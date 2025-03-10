@@ -201,7 +201,7 @@ class ActorInstance(BaseModel):
     kick_off_message: str
     active_skills: List[SkillInfo]
     attributes: List[int]  # HP/MaxHP/ActionTimes/MaxActionTimes/STR/AGI/WIS
-    tags: List[TagInfo]
+    # tags: List[TagInfo]
 
 
 ###############################################################################################################################################
@@ -213,7 +213,7 @@ class StageInstance(BaseModel):
     kick_off_message: str
     attributes: List[int]
     next: List[str]
-    tags: List[TagInfo]
+    # tags: List[TagInfo]
 
 
 ###############################################################################################################################################

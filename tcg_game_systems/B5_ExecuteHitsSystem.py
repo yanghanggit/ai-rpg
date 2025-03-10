@@ -32,6 +32,10 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         self._game: TCGGame = cast(TCGGame, context._game)
         assert self._game is not None
 
+    @override
+    def execute(self) -> None:
+        pass
+
     async def a_execute1(self) -> None:
         await self._process()
 

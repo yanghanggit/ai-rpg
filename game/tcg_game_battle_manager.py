@@ -71,8 +71,6 @@ class BattleManager:
                 value = int(skill.values[random.randint(1, 4)] * 80)
                 type = HitType.DAMAGE
                 dmgtype = DamageType.PHYSICAL
-            case "跳过行动":
-                log = f"{source} 跳过了行动。"
 
         return HitInfo(
             skill=skill,

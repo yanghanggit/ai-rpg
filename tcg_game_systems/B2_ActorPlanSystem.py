@@ -30,6 +30,10 @@ class B2_ActorPlanSystem(ExecuteProcessor):
         assert self._game is not None
 
     @override
+    def execute(self) -> None:
+        pass
+
+    @override
     async def a_execute1(self) -> None:
         await self._make_plan()
 

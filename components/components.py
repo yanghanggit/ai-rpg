@@ -1,6 +1,6 @@
 from typing import Dict, NamedTuple, List, Set, final
 from components.registry import register_component_class
-from tcg_models.v_0_0_1 import Buff, TagInfo, ActiveSkill, TriggerSkill
+from tcg_models.v_0_0_1 import Buff, ActiveSkill, TagInfo, TriggerSkill
 
 
 """

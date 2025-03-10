@@ -9,6 +9,7 @@ from game.tcg_game_processors import TCGGameProcessors
 from rpg_models.event_models import BaseEvent
 from tcg_models.v_0_0_1 import (
     # ActorPrototype,
+    CardObject,
     WorldRuntime,
     WorldSystemInstance,
     WorldDataBase,
@@ -18,7 +19,6 @@ from tcg_models.v_0_0_1 import (
     AgentShortTermMemory,
     ActorType,
     StageType,
-    CardObject,
 )
 from components.components import (
     WorldSystemComponent,

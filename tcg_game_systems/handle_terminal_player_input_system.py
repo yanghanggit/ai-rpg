@@ -41,34 +41,5 @@ class HandleTerminalPlayerInputSystem(ExecuteProcessor):
             f"player = {player_proxy.name}, actor = {player_proxy.actor_name}, command = {command}"
         )
 
-        if "/card" in command.command or "/c" in command.command:
-
-            # TODO
-            player_entity = self._game.get_player_entity()
-            assert player_entity is not None
-
-            actor_comp = player_entity.get(ActorComponent)
-            player_entity.add(
-                CardAction,
-                actor_comp.name,
-                [],
-            )
-
-            actors = self._context.get_group(
-                Matcher(
-                    all_of=[ActorComponent],
-                )
-            ).entities.copy()
-            actors.remove(player_entity)
-            for actor in actors:
-                comp = actor.get(ActorComponent)
-                actor.add(
-                    CardAction,
-                    comp.name,
-                    [],
-                )
-
-            return
-
 
 ############################################################################################################

@@ -149,43 +149,26 @@ class TCGGameProcessors(Processors):
         from tcg_game_systems.handle_web_player_input_system import (
             HandleWebPlayerInputSystem,
         )
-        from tcg_game_systems.destroy_system import DestroySystem
-        from tcg_game_systems.test_card_action_system import CardActionSystem
-        from tcg_game_systems.pre_action_system import PreActionSystem
-        from tcg_game_systems.post_action_system import PostActionSystem
-        from tcg_game_systems.dead_action_system import DeadActionSystem
+
+        from tcg_game_systems.B1_TurnStartSystem import B1_TurnStartSystem
+        from tcg_game_systems.B2_ActorPlanSystem import B2_ActorPlanSystem
+        from tcg_game_systems.B5_ExecuteHitsSystem import B5_ExecuteHitsSystem
+        from tcg_game_systems.B6_CheckEndSystem import B6_CheckEndSystem
 
         processors.add(BeginSystem(context))
 
         # 启动agent的提示词。启动阶段
         processors.add(KickOffSystem(context))
 
-        # 进入动作前，处理输入。
+        # 断点
         processors.add(HandleTerminalPlayerInputSystem(context))
         processors.add(HandleWebPlayerInputSystem(context))
 
-        # 动作处理相关的系统
-        processors.add(PreActionSystem(context))
-
-        processors.add(CardActionSystem(context))
-
-        # processors.add(TagActionSystem(context))
-        # processors.add(MindVoiceActionSystem(context))
-        # processors.add(WhisperActionSystem(context))
-        # processors.add(AnnounceActionSystem(context))
-        # processors.add(SpeakActionSystem(context))
-
-        # ?
-        processors.add(DeadActionSystem(context))
-
-        # 战斗之后，执行场景更换的逻辑，如果上面死亡了，就不能执行下面的！
-        # processors.add(GoToActionSystem(context))
-
-        # ?
-        processors.add(PostActionSystem(context))
-
-        # 动作处理后，可能清理。
-        processors.add(DestroySystem(context))
+        # 战斗逻辑
+        processors.add(B1_TurnStartSystem(context))
+        processors.add(B2_ActorPlanSystem(context))
+        processors.add(B5_ExecuteHitsSystem(context))
+        processors.add(B6_CheckEndSystem(context))
 
         # 存储系统。
         processors.add(SaveSystem(context))

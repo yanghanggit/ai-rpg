@@ -1,4 +1,5 @@
 from overrides import override
+from pydantic import BaseModel
 from agent.chat_request_handler import ChatRequestHandler
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from entitas.entity import Entity
@@ -16,7 +17,7 @@ from loguru import logger
 import json
 
 
-class ChoiceRet:
+class ChoiceRet(BaseModel):
     num: int
     target: str
     text: str
@@ -114,7 +115,7 @@ class B2_ActorPlanSystem(ExecuteProcessor):
 
         # 得到回复后，构建hit
         try:
-            ret = ChoiceRet(**json.loads(request_handlers[0].response_content))
+            ret : ChoiceRet = ChoiceRet.model_validate_json(request_handlers[0].response_content)
         except:
             logger.error("返回格式错误")
             ret = ChoiceRet()
@@ -171,8 +172,8 @@ def _gen_prompt(
 1. 你想使用的技能的序号固定为-1。
 2. 释放技能的目标角色的名称固定为你的名称。
 3. 释放技能时你想说的话固定为你不想使用技能的原因。
-## 输出要求
-请严格遵守以下JSON结构示例：
+## 输出格式指南
+请严格遵守以下JSON结构示例，无需保留换行符号：
 {{
     "num":"此处替换为想使用的技能的序号。类型为整数。",
     "target":"此处替换为你想释放技能的目标角色的名称。",

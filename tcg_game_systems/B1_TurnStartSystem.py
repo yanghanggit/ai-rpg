@@ -17,6 +17,8 @@ class B1_TurnStartSystem(ExecuteProcessor):
 
     @override
     def execute(self) -> None:
+        if self._game._battle_manager._battle_end_flag:
+            return
         if self._game._battle_manager._new_turn_flag:
             self._fresh_turn()
 

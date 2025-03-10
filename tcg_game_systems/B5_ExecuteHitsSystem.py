@@ -54,14 +54,14 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             self._game._battle_manager.add_history(hit.log)
             done_hits_log += hit.log
 
-        # pop掉当前行动角色，删掉所有行动力小于0的
+        # pop掉当前行动角色，删掉所有行动力小于0的和翘辫子的
         temp_actor_name = self._game._battle_manager._order_queue.popleft()
         for actor_name in self._game._battle_manager._order_queue:
             actor = self._context.get_entity_by_name(actor_name)
             assert actor is not None
             comp = actor.get(AttributeCompoment)
             assert comp is not None
-            if comp.action_times <= 0:
+            if comp.action_times <= 0 or comp.hp <= 0:
                 self._game._battle_manager._order_queue.remove(actor_name)
 
         # 问世界系统，给我生成一段描述
@@ -106,7 +106,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         # 把描述添加进历史
         self._game._battle_manager.add_history(request_handlers[0].response_content)
 
-    def _execute_hit(self, hit: HitInfo) -> None:
+    def _execute_hit(self, hit: HitInfo) -> bool:
         source_name = hit.source
         target_name = hit.target
         source = self._context.get_entity_by_name(source_name)
@@ -124,7 +124,14 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         actor_comp = source.get(ActorComponent)
         if actor_comp is None:
             assert False, "actor_comp is None"
-        stage_name = actor_comp.current_stage
+
+        # 检查source和target是不是死了
+        if source_comp.hp <= 0:
+            hit.log += f"{source_name} 已经被击败，无法行动！"
+            return False
+        if target_comp.hp <= 0 and hit.type is not HitType.HEAL:
+            hit.log += f"{target_name} 已经被击败，无法进行该行动！"
+            return False
 
         # 执行hit
         if hit.type is HitType.NONE:
@@ -150,7 +157,9 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             hit.log += f"{source_name} 对 {target_name} 造成了 {value} 点伤害。"
             # 扣血
             hp_value = target_comp.hp - value
-            hp_value = hp_value if hp_value >= 0 else 0
+            hp_value = hp_value if hp_value <= 0 else 0
+            if hp_value is 0:
+                hit.log += f"{target_name} 被击败了！"
         # 如果是个加血行为
         elif hit.type is HitType.HEAL:
             value = hit.value
@@ -185,9 +194,11 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             hp_value = target_comp.hp
 
         # 修改血量, 广播说话
+        stage_name = actor_comp.current_stage
         self._modify_hp_action_times_and_announce(
             source, hp_value, hit.text, stage_name
         )
+        return True
 
     def _modify_hp_action_times_and_announce(
         self, actor: Entity, hp: int, text: str, stage_name: str

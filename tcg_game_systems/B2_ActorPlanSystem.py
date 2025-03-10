@@ -49,6 +49,9 @@ class B2_ActorPlanSystem(ExecuteProcessor):
         comp = thinker.get(AttributeCompoment)
         if comp.action_times <= 0:
             assert False, "角色行动力<=0但是没删掉"
+            return
+        if comp.hp <= 0:
+            return
 
         # 检查这个时候触发的buff，写的太硬了给我自己看笑了
         if any(buff.name == "眩晕" for buff, last_times in comp.buffs.items()):

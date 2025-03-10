@@ -45,15 +45,46 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         if len(self._game._battle_manager._hits_stack) is 0:
             return
 
-        # 执行hit
+        done_hits_log: str = ""
+        # 执行stack里的所有hit
         while len(self._game._battle_manager._hits_stack) > 0:
             hit = self._game._battle_manager._hits_stack.pop()
             self._execute_hit(hit)
             # 添加历史
             self._game._battle_manager.add_history(hit.log)
+            done_hits_log += hit.log
+
+        # pop掉当前行动角色，删掉所有行动力小于0的
+        temp_actor_name = self._game._battle_manager._order_queue.popleft()
+        for actor_name in self._game._battle_manager._order_queue:
+            actor = self._context.get_entity_by_name(actor_name)
+            assert actor is not None
+            comp = actor.get(AttributeCompoment)
+            assert comp is not None
+            if comp.action_times <= 0:
+                self._game._battle_manager._order_queue.remove(actor_name)
 
         # 问世界系统，给我生成一段描述
-        msg = _gen_prompt()
+        # 得到所有角色和场景信息
+        temp_actor = self._context.get_entity_by_name(temp_actor_name)
+        assert temp_actor is not None
+        current_stage = self._context.safe_get_stage_entity(temp_actor)
+        assert current_stage is not None
+        actors_set = self._game.retrieve_actors_on_stage(current_stage)
+        actors_info_list: List[str] = [
+            f"{actor._name}：\n外表：{actor.get(FinalAppearanceComponent).final_appearance}\n生命值：{actor.get(AttributeCompoment).hp}/{actor.get(AttributeCompoment).maxhp}\n行动力：{actor.get(AttributeCompoment).action_times}/{actor.get(AttributeCompoment).max_action_times}"
+            for actor in actors_set
+            if actor.has(FinalAppearanceComponent)
+        ]
+        msg = _gen_prompt(
+            current_stage_name=current_stage._name,
+            current_stage_narration=current_stage.get(
+                StageEnvironmentComponent
+            ).narrate,
+            actors_info_list=actors_info_list,
+            act_order=self._game._battle_manager._order_queue.copy(),
+            done_hits_log=done_hits_log,
+        )
         world_system_entity = self._get_world_system()
         assert world_system_entity is not None
         request_handlers: List[ChatRequestHandler] = []
@@ -202,5 +233,27 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         return None
 
 
-def _gen_prompt() -> str:
-    return ""
+def _gen_prompt(
+    current_stage_name: str,
+    current_stage_narration: str,
+    actors_info_list: List[str],
+    act_order: Deque[str],
+    done_hits_log: str,
+) -> str:
+    return f"""
+# 请作为战斗系统的故事讲述者，描述这轮的战斗情况。
+## 战场形势
+### 当前所在的场景
+{current_stage_name}
+### 当前场景描述
+{current_stage_narration}
+### 当前场景内所有角色的状态
+{"\n".join(actors_info_list)}
+### 本回合尚未未行动角色行动顺序队列
+{", ".join(f"{index}: {item}" for index, item in enumerate(act_order))}
+### 本轮中发生的行动
+{done_hits_log}
+## 描述要求
+1. 战斗过程的描述需要生动和有趣。
+2. 必须充分考虑每个角色的性格，不要让角色成为只会战斗的棋子。
+"""

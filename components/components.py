@@ -1,6 +1,6 @@
-from typing import NamedTuple, List, Set, final
+from typing import Dict, NamedTuple, List, Set, final
 from components.registry import register_component_class
-from tcg_models.v_0_0_1 import TagInfo, ActiveSkill, TriggerSkill
+from tcg_models.v_0_0_1 import Buff, ActiveSkill, TagInfo, TriggerSkill
 
 
 """
@@ -106,12 +106,6 @@ class StageStaticFlagComponent(NamedTuple):
 
 
 ############################################################################################################
-class Buff:
-    name: str
-    description: str
-    last_time: int
-
-
 # 角色标记
 @final
 @register_component_class
@@ -131,7 +125,7 @@ class AttributeCompoment(NamedTuple):
     strength: int
     agility: int
     wisdom: int
-    buffs: List[Buff]
+    buffs: Dict[Buff, int]
     active_skills: List[ActiveSkill]
     trigger_skills: List[TriggerSkill]
 

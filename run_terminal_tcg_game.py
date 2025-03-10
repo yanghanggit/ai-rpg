@@ -173,12 +173,12 @@ async def run_game(option: OptionParameters) -> None:
             terminal_tcg_game._will_exit = True
             break
 
-        if usr_input == "/tp":
+        """ if usr_input == "/tp":
             # 传送场景做特殊处理，先不做execute。
             player_entity = terminal_tcg_game.get_player_entity()
             assert player_entity is not None
             terminal_tcg_game.teleport_actors_to_stage({player_entity}, "场景.洞窟")
-            continue
+            continue """
 
         # 以上都拦截不住，就是玩家的输入，输入错了就会空跑一次
         terminal_tcg_game.player.add_command2(

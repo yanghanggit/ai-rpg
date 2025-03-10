@@ -1,4 +1,4 @@
-from typing import Final, List, Dict, Any, Union, final
+from typing import Final, List, Dict, Any, Optional, Union, final
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from enum import IntEnum, StrEnum, unique
@@ -125,10 +125,25 @@ class TagInfo(BaseModel):
 
 ###############################################################################################################################################
 # TODO，这个框里的全是临时的，没细想，能跑就行，等重构
+class BuffTriggerType(StrEnum):
+    NONE = "None"
+    TURN_START = "TurnStart"
+    ON_ATTACKED = "OnAttacked"
+    ON_PLANNING = "OnPlanning"
+
+
+class Buff(BaseModel):
+    name: str
+    description: str
+    timing: BuffTriggerType
+    is_debuff: bool
+
+
 class SkillInfo(BaseModel):
     name: str
     description: str
     values: List[float]
+    buff: Optional[Buff]
 
 
 class ActiveSkill(SkillInfo):
@@ -163,6 +178,7 @@ class HitInfo(BaseModel):
     value: int
     type: HitType
     dmgtype: DamageType
+    buff: Optional[Buff]  # 要添加或者移除的buff
     log: str  # 写在战斗历史里的log，比如A对B用了X技能，造成Y伤害
     text: str  # 角色执行这个动作时想说的话，执行的时候需要广播或者notify出去
 
@@ -177,10 +193,6 @@ class BattleHistory(BaseModel):
     logs: Dict[int, List[str]]
 
 
-class BuffDict(BaseModel):
-    buffs: Dict[str, str]
-
-
 ###############################################################################################################################################
 @final
 class ActorInstance(BaseModel):
@@ -189,7 +201,7 @@ class ActorInstance(BaseModel):
     kick_off_message: str
     active_skills: List[SkillInfo]
     attributes: List[int]  # HP/MaxHP/ActionTimes/MaxActionTimes/STR/AGI/WIS
-    tags: List[TagInfo]
+    # tags: List[TagInfo]
 
 
 ###############################################################################################################################################
@@ -201,7 +213,7 @@ class StageInstance(BaseModel):
     kick_off_message: str
     attributes: List[int]
     next: List[str]
-    tags: List[TagInfo]
+    # tags: List[TagInfo]
 
 
 ###############################################################################################################################################

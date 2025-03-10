@@ -4,19 +4,23 @@ from typing import Deque, List, Union
 from game.tcg_game import TCGGame
 from tcg_models.v_0_0_1 import (
     BattleHistory,
+    DamageType,
     EventMsg,
     ActiveSkill,
     HitInfo,
     HitType,
     TriggerSkill,
     ActorInstance,
+    SkillInfo,
 )
 from components.components import ActorComponent
+import random
 
 
 # TODO 整个系统都是prototype里临时用的！！demo全重写！
 class BattleManager:
-    def __init__(self) -> None:
+    def __init__(self, game: TCGGame) -> None:
+        self._game = game
         self._combat_num: int = 0
         self._turn_num: int = 0
         self._new_turn_flag: bool = False
@@ -24,9 +28,60 @@ class BattleManager:
         self._hits_stack: Deque[HitInfo] = deque()
         self._order_queue: Deque[str] = deque()
         self.battle_history: BattleHistory
+        self._event_msg: EventMsg
 
-    def add_history(self, msg: Union[str, EventMsg]) -> None:
+    def add_history(self, msg: str) -> None:
         self.battle_history.logs[self._turn_num].append(msg)
+
+    def generate_hit(
+        self, skill: ActiveSkill, source: str, target: str, text: str
+    ) -> HitInfo:
+        value: int
+        type: HitType
+        dmgtype: DamageType
+        log: str
+        log = f"{source} 对 {target} 使用了 {skill.name}"
+
+        # 这里应该是造成属性多少倍的伤害，懒得写好长的get了，原型里写死吧
+        # 有效性，先不问ai了，随便roll一个吧
+        match skill.name:
+            case "斩击":
+                value = int(skill.values[random.randint(1, 4)] * 50)
+                type = HitType.DAMAGE
+                dmgtype = DamageType.PHYSICAL
+            case "战地治疗":
+                value = int(0.5 * 30)
+                type = HitType.HEAL
+                dmgtype = DamageType.HEAL
+            case "火球":
+                value = int(skill.values[random.randint(1, 4)] * 60)
+                type = HitType.DAMAGE
+                dmgtype = DamageType.FIRE
+            case "冰雾":
+                value = int(skill.values[random.randint(1, 4)] * 60)
+                type = HitType.DAMAGE
+                dmgtype = DamageType.ICE
+            case "猛砸":
+                value = int(skill.values[random.randint(1, 4)] * 80)
+                type = HitType.DAMAGE
+                dmgtype = DamageType.PHYSICAL
+            case "乱舞":
+                value = int(skill.values[random.randint(1, 4)] * 80)
+                type = HitType.DAMAGE
+                dmgtype = DamageType.PHYSICAL
+            case "跳过行动":
+                log = f"{source} 跳过了行动。"
+
+        return HitInfo(
+            skill=skill,
+            source=source,
+            target=target,
+            value=value,
+            type=type,
+            dmgtype=dmgtype,
+            log=log,
+            text=text,
+        )
 
     """ def __init__(self, game: TCGGame, context: TCGGameContext) -> None:
         self._battle_num: int = 0

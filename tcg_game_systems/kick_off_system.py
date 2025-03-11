@@ -130,16 +130,19 @@ class KickOffSystem(ExecuteProcessor):
         # 添加上下文。
         for request_handler in request_handlers:
 
+            entity2 = self._context.get_entity_by_name(request_handler._name)
+            assert entity2 is not None
+
             if request_handler.response_content == "":
-                logger.error(f"Agent: {request_handler._name}, Response is empty.")
+                logger.error(
+                    f"Agent: {request_handler._name}, Response is empty!!!!!!!!!!!!!!!!!!!!!!!!! KickOff Failed."
+                )
                 continue
 
             logger.warning(
                 f"Agent: {request_handler._name}, Response:\n{request_handler.response_content}"
             )
 
-            entity2 = self._context.get_entity_by_name(request_handler._name)
-            assert entity2 is not None
             self._game.append_human_message(entity2, request_handler._prompt)
             self._game.append_ai_message(entity2, request_handler.response_content)
 
@@ -153,22 +156,20 @@ class KickOffSystem(ExecuteProcessor):
                     entity2._name,
                     request_handler.response_content,
                 )
-
-            # 添加行动
-            self._assign_entity_actions(entity2, request_handler.response_content)
+            elif entity2.has(ActorComponent):
+                # 添加行动
+                self._allocate_actor_actions(entity2, request_handler.response_content)
 
     ######################################################################################################################################################
-    def _assign_entity_actions(self, entity: Entity, response_content: str) -> None:
+    def _allocate_actor_actions(self, entity: Entity, response_content: str) -> None:
 
         assert response_content != ""
-
-        # 添加行动
-        if entity.has(ActorComponent):
-            action_bundle = ActionBundle(entity._name, response_content)
-            if not action_bundle.assign_actions_to_entity(
-                entity, ACTOR_AVAILABLE_ACTIONS_REGISTER
-            ):
-                assert False, "Assign action failed."
+        assert entity.has(ActorComponent)
+        action_bundle = ActionBundle(entity._name, response_content)
+        if not action_bundle.assign_actions_to_entity(
+            entity, ACTOR_AVAILABLE_ACTIONS_REGISTER
+        ):
+            assert False, "Assign action failed."
 
     ######################################################################################################################################################
     def _generate_kick_off_prompt(self, entity: Entity) -> str:

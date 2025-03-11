@@ -102,6 +102,9 @@ class B2_ActorPlanSystem(ExecuteProcessor):
             act_order=order,
             battle_history=self._game._battle_manager.battle_history_dump,
         )
+        
+        logger.info(f"thinker_name: {thinker_name}, message:\n{message}")
+        
         # 开问
         request_handlers: List[ChatRequestHandler] = []
         agent_short_term_memory = self._game.get_agent_short_term_memory(thinker)

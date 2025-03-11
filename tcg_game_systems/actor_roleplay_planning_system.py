@@ -120,7 +120,7 @@ def _generate_actor_plan_prompt(
     self_appearence: str,
     actors_info_list: List[str],
 ) -> str:
-    assert current_stage_name is not "", "current_stage is empty"
+    assert current_stage_name != "", "current_stage is empty"
     return f"""
 # 请制定你的行动计划，请确保你的行为和言语符合游戏规则和设定
 

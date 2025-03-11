@@ -36,7 +36,8 @@ class BattleManager:
         self.add_history("战斗开始！")
 
     def add_history(self, msg: str) -> None:
-        assert msg != ""
+        if msg == "":
+            return
         self._battle_history.logs.setdefault(self._turn_num, []).append(msg)
 
     def generate_hits(

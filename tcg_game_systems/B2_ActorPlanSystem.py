@@ -46,7 +46,7 @@ class B2_ActorPlanSystem(ExecuteProcessor):
             return
         if self._game._battle_manager._battle_end_flag:
             return
-        if len(self._game._battle_manager._order_queue) is 0:
+        if len(self._game._battle_manager._order_queue) == 0:
             return
 
         # 找出当前应该做决定的角色

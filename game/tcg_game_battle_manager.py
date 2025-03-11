@@ -7,7 +7,7 @@ from tcg_models.v_0_0_1 import (
     BattleHistory,
     Buff,
     DamageType,
-    EventMsg,
+    # EventMsg,
     ActiveSkill,
     HitInfo,
     HitType,
@@ -23,7 +23,7 @@ import random
 # TODO 整个系统都是prototype里临时用的！！demo全重写！
 class BattleManager:
     def __init__(self) -> None:
-        from game.tcg_game import TCGGame
+        # from game.tcg_game import TCGGame
 
         # self._game: Optional[TCGGame] = None
         self._combat_num: int = 0

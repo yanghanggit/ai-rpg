@@ -45,9 +45,9 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             return
         if self._game._battle_manager._battle_end_flag:
             return
-        if len(self._game._battle_manager._order_queue) is 0:
+        if len(self._game._battle_manager._order_queue) == 0:
             return
-        if len(self._game._battle_manager._hits_stack) is 0:
+        if len(self._game._battle_manager._hits_stack) == 0:
             return
 
         done_hits_log: str = ""
@@ -175,7 +175,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             # 扣血
             hp_value = target_comp.hp - value
             hp_value = hp_value if hp_value > 0 else 0
-            if hp_value is 0:
+            if hp_value == 0:
                 hit.log += f"{target_name} 被击败了！"
         # 如果是个加血行为
         elif hit.type is HitType.HEAL:

@@ -38,7 +38,7 @@ class B6_CheckEndSystem(ExecuteProcessor):
             return
 
         # 检查回合结束
-        if len(self._game._battle_manager._order_queue) is 0:
+        if len(self._game._battle_manager._order_queue) == 0:
             self._game._battle_manager.add_history("回合结束！")
             self._game._battle_manager._new_turn_flag = True
 

@@ -128,6 +128,7 @@ class B2_ActorPlanSystem(ExecuteProcessor):
         if ret.num == -1:
             msg = f"{thinker_name}决定跳过行动，原因是：{ret.text}"
             self._game._battle_manager.add_history(msg)
+            self._game._battle_manager._order_queue.popleft()
             return
         else:
             hits = self._game._battle_manager.generate_hits(

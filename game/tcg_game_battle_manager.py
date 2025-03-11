@@ -1,31 +1,31 @@
 from collections import deque
-import json
 from pathlib import Path
-from typing import Deque, List, Optional, Union
+from typing import Deque, Optional
 
 from loguru import logger
 from tcg_models.v_0_0_1 import (
     BattleHistory,
     Buff,
     DamageType,
-    EventMsg,
+    # EventMsg,
     ActiveSkill,
     HitInfo,
     HitType,
-    TriggerSkill,
-    ActorInstance,
-    SkillInfo,
+    # TriggerSkill,
+    # ActorInstance,
+    # SkillInfo,
 )
-from components.components import ActorComponent
+
+# from components.components import ActorComponent
 import random
 
 
 # TODO 整个系统都是prototype里临时用的！！demo全重写！
 class BattleManager:
     def __init__(self) -> None:
-        from game.tcg_game import TCGGame
+        # from game.tcg_game import TCGGame
 
-        self._game: Optional[TCGGame] = None
+        # self._game: Optional[TCGGame] = None
         self._combat_num: int = 0
         self._turn_num: int = 0
         self._new_turn_flag: bool = False
@@ -33,10 +33,11 @@ class BattleManager:
         self._hits_stack: Deque[HitInfo] = deque()
         self._order_queue: Deque[str] = deque()
         self.battle_history: BattleHistory = BattleHistory(logs={})
-        self._event_msg: EventMsg = EventMsg(event="", option=0, result="")
+        # self._event_msg: EventMsg = EventMsg(event="", option=0, result="")
 
         try:
             write_path: Path = Path("battlelog") / "battle_history.json"
+            write_path.mkdir(parents=True, exist_ok=True)
             write_path.write_text(
                 self.battle_history.model_dump_json(), encoding="utf-8"
             )

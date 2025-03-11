@@ -4,11 +4,11 @@ from entitas import ExecuteProcessor, Matcher  # type: ignore
 from entitas.entity import Entity
 from game.tcg_game_context import TCGGameContext
 from game.tcg_game import TCGGame
-from typing import Deque, List, Optional, Set, final, cast
+from typing import Deque, List, Optional, Set, cast
 from rpg_models.event_models import AnnounceEvent
 from tcg_models.v_0_0_1 import (
-    ActorInstance,
-    ActiveSkill,
+    # ActorInstance,
+    # ActiveSkill,
     TriggerType,
     HitInfo,
     HitType,
@@ -21,8 +21,9 @@ from components.components import (
     StageEnvironmentComponent,
     WorldSystemComponent,
 )
-from loguru import logger
-import json
+
+# from loguru import logger
+# import json
 
 
 class B5_ExecuteHitsSystem(ExecuteProcessor):
@@ -44,9 +45,9 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             return
         if self._game._battle_manager._battle_end_flag:
             return
-        if len(self._game._battle_manager._order_queue) is 0:
+        if len(self._game._battle_manager._order_queue) == 0:
             return
-        if len(self._game._battle_manager._hits_stack) is 0:
+        if len(self._game._battle_manager._hits_stack) == 0:
             return
 
         done_hits_log: str = ""
@@ -71,7 +72,6 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         for name in remove_list:
             if name in self._game._battle_manager._order_queue:
                 self._game._battle_manager._order_queue.remove(name)
-            
 
         # 问世界系统，给我生成一段描述
         # 得到所有角色和场景信息
@@ -175,7 +175,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             # 扣血
             hp_value = target_comp.hp - value
             hp_value = hp_value if hp_value > 0 else 0
-            if hp_value is 0:
+            if hp_value == 0:
                 hit.log += f"{target_name} 被击败了！"
         # 如果是个加血行为
         elif hit.type is HitType.HEAL:

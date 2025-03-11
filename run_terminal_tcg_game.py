@@ -146,44 +146,39 @@ async def run_game(option: OptionParameters) -> None:
         logger.error(f"游戏准备失败 = {game_name}")
         exit(1)
 
-    first_start = False
+    is_first_execution = False
 
     # 核心循环
     while True:
 
-        if not first_start:
-            first_start = True
+        if not is_first_execution:
+            is_first_execution = True
             logger.warning(
                 f"游戏开始 = {game_name}!!!, 第一次的默认执行!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
             )
             await terminal_tcg_game.a_execute()
             continue
 
-        # await terminal_tcg_game.a_execute()
-
         usr_input = input(f"[{terminal_tcg_game.player.name}]:")
-        """ if usr_input == "":
-            logger.debug(f"玩家输入为空 = {terminal_tcg_game.player.name}，空跑一次")
-
-            await terminal_tcg_game.a_execute()
-            break
 
         if usr_input == "/quit" or usr_input == "/q":
-            logger.info(f"玩家退出游戏 = {terminal_tcg_game.player.name}")
+            logger.info(f"玩家 主动 退出游戏 = {terminal_tcg_game.player.name}")
             terminal_tcg_game._will_exit = True
-            break """
+            break
 
-        """ if usr_input == "/tp":
+        if usr_input == "/tp":
             # 传送场景做特殊处理，先不做execute。
             player_entity = terminal_tcg_game.get_player_entity()
             assert player_entity is not None
             terminal_tcg_game.teleport_actors_to_stage({player_entity}, "场景.洞窟")
-            continue """
+            continue
 
-        # 以上都拦截不住，就是玩家的输入，输入错了就会空跑一次
+        # 以上都拦截不住，就是玩家的输入，输入错了， handle input 相关的system 就不执行，空跑一次。
         terminal_tcg_game.player.add_command2(
             PlayerCommand2(user=terminal_tcg_game.player.name, command=usr_input)
         )
+
+        # 执行
         await terminal_tcg_game.a_execute()
 
         # 处理退出

@@ -93,6 +93,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             actors_info_list=actors_info_list,
             act_order=self._game._battle_manager._order_queue.copy(),
             done_hits_log=done_hits_log,
+            battle_history=self._game._battle_manager._battle_history.model_dump_json(),
         )
         world_system_entity = self._get_world_system()
         assert world_system_entity is not None
@@ -108,10 +109,11 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             )
         )
         await self._game.langserve_system.gather(request_handlers=request_handlers)
-        self._game.append_human_message(world_system_entity, msg)
-        self._game.append_ai_message(
-            world_system_entity, request_handlers[0].response_content
-        )
+        # self._game.append_human_message(world_system_entity, msg)
+        # self._game.append_ai_message(
+        #     world_system_entity, request_handlers[0].response_content
+        # )
+
         # 把描述添加进历史
         self._game._battle_manager.add_history(request_handlers[0].response_content)
 
@@ -315,6 +317,7 @@ def _gen_prompt(
     actors_info_list: List[str],
     act_order: Deque[str],
     done_hits_log: str,
+    battle_history: str,
 ) -> str:
     return f"""
 # 请作为战斗系统的故事讲述者，参考战斗日志，描述这轮的战斗情况。
@@ -329,6 +332,8 @@ def _gen_prompt(
 {", ".join(f"{index}: {item}" for index, item in enumerate(act_order))}
 ### 本轮中发生的行动
 {done_hits_log}
+### 截至目前，整场战斗的记录
+{battle_history}
 ## 描述要求
 1. 战斗过程的描述需要生动和有趣。
 2. 描述中不要附带角色对话，不要揣测角色心理活动，仅以第三人称视角对发生的事件做客观描述。

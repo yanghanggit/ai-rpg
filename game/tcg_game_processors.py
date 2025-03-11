@@ -70,8 +70,8 @@ class TCGGameProcessors(Processors):
         processors.add(KickOffSystem(context))
 
         # 进入动作前，处理输入。
-        processors.add(HandleTerminalPlayerInputSystem(context))
-        processors.add(HandleWebPlayerInputSystem(context))
+        # processors.add(HandleTerminalPlayerInputSystem(context))
+        # processors.add(HandleWebPlayerInputSystem(context))
 
         # 动作处理相关的系统
         processors.add(PreActionSystem(context))
@@ -95,7 +95,11 @@ class TCGGameProcessors(Processors):
         processors.add(DestroySystem(context))
 
         #
-        processors.add(TerminalPlayerInterruptWaitSystem(context))
+        # processors.add(TerminalPlayerInterruptWaitSystem(context))
+
+        # 输入换个位置，测试 TODO
+        processors.add(HandleTerminalPlayerInputSystem(context))
+        processors.add(HandleWebPlayerInputSystem(context))
 
         # 规划逻辑
         processors.add(PrePlanningSystem(context))  ######## 在所有规划之前!

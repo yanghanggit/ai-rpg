@@ -396,7 +396,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             )
         ],
         buffs={},
-        attributes=[70, 70, 1, 1, 15, 40, 60],
+        attributes=[70, 70, 1, 1, 15, 45, 60],
     )
 
     # 创建实例：角色.怪物.兽人王

@@ -670,6 +670,7 @@ class TCGGame(BaseGame):
                 ),
             )
 
+        # 写死
         if target_stage.has(HomeStageFlagComponent):
             self._game_state = TCGGameState.HOME
         elif target_stage.has(DungeonStageFlagComponent):

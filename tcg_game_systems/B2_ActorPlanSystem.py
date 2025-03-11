@@ -66,6 +66,7 @@ class B2_ActorPlanSystem(ExecuteProcessor):
             self._game._battle_manager.add_history(
                 f"{thinker_name} 被眩晕了，无法行动！"
             )
+            self._game._battle_manager._order_queue.popleft()
             return
 
         # 问他做什么决定
@@ -130,6 +131,7 @@ class B2_ActorPlanSystem(ExecuteProcessor):
         if ret.num == -1:
             msg = f"{thinker_name}决定跳过行动，原因是：{ret.text}"
             self._game._battle_manager.add_history(msg)
+            self._game._battle_manager._order_queue.popleft()
             return
         else:
             hits = self._game._battle_manager.generate_hits(
@@ -195,4 +197,5 @@ def _gen_prompt(
 - 确保你的言行符合游戏规则和设定。
 - 使用技能时会消耗行动力。行动力归0后本回合无法继续行动。
 - 被动技能只有在满足触发条件时才能使用。无法主动使用。
+- HP归零，被击败的目标无法成为技能的目标。
 """

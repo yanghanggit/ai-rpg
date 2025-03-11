@@ -337,13 +337,13 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             ActiveSkill(
                 name="斩击",
                 description="用剑斩向目标，造成物理伤害，力量越高效果越好。",
-                values=[0.5, 0.8, 1.0, 1.5],
+                values=[0.5, 0.8, 1.0, 1.3],
                 buff=None,
             ),
             ActiveSkill(
                 name="战地治疗",
                 description="利用你的急救知识治疗目标的伤口，恢复生命值，智力越高效果越好。",
-                values=[0.5, 0.8, 1.0, 1.5],
+                values=[0.5, 0.8, 1.0, 1.3],
                 buff=None,
             ),
         ],
@@ -362,7 +362,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             ),
         ],
         buffs={},
-        attributes=[80, 80, 1, 1, 50, 60, 20],
+        attributes=[80, 80, 1, 1, 50, 30, 20],
     )
 
     # 创建实例：角色.法师.露西
@@ -376,13 +376,13 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             ActiveSkill(
                 name="火球",
                 description="默念咒文，在法杖尖端形成火球向目标发射而出，造成火焰伤害，智力越高效果越好。",
-                values=[0.5, 0.8, 1.0, 1.5],
+                values=[0.5, 0.8, 1.0, 1.3],
                 buff=None,
             ),
             ActiveSkill(
                 name="冰雾",
                 description="默念咒文，在周围形成寒冷刺骨的冰雾，造成冰霜伤害，智力越高效果越好。",
-                values=[0.5, 0.8, 1.0, 1.5],
+                values=[0.5, 0.8, 1.0, 1.3],
                 buff=None,
             ),
         ],
@@ -408,7 +408,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             ActiveSkill(
                 name="猛砸",
                 description="蓄力后猛的出拳，对目标造成物理伤害的同时眩晕目标，力量越高效果越好。",
-                values=[0.5, 0.8, 1.0, 1.5, 1.0],
+                values=[0.5, 0.8, 1.0, 1.3, 1.0],
                 buff=Buff(
                     name="眩晕",
                     description="头晕目眩，无法行动。",
@@ -419,7 +419,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             ActiveSkill(
                 name="乱舞",
                 description="凭借力量毫无章法的挥舞武器，对目标造成物理伤害，力量越高效果越好。",
-                values=[0.5, 0.8, 1.0, 1.5],
+                values=[0.5, 0.8, 1.0, 1.3],
                 buff=None,
             ),
         ],
@@ -435,7 +435,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         buffs={
             "藤甲": 999,
         },
-        attributes=[200, 200, 2, 2, 80, 40, 10],
+        attributes=[200, 200, 2, 2, 65, 40, 10],
     )
 
     # 创建实例：场景.洞窟

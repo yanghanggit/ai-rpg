@@ -36,9 +36,8 @@ class BattleManager:
         self.add_history("战斗开始！")
 
     def add_history(self, msg: str) -> None:
-        if msg == "":
-            return
-        self._battle_history.logs.setdefault(self._turn_num, []).append(msg)
+        if msg != "":
+            self._battle_history.logs.setdefault(self._turn_num, []).append(msg)
 
     def generate_hits(
         self, skill: ActiveSkill, source: str, target: str, text: str
@@ -67,7 +66,7 @@ class BattleManager:
                 type = HitType.DAMAGE
                 dmgtype = DamageType.ICE
             case "猛砸":
-                value = int(skill.values[random.randint(0, 3)] * 80)
+                value = int(skill.values[random.randint(0, 3)] * 65)
                 type = HitType.DAMAGE
                 dmgtype = DamageType.PHYSICAL
                 ret.append(
@@ -85,7 +84,7 @@ class BattleManager:
                     )
                 )
             case "乱舞":
-                value = int(skill.values[random.randint(0, 3)] * 80)
+                value = int(skill.values[random.randint(0, 3)] * 65)
                 type = HitType.DAMAGE
                 dmgtype = DamageType.PHYSICAL
 

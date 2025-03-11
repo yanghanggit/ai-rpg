@@ -43,6 +43,7 @@ from components.components import (
     # MonsterCardItemFlagComponent,
     # MagicRulerActorFlagComponent,
     # TagsComponent,
+    AttributeCompoment,
 )
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -112,7 +113,8 @@ class TCGGame(BaseGame):
         # 混沌工程系统
         self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
 
-        self._battle_manager = BattleManager(game=self)
+        self._battle_manager = BattleManager()
+        self._battle_manager._game = self
 
     ###############################################################################################################################################
     @property
@@ -354,6 +356,22 @@ class TCGGame(BaseGame):
             # 必要组件：外观
             actor_entity.add(
                 FinalAppearanceComponent, instance.name, prototype.appearance
+            )
+
+            # 必要组件：属性
+            actor_entity.add(
+                AttributeCompoment,
+                instance.name,
+                instance.attributes[0],
+                instance.attributes[1],
+                instance.attributes[2],
+                instance.attributes[3],
+                instance.attributes[4],
+                instance.attributes[5],
+                instance.attributes[6],
+                instance.buffs,
+                instance.active_skills,
+                instance.trigger_skills,
             )
 
             # TODO, 测试组件，tag

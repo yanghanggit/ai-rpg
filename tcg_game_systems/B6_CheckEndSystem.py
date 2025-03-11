@@ -1,3 +1,4 @@
+from pathlib import Path
 from overrides import override
 from agent.chat_request_handler import ChatRequestHandler
 from entitas import ExecuteProcessor, Matcher  # type: ignore
@@ -9,7 +10,7 @@ from rpg_models.event_models import AnnounceEvent
 from tcg_models.v_0_0_1 import (
     ActorInstance,
     ActiveSkill,
-    BuffTriggerType,
+    TriggerType,
     HitInfo,
     HitType,
     DamageType,
@@ -36,6 +37,15 @@ class B6_CheckEndSystem(ExecuteProcessor):
 
     @override
     def execute(self) -> None:
+        try:
+            write_path: Path = Path("battlelog") / "battle_history.json"
+            write_path.write_text(
+                self._game._battle_manager.battle_history.model_dump_json(),
+                encoding="utf-8",
+            )
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+
         if self._game._battle_manager._new_turn_flag:
             return
         if self._game._battle_manager._battle_end_flag:

@@ -9,7 +9,7 @@ from rpg_models.event_models import AnnounceEvent
 from tcg_models.v_0_0_1 import (
     ActorInstance,
     ActiveSkill,
-    BuffTriggerType,
+    TriggerType,
     HitInfo,
     HitType,
     DamageType,
@@ -144,24 +144,32 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         elif hit.type is HitType.DAMAGE:
             value = hit.value
             # 检查被攻击时触发的buff，应该包装个新函数
-            for buff, last_time in target_comp.buffs.items():
-                if buff.timing is BuffTriggerType.ON_ATTACKED:
+            for buff_name, last_time in target_comp.buffs.items():
+                buff = self._game.world_runtime.root.data_base.buffs[buff_name]
+                if buff.timing is TriggerType.ON_ATTACKED:
                     match buff.name:
                         case "护盾":
-                            value = int(value * 0.5)
-                            hit.log += (
-                                f"{target_name} 由于 {buff.name} 的效果抵挡了伤害。"
-                            )
+                            if hit.dmgtype is DamageType.PHYSICAL:
+                                value = int(value * 0.5)
+                                hit.log += (
+                                    f"{target_name} 由于 {buff.name} 的效果抵挡了伤害。"
+                                )
                         case "藤甲":
-                            value = 1
-                            hit.log += (
-                                f"{target_name} 由于 {buff.name} 的效果抵挡了伤害。"
-                            )
+                            if hit.dmgtype is DamageType.PHYSICAL:
+                                value = 1
+                                hit.log += (
+                                    f"{target_name} 由于 {buff.name} 的效果抵挡了伤害。"
+                                )
+                            elif hit.dmgtype is DamageType.FIRE:
+                                value = int(value * 1.5)
+                                hit.log += (
+                                    f"{target_name} 由于 {buff.name} 的效果增强了伤害。"
+                                )
             # 记录log
             hit.log += f"{source_name} 对 {target_name} 造成了 {value} 点伤害。"
             # 扣血
             hp_value = target_comp.hp - value
-            hp_value = hp_value if hp_value <= 0 else 0
+            hp_value = hp_value if hp_value > 0 else 0
             if hp_value is 0:
                 hit.log += f"{target_name} 被击败了！"
         # 如果是个加血行为
@@ -180,7 +188,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             # 记录log
             hit.log += f"{source_name} 对 {target_name} 施加了 {buff.name}。"
             # 加buff
-            target_comp.buffs[buff] = hit.value
+            target_comp.buffs[buff.name] = hit.value
             hp_value = target_comp.hp
         # 如果是个减buff行为
         elif hit.type is HitType.REMOVEBUFF:
@@ -188,11 +196,11 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
                 assert False, "buff is None"
             buff = hit.buff
             # 判断有没有要减的buff
-            if buff in target_comp.buffs:
+            if buff.name in target_comp.buffs:
                 # 记录log
                 hit.log += f"{source_name} 对 {target_name} 解除了 {buff.name}。"
                 # 减buff
-                del target_comp.buffs[buff]
+                del target_comp.buffs[buff.name]
             else:
                 hit.log += f"{target_name} 没有 {buff.name}。"
             hp_value = target_comp.hp
@@ -200,35 +208,52 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         # 修改血量, 广播说话
         stage_name = actor_comp.current_stage
         self._modify_hp_action_times_and_announce(
-            source, hp_value, hit.text, stage_name
+            source, target, hp_value, hit.text, stage_name
         )
         return True
 
     def _modify_hp_action_times_and_announce(
-        self, actor: Entity, hp: int, text: str, stage_name: str
+        self, source: Entity, target: Entity, hp: int, text: str, stage_name: str
     ) -> None:
-        actor_comp = actor.get(AttributeCompoment)
-        if actor_comp is None:
-            assert False, "actor_comp is None"
-        actor.replace(
+        source_comp = source.get(AttributeCompoment)
+        target_comp = target.get(AttributeCompoment)
+        if source_comp is None:
+            assert False, "source_comp is None"
+        if target_comp is None:
+            assert False, "target_comp is None"
+        source.replace(
             AttributeCompoment,
-            actor_comp.name,
+            source_comp.name,
+            source_comp.hp,
+            source_comp.maxhp,
+            source_comp.action_times - 1,
+            source_comp.max_action_times,
+            source_comp.strength,
+            source_comp.agility,
+            source_comp.wisdom,
+            source_comp.buffs,
+            source_comp.active_skills,
+            source_comp.trigger_skills,
+        )
+        target.replace(
+            AttributeCompoment,
+            target_comp.name,
             hp,
-            actor_comp.maxhp,
-            actor_comp.action_times - 1,
-            actor_comp.max_action_times,
-            actor_comp.strength,
-            actor_comp.agility,
-            actor_comp.wisdom,
-            actor_comp.buffs,
-            actor_comp.active_skills,
-            actor_comp.trigger_skills,
+            target_comp.maxhp,
+            target_comp.action_times,
+            target_comp.max_action_times,
+            target_comp.strength,
+            target_comp.agility,
+            target_comp.wisdom,
+            target_comp.buffs,
+            target_comp.active_skills,
+            target_comp.trigger_skills,
         )
         self._game.broadcast_event(
-            actor,
+            source,
             AnnounceEvent(
-                message=f"{actor_comp.name}说：",
-                announcer_name=actor_comp.name,
+                message=f"{source._name}说：" + text,
+                announcer_name=source._name,
                 stage_name=stage_name,
                 content=text,
             ),

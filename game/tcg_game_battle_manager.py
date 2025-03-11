@@ -1,7 +1,9 @@
 from collections import deque
 import json
+from pathlib import Path
 from typing import Deque, List, Optional, Union
-from game.tcg_game import TCGGame
+
+from loguru import logger
 from tcg_models.v_0_0_1 import (
     BattleHistory,
     Buff,
@@ -20,18 +22,32 @@ import random
 
 # TODO 整个系统都是prototype里临时用的！！demo全重写！
 class BattleManager:
-    def __init__(self, game: TCGGame) -> None:
-        self._game = game
+    def __init__(self) -> None:
+        from game.tcg_game import TCGGame
+
+        self._game: Optional[TCGGame] = None
         self._combat_num: int = 0
         self._turn_num: int = 0
         self._new_turn_flag: bool = False
         self._battle_end_flag: bool = False
         self._hits_stack: Deque[HitInfo] = deque()
         self._order_queue: Deque[str] = deque()
-        self.battle_history: BattleHistory
-        self._event_msg: EventMsg
+        self.battle_history: BattleHistory = BattleHistory(logs={})
+        self._event_msg: EventMsg = EventMsg(event="", option=0, result="")
+
+        try:
+            write_path: Path = Path("battlelog") / "battle_history.json"
+            write_path.write_text(
+                self.battle_history.model_dump_json(), encoding="utf-8"
+            )
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+
+        self.add_history("战斗开始！")
 
     def add_history(self, msg: str) -> None:
+        if self._turn_num not in self.battle_history.logs:
+            self.battle_history.logs[self._turn_num] = []
         self.battle_history.logs[self._turn_num].append(msg)
 
     def generate_hit(
@@ -48,7 +64,7 @@ class BattleManager:
         # 有效性，先不问ai了，随便roll一个吧
         match skill.name:
             case "斩击":
-                value = int(skill.values[random.randint(1, 4)] * 50)
+                value = int(skill.values[random.randint(0, 3)] * 50)
                 type = HitType.DAMAGE
                 dmgtype = DamageType.PHYSICAL
             case "战地治疗":
@@ -56,19 +72,19 @@ class BattleManager:
                 type = HitType.HEAL
                 dmgtype = DamageType.HEAL
             case "火球":
-                value = int(skill.values[random.randint(1, 4)] * 60)
+                value = int(skill.values[random.randint(0, 3)] * 60)
                 type = HitType.DAMAGE
                 dmgtype = DamageType.FIRE
             case "冰雾":
-                value = int(skill.values[random.randint(1, 4)] * 60)
+                value = int(skill.values[random.randint(0, 3)] * 60)
                 type = HitType.DAMAGE
                 dmgtype = DamageType.ICE
             case "猛砸":
-                value = int(skill.values[random.randint(1, 4)] * 80)
+                value = int(skill.values[random.randint(0, 3)] * 80)
                 type = HitType.DAMAGE
                 dmgtype = DamageType.PHYSICAL
             case "乱舞":
-                value = int(skill.values[random.randint(1, 4)] * 80)
+                value = int(skill.values[random.randint(0, 3)] * 80)
                 type = HitType.DAMAGE
                 dmgtype = DamageType.PHYSICAL
 

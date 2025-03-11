@@ -16,3 +16,4 @@ gen_configs/
 gen_worlds/
 gen_runtimes/
 *.log
+/battlelog

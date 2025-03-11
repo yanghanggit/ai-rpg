@@ -82,8 +82,8 @@ class B1_TurnStartSystem(ExecuteProcessor):
     def _set_order(self, actor_entities: List[Entity]) -> None:
         actor_list = sorted(
             (actor for actor in actor_entities if actor.get(AttributeCompoment).hp > 0),
-            key=lambda x: x.get(AttributeCompoment).agility,  # 排序规则
-            reverse=True,  # 从大到小排序
+            key=lambda x: x.get(AttributeCompoment).agility,
+            reverse=False,
         )
         for actor in actor_list:
             self._game._battle_manager._order_queue.append(

@@ -23,9 +23,6 @@ import random
 # TODO 整个系统都是prototype里临时用的！！demo全重写！
 class BattleManager:
     def __init__(self) -> None:
-        # from game.tcg_game import TCGGame
-
-        # self._game: Optional[TCGGame] = None
         self._combat_num: int = 0
         self._turn_num: int = 0
         self._new_turn_flag: bool = False
@@ -35,23 +32,10 @@ class BattleManager:
         self._battle_history: BattleHistory = BattleHistory()
         # self._event_msg: EventMsg = EventMsg(event="", option=0, result="")
 
-        # try:
-        #     write_path: Path = Path("battlelog") / "battle_history.json"
-        #     write_path.mkdir(parents=True, exist_ok=True)
-        #     write_path.write_text(
-        #         self.battle_history.model_dump_json(), encoding="utf-8"
-        #     )
-        # except Exception as e:
-        #     logger.error(f"An error occurred: {e}")
-
         self.write_battle_history()
-
         self.add_history("战斗开始！")
 
     def add_history(self, msg: str) -> None:
-        # if self._turn_num not in self._battle_history.logs:
-        #     self._battle_history.logs[self._turn_num] = []
-        # self._battle_history.logs[self._turn_num].append(msg)
         assert msg != ""
         self._battle_history.logs.setdefault(self._turn_num, []).append(msg)
 

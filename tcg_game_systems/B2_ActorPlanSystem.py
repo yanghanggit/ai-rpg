@@ -103,9 +103,9 @@ class B2_ActorPlanSystem(ExecuteProcessor):
             act_order=order,
             battle_history=self._game._battle_manager.battle_history_dump,
         )
-        
+
         logger.info(f"thinker_name: {thinker_name}, message:\n{message}")
-        
+
         # 开问
         request_handlers: List[ChatRequestHandler] = []
         agent_short_term_memory = self._game.get_agent_short_term_memory(thinker)
@@ -189,7 +189,6 @@ def _gen_prompt(
 ### 注意事项
 - 引用角色或场景时，请严格遵守全名机制
 - 所有输出必须为第一人称视角。
-- 如要使用名字，请使用全名。
 - 输出不得包含超出所需 JSON 格式的其他文本、解释或附加信息。
 - 不要使用```json```来封装内容。
 ## 补充信息

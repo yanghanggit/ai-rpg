@@ -210,7 +210,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
                 hit.log += f"{target_name} 没有 {buff.name}。"
             hp_value = target_comp.hp
 
-        # 修改血量, 广播说话
+        # 修改血量, 减行动力，广播说话，广播战斗log
         stage_name = actor_comp.current_stage
         self._modify_hp_action_times_and_announce(
             source,
@@ -219,6 +219,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             hit.text,
             stage_name,
             hit.is_cost,
+            hit.log,
         )
         return True
 
@@ -230,6 +231,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         text: str,
         stage_name: str,
         reduce_action_times: bool,
+        log: str,
     ) -> None:
         source_comp = source.get(AttributeCompoment)
         target_comp = target.get(AttributeCompoment)
@@ -276,6 +278,17 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
                     announcer_name=source._name,
                     stage_name=stage_name,
                     content=text,
+                ),
+            )
+
+        if log != "":
+            self._game.broadcast_event(
+                source,
+                AnnounceEvent(
+                    message="发生事件：" + log,
+                    announcer_name="系统",
+                    stage_name=stage_name,
+                    content=log,
                 ),
             )
 

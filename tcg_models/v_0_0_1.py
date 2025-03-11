@@ -193,7 +193,7 @@ class EventMsg(BaseModel):
 
 
 class BattleHistory(BaseModel):
-    logs: Dict[int, List[str]]
+    logs: Dict[int, List[str]] = {}
 
 
 ###############################################################################################################################################

@@ -1,5 +1,6 @@
 from .entity import Entity
-from .entity_index import PrimaryEntityIndex, EntityIndex
+
+# from .entity_index import PrimaryEntityIndex, EntityIndex
 from .context import Context
 from .matcher import Matcher
 from .group import Group, GroupEvent

@@ -1,4 +1,3 @@
-from pathlib import Path
 from overrides import override
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from game.tcg_game_context import TCGGameContext
@@ -67,6 +66,6 @@ class B6_CheckEndSystem(ExecuteProcessor):
 
         self._game._battle_manager.write_battle_history()
 
-        # 结束就退出
+        # 结束就回Home，写死 TODO
         if self._game._battle_manager._battle_end_flag:
-            self._game._will_exit = True
+            self._game.teleport_actors_to_stage(hero_entities, "场景.营地")

@@ -275,51 +275,6 @@ class TCGGame(BaseGame):
         return ret
 
     ###############################################################################################################################################
-    # TODO 写死的，直接创建card_pool的所有牌并写死持有者
-    # def _create_card_entites(
-    #     self,
-    #     actor_instance: ActorInstance,
-    #     actor_prototype: ActorPrototype,
-    # ) -> List[Entity]:
-    #     assert actor_instance is not None, "actor instance is none"
-
-    #     ret: List[Entity] = []
-    #     for card_obj in actor_instance.card_pool:
-
-    #         card_entity = self.context.__create_entity__(card_obj.name)
-    #         assert card_entity is not None
-
-    #         card_entity.add(ItemComponent, card_obj.name, actor_instance.name)
-    #         card_entity.add(
-    #             CardItemComponent,
-    #             card_obj.name,
-    #             card_obj.performer,
-    #             "Deck",
-    #             card_obj.target,
-    #             card_obj.value,
-    #         )
-    #         card_entity.add(
-    #             ItemDescriptionComponent,
-    #             card_obj.name,
-    #             card_obj.description,
-    #             card_obj.insight,
-    #         )
-    #         if (
-    #             actor_prototype.type == ActorType.PLAYER
-    #             or actor_prototype.type == ActorType.HERO
-    #         ):
-    #             card_entity.add(PlayerCardItemFlagComponent, card_obj.name)
-    #         elif (
-    #             actor_prototype.type == ActorType.MONSTER
-    #             or actor_prototype.type == ActorType.BOSS
-    #         ):
-    #             card_entity.add(MonsterCardItemFlagComponent, card_obj.name)
-
-    #         ret.append(card_entity)
-
-    #     return ret
-
-    ###############################################################################################################################################
     def _create_actor_entities(
         self, actor_instances: List[ActorInstance], data_base: WorldDataBase
     ) -> List[Entity]:
@@ -374,27 +329,6 @@ class TCGGame(BaseGame):
                 instance.trigger_skills,
             )
 
-            # TODO, 测试组件，tag
-            # actor_entity.add(TagsComponent, instance.name, set(instance.tags))
-
-            # 根据类型添加角色类型flag
-            # if prototype.type == ActorPrototype.ActorType.UNDIFINED:
-            #     assert False, "actor type is not defined"
-            # elif prototype.type == ActorPrototype.ActorType.PLAYER:
-            #     actor_entity.add(HeroActorFlagComponent, instance.name)
-            #     actor_entity.add(PlayerActorFlagComponent, "")
-            #     actor_entity.add(CardPlayerActorComponent, instance.name, 5, 3)
-            #     # 写死 TODO
-            #     self._create_card_entites(instance, prototype)
-            # elif prototype.type == ActorPrototype.ActorType.HERO:
-            #     actor_entity.add(HeroActorFlagComponent, instance.name)
-            # elif prototype.type == ActorPrototype.ActorType.MONSTER:
-            #     actor_entity.add(MonsterActorFlagComponent, instance.name)
-            #     actor_entity.add(CardPlayerActorComponent, instance.name, 3, 3)
-            #     # 写死 TODO
-            #     self._create_card_entites(instance, prototype)
-
-            # 请将上面的实现写成match的样式
             match prototype.type:
                 # case ActorType.UNDIFINED:
                 #    assert False, "actor type is not defined"
@@ -736,6 +670,14 @@ class TCGGame(BaseGame):
                 ),
             )
 
+        if target_stage.has(HomeStageFlagComponent):
+            self._game_state = TCGGameState.HOME
+        elif target_stage.has(DungeonStageFlagComponent):
+            self._game_state = TCGGameState.DUNGEON
+            self._battle_manager._new_battle_refresh()
+        else:
+            assert False, "stage type is not defined"
+
     ###############################################################################################################################################
     # TODO
     def get_card_pool(self, entity: Entity) -> List[CardObject]:
@@ -746,52 +688,6 @@ class TCGGame(BaseGame):
                 return actor.card_pool
 
         return [] """
-
-    ###############################################################################################################################################
-
-    # TODO 写死的，直接创建card_pool的所有牌并写死持有者
-    # def _create_card_entites(
-    #     self,
-    #     actor_instance: ActorInstance,
-    #     actor_prototype: ActorPrototype,
-    # ) -> List[Entity]:
-    #     assert actor_instance is not None, "actor instance is none"
-
-    #     ret: List[Entity] = []
-    #     for card_obj in actor_instance.card_pool:
-
-    #         card_entity = self.context.__create_entity__(card_obj.name)
-    #         assert card_entity is not None
-
-    #         card_entity.add(ItemComponent, card_obj.name, actor_instance.name)
-    #         card_entity.add(
-    #             CardItemComponent,
-    #             card_obj.name,
-    #             card_obj.performer,
-    #             "Deck",
-    #             card_obj.target,
-    #             card_obj.value,
-    #         )
-    #         card_entity.add(
-    #             ItemDescriptionComponent,
-    #             card_obj.name,
-    #             card_obj.description,
-    #             card_obj.insight,
-    #         )
-    #         if (
-    #             actor_prototype.type == ActorType.PLAYER
-    #             or actor_prototype.type == ActorType.HERO
-    #         ):
-    #             card_entity.add(PlayerCardItemFlagComponent, card_obj.name)
-    #         elif (
-    #             actor_prototype.type == ActorType.MONSTER
-    #             or actor_prototype.type == ActorType.BOSS
-    #         ):
-    #             card_entity.add(MonsterCardItemFlagComponent, card_obj.name)
-
-    #         ret.append(card_entity)
-
-    #     return ret
 
     ###############################################################################################################################################
     # 检查是否可以对话

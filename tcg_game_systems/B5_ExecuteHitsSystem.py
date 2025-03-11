@@ -148,7 +148,8 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         # 如果是个伤害行为
         elif hit.type is HitType.DAMAGE:
             value = hit.value
-            # 检查被攻击时触发的buff，应该包装个新函数
+            # 检查被攻击时触发的buff，移除失效的buff，应该包装个新函数
+            remove_list = []
             for buff_name, last_time in target_comp.buffs.items():
                 buff = self._game.world_runtime.root.data_base.buffs[buff_name]
                 if buff.timing is TriggerType.ON_ATTACKED:
@@ -167,9 +168,11 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
                                 )
                             elif hit.dmgtype is DamageType.FIRE:
                                 value = int(value * 1.5)
-                                hit.log += (
-                                    f"{target_name} 由于 {buff.name} 的效果增强了伤害。"
-                                )
+                                hit.log += f"{target_name} 由于 {buff.name} 的效果增强了伤害。{buff.name} 被移除了！"
+                                remove_list.append(buff_name)
+            for name in remove_list:
+                target_comp.buffs.pop(name)
+
             # 记录log
             hit.log += f"{source_name} 对 {target_name} 造成了 {value} 点伤害。"
             # 扣血

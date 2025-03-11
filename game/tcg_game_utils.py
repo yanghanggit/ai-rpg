@@ -330,7 +330,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
     actor_warrior_instance = _create_actor_instance(
         world_root=world_root,
         actor_prototype=actor_warrior,
-        kick_off_message=f"""你接到了剿灭哥布林的委托，和最近认识不久的队友 {actor_wizard.name} 一起潜入了兽人的巢穴。面前是一只强壮的兽人王，你准备开始战斗。
+        kick_off_message=f"""你接到了剿灭怪物的委托，和最近认识不久的队友 {actor_wizard.name} 组队扎营，准备开始冒险。
 你对 {actor_wizard.name} 的印象：很强大，但是有点装，你不太喜欢她，为了达成目的你需要一个法师的队友。
 """,
         active_skills=[
@@ -362,14 +362,14 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             ),
         ],
         buffs={},
-        attributes=[80, 80, 1, 1, 50, 30, 20],
+        attributes=[100, 100, 1, 1, 50, 30, 20],
     )
 
     # 创建实例：角色.法师.露西
     actor_wizard_instance = _create_actor_instance(
         world_root=world_root,
         actor_prototype=actor_wizard,
-        kick_off_message=f"""你为了赚取赏金，与最近认识的队友 {actor_warrior.name} 一起潜入了兽人的巢穴。面前是一只强壮的兽人王，你准备开始战斗。
+        kick_off_message=f"""你为了赚取赏金，与最近认识的队友 {actor_warrior.name} 一起组队扎营，准备开始冒险。
 你对 {actor_warrior.name} 的印象：有些蠢（你讨厌头脑简单四肢发达的人）。但够壮实，关键时刻还是可以依靠的。        
 """,
         active_skills=[
@@ -396,14 +396,14 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             )
         ],
         buffs={},
-        attributes=[50, 50, 1, 1, 15, 40, 60],
+        attributes=[70, 70, 1, 1, 15, 40, 60],
     )
 
     # 创建实例：角色.怪物.兽人王
     actor_goblin_instance = _create_actor_instance(
         world_root=world_root,
         actor_prototype=actor_goblin,
-        kick_off_message=f"""你正于洞穴深处的王座中纵情狂欢。这时两个不自量力的人类闯入了你的领地，绝不能让他们离开！""",
+        kick_off_message=f"""你正于洞穴深处的王座中纵情狂欢。""",
         active_skills=[
             ActiveSkill(
                 name="猛砸",
@@ -443,7 +443,14 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         world_root=world_root,
         stage=stage_cave,
         kick_off_message="洞穴中十分吵闹，一场战斗即将开始。",
-        actors=[actor_warrior_instance, actor_goblin_instance, actor_wizard_instance],
+        actors=[actor_goblin_instance],
+    )
+
+    stage_camp_instance = _create_stage_instance(
+        world_root=world_root,
+        stage=stage_camp,
+        kick_off_message="营火静静地燃烧着",
+        actors=[actor_warrior_instance, actor_wizard_instance],
     )
 
     # 创建实例：战斗系统
@@ -456,7 +463,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         world_root,
         [actor_warrior_instance],
         [actor_goblin_instance, actor_wizard_instance],
-        [stage_cave_instance],
+        [stage_cave_instance, stage_camp_instance],
         [world_system_battle_system_instance],
     )
 

@@ -35,6 +35,17 @@ class BattleManager:
         self.write_battle_history()
         self.add_history("战斗开始！")
 
+    def _new_battle_refresh(self) -> None:
+        self._combat_num += 1
+        self._turn_num = 0
+        self._new_turn_flag = False
+        self._battle_end_flag = False
+        self._hits_stack.clear()
+        self._order_queue.clear()
+        self._battle_history.logs.clear()
+        self.write_battle_history()
+        self.add_history("战斗开始！")
+
     def add_history(self, msg: str) -> None:
         if msg != "":
             self._battle_history.logs.setdefault(self._turn_num, []).append(msg)
@@ -54,7 +65,7 @@ class BattleManager:
                 type = HitType.DAMAGE
                 dmgtype = DamageType.PHYSICAL
             case "战地治疗":
-                value = int(0.5 * 30)
+                value = int(30)
                 type = HitType.HEAL
                 dmgtype = DamageType.HEAL
             case "火球":

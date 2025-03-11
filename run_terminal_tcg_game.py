@@ -1,5 +1,6 @@
 from loguru import logger
 import datetime
+from components.components import ActorComponent, HeroActorFlagComponent
 import game.rpg_game_utils
 from dataclasses import dataclass
 import game.tcg_game_config
@@ -17,6 +18,7 @@ import game.tcg_game_utils
 
 # from extended_systems.tcg_prop_file_manage_system import PropFileManageSystem
 from player.player_command2 import PlayerCommand2
+from entitas import Matcher  # type: ignore
 
 
 ###############################################################################################################################################
@@ -166,11 +168,32 @@ async def run_game(option: OptionParameters) -> None:
             terminal_tcg_game._will_exit = True
             break
 
-        if usr_input == "/tp":
+        if usr_input == "/tp1":
             # 传送场景做特殊处理，先不做execute。
-            player_entity = terminal_tcg_game.get_player_entity()
-            assert player_entity is not None
-            terminal_tcg_game.teleport_actors_to_stage({player_entity}, "场景.洞窟")
+            hero_entities = terminal_tcg_game._context.get_group(
+                Matcher(
+                    all_of=[
+                        ActorComponent,
+                        HeroActorFlagComponent,
+                    ],
+                )
+            ).entities
+            terminal_tcg_game.teleport_actors_to_stage(
+                hero_entities, "场景.兽人巢穴王座厅"
+            )
+            continue
+
+        if usr_input == "/tp2":
+            # 传送场景做特殊处理，先不做execute。
+            hero_entities = terminal_tcg_game._context.get_group(
+                Matcher(
+                    all_of=[
+                        ActorComponent,
+                        HeroActorFlagComponent,
+                    ],
+                )
+            ).entities
+            terminal_tcg_game.teleport_actors_to_stage(hero_entities, "场景.营地")
             continue
 
         # 以上都拦截不住，就是玩家的输入，输入错了， handle input 相关的system 就不执行，空跑一次。

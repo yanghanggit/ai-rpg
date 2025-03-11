@@ -141,7 +141,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         if target_comp.hp <= 0 and hit.type is HitType.HEAL:
             hit.log += f"{target_name} 已经被击败，无法进行该行动！"
             return False
-        elif target_comp <=0 and hit.type is HitType.ADDBUFF or HitType.REMOVEBUFF:
+        elif target_comp.hp <= 0 and hit.type is HitType.ADDBUFF or HitType.REMOVEBUFF:
             return False
 
         # 执行hit

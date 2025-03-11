@@ -70,15 +70,10 @@ def _create_compiled_stage_graph(
         except Exception as e:
 
             # 1) 打印异常信息本身
-            print(f"invoke_azure_chat_openai_llm_action, An error occurred: {repr(e)}")
+            print(f"invoke_azure_chat_openai_llm_action, An error occurred: {e}")
 
             # 2) 打印完整堆栈信息，方便进一步排查
             traceback.print_exc()
-
-            # 进一步查看异常的类型、参数等
-            print("Exception type:", type(e))  # e.g. <class 'ValueError'>
-            print("Exception name:", e.__class__.__name__)  # e.g. 'ValueError'
-            print("Exception args:", e.args)
 
         # 当出现 Azure 内容过滤的情况，或者其他类型异常时，视需求可在此返回空字符串或者自定义提示。
         return {"messages": [AIMessage(content="")]}

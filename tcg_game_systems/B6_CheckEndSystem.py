@@ -86,3 +86,7 @@ class B6_CheckEndSystem(ExecuteProcessor):
         if all_enemies_dead:
             self._game._battle_manager.add_history("战斗结束！你赢了！")
             self._game._battle_manager._battle_end_flag = True
+
+        # 结束就退出
+        if self._game._battle_manager._battle_end_flag:
+            self._game._will_exit = True

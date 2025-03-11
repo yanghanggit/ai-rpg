@@ -60,13 +60,18 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
 
         # pop掉当前行动角色，删掉所有行动力小于0的和翘辫子的
         temp_actor_name = self._game._battle_manager._order_queue.popleft()
+        remove_list = []
         for actor_name in self._game._battle_manager._order_queue:
             actor = self._context.get_entity_by_name(actor_name)
             assert actor is not None
             comp = actor.get(AttributeCompoment)
             assert comp is not None
             if comp.action_times <= 0 or comp.hp <= 0:
-                self._game._battle_manager._order_queue.remove(actor_name)
+                remove_list.append(actor_name)
+        for name in remove_list:
+            if name in self._game._battle_manager._order_queue:
+                self._game._battle_manager._order_queue.remove(name)
+            
 
         # 问世界系统，给我生成一段描述
         # 得到所有角色和场景信息

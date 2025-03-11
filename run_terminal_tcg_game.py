@@ -162,7 +162,7 @@ async def run_game(option: OptionParameters) -> None:
         # await terminal_tcg_game.a_execute()
 
         usr_input = input(f"[{terminal_tcg_game.player.name}]:")
-        if usr_input == "":
+        """ if usr_input == "":
             logger.debug(f"玩家输入为空 = {terminal_tcg_game.player.name}，空跑一次")
 
             await terminal_tcg_game.a_execute()
@@ -171,7 +171,7 @@ async def run_game(option: OptionParameters) -> None:
         if usr_input == "/quit" or usr_input == "/q":
             logger.info(f"玩家退出游戏 = {terminal_tcg_game.player.name}")
             terminal_tcg_game._will_exit = True
-            break
+            break """
 
         """ if usr_input == "/tp":
             # 传送场景做特殊处理，先不做execute。

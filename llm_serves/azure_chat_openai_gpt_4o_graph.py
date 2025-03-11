@@ -1,5 +1,6 @@
 import os
 import sys
+import traceback
 from typing import Annotated, Final, cast, Dict, List, Union, Any, override
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph
@@ -15,6 +16,7 @@ from langserve import (
 )
 from langchain.schema.runnable import Runnable, RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
+import traceback
 
 
 ############################################################################################################
@@ -66,10 +68,14 @@ def _create_compiled_stage_graph(
         try:
             return {"messages": [llm.invoke(state["messages"])]}
         except Exception as e:
-            # yh 临时试一试。
-            print(f"invoke_azure_chat_openai_llm_action, An error occurred: {e}")
 
-        # 走到这就是出问题了，可能被内容过滤。
+            # 1) 打印异常信息本身
+            print(f"invoke_azure_chat_openai_llm_action, An error occurred: {repr(e)}")
+
+            # 2) 打印完整堆栈信息，方便进一步排查
+            traceback.print_exc()
+
+        # 当出现 Azure 内容过滤的情况，或者其他类型异常时，视需求可在此返回空字符串或者自定义提示。
         return {"messages": [AIMessage(content="")]}
 
     graph_builder = StateGraph(State)

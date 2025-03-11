@@ -37,6 +37,7 @@ class BattleManager:
 
         try:
             write_path: Path = Path("battlelog") / "battle_history.json"
+            write_path.mkdir(parents=True, exist_ok=True)
             write_path.write_text(
                 self.battle_history.model_dump_json(), encoding="utf-8"
             )

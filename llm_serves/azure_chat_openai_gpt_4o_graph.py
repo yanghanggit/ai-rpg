@@ -62,7 +62,15 @@ def _create_compiled_stage_graph(
     def invoke_azure_chat_openai_llm_action(
         state: State,
     ) -> Dict[str, List[BaseMessage]]:
-        return {"messages": [llm.invoke(state["messages"])]}
+
+        try:
+            return {"messages": [llm.invoke(state["messages"])]}
+        except Exception as e:
+            # yh 临时试一试。
+            print(f"invoke_azure_chat_openai_llm_action, An error occurred: {e}")
+
+        # 走到这就是出问题了，可能被内容过滤。
+        return {"messages": [AIMessage(content="")]}
 
     graph_builder = StateGraph(State)
     graph_builder.add_node(node_name, invoke_azure_chat_openai_llm_action)

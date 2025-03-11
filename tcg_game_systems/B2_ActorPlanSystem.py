@@ -100,7 +100,7 @@ class B2_ActorPlanSystem(ExecuteProcessor):
             active_skill_list=active_skills,
             trigger_skill_list=trigger_skills,
             act_order=order,
-            battle_history=self._game._battle_manager.battle_history.model_dump_json(),
+            battle_history=self._game._battle_manager.battle_history_dump,
         )
         # 开问
         request_handlers: List[ChatRequestHandler] = []

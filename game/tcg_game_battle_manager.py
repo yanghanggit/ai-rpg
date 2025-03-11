@@ -32,24 +32,28 @@ class BattleManager:
         self._battle_end_flag: bool = False
         self._hits_stack: Deque[HitInfo] = deque()
         self._order_queue: Deque[str] = deque()
-        self.battle_history: BattleHistory = BattleHistory(logs={})
+        self._battle_history: BattleHistory = BattleHistory()
         # self._event_msg: EventMsg = EventMsg(event="", option=0, result="")
 
-        try:
-            write_path: Path = Path("battlelog") / "battle_history.json"
-            write_path.mkdir(parents=True, exist_ok=True)
-            write_path.write_text(
-                self.battle_history.model_dump_json(), encoding="utf-8"
-            )
-        except Exception as e:
-            logger.error(f"An error occurred: {e}")
+        # try:
+        #     write_path: Path = Path("battlelog") / "battle_history.json"
+        #     write_path.mkdir(parents=True, exist_ok=True)
+        #     write_path.write_text(
+        #         self.battle_history.model_dump_json(), encoding="utf-8"
+        #     )
+        # except Exception as e:
+        #     logger.error(f"An error occurred: {e}")
+
+        self.write_battle_history()
 
         self.add_history("战斗开始！")
 
     def add_history(self, msg: str) -> None:
-        if self._turn_num not in self.battle_history.logs:
-            self.battle_history.logs[self._turn_num] = []
-        self.battle_history.logs[self._turn_num].append(msg)
+        # if self._turn_num not in self._battle_history.logs:
+        #     self._battle_history.logs[self._turn_num] = []
+        # self._battle_history.logs[self._turn_num].append(msg)
+        assert msg != ""
+        self._battle_history.logs.setdefault(self._turn_num, []).append(msg)
 
     def generate_hit(
         self, skill: ActiveSkill, source: str, target: str, text: str
@@ -100,6 +104,30 @@ class BattleManager:
             log=log,
             text=text,
         )
+
+    @property
+    def battle_history_dump(self) -> str:
+        return self._battle_history.model_dump_json()
+
+    def write_battle_history(self) -> None:
+        try:
+
+            # GEN_RUNTIME_DIR: Path = Path("gen_runtimes")
+            # GEN_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+            # assert GEN_RUNTIME_DIR.exists(), f"找不到目录: {GEN_RUNTIME_DIR}"
+
+            write_dir: Path = Path("battlelog")
+            write_dir.mkdir(parents=True, exist_ok=True)
+            assert write_dir.exists()
+
+            write_file_path: Path = write_dir / "history.json"
+            write_file_path.write_text(
+                self.battle_history_dump,
+                encoding="utf-8",
+            )
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+            assert False, f"An error occurred: {e}"
 
     """ def __init__(self, game: TCGGame, context: TCGGameContext) -> None:
         self._battle_num: int = 0

@@ -138,8 +138,8 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         if source_comp.hp <= 0:
             hit.log += f"{source_name} 已经被击败，无法行动！"
             return False
-        if target_comp.hp <= 0 and hit.type is HitType.HEAL:
-            hit.log += f"{target_name} 已经被击败，无法进行该行动！"
+        if target_comp.hp <= 0:
+            hit.log += f"目标已被击败！"
             return False
 
         # 执行hit
@@ -315,9 +315,9 @@ def _gen_prompt(
 {done_hits_log}
 ## 描述要求
 1. 战斗过程的描述需要生动和有趣。
-2. 描述中不要附带角色说的话，仅描述他们进行的动作和场景的变化。
-3. 以第三人称视角描述。
-4. 尽量将描述的长度限制在三句话左右。
-5. 本轮中发生的动作的执行者和目标必须在描述中出现，且选二者之一作为描述的主体。
-6. 不要预测尚未发生的事。
+2. 描述中不要附带角色对话，不要揣测角色心理活动，仅以第三人称视角对发生的事件做客观描述。
+3. 尽量将描述的长度限制在三句话左右。
+4. 本轮中发生的动作的执行者和目标必须在描述中出现，且选二者之一作为描述的主体。
+5. 不要预测尚未发生的事。
+6. 描述需要客观公正，不要在价值观上偏袒任何一方。
 """

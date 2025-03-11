@@ -57,7 +57,7 @@ class B6_CheckEndSystem(ExecuteProcessor):
             self._game._battle_manager._new_turn_flag = True
 
         # 检查战斗结束
-        # 输了
+        # 英雄全死了，输了
         hero_entities = self._context.get_group(
             Matcher(
                 all_of=[
@@ -72,6 +72,7 @@ class B6_CheckEndSystem(ExecuteProcessor):
         if all_heroes_dead:
             self._game._battle_manager.add_history("战斗结束！你输了！")
             self._game._battle_manager._battle_end_flag = True
+        # 怪全死了，赢了
         enemy_entities = self._context.get_group(
             Matcher(
                 all_of=[

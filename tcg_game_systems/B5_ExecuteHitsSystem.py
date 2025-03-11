@@ -71,7 +71,6 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         for name in remove_list:
             if name in self._game._battle_manager._order_queue:
                 self._game._battle_manager._order_queue.remove(name)
-            
 
         # 问世界系统，给我生成一段描述
         # 得到所有角色和场景信息

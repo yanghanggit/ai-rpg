@@ -4,11 +4,11 @@ from entitas import ExecuteProcessor, Matcher  # type: ignore
 from entitas.entity import Entity
 from game.tcg_game_context import TCGGameContext
 from game.tcg_game import TCGGame
-from typing import Deque, List, Optional, Set, final, cast
+from typing import Deque, List, Optional, Set, cast
 from rpg_models.event_models import AnnounceEvent
 from tcg_models.v_0_0_1 import (
-    ActorInstance,
-    ActiveSkill,
+    # ActorInstance,
+    # ActiveSkill,
     TriggerType,
     HitInfo,
     HitType,
@@ -21,8 +21,9 @@ from components.components import (
     StageEnvironmentComponent,
     WorldSystemComponent,
 )
-from loguru import logger
-import json
+
+# from loguru import logger
+# import json
 
 
 class B5_ExecuteHitsSystem(ExecuteProcessor):

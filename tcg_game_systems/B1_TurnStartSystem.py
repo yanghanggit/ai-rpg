@@ -3,8 +3,9 @@ from entitas import ExecuteProcessor, Matcher  # type: ignore
 from entitas.entity import Entity
 from game.tcg_game_context import TCGGameContext
 from game.tcg_game import TCGGame
-from typing import List, final, cast
-from tcg_models.v_0_0_1 import ActorInstance
+from typing import List, cast
+
+# from tcg_models.v_0_0_1 import ActorInstance
 from components.components import ActorComponent, AttributeCompoment
 
 

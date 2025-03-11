@@ -23,15 +23,6 @@ class B6_CheckEndSystem(ExecuteProcessor):
 
     @override
     def execute(self) -> None:
-        try:
-            write_path: Path = Path("battlelog") / "battle_history.json"
-            write_path.write_text(
-                self._game._battle_manager.battle_history.model_dump_json(),
-                encoding="utf-8",
-            )
-        except Exception as e:
-            logger.error(f"An error occurred: {e}")
-
         if self._game._battle_manager._new_turn_flag:
             return
         if self._game._battle_manager._battle_end_flag:
@@ -73,6 +64,15 @@ class B6_CheckEndSystem(ExecuteProcessor):
         if all_enemies_dead:
             self._game._battle_manager.add_history("战斗结束！你赢了！")
             self._game._battle_manager._battle_end_flag = True
+
+        try:
+            write_path: Path = Path("battlelog") / "battle_history.json"
+            write_path.write_text(
+                self._game._battle_manager.battle_history.model_dump_json(),
+                encoding="utf-8",
+            )
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
 
         # 结束就退出
         if self._game._battle_manager._battle_end_flag:

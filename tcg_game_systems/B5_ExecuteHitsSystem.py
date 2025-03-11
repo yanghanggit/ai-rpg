@@ -268,7 +268,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             target_comp.active_skills,
             target_comp.trigger_skills,
         )
-        if text is not "":
+        if text != "":
             self._game.broadcast_event(
                 source,
                 AnnounceEvent(

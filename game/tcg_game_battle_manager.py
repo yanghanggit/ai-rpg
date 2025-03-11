@@ -1,6 +1,6 @@
 from collections import deque
 from pathlib import Path
-from typing import Deque, Optional
+from typing import Deque, List, Optional
 
 from loguru import logger
 from tcg_models.v_0_0_1 import (

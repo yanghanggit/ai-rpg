@@ -87,7 +87,7 @@ class B1_TurnStartSystem(ExecuteProcessor):
         actor_list = sorted(
             (actor for actor in actor_entities if actor.get(AttributeCompoment).hp > 0),
             key=lambda x: x.get(AttributeCompoment).agility,
-            reverse=False,
+            reverse=True,
         )
         for actor in actor_list:
             self._game._battle_manager._order_queue.append(

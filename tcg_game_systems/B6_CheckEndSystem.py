@@ -1,31 +1,17 @@
 from pathlib import Path
 from overrides import override
-from agent.chat_request_handler import ChatRequestHandler
 from entitas import ExecuteProcessor, Matcher  # type: ignore
-from entitas.entity import Entity
 from game.tcg_game_context import TCGGameContext
 from game.tcg_game import TCGGame
-from typing import Deque, List, Optional, Set, final, cast
-from rpg_models.event_models import AnnounceEvent
-from tcg_models.v_0_0_1 import (
-    ActorInstance,
-    ActiveSkill,
-    TriggerType,
-    HitInfo,
-    HitType,
-    DamageType,
-)
+from typing import cast
+
 from components.components import (
     AttributeCompoment,
     ActorComponent,
-    FinalAppearanceComponent,
     HeroActorFlagComponent,
     MonsterActorFlagComponent,
-    StageEnvironmentComponent,
-    WorldSystemComponent,
 )
 from loguru import logger
-import json
 
 
 class B6_CheckEndSystem(ExecuteProcessor):
@@ -52,7 +38,7 @@ class B6_CheckEndSystem(ExecuteProcessor):
             return
 
         # 检查回合结束
-        if len(self._game._battle_manager._order_queue) is 0:
+        if len(self._game._battle_manager._order_queue) == 0:
             self._game._battle_manager.add_history("回合结束！")
             self._game._battle_manager._new_turn_flag = True
 

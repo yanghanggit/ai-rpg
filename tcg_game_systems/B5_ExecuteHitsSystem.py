@@ -137,7 +137,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         if source_comp.hp <= 0:
             hit.log += f"{source_name} 已经被击败，无法行动！"
             return False
-        if target_comp.hp <= 0 and hit.type is not HitType.HEAL:
+        if target_comp.hp <= 0 and hit.type is HitType.HEAL:
             hit.log += f"{target_name} 已经被击败，无法进行该行动！"
             return False
 
@@ -212,12 +212,23 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         # 修改血量, 广播说话
         stage_name = actor_comp.current_stage
         self._modify_hp_action_times_and_announce(
-            source, target, hp_value, hit.text, stage_name
+            source,
+            target,
+            hp_value,
+            hit.text,
+            stage_name,
+            hit.is_cost,
         )
         return True
 
     def _modify_hp_action_times_and_announce(
-        self, source: Entity, target: Entity, hp: int, text: str, stage_name: str
+        self,
+        source: Entity,
+        target: Entity,
+        hp: int,
+        text: str,
+        stage_name: str,
+        reduce_action_times: bool,
     ) -> None:
         source_comp = source.get(AttributeCompoment)
         target_comp = target.get(AttributeCompoment)
@@ -225,20 +236,23 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             assert False, "source_comp is None"
         if target_comp is None:
             assert False, "target_comp is None"
-        source.replace(
-            AttributeCompoment,
-            source_comp.name,
-            source_comp.hp,
-            source_comp.maxhp,
-            source_comp.action_times - 1,
-            source_comp.max_action_times,
-            source_comp.strength,
-            source_comp.agility,
-            source_comp.wisdom,
-            source_comp.buffs,
-            source_comp.active_skills,
-            source_comp.trigger_skills,
-        )
+        # 掉行动力
+        if reduce_action_times:
+            source.replace(
+                AttributeCompoment,
+                source_comp.name,
+                source_comp.hp,
+                source_comp.maxhp,
+                source_comp.action_times - 1,
+                source_comp.max_action_times,
+                source_comp.strength,
+                source_comp.agility,
+                source_comp.wisdom,
+                source_comp.buffs,
+                source_comp.active_skills,
+                source_comp.trigger_skills,
+            )
+        # 改血量
         target.replace(
             AttributeCompoment,
             target_comp.name,
@@ -253,15 +267,16 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             target_comp.active_skills,
             target_comp.trigger_skills,
         )
-        self._game.broadcast_event(
-            source,
-            AnnounceEvent(
-                message=f"{source._name}说：" + text,
-                announcer_name=source._name,
-                stage_name=stage_name,
-                content=text,
-            ),
-        )
+        if text is not "":
+            self._game.broadcast_event(
+                source,
+                AnnounceEvent(
+                    message=f"{source._name}说：" + text,
+                    announcer_name=source._name,
+                    stage_name=stage_name,
+                    content=text,
+                ),
+            )
 
     def _get_world_system(self) -> Optional[Entity]:
 

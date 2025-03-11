@@ -408,7 +408,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             ActiveSkill(
                 name="猛砸",
                 description="蓄力后猛的出拳，对目标造成物理伤害的同时眩晕目标，力量越高效果越好。",
-                values=[0.5, 0.8, 1.0, 1.5],
+                values=[0.5, 0.8, 1.0, 1.5, 1.0],
                 buff=Buff(
                     name="眩晕",
                     description="头晕目眩，无法行动。",

@@ -126,11 +126,11 @@ class B2_ActorPlanSystem(ExecuteProcessor):
             self._game._battle_manager.add_history(msg)
             return
         else:
-            hit = self._game._battle_manager.generate_hit(
+            hits = self._game._battle_manager.generate_hits(
                 comp.active_skills[ret.num], thinker_name, ret.target, ret.text
             )
         # hit插入执行栈内
-        self._game._battle_manager._hits_stack.append(hit)
+        self._game._battle_manager._hits_stack.extend(hits)
 
 
 def _gen_prompt(

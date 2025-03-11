@@ -51,15 +51,12 @@ class BattleManager:
             self.battle_history.logs[self._turn_num] = []
         self.battle_history.logs[self._turn_num].append(msg)
 
-    def generate_hit(
+    def generate_hits(
         self, skill: ActiveSkill, source: str, target: str, text: str
-    ) -> HitInfo:
-        value: int
-        type: HitType
-        dmgtype: DamageType
+    ) -> List[HitInfo]:
         buff: Optional[Buff] = skill.buff
-        log: str
         log = f"{source} 对 {target} 使用了 {skill.name}。"
+        ret = []
 
         # 这里应该是造成属性多少倍的伤害，懒得写好长的get了，原型里写死吧
         # 有效性，先不问ai了，随便roll一个吧
@@ -84,22 +81,40 @@ class BattleManager:
                 value = int(skill.values[random.randint(0, 3)] * 80)
                 type = HitType.DAMAGE
                 dmgtype = DamageType.PHYSICAL
+                ret.append(
+                    HitInfo(
+                        skill=skill,
+                        source=source,
+                        target=target,
+                        value=int(skill.values[4]),
+                        type=HitType.ADDBUFF,
+                        dmgtype=DamageType.BUFF,
+                        buff=buff,
+                        log="",
+                        text="",
+                        is_cost=False,
+                    )
+                )
             case "乱舞":
                 value = int(skill.values[random.randint(0, 3)] * 80)
                 type = HitType.DAMAGE
                 dmgtype = DamageType.PHYSICAL
 
-        return HitInfo(
-            skill=skill,
-            source=source,
-            target=target,
-            value=value,
-            type=type,
-            dmgtype=dmgtype,
-            buff=buff,
-            log=log,
-            text=text,
+        ret.append(
+            HitInfo(
+                skill=skill,
+                source=source,
+                target=target,
+                value=value,
+                type=type,
+                dmgtype=dmgtype,
+                buff=buff,
+                log=log,
+                text=text,
+                is_cost=True,
+            )
         )
+        return ret
 
     """ def __init__(self, game: TCGGame, context: TCGGameContext) -> None:
         self._battle_num: int = 0

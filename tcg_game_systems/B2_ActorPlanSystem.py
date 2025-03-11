@@ -121,7 +121,7 @@ class B2_ActorPlanSystem(ExecuteProcessor):
         except:
             logger.error("返回格式错误")
             ret = ChoiceRet(num=-1, target=thinker_name, text="返回格式错误")
-        if ret.num is -1:
+        if ret.num == -1:
             msg = f"{thinker_name}决定跳过行动，原因是：{ret.text}"
             self._game._battle_manager.add_history(msg)
             return

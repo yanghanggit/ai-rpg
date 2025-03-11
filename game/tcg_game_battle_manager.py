@@ -66,7 +66,7 @@ class BattleManager:
                 type = HitType.DAMAGE
                 dmgtype = DamageType.ICE
             case "猛砸":
-                value = int(skill.values[random.randint(0, 3)] * 80)
+                value = int(skill.values[random.randint(0, 3)] * 70)
                 type = HitType.DAMAGE
                 dmgtype = DamageType.PHYSICAL
                 ret.append(
@@ -84,7 +84,7 @@ class BattleManager:
                     )
                 )
             case "乱舞":
-                value = int(skill.values[random.randint(0, 3)] * 80)
+                value = int(skill.values[random.randint(0, 3)] * 70)
                 type = HitType.DAMAGE
                 dmgtype = DamageType.PHYSICAL
 

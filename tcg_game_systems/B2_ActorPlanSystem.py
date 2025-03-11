@@ -66,6 +66,7 @@ class B2_ActorPlanSystem(ExecuteProcessor):
             self._game._battle_manager.add_history(
                 f"{thinker_name} 被眩晕了，无法行动！"
             )
+            self._game._battle_manager._order_queue.popleft()
             return
 
         # 问他做什么决定

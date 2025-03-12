@@ -1,19 +1,25 @@
 from entitas import Context, Entity, Matcher  # type: ignore
-from typing import final, Optional, List, Set, override, Dict
-from game.base_game import BaseGame
+from typing import Optional, List, Set, override, Dict
 from tcg_models.v_0_0_1 import ComponentSnapshot, EntitySnapshot
 from components.components import (
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
-    # PlayerActorFlagComponent,
     GUIDComponent,
+    HeroActorFlagComponent,
 )
 from loguru import logger
 from components.registry import COMPONENTS_REGISTRY
 
 
-@final
+"""
+少做事，
+只做合ecs相关的事情，
+这些事情大多数是“检索”，以及不影响状态的调用，例如组织场景与角色的映射。
+有2件比较关键的事，存储与复位。
+"""
+
+
 class TCGGameContext(Context):
 
     ###############################################################################################################################################
@@ -21,7 +27,6 @@ class TCGGameContext(Context):
         self,
     ) -> None:
         super().__init__()
-        self._game: Optional[BaseGame] = None
         self._query_entities: Dict[str, Entity] = {}  # （方便快速查找用）
 
     ###############################################################################################################################################
@@ -91,17 +96,6 @@ class TCGGameContext(Context):
         return None
 
     ###############################################################################################################################################
-    # def get_player_entity(self, player_name: str) -> Optional[Entity]:
-    #     entities: Set[Entity] = self.get_group(
-    #         Matcher(all_of=[PlayerActorFlagComponent, ActorComponent])
-    #     ).entities
-    #     for entity in entities:
-    #         player_comp = entity.get(PlayerActorFlagComponent)
-    #         if player_comp.name == player_name:
-    #             return entity
-    #     return None
-
-    ###############################################################################################################################################
     def get_entity_by_name(self, name: str) -> Optional[Entity]:
         return self._query_entities.get(name, None)
 
@@ -165,5 +159,16 @@ class TCGGameContext(Context):
                 ret.setdefault(stage_entity, set())
 
         return ret
+
+    ###############################################################################################################################################
+    def retrieve_all_hero_entities(self) -> Set[Entity]:
+        return self.get_group(
+            Matcher(
+                all_of=[
+                    ActorComponent,
+                    HeroActorFlagComponent,
+                ],
+            )
+        ).entities
 
     ###############################################################################################################################################

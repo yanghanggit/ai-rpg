@@ -1,27 +1,134 @@
 from overrides import override
 from entitas import ExecuteProcessor, Matcher  # type: ignore
-from game.tcg_game_context import TCGGameContext
 from game.tcg_game import TCGGame
-from typing import cast
-
 from components.components import (
     AttributeCompoment,
     ActorComponent,
     HeroActorFlagComponent,
     MonsterActorFlagComponent,
+    DestroyFlagComponent,
 )
+from components.actions import DeadAction
 from loguru import logger
 
 
 class B6_CheckEndSystem(ExecuteProcessor):
 
-    def __init__(self, context: TCGGameContext) -> None:
-        self._context: TCGGameContext = context
-        self._game: TCGGame = cast(TCGGame, context._game)
-        assert self._game is not None
+    ######################################################################################################################################################
+    def __init__(self, game_context: TCGGame) -> None:
+        self._game: TCGGame = game_context
 
+    ######################################################################################################################################################
     @override
     def execute(self) -> None:
+
+        # step1: 先只根据血量判断死亡，加上DeadAction，做标记，这一步是是安全无影响的。
+        self._evaluate_entity_deaths()
+
+        # step2: 重构前的执行。
+        self.execute1()
+
+    ######################################################################################################################################################
+    # 任何情况下，只要有AttributeCompoment，而且血量<=0，就加上DeadAction。
+    def _evaluate_entity_deaths(self) -> None:
+
+        # 一次抓出来。
+        active_entities = self._game.get_group(
+            Matcher(
+                all_of=[
+                    ActorComponent,
+                    AttributeCompoment,
+                ],
+                any_of=[
+                    HeroActorFlagComponent,
+                    MonsterActorFlagComponent,
+                ],
+                none_of=[
+                    DeadAction,
+                ],
+            )
+        ).entities
+
+        # 检查死亡, 目前写死，血量见0就是死，其实可以复杂点。
+        for entity in active_entities:
+            attr_comp = entity.get(AttributeCompoment)
+            if attr_comp.hp <= 0:
+                assert not entity.has(DeadAction)
+                entity.replace(DeadAction, attr_comp.name, [])
+
+    ######################################################################################################################################################
+    # 英雄全死了么？
+    def _are_all_heroes_dead(self) -> bool:
+
+        active_hero_entities = self._game.get_group(
+            Matcher(
+                all_of=[
+                    ActorComponent,
+                    HeroActorFlagComponent,
+                ],
+                none_of=[
+                    DeadAction,
+                ],
+            )
+        ).entities
+
+        return len(active_hero_entities) == 0
+
+    ######################################################################################################################################################
+    # 怪全死了么？
+    def _are_all_enemies_dead(self) -> bool:
+
+        active_enemy_entities = self._game.get_group(
+            Matcher(
+                all_of=[
+                    ActorComponent,
+                    MonsterActorFlagComponent,
+                ],
+                none_of=[
+                    DeadAction,
+                ],
+            )
+        ).entities
+
+        return len(active_enemy_entities) == 0
+
+    ######################################################################################################################################################
+    # 战斗结束前，准备跳出的一些写死的处理，这是临时的。
+    def _process_battle_end_actions(self) -> None:
+
+        # 因为可能是删除的，所以要浅拷贝。
+        inactive_heros = self._game.get_group(
+            Matcher(
+                all_of=[
+                    DeadAction,
+                    HeroActorFlagComponent,
+                ],
+            )
+        ).entities.copy()
+
+        # TODO: 这里应该是英雄死亡的处理, 临时把死亡标记去掉，因为会强制飞。
+        for actor in inactive_heros:
+            actor.remove(DeadAction)
+
+        # 怪物死亡的处理，直接加上销毁标记。走pipeline-DestroySystem进行销毁。
+        inactive_monsters = self._game.get_group(
+            Matcher(
+                all_of=[
+                    DeadAction,
+                    MonsterActorFlagComponent,
+                ],
+                none_of=[
+                    DestroyFlagComponent,
+                ],
+            )
+        ).entities
+
+        # 怪物死亡的处理，直接加上销毁标记。走pipeline-DestroySystem进行销毁。
+        for actor in inactive_monsters:
+            actor.replace(DestroyFlagComponent, actor.get(DeadAction).name)
+
+    ######################################################################################################################################################
+    def execute1(self) -> None:
         if self._game._battle_manager._new_turn_flag:
             return
         if self._game._battle_manager._battle_end_flag:
@@ -34,7 +141,8 @@ class B6_CheckEndSystem(ExecuteProcessor):
 
         # 检查战斗结束
         # 英雄全死了，输了
-        hero_entities = self._context.get_group(
+        """
+        hero_entities = self._game.get_group(
             Matcher(
                 all_of=[
                     ActorComponent,
@@ -49,7 +157,7 @@ class B6_CheckEndSystem(ExecuteProcessor):
             self._game._battle_manager.add_history("战斗结束！你输了！")
             self._game._battle_manager._battle_end_flag = True
         # 怪全死了，赢了
-        enemy_entities = self._context.get_group(
+        enemy_entities = self._game.get_group(
             Matcher(
                 all_of=[
                     ActorComponent,
@@ -69,3 +177,27 @@ class B6_CheckEndSystem(ExecuteProcessor):
         # 结束就回Home，写死 TODO
         if self._game._battle_manager._battle_end_flag:
             self._game.teleport_actors_to_stage(hero_entities, "场景.营地")
+        """
+
+        if self._are_all_heroes_dead():
+            # 英雄全死了，输了
+            self._game._battle_manager.add_history("战斗结束！你输了！")
+            self._game._battle_manager._battle_end_flag = True
+        elif self._are_all_enemies_dead():
+            # 怪全死了，赢了
+            self._game._battle_manager.add_history("战斗结束！你赢了！")
+            self._game._battle_manager._battle_end_flag = True
+
+        # 写入战斗历史。
+        self._game._battle_manager.write_battle_history()
+
+        # 结束就回Home，写死 TODO
+        if self._game._battle_manager._battle_end_flag:
+
+            # 出战斗前的清理工作
+            self._process_battle_end_actions()
+
+            # 回到营地
+            self._game.teleport_actors_to_stage(
+                self._game.retrieve_all_hero_entities(), "场景.营地"
+            )

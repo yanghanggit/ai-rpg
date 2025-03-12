@@ -1,19 +1,16 @@
 from entitas import Processors  # type: ignore
 from overrides import override
 from typing import cast
-from game.tcg_game_context import TCGGameContext
 from game.base_game import BaseGame
 
 
-class TCGGameProcessors(Processors):
+class TCGGameProcessPipeline(Processors):
     """
     熟悉项目用的，后续会做改良在HOME时候使用
     """
 
     @staticmethod
-    def create_test(game: BaseGame, context: TCGGameContext) -> "TCGGameProcessors":
-
-        assert context is not None
+    def create_home_state_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
 
         ### 不这样就循环引用
         from game.tcg_game import TCGGame
@@ -21,7 +18,7 @@ class TCGGameProcessors(Processors):
         ##
         tcg_game = cast(TCGGame, game)
         assert isinstance(tcg_game, TCGGame)
-        processors = TCGGameProcessors()
+        processors = TCGGameProcessPipeline()
 
         ## 添加一些系统。。。
         from tcg_game_systems.begin_system import BeginSystem
@@ -34,9 +31,10 @@ class TCGGameProcessors(Processors):
         from tcg_game_systems.handle_web_player_input_system import (
             HandleWebPlayerInputSystem,
         )
-        from tcg_game_systems.terminal_player_interrupt_wait_system import (
-            TerminalPlayerInterruptWaitSystem,
-        )
+
+        # from tcg_game_systems.terminal_player_interrupt_wait_system import (
+        #     TerminalPlayerInterruptWaitSystem,
+        # )
         from tcg_game_systems.mind_voice_action_system import (
             MindVoiceActionSystem,
         )
@@ -64,59 +62,51 @@ class TCGGameProcessors(Processors):
             StageNarratePlanningPermitSystem,
         )
 
-        processors.add(BeginSystem(context))
+        # 进入动作前，处理输入。
+        processors.add(HandleTerminalPlayerInputSystem(tcg_game))
+        processors.add(HandleWebPlayerInputSystem(tcg_game))
+
+        processors.add(BeginSystem(tcg_game))
 
         # 启动agent的提示词。启动阶段
-        processors.add(KickOffSystem(context))
-
-        # 进入动作前，处理输入。
-        # processors.add(HandleTerminalPlayerInputSystem(context))
-        # processors.add(HandleWebPlayerInputSystem(context))
+        processors.add(KickOffSystem(tcg_game))
 
         # 动作处理相关的系统
-        processors.add(PreActionSystem(context))
+        processors.add(PreActionSystem(tcg_game))
 
-        # processors.add(TagActionSystem(context))
-        processors.add(MindVoiceActionSystem(context))
-        processors.add(WhisperActionSystem(context))
-        processors.add(AnnounceActionSystem(context))
-        processors.add(SpeakActionSystem(context))
-
-        # ?
-        processors.add(DeadActionSystem(context))
-
-        # 战斗之后，执行场景更换的逻辑，如果上面死亡了，就不能执行下面的！
-        # processors.add(GoToActionSystem(context))
+        # 说话相关动作。
+        processors.add(MindVoiceActionSystem(tcg_game))
+        processors.add(WhisperActionSystem(tcg_game))
+        processors.add(AnnounceActionSystem(tcg_game))
+        processors.add(SpeakActionSystem(tcg_game))
 
         # ?
-        processors.add(PostActionSystem(context))
+        processors.add(DeadActionSystem(tcg_game))
+
+        # ?
+        processors.add(PostActionSystem(tcg_game))
 
         # 动作处理后，可能清理。
-        processors.add(DestroySystem(context))
+        processors.add(DestroySystem(tcg_game))
 
-        #
+        # debug 用，看需求
         # processors.add(TerminalPlayerInterruptWaitSystem(context))
 
-        # 输入换个位置，测试 TODO
-        processors.add(HandleTerminalPlayerInputSystem(context))
-        processors.add(HandleWebPlayerInputSystem(context))
-
         # 规划逻辑
-        processors.add(PrePlanningSystem(context))  ######## 在所有规划之前!
+        processors.add(PrePlanningSystem(tcg_game))  ######## 在所有规划之前!
 
-        processors.add(StageNarratePlanningPermitSystem(context))
-        processors.add(ActorRoleplayPlanningPermitSystem(context))
+        processors.add(StageNarratePlanningPermitSystem(tcg_game))
+        processors.add(ActorRoleplayPlanningPermitSystem(tcg_game))
 
-        # processors.add(WorldSystemPlanningSystem(context))
-        processors.add(StageNarratePlanningSystem(context))
-        processors.add(ActorRoleplayPlanningSystem(context))
+        processors.add(StageNarratePlanningSystem(tcg_game))
+        processors.add(ActorRoleplayPlanningSystem(tcg_game))
 
-        processors.add(PostPlanningSystem(context))  ####### 在所有规划之后!
+        processors.add(PostPlanningSystem(tcg_game))  ####### 在所有规划之后!
 
         # 存储系统。
-        processors.add(SaveSystem(context))
+        processors.add(SaveSystem(tcg_game))
 
-        processors.add(EndSystem(context))
+        processors.add(EndSystem(tcg_game))
 
         return processors
 
@@ -127,11 +117,7 @@ class TCGGameProcessors(Processors):
     """
 
     @staticmethod
-    def create_test_battle(
-        game: BaseGame, context: TCGGameContext
-    ) -> "TCGGameProcessors":
-
-        assert context is not None
+    def create_dungeon_state_pipeline(game: BaseGame) -> "TCGGameProcessPipeline":
 
         ### 不这样就循环引用
         from game.tcg_game import TCGGame
@@ -140,7 +126,7 @@ class TCGGameProcessors(Processors):
         ##
         tcg_game = cast(TCGGame, game)
         assert isinstance(tcg_game, TCGGame)
-        processors = TCGGameProcessors()
+        processors = TCGGameProcessPipeline()
 
         ## 添加一些系统。。。
         from tcg_game_systems.begin_system import BeginSystem
@@ -153,31 +139,37 @@ class TCGGameProcessors(Processors):
         from tcg_game_systems.handle_web_player_input_system import (
             HandleWebPlayerInputSystem,
         )
+        from tcg_game_systems.destroy_system import DestroySystem
 
         from tcg_game_systems.B1_TurnStartSystem import B1_TurnStartSystem
         from tcg_game_systems.B2_ActorPlanSystem import B2_ActorPlanSystem
         from tcg_game_systems.B5_ExecuteHitsSystem import B5_ExecuteHitsSystem
         from tcg_game_systems.B6_CheckEndSystem import B6_CheckEndSystem
 
-        processors.add(BeginSystem(context))
+        # 用户输入转入pipeline 执行序列
+        processors.add(HandleTerminalPlayerInputSystem(tcg_game))
+        processors.add(HandleWebPlayerInputSystem(tcg_game))
+
+        # 标记开始。
+        processors.add(BeginSystem(tcg_game))
 
         # 启动agent的提示词。启动阶段
-        processors.add(KickOffSystem(context))
+        processors.add(KickOffSystem(tcg_game))
 
-        # 断点
-        processors.add(HandleTerminalPlayerInputSystem(context))
-        processors.add(HandleWebPlayerInputSystem(context))
+        # 战斗逻辑。
+        processors.add(B1_TurnStartSystem(tcg_game))
+        processors.add(B2_ActorPlanSystem(tcg_game))
+        processors.add(B5_ExecuteHitsSystem(tcg_game))
+        processors.add(B6_CheckEndSystem(tcg_game))
 
-        # 战斗逻辑
-        processors.add(B1_TurnStartSystem(context))
-        processors.add(B2_ActorPlanSystem(context))
-        processors.add(B5_ExecuteHitsSystem(context))
-        processors.add(B6_CheckEndSystem(context))
+        # 动作处理后，可能删除掉一些entities。
+        processors.add(DestroySystem(tcg_game))
 
         # 存储系统。
-        processors.add(SaveSystem(context))
+        processors.add(SaveSystem(tcg_game))
 
-        processors.add(EndSystem(context))
+        # 结束
+        processors.add(EndSystem(tcg_game))
 
         return processors
 

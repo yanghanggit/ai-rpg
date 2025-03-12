@@ -1,17 +1,13 @@
 from entitas import ExecuteProcessor  # type: ignore
-from typing import final, override, cast
-from game.tcg_game_context import TCGGameContext
+from typing import final, override
 from game.tcg_game import TCGGame
-
-# from loguru import logger
 
 
 @final
 class EndSystem(ExecuteProcessor):
     ############################################################################################################
-    def __init__(self, context: TCGGameContext) -> None:
-        self._context: TCGGameContext = context
-        self._game: TCGGame = cast(TCGGame, context._game)
+    def __init__(self, game_context: TCGGame) -> None:
+        self._game: TCGGame = game_context
 
     ############################################################################################################
     @override
@@ -19,4 +15,3 @@ class EndSystem(ExecuteProcessor):
         pass
 
     ############################################################################################################
-    # logger.info("EndSystem execute")

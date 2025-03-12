@@ -5,16 +5,13 @@ from overrides import override
 from loguru import logger
 from game.tcg_game_context import TCGGameContext
 from game.base_game import BaseGame
-from game.tcg_game_processors import TCGGameProcessors
+from game.tcg_game_process_pipeline import TCGGameProcessPipeline
 from rpg_models.event_models import BaseEvent
 from tcg_models.v_0_0_1 import (
-    # ActorPrototype,
-    CardObject,
-    WorldRuntime,
+    World,
     WorldSystemInstance,
-    WorldDataBase,
+    DataBase,
     ActorInstance,
-    # StagePrototype,
     StageInstance,
     AgentShortTermMemory,
     ActorType,
@@ -28,21 +25,12 @@ from components.components import (
     GUIDComponent,
     SystemMessageComponent,
     KickOffMessageComponent,
-    # StageGraphComponent,
     FinalAppearanceComponent,
     StageEnvironmentComponent,
     HomeStageFlagComponent,
     DungeonStageFlagComponent,
     HeroActorFlagComponent,
     MonsterActorFlagComponent,
-    # CardPlayerActorComponent,
-    # ItemComponent,
-    # CardItemComponent,
-    # ItemDescriptionComponent,
-    # PlayerCardItemFlagComponent,
-    # MonsterCardItemFlagComponent,
-    # MagicRulerActorFlagComponent,
-    # TagsComponent,
     AttributeCompoment,
 )
 from player.player_proxy import PlayerProxy
@@ -52,7 +40,7 @@ from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 import rpg_game_systems.prompt_utils
 from rpg_models.event_models import AgentEvent
-from game.tcg_game_battle_manager import BattleManager
+from extended_systems.tcg_game_battle_manager import BattleManager
 
 
 @unique
@@ -70,64 +58,62 @@ class ConversationError(Enum):
     NOT_SAME_STAGE = 3
 
 
-class TCGGame(BaseGame):
+class TCGGame(BaseGame, TCGGameContext):
 
     def __init__(
         self,
         name: str,
-        world_runtime: WorldRuntime,
-        world_runtime_path: Path,
-        context: TCGGameContext,
+        world: World,
+        world_path: Path,
         langserve_system: LangServeSystem,
+        battle_manager: BattleManager,
         chaos_engineering_system: IChaosEngineering,
     ) -> None:
 
-        # 必须实现父
-        super().__init__(name)
-
-        # 上下文
-        self._context: TCGGameContext = context
-        self._context._game = self
+        # 必须按着此顺序实现父
+        BaseGame.__init__(self, name)  # 需要传递 name
+        TCGGameContext.__init__(self)  # 继承 Context, 需要调用其 __init__
 
         # 世界运行时
-        self._world_runtime: WorldRuntime = world_runtime
-        self._world_runtime_path: Path = world_runtime_path
+        self._world: World = world
+        self._world_file_path: Path = world_path
 
-        # 处理器
-
+        # 处理器 与 对其控制的 状态。
         self._game_state: TCGGameState = TCGGameState.NONE
-        self._processors1: TCGGameProcessors = TCGGameProcessors.create_test(
-            self, context
+        self._home_state_process_pipeline: TCGGameProcessPipeline = (
+            TCGGameProcessPipeline.create_home_state_pipline(self)
         )
-        self._processors2: TCGGameProcessors = TCGGameProcessors.create_test_battle(
-            self, context
+        self._dungeon_state_processing_pipeline: TCGGameProcessPipeline = (
+            TCGGameProcessPipeline.create_dungeon_state_pipeline(self)
         )
 
         # 玩家
-        # self._players: List[PlayerProxy] = []
         self._player: PlayerProxy = PlayerProxy()
 
         # agent 系统
         self._langserve_system: LangServeSystem = langserve_system
 
+        # 临时战斗系统
+        self._battle_manager = battle_manager
+
         # 混沌工程系统
         self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
 
-        self._battle_manager = BattleManager()
-        # self._battle_manager._game = self
+    ###############################################################################################################################################
+    @property
+    def world_file_dir(self) -> Path:
+        return self._world_file_path.parent
 
     ###############################################################################################################################################
     @property
-    def curent_processors(self) -> TCGGameProcessors:
+    def current_process_pipeline(self) -> TCGGameProcessPipeline:
 
         if self._game_state == TCGGameState.HOME:
-            return self._processors1
+            return self._home_state_process_pipeline
         elif self._game_state == TCGGameState.DUNGEON:
-            return self._processors2
+            return self._dungeon_state_processing_pipeline
         else:
             assert False, "game state is not defined"
-
-        # return self._processors2
 
     ###############################################################################################################################################
     @property
@@ -141,45 +127,43 @@ class TCGGame(BaseGame):
 
     ###############################################################################################################################################
     @property
-    def context(self) -> TCGGameContext:
-        return self._context
-
-    ###############################################################################################################################################
-    @property
-    def world_runtime(self) -> WorldRuntime:
-        return self._world_runtime
+    def world(self) -> World:
+        return self._world
 
     ###############################################################################################################################################
     @override
     def execute(self) -> None:
         # 顺序不要动
-        current_processors = self.curent_processors
-        if not current_processors._initialized:
-            current_processors._initialized = True
-            current_processors.activate_reactive_processors()
-            current_processors.initialize()
+        active_processing_pipeline = self.current_process_pipeline
+        if not active_processing_pipeline._initialized:
+            active_processing_pipeline._initialized = True
+            active_processing_pipeline.activate_reactive_processors()
+            active_processing_pipeline.initialize()
 
-        current_processors.execute()
-        current_processors.cleanup()
+        active_processing_pipeline.execute()
+        active_processing_pipeline.cleanup()
 
     ###############################################################################################################################################
     @override
     async def a_execute(self) -> None:
         # 顺序不要动
-        current_processors = self.curent_processors
-        if not current_processors._initialized:
-            current_processors._initialized = True
-            current_processors.activate_reactive_processors()
-            current_processors.initialize()
+        active_process_pipeline = self.current_process_pipeline
+        if not active_process_pipeline._initialized:
+            active_process_pipeline._initialized = True
+            active_process_pipeline.activate_reactive_processors()
+            active_process_pipeline.initialize()
 
-        await current_processors.a_execute()
-        current_processors.cleanup()
+        await active_process_pipeline.a_execute()
+        active_process_pipeline.cleanup()
 
     ###############################################################################################################################################
     @override
     def exit(self) -> None:
         # TODO 加上所有processors pipeline
-        all = [self._processors1, self._processors2]
+        all = [
+            self._home_state_process_pipeline,
+            self._dungeon_state_processing_pipeline,
+        ]
         for processor in all:
             processor.tear_down()
             processor.clear_reactive_processors()
@@ -199,19 +183,19 @@ class TCGGame(BaseGame):
         self.chaos_engineering_system.on_pre_create_game()
 
         #
-        world_root = self._world_runtime.root
+        world_boot = self._world.boot
 
         ## 第1步，创建world_system
         self._create_world_system_entities(
-            world_root.world_systems, world_root.data_base
+            world_boot.world_systems, world_boot.data_base
         )
 
         ## 第2步，创建actor
-        self._create_player_entities(world_root.players, world_root.data_base)
-        self._create_actor_entities(world_root.actors, world_root.data_base)
+        self._create_player_entities(world_boot.players, world_boot.data_base)
+        self._create_actor_entities(world_boot.actors, world_boot.data_base)
 
         ## 第3步，创建stage
-        self._create_stage_entities(world_root.stages, world_root.data_base)
+        self._create_stage_entities(world_boot.stages, world_boot.data_base)
 
         ## 最后！混沌系统，准备测试
         self.chaos_engineering_system.on_post_create_game()
@@ -221,20 +205,16 @@ class TCGGame(BaseGame):
     ###############################################################################################################################################
     # 测试！回复ecs
     def restore_entities(self) -> "TCGGame":
-        self.context.restore_entities_from_snapshot(
-            self.world_runtime.entities_snapshot
-        )
+        self.restore_entities_from_snapshot(self.world.entities_snapshot)
         return self
 
     ###############################################################################################################################################
     def save(self) -> "TCGGame":
 
-        self.world_runtime.entities_snapshot = self.context.make_entities_snapshot()
+        self.world.entities_snapshot = self.make_entities_snapshot()
 
-        assert self._world_runtime_path.exists()
-        self._world_runtime_path.write_text(
-            self.world_runtime.model_dump_json(), encoding="utf-8"
-        )
+        assert self._world_file_path.exists()
+        self._world_file_path.write_text(self.world.model_dump_json(), encoding="utf-8")
 
         return self
 
@@ -242,7 +222,7 @@ class TCGGame(BaseGame):
     def _create_world_system_entities(
         self,
         world_system_instances: List[WorldSystemInstance],
-        data_base: WorldDataBase,
+        data_base: DataBase,
     ) -> List[Entity]:
 
         ret: List[Entity] = []
@@ -256,7 +236,7 @@ class TCGGame(BaseGame):
                 continue
 
             # 创建实体
-            world_system_entity = self.context.__create_entity__(instance.name)
+            world_system_entity = self.__create_entity__(instance.name)
             assert world_system_entity is not None
 
             # 必要组件
@@ -276,7 +256,7 @@ class TCGGame(BaseGame):
 
     ###############################################################################################################################################
     def _create_actor_entities(
-        self, actor_instances: List[ActorInstance], data_base: WorldDataBase
+        self, actor_instances: List[ActorInstance], data_base: DataBase
     ) -> List[Entity]:
 
         ret: List[Entity] = []
@@ -289,7 +269,7 @@ class TCGGame(BaseGame):
                 continue
 
             # 创建实体
-            actor_entity = self.context.__create_entity__(instance.name)
+            actor_entity = self.__create_entity__(instance.name)
             assert actor_entity is not None
 
             # 必要组件：guid
@@ -330,21 +310,11 @@ class TCGGame(BaseGame):
             )
 
             match prototype.type:
-                # case ActorType.UNDIFINED:
-                #    assert False, "actor type is not defined"
-                # case ActorType.PLAYER:
-                #     actor_entity.add(HeroActorFlagComponent, instance.name)
-                #     actor_entity.add(PlayerActorFlagComponent, "")
-                #     actor_entity.add(CardPlayerActorComponent, instance.name, 5, 3)
-                #     # 写死 TODO
-                #     self._create_card_entites(instance, prototype)
+
                 case ActorType.HERO:
                     actor_entity.add(HeroActorFlagComponent, instance.name)
                 case ActorType.MONSTER:
                     actor_entity.add(MonsterActorFlagComponent, instance.name)
-                    # actor_entity.add(CardPlayerActorComponent, instance.name, 3, 3)
-                    # # 写死 TODO
-                    # self._create_card_entites(instance, prototype)
 
             # 添加到返回值
             ret.append(actor_entity)
@@ -353,7 +323,7 @@ class TCGGame(BaseGame):
 
     ###############################################################################################################################################
     def _create_player_entities(
-        self, actor_instances: List[ActorInstance], data_base: WorldDataBase
+        self, actor_instances: List[ActorInstance], data_base: DataBase
     ) -> List[Entity]:
 
         ret: List[Entity] = []
@@ -365,7 +335,7 @@ class TCGGame(BaseGame):
 
     ###############################################################################################################################################
     def _create_stage_entities(
-        self, stage_instances: List[StageInstance], data_base: WorldDataBase
+        self, stage_instances: List[StageInstance], data_base: DataBase
     ) -> List[Entity]:
 
         ret: List[Entity] = []
@@ -379,7 +349,7 @@ class TCGGame(BaseGame):
                 continue
 
             # 创建实体
-            stage_entity = self.context.__create_entity__(instance.name)
+            stage_entity = self.__create_entity__(instance.name)
 
             # 必要组件
             stage_entity.add(GUIDComponent, instance.name, instance.guid)
@@ -394,25 +364,14 @@ class TCGGame(BaseGame):
                 StageEnvironmentComponent, instance.name, instance.kick_off_message
             )
 
-            # TODO, 测试组件，tag
-            # stage_entity.add(TagsComponent, instance.name, set(instance.tags))
-
-            # 根据类型添加场景类型
-            # if prototype.type == StageType.UNDIFINED:
-            #    assert False, "stage type is not defined"
             if prototype.type == StageType.DUNGEON:
                 stage_entity.add(DungeonStageFlagComponent, instance.name)
             elif prototype.type == StageType.HOME:
                 stage_entity.add(HomeStageFlagComponent, instance.name)
 
-            # 添加场景可以连接的场景
-            # stage_entity.add(StageGraphComponent, instance.name, instance.next)
-
             ## 重新设置Actor和stage的关系
             for actor_name in instance.actors:
-                actor_entity: Optional[Entity] = self.context.get_actor_entity(
-                    actor_name
-                )
+                actor_entity: Optional[Entity] = self.get_actor_entity(actor_name)
                 assert actor_entity is not None
                 actor_entity.replace(ActorComponent, actor_name, instance.name)
 
@@ -433,7 +392,7 @@ class TCGGame(BaseGame):
     ###############################################################################################################################################
     # 临时的，考虑后面把player直接挂在context或者game里，因为player设计上唯一
     def get_player_entity(self) -> Optional[Entity]:
-        player_entity = self._context.get_group(
+        player_entity = self.get_group(
             Matcher(
                 all_of=[PlayerActorFlagComponent],
             )
@@ -444,7 +403,7 @@ class TCGGame(BaseGame):
     ###############################################################################################################################################
     def get_system_message(self, entity: Entity) -> str:
 
-        data_base = self.world_runtime.root.data_base
+        data_base = self.world.boot.data_base
 
         if entity.has(ActorComponent):
             actor_prototype = data_base.actors.get(entity._name, None)
@@ -470,7 +429,7 @@ class TCGGame(BaseGame):
 
     ###############################################################################################################################################
     def get_agent_short_term_memory(self, entity: Entity) -> AgentShortTermMemory:
-        return self.world_runtime.agents_short_term_memory.setdefault(
+        return self.world.agents_short_term_memory.setdefault(
             entity._name, AgentShortTermMemory(name=entity._name, chat_history=[])
         )
 
@@ -493,12 +452,12 @@ class TCGGame(BaseGame):
     ###############################################################################################################################################
     def retrieve_actors_on_stage(self, entity: Entity) -> Set[Entity]:
 
-        stage_entity = self.context.safe_get_stage_entity(entity)
+        stage_entity = self.safe_get_stage_entity(entity)
         assert stage_entity is not None
         if stage_entity is None:
             return set()
 
-        mapping = self.context.retrieve_stage_actor_mapping()
+        mapping = self.retrieve_stage_actor_mapping()
         if stage_entity not in mapping:
             return set()
 
@@ -508,7 +467,7 @@ class TCGGame(BaseGame):
     # TODO 目前是写死的
     def ready(self) -> bool:
 
-        player_entities: Set[Entity] = self.context.get_group(
+        player_entities: Set[Entity] = self.get_group(
             Matcher(all_of=[PlayerActorFlagComponent])
         ).entities
 
@@ -530,7 +489,7 @@ class TCGGame(BaseGame):
         # player_actor_entity.replace(MagicRulerActorFlagComponent, self.player.name)
 
         ## 因为写死了。
-        stage_entity = self.context.safe_get_stage_entity(player_actor_entity)
+        stage_entity = self.safe_get_stage_entity(player_actor_entity)
         assert stage_entity is not None
 
         if stage_entity.has(HomeStageFlagComponent):
@@ -550,7 +509,7 @@ class TCGGame(BaseGame):
         exclude_entities: Set[Entity] = set(),
     ) -> None:
 
-        stage_entity = self.context.safe_get_stage_entity(entity)
+        stage_entity = self.safe_get_stage_entity(entity)
         assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"
         if stage_entity is None:
             return
@@ -583,11 +542,6 @@ class TCGGame(BaseGame):
             if entity.has(PlayerActorFlagComponent):
                 player_comp = entity.get(PlayerActorFlagComponent)
                 assert player_comp.name == self.player.name
-
-                # player_proxy = self.get_player(player_comp.name)
-                # assert player_proxy is not None
-                # if player_proxy is None:
-                #     continue
                 self.player.add_notification(event=agent_event)
 
     ###############################################################################################################################################
@@ -606,9 +560,9 @@ class TCGGame(BaseGame):
 
         # 找到目标stage，否则报错
         target_stage = (
-            self.context.get_stage_entity(destination)
+            self.get_stage_entity(destination)
             if isinstance(destination, str)
-            else self._context.safe_get_stage_entity(destination)
+            else self.safe_get_stage_entity(destination)
         )
         if target_stage is None:
             destination = (
@@ -623,7 +577,7 @@ class TCGGame(BaseGame):
         for going_actor in going_actors:
 
             # 检查自身是否已经在目标场景
-            current_stage = self.context.safe_get_stage_entity(going_actor)
+            current_stage = self.safe_get_stage_entity(going_actor)
             assert current_stage is not None
             if current_stage is not None and current_stage == target_stage:
                 logger.warning(f"{going_actor._name} 已经存在于 {target_stage._name}")
@@ -680,31 +634,20 @@ class TCGGame(BaseGame):
             assert False, "stage type is not defined"
 
     ###############################################################################################################################################
-    # TODO
-    def get_card_pool(self, entity: Entity) -> List[CardObject]:
-        return []
-        """ root = self.world_runtime.root
-        for actor in root.actors + root.players:
-            if actor.name == entity._name:
-                return actor.card_pool
-
-        return [] """
-
-    ###############################################################################################################################################
     # 检查是否可以对话
     def validate_conversation(
         self, stage_or_actor: Entity, target_name: str
     ) -> ConversationError:
 
-        actor_entity: Optional[Entity] = self._context.get_actor_entity(target_name)
+        actor_entity: Optional[Entity] = self.get_actor_entity(target_name)
         if actor_entity is None:
             return ConversationError.INVALID_TARGET
 
-        current_stage_entity = self._context.safe_get_stage_entity(stage_or_actor)
+        current_stage_entity = self.safe_get_stage_entity(stage_or_actor)
         if current_stage_entity is None:
             return ConversationError.NO_STAGE
 
-        target_stage_entity = self._context.safe_get_stage_entity(actor_entity)
+        target_stage_entity = self.safe_get_stage_entity(actor_entity)
         if target_stage_entity != current_stage_entity:
             return ConversationError.NOT_SAME_STAGE
 

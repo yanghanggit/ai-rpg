@@ -1,14 +1,10 @@
 from entitas import ExecuteProcessor  # type: ignore
-from typing import final, override, cast
-from entitas.matcher import Matcher
-from game.tcg_game_context import TCGGameContext
+from typing import final, override
 from game.tcg_game import TCGGame
 from loguru import logger
 from game.terminal_tcg_game import TerminalTCGGame
 from player.player_proxy import PlayerProxy
 from player.player_command2 import PlayerCommand2
-from components.components import ActorComponent
-from components.actions import CardAction
 
 
 ############################################################################################################
@@ -16,10 +12,8 @@ from components.actions import CardAction
 class HandleTerminalPlayerInputSystem(ExecuteProcessor):
 
     ############################################################################################################
-    def __init__(self, context: TCGGameContext) -> None:
-        self._context: TCGGameContext = context
-        self._game: TCGGame = cast(TCGGame, context._game)
-        assert self._game is not None
+    def __init__(self, game_context: TCGGame) -> None:
+        self._game: TCGGame = game_context
 
     ############################################################################################################
     @override

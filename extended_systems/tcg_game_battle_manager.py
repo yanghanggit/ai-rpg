@@ -22,7 +22,9 @@ import random
 
 # TODO 整个系统都是prototype里临时用的！！demo全重写！
 class BattleManager:
-    def __init__(self) -> None:
+    def __init__(self, root_write_dir: Path) -> None:
+
+        self._root_write_dir: Path = root_write_dir
         self._combat_num: int = 0
         self._turn_num: int = 0
         self._new_turn_flag: bool = False
@@ -120,15 +122,13 @@ class BattleManager:
         return self._battle_history.model_dump_json()
 
     def write_battle_history(self) -> None:
+
         try:
 
-            # GEN_RUNTIME_DIR: Path = Path("gen_runtimes")
-            # GEN_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-            # assert GEN_RUNTIME_DIR.exists(), f"找不到目录: {GEN_RUNTIME_DIR}"
-
-            write_dir: Path = Path("battlelog")
+            write_dir: Path = self._root_write_dir / "battlelog"
             write_dir.mkdir(parents=True, exist_ok=True)
             assert write_dir.exists()
+            assert write_dir.is_dir()
 
             write_file_path: Path = write_dir / "history.json"
             write_file_path.write_text(

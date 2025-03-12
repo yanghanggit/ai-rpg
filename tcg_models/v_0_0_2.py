@@ -1,6 +1,6 @@
 from typing import Final, Dict, final
 from pydantic import BaseModel
-from tcg_models.v_0_0_1 import WorldRuntime as WorldRuntime_v_0_0_1
+from tcg_models.v_0_0_1 import World as World_v_0_0_1
 
 """
 这是一个试验。@yanghang
@@ -16,7 +16,7 @@ SCHEMA_VERSION: Final[str] = "0.0.2"
 @final
 class WorldRuntime(BaseModel):
     version: str = SCHEMA_VERSION
-    previous: WorldRuntime_v_0_0_1 = WorldRuntime_v_0_0_1()
+    previous: World_v_0_0_1 = World_v_0_0_1()
     extends: Dict[str, str] = {}  # 测试的字段。
 
 

@@ -1,6 +1,5 @@
 from entitas import ExecuteProcessor, Matcher  # type: ignore
-from typing import final, override, cast
-from game.tcg_game_context import TCGGameContext
+from typing import final, override
 from game.tcg_game import TCGGame
 from components.components import (
     StageNarratePlanningPermitFlagComponent,
@@ -11,10 +10,8 @@ from components.components import (
 @final
 class PostPlanningSystem(ExecuteProcessor):
 
-    def __init__(self, context: TCGGameContext) -> None:
-        self._context: TCGGameContext = context
-        self._game: TCGGame = cast(TCGGame, context._game)
-        assert self._game is not None
+    def __init__(self, game_context: TCGGame) -> None:
+        self._game: TCGGame = game_context
 
     ############################################################################################################
     @override
@@ -25,7 +22,7 @@ class PostPlanningSystem(ExecuteProcessor):
     ############################################################################################################
     def _remove_all_planning_permit(self) -> None:
         # 后续可以考虑给所有planning , TODO
-        actor_entities = self._context.get_group(
+        actor_entities = self._game.get_group(
             Matcher(
                 all_of=[
                     ActorRolePlayPlanningPermitFlagComponent,
@@ -35,7 +32,7 @@ class PostPlanningSystem(ExecuteProcessor):
         for entity in actor_entities:
             entity.remove(ActorRolePlayPlanningPermitFlagComponent)
 
-        stage_entities = self._context.get_group(
+        stage_entities = self._game.get_group(
             Matcher(
                 all_of=[
                     StageNarratePlanningPermitFlagComponent,

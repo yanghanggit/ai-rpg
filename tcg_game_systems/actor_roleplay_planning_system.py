@@ -10,8 +10,9 @@ from components.components import (
 )
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from overrides import override
-from typing import List, final, cast
-from game.tcg_game_context import TCGGameContext
+from typing import List, final
+
+# from game.tcg_game_context import TCGGameContext
 from game.tcg_game import TCGGame
 from loguru import logger
 from tcg_game_systems.action_bundle import ActionBundle
@@ -21,10 +22,8 @@ from tcg_game_systems.action_bundle import ActionBundle
 @final
 class ActorRoleplayPlanningSystem(ExecuteProcessor):
 
-    def __init__(self, context: TCGGameContext) -> None:
-        self._context: TCGGameContext = context
-        self._game: TCGGame = cast(TCGGame, context._game)
-        assert self._game is not None
+    def __init__(self, game_context: TCGGame) -> None:
+        self._game: TCGGame = game_context
 
     #######################################################################################################################################
     @override
@@ -45,7 +44,7 @@ class ActorRoleplayPlanningSystem(ExecuteProcessor):
     #######################################################################################################################################
     async def _process_actor_planning_request(self) -> None:
 
-        actor_entities = self._context.get_group(
+        actor_entities = self._game.get_group(
             Matcher(
                 all_of=[
                     ActorRolePlayPlanningPermitFlagComponent,
@@ -59,7 +58,7 @@ class ActorRoleplayPlanningSystem(ExecuteProcessor):
         request_handlers: List[ChatRequestHandler] = []
         for entity in actor_entities:
             # 找到当前场景, TODO 如果只有player在的stage才能更新这个规则不变，可以把下面挪到循环外，省一下复杂度
-            current_stage = self._context.safe_get_stage_entity(entity)
+            current_stage = self._game.safe_get_stage_entity(entity)
             assert current_stage is not None
             # 找到当前场景内所有角色
             actors_set = self._game.retrieve_actors_on_stage(current_stage)
@@ -96,7 +95,7 @@ class ActorRoleplayPlanningSystem(ExecuteProcessor):
             if request_handler.response_content == "":
                 continue
 
-            entity2 = self._context.get_entity_by_name(request_handler._name)
+            entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
             self._game.append_human_message(
                 entity2, _compress_actor_plan_prompt(request_handler._prompt)

@@ -1,6 +1,6 @@
 from typing import Dict, NamedTuple, List, Set, final
 from components.registry import register_component_class
-from tcg_models.v_0_0_1 import Buff, ActiveSkill, TagInfo, TriggerSkill
+from tcg_models.v_0_0_1 import ActiveSkill, TriggerSkill
 
 
 """
@@ -395,9 +395,9 @@ class StageNarratePlanningPermitFlagComponent(NamedTuple):
 # from tcg_models.v_0_0_1 import TagInfo
 
 
-# TODO 存储TAG用的组件，测试用
-@final
-@register_component_class
-class TagsComponent(NamedTuple):
-    name: str
-    tags: Set[TagInfo]
+# # TODO 存储TAG用的组件，测试用
+# @final
+# @register_component_class
+# class TagsComponent(NamedTuple):
+#     name: str
+#     tags: Set[TagInfo]

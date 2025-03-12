@@ -142,6 +142,10 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         if target_comp.hp <= 0:
             hit.log += f"目标已被击败！"
             return False
+        # 检查source是不是没行动力了
+        if source_comp.action_times <= 0:
+            hit.log += f"{source_name} 行动力不足，无法继续行动！"
+            return False
 
         # 执行hit
         if hit.type is HitType.NONE:

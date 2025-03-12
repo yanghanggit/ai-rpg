@@ -299,17 +299,6 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
     def _get_world_system(self, name: str = "战斗系统") -> Optional[Entity]:
         return self._game.get_world_entity(name)
 
-        # entities: Set[Entity] = self._context.get_group(
-        #     Matcher(
-        #         any_of=[WorldSystemComponent],
-        #     )
-        # ).entities
-
-        # if len(entities) > 0:
-        #     return next(iter(entities))
-
-        # return None
-
 
 def _gen_prompt(
     current_stage_name: str,

@@ -1,5 +1,7 @@
+from typing import List
 from overrides import override
 from entitas import ExecuteProcessor, Matcher  # type: ignore
+from entitas.entity import Entity
 from game.tcg_game import TCGGame
 from components.components import (
     AttributeCompoment,
@@ -50,11 +52,14 @@ class B6_CheckEndSystem(ExecuteProcessor):
         ).entities
 
         # 检查死亡, 目前写死，血量见0就是死，其实可以复杂点。
+        dead_list: List[Entity] = []
         for entity in active_entities:
             attr_comp = entity.get(AttributeCompoment)
             if attr_comp.hp <= 0:
                 assert not entity.has(DeadAction)
-                entity.replace(DeadAction, attr_comp.name, [])
+                dead_list.append(entity)
+        for entity in dead_list:
+            entity.replace(DeadAction, attr_comp.name, [])
 
     ######################################################################################################################################################
     # 英雄全死了么？
@@ -123,8 +128,11 @@ class B6_CheckEndSystem(ExecuteProcessor):
             )
         ).entities
 
-        # 怪物死亡的处理，直接加上销毁标记。走pipeline-DestroySystem进行销毁。
+        # 怪物死亡的处理，直接加上销毁标记。走pipeline-
+        destroy_list: List[Entity] = []
         for actor in inactive_monsters:
+            destroy_list.append(actor)
+        for actor in destroy_list:
             actor.replace(DestroyFlagComponent, actor.get(DeadAction).name)
 
     ######################################################################################################################################################

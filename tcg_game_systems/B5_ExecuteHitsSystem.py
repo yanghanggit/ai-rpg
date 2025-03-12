@@ -313,7 +313,7 @@ def _gen_prompt(
     battle_history: str,
 ) -> str:
     return f"""
-# 请作为战斗系统的故事讲述者，参考战斗日志，描述这轮的战斗情况。
+# 请作为战斗系统的故事讲述者，参考战斗日志，描述此刻的战斗情况。
 ## 战场形势
 ### 当前所在的场景
 {current_stage_name}
@@ -323,7 +323,7 @@ def _gen_prompt(
 {"\n".join(actors_info_list)}
 ### 本回合尚未未行动角色行动顺序队列
 {", ".join(f"{index}: {item}" for index, item in enumerate(act_order))}
-### 本轮中发生的行动
+### 此刻发生的行动
 {done_hits_log}
 ### 截至目前，整场战斗的记录
 {battle_history}

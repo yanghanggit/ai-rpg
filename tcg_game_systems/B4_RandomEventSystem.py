@@ -53,7 +53,7 @@ class B4_RandomEventSystem(ExecuteProcessor):
         # 1/3概率随机决定发生or不发生
         if not random.randint(1, 3) == 1:
             return
-        
+
         await self._event_start()
         self._get_choice()
         await self._event_end()
@@ -91,7 +91,7 @@ class B4_RandomEventSystem(ExecuteProcessor):
         # 构造prompt
         msg = _gen_event_start_prompt()
 
-        #开问
+        # 开问
         world_system_entity = self._game.get_world_entity("战斗系统")
         assert world_system_entity is not None
         request_handlers: List[ChatRequestHandler] = []
@@ -121,7 +121,7 @@ class B4_RandomEventSystem(ExecuteProcessor):
         event = self._game._battle_manager._event_msg.event
         choice = self._game._battle_manager._event_msg.choice
         result = self._game._battle_manager._event_msg.result
-        self._game._battle_manager.add_history(event)
+        self._game._battle_manager.add_history("发生了事件：" + event)
         self._game._battle_manager.add_history(result)
         # 广播给所有人
         stage_name = self._game.get_current_stage_entity()._name
@@ -140,7 +140,43 @@ class B4_RandomEventSystem(ExecuteProcessor):
 
 
 def _gen_event_start_prompt() -> str:
-    return ""
+    return f"""
+# 请作为战斗系统的故事讲述者，参考战斗日志，生成一个随机事件。
+## 战场形势
+### 当前所在的场景
+current_stage_name
+### 当前场景描述
+current_stage_narration
+### 当前场景内所有角色的状态
+"\n".join(actors_info_list)
+### 本回合中即将执行的行动栈
+done_hits_log
+### 截至目前，整场战斗的记录
+battle_history
+## 随机事件要求
+1. 随机事件能够影响玩家方角色的行为选择和执行结果。
+2. 必须提供三个选项让玩家选择。
+3. 不要总是让玩家方获胜，适时时给予挫折。
+4. 必须充分考虑角色的行为对其目标之外的场景内元素，包括其他角色，场景内物品，场景本身等带来的影响。
+5. 可以生成一些突兀的，机械降神的事件。
+6. 不要让选项看上去差距过大，要让潜在的收益和风险并存。要让玩家感受挫折时，需要让所有选项看上去都是坏选项。
+7. 必须考虑以往已经发生过的随机事件，不要雷同重复，并要使多个随机事件形成一条连续的事件链。
+## 行动栈说明
+1. 行动栈中的每个元素都是一个HitInfo，代表了一次攻击或技能释放的结果。
+2. 行动栈中每个HitInfo的都是先进后出，即栈顶的HitInfo是最先执行的。
+## HitInfo说明
+1. skill: 技能类的实例。在生成新HitInfo时，使其为None即可。
+2. source: HitInfo来源的名字。
+3. target: HitInfo目标的名字。
+4. value: 伤害值，治疗值，或是添加buff的持续回合数值。
+5. type: HitType枚举，表示这次HitInfo的类型。
+
+## 输出内容要求
+1. 描述需要生动和有趣。
+2. 描述中不要附带角色对话，不要揣测角色心理活动，仅以第三人称视角对发生的事件做客观描述。
+3. 尽量将描述的长度限制在五到十句话左右。
+4. 描述需要客观公正，不要在价值观上偏袒任何一方。
+"""
 
 
 def _gen_event_end_prompt() -> str:

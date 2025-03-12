@@ -178,12 +178,14 @@ class HitInfo(BaseModel):
     source: str
     target: str
     value: int
-    type: HitType
+    type: Union[HitType, str]
     dmgtype: DamageType
     buff: Optional[Buff]  # 要添加或者移除的buff
     log: str  # 写在战斗历史里的log，比如A对B用了X技能，造成Y伤害
     text: str  # 角色执行这个动作时想说的话，执行的时候需要广播或者notify出去
     is_cost: bool  # 是否消耗行动力
+    is_event: bool # 是否是事件
+    TODO
 
 
 class BattleHistory(BaseModel):

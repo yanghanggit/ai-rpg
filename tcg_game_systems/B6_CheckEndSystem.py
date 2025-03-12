@@ -1,8 +1,10 @@
 from overrides import override
 from entitas import ExecuteProcessor, Matcher  # type: ignore
-from game.tcg_game_context import TCGGameContext
+
+# from game.tcg_game_context import TCGGameContext
 from game.tcg_game import TCGGame
-from typing import cast
+
+# from typing import cast
 
 from components.components import (
     AttributeCompoment,
@@ -15,10 +17,10 @@ from loguru import logger
 
 class B6_CheckEndSystem(ExecuteProcessor):
 
-    def __init__(self, context: TCGGameContext) -> None:
-        self._context: TCGGameContext = context
-        self._game: TCGGame = cast(TCGGame, context._game)
-        assert self._game is not None
+    def __init__(self, game_context: TCGGame) -> None:
+        self._game: TCGGame = game_context
+        # self._game: TCGGame = cast(TCGGame, context._game)
+        # assert self._game is not None
 
     @override
     def execute(self) -> None:
@@ -34,7 +36,7 @@ class B6_CheckEndSystem(ExecuteProcessor):
 
         # 检查战斗结束
         # 英雄全死了，输了
-        hero_entities = self._context.get_group(
+        hero_entities = self._game.get_group(
             Matcher(
                 all_of=[
                     ActorComponent,
@@ -49,7 +51,7 @@ class B6_CheckEndSystem(ExecuteProcessor):
             self._game._battle_manager.add_history("战斗结束！你输了！")
             self._game._battle_manager._battle_end_flag = True
         # 怪全死了，赢了
-        enemy_entities = self._context.get_group(
+        enemy_entities = self._game.get_group(
             Matcher(
                 all_of=[
                     ActorComponent,

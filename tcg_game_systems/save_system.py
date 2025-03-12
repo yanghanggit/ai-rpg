@@ -1,6 +1,5 @@
 from entitas import ExecuteProcessor  # type: ignore
-from typing import final, override, cast, Dict, Set
-from game.tcg_game_context import TCGGameContext
+from typing import final, override, Dict, Set
 from game.tcg_game import TCGGame
 from loguru import logger
 
@@ -9,10 +8,8 @@ from loguru import logger
 class SaveSystem(ExecuteProcessor):
 
     ############################################################################################################
-    def __init__(self, context: TCGGameContext) -> None:
-        self._context: TCGGameContext = context
-        self._game: TCGGame = cast(TCGGame, context._game)
-        assert self._game is not None
+    def __init__(self, game_context: TCGGame) -> None:
+        self._game: TCGGame = game_context
 
     ############################################################################################################
     @override
@@ -27,7 +24,7 @@ class SaveSystem(ExecuteProcessor):
     ############################################################################################################
     def _mapping(self) -> None:
 
-        entities_mapping = self._game.context.retrieve_stage_actor_mapping()
+        entities_mapping = self._game.retrieve_stage_actor_mapping()
         if len(entities_mapping) == 0:
             return
 

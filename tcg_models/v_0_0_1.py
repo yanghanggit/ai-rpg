@@ -1,7 +1,7 @@
 from typing import Final, List, Dict, Any, Optional, Union, final
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from enum import IntEnum, StrEnum, unique
+from enum import StrEnum, unique
 
 # 注意，不允许动！
 SCHEMA_VERSION: Final[str] = "0.0.1"
@@ -76,43 +76,43 @@ class WorldSystemPrototype(BaseModel):
 ###############################################################################################################################################
 
 
-class ItemObject(BaseModel):
-    name: str
-    guid: int
-    code_name: str
-    count: int = 1
-    value: List[int]
+# class ItemObject(BaseModel):
+#     name: str
+#     guid: int
+#     code_name: str
+#     count: int = 1
+#     value: List[int]
 
 
 ###############################################################################################################################################
-@unique
-class ItemAttributes(IntEnum):
-    MAX_HP = 0
-    CUR_HP = 1
-    MAX = 20
+# @unique
+# class ItemAttributes(IntEnum):
+#     MAX_HP = 0
+#     CUR_HP = 1
+#     MAX = 20
 
 
-@final
-class CardObject(ItemObject):  # 可能以后改成ItemObject，类型选card，现阶段先这样 TODO
-    level: int = 1
-    description: str
-    insight: str
-    owner: str  # 测试用的属性，以后用管理系统的方法 TODO
+# @final
+# class CardObject(ItemObject):  # 可能以后改成ItemObject，类型选card，现阶段先这样 TODO
+#     level: int = 1
+#     description: str
+#     insight: str
+#     owner: str  # 测试用的属性，以后用管理系统的方法 TODO
 
-    # 测试的属性
-    @property
-    def max_hp(self) -> int:
-        if len(self.value) < ItemAttributes.MAX:
-            return self.value[ItemAttributes.MAX_HP]
-        return 0
+#     # 测试的属性
+#     @property
+#     def max_hp(self) -> int:
+#         if len(self.value) < ItemAttributes.MAX:
+#             return self.value[ItemAttributes.MAX_HP]
+#         return 0
 
 
 ###############################################################################################################################################
-# TODO 不确定是否保留
-@final
-class TagInfo(BaseModel):
-    name: str
-    description: str
+# # TODO 不确定是否保留
+# @final
+# class TagInfo(BaseModel):
+#     name: str
+#     description: str
 
 
 ###############################################################################################################################################
@@ -133,7 +133,7 @@ class Buff(BaseModel):
 
 ###############################################################################################################################################
 @final
-class WorldDataBase(BaseModel):
+class DataBase(BaseModel):
     actors: Dict[str, ActorPrototype] = {}
     stages: Dict[str, StagePrototype] = {}
     world_systems: Dict[str, WorldSystemPrototype] = {}
@@ -186,10 +186,10 @@ class HitInfo(BaseModel):
     is_cost: bool  # 是否消耗行动力
 
 
-class EventMsg(BaseModel):
-    event: str
-    option: int
-    result: str
+# class EventMsg(BaseModel):
+#     event: str
+#     option: int
+#     result: str
 
 
 class BattleHistory(BaseModel):
@@ -232,7 +232,7 @@ class WorldSystemInstance(BaseModel):
 ###############################################################################################################################################
 # 生成世界的根文件，就是世界的起点
 @final
-class WorldRoot(BaseModel):
+class Boot(BaseModel):
     name: str = ""
     version: str = ""
     epoch_script: str = ""
@@ -240,15 +240,15 @@ class WorldRoot(BaseModel):
     actors: List[ActorInstance] = []
     stages: List[StageInstance] = []
     world_systems: List[WorldSystemInstance] = []
-    data_base: WorldDataBase = WorldDataBase()
+    data_base: DataBase = DataBase()
 
 
 ###############################################################################################################################################
 # 生成世界的运行时文件，记录世界的状态
 @final
-class WorldRuntime(BaseModel):
+class World(BaseModel):
     version: str = SCHEMA_VERSION
-    root: WorldRoot = WorldRoot()
+    boot: Boot = Boot()
     entities_snapshot: List[EntitySnapshot] = []
     agents_short_term_memory: Dict[str, AgentShortTermMemory] = {}
 

@@ -30,7 +30,7 @@ class SpeakActionSystem(BaseActionReactiveSystem):
 
     ####################################################################################################################################
     def _prosses_speak_action(self, entity: Entity) -> None:
-        stage_entity = self._context.safe_get_stage_entity(entity)
+        stage_entity = self._game.safe_get_stage_entity(entity)
         if stage_entity is None:
             return
 
@@ -54,7 +54,7 @@ class SpeakActionSystem(BaseActionReactiveSystem):
                     )
                 continue
 
-            assert self._context.get_entity_by_name(target_name) is not None
+            assert self._game.get_entity_by_name(target_name) is not None
             self._game.broadcast_event(
                 stage_entity,
                 SpeakEvent(

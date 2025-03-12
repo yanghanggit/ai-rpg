@@ -4,9 +4,9 @@ from agent.chat_request_handler import ChatRequestHandler
 from entitas import ExecuteProcessor  # type: ignore
 
 # from entitas.entity import Entity
-from game.tcg_game_context import TCGGameContext
+# from game.tcg_game_context import TCGGameContext
 from game.tcg_game import TCGGame
-from typing import Deque, List, cast
+from typing import Deque, List
 
 # from tcg_models.v_0_0_1 import ActorInstance, ActiveSkill
 from components.components import (
@@ -28,10 +28,8 @@ class ChoiceRet(BaseModel):
 
 class B2_ActorPlanSystem(ExecuteProcessor):
 
-    def __init__(self, context: TCGGameContext) -> None:
-        self._context: TCGGameContext = context
-        self._game: TCGGame = cast(TCGGame, context._game)
-        assert self._game is not None
+    def __init__(self, game_context: TCGGame) -> None:
+        self._game: TCGGame = game_context
 
     @override
     def execute(self) -> None:
@@ -51,7 +49,7 @@ class B2_ActorPlanSystem(ExecuteProcessor):
 
         # 找出当前应该做决定的角色
         thinker_name = self._game._battle_manager._order_queue[0]
-        thinker = self._context.get_entity_by_name(thinker_name)
+        thinker = self._game.get_entity_by_name(thinker_name)
         if thinker is None:
             assert False, "can't find entity by thinker name"
         comp = thinker.get(AttributeCompoment)
@@ -71,7 +69,7 @@ class B2_ActorPlanSystem(ExecuteProcessor):
 
         # 问他做什么决定
         # 得到所有角色和场景信息
-        current_stage = self._context.safe_get_stage_entity(thinker)
+        current_stage = self._game.safe_get_stage_entity(thinker)
         assert current_stage is not None
         actors_set = self._game.retrieve_actors_on_stage(current_stage)
         actors_info_list: List[str] = [
@@ -117,7 +115,9 @@ class B2_ActorPlanSystem(ExecuteProcessor):
             )
         )
         await self._game.langserve_system.gather(request_handlers=request_handlers)
-        self._game.append_human_message(thinker, "你的回合开始，请思考并给出本回合的行动计划。")
+        self._game.append_human_message(
+            thinker, "你的回合开始，请思考并给出本回合的行动计划。"
+        )
         self._game.append_ai_message(thinker, request_handlers[0].response_content)
 
         # 得到回复后，构建hit

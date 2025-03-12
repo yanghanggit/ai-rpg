@@ -9,8 +9,7 @@ from components.components import (
     SystemMessageComponent,
     StageEnvironmentComponent,
 )
-from typing import Set, final, cast, List
-from game.tcg_game_context import TCGGameContext
+from typing import Set, final, List
 from game.tcg_game import TCGGame
 from loguru import logger
 from agent.chat_request_handler import ChatRequestHandler
@@ -71,10 +70,9 @@ def _generate_world_system_kick_off_prompt() -> str:
 @final
 class KickOffSystem(ExecuteProcessor):
 
-    def __init__(self, context: TCGGameContext) -> None:
-        self._context: TCGGameContext = context
-        self._game: TCGGame = cast(TCGGame, context._game)
-        assert self._game is not None
+    ############################################################################################################
+    def __init__(self, game_context: TCGGame) -> None:
+        self._game: TCGGame = game_context
 
     ######################################################################################################################################################
     @override
@@ -85,7 +83,7 @@ class KickOffSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
 
-        entities: Set[Entity] = self._context.get_group(
+        entities: Set[Entity] = self._game.get_group(
             Matcher(
                 all_of=[SystemMessageComponent, KickOffMessageComponent],
                 any_of=[ActorComponent, WorldSystemComponent, StageComponent],
@@ -130,7 +128,7 @@ class KickOffSystem(ExecuteProcessor):
         # 添加上下文。
         for request_handler in request_handlers:
 
-            entity2 = self._context.get_entity_by_name(request_handler._name)
+            entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
 
             if request_handler.response_content == "":
@@ -183,13 +181,13 @@ class KickOffSystem(ExecuteProcessor):
         if entity.has(ActorComponent):
             # 角色的
             gen_prompt = _generate_actor_kick_off_prompt(
-                kick_off_message, self._game.world_runtime.root.epoch_script
+                kick_off_message, self._game.world.boot.epoch_script
             )
         elif entity.has(StageComponent):
             # 舞台的
             gen_prompt = _generate_stage_kick_off_prompt(
                 kick_off_message,
-                self._game.world_runtime.root.epoch_script,
+                self._game.world.boot.epoch_script,
             )
         elif entity.has(WorldSystemComponent):
             # 世界系统的

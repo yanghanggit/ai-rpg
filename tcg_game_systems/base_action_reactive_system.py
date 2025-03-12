@@ -1,17 +1,14 @@
 from entitas import ReactiveProcessor, CleanupProcessor, Entity  # type: ignore
-from game.tcg_game_context import TCGGameContext
-from typing import cast, List, override
+from typing import List, override
 from game.tcg_game import TCGGame
 
 
 ####################################################################################################################################
 class BaseActionReactiveSystem(ReactiveProcessor, CleanupProcessor):
 
-    def __init__(self, context: TCGGameContext) -> None:
-        super().__init__(context)
-        self._context: TCGGameContext = context
-        self._game: TCGGame = cast(TCGGame, context._game)
-        assert self._game is not None
+    def __init__(self, game_context: TCGGame) -> None:
+        super().__init__(game_context)
+        self._game: TCGGame = game_context
         self._react_entities_copy: List[Entity] = []
 
     ####################################################################################################################################

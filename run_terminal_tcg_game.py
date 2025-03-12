@@ -5,20 +5,16 @@ import game.rpg_game_utils
 from dataclasses import dataclass
 import game.tcg_game_config
 import shutil
-from game.tcg_game_context import TCGGameContext
 from game.terminal_tcg_game import TerminalTCGGame
-from tcg_models.v_0_0_1 import WorldRoot, WorldRuntime
-
-# from tcg_models.v_0_0_2 import WorldRuntime as WorldRuntime_v_0_0_2
+from tcg_models.v_0_0_1 import Boot, World
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from extended_systems.lang_serve_system import LangServeSystem
 from player.player_proxy import PlayerProxy
 from rpg_models.player_models import PlayerProxyModel
 import game.tcg_game_utils
-
-# from extended_systems.tcg_prop_file_manage_system import PropFileManageSystem
 from player.player_command2 import PlayerCommand2
 from entitas import Matcher  # type: ignore
+from extended_systems.tcg_game_battle_manager import BattleManager
 
 
 ###############################################################################################################################################
@@ -72,37 +68,33 @@ async def run_game(option: OptionParameters) -> None:
     game.tcg_game_utils.create_test_world(game_name, "0.0.1")
 
     # 创建游戏的根文件是否存在。
-    world_root_file_path = game.tcg_game_config.GEN_WORLD_DIR / f"{game_name}.json"
-    if not world_root_file_path.exists():
+    world_boot_file_path = game.tcg_game_config.GEN_WORLD_DIR / f"{game_name}.json"
+    if not world_boot_file_path.exists():
         logger.error(
-            f"找不到启动游戏世界的文件 = {world_root_file_path}, 没有用编辑器生成"
+            f"找不到启动游戏世界的文件 = {world_boot_file_path}, 没有用编辑器生成"
         )
         return
 
-    # 游戏资源可以被创建，则将game_resource_file_path这个文件拷贝一份到root_runtime_dir下
-    shutil.copy(world_root_file_path, users_world_runtime_dir)
+    # 游戏资源可以被创建，则将game_resource_file_path这个文件拷贝一份到world_boot_file_path下
+    shutil.copy(world_boot_file_path, users_world_runtime_dir)
 
     # 创建runtime
-    world_runtime = WorldRuntime()
-
-    # yanghang test
-    # world_runtime_v_0_0_2 = WorldRuntime_v_0_0_2()
-    # world_runtime_v_0_0_2.previous = world_runtime
+    world = World()
 
     #
     users_world_runtime_file_path = users_world_runtime_dir / f"runtime.json"
     if not users_world_runtime_file_path.exists():
 
         # runtime文件不存在，需要做第一次创建
-        copy_root_path = users_world_runtime_dir / f"{game_name}.json"
-        assert copy_root_path.exists()
+        copy_boot_path = users_world_runtime_dir / f"{game_name}.json"
+        assert copy_boot_path.exists()
 
-        world_root_file_content = copy_root_path.read_text(encoding="utf-8")
-        world_root = WorldRoot.model_validate_json(world_root_file_content)
+        world_boot_file_content = copy_boot_path.read_text(encoding="utf-8")
+        world_boot = Boot.model_validate_json(world_boot_file_content)
 
-        world_runtime = WorldRuntime(root=world_root)
+        world = World(boot=world_boot)
         users_world_runtime_file_path.write_text(
-            world_runtime.model_dump_json(), encoding="utf-8"
+            world.model_dump_json(), encoding="utf-8"
         )
 
     else:
@@ -111,7 +103,7 @@ async def run_game(option: OptionParameters) -> None:
         world_runtime_file_content = users_world_runtime_file_path.read_text(
             encoding="utf-8"
         )
-        world_runtime = WorldRuntime.model_validate_json(world_runtime_file_content)
+        world = World.model_validate_json(world_runtime_file_content)
 
     # 先写死。后续需要改成配置文件
     server_url = "http://localhost:8100/v1/llm_serve/chat/"
@@ -121,16 +113,15 @@ async def run_game(option: OptionParameters) -> None:
     # 创建空游戏
     terminal_tcg_game = TerminalTCGGame(
         name=game_name,
-        world_runtime=world_runtime,
-        world_runtime_path=users_world_runtime_file_path,
-        context=TCGGameContext(),
+        world=world,
+        world_path=users_world_runtime_file_path,
         langserve_system=lang_serve_system,
-        # prop_file_system=PropFileManageSystem(),
+        battle_manager=BattleManager(users_world_runtime_file_path.parent),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
 
     # 启动游戏的判断，是第一次建立还是恢复？
-    if len(terminal_tcg_game.world_runtime.entities_snapshot) == 0:
+    if len(terminal_tcg_game.world.entities_snapshot) == 0:
         logger.warning(f"游戏中没有实体 = {game_name}, 说明是第一次创建游戏")
         terminal_tcg_game.build_entities().save()
     else:
@@ -170,7 +161,7 @@ async def run_game(option: OptionParameters) -> None:
 
         if usr_input == "/tp1":
             # 传送场景做特殊处理，先不做execute。
-            hero_entities = terminal_tcg_game._context.get_group(
+            hero_entities = terminal_tcg_game.get_group(
                 Matcher(
                     all_of=[
                         ActorComponent,
@@ -185,7 +176,7 @@ async def run_game(option: OptionParameters) -> None:
 
         if usr_input == "/tp2":
             # 传送场景做特殊处理，先不做execute。
-            hero_entities = terminal_tcg_game._context.get_group(
+            hero_entities = terminal_tcg_game.get_group(
                 Matcher(
                     all_of=[
                         ActorComponent,

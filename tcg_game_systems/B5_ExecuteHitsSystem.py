@@ -2,9 +2,10 @@ from overrides import override
 from agent.chat_request_handler import ChatRequestHandler
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from entitas.entity import Entity
-from game.tcg_game_context import TCGGameContext
+
+# from game.tcg_game_context import TCGGameContext
 from game.tcg_game import TCGGame
-from typing import Deque, List, Optional, Set, cast
+from typing import Deque, List, Optional
 from rpg_models.event_models import AnnounceEvent
 from tcg_models.v_0_0_1 import (
     # ActorInstance,
@@ -19,7 +20,7 @@ from components.components import (
     ActorComponent,
     FinalAppearanceComponent,
     StageEnvironmentComponent,
-    WorldSystemComponent,
+    # WorldSystemComponent,
 )
 
 # from loguru import logger
@@ -28,10 +29,8 @@ from components.components import (
 
 class B5_ExecuteHitsSystem(ExecuteProcessor):
 
-    def __init__(self, context: TCGGameContext) -> None:
-        self._context: TCGGameContext = context
-        self._game: TCGGame = cast(TCGGame, context._game)
-        assert self._game is not None
+    def __init__(self, game_context: TCGGame) -> None:
+        self._game: TCGGame = game_context
 
     @override
     def execute(self) -> None:
@@ -63,7 +62,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         temp_actor_name = self._game._battle_manager._order_queue.popleft()
         remove_list = []
         for actor_name in self._game._battle_manager._order_queue:
-            actor = self._context.get_entity_by_name(actor_name)
+            actor = self._game.get_entity_by_name(actor_name)
             assert actor is not None
             comp = actor.get(AttributeCompoment)
             assert comp is not None
@@ -75,9 +74,9 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
 
         # 问世界系统，给我生成一段描述
         # 得到所有角色和场景信息
-        temp_actor = self._context.get_entity_by_name(temp_actor_name)
+        temp_actor = self._game.get_entity_by_name(temp_actor_name)
         assert temp_actor is not None
-        current_stage = self._context.safe_get_stage_entity(temp_actor)
+        current_stage = self._game.safe_get_stage_entity(temp_actor)
         assert current_stage is not None
         actors_set = self._game.retrieve_actors_on_stage(current_stage)
         actors_info_list: List[str] = [
@@ -120,8 +119,8 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
     def _execute_hit(self, hit: HitInfo) -> bool:
         source_name = hit.source
         target_name = hit.target
-        source = self._context.get_entity_by_name(source_name)
-        target = self._context.get_entity_by_name(target_name)
+        source = self._game.get_entity_by_name(source_name)
+        target = self._game.get_entity_by_name(target_name)
         if source is None:
             assert False, "source is None"
         if target is None:
@@ -153,7 +152,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             # 检查被攻击时触发的buff，移除失效的buff，应该包装个新函数
             remove_list = []
             for buff_name, last_time in target_comp.buffs.items():
-                buff = self._game.world_runtime.root.data_base.buffs[buff_name]
+                buff = self._game.world.boot.data_base.buffs[buff_name]
                 if buff.timing is TriggerType.ON_ATTACKED:
                     match buff.name:
                         case "护盾":
@@ -297,18 +296,19 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
                 ),
             )
 
-    def _get_world_system(self) -> Optional[Entity]:
+    def _get_world_system(self, name: str = "战斗系统") -> Optional[Entity]:
+        return self._game.get_world_entity(name)
 
-        entities: Set[Entity] = self._context.get_group(
-            Matcher(
-                any_of=[WorldSystemComponent],
-            )
-        ).entities
+        # entities: Set[Entity] = self._context.get_group(
+        #     Matcher(
+        #         any_of=[WorldSystemComponent],
+        #     )
+        # ).entities
 
-        if len(entities) > 0:
-            return next(iter(entities))
+        # if len(entities) > 0:
+        #     return next(iter(entities))
 
-        return None
+        # return None
 
 
 def _gen_prompt(

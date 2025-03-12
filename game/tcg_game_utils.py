@@ -2,24 +2,25 @@ from loguru import logger
 from tcg_models.v_0_0_1 import (
     ActiveSkill,
     Buff,
-    WorldRoot,
+    Boot,
     ActorPrototype,
     StagePrototype,
     WorldSystemPrototype,
-    CardObject,
+    # CardObject,
     ActorInstance,
     StageInstance,
     WorldSystemInstance,
-    ItemAttributes,
+    # ItemAttributes,
     ActorType,
     StageType,
-    TagInfo,
+    # TagInfo,
     TriggerSkill,
     TriggerType,
 )
 import game.tcg_game_config
 from typing import List, Final, Dict
-import copy
+
+# import copy
 
 GLOBAL_GAME_RULES: Final[
     str
@@ -46,18 +47,18 @@ GUID_INDEX: int = 1000
 
 
 #######################################################################################################################################
-def create_test_world(game_name: str, version: str) -> WorldRoot:
+def create_test_world(game_name: str, version: str) -> Boot:
 
-    world_root = WorldRoot(name=game_name, version=version)
-    test_world1(world_root)
+    world_boot = Boot(name=game_name, version=version)
+    test_world1(world_boot)
 
     try:
         write_path = game.tcg_game_config.GEN_WORLD_DIR / f"{game_name}.json"
-        write_path.write_text(world_root.model_dump_json(), encoding="utf-8")
+        write_path.write_text(world_boot.model_dump_json(), encoding="utf-8")
     except Exception as e:
         logger.error(f"An error occurred: {e}")
 
-    return world_root
+    return world_boot
 
 
 #######################################################################################################################################
@@ -205,27 +206,27 @@ world_system_battle_system = WorldSystemPrototype(
 
 #######################################################################################################################################
 def _initialize_data_base(
-    world_root: WorldRoot,
+    world_boot: Boot,
     epoch_script: str,
     actors: List[ActorPrototype],
     stages: List[StagePrototype],
     world_systems: List[WorldSystemPrototype],
 ) -> None:
-    world_root.epoch_script = epoch_script
+    world_boot.epoch_script = epoch_script
 
     for actor in actors:
-        world_root.data_base.actors.setdefault(actor.name, actor)
+        world_boot.data_base.actors.setdefault(actor.name, actor)
 
     for stage in stages:
-        world_root.data_base.stages.setdefault(stage.name, stage)
+        world_boot.data_base.stages.setdefault(stage.name, stage)
 
     for world_system in world_systems:
-        world_root.data_base.world_systems.setdefault(world_system.name, world_system)
+        world_boot.data_base.world_systems.setdefault(world_system.name, world_system)
 
 
 #######################################################################################################################################
 def _create_actor_instance(
-    world_root: WorldRoot,
+    world_boot: Boot,
     actor_prototype: ActorPrototype,
     kick_off_message: str,
     active_skills: List[ActiveSkill],
@@ -234,7 +235,7 @@ def _create_actor_instance(
     attributes: List[int],
 ) -> ActorInstance:
 
-    if actor_prototype.name not in world_root.data_base.actors:
+    if actor_prototype.name not in world_boot.data_base.actors:
         assert False, f"Actor {actor_prototype.name} not found in data base."
 
     global GUID_INDEX
@@ -254,13 +255,13 @@ def _create_actor_instance(
 
 #######################################################################################################################################
 def _create_stage_instance(
-    world_root: WorldRoot,
+    world_boot: Boot,
     stage: StagePrototype,
     kick_off_message: str,
     actors: List[ActorInstance] = [],
 ) -> StageInstance:
 
-    if stage.name not in world_root.data_base.stages:
+    if stage.name not in world_boot.data_base.stages:
         assert False, f"Stage {stage.name} not found in data base."
 
     global GUID_INDEX
@@ -280,10 +281,10 @@ def _create_stage_instance(
 
 #######################################################################################################################################
 def _create_world_system_instance(
-    world_root: WorldRoot, world_system: WorldSystemPrototype, kick_off_message: str
+    world_boot: Boot, world_system: WorldSystemPrototype, kick_off_message: str
 ) -> WorldSystemInstance:
 
-    if world_system.name not in world_root.data_base.world_systems:
+    if world_system.name not in world_boot.data_base.world_systems:
         assert False, f"World System {world_system.name} not found in data base."
 
     global GUID_INDEX
@@ -297,29 +298,29 @@ def _create_world_system_instance(
 
 #######################################################################################################################################
 def _link_instance(
-    world_root: WorldRoot,
+    world_boot: Boot,
     players: List[ActorInstance],
     actors: List[ActorInstance],
     stages: List[StageInstance],
     world_systems: List[WorldSystemInstance],
 ) -> None:
 
-    world_root.players.extend(players)
-    world_root.actors.extend(actors)
-    world_root.stages.extend(stages)
-    world_root.world_systems.extend(world_systems)
+    world_boot.players.extend(players)
+    world_boot.actors.extend(actors)
+    world_boot.stages.extend(stages)
+    world_boot.world_systems.extend(world_systems)
 
 
 #######################################################################################################################################
-def test_world1(world_root: WorldRoot) -> WorldRoot:
+def test_world1(world_boot: Boot) -> Boot:
 
     # 初始化数据
     # 世界剧本
-    world_root.epoch_script = EPOCH_SCRIPT
+    world_boot.epoch_script = EPOCH_SCRIPT
 
     # 构建基础角色数据
     _initialize_data_base(
-        world_root,
+        world_boot,
         EPOCH_SCRIPT,
         [actor_warrior, actor_goblin, actor_wizard],
         [stage_cave, stage_camp],
@@ -328,7 +329,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
 
     # 创建实例：角色.战士.凯尔
     actor_warrior_instance = _create_actor_instance(
-        world_root=world_root,
+        world_boot=world_boot,
         actor_prototype=actor_warrior,
         kick_off_message=f"""你接到了剿灭怪物的委托，和最近认识不久的队友 {actor_wizard.name} 组队扎营，准备开始冒险。
 你对 {actor_wizard.name} 的印象：很强大，但是有点装，你不太喜欢她，为了达成目的你需要一个法师的队友。
@@ -367,7 +368,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
 
     # 创建实例：角色.法师.露西
     actor_wizard_instance = _create_actor_instance(
-        world_root=world_root,
+        world_boot=world_boot,
         actor_prototype=actor_wizard,
         kick_off_message=f"""你为了赚取赏金，与最近认识的队友 {actor_warrior.name} 一起组队扎营，准备开始冒险。
 你对 {actor_warrior.name} 的印象：有些蠢（你讨厌头脑简单四肢发达的人）。但够壮实，关键时刻还是可以依靠的。        
@@ -401,7 +402,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
 
     # 创建实例：角色.怪物.兽人王
     actor_goblin_instance = _create_actor_instance(
-        world_root=world_root,
+        world_boot=world_boot,
         actor_prototype=actor_goblin,
         kick_off_message=f"""你正于洞穴深处的王座中纵情狂欢。""",
         active_skills=[
@@ -440,14 +441,14 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
 
     # 创建实例：场景.洞窟
     stage_cave_instance = _create_stage_instance(
-        world_root=world_root,
+        world_boot=world_boot,
         stage=stage_cave,
         kick_off_message="洞穴中十分吵闹，一场战斗即将开始。",
         actors=[actor_goblin_instance],
     )
 
     stage_camp_instance = _create_stage_instance(
-        world_root=world_root,
+        world_boot=world_boot,
         stage=stage_camp,
         kick_off_message="营火静静地燃烧着",
         actors=[actor_warrior_instance, actor_wizard_instance],
@@ -455,37 +456,37 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
 
     # 创建实例：战斗系统
     world_system_battle_system_instance = _create_world_system_instance(
-        world_root, world_system_battle_system, "你开始作为这个世界的战斗系统开始运行"
+        world_boot, world_system_battle_system, "你开始作为这个世界的战斗系统开始运行"
     )
 
     # 链接实例
     _link_instance(
-        world_root,
+        world_boot,
         [actor_warrior_instance],
         [actor_goblin_instance, actor_wizard_instance],
         [stage_cave_instance, stage_camp_instance],
         [world_system_battle_system_instance],
     )
 
-    world_root.data_base.buffs["藤甲"] = Buff(
+    world_boot.data_base.buffs["藤甲"] = Buff(
         name="藤甲",
         description="藤蔓缠绕全身，增加防御力。但很易燃。",
         timing=TriggerType.ON_ATTACKED,
         is_debuff=False,
     )
 
-    world_root.data_base.buffs["眩晕"] = Buff(
+    world_boot.data_base.buffs["眩晕"] = Buff(
         name="眩晕",
         description="头晕目眩，无法行动。",
         timing=TriggerType.ON_PLANNING,
         is_debuff=True,
     )
 
-    world_root.data_base.buffs["护盾"] = Buff(
+    world_boot.data_base.buffs["护盾"] = Buff(
         name="护盾",
         description="抵挡大量物理伤害",
         timing=TriggerType.ON_ATTACKED,
         is_debuff=False,
     )
 
-    return world_root
+    return world_boot

@@ -29,7 +29,7 @@ class AnnounceActionSystem(BaseActionReactiveSystem):
 
     ####################################################################################################################################
     def _process_announce_action(self, entity: Entity) -> None:
-        stage_entity = self._context.safe_get_stage_entity(entity)
+        stage_entity = self._game.safe_get_stage_entity(entity)
         if stage_entity is None:
             return
 

@@ -6,7 +6,8 @@ from components.components import (
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from overrides import override
 from typing import List, final, cast
-from game.tcg_game_context import TCGGameContext
+
+# from game.tcg_game_context import TCGGameContext
 from game.tcg_game import TCGGame
 from loguru import logger
 
@@ -15,10 +16,8 @@ from loguru import logger
 @final
 class StageNarratePlanningSystem(ExecuteProcessor):
 
-    def __init__(self, context: TCGGameContext) -> None:
-        self._context: TCGGameContext = context
-        self._game: TCGGame = cast(TCGGame, context._game)
-        assert self._game is not None
+    def __init__(self, game_context: TCGGame) -> None:
+        self._game: TCGGame = game_context
 
     #######################################################################################################################################
     @override
@@ -39,7 +38,7 @@ class StageNarratePlanningSystem(ExecuteProcessor):
     #######################################################################################################################################
     async def _process_stage_planning_request(self) -> None:
 
-        stage_entities = self._context.get_group(
+        stage_entities = self._game.get_group(
             Matcher(
                 all_of=[
                     StageNarratePlanningPermitFlagComponent,
@@ -73,7 +72,7 @@ class StageNarratePlanningSystem(ExecuteProcessor):
             if request_handler.response_content == "":
                 continue
 
-            entity2 = self._context.get_entity_by_name(request_handler._name)
+            entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
             self._game.append_human_message(
                 entity2, _compress_stage_plan_prompt(request_handler._prompt)

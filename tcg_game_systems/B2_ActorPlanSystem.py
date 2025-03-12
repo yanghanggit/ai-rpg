@@ -117,7 +117,9 @@ class B2_ActorPlanSystem(ExecuteProcessor):
             )
         )
         await self._game.langserve_system.gather(request_handlers=request_handlers)
-        self._game.append_human_message(thinker, "你的回合开始，请思考并给出本回合的行动计划。")
+        self._game.append_human_message(
+            thinker, "你的回合开始，请思考并给出本回合的行动计划。"
+        )
         self._game.append_ai_message(thinker, request_handlers[0].response_content)
 
         # 得到回复后，构建hit

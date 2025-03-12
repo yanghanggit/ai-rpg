@@ -139,30 +139,36 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.handle_web_player_input_system import (
             HandleWebPlayerInputSystem,
         )
+        from tcg_game_systems.destroy_system import DestroySystem
 
         from tcg_game_systems.B1_TurnStartSystem import B1_TurnStartSystem
         from tcg_game_systems.B2_ActorPlanSystem import B2_ActorPlanSystem
         from tcg_game_systems.B5_ExecuteHitsSystem import B5_ExecuteHitsSystem
         from tcg_game_systems.B6_CheckEndSystem import B6_CheckEndSystem
 
-        # 断点
+        # 用户输入转入pipeline 执行序列
         processors.add(HandleTerminalPlayerInputSystem(tcg_game))
         processors.add(HandleWebPlayerInputSystem(tcg_game))
 
+        # 标记开始。
         processors.add(BeginSystem(tcg_game))
 
         # 启动agent的提示词。启动阶段
         processors.add(KickOffSystem(tcg_game))
 
-        # 战斗逻辑
+        # 战斗逻辑。
         processors.add(B1_TurnStartSystem(tcg_game))
         processors.add(B2_ActorPlanSystem(tcg_game))
         processors.add(B5_ExecuteHitsSystem(tcg_game))
         processors.add(B6_CheckEndSystem(tcg_game))
 
+        # 动作处理后，可能删除掉一些entities。
+        processors.add(DestroySystem(tcg_game))
+
         # 存储系统。
         processors.add(SaveSystem(tcg_game))
 
+        # 结束
         processors.add(EndSystem(tcg_game))
 
         return processors

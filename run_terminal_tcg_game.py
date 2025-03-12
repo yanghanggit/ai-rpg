@@ -1,6 +1,5 @@
 from loguru import logger
 import datetime
-from components.components import ActorComponent, HeroActorFlagComponent
 import game.rpg_game_utils
 from dataclasses import dataclass
 import game.tcg_game_config
@@ -13,7 +12,6 @@ from player.player_proxy import PlayerProxy
 from rpg_models.player_models import PlayerProxyModel
 import game.tcg_game_utils
 from player.player_command2 import PlayerCommand2
-from entitas import Matcher  # type: ignore
 from extended_systems.tcg_game_battle_manager import BattleManager
 
 
@@ -160,31 +158,15 @@ async def run_game(option: OptionParameters) -> None:
             break
 
         if usr_input == "/tp1":
-            # 传送场景做特殊处理，先不做execute。
-            hero_entities = terminal_tcg_game.get_group(
-                Matcher(
-                    all_of=[
-                        ActorComponent,
-                        HeroActorFlagComponent,
-                    ],
-                )
-            ).entities
             terminal_tcg_game.teleport_actors_to_stage(
-                hero_entities, "场景.兽人巢穴王座厅"
+                terminal_tcg_game.retrieve_all_hero_entities(), "场景.兽人巢穴王座厅"
             )
             continue
 
         if usr_input == "/tp2":
-            # 传送场景做特殊处理，先不做execute。
-            hero_entities = terminal_tcg_game.get_group(
-                Matcher(
-                    all_of=[
-                        ActorComponent,
-                        HeroActorFlagComponent,
-                    ],
-                )
-            ).entities
-            terminal_tcg_game.teleport_actors_to_stage(hero_entities, "场景.营地")
+            terminal_tcg_game.teleport_actors_to_stage(
+                terminal_tcg_game.retrieve_all_hero_entities(), "场景.营地"
+            )
             continue
 
         # 以上都拦截不住，就是玩家的输入，输入错了， handle input 相关的system 就不执行，空跑一次。

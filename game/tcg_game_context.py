@@ -6,6 +6,7 @@ from components.components import (
     StageComponent,
     ActorComponent,
     GUIDComponent,
+    HeroActorFlagComponent,
 )
 from loguru import logger
 from components.registry import COMPONENTS_REGISTRY
@@ -158,5 +159,16 @@ class TCGGameContext(Context):
                 ret.setdefault(stage_entity, set())
 
         return ret
+
+    ###############################################################################################################################################
+    def retrieve_all_hero_entities(self) -> Set[Entity]:
+        return self.get_group(
+            Matcher(
+                all_of=[
+                    ActorComponent,
+                    HeroActorFlagComponent,
+                ],
+            )
+        ).entities
 
     ###############################################################################################################################################

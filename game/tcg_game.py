@@ -595,7 +595,7 @@ class TCGGame(BaseGame, TCGGameContext):
             self.notify_event(
                 {going_actor},
                 AgentEvent(
-                    message=f"你被传送离开了 {current_stage._name}",
+                    message=f"一束从天而降的奇异光束包裹了你，等你醒来后，发现你被传送离开了 {current_stage._name}",
                 ),
             )
 
@@ -620,7 +620,7 @@ class TCGGame(BaseGame, TCGGameContext):
             self.notify_event(
                 {going_actor},
                 AgentEvent(
-                    message=f"你被传送到了 {target_stage._name}",
+                    message=f"一束从天而降的奇异光束包裹了你，等你醒来后，发现你被传送到了 {target_stage._name}",
                 ),
             )
 

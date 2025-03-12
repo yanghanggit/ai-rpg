@@ -186,12 +186,6 @@ class HitInfo(BaseModel):
     is_cost: bool  # 是否消耗行动力
 
 
-# class EventMsg(BaseModel):
-#     event: str
-#     option: int
-#     result: str
-
-
 class BattleHistory(BaseModel):
     logs: Dict[int, List[str]] = {}
 

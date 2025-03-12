@@ -49,17 +49,14 @@ class B6_CheckEndSystem(ExecuteProcessor):
                     DeadAction,
                 ],
             )
-        ).entities
+        ).entities.copy()
 
         # 检查死亡, 目前写死，血量见0就是死，其实可以复杂点。
-        dead_list: List[Entity] = []
         for entity in active_entities:
             attr_comp = entity.get(AttributeCompoment)
             if attr_comp.hp <= 0:
                 assert not entity.has(DeadAction)
-                dead_list.append(entity)
-        for entity in dead_list:
-            entity.replace(DeadAction, attr_comp.name, [])
+                entity.replace(DeadAction, attr_comp.name, [])
 
     ######################################################################################################################################################
     # 英雄全死了么？

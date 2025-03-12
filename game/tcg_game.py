@@ -400,6 +400,11 @@ class TCGGame(BaseGame, TCGGameContext):
         assert len(player_entity) == 1, "Player number is not 1"
         return next(iter(player_entity), None)
 
+    def get_current_stage_entity(self) -> Optional[Entity]:
+        player_entity = self.get_player_entity()
+        assert player_entity is not None
+        return self.safe_get_stage_entity(player_entity)
+
     ###############################################################################################################################################
     def get_system_message(self, entity: Entity) -> str:
 

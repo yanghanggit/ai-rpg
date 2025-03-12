@@ -47,6 +47,7 @@ class B1_TurnStartSystem(ExecuteProcessor):
         # 重置flag
         self._game._battle_manager._battle_end_flag = False
         self._game._battle_manager._new_turn_flag = False
+        self._game._battle_manager._event_msg.done_flag = False
 
         # 根据速度给每个活着的排行动顺序
         self._set_order(list(actor_entities.copy()))

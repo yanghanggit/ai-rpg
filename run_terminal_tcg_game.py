@@ -186,8 +186,81 @@ async def run_game(option: OptionParameters) -> None:
     exit(0)
 
 
+def _test_immutable() -> None:
+
+    from pydantic import BaseModel
+    from typing import NamedTuple
+
+    class MutableAttributeModel(BaseModel):
+        name: str
+        hp: int
+        maxhp: int
+        action_times: int
+        max_action_times: int
+        strength: int
+        agility: int
+        wisdom: int
+
+    class AttributeCompoment2(NamedTuple):
+        mutable: MutableAttributeModel
+
+    new_attr_comp = AttributeCompoment2(
+        mutable=MutableAttributeModel(
+            name="yanghang",
+            hp=100,
+            maxhp=100,
+            action_times=1,
+            max_action_times=1,
+            strength=1,
+            agility=1,
+            wisdom=1,
+        )
+    )
+
+    # print(new_attr_comp)
+    import random
+
+    new_attr_comp.mutable.name = "yanghang2"
+    new_attr_comp.mutable.hp = random.randint(100, 200)
+    new_attr_comp.mutable.maxhp = random.randint(100, 200)
+    new_attr_comp.mutable.action_times = random.randint(100, 200)
+    new_attr_comp.mutable.max_action_times = random.randint(100, 200)
+    new_attr_comp.mutable.strength = random.randint(100, 200)
+    new_attr_comp.mutable.agility = random.randint(100, 200)
+    new_attr_comp.mutable.wisdom = random.randint(100, 200)
+
+    from typing import Dict, Any
+
+    class TestSnapshot(BaseModel):
+        data: Dict[str, Any]
+
+    test_snapshot = TestSnapshot(data=new_attr_comp._asdict())
+    dump = test_snapshot.model_dump_json()
+    print(dump)
+
+    restore_comp = AttributeCompoment2(**test_snapshot.data)
+    assert restore_comp is not None
+
+    assert restore_comp is not new_attr_comp
+    assert restore_comp.mutable.name == new_attr_comp.mutable.name
+    assert restore_comp.mutable.hp == new_attr_comp.mutable.hp
+    assert restore_comp.mutable.maxhp == new_attr_comp.mutable.maxhp
+    assert restore_comp.mutable.action_times == new_attr_comp.mutable.action_times
+    assert (
+        restore_comp.mutable.max_action_times == new_attr_comp.mutable.max_action_times
+    )
+    assert restore_comp.mutable.strength == new_attr_comp.mutable.strength
+    assert restore_comp.mutable.agility == new_attr_comp.mutable.agility
+    assert restore_comp.mutable.wisdom == new_attr_comp.mutable.wisdom
+
+    pass
+
+
 ###############################################################################################################################################
 if __name__ == "__main__":
+
+    _test_immutable()
+
     import asyncio
 
     asyncio.run(run_game(OptionParameters(user="yanghang", game="Game1")))

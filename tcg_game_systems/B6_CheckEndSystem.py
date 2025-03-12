@@ -126,13 +126,10 @@ class B6_CheckEndSystem(ExecuteProcessor):
                     DestroyFlagComponent,
                 ],
             )
-        ).entities
+        ).entities.copy()
 
         # 怪物死亡的处理，直接加上销毁标记。走pipeline-
-        destroy_list: List[Entity] = []
         for actor in inactive_monsters:
-            destroy_list.append(actor)
-        for actor in destroy_list:
             actor.replace(DestroyFlagComponent, actor.get(DeadAction).name)
 
     ######################################################################################################################################################

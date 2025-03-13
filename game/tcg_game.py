@@ -33,6 +33,8 @@ from components.components import (
     MonsterActorFlagComponent,
     AttributeCompoment,
 )
+from components.actions2 import DEFAULT_NULL_ACTION, StatusUpdateAction
+
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from extended_systems.lang_serve_system import LangServeSystem
@@ -635,6 +637,14 @@ class TCGGame(BaseGame, TCGGameContext):
         elif target_stage.has(DungeonStageFlagComponent):
             self._game_state = TCGGameState.DUNGEON
             self._battle_manager._new_battle_refresh()
+
+            # yh 添加一个标记。
+            assert target_stage is not None
+            target_stage.replace(StatusUpdateAction, DEFAULT_NULL_ACTION)
+
+            status_action = target_stage.get(StatusUpdateAction)
+            assert status_action is not None
+
         else:
             assert False, "stage type is not defined"
 

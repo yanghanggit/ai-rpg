@@ -82,7 +82,7 @@ class TCGGame(BaseGame, TCGGameContext):
         self._world_file_path: Path = world_path
 
         # 处理器 与 对其控制的 状态。
-        self._game_state: TCGGameState = TCGGameState.NONE
+        # self._game_state: TCGGameState = TCGGameState.NONE
         self._home_state_process_pipeline: TCGGameProcessPipeline = (
             TCGGameProcessPipeline.create_home_state_pipline(self)
         )
@@ -109,11 +109,33 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     @property
+    def current_game_state(self) -> TCGGameState:
+
+        player_entity = self.get_player_entity()
+        if player_entity is None:
+            return TCGGameState.NONE
+
+        stage_entity = self.safe_get_stage_entity(player_entity)
+        assert stage_entity is not None
+        if stage_entity is None:
+            return TCGGameState.NONE
+
+        if stage_entity.has(HomeStageFlagComponent):
+            return TCGGameState.HOME
+        elif stage_entity.has(DungeonStageFlagComponent):
+            return TCGGameState.DUNGEON
+        else:
+            assert False, "stage type is not defined"
+
+        return TCGGameState.NONE
+
+    ###############################################################################################################################################
+    @property
     def current_process_pipeline(self) -> TCGGameProcessPipeline:
 
-        if self._game_state == TCGGameState.HOME:
+        if self.current_game_state == TCGGameState.HOME:
             return self._home_state_process_pipeline
-        elif self._game_state == TCGGameState.DUNGEON:
+        elif self.current_game_state == TCGGameState.DUNGEON:
             return self._dungeon_state_processing_pipeline
         else:
             assert False, "game state is not defined"
@@ -482,15 +504,15 @@ class TCGGame(BaseGame, TCGGameContext):
         logger.info(f"{self.player.name} => {player_actor_entity._name}")
 
         ## 因为写死了。
-        stage_entity = self.safe_get_stage_entity(player_actor_entity)
-        assert stage_entity is not None
+        # stage_entity = self.safe_get_stage_entity(player_actor_entity)
+        # assert stage_entity is not None
 
-        if stage_entity.has(HomeStageFlagComponent):
-            self._game_state = TCGGameState.HOME
-        elif stage_entity.has(DungeonStageFlagComponent):
-            self._game_state = TCGGameState.DUNGEON
-        else:
-            assert False, "stage type is not defined"
+        # if stage_entity.has(HomeStageFlagComponent):
+        #     self._game_state = TCGGameState.HOME
+        # elif stage_entity.has(DungeonStageFlagComponent):
+        #     self._game_state = TCGGameState.DUNGEON
+        # else:
+        #     assert False, "stage type is not defined"
 
         return True
 
@@ -622,14 +644,16 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
         # 写死
-        if target_stage.has(HomeStageFlagComponent):
-            self._game_state = TCGGameState.HOME
-        elif target_stage.has(DungeonStageFlagComponent):
-            self._game_state = TCGGameState.DUNGEON
-            self._battle_manager._new_battle_refresh()
+        # if target_stage.has(HomeStageFlagComponent):
+        #     self._game_state = TCGGameState.HOME
+        # elif target_stage.has(DungeonStageFlagComponent):
+        #     self._game_state = TCGGameState.DUNGEON
+        #     self._battle_manager._new_battle_refresh()
 
-        else:
-            assert False, "stage type is not defined"
+        # else:
+        #     assert False, "stage type is not defined"
+        if self.current_game_state == TCGGameState.DUNGEON:
+            self._battle_manager._new_battle_refresh()
 
     ###############################################################################################################################################
     # 检查是否可以对话

@@ -63,7 +63,7 @@ def _contains_json_code(markdown_text: str) -> bool:
 
 
 ############################################################################################################
-def _strip_json_code_block(markdown_text: str) -> str:
+def strip_json_code_block(markdown_text: str) -> str:
 
     if "```json" in markdown_text:
         copyvalue = str(markdown_text).strip()
@@ -98,7 +98,7 @@ class JsonFormat:
     ############################################################################################################
     def strip_json_code(self) -> "JsonFormat":
         if _contains_json_code(self._formatted_output):
-            self._formatted_output = _strip_json_code_block(self._formatted_output)
+            self._formatted_output = strip_json_code_block(self._formatted_output)
         return self
 
     ############################################################################################################

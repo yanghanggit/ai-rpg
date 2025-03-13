@@ -160,7 +160,7 @@ class TCGGameContext(Context):
         for actor_entity in actor_entities:
 
             stage_entity = self.safe_get_stage_entity(actor_entity)
-            assert stage_entity is not None
+            assert stage_entity is not None, f"actor_entity = {actor_entity}"
             if stage_entity is None:
                 continue
             ret.setdefault(stage_entity, set()).add(actor_entity)

@@ -154,6 +154,19 @@ actor_goblin = ActorPrototype(
     appearance="身躯魁梧，肌肉如岩石般坚硬，皮肤覆盖着粗糙的灰绿色鳞片，獠牙外露，眼中闪烁着残忍的红光。浑身散发着血腥与腐臭的气息，仿佛从地狱深处爬出的噩梦。",
     type=ActorType.MONSTER,
 )
+
+actor_goblin2 = ActorPrototype(
+    name="角色.怪物.哥布林王二号",
+    code_name="orcking",
+    system_message=_comple_actor_system_prompt(
+        name="角色.怪物.哥布林王二号",
+        epoch_script=EPOCH_SCRIPT,
+        actor_profile="你的背景：生活在偏僻郊野的地下洞穴中，时不时带领其他哥布林们一起组成劫掠大军。你最喜欢劫掠附近村子的农产品和牲畜，猎杀人类取乐。你十分强大，历经无数的厮杀后成为了哥布林们的首领。\n你的性格：狡猾，狂妄，残忍，自私自利。\n你的目标：你的首要目标是生存，你的次要目标是满足自己变态的施虐心和纵欲。\n你的恐惧：没有战斗。\n你的弱点：智力低下。\n你的说话风格与语气示例：（嘲讽）哈哈哈！你们这些蠢货，居然敢闯入我的领地！你们的死期到了！；（狂妄）颤抖吧！虫子！我会把你们碾碎！；残忍）我会让你们亲眼看着自己的同伴被撕成碎片，然后再慢慢折磨你们！；（狂妄）来吧，挣扎吧！让我看看你们绝望的表情！那才是我最爱的娱乐！",
+        appearance="你和其他哥布林一样有深绿色的皮肤和尖尖的耳朵。但你的体格比普通哥布林更加强壮。你的身上有很浓重的臭味。",
+    ),
+    appearance="身躯魁梧，肌肉如岩石般坚硬，皮肤覆盖着粗糙的灰绿色鳞片，獠牙外露，眼中闪烁着残忍的红光。浑身散发着血腥与腐臭的气息，仿佛从地狱深处爬出的噩梦。",
+    type=ActorType.MONSTER,
+)
 #######################################################################################################################################
 actor_wizard = ActorPrototype(
     name="角色.法师.露西",
@@ -336,8 +349,8 @@ def test_world1(world_boot: Boot) -> Boot:
     _initialize_data_base(
         world_boot,
         EPOCH_SCRIPT,
-        [actor_warrior, actor_goblin, actor_wizard],
-        [stage_cave, stage_camp],
+        [actor_warrior, actor_goblin, actor_wizard, actor_goblin2],
+        [stage_cave, stage_camp, stage_room],
         [world_system_battle_system],
     )
 
@@ -456,7 +469,7 @@ def test_world1(world_boot: Boot) -> Boot:
     # 创建实例：角色.怪物.哥布林王二号
     actor_goblin2_instance = _create_actor_instance(
         world_boot=world_boot,
-        actor_prototype=actor_goblin,
+        actor_prototype=actor_goblin2,
         kick_off_message=f"""你正位于洞穴深处的密室中欣赏着自己劫掠来的财宝。""",
         active_skills=[
             ActiveSkill(

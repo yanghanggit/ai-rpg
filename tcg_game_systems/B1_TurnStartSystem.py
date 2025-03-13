@@ -33,6 +33,15 @@ class B1_TurnStartSystem(ExecuteProcessor):
         if len(actor_entities) == 0:
             return
 
+        # 删掉不和player在同一个stage里的
+        current_stage = self._game.get_current_stage_entity()
+        assert current_stage is not None
+        actor_entities = {
+            actor
+            for actor in actor_entities
+            if actor.get(ActorComponent).current_stage == current_stage._name
+        }
+
         # 更新回合数
         self._game._battle_manager._turn_num += 1
         self._game._battle_manager.add_history(

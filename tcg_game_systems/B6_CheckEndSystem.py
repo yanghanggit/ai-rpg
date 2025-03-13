@@ -101,6 +101,15 @@ class B6_CheckEndSystem(ExecuteProcessor):
             )
         ).entities
 
+        # 删掉不和player在同一个stage里的
+        current_stage = self._game.get_current_stage_entity()
+        assert current_stage is not None
+        active_hero_entities = {
+            actor
+            for actor in active_hero_entities
+            if actor.get(ActorComponent).current_stage == current_stage._name
+        }
+
         return len(active_hero_entities) == 0
 
     ######################################################################################################################################################
@@ -118,6 +127,15 @@ class B6_CheckEndSystem(ExecuteProcessor):
                 ],
             )
         ).entities
+
+        # 删掉不和player在同一个stage里的
+        current_stage = self._game.get_current_stage_entity()
+        assert current_stage is not None
+        active_enemy_entities = {
+            actor
+            for actor in active_enemy_entities
+            if actor.get(ActorComponent).current_stage == current_stage._name
+        }
 
         return len(active_enemy_entities) == 0
 
@@ -242,6 +260,7 @@ class B6_CheckEndSystem(ExecuteProcessor):
                     return
                 elif result == 2:
                     # 去战斗2
+                    self._game._battle_manager._new_battle_refresh()
                     self._game.teleport_actors_to_stage(
                         self._game.retrieve_all_hero_entities(), "场景.哥布林巢穴密室"
                     )

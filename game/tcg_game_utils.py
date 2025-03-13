@@ -463,7 +463,7 @@ def test_world1(world_boot: Boot) -> Boot:
         buffs={
             "藤甲": 999,
         },
-        attributes=[200, 200, 2, 2, 65, 40, 10],
+        attributes=[150, 150, 2, 2, 65, 40, 10],
     )
 
     # 创建实例：角色.怪物.哥布林王二号
@@ -502,7 +502,7 @@ def test_world1(world_boot: Boot) -> Boot:
         buffs={
             "藤甲": 999,
         },
-        attributes=[200, 200, 2, 2, 65, 40, 10],
+        attributes=[150, 150, 2, 2, 65, 40, 10],
     )
 
     # 创建实例：场景.洞窟

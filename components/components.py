@@ -173,7 +173,7 @@ class FinalAppearanceComponent(NamedTuple):
 
 
 ############################################################################################################
-# 标记进入新的 TODO:旧组件，用上的时候把这个删了
+# 标记进入新的场景
 @final
 @register_component_class
 class EnterStageFlagComponent(NamedTuple):
@@ -300,104 +300,3 @@ class ActorRolePlayPlanningPermitFlagComponent(NamedTuple):
 @register_component_class
 class StageNarratePlanningPermitFlagComponent(NamedTuple):
     name: str
-
-
-############################################################################################################
-# Actor专用，标记该Actor能打牌，通常只能加到Player和Monster身上
-# @final
-# @register_component_class
-# class CardPlayerActorComponent(NamedTuple):
-#     name: str
-#     draw_num: int
-#     play_num: int
-#     # list: list[str]
-
-
-############################################################################################################
-# 物品组件
-# @final
-# @register_component_class
-# class ItemComponent(NamedTuple):
-#     name: str
-#     holder: str
-
-
-############################################################################################################
-# 可堆叠物品组件 TODO 可能没用，反正现阶段不做card以外的道具
-# @final
-# @register_component_class
-# class StackableItemComponent(NamedTuple):
-#     name: str
-#     count_num: int
-
-
-############################################################################################################
-# Item专用，标记该Item是Card
-# class CardState(StrEnum):
-#     UNDEFINED = "Undefined"
-#     DECK = "Deck"
-#     HAND = "Hand"
-#     DISCARD = "Discard"
-#     BANNED = "Banned"
-
-
-# class TargetType(StrEnum):
-#     UNDEFINED = "Undefined"
-#     ENEMY = "Enemy"
-#     ALLEY = "Alley"
-#     NULL = "Null"
-
-
-# @final
-# @register_component_class
-# class CardItemComponent(NamedTuple):
-#     name: str
-#     # performer: str
-#     # state: Union[CardState, str]
-#     # target: Union[TargetType, str]
-#     value: List[int]
-
-
-############################################################################################################
-# Item专用，Item的描述, TODO tags如有需要，也放在这里？
-# @final
-# @register_component_class
-# class ItemDescriptionComponent(NamedTuple):
-#     name: str
-#     description: str
-#     insight: str
-
-
-# ############################################################################################################
-# # Card Item专用，标识这张卡是玩家的卡
-# @final
-# @register_component_class
-# class PlayerCardItemFlagComponent(NamedTuple):
-#     name: str
-
-
-# ############################################################################################################
-# # Card Item专用，标识这张卡是Monster的卡
-# @final
-# @register_component_class
-# class MonsterCardItemFlagComponent(NamedTuple):
-#     name: str
-
-
-############################################################################################################
-# # 表示这张卡会被执行效果
-# @final
-# @register_component_class
-# class CardEffectComponent(NamedTuple):
-#     name: str
-#     order: int
-
-# from tcg_models.v_0_0_1 import TagInfo
-
-
-# # TODO 存储TAG用的组件，测试用
-# @final
-# @register_component_class
-# class TagsComponent(NamedTuple):
-#     name: str
-#     tags: Set[TagInfo]

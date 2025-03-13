@@ -22,6 +22,7 @@ class ChatRequestHandler:
             chat_history
         )
         self._response: Optional[Any] = None
+        self._additional_params: List[Any] = []
 
     ################################################################################################################################################################################
     @property

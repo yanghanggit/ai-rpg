@@ -32,6 +32,7 @@ from components.components import (
     HeroActorFlagComponent,
     MonsterActorFlagComponent,
     AttributeCompoment,
+    EnterStageFlagComponent,
 )
 from components.actions2 import DEFAULT_NULL_ACTION, StatusUpdateAction
 
@@ -630,6 +631,10 @@ class TCGGame(BaseGame, TCGGameContext):
                     message=f"一束从天而降的奇异光束包裹了你，等你醒来后，发现你被传送到了 {target_stage._name}",
                 ),
             )
+            # 添加标记，有用。
+            going_actor.replace(
+                EnterStageFlagComponent, going_actor._name, target_stage._name
+            )
 
         # 写死
         if target_stage.has(HomeStageFlagComponent):
@@ -637,13 +642,6 @@ class TCGGame(BaseGame, TCGGameContext):
         elif target_stage.has(DungeonStageFlagComponent):
             self._game_state = TCGGameState.DUNGEON
             self._battle_manager._new_battle_refresh()
-
-            # yh 添加一个标记。
-            assert target_stage is not None
-            target_stage.replace(StatusUpdateAction, DEFAULT_NULL_ACTION)
-
-            status_action = target_stage.get(StatusUpdateAction)
-            assert status_action is not None
 
         else:
             assert False, "stage type is not defined"

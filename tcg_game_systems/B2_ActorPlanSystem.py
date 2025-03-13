@@ -138,7 +138,7 @@ class B2_ActorPlanSystem(ExecuteProcessor):
                 comp.active_skills[ret.num], thinker_name, ret.target, ret.text
             )
         # hit插入执行栈内
-        self._game._battle_manager._hits_stack.extend(hits)
+        self._game._battle_manager._hits_stack.stack.extend(hits)
 
 
 def _gen_prompt(
@@ -180,7 +180,7 @@ def _gen_prompt(
 2. 释放技能的目标角色的名称固定为你的名称。
 3. 释放技能时你想说的话固定为你不想使用技能的原因。
 ## 输出格式指南
-请严格遵守以下JSON结构示例，无需保留换行符号：
+请严格遵守以下JSON结构示例：
 {{
     "num":"此处替换为想使用的技能的序号。类型为整数。",
     "target":"此处替换为你想释放技能的目标角色的名称。",

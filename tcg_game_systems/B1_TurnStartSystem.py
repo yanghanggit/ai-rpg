@@ -42,7 +42,7 @@ class B1_TurnStartSystem(ExecuteProcessor):
 
         # 双重保险，清一下新回合的东西
         self._game._battle_manager._order_queue.clear()
-        self._game._battle_manager._hits_stack.clear()
+        self._game._battle_manager._hits_stack.stack.clear()
 
         # 重置flag
         self._game._battle_manager._battle_end_flag = False

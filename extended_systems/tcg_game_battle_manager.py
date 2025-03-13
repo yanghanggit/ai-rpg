@@ -23,6 +23,10 @@ class _EventMsg(BaseModel):
     done_flag: bool
 
 
+class _HitStack(BaseModel):
+    stack: Deque[HitInfo]
+
+
 # TODO 整个系统都是prototype里临时用的！！demo全重写！
 class BattleManager:
     def __init__(self, root_write_dir: Path) -> None:
@@ -32,7 +36,7 @@ class BattleManager:
         self._turn_num: int = 0
         self._new_turn_flag: bool = False
         self._battle_end_flag: bool = False
-        self._hits_stack: Deque[HitInfo] = deque()
+        self._hits_stack: _HitStack = _HitStack(stack=deque())
         self._order_queue: Deque[str] = deque()
         self._battle_history: BattleHistory = BattleHistory()
         self._event_msg: _EventMsg = _EventMsg(
@@ -47,7 +51,7 @@ class BattleManager:
         self._turn_num = 0
         self._new_turn_flag = False
         self._battle_end_flag = False
-        self._hits_stack.clear()
+        self._hits_stack.stack.clear()
         self._order_queue.clear()
         self._battle_history.logs.clear()
         self._event_msg.done_flag = False

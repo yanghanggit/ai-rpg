@@ -208,23 +208,44 @@ class B6_CheckEndSystem(ExecuteProcessor):
             self._game.teleport_actors_to_stage(hero_entities, "场景.营地")
         """
 
+        result = 0
         if self._are_all_heroes_dead():
             # 英雄全死了，输了
             self._game._battle_manager.add_history("战斗结束！你输了！")
             self._game._battle_manager._battle_end_flag = True
+            result = 1
         elif self._are_all_enemies_dead():
             # 怪全死了，赢了
             self._game._battle_manager.add_history("战斗结束！你赢了！")
             self._game._battle_manager._battle_end_flag = True
+            result = 2
 
         # 写入战斗历史。
         self._game._battle_manager.write_battle_history()
 
-        # 结束就回Home，写死 TODO
+        # 战斗1结束去战斗2，战斗2结束回Home。写死，TODO
         if self._game._battle_manager._battle_end_flag:
 
             # 出战斗前的清理工作
             self._process_battle_end_actions()
+
+            current_stage = self._game.get_current_stage_entity()
+            assert current_stage is not None
+            current_stage_name = current_stage._name
+
+            if current_stage_name == "场景.哥布林巢穴王座厅":
+                if result == 1:
+                    # 回到营地
+                    self._game.teleport_actors_to_stage(
+                        self._game.retrieve_all_hero_entities(), "场景.营地"
+                    )
+                    return
+                elif result == 2:
+                    # 去战斗2
+                    self._game.teleport_actors_to_stage(
+                        self._game.retrieve_all_hero_entities(), "场景.哥布林巢穴密室"
+                    )
+                    return
 
             # 回到营地
             self._game.teleport_actors_to_stage(

@@ -101,6 +101,7 @@ class BattleManager:
                         log="",
                         text="",
                         is_cost=False,
+                        is_event=False,
                     )
                 )
             case "乱舞":
@@ -120,6 +121,7 @@ class BattleManager:
                 log=log,
                 text=text,
                 is_cost=True,
+                is_event=False,
             )
         )
         return ret

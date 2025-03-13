@@ -174,6 +174,10 @@ class DamageType(StrEnum):
 
 
 class HitInfo(BaseModel):
+    """
+    HitInfo类表示将执行的技能效果信息。
+    """
+
     skill: SkillInfo
     source: str
     target: str
@@ -184,8 +188,17 @@ class HitInfo(BaseModel):
     log: str  # 写在战斗历史里的log，比如A对B用了X技能，造成Y伤害
     text: str  # 角色执行这个动作时想说的话，执行的时候需要广播或者notify出去
     is_cost: bool  # 是否消耗行动力
-    is_event: bool # 是否是事件
-    TODO
+    is_event: bool  # 是否是事件
+
+    @classmethod
+    def get_description(cls) -> str:
+        description = f"{cls.__doc__}\n\nAttributes:\n"
+        for field_name, field in cls.model_fields.items():
+            description += f"- {field_name}: {field.description}\n"
+        return description
+
+
+HitInfo.model_fields["skill"].description = "技能信息"
 
 
 class BattleHistory(BaseModel):

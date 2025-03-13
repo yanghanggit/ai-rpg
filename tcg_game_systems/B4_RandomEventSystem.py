@@ -89,7 +89,7 @@ class B4_RandomEventSystem(ExecuteProcessor):
 
     async def _event_end(self) -> None:
         # 构造prompt
-        msg = _gen_event_start_prompt()
+        msg = _gen_event_end_prompt()
 
         # 开问
         world_system_entity = self._game.get_world_entity("战斗系统")
@@ -161,16 +161,6 @@ battle_history
 5. 可以生成一些突兀的，机械降神的事件。
 6. 不要让选项看上去差距过大，要让潜在的收益和风险并存。要让玩家感受挫折时，需要让所有选项看上去都是坏选项。
 7. 必须考虑以往已经发生过的随机事件，不要雷同重复，并要使多个随机事件形成一条连续的事件链。
-## 行动栈说明
-1. 行动栈中的每个元素都是一个HitInfo，代表了一次攻击或技能释放的结果。
-2. 行动栈中每个HitInfo的都是先进后出，即栈顶的HitInfo是最先执行的。
-## HitInfo说明
-1. skill: 技能类的实例。在生成新HitInfo时，使其为None即可。
-2. source: HitInfo来源的名字。
-3. target: HitInfo目标的名字。
-4. value: 伤害值，治疗值，或是添加buff的持续回合数值。
-5. type: HitType枚举，表示这次HitInfo的类型。
-
 ## 输出内容要求
 1. 描述需要生动和有趣。
 2. 描述中不要附带角色对话，不要揣测角色心理活动，仅以第三人称视角对发生的事件做客观描述。
@@ -180,4 +170,6 @@ battle_history
 
 
 def _gen_event_end_prompt() -> str:
-    return ""
+    return f"""
+    
+"""

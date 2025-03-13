@@ -53,8 +53,8 @@ class B4_RandomEventSystem(ExecuteProcessor):
             return
 
         # 1/3概率随机决定发生or不发生
-        # if not random.randint(1, 3) == 1:
-        #     return
+        if not random.randint(1, 3) == 1:
+            return
 
         await self._event_start()
         self._get_choice()

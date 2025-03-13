@@ -1,7 +1,5 @@
-from typing import List
 from overrides import override
 from entitas import ExecuteProcessor, Matcher  # type: ignore
-from entitas.entity import Entity
 from game.tcg_game import TCGGame
 from components.components import (
     AttributeCompoment,
@@ -11,6 +9,7 @@ from components.components import (
     DestroyFlagComponent,
 )
 from components.actions import DeadAction
+from tcg_game_systems.status_check_utils import StatusCheckUtils
 from loguru import logger
 
 
@@ -29,6 +28,34 @@ class B6_CheckEndSystem(ExecuteProcessor):
 
         # step2: 重构前的执行。
         self.execute1()
+
+    ######################################################################################################################################################
+    @override
+    async def a_execute2(self) -> None:
+
+        # debug 一下！
+        active_entities = self._game.get_group(
+            Matcher(
+                all_of=[
+                    ActorComponent,
+                ],
+                any_of=[
+                    HeroActorFlagComponent,
+                    MonsterActorFlagComponent,
+                ],
+                none_of=[
+                    DeadAction,
+                ],
+            )
+        ).entities
+
+        # 用这个工具。
+        status_check_utils = StatusCheckUtils(
+            game_context=self._game,
+            stage_entities=set(),
+            actor_entities=active_entities,
+        )
+        await status_check_utils.a_execute()
 
     ######################################################################################################################################################
     # 任何情况下，只要有AttributeCompoment，而且血量<=0，就加上DeadAction。

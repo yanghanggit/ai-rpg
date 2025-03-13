@@ -20,6 +20,7 @@ class StageResponse(BaseModel):
 class ActorResponse(BaseModel):
     stage: str = ""
     other_actors: List[str] = []
+    buffs: List[str] = []
 
 
 @final
@@ -131,7 +132,9 @@ class StatusCheckUtils:
 
         # 准备模板
         actor_response_template = ActorResponse(
-            stage="场景全名", other_actors=["其他角色1全名", "其他角色2全名", "..."]
+            stage="场景全名",
+            other_actors=["其他角色1全名", "其他角色2全名", "..."],
+            buffs=["你的状态", "..."],
         )
 
         # 都用这个prompt
@@ -140,6 +143,9 @@ class StatusCheckUtils:
 - 场景全名(注意‘全名机制’)。
 ## 输出内容2-其他角色状态：
 - 场景内除自己外的其他角色的全名(注意‘全名机制’)。
+## 输出内容3-状态：
+- 你当前拥有的状态（增益/减益）。
+- 如果没有状态，输出‘[]’。
 ## 输出要求：
 - 保持内容简洁，但不要遗漏重要信息。
 ### 格式示例(JSON)

@@ -23,6 +23,7 @@ class StatusUpdateActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     @override
     async def a_execute2(self) -> None:
+        return
 
         # 准备数据
         stage_entities, actor_entities = self._classify_entities()

@@ -28,7 +28,9 @@ class StatusUpdateActionSystem(BaseActionReactiveSystem):
         stage_entities, actor_entities = self._classify_entities()
 
         status_check_utils = StatusCheckUtils(
-            self._game, stage_entities, actor_entities
+            game_context=self._game,
+            stage_entities=stage_entities,
+            actor_entities=actor_entities,
         )
         await status_check_utils.a_execute()
 

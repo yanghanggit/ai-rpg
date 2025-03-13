@@ -33,9 +33,15 @@ class StatusCheckUtils:
         actor_entities: Set[Entity],
     ) -> None:
         self._game = game_context
+
         self._stage_entities = stage_entities
+        assert all([entity.has(StageComponent) for entity in stage_entities])
+
         self._actor_entities = actor_entities
+        assert all([entity.has(ActorComponent) for entity in actor_entities])
+
         self._request_handlers: list[ChatRequestHandler] = []
+
         self._result_mapping: Dict[Entity, Union[StageResponse, ActorResponse]] = {}
 
     ####################################################################################################################################

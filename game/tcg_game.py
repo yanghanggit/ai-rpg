@@ -1,6 +1,6 @@
 from enum import Enum, IntEnum, unique
 from entitas import Entity, Matcher  # type: ignore
-from typing import Set, List, Optional, Union
+from typing import Set, List, Optional, Union, final
 from overrides import override
 from loguru import logger
 from game.tcg_game_context import TCGGameContext
@@ -34,8 +34,6 @@ from components.components import (
     AttributeCompoment,
     EnterStageFlagComponent,
 )
-from components.actions2 import DEFAULT_NULL_ACTION, StatusUpdateAction
-
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from extended_systems.lang_serve_system import LangServeSystem
@@ -47,6 +45,7 @@ from extended_systems.tcg_game_battle_manager import BattleManager
 
 
 @unique
+@final
 class TCGGameState(IntEnum):
     NONE = 0
     HOME = 1
@@ -54,6 +53,7 @@ class TCGGameState(IntEnum):
 
 
 @unique
+@final
 class ConversationError(Enum):
     VALID = 0
     INVALID_TARGET = 1
@@ -395,14 +395,16 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     # 临时的，考虑后面把player直接挂在context或者game里，因为player设计上唯一
     def get_player_entity(self) -> Optional[Entity]:
-        player_entity = self.get_group(
-            Matcher(
-                all_of=[PlayerActorFlagComponent],
-            )
-        ).entities.copy()
-        assert len(player_entity) == 1, "Player number is not 1"
-        return next(iter(player_entity), None)
+        # player_entity = self.get_group(
+        #     Matcher(
+        #         all_of=[PlayerActorFlagComponent],
+        #     )
+        # ).entities.copy()
+        # assert len(player_entity) == 1, "Player number is not 1"
+        # return next(iter(player_entity), None)
+        return self.get_entity_by_player_name(self.player.name)
 
+    ###############################################################################################################################################
     def get_current_stage_entity(self) -> Optional[Entity]:
         player_entity = self.get_player_entity()
         assert player_entity is not None
@@ -458,20 +460,6 @@ class TCGGame(BaseGame, TCGGameContext):
             agent_short_term_memory.chat_history.extend([SystemMessage(content=chat)])
 
     ###############################################################################################################################################
-    def retrieve_actors_on_stage(self, entity: Entity) -> Set[Entity]:
-
-        stage_entity = self.safe_get_stage_entity(entity)
-        assert stage_entity is not None
-        if stage_entity is None:
-            return set()
-
-        mapping = self.retrieve_stage_actor_mapping()
-        if stage_entity not in mapping:
-            return set()
-
-        return mapping.get(stage_entity, set())
-
-    ###############################################################################################################################################
     # TODO 目前是写死的
     def ready(self) -> bool:
 
@@ -492,9 +480,6 @@ class TCGGame(BaseGame, TCGGameContext):
 
         logger.info(f"{self._name}, game ready!!!!!!!!!!!!!!!!!!!!")
         logger.info(f"{self.player.name} => {player_actor_entity._name}")
-
-        ## 设置玩家的魔法统治者标记
-        # player_actor_entity.replace(MagicRulerActorFlagComponent, self.player.name)
 
         ## 因为写死了。
         stage_entity = self.safe_get_stage_entity(player_actor_entity)

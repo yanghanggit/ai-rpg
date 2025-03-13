@@ -8,6 +8,7 @@ from components.components import (
     GUIDComponent,
     HeroActorFlagComponent,
     FinalAppearanceComponent,
+    PlayerActorFlagComponent,
 )
 
 from components.registry import COMPONENTS_REGISTRY
@@ -134,6 +135,19 @@ class TCGGameContext(Context):
         return None
 
     ###############################################################################################################################################
+    def get_entity_by_player_name(self, player_name: str) -> Optional[Entity]:
+        player_entities = self.get_group(
+            Matcher(
+                all_of=[PlayerActorFlagComponent],
+            )
+        ).entities
+        for player_entity in player_entities:
+            player_comp = player_entity.get(PlayerActorFlagComponent)
+            if player_comp.name == player_name:
+                return player_entity
+        return None
+
+    ###############################################################################################################################################
     def retrieve_stage_actor_mapping(self) -> Dict[Entity, Set[Entity]]:
 
         ret: Dict[Entity, Set[Entity]] = {}
@@ -163,24 +177,17 @@ class TCGGameContext(Context):
 
     ###############################################################################################################################################
     def retrieve_actors_on_stage(self, entity: Entity) -> Set[Entity]:
+
         stage_entity = self.safe_get_stage_entity(entity)
+        assert stage_entity is not None
         if stage_entity is None:
             return set()
 
-        ret: Set[Entity] = set()
+        mapping = self.retrieve_stage_actor_mapping()
+        if stage_entity not in mapping:
+            return set()
 
-        actor_entities: Set[Entity] = self.get_group(
-            Matcher(all_of=[ActorComponent])
-        ).entities
-
-        for actor_entity in actor_entities:
-            if (
-                actor_entity.get(ActorComponent).current_stage
-                == stage_entity.get(StageComponent).name
-            ):
-                ret.add(actor_entity)
-
-        return ret
+        return mapping.get(stage_entity, set())
 
     ###############################################################################################################################################
     # 以actor的final_appearance.name为key，final_appearance.final_appearance为value

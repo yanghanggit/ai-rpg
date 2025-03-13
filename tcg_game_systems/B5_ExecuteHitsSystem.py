@@ -46,14 +46,17 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             return
         if len(self._game._battle_manager._order_queue) == 0:
             return
-        if len(self._game._battle_manager._hits_stack) == 0:
+        if len(self._game._battle_manager._hits_stack.stack) == 0:
             return
 
         done_hits_log: str = ""
         # 执行stack里的所有hit
-        while len(self._game._battle_manager._hits_stack) > 0:
-            hit = self._game._battle_manager._hits_stack.pop()
-            self._execute_hit(hit)
+        while len(self._game._battle_manager._hits_stack.stack) > 0:
+            hit = self._game._battle_manager._hits_stack.stack.pop()
+            if hit.is_event:
+                self._execute_event_hit(hit)
+            else:
+                self._execute_hit(hit)
             # 添加历史
             self._game._battle_manager.add_history(hit.log)
             done_hits_log += hit.log
@@ -147,31 +150,32 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             hit.log += f"{source_name} 行动力不足，无法继续行动！"
             return False
 
+        hp_value = target_comp.hp
         # 执行hit
-        if hit.type is HitType.NONE:
+        if hit.type == HitType.NONE:
             assert False, "hit type is NONE"
         # 如果是个伤害行为
-        elif hit.type is HitType.DAMAGE:
+        elif hit.type == HitType.DAMAGE:
             value = hit.value
             # 检查被攻击时触发的buff，移除失效的buff，应该包装个新函数
             remove_list = []
             for buff_name, last_time in target_comp.buffs.items():
                 buff = self._game.world.boot.data_base.buffs[buff_name]
-                if buff.timing is TriggerType.ON_ATTACKED:
+                if buff.timing == TriggerType.ON_ATTACKED:
                     match buff.name:
                         case "护盾":
-                            if hit.dmgtype is DamageType.PHYSICAL:
+                            if hit.dmgtype == DamageType.PHYSICAL:
                                 value = int(value * 0.5)
                                 hit.log += (
                                     f"{target_name} 由于 {buff.name} 的效果抵挡了伤害。"
                                 )
                         case "藤甲":
-                            if hit.dmgtype is DamageType.PHYSICAL:
+                            if hit.dmgtype == DamageType.PHYSICAL:
                                 value = 1
                                 hit.log += (
                                     f"{target_name} 由于 {buff.name} 的效果抵挡了伤害。"
                                 )
-                            elif hit.dmgtype is DamageType.FIRE:
+                            elif hit.dmgtype == DamageType.FIRE:
                                 value = int(value * 1.5)
                                 hit.log += f"{target_name} 由于 {buff.name} 的效果增强了伤害。{buff.name} 被移除了！"
                                 remove_list.append(buff_name)
@@ -186,7 +190,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             if hp_value == 0:
                 hit.log += f"{target_name} 被击败了！"
         # 如果是个加血行为
-        elif hit.type is HitType.HEAL:
+        elif hit.type == HitType.HEAL:
             value = hit.value
             # 记录log
             hit.log += f"{source_name} 对 {target_name} 治疗了 {value} 点生命。"
@@ -194,7 +198,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             hp_value = target_comp.hp + value
             hp_value = hp_value if hp_value <= target_comp.maxhp else target_comp.maxhp
         # 如果是个加buff行为
-        elif hit.type is HitType.ADDBUFF:
+        elif hit.type == HitType.ADDBUFF:
             if hit.buff is None:
                 assert False, "buff is None"
             buff = hit.buff
@@ -204,7 +208,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             target_comp.buffs[buff.name] = hit.value
             hp_value = target_comp.hp
         # 如果是个减buff行为
-        elif hit.type is HitType.REMOVEBUFF:
+        elif hit.type == HitType.REMOVEBUFF:
             if hit.buff is None:
                 assert False, "buff is None"
             buff = hit.buff
@@ -222,6 +226,107 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         stage_name = actor_comp.current_stage
         self._modify_hp_action_times_and_announce(
             source,
+            target,
+            hp_value,
+            hit.text,
+            stage_name,
+            hit.is_cost,
+            hit.log,
+        )
+        return True
+
+    def _execute_event_hit(self, hit: HitInfo) -> bool:
+        target_name = hit.target
+        target = self._game.get_entity_by_name(target_name)
+        if target is None:
+            assert False, "target is None"
+        target_comp = target.get(AttributeCompoment)
+        if target_comp is None:
+            assert False, "target_comp is None"
+
+        # target是不是死了
+        if target_comp.hp <= 0:
+            hit.log += f"目标已被击败！"
+            return False
+
+        hp_value = target_comp.hp
+        # 执行hit
+        if hit.type == HitType.NONE:
+            assert False, "hit type is NONE"
+        # 如果是个伤害行为
+        elif hit.type == HitType.DAMAGE:
+            value = hit.value
+            # 检查被攻击时触发的buff，移除失效的buff，应该包装个新函数
+            remove_list = []
+            for buff_name, last_time in target_comp.buffs.items():
+                buff = self._game.world.boot.data_base.buffs[buff_name]
+                if buff.timing == TriggerType.ON_ATTACKED:
+                    match buff.name:
+                        case "护盾":
+                            if hit.dmgtype == DamageType.PHYSICAL:
+                                value = int(value * 0.5)
+                                hit.log += (
+                                    f"{target_name} 由于 {buff.name} 的效果抵挡了伤害。"
+                                )
+                        case "藤甲":
+                            if hit.dmgtype == DamageType.PHYSICAL:
+                                value = 1
+                                hit.log += (
+                                    f"{target_name} 由于 {buff.name} 的效果抵挡了伤害。"
+                                )
+                            elif hit.dmgtype == DamageType.FIRE:
+                                value = int(value * 1.5)
+                                hit.log += f"{target_name} 由于 {buff.name} 的效果增强了伤害。{buff.name} 被移除了！"
+                                remove_list.append(buff_name)
+            for name in remove_list:
+                target_comp.buffs.pop(name)
+
+            # 记录log
+            hit.log += f"{hit.source} 对 {target_name} 造成了 {value} 点伤害。"
+            # 扣血
+            hp_value = target_comp.hp - value
+            hp_value = hp_value if hp_value > 0 else 0
+            if hp_value == 0:
+                hit.log += f"{target_name} 被击败了！"
+        # 如果是个加血行为
+        elif hit.type == HitType.HEAL:
+            value = hit.value
+            # 记录log
+            hit.log += f"{hit.source} 对 {target_name} 治疗了 {value} 点生命。"
+            # 加血
+            hp_value = target_comp.hp + value
+            hp_value = hp_value if hp_value <= target_comp.maxhp else target_comp.maxhp
+        # 如果是个加buff行为
+        elif hit.type == HitType.ADDBUFF:
+            if hit.buff is None:
+                assert False, "buff is None"
+            buff = hit.buff
+            # 记录log
+            hit.log += f"{hit.source} 对 {target_name} 施加了 {buff.name}。"
+            # 加buff
+            target_comp.buffs[buff.name] = hit.value
+            hp_value = target_comp.hp
+        # 如果是个减buff行为
+        elif hit.type == HitType.REMOVEBUFF:
+            if hit.buff is None:
+                assert False, "buff is None"
+            buff = hit.buff
+            # 判断有没有要减的buff
+            if buff.name in target_comp.buffs:
+                # 记录log
+                hit.log += f"{hit.source} 对 {target_name} 解除了 {buff.name}。"
+                # 减buff
+                del target_comp.buffs[buff.name]
+            else:
+                hit.log += f"{target_name} 没有 {buff.name}。"
+            hp_value = target_comp.hp
+
+        # 修改血量, 减行动力，广播说话，广播战斗log
+        stage_entity = self._game.get_current_stage_entity()
+        assert stage_entity is not None
+        stage_name = stage_entity._name
+        self._modify_hp_action_times_and_announce(
+            target,
             target,
             hp_value,
             hit.text,

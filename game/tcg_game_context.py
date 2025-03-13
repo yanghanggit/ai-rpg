@@ -7,10 +7,11 @@ from components.components import (
     ActorComponent,
     GUIDComponent,
     HeroActorFlagComponent,
+    FinalAppearanceComponent,
 )
-from loguru import logger
-from components.registry import COMPONENTS_REGISTRY
 
+from components.registry import COMPONENTS_REGISTRY
+from loguru import logger
 
 """
 少做事，
@@ -158,6 +159,39 @@ class TCGGameContext(Context):
             if stage_entity not in ret:
                 ret.setdefault(stage_entity, set())
 
+        return ret
+
+    ###############################################################################################################################################
+    def retrieve_actors_on_stage(self, entity: Entity) -> Set[Entity]:
+        stage_entity = self.safe_get_stage_entity(entity)
+        if stage_entity is None:
+            return set()
+
+        ret: Set[Entity] = set()
+
+        actor_entities: Set[Entity] = self.get_group(
+            Matcher(all_of=[ActorComponent])
+        ).entities
+
+        for actor_entity in actor_entities:
+            if (
+                actor_entity.get(ActorComponent).current_stage
+                == stage_entity.get(StageComponent).name
+            ):
+                ret.add(actor_entity)
+
+        return ret
+
+    ###############################################################################################################################################
+    # 以actor的final_appearance.name为key，final_appearance.final_appearance为value
+    def retrieve_actor_appearance_on_stage_mapping(
+        self, entity: Entity
+    ) -> Dict[str, str]:
+        ret: Dict[str, str] = {}
+        for actor in self.retrieve_actors_on_stage(entity):
+            if actor.has(FinalAppearanceComponent):
+                final_appearance = actor.get(FinalAppearanceComponent)
+                ret.setdefault(final_appearance.name, final_appearance.final_appearance)
         return ret
 
     ###############################################################################################################################################

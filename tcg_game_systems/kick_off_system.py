@@ -9,7 +9,7 @@ from components.components import (
     SystemMessageComponent,
     StageEnvironmentComponent,
 )
-from typing import Set, final, List
+from typing import Dict, Set, final, List
 from game.tcg_game import TCGGame
 from loguru import logger
 from agent.chat_request_handler import ChatRequestHandler
@@ -44,13 +44,23 @@ def _generate_actor_kick_off_prompt(kick_off_message: str, epoch_script: str) ->
 def _generate_stage_kick_off_prompt(
     kick_off_message: str,
     epoch_script: str,
+    actor_appearance_mapping: Dict[str, str],
 ) -> str:
 
-    return f"""# 游戏启动! 你将开始你的扮演，此时的世界背景如下，请仔细阅读并牢记，以确保你的行为和言语符合游戏设定，不会偏离时代背景。
-## 当前世界背景
+    # 组织一下格式
+    actor_descriptions = ["无"]
+    if len(actor_appearance_mapping) > 0:
+        actor_descriptions = []
+        for actor_name, final_appearance in actor_appearance_mapping.items():
+            actor_descriptions.append(f"- {actor_name}: {final_appearance}")
+
+    return f"""# 游戏启动! 你将开始你的扮演。
+## 世界背景
 {epoch_script}
-## 你的初始设定与状态
+## 初始设定与状态
 {kick_off_message}
+## 场景内的角色
+{"\n".join(actor_descriptions)}
 ## 输出要求
 - 尽量简短。"""
 
@@ -185,9 +195,13 @@ class KickOffSystem(ExecuteProcessor):
             )
         elif entity.has(StageComponent):
             # 舞台的
+            actors_appearance_on_stage = (
+                self._game.retrieve_actor_appearance_on_stage_mapping(entity)
+            )
             gen_prompt = _generate_stage_kick_off_prompt(
                 kick_off_message,
                 self._game.world.boot.epoch_script,
+                actors_appearance_on_stage,
             )
         elif entity.has(WorldSystemComponent):
             # 世界系统的

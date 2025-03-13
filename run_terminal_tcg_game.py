@@ -159,7 +159,8 @@ async def run_game(option: OptionParameters) -> None:
 
         if usr_input == "/tp1":
             terminal_tcg_game.teleport_actors_to_stage(
-                terminal_tcg_game.retrieve_all_hero_entities(), "场景.哥布林巢穴王座厅"
+                terminal_tcg_game.retrieve_all_hero_entities(),
+                "场景.哥布林巢穴密室一号",
             )
             continue
 

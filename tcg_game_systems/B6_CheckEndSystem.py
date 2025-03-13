@@ -55,7 +55,7 @@ class B6_CheckEndSystem(ExecuteProcessor):
             stage_entities=set(),
             actor_entities=active_entities,
         )
-        await status_check_utils.a_execute()
+        # await status_check_utils.a_execute()
 
     ######################################################################################################################################################
     # 任何情况下，只要有AttributeCompoment，而且血量<=0，就加上DeadAction。
@@ -262,7 +262,8 @@ class B6_CheckEndSystem(ExecuteProcessor):
                     # 去战斗2
                     self._game._battle_manager._new_battle_refresh()
                     self._game.teleport_actors_to_stage(
-                        self._game.retrieve_all_hero_entities(), "场景.哥布林巢穴密室"
+                        self._game.retrieve_all_hero_entities(),
+                        "场景.哥布林巢穴密室二号",
                     )
                     return
 

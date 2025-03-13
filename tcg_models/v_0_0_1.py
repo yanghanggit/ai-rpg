@@ -74,48 +74,6 @@ class WorldSystemPrototype(BaseModel):
 
 
 ###############################################################################################################################################
-
-
-# class ItemObject(BaseModel):
-#     name: str
-#     guid: int
-#     code_name: str
-#     count: int = 1
-#     value: List[int]
-
-
-###############################################################################################################################################
-# @unique
-# class ItemAttributes(IntEnum):
-#     MAX_HP = 0
-#     CUR_HP = 1
-#     MAX = 20
-
-
-# @final
-# class CardObject(ItemObject):  # 可能以后改成ItemObject，类型选card，现阶段先这样 TODO
-#     level: int = 1
-#     description: str
-#     insight: str
-#     owner: str  # 测试用的属性，以后用管理系统的方法 TODO
-
-#     # 测试的属性
-#     @property
-#     def max_hp(self) -> int:
-#         if len(self.value) < ItemAttributes.MAX:
-#             return self.value[ItemAttributes.MAX_HP]
-#         return 0
-
-
-###############################################################################################################################################
-# # TODO 不确定是否保留
-# @final
-# class TagInfo(BaseModel):
-#     name: str
-#     description: str
-
-
-###############################################################################################################################################
 # TODO，这个框里的全是临时的，没细想，能跑就行，等重构
 class TriggerType(StrEnum):
     NONE = "None"
@@ -237,19 +195,20 @@ class BattleHistory(BaseModel):
 @final
 class ActorInstance(BaseModel):
     name: str
+    prototype: str
     guid: int
     kick_off_message: str
     active_skills: List[ActiveSkill]
     trigger_skills: List[TriggerSkill]
     buffs: Dict[str, int]
     attributes: List[int]  # HP/MaxHP/ActionTimes/MaxActionTimes/STR/AGI/WIS
-    # tags: List[TagInfo]
 
 
 ###############################################################################################################################################
 @final
 class StageInstance(BaseModel):
     name: str
+    prototype: str
     guid: int
     actors: List[str]
     kick_off_message: str
@@ -262,6 +221,7 @@ class StageInstance(BaseModel):
 @final
 class WorldSystemInstance(BaseModel):
     name: str
+    prototype: str
     guid: int
     kick_off_message: str
 

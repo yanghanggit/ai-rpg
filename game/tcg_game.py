@@ -254,10 +254,10 @@ class TCGGame(BaseGame, TCGGameContext):
 
         for instance in world_system_instances:
 
-            prototype = data_base.world_systems.get(instance.name, None)
+            prototype = data_base.world_systems.get(instance.prototype, None)
             assert prototype is not None
             if prototype is None:
-                logger.error(f"db is None: {instance.name}")
+                logger.error(f"db is None! {instance.name}: {instance.prototype}")
                 continue
 
             # 创建实体
@@ -287,10 +287,10 @@ class TCGGame(BaseGame, TCGGameContext):
         ret: List[Entity] = []
         for instance in actor_instances:
 
-            prototype = data_base.actors.get(instance.name, None)
+            prototype = data_base.actors.get(instance.prototype, None)
             assert prototype is not None
             if prototype is None:
-                logger.error(f"db is None: {instance.name}")
+                logger.error(f"db is None! {instance.name} : {instance.prototype}")
                 continue
 
             # 创建实体
@@ -367,10 +367,10 @@ class TCGGame(BaseGame, TCGGameContext):
 
         for instance in stage_instances:
 
-            prototype = data_base.stages.get(instance.name, None)
+            prototype = data_base.stages.get(instance.prototype, None)
             assert prototype is not None
             if prototype is None:
-                logger.error(f"db is None: {instance.name}")
+                logger.error(f"db is None! {instance.name} : {instance.prototype}")
                 continue
 
             # 创建实体
@@ -495,25 +495,11 @@ class TCGGame(BaseGame, TCGGameContext):
             return False
 
         player_actor_entity = next(iter(player_entities))
-
         player_comp = player_actor_entity.get(PlayerActorFlagComponent)
         assert player_comp is not None
         player_actor_entity.replace(PlayerActorFlagComponent, self.player.name)
-
         logger.info(f"{self._name}, game ready!!!!!!!!!!!!!!!!!!!!")
         logger.info(f"{self.player.name} => {player_actor_entity._name}")
-
-        ## 因为写死了。
-        # stage_entity = self.safe_get_stage_entity(player_actor_entity)
-        # assert stage_entity is not None
-
-        # if stage_entity.has(HomeStageFlagComponent):
-        #     self._game_state = TCGGameState.HOME
-        # elif stage_entity.has(DungeonStageFlagComponent):
-        #     self._game_state = TCGGameState.DUNGEON
-        # else:
-        #     assert False, "stage type is not defined"
-
         return True
 
     ###############################################################################################################################################
@@ -643,15 +629,6 @@ class TCGGame(BaseGame, TCGGameContext):
                 EnterStageFlagComponent, going_actor._name, target_stage._name
             )
 
-        # 写死
-        # if target_stage.has(HomeStageFlagComponent):
-        #     self._game_state = TCGGameState.HOME
-        # elif target_stage.has(DungeonStageFlagComponent):
-        #     self._game_state = TCGGameState.DUNGEON
-        #     self._battle_manager._new_battle_refresh()
-
-        # else:
-        #     assert False, "stage type is not defined"
         if self.current_game_state == TCGGameState.DUNGEON:
             self._battle_manager._new_battle_refresh()
 

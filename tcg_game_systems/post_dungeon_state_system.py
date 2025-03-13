@@ -21,7 +21,7 @@ class PostDungeonStateSystem(ExecuteProcessor):
         )
 
         self._clear_actions(actions_set)
-        self._test(actions_set)
+        # self._test(actions_set)
 
     ############################################################################################################
     def _clear_actions(self, registered_actions: FrozenSet[type[NamedTuple]]) -> None:

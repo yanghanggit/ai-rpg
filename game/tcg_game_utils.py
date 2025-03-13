@@ -6,14 +6,11 @@ from tcg_models.v_0_0_1 import (
     ActorPrototype,
     StagePrototype,
     WorldSystemPrototype,
-    # CardObject,
     ActorInstance,
     StageInstance,
     WorldSystemInstance,
-    # ItemAttributes,
     ActorType,
     StageType,
-    # TagInfo,
     TriggerSkill,
     TriggerType,
 )
@@ -142,31 +139,19 @@ actor_warrior = ActorPrototype(
 )
 #######################################################################################################################################
 # 角色.怪物.强壮哥布林
-actor_goblin = ActorPrototype(
+actor_goblin1 = ActorPrototype(
     name="角色.怪物.哥布林王",
     code_name="orcking",
     system_message=_comple_actor_system_prompt(
         name="角色.怪物.哥布林王",
         epoch_script=EPOCH_SCRIPT,
-        actor_profile="你的背景：生活在偏僻郊野的地下洞穴中，时不时带领其他哥布林们一起组成劫掠大军。你最喜欢劫掠附近村子的农产品和牲畜，猎杀人类取乐。你十分强大，历经无数的厮杀后成为了哥布林们的首领。\n你的性格：狡猾，狂妄，残忍，自私自利。\n你的目标：你的首要目标是生存，你的次要目标是满足自己变态的施虐心和纵欲。\n你的恐惧：没有战斗。\n你的弱点：智力低下。\n你的说话风格与语气示例：（嘲讽）哈哈哈！你们这些蠢货，居然敢闯入我的领地！你们的死期到了！；（狂妄）颤抖吧！虫子！我会把你们碾碎！；残忍）我会让你们亲眼看着自己的同伴被撕成碎片，然后再慢慢折磨你们！；（狂妄）来吧，挣扎吧！让我看看你们绝望的表情！那才是我最爱的娱乐！",
+        actor_profile="你的背景：生活在偏僻郊野的地下洞穴中，时不时带领其他哥布林们一起组成劫掠大军。你最喜欢劫掠附近村子的农产品和牲畜。你十分强大并且敌视其他种族，历经无数的厮杀后成为了哥布林们的首领。\n你的性格：狡猾，狂妄，残忍，自私自利。\n你的目标：你的首要目标是生存，你的次要目标是满足自己变态的施虐心和纵欲。\n你的恐惧：没有战斗。\n你的弱点：智力低下。\n你的说话风格与语气示例：（嘲讽）哈哈哈！你们这些蠢货，居然敢闯入我的领地！你们的死期到了！；（狂妄）颤抖吧！虫子！我会把你们碾碎！；残忍）我会让你们亲眼看着自己的同伴被撕成碎片，然后再慢慢折磨你们！；（狂妄）来吧，挣扎吧！让我看看你们绝望的表情！那才是我最爱的娱乐！",
         appearance="你和其他哥布林一样有深绿色的皮肤和尖尖的耳朵。但你的体格比普通哥布林更加强壮。你的身上有很浓重的臭味。",
     ),
     appearance="身躯魁梧，肌肉如岩石般坚硬，皮肤覆盖着粗糙的灰绿色鳞片，獠牙外露，眼中闪烁着残忍的红光。浑身散发着血腥与腐臭的气息，仿佛从地狱深处爬出的噩梦。",
     type=ActorType.MONSTER,
 )
 
-actor_goblin2 = ActorPrototype(
-    name="角色.怪物.哥布林王二号",
-    code_name="orcking",
-    system_message=_comple_actor_system_prompt(
-        name="角色.怪物.哥布林王二号",
-        epoch_script=EPOCH_SCRIPT,
-        actor_profile="你的背景：生活在偏僻郊野的地下洞穴中，时不时带领其他哥布林们一起组成劫掠大军。你最喜欢劫掠附近村子的农产品和牲畜，猎杀人类取乐。你十分强大，历经无数的厮杀后成为了哥布林们的首领。\n你的性格：狡猾，狂妄，残忍，自私自利。\n你的目标：你的首要目标是生存，你的次要目标是满足自己变态的施虐心和纵欲。\n你的恐惧：没有战斗。\n你的弱点：智力低下。\n你的说话风格与语气示例：（嘲讽）哈哈哈！你们这些蠢货，居然敢闯入我的领地！你们的死期到了！；（狂妄）颤抖吧！虫子！我会把你们碾碎！；残忍）我会让你们亲眼看着自己的同伴被撕成碎片，然后再慢慢折磨你们！；（狂妄）来吧，挣扎吧！让我看看你们绝望的表情！那才是我最爱的娱乐！",
-        appearance="你和其他哥布林一样有深绿色的皮肤和尖尖的耳朵。但你的体格比普通哥布林更加强壮。你的身上有很浓重的臭味。",
-    ),
-    appearance="身躯魁梧，肌肉如岩石般坚硬，皮肤覆盖着粗糙的灰绿色鳞片，獠牙外露，眼中闪烁着残忍的红光。浑身散发着血腥与腐臭的气息，仿佛从地狱深处爬出的噩梦。",
-    type=ActorType.MONSTER,
-)
 #######################################################################################################################################
 actor_wizard = ActorPrototype(
     name="角色.法师.露西",
@@ -183,9 +168,9 @@ actor_wizard = ActorPrototype(
 
 #######################################################################################################################################
 # 场景.洞窟
-stage_cave = StagePrototype(
+stage_dungeon_kings_room = StagePrototype(
     name="场景.哥布林巢穴王座厅",
-    code_name="cave",
+    code_name="kings_room",
     system_message=_comple_stage_system_prompt(
         name="场景.哥布林巢穴王座厅",
         epoch_script=EPOCH_SCRIPT,
@@ -195,9 +180,9 @@ stage_cave = StagePrototype(
 )
 #######################################################################################################################################
 # 场景.密室
-stage_room = StagePrototype(
+stage_dungeon_room = StagePrototype(
     name="场景.哥布林巢穴密室",
-    code_name="cave",
+    code_name="cave_room",
     system_message=_comple_stage_system_prompt(
         name="场景.哥布林巢穴密室",
         epoch_script=EPOCH_SCRIPT,
@@ -207,7 +192,7 @@ stage_room = StagePrototype(
 )
 #######################################################################################################################################
 # 场景.营地
-stage_camp = StagePrototype(
+stage_heros_camp = StagePrototype(
     name="场景.营地",
     code_name="camp",
     system_message=_comple_stage_system_prompt(
@@ -254,6 +239,7 @@ def _initialize_data_base(
 #######################################################################################################################################
 def _create_actor_instance(
     world_boot: Boot,
+    name: str,
     actor_prototype: ActorPrototype,
     kick_off_message: str,
     active_skills: List[ActiveSkill],
@@ -268,7 +254,8 @@ def _create_actor_instance(
     global GUID_INDEX
     GUID_INDEX += 1
     ret = ActorInstance(
-        name=f"{actor_prototype.name}",
+        name=name,
+        prototype=actor_prototype.name,
         guid=GUID_INDEX,
         attributes=attributes,  # 暂时不用
         kick_off_message=kick_off_message,
@@ -283,6 +270,7 @@ def _create_actor_instance(
 #######################################################################################################################################
 def _create_stage_instance(
     world_boot: Boot,
+    name: str,
     stage: StagePrototype,
     kick_off_message: str,
     actors: List[ActorInstance] = [],
@@ -294,7 +282,8 @@ def _create_stage_instance(
     global GUID_INDEX
     GUID_INDEX += 1
     ret = StageInstance(
-        name=f"{stage.name}",
+        name=name,
+        prototype=stage.name,
         guid=GUID_INDEX,
         actors=[],
         attributes=[],  # 暂时不用,
@@ -308,7 +297,10 @@ def _create_stage_instance(
 
 #######################################################################################################################################
 def _create_world_system_instance(
-    world_boot: Boot, world_system: WorldSystemPrototype, kick_off_message: str
+    world_boot: Boot,
+    name: str,
+    world_system: WorldSystemPrototype,
+    kick_off_message: str,
 ) -> WorldSystemInstance:
 
     if world_system.name not in world_boot.data_base.world_systems:
@@ -317,7 +309,8 @@ def _create_world_system_instance(
     global GUID_INDEX
     GUID_INDEX += 1
     return WorldSystemInstance(
-        name=f"{world_system.name}",
+        name=name,
+        prototype=world_system.name,
         guid=GUID_INDEX,
         kick_off_message=kick_off_message,
     )
@@ -349,14 +342,16 @@ def test_world1(world_boot: Boot) -> Boot:
     _initialize_data_base(
         world_boot,
         EPOCH_SCRIPT,
-        [actor_warrior, actor_goblin, actor_wizard, actor_goblin2],
-        [stage_cave, stage_camp, stage_room],
+        [actor_warrior, actor_goblin1, actor_wizard],
+        # [stage_dungeon_kings_room, stage_heros_camp, stage_dungeon_room],
+        [stage_heros_camp, stage_dungeon_room],
         [world_system_battle_system],
     )
 
     # 创建实例：角色.战士.凯尔
     actor_warrior_instance = _create_actor_instance(
         world_boot=world_boot,
+        name=actor_warrior.name,
         actor_prototype=actor_warrior,
         kick_off_message=f"""你接到了剿灭怪物的委托，和最近认识不久的队友 {actor_wizard.name} 组队扎营，准备开始冒险。
 你对 {actor_wizard.name} 的印象：很强大，但是有点装，你不太喜欢她，为了达成目的你需要一个法师的队友。
@@ -396,6 +391,7 @@ def test_world1(world_boot: Boot) -> Boot:
     # 创建实例：角色.法师.露西
     actor_wizard_instance = _create_actor_instance(
         world_boot=world_boot,
+        name=actor_wizard.name,
         actor_prototype=actor_wizard,
         kick_off_message=f"""你为了赚取赏金，与最近认识的队友 {actor_warrior.name} 一起组队扎营，准备开始冒险。
 你对 {actor_warrior.name} 的印象：有些蠢（你讨厌头脑简单四肢发达的人）。但够壮实，关键时刻还是可以依靠的。        
@@ -428,9 +424,11 @@ def test_world1(world_boot: Boot) -> Boot:
     )
 
     # 创建实例：角色.怪物.哥布林王
-    actor_goblin_instance = _create_actor_instance(
+    actor_goblin1_instance = _create_actor_instance(
         world_boot=world_boot,
-        actor_prototype=actor_goblin,
+        # name=actor_goblin.name,
+        name="角色.怪物.哥布林王一号",
+        actor_prototype=actor_goblin1,
         kick_off_message=f"""你正于洞穴深处的王座中纵情狂欢。""",
         active_skills=[
             ActiveSkill(
@@ -469,7 +467,9 @@ def test_world1(world_boot: Boot) -> Boot:
     # 创建实例：角色.怪物.哥布林王二号
     actor_goblin2_instance = _create_actor_instance(
         world_boot=world_boot,
-        actor_prototype=actor_goblin2,
+        # name=actor_goblin2.name,
+        name="角色.怪物.哥布林王二号",
+        actor_prototype=actor_goblin1,
         kick_off_message=f"""你正位于洞穴深处的密室中欣赏着自己劫掠来的财宝。""",
         active_skills=[
             ActiveSkill(
@@ -505,39 +505,47 @@ def test_world1(world_boot: Boot) -> Boot:
         attributes=[200, 200, 2, 2, 65, 40, 10],
     )
 
-    # 创建实例：场景.洞窟
-    stage_cave_instance = _create_stage_instance(
+    # 创建实例：场景.营地，添加角色
+    stage_heros_camp_instance = _create_stage_instance(
         world_boot=world_boot,
-        stage=stage_cave,
-        kick_off_message="洞穴中十分吵闹，一场战斗即将开始。",
-        actors=[actor_goblin_instance],
-    )
-
-    stage_camp_instance = _create_stage_instance(
-        world_boot=world_boot,
-        stage=stage_camp,
+        name=stage_heros_camp.name,
+        stage=stage_heros_camp,
         kick_off_message="营火静静地燃烧着。",
         actors=[actor_warrior_instance, actor_wizard_instance],
     )
 
-    stage_room_instance = _create_stage_instance(
+    # 创建实例：场景.密室
+    stage_room_instance1 = _create_stage_instance(
         world_boot=world_boot,
-        stage=stage_room,
+        name="场景.哥布林巢穴密室一号",
+        stage=stage_dungeon_room,
+        kick_off_message="洞穴中十分吵闹，一场战斗即将开始。",
+        actors=[actor_goblin1_instance],
+    )
+
+    # 创建实例：场景.密室
+    stage_room_instance2 = _create_stage_instance(
+        world_boot=world_boot,
+        name="场景.哥布林巢穴密室二号",
+        stage=stage_dungeon_room,
         kick_off_message="哥布林大王藏匿的财宝闪闪发光。",
         actors=[actor_goblin2_instance],
     )
 
     # 创建实例：战斗系统
     world_system_battle_system_instance = _create_world_system_instance(
-        world_boot, world_system_battle_system, "你开始作为这个世界的战斗系统开始运行。"
+        world_boot,
+        name=world_system_battle_system.name,
+        world_system=world_system_battle_system,
+        kick_off_message="你开始作为这个世界的战斗系统开始运行。",
     )
 
     # 链接实例
     _link_instance(
         world_boot,
         [actor_warrior_instance],
-        [actor_goblin_instance, actor_wizard_instance, actor_goblin2_instance],
-        [stage_cave_instance, stage_camp_instance, stage_room_instance],
+        [actor_goblin1_instance, actor_wizard_instance, actor_goblin2_instance],
+        [stage_heros_camp_instance, stage_room_instance1, stage_room_instance2],
         [world_system_battle_system_instance],
     )
 

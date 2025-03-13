@@ -215,11 +215,15 @@ HitInfo.model_fields["dmgtype"].description = (
 HitInfo.model_fields["buff"].description = (
     "Hit中涉及的buff。类型为Buff类。当type为AddBuff或RemoveBuff时，buff为要添加或移除的buff，当type为Damage或Heal时，buff为None。"
 )
-HitInfo.model_fields["log"].description = "Hit的描述，用于记录在战斗历史，若技能有数值，需要记录数值。类型为str。"
+HitInfo.model_fields["log"].description = (
+    "Hit的描述，用于记录在战斗历史，若技能有数值，需要记录数值。类型为str。"
+)
 HitInfo.model_fields["text"].description = (
     "角色执行这个动作时想说的话。类型为str。当Hit由事件系统生成时设为空字符串。"
 )
-HitInfo.model_fields["is_cost"].description = "是否消耗执行者的行动力。类型为bool。只要角色执行了行动就应设为True，当一个行动被拆解为多个HitInfo时，将其中一个设置为True，其他为False即可。"
+HitInfo.model_fields["is_cost"].description = (
+    "是否消耗执行者的行动力。类型为bool。只要角色执行了行动就应设为True，当一个行动被拆解为多个HitInfo时，将其中一个设置为True，其他为False即可。"
+)
 HitInfo.model_fields["is_event"].description = (
     "是否是事件。类型为bool。当Hit由事件系统生成时设为True。"
 )

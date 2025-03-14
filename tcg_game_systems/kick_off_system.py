@@ -15,29 +15,19 @@ from loguru import logger
 from agent.chat_request_handler import ChatRequestHandler
 from components.actions import (
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
-    MindVoiceAction,
 )
 from tcg_game_systems.action_bundle import ActionBundle
 
 
 ###############################################################################################################################################
 def _generate_actor_kick_off_prompt(kick_off_message: str, epoch_script: str) -> str:
-    return f"""# 游戏启动! 你将开始你的扮演，此时的世界背景如下，请仔细阅读并牢记，以确保你的行为和言语符合游戏设定，不会偏离时代背景。
-## 当前世界背景
+    return f"""# 游戏启动! 你将开始你的扮演。
+## 世界背景
 {epoch_script}
-## 你的初始设定与状态
+## 初始设定与状态
 {kick_off_message}
 ## 输出要求
-### 输出格式指南
-请严格遵循以下 JSON 结构示例： 
-{{
-    "{MindVoiceAction.__name__}":["你的内心独白",...], 
-}}
-### 注意事项
-- 所有输出必须为第一人称视角。
-- 含有“...”的键可以接收多个值，否则只能接收一个值。
-- 输出不得包含超出所需 JSON 格式的其他文本、解释或附加信息。
-- 不要使用```json```来封装内容。"""
+- 尽量简短。"""
 
 
 ###############################################################################################################################################
@@ -67,8 +57,7 @@ def _generate_stage_kick_off_prompt(
 
 ###############################################################################################################################################
 def _generate_world_system_kick_off_prompt() -> str:
-    return f"""# 游戏启动! # 游戏启动! 你将开始你的扮演，此时的世界背景如下，请仔细阅读并牢记，以确保你的行为和言语符合游戏设定，不会偏离时代背景。
-## 请回答你的职能与描述。
+    return f"""# 游戏启动! 你将开始你的扮演。请回答你的职能与描述。
 ## 输出要求
 - 尽量简短。"""
 
@@ -165,19 +154,20 @@ class KickOffSystem(ExecuteProcessor):
                     request_handler.response_content,
                 )
             elif entity2.has(ActorComponent):
+                pass
                 # 添加行动
-                self._allocate_actor_actions(entity2, request_handler.response_content)
+                # self._allocate_actor_actions(entity2, request_handler.response_content)
 
     ######################################################################################################################################################
-    def _allocate_actor_actions(self, entity: Entity, response_content: str) -> None:
+    # def _allocate_actor_actions(self, entity: Entity, response_content: str) -> None:
 
-        assert response_content != ""
-        assert entity.has(ActorComponent)
-        action_bundle = ActionBundle(entity._name, response_content)
-        if not action_bundle.assign_actions_to_entity(
-            entity, ACTOR_AVAILABLE_ACTIONS_REGISTER
-        ):
-            assert False, "Assign action failed."
+    #     assert response_content != ""
+    #     assert entity.has(ActorComponent)
+    #     action_bundle = ActionBundle(entity._name, response_content)
+    #     if not action_bundle.assign_actions_to_entity(
+    #         entity, ACTOR_AVAILABLE_ACTIONS_REGISTER
+    #     ):
+    #         assert False, "Assign action failed."
 
     ######################################################################################################################################################
     def _generate_kick_off_prompt(self, entity: Entity) -> str:

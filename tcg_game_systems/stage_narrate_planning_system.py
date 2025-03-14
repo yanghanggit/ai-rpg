@@ -44,7 +44,7 @@ class StageNarratePlanningSystem(ExecuteProcessor):
                     StageNarratePlanningPermitFlagComponent,
                 ]
             )
-        ).entities.copy()
+        ).entities
 
         if len(stage_entities) == 0:
             return
@@ -92,7 +92,7 @@ class StageNarratePlanningSystem(ExecuteProcessor):
 
 
 def _generate_stage_plan_prompt() -> str:
-    return f"""# 请推理你的环境是否会发生变化并输出变化后的场景描述，请确保你的描述符合游戏设定，不会偏离时代背景。
+    return f"""# 请推理你的环境是否会发生变化并输出变化后的场景描述。
 ## 场景内角色进行的动作
 {'无,TODO'}
 ## 输出要求

@@ -1,15 +1,13 @@
-from loguru import logger
-from entitas import ExecuteProcessor  # type: ignore
+from entitas import ExecuteProcessor, Entity  # type: ignore
 from overrides import override
 from typing import final, Set
-from entitas import Entity  # type: ignore
 from game.tcg_game import TCGGame
-
-# from game.tcg_game_context import TCGGameContext
+import random
 from components.components import (
     ActorComponent,
     ActorRolePlayPlanningPermitFlagComponent,
 )
+from loguru import logger
 
 
 #######################################################################################################################################
@@ -19,7 +17,7 @@ class ActorRoleplayPlanningPermitSystem(ExecuteProcessor):
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
         # 实现交叉对话，后续找个更优雅的逻辑 TODO
-        self.counter: int = 0
+        # self.counter: int = 0
 
     #######################################################################################################################################
     @override
@@ -34,13 +32,10 @@ class ActorRoleplayPlanningPermitSystem(ExecuteProcessor):
         actors = list(self._game.retrieve_stage_actor_mapping()[player_stage])
         if len(actors) == 0:
             return
-        # player不需要让ai思考
-        # actors.remove(player_entity) TODO 测试
 
-        # 轮到的人才能说话
-        talker_num = self.counter % len(actors)
-        self.counter += 1
-        self._add_permit({actors[talker_num]})
+        # 随机选择一个actor
+        random_actor = random.choice(actors)
+        self._add_permit({random_actor})
 
     #######################################################################################################################################
     def _add_permit(self, entities: Set[Entity]) -> None:
@@ -49,3 +44,5 @@ class ActorRoleplayPlanningPermitSystem(ExecuteProcessor):
                 ActorRolePlayPlanningPermitFlagComponent,
                 entity.get(ActorComponent).name,
             )
+
+    #######################################################################################################################################

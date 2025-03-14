@@ -75,9 +75,9 @@ class TCGGameProcessPipeline(Processors):
         processors.add(PreActionSystem(tcg_game))
 
         # 说话相关动作。
-        processors.add(MindVoiceActionSystem(tcg_game))
-        processors.add(WhisperActionSystem(tcg_game))
-        processors.add(AnnounceActionSystem(tcg_game))
+        # processors.add(MindVoiceActionSystem(tcg_game))
+        # processors.add(WhisperActionSystem(tcg_game))
+        # processors.add(AnnounceActionSystem(tcg_game))
         processors.add(SpeakActionSystem(tcg_game))
 
         # ?
@@ -95,10 +95,10 @@ class TCGGameProcessPipeline(Processors):
         # 规划逻辑
         processors.add(PrePlanningSystem(tcg_game))  ######## 在所有规划之前!
 
-        processors.add(StageNarratePlanningPermitSystem(tcg_game))
+        # processors.add(StageNarratePlanningPermitSystem(tcg_game))
         processors.add(ActorRoleplayPlanningPermitSystem(tcg_game))
 
-        processors.add(StageNarratePlanningSystem(tcg_game))
+        # processors.add(StageNarratePlanningSystem(tcg_game))
         processors.add(ActorRoleplayPlanningSystem(tcg_game))
 
         processors.add(PostPlanningSystem(tcg_game))  ####### 在所有规划之后!

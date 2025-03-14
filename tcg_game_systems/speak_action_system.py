@@ -1,12 +1,26 @@
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
-from components.actions import (
-    SpeakAction,
-)
 from typing import final, override
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 import format_string.target_message
 from rpg_models.event_models import AgentEvent, SpeakEvent
 from game.tcg_game import ConversationError
+from components.actions2 import SpeakAction2
+
+
+####################################################################################################################################
+def _generate_speak_prompt(speaker_name: str, target_name: str, content: str) -> str:
+    return f"# 发生事件: {speaker_name} 对 {target_name} 说: {content}"
+
+
+####################################################################################################################################
+def _generate_invalid_speak_target_prompt(speaker_name: str, target_name: str) -> str:
+    return f"""# 提示: {speaker_name} 试图和一个不存在的目标 {target_name} 进行对话。
+## 原因分析与建议
+- 请检查目标的全名: {target_name}。
+- 请检查目标是否存在于当前场景中。"""
+
+
+####################################################################################################################################
 
 
 @final
@@ -15,12 +29,12 @@ class SpeakActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(SpeakAction): GroupEvent.ADDED}
+        return {Matcher(SpeakAction2): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(SpeakAction)
+        return entity.has(SpeakAction2)
 
     ####################################################################################################################################
     @override
@@ -34,12 +48,9 @@ class SpeakActionSystem(BaseActionReactiveSystem):
         if stage_entity is None:
             return
 
-        speak_action = entity.get(SpeakAction)
-        target_and_message = format_string.target_message.extract_target_message_pairs(
-            speak_action.values
-        )
+        speak_action = entity.get(SpeakAction2)
 
-        for target_name, message in target_and_message:
+        for target_name, speak_content in speak_action.data.items():
 
             error = self._game.validate_conversation(entity, target_name)
             if error != ConversationError.VALID:
@@ -59,23 +70,12 @@ class SpeakActionSystem(BaseActionReactiveSystem):
                 stage_entity,
                 SpeakEvent(
                     message=_generate_speak_prompt(
-                        speak_action.name, target_name, message
+                        speak_action.name, target_name, speak_content
                     ),
                     speaker_name=speak_action.name,
                     target_name=target_name,
-                    content=message,
+                    content=speak_content,
                 ),
             )
 
     ####################################################################################################################################
-
-
-def _generate_speak_prompt(speaker_name: str, target_name: str, content: str) -> str:
-    return f"# 发生事件: {speaker_name} 对 {target_name} 说: {content}"
-
-
-def _generate_invalid_speak_target_prompt(speaker_name: str, target_name: str) -> str:
-    return f"""# 提示: {speaker_name} 试图和一个不存在的目标 {target_name} 进行对话。
-## 原因分析与建议
-- 请检查目标的全名: {target_name}，确保是完整匹配:游戏规则-全名机制
-- 请检查目标是否存在于当前场景中。"""

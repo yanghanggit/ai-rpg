@@ -16,8 +16,6 @@ class ActorRoleplayPlanningPermitSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
-        # 实现交叉对话，后续找个更优雅的逻辑 TODO
-        # self.counter: int = 0
 
     #######################################################################################################################################
     @override

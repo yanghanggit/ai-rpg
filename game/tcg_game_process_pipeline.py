@@ -48,9 +48,10 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.dead_action_system import DeadActionSystem
         from tcg_game_systems.pre_planning_system import PrePlanningSystem
         from tcg_game_systems.post_planning_system import PostPlanningSystem
-        from tcg_game_systems.stage_narrate_planning_system import (
-            StageNarratePlanningSystem,
-        )
+
+        # from tcg_game_systems.stage_narrate_planning_system import (
+        #     StageNarratePlanningSystem,
+        # )
         from tcg_game_systems.actor_roleplay_planning_system import (
             ActorRoleplayPlanningSystem,
         )
@@ -58,9 +59,10 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.actor_roleplay_planning_permit_system import (
             ActorRoleplayPlanningPermitSystem,
         )
-        from tcg_game_systems.stage_narrate_planning_permit_system import (
-            StageNarratePlanningPermitSystem,
-        )
+
+        # from tcg_game_systems.stage_narrate_planning_permit_system import (
+        #     StageNarratePlanningPermitSystem,
+        # )
 
         # 进入动作前，处理输入。
         processors.add(HandleTerminalPlayerInputSystem(tcg_game))

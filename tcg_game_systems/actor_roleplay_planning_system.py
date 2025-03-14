@@ -1,19 +1,23 @@
+from pydantic import BaseModel
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from agent.chat_request_handler import ChatRequestHandler
-from components.actions import (
-    ACTOR_AVAILABLE_ACTIONS_REGISTER,
-    SpeakAction,
-)
+import format_string.json_format
 from components.components import (
     StageEnvironmentComponent,
     FinalAppearanceComponent,
     ActorRolePlayPlanningPermitFlagComponent,
 )
 from overrides import override
-from typing import List, final
+from typing import Dict, List, final
 from game.tcg_game import TCGGame
 from loguru import logger
-from tcg_game_systems.action_bundle import ActionBundle
+from components.actions2 import SpeakAction2
+
+
+#######################################################################################################################################
+@final
+class ActorRoleplayPlanningResponse(BaseModel):
+    speak_actions: Dict[str, str] = {}
 
 
 #######################################################################################################################################
@@ -24,40 +28,31 @@ def _generate_actor_plan_prompt(
     actors_info_list: List[str],
 ) -> str:
 
-    return f"""# 请制定你的行动计划，请确保你的行为和言语符合游戏规则和设定
+    # 格式示例
+    actor_roleplay_response_example = ActorRoleplayPlanningResponse(
+        speak_actions={
+            "场景内角色1": "你要说的内容（场景内其他角色会听见）",
+            "场景内角色2": "你要说的内容（场景内其他角色会听见）",
+            "场景内角色?": "....",
+        }
+    )
 
+    return f"""# 请制定你的行动计划，请确保你的行为和言语符合游戏规则和设定
 ## 当前所在的场景
 {current_stage_name}
-
 ### 当前场景描述
 {current_stage_narration}
-
 ## 你当前的外观特征
 {self_appearence}
-
 ## 当前场景内除你之外的其他角色的名称与外观特征
 {"\n".join(actors_info_list)}
-
 ## 输出要求
-### 输出格式指南
-请严格遵循以下 JSON 结构示例： 
-{{
-    "{SpeakAction.__name__}":["@角色全名(你要对谁说,只能是场景内的角色):你要说的内容（场景内其他角色会听见）",...],
-}}
-
-### 注意事项
 - 引用角色或场景时，请严格遵守全名机制
 - 所有输出必须为第一人称视角。
-- JSON 对象中可以包含上述键中的一个或多个。
-- 注意！不允许重复使用上述的键！ 
-- 注意！不允许使用不在上述列表中的键！（即未定义的键位），注意看‘输出要求’
-- 如要使用名字，请使用全名。见上文‘全名机制’。
-- 含有“...”的键可以接收多个值，否则只能接收一个值。
-- 输出不得包含超出所需 JSON 格式的其他文本、解释或附加信息。
-- 不要使用```json```来封装内容。"""
+### 格式示例(JSON)
+{actor_roleplay_response_example.model_dump_json()}"""
 
 
-#######################################################################################################################################
 #######################################################################################################################################
 def _compress_actor_plan_prompt(
     prompt: str,
@@ -103,29 +98,59 @@ class ActorRoleplayPlanningSystem(ExecuteProcessor):
         await self._game.langserve_system.gather(request_handlers=request_handlers)
 
         # 处理角色规划请求
-        self._handle_chat_response(request_handlers)
+        self._handle_chat_responses(request_handlers)
 
     #######################################################################################################################################
-    def _handle_chat_response(self, request_handlers: List[ChatRequestHandler]) -> None:
+    def _handle_chat_responses(
+        self, request_handlers: List[ChatRequestHandler]
+    ) -> None:
+
         for request_handler in request_handlers:
+
+            if request_handler.response_content == "":
+                logger.error(f"Agent: {request_handler._name}, Response is empty.")
+                continue
+
             logger.warning(
                 f"Agent: {request_handler._name}, Response:\n{request_handler.response_content}"
             )
 
-            if request_handler.response_content == "":
-                continue
-
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
+            self._handle_actor_response(entity2, request_handler)
+
+    #######################################################################################################################################
+    def _handle_actor_response(
+        self, entity2: Entity, request_handler: ChatRequestHandler
+    ) -> None:
+
+        assert entity2.has(ActorRolePlayPlanningPermitFlagComponent)
+        assert entity2._name == request_handler._name
+
+        # 核心处理
+        try:
+
+            format_response = ActorRoleplayPlanningResponse.model_validate_json(
+                format_string.json_format.strip_json_code_block(
+                    request_handler.response_content
+                )
+            )
+            logger.warning(
+                f"{entity2._name}, format_response:\n{format_response.model_dump_json()}"
+            )
+
             self._game.append_human_message(
                 entity2, _compress_actor_plan_prompt(request_handler._prompt)
             )
             self._game.append_ai_message(entity2, request_handler.response_content)
-            bundle = ActionBundle(entity2._name, request_handler.response_content)
-            ret = bundle.assign_actions_to_entity(
-                entity2, ACTOR_AVAILABLE_ACTIONS_REGISTER
+
+            # 添加说话动作
+            entity2.replace(SpeakAction2, entity2._name, format_response.speak_actions)
+
+        except:
+            logger.error(
+                f"""返回格式错误: {entity2._name}, Response = \n{request_handler.response_content}"""
             )
-            assert ret is True, "Action Bundle Error"
 
     #######################################################################################################################################
     def _generate_chat_requests(

@@ -1,6 +1,7 @@
 from typing import Dict, NamedTuple, List, Set, final
 from components.registry import register_component_class
-from tcg_models.v_0_0_1 import ActiveSkill, TriggerSkill
+
+# from tcg_models.v_0_0_1 import ActiveSkill, TriggerSkill
 
 
 """
@@ -118,16 +119,16 @@ class ActorComponent(NamedTuple):
 @register_component_class
 class AttributeCompoment(NamedTuple):
     name: str
-    hp: int
-    maxhp: int
-    action_times: int
-    max_action_times: int
-    strength: int
-    agility: int
-    wisdom: int
-    buffs: Dict[str, int]
-    active_skills: List[ActiveSkill]
-    trigger_skills: List[TriggerSkill]
+    # hp: int
+    # maxhp: int
+    # action_times: int
+    # max_action_times: int
+    # strength: int
+    # agility: int
+    # wisdom: int
+    # buffs: Dict[str, int]
+    # active_skills: List[ActiveSkill]
+    # trigger_skills: List[TriggerSkill]
 
 
 ############################################################################################################

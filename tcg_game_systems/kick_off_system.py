@@ -13,27 +13,20 @@ from typing import Dict, Set, final, List
 from game.tcg_game import TCGGame
 from loguru import logger
 from agent.chat_request_handler import ChatRequestHandler
-from components.actions import (
-    ACTOR_AVAILABLE_ACTIONS_REGISTER,
-)
-from tcg_game_systems.action_bundle import ActionBundle
 
 
 ###############################################################################################################################################
-def _generate_actor_kick_off_prompt(kick_off_message: str, epoch_script: str) -> str:
-    return f"""# 游戏启动! 你将开始你的扮演。
-## 世界背景
-{epoch_script}
-## 初始设定与状态
+def _generate_actor_kick_off_prompt(kick_off_message: str) -> str:
+    return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
+## 设定与状态描述
 {kick_off_message}
 ## 输出要求
-- 尽量简短。"""
+- 你的内容活动，输出内容尽量简短。"""
 
 
 ###############################################################################################################################################
 def _generate_stage_kick_off_prompt(
     kick_off_message: str,
-    epoch_script: str,
     actor_appearance_mapping: Dict[str, str],
 ) -> str:
 
@@ -44,41 +37,39 @@ def _generate_stage_kick_off_prompt(
         for actor_name, final_appearance in actor_appearance_mapping.items():
             actor_descriptions.append(f"- {actor_name}: {final_appearance}")
 
-    return f"""# 游戏启动! 你将开始你的扮演。
-## 世界背景
-{epoch_script}
-## 初始设定与状态
+    return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
+## 设定与状态描述
 {kick_off_message}
 ## 场景内的角色
 {"\n".join(actor_descriptions)}
 ## 输出要求
-- 尽量简短。"""
+- 输出场景描述，并从描述中移除角色的描述。输出尽量简短。"""
 
 
 ###############################################################################################################################################
 def _generate_world_system_kick_off_prompt() -> str:
     return f"""# 游戏启动! 你将开始你的扮演。请回答你的职能与描述。
 ## 输出要求
-- 尽量简短。"""
+- 确认你的职能，输出尽量简短。"""
 
 
 ###############################################################################################################################################
 
 
-######################################################################################################################################################
+###############################################################################################################################################
 @final
 class KickOffSystem(ExecuteProcessor):
 
-    ############################################################################################################
+    ###############################################################################################################################################
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
 
-    ######################################################################################################################################################
+    ###############################################################################################################################################
     @override
     def execute(self) -> None:
         pass
 
-    ######################################################################################################################################################
+    ###############################################################################################################################################
     @override
     async def a_execute1(self) -> None:
 
@@ -99,7 +90,7 @@ class KickOffSystem(ExecuteProcessor):
         # 处理请求
         await self._process_kick_off_request(entities)
 
-    ######################################################################################################################################################
+    ###############################################################################################################################################
     async def _process_kick_off_request(self, entities: Set[Entity]) -> None:
 
         # 添加请求处理器
@@ -155,21 +146,8 @@ class KickOffSystem(ExecuteProcessor):
                 )
             elif entity2.has(ActorComponent):
                 pass
-                # 添加行动
-                # self._allocate_actor_actions(entity2, request_handler.response_content)
 
-    ######################################################################################################################################################
-    # def _allocate_actor_actions(self, entity: Entity, response_content: str) -> None:
-
-    #     assert response_content != ""
-    #     assert entity.has(ActorComponent)
-    #     action_bundle = ActionBundle(entity._name, response_content)
-    #     if not action_bundle.assign_actions_to_entity(
-    #         entity, ACTOR_AVAILABLE_ACTIONS_REGISTER
-    #     ):
-    #         assert False, "Assign action failed."
-
-    ######################################################################################################################################################
+    ###############################################################################################################################################
     def _generate_kick_off_prompt(self, entity: Entity) -> str:
 
         kick_off_message_comp = entity.get(KickOffMessageComponent)
@@ -180,9 +158,7 @@ class KickOffSystem(ExecuteProcessor):
         gen_prompt = ""
         if entity.has(ActorComponent):
             # 角色的
-            gen_prompt = _generate_actor_kick_off_prompt(
-                kick_off_message, self._game.world.boot.epoch_script
-            )
+            gen_prompt = _generate_actor_kick_off_prompt(kick_off_message)
         elif entity.has(StageComponent):
             # 舞台的
             actors_appearance_on_stage = (
@@ -190,7 +166,6 @@ class KickOffSystem(ExecuteProcessor):
             )
             gen_prompt = _generate_stage_kick_off_prompt(
                 kick_off_message,
-                self._game.world.boot.epoch_script,
                 actors_appearance_on_stage,
             )
         elif entity.has(WorldSystemComponent):
@@ -199,11 +174,11 @@ class KickOffSystem(ExecuteProcessor):
 
         return gen_prompt
 
-    ######################################################################################################################################################
+    ###############################################################################################################################################
     def _add_system_message(self, entities: Set[Entity]) -> None:
         for entity in entities:
             system_message_comp = entity.get(SystemMessageComponent)
             assert system_message_comp is not None
             self._game.append_system_message(entity, system_message_comp.content)
 
-    ######################################################################################################################################################
+    ###############################################################################################################################################

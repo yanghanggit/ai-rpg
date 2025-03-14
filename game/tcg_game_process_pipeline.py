@@ -141,11 +141,11 @@ class TCGGameProcessPipeline(Processors):
         )
         from tcg_game_systems.destroy_system import DestroySystem
 
-        from tcg_game_systems.B1_TurnStartSystem import B1_TurnStartSystem
-        from tcg_game_systems.B2_ActorPlanSystem import B2_ActorPlanSystem
-        from tcg_game_systems.B4_RandomEventSystem import B4_RandomEventSystem
-        from tcg_game_systems.B5_ExecuteHitsSystem import B5_ExecuteHitsSystem
-        from tcg_game_systems.B6_CheckEndSystem import B6_CheckEndSystem
+        # from tcg_game_systems.B1_TurnStartSystem import B1_TurnStartSystem
+        # from tcg_game_systems.B2_ActorPlanSystem import B2_ActorPlanSystem
+        # from tcg_game_systems.B4_RandomEventSystem import B4_RandomEventSystem
+        # from tcg_game_systems.B5_ExecuteHitsSystem import B5_ExecuteHitsSystem
+        # from tcg_game_systems.B6_CheckEndSystem import B6_CheckEndSystem
 
         from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
         from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
@@ -170,11 +170,11 @@ class TCGGameProcessPipeline(Processors):
         processors.add(StatusUpdateActionSystem(tcg_game))
 
         # 战斗逻辑。
-        processors.add(B1_TurnStartSystem(tcg_game))
-        processors.add(B2_ActorPlanSystem(tcg_game))
-        processors.add(B4_RandomEventSystem(tcg_game))
-        processors.add(B5_ExecuteHitsSystem(tcg_game))
-        processors.add(B6_CheckEndSystem(tcg_game))
+        # processors.add(B1_TurnStartSystem(tcg_game))
+        # processors.add(B2_ActorPlanSystem(tcg_game))
+        # processors.add(B4_RandomEventSystem(tcg_game))
+        # processors.add(B5_ExecuteHitsSystem(tcg_game))
+        # processors.add(B6_CheckEndSystem(tcg_game))
 
         # yh add, 测试用。
         processors.add(PostDungeonStateSystem(tcg_game))

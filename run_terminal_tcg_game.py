@@ -12,7 +12,8 @@ from player.player_proxy import PlayerProxy
 from rpg_models.player_models import PlayerProxyModel
 import game.tcg_game_utils
 from player.player_command2 import PlayerCommand2
-from extended_systems.tcg_game_battle_manager import BattleManager
+
+# from extended_systems.tcg_game_battle_manager import BattleManager
 
 
 ###############################################################################################################################################
@@ -114,7 +115,7 @@ async def run_game(option: OptionParameters) -> None:
         world=world,
         world_path=users_world_runtime_file_path,
         langserve_system=lang_serve_system,
-        battle_manager=BattleManager(users_world_runtime_file_path.parent),
+        # battle_manager=BattleManager(users_world_runtime_file_path.parent),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
 
@@ -157,18 +158,18 @@ async def run_game(option: OptionParameters) -> None:
             terminal_tcg_game._will_exit = True
             break
 
-        if usr_input == "/tp1":
-            terminal_tcg_game.teleport_actors_to_stage(
-                terminal_tcg_game.retrieve_all_hero_entities(),
-                "场景.哥布林巢穴密室一号",
-            )
-            continue
+        # if usr_input == "/tp1":
+        #     terminal_tcg_game.teleport_actors_to_stage(
+        #         terminal_tcg_game.retrieve_all_hero_entities(),
+        #         "场景.哥布林巢穴密室一号",
+        #     )
+        #     continue
 
-        if usr_input == "/tp2":
-            terminal_tcg_game.teleport_actors_to_stage(
-                terminal_tcg_game.retrieve_all_hero_entities(), "场景.营地"
-            )
-            continue
+        # if usr_input == "/tp2":
+        #     terminal_tcg_game.teleport_actors_to_stage(
+        #         terminal_tcg_game.retrieve_all_hero_entities(), "场景.营地"
+        #     )
+        #     continue
 
         # 以上都拦截不住，就是玩家的输入，输入错了， handle input 相关的system 就不执行，空跑一次。
         terminal_tcg_game.player.add_command2(

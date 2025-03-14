@@ -31,7 +31,7 @@ from components.components import (
     DungeonStageFlagComponent,
     HeroActorFlagComponent,
     MonsterActorFlagComponent,
-    AttributeCompoment,
+    # AttributeCompoment,
     EnterStageFlagComponent,
 )
 from player.player_proxy import PlayerProxy
@@ -41,7 +41,8 @@ from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 import rpg_game_systems.prompt_utils
 from rpg_models.event_models import AgentEvent
-from extended_systems.tcg_game_battle_manager import BattleManager
+
+# from extended_systems.tcg_game_battle_manager import BattleManager
 
 
 @unique
@@ -69,7 +70,7 @@ class TCGGame(BaseGame, TCGGameContext):
         world: World,
         world_path: Path,
         langserve_system: LangServeSystem,
-        battle_manager: BattleManager,
+        # battle_manager: BattleManager,
         chaos_engineering_system: IChaosEngineering,
     ) -> None:
 
@@ -97,7 +98,7 @@ class TCGGame(BaseGame, TCGGameContext):
         self._langserve_system: LangServeSystem = langserve_system
 
         # 临时战斗系统
-        self._battle_manager = battle_manager
+        # self._battle_manager = battle_manager
 
         # 混沌工程系统
         self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
@@ -319,20 +320,20 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
             # 必要组件：属性
-            actor_entity.add(
-                AttributeCompoment,
-                instance.name,
-                instance.attributes[0],
-                instance.attributes[1],
-                instance.attributes[2],
-                instance.attributes[3],
-                instance.attributes[4],
-                instance.attributes[5],
-                instance.attributes[6],
-                instance.buffs,
-                instance.active_skills,
-                instance.trigger_skills,
-            )
+            # actor_entity.add(
+            #     AttributeCompoment,
+            #     instance.name,
+            #     instance.attributes[0],
+            #     instance.attributes[1],
+            #     instance.attributes[2],
+            #     instance.attributes[3],
+            #     instance.attributes[4],
+            #     instance.attributes[5],
+            #     instance.attributes[6],
+            #     # instance.buffs,
+            #     # instance.active_skills,
+            #     # instance.trigger_skills,
+            # )
 
             match prototype.type:
 
@@ -629,8 +630,8 @@ class TCGGame(BaseGame, TCGGameContext):
                 EnterStageFlagComponent, going_actor._name, target_stage._name
             )
 
-        if self.current_game_state == TCGGameState.DUNGEON:
-            self._battle_manager._new_battle_refresh()
+        # if self.current_game_state == TCGGameState.DUNGEON:
+        #     self._battle_manager._new_battle_refresh()
 
     ###############################################################################################################################################
     # 检查是否可以对话

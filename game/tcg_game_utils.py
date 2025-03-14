@@ -1,7 +1,7 @@
 from loguru import logger
 from tcg_models.v_0_0_1 import (
-    ActiveSkill,
-    Buff,
+    # ActiveSkill,
+    # Buff,
     Boot,
     ActorPrototype,
     StagePrototype,
@@ -11,11 +11,11 @@ from tcg_models.v_0_0_1 import (
     WorldSystemInstance,
     ActorType,
     StageType,
-    TriggerSkill,
-    TriggerType,
+    # TriggerSkill,
+    # TriggerType,
 )
 import game.tcg_game_config
-from typing import List, Final, Dict
+from typing import List, Final
 
 # import copy
 
@@ -36,9 +36,12 @@ GLOBAL_GAME_RULES: Final[
 道具：如卡牌，药水与遗物等，由角色持有并可以改变角色能力或提供特殊能力。
 """
 
-EPOCH_SCRIPT: Final[str] = (
-    "这是一个奇幻世界，人类，精灵，矮人等种族共同生活在一片大陆上。这片大陆危机四伏，不仅是因为时常爆发的战争，更是因为四处游荡的怪物，如哥布林，吸血鬼，恶龙等。"
-)
+EPOCH_SCRIPT: Final[
+    str
+] = """在这片名为「艾尔法尼亚」的大陆上，剑与魔法共存已历经数百年。
+人类、精灵与兽人各自建立了繁荣的王国，但也不断受到魔物与黑暗势力的威胁。
+传说曾有圣剑封印了魔王的力量，然而邪恶的气息再度卷土重来。
+古老的遗迹、神秘的宝藏与未知的险境等待新的冒险者踏上旅途，而人们正期盼着新的勇者出现，守护这片动荡却充满希望的土地。"""
 
 
 #######################################################################################################################################
@@ -124,19 +127,70 @@ def _comple_world_system_system_prompt(
 
 
 #######################################################################################################################################
-# 角色.战士.凯尔
+#######################################################################################################################################
+#######################################################################################################################################
+actor_warrior_profile: Final[
+    str
+] = """你自幼出生在边境的小村庄，因多年与游荡的魔物作战而学会了实用的战斗技巧。
+你性格坚毅，却内心善良，为了保护家乡而加入王国军队。
+战乱平息后，你选择继续游历大陆，锻炼自身武技，同时寻找能为弱小者提供帮助的机会。"""
+#######################################################################################################################################
+#######################################################################################################################################
+#######################################################################################################################################
+actor_warrior_appearance: Final[
+    str
+] = """身材修长结实，皮肤在战斗与日晒中泛着古铜色。常年锻炼使得他拥有敏捷而有力的体魄，眼神坚毅，带有淡淡的疲惫。
+平时身穿简洁而坚固的皮甲，胸口纹着家乡的象征图案；背负着一柄制式长剑，剑柄处刻有王国军团的标志。"""
+#######################################################################################################################################
+#######################################################################################################################################
+#######################################################################################################################################
+actor_wizard_profile: Final[
+    str
+] = """你是精灵王国里少数天赋异禀的年轻法师之一。
+你自小展现出对元素魔法的惊人理解力，却也因此时常被视为“古怪”的存在。
+对魔法知识的渴求，让你离开了精灵之森，开始独自游历。
+你除了想提升自己的法术造诣，也希望用力量维护世界平衡。
+"""
+#######################################################################################################################################
+#######################################################################################################################################
+#######################################################################################################################################
+actor_wizard_appearance: Final[
+    str
+] = """拥有精灵特有的轻盈体态和尖尖的耳朵，浅绿色的双眼流露出灵动与好奇。
+身着淡雅的法袍，上面绣有象征自然与精灵文化的藤蔓花纹；披肩的银色长发随风轻舞。
+一柄雕刻精细的法杖常伴在她身边，镶嵌其上的宝石微微闪烁着神秘的光芒。"""
+#######################################################################################################################################
+#######################################################################################################################################
+#######################################################################################################################################
 actor_warrior = ActorPrototype(
-    name="角色.战士.凯尔",
+    name="角色.战士.卡恩",
     code_name="warrior",
     system_message=_comple_actor_system_prompt(
-        name="角色.战士.凯尔",
+        name="角色.战士.卡恩",
         epoch_script=EPOCH_SCRIPT,
-        actor_profile="你的背景：生于边境的偏远山村，你的家乡由于哥布林的劫掠而被毁灭，你的家人也都在那场浩劫中不幸遇难，因此你十分痛恨哥布林，一生致力于消灭这些邪恶的怪物，如今成为了一名娴熟的战士。你的生活简朴，靠帮附近的村子剿灭哥布林为生，除日常生活外的所有开销都用于保养和升级自己的装备。附近的村民虽然都把你当作怪人，但都对你带有几分敬意。\n你的性格：冷静，谨慎，内向。你从不轻敌，沉着地评估现状并快速做出反应的能力帮助你数次逃出哥布林的陷阱。\n你的目标：你的首要目标是生存，你的次要目标是剿灭哥布林。\n你的恐惧：哥布林的突然袭击。\n你的弱点：左臂还未痊愈的旧伤。\n你的说话风格与语气示例：（认真）哥布林虽小，但狡猾残忍，绝不能掉以轻心！；（严肃）没有侥幸，只有准备。；（坚定）杀光它们，一个不留，这就是我的方式。；（冷酷）我不在乎荣誉，也不在乎名声。我的目标很简单——清除所有的哥布林，直到最后一个倒下。；（略带嘲讽）那些自以为英雄的家伙，总是低估哥布林的威胁。等他们被包围时，才会明白自己的愚蠢。",
-        appearance="身材精瘦，但穿上铠甲后显得十分高大。为了防备突袭总是带着头盔，就连睡觉时也不摘下。身上有多处伤疤，淡化在肤色之中，记录着曾经的战斗。",
+        actor_profile=actor_warrior_profile,
+        appearance=actor_warrior_appearance,
     ),
-    appearance="身材精瘦，但穿上铠甲后显得十分高大。为了防备突袭总是带着头盔，就连睡觉时也不摘下。身上有多处伤疤，淡化在肤色之中，记录着曾经的战斗。",
+    appearance=actor_warrior_appearance,
     type=ActorType.HERO,
 )
+#######################################################################################################################################
+#######################################################################################################################################
+#######################################################################################################################################
+actor_wizard = ActorPrototype(
+    name="角色.法师.奥露娜",
+    code_name="wizard",
+    system_message=_comple_actor_system_prompt(
+        name="角色.法师.奥露娜",
+        epoch_script=EPOCH_SCRIPT,
+        actor_profile=actor_wizard_profile,
+        appearance=actor_wizard_appearance,
+    ),
+    appearance=actor_wizard_appearance,
+    type=ActorType.HERO,
+)
+#######################################################################################################################################
+#######################################################################################################################################
 #######################################################################################################################################
 # 角色.怪物.强壮哥布林
 actor_goblin1 = ActorPrototype(
@@ -152,19 +206,6 @@ actor_goblin1 = ActorPrototype(
     type=ActorType.MONSTER,
 )
 
-#######################################################################################################################################
-actor_wizard = ActorPrototype(
-    name="角色.法师.露西",
-    code_name="wizard",
-    system_message=_comple_actor_system_prompt(
-        name="角色.法师.露西",
-        epoch_script=EPOCH_SCRIPT,
-        actor_profile="你的背景：你是生于声名显赫的贵族家庭的千金小姐，从小接受全方面的精英教育。但你不愿循规蹈矩，遵从家族的安排成为联姻的工具。在你16岁那天，你毅然决然离开了家乡，踏上了前往未知世界的旅途。如今的你是一名初出茅庐的法师，虽然能力过人，但经验尚浅。\n你的性格：自尊心强，自大，好奇心强。无论出身卑贱或是高贵，你都看不起只知道享乐的酒囊饭袋，相反，你喜欢有能之人。你的自尊心很强，因此总会吵架，经常逞能。\n你的目标：你的首要目标是生存，你的次要目标是探索这个神奇的世界。\n你的恐惧：你怕鬼。\n你的弱点：你有洁癖。在肮脏的环境中会感到很不舒服，精神不佳。\n你的说话风格与语气示例：哦？你以为你那些华丽的衣服和空洞的头衔能让我高看你一眼？真是可笑。我见过的‘贵族’多了，像你这样只会炫耀家世的，不过是披着金丝的稻草人罢了。有本事拿出点真本事来，别让我觉得浪费时间。；天哪！这地方简直是个垃圾堆！（捂住鼻子，一脸嫌弃）我宁愿去和鬼魂打交道，也不想在这种地方多待一秒。你们这些人是怎么忍受的？……算了，我自己清理一下，免得被这种污秽影响了我的魔法；（咬着嘴唇，强忍不甘）这次只是我大意了，下次绝不会再犯这种低级错误！……不过，如果你敢把这件事说出去，我保证你会后悔的。我的自尊可不允许任何人嘲笑我的失败。",
-        appearance="身着一袭深紫色法师长袍，衣料上绣着精致的银色符文，既显高贵又不失神秘；金色的长发如瀑布般垂至腰间，发间别着一枚镶嵌蓝宝石的发饰，闪烁着微光；眼神锐利而自信，微微抬起的下巴透露出骨子里的骄傲，仿佛随时准备用魔法证明自己的不凡。",
-    ),
-    appearance="身着一袭深紫色法师长袍，衣料上绣着精致的银色符文，既显高贵又不失神秘；金色的长发如瀑布般垂至腰间，发间别着一枚镶嵌蓝宝石的发饰，闪烁着微光；眼神锐利而自信，微微抬起的下巴透露出骨子里的骄傲，仿佛随时准备用魔法证明自己的不凡。",
-    type=ActorType.HERO,
-)
 
 #######################################################################################################################################
 # 场景.洞窟
@@ -242,10 +283,10 @@ def _create_actor_instance(
     name: str,
     actor_prototype: ActorPrototype,
     kick_off_message: str,
-    active_skills: List[ActiveSkill],
-    trigger_skills: List[TriggerSkill],
-    buffs: Dict[str, int],
-    attributes: List[int],
+    # active_skills: List[ActiveSkill],
+    # trigger_skills: List[TriggerSkill],
+    # buffs: Dict[str, int],
+    # attributes: List[int],
 ) -> ActorInstance:
 
     if actor_prototype.name not in world_boot.data_base.actors:
@@ -257,11 +298,12 @@ def _create_actor_instance(
         name=name,
         prototype=actor_prototype.name,
         guid=GUID_INDEX,
-        attributes=attributes,  # 暂时不用
+        # attributes=attributes,  # 暂时不用
         kick_off_message=kick_off_message,
-        active_skills=active_skills,
-        trigger_skills=trigger_skills,
-        buffs=buffs,
+        # active_skills=active_skills,
+        # trigger_skills=trigger_skills,
+        # buffs=buffs,
+        attributes=[],
     )
 
     return ret
@@ -353,39 +395,37 @@ def test_world1(world_boot: Boot) -> Boot:
         world_boot=world_boot,
         name=actor_warrior.name,
         actor_prototype=actor_warrior,
-        kick_off_message=f"""你接到了剿灭怪物的委托，和最近认识不久的队友 {actor_wizard.name} 组队扎营，准备开始冒险。
-你对 {actor_wizard.name} 的印象：很强大，但是有点装，你不太喜欢她，为了达成目的你需要一个法师的队友。
-""",
-        active_skills=[
-            ActiveSkill(
-                name="斩击",
-                description="用剑斩向目标，造成物理伤害，力量越高效果越好。",
-                values=[0.5, 0.8, 1.0, 1.3],
-                buff=None,
-            ),
-            ActiveSkill(
-                name="战地治疗",
-                description="利用你的急救知识治疗目标的伤口，恢复生命值，智力越高效果越好。",
-                values=[0.5, 0.8, 1.0, 1.3],
-                buff=None,
-            ),
-        ],
-        trigger_skills=[
-            TriggerSkill(
-                name="挺身格挡",
-                description="挺身而出抵挡攻击，为目标添加护盾buff。",
-                values=[2.0],
-                buff=Buff(
-                    name="护盾",
-                    description="抵挡大量物理伤害",
-                    timing=TriggerType.ON_ATTACKED,
-                    is_debuff=False,
-                ),
-                timing=TriggerType.ON_ATTACKED,
-            ),
-        ],
-        buffs={},
-        attributes=[100, 100, 1, 1, 50, 30, 20],
+        kick_off_message=f"""你接到了剿灭怪物的委托，和最近认识不久的队友 {actor_wizard.name} 组队扎营，准备开始冒险。""",
+        # active_skills=[
+        #     ActiveSkill(
+        #         name="斩击",
+        #         description="用剑斩向目标，造成物理伤害，力量越高效果越好。",
+        #         values=[0.5, 0.8, 1.0, 1.3],
+        #         buff=None,
+        #     ),
+        #     ActiveSkill(
+        #         name="战地治疗",
+        #         description="利用你的急救知识治疗目标的伤口，恢复生命值，智力越高效果越好。",
+        #         values=[0.5, 0.8, 1.0, 1.3],
+        #         buff=None,
+        #     ),
+        # ],
+        # trigger_skills=[
+        #     TriggerSkill(
+        #         name="挺身格挡",
+        #         description="挺身而出抵挡攻击，为目标添加护盾buff。",
+        #         values=[2.0],
+        #         buff=Buff(
+        #             name="护盾",
+        #             description="抵挡大量物理伤害",
+        #             timing=TriggerType.ON_ATTACKED,
+        #             is_debuff=False,
+        #         ),
+        #         timing=TriggerType.ON_ATTACKED,
+        #     ),
+        # ],
+        # buffs={},
+        # attributes=[100, 100, 1, 1, 50, 30, 20],
     )
 
     # 创建实例：角色.法师.露西
@@ -393,34 +433,32 @@ def test_world1(world_boot: Boot) -> Boot:
         world_boot=world_boot,
         name=actor_wizard.name,
         actor_prototype=actor_wizard,
-        kick_off_message=f"""你为了赚取赏金，与最近认识的队友 {actor_warrior.name} 一起组队扎营，准备开始冒险。
-你对 {actor_warrior.name} 的印象：有些蠢（你讨厌头脑简单四肢发达的人）。但够壮实，关键时刻还是可以依靠的。        
-""",
-        active_skills=[
-            ActiveSkill(
-                name="火球",
-                description="默念咒文，在法杖尖端形成火球向目标发射而出，造成火焰伤害，智力越高效果越好。",
-                values=[0.5, 0.8, 1.0, 1.3],
-                buff=None,
-            ),
-            ActiveSkill(
-                name="冰雾",
-                description="默念咒文，在周围形成寒冷刺骨的冰雾，造成冰霜伤害，智力越高效果越好。",
-                values=[0.5, 0.8, 1.0, 1.3],
-                buff=None,
-            ),
-        ],
-        trigger_skills=[
-            TriggerSkill(
-                name="解咒",
-                description="使用解咒魔法移除目标身上的负面效果。",
-                values=[1.0],
-                buff=None,
-                timing=TriggerType.ON_ATTACKED,
-            )
-        ],
-        buffs={},
-        attributes=[70, 70, 1, 1, 15, 45, 60],
+        kick_off_message=f"""你为了赚取赏金，与最近认识的队友 {actor_warrior.name} 一起组队扎营，准备开始冒险。""",
+        # active_skills=[
+        #     ActiveSkill(
+        #         name="火球",
+        #         description="默念咒文，在法杖尖端形成火球向目标发射而出，造成火焰伤害，智力越高效果越好。",
+        #         values=[0.5, 0.8, 1.0, 1.3],
+        #         buff=None,
+        #     ),
+        #     ActiveSkill(
+        #         name="冰雾",
+        #         description="默念咒文，在周围形成寒冷刺骨的冰雾，造成冰霜伤害，智力越高效果越好。",
+        #         values=[0.5, 0.8, 1.0, 1.3],
+        #         buff=None,
+        #     ),
+        # ],
+        # trigger_skills=[
+        #     TriggerSkill(
+        #         name="解咒",
+        #         description="使用解咒魔法移除目标身上的负面效果。",
+        #         values=[1.0],
+        #         buff=None,
+        #         timing=TriggerType.ON_ATTACKED,
+        #     )
+        # ],
+        # buffs={},
+        # attributes=[70, 70, 1, 1, 15, 45, 60],
     )
 
     # 创建实例：角色.怪物.哥布林王
@@ -430,38 +468,38 @@ def test_world1(world_boot: Boot) -> Boot:
         name="角色.怪物.哥布林王一号",
         actor_prototype=actor_goblin1,
         kick_off_message=f"""你正于洞穴深处的王座中纵情狂欢。""",
-        active_skills=[
-            ActiveSkill(
-                name="猛砸",
-                description="蓄力后猛的出拳，对目标造成物理伤害的同时眩晕目标，力量越高效果越好。",
-                values=[0.5, 0.8, 1.0, 1.3, 1.0],
-                buff=Buff(
-                    name="眩晕",
-                    description="头晕目眩，无法行动。",
-                    timing=TriggerType.ON_PLANNING,
-                    is_debuff=True,
-                ),
-            ),
-            ActiveSkill(
-                name="乱舞",
-                description="凭借力量毫无章法的挥舞武器，对目标造成物理伤害，力量越高效果越好。",
-                values=[0.5, 0.8, 1.0, 1.3],
-                buff=None,
-            ),
-        ],
-        trigger_skills=[
-            TriggerSkill(
-                name="反击",
-                description="受到攻击后发动反击，对攻击者造成物理伤害。",
-                values=[1.0],
-                buff=None,
-                timing=TriggerType.ON_ATTACKED,
-            )
-        ],
-        buffs={
-            "藤甲": 999,
-        },
-        attributes=[150, 150, 2, 2, 65, 40, 10],
+        # active_skills=[
+        #     ActiveSkill(
+        #         name="猛砸",
+        #         description="蓄力后猛的出拳，对目标造成物理伤害的同时眩晕目标，力量越高效果越好。",
+        #         values=[0.5, 0.8, 1.0, 1.3, 1.0],
+        #         buff=Buff(
+        #             name="眩晕",
+        #             description="头晕目眩，无法行动。",
+        #             timing=TriggerType.ON_PLANNING,
+        #             is_debuff=True,
+        #         ),
+        #     ),
+        #     ActiveSkill(
+        #         name="乱舞",
+        #         description="凭借力量毫无章法的挥舞武器，对目标造成物理伤害，力量越高效果越好。",
+        #         values=[0.5, 0.8, 1.0, 1.3],
+        #         buff=None,
+        #     ),
+        # ],
+        # trigger_skills=[
+        #     TriggerSkill(
+        #         name="反击",
+        #         description="受到攻击后发动反击，对攻击者造成物理伤害。",
+        #         values=[1.0],
+        #         buff=None,
+        #         timing=TriggerType.ON_ATTACKED,
+        #     )
+        # ],
+        # buffs={
+        #     "藤甲": 999,
+        # },
+        # attributes=[150, 150, 2, 2, 65, 40, 10],
     )
 
     # 创建实例：角色.怪物.哥布林王二号
@@ -471,38 +509,38 @@ def test_world1(world_boot: Boot) -> Boot:
         name="角色.怪物.哥布林王二号",
         actor_prototype=actor_goblin1,
         kick_off_message=f"""你正位于洞穴深处的密室中欣赏着自己劫掠来的财宝。""",
-        active_skills=[
-            ActiveSkill(
-                name="猛砸",
-                description="蓄力后猛的出拳，对目标造成物理伤害的同时眩晕目标，力量越高效果越好。",
-                values=[0.5, 0.8, 1.0, 1.3, 1.0],
-                buff=Buff(
-                    name="眩晕",
-                    description="头晕目眩，无法行动。",
-                    timing=TriggerType.ON_PLANNING,
-                    is_debuff=True,
-                ),
-            ),
-            ActiveSkill(
-                name="乱舞",
-                description="凭借力量毫无章法的挥舞武器，对目标造成物理伤害，力量越高效果越好。",
-                values=[0.5, 0.8, 1.0, 1.3],
-                buff=None,
-            ),
-        ],
-        trigger_skills=[
-            TriggerSkill(
-                name="反击",
-                description="受到攻击后发动反击，对攻击者造成物理伤害。",
-                values=[1.0],
-                buff=None,
-                timing=TriggerType.ON_ATTACKED,
-            )
-        ],
-        buffs={
-            "藤甲": 999,
-        },
-        attributes=[150, 150, 2, 2, 65, 40, 10],
+        # active_skills=[
+        #     ActiveSkill(
+        #         name="猛砸",
+        #         description="蓄力后猛的出拳，对目标造成物理伤害的同时眩晕目标，力量越高效果越好。",
+        #         values=[0.5, 0.8, 1.0, 1.3, 1.0],
+        #         buff=Buff(
+        #             name="眩晕",
+        #             description="头晕目眩，无法行动。",
+        #             timing=TriggerType.ON_PLANNING,
+        #             is_debuff=True,
+        #         ),
+        #     ),
+        #     ActiveSkill(
+        #         name="乱舞",
+        #         description="凭借力量毫无章法的挥舞武器，对目标造成物理伤害，力量越高效果越好。",
+        #         values=[0.5, 0.8, 1.0, 1.3],
+        #         buff=None,
+        #     ),
+        # ],
+        # trigger_skills=[
+        #     TriggerSkill(
+        #         name="反击",
+        #         description="受到攻击后发动反击，对攻击者造成物理伤害。",
+        #         values=[1.0],
+        #         buff=None,
+        #         timing=TriggerType.ON_ATTACKED,
+        #     )
+        # ],
+        # buffs={
+        #     "藤甲": 999,
+        # },
+        # attributes=[150, 150, 2, 2, 65, 40, 10],
     )
 
     # 创建实例：场景.营地，添加角色
@@ -544,30 +582,32 @@ def test_world1(world_boot: Boot) -> Boot:
     _link_instance(
         world_boot,
         [actor_warrior_instance],
-        [actor_goblin1_instance, actor_wizard_instance, actor_goblin2_instance],
-        [stage_heros_camp_instance, stage_room_instance1, stage_room_instance2],
-        [world_system_battle_system_instance],
+        [actor_wizard_instance],
+        [
+            stage_heros_camp_instance,
+        ],
+        [],
     )
 
-    world_boot.data_base.buffs["藤甲"] = Buff(
-        name="藤甲",
-        description="藤蔓缠绕全身，增加防御力。但很易燃。",
-        timing=TriggerType.ON_ATTACKED,
-        is_debuff=False,
-    )
+    # world_boot.data_base.buffs["藤甲"] = Buff(
+    #     name="藤甲",
+    #     description="藤蔓缠绕全身，增加防御力。但很易燃。",
+    #     timing=TriggerType.ON_ATTACKED,
+    #     is_debuff=False,
+    # )
 
-    world_boot.data_base.buffs["眩晕"] = Buff(
-        name="眩晕",
-        description="头晕目眩，无法行动。",
-        timing=TriggerType.ON_PLANNING,
-        is_debuff=True,
-    )
+    # world_boot.data_base.buffs["眩晕"] = Buff(
+    #     name="眩晕",
+    #     description="头晕目眩，无法行动。",
+    #     timing=TriggerType.ON_PLANNING,
+    #     is_debuff=True,
+    # )
 
-    world_boot.data_base.buffs["护盾"] = Buff(
-        name="护盾",
-        description="抵挡大量物理伤害",
-        timing=TriggerType.ON_ATTACKED,
-        is_debuff=False,
-    )
+    # world_boot.data_base.buffs["护盾"] = Buff(
+    #     name="护盾",
+    #     description="抵挡大量物理伤害",
+    #     timing=TriggerType.ON_ATTACKED,
+    #     is_debuff=False,
+    # )
 
     return world_boot

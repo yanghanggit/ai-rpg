@@ -6,6 +6,7 @@ from tcg_models.v_0_0_1 import (
     ActorInstance,
     StageInstance,
     WorldSystemInstance,
+    Attributes,
 )
 from typing import List, Final
 
@@ -119,6 +120,7 @@ def _create_actor_instance(
     name: str,
     actor_prototype: ActorPrototype,
     kick_off_message: str,
+    attributes: Attributes,
 ) -> ActorInstance:
 
     if actor_prototype.name not in world_boot.data_base.actors:
@@ -131,7 +133,7 @@ def _create_actor_instance(
         prototype=actor_prototype.name,
         guid=GUID_INDEX,
         kick_off_message=kick_off_message,
-        attributes=[],
+        attributes=attributes,
     )
 
     return ret
@@ -156,9 +158,7 @@ def _create_stage_instance(
         prototype=stage.name,
         guid=GUID_INDEX,
         actors=[],
-        attributes=[],  # 暂时不用,
         kick_off_message=kick_off_message,
-        next=[],
     )
 
     ret.actors = [actor.name for actor in actors]

@@ -5,6 +5,7 @@ from tcg_models.v_0_0_1 import (
     StagePrototype,
     ActorType,
     StageType,
+    Attributes,
 )
 import game.tcg_game_config
 from typing import Final
@@ -203,6 +204,9 @@ def test_world1(world_boot: Boot) -> Boot:
         name=actor_warrior.name,
         actor_prototype=actor_warrior,
         kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
+        attributes=Attributes(
+            hp=100, max_hp=100, strength=150, dexterity=90, wisdom=60
+        ),
     )
 
     # 创建实例：角色.法师.露西
@@ -211,14 +215,16 @@ def test_world1(world_boot: Boot) -> Boot:
         name=actor_wizard.name,
         actor_prototype=actor_wizard,
         kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
+        attributes=Attributes(hp=50, max_hp=50, strength=35, dexterity=70, wisdom=180),
     )
 
-    # 创建实例：角色.怪物.哥布林王
+    # 创建实例：角色.怪物.哥布林-拉格
     actor_goblin_instance = _create_actor_instance(
         world_boot=world_boot,
         name="角色.怪物.哥布林-拉格",
         actor_prototype=actor_goblin,
         kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
+        attributes=Attributes(hp=80, max_hp=80, strength=45, dexterity=120, wisdom=50),
     )
 
     # 创建实例：角色.怪物.兽人-库洛斯
@@ -235,7 +241,7 @@ def test_world1(world_boot: Boot) -> Boot:
         name=stage_heros_camp.name,
         stage=stage_heros_camp,
         kick_off_message="营火静静地燃烧着。故事的开始了，据消息附近的洞窟里出现了怪物，需要冒险者前去调查。",
-        actors=[actor_warrior_instance, actor_wizard_instance],
+        actors=[],
     )
 
     # 创建实例：场景.密室
@@ -243,8 +249,8 @@ def test_world1(world_boot: Boot) -> Boot:
         world_boot=world_boot,
         name=stage_dungeon_cave.name,
         stage=stage_dungeon_cave,
-        kick_off_message="洞穴中十分吵闹。洞穴的主人正在守护着自己的领地。",
-        actors=[actor_goblin_instance],
+        kick_off_message="洞穴中十分吵闹。一场大战即将开始！！！！",
+        actors=[actor_goblin_instance, actor_warrior_instance, actor_wizard_instance],
     )
 
     # 链接实例
@@ -252,7 +258,7 @@ def test_world1(world_boot: Boot) -> Boot:
         world_boot,
         [actor_warrior_instance],
         [actor_wizard_instance, actor_goblin_instance],
-        [stage_heros_camp_instance, stage_dungeon_cave_instance],
+        [stage_dungeon_cave_instance],
         [],
     )
 

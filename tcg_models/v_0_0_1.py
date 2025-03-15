@@ -9,6 +9,24 @@ SCHEMA_VERSION: Final[str] = "0.0.1"
 
 ###############################################################################################################################################
 @final
+@unique
+class ActorType(StrEnum):
+    NONE = "None"
+    HERO = "Hero"
+    MONSTER = "Monster"
+
+
+###############################################################################################################################################
+@final
+@unique
+class StageType(StrEnum):
+    NONE = "None"
+    HOME = "Home"
+    DUNGEON = "Dungeon"
+
+
+###############################################################################################################################################
+@final
 class AgentShortTermMemory(BaseModel):
     name: str = ""
     chat_history: List[SystemMessage | HumanMessage | AIMessage] = []
@@ -30,30 +48,12 @@ class EntitySnapshot(BaseModel):
 
 ###############################################################################################################################################
 @final
-@unique
-class ActorType(StrEnum):
-    NONE = "None"
-    HERO = "Hero"
-    MONSTER = "Monster"
-
-
-###############################################################################################################################################
-@final
 class ActorPrototype(BaseModel):
     name: str
     code_name: str
     system_message: str
     appearance: str
     type: Union[ActorType, str]
-
-
-###############################################################################################################################################
-@final
-@unique
-class StageType(StrEnum):
-    NONE = "None"
-    HOME = "Home"
-    DUNGEON = "Dungeon"
 
 
 ###############################################################################################################################################
@@ -82,13 +82,27 @@ class DataBase(BaseModel):
 
 
 ###############################################################################################################################################
+# 力量（Strength）
+# 敏捷（Dexterity）
+# 智慧（Wisdom）
+@final
+class Attributes(BaseModel):
+    hp: int
+    max_hp: int
+    strength: int
+    dexterity: int
+    wisdom: int
+
+
+###############################################################################################################################################
 @final
 class ActorInstance(BaseModel):
     name: str
     prototype: str
     guid: int
     kick_off_message: str
-    attributes: List[int]
+    attributes: Attributes
+    level: int = 1
 
 
 ###############################################################################################################################################
@@ -99,8 +113,6 @@ class StageInstance(BaseModel):
     guid: int
     actors: List[str]
     kick_off_message: str
-    attributes: List[int]
-    next: List[str]
 
 
 ###############################################################################################################################################

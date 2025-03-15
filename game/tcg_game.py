@@ -1,6 +1,6 @@
 from enum import Enum, IntEnum, unique
 from entitas import Entity, Matcher  # type: ignore
-from typing import Set, List, Optional, Union, final
+from typing import Set, List, Optional, final
 from overrides import override
 from loguru import logger
 from game.tcg_game_context import TCGGameContext
@@ -31,7 +31,6 @@ from components.components import (
     DungeonStageFlagComponent,
     HeroActorFlagComponent,
     MonsterActorFlagComponent,
-    # AttributeCompoment,
     EnterStageFlagComponent,
 )
 from player.player_proxy import PlayerProxy
@@ -41,10 +40,10 @@ from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 import rpg_game_systems.prompt_utils
 from rpg_models.event_models import AgentEvent
+from tcg_models.v_0_0_1 import Skill
 
-# from extended_systems.tcg_game_battle_manager import BattleManager
 
-
+###############################################################################################################################################
 @unique
 @final
 class TCGGameState(IntEnum):
@@ -53,6 +52,7 @@ class TCGGameState(IntEnum):
     DUNGEON = 2
 
 
+###############################################################################################################################################
 @unique
 @final
 class ConversationError(Enum):
@@ -62,12 +62,7 @@ class ConversationError(Enum):
     NOT_SAME_STAGE = 3
 
 
-#  class StageTransition:
-#      def __init__(self, game: TCGGame) -> None:
-#          self._game = game
-#          pass
-
-
+###############################################################################################################################################
 class TCGGame(BaseGame, TCGGameContext):
 
     def __init__(
@@ -76,7 +71,6 @@ class TCGGame(BaseGame, TCGGameContext):
         world: World,
         world_path: Path,
         langserve_system: LangServeSystem,
-        # battle_manager: BattleManager,
         chaos_engineering_system: IChaosEngineering,
     ) -> None:
 
@@ -89,7 +83,6 @@ class TCGGame(BaseGame, TCGGameContext):
         self._world_file_path: Path = world_path
 
         # 处理器 与 对其控制的 状态。
-        # self._game_state: TCGGameState = TCGGameState.NONE
         self._home_state_process_pipeline: TCGGameProcessPipeline = (
             TCGGameProcessPipeline.create_home_state_pipline(self)
         )
@@ -108,6 +101,10 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 混沌工程系统
         self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
+
+        # 临时数据。
+        # self._round_battle_execute_skills: List[Skill] = []
+        self._round_action_order: List[str] = []
 
     ###############################################################################################################################################
     @property
@@ -325,22 +322,6 @@ class TCGGame(BaseGame, TCGGameContext):
                 FinalAppearanceComponent, instance.name, prototype.appearance
             )
 
-            # 必要组件：属性
-            # actor_entity.add(
-            #     AttributeCompoment,
-            #     instance.name,
-            #     instance.attributes[0],
-            #     instance.attributes[1],
-            #     instance.attributes[2],
-            #     instance.attributes[3],
-            #     instance.attributes[4],
-            #     instance.attributes[5],
-            #     instance.attributes[6],
-            #     # instance.buffs,
-            #     # instance.active_skills,
-            #     # instance.trigger_skills,
-            # )
-
             match prototype.type:
 
                 case ActorType.HERO:
@@ -424,20 +405,7 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     # 临时的，考虑后面把player直接挂在context或者game里，因为player设计上唯一
     def get_player_entity(self) -> Optional[Entity]:
-        # player_entity = self.get_group(
-        #     Matcher(
-        #         all_of=[PlayerActorFlagComponent],
-        #     )
-        # ).entities.copy()
-        # assert len(player_entity) == 1, "Player number is not 1"
-        # return next(iter(player_entity), None)
         return self.get_entity_by_player_name(self.player.name)
-
-    ###############################################################################################################################################
-    # def get_current_stage_entity(self) -> Optional[Entity]:
-    #     player_entity = self.get_player_entity()
-    #     assert player_entity is not None
-    #     return self.safe_get_stage_entity(player_entity)
 
     ###############################################################################################################################################
     def get_system_message(self, entity: Entity) -> str:
@@ -507,7 +475,6 @@ class TCGGame(BaseGame, TCGGameContext):
 
         #
         player_actor_entity.replace(PlayerActorFlagComponent, self.player.name)
-        # logger.info(f"{self._name}, game ready!!!!!!!!!!!!!!!!!!!!")
         logger.info(f"{self.player.name} => {player_actor_entity._name}")
         return True
 
@@ -623,7 +590,6 @@ class TCGGame(BaseGame, TCGGameContext):
             logger.error(f"目标场景不存在: {destination}")
             return
         self._stage_transition(going_actors, destination_stage)
-        # self.get_stage_entity(destination)
 
     ###############################################################################################################################################
     # 检查是否可以对话

@@ -1,6 +1,7 @@
 from typing import Dict, Final, NamedTuple, final
 from pydantic import BaseModel
 from components.registry import register_action_class_2
+from tcg_models.v_0_0_1 import Skill
 
 
 class NullActionModel(BaseModel):
@@ -29,12 +30,23 @@ class SpeakAction2(NamedTuple):
     data: Dict[str, str]
 
 
+############################################################################################################
 # 新的说话action
 @final
 @register_action_class_2
 class MindVoiceAction2(NamedTuple):
     name: str
     data: str
+
+
+############################################################################################################
+
+
+@final
+@register_action_class_2
+class SkillAction2(NamedTuple):
+    name: str
+    skill: Skill
 
 
 ############################################################################################################

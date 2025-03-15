@@ -145,7 +145,10 @@ class TCGGameProcessPipeline(Processors):
         )
         from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
         from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
-        from tcg_game_systems.dungeon_battle_system import DungeonBattleSystem
+        from tcg_game_systems.gen_skill_candidate_queue_system import (
+            GenSkillCandidateQueueSystem,
+        )
+        from tcg_game_systems.select_skill_system import SelectSkillSystem
 
         #
         ##
@@ -177,7 +180,8 @@ class TCGGameProcessPipeline(Processors):
         processors.add(PostPlanningSystem(tcg_game))  ####### 在所有规划之后!
 
         # yh test
-        processors.add(DungeonBattleSystem(tcg_game))
+        processors.add(GenSkillCandidateQueueSystem(tcg_game))
+        processors.add(SelectSkillSystem(tcg_game))
 
         # yh add, 测试用。
         processors.add(PreActionSystem(tcg_game))

@@ -1,5 +1,6 @@
 from typing import NamedTuple, List, final
 from components.registry import register_component_class
+from tcg_models.v_0_0_1 import Skill
 
 # from tcg_models.v_0_0_1 import ActiveSkill, TriggerSkill
 
@@ -294,3 +295,11 @@ class ActorPlanningPermitFlagComponent(NamedTuple):
 @register_component_class
 class StagePlanningPermitFlagComponent(NamedTuple):
     name: str
+
+
+############################################################################################################
+@final
+@register_component_class
+class SkillCandidateQueueComponent(NamedTuple):
+    name: str
+    queue: List[Skill]

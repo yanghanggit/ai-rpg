@@ -5,52 +5,58 @@ import format_string.json_format
 from components.components import (
     StageEnvironmentComponent,
     FinalAppearanceComponent,
-    ActorRolePlayPlanningPermitFlagComponent,
+    ActorPlanningPermitFlagComponent,
 )
 from overrides import override
 from typing import Dict, List, final
 from game.tcg_game import TCGGame
 from loguru import logger
-from components.actions2 import SpeakAction2
+from components.actions2 import SpeakAction2, MindVoiceAction2
 
 
 #######################################################################################################################################
 @final
-class ActorRoleplayPlanningResponse(BaseModel):
+class ActorPlanningResponse(BaseModel):
     speak_actions: Dict[str, str] = {}
+    mind_voice_actions: str = ""
 
 
 #######################################################################################################################################
 def _generate_actor_plan_prompt(
-    current_stage_name: str,
+    current_stage: str,
     current_stage_narration: str,
-    self_appearence: str,
-    actors_info_list: List[str],
+    current_story: str,
+    actors_appearance_mapping: Dict[str, str],
 ) -> str:
 
+    actors_appearances_info = []
+    for actor_name, appearance in actors_appearance_mapping.items():
+        actors_appearances_info.append(f"{actor_name}: {appearance}")
+    if len(actors_appearances_info) == 0:
+        actors_appearances_info.append("无")
+
     # 格式示例
-    actor_roleplay_response_example = ActorRoleplayPlanningResponse(
+    actor_response_example = ActorPlanningResponse(
         speak_actions={
-            "场景内角色1": "你要说的内容（场景内其他角色会听见）",
-            "场景内角色2": "你要说的内容（场景内其他角色会听见）",
-            "场景内角色?": "....",
-        }
+            "场景内角色全名": "你要说的内容（场景内其他角色会听见）",
+        },
+        mind_voice_actions="你要说的内容（内心独白，只有你自己能听见）",
     )
 
-    return f"""# 请制定你的行动计划，请确保你的行为和言语符合游戏规则和设定
-## 当前所在的场景
-{current_stage_name}
-### 当前场景描述
+    return f"""# 请制定你的行动计划。
+## 当前场景
+{current_stage}
+### 场景描述
 {current_stage_narration}
-## 你当前的外观特征
-{self_appearence}
-## 当前场景内除你之外的其他角色的名称与外观特征
-{"\n".join(actors_info_list)}
+### 故事情节
+{current_story}
+## 场景内角色
+{"\n".join(actors_appearances_info)}
 ## 输出要求
 - 引用角色或场景时，请严格遵守全名机制
 - 所有输出必须为第一人称视角。
-### 格式示例(JSON)
-{actor_roleplay_response_example.model_dump_json()}"""
+### 输出格式(JSON)
+{actor_response_example.model_dump_json()}"""
 
 
 #######################################################################################################################################
@@ -62,7 +68,7 @@ def _compress_actor_plan_prompt(
 
 #######################################################################################################################################
 @final
-class ActorRoleplayPlanningSystem(ExecuteProcessor):
+class ActorPlanningSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
@@ -84,7 +90,7 @@ class ActorRoleplayPlanningSystem(ExecuteProcessor):
         actor_entities = self._game.get_group(
             Matcher(
                 all_of=[
-                    ActorRolePlayPlanningPermitFlagComponent,
+                    ActorPlanningPermitFlagComponent,
                 ],
             )
         ).entities
@@ -124,19 +130,16 @@ class ActorRoleplayPlanningSystem(ExecuteProcessor):
         self, entity2: Entity, request_handler: ChatRequestHandler
     ) -> None:
 
-        assert entity2.has(ActorRolePlayPlanningPermitFlagComponent)
+        assert entity2.has(ActorPlanningPermitFlagComponent)
         assert entity2._name == request_handler._name
 
         # 核心处理
         try:
 
-            format_response = ActorRoleplayPlanningResponse.model_validate_json(
+            format_response = ActorPlanningResponse.model_validate_json(
                 format_string.json_format.strip_json_code_block(
                     request_handler.response_content
                 )
-            )
-            logger.warning(
-                f"{entity2._name}, format_response:\n{format_response.model_dump_json()}"
             )
 
             self._game.append_human_message(
@@ -145,7 +148,16 @@ class ActorRoleplayPlanningSystem(ExecuteProcessor):
             self._game.append_ai_message(entity2, request_handler.response_content)
 
             # 添加说话动作
-            entity2.replace(SpeakAction2, entity2._name, format_response.speak_actions)
+            if len(format_response.speak_actions) > 0:
+                entity2.replace(
+                    SpeakAction2, entity2._name, format_response.speak_actions
+                )
+
+            # 添加内心独白
+            if format_response.mind_voice_actions != "":
+                entity2.replace(
+                    MindVoiceAction2, entity2._name, format_response.mind_voice_actions
+                )
 
         except:
             logger.error(
@@ -165,22 +177,23 @@ class ActorRoleplayPlanningSystem(ExecuteProcessor):
             assert current_stage is not None
 
             # 找到当前场景内所有角色
-            actors_set = self._game.retrieve_actors_on_stage(current_stage)
-            actors_set.remove(entity)
+            actors_on_stage = self._game.retrieve_actors_on_stage(current_stage)
+            actors_on_stage.remove(entity)
 
-            # 移除自己后，剩下的角色的名字+外观信息
-            actors_info_list: List[str] = [
-                f"{actor._name}:{actor.get(FinalAppearanceComponent).final_appearance}"
-                for actor in actors_set
-                if actor.has(FinalAppearanceComponent)
-            ]
+            actors_apperances_mapping: Dict[str, str] = {}
+            for actor in actors_on_stage:
+                final_appearance_comp = actor.get(FinalAppearanceComponent)
+                assert final_appearance_comp is not None
+                actors_apperances_mapping[final_appearance_comp.name] = (
+                    final_appearance_comp.final_appearance
+                )
 
             # 生成消息
             message = _generate_actor_plan_prompt(
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
-                entity.get(FinalAppearanceComponent).final_appearance,
-                actors_info_list,
+                current_stage.get(StageEnvironmentComponent).story,
+                actors_apperances_mapping,
             )
 
             # 生成请求处理器

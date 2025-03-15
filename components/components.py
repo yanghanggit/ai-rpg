@@ -1,4 +1,4 @@
-from typing import Dict, NamedTuple, List, Set, final
+from typing import NamedTuple, List, final
 from components.registry import register_component_class
 
 # from tcg_models.v_0_0_1 import ActiveSkill, TriggerSkill
@@ -96,6 +96,7 @@ class StageSpawnerComponent(NamedTuple):
 class StageEnvironmentComponent(NamedTuple):
     name: str
     narrate: str
+    story: str
 
 
 ############################################################################################################
@@ -280,18 +281,10 @@ class MonsterActorFlagComponent(NamedTuple):
 
 
 ############################################################################################################
-# Actor专用，标记该Actor是MR
-""" @final
-@register_component_class
-class MagicRulerActorFlagComponent(NamedTuple):
-    name: str """
-
-
-############################################################################################################
 # Actor专用，标记该Actor需要进行角色扮演推理（心理活动，说话...），如有需要，单独列入Plan
 @final
 @register_component_class
-class ActorRolePlayPlanningPermitFlagComponent(NamedTuple):
+class ActorPlanningPermitFlagComponent(NamedTuple):
     name: str
 
 
@@ -299,5 +292,5 @@ class ActorRolePlayPlanningPermitFlagComponent(NamedTuple):
 # State专用，标记该State需要进行场景描写推理，如有需要，单独列入Plan
 @final
 @register_component_class
-class StageNarratePlanningPermitFlagComponent(NamedTuple):
+class StagePlanningPermitFlagComponent(NamedTuple):
     name: str

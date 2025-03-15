@@ -104,7 +104,7 @@ class StatusCheckUtils:
 - 场景内所有角色的全名(注意‘全名机制’)。
 ## 输出要求
 - 保持内容简洁，但不要遗漏重要信息。
-### 格式示例(JSON)
+### 输出格式(JSON)
 {stage_response_template.model_dump_json()}"""
 
         # 生成请求
@@ -147,7 +147,7 @@ class StatusCheckUtils:
 - 你当前拥有的状态（增益/减益）。
 ## 输出要求：
 - 保持内容简洁，但不要遗漏重要信息。
-### 格式示例(JSON)
+### 输出格式(JSON)
 {actor_response_template.model_dump_json()}"""
 
         # 生成请求

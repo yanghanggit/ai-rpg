@@ -29,4 +29,12 @@ class SpeakAction2(NamedTuple):
     data: Dict[str, str]
 
 
+# 新的说话action
+@final
+@register_action_class_2
+class MindVoiceAction2(NamedTuple):
+    name: str
+    data: str
+
+
 ############################################################################################################

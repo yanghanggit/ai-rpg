@@ -387,7 +387,7 @@ class TCGGame(BaseGame, TCGGameContext):
                 KickOffMessageComponent, instance.name, instance.kick_off_message
             )
             stage_entity.add(
-                StageEnvironmentComponent, instance.name, instance.kick_off_message
+                StageEnvironmentComponent, instance.name, instance.kick_off_message, ""
             )
 
             if prototype.type == StageType.DUNGEON:
@@ -428,10 +428,10 @@ class TCGGame(BaseGame, TCGGameContext):
         return self.get_entity_by_player_name(self.player.name)
 
     ###############################################################################################################################################
-    def get_current_stage_entity(self) -> Optional[Entity]:
-        player_entity = self.get_player_entity()
-        assert player_entity is not None
-        return self.safe_get_stage_entity(player_entity)
+    # def get_current_stage_entity(self) -> Optional[Entity]:
+    #     player_entity = self.get_player_entity()
+    #     assert player_entity is not None
+    #     return self.safe_get_stage_entity(player_entity)
 
     ###############################################################################################################################################
     def get_system_message(self, entity: Entity) -> str:
@@ -492,14 +492,16 @@ class TCGGame(BaseGame, TCGGameContext):
 
         assert len(player_entities) > 0
         if len(player_entities) == 0:
-            logger.error(f"no player entity")
             return False
 
+        #
         player_actor_entity = next(iter(player_entities))
         player_comp = player_actor_entity.get(PlayerActorFlagComponent)
         assert player_comp is not None
+
+        #
         player_actor_entity.replace(PlayerActorFlagComponent, self.player.name)
-        logger.info(f"{self._name}, game ready!!!!!!!!!!!!!!!!!!!!")
+        # logger.info(f"{self._name}, game ready!!!!!!!!!!!!!!!!!!!!")
         logger.info(f"{self.player.name} => {player_actor_entity._name}")
         return True
 

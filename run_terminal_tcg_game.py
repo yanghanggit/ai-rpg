@@ -134,9 +134,10 @@ async def run_game(option: OptionParameters) -> None:
     # player_proxy = PlayerProxy(PlayerProxyModel(player_name=user_name))
     terminal_tcg_game.player = PlayerProxy(PlayerProxyModel(name=user_name))
 
-    if not terminal_tcg_game.ready():
-        logger.error(f"游戏准备失败 = {game_name}")
-        exit(1)
+    if option.new_game:
+        if not terminal_tcg_game.ready():
+            logger.error(f"游戏准备失败 = {game_name}")
+            exit(1)
 
     is_first_execution = False
 

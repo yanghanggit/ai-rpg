@@ -1,6 +1,6 @@
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
-from components.actions import (
-    MindVoiceAction,
+from components.actions2 import (
+    MindVoiceAction2,
 )
 from typing import final, override
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
@@ -15,12 +15,12 @@ class MindVoiceActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(MindVoiceAction): GroupEvent.ADDED}
+        return {Matcher(MindVoiceAction2): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(MindVoiceAction) and entity.has(ActorComponent)
+        return entity.has(MindVoiceAction2) and entity.has(ActorComponent)
 
     ####################################################################################################################################
     @override
@@ -30,11 +30,10 @@ class MindVoiceActionSystem(BaseActionReactiveSystem):
 
     ####################################################################################################################################
     def _process_mindvoice_action(self, entity: Entity) -> None:
-
-        mind_voice_action = entity.get(MindVoiceAction)
+        mind_voice_action = entity.get(MindVoiceAction2)
         assert mind_voice_action is not None
-
-        content = " ".join(mind_voice_action.values)
-        logger.info(f"MindVoiceActionSystem:\n{mind_voice_action.name}:\n{content}")
+        logger.info(
+            f"MindVoiceActionSystem:\n{mind_voice_action.name}:\n{mind_voice_action.data}"
+        )
 
     ####################################################################################################################################

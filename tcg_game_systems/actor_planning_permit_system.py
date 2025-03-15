@@ -5,14 +5,14 @@ from game.tcg_game import TCGGame
 import random
 from components.components import (
     ActorComponent,
-    ActorRolePlayPlanningPermitFlagComponent,
+    ActorPlanningPermitFlagComponent,
 )
 from loguru import logger
 
 
 #######################################################################################################################################
 @final
-class ActorRoleplayPlanningPermitSystem(ExecuteProcessor):
+class ActorPlanningPermitSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
@@ -20,12 +20,15 @@ class ActorRoleplayPlanningPermitSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     def execute(self) -> None:
+
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
+
         player_stage = self._game.safe_get_stage_entity(player_entity)
+        assert player_stage is not None
         if player_stage is None:
-            logger.error("Player stage is None")
             return
+
         # 得到所有在玩家所在stage的actor
         actors = list(self._game.retrieve_stage_actor_mapping()[player_stage])
         if len(actors) == 0:
@@ -37,9 +40,10 @@ class ActorRoleplayPlanningPermitSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     def _add_permit(self, entities: Set[Entity]) -> None:
+
         for entity in entities:
             entity.replace(
-                ActorRolePlayPlanningPermitFlagComponent,
+                ActorPlanningPermitFlagComponent,
                 entity.get(ActorComponent).name,
             )
 

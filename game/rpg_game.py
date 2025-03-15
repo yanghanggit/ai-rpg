@@ -494,7 +494,7 @@ class RPGGame(BaseGame):
         )
 
         ## 添加场景环境信息。
-        stage_entity.add(StageEnvironmentComponent, stage_model.name, "")
+        stage_entity.add(StageEnvironmentComponent, stage_model.name, "", "")
 
         ## todo 全部静态场景，除了第一次kick off，后续全部不做环境变化
         stage_entity.add(StageStaticFlagComponent, stage_model.name)

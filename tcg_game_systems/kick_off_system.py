@@ -9,7 +9,7 @@ from components.components import (
     SystemMessageComponent,
     StageEnvironmentComponent,
 )
-from typing import Dict, Set, final, List
+from typing import Set, final, List
 from game.tcg_game import TCGGame
 from loguru import logger
 from agent.chat_request_handler import ChatRequestHandler
@@ -18,39 +18,30 @@ from agent.chat_request_handler import ChatRequestHandler
 ###############################################################################################################################################
 def _generate_actor_kick_off_prompt(kick_off_message: str) -> str:
     return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
-## 设定与状态描述
+## 这是你的启动消息
 {kick_off_message}
 ## 输出要求
-- 你的内容活动，输出内容尽量简短。"""
+- 你的内心活动，尽量简短。"""
 
 
 ###############################################################################################################################################
 def _generate_stage_kick_off_prompt(
     kick_off_message: str,
-    actor_appearance_mapping: Dict[str, str],
 ) -> str:
-
-    # 组织一下格式
-    actor_descriptions = ["无"]
-    if len(actor_appearance_mapping) > 0:
-        actor_descriptions = []
-        for actor_name, final_appearance in actor_appearance_mapping.items():
-            actor_descriptions.append(f"- {actor_name}: {final_appearance}")
-
     return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
-## 设定与状态描述
+## 这是你的启动消息
 {kick_off_message}
-## 场景内的角色
-{"\n".join(actor_descriptions)}
 ## 输出要求
-- 输出场景描述，并从描述中移除角色的描述。输出尽量简短。"""
+- 输出场景描述与故事内容，尽量简短。"""
 
 
 ###############################################################################################################################################
 def _generate_world_system_kick_off_prompt() -> str:
-    return f"""# 游戏启动! 你将开始你的扮演。请回答你的职能与描述。
+    return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
+## 这是你的启动消息
+- 请回答你的职能与描述。
 ## 输出要求
-- 确认你的职能，输出尽量简短。"""
+- 确认你的职能，尽量简短。"""
 
 
 ###############################################################################################################################################
@@ -143,6 +134,7 @@ class KickOffSystem(ExecuteProcessor):
                     StageEnvironmentComponent,
                     entity2._name,
                     request_handler.response_content,
+                    "",
                 )
             elif entity2.has(ActorComponent):
                 pass
@@ -161,12 +153,8 @@ class KickOffSystem(ExecuteProcessor):
             gen_prompt = _generate_actor_kick_off_prompt(kick_off_message)
         elif entity.has(StageComponent):
             # 舞台的
-            actors_appearance_on_stage = (
-                self._game.retrieve_actor_appearance_on_stage_mapping(entity)
-            )
             gen_prompt = _generate_stage_kick_off_prompt(
                 kick_off_message,
-                actors_appearance_on_stage,
             )
         elif entity.has(WorldSystemComponent):
             # 世界系统的

@@ -12,11 +12,6 @@ class TCGGameProcessPipeline(Processors):
         ### 不这样就循环引用
         from game.tcg_game import TCGGame
 
-        ##
-        tcg_game = cast(TCGGame, game)
-        assert isinstance(tcg_game, TCGGame)
-        processors = TCGGameProcessPipeline()
-
         ## 添加一些系统。。。
         from tcg_game_systems.begin_system import BeginSystem
         from tcg_game_systems.end_system import EndSystem
@@ -28,19 +23,10 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.handle_web_player_input_system import (
             HandleWebPlayerInputSystem,
         )
-
-        # from tcg_game_systems.terminal_player_interrupt_wait_system import (
-        #     TerminalPlayerInterruptWaitSystem,
-        # )
         from tcg_game_systems.mind_voice_action_system import (
             MindVoiceActionSystem,
         )
-
-        # from tcg_game_systems.whisper_action_system import WhisperActionSystem
-
         from tcg_game_systems.speak_action_system import SpeakActionSystem
-
-        # from tcg_game_systems.announce_action_system import AnnounceActionSystem
         from tcg_game_systems.pre_action_system import PreActionSystem
         from tcg_game_systems.post_action_system import PostActionSystem
         from tcg_game_systems.destroy_system import DestroySystem
@@ -62,6 +48,13 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.stage_planning_permit_system import (
             StagePlanningPermitSystem,
         )
+        from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
+        from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
+
+        ##
+        tcg_game = cast(TCGGame, game)
+        assert isinstance(tcg_game, TCGGame)
+        processors = TCGGameProcessPipeline()
 
         # 进入动作前，处理输入。
         processors.add(HandleTerminalPlayerInputSystem(tcg_game))
@@ -114,12 +107,6 @@ class TCGGameProcessPipeline(Processors):
         ### 不这样就循环引用
         from game.tcg_game import TCGGame
 
-        #
-        ##
-        tcg_game = cast(TCGGame, game)
-        assert isinstance(tcg_game, TCGGame)
-        processors = TCGGameProcessPipeline()
-
         ## 添加一些系统。。。
         from tcg_game_systems.begin_system import BeginSystem
         from tcg_game_systems.end_system import EndSystem
@@ -131,14 +118,13 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.handle_web_player_input_system import (
             HandleWebPlayerInputSystem,
         )
-        from tcg_game_systems.destroy_system import DestroySystem
-        from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
-        from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
-        from tcg_game_systems.status_update_action_system import (
-            StatusUpdateActionSystem,
+        from tcg_game_systems.mind_voice_action_system import (
+            MindVoiceActionSystem,
         )
+        from tcg_game_systems.speak_action_system import SpeakActionSystem
         from tcg_game_systems.pre_action_system import PreActionSystem
         from tcg_game_systems.post_action_system import PostActionSystem
+        from tcg_game_systems.destroy_system import DestroySystem
         from tcg_game_systems.dead_action_system import DeadActionSystem
         from tcg_game_systems.pre_planning_system import PrePlanningSystem
         from tcg_game_systems.post_planning_system import PostPlanningSystem
@@ -157,14 +143,14 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.stage_planning_permit_system import (
             StagePlanningPermitSystem,
         )
+        from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
+        from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
 
-        from tcg_game_systems.mind_voice_action_system import (
-            MindVoiceActionSystem,
-        )
-
-        # from tcg_game_systems.whisper_action_system import WhisperActionSystem
-
-        from tcg_game_systems.speak_action_system import SpeakActionSystem
+        #
+        ##
+        tcg_game = cast(TCGGame, game)
+        assert isinstance(tcg_game, TCGGame)
+        processors = TCGGameProcessPipeline()
 
         # 用户输入转入pipeline 执行序列
         processors.add(HandleTerminalPlayerInputSystem(tcg_game))
@@ -192,7 +178,6 @@ class TCGGameProcessPipeline(Processors):
 
         # yh add, 测试用。
         processors.add(PreActionSystem(tcg_game))
-        processors.add(StatusUpdateActionSystem(tcg_game))
         processors.add(MindVoiceActionSystem(tcg_game))
         processors.add(SpeakActionSystem(tcg_game))
         processors.add(DeadActionSystem(tcg_game))

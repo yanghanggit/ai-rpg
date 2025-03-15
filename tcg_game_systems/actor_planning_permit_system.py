@@ -7,6 +7,7 @@ from components.components import (
     ActorComponent,
     ActorPlanningPermitFlagComponent,
     EnterStageFlagComponent,
+    DungeonStageFlagComponent,
 )
 from loguru import logger
 
@@ -28,6 +29,9 @@ class ActorPlanningPermitSystem(ExecuteProcessor):
         current_stage_entity = self._game.safe_get_stage_entity(player_entity)
         assert current_stage_entity is not None
         if current_stage_entity is None:
+            return
+
+        if current_stage_entity.has(DungeonStageFlagComponent):
             return
 
         # 得到所有在玩家所在stage的actor

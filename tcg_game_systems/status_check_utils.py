@@ -105,6 +105,7 @@ class StatusCheckUtils:
 - 不要漏掉任何一个角色。
 ## 输出要求
 - 保持内容简洁，但不要遗漏重要信息。
+- 不要使用```json```来封装内容。
 ### 输出格式(JSON)
 {stage_response_template.model_dump_json()}"""
 
@@ -149,6 +150,7 @@ class StatusCheckUtils:
 - 你当前拥有的状态（增益/减益）。
 ## 输出要求：
 - 保持内容简洁，但不要遗漏重要信息。
+- 不要使用```json```来封装内容。
 ### 输出格式(JSON)
 {actor_response_template.model_dump_json()}"""
 

@@ -49,6 +49,7 @@ def _generate_battle_prompt(
 ## 场景内角色行动顺序(从左到右)
 {action_order}
 ## 输出要求
+- 不要使用```json```来封装内容。
 ### 输出格式(JSON)
 {select_skill_response_example.model_dump_json()}"""
 
@@ -68,10 +69,10 @@ class SelectSkillSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     async def a_execute1(self) -> None:
-        await self._process_actor_planning_request()
+        await self._process_request()
 
     #######################################################################################################################################
-    async def _process_actor_planning_request(self) -> None:
+    async def _process_request(self) -> None:
 
         # 获取所有需要进行角色规划的角色
         actor_entities = self._game.get_group(
@@ -115,10 +116,10 @@ class SelectSkillSystem(ExecuteProcessor):
 
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
-            self._handle_actor_response(entity2, request_handler)
+            self._handle_response(entity2, request_handler)
 
     #######################################################################################################################################
-    def _handle_actor_response(
+    def _handle_response(
         self, entity2: Entity, request_handler: ChatRequestHandler
     ) -> None:
 
@@ -131,7 +132,6 @@ class SelectSkillSystem(ExecuteProcessor):
                 )
             )
 
-            #
             skill_candidate_comp = entity2.get(SkillCandidateQueueComponent)
             for skill in skill_candidate_comp.queue:
                 if skill.name == format_response.skill:
@@ -160,7 +160,6 @@ class SelectSkillSystem(ExecuteProcessor):
             message = _generate_battle_prompt(
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
-                # current_stage.get(StageEnvironmentComponent).story,
                 entity.get(SkillCandidateQueueComponent).queue,
                 action_order,
             )

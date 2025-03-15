@@ -13,8 +13,6 @@ from rpg_models.player_models import PlayerProxyModel
 import game.tcg_game_utils
 from player.player_command2 import PlayerCommand2
 
-# from extended_systems.tcg_game_battle_manager import BattleManager
-
 
 ###############################################################################################################################################
 @dataclass
@@ -184,8 +182,6 @@ async def run_game(option: OptionParameters) -> None:
 
 ###############################################################################################################################################
 if __name__ == "__main__":
-
-    # _test_immutable()
 
     import asyncio
 

@@ -187,8 +187,8 @@ class TCGGameProcessPipeline(Processors):
 
         # yh add, 测试用。
         processors.add(PreActionSystem(tcg_game))
-        processors.add(MindVoiceActionSystem(tcg_game))
-        processors.add(SpeakActionSystem(tcg_game))
+        # processors.add(MindVoiceActionSystem(tcg_game))
+        # processors.add(SpeakActionSystem(tcg_game))
         processors.add(DeadActionSystem(tcg_game))
         processors.add(PostActionSystem(tcg_game))
 

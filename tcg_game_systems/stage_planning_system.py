@@ -41,8 +41,8 @@ def _generate_stage_plan_prompt(
 ## 输出内容-场景描述
 - 场景内的环境描述，不要包含任何角色信息。
 ## 输出要求
-- 引用角色或场景时，请严格遵守全名机制。
 - 所有输出必须为第三人称视角。
+- 不要使用```json```来封装内容。
 ### 输出格式(JSON)
 {stage_response_example.model_dump_json()}"""
 

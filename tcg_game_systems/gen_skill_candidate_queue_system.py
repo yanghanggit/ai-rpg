@@ -26,7 +26,6 @@ class GenSkillsResponse(BaseModel):
 def _generate_gen_skills_prompt(
     current_stage: str,
     current_stage_narration: str,
-    # current_story: str,
 ) -> str:
 
     gen_skills_response_example = GenSkillsResponse(
@@ -53,6 +52,7 @@ def _generate_gen_skills_prompt(
 ### 场景描述
 {current_stage_narration}
 ## 输出要求
+- 不要使用```json```来封装内容。
 ### 输出格式(JSON)
 {gen_skills_response_example.model_dump_json()}"""
 
@@ -74,7 +74,7 @@ class GenSkillCandidateQueueSystem(ExecuteProcessor):
     async def a_execute1(self) -> None:
         # pass
         self._clear_all_skill_candidate_queue_components()
-        await self._process_actor_planning_request()
+        await self._process_request()
 
     #######################################################################################################################################
     def _clear_all_skill_candidate_queue_components(self) -> None:
@@ -90,7 +90,7 @@ class GenSkillCandidateQueueSystem(ExecuteProcessor):
             entity.remove(SkillCandidateQueueComponent)
 
     #######################################################################################################################################
-    async def _process_actor_planning_request(self) -> None:
+    async def _process_request(self) -> None:
 
         # 获取所有需要进行角色规划的角色
         actor_entities = self._game.get_group(
@@ -129,10 +129,10 @@ class GenSkillCandidateQueueSystem(ExecuteProcessor):
 
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
-            self._handle_actor_response(entity2, request_handler)
+            self._handle_response(entity2, request_handler)
 
     #######################################################################################################################################
-    def _handle_actor_response(
+    def _handle_response(
         self, entity2: Entity, request_handler: ChatRequestHandler
     ) -> None:
 

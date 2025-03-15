@@ -24,9 +24,7 @@ GLOBAL_GAME_RULES: Final[
 名字可以由多个单词组成，单词之间用英文句号`.`分隔。例如：角色.战士.凯尔。
 注意请完整引用全名以确保一致性。"""
 
-"""
-道具：如卡牌，药水与遗物等，由角色持有并可以改变角色能力或提供特殊能力。
-"""
+#######################################################################################################################################
 
 EPOCH_SCRIPT: Final[
     str
@@ -45,7 +43,7 @@ def _comple_actor_system_prompt(
     name: str, epoch_script: str, actor_profile: str, appearance: str
 ) -> str:
 
-    prompt = f"""# {name}
+    return f"""# {name}
 你扮演这个游戏世界中的一个角色: {name}
 ## 当前游戏背景
 {epoch_script}
@@ -56,16 +54,16 @@ def _comple_actor_system_prompt(
 ## 你的外观特征
 {appearance}"""
 
-    return prompt
-
 
 #######################################################################################################################################
 def _comple_stage_system_prompt(
     name: str, epoch_script: str, stage_profile: str
 ) -> str:
 
-    prompt = f"""# {name}
+    return f"""# {name}
 你扮演这个游戏世界中的一个场景: {name}
+你将是角色活动的地点。
+如果发生战斗，你将负责推理，判断，处理与演绎战斗。
 ## 游戏背景
 {epoch_script}
 ## 游戏规则
@@ -73,15 +71,13 @@ def _comple_stage_system_prompt(
 ## 场景设定
 {stage_profile}"""
 
-    return prompt
-
 
 #######################################################################################################################################
 def _comple_world_system_system_prompt(
     name: str, epoch_script: str, world_system_profile: str
 ) -> str:
 
-    prompt = f"""# {name}
+    return f"""# {name}
 你扮演这个游戏世界中的一个系统: {name}
 ## 游戏背景
 {epoch_script}
@@ -89,8 +85,6 @@ def _comple_world_system_system_prompt(
 {GLOBAL_GAME_RULES}
 ## 你的系统设定
 {world_system_profile}"""
-
-    return prompt
 
 
 #######################################################################################################################################

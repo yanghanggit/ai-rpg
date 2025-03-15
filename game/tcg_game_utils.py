@@ -240,7 +240,7 @@ def test_world1(world_boot: Boot) -> Boot:
         world_boot=world_boot,
         name=stage_heros_camp.name,
         stage=stage_heros_camp,
-        kick_off_message="营火静静地燃烧着。故事的开始了，据消息附近的洞窟里出现了怪物，需要冒险者前去调查。",
+        kick_off_message="营火静静地燃烧着。据消息附近的洞窟里出现了怪物，需要冒险者前去调查。",
         actors=[],
     )
 
@@ -249,7 +249,7 @@ def test_world1(world_boot: Boot) -> Boot:
         world_boot=world_boot,
         name=stage_dungeon_cave.name,
         stage=stage_dungeon_cave,
-        kick_off_message="洞穴中十分吵闹。一场大战即将开始！！！！",
+        kick_off_message="洞穴中十分吵闹。",
         actors=[actor_goblin_instance, actor_warrior_instance, actor_wizard_instance],
     )
 

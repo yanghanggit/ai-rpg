@@ -17,7 +17,7 @@ import format_string.json_format
 @final
 class StagePlanningResponse(BaseModel):
     environment_narration: str = ""
-    story: str = ""
+    # story: str = ""
 
 
 #######################################################################################################################################
@@ -32,17 +32,14 @@ def _generate_stage_plan_prompt(
         actors_appearances_info.append("无")
 
     stage_response_example = StagePlanningResponse(
-        environment_narration="场景内的环境描述", story="故事情节"
+        environment_narration="场景内的环境描述"
     )
 
-    return f"""# 请你输出你的场景描述与故事情节。
+    return f"""# 请你输出你的场景描述
 ## 场景内角色
 {"\n".join(actors_appearances_info)}
-## 输出内容1-场景描述
+## 输出内容-场景描述
 - 场景内的环境描述，不要包含任何角色信息。
-## 输出内容2-故事情节
-- 故事情节将会通知场景内角色对其进行引导。
-- 不要虚构我没有告诉你的角色信息。
 ## 输出要求
 - 引用角色或场景时，请严格遵守全名机制。
 - 所有输出必须为第三人称视角。
@@ -52,7 +49,7 @@ def _generate_stage_plan_prompt(
 
 #######################################################################################################################################
 def _compress_stage_plan_prompt(prompt: str) -> str:
-    return "# 请你输出你的场景描述与故事情节。并以 JSON 格式输出。"
+    return "# 请你输出你的场景描述。并以 JSON 格式输出。"
 
 
 #######################################################################################################################################
@@ -168,7 +165,7 @@ class StagePlanningSystem(ExecuteProcessor):
                 StageEnvironmentComponent,
                 entity2._name,
                 format_response.environment_narration,
-                format_response.story,
+                # format_response.story,
             )
 
         except:

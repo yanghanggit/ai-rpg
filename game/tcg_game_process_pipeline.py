@@ -149,6 +149,7 @@ class TCGGameProcessPipeline(Processors):
             GenSkillCandidateQueueSystem,
         )
         from tcg_game_systems.select_skill_system import SelectSkillSystem
+        from tcg_game_systems.execute_skill_system import ExecuteSkillSystem
 
         #
         ##
@@ -182,6 +183,7 @@ class TCGGameProcessPipeline(Processors):
         # yh test
         processors.add(GenSkillCandidateQueueSystem(tcg_game))
         processors.add(SelectSkillSystem(tcg_game))
+        processors.add(ExecuteSkillSystem(tcg_game))
 
         # yh add, 测试用。
         processors.add(PreActionSystem(tcg_game))

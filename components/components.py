@@ -97,7 +97,7 @@ class StageSpawnerComponent(NamedTuple):
 class StageEnvironmentComponent(NamedTuple):
     name: str
     narrate: str
-    story: str
+    #story: str
 
 
 ############################################################################################################

@@ -32,7 +32,7 @@ def _generate_stage_kick_off_prompt(
 ## 这是你的启动消息
 {kick_off_message}
 ## 输出要求
-- 输出场景描述与故事内容，尽量简短。"""
+- 输出场景描述，尽量简短。"""
 
 
 ###############################################################################################################################################
@@ -134,7 +134,6 @@ class KickOffSystem(ExecuteProcessor):
                     StageEnvironmentComponent,
                     entity2._name,
                     request_handler.response_content,
-                    "",
                 )
             elif entity2.has(ActorComponent):
                 pass

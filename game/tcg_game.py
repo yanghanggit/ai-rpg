@@ -374,7 +374,7 @@ class TCGGame(BaseGame, TCGGameContext):
                 KickOffMessageComponent, instance.name, instance.kick_off_message
             )
             stage_entity.add(
-                StageEnvironmentComponent, instance.name, instance.kick_off_message, ""
+                StageEnvironmentComponent, instance.name, instance.kick_off_message
             )
 
             if prototype.type == StageType.DUNGEON:

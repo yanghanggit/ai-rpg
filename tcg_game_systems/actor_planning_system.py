@@ -25,7 +25,7 @@ class ActorPlanningResponse(BaseModel):
 def _generate_actor_plan_prompt(
     current_stage: str,
     current_stage_narration: str,
-    current_story: str,
+    # current_story: str,
     actors_appearance_mapping: Dict[str, str],
 ) -> str:
 
@@ -48,8 +48,6 @@ def _generate_actor_plan_prompt(
 {current_stage}
 ### 场景描述
 {current_stage_narration}
-### 故事情节
-{current_story}
 ## 场景内角色
 {"\n".join(actors_appearances_info)}
 ## 输出要求
@@ -192,7 +190,7 @@ class ActorPlanningSystem(ExecuteProcessor):
             message = _generate_actor_plan_prompt(
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
-                current_stage.get(StageEnvironmentComponent).story,
+                # current_stage.get(StageEnvironmentComponent).story,
                 actors_apperances_mapping,
             )
 

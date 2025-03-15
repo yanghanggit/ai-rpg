@@ -55,7 +55,7 @@ def _generate_battle_prompt(
 
 #######################################################################################################################################
 @final
-class SelectSkillSystem(ExecuteProcessor):
+class ExecuteSkillSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
@@ -77,26 +77,25 @@ class SelectSkillSystem(ExecuteProcessor):
         actor_entities = self._game.get_group(
             Matcher(
                 all_of=[
-                    SkillCandidateQueueComponent,
+                    SkillAction2,
                 ],
             )
         ).entities
 
         # 生成消息
-        self._game._round_action_order = [
-            action._name for action in self._action_order()
-        ]
+        # self._round_action_order = [action._name for action in self._action_order()]
+        assert len(self._game._round_action_order) > 0
 
         # 处理角色规划请求
-        request_handlers: List[ChatRequestHandler] = self._generate_chat_requests(
-            actor_entities, self._game._round_action_order
-        )
+        # request_handlers: List[ChatRequestHandler] = self._generate_chat_requests(
+        #     actor_entities, self._round_action_order
+        # )
 
-        # 语言服务
-        await self._game.langserve_system.gather(request_handlers=request_handlers)
+        # # 语言服务
+        # await self._game.langserve_system.gather(request_handlers=request_handlers)
 
-        # 处理角色规划请求
-        self._handle_chat_responses(request_handlers)
+        # # 处理角色规划请求
+        # self._handle_chat_responses(request_handlers)
 
     #######################################################################################################################################
     def _handle_chat_responses(
@@ -179,18 +178,18 @@ class SelectSkillSystem(ExecuteProcessor):
         return request_handlers
 
     #######################################################################################################################################
-    def _action_order(self) -> List[Entity]:
-        # 获取所有需要进行角色规划的角色
-        actor_entities = self._game.get_group(
-            Matcher(
-                all_of=[
-                    ActorComponent,
-                ],
-            )
-        ).entities.copy()
+    # def _action_order(self) -> List[Entity]:
+    #     # 获取所有需要进行角色规划的角色
+    #     actor_entities = self._game.get_group(
+    #         Matcher(
+    #             all_of=[
+    #                 ActorComponent,
+    #             ],
+    #         )
+    #     ).entities.copy()
 
-        actor_entities1 = list(actor_entities)
-        random.shuffle(actor_entities1)
-        return actor_entities1
+    #     actor_entities1 = list(actor_entities)
+    #     random.shuffle(actor_entities1)
+    #     return actor_entities1
 
     #######################################################################################################################################

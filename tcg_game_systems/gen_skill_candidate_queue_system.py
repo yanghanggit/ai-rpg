@@ -26,7 +26,7 @@ class GenSkillsResponse(BaseModel):
 def _generate_gen_skills_prompt(
     current_stage: str,
     current_stage_narration: str,
-    current_story: str,
+    # current_story: str,
 ) -> str:
 
     gen_skills_response_example = GenSkillsResponse(
@@ -52,8 +52,6 @@ def _generate_gen_skills_prompt(
 {current_stage}
 ### 场景描述
 {current_stage_narration}
-### 故事情节
-{current_story}
 ## 输出要求
 ### 输出格式(JSON)
 {gen_skills_response_example.model_dump_json()}"""
@@ -178,7 +176,7 @@ class GenSkillCandidateQueueSystem(ExecuteProcessor):
             message = _generate_gen_skills_prompt(
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
-                current_stage.get(StageEnvironmentComponent).story,
+                # current_stage.get(StageEnvironmentComponent).story,
             )
 
             # 生成请求处理器

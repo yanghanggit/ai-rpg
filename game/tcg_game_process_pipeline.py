@@ -5,9 +5,6 @@ from game.base_game import BaseGame
 
 
 class TCGGameProcessPipeline(Processors):
-    """
-    熟悉项目用的，后续会做改良在HOME时候使用
-    """
 
     @staticmethod
     def create_home_state_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
@@ -111,10 +108,6 @@ class TCGGameProcessPipeline(Processors):
 
     ###################################################################################################################################################################
 
-    """
-    临时先这么写！！！！！！！！！1
-    """
-
     @staticmethod
     def create_dungeon_state_pipeline(game: BaseGame) -> "TCGGameProcessPipeline":
 
@@ -144,6 +137,34 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.status_update_action_system import (
             StatusUpdateActionSystem,
         )
+        from tcg_game_systems.pre_action_system import PreActionSystem
+        from tcg_game_systems.post_action_system import PostActionSystem
+        from tcg_game_systems.dead_action_system import DeadActionSystem
+        from tcg_game_systems.pre_planning_system import PrePlanningSystem
+        from tcg_game_systems.post_planning_system import PostPlanningSystem
+
+        from tcg_game_systems.stage_planning_system import (
+            StagePlanningSystem,
+        )
+        from tcg_game_systems.actor_planning_system import (
+            ActorPlanningSystem,
+        )
+
+        from tcg_game_systems.actor_planning_permit_system import (
+            ActorPlanningPermitSystem,
+        )
+
+        from tcg_game_systems.stage_planning_permit_system import (
+            StagePlanningPermitSystem,
+        )
+
+        from tcg_game_systems.mind_voice_action_system import (
+            MindVoiceActionSystem,
+        )
+
+        # from tcg_game_systems.whisper_action_system import WhisperActionSystem
+
+        from tcg_game_systems.speak_action_system import SpeakActionSystem
 
         # 用户输入转入pipeline 执行序列
         processors.add(HandleTerminalPlayerInputSystem(tcg_game))
@@ -158,8 +179,24 @@ class TCGGameProcessPipeline(Processors):
         # yh add, 测试用。
         processors.add(PreDungeonStateSystem(tcg_game))
 
+        # 规划逻辑
+        processors.add(PrePlanningSystem(tcg_game))  ######## 在所有规划之前!
+
+        processors.add(StagePlanningPermitSystem(tcg_game))
+        processors.add(ActorPlanningPermitSystem(tcg_game))
+
+        processors.add(StagePlanningSystem(tcg_game))
+        processors.add(ActorPlanningSystem(tcg_game))
+
+        processors.add(PostPlanningSystem(tcg_game))  ####### 在所有规划之后!
+
         # yh add, 测试用。
+        processors.add(PreActionSystem(tcg_game))
         processors.add(StatusUpdateActionSystem(tcg_game))
+        processors.add(MindVoiceActionSystem(tcg_game))
+        processors.add(SpeakActionSystem(tcg_game))
+        processors.add(DeadActionSystem(tcg_game))
+        processors.add(PostActionSystem(tcg_game))
 
         # yh add, 测试用。
         processors.add(PostDungeonStateSystem(tcg_game))

@@ -27,7 +27,3 @@ class PreDungeonStateSystem(ExecuteProcessor):
             # 添加这个动作。
             assert not entity1.has(StatusUpdateAction)
             entity1.replace(StatusUpdateAction, DEFAULT_NULL_ACTION)
-
-        # 最后的清理，不要这个
-        for entity2 in entities:
-            entity2.remove(EnterStageFlagComponent)

@@ -31,7 +31,7 @@ def _generate_actor_plan_prompt(
 
     actors_appearances_info = []
     for actor_name, appearance in actors_appearance_mapping.items():
-        actors_appearances_info.append(f"{actor_name}: {appearance}")
+        actors_appearances_info.append(f"- {actor_name}: {appearance}")
     if len(actors_appearances_info) == 0:
         actors_appearances_info.append("无")
 

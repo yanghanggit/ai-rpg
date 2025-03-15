@@ -27,7 +27,7 @@ def _generate_stage_plan_prompt(
 
     actors_appearances_info = []
     for actor_name, appearance in actors_appearances_mapping.items():
-        actors_appearances_info.append(f"{actor_name}: {appearance}")
+        actors_appearances_info.append(f"- {actor_name}: {appearance}")
     if len(actors_appearances_info) == 0:
         actors_appearances_info.append("无")
 
@@ -41,9 +41,10 @@ def _generate_stage_plan_prompt(
 ## 输出内容1-场景描述
 - 场景内的环境描述，不要包含任何角色信息。
 ## 输出内容2-故事情节
-- 故事情节，将会通知场景内角色对其进行引导。
+- 故事情节将会通知场景内角色对其进行引导。
+- 不要虚构我没有告诉你的角色信息。
 ## 输出要求
-- 引用角色或场景时，请严格遵守全名机制
+- 引用角色或场景时，请严格遵守全名机制。
 - 所有输出必须为第三人称视角。
 ### 输出格式(JSON)
 {stage_response_example.model_dump_json()}"""
@@ -151,6 +152,10 @@ class StagePlanningSystem(ExecuteProcessor):
                 format_string.json_format.strip_json_code_block(
                     request_handler.response_content
                 )
+            )
+
+            logger.warning(
+                f"Stage: {entity2._name}, Response:\n{format_response.model_dump_json()}"
             )
 
             self._game.append_human_message(

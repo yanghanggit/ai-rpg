@@ -6,6 +6,7 @@ import random
 from components.components import (
     ActorComponent,
     ActorPlanningPermitFlagComponent,
+    EnterStageFlagComponent,
 )
 from loguru import logger
 
@@ -24,19 +25,22 @@ class ActorPlanningPermitSystem(ExecuteProcessor):
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
 
-        player_stage = self._game.safe_get_stage_entity(player_entity)
-        assert player_stage is not None
-        if player_stage is None:
+        current_stage_entity = self._game.safe_get_stage_entity(player_entity)
+        assert current_stage_entity is not None
+        if current_stage_entity is None:
             return
 
         # 得到所有在玩家所在stage的actor
-        actors = list(self._game.retrieve_stage_actor_mapping()[player_stage])
+        actors = list(self._game.retrieve_stage_actor_mapping()[current_stage_entity])
         if len(actors) == 0:
             return
 
-        # 随机选择一个actor
-        random_actor = random.choice(actors)
-        self._add_permit({random_actor})
+        if not player_entity.has(EnterStageFlagComponent):
+            # 随机选择一个actor
+            random_actor = random.choice(actors)
+            self._add_permit({random_actor})
+        else:
+            self._add_permit(set(actors))
 
     #######################################################################################################################################
     def _add_permit(self, entities: Set[Entity]) -> None:

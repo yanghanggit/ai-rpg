@@ -16,12 +16,27 @@ class PostDungeonStateSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
 
+        self._clear_enter_flag()
+
         actions_set: Final[FrozenSet[type[NamedTuple]]] = frozenset(
             ACTIONS_REGISTRY_2.values()
         )
-
         self._clear_actions(actions_set)
-        # self._test(actions_set) TODO
+        self._test(actions_set)
+
+    ############################################################################################################
+    def _clear_enter_flag(self) -> None:
+        entities = self._game.get_group(
+            Matcher(
+                all_of=[
+                    EnterStageFlagComponent,
+                ],
+            )
+        ).entities.copy()
+
+        # 最后的清理，不要这个
+        for entity2 in entities:
+            entity2.remove(EnterStageFlagComponent)
 
     ############################################################################################################
     def _clear_actions(self, registered_actions: FrozenSet[type[NamedTuple]]) -> None:

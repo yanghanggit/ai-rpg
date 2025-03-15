@@ -222,12 +222,12 @@ def test_world1(world_boot: Boot) -> Boot:
     )
 
     # 创建实例：角色.怪物.兽人-库洛斯
-    actor_orcs_instance = _create_actor_instance(
-        world_boot=world_boot,
-        name="角色.怪物.兽人-库洛斯",
-        actor_prototype=actor_orcs,
-        kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
-    )
+    # actor_orcs_instance = _create_actor_instance(
+    #     world_boot=world_boot,
+    #     name="角色.怪物.兽人-库洛斯",
+    #     actor_prototype=actor_orcs,
+    #     kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
+    # )
 
     # 创建实例：场景.营地，添加角色
     stage_heros_camp_instance = _create_stage_instance(
@@ -244,14 +244,14 @@ def test_world1(world_boot: Boot) -> Boot:
         name=stage_dungeon_cave.name,
         stage=stage_dungeon_cave,
         kick_off_message="洞穴中十分吵闹。洞穴的主人正在守护着自己的领地。",
-        actors=[actor_goblin_instance, actor_orcs_instance],
+        actors=[actor_goblin_instance],
     )
 
     # 链接实例
     _link_instance(
         world_boot,
         [actor_warrior_instance],
-        [actor_wizard_instance, actor_goblin_instance, actor_orcs_instance],
+        [actor_wizard_instance, actor_goblin_instance],
         [stage_heros_camp_instance, stage_dungeon_cave_instance],
         [],
     )

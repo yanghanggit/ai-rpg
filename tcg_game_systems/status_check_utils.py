@@ -19,7 +19,7 @@ class StageResponse(BaseModel):
 @final
 class ActorResponse(BaseModel):
     stage: str = ""
-    other_actors: List[str] = []
+    actors: List[str] = []
     buffs: List[str] = []
 
 
@@ -93,7 +93,7 @@ class StatusCheckUtils:
 
         # 准备模板
         stage_response_template = StageResponse(
-            narrate="场景描述", actors=["角色1全名", "角色2全名", "..."]
+            narrate="当前场景描述", actors=["场景内的角色全名", "..."]
         )
 
         # 都用这个prompt
@@ -101,7 +101,8 @@ class StatusCheckUtils:
 ## 输出内容1-场景描述
 - 注意：不要输入任何场景内角色信息，只需描述场景本身。
 ## 输出内容2-角色状态
-- 场景内所有角色的全名(注意‘全名机制’)。
+- 场景内全部的角色的全名(注意‘全名机制’)。
+- 不要漏掉任何一个角色。
 ## 输出要求
 - 保持内容简洁，但不要遗漏重要信息。
 ### 输出格式(JSON)
@@ -133,16 +134,17 @@ class StatusCheckUtils:
         # 准备模板
         actor_response_template = ActorResponse(
             stage="场景全名",
-            other_actors=["其他角色1全名", "其他角色2全名", "..."],
+            actors=["场景内的角色全名", "..."],
             buffs=["你的状态", "..."],
         )
 
         # 都用这个prompt
         message = f"""# 提示: 将你目前的状态与信息告诉我。
-## 输出内容1-场景全名：
+## 输出内容1-场景全名
 - 场景全名(注意‘全名机制’)。
-## 输出内容2-其他角色状态：
-- 场景内除自己外的其他角色的全名(注意‘全名机制’)。
+## 输出内容2-角色状态
+- 场景内所有角色的全名(注意‘全名机制’)。
+- 不要漏掉任何一个角色。
 ## 输出内容3-状态：
 - 你当前拥有的状态（增益/减益）。
 ## 输出要求：

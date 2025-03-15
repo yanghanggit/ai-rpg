@@ -131,7 +131,6 @@ async def run_game(option: OptionParameters) -> None:
         terminal_tcg_game.restore_entities().save()
 
     # 加入玩家的数据结构
-    # player_proxy = PlayerProxy(PlayerProxyModel(player_name=user_name))
     terminal_tcg_game.player = PlayerProxy(PlayerProxyModel(name=user_name))
 
     if option.new_game:
@@ -159,18 +158,12 @@ async def run_game(option: OptionParameters) -> None:
             terminal_tcg_game._will_exit = True
             break
 
-        # if usr_input == "/tp1":
-        #     terminal_tcg_game.teleport_actors_to_stage(
-        #         terminal_tcg_game.retrieve_all_hero_entities(),
-        #         "场景.哥布林巢穴密室一号",
-        #     )
-        #     continue
-
-        # if usr_input == "/tp2":
-        #     terminal_tcg_game.teleport_actors_to_stage(
-        #         terminal_tcg_game.retrieve_all_hero_entities(), "场景.营地"
-        #     )
-        #     continue
+        if usr_input == "/tp1":
+            terminal_tcg_game.stage_transition(
+                terminal_tcg_game.retrieve_all_hero_entities(),
+                "场景.哥布林巢穴",
+            )
+            continue
 
         # 以上都拦截不住，就是玩家的输入，输入错了， handle input 相关的system 就不执行，空跑一次。
         terminal_tcg_game.player.add_command2(

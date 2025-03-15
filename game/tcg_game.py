@@ -62,6 +62,12 @@ class ConversationError(Enum):
     NOT_SAME_STAGE = 3
 
 
+#  class StageTransition:
+#      def __init__(self, game: TCGGame) -> None:
+#          self._game = game
+#          pass
+
+
 class TCGGame(BaseGame, TCGGameContext):
 
     def __init__(
@@ -550,90 +556,74 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     # 传送角色set里的角色到指定场景，游戏层面的行为，会添加记忆但不会触发action
-    def teleport_actors_to_stage(
-        self, going_actors: Set[Entity], destination: Union[str, Entity]
-    ) -> None:
+    def _stage_transition(self, actors: Set[Entity], stage_destination: Entity) -> None:
 
-        if len(going_actors) == 0:
-            return
-
-        for going_actor in going_actors:
-            if going_actor is None or not going_actor.has(ActorComponent):
-                assert False, "actor is None or have no actor component"
-                return
-
-        # 找到目标stage，否则报错
-        target_stage = (
-            self.get_stage_entity(destination)
-            if isinstance(destination, str)
-            else self.safe_get_stage_entity(destination)
-        )
-        if target_stage is None:
-            destination = (
-                destination._name if isinstance(destination, Entity) else destination
-            )
-            logger.error(
-                f"该场景不存在: {destination}，请确认场景是否存在，是否有格式错误"
-            )
-            return
+        for actor1 in actors:
+            assert actor1.has(ActorComponent)
 
         # 传送前处理
-        for going_actor in going_actors:
+        for actor_entity in actors:
 
             # 检查自身是否已经在目标场景
-            current_stage = self.safe_get_stage_entity(going_actor)
+            current_stage = self.safe_get_stage_entity(actor_entity)
             assert current_stage is not None
-            if current_stage is not None and current_stage == target_stage:
-                logger.warning(f"{going_actor._name} 已经存在于 {target_stage._name}")
+            if current_stage is not None and current_stage == stage_destination:
+                logger.warning(
+                    f"{actor_entity._name} 已经存在于 {stage_destination._name}"
+                )
                 continue
 
             # 向所在场景及所在场景内除自身外的其他人宣布，这货要离开了
             self.broadcast_event(
-                current_stage,
-                AgentEvent(
-                    message=f"{going_actor._name} 传送离开了 {current_stage._name}",
+                entity=current_stage,
+                agent_event=AgentEvent(
+                    message=f"# 发生事件！{actor_entity._name} 离开了场景: {current_stage._name}",
                 ),
-                {going_actor},
-            )
-            # 再对他自己说你离开了
-            self.notify_event(
-                {going_actor},
-                AgentEvent(
-                    message=f"一束从天而降的奇异光束包裹了你，等你醒来后，发现你被传送离开了 {current_stage._name}",
-                ),
+                exclude_entities={actor_entity},
             )
 
         # 传送中处理
-        for going_actor in going_actors:
+        for actor_entity in actors:
+
+            current_stage = self.safe_get_stage_entity(actor_entity)
+            assert current_stage is not None
 
             # 更改所处场景的标识
-            going_actor.replace(ActorComponent, going_actor._name, target_stage._name)
+            actor_entity.replace(
+                ActorComponent, actor_entity._name, stage_destination._name
+            )
+
+            self.notify_event(
+                entities={actor_entity},
+                agent_event=AgentEvent(
+                    message=f"# 发生事件！{actor_entity._name} 从 场景: {current_stage._name} 离开，然后进入了 场景: {stage_destination._name}",
+                ),
+            )
 
         # 传送后处理
-        for going_actor in going_actors:
+        for actor_entity in actors:
 
             # 向所在场景及所在场景内除自身外的其他人宣布，这货到了
             self.broadcast_event(
-                target_stage,
-                AgentEvent(
-                    message=f"{going_actor._name} 传送到了 {target_stage._name}",
+                entity=stage_destination,
+                agent_event=AgentEvent(
+                    message=f"# 发生事件！{actor_entity._name} 进入了 场景: {stage_destination._name}",
                 ),
-                {going_actor},
-            )
-            # 再对他自己说你到了
-            self.notify_event(
-                {going_actor},
-                AgentEvent(
-                    message=f"一束从天而降的奇异光束包裹了你，等你醒来后，发现你被传送到了 {target_stage._name}",
-                ),
+                exclude_entities={actor_entity},
             )
             # 添加标记，有用。
-            going_actor.replace(
-                EnterStageFlagComponent, going_actor._name, target_stage._name
+            actor_entity.replace(
+                EnterStageFlagComponent, actor_entity._name, stage_destination._name
             )
 
-        # if self.current_game_state == TCGGameState.DUNGEON:
-        #     self._battle_manager._new_battle_refresh()
+    ###############################################################################################################################################
+    def stage_transition(self, going_actors: Set[Entity], destination: str) -> None:
+        destination_stage = self.get_stage_entity(destination)
+        if destination_stage is None:
+            logger.error(f"目标场景不存在: {destination}")
+            return
+        self._stage_transition(going_actors, destination_stage)
+        # self.get_stage_entity(destination)
 
     ###############################################################################################################################################
     # 检查是否可以对话

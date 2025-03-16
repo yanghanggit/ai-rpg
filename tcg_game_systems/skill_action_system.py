@@ -1,30 +1,31 @@
-from entitas import ExecuteProcessor  # type: ignore
+from entitas import Entity, Matcher, GroupEvent  # type: ignore
 from agent.chat_request_handler import ChatRequestHandler
 from overrides import override
-from typing import List, Tuple, final
-from game.tcg_game import TCGGame
+from typing import List, final
 from loguru import logger
-from tcg_models.v_0_0_1 import Skill
 from components.actions2 import SkillAction2
 from rpg_models.event_models import AgentEvent
+from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 
 #######################################################################################################################################
-def _generate_execute_skills_prompt(execute_list: List[Tuple[str, Skill]]) -> str:
+def _generate_execute_skills_prompt(actions_list: List[SkillAction2]) -> str:
 
-    skill_infos: List[str] = []
-    for actor_name, skill in execute_list:
-        skill_infos.append(
-            f"""### {actor_name} : {skill.name}。
-- 技能描述: {skill.description}
-- 技能效果: {skill.effect}"""
+    execute_list: List[str] = []
+    for skill_action in actions_list:
+
+        execute_list.append(
+            f"""### {skill_action.name} : {skill_action.skill.name}。
+- 目标: {skill_action.targets}
+- 技能描述: {skill_action.skill.description}
+- 技能效果: {skill_action.skill.effect}"""
         )
 
     return f"""# 将要执行一次战斗行动。请根据输入的信息来做演绎。
 ## 技能信息
-{"\n".join(skill_infos)}
+{"\n".join(execute_list)}
 ## 技能执行顺序
-{" -> ".join([actor_name for actor_name, _ in execute_list])}
+{" -> ".join([action.name for action in actions_list])}
 ## 输出要求
 - 输出一整段文字来描述你的演绎。
 - 不要使用换行与空行。"""
@@ -32,48 +33,47 @@ def _generate_execute_skills_prompt(execute_list: List[Tuple[str, Skill]]) -> st
 
 #######################################################################################################################################
 @final
-class ExecuteSkillSystem(ExecuteProcessor):
+class SkillActionSystem(BaseActionReactiveSystem):
 
-    def __init__(self, game_context: TCGGame) -> None:
-        self._game: TCGGame = game_context
+    ####################################################################################################################################
+    @override
+    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+        return {Matcher(SkillAction2): GroupEvent.ADDED}
+
+    ####################################################################################################################################
+    @override
+    def filter(self, entity: Entity) -> bool:
+        return entity.has(SkillAction2)
 
     #######################################################################################################################################
     @override
-    def execute(self) -> None:
-        pass
-
-    #######################################################################################################################################
-    @override
-    async def a_execute1(self) -> None:
-        await self._process_request()
-
-    #######################################################################################################################################
-    async def _process_request(self) -> None:
+    async def a_execute2(self) -> None:
 
         assert len(self._game._round_action_order) > 0
         if len(self._game._round_action_order) == 0:
             return
 
-        execute_list: List[Tuple[str, Skill]] = []
-        for actor_name in self._game._round_action_order:
+        # 将self._react_entities_copy以self._game._round_action_order的顺序进行重新排序
+        self._react_entities_copy.sort(
+            key=lambda entity: self._game._round_action_order.index(entity._name)
+        )
 
-            actor_entity = self._game.get_entity_by_name(actor_name)
-            assert actor_entity is not None
+        await self._process_request(self._react_entities_copy)
 
-            skill_action2 = actor_entity.get(SkillAction2)
-            if skill_action2 is None:
-                continue
+    #######################################################################################################################################
+    async def _process_request(self, react_entities: List[Entity]) -> None:
 
-            execute_list.append((skill_action2.name, skill_action2.skill))
+        skill_actions: List[SkillAction2] = []
+        for entity in react_entities:
+            skill_action2 = entity.get(SkillAction2)
+            assert skill_action2 is not None
+            skill_actions.append(skill_action2)
 
-        #
-        entity = self._game.get_entity_by_name(execute_list[0][0])
-        assert entity is not None
-        current_stage = self._game.safe_get_stage_entity(entity)
+        current_stage = self._game.safe_get_stage_entity(react_entities[0])
         assert current_stage is not None
 
         #
-        message = _generate_execute_skills_prompt(execute_list)
+        message = _generate_execute_skills_prompt(skill_actions)
 
         # 用场景推理。
         request_handler = ChatRequestHandler(
@@ -84,14 +84,15 @@ class ExecuteSkillSystem(ExecuteProcessor):
             ).chat_history,
         )
 
-        #
+        # 用语言服务系统进行推理。
         await self._game.langserve_system.gather(request_handlers=[request_handler])
 
-        #
+        # 处理返回结果。
         if request_handler.response_content == "":
             logger.error(f"Agent: {request_handler._name}, Response is empty.")
             return
 
+        # 处理返回结果。
         self._handle_response(request_handler)
 
     #######################################################################################################################################
@@ -102,6 +103,7 @@ class ExecuteSkillSystem(ExecuteProcessor):
             current_stage = self._game.get_entity_by_name(request_handler._name)
             assert current_stage is not None
 
+            # 发送事件。
             self._game.broadcast_event(
                 entity=current_stage,
                 agent_event=AgentEvent(

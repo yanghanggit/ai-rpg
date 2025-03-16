@@ -1,4 +1,4 @@
-from typing import Dict, Final, NamedTuple, final
+from typing import Dict, Final, NamedTuple, final, List
 from pydantic import BaseModel
 from components.registry import register_action_class_2
 from tcg_models.v_0_0_1 import Skill
@@ -46,6 +46,7 @@ class MindVoiceAction2(NamedTuple):
 @register_action_class_2
 class SkillAction2(NamedTuple):
     name: str
+    targets: List[str]
     skill: Skill
 
 

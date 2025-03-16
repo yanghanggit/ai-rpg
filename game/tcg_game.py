@@ -97,14 +97,10 @@ class TCGGame(BaseGame, TCGGameContext):
         # agent 系统
         self._langserve_system: LangServeSystem = langserve_system
 
-        # 临时战斗系统
-        # self._battle_manager = battle_manager
-
         # 混沌工程系统
         self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
 
         # 临时数据。
-        # self._round_battle_execute_skills: List[Skill] = []
         self._round_action_order: List[str] = []
 
     ###############################################################################################################################################

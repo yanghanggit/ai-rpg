@@ -3,13 +3,13 @@ from agent.chat_request_handler import ChatRequestHandler
 from overrides import override
 from typing import List, final
 from loguru import logger
-from components.actions2 import SkillAction2
+from components.actions2 import HitAction2, FeedbackAction2
 from rpg_models.event_models import AgentEvent
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 
 #######################################################################################################################################
-def _generate_execute_skills_prompt(actions_list: List[SkillAction2]) -> str:
+def _generate_execute_skills_prompt(actions_list: List[HitAction2]) -> str:
 
     execute_list: List[str] = []
     for skill_action in actions_list:
@@ -33,17 +33,17 @@ def _generate_execute_skills_prompt(actions_list: List[SkillAction2]) -> str:
 
 #######################################################################################################################################
 @final
-class SkillActionSystem(BaseActionReactiveSystem):
+class HitActionSystem(BaseActionReactiveSystem):
 
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(SkillAction2): GroupEvent.ADDED}
+        return {Matcher(HitAction2): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(SkillAction2)
+        return entity.has(HitAction2)
 
     #######################################################################################################################################
     @override
@@ -63,9 +63,9 @@ class SkillActionSystem(BaseActionReactiveSystem):
     #######################################################################################################################################
     async def _process_request(self, react_entities: List[Entity]) -> None:
 
-        skill_actions: List[SkillAction2] = []
+        skill_actions: List[HitAction2] = []
         for entity in react_entities:
-            skill_action2 = entity.get(SkillAction2)
+            skill_action2 = entity.get(HitAction2)
             assert skill_action2 is not None
             skill_actions.append(skill_action2)
 
@@ -110,6 +110,11 @@ class SkillActionSystem(BaseActionReactiveSystem):
                     message=f"# 发生事件！\n{request_handler.response_content}",
                 ),
             )
+
+            #
+            actors_on_stage = self._game.retrieve_actors_on_stage(current_stage)
+            for actor_entity in actors_on_stage:
+                actor_entity.replace(FeedbackAction2, actor_entity._name)
 
         except:
             logger.error(

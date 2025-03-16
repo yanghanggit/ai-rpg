@@ -48,8 +48,9 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.stage_planning_permit_system import (
             StagePlanningPermitSystem,
         )
-        from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
-        from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
+
+        # from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
+        # from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
 
         ##
         tcg_game = cast(TCGGame, game)
@@ -145,11 +146,12 @@ class TCGGameProcessPipeline(Processors):
         )
         from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
         from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
-        from tcg_game_systems.skill_candidate_queue_system import (
-            SkillCandidateQueueSystem,
+        from tcg_game_systems.candidate_action_system import (
+            CandidateActionSystem,
         )
-        from tcg_game_systems.skill_selection_system import SkillSelectionSystem
-        from tcg_game_systems.skill_action_system import SkillActionSystem
+        from tcg_game_systems.select_action_system import SelectActionSystem
+        from tcg_game_systems.hit_action_system import HitActionSystem
+        from tcg_game_systems.feedback_action_system import FeedbackActionSystem
 
         #
         ##
@@ -180,14 +182,18 @@ class TCGGameProcessPipeline(Processors):
 
         processors.add(PostPlanningSystem(tcg_game))  ####### 在所有规划之后!
 
-        # yh test
-        processors.add(SkillCandidateQueueSystem(tcg_game))
-        processors.add(SkillSelectionSystem(tcg_game))
-
         # yh add, 测试用。
         processors.add(PreActionSystem(tcg_game))
-        processors.add(SkillActionSystem(tcg_game))
+
+        # yh test
+        processors.add(
+            CandidateActionSystem(tcg_game)
+        )  ##################################
+        processors.add(SelectActionSystem(tcg_game))
+        processors.add(HitActionSystem(tcg_game))
+        processors.add(FeedbackActionSystem(tcg_game))
         processors.add(DeadActionSystem(tcg_game))  ##################################
+
         processors.add(PostActionSystem(tcg_game))
 
         # yh add, 测试用。

@@ -102,6 +102,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 临时数据。
         self._round_action_order: List[str] = []
+        self._round_number: int = 0
 
     ###############################################################################################################################################
     @property

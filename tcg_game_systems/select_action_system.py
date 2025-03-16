@@ -1,5 +1,6 @@
+import random
 from pydantic import BaseModel
-from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
+from entitas import Matcher, Entity, Matcher, GroupEvent  # type: ignore
 from agent.chat_request_handler import ChatRequestHandler
 import format_string.json_format
 from components.components import (
@@ -9,101 +10,83 @@ from components.components import (
 )
 from overrides import override
 from typing import List, final
-from game.tcg_game import TCGGame
 from loguru import logger
 from tcg_models.v_0_0_1 import Skill
+from components.actions2 import HitAction2, SelectAction2
+from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 
 #######################################################################################################################################
 @final
-class SkillCandidateQueueResponse(BaseModel):
-    attack: Skill
-    defense: Skill
-    support: Skill
+class SkillSelectionResponse(BaseModel):
+    skill: str
+    targets: List[str]
+    reason: str
 
 
 #######################################################################################################################################
-def _generate_skill_candidate_queue_prompt(
+def _generate_battle_prompt(
     current_stage: str,
     current_stage_narration: str,
+    skill_candidates: List[Skill],
+    action_order: List[str],
 ) -> str:
 
-    gen_skills_response_example = SkillCandidateQueueResponse(
-        attack=Skill(
-            name="攻击技能(能够造成伤害)",
-            description="攻击技能描述",
-            effect="攻击技能效果",
-        ),
-        defense=Skill(
-            name="防御技能(能够减少伤害)",
-            description="防御技能描述",
-            effect="防御技能效果",
-        ),
-        support=Skill(
-            name="支援技能(能够提供辅助效果,如回复生命值，增加攻击力等)",
-            description="支援技能描述",
-            effect="支援技能效果",
-        ),
+    skill_candidates1 = [skill.model_dump_json() for skill in skill_candidates]
+
+    select_skill_response_example = SkillSelectionResponse(
+        skill="技能名称",
+        targets=["目标1", "目标2", "..."],
+        reason="技能使用原因",
     )
 
-    return f"""# 请根据你的能力情况，生成你的技能
+    return f"""# 战斗正在进行，请考虑后，在技能列表中选择你将要使用的技能！
 ## 当前场景
 {current_stage}
 ### 场景描述
 {current_stage_narration}
+## 技能列表
+{"\n".join(skill_candidates1)}
+## 场景内角色行动顺序(从左到右)
+{action_order}
 ## 输出要求
 - 不要使用```json```来封装内容。
 ### 输出格式(JSON)
-{gen_skills_response_example.model_dump_json()}"""
+{select_skill_response_example.model_dump_json()}"""
 
 
 #######################################################################################################################################
 @final
-class SkillCandidateQueueSystem(ExecuteProcessor):
+class SelectActionSystem(BaseActionReactiveSystem):
 
-    def __init__(self, game_context: TCGGame) -> None:
-        self._game: TCGGame = game_context
+    ####################################################################################################################################
+    @override
+    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+        return {Matcher(SelectAction2): GroupEvent.ADDED}
+
+    ####################################################################################################################################
+    @override
+    def filter(self, entity: Entity) -> bool:
+        return entity.has(SelectAction2)
 
     #######################################################################################################################################
     @override
-    def execute(self) -> None:
-        pass
+    async def a_execute2(self) -> None:
+        if len(self._react_entities_copy) == 0:
+            return
+        await self._process_request(self._react_entities_copy)
 
     #######################################################################################################################################
-    @override
-    async def a_execute1(self) -> None:
-        # pass
-        self._clear_all_skill_candidate_queue_components()
-        await self._process_request()
+    async def _process_request(self, react_entities: List[Entity]) -> None:
 
-    #######################################################################################################################################
-    def _clear_all_skill_candidate_queue_components(self) -> None:
-        actor_entities = self._game.get_group(
-            Matcher(
-                all_of=[
-                    SkillCandidateQueueComponent,
-                ],
-            )
-        ).entities.copy()
-
-        for entity in actor_entities:
-            entity.remove(SkillCandidateQueueComponent)
-
-    #######################################################################################################################################
-    async def _process_request(self) -> None:
-
-        # 获取所有需要进行角色规划的角色
-        actor_entities = self._game.get_group(
-            Matcher(
-                all_of=[
-                    ActorComponent,
-                ],
-            )
-        ).entities
+        # 生成消息
+        self._game._round_action_order = [
+            action._name for action in self._action_order()
+        ]
 
         # 处理角色规划请求
         request_handlers: List[ChatRequestHandler] = self._generate_chat_requests(
-            actor_entities
+            set(react_entities), self._game._round_action_order
         )
 
         # 语言服务
@@ -138,22 +121,24 @@ class SkillCandidateQueueSystem(ExecuteProcessor):
 
         try:
 
-            format_response = SkillCandidateQueueResponse.model_validate_json(
+            # pass
+            format_response = SkillSelectionResponse.model_validate_json(
                 format_string.json_format.strip_json_code_block(
                     request_handler.response_content
                 )
             )
 
-            entity2.replace(
-                SkillCandidateQueueComponent,
-                entity2._name,
-                [
-                    format_response.attack,
-                    format_response.defense,
-                    format_response.support,
-                ],
-            )
-
+            skill_candidate_comp = entity2.get(SkillCandidateQueueComponent)
+            for skill in skill_candidate_comp.queue:
+                if skill.name == format_response.skill:
+                    assert not entity2.has(HitAction2)
+                    entity2.replace(
+                        HitAction2,
+                        skill_candidate_comp.name,
+                        format_response.targets,
+                        skill,
+                    )
+                    break
         except:
             logger.error(
                 f"""返回格式错误: {entity2._name}, Response = \n{request_handler.response_content}"""
@@ -161,7 +146,7 @@ class SkillCandidateQueueSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     def _generate_chat_requests(
-        self, actor_entities: set[Entity]
+        self, actor_entities: set[Entity], action_order: List[str]
     ) -> List[ChatRequestHandler]:
 
         request_handlers: List[ChatRequestHandler] = []
@@ -172,10 +157,13 @@ class SkillCandidateQueueSystem(ExecuteProcessor):
             current_stage = self._game.safe_get_stage_entity(entity)
             assert current_stage is not None
 
-            # 生成消息
-            message = _generate_skill_candidate_queue_prompt(
+            #
+            assert entity.has(SkillCandidateQueueComponent)
+            message = _generate_battle_prompt(
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
+                entity.get(SkillCandidateQueueComponent).queue,
+                action_order,
             )
 
             # 生成请求处理器
@@ -190,5 +178,20 @@ class SkillCandidateQueueSystem(ExecuteProcessor):
             )
 
         return request_handlers
+
+    #######################################################################################################################################
+    def _action_order(self) -> List[Entity]:
+        # 获取所有需要进行角色规划的角色
+        actor_entities = self._game.get_group(
+            Matcher(
+                all_of=[
+                    ActorComponent,
+                ],
+            )
+        ).entities.copy()
+
+        actor_entities1 = list(actor_entities)
+        random.shuffle(actor_entities1)
+        return actor_entities1
 
     #######################################################################################################################################

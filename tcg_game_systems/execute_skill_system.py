@@ -6,6 +6,7 @@ from game.tcg_game import TCGGame
 from loguru import logger
 from tcg_models.v_0_0_1 import Skill
 from components.actions2 import SkillAction2
+from rpg_models.event_models import AgentEvent
 
 
 #######################################################################################################################################
@@ -48,6 +49,7 @@ class ExecuteSkillSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     async def _process_request(self) -> None:
+
         assert len(self._game._round_action_order) > 0
         if len(self._game._round_action_order) == 0:
             return
@@ -96,7 +98,16 @@ class ExecuteSkillSystem(ExecuteProcessor):
     def _handle_response(self, request_handler: ChatRequestHandler) -> None:
 
         try:
-            logger.info(f"Agent, Response = \n{request_handler.response_content}")
+
+            current_stage = self._game.get_entity_by_name(request_handler._name)
+            assert current_stage is not None
+
+            self._game.broadcast_event(
+                entity=current_stage,
+                agent_event=AgentEvent(
+                    message=f"# 发生事件！\n{request_handler.response_content}",
+                ),
+            )
 
         except:
             logger.error(

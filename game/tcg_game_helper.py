@@ -62,8 +62,7 @@ def _comple_stage_system_prompt(
 
     return f"""# {name}
 你扮演这个游戏世界中的一个场景: {name}
-你将是角色活动的地点。
-如果发生战斗，你将负责推理，判断，处理与演绎战斗。
+你将是角色活动的地点也是战斗系统。
 ## 游戏背景
 {epoch_script}
 ## 游戏规则

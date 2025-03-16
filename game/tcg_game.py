@@ -40,7 +40,8 @@ from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 import rpg_game_systems.prompt_utils
 from rpg_models.event_models import AgentEvent
-from tcg_models.v_0_0_1 import Skill
+
+# from tcg_models.v_0_0_1 import Skill
 
 
 ###############################################################################################################################################

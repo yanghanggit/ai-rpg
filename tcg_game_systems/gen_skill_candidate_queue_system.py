@@ -176,7 +176,6 @@ class GenSkillCandidateQueueSystem(ExecuteProcessor):
             message = _generate_gen_skills_prompt(
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
-                # current_stage.get(StageEnvironmentComponent).story,
             )
 
             # 生成请求处理器

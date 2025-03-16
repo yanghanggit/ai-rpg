@@ -113,7 +113,6 @@ async def run_game(option: OptionParameters) -> None:
         world=world,
         world_path=users_world_runtime_file_path,
         langserve_system=lang_serve_system,
-        # battle_manager=BattleManager(users_world_runtime_file_path.parent),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
 

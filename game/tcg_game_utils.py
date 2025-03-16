@@ -6,6 +6,7 @@ from tcg_models.v_0_0_1 import (
     ActorType,
     StageType,
     Attributes,
+    WorldSystemPrototype,
 )
 import game.tcg_game_config
 from typing import Final
@@ -13,11 +14,11 @@ from game.tcg_game_helper import (
     EPOCH_SCRIPT,
     _comple_actor_system_prompt,
     _comple_stage_system_prompt,
-    # _comple_world_system_system_prompt,
+    _comple_world_system_system_prompt,
     _initialize_data_base,
     _create_actor_instance,
     _create_stage_instance,
-    # _create_world_system_instance,
+    _create_world_system_instance,
     _link_instance,
 )
 
@@ -94,7 +95,7 @@ actor_orcs_appearance: Final[
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
-actor_warrior = ActorPrototype(
+actor_warrior_prototype = ActorPrototype(
     name="角色.战士.卡恩",
     code_name="warrior",
     system_message=_comple_actor_system_prompt(
@@ -109,7 +110,7 @@ actor_warrior = ActorPrototype(
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
-actor_wizard = ActorPrototype(
+actor_wizard_prototype = ActorPrototype(
     name="角色.法师.奥露娜",
     code_name="wizard",
     system_message=_comple_actor_system_prompt(
@@ -124,7 +125,7 @@ actor_wizard = ActorPrototype(
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
-actor_goblin = ActorPrototype(
+actor_goblin_prototype = ActorPrototype(
     name="角色.怪物.哥布林-拉格",
     code_name="goblin_rag",
     system_message=_comple_actor_system_prompt(
@@ -139,7 +140,7 @@ actor_goblin = ActorPrototype(
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
-actor_orcs = ActorPrototype(
+actor_orcs_prototype = ActorPrototype(
     name="角色.怪物.兽人-库洛斯",
     code_name="orc_kuros",
     system_message=_comple_actor_system_prompt(
@@ -154,7 +155,7 @@ actor_orcs = ActorPrototype(
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
-stage_dungeon_cave = StagePrototype(
+stage_dungeon_cave_prototype = StagePrototype(
     name="场景.洞窟",
     code_name="goblin_cave",
     system_message=_comple_stage_system_prompt(
@@ -167,7 +168,7 @@ stage_dungeon_cave = StagePrototype(
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
-stage_heros_camp = StagePrototype(
+stage_heros_camp_prototype = StagePrototype(
     name="场景.营地",
     code_name="camp",
     system_message=_comple_stage_system_prompt(
@@ -176,6 +177,18 @@ stage_heros_camp = StagePrototype(
         stage_profile="你是一个建在古代城堡的遗迹之上的临时营地，遗迹四周是一片未开发的原野。营地中有帐篷，营火，仓库等设施，虽然简陋，却也足够让人稍事休息，准备下一次冒险。",
     ),
     type=StageType.HOME,
+)
+#######################################################################################################################################
+#######################################################################################################################################
+#######################################################################################################################################
+world_system_prototype = WorldSystemPrototype(
+    name="系统.世界",
+    code_name="world",
+    system_message=_comple_world_system_system_prompt(
+        name="系统.世界",
+        epoch_script=EPOCH_SCRIPT,
+        world_system_profile="你是战斗系统。",
+    ),
 )
 
 
@@ -192,16 +205,28 @@ def test_world1(world_boot: Boot) -> Boot:
     _initialize_data_base(
         world_boot,
         EPOCH_SCRIPT,
-        [actor_warrior, actor_goblin, actor_wizard, actor_orcs],
-        [stage_heros_camp, stage_dungeon_cave],
-        [],
+        [
+            actor_warrior_prototype,
+            actor_goblin_prototype,
+            actor_wizard_prototype,
+            actor_orcs_prototype,
+        ],
+        [stage_heros_camp_prototype, stage_dungeon_cave_prototype],
+        [world_system_prototype],
+    )
+
+    world_system_instance = _create_world_system_instance(
+        world_boot=world_boot,
+        name=world_system_prototype.name,
+        world_system=world_system_prototype,
+        kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
     )
 
     # 创建实例：角色.战士.凯尔
     actor_warrior_instance = _create_actor_instance(
         world_boot=world_boot,
-        name=actor_warrior.name,
-        actor_prototype=actor_warrior,
+        name=actor_warrior_prototype.name,
+        actor_prototype=actor_warrior_prototype,
         kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
         attributes=Attributes(
             hp=100, max_hp=100, strength=150, dexterity=90, wisdom=60
@@ -211,8 +236,8 @@ def test_world1(world_boot: Boot) -> Boot:
     # 创建实例：角色.法师.露西
     actor_wizard_instance = _create_actor_instance(
         world_boot=world_boot,
-        name=actor_wizard.name,
-        actor_prototype=actor_wizard,
+        name=actor_wizard_prototype.name,
+        actor_prototype=actor_wizard_prototype,
         kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
         attributes=Attributes(hp=50, max_hp=50, strength=35, dexterity=70, wisdom=180),
     )
@@ -221,24 +246,27 @@ def test_world1(world_boot: Boot) -> Boot:
     actor_goblin_instance = _create_actor_instance(
         world_boot=world_boot,
         name="角色.怪物.哥布林-拉格",
-        actor_prototype=actor_goblin,
+        actor_prototype=actor_goblin_prototype,
         kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
         attributes=Attributes(hp=80, max_hp=80, strength=45, dexterity=120, wisdom=50),
     )
 
     # 创建实例：角色.怪物.兽人-库洛斯
-    # actor_orcs_instance = _create_actor_instance(
-    #     world_boot=world_boot,
-    #     name="角色.怪物.兽人-库洛斯",
-    #     actor_prototype=actor_orcs,
-    #     kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
-    # )
+    actor_orcs_instance = _create_actor_instance(
+        world_boot=world_boot,
+        name="角色.怪物.兽人-库洛斯",
+        actor_prototype=actor_orcs_prototype,
+        kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
+        attributes=Attributes(
+            hp=200, max_hp=200, strength=180, dexterity=60, wisdom=40
+        ),
+    )
 
     # 创建实例：场景.营地，添加角色
     stage_heros_camp_instance = _create_stage_instance(
         world_boot=world_boot,
-        name=stage_heros_camp.name,
-        stage=stage_heros_camp,
+        name=stage_heros_camp_prototype.name,
+        stage=stage_heros_camp_prototype,
         kick_off_message="营火静静地燃烧着。据消息附近的洞窟里出现了怪物，需要冒险者前去调查。",
         actors=[],
     )
@@ -246,19 +274,24 @@ def test_world1(world_boot: Boot) -> Boot:
     # 创建实例：场景.密室
     stage_dungeon_cave_instance = _create_stage_instance(
         world_boot=world_boot,
-        name=stage_dungeon_cave.name,
-        stage=stage_dungeon_cave,
+        name=stage_dungeon_cave_prototype.name,
+        stage=stage_dungeon_cave_prototype,
         kick_off_message="洞穴中十分吵闹。",
-        actors=[actor_goblin_instance, actor_warrior_instance, actor_wizard_instance],
+        actors=[
+            actor_warrior_instance,
+            actor_wizard_instance,
+            actor_goblin_instance,
+            actor_orcs_instance,
+        ],
     )
 
     # 链接实例
     _link_instance(
         world_boot,
         [actor_warrior_instance],
-        [actor_wizard_instance, actor_goblin_instance],
-        [stage_dungeon_cave_instance],
-        [],
+        [actor_wizard_instance, actor_goblin_instance, actor_orcs_instance],
+        [stage_heros_camp_instance, stage_dungeon_cave_instance],
+        [world_system_instance],
     )
 
     return world_boot

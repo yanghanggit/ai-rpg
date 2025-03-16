@@ -193,5 +193,19 @@ def _link_instance(
     world_boot.stages.extend(stages)
     world_boot.world_systems.extend(world_systems)
 
+    # 检查players 与 actors是否有重复
+    for player in players:
+        for actor in actors:
+            if player.name == actor.name:
+                assert False, f"Actor {player.name} found in both players and actors."
+
+    # 检查是否有不在players与actors中的actor
+    append_actors = players + actors
+    check_names = [actor.name for actor in append_actors]
+    for stage in stages:
+        for test_actor in stage.actors:
+            if test_actor not in check_names:
+                assert False, f"Actor {test_actor} not found in append_actors."
+
 
 #######################################################################################################################################

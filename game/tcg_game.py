@@ -1,6 +1,6 @@
 from enum import Enum, IntEnum, unique
 from entitas import Entity, Matcher  # type: ignore
-from typing import Set, List, Optional, final
+from typing import Any, Set, List, Optional, final
 from overrides import override
 from loguru import logger
 from game.tcg_game_context import TCGGameContext
@@ -40,8 +40,6 @@ from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 import rpg_game_systems.prompt_utils
 from rpg_models.event_models import AgentEvent
-
-# from tcg_models.v_0_0_1 import Skill
 
 
 ###############################################################################################################################################
@@ -439,9 +437,11 @@ class TCGGame(BaseGame, TCGGameContext):
         )
 
     ###############################################################################################################################################
-    def append_human_message(self, entity: Entity, chat: str) -> None:
+    def append_human_message(self, entity: Entity, chat: str, **kwargs: Any) -> None:
         agent_short_term_memory = self.get_agent_short_term_memory(entity)
-        agent_short_term_memory.chat_history.extend([HumanMessage(content=chat)])
+        agent_short_term_memory.chat_history.extend(
+            [HumanMessage(content=chat, kwargs=kwargs)]
+        )
 
     ###############################################################################################################################################
     def append_ai_message(self, entity: Entity, chat: str) -> None:
@@ -582,12 +582,12 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
     ###############################################################################################################################################
-    def stage_transition(self, going_actors: Set[Entity], destination: str) -> None:
+    def stage_transition(self, actors: Set[Entity], destination: str) -> None:
         destination_stage = self.get_stage_entity(destination)
         if destination_stage is None:
             logger.error(f"目标场景不存在: {destination}")
             return
-        self._stage_transition(going_actors, destination_stage)
+        self._stage_transition(actors, destination_stage)
 
     ###############################################################################################################################################
     # 检查是否可以对话

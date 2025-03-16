@@ -49,9 +49,6 @@ class TCGGameProcessPipeline(Processors):
             StagePlanningPermitSystem,
         )
 
-        # from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
-        # from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
-
         ##
         tcg_game = cast(TCGGame, game)
         assert isinstance(tcg_game, TCGGame)
@@ -119,28 +116,15 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.handle_web_player_input_system import (
             HandleWebPlayerInputSystem,
         )
-        from tcg_game_systems.mind_voice_action_system import (
-            MindVoiceActionSystem,
-        )
-        from tcg_game_systems.speak_action_system import SpeakActionSystem
         from tcg_game_systems.pre_action_system import PreActionSystem
         from tcg_game_systems.post_action_system import PostActionSystem
         from tcg_game_systems.destroy_system import DestroySystem
         from tcg_game_systems.dead_action_system import DeadActionSystem
         from tcg_game_systems.pre_planning_system import PrePlanningSystem
         from tcg_game_systems.post_planning_system import PostPlanningSystem
-
         from tcg_game_systems.stage_planning_system import (
             StagePlanningSystem,
         )
-        from tcg_game_systems.actor_planning_system import (
-            ActorPlanningSystem,
-        )
-
-        from tcg_game_systems.actor_planning_permit_system import (
-            ActorPlanningPermitSystem,
-        )
-
         from tcg_game_systems.stage_planning_permit_system import (
             StagePlanningPermitSystem,
         )
@@ -152,8 +136,10 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.select_action_system import SelectActionSystem
         from tcg_game_systems.hit_action_system import HitActionSystem
         from tcg_game_systems.feedback_action_system import FeedbackActionSystem
+        from tcg_game_systems.dungeon_state_actor_planning_system import (
+            DungeonStateActorPlanningSystem,
+        )
 
-        #
         ##
         tcg_game = cast(TCGGame, game)
         assert isinstance(tcg_game, TCGGame)
@@ -176,9 +162,8 @@ class TCGGameProcessPipeline(Processors):
         processors.add(PrePlanningSystem(tcg_game))  ######## 在所有规划之前!
 
         processors.add(StagePlanningPermitSystem(tcg_game))
-        processors.add(ActorPlanningPermitSystem(tcg_game))
-
         processors.add(StagePlanningSystem(tcg_game))
+        processors.add(DungeonStateActorPlanningSystem(tcg_game))
 
         processors.add(PostPlanningSystem(tcg_game))  ####### 在所有规划之后!
 

@@ -20,7 +20,7 @@ def _generate_execute_skills_prompt(
             if actor_instance.name != skill_action.name:
                 continue
 
-            export_combat_attr = actor_instance.base_attributes.combat_attrs
+            export_combat_attr = actor_instance.base_attributes.export_combat_attrs()
 
             detail = f"""### {actor_instance.name} 
 **{skill_action.skill.name}**

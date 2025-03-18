@@ -30,17 +30,17 @@ def _generate_skill_candidate_queue_prompt(
 
     gen_skills_response_example = SkillCandidateQueueResponse(
         attack=Skill(
-            name="攻击技能(能够造成伤害)",
+            name="攻击技能",
             description="攻击技能描述",
             effect="攻击技能效果",
         ),
         defense=Skill(
-            name="防御技能(能够减少伤害)",
+            name="防御技能",
             description="防御技能描述",
             effect="防御技能效果",
         ),
         support=Skill(
-            name="支援技能(能够提供辅助效果,如回复生命值，增加攻击力等)",
+            name="支援技能",
             description="支援技能描述",
             effect="支援技能效果",
         ),
@@ -51,6 +51,10 @@ def _generate_skill_candidate_queue_prompt(
 {current_stage}
 ### 场景描述
 {current_stage_narration}
+## 注意事项
+如果生成的技能跟属性有关(依赖/增加/减少)。
+则可以操作的属性只能从 **基础属性** 与 **战斗属性** 中选择。
+在技能描述与影响里需要明确说明。
 ## 输出要求
 - 不要使用```json```来封装内容。
 ### 输出格式(JSON)

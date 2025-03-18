@@ -24,7 +24,7 @@ def _generate_prompt(
         actors_appearances_info.append("无")
 
     # 导出战斗属性
-    combat_attrs: CombatAttributes = attributes.combat_attrs
+    combat_attrs: CombatAttributes = attributes.export_combat_attrs()
 
     return f"""# 发生事件！一场战斗即将开始！请说一下你的感受！
 ## 当前场景

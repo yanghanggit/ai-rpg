@@ -44,7 +44,7 @@ ATTRIBUTE_RULES_DESCRIPTION: Final[
 - 力量（Strength）：影响生命值、物理攻击、物理防御。
 - 智慧（Wisdom）：影响魔法攻击、魔法防御。
 - 敏捷（Dexterity）：影响行动速度。
-### (衍生)战斗属性
+### 战斗属性
 - 当前/最大生命值，由力量决定。
 - 物理攻击，由力量决定。
 - 物理防御，由力量决定。
@@ -75,8 +75,11 @@ def _comple_actor_system_prompt(
 你扮演这个游戏世界中的一个角色: {name}
 ## 当前游戏背景
 {epoch_script}
-## 游戏规则
+## 全局规则
 {GLOBAL_GAME_RULES}
+## 战斗规则
+{COMBAT_RULES_DESCRIPTION}
+## 角色属性
 {ATTRIBUTE_RULES_DESCRIPTION}
 ## 你的角色设定
 {actor_profile}
@@ -94,11 +97,11 @@ def _comple_stage_system_prompt(
 你将是角色活动的地点也是战斗系统。
 ## 游戏背景
 {epoch_script}
-## 游戏规则
+## 全局规则
 {GLOBAL_GAME_RULES}
-## 战斗规则说明
+## 战斗规则
 {COMBAT_RULES_DESCRIPTION}
-## 角色属性说明
+## 角色属性
 {ATTRIBUTE_RULES_DESCRIPTION}
 ## 场景设定
 {stage_profile}"""
@@ -113,7 +116,7 @@ def _comple_world_system_system_prompt(
 你扮演这个游戏世界中的一个系统: {name}
 ## 游戏背景
 {epoch_script}
-## 游戏规则
+## 全局规则
 {GLOBAL_GAME_RULES}
 ## 你的系统设定
 {world_system_profile}"""

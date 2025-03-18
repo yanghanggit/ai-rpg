@@ -32,7 +32,7 @@ ACTOR_SYSTEM_PROMPT_TEMPLATE = f"""# {game_sample.configuration.SystemPromptRepl
 ## 游戏背景
 {game_sample.builtin_prompt.GAME_BACKGROUND_FOR_ACTOR}
 
-## 游戏规则
+## 全局规则
 {game_sample.builtin_prompt.GAME_RULES_SETTING}
 
 ## 游戏流程
@@ -75,7 +75,7 @@ STAGE_SYSTEM_PROMPT_TEMPLATE = f"""# {game_sample.configuration.SystemPromptRepl
 ## 游戏背景
 {game_sample.builtin_prompt.GAME_BACKGROUND_FOR_STAGE}
 
-## 游戏规则
+## 全局规则
 {game_sample.builtin_prompt.GAME_RULES_SETTING}
 
 ## 游戏流程
@@ -108,7 +108,7 @@ WORLD_SYSTEM_SYSTEM_PROMPT_TEMPLATE = f"""# {game_sample.configuration.SystemPro
 ## 游戏背景
 {game_sample.builtin_prompt.GAME_BACKGROUND_FOR_WORLD_SYSTEM}
 
-## 游戏规则
+## 全局规则
 {game_sample.builtin_prompt.GAME_RULES_SETTING}
 
 ## 你的设定

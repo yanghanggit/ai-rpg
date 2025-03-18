@@ -129,8 +129,7 @@ class BaseAttributes(BaseModel):
     def magic_defense(self) -> int:
         return 5 + (1 * self.wisdom)
 
-    @property
-    def combat_attrs(self) -> CombatAttributes:
+    def export_combat_attrs(self) -> CombatAttributes:
         return CombatAttributes(
             max_hp=self.max_hp,
             physical_attack=self.physical_attack,

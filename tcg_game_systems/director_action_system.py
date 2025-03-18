@@ -28,7 +28,7 @@ def _generate_execute_skills_prompt(
 - 技能描述: {skill_action.skill.description}
 - 技能效果: {skill_action.skill.effect}
 **属性**
-- 生命: {actor_instance.hp}
+- 当前生命: {actor_instance.hp}
 - 最大生命: {export_combat_attr.max_hp}
 - 物理攻击: {export_combat_attr.physical_attack}
 - 物理防御: {export_combat_attr.physical_defense}
@@ -53,8 +53,6 @@ def _generate_execute_skills_prompt(
 #######################################################################################################################################
 @final
 class DirectorActionSystem(BaseActionReactiveSystem):
-
-    # director_action_system.py
 
     ####################################################################################################################################
     @override

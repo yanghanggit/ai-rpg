@@ -1,6 +1,6 @@
 from typing import NamedTuple, List, final
 from components.registry import register_component_class
-from tcg_models.v_0_0_1 import Skill
+from tcg_models.v_0_0_1 import Skill, BaseAttributes
 
 # from tcg_models.v_0_0_1 import ActiveSkill, TriggerSkill
 
@@ -303,3 +303,14 @@ class StagePlanningPermitFlagComponent(NamedTuple):
 class SkillCandidateQueueComponent(NamedTuple):
     name: str
     queue: List[Skill]
+
+
+############################################################################################################
+# 新的组件。
+@final
+@register_component_class
+class AttributesComponent2(NamedTuple):
+    name: str
+    level: int
+    hp: int
+    base_attributes: BaseAttributes

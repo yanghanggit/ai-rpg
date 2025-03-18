@@ -16,6 +16,7 @@ from tcg_models.v_0_0_1 import (
     AgentShortTermMemory,
     ActorType,
     StageType,
+    BaseAttributes,
 )
 from components.components import (
     WorldSystemComponent,
@@ -32,6 +33,7 @@ from components.components import (
     HeroActorFlagComponent,
     MonsterActorFlagComponent,
     EnterStageFlagComponent,
+    AttributesComponent2,
 )
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -356,12 +358,22 @@ class TCGGame(BaseGame, TCGGameContext):
                 FinalAppearanceComponent, instance.name, prototype.appearance
             )
 
+            # 必要组件：类型标记
             match prototype.type:
 
                 case ActorType.HERO:
                     actor_entity.add(HeroActorFlagComponent, instance.name)
                 case ActorType.MONSTER:
                     actor_entity.add(MonsterActorFlagComponent, instance.name)
+
+            # 必要组件：属性
+            actor_entity.add(
+                AttributesComponent2,
+                instance.name,
+                instance.level,
+                instance.hp,
+                instance.base_attributes,
+            )
 
             # 添加到返回值
             ret.append(actor_entity)

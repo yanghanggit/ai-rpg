@@ -2,6 +2,7 @@ import random
 from entitas import Matcher, Entity, Matcher, ExecuteProcessor  # type: ignore
 from components.components import (
     SkillCandidateQueueComponent,
+    AttributesComponent2,
 )
 from overrides import override
 from typing import List, final
@@ -40,6 +41,9 @@ class DungeonCombatTurnSystem(ExecuteProcessor):
 
         # 随机出手顺序
         shuffled_reactive_entities = self._shuffle_action_order(list(actor_entities))
+        # shuffled_reactive_entities = self._sort_action_order_by_dex(
+        #     shuffled_reactive_entities
+        # )
         new_round.turns = [entity._name for entity in shuffled_reactive_entities]
 
         # 测试的代码 TODO
@@ -52,9 +56,21 @@ class DungeonCombatTurnSystem(ExecuteProcessor):
             entity2.replace(SelectAction2, entity2._name)
 
     #######################################################################################################################################
+    # 随机排序
     def _shuffle_action_order(self, react_entities: List[Entity]) -> List[Entity]:
         shuffled_reactive_entities = react_entities.copy()
         random.shuffle(shuffled_reactive_entities)
         return shuffled_reactive_entities
+
+    #######################################################################################################################################
+    # 正式的排序方式，按着敏捷度排序
+    def _sort_action_order_by_dex(self, react_entities: List[Entity]) -> List[Entity]:
+        return sorted(
+            react_entities,
+            key=lambda entity: entity.get(
+                AttributesComponent2
+            ).base_attributes.dexterity,
+            reverse=True,
+        )
 
     #######################################################################################################################################

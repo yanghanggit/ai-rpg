@@ -3,8 +3,9 @@ from agent.chat_request_handler import ChatRequestHandler
 from entitas import ExecuteProcessor, Entity  # type: ignore
 from typing import Dict, List, final, override
 from game.tcg_game import TCGGame
-from components.components import StageEnvironmentComponent
+from components.components import StageEnvironmentComponent, AttributesComponent2
 from extended_systems.combat_system import CombatState
+from tcg_models.v_0_0_1 import BaseAttributes, CombatAttributes
 
 
 ###################################################################################################################################################################
@@ -12,6 +13,8 @@ def _generate_prompt(
     stage_name: str,
     stage_narrate: str,
     actors_apperances_mapping: Dict[str, str],
+    hp: int,
+    attributes: BaseAttributes,
 ) -> str:
 
     actors_appearances_info = []
@@ -20,6 +23,9 @@ def _generate_prompt(
     if len(actors_appearances_info) == 0:
         actors_appearances_info.append("无")
 
+    # 导出战斗属性
+    combat_attrs: CombatAttributes = attributes.combat_attrs
+
     return f"""# 发生事件！一场战斗即将开始！请说一下你的感受！
 ## 当前场景
 {stage_name}
@@ -27,6 +33,18 @@ def _generate_prompt(
 {stage_narrate}
 ## 场景内角色
 {"\n".join(actors_appearances_info)}
+## 你的属性
+### 基础属性
+- 力量: {attributes.strength}
+- 敏捷: {attributes.dexterity}
+- 智力: {attributes.wisdom}
+### 战斗属性
+- 当前生命：{hp}
+- 最大生命：{combat_attrs.max_hp}
+- 物理攻击：{combat_attrs.physical_attack}
+- 物理防御：{combat_attrs.physical_defense}
+- 魔法攻击：{combat_attrs.magic_attack}
+- 魔法防御：{combat_attrs.magic_defense}
 ## 输出要求
 - 引用角色或场景时，请严格遵守全名机制
 - 以第一人称视角，一整段话来描述，不要换行或折行。
@@ -94,31 +112,35 @@ class DungeonCombatInitSystem(ExecuteProcessor):
 
         request_handlers: List[ChatRequestHandler] = []
 
-        for entity in actor_entities:
+        for actor_entity in actor_entities:
 
-            current_stage = self._game.safe_get_stage_entity(entity)
+            assert actor_entity.has(AttributesComponent2)
+
+            current_stage = self._game.safe_get_stage_entity(actor_entity)
             assert current_stage is not None
 
             # 找到当前场景内所有角色
             actors_apperances_mapping = (
                 self._game.retrieve_actor_appearance_on_stage_mapping(current_stage)
             )
-            actors_apperances_mapping.pop(entity._name, None)
+            actors_apperances_mapping.pop(actor_entity._name, None)
 
             # 生成消息
             message = _generate_prompt(
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
                 actors_apperances_mapping,
+                actor_entity.get(AttributesComponent2).hp,
+                actor_entity.get(AttributesComponent2).base_attributes,
             )
 
             # 生成请求处理器
             request_handlers.append(
                 ChatRequestHandler(
-                    name=entity._name,
+                    name=actor_entity._name,
                     prompt=message,
                     chat_history=self._game.get_agent_short_term_memory(
-                        entity
+                        actor_entity
                     ).chat_history,
                 )
             )

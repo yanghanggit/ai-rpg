@@ -149,7 +149,7 @@ class ActorInstance(BaseModel):
     kick_off_message: str
     base_attributes: BaseAttributes
     level: int = 1
-    hp: int = 1
+    hp: int = 0
 
 
 ###############################################################################################################################################

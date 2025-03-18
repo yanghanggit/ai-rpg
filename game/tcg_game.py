@@ -154,6 +154,7 @@ class TCGGame(BaseGame, TCGGameContext):
     @property
     def chaos_engineering_system(self) -> IChaosEngineering:
         return self._chaos_engineering_system
+
     ###############################################################################################################################################
     @property
     def combat_system(self) -> CombatSystem:

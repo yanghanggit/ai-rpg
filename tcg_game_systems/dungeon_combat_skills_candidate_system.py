@@ -1,72 +1,65 @@
 from pydantic import BaseModel
-from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
+from entitas import Matcher, Entity, Matcher, ExecuteProcessor  # type: ignore
 from agent.chat_request_handler import ChatRequestHandler
 import format_string.json_format
 from components.components import (
     StageEnvironmentComponent,
-    ActorPlanningPermitFlagComponent,
+    SkillCandidateQueueComponent,
 )
 from overrides import override
-from typing import Dict, List, final
-from game.tcg_game import TCGGame
+from typing import List, Set, final
 from loguru import logger
-from components.actions2 import SpeakAction2, MindVoiceAction2
+from tcg_models.v_0_0_1 import Skill
+from game.tcg_game import TCGGame
+from extended_systems.combat_system import CombatSystem, CombatState
 
 
 #######################################################################################################################################
 @final
-class ActorPlanningResponse(BaseModel):
-    speak_actions: Dict[str, str] = {}
-    mind_voice_actions: str = ""
+class SkillCandidateQueueResponse(BaseModel):
+    attack: Skill
+    defense: Skill
+    support: Skill
 
 
 #######################################################################################################################################
-def _generate_actor_plan_prompt(
+def _generate_skill_candidate_queue_prompt(
     current_stage: str,
     current_stage_narration: str,
-    actors_appearance_mapping: Dict[str, str],
 ) -> str:
 
-    actors_appearances_info = []
-    for actor_name, appearance in actors_appearance_mapping.items():
-        actors_appearances_info.append(f"{actor_name}: {appearance}")
-    if len(actors_appearances_info) == 0:
-        actors_appearances_info.append("无")
-
-    # 格式示例
-    actor_response_example = ActorPlanningResponse(
-        speak_actions={
-            "场景内角色全名": "你要说的内容（场景内其他角色会听见）",
-        },
-        mind_voice_actions="你要说的内容（内心独白，只有你自己能听见）",
+    gen_skills_response_example = SkillCandidateQueueResponse(
+        attack=Skill(
+            name="攻击技能(能够造成伤害)",
+            description="攻击技能描述",
+            effect="攻击技能效果",
+        ),
+        defense=Skill(
+            name="防御技能(能够减少伤害)",
+            description="防御技能描述",
+            effect="防御技能效果",
+        ),
+        support=Skill(
+            name="支援技能(能够提供辅助效果,如回复生命值，增加攻击力等)",
+            description="支援技能描述",
+            effect="支援技能效果",
+        ),
     )
 
-    return f"""# 请制定你的行动计划。
+    return f"""# 请根据你的能力情况，生成你的技能
 ## 当前场景
 {current_stage}
 ### 场景描述
 {current_stage_narration}
-## 场景内角色
-{"\n".join(actors_appearances_info)}
 ## 输出要求
-- 引用角色或场景时，请严格遵守全名机制
-- 所有输出必须为第一人称视角。
 - 不要使用```json```来封装内容。
 ### 输出格式(JSON)
-{actor_response_example.model_dump_json()}"""
-
-
-#######################################################################################################################################
-def _compress_actor_plan_prompt(
-    prompt: str,
-) -> str:
-    logger.debug(f"原始消息：\n{prompt}")
-    return "# 请做出你的计划，决定你将要做什么，并以 JSON 格式输出。"
+{gen_skills_response_example.model_dump_json()}"""
 
 
 #######################################################################################################################################
 @final
-class ActorPlanningSystem(ExecuteProcessor):
+class DungeonCombatSkillsCandidateSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
@@ -79,23 +72,49 @@ class ActorPlanningSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     async def a_execute1(self) -> None:
-        await self._process_actor_planning_request()
+
+        if self._game.combat_system.current_combat.current_state != CombatState.RUNNING:
+            # 不是本阶段就直接返回
+            return
+
+        # 先清除
+        self._clear_all_skill_candidate_queue_components()
+
+        # 提取角色
+        actor_entities = self._extract_actor_entities()
+        if len(actor_entities) > 0:
+
+            # 处理请求
+            await self._process_chat_requests(actor_entities)
+
+    ###################################################################################################################################################################
+    def _extract_actor_entities(self) -> set[Entity]:
+
+        player_entity = self._game.get_player_entity()
+        assert player_entity is not None
+
+        actors_on_stage = self._game.retrieve_actors_on_stage(player_entity)
+        return actors_on_stage
 
     #######################################################################################################################################
-    async def _process_actor_planning_request(self) -> None:
-
-        # 获取所有需要进行角色规划的角色
+    def _clear_all_skill_candidate_queue_components(self) -> None:
         actor_entities = self._game.get_group(
             Matcher(
                 all_of=[
-                    ActorPlanningPermitFlagComponent,
+                    SkillCandidateQueueComponent,
                 ],
             )
-        ).entities
+        ).entities.copy()
+
+        for entity in actor_entities:
+            entity.remove(SkillCandidateQueueComponent)
+
+    #######################################################################################################################################
+    async def _process_chat_requests(self, react_entities: Set[Entity]) -> None:
 
         # 处理角色规划请求
         request_handlers: List[ChatRequestHandler] = self._generate_chat_requests(
-            actor_entities
+            set(react_entities)
         )
 
         # 语言服务
@@ -121,41 +140,30 @@ class ActorPlanningSystem(ExecuteProcessor):
 
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
-            self._handle_actor_response(entity2, request_handler)
+            self._handle_response(entity2, request_handler)
 
     #######################################################################################################################################
-    def _handle_actor_response(
+    def _handle_response(
         self, entity2: Entity, request_handler: ChatRequestHandler
     ) -> None:
 
-        assert entity2.has(ActorPlanningPermitFlagComponent)
-        assert entity2._name == request_handler._name
-
-        # 核心处理
         try:
 
-            format_response = ActorPlanningResponse.model_validate_json(
+            format_response = SkillCandidateQueueResponse.model_validate_json(
                 format_string.json_format.strip_json_code_block(
                     request_handler.response_content
                 )
             )
 
-            self._game.append_human_message(
-                entity2, _compress_actor_plan_prompt(request_handler._prompt)
+            entity2.replace(
+                SkillCandidateQueueComponent,
+                entity2._name,
+                [
+                    format_response.attack,
+                    format_response.defense,
+                    format_response.support,
+                ],
             )
-            self._game.append_ai_message(entity2, request_handler.response_content)
-
-            # 添加说话动作
-            if len(format_response.speak_actions) > 0:
-                entity2.replace(
-                    SpeakAction2, entity2._name, format_response.speak_actions
-                )
-
-            # 添加内心独白
-            if format_response.mind_voice_actions != "":
-                entity2.replace(
-                    MindVoiceAction2, entity2._name, format_response.mind_voice_actions
-                )
 
         except:
             logger.error(
@@ -171,20 +179,14 @@ class ActorPlanningSystem(ExecuteProcessor):
 
         for entity in actor_entities:
 
+            #
             current_stage = self._game.safe_get_stage_entity(entity)
             assert current_stage is not None
 
-            # 找到当前场景内所有角色
-            actors_apperances_mapping = (
-                self._game.retrieve_actor_appearance_on_stage_mapping(current_stage)
-            )
-            actors_apperances_mapping.pop(entity._name, None)
-
             # 生成消息
-            message = _generate_actor_plan_prompt(
+            message = _generate_skill_candidate_queue_prompt(
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
-                actors_apperances_mapping,
             )
 
             # 生成请求处理器

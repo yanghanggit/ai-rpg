@@ -1,5 +1,5 @@
 from enum import IntEnum, unique
-from typing import List, final
+from typing import Final, List, final
 
 
 ###############################################################################################################################################
@@ -16,13 +16,23 @@ class CombatState(IntEnum):
 class Combat:
 
     def __init__(self, name: str) -> None:
-        self._name = name
+        self._name: Final[str] = name
         self._state: CombatState = CombatState.NONE
-        
+
     ###############################################################################################################################################
     @property
     def current_state(self) -> CombatState:
         return self._state
+
+    ###############################################################################################################################################
+    def start_combat(self) -> None:
+        assert self._state == CombatState.INIT
+        self._state = CombatState.RUNNING
+
+    ###############################################################################################################################################
+
+
+EMPTY_COMBAT: Final[Combat] = Combat("EMPTY_COMBAT")
 
 
 ###############################################################################################################################################
@@ -38,8 +48,19 @@ class CombatSystem:
         self._combats.append(combat)
 
     ########################################################################################################################
+    def has_combat(self, name: str) -> bool:
+        for combat in self._combats:
+            if combat._name == name:
+                return True
+        return False
+
+    ########################################################################################################################
+    @property
     def current_combat(self) -> Combat:
         assert len(self._combats) > 0
+        if len(self._combats) == 0:
+            return EMPTY_COMBAT
+
         return self._combats[-1]
 
     ########################################################################################################################

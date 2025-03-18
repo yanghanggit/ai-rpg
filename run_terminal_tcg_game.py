@@ -1,9 +1,11 @@
+from typing import Final
 from loguru import logger
 import datetime
 from dataclasses import dataclass
 import game.tcg_game_config
 import shutil
 from game.terminal_tcg_game import TerminalTCGGame
+from game.tcg_game import TCGGameState
 from tcg_models.v_0_0_1 import Boot, World
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from extended_systems.lang_serve_system import LangServeSystem
@@ -136,52 +138,40 @@ async def run_game(option: OptionParameters) -> None:
             logger.error(f"游戏准备失败 = {game_name}")
             exit(1)
 
-    # is_first_execution = False
+    # 测试
+    test_dungeon_name: Final[str] = "场景.洞窟"
 
     # 核心循环
     while True:
 
-        # if not is_first_execution:
-        #     is_first_execution = True
-        #     logger.warning(
-        #         f"游戏开始 = {game_name}!!!, 第一次的默认执行!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        #     )
-        #     # await terminal_tcg_game.a_execute()
-        #     continue
+        # 加一个描述。
+        game_state_desc = "未知状态"
+        if terminal_tcg_game.current_game_state == TCGGameState.HOME:
+            game_state_desc = "营地"
+        elif terminal_tcg_game.current_game_state == TCGGameState.DUNGEON:
+            game_state_desc = f"地下城/{test_dungeon_name}"
 
-        usr_input = input(f"[{terminal_tcg_game.player.name}]:")
+        usr_input = input(f"[{terminal_tcg_game.player.name}/{game_state_desc}]:")
 
         if usr_input == "/quit" or usr_input == "/q":
             logger.info(f"玩家 主动 退出游戏 = {terminal_tcg_game.player.name}")
             terminal_tcg_game._will_exit = True
             break
 
-        elif usr_input == "/bat":
+        elif usr_input == "/b":
 
-            terminal_tcg_game.combat_system.new_combat("场景.洞窟")
+            if not terminal_tcg_game.combat_system.has_combat(test_dungeon_name):
+                logger.info(f"玩家输入 = {usr_input}, 开始战斗！")
+                terminal_tcg_game.combat_system.new_combat(test_dungeon_name)
+
             terminal_tcg_game.player.add_command2(
                 PlayerCommand2(user=terminal_tcg_game.player.name, command=usr_input)
             )
-            
+
             await terminal_tcg_game.a_execute()
 
         else:
             logger.info(f"玩家输入 = {usr_input}, 啥都不做！")
-
-        # if usr_input == "/tp1":
-        #     terminal_tcg_game.stage_transition(
-        #         terminal_tcg_game.retrieve_all_hero_entities(),
-        #         "场景.洞窟",
-        #     )
-        #     continue
-
-        # 以上都拦截不住，就是玩家的输入，输入错了， handle input 相关的system 就不执行，空跑一次。
-        # terminal_tcg_game.player.add_command2(
-        #     PlayerCommand2(user=terminal_tcg_game.player.name, command=usr_input)
-        # )
-
-        # 执行
-        #await terminal_tcg_game.a_execute()
 
         # 处理退出
         if terminal_tcg_game._will_exit:

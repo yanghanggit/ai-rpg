@@ -130,17 +130,21 @@ class TCGGameProcessPipeline(Processors):
         )
         from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
         from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
-        from tcg_game_systems.candidate_action_system import (
-            CandidateActionSystem,
-        )
+
+        # from tcg_game_systems.candidate_action_system import (
+        #     CandidateActionSystem,
+        # )
         from tcg_game_systems.select_action_system import SelectActionSystem
         from tcg_game_systems.hit_action_system import HitActionSystem
         from tcg_game_systems.feedback_action_system import FeedbackActionSystem
-        from tcg_game_systems.dungeon_state_actor_planning_system import (
-            DungeonStateActorPlanningSystem,
+        from tcg_game_systems.dungeon_combat_init_system import (
+            DungeonCombatInitSystem,
         )
         from tcg_game_systems.terminal_player_interrupt_wait_system import (
             TerminalPlayerInterruptWaitSystem,
+        )
+        from tcg_game_systems.dungeon_combat_skills_candidate_system import (
+            DungeonCombatSkillsCandidateSystem,
         )
 
         ##
@@ -164,15 +168,13 @@ class TCGGameProcessPipeline(Processors):
         # yh add, 测试用。
         processors.add(PreDungeonStateSystem(tcg_game))
 
-        
-
         # yh add, 测试用。
         processors.add(PreActionSystem(tcg_game))
 
         # yh test
-        processors.add(
-            CandidateActionSystem(tcg_game)
-        )  ##################################
+        # processors.add(
+        #     CandidateActionSystem(tcg_game)
+        # )  ##################################
         processors.add(SelectActionSystem(tcg_game))
         processors.add(HitActionSystem(tcg_game))
         processors.add(FeedbackActionSystem(tcg_game))
@@ -199,7 +201,8 @@ class TCGGameProcessPipeline(Processors):
 
         processors.add(StagePlanningPermitSystem(tcg_game))
         processors.add(StagePlanningSystem(tcg_game))
-        processors.add(DungeonStateActorPlanningSystem(tcg_game))
+        processors.add(DungeonCombatInitSystem(tcg_game))
+        processors.add(DungeonCombatSkillsCandidateSystem(tcg_game))
 
         processors.add(
             PostPlanningSystem(tcg_game)

@@ -103,10 +103,6 @@ class TCGGame(BaseGame, TCGGameContext):
         # 战斗系统
         self._combat_system: CombatSystem = combat_system
 
-        # 临时数据。
-        self._round_action_order: List[str] = []
-        self._round_number: int = 0
-
     ###############################################################################################################################################
     @property
     def world_file_dir(self) -> Path:
@@ -491,7 +487,7 @@ class TCGGame(BaseGame, TCGGameContext):
         agent_short_term_memory.chat_history.extend([AIMessage(content=chat)])
 
     ###############################################################################################################################################
-    def append_system_message(self, entity: Entity, chat: str) -> None:
+    def append_system_message(self, entity: Entity, chat: str, **kwargs: Any) -> None:
         agent_short_term_memory = self.get_agent_short_term_memory(entity)
         if len(agent_short_term_memory.chat_history) == 0:
             agent_short_term_memory.chat_history.extend([SystemMessage(content=chat)])
@@ -524,6 +520,7 @@ class TCGGame(BaseGame, TCGGameContext):
         entity: Entity,
         agent_event: AgentEvent,
         exclude_entities: Set[Entity] = set(),
+        **kwargs: Any,
     ) -> None:
 
         stage_entity = self.safe_get_stage_entity(entity)

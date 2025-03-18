@@ -1,53 +1,17 @@
 from loguru import logger
 from agent.chat_request_handler import ChatRequestHandler
-from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
-from typing import List, final, override
+from entitas import ExecuteProcessor, Entity  # type: ignore
+from typing import Dict, List, final, override
 from game.tcg_game import TCGGame
-from components.components import ActorComponent, StageEnvironmentComponent
-from components.actions2 import (
-    CandidateAction2,
-)
-from extended_systems.combat_system import CombatSystem, CombatState
-
-
-# combat_system = self._game.combat_system.current_combat()
-# match(combat_system.current_state):
-#     case CombatState.INIT:
-#         self._process()
-#     case _:
-#         assert False, f"未知的状态 = {combat_system.current_state}"
-
-# self._game._round_number = self._game._round_number + 1
-
-# entities2 = self._game.get_group(
-#     Matcher(
-#         all_of=[
-#             ActorComponent,
-#         ],
-#     )
-# ).entities
-
-# for actor_entity in entities2:
-
-#     break
-
-#     stage_entity = self._game.safe_get_stage_entity(actor_entity)
-#     assert stage_entity is not None
-
-#     self._game.append_human_message(
-#         entity=actor_entity,
-#         chat=f"# 提示！战斗回合开始 = {self._game._round_number}",
-#         tag=f"battle:{stage_entity._name}:{self._game._round_number}",
-#     )
-
-#     actor_entity.replace(CandidateAction2, actor_entity._name)
+from components.components import StageEnvironmentComponent
+from extended_systems.combat_system import CombatState
 
 
 ###################################################################################################################################################################
 def _generate_prompt(
     stage_name: str,
     stage_narrate: str,
-    actors_apperances_mapping: dict[str, str],
+    actors_apperances_mapping: Dict[str, str],
 ) -> str:
 
     actors_appearances_info = []
@@ -85,7 +49,7 @@ class DungeonCombatInitSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
 
-        if self._game.combat_system.current_combat.current_state != CombatState.INIT:
+        if self._game.combat_system.latest_combat.current_state != CombatState.INIT:
             # 不是本阶段就直接返回
             return
 
@@ -93,7 +57,7 @@ class DungeonCombatInitSystem(ExecuteProcessor):
         await self._process_chat_requests()
 
         # 开始战斗
-        self._game.combat_system.current_combat.start_combat()
+        self._game.combat_system.latest_combat.start_combat()
 
     ###################################################################################################################################################################
     def _extract_actor_entities(self) -> set[Entity]:
@@ -188,7 +152,9 @@ class DungeonCombatInitSystem(ExecuteProcessor):
         # 核心处理
         try:
             # 添加上下文。
-            self._game.append_human_message(entity2, request_handler._prompt)
+            self._game.append_human_message(
+                entity2, request_handler._prompt, tag=f"new battle!"
+            )
             self._game.append_ai_message(entity2, request_handler.response_content)
 
         except:

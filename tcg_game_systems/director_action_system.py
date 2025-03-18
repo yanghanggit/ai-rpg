@@ -3,7 +3,7 @@ from agent.chat_request_handler import ChatRequestHandler
 from overrides import override
 from typing import List, final
 from loguru import logger
-from components.actions2 import HitAction2, FeedbackAction2
+from components.actions2 import DirectorAction2, FeedbackAction2
 from rpg_models.event_models import AgentEvent
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from tcg_models.v_0_0_1 import ActorInstance
@@ -11,7 +11,7 @@ from tcg_models.v_0_0_1 import ActorInstance
 
 #######################################################################################################################################
 def _generate_execute_skills_prompt(
-    actions_list: List[HitAction2], actor_instances: List[ActorInstance]
+    actions_list: List[DirectorAction2], actor_instances: List[ActorInstance]
 ) -> str:
 
     skill_execution_details: List[str] = []
@@ -52,29 +52,35 @@ def _generate_execute_skills_prompt(
 
 #######################################################################################################################################
 @final
-class HitActionSystem(BaseActionReactiveSystem):
+class DirectorActionSystem(BaseActionReactiveSystem):
+
+    # director_action_system.py
 
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(HitAction2): GroupEvent.ADDED}
+        return {Matcher(DirectorAction2): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(HitAction2)
+        return entity.has(DirectorAction2)
 
     #######################################################################################################################################
     @override
     async def a_execute2(self) -> None:
 
-        # assert len(self._game._round_action_order) > 0
-        if len(self._game._round_action_order) == 0:
+        if len(self._react_entities_copy) == 0:
+            return
+
+        if len(self._game.combat_system.latest_combat.latest_round.turns) == 0:
             return
 
         # 将self._react_entities_copy以self._game._round_action_order的顺序进行重新排序
         self._react_entities_copy.sort(
-            key=lambda entity: self._game._round_action_order.index(entity._name)
+            key=lambda entity: self._game.combat_system.latest_combat.latest_round.turns.index(
+                entity._name
+            )
         )
 
         await self._process_request(self._react_entities_copy)
@@ -82,9 +88,9 @@ class HitActionSystem(BaseActionReactiveSystem):
     #######################################################################################################################################
     async def _process_request(self, react_entities: List[Entity]) -> None:
 
-        skill_actions: List[HitAction2] = []
+        skill_actions: List[DirectorAction2] = []
         for entity in react_entities:
-            skill_action2 = entity.get(HitAction2)
+            skill_action2 = entity.get(DirectorAction2)
             assert skill_action2 is not None
             skill_actions.append(skill_action2)
 

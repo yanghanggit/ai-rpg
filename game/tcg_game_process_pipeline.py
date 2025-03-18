@@ -63,35 +63,34 @@ class TCGGameProcessPipeline(Processors):
         # 启动agent的提示词。启动阶段
         processors.add(KickOffSystem(tcg_game))
 
-        # 规划逻辑
-        processors.add(PrePlanningSystem(tcg_game))  ######## 在所有规划之前!
-
-        processors.add(StagePlanningPermitSystem(tcg_game))
-        processors.add(ActorPlanningPermitSystem(tcg_game))
-
-        processors.add(StagePlanningSystem(tcg_game))
-        processors.add(ActorPlanningSystem(tcg_game))
-
-        processors.add(PostPlanningSystem(tcg_game))  ####### 在所有规划之后!
-
-        # 动作处理相关的系统
+        # 动作处理相关的系统 ##################################################################
+        ####################################################################################
         processors.add(PreActionSystem(tcg_game))
-
-        # 说话相关动作。
         processors.add(MindVoiceActionSystem(tcg_game))
         processors.add(SpeakActionSystem(tcg_game))
-
-        # ?
         processors.add(DeadActionSystem(tcg_game))
-
-        # ?
         processors.add(PostActionSystem(tcg_game))
+        ####################################################################################
+        ####################################################################################
 
         # 动作处理后，可能清理。
         processors.add(DestroySystem(tcg_game))
 
         # 存储系统。
         processors.add(SaveSystem(tcg_game))
+
+        # 规划逻辑
+        ######## 在所有规划之前!##############################################################
+        ####################################################################################
+        processors.add(PrePlanningSystem(tcg_game))
+        processors.add(StagePlanningPermitSystem(tcg_game))
+        processors.add(ActorPlanningPermitSystem(tcg_game))
+        processors.add(StagePlanningSystem(tcg_game))
+        processors.add(ActorPlanningSystem(tcg_game))
+        processors.add(PostPlanningSystem(tcg_game))
+        ####### 在所有规划之后!
+        ####################################################################################
+        ####################################################################################
 
         processors.add(EndSystem(tcg_game))
 
@@ -130,12 +129,8 @@ class TCGGameProcessPipeline(Processors):
         )
         from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
         from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
-
-        # from tcg_game_systems.candidate_action_system import (
-        #     CandidateActionSystem,
-        # )
         from tcg_game_systems.select_action_system import SelectActionSystem
-        from tcg_game_systems.hit_action_system import HitActionSystem
+        from tcg_game_systems.director_action_system import DirectorActionSystem
         from tcg_game_systems.feedback_action_system import FeedbackActionSystem
         from tcg_game_systems.dungeon_combat_init_system import (
             DungeonCombatInitSystem,
@@ -146,6 +141,8 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.dungeon_combat_skills_candidate_system import (
             DungeonCombatSkillsCandidateSystem,
         )
+        from tcg_game_systems.turn_action_system import TurnActionSystem
+        from tcg_game_systems.dungeon_combat_turn_system import DungeonCombatTurnSystem
 
         ##
         tcg_game = cast(TCGGame, game)
@@ -163,7 +160,7 @@ class TCGGameProcessPipeline(Processors):
         processors.add(KickOffSystem(tcg_game))
 
         # 调试！！！！
-        processors.add(TerminalPlayerInterruptWaitSystem(tcg_game))
+        # processors.add(TerminalPlayerInterruptWaitSystem(tcg_game))
 
         # yh add, 测试用。
         processors.add(PreDungeonStateSystem(tcg_game))
@@ -171,14 +168,13 @@ class TCGGameProcessPipeline(Processors):
         # yh add, 测试用。
         processors.add(PreActionSystem(tcg_game))
 
-        # yh test
-        # processors.add(
-        #     CandidateActionSystem(tcg_game)
-        # )  ##################################
+        # yh test #####################################################################################################
+        processors.add(TurnActionSystem(tcg_game))
         processors.add(SelectActionSystem(tcg_game))
-        processors.add(HitActionSystem(tcg_game))
+        processors.add(DirectorActionSystem(tcg_game))
         processors.add(FeedbackActionSystem(tcg_game))
-        processors.add(DeadActionSystem(tcg_game))  ##################################
+        processors.add(DeadActionSystem(tcg_game))
+        ######################################################################################################
 
         processors.add(PostActionSystem(tcg_game))
 
@@ -194,6 +190,10 @@ class TCGGameProcessPipeline(Processors):
         ###############################################################
         ###############################################################
         ###############################################################
+
+        # 调试！！！！
+        processors.add(TerminalPlayerInterruptWaitSystem(tcg_game))
+
         # 规划逻辑
         processors.add(
             PrePlanningSystem(tcg_game)
@@ -203,6 +203,7 @@ class TCGGameProcessPipeline(Processors):
         processors.add(StagePlanningSystem(tcg_game))
         processors.add(DungeonCombatInitSystem(tcg_game))
         processors.add(DungeonCombatSkillsCandidateSystem(tcg_game))
+        processors.add(DungeonCombatTurnSystem(tcg_game))
 
         processors.add(
             PostPlanningSystem(tcg_game)

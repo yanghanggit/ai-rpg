@@ -41,7 +41,7 @@ class MindVoiceAction2(NamedTuple):
 ############################################################################################################
 @final
 @register_action_class_2
-class CandidateAction2(NamedTuple):
+class TurnAction2(NamedTuple):
     name: str
 
 
@@ -55,7 +55,7 @@ class SelectAction2(NamedTuple):
 ############################################################################################################
 @final
 @register_action_class_2
-class HitAction2(NamedTuple):
+class DirectorAction2(NamedTuple):
     name: str
     targets: List[str]
     skill: Skill

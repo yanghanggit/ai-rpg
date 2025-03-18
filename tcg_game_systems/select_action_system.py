@@ -1,18 +1,16 @@
-import random
 from pydantic import BaseModel
 from entitas import Matcher, Entity, Matcher, GroupEvent  # type: ignore
 from agent.chat_request_handler import ChatRequestHandler
 import format_string.json_format
 from components.components import (
     StageEnvironmentComponent,
-    ActorComponent,
     SkillCandidateQueueComponent,
 )
 from overrides import override
 from typing import List, final
 from loguru import logger
 from tcg_models.v_0_0_1 import Skill
-from components.actions2 import HitAction2, SelectAction2
+from components.actions2 import DirectorAction2, SelectAction2
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 
@@ -79,14 +77,10 @@ class SelectActionSystem(BaseActionReactiveSystem):
     #######################################################################################################################################
     async def _process_request(self, react_entities: List[Entity]) -> None:
 
-        # 生成消息
-        self._game._round_action_order = [
-            action._name for action in self._action_order()
-        ]
-
         # 处理角色规划请求
         request_handlers: List[ChatRequestHandler] = self._generate_chat_requests(
-            set(react_entities), self._game._round_action_order
+            set(react_entities),
+            self._game.combat_system.latest_combat.latest_round.turns,
         )
 
         # 语言服务
@@ -131,18 +125,34 @@ class SelectActionSystem(BaseActionReactiveSystem):
             skill_candidate_comp = entity2.get(SkillCandidateQueueComponent)
             for skill in skill_candidate_comp.queue:
                 if skill.name == format_response.skill:
-                    assert not entity2.has(HitAction2)
+                    assert not entity2.has(DirectorAction2)
                     entity2.replace(
-                        HitAction2,
+                        DirectorAction2,
                         skill_candidate_comp.name,
                         format_response.targets,
                         skill,
                     )
+
+                    self._notify_event(entity2, format_response, skill)
                     break
         except:
             logger.error(
                 f"""返回格式错误: {entity2._name}, Response = \n{request_handler.response_content}"""
             )
+
+    #######################################################################################################################################
+    def _notify_event(
+        self, entity: Entity, format_response: SkillSelectionResponse, skill: Skill
+    ) -> None:
+
+        message = f""" # 发生事件！经过思考后，你决定行动！
+## 使用技能 = {skill.name}
+## 目标 = {format_response.targets}
+## 原因 = {format_response.reason}
+## 技能数据
+{skill.model_dump_json()}"""
+
+        self._game.append_human_message(entity, message)
 
     #######################################################################################################################################
     def _generate_chat_requests(
@@ -178,20 +188,5 @@ class SelectActionSystem(BaseActionReactiveSystem):
             )
 
         return request_handlers
-
-    #######################################################################################################################################
-    def _action_order(self) -> List[Entity]:
-        # 获取所有需要进行角色规划的角色
-        actor_entities = self._game.get_group(
-            Matcher(
-                all_of=[
-                    ActorComponent,
-                ],
-            )
-        ).entities.copy()
-
-        actor_entities1 = list(actor_entities)
-        random.shuffle(actor_entities1)
-        return actor_entities1
 
     #######################################################################################################################################

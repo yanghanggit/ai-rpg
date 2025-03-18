@@ -162,7 +162,7 @@ async def run_game(option: OptionParameters) -> None:
 
             if not terminal_tcg_game.combat_system.has_combat(test_dungeon_name):
                 logger.info(f"玩家输入 = {usr_input}, 开始战斗！")
-                terminal_tcg_game.combat_system.new_combat(test_dungeon_name)
+                terminal_tcg_game.combat_system.start_new_combat(test_dungeon_name)
 
             terminal_tcg_game.player.add_command2(
                 PlayerCommand2(user=terminal_tcg_game.player.name, command=usr_input)

@@ -11,7 +11,7 @@ from typing import List, Set, final
 from loguru import logger
 from tcg_models.v_0_0_1 import Skill
 from game.tcg_game import TCGGame
-from extended_systems.combat_system import CombatSystem, CombatState
+from extended_systems.combat_system import CombatState
 
 
 #######################################################################################################################################
@@ -73,7 +73,7 @@ class DungeonCombatSkillsCandidateSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
 
-        if self._game.combat_system.current_combat.current_state != CombatState.RUNNING:
+        if self._game.combat_system.latest_combat.current_state != CombatState.RUNNING:
             # 不是本阶段就直接返回
             return
 
@@ -155,6 +155,7 @@ class DungeonCombatSkillsCandidateSystem(ExecuteProcessor):
                 )
             )
 
+            # 设置3个技能
             entity2.replace(
                 SkillCandidateQueueComponent,
                 entity2._name,

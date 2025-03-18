@@ -6,9 +6,22 @@ from tcg_models.v_0_0_1 import (
     ActorInstance,
     StageInstance,
     WorldSystemInstance,
-    Attributes,
+    BaseAttributes,
 )
 from typing import List, Final
+
+#######################################################################################################################################
+COMBAT_RULES_DESCRIPTION: Final[
+    str
+] = """### 如 A 攻击 B
+先判断命中，由你根据上下文来推理与决定。
+若未命中，则伤害为0。若命中，则
+物理伤害 = max(1, (A物理攻击 * alpha) - B物理防御)，alpha由你来决定。
+魔法伤害 = max(1, (A魔法攻击 * beta) - B魔法防御)，beta表达元素克制与适应性。
+B生命 = B生命 - 伤害，如果B生命 <= 0，则B死亡。
+### 如果 A 治疗 B。
+治疗量 = A魔法攻击 * beta，beta此时由你来决定。
+B生命 = B生命 + 治疗量，如果B生命 > B最大生命值，则B生命 = B最大生命值。"""
 
 #######################################################################################################################################
 GLOBAL_GAME_RULES: Final[
@@ -67,6 +80,8 @@ def _comple_stage_system_prompt(
 {epoch_script}
 ## 游戏规则
 {GLOBAL_GAME_RULES}
+## 战斗规则
+{COMBAT_RULES_DESCRIPTION}
 ## 场景设定
 {stage_profile}"""
 
@@ -113,7 +128,7 @@ def _create_actor_instance(
     name: str,
     actor_prototype: ActorPrototype,
     kick_off_message: str,
-    attributes: Attributes,
+    attributes: BaseAttributes,
 ) -> ActorInstance:
 
     if actor_prototype.name not in world_boot.data_base.actors:
@@ -126,8 +141,11 @@ def _create_actor_instance(
         prototype=actor_prototype.name,
         guid=GUID_INDEX,
         kick_off_message=kick_off_message,
-        attributes=attributes,
+        base_attributes=attributes,
     )
+
+    # 血量加满。
+    ret.hp = attributes.max_hp
 
     return ret
 

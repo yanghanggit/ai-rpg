@@ -5,7 +5,7 @@ from tcg_models.v_0_0_1 import (
     StagePrototype,
     ActorType,
     StageType,
-    Attributes,
+    BaseAttributes,
     WorldSystemPrototype,
 )
 import game.tcg_game_config
@@ -228,9 +228,7 @@ def test_world1(world_boot: Boot) -> Boot:
         name=actor_warrior_prototype.name,
         actor_prototype=actor_warrior_prototype,
         kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
-        attributes=Attributes(
-            hp=100, max_hp=100, strength=150, dexterity=90, wisdom=60
-        ),
+        attributes=BaseAttributes(strength=15, dexterity=9, wisdom=6),
     )
 
     # 创建实例：角色.法师.露西
@@ -239,7 +237,7 @@ def test_world1(world_boot: Boot) -> Boot:
         name=actor_wizard_prototype.name,
         actor_prototype=actor_wizard_prototype,
         kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
-        attributes=Attributes(hp=50, max_hp=50, strength=35, dexterity=70, wisdom=180),
+        attributes=BaseAttributes(strength=4, dexterity=7, wisdom=18),
     )
 
     # 创建实例：角色.怪物.哥布林-拉格
@@ -248,7 +246,7 @@ def test_world1(world_boot: Boot) -> Boot:
         name="角色.怪物.哥布林-拉格",
         actor_prototype=actor_goblin_prototype,
         kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
-        attributes=Attributes(hp=80, max_hp=80, strength=45, dexterity=120, wisdom=50),
+        attributes=BaseAttributes(strength=5, dexterity=12, wisdom=5),
     )
 
     # 创建实例：角色.怪物.兽人-库洛斯
@@ -257,9 +255,7 @@ def test_world1(world_boot: Boot) -> Boot:
         name="角色.怪物.兽人-库洛斯",
         actor_prototype=actor_orcs_prototype,
         kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
-        attributes=Attributes(
-            hp=200, max_hp=200, strength=180, dexterity=60, wisdom=40
-        ),
+        attributes=BaseAttributes(strength=18, dexterity=6, wisdom=4),
     )
 
     # 创建实例：场景.营地，添加角色
@@ -281,7 +277,7 @@ def test_world1(world_boot: Boot) -> Boot:
             actor_warrior_instance,
             actor_wizard_instance,
             actor_goblin_instance,
-            actor_orcs_instance,
+            # actor_orcs_instance,
         ],
     )
 
@@ -298,7 +294,7 @@ def test_world1(world_boot: Boot) -> Boot:
     _link_instance(
         world_boot,
         [actor_warrior_instance],
-        [actor_wizard_instance, actor_goblin_instance, actor_orcs_instance],
+        [actor_wizard_instance, actor_goblin_instance],
         [stage_dungeon_cave_instance],
         [],
     )

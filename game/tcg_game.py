@@ -234,14 +234,46 @@ class TCGGame(BaseGame, TCGGameContext):
         return self
 
     ###############################################################################################################################################
-    def save(self) -> "TCGGame":
+    def save(self, verbose: bool = True) -> "TCGGame":
 
         self.world.entities_snapshot = self.make_entities_snapshot()
 
         assert self._world_file_path.exists()
         self._world_file_path.write_text(self.world.model_dump_json(), encoding="utf-8")
 
+        if verbose:
+            # 保存聊天记录
+            self._save_chat_history()
+            # 保存boot
+            self._save_boot()
+
         return self
+
+    ###############################################################################################################################################
+    def _save_chat_history(self) -> None:
+
+        chat_history_dir = self.world_file_dir / "chat_history"
+        chat_history_dir.mkdir(parents=True, exist_ok=True)
+
+        for agent_name, agent_memory in self.world.agents_short_term_memory.items():
+            chat_history_path = chat_history_dir / f"{agent_name}.json"
+            chat_history_path.write_text(
+                agent_memory.model_dump_json(), encoding="utf-8"
+            )
+
+    ###############################################################################################################################################
+    def _save_boot(self) -> None:
+        boot_dir = self.world_file_dir / "boot"
+        boot_dir.mkdir(parents=True, exist_ok=True)
+
+        actors = self.world.boot.players + self.world.boot.actors
+        for actor in actors:
+            actor_path = boot_dir / f"{actor.name}.json"
+            actor_path.write_text(actor.model_dump_json(), encoding="utf-8")
+
+        for stage in self.world.boot.stages:
+            stage_path = boot_dir / f"{stage.name}.json"
+            stage_path.write_text(stage.model_dump_json(), encoding="utf-8")
 
     ###############################################################################################################################################
     def _create_world_system_entities(

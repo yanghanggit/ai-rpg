@@ -6,28 +6,47 @@ from loguru import logger
 from components.actions2 import HitAction2, FeedbackAction2
 from rpg_models.event_models import AgentEvent
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
+from tcg_models.v_0_0_1 import ActorInstance
 
 
 #######################################################################################################################################
-def _generate_execute_skills_prompt(actions_list: List[HitAction2]) -> str:
+def _generate_execute_skills_prompt(
+    actions_list: List[HitAction2], actor_instances: List[ActorInstance]
+) -> str:
 
-    execute_list: List[str] = []
+    skill_execution_details: List[str] = []
     for skill_action in actions_list:
+        for actor_instance in actor_instances:
+            if actor_instance.name != skill_action.name:
+                continue
 
-        execute_list.append(
-            f"""### {skill_action.name} : {skill_action.skill.name}。
+            export_combat_attr = actor_instance.base_attributes.combat_attrs
+
+            detail = f"""### {actor_instance.name} 
+**{skill_action.skill.name}**
 - 目标: {skill_action.targets}
 - 技能描述: {skill_action.skill.description}
-- 技能效果: {skill_action.skill.effect}"""
-        )
+- 技能效果: {skill_action.skill.effect}
+**属性**
+- 生命: {actor_instance.hp}
+- 最大生命: {export_combat_attr.max_hp}
+- 物理攻击: {export_combat_attr.physical_attack}
+- 物理防御: {export_combat_attr.physical_defense}
+- 魔法攻击: {export_combat_attr.magic_attack}
+- 魔法防御: {export_combat_attr.magic_defense}"""
 
-    return f"""# 将要执行一次战斗行动。请根据输入的信息来做演绎。
-## 技能信息
-{"\n".join(execute_list)}
+            skill_execution_details.append(detail)
+
+    return f"""# 将要执行一次战斗行动。请根据输入的信息来做推理与演绎。
+## 技能执行详情
+{"\n".join(skill_execution_details)}
 ## 技能执行顺序
 {" -> ".join([action.name for action in actions_list])}
+### 注意顺序
+- 排在后面的技能会在前面的技能执行完毕后再执行！
 ## 输出要求
 - 输出一整段文字来描述你的演绎。
+- 需要描述计算过程与结果。
 - 不要使用换行与空行。"""
 
 
@@ -72,8 +91,12 @@ class HitActionSystem(BaseActionReactiveSystem):
         current_stage = self._game.safe_get_stage_entity(react_entities[0])
         assert current_stage is not None
 
-        #
-        message = _generate_execute_skills_prompt(skill_actions)
+        # 临时
+        all_actor_instances = (
+            self._game._world.boot.actors + self._game._world.boot.players
+        )
+
+        message = _generate_execute_skills_prompt(skill_actions, all_actor_instances)
 
         # 用场景推理。
         request_handler = ChatRequestHandler(

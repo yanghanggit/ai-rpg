@@ -6,7 +6,7 @@ from components.components import (
     StageComponent,
     ActorComponent,
     GUIDComponent,
-    HeroActorFlagComponent,
+    # HeroActorFlagComponent,
     FinalAppearanceComponent,
     PlayerActorFlagComponent,
 )
@@ -200,16 +200,5 @@ class TCGGameContext(Context):
                 final_appearance = actor.get(FinalAppearanceComponent)
                 ret.setdefault(final_appearance.name, final_appearance.final_appearance)
         return ret
-
-    ###############################################################################################################################################
-    def retrieve_all_hero_entities(self) -> Set[Entity]:
-        return self.get_group(
-            Matcher(
-                all_of=[
-                    ActorComponent,
-                    HeroActorFlagComponent,
-                ],
-            )
-        ).entities
 
     ###############################################################################################################################################

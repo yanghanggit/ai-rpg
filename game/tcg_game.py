@@ -40,6 +40,7 @@ from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 import rpg_game_systems.prompt_utils
 from rpg_models.event_models import AgentEvent
+from extended_systems.combat_system import CombatSystem
 
 
 ###############################################################################################################################################
@@ -70,6 +71,7 @@ class TCGGame(BaseGame, TCGGameContext):
         world: World,
         world_path: Path,
         langserve_system: LangServeSystem,
+        combat_system: CombatSystem,
         chaos_engineering_system: IChaosEngineering,
     ) -> None:
 
@@ -97,6 +99,9 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 混沌工程系统
         self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
+
+        # 战斗系统
+        self._combat_system: CombatSystem = combat_system
 
         # 临时数据。
         self._round_action_order: List[str] = []
@@ -149,6 +154,10 @@ class TCGGame(BaseGame, TCGGameContext):
     @property
     def chaos_engineering_system(self) -> IChaosEngineering:
         return self._chaos_engineering_system
+    ###############################################################################################################################################
+    @property
+    def combat_system(self) -> CombatSystem:
+        return self._combat_system
 
     ###############################################################################################################################################
     @property
@@ -642,3 +651,5 @@ class TCGGame(BaseGame, TCGGameContext):
         return ConversationError.VALID
 
     ###############################################################################################################################################
+    # def new_combat(self) -> None:
+    #     self._combat_system.new_combat()

@@ -23,8 +23,12 @@ class StagePlanningPermitSystem(ExecuteProcessor):
 
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
+        if player_entity is None:
+            logger.error("Player entity is None")
+            return
 
         player_stage = self._game.safe_get_stage_entity(player_entity)
+        assert player_stage is not None
         if player_stage is None:
             logger.error("Player stage is None")
             return

@@ -68,7 +68,7 @@ class HitActionSystem(BaseActionReactiveSystem):
     @override
     async def a_execute2(self) -> None:
 
-        assert len(self._game._round_action_order) > 0
+        #assert len(self._game._round_action_order) > 0
         if len(self._game._round_action_order) == 0:
             return
 

@@ -32,12 +32,4 @@ class PreDungeonStateSystem(ExecuteProcessor):
             assert not entity1.has(StatusUpdateAction)
             entity1.replace(StatusUpdateAction, DEFAULT_NULL_ACTION)
 
-        entities2 = self._game.get_group(
-            Matcher(
-                all_of=[
-                    ActorComponent,
-                ],
-            )
-        ).entities
-
     ###################################################################################################################################################################

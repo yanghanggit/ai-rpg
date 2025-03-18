@@ -1,11 +1,10 @@
+from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from pydantic import BaseModel
 from agent.chat_request_handler import ChatRequestHandler
 from components.components import (
     StageEnvironmentComponent,
     StagePlanningPermitFlagComponent,
-    FinalAppearanceComponent,
 )
-from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from overrides import override
 from typing import Dict, List, Set, final
 from game.tcg_game import TCGGame
@@ -17,7 +16,6 @@ import format_string.json_format
 @final
 class StagePlanningResponse(BaseModel):
     environment_narration: str = ""
-    # story: str = ""
 
 
 #######################################################################################################################################
@@ -100,17 +98,15 @@ class StagePlanningSystem(ExecuteProcessor):
         request_handlers: List[ChatRequestHandler] = []
         for entity in stage_entities:
 
-            actors_on_stage = self._game.retrieve_actors_on_stage(entity)
-            actors_appearances_mapping: Dict[str, str] = {}
-            for actor in actors_on_stage:
-                final_appearance_comp = actor.get(FinalAppearanceComponent)
-                assert final_appearance_comp is not None
-                actors_appearances_mapping[final_appearance_comp.name] = (
-                    final_appearance_comp.final_appearance
-                )
+            # 获取场景内角色的外貌信息
+            actors_appearances_mapping: Dict[str, str] = (
+                self._game.retrieve_actor_appearance_on_stage_mapping(entity)
+            )
 
+            # 生成提示信息
             message = _generate_stage_plan_prompt(actors_appearances_mapping)
 
+            # 生成请求处理器
             request_handlers.append(
                 ChatRequestHandler(
                     name=entity._name,
@@ -165,7 +161,6 @@ class StagePlanningSystem(ExecuteProcessor):
                 StageEnvironmentComponent,
                 entity2._name,
                 format_response.environment_narration,
-                # format_response.story,
             )
 
         except:

@@ -1,6 +1,5 @@
 from loguru import logger
 import datetime
-import game.rpg_game_utils
 from dataclasses import dataclass
 import game.tcg_game_config
 import shutil
@@ -12,6 +11,7 @@ from player.player_proxy import PlayerProxy
 from rpg_models.player_models import PlayerProxyModel
 import game.tcg_game_utils
 from player.player_command2 import PlayerCommand2
+from extended_systems.combat_system import CombatSystem
 
 
 ###############################################################################################################################################
@@ -113,6 +113,7 @@ async def run_game(option: OptionParameters) -> None:
         world=world,
         world_path=users_world_runtime_file_path,
         langserve_system=lang_serve_system,
+        combat_system=CombatSystem(),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
 
@@ -135,18 +136,18 @@ async def run_game(option: OptionParameters) -> None:
             logger.error(f"游戏准备失败 = {game_name}")
             exit(1)
 
-    is_first_execution = False
+    # is_first_execution = False
 
     # 核心循环
     while True:
 
-        if not is_first_execution:
-            is_first_execution = True
-            logger.warning(
-                f"游戏开始 = {game_name}!!!, 第一次的默认执行!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-            )
-            await terminal_tcg_game.a_execute()
-            continue
+        # if not is_first_execution:
+        #     is_first_execution = True
+        #     logger.warning(
+        #         f"游戏开始 = {game_name}!!!, 第一次的默认执行!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        #     )
+        #     # await terminal_tcg_game.a_execute()
+        #     continue
 
         usr_input = input(f"[{terminal_tcg_game.player.name}]:")
 
@@ -155,20 +156,32 @@ async def run_game(option: OptionParameters) -> None:
             terminal_tcg_game._will_exit = True
             break
 
-        if usr_input == "/tp1":
-            terminal_tcg_game.stage_transition(
-                terminal_tcg_game.retrieve_all_hero_entities(),
-                "场景.洞窟",
+        elif usr_input == "/bat":
+
+            terminal_tcg_game.combat_system.new_combat("场景.洞窟")
+            terminal_tcg_game.player.add_command2(
+                PlayerCommand2(user=terminal_tcg_game.player.name, command=usr_input)
             )
-            continue
+            
+            await terminal_tcg_game.a_execute()
+
+        else:
+            logger.info(f"玩家输入 = {usr_input}, 啥都不做！")
+
+        # if usr_input == "/tp1":
+        #     terminal_tcg_game.stage_transition(
+        #         terminal_tcg_game.retrieve_all_hero_entities(),
+        #         "场景.洞窟",
+        #     )
+        #     continue
 
         # 以上都拦截不住，就是玩家的输入，输入错了， handle input 相关的system 就不执行，空跑一次。
-        terminal_tcg_game.player.add_command2(
-            PlayerCommand2(user=terminal_tcg_game.player.name, command=usr_input)
-        )
+        # terminal_tcg_game.player.add_command2(
+        #     PlayerCommand2(user=terminal_tcg_game.player.name, command=usr_input)
+        # )
 
         # 执行
-        await terminal_tcg_game.a_execute()
+        #await terminal_tcg_game.a_execute()
 
         # 处理退出
         if terminal_tcg_game._will_exit:

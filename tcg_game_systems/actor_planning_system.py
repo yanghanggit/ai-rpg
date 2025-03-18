@@ -4,7 +4,7 @@ from agent.chat_request_handler import ChatRequestHandler
 import format_string.json_format
 from components.components import (
     StageEnvironmentComponent,
-    FinalAppearanceComponent,
+    # FinalAppearanceComponent,
     ActorPlanningPermitFlagComponent,
 )
 from overrides import override
@@ -176,22 +176,15 @@ class ActorPlanningSystem(ExecuteProcessor):
             assert current_stage is not None
 
             # 找到当前场景内所有角色
-            actors_on_stage = self._game.retrieve_actors_on_stage(current_stage)
-            actors_on_stage.remove(entity)
-
-            actors_apperances_mapping: Dict[str, str] = {}
-            for actor in actors_on_stage:
-                final_appearance_comp = actor.get(FinalAppearanceComponent)
-                assert final_appearance_comp is not None
-                actors_apperances_mapping[final_appearance_comp.name] = (
-                    final_appearance_comp.final_appearance
-                )
+            actors_apperances_mapping = (
+                self._game.retrieve_actor_appearance_on_stage_mapping(current_stage)
+            )
+            actors_apperances_mapping.pop(entity._name, None)
 
             # 生成消息
             message = _generate_actor_plan_prompt(
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
-                # current_stage.get(StageEnvironmentComponent).story,
                 actors_apperances_mapping,
             )
 

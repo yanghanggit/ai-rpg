@@ -139,6 +139,9 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.dungeon_state_actor_planning_system import (
             DungeonStateActorPlanningSystem,
         )
+        from tcg_game_systems.terminal_player_interrupt_wait_system import (
+            TerminalPlayerInterruptWaitSystem,
+        )
 
         ##
         tcg_game = cast(TCGGame, game)
@@ -155,17 +158,13 @@ class TCGGameProcessPipeline(Processors):
         # 启动agent的提示词。启动阶段
         processors.add(KickOffSystem(tcg_game))
 
+        # 调试！！！！
+        processors.add(TerminalPlayerInterruptWaitSystem(tcg_game))
+
         # yh add, 测试用。
         processors.add(PreDungeonStateSystem(tcg_game))
 
-        # 规划逻辑
-        processors.add(PrePlanningSystem(tcg_game))  ######## 在所有规划之前!
-
-        processors.add(StagePlanningPermitSystem(tcg_game))
-        processors.add(StagePlanningSystem(tcg_game))
-        processors.add(DungeonStateActorPlanningSystem(tcg_game))
-
-        processors.add(PostPlanningSystem(tcg_game))  ####### 在所有规划之后!
+        
 
         # yh add, 测试用。
         processors.add(PreActionSystem(tcg_game))
@@ -189,6 +188,22 @@ class TCGGameProcessPipeline(Processors):
 
         # 存储系统。
         processors.add(SaveSystem(tcg_game))
+
+        ###############################################################
+        ###############################################################
+        ###############################################################
+        # 规划逻辑
+        processors.add(
+            PrePlanningSystem(tcg_game)
+        )  ################################################## 在所有规划之前!##################################################
+
+        processors.add(StagePlanningPermitSystem(tcg_game))
+        processors.add(StagePlanningSystem(tcg_game))
+        processors.add(DungeonStateActorPlanningSystem(tcg_game))
+
+        processors.add(
+            PostPlanningSystem(tcg_game)
+        )  ################################################## 在所有规划之后!##################################################
 
         # 结束
         processors.add(EndSystem(tcg_game))

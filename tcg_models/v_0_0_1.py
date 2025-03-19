@@ -139,8 +139,8 @@ class ActorInstance(BaseModel):
     prototype: str
     guid: int
     kick_off_message: str
-    base_attributes: BaseAttributes
     level: int = 1
+    base_attributes: BaseAttributes
 
 
 ###############################################################################################################################################

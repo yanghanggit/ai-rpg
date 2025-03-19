@@ -2,8 +2,6 @@ from typing import NamedTuple, List, final
 from components.registry import register_component_class
 from tcg_models.v_0_0_1 import Skill, BaseAttributes
 
-# from tcg_models.v_0_0_1 import ActiveSkill, TriggerSkill
-
 
 """
 # 命名规则
@@ -121,16 +119,6 @@ class ActorComponent(NamedTuple):
 @register_component_class
 class AttributeCompoment(NamedTuple):
     name: str
-    # hp: int
-    # maxhp: int
-    # action_times: int
-    # max_action_times: int
-    # strength: int
-    # agility: int
-    # wisdom: int
-    # buffs: Dict[str, int]
-    # active_skills: List[ActiveSkill]
-    # trigger_skills: List[TriggerSkill]
 
 
 ############################################################################################################
@@ -306,10 +294,32 @@ class SkillCandidateQueueComponent(NamedTuple):
 
 
 ############################################################################################################
-# 新的组件。
+# 战斗中临时使用。
 @final
 @register_component_class
-class AttributesComponent2(NamedTuple):
+class CombatAttributesComponent(NamedTuple):
     name: str
     level: int
-    base_attributes: BaseAttributes
+    hp: int
+    max_hp: int
+    strength: int
+    dexterity: int
+    wisdom: int
+    physical_attack: int
+    physical_defense: int
+    magic_attack: int
+    magic_defense: int
+
+    @property
+    def gen_prompt(self) -> str:
+        return f"""**基础属性**
+当前生命：{self.hp}
+最大生命：{self.max_hp}
+力量: {self.strength}
+敏捷: {self.dexterity}
+智力: {self.wisdom}
+**战斗属性**
+物理攻击：{self.physical_attack}
+物理防御：{self.physical_defense}
+魔法攻击：{self.magic_attack}
+魔法防御：{self.magic_defense}"""

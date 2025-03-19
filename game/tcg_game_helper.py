@@ -4,7 +4,7 @@ from tcg_models.v_0_0_1 import (
     StagePrototype,
     WorldSystemPrototype,
     ActorInstance,
-    StageInstance,
+StageInstance,
     WorldSystemInstance,
     BaseAttributes,
 )

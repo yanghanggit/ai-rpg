@@ -1,6 +1,6 @@
 from enum import Enum, IntEnum, unique
 from entitas import Entity, Matcher  # type: ignore
-from typing import Any, Set, List, Optional, final
+from typing import Any, Final, Set, List, Optional, final
 from overrides import override
 from loguru import logger
 from game.tcg_game_context import TCGGameContext
@@ -33,7 +33,7 @@ from components.components import (
     HeroActorFlagComponent,
     MonsterActorFlagComponent,
     EnterStageFlagComponent,
-    AttributesComponent2,
+    CombatAttributesComponent,
 )
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -366,14 +366,6 @@ class TCGGame(BaseGame, TCGGameContext):
                 case ActorType.MONSTER:
                     actor_entity.add(MonsterActorFlagComponent, instance.name)
 
-            # 必要组件：属性
-            actor_entity.add(
-                AttributesComponent2,
-                instance.name,
-                instance.level,
-                instance.base_attributes,
-            )
-
             # 添加到返回值
             ret.append(actor_entity)
 
@@ -660,5 +652,63 @@ class TCGGame(BaseGame, TCGGameContext):
         return ConversationError.VALID
 
     ###############################################################################################################################################
-    # def new_combat(self) -> None:
-    #     self._combat_system.new_combat()
+    def retrieve_actor_instance(self, actor_entity: Entity) -> Optional[ActorInstance]:
+
+        if not actor_entity.has(ActorComponent):
+            return None
+
+        all_actors = self.world.boot.players + self.world.boot.actors
+        for actor in all_actors:
+            if actor.name == actor_entity._name:
+                return actor
+        return None
+
+    ###############################################################################################################################################
+    def setup_temp_combat_attributes(self, actor_entity: Entity) -> None:
+        assert actor_entity.has(ActorComponent)
+        if not actor_entity.has(ActorComponent):
+            return
+
+        actor_instance = self.retrieve_actor_instance(actor_entity)
+        if actor_instance is None:
+            return
+
+        level: Final[int] = actor_instance.level
+        hp: Final[int] = actor_instance.base_attributes.hp
+        max_hp: Final[int] = actor_instance.base_attributes.max_hp
+        strength: Final[int] = actor_instance.base_attributes.strength
+        dexterity: Final[int] = actor_instance.base_attributes.dexterity
+        wisdom: Final[int] = actor_instance.base_attributes.wisdom
+        physical_attack: Final[int] = actor_instance.base_attributes.physical_attack
+        physical_defense: Final[int] = actor_instance.base_attributes.physical_defense
+        magic_attack: Final[int] = actor_instance.base_attributes.magic_attack
+        magic_defense: Final[int] = actor_instance.base_attributes.magic_defense
+
+        logger.info(
+            f"""{actor_entity._name}-准备战斗属性:
+level: {level}
+hp: {hp}
+max_hp: {max_hp}
+strength: {strength}
+dexterity: {dexterity}
+wisdom: {wisdom}
+physical_attack: {physical_attack}
+physical_defense: {physical_defense}
+magic_attack: {magic_attack}
+magic_defense: {magic_defense}"""
+        )
+
+        actor_entity.replace(
+            CombatAttributesComponent,
+            actor_entity._name,
+            level,
+            hp,
+            max_hp,
+            strength,
+            dexterity,
+            wisdom,
+            physical_attack,
+            physical_defense,
+            magic_attack,
+            magic_defense,
+        )

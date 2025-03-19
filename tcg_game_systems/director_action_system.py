@@ -7,8 +7,8 @@ from loguru import logger
 from components.actions2 import DirectorAction2, FeedbackAction2
 from rpg_models.event_models import AgentEvent
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
-from tcg_models.v_0_0_1 import BaseAttributes, Skill
-from components.components import AttributesComponent2
+from tcg_models.v_0_0_1 import Skill
+from components.components import CombatAttributesComponent
 
 
 #######################################################################################################################################
@@ -24,7 +24,7 @@ class ActionPromptParameters(NamedTuple):
     actor: str
     targets: List[str]
     skill: Skill
-    base_attrs: BaseAttributes
+    temp_combat_attrs_component: CombatAttributesComponent
 
 
 #######################################################################################################################################
@@ -38,7 +38,7 @@ def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> st
 目标: {param.targets}
 描述: {param.skill.description}
 效果: {param.skill.effect}
-{param.base_attrs.gen_prompt()}"""
+{param.temp_combat_attrs_component.gen_prompt}"""
 
         details_prompt.append(detail)
 
@@ -53,8 +53,9 @@ def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> st
 ## 角色&技能详情
 {"\n".join(details_prompt)}
 ## 输出内容
-1. 计算过程（<100字）
-    - 精确简练，明确最终生命值
+1. 计算过程（<200字）
+    - 根据‘战斗规则’说明计算过程。
+    - 精确简练，明确最终生命值。
 2. 演绎过程（~200字）
     - 文学化描写，禁用数字与计算过程
 ## 输出格式规范
@@ -97,7 +98,6 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         await self._process_request(self._react_entities_copy)
 
     #######################################################################################################################################
-    # def ActionPromptParameters
     def _generate_action_prompt_parameters(
         self, react_entities: List[Entity]
     ) -> List[ActionPromptParameters]:
@@ -108,15 +108,13 @@ class DirectorActionSystem(BaseActionReactiveSystem):
             skill_action2 = entity.get(DirectorAction2)
             assert skill_action2 is not None
 
-            attr_comp2 = entity.get(AttributesComponent2)
-            assert attr_comp2 is not None
-
+            assert entity.has(CombatAttributesComponent)
             ret.append(
                 ActionPromptParameters(
                     actor=entity._name,
                     targets=skill_action2.targets,
                     skill=skill_action2.skill,
-                    base_attrs=attr_comp2.base_attributes,
+                    temp_combat_attrs_component=entity.get(CombatAttributesComponent),
                 )
             )
 

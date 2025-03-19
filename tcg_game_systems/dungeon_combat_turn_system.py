@@ -2,7 +2,7 @@ import random
 from entitas import Matcher, Entity, Matcher, ExecuteProcessor  # type: ignore
 from components.components import (
     SkillCandidateQueueComponent,
-    AttributesComponent2,
+    CombatAttributesComponent,
 )
 from overrides import override
 from typing import List, final
@@ -67,9 +67,7 @@ class DungeonCombatTurnSystem(ExecuteProcessor):
     def _sort_action_order_by_dex(self, react_entities: List[Entity]) -> List[Entity]:
         return sorted(
             react_entities,
-            key=lambda entity: entity.get(
-                AttributesComponent2
-            ).base_attributes.dexterity,
+            key=lambda entity: entity.get(CombatAttributesComponent).dexterity,
             reverse=True,
         )
 

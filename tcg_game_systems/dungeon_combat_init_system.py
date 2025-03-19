@@ -1,11 +1,13 @@
 from loguru import logger
 from agent.chat_request_handler import ChatRequestHandler
 from entitas import ExecuteProcessor, Entity  # type: ignore
-from typing import Dict, List, final, override
+from typing import Dict, List, Set, final, override
 from game.tcg_game import TCGGame
-from components.components import StageEnvironmentComponent, AttributesComponent2
+from components.components import (
+    StageEnvironmentComponent,
+    CombatAttributesComponent,
+)
 from extended_systems.combat_system import CombatState
-from tcg_models.v_0_0_1 import BaseAttributes
 
 
 ###################################################################################################################################################################
@@ -13,7 +15,7 @@ def _generate_prompt(
     stage_name: str,
     stage_narrate: str,
     actors_apperances_mapping: Dict[str, str],
-    attributes: BaseAttributes,
+    temp_combat_attr_component: CombatAttributesComponent,
 ) -> str:
 
     actors_appearances_info = []
@@ -29,7 +31,7 @@ def _generate_prompt(
 ## （场景内）角色信息
 {"\n".join(actors_appearances_info)}
 ## 你的状态
-{attributes.gen_prompt()}
+{temp_combat_attr_component.gen_prompt}
 ## 输出要求
 - 严格使用角色/场景的全称。遵守全名机制。
 - 单段紧凑表达（<80字）。
@@ -56,18 +58,19 @@ class DungeonCombatInitSystem(ExecuteProcessor):
             # 不是本阶段就直接返回
             return
 
+        actor_entities = self._extract_actor_entities()
+        assert len(actor_entities) > 0
+        if len(actor_entities) == 0:
+            return
+
         # 重置战斗属性
-        self._reset_combat_attributes()
+        self._reset_combat_attributes(actor_entities)
 
         # 核心处理
-        await self._process_chat_requests()
+        await self._process_chat_requests(actor_entities)
 
         # 开始战斗
         self._game.combat_system.latest_combat.start_combat()
-
-    ###################################################################################################################################################################
-    def _reset_combat_attributes(self) -> None:
-        pass
 
     ###################################################################################################################################################################
     def _extract_actor_entities(self) -> set[Entity]:
@@ -79,12 +82,13 @@ class DungeonCombatInitSystem(ExecuteProcessor):
         return actors_on_stage
 
     ###################################################################################################################################################################
-    async def _process_chat_requests(self) -> None:
+    def _reset_combat_attributes(self, actor_entities: Set[Entity]) -> None:
 
-        actor_entities = self._extract_actor_entities()
-        assert len(actor_entities) > 0
-        if len(actor_entities) == 0:
-            return
+        for actor_entity in actor_entities:
+            self._game.setup_temp_combat_attributes(actor_entity)
+
+    ###################################################################################################################################################################
+    async def _process_chat_requests(self, actor_entities: Set[Entity]) -> None:
 
         # 处理角色规划请求
         request_handlers: List[ChatRequestHandler] = self._generate_chat_requests(
@@ -106,7 +110,7 @@ class DungeonCombatInitSystem(ExecuteProcessor):
 
         for actor_entity in actor_entities:
 
-            assert actor_entity.has(AttributesComponent2)
+            assert actor_entity.has(CombatAttributesComponent)
 
             current_stage = self._game.safe_get_stage_entity(actor_entity)
             assert current_stage is not None
@@ -122,7 +126,7 @@ class DungeonCombatInitSystem(ExecuteProcessor):
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
                 actors_apperances_mapping,
-                actor_entity.get(AttributesComponent2).base_attributes,
+                actor_entity.get(CombatAttributesComponent),
             )
 
             # 生成请求处理器

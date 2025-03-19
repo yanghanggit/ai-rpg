@@ -312,5 +312,4 @@ class SkillCandidateQueueComponent(NamedTuple):
 class AttributesComponent2(NamedTuple):
     name: str
     level: int
-    hp: int
     base_attributes: BaseAttributes

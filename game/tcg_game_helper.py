@@ -37,19 +37,25 @@ GLOBAL_GAME_RULES: Final[
 名字可以由多个单词组成，单词之间用英文句号`.`分隔。例如：角色.战士.凯尔。
 注意请完整引用全名以确保一致性。"""
 
+
+# Max HP = 50 + (10 × STR)
+# Physical Attack = 5  + (2  × STR)
+# Physical Defense = 5  + (1  × STR)
+# Magic Attack = 5  + (2  × WIS)
+# Magic Defense = 5  + (1  × WIS)
 #######################################################################################################################################
 ATTRIBUTE_RULES_DESCRIPTION: Final[
     str
 ] = f"""### 基础属性
-- 力量（Strength）：影响生命值、物理攻击、物理防御。
-- 智慧（Wisdom）：影响魔法攻击、魔法防御。
-- 敏捷（Dexterity）：影响行动速度。
+- 力量（Strength/STR）：影响最大生命值、物理攻击、物理防御。
+- 智慧（Wisdom/WIS）：影响魔法攻击、魔法防御。
+- 敏捷（Dexterity/DEX）：影响行动速度。
+- 最大生命值，由力量决定。Max HP = 50 + (10 × STR)
 ### 战斗属性
-- 当前/最大生命值，由力量决定。
-- 物理攻击，由力量决定。
-- 物理防御，由力量决定。
-- 魔法攻击，由智慧决定。
-- 魔法防御，由智慧决定。"""
+- 物理攻击，由力量决定。Physical Attack = 5  + (2  × STR)
+- 物理防御，由力量决定。Physical Defense = 5  + (1  × STR)
+- 魔法攻击，由智慧决定。Magic Attack = 5  + (2  × WIS)
+- 魔法防御，由智慧决定。Magic Defense = 5  + (1  × WIS)"""
 
 
 #######################################################################################################################################
@@ -167,8 +173,8 @@ def _create_actor_instance(
 
     # 血量加满。
     assert attributes.max_hp > 0, "Max HP must be greater than 0."
-    assert ret.hp == 0, "HP must be 0."
-    ret.hp = attributes.max_hp
+    assert ret.base_attributes.hp == 0, "HP must be 0."
+    ret.base_attributes.hp = attributes.max_hp
 
     return ret
 

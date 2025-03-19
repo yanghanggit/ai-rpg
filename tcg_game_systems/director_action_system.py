@@ -1,53 +1,66 @@
+from pydantic import BaseModel
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
 from agent.chat_request_handler import ChatRequestHandler
 from overrides import override
-from typing import List, final
+from typing import List, NamedTuple, final
 from loguru import logger
 from components.actions2 import DirectorAction2, FeedbackAction2
 from rpg_models.event_models import AgentEvent
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
-from tcg_models.v_0_0_1 import ActorInstance
+from tcg_models.v_0_0_1 import BaseAttributes, Skill
+from components.components import AttributesComponent2
 
 
 #######################################################################################################################################
-def _generate_execute_skills_prompt(
-    actions_list: List[DirectorAction2], actor_instances: List[ActorInstance]
-) -> str:
+@final
+class DirectorResponse(BaseModel):
+    calculation: str
+    performance: str
 
-    skill_execution_details: List[str] = []
-    for skill_action in actions_list:
-        for actor_instance in actor_instances:
-            if actor_instance.name != skill_action.name:
-                continue
 
-            export_combat_attr = actor_instance.base_attributes.export_combat_attrs()
+#######################################################################################################################################
+@final
+class ActionPromptParameters(NamedTuple):
+    actor: str
+    targets: List[str]
+    skill: Skill
+    base_attrs: BaseAttributes
 
-            detail = f"""### {actor_instance.name} 
-**{skill_action.skill.name}**
-- 目标: {skill_action.targets}
-- 技能描述: {skill_action.skill.description}
-- 技能效果: {skill_action.skill.effect}
-**属性**
-- 当前生命: {actor_instance.hp}
-- 最大生命: {export_combat_attr.max_hp}
-- 物理攻击: {export_combat_attr.physical_attack}
-- 物理防御: {export_combat_attr.physical_defense}
-- 魔法攻击: {export_combat_attr.magic_attack}
-- 魔法防御: {export_combat_attr.magic_defense}"""
 
-            skill_execution_details.append(detail)
+#######################################################################################################################################
+def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> str:
 
-    return f"""# 将要执行一次战斗行动。请根据输入的信息来做推理与演绎。
-## 技能执行详情
-{"\n".join(skill_execution_details)}
-## 技能执行顺序
-{" -> ".join([action.name for action in actions_list])}
-### 注意顺序
-- 排在后面的技能会在前面的技能执行完毕后再执行！
-## 输出要求
-- 输出一整段文字来描述你的演绎。
-- 需要描述计算过程与结果。
-- 不要使用换行与空行。"""
+    details_prompt: List[str] = []
+    for param in prompt_params:
+
+        detail = f"""{param.actor} 
+技能: {param.skill.name}
+目标: {param.targets}
+描述: {param.skill.description}
+效果: {param.skill.effect}
+{param.base_attrs.gen_prompt()}"""
+
+        details_prompt.append(detail)
+
+    # 模版
+    director_response_sample = DirectorResponse(
+        calculation="简明战斗计算（含最终生命值）", performance="生动的文学化演绎"
+    )
+
+    return f"""# 提示！回合行动指令。根据下列信息执行战斗回合：
+## 角色行动序列（后续技能在前序执行后生效）
+{" -> ".join([param.actor for param in prompt_params])}
+## 角色&技能详情
+{"\n".join(details_prompt)}
+## 输出内容
+1. 计算过程（<100字）
+    - 精确简练，明确最终生命值
+2. 演绎过程（~200字）
+    - 文学化描写，禁用数字与计算过程
+## 输出格式规范
+{director_response_sample.model_dump_json()}
+- 禁用换行/空行
+- 直接输出合规JSON"""
 
 
 #######################################################################################################################################
@@ -84,23 +97,44 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         await self._process_request(self._react_entities_copy)
 
     #######################################################################################################################################
-    async def _process_request(self, react_entities: List[Entity]) -> None:
+    # def ActionPromptParameters
+    def _generate_action_prompt_parameters(
+        self, react_entities: List[Entity]
+    ) -> List[ActionPromptParameters]:
 
-        skill_actions: List[DirectorAction2] = []
+        ret: List[ActionPromptParameters] = []
         for entity in react_entities:
+
             skill_action2 = entity.get(DirectorAction2)
             assert skill_action2 is not None
-            skill_actions.append(skill_action2)
 
+            attr_comp2 = entity.get(AttributesComponent2)
+            assert attr_comp2 is not None
+
+            ret.append(
+                ActionPromptParameters(
+                    actor=entity._name,
+                    targets=skill_action2.targets,
+                    skill=skill_action2.skill,
+                    base_attrs=attr_comp2.base_attributes,
+                )
+            )
+
+        return ret
+
+    #######################################################################################################################################
+    async def _process_request(self, react_entities: List[Entity]) -> None:
+
+        # 用场景来推理
         current_stage = self._game.safe_get_stage_entity(react_entities[0])
         assert current_stage is not None
 
-        # 临时
-        all_actor_instances = (
-            self._game._world.boot.actors + self._game._world.boot.players
-        )
+        # 生成推理参数。
+        params = self._generate_action_prompt_parameters(react_entities)
+        assert len(params) > 0
 
-        message = _generate_execute_skills_prompt(skill_actions, all_actor_instances)
+        # 生成推理信息。
+        message = _generate_director_prompt(params)
 
         # 用场景推理。
         request_handler = ChatRequestHandler(
@@ -129,6 +163,10 @@ class DirectorActionSystem(BaseActionReactiveSystem):
 
             current_stage = self._game.get_entity_by_name(request_handler._name)
             assert current_stage is not None
+
+            logger.warning(
+                f"返回格式正确, Response = \n{request_handler.response_content}"
+            )
 
             # 发送事件。
             self._game.broadcast_event(

@@ -16,7 +16,7 @@ from tcg_models.v_0_0_1 import (
     AgentShortTermMemory,
     ActorType,
     StageType,
-    BaseAttributes,
+    # BaseAttributes,
 )
 from components.components import (
     WorldSystemComponent,
@@ -371,7 +371,6 @@ class TCGGame(BaseGame, TCGGameContext):
                 AttributesComponent2,
                 instance.name,
                 instance.level,
-                instance.hp,
                 instance.base_attributes,
             )
 

@@ -5,7 +5,7 @@ from typing import Dict, List, final, override
 from game.tcg_game import TCGGame
 from components.components import StageEnvironmentComponent, AttributesComponent2
 from extended_systems.combat_system import CombatState
-from tcg_models.v_0_0_1 import BaseAttributes, CombatAttributes
+from tcg_models.v_0_0_1 import BaseAttributes
 
 
 ###################################################################################################################################################################
@@ -13,7 +13,6 @@ def _generate_prompt(
     stage_name: str,
     stage_narrate: str,
     actors_apperances_mapping: Dict[str, str],
-    hp: int,
     attributes: BaseAttributes,
 ) -> str:
 
@@ -24,31 +23,17 @@ def _generate_prompt(
         actors_appearances_info.append("无")
 
     # 导出战斗属性
-    combat_attrs: CombatAttributes = attributes.export_combat_attrs()
-
-    return f"""# 发生事件！一场战斗即将开始！请说一下你的感受！
-## 当前场景
-{stage_name}
-### 场景描述
-{stage_narrate}
-## 场景内角色
+    return f"""# 发生事件！战斗触发！请用第一人称描述临场感受。
+## 场景信息
+{stage_name} ｜ {stage_narrate}
+## （场景内）角色信息
 {"\n".join(actors_appearances_info)}
-## 你的属性
-### 基础属性
-- 力量: {attributes.strength}
-- 敏捷: {attributes.dexterity}
-- 智力: {attributes.wisdom}
-### 战斗属性
-- 当前生命：{hp}
-- 最大生命：{combat_attrs.max_hp}
-- 物理攻击：{combat_attrs.physical_attack}
-- 物理防御：{combat_attrs.physical_defense}
-- 魔法攻击：{combat_attrs.magic_attack}
-- 魔法防御：{combat_attrs.magic_defense}
+## 你的状态
+{attributes.gen_prompt()}
 ## 输出要求
-- 引用角色或场景时，请严格遵守全名机制
-- 以第一人称视角，一整段话来描述，不要换行或折行。
-- 输出字数尽量简短。"""
+- 严格使用角色/场景的全称。遵守全名机制。
+- 单段紧凑表达（<80字）。
+- 禁用换行/空行与数字。"""
 
 
 ###################################################################################################################################################################
@@ -71,11 +56,18 @@ class DungeonCombatInitSystem(ExecuteProcessor):
             # 不是本阶段就直接返回
             return
 
+        # 重置战斗属性
+        self._reset_combat_attributes()
+
         # 核心处理
         await self._process_chat_requests()
 
         # 开始战斗
         self._game.combat_system.latest_combat.start_combat()
+
+    ###################################################################################################################################################################
+    def _reset_combat_attributes(self) -> None:
+        pass
 
     ###################################################################################################################################################################
     def _extract_actor_entities(self) -> set[Entity]:
@@ -130,7 +122,6 @@ class DungeonCombatInitSystem(ExecuteProcessor):
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
                 actors_apperances_mapping,
-                actor_entity.get(AttributesComponent2).hp,
                 actor_entity.get(AttributesComponent2).base_attributes,
             )
 

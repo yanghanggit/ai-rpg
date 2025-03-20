@@ -30,7 +30,6 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.pre_action_system import PreActionSystem
         from tcg_game_systems.post_action_system import PostActionSystem
         from tcg_game_systems.destroy_system import DestroySystem
-        from tcg_game_systems.dead_action_system import DeadActionSystem
         from tcg_game_systems.pre_planning_system import PrePlanningSystem
         from tcg_game_systems.post_planning_system import PostPlanningSystem
 
@@ -68,7 +67,6 @@ class TCGGameProcessPipeline(Processors):
         processors.add(PreActionSystem(tcg_game))
         processors.add(MindVoiceActionSystem(tcg_game))
         processors.add(SpeakActionSystem(tcg_game))
-        processors.add(DeadActionSystem(tcg_game))
         processors.add(PostActionSystem(tcg_game))
         ####################################################################################
         ####################################################################################
@@ -143,6 +141,7 @@ class TCGGameProcessPipeline(Processors):
         )
         from tcg_game_systems.turn_action_system import TurnActionSystem
         from tcg_game_systems.dungeon_combat_turn_system import DungeonCombatTurnSystem
+        from tcg_game_systems.dungeon_combat_end_system import DungeonCombatEndSystem
 
         ##
         tcg_game = cast(TCGGame, game)
@@ -204,6 +203,7 @@ class TCGGameProcessPipeline(Processors):
         processors.add(DungeonCombatInitSystem(tcg_game))
         processors.add(DungeonCombatSkillsCandidateSystem(tcg_game))
         processors.add(DungeonCombatTurnSystem(tcg_game))
+        processors.add(DungeonCombatEndSystem(tcg_game))
 
         processors.add(
             PostPlanningSystem(tcg_game)

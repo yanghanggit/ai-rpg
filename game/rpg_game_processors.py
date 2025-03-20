@@ -72,17 +72,19 @@ class RPGGameProcessors(Processors):
         from rpg_game_systems.skill_invocation_system import (
             SkillInvocationSystem,
         )
-        from rpg_game_systems.skill_hit_impact_system import (
-            SkillHitImpactSystem,
-        )
-        from rpg_game_systems.damage_action_system import DamageActionSystem
+
+        # from rpg_game_systems.skill_hit_impact_system import (
+        #     SkillHitImpactSystem,
+        # )
+        # from rpg_game_systems.damage_action_system import DamageActionSystem
         from rpg_game_systems.handle_terminal_player_input_system import (
             HandleTerminalPlayerInputSystem,
         )
         from rpg_game_systems.update_client_message_system import (
             UpdateClientMessageSystem,
         )
-        from rpg_game_systems.dead_action_system import DeadActionSystem
+
+        # from rpg_game_systems.dead_action_system import DeadActionSystem
         from rpg_game_systems.terminal_player_interrupt_wait_system import (
             TerminalPlayerInterruptWaitSystem,
         )
@@ -93,12 +95,13 @@ class RPGGameProcessors(Processors):
             TerminalPlayerTipsSystem,
         )
         from rpg_game_systems.equip_prop_action_system import EquipPropActionSystem
-        from rpg_game_systems.skill_readiness_validator_system import (
-            SkillReadinessValidatorSystem,
-        )
-        from rpg_game_systems.skill_world_harmony_inspector_system import (
-            SkillWorldHarmonyInspectorSystem,
-        )
+
+        # from rpg_game_systems.skill_readiness_validator_system import (
+        #     SkillReadinessValidatorSystem,
+        # )
+        # from rpg_game_systems.skill_world_harmony_inspector_system import (
+        #     SkillWorldHarmonyInspectorSystem,
+        # )
         from rpg_game_systems.save_game_resource_system import SaveGameResourceSystem
         from rpg_game_systems.save_entity_system import SaveEntitySystem
         from rpg_game_systems.save_player_system import SavePlayerSystem
@@ -110,11 +113,12 @@ class RPGGameProcessors(Processors):
         )
         from rpg_game_systems.stage_tag_action_system import StageTagActionSystem
         from rpg_game_systems.inspect_action_system import InspectActionSystem
-        from rpg_game_systems.stage_transfer_action_system import (
-            StageTransferActionSystem,
-        )
-        from rpg_game_systems.skill_feedback_system import SkillFeedbackSystem
-        from rpg_game_systems.heal_action_system import HealActionSystem
+
+        # from rpg_game_systems.stage_transfer_action_system import (
+        #     StageTransferActionSystem,
+        # )
+        # from rpg_game_systems.skill_feedback_system import SkillFeedbackSystem
+        # from rpg_game_systems.heal_action_system import HealActionSystem
 
         ##
         rpg_game = cast(RPGGame, game)
@@ -189,23 +193,23 @@ class RPGGameProcessors(Processors):
             )
         )
 
-        processors.add(SkillReadinessValidatorSystem(context, rpg_game))
-        processors.add(
-            SkillWorldHarmonyInspectorSystem(
-                context, rpg_game, WorldSystemNames.WORLD_SKILL_SYSTEM_NAME
-            )
-        )
+        # processors.add(SkillReadinessValidatorSystem(context, rpg_game))
+        # processors.add(
+        #     SkillWorldHarmonyInspectorSystem(
+        #         context, rpg_game, WorldSystemNames.WORLD_SKILL_SYSTEM_NAME
+        #     )
+        # )
 
-        processors.add(SkillHitImpactSystem(context, rpg_game))
-        processors.add(HealActionSystem(context, rpg_game))  # 先治疗后伤害。
-        processors.add(DamageActionSystem(context, rpg_game))
-        processors.add(
-            SkillFeedbackSystem(context, rpg_game)
-        )  # 一些特殊事件的反馈。可能触发 StageTransfer
-        processors.add(StageTransferActionSystem(context, rpg_game))
-        processors.add(
-            DeadActionSystem(context, rpg_game)
-        )  ## 战斗类行为产生结果可能有死亡，死亡之后，后面的行为都不可以做。
+        # processors.add(SkillHitImpactSystem(context, rpg_game))
+        # processors.add(HealActionSystem(context, rpg_game))  # 先治疗后伤害。
+        # processors.add(DamageActionSystem(context, rpg_game))
+        # processors.add(
+        #     SkillFeedbackSystem(context, rpg_game)
+        # )  # 一些特殊事件的反馈。可能触发 StageTransfer
+        # processors.add(StageTransferActionSystem(context, rpg_game))
+        # processors.add(
+        #     DeadActionSystem(context, rpg_game)
+        # )  ## 战斗类行为产生结果可能有死亡，死亡之后，后面的行为都不可以做。
 
         # 交互类的行为（交换数据），在死亡之后，因为死了就不能执行
         processors.add(StealPropActionSystem(context, rpg_game))

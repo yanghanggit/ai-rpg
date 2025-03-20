@@ -13,6 +13,15 @@ class CombatState(IntEnum):
     END = 3  # 结束，需要进行结算
 
 
+# 表示战斗的状态
+@final
+@unique
+class CombatResult(IntEnum):
+    NONE = (0,)
+    WIN = (1,)  # 胜利
+    LOSE = (2,)  # 失败
+
+
 ###############################################################################################################################################
 
 
@@ -44,6 +53,7 @@ class Combat:
         self._name: Final[str] = name
         self._state: CombatState = CombatState.NONE
         self._rounds: List[Round] = []
+        self._result: CombatResult = CombatResult.NONE
 
     ###############################################################################################################################################
     @property
@@ -51,9 +61,20 @@ class Combat:
         return self._state
 
     ###############################################################################################################################################
+    @property
+    def result(self) -> CombatResult:
+        return self._result
+
+    ###############################################################################################################################################
     def start_combat(self) -> None:
         assert self._state == CombatState.INIT
         self._state = CombatState.RUNNING
+
+    ###############################################################################################################################################
+    def end_combat(self, result: CombatResult) -> None:
+        assert self._state == CombatState.RUNNING
+        self._state = CombatState.END
+        self._result = result
 
     ###############################################################################################################################################
     def start_new_round(self) -> Round:

@@ -1,15 +1,6 @@
 from typing import NamedTuple, List, final
 from components.registry import register_component_class
-from tcg_models.v_0_0_1 import Skill, BaseAttributes
-
-
-"""
-# 命名规则
-1. 以Component结尾
-2. 除Actor，Stage，System外，不存储数据仅作标识用的组件，以FlagComponent结尾，比如KickOffDoneFlagComponent    考虑吧Component去掉？省点字数
-   反过来讲，需要做标记时遵循组件>属性的思想
-3. 标记Actor，Stage，System类型的组件，需要在FlagComponent前加上对应类型，比如HeroActorFlagComponent
-"""
+from tcg_models.v_0_0_1 import Skill
 
 
 # 全局唯一标识符
@@ -311,14 +302,9 @@ class CombatAttributesComponent(NamedTuple):
     magic_defense: int
 
     @property
-    def gen_prompt(self) -> str:
-        return f"""**基础属性**
-当前生命：{self.hp}
+    def prompt(self) -> str:
+        return f"""当前生命：{self.hp}
 最大生命：{self.max_hp}
-力量: {self.strength}
-敏捷: {self.dexterity}
-智力: {self.wisdom}
-**战斗属性**
 物理攻击：{self.physical_attack}
 物理防御：{self.physical_defense}
 魔法攻击：{self.magic_attack}

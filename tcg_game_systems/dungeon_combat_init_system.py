@@ -30,11 +30,11 @@ def _generate_prompt(
 {stage_name} ｜ {stage_narrate}
 ## （场景内）角色信息
 {"\n".join(actors_appearances_info)}
-## 你的状态
-{temp_combat_attr_component.gen_prompt}
+## 你的属性（仅在战斗中使用）
+{temp_combat_attr_component.prompt}
 ## 输出要求
 - 严格使用角色/场景的全称。遵守全名机制。
-- 单段紧凑表达（<80字）。
+- 单段紧凑表达（<100字）。
 - 禁用换行/空行与数字。"""
 
 

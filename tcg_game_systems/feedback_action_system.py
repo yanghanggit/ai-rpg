@@ -9,6 +9,8 @@ from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSyste
 from tcg_models.v_0_0_1 import Effect
 import format_string.json_format
 
+# from components.components import CombatAttributesComponent
+
 
 #######################################################################################################################################
 @final
@@ -18,28 +20,33 @@ class FeedbackResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _generate_feedback_prompt() -> str:
+def _generate_prompt(
+    # combat_attributes_component: CombatAttributesComponent,
+    feedback_component: FeedbackAction2,
+) -> str:
 
     feedback_response_example = FeedbackResponse(
-        description="状输出内容1-状态描述",
+        description="第一人称状态描述（<200字）",
         effects=[
-            Effect(description="反馈影响1的描述", round=1),
-            Effect(description="反馈影响2的描述", round=1),
+            Effect(description="效果1描述", round=1),
+            Effect(description="效果2描述", round=2),
         ],
     )
 
-    return f"""# 请根据发生事件，更新你的状态，仅输出你的反馈（注意不要猜测或输出其他人反馈）。
-## 输出内容1-状态描述
-- 使用第一人称。
-- 一整段文字来描述你的状态。明确增益状态或减益状态。
-- 不要使用换行与空行。
-## 输出内容2-反馈影响。
-- 这些是作用在你身上的效果！
-- 其中round表示持续的回合数。
-## 输出要求
-- 不要使用```json```来封装内容。
-### 输出格式(JSON)
-{feedback_response_example.model_dump_json()}"""
+    return f"""# 提示！状态更新，根据战斗结果，更新状态并反馈！(仅反馈你自身状态)
+## 战斗结果
+### 计算摘要
+{feedback_component.calculation}
+### 演绎摘要
+{feedback_component.performance}
+## 输出内容
+1. 状态感受：单段紧凑自述（禁用换行/空行）
+2. 持续效果：仍将持续生效的效果列表。
+    - 注意！效果描述和剩余回合数。
+## 输出格式规范
+{feedback_response_example.model_dump_json()}
+- 数值精确，禁用文字修饰。
+- 直接输出合规JSON"""
 
 
 #######################################################################################################################################
@@ -85,9 +92,9 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
                 logger.error(f"Agent: {request_handler._name}, Response is empty.")
                 continue
 
-            logger.warning(
-                f"Agent: {request_handler._name}, Response:\n{request_handler.response_content}"
-            )
+            # logger.warning(
+            #     f"Agent: {request_handler._name}, Response:\n{request_handler.response_content}"
+            # )
 
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
@@ -110,6 +117,8 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
                 f"Agent: {entity._name}, Response = {format_response.model_dump_json()}"
             )
 
+            pass
+
         except:
             logger.error(
                 f"""返回格式错误, Response = \n{request_handler.response_content}"""
@@ -124,8 +133,13 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
 
         for entity in actor_entities:
 
+            feedback_action2 = entity.get(FeedbackAction2)
+
+            # combat_attributes_component = entity.get(CombatAttributesComponent)
+            # assert combat_attributes_component is not None
+
             # 生成消息
-            message = _generate_feedback_prompt()
+            message = _generate_prompt(feedback_action2)
             # 生成请求处理器
             request_handlers.append(
                 ChatRequestHandler(

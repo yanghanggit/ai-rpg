@@ -201,7 +201,7 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     def add_notification(self, event: BaseEvent) -> None:
-        logger.debug(f"add_event: {event}")
+        # logger.debug(f"add_event: {event}")
         self._notifications.append(
             PlayerNotification(
                 data=event,

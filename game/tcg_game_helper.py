@@ -4,7 +4,7 @@ from tcg_models.v_0_0_1 import (
     StagePrototype,
     WorldSystemPrototype,
     ActorInstance,
-StageInstance,
+    StageInstance,
     WorldSystemInstance,
     BaseAttributes,
 )
@@ -21,7 +21,8 @@ COMBAT_RULES_DESCRIPTION: Final[
 B生命 = B生命 - 伤害，如果B生命 <= 0，则B死亡。
 ### 如果 A 治疗 B。
 治疗量 = A魔法攻击 * beta，beta此时由你来决定。
-B生命 = B生命 + 治疗量，如果B生命 > B最大生命值，则B生命 = B最大生命值。"""
+B生命 = B生命 + 治疗量，如果B生命 > B最大生命值，则B生命 = B最大生命值。
+### 伤害与治疗最终结果均向上取整。"""
 
 #######################################################################################################################################
 GLOBAL_GAME_RULES: Final[
@@ -46,16 +47,14 @@ GLOBAL_GAME_RULES: Final[
 #######################################################################################################################################
 ATTRIBUTE_RULES_DESCRIPTION: Final[
     str
-] = f"""### 基础属性
+] = f"""- 最大生命值(MAX HP)，由力量决定。
 - 力量（Strength/STR）：影响最大生命值、物理攻击、物理防御。
 - 智慧（Wisdom/WIS）：影响魔法攻击、魔法防御。
 - 敏捷（Dexterity/DEX）：影响行动速度。
-- 最大生命值，由力量决定。Max HP = 50 + (10 × STR)
-### 战斗属性
-- 物理攻击，由力量决定。Physical Attack = 5  + (2  × STR)
-- 物理防御，由力量决定。Physical Defense = 5  + (1  × STR)
-- 魔法攻击，由智慧决定。Magic Attack = 5  + (2  × WIS)
-- 魔法防御，由智慧决定。Magic Defense = 5  + (1  × WIS)"""
+- 物理攻击(Physical Attack)，由力量决定。
+- 物理防御(Physical Defense)，由力量决定。
+- 魔法攻击(Magic Attack)，由智慧决定。
+- 魔法防御(Magic Defense)，由智慧决定。"""
 
 
 #######################################################################################################################################
@@ -83,10 +82,6 @@ def _comple_actor_system_prompt(
 {epoch_script}
 ## 全局规则
 {GLOBAL_GAME_RULES}
-## 战斗规则
-{COMBAT_RULES_DESCRIPTION}
-## 角色属性
-{ATTRIBUTE_RULES_DESCRIPTION}
 ## 你的角色设定
 {actor_profile}
 ## 你的外观特征
@@ -105,10 +100,6 @@ def _comple_stage_system_prompt(
 {epoch_script}
 ## 全局规则
 {GLOBAL_GAME_RULES}
-## 战斗规则
-{COMBAT_RULES_DESCRIPTION}
-## 角色属性
-{ATTRIBUTE_RULES_DESCRIPTION}
 ## 场景设定
 {stage_profile}"""
 

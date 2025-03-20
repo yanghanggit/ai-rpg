@@ -2,13 +2,38 @@ from pydantic import BaseModel
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
 from agent.chat_request_handler import ChatRequestHandler
 from overrides import override
-from typing import List, NamedTuple, final
+from typing import Final, List, NamedTuple, final
 from loguru import logger
 from components.actions2 import DirectorAction2, FeedbackAction2
 from rpg_models.event_models import AgentEvent
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from tcg_models.v_0_0_1 import Skill
 from components.components import CombatAttributesComponent
+import format_string.json_format
+
+COMBAT_MECHANICS_DESCRIPTION: Final[
+    str
+] = f"""伤害流程（A→B）
+1. 命中判定 → 未命中：伤害=0
+2. 命中时：
+   物理伤害 = max(1, ⎡A.物理攻击×α - B.物理防御×β⎤)
+   魔法伤害 = max(1, ⎡A.魔法攻击×α - B.魔法防御×β⎤)
+   → B.HP -= (物理伤害 + 魔法伤害)
+   → 若 B.HP <= 0 : 死亡标记
+
+治疗流程（A→B）
+1. 必中生效：
+   治疗量 = ⎡A.魔法攻击×α⎤ （α∈剧情合理值）
+   → B.HP = min(B.MAX_HP, B.HP + 治疗量)
+
+核心机制
+1. 所有数值最终向上取整（⎡x⎤表示）。
+2. 动态参数：
+   - 命中率 ∈ 剧情逻辑。
+   - α/β ∈ 情境调整系数，并参考A与B的增益/减益状态。
+3. 边界控制：
+   - 伤害保底≥1。
+   - 治疗量不突破MAX_HP。"""
 
 
 #######################################################################################################################################
@@ -33,12 +58,13 @@ def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> st
     details_prompt: List[str] = []
     for param in prompt_params:
 
-        detail = f"""{param.actor} 
+        detail = f"""### {param.actor} 
 技能: {param.skill.name}
 目标: {param.targets}
 描述: {param.skill.description}
 效果: {param.skill.effect}
-{param.temp_combat_attrs_component.gen_prompt}"""
+属性: 
+{param.temp_combat_attrs_component.prompt}"""
 
         details_prompt.append(detail)
 
@@ -52,10 +78,12 @@ def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> st
 {" -> ".join([param.actor for param in prompt_params])}
 ## 角色&技能详情
 {"\n".join(details_prompt)}
+## 战斗结算规则
+{COMBAT_MECHANICS_DESCRIPTION}
 ## 输出内容
-1. 计算过程（<200字）
-    - 根据‘战斗规则’说明计算过程。
-    - 精确简练，明确最终生命值。
+1. 计算过程：
+    - 根据‘战斗结算规则’输出详细的计算过程(伤害与治疗的计算过程)。
+    - 明确每个角色的最终生命值。
 2. 演绎过程（~200字）
     - 文学化描写，禁用数字与计算过程
 ## 输出格式规范
@@ -159,25 +187,36 @@ class DirectorActionSystem(BaseActionReactiveSystem):
 
         try:
 
+            format_response = DirectorResponse.model_validate_json(
+                format_string.json_format.strip_json_code_block(
+                    request_handler.response_content
+                )
+            )
+
+            logger.info(
+                f"返回格式正确, Response = \n{format_response.model_dump_json()}"
+            )
+
             current_stage = self._game.get_entity_by_name(request_handler._name)
             assert current_stage is not None
-
-            logger.warning(
-                f"返回格式正确, Response = \n{request_handler.response_content}"
-            )
 
             # 发送事件。
             self._game.broadcast_event(
                 entity=current_stage,
                 agent_event=AgentEvent(
-                    message=f"# 发生事件！\n{request_handler.response_content}",
+                    message=f"# 发生事件！战斗回合:\n{format_response.performance}",
                 ),
             )
 
             #
             actors_on_stage = self._game.retrieve_actors_on_stage(current_stage)
             for actor_entity in actors_on_stage:
-                actor_entity.replace(FeedbackAction2, actor_entity._name)
+                actor_entity.replace(
+                    FeedbackAction2,
+                    actor_entity._name,
+                    format_response.calculation,
+                    format_response.performance,
+                )
 
         except:
             logger.error(

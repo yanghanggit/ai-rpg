@@ -66,6 +66,8 @@ class DirectorAction2(NamedTuple):
 @register_action_class_2
 class FeedbackAction2(NamedTuple):
     name: str
+    calculation: str
+    performance: str
 
 
 ############################################################################################################

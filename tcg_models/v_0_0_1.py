@@ -117,20 +117,6 @@ class BaseAttributes(BaseModel):
     def magic_defense(self) -> int:
         return 5 + (1 * self.wisdom)
 
-    def gen_prompt(self) -> str:
-
-        return f"""**基础属性**
-当前生命：{self.hp}
-最大生命：{self.max_hp}
-力量: {self.strength}
-敏捷: {self.dexterity}
-智力: {self.wisdom}
-**战斗属性**
-物理攻击：{self.physical_attack}
-物理防御：{self.physical_defense}
-魔法攻击：{self.magic_attack}
-魔法防御：{self.magic_defense}"""
-
 
 ###############################################################################################################################################
 @final

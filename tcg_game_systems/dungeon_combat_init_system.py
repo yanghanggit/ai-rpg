@@ -1,13 +1,20 @@
 from loguru import logger
+from pydantic import BaseModel
 from agent.chat_request_handler import ChatRequestHandler
 from entitas import ExecuteProcessor, Entity  # type: ignore
 from typing import Dict, List, Set, final, override
 from game.tcg_game import TCGGame
-from components.components import (
-    StageEnvironmentComponent,
-    CombatAttributesComponent,
-)
+from components.components import StageEnvironmentComponent, CombatAttributesComponent
+import format_string.json_format
 from extended_systems.combat_system import CombatState
+from tcg_models.v_0_0_1 import Effect
+
+
+#######################################################################################################################################
+@final
+class CombatInitResponse(BaseModel):
+    description: str
+    effects: List[Effect]
 
 
 ###################################################################################################################################################################
@@ -24,6 +31,14 @@ def _generate_prompt(
     if len(actors_appearances_info) == 0:
         actors_appearances_info.append("无")
 
+    combat_init_response_example = CombatInitResponse(
+        description="第一人称状态描述（<200字）",
+        effects=[
+            Effect(name="效果1的名字", description="效果1的描述", rounds=1),
+            Effect(name="效果2的名字", description="效果2的描述", rounds=2),
+        ],
+    )
+
     # 导出战斗属性
     return f"""# 发生事件！战斗触发！请用第一人称描述临场感受。
 ## 场景信息
@@ -32,10 +47,12 @@ def _generate_prompt(
 {"\n".join(actors_appearances_info)}
 ## 你的属性（仅在战斗中使用）
 {temp_combat_attr_component.prompt}
-## 输出要求
-- 严格使用角色/场景的全称。遵守全名机制。
-- 单段紧凑表达（<100字）。
-- 禁用换行/空行与数字。"""
+## 输出内容
+1. 状态感受：单段紧凑自述（禁用换行/空行/数字）
+2. 在你身上的持续效果：生成效果列表，包含效果名、效果描述、持续回合数。
+## 输出格式规范
+{combat_init_response_example.model_dump_json()}
+- 直接输出合规JSON"""
 
 
 ###################################################################################################################################################################
@@ -155,10 +172,6 @@ class DungeonCombatInitSystem(ExecuteProcessor):
                 logger.error(f"Agent: {request_handler._name}, Response is empty.")
                 continue
 
-            logger.warning(
-                f"Agent: {request_handler._name}, Response:\n{request_handler.response_content}"
-            )
-
             self._handle_actor_response(entity2, request_handler)
 
     ###################################################################################################################################################################
@@ -168,15 +181,38 @@ class DungeonCombatInitSystem(ExecuteProcessor):
 
         # 核心处理
         try:
-            # 添加上下文。
+
+            format_response = CombatInitResponse.model_validate_json(
+                format_string.json_format.strip_json_code_block(
+                    request_handler.response_content
+                )
+            )
+
+            logger.info(
+                f"Agent: {entity2._name}, Response = {format_response.model_dump_json()}"
+            )
+
+            # 效果更新
+            self._game.refresh_combat_effects(entity2, format_response.effects)
+
+            # 添加提示词上下文。
             self._game.append_human_message(
                 entity2, request_handler._prompt, tag=f"new battle!"
             )
-            self._game.append_ai_message(entity2, request_handler.response_content)
+
+            # 添加记忆
+            message = f"""# ！战斗触发！准备完毕。
+{format_response.description}
+## 你目前拥有的状态
+{'\n'.join([e.model_dump_json() for e in format_response.effects])}"""
+
+            self._game.append_ai_message(entity2, message)
 
         except:
             logger.error(
                 f"""返回格式错误: {entity2._name}, Response = \n{request_handler.response_content}"""
             )
+
+    ###################################################################################################################################################################
 
     ###################################################################################################################################################################

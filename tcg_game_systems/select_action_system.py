@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from entitas import Matcher, Entity, Matcher, GroupEvent  # type: ignore
 from agent.chat_request_handler import ChatRequestHandler
+from extended_systems.combat_system import CombatState
 import format_string.json_format
 from components.components import (
     StageEnvironmentComponent,
@@ -20,6 +21,7 @@ class SkillSelectionResponse(BaseModel):
     skill: str
     targets: List[str]
     reason: str
+    interaction: str
 
 
 #######################################################################################################################################
@@ -36,6 +38,7 @@ def _generate_battle_prompt(
         skill="技能名称",
         targets=["目标1", "目标2", "..."],
         reason="技能使用原因",
+        interaction="在使用技能时你要表演的交互性动作或者说的话",
     )
 
     return f"""# 战斗正在进行，请考虑后，在技能列表中选择你将要使用的技能！
@@ -72,6 +75,10 @@ class SelectActionSystem(BaseActionReactiveSystem):
     async def a_execute2(self) -> None:
         if len(self._react_entities_copy) == 0:
             return
+
+        assert (
+            self._game.combat_system.latest_combat.current_state == CombatState.RUNNING
+        )
         await self._process_request(self._react_entities_copy)
 
     #######################################################################################################################################
@@ -131,6 +138,7 @@ class SelectActionSystem(BaseActionReactiveSystem):
                         skill_candidate_comp.name,
                         format_response.targets,
                         skill,
+                        format_response.interaction,
                     )
 
                     self._notify_event(entity2, format_response, skill)

@@ -2,10 +2,9 @@ import random
 from entitas import Matcher, Entity, Matcher, ExecuteProcessor  # type: ignore
 from components.components import (
     SkillCandidateQueueComponent,
-    CombatAttributesComponent,
 )
 from overrides import override
-from typing import List, final
+from typing import List, Tuple, final
 from game.tcg_game import TCGGame
 from extended_systems.combat_system import CombatState
 from components.actions2 import SelectAction2, TurnAction2
@@ -65,10 +64,20 @@ class DungeonCombatTurnSystem(ExecuteProcessor):
     #######################################################################################################################################
     # 正式的排序方式，按着敏捷度排序
     def _sort_action_order_by_dex(self, react_entities: List[Entity]) -> List[Entity]:
-        return sorted(
-            react_entities,
-            key=lambda entity: entity.get(CombatAttributesComponent).dexterity,
-            reverse=True,
-        )
+
+        actor_dexterity_pairs: List[Tuple[Entity, int]] = []
+        for entity in react_entities:
+            actor_instance = self._game.retrieve_actor_instance(entity)
+            assert actor_instance is not None
+            actor_dexterity_pairs.append(
+                (entity, actor_instance.base_attributes.dexterity)
+            )
+
+        return [
+            entity
+            for entity, _ in sorted(
+                actor_dexterity_pairs, key=lambda x: x[1], reverse=True
+            )
+        ]
 
     #######################################################################################################################################

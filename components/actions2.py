@@ -59,6 +59,7 @@ class DirectorAction2(NamedTuple):
     name: str
     targets: List[str]
     skill: Skill
+    interaction: str
 
 
 ############################################################################################################

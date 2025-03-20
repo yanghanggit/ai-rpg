@@ -290,25 +290,21 @@ class SkillCandidateQueueComponent(NamedTuple):
 @register_component_class
 class CombatAttributesComponent(NamedTuple):
     name: str
-    level: int
-    hp: int
-    max_hp: int
-    strength: int
-    dexterity: int
-    wisdom: int
-    physical_attack: int
-    physical_defense: int
-    magic_attack: int
-    magic_defense: int
+    hp: float
+    max_hp: float
+    physical_attack: float
+    physical_defense: float
+    magic_attack: float
+    magic_defense: float
 
     @property
     def prompt(self) -> str:
-        return f"""当前生命：{self.hp}
-最大生命：{self.max_hp}
-物理攻击：{self.physical_attack}
-物理防御：{self.physical_defense}
-魔法攻击：{self.magic_attack}
-魔法防御：{self.magic_defense}"""
+        return f"""- 当前生命：{self.hp}
+- 最大生命：{self.max_hp}
+- 物理攻击：{self.physical_attack}
+- 物理防御：{self.physical_defense}
+- 魔法攻击：{self.magic_attack}
+- 魔法防御：{self.magic_defense}"""
 
 
 ############################################################################################################

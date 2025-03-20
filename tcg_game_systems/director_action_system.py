@@ -5,6 +5,7 @@ from overrides import override
 from typing import Final, List, NamedTuple, final
 from loguru import logger
 from components.actions2 import DirectorAction2, FeedbackAction2
+from extended_systems.combat_system import CombatState
 from rpg_models.event_models import AgentEvent
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from tcg_models.v_0_0_1 import Skill
@@ -16,10 +17,11 @@ COMBAT_MECHANICS_DESCRIPTION: Final[
 ] = f"""伤害流程（A→B）
 1. 命中判定 → 未命中：伤害=0
 2. 命中时：
-   物理伤害 = max(1, ⎡A.物理攻击×α - B.物理防御×β⎤)
+   物理伤害 = max(1, ⎡A.物理攻击×α - B.物理防御×β)
    魔法伤害 = max(1, ⎡A.魔法攻击×α - B.魔法防御×β⎤)
    → B.HP -= (物理伤害 + 魔法伤害 + B.持续伤害) - B.持续治疗
    → 若 B.HP <= 0 : 死亡标记
+   → A.HP += ⎡A.吸血量(物理伤害 + 魔法伤害) x γ⎤
 
 治疗流程（A→B）
 1. 必中生效：
@@ -30,7 +32,7 @@ COMBAT_MECHANICS_DESCRIPTION: Final[
 1. 所有数值最终向上取整（⎡x⎤表示）。
 2. 动态参数：
    - 命中率 ∈ 剧情逻辑。
-   - α/β ∈ 情境调整系数，并参考A与B的‘增益/减益‘等状态。
+   - α/β/γ ∈ 情境调整系数，并参考A与B的‘增益/减益‘等状态。
 3. 边界控制：
    - 伤害保底≥1。
    - 治疗量不突破MAX_HP。"""
@@ -51,6 +53,7 @@ class ActionPromptParameters(NamedTuple):
     skill: Skill
     combat_attrs_component: CombatAttributesComponent
     combat_effects_component: CombatEffectsComponent
+    interaction: str
 
 
 #######################################################################################################################################
@@ -63,7 +66,7 @@ def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> st
         if len(param.combat_effects_component.effects) > 0:
             effects_prompt = "\n".join(
                 [
-                    f"{effect.name}: {effect.description} (剩余{effect.rounds}回合)"
+                    f"- {effect.name}: {effect.description} (剩余{effect.rounds}回合)"
                     for effect in param.combat_effects_component.effects
                 ]
             )
@@ -72,10 +75,11 @@ def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> st
 技能: {param.skill.name}
 目标: {param.targets}
 描述: {param.skill.description}
-效果: {param.skill.effect}
+技能效果: {param.skill.effect}
+角色演绎: {param.interaction}
 属性: 
 {param.combat_attrs_component.prompt}
-状态: 
+角色状态: 
 {effects_prompt}"""
 
         details_prompt.append(detail)
@@ -125,6 +129,10 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         if len(self._react_entities_copy) == 0:
             return
 
+        assert (
+            self._game.combat_system.latest_combat.current_state == CombatState.RUNNING
+        )
+
         if len(self._game.combat_system.latest_combat.latest_round.turns) == 0:
             return
 
@@ -157,6 +165,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
                     skill=skill_action2.skill,
                     combat_attrs_component=entity.get(CombatAttributesComponent),
                     combat_effects_component=entity.get(CombatEffectsComponent),
+                    interaction=skill_action2.interaction,
                 )
             )
 

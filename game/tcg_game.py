@@ -1,6 +1,6 @@
 from enum import Enum, IntEnum, unique
 from entitas import Entity, Matcher  # type: ignore
-from typing import Any, Final, Set, List, Optional, final
+from typing import Any, Final, Set, List, Optional, Tuple, final
 from overrides import override
 from loguru import logger
 from game.tcg_game_context import TCGGameContext
@@ -8,6 +8,7 @@ from game.base_game import BaseGame
 from game.tcg_game_process_pipeline import TCGGameProcessPipeline
 from rpg_models.event_models import BaseEvent
 from tcg_models.v_0_0_1 import (
+    Effect,
     World,
     WorldSystemInstance,
     DataBase,
@@ -16,7 +17,6 @@ from tcg_models.v_0_0_1 import (
     AgentShortTermMemory,
     ActorType,
     StageType,
-    # BaseAttributes,
 )
 from components.components import (
     WorldSystemComponent,
@@ -674,25 +674,17 @@ class TCGGame(BaseGame, TCGGameContext):
         if actor_instance is None:
             return
 
-        level: Final[int] = actor_instance.level
-        hp: Final[int] = actor_instance.base_attributes.hp
-        max_hp: Final[int] = actor_instance.base_attributes.max_hp
-        strength: Final[int] = actor_instance.base_attributes.strength
-        dexterity: Final[int] = actor_instance.base_attributes.dexterity
-        wisdom: Final[int] = actor_instance.base_attributes.wisdom
-        physical_attack: Final[int] = actor_instance.base_attributes.physical_attack
-        physical_defense: Final[int] = actor_instance.base_attributes.physical_defense
-        magic_attack: Final[int] = actor_instance.base_attributes.magic_attack
-        magic_defense: Final[int] = actor_instance.base_attributes.magic_defense
+        hp: Final[float] = actor_instance.base_attributes.hp
+        max_hp: Final[float] = actor_instance.base_attributes.max_hp
+        physical_attack: Final[float] = actor_instance.base_attributes.physical_attack
+        physical_defense: Final[float] = actor_instance.base_attributes.physical_defense
+        magic_attack: Final[float] = actor_instance.base_attributes.magic_attack
+        magic_defense: Final[float] = actor_instance.base_attributes.magic_defense
 
         logger.info(
             f"""{actor_entity._name}-准备战斗属性:
-level: {level}
 hp: {hp}
 max_hp: {max_hp}
-strength: {strength}
-dexterity: {dexterity}
-wisdom: {wisdom}
 physical_attack: {physical_attack}
 physical_defense: {physical_defense}
 magic_attack: {magic_attack}
@@ -702,12 +694,8 @@ magic_defense: {magic_defense}"""
         actor_entity.replace(
             CombatAttributesComponent,
             actor_entity._name,
-            level,
             hp,
             max_hp,
-            strength,
-            dexterity,
-            wisdom,
             physical_attack,
             physical_defense,
             magic_attack,
@@ -715,3 +703,77 @@ magic_defense: {magic_defense}"""
         )
 
         actor_entity.replace(CombatEffectsComponent, actor_entity._name, [])
+
+    ###############################################################################################################################################
+    # 刷新effects
+    def refresh_combat_effects(self, entity: Entity, effects: List[Effect]) -> None:
+
+        # 效果更新
+        assert entity.has(CombatEffectsComponent)
+        combat_effects_comp = entity.get(CombatEffectsComponent)
+        assert combat_effects_comp is not None
+
+        current_effects = combat_effects_comp.effects
+        for new_effect in effects:
+            for i, e in enumerate(current_effects):
+                if e.name == new_effect.name:
+                    current_effects[i].name = new_effect.name
+                    current_effects[i].description = new_effect.description
+                    current_effects[i].rounds = (
+                        current_effects[i].rounds + new_effect.rounds
+                    )
+                    break
+            else:
+                current_effects.append(new_effect)
+
+        entity.replace(
+            CombatEffectsComponent, combat_effects_comp.name, current_effects
+        )
+
+    ###############################################################################################################################################
+    # 状态效果扣除。
+    def update_combat_remaining_effects(
+        self, entity: Entity
+    ) -> Tuple[List[Effect], List[Effect]]:
+
+        # 效果更新
+        assert entity.has(CombatEffectsComponent)
+        combat_effects_comp = entity.get(CombatEffectsComponent)
+        assert combat_effects_comp is not None
+
+        current_effects = combat_effects_comp.effects.copy()
+        remaining_effects = []
+        removed_effects = []
+        for i, e in enumerate(current_effects):
+            current_effects[i].rounds -= 1
+            current_effects[i].rounds = max(0, current_effects[i].rounds)
+
+            if current_effects[i].rounds > 0:
+                remaining_effects.append(current_effects[i])
+            else:
+                removed_effects.append(current_effects[i])
+
+        entity.replace(
+            CombatEffectsComponent, combat_effects_comp.name, remaining_effects
+        )
+
+        return remaining_effects, removed_effects
+
+    ###############################################################################################################################################
+    def update_combat_health(self, entity: Entity, hp: float, max_hp: float) -> None:
+
+        combat_attributes_comp = entity.get(CombatAttributesComponent)
+        assert combat_attributes_comp is not None
+
+        entity.replace(
+            CombatAttributesComponent,
+            combat_attributes_comp.name,
+            hp,
+            max_hp,
+            combat_attributes_comp.physical_attack,
+            combat_attributes_comp.physical_defense,
+            combat_attributes_comp.magic_attack,
+            combat_attributes_comp.magic_defense,
+        )
+
+    ###############################################################################################################################################

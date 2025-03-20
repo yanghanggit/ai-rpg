@@ -5,7 +5,7 @@ from components.components import (
     DestroyFlagComponent,
 )
 from components.actions2 import (
-    DeadActio2,
+    DeadAction2,
 )
 from extended_systems.combat_system import CombatState, CombatResult
 from game.tcg_game import TCGGame
@@ -30,7 +30,7 @@ class DeadActionSystem(ExecuteProcessor):
         self._update_entities_to_dead_state()
 
         # 添加销毁
-        # self._add_destory()
+        self._add_destory()
 
         # 检查战斗结果的死亡情况
         self._check_combat_result()
@@ -38,19 +38,22 @@ class DeadActionSystem(ExecuteProcessor):
     ########################################################################################################################################################################
     def _update_entities_to_dead_state(self) -> None:
         entities = self._game.get_group(
-            Matcher(all_of=[CombatAttributesComponent], none_of=[DeadActio2])
-        ).entities
+            Matcher(all_of=[CombatAttributesComponent], none_of=[DeadAction2])
+        ).entities.copy()
         for entity in entities:
             combat_attributes = entity.get(CombatAttributesComponent)
             if combat_attributes.hp <= 0:
                 logger.info(f"{combat_attributes.name} is dead")
-                entity.replace(DeadActio2, combat_attributes.name)
+                self._game.append_human_message(entity, "# 你已被击败！")
+                entity.replace(DeadAction2, combat_attributes.name)
 
     ########################################################################################################################################################################
     def _add_destory(self) -> None:
-        entities = self._game.get_group(Matcher(DeadActio2)).entities
+        entities = self._game.get_group(
+            Matcher(all_of=[DeadAction2, MonsterActorFlagComponent])
+        ).entities
         for entity in entities:
-            dead_caction = entity.get(DeadActio2)
+            dead_caction = entity.get(DeadAction2)
             entity.replace(DestroyFlagComponent, dead_caction.name)
 
     ########################################################################################################################################################################
@@ -62,16 +65,16 @@ class DeadActionSystem(ExecuteProcessor):
             return
 
         if self._are_all_heroes_defeated():
-            self._game.combat_system.latest_combat.end_combat(CombatResult.WIN)
+            self._game.combat_system.latest_combat.end_combat(CombatResult.HERO_LOSE)
         elif self._are_all_monsters_defeated():
-            self._game.combat_system.latest_combat.end_combat(CombatResult.LOSE)
+            self._game.combat_system.latest_combat.end_combat(CombatResult.HERO_WIN)
         else:
             logger.info("combat continue!!!")
 
     ########################################################################################################################################################################
     def _are_all_heroes_defeated(self) -> bool:
         entities1 = self._game.get_group(
-            Matcher(all_of=[HeroActorFlagComponent, DeadActio2])
+            Matcher(all_of=[HeroActorFlagComponent, DeadAction2])
         ).entities
 
         entities2 = self._game.get_group(
@@ -84,7 +87,7 @@ class DeadActionSystem(ExecuteProcessor):
     ########################################################################################################################################################################
     def _are_all_monsters_defeated(self) -> bool:
         entities1 = self._game.get_group(
-            Matcher(all_of=[MonsterActorFlagComponent, DeadActio2])
+            Matcher(all_of=[MonsterActorFlagComponent, DeadAction2])
         ).entities
 
         entities2 = self._game.get_group(

@@ -2,14 +2,14 @@ from pydantic import BaseModel
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
 from agent.chat_request_handler import ChatRequestHandler
 from overrides import override
-from typing import List, final
+from typing import List, Tuple, final
 from loguru import logger
 from components.actions2 import FeedbackAction2
 from extended_systems.combat_system import CombatState
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from tcg_models.v_0_0_1 import Effect
 import format_string.json_format
-from components.components import CombatAttributesComponent
+from components.components import CombatAttributesComponent, CombatEffectsComponent
 
 
 #######################################################################################################################################
@@ -127,7 +127,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
             )
 
             # 血量更新
-            self._game.update_combat_health(
+            self.update_combat_health(
                 entity, format_response.hp, format_response.max_hp
             )
 
@@ -135,18 +135,30 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
             self._game.refresh_combat_effects(entity, format_response.effects)
 
             # 效果扣除
-            remaining_effects, removed_effects = (
-                self._game.update_combat_remaining_effects(entity)
+            remaining_effects, removed_effects = self.update_combat_remaining_effects(
+                entity
             )
+
+            remaining_effects_prompt = "无"
+            if len(remaining_effects) > 0:
+                remaining_effects_prompt = "\n".join(
+                    [e.model_dump_json() for e in remaining_effects]
+                )
+
+            removed_effects_prompt = "无"
+            if len(removed_effects) > 0:
+                removed_effects_prompt = "\n".join(
+                    [e.model_dump_json() for e in removed_effects]
+                )
 
             # 添加记忆
             message = f"""# 你的状态更新，请注意！
 {format_response.description}
 生命值：{format_response.hp}/{format_response.max_hp}
 持续效果：
-{'\n'.join([e.model_dump_json() for e in remaining_effects])}
+{remaining_effects_prompt}
 失效效果：
-{'\n'.join([e.model_dump_json() for e in removed_effects])}"""
+{removed_effects_prompt}"""
 
             self._game.append_human_message(entity, message)
 
@@ -185,3 +197,49 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
         return request_handlers
 
     #######################################################################################################################################
+    # 状态效果扣除。
+    def update_combat_remaining_effects(
+        self, entity: Entity
+    ) -> Tuple[List[Effect], List[Effect]]:
+
+        # 效果更新
+        assert entity.has(CombatEffectsComponent)
+        combat_effects_comp = entity.get(CombatEffectsComponent)
+        assert combat_effects_comp is not None
+
+        current_effects = combat_effects_comp.effects.copy()
+        remaining_effects = []
+        removed_effects = []
+        for i, e in enumerate(current_effects):
+            current_effects[i].rounds -= 1
+            current_effects[i].rounds = max(0, current_effects[i].rounds)
+
+            if current_effects[i].rounds > 0:
+                remaining_effects.append(current_effects[i])
+            else:
+                removed_effects.append(current_effects[i])
+
+        entity.replace(
+            CombatEffectsComponent, combat_effects_comp.name, remaining_effects
+        )
+
+        return remaining_effects, removed_effects
+
+    ###############################################################################################################################################
+    def update_combat_health(self, entity: Entity, hp: float, max_hp: float) -> None:
+
+        combat_attributes_comp = entity.get(CombatAttributesComponent)
+        assert combat_attributes_comp is not None
+
+        entity.replace(
+            CombatAttributesComponent,
+            combat_attributes_comp.name,
+            hp,
+            max_hp,
+            combat_attributes_comp.physical_attack,
+            combat_attributes_comp.physical_defense,
+            combat_attributes_comp.magic_attack,
+            combat_attributes_comp.magic_defense,
+        )
+
+    ###############################################################################################################################################

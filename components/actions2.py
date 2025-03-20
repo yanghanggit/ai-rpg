@@ -74,7 +74,7 @@ class FeedbackAction2(NamedTuple):
 ############################################################################################################
 @final
 @register_action_class_2
-class DeadActio2(NamedTuple):
+class DeadAction2(NamedTuple):
     name: str
 
 

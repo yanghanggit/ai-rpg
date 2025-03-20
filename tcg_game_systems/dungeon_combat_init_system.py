@@ -2,7 +2,7 @@ from loguru import logger
 from pydantic import BaseModel
 from agent.chat_request_handler import ChatRequestHandler
 from entitas import ExecuteProcessor, Entity  # type: ignore
-from typing import Dict, List, Set, final, override
+from typing import Dict, Final, List, Set, final, override
 from game.tcg_game import TCGGame
 from components.components import StageEnvironmentComponent, CombatAttributesComponent
 import format_string.json_format
@@ -197,7 +197,9 @@ class DungeonCombatInitSystem(ExecuteProcessor):
 
             # 添加提示词上下文。
             self._game.append_human_message(
-                entity2, request_handler._prompt, tag=f"new battle!"
+                entity2,
+                request_handler._prompt,
+                combat_init_tag="战斗触发！",
             )
 
             # 添加记忆

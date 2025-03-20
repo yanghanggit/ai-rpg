@@ -248,6 +248,7 @@ def test_world1(world_boot: Boot) -> Boot:
         kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
         attributes=BaseAttributes(strength=5, dexterity=12, wisdom=5),
     )
+    actor_goblin_instance.base_attributes.hp = 1  # 测试直接打死。
 
     # 创建实例：角色.怪物.兽人-库洛斯
     actor_orcs_instance = _create_actor_instance(

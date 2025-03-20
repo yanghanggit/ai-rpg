@@ -107,6 +107,12 @@ class TCGGame(BaseGame, TCGGameContext):
         self._combat_system: CombatSystem = combat_system
 
     ###############################################################################################################################################
+    # @override
+    # def destroy_entity(self, entity: Entity) -> None:
+    #     # self._remove_agent_short_term_memory(entity)
+    #     return super().destroy_entity(entity)
+
+    ###############################################################################################################################################
     @property
     def world_file_dir(self) -> Path:
         return self._world_file_path.parent
@@ -479,6 +485,10 @@ class TCGGame(BaseGame, TCGGameContext):
         )
 
     ###############################################################################################################################################
+    def _remove_agent_short_term_memory(self, entity: Entity) -> None:
+        self.world.agents_short_term_memory.pop(entity._name, None)
+
+    ###############################################################################################################################################
     def append_human_message(self, entity: Entity, chat: str, **kwargs: Any) -> None:
         agent_short_term_memory = self.get_agent_short_term_memory(entity)
         agent_short_term_memory.chat_history.extend(
@@ -728,52 +738,6 @@ magic_defense: {magic_defense}"""
 
         entity.replace(
             CombatEffectsComponent, combat_effects_comp.name, current_effects
-        )
-
-    ###############################################################################################################################################
-    # 状态效果扣除。
-    def update_combat_remaining_effects(
-        self, entity: Entity
-    ) -> Tuple[List[Effect], List[Effect]]:
-
-        # 效果更新
-        assert entity.has(CombatEffectsComponent)
-        combat_effects_comp = entity.get(CombatEffectsComponent)
-        assert combat_effects_comp is not None
-
-        current_effects = combat_effects_comp.effects.copy()
-        remaining_effects = []
-        removed_effects = []
-        for i, e in enumerate(current_effects):
-            current_effects[i].rounds -= 1
-            current_effects[i].rounds = max(0, current_effects[i].rounds)
-
-            if current_effects[i].rounds > 0:
-                remaining_effects.append(current_effects[i])
-            else:
-                removed_effects.append(current_effects[i])
-
-        entity.replace(
-            CombatEffectsComponent, combat_effects_comp.name, remaining_effects
-        )
-
-        return remaining_effects, removed_effects
-
-    ###############################################################################################################################################
-    def update_combat_health(self, entity: Entity, hp: float, max_hp: float) -> None:
-
-        combat_attributes_comp = entity.get(CombatAttributesComponent)
-        assert combat_attributes_comp is not None
-
-        entity.replace(
-            CombatAttributesComponent,
-            combat_attributes_comp.name,
-            hp,
-            max_hp,
-            combat_attributes_comp.physical_attack,
-            combat_attributes_comp.physical_defense,
-            combat_attributes_comp.magic_attack,
-            combat_attributes_comp.magic_defense,
         )
 
     ###############################################################################################################################################

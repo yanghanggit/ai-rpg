@@ -1,6 +1,6 @@
 from typing import NamedTuple, List, final
 from components.registry import register_component_class
-from tcg_models.v_0_0_1 import Skill
+from tcg_models.v_0_0_1 import Skill, Effect
 
 
 # 全局唯一标识符
@@ -309,3 +309,15 @@ class CombatAttributesComponent(NamedTuple):
 物理防御：{self.physical_defense}
 魔法攻击：{self.magic_attack}
 魔法防御：{self.magic_defense}"""
+
+
+############################################################################################################
+# 战斗中临时使用。
+@final
+@register_component_class
+class CombatEffectsComponent(NamedTuple):
+    name: str
+    effects: List[Effect]
+
+
+############################################################################################################

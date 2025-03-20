@@ -8,7 +8,7 @@ from components.actions2 import DirectorAction2, FeedbackAction2
 from rpg_models.event_models import AgentEvent
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from tcg_models.v_0_0_1 import Skill
-from components.components import CombatAttributesComponent
+from components.components import CombatAttributesComponent, CombatEffectsComponent
 import format_string.json_format
 
 COMBAT_MECHANICS_DESCRIPTION: Final[
@@ -18,19 +18,19 @@ COMBAT_MECHANICS_DESCRIPTION: Final[
 2. 命中时：
    物理伤害 = max(1, ⎡A.物理攻击×α - B.物理防御×β⎤)
    魔法伤害 = max(1, ⎡A.魔法攻击×α - B.魔法防御×β⎤)
-   → B.HP -= (物理伤害 + 魔法伤害)
+   → B.HP -= (物理伤害 + 魔法伤害 + B.持续伤害) - B.持续治疗
    → 若 B.HP <= 0 : 死亡标记
 
 治疗流程（A→B）
 1. 必中生效：
    治疗量 = ⎡A.魔法攻击×α⎤ （α∈剧情合理值）
-   → B.HP = min(B.MAX_HP, B.HP + 治疗量)
+   → B.HP = min(B.MAX_HP, B.HP + 治疗量) + B.持续治疗
 
 核心机制
 1. 所有数值最终向上取整（⎡x⎤表示）。
 2. 动态参数：
    - 命中率 ∈ 剧情逻辑。
-   - α/β ∈ 情境调整系数，并参考A与B的增益/减益状态。
+   - α/β ∈ 情境调整系数，并参考A与B的‘增益/减益‘等状态。
 3. 边界控制：
    - 伤害保底≥1。
    - 治疗量不突破MAX_HP。"""
@@ -49,7 +49,8 @@ class ActionPromptParameters(NamedTuple):
     actor: str
     targets: List[str]
     skill: Skill
-    temp_combat_attrs_component: CombatAttributesComponent
+    combat_attrs_component: CombatAttributesComponent
+    combat_effects_component: CombatEffectsComponent
 
 
 #######################################################################################################################################
@@ -58,19 +59,30 @@ def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> st
     details_prompt: List[str] = []
     for param in prompt_params:
 
+        effects_prompt = "无"
+        if len(param.combat_effects_component.effects) > 0:
+            effects_prompt = "\n".join(
+                [
+                    f"{effect.name}: {effect.description} (剩余{effect.rounds}回合)"
+                    for effect in param.combat_effects_component.effects
+                ]
+            )
+
         detail = f"""### {param.actor} 
 技能: {param.skill.name}
 目标: {param.targets}
 描述: {param.skill.description}
 效果: {param.skill.effect}
 属性: 
-{param.temp_combat_attrs_component.prompt}"""
+{param.combat_attrs_component.prompt}
+状态: 
+{effects_prompt}"""
 
         details_prompt.append(detail)
 
     # 模版
     director_response_sample = DirectorResponse(
-        calculation="简明战斗计算（含最终生命值）", performance="生动的文学化演绎"
+        calculation="计算过程", performance="演绎过程"
     )
 
     return f"""# 提示！回合行动指令。根据下列信息执行战斗回合：
@@ -83,7 +95,7 @@ def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> st
 ## 输出内容
 1. 计算过程：
     - 根据‘战斗结算规则’输出详细的计算过程(伤害与治疗的计算过程)。
-    - 明确每个角色的最终生命值。
+    - 结算后，需明确每个角色的当前生命值/最大生命值。
 2. 演绎过程（~200字）
     - 文学化描写，禁用数字与计算过程
 ## 输出格式规范
@@ -137,12 +149,14 @@ class DirectorActionSystem(BaseActionReactiveSystem):
             assert skill_action2 is not None
 
             assert entity.has(CombatAttributesComponent)
+            assert entity.has(CombatEffectsComponent)
             ret.append(
                 ActionPromptParameters(
                     actor=entity._name,
                     targets=skill_action2.targets,
                     skill=skill_action2.skill,
-                    temp_combat_attrs_component=entity.get(CombatAttributesComponent),
+                    combat_attrs_component=entity.get(CombatAttributesComponent),
+                    combat_effects_component=entity.get(CombatEffectsComponent),
                 )
             )
 

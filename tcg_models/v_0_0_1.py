@@ -187,5 +187,6 @@ class Skill(BaseModel):
 
 @final
 class Effect(BaseModel):
+    name: str
     description: str
-    round: int
+    rounds: int

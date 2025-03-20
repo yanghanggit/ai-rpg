@@ -2,47 +2,54 @@ from pydantic import BaseModel
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
 from agent.chat_request_handler import ChatRequestHandler
 from overrides import override
-from typing import List, final
+from typing import List, Tuple, final
 from loguru import logger
 from components.actions2 import FeedbackAction2
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from tcg_models.v_0_0_1 import Effect
 import format_string.json_format
-
-# from components.components import CombatAttributesComponent
+from components.components import CombatAttributesComponent, CombatEffectsComponent
 
 
 #######################################################################################################################################
 @final
 class FeedbackResponse(BaseModel):
     description: str
+    hp: int
+    max_hp: int
     effects: List[Effect]
 
 
 #######################################################################################################################################
 def _generate_prompt(
-    # combat_attributes_component: CombatAttributesComponent,
+    combat_attributes_component: CombatAttributesComponent,
     feedback_component: FeedbackAction2,
 ) -> str:
 
     feedback_response_example = FeedbackResponse(
         description="第一人称状态描述（<200字）",
+        hp=combat_attributes_component.hp,
+        max_hp=combat_attributes_component.max_hp,
         effects=[
-            Effect(description="效果1描述", round=1),
-            Effect(description="效果2描述", round=2),
+            Effect(name="效果1的名字", description="效果1的描述", rounds=1),
+            Effect(name="效果2的名字", description="效果2的描述", rounds=2),
         ],
     )
 
-    return f"""# 提示！状态更新，根据战斗结果，更新状态并反馈！(仅反馈你自身状态)
+    return f"""# 提示！根据战斗结果，更新状态并反馈！(仅反馈你自身状态)
 ## 战斗结果
+
 ### 计算摘要
 {feedback_component.calculation}
+
 ### 演绎摘要
 {feedback_component.performance}
+
 ## 输出内容
 1. 状态感受：单段紧凑自述（禁用换行/空行）
-2. 持续效果：仍将持续生效的效果列表。
-    - 注意！效果描述和剩余回合数。
+3. 生命值：根据‘战斗结果-计算摘要’，更新hp/max_hp。
+2. 持续效果：生成效果列表，包含效果名、效果描述、剩余回合数。
+    
 ## 输出格式规范
 {feedback_response_example.model_dump_json()}
 - 数值精确，禁用文字修饰。
@@ -92,10 +99,6 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
                 logger.error(f"Agent: {request_handler._name}, Response is empty.")
                 continue
 
-            # logger.warning(
-            #     f"Agent: {request_handler._name}, Response:\n{request_handler.response_content}"
-            # )
-
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
             self._handle_response(entity2, request_handler)
@@ -117,12 +120,108 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
                 f"Agent: {entity._name}, Response = {format_response.model_dump_json()}"
             )
 
-            pass
+            # 血量更新
+            self._update_health(entity, format_response.hp, format_response.max_hp)
 
+            # 效果更新
+            self._update_effects(entity, format_response.effects)
+
+            # 效果扣除
+            remaining_effects, removed_effects = self._update_remaining_effects(entity)
+            
+            
+            # 添加记忆
+            message = f"""# 你的状态更新，请注意！
+{format_response.description}
+生命值：{format_response.hp}/{format_response.max_hp}
+持续效果：
+{'\n'.join([e.model_dump_json() for e in remaining_effects])}
+失效效果：
+{'\n'.join([e.model_dump_json() for e in removed_effects])}"""
+            
+            self._game.append_human_message(entity, message)
+            
         except:
             logger.error(
                 f"""返回格式错误, Response = \n{request_handler.response_content}"""
             )
+
+    #######################################################################################################################################
+    # 重置生命值
+    def _update_health(self, entity: Entity, hp: int, max_hp: int) -> None:
+
+        combat_attributes_comp = entity.get(CombatAttributesComponent)
+        assert combat_attributes_comp is not None
+
+        entity.replace(
+            CombatAttributesComponent,
+            combat_attributes_comp.name,
+            combat_attributes_comp.level,
+            hp,
+            max_hp,
+            combat_attributes_comp.strength,
+            combat_attributes_comp.dexterity,
+            combat_attributes_comp.wisdom,
+            combat_attributes_comp.physical_attack,
+            combat_attributes_comp.physical_defense,
+            combat_attributes_comp.magic_attack,
+            combat_attributes_comp.magic_defense,
+        )
+
+    #######################################################################################################################################
+    # 刷新effects
+    def _update_effects(self, entity: Entity, effects: List[Effect]) -> None:
+
+        # 效果更新
+        assert entity.has(CombatEffectsComponent)
+        combat_effects_comp = entity.get(CombatEffectsComponent)
+        assert combat_effects_comp is not None
+
+        current_effects = combat_effects_comp.effects
+        for new_effect in effects:
+            for i, e in enumerate(current_effects):
+                if e.name == new_effect.name:
+                    current_effects[i].name = new_effect.name
+                    current_effects[i].description = new_effect.description
+                    current_effects[i].rounds = (
+                        current_effects[i].rounds + new_effect.rounds
+                    )
+                    break
+            else:
+                current_effects.append(new_effect)
+
+        entity.replace(
+            CombatEffectsComponent, combat_effects_comp.name, current_effects
+        )
+
+    #######################################################################################################################################
+    # 状态效果扣除。
+    def _update_remaining_effects(
+        self, entity: Entity
+    ) -> Tuple[List[Effect], List[Effect]]:
+
+        # 效果更新
+        assert entity.has(CombatEffectsComponent)
+        combat_effects_comp = entity.get(CombatEffectsComponent)
+        assert combat_effects_comp is not None
+
+        current_effects = combat_effects_comp.effects.copy()
+        remaining_effects = []
+        removed_effects = []
+        for i, e in enumerate(current_effects):
+            current_effects[i].rounds -= 1
+            current_effects[i].rounds = max(0, current_effects[i].rounds)
+
+            if current_effects[i].rounds > 0:
+                remaining_effects.append(current_effects[i])
+            else:
+                removed_effects.append(current_effects[i])
+
+        entity.replace(
+            CombatEffectsComponent, combat_effects_comp.name, remaining_effects
+        )
+
+        return remaining_effects, removed_effects
 
     #######################################################################################################################################
     def _generate_chat_requests(
@@ -135,11 +234,11 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
 
             feedback_action2 = entity.get(FeedbackAction2)
 
-            # combat_attributes_component = entity.get(CombatAttributesComponent)
-            # assert combat_attributes_component is not None
+            combat_attributes_component = entity.get(CombatAttributesComponent)
+            assert combat_attributes_component is not None
 
             # 生成消息
-            message = _generate_prompt(feedback_action2)
+            message = _generate_prompt(combat_attributes_component, feedback_action2)
             # 生成请求处理器
             request_handlers.append(
                 ChatRequestHandler(

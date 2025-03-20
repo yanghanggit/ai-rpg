@@ -34,6 +34,7 @@ from components.components import (
     MonsterActorFlagComponent,
     EnterStageFlagComponent,
     CombatAttributesComponent,
+    CombatEffectsComponent,
 )
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -712,3 +713,5 @@ magic_defense: {magic_defense}"""
             magic_attack,
             magic_defense,
         )
+
+        actor_entity.replace(CombatEffectsComponent, actor_entity._name, [])

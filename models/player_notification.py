@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from tcg_models.event_models import BaseEvent
+from models.event_models import BaseEvent
 
 
 # 玩家客户端消息，目前是测试。

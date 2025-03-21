@@ -10,8 +10,8 @@ from components.components import (
 from overrides import override
 from typing import List, final
 from loguru import logger
-from tcg_models.v_0_0_1 import Skill
-from components.actions2 import DirectorAction2, SelectAction2
+from models.v_0_0_1 import Skill
+from components.actions import DirectorAction2, SelectAction2
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 

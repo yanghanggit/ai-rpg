@@ -1,5 +1,5 @@
 from loguru import logger
-from tcg_models.v_0_0_1 import (
+from models.v_0_0_1 import (
     Boot,
     ActorPrototype,
     StagePrototype,

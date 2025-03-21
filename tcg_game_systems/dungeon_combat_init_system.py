@@ -7,7 +7,7 @@ from game.tcg_game import TCGGame
 from components.components import StageEnvironmentComponent, CombatAttributesComponent
 import format_string.json_format
 from extended_systems.combat_system import CombatState
-from tcg_models.v_0_0_1 import Effect
+from models.v_0_0_1 import Effect
 
 
 #######################################################################################################################################

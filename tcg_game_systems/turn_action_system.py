@@ -1,7 +1,7 @@
 from entitas import Matcher, Entity, Matcher, GroupEvent  # type: ignore
 from overrides import override
 from typing import final
-from components.actions2 import TurnAction2
+from components.actions import TurnAction2
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from extended_systems.combat_system import CombatState
 

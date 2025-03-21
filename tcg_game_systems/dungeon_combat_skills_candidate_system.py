@@ -9,7 +9,7 @@ from components.components import (
 from overrides import override
 from typing import List, Set, final
 from loguru import logger
-from tcg_models.v_0_0_1 import Skill
+from models.v_0_0_1 import Skill
 from game.tcg_game import TCGGame
 from extended_systems.combat_system import CombatState
 

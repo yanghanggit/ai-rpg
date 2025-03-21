@@ -1,6 +1,6 @@
 from typing import Final, Dict, final
 from pydantic import BaseModel
-from tcg_models.v_0_0_1 import World as World_v_0_0_1
+from models.v_0_0_1 import World as World_v_0_0_1
 
 """
 这是一个试验。@yanghang

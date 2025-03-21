@@ -3,7 +3,7 @@ import requests
 from loguru import logger
 import datetime
 
-from tcg_models.api_models import (
+from models.api_models import (
     APIEndpointConfigurationRequest,
     APIEndpointConfiguration,
     APIEndpointConfiguratioResponse,

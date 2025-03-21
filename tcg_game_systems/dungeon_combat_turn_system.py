@@ -7,7 +7,7 @@ from overrides import override
 from typing import List, Tuple, final
 from game.tcg_game import TCGGame
 from extended_systems.combat_system import CombatState
-from components.actions2 import SelectAction2, TurnAction2
+from components.actions import SelectAction2, TurnAction2
 
 
 #######################################################################################################################################

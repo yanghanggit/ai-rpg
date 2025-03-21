@@ -15,4 +15,3 @@ class BeginSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
         pass
-        # logger.info("BeginSystem execute")

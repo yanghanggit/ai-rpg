@@ -4,7 +4,7 @@ from game.tcg_game import TCGGame
 from loguru import logger
 from game.web_tcg_game import WebTCGGame
 from player.player_proxy import PlayerProxy
-from player.player_command2 import PlayerCommand2
+from player.player_command import PlayerCommand2
 
 
 ############################################################################################################

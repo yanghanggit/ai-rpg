@@ -4,10 +4,10 @@ from extended_systems.chat_request_handler import ChatRequestHandler
 from overrides import override
 from typing import List, Tuple, final
 from loguru import logger
-from components.actions2 import FeedbackAction2
+from components.actions import FeedbackAction2
 from extended_systems.combat_system import CombatState
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
-from tcg_models.v_0_0_1 import Effect
+from models.v_0_0_1 import Effect
 import format_string.json_format
 from components.components import CombatAttributesComponent, CombatEffectsComponent
 

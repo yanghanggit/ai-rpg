@@ -4,7 +4,7 @@ from typing import final, override
 from components.components import (
     DestroyFlagComponent,
 )
-from components.actions2 import (
+from components.actions import (
     DeadAction2,
 )
 from extended_systems.combat_system import CombatState, CombatResult

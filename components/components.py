@@ -1,6 +1,6 @@
 from typing import NamedTuple, List, final
 from components.registry import register_component_class
-from tcg_models.v_0_0_1 import Skill, Effect
+from models.v_0_0_1 import Skill, Effect
 
 
 # 全局唯一标识符

@@ -6,8 +6,8 @@ from loguru import logger
 from game.tcg_game_context import TCGGameContext
 from game.base_game import BaseGame
 from game.tcg_game_process_pipeline import TCGGameProcessPipeline
-from tcg_models.event_models import BaseEvent
-from tcg_models.v_0_0_1 import (
+from models.event_models import BaseEvent
+from models.v_0_0_1 import (
     Effect,
     World,
     WorldSystemInstance,
@@ -41,7 +41,7 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from extended_systems.lang_serve_system import LangServeSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
-from tcg_models.event_models import AgentEvent
+from models.event_models import AgentEvent
 from extended_systems.combat_system import CombatSystem
 
 

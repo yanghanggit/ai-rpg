@@ -1,6 +1,6 @@
 from typing import Dict, NamedTuple, final, List
 from components.registry import register_action_class_2
-from tcg_models.v_0_0_1 import Skill
+from models.v_0_0_1 import Skill
 
 
 ############################################################################################################

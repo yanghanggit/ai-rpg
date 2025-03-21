@@ -1,6 +1,6 @@
 from entitas import Context, Entity, Matcher  # type: ignore
 from typing import Optional, List, Set, override, Dict
-from tcg_models.v_0_0_1 import ComponentSnapshot, EntitySnapshot
+from models.v_0_0_1 import ComponentSnapshot, EntitySnapshot
 from components.components import (
     WorldSystemComponent,
     StageComponent,

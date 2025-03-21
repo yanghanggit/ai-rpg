@@ -10,7 +10,7 @@ from overrides import override
 from typing import Dict, List, final
 from game.tcg_game import TCGGame
 from loguru import logger
-from components.actions2 import SpeakAction2, MindVoiceAction2
+from components.actions import SpeakAction2, MindVoiceAction2
 
 
 #######################################################################################################################################

@@ -5,7 +5,7 @@ from components.actions import (
 from typing import final, override
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from loguru import logger
-from components.components import ActorComponent
+from components.components_v_0_0_1 import ActorComponent
 
 
 ####################################################################################################################################

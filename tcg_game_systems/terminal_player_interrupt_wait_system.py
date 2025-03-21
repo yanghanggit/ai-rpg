@@ -1,15 +1,15 @@
 from entitas import ExecuteProcessor  # type: ignore
 from typing import final, override
-from game.tcg_game_context import TCGGameContext
 from game.terminal_tcg_game import TerminalTCGGame
+from game.tcg_game import TCGGame
 
 
 @final
 class TerminalPlayerInterruptWaitSystem(ExecuteProcessor):
 
     ############################################################################################################
-    def __init__(self, context: TCGGameContext) -> None:
-        self._game: TCGGameContext = context
+    def __init__(self, game_context: TCGGame) -> None:
+        self._game: TCGGame = game_context
 
     ############################################################################################################
     @override

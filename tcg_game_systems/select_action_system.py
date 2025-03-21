@@ -3,7 +3,7 @@ from entitas import Matcher, Entity, Matcher, GroupEvent  # type: ignore
 from extended_systems.chat_request_handler import ChatRequestHandler
 from extended_systems.combat_system import CombatState
 import format_string.json_format
-from components.components import (
+from components.components_v_0_0_1 import (
     StageEnvironmentComponent,
     SkillCandidateQueueComponent,
 )

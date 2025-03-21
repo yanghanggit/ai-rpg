@@ -71,9 +71,9 @@ class SpeakActionSystem(BaseActionReactiveSystem):
                     message=_generate_speak_prompt(
                         speak_action.name, target_name, speak_content
                     ),
-                    speaker_name=speak_action.name,
-                    target_name=target_name,
-                    content=speak_content,
+                    speaker=speak_action.name,
+                    listener=target_name,
+                    dialogue=speak_content,
                 ),
             )
 

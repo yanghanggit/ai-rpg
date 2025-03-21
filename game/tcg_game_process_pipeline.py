@@ -158,9 +158,6 @@ class TCGGameProcessPipeline(Processors):
         # 启动agent的提示词。启动阶段
         processors.add(KickOffSystem(tcg_game))
 
-        # 调试！！！！
-        # processors.add(TerminalPlayerInterruptWaitSystem(tcg_game))
-
         # yh add, 测试用。
         processors.add(PreDungeonStateSystem(tcg_game))
 

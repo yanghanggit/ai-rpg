@@ -18,27 +18,15 @@ class AgentEvent(BaseEvent):
 
 
 # 以下是一些具体的事件-------------------------------------------------------------
-
-
-# 广播内容事件
-@final
-class AnnounceEvent(AgentEvent):
-    announcer_name: str
-    stage_name: str
-    content: str
+# 以下是一些具体的事件-------------------------------------------------------------
+# 以下是一些具体的事件-------------------------------------------------------------
+# 以下是一些具体的事件-------------------------------------------------------------
+# 以下是一些具体的事件-------------------------------------------------------------
 
 
 # 说话事件
 @final
 class SpeakEvent(AgentEvent):
-    speaker_name: str
-    target_name: str
-    content: str
-
-
-# 私语事件
-@final
-class WhisperEvent(AgentEvent):
-    whisperer_name: str
-    target_name: str
-    content: str
+    speaker: str
+    listener: str
+    dialogue: str

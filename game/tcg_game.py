@@ -1,12 +1,11 @@
 from enum import Enum, IntEnum, unique
 from entitas import Entity, Matcher  # type: ignore
-from typing import Any, Final, Set, List, Optional, Tuple, final
+from typing import Any, Final, Set, List, Optional, final
 from overrides import override
 from loguru import logger
 from game.tcg_game_context import TCGGameContext
 from game.base_game import BaseGame
 from game.tcg_game_process_pipeline import TCGGameProcessPipeline
-from models.event_models import BaseEvent
 from models.v_0_0_1 import (
     Effect,
     World,
@@ -18,7 +17,7 @@ from models.v_0_0_1 import (
     ActorType,
     StageType,
 )
-from components.components import (
+from components.components_v_0_0_1 import (
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
@@ -118,12 +117,6 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 战斗系统
         self._combat_system: CombatSystem = combat_system
-
-    ###############################################################################################################################################
-    # @override
-    # def destroy_entity(self, entity: Entity) -> None:
-    #     # self._remove_agent_short_term_memory(entity)
-    #     return super().destroy_entity(entity)
 
     ###############################################################################################################################################
     @property
@@ -514,7 +507,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     # TODO 目前是写死的
-    def ready(self) -> bool:
+    def is_player_ready(self) -> bool:
 
         player_entities: Set[Entity] = self.get_group(
             Matcher(all_of=[PlayerActorFlagComponent])
@@ -679,7 +672,7 @@ class TCGGame(BaseGame, TCGGameContext):
         return None
 
     ###############################################################################################################################################
-    def setup_temp_combat_attributes(self, actor_entity: Entity) -> None:
+    def setup_combat_attributes(self, actor_entity: Entity) -> None:
         assert actor_entity.has(ActorComponent)
         if not actor_entity.has(ActorComponent):
             return
@@ -720,7 +713,7 @@ magic_defense: {magic_defense}"""
 
     ###############################################################################################################################################
     # 刷新effects
-    def refresh_combat_effects(self, entity: Entity, effects: List[Effect]) -> None:
+    def update_combat_effects(self, entity: Entity, effects: List[Effect]) -> None:
 
         # 效果更新
         assert entity.has(CombatEffectsComponent)
@@ -733,9 +726,7 @@ magic_defense: {magic_defense}"""
                 if e.name == new_effect.name:
                     current_effects[i].name = new_effect.name
                     current_effects[i].description = new_effect.description
-                    current_effects[i].rounds = (
-                        current_effects[i].rounds + new_effect.rounds
-                    )
+                    current_effects[i].rounds = new_effect.rounds
                     break
             else:
                 current_effects.append(new_effect)

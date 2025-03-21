@@ -1,7 +1,7 @@
 from loguru import logger
 from entitas import Matcher, ExecuteProcessor  # type: ignore
 from typing import final, override
-from components.components import (
+from components.components_v_0_0_1 import (
     DestroyFlagComponent,
 )
 from components.actions import (
@@ -9,7 +9,7 @@ from components.actions import (
 )
 from extended_systems.combat_system import CombatState, CombatResult
 from game.tcg_game import TCGGame
-from components.components import (
+from components.components_v_0_0_1 import (
     CombatAttributesComponent,
     HeroActorFlagComponent,
     MonsterActorFlagComponent,

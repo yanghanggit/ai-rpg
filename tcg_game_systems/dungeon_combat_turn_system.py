@@ -1,6 +1,6 @@
 import random
 from entitas import Matcher, Entity, Matcher, ExecuteProcessor  # type: ignore
-from components.components import (
+from components.components_v_0_0_1 import (
     SkillCandidateQueueComponent,
 )
 from overrides import override

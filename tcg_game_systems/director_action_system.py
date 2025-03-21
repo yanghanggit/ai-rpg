@@ -9,7 +9,10 @@ from extended_systems.combat_system import CombatState
 from models.event_models import AgentEvent
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from models.v_0_0_1 import Skill
-from components.components import CombatAttributesComponent, CombatEffectsComponent
+from components.components_v_0_0_1 import (
+    CombatAttributesComponent,
+    CombatEffectsComponent,
+)
 import format_string.json_format
 
 COMBAT_MECHANICS_DESCRIPTION: Final[
@@ -62,15 +65,6 @@ def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> st
     details_prompt: List[str] = []
     for param in prompt_params:
 
-        effects_prompt = "无"
-        if len(param.combat_effects_component.effects) > 0:
-            effects_prompt = "\n".join(
-                [
-                    f"- {effect.name}: {effect.description} (剩余{effect.rounds}回合)"
-                    for effect in param.combat_effects_component.effects
-                ]
-            )
-
         detail = f"""### {param.actor} 
 技能: {param.skill.name}
 目标: {param.targets}
@@ -78,9 +72,9 @@ def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> st
 技能效果: {param.skill.effect}
 角色演绎: {param.interaction}
 属性: 
-{param.combat_attrs_component.prompt}
+{param.combat_attrs_component.as_prompt}
 角色状态: 
-{effects_prompt}"""
+{param.combat_effects_component.as_prompt}"""
 
         details_prompt.append(detail)
 

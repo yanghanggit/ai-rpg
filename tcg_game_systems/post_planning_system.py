@@ -1,7 +1,7 @@
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from typing import final, override
 from game.tcg_game import TCGGame
-from components.components import (
+from components.components_v_0_0_1 import (
     StagePlanningPermitFlagComponent,
     ActorPlanningPermitFlagComponent,
 )

@@ -9,7 +9,10 @@ from extended_systems.combat_system import CombatState
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from models.v_0_0_1 import Effect
 import format_string.json_format
-from components.components import CombatAttributesComponent, CombatEffectsComponent
+from components.components_v_0_0_1 import (
+    CombatAttributesComponent,
+    CombatEffectsComponent,
+)
 
 
 #######################################################################################################################################
@@ -127,15 +130,15 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
             )
 
             # 血量更新
-            self.update_combat_health(
+            self._update_combat_health(
                 entity, format_response.hp, format_response.max_hp
             )
 
             # 效果更新
-            self._game.refresh_combat_effects(entity, format_response.effects)
+            self._game.update_combat_effects(entity, format_response.effects)
 
             # 效果扣除
-            remaining_effects, removed_effects = self.update_combat_remaining_effects(
+            remaining_effects, removed_effects = self._update_combat_remaining_effects(
                 entity
             )
 
@@ -198,7 +201,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
 
     #######################################################################################################################################
     # 状态效果扣除。
-    def update_combat_remaining_effects(
+    def _update_combat_remaining_effects(
         self, entity: Entity
     ) -> Tuple[List[Effect], List[Effect]]:
 
@@ -226,7 +229,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
         return remaining_effects, removed_effects
 
     ###############################################################################################################################################
-    def update_combat_health(self, entity: Entity, hp: float, max_hp: float) -> None:
+    def _update_combat_health(self, entity: Entity, hp: float, max_hp: float) -> None:
 
         combat_attributes_comp = entity.get(CombatAttributesComponent)
         assert combat_attributes_comp is not None

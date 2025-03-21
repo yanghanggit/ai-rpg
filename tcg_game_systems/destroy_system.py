@@ -1,7 +1,7 @@
 from loguru import logger
 from entitas import Matcher, ExecuteProcessor  # type: ignore
 from typing import final, override
-from components.components import DestroyFlagComponent
+from components.components_v_0_0_1 import DestroyFlagComponent
 from game.tcg_game import TCGGame
 
 

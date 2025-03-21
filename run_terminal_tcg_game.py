@@ -1,4 +1,3 @@
-from typing import Final
 from loguru import logger
 import datetime
 from dataclasses import dataclass
@@ -10,10 +9,12 @@ from models.v_0_0_1 import Boot, World
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from extended_systems.lang_serve_system import LangServeSystem
 from player.player_proxy import PlayerProxy
-
-# from rpg_models.player_models import PlayerProxyModel
-import game.tcg_game_utils
-from player.player_command import PlayerCommand2
+from game.tcg_game_demo import (
+    create_demo_world,
+    stage_heros_camp_instance,
+    stage_dungeon_cave_instance,
+)
+from player.player_command import PlayerCommand
 from extended_systems.combat_system import CombatSystem
 
 
@@ -65,7 +66,7 @@ async def run_game(option: OptionParameters) -> None:
     assert users_world_runtime_dir.exists()
 
     # todo
-    game.tcg_game_utils.create_test_world(game_name, "0.0.1")
+    create_demo_world(game_name, "0.0.1")
 
     # 创建游戏的根文件是否存在。
     world_boot_file_path = game.tcg_game_config.GEN_WORLD_DIR / f"{game_name}.json"
@@ -135,12 +136,9 @@ async def run_game(option: OptionParameters) -> None:
     terminal_tcg_game.player = PlayerProxy(name=user_name)
 
     if option.new_game:
-        if not terminal_tcg_game.ready():
+        if not terminal_tcg_game.is_player_ready():
             logger.error(f"游戏准备失败 = {game_name}")
             exit(1)
-
-    # 测试
-    test_dungeon_name: Final[str] = "场景.洞窟"
 
     # 核心循环
     while True:
@@ -148,9 +146,9 @@ async def run_game(option: OptionParameters) -> None:
         # 加一个描述。
         game_state_desc = "未知状态"
         if terminal_tcg_game.current_game_state == TCGGameState.HOME:
-            game_state_desc = "营地"
+            game_state_desc = f"营地/{stage_heros_camp_instance.name}"
         elif terminal_tcg_game.current_game_state == TCGGameState.DUNGEON:
-            game_state_desc = f"地下城/{test_dungeon_name}"
+            game_state_desc = f"地下城/{stage_dungeon_cave_instance.name}"
 
         usr_input = input(f"[{terminal_tcg_game.player.name}/{game_state_desc}]:")
 
@@ -161,12 +159,16 @@ async def run_game(option: OptionParameters) -> None:
 
         elif usr_input == "/b":
 
-            if not terminal_tcg_game.combat_system.has_combat(test_dungeon_name):
+            if not terminal_tcg_game.combat_system.has_combat(
+                stage_dungeon_cave_instance.name
+            ):
                 logger.info(f"玩家输入 = {usr_input}, 开始战斗！")
-                terminal_tcg_game.combat_system.start_new_combat(test_dungeon_name)
+                terminal_tcg_game.combat_system.start_new_combat(
+                    stage_dungeon_cave_instance.name
+                )
 
-            terminal_tcg_game.player.add_command2(
-                PlayerCommand2(user=terminal_tcg_game.player.name, command=usr_input)
+            terminal_tcg_game.player.add_command(
+                PlayerCommand(user=terminal_tcg_game.player.name, command=usr_input)
             )
 
             await terminal_tcg_game.a_execute()

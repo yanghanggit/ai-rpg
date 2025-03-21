@@ -4,7 +4,7 @@ from overrides import override
 from typing import Any, Dict, List, cast, final
 from game.tcg_game import TCGGame
 from extended_systems.combat_system import CombatState, CombatResult
-from components.components import ActorComponent, HeroActorFlagComponent
+from components.components_v_0_0_1 import ActorComponent, HeroActorFlagComponent
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from extended_systems.chat_request_handler import ChatRequestHandler
 

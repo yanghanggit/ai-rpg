@@ -4,7 +4,10 @@ from extended_systems.chat_request_handler import ChatRequestHandler
 from entitas import ExecuteProcessor, Entity  # type: ignore
 from typing import Dict, Final, List, Set, final, override
 from game.tcg_game import TCGGame
-from components.components import StageEnvironmentComponent, CombatAttributesComponent
+from components.components_v_0_0_1 import (
+    StageEnvironmentComponent,
+    CombatAttributesComponent,
+)
 import format_string.json_format
 from extended_systems.combat_system import CombatState
 from models.v_0_0_1 import Effect
@@ -46,7 +49,7 @@ def _generate_prompt(
 ## （场景内）角色信息
 {"\n".join(actors_appearances_info)}
 ## 你的属性（仅在战斗中使用）
-{temp_combat_attr_component.prompt}
+{temp_combat_attr_component.as_prompt}
 ## 输出内容
 1. 状态感受：单段紧凑自述（禁用换行/空行/数字）
 2. 在你身上的持续效果：生成效果列表，包含效果名、效果描述、持续回合数。
@@ -102,7 +105,7 @@ class DungeonCombatInitSystem(ExecuteProcessor):
     def _reset_combat_attributes(self, actor_entities: Set[Entity]) -> None:
 
         for actor_entity in actor_entities:
-            self._game.setup_temp_combat_attributes(actor_entity)
+            self._game.setup_combat_attributes(actor_entity)
 
     ###################################################################################################################################################################
     async def _process_chat_requests(self, actor_entities: Set[Entity]) -> None:
@@ -193,7 +196,7 @@ class DungeonCombatInitSystem(ExecuteProcessor):
             )
 
             # 效果更新
-            self._game.refresh_combat_effects(entity2, format_response.effects)
+            self._game.update_combat_effects(entity2, format_response.effects)
 
             # 添加提示词上下文。
             self._game.append_human_message(

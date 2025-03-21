@@ -10,7 +10,7 @@ from models.v_0_0_1 import (
 )
 import game.tcg_game_config
 from typing import Final
-from game.tcg_game_helper import (
+from game.tcg_game_demo_utils import (
     EPOCH_SCRIPT,
     _comple_actor_system_prompt,
     _comple_stage_system_prompt,
@@ -190,16 +190,81 @@ world_system_prototype = WorldSystemPrototype(
         world_system_profile="你是战斗系统。",
     ),
 )
+#######################################################################################################################################
+#######################################################################################################################################
+#######################################################################################################################################
+world_system_instance = _create_world_system_instance(
+    name=world_system_prototype.name,
+    world_system=world_system_prototype,
+    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
+)
+#######################################################################################################################################
+#######################################################################################################################################
+#######################################################################################################################################
+actor_warrior_instance = _create_actor_instance(
+    name=actor_warrior_prototype.name,
+    actor_prototype=actor_warrior_prototype,
+    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
+    attributes=BaseAttributes(strength=15, dexterity=9, wisdom=6),
+)
+#######################################################################################################################################
+#######################################################################################################################################
+#######################################################################################################################################
+actor_wizard_instance = _create_actor_instance(
+    name=actor_wizard_prototype.name,
+    actor_prototype=actor_wizard_prototype,
+    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
+    attributes=BaseAttributes(strength=4, dexterity=7, wisdom=18),
+)
+#######################################################################################################################################
+#######################################################################################################################################
+#######################################################################################################################################
+actor_goblin_instance = _create_actor_instance(
+    name="角色.怪物.哥布林-拉格",
+    actor_prototype=actor_goblin_prototype,
+    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
+    attributes=BaseAttributes(strength=5, dexterity=12, wisdom=5),
+)
+actor_goblin_instance.base_attributes.hp = 1  # 测试直接打死。
+#######################################################################################################################################
+#######################################################################################################################################
+#######################################################################################################################################
+actor_orcs_instance = _create_actor_instance(
+    name="角色.怪物.兽人-库洛斯",
+    actor_prototype=actor_orcs_prototype,
+    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
+    attributes=BaseAttributes(strength=18, dexterity=6, wisdom=4),
+)
+#######################################################################################################################################
+#######################################################################################################################################
+#######################################################################################################################################
+stage_heros_camp_instance = _create_stage_instance(
+    name=stage_heros_camp_prototype.name,
+    stage=stage_heros_camp_prototype,
+    kick_off_message="营火静静地燃烧着。据消息附近的洞窟里出现了怪物，需要冒险者前去调查。",
+    actors=[],
+)
+#######################################################################################################################################
+#######################################################################################################################################
+#######################################################################################################################################
+# 创建实例：场景.密室
+stage_dungeon_cave_instance = _create_stage_instance(
+    name=stage_dungeon_cave_prototype.name,
+    stage=stage_dungeon_cave_prototype,
+    kick_off_message="洞穴中十分吵闹。",
+    actors=[
+        actor_warrior_instance,
+        actor_wizard_instance,
+        actor_goblin_instance,
+        # actor_orcs_instance,
+    ],
+)
 
 
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
-def test_world1(world_boot: Boot) -> Boot:
-
-    # 初始化数据
-    # 世界剧本
-    world_boot.epoch_script = EPOCH_SCRIPT
+def _build_world(world_boot: Boot) -> Boot:
 
     # 构建基础角色数据
     _initialize_data_base(
@@ -214,82 +279,6 @@ def test_world1(world_boot: Boot) -> Boot:
         [stage_heros_camp_prototype, stage_dungeon_cave_prototype],
         [world_system_prototype],
     )
-
-    world_system_instance = _create_world_system_instance(
-        world_boot=world_boot,
-        name=world_system_prototype.name,
-        world_system=world_system_prototype,
-        kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
-    )
-
-    # 创建实例：角色.战士.凯尔
-    actor_warrior_instance = _create_actor_instance(
-        world_boot=world_boot,
-        name=actor_warrior_prototype.name,
-        actor_prototype=actor_warrior_prototype,
-        kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
-        attributes=BaseAttributes(strength=15, dexterity=9, wisdom=6),
-    )
-
-    # 创建实例：角色.法师.露西
-    actor_wizard_instance = _create_actor_instance(
-        world_boot=world_boot,
-        name=actor_wizard_prototype.name,
-        actor_prototype=actor_wizard_prototype,
-        kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
-        attributes=BaseAttributes(strength=4, dexterity=7, wisdom=18),
-    )
-
-    # 创建实例：角色.怪物.哥布林-拉格
-    actor_goblin_instance = _create_actor_instance(
-        world_boot=world_boot,
-        name="角色.怪物.哥布林-拉格",
-        actor_prototype=actor_goblin_prototype,
-        kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
-        attributes=BaseAttributes(strength=5, dexterity=12, wisdom=5),
-    )
-    actor_goblin_instance.base_attributes.hp = 1  # 测试直接打死。
-
-    # 创建实例：角色.怪物.兽人-库洛斯
-    actor_orcs_instance = _create_actor_instance(
-        world_boot=world_boot,
-        name="角色.怪物.兽人-库洛斯",
-        actor_prototype=actor_orcs_prototype,
-        kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
-        attributes=BaseAttributes(strength=18, dexterity=6, wisdom=4),
-    )
-
-    # 创建实例：场景.营地，添加角色
-    stage_heros_camp_instance = _create_stage_instance(
-        world_boot=world_boot,
-        name=stage_heros_camp_prototype.name,
-        stage=stage_heros_camp_prototype,
-        kick_off_message="营火静静地燃烧着。据消息附近的洞窟里出现了怪物，需要冒险者前去调查。",
-        actors=[],
-    )
-
-    # 创建实例：场景.密室
-    stage_dungeon_cave_instance = _create_stage_instance(
-        world_boot=world_boot,
-        name=stage_dungeon_cave_prototype.name,
-        stage=stage_dungeon_cave_prototype,
-        kick_off_message="洞穴中十分吵闹。",
-        actors=[
-            actor_warrior_instance,
-            actor_wizard_instance,
-            actor_goblin_instance,
-            # actor_orcs_instance,
-        ],
-    )
-
-    # 链接实例
-    # _link_instance(
-    #     world_boot,
-    #     [actor_warrior_instance],
-    #     [actor_wizard_instance, actor_goblin_instance, actor_orcs_instance],
-    #     [stage_heros_camp_instance, stage_dungeon_cave_instance],
-    #     [world_system_instance],
-    # )
 
     # 链接实例
     _link_instance(
@@ -306,10 +295,10 @@ def test_world1(world_boot: Boot) -> Boot:
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
-def create_test_world(game_name: str, version: str) -> Boot:
+def create_demo_world(game_name: str, version: str) -> Boot:
 
     world_boot = Boot(name=game_name, version=version)
-    test_world1(world_boot)
+    _build_world(world_boot)
 
     try:
         write_path = game.tcg_game_config.GEN_WORLD_DIR / f"{game_name}.json"

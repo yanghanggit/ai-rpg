@@ -1,6 +1,10 @@
-from typing import NamedTuple, List, final
+from typing import Final, NamedTuple, List, final
 from components.registry import register_component_class
 from models.v_0_0_1 import Skill, Effect
+
+
+# 注意，不允许动！
+SCHEMA_VERSION: Final[str] = "0.0.1"
 
 
 # 全局唯一标识符
@@ -175,7 +179,7 @@ class CombatAttributesComponent(NamedTuple):
     magic_defense: float
 
     @property
-    def prompt(self) -> str:
+    def as_prompt(self) -> str:
         return f"""- 当前生命：{self.hp}
 - 最大生命：{self.max_hp}
 - 物理攻击：{self.physical_attack}
@@ -191,6 +195,18 @@ class CombatAttributesComponent(NamedTuple):
 class CombatEffectsComponent(NamedTuple):
     name: str
     effects: List[Effect]
+
+    @property
+    def as_prompt(self) -> str:
+        ret = "- 无"
+        if len(self.effects) > 0:
+            ret = "\n".join(
+                [
+                    f"- {effect.name}: {effect.description} (剩余{effect.rounds}回合)"
+                    for effect in self.effects
+                ]
+            )
+        return ret
 
 
 ############################################################################################################

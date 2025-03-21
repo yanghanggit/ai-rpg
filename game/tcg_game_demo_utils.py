@@ -142,15 +142,11 @@ def _initialize_data_base(
 
 #######################################################################################################################################
 def _create_actor_instance(
-    world_boot: Boot,
     name: str,
     actor_prototype: ActorPrototype,
     kick_off_message: str,
     attributes: BaseAttributes,
 ) -> ActorInstance:
-
-    if actor_prototype.name not in world_boot.data_base.actors:
-        assert False, f"Actor {actor_prototype.name} not found in data base."
 
     global GUID_INDEX
     GUID_INDEX += 1
@@ -172,15 +168,11 @@ def _create_actor_instance(
 
 #######################################################################################################################################
 def _create_stage_instance(
-    world_boot: Boot,
     name: str,
     stage: StagePrototype,
     kick_off_message: str,
     actors: List[ActorInstance] = [],
 ) -> StageInstance:
-
-    if stage.name not in world_boot.data_base.stages:
-        assert False, f"Stage {stage.name} not found in data base."
 
     global GUID_INDEX
     GUID_INDEX += 1
@@ -198,14 +190,10 @@ def _create_stage_instance(
 
 #######################################################################################################################################
 def _create_world_system_instance(
-    world_boot: Boot,
     name: str,
     world_system: WorldSystemPrototype,
     kick_off_message: str,
 ) -> WorldSystemInstance:
-
-    if world_system.name not in world_boot.data_base.world_systems:
-        assert False, f"World System {world_system.name} not found in data base."
 
     global GUID_INDEX
     GUID_INDEX += 1
@@ -230,6 +218,23 @@ def _link_instance(
     world_boot.actors.extend(actors)
     world_boot.stages.extend(stages)
     world_boot.world_systems.extend(world_systems)
+
+    for player in players:
+        assert (
+            player.prototype in world_boot.data_base.actors
+        ), f"Actor {player.prototype} not found in data base."
+    for actor in actors:
+        assert (
+            actor.prototype in world_boot.data_base.actors
+        ), f"Actor {actor.prototype} not found in data base."
+    for stage in stages:
+        assert (
+            stage.prototype in world_boot.data_base.stages
+        ), f"Stage {stage.prototype} not found in data base."
+    for world_system in world_systems:
+        assert (
+            world_system.prototype in world_boot.data_base.world_systems
+        ), f"World System {world_system.prototype} not found in data base."
 
     # 检查players 与 actors是否有重复
     for player in players:

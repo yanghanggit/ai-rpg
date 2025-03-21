@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class PlayerCommand2:
+class PlayerCommand:
     user: str = ""
     command: str = "/command"
 

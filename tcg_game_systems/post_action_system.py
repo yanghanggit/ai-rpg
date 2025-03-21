@@ -2,7 +2,7 @@ from entitas import ExecuteProcessor, Matcher  # type: ignore
 from typing import Final, FrozenSet, NamedTuple, final, override
 from game.tcg_game import TCGGame
 from components.registry import ACTIONS_REGISTRY_2
-from components.components import EnterStageFlagComponent
+from components.components_v_0_0_1 import EnterStageFlagComponent
 
 
 @final

@@ -3,7 +3,7 @@ from overrides import override
 from typing import final, Set
 from game.tcg_game import TCGGame
 import random
-from components.components import (
+from components.components_v_0_0_1 import (
     ActorComponent,
     ActorPlanningPermitFlagComponent,
     EnterStageFlagComponent,

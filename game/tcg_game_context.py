@@ -1,12 +1,11 @@
 from entitas import Context, Entity, Matcher  # type: ignore
 from typing import Optional, List, Set, override, Dict
 from models.v_0_0_1 import ComponentSnapshot, EntitySnapshot
-from components.components import (
+from components.components_v_0_0_1 import (
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
     GUIDComponent,
-    # HeroActorFlagComponent,
     AppearanceComponent,
     PlayerActorFlagComponent,
 )
@@ -20,6 +19,9 @@ from loguru import logger
 这些事情大多数是“检索”，以及不影响状态的调用，例如组织场景与角色的映射。
 有2件比较关键的事，存储与复位。
 """
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
 
 
 class TCGGameContext(Context):

@@ -10,7 +10,8 @@ from tcg_models.v_0_0_1 import Boot, World
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from extended_systems.lang_serve_system import LangServeSystem
 from player.player_proxy import PlayerProxy
-from rpg_models.player_models import PlayerProxyModel
+
+# from rpg_models.player_models import PlayerProxyModel
 import game.tcg_game_utils
 from player.player_command2 import PlayerCommand2
 from extended_systems.combat_system import CombatSystem
@@ -131,7 +132,7 @@ async def run_game(option: OptionParameters) -> None:
         terminal_tcg_game.restore_entities().save()
 
     # 加入玩家的数据结构
-    terminal_tcg_game.player = PlayerProxy(PlayerProxyModel(name=user_name))
+    terminal_tcg_game.player = PlayerProxy(name=user_name)
 
     if option.new_game:
         if not terminal_tcg_game.ready():

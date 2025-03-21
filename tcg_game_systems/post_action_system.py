@@ -1,11 +1,8 @@
 from entitas import ExecuteProcessor, Matcher  # type: ignore
-from typing import final, override
-from components.actions import (
-    STAGE_AVAILABLE_ACTIONS_REGISTER,
-    ACTOR_AVAILABLE_ACTIONS_REGISTER,
-)
-from typing import final, override, FrozenSet, NamedTuple
+from typing import Final, FrozenSet, NamedTuple, final, override
 from game.tcg_game import TCGGame
+from components.registry import ACTIONS_REGISTRY_2
+from components.components import EnterStageFlagComponent
 
 
 @final
@@ -18,10 +15,28 @@ class PostActionSystem(ExecuteProcessor):
     ############################################################################################################
     @override
     def execute(self) -> None:
-        self._clear_actions(
-            (ACTOR_AVAILABLE_ACTIONS_REGISTER | STAGE_AVAILABLE_ACTIONS_REGISTER)
+
+        self._clear_enter_flag()
+
+        actions_set: Final[FrozenSet[type[NamedTuple]]] = frozenset(
+            ACTIONS_REGISTRY_2.values()
         )
-        self._test()
+        self._clear_actions(actions_set)
+        self._test(actions_set)
+
+    ############################################################################################################
+    def _clear_enter_flag(self) -> None:
+        entities = self._game.get_group(
+            Matcher(
+                all_of=[
+                    EnterStageFlagComponent,
+                ],
+            )
+        ).entities.copy()
+
+        # 最后的清理，不要这个
+        for entity2 in entities:
+            entity2.remove(EnterStageFlagComponent)
 
     ############################################################################################################
     def _clear_actions(self, registered_actions: FrozenSet[type[NamedTuple]]) -> None:
@@ -34,19 +49,23 @@ class PostActionSystem(ExecuteProcessor):
                     entity.remove(action_class)
 
     ############################################################################################################
-    def _test(self) -> None:
-        stage_entities = self._game.get_group(
-            Matcher(any_of=STAGE_AVAILABLE_ACTIONS_REGISTER)
+    def _test(self, registered_actions: FrozenSet[type[NamedTuple]]) -> None:
+
+        # 动作必须被清理掉。
+        entities1 = self._game.get_group(Matcher(any_of=registered_actions)).entities
+        assert len(entities1) == 0, f"entities with actions: {entities1}"
+
+        # EnterStageFlagComponent必须被清理掉。
+        entities2 = self._game.get_group(
+            Matcher(
+                all_of=[
+                    EnterStageFlagComponent,
+                ],
+            )
         ).entities
         assert (
-            len(stage_entities) == 0
-        ), f"Stage entities with actions: {stage_entities}"
-        actor_entities = self._game.get_group(
-            Matcher(any_of=ACTOR_AVAILABLE_ACTIONS_REGISTER)
-        ).entities
-        assert (
-            len(actor_entities) == 0
-        ), f"Actor entities with actions: {actor_entities}"
+            len(entities2) == 0
+        ), f"entities with EnterStageFlagComponent: {entities2}"
 
 
 ############################################################################################################

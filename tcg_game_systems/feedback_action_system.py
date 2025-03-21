@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
-from agent.chat_request_handler import ChatRequestHandler
+from extended_systems.chat_request_handler import ChatRequestHandler
 from overrides import override
 from typing import List, Tuple, final
 from loguru import logger

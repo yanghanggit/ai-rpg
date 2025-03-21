@@ -12,7 +12,7 @@ from components.components import (
 from typing import Set, final, List
 from game.tcg_game import TCGGame
 from loguru import logger
-from agent.chat_request_handler import ChatRequestHandler
+from extended_systems.chat_request_handler import ChatRequestHandler
 
 
 ###############################################################################################################################################

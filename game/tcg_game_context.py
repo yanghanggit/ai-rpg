@@ -7,7 +7,7 @@ from components.components import (
     ActorComponent,
     GUIDComponent,
     # HeroActorFlagComponent,
-    FinalAppearanceComponent,
+    AppearanceComponent,
     PlayerActorFlagComponent,
 )
 
@@ -196,9 +196,9 @@ class TCGGameContext(Context):
     ) -> Dict[str, str]:
         ret: Dict[str, str] = {}
         for actor in self.retrieve_actors_on_stage(entity):
-            if actor.has(FinalAppearanceComponent):
-                final_appearance = actor.get(FinalAppearanceComponent)
-                ret.setdefault(final_appearance.name, final_appearance.final_appearance)
+            if actor.has(AppearanceComponent):
+                final_appearance = actor.get(AppearanceComponent)
+                ret.setdefault(final_appearance.name, final_appearance.appearance)
         return ret
 
     ###############################################################################################################################################

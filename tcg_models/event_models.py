@@ -20,29 +20,6 @@ class AgentEvent(BaseEvent):
 # 以下是一些具体的事件-------------------------------------------------------------
 
 
-# 这个事件是用来更新外观的
-@final
-class UpdateAppearanceEvent(AgentEvent):
-    pass
-
-
-# 这个事件是用来通知进入场景的
-@final
-class PreStageExitEvent(AgentEvent):
-    pass
-
-
-@final
-class PostStageEnterEvent(AgentEvent):
-    pass
-
-
-# 这个事件是用来通知更新档案的。
-@final
-class UpdateArchiveEvent(AgentEvent):
-    pass
-
-
 # 广播内容事件
 @final
 class AnnounceEvent(AgentEvent):
@@ -65,15 +42,3 @@ class WhisperEvent(AgentEvent):
     whisperer_name: str
     target_name: str
     content: str
-
-
-# 每一个游戏回合通知到
-@final
-class GameRoundEvent(AgentEvent):
-    pass
-
-
-#
-@final
-class StageTagEvent(AgentEvent):
-    stage_tags: List[str]

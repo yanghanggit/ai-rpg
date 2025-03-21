@@ -1,11 +1,6 @@
-from entitas import ExecuteProcessor, Matcher  # type: ignore
+from entitas import ExecuteProcessor  # type: ignore
 from typing import final, override
 from game.tcg_game import TCGGame
-from components.components import EnterStageFlagComponent, ActorComponent
-from components.actions2 import (
-    StatusUpdateAction,
-    DEFAULT_NULL_ACTION,
-)
 
 
 @final
@@ -17,19 +12,6 @@ class PreDungeonStateSystem(ExecuteProcessor):
     ###################################################################################################################################################################
     @override
     def execute(self) -> None:
-
-        entities = self._game.get_group(
-            Matcher(
-                all_of=[
-                    EnterStageFlagComponent,
-                ],
-            )
-        ).entities
-
-        # 这个pass，添加动作。
-        for entity1 in entities:
-            # 添加这个动作。
-            assert not entity1.has(StatusUpdateAction)
-            entity1.replace(StatusUpdateAction, DEFAULT_NULL_ACTION)
+        pass
 
     ###################################################################################################################################################################

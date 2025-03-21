@@ -1,23 +1,6 @@
-from typing import Dict, Final, NamedTuple, final, List
-from pydantic import BaseModel
+from typing import Dict, NamedTuple, final, List
 from components.registry import register_action_class_2
 from tcg_models.v_0_0_1 import Skill
-
-
-class NullActionModel(BaseModel):
-    name: str = "null"
-
-
-DEFAULT_NULL_ACTION: Final[NullActionModel] = NullActionModel()
-############################################################################################################
-
-
-############################################################################################################
-# 更新状态
-@final
-@register_action_class_2
-class StatusUpdateAction(NamedTuple):
-    base_model: BaseModel
 
 
 ############################################################################################################

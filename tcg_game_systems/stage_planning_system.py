@@ -1,6 +1,6 @@
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from pydantic import BaseModel
-from agent.chat_request_handler import ChatRequestHandler
+from extended_systems.chat_request_handler import ChatRequestHandler
 from components.components import (
     StageEnvironmentComponent,
     StagePlanningPermitFlagComponent,

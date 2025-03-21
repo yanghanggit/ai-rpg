@@ -1,7 +1,7 @@
 from entitas import Entity  # type: ignore
 from typing import Dict, List, Set, Union, final
 from components.components import StageComponent, ActorComponent
-from agent.chat_request_handler import ChatRequestHandler
+from extended_systems.chat_request_handler import ChatRequestHandler
 from loguru import logger
 from pydantic import BaseModel
 import format_string.json_format

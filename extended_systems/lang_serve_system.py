@@ -5,7 +5,7 @@ from typing import List, Any
 from loguru import logger
 import asyncio
 import time
-from agent.chat_request_handler import ChatRequestHandler
+from extended_systems.chat_request_handler import ChatRequestHandler
 
 
 class LangServeSystem:

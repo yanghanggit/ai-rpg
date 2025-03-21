@@ -6,7 +6,7 @@ from game.tcg_game import TCGGame
 from extended_systems.combat_system import CombatState, CombatResult
 from components.components import ActorComponent, HeroActorFlagComponent
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from agent.chat_request_handler import ChatRequestHandler
+from extended_systems.chat_request_handler import ChatRequestHandler
 
 
 #######################################################################################################################################

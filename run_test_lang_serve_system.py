@@ -1,6 +1,6 @@
 from typing import List, Dict, Union
 from extended_systems.lang_serve_system import LangServeSystem
-from agent.chat_request_handler import ChatRequestHandler
+from extended_systems.chat_request_handler import ChatRequestHandler
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 

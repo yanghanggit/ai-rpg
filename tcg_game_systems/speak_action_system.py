@@ -1,7 +1,7 @@
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
 from typing import final, override
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
-from rpg_models.event_models import AgentEvent, SpeakEvent
+from tcg_models.event_models import AgentEvent, SpeakEvent
 from game.tcg_game import ConversationError
 from components.actions2 import SpeakAction2
 

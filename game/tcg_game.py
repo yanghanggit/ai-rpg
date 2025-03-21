@@ -6,7 +6,7 @@ from loguru import logger
 from game.tcg_game_context import TCGGameContext
 from game.base_game import BaseGame
 from game.tcg_game_process_pipeline import TCGGameProcessPipeline
-from rpg_models.event_models import BaseEvent
+from tcg_models.event_models import BaseEvent
 from tcg_models.v_0_0_1 import (
     Effect,
     World,
@@ -26,7 +26,7 @@ from components.components import (
     GUIDComponent,
     SystemMessageComponent,
     KickOffMessageComponent,
-    FinalAppearanceComponent,
+    AppearanceComponent,
     StageEnvironmentComponent,
     HomeStageFlagComponent,
     DungeonStageFlagComponent,
@@ -41,9 +41,22 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from extended_systems.lang_serve_system import LangServeSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
-import rpg_game_systems.prompt_utils
-from rpg_models.event_models import AgentEvent
+from tcg_models.event_models import AgentEvent
 from extended_systems.combat_system import CombatSystem
+
+
+# ################################################################################################################################################
+def _replace_with_you(input_text: str, your_name: str) -> str:
+
+    if len(input_text) == 0 or your_name not in input_text:
+        return input_text
+
+    at_name = f"@{your_name}"
+    if at_name in input_text:
+        # 如果有@名字，就略过
+        return input_text
+
+    return input_text.replace(your_name, "你")
 
 
 ###############################################################################################################################################
@@ -95,7 +108,7 @@ class TCGGame(BaseGame, TCGGameContext):
         )
 
         # 玩家
-        self._player: PlayerProxy = PlayerProxy()
+        self._player: PlayerProxy = PlayerProxy(name="")
 
         # agent 系统
         self._langserve_system: LangServeSystem = langserve_system
@@ -209,11 +222,6 @@ class TCGGame(BaseGame, TCGGameContext):
             processor.clear_reactive_processors()
 
         logger.info(f"{self._name}, game over!!!!!!!!!!!!!!!!!!!!")
-
-    ###############################################################################################################################################
-    @override
-    def send_message(self, player_proxy_names: Set[str], send_event: BaseEvent) -> None:
-        pass
 
     ###############################################################################################################################################
     def build_entities(self) -> "TCGGame":
@@ -361,9 +369,7 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
             # 必要组件：外观
-            actor_entity.add(
-                FinalAppearanceComponent, instance.name, prototype.appearance
-            )
+            actor_entity.add(AppearanceComponent, instance.name, prototype.appearance)
 
             # 必要组件：类型标记
             match prototype.type:
@@ -560,9 +566,7 @@ class TCGGame(BaseGame, TCGGameContext):
         for entity in entities:
 
             # 针对agent的事件通知。
-            replace_message = rpg_game_systems.prompt_utils.replace_with_you(
-                agent_event.message, entity._name
-            )
+            replace_message = _replace_with_you(agent_event.message, entity._name)
             self.append_human_message(entity, replace_message)
             logger.warning(f"事件通知 => {entity._name}:\n{replace_message}")
 

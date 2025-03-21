@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from loguru import logger
 from services.game_server_instance import GameServerInstance
-from rpg_models.api_models import (
+from tcg_models.api_models import (
     APIEndpointConfiguration,
     APIEndpointConfigurationRequest,
     APIEndpointConfiguratioResponse,

@@ -1,12 +1,12 @@
 from pydantic import BaseModel
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
-from agent.chat_request_handler import ChatRequestHandler
+from extended_systems.chat_request_handler import ChatRequestHandler
 from overrides import override
 from typing import Final, List, NamedTuple, final
 from loguru import logger
 from components.actions2 import DirectorAction2, FeedbackAction2
 from extended_systems.combat_system import CombatState
-from rpg_models.event_models import AgentEvent
+from tcg_models.event_models import AgentEvent
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from tcg_models.v_0_0_1 import Skill
 from components.components import CombatAttributesComponent, CombatEffectsComponent

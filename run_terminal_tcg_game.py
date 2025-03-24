@@ -169,6 +169,8 @@ async def run_game(option: UserRuntimeOptions) -> None:
             logger.error(f"游戏准备失败 = {option.game}")
             exit(1)
 
+    run_home_once = False
+
     # 进入核心循环
     while True:
 
@@ -205,23 +207,32 @@ async def run_game(option: UserRuntimeOptions) -> None:
                 )
 
             # 执行一次！！！！！
-            terminal_game.player.add_command(
-                PlayerCommand(user=terminal_game.player.name, command=usr_input)
-            )
-            await terminal_game.a_execute()
+            await _execute_terminal_game(terminal_game, usr_input)
 
         elif usr_input == "/h":
+
             if terminal_game.current_game_state != TCGGameState.HOME:
                 logger.error(f"{usr_input} 只能在营地中使用")
                 continue
 
             # 执行一次！！！！！
-            terminal_game.player.add_command(
-                PlayerCommand(user=terminal_game.player.name, command=usr_input)
-            )
-            await terminal_game.a_execute()
+            run_home_once = True
+            await _execute_terminal_game(terminal_game, usr_input)
+
+        elif usr_input == "/p":
+
+            if terminal_game.current_game_state != TCGGameState.HOME:
+                logger.error(f"{usr_input} 只能在营地中使用")
+                continue
+
+            if not run_home_once:
+                logger.error(f"{usr_input} 至少要执行一次 /h，才能准备传送战斗！")
+                continue
+
+            logger.info(f"玩家输入 = {usr_input}, 准备传送")
 
         else:
+
             logger.error(
                 f"玩家输入 = {usr_input}, 目前不做任何处理，不在处理范围内！！！！！"
             )
@@ -234,6 +245,21 @@ async def run_game(option: UserRuntimeOptions) -> None:
     logger.error(f"游戏退出 = {terminal_game.player.name}")
     terminal_game.exit()
     exit(0)
+
+
+###############################################################################################################################################
+async def _execute_terminal_game(
+    terminal_game: TerminalTCGGame, usr_input: str
+) -> None:
+
+    assert terminal_game.player.name != ""
+    logger.info(f"玩家输入: {terminal_game.player.name} = {usr_input}")
+
+    # 执行一次！！！！！
+    terminal_game.player.add_command(
+        PlayerCommand(user=terminal_game.player.name, command=usr_input)
+    )
+    await terminal_game.a_execute()
 
 
 ###############################################################################################################################################

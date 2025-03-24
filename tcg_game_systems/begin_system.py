@@ -2,8 +2,6 @@ from entitas import ExecuteProcessor  # type: ignore
 from typing import final, override
 from game.tcg_game import TCGGame
 
-# from loguru import logger
-
 
 @final
 class BeginSystem(ExecuteProcessor):

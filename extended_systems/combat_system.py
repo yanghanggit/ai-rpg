@@ -11,8 +11,10 @@ class CombatPhase(IntEnum):
     PREPARATION = (1,)  # 初始化，需要同步一些数据与状态
     ONGOING = (2,)  # 运行中，不断进行战斗推理
     COMPLETE = 3  # 结束，需要进行结算
+    POST_WAIT = 4  # 战斗等待进入新一轮战斗或者回家
 
 
+###############################################################################################################################################
 # 表示战斗的状态
 @final
 @unique
@@ -69,13 +71,29 @@ class Combat:
     def begin_combat(self) -> None:
         assert self._phase == CombatPhase.PREPARATION
         self._phase = CombatPhase.ONGOING
+        assert self._result == CombatResult.NONE
 
     ###############################################################################################################################################
     def end_combat(self, result: CombatResult) -> None:
+
+        # 设置战斗结束阶段！
         assert self._phase == CombatPhase.ONGOING
         assert self.is_on_going, "战斗已经结束"
         self._phase = CombatPhase.COMPLETE
+
+        # 设置战斗结果！
+        assert result == CombatResult.HERO_WIN or result == CombatResult.HERO_LOSE
+        assert self._result == CombatResult.NONE
         self._result = result
+
+    ###############################################################################################################################################
+    def post_combat_wait(self) -> None:
+        assert self._phase == CombatPhase.COMPLETE
+        self._phase = CombatPhase.POST_WAIT
+        assert (
+            self._result == CombatResult.HERO_WIN
+            or self._result == CombatResult.HERO_LOSE
+        )
 
     ###############################################################################################################################################
     def begin_new_round(self) -> Round:
@@ -113,6 +131,11 @@ class Combat:
         return self._phase == CombatPhase.PREPARATION
 
     ###############################################################################################################################################
+    @property
+    def is_post_wait(self) -> bool:
+        return self._phase == CombatPhase.POST_WAIT
+
+    ###############################################################################################################################################
 
 
 # 全局变量：空的战斗
@@ -125,6 +148,11 @@ class CombatSystem:
 
     def __init__(self) -> None:
         self._combats: List[Combat] = []
+
+    ########################################################################################################################
+    @property
+    def combats(self) -> List[Combat]:
+        return self._combats
 
     ########################################################################################################################
     def start_new_combat(self, name: str) -> None:

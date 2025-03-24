@@ -1,4 +1,5 @@
 from enum import Enum, IntEnum, unique
+import shutil
 from entitas import Entity, Matcher  # type: ignore
 from typing import Any, Final, Set, List, Optional, final
 from overrides import override
@@ -260,15 +261,17 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 保存聊天记录和boot
         if verbose:
+            # 保存实体快照
+            self._verbose_entities_snapshot()
             # 保存聊天记录
-            self._save_chat_history()
+            self._verbose_chat_history()
             # 保存boot
-            self._save_boot()
+            self._verbose_boot()
 
         return self
 
     ###############################################################################################################################################
-    def _save_chat_history(self) -> None:
+    def _verbose_chat_history(self) -> None:
 
         chat_history_dir = self.world_file_dir / "chat_history"
         chat_history_dir.mkdir(parents=True, exist_ok=True)
@@ -280,7 +283,7 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
     ###############################################################################################################################################
-    def _save_boot(self) -> None:
+    def _verbose_boot(self) -> None:
         boot_dir = self.world_file_dir / "boot"
         boot_dir.mkdir(parents=True, exist_ok=True)
 
@@ -292,6 +295,24 @@ class TCGGame(BaseGame, TCGGameContext):
         for stage in self.world.boot.stages:
             stage_path = boot_dir / f"{stage.name}.json"
             stage_path.write_text(stage.model_dump_json(), encoding="utf-8")
+
+    ###############################################################################################################################################
+    def _verbose_entities_snapshot(self) -> None:
+        entities_snapshot_dir = self.world_file_dir / "entities_snapshot"
+        # 强制删除一次
+        if entities_snapshot_dir.exists():
+            shutil.rmtree(entities_snapshot_dir)
+        # 创建目录
+        entities_snapshot_dir.mkdir(parents=True, exist_ok=True)
+        assert entities_snapshot_dir.exists()
+
+        for entity_snapshot in self.world.entities_snapshot:
+            entity_snapshot_path = (
+                entities_snapshot_dir / f"{entity_snapshot.name}.json"
+            )
+            entity_snapshot_path.write_text(
+                entity_snapshot.model_dump_json(), encoding="utf-8"
+            )
 
     ###############################################################################################################################################
     def _create_world_system_entities(
@@ -752,5 +773,57 @@ magic_defense: {magic_defense}"""
         entity.replace(
             CombatEffectsComponent, combat_effects_comp.name, current_effects
         )
+
+    ###############################################################################################################################################
+    # TODO!!! 临时测试准备传送！！！
+    def dungeon_stage_transition(
+        self, trans_message: str, dungeon_stage: StageInstance
+    ) -> None:
+
+        stage_entity = self.get_stage_entity(dungeon_stage.name)
+        assert stage_entity is not None
+        assert stage_entity.has(DungeonComponent)
+        if stage_entity is None:
+            return
+
+        heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
+        assert len(heros_entities) > 0
+        if len(heros_entities) == 0:
+            logger.error("没有找到英雄!")
+            return
+
+        for hero_entity in heros_entities:
+            # 添加故事
+            logger.info(f"添加故事: {hero_entity._name} => {trans_message}")
+            self.append_human_message(hero_entity, trans_message)
+
+        # 开始传送。
+        self._stage_transition(heros_entities, stage_entity)
+
+    ###############################################################################################################################################
+    # TODO!!! 临时测试准备传送！！！
+    def home_stage_transition(
+        self, trans_message: str, home_stage: StageInstance
+    ) -> None:
+
+        stage_entity = self.get_stage_entity(home_stage.name)
+        assert stage_entity is not None
+        assert stage_entity.has(HomeComponent)
+        if stage_entity is None:
+            return
+
+        heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
+        assert len(heros_entities) > 0
+        if len(heros_entities) == 0:
+            logger.error("没有找到英雄!")
+            return
+
+        for hero_entity in heros_entities:
+            # 添加故事
+            logger.info(f"添加故事: {hero_entity._name} => {trans_message}")
+            self.append_human_message(hero_entity, trans_message)
+
+        # 开始传送。
+        self._stage_transition(heros_entities, stage_entity)
 
     ###############################################################################################################################################

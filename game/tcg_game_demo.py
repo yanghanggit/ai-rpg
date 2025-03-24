@@ -154,7 +154,7 @@ stage_heros_camp_prototype = StagePrototype(
     system_message=_comple_stage_system_prompt(
         name="场景.营地",
         epoch_script=EPOCH_SCRIPT,
-        stage_profile="你是一个建在古代城堡的遗迹之上的临时营地，遗迹四周是一片未开发的原野。营地中有帐篷，营火，仓库等设施，虽然简陋，却也足够让人稍事休息，准备下一次冒险。",
+        stage_profile="你是一个冒险者的临时营地，四周是一片未开发的原野。营地中有帐篷，营火，仓库等设施，虽然简陋，却也足够让人稍事休息，准备下一次冒险。",
     ),
     type=StageType.HOME,
 )
@@ -258,21 +258,23 @@ def _build_world(world_boot: Boot) -> Boot:
     ############################################################
     ############################################################
     # 改变一些数据，例如将角色放入场景 !!!!!!!!!
-
     # 测试直接打死。
-    # actor_goblin_instance.base_attributes.hp = 1
+    actor_goblin_instance.base_attributes.hp = 1
 
     # 角色放入场景，目前只放英雄。
-    participant_actors = [
-        actor_warrior_instance,
-        actor_wizard_instance,
-        # actor_goblin_instance,
-        # actor_orcs_instance,
-    ]
+    for actor1 in [actor_warrior_instance, actor_wizard_instance]:
+        stage_heros_camp_instance.actors.append(actor1.name)
 
-    # 全在营地！
-    for actor in participant_actors:
-        stage_heros_camp_instance.actors.append(actor.name)
+    # 添加一些人物关系做润色。
+    actor_warrior_instance.kick_off_message += (
+        f"""{actor_wizard_instance.name} 是你的同伴。"""
+    )
+    actor_wizard_instance.kick_off_message += (
+        f"""{actor_warrior_instance.name} 是你的同伴。"""
+    )
+
+    for actor2 in [actor_goblin_instance]:
+        stage_dungeon_cave_instance.actors.append(actor2.name)
 
     ############################################################
     ############################################################
@@ -282,8 +284,8 @@ def _build_world(world_boot: Boot) -> Boot:
     _link_instance(
         world_boot,
         [actor_warrior_instance],
-        [actor_wizard_instance],
-        [stage_heros_camp_instance],
+        [actor_wizard_instance, actor_goblin_instance],
+        [stage_heros_camp_instance, stage_dungeon_cave_instance],
         [],
     )
 

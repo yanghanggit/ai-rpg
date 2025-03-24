@@ -25,24 +25,22 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
         latest_combat = self._game.combat_system.latest_combat
-
         if not latest_combat.is_complete:
             # 不是本阶段就直接返回
             return
-
-        if latest_combat.result == CombatResult.HERO_WIN:
-            logger.info("DungeonCombatEndSystem: WIN")
-        elif latest_combat.result == CombatResult.HERO_LOSE:
-            logger.info("DungeonCombatEndSystem: LOSE")
-        else:
-            logger.info("DungeonCombatEndSystem: UNKNOWN")
 
         if (
             latest_combat.result == CombatResult.HERO_WIN
             or latest_combat.result == CombatResult.HERO_LOSE
         ):
+            # 测试，总结战斗结果。
             await self._summarize_combat_result()
-            self._game._will_exit = True
+
+            # 存储一下。
+            self._game.save()
+
+            # TODO, 退出游戏。
+            latest_combat.post_combat_wait()
 
     #######################################################################################################################################
     async def _summarize_combat_result(self) -> None:
@@ -57,10 +55,20 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
         request_handlers: List[ChatRequestHandler] = []
         for entity1 in actor_entities:
 
+            stage_entity = self._game.safe_get_stage_entity(entity1)
+            assert stage_entity is not None
+
             # 生成消息
-            message = """# 战斗结束! 你决定回忆刚刚的战斗过程和记录你的感受。
-输出内容与要求:你的回忆与状态感受，从战斗的开始，过程与结束。
-要求单段紧凑自述（禁用换行/空行/数字）"""
+            message = f"""# 提示！{stage_entity._name} 战斗结束，你决定记录下这次战斗的经历。
+## 输出内容:
+1. 战斗发生的场景。
+2. 你的对手是谁，他们的特点。
+3. 战斗的开始，过程以及如何结束的。
+4. 你的感受，你的状态。
+5. 你的同伴，他们的表现。
+## 输出格式规范:
+第一人称视角。
+要求单段紧凑自述（禁用换行/空行/数字）。"""
 
             # 生成请求处理器
             request_handlers.append(

@@ -62,17 +62,17 @@ def _generate_actor_plan_prompt(
 ## 输出要求
 - 引用角色或场景时，请严格遵守全名机制
 - 所有输出必须为第一人称视角。
-- 不要使用```json```来封装内容。
-### 输出格式(JSON)
+### 输出格式规范
 {actor_response_example.model_dump_json()}
-- 注意！speak_actions/whisper_actions/announce_actions只能3选1，mind_voice_actions可选。"""
+- 注意！speak_actions/whisper_actions/announce_actions只能3选1，mind_voice_actions可选。
+- 禁用换行/空行。
+- 直接输出合规JSON。"""
 
 
 #######################################################################################################################################
 def _compress_actor_plan_prompt(
     prompt: str,
 ) -> str:
-    logger.debug(f"原始消息：\n{prompt}")
     return "# 请做出你的计划，决定你将要做什么，并以 JSON 格式输出。"
 
 

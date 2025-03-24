@@ -25,7 +25,7 @@ class DeathSystem(ExecuteProcessor):
         self._update_entities_to_dead_state()
 
         # 添加销毁
-        self._add_destory()
+        self._add_destroyed_monster_entities()
 
         # 检查战斗结果的死亡情况
         self._check_combat_result()
@@ -43,7 +43,7 @@ class DeathSystem(ExecuteProcessor):
                 entity.replace(DeathComponent, combat_attributes.name)
 
     ########################################################################################################################################################################
-    def _add_destory(self) -> None:
+    def _add_destroyed_monster_entities(self) -> None:
         entities = self._game.get_group(
             Matcher(all_of=[DeathComponent, MonsterComponent])
         ).entities

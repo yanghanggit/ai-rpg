@@ -185,14 +185,16 @@ async def run_game(option: UserRuntimeOptions) -> None:
         usr_input = input(f"[{terminal_game.player.name}/{game_state_desc}]:")
 
         # 处理输入
-        if usr_input == "/quit" or usr_input == "/q":
+        if usr_input == "/q" or usr_input == "/quit":
             # 退出游戏
             logger.info(f"玩家 主动 退出游戏 = {terminal_game.player.name}")
             terminal_game._will_exit = True
             break
 
-        elif usr_input == "/d":
+        # 乱点乱点吧，测试用，不用太纠结。
+        elif usr_input == "/c" or usr_input == "/combat":
 
+            # 推进一次战斗。
             if terminal_game.current_game_state != TCGGameState.DUNGEON:
                 logger.error(f"{usr_input} 只能在地下城中使用")
                 continue
@@ -209,7 +211,32 @@ async def run_game(option: UserRuntimeOptions) -> None:
             # 执行一次！！！！！
             await _execute_terminal_game(terminal_game, usr_input)
 
-        elif usr_input == "/h":
+        elif usr_input == "/b" or usr_input == "/back":
+
+            # 战斗后回家。
+
+            if terminal_game.current_game_state != TCGGameState.DUNGEON:
+                logger.error(f"{usr_input} 只能在地下城中使用")
+                continue
+
+            if (
+                len(terminal_game.combat_system.combats) == 0
+                or not terminal_game.combat_system.latest_combat.is_post_wait
+            ):
+                logger.error(f"{usr_input} 只能在战斗后使用!!!!!")
+                continue
+
+            logger.info(
+                f"玩家输入 = {usr_input}, 准备传送回家 {stage_heros_camp_instance.name}"
+            )
+            terminal_game.home_stage_transition(
+                f"""# 提示！冒险结束，你将要返回: {stage_heros_camp_instance.name}""",
+                stage_heros_camp_instance,
+            )
+
+        elif usr_input == "/h" or usr_input == "/home":
+
+            # 推进一次营地的执行。
 
             if terminal_game.current_game_state != TCGGameState.HOME:
                 logger.error(f"{usr_input} 只能在营地中使用")
@@ -219,7 +246,9 @@ async def run_game(option: UserRuntimeOptions) -> None:
             run_home_once = True
             await _execute_terminal_game(terminal_game, usr_input)
 
-        elif usr_input == "/p":
+        elif usr_input == "/d" or usr_input == "/dungeon":
+
+            # 传送进地下城战斗。
 
             if terminal_game.current_game_state != TCGGameState.HOME:
                 logger.error(f"{usr_input} 只能在营地中使用")
@@ -229,7 +258,27 @@ async def run_game(option: UserRuntimeOptions) -> None:
                 logger.error(f"{usr_input} 至少要执行一次 /h，才能准备传送战斗！")
                 continue
 
-            logger.info(f"玩家输入 = {usr_input}, 准备传送")
+            dungeon_stage = terminal_game.get_stage_entity(
+                stage_dungeon_cave_instance.name
+            )
+            if dungeon_stage is None:
+                logger.error(f"{stage_dungeon_cave_instance.name} 地下城不存在")
+                continue
+
+            monster_entities = terminal_game.retrieve_actors_on_stage(dungeon_stage)
+            if len(monster_entities) == 0:
+                logger.error(
+                    f"{stage_dungeon_cave_instance.name} 地下城没有怪物，已经被攻破！！！！！！"
+                )
+                continue
+
+            logger.info(
+                f"玩家输入 = {usr_input}, 准备传送地下城 {stage_dungeon_cave_instance.name}"
+            )
+            terminal_game.dungeon_stage_transition(
+                f"""# 提示！你将要开始一次冒险，准备进入地下城: {stage_dungeon_cave_instance.name}""",
+                stage_dungeon_cave_instance,
+            )
 
         else:
 

@@ -9,6 +9,7 @@ from models.v_0_0_1 import (
     BaseAttributes,
 )
 from typing import List, Final
+from loguru import logger
 
 #######################################################################################################################################
 COMBAT_RULES_DESCRIPTION: Final[
@@ -72,13 +73,13 @@ GUID_INDEX: int = 1000
 
 
 #######################################################################################################################################
-def _comple_actor_system_prompt(
-    name: str, epoch_script: str, actor_profile: str, appearance: str
+def _comple_actor_base_system_prompt(
+    epoch_script: str, actor_profile: str, appearance: str
 ) -> str:
+    # # {prototype_name}
+    # 你扮演这个游戏世界中的一个角色: {prototype_name}
 
-    return f"""# {name}
-你扮演这个游戏世界中的一个角色: {name}
-## 当前游戏背景
+    return f"""## 当前游戏背景
 {epoch_script}
 ## 全局规则
 {GLOBAL_GAME_RULES}
@@ -89,13 +90,9 @@ def _comple_actor_system_prompt(
 
 
 #######################################################################################################################################
-def _comple_stage_system_prompt(
-    name: str, epoch_script: str, stage_profile: str
-) -> str:
+def _comple_base_stage_system_prompt(epoch_script: str, stage_profile: str) -> str:
 
-    return f"""# {name}
-你扮演这个游戏世界中的一个场景: {name}
-你将是角色活动的地点也是战斗系统。
+    return f"""你将是角色活动的地点也是战斗系统。
 ## 游戏背景
 {epoch_script}
 ## 全局规则
@@ -106,11 +103,10 @@ def _comple_stage_system_prompt(
 
 #######################################################################################################################################
 def _comple_world_system_system_prompt(
-    name: str, epoch_script: str, world_system_profile: str
+    epoch_script: str, world_system_profile: str
 ) -> str:
 
-    return f"""# {name}
-你扮演这个游戏世界中的一个系统: {name}
+    return f"""
 ## 游戏背景
 {epoch_script}
 ## 全局规则
@@ -154,15 +150,24 @@ def _create_actor_instance(
         name=name,
         prototype=actor_prototype.name,
         guid=GUID_INDEX,
+        system_message="",
         kick_off_message=kick_off_message,
         base_attributes=attributes,
     )
 
-    # 血量加满。
+    # 血量加满!!!!
     assert attributes.max_hp > 0, "Max HP must be greater than 0."
     assert ret.base_attributes.hp == 0, "HP must be 0."
     ret.base_attributes.hp = attributes.max_hp
 
+    # 初次编译system_message!!!!
+    ret.system_message = f"""# {ret.name}
+你扮演这个游戏世界中的一个角色: {ret.name}
+{actor_prototype.base_system_message}"""
+
+    logger.debug(
+        f"_create_actor_instance {ret.name} created. system_message: \n{ret.system_message}"
+    )
     return ret
 
 
@@ -181,10 +186,20 @@ def _create_stage_instance(
         prototype=stage.name,
         guid=GUID_INDEX,
         actors=[],
+        system_message="",
         kick_off_message=kick_off_message,
     )
 
     ret.actors = [actor.name for actor in actors]
+
+    # 初次编译system_message!!!!
+    ret.system_message = f"""# {ret.name}
+你扮演这个游戏世界中的一个场景: {ret.name}
+{stage.base_system_message}"""
+
+    logger.debug(
+        f"_create_stage_instance {ret.name} created. system_message: \n{ret.system_message}"
+    )
     return ret
 
 
@@ -197,12 +212,23 @@ def _create_world_system_instance(
 
     global GUID_INDEX
     GUID_INDEX += 1
-    return WorldSystemInstance(
+    ret = WorldSystemInstance(
         name=name,
         prototype=world_system.name,
         guid=GUID_INDEX,
+        system_message="",
         kick_off_message=kick_off_message,
     )
+
+    # 初次编译system_message!!!!
+    ret.system_message = f"""# {ret.name}
+你扮演这个游戏世界中的一个全局系统: {ret.name}
+{world_system.base_system_message}"""
+
+    logger.debug(
+        f"_create_world_system_instance {ret.name} created. system_message: \n{ret.system_message}"
+    )
+    return ret
 
 
 #######################################################################################################################################
@@ -218,6 +244,9 @@ def _link_instance(
     world_boot.actors.extend(actors)
     world_boot.stages.extend(stages)
     world_boot.world_systems.extend(world_systems)
+
+    # # actor 需要后处理一下。
+    all_actors = players + actors
 
     for player in players:
         assert (
@@ -242,9 +271,7 @@ def _link_instance(
             if player.name == actor.name:
                 assert False, f"Actor {player.name} found in both players and actors."
 
-    # 检查是否有不在players与actors中的actor
-    append_actors = players + actors
-    check_names = [actor.name for actor in append_actors]
+    check_names = [actor.name for actor in all_actors]
     for stage in stages:
         for test_actor in stage.actors:
             if test_actor not in check_names:

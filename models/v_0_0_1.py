@@ -51,7 +51,7 @@ class EntitySnapshot(BaseModel):
 class ActorPrototype(BaseModel):
     name: str
     code_name: str
-    system_message: str
+    base_system_message: str
     appearance: str
     type: Union[ActorType, str]
 
@@ -61,7 +61,7 @@ class ActorPrototype(BaseModel):
 class StagePrototype(BaseModel):
     name: str
     code_name: str
-    system_message: str
+    base_system_message: str
     type: Union[StageType, str]
 
 
@@ -70,7 +70,7 @@ class StagePrototype(BaseModel):
 class WorldSystemPrototype(BaseModel):
     name: str
     code_name: str
-    system_message: str
+    base_system_message: str
 
 
 ###############################################################################################################################################
@@ -124,6 +124,7 @@ class ActorInstance(BaseModel):
     name: str
     prototype: str
     guid: int
+    system_message: str
     kick_off_message: str
     level: int = 1
     base_attributes: BaseAttributes
@@ -136,6 +137,7 @@ class StageInstance(BaseModel):
     prototype: str
     guid: int
     actors: List[str]
+    system_message: str
     kick_off_message: str
 
 
@@ -145,6 +147,7 @@ class WorldSystemInstance(BaseModel):
     name: str
     prototype: str
     guid: int
+    system_message: str
     kick_off_message: str
 
 

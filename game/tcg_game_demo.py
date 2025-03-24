@@ -12,8 +12,8 @@ from models.v_0_0_1 import (
 from typing import Final, Optional
 from game.tcg_game_demo_utils import (
     EPOCH_SCRIPT,
-    _comple_actor_system_prompt,
-    _comple_stage_system_prompt,
+    _comple_actor_base_system_prompt,
+    _comple_base_stage_system_prompt,
     _comple_world_system_system_prompt,
     _initialize_data_base,
     _create_actor_instance,
@@ -78,8 +78,7 @@ actor_orcs_appearance: Final[str] = (
 actor_warrior_prototype = ActorPrototype(
     name="角色.战士.卡恩",
     code_name="warrior",
-    system_message=_comple_actor_system_prompt(
-        name="角色.战士.卡恩",
+    base_system_message=_comple_actor_base_system_prompt(
         epoch_script=EPOCH_SCRIPT,
         actor_profile=actor_warrior_profile,
         appearance=actor_warrior_appearance,
@@ -93,8 +92,7 @@ actor_warrior_prototype = ActorPrototype(
 actor_wizard_prototype = ActorPrototype(
     name="角色.法师.奥露娜",
     code_name="wizard",
-    system_message=_comple_actor_system_prompt(
-        name="角色.法师.奥露娜",
+    base_system_message=_comple_actor_base_system_prompt(
         epoch_script=EPOCH_SCRIPT,
         actor_profile=actor_wizard_profile,
         appearance=actor_wizard_appearance,
@@ -106,10 +104,9 @@ actor_wizard_prototype = ActorPrototype(
 #######################################################################################################################################
 #######################################################################################################################################
 actor_goblin_prototype = ActorPrototype(
-    name="角色.怪物.哥布林-拉格",
+    name="角色.怪物.哥布林",
     code_name="goblin_rag",
-    system_message=_comple_actor_system_prompt(
-        name="角色.怪物.哥布林-拉格",
+    base_system_message=_comple_actor_base_system_prompt(
         epoch_script=EPOCH_SCRIPT,
         actor_profile=actor_goblin_profile,
         appearance=actor_goblin_appearance,
@@ -121,10 +118,9 @@ actor_goblin_prototype = ActorPrototype(
 #######################################################################################################################################
 #######################################################################################################################################
 actor_orcs_prototype = ActorPrototype(
-    name="角色.怪物.兽人-库洛斯",
+    name="角色.怪物.兽人",
     code_name="orc_kuros",
-    system_message=_comple_actor_system_prompt(
-        name="角色.怪物.兽人-库洛斯",
+    base_system_message=_comple_actor_base_system_prompt(
         epoch_script=EPOCH_SCRIPT,
         actor_profile=actor_orcs_profile,
         appearance=actor_orcs_appearance,
@@ -138,8 +134,7 @@ actor_orcs_prototype = ActorPrototype(
 stage_dungeon_cave_prototype = StagePrototype(
     name="场景.洞窟",
     code_name="goblin_cave",
-    system_message=_comple_stage_system_prompt(
-        name="场景.洞窟",
+    base_system_message=_comple_base_stage_system_prompt(
         epoch_script=EPOCH_SCRIPT,
         stage_profile="你是一处位于山脚下的洞窟，洞穴内部昏暗潮湿，四处散发着腐烂的气味。光线昏暗，只能看到不远处的模糊轮廓。",
     ),
@@ -151,8 +146,7 @@ stage_dungeon_cave_prototype = StagePrototype(
 stage_heros_camp_prototype = StagePrototype(
     name="场景.营地",
     code_name="camp",
-    system_message=_comple_stage_system_prompt(
-        name="场景.营地",
+    base_system_message=_comple_base_stage_system_prompt(
         epoch_script=EPOCH_SCRIPT,
         stage_profile="你是一个冒险者的临时营地，四周是一片未开发的原野。营地中有帐篷，营火，仓库等设施，虽然简陋，却也足够让人稍事休息，准备下一次冒险。",
     ),
@@ -164,8 +158,7 @@ stage_heros_camp_prototype = StagePrototype(
 world_system_prototype = WorldSystemPrototype(
     name="系统.世界",
     code_name="world",
-    system_message=_comple_world_system_system_prompt(
-        name="系统.世界",
+    base_system_message=_comple_world_system_system_prompt(
         epoch_script=EPOCH_SCRIPT,
         world_system_profile="你是战斗系统。",
     ),
@@ -176,7 +169,7 @@ world_system_prototype = WorldSystemPrototype(
 world_system_instance = _create_world_system_instance(
     name=world_system_prototype.name,
     world_system=world_system_prototype,
-    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
+    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）""",
 )
 #######################################################################################################################################
 #######################################################################################################################################
@@ -184,7 +177,7 @@ world_system_instance = _create_world_system_instance(
 actor_warrior_instance = _create_actor_instance(
     name=actor_warrior_prototype.name,
     actor_prototype=actor_warrior_prototype,
-    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
+    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）""",
     attributes=BaseAttributes(strength=15, dexterity=9, wisdom=6),
 )
 #######################################################################################################################################
@@ -193,7 +186,7 @@ actor_warrior_instance = _create_actor_instance(
 actor_wizard_instance = _create_actor_instance(
     name=actor_wizard_prototype.name,
     actor_prototype=actor_wizard_prototype,
-    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
+    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）""",
     attributes=BaseAttributes(strength=4, dexterity=7, wisdom=18),
 )
 #######################################################################################################################################
@@ -202,7 +195,7 @@ actor_wizard_instance = _create_actor_instance(
 actor_goblin_instance = _create_actor_instance(
     name="角色.怪物.哥布林-拉格",
     actor_prototype=actor_goblin_prototype,
-    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
+    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）""",
     attributes=BaseAttributes(strength=5, dexterity=12, wisdom=5),
 )
 #######################################################################################################################################
@@ -211,7 +204,7 @@ actor_goblin_instance = _create_actor_instance(
 actor_orcs_instance = _create_actor_instance(
     name="角色.怪物.兽人-库洛斯",
     actor_prototype=actor_orcs_prototype,
-    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
+    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）""",
     attributes=BaseAttributes(strength=18, dexterity=6, wisdom=4),
 )
 #######################################################################################################################################

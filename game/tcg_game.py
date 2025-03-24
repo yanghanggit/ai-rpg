@@ -339,8 +339,9 @@ class TCGGame(BaseGame, TCGGameContext):
             world_system_entity.add(GUIDComponent, instance.name, instance.guid)
             world_system_entity.add(WorldSystemComponent, instance.name)
             world_system_entity.add(
-                SystemMessageComponent, instance.name, prototype.system_message
+                SystemMessageComponent, instance.name, instance.system_message
             )
+            assert instance.name in instance.system_message
             world_system_entity.add(
                 KickOffMessageComponent, instance.name, instance.kick_off_message
             )
@@ -376,8 +377,9 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 必要组件：系统消息
             actor_entity.add(
-                SystemMessageComponent, instance.name, prototype.system_message
+                SystemMessageComponent, instance.name, instance.system_message
             )
+            assert instance.name in instance.system_message
 
             # 必要组件：启动消息
             actor_entity.add(
@@ -434,8 +436,10 @@ class TCGGame(BaseGame, TCGGameContext):
             stage_entity.add(GUIDComponent, instance.name, instance.guid)
             stage_entity.add(StageComponent, instance.name)
             stage_entity.add(
-                SystemMessageComponent, instance.name, prototype.system_message
+                SystemMessageComponent, instance.name, instance.system_message
             )
+            assert instance.name in instance.system_message
+
             stage_entity.add(
                 KickOffMessageComponent, instance.name, instance.kick_off_message
             )
@@ -472,33 +476,6 @@ class TCGGame(BaseGame, TCGGameContext):
     # 临时的，考虑后面把player直接挂在context或者game里，因为player设计上唯一
     def get_player_entity(self) -> Optional[Entity]:
         return self.get_entity_by_player_name(self.player.name)
-
-    ###############################################################################################################################################
-    def get_system_message(self, entity: Entity) -> str:
-
-        data_base = self.world.boot.data_base
-
-        if entity.has(ActorComponent):
-            actor_prototype = data_base.actors.get(entity._name, None)
-            assert actor_prototype is not None
-            if actor_prototype is not None:
-                return actor_prototype.system_message
-
-        elif entity.has(StageComponent):
-
-            stage_prototype = data_base.stages.get(entity._name, None)
-            assert stage_prototype is not None
-            if stage_prototype is not None:
-                return stage_prototype.system_message
-
-        elif entity.has(WorldSystemComponent):
-
-            world_system_prototype = data_base.world_systems.get(entity._name, None)
-            assert world_system_prototype is not None
-            if world_system_prototype is not None:
-                return world_system_prototype.system_message
-
-        return ""
 
     ###############################################################################################################################################
     def get_agent_short_term_memory(self, entity: Entity) -> AgentShortTermMemory:

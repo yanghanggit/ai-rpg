@@ -2,7 +2,7 @@ from loguru import logger
 from entitas import Matcher, ExecuteProcessor  # type: ignore
 from typing import final, override
 from components.components_v_0_0_1 import DestroyComponent, DeathComponent
-from extended_systems.combat_system import CombatState, CombatResult
+from extended_systems.combat_system import CombatResult
 from game.tcg_game import TCGGame
 from components.components_v_0_0_1 import (
     CombatAttributesComponent,
@@ -54,8 +54,7 @@ class DeathSystem(ExecuteProcessor):
     ########################################################################################################################################################################
     # 检查战斗结果的死亡情况
     def _check_combat_result(self) -> None:
-        # pass
-        if self._game.combat_system.latest_combat.current_state != CombatState.RUNNING:
+        if not self._game.combat_system.latest_combat.is_on_going:
             # 不是本阶段就直接返回
             return
 

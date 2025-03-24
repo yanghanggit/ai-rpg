@@ -3,7 +3,6 @@ from overrides import override
 from typing import final
 from components.actions import TurnAction
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
-from extended_systems.combat_system import CombatState
 
 
 #######################################################################################################################################
@@ -26,9 +25,7 @@ class TurnActionSystem(BaseActionReactiveSystem):
         if len(self._react_entities_copy) == 0:
             return
 
-        assert (
-            self._game.combat_system.latest_combat.current_state == CombatState.RUNNING
-        )
+        assert self._game.combat_system.latest_combat.is_on_going
 
         # 开始新回合
         latest_combat = self._game.combat_system.latest_combat

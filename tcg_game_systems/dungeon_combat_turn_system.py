@@ -6,7 +6,6 @@ from components.components_v_0_0_1 import (
 from overrides import override
 from typing import List, Tuple, final
 from game.tcg_game import TCGGame
-from extended_systems.combat_system import CombatState
 from components.actions import SelectAction, TurnAction
 
 
@@ -21,7 +20,7 @@ class DungeonCombatTurnSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
 
-        if self._game.combat_system.latest_combat.current_state != CombatState.RUNNING:
+        if not self._game.combat_system.latest_combat.is_on_going:
             # 不是本阶段就直接返回
             return
 
@@ -36,7 +35,7 @@ class DungeonCombatTurnSystem(ExecuteProcessor):
         if len(actor_entities) == 0:
             return
 
-        new_round = self._game.combat_system.latest_combat.start_new_round()
+        new_round = self._game.combat_system.latest_combat.begin_new_round()
 
         # 随机出手顺序
         shuffled_reactive_entities = self._shuffle_action_order(list(actor_entities))

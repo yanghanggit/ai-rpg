@@ -222,13 +222,16 @@ async def run_game(option: UserRuntimeOptions) -> None:
             await terminal_game.a_execute()
 
         else:
-            logger.error(f"玩家输入 = {usr_input}, 目前不做任何处理，不在处理范围内！！！！！")
+            logger.error(
+                f"玩家输入 = {usr_input}, 目前不做任何处理，不在处理范围内！！！！！"
+            )
 
         # 处理退出
         if terminal_game._will_exit:
             break
 
     # 退出游戏
+    logger.error(f"游戏退出 = {terminal_game.player.name}")
     terminal_game.exit()
     exit(0)
 

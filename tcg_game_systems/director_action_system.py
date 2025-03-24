@@ -5,7 +5,6 @@ from overrides import override
 from typing import Final, List, NamedTuple, final
 from loguru import logger
 from components.actions import DirectorAction, FeedbackAction
-from extended_systems.combat_system import CombatState
 from models.event_models import AgentEvent
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from models.v_0_0_1 import Skill
@@ -123,9 +122,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         if len(self._react_entities_copy) == 0:
             return
 
-        assert (
-            self._game.combat_system.latest_combat.current_state == CombatState.RUNNING
-        )
+        assert self._game.combat_system.latest_combat.is_on_going
 
         if len(self._game.combat_system.latest_combat.latest_round.turns) == 0:
             return

@@ -136,8 +136,8 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.select_action_system import SelectActionSystem
         from tcg_game_systems.director_action_system import DirectorActionSystem
         from tcg_game_systems.feedback_action_system import FeedbackActionSystem
-        from tcg_game_systems.dungeon_combat_init_system import (
-            DungeonCombatInitSystem,
+        from tcg_game_systems.dungeon_combat_preparation_system import (
+            DungeonCombatPreparationSystem,
         )
         from tcg_game_systems.terminal_player_interrupt_wait_system import (
             TerminalPlayerInterruptWaitSystem,
@@ -147,7 +147,9 @@ class TCGGameProcessPipeline(Processors):
         )
         from tcg_game_systems.turn_action_system import TurnActionSystem
         from tcg_game_systems.dungeon_combat_turn_system import DungeonCombatTurnSystem
-        from tcg_game_systems.dungeon_combat_end_system import DungeonCombatEndSystem
+        from tcg_game_systems.dungeon_combat_complete_system import (
+            DungeonCombatCompleteSystem,
+        )
 
         ##
         tcg_game = cast(TCGGame, game)
@@ -202,10 +204,12 @@ class TCGGameProcessPipeline(Processors):
 
         processors.add(StagePermitSystem(tcg_game))
         processors.add(StagePlanningSystem(tcg_game))
-        processors.add(DungeonCombatInitSystem(tcg_game))
+
+        ## 角色相关的规划，跟战斗相关的规划。
+        processors.add(DungeonCombatPreparationSystem(tcg_game))
         processors.add(DungeonCombatSkillsCandidateSystem(tcg_game))
         processors.add(DungeonCombatTurnSystem(tcg_game))
-        processors.add(DungeonCombatEndSystem(tcg_game))
+        processors.add(DungeonCombatCompleteSystem(tcg_game))
 
         processors.add(
             PostPlanningSystem(tcg_game)

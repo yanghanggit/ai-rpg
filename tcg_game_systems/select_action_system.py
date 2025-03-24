@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from entitas import Matcher, Entity, Matcher, GroupEvent  # type: ignore
 from extended_systems.chat_request_handler import ChatRequestHandler
-from extended_systems.combat_system import CombatState
 import format_string.json_format
 from components.components_v_0_0_1 import (
     StageEnvironmentComponent,
@@ -76,9 +75,7 @@ class SelectActionSystem(BaseActionReactiveSystem):
         if len(self._react_entities_copy) == 0:
             return
 
-        assert (
-            self._game.combat_system.latest_combat.current_state == CombatState.RUNNING
-        )
+        assert self._game.combat_system.latest_combat.is_on_going
         await self._process_request(self._react_entities_copy)
 
     #######################################################################################################################################

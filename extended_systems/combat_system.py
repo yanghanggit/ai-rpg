@@ -3,14 +3,14 @@ from typing import Final, List, final
 
 
 ###############################################################################################################################################
-# 表示战斗的状态
+# 表示战斗的状态 Phase
 @final
 @unique
-class CombatState(IntEnum):
+class CombatPhase(IntEnum):
     NONE = (0,)
-    INIT = (1,)  # 初始化，需要同步一些数据与状态
-    RUNNING = (2,)  # 运行中，不断进行战斗推理
-    END = 3  # 结束，需要进行结算
+    PREPARATION = (1,)  # 初始化，需要同步一些数据与状态
+    ONGOING = (2,)  # 运行中，不断进行战斗推理
+    COMPLETE = 3  # 结束，需要进行结算
 
 
 # 表示战斗的状态
@@ -51,14 +51,14 @@ class Combat:
 
     def __init__(self, name: str) -> None:
         self._name: Final[str] = name
-        self._state: CombatState = CombatState.NONE
+        self._phase: CombatPhase = CombatPhase.NONE
         self._rounds: List[Round] = []
         self._result: CombatResult = CombatResult.NONE
 
     ###############################################################################################################################################
     @property
-    def current_state(self) -> CombatState:
-        return self._state
+    def current_phase(self) -> CombatPhase:
+        return self._phase
 
     ###############################################################################################################################################
     @property
@@ -66,18 +66,19 @@ class Combat:
         return self._result
 
     ###############################################################################################################################################
-    def start_combat(self) -> None:
-        assert self._state == CombatState.INIT
-        self._state = CombatState.RUNNING
+    def begin_combat(self) -> None:
+        assert self._phase == CombatPhase.PREPARATION
+        self._phase = CombatPhase.ONGOING
 
     ###############################################################################################################################################
     def end_combat(self, result: CombatResult) -> None:
-        assert self._state == CombatState.RUNNING
-        self._state = CombatState.END
+        assert self._phase == CombatPhase.ONGOING
+        assert self.is_on_going, "战斗已经结束"
+        self._phase = CombatPhase.COMPLETE
         self._result = result
 
     ###############################################################################################################################################
-    def start_new_round(self) -> Round:
+    def begin_new_round(self) -> Round:
         round = Round()
         self._rounds.append(round)
         return round
@@ -97,6 +98,21 @@ class Combat:
         return self._rounds[-1]
 
     ###############################################################################################################################################
+    @property
+    def is_on_going(self) -> bool:
+        return self._phase == CombatPhase.ONGOING
+
+    ###############################################################################################################################################
+    @property
+    def is_complete(self) -> bool:
+        return self._phase == CombatPhase.COMPLETE
+
+    ###############################################################################################################################################
+    @property
+    def is_preparation(self) -> bool:
+        return self._phase == CombatPhase.PREPARATION
+
+    ###############################################################################################################################################
 
 
 # 全局变量：空的战斗
@@ -113,7 +129,7 @@ class CombatSystem:
     ########################################################################################################################
     def start_new_combat(self, name: str) -> None:
         combat = Combat(name)
-        combat._state = CombatState.INIT
+        combat._phase = CombatPhase.PREPARATION
         self._combats.append(combat)
 
     ########################################################################################################################

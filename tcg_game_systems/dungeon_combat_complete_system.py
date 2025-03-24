@@ -3,7 +3,7 @@ from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from overrides import override
 from typing import Any, Dict, List, cast, final
 from game.tcg_game import TCGGame
-from extended_systems.combat_system import CombatState, CombatResult
+from extended_systems.combat_system import CombatResult
 from components.components_v_0_0_1 import ActorComponent, HeroComponent
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from extended_systems.chat_request_handler import ChatRequestHandler
@@ -11,7 +11,7 @@ from extended_systems.chat_request_handler import ChatRequestHandler
 
 #######################################################################################################################################
 @final
-class DungeonCombatEndSystem(ExecuteProcessor):
+class DungeonCombatCompleteSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
@@ -26,7 +26,7 @@ class DungeonCombatEndSystem(ExecuteProcessor):
     async def a_execute1(self) -> None:
         latest_combat = self._game.combat_system.latest_combat
 
-        if latest_combat.current_state != CombatState.END:
+        if not latest_combat.is_complete:
             # 不是本阶段就直接返回
             return
 
@@ -43,7 +43,6 @@ class DungeonCombatEndSystem(ExecuteProcessor):
         ):
             await self._summarize_combat_result()
             self._game._will_exit = True
-            assert False, "DungeonCombatEndSystem: Game will exit."
 
     #######################################################################################################################################
     async def _summarize_combat_result(self) -> None:

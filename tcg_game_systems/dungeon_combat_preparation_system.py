@@ -2,20 +2,19 @@ from loguru import logger
 from pydantic import BaseModel
 from extended_systems.chat_request_handler import ChatRequestHandler
 from entitas import ExecuteProcessor, Entity  # type: ignore
-from typing import Dict, Final, List, Set, final, override
+from typing import Dict, List, Set, final, override
 from game.tcg_game import TCGGame
 from components.components_v_0_0_1 import (
     StageEnvironmentComponent,
     CombatAttributesComponent,
 )
 import format_string.json_format
-from extended_systems.combat_system import CombatState
 from models.v_0_0_1 import Effect
 
 
 #######################################################################################################################################
 @final
-class CombatInitResponse(BaseModel):
+class CombatPreparationResponse(BaseModel):
     description: str
     effects: List[Effect]
 
@@ -34,7 +33,7 @@ def _generate_prompt(
     if len(actors_appearances_info) == 0:
         actors_appearances_info.append("无")
 
-    combat_init_response_example = CombatInitResponse(
+    combat_init_response_example = CombatPreparationResponse(
         description="第一人称状态描述（<200字）",
         effects=[
             Effect(name="效果1的名字", description="效果1的描述", rounds=1),
@@ -60,7 +59,7 @@ def _generate_prompt(
 
 ###################################################################################################################################################################
 @final
-class DungeonCombatInitSystem(ExecuteProcessor):
+class DungeonCombatPreparationSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
@@ -74,7 +73,7 @@ class DungeonCombatInitSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
 
-        if self._game.combat_system.latest_combat.current_state != CombatState.INIT:
+        if not self._game.combat_system.latest_combat.is_preparation:
             # 不是本阶段就直接返回
             return
 
@@ -90,7 +89,7 @@ class DungeonCombatInitSystem(ExecuteProcessor):
         await self._process_chat_requests(actor_entities)
 
         # 开始战斗
-        self._game.combat_system.latest_combat.start_combat()
+        self._game.combat_system.latest_combat.begin_combat()
 
     ###################################################################################################################################################################
     def _extract_actor_entities(self) -> set[Entity]:
@@ -185,7 +184,7 @@ class DungeonCombatInitSystem(ExecuteProcessor):
         # 核心处理
         try:
 
-            format_response = CombatInitResponse.model_validate_json(
+            format_response = CombatPreparationResponse.model_validate_json(
                 format_string.json_format.strip_json_code_block(
                     request_handler.response_content
                 )
@@ -217,7 +216,5 @@ class DungeonCombatInitSystem(ExecuteProcessor):
             logger.error(
                 f"""返回格式错误: {entity2._name}, Response = \n{request_handler.response_content}"""
             )
-
-    ###################################################################################################################################################################
 
     ###################################################################################################################################################################

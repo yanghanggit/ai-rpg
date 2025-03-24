@@ -5,7 +5,6 @@ from overrides import override
 from typing import List, Tuple, final
 from loguru import logger
 from components.actions import FeedbackAction
-from extended_systems.combat_system import CombatState
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from models.v_0_0_1 import Effect
 import format_string.json_format
@@ -79,10 +78,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
     async def a_execute2(self) -> None:
         if len(self._react_entities_copy) > 0:
 
-            assert (
-                self._game.combat_system.latest_combat.current_state
-                == CombatState.RUNNING
-            )
+            assert self._game.combat_system.latest_combat.is_on_going
             await self._process_request(self._react_entities_copy)
 
     #######################################################################################################################################

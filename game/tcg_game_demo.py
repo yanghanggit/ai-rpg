@@ -225,7 +225,6 @@ actor_goblin_instance = _create_actor_instance(
     kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？""",
     attributes=BaseAttributes(strength=5, dexterity=12, wisdom=5),
 )
-actor_goblin_instance.base_attributes.hp = 1  # 测试直接打死。
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
@@ -252,12 +251,7 @@ stage_dungeon_cave_instance = _create_stage_instance(
     name=stage_dungeon_cave_prototype.name,
     stage=stage_dungeon_cave_prototype,
     kick_off_message="洞穴中十分吵闹。",
-    actors=[
-        actor_warrior_instance,
-        actor_wizard_instance,
-        actor_goblin_instance,
-        # actor_orcs_instance,
-    ],
+    actors=[],
 )
 
 
@@ -279,6 +273,29 @@ def _build_world(world_boot: Boot) -> Boot:
         [stage_heros_camp_prototype, stage_dungeon_cave_prototype],
         [world_system_prototype],
     )
+
+    ############################################################
+    ############################################################
+    ############################################################
+    # 改变一些数据，例如将角色放入场景 !!!!!!!!!
+
+    # 测试直接打死。
+    actor_goblin_instance.base_attributes.hp = 1
+
+    # 角色放入场景
+    player_actors = [
+        actor_warrior_instance,
+        actor_wizard_instance,
+        actor_goblin_instance,
+        # actor_orcs_instance,
+    ]
+
+    for actor in player_actors:
+        stage_dungeon_cave_instance.actors.append(actor.name)
+
+    ############################################################
+    ############################################################
+    ############################################################
 
     # 链接实例
     _link_instance(

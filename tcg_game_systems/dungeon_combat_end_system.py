@@ -60,7 +60,8 @@ class DungeonCombatEndSystem(ExecuteProcessor):
 
             # 生成消息
             message = """# 战斗结束! 你决定回忆刚刚的战斗过程和记录你的感受。
-输出内容与要求:你的回忆与状态感受，要求单段紧凑自述（禁用换行/空行/数字）"""
+输出内容与要求:你的回忆与状态感受，从战斗的开始，过程与结束。
+要求单段紧凑自述（禁用换行/空行/数字）"""
 
             # 生成请求处理器
             request_handlers.append(

@@ -5,7 +5,7 @@ from game.tcg_game import TCGGame
 import random
 from components.components_v_0_0_1 import (
     ActorComponent,
-    ActorPlanningPermitComponent,
+    ActorPermitComponent,
     EnterStageComponent,
     DungeonComponent,
 )
@@ -14,7 +14,7 @@ from loguru import logger
 
 #######################################################################################################################################
 @final
-class ActorPlanningPermitSystem(ExecuteProcessor):
+class ActorPermitSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
@@ -51,7 +51,7 @@ class ActorPlanningPermitSystem(ExecuteProcessor):
 
         for entity in entities:
             entity.replace(
-                ActorPlanningPermitComponent,
+                ActorPermitComponent,
                 entity.get(ActorComponent).name,
             )
 

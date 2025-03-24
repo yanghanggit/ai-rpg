@@ -3,7 +3,7 @@ from entitas import ExecuteProcessor  # type: ignore
 from overrides import override
 from typing import final
 from components.components_v_0_0_1 import (
-    StagePlanningPermitComponent,
+    StagePermitComponent,
     StageComponent,
 )
 
@@ -12,7 +12,7 @@ from game.tcg_game import TCGGame
 
 #######################################################################################################################################
 @final
-class StagePlanningPermitSystem(ExecuteProcessor):
+class StagePermitSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
@@ -34,7 +34,7 @@ class StagePlanningPermitSystem(ExecuteProcessor):
             return
 
         player_stage.replace(
-            StagePlanningPermitComponent,
+            StagePermitComponent,
             player_stage.get(StageComponent).name,
         )
 

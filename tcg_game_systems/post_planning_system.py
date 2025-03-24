@@ -2,8 +2,8 @@ from entitas import ExecuteProcessor, Matcher  # type: ignore
 from typing import final, override
 from game.tcg_game import TCGGame
 from components.components_v_0_0_1 import (
-    StagePlanningPermitComponent,
-    ActorPlanningPermitComponent,
+    StagePermitComponent,
+    ActorPermitComponent,
 )
 
 
@@ -23,19 +23,19 @@ class PostPlanningSystem(ExecuteProcessor):
         actor_entities = self._game.get_group(
             Matcher(
                 all_of=[
-                    ActorPlanningPermitComponent,
+                    ActorPermitComponent,
                 ],
             )
         ).entities.copy()
         for entity in actor_entities:
-            entity.remove(ActorPlanningPermitComponent)
+            entity.remove(ActorPermitComponent)
 
         stage_entities = self._game.get_group(
             Matcher(
                 all_of=[
-                    StagePlanningPermitComponent,
+                    StagePermitComponent,
                 ]
             )
         ).entities.copy()
         for entity in stage_entities:
-            entity.remove(StagePlanningPermitComponent)
+            entity.remove(StagePermitComponent)

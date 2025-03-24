@@ -145,7 +145,7 @@ class MonsterComponent(NamedTuple):
 # Actor专用，标记该Actor需要进行角色扮演推理（心理活动，说话...），如有需要，单独列入Plan
 @final
 @register_component_class
-class ActorPlanningPermitComponent(NamedTuple):
+class ActorPermitComponent(NamedTuple):
     name: str
 
 
@@ -153,7 +153,7 @@ class ActorPlanningPermitComponent(NamedTuple):
 # State专用，标记该State需要进行场景描写推理，如有需要，单独列入Plan
 @final
 @register_component_class
-class StagePlanningPermitComponent(NamedTuple):
+class StagePermitComponent(NamedTuple):
     name: str
 
 

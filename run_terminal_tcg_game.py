@@ -189,7 +189,12 @@ async def run_game(option: UserRuntimeOptions) -> None:
             terminal_game._will_exit = True
             break
 
-        elif usr_input == "/b":
+        elif usr_input == "/d":
+
+            if terminal_game.current_game_state != TCGGameState.DUNGEON:
+                logger.error(f"{usr_input} 只能在地下城中使用")
+                continue
+
             # 测试，直接进入战斗
             if not terminal_game.combat_system.has_combat(
                 stage_dungeon_cave_instance.name
@@ -199,14 +204,25 @@ async def run_game(option: UserRuntimeOptions) -> None:
                     stage_dungeon_cave_instance.name
                 )
 
+            # 执行一次！！！！！
             terminal_game.player.add_command(
                 PlayerCommand(user=terminal_game.player.name, command=usr_input)
             )
+            await terminal_game.a_execute()
 
+        elif usr_input == "/h":
+            if terminal_game.current_game_state != TCGGameState.HOME:
+                logger.error(f"{usr_input} 只能在营地中使用")
+                continue
+
+            # 执行一次！！！！！
+            terminal_game.player.add_command(
+                PlayerCommand(user=terminal_game.player.name, command=usr_input)
+            )
             await terminal_game.a_execute()
 
         else:
-            logger.info(f"玩家输入 = {usr_input}, 啥都不做！")
+            logger.error(f"玩家输入 = {usr_input}, 目前不做任何处理，不在处理范围内！！！！！")
 
         # 处理退出
         if terminal_game._will_exit:

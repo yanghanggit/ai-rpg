@@ -4,7 +4,7 @@ from extended_systems.chat_request_handler import ChatRequestHandler
 from overrides import override
 from typing import Final, List, NamedTuple, final
 from loguru import logger
-from components.actions import DirectorAction2, FeedbackAction2
+from components.actions import DirectorAction, FeedbackAction
 from extended_systems.combat_system import CombatState
 from models.event_models import AgentEvent
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
@@ -109,12 +109,12 @@ class DirectorActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(DirectorAction2): GroupEvent.ADDED}
+        return {Matcher(DirectorAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(DirectorAction2)
+        return entity.has(DirectorAction)
 
     #######################################################################################################################################
     @override
@@ -147,7 +147,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         ret: List[ActionPromptParameters] = []
         for entity in react_entities:
 
-            skill_action2 = entity.get(DirectorAction2)
+            skill_action2 = entity.get(DirectorAction)
             assert skill_action2 is not None
 
             assert entity.has(CombatAttributesComponent)
@@ -229,7 +229,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
             actors_on_stage = self._game.retrieve_actors_on_stage(current_stage)
             for actor_entity in actors_on_stage:
                 actor_entity.replace(
-                    FeedbackAction2,
+                    FeedbackAction,
                     actor_entity._name,
                     format_response.calculation,
                     format_response.performance,

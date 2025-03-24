@@ -9,7 +9,6 @@ from models.v_0_0_1 import (
     BaseAttributes,
     WorldSystemPrototype,
 )
-import game.tcg_game_config
 from typing import Final, Optional
 from game.tcg_game_demo_utils import (
     EPOCH_SCRIPT,

@@ -47,6 +47,8 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.stage_planning_permit_system import (
             StagePlanningPermitSystem,
         )
+        from tcg_game_systems.whisper_action_system import WhisperActionSystem
+        from tcg_game_systems.announce_action_system import AnnounceActionSystem
 
         ##
         tcg_game = cast(TCGGame, game)
@@ -67,6 +69,8 @@ class TCGGameProcessPipeline(Processors):
         processors.add(PreActionSystem(tcg_game))
         processors.add(MindVoiceActionSystem(tcg_game))
         processors.add(SpeakActionSystem(tcg_game))
+        processors.add(WhisperActionSystem(tcg_game))
+        processors.add(AnnounceActionSystem(tcg_game))
         processors.add(PostActionSystem(tcg_game))
         ####################################################################################
         ####################################################################################
@@ -97,7 +101,9 @@ class TCGGameProcessPipeline(Processors):
     ###################################################################################################################################################################
 
     @staticmethod
-    def create_dungeon_state_pipeline(game: BaseGame) -> "TCGGameProcessPipeline":
+    def create_dungeon_combat_state_pipeline(
+        game: BaseGame,
+    ) -> "TCGGameProcessPipeline":
 
         ### 不这样就循环引用
         from game.tcg_game import TCGGame

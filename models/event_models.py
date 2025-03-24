@@ -24,9 +24,28 @@ class AgentEvent(BaseEvent):
 # 以下是一些具体的事件-------------------------------------------------------------
 
 
+####################################################################################################################################
 # 说话事件
 @final
 class SpeakEvent(AgentEvent):
     speaker: str
     listener: str
     dialogue: str
+
+
+####################################################################################################################################
+# 耳语事件
+@final
+class WhisperEvent(AgentEvent):
+    speaker: str
+    listener: str
+    dialogue: str
+
+
+####################################################################################################################################
+# 宣布事件
+@final
+class AnnounceEvent(AgentEvent):
+    announcement_speaker: str
+    event_stage: str
+    announcement_message: str

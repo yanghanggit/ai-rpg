@@ -145,7 +145,7 @@ class TCGGameContext(Context):
         ).entities
         for player_entity in player_entities:
             player_comp = player_entity.get(PlayerComponent)
-            if player_comp.name == player_name:
+            if player_comp.player_name == player_name:
                 return player_entity
         return None
 

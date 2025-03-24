@@ -80,7 +80,7 @@ class ActorComponent(NamedTuple):
 @final
 @register_component_class
 class PlayerComponent(NamedTuple):
-    name: str
+    player_name: str
 
 
 ############################################################################################################

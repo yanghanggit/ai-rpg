@@ -7,7 +7,7 @@ from overrides import override
 from typing import List, Tuple, final
 from game.tcg_game import TCGGame
 from extended_systems.combat_system import CombatState
-from components.actions import SelectAction2, TurnAction2
+from components.actions import SelectAction, TurnAction
 
 
 #######################################################################################################################################
@@ -49,10 +49,10 @@ class DungeonCombatTurnSystem(ExecuteProcessor):
         for turn_index, name in enumerate(new_round.turns):
             entity2 = self._game.get_entity_by_name(name)
             assert entity2 is not None
-            assert not entity2.has(TurnAction2)
-            assert not entity2.has(SelectAction2)
-            entity2.replace(TurnAction2, entity2._name)
-            entity2.replace(SelectAction2, entity2._name)
+            assert not entity2.has(TurnAction)
+            assert not entity2.has(SelectAction)
+            entity2.replace(TurnAction, entity2._name)
+            entity2.replace(SelectAction, entity2._name)
 
     #######################################################################################################################################
     # 随机排序

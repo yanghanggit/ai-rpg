@@ -103,7 +103,7 @@ class TCGGame(BaseGame, TCGGameContext):
             TCGGameProcessPipeline.create_home_state_pipline(self)
         )
         self._dungeon_state_processing_pipeline: TCGGameProcessPipeline = (
-            TCGGameProcessPipeline.create_dungeon_state_pipeline(self)
+            TCGGameProcessPipeline.create_dungeon_combat_state_pipeline(self)
         )
 
         # 玩家
@@ -509,25 +509,42 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     # TODO 目前是写死的
-    def is_player_ready(self) -> bool:
+    def confirm_player_actor_control_readiness(
+        self, actor_instance: ActorInstance
+    ) -> bool:
 
-        player_entities: Set[Entity] = self.get_group(
-            Matcher(all_of=[PlayerComponent])
-        ).entities
-
-        assert len(player_entities) > 0
-        if len(player_entities) == 0:
+        # 玩家的名字，此时必须有
+        assert self.player.name != ""
+        if self.player.name == "":
             return False
 
-        #
-        player_actor_entity = next(iter(player_entities))
-        player_comp = player_actor_entity.get(PlayerComponent)
-        assert player_comp is not None
+        assert (
+            self.get_entity_by_player_name(self.player.name) is None
+        ), "玩家已经存在，不需要再次确认"
 
-        #
-        player_actor_entity.replace(PlayerComponent, self.player.name)
-        logger.info(f"{self.player.name} => {player_actor_entity._name}")
-        return True
+        player_entities: Set[Entity] = self.get_group(
+            Matcher(all_of=[PlayerComponent, ActorComponent])
+        ).entities
+        assert len(player_entities) > 0, "玩家实体不存在"
+
+        for player_entity in player_entities:
+
+            actor_comp = player_entity.get(ActorComponent)
+            assert actor_comp is not None
+            if actor_comp.name != actor_instance.name:
+                continue
+
+            # 找到了可以控制的actor，标记控制，将player的名字赋值给actor
+            player_comp = player_entity.get(PlayerComponent)
+            assert player_comp is not None
+            assert player_comp.player_name == ""
+            player_entity.replace(PlayerComponent, self.player.name)
+            logger.info(f"玩家: {self.player.name} 选择控制: {player_entity._name}")
+
+            return True
+
+        assert False, "玩家没有准备好，没有找到可以控制的actor"
+        return False
 
     ###############################################################################################################################################
     def broadcast_event(
@@ -535,7 +552,6 @@ class TCGGame(BaseGame, TCGGameContext):
         entity: Entity,
         agent_event: AgentEvent,
         exclude_entities: Set[Entity] = set(),
-        **kwargs: Any,
     ) -> None:
 
         stage_entity = self.safe_get_stage_entity(entity)
@@ -568,7 +584,7 @@ class TCGGame(BaseGame, TCGGameContext):
             # 如果是玩家，就要补充一个事件信息，用于客户端接收
             if entity.has(PlayerComponent):
                 player_comp = entity.get(PlayerComponent)
-                assert player_comp.name == self.player.name
+                assert player_comp.player_name == self.player.name
                 self.player.add_notification(event=agent_event)
 
     ###############################################################################################################################################

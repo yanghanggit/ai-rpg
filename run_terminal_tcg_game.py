@@ -12,6 +12,7 @@ from extended_systems.lang_serve_system import LangServeSystem
 from player.player_proxy import PlayerProxy
 from game.tcg_game_demo import (
     create_then_write_demo_world,
+    actor_warrior_instance,
     stage_heros_camp_instance,
     stage_dungeon_cave_instance,
 )
@@ -69,10 +70,11 @@ class UserRuntimeOptions:
 
     ###############################################################################################################################################
     # 初始化logger
-    def init_logger(self) -> None:
+    def init_logger(self) -> "UserRuntimeOptions":
         log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         logger.add(self.log_dir / f"{log_start_time}.log", level="DEBUG")
         logger.info(f"准备进入游戏 = {self.game}, {self.user}")
+        return self
 
     ###############################################################################################################################################
 
@@ -161,7 +163,9 @@ async def run_game(option: UserRuntimeOptions) -> None:
 
     # 初始化游戏，玩家必须准备好，否则无法开始游戏
     if option.new_game:
-        if not terminal_game.is_player_ready():
+        if not terminal_game.confirm_player_actor_control_readiness(
+            actor_warrior_instance
+        ):
             logger.error(f"游戏准备失败 = {option.game}")
             exit(1)
 
@@ -218,6 +222,5 @@ if __name__ == "__main__":
 
     import asyncio
 
-    option = UserRuntimeOptions(user="yanghang", game="Game1")
-    option.init_logger()
+    option = UserRuntimeOptions(user="yanghang", game="Game1").init_logger()
     asyncio.run(run_game(option))

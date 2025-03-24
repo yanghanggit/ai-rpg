@@ -10,13 +10,20 @@ from overrides import override
 from typing import Dict, List, final
 from game.tcg_game import TCGGame
 from loguru import logger
-from components.actions import SpeakAction2, MindVoiceAction2
+from components.actions import (
+    SpeakAction,
+    MindVoiceAction,
+    WhisperAction,
+    AnnounceAction,
+)
 
 
 #######################################################################################################################################
 @final
 class ActorPlanningResponse(BaseModel):
     speak_actions: Dict[str, str] = {}
+    whisper_actions: Dict[str, str] = {}
+    announce_actions: str = ""
     mind_voice_actions: str = ""
 
 
@@ -38,6 +45,10 @@ def _generate_actor_plan_prompt(
         speak_actions={
             "场景内角色全名": "你要说的内容（场景内其他角色会听见）",
         },
+        whisper_actions={
+            "场景内角色全名": "你要说的内容（只有你和目标角色能听见）",
+        },
+        announce_actions="你要说的内容（所有的角色都能听见）",
         mind_voice_actions="你要说的内容（内心独白，只有你自己能听见）",
     )
 
@@ -53,7 +64,8 @@ def _generate_actor_plan_prompt(
 - 所有输出必须为第一人称视角。
 - 不要使用```json```来封装内容。
 ### 输出格式(JSON)
-{actor_response_example.model_dump_json()}"""
+{actor_response_example.model_dump_json()}
+- 注意！speak_actions/whisper_actions/announce_actions只能3选1，mind_voice_actions可选。"""
 
 
 #######################################################################################################################################
@@ -148,13 +160,25 @@ class ActorPlanningSystem(ExecuteProcessor):
             # 添加说话动作
             if len(format_response.speak_actions) > 0:
                 entity2.replace(
-                    SpeakAction2, entity2._name, format_response.speak_actions
+                    SpeakAction, entity2._name, format_response.speak_actions
+                )
+
+            # 添加耳语动作
+            if len(format_response.whisper_actions) > 0:
+                entity2.replace(
+                    WhisperAction, entity2._name, format_response.whisper_actions
+                )
+
+            # 添加宣布动作
+            if format_response.announce_actions != "":
+                entity2.replace(
+                    AnnounceAction, entity2._name, format_response.announce_actions
                 )
 
             # 添加内心独白
             if format_response.mind_voice_actions != "":
                 entity2.replace(
-                    MindVoiceAction2, entity2._name, format_response.mind_voice_actions
+                    MindVoiceAction, entity2._name, format_response.mind_voice_actions
                 )
 
         except:

@@ -11,7 +11,7 @@ from overrides import override
 from typing import List, final
 from loguru import logger
 from models.v_0_0_1 import Skill
-from components.actions import DirectorAction2, SelectAction2
+from components.actions import DirectorAction, SelectAction
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 
@@ -63,12 +63,12 @@ class SelectActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(SelectAction2): GroupEvent.ADDED}
+        return {Matcher(SelectAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(SelectAction2)
+        return entity.has(SelectAction)
 
     #######################################################################################################################################
     @override
@@ -132,9 +132,9 @@ class SelectActionSystem(BaseActionReactiveSystem):
             skill_candidate_comp = entity2.get(SkillCandidateQueueComponent)
             for skill in skill_candidate_comp.queue:
                 if skill.name == format_response.skill:
-                    assert not entity2.has(DirectorAction2)
+                    assert not entity2.has(DirectorAction)
                     entity2.replace(
-                        DirectorAction2,
+                        DirectorAction,
                         skill_candidate_comp.name,
                         format_response.targets,
                         skill,

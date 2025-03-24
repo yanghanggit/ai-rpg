@@ -7,16 +7,34 @@ from models.v_0_0_1 import Skill
 # 新的说话action
 @final
 @register_action_class_2
-class SpeakAction2(NamedTuple):
+class SpeakAction(NamedTuple):
     name: str
     data: Dict[str, str]
+
+
+############################################################################################################
+# 新的耳语action
+@final
+@register_action_class_2
+class WhisperAction(NamedTuple):
+    name: str
+    data: Dict[str, str]
+
+
+############################################################################################################
+# 新的宣布action
+@final
+@register_action_class_2
+class AnnounceAction(NamedTuple):
+    name: str
+    data: str
 
 
 ############################################################################################################
 # 新的说话action
 @final
 @register_action_class_2
-class MindVoiceAction2(NamedTuple):
+class MindVoiceAction(NamedTuple):
     name: str
     data: str
 
@@ -24,21 +42,21 @@ class MindVoiceAction2(NamedTuple):
 ############################################################################################################
 @final
 @register_action_class_2
-class TurnAction2(NamedTuple):
+class TurnAction(NamedTuple):
     name: str
 
 
 ############################################################################################################
 @final
 @register_action_class_2
-class SelectAction2(NamedTuple):
+class SelectAction(NamedTuple):
     name: str
 
 
 ############################################################################################################
 @final
 @register_action_class_2
-class DirectorAction2(NamedTuple):
+class DirectorAction(NamedTuple):
     name: str
     targets: List[str]
     skill: Skill
@@ -48,7 +66,7 @@ class DirectorAction2(NamedTuple):
 ############################################################################################################
 @final
 @register_action_class_2
-class FeedbackAction2(NamedTuple):
+class FeedbackAction(NamedTuple):
     name: str
     calculation: str
     performance: str

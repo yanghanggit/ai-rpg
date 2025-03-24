@@ -1,7 +1,7 @@
 from entitas import Matcher, Entity, Matcher, GroupEvent  # type: ignore
 from overrides import override
 from typing import final
-from components.actions import TurnAction2
+from components.actions import TurnAction
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from extended_systems.combat_system import CombatState
 
@@ -13,12 +13,12 @@ class TurnActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(TurnAction2): GroupEvent.ADDED}
+        return {Matcher(TurnAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(TurnAction2)
+        return entity.has(TurnAction)
 
     #######################################################################################################################################
     @override

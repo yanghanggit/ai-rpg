@@ -4,7 +4,7 @@ from extended_systems.chat_request_handler import ChatRequestHandler
 from overrides import override
 from typing import List, Tuple, final
 from loguru import logger
-from components.actions import FeedbackAction2
+from components.actions import FeedbackAction
 from extended_systems.combat_system import CombatState
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from models.v_0_0_1 import Effect
@@ -27,7 +27,7 @@ class FeedbackResponse(BaseModel):
 #######################################################################################################################################
 def _generate_prompt(
     combat_attributes_component: CombatAttributesComponent,
-    feedback_component: FeedbackAction2,
+    feedback_component: FeedbackAction,
 ) -> str:
 
     feedback_response_example = FeedbackResponse(
@@ -67,12 +67,12 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(FeedbackAction2): GroupEvent.ADDED}
+        return {Matcher(FeedbackAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(FeedbackAction2)
+        return entity.has(FeedbackAction)
 
     #######################################################################################################################################
     @override
@@ -179,7 +179,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
 
         for entity in actor_entities:
 
-            feedback_action2 = entity.get(FeedbackAction2)
+            feedback_action2 = entity.get(FeedbackAction)
 
             combat_attributes_component = entity.get(CombatAttributesComponent)
             assert combat_attributes_component is not None

@@ -252,11 +252,13 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     def save(self, verbose: bool = True) -> "TCGGame":
 
+        # 生成快照
         self.world.entities_snapshot = self.make_entities_snapshot()
 
-        assert self._world_file_path.exists()
+        # 保存快照
         self._world_file_path.write_text(self.world.model_dump_json(), encoding="utf-8")
 
+        # 保存聊天记录和boot
         if verbose:
             # 保存聊天记录
             self._save_chat_history()

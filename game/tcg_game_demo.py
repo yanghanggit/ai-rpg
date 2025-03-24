@@ -1,3 +1,4 @@
+from pathlib import Path
 from loguru import logger
 from models.v_0_0_1 import (
     Boot,
@@ -9,7 +10,7 @@ from models.v_0_0_1 import (
     WorldSystemPrototype,
 )
 import game.tcg_game_config
-from typing import Final
+from typing import Final, Optional
 from game.tcg_game_demo_utils import (
     EPOCH_SCRIPT,
     _comple_actor_system_prompt,
@@ -295,18 +296,29 @@ def _build_world(world_boot: Boot) -> Boot:
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
-def create_demo_world(game_name: str, version: str) -> Boot:
-
-    world_boot = Boot(name=game_name, version=version)
-    _build_world(world_boot)
+def create_then_write_demo_world(
+    game_name: str, version: str, write_path: Path
+) -> Optional[Boot]:
 
     try:
-        write_path = game.tcg_game_config.GEN_WORLD_DIR / f"{game_name}.json"
+        # 创建世界
+        world_boot = Boot(name=game_name, version=version)
+
+        # 构建世界
+        _build_world(world_boot)
+
+        # 写入文件
         write_path.write_text(world_boot.model_dump_json(), encoding="utf-8")
+
+        # 返回
+        return world_boot
+
     except Exception as e:
         logger.error(f"An error occurred: {e}")
+        return None
 
-    return world_boot
+    assert False, "Should not reach here"
+    return None
 
 
 #######################################################################################################################################

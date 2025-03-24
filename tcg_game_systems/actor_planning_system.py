@@ -4,7 +4,7 @@ from extended_systems.chat_request_handler import ChatRequestHandler
 import format_string.json_format
 from components.components_v_0_0_1 import (
     StageEnvironmentComponent,
-    ActorPlanningPermitFlagComponent,
+    ActorPlanningPermitComponent,
 )
 from overrides import override
 from typing import Dict, List, final
@@ -88,7 +88,7 @@ class ActorPlanningSystem(ExecuteProcessor):
         actor_entities = self._game.get_group(
             Matcher(
                 all_of=[
-                    ActorPlanningPermitFlagComponent,
+                    ActorPlanningPermitComponent,
                 ],
             )
         ).entities
@@ -128,7 +128,7 @@ class ActorPlanningSystem(ExecuteProcessor):
         self, entity2: Entity, request_handler: ChatRequestHandler
     ) -> None:
 
-        assert entity2.has(ActorPlanningPermitFlagComponent)
+        assert entity2.has(ActorPlanningPermitComponent)
         assert entity2._name == request_handler._name
 
         # 核心处理

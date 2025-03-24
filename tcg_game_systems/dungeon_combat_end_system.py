@@ -4,7 +4,7 @@ from overrides import override
 from typing import Any, Dict, List, cast, final
 from game.tcg_game import TCGGame
 from extended_systems.combat_system import CombatState, CombatResult
-from components.components_v_0_0_1 import ActorComponent, HeroActorFlagComponent
+from components.components_v_0_0_1 import ActorComponent, HeroComponent
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from extended_systems.chat_request_handler import ChatRequestHandler
 
@@ -50,7 +50,7 @@ class DungeonCombatEndSystem(ExecuteProcessor):
         # 获取所有需要进行角色规划的角色
         actor_entities = self._game.get_group(
             Matcher(
-                all_of=[ActorComponent, HeroActorFlagComponent],
+                all_of=[ActorComponent, HeroComponent],
             )
         ).entities
 
@@ -99,7 +99,7 @@ class DungeonCombatEndSystem(ExecuteProcessor):
     def _cache_combat_messages(self) -> None:
         actor_entities = self._game.get_group(
             Matcher(
-                all_of=[ActorComponent, HeroActorFlagComponent],
+                all_of=[ActorComponent, HeroComponent],
             )
         ).entities
 

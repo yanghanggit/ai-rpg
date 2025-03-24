@@ -29,7 +29,7 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.speak_action_system import SpeakActionSystem
         from tcg_game_systems.pre_action_system import PreActionSystem
         from tcg_game_systems.post_action_system import PostActionSystem
-        from tcg_game_systems.destroy_system import DestroySystem
+        from tcg_game_systems.destroy_entity_system import DestroyEntitySystem
         from tcg_game_systems.pre_planning_system import PrePlanningSystem
         from tcg_game_systems.post_planning_system import PostPlanningSystem
 
@@ -72,7 +72,7 @@ class TCGGameProcessPipeline(Processors):
         ####################################################################################
 
         # 动作处理后，可能清理。
-        processors.add(DestroySystem(tcg_game))
+        processors.add(DestroyEntitySystem(tcg_game))
 
         # 存储系统。
         processors.add(SaveSystem(tcg_game))
@@ -115,8 +115,8 @@ class TCGGameProcessPipeline(Processors):
         )
         from tcg_game_systems.pre_action_system import PreActionSystem
         from tcg_game_systems.post_action_system import PostActionSystem
-        from tcg_game_systems.destroy_system import DestroySystem
-        from tcg_game_systems.dead_action_system import DeadActionSystem
+        from tcg_game_systems.destroy_entity_system import DestroyEntitySystem
+        from tcg_game_systems.death_system import DeathSystem
         from tcg_game_systems.pre_planning_system import PrePlanningSystem
         from tcg_game_systems.post_planning_system import PostPlanningSystem
         from tcg_game_systems.stage_planning_system import (
@@ -169,16 +169,18 @@ class TCGGameProcessPipeline(Processors):
         processors.add(SelectActionSystem(tcg_game))
         processors.add(DirectorActionSystem(tcg_game))
         processors.add(FeedbackActionSystem(tcg_game))
-        processors.add(DeadActionSystem(tcg_game))
+
         ######################################################################################################
 
         processors.add(PostActionSystem(tcg_game))
+
+        processors.add(DeathSystem(tcg_game))
 
         # yh add, 测试用。
         processors.add(PostDungeonStateSystem(tcg_game))
 
         # 动作处理后，可能删除掉一些entities。
-        processors.add(DestroySystem(tcg_game))
+        processors.add(DestroyEntitySystem(tcg_game))
 
         # 存储系统。
         processors.add(SaveSystem(tcg_game))

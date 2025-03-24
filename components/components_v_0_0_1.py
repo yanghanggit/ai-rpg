@@ -37,7 +37,7 @@ class KickOffMessageComponent(NamedTuple):
 # 标记kick off已经完成
 @final
 @register_component_class
-class KickOffDoneFlagComponent(NamedTuple):
+class KickOffDoneComponent(NamedTuple):
     name: str
 
 
@@ -79,7 +79,7 @@ class ActorComponent(NamedTuple):
 # 玩家标记
 @final
 @register_component_class
-class PlayerActorFlagComponent(NamedTuple):
+class PlayerComponent(NamedTuple):
     name: str
 
 
@@ -87,7 +87,7 @@ class PlayerActorFlagComponent(NamedTuple):
 # 摧毁Entity标记
 @final
 @register_component_class
-class DestroyFlagComponent(NamedTuple):
+class DestroyComponent(NamedTuple):
     name: str
 
 
@@ -104,7 +104,7 @@ class AppearanceComponent(NamedTuple):
 # 标记进入新的场景
 @final
 @register_component_class
-class EnterStageFlagComponent(NamedTuple):
+class EnterStageComponent(NamedTuple):
     name: str
     enter_stage: str
 
@@ -113,7 +113,7 @@ class EnterStageFlagComponent(NamedTuple):
 # Stage专用，标记该Stage是Home
 @final
 @register_component_class
-class HomeStageFlagComponent(NamedTuple):
+class HomeComponent(NamedTuple):
     name: str
 
 
@@ -121,7 +121,7 @@ class HomeStageFlagComponent(NamedTuple):
 # Stage专用，标记该Stage是Dungeon
 @final
 @register_component_class
-class DungeonStageFlagComponent(NamedTuple):
+class DungeonComponent(NamedTuple):
     name: str
 
 
@@ -129,7 +129,7 @@ class DungeonStageFlagComponent(NamedTuple):
 # Actor专用，标记该Actor是Hero
 @final
 @register_component_class
-class HeroActorFlagComponent(NamedTuple):
+class HeroComponent(NamedTuple):
     name: str
 
 
@@ -137,7 +137,7 @@ class HeroActorFlagComponent(NamedTuple):
 # Actor专用，标记该Actor是Monster
 @final
 @register_component_class
-class MonsterActorFlagComponent(NamedTuple):
+class MonsterComponent(NamedTuple):
     name: str
 
 
@@ -145,7 +145,7 @@ class MonsterActorFlagComponent(NamedTuple):
 # Actor专用，标记该Actor需要进行角色扮演推理（心理活动，说话...），如有需要，单独列入Plan
 @final
 @register_component_class
-class ActorPlanningPermitFlagComponent(NamedTuple):
+class ActorPlanningPermitComponent(NamedTuple):
     name: str
 
 
@@ -153,7 +153,7 @@ class ActorPlanningPermitFlagComponent(NamedTuple):
 # State专用，标记该State需要进行场景描写推理，如有需要，单独列入Plan
 @final
 @register_component_class
-class StagePlanningPermitFlagComponent(NamedTuple):
+class StagePlanningPermitComponent(NamedTuple):
     name: str
 
 
@@ -210,3 +210,8 @@ class CombatEffectsComponent(NamedTuple):
 
 
 ############################################################################################################
+# 死亡标记
+@final
+@register_component_class
+class DeathComponent(NamedTuple):
+    name: str

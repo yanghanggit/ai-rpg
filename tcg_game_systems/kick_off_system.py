@@ -5,7 +5,7 @@ from components.components_v_0_0_1 import (
     StageComponent,
     ActorComponent,
     KickOffMessageComponent,
-    KickOffDoneFlagComponent,
+    KickOffDoneComponent,
     SystemMessageComponent,
     StageEnvironmentComponent,
 )
@@ -68,7 +68,7 @@ class KickOffSystem(ExecuteProcessor):
             Matcher(
                 all_of=[SystemMessageComponent, KickOffMessageComponent],
                 any_of=[ActorComponent, WorldSystemComponent, StageComponent],
-                none_of=[KickOffDoneFlagComponent],
+                none_of=[KickOffDoneComponent],
             )
         ).entities.copy()
 
@@ -126,7 +126,7 @@ class KickOffSystem(ExecuteProcessor):
             self._game.append_ai_message(entity2, request_handler.response_content)
 
             # 必须执行
-            entity2.replace(KickOffDoneFlagComponent, entity2._name)
+            entity2.replace(KickOffDoneComponent, entity2._name)
 
             # 若是场景，用response替换narrate
             if entity2.has(StageComponent):

@@ -3,7 +3,7 @@ from entitas import ExecuteProcessor  # type: ignore
 from overrides import override
 from typing import final
 from components.components_v_0_0_1 import (
-    StagePlanningPermitFlagComponent,
+    StagePlanningPermitComponent,
     StageComponent,
 )
 
@@ -34,7 +34,7 @@ class StagePlanningPermitSystem(ExecuteProcessor):
             return
 
         player_stage.replace(
-            StagePlanningPermitFlagComponent,
+            StagePlanningPermitComponent,
             player_stage.get(StageComponent).name,
         )
 

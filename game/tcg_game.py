@@ -21,17 +21,17 @@ from components.components_v_0_0_1 import (
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
-    PlayerActorFlagComponent,
+    PlayerComponent,
     GUIDComponent,
     SystemMessageComponent,
     KickOffMessageComponent,
     AppearanceComponent,
     StageEnvironmentComponent,
-    HomeStageFlagComponent,
-    DungeonStageFlagComponent,
-    HeroActorFlagComponent,
-    MonsterActorFlagComponent,
-    EnterStageFlagComponent,
+    HomeComponent,
+    DungeonComponent,
+    HeroComponent,
+    MonsterComponent,
+    EnterStageComponent,
     CombatAttributesComponent,
     CombatEffectsComponent,
 )
@@ -136,9 +136,9 @@ class TCGGame(BaseGame, TCGGameContext):
         if stage_entity is None:
             return TCGGameState.NONE
 
-        if stage_entity.has(HomeStageFlagComponent):
+        if stage_entity.has(HomeComponent):
             return TCGGameState.HOME
-        elif stage_entity.has(DungeonStageFlagComponent):
+        elif stage_entity.has(DungeonComponent):
             return TCGGameState.DUNGEON
         else:
             assert False, "stage type is not defined"
@@ -368,9 +368,9 @@ class TCGGame(BaseGame, TCGGameContext):
             match prototype.type:
 
                 case ActorType.HERO:
-                    actor_entity.add(HeroActorFlagComponent, instance.name)
+                    actor_entity.add(HeroComponent, instance.name)
                 case ActorType.MONSTER:
-                    actor_entity.add(MonsterActorFlagComponent, instance.name)
+                    actor_entity.add(MonsterComponent, instance.name)
 
             # 添加到返回值
             ret.append(actor_entity)
@@ -385,8 +385,8 @@ class TCGGame(BaseGame, TCGGameContext):
         ret: List[Entity] = []
         ret = self._create_actor_entities(actor_instances, data_base)
         for entity in ret:
-            assert not entity.has(PlayerActorFlagComponent)
-            entity.add(PlayerActorFlagComponent, "")
+            assert not entity.has(PlayerComponent)
+            entity.add(PlayerComponent, "")
         return ret
 
     ###############################################################################################################################################
@@ -421,9 +421,9 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
             if prototype.type == StageType.DUNGEON:
-                stage_entity.add(DungeonStageFlagComponent, instance.name)
+                stage_entity.add(DungeonComponent, instance.name)
             elif prototype.type == StageType.HOME:
-                stage_entity.add(HomeStageFlagComponent, instance.name)
+                stage_entity.add(HomeComponent, instance.name)
 
             ## 重新设置Actor和stage的关系
             for actor_name in instance.actors:
@@ -510,7 +510,7 @@ class TCGGame(BaseGame, TCGGameContext):
     def is_player_ready(self) -> bool:
 
         player_entities: Set[Entity] = self.get_group(
-            Matcher(all_of=[PlayerActorFlagComponent])
+            Matcher(all_of=[PlayerComponent])
         ).entities
 
         assert len(player_entities) > 0
@@ -519,11 +519,11 @@ class TCGGame(BaseGame, TCGGameContext):
 
         #
         player_actor_entity = next(iter(player_entities))
-        player_comp = player_actor_entity.get(PlayerActorFlagComponent)
+        player_comp = player_actor_entity.get(PlayerComponent)
         assert player_comp is not None
 
         #
-        player_actor_entity.replace(PlayerActorFlagComponent, self.player.name)
+        player_actor_entity.replace(PlayerComponent, self.player.name)
         logger.info(f"{self.player.name} => {player_actor_entity._name}")
         return True
 
@@ -564,8 +564,8 @@ class TCGGame(BaseGame, TCGGameContext):
             logger.warning(f"事件通知 => {entity._name}:\n{replace_message}")
 
             # 如果是玩家，就要补充一个事件信息，用于客户端接收
-            if entity.has(PlayerActorFlagComponent):
-                player_comp = entity.get(PlayerActorFlagComponent)
+            if entity.has(PlayerComponent):
+                player_comp = entity.get(PlayerComponent)
                 assert player_comp.name == self.player.name
                 self.player.add_notification(event=agent_event)
 
@@ -628,7 +628,7 @@ class TCGGame(BaseGame, TCGGameContext):
             )
             # 添加标记，有用。
             actor_entity.replace(
-                EnterStageFlagComponent, actor_entity._name, stage_destination._name
+                EnterStageComponent, actor_entity._name, stage_destination._name
             )
 
     ###############################################################################################################################################

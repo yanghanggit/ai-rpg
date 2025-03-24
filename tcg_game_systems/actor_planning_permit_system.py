@@ -5,9 +5,9 @@ from game.tcg_game import TCGGame
 import random
 from components.components_v_0_0_1 import (
     ActorComponent,
-    ActorPlanningPermitFlagComponent,
-    EnterStageFlagComponent,
-    DungeonStageFlagComponent,
+    ActorPlanningPermitComponent,
+    EnterStageComponent,
+    DungeonComponent,
 )
 from loguru import logger
 
@@ -31,7 +31,7 @@ class ActorPlanningPermitSystem(ExecuteProcessor):
         if current_stage_entity is None:
             return
 
-        if current_stage_entity.has(DungeonStageFlagComponent):
+        if current_stage_entity.has(DungeonComponent):
             return
 
         # 得到所有在玩家所在stage的actor
@@ -39,7 +39,7 @@ class ActorPlanningPermitSystem(ExecuteProcessor):
         if len(actors) == 0:
             return
 
-        if not player_entity.has(EnterStageFlagComponent):
+        if not player_entity.has(EnterStageComponent):
             # 随机选择一个actor
             random_actor = random.choice(actors)
             self._add_permit({random_actor})
@@ -51,7 +51,7 @@ class ActorPlanningPermitSystem(ExecuteProcessor):
 
         for entity in entities:
             entity.replace(
-                ActorPlanningPermitFlagComponent,
+                ActorPlanningPermitComponent,
                 entity.get(ActorComponent).name,
             )
 

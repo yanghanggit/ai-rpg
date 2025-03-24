@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from extended_systems.chat_request_handler import ChatRequestHandler
 from components.components_v_0_0_1 import (
     StageEnvironmentComponent,
-    StagePlanningPermitFlagComponent,
+    StagePlanningPermitComponent,
 )
 from overrides import override
 from typing import Dict, List, Set, final
@@ -78,7 +78,7 @@ class StagePlanningSystem(ExecuteProcessor):
         stage_entities = self._game.get_group(
             Matcher(
                 all_of=[
-                    StagePlanningPermitFlagComponent,
+                    StagePlanningPermitComponent,
                 ]
             )
         ).entities

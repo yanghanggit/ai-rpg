@@ -1,23 +1,18 @@
 from loguru import logger
 from entitas import Matcher, ExecuteProcessor  # type: ignore
 from typing import final, override
-from components.components_v_0_0_1 import (
-    DestroyFlagComponent,
-)
-from components.actions import (
-    DeadAction2,
-)
+from components.components_v_0_0_1 import DestroyComponent, DeathComponent
 from extended_systems.combat_system import CombatState, CombatResult
 from game.tcg_game import TCGGame
 from components.components_v_0_0_1 import (
     CombatAttributesComponent,
-    HeroActorFlagComponent,
-    MonsterActorFlagComponent,
+    HeroComponent,
+    MonsterComponent,
 )
 
 
 @final
-class DeadActionSystem(ExecuteProcessor):
+class DeathSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
@@ -38,23 +33,23 @@ class DeadActionSystem(ExecuteProcessor):
     ########################################################################################################################################################################
     def _update_entities_to_dead_state(self) -> None:
         entities = self._game.get_group(
-            Matcher(all_of=[CombatAttributesComponent], none_of=[DeadAction2])
+            Matcher(all_of=[CombatAttributesComponent], none_of=[DeathComponent])
         ).entities.copy()
         for entity in entities:
             combat_attributes = entity.get(CombatAttributesComponent)
             if combat_attributes.hp <= 0:
                 logger.info(f"{combat_attributes.name} is dead")
                 self._game.append_human_message(entity, "# 你已被击败！")
-                entity.replace(DeadAction2, combat_attributes.name)
+                entity.replace(DeathComponent, combat_attributes.name)
 
     ########################################################################################################################################################################
     def _add_destory(self) -> None:
         entities = self._game.get_group(
-            Matcher(all_of=[DeadAction2, MonsterActorFlagComponent])
+            Matcher(all_of=[DeathComponent, MonsterComponent])
         ).entities
         for entity in entities:
-            dead_caction = entity.get(DeadAction2)
-            entity.replace(DestroyFlagComponent, dead_caction.name)
+            dead_caction = entity.get(DeathComponent)
+            entity.replace(DestroyComponent, dead_caction.name)
 
     ########################################################################################################################################################################
     # 检查战斗结果的死亡情况
@@ -74,12 +69,10 @@ class DeadActionSystem(ExecuteProcessor):
     ########################################################################################################################################################################
     def _are_all_heroes_defeated(self) -> bool:
         entities1 = self._game.get_group(
-            Matcher(all_of=[HeroActorFlagComponent, DeadAction2])
+            Matcher(all_of=[HeroComponent, DeathComponent])
         ).entities
 
-        entities2 = self._game.get_group(
-            Matcher(all_of=[HeroActorFlagComponent])
-        ).entities
+        entities2 = self._game.get_group(Matcher(all_of=[HeroComponent])).entities
 
         assert len(entities2) > 0, f"entities with actions: {entities2}"
         return len(entities1) == len(entities2)
@@ -87,12 +80,10 @@ class DeadActionSystem(ExecuteProcessor):
     ########################################################################################################################################################################
     def _are_all_monsters_defeated(self) -> bool:
         entities1 = self._game.get_group(
-            Matcher(all_of=[MonsterActorFlagComponent, DeadAction2])
+            Matcher(all_of=[MonsterComponent, DeathComponent])
         ).entities
 
-        entities2 = self._game.get_group(
-            Matcher(all_of=[MonsterActorFlagComponent])
-        ).entities
+        entities2 = self._game.get_group(Matcher(all_of=[MonsterComponent])).entities
 
         assert len(entities2) > 0, f"entities with actions: {entities2}"
         return len(entities1) == len(entities2)

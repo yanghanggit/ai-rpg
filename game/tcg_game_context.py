@@ -7,7 +7,7 @@ from components.components_v_0_0_1 import (
     ActorComponent,
     GUIDComponent,
     AppearanceComponent,
-    PlayerActorFlagComponent,
+    PlayerComponent,
 )
 
 from components.registry import COMPONENTS_REGISTRY
@@ -140,11 +140,11 @@ class TCGGameContext(Context):
     def get_entity_by_player_name(self, player_name: str) -> Optional[Entity]:
         player_entities = self.get_group(
             Matcher(
-                all_of=[PlayerActorFlagComponent],
+                all_of=[PlayerComponent],
             )
         ).entities
         for player_entity in player_entities:
-            player_comp = player_entity.get(PlayerActorFlagComponent)
+            player_comp = player_entity.get(PlayerComponent)
             if player_comp.name == player_name:
                 return player_entity
         return None

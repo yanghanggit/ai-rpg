@@ -2,7 +2,7 @@ from entitas import ExecuteProcessor, Matcher  # type: ignore
 from typing import Final, FrozenSet, NamedTuple, final, override
 from game.tcg_game import TCGGame
 from components.registry import ACTIONS_REGISTRY_2
-from components.components_v_0_0_1 import EnterStageFlagComponent
+from components.components_v_0_0_1 import EnterStageComponent
 
 
 @final
@@ -29,14 +29,14 @@ class PostActionSystem(ExecuteProcessor):
         entities = self._game.get_group(
             Matcher(
                 all_of=[
-                    EnterStageFlagComponent,
+                    EnterStageComponent,
                 ],
             )
         ).entities.copy()
 
         # 最后的清理，不要这个
         for entity2 in entities:
-            entity2.remove(EnterStageFlagComponent)
+            entity2.remove(EnterStageComponent)
 
     ############################################################################################################
     def _clear_actions(self, registered_actions: FrozenSet[type[NamedTuple]]) -> None:
@@ -59,7 +59,7 @@ class PostActionSystem(ExecuteProcessor):
         entities2 = self._game.get_group(
             Matcher(
                 all_of=[
-                    EnterStageFlagComponent,
+                    EnterStageComponent,
                 ],
             )
         ).entities

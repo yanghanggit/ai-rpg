@@ -43,7 +43,7 @@ from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 from models.event_models import AgentEvent
 from extended_systems.combat_system import CombatSystem
-from extended_systems.dungeon_system import DungeonSystem, EMPTY_DUNGEON
+from extended_systems.dungeon_system import DungeonSystem
 
 
 # ################################################################################################################################################
@@ -97,14 +97,14 @@ class TCGGame(BaseGame, TCGGameContext):
         TCGGameContext.__init__(self)  # 继承 Context, 需要调用其 __init__
 
         # 世界运行时
-        self._world: World = world
-        self._world_file_path: Path = world_path
+        self._world: Final[World] = world
+        self._world_file_path: Final[Path] = world_path
 
         # 处理器 与 对其控制的 状态。
-        self._home_state_process_pipeline: TCGGameProcessPipeline = (
+        self._home_pipeline: Final[TCGGameProcessPipeline] = (
             TCGGameProcessPipeline.create_home_state_pipline(self)
         )
-        self._dungeon_state_processing_pipeline: TCGGameProcessPipeline = (
+        self._dungeon_combat_pipeline: Final[TCGGameProcessPipeline] = (
             TCGGameProcessPipeline.create_dungeon_combat_state_pipeline(self)
         )
 
@@ -112,10 +112,12 @@ class TCGGame(BaseGame, TCGGameContext):
         self._player: PlayerProxy = PlayerProxy(name="")
 
         # agent 系统
-        self._langserve_system: LangServeSystem = langserve_system
+        self._langserve_system: Final[LangServeSystem] = langserve_system
 
         # 混沌工程系统
-        self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
+        self._chaos_engineering_system: Final[IChaosEngineering] = (
+            chaos_engineering_system
+        )
 
         # 地牢管理系统
         self._dungeon_system: DungeonSystem = dungeon_system
@@ -152,9 +154,9 @@ class TCGGame(BaseGame, TCGGameContext):
     def current_process_pipeline(self) -> TCGGameProcessPipeline:
 
         if self.current_game_state == TCGGameState.HOME:
-            return self._home_state_process_pipeline
+            return self._home_pipeline
         elif self.current_game_state == TCGGameState.DUNGEON:
-            return self._dungeon_state_processing_pipeline
+            return self._dungeon_combat_pipeline
         else:
             assert False, "game state is not defined"
 
@@ -219,14 +221,14 @@ class TCGGame(BaseGame, TCGGameContext):
     def exit(self) -> None:
         # TODO 加上所有processors pipeline
         all = [
-            self._home_state_process_pipeline,
-            self._dungeon_state_processing_pipeline,
+            self._home_pipeline,
+            self._dungeon_combat_pipeline,
         ]
         for processor in all:
             processor.tear_down()
             processor.clear_reactive_processors()
 
-        logger.error(f"{self._name}, game over!!!!!!!!!!!!!!!!!!!!")
+        logger.error(f"{self.name}, game over!!!!!!!!!!!!!!!!!!!!")
 
     ###############################################################################################################################################
     def build_entities(self) -> "TCGGame":

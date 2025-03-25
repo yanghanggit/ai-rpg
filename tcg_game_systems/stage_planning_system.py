@@ -157,11 +157,12 @@ class StagePlanningSystem(ExecuteProcessor):
             self._game.append_ai_message(entity2, request_handler.response_content)
 
             # 更新环境描写
-            entity2.replace(
-                StageEnvironmentComponent,
-                entity2._name,
-                format_response.environment_narration,
-            )
+            if format_response.environment_narration != "":
+                entity2.replace(
+                    StageEnvironmentComponent,
+                    entity2._name,
+                    format_response.environment_narration,
+                )
 
         except:
             logger.error(

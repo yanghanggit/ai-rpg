@@ -1,7 +1,7 @@
 from entitas import ExecuteProcessor  # type: ignore
 from typing import final, override
-from game.terminal_tcg_game import TerminalTCGGame
 from game.tcg_game import TCGGame
+from game.terminal_tcg_game import TerminalTCGGame
 
 
 @final

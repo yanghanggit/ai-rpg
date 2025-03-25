@@ -55,6 +55,7 @@ def _generate_prompt(
     
 ## 输出格式规范
 {feedback_response_example.model_dump_json()}
+- 直接输出合规JSON
 - 数值精确，禁用文字修饰。
 - 直接输出合规JSON"""
 

@@ -18,7 +18,6 @@ from game.tcg_game_demo import (
     stage_dungeon_cave2_instance,
 )
 from player.player_command import PlayerCommand
-from extended_systems.combat_system import CombatSystem
 from extended_systems.dungeon_system import DungeonSystem, EMPTY_DUNGEON
 
 
@@ -182,6 +181,7 @@ async def run_game(option: UserRuntimeOptions) -> None:
             logger.error(f"游戏准备失败 = {option.game}")
             exit(1)
 
+    # 至少跑一次home阶段。
     run_home_once = False
 
     # 进入核心循环
@@ -197,8 +197,10 @@ async def run_game(option: UserRuntimeOptions) -> None:
         # 处理输入
         if usr_input == "/q" or usr_input == "/quit":
             # 退出游戏
-            logger.info(f"玩家 主动 退出游戏 = {terminal_game.player.name}")
-            terminal_game._will_exit = True
+            logger.info(
+                f"玩家 主动 退出游戏 = {terminal_game.player.name}, {player_stage_entity._name}"
+            )
+            terminal_game.will_exit = True
             break
 
         # 乱点乱点吧，测试用，不用太纠结。
@@ -285,11 +287,14 @@ async def run_game(option: UserRuntimeOptions) -> None:
             )
 
         # 处理退出
-        if terminal_game._will_exit:
+        if terminal_game.will_exit:
             break
 
+    # 会保存一下。
+    terminal_game.save()
     # 退出游戏
     terminal_game.exit()
+    # 退出
     exit(0)
 
 

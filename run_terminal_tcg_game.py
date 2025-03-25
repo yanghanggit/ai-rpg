@@ -15,6 +15,7 @@ from game.tcg_game_demo import (
     actor_warrior_instance,
     stage_heros_camp_instance,
     stage_dungeon_cave1_instance,
+    stage_dungeon_cave2_instance,
 )
 from player.player_command import PlayerCommand
 from extended_systems.combat_system import CombatSystem
@@ -137,7 +138,8 @@ async def run_game(option: UserRuntimeOptions) -> None:
 
     # 创建一个测试的地下城系统
     test_dungeon = DungeonSystem(
-        "first_test_dungeon", [stage_dungeon_cave1_instance], CombatSystem()
+        "first_test_dungeon",
+        [stage_dungeon_cave1_instance, stage_dungeon_cave2_instance],
     )
 
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

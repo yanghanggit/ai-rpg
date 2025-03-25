@@ -68,13 +68,13 @@ class Combat:
         return self._result
 
     ###############################################################################################################################################
-    def begin_combat(self) -> None:
+    def start_combat(self) -> None:
         assert self._phase == CombatPhase.PREPARATION
         self._phase = CombatPhase.ONGOING
         assert self._result == CombatResult.NONE
 
     ###############################################################################################################################################
-    def end_combat(self, result: CombatResult) -> None:
+    def complete_combat(self, result: CombatResult) -> None:
 
         # 设置战斗结束阶段！
         assert self._phase == CombatPhase.ONGOING
@@ -87,7 +87,7 @@ class Combat:
         self._result = result
 
     ###############################################################################################################################################
-    def post_combat_wait(self) -> None:
+    def transition_to_post_wait(self) -> None:
         assert self._phase == CombatPhase.COMPLETE
         self._phase = CombatPhase.POST_WAIT
         assert (
@@ -96,7 +96,7 @@ class Combat:
         )
 
     ###############################################################################################################################################
-    def begin_new_round(self) -> Round:
+    def start_new_round(self) -> Round:
         round = Round()
         self._rounds.append(round)
         return round
@@ -156,7 +156,7 @@ class CombatSystem:
         return self._combats
 
     ########################################################################################################################
-    def start_new_combat(self, name: str) -> None:
+    def launch_combat_engagement(self, name: str) -> None:
         combat = Combat(name)
         combat._phase = CombatPhase.PREPARATION
         self._combats.append(combat)

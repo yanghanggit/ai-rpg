@@ -35,7 +35,7 @@ class DungeonCombatTurnSystem(ExecuteProcessor):
         if len(actor_entities) == 0:
             return
 
-        new_round = self._game.combat_system.latest_combat.begin_new_round()
+        new_round = self._game.combat_system.latest_combat.start_new_round()
 
         # 随机出手顺序
         shuffled_reactive_entities = self._shuffle_action_order(list(actor_entities))

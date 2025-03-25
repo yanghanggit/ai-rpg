@@ -59,33 +59,43 @@ class DeathSystem(ExecuteProcessor):
             return
 
         if self._are_all_heroes_defeated():
-            self._game.combat_system.latest_combat.end_combat(CombatResult.HERO_LOSE)
+            self._game.combat_system.latest_combat.complete_combat(
+                CombatResult.HERO_LOSE
+            )
         elif self._are_all_monsters_defeated():
-            self._game.combat_system.latest_combat.end_combat(CombatResult.HERO_WIN)
+            self._game.combat_system.latest_combat.complete_combat(
+                CombatResult.HERO_WIN
+            )
         else:
             logger.info("combat continue!!!")
 
     ########################################################################################################################################################################
     def _are_all_heroes_defeated(self) -> bool:
         entities1 = self._game.get_group(
-            Matcher(all_of=[HeroComponent, DeathComponent])
+            Matcher(all_of=[HeroComponent, DeathComponent, CombatAttributesComponent])
         ).entities
 
-        entities2 = self._game.get_group(Matcher(all_of=[HeroComponent])).entities
+        entities2 = self._game.get_group(
+            Matcher(all_of=[HeroComponent, CombatAttributesComponent])
+        ).entities
 
         assert len(entities2) > 0, f"entities with actions: {entities2}"
-        return len(entities1) == len(entities2)
+        return len(entities2) > 0 and len(entities1) >= len(entities2)
 
     ########################################################################################################################################################################
     def _are_all_monsters_defeated(self) -> bool:
         entities1 = self._game.get_group(
-            Matcher(all_of=[MonsterComponent, DeathComponent])
+            Matcher(
+                all_of=[MonsterComponent, DeathComponent, CombatAttributesComponent]
+            )
         ).entities
 
-        entities2 = self._game.get_group(Matcher(all_of=[MonsterComponent])).entities
+        entities2 = self._game.get_group(
+            Matcher(all_of=[MonsterComponent, CombatAttributesComponent])
+        ).entities
 
         assert len(entities2) > 0, f"entities with actions: {entities2}"
-        return len(entities1) == len(entities2)
+        return len(entities2) > 0 and len(entities1) >= len(entities2)
 
 
 ########################################################################################################################################################################

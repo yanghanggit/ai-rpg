@@ -828,6 +828,13 @@ magic_defense: {magic_defense}"""
             logger.info(f"添加故事: {hero_entity._name} => {trans_message}")
             self.append_human_message(hero_entity, trans_message)
 
+            if hero_entity.has(CombatAttributesComponent):
+                logger.info(f"删除战斗属性: {hero_entity._name}")
+                hero_entity.remove(CombatAttributesComponent)
+            if hero_entity.has(CombatEffectsComponent):
+                logger.info(f"删除战斗效果: {hero_entity._name}")
+                hero_entity.remove(CombatEffectsComponent)
+
         # 开始传送。
         self._stage_transition(heros_entities, stage_entity)
 

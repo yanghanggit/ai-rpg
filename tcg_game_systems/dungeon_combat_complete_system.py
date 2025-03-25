@@ -4,7 +4,11 @@ from overrides import override
 from typing import Any, Dict, List, cast, final
 from game.tcg_game import TCGGame
 from extended_systems.combat_system import CombatResult
-from components.components_v_0_0_1 import ActorComponent, HeroComponent
+from components.components_v_0_0_1 import (
+    ActorComponent,
+    HeroComponent,
+    CombatAttributesComponent,
+)
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from extended_systems.chat_request_handler import ChatRequestHandler
 
@@ -42,7 +46,7 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
             self._game.save()
 
             # TODO, 进入战斗后准备的状态，离开当前状态。
-            latest_combat.post_combat_wait()
+            latest_combat.transition_to_post_wait()
 
         else:
             assert False, "不可能出现的情况！"
@@ -65,7 +69,7 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
         # 获取所有需要进行角色规划的角色
         actor_entities = self._game.get_group(
             Matcher(
-                all_of=[ActorComponent, HeroComponent],
+                all_of=[ActorComponent, HeroComponent, CombatAttributesComponent],
             )
         ).entities
 
@@ -139,7 +143,11 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
     # 压缩战斗历史。
     def _compress_chat_history_after_combat(self, entity: Entity) -> None:
 
-        assert entity.has(ActorComponent) and entity.has(HeroComponent)
+        assert (
+            entity.has(ActorComponent)
+            and entity.has(HeroComponent)
+            and entity.has(CombatAttributesComponent)
+        )
 
         # 先获取最近的战斗消息。
         extracted_combat_messages = self._extract_last_combat_messages(entity)

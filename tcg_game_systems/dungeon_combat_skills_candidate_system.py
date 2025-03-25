@@ -84,7 +84,6 @@ class DungeonCombatSkillsCandidateSystem(ExecuteProcessor):
         # 提取角色
         actor_entities = self._extract_actor_entities()
         if len(actor_entities) > 0:
-
             # 处理请求
             await self._process_chat_requests(actor_entities)
 

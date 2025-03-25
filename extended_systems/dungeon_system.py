@@ -94,7 +94,7 @@ class DungeonSystem:
         first_stage = self._dungeon_levels[0]
         if not self.combat_system.has_combat(first_stage.name):
             logger.info(f"开始地下城level：{first_stage.name}")
-            self.combat_system.start_new_combat(first_stage.name)
+            self.combat_system.launch_combat_engagement(first_stage.name)
             return True
 
         return False
@@ -103,5 +103,5 @@ class DungeonSystem:
 
 
 # 全局空
-EMPTY_DUNGEON: Final[DungeonSystem] = DungeonSystem("", [], CombatSystem())
+EMPTY_DUNGEON: Final[DungeonSystem] = DungeonSystem("", [])
 # #######################################################################################################################################

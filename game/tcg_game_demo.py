@@ -221,7 +221,7 @@ stage_heros_camp_instance = _create_stage_instance(
 #######################################################################################################################################
 # 创建实例：洞穴1
 stage_dungeon_cave1_instance = _create_stage_instance(
-    name=f"""{stage_dungeon_cave_prototype.name}-1""",
+    name=f"""{stage_dungeon_cave_prototype.name}之一""",
     stage=stage_dungeon_cave_prototype,
     kick_off_message="洞穴中十分吵闹。",
     actors=[],
@@ -230,7 +230,7 @@ stage_dungeon_cave1_instance = _create_stage_instance(
 #######################################################################################################################################
 #######################################################################################################################################
 stage_dungeon_cave2_instance = _create_stage_instance(
-    name=f"""{stage_dungeon_cave_prototype.name}-2""",
+    name=f"""{stage_dungeon_cave_prototype.name}之二""",
     stage=stage_dungeon_cave_prototype,
     kick_off_message="洞穴中十分吵闹。",
     actors=[],
@@ -262,10 +262,7 @@ def _build_world(world_boot: Boot) -> Boot:
     # 改变一些数据，例如将角色放入场景 !!!!!!!!!
     # 测试直接打死。
     actor_goblin_instance.base_attributes.hp = 1
-
-    # 角色放入场景，目前只放英雄。
-    for actor1 in [actor_warrior_instance, actor_wizard_instance]:
-        stage_heros_camp_instance.actors.append(actor1.name)
+    actor_orcs_instance.base_attributes.hp = 1
 
     # 添加一些人物关系做润色。
     actor_warrior_instance.kick_off_message += (
@@ -275,8 +272,15 @@ def _build_world(world_boot: Boot) -> Boot:
         f"""{actor_warrior_instance.name} 是你的同伴。"""
     )
 
-    for actor2 in [actor_goblin_instance]:
-        stage_dungeon_cave1_instance.actors.append(actor2.name)
+    # 营地中放置角色，这里是战士和法师。
+    stage_heros_camp_instance.actors.append(actor_warrior_instance.name)
+    stage_heros_camp_instance.actors.append(actor_wizard_instance.name)
+
+    # 第一个洞穴，放置哥布林。
+    stage_dungeon_cave1_instance.actors.append(actor_goblin_instance.name)
+
+    # 第二个洞穴，放置兽人。
+    stage_dungeon_cave2_instance.actors.append(actor_orcs_instance.name)
 
     ############################################################
     ############################################################
@@ -286,8 +290,12 @@ def _build_world(world_boot: Boot) -> Boot:
     _link_instance(
         world_boot,
         [actor_warrior_instance],
-        [actor_wizard_instance, actor_goblin_instance],
-        [stage_heros_camp_instance, stage_dungeon_cave1_instance],
+        [actor_wizard_instance, actor_goblin_instance, actor_orcs_instance],
+        [
+            stage_heros_camp_instance,
+            stage_dungeon_cave1_instance,
+            stage_dungeon_cave2_instance,
+        ],
         [],
     )
 

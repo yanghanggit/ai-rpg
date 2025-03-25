@@ -82,23 +82,21 @@ class DungeonCombatPreparationSystem(ExecuteProcessor):
         if len(actor_entities) == 0:
             return
 
-        # 重置战斗属性
+        # 重置战斗属性! 这个是必须的！
         self._reset_combat_attributes(actor_entities)
 
         # 核心处理
         await self._process_chat_requests(actor_entities)
 
         # 开始战斗
-        self._game.combat_system.latest_combat.begin_combat()
+        self._game.combat_system.latest_combat.start_combat()
 
     ###################################################################################################################################################################
-    def _extract_actor_entities(self) -> set[Entity]:
-
+    # 所有参与战斗的角色！
+    def _extract_actor_entities(self) -> Set[Entity]:
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
-
-        actors_on_stage = self._game.retrieve_actors_on_stage(player_entity)
-        return actors_on_stage
+        return self._game.retrieve_actors_on_stage(player_entity)
 
     ###################################################################################################################################################################
     def _reset_combat_attributes(self, actor_entities: Set[Entity]) -> None:

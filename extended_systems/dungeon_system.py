@@ -10,12 +10,15 @@ class DungeonSystem:
 
     ########################################################################################################################
     def __init__(
-        self, prefix_name: str, stages: List[StageInstance], combat_system: CombatSystem
+        self,
+        prefix_name: str,
+        dungeon_levels: List[StageInstance],
+        combat_system: CombatSystem = CombatSystem(),
     ) -> None:
 
         # 初始化。
         self._prefix_name: Final[str] = prefix_name
-        self._dungeon_levels: List[StageInstance] = stages
+        self._dungeon_levels: List[StageInstance] = dungeon_levels
         self._completed_stages: Set[str] = set()
         self._combat_system: CombatSystem = combat_system
 
@@ -37,6 +40,11 @@ class DungeonSystem:
 
     ########################################################################################################################
     @property
+    def dungeon_levels(self) -> List[StageInstance]:
+        return self._dungeon_levels
+
+    ########################################################################################################################
+    @property
     def combat_system(self) -> CombatSystem:
         return self._combat_system
 
@@ -54,7 +62,7 @@ class DungeonSystem:
 
     ########################################################################################################################
     def mark_stage_complete(self, stage_name: str) -> None:
-        
+
         if len(self._dungeon_levels) == 0:
             logger.warning("地下城系统为空！")
             return
@@ -71,6 +79,25 @@ class DungeonSystem:
         # 最终添加。
         self._completed_stages.add(stage_name)
         logger.info(f"完成地下城关卡：{stage_name}")
+
+    ########################################################################################################################
+    def start_first_dungeon_level_combat(self) -> bool:
+
+        assert len(self._dungeon_levels) > 0, "地下城系统为空！"
+        assert len(self._completed_stages) == 0, "已经完成的地下城关卡不为空！"
+
+        if len(self._dungeon_levels) == 0:
+            logger.warning("地下城系统为空！")
+            return False
+
+        # 获取第一个地下城。
+        first_stage = self._dungeon_levels[0]
+        if not self.combat_system.has_combat(first_stage.name):
+            logger.info(f"开始地下城level：{first_stage.name}")
+            self.combat_system.start_new_combat(first_stage.name)
+            return True
+
+        return False
 
     ########################################################################################################################
 

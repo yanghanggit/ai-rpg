@@ -771,11 +771,16 @@ magic_defense: {magic_defense}"""
 
     ###############################################################################################################################################
     # TODO!!! 临时测试准备传送！！！
-    def dungeon_stage_transition(
-        self, trans_message: str, dungeon_stage: StageInstance
-    ) -> None:
+    def dungeon_stage_transition(self) -> None:
 
-        stage_entity = self.get_stage_entity(dungeon_stage.name)
+        assert len(self.dungeon_system.dungeon_levels) > 0, "没有地下城！"
+        if len(self.dungeon_system.dungeon_levels) == 0:
+            logger.error("没有地下城！")
+            return
+
+        launch_dungeon_stage = self.dungeon_system.dungeon_levels[0]
+
+        stage_entity = self.get_stage_entity(launch_dungeon_stage.name)
         assert stage_entity is not None
         assert stage_entity.has(DungeonComponent)
         if stage_entity is None:
@@ -787,6 +792,7 @@ magic_defense: {magic_defense}"""
             logger.error("没有找到英雄!")
             return
 
+        trans_message = f"""# 提示！你将要开始一次冒险，准备进入地下城: {launch_dungeon_stage.name}"""
         for hero_entity in heros_entities:
             # 添加故事
             logger.info(f"添加故事: {hero_entity._name} => {trans_message}")
@@ -794,6 +800,10 @@ magic_defense: {magic_defense}"""
 
         # 开始传送。
         self._stage_transition(heros_entities, stage_entity)
+
+        # 第一场战斗
+        if not self.dungeon_system.start_first_dungeon_level_combat():
+            assert False, "地下城战斗启动失败！"
 
     ###############################################################################################################################################
     # TODO!!! 临时测试准备传送！！！
@@ -822,12 +832,13 @@ magic_defense: {magic_defense}"""
         self._stage_transition(heros_entities, stage_entity)
 
     ###############################################################################################################################################
-    # def reset_combat_system(self) -> None:
-    #     # 重制地下城
-    #     self._dungeon_system = EMPTY_DUNGEON
+    def get_player_stage_entity(self) -> Optional[Entity]:
 
-    # ###############################################################################################################################################
-    # def is_dungeon_system_populated(self) -> bool:
-    #     return self._dungeon_system != EMPTY_DUNGEON
+        player_entity = self.get_player_entity()
+        assert player_entity is not None
+        if player_entity is None:
+            return None
+
+        return self.safe_get_stage_entity(player_entity)
 
     ###############################################################################################################################################

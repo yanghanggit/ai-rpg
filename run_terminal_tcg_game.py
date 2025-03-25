@@ -14,7 +14,7 @@ from game.tcg_game_demo import (
     create_then_write_demo_world,
     actor_warrior_instance,
     stage_heros_camp_instance,
-    stage_dungeon_cave_instance,
+    stage_dungeon_cave1_instance,
 )
 from player.player_command import PlayerCommand
 from extended_systems.combat_system import CombatSystem
@@ -137,7 +137,7 @@ async def run_game(option: UserRuntimeOptions) -> None:
 
     # 创建一个测试的地下城系统
     test_dungeon = DungeonSystem(
-        "first_test_dungeon", [stage_dungeon_cave_instance], CombatSystem()
+        "first_test_dungeon", [stage_dungeon_cave1_instance], CombatSystem()
     )
 
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -186,14 +186,11 @@ async def run_game(option: UserRuntimeOptions) -> None:
     while True:
 
         # TODO加一个描述。
-        game_state_desc = "未知状态"
-        if terminal_game.current_game_state == TCGGameState.HOME:
-            game_state_desc = f"营地/{stage_heros_camp_instance.name}"
-        elif terminal_game.current_game_state == TCGGameState.DUNGEON:
-            game_state_desc = f"地下城/{stage_dungeon_cave_instance.name}"
+        player_stage_entity = terminal_game.get_player_stage_entity()
+        assert player_stage_entity is not None
 
         # 玩家输入
-        usr_input = input(f"[{terminal_game.player.name}/{game_state_desc}]:")
+        usr_input = input(f"[{terminal_game.player.name}/{player_stage_entity._name}]:")
 
         # 处理输入
         if usr_input == "/q" or usr_input == "/quit":
@@ -210,14 +207,9 @@ async def run_game(option: UserRuntimeOptions) -> None:
                 logger.error(f"{usr_input} 只能在地下城中使用")
                 continue
 
-            # 测试，直接进入战斗
-            if not terminal_game.combat_system.has_combat(
-                stage_dungeon_cave_instance.name
-            ):
-                logger.info(f"玩家输入 = {usr_input}, 开始战斗！")
-                terminal_game.combat_system.start_new_combat(
-                    stage_dungeon_cave_instance.name
-                )
+            if len(terminal_game.combat_system.combats) == 0:
+                logger.error(f"{usr_input} 没有战斗可以进行！！！！")
+                continue
 
             # 执行一次！！！！！
             await _execute_terminal_game(terminal_game, usr_input)
@@ -275,24 +267,14 @@ async def run_game(option: UserRuntimeOptions) -> None:
                 logger.error(f"{usr_input} 至少要执行一次 /h，才能准备传送战斗！")
                 continue
 
-            dungeon_stage = terminal_game.get_stage_entity(
-                stage_dungeon_cave_instance.name
-            )
-            if dungeon_stage is None:
-                logger.error(f"{stage_dungeon_cave_instance.name} 地下城不存在")
-                continue
-
             if terminal_game.dungeon_system == EMPTY_DUNGEON:
-                logger.error(f"全部地下城已经结束。！！！！已经全部被清空！！！！")
+                logger.error(
+                    f"全部地下城已经结束。！！！！已经全部被清空！！！！或者不存在！！！！"
+                )
                 continue
 
-            logger.info(
-                f"玩家输入 = {usr_input}, 准备传送地下城 {stage_dungeon_cave_instance.name}"
-            )
-            terminal_game.dungeon_stage_transition(
-                f"""# 提示！你将要开始一次冒险，准备进入地下城: {stage_dungeon_cave_instance.name}""",
-                stage_dungeon_cave_instance,
-            )
+            logger.info(f"玩家输入 = {usr_input}, 准备传送地下城")
+            terminal_game.dungeon_stage_transition()
 
         else:
 

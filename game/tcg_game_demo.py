@@ -219,9 +219,18 @@ stage_heros_camp_instance = _create_stage_instance(
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
-# 创建实例：场景.密室
-stage_dungeon_cave_instance = _create_stage_instance(
-    name=stage_dungeon_cave_prototype.name,
+# 创建实例：洞穴1
+stage_dungeon_cave1_instance = _create_stage_instance(
+    name=f"""{stage_dungeon_cave_prototype.name}-1""",
+    stage=stage_dungeon_cave_prototype,
+    kick_off_message="洞穴中十分吵闹。",
+    actors=[],
+)
+#######################################################################################################################################
+#######################################################################################################################################
+#######################################################################################################################################
+stage_dungeon_cave2_instance = _create_stage_instance(
+    name=f"""{stage_dungeon_cave_prototype.name}-2""",
     stage=stage_dungeon_cave_prototype,
     kick_off_message="洞穴中十分吵闹。",
     actors=[],
@@ -267,7 +276,7 @@ def _build_world(world_boot: Boot) -> Boot:
     )
 
     for actor2 in [actor_goblin_instance]:
-        stage_dungeon_cave_instance.actors.append(actor2.name)
+        stage_dungeon_cave1_instance.actors.append(actor2.name)
 
     ############################################################
     ############################################################
@@ -278,7 +287,7 @@ def _build_world(world_boot: Boot) -> Boot:
         world_boot,
         [actor_warrior_instance],
         [actor_wizard_instance, actor_goblin_instance],
-        [stage_heros_camp_instance, stage_dungeon_cave_instance],
+        [stage_heros_camp_instance, stage_dungeon_cave1_instance],
         [],
     )
 

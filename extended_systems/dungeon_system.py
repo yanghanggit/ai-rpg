@@ -1,6 +1,7 @@
 from typing import Final, List, Optional, Set, final
 from loguru import logger
 from models.v_0_0_1 import StageInstance
+from extended_systems.combat_system import CombatSystem
 
 
 # TODO临时的，先管理下。
@@ -8,10 +9,15 @@ from models.v_0_0_1 import StageInstance
 class DungeonSystem:
 
     ########################################################################################################################
-    def __init__(self, prefix_name: str, stages: List[StageInstance]) -> None:
+    def __init__(
+        self, prefix_name: str, stages: List[StageInstance], combat_system: CombatSystem
+    ) -> None:
+
+        # 初始化。
         self._prefix_name: Final[str] = prefix_name
         self._dungeon_levels: List[StageInstance] = stages
         self._completed_stages: Set[str] = set()
+        self._combat_system: CombatSystem = combat_system
 
         #
         if len(self._dungeon_levels) > 0:
@@ -30,6 +36,11 @@ class DungeonSystem:
         return f"{self._prefix_name}-{dungeon_stage_names}"
 
     ########################################################################################################################
+    @property
+    def combat_system(self) -> CombatSystem:
+        return self._combat_system
+
+    ########################################################################################################################
     # TODO，输入一个名字，就能查看是否有下一个地下城。
     def get_next_dungeon_level(self, stage_name: str) -> Optional[StageInstance]:
         assert stage_name != "", "stage_name 不能为空！"
@@ -43,6 +54,10 @@ class DungeonSystem:
 
     ########################################################################################################################
     def mark_stage_complete(self, stage_name: str) -> None:
+        
+        if len(self._dungeon_levels) == 0:
+            logger.warning("地下城系统为空！")
+            return
 
         # 如果 stage_name 不在 self._stages 中，就报错。
         assert stage_name in [
@@ -58,11 +73,8 @@ class DungeonSystem:
         logger.info(f"完成地下城关卡：{stage_name}")
 
     ########################################################################################################################
-    def clear(self) -> None:
-        self._dungeon_levels.clear()
-        self._completed_stages.clear()
-
-    ########################################################################################################################
 
 
-EMPTY_DUNGEON = DungeonSystem("", [])
+# 全局空
+EMPTY_DUNGEON: Final[DungeonSystem] = DungeonSystem("", [], CombatSystem())
+# #######################################################################################################################################

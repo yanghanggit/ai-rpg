@@ -88,7 +88,6 @@ class TCGGame(BaseGame, TCGGameContext):
         world: World,
         world_path: Path,
         langserve_system: LangServeSystem,
-        combat_system: CombatSystem,
         dungeon_system: DungeonSystem,
         chaos_engineering_system: IChaosEngineering,
     ) -> None:
@@ -117,9 +116,6 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 混沌工程系统
         self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
-
-        # 战斗系统
-        self._combat_system: CombatSystem = combat_system
 
         # 地牢管理系统
         self._dungeon_system: DungeonSystem = dungeon_system
@@ -175,7 +171,7 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     @property
     def combat_system(self) -> CombatSystem:
-        return self._combat_system
+        return self._dungeon_system.combat_system
 
     ###############################################################################################################################################
     @property
@@ -186,6 +182,11 @@ class TCGGame(BaseGame, TCGGameContext):
     @property
     def dungeon_system(self) -> DungeonSystem:
         return self._dungeon_system
+
+    ###############################################################################################################################################
+    @dungeon_system.setter
+    def dungeon_system(self, value: DungeonSystem) -> None:
+        self._dungeon_system = value
 
     ###############################################################################################################################################
     @override
@@ -821,14 +822,12 @@ magic_defense: {magic_defense}"""
         self._stage_transition(heros_entities, stage_entity)
 
     ###############################################################################################################################################
-    def clear_combat_and_dungeon(self) -> None:
-        # 清空战斗
-        self.combat_system.clear_combats()
-        # 重制地下城
-        self._dungeon_system = EMPTY_DUNGEON
+    # def reset_combat_system(self) -> None:
+    #     # 重制地下城
+    #     self._dungeon_system = EMPTY_DUNGEON
 
-    ###############################################################################################################################################
-    def is_dungeon_system_populated(self) -> bool:
-        return self._dungeon_system != EMPTY_DUNGEON
+    # ###############################################################################################################################################
+    # def is_dungeon_system_populated(self) -> bool:
+    #     return self._dungeon_system != EMPTY_DUNGEON
 
     ###############################################################################################################################################

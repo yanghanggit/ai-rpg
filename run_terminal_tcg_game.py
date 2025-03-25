@@ -18,7 +18,7 @@ from game.tcg_game_demo import (
 )
 from player.player_command import PlayerCommand
 from extended_systems.combat_system import CombatSystem
-from extended_systems.dungeon_system import DungeonSystem
+from extended_systems.dungeon_system import DungeonSystem, EMPTY_DUNGEON
 
 
 ###############################################################################################################################################
@@ -135,8 +135,10 @@ async def run_game(option: UserRuntimeOptions) -> None:
     lang_serve_system = LangServeSystem(f"{option.game}-langserve_system")
     lang_serve_system.add_remote_runnable(url=option.langserve_url)
 
-    # 创建一个地下城系统
-    test_dungeon = DungeonSystem("first_test_dungeon", [stage_dungeon_cave_instance])
+    # 创建一个测试的地下城系统
+    test_dungeon = DungeonSystem(
+        "first_test_dungeon", [stage_dungeon_cave_instance], CombatSystem()
+    )
 
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -147,7 +149,6 @@ async def run_game(option: UserRuntimeOptions) -> None:
         world=start_world,
         world_path=option.world_runtime_file,
         langserve_system=lang_serve_system,
-        combat_system=CombatSystem(),
         dungeon_system=test_dungeon,
         chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
@@ -247,7 +248,8 @@ async def run_game(option: UserRuntimeOptions) -> None:
             )
 
             # 清空战斗
-            terminal_game.clear_combat_and_dungeon()
+            logger.info(f"玩家输入 = {usr_input}, 重制地下城！！！！！！！！")
+            terminal_game.dungeon_system = EMPTY_DUNGEON
 
         elif usr_input == "/rh" or usr_input == "/run-home":
 
@@ -280,7 +282,7 @@ async def run_game(option: UserRuntimeOptions) -> None:
                 logger.error(f"{stage_dungeon_cave_instance.name} 地下城不存在")
                 continue
 
-            if not terminal_game.is_dungeon_system_populated():
+            if terminal_game.dungeon_system == EMPTY_DUNGEON:
                 logger.error(f"全部地下城已经结束。！！！！已经全部被清空！！！！")
                 continue
 

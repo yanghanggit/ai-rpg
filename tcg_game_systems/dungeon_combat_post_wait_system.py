@@ -3,6 +3,7 @@ from entitas import ExecuteProcessor  # type: ignore
 from overrides import override
 from typing import final
 from game.tcg_game import TCGGame
+from extended_systems.combat_system import CombatResult
 
 
 #######################################################################################################################################
@@ -15,17 +16,37 @@ class DungeonCombatPostWaitSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     def execute(self) -> None:
-        pass
-
-    #######################################################################################################################################
-    @override
-    async def a_execute1(self) -> None:
         latest_combat = self._game.combat_system.latest_combat
         if not latest_combat.is_post_wait:
-            # 不是本阶段就直接返回
             return
-        logger.info(
-            "DungeonCombatPostWaitSystem: POST_WAIT!!!!!! 等待返回或者继续打下一局！！！！"
+
+        if latest_combat.result == CombatResult.HERO_WIN:
+            self._resolve_hero_win()
+        elif latest_combat.result == CombatResult.HERO_LOSE:
+            self._resolve_hero_lose()
+        else:
+            assert False, "不可能出现的情况！"
+
+    #######################################################################################################################################
+    def _resolve_hero_win(self) -> None:
+
+        player_entity = self._game.get_player_entity()
+        assert player_entity is not None, "player_entity 不可能为空！"
+
+        stage_entity = self._game.safe_get_stage_entity(player_entity)
+        assert stage_entity is not None, "stage_entity 不可能为空！"
+
+        next_stage = self._game.dungeon_system.get_next_dungeon_level(
+            stage_entity._name
         )
+        if next_stage is None:
+            logger.info("没有下一关，你胜利了，应该返回营地！！！！")
+            return
+
+        logger.info(f"下一关为：{next_stage.name}，可以进入！！！！")
+
+    #######################################################################################################################################
+    def _resolve_hero_lose(self) -> None:
+        logger.info("英雄失败，应该返回营地！！！！")
 
     #######################################################################################################################################

@@ -19,7 +19,9 @@ class TerminalPlayerInterruptWaitSystem(ExecuteProcessor):
             return
 
         while True:
-            input(f"！！！！！打断调试！！！........请任意键继续........")
+            input(
+                f"！！！！！TerminalTCGGame 打断调试！！！........请任意键继续........"
+            )
             break
 
 

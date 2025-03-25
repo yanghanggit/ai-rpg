@@ -18,6 +18,7 @@ from game.tcg_game_demo import (
 )
 from player.player_command import PlayerCommand
 from extended_systems.combat_system import CombatSystem
+from extended_systems.dungeon_system import DungeonSystem
 
 
 ###############################################################################################################################################
@@ -127,10 +128,18 @@ async def run_game(option: UserRuntimeOptions) -> None:
         # 重新生成world,直接反序列化。
         start_world = World.model_validate_json(world_runtime_file_content)
 
-    ### 创建一些子系统。
+    ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     # langserve先写死。后续需要改成配置文件
     lang_serve_system = LangServeSystem(f"{option.game}-langserve_system")
     lang_serve_system.add_remote_runnable(url=option.langserve_url)
+
+    # 创建一个地下城系统
+    test_dungeon = DungeonSystem("first_test_dungeon", [stage_dungeon_cave_instance])
+
+    ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     # 依赖注入，创建新的游戏
     terminal_game = TerminalTCGGame(
@@ -139,6 +148,7 @@ async def run_game(option: UserRuntimeOptions) -> None:
         world_path=option.world_runtime_file,
         langserve_system=lang_serve_system,
         combat_system=CombatSystem(),
+        dungeon_system=test_dungeon,
         chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
 
@@ -192,7 +202,7 @@ async def run_game(option: UserRuntimeOptions) -> None:
             break
 
         # 乱点乱点吧，测试用，不用太纠结。
-        elif usr_input == "/c" or usr_input == "/combat":
+        elif usr_input == "/rd" or usr_input == "/run-dungeon":
 
             # 推进一次战斗。
             if terminal_game.current_game_state != TCGGameState.DUNGEON:
@@ -211,7 +221,7 @@ async def run_game(option: UserRuntimeOptions) -> None:
             # 执行一次！！！！！
             await _execute_terminal_game(terminal_game, usr_input)
 
-        elif usr_input == "/b" or usr_input == "/back":
+        elif usr_input == "/th" or usr_input == "/trans-home":
 
             # 战斗后回家。
 
@@ -229,12 +239,17 @@ async def run_game(option: UserRuntimeOptions) -> None:
             logger.info(
                 f"玩家输入 = {usr_input}, 准备传送回家 {stage_heros_camp_instance.name}"
             )
+
+            # 回家
             terminal_game.home_stage_transition(
                 f"""# 提示！冒险结束，你将要返回: {stage_heros_camp_instance.name}""",
                 stage_heros_camp_instance,
             )
 
-        elif usr_input == "/h" or usr_input == "/home":
+            # 清空战斗
+            terminal_game.clear_combat_and_dungeon()
+
+        elif usr_input == "/rh" or usr_input == "/run-home":
 
             # 推进一次营地的执行。
 
@@ -246,7 +261,7 @@ async def run_game(option: UserRuntimeOptions) -> None:
             run_home_once = True
             await _execute_terminal_game(terminal_game, usr_input)
 
-        elif usr_input == "/d" or usr_input == "/dungeon":
+        elif usr_input == "/td" or usr_input == "/trans-dungeon":
 
             # 传送进地下城战斗。
 
@@ -265,11 +280,8 @@ async def run_game(option: UserRuntimeOptions) -> None:
                 logger.error(f"{stage_dungeon_cave_instance.name} 地下城不存在")
                 continue
 
-            monster_entities = terminal_game.retrieve_actors_on_stage(dungeon_stage)
-            if len(monster_entities) == 0:
-                logger.error(
-                    f"{stage_dungeon_cave_instance.name} 地下城没有怪物，已经被攻破！！！！！！"
-                )
+            if not terminal_game.is_dungeon_system_populated():
+                logger.error(f"全部地下城已经结束。！！！！已经全部被清空！！！！")
                 continue
 
             logger.info(
@@ -291,7 +303,6 @@ async def run_game(option: UserRuntimeOptions) -> None:
             break
 
     # 退出游戏
-    logger.error(f"游戏退出 = {terminal_game.player.name}")
     terminal_game.exit()
     exit(0)
 

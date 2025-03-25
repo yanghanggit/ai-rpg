@@ -43,6 +43,7 @@ from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 from models.event_models import AgentEvent
 from extended_systems.combat_system import CombatSystem
+from extended_systems.dungeon_system import DungeonSystem, EMPTY_DUNGEON
 
 
 # ################################################################################################################################################
@@ -88,6 +89,7 @@ class TCGGame(BaseGame, TCGGameContext):
         world_path: Path,
         langserve_system: LangServeSystem,
         combat_system: CombatSystem,
+        dungeon_system: DungeonSystem,
         chaos_engineering_system: IChaosEngineering,
     ) -> None:
 
@@ -118,6 +120,9 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 战斗系统
         self._combat_system: CombatSystem = combat_system
+
+        # 地牢管理系统
+        self._dungeon_system: DungeonSystem = dungeon_system
 
     ###############################################################################################################################################
     @property
@@ -178,6 +183,11 @@ class TCGGame(BaseGame, TCGGameContext):
         return self._world
 
     ###############################################################################################################################################
+    @property
+    def dungeon_system(self) -> DungeonSystem:
+        return self._dungeon_system
+
+    ###############################################################################################################################################
     @override
     def execute(self) -> None:
         # 顺序不要动
@@ -215,7 +225,7 @@ class TCGGame(BaseGame, TCGGameContext):
             processor.tear_down()
             processor.clear_reactive_processors()
 
-        logger.info(f"{self._name}, game over!!!!!!!!!!!!!!!!!!!!")
+        logger.error(f"{self._name}, game over!!!!!!!!!!!!!!!!!!!!")
 
     ###############################################################################################################################################
     def build_entities(self) -> "TCGGame":
@@ -489,6 +499,13 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     def append_human_message(self, entity: Entity, chat: str, **kwargs: Any) -> None:
+
+        # 如果 **kwargs 不是 空，就打印一下
+        if len(kwargs) > 0:
+            logger.info(
+                f"append_human_message\nentity = {entity._name}, \nchat = {chat}, \nkwargs: {kwargs}"
+            )
+
         agent_short_term_memory = self.get_agent_short_term_memory(entity)
         agent_short_term_memory.chat_history.extend(
             [HumanMessage(content=chat, kwargs=kwargs)]
@@ -802,5 +819,16 @@ magic_defense: {magic_defense}"""
 
         # 开始传送。
         self._stage_transition(heros_entities, stage_entity)
+
+    ###############################################################################################################################################
+    def clear_combat_and_dungeon(self) -> None:
+        # 清空战斗
+        self.combat_system.clear_combats()
+        # 重制地下城
+        self._dungeon_system = EMPTY_DUNGEON
+
+    ###############################################################################################################################################
+    def is_dungeon_system_populated(self) -> bool:
+        return self._dungeon_system != EMPTY_DUNGEON
 
     ###############################################################################################################################################

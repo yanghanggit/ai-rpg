@@ -808,14 +808,12 @@ magic_defense: {magic_defense}"""
 
         ## 设置一个战斗。
         assert len(self.dungeon_system.dungeon_levels) > 0, "没有地下城！"
-        assert (
-            len(self.dungeon_system._completed_levels) == 0
-        ), "已经完成的地下城关卡不为空！"
+        assert self.dungeon_system.position == 0, "当前地下城关卡已经完成！"
         self.combat_system.combat_engagement(Combat(stage_entity._name))
 
     #######################################################################################################################################
-    def next_dungeon_level(self, next_level: StageInstance) -> None:
-        # pass
+    def advance_to_next_dungeon(self, next_level: StageInstance) -> None:
+
         logger.info(f"下一关为：{next_level.name}，可以进入！！！！")
 
         heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
@@ -836,10 +834,7 @@ magic_defense: {magic_defense}"""
         self.stage_transition(heros_entities, next_level.name)
 
         assert len(self.dungeon_system.dungeon_levels) > 0, "没有地下城！"
-        assert (
-            len(self.dungeon_system._completed_levels) > 0
-        ), "已经完成的地下城关卡为空！"
-
+        assert self.dungeon_system.position > 0, "当前地下城关卡已经完成！"
         # 再开一场战斗！
         self.combat_system.combat_engagement(Combat(next_level.name))
 

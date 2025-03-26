@@ -1,4 +1,4 @@
-from typing import Final, List, Optional, Set, final
+from typing import Final, List, Optional, final
 from loguru import logger
 from models.v_0_0_1 import StageInstance
 from extended_systems.combat_system import CombatSystem
@@ -13,15 +13,13 @@ class DungeonSystem:
         self,
         prefix_name: str,
         dungeon_levels: List[StageInstance],
-        combat_system: CombatSystem = CombatSystem(),
     ) -> None:
 
         # 初始化。
         self._prefix_name: Final[str] = prefix_name
         self._levels: List[StageInstance] = dungeon_levels
-        self._completed_levels: Set[str] = set()
-        self._combat_system: CombatSystem = combat_system
-        self._current_level_index: int = 0
+        self._combat_system: CombatSystem = CombatSystem()
+        self._position: int = 0
 
         #
         if len(self._levels) > 0:
@@ -50,40 +48,33 @@ class DungeonSystem:
         return self._combat_system
 
     ########################################################################################################################
+    @property
+    def position(self) -> int:
+        return self._position
+
+    ########################################################################################################################
     def next_level(self) -> Optional[StageInstance]:
-        if self._current_level_index + 1 < len(self._levels):
-            self._current_level_index += 1
-            return self._levels[self._current_level_index]
+        if self._position + 1 < len(self._levels):
+            self._position += 1
+            return self._levels[self._position]
         return None
 
     ########################################################################################################################
-    def set_current_level_complete(self, stage_name: str = "") -> bool:
+    def advance_to_next_level(self, stage_name: str = "") -> bool:
 
         assert len(self._levels) > 0, "地下城系统为空！"
         if len(self._levels) == 0:
             logger.warning("地下城系统为空！")
             return False
 
-        assert self._current_level_index < len(self._levels), "当前地下城关卡已经完成！"
-        if self._current_level_index >= len(self._levels):
+        assert self._position < len(self._levels), "当前地下城关卡已经完成！"
+        if self._position >= len(self._levels):
             logger.warning("当前地下城关卡已经完成！")
             return False
 
-        current_level_stage = self._levels[self._current_level_index]
+        current_level_stage = self._levels[self._position]
         assert current_level_stage.name == stage_name, "当前地下城关卡已经完成！"
-        assert (
-            current_level_stage.name not in self._completed_levels
-        ), "当前地下城关卡已经完成！"
-        if current_level_stage.name in self._completed_levels:
-            logger.warning("当前地下城关卡已经完成！")
-            return False
-
-        self._completed_levels.add(current_level_stage.name)
+        self._position = self._position + 1
         return True
 
     ########################################################################################################################
-
-
-# 全局空
-NULL_DUNGEON: Final[DungeonSystem] = DungeonSystem("", [])
-# #######################################################################################################################################

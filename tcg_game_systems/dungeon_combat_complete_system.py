@@ -60,7 +60,7 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
         stage_entity = self._game.safe_get_stage_entity(player_entity)
         assert stage_entity is not None
 
-        if not self._game.dungeon_system.set_current_level_complete(stage_entity._name):
+        if not self._game.dungeon_system.advance_to_next_level(stage_entity._name):
             assert False, "不可能出现的情况！"
 
     #######################################################################################################################################

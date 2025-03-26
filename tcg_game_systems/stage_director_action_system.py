@@ -10,7 +10,6 @@ from components.actions_v_0_0_1 import (
     TurnAction,
     SelectAction,
 )
-from models.event_models import AgentEvent
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from models.v_0_0_1 import Skill
 from components.components_v_0_0_1 import (
@@ -71,6 +70,8 @@ def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> st
 
     details_prompt: List[str] = []
     for param in prompt_params:
+
+        assert param.skill.name != ""
 
         detail = f"""### {param.actor} 
 技能: {param.skill.name}
@@ -147,6 +148,9 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
             )
         ).entities
 
+        if len(turn_then_select_actors) == 0:
+            return
+
         sort_actors = sorted(
             turn_then_select_actors, key=lambda entity: entity.get(TurnAction).turn
         )
@@ -164,11 +168,11 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
             assert entity.has(ActorComponent)
             assert entity.has(CombatAttributesComponent)
             assert entity.has(CombatEffectsComponent)
-
-            if not entity.has(SelectAction):
-                continue
+            assert entity.has(SelectAction)
 
             select_action = entity.get(SelectAction)
+            assert select_action.skill.name != ""
+
             ret.append(
                 ActionPromptParameters(
                     actor=entity._name,
@@ -241,14 +245,6 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
                 stage_director_action.name,
                 format_response.calculation,
                 format_response.performance,
-            )
-
-            # 发送事件。
-            self._game.broadcast_event(
-                entity=stage_entity,
-                agent_event=AgentEvent(
-                    message=f"# 发生事件！战斗回合:\n{format_response.performance}",
-                ),
             )
 
             # 通知角色！！！！

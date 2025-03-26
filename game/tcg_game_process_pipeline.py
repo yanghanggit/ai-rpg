@@ -147,7 +147,8 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.dungeon_combat_skills_candidate_system import (
             DungeonCombatSkillsCandidateSystem,
         )
-        from tcg_game_systems.turn_action_system import TurnActionSystem
+
+        # from tcg_game_systems.turn_action_system import TurnActionSystem
         from tcg_game_systems.dungeon_combat_round_system import (
             DungeonCombatRoundSystem,
         )
@@ -179,7 +180,6 @@ class TCGGameProcessPipeline(Processors):
 
         ######动作开始！！！！！################################################################################################
         processors.add(PreActionSystem(tcg_game))
-        processors.add(TurnActionSystem(tcg_game))
         processors.add(SelectActionSystem(tcg_game))
         processors.add(StageDirectorActionSystem(tcg_game))
         processors.add(FeedbackActionSystem(tcg_game))

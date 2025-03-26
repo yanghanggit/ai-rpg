@@ -24,7 +24,7 @@ class SkillSelectionResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _generate_battle_prompt(
+def _generate_prompt(
     current_stage: str,
     current_stage_narration: str,
     skill_candidates: List[Skill],
@@ -62,12 +62,12 @@ class SelectActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(SelectAction): GroupEvent.ADDED}
+        return {Matcher(TurnAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(SelectAction) and entity.has(TurnAction)
+        return entity.has(TurnAction)
 
     #######################################################################################################################################
     @override
@@ -91,7 +91,6 @@ class SelectActionSystem(BaseActionReactiveSystem):
 
         # 处理角色规划请求
         self._handle_responses(request_handlers)
-        pass
 
     #######################################################################################################################################
     def _handle_responses(self, request_handlers: List[ChatRequestHandler]) -> None:
@@ -142,6 +141,7 @@ class SelectActionSystem(BaseActionReactiveSystem):
                         )
 
                     # 给角色添加！！！
+                    assert not entity2.has(SelectAction)
                     entity2.replace(
                         SelectAction,
                         skill_candidate_comp.name,
@@ -150,27 +150,11 @@ class SelectActionSystem(BaseActionReactiveSystem):
                         format_response.interaction,
                         format_response.reason,
                     )
-
-                    self._notify_event(entity2, format_response, skill)
                     break
         except:
             logger.error(
                 f"""返回格式错误: {entity2._name}, Response = \n{request_handler.response_content}"""
             )
-
-    #######################################################################################################################################
-    def _notify_event(
-        self, entity: Entity, format_response: SkillSelectionResponse, skill: Skill
-    ) -> None:
-
-        message = f""" # 发生事件！经过思考后，你决定行动！
-## 使用技能 = {skill.name}
-## 目标 = {format_response.targets}
-## 原因 = {format_response.reason}
-## 技能数据
-{skill.model_dump_json()}"""
-
-        self._game.append_human_message(entity, message)
 
     #######################################################################################################################################
     def _generate_requests(
@@ -187,7 +171,7 @@ class SelectActionSystem(BaseActionReactiveSystem):
 
             #
             assert entity.has(SkillCandidateQueueComponent)
-            message = _generate_battle_prompt(
+            message = _generate_prompt(
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
                 entity.get(SkillCandidateQueueComponent).queue,

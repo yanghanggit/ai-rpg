@@ -133,7 +133,7 @@ class TCGGameProcessPipeline(Processors):
         )
         from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
         from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
-        from tcg_game_systems.select_action_system import SelectActionSystem
+        from tcg_game_systems.turn_action_system import TurnActionSystem
         from tcg_game_systems.stage_director_action_system import (
             StageDirectorActionSystem,
         )
@@ -180,7 +180,7 @@ class TCGGameProcessPipeline(Processors):
 
         ######动作开始！！！！！################################################################################################
         processors.add(PreActionSystem(tcg_game))
-        processors.add(SelectActionSystem(tcg_game))
+        processors.add(TurnActionSystem(tcg_game))
         processors.add(StageDirectorActionSystem(tcg_game))
         processors.add(FeedbackActionSystem(tcg_game))
         processors.add(DungeonCombatFinalizeSystem(tcg_game))

@@ -138,8 +138,8 @@ async def run_game(option: UserRuntimeOptions) -> None:
 
     # 创建一个测试的地下城系统
     test_dungeon = DungeonSystem(
-        "first_test_dungeon",
-        [stage_dungeon_cave1_instance, stage_dungeon_cave2_instance],
+        name="test_dungeon",
+        levels=[stage_dungeon_cave1_instance, stage_dungeon_cave2_instance],
     )
 
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -214,7 +214,7 @@ async def run_game(option: UserRuntimeOptions) -> None:
                             break
 
                     # 进入下一个循环！！！！
-                    terminal_game.advance_to_next_dungeon(next_level)
+                    terminal_game.advance_to_next_dungeon()
                     continue
 
             elif terminal_game.combat_system.combat_result == CombatResult.HERO_LOSE:
@@ -282,7 +282,7 @@ async def run_game(option: UserRuntimeOptions) -> None:
 
             # 清空战斗
             logger.info(f"玩家输入 = {usr_input}, 重制地下城！！！！！！！！")
-            terminal_game.dungeon_system = DungeonSystem("", [])
+            terminal_game.dungeon_system = DungeonSystem(name="", levels=[])
 
         elif usr_input == "/rh" or usr_input == "/run-home":
 
@@ -308,7 +308,7 @@ async def run_game(option: UserRuntimeOptions) -> None:
                 logger.error(f"{usr_input} 至少要执行一次 /h，才能准备传送战斗！")
                 continue
 
-            if len(terminal_game.dungeon_system.dungeon_levels) == 0:
+            if len(terminal_game.dungeon_system.levels) == 0:
                 logger.error(
                     f"全部地下城已经结束。！！！！已经全部被清空！！！！或者不存在！！！！"
                 )

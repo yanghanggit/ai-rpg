@@ -15,8 +15,8 @@ from components.actions_v_0_0_1 import (
     FeedbackAction,
 )
 from models.v_0_0_1 import Effect
-
 from models.event_models import AgentEvent
+from extended_systems.combat_system import Round
 
 
 #######################################################################################################################################
@@ -99,18 +99,22 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
             logger.error(f"战斗演绎没有计算和表演。!!!!!")
             return
 
+        last_round = self._game.combat_system.last_round
+
         # 看一看出手顺序。
         first_turn_actor = next(iter(turn_action_actors))
         first_turn_action = first_turn_actor.get(TurnAction)
         logger.info(
             f"First turn actor: {first_turn_action.rounds}, {first_turn_action.round_turns}"
         )
+        # 记录
+        last_round.round_turns = first_turn_action.round_turns
 
         # 第一步，通知回合开始！！！提示! 添加一个记忆！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
-        self._process_turn_action(turn_action_actors)
+        self._process_turn_action(turn_action_actors, last_round)
 
         # 第二步，添加决定使用什么技能 ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
-        self._process_select_action(select_then_feedback_action_actors)
+        self._process_select_action(select_then_feedback_action_actors, last_round)
 
         # 第三步，场景广播 ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
         self._game.broadcast_event(
@@ -119,12 +123,15 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
                 message=f"# 发生事件！战斗回合:\n{stage_director_action.performance}",
             ),
         )
+        # 记录
+        last_round.stage_director_calculation = stage_director_action.calculation
+        last_round.stage_director_performance = stage_director_action.performance
 
         # 第四步，处理技能效果
-        self._process_feedback_action(select_then_feedback_action_actors)
+        self._process_feedback_action(select_then_feedback_action_actors, last_round)
 
     #######################################################################################################################################
-    def _process_turn_action(self, actor_entities: Set[Entity]) -> None:
+    def _process_turn_action(self, actor_entities: Set[Entity], round: Round) -> None:
         for actor_entity1 in actor_entities:
             turn_action = actor_entity1.get(TurnAction)
             assert turn_action is not None
@@ -136,7 +143,7 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
             )
 
     #######################################################################################################################################
-    def _process_select_action(self, actor_entities: Set[Entity]) -> None:
+    def _process_select_action(self, actor_entities: Set[Entity], round: Round) -> None:
         for actor_entity2 in actor_entities:
             select_action = actor_entity2.get(SelectAction)
             assert select_action is not None
@@ -151,8 +158,12 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
 
             self._game.append_human_message(actor_entity2, message)
 
+            round.select_report[actor_entity2._name] = message
+
     #######################################################################################################################################
-    def _process_feedback_action(self, actor_entities: Set[Entity]) -> None:
+    def _process_feedback_action(
+        self, actor_entities: Set[Entity], round: Round
+    ) -> None:
 
         for actor_entity3 in actor_entities:
 
@@ -196,6 +207,8 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
 {removed_effects_prompt}"""
 
             self._game.append_human_message(actor_entity3, message)
+
+            round.feedback_report[actor_entity3._name] = message
 
     #######################################################################################################################################
     # 状态效果扣除。

@@ -191,7 +191,11 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     @dungeon_system.setter
     def dungeon_system(self, value: DungeonSystem) -> None:
+        if self._dungeon_system.name != "":
+            self._verbose_dungeon_system()
+
         self._dungeon_system = value
+        self._dungeon_system.log_dungeon_details()
 
     ###############################################################################################################################################
     @override
@@ -283,6 +287,8 @@ class TCGGame(BaseGame, TCGGameContext):
             self._verbose_chat_history()
             # 保存boot
             self._verbose_boot()
+            # 保存地下城记录。
+            self._verbose_dungeon_system()
 
         return self
 
@@ -329,6 +335,19 @@ class TCGGame(BaseGame, TCGGameContext):
             entity_snapshot_path.write_text(
                 entity_snapshot.model_dump_json(), encoding="utf-8"
             )
+
+    ###############################################################################################################################################
+    def _verbose_dungeon_system(self) -> None:
+
+        if self.dungeon_system.name == "":
+            return
+
+        dungeon_system_dir = self.world_file_dir / "dungeons"
+        dungeon_system_dir.mkdir(parents=True, exist_ok=True)
+        dungeon_system_path = dungeon_system_dir / f"{self.dungeon_system.name}.json"
+        dungeon_system_path.write_text(
+            self.dungeon_system.model_dump_json(), encoding="utf-8"
+        )
 
     ###############################################################################################################################################
     def _create_world_system_entities(
@@ -778,26 +797,28 @@ magic_defense: {magic_defense}"""
     # TODO!!! 临时测试准备传送！！！
     def launch_dungeon_adventure(self) -> None:
 
-        assert len(self.dungeon_system.dungeon_levels) > 0, "没有地下城！"
-        if len(self.dungeon_system.dungeon_levels) == 0:
+        assert len(self.dungeon_system.levels) > 0, "没有地下城！"
+        if len(self.dungeon_system.levels) == 0:
             logger.error("没有地下城！")
             return
 
-        launch_dungeon_stage = self.dungeon_system.dungeon_levels[0]
-
-        stage_entity = self.get_stage_entity(launch_dungeon_stage.name)
+        initial_dungeon_level = self.dungeon_system.levels[0]
+        stage_entity = self.get_stage_entity(initial_dungeon_level.name)
         assert stage_entity is not None
         assert stage_entity.has(DungeonComponent)
         if stage_entity is None:
             return
 
+        # 集体准备传送
         heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
         assert len(heros_entities) > 0
         if len(heros_entities) == 0:
             logger.error("没有找到英雄!")
             return
 
-        trans_message = f"""# 提示！你将要开始一次冒险，准备进入地下城: {launch_dungeon_stage.name}"""
+        trans_message = (
+            f"""# 提示！你将要开始一次冒险，准备进入地下城: {stage_entity._name}"""
+        )
         for hero_entity in heros_entities:
             # 添加故事
             logger.info(f"添加故事: {hero_entity._name} => {trans_message}")
@@ -807,36 +828,55 @@ magic_defense: {magic_defense}"""
         self._stage_transition(heros_entities, stage_entity)
 
         ## 设置一个战斗。
-        assert len(self.dungeon_system.dungeon_levels) > 0, "没有地下城！"
+        assert len(self.dungeon_system.levels) > 0, "没有地下城！"
         assert self.dungeon_system.position == 0, "当前地下城关卡已经完成！"
-        self.combat_system.combat_engagement(Combat(stage_entity._name))
+        self.combat_system.combat_engagement(Combat(name=stage_entity._name))
 
     #######################################################################################################################################
-    def advance_to_next_dungeon(self, next_level: StageInstance) -> None:
+    # TODO, 临时测试，准备传送！！！
+    def advance_to_next_dungeon(self) -> None:
 
-        logger.info(f"下一关为：{next_level.name}，可以进入！！！！")
+        # 位置+1
+        self.dungeon_system.position += 1
 
+        # 下一个关卡?
+        next_level = self.dungeon_system.current_level()
+        assert next_level is not None
+        if next_level is None:
+            logger.error("没有下一个地下城！")
+            return
+
+        # 下一个关卡实体, 没有就是错误的。
+        stage_entity = self.get_stage_entity(next_level.name)
+        assert stage_entity is not None
+        assert stage_entity.has(DungeonComponent)
+        if stage_entity is None:
+            return
+
+        logger.info(f"下一关为：{stage_entity._name}，可以进入！！！！")
+
+        # 集体准备传送
         heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
         assert len(heros_entities) > 0
         if len(heros_entities) == 0:
             logger.error("没有找到英雄!")
             return
 
-        trans_message = (
-            f"""# 提示！你准备继续你的冒险，准备进入下一个地下城: {next_level.name}"""
-        )
+        trans_message = f"""# 提示！你准备继续你的冒险，准备进入下一个地下城: {stage_entity._name}"""
         for hero_entity in heros_entities:
             # 添加故事
             logger.info(f"添加故事: {hero_entity._name} => {trans_message}")
             self.append_human_message(hero_entity, trans_message)
 
         # 开始传送。
-        self.stage_transition(heros_entities, next_level.name)
+        self._stage_transition(heros_entities, stage_entity)
 
-        assert len(self.dungeon_system.dungeon_levels) > 0, "没有地下城！"
+        # 设置一个战斗。
+        assert len(self.dungeon_system.levels) > 0, "没有地下城！"
         assert self.dungeon_system.position > 0, "当前地下城关卡已经完成！"
-        # 再开一场战斗！
-        self.combat_system.combat_engagement(Combat(next_level.name))
+        self.combat_system.combat_engagement(
+            Combat(name=stage_entity._name)
+        )  # 再开一场战斗！
 
     ###############################################################################################################################################
     # TODO!!! 临时测试准备传送！！！

@@ -35,32 +35,13 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
             self._game.combat_system.combat_result == CombatResult.HERO_WIN
             or self._game.combat_system.combat_result == CombatResult.HERO_LOSE
         ):
-            # 标记本个地下城结束。因为有结果了。
-            self._process_stage_completion()
-
             # 测试，总结战斗结果。
             await self._summarize_combat_result()
-
-            # 存储一下。
-            self._game.save()
 
             # TODO, 进入战斗后准备的状态，离开当前状态。
             self._game.combat_system.combat_post_wait()
 
         else:
-            assert False, "不可能出现的情况！"
-
-    #######################################################################################################################################
-    # 标记当前地下城完成。
-    def _process_stage_completion(self) -> None:
-
-        player_entity = self._game.get_player_entity()
-        assert player_entity is not None
-
-        stage_entity = self._game.safe_get_stage_entity(player_entity)
-        assert stage_entity is not None
-
-        if not self._game.dungeon_system.advance_to_next_level(stage_entity._name):
             assert False, "不可能出现的情况！"
 
     #######################################################################################################################################
@@ -137,6 +118,11 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
                 entity=entity2,
                 chat=summary,
                 summarize_combat=f"{stage_entity2._name}",
+            )
+
+            #  # 准备记录～
+            self._game.combat_system.last_combat.summarize_report[entity2._name] = (
+                summary
             )
 
     #######################################################################################################################################

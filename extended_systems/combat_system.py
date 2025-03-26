@@ -1,6 +1,8 @@
 from enum import IntEnum, unique
 from typing import Final, List, final
 
+from loguru import logger
+
 
 ###############################################################################################################################################
 # 表示战斗的状态 Phase
@@ -31,7 +33,7 @@ class CombatResult(IntEnum):
 class Round:
 
     def __init__(self) -> None:
-        self._turns: List[str] = []
+        pass
 
 
 ###############################################################################################################################################
@@ -105,17 +107,6 @@ class CombatSystem:
 
     ###############################################################################################################################################
     @property
-    def turns(self) -> List[str]:
-        return self.last_combat.last_round._turns
-
-    ###############################################################################################################################################
-    # 写一个 turns 的setter
-    @turns.setter
-    def turns(self, value: List[str]) -> None:
-        self.last_combat.last_round._turns = value
-
-    ###############################################################################################################################################
-    @property
     def combat_result(self) -> CombatResult:
         return self.last_combat._result
 
@@ -159,6 +150,7 @@ class CombatSystem:
     def new_round(self) -> Round:
         round = Round()
         self.last_combat._rounds.append(round)
+        logger.info(f"新的回合开始 = {len(self.last_combat._rounds)}")
         return round
 
     ###############################################################################################################################################

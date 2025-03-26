@@ -4,13 +4,21 @@ from extended_systems.chat_request_handler import ChatRequestHandler
 from overrides import override
 from typing import Final, List, NamedTuple, final
 from loguru import logger
-from components.actions import DirectorAction, FeedbackAction
+from components.actions import (
+    StageDirectorAction,
+    FeedbackAction,
+    TurnAction,
+    SelectAction,
+)
 from models.event_models import AgentEvent
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from models.v_0_0_1 import Skill
 from components.components_v_0_0_1 import (
+    ActorComponent,
     CombatAttributesComponent,
     CombatEffectsComponent,
+    DungeonComponent,
+    StageComponent,
 )
 import format_string.json_format
 
@@ -103,17 +111,17 @@ def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> st
 
 #######################################################################################################################################
 @final
-class DirectorActionSystem(BaseActionReactiveSystem):
+class StageDirectorActionSystem(BaseActionReactiveSystem):
 
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(DirectorAction): GroupEvent.ADDED}
+        return {Matcher(StageDirectorAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(DirectorAction)
+        return entity.has(StageDirectorAction) and entity.has(StageComponent)
 
     #######################################################################################################################################
     @override
@@ -123,16 +131,20 @@ class DirectorActionSystem(BaseActionReactiveSystem):
             return
 
         assert self._game.combat_system.is_on_going_phase
+        assert len(self._react_entities_copy) == 1
 
-        if len(self._game.combat_system.turns) == 0:
-            return
+        # 排序角色！
+        stage_entity = self._react_entities_copy[0]
+        assert stage_entity.has(StageComponent)
+        assert stage_entity.has(DungeonComponent)
 
-        # 将self._react_entities_copy以self._game._round_action_order的顺序进行重新排序
-        self._react_entities_copy.sort(
-            key=lambda entity: self._game.combat_system.turns.index(entity._name)
+        # 所有的角色拿出来，做排序。
+        actors_on_stage = self._game.retrieve_actors_on_stage(stage_entity)
+        sort_actors = sorted(
+            actors_on_stage, key=lambda entity: entity.get(TurnAction).turn
         )
 
-        await self._process_request(self._react_entities_copy)
+        await self._process_request(stage_entity, sort_actors)
 
     #######################################################################################################################################
     def _generate_action_prompt_parameters(
@@ -142,33 +154,34 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         ret: List[ActionPromptParameters] = []
         for entity in react_entities:
 
-            skill_action2 = entity.get(DirectorAction)
-            assert skill_action2 is not None
-
+            assert entity.has(ActorComponent)
             assert entity.has(CombatAttributesComponent)
             assert entity.has(CombatEffectsComponent)
+
+            if not entity.has(SelectAction):
+                continue
+
+            select_action = entity.get(SelectAction)
             ret.append(
                 ActionPromptParameters(
                     actor=entity._name,
-                    targets=skill_action2.targets,
-                    skill=skill_action2.skill,
+                    targets=select_action.targets,
+                    skill=select_action.skill,
                     combat_attrs_component=entity.get(CombatAttributesComponent),
                     combat_effects_component=entity.get(CombatEffectsComponent),
-                    interaction=skill_action2.interaction,
+                    interaction=select_action.interaction,
                 )
             )
 
         return ret
 
     #######################################################################################################################################
-    async def _process_request(self, react_entities: List[Entity]) -> None:
-
-        # 用场景来推理
-        current_stage = self._game.safe_get_stage_entity(react_entities[0])
-        assert current_stage is not None
+    async def _process_request(
+        self, stage_entity: Entity, actor_entities: List[Entity]
+    ) -> None:
 
         # 生成推理参数。
-        params = self._generate_action_prompt_parameters(react_entities)
+        params = self._generate_action_prompt_parameters(actor_entities)
         assert len(params) > 0
 
         # 生成推理信息。
@@ -176,15 +189,15 @@ class DirectorActionSystem(BaseActionReactiveSystem):
 
         # 用场景推理。
         request_handler = ChatRequestHandler(
-            name=current_stage._name,
+            name=stage_entity._name,
             prompt=message,
             chat_history=self._game.get_agent_short_term_memory(
-                current_stage
+                stage_entity
             ).chat_history,
         )
 
         # 用语言服务系统进行推理。
-        await self._game.langserve_system.gather(request_handlers=[request_handler])
+        self._game.langserve_system.handle([request_handler])
 
         # 处理返回结果。
         if request_handler.response_content == "":
@@ -192,10 +205,12 @@ class DirectorActionSystem(BaseActionReactiveSystem):
             return
 
         # 处理返回结果。
-        self._handle_response(request_handler)
+        self._handle_response(stage_entity, request_handler)
 
     #######################################################################################################################################
-    def _handle_response(self, request_handler: ChatRequestHandler) -> None:
+    def _handle_response(
+        self, stage_entity: Entity, request_handler: ChatRequestHandler
+    ) -> None:
 
         try:
 
@@ -209,25 +224,36 @@ class DirectorActionSystem(BaseActionReactiveSystem):
                 f"返回格式正确, Response = \n{format_response.model_dump_json()}"
             )
 
-            current_stage = self._game.get_entity_by_name(request_handler._name)
-            assert current_stage is not None
+            # 推理的场景记录下！
+            stage_director_action = stage_entity.get(StageDirectorAction)
+            stage_entity.replace(
+                StageDirectorAction,
+                stage_director_action.name,
+                format_response.calculation,
+                format_response.performance,
+            )
 
             # 发送事件。
             self._game.broadcast_event(
-                entity=current_stage,
+                entity=stage_entity,
                 agent_event=AgentEvent(
                     message=f"# 发生事件！战斗回合:\n{format_response.performance}",
                 ),
             )
 
-            #
-            actors_on_stage = self._game.retrieve_actors_on_stage(current_stage)
+            # 通知角色！！！！
+            actors_on_stage = self._game.retrieve_actors_on_stage(stage_entity)
             for actor_entity in actors_on_stage:
+
                 actor_entity.replace(
                     FeedbackAction,
                     actor_entity._name,
                     format_response.calculation,
                     format_response.performance,
+                    "",
+                    0.0,
+                    0.0,
+                    [],
                 )
 
         except:

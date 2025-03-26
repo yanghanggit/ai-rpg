@@ -1,6 +1,6 @@
 from typing import Dict, NamedTuple, final, List
 from components.registry import register_action_class_2
-from models.v_0_0_1 import Skill
+from models.v_0_0_1 import Skill, Effect
 
 
 ############################################################################################################
@@ -44,6 +44,12 @@ class MindVoiceAction(NamedTuple):
 @register_action_class_2
 class TurnAction(NamedTuple):
     name: str
+    rounds: int
+    round_turns: List[str]
+
+    @property
+    def turn(self) -> int:
+        return self.round_turns.index(self.name)
 
 
 ############################################################################################################
@@ -51,16 +57,19 @@ class TurnAction(NamedTuple):
 @register_action_class_2
 class SelectAction(NamedTuple):
     name: str
+    targets: List[str]
+    skill: Skill
+    interaction: str
+    reason: str
 
 
 ############################################################################################################
 @final
 @register_action_class_2
-class DirectorAction(NamedTuple):
+class StageDirectorAction(NamedTuple):
     name: str
-    targets: List[str]
-    skill: Skill
-    interaction: str
+    calculation: str
+    performance: str
 
 
 ############################################################################################################
@@ -70,6 +79,10 @@ class FeedbackAction(NamedTuple):
     name: str
     calculation: str
     performance: str
+    description: str
+    hp: float
+    max_hp: float
+    effects: List[Effect]
 
 
 ############################################################################################################

@@ -86,7 +86,7 @@ class DungeonCombatPreparationSystem(ExecuteProcessor):
         self._reset_combat_attributes(actor_entities)
 
         # 核心处理
-        await self._process_chat_requests(actor_entities)
+        await self._process_requests(actor_entities)
 
         # 开始战斗
         self._game.combat_system.combat_go()
@@ -105,10 +105,10 @@ class DungeonCombatPreparationSystem(ExecuteProcessor):
             self._game.setup_combat_attributes(actor_entity)
 
     ###################################################################################################################################################################
-    async def _process_chat_requests(self, actor_entities: Set[Entity]) -> None:
+    async def _process_requests(self, actor_entities: Set[Entity]) -> None:
 
         # 处理角色规划请求
-        request_handlers: List[ChatRequestHandler] = self._generate_chat_requests(
+        request_handlers: List[ChatRequestHandler] = self._generate_requests(
             actor_entities
         )
 
@@ -116,10 +116,10 @@ class DungeonCombatPreparationSystem(ExecuteProcessor):
         await self._game.langserve_system.gather(request_handlers=request_handlers)
 
         # 处理角色规划请求
-        self._handle_chat_responses(request_handlers)
+        self._handle_responses(request_handlers)
 
     ###################################################################################################################################################################
-    def _generate_chat_requests(
+    def _generate_requests(
         self, actor_entities: set[Entity]
     ) -> List[ChatRequestHandler]:
 
@@ -160,9 +160,7 @@ class DungeonCombatPreparationSystem(ExecuteProcessor):
         return request_handlers
 
     ###################################################################################################################################################################
-    def _handle_chat_responses(
-        self, request_handlers: List[ChatRequestHandler]
-    ) -> None:
+    def _handle_responses(self, request_handlers: List[ChatRequestHandler]) -> None:
         for request_handler in request_handlers:
 
             entity2 = self._game.get_entity_by_name(request_handler._name)
@@ -172,10 +170,10 @@ class DungeonCombatPreparationSystem(ExecuteProcessor):
                 logger.error(f"Agent: {request_handler._name}, Response is empty.")
                 continue
 
-            self._handle_actor_response(entity2, request_handler)
+            self._handle_response(entity2, request_handler)
 
     ###################################################################################################################################################################
-    def _handle_actor_response(
+    def _handle_response(
         self, entity2: Entity, request_handler: ChatRequestHandler
     ) -> None:
 

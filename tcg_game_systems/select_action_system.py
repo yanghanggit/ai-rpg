@@ -7,10 +7,10 @@ from components.components_v_0_0_1 import (
     SkillCandidateQueueComponent,
 )
 from overrides import override
-from typing import List, final
+from typing import List, Set, final
 from loguru import logger
 from models.v_0_0_1 import Skill
-from components.actions import DirectorAction, SelectAction
+from components.actions import StageDirectorAction, SelectAction, TurnAction
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 
@@ -82,21 +82,18 @@ class SelectActionSystem(BaseActionReactiveSystem):
     async def _process_request(self, react_entities: List[Entity]) -> None:
 
         # 处理角色规划请求
-        request_handlers: List[ChatRequestHandler] = self._generate_chat_requests(
+        request_handlers: List[ChatRequestHandler] = self._generate_requests(
             set(react_entities),
-            self._game.combat_system.turns,
         )
 
         # 语言服务
         await self._game.langserve_system.gather(request_handlers=request_handlers)
 
         # 处理角色规划请求
-        self._handle_chat_responses(request_handlers)
+        self._handle_responses(request_handlers)
 
     #######################################################################################################################################
-    def _handle_chat_responses(
-        self, request_handlers: List[ChatRequestHandler]
-    ) -> None:
+    def _handle_responses(self, request_handlers: List[ChatRequestHandler]) -> None:
 
         for request_handler in request_handlers:
 
@@ -119,7 +116,6 @@ class SelectActionSystem(BaseActionReactiveSystem):
 
         try:
 
-            # pass
             format_response = SkillSelectionResponse.model_validate_json(
                 format_string.json_format.strip_json_code_block(
                     request_handler.response_content
@@ -128,14 +124,28 @@ class SelectActionSystem(BaseActionReactiveSystem):
 
             skill_candidate_comp = entity2.get(SkillCandidateQueueComponent)
             for skill in skill_candidate_comp.queue:
+
                 if skill.name == format_response.skill:
-                    assert not entity2.has(DirectorAction)
+
+                    # 给场景添加！！！
+                    stage_entity = self._game.safe_get_stage_entity(entity2)
+                    assert stage_entity is not None
+                    assert not stage_entity.has(StageDirectorAction)
+                    stage_entity.replace(
+                        StageDirectorAction,
+                        stage_entity._name,
+                        "",
+                        "",
+                    )
+
+                    # 给角色添加！！！
                     entity2.replace(
-                        DirectorAction,
+                        SelectAction,
                         skill_candidate_comp.name,
                         format_response.targets,
                         skill,
                         format_response.interaction,
+                        format_response.reason,
                     )
 
                     self._notify_event(entity2, format_response, skill)
@@ -160,8 +170,8 @@ class SelectActionSystem(BaseActionReactiveSystem):
         self._game.append_human_message(entity, message)
 
     #######################################################################################################################################
-    def _generate_chat_requests(
-        self, actor_entities: set[Entity], action_order: List[str]
+    def _generate_requests(
+        self, actor_entities: Set[Entity]
     ) -> List[ChatRequestHandler]:
 
         request_handlers: List[ChatRequestHandler] = []
@@ -178,7 +188,7 @@ class SelectActionSystem(BaseActionReactiveSystem):
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
                 entity.get(SkillCandidateQueueComponent).queue,
-                action_order,
+                entity.get(TurnAction).round_turns,
             )
 
             # 生成请求处理器

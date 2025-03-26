@@ -134,7 +134,9 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
         from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
         from tcg_game_systems.select_action_system import SelectActionSystem
-        from tcg_game_systems.director_action_system import DirectorActionSystem
+        from tcg_game_systems.stage_director_action_system import (
+            StageDirectorActionSystem,
+        )
         from tcg_game_systems.feedback_action_system import FeedbackActionSystem
         from tcg_game_systems.dungeon_combat_preparation_system import (
             DungeonCombatPreparationSystem,
@@ -146,14 +148,12 @@ class TCGGameProcessPipeline(Processors):
             DungeonCombatSkillsCandidateSystem,
         )
         from tcg_game_systems.turn_action_system import TurnActionSystem
-        from tcg_game_systems.dungeon_combat_turn_system import DungeonCombatTurnSystem
+        from tcg_game_systems.dungeon_combat_round_system import (
+            DungeonCombatRoundSystem,
+        )
         from tcg_game_systems.dungeon_combat_complete_system import (
             DungeonCombatCompleteSystem,
         )
-
-        # from tcg_game_systems.dungeon_combat_post_wait_system import (
-        #     DungeonCombatPostWaitSystem,
-        # )
 
         ##
         tcg_game = cast(TCGGame, game)
@@ -177,7 +177,7 @@ class TCGGameProcessPipeline(Processors):
         processors.add(PreActionSystem(tcg_game))
         processors.add(TurnActionSystem(tcg_game))
         processors.add(SelectActionSystem(tcg_game))
-        processors.add(DirectorActionSystem(tcg_game))
+        processors.add(StageDirectorActionSystem(tcg_game))
         processors.add(FeedbackActionSystem(tcg_game))
         processors.add(PostActionSystem(tcg_game))
         ###### 动作结束！！！！！################################################################################################
@@ -212,11 +212,10 @@ class TCGGameProcessPipeline(Processors):
         ## 角色相关的规划，跟战斗相关的规划。
         processors.add(DungeonCombatPreparationSystem(tcg_game))
         processors.add(DungeonCombatCompleteSystem(tcg_game))
-        # processors.add(DungeonCombatPostWaitSystem(tcg_game))
 
         # 可能需要改一改，换个位置。
         processors.add(DungeonCombatSkillsCandidateSystem(tcg_game))
-        processors.add(DungeonCombatTurnSystem(tcg_game))
+        processors.add(DungeonCombatRoundSystem(tcg_game))
 
         processors.add(
             PostPlanningSystem(tcg_game)

@@ -509,7 +509,7 @@ class TCGGame(BaseGame, TCGGameContext):
         # 如果 **kwargs 不是 空，就打印一下
         if len(kwargs) > 0:
             logger.info(
-                f"append_human_message\nentity = {entity._name}, \nchat = {chat}, \nkwargs: {kwargs}"
+                f"kwargs: {kwargs}"
             )
 
         agent_short_term_memory = self.get_agent_short_term_memory(entity)

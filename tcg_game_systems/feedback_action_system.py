@@ -78,7 +78,6 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
     @override
     async def a_execute2(self) -> None:
         if len(self._react_entities_copy) > 0:
-
             assert self._game.combat_system.is_on_going_phase
             await self._process_request(self._react_entities_copy)
 
@@ -86,18 +85,16 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
     async def _process_request(self, react_entities: List[Entity]) -> None:
 
         #
-        chat_requests = self._generate_chat_requests(set(react_entities))
+        chat_requests = self._generate_requests(set(react_entities))
 
         # 用语言服务系统进行推理。
         await self._game.langserve_system.gather(request_handlers=chat_requests)
 
         # 处理返回结果。
-        self._handle_chat_responses(chat_requests)
+        self._handle_responses(chat_requests)
 
     #######################################################################################################################################
-    def _handle_chat_responses(
-        self, request_handlers: List[ChatRequestHandler]
-    ) -> None:
+    def _handle_responses(self, request_handlers: List[ChatRequestHandler]) -> None:
 
         for request_handler in request_handlers:
 
@@ -162,13 +159,27 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
 
             self._game.append_human_message(entity, message)
 
+            feedback_action2 = entity.get(FeedbackAction)
+            assert feedback_action2 is not None
+
+            entity.replace(
+                FeedbackAction,
+                feedback_action2.name,
+                feedback_action2.calculation,
+                feedback_action2.performance,
+                format_response.description,
+                format_response.hp,
+                format_response.max_hp,
+                format_response.effects,
+            )
+
         except:
             logger.error(
                 f"""返回格式错误, Response = \n{request_handler.response_content}"""
             )
 
     #######################################################################################################################################
-    def _generate_chat_requests(
+    def _generate_requests(
         self, actor_entities: set[Entity]
     ) -> List[ChatRequestHandler]:
 

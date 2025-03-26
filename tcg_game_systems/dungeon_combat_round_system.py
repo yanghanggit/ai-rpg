@@ -40,7 +40,7 @@ class DungeonCombatRoundSystem(ExecuteProcessor):
         # 随机出手顺序
         shuffled_reactive_entities = self._shuffle_action_order(list(actor_entities))
         round_turns: List[str] = [entity._name for entity in shuffled_reactive_entities]
-        for turn_index, name in enumerate(round_turns):
+        for _, name in enumerate(round_turns):
             entity2 = self._game.get_entity_by_name(name)
             assert entity2 is not None
             assert not entity2.has(TurnAction)

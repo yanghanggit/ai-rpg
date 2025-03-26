@@ -138,10 +138,17 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
         assert stage_entity.has(StageComponent)
         assert stage_entity.has(DungeonComponent)
 
-        # 所有的角色拿出来，做排序。
-        actors_on_stage = self._game.retrieve_actors_on_stage(stage_entity)
+        turn_then_select_actors = self._game.get_group(
+            Matcher(
+                all_of=[
+                    TurnAction,
+                    SelectAction,
+                ],
+            )
+        ).entities
+
         sort_actors = sorted(
-            actors_on_stage, key=lambda entity: entity.get(TurnAction).turn
+            turn_then_select_actors, key=lambda entity: entity.get(TurnAction).turn
         )
 
         await self._process_request(stage_entity, sort_actors)
@@ -205,11 +212,14 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
             return
 
         # 处理返回结果。
-        self._handle_response(stage_entity, request_handler)
+        self._handle_response(stage_entity, request_handler, actor_entities)
 
     #######################################################################################################################################
     def _handle_response(
-        self, stage_entity: Entity, request_handler: ChatRequestHandler
+        self,
+        stage_entity: Entity,
+        request_handler: ChatRequestHandler,
+        actor_entities: List[Entity],
     ) -> None:
 
         try:
@@ -242,8 +252,7 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
             )
 
             # 通知角色！！！！
-            actors_on_stage = self._game.retrieve_actors_on_stage(stage_entity)
-            for actor_entity in actors_on_stage:
+            for actor_entity in actor_entities:
 
                 actor_entity.replace(
                     FeedbackAction,

@@ -67,7 +67,7 @@ class SelectActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(SelectAction)
+        return entity.has(SelectAction) and entity.has(TurnAction)
 
     #######################################################################################################################################
     @override
@@ -91,6 +91,7 @@ class SelectActionSystem(BaseActionReactiveSystem):
 
         # 处理角色规划请求
         self._handle_responses(request_handlers)
+        pass
 
     #######################################################################################################################################
     def _handle_responses(self, request_handlers: List[ChatRequestHandler]) -> None:
@@ -122,6 +123,8 @@ class SelectActionSystem(BaseActionReactiveSystem):
                 )
             )
 
+            logger.info(f"format_response 成功！ = {request_handler.response_content}")
+
             skill_candidate_comp = entity2.get(SkillCandidateQueueComponent)
             for skill in skill_candidate_comp.queue:
 
@@ -130,13 +133,13 @@ class SelectActionSystem(BaseActionReactiveSystem):
                     # 给场景添加！！！
                     stage_entity = self._game.safe_get_stage_entity(entity2)
                     assert stage_entity is not None
-                    assert not stage_entity.has(StageDirectorAction)
-                    stage_entity.replace(
-                        StageDirectorAction,
-                        stage_entity._name,
-                        "",
-                        "",
-                    )
+                    if not stage_entity.has(StageDirectorAction):
+                        stage_entity.replace(
+                            StageDirectorAction,
+                            stage_entity._name,
+                            "",
+                            "",
+                        )
 
                     # 给角色添加！！！
                     entity2.replace(

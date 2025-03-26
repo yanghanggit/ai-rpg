@@ -155,6 +155,10 @@ class TCGGameProcessPipeline(Processors):
             DungeonCombatCompleteSystem,
         )
 
+        from tcg_game_systems.dungeon_combat_finalize_system import (
+            DungeonCombatFinalizeSystem,
+        )
+
         ##
         tcg_game = cast(TCGGame, game)
         assert isinstance(tcg_game, TCGGame)
@@ -179,6 +183,7 @@ class TCGGameProcessPipeline(Processors):
         processors.add(SelectActionSystem(tcg_game))
         processors.add(StageDirectorActionSystem(tcg_game))
         processors.add(FeedbackActionSystem(tcg_game))
+        processors.add(DungeonCombatFinalizeSystem(tcg_game))
         processors.add(PostActionSystem(tcg_game))
         ###### 动作结束！！！！！################################################################################################
 

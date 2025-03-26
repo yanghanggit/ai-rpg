@@ -4,7 +4,7 @@ from extended_systems.chat_request_handler import ChatRequestHandler
 from overrides import override
 from typing import Final, List, NamedTuple, final
 from loguru import logger
-from components.actions import (
+from components.actions_v_0_0_1 import (
     StageDirectorAction,
     FeedbackAction,
     TurnAction,

@@ -1,7 +1,7 @@
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
 from typing import final, override
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
-from components.actions import AnnounceAction
+from components.actions_v_0_0_1 import AnnounceAction
 from components.components_v_0_0_1 import HomeComponent, HeroComponent
 from models.event_models import AnnounceEvent
 

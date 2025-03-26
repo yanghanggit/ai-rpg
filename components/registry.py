@@ -14,9 +14,9 @@ def register_component_class(cls: T) -> T:
 
 
 # action 装饰器
-ACTIONS_REGISTRY_2: Final[Dict[str, Any]] = {}
+ACTIONS_REGISTRY: Final[Dict[str, Any]] = {}
 
 
 def register_action_class_2(cls: T) -> T:
-    ACTIONS_REGISTRY_2[cast(Any, cls).__name__] = cls
+    ACTIONS_REGISTRY[cast(Any, cls).__name__] = cls
     return cls

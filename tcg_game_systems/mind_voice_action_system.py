@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
-from components.actions import (
+from components.actions_v_0_0_1 import (
     MindVoiceAction,
 )
 from typing import final, override

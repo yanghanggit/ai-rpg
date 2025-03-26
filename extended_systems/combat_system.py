@@ -31,9 +31,7 @@ class CombatResult(IntEnum):
 
 # 表示一个回合
 class Round:
-
-    def __init__(self) -> None:
-        pass
+    pass
 
 
 ###############################################################################################################################################
@@ -43,8 +41,8 @@ class Combat:
     def __init__(self, name: str) -> None:
         self._name: Final[str] = name
         self._phase: CombatPhase = CombatPhase.NONE
-        self._rounds: List[Round] = []
         self._result: CombatResult = CombatResult.NONE
+        self._rounds: List[Round] = []
 
     ###############################################################################################################################################
     @property

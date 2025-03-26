@@ -10,7 +10,7 @@ from overrides import override
 from typing import List, Set, final
 from loguru import logger
 from models.v_0_0_1 import Skill
-from components.actions import StageDirectorAction, SelectAction, TurnAction
+from components.actions_v_0_0_1 import StageDirectorAction, SelectAction, TurnAction
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 

@@ -1,7 +1,7 @@
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from typing import Final, FrozenSet, NamedTuple, final, override
 from game.tcg_game import TCGGame
-from components.registry import ACTIONS_REGISTRY_2
+from components.registry import ACTIONS_REGISTRY
 
 
 @final
@@ -15,7 +15,7 @@ class PostActionSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
         actions_set: Final[FrozenSet[type[NamedTuple]]] = frozenset(
-            ACTIONS_REGISTRY_2.values()
+            ACTIONS_REGISTRY.values()
         )
         self._clear_actions(actions_set)
         self._test(actions_set)

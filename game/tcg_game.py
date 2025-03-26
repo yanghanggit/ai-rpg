@@ -508,9 +508,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 如果 **kwargs 不是 空，就打印一下
         if len(kwargs) > 0:
-            logger.info(
-                f"kwargs: {kwargs}"
-            )
+            logger.info(f"kwargs: {kwargs}")
 
         agent_short_term_memory = self.get_agent_short_term_memory(entity)
         agent_short_term_memory.chat_history.extend(

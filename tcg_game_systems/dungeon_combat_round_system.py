@@ -6,7 +6,7 @@ from components.components_v_0_0_1 import (
 from overrides import override
 from typing import List, Tuple, final
 from game.tcg_game import TCGGame
-from components.actions import TurnAction
+from components.actions_v_0_0_1 import TurnAction
 
 
 #######################################################################################################################################

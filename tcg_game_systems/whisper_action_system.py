@@ -3,7 +3,7 @@ from typing import final, override
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from models.event_models import AgentEvent, WhisperEvent
 from game.tcg_game import ConversationError
-from components.actions import WhisperAction
+from components.actions_v_0_0_1 import WhisperAction
 
 
 ####################################################################################################################################

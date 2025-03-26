@@ -1,10 +1,11 @@
 from entitas import Matcher, Entity, Matcher, GroupEvent  # type: ignore
 from overrides import override
 from typing import final
-from components.actions import TurnAction, SelectAction
+from components.actions_v_0_0_1 import TurnAction, SelectAction
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from components.components_v_0_0_1 import SkillCandidateQueueComponent
 from models.v_0_0_1 import Skill
+
 
 #######################################################################################################################################
 @final
@@ -40,6 +41,13 @@ class TurnActionSystem(BaseActionReactiveSystem):
             )
 
             # 准备进入选择技能阶段！
-            actor_entity.replace(SelectAction, actor_entity._name, [], Skill(name="",description="", effect=""), "", "")
+            actor_entity.replace(
+                SelectAction,
+                actor_entity._name,
+                [],
+                Skill(name="", description="", effect=""),
+                "",
+                "",
+            )
 
     #######################################################################################################################################

@@ -2,6 +2,7 @@ from pathlib import Path
 from loguru import logger
 import datetime
 from dataclasses import dataclass
+from extended_systems.combat_system import CombatResult
 import game.tcg_game_config
 import shutil
 from game.terminal_tcg_game import TerminalTCGGame
@@ -18,7 +19,7 @@ from game.tcg_game_demo import (
     stage_dungeon_cave2_instance,
 )
 from player.player_command import PlayerCommand
-from extended_systems.dungeon_system import DungeonSystem, EMPTY_DUNGEON
+from extended_systems.dungeon_system import DungeonSystem, NULL_DUNGEON
 
 
 ###############################################################################################################################################
@@ -191,7 +192,43 @@ async def run_game(option: UserRuntimeOptions) -> None:
         player_stage_entity = terminal_game.get_player_stage_entity()
         assert player_stage_entity is not None
 
-        # 玩家输入
+        # 如果是战斗后等待阶段，这里临时处理下，不封装了。散着写吧。封装意义也不是很大。
+        #######################################################################
+        #######################################################################
+        #######################################################################
+        if (
+            len(terminal_game.combat_system.combats) > 0
+            and terminal_game.combat_system.is_post_wait_phase
+        ):
+            if terminal_game.combat_system.combat_result == CombatResult.HERO_WIN:
+
+                next_level = terminal_game.dungeon_system.next_level()
+                if next_level is None:
+                    logger.info("没有下一关，你胜利了，应该返回营地！！！！")
+                else:
+                    while True:
+                        user_input = input(
+                            f"下一关为：[{next_level.name}]，可以进入。是否进入？(y/n): "
+                        )
+                        if user_input == "y":
+                            break
+
+                    # 进入下一个循环！！！！
+                    terminal_game.next_dungeon_level(next_level)
+                    continue
+
+            elif terminal_game.combat_system.combat_result == CombatResult.HERO_LOSE:
+                logger.info("英雄失败，应该返回营地！！！！")
+            else:
+                assert False, "不可能出现的情况！"
+        #######################################################################
+        #######################################################################
+        #######################################################################
+
+        #######################################################################
+        #######################################################################
+        #######################################################################
+        # 其他状态下的玩家输入！！！！！！
         usr_input = input(f"[{terminal_game.player.name}/{player_stage_entity._name}]:")
 
         # 处理输入
@@ -228,7 +265,7 @@ async def run_game(option: UserRuntimeOptions) -> None:
 
             if (
                 len(terminal_game.combat_system.combats) == 0
-                or not terminal_game.combat_system.latest_combat.is_post_wait
+                or not terminal_game.combat_system.is_post_wait_phase
             ):
                 logger.error(f"{usr_input} 只能在战斗后使用!!!!!")
                 continue
@@ -245,7 +282,7 @@ async def run_game(option: UserRuntimeOptions) -> None:
 
             # 清空战斗
             logger.info(f"玩家输入 = {usr_input}, 重制地下城！！！！！！！！")
-            terminal_game.dungeon_system = EMPTY_DUNGEON
+            terminal_game.dungeon_system = NULL_DUNGEON
 
         elif usr_input == "/rh" or usr_input == "/run-home":
 
@@ -271,14 +308,14 @@ async def run_game(option: UserRuntimeOptions) -> None:
                 logger.error(f"{usr_input} 至少要执行一次 /h，才能准备传送战斗！")
                 continue
 
-            if terminal_game.dungeon_system == EMPTY_DUNGEON:
+            if terminal_game.dungeon_system == NULL_DUNGEON:
                 logger.error(
                     f"全部地下城已经结束。！！！！已经全部被清空！！！！或者不存在！！！！"
                 )
                 continue
 
             logger.info(f"玩家输入 = {usr_input}, 准备传送地下城")
-            terminal_game.dungeon_stage_transition()
+            terminal_game.launch_dungeon_adventure()
 
         else:
 

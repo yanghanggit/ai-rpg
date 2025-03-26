@@ -18,30 +18,31 @@ class DungeonSystem:
 
         # 初始化。
         self._prefix_name: Final[str] = prefix_name
-        self._dungeon_levels: List[StageInstance] = dungeon_levels
-        self._completed_stages: Set[str] = set()
+        self._levels: List[StageInstance] = dungeon_levels
+        self._completed_levels: Set[str] = set()
         self._combat_system: CombatSystem = combat_system
+        self._current_level_index: int = 0
 
         #
-        if len(self._dungeon_levels) > 0:
+        if len(self._levels) > 0:
             logger.info(
-                f"初始化地下城系统 = [{self.name}]\n地下城数量：{len(self._dungeon_levels)}"
+                f"初始化地下城系统 = [{self.name}]\n地下城数量：{len(self._levels)}"
             )
-            for stage in self._dungeon_levels:
+            for stage in self._levels:
                 logger.info(f"地下城关卡：{stage.name}")
 
     ########################################################################################################################
     @property
     def name(self) -> str:
-        if len(self._dungeon_levels) == 0:
+        if len(self._levels) == 0:
             return "EmptyDungeon"
-        dungeon_stage_names = "-".join([stage.name for stage in self._dungeon_levels])
+        dungeon_stage_names = "-".join([stage.name for stage in self._levels])
         return f"{self._prefix_name}-{dungeon_stage_names}"
 
     ########################################################################################################################
     @property
     def dungeon_levels(self) -> List[StageInstance]:
-        return self._dungeon_levels
+        return self._levels
 
     ########################################################################################################################
     @property
@@ -49,59 +50,40 @@ class DungeonSystem:
         return self._combat_system
 
     ########################################################################################################################
-    # TODO，输入一个名字，就能查看是否有下一个地下城。
-    def get_next_dungeon_level(self, stage_name: str) -> Optional[StageInstance]:
-        assert stage_name != "", "stage_name 不能为空！"
-        for i, stage in enumerate(self._dungeon_levels):
-            if stage.name == stage_name:
-                if i + 1 < len(self._dungeon_levels):
-                    return self._dungeon_levels[i + 1]
-                else:
-                    return None
+    def next_level(self) -> Optional[StageInstance]:
+        if self._current_level_index + 1 < len(self._levels):
+            self._current_level_index += 1
+            return self._levels[self._current_level_index]
         return None
 
     ########################################################################################################################
-    def mark_stage_complete(self, stage_name: str) -> None:
+    def set_current_level_complete(self, stage_name: str = "") -> bool:
 
-        if len(self._dungeon_levels) == 0:
-            logger.warning("地下城系统为空！")
-            return
-
-        # 如果 stage_name 不在 self._stages 中，就报错。
-        assert stage_name in [
-            stage.name for stage in self._dungeon_levels
-        ], f"{stage_name} 不在 self._stages 中！"
-        # 如果 stage_name 已经在 self._finished_stages 中，就报错。
-        assert (
-            stage_name not in self._completed_stages
-        ), f"{stage_name} 已经在 self._finished_stages 中！"
-
-        # 最终添加。
-        self._completed_stages.add(stage_name)
-        logger.info(f"完成地下城关卡：{stage_name}")
-
-    ########################################################################################################################
-    def start_first_dungeon_level_combat(self) -> bool:
-
-        assert len(self._dungeon_levels) > 0, "地下城系统为空！"
-        assert len(self._completed_stages) == 0, "已经完成的地下城关卡不为空！"
-
-        if len(self._dungeon_levels) == 0:
+        assert len(self._levels) > 0, "地下城系统为空！"
+        if len(self._levels) == 0:
             logger.warning("地下城系统为空！")
             return False
 
-        # 获取第一个地下城。
-        first_stage = self._dungeon_levels[0]
-        if not self.combat_system.has_combat(first_stage.name):
-            logger.info(f"开始地下城level：{first_stage.name}")
-            self.combat_system.launch_combat_engagement(first_stage.name)
-            return True
+        assert self._current_level_index < len(self._levels), "当前地下城关卡已经完成！"
+        if self._current_level_index >= len(self._levels):
+            logger.warning("当前地下城关卡已经完成！")
+            return False
 
-        return False
+        current_level_stage = self._levels[self._current_level_index]
+        assert current_level_stage.name == stage_name, "当前地下城关卡已经完成！"
+        assert (
+            current_level_stage.name not in self._completed_levels
+        ), "当前地下城关卡已经完成！"
+        if current_level_stage.name in self._completed_levels:
+            logger.warning("当前地下城关卡已经完成！")
+            return False
+
+        self._completed_levels.add(current_level_stage.name)
+        return True
 
     ########################################################################################################################
 
 
 # 全局空
-EMPTY_DUNGEON: Final[DungeonSystem] = DungeonSystem("", [])
+NULL_DUNGEON: Final[DungeonSystem] = DungeonSystem("", [])
 # #######################################################################################################################################

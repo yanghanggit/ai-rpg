@@ -75,7 +75,7 @@ class SelectActionSystem(BaseActionReactiveSystem):
         if len(self._react_entities_copy) == 0:
             return
 
-        assert self._game.combat_system.latest_combat.is_on_going
+        assert self._game.combat_system.is_on_going_phase
         await self._process_request(self._react_entities_copy)
 
     #######################################################################################################################################
@@ -84,7 +84,7 @@ class SelectActionSystem(BaseActionReactiveSystem):
         # 处理角色规划请求
         request_handlers: List[ChatRequestHandler] = self._generate_chat_requests(
             set(react_entities),
-            self._game.combat_system.latest_combat.latest_round.turns,
+            self._game.combat_system.turns,
         )
 
         # 语言服务

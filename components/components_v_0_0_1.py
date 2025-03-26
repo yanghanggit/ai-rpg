@@ -101,12 +101,12 @@ class AppearanceComponent(NamedTuple):
 
 
 ############################################################################################################
-# 标记进入新的场景
-@final
-@register_component_class
-class EnterStageComponent(NamedTuple):
-    name: str
-    enter_stage: str
+# # 标记进入新的场景
+# @final
+# @register_component_class
+# class EnterStageComponent(NamedTuple):
+#     name: str
+#     enter_stage: str
 
 
 ############################################################################################################

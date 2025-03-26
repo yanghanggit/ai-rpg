@@ -12,6 +12,7 @@ class EndSystem(ExecuteProcessor):
     ############################################################################################################
     @override
     def execute(self) -> None:
-        pass
+        assert self._game._debug_flag_pipeline is True
+        self._game._debug_flag_pipeline = False
 
     ############################################################################################################

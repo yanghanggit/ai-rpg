@@ -25,17 +25,17 @@ class TurnActionSystem(BaseActionReactiveSystem):
         if len(self._react_entities_copy) == 0:
             return
 
-        assert self._game.combat_system.latest_combat.is_on_going
+        assert self._game.combat_system.is_on_going_phase
 
         # 开始新回合
-        latest_combat = self._game.combat_system.latest_combat
+        # latest_combat = self._game.combat_system.latest_combat
 
         # 提示!
         for actor_entity in self._react_entities_copy:
             self._game.append_human_message(
                 entity=actor_entity,
-                chat=f"# 提示！战斗回合开始 = {len(latest_combat.rounds)}",
-                tag=f"battle:{latest_combat._name}:{len(latest_combat.rounds)}",
+                chat=f"# 提示！战斗回合开始 = {len(self._game.combat_system.rounds)}",
+                tag=f"battle::{len(self._game.combat_system.rounds)}",
             )
 
     #######################################################################################################################################

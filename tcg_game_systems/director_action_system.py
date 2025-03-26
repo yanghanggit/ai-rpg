@@ -122,16 +122,14 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         if len(self._react_entities_copy) == 0:
             return
 
-        assert self._game.combat_system.latest_combat.is_on_going
+        assert self._game.combat_system.is_on_going_phase
 
-        if len(self._game.combat_system.latest_combat.latest_round.turns) == 0:
+        if len(self._game.combat_system.turns) == 0:
             return
 
         # 将self._react_entities_copy以self._game._round_action_order的顺序进行重新排序
         self._react_entities_copy.sort(
-            key=lambda entity: self._game.combat_system.latest_combat.latest_round.turns.index(
-                entity._name
-            )
+            key=lambda entity: self._game.combat_system.turns.index(entity._name)
         )
 
         await self._process_request(self._react_entities_copy)

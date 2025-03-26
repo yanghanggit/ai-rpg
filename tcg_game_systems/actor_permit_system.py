@@ -6,8 +6,9 @@ import random
 from components.components_v_0_0_1 import (
     ActorComponent,
     ActorPermitComponent,
-    EnterStageComponent,
+    # EnterStageComponent,
     DungeonComponent,
+    HomeComponent,
 )
 from loguru import logger
 
@@ -31,20 +32,16 @@ class ActorPermitSystem(ExecuteProcessor):
         if current_stage_entity is None:
             return
 
-        if current_stage_entity.has(DungeonComponent):
-            return
+        assert not current_stage_entity.has(DungeonComponent)
+        assert current_stage_entity.has(HomeComponent)
 
         # 得到所有在玩家所在stage的actor
         actors = list(self._game.retrieve_stage_actor_mapping()[current_stage_entity])
         if len(actors) == 0:
             return
 
-        if not player_entity.has(EnterStageComponent):
-            # 随机选择一个actor
-            random_actor = random.choice(actors)
-            self._add_permit({random_actor})
-        else:
-            self._add_permit(set(actors))
+        random_actor = random.choice(actors)
+        self._add_permit({random_actor})
 
     #######################################################################################################################################
     def _add_permit(self, entities: Set[Entity]) -> None:

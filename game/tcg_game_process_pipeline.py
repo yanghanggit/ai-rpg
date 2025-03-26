@@ -150,9 +150,10 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.dungeon_combat_complete_system import (
             DungeonCombatCompleteSystem,
         )
-        from tcg_game_systems.dungeon_combat_post_wait_system import (
-            DungeonCombatPostWaitSystem,
-        )
+
+        # from tcg_game_systems.dungeon_combat_post_wait_system import (
+        #     DungeonCombatPostWaitSystem,
+        # )
 
         ##
         tcg_game = cast(TCGGame, game)
@@ -211,7 +212,7 @@ class TCGGameProcessPipeline(Processors):
         ## 角色相关的规划，跟战斗相关的规划。
         processors.add(DungeonCombatPreparationSystem(tcg_game))
         processors.add(DungeonCombatCompleteSystem(tcg_game))
-        processors.add(DungeonCombatPostWaitSystem(tcg_game))
+        # processors.add(DungeonCombatPostWaitSystem(tcg_game))
 
         # 可能需要改一改，换个位置。
         processors.add(DungeonCombatSkillsCandidateSystem(tcg_game))

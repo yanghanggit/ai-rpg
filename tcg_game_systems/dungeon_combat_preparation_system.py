@@ -73,7 +73,7 @@ class DungeonCombatPreparationSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
 
-        if not self._game.combat_system.latest_combat.is_preparation:
+        if not self._game.combat_system.is_preparation_phase:
             # 不是本阶段就直接返回
             return
 
@@ -89,7 +89,7 @@ class DungeonCombatPreparationSystem(ExecuteProcessor):
         await self._process_chat_requests(actor_entities)
 
         # 开始战斗
-        self._game.combat_system.latest_combat.start_combat()
+        self._game.combat_system.combat_go()
 
     ###################################################################################################################################################################
     # 所有参与战斗的角色！

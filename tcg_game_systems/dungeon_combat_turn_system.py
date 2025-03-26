@@ -20,7 +20,7 @@ class DungeonCombatTurnSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
 
-        if not self._game.combat_system.latest_combat.is_on_going:
+        if not self._game.combat_system.is_on_going_phase:
             # 不是本阶段就直接返回
             return
 
@@ -35,17 +35,17 @@ class DungeonCombatTurnSystem(ExecuteProcessor):
         if len(actor_entities) == 0:
             return
 
-        new_round = self._game.combat_system.latest_combat.start_new_round()
-
         # 随机出手顺序
         shuffled_reactive_entities = self._shuffle_action_order(list(actor_entities))
         # shuffled_reactive_entities = self._sort_action_order_by_dex(
         #     shuffled_reactive_entities
         # )
-        new_round.turns = [entity._name for entity in shuffled_reactive_entities]
+
+        turns: List[str] = [entity._name for entity in shuffled_reactive_entities]
+        self._game.combat_system.new_round()._turns = turns.copy()
 
         # 测试的代码 TODO
-        for turn_index, name in enumerate(new_round.turns):
+        for turn_index, name in enumerate(turns):
             entity2 = self._game.get_entity_by_name(name)
             assert entity2 is not None
             assert not entity2.has(TurnAction)

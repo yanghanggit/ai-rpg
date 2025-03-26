@@ -32,7 +32,7 @@ from components.components_v_0_0_1 import (
     DungeonComponent,
     HeroComponent,
     MonsterComponent,
-    EnterStageComponent,
+    # EnterStageComponent,
     CombatAttributesComponent,
     CombatEffectsComponent,
 )
@@ -42,7 +42,7 @@ from extended_systems.lang_serve_system import LangServeSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 from models.event_models import AgentEvent
-from extended_systems.combat_system import CombatSystem
+from extended_systems.combat_system import CombatSystem, Combat
 from extended_systems.dungeon_system import DungeonSystem
 
 
@@ -121,6 +121,9 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 地牢管理系统
         self._dungeon_system: DungeonSystem = dungeon_system
+
+        # 是否开启调试
+        self._debug_flag_pipeline: bool = False
 
     ###############################################################################################################################################
     @property
@@ -609,6 +612,8 @@ class TCGGame(BaseGame, TCGGameContext):
     # 传送角色set里的角色到指定场景，游戏层面的行为，会添加记忆但不会触发action
     def _stage_transition(self, actors: Set[Entity], stage_destination: Entity) -> None:
 
+        assert self._debug_flag_pipeline is False, "传送前，不允许在pipeline中"
+
         for actor1 in actors:
             assert actor1.has(ActorComponent)
 
@@ -663,9 +668,9 @@ class TCGGame(BaseGame, TCGGameContext):
                 exclude_entities={actor_entity},
             )
             # 添加标记，有用。
-            actor_entity.replace(
-                EnterStageComponent, actor_entity._name, stage_destination._name
-            )
+            # actor_entity.replace(
+            #     EnterStageComponent, actor_entity._name, stage_destination._name
+            # )
 
     ###############################################################################################################################################
     def stage_transition(self, actors: Set[Entity], destination: str) -> None:
@@ -773,7 +778,7 @@ magic_defense: {magic_defense}"""
 
     ###############################################################################################################################################
     # TODO!!! 临时测试准备传送！！！
-    def dungeon_stage_transition(self) -> None:
+    def launch_dungeon_adventure(self) -> None:
 
         assert len(self.dungeon_system.dungeon_levels) > 0, "没有地下城！"
         if len(self.dungeon_system.dungeon_levels) == 0:
@@ -803,9 +808,42 @@ magic_defense: {magic_defense}"""
         # 开始传送。
         self._stage_transition(heros_entities, stage_entity)
 
-        # 第一场战斗
-        if not self.dungeon_system.start_first_dungeon_level_combat():
-            assert False, "地下城战斗启动失败！"
+        ## 设置一个战斗。
+        assert len(self.dungeon_system.dungeon_levels) > 0, "没有地下城！"
+        assert (
+            len(self.dungeon_system._completed_levels) == 0
+        ), "已经完成的地下城关卡不为空！"
+        self.combat_system.combat_engagement(Combat(stage_entity._name))
+
+    #######################################################################################################################################
+    def next_dungeon_level(self, next_level: StageInstance) -> None:
+        # pass
+        logger.info(f"下一关为：{next_level.name}，可以进入！！！！")
+
+        heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
+        assert len(heros_entities) > 0
+        if len(heros_entities) == 0:
+            logger.error("没有找到英雄!")
+            return
+
+        trans_message = (
+            f"""# 提示！你准备继续你的冒险，准备进入下一个地下城: {next_level.name}"""
+        )
+        for hero_entity in heros_entities:
+            # 添加故事
+            logger.info(f"添加故事: {hero_entity._name} => {trans_message}")
+            self.append_human_message(hero_entity, trans_message)
+
+        # 开始传送。
+        self.stage_transition(heros_entities, next_level.name)
+
+        assert len(self.dungeon_system.dungeon_levels) > 0, "没有地下城！"
+        assert (
+            len(self.dungeon_system._completed_levels) > 0
+        ), "已经完成的地下城关卡为空！"
+
+        # 再开一场战斗！
+        self.combat_system.combat_engagement(Combat(next_level.name))
 
     ###############################################################################################################################################
     # TODO!!! 临时测试准备传送！！！

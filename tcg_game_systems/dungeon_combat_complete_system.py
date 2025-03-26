@@ -28,13 +28,12 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     async def a_execute1(self) -> None:
-        latest_combat = self._game.combat_system.latest_combat
-        if not latest_combat.is_complete:
+        if not self._game.combat_system.is_complete_phase:
             return  # 不是本阶段就直接返回
 
         if (
-            latest_combat.result == CombatResult.HERO_WIN
-            or latest_combat.result == CombatResult.HERO_LOSE
+            self._game.combat_system.combat_result == CombatResult.HERO_WIN
+            or self._game.combat_system.combat_result == CombatResult.HERO_LOSE
         ):
             # 标记本个地下城结束。因为有结果了。
             self._process_stage_completion()
@@ -46,7 +45,7 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
             self._game.save()
 
             # TODO, 进入战斗后准备的状态，离开当前状态。
-            latest_combat.transition_to_post_wait()
+            self._game.combat_system.combat_post_wait()
 
         else:
             assert False, "不可能出现的情况！"
@@ -61,7 +60,8 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
         stage_entity = self._game.safe_get_stage_entity(player_entity)
         assert stage_entity is not None
 
-        self._game.dungeon_system.mark_stage_complete(stage_entity._name)
+        if not self._game.dungeon_system.set_current_level_complete(stage_entity._name):
+            assert False, "不可能出现的情况！"
 
     #######################################################################################################################################
     # 总结！！！

@@ -74,7 +74,7 @@ class DungeonCombatSkillsCandidateSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
 
-        if not self._game.combat_system.latest_combat.is_on_going:
+        if not self._game.combat_system.is_on_going_phase:
             # 不是本阶段就直接返回
             return
 

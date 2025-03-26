@@ -2,7 +2,8 @@ from entitas import ExecuteProcessor, Matcher  # type: ignore
 from typing import Final, FrozenSet, NamedTuple, final, override
 from game.tcg_game import TCGGame
 from components.registry import ACTIONS_REGISTRY_2
-from components.components_v_0_0_1 import EnterStageComponent
+
+# from components.components_v_0_0_1 import EnterStageComponent
 
 
 @final
@@ -16,7 +17,7 @@ class PostActionSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
 
-        self._clear_enter_flag()
+        # self._clear_enter_flag()
 
         actions_set: Final[FrozenSet[type[NamedTuple]]] = frozenset(
             ACTIONS_REGISTRY_2.values()
@@ -25,18 +26,18 @@ class PostActionSystem(ExecuteProcessor):
         self._test(actions_set)
 
     ############################################################################################################
-    def _clear_enter_flag(self) -> None:
-        entities = self._game.get_group(
-            Matcher(
-                all_of=[
-                    EnterStageComponent,
-                ],
-            )
-        ).entities.copy()
+    # def _clear_enter_flag(self) -> None:
+    #     entities = self._game.get_group(
+    #         Matcher(
+    #             all_of=[
+    #                 EnterStageComponent,
+    #             ],
+    #         )
+    #     ).entities.copy()
 
-        # 最后的清理，不要这个
-        for entity2 in entities:
-            entity2.remove(EnterStageComponent)
+    #     # 最后的清理，不要这个
+    #     for entity2 in entities:
+    #         entity2.remove(EnterStageComponent)
 
     ############################################################################################################
     def _clear_actions(self, registered_actions: FrozenSet[type[NamedTuple]]) -> None:
@@ -56,16 +57,16 @@ class PostActionSystem(ExecuteProcessor):
         assert len(entities1) == 0, f"entities with actions: {entities1}"
 
         # EnterStageFlagComponent必须被清理掉。
-        entities2 = self._game.get_group(
-            Matcher(
-                all_of=[
-                    EnterStageComponent,
-                ],
-            )
-        ).entities
-        assert (
-            len(entities2) == 0
-        ), f"entities with EnterStageFlagComponent: {entities2}"
+        # entities2 = self._game.get_group(
+        #     Matcher(
+        #         all_of=[
+        #             EnterStageComponent,
+        #         ],
+        #     )
+        # ).entities
+        # assert (
+        #     len(entities2) == 0
+        # ), f"entities with EnterStageFlagComponent: {entities2}"
 
 
 ############################################################################################################

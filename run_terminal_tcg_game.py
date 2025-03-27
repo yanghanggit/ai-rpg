@@ -219,196 +219,10 @@ async def run_game(option: UserRuntimeOptions) -> None:
             logger.error(f"游戏准备失败 = {option.game}")
             exit(1)
 
-    # 至少跑一次home阶段。
-    run_home_once = False
-
-    # 进入核心循环
+    # 游戏循环。。。。。。
     while True:
 
-        # TODO加一个描述。
-        player_actor_entity = terminal_game.get_player_entity()
-        assert player_actor_entity is not None
-
-        player_stage_entity = terminal_game.safe_get_stage_entity(player_actor_entity)
-        assert player_stage_entity is not None
-
-        # 如果是战斗后等待阶段，这里临时处理下，不封装了。散着写吧。封装意义也不是很大。
-        #######################################################################
-        #######################################################################
-        #######################################################################
-        if (
-            len(terminal_game.combat_system.combats) > 0
-            and terminal_game.combat_system.is_post_wait_phase
-        ):
-            if terminal_game.combat_system.combat_result == CombatResult.HERO_WIN:
-
-                next_level = terminal_game.dungeon_system.next_level()
-                if next_level is None:
-                    logger.info("没有下一关，你胜利了，应该返回营地！！！！")
-                else:
-                    while True:
-                        usr_input = input(
-                            f"下一关为：[{next_level.name}]，可以进入。是否进入？(y/n): "
-                        )
-                        usr_input = usr_input.strip().lower()
-                        if usr_input == "y":
-                            break
-                        elif usr_input == "n":
-                            logger.error("暂时未实现，只能点击y")
-                            continue
-
-                    # 进入下一个循环！！！！
-                    terminal_game.advance_to_next_dungeon()
-                    continue
-
-            elif terminal_game.combat_system.combat_result == CombatResult.HERO_LOSE:
-                logger.info("英雄失败，应该返回营地！！！！")
-            else:
-                assert False, "不可能出现的情况！"
-        #######################################################################
-        #######################################################################
-        #######################################################################
-
-        #######################################################################
-        #######################################################################
-        #######################################################################
-        # 其他状态下的玩家输入！！！！！！
-        usr_input = input(f"[{terminal_game.player.name}/{player_stage_entity._name}]:")
-        usr_input = usr_input.strip().lower()
-
-        # 处理输入
-        if usr_input == "/q" or usr_input == "/quit":
-            # 退出游戏
-            logger.info(
-                f"玩家 主动 退出游戏 = {terminal_game.player.name}, {player_stage_entity._name}"
-            )
-            terminal_game.will_exit = True
-            break
-
-        # 乱点乱点吧，测试用，不用太纠结。
-        elif usr_input == "/rd" or usr_input == "/run-dungeon":
-
-            # 推进一次战斗。
-            if terminal_game.current_game_state != TCGGameState.DUNGEON:
-                logger.error(f"{usr_input} 只能在地下城中使用")
-                continue
-
-            if len(terminal_game.combat_system.combats) == 0:
-                logger.error(f"{usr_input} 没有战斗可以进行！！！！")
-                continue
-
-            # 执行一次！！！！！
-            await _execute_terminal_game(terminal_game, usr_input)
-
-        elif usr_input == "/dc" or usr_input == "/draw-cards":
-
-            # 抽卡
-            if terminal_game.current_game_state != TCGGameState.DUNGEON:
-                logger.error(f"{usr_input} 只能在地下城中使用")
-                continue
-
-            if not terminal_game.combat_system.is_on_going_phase:
-                logger.error(f"{usr_input} 只能在战斗中使用")
-                continue
-
-            logger.info(f"玩家输入 = {usr_input}, 准备抽卡")
-            draw_card_utils = DrawCardsUtils(
-                terminal_game,
-                terminal_game.retrieve_actors_on_stage(player_stage_entity),
-            )
-            await draw_card_utils.draw_cards()
-
-            # 执行一次！！！！！
-            await _execute_terminal_game(terminal_game, usr_input)
-
-        elif usr_input == "/m" or usr_input == "/monitor":
-
-            # 监控
-            if terminal_game.current_game_state != TCGGameState.DUNGEON:
-                logger.error(f"{usr_input} 只能在地下城中使用")
-                continue
-
-            if not terminal_game.combat_system.is_on_going_phase:
-                logger.error(f"{usr_input} 只能在战斗中使用")
-                continue
-
-            logger.info(f"玩家输入 = {usr_input}, 准备监控")
-            monitor_utils = MonitorUtils(
-                terminal_game,
-                set({player_stage_entity}),
-                terminal_game.retrieve_actors_on_stage(player_stage_entity),
-            )
-            await monitor_utils.process()
-
-        elif usr_input == "/th" or usr_input == "/trans-home":
-
-            # 战斗后回家。
-
-            if terminal_game.current_game_state != TCGGameState.DUNGEON:
-                logger.error(f"{usr_input} 只能在地下城中使用")
-                continue
-
-            if (
-                len(terminal_game.combat_system.combats) == 0
-                or not terminal_game.combat_system.is_post_wait_phase
-            ):
-                logger.error(f"{usr_input} 只能在战斗后使用!!!!!")
-                continue
-
-            logger.info(
-                f"玩家输入 = {usr_input}, 准备传送回家 {stage_heros_camp_instance.name}"
-            )
-
-            # 回家
-            terminal_game.home_stage_transition(
-                f"""# 提示！冒险结束，你将要返回: {stage_heros_camp_instance.name}""",
-                stage_heros_camp_instance,
-            )
-
-            # 清空战斗
-            logger.info(f"玩家输入 = {usr_input}, 重制地下城！！！！！！！！")
-            terminal_game.dungeon_system = DungeonSystem(name="", levels=[])
-
-        elif usr_input == "/rh" or usr_input == "/run-home":
-
-            # 推进一次营地的执行。
-
-            if terminal_game.current_game_state != TCGGameState.HOME:
-                logger.error(f"{usr_input} 只能在营地中使用")
-                continue
-
-            # 执行一次！！！！！
-            run_home_once = True
-            await _execute_terminal_game(terminal_game, usr_input)
-
-        elif usr_input == "/td" or usr_input == "/trans-dungeon":
-
-            # 传送进地下城战斗。
-
-            if terminal_game.current_game_state != TCGGameState.HOME:
-                logger.error(f"{usr_input} 只能在营地中使用")
-                continue
-
-            if not run_home_once:
-                logger.error(f"{usr_input} 至少要执行一次 /h，才能准备传送战斗！")
-                continue
-
-            if len(terminal_game.dungeon_system.levels) == 0:
-                logger.error(
-                    f"全部地下城已经结束。！！！！已经全部被清空！！！！或者不存在！！！！"
-                )
-                continue
-
-            logger.info(f"玩家输入 = {usr_input}, 准备传送地下城")
-            terminal_game.launch_dungeon_adventure()
-
-        else:
-
-            logger.error(
-                f"玩家输入 = {usr_input}, 目前不做任何处理，不在处理范围内！！！！！"
-            )
-
-        # 处理退出
+        await _process_player_input(terminal_game)
         if terminal_game.will_exit:
             break
 
@@ -418,6 +232,190 @@ async def run_game(option: UserRuntimeOptions) -> None:
     terminal_game.exit()
     # 退出
     exit(0)
+
+
+###############################################################################################################################################
+# TODO, 不封装了。散着写。封装意义也不是很大，乱点乱点吧，以后再说。
+async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
+
+    player_actor_entity = terminal_game.get_player_entity()
+    assert player_actor_entity is not None
+
+    player_stage_entity = terminal_game.safe_get_stage_entity(player_actor_entity)
+    assert player_stage_entity is not None
+
+    # 如果是战斗后等待阶段，这里临时处理下，
+    #######################################################################
+    #######################################################################
+    #######################################################################
+    if (
+        len(terminal_game.combat_system.combats) > 0
+        and terminal_game.combat_system.is_post_wait_phase
+    ):
+        if terminal_game.combat_system.combat_result == CombatResult.HERO_WIN:
+
+            next_level = terminal_game.dungeon_system.next_level()
+            if next_level is None:
+                logger.info("没有下一关，你胜利了，应该返回营地！！！！")
+            else:
+                while True:
+                    usr_input = input(
+                        f"下一关为：[{next_level.name}]，可以进入。是否进入？(y/n): "
+                    )
+                    usr_input = usr_input.strip().lower()
+                    if usr_input == "y" or usr_input == "yes":
+                        break
+                    else:
+                        logger.error("暂时未实现，只能点击y")
+                        continue
+
+                # 进入下一个循环！！！！
+                terminal_game.advance_to_next_dungeon()
+                return
+
+        elif terminal_game.combat_system.combat_result == CombatResult.HERO_LOSE:
+            logger.info("英雄失败，应该返回营地！！！！")
+        else:
+            assert False, "不可能出现的情况！"
+
+    #######################################################################
+    #######################################################################
+    #######################################################################
+
+    #######################################################################
+    #######################################################################
+    #######################################################################
+    # 其他状态下的玩家输入！！！！！！
+    usr_input = input(f"[{terminal_game.player.name}/{player_stage_entity._name}]:")
+    usr_input = usr_input.strip().lower()
+
+    # 处理输入
+    if usr_input == "/q" or usr_input == "/quit":
+        # 退出游戏
+        logger.info(
+            f"玩家 主动 退出游戏 = {terminal_game.player.name}, {player_stage_entity._name}"
+        )
+        terminal_game.will_exit = True
+
+    # 乱点乱点吧，测试用，不用太纠结。
+    elif usr_input == "/rd" or usr_input == "/run-dungeon":
+
+        # 推进一次战斗。
+        if terminal_game.current_game_state != TCGGameState.DUNGEON:
+            logger.error(f"{usr_input} 只能在地下城中使用")
+            return
+
+        if len(terminal_game.combat_system.combats) == 0:
+            logger.error(f"{usr_input} 没有战斗可以进行！！！！")
+            return
+
+        # 执行一次！！！！！
+        await _execute_terminal_game(terminal_game, usr_input)
+
+    elif usr_input == "/dc" or usr_input == "/draw-cards":
+
+        # 抽卡
+        if terminal_game.current_game_state != TCGGameState.DUNGEON:
+            logger.error(f"{usr_input} 只能在地下城中使用")
+            return
+
+        if not terminal_game.combat_system.is_on_going_phase:
+            logger.error(f"{usr_input} 只能在战斗中使用")
+            return
+
+        logger.info(f"玩家输入 = {usr_input}, 准备抽卡")
+        draw_card_utils = DrawCardsUtils(
+            terminal_game,
+            terminal_game.retrieve_actors_on_stage(player_stage_entity),
+        )
+        await draw_card_utils.draw_cards()
+
+        # 执行一次！！！！！
+        await _execute_terminal_game(terminal_game, usr_input)
+
+    elif usr_input == "/m" or usr_input == "/monitor":
+
+        # 监控
+        if terminal_game.current_game_state != TCGGameState.DUNGEON:
+            logger.error(f"{usr_input} 只能在地下城中使用")
+            return
+
+        if not terminal_game.combat_system.is_on_going_phase:
+            logger.error(f"{usr_input} 只能在战斗on_going_phase中使用")
+            return
+
+        logger.info(f"玩家输入 = {usr_input}, 准备监控")
+        monitor_utils = MonitorUtils(
+            terminal_game,
+            set({player_stage_entity}),
+            terminal_game.retrieve_actors_on_stage(player_stage_entity),
+        )
+        await monitor_utils.process()
+
+    elif usr_input == "/th" or usr_input == "/trans-home":
+
+        # 战斗后回家。
+        if terminal_game.current_game_state != TCGGameState.DUNGEON:
+            logger.error(f"{usr_input} 只能在地下城中使用")
+            return
+
+        if (
+            len(terminal_game.combat_system.combats) == 0
+            or not terminal_game.combat_system.is_post_wait_phase
+        ):
+            logger.error(f"{usr_input} 只能在战斗后使用!!!!!")
+            return
+
+        logger.info(
+            f"玩家输入 = {usr_input}, 准备传送回家 {stage_heros_camp_instance.name}"
+        )
+
+        # 回家
+        terminal_game.home_stage_transition(
+            f"""# 提示！冒险结束，你将要返回: {stage_heros_camp_instance.name}""",
+            stage_heros_camp_instance,
+        )
+
+        # 清空战斗
+        logger.info(f"玩家输入 = {usr_input}, 重制地下城！！！！！！！！")
+        terminal_game.dungeon_system = DungeonSystem(name="", levels=[])
+
+    elif usr_input == "/rh" or usr_input == "/run-home":
+
+        # 推进一次营地的执行。
+        if terminal_game.current_game_state != TCGGameState.HOME:
+            logger.error(f"{usr_input} 只能在营地中使用")
+            return
+
+        # 执行一次！！！！！
+        await _execute_terminal_game(terminal_game, usr_input)
+        terminal_game.run_home_once = True
+
+    elif usr_input == "/td" or usr_input == "/trans-dungeon":
+
+        # 传送进地下城战斗。
+        if terminal_game.current_game_state != TCGGameState.HOME:
+            logger.error(f"{usr_input} 只能在营地中使用")
+            return
+
+        if not terminal_game.run_home_once:
+            logger.error(f"{usr_input} 至少要执行一次 /rh，才能准备传送战斗！")
+            return
+
+        if len(terminal_game.dungeon_system.levels) == 0:
+            logger.error(
+                f"全部地下城已经结束。！！！！已经全部被清空！！！！或者不存在！！！！"
+            )
+            return
+
+        logger.info(f"玩家输入 = {usr_input}, 准备传送地下城")
+        terminal_game.launch_dungeon_adventure()
+
+    else:
+
+        logger.error(
+            f"玩家输入 = {usr_input}, 目前不做任何处理，不在处理范围内！！！！！"
+        )
 
 
 ###############################################################################################################################################

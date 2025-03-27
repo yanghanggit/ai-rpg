@@ -4,4 +4,4 @@ from game.tcg_game import TCGGame
 
 @final
 class TerminalTCGGame(TCGGame):
-    pass
+    run_home_once = False

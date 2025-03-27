@@ -1,7 +1,7 @@
 from entitas import Entity, Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
 from components.components_v_0_0_1 import (
-    DungeonComponent,
+    # DungeonComponent,
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
@@ -217,7 +217,7 @@ class KickOffSystem(ExecuteProcessor):
 ## 场景内角色外貌信息
 {"\n".join(actors_appearances_info)}"""
 
-        logger.info(f"Hero: {actor_entity._name}, First Observation: \n{message}")
+        #logger.info(f"Hero: {actor_entity._name}, First Observation: \n{message}")
         self._game.append_human_message(actor_entity, message)
 
     ###############################################################################################################################################

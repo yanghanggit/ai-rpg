@@ -17,9 +17,7 @@ from game.tcg_game import TCGGame
 #######################################################################################################################################
 @final
 class DrawCardResponse(BaseModel):
-    attack: Skill
-    defense: Skill
-    support: Skill
+    skills: List[Skill]
 
 
 #######################################################################################################################################
@@ -29,32 +27,28 @@ def _generate_prompt(
 ) -> str:
 
     default_response_example = DrawCardResponse(
-        attack=Skill(
-            name="攻击技能",
-            description="攻击技能描述",
-            effect="攻击技能效果",
-        ),
-        defense=Skill(
-            name="防御技能",
-            description="防御技能描述",
-            effect="防御技能效果",
-        ),
-        support=Skill(
-            name="支援技能",
-            description="支援技能描述",
-            effect="支援技能效果",
-        ),
+        skills=[
+            Skill(
+                name="技能1",
+                description="技能1描述",
+                effect="技能1效果",
+            ),
+            Skill(
+                name="技能2",
+                description="技能2描述",
+                effect="技能2效果",
+            ),
+        ]
     )
 
-    return f"""# 请根据你的能力情况，生成你的技能
-## 当前场景
-{current_stage}
-### 场景描述
-{current_stage_narration}
+    return f"""# 请你生成2个技能
+## 当前场景状态
+{current_stage} | {current_stage_narration}
 ## 注意事项
-如生成的技能跟属性有关(依赖/增加/减少)，需在技能描述与影响里明确说明。
+- 如生成的技能跟属性有关(增加/减少)，需在技能描述与影响里明确说明。
 ## 输出要求
-- 不要使用```json```来封装内容。
+- 禁用换行/空行
+- 直接输出合规JSON
 ### 输出格式(JSON)
 {default_response_example.model_dump_json()}"""
 
@@ -138,11 +132,7 @@ class DrawCardsUtils:
             entity2.replace(
                 HandComponent,
                 entity2._name,
-                [
-                    format_response.attack,
-                    format_response.defense,
-                    format_response.support,
-                ],
+                format_response.skills,
             )
 
         except:

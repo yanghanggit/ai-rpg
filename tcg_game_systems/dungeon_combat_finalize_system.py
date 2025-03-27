@@ -41,6 +41,8 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
         stage_entity = self._game.safe_get_stage_entity(player_entity)
         assert stage_entity is not None
 
+        actors_on_stage = self._game.retrieve_actors_on_stage(stage_entity)
+
         available_skill_entities = self._game.get_group(
             Matcher(
                 all_of=[
@@ -79,8 +81,12 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
             return
 
         # 所有的角色，理论上都出手了。
-        actors_on_stage = self._game.retrieve_actors_on_stage(stage_entity)
-        assert len(turn_action_actors) == len(actors_on_stage)
+        if len(turn_action_actors) != len(actors_on_stage):
+            logger.error(
+                f"出手的角色数量和场景中的角色数量不一致。可能是request有问题。"
+            )
+            return
+
         assert len(select_then_feedback_action_actors) == len(actors_on_stage)
         assert len(available_skill_entities) == len(actors_on_stage)
 

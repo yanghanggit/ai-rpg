@@ -70,8 +70,9 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
 4. 你的感受，你的状态。
 5. 你的同伴，他们的表现。
 ## 输出格式规范:
-第一人称视角。
-要求单段紧凑自述（禁用换行/空行/数字）。"""
+- 第一人称视角。
+- 要求单段紧凑自述（禁用换行/空行/数字）。
+- 尽量简短。"""
 
             # 生成请求处理器
             request_handlers.append(

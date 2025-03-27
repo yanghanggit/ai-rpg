@@ -8,14 +8,6 @@ from models.v_0_0_1 import (
     StageType,
     BaseAttributes,
     WorldSystemPrototype,
-    STRIKER,
-    GUARDIAN,
-    MAGE,
-    WARDEN,
-    HEALER,
-    ENHANCER,
-    DEBILITATOR,
-    SUMMONER,
 )
 from typing import Final, Optional
 from game.tcg_game_demo_utils import (
@@ -93,7 +85,6 @@ actor_warrior_prototype = ActorPrototype(
     ),
     appearance=actor_warrior_appearance,
     type=ActorType.HERO,
-    combat_roles=[STRIKER, GUARDIAN],
 )
 #######################################################################################################################################
 #######################################################################################################################################
@@ -108,7 +99,6 @@ actor_wizard_prototype = ActorPrototype(
     ),
     appearance=actor_wizard_appearance,
     type=ActorType.HERO,
-    combat_roles=[MAGE, HEALER],
 )
 #######################################################################################################################################
 #######################################################################################################################################
@@ -123,7 +113,6 @@ actor_goblin_prototype = ActorPrototype(
     ),
     appearance=actor_goblin_appearance,
     type=ActorType.MONSTER,
-    combat_roles=[STRIKER, DEBILITATOR],
 )
 #######################################################################################################################################
 #######################################################################################################################################
@@ -138,7 +127,6 @@ actor_orcs_prototype = ActorPrototype(
     ),
     appearance=actor_orcs_appearance,
     type=ActorType.MONSTER,
-    combat_roles=[STRIKER, ENHANCER],
 )
 #######################################################################################################################################
 #######################################################################################################################################
@@ -190,7 +178,7 @@ world_system_instance = _create_world_system_instance(
 actor_warrior_instance = _create_actor_instance(
     name=actor_warrior_prototype.name,
     actor_prototype=actor_warrior_prototype,
-    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）并告诉我你的战斗角色职能""",
+    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）并告诉我你的战斗角色职能。回答简短(<100字)。""",
     attributes=BaseAttributes(strength=15 * 10, dexterity=9, wisdom=6),
 )
 #######################################################################################################################################
@@ -200,7 +188,7 @@ actor_warrior_instance = _create_actor_instance(
 actor_wizard_instance = _create_actor_instance(
     name=actor_wizard_prototype.name,
     actor_prototype=actor_wizard_prototype,
-    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）并告诉我你的战斗角色职能""",
+    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）并告诉我你的战斗角色职能。回答简短(<100字)。""",
     attributes=BaseAttributes(strength=4 * 10, dexterity=7, wisdom=18),
 )
 #######################################################################################################################################
@@ -209,7 +197,7 @@ actor_wizard_instance = _create_actor_instance(
 actor_goblin_instance = _create_actor_instance(
     name="角色.怪物.哥布林-拉格",
     actor_prototype=actor_goblin_prototype,
-    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）并告诉我你的战斗角色职能""",
+    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）并告诉我你的战斗角色职能。回答简短(<100字)。""",
     attributes=BaseAttributes(strength=5, dexterity=12, wisdom=5),
 )
 #######################################################################################################################################
@@ -218,7 +206,7 @@ actor_goblin_instance = _create_actor_instance(
 actor_orcs_instance = _create_actor_instance(
     name="角色.怪物.兽人-库洛斯",
     actor_prototype=actor_orcs_prototype,
-    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）并告诉我你的战斗角色职能""",
+    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）并告诉我你的战斗角色职能。回答简短(<100字)。""",
     attributes=BaseAttributes(strength=18, dexterity=6, wisdom=4),
 )
 #######################################################################################################################################
@@ -279,12 +267,8 @@ def _build_world(world_boot: Boot) -> Boot:
     actor_orcs_instance.base_attributes.hp = 1
 
     # 添加一些人物关系做润色。
-    actor_warrior_instance.kick_off_message += (
-        f"""{actor_wizard_instance.name} 是你的同伴。"""
-    )
-    actor_wizard_instance.kick_off_message += (
-        f"""{actor_warrior_instance.name} 是你的同伴。"""
-    )
+    actor_warrior_instance.kick_off_message += f"""\n注意:{actor_wizard_instance.name} 是你的同伴。你目前只会使用防御类的技能！你讨厌黑暗法术，因为你认为它们是邪恶的。"""
+    actor_wizard_instance.kick_off_message += f"""\n注意:{actor_warrior_instance.name} 是你的同伴。你最擅长的是闪电类的魔法，而且你还有一个不为别人知道的秘密：你深刻理解黑暗元素的力量，如果面对你最讨厌的东西——哥布林的时候你会毫不犹豫运用这种禁忌之力将其清除。"""
 
     # 营地中放置角色，这里是战士和法师。
     stage_heros_camp_instance.actors.append(actor_warrior_instance.name)

@@ -68,13 +68,6 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
             )
         ).entities
 
-        # 所有的角色，理论上都出手了。
-        actors_on_stage = self._game.retrieve_actors_on_stage(stage_entity)
-        assert len(turn_action_actors) == len(actors_on_stage)
-        assert len(select_then_feedback_action_actors) == len(actors_on_stage)
-        assert len(available_skill_entities) == len(actors_on_stage)
-
-        assert len(turn_action_actors) > 0
         if len(turn_action_actors) == 0:
             logger.error(f"没有角色出手。???!!!!!")
             return
@@ -84,6 +77,12 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
                 f"出手的角色数量和选择技能的角色数量不一致。可能是request有问题。"
             )
             return
+
+        # 所有的角色，理论上都出手了。
+        actors_on_stage = self._game.retrieve_actors_on_stage(stage_entity)
+        assert len(turn_action_actors) == len(actors_on_stage)
+        assert len(select_then_feedback_action_actors) == len(actors_on_stage)
+        assert len(available_skill_entities) == len(actors_on_stage)
 
         # 场景的也需要做检查！！！
         if not stage_entity.has(StageDirectorAction):

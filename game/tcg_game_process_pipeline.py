@@ -182,6 +182,9 @@ class TCGGameProcessPipeline(Processors):
         # 地下城的标记开始
         processors.add(PreDungeonStateSystem(tcg_game))
 
+        # 开局
+        processors.add(DungeonCombatRoundSystem(tcg_game))
+
         ######动作开始！！！！！################################################################################################
         processors.add(PreActionSystem(tcg_game))
         processors.add(TurnActionSystem(tcg_game))
@@ -223,7 +226,6 @@ class TCGGameProcessPipeline(Processors):
 
         # 可能需要改一改，换个位置。
         processors.add(DungeonCombatDrawCardSystem(tcg_game))
-        processors.add(DungeonCombatRoundSystem(tcg_game))
 
         processors.add(
             PostPlanningSystem(tcg_game)

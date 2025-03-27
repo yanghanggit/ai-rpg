@@ -1,8 +1,9 @@
-from entitas import ExecuteProcessor, Entity  # type: ignore
+from entitas import Matcher, Entity, Matcher, ExecuteProcessor  # type: ignore
 from pydantic import BaseModel
 from extended_systems.chat_request_handler import ChatRequestHandler
 from components.components_v_0_0_1 import (
     StageEnvironmentComponent,
+    HandComponent,
 )
 from overrides import override
 from typing import Dict, final
@@ -59,13 +60,25 @@ class DungeonStagePlanningSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     def execute(self) -> None:
-        if not self.is_state_valid():
+        if not self._is_phase_valid():
             logger.debug("StagePlanningSystem: 状态无效，跳过执行。")
             return
         self._process_stage_planning()
 
     #######################################################################################################################################
-    def is_state_valid(self) -> bool:
+    def _is_phase_valid(self) -> bool:
+
+        actor_entities = self._game.get_group(
+            Matcher(
+                all_of=[
+                    HandComponent,
+                ],
+            )
+        ).entities
+
+        if len(actor_entities) == 0:
+            return False
+
         return (
             self._game.combat_system.is_preparation_phase
             or self._game.combat_system.is_on_going_phase

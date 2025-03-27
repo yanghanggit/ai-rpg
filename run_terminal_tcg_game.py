@@ -246,10 +246,10 @@ async def run_game(option: UserRuntimeOptions) -> None:
                     logger.info("没有下一关，你胜利了，应该返回营地！！！！")
                 else:
                     while True:
-                        user_input = input(
+                        usr_input = input(
                             f"下一关为：[{next_level.name}]，可以进入。是否进入？(y/n): "
                         )
-                        if user_input == "y":
+                        if usr_input == "y":
                             break
 
                     # 进入下一个循环！！！！

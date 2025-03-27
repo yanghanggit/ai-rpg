@@ -6,7 +6,7 @@ from typing import List, final
 from loguru import logger
 from components.actions_v_0_0_1 import FeedbackAction
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
-from models.v_0_0_1 import Effect
+from models.v_0_0_1 import StatusEffect
 import format_string.json_format
 from components.components_v_0_0_1 import (
     CombatAttributesComponent,
@@ -19,7 +19,7 @@ class FeedbackResponse(BaseModel):
     description: str
     hp: float
     max_hp: float
-    effects: List[Effect]
+    status_effects: List[StatusEffect]
 
 
 #######################################################################################################################################
@@ -28,13 +28,13 @@ def _generate_prompt(
     feedback_component: FeedbackAction,
 ) -> str:
 
-    feedback_response_example = FeedbackResponse(
+    response_example = FeedbackResponse(
         description="第一人称状态描述（<200字）",
         hp=combat_attributes_component.hp,
         max_hp=combat_attributes_component.max_hp,
-        effects=[
-            Effect(name="效果1的名字", description="效果1的描述", rounds=1),
-            Effect(name="效果2的名字", description="效果2的描述", rounds=2),
+        status_effects=[
+            StatusEffect(name="效果1的名字", description="效果1的描述", rounds=1),
+            StatusEffect(name="效果2的名字", description="效果2的描述", rounds=2),
         ],
     )
 
@@ -44,7 +44,7 @@ def _generate_prompt(
 ### 计算摘要
 {feedback_component.calculation}
 
-### 演绎摘要
+### 演出摘要
 {feedback_component.performance}
 
 ## 输出内容
@@ -53,7 +53,7 @@ def _generate_prompt(
 2. 在你身上的持续效果：生成效果列表，包含效果名、效果描述、剩余回合数。
     
 ## 输出格式规范
-{feedback_response_example.model_dump_json()}
+{response_example.model_dump_json()}
 - 直接输出合规JSON
 - 数值精确，禁用文字修饰。
 - 直接输出合规JSON"""
@@ -154,7 +154,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
                 format_response.description,
                 format_response.hp,
                 format_response.max_hp,
-                format_response.effects,
+                format_response.status_effects,
             )
 
         except:

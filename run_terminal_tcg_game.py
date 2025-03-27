@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List
 from loguru import logger
 import datetime
 from dataclasses import dataclass
@@ -20,6 +21,11 @@ from game.tcg_game_demo import (
 )
 from player.player_command import PlayerCommand
 from extended_systems.dungeon_system import DungeonSystem
+from llm_serves.config import (
+    # ServiceConfiguration,
+    AgentStartupConfiguration,
+    # GEN_CONFIGS_DIR,
+)
 
 
 ###############################################################################################################################################
@@ -27,8 +33,10 @@ from extended_systems.dungeon_system import DungeonSystem
 class UserRuntimeOptions:
     user: str
     game: str
-    new_game: bool = True
-    langserve_url: str = "http://localhost:8100/v1/llm_serve/chat/"
+    new_game: bool
+    # langserve_url: str = "http://localhost:8100/v1/llm_serve/chat/"
+    server_setup_config: str  # = "gen_configs/start_llm_serves.json"
+    language_service_urls: List[str]
 
     ###############################################################################################################################################
     # 生成用户的运行时目录
@@ -76,6 +84,30 @@ class UserRuntimeOptions:
         log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         logger.add(self.log_dir / f"{log_start_time}.log", level="DEBUG")
         logger.info(f"准备进入游戏 = {self.game}, {self.user}")
+        return self
+
+    ###############################################################################################################################################
+    def generate_service_urls(self) -> "UserRuntimeOptions":
+
+        config_file_path = Path(self.server_setup_config)
+        assert config_file_path.exists()
+
+        try:
+
+            config_file_content = config_file_path.read_text(encoding="utf-8")
+            agent_startup_config = AgentStartupConfiguration.model_validate_json(
+                config_file_content
+            )
+
+            # self.language_service_urls.clear()
+            for config in agent_startup_config.service_configurations:
+                self.language_service_urls.append(
+                    f"http://localhost:{config.port}{config.api}"
+                )
+
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+
         return self
 
     ###############################################################################################################################################
@@ -134,7 +166,7 @@ async def run_game(option: UserRuntimeOptions) -> None:
 
     # langserve先写死。后续需要改成配置文件
     lang_serve_system = LangServeSystem(f"{option.game}-langserve_system")
-    lang_serve_system.add_remote_runnable(url=option.langserve_url)
+    lang_serve_system.add_remote_runnable(url=option.language_service_urls[0])
 
     # 创建一个测试的地下城系统
     test_dungeon = DungeonSystem(
@@ -355,5 +387,15 @@ if __name__ == "__main__":
 
     import asyncio
 
-    option = UserRuntimeOptions(user="yanghang", game="Game1").init_logger()
+    option = (
+        UserRuntimeOptions(
+            user="yanghang",
+            game="Game1",
+            new_game=True,
+            server_setup_config="gen_configs/start_llm_serves.json",
+            language_service_urls=[],
+        )
+        .init_logger()
+        .generate_service_urls()
+    )
     asyncio.run(run_game(option))

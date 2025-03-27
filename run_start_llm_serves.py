@@ -1,45 +1,31 @@
-from typing import List
-from pydantic import BaseModel
-from llm_serves.start_config_model import StartConfigModel
+from llm_serves.config import (
+    ServiceConfiguration,
+    AgentStartupConfiguration,
+    GEN_CONFIGS_DIR,
+)
 from pathlib import Path
 from loguru import logger
 import os
 
 
 ##################################################################################################################
-class StartConfigListModel(BaseModel):
-    name: str = ""
-    config_list: List[StartConfigModel] = []
-
-
-##################################################################################################################
-# 根目录
-GEN_CONFIGS_DIR: Path = Path("gen_configs")
-GEN_CONFIGS_DIR.mkdir(parents=True, exist_ok=True)
-assert GEN_CONFIGS_DIR.exists(), f"找不到目录: {GEN_CONFIGS_DIR}"
-
-##################################################################################################################
-START_LLM_SERVES_DIR: Path = GEN_CONFIGS_DIR / "start_llm_serves.json"
-
-
-##################################################################################################################
-def _gen_start_config_list(name: str = "") -> StartConfigListModel:
-    config_list = StartConfigListModel()
-    config_list.name = name
-    config_list.config_list = [
-        StartConfigModel(port=8100, temperature=0.7, api="/v1/llm_serve/chat/"),
+def _create_agent_startup_config(name: str) -> AgentStartupConfiguration:
+    agent_startup_config = AgentStartupConfiguration()
+    agent_startup_config.name = name
+    agent_startup_config.service_configurations = [
+        ServiceConfiguration(port=8100, temperature=0.7, api="/v1/llm_serve/chat/"),
     ]
-    return config_list
+    return agent_startup_config
 
 
 ##################################################################################################################
-def _gen_config() -> None:
+def _prepare_service_configuration(file_path: Path) -> None:
 
     # 生成配置文件, 写死先
-    start_configurations = _gen_start_config_list(START_LLM_SERVES_DIR.name)
+    start_configurations = _create_agent_startup_config(file_path.name)
 
     # 打印配置文件
-    for config in start_configurations.config_list:
+    for config in start_configurations.service_configurations:
 
         logger.debug(f"port: {config.port}")
         assert config.port > 0, "port is 0"
@@ -62,24 +48,22 @@ def _gen_config() -> None:
     # 保存配置文件
     try:
         dump_json = start_configurations.model_dump_json()
-        START_LLM_SERVES_DIR.write_text(dump_json, encoding="utf-8")
+        file_path.write_text(dump_json, encoding="utf-8")
     except Exception as e:
         logger.error(f"An error occurred: {e}")
 
 
 ##################################################################################################################
-def _start_llm_serves(path_param: str) -> None:
+def _execute_service_startup(config_file_path: Path) -> None:
 
     try:
 
-        read_path = Path(path_param)
-
-        read_config_content = read_path.read_text(encoding="utf-8")
-        validated_config_model = StartConfigListModel.model_validate_json(
-            read_config_content
+        config_file_content = config_file_path.read_text(encoding="utf-8")
+        agent_startup_config = AgentStartupConfiguration.model_validate_json(
+            config_file_content
         )
 
-        if len(validated_config_model.config_list) == 0:
+        if len(agent_startup_config.service_configurations) == 0:
             logger.error("没有找到配置")
             return None
 
@@ -87,7 +71,7 @@ def _start_llm_serves(path_param: str) -> None:
         os.system("pm2 delete all")
 
         # 启动所有进程
-        for config in validated_config_model.config_list:
+        for config in agent_startup_config.service_configurations:
             terminal_batch_start_command = f"pm2 start llm_serves/azure_chat_openai_gpt_4o_graph.py -- {config.port} {config.temperature} {config.api} {config.fast_api_title} {config.fast_api_version} {config.fast_api_description}"
             logger.debug(terminal_batch_start_command)
             os.system(terminal_batch_start_command)
@@ -98,11 +82,19 @@ def _start_llm_serves(path_param: str) -> None:
 
 ##################################################################################################################
 def main() -> None:
+
+    agent_startup_config_file_path: Path = GEN_CONFIGS_DIR / "start_llm_serves.json"
+    if agent_startup_config_file_path.exists():
+        agent_startup_config_file_path.unlink()
+
     # 生成配置文件
-    _gen_config()
+    _prepare_service_configuration(agent_startup_config_file_path)
 
     # 启动服务
-    _start_llm_serves("gen_configs/start_llm_serves.json")  # 写死？
+    assert (
+        agent_startup_config_file_path.exists()
+    ), f"找不到配置文件: {agent_startup_config_file_path}"
+    _execute_service_startup(agent_startup_config_file_path)  # 写死？
 
 
 ##################################################################################################################

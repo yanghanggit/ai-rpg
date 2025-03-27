@@ -1,6 +1,6 @@
 from typing import Dict, NamedTuple, final, List
 from components.registry import register_action_class_2
-from models.v_0_0_1 import Skill, Effect
+from models.v_0_0_1 import Skill, StatusEffect
 
 
 ############################################################################################################
@@ -55,7 +55,7 @@ class TurnAction(NamedTuple):
 ############################################################################################################
 @final
 @register_action_class_2
-class SelectAction(NamedTuple):
+class PlayCardAction(NamedTuple):
     name: str
     targets: List[str]
     skill: Skill
@@ -82,7 +82,7 @@ class FeedbackAction(NamedTuple):
     description: str
     hp: float
     max_hp: float
-    effects: List[Effect]
+    effects: List[StatusEffect]
 
 
 ############################################################################################################

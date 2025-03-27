@@ -1,6 +1,6 @@
 from typing import Final, NamedTuple, List, final
 from components.registry import register_component_class
-from models.v_0_0_1 import Skill, Effect
+from models.v_0_0_1 import Skill, StatusEffect
 
 
 # 注意，不允许动！
@@ -157,12 +157,22 @@ class StagePermitComponent(NamedTuple):
     name: str
 
 
+# 以下是针对卡牌游戏中 牌组、弃牌堆、抽牌堆、手牌 的类名设计建议，结合常见游戏术语和编程习惯：
+# 方案 4：极简统一型
+# 组件	类名	说明
+# 牌组	Deck	直接命名为 Deck，表示通用牌组。
+# 抽牌堆	DrawDeck	与 Deck 统一，通过前缀区分功能。
+# 弃牌堆	DiscardDeck	同上，保持命名一致性。
+# 手牌	Hand	简洁无冗余。
+# play_card
+# draw_card
 ############################################################################################################
+# 手牌组件。
 @final
 @register_component_class
-class SkillCandidateQueueComponent(NamedTuple):
+class HandComponent(NamedTuple):
     name: str
-    queue: List[Skill]
+    skills: List[Skill]
 
 
 ############################################################################################################
@@ -192,18 +202,18 @@ class CombatAttributesComponent(NamedTuple):
 # 战斗中临时使用。
 @final
 @register_component_class
-class CombatEffectsComponent(NamedTuple):
+class CombatStatusEffectsComponent(NamedTuple):
     name: str
-    effects: List[Effect]
+    status_effects: List[StatusEffect]
 
     @property
     def as_prompt(self) -> str:
         ret = "- 无"
-        if len(self.effects) > 0:
+        if len(self.status_effects) > 0:
             ret = "\n".join(
                 [
                     f"- {effect.name}: {effect.description} (剩余{effect.rounds}回合)"
-                    for effect in self.effects
+                    for effect in self.status_effects
                 ]
             )
         return ret

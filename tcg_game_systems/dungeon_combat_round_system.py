@@ -1,7 +1,7 @@
 import random
 from entitas import Matcher, Entity, Matcher, ExecuteProcessor  # type: ignore
 from components.components_v_0_0_1 import (
-    SkillCandidateQueueComponent,
+    HandComponent,
 )
 from overrides import override
 from typing import List, Tuple, final
@@ -26,7 +26,7 @@ class DungeonCombatRoundSystem(ExecuteProcessor):
         actor_entities = self._game.get_group(
             Matcher(
                 all_of=[
-                    SkillCandidateQueueComponent,
+                    HandComponent,
                 ],
             )
         ).entities

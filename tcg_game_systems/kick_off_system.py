@@ -1,6 +1,7 @@
 from entitas import Entity, Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
 from components.components_v_0_0_1 import (
+    DungeonComponent,
     WorldSystemComponent,
     StageComponent,
     ActorComponent,

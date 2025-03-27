@@ -9,14 +9,14 @@ from components.components_v_0_0_1 import (
     CombatAttributesComponent,
 )
 import format_string.json_format
-from models.v_0_0_1 import Effect
+from models.v_0_0_1 import StatusEffect
 
 
 #######################################################################################################################################
 @final
 class CombatPreparationResponse(BaseModel):
     description: str
-    effects: List[Effect]
+    status_effects: List[StatusEffect]
 
 
 ###################################################################################################################################################################
@@ -35,9 +35,9 @@ def _generate_prompt(
 
     combat_init_response_example = CombatPreparationResponse(
         description="第一人称状态描述（<200字）",
-        effects=[
-            Effect(name="效果1的名字", description="效果1的描述", rounds=1),
-            Effect(name="效果2的名字", description="效果2的描述", rounds=2),
+        status_effects=[
+            StatusEffect(name="效果1的名字", description="效果1的描述", rounds=1),
+            StatusEffect(name="效果2的名字", description="效果2的描述", rounds=2),
         ],
     )
 
@@ -191,7 +191,9 @@ class DungeonCombatPreparationSystem(ExecuteProcessor):
             )
 
             # 效果更新
-            self._game.update_combat_effects(entity2, format_response.effects)
+            self._game.update_combat_status_effects(
+                entity2, format_response.status_effects
+            )
 
             # 添加提示词上下文。
             self._game.append_human_message(
@@ -204,7 +206,7 @@ class DungeonCombatPreparationSystem(ExecuteProcessor):
             message = f"""# ！战斗触发！准备完毕。
 {format_response.description}
 ## 你目前拥有的状态
-{'\n'.join([e.model_dump_json() for e in format_response.effects])}"""
+{'\n'.join([e.model_dump_json() for e in format_response.status_effects])}"""
 
             self._game.append_ai_message(entity2, message)
 

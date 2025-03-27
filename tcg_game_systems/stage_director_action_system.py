@@ -8,14 +8,14 @@ from components.actions_v_0_0_1 import (
     StageDirectorAction,
     FeedbackAction,
     TurnAction,
-    SelectAction,
+    PlayCardAction,
 )
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from models.v_0_0_1 import Skill
 from components.components_v_0_0_1 import (
     ActorComponent,
     CombatAttributesComponent,
-    CombatEffectsComponent,
+    CombatStatusEffectsComponent,
     DungeonComponent,
     StageComponent,
 )
@@ -61,7 +61,7 @@ class ActionPromptParameters(NamedTuple):
     targets: List[str]
     skill: Skill
     combat_attrs_component: CombatAttributesComponent
-    combat_effects_component: CombatEffectsComponent
+    combat_effects_component: CombatStatusEffectsComponent
     interaction: str
 
 
@@ -78,7 +78,7 @@ def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> st
 目标: {param.targets}
 描述: {param.skill.description}
 技能效果: {param.skill.effect}
-角色演绎: {param.interaction}
+角色演出: {param.interaction}
 属性: 
 {param.combat_attrs_component.as_prompt}
 角色状态: 
@@ -88,7 +88,7 @@ def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> st
 
     # 模版
     director_response_sample = DirectorResponse(
-        calculation="计算过程", performance="演绎过程"
+        calculation="计算过程", performance="演出过程"
     )
 
     return f"""# 提示！回合行动指令。根据下列信息执行战斗回合：
@@ -102,7 +102,7 @@ def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> st
 1. 计算过程：
     - 根据‘战斗结算规则’输出详细的计算过程(伤害与治疗的计算过程)。
     - 结算后，需明确每个角色的当前生命值/最大生命值。
-2. 演绎过程（~200字）
+2. 演出过程（~200字）
     - 文学化描写，禁用数字与计算过程
 ## 输出格式规范
 {director_response_sample.model_dump_json()}
@@ -143,7 +143,7 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
             Matcher(
                 all_of=[
                     TurnAction,
-                    SelectAction,
+                    PlayCardAction,
                 ],
             )
         ).entities
@@ -167,10 +167,10 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
 
             assert entity.has(ActorComponent)
             assert entity.has(CombatAttributesComponent)
-            assert entity.has(CombatEffectsComponent)
-            assert entity.has(SelectAction)
+            assert entity.has(CombatStatusEffectsComponent)
+            assert entity.has(PlayCardAction)
 
-            select_action = entity.get(SelectAction)
+            select_action = entity.get(PlayCardAction)
             assert select_action.skill.name != ""
 
             ret.append(
@@ -179,7 +179,7 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
                     targets=select_action.targets,
                     skill=select_action.skill,
                     combat_attrs_component=entity.get(CombatAttributesComponent),
-                    combat_effects_component=entity.get(CombatEffectsComponent),
+                    combat_effects_component=entity.get(CombatStatusEffectsComponent),
                     interaction=select_action.interaction,
                 )
             )

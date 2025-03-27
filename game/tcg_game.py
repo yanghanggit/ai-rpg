@@ -8,7 +8,7 @@ from game.tcg_game_context import TCGGameContext
 from game.base_game import BaseGame
 from game.tcg_game_process_pipeline import TCGGameProcessPipeline
 from models.v_0_0_1 import (
-    Effect,
+    StatusEffect,
     World,
     WorldSystemInstance,
     DataBase,
@@ -34,7 +34,7 @@ from components.components_v_0_0_1 import (
     MonsterComponent,
     # EnterStageComponent,
     CombatAttributesComponent,
-    CombatEffectsComponent,
+    CombatStatusEffectsComponent,
 )
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -767,19 +767,20 @@ magic_defense: {magic_defense}"""
             magic_defense,
         )
 
-        actor_entity.replace(CombatEffectsComponent, actor_entity._name, [])
+        actor_entity.replace(CombatStatusEffectsComponent, actor_entity._name, [])
 
     ###############################################################################################################################################
-    # 刷新effects
-    def update_combat_effects(self, entity: Entity, effects: List[Effect]) -> None:
+    def update_combat_status_effects(
+        self, entity: Entity, status_effects: List[StatusEffect]
+    ) -> None:
 
         # 效果更新
-        assert entity.has(CombatEffectsComponent)
-        combat_effects_comp = entity.get(CombatEffectsComponent)
-        assert combat_effects_comp is not None
+        assert entity.has(CombatStatusEffectsComponent)
+        combat_status_effects_comp = entity.get(CombatStatusEffectsComponent)
+        assert combat_status_effects_comp is not None
 
-        current_effects = combat_effects_comp.effects
-        for new_effect in effects:
+        current_effects = combat_status_effects_comp.status_effects
+        for new_effect in status_effects:
             for i, e in enumerate(current_effects):
                 if e.name == new_effect.name:
                     current_effects[i].name = new_effect.name
@@ -790,7 +791,9 @@ magic_defense: {magic_defense}"""
                 current_effects.append(new_effect)
 
         entity.replace(
-            CombatEffectsComponent, combat_effects_comp.name, current_effects
+            CombatStatusEffectsComponent,
+            combat_status_effects_comp.name,
+            current_effects,
         )
 
     ###############################################################################################################################################
@@ -904,9 +907,9 @@ magic_defense: {magic_defense}"""
             if hero_entity.has(CombatAttributesComponent):
                 logger.info(f"删除战斗属性: {hero_entity._name}")
                 hero_entity.remove(CombatAttributesComponent)
-            if hero_entity.has(CombatEffectsComponent):
+            if hero_entity.has(CombatStatusEffectsComponent):
                 logger.info(f"删除战斗效果: {hero_entity._name}")
-                hero_entity.remove(CombatEffectsComponent)
+                hero_entity.remove(CombatStatusEffectsComponent)
 
         # 开始传送。
         self._stage_transition(heros_entities, stage_entity)

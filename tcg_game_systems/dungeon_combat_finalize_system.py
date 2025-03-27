@@ -1,8 +1,8 @@
 from loguru import logger
 from entitas import Matcher, Entity, Matcher, ExecuteProcessor  # type: ignore
 from components.components_v_0_0_1 import (
-    SkillCandidateQueueComponent,
-    CombatEffectsComponent,
+    HandComponent,
+    CombatStatusEffectsComponent,
     CombatAttributesComponent,
 )
 from overrides import override
@@ -11,10 +11,10 @@ from game.tcg_game import TCGGame
 from components.actions_v_0_0_1 import (
     TurnAction,
     StageDirectorAction,
-    SelectAction,
+    PlayCardAction,
     FeedbackAction,
 )
-from models.v_0_0_1 import Effect
+from models.v_0_0_1 import StatusEffect
 from models.event_models import AgentEvent
 from extended_systems.combat_system import Round
 
@@ -41,10 +41,10 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
         stage_entity = self._game.safe_get_stage_entity(player_entity)
         assert stage_entity is not None
 
-        skill_candidate_entities = self._game.get_group(
+        available_skill_entities = self._game.get_group(
             Matcher(
                 all_of=[
-                    SkillCandidateQueueComponent,
+                    HandComponent,
                 ],
             )
         ).entities
@@ -62,7 +62,7 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
         select_then_feedback_action_actors = self._game.get_group(
             Matcher(
                 all_of=[
-                    SelectAction,
+                    PlayCardAction,
                     FeedbackAction,
                 ],
             )
@@ -72,7 +72,7 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
         actors_on_stage = self._game.retrieve_actors_on_stage(stage_entity)
         assert len(turn_action_actors) == len(actors_on_stage)
         assert len(select_then_feedback_action_actors) == len(actors_on_stage)
-        assert len(skill_candidate_entities) == len(actors_on_stage)
+        assert len(available_skill_entities) == len(actors_on_stage)
 
         assert len(turn_action_actors) > 0
         if len(turn_action_actors) == 0:
@@ -87,7 +87,7 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
 
         # 场景的也需要做检查！！！
         if not stage_entity.has(StageDirectorAction):
-            logger.error(f"{stage_entity._name} 没有进行战斗演绎，应该是出错了。")
+            logger.error(f"{stage_entity._name} 没有进行战斗演出，应该是出错了。")
             return
 
         stage_director_action = stage_entity.get(StageDirectorAction)
@@ -96,7 +96,7 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
             stage_director_action.calculation == ""
             or stage_director_action.performance == ""
         ):
-            logger.error(f"战斗演绎没有计算和表演。!!!!!")
+            logger.error(f"战斗演出没有计算和表演。!!!!!")
             return
 
         last_round = self._game.combat_system.last_round
@@ -145,7 +145,7 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
     #######################################################################################################################################
     def _process_select_action(self, actor_entities: Set[Entity], round: Round) -> None:
         for actor_entity2 in actor_entities:
-            select_action = actor_entity2.get(SelectAction)
+            select_action = actor_entity2.get(PlayCardAction)
             assert select_action is not None
 
             assert select_action.skill.name != ""
@@ -178,7 +178,9 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
             )
 
             # 效果更新
-            self._game.update_combat_effects(actor_entity3, feedback_action.effects)
+            self._game.update_combat_status_effects(
+                actor_entity3, feedback_action.effects
+            )
 
             # 效果扣除
             remaining_effects, removed_effects = self._update_combat_remaining_effects(
@@ -214,14 +216,14 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
     # 状态效果扣除。
     def _update_combat_remaining_effects(
         self, entity: Entity
-    ) -> Tuple[List[Effect], List[Effect]]:
+    ) -> Tuple[List[StatusEffect], List[StatusEffect]]:
 
         # 效果更新
-        assert entity.has(CombatEffectsComponent)
-        combat_effects_comp = entity.get(CombatEffectsComponent)
+        assert entity.has(CombatStatusEffectsComponent)
+        combat_effects_comp = entity.get(CombatStatusEffectsComponent)
         assert combat_effects_comp is not None
 
-        current_effects = combat_effects_comp.effects.copy()
+        current_effects = combat_effects_comp.status_effects.copy()
         remaining_effects = []
         removed_effects = []
         for i, e in enumerate(current_effects):
@@ -234,7 +236,7 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
                 removed_effects.append(current_effects[i])
 
         entity.replace(
-            CombatEffectsComponent, combat_effects_comp.name, remaining_effects
+            CombatStatusEffectsComponent, combat_effects_comp.name, remaining_effects
         )
 
         return remaining_effects, removed_effects

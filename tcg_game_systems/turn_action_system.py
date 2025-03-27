@@ -4,19 +4,19 @@ from extended_systems.chat_request_handler import ChatRequestHandler
 import format_string.json_format
 from components.components_v_0_0_1 import (
     StageEnvironmentComponent,
-    SkillCandidateQueueComponent,
+    HandComponent,
 )
 from overrides import override
-from typing import List, Set, final
+from typing import List, Optional, Set, final
 from loguru import logger
 from models.v_0_0_1 import Skill
-from components.actions_v_0_0_1 import StageDirectorAction, SelectAction, TurnAction
+from components.actions_v_0_0_1 import StageDirectorAction, PlayCardAction, TurnAction
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 
 #######################################################################################################################################
 @final
-class SkillSelectionResponse(BaseModel):
+class PlayCardResponse(BaseModel):
     skill: str
     targets: List[str]
     reason: str
@@ -27,13 +27,13 @@ class SkillSelectionResponse(BaseModel):
 def _generate_prompt(
     current_stage: str,
     current_stage_narration: str,
-    skill_candidates: List[Skill],
+    available_skills: List[Skill],
     action_order: List[str],
 ) -> str:
 
-    skill_candidates1 = [skill.model_dump_json() for skill in skill_candidates]
+    available_skill_jsons = [skill.model_dump_json() for skill in available_skills]
 
-    select_skill_response_example = SkillSelectionResponse(
+    example_play_card_response = PlayCardResponse(
         skill="技能名称",
         targets=["目标1", "目标2", "..."],
         reason="技能使用原因",
@@ -46,13 +46,13 @@ def _generate_prompt(
 ### 场景描述
 {current_stage_narration}
 ## 技能列表
-{"\n".join(skill_candidates1)}
+{"\n".join(available_skill_jsons)}
 ## 场景内角色行动顺序(从左到右)
 {action_order}
 ## 输出要求
 - 不要使用```json```来封装内容。
 ### 输出格式(JSON)
-{select_skill_response_example.model_dump_json()}"""
+{example_play_card_response.model_dump_json()}"""
 
 
 #######################################################################################################################################
@@ -116,7 +116,7 @@ class TurnActionSystem(BaseActionReactiveSystem):
 
         try:
 
-            format_response = SkillSelectionResponse.model_validate_json(
+            format_response = PlayCardResponse.model_validate_json(
                 format_string.json_format.strip_json_code_block(
                     request_handler.response_content
                 )
@@ -124,37 +124,51 @@ class TurnActionSystem(BaseActionReactiveSystem):
 
             logger.info(f"format_response 成功！ = {request_handler.response_content}")
 
-            skill_candidate_comp = entity2.get(SkillCandidateQueueComponent)
-            for skill in skill_candidate_comp.queue:
+            skill = self._retrieve_skill_from_hand(entity2, format_response.skill)
+            if skill is None:
+                logger.error(
+                    f"""技能名称错误: {entity2._name}, Response = \n{request_handler.response_content}"""
+                )
+                return
 
-                if skill.name == format_response.skill:
+            # 给场景添加！！！
+            stage_entity = self._game.safe_get_stage_entity(entity2)
+            assert stage_entity is not None
+            if not stage_entity.has(StageDirectorAction):
+                stage_entity.replace(
+                    StageDirectorAction,
+                    stage_entity._name,
+                    "",
+                    "",
+                )
 
-                    # 给场景添加！！！
-                    stage_entity = self._game.safe_get_stage_entity(entity2)
-                    assert stage_entity is not None
-                    if not stage_entity.has(StageDirectorAction):
-                        stage_entity.replace(
-                            StageDirectorAction,
-                            stage_entity._name,
-                            "",
-                            "",
-                        )
+            # 给角色添加！！！
+            assert not entity2.has(PlayCardAction)
+            entity2.replace(
+                PlayCardAction,
+                entity2._name,
+                format_response.targets,
+                skill,
+                format_response.interaction,
+                format_response.reason,
+            )
 
-                    # 给角色添加！！！
-                    assert not entity2.has(SelectAction)
-                    entity2.replace(
-                        SelectAction,
-                        skill_candidate_comp.name,
-                        format_response.targets,
-                        skill,
-                        format_response.interaction,
-                        format_response.reason,
-                    )
-                    break
         except:
             logger.error(
                 f"""返回格式错误: {entity2._name}, Response = \n{request_handler.response_content}"""
             )
+
+    #######################################################################################################################################
+    def _retrieve_skill_from_hand(
+        self, entity: Entity, skill_name: str
+    ) -> Optional[Skill]:
+        assert entity.has(HandComponent)
+        skill_candidate_comp = entity.get(HandComponent)
+        for skill in skill_candidate_comp.skills:
+            if skill.name == skill_name:
+                return skill
+
+        return None
 
     #######################################################################################################################################
     def _generate_requests(
@@ -170,11 +184,11 @@ class TurnActionSystem(BaseActionReactiveSystem):
             assert current_stage is not None
 
             #
-            assert entity.has(SkillCandidateQueueComponent)
+            assert entity.has(HandComponent)
             message = _generate_prompt(
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
-                entity.get(SkillCandidateQueueComponent).queue,
+                entity.get(HandComponent).skills,
                 entity.get(TurnAction).round_turns,
             )
 

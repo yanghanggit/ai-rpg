@@ -4,7 +4,7 @@ from extended_systems.chat_request_handler import ChatRequestHandler
 import format_string.json_format
 from components.components_v_0_0_1 import (
     StageEnvironmentComponent,
-    SkillCandidateQueueComponent,
+    HandComponent,
 )
 from overrides import override
 from typing import List, Set, final
@@ -15,19 +15,19 @@ from game.tcg_game import TCGGame
 
 #######################################################################################################################################
 @final
-class SkillCandidateQueueResponse(BaseModel):
+class DrawCardResponse(BaseModel):
     attack: Skill
     defense: Skill
     support: Skill
 
 
 #######################################################################################################################################
-def _generate_skill_candidate_queue_prompt(
+def _generate_prompt(
     current_stage: str,
     current_stage_narration: str,
 ) -> str:
 
-    gen_skills_response_example = SkillCandidateQueueResponse(
+    default_response_example = DrawCardResponse(
         attack=Skill(
             name="攻击技能",
             description="攻击技能描述",
@@ -55,13 +55,18 @@ def _generate_skill_candidate_queue_prompt(
 ## 输出要求
 - 不要使用```json```来封装内容。
 ### 输出格式(JSON)
-{gen_skills_response_example.model_dump_json()}"""
+{default_response_example.model_dump_json()}"""
+
+
+# draw_card
+# DrawCard
 
 
 #######################################################################################################################################
 @final
-class DungeonCombatSkillsCandidateSystem(ExecuteProcessor):
+class DungeonCombatDrawCardSystem(ExecuteProcessor):
 
+    # dungeon_combat_draw_card_system
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
 
@@ -101,19 +106,19 @@ class DungeonCombatSkillsCandidateSystem(ExecuteProcessor):
         actor_entities = self._game.get_group(
             Matcher(
                 all_of=[
-                    SkillCandidateQueueComponent,
+                    HandComponent,
                 ],
             )
         ).entities.copy()
 
         for entity in actor_entities:
-            entity.remove(SkillCandidateQueueComponent)
+            entity.remove(HandComponent)
 
     #######################################################################################################################################
     async def _process_chat_requests(self, react_entities: Set[Entity]) -> None:
 
         # 处理角色规划请求
-        request_handlers: List[ChatRequestHandler] = self._generate_chat_requests(
+        request_handlers: List[ChatRequestHandler] = self._generate_requests(
             set(react_entities)
         )
 
@@ -121,12 +126,10 @@ class DungeonCombatSkillsCandidateSystem(ExecuteProcessor):
         await self._game.langserve_system.gather(request_handlers=request_handlers)
 
         # 处理角色规划请求
-        self._handle_chat_responses(request_handlers)
+        self._handle_responses(request_handlers)
 
     #######################################################################################################################################
-    def _handle_chat_responses(
-        self, request_handlers: List[ChatRequestHandler]
-    ) -> None:
+    def _handle_responses(self, request_handlers: List[ChatRequestHandler]) -> None:
 
         for request_handler in request_handlers:
 
@@ -149,7 +152,7 @@ class DungeonCombatSkillsCandidateSystem(ExecuteProcessor):
 
         try:
 
-            format_response = SkillCandidateQueueResponse.model_validate_json(
+            format_response = DrawCardResponse.model_validate_json(
                 format_string.json_format.strip_json_code_block(
                     request_handler.response_content
                 )
@@ -157,7 +160,7 @@ class DungeonCombatSkillsCandidateSystem(ExecuteProcessor):
 
             # 设置3个技能
             entity2.replace(
-                SkillCandidateQueueComponent,
+                HandComponent,
                 entity2._name,
                 [
                     format_response.attack,
@@ -172,7 +175,7 @@ class DungeonCombatSkillsCandidateSystem(ExecuteProcessor):
             )
 
     #######################################################################################################################################
-    def _generate_chat_requests(
+    def _generate_requests(
         self, actor_entities: set[Entity]
     ) -> List[ChatRequestHandler]:
 
@@ -185,7 +188,7 @@ class DungeonCombatSkillsCandidateSystem(ExecuteProcessor):
             assert current_stage is not None
 
             # 生成消息
-            message = _generate_skill_candidate_queue_prompt(
+            message = _generate_prompt(
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
             )

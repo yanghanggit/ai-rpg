@@ -7,12 +7,12 @@ from components.actions_v_0_0_1 import SpeakAction
 
 
 ####################################################################################################################################
-def _generate_speak_prompt(speaker_name: str, target_name: str, content: str) -> str:
+def _generate_prompt(speaker_name: str, target_name: str, content: str) -> str:
     return f"# 发生事件: {speaker_name} 对 {target_name} 说: {content}"
 
 
 ####################################################################################################################################
-def _generate_invalid_speak_target_prompt(speaker_name: str, target_name: str) -> str:
+def _generate_invalid_prompt(speaker_name: str, target_name: str) -> str:
     return f"""# 提示: {speaker_name} 试图和一个不存在的目标 {target_name} 进行对话。
 ## 原因分析与建议
 - 请检查目标的全名: {target_name}。
@@ -39,10 +39,10 @@ class SpeakActionSystem(BaseActionReactiveSystem):
     @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            self._prosses_speak_action(entity)
+            self._prosses_action(entity)
 
     ####################################################################################################################################
-    def _prosses_speak_action(self, entity: Entity) -> None:
+    def _prosses_action(self, entity: Entity) -> None:
         stage_entity = self._game.safe_get_stage_entity(entity)
         if stage_entity is None:
             return
@@ -57,7 +57,7 @@ class SpeakActionSystem(BaseActionReactiveSystem):
                     self._game.notify_event(
                         set({entity}),
                         AgentEvent(
-                            message=_generate_invalid_speak_target_prompt(
+                            message=_generate_invalid_prompt(
                                 speak_action.name, target_name
                             )
                         ),
@@ -68,7 +68,7 @@ class SpeakActionSystem(BaseActionReactiveSystem):
             self._game.broadcast_event(
                 stage_entity,
                 SpeakEvent(
-                    message=_generate_speak_prompt(
+                    message=_generate_prompt(
                         speak_action.name, target_name, speak_content
                     ),
                     speaker=speak_action.name,

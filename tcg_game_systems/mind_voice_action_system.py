@@ -26,10 +26,10 @@ class MindVoiceActionSystem(BaseActionReactiveSystem):
     @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            self._process_mindvoice_action(entity)
+            self._process_action(entity)
 
     ####################################################################################################################################
-    def _process_mindvoice_action(self, entity: Entity) -> None:
+    def _process_action(self, entity: Entity) -> None:
         mind_voice_action = entity.get(MindVoiceAction)
         assert mind_voice_action is not None
         logger.info(

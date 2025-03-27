@@ -32,7 +32,6 @@ from components.components_v_0_0_1 import (
     DungeonComponent,
     HeroComponent,
     MonsterComponent,
-    # EnterStageComponent,
     CombatAttributesComponent,
     CombatStatusEffectsComponent,
 )
@@ -519,10 +518,6 @@ class TCGGame(BaseGame, TCGGameContext):
         )
 
     ###############################################################################################################################################
-    def _remove_agent_short_term_memory(self, entity: Entity) -> None:
-        self.world.agents_short_term_memory.pop(entity._name, None)
-
-    ###############################################################################################################################################
     def append_human_message(self, entity: Entity, chat: str, **kwargs: Any) -> None:
 
         # 如果 **kwargs 不是 空，就打印一下
@@ -627,7 +622,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     # 传送角色set里的角色到指定场景，游戏层面的行为，会添加记忆但不会触发action
-    def _stage_transition(self, actors: Set[Entity], stage_destination: Entity) -> None:
+    def stage_transition(self, actors: Set[Entity], stage_destination: Entity) -> None:
 
         assert self._debug_flag_pipeline is False, "传送前，不允许在pipeline中"
 
@@ -684,18 +679,6 @@ class TCGGame(BaseGame, TCGGameContext):
                 ),
                 exclude_entities={actor_entity},
             )
-            # 添加标记，有用。
-            # actor_entity.replace(
-            #     EnterStageComponent, actor_entity._name, stage_destination._name
-            # )
-
-    ###############################################################################################################################################
-    def stage_transition(self, actors: Set[Entity], destination: str) -> None:
-        destination_stage = self.get_stage_entity(destination)
-        if destination_stage is None:
-            logger.error(f"目标场景不存在: {destination}")
-            return
-        self._stage_transition(actors, destination_stage)
 
     ###############################################################################################################################################
     # 检查是否可以对话
@@ -736,6 +719,7 @@ class TCGGame(BaseGame, TCGGameContext):
             return
 
         actor_instance = self.retrieve_actor_instance(actor_entity)
+        assert actor_instance is not None
         if actor_instance is None:
             return
 
@@ -745,16 +729,6 @@ class TCGGame(BaseGame, TCGGameContext):
         physical_defense: Final[float] = actor_instance.base_attributes.physical_defense
         magic_attack: Final[float] = actor_instance.base_attributes.magic_attack
         magic_defense: Final[float] = actor_instance.base_attributes.magic_defense
-
-        logger.info(
-            f"""{actor_entity._name}-准备战斗属性:
-hp: {hp}
-max_hp: {max_hp}
-physical_attack: {physical_attack}
-physical_defense: {physical_defense}
-magic_attack: {magic_attack}
-magic_defense: {magic_defense}"""
-        )
 
         actor_entity.replace(
             CombatAttributesComponent,
@@ -777,7 +751,8 @@ magic_defense: {magic_defense}"""
         # 效果更新
         assert entity.has(CombatStatusEffectsComponent)
         combat_status_effects_comp = entity.get(CombatStatusEffectsComponent)
-        assert combat_status_effects_comp is not None
+        if combat_status_effects_comp is None:
+            return
 
         current_effects = combat_status_effects_comp.status_effects
         for new_effect in status_effects:
@@ -828,7 +803,7 @@ magic_defense: {magic_defense}"""
             self.append_human_message(hero_entity, trans_message)
 
         # 开始传送。
-        self._stage_transition(heros_entities, stage_entity)
+        self.stage_transition(heros_entities, stage_entity)
 
         ## 设置一个战斗。
         assert len(self.dungeon_system.levels) > 0, "没有地下城！"
@@ -872,7 +847,7 @@ magic_defense: {magic_defense}"""
             self.append_human_message(hero_entity, trans_message)
 
         # 开始传送。
-        self._stage_transition(heros_entities, stage_entity)
+        self.stage_transition(heros_entities, stage_entity)
 
         # 设置一个战斗。
         assert len(self.dungeon_system.levels) > 0, "没有地下城！"
@@ -883,7 +858,7 @@ magic_defense: {magic_defense}"""
 
     ###############################################################################################################################################
     # TODO!!! 临时测试准备传送！！！
-    def home_stage_transition(
+    def back_home_transition(
         self, trans_message: str, home_stage: StageInstance
     ) -> None:
 
@@ -912,6 +887,6 @@ magic_defense: {magic_defense}"""
                 hero_entity.remove(CombatStatusEffectsComponent)
 
         # 开始传送。
-        self._stage_transition(heros_entities, stage_entity)
+        self.stage_transition(heros_entities, stage_entity)
 
     ###############################################################################################################################################

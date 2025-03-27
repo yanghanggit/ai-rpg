@@ -20,10 +20,9 @@ class ServiceConfiguration(BaseModel):
     fast_api_version: str = "0.0.1"
     fast_api_description: str = "description"
 
-    # langserve_url: str = "http://localhost:8100/v1/llm_serve/chat/"
-
 
 ##################################################################################################################
+# 启动一个Agent的配置原型
 class AgentStartupConfiguration(BaseModel):
     name: str = ""
     service_configurations: List[ServiceConfiguration] = []

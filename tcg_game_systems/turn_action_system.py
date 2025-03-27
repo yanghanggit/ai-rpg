@@ -164,8 +164,8 @@ class TurnActionSystem(BaseActionReactiveSystem):
         self, entity: Entity, skill_name: str
     ) -> Optional[Skill]:
         assert entity.has(HandComponent)
-        skill_candidate_comp = entity.get(HandComponent)
-        for skill in skill_candidate_comp.skills:
+        hand_comp = entity.get(HandComponent)
+        for skill in hand_comp.skills:
             if skill.name == skill_name:
                 return skill
 

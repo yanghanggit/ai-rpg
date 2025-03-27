@@ -7,7 +7,7 @@ from models.event_models import AnnounceEvent
 
 
 ####################################################################################################################################
-def _generate_announce_prompt(
+def _generate_prompt(
     announcer_name: str, announcement_message: str, event_stage: str
 ) -> str:
     return f"""# 发生事件: {announcer_name} 宣布: {announcement_message}
@@ -73,7 +73,7 @@ class AnnounceActionSystem(BaseActionReactiveSystem):
             self._game.broadcast_event(
                 home_stage_entity,
                 AnnounceEvent(
-                    message=_generate_announce_prompt(
+                    message=_generate_prompt(
                         entity.get(HeroComponent).name,
                         announce_action.data,
                         home_stage_entity.get(HomeComponent).name,

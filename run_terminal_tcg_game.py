@@ -371,7 +371,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         )
 
         # 回家
-        terminal_game.home_stage_transition(
+        terminal_game.back_home_transition(
             f"""# 提示！冒险结束，你将要返回: {stage_heros_camp_instance.name}""",
             stage_heros_camp_instance,
         )

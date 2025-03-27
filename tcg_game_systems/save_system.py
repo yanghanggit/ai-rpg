@@ -1,5 +1,5 @@
 from entitas import ExecuteProcessor  # type: ignore
-from typing import final, override, Dict, Set
+from typing import List, final, override, Dict, Set
 from game.tcg_game import TCGGame
 from loguru import logger
 
@@ -28,12 +28,12 @@ class SaveSystem(ExecuteProcessor):
         if len(entities_mapping) == 0:
             return
 
-        names_mapping: Dict[str, Set[str]] = {}
+        names_mapping: Dict[str, List[str]] = {}
 
         for stage_entity, actor_entities in entities_mapping.items():
             actor_names = {actor_entity._name for actor_entity in actor_entities}
             stage_name = stage_entity._name
-            names_mapping[stage_name] = actor_names
+            names_mapping[stage_name] = list(actor_names)
 
         logger.warning(f"names_mapping = {names_mapping}")
 

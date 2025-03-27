@@ -101,15 +101,6 @@ class AppearanceComponent(NamedTuple):
 
 
 ############################################################################################################
-# # 标记进入新的场景
-# @final
-# @register_component_class
-# class EnterStageComponent(NamedTuple):
-#     name: str
-#     enter_stage: str
-
-
-############################################################################################################
 # Stage专用，标记该Stage是Home
 @final
 @register_component_class

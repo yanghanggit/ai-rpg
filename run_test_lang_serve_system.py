@@ -8,8 +8,7 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 async def _test_gather() -> None:
 
     server_url = "http://localhost:8100/v1/llm_serve/chat/"
-    lang_serve_system = LangServeSystem(name="test_agent")
-    lang_serve_system.add_remote_runnable(url=server_url)
+    lang_serve_system = LangServeSystem(name="test_agent", url=server_url)
 
     test_prompt_data: Dict[str, str] = {
         "agent1": "你好!你是谁",
@@ -37,8 +36,7 @@ async def _test_gather() -> None:
 async def _test_chat_history() -> None:
 
     server_url = "http://localhost:8100/v1/llm_serve/chat/"
-    lang_serve_system = LangServeSystem(name="test_agent")
-    lang_serve_system.add_remote_runnable(url=server_url)
+    lang_serve_system = LangServeSystem(name="test_agent", url=server_url)
 
     chat_history: List[Union[SystemMessage, HumanMessage, AIMessage]] = []
     chat_history.append(

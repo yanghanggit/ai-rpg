@@ -50,9 +50,10 @@ def _generate_prompt(
 ## 场景内角色行动顺序(从左到右)
 {action_order}
 ## 输出要求
-- 不要使用```json```来封装内容。
 ### 输出格式(JSON)
-{example_play_card_response.model_dump_json()}"""
+{example_play_card_response.model_dump_json()}
+- 禁用换行/空行
+- 直接输出合规JSON"""
 
 
 #######################################################################################################################################

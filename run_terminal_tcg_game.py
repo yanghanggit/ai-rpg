@@ -169,8 +169,9 @@ async def run_game(option: UserRuntimeOptions) -> None:
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     # langserve先写死。后续需要改成配置文件
-    lang_serve_system = LangServeSystem(f"{option.game}-langserve_system")
-    lang_serve_system.add_remote_runnable(url=option.language_service_localhost_urls[0])
+    lang_serve_system = LangServeSystem(
+        f"{option.game}-langserve_system", url=option.language_service_localhost_urls[0]
+    )
 
     # 创建一个测试的地下城系统
     test_dungeon = DungeonSystem(
@@ -249,8 +250,12 @@ async def run_game(option: UserRuntimeOptions) -> None:
                         usr_input = input(
                             f"下一关为：[{next_level.name}]，可以进入。是否进入？(y/n): "
                         )
+                        usr_input = usr_input.strip().lower()
                         if usr_input == "y":
                             break
+                        elif usr_input == "n":
+                            logger.error("暂时未实现，只能点击y")
+                            continue
 
                     # 进入下一个循环！！！！
                     terminal_game.advance_to_next_dungeon()
@@ -269,6 +274,7 @@ async def run_game(option: UserRuntimeOptions) -> None:
         #######################################################################
         # 其他状态下的玩家输入！！！！！！
         usr_input = input(f"[{terminal_game.player.name}/{player_stage_entity._name}]:")
+        usr_input = usr_input.strip().lower()
 
         # 处理输入
         if usr_input == "/q" or usr_input == "/quit":

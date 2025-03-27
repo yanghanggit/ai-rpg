@@ -68,21 +68,25 @@ class DungeonStagePlanningSystem(ExecuteProcessor):
     #######################################################################################################################################
     def _is_phase_valid(self) -> bool:
 
-        actor_entities = self._game.get_group(
-            Matcher(
-                all_of=[
-                    HandComponent,
-                ],
-            )
-        ).entities
-
-        if len(actor_entities) == 0:
+        if (
+            self._game.combat_system.is_post_wait_phase
+            or self._game.combat_system.is_complete_phase
+        ):
             return False
 
-        return (
-            self._game.combat_system.is_preparation_phase
-            or self._game.combat_system.is_on_going_phase
-        )
+        if self._game.combat_system.is_on_going_phase:
+            actor_entities = self._game.get_group(
+                Matcher(
+                    all_of=[
+                        HandComponent,
+                    ],
+                )
+            ).entities
+
+            if len(actor_entities) == 0:
+                return False
+
+        return True
 
     #######################################################################################################################################
     def _process_stage_planning(self) -> None:

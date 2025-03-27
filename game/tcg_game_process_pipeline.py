@@ -225,7 +225,7 @@ class TCGGameProcessPipeline(Processors):
         processors.add(DungeonCombatCompleteSystem(tcg_game))
 
         # 可能需要改一改，换个位置。
-        processors.add(DungeonCombatDrawCardSystem(tcg_game))
+        # processors.add(DungeonCombatDrawCardSystem(tcg_game))
 
         processors.add(
             PostPlanningSystem(tcg_game)

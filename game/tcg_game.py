@@ -915,13 +915,3 @@ magic_defense: {magic_defense}"""
         self._stage_transition(heros_entities, stage_entity)
 
     ###############################################################################################################################################
-    def get_player_stage_entity(self) -> Optional[Entity]:
-
-        player_entity = self.get_player_entity()
-        assert player_entity is not None
-        if player_entity is None:
-            return None
-
-        return self.safe_get_stage_entity(player_entity)
-
-    ###############################################################################################################################################

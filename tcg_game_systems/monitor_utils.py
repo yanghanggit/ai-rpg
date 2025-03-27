@@ -6,6 +6,7 @@ from loguru import logger
 from pydantic import BaseModel
 import format_string.json_format
 from game.tcg_game import TCGGame
+from models.v_0_0_1 import StatusEffect
 
 
 # 用于Stage生成请求的数据格式
@@ -20,11 +21,11 @@ class StageResponse(BaseModel):
 class ActorResponse(BaseModel):
     stage: str = ""
     actors: List[str] = []
-    buffs: List[str] = []
+    status_effects: List[StatusEffect] = []
 
 
 @final
-class StatusCheckUtils:
+class MonitorUtils:
 
     ####################################################################################################################################
     def __init__(
@@ -33,6 +34,7 @@ class StatusCheckUtils:
         stage_entities: Set[Entity],
         actor_entities: Set[Entity],
     ) -> None:
+
         self._game = game_context
 
         self._stage_entities = stage_entities
@@ -46,13 +48,7 @@ class StatusCheckUtils:
         self._result_mapping: Dict[Entity, Union[StageResponse, ActorResponse]] = {}
 
     ####################################################################################################################################
-    def map_entity_to_response(
-        self, entity: Entity
-    ) -> Union[StageResponse, ActorResponse]:
-        return self._result_mapping[entity]
-
-    ####################################################################################################################################
-    async def a_execute(self) -> None:
+    async def process(self) -> None:
 
         # 合并一下 request 任务。
         self._request_handlers = self._gen_actors_requests(
@@ -136,7 +132,10 @@ class StatusCheckUtils:
         actor_response_template = ActorResponse(
             stage="场景全名",
             actors=["场景内的角色全名", "..."],
-            buffs=["你的状态", "..."],
+            status_effects=[
+                StatusEffect(name="状态名称1", description="状态描述1", rounds=1),
+                StatusEffect(name="状态名称2", description="状态描述2", rounds=2),
+            ],
         )
 
         # 都用这个prompt

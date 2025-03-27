@@ -24,6 +24,8 @@ from extended_systems.dungeon_system import DungeonSystem
 from llm_serves.config import (
     AgentStartupConfiguration,
 )
+from tcg_game_systems.draw_cards_utils import DrawCardsUtils
+from tcg_game_systems.monitor_utils import MonitorUtils
 
 
 ###############################################################################################################################################
@@ -223,7 +225,10 @@ async def run_game(option: UserRuntimeOptions) -> None:
     while True:
 
         # TODO加一个描述。
-        player_stage_entity = terminal_game.get_player_stage_entity()
+        player_actor_entity = terminal_game.get_player_entity()
+        assert player_actor_entity is not None
+
+        player_stage_entity = terminal_game.safe_get_stage_entity(player_actor_entity)
         assert player_stage_entity is not None
 
         # 如果是战斗后等待阶段，这里临时处理下，不封装了。散着写吧。封装意义也不是很大。
@@ -288,6 +293,46 @@ async def run_game(option: UserRuntimeOptions) -> None:
 
             # 执行一次！！！！！
             await _execute_terminal_game(terminal_game, usr_input)
+
+        elif usr_input == "/dc" or usr_input == "/draw-cards":
+
+            # 抽卡
+            if terminal_game.current_game_state != TCGGameState.DUNGEON:
+                logger.error(f"{usr_input} 只能在地下城中使用")
+                continue
+
+            if not terminal_game.combat_system.is_on_going_phase:
+                logger.error(f"{usr_input} 只能在战斗中使用")
+                continue
+
+            logger.info(f"玩家输入 = {usr_input}, 准备抽卡")
+            draw_card_utils = DrawCardsUtils(
+                terminal_game,
+                terminal_game.retrieve_actors_on_stage(player_stage_entity),
+            )
+            await draw_card_utils.draw_cards()
+
+            # 执行一次！！！！！
+            await _execute_terminal_game(terminal_game, usr_input)
+
+        elif usr_input == "/m" or usr_input == "/monitor":
+
+            # 监控
+            if terminal_game.current_game_state != TCGGameState.DUNGEON:
+                logger.error(f"{usr_input} 只能在地下城中使用")
+                continue
+
+            if not terminal_game.combat_system.is_on_going_phase:
+                logger.error(f"{usr_input} 只能在战斗中使用")
+                continue
+
+            logger.info(f"玩家输入 = {usr_input}, 准备监控")
+            monitor_utils = MonitorUtils(
+                terminal_game,
+                set({player_stage_entity}),
+                terminal_game.retrieve_actors_on_stage(player_stage_entity),
+            )
+            await monitor_utils.process()
 
         elif usr_input == "/th" or usr_input == "/trans-home":
 

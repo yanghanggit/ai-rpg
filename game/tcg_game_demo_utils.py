@@ -163,7 +163,9 @@ def _create_actor_instance(
     # 初次编译system_message!!!!
     ret.system_message = f"""# {ret.name}
 你扮演这个游戏世界中的一个角色: {ret.name}
-{actor_prototype.base_system_message}"""
+{actor_prototype.base_system_message}
+## 你的战斗角色职能如下(可以是多种):
+{"\n".join([combat_role.as_prompt for combat_role in actor_prototype.combat_roles])}"""
 
     logger.debug(
         f"_create_actor_instance {ret.name} created. system_message: \n{ret.system_message}"

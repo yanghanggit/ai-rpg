@@ -27,6 +27,7 @@ async def api_endpoints(
     generated_api_endpoints: APIEndpointConfiguration = APIEndpointConfiguration(
         TEST_URL=f"http://{server_ip_address}:{server_port}/test/v1/",
         LOGIN_URL=f"http://{server_ip_address}:{server_port}/login/v1/",
+        LOGOUT_URL=f"http://{server_ip_address}:{server_port}/logout/v1/",
     )
 
     return APIEndpointConfigurationResponse(

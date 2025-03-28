@@ -1,7 +1,7 @@
 from typing import Optional
 from fastapi import APIRouter
 from services.game_server_instance import GameServerInstance
-from models.api_models import LoginRequest, LoginResponse
+from models.api_models import LoginRequest, LoginResponse, LogoutRequest, LogoutResponse
 from loguru import logger
 from game.user_session_options import UserSessionOptions
 from game.tcg_game_demo import (
@@ -68,6 +68,9 @@ async def login(
     if web_game_session is None:
         logger.error(f"创建游戏失败 = {option.game}")
         return LoginResponse(
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            error=1000,
             message="创建游戏失败",
         )
 
@@ -75,7 +78,65 @@ async def login(
     new_room._game = web_game_session
     logger.debug(f"login: {request_data.user_name} create game = {new_room._game.name}")
     return LoginResponse(
+        user_name=request_data.user_name,
+        game_name=request_data.game_name,
+        error=0,
         message=new_room._game.world.model_dump_json(),
+    )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@login_router.post(path="/logout/v1/", response_model=LogoutResponse)
+async def logout(
+    request_data: LogoutRequest,
+    game_server: GameServerInstance,
+) -> LogoutResponse:
+
+    logger.debug(f"logout: {request_data.model_dump_json()}")
+
+    # 先检查房间是否存在
+    room_manager = game_server.room_manager
+    if not room_manager.has_room(request_data.user_name):
+        logger.error(f"logout: {request_data.user_name} not found")
+        return LogoutResponse(
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            error=1001,
+            message="没有找到房间",
+        )
+
+    # 删除房间
+    pre_room = room_manager.get_room(request_data.user_name)
+    assert pre_room is not None
+    if pre_room._game is not None:
+        # 保存游戏的运行时数据
+        logger.debug(
+            f"logout: {request_data.user_name} save game = {pre_room._game.name}"
+        )
+        pre_room._game.save()
+        # 退出游戏
+        logger.debug(
+            f"logout: {request_data.user_name} exit game = {pre_room._game.name}"
+        )
+        # 退出游戏
+        pre_room._game.exit()
+
+    else:
+        logger.debug(
+            f"logout: {request_data.user_name} no game = {pre_room._user_name}"
+        )
+
+    logger.debug(
+        f"logout: {request_data.user_name} remove room = {pre_room._user_name}"
+    )
+    room_manager.remove_room(pre_room)
+    return LogoutResponse(
+        user_name=request_data.user_name,
+        game_name=request_data.game_name,
+        error=0,
+        message=f"logout: {request_data.user_name} success",
     )
 
 

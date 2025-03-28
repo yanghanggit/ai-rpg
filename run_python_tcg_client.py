@@ -6,7 +6,7 @@ import datetime
 from models.api_models import (
     APIEndpointConfigurationRequest,
     APIEndpointConfiguration,
-    APIEndpointConfiguratioResponse,
+    APIEndpointConfigurationResponse,
 )
 
 
@@ -37,7 +37,7 @@ def _request_api_endpoints(
         json=APIEndpointConfigurationRequest(content=f"time = {time}").model_dump(),
     )
 
-    api_endpoint_response = APIEndpointConfiguratioResponse.model_validate(
+    api_endpoint_response = APIEndpointConfigurationResponse.model_validate(
         response.json()
     )
 

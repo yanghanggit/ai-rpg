@@ -14,6 +14,7 @@ def main(game_server: GameServerInstance) -> None:
     import uvicorn
 
     from services.api_endpoints_services import api_endpoints_router
+    from services.login_services import login_router
 
     # get测试。
     # 指向包含 runtime.json 的目录
@@ -38,6 +39,7 @@ def main(game_server: GameServerInstance) -> None:
 
     # API Endpoints
     game_server.fast_api.include_router(router=api_endpoints_router)
+    game_server.fast_api.include_router(router=login_router)
     # 加一些其他的。。。。。
 
     parser = argparse.ArgumentParser(description="启动 FastAPI 应用")

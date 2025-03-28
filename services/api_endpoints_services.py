@@ -4,7 +4,7 @@ from services.game_server_instance import GameServerInstance
 from models.api_models import (
     APIEndpointConfiguration,
     APIEndpointConfigurationRequest,
-    APIEndpointConfiguratioResponse,
+    APIEndpointConfigurationResponse,
 )
 
 
@@ -12,12 +12,12 @@ api_endpoints_router = APIRouter()
 
 
 @api_endpoints_router.post(
-    path="/api_endpoints/v1/", response_model=APIEndpointConfiguratioResponse
+    path="/api_endpoints/v1/", response_model=APIEndpointConfigurationResponse
 )
 async def api_endpoints(
     request_data: APIEndpointConfigurationRequest,
     game_server: GameServerInstance,
-) -> APIEndpointConfiguratioResponse:
+) -> APIEndpointConfigurationResponse:
 
     logger.debug(f"api_endpoints: {request_data.content}")
 
@@ -25,10 +25,11 @@ async def api_endpoints(
     server_port = game_server.server_port
 
     generated_api_endpoints: APIEndpointConfiguration = APIEndpointConfiguration(
-        TEST_URL=f"http://{server_ip_address}:{server_port}/test/v1/"
+        TEST_URL=f"http://{server_ip_address}:{server_port}/test/v1/",
+        LOGIN_URL=f"http://{server_ip_address}:{server_port}/login/v1/",
     )
 
-    return APIEndpointConfiguratioResponse(
+    return APIEndpointConfigurationResponse(
         message=request_data.content,
         api_endpoints=generated_api_endpoints,
     )

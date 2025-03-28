@@ -530,7 +530,7 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     def append_human_message(self, entity: Entity, chat: str, **kwargs: Any) -> None:
 
-        logger.debug(f"append_human_message: {entity._name} => {chat}")
+        logger.debug(f"append_human_message: {entity._name} => \n{chat}")
         if len(kwargs) > 0:
             # 如果 **kwargs 不是 空，就打印一下
             logger.debug(f"kwargs: {kwargs}")
@@ -542,13 +542,13 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     def append_ai_message(self, entity: Entity, chat: str) -> None:
-        logger.debug(f"append_ai_message: {entity._name} => {chat}")
+        logger.debug(f"append_ai_message: {entity._name} => \n{chat}")
         agent_short_term_memory = self.get_agent_short_term_memory(entity)
         agent_short_term_memory.chat_history.extend([AIMessage(content=chat)])
 
     ###############################################################################################################################################
-    def append_system_message(self, entity: Entity, chat: str, **kwargs: Any) -> None:
-        logger.debug(f"append_system_message: {entity._name} => {chat}")
+    def append_system_message(self, entity: Entity, chat: str) -> None:
+        logger.debug(f"append_system_message: {entity._name} => \n{chat}")
         agent_short_term_memory = self.get_agent_short_term_memory(entity)
         if len(agent_short_term_memory.chat_history) == 0:
             agent_short_term_memory.chat_history.extend([SystemMessage(content=chat)])
@@ -629,9 +629,9 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 如果是玩家，就要补充一个事件信息，用于客户端接收
             if entity.has(PlayerComponent):
-                player_comp = entity.get(PlayerComponent)
-                assert player_comp.player_name == self.player.name
-                self.player.add_notification(event=agent_event)
+                # player_comp = entity.get(PlayerComponent)
+                # assert player_comp.player_name == self.player.name
+                self.player.add_event(event=agent_event)
 
     ###############################################################################################################################################
     # 传送角色set里的角色到指定场景，游戏层面的行为，会添加记忆但不会触发action

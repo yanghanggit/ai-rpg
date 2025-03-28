@@ -14,7 +14,8 @@ from game.tcg_game_demo import (
     stage_dungeon_cave1_instance,
     stage_dungeon_cave2_instance,
 )
-from player.player_command import PlayerCommand
+
+# from player.player_command import PlayerCommand
 from extended_systems.dungeon_system import DungeonSystem
 from tcg_game_systems.draw_cards_utils import DrawCardsUtils
 from tcg_game_systems.monitor_utils import MonitorUtils
@@ -331,9 +332,9 @@ async def _execute_terminal_game(
     logger.debug(f"玩家输入: {terminal_game.player.name} = {usr_input}")
 
     # 执行一次！！！！！
-    terminal_game.player.add_command(
-        PlayerCommand(user=terminal_game.player.name, command=usr_input)
-    )
+    # terminal_game.player.add_command(
+    #     PlayerCommand(user=terminal_game.player.name, command=usr_input)
+    # )
     await terminal_game.a_execute()
 
 

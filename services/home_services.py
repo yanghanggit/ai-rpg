@@ -2,7 +2,8 @@ from fastapi import APIRouter
 from services.game_server_instance import GameServerInstance
 from models.api_models import HomeRunRequest, HomeRunResponse
 from loguru import logger
-from player.player_command import PlayerCommand
+
+# from player.player_command import PlayerCommand
 from game.web_tcg_game import WebTCGGame
 from game.tcg_game import TCGGameState
 
@@ -71,7 +72,7 @@ async def _execute_web_game(web_game: WebTCGGame, usr_input: str) -> None:
     assert web_game.player.name != ""
 
     # 执行一次！！！！！
-    web_game.player.add_command(
-        PlayerCommand(user=web_game.player.name, command=usr_input)
-    )
+    # web_game.player.add_command(
+    #     PlayerCommand(user=web_game.player.name, command=usr_input)
+    # )
     await web_game.a_execute()

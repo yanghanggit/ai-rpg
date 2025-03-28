@@ -25,14 +25,12 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     def add_command(self, command: PlayerCommand) -> None:
-        logger.info(f"add_player_command: {command}")
+        logger.debug(f"add_player_command: {command}")
         self._commands.append(command)
 
     ##########################################################################################################################################################
-
-    ##########################################################################################################################################################
     def add_notification(self, event: BaseEvent) -> None:
-        # logger.debug(f"add_event: {event}")
+        logger.debug(f"{self._name}, add_notification: {event}")
         self._notifications.append(
             PlayerNotification(
                 data=event,

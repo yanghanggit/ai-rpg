@@ -19,7 +19,7 @@ async def api_endpoints(
     game_server: GameServerInstance,
 ) -> APIEndpointConfiguratioResponse:
 
-    logger.info(f"api_endpoints: {request_data.content}")
+    logger.debug(f"api_endpoints: {request_data.content}")
 
     server_ip_address = game_server.server_ip_address
     server_port = game_server.server_port

@@ -212,7 +212,6 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
 
         # 处理返回结果。
         if request_handler.response_content == "":
-            logger.error(f"Agent: {request_handler._name}, Response is empty.")
             return
 
         # 处理返回结果。
@@ -232,10 +231,6 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
                 format_string.json_format.strip_json_code_block(
                     request_handler.response_content
                 )
-            )
-
-            logger.info(
-                f"返回格式正确, Response = \n{format_response.model_dump_json()}"
             )
 
             # 推理的场景记录下！
@@ -261,9 +256,7 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
                     [],
                 )
 
-        except:
-            logger.error(
-                f"""返回格式错误, Response = \n{request_handler.response_content}"""
-            )
+        except Exception as e:
+            logger.error(f"Exception: {e}")
 
     #######################################################################################################################################

@@ -165,9 +165,6 @@ def _create_actor_instance(
 你扮演这个游戏世界中的一个角色: {ret.name}
 {actor_prototype.base_system_message}"""
 
-    # logger.info(
-    #     f"_create_actor_instance {ret.name} created. system_message: \n{ret.system_message}"
-    # )
     return ret
 
 
@@ -197,9 +194,9 @@ def _create_stage_instance(
 你扮演这个游戏世界中的一个场景: {ret.name}
 {stage.base_system_message}"""
 
-    logger.debug(
-        f"_create_stage_instance {ret.name} created. system_message: \n{ret.system_message}"
-    )
+    # logger.debug(
+    #     f"_create_stage_instance {ret.name} created. system_message: \n{ret.system_message}"
+    # )
     return ret
 
 
@@ -225,9 +222,9 @@ def _create_world_system_instance(
 你扮演这个游戏世界中的一个全局系统: {ret.name}
 {world_system.base_system_message}"""
 
-    logger.debug(
-        f"_create_world_system_instance {ret.name} created. system_message: \n{ret.system_message}"
-    )
+    # logger.debug(
+    #     f"_create_world_system_instance {ret.name} created. system_message: \n{ret.system_message}"
+    # )
     return ret
 
 

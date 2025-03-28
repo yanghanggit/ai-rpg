@@ -167,7 +167,6 @@ class DungeonCombatPreparationSystem(ExecuteProcessor):
             assert entity2 is not None
 
             if request_handler.response_content == "":
-                logger.error(f"Agent: {request_handler._name}, Response is empty.")
                 continue
 
             self._handle_response(entity2, request_handler)
@@ -184,10 +183,6 @@ class DungeonCombatPreparationSystem(ExecuteProcessor):
                 format_string.json_format.strip_json_code_block(
                     request_handler.response_content
                 )
-            )
-
-            logger.info(
-                f"Agent: {entity2._name}, Response = {format_response.model_dump_json()}"
             )
 
             # 效果更新
@@ -210,9 +205,7 @@ class DungeonCombatPreparationSystem(ExecuteProcessor):
 
             self._game.append_ai_message(entity2, message)
 
-        except:
-            logger.error(
-                f"""返回格式错误: {entity2._name}, Response = \n{request_handler.response_content}"""
-            )
+        except Exception as e:
+            logger.error(f"Exception: {e}")
 
     ###################################################################################################################################################################

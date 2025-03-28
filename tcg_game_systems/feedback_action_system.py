@@ -119,7 +119,6 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
         for request_handler in request_handlers:
 
             if request_handler.response_content == "":
-                logger.error(f"Agent: {request_handler._name}, Response is empty.")
                 continue
 
             entity2 = self._game.get_entity_by_name(request_handler._name)
@@ -139,10 +138,6 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
                 )
             )
 
-            logger.info(
-                f"Agent: {entity._name}, Response = {format_response.model_dump_json()}"
-            )
-
             feedback_action2 = entity.get(FeedbackAction)
             assert feedback_action2 is not None
 
@@ -157,10 +152,8 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
                 format_response.status_effects,
             )
 
-        except:
-            logger.error(
-                f"""返回格式错误, Response = \n{request_handler.response_content}"""
-            )
+        except Exception as e:
+            logger.error(f"Exception: {e}")
 
     #######################################################################################################################################
     def _generate_requests(

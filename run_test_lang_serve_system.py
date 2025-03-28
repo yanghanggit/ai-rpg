@@ -1,4 +1,6 @@
 from typing import List, Dict, Union
+
+from loguru import logger
 from extended_systems.lang_serve_system import LangServeSystem
 from extended_systems.chat_request_handler import ChatRequestHandler
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -63,8 +65,9 @@ async def _test_chat_history() -> None:
             for msg in chat_history:
                 print(msg.content)
 
-        except:
-            assert False, "Error in processing user input"
+        except Exception as e:
+            logger.error(f"Exception: {e}")
+            assert False, f"Error in processing user input = {e}"
 
 
 ###########################################################################################################################

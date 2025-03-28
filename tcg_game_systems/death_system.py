@@ -38,7 +38,7 @@ class DeathSystem(ExecuteProcessor):
         for entity in entities:
             combat_attributes = entity.get(CombatAttributesComponent)
             if combat_attributes.hp <= 0:
-                logger.info(f"{combat_attributes.name} is dead")
+                logger.debug(f"{combat_attributes.name} is dead")
                 self._game.append_human_message(entity, "# 你已被击败！")
                 entity.replace(DeathComponent, combat_attributes.name)
 
@@ -63,7 +63,7 @@ class DeathSystem(ExecuteProcessor):
         elif self._are_all_monsters_defeated():
             self._game.combat_system.combat_complete(CombatResult.HERO_WIN)
         else:
-            logger.info("combat continue!!!")
+            logger.debug("combat continue!!!")
 
     ########################################################################################################################################################################
     def _are_all_heroes_defeated(self) -> bool:

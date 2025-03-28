@@ -84,7 +84,7 @@ class CombatSystem(BaseModel):
     def new_round(self) -> Round:
         round = Round(tag=f"round_{len(self.last_combat.rounds) + 1}")
         self.last_combat.rounds.append(round)
-        logger.info(f"新的回合开始 = {len(self.last_combat.rounds)}")
+        logger.debug(f"新的回合开始 = {len(self.last_combat.rounds)}")
         return round
 
     ###############################################################################################################################################

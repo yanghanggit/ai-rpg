@@ -50,7 +50,7 @@ def _prepare_service_configuration(file_path: Path) -> None:
         dump_json = start_configurations.model_dump_json()
         file_path.write_text(dump_json, encoding="utf-8")
     except Exception as e:
-        logger.error(f"An error occurred: {e}")
+        logger.error(f"Exception: {e}")
 
 
 ##################################################################################################################
@@ -77,7 +77,7 @@ def _execute_service_startup(config_file_path: Path) -> None:
             os.system(terminal_batch_start_command)
 
     except Exception as e:
-        logger.error(f"An error occurred: {e}")
+        logger.error(f"Exception: {e}")
 
 
 ##################################################################################################################

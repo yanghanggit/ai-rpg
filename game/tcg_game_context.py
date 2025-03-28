@@ -87,7 +87,7 @@ class TCGGameContext(Context):
                 restore_comp = comp_class(**comp_snapshot.data)
                 assert restore_comp is not None
 
-                logger.info(
+                logger.debug(
                     f"comp_class = {comp_class.__name__}, comp = {restore_comp}"
                 )
                 entity.insert(comp_class, restore_comp)

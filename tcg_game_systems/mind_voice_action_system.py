@@ -32,7 +32,7 @@ class MindVoiceActionSystem(BaseActionReactiveSystem):
     def _process_action(self, entity: Entity) -> None:
         mind_voice_action = entity.get(MindVoiceAction)
         assert mind_voice_action is not None
-        logger.info(
+        logger.debug(
             f"MindVoiceActionSystem:\n{mind_voice_action.name}:\n{mind_voice_action.data}"
         )
 

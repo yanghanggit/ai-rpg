@@ -154,7 +154,6 @@ class ActorInstance(BaseModel):
     guid: int
     system_message: str
     kick_off_message: str
-    level: int = 1
     base_attributes: BaseAttributes
 
 

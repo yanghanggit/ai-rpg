@@ -125,7 +125,6 @@ class StagePlanningSystem(ExecuteProcessor):
         for request_handler in request_handlers:
 
             if request_handler.response_content == "":
-                logger.error(f"Agent: {request_handler._name}, Response is empty.")
                 continue
 
             entity2 = self._game.get_entity_by_name(request_handler._name)
@@ -147,9 +146,9 @@ class StagePlanningSystem(ExecuteProcessor):
                 )
             )
 
-            logger.warning(
-                f"Stage: {entity2._name}, Response:\n{format_response.model_dump_json()}"
-            )
+            # logger.warning(
+            #     f"Stage: {entity2._name}, Response:\n{format_response.model_dump_json()}"
+            # )
 
             self._game.append_human_message(
                 entity2, _compress_stage_plan_prompt(request_handler._prompt)
@@ -164,10 +163,8 @@ class StagePlanningSystem(ExecuteProcessor):
                     format_response.environment_narration,
                 )
 
-        except:
-            logger.error(
-                f"""返回格式错误: {entity2._name}, Response = \n{request_handler.response_content}"""
-            )
+        except Exception as e:
+            logger.error(f"Exception: {e}")
 
 
 #######################################################################################################################################

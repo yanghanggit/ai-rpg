@@ -1,21 +1,23 @@
 from entitas import Entity, Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
 from components.components_v_0_0_1 import (
-    # DungeonComponent,
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
     KickOffMessageComponent,
     KickOffDoneComponent,
-    SystemMessageComponent,
+    # SystemMessageComponent,
     StageEnvironmentComponent,
     HeroComponent,
     MonsterComponent,
     HomeComponent,
+    MonsterComponent,
+    DungeonComponent,
 )
 from typing import Dict, Set, final, List
 from game.tcg_game import TCGGame
-from loguru import logger
+
+# from loguru import logger
 from extended_systems.chat_request_handler import ChatRequestHandler
 
 
@@ -68,32 +70,122 @@ class KickOffSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
 
-        entities: Set[Entity] = self._game.get_group(
-            Matcher(
-                all_of=[SystemMessageComponent, KickOffMessageComponent],
-                any_of=[ActorComponent, WorldSystemComponent, StageComponent],
-                none_of=[KickOffDoneComponent],
-            )
-        ).entities.copy()
+        entities: Set[Entity] = set()
+
+        # 获取世界系统实体
+        world_system_entities = self._retrieve_world_system_entities_for_kick_off()
+        entities.update(world_system_entities)
+
+        # 获取舞台实体
+        stage_entities = self._retrieve_stage_entities_for_kick_off()
+        entities.update(stage_entities)
+
+        # 获取角色实体
+        actor_entities = self._retrieve_actor_entities_for_kick_off()
+        entities.update(actor_entities)
 
         if len(entities) == 0:
             return
 
-        # 添加系统消息
-        self._add_system_message(entities)
-
         # 处理请求
-        await self._process_kick_off_request(entities)
+        await self._process_request(entities)
+
+        # 设置第一次观察
+        self._setup_heros_first_observation()
 
     ###############################################################################################################################################
-    async def _process_kick_off_request(self, entities: Set[Entity]) -> None:
+    def _retrieve_world_system_entities_for_kick_off(self) -> Set[Entity]:
+        ret: Set[Entity] = set()
+        world_entities = self._game.get_group(
+            Matcher(
+                all_of=[WorldSystemComponent, KickOffMessageComponent],
+                none_of=[KickOffDoneComponent],
+            )
+        ).entities.copy()
+
+        for world_system_entity in world_entities:
+            assert not world_system_entity.has(KickOffDoneComponent)
+            assert world_system_entity.has(KickOffMessageComponent)
+            kick_off_message_comp = world_system_entity.get(KickOffMessageComponent)
+            if kick_off_message_comp.content == "":
+                continue
+
+            ret.add(world_system_entity)
+
+        return ret
+
+    ###############################################################################################################################################
+    def _retrieve_stage_entities_for_kick_off(self) -> Set[Entity]:
+
+        ret: Set[Entity] = set()
+
+        # 获取玩家实体
+        player_entity = self._game.get_player_entity()
+        assert player_entity is not None
+
+        # 获取玩家所在的舞台实体
+        player_stage_entity = self._game.safe_get_stage_entity(player_entity)
+        assert player_stage_entity is not None
+
+        if player_stage_entity.has(KickOffDoneComponent):
+            # 已经完成了kick off
+            return ret
+
+        assert player_stage_entity.has(KickOffMessageComponent)
+        kick_off_message_comp = player_stage_entity.get(KickOffMessageComponent)
+        if kick_off_message_comp.content == "":
+            # 没有kick off消息
+            return ret
+
+        if player_stage_entity.has(DungeonComponent):
+            # 如果是副本场景，直接返回
+            return ret
+
+        ret.add(player_stage_entity)
+        return ret
+
+    ###############################################################################################################################################
+    def _retrieve_actor_entities_for_kick_off(self) -> Set[Entity]:
+        ret: Set[Entity] = set()
+
+        # 获取玩家实体
+        player_entity = self._game.get_player_entity()
+        assert player_entity is not None
+
+        # 获取玩家所在的舞台实体
+        player_stage_entity = self._game.safe_get_stage_entity(player_entity)
+        assert player_stage_entity is not None
+
+        actors_on_stage = self._game.retrieve_actors_on_stage(player_stage_entity)
+        for actor_entity in actors_on_stage:
+            if actor_entity.has(KickOffDoneComponent):
+                # 已经完成了kick off
+                continue
+
+            assert actor_entity.has(KickOffMessageComponent)
+            kick_off_message_comp = actor_entity.get(KickOffMessageComponent)
+            if kick_off_message_comp.content == "":
+                # 没有kick off消息
+                continue
+
+            if actor_entity.has(MonsterComponent):
+                # 如果是怪物，直接跳过
+                continue
+
+            #
+            ret.add(actor_entity)
+
+        return ret
+
+    ###############################################################################################################################################
+    async def _process_request(self, entities: Set[Entity]) -> None:
 
         # 添加请求处理器
         request_handlers: List[ChatRequestHandler] = []
 
         for entity1 in entities:
             # 不同实体生成不同的提示
-            gen_prompt = self._generate_kick_off_prompt(entity1)
+            gen_prompt = self._generate_prompt(entity1)
             if gen_prompt == "":
                 continue
 
@@ -109,8 +201,6 @@ class KickOffSystem(ExecuteProcessor):
         # 并发
         await self._game.langserve_system.gather(request_handlers=request_handlers)
 
-        hero_entities: Set[Entity] = set()
-
         # 添加上下文。
         for request_handler in request_handlers:
 
@@ -118,14 +208,7 @@ class KickOffSystem(ExecuteProcessor):
             assert entity2 is not None
 
             if request_handler.response_content == "":
-                logger.error(
-                    f"Agent: {request_handler._name}, Response is empty!!!!!!!!!!!!!!!!!!!!!!!!! KickOff Failed."
-                )
                 continue
-
-            logger.warning(
-                f"Agent: {request_handler._name}, Response:\n{request_handler.response_content}"
-            )
 
             self._game.append_human_message(entity2, request_handler._prompt)
             self._game.append_ai_message(entity2, request_handler.response_content)
@@ -142,17 +225,9 @@ class KickOffSystem(ExecuteProcessor):
                 )
             elif entity2.has(ActorComponent):
                 assert entity2.has(HeroComponent) or entity2.has(MonsterComponent)
-                if entity2.has(HeroComponent):
-                    # 只有在家的场景才需要第一次观察！做一些memory的初始化工作。
-                    # 其他场景不需要。
-                    hero_entities.add(entity2)
-
-        # 第一次观察
-        for hero_entity in hero_entities:
-            self._setup_hero_first_observation(hero_entity)
 
     ###############################################################################################################################################
-    def _generate_kick_off_prompt(self, entity: Entity) -> str:
+    def _generate_prompt(self, entity: Entity) -> str:
 
         kick_off_message_comp = entity.get(KickOffMessageComponent)
         assert kick_off_message_comp is not None
@@ -175,11 +250,16 @@ class KickOffSystem(ExecuteProcessor):
         return gen_prompt
 
     ###############################################################################################################################################
-    def _add_system_message(self, entities: Set[Entity]) -> None:
-        for entity in entities:
-            system_message_comp = entity.get(SystemMessageComponent)
-            assert system_message_comp is not None
-            self._game.append_system_message(entity, system_message_comp.content)
+    def _setup_heros_first_observation(self) -> None:
+        # 第一次观察 周围的环境。
+        hero_entities: Set[Entity] = self._game.get_group(
+            Matcher(
+                all_of=[KickOffDoneComponent, HeroComponent],
+            )
+        ).entities
+        # 只有在家的场景才需要第一次观察！做一些memory的初始化工作。
+        for hero_entity in hero_entities:
+            self._setup_hero_first_observation(hero_entity)
 
     ###############################################################################################################################################
     # TODO 第一次观察所在场景已经场景内都有谁
@@ -217,7 +297,6 @@ class KickOffSystem(ExecuteProcessor):
 ## 场景内角色外貌信息
 {"\n".join(actors_appearances_info)}"""
 
-        #logger.info(f"Hero: {actor_entity._name}, First Observation: \n{message}")
         self._game.append_human_message(actor_entity, message)
 
     ###############################################################################################################################################

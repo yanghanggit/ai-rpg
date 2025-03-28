@@ -152,10 +152,8 @@ class DungeonStagePlanningSystem(ExecuteProcessor):
                     format_response.environment_narration,
                 )
 
-        except:
-            logger.error(
-                f"""返回格式错误: {stage_entity._name}, Response = \n{request_handler.response_content}"""
-            )
+        except Exception as e:
+            logger.error(f"Exception: {e}")
 
 
 #######################################################################################################################################

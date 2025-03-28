@@ -92,12 +92,7 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
         for request_handler in request_handlers:
 
             if request_handler.response_content == "":
-                logger.error(f"Agent: {request_handler._name}, Response is empty.")
                 continue
-
-            logger.warning(
-                f"Agent: {request_handler._name}, Response:\n{request_handler.response_content}"
-            )
 
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None

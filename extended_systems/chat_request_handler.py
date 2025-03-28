@@ -57,6 +57,10 @@ class ChatRequestHandler:
                 }
             )
 
+            logger.info(
+                f"{self._name} request response_content:\n{self.response_content}"
+            )
+
         except Exception as e:
             logger.error(f"{self._name}: request error: {e}")
 
@@ -83,6 +87,10 @@ class ChatRequestHandler:
                     "input": self._prompt,
                     "chat_history": self._chat_history,
                 }
+            )
+
+            logger.info(
+                f"{self._name} a_request response_content:\n{self.response_content}"
             )
 
         except Exception as e:

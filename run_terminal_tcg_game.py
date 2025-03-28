@@ -86,7 +86,7 @@ class UserRuntimeOptions:
     def _init_logger(self) -> "UserRuntimeOptions":
         log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         logger.add(self.log_dir / f"{log_start_time}.log", level="DEBUG")
-        logger.info(f"准备进入游戏 = {self.game}, {self.user}")
+        logger.debug(f"准备进入游戏 = {self.game}, {self.user}")
         return self
 
     ###############################################################################################################################################
@@ -109,8 +109,8 @@ class UserRuntimeOptions:
                 )
 
         except Exception as e:
-            logger.error(f"An error occurred: {e}")
-            assert False, "无法生成服务URL"
+            logger.error(f"Exception: {e}")
+            assert False, "没有找到配置!"
 
         return self
 
@@ -292,7 +292,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
     # 处理输入
     if usr_input == "/q" or usr_input == "/quit":
         # 退出游戏
-        logger.info(
+        logger.debug(
             f"玩家 主动 退出游戏 = {terminal_game.player.name}, {player_stage_entity._name}"
         )
         terminal_game.will_exit = True
@@ -323,7 +323,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             logger.error(f"{usr_input} 只能在战斗中使用")
             return
 
-        logger.info(f"玩家输入 = {usr_input}, 准备抽卡")
+        logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
         draw_card_utils = DrawCardsUtils(
             terminal_game,
             terminal_game.retrieve_actors_on_stage(player_stage_entity),
@@ -344,7 +344,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             logger.error(f"{usr_input} 只能在战斗on_going_phase中使用")
             return
 
-        logger.info(f"玩家输入 = {usr_input}, 准备监控")
+        logger.debug(f"玩家输入 = {usr_input}, 准备监控")
         monitor_utils = MonitorUtils(
             terminal_game,
             set({player_stage_entity}),
@@ -366,7 +366,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             logger.error(f"{usr_input} 只能在战斗后使用!!!!!")
             return
 
-        logger.info(
+        logger.debug(
             f"玩家输入 = {usr_input}, 准备传送回家 {stage_heros_camp_instance.name}"
         )
 
@@ -377,7 +377,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         )
 
         # 清空战斗
-        logger.info(f"玩家输入 = {usr_input}, 重制地下城！！！！！！！！")
+        logger.debug(f"玩家输入 = {usr_input}, 重制地下城！！！！！！！！")
         terminal_game.dungeon_system = DungeonSystem(name="", levels=[])
 
     elif usr_input == "/rh" or usr_input == "/run-home":
@@ -408,7 +408,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             )
             return
 
-        logger.info(f"玩家输入 = {usr_input}, 准备传送地下城")
+        logger.debug(f"玩家输入 = {usr_input}, 准备传送地下城")
         terminal_game.launch_dungeon_adventure()
 
     else:
@@ -424,7 +424,7 @@ async def _execute_terminal_game(
 ) -> None:
 
     assert terminal_game.player.name != ""
-    logger.info(f"玩家输入: {terminal_game.player.name} = {usr_input}")
+    logger.debug(f"玩家输入: {terminal_game.player.name} = {usr_input}")
 
     # 执行一次！！！！！
     terminal_game.player.add_command(

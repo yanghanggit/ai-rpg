@@ -225,7 +225,7 @@ stage_heros_camp_instance = _create_stage_instance(
 stage_dungeon_cave1_instance = _create_stage_instance(
     name=f"""{stage_dungeon_cave_prototype.name}之一""",
     stage=stage_dungeon_cave_prototype,
-    kick_off_message="洞穴中十分吵闹。",
+    kick_off_message="",
     actors=[],
 )
 #######################################################################################################################################
@@ -234,7 +234,7 @@ stage_dungeon_cave1_instance = _create_stage_instance(
 stage_dungeon_cave2_instance = _create_stage_instance(
     name=f"""{stage_dungeon_cave_prototype.name}之二""",
     stage=stage_dungeon_cave_prototype,
-    kick_off_message="洞穴中十分吵闹。",
+    kick_off_message="",
     actors=[],
 )
 

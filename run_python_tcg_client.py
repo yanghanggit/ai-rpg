@@ -55,7 +55,7 @@ def _request_api_endpoints(
 
 
 def main(client_context: ClientContext) -> None:
-    logger.info("启动客户端")
+    logger.debug("启动客户端")
     while True:
 
         usr_input = input(f"[{client_context.user_name}]:")

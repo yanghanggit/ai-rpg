@@ -18,13 +18,13 @@ class DungeonSystem(BaseModel):
     def log_dungeon_details(self) -> None:
 
         if len(self.levels) > 0:
-            logger.info(
+            logger.debug(
                 f"初始化地下城系统 = [{self.name}]\n地下城数量：{len(self.levels)}"
             )
             for stage in self.levels:
-                logger.info(f"地下城关卡：{stage.name}")
+                logger.debug(f"地下城关卡：{stage.name}")
 
-            logger.info(f"当前地下城关卡：{self.levels[self.position].name}")
+            logger.debug(f"当前地下城关卡：{self.levels[self.position].name}")
         else:
             logger.warning("地下城系统为空！")
 

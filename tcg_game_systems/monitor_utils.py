@@ -191,10 +191,8 @@ class MonitorUtils:
 
             self._result_mapping[stage_entity] = format_response
 
-        except:
-            logger.error(
-                f"""返回格式错误, Stage: {stage_entity._name}, response_content = \n{request_handler.response_content}"""
-            )
+        except Exception as e:
+            logger.error(f"Exception: {e}")
 
     ####################################################################################################################################
     # 后续处理：处理角色的返回
@@ -217,9 +215,7 @@ class MonitorUtils:
             )
 
             self._result_mapping[actor_entity] = format_response
-        except:
-            logger.error(
-                f"""返回格式错误, Actor: {actor_entity._name}, response_content = \n{request_handler.response_content}"""
-            )
+        except Exception as e:
+            logger.error(f"Exception: {e}")
 
     ####################################################################################################################################

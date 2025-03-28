@@ -32,8 +32,8 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
         if not self._game.combat_system.is_on_going_phase:
             return  # 不是本阶段就直接返回
 
-        logger.info("DungeonCombatFinalizeSystem is executing...")
-        logger.info(f"Current combat rounds: {len(self._game.combat_system.rounds)}")
+        logger.debug("DungeonCombatFinalizeSystem is executing...")
+        logger.debug(f"Current combat rounds: {len(self._game.combat_system.rounds)}")
 
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
@@ -109,7 +109,7 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
         # 看一看出手顺序。
         first_turn_actor = next(iter(turn_action_actors))
         first_turn_action = first_turn_actor.get(TurnAction)
-        logger.info(
+        logger.debug(
             f"First turn actor: {first_turn_action.rounds}, {first_turn_action.round_turns}"
         )
         # 记录

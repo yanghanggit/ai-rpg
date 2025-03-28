@@ -2,6 +2,8 @@ from typing import List, Dict, Any, Optional, cast, final
 import json
 import re
 
+from loguru import logger
+
 
 ############################################################################################################
 def _combine_json_fragments(json_str: str) -> Optional[Dict[str, List[str]]]:
@@ -46,7 +48,7 @@ def _combine_json_fragments(json_str: str) -> Optional[Dict[str, List[str]]]:
         return cast(Dict[str, List[str]], combined_json)
 
     except Exception as e:
-        pass
+        logger.error(f"Exception: {e}")
 
     return None
 

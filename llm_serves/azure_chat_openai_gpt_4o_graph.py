@@ -226,9 +226,9 @@ def test() -> None:
             chat_history_state["messages"].extend(user_input_state["messages"])
             chat_history_state["messages"].extend(update_messages)
 
-        except:
-            assert False, "Error in processing user input"
-            break
+        except Exception as e:
+            assert False, f"Error in processing user input = {e}"
+            # break
 
 
 ############################################################################################################

@@ -234,7 +234,7 @@ class TCGGame(BaseGame, TCGGameContext):
             processor.tear_down()
             processor.clear_reactive_processors()
 
-        logger.error(f"{self.name}, game over!!!!!!!!!!!!!!!!!!!!")
+        logger.warning(f"{self.name}, game over!!!!!!!!!!!!!!!!!!!!")
 
     ###############################################################################################################################################
     def build_entities(self) -> "TCGGame":
@@ -372,10 +372,15 @@ class TCGGame(BaseGame, TCGGameContext):
             # 必要组件
             world_system_entity.add(GUIDComponent, instance.name, instance.guid)
             world_system_entity.add(WorldSystemComponent, instance.name)
+
+            # system prompt
             world_system_entity.add(
                 SystemMessageComponent, instance.name, instance.system_message
             )
             assert instance.name in instance.system_message
+            self.append_system_message(world_system_entity, instance.system_message)
+
+            # kickoff prompt
             world_system_entity.add(
                 KickOffMessageComponent, instance.name, instance.kick_off_message
             )
@@ -414,6 +419,7 @@ class TCGGame(BaseGame, TCGGameContext):
                 SystemMessageComponent, instance.name, instance.system_message
             )
             assert instance.name in instance.system_message
+            self.append_system_message(actor_entity, instance.system_message)
 
             # 必要组件：启动消息
             actor_entity.add(
@@ -469,11 +475,15 @@ class TCGGame(BaseGame, TCGGameContext):
             # 必要组件
             stage_entity.add(GUIDComponent, instance.name, instance.guid)
             stage_entity.add(StageComponent, instance.name)
+
+            # system prompt
             stage_entity.add(
                 SystemMessageComponent, instance.name, instance.system_message
             )
             assert instance.name in instance.system_message
+            self.append_system_message(stage_entity, instance.system_message)
 
+            # kickoff prompt
             stage_entity.add(
                 KickOffMessageComponent, instance.name, instance.kick_off_message
             )
@@ -520,9 +530,10 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     def append_human_message(self, entity: Entity, chat: str, **kwargs: Any) -> None:
 
-        # 如果 **kwargs 不是 空，就打印一下
+        logger.debug(f"append_human_message: {entity._name} => {chat}")
         if len(kwargs) > 0:
-            logger.info(f"kwargs: {kwargs}")
+            # 如果 **kwargs 不是 空，就打印一下
+            logger.debug(f"kwargs: {kwargs}")
 
         agent_short_term_memory = self.get_agent_short_term_memory(entity)
         agent_short_term_memory.chat_history.extend(
@@ -531,11 +542,13 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     def append_ai_message(self, entity: Entity, chat: str) -> None:
+        logger.debug(f"append_ai_message: {entity._name} => {chat}")
         agent_short_term_memory = self.get_agent_short_term_memory(entity)
         agent_short_term_memory.chat_history.extend([AIMessage(content=chat)])
 
     ###############################################################################################################################################
     def append_system_message(self, entity: Entity, chat: str, **kwargs: Any) -> None:
+        logger.debug(f"append_system_message: {entity._name} => {chat}")
         agent_short_term_memory = self.get_agent_short_term_memory(entity)
         if len(agent_short_term_memory.chat_history) == 0:
             agent_short_term_memory.chat_history.extend([SystemMessage(content=chat)])
@@ -612,7 +625,7 @@ class TCGGame(BaseGame, TCGGameContext):
             # 针对agent的事件通知。
             replace_message = _replace_with_you(agent_event.message, entity._name)
             self.append_human_message(entity, replace_message)
-            logger.warning(f"事件通知 => {entity._name}:\n{replace_message}")
+            # logger.warning(f"事件通知 => {entity._name}:\n{replace_message}")
 
             # 如果是玩家，就要补充一个事件信息，用于客户端接收
             if entity.has(PlayerComponent):
@@ -831,7 +844,7 @@ class TCGGame(BaseGame, TCGGameContext):
         if stage_entity is None:
             return
 
-        logger.info(f"下一关为：{stage_entity._name}，可以进入！！！！")
+        logger.debug(f"下一关为：{stage_entity._name}，可以进入！！！！")
 
         # 集体准备传送
         heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
@@ -880,10 +893,8 @@ class TCGGame(BaseGame, TCGGameContext):
             self.append_human_message(hero_entity, trans_message)
 
             if hero_entity.has(CombatAttributesComponent):
-                logger.info(f"删除战斗属性: {hero_entity._name}")
                 hero_entity.remove(CombatAttributesComponent)
             if hero_entity.has(CombatStatusEffectsComponent):
-                logger.info(f"删除战斗效果: {hero_entity._name}")
                 hero_entity.remove(CombatStatusEffectsComponent)
 
         # 开始传送。

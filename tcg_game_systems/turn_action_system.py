@@ -97,15 +97,8 @@ class TurnActionSystem(BaseActionReactiveSystem):
     def _handle_responses(self, request_handlers: List[ChatRequestHandler]) -> None:
 
         for request_handler in request_handlers:
-
             if request_handler.response_content == "":
-                logger.error(f"Agent: {request_handler._name}, Response is empty.")
                 continue
-
-            logger.warning(
-                f"Agent: {request_handler._name}, Response:\n{request_handler.response_content}"
-            )
-
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
             self._handle_response(entity2, request_handler)
@@ -122,8 +115,6 @@ class TurnActionSystem(BaseActionReactiveSystem):
                     request_handler.response_content
                 )
             )
-
-            logger.info(f"format_response 成功！ = {request_handler.response_content}")
 
             skill = self._retrieve_skill_from_hand(entity2, format_response.skill)
             if skill is None:
@@ -154,10 +145,8 @@ class TurnActionSystem(BaseActionReactiveSystem):
                 format_response.reason,
             )
 
-        except:
-            logger.error(
-                f"""返回格式错误: {entity2._name}, Response = \n{request_handler.response_content}"""
-            )
+        except Exception as e:
+            logger.error(f"Exception: {e}")
 
     #######################################################################################################################################
     def _retrieve_skill_from_hand(

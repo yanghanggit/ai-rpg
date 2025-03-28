@@ -12,6 +12,7 @@ class APIEndpointConfiguration(BaseModel):
     TEST_URL: str = ""
     LOGIN_URL: str = ""
     LOGOUT_URL: str = ""
+    PLAYER_URL: str = ""
 
 
 class APIEndpointConfigurationResponse(BaseModel):
@@ -49,6 +50,24 @@ class LogoutRequest(BaseModel):
 
 
 class LogoutResponse(BaseModel):
+    user_name: str = ""
+    game_name: str = ""
+    error: int = 0
+    message: str = ""
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+
+class PlayerRequest(BaseModel):
+    user_name: str = ""
+    game_name: str = ""
+    user_input: str = ""
+
+
+class PlayerResponse(BaseModel):
     user_name: str = ""
     game_name: str = ""
     error: int = 0

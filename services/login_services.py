@@ -31,7 +31,7 @@ async def login(
     game_server: GameServerInstance,
 ) -> LoginResponse:
 
-    logger.debug(f"login: {request_data.model_dump_json()}")
+    logger.info(f"login: {request_data.model_dump_json()}")
 
     room_manager = game_server.room_manager
 
@@ -39,7 +39,7 @@ async def login(
     if room_manager.has_room(request_data.user_name):
         pre_room = room_manager.get_room(request_data.user_name)
         assert pre_room is not None
-        logger.debug(
+        logger.info(
             f"login: {request_data.user_name} has room, remove it = {pre_room._user_name}"
         )
         room_manager.remove_room(pre_room)
@@ -48,7 +48,7 @@ async def login(
     new_room = room_manager.create_room(
         user_name=request_data.user_name,
     )
-    logger.debug(f"login: {request_data.user_name} create room = {new_room._user_name}")
+    logger.info(f"login: {request_data.user_name} create room = {new_room._user_name}")
     assert new_room._game is None
 
     # 准备创建一个新的游戏。########################################
@@ -68,18 +68,14 @@ async def login(
     if web_game_session is None:
         logger.error(f"创建游戏失败 = {option.game}")
         return LoginResponse(
-            user_name=request_data.user_name,
-            game_name=request_data.game_name,
             error=1000,
             message="创建游戏失败",
         )
 
     # 房间正常完成, 新的游戏也准备好了。。。。
     new_room._game = web_game_session
-    logger.debug(f"login: {request_data.user_name} create game = {new_room._game.name}")
+    logger.info(f"login: {request_data.user_name} create game = {new_room._game.name}")
     return LoginResponse(
-        user_name=request_data.user_name,
-        game_name=request_data.game_name,
         error=0,
         message=new_room._game.world.model_dump_json(),
     )
@@ -94,15 +90,13 @@ async def logout(
     game_server: GameServerInstance,
 ) -> LogoutResponse:
 
-    logger.debug(f"logout: {request_data.model_dump_json()}")
+    logger.info(f"logout: {request_data.model_dump_json()}")
 
     # 先检查房间是否存在
     room_manager = game_server.room_manager
     if not room_manager.has_room(request_data.user_name):
         logger.error(f"logout: {request_data.user_name} not found")
         return LogoutResponse(
-            user_name=request_data.user_name,
-            game_name=request_data.game_name,
             error=1001,
             message="没有找到房间",
         )
@@ -112,29 +106,23 @@ async def logout(
     assert pre_room is not None
     if pre_room._game is not None:
         # 保存游戏的运行时数据
-        logger.debug(
+        logger.info(
             f"logout: {request_data.user_name} save game = {pre_room._game.name}"
         )
         pre_room._game.save()
         # 退出游戏
-        logger.debug(
+        logger.info(
             f"logout: {request_data.user_name} exit game = {pre_room._game.name}"
         )
         # 退出游戏
         pre_room._game.exit()
 
     else:
-        logger.debug(
-            f"logout: {request_data.user_name} no game = {pre_room._user_name}"
-        )
+        logger.info(f"logout: {request_data.user_name} no game = {pre_room._user_name}")
 
-    logger.debug(
-        f"logout: {request_data.user_name} remove room = {pre_room._user_name}"
-    )
+    logger.info(f"logout: {request_data.user_name} remove room = {pre_room._user_name}")
     room_manager.remove_room(pre_room)
     return LogoutResponse(
-        user_name=request_data.user_name,
-        game_name=request_data.game_name,
         error=0,
         message=f"logout: {request_data.user_name} success",
     )

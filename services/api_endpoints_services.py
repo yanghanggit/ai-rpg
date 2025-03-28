@@ -19,7 +19,7 @@ async def api_endpoints(
     game_server: GameServerInstance,
 ) -> APIEndpointConfigurationResponse:
 
-    logger.debug(f"api_endpoints: {request_data.content}")
+    logger.info(f"api_endpoints: {request_data.model_dump_json()}")
 
     server_ip_address = game_server.server_ip_address
     server_port = game_server.server_port
@@ -28,10 +28,10 @@ async def api_endpoints(
         TEST_URL=f"http://{server_ip_address}:{server_port}/test/v1/",
         LOGIN_URL=f"http://{server_ip_address}:{server_port}/login/v1/",
         LOGOUT_URL=f"http://{server_ip_address}:{server_port}/logout/v1/",
-        PLAYER_URL=f"http://{server_ip_address}:{server_port}/player/v1/",
+        HOME_RUN_URL=f"http://{server_ip_address}:{server_port}/home/run/v1/",
     )
 
     return APIEndpointConfigurationResponse(
-        message=request_data.content,
+        message="获取API路由成功",
         api_endpoints=generated_api_endpoints,
     )

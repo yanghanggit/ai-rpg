@@ -5,14 +5,14 @@ from pydantic import BaseModel
 ################################################################################################################
 ################################################################################################################
 class APIEndpointConfigurationRequest(BaseModel):
-    content: str = ""
+    pass
 
 
 class APIEndpointConfiguration(BaseModel):
     TEST_URL: str = ""
     LOGIN_URL: str = ""
     LOGOUT_URL: str = ""
-    PLAYER_URL: str = ""
+    HOME_RUN_URL: str = ""
 
 
 class APIEndpointConfigurationResponse(BaseModel):
@@ -33,8 +33,6 @@ class LoginRequest(BaseModel):
 
 
 class LoginResponse(BaseModel):
-    user_name: str = ""
-    game_name: str = ""
     error: int = 0
     message: str = ""
 
@@ -50,8 +48,6 @@ class LogoutRequest(BaseModel):
 
 
 class LogoutResponse(BaseModel):
-    user_name: str = ""
-    game_name: str = ""
     error: int = 0
     message: str = ""
 
@@ -61,15 +57,13 @@ class LogoutResponse(BaseModel):
 ################################################################################################################
 
 
-class PlayerRequest(BaseModel):
+class HomeRunRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
     user_input: str = ""
 
 
-class PlayerResponse(BaseModel):
-    user_name: str = ""
-    game_name: str = ""
+class HomeRunResponse(BaseModel):
     error: int = 0
     message: str = ""
 

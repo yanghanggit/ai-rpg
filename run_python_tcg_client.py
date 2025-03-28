@@ -34,7 +34,7 @@ def _request_api_endpoints(
     time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     response = requests.post(
         client_context.api_endpoints,
-        json=APIEndpointConfigurationRequest(content=f"time = {time}").model_dump(),
+        json=APIEndpointConfigurationRequest().model_dump(),
     )
 
     api_endpoint_response = APIEndpointConfigurationResponse.model_validate(

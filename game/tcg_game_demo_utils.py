@@ -230,36 +230,36 @@ def _create_world_system_instance(
 
 #######################################################################################################################################
 def _link_instance(
-    world_boot: Boot,
+    boot: Boot,
     players: List[ActorInstance],
     actors: List[ActorInstance],
     stages: List[StageInstance],
     world_systems: List[WorldSystemInstance],
 ) -> None:
 
-    world_boot.players.extend(players)
-    world_boot.actors.extend(actors)
-    world_boot.stages.extend(stages)
-    world_boot.world_systems.extend(world_systems)
+    boot.players.extend(players)
+    boot.actors.extend(actors)
+    boot.stages.extend(stages)
+    boot.world_systems.extend(world_systems)
 
     # # actor 需要后处理一下。
     all_actors = players + actors
 
     for player in players:
         assert (
-            player.prototype in world_boot.data_base.actors
+            player.prototype in boot.data_base.actors
         ), f"Actor {player.prototype} not found in data base."
     for actor in actors:
         assert (
-            actor.prototype in world_boot.data_base.actors
+            actor.prototype in boot.data_base.actors
         ), f"Actor {actor.prototype} not found in data base."
     for stage in stages:
         assert (
-            stage.prototype in world_boot.data_base.stages
+            stage.prototype in boot.data_base.stages
         ), f"Stage {stage.prototype} not found in data base."
     for world_system in world_systems:
         assert (
-            world_system.prototype in world_boot.data_base.world_systems
+            world_system.prototype in boot.data_base.world_systems
         ), f"World System {world_system.prototype} not found in data base."
 
     # 检查players 与 actors是否有重复

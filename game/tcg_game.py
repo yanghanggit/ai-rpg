@@ -24,7 +24,6 @@ from components.components_v_0_0_1 import (
     ActorComponent,
     PlayerComponent,
     GUIDComponent,
-    SystemMessageComponent,
     KickOffMessageComponent,
     AppearanceComponent,
     StageEnvironmentComponent,
@@ -243,20 +242,17 @@ class TCGGame(BaseGame, TCGGameContext):
         self.chaos_engineering_system.initialize(self)
         self.chaos_engineering_system.on_pre_create_game()
 
-        #
-        world_boot = self._world.boot
-
         ## 第1步，创建world_system
         self._create_world_system_entities(
-            world_boot.world_systems, world_boot.data_base
+            self.world.world_systems, self.world.data_base
         )
 
         ## 第2步，创建actor
-        self._create_player_entities(world_boot.players, world_boot.data_base)
-        self._create_actor_entities(world_boot.actors, world_boot.data_base)
+        self._create_player_entities(self.world.players, self.world.data_base)
+        self._create_actor_entities(self.world.actors, self.world.data_base)
 
         ## 第3步，创建stage
-        self._create_stage_entities(world_boot.stages, world_boot.data_base)
+        self._create_stage_entities(self.world.stages, self.world.data_base)
 
         ## 最后！混沌系统，准备测试
         self.chaos_engineering_system.on_post_create_game()
@@ -285,7 +281,7 @@ class TCGGame(BaseGame, TCGGameContext):
             # 保存聊天记录
             self._verbose_chat_history()
             # 保存boot
-            self._verbose_boot()
+            self._verbose_instances()
             # 保存地下城记录。
             self._verbose_dungeon_system()
 
@@ -304,18 +300,24 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
     ###############################################################################################################################################
-    def _verbose_boot(self) -> None:
-        boot_dir = self.world_file_dir / "boot"
-        boot_dir.mkdir(parents=True, exist_ok=True)
+    def _verbose_instances(self) -> None:
+        instances_dir = self.world_file_dir / "instances"
+        instances_dir.mkdir(parents=True, exist_ok=True)
 
-        actors = self.world.boot.players + self.world.boot.actors
+        actors = self.world.players + self.world.actors
         for actor in actors:
-            actor_path = boot_dir / f"{actor.name}.json"
+            actor_path = instances_dir / f"{actor.name}.json"
             actor_path.write_text(actor.model_dump_json(), encoding="utf-8")
 
-        for stage in self.world.boot.stages:
-            stage_path = boot_dir / f"{stage.name}.json"
+        for stage in self.world.stages:
+            stage_path = instances_dir / f"{stage.name}.json"
             stage_path.write_text(stage.model_dump_json(), encoding="utf-8")
+
+        for world_system in self.world.world_systems:
+            world_system_path = instances_dir / f"{world_system.name}.json"
+            world_system_path.write_text(
+                world_system.model_dump_json(), encoding="utf-8"
+            )
 
     ###############################################################################################################################################
     def _verbose_entities_snapshot(self) -> None:
@@ -374,9 +376,6 @@ class TCGGame(BaseGame, TCGGameContext):
             world_system_entity.add(WorldSystemComponent, instance.name)
 
             # system prompt
-            world_system_entity.add(
-                SystemMessageComponent, instance.name, instance.system_message
-            )
             assert instance.name in instance.system_message
             self.append_system_message(world_system_entity, instance.system_message)
 
@@ -415,9 +414,6 @@ class TCGGame(BaseGame, TCGGameContext):
             actor_entity.add(ActorComponent, instance.name, "")
 
             # 必要组件：系统消息
-            actor_entity.add(
-                SystemMessageComponent, instance.name, instance.system_message
-            )
             assert instance.name in instance.system_message
             self.append_system_message(actor_entity, instance.system_message)
 
@@ -477,9 +473,6 @@ class TCGGame(BaseGame, TCGGameContext):
             stage_entity.add(StageComponent, instance.name)
 
             # system prompt
-            stage_entity.add(
-                SystemMessageComponent, instance.name, instance.system_message
-            )
             assert instance.name in instance.system_message
             self.append_system_message(stage_entity, instance.system_message)
 
@@ -487,10 +480,15 @@ class TCGGame(BaseGame, TCGGameContext):
             stage_entity.add(
                 KickOffMessageComponent, instance.name, instance.kick_off_message
             )
+
+            # 必要组件：环境描述
             stage_entity.add(
-                StageEnvironmentComponent, instance.name, instance.kick_off_message
+                StageEnvironmentComponent,
+                instance.name,
+                "",
             )
 
+            # 必要组件：类型
             if prototype.type == StageType.DUNGEON:
                 stage_entity.add(DungeonComponent, instance.name)
             elif prototype.type == StageType.HOME:
@@ -719,7 +717,7 @@ class TCGGame(BaseGame, TCGGameContext):
         if not actor_entity.has(ActorComponent):
             return None
 
-        all_actors = self.world.boot.players + self.world.boot.actors
+        all_actors = self.world.players + self.world.actors
         for actor in all_actors:
             if actor.name == actor_entity._name:
                 return actor
@@ -733,8 +731,6 @@ class TCGGame(BaseGame, TCGGameContext):
 
         actor_instance = self.retrieve_actor_instance(actor_entity)
         assert actor_instance is not None
-        if actor_instance is None:
-            return
 
         hp: Final[float] = actor_instance.base_attributes.hp
         max_hp: Final[float] = actor_instance.base_attributes.max_hp

@@ -16,15 +16,6 @@ class GUIDComponent(NamedTuple):
 
 
 ############################################################################################################
-# 记录 系统提示词 的组件
-@final
-@register_component_class
-class SystemMessageComponent(NamedTuple):
-    name: str
-    content: str
-
-
-############################################################################################################
 # 记录kick off原始信息
 @final
 @register_component_class

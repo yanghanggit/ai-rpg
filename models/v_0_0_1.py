@@ -200,6 +200,30 @@ class World(BaseModel):
     boot: Boot = Boot()
     entities_snapshot: List[EntitySnapshot] = []
     agents_short_term_memory: Dict[str, AgentShortTermMemory] = {}
+    runtime_players: List[ActorInstance] = []
+    runtime_actors: List[ActorInstance] = []
+    runtime_stages: List[StageInstance] = []
+    runtime_world_systems: List[WorldSystemInstance] = []
+
+    @property
+    def data_base(self) -> DataBase:
+        return self.boot.data_base
+
+    @property
+    def players(self) -> List[ActorInstance]:
+        return self.boot.players + self.runtime_players
+
+    @property
+    def actors(self) -> List[ActorInstance]:
+        return self.boot.actors + self.runtime_actors
+
+    @property
+    def stages(self) -> List[StageInstance]:
+        return self.boot.stages + self.runtime_stages
+
+    @property
+    def world_systems(self) -> List[WorldSystemInstance]:
+        return self.boot.world_systems + self.runtime_world_systems
 
 
 ###############################################################################################################################################

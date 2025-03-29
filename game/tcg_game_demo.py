@@ -197,7 +197,7 @@ actor_wizard_instance = _create_actor_instance(
 actor_goblin_instance = _create_actor_instance(
     name="角色.怪物.哥布林-拉格",
     actor_prototype=actor_goblin_prototype,
-    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）并告诉我你的战斗角色职能。回答简短(<100字)。""",
+    kick_off_message="",
     attributes=BaseAttributes(strength=5, dexterity=12, wisdom=5),
 )
 #######################################################################################################################################
@@ -206,7 +206,7 @@ actor_goblin_instance = _create_actor_instance(
 actor_orcs_instance = _create_actor_instance(
     name="角色.怪物.兽人-库洛斯",
     actor_prototype=actor_orcs_prototype,
-    kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）并告诉我你的战斗角色职能。回答简短(<100字)。""",
+    kick_off_message="",
     attributes=BaseAttributes(strength=18, dexterity=6, wisdom=4),
 )
 #######################################################################################################################################

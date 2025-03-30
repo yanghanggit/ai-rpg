@@ -238,6 +238,8 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     def build_entities(self) -> "TCGGame":
 
+        assert len(self.world.entities_snapshot) == 0, "游戏中有实体，不能创建新的游戏"
+
         # 混沌系统
         self.chaos_engineering_system.initialize(self)
         self.chaos_engineering_system.on_pre_create_game()
@@ -262,6 +264,7 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     # 测试！回复ecs
     def restore_entities(self) -> "TCGGame":
+        assert len(self.world.entities_snapshot) > 0, "游戏中没有实体，不能恢复游戏"
         self.restore_entities_from_snapshot(self.world.entities_snapshot)
         return self
 
@@ -817,7 +820,7 @@ class TCGGame(BaseGame, TCGGameContext):
         ## 设置一个战斗。
         assert len(self.dungeon_system.levels) > 0, "没有地下城！"
         assert self.dungeon_system.position == 0, "当前地下城关卡已经完成！"
-        self.combat_system.combat_engagement(Combat(name=stage_entity._name))
+        self.combat_system.combat_kickoff(Combat(name=stage_entity._name))
 
     #######################################################################################################################################
     # TODO, 临时测试，准备传送！！！
@@ -861,7 +864,7 @@ class TCGGame(BaseGame, TCGGameContext):
         # 设置一个战斗。
         assert len(self.dungeon_system.levels) > 0, "没有地下城！"
         assert self.dungeon_system.position > 0, "当前地下城关卡已经完成！"
-        self.combat_system.combat_engagement(
+        self.combat_system.combat_kickoff(
             Combat(name=stage_entity._name)
         )  # 再开一场战斗！
 

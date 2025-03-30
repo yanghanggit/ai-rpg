@@ -236,7 +236,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         await draw_card_utils.draw_cards()
 
         # 执行一次！！！！！
-        await _execute_terminal_game(terminal_game, usr_input)
+        # await _execute_terminal_game(terminal_game, usr_input)
 
     elif usr_input == "/m" or usr_input == "/monitor":
 

@@ -10,7 +10,7 @@ from pydantic import BaseModel
 @unique
 class CombatPhase(IntEnum):
     NONE = (0,)
-    PREPARATION = (1,)  # 初始化，需要同步一些数据与状态
+    KICK_OFF = (1,)  # 初始化，需要同步一些数据与状态
     ONGOING = (2,)  # 运行中，不断进行战斗推理
     COMPLETE = 3  # 结束，需要进行结算
     POST_WAIT = 4  # 战斗等待进入新一轮战斗或者回家
@@ -99,8 +99,8 @@ class CombatSystem(BaseModel):
 
     ###############################################################################################################################################
     @property
-    def is_preparation_phase(self) -> bool:
-        return self.last_combat.phase == CombatPhase.PREPARATION
+    def is_kickoff_phase(self) -> bool:
+        return self.last_combat.phase == CombatPhase.KICK_OFF
 
     ###############################################################################################################################################
     @property
@@ -114,14 +114,14 @@ class CombatSystem(BaseModel):
 
     ###############################################################################################################################################
     # 启动一个战斗！！！ 注意状态转移
-    def combat_engagement(self, combat: Combat) -> None:
+    def combat_kickoff(self, combat: Combat) -> None:
         assert combat.phase == CombatPhase.NONE
-        combat.phase = CombatPhase.PREPARATION
+        combat.phase = CombatPhase.KICK_OFF
         self.combats.append(combat)
 
     ###############################################################################################################################################
-    def combat_go(self) -> None:
-        assert self.last_combat.phase == CombatPhase.PREPARATION
+    def combat_ongoing(self) -> None:
+        assert self.last_combat.phase == CombatPhase.KICK_OFF
         assert self.last_combat.result == CombatResult.NONE
         self.last_combat.phase = CombatPhase.ONGOING
 

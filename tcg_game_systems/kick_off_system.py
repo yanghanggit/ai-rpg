@@ -8,10 +8,8 @@ from components.components_v_0_0_1 import (
     KickOffMessageComponent,
     KickOffDoneComponent,
     StageEnvironmentComponent,
-    HeroComponent,
-    HomeComponent,
 )
-from typing import Dict, Set, final, List
+from typing import Set, final, List
 from game.tcg_game import TCGGame
 from extended_systems.chat_request_handler import ChatRequestHandler
 
@@ -79,9 +77,6 @@ class KickOffSystem(ExecuteProcessor):
         # 处理请求
         await self._process_request(entities)
 
-        # 设置第一次观察
-        self._setup_heros_first_observation()
-
     ###############################################################################################################################################
     async def _process_request(self, entities: Set[Entity]) -> None:
 
@@ -93,7 +88,7 @@ class KickOffSystem(ExecuteProcessor):
             gen_prompt = self._generate_prompt(entity1)
             if gen_prompt == "":
                 logger.warning(
-                    f"KickOffSystem: {entity1._name} kick off message is empty."
+                    f"KickOffSystem: {entity1._name} kick off message is empty. dungeon or monster?"
                 )
                 continue
 
@@ -158,55 +153,5 @@ class KickOffSystem(ExecuteProcessor):
             gen_prompt = _generate_world_system_kick_off_prompt()
 
         return gen_prompt
-
-    ###############################################################################################################################################
-    def _setup_heros_first_observation(self) -> None:
-        # 第一次观察 周围的环境。
-        hero_entities: Set[Entity] = self._game.get_group(
-            Matcher(
-                all_of=[KickOffDoneComponent, HeroComponent],
-            )
-        ).entities
-        # 只有在家的场景才需要第一次观察！做一些memory的初始化工作。
-        for hero_entity in hero_entities:
-            self._setup_hero_first_observation(hero_entity)
-
-    ###############################################################################################################################################
-    # TODO 第一次观察所在场景已经场景内都有谁
-    def _setup_hero_first_observation(self, actor_entity: Entity) -> None:
-        assert actor_entity.has(ActorComponent)
-        assert actor_entity.has(HeroComponent)
-        stage_entity = self._game.safe_get_stage_entity(actor_entity)
-        assert stage_entity is not None
-        if not stage_entity.has(HomeComponent):
-            # 只有在家的场景才需要第一次观察！做一些memory的初始化工作。
-            # 其他场景不需要。
-            return
-
-        stage_env_comp = stage_entity.get(StageEnvironmentComponent)
-
-        # 获取场景内角色的外貌信息
-        actors_appearances_mapping: Dict[str, str] = (
-            self._game.retrieve_actor_appearance_on_stage_mapping(actor_entity)
-        )
-        # 删除自己
-        actors_appearances_mapping.pop(actor_entity._name, None)
-
-        # 组织提示词数据
-        actors_appearances_info = []
-        for actor_name, appearance in actors_appearances_mapping.items():
-            actors_appearances_info.append(f"- {actor_name}: {appearance}")
-        if len(actors_appearances_info) == 0:
-            actors_appearances_info.append("- 无")
-
-        message = f"""# 提示！你进行观察场景
-## 所在场景
-{stage_entity._name}
-## 场景描述
-{stage_env_comp.narrate}
-## 场景内角色外貌信息
-{"\n".join(actors_appearances_info)}"""
-
-        self._game.append_human_message(actor_entity, message)
 
     ###############################################################################################################################################

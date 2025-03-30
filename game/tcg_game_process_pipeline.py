@@ -133,8 +133,8 @@ class TCGGameProcessPipeline(Processors):
             StageDirectorActionSystem,
         )
         from tcg_game_systems.feedback_action_system import FeedbackActionSystem
-        from tcg_game_systems.dungeon_combat_preparation_system import (
-            DungeonCombatPreparationSystem,
+        from tcg_game_systems.dungeon_combat_kick_off_system import (
+            DungeonCombatKickOffSystem,
         )
         from tcg_game_systems.terminal_player_interrupt_wait_system import (
             TerminalPlayerInterruptWaitSystem,
@@ -172,15 +172,13 @@ class TCGGameProcessPipeline(Processors):
         # 地下城的标记开始
         processors.add(PreDungeonStateSystem(tcg_game))
 
-        # 开局
-        processors.add(DungeonCombatRoundSystem(tcg_game))
-
         ######动作开始！！！！！################################################################################################
         processors.add(PreActionSystem(tcg_game))
+        processors.add(DungeonCombatRoundSystem(tcg_game))  # 开局
         processors.add(TurnActionSystem(tcg_game))
         processors.add(StageDirectorActionSystem(tcg_game))
         processors.add(FeedbackActionSystem(tcg_game))
-        processors.add(DungeonCombatFinalizeSystem(tcg_game))
+        processors.add(DungeonCombatFinalizeSystem(tcg_game))  # 战斗结束
         processors.add(PostActionSystem(tcg_game))
         ###### 动作结束！！！！！################################################################################################
 
@@ -211,7 +209,7 @@ class TCGGameProcessPipeline(Processors):
         processors.add(DungeonStagePlanningSystem(tcg_game))
 
         ## 角色相关的规划，跟战斗相关的规划。
-        processors.add(DungeonCombatPreparationSystem(tcg_game))
+        processors.add(DungeonCombatKickOffSystem(tcg_game))
         processors.add(DungeonCombatCompleteSystem(tcg_game))
 
         # 可能需要改一改，换个位置。

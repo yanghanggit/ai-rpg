@@ -59,7 +59,7 @@ def _generate_prompt(
 
 ###################################################################################################################################################################
 @final
-class DungeonCombatPreparationSystem(ExecuteProcessor):
+class DungeonCombatKickOffSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
@@ -73,7 +73,7 @@ class DungeonCombatPreparationSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
 
-        if not self._game.combat_system.is_preparation_phase:
+        if not self._game.combat_system.is_kickoff_phase:
             # 不是本阶段就直接返回
             return
 
@@ -89,7 +89,7 @@ class DungeonCombatPreparationSystem(ExecuteProcessor):
         await self._process_requests(actor_entities)
 
         # 开始战斗
-        self._game.combat_system.combat_go()
+        self._game.combat_system.combat_ongoing()
 
     ###################################################################################################################################################################
     # 所有参与战斗的角色！

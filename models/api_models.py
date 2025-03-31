@@ -1,6 +1,6 @@
 from typing import List
 from pydantic import BaseModel
-from player.client_message import BaseClientMessage
+from player.client_message import ClientMessage
 
 
 ################################################################################################################
@@ -68,7 +68,7 @@ class StartRequest(BaseModel):
 
 
 class StartResponse(BaseModel):
-    client_messages: List[BaseClientMessage] = []
+    client_messages: List[ClientMessage] = []
     error: int = 0
     message: str = ""
 

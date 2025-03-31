@@ -74,3 +74,79 @@
 主要关联：Dexterity (DEX)
 说明：影响角色躲避攻击的能力，越灵巧的身手能够避免更多伤害。
 
+
+
+# hi, 我目前在做python的开发，我遇到了关于BaseModel的问题。请你帮我解决一下。
+## 问题描述，代码如下
+```python
+
+from enum import StrEnum, unique
+from typing import Dict, List, final
+from pydantic import BaseModel
+from models.event_models import BaseEvent
+
+@final
+@unique
+class ClientMessageType(StrEnum):
+    NONE = "None"
+    AGENT_EVENT = "AgentEvent"
+    MAPPING = "Mapping"
+
+class BaseClientMessage(BaseModel):
+    type: ClientMessageType = ClientMessageType.NONE
+
+class MappingMessage(BaseClientMessage):
+    type: ClientMessageType = ClientMessageType.MAPPING
+    data: Dict[str, List[str]] = {}
+
+class StartResponse(BaseModel):
+    client_messages: List[BaseClientMessage] = []
+    error: int = 0
+    message: str = ""
+
+
+测试代码。
+
+from typing import List
+from player.client_message import BaseClientMessage, MappingMessage
+from models.api_models import StartResponse
+from loguru import logger
+
+
+def _test_base_model() -> None:
+
+    ## 测试消息
+    test: List[BaseClientMessage] = [
+        MappingMessage(
+            type="Mapping",
+            data={
+                "agent1": ["agent2", "agent3"],
+                "agent2": ["agent1"],
+                "agent3": ["agent1"],
+            },
+        )
+    ]
+
+    ret = StartResponse(
+        client_messages=test,
+        error=0,
+        message=f"启动游戏成功！!=",
+    )
+
+    logger.debug(f"start/v1:game start, ret: \n{ret.model_dump_json()}")
+
+    logger.info("Hello World!")
+
+if __name__ == "__main__":
+    _test_base_model()
+```
+
+## 错误提示如下
+```
+2025-03-31 13:00:00.996 | DEBUG    | __main__:_test_base_model:27 - start/v1:game start, ret: 
+{"client_messages":[{"type":"Mapping"}],"error":0,"message":"启动游戏成功！!="}
+2025-03-31 13:00:09.926 | INFO     | __main__:_test_base_model:29 - Hello World!
+```
+## 我的问题：
+1. 在上面的代码中，MappingMessage的data字段没有被序列化。
+2. 我希望你帮我分析一下这个问题。我的需求是data字段能被序列化。请给我解决方案。

@@ -1,39 +1,25 @@
-from enum import StrEnum, unique
+from enum import IntEnum, unique
 from typing import Dict, List, final
 from pydantic import BaseModel
 from models.event_models import BaseEvent
 
 
-###############################################################################################################################################
 @final
 @unique
-class ClientMessageType(StrEnum):
-    NONE = "None"
-    AGENT_EVENT = "AgentEvent"
-    MAPPING = "Mapping"
+class ClientMessageHead(IntEnum):
+    NONE = 0
+    AGENT_EVENT = 1
+    MAPPING = 2
 
 
-##########################################################################################################################################################
-# 根类 连接 player 与 entity的 2个大部分。
-class BaseClientMessage(BaseModel):
-    type: ClientMessageType = ClientMessageType.NONE
+class ClientMessage(BaseModel):
+    head: int = ClientMessageHead.NONE
+    body: str = ""
 
 
-##########################################################################################################################################################
-##########################################################################################################################################################
-##########################################################################################################################################################
-##########################################################################################################################################################
-##########################################################################################################################################################
-class AgentEventMessage(BaseClientMessage):
-    type: ClientMessageType = ClientMessageType.AGENT_EVENT
+class AgentEventMessage(BaseModel):
     agent_event: BaseEvent = BaseEvent(message="")
 
 
-##########################################################################################################################################################
-# 测试用！！
-class MappingMessage(BaseClientMessage):
-    type: ClientMessageType = ClientMessageType.MAPPING
-    mapping: Dict[str, List[str]] = {}
-
-
-##########################################################################################################################################################
+class MappingMessage(BaseModel):
+    data: Dict[str, List[str]] = {}

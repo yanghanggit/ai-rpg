@@ -1,4 +1,6 @@
+from typing import List
 from pydantic import BaseModel
+from player.client_message import BaseClientMessage
 
 
 ################################################################################################################
@@ -57,6 +59,8 @@ class LogoutResponse(BaseModel):
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################
+
+
 class StartRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
@@ -64,6 +68,7 @@ class StartRequest(BaseModel):
 
 
 class StartResponse(BaseModel):
+    client_messages: List[BaseClientMessage] = []
     error: int = 0
     message: str = ""
 

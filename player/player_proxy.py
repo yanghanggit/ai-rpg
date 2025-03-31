@@ -1,12 +1,15 @@
-from typing import Final, List
+from typing import Dict, Final, List
 from loguru import logger
 from models.event_models import BaseEvent
+from player.client_message import (
+    ClientMessageType,
+    AgentEventMessage,
+    MappingMessage,
+    BaseClientMessage,
+)
 
-# from player.player_command import PlayerCommand
 
-# from models.player_notification import PlayerNotification
-
-
+##########################################################################################################################################################
 class PlayerProxy:
 
     def __init__(
@@ -15,10 +18,7 @@ class PlayerProxy:
     ) -> None:
 
         self._name: Final[str] = name
-
-        # self._commands: List[PlayerCommand] = []
-
-        self._events: List[BaseEvent] = []
+        self._client_messages: List[BaseClientMessage] = []
 
     # ##########################################################################################################################################################
     @property
@@ -26,13 +26,27 @@ class PlayerProxy:
         return self._name
 
     ##########################################################################################################################################################
-    # def add_command(self, command: PlayerCommand) -> None:
-    #     logger.debug(f"add_player_command: {command}")
-    #     self._commands.append(command)
+    def add_agent_event(self, event: BaseEvent) -> None:
+        logger.info(f"{self._name}, add_agent_event: {event}")
+        self._client_messages.append(
+            AgentEventMessage(type=ClientMessageType.AGENT_EVENT, agent_event=event)
+        )
 
     ##########################################################################################################################################################
-    def add_event(self, event: BaseEvent) -> None:
-        logger.debug(f"{self._name}, add_notification: {event}")
-        self._events.append(event)
+    def add_mapping(self, mapping: Dict[str, List[str]]) -> None:
+        logger.info(f"{self._name}, add_mapping: {mapping}")
+        self._client_messages.append(
+            MappingMessage(type=ClientMessageType.MAPPING, mapping=mapping)
+        )
+        
+    ##########################################################################################################################################################
+    def clear_client_messages(self) -> None:
+        logger.info(f"{self._name}, clear_client_messages")
+        self._client_messages = []
+
+    ##########################################################################################################################################################
+    @property
+    def client_messages(self) -> List[BaseClientMessage]:
+        return self._client_messages
 
     ##########################################################################################################################################################

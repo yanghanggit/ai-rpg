@@ -626,13 +626,10 @@ class TCGGame(BaseGame, TCGGameContext):
             # 针对agent的事件通知。
             replace_message = _replace_with_you(agent_event.message, entity._name)
             self.append_human_message(entity, replace_message)
-            # logger.warning(f"事件通知 => {entity._name}:\n{replace_message}")
 
             # 如果是玩家，就要补充一个事件信息，用于客户端接收
             if entity.has(PlayerComponent):
-                # player_comp = entity.get(PlayerComponent)
-                # assert player_comp.player_name == self.player.name
-                self.player.add_event(event=agent_event)
+                self.player.add_agent_event(event=agent_event)
 
     ###############################################################################################################################################
     # 传送角色set里的角色到指定场景，游戏层面的行为，会添加记忆但不会触发action

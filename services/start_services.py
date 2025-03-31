@@ -1,19 +1,10 @@
-from typing import Dict, List
 from fastapi import APIRouter
-from pydantic import BaseModel
 from services.game_server_instance import GameServerInstance
 from models.api_models import StartRequest, StartResponse
 from loguru import logger
 
-
-# 测试用！！
-class Mapping(BaseModel):
-    names_mapping: Dict[str, List[str]] = {}
-
-
 ###################################################################################################################################################################
 start_router = APIRouter()
-
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
@@ -58,16 +49,22 @@ async def start(
             message="游戏已经开始",
         )
 
-    # 这里是启动游戏的逻辑
+    # 这里是启动游戏的逻辑，防止反复启动。
     room._game.start = True
+    
+    # 先清除掉之前的消息。
+    room._game.player.clear_client_messages()
 
-    # 测试数据。
-    mapping_data = Mapping()
-    mapping_data.names_mapping = room._game.retrieve_stage_actor_names_mapping()
-
+    # 添加全局地图的数据。
+    names_mapping = room._game.retrieve_stage_actor_names_mapping()
+    assert len(names_mapping) > 0, f"没有找到任何角色名称映射数据！"
+    room._game.player.add_mapping(names_mapping)
+    
+    # 返回正确的数据。
     return StartResponse(
+        client_messages=room._game.player.client_messages,
         error=0,
-        message=f"启动游戏成功！！！！ = {mapping_data.model_dump_json()}",
+        message=f"启动游戏成功！!= {';'.join([message.model_dump_json() for message in room._game.player.client_messages])}",
     )
 
 

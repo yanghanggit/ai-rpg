@@ -16,6 +16,7 @@ class APIEndpointConfiguration(BaseModel):
     LOGOUT_URL: str = ""
     START_URL: str = ""
     HOME_RUN_URL: str = ""
+    HOME_TRANS_DUNGEON_URL: str = ""
 
 
 class APIEndpointConfigurationResponse(BaseModel):
@@ -85,6 +86,22 @@ class HomeRunRequest(BaseModel):
 
 
 class HomeRunResponse(BaseModel):
+    client_messages: List[ClientMessage] = []
+    error: int = 0
+    message: str = ""
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+
+class HomeTransDungeonRequest(BaseModel):
+    user_name: str = ""
+    game_name: str = ""
+
+
+class HomeTransDungeonResponse(BaseModel):
     client_messages: List[ClientMessage] = []
     error: int = 0
     message: str = ""

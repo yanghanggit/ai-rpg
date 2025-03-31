@@ -120,7 +120,7 @@ class KickOffSystem(ExecuteProcessor):
             entity2.replace(KickOffDoneComponent, entity2._name)
 
             # 若是场景，用response替换narrate
-            if entity2.has(StageComponent):
+            if entity2.has(StageComponent) and request_handler.response_content != "":
                 entity2.replace(
                     StageEnvironmentComponent,
                     entity2._name,

@@ -5,7 +5,7 @@ from game.tcg_game import TCGGame
 
 
 @final
-class PrePlanningSystem(ExecuteProcessor):
+class HomePrePlanningSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context

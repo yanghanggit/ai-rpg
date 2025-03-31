@@ -31,25 +31,28 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.pre_action_system import PreActionSystem
         from tcg_game_systems.post_action_system import PostActionSystem
         from tcg_game_systems.destroy_entity_system import DestroyEntitySystem
-        from tcg_game_systems.pre_planning_system import PrePlanningSystem
-        from tcg_game_systems.post_planning_system import PostPlanningSystem
+        from tcg_game_systems.home_pre_planning_system import HomePrePlanningSystem
+        from tcg_game_systems.home_post_planning_system import HomePostPlanningSystem
 
-        from tcg_game_systems.stage_planning_system import (
-            StagePlanningSystem,
+        from tcg_game_systems.home_stage_planning_system import (
+            HomeStagePlanningSystem,
         )
-        from tcg_game_systems.actor_planning_system import (
-            ActorPlanningSystem,
-        )
-
-        from tcg_game_systems.actor_permit_system import (
-            ActorPermitSystem,
+        from tcg_game_systems.home_actor_planning_system import (
+            HomeActorPlanningSystem,
         )
 
-        from tcg_game_systems.stage_permit_system import (
-            StagePermitSystem,
+        from tcg_game_systems.home_actor_permit_system import (
+            HomeActorPermitSystem,
+        )
+
+        from tcg_game_systems.home_stage_permit_system import (
+            HomeStagePermitSystem,
         )
         from tcg_game_systems.whisper_action_system import WhisperActionSystem
         from tcg_game_systems.announce_action_system import AnnounceActionSystem
+        from tcg_game_systems.terminal_player_interrupt_wait_system import (
+            TerminalPlayerInterruptWaitSystem,
+        )
 
         ##
         tcg_game = cast(TCGGame, game)
@@ -82,15 +85,18 @@ class TCGGameProcessPipeline(Processors):
         # 存储系统。
         processors.add(SaveSystem(tcg_game))
 
+        # yh 调试用。因为后面要消耗tokens，如果不需要就在这里停掉。
+        processors.add(TerminalPlayerInterruptWaitSystem(tcg_game))
+
         # 规划逻辑
         ######## 在所有规划之前!##############################################################
         ####################################################################################
-        processors.add(PrePlanningSystem(tcg_game))
-        processors.add(StagePermitSystem(tcg_game))
-        processors.add(ActorPermitSystem(tcg_game))
-        processors.add(StagePlanningSystem(tcg_game))
-        processors.add(ActorPlanningSystem(tcg_game))
-        processors.add(PostPlanningSystem(tcg_game))
+        processors.add(HomePrePlanningSystem(tcg_game))
+        processors.add(HomeStagePermitSystem(tcg_game))
+        processors.add(HomeActorPermitSystem(tcg_game))
+        processors.add(HomeStagePlanningSystem(tcg_game))
+        processors.add(HomeActorPlanningSystem(tcg_game))
+        processors.add(HomePostPlanningSystem(tcg_game))
         ####### 在所有规划之后!
         ####################################################################################
         ####################################################################################
@@ -124,8 +130,9 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.post_action_system import PostActionSystem
         from tcg_game_systems.destroy_entity_system import DestroyEntitySystem
         from tcg_game_systems.death_system import DeathSystem
-        from tcg_game_systems.pre_planning_system import PrePlanningSystem
-        from tcg_game_systems.post_planning_system import PostPlanningSystem
+
+        # from tcg_game_systems.home_pre_planning_system import HomePrePlanningSystem
+        # from tcg_game_systems.home_post_planning_system import HomePostPlanningSystem
         from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
         from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
         from tcg_game_systems.turn_action_system import TurnActionSystem
@@ -202,9 +209,9 @@ class TCGGameProcessPipeline(Processors):
         processors.add(TerminalPlayerInterruptWaitSystem(tcg_game))
 
         # 规划逻辑
-        processors.add(
-            PrePlanningSystem(tcg_game)
-        )  ################################################## 在所有规划之前!##################################################
+        # processors.add(
+        #     PrePlanningSystem(tcg_game)
+        # )  ################################################## 在所有规划之前!##################################################
 
         processors.add(DungeonStagePlanningSystem(tcg_game))
 
@@ -215,9 +222,9 @@ class TCGGameProcessPipeline(Processors):
         # 可能需要改一改，换个位置。
         # processors.add(DungeonCombatDrawCardSystem(tcg_game))
 
-        processors.add(
-            PostPlanningSystem(tcg_game)
-        )  ################################################## 在所有规划之后!##################################################
+        # processors.add(
+        #     PostPlanningSystem(tcg_game)
+        # )  ################################################## 在所有规划之后!##################################################
 
         # 结束
         processors.add(EndSystem(tcg_game))

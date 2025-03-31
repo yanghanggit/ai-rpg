@@ -15,7 +15,7 @@ from loguru import logger
 
 #######################################################################################################################################
 @final
-class ActorPermitSystem(ExecuteProcessor):
+class HomeActorPermitSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context

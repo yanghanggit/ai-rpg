@@ -7,6 +7,7 @@ from models.v_0_0_1 import Skill, StatusEffect
 SCHEMA_VERSION: Final[str] = "0.0.1"
 
 
+############################################################################################################
 # 全局唯一标识符
 @final
 @register_component_class

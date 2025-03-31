@@ -1,3 +1,4 @@
+from loguru import logger
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from typing import Final, FrozenSet, NamedTuple, final, override
 from game.tcg_game import TCGGame
@@ -28,6 +29,9 @@ class PostActionSystem(ExecuteProcessor):
         for entity in entities:
             for action_class in registered_actions:
                 if entity.has(action_class):
+                    logger.debug(
+                        f"PostActionSystem: 清理动作: {action_class} from entity: {entity._name}"
+                    )
                     entity.remove(action_class)
 
     ############################################################################################################

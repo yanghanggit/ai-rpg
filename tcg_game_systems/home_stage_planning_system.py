@@ -52,7 +52,7 @@ def _compress_stage_plan_prompt(prompt: str) -> str:
 
 #######################################################################################################################################
 @final
-class StagePlanningSystem(ExecuteProcessor):
+class HomeStagePlanningSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context

@@ -1,15 +1,12 @@
 from overrides import final
 from pydantic import BaseModel
-from typing import Any, List
-
-
-# 根类 连接 player 与 entity的 2个大部分。
-class BaseEvent(BaseModel):
-    message: str
+from typing import Any
 
 
 # 广播用的实现，这里只是一个例子，实际上可能会有很多不同的实现
-class AgentEvent(BaseEvent):
+class AgentEvent(BaseModel):
+
+    message: str
 
     def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         data = super().model_dump(*args, **kwargs)

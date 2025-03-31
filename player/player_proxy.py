@@ -1,9 +1,9 @@
 from typing import Dict, Final, List
 from loguru import logger
-from models.event_models import BaseEvent
+from models.event_models import AgentEvent
 from player.client_message import (
     ClientMessageHead,
-    AgentEventMessage,
+    # AgentEventMessage,
     MappingMessage,
     ClientMessage,
 )
@@ -26,13 +26,12 @@ class PlayerProxy:
         return self._name
 
     ##########################################################################################################################################################
-    def add_agent_event(self, event: BaseEvent) -> None:
-        logger.info(f"{self._name}, add_agent_event: {event}")
-        agent_event_message = AgentEventMessage(agent_event=event)
+    def add_agent_event(self, agent_event: AgentEvent) -> None:
+        logger.info(f"{self._name}, add_agent_event: {agent_event}")
         self._client_messages.append(
             ClientMessage(
                 head=ClientMessageHead.AGENT_EVENT,
-                body=agent_event_message.model_dump_json(),
+                body=agent_event.model_dump_json(),
             )
         )
 

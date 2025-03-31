@@ -629,7 +629,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 如果是玩家，就要补充一个事件信息，用于客户端接收
             if entity.has(PlayerComponent):
-                self.player.add_agent_event(event=agent_event)
+                self.player.add_agent_event(agent_event=agent_event)
 
     ###############################################################################################################################################
     # 传送角色set里的角色到指定场景，游戏层面的行为，会添加记忆但不会触发action

@@ -16,6 +16,7 @@ from components.actions_v_0_0_1 import (
     WhisperAction,
     AnnounceAction,
 )
+import random
 
 
 #######################################################################################################################################
@@ -28,7 +29,7 @@ class ActorPlanningResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _generate_actor_plan_prompt(
+def _generate_prompt(
     current_stage: str,
     current_stage_narration: str,
     actors_appearance_mapping: Dict[str, str],
@@ -70,7 +71,7 @@ def _generate_actor_plan_prompt(
 
 
 #######################################################################################################################################
-def _compress_actor_plan_prompt(
+def _compress_prompt(
     prompt: str,
 ) -> str:
     return "# 请做出你的计划，决定你将要做什么，并以 JSON 格式输出。"
@@ -103,7 +104,17 @@ class HomeActorPlanningSystem(ExecuteProcessor):
                     ActorPermitComponent,
                 ],
             )
-        ).entities
+        ).entities.copy()
+
+        if len(actor_entities) == 0:
+            logger.debug(f"HomeActorPlanningSystem: 没有 ActorPermitComponent 的角色。")
+            return
+
+        # 特殊处理：随机一个。
+        random_one = random.choice(list(actor_entities))
+
+        # 然后替换掉。编程1个。
+        actor_entities = set({random_one})
 
         # 处理角色规划请求
         request_handlers: List[ChatRequestHandler] = self._generate_chat_requests(
@@ -115,6 +126,14 @@ class HomeActorPlanningSystem(ExecuteProcessor):
 
         # 处理角色规划请求
         self._handle_chat_responses(request_handlers)
+
+        # 清除 ActorPermitComponent
+        for actor in actor_entities:
+            if actor.has(ActorPermitComponent):
+                logger.debug(
+                    f"HomeActorPlanningSystem: ActorPermitComponent: {actor._name}，处理完毕，移除 ActorPermitComponent。"
+                )
+                actor.remove(ActorPermitComponent)
 
     #######################################################################################################################################
     def _handle_chat_responses(
@@ -148,7 +167,7 @@ class HomeActorPlanningSystem(ExecuteProcessor):
             )
 
             self._game.append_human_message(
-                entity2, _compress_actor_plan_prompt(request_handler._prompt)
+                entity2, _compress_prompt(request_handler._prompt)
             )
             self._game.append_ai_message(entity2, request_handler.response_content)
 
@@ -198,7 +217,7 @@ class HomeActorPlanningSystem(ExecuteProcessor):
             actors_apperances_mapping.pop(entity._name, None)
 
             # 生成消息
-            message = _generate_actor_plan_prompt(
+            message = _generate_prompt(
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
                 actors_apperances_mapping,

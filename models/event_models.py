@@ -1,17 +1,20 @@
+from enum import IntEnum, unique
 from overrides import final
 from pydantic import BaseModel
-from typing import Any
 
 
-# 广播用的实现，这里只是一个例子，实际上可能会有很多不同的实现
+@final
+@unique
+class AgentEventHead(IntEnum):
+    NONE = 0
+    SPEAK_EVENT = 1
+    WHISPER_EVENT = 2
+    ANNOUNCE_EVENT = 3
+
+
 class AgentEvent(BaseModel):
-
+    head: int = AgentEventHead.NONE
     message: str
-
-    def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
-        data = super().model_dump(*args, **kwargs)
-        data["class_name"] = self.__class__.__name__
-        return data
 
 
 # 以下是一些具体的事件-------------------------------------------------------------
@@ -25,6 +28,7 @@ class AgentEvent(BaseModel):
 # 说话事件
 @final
 class SpeakEvent(AgentEvent):
+    head: int = AgentEventHead.SPEAK_EVENT
     speaker: str
     listener: str
     dialogue: str
@@ -34,6 +38,7 @@ class SpeakEvent(AgentEvent):
 # 耳语事件
 @final
 class WhisperEvent(AgentEvent):
+    head: int = AgentEventHead.WHISPER_EVENT
     speaker: str
     listener: str
     dialogue: str
@@ -43,6 +48,7 @@ class WhisperEvent(AgentEvent):
 # 宣布事件
 @final
 class AnnounceEvent(AgentEvent):
+    head: int = AgentEventHead.ANNOUNCE_EVENT
     announcement_speaker: str
     event_stage: str
     announcement_message: str

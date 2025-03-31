@@ -19,6 +19,7 @@ from models.v_0_0_1 import (
     StageType,
 )
 from components.components_v_0_0_1 import (
+    ActorPermitComponent,
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
@@ -678,6 +679,12 @@ class TCGGame(BaseGame, TCGGameContext):
                     message=f"# 发生事件！{actor_entity._name} 从 场景: {current_stage._name} 离开，然后进入了 场景: {stage_destination._name}",
                 ),
             )
+
+            if actor_entity.has(ActorPermitComponent):
+                logger.debug(
+                    f"stage_transition: {actor_entity._name} 有 ActorPermitComponent了，传送前删除。"
+                )
+                actor_entity.remove(ActorPermitComponent)
 
         # 传送后处理
         for actor_entity in actors:

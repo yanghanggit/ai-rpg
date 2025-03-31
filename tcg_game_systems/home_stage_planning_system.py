@@ -81,7 +81,7 @@ class HomeStagePlanningSystem(ExecuteProcessor):
                     StagePermitComponent,
                 ]
             )
-        ).entities
+        ).entities.copy()
 
         request_handlers: List[ChatRequestHandler] = (
             self._generate_chat_request_handlers(stage_entities)
@@ -137,7 +137,6 @@ class HomeStagePlanningSystem(ExecuteProcessor):
         self, entity2: Entity, request_handler: ChatRequestHandler
     ) -> None:
 
-        # 核心处理
         try:
 
             format_response = StagePlanningResponse.model_validate_json(
@@ -145,10 +144,6 @@ class HomeStagePlanningSystem(ExecuteProcessor):
                     request_handler.response_content
                 )
             )
-
-            # logger.warning(
-            #     f"Stage: {entity2._name}, Response:\n{format_response.model_dump_json()}"
-            # )
 
             self._game.append_human_message(
                 entity2, _compress_stage_plan_prompt(request_handler._prompt)

@@ -3,7 +3,6 @@ from loguru import logger
 from models.event_models import AgentEvent
 from player.client_message import (
     ClientMessageHead,
-    # AgentEventMessage,
     MappingMessage,
     ClientMessage,
 )
@@ -27,7 +26,7 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     def add_agent_event(self, agent_event: AgentEvent) -> None:
-        logger.info(f"{self._name}, add_agent_event: {agent_event}")
+        logger.info(f"{self._name}, add_agent_event: {agent_event.model_dump_json()}")
         self._client_messages.append(
             ClientMessage(
                 head=ClientMessageHead.AGENT_EVENT,

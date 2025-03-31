@@ -68,6 +68,19 @@ class TCGGameProcessPipeline(Processors):
         # 启动agent的提示词。启动阶段
         processors.add(KickOffSystem(tcg_game))
 
+        # 规划逻辑
+        ######## 在所有规划之前!##############################################################
+        processors.add(
+            TerminalPlayerInterruptWaitSystem(tcg_game)
+        )  # yh 调试用。因为后面要消耗tokens，如果不需要就在这里停掉。
+        processors.add(HomePrePlanningSystem(tcg_game))
+        processors.add(HomeStagePermitSystem(tcg_game))
+        processors.add(HomeActorPermitSystem(tcg_game))
+        processors.add(HomeStagePlanningSystem(tcg_game))
+        processors.add(HomeActorPlanningSystem(tcg_game))
+        processors.add(HomePostPlanningSystem(tcg_game))
+        ####### 在所有规划之后! ##############################################################
+
         # 动作处理相关的系统 ##################################################################
         ####################################################################################
         processors.add(PreActionSystem(tcg_game))
@@ -85,22 +98,7 @@ class TCGGameProcessPipeline(Processors):
         # 存储系统。
         processors.add(SaveSystem(tcg_game))
 
-        # yh 调试用。因为后面要消耗tokens，如果不需要就在这里停掉。
-        processors.add(TerminalPlayerInterruptWaitSystem(tcg_game))
-
-        # 规划逻辑
-        ######## 在所有规划之前!##############################################################
-        ####################################################################################
-        processors.add(HomePrePlanningSystem(tcg_game))
-        processors.add(HomeStagePermitSystem(tcg_game))
-        processors.add(HomeActorPermitSystem(tcg_game))
-        processors.add(HomeStagePlanningSystem(tcg_game))
-        processors.add(HomeActorPlanningSystem(tcg_game))
-        processors.add(HomePostPlanningSystem(tcg_game))
-        ####### 在所有规划之后!
-        ####################################################################################
-        ####################################################################################
-
+        # 结束
         processors.add(EndSystem(tcg_game))
 
         return processors
@@ -130,9 +128,6 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.post_action_system import PostActionSystem
         from tcg_game_systems.destroy_entity_system import DestroyEntitySystem
         from tcg_game_systems.death_system import DeathSystem
-
-        # from tcg_game_systems.home_pre_planning_system import HomePrePlanningSystem
-        # from tcg_game_systems.home_post_planning_system import HomePostPlanningSystem
         from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
         from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
         from tcg_game_systems.turn_action_system import TurnActionSystem
@@ -208,23 +203,11 @@ class TCGGameProcessPipeline(Processors):
         # yh 调试用。因为后面要消耗tokens，如果不需要就在这里停掉。
         processors.add(TerminalPlayerInterruptWaitSystem(tcg_game))
 
-        # 规划逻辑
-        # processors.add(
-        #     PrePlanningSystem(tcg_game)
-        # )  ################################################## 在所有规划之前!##################################################
-
         processors.add(DungeonStagePlanningSystem(tcg_game))
 
         ## 角色相关的规划，跟战斗相关的规划。
         processors.add(DungeonCombatKickOffSystem(tcg_game))
         processors.add(DungeonCombatCompleteSystem(tcg_game))
-
-        # 可能需要改一改，换个位置。
-        # processors.add(DungeonCombatDrawCardSystem(tcg_game))
-
-        # processors.add(
-        #     PostPlanningSystem(tcg_game)
-        # )  ################################################## 在所有规划之后!##################################################
 
         # 结束
         processors.add(EndSystem(tcg_game))

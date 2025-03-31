@@ -2,13 +2,9 @@ from entitas import ExecuteProcessor, Entity  # type: ignore
 from overrides import override
 from typing import final, Set
 from game.tcg_game import TCGGame
-import random
 from components.components_v_0_0_1 import (
     ActorComponent,
     ActorPermitComponent,
-    # EnterStageComponent,
-    DungeonComponent,
-    HomeComponent,
 )
 from loguru import logger
 
@@ -23,33 +19,36 @@ class HomeActorPermitSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     def execute(self) -> None:
+        self._assign_actor_permits()
+
+    #######################################################################################################################################
+    def _assign_actor_permits(self) -> None:
 
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
 
-        current_stage_entity = self._game.safe_get_stage_entity(player_entity)
-        assert current_stage_entity is not None
-        if current_stage_entity is None:
-            return
+        actors_on_stage = self._game.retrieve_actors_on_stage(player_entity)
 
-        assert not current_stage_entity.has(DungeonComponent)
-        assert current_stage_entity.has(HomeComponent)
+        # 获取目前有 ActorPermitComponent 的actor
+        permit_actors: Set[Entity] = set()
+        for actor in actors_on_stage:
+            if actor.has(ActorPermitComponent):
+                permit_actors.add(actor)
+                logger.debug(
+                    f"HomeActorPermitSystem: ActorPermitComponent: {actor.get(ActorPermitComponent).name}，已经有 ActorPermitComponent。"
+                )
+            else:
+                logger.debug(
+                    f"HomeActorPermitSystem: ActorPermitComponent: {actor.get(ActorComponent).name}，没有 ActorPermitComponent。"
+                )
 
-        # 得到所有在玩家所在stage的actor
-        actors = list(self._game.retrieve_stage_actor_mapping()[current_stage_entity])
-        if len(actors) == 0:
-            return
-
-        random_actor = random.choice(actors)
-        self._add_permit({random_actor})
-
-    #######################################################################################################################################
-    def _add_permit(self, entities: Set[Entity]) -> None:
-
-        for entity in entities:
-            entity.replace(
-                ActorPermitComponent,
-                entity.get(ActorComponent).name,
-            )
-
+        # 如果没有 ActorPermitComponent 的actor，给所有的actor添加 ActorPermitComponent
+        if len(permit_actors) == 0:
+            # 如果清空了，就刷新一遍给所有的actor添加 ActorPermitComponent
+            permit_actors = actors_on_stage
+            for actor in permit_actors:
+                actor.replace(
+                    ActorPermitComponent,
+                    actor._name,
+                )
     #######################################################################################################################################

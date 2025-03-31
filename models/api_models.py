@@ -85,6 +85,7 @@ class HomeRunRequest(BaseModel):
 
 
 class HomeRunResponse(BaseModel):
+    client_messages: List[ClientMessage] = []
     error: int = 0
     message: str = ""
 

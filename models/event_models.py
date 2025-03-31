@@ -10,6 +10,7 @@ class AgentEventHead(IntEnum):
     SPEAK_EVENT = 1
     WHISPER_EVENT = 2
     ANNOUNCE_EVENT = 3
+    MIND_VOICE_EVENT = 4
 
 
 class AgentEvent(BaseModel):
@@ -52,3 +53,15 @@ class AnnounceEvent(AgentEvent):
     announcement_speaker: str
     event_stage: str
     announcement_message: str
+
+
+####################################################################################################################################
+# 心灵语音事件
+@final
+class MindVoiceEvent(AgentEvent):
+    head: int = AgentEventHead.MIND_VOICE_EVENT
+    speaker: str
+    dialogue: str
+
+
+####################################################################################################################################

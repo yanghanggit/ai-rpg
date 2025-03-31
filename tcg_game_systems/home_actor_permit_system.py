@@ -51,4 +51,5 @@ class HomeActorPermitSystem(ExecuteProcessor):
                     ActorPermitComponent,
                     actor._name,
                 )
+
     #######################################################################################################################################

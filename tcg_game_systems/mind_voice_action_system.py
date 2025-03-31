@@ -4,8 +4,10 @@ from components.actions_v_0_0_1 import (
 )
 from typing import final, override
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
-from loguru import logger
 from components.components_v_0_0_1 import ActorComponent
+from models.event_models import MindVoiceEvent
+
+# from loguru import logger
 
 
 ####################################################################################################################################
@@ -32,8 +34,13 @@ class MindVoiceActionSystem(BaseActionReactiveSystem):
     def _process_action(self, entity: Entity) -> None:
         mind_voice_action = entity.get(MindVoiceAction)
         assert mind_voice_action is not None
-        logger.debug(
-            f"MindVoiceActionSystem:\n{mind_voice_action.name}:\n{mind_voice_action.data}"
+        self._game.notify_event(
+            set({entity}),
+            MindVoiceEvent(
+                message=f"{mind_voice_action.name}:{mind_voice_action.data}",
+                speaker=mind_voice_action.name,
+                dialogue=mind_voice_action.data,
+            ),
         )
 
     ####################################################################################################################################

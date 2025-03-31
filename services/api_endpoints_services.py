@@ -28,6 +28,7 @@ async def api_endpoints(
         TEST_URL=f"http://{server_ip_address}:{server_port}/test/v1/",
         LOGIN_URL=f"http://{server_ip_address}:{server_port}/login/v1/",
         LOGOUT_URL=f"http://{server_ip_address}:{server_port}/logout/v1/",
+        START_URL=f"http://{server_ip_address}:{server_port}/start/v1/",
         HOME_RUN_URL=f"http://{server_ip_address}:{server_port}/home/run/v1/",
     )
 

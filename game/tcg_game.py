@@ -1,7 +1,7 @@
 from enum import Enum, IntEnum, unique
 import shutil
 from entitas import Entity, Matcher  # type: ignore
-from typing import Any, Final, Set, List, Optional, final
+from typing import Any, Dict, Final, Set, List, Optional, final
 from overrides import override
 from loguru import logger
 from game.tcg_game_context import TCGGameContext
@@ -898,5 +898,21 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 开始传送。
         self.stage_transition(heros_entities, stage_entity)
+
+    ###############################################################################################################################################
+    def retrieve_stage_actor_names_mapping(self) -> Dict[str, List[str]]:
+
+        entities_mapping = self.retrieve_stage_actor_mapping()
+        if len(entities_mapping) == 0:
+            return {}
+
+        names_mapping: Dict[str, List[str]] = {}
+
+        for stage_entity, actor_entities in entities_mapping.items():
+            actor_names = {actor_entity._name for actor_entity in actor_entities}
+            stage_name = stage_entity._name
+            names_mapping[stage_name] = list(actor_names)
+
+        return names_mapping
 
     ###############################################################################################################################################

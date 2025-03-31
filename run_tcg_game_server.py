@@ -15,7 +15,8 @@ def main(game_server: GameServerInstance) -> None:
 
     from services.api_endpoints_services import api_endpoints_router
     from services.login_services import login_router
-    from services.home_services import home_services_router
+    from services.home_gameplay_services import home_gameplay_router
+    from services.start_services import start_router
 
     # get测试。
     # 指向包含 runtime.json 的目录
@@ -41,7 +42,8 @@ def main(game_server: GameServerInstance) -> None:
     # API Endpoints
     game_server.fast_api.include_router(router=api_endpoints_router)
     game_server.fast_api.include_router(router=login_router)
-    game_server.fast_api.include_router(router=home_services_router)
+    game_server.fast_api.include_router(router=start_router)
+    game_server.fast_api.include_router(router=home_gameplay_router)
     # 加一些其他的。。。。。
 
     parser = argparse.ArgumentParser(description="启动 FastAPI 应用")

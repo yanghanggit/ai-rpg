@@ -31,7 +31,7 @@ async def login(
     game_server: GameServerInstance,
 ) -> LoginResponse:
 
-    logger.info(f"login: {request_data.model_dump_json()}")
+    logger.info(f"login/v1: {request_data.model_dump_json()}")
 
     room_manager = game_server.room_manager
 
@@ -74,8 +74,14 @@ async def login(
 
     # 房间正常完成, 新的游戏也准备好了。。。。
     new_room._game = web_game_session
-    logger.info(f"login: {request_data.user_name} create game = {new_room._game.name}")
+    player_entity = web_game_session.get_player_entity()
+    assert player_entity is not None
+
+    logger.info(
+        f"login: {request_data.user_name} create game = {new_room._game.name}, player = {web_game_session.player._name}, actor = {player_entity._name}"
+    )
     return LoginResponse(
+        actor=player_entity._name,
         error=0,
         message=new_room._game.world.model_dump_json(),
     )

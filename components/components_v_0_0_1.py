@@ -98,6 +98,7 @@ class AppearanceComponent(NamedTuple):
 @register_component_class
 class HomeComponent(NamedTuple):
     name: str
+    action_order: List[str]
 
 
 ############################################################################################################
@@ -125,18 +126,9 @@ class MonsterComponent(NamedTuple):
 
 
 ############################################################################################################
-# Actor专用，标记该Actor需要进行角色扮演推理（心理活动，说话...），如有需要，单独列入Plan
 @final
 @register_component_class
-class ActorPermitComponent(NamedTuple):
-    name: str
-
-
-############################################################################################################
-# State专用，标记该State需要进行场景描写推理，如有需要，单独列入Plan
-@final
-@register_component_class
-class StagePermitComponent(NamedTuple):
+class CanStartPlanningComponent(NamedTuple):
     name: str
 
 

@@ -2,8 +2,10 @@ from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from pydantic import BaseModel
 from extended_systems.chat_request_handler import ChatRequestHandler
 from components.components_v_0_0_1 import (
+    HomeComponent,
+    StageComponent,
     StageEnvironmentComponent,
-    StagePermitComponent,
+    CanStartPlanningComponent,
 )
 from overrides import override
 from typing import Dict, List, Set, final
@@ -76,11 +78,7 @@ class HomeStagePlanningSystem(ExecuteProcessor):
     async def _process_stage_planning_request(self) -> None:
 
         stage_entities = self._game.get_group(
-            Matcher(
-                all_of=[
-                    StagePermitComponent,
-                ]
-            )
+            Matcher(all_of=[CanStartPlanningComponent, StageComponent, HomeComponent])
         ).entities.copy()
 
         request_handlers: List[ChatRequestHandler] = (
@@ -96,11 +94,11 @@ class HomeStagePlanningSystem(ExecuteProcessor):
         self, stage_entities: Set[Entity]
     ) -> List[ChatRequestHandler]:
         request_handlers: List[ChatRequestHandler] = []
-        for entity in stage_entities:
+        for stage_entity in stage_entities:
 
             # 获取场景内角色的外貌信息
             actors_appearances_mapping: Dict[str, str] = (
-                self._game.retrieve_actor_appearance_on_stage_mapping(entity)
+                self._game.retrieve_actor_appearance_on_stage_mapping(stage_entity)
             )
 
             # 生成提示信息
@@ -109,10 +107,10 @@ class HomeStagePlanningSystem(ExecuteProcessor):
             # 生成请求处理器
             request_handlers.append(
                 ChatRequestHandler(
-                    name=entity._name,
+                    name=stage_entity._name,
                     prompt=message,
                     chat_history=self._game.get_agent_short_term_memory(
-                        entity
+                        stage_entity
                     ).chat_history,
                 )
             )

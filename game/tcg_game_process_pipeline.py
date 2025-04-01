@@ -40,14 +40,6 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.home_actor_planning_system import (
             HomeActorPlanningSystem,
         )
-
-        from tcg_game_systems.home_actor_permit_system import (
-            HomeActorPermitSystem,
-        )
-
-        from tcg_game_systems.home_stage_permit_system import (
-            HomeStagePermitSystem,
-        )
         from tcg_game_systems.whisper_action_system import WhisperActionSystem
         from tcg_game_systems.announce_action_system import AnnounceActionSystem
         from tcg_game_systems.terminal_player_interrupt_wait_system import (
@@ -74,8 +66,6 @@ class TCGGameProcessPipeline(Processors):
             TerminalPlayerInterruptWaitSystem(tcg_game)
         )  # yh 调试用。因为后面要消耗tokens，如果不需要就在这里停掉。
         processors.add(HomePrePlanningSystem(tcg_game))
-        processors.add(HomeStagePermitSystem(tcg_game))
-        processors.add(HomeActorPermitSystem(tcg_game))
         processors.add(HomeStagePlanningSystem(tcg_game))
         processors.add(HomeActorPlanningSystem(tcg_game))
         processors.add(HomePostPlanningSystem(tcg_game))

@@ -19,7 +19,6 @@ from models.v_0_0_1 import (
     StageType,
 )
 from components.components_v_0_0_1 import (
-    ActorPermitComponent,
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
@@ -496,7 +495,7 @@ class TCGGame(BaseGame, TCGGameContext):
             if prototype.type == StageType.DUNGEON:
                 stage_entity.add(DungeonComponent, instance.name)
             elif prototype.type == StageType.HOME:
-                stage_entity.add(HomeComponent, instance.name)
+                stage_entity.add(HomeComponent, instance.name, [])
 
             ## 重新设置Actor和stage的关系
             for actor_name in instance.actors:
@@ -680,11 +679,27 @@ class TCGGame(BaseGame, TCGGameContext):
                 ),
             )
 
-            if actor_entity.has(ActorPermitComponent):
-                logger.debug(
-                    f"stage_transition: {actor_entity._name} 有 ActorPermitComponent了，传送前删除。"
-                )
-                actor_entity.remove(ActorPermitComponent)
+            # 从当前的行动队列里移除
+            if current_stage.has(HomeComponent):
+                home_comp = current_stage.get(HomeComponent)
+                if actor_entity._name in home_comp.action_order:
+                    home_comp.action_order.remove(actor_entity._name)
+                    current_stage.replace(
+                        HomeComponent,
+                        home_comp.name,
+                        home_comp.action_order,
+                    )
+
+            # 加入到目标场景的行动队列里
+            if stage_destination.has(HomeComponent):
+                home_comp = stage_destination.get(HomeComponent)
+                if actor_entity._name not in home_comp.action_order:
+                    home_comp.action_order.append(actor_entity._name)
+                    stage_destination.replace(
+                        HomeComponent,
+                        home_comp.name,
+                        home_comp.action_order,
+                    )
 
         # 传送后处理
         for actor_entity in actors:

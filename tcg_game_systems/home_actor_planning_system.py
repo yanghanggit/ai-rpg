@@ -3,8 +3,9 @@ from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from extended_systems.chat_request_handler import ChatRequestHandler
 import format_string.json_format
 from components.components_v_0_0_1 import (
+    ActorComponent,
     StageEnvironmentComponent,
-    ActorPermitComponent,
+    CanStartPlanningComponent,
 )
 from overrides import override
 from typing import Dict, List, final
@@ -100,14 +101,11 @@ class HomeActorPlanningSystem(ExecuteProcessor):
         # 获取所有需要进行角色规划的角色
         actor_entities = self._game.get_group(
             Matcher(
-                all_of=[
-                    ActorPermitComponent,
-                ],
+                all_of=[CanStartPlanningComponent, ActorComponent],
             )
         ).entities.copy()
 
         if len(actor_entities) == 0:
-            logger.debug(f"HomeActorPlanningSystem: 没有 ActorPermitComponent 的角色。")
             return
 
         # 特殊处理：随机一个。
@@ -117,7 +115,7 @@ class HomeActorPlanningSystem(ExecuteProcessor):
         actor_entities = set({random_one})
 
         # 处理角色规划请求
-        request_handlers: List[ChatRequestHandler] = self._generate_chat_requests(
+        request_handlers: List[ChatRequestHandler] = self._generate_requests(
             actor_entities
         )
 
@@ -125,20 +123,10 @@ class HomeActorPlanningSystem(ExecuteProcessor):
         await self._game.langserve_system.gather(request_handlers=request_handlers)
 
         # 处理角色规划请求
-        self._handle_chat_responses(request_handlers)
-
-        # 清除 ActorPermitComponent
-        for actor in actor_entities:
-            if actor.has(ActorPermitComponent):
-                logger.debug(
-                    f"HomeActorPlanningSystem: ActorPermitComponent: {actor._name}，处理完毕，移除 ActorPermitComponent。"
-                )
-                actor.remove(ActorPermitComponent)
+        self._handle_responses(request_handlers)
 
     #######################################################################################################################################
-    def _handle_chat_responses(
-        self, request_handlers: List[ChatRequestHandler]
-    ) -> None:
+    def _handle_responses(self, request_handlers: List[ChatRequestHandler]) -> None:
 
         for request_handler in request_handlers:
 
@@ -147,15 +135,12 @@ class HomeActorPlanningSystem(ExecuteProcessor):
 
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
-            self._handle_actor_response(entity2, request_handler)
+            self._handle_response(entity2, request_handler)
 
     #######################################################################################################################################
-    def _handle_actor_response(
+    def _handle_response(
         self, entity2: Entity, request_handler: ChatRequestHandler
     ) -> None:
-
-        assert entity2.has(ActorPermitComponent)
-        assert entity2._name == request_handler._name
 
         # 核心处理
         try:
@@ -199,7 +184,7 @@ class HomeActorPlanningSystem(ExecuteProcessor):
             logger.error(f"Exception: {e}")
 
     #######################################################################################################################################
-    def _generate_chat_requests(
+    def _generate_requests(
         self, actor_entities: set[Entity]
     ) -> List[ChatRequestHandler]:
 

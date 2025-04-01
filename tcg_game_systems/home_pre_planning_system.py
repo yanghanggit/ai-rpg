@@ -1,4 +1,4 @@
-from typing import Deque, Tuple, final, List
+from typing import Tuple, final, List
 from loguru import logger
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from overrides import override
@@ -8,6 +8,7 @@ from components.components_v_0_0_1 import (
     CanStartPlanningComponent,
     StageComponent,
     GUIDComponent,
+    StageEnvironmentComponent,
 )
 
 
@@ -59,12 +60,16 @@ class HomePrePlanningSystem(ExecuteProcessor):
         assert player_stage is not None
 
         for stage_entity in stage_entities:
-            if stage_entity == player_stage:
-                # 如果是玩家的stage，添加 CanStartPlanningComponent
-                logger.debug(
-                    f"HomePrePlanningSystem: _can_stage_planning: {stage_entity.get(StageComponent).name}，添加 CanStartPlanningComponent。"
-                )
-                stage_entity.replace(CanStartPlanningComponent, stage_entity._name)
+
+            if stage_entity != player_stage:
+                # 如果不是玩家的stage，跳过
+                continue
+
+            # 如果是玩家的stage，添加 CanStartPlanningComponent
+            logger.debug(
+                f"HomePrePlanningSystem: _can_stage_planning: {stage_entity.get(StageComponent).name}，添加 CanStartPlanningComponent。"
+            )
+            stage_entity.replace(CanStartPlanningComponent, stage_entity._name)
 
     ############################################################################################################
     def _assign_planning_component_to_actors(self) -> None:
@@ -76,19 +81,7 @@ class HomePrePlanningSystem(ExecuteProcessor):
 
         # 如果是空了，就重置一次。
         for stage_entity in stage_entities:
-            home_comp = stage_entity.get(HomeComponent)
-            action_order = home_comp.action_order
-            if len(action_order) == 0:
-                actors_on_stage = self._game.retrieve_actors_on_stage(stage_entity)
-                order_actors_by_action = self._sort_action_order_by_guid(
-                    list(actors_on_stage)
-                )
-                sorted_actor_names = [actor._name for actor in order_actors_by_action]
-                stage_entity.replace(
-                    HomeComponent,
-                    home_comp.name,
-                    sorted_actor_names,
-                )
+            self._refresh_home_stage_actor_order(stage_entity)
 
         # 每个stage的action_order的第一个pop出来，作为可以行动的人。
         for stage_entity in stage_entities:
@@ -110,6 +103,27 @@ class HomePrePlanningSystem(ExecuteProcessor):
                 )
                 # 只有第一个。
                 break
+
+        # 如果空了，就重新构建一次。
+        for stage_entity in stage_entities:
+            self._refresh_home_stage_actor_order(stage_entity)
+
+    ############################################################################################################
+    def _refresh_home_stage_actor_order(self, stage_entity: Entity) -> None:
+        # 重新构建stage的action_order
+        home_comp = stage_entity.get(HomeComponent)
+        action_order = home_comp.action_order
+        if len(action_order) == 0:
+            actors_on_stage = self._game.retrieve_actors_on_stage(stage_entity)
+            order_actors_by_action = self._sort_action_order_by_guid(
+                list(actors_on_stage)
+            )
+            sorted_actor_names = [actor._name for actor in order_actors_by_action]
+            stage_entity.replace(
+                HomeComponent,
+                home_comp.name,
+                sorted_actor_names,
+            )
 
     ############################################################################################################
     def _sort_action_order_by_guid(self, actor_entities: List[Entity]) -> List[Entity]:

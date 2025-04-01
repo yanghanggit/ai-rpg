@@ -17,6 +17,8 @@ class APIEndpointConfiguration(BaseModel):
     START_URL: str = ""
     HOME_RUN_URL: str = ""
     HOME_TRANS_DUNGEON_URL: str = ""
+    DUNGEON_RUN_URL: str = ""
+    DUNGEON_DRAW_CARDS_URL: str = ""
 
 
 class APIEndpointConfigurationResponse(BaseModel):
@@ -110,3 +112,32 @@ class HomeTransDungeonResponse(BaseModel):
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################
+
+
+class DungeonRunRequest(BaseModel):
+    user_name: str = ""
+    game_name: str = ""
+    user_input: str = ""
+
+
+class DungeonRunResponse(BaseModel):
+    client_messages: List[ClientMessage] = []
+    error: int = 0
+    message: str = ""
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+
+class DungeonDrawCardsRequest(BaseModel):
+    user_name: str = ""
+    game_name: str = ""
+    user_input: str = ""
+
+
+class DungeonDrawCardsResponse(BaseModel):
+    client_messages: List[ClientMessage] = []
+    error: int = 0
+    message: str = ""

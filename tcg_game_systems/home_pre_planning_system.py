@@ -8,7 +8,8 @@ from components.components_v_0_0_1 import (
     CanStartPlanningComponent,
     StageComponent,
     GUIDComponent,
-    StageEnvironmentComponent,
+    # StageEnvironmentComponent,
+    PlayerComponent,
 )
 
 
@@ -88,10 +89,15 @@ class HomePrePlanningSystem(ExecuteProcessor):
             home_comp = stage_entity.get(HomeComponent)
             action_order = home_comp.action_order
             while len(action_order) > 0:
+
                 actor_name = action_order.pop(0)
                 actor_entity = self._game.get_actor_entity(actor_name)
                 assert actor_entity is not None
                 if actor_entity is None:
+                    continue
+
+                if actor_entity.has(PlayerComponent):
+                    # 如果是玩家的角色，跳过
                     continue
 
                 logger.debug(

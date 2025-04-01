@@ -93,16 +93,16 @@ class HomeStagePlanningSystem(ExecuteProcessor):
     def _generate_chat_request_handlers(
         self, stage_entities: Set[Entity]
     ) -> List[ChatRequestHandler]:
-        
+
         request_handlers: List[ChatRequestHandler] = []
-        
+
         for stage_entity in stage_entities:
-            
+
             environment_component = stage_entity.get(StageEnvironmentComponent)
             if environment_component.narrate != "":
                 # 如果环境描述不为空，跳过
                 continue
-            
+
             # 获取场景内角色的外貌信息
             actors_appearances_mapping: Dict[str, str] = (
                 self._game.retrieve_actor_appearance_on_stage_mapping(stage_entity)

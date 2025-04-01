@@ -629,7 +629,9 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 如果是玩家，就要补充一个事件信息，用于客户端接收
             if entity.has(PlayerComponent):
-                logger.debug(f"notify_event = {entity.get(PlayerComponent).player_name}:{entity._name}")
+                logger.debug(
+                    f"notify_event = {entity.get(PlayerComponent).player_name}:{entity._name}"
+                )
                 self.player.add_agent_event(agent_event=agent_event)
 
     ###############################################################################################################################################

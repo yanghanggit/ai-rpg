@@ -68,7 +68,7 @@ def _generate_prompt(
 {actor_response_example.model_dump_json()}
 - 注意！speak_actions/whisper_actions/announce_actions只能3选1，mind_voice_actions可选。
 - 禁用换行/空行。
-- 直接输出合规JSON。"""
+- 直接输出一个合规JSON。"""
 
 
 #######################################################################################################################################

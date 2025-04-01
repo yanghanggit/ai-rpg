@@ -43,7 +43,7 @@ async def start(
             message="游戏名称不匹配",
         )
 
-    if room._game.start:
+    if room._game.is_game_started:
         logger.error(f"start/v1: {request_data.user_name} game already started")
         return StartResponse(
             error=1004,
@@ -51,7 +51,7 @@ async def start(
         )
 
     # 这里是启动游戏的逻辑，防止反复启动。
-    room._game.start = True
+    room._game.is_game_started = True
 
     # 先清除掉之前的消息。
     room._game.player.clear_client_messages()

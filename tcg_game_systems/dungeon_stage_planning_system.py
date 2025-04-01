@@ -137,10 +137,6 @@ class DungeonStagePlanningSystem(ExecuteProcessor):
                 )
             )
 
-            logger.warning(
-                f"Stage: {stage_entity._name}, Response:\n{format_response.model_dump_json()}"
-            )
-
             self._game.append_human_message(stage_entity, request_handler._prompt)
             self._game.append_ai_message(stage_entity, request_handler.response_content)
 

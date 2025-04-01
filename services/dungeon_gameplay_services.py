@@ -60,7 +60,7 @@ async def dungeon_run(
         )
 
     # 判断游戏是否开始
-    if not current_room._game.start:
+    if not current_room._game.is_game_started:
         logger.error(
             f"dungeon_run: {request_data.user_name} game not started, please start it first."
         )
@@ -135,7 +135,7 @@ async def dungeon_draw_cards(
         )
 
     # 判断游戏是否开始
-    if not current_room._game.start:
+    if not current_room._game.is_game_started:
         logger.error(
             f"dungeon_draw_cards: {request_data.user_name} game not started, please start it first."
         )

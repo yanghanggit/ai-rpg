@@ -10,7 +10,7 @@ from player.player_proxy import PlayerProxy
 from game.tcg_game_demo import (
     create_then_write_demo_world,
     actor_warrior_instance,
-    stage_heros_camp_instance,
+    # stage_heros_camp_instance,
     stage_dungeon_cave1_instance,
     stage_dungeon_cave2_instance,
 )
@@ -80,7 +80,7 @@ async def run_game(option: UserSessionOptions) -> None:
 
     # 创建一个测试的地下城系统
     test_dungeon = DungeonSystem(
-        name="test_dungeon",
+        name="哥布林与兽人",
         levels=[stage_dungeon_cave1_instance, stage_dungeon_cave2_instance],
     )
 
@@ -118,9 +118,7 @@ async def run_game(option: UserSessionOptions) -> None:
 
     # 初始化游戏，玩家必须准备好，否则无法开始游戏
     if option.new_game:
-        if not terminal_game.confirm_player_actor_control_readiness(
-            actor_warrior_instance
-        ):
+        if not terminal_game.confirm_player_actor_assignment(actor_warrior_instance):
             logger.error(f"游戏准备失败 = {option.game}")
             exit(1)
 
@@ -175,7 +173,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
                         continue
 
                 # 进入下一个循环！！！！
-                terminal_game.advance_to_next_dungeon()
+                terminal_game.advance_next_dungeon()
                 return
 
         elif terminal_game.combat_system.combat_result == CombatResult.HERO_LOSE:
@@ -191,7 +189,9 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
     #######################################################################
     #######################################################################
     # 其他状态下的玩家输入！！！！！！
-    usr_input = input(f"[{terminal_game.player.name}/{player_stage_entity._name}]:")
+    usr_input = input(
+        f"[{terminal_game.player.name}/{player_stage_entity._name}/{player_actor_entity._name}]:"
+    )
     usr_input = usr_input.strip().lower()
 
     # 处理输入
@@ -236,7 +236,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         await draw_card_utils.draw_cards()
 
         # 执行一次！！！！！
-        # await _execute_terminal_game(terminal_game, usr_input)
+        await _execute_terminal_game(terminal_game, usr_input)
 
     elif usr_input == "/m" or usr_input == "/monitor":
 
@@ -271,19 +271,19 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             logger.error(f"{usr_input} 只能在战斗后使用!!!!!")
             return
 
-        logger.debug(
-            f"玩家输入 = {usr_input}, 准备传送回家 {stage_heros_camp_instance.name}"
-        )
+        logger.debug(f"玩家输入 = {usr_input}, 准备传送回家")
 
         # 回家
-        terminal_game.back_home_transition(
-            f"""# 提示！冒险结束，你将要返回: {stage_heros_camp_instance.name}""",
-            stage_heros_camp_instance,
-        )
+        terminal_game.transition_heroes_to_home()
 
         # 清空战斗
         logger.debug(f"玩家输入 = {usr_input}, 重制地下城！！！！！！！！")
         terminal_game.dungeon_system = DungeonSystem(name="", levels=[])
+
+    elif usr_input == "/vd" or usr_input == "/view-dungeon":
+        logger.info(
+            f"当前地下城系统 =\n{terminal_game.dungeon_system.model_dump_json(indent=4)}\n"
+        )
 
     elif usr_input == "/rh" or usr_input == "/run-home":
 
@@ -294,7 +294,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
 
         # 执行一次！！！！！
         await _execute_terminal_game(terminal_game, usr_input)
-        terminal_game.run_home_once = True
+        terminal_game.is_game_started = True
 
     elif usr_input == "/td" or usr_input == "/trans-dungeon":
 
@@ -303,7 +303,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             logger.error(f"{usr_input} 只能在营地中使用")
             return
 
-        if not terminal_game.run_home_once:
+        if not terminal_game.is_game_started:
             logger.error(f"{usr_input} 至少要执行一次 /rh，才能准备传送战斗！")
             return
 
@@ -314,7 +314,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备传送地下城")
-        terminal_game.launch_dungeon_adventure()
+        terminal_game.launch_dungeon()
 
     else:
 

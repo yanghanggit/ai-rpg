@@ -58,7 +58,7 @@ async def home_run(
         )
 
     # 判断游戏是否开始
-    if not current_room._game.start:
+    if not current_room._game.is_game_started:
         logger.error(
             f"home_run: {request_data.user_name} game not started, please start it first."
         )
@@ -127,7 +127,7 @@ async def home_trans_dungeon(
         )
 
     # 判断游戏是否开始
-    if not current_room._game.start:
+    if not current_room._game.is_game_started:
         logger.error(
             f"home_trans_dungeon: {request_data.user_name} game not started, please start it first."
         )
@@ -161,7 +161,7 @@ async def home_trans_dungeon(
 
     # 测试推进一次游戏
     logger.info(f"!!!!!!!!!准备传送地下城!!!!!!!!!!!!")
-    current_room._game.launch_dungeon_adventure()
+    current_room._game.launch_dungeon()
 
     #
     return HomeTransDungeonResponse(

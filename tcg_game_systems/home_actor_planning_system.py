@@ -17,7 +17,6 @@ from components.actions_v_0_0_1 import (
     WhisperAction,
     AnnounceAction,
 )
-import random
 
 
 #######################################################################################################################################
@@ -54,21 +53,22 @@ def _generate_prompt(
         mind_voice_actions="你要说的内容（内心独白，只有你自己能听见）",
     )
 
-    return f"""# 请制定你的行动计划。
+    return f"""# 请制定你的行动计划！决定你将要做什么，并以 JSON 格式输出。
 ## 当前场景
-{current_stage}
-### 场景描述
-{current_stage_narration}
+{current_stage} | {current_stage_narration}
 ## 场景内角色
 {"\n".join(actors_appearances_info)}
-## 输出要求
-- 引用角色或场景时，请严格遵守全名机制
-- 所有输出必须为第一人称视角。
-### 输出格式规范
+## 输出内容
+- 请根据当前场景，角色信息与你的历史，制定你的行动计划。
+- 请严格遵守全名机制。
+- 第一人称视角。
+## 输出格式
+### 标准示例
 {actor_response_example.model_dump_json()}
-- 注意！speak_actions/whisper_actions/announce_actions只能3选1，mind_voice_actions可选。
-- 禁用换行/空行。
-- 直接输出一个合规JSON。"""
+### 注意事项
+- speak_actions/whisper_actions/announce_actions 这三种行动只能选其一
+- mind_voice_actions可选。
+- 根据‘标准示例’，直接输出合规JSON。"""
 
 
 #######################################################################################################################################
@@ -107,12 +107,6 @@ class HomeActorPlanningSystem(ExecuteProcessor):
 
         if len(actor_entities) == 0:
             return
-
-        # 特殊处理：随机一个。
-        random_one = random.choice(list(actor_entities))
-
-        # 然后替换掉。编程1个。
-        actor_entities = set({random_one})
 
         # 处理角色规划请求
         request_handlers: List[ChatRequestHandler] = self._generate_requests(

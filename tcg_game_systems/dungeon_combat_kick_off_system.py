@@ -176,7 +176,6 @@ class DungeonCombatKickOffSystem(ExecuteProcessor):
         self, entity2: Entity, request_handler: ChatRequestHandler
     ) -> None:
 
-        # 核心处理
         try:
 
             format_response = CombatPreparationResponse.model_validate_json(
@@ -197,11 +196,17 @@ class DungeonCombatKickOffSystem(ExecuteProcessor):
                 combat_init_tag="战斗触发！",
             )
 
+            status_effects_prompt = "无"
+            if len(format_response.status_effects) > 0:
+                status_effects_prompt = "\n".join(
+                    [e.model_dump_json() for e in format_response.status_effects]
+                )
+
             # 添加记忆
             message = f"""# ！战斗触发！准备完毕。
 {format_response.description}
 ## 你目前拥有的状态
-{'\n'.join([e.model_dump_json() for e in format_response.status_effects])}"""
+{status_effects_prompt}"""
 
             self._game.append_ai_message(entity2, message)
 

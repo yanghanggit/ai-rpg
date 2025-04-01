@@ -42,9 +42,10 @@ class TCGGameProcessPipeline(Processors):
         )
         from tcg_game_systems.whisper_action_system import WhisperActionSystem
         from tcg_game_systems.announce_action_system import AnnounceActionSystem
-        from tcg_game_systems.terminal_player_interrupt_wait_system import (
-            TerminalPlayerInterruptWaitSystem,
-        )
+
+        # from tcg_game_systems.terminal_player_interrupt_wait_system import (
+        #     TerminalPlayerInterruptWaitSystem,
+        # )
 
         ##
         tcg_game = cast(TCGGame, game)
@@ -62,9 +63,9 @@ class TCGGameProcessPipeline(Processors):
 
         # 规划逻辑
         ######## 在所有规划之前!##############################################################
-        processors.add(
-            TerminalPlayerInterruptWaitSystem(tcg_game)
-        )  # yh 调试用。因为后面要消耗tokens，如果不需要就在这里停掉。
+        # processors.add(
+        #     TerminalPlayerInterruptWaitSystem(tcg_game)
+        # )  # yh 调试用。因为后面要消耗tokens，如果不需要就在这里停掉。
         processors.add(HomePrePlanningSystem(tcg_game))
         processors.add(HomeStagePlanningSystem(tcg_game))
         processors.add(HomeActorPlanningSystem(tcg_game))
@@ -118,8 +119,9 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.post_action_system import PostActionSystem
         from tcg_game_systems.destroy_entity_system import DestroyEntitySystem
         from tcg_game_systems.death_system import DeathSystem
-        from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
-        from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
+
+        # from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
+        # from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
         from tcg_game_systems.turn_action_system import TurnActionSystem
         from tcg_game_systems.stage_director_action_system import (
             StageDirectorActionSystem,
@@ -128,9 +130,10 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.dungeon_combat_kick_off_system import (
             DungeonCombatKickOffSystem,
         )
-        from tcg_game_systems.terminal_player_interrupt_wait_system import (
-            TerminalPlayerInterruptWaitSystem,
-        )
+
+        # from tcg_game_systems.terminal_player_interrupt_wait_system import (
+        #     TerminalPlayerInterruptWaitSystem,
+        # )
         from tcg_game_systems.dungeon_combat_round_system import (
             DungeonCombatRoundSystem,
         )
@@ -138,8 +141,8 @@ class TCGGameProcessPipeline(Processors):
             DungeonCombatCompleteSystem,
         )
 
-        from tcg_game_systems.dungeon_combat_finalize_system import (
-            DungeonCombatFinalizeSystem,
+        from tcg_game_systems.dungeon_combat_resolution_system import (
+            DungeonCombatResolutionSystem,
         )
 
         from tcg_game_systems.dungeon_stage_planning_system import (
@@ -161,43 +164,35 @@ class TCGGameProcessPipeline(Processors):
         # 启动agent的提示词。启动阶段
         processors.add(KickOffSystem(tcg_game))
 
-        # 地下城的标记开始
-        processors.add(PreDungeonStateSystem(tcg_game))
+        # 场景先规划，可能会有一些变化。
+        processors.add(DungeonStagePlanningSystem(tcg_game))
+
+        # 战斗触发！！
+        processors.add(DungeonCombatKickOffSystem(tcg_game))
 
         ######动作开始！！！！！################################################################################################
+        processors.add(DungeonCombatRoundSystem(tcg_game))  # 开局系统。
         processors.add(PreActionSystem(tcg_game))
-        processors.add(DungeonCombatRoundSystem(tcg_game))  # 开局
         processors.add(TurnActionSystem(tcg_game))
         processors.add(StageDirectorActionSystem(tcg_game))
         processors.add(FeedbackActionSystem(tcg_game))
-        processors.add(DungeonCombatFinalizeSystem(tcg_game))  # 战斗结束
+        processors.add(
+            DungeonCombatResolutionSystem(tcg_game)
+        )  # 最终将过程合成。因为中间会有很多request，防止断掉。
         processors.add(PostActionSystem(tcg_game))
         ###### 动作结束！！！！！################################################################################################
 
         # 检查死亡
         processors.add(DeathSystem(tcg_game))
 
-        # 地下城的标记结束
-        processors.add(PostDungeonStateSystem(tcg_game))
+        # 检查地下城是否结束？
+        processors.add(DungeonCombatCompleteSystem(tcg_game))
 
         # 核心系统，检查需要删除的实体。
         processors.add(DestroyEntitySystem(tcg_game))
 
         # 核心系统，存储系统。
         processors.add(SaveSystem(tcg_game))
-
-        ###############################################################
-        ###############################################################
-        ###############################################################
-
-        # yh 调试用。因为后面要消耗tokens，如果不需要就在这里停掉。
-        processors.add(TerminalPlayerInterruptWaitSystem(tcg_game))
-
-        processors.add(DungeonStagePlanningSystem(tcg_game))
-
-        ## 角色相关的规划，跟战斗相关的规划。
-        processors.add(DungeonCombatKickOffSystem(tcg_game))
-        processors.add(DungeonCombatCompleteSystem(tcg_game))
 
         # 结束
         processors.add(EndSystem(tcg_game))
@@ -213,14 +208,14 @@ class TCGGameProcessPipeline(Processors):
     @override
     def initialize(self) -> None:
         for processor in self._initialize_processors:
-            logger.debug(f"initialize {processor.__class__.__name__}")
+            logger.warning(f"initialize {processor.__class__.__name__}")
             processor.initialize()
 
     ###################################################################################################################################################################
     ## 异步执行方法
     async def a_execute(self) -> None:
         for processor in self._execute_processors:
-            logger.debug(f"a_execute {processor.__class__.__name__}")
+            logger.warning(f"a_execute {processor.__class__.__name__}")
             await processor.a_execute1()
             processor.execute()
             await processor.a_execute2()
@@ -229,14 +224,14 @@ class TCGGameProcessPipeline(Processors):
     @override
     def execute(self) -> None:
         for processor in self._execute_processors:
-            logger.debug(f"execute {processor.__class__.__name__}")
+            logger.warning(f"execute {processor.__class__.__name__}")
             processor.execute()
 
     ###################################################################################################################################################################
     @override
     def tear_down(self) -> None:
         for processor in self._tear_down_processors:
-            logger.debug(f"tear_down {processor.__class__.__name__}")
+            logger.warning(f"tear_down {processor.__class__.__name__}")
             processor.tear_down()
 
 

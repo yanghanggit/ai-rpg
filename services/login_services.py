@@ -232,9 +232,7 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
 
     # 初始化游戏，玩家必须准备好，否则无法开始游戏
     if option.new_game:
-        if not terminal_game.confirm_player_actor_control_readiness(
-            actor_warrior_instance
-        ):
+        if not terminal_game.confirm_player_actor_assignment(actor_warrior_instance):
             logger.error(f"游戏准备失败 = {option.game}")
             return None
 

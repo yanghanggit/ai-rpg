@@ -15,20 +15,6 @@ class DungeonSystem(BaseModel):
     position: int = 0
 
     ########################################################################################################################
-    def log_dungeon_details(self) -> None:
-
-        if len(self.levels) > 0:
-            logger.debug(
-                f"初始化地下城系统 = [{self.name}]\n地下城数量：{len(self.levels)}"
-            )
-            for stage in self.levels:
-                logger.debug(f"地下城关卡：{stage.name}")
-
-            logger.debug(f"当前地下城关卡：{self.levels[self.position].name}")
-        else:
-            logger.warning("地下城系统为空！")
-
-    ########################################################################################################################
     def current_level(self) -> Optional[StageInstance]:
         if len(self.levels) == 0:
             logger.warning("地下城系统为空！")
@@ -56,5 +42,19 @@ class DungeonSystem(BaseModel):
             if self.position + 1 < len(self.levels)
             else None
         )
+
+    ########################################################################################################################
+    def advance_level(self) -> bool:
+
+        if len(self.levels) == 0:
+            logger.warning("地下城系统为空！")
+            return False
+
+        if self.position >= len(self.levels):
+            logger.warning("当前地下城关卡已经完成！")
+            return False
+
+        self.position += 1
+        return True
 
     ########################################################################################################################

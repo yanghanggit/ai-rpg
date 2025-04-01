@@ -193,7 +193,7 @@ class TCGGame(BaseGame, TCGGameContext):
             self._verbose_dungeon_system()
 
         self._dungeon_system = value
-        self._dungeon_system.log_dungeon_details()
+        logger.debug(f"地下城系统 =\n{self._dungeon_system.model_dump_json()}\n")
 
     ###############################################################################################################################################
     @override
@@ -556,9 +556,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     # TODO 目前是写死的
-    def confirm_player_actor_control_readiness(
-        self, actor_instance: ActorInstance
-    ) -> bool:
+    def confirm_player_actor_assignment(self, actor_instance: ActorInstance) -> bool:
 
         # 玩家的名字，此时必须有
         assert self.player.name != ""
@@ -590,7 +588,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
             return True
 
-        assert False, "玩家没有准备好，没有找到可以控制的actor"
+        # assert False, "玩家没有准备好，没有找到可以控制的actor"
         return False
 
     ###############################################################################################################################################
@@ -805,102 +803,78 @@ class TCGGame(BaseGame, TCGGameContext):
             current_effects,
         )
 
-    ###############################################################################################################################################
-    # TODO!!! 临时测试准备传送！！！
-    def launch_dungeon_adventure(self) -> None:
-
-        assert len(self.dungeon_system.levels) > 0, "没有地下城！"
-        if len(self.dungeon_system.levels) == 0:
-            logger.error("没有地下城！")
-            return
-
-        initial_dungeon_level = self.dungeon_system.levels[0]
-        stage_entity = self.get_stage_entity(initial_dungeon_level.name)
-        assert stage_entity is not None
-        assert stage_entity.has(DungeonComponent)
-        if stage_entity is None:
-            return
-
-        # 集体准备传送
-        heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
-        assert len(heros_entities) > 0
-        if len(heros_entities) == 0:
-            logger.error("没有找到英雄!")
-            return
-
-        trans_message = (
-            f"""# 提示！你将要开始一次冒险，准备进入地下城: {stage_entity._name}"""
-        )
-        for hero_entity in heros_entities:
-            # 添加故事
-            logger.info(f"添加故事: {hero_entity._name} => {trans_message}")
-            self.append_human_message(hero_entity, trans_message)
-
-        # 开始传送。
-        self.stage_transition(heros_entities, stage_entity)
-
-        ## 设置一个战斗。
-        assert len(self.dungeon_system.levels) > 0, "没有地下城！"
+    #######################################################################################################################################
+    # TODO!!! 进入地下城。
+    def launch_dungeon(self) -> None:
         assert self.dungeon_system.position == 0, "当前地下城关卡已经完成！"
-        self.combat_system.combat_kickoff(Combat(name=stage_entity._name))
+        if self.dungeon_system.position == 0:
+            heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
+            self._process_dungeon_advance(self.dungeon_system, heros_entities)
 
     #######################################################################################################################################
-    # TODO, 临时测试，准备传送！！！
-    def advance_to_next_dungeon(self) -> None:
-
+    # TODO, 地下城下一关。
+    def advance_next_dungeon(self) -> None:
         # 位置+1
-        self.dungeon_system.position += 1
+        if self.dungeon_system.advance_level():
+            heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
+            self._process_dungeon_advance(self.dungeon_system, heros_entities)
 
-        # 下一个关卡?
-        next_level = self.dungeon_system.current_level()
-        assert next_level is not None
-        if next_level is None:
-            logger.error("没有下一个地下城！")
-            return
+    #######################################################################################################################################
+    # TODO, 进入地下城！
+    def _process_dungeon_advance(
+        self, dungeon_system: DungeonSystem, heros_entities: Set[Entity]
+    ) -> bool:
+
+        # 是否有可以进入的关卡？
+        upcoming_dungeon = dungeon_system.current_level()
+        assert upcoming_dungeon is not None
+        if upcoming_dungeon is None:
+            logger.error(
+                f"{self.dungeon_system.name} 没有下一个地下城！position = {self.dungeon_system.position}"
+            )
+            return False
 
         # 下一个关卡实体, 没有就是错误的。
-        stage_entity = self.get_stage_entity(next_level.name)
+        stage_entity = self.get_stage_entity(upcoming_dungeon.name)
         assert stage_entity is not None
         assert stage_entity.has(DungeonComponent)
         if stage_entity is None:
-            return
-
-        logger.debug(f"下一关为：{stage_entity._name}，可以进入！！！！")
+            logger.error(f"{upcoming_dungeon.name} 没有对应的stage实体！")
+            return False
 
         # 集体准备传送
-        heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
         assert len(heros_entities) > 0
         if len(heros_entities) == 0:
-            logger.error("没有找到英雄!")
-            return
+            logger.error(f"没有英雄不能进入地下城!= {stage_entity._name}")
+            return False
 
-        trans_message = f"""# 提示！你准备继续你的冒险，准备进入下一个地下城: {stage_entity._name}"""
+        logger.debug(
+            f"{self.dungeon_system.name} = [{self.dungeon_system.position}]关为：{stage_entity._name}，可以进入！！！！"
+        )
+
+        # 准备提示词。
+        trans_message = ""
+        if dungeon_system.position == 0:
+            trans_message = (
+                f"""# 提示！你将要开始一次冒险，准备进入地下城: {stage_entity._name}"""
+            )
+        else:
+            trans_message = f"""# 提示！你准备继续你的冒险，准备进入下一个地下城: {stage_entity._name}"""
+
         for hero_entity in heros_entities:
-            # 添加故事
-            logger.info(f"添加故事: {hero_entity._name} => {trans_message}")
-            self.append_human_message(hero_entity, trans_message)
+            self.append_human_message(hero_entity, trans_message)  # 添加故事
 
         # 开始传送。
         self.stage_transition(heros_entities, stage_entity)
 
         # 设置一个战斗。
-        assert len(self.dungeon_system.levels) > 0, "没有地下城！"
-        assert self.dungeon_system.position > 0, "当前地下城关卡已经完成！"
-        self.combat_system.combat_kickoff(
-            Combat(name=stage_entity._name)
-        )  # 再开一场战斗！
+        dungeon_system.combat_system.combat_kickoff(Combat(name=stage_entity._name))
+
+        return True
 
     ###############################################################################################################################################
     # TODO!!! 临时测试准备传送！！！
-    def back_home_transition(
-        self, trans_message: str, home_stage: StageInstance
-    ) -> None:
-
-        stage_entity = self.get_stage_entity(home_stage.name)
-        assert stage_entity is not None
-        assert stage_entity.has(HomeComponent)
-        if stage_entity is None:
-            return
+    def transition_heroes_to_home(self) -> None:
 
         heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
         assert len(heros_entities) > 0
@@ -908,11 +882,20 @@ class TCGGame(BaseGame, TCGGameContext):
             logger.error("没有找到英雄!")
             return
 
-        for hero_entity in heros_entities:
-            # 添加故事
-            logger.info(f"添加故事: {hero_entity._name} => {trans_message}")
-            self.append_human_message(hero_entity, trans_message)
+        home_stage_entities = self.get_group(Matcher(all_of=[HomeComponent])).entities
+        assert len(home_stage_entities) > 0
+        if len(home_stage_entities) == 0:
+            logger.error("没有找到家园!")
+            return
 
+        stage_entity = next(iter(home_stage_entities))
+        prompt = f"""# 提示！冒险结束，你将要返回: {stage_entity._name}"""
+        for hero_entity in heros_entities:
+
+            # 添加故事。
+            self.append_human_message(hero_entity, prompt)
+
+            # 一些处理。
             if hero_entity.has(CombatAttributesComponent):
                 hero_entity.remove(CombatAttributesComponent)
             if hero_entity.has(CombatStatusEffectsComponent):

@@ -21,7 +21,9 @@ from extended_systems.combat_system import Round
 
 #######################################################################################################################################
 @final
-class DungeonCombatFinalizeSystem(ExecuteProcessor):
+class DungeonCombatResolutionSystem(ExecuteProcessor):
+
+    # dungeon_combat_resolution_system
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
@@ -29,10 +31,14 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     def execute(self) -> None:
+        self._manage_battle_sequence()
+        self._remove_hand_components()
+
+    #######################################################################################################################################
+    def _manage_battle_sequence(self) -> None:
         if not self._game.combat_system.is_on_going_phase:
             return  # 不是本阶段就直接返回
 
-        logger.debug("DungeonCombatFinalizeSystem is executing...")
         logger.debug(f"Current combat rounds: {len(self._game.combat_system.rounds)}")
 
         player_entity = self._game.get_player_entity()
@@ -71,7 +77,7 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
         ).entities
 
         if len(turn_action_actors) == 0:
-            logger.error(f"没有角色出手。???!!!!!")
+            logger.info(f"没有角色出手。什么都没有发生。")
             return
 
         if len(select_then_feedback_action_actors) != len(turn_action_actors):
@@ -263,4 +269,9 @@ class DungeonCombatFinalizeSystem(ExecuteProcessor):
             combat_attributes_comp.magic_defense,
         )
 
-    #######################################################################################################################################
+    ###############################################################################################################################################
+    # 删除手牌组件
+    def _remove_hand_components(self) -> None:
+        actor_entities = self._game.get_group(Matcher(HandComponent)).entities.copy()
+        for entity in actor_entities:
+            entity.remove(HandComponent)

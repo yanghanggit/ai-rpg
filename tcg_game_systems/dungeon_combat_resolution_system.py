@@ -13,16 +13,13 @@ from components.actions_v_0_0_1 import (
     PlayCardAction,
     FeedbackAction,
 )
-from models.v_0_0_1 import StatusEffect
+from models.v_0_0_1 import StatusEffect, Round
 from models.event_models import AgentEvent
-from extended_systems.combat_system import Round
 
 
 #######################################################################################################################################
 @final
 class DungeonCombatResolutionSystem(ExecuteProcessor):
-
-    # dungeon_combat_resolution_system
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
@@ -35,10 +32,12 @@ class DungeonCombatResolutionSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     def _manage_battle_sequence(self) -> None:
-        if not self._game.combat_system.is_on_going_phase:
+        if not self._game.current_engagement_system.is_on_going_phase:
             return  # 不是本阶段就直接返回
 
-        logger.debug(f"Current combat rounds: {len(self._game.combat_system.rounds)}")
+        logger.debug(
+            f"Current combat rounds: {len(self._game.current_engagement_system.rounds)}"
+        )
 
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
@@ -109,7 +108,7 @@ class DungeonCombatResolutionSystem(ExecuteProcessor):
             logger.error(f"战斗演出没有计算和表演。!!!!!")
             return
 
-        last_round = self._game.combat_system.last_round
+        last_round = self._game.current_engagement_system.last_round
 
         # 看一看出手顺序。
         first_turn_actor = next(iter(turn_action_actors))

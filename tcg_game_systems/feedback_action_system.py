@@ -78,7 +78,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
     async def a_execute2(self) -> None:
         if len(self._react_entities_copy) > 0:
 
-            assert self._game.combat_system.is_on_going_phase
+            assert self._game.current_engagement_system.is_on_going_phase
 
             # 处理请求
             await self._process_request(self._react_entities_copy)

@@ -1,5 +1,5 @@
 from loguru import logger
-from extended_systems.combat_system import CombatResult
+from models.v_0_0_1 import CombatResult
 import shutil
 from game.terminal_tcg_game import TerminalTCGGame
 from game.tcg_game import TCGGameState
@@ -13,9 +13,8 @@ from game.tcg_game_demo import (
     stage_dungeon_cave1,
     stage_dungeon_cave2,
 )
-
-# from player.player_command import PlayerCommand
 from extended_systems.dungeon_system import DungeonSystem
+from extended_systems.engagement_system import EngagementSystem
 from tcg_game_systems.draw_cards_utils import DrawCardsUtils
 from tcg_game_systems.monitor_utils import MonitorUtils
 from game.user_session_options import UserSessionOptions
@@ -80,6 +79,7 @@ async def run_game(option: UserSessionOptions) -> None:
     # 创建一个测试的地下城系统
     test_dungeon = DungeonSystem(
         name="哥布林与兽人",
+        engagement=EngagementSystem(),
         levels=[stage_dungeon_cave1, stage_dungeon_cave2],
     )
 
@@ -143,12 +143,15 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
     #######################################################################
     #######################################################################
     if (
-        len(terminal_game.combat_system.combats) > 0
-        and terminal_game.combat_system.is_post_wait_phase
+        len(terminal_game.current_engagement_system.combats) > 0
+        and terminal_game.current_engagement_system.is_post_wait_phase
     ):
-        if terminal_game.combat_system.combat_result == CombatResult.HERO_WIN:
+        if (
+            terminal_game.current_engagement_system.combat_result
+            == CombatResult.HERO_WIN
+        ):
 
-            next_level = terminal_game.dungeon_system.next_level()
+            next_level = terminal_game.current_dungeon_system.next_level()
             if next_level is None:
                 logger.info("没有下一关，你胜利了，应该返回营地！！！！")
             else:
@@ -167,7 +170,10 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
                 terminal_game.advance_next_dungeon()
                 return
 
-        elif terminal_game.combat_system.combat_result == CombatResult.HERO_LOSE:
+        elif (
+            terminal_game.current_engagement_system.combat_result
+            == CombatResult.HERO_LOSE
+        ):
             logger.info("英雄失败，应该返回营地！！！！")
         else:
             assert False, "不可能出现的情况！"
@@ -201,7 +207,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             logger.error(f"{usr_input} 只能在地下城中使用")
             return
 
-        if len(terminal_game.combat_system.combats) == 0:
+        if len(terminal_game.current_engagement_system.combats) == 0:
             logger.error(f"{usr_input} 没有战斗可以进行！！！！")
             return
 
@@ -215,7 +221,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             logger.error(f"{usr_input} 只能在地下城中使用")
             return
 
-        if not terminal_game.combat_system.is_on_going_phase:
+        if not terminal_game.current_engagement_system.is_on_going_phase:
             logger.error(f"{usr_input} 只能在战斗中使用")
             return
 
@@ -236,7 +242,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             logger.error(f"{usr_input} 只能在地下城中使用")
             return
 
-        if not terminal_game.combat_system.is_on_going_phase:
+        if not terminal_game.current_engagement_system.is_on_going_phase:
             logger.error(f"{usr_input} 只能在战斗on_going_phase中使用")
             return
 
@@ -256,8 +262,8 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             return
 
         if (
-            len(terminal_game.combat_system.combats) == 0
-            or not terminal_game.combat_system.is_post_wait_phase
+            len(terminal_game.current_engagement_system.combats) == 0
+            or not terminal_game.current_engagement_system.is_post_wait_phase
         ):
             logger.error(f"{usr_input} 只能在战斗后使用!!!!!")
             return
@@ -267,13 +273,9 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         # 回家
         terminal_game.transition_heroes_to_home()
 
-        # 清空战斗
-        logger.debug(f"玩家输入 = {usr_input}, 重制地下城！！！！！！！！")
-        terminal_game.dungeon_system = DungeonSystem(name="", levels=[])
-
     elif usr_input == "/vd" or usr_input == "/view-dungeon":
         logger.info(
-            f"当前地下城系统 =\n{terminal_game.dungeon_system.model_dump_json(indent=4)}\n"
+            f"当前地下城系统 =\n{terminal_game.current_dungeon_system.model_dump_json(indent=4)}\n"
         )
 
     elif usr_input == "/rh" or usr_input == "/run-home":
@@ -298,7 +300,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             logger.error(f"{usr_input} 至少要执行一次 /rh，才能准备传送战斗！")
             return
 
-        if len(terminal_game.dungeon_system.levels) == 0:
+        if len(terminal_game.current_dungeon_system.levels) == 0:
             logger.error(
                 f"全部地下城已经结束。！！！！已经全部被清空！！！！或者不存在！！！！"
             )

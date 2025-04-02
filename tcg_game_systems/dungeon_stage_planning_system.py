@@ -64,12 +64,12 @@ class DungeonStagePlanningSystem(ExecuteProcessor):
     def _is_phase_valid(self) -> bool:
 
         if (
-            self._game.combat_system.is_post_wait_phase
-            or self._game.combat_system.is_complete_phase
+            self._game.current_engagement_system.is_post_wait_phase
+            or self._game.current_engagement_system.is_complete_phase
         ):
             return False
 
-        if self._game.combat_system.is_on_going_phase:
+        if self._game.current_engagement_system.is_on_going_phase:
             actor_entities = self._game.get_group(
                 Matcher(
                     all_of=[

@@ -1,18 +1,18 @@
-from typing import List, Optional, final
+from typing import Optional, final
 from loguru import logger
-from models.v_0_0_1 import Stage
-from extended_systems.combat_system import CombatSystem
-from pydantic import BaseModel
+from models.v_0_0_1 import Stage, Dungeon
+from extended_systems.engagement_system import EngagementSystem
 
 
 # TODO临时的，先管理下。
 @final
-class DungeonSystem(BaseModel):
+class DungeonSystem(Dungeon):
 
-    name: str
-    levels: List[Stage]
-    combat_system: CombatSystem = CombatSystem()
-    position: int = 0
+    @property
+    def engagement_system(self) -> EngagementSystem:
+        assert self.engagement is not None
+        assert isinstance(self.engagement, EngagementSystem)
+        return self.engagement
 
     ########################################################################################################################
     def current_level(self) -> Optional[Stage]:

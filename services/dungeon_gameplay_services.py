@@ -80,7 +80,7 @@ async def dungeon_run(
         )
 
     # 判断是否有战斗
-    if len(current_room._game.combat_system.combats) == 0:
+    if len(current_room._game.current_engagement_system.combats) == 0:
         logger.error(f"没有战斗可以进行！！！！")
         return DungeonRunResponse(
             error=1005,
@@ -154,7 +154,7 @@ async def dungeon_draw_cards(
             message=f"{request_data.user_input} 只能在地下城状态下使用",
         )
 
-    if not current_room._game.combat_system.is_on_going_phase:
+    if not current_room._game.current_engagement_system.is_on_going_phase:
         logger.error(f"战斗不是进行中状态！！！！")
         return DungeonDrawCardsResponse(
             error=1005,

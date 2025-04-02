@@ -1,61 +1,12 @@
-from enum import IntEnum, unique
-from typing import Dict, List, final
+from typing import List, final
 from loguru import logger
-from pydantic import BaseModel
-
-
-###############################################################################################################################################
-# 表示战斗的状态 Phase
-@final
-@unique
-class CombatPhase(IntEnum):
-    NONE = (0,)
-    KICK_OFF = (1,)  # 初始化，需要同步一些数据与状态
-    ONGOING = (2,)  # 运行中，不断进行战斗推理
-    COMPLETE = 3  # 结束，需要进行结算
-    POST_WAIT = 4  # 战斗等待进入新一轮战斗或者回家
-
-
-###############################################################################################################################################
-# 表示战斗的状态
-@final
-@unique
-class CombatResult(IntEnum):
-    NONE = (0,)
-    HERO_WIN = (1,)  # 胜利
-    HERO_LOSE = (2,)  # 失败
-
-
-###############################################################################################################################################
-
-
-# 表示一个回合
-class Round(BaseModel):
-    tag: str
-    round_turns: List[str] = []
-    select_report: Dict[str, str] = {}
-    stage_director_calculation: str = ""
-    stage_director_performance: str = ""
-    feedback_report: Dict[str, str] = {}
-
-
-###############################################################################################################################################
-# 表示一个战斗
-class Combat(BaseModel):
-
-    name: str
-    phase: CombatPhase = CombatPhase.NONE
-    result: CombatResult = CombatResult.NONE
-    rounds: List[Round] = []
-    summarize_report: Dict[str, str] = {}
+from models.v_0_0_1 import Combat, Round, CombatPhase, CombatResult, Engagement
 
 
 ###############################################################################################################################################
 # 表示战斗系统
 @final
-class CombatSystem(BaseModel):
-
-    combats: List[Combat] = []
+class EngagementSystem(Engagement):
 
     ###############################################################################################################################################
     @property

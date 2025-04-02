@@ -1,7 +1,7 @@
 from typing import Final, List, Dict, Any, final
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from enum import StrEnum, unique
+from enum import IntEnum, StrEnum, unique
 
 # 注意，不允许动！
 SCHEMA_VERSION: Final[str] = "0.0.1"
@@ -26,6 +26,28 @@ class StageType(StrEnum):
 
 
 ###############################################################################################################################################
+# 表示战斗的状态 Phase
+@final
+@unique
+class CombatPhase(IntEnum):
+    NONE = (0,)
+    KICK_OFF = (1,)  # 初始化，需要同步一些数据与状态
+    ONGOING = (2,)  # 运行中，不断进行战斗推理
+    COMPLETE = 3  # 结束，需要进行结算
+    POST_WAIT = 4  # 战斗等待进入新一轮战斗或者回家
+
+
+###############################################################################################################################################
+# 表示战斗的状态
+@final
+@unique
+class CombatResult(IntEnum):
+    NONE = (0,)
+    HERO_WIN = (1,)  # 胜利
+    HERO_LOSE = (2,)  # 失败
+
+
+###############################################################################################################################################
 @final
 class AgentShortTermMemory(BaseModel):
     name: str = ""
@@ -47,12 +69,17 @@ class EntitySnapshot(BaseModel):
 
 
 ###############################################################################################################################################
-
-
 # 所有道具的基础定义
 class Item(BaseModel):
     name: str
     description: str
+
+
+###############################################################################################################################################
+# 技能产生的影响。
+@final
+class StatusEffect(Item):
+    rounds: int
 
 
 ###############################################################################################################################################
@@ -68,10 +95,30 @@ class Skill(Card):
 
 
 ###############################################################################################################################################
-# 技能产生的影响。
-@final
-class StatusEffect(Item):
-    rounds: int
+# 表示一个回合
+class Round(BaseModel):
+    tag: str
+    round_turns: List[str] = []
+    select_report: Dict[str, str] = {}
+    stage_director_calculation: str = ""
+    stage_director_performance: str = ""
+    feedback_report: Dict[str, str] = {}
+
+
+###############################################################################################################################################
+# 表示一个战斗
+class Combat(BaseModel):
+
+    name: str
+    phase: CombatPhase = CombatPhase.NONE
+    result: CombatResult = CombatResult.NONE
+    rounds: List[Round] = []
+    summarize_report: Dict[str, str] = {}
+
+
+###############################################################################################################################################
+class Engagement(BaseModel):
+    combats: List[Combat] = []
 
 
 ###############################################################################################################################################
@@ -164,6 +211,19 @@ class WorldSystem(BaseModel):
 
 
 ###############################################################################################################################################
+# TODO临时的，先管理下。
+class Dungeon(BaseModel):
+    name: str
+    levels: List[Stage]
+    engagement: Engagement
+    position: int = 0
+
+    @property
+    def actors(self) -> List[Actor]:
+        return [actor for stage in self.levels for actor in stage.actors]
+
+
+###############################################################################################################################################
 # 生成世界的根文件，就是世界的起点
 @final
 class Boot(BaseModel):
@@ -186,6 +246,7 @@ class World(BaseModel):
     runtime_index: int = 1000
     entities_snapshot: List[EntitySnapshot] = []
     agents_short_term_memory: Dict[str, AgentShortTermMemory] = {}
+    dungeon: Dungeon = Dungeon(name="", levels=[], engagement=Engagement())
     boot: Boot = Boot()
 
     @property

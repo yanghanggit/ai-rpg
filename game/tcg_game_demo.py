@@ -151,51 +151,12 @@ def _build_world(world_boot: Boot) -> Boot:
     ############################################################
     ############################################################
 
-    _boot_link(
-        world_boot,
-        [
-            stage_heros_camp,
-            stage_dungeon_cave1,
-            stage_dungeon_cave2,
-        ],
-        [],
-    )
-
+    assert world_boot.epoch_script != ""
+    world_boot.stages = [
+        stage_heros_camp,
+    ]
+    world_boot.world_systems = []
     return world_boot
-
-
-#######################################################################################################################################
-def _boot_link(
-    boot: Boot,
-    stages: List[Stage],
-    world_systems: List[WorldSystem],
-) -> None:
-
-    assert boot.epoch_script != ""
-    boot.stages = stages
-    boot.world_systems = world_systems
-
-    # 构建数据库。
-    data_base = boot.data_base
-    data_base.actors.clear()
-    data_base.stages.clear()
-    for stage in stages:
-
-        if stage.prototype.name in data_base.stages:
-            logger.warning(
-                f"{stage.name}:{stage.prototype.name} = stage already exists in data_base.stages. is copy_stage?"
-            )
-
-        data_base.stages.setdefault(stage.prototype.name, stage.prototype)
-
-        for actors in stage.actors:
-
-            if actors.prototype.name in data_base.actors:
-                logger.warning(
-                    f"{actors.name}:{actors.prototype.name} = actor already exists in data_base.actors. is copy_actor?"
-                )
-
-            data_base.actors.setdefault(actors.prototype.name, actors.prototype)
 
 
 #######################################################################################################################################

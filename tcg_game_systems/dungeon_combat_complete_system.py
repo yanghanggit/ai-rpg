@@ -3,7 +3,7 @@ from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from overrides import override
 from typing import Any, Dict, List, cast, final
 from game.tcg_game import TCGGame
-from extended_systems.combat_system import CombatResult
+from models.v_0_0_1 import CombatResult
 from components.components_v_0_0_1 import (
     ActorComponent,
     HeroComponent,
@@ -28,18 +28,19 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     async def a_execute1(self) -> None:
-        if not self._game.combat_system.is_complete_phase:
+        if not self._game.current_engagement_system.is_complete_phase:
             return  # 不是本阶段就直接返回
 
         if (
-            self._game.combat_system.combat_result == CombatResult.HERO_WIN
-            or self._game.combat_system.combat_result == CombatResult.HERO_LOSE
+            self._game.current_engagement_system.combat_result == CombatResult.HERO_WIN
+            or self._game.current_engagement_system.combat_result
+            == CombatResult.HERO_LOSE
         ):
             # 测试，总结战斗结果。
             await self._summarize_combat_result()
 
             # TODO, 进入战斗后准备的状态，离开当前状态。
-            self._game.combat_system.combat_post_wait()
+            self._game.current_engagement_system.combat_post_wait()
 
         else:
             assert False, "不可能出现的情况！"
@@ -117,9 +118,9 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
             )
 
             #  # 准备记录～
-            self._game.combat_system.last_combat.summarize_report[entity2._name] = (
-                summary
-            )
+            self._game.current_engagement_system.last_combat.summarize_report[
+                entity2._name
+            ] = summary
 
     #######################################################################################################################################
     # 压缩战斗历史。

@@ -91,6 +91,9 @@ class TCGGameContext(Context):
                 comp_class = COMPONENTS_REGISTRY.get(comp_snapshot.name)
                 assert comp_class is not None
 
+                assert hasattr(comp_class, "__deserialize_component__")
+                comp_class.__deserialize_component__(comp_snapshot.data)
+
                 restore_comp = comp_class(**comp_snapshot.data)
                 assert restore_comp is not None
 

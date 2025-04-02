@@ -69,7 +69,9 @@ class DungeonCombatRoundSystem(ExecuteProcessor):
 
             assert entity.has(BaseAttributesComponent)
             base_attributes_comp = entity.get(BaseAttributesComponent)
-            actor_dexterity_pairs.append((entity, base_attributes_comp.data.dexterity))
+            actor_dexterity_pairs.append(
+                (entity, base_attributes_comp.base_attributes.dexterity)
+            )
 
         return [
             entity

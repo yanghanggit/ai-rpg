@@ -17,6 +17,7 @@ from models.v_0_0_1 import (
     ActorType,
     StageType,
     Combat,
+    BaseAttributes,
 )
 from components.components_v_0_0_1 import (
     WorldSystemComponent,
@@ -125,9 +126,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 地下城系统的强行类型转化 DungeonSystem 继承自 Dungeon，EngagementSystem 继承自 Engagement
         if not isinstance(self._world.dungeon, DungeonSystem):
-            logger.warning(
-                f"world.dungeon is not DungeonSystem, try to convert it."
-            )
+            logger.warning(f"world.dungeon is not DungeonSystem, try to convert it.")
             self._world.dungeon = DungeonSystem.model_validate_json(
                 self._world.dungeon.model_dump_json()
             )
@@ -417,6 +416,10 @@ class TCGGame(BaseGame, TCGGameContext):
                 instance.name,
                 copy.copy(instance.base_attributes),
             )
+
+            # 测试类型。
+            base_attributes_comp = actor_entity.get(BaseAttributesComponent)
+            assert isinstance(base_attributes_comp.base_attributes, BaseAttributes)
 
             # 必要组件：类型标记
             match instance.prototype.type:
@@ -711,13 +714,18 @@ class TCGGame(BaseGame, TCGGameContext):
         assert actor_entity.has(BaseAttributesComponent)
 
         base_attributes_comp = actor_entity.get(BaseAttributesComponent)
+        assert isinstance(base_attributes_comp.base_attributes, BaseAttributes)
 
-        hp: Final[float] = base_attributes_comp.data.hp
-        max_hp: Final[float] = base_attributes_comp.data.max_hp
-        physical_attack: Final[float] = base_attributes_comp.data.physical_attack
-        physical_defense: Final[float] = base_attributes_comp.data.physical_defense
-        magic_attack: Final[float] = base_attributes_comp.data.magic_attack
-        magic_defense: Final[float] = base_attributes_comp.data.magic_defense
+        hp: Final[float] = base_attributes_comp.base_attributes.hp
+        max_hp: Final[float] = base_attributes_comp.base_attributes.max_hp
+        physical_attack: Final[float] = (
+            base_attributes_comp.base_attributes.physical_attack
+        )
+        physical_defense: Final[float] = (
+            base_attributes_comp.base_attributes.physical_defense
+        )
+        magic_attack: Final[float] = base_attributes_comp.base_attributes.magic_attack
+        magic_defense: Final[float] = base_attributes_comp.base_attributes.magic_defense
 
         actor_entity.replace(
             CombatRoleComponent,

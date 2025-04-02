@@ -1,4 +1,4 @@
-from typing import Final, NamedTuple, List, final
+from typing import Any, Dict, Final, NamedTuple, List, final
 from components.registry import register_component_class
 from models.v_0_0_1 import Skill, StatusEffect, BaseAttributes
 
@@ -149,6 +149,13 @@ class HandComponent(NamedTuple):
     name: str
     skills: List[Skill]
 
+    @staticmethod
+    def __deserialize_component__(component_data: Dict[str, Any]) -> None:
+        key: Final[str] = "skills"
+        assert key in component_data
+        if key in component_data:
+            component_data[key] = [Skill(**skill) for skill in component_data[key]]
+
 
 ############################################################################################################
 # 战斗中临时使用。
@@ -185,6 +192,15 @@ class CombatRoleComponent(NamedTuple):
             )
         return ret
 
+    @staticmethod
+    def __deserialize_component__(component_data: Dict[str, Any]) -> None:
+        key: Final[str] = "status_effects"
+        assert key in component_data
+        if key in component_data:
+            component_data[key] = [
+                StatusEffect(**effect) for effect in component_data[key]
+            ]
+
 
 ############################################################################################################
 # 死亡标记
@@ -199,5 +215,14 @@ class DeathComponent(NamedTuple):
 @final
 @register_component_class
 class BaseAttributesComponent(NamedTuple):
+
     name: str
-    data: BaseAttributes
+    base_attributes: BaseAttributes
+
+    # 有读取的组件需要这个。
+    @staticmethod
+    def __deserialize_component__(component_data: Dict[str, Any]) -> None:
+        key: Final[str] = "base_attributes"
+        assert key in component_data
+        if key in component_data:
+            component_data[key] = BaseAttributes(**component_data[key])

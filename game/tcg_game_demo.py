@@ -77,7 +77,7 @@ actor_orcs_appearance: Final[str] = (
 #######################################################################################################################################
 actor_warrior_prototype = ActorPrototype(
     name="角色.战士.卡恩",
-    code_name="warrior",
+    # code_name="warrior",
     base_system_message=_comple_actor_base_system_prompt(
         epoch_script=EPOCH_SCRIPT,
         actor_profile=actor_warrior_profile,
@@ -91,7 +91,7 @@ actor_warrior_prototype = ActorPrototype(
 #######################################################################################################################################
 actor_wizard_prototype = ActorPrototype(
     name="角色.法师.奥露娜",
-    code_name="wizard",
+    # code_name="wizard",
     base_system_message=_comple_actor_base_system_prompt(
         epoch_script=EPOCH_SCRIPT,
         actor_profile=actor_wizard_profile,
@@ -105,7 +105,7 @@ actor_wizard_prototype = ActorPrototype(
 #######################################################################################################################################
 actor_goblin_prototype = ActorPrototype(
     name="角色.怪物.哥布林",
-    code_name="goblin_rag",
+    # code_name="goblin_rag",
     base_system_message=_comple_actor_base_system_prompt(
         epoch_script=EPOCH_SCRIPT,
         actor_profile=actor_goblin_profile,
@@ -119,7 +119,7 @@ actor_goblin_prototype = ActorPrototype(
 #######################################################################################################################################
 actor_orcs_prototype = ActorPrototype(
     name="角色.怪物.兽人",
-    code_name="orc_kuros",
+    # code_name="orc_kuros",
     base_system_message=_comple_actor_base_system_prompt(
         epoch_script=EPOCH_SCRIPT,
         actor_profile=actor_orcs_profile,
@@ -133,7 +133,7 @@ actor_orcs_prototype = ActorPrototype(
 #######################################################################################################################################
 stage_dungeon_cave_prototype = StagePrototype(
     name="场景.洞窟",
-    code_name="goblin_cave",
+    # code_name="goblin_cave",
     base_system_message=_comple_base_stage_system_prompt(
         epoch_script=EPOCH_SCRIPT,
         stage_profile="你是一处位于山脚下的洞窟，洞穴内部昏暗潮湿，四处散发着腐烂的气味。光线昏暗，只能看到不远处的模糊轮廓。",
@@ -145,7 +145,7 @@ stage_dungeon_cave_prototype = StagePrototype(
 #######################################################################################################################################
 stage_heros_camp_prototype = StagePrototype(
     name="场景.营地",
-    code_name="camp",
+    # code_name="camp",
     base_system_message=_comple_base_stage_system_prompt(
         epoch_script=EPOCH_SCRIPT,
         stage_profile="你是一个冒险者的临时营地，四周是一片未开发的原野。营地中有帐篷，营火，仓库等设施，虽然简陋，却也足够让人稍事休息，准备下一次冒险。",
@@ -157,7 +157,7 @@ stage_heros_camp_prototype = StagePrototype(
 #######################################################################################################################################
 world_system_prototype = WorldSystemPrototype(
     name="系统.世界",
-    code_name="world",
+    # code_name="world",
     base_system_message=_comple_world_system_system_prompt(
         epoch_script=EPOCH_SCRIPT,
         world_system_profile="你是战斗系统。",

@@ -78,7 +78,6 @@ class StatusEffect(Item):
 @final
 class ActorPrototype(BaseModel):
     name: str
-    code_name: str
     base_system_message: str
     appearance: str
     type: str
@@ -88,7 +87,7 @@ class ActorPrototype(BaseModel):
 @final
 class StagePrototype(BaseModel):
     name: str
-    code_name: str
+    # code_name: str
     base_system_message: str
     type: str
 
@@ -97,7 +96,7 @@ class StagePrototype(BaseModel):
 @final
 class WorldSystemPrototype(BaseModel):
     name: str
-    code_name: str
+    # code_name: str
     base_system_message: str
 
 
@@ -151,7 +150,6 @@ class BaseAttributes(BaseModel):
 class ActorInstance(BaseModel):
     name: str
     prototype: str
-    # guid: int
     system_message: str
     kick_off_message: str
     base_attributes: BaseAttributes
@@ -162,7 +160,6 @@ class ActorInstance(BaseModel):
 class StageInstance(BaseModel):
     name: str
     prototype: str
-    # guid: int
     actors: List[str]
     system_message: str
     kick_off_message: str
@@ -173,7 +170,6 @@ class StageInstance(BaseModel):
 class WorldSystemInstance(BaseModel):
     name: str
     prototype: str
-    # guid: int
     system_message: str
     kick_off_message: str
 
@@ -186,7 +182,6 @@ class Boot(BaseModel):
     version: str = ""
     epoch_script: str = ""
     player_actor: str = ""
-    # players: List[ActorInstance] = []
     actors: List[ActorInstance] = []
     stages: List[StageInstance] = []
     world_systems: List[WorldSystemInstance] = []
@@ -202,18 +197,10 @@ class World(BaseModel):
     entities_snapshot: List[EntitySnapshot] = []
     agents_short_term_memory: Dict[str, AgentShortTermMemory] = {}
     runtime_index: int = 1000
-    # runtime_players: List[ActorInstance] = []
-    # runtime_actors: List[ActorInstance] = []
-    # runtime_stages: List[StageInstance] = []
-    # runtime_world_systems: List[WorldSystemInstance] = []
 
     @property
     def data_base(self) -> DataBase:
         return self.boot.data_base
-
-    # @property
-    # def players(self) -> List[ActorInstance]:
-    #     return self.boot.players
 
     @property
     def actors(self) -> List[ActorInstance]:

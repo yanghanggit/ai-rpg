@@ -44,6 +44,7 @@ from extended_systems.combat_system import CombatSystem, Combat
 from extended_systems.dungeon_system import DungeonSystem
 import copy
 
+
 # ################################################################################################################################################
 def _replace_with_you(input_text: str, your_name: str) -> str:
 
@@ -442,12 +443,13 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 必要组件：基础属性，这里用浅拷贝，不能动原有的。
             actor_entity.add(
-                BaseAttributesComponent, instance.name, copy.copy(instance.base_attributes)
+                BaseAttributesComponent,
+                instance.name,
+                copy.copy(instance.base_attributes),
             )
 
             # 必要组件：类型标记
             match prototype.type:
-
                 case ActorType.HERO:
                     actor_entity.add(HeroComponent, instance.name)
                 case ActorType.MONSTER:

@@ -167,38 +167,35 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
         assert option.new_game
         # 如果runtime文件不存在，说明是第一次启动，直接从gen文件中读取.
         assert option.gen_world_boot_file.exists()
+
         # 假设有文件，直接读取
         world_boot_file_content = option.gen_world_boot_file.read_text(encoding="utf-8")
+
         # 重新生成boot
         world_boot = Boot.model_validate_json(world_boot_file_content)
+
         # 重新生成world
         start_world = World(boot=world_boot)
+
+        # 运行时生成地下城系统。
+        start_world.dungeon = DungeonSystem(
+            name="哥布林与兽人",
+            engagement=EngagementSystem(),
+            levels=[stage_dungeon_cave1, stage_dungeon_cave2],
+        )
 
     else:
 
         # 如果runtime文件存在，说明是恢复游戏
         assert not option.new_game
+
         # runtime文件存在，需要做恢复
         world_runtime_file_content = option.world_runtime_file.read_text(
             encoding="utf-8"
         )
+
         # 重新生成world,直接反序列化。
         start_world = World.model_validate_json(world_runtime_file_content)
-
-    ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    # langserve先写死。后续需要改成配置文件
-    lang_serve_system = LangServeSystem(
-        f"{option.game}-langserve_system", url=option.langserve_localhost_urls[0]
-    )
-
-    # 创建一个测试的地下城系统
-    test_dungeon = DungeonSystem(
-        name="哥布林与兽人",
-        engagement=EngagementSystem(),
-        levels=[stage_dungeon_cave1, stage_dungeon_cave2],
-    )
 
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -209,8 +206,9 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
         player=PlayerProxy(name=option.user, actor=actor_warrior.name),
         world=start_world,
         world_path=option.world_runtime_file,
-        langserve_system=lang_serve_system,
-        dungeon_system=test_dungeon,
+        langserve_system=LangServeSystem(
+            f"{option.game}-langserve_system", url=option.langserve_localhost_urls[0]
+        ),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
 

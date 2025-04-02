@@ -56,6 +56,12 @@ async def run_game(option: UserSessionOptions) -> None:
         world_boot = Boot.model_validate_json(world_boot_file_content)
         # 重新生成world
         start_world = World(boot=world_boot)
+        # 运行时生成地下城系统
+        start_world.dungeon = DungeonSystem(
+            name="哥布林与兽人",
+            engagement=EngagementSystem(),
+            levels=[stage_dungeon_cave1, stage_dungeon_cave2],
+        )
 
     else:
 
@@ -71,29 +77,15 @@ async def run_game(option: UserSessionOptions) -> None:
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    # langserve先写死。后续需要改成配置文件
-    lang_serve_system = LangServeSystem(
-        f"{option.game}-langserve_system", url=option.langserve_localhost_urls[0]
-    )
-
-    # 创建一个测试的地下城系统
-    test_dungeon = DungeonSystem(
-        name="哥布林与兽人",
-        engagement=EngagementSystem(),
-        levels=[stage_dungeon_cave1, stage_dungeon_cave2],
-    )
-
-    ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
     # 依赖注入，创建新的游戏
     terminal_game = TerminalTCGGame(
         name=option.game,
         player=PlayerProxy(name=option.user, actor=actor_warrior.name),
         world=start_world,
         world_path=option.world_runtime_file,
-        langserve_system=lang_serve_system,
-        dungeon_system=test_dungeon,
+        langserve_system=LangServeSystem(
+            f"{option.game}-langserve_system", url=option.langserve_localhost_urls[0]
+        ),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
 

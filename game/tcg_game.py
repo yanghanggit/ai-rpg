@@ -88,7 +88,7 @@ class TCGGame(BaseGame, TCGGameContext):
         world: World,
         world_path: Path,
         langserve_system: LangServeSystem,
-        dungeon_system: DungeonSystem,
+        # dungeon_system: DungeonSystem,
         chaos_engineering_system: IChaosEngineering,
     ) -> None:
 
@@ -120,9 +120,6 @@ class TCGGame(BaseGame, TCGGameContext):
         self._chaos_engineering_system: Final[IChaosEngineering] = (
             chaos_engineering_system
         )
-
-        # 地牢管理系统
-        self._world.dungeon = dungeon_system
 
         # 是否开启调试
         self._debug_flag_pipeline: bool = False

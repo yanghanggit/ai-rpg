@@ -62,7 +62,6 @@ async def run_game(option: UserSessionOptions) -> None:
             engagement=EngagementSystem(),
             levels=[stage_dungeon_cave1, stage_dungeon_cave2],
         )
-
     else:
 
         # 如果runtime文件存在，说明是恢复游戏
@@ -92,12 +91,15 @@ async def run_game(option: UserSessionOptions) -> None:
 
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(terminal_game.world.entities_snapshot) == 0:
+
         assert option.new_game
         logger.warning(f"游戏中没有实体 = {option.game}, 说明是第一次创建游戏")
 
         # 直接构建ecs
         terminal_game.new_game().save()
+
     else:
+
         assert not option.new_game
         logger.warning(
             f"游戏中有实体 = {option.game}，需要通过数据恢复实体，是游戏回复的过程"
@@ -318,9 +320,6 @@ async def _execute_terminal_game(
     logger.debug(f"玩家输入: {terminal_game.player.name} = {usr_input}")
 
     # 执行一次！！！！！
-    # terminal_game.player.add_command(
-    #     PlayerCommand(user=terminal_game.player.name, command=usr_input)
-    # )
     await terminal_game.a_execute()
 
 

@@ -51,8 +51,15 @@ class TCGGameContext(Context):
 
         ret: List[EntitySnapshot] = []
 
-        entities = self._entities
-        for entity in entities:
+        entities_copy = self._entities.copy()
+
+        # 保证有顺序。防止set引起的顺序不一致。
+        sort_actors = sorted(
+            entities_copy,
+            key=lambda entity: entity.get(RunTimeIndexComponent).runtime_index,
+        )
+
+        for entity in sort_actors:
             entity_snapshot = EntitySnapshot(name=entity._name, components=[])
             for key, value in entity._components.items():
 

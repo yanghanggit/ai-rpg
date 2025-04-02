@@ -123,6 +123,22 @@ class TCGGame(BaseGame, TCGGameContext):
         # 是否开启调试
         self._debug_flag_pipeline: bool = False
 
+        # 地下城系统的强行类型转化 DungeonSystem 继承自 Dungeon，EngagementSystem 继承自 Engagement
+        if not isinstance(self._world.dungeon, DungeonSystem):
+            logger.warning(
+                f"world.dungeon is not DungeonSystem, try to convert it."
+            )
+            self._world.dungeon = DungeonSystem.model_validate_json(
+                self._world.dungeon.model_dump_json()
+            )
+            if not isinstance(self._world.dungeon.engagement, EngagementSystem):
+                logger.warning(
+                    f"world.dungeon.engagement is not EngagementSystem, try to convert it."
+                )
+                self._world.dungeon.engagement = EngagementSystem.model_validate_json(
+                    self._world.dungeon.engagement.model_dump_json()
+                )
+
     ###############################################################################################################################################
     @property
     def world_file_dir(self) -> Path:

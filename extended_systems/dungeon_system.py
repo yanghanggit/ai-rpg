@@ -10,7 +10,6 @@ class DungeonSystem(Dungeon):
 
     @property
     def engagement_system(self) -> EngagementSystem:
-        assert self.engagement is not None
         assert isinstance(self.engagement, EngagementSystem)
         return self.engagement
 

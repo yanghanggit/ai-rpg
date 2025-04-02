@@ -49,7 +49,7 @@ class TCGGameProcessPipeline(Processors):
 
         ##
         tcg_game = cast(TCGGame, game)
-        assert isinstance(tcg_game, TCGGame)
+        # assert isinstance(tcg_game, TCGGame)
         processors = TCGGameProcessPipeline()
 
         # 进入动作前，处理输入。
@@ -151,7 +151,7 @@ class TCGGameProcessPipeline(Processors):
 
         ##
         tcg_game = cast(TCGGame, game)
-        assert isinstance(tcg_game, TCGGame)
+        # assert isinstance(tcg_game, TCGGame)
         processors = TCGGameProcessPipeline()
 
         # 用户输入转入pipeline 执行序列

@@ -69,7 +69,7 @@ EPOCH_SCRIPT: Final[
 
 
 #######################################################################################################################################
-GUID_INDEX: int = 1000
+#GUID_INDEX: int = 1000
 
 
 #######################################################################################################################################
@@ -144,12 +144,12 @@ def _create_actor_instance(
     attributes: BaseAttributes,
 ) -> ActorInstance:
 
-    global GUID_INDEX
-    GUID_INDEX += 1
+    # global GUID_INDEX
+    # GUID_INDEX += 1
     ret = ActorInstance(
         name=name,
         prototype=actor_prototype.name,
-        guid=GUID_INDEX,
+        #guid=GUID_INDEX,
         system_message="",
         kick_off_message=kick_off_message,
         base_attributes=attributes,
@@ -176,12 +176,12 @@ def _create_stage_instance(
     actors: List[ActorInstance] = [],
 ) -> StageInstance:
 
-    global GUID_INDEX
-    GUID_INDEX += 1
+    # global GUID_INDEX
+    # GUID_INDEX += 1
     ret = StageInstance(
         name=name,
         prototype=stage.name,
-        guid=GUID_INDEX,
+        ##guid=GUID_INDEX,
         actors=[],
         system_message="",
         kick_off_message=kick_off_message,
@@ -207,12 +207,12 @@ def _create_world_system_instance(
     kick_off_message: str,
 ) -> WorldSystemInstance:
 
-    global GUID_INDEX
-    GUID_INDEX += 1
+    # global GUID_INDEX
+    # GUID_INDEX += 1
     ret = WorldSystemInstance(
         name=name,
         prototype=world_system.name,
-        guid=GUID_INDEX,
+        #guid=GUID_INDEX,
         system_message="",
         kick_off_message=kick_off_message,
     )

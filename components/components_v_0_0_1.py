@@ -8,12 +8,12 @@ SCHEMA_VERSION: Final[str] = "0.0.1"
 
 
 ############################################################################################################
-# 全局唯一标识符
+# 全局唯一标识符 RunTimeIndexComponent
 @final
 @register_component_class
-class GUIDComponent(NamedTuple):
+class RunTimeIndexComponent(NamedTuple):
     name: str
-    GUID: int
+    runtime_index: int
 
 
 ############################################################################################################

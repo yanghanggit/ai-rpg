@@ -23,7 +23,7 @@ from components.components_v_0_0_1 import (
     StageComponent,
     ActorComponent,
     PlayerComponent,
-    GUIDComponent,
+    RunTimeIndexComponent,
     KickOffMessageComponent,
     AppearanceComponent,
     StageEnvironmentComponent,
@@ -375,7 +375,11 @@ class TCGGame(BaseGame, TCGGameContext):
             assert world_system_entity is not None
 
             # 必要组件
-            world_system_entity.add(GUIDComponent, instance.name, instance.guid)
+            world_system_entity.add(
+                RunTimeIndexComponent,
+                instance.name,
+                self.world.next_runtime_index(),
+            )
             world_system_entity.add(WorldSystemComponent, instance.name)
 
             # system prompt
@@ -411,7 +415,11 @@ class TCGGame(BaseGame, TCGGameContext):
             assert actor_entity is not None
 
             # 必要组件：guid
-            actor_entity.add(GUIDComponent, instance.name, instance.guid)
+            actor_entity.add(
+                RunTimeIndexComponent,
+                instance.name,
+                self.world.next_runtime_index(),
+            )
 
             # 必要组件：身份类型标记-角色Actor
             actor_entity.add(ActorComponent, instance.name, "")
@@ -472,7 +480,11 @@ class TCGGame(BaseGame, TCGGameContext):
             stage_entity = self.__create_entity__(instance.name)
 
             # 必要组件
-            stage_entity.add(GUIDComponent, instance.name, instance.guid)
+            stage_entity.add(
+                RunTimeIndexComponent,
+                instance.name,
+                self.world.next_runtime_index(),
+            )
             stage_entity.add(StageComponent, instance.name)
 
             # system prompt

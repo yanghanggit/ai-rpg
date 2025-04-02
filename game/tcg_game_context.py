@@ -5,7 +5,7 @@ from components.components_v_0_0_1 import (
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
-    GUIDComponent,
+    RunTimeIndexComponent,
     AppearanceComponent,
     PlayerComponent,
 )
@@ -129,9 +129,9 @@ class TCGGameContext(Context):
     ###############################################################################################################################################
     def get_entity_by_guid(self, guid: int) -> Optional[Entity]:
 
-        for entity in self.get_group(Matcher(GUIDComponent)).entities:
-            guid_comp = entity.get(GUIDComponent)
-            if guid_comp.GUID == guid:
+        for entity in self.get_group(Matcher(RunTimeIndexComponent)).entities:
+            guid_comp = entity.get(RunTimeIndexComponent)
+            if guid_comp.runtime_index == guid:
                 return entity
 
         return None

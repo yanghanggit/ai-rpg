@@ -151,7 +151,7 @@ class BaseAttributes(BaseModel):
 class ActorInstance(BaseModel):
     name: str
     prototype: str
-    guid: int
+    #guid: int
     system_message: str
     kick_off_message: str
     base_attributes: BaseAttributes
@@ -162,7 +162,7 @@ class ActorInstance(BaseModel):
 class StageInstance(BaseModel):
     name: str
     prototype: str
-    guid: int
+    #guid: int
     actors: List[str]
     system_message: str
     kick_off_message: str
@@ -173,7 +173,7 @@ class StageInstance(BaseModel):
 class WorldSystemInstance(BaseModel):
     name: str
     prototype: str
-    guid: int
+    #guid: int
     system_message: str
     kick_off_message: str
 
@@ -200,10 +200,11 @@ class World(BaseModel):
     boot: Boot = Boot()
     entities_snapshot: List[EntitySnapshot] = []
     agents_short_term_memory: Dict[str, AgentShortTermMemory] = {}
-    runtime_players: List[ActorInstance] = []
-    runtime_actors: List[ActorInstance] = []
-    runtime_stages: List[StageInstance] = []
-    runtime_world_systems: List[WorldSystemInstance] = []
+    runtime_index: int = 1000
+    # runtime_players: List[ActorInstance] = []
+    # runtime_actors: List[ActorInstance] = []
+    # runtime_stages: List[StageInstance] = []
+    # runtime_world_systems: List[WorldSystemInstance] = []
 
     @property
     def data_base(self) -> DataBase:
@@ -211,19 +212,23 @@ class World(BaseModel):
 
     @property
     def players(self) -> List[ActorInstance]:
-        return self.boot.players + self.runtime_players
+        return self.boot.players
 
     @property
     def actors(self) -> List[ActorInstance]:
-        return self.boot.actors + self.runtime_actors
+        return self.boot.actors
 
     @property
     def stages(self) -> List[StageInstance]:
-        return self.boot.stages + self.runtime_stages
+        return self.boot.stages
 
     @property
     def world_systems(self) -> List[WorldSystemInstance]:
-        return self.boot.world_systems + self.runtime_world_systems
+        return self.boot.world_systems
+
+    def next_runtime_index(self) -> int:
+        self.runtime_index += 1
+        return self.runtime_index
 
 
 ###############################################################################################################################################

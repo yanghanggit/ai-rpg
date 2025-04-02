@@ -7,7 +7,7 @@ from components.components_v_0_0_1 import (
     HomeComponent,
     CanStartPlanningComponent,
     StageComponent,
-    GUIDComponent,
+    RunTimeIndexComponent,
     # StageEnvironmentComponent,
     PlayerComponent,
 )
@@ -136,9 +136,9 @@ class HomePrePlanningSystem(ExecuteProcessor):
 
         entity_guid_pairs: List[Tuple[Entity, int]] = []
         for entity in actor_entities:
-            assert entity.has(GUIDComponent)
-            guid_comp = entity.get(GUIDComponent)
-            entity_guid_pairs.append((entity, guid_comp.GUID))
+            assert entity.has(RunTimeIndexComponent)
+            guid_comp = entity.get(RunTimeIndexComponent)
+            entity_guid_pairs.append((entity, guid_comp.runtime_index))
 
         return [entity for entity, _ in sorted(entity_guid_pairs, key=lambda x: x[1])]
 

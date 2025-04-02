@@ -9,7 +9,7 @@ from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSyste
 from models.v_0_0_1 import StatusEffect
 import format_string.json_format
 from components.components_v_0_0_1 import (
-    CombatAttributesComponent,
+    CombatRoleComponent,
 )
 
 
@@ -24,7 +24,7 @@ class FeedbackResponse(BaseModel):
 
 #######################################################################################################################################
 def _generate_prompt(
-    combat_attributes_component: CombatAttributesComponent,
+    combat_attributes_component: CombatRoleComponent,
     feedback_component: FeedbackAction,
 ) -> str:
 
@@ -166,7 +166,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
 
             feedback_action2 = entity.get(FeedbackAction)
 
-            combat_attributes_component = entity.get(CombatAttributesComponent)
+            combat_attributes_component = entity.get(CombatRoleComponent)
             assert combat_attributes_component is not None
 
             # 生成消息

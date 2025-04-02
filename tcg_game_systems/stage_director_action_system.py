@@ -14,8 +14,7 @@ from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSyste
 from models.v_0_0_1 import Skill
 from components.components_v_0_0_1 import (
     ActorComponent,
-    CombatAttributesComponent,
-    CombatStatusEffectsComponent,
+    CombatRoleComponent,
     DungeonComponent,
     StageComponent,
 )
@@ -60,8 +59,7 @@ class ActionPromptParameters(NamedTuple):
     actor: str
     targets: List[str]
     skill: Skill
-    combat_attrs_component: CombatAttributesComponent
-    combat_effects_component: CombatStatusEffectsComponent
+    combat_role_component: CombatRoleComponent
     interaction: str
 
 
@@ -80,9 +78,9 @@ def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> st
 技能效果: {param.skill.effect}
 角色演出: {param.interaction}
 属性: 
-{param.combat_attrs_component.as_prompt}
+{param.combat_role_component.attrs_prompt}
 角色状态: 
-{param.combat_effects_component.as_prompt}"""
+{param.combat_role_component.status_effects_prompt}"""
 
         details_prompt.append(detail)
 
@@ -166,8 +164,7 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
         for entity in react_entities:
 
             assert entity.has(ActorComponent)
-            assert entity.has(CombatAttributesComponent)
-            assert entity.has(CombatStatusEffectsComponent)
+            assert entity.has(CombatRoleComponent)
             assert entity.has(PlayCardAction)
 
             select_action = entity.get(PlayCardAction)
@@ -178,8 +175,7 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
                     actor=entity._name,
                     targets=select_action.targets,
                     skill=select_action.skill,
-                    combat_attrs_component=entity.get(CombatAttributesComponent),
-                    combat_effects_component=entity.get(CombatStatusEffectsComponent),
+                    combat_role_component=entity.get(CombatRoleComponent),
                     interaction=select_action.interaction,
                 )
             )

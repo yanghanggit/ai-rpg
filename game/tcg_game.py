@@ -17,6 +17,7 @@ from models.v_0_0_1 import (
     AgentShortTermMemory,
     ActorType,
     StageType,
+    # BaseAttributes,
 )
 from components.components_v_0_0_1 import (
     WorldSystemComponent,
@@ -31,8 +32,8 @@ from components.components_v_0_0_1 import (
     DungeonComponent,
     HeroComponent,
     MonsterComponent,
-    CombatAttributesComponent,
-    CombatStatusEffectsComponent,
+    CombatRoleComponent,
+    BaseAttributesComponent,
 )
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -83,6 +84,7 @@ class TCGGame(BaseGame, TCGGameContext):
     def __init__(
         self,
         name: str,
+        player: PlayerProxy,
         world: World,
         world_path: Path,
         langserve_system: LangServeSystem,
@@ -107,7 +109,9 @@ class TCGGame(BaseGame, TCGGameContext):
         )
 
         # 玩家
-        self._player: PlayerProxy = PlayerProxy(name="")
+        self._player: PlayerProxy = player
+        assert self._player.name != ""
+        assert self._player.actor != ""
 
         # agent 系统
         self._langserve_system: Final[LangServeSystem] = langserve_system
@@ -236,7 +240,7 @@ class TCGGame(BaseGame, TCGGameContext):
         logger.warning(f"{self.name}, game over!!!!!!!!!!!!!!!!!!!!")
 
     ###############################################################################################################################################
-    def build_entities(self) -> "TCGGame":
+    def new_game(self) -> "TCGGame":
 
         assert len(self.world.entities_snapshot) == 0, "游戏中有实体，不能创建新的游戏"
 
@@ -250,8 +254,9 @@ class TCGGame(BaseGame, TCGGameContext):
         )
 
         ## 第2步，创建actor
-        self._create_player_entities(self.world.players, self.world.data_base)
+        # self._create_player_entities(self.world.players, self.world.data_base)
         self._create_actor_entities(self.world.actors, self.world.data_base)
+        self._assign_player_to_actor()
 
         ## 第3步，创建stage
         self._create_stage_entities(self.world.stages, self.world.data_base)
@@ -263,7 +268,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     # 测试！回复ecs
-    def restore_entities(self) -> "TCGGame":
+    def retore_game(self) -> "TCGGame":
         assert len(self.world.entities_snapshot) > 0, "游戏中没有实体，不能恢复游戏"
         self.restore_entities_from_snapshot(self.world.entities_snapshot)
         return self
@@ -307,8 +312,8 @@ class TCGGame(BaseGame, TCGGameContext):
         instances_dir = self.world_file_dir / "instances"
         instances_dir.mkdir(parents=True, exist_ok=True)
 
-        actors = self.world.players + self.world.actors
-        for actor in actors:
+        # actors = self.world.actors
+        for actor in self.world.actors:
             actor_path = instances_dir / f"{actor.name}.json"
             actor_path.write_text(actor.model_dump_json(), encoding="utf-8")
 
@@ -436,6 +441,11 @@ class TCGGame(BaseGame, TCGGameContext):
             # 必要组件：外观
             actor_entity.add(AppearanceComponent, instance.name, prototype.appearance)
 
+            # 必要组件：基础属性
+            actor_entity.add(
+                BaseAttributesComponent, instance.name, instance.base_attributes
+            )
+
             # 必要组件：类型标记
             match prototype.type:
 
@@ -450,16 +460,16 @@ class TCGGame(BaseGame, TCGGameContext):
         return ret
 
     ###############################################################################################################################################
-    def _create_player_entities(
-        self, actor_instances: List[ActorInstance], data_base: DataBase
-    ) -> List[Entity]:
+    # def _create_player_entities(
+    #     self, actor_instances: List[ActorInstance], data_base: DataBase
+    # ) -> List[Entity]:
 
-        ret: List[Entity] = []
-        ret = self._create_actor_entities(actor_instances, data_base)
-        for entity in ret:
-            assert not entity.has(PlayerComponent)
-            entity.add(PlayerComponent, "")
-        return ret
+    #     ret: List[Entity] = []
+    #     ret = self._create_actor_entities(actor_instances, data_base)
+    #     for entity in ret:
+    #         assert not entity.has(PlayerComponent)
+    #         entity.add(PlayerComponent, "")
+    #     return ret
 
     ###############################################################################################################################################
     def _create_stage_entities(
@@ -525,9 +535,9 @@ class TCGGame(BaseGame, TCGGameContext):
         return self._player
 
     ###############################################################################################################################################
-    @player.setter
-    def player(self, player_proxy: PlayerProxy) -> None:
-        self._player = player_proxy
+    # @player.setter
+    # def player(self, player_proxy: PlayerProxy) -> None:
+    #     self._player = player_proxy
 
     ###############################################################################################################################################
     # 临时的，考虑后面把player直接挂在context或者game里，因为player设计上唯一
@@ -568,40 +578,22 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     # TODO 目前是写死的
-    def confirm_player_actor_assignment(self, actor_instance: ActorInstance) -> bool:
+    def _assign_player_to_actor(self) -> bool:
 
         # 玩家的名字，此时必须有
         assert self.player.name != ""
-        if self.player.name == "":
+        assert self.player.actor != ""
+
+        actor_entity = self.get_actor_entity(self.player.actor)
+        assert actor_entity is not None
+        if actor_entity is None:
             return False
 
-        assert (
-            self.get_entity_by_player_name(self.player.name) is None
-        ), "玩家已经存在，不需要再次确认"
+        assert not actor_entity.has(PlayerComponent)
+        actor_entity.replace(PlayerComponent, self.player.name)
+        logger.info(f"玩家: {self.player.name} 选择控制: {self.player.name}")
 
-        player_entities: Set[Entity] = self.get_group(
-            Matcher(all_of=[PlayerComponent, ActorComponent])
-        ).entities
-        assert len(player_entities) > 0, "玩家实体不存在"
-
-        for player_entity in player_entities:
-
-            actor_comp = player_entity.get(ActorComponent)
-            assert actor_comp is not None
-            if actor_comp.name != actor_instance.name:
-                continue
-
-            # 找到了可以控制的actor，标记控制，将player的名字赋值给actor
-            player_comp = player_entity.get(PlayerComponent)
-            assert player_comp is not None
-            assert player_comp.player_name == ""
-            player_entity.replace(PlayerComponent, self.player.name)
-            logger.info(f"玩家: {self.player.name} 选择控制: {player_entity._name}")
-
-            return True
-
-        # assert False, "玩家没有准备好，没有找到可以控制的actor"
-        return False
+        return True
 
     ###############################################################################################################################################
     def broadcast_event(
@@ -747,35 +739,21 @@ class TCGGame(BaseGame, TCGGameContext):
         return ConversationError.VALID
 
     ###############################################################################################################################################
-    def retrieve_actor_instance(self, actor_entity: Entity) -> Optional[ActorInstance]:
-
-        if not actor_entity.has(ActorComponent):
-            return None
-
-        all_actors = self.world.players + self.world.actors
-        for actor in all_actors:
-            if actor.name == actor_entity._name:
-                return actor
-        return None
-
-    ###############################################################################################################################################
     def setup_combat_attributes(self, actor_entity: Entity) -> None:
         assert actor_entity.has(ActorComponent)
-        if not actor_entity.has(ActorComponent):
-            return
+        assert actor_entity.has(BaseAttributesComponent)
 
-        actor_instance = self.retrieve_actor_instance(actor_entity)
-        assert actor_instance is not None
+        base_attributes_comp = actor_entity.get(BaseAttributesComponent)
 
-        hp: Final[float] = actor_instance.base_attributes.hp
-        max_hp: Final[float] = actor_instance.base_attributes.max_hp
-        physical_attack: Final[float] = actor_instance.base_attributes.physical_attack
-        physical_defense: Final[float] = actor_instance.base_attributes.physical_defense
-        magic_attack: Final[float] = actor_instance.base_attributes.magic_attack
-        magic_defense: Final[float] = actor_instance.base_attributes.magic_defense
+        hp: Final[float] = base_attributes_comp.data.hp
+        max_hp: Final[float] = base_attributes_comp.data.max_hp
+        physical_attack: Final[float] = base_attributes_comp.data.physical_attack
+        physical_defense: Final[float] = base_attributes_comp.data.physical_defense
+        magic_attack: Final[float] = base_attributes_comp.data.magic_attack
+        magic_defense: Final[float] = base_attributes_comp.data.magic_defense
 
         actor_entity.replace(
-            CombatAttributesComponent,
+            CombatRoleComponent,
             actor_entity._name,
             hp,
             max_hp,
@@ -783,9 +761,8 @@ class TCGGame(BaseGame, TCGGameContext):
             physical_defense,
             magic_attack,
             magic_defense,
+            [],
         )
-
-        actor_entity.replace(CombatStatusEffectsComponent, actor_entity._name, [])
 
     ###############################################################################################################################################
     def update_combat_status_effects(
@@ -793,12 +770,10 @@ class TCGGame(BaseGame, TCGGameContext):
     ) -> None:
 
         # 效果更新
-        assert entity.has(CombatStatusEffectsComponent)
-        combat_status_effects_comp = entity.get(CombatStatusEffectsComponent)
-        if combat_status_effects_comp is None:
-            return
+        assert entity.has(CombatRoleComponent)
+        combat_role_comp = entity.get(CombatRoleComponent)
 
-        current_effects = combat_status_effects_comp.status_effects
+        current_effects = combat_role_comp.status_effects
         for new_effect in status_effects:
             for i, e in enumerate(current_effects):
                 if e.name == new_effect.name:
@@ -810,8 +785,14 @@ class TCGGame(BaseGame, TCGGameContext):
                 current_effects.append(new_effect)
 
         entity.replace(
-            CombatStatusEffectsComponent,
-            combat_status_effects_comp.name,
+            CombatRoleComponent,
+            combat_role_comp.name,
+            combat_role_comp.hp,
+            combat_role_comp.max_hp,
+            combat_role_comp.physical_attack,
+            combat_role_comp.physical_defense,
+            combat_role_comp.magic_attack,
+            combat_role_comp.magic_defense,
             current_effects,
         )
 
@@ -908,10 +889,8 @@ class TCGGame(BaseGame, TCGGameContext):
             self.append_human_message(hero_entity, prompt)
 
             # 一些处理。
-            if hero_entity.has(CombatAttributesComponent):
-                hero_entity.remove(CombatAttributesComponent)
-            if hero_entity.has(CombatStatusEffectsComponent):
-                hero_entity.remove(CombatStatusEffectsComponent)
+            if hero_entity.has(CombatRoleComponent):
+                hero_entity.remove(CombatRoleComponent)
 
         # 开始传送。
         self.stage_transition(heros_entities, stage_entity)

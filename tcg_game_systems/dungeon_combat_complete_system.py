@@ -7,7 +7,7 @@ from extended_systems.combat_system import CombatResult
 from components.components_v_0_0_1 import (
     ActorComponent,
     HeroComponent,
-    CombatAttributesComponent,
+    CombatRoleComponent,
 )
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from extended_systems.chat_request_handler import ChatRequestHandler
@@ -50,7 +50,7 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
         # 获取所有需要进行角色规划的角色
         actor_entities = self._game.get_group(
             Matcher(
-                all_of=[ActorComponent, HeroComponent, CombatAttributesComponent],
+                all_of=[ActorComponent, HeroComponent, CombatRoleComponent],
             )
         ).entities
 
@@ -128,7 +128,7 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
         assert (
             entity.has(ActorComponent)
             and entity.has(HeroComponent)
-            and entity.has(CombatAttributesComponent)
+            and entity.has(CombatRoleComponent)
         )
 
         # 先获取最近的战斗消息。

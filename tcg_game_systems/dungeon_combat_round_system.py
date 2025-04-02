@@ -2,6 +2,7 @@ import random
 from entitas import Matcher, Entity, Matcher, ExecuteProcessor  # type: ignore
 from components.components_v_0_0_1 import (
     HandComponent,
+    BaseAttributesComponent,
 )
 from overrides import override
 from typing import List, Tuple, final
@@ -65,11 +66,10 @@ class DungeonCombatRoundSystem(ExecuteProcessor):
 
         actor_dexterity_pairs: List[Tuple[Entity, int]] = []
         for entity in react_entities:
-            actor_instance = self._game.retrieve_actor_instance(entity)
-            assert actor_instance is not None
-            actor_dexterity_pairs.append(
-                (entity, actor_instance.base_attributes.dexterity)
-            )
+
+            assert entity.has(BaseAttributesComponent)
+            base_attributes_comp = entity.get(BaseAttributesComponent)
+            actor_dexterity_pairs.append((entity, base_attributes_comp.data.dexterity))
 
         return [
             entity

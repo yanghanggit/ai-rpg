@@ -1,6 +1,6 @@
 from typing import Final, NamedTuple, List, final
 from components.registry import register_component_class
-from models.v_0_0_1 import Skill, StatusEffect
+from models.v_0_0_1 import Skill, StatusEffect, BaseAttributes
 
 
 # 注意，不允许动！
@@ -154,7 +154,7 @@ class HandComponent(NamedTuple):
 # 战斗中临时使用。
 @final
 @register_component_class
-class CombatAttributesComponent(NamedTuple):
+class CombatRoleComponent(NamedTuple):
     name: str
     hp: float
     max_hp: float
@@ -162,9 +162,10 @@ class CombatAttributesComponent(NamedTuple):
     physical_defense: float
     magic_attack: float
     magic_defense: float
+    status_effects: List[StatusEffect]
 
     @property
-    def as_prompt(self) -> str:
+    def attrs_prompt(self) -> str:
         return f"""- 当前生命：{self.hp}
 - 最大生命：{self.max_hp}
 - 物理攻击：{self.physical_attack}
@@ -172,17 +173,8 @@ class CombatAttributesComponent(NamedTuple):
 - 魔法攻击：{self.magic_attack}
 - 魔法防御：{self.magic_defense}"""
 
-
-############################################################################################################
-# 战斗中临时使用。
-@final
-@register_component_class
-class CombatStatusEffectsComponent(NamedTuple):
-    name: str
-    status_effects: List[StatusEffect]
-
     @property
-    def as_prompt(self) -> str:
+    def status_effects_prompt(self) -> str:
         ret = "- 无"
         if len(self.status_effects) > 0:
             ret = "\n".join(
@@ -200,3 +192,12 @@ class CombatStatusEffectsComponent(NamedTuple):
 @register_component_class
 class DeathComponent(NamedTuple):
     name: str
+
+
+############################################################################################################
+# 死亡标记
+@final
+@register_component_class
+class BaseAttributesComponent(NamedTuple):
+    name: str
+    data: BaseAttributes

@@ -69,7 +69,7 @@ EPOCH_SCRIPT: Final[
 
 
 #######################################################################################################################################
-#GUID_INDEX: int = 1000
+# GUID_INDEX: int = 1000
 
 
 #######################################################################################################################################
@@ -149,7 +149,7 @@ def _create_actor_instance(
     ret = ActorInstance(
         name=name,
         prototype=actor_prototype.name,
-        #guid=GUID_INDEX,
+        # guid=GUID_INDEX,
         system_message="",
         kick_off_message=kick_off_message,
         base_attributes=attributes,
@@ -212,7 +212,7 @@ def _create_world_system_instance(
     ret = WorldSystemInstance(
         name=name,
         prototype=world_system.name,
-        #guid=GUID_INDEX,
+        # guid=GUID_INDEX,
         system_message="",
         kick_off_message=kick_off_message,
     )
@@ -231,21 +231,21 @@ def _create_world_system_instance(
 #######################################################################################################################################
 def _link_instance(
     boot: Boot,
-    players: List[ActorInstance],
+    # players: List[ActorInstance],
     actors: List[ActorInstance],
     stages: List[StageInstance],
     world_systems: List[WorldSystemInstance],
 ) -> None:
 
-    boot.players.extend(players)
+    # boot.players.extend(players)
     boot.actors.extend(actors)
     boot.stages.extend(stages)
     boot.world_systems.extend(world_systems)
 
     # # actor 需要后处理一下。
-    all_actors = players + actors
+    # all_actors = players + actors
 
-    for player in players:
+    for player in actors:
         assert (
             player.prototype in boot.data_base.actors
         ), f"Actor {player.prototype} not found in data base."
@@ -263,12 +263,12 @@ def _link_instance(
         ), f"World System {world_system.prototype} not found in data base."
 
     # 检查players 与 actors是否有重复
-    for player in players:
-        for actor in actors:
-            if player.name == actor.name:
-                assert False, f"Actor {player.name} found in both players and actors."
+    # for player in players:
+    #     for actor in actors:
+    #         if player.name == actor.name:
+    #             assert False, f"Actor {player.name} found in both players and actors."
 
-    check_names = [actor.name for actor in all_actors]
+    check_names = [actor.name for actor in actors]
     for stage in stages:
         for test_actor in stage.actors:
             if test_actor not in check_names:

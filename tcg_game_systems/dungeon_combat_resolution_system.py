@@ -2,8 +2,7 @@ from loguru import logger
 from entitas import Matcher, Entity, Matcher, ExecuteProcessor  # type: ignore
 from components.components_v_0_0_1 import (
     HandComponent,
-    CombatStatusEffectsComponent,
-    CombatAttributesComponent,
+    CombatRoleComponent,
 )
 from overrides import override
 from typing import List, Set, Tuple, final
@@ -185,7 +184,9 @@ class DungeonCombatResolutionSystem(ExecuteProcessor):
 
             # 血量更新
             self._update_combat_health(
-                actor_entity3, feedback_action.hp, feedback_action.max_hp
+                actor_entity3,
+                feedback_action.hp,
+                feedback_action.max_hp,
             )
 
             # 效果更新
@@ -230,11 +231,11 @@ class DungeonCombatResolutionSystem(ExecuteProcessor):
     ) -> Tuple[List[StatusEffect], List[StatusEffect]]:
 
         # 效果更新
-        assert entity.has(CombatStatusEffectsComponent)
-        combat_effects_comp = entity.get(CombatStatusEffectsComponent)
-        assert combat_effects_comp is not None
+        assert entity.has(CombatRoleComponent)
+        combat_role_comp = entity.get(CombatRoleComponent)
+        assert combat_role_comp is not None
 
-        current_effects = combat_effects_comp.status_effects.copy()
+        current_effects = combat_role_comp.status_effects.copy()
         remaining_effects = []
         removed_effects = []
         for i, e in enumerate(current_effects):
@@ -246,27 +247,45 @@ class DungeonCombatResolutionSystem(ExecuteProcessor):
             else:
                 removed_effects.append(current_effects[i])
 
+        # entity.replace(
+        #     CombatRole, combat_role_comp.name, remaining_effects
+        # )
+
         entity.replace(
-            CombatStatusEffectsComponent, combat_effects_comp.name, remaining_effects
+            CombatRoleComponent,
+            combat_role_comp.name,
+            combat_role_comp.hp,
+            combat_role_comp.max_hp,
+            combat_role_comp.physical_attack,
+            combat_role_comp.physical_defense,
+            combat_role_comp.magic_attack,
+            combat_role_comp.magic_defense,
+            removed_effects,
         )
 
         return remaining_effects, removed_effects
 
     ###############################################################################################################################################
-    def _update_combat_health(self, entity: Entity, hp: float, max_hp: float) -> None:
+    def _update_combat_health(
+        self,
+        entity: Entity,
+        hp: float,
+        max_hp: float,
+    ) -> None:
 
-        combat_attributes_comp = entity.get(CombatAttributesComponent)
-        assert combat_attributes_comp is not None
+        combat_role_comp = entity.get(CombatRoleComponent)
+        assert combat_role_comp is not None
 
         entity.replace(
-            CombatAttributesComponent,
-            combat_attributes_comp.name,
+            CombatRoleComponent,
+            combat_role_comp.name,
             hp,
             max_hp,
-            combat_attributes_comp.physical_attack,
-            combat_attributes_comp.physical_defense,
-            combat_attributes_comp.magic_attack,
-            combat_attributes_comp.magic_defense,
+            combat_role_comp.physical_attack,
+            combat_role_comp.physical_defense,
+            combat_role_comp.magic_attack,
+            combat_role_comp.magic_defense,
+            combat_role_comp.status_effects,
         )
 
     ###############################################################################################################################################

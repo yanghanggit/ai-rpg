@@ -5,7 +5,7 @@ from components.components_v_0_0_1 import DestroyComponent, DeathComponent
 from extended_systems.combat_system import CombatResult
 from game.tcg_game import TCGGame
 from components.components_v_0_0_1 import (
-    CombatAttributesComponent,
+    CombatRoleComponent,
     HeroComponent,
     MonsterComponent,
 )
@@ -33,14 +33,14 @@ class DeathSystem(ExecuteProcessor):
     ########################################################################################################################################################################
     def _update_entities_to_dead_state(self) -> None:
         entities = self._game.get_group(
-            Matcher(all_of=[CombatAttributesComponent], none_of=[DeathComponent])
+            Matcher(all_of=[CombatRoleComponent], none_of=[DeathComponent])
         ).entities.copy()
         for entity in entities:
-            combat_attributes = entity.get(CombatAttributesComponent)
-            if combat_attributes.hp <= 0:
-                logger.debug(f"{combat_attributes.name} is dead")
+            combat_role_comp = entity.get(CombatRoleComponent)
+            if combat_role_comp.hp <= 0:
+                logger.debug(f"{combat_role_comp.name} is dead")
                 self._game.append_human_message(entity, "# 你已被击败！")
-                entity.replace(DeathComponent, combat_attributes.name)
+                entity.replace(DeathComponent, combat_role_comp.name)
 
     ########################################################################################################################################################################
     def _add_destroyed_monster_entities(self) -> None:
@@ -68,11 +68,11 @@ class DeathSystem(ExecuteProcessor):
     ########################################################################################################################################################################
     def _are_all_heroes_defeated(self) -> bool:
         entities1 = self._game.get_group(
-            Matcher(all_of=[HeroComponent, DeathComponent, CombatAttributesComponent])
+            Matcher(all_of=[HeroComponent, DeathComponent, CombatRoleComponent])
         ).entities
 
         entities2 = self._game.get_group(
-            Matcher(all_of=[HeroComponent, CombatAttributesComponent])
+            Matcher(all_of=[HeroComponent, CombatRoleComponent])
         ).entities
 
         assert len(entities2) > 0, f"entities with actions: {entities2}"
@@ -81,13 +81,11 @@ class DeathSystem(ExecuteProcessor):
     ########################################################################################################################################################################
     def _are_all_monsters_defeated(self) -> bool:
         entities1 = self._game.get_group(
-            Matcher(
-                all_of=[MonsterComponent, DeathComponent, CombatAttributesComponent]
-            )
+            Matcher(all_of=[MonsterComponent, DeathComponent, CombatRoleComponent])
         ).entities
 
         entities2 = self._game.get_group(
-            Matcher(all_of=[MonsterComponent, CombatAttributesComponent])
+            Matcher(all_of=[MonsterComponent, CombatRoleComponent])
         ).entities
 
         assert len(entities2) > 0, f"entities with actions: {entities2}"

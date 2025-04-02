@@ -151,7 +151,7 @@ class BaseAttributes(BaseModel):
 class ActorInstance(BaseModel):
     name: str
     prototype: str
-    #guid: int
+    # guid: int
     system_message: str
     kick_off_message: str
     base_attributes: BaseAttributes
@@ -162,7 +162,7 @@ class ActorInstance(BaseModel):
 class StageInstance(BaseModel):
     name: str
     prototype: str
-    #guid: int
+    # guid: int
     actors: List[str]
     system_message: str
     kick_off_message: str
@@ -173,7 +173,7 @@ class StageInstance(BaseModel):
 class WorldSystemInstance(BaseModel):
     name: str
     prototype: str
-    #guid: int
+    # guid: int
     system_message: str
     kick_off_message: str
 
@@ -185,7 +185,8 @@ class Boot(BaseModel):
     name: str = ""
     version: str = ""
     epoch_script: str = ""
-    players: List[ActorInstance] = []
+    player_actor: str = ""
+    # players: List[ActorInstance] = []
     actors: List[ActorInstance] = []
     stages: List[StageInstance] = []
     world_systems: List[WorldSystemInstance] = []
@@ -210,9 +211,9 @@ class World(BaseModel):
     def data_base(self) -> DataBase:
         return self.boot.data_base
 
-    @property
-    def players(self) -> List[ActorInstance]:
-        return self.boot.players
+    # @property
+    # def players(self) -> List[ActorInstance]:
+    #     return self.boot.players
 
     @property
     def actors(self) -> List[ActorInstance]:

@@ -6,7 +6,7 @@ from typing import Dict, List, Set, final, override
 from game.tcg_game import TCGGame
 from components.components_v_0_0_1 import (
     StageEnvironmentComponent,
-    CombatAttributesComponent,
+    CombatRoleComponent,
 )
 import format_string.json_format
 from models.v_0_0_1 import StatusEffect
@@ -24,7 +24,7 @@ def _generate_prompt(
     stage_name: str,
     stage_narrate: str,
     actors_apperances_mapping: Dict[str, str],
-    temp_combat_attr_component: CombatAttributesComponent,
+    temp_combat_attr_component: CombatRoleComponent,
 ) -> str:
 
     actors_appearances_info = []
@@ -48,7 +48,7 @@ def _generate_prompt(
 ## （场景内）角色信息
 {"\n".join(actors_appearances_info)}
 ## 你的属性（仅在战斗中使用）
-{temp_combat_attr_component.as_prompt}
+{temp_combat_attr_component.attrs_prompt}
 ## 输出内容
 1. 状态感受：单段紧凑自述（禁用换行/空行/数字）
 2. 在你身上的持续效果：生成效果列表，包含效果名、效果描述、持续回合数。
@@ -127,7 +127,7 @@ class DungeonCombatKickOffSystem(ExecuteProcessor):
 
         for actor_entity in actor_entities:
 
-            assert actor_entity.has(CombatAttributesComponent)
+            assert actor_entity.has(CombatRoleComponent)
 
             current_stage = self._game.safe_get_stage_entity(actor_entity)
             assert current_stage is not None
@@ -143,7 +143,7 @@ class DungeonCombatKickOffSystem(ExecuteProcessor):
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
                 actors_apperances_mapping,
-                actor_entity.get(CombatAttributesComponent),
+                actor_entity.get(CombatRoleComponent),
             )
 
             # 生成请求处理器

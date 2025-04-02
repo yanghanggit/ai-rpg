@@ -287,8 +287,13 @@ def _build_world(world_boot: Boot) -> Boot:
     # 链接实例
     _link_instance(
         world_boot,
-        [actor_warrior_instance],
-        [actor_wizard_instance, actor_goblin_instance, actor_orcs_instance],
+        # [actor_warrior_instance],
+        [
+            actor_warrior_instance,
+            actor_wizard_instance,
+            actor_goblin_instance,
+            actor_orcs_instance,
+        ],
         [
             stage_heros_camp_instance,
             stage_dungeon_cave1_instance,

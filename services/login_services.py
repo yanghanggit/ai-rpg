@@ -204,6 +204,7 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
     # 依赖注入，创建新的游戏
     terminal_game = WebTCGGame(
         name=option.game,
+        player=PlayerProxy(name=option.user, actor=actor_warrior_instance.name),
         world=start_world,
         world_path=option.world_runtime_file,
         langserve_system=lang_serve_system,
@@ -217,7 +218,7 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
         logger.warning(f"游戏中没有实体 = {option.game}, 说明是第一次创建游戏")
 
         # 直接构建ecs
-        terminal_game.build_entities().save()
+        terminal_game.new_game().save()
     else:
         assert not option.new_game
         logger.warning(
@@ -225,16 +226,7 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
         )
 
         # 测试！回复ecs
-        terminal_game.restore_entities().save()
-
-    # 加入玩家的数据结构
-    terminal_game.player = PlayerProxy(name=option.user)
-
-    # 初始化游戏，玩家必须准备好，否则无法开始游戏
-    if option.new_game:
-        if not terminal_game.confirm_player_actor_assignment(actor_warrior_instance):
-            logger.error(f"游戏准备失败 = {option.game}")
-            return None
+        terminal_game.retore_game().save()
 
     return terminal_game
 

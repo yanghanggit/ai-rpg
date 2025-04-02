@@ -14,15 +14,22 @@ class PlayerProxy:
     def __init__(
         self,
         name: str,
+        actor: str,
     ) -> None:
 
         self._name: Final[str] = name
+        self._actor: Final[str] = actor
         self._client_messages: List[ClientMessage] = []
 
     # ##########################################################################################################################################################
     @property
     def name(self) -> str:
         return self._name
+
+    ##########################################################################################################################################################
+    @property
+    def actor(self) -> str:
+        return self._actor
 
     ##########################################################################################################################################################
     def add_agent_event(self, agent_event: AgentEvent) -> None:

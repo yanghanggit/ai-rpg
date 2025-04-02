@@ -10,10 +10,9 @@ from game.tcg_game_process_pipeline import TCGGameProcessPipeline
 from models.v_0_0_1 import (
     StatusEffect,
     World,
-    WorldSystemInstance,
-    DataBase,
-    ActorInstance,
-    StageInstance,
+    WorldSystem,
+    Actor,
+    Stage,
     AgentShortTermMemory,
     ActorType,
     StageType,
@@ -249,17 +248,14 @@ class TCGGame(BaseGame, TCGGameContext):
         self.chaos_engineering_system.on_pre_create_game()
 
         ## 第1步，创建world_system
-        self._create_world_system_entities(
-            self.world.world_systems, self.world.data_base
-        )
+        self._create_world_system_entities(self.world.boot.world_systems)
 
         ## 第2步，创建actor
-        # self._create_player_entities(self.world.players, self.world.data_base)
-        self._create_actor_entities(self.world.actors, self.world.data_base)
+        self._create_actor_entities(self.world.boot.actors)
         self._assign_player_to_actor()
 
         ## 第3步，创建stage
-        self._create_stage_entities(self.world.stages, self.world.data_base)
+        self._create_stage_entities(self.world.boot.stages)
 
         ## 最后！混沌系统，准备测试
         self.chaos_engineering_system.on_post_create_game()
@@ -288,8 +284,6 @@ class TCGGame(BaseGame, TCGGameContext):
             self._verbose_entities_snapshot()
             # 保存聊天记录
             self._verbose_chat_history()
-            # 保存boot
-            self._verbose_instances()
             # 保存地下城记录。
             self._verbose_dungeon_system()
 
@@ -305,26 +299,6 @@ class TCGGame(BaseGame, TCGGameContext):
             chat_history_path = chat_history_dir / f"{agent_name}.json"
             chat_history_path.write_text(
                 agent_memory.model_dump_json(), encoding="utf-8"
-            )
-
-    ###############################################################################################################################################
-    def _verbose_instances(self) -> None:
-        instances_dir = self.world_file_dir / "instances"
-        instances_dir.mkdir(parents=True, exist_ok=True)
-
-        # actors = self.world.actors
-        for actor in self.world.actors:
-            actor_path = instances_dir / f"{actor.name}.json"
-            actor_path.write_text(actor.model_dump_json(), encoding="utf-8")
-
-        for stage in self.world.stages:
-            stage_path = instances_dir / f"{stage.name}.json"
-            stage_path.write_text(stage.model_dump_json(), encoding="utf-8")
-
-        for world_system in self.world.world_systems:
-            world_system_path = instances_dir / f"{world_system.name}.json"
-            world_system_path.write_text(
-                world_system.model_dump_json(), encoding="utf-8"
             )
 
     ###############################################################################################################################################
@@ -361,19 +335,14 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     def _create_world_system_entities(
         self,
-        world_system_instances: List[WorldSystemInstance],
-        data_base: DataBase,
+        world_system_instances: List[WorldSystem],
     ) -> List[Entity]:
 
         ret: List[Entity] = []
 
         for instance in world_system_instances:
 
-            prototype = data_base.world_systems.get(instance.prototype, None)
-            assert prototype is not None
-            if prototype is None:
-                logger.error(f"db is None! {instance.name}: {instance.prototype}")
-                continue
+            # break  # TODO, 先注释掉
 
             # 创建实体
             world_system_entity = self.__create_entity__(instance.name)
@@ -402,18 +371,10 @@ class TCGGame(BaseGame, TCGGameContext):
         return ret
 
     ###############################################################################################################################################
-    def _create_actor_entities(
-        self, actor_instances: List[ActorInstance], data_base: DataBase
-    ) -> List[Entity]:
+    def _create_actor_entities(self, actor_instances: List[Actor]) -> List[Entity]:
 
         ret: List[Entity] = []
         for instance in actor_instances:
-
-            prototype = data_base.actors.get(instance.prototype, None)
-            assert prototype is not None
-            if prototype is None:
-                logger.error(f"db is None! {instance.name} : {instance.prototype}")
-                continue
 
             # 创建实体
             actor_entity = self.__create_entity__(instance.name)
@@ -439,7 +400,9 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
             # 必要组件：外观
-            actor_entity.add(AppearanceComponent, instance.name, prototype.appearance)
+            actor_entity.add(
+                AppearanceComponent, instance.name, instance.prototype.appearance
+            )
 
             # 必要组件：基础属性，这里用浅拷贝，不能动原有的。
             actor_entity.add(
@@ -449,7 +412,7 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
             # 必要组件：类型标记
-            match prototype.type:
+            match instance.prototype.type:
                 case ActorType.HERO:
                     actor_entity.add(HeroComponent, instance.name)
                 case ActorType.MONSTER:
@@ -461,19 +424,11 @@ class TCGGame(BaseGame, TCGGameContext):
         return ret
 
     ###############################################################################################################################################
-    def _create_stage_entities(
-        self, stage_instances: List[StageInstance], data_base: DataBase
-    ) -> List[Entity]:
+    def _create_stage_entities(self, stage_instances: List[Stage]) -> List[Entity]:
 
         ret: List[Entity] = []
 
         for instance in stage_instances:
-
-            prototype = data_base.stages.get(instance.prototype, None)
-            assert prototype is not None
-            if prototype is None:
-                logger.error(f"db is None! {instance.name} : {instance.prototype}")
-                continue
 
             # 创建实体
             stage_entity = self.__create_entity__(instance.name)
@@ -503,16 +458,18 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
             # 必要组件：类型
-            if prototype.type == StageType.DUNGEON:
+            if instance.prototype.type == StageType.DUNGEON:
                 stage_entity.add(DungeonComponent, instance.name)
-            elif prototype.type == StageType.HOME:
+            elif instance.prototype.type == StageType.HOME:
                 stage_entity.add(HomeComponent, instance.name, [])
 
             ## 重新设置Actor和stage的关系
-            for actor_name in instance.actors:
-                actor_entity: Optional[Entity] = self.get_actor_entity(actor_name)
+            for actor_instance in instance.actors:
+                actor_entity: Optional[Entity] = self.get_actor_entity(
+                    actor_instance.name
+                )
                 assert actor_entity is not None
-                actor_entity.replace(ActorComponent, actor_name, instance.name)
+                actor_entity.replace(ActorComponent, actor_instance.name, instance.name)
 
             ret.append(stage_entity)
 

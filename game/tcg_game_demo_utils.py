@@ -1,15 +1,12 @@
 from models.v_0_0_1 import (
-    Boot,
     ActorPrototype,
     StagePrototype,
-    WorldSystemPrototype,
-    ActorInstance,
-    StageInstance,
-    WorldSystemInstance,
+    Actor,
+    Stage,
+    WorldSystem,
     BaseAttributes,
 )
 from typing import List, Final
-from loguru import logger
 
 #######################################################################################################################################
 COMBAT_RULES_DESCRIPTION: Final[
@@ -69,15 +66,9 @@ EPOCH_SCRIPT: Final[
 
 
 #######################################################################################################################################
-# GUID_INDEX: int = 1000
-
-
-#######################################################################################################################################
-def _comple_actor_base_system_prompt(
+def _comple_actor_system_prompt(
     epoch_script: str, actor_profile: str, appearance: str
 ) -> str:
-    # # {prototype_name}
-    # 你扮演这个游戏世界中的一个角色: {prototype_name}
 
     return f"""## 当前游戏背景
 {epoch_script}
@@ -90,7 +81,7 @@ def _comple_actor_base_system_prompt(
 
 
 #######################################################################################################################################
-def _comple_base_stage_system_prompt(epoch_script: str, stage_profile: str) -> str:
+def _comple_stage_system_prompt(epoch_script: str, stage_profile: str) -> str:
 
     return f"""你将是角色活动的地点也是战斗系统。
 ## 游戏背景
@@ -106,8 +97,7 @@ def _comple_world_system_system_prompt(
     epoch_script: str, world_system_profile: str
 ) -> str:
 
-    return f"""
-## 游戏背景
+    return f"""## 游戏背景
 {epoch_script}
 ## 全局规则
 {GLOBAL_GAME_RULES}
@@ -116,40 +106,27 @@ def _comple_world_system_system_prompt(
 
 
 #######################################################################################################################################
-def _initialize_data_base(
-    world_boot: Boot,
-    epoch_script: str,
-    actors: List[ActorPrototype],
-    stages: List[StagePrototype],
-    world_systems: List[WorldSystemPrototype],
-) -> None:
-
-    world_boot.epoch_script = epoch_script
-
-    for actor in actors:
-        world_boot.data_base.actors.setdefault(actor.name, actor)
-
-    for stage in stages:
-        world_boot.data_base.stages.setdefault(stage.name, stage)
-
-    for world_system in world_systems:
-        world_boot.data_base.world_systems.setdefault(world_system.name, world_system)
-
-
-#######################################################################################################################################
-def _create_actor_instance(
+def create_actor(
     name: str,
-    actor_prototype: ActorPrototype,
+    prototype_name: str,
     kick_off_message: str,
     attributes: BaseAttributes,
-) -> ActorInstance:
+    type: str,
+    epoch_script: str,
+    actor_profile: str,
+    appearance: str,
+) -> Actor:
 
-    # global GUID_INDEX
-    # GUID_INDEX += 1
-    ret = ActorInstance(
+    prototype = ActorPrototype(
+        name=prototype_name,
+        type=type,
+        profile=actor_profile,
+        appearance=appearance,
+    )
+
+    ret = Actor(
         name=name,
-        prototype=actor_prototype.name,
-        # guid=GUID_INDEX,
+        prototype=prototype,
         system_message="",
         kick_off_message=kick_off_message,
         base_attributes=attributes,
@@ -163,56 +140,81 @@ def _create_actor_instance(
     # 初次编译system_message!!!!
     ret.system_message = f"""# {ret.name}
 你扮演这个游戏世界中的一个角色: {ret.name}
-{actor_prototype.base_system_message}"""
+{_comple_actor_system_prompt(
+    epoch_script=epoch_script,
+    actor_profile=actor_profile,
+    appearance=appearance,
+)}"""
 
     return ret
 
 
 #######################################################################################################################################
-def _create_stage_instance(
+def create_stage(
     name: str,
-    stage: StagePrototype,
+    prototype_name: str,
     kick_off_message: str,
-    actors: List[ActorInstance] = [],
-) -> StageInstance:
+    epoch_script: str,
+    type: str,
+    stage_profile: str,
+    actors: List[Actor],
+) -> Stage:
 
-    # global GUID_INDEX
-    # GUID_INDEX += 1
-    ret = StageInstance(
-        name=name,
-        prototype=stage.name,
-        ##guid=GUID_INDEX,
-        actors=[],
-        system_message="",
-        kick_off_message=kick_off_message,
+    prototype = StagePrototype(
+        name=prototype_name,
+        type=type,
+        profile=stage_profile,
     )
 
-    ret.actors = [actor.name for actor in actors]
+    ret = Stage(
+        name=name,
+        prototype=prototype,
+        system_message="",
+        kick_off_message=kick_off_message,
+        actors=[],
+    )
 
     # 初次编译system_message!!!!
     ret.system_message = f"""# {ret.name}
 你扮演这个游戏世界中的一个场景: {ret.name}
-{stage.base_system_message}"""
+{_comple_stage_system_prompt(
+    epoch_script=epoch_script,
+    stage_profile=stage_profile,
+)}"""
 
-    # logger.debug(
-    #     f"_create_stage_instance {ret.name} created. system_message: \n{ret.system_message}"
-    # )
     return ret
 
 
 #######################################################################################################################################
-def _create_world_system_instance(
+def copy_stage(
     name: str,
-    world_system: WorldSystemPrototype,
+    prototype: StagePrototype,
     kick_off_message: str,
-) -> WorldSystemInstance:
+    epoch_script: str,
+    actors: List[Actor],
+) -> Stage:
 
-    # global GUID_INDEX
-    # GUID_INDEX += 1
-    ret = WorldSystemInstance(
+    return create_stage(
         name=name,
-        prototype=world_system.name,
-        # guid=GUID_INDEX,
+        prototype_name=prototype.name,
+        kick_off_message=kick_off_message,
+        epoch_script=epoch_script,
+        type=prototype.type,
+        stage_profile=prototype.profile,
+        actors=actors,
+    )
+
+
+#######################################################################################################################################
+def create_world_system(
+    name: str,
+    kick_off_message: str,
+    epoch_script: str,
+    world_system_profile: str,
+) -> WorldSystem:
+
+    ret = WorldSystem(
+        name=name,
         system_message="",
         kick_off_message=kick_off_message,
     )
@@ -220,59 +222,12 @@ def _create_world_system_instance(
     # 初次编译system_message!!!!
     ret.system_message = f"""# {ret.name}
 你扮演这个游戏世界中的一个全局系统: {ret.name}
-{world_system.base_system_message}"""
+{_comple_world_system_system_prompt(
+    epoch_script=epoch_script,
+    world_system_profile=world_system_profile,
+)}"""
 
-    # logger.debug(
-    #     f"_create_world_system_instance {ret.name} created. system_message: \n{ret.system_message}"
-    # )
     return ret
-
-
-#######################################################################################################################################
-def _link_instance(
-    boot: Boot,
-    # players: List[ActorInstance],
-    actors: List[ActorInstance],
-    stages: List[StageInstance],
-    world_systems: List[WorldSystemInstance],
-) -> None:
-
-    # boot.players.extend(players)
-    boot.actors.extend(actors)
-    boot.stages.extend(stages)
-    boot.world_systems.extend(world_systems)
-
-    # # actor 需要后处理一下。
-    # all_actors = players + actors
-
-    for player in actors:
-        assert (
-            player.prototype in boot.data_base.actors
-        ), f"Actor {player.prototype} not found in data base."
-    for actor in actors:
-        assert (
-            actor.prototype in boot.data_base.actors
-        ), f"Actor {actor.prototype} not found in data base."
-    for stage in stages:
-        assert (
-            stage.prototype in boot.data_base.stages
-        ), f"Stage {stage.prototype} not found in data base."
-    for world_system in world_systems:
-        assert (
-            world_system.prototype in boot.data_base.world_systems
-        ), f"World System {world_system.prototype} not found in data base."
-
-    # 检查players 与 actors是否有重复
-    # for player in players:
-    #     for actor in actors:
-    #         if player.name == actor.name:
-    #             assert False, f"Actor {player.name} found in both players and actors."
-
-    check_names = [actor.name for actor in actors]
-    for stage in stages:
-        for test_actor in stage.actors:
-            if test_actor not in check_names:
-                assert False, f"Actor {test_actor} not found in append_actors."
 
 
 #######################################################################################################################################

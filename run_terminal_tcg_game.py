@@ -9,10 +9,9 @@ from extended_systems.lang_serve_system import LangServeSystem
 from player.player_proxy import PlayerProxy
 from game.tcg_game_demo import (
     create_then_write_demo_world,
-    actor_warrior_instance,
-    # stage_heros_camp_instance,
-    stage_dungeon_cave1_instance,
-    stage_dungeon_cave2_instance,
+    actor_warrior,
+    stage_dungeon_cave1,
+    stage_dungeon_cave2,
 )
 
 # from player.player_command import PlayerCommand
@@ -27,7 +26,7 @@ async def run_game(option: UserSessionOptions) -> None:
 
     # 这里是临时的TODO
     demo_edit_boot = create_then_write_demo_world(
-        option.game, "0.0.1", option.gen_world_boot_file
+        option.game, option.gen_world_boot_file
     )
     assert demo_edit_boot is not None
     if demo_edit_boot is None:
@@ -81,7 +80,7 @@ async def run_game(option: UserSessionOptions) -> None:
     # 创建一个测试的地下城系统
     test_dungeon = DungeonSystem(
         name="哥布林与兽人",
-        levels=[stage_dungeon_cave1_instance, stage_dungeon_cave2_instance],
+        levels=[stage_dungeon_cave1, stage_dungeon_cave2],
     )
 
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -90,7 +89,7 @@ async def run_game(option: UserSessionOptions) -> None:
     # 依赖注入，创建新的游戏
     terminal_game = TerminalTCGGame(
         name=option.game,
-        player=PlayerProxy(name=option.user, actor=actor_warrior_instance.name),
+        player=PlayerProxy(name=option.user, actor=actor_warrior.name),
         world=start_world,
         world_path=option.world_runtime_file,
         langserve_system=lang_serve_system,

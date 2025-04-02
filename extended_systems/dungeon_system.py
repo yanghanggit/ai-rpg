@@ -1,6 +1,6 @@
 from typing import List, Optional, final
 from loguru import logger
-from models.v_0_0_1 import StageInstance
+from models.v_0_0_1 import Stage
 from extended_systems.combat_system import CombatSystem
 from pydantic import BaseModel
 
@@ -10,12 +10,12 @@ from pydantic import BaseModel
 class DungeonSystem(BaseModel):
 
     name: str
-    levels: List[StageInstance]
+    levels: List[Stage]
     combat_system: CombatSystem = CombatSystem()
     position: int = 0
 
     ########################################################################################################################
-    def current_level(self) -> Optional[StageInstance]:
+    def current_level(self) -> Optional[Stage]:
         if len(self.levels) == 0:
             logger.warning("地下城系统为空！")
             return None
@@ -27,7 +27,7 @@ class DungeonSystem(BaseModel):
         return self.levels[self.position]
 
     ########################################################################################################################
-    def next_level(self) -> Optional[StageInstance]:
+    def next_level(self) -> Optional[Stage]:
 
         if len(self.levels) == 0:
             logger.warning("地下城系统为空！")

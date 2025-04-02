@@ -6,9 +6,9 @@ from loguru import logger
 from game.user_session_options import UserSessionOptions
 from game.tcg_game_demo import (
     create_then_write_demo_world,
-    actor_warrior_instance,
-    stage_dungeon_cave1_instance,
-    stage_dungeon_cave2_instance,
+    actor_warrior,
+    stage_dungeon_cave1,
+    stage_dungeon_cave2,
 )
 import shutil
 from models.v_0_0_1 import Boot, World
@@ -141,7 +141,7 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
 
     # 这里是临时的TODO
     demo_edit_boot = create_then_write_demo_world(
-        option.game, "0.0.1", option.gen_world_boot_file
+        option.game, option.gen_world_boot_file
     )
     assert demo_edit_boot is not None
     if demo_edit_boot is None:
@@ -195,7 +195,7 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
     # 创建一个测试的地下城系统
     test_dungeon = DungeonSystem(
         name="test_dungeon",
-        levels=[stage_dungeon_cave1_instance, stage_dungeon_cave2_instance],
+        levels=[stage_dungeon_cave1, stage_dungeon_cave2],
     )
 
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -204,7 +204,7 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
     # 依赖注入，创建新的游戏
     terminal_game = WebTCGGame(
         name=option.game,
-        player=PlayerProxy(name=option.user, actor=actor_warrior_instance.name),
+        player=PlayerProxy(name=option.user, actor=actor_warrior.name),
         world=start_world,
         world_path=option.world_runtime_file,
         langserve_system=lang_serve_system,

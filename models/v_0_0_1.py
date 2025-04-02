@@ -78,26 +78,17 @@ class StatusEffect(Item):
 @final
 class ActorPrototype(BaseModel):
     name: str
-    base_system_message: str
-    appearance: str
     type: str
+    profile: str
+    appearance: str
 
 
 ###############################################################################################################################################
 @final
 class StagePrototype(BaseModel):
     name: str
-    # code_name: str
-    base_system_message: str
     type: str
-
-
-###############################################################################################################################################
-@final
-class WorldSystemPrototype(BaseModel):
-    name: str
-    # code_name: str
-    base_system_message: str
+    profile: str
 
 
 ###############################################################################################################################################
@@ -105,7 +96,6 @@ class WorldSystemPrototype(BaseModel):
 class DataBase(BaseModel):
     actors: Dict[str, ActorPrototype] = {}
     stages: Dict[str, StagePrototype] = {}
-    world_systems: Dict[str, WorldSystemPrototype] = {}
 
 
 ###############################################################################################################################################
@@ -147,9 +137,9 @@ class BaseAttributes(BaseModel):
 
 ###############################################################################################################################################
 @final
-class ActorInstance(BaseModel):
+class Actor(BaseModel):
     name: str
-    prototype: str
+    prototype: ActorPrototype
     system_message: str
     kick_off_message: str
     base_attributes: BaseAttributes
@@ -157,19 +147,18 @@ class ActorInstance(BaseModel):
 
 ###############################################################################################################################################
 @final
-class StageInstance(BaseModel):
+class Stage(BaseModel):
     name: str
-    prototype: str
-    actors: List[str]
+    prototype: StagePrototype
     system_message: str
     kick_off_message: str
+    actors: List[Actor]
 
 
 ###############################################################################################################################################
 @final
-class WorldSystemInstance(BaseModel):
+class WorldSystem(BaseModel):
     name: str
-    prototype: str
     system_message: str
     kick_off_message: str
 
@@ -179,13 +168,14 @@ class WorldSystemInstance(BaseModel):
 @final
 class Boot(BaseModel):
     name: str = ""
-    version: str = ""
     epoch_script: str = ""
-    player_actor: str = ""
-    actors: List[ActorInstance] = []
-    stages: List[StageInstance] = []
-    world_systems: List[WorldSystemInstance] = []
+    stages: List[Stage] = []
+    world_systems: List[WorldSystem] = []
     data_base: DataBase = DataBase()
+
+    @property
+    def actors(self) -> List[Actor]:
+        return [actor for stage in self.stages for actor in stage.actors]
 
 
 ###############################################################################################################################################
@@ -193,26 +183,14 @@ class Boot(BaseModel):
 @final
 class World(BaseModel):
     version: str = SCHEMA_VERSION
-    boot: Boot = Boot()
+    runtime_index: int = 1000
     entities_snapshot: List[EntitySnapshot] = []
     agents_short_term_memory: Dict[str, AgentShortTermMemory] = {}
-    runtime_index: int = 1000
+    boot: Boot = Boot()
 
     @property
     def data_base(self) -> DataBase:
         return self.boot.data_base
-
-    @property
-    def actors(self) -> List[ActorInstance]:
-        return self.boot.actors
-
-    @property
-    def stages(self) -> List[StageInstance]:
-        return self.boot.stages
-
-    @property
-    def world_systems(self) -> List[WorldSystemInstance]:
-        return self.boot.world_systems
 
     def next_runtime_index(self) -> int:
         self.runtime_index += 1

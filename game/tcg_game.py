@@ -17,7 +17,6 @@ from models.v_0_0_1 import (
     AgentShortTermMemory,
     ActorType,
     StageType,
-    # BaseAttributes,
 )
 from components.components_v_0_0_1 import (
     WorldSystemComponent,
@@ -43,7 +42,7 @@ from pathlib import Path
 from models.event_models import AgentEvent
 from extended_systems.combat_system import CombatSystem, Combat
 from extended_systems.dungeon_system import DungeonSystem
-
+import copy
 
 # ################################################################################################################################################
 def _replace_with_you(input_text: str, your_name: str) -> str:
@@ -441,9 +440,9 @@ class TCGGame(BaseGame, TCGGameContext):
             # 必要组件：外观
             actor_entity.add(AppearanceComponent, instance.name, prototype.appearance)
 
-            # 必要组件：基础属性
+            # 必要组件：基础属性，这里用浅拷贝，不能动原有的。
             actor_entity.add(
-                BaseAttributesComponent, instance.name, instance.base_attributes
+                BaseAttributesComponent, instance.name, copy.copy(instance.base_attributes)
             )
 
             # 必要组件：类型标记
@@ -458,18 +457,6 @@ class TCGGame(BaseGame, TCGGameContext):
             ret.append(actor_entity)
 
         return ret
-
-    ###############################################################################################################################################
-    # def _create_player_entities(
-    #     self, actor_instances: List[ActorInstance], data_base: DataBase
-    # ) -> List[Entity]:
-
-    #     ret: List[Entity] = []
-    #     ret = self._create_actor_entities(actor_instances, data_base)
-    #     for entity in ret:
-    #         assert not entity.has(PlayerComponent)
-    #         entity.add(PlayerComponent, "")
-    #     return ret
 
     ###############################################################################################################################################
     def _create_stage_entities(
@@ -535,11 +522,6 @@ class TCGGame(BaseGame, TCGGameContext):
         return self._player
 
     ###############################################################################################################################################
-    # @player.setter
-    # def player(self, player_proxy: PlayerProxy) -> None:
-    #     self._player = player_proxy
-
-    ###############################################################################################################################################
     # 临时的，考虑后面把player直接挂在context或者game里，因为player设计上唯一
     def get_player_entity(self) -> Optional[Entity]:
         return self.get_entity_by_player_name(self.player.name)
@@ -577,7 +559,6 @@ class TCGGame(BaseGame, TCGGameContext):
             agent_short_term_memory.chat_history.extend([SystemMessage(content=chat)])
 
     ###############################################################################################################################################
-    # TODO 目前是写死的
     def _assign_player_to_actor(self) -> bool:
 
         # 玩家的名字，此时必须有

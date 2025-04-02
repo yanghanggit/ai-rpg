@@ -13,7 +13,30 @@ def _create_agent_startup_config(name: str) -> AgentStartupConfiguration:
     agent_startup_config = AgentStartupConfiguration()
     agent_startup_config.name = name
     agent_startup_config.service_configurations = [
-        ServiceConfiguration(port=8100, temperature=0.7, api="/v1/llm_serve/chat/"),
+        ServiceConfiguration(
+            port=8100,
+            temperature=0.7,
+            api="/v1/llm_serve/chat/",
+            fast_api_title="title1",
+            fast_api_version="0.0.1",
+            fast_api_description="description1",
+        ),
+        ServiceConfiguration(
+            port=8101,
+            temperature=0.7,
+            api="/v1/llm_serve/chat/",
+            fast_api_title="title2",
+            fast_api_version="0.0.1",
+            fast_api_description="description2",
+        ),
+        ServiceConfiguration(
+            port=8102,
+            temperature=0.7,
+            api="/v1/llm_serve/chat/",
+            fast_api_title="title3",
+            fast_api_version="0.0.1",
+            fast_api_description="description3",
+        ),
     ]
     return agent_startup_config
 
@@ -26,24 +49,13 @@ def _prepare_service_configuration(file_path: Path) -> None:
 
     # 打印配置文件
     for config in start_configurations.service_configurations:
-
-        logger.debug(f"port: {config.port}")
         assert config.port > 0, "port is 0"
-
-        logger.debug(f"temperature: {config.temperature}")
         assert config.temperature > 0, "temperature is 0"
-
-        logger.debug(f"api: {config.api}")
         assert config.api != "", "api is empty"
-
-        logger.debug(f"fast_api_title: {config.fast_api_title}")
         assert config.fast_api_title != "", "fast_api_title is empty"
-
-        logger.debug(f"fast_api_version: {config.fast_api_version}")
         assert config.fast_api_version != "", "fast_api_version is empty"
-
-        logger.debug(f"fast_api_description: {config.fast_api_description}")
         assert config.fast_api_description != "", "fast_api_description is empty"
+        logger.debug(f"\n{config.model_dump_json()}\n")
 
     # 保存配置文件
     try:
@@ -65,16 +77,15 @@ def _execute_service_startup(config_file_path: Path) -> None:
 
         if len(agent_startup_config.service_configurations) == 0:
             logger.error("没有找到配置")
-            return None
+            return
 
         # 删除所有进程
         os.system("pm2 delete all")
 
-        # 启动所有进程
-        for config in agent_startup_config.service_configurations:
-            terminal_batch_start_command = f"pm2 start llm_serves/azure_chat_openai_gpt_4o_graph.py -- {config.port} {config.temperature} {config.api} {config.fast_api_title} {config.fast_api_version} {config.fast_api_description}"
-            logger.debug(terminal_batch_start_command)
-            os.system(terminal_batch_start_command)
+        # 用配置文件的路径启动
+        terminal_batch_start_command = f"pm2 start llm_serves/azure_chat_openai_gpt_4o_graph.py -- {config_file_path}"
+        logger.debug(terminal_batch_start_command)
+        os.system(terminal_batch_start_command)
 
     except Exception as e:
         logger.error(f"Exception: {e}")
@@ -94,6 +105,7 @@ def main() -> None:
     assert (
         agent_startup_config_file_path.exists()
     ), f"找不到配置文件: {agent_startup_config_file_path}"
+    logger.debug(f"配置文件: {agent_startup_config_file_path}")
     _execute_service_startup(agent_startup_config_file_path)  # 写死？
 
 

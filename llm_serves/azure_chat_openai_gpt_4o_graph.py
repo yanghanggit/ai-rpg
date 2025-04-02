@@ -1,7 +1,11 @@
-import os
 import sys
+from pathlib import Path
+import threading
+
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+import os
 import traceback
-from typing import Annotated, Final, cast, Dict, List, Union, Any, override
+from typing import Annotated, cast, Dict, List, Union, Any, override
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
@@ -17,6 +21,10 @@ from langserve import (
 from langchain.schema.runnable import Runnable, RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
 import traceback
+from pathlib import Path
+from llm_serves.config import (
+    AgentStartupConfiguration,
+)
 
 
 ############################################################################################################
@@ -152,50 +160,84 @@ class ChatExecutor(Runnable[Dict[str, Any], Dict[str, Any]]):
 
 ############################################################################################################
 def main() -> None:
-    import uvicorn
 
-    if len(sys.argv) < 7:
-        print(
-            "Usage: python3 azure_chat_openai_gpt_4o_graph.py <port> <temperature> <api> <fast_api_title> <fast_api_version> <fast_api_description>"
-        )
+    if len(sys.argv) < 2:
+        print("请提供配置文件路径作为参数")
         sys.exit(1)
 
     arguments = sys.argv[1:]  # 获取除脚本名称外的所有参数
     print("接收到的参数:", arguments)
 
-    # 获取参数
-    arg_port: Final[int] = int(arguments[0])
-    arg_temperature: Final[float] = float(arguments[1])
-    arg_api: Final[str] = arguments[2]
-    arg_fast_api_title: Final[str] = arguments[3]
-    arg_fast_api_version: Final[str] = arguments[4]
-    arg_fast_api_description: Final[str] = arguments[5]
+    # 读取配置文件
+    agent_startup_config_file_path: Path = Path(str(arguments[0]))
 
-    app = FastAPI(
-        title=arg_fast_api_title,
-        version=arg_fast_api_version,
-        description=arg_fast_api_description,
-    )
+    if not agent_startup_config_file_path.exists():
+        # 如果文件不存在，打印错误信息并返回
+        return
 
-    # 如果api以/结尾，就将尾部的/去掉，不然add_routes会出错.
-    api = str(arg_api)
-    if api.endswith("/"):
-        api = api[:-1]
+    try:
 
-    add_routes(
-        app,
-        ChatExecutor(
-            compiled_state_graph=_create_compiled_stage_graph(
-                "azure_chat_openai_chatbot_node", arg_temperature
+        config_file_content = agent_startup_config_file_path.read_text(encoding="utf-8")
+        agent_startup_config = AgentStartupConfiguration.model_validate_json(
+            config_file_content
+        )
+
+        if len(agent_startup_config.service_configurations) == 0:
+            print("没有找到配置")
+            return
+
+        for configuration in agent_startup_config.service_configurations:
+
+            app = FastAPI(
+                title=configuration.fast_api_title,
+                version=configuration.fast_api_version,
+                description=configuration.fast_api_description,
             )
-        ),
-        path=api,
-    )
-    uvicorn.run(app, host="localhost", port=arg_port)
+
+            # 如果api以/结尾，就将尾部的/去掉，不然add_routes会出错.
+            api = str(configuration.api)
+            if api.endswith("/"):
+                api = api[:-1]
+
+            add_routes(
+                app,
+                ChatExecutor(
+                    compiled_state_graph=_create_compiled_stage_graph(
+                        "azure_chat_openai_chatbot_node", configuration.temperature
+                    )
+                ),
+                path=api,
+            )
+
+            # 这么写就是堵塞的。uvicorn.run(app, host="localhost", port=configuration.port)
+            def run_server() -> None:
+                # 必须这么写。
+                import uvicorn
+
+                uvicorn.run(
+                    app,
+                    host="localhost",
+                    port=configuration.port,
+                    # 可选：关闭不必要的日志输出
+                    # access_log=False,
+                )
+
+            # 创建并启动线程
+            thread = threading.Thread(target=run_server)
+            thread.daemon = True  # 设置为守护线程，主线程退出时自动终止
+            thread.start()
+
+    except Exception as e:
+        # logger.error(f"Exception: {e}")
+        print(f"Exception: {e}")
+
+    # 主线程继续执行其他逻辑或挂起
+    while True:
+        pass  # 保持主线程存活，防止子线程退出
 
 
 ############################################################################################################
-def test() -> None:
+def _test() -> None:
 
     # 聊天历史
     chat_history_state: State = {"messages": []}
@@ -234,4 +276,4 @@ def test() -> None:
 ############################################################################################################
 if __name__ == "__main__":
     main()
-    # test()
+    # _test()

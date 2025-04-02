@@ -207,7 +207,8 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
         world=start_world,
         world_path=option.world_runtime_file,
         langserve_system=LangServeSystem(
-            f"{option.game}-langserve_system", url=option.langserve_localhost_urls[0]
+            f"{option.game}-langserve_system",
+            localhost_urls=option.langserve_localhost_urls,
         ),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )

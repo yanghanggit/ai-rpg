@@ -3,11 +3,11 @@ from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from overrides import override
 from typing import Any, Dict, List, cast, final
 from game.tcg_game import TCGGame
-from models_v_0_0_1.dungeon import CombatResult
-from models_v_0_0_1.components import (
+from models_v_0_0_1 import (
     ActorComponent,
     HeroComponent,
     CombatRoleComponent,
+    CombatResult,
 )
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from extended_systems.chat_request_handler import ChatRequestHandler

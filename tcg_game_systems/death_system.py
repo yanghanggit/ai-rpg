@@ -1,14 +1,15 @@
 from loguru import logger
 from entitas import Matcher, ExecuteProcessor  # type: ignore
 from typing import final, override
-from models_v_0_0_1.components import DestroyComponent, DeathComponent
-from models_v_0_0_1.dungeon import CombatResult
-from game.tcg_game import TCGGame
-from models_v_0_0_1.components import (
+from models_v_0_0_1 import (
+    DestroyComponent,
+    DeathComponent,
+    CombatResult,
     CombatRoleComponent,
     HeroComponent,
     MonsterComponent,
 )
+from game.tcg_game import TCGGame
 
 
 @final

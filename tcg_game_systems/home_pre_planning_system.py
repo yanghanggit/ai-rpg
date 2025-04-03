@@ -3,12 +3,11 @@ from loguru import logger
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from overrides import override
 from game.tcg_game import TCGGame
-from models_v_0_0_1.components import (
+from models_v_0_0_1 import (
     HomeComponent,
     CanStartPlanningComponent,
     StageComponent,
     RunTimeIndexComponent,
-    # StageEnvironmentComponent,
     PlayerComponent,
 )
 

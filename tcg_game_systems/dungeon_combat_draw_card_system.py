@@ -1,5 +1,5 @@
 from entitas import ExecuteProcessor  # type: ignore
-from models_v_0_0_1.components import (
+from models_v_0_0_1 import (
     DungeonComponent,
 )
 from typing import final, override

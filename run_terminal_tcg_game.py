@@ -1,9 +1,8 @@
 from loguru import logger
-from models_v_0_0_1.dungeon import CombatResult, Dungeon
 import shutil
 from game.terminal_tcg_game import TerminalTCGGame
 from game.tcg_game import TCGGameState
-from models_v_0_0_1.world import Boot, World
+from models_v_0_0_1 import Boot, World, CombatResult, Dungeon
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from extended_systems.lang_serve_system import LangServeSystem
 from player.player_proxy import PlayerProxy

@@ -1,10 +1,11 @@
-from models_v_0_0_1.objects import (
+from models_v_0_0_1 import (
     Actor,
     Stage,
     WorldSystem,
     BaseAttributes,
+    ActorPrototype,
+    StagePrototype,
 )
-from models_v_0_0_1.database import ActorPrototype, StagePrototype
 from typing import List, Final
 
 #######################################################################################################################################

@@ -1,13 +1,9 @@
 import random
 from entitas import Matcher, Entity, Matcher, ExecuteProcessor  # type: ignore
-from models_v_0_0_1.components import (
-    HandComponent,
-    BaseAttributesComponent,
-)
+from models_v_0_0_1 import HandComponent, BaseAttributesComponent, TurnAction
 from overrides import override
 from typing import List, Tuple, final
 from game.tcg_game import TCGGame
-from models_v_0_0_1.actions import TurnAction
 
 
 #######################################################################################################################################

@@ -1,7 +1,7 @@
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from pydantic import BaseModel
 from extended_systems.chat_request_handler import ChatRequestHandler
-from models_v_0_0_1.components import (
+from models_v_0_0_1 import (
     HomeComponent,
     StageComponent,
     StageEnvironmentComponent,

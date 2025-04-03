@@ -1,10 +1,8 @@
 from pathlib import Path
 from loguru import logger
-from models_v_0_0_1.world import (
-    Boot,
-)
-from models_v_0_0_1.objects import ActorType, StageType, BaseAttributes
-from typing import List, Optional
+from models_v_0_0_1 import Boot, ActorType, StageType, BaseAttributes
+
+from typing import Optional
 from game.tcg_game_demo_utils import (
     EPOCH_SCRIPT,
     create_actor,

@@ -1,16 +1,17 @@
 from entitas import Context, Entity, Matcher  # type: ignore
 from typing import Optional, List, Set, override, Dict
-from models_v_0_0_1.snapshot import ComponentSnapshot, EntitySnapshot
-from models_v_0_0_1.components import (
+from models_v_0_0_1 import (
+    ComponentSnapshot,
+    EntitySnapshot,
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
     RunTimeIndexComponent,
     AppearanceComponent,
     PlayerComponent,
+    COMPONENTS_REGISTRY,
 )
 
-from models_v_0_0_1.component_registry import COMPONENTS_REGISTRY
 from loguru import logger
 
 """

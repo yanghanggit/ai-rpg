@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from services.game_server_instance import GameServerInstance
-from models_v_0_0_1.api import (
+from models_v_0_0_1 import (
     HomeRunRequest,
     HomeRunResponse,
     HomeTransDungeonRequest,

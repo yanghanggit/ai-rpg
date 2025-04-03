@@ -1,11 +1,6 @@
 from enum import IntEnum, unique
-from typing import Final
 from overrides import final
 from pydantic import BaseModel
-
-
-# 注意，不允许动！
-SCHEMA_VERSION: Final[str] = "0.0.1"
 
 
 @final

@@ -4,12 +4,12 @@ from extended_systems.chat_request_handler import ChatRequestHandler
 from entitas import ExecuteProcessor, Entity  # type: ignore
 from typing import Dict, List, Set, final, override
 from game.tcg_game import TCGGame
-from models.components_v_0_0_1 import (
+from models_v_0_0_1.components import (
     StageEnvironmentComponent,
     CombatRoleComponent,
 )
 import format_string.json_format
-from models.dungeon_v_0_0_1 import StatusEffect
+from models_v_0_0_1.dungeon import StatusEffect
 
 
 #######################################################################################################################################

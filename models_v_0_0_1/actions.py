@@ -1,10 +1,6 @@
-from typing import Dict, Final, NamedTuple, final, List
-from models.component_registry import register_action_class_2
-from models.dungeon_v_0_0_1 import Skill, StatusEffect
-
-
-# 注意，不允许动！
-SCHEMA_VERSION: Final[str] = "0.0.1"
+from typing import Dict, NamedTuple, final, List
+from .component_registry import register_action_class_2
+from .dungeon import Skill, StatusEffect
 
 
 ############################################################################################################

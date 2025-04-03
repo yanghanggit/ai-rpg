@@ -1,9 +1,5 @@
-from typing import Final, List, Dict, Any, final
+from typing import List, Dict, Any, final
 from pydantic import BaseModel
-
-
-# 注意，不允许动！
-SCHEMA_VERSION: Final[str] = "0.0.1"
 
 
 ###############################################################################################################################################

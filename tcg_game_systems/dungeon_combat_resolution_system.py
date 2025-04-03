@@ -1,20 +1,20 @@
 from loguru import logger
 from entitas import Matcher, Entity, Matcher, ExecuteProcessor  # type: ignore
-from models.components_v_0_0_1 import (
+from models_v_0_0_1.components import (
     HandComponent,
     CombatRoleComponent,
 )
 from overrides import override
 from typing import List, Set, Tuple, final
 from game.tcg_game import TCGGame
-from models.actions_v_0_0_1 import (
+from models_v_0_0_1.actions import (
     TurnAction,
     StageDirectorAction,
     PlayCardAction,
     FeedbackAction,
 )
-from models.dungeon_v_0_0_1 import StatusEffect, Round
-from models.agent_event_v_0_0_1 import AgentEvent
+from models_v_0_0_1.dungeon import StatusEffect, Round
+from models_v_0_0_1.agent_event import AgentEvent
 
 
 #######################################################################################################################################

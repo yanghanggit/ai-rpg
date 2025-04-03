@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from entitas import Entity  # type: ignore
 from extended_systems.chat_request_handler import ChatRequestHandler
 import format_string.json_format
-from models.components_v_0_0_1 import (
+from models_v_0_0_1.components import (
     StageEnvironmentComponent,
     HandComponent,
     HeroComponent,
@@ -10,7 +10,7 @@ from models.components_v_0_0_1 import (
 )
 from typing import List, Set, final
 from loguru import logger
-from models.dungeon_v_0_0_1 import Skill
+from models_v_0_0_1.dungeon import Skill
 from game.tcg_game import TCGGame
 
 

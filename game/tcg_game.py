@@ -7,12 +7,12 @@ from loguru import logger
 from game.tcg_game_context import TCGGameContext
 from game.base_game import BaseGame
 from game.tcg_game_process_pipeline import TCGGameProcessPipeline
-from models.world_v_0_0_1 import (
+from models_v_0_0_1.world import (
     World,
     AgentShortTermMemory,
 )
-from models.dungeon_v_0_0_1 import StatusEffect, Combat, Dungeon, Engagement
-from models.objects_v_0_0_1 import (
+from models_v_0_0_1.dungeon import StatusEffect, Combat, Dungeon, Engagement
+from models_v_0_0_1.objects import (
     WorldSystem,
     Actor,
     Stage,
@@ -21,7 +21,7 @@ from models.objects_v_0_0_1 import (
     BaseAttributes,
 )
 
-from models.components_v_0_0_1 import (
+from models_v_0_0_1.components import (
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
@@ -42,7 +42,7 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from extended_systems.lang_serve_system import LangServeSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
-from models.agent_event_v_0_0_1 import AgentEvent
+from models_v_0_0_1.agent_event import AgentEvent
 
 # from extended_systems.engagement_system import EngagementSystem
 # from extended_systems.dungeon_system import DungeonSystem

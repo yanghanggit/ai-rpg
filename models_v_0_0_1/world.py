@@ -1,12 +1,12 @@
 from typing import Final, List, Dict, final
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from models.snapshot_v_0_0_1 import EntitySnapshot
-from models.database_v_0_0_1 import DataBase
-from models.objects_v_0_0_1 import Actor, Stage, WorldSystem
-from models.dungeon_v_0_0_1 import Dungeon, Engagement
+from .snapshot import EntitySnapshot
+from .database import DataBase
+from .objects import Actor, Stage, WorldSystem
+from .dungeon import Dungeon, Engagement
 
-# 注意，不允许动！
+
 SCHEMA_VERSION: Final[str] = "0.0.1"
 
 

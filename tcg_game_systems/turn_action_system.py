@@ -2,15 +2,19 @@ from pydantic import BaseModel
 from entitas import Matcher, Entity, Matcher, GroupEvent  # type: ignore
 from extended_systems.chat_request_handler import ChatRequestHandler
 import format_string.json_format
-from models.components_v_0_0_1 import (
+from models_v_0_0_1.components import (
     StageEnvironmentComponent,
     HandComponent,
 )
 from overrides import override
 from typing import List, Optional, Set, final
 from loguru import logger
-from models.dungeon_v_0_0_1 import Skill
-from models.actions_v_0_0_1 import StageDirectorAction, PlayCardAction, TurnAction
+from models_v_0_0_1.dungeon import Skill
+from models_v_0_0_1.actions import (
+    StageDirectorAction,
+    PlayCardAction,
+    TurnAction,
+)
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 

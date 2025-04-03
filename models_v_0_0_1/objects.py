@@ -1,10 +1,7 @@
-from typing import Final, List, final
+from typing import List, final
 from pydantic import BaseModel
 from enum import StrEnum, unique
-from models.database_v_0_0_1 import ActorPrototype, StagePrototype
-
-# 注意，不允许动！
-SCHEMA_VERSION: Final[str] = "0.0.1"
+from .database import ActorPrototype, StagePrototype
 
 
 ###############################################################################################################################################

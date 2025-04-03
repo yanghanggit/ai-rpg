@@ -1,11 +1,11 @@
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
-from models.actions_v_0_0_1 import (
+from models_v_0_0_1.actions import (
     MindVoiceAction,
 )
 from typing import final, override
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
-from models.components_v_0_0_1 import ActorComponent
-from models.agent_event_v_0_0_1 import MindVoiceEvent
+from models_v_0_0_1.components import ActorComponent
+from models_v_0_0_1.agent_event import MindVoiceEvent
 
 # from loguru import logger
 

@@ -1,11 +1,8 @@
-from typing import Final, List, Dict, final, Optional
+from typing import List, Dict, final, Optional
 from pydantic import BaseModel
 from enum import IntEnum, unique
 from loguru import logger
-from models.objects_v_0_0_1 import Actor, Stage
-
-# 注意，不允许动！
-SCHEMA_VERSION: Final[str] = "0.0.1"
+from .objects import Actor, Stage
 
 
 ###############################################################################################################################################

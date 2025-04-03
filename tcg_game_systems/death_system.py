@@ -1,10 +1,10 @@
 from loguru import logger
 from entitas import Matcher, ExecuteProcessor  # type: ignore
 from typing import final, override
-from models.components_v_0_0_1 import DestroyComponent, DeathComponent
-from models.dungeon_v_0_0_1 import CombatResult
+from models_v_0_0_1.components import DestroyComponent, DeathComponent
+from models_v_0_0_1.dungeon import CombatResult
 from game.tcg_game import TCGGame
-from models.components_v_0_0_1 import (
+from models_v_0_0_1.components import (
     CombatRoleComponent,
     HeroComponent,
     MonsterComponent,

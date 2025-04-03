@@ -1,9 +1,6 @@
-from typing import Final, List
+from typing import List
 from pydantic import BaseModel
-from models.client_message_v_0_0_1 import ClientMessage
-
-# 注意，不允许动！
-SCHEMA_VERSION: Final[str] = "0.0.1"
+from .client_message import ClientMessage
 
 
 ################################################################################################################

@@ -1,12 +1,12 @@
 from entitas import Entity  # type: ignore
 from typing import Dict, List, Set, Union, final
-from models.components_v_0_0_1 import StageComponent, ActorComponent
+from models_v_0_0_1.components import StageComponent, ActorComponent
 from extended_systems.chat_request_handler import ChatRequestHandler
 from loguru import logger
 from pydantic import BaseModel
 import format_string.json_format
 from game.tcg_game import TCGGame
-from models.dungeon_v_0_0_1 import StatusEffect
+from models_v_0_0_1.dungeon import StatusEffect
 
 
 # 用于Stage生成请求的数据格式

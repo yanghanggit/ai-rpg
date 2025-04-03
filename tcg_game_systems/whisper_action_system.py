@@ -1,9 +1,9 @@
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
 from typing import final, override
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
-from models.agent_event_v_0_0_1 import AgentEvent, WhisperEvent
+from models_v_0_0_1.agent_event import AgentEvent, WhisperEvent
 from game.tcg_game import ConversationError
-from models.actions_v_0_0_1 import WhisperAction
+from models_v_0_0_1.actions import WhisperAction
 
 
 ####################################################################################################################################

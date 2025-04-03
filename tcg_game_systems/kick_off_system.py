@@ -1,7 +1,7 @@
 from loguru import logger
 from entitas import Entity, Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
-from components.components_v_0_0_1 import (
+from models.components_v_0_0_1 import (
     WorldSystemComponent,
     StageComponent,
     ActorComponent,

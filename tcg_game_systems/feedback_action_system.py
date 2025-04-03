@@ -4,11 +4,11 @@ from extended_systems.chat_request_handler import ChatRequestHandler
 from overrides import override
 from typing import List, final
 from loguru import logger
-from components.actions_v_0_0_1 import FeedbackAction
+from models.actions_v_0_0_1 import FeedbackAction
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
-from models.v_0_0_1 import StatusEffect
+from models.dungeon_v_0_0_1 import StatusEffect
 import format_string.json_format
-from components.components_v_0_0_1 import (
+from models.components_v_0_0_1 import (
     CombatRoleComponent,
 )
 

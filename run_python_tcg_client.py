@@ -3,7 +3,7 @@ import requests
 from loguru import logger
 import datetime
 
-from models.api_models import (
+from models.api_v_0_0_1 import (
     APIEndpointConfigurationRequest,
     APIEndpointConfiguration,
     APIEndpointConfigurationResponse,

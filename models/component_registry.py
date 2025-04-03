@@ -1,6 +1,9 @@
 from typing import Any, Dict, TypeVar, cast, Final
 
 
+# 注意，不允许动！
+SCHEMA_VERSION: Final[str] = "0.0.1"
+
 # TypeVar 是一个泛型，用于表示任意类型
 T = TypeVar("T")
 

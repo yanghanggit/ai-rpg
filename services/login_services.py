@@ -1,7 +1,12 @@
 from typing import Optional
 from fastapi import APIRouter
 from services.game_server_instance import GameServerInstance
-from models.api_models import LoginRequest, LoginResponse, LogoutRequest, LogoutResponse
+from models.api_v_0_0_1 import (
+    LoginRequest,
+    LoginResponse,
+    LogoutRequest,
+    LogoutResponse,
+)
 from loguru import logger
 from game.user_session_options import UserSessionOptions
 from game.tcg_game_demo import (
@@ -11,7 +16,8 @@ from game.tcg_game_demo import (
     stage_dungeon_cave2,
 )
 import shutil
-from models.v_0_0_1 import Boot, World, Dungeon, Engagement
+from models.world_v_0_0_1 import Boot, World
+from models.dungeon_v_0_0_1 import Dungeon
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from extended_systems.lang_serve_system import LangServeSystem
 from game.web_tcg_game import WebTCGGame

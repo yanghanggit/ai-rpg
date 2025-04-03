@@ -3,8 +3,8 @@ from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from overrides import override
 from typing import Any, Dict, List, cast, final
 from game.tcg_game import TCGGame
-from models.v_0_0_1 import CombatResult
-from components.components_v_0_0_1 import (
+from models.dungeon_v_0_0_1 import CombatResult
+from models.components_v_0_0_1 import (
     ActorComponent,
     HeroComponent,
     CombatRoleComponent,

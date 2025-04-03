@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from services.game_server_instance import GameServerInstance
-from models.api_models import StartRequest, StartResponse
+from models.api_v_0_0_1 import StartRequest, StartResponse
 from loguru import logger
 
 ###################################################################################################################################################################

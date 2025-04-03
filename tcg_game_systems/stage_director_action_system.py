@@ -4,15 +4,15 @@ from extended_systems.chat_request_handler import ChatRequestHandler
 from overrides import override
 from typing import Final, List, NamedTuple, final
 from loguru import logger
-from components.actions_v_0_0_1 import (
+from models.actions_v_0_0_1 import (
     StageDirectorAction,
     FeedbackAction,
     TurnAction,
     PlayCardAction,
 )
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
-from models.v_0_0_1 import Skill
-from components.components_v_0_0_1 import (
+from models.dungeon_v_0_0_1 import Skill
+from models.components_v_0_0_1 import (
     ActorComponent,
     CombatRoleComponent,
     DungeonComponent,

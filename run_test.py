@@ -1,8 +1,12 @@
 from typing import List
 
 # from pydantic import BaseModel
-from player.client_message import ClientMessage, MappingMessage, ClientMessageHead
-from models.api_models import StartResponse
+from models.client_message_v_0_0_1 import (
+    ClientMessage,
+    MappingMessage,
+    ClientMessageHead,
+)
+from models.api_v_0_0_1 import StartResponse
 from loguru import logger
 
 

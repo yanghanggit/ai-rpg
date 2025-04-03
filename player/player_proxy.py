@@ -1,7 +1,7 @@
 from typing import Dict, Final, List
 from loguru import logger
-from models.event_models import AgentEvent
-from player.client_message import (
+from models.agent_event_v_0_0_1 import AgentEvent
+from models.client_message_v_0_0_1 import (
     ClientMessageHead,
     MappingMessage,
     ClientMessage,

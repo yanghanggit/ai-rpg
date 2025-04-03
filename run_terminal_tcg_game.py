@@ -1,9 +1,9 @@
 from loguru import logger
-from models.v_0_0_1 import CombatResult, Dungeon, Engagement
+from models.dungeon_v_0_0_1 import CombatResult, Dungeon
 import shutil
 from game.terminal_tcg_game import TerminalTCGGame
 from game.tcg_game import TCGGameState
-from models.v_0_0_1 import Boot, World
+from models.world_v_0_0_1 import Boot, World
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from extended_systems.lang_serve_system import LangServeSystem
 from player.player_proxy import PlayerProxy
@@ -13,9 +13,6 @@ from game.tcg_game_demo import (
     stage_dungeon_cave1,
     stage_dungeon_cave2,
 )
-
-# from extended_systems.dungeon_system import DungeonSystem
-# from extended_systems.engagement_system import EngagementSystem
 from tcg_game_systems.draw_cards_utils import DrawCardsUtils
 from tcg_game_systems.monitor_utils import MonitorUtils
 from game.user_session_options import UserSessionOptions
@@ -326,7 +323,7 @@ if __name__ == "__main__":
     option = UserSessionOptions(
         user="yanghang",
         game="Game1",
-        new_game=False,
+        new_game=True,
         server_setup_config="gen_configs/start_llm_serves.json",
         langserve_localhost_urls=[],
     ).setup()

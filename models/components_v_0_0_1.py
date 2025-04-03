@@ -1,7 +1,7 @@
 from typing import Any, Dict, Final, NamedTuple, List, final
-from components.registry import register_component_class
-from models.v_0_0_1 import Skill, StatusEffect, BaseAttributes
-
+from models.component_registry import register_component_class
+from models.dungeon_v_0_0_1 import Skill, StatusEffect
+from models.objects_v_0_0_1 import BaseAttributes
 
 # 注意，不允许动！
 SCHEMA_VERSION: Final[str] = "0.0.1"

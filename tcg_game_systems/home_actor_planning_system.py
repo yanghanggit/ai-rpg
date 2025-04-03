@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from extended_systems.chat_request_handler import ChatRequestHandler
 import format_string.json_format
-from components.components_v_0_0_1 import (
+from models.components_v_0_0_1 import (
     ActorComponent,
     StageEnvironmentComponent,
     CanStartPlanningComponent,
@@ -11,7 +11,7 @@ from overrides import override
 from typing import Dict, List, final
 from game.tcg_game import TCGGame
 from loguru import logger
-from components.actions_v_0_0_1 import (
+from models.actions_v_0_0_1 import (
     SpeakAction,
     MindVoiceAction,
     WhisperAction,

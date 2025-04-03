@@ -1,7 +1,7 @@
 from entitas import Context, Entity, Matcher  # type: ignore
 from typing import Optional, List, Set, override, Dict
-from models.v_0_0_1 import ComponentSnapshot, EntitySnapshot
-from components.components_v_0_0_1 import (
+from models.snapshot_v_0_0_1 import ComponentSnapshot, EntitySnapshot
+from models.components_v_0_0_1 import (
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
@@ -10,7 +10,7 @@ from components.components_v_0_0_1 import (
     PlayerComponent,
 )
 
-from components.registry import COMPONENTS_REGISTRY
+from models.component_registry import COMPONENTS_REGISTRY
 from loguru import logger
 
 """

@@ -2,7 +2,7 @@ from loguru import logger
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from typing import Final, FrozenSet, NamedTuple, final, override
 from game.tcg_game import TCGGame
-from components.registry import ACTIONS_REGISTRY
+from models.component_registry import ACTIONS_REGISTRY
 
 
 @final

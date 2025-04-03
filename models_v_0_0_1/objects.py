@@ -2,6 +2,7 @@ from typing import List, final
 from pydantic import BaseModel
 from enum import StrEnum, unique
 from .database import ActorPrototype, StagePrototype
+from .registry import register_base_model_class
 
 
 ###############################################################################################################################################
@@ -32,6 +33,7 @@ class StageType(StrEnum):
 # Evasion           = 5  + (1  × DEX)
 ###############################################################################################################################################
 @final
+@register_base_model_class
 class BaseAttributes(BaseModel):
     hp: int = 0
     strength: int
@@ -61,6 +63,7 @@ class BaseAttributes(BaseModel):
 
 ###############################################################################################################################################
 @final
+@register_base_model_class
 class Actor(BaseModel):
     name: str
     prototype: ActorPrototype
@@ -71,6 +74,7 @@ class Actor(BaseModel):
 
 ###############################################################################################################################################
 @final
+@register_base_model_class
 class Stage(BaseModel):
     name: str
     prototype: StagePrototype
@@ -81,6 +85,7 @@ class Stage(BaseModel):
 
 ###############################################################################################################################################
 @final
+@register_base_model_class
 class WorldSystem(BaseModel):
     name: str
     system_message: str

@@ -1,5 +1,5 @@
 from typing import Any, Dict, Final, NamedTuple, List, final
-from .component_registry import register_component_class
+from .registry import register_component_class
 from .dungeon import Skill, StatusEffect
 from .objects import BaseAttributes
 

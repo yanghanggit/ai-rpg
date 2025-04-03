@@ -1,12 +1,12 @@
 from typing import Dict, NamedTuple, final, List
-from .component_registry import register_action_class_2
+from .registry import register_action_class
 from .dungeon import Skill, StatusEffect
 
 
 ############################################################################################################
 # 新的说话action
 @final
-@register_action_class_2
+@register_action_class
 class SpeakAction(NamedTuple):
     name: str
     data: Dict[str, str]
@@ -15,7 +15,7 @@ class SpeakAction(NamedTuple):
 ############################################################################################################
 # 新的耳语action
 @final
-@register_action_class_2
+@register_action_class
 class WhisperAction(NamedTuple):
     name: str
     data: Dict[str, str]
@@ -24,7 +24,7 @@ class WhisperAction(NamedTuple):
 ############################################################################################################
 # 新的宣布action
 @final
-@register_action_class_2
+@register_action_class
 class AnnounceAction(NamedTuple):
     name: str
     data: str
@@ -33,7 +33,7 @@ class AnnounceAction(NamedTuple):
 ############################################################################################################
 # 新的说话action
 @final
-@register_action_class_2
+@register_action_class
 class MindVoiceAction(NamedTuple):
     name: str
     data: str
@@ -41,7 +41,7 @@ class MindVoiceAction(NamedTuple):
 
 ############################################################################################################
 @final
-@register_action_class_2
+@register_action_class
 class TurnAction(NamedTuple):
     name: str
     rounds: int
@@ -54,7 +54,7 @@ class TurnAction(NamedTuple):
 
 ############################################################################################################
 @final
-@register_action_class_2
+@register_action_class
 class PlayCardAction(NamedTuple):
     name: str
     targets: List[str]
@@ -65,7 +65,7 @@ class PlayCardAction(NamedTuple):
 
 ############################################################################################################
 @final
-@register_action_class_2
+@register_action_class
 class StageDirectorAction(NamedTuple):
     name: str
     calculation: str
@@ -74,7 +74,7 @@ class StageDirectorAction(NamedTuple):
 
 ############################################################################################################
 @final
-@register_action_class_2
+@register_action_class
 class FeedbackAction(NamedTuple):
     name: str
     calculation: str

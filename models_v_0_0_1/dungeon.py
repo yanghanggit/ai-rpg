@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from enum import IntEnum, unique
 from loguru import logger
 from .objects import Actor, Stage
+from .registry import register_base_model_class
 
 
 ###############################################################################################################################################
@@ -30,6 +31,7 @@ class CombatResult(IntEnum):
 ###############################################################################################################################################
 # 技能产生的影响。
 @final
+@register_base_model_class
 class StatusEffect(BaseModel):
     name: str
     description: str
@@ -39,6 +41,7 @@ class StatusEffect(BaseModel):
 ###############################################################################################################################################
 # 技能是一种特殊的道具，它有一个额外的效果。
 @final
+@register_base_model_class
 class Skill(BaseModel):
     name: str
     description: str
@@ -47,6 +50,8 @@ class Skill(BaseModel):
 
 ###############################################################################################################################################
 # 表示一个回合
+@final
+@register_base_model_class
 class Round(BaseModel):
     tag: str
     round_turns: List[str] = []
@@ -58,6 +63,8 @@ class Round(BaseModel):
 
 ###############################################################################################################################################
 # 表示一个战斗
+@final
+@register_base_model_class
 class Combat(BaseModel):
 
     name: str
@@ -68,6 +75,10 @@ class Combat(BaseModel):
 
 
 ###############################################################################################################################################
+
+
+@final
+@register_base_model_class
 class Engagement(BaseModel):
     combats: List[Combat] = []
 
@@ -167,6 +178,8 @@ class Engagement(BaseModel):
 
 ###############################################################################################################################################
 # TODO临时的，先管理下。
+@final
+@register_base_model_class
 class Dungeon(BaseModel):
     name: str = ""
     levels: List[Stage] = []

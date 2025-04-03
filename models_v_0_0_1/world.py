@@ -5,7 +5,7 @@ from .snapshot import EntitySnapshot
 from .database import DataBase
 from .objects import Actor, Stage, WorldSystem
 from .dungeon import Dungeon, Engagement
-
+from .registry import register_base_model_class
 
 SCHEMA_VERSION: Final[str] = "0.0.1"
 
@@ -13,6 +13,7 @@ SCHEMA_VERSION: Final[str] = "0.0.1"
 ###############################################################################################################################################
 # 生成世界的根文件，就是世界的起点
 @final
+@register_base_model_class
 class Boot(BaseModel):
     name: str = ""
     epoch_script: str = ""
@@ -27,6 +28,7 @@ class Boot(BaseModel):
 
 ###############################################################################################################################################
 @final
+@register_base_model_class
 class AgentShortTermMemory(BaseModel):
     name: str = ""
     chat_history: List[SystemMessage | HumanMessage | AIMessage] = []
@@ -35,6 +37,7 @@ class AgentShortTermMemory(BaseModel):
 ###############################################################################################################################################
 # 生成世界的运行时文件，记录世界的状态
 @final
+@register_base_model_class
 class World(BaseModel):
     version: str = SCHEMA_VERSION
     runtime_index: int = 1000

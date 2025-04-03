@@ -2,7 +2,7 @@ from .actions import *
 from .agent_event import *
 from .api import *
 from .client_message import *
-from .component_registry import *
+from .registry import *
 from .components import *
 from .database import *
 from .dungeon import *

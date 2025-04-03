@@ -7,8 +7,6 @@ from .objects import Actor, Stage, WorldSystem
 from .dungeon import Dungeon, Engagement
 from .registry import register_base_model_class
 
-SCHEMA_VERSION: Final[str] = "0.0.1"
-
 
 ###############################################################################################################################################
 # 生成世界的根文件，就是世界的起点
@@ -39,12 +37,16 @@ class AgentShortTermMemory(BaseModel):
 @final
 @register_base_model_class
 class World(BaseModel):
-    version: str = SCHEMA_VERSION
+
     runtime_index: int = 1000
     entities_snapshot: List[EntitySnapshot] = []
     agents_short_term_memory: Dict[str, AgentShortTermMemory] = {}
     dungeon: Dungeon = Dungeon(name="", levels=[], engagement=Engagement())
     boot: Boot = Boot()
+
+    @property
+    def version(self) -> str:
+        return "0.0.1"
 
     @property
     def data_base(self) -> DataBase:

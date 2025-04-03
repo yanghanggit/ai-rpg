@@ -23,7 +23,7 @@ class DungeonCombatDrawCardSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
 
-        if not self._game.current_engagement_system.is_on_going_phase:
+        if not self._game.current_engagement.is_on_going_phase:
             return  # 不是本阶段就直接返回
 
         player_entity = self._game.get_player_entity()

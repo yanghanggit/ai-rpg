@@ -32,11 +32,11 @@ class DungeonCombatResolutionSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     def _manage_battle_sequence(self) -> None:
-        if not self._game.current_engagement_system.is_on_going_phase:
+        if not self._game.current_engagement.is_on_going_phase:
             return  # 不是本阶段就直接返回
 
         logger.debug(
-            f"Current combat rounds: {len(self._game.current_engagement_system.rounds)}"
+            f"Current combat rounds: {len(self._game.current_engagement.rounds)}"
         )
 
         player_entity = self._game.get_player_entity()
@@ -108,7 +108,7 @@ class DungeonCombatResolutionSystem(ExecuteProcessor):
             logger.error(f"战斗演出没有计算和表演。!!!!!")
             return
 
-        last_round = self._game.current_engagement_system.last_round
+        last_round = self._game.current_engagement.last_round
 
         # 看一看出手顺序。
         first_turn_actor = next(iter(turn_action_actors))

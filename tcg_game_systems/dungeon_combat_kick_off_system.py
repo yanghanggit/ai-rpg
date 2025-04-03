@@ -73,7 +73,7 @@ class DungeonCombatKickOffSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
 
-        if not self._game.current_engagement_system.is_kickoff_phase:
+        if not self._game.current_engagement.is_kickoff_phase:
             # 不是本阶段就直接返回
             return
 
@@ -89,7 +89,7 @@ class DungeonCombatKickOffSystem(ExecuteProcessor):
         await self._process_requests(actor_entities)
 
         # 开始战斗
-        self._game.current_engagement_system.combat_ongoing()
+        self._game.current_engagement.combat_ongoing()
 
     ###################################################################################################################################################################
     # 所有参与战斗的角色！

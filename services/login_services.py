@@ -11,11 +11,9 @@ from game.tcg_game_demo import (
     stage_dungeon_cave2,
 )
 import shutil
-from models.v_0_0_1 import Boot, World
+from models.v_0_0_1 import Boot, World, Dungeon, Engagement
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from extended_systems.lang_serve_system import LangServeSystem
-from extended_systems.dungeon_system import DungeonSystem
-from extended_systems.engagement_system import EngagementSystem
 from game.web_tcg_game import WebTCGGame
 from player.player_proxy import PlayerProxy
 
@@ -178,9 +176,8 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
         start_world = World(boot=world_boot)
 
         # 运行时生成地下城系统。
-        start_world.dungeon = DungeonSystem(
+        start_world.dungeon = Dungeon(
             name="哥布林与兽人",
-            engagement=EngagementSystem(),
             levels=[stage_dungeon_cave1, stage_dungeon_cave2],
         )
 
@@ -227,7 +224,7 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
         )
 
         # 测试！回复ecs
-        terminal_game.retore_game().save()
+        terminal_game.load_game().save()
 
     return terminal_game
 

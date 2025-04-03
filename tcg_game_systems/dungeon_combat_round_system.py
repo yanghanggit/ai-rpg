@@ -21,7 +21,7 @@ class DungeonCombatRoundSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
 
-        if not self._game.current_engagement_system.is_on_going_phase:
+        if not self._game.current_engagement.is_on_going_phase:
             return  # 不是本阶段就直接返回
 
         actor_entities = self._game.get_group(
@@ -36,7 +36,7 @@ class DungeonCombatRoundSystem(ExecuteProcessor):
             return
 
         # 回合增加一次
-        self._game.current_engagement_system.new_round()
+        self._game.current_engagement.new_round()
 
         # 随机出手顺序
         shuffled_reactive_entities = self._shuffle_action_order(list(actor_entities))
@@ -49,7 +49,7 @@ class DungeonCombatRoundSystem(ExecuteProcessor):
             entity2.replace(
                 TurnAction,
                 entity2._name,
-                len(self._game.current_engagement_system.rounds),
+                len(self._game.current_engagement.rounds),
                 round_turns,
             )
 

@@ -129,7 +129,7 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
         if len(self._react_entities_copy) == 0:
             return
 
-        assert self._game.current_engagement_system.is_on_going_phase
+        assert self._game.current_engagement.is_on_going_phase
         assert len(self._react_entities_copy) == 1
 
         # 排序角色！

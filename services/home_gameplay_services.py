@@ -147,7 +147,7 @@ async def home_trans_dungeon(
         )
 
     # 判断地下城是否存在
-    if len(current_room._game.current_dungeon_system.levels) == 0:
+    if len(current_room._game.current_dungeon.levels) == 0:
         logger.warning(
             "没有地下城可以传送, 全部地下城已经结束。！！！！已经全部被清空！！！！或者不存在！！！！"
         )

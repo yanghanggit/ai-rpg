@@ -18,6 +18,8 @@ from models.v_0_0_1 import (
     StageType,
     Combat,
     BaseAttributes,
+    Dungeon,
+    Engagement,
 )
 from components.components_v_0_0_1 import (
     WorldSystemComponent,
@@ -41,8 +43,9 @@ from extended_systems.lang_serve_system import LangServeSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 from models.event_models import AgentEvent
-from extended_systems.engagement_system import EngagementSystem
-from extended_systems.dungeon_system import DungeonSystem
+
+# from extended_systems.engagement_system import EngagementSystem
+# from extended_systems.dungeon_system import DungeonSystem
 import copy
 
 
@@ -125,18 +128,18 @@ class TCGGame(BaseGame, TCGGameContext):
         self._debug_flag_pipeline: bool = False
 
         # 地下城系统的强行类型转化 DungeonSystem 继承自 Dungeon，EngagementSystem 继承自 Engagement
-        if not isinstance(self._world.dungeon, DungeonSystem):
-            logger.warning(f"world.dungeon is not DungeonSystem, try to convert it.")
-            self._world.dungeon = DungeonSystem.model_validate_json(
-                self._world.dungeon.model_dump_json()
-            )
-            if not isinstance(self._world.dungeon.engagement, EngagementSystem):
-                logger.warning(
-                    f"world.dungeon.engagement is not EngagementSystem, try to convert it."
-                )
-                self._world.dungeon.engagement = EngagementSystem.model_validate_json(
-                    self._world.dungeon.engagement.model_dump_json()
-                )
+        # if not isinstance(self._world.dungeon, DungeonSystem):
+        #     logger.warning(f"world.dungeon is not DungeonSystem, try to convert it.")
+        #     self._world.dungeon = DungeonSystem.model_validate_json(
+        #         self._world.dungeon.model_dump_json()
+        #     )
+        #     if not isinstance(self._world.dungeon.engagement, EngagementSystem):
+        #         logger.warning(
+        #             f"world.dungeon.engagement is not EngagementSystem, try to convert it."
+        #         )
+        #         self._world.dungeon.engagement = EngagementSystem.model_validate_json(
+        #             self._world.dungeon.engagement.model_dump_json()
+        #         )
 
     ###############################################################################################################################################
     @property
@@ -193,14 +196,14 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     @property
-    def current_dungeon_system(self) -> DungeonSystem:
-        assert isinstance(self._world.dungeon, DungeonSystem)
+    def current_dungeon(self) -> Dungeon:
+        assert isinstance(self._world.dungeon, Dungeon)
         return self._world.dungeon
 
     ###############################################################################################################################################
     @property
-    def current_engagement_system(self) -> EngagementSystem:
-        return self.current_dungeon_system.engagement_system
+    def current_engagement(self) -> Engagement:
+        return self.current_dungeon.engagement
 
     ###############################################################################################################################################
     @override
@@ -268,7 +271,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     # 测试！回复ecs
-    def retore_game(self) -> "TCGGame":
+    def load_game(self) -> "TCGGame":
         assert len(self.world.entities_snapshot) > 0, "游戏中没有实体，不能恢复游戏"
         self.restore_entities_from_snapshot(self.world.entities_snapshot)
         return self
@@ -326,16 +329,14 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     def _verbose_dungeon_system(self) -> None:
 
-        if self.current_dungeon_system.name == "":
+        if self.current_dungeon.name == "":
             return
 
         dungeon_system_dir = self.world_file_dir / "dungeons"
         dungeon_system_dir.mkdir(parents=True, exist_ok=True)
-        dungeon_system_path = (
-            dungeon_system_dir / f"{self.current_dungeon_system.name}.json"
-        )
+        dungeon_system_path = dungeon_system_dir / f"{self.current_dungeon.name}.json"
         dungeon_system_path.write_text(
-            self.current_dungeon_system.model_dump_json(), encoding="utf-8"
+            self.current_dungeon.model_dump_json(), encoding="utf-8"
         )
 
     ###############################################################################################################################################
@@ -774,23 +775,23 @@ class TCGGame(BaseGame, TCGGameContext):
     #######################################################################################################################################
     # TODO!!! 进入地下城。
     def launch_dungeon(self) -> None:
-        assert self.current_dungeon_system.position == 0, "当前地下城关卡已经完成！"
-        if self.current_dungeon_system.position == 0:
+        assert self.current_dungeon.position == 0, "当前地下城关卡已经完成！"
+        if self.current_dungeon.position == 0:
             heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
-            self._process_dungeon_advance(self.current_dungeon_system, heros_entities)
+            self._process_dungeon_advance(self.current_dungeon, heros_entities)
 
     #######################################################################################################################################
     # TODO, 地下城下一关。
     def advance_next_dungeon(self) -> None:
         # 位置+1
-        if self.current_dungeon_system.advance_level():
+        if self.current_dungeon.advance_level():
             heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
-            self._process_dungeon_advance(self.current_dungeon_system, heros_entities)
+            self._process_dungeon_advance(self.current_dungeon, heros_entities)
 
     #######################################################################################################################################
     # TODO, 进入地下城！
     def _process_dungeon_advance(
-        self, dungeon_system: DungeonSystem, heros_entities: Set[Entity]
+        self, dungeon_system: Dungeon, heros_entities: Set[Entity]
     ) -> bool:
 
         # 是否有可以进入的关卡？
@@ -798,7 +799,7 @@ class TCGGame(BaseGame, TCGGameContext):
         assert upcoming_dungeon is not None
         if upcoming_dungeon is None:
             logger.error(
-                f"{self.current_dungeon_system.name} 没有下一个地下城！position = {self.current_dungeon_system.position}"
+                f"{self.current_dungeon.name} 没有下一个地下城！position = {self.current_dungeon.position}"
             )
             return False
 
@@ -817,7 +818,7 @@ class TCGGame(BaseGame, TCGGameContext):
             return False
 
         logger.debug(
-            f"{self.current_dungeon_system.name} = [{self.current_dungeon_system.position}]关为：{stage_entity._name}，可以进入！！！！"
+            f"{self.current_dungeon.name} = [{self.current_dungeon.position}]关为：{stage_entity._name}，可以进入！！！！"
         )
 
         # 准备提示词。
@@ -836,7 +837,7 @@ class TCGGame(BaseGame, TCGGameContext):
         self.stage_transition(heros_entities, stage_entity)
 
         # 设置一个战斗。
-        dungeon_system.engagement_system.combat_kickoff(Combat(name=stage_entity._name))
+        dungeon_system.engagement.combat_kickoff(Combat(name=stage_entity._name))
 
         return True
 
@@ -871,9 +872,7 @@ class TCGGame(BaseGame, TCGGameContext):
         self.stage_transition(heros_entities, stage_entity)
 
         # 设置空的地下城。
-        self._world.dungeon = DungeonSystem(
-            name="", levels=[], engagement=EngagementSystem()
-        )
+        self._world.dungeon = Dungeon()
 
     ###############################################################################################################################################
     def retrieve_stage_actor_names_mapping(self) -> Dict[str, List[str]]:

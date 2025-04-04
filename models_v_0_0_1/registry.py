@@ -1,75 +1,76 @@
 import sys
-from typing import Any, Dict, TypeVar, cast, Final, get_origin
+from typing import Any, Dict, NamedTuple, Type, TypeVar, Final, cast, get_origin
+from pydantic import BaseModel
 
-# TODO，后续可以用Type[T]来写的好一些。T = TypeVar("T", bound=Type[？])
-
-
-# TypeVar 是一个泛型，用于表示任意类型
-T = TypeVar("T")
-
+# 定义泛型
+T_COMPONENT = TypeVar("T_COMPONENT", bound=Type[NamedTuple])
+T_BASE_MODEL = TypeVar("T_BASE_MODEL", bound=Type[BaseModel])
 
 ############################################################################################################
-# component 装饰器
-COMPONENTS_REGISTRY: Final[Dict[str, Any]] = {}
+COMPONENTS_REGISTRY: Final[Dict[str, Type[NamedTuple]]] = {}
 
 
-def register_component_class(cls: T) -> T:
+# 注册组件类的装饰器
+def register_component_class(cls: T_COMPONENT) -> T_COMPONENT:
+    # 注册类到全局字典
+    class_name = cls.__name__
+    if class_name in COMPONENTS_REGISTRY:
+        assert False, f"Class {class_name} is already registered."
 
-    # 注册组件类
-    COMPONENTS_REGISTRY[cast(Any, cls).__name__] = cls
+    COMPONENTS_REGISTRY[class_name] = cls
 
-    ## 为了兼容性，给没有 __deserialize_component__ 方法的组件添加一个空实现
-    def _dummy_deserialize_component__(component_data: Dict[str, Any]) -> None:
-        pass
-
+    # 外挂一个方法到类上
     if not hasattr(cast(Any, cls), "__deserialize_component__"):
+        ## 为了兼容性，给没有 __deserialize_component__ 方法的组件添加一个空实现
+        def _dummy_deserialize_component__(component_data: Dict[str, Any]) -> None:
+            pass
+
         cast(Any, cls).__deserialize_component__ = _dummy_deserialize_component__
 
-    if _contains_set_type(cast(Any, cls)):
-        assert False, f"{cast(Any, cls).__name__}: Component class contain set type !"
-    return cls
-
-
-############################################################################################################
-# action 装饰器
-ACTIONS_REGISTRY: Final[Dict[str, Any]] = {}
-
-
-def register_action_class(cls: T) -> T:
-
-    # 注册动作类
-    ACTIONS_REGISTRY[cast(Any, cls).__name__] = cls
-
-    ## 为了兼容性，给没有 __deserialize_component__ 方法的组件添加一个空实现
-    def _dummy_deserialize_component__(component_data: Dict[str, Any]) -> None:
-        pass
-
-    if not hasattr(cast(Any, cls), "__deserialize_component__"):
-        cast(Any, cls).__deserialize_component__ = _dummy_deserialize_component__
-
-    if _contains_set_type(cast(Any, cls)):
-        assert False, f"{cast(Any, cls).__name__}: Action class contain set type !"
+    # 不允许有 set 类型的属性，影响序列化和存储
+    if _includes_set_type(cls):
+        assert False, f"{class_name}: Component class contain set type !"
 
     return cls
 
 
 ############################################################################################################
-# 我的 base_model 装饰器，用于记住所有用到的 BaseModel
-BASE_MODEL_REGISTRY: Final[Dict[str, Any]] = {}
+ACTION_COMPONENTS_REGISTRY: Final[Dict[str, Type[NamedTuple]]] = {}
 
 
-def register_base_model_class(cls: T) -> T:
+# 注册动作类的装饰器，必须同时注册到 COMPONENTS_REGISTRY 中
+def register_action_class(cls: T_COMPONENT) -> T_COMPONENT:
 
-    BASE_MODEL_REGISTRY[cast(Any, cls).__name__] = cls
+    class_name = cls.__name__
+    if class_name in ACTION_COMPONENTS_REGISTRY:
+        raise ValueError(f"Class {class_name} is already registered.")
 
-    if _contains_set_type(cast(Any, cls)):
-        assert False, f"{cast(Any, cls).__name__}: BaseModel class contain set type !"
+    ACTION_COMPONENTS_REGISTRY[class_name] = cls
+    return cls
+
+
+############################################################################################################
+BASE_MODEL_REGISTRY: Final[Dict[str, Type[BaseModel]]] = {}
+
+
+def register_base_model_class(cls: T_BASE_MODEL) -> T_BASE_MODEL:
+    """
+    注册 BaseModel 类到全局字典，避免重复注册。
+    """
+    class_name = cls.__name__
+    if class_name in BASE_MODEL_REGISTRY:
+        raise ValueError(f"Class {class_name} is already registered.")
+
+    BASE_MODEL_REGISTRY[class_name] = cls
+
+    if _includes_set_type(cls):
+        assert False, f"{class_name}: BaseModel class contain set type !"
 
     return cls
 
 
 ############################################################################################################
-def _contains_set_type(cls: Any) -> bool:
+def _includes_set_type(cls: Any) -> bool:
     """
     检查类的属性类型是否包含 set/Set, 本项目不允许有，会影响存储和序列化的流程。
     """
@@ -86,9 +87,45 @@ def _contains_set_type(cls: Any) -> bool:
 
         # 获取泛型底层类型（如 Set[str] -> set）
         origin_type = get_origin(attr_type)
+
         if origin_type is set or attr_type is set:
             return True
+
+        if origin_type is BaseModel or attr_type is BaseModel:
+            # 检查是否是 BaseModel 的子类
+            return _includes_set_type(attr_type)
+
     return False
 
 
-############################################################################################################
+"""
+@final
+@register_component_class2
+class TestComponent(NamedTuple):
+    name: str
+    runtime_index: int
+
+
+def main() -> None:
+
+    for key, value in __COMPONENTS_REGISTRY__.items():
+        print(f"Key: {key}, Value: {value}")
+
+    new_comp = TestComponent._make(("hello world", 1002))
+    print(new_comp)
+
+    component_data = new_comp._asdict()
+    print(component_data)
+
+    comp_class = __COMPONENTS_REGISTRY__.get(TestComponent.__name__)
+    assert comp_class is not None
+
+    restore_comp = comp_class(*component_data.values())
+    assert restore_comp is not None
+    print(restore_comp)
+    assert restore_comp is not new_comp, "restore_comp should not be equal to new_comp"
+
+
+if __name__ == "__main__":
+    main()
+"""

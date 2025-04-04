@@ -95,7 +95,8 @@ class TCGGameContext(Context):
                 assert hasattr(comp_class, "__deserialize_component__")
                 comp_class.__deserialize_component__(comp_snapshot.data)
 
-                restore_comp = comp_class(**comp_snapshot.data)
+                # restore_comp = comp_class(**comp_snapshot.data) 这么写严格模式过不去，因为是OrderedDict，就直接用values()了
+                restore_comp = comp_class(*comp_snapshot.data.values())
                 assert restore_comp is not None
 
                 logger.debug(

@@ -76,77 +76,64 @@
 
 
 
-# hi, 我目前在做python的开发，我遇到了关于BaseModel的问题。请你帮我解决一下。
+# hi, 我目前在做python的开发，我遇到了关于NamedTuple的问题。请你帮我解决一下。
+
 ## 问题描述，代码如下
 ```python
+from typing import Dict, NamedTuple, Type, TypeVar, Final, final
 
-from enum import StrEnum, unique
-from typing import Dict, List, final
-from pydantic import BaseModel
-from models.event_models import BaseEvent
+T = TypeVar("T", bound=Type[NamedTuple])
+
+__COMPONENTS_REGISTRY__: Final[Dict[str, Type[NamedTuple]]] = {}
+
+
+def register_component_class2(cls: T) -> T:
+    # 注册类到全局字典
+    class_name = cls.__name__
+    if class_name in __COMPONENTS_REGISTRY__:
+        raise ValueError(f"Class {class_name} is already registered.")
+
+    __COMPONENTS_REGISTRY__[class_name] = cls
+    return cls
+
 
 @final
-@unique
-class ClientMessageType(StrEnum):
-    NONE = "None"
-    AGENT_EVENT = "AgentEvent"
-    MAPPING = "Mapping"
-
-class BaseClientMessage(BaseModel):
-    type: ClientMessageType = ClientMessageType.NONE
-
-class MappingMessage(BaseClientMessage):
-    type: ClientMessageType = ClientMessageType.MAPPING
-    data: Dict[str, List[str]] = {}
-
-class StartResponse(BaseModel):
-    client_messages: List[BaseClientMessage] = []
-    error: int = 0
-    message: str = ""
+@register_component_class2
+class TestComponent(NamedTuple):
+    name: str
+    runtime_index: int
 
 
-测试代码。
+def main() -> None:
 
-from typing import List
-from player.client_message import BaseClientMessage, MappingMessage
-from models.api_models import StartResponse
-from loguru import logger
+    for key, value in __COMPONENTS_REGISTRY__.items():
+        print(f"Key: {key}, Value: {value}")
 
+    new_comp = TestComponent._make(("hello world", 1000))
+    print(new_comp)
 
-def _test_base_model() -> None:
+    component_data = new_comp._asdict()
+    print(component_data)
 
-    ## 测试消息
-    test: List[BaseClientMessage] = [
-        MappingMessage(
-            type="Mapping",
-            data={
-                "agent1": ["agent2", "agent3"],
-                "agent2": ["agent1"],
-                "agent3": ["agent1"],
-            },
-        )
-    ]
+    comp_class = __COMPONENTS_REGISTRY__.get(TestComponent.__name__)
+    assert comp_class is not None
 
-    ret = StartResponse(
-        client_messages=test,
-        error=0,
-        message=f"启动游戏成功！!=",
-    )
+    restore_comp = comp_class(**component_data)
+    assert restore_comp is not None
+    print(restore_comp)
 
-    logger.debug(f"start/v1:game start, ret: \n{ret.model_dump_json()}")
-
-    logger.info("Hello World!")
 
 if __name__ == "__main__":
-    _test_base_model()
+    main()
 ```
 
-## 错误提示如下
+## 我在运行严格模式检查的时候，错误提示如下
 ```
-2025-03-31 13:00:00.996 | DEBUG    | __main__:_test_base_model:27 - start/v1:game start, ret: 
-{"client_messages":[{"type":"Mapping"}],"error":0,"message":"启动游戏成功！!="}
-2025-03-31 13:00:09.926 | INFO     | __main__:_test_base_model:29 - Hello World!
+models_v_0_0_1/registry2.py:39: error: No overload variant of "NamedTuple" matches argument type "dict[str, Any]"  [call-overload]
+models_v_0_0_1/registry2.py:39: note: Possible overload variants:
+models_v_0_0_1/registry2.py:39: note:     def NamedTuple(self, str, Iterable[tuple[str, Any]], /) -> NamedTuple
+models_v_0_0_1/registry2.py:39: note:     def NamedTuple(self, str, None = ..., /, **kwargs: Any) -> NamedTuple
 ```
-## 我的问题：
-1. 在上面的代码中，MappingMessage的data字段没有被序列化。
-2. 我希望你帮我分析一下这个问题。我的需求是data字段能被序列化。请给我解决方案。
+## 我的需求：
+1. 请帮我分析问题的原因。
+2. 我希望解决这个问题（按我目前的代码逻辑与意图）。

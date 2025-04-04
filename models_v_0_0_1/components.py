@@ -1,7 +1,7 @@
 from typing import Any, Dict, Final, NamedTuple, List, final
-from .registry import register_component_class
 from .dungeon import Skill, StatusEffect
 from .objects import BaseAttributes
+from .registry import register_component_class
 
 
 ############################################################################################################

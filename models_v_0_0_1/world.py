@@ -13,7 +13,7 @@ from .registry import register_base_model_class
 @final
 @register_base_model_class
 class Boot(BaseModel):
-    name: str = ""
+    name: str
     epoch_script: str = ""
     stages: List[Stage] = []
     world_systems: List[WorldSystem] = []
@@ -28,7 +28,7 @@ class Boot(BaseModel):
 @final
 @register_base_model_class
 class AgentShortTermMemory(BaseModel):
-    name: str = ""
+    name: str
     chat_history: List[SystemMessage | HumanMessage | AIMessage] = []
 
 
@@ -37,12 +37,11 @@ class AgentShortTermMemory(BaseModel):
 @final
 @register_base_model_class
 class World(BaseModel):
-
     runtime_index: int = 1000
     entities_snapshot: List[EntitySnapshot] = []
     agents_short_term_memory: Dict[str, AgentShortTermMemory] = {}
-    dungeon: Dungeon = Dungeon(name="", levels=[], engagement=Engagement())
-    boot: Boot = Boot()
+    dungeon: Dungeon = Dungeon(name="")
+    boot: Boot = Boot(name="")
 
     @property
     def version(self) -> str:

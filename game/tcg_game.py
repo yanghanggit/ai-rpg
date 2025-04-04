@@ -427,7 +427,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 添加进入数据库。
             if instance.prototype.name in self.world.data_base.actors:
-                logger.warning(
+                logger.info(
                     f"{instance.name}:{instance.prototype.name} = actor already exists in data_base.actors. is copy_actor?"
                 )
             else:
@@ -490,7 +490,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 添加进入数据库。
             if instance.prototype.name in self.world.data_base.stages:
-                logger.warning(
+                logger.info(
                     f"{instance.name}:{instance.prototype.name} = stage already exists in data_base.stages. is copy_stage?"
                 )
             else:
@@ -868,7 +868,7 @@ class TCGGame(BaseGame, TCGGameContext):
         self.stage_transition(heros_entities, stage_entity)
 
         # 设置空的地下城。
-        self._world.dungeon = Dungeon()
+        self._world.dungeon = Dungeon(name="")
 
     ###############################################################################################################################################
     def retrieve_stage_actor_names_mapping(self) -> Dict[str, List[str]]:

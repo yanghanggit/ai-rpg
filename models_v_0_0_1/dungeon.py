@@ -177,11 +177,11 @@ class Engagement(BaseModel):
 
 
 ###############################################################################################################################################
-# TODO临时的，先管理下。
+# TODO, 临时的，先管理下。
 @final
 @register_base_model_class
 class Dungeon(BaseModel):
-    name: str = ""
+    name: str
     levels: List[Stage] = []
     engagement: Engagement = Engagement()
     position: int = 0

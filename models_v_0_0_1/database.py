@@ -5,6 +5,7 @@ from .registry import register_base_model_class
 
 ###############################################################################################################################################
 @final
+@register_base_model_class
 class ActorPrototype(BaseModel):
     name: str
     type: str

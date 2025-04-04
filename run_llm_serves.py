@@ -83,7 +83,9 @@ def _execute_service_startup(config_file_path: Path) -> None:
         os.system("pm2 delete all")
 
         # 用配置文件的路径启动
-        terminal_batch_start_command = f"pm2 start llm_serves/azure_chat_openai_gpt_4o_graph.py -- {config_file_path}"
+        terminal_batch_start_command = (
+            f"pm2 start llm_serves/batch_start_langserve.py -- {config_file_path}"
+        )
         logger.debug(terminal_batch_start_command)
         os.system(terminal_batch_start_command)
 
@@ -94,6 +96,7 @@ def _execute_service_startup(config_file_path: Path) -> None:
 ##################################################################################################################
 def main() -> None:
 
+    # 写死生成文件。
     agent_startup_config_file_path: Path = GEN_CONFIGS_DIR / "start_llm_serves.json"
     if agent_startup_config_file_path.exists():
         agent_startup_config_file_path.unlink()

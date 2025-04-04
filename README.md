@@ -15,7 +15,7 @@ pip install langchain langchain_core langserve langgraph fastapi langchain_opena
 # 如果用vscode 进行代码调试，需要用 >Python Interpreter. 将python环境指向这个Name代表的环境
 ```
 ## 严格模式检查
-- mypy --strict run_terminal_tcg_game.py run_tcg_game_server.py run_python_tcg_client.py llm_serves/azure_chat_openai_gpt_4o_graph.py run_start_llm_serves.py run_test_lang_serve_system.py run_test.py
+- mypy --strict run_terminal_tcg_game.py run_tcg_game_server.py run_python_tcg_client.py run_llm_serves.py run_test_lang_serve_system.py run_test.py llm_serves/batch_start_langserve.py
 
 ## 说明
 - game_sample/gen_game.py 是生成游戏世界的配置

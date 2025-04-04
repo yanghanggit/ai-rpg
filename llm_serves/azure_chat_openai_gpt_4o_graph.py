@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path
-import threading
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import os
@@ -13,18 +12,11 @@ from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import BaseMessage
 from pydantic import SecretStr
 from langchain.schema import AIMessage, HumanMessage, SystemMessage, FunctionMessage
-from fastapi import FastAPI
 from pydantic import BaseModel
-from langserve import (
-    add_routes,
-)
 from langchain.schema.runnable import Runnable, RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
 import traceback
 from pathlib import Path
-from llm_serves.config import (
-    AgentStartupConfiguration,
-)
 
 
 ############################################################################################################
@@ -56,7 +48,7 @@ class ResponseModel(BaseModel):
 
 
 ############################################################################################################
-def _create_compiled_stage_graph(
+def create_compiled_stage_graph(
     node_name: str = "azure_chat_openai_chatbot_node", temperature: float = 0.7
 ) -> CompiledStateGraph:
     assert node_name != "", "node_name is empty"
@@ -94,7 +86,7 @@ def _create_compiled_stage_graph(
 
 
 ############################################################################################################
-def _stream_graph_updates(
+def stream_graph_updates(
     state_compiled_graph: CompiledStateGraph,
     chat_history_state: State,
     user_input_state: State,
@@ -133,7 +125,7 @@ class ChatExecutor(Runnable[Dict[str, Any], Dict[str, Any]]):
         user_input_state: State = {"messages": [HumanMessage(content=request.input)]}
 
         # 获取回复
-        update_messages = _stream_graph_updates(
+        update_messages = stream_graph_updates(
             state_compiled_graph=self._compiled_state_graph,
             chat_history_state=chat_history_state,
             user_input_state=user_input_state,
@@ -161,89 +153,11 @@ class ChatExecutor(Runnable[Dict[str, Any], Dict[str, Any]]):
 ############################################################################################################
 def main() -> None:
 
-    if len(sys.argv) < 2:
-        print("请提供配置文件路径作为参数")
-        sys.exit(1)
-
-    arguments = sys.argv[1:]  # 获取除脚本名称外的所有参数
-    print("接收到的参数:", arguments)
-
-    # 读取配置文件
-    agent_startup_config_file_path: Path = Path(str(arguments[0]))
-
-    if not agent_startup_config_file_path.exists():
-        # 如果文件不存在，打印错误信息并返回
-        return
-
-    try:
-
-        config_file_content = agent_startup_config_file_path.read_text(encoding="utf-8")
-        agent_startup_config = AgentStartupConfiguration.model_validate_json(
-            config_file_content
-        )
-
-        if len(agent_startup_config.service_configurations) == 0:
-            print("没有找到配置")
-            return
-
-        for configuration in agent_startup_config.service_configurations:
-
-            app = FastAPI(
-                title=configuration.fast_api_title,
-                version=configuration.fast_api_version,
-                description=configuration.fast_api_description,
-            )
-
-            # 如果api以/结尾，就将尾部的/去掉，不然add_routes会出错.
-            api = str(configuration.api)
-            if api.endswith("/"):
-                api = api[:-1]
-
-            add_routes(
-                app,
-                ChatExecutor(
-                    compiled_state_graph=_create_compiled_stage_graph(
-                        "azure_chat_openai_chatbot_node", configuration.temperature
-                    )
-                ),
-                path=api,
-            )
-
-            # 这么写就是堵塞的。uvicorn.run(app, host="localhost", port=configuration.port)
-            def run_server() -> None:
-                # 必须这么写。
-                import uvicorn
-
-                uvicorn.run(
-                    app,
-                    host="localhost",
-                    port=configuration.port,
-                    # 可选：关闭不必要的日志输出
-                    # access_log=False,
-                )
-
-            # 创建并启动线程
-            thread = threading.Thread(target=run_server)
-            thread.daemon = True  # 设置为守护线程，主线程退出时自动终止
-            thread.start()
-
-    except Exception as e:
-        # logger.error(f"Exception: {e}")
-        print(f"Exception: {e}")
-
-    # 主线程继续执行其他逻辑或挂起
-    while True:
-        pass  # 保持主线程存活，防止子线程退出
-
-
-############################################################################################################
-def _test() -> None:
-
     # 聊天历史
     chat_history_state: State = {"messages": []}
 
     # 生成聊天机器人状态图
-    compiled_stage_graph = _create_compiled_stage_graph()
+    compiled_stage_graph = create_compiled_stage_graph()
 
     while True:
 
@@ -258,7 +172,7 @@ def _test() -> None:
             user_input_state: State = {"messages": [HumanMessage(content=user_input)]}
 
             # 获取回复
-            update_messages = _stream_graph_updates(
+            update_messages = stream_graph_updates(
                 state_compiled_graph=compiled_stage_graph,
                 chat_history_state=chat_history_state,
                 user_input_state=user_input_state,
@@ -276,4 +190,3 @@ def _test() -> None:
 ############################################################################################################
 if __name__ == "__main__":
     main()
-    # _test()

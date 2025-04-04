@@ -1,4 +1,3 @@
-import sys
 from typing import (
     Any,
     Dict,
@@ -13,16 +12,22 @@ from typing import (
 from pydantic import BaseModel
 import inspect
 
-# 定义泛型
-T_COMPONENT = TypeVar("T_COMPONENT", bound=Type[NamedTuple])
-T_BASE_MODEL = TypeVar("T_BASE_MODEL", bound=Type[BaseModel])
-
 ############################################################################################################
 COMPONENTS_REGISTRY: Final[Dict[str, Type[NamedTuple]]] = {}
+T_COMPONENT = TypeVar("T_COMPONENT", bound=Type[NamedTuple])
 
 
 # 注册组件类的装饰器
 def register_component_class(cls: T_COMPONENT) -> T_COMPONENT:
+
+    # 新增检查：确保类是通过 NamedTuple 创建的
+    if not (
+        issubclass(cls, tuple)
+        and hasattr(cls, "_fields")
+        and hasattr(cls, "__annotations__")
+    ):
+        assert False, f"{cls.__name__} is not a valid NamedTuple class."
+
     # 注册类到全局字典
     class_name = cls.__name__
     if class_name in COMPONENTS_REGISTRY:
@@ -52,6 +57,7 @@ ACTION_COMPONENTS_REGISTRY: Final[Dict[str, Type[NamedTuple]]] = {}
 # 注册动作类的装饰器，必须同时注册到 COMPONENTS_REGISTRY 中
 def register_action_class(cls: T_COMPONENT) -> T_COMPONENT:
 
+    # 注册类到全局字典
     class_name = cls.__name__
     if class_name in ACTION_COMPONENTS_REGISTRY:
         raise ValueError(f"Class {class_name} is already registered.")
@@ -62,18 +68,23 @@ def register_action_class(cls: T_COMPONENT) -> T_COMPONENT:
 
 ############################################################################################################
 BASE_MODEL_REGISTRY: Final[Dict[str, Type[BaseModel]]] = {}
+T_BASE_MODEL = TypeVar("T_BASE_MODEL", bound=Type[BaseModel])
 
 
 def register_base_model_class(cls: T_BASE_MODEL) -> T_BASE_MODEL:
-    """
-    注册 BaseModel 类到全局字典，避免重复注册。
-    """
+
+    # 新增检查：确保类是通过 BaseModel 创建的
+    if not issubclass(cls, BaseModel):
+        assert False, f"{cls.__name__} is not a valid BaseModel class."
+
+    # 注册类到全局字典
     class_name = cls.__name__
     if class_name in BASE_MODEL_REGISTRY:
         raise ValueError(f"Class {class_name} is already registered.")
 
     BASE_MODEL_REGISTRY[class_name] = cls
 
+    # 不可以有 set 类型的属性，影响序列化和存储
     if _has_set_attr(cls):
         assert False, f"{class_name}: BaseModel class contain set type !"
 

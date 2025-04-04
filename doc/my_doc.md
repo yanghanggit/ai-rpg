@@ -76,64 +76,53 @@
 
 
 
-# hi, 我目前在做python的开发，我遇到了关于NamedTuple的问题。请你帮我解决一下。
+# hi, 我的如下代码首先请你看一下，然后帮助我优化这个函数。
 
-## 问题描述，代码如下
+## 代码如下
+
 ```python
-from typing import Dict, NamedTuple, Type, TypeVar, Final, final
+from typing import (
+    Any,
+    Dict,
+    NamedTuple,
+    Type,
+    TypeVar,
+    Final,
+    cast,
+    get_origin,
+    get_type_hints,
+)
+from pydantic import BaseModel
+import inspect
 
-T = TypeVar("T", bound=Type[NamedTuple])
+# 定义泛型
+T_COMPONENT = TypeVar("T_COMPONENT", bound=Type[NamedTuple])
 
-__COMPONENTS_REGISTRY__: Final[Dict[str, Type[NamedTuple]]] = {}
+COMPONENTS_REGISTRY: Final[Dict[str, Type[NamedTuple]]] = {}
 
-
-def register_component_class2(cls: T) -> T:
+# 注册组件类的装饰器
+def register_component_class(cls: T_COMPONENT) -> T_COMPONENT:
     # 注册类到全局字典
     class_name = cls.__name__
-    if class_name in __COMPONENTS_REGISTRY__:
-        raise ValueError(f"Class {class_name} is already registered.")
+    if class_name in COMPONENTS_REGISTRY:
+        assert False, f"Class {class_name} is already registered."
 
-    __COMPONENTS_REGISTRY__[class_name] = cls
+    COMPONENTS_REGISTRY[class_name] = cls
+
+    # 外挂一个方法到类上
+    if not hasattr(cast(Any, cls), "__deserialize_component__"):
+        ## 为了兼容性，给没有 __deserialize_component__ 方法的组件添加一个空实现
+        def _dummy_deserialize_component__(component_data: Dict[str, Any]) -> None:
+            pass
+
+        cast(Any, cls).__deserialize_component__ = _dummy_deserialize_component__
+
+    # 不允许有 set 类型的属性，影响序列化和存储
+    if _has_set_attr(cls):
+        assert False, f"{class_name}: Component class contain set type !"
+
     return cls
-
-
-@final
-@register_component_class2
-class TestComponent(NamedTuple):
-    name: str
-    runtime_index: int
-
-
-def main() -> None:
-
-    for key, value in __COMPONENTS_REGISTRY__.items():
-        print(f"Key: {key}, Value: {value}")
-
-    new_comp = TestComponent._make(("hello world", 1000))
-    print(new_comp)
-
-    component_data = new_comp._asdict()
-    print(component_data)
-
-    comp_class = __COMPONENTS_REGISTRY__.get(TestComponent.__name__)
-    assert comp_class is not None
-
-    restore_comp = comp_class(**component_data)
-    assert restore_comp is not None
-    print(restore_comp)
-
-
-if __name__ == "__main__":
-    main()
 ```
 
-## 我在运行严格模式检查的时候，错误提示如下
-```
-models_v_0_0_1/registry2.py:39: error: No overload variant of "NamedTuple" matches argument type "dict[str, Any]"  [call-overload]
-models_v_0_0_1/registry2.py:39: note: Possible overload variants:
-models_v_0_0_1/registry2.py:39: note:     def NamedTuple(self, str, Iterable[tuple[str, Any]], /) -> NamedTuple
-models_v_0_0_1/registry2.py:39: note:     def NamedTuple(self, str, None = ..., /, **kwargs: Any) -> NamedTuple
-```
 ## 我的需求：
-1. 请帮我分析问题的原因。
-2. 我希望解决这个问题（按我目前的代码逻辑与意图）。
+1. 在 register_component_class 函数里加一个判断，cls必须是 NamedTuple 类。

@@ -1,4 +1,4 @@
-from typing import Final, List, Dict, final
+from typing import List, Dict, final
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from .snapshot import EntitySnapshot

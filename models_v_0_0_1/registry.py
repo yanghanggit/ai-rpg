@@ -1,6 +1,17 @@
 import sys
-from typing import Any, Dict, NamedTuple, Type, TypeVar, Final, cast, get_origin
+from typing import (
+    Any,
+    Dict,
+    NamedTuple,
+    Type,
+    TypeVar,
+    Final,
+    cast,
+    get_origin,
+    get_type_hints,
+)
 from pydantic import BaseModel
+import inspect
 
 # 定义泛型
 T_COMPONENT = TypeVar("T_COMPONENT", bound=Type[NamedTuple])
@@ -28,7 +39,7 @@ def register_component_class(cls: T_COMPONENT) -> T_COMPONENT:
         cast(Any, cls).__deserialize_component__ = _dummy_deserialize_component__
 
     # 不允许有 set 类型的属性，影响序列化和存储
-    if _includes_set_type(cls):
+    if _has_set_attr(cls):
         assert False, f"{class_name}: Component class contain set type !"
 
     return cls
@@ -63,40 +74,73 @@ def register_base_model_class(cls: T_BASE_MODEL) -> T_BASE_MODEL:
 
     BASE_MODEL_REGISTRY[class_name] = cls
 
-    if _includes_set_type(cls):
+    if _has_set_attr(cls):
         assert False, f"{class_name}: BaseModel class contain set type !"
 
     return cls
 
 
 ############################################################################################################
-def _includes_set_type(cls: Any) -> bool:
-    """
-    检查类的属性类型是否包含 set/Set, 本项目不允许有，会影响存储和序列化的流程。
-    """
-    annotations = getattr(cls, "__annotations__", {})
-    for attr_name, attr_type in annotations.items():
-        # 处理延迟注解（字符串形式的类型）
-        if isinstance(attr_type, str):
-            # 解析字符串类型（需要访问类的全局命名空间）
-            global_namespace = sys.modules[cls.__module__].__dict__
-            try:
-                attr_type = eval(attr_type, global_namespace, {})
-            except NameError:
-                continue  # 忽略无法解析的类型
+def _is_set_type(t: type) -> bool:
+    """检查类型是否为 set 或 typing.Set"""
+    origin = get_origin(t) if t is not None else None
+    return origin is set or t is set
 
-        # 获取泛型底层类型（如 Set[str] -> set）
-        origin_type = get_origin(attr_type)
 
-        if origin_type is set or attr_type is set:
+############################################################################################################
+def _is_user_defined_class(cls: type) -> bool:
+    """检查是否为用户自定义类（非内置类型）"""
+    return inspect.isclass(cls) and cls.__module__ not in ("builtins", "typing")
+
+
+############################################################################################################
+def _has_set_attr(cls: type, visited: set[type] | None = None) -> bool:
+    """递归检查类中是否存在 set/Set 类型的属性"""
+    if visited is None:
+        visited = set()
+
+    # 避免重复检查
+    if cls in visited:
+        return False
+    visited.add(cls)
+
+    try:
+        # 获取类型注解（处理前向引用）
+        annotations = get_type_hints(cls)
+    except Exception:
+        annotations = {}
+
+    # 检查类型注解
+    for attr_type in annotations.values():
+        if _is_set_type(attr_type):
+            return True
+        if _is_user_defined_class(attr_type) and _has_set_attr(attr_type, visited):
             return True
 
-        if origin_type is BaseModel or attr_type is BaseModel:
-            # 检查是否是 BaseModel 的子类
-            return _includes_set_type(attr_type)
+    # 检查类属性值
+    for attr_name in vars(cls):
+        if attr_name.startswith("__") and attr_name.endswith("__"):
+            continue  # 跳过魔术方法
+
+        attr_value = getattr(cls, attr_name)
+
+        # 跳过方法
+        if inspect.ismethod(attr_value) or inspect.isfunction(attr_value):
+            continue
+
+        # 检查是否为 set 实例
+        if isinstance(attr_value, set):
+            return True
+
+        # 检查值类型是否为用户自定义类
+        attr_class = type(attr_value)
+        if _is_user_defined_class(attr_class) and _has_set_attr(attr_class, visited):
+            return True
 
     return False
 
+
+############################################################################################################
 
 """
 @final

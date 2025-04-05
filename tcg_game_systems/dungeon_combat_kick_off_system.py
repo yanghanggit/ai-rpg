@@ -1,6 +1,6 @@
 from loguru import logger
 from pydantic import BaseModel
-from extended_systems.chat_request_handler import ChatRequestHandler
+from llm_serves.chat_request_handler import ChatRequestHandler
 from entitas import ExecuteProcessor, Entity  # type: ignore
 from typing import Dict, List, Optional, Set, final, override
 from game.tcg_game import TCGGame
@@ -90,7 +90,7 @@ class DungeonCombatKickOffSystem(ExecuteProcessor):
         request_handlers: List[ChatRequestHandler] = self._generate_requests(
             actor_entities
         )
-        await self._game.langserve_system.gather(request_handlers=request_handlers)
+        await self._game.chat_system.gather(request_handlers=request_handlers)
 
         # step5: 处理角色规划请求
         response_map: Dict[ChatRequestHandler, CombatKickOffResponse] = {}

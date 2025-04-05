@@ -1,8 +1,8 @@
 from typing import List, Dict, Union
 
 from loguru import logger
-from extended_systems.lang_serve_system import LangServeSystem
-from extended_systems.chat_request_handler import ChatRequestHandler
+from llm_serves.chat_system import ChatSystem
+from llm_serves.chat_request_handler import ChatRequestHandler
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 
@@ -10,7 +10,9 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 async def _test_gather() -> None:
 
     server_url = "http://localhost:8100/v1/llm_serve/chat/"
-    lang_serve_system = LangServeSystem(name="test_agent", localhost_urls=[server_url])
+    chat_system = ChatSystem(
+        name="test_agent", user_name="yh", localhost_urls=[server_url]
+    )
 
     test_prompt_data: Dict[str, str] = {
         "agent1": "你好!你是谁",
@@ -26,7 +28,7 @@ async def _test_gather() -> None:
         )
 
     # 并发
-    await lang_serve_system.gather(request_handlers=request_handlers)
+    await chat_system.gather(request_handlers=request_handlers)
 
     for request_handler in request_handlers:
         print(
@@ -38,7 +40,9 @@ async def _test_gather() -> None:
 async def _test_chat_history() -> None:
 
     server_url = "http://localhost:8100/v1/llm_serve/chat/"
-    lang_serve_system = LangServeSystem(name="test_agent", localhost_urls=[server_url])
+    chat_system = ChatSystem(
+        name="test_agent", user_name="yh", localhost_urls=[server_url]
+    )
 
     chat_history: List[Union[SystemMessage, HumanMessage, AIMessage]] = []
     chat_history.append(
@@ -56,7 +60,7 @@ async def _test_chat_history() -> None:
             chat_request_handler = ChatRequestHandler(
                 name="yh", prompt=user_input, chat_history=chat_history
             )
-            lang_serve_system.handle(request_handlers=[chat_request_handler])
+            chat_system.handle(request_handlers=[chat_request_handler])
             chat_history.append(HumanMessage(content=user_input))
             chat_history.append(
                 AIMessage(content=chat_request_handler.response_content)

@@ -1,6 +1,6 @@
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from pydantic import BaseModel
-from extended_systems.chat_request_handler import ChatRequestHandler
+from llm_serves.chat_request_handler import ChatRequestHandler
 from models_v_0_0_1 import (
     HomeComponent,
     StageComponent,
@@ -85,7 +85,7 @@ class HomeStagePlanningSystem(ExecuteProcessor):
             self._generate_chat_request_handlers(stage_entities)
         )
 
-        await self._game.langserve_system.gather(request_handlers=request_handlers)
+        await self._game.chat_system.gather(request_handlers=request_handlers)
 
         self._handle_chat_responses(request_handlers)
 

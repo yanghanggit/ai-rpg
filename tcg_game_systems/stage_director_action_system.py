@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
-from extended_systems.chat_request_handler import ChatRequestHandler
+from llm_serves.chat_request_handler import ChatRequestHandler
 from overrides import override
 from typing import Final, List, NamedTuple, final
 from loguru import logger
@@ -202,7 +202,7 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
         )
 
         # 用语言服务系统进行推理。
-        self._game.langserve_system.handle([request_handler])
+        self._game.chat_system.handle([request_handler])
 
         # 处理返回结果。
         if request_handler.response_content == "":

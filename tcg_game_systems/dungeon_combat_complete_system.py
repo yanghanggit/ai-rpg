@@ -10,7 +10,7 @@ from models_v_0_0_1 import (
     CombatResult,
 )
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from extended_systems.chat_request_handler import ChatRequestHandler
+from llm_serves.chat_request_handler import ChatRequestHandler
 
 
 #######################################################################################################################################
@@ -86,7 +86,7 @@ class DungeonCombatCompleteSystem(ExecuteProcessor):
             )
 
         # 语言服务
-        await self._game.langserve_system.gather(request_handlers=request_handlers)
+        await self._game.chat_system.gather(request_handlers=request_handlers)
 
         # 结束的处理。
         for request_handler in request_handlers:

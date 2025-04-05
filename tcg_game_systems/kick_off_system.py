@@ -11,7 +11,7 @@ from models_v_0_0_1 import (
 )
 from typing import Set, final, List
 from game.tcg_game import TCGGame
-from extended_systems.chat_request_handler import ChatRequestHandler
+from llm_serves.chat_request_handler import ChatRequestHandler
 
 
 ###############################################################################################################################################
@@ -102,7 +102,7 @@ class KickOffSystem(ExecuteProcessor):
             )
 
         # 并发
-        await self._game.langserve_system.gather(request_handlers=request_handlers)
+        await self._game.chat_system.gather(request_handlers=request_handlers)
 
         # 添加上下文。
         for request_handler in request_handlers:

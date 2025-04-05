@@ -1,21 +1,21 @@
 from loguru import logger
 from typing import Final, List, Any, final
 from langserve import RemoteRunnable
-from typing import List, Any
-from loguru import logger
 import asyncio
 import time
-from extended_systems.chat_request_handler import ChatRequestHandler
+from llm_serves.chat_request_handler import ChatRequestHandler
 
 
 @final
-class LangServeSystem:
+class ChatSystem:
 
     ################################################################################################################################################################################
-    def __init__(self, name: str, localhost_urls: List[str]) -> None:
+    def __init__(self, name: str, user_name: str, localhost_urls: List[str]) -> None:
 
         # 名字
         self._name: Final[str] = name
+
+        self._user_name: Final[str] = user_name
 
         # 运行的服务器
         assert len(localhost_urls) > 0
@@ -36,13 +36,14 @@ class LangServeSystem:
         for idx, handler in enumerate(request_handlers):
             # 循环复用 RemoteRunnable
             runnable = self._remote_runnables[idx % len(self._remote_runnables)]
+            handler._user_name = self._user_name
             coros.append(handler.a_request(runnable))
 
         # 允许异常捕获，不中断其他请求
         start_time = time.time()
         batch_results = await asyncio.gather(*coros, return_exceptions=True)
         end_time = time.time()
-        logger.debug(f"task_request_utils.gather:{end_time - start_time:.2f} seconds")
+        logger.debug(f"LangServeSystem.gather:{end_time - start_time:.2f} seconds")
 
         # 记录失败请求
         for result in batch_results:
@@ -62,10 +63,9 @@ class LangServeSystem:
 
         for request_handler in request_handlers:
             start_time = time.time()
+            request_handler._user_name = self._user_name
             request_handler.request(self._remote_runnables[0])
             end_time = time.time()
-            logger.debug(
-                f"task_request_utils.handle:{end_time - start_time:.2f} seconds"
-            )
+            logger.debug(f"LangServeSystem.handle:{end_time - start_time:.2f} seconds")
 
     ################################################################################################################################################################################

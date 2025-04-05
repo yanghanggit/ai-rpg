@@ -39,7 +39,7 @@ from models_v_0_0_1 import (
 
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from extended_systems.lang_serve_system import LangServeSystem
+from llm_serves.chat_system import ChatSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 import copy
@@ -87,7 +87,7 @@ class TCGGame(BaseGame, TCGGameContext):
         player: PlayerProxy,
         world: World,
         world_path: Path,
-        langserve_system: LangServeSystem,
+        chat_system: ChatSystem,
         chaos_engineering_system: IChaosEngineering,
     ) -> None:
 
@@ -113,7 +113,7 @@ class TCGGame(BaseGame, TCGGameContext):
         assert self._player.actor != ""
 
         # agent 系统
-        self._langserve_system: Final[LangServeSystem] = langserve_system
+        self._chat_system: Final[ChatSystem] = chat_system
 
         # 混沌工程系统
         self._chaos_engineering_system: Final[IChaosEngineering] = (
@@ -173,8 +173,8 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     @property
-    def langserve_system(self) -> LangServeSystem:
-        return self._langserve_system
+    def chat_system(self) -> ChatSystem:
+        return self._chat_system
 
     ###############################################################################################################################################
     @property

@@ -1,6 +1,6 @@
-from llm_serves.config import (
+from llm_serves.service_config import (
     ServiceConfiguration,
-    AgentStartupConfiguration,
+    StartupConfiguration,
     GEN_CONFIGS_DIR,
 )
 from pathlib import Path
@@ -9,8 +9,8 @@ import os
 
 
 ##################################################################################################################
-def _create_agent_startup_config(name: str) -> AgentStartupConfiguration:
-    agent_startup_config = AgentStartupConfiguration()
+def _create_startup_config(name: str) -> StartupConfiguration:
+    agent_startup_config = StartupConfiguration()
     agent_startup_config.name = name
     agent_startup_config.service_configurations = [
         ServiceConfiguration(
@@ -45,7 +45,7 @@ def _create_agent_startup_config(name: str) -> AgentStartupConfiguration:
 def _prepare_service_configuration(file_path: Path) -> None:
 
     # 生成配置文件, 写死先
-    start_configurations = _create_agent_startup_config(file_path.name)
+    start_configurations = _create_startup_config(file_path.name)
 
     # 打印配置文件
     for config in start_configurations.service_configurations:
@@ -71,7 +71,7 @@ def _execute_service_startup(config_file_path: Path) -> None:
     try:
 
         config_file_content = config_file_path.read_text(encoding="utf-8")
-        agent_startup_config = AgentStartupConfiguration.model_validate_json(
+        agent_startup_config = StartupConfiguration.model_validate_json(
             config_file_content
         )
 
@@ -97,19 +97,19 @@ def _execute_service_startup(config_file_path: Path) -> None:
 def main() -> None:
 
     # 写死生成文件。
-    agent_startup_config_file_path: Path = GEN_CONFIGS_DIR / "start_llm_serves.json"
-    if agent_startup_config_file_path.exists():
-        agent_startup_config_file_path.unlink()
+    startup_config_file_path: Path = GEN_CONFIGS_DIR / "start_llm_serves.json"
+    if startup_config_file_path.exists():
+        startup_config_file_path.unlink()
 
     # 生成配置文件
-    _prepare_service_configuration(agent_startup_config_file_path)
+    _prepare_service_configuration(startup_config_file_path)
 
     # 启动服务
     assert (
-        agent_startup_config_file_path.exists()
-    ), f"找不到配置文件: {agent_startup_config_file_path}"
-    logger.debug(f"配置文件: {agent_startup_config_file_path}")
-    _execute_service_startup(agent_startup_config_file_path)  # 写死？
+        startup_config_file_path.exists()
+    ), f"找不到配置文件: {startup_config_file_path}"
+    logger.debug(f"配置文件: {startup_config_file_path}")
+    _execute_service_startup(startup_config_file_path)  # 写死？
 
 
 ##################################################################################################################

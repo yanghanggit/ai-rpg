@@ -4,7 +4,7 @@ from game.terminal_tcg_game import TerminalTCGGame
 from game.tcg_game import TCGGameState
 from models_v_0_0_1 import Boot, World, CombatResult, Dungeon
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
-from extended_systems.lang_serve_system import LangServeSystem
+from llm_serves.chat_system import ChatSystem
 from player.player_proxy import PlayerProxy
 from game.tcg_game_demo import (
     create_then_write_demo_world,
@@ -78,8 +78,9 @@ async def run_game(option: UserSessionOptions) -> None:
         player=PlayerProxy(name=option.user, actor=actor_warrior.name),
         world=start_world,
         world_path=option.world_runtime_file,
-        langserve_system=LangServeSystem(
-            f"{option.game}-langserve_system",
+        chat_system=ChatSystem(
+            name=f"{option.game}-langserve_system",
+            user_name=option.user,
             localhost_urls=option.langserve_localhost_urls,
         ),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),

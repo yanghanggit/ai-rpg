@@ -1,7 +1,7 @@
 from entitas import Entity  # type: ignore
 from typing import Dict, List, Set, Union, final
 from models_v_0_0_1 import StageComponent, ActorComponent, StatusEffect
-from extended_systems.chat_request_handler import ChatRequestHandler
+from llm_serves.chat_request_handler import ChatRequestHandler
 from loguru import logger
 from pydantic import BaseModel
 import format_string.json_format
@@ -55,9 +55,7 @@ class MonitorUtils:
         ) + self._gen_stages_requests(self._stage_entities)
 
         # 并发执行。
-        await self._game.langserve_system.gather(
-            request_handlers=self._request_handlers
-        )
+        await self._game.chat_system.gather(request_handlers=self._request_handlers)
 
         # 后续处理
         for request_handler in self._request_handlers:

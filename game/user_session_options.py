@@ -5,8 +5,8 @@ import datetime
 from dataclasses import dataclass
 import game.tcg_game_config
 import shutil
-from llm_serves.config import (
-    AgentStartupConfiguration,
+from llm_serves.service_config import (
+    StartupConfiguration,
 )
 
 
@@ -82,7 +82,7 @@ class UserSessionOptions:
         try:
 
             config_file_content = config_file_path.read_text(encoding="utf-8")
-            agent_startup_config = AgentStartupConfiguration.model_validate_json(
+            agent_startup_config = StartupConfiguration.model_validate_json(
                 config_file_content
             )
 

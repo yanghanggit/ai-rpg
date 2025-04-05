@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from entitas import Entity  # type: ignore
-from extended_systems.chat_request_handler import ChatRequestHandler
+from llm_serves.chat_request_handler import ChatRequestHandler
 import format_string.json_format
 from models_v_0_0_1 import (
     StageEnvironmentComponent,
@@ -93,7 +93,7 @@ class DrawCardsUtils:
         )
 
         # 语言服务
-        await self._game.langserve_system.gather(request_handlers=request_handlers)
+        await self._game.chat_system.gather(request_handlers=request_handlers)
 
         # 处理角色规划请求
         self._handle_responses(request_handlers)

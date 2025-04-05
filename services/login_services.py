@@ -20,7 +20,7 @@ from game.tcg_game_demo import (
 )
 import shutil
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
-from extended_systems.lang_serve_system import LangServeSystem
+from llm_serves.chat_system import ChatSystem
 from game.web_tcg_game import WebTCGGame
 from player.player_proxy import PlayerProxy
 
@@ -210,8 +210,9 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
         player=PlayerProxy(name=option.user, actor=actor_warrior.name),
         world=start_world,
         world_path=option.world_runtime_file,
-        langserve_system=LangServeSystem(
-            f"{option.game}-langserve_system",
+        chat_system=ChatSystem(
+            name=f"{option.game}-langserve_system",
+            user_name=option.user,
             localhost_urls=option.langserve_localhost_urls,
         ),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),

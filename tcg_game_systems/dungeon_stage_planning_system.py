@@ -1,6 +1,6 @@
 from entitas import Matcher, Entity, Matcher, ExecuteProcessor  # type: ignore
 from pydantic import BaseModel
-from extended_systems.chat_request_handler import ChatRequestHandler
+from llm_serves.chat_request_handler import ChatRequestHandler
 from models_v_0_0_1 import (
     StageEnvironmentComponent,
     HandComponent,
@@ -93,7 +93,7 @@ class DungeonStagePlanningSystem(ExecuteProcessor):
         assert current_stage is not None
 
         request_handler = self._generate_requests(current_stage)
-        self._game.langserve_system.handle(request_handlers=[request_handler])
+        self._game.chat_system.handle(request_handlers=[request_handler])
 
         if request_handler.response_content == "":
             logger.error(f"Agent: {request_handler._name}, Response is empty.")

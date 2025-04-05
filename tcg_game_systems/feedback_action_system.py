@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
-from extended_systems.chat_request_handler import ChatRequestHandler
+from llm_serves.chat_request_handler import ChatRequestHandler
 from overrides import override
 from typing import List, final
 from loguru import logger
@@ -104,7 +104,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
         chat_requests = self._generate_requests(set(react_entities))
 
         # 用语言服务系统进行推理。
-        await self._game.langserve_system.gather(request_handlers=chat_requests)
+        await self._game.chat_system.gather(request_handlers=chat_requests)
 
         # 处理返回结果。
         self._handle_responses(chat_requests)

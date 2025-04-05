@@ -23,6 +23,6 @@ class ServiceConfiguration(BaseModel):
 
 ##################################################################################################################
 # 启动一个Agent的配置原型
-class AgentStartupConfiguration(BaseModel):
+class StartupConfiguration(BaseModel):
     name: str = ""
     service_configurations: List[ServiceConfiguration] = []

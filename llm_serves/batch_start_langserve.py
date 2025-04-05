@@ -7,9 +7,8 @@ from fastapi import FastAPI
 from langserve import (
     add_routes,
 )
-from pathlib import Path
-from llm_serves.config import (
-    AgentStartupConfiguration,
+from llm_serves.service_config import (
+    StartupConfiguration,
 )
 from llm_serves.azure_chat_openai_gpt_4o_graph import (
     create_compiled_stage_graph,
@@ -37,7 +36,7 @@ def main() -> None:
     try:
 
         config_file_content = agent_startup_config_file_path.read_text(encoding="utf-8")
-        agent_startup_config = AgentStartupConfiguration.model_validate_json(
+        agent_startup_config = StartupConfiguration.model_validate_json(
             config_file_content
         )
 

@@ -1,9 +1,11 @@
 from loguru import logger
-from typing import List, Union, cast, Any, Optional, Final
+from typing import List, Union, Any, Optional, Final
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langserve import RemoteRunnable
-from typing import List, Any
-from loguru import logger
+from llm_serves.request_protocol import (
+    RequestModel,
+    ResponseModel,
+)
 
 
 class ChatRequestHandler:
@@ -14,6 +16,7 @@ class ChatRequestHandler:
         name: str,
         prompt: str,
         chat_history: List[Union[SystemMessage, HumanMessage, AIMessage]],
+        user_name: str = "",
     ) -> None:
 
         self._name = name
@@ -21,24 +24,20 @@ class ChatRequestHandler:
         self._chat_history: List[Union[SystemMessage, HumanMessage, AIMessage]] = (
             chat_history
         )
-        self._response: Optional[Any] = None
-        self._additional_params: List[Any] = []
+        self._response: Optional[ResponseModel] = None
+        self._user_name: str = user_name
 
     ################################################################################################################################################################################
     @property
     def response_content(self) -> str:
         if self._response is None:
             return ""
-        return cast(str, self._response["output"])
-
-    ################################################################################################################################################################################
-    @property
-    def response(self) -> Optional[Any]:
-        return self._response
+        return self._response.output
 
     ################################################################################################################################################################################
     def request(self, remote_runnable: RemoteRunnable[Any, Any]) -> Optional[Any]:
-        assert self.response is None
+
+        assert self._response is None
 
         if self._prompt == "":
             logger.error(f"{self._name}: request error: prompt is empty")
@@ -48,29 +47,30 @@ class ChatRequestHandler:
 
             logger.debug(f"{self._name} request prompt:\n{self._prompt}")
 
-            self._response = remote_runnable.invoke(
-                {
-                    "agent_name": self._name,
-                    "user_name": "",
-                    "input": self._prompt,
-                    "chat_history": self._chat_history,
-                }
+            response = remote_runnable.invoke(
+                RequestModel(
+                    agent_name=self._name,
+                    user_name=self._user_name,
+                    input=self._prompt,
+                    chat_history=self._chat_history,
+                )
             )
 
+            self._response = ResponseModel.model_validate(response)
             logger.info(
-                f"{self._name} request response_content:\n{self.response_content}"
+                f"{self._name} request-response:\n{self._response.model_dump_json()}"
             )
 
         except Exception as e:
             logger.error(f"{self._name}: request error: {e}")
 
-        return self.response
+        return self._response
 
     ################################################################################################################################################################################
     async def a_request(
         self, remote_runnable: RemoteRunnable[Any, Any]
     ) -> Optional[Any]:
-        assert self.response is None
+        assert self._response is None
 
         if self._prompt == "":
             logger.error(f"{self._name}: a_request error: prompt is empty")
@@ -80,22 +80,23 @@ class ChatRequestHandler:
 
             logger.debug(f"{self._name} a_request prompt:\n{self._prompt}")
 
-            self._response = await remote_runnable.ainvoke(
-                {
-                    "agent_name": self._name,
-                    "user_name": "",
-                    "input": self._prompt,
-                    "chat_history": self._chat_history,
-                }
+            response = await remote_runnable.ainvoke(
+                RequestModel(
+                    agent_name=self._name,
+                    user_name=self._user_name,
+                    input=self._prompt,
+                    chat_history=self._chat_history,
+                )
             )
 
+            self._response = ResponseModel.model_validate(response)
             logger.info(
-                f"{self._name} a_request response_content:\n{self.response_content}"
+                f"{self._name} a_request-response:\n{self._response.model_dump_json()}"
             )
 
         except Exception as e:
             logger.error(f"{self._name}: a_request error: {e}")
 
-        return self.response
+        return self._response
 
     ################################################################################################################################################################################

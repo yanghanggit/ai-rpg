@@ -4,47 +4,25 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import os
 import traceback
-from typing import Annotated, cast, Dict, List, Union, Any, override
+from typing import Annotated, cast, Dict, List, Any, override
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import BaseMessage
 from pydantic import SecretStr
-from langchain.schema import AIMessage, HumanMessage, SystemMessage, FunctionMessage
-from pydantic import BaseModel
+from langchain.schema import AIMessage, HumanMessage
 from langchain.schema.runnable import Runnable, RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
-import traceback
-from pathlib import Path
+from llm_serves.request_protocol import (
+    RequestModel,
+    ResponseModel,
+)
 
 
 ############################################################################################################
 class State(TypedDict):
     messages: Annotated[List[BaseMessage], add_messages]
-
-
-############################################################################################################
-class RequestModel(BaseModel):
-    agent_name: str = ""
-    user_name: str = ""
-    input: str = ""
-    chat_history: List[
-        Union[SystemMessage, HumanMessage, AIMessage, FunctionMessage]
-    ] = []
-
-    class Config:
-        arbitrary_types_allowed = True
-
-
-############################################################################################################
-class ResponseModel(BaseModel):
-    agent_name: str = ""
-    user_name: str = ""
-    output: str = ""
-
-    class Config:
-        arbitrary_types_allowed = True
 
 
 ############################################################################################################

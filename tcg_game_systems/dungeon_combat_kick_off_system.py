@@ -2,7 +2,7 @@ from loguru import logger
 from pydantic import BaseModel
 from extended_systems.chat_request_handler import ChatRequestHandler
 from entitas import ExecuteProcessor, Entity  # type: ignore
-from typing import Dict, List, Set, final, override
+from typing import Dict, List, Optional, Set, final, override
 from game.tcg_game import TCGGame
 from models_v_0_0_1 import (
     StageEnvironmentComponent,
@@ -14,7 +14,7 @@ import format_string.json_format
 
 #######################################################################################################################################
 @final
-class CombatPreparationResponse(BaseModel):
+class CombatKickOffResponse(BaseModel):
     description: str
     status_effects: List[StatusEffect]
 
@@ -33,7 +33,7 @@ def _generate_prompt(
     if len(actors_appearances_info) == 0:
         actors_appearances_info.append("无")
 
-    combat_init_response_example = CombatPreparationResponse(
+    combat_init_response_example = CombatKickOffResponse(
         description="第一人称状态描述（<200字）",
         status_effects=[
             StatusEffect(name="效果1的名字", description="效果1的描述", rounds=1),
@@ -73,22 +73,52 @@ class DungeonCombatKickOffSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
 
+        # step1: 不是本阶段就直接返回
         if not self._game.current_engagement.is_kickoff_phase:
-            # 不是本阶段就直接返回
             return
 
+        # step2: 参与战斗的人
         actor_entities = self._extract_actor_entities()
         assert len(actor_entities) > 0
         if len(actor_entities) == 0:
-            return
+            return  # 人不够就返回。
 
-        # 重置战斗属性! 这个是必须的！
+        # step3: 重置战斗属性! 这个是必须的！
         self._reset_combat_attributes(actor_entities)
 
-        # 核心处理
-        await self._process_requests(actor_entities)
+        # step4: 处理角色规划请求
+        request_handlers: List[ChatRequestHandler] = self._generate_requests(
+            actor_entities
+        )
+        await self._game.langserve_system.gather(request_handlers=request_handlers)
 
-        # 开始战斗
+        # step5: 处理角色规划请求
+        response_map: Dict[ChatRequestHandler, CombatKickOffResponse] = {}
+        for request_handler in request_handlers:
+            if request_handler.response_content == "":
+                continue
+
+            format_response = self._validate_response_format(request_handler)
+            if format_response is None:
+                logger.error(
+                    f"请求处理器返回的内容格式不正确！\n{request_handler._name}:{request_handler.response_content}"
+                )
+                continue
+            response_map[request_handler] = format_response
+
+        # step6: 处理返回结果
+        if len(response_map) != len(request_handlers):
+            # 如果有角色没有返回结果，就直接返回
+            logger.error("有角色没有返回结果！就不允许进入战斗阶段！")
+            return
+
+        # step7: 统一处理所有角色的返回结果。
+        for request_handler, format_response in response_map.items():
+            entity2 = self._game.get_entity_by_name(request_handler._name)
+            assert entity2 is not None
+            self._handle_response(entity2, request_handler, format_response)
+
+        # final 开始战斗，最后一步，转换到战斗阶段。
         self._game.current_engagement.combat_ongoing()
 
     ###################################################################################################################################################################
@@ -100,23 +130,8 @@ class DungeonCombatKickOffSystem(ExecuteProcessor):
 
     ###################################################################################################################################################################
     def _reset_combat_attributes(self, actor_entities: Set[Entity]) -> None:
-
         for actor_entity in actor_entities:
             self._game.setup_combat_attributes(actor_entity)
-
-    ###################################################################################################################################################################
-    async def _process_requests(self, actor_entities: Set[Entity]) -> None:
-
-        # 处理角色规划请求
-        request_handlers: List[ChatRequestHandler] = self._generate_requests(
-            actor_entities
-        )
-
-        # 语言服务
-        await self._game.langserve_system.gather(request_handlers=request_handlers)
-
-        # 处理角色规划请求
-        self._handle_responses(request_handlers)
 
     ###################################################################################################################################################################
     def _generate_requests(
@@ -160,57 +175,54 @@ class DungeonCombatKickOffSystem(ExecuteProcessor):
         return request_handlers
 
     ###################################################################################################################################################################
-    def _handle_responses(self, request_handlers: List[ChatRequestHandler]) -> None:
-        for request_handler in request_handlers:
-
-            entity2 = self._game.get_entity_by_name(request_handler._name)
-            assert entity2 is not None
-
-            if request_handler.response_content == "":
-                continue
-
-            self._handle_response(entity2, request_handler)
-
-    ###################################################################################################################################################################
-    def _handle_response(
-        self, entity2: Entity, request_handler: ChatRequestHandler
-    ) -> None:
-
+    def _validate_response_format(
+        self, request_handler: ChatRequestHandler
+    ) -> Optional[CombatKickOffResponse]:
         try:
-
-            format_response = CombatPreparationResponse.model_validate_json(
+            format_response = CombatKickOffResponse.model_validate_json(
                 format_string.json_format.strip_json_code_block(
                     request_handler.response_content
                 )
             )
+            return format_response
+        except Exception as e:
+            logger.error(f"Exception: {e}")
+            return None
 
-            # 效果更新
-            self._game.update_combat_status_effects(
-                entity2, format_response.status_effects
+        return None
+
+    ###################################################################################################################################################################
+    # 核心处理。
+    def _handle_response(
+        self,
+        entity2: Entity,
+        request_handler: ChatRequestHandler,
+        format_response: CombatKickOffResponse,
+    ) -> None:
+
+        # 效果更新
+        self._game.update_combat_status_effects(entity2, format_response.status_effects)
+
+        # 添加提示词上下文。
+        self._game.append_human_message(
+            entity2,
+            request_handler._prompt,
+            combat_init_tag="战斗触发！",
+        )
+
+        status_effects_prompt = "无"
+        if len(format_response.status_effects) > 0:
+            status_effects_prompt = "\n".join(
+                [e.model_dump_json() for e in format_response.status_effects]
             )
 
-            # 添加提示词上下文。
-            self._game.append_human_message(
-                entity2,
-                request_handler._prompt,
-                combat_init_tag="战斗触发！",
-            )
-
-            status_effects_prompt = "无"
-            if len(format_response.status_effects) > 0:
-                status_effects_prompt = "\n".join(
-                    [e.model_dump_json() for e in format_response.status_effects]
-                )
-
-            # 添加记忆
-            message = f"""# ！战斗触发！准备完毕。
+        # 添加记忆
+        message = f"""# ！战斗触发！准备完毕。
 {format_response.description}
 ## 你目前拥有的状态
 {status_effects_prompt}"""
 
-            self._game.append_ai_message(entity2, message)
+        self._game.append_ai_message(entity2, message)
 
-        except Exception as e:
-            logger.error(f"Exception: {e}")
 
-    ###################################################################################################################################################################
+###################################################################################################################################################################

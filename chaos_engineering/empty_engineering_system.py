@@ -9,11 +9,11 @@ class EmptyChaosEngineeringSystem(IChaosEngineering):
         super().__init__()
 
     @override
-    def on_pre_create_game(self) -> None:
+    def on_pre_new_game(self) -> None:
         pass
 
     @override
-    def on_post_create_game(self) -> None:
+    def on_post_new_game(self) -> None:
         pass
 
     @override

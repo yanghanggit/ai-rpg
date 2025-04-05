@@ -44,6 +44,7 @@ class TCGGameContext(Context):
     ###############################################################################################################################################
     @override
     def destroy_entity(self, entity: Entity) -> None:
+        logger.debug(f"destroy entity: {entity._name}")
         self._query_entities.pop(entity._name, None)
         return super().destroy_entity(entity)
 

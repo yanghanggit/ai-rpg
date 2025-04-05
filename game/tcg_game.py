@@ -119,23 +119,10 @@ class TCGGame(BaseGame, TCGGameContext):
         self._chaos_engineering_system: Final[IChaosEngineering] = (
             chaos_engineering_system
         )
+        self.chaos_engineering_system.initialize(self)
 
         # 是否开启调试
         self._debug_flag_pipeline: bool = False
-
-        # 地下城系统的强行类型转化 DungeonSystem 继承自 Dungeon，EngagementSystem 继承自 Engagement
-        # if not isinstance(self._world.dungeon, DungeonSystem):
-        #     logger.warning(f"world.dungeon is not DungeonSystem, try to convert it.")
-        #     self._world.dungeon = DungeonSystem.model_validate_json(
-        #         self._world.dungeon.model_dump_json()
-        #     )
-        #     if not isinstance(self._world.dungeon.engagement, EngagementSystem):
-        #         logger.warning(
-        #             f"world.dungeon.engagement is not EngagementSystem, try to convert it."
-        #         )
-        #         self._world.dungeon.engagement = EngagementSystem.model_validate_json(
-        #             self._world.dungeon.engagement.model_dump_json()
-        #         )
 
     ###############################################################################################################################################
     @property
@@ -247,21 +234,20 @@ class TCGGame(BaseGame, TCGGameContext):
         assert len(self.world.entities_snapshot) == 0, "游戏中有实体，不能创建新的游戏"
 
         # 混沌系统
-        self.chaos_engineering_system.initialize(self)
-        self.chaos_engineering_system.on_pre_create_game()
+        self.chaos_engineering_system.on_pre_new_game()
 
         ## 第1步，创建world_system
         self._create_world_system_entities(self.world.boot.world_systems)
 
         ## 第2步，创建actor
-        self._create_actor_entities(self.world.boot.actors + self.world.dungeon.actors)
+        self._create_actor_entities(self.world.boot.actors)
         self._assign_player_to_actor()
 
         ## 第3步，创建stage
-        self._create_stage_entities(self.world.boot.stages + self.world.dungeon.levels)
+        self._create_stage_entities(self.world.boot.stages)
 
         ## 最后！混沌系统，准备测试
-        self.chaos_engineering_system.on_post_create_game()
+        self.chaos_engineering_system.on_post_new_game()
 
         return self
 
@@ -769,10 +755,50 @@ class TCGGame(BaseGame, TCGGameContext):
         )
 
     #######################################################################################################################################
+    def _create_dungeon_entities(self, dungeon: Dungeon) -> None:
+
+        # 加一步测试: 不可以存在！如果存在说明没有清空。
+        for actor in dungeon.actors:
+            actor_entity = self.get_actor_entity(actor.name)
+            assert actor_entity is None, "actor_entity is not None"
+
+        # 加一步测试: 不可以存在！如果存在说明没有清空。
+        for stage in dungeon.levels:
+            stage_entity = self.get_stage_entity(stage.name)
+            assert stage_entity is None, "stage_entity is not None"
+
+        # 正式创建。。。。。。。。。。
+        # 创建地下城的怪物。
+        self._create_actor_entities(dungeon.actors)
+        ## 创建地下城的场景
+        self._create_stage_entities(dungeon.levels)
+
+    #######################################################################################################################################
+    def _destroy_dungeon_entities(self, dungeon: Dungeon) -> None:
+
+        # 清空地下城的怪物。
+        for actor in dungeon.actors:
+            actor_entity = self.get_actor_entity(actor.name)
+            if actor_entity is not None:
+                self.destroy_entity(actor_entity)
+
+        # 清空地下城的场景
+        for stage in dungeon.levels:
+            stage_entity = self.get_stage_entity(stage.name)
+            if stage_entity is not None:
+                self.destroy_entity(stage_entity)
+
+    #######################################################################################################################################
+    def _clear_dungeon(self) -> None:
+        self._destroy_dungeon_entities(self._world.dungeon)
+        self._world.dungeon = Dungeon(name="")
+
+    #######################################################################################################################################
     # TODO!!! 进入地下城。
     def launch_dungeon(self) -> None:
         assert self.current_dungeon.position == 0, "当前地下城关卡已经完成！"
         if self.current_dungeon.position == 0:
+            self._create_dungeon_entities(self.current_dungeon)
             heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
             self._process_dungeon_advance(self.current_dungeon, heros_entities)
 
@@ -787,11 +813,11 @@ class TCGGame(BaseGame, TCGGameContext):
     #######################################################################################################################################
     # TODO, 进入地下城！
     def _process_dungeon_advance(
-        self, dungeon_system: Dungeon, heros_entities: Set[Entity]
+        self, dungeon: Dungeon, heros_entities: Set[Entity]
     ) -> bool:
 
         # 是否有可以进入的关卡？
-        upcoming_dungeon = dungeon_system.current_level()
+        upcoming_dungeon = dungeon.current_level()
         assert upcoming_dungeon is not None
         if upcoming_dungeon is None:
             logger.error(
@@ -819,7 +845,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 准备提示词。
         trans_message = ""
-        if dungeon_system.position == 0:
+        if dungeon.position == 0:
             trans_message = (
                 f"""# 提示！你将要开始一次冒险，准备进入地下城: {stage_entity._name}"""
             )
@@ -833,7 +859,7 @@ class TCGGame(BaseGame, TCGGameContext):
         self.stage_transition(heros_entities, stage_entity)
 
         # 设置一个战斗。
-        dungeon_system.engagement.combat_kickoff(Combat(name=stage_entity._name))
+        dungeon.engagement.combat_kickoff(Combat(name=stage_entity._name))
 
         return True
 
@@ -868,7 +894,7 @@ class TCGGame(BaseGame, TCGGameContext):
         self.stage_transition(heros_entities, stage_entity)
 
         # 设置空的地下城。
-        self._world.dungeon = Dungeon(name="")
+        self._clear_dungeon()
 
     ###############################################################################################################################################
     def retrieve_stage_actor_names_mapping(self) -> Dict[str, List[str]]:

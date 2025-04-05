@@ -5,11 +5,11 @@ from typing import Any
 class IChaosEngineering(ABC):
 
     @abstractmethod
-    def on_pre_create_game(self) -> None:
+    def on_pre_new_game(self) -> None:
         pass
 
     @abstractmethod
-    def on_post_create_game(self) -> None:
+    def on_post_new_game(self) -> None:
         pass
 
     @abstractmethod

@@ -125,6 +125,15 @@ class TCGGame(BaseGame, TCGGameContext):
         self._debug_flag_pipeline: bool = False
 
     ###############################################################################################################################################
+    @override
+    def destroy_entity(self, entity: Entity) -> None:
+        logger.debug(f"TCGGame destroy entity: {entity._name}")
+        if entity._name in self.world.agents_short_term_memory:
+            logger.debug(f"TCGGame destroy entity: {entity._name} in short term memory")
+            self.world.agents_short_term_memory.pop(entity._name, None)
+        return super().destroy_entity(entity)
+
+    ###############################################################################################################################################
     @property
     def world_file_dir(self) -> Path:
         return self._world_file_path.parent

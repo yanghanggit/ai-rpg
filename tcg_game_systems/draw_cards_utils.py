@@ -9,7 +9,7 @@ from models_v_0_0_1 import (
     MonsterComponent,
     Skill,
 )
-from typing import List, Set, final
+from typing import Final, List, Set, final
 from loguru import logger
 from game.tcg_game import TCGGame
 
@@ -22,26 +22,26 @@ class DrawCardResponse(BaseModel):
 
 #######################################################################################################################################
 def _generate_prompt(
+    skill_creation_count: int,
     current_stage: str,
     current_stage_narration: str,
 ) -> str:
 
-    default_response_example = DrawCardResponse(
-        skills=[
-            Skill(
-                name="技能1",
-                description="技能1描述",
-                effect="技能1效果",
-            ),
-            Skill(
-                name="技能2",
-                description="技能2描述",
-                effect="技能2效果",
-            ),
-        ]
+    assert skill_creation_count > 0
+    response_example = DrawCardResponse(
+        skills=[],
     )
 
-    return f"""# 请你生成2个技能
+    for i in range(skill_creation_count):
+        response_example.skills.append(
+            Skill(
+                name=f"技能{i+1}",
+                description=f"技能{i+1}描述",
+                effect=f"技能{i+1}效果",
+            )
+        )
+
+    return f"""# 请你生成 {skill_creation_count} 个技能
 ## 当前场景状态
 {current_stage} | {current_stage_narration}
 ## 注意事项
@@ -50,7 +50,7 @@ def _generate_prompt(
 - 禁用换行/空行
 - 直接输出合规JSON
 ### 输出格式(JSON)
-{default_response_example.model_dump_json()}"""
+{response_example.model_dump_json()}"""
 
 
 #######################################################################################################################################
@@ -60,6 +60,7 @@ class DrawCardsUtils:
     def __init__(self, game_context: TCGGame, actor_entities: Set[Entity]) -> None:
         self._game: TCGGame = game_context
         self._actor_entities: Set[Entity] = actor_entities
+        self._skill_creation_count: Final[int] = 2
 
         for entity in self._actor_entities:
             assert entity.has(HeroComponent) or entity.has(
@@ -148,6 +149,7 @@ class DrawCardsUtils:
 
             # 生成消息
             message = _generate_prompt(
+                self._skill_creation_count,
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
             )

@@ -57,9 +57,9 @@ async def start(
     room._game.player.clear_client_messages()
 
     # 添加全局地图的数据。
-    names_mapping = room._game.retrieve_stage_actor_names_mapping()
-    assert len(names_mapping) > 0, f"没有找到任何角色名称映射数据！"
-    room._game.player.add_mapping(names_mapping)
+    # names_mapping = room._game.retrieve_stage_actor_names_mapping()
+    # assert len(names_mapping) > 0, f"没有找到任何角色名称映射数据！"
+    # room._game.player.add_mapping(names_mapping)
 
     # 返回正确的数据。
     return StartResponse(

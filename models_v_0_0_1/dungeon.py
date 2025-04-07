@@ -184,7 +184,7 @@ class Dungeon(BaseModel):
     name: str
     levels: List[Stage] = []
     engagement: Engagement = Engagement()
-    position: int = 0
+    position: int = -1
 
     @property
     def actors(self) -> List[Actor]:
@@ -196,8 +196,8 @@ class Dungeon(BaseModel):
             logger.warning("地下城系统为空！")
             return None
 
-        if self.position >= len(self.levels):
-            logger.warning("当前地下城关卡已经完成！")
+        if not self._validate_position(self.position):
+            logger.warning("当前地下城关卡已经完成！或者尚未开始！")
             return None
 
         return self.levels[self.position]
@@ -209,8 +209,8 @@ class Dungeon(BaseModel):
             logger.warning("地下城系统为空！")
             return None
 
-        if self.position >= len(self.levels):
-            logger.warning("当前地下城关卡已经完成！")
+        if not self._validate_position(self.position):
+            logger.warning("当前地下城关卡已经完成！或者尚未开始！")
             return None
 
         return (
@@ -226,14 +226,15 @@ class Dungeon(BaseModel):
             logger.warning("地下城系统为空！")
             return False
 
-        if self.position >= len(self.levels):
-            logger.warning("当前地下城关卡已经完成！")
+        if not self._validate_position(self.position):
+            logger.warning("当前地下城关卡已经完成！或者尚未开始！")
             return False
 
         self.position += 1
         return True
 
     ########################################################################################################################
+    def _validate_position(self, position: int) -> bool:
+        return position >= 0 and position < len(self.levels)
 
-
-###############################################################################################################################################
+    ########################################################################################################################

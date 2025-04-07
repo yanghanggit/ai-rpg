@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from services.game_server_instance import GameServerInstance
 from models_v_0_0_1 import (
     ViewDungeonRequest,
+    ViewDungeonData,
     ViewDungeonResponse,
 )
 from loguru import logger
@@ -55,10 +56,18 @@ async def view_dungeon(
             message="游戏没有开始，请先开始游戏",
         )
 
-    gen_message = current_room._game.world.dungeon.model_dump_json()
+    # 创建返回数据。
+    data = ViewDungeonData(
+        dungeon_name=current_room._game.current_dungeon.name,
+        levels=[stage.name for stage in current_room._game.current_dungeon.levels],
+        current_position=current_room._game.current_dungeon.position,
+    )
+
+    # 返回。
     return ViewDungeonResponse(
+        data=data,
         error=0,
-        message=gen_message,
+        message=data.model_dump_json(),
     )
 
 

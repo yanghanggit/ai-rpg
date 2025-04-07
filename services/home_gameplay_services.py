@@ -161,8 +161,12 @@ async def home_trans_dungeon(
 
     # 测试推进一次游戏
     logger.info(f"!!!!!!!!!准备传送地下城!!!!!!!!!!!!")
-    current_room._game.launch_dungeon()
-
+    if not current_room._game.launch_dungeon():
+        logger.error("第一次地下城传送失败!!!!")
+        return HomeTransDungeonResponse(
+            error=1005,
+            message="第一次地下城传送失败!!!!",
+        )
     #
     return HomeTransDungeonResponse(
         client_messages=current_room._game.player.client_messages,

@@ -23,7 +23,6 @@ class APIEndpointConfiguration(BaseModel):
     HOME_RUN_URL: str = ""
     HOME_TRANS_DUNGEON_URL: str = ""
     DUNGEON_RUN_URL: str = ""
-    DUNGEON_DRAW_CARDS_URL: str = ""
     VIEW_DUNGEON_URL: str = ""
 
 
@@ -144,36 +143,21 @@ class HomeTransDungeonResponse(BaseModel):
 
 @final
 @register_base_model_class
+class DungeonRunUserInput(BaseModel):
+    tag: str = ""
+
+
+@final
+@register_base_model_class
 class DungeonRunRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    user_input: str = ""
+    user_input: DungeonRunUserInput = DungeonRunUserInput()
 
 
 @final
 @register_base_model_class
 class DungeonRunResponse(BaseModel):
-    client_messages: List[ClientMessage] = []
-    error: int = 0
-    message: str = ""
-
-
-################################################################################################################
-################################################################################################################
-################################################################################################################
-
-
-@final
-@register_base_model_class
-class DungeonDrawCardsRequest(BaseModel):
-    user_name: str = ""
-    game_name: str = ""
-    user_input: str = ""
-
-
-@final
-@register_base_model_class
-class DungeonDrawCardsResponse(BaseModel):
     client_messages: List[ClientMessage] = []
     error: int = 0
     message: str = ""
@@ -193,7 +177,16 @@ class ViewDungeonRequest(BaseModel):
 
 @final
 @register_base_model_class
+class ViewDungeonData(BaseModel):
+    dungeon_name: str = ""
+    levels: List[str] = []
+    current_position: int = 0
+
+
+@final
+@register_base_model_class
 class ViewDungeonResponse(BaseModel):
+    data: ViewDungeonData = ViewDungeonData()
     error: int = 0
     message: str = ""
 

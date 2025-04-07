@@ -8,7 +8,7 @@ from .registry import register_component_class
 # 全局唯一标识符 RunTimeIndexComponent
 @final
 @register_component_class
-class RunTimeIndexComponent(NamedTuple):
+class RuntimeComponent(NamedTuple):
     name: str
     runtime_index: int
 

@@ -6,7 +6,7 @@ from models_v_0_0_1 import (
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
-    RunTimeIndexComponent,
+    RuntimeComponent,
     AppearanceComponent,
     PlayerComponent,
     COMPONENTS_REGISTRY,
@@ -58,7 +58,7 @@ class TCGGameContext(Context):
         # 保证有顺序。防止set引起的顺序不一致。
         sort_actors = sorted(
             entities_copy,
-            key=lambda entity: entity.get(RunTimeIndexComponent).runtime_index,
+            key=lambda entity: entity.get(RuntimeComponent).runtime_index,
         )
 
         for entity in sort_actors:
@@ -140,11 +140,11 @@ class TCGGameContext(Context):
         return None
 
     ###############################################################################################################################################
-    def get_entity_by_guid(self, guid: int) -> Optional[Entity]:
+    def get_entity_by_runtime_index(self, runtime_index: int) -> Optional[Entity]:
 
-        for entity in self.get_group(Matcher(RunTimeIndexComponent)).entities:
-            guid_comp = entity.get(RunTimeIndexComponent)
-            if guid_comp.runtime_index == guid:
+        for entity in self.get_group(Matcher(RuntimeComponent)).entities:
+            guid_comp = entity.get(RuntimeComponent)
+            if guid_comp.runtime_index == runtime_index:
                 return entity
 
         return None

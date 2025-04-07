@@ -33,7 +33,7 @@ def _generate_prompt(
     if len(actors_appearances_info) == 0:
         actors_appearances_info.append("无")
 
-    combat_init_response_example = CombatKickOffResponse(
+    combat_kickoff_response_example = CombatKickOffResponse(
         description="第一人称状态描述（<200字）",
         status_effects=[
             StatusEffect(name="效果1的名字", description="效果1的描述", rounds=1),
@@ -53,7 +53,7 @@ def _generate_prompt(
 1. 状态感受：单段紧凑自述（禁用换行/空行/数字）
 2. 在你身上的持续效果：生成效果列表，包含效果名、效果描述、持续回合数。
 ## 输出格式规范
-{combat_init_response_example.model_dump_json()}
+{combat_kickoff_response_example.model_dump_json()}
 - 直接输出合规JSON"""
 
 

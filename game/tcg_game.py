@@ -24,7 +24,7 @@ from models_v_0_0_1 import (
     StageComponent,
     ActorComponent,
     PlayerComponent,
-    RunTimeIndexComponent,
+    RuntimeComponent,
     KickOffMessageComponent,
     AppearanceComponent,
     StageEnvironmentComponent,
@@ -348,7 +348,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 必要组件
             world_system_entity.add(
-                RunTimeIndexComponent,
+                RuntimeComponent,
                 instance.name,
                 self.world.next_runtime_index(),
             )
@@ -380,7 +380,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 必要组件：guid
             actor_entity.add(
-                RunTimeIndexComponent,
+                RuntimeComponent,
                 instance.name,
                 self.world.next_runtime_index(),
             )
@@ -447,7 +447,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 必要组件
             stage_entity.add(
-                RunTimeIndexComponent,
+                RuntimeComponent,
                 instance.name,
                 self.world.next_runtime_index(),
             )
@@ -804,12 +804,16 @@ class TCGGame(BaseGame, TCGGameContext):
 
     #######################################################################################################################################
     # TODO!!! 进入地下城。
-    def launch_dungeon(self) -> None:
-        assert self.current_dungeon.position == 0, "当前地下城关卡已经完成！"
-        if self.current_dungeon.position == 0:
+    def launch_dungeon(self) -> bool:
+        # 第一次，必须是<0, 证明一次没来过。
+        assert self.current_dungeon.position < 0, "当前地下城关卡已经完成！"
+        if self.current_dungeon.position < 0:
+            self.current_dungeon.position = 0  # 第一次设置，第一个关卡。
             self._create_dungeon_entities(self.current_dungeon)
             heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
-            self._process_dungeon_advance(self.current_dungeon, heros_entities)
+            return self._process_dungeon_advance(self.current_dungeon, heros_entities)
+
+        return False
 
     #######################################################################################################################################
     # TODO, 地下城下一关。
@@ -852,7 +856,7 @@ class TCGGame(BaseGame, TCGGameContext):
             f"{self.current_dungeon.name} = [{self.current_dungeon.position}]关为：{stage_entity._name}，可以进入！！！！"
         )
 
-        # 准备提示词。
+        # TODO, 准备提示词。
         trans_message = ""
         if dungeon.position == 0:
             trans_message = (
@@ -867,7 +871,7 @@ class TCGGame(BaseGame, TCGGameContext):
         # 开始传送。
         self.stage_transition(heros_entities, stage_entity)
 
-        # 设置一个战斗。
+        # 设置一个战斗为kickoff状态。
         dungeon.engagement.combat_kickoff(Combat(name=stage_entity._name))
 
         return True

@@ -82,12 +82,6 @@ async def run_game(option: UserSessionOptions) -> None:
         chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
 
-    player_entity = terminal_game.get_player_entity()
-    assert player_entity is not None
-    if player_entity is None:
-        logger.error(f"玩家实体不存在 = {option.user}, {option.game}, {option.actor}")
-        exit(1)
-
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(terminal_game.world.entities_snapshot) == 0:
 
@@ -106,6 +100,13 @@ async def run_game(option: UserSessionOptions) -> None:
 
         # 测试！回复ecs
         terminal_game.load_game().save()
+
+    # 测试一下玩家控制角色，如果没有就是错误。
+    player_entity = terminal_game.get_player_entity()
+    assert player_entity is not None
+    if player_entity is None:
+        logger.error(f"玩家实体不存在 = {option.user}, {option.game}, {option.actor}")
+        exit(1)
 
     # 游戏循环。。。。。。
     while True:
@@ -277,7 +278,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         await _execute_terminal_game(terminal_game, usr_input)
         terminal_game.is_game_started = True
 
-    elif usr_input == "/td" or usr_input == "/trans-dungeon":
+    elif usr_input == "/ld" or usr_input == "/launch-dungeon":
 
         # 传送进地下城战斗。
         if terminal_game.current_game_state != TCGGameState.HOME:
@@ -295,7 +296,8 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备传送地下城")
-        terminal_game.launch_dungeon()
+        if not terminal_game.launch_dungeon():
+            assert False, "传送地下城失败！"
 
     else:
 

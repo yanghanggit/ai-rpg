@@ -30,6 +30,7 @@ async def api_endpoints(
         LOGOUT_URL=f"http://{server_ip_address}:{server_port}/logout/v1/",
         START_URL=f"http://{server_ip_address}:{server_port}/start/v1/",
         HOME_RUN_URL=f"http://{server_ip_address}:{server_port}/home/run/v1/",
+        VIEW_HOME_URL=f"http://{server_ip_address}:{server_port}/view-home/v1/",
         HOME_TRANS_DUNGEON_URL=f"http://{server_ip_address}:{server_port}/home/trans_dungeon/v1/",
         DUNGEON_RUN_URL=f"http://{server_ip_address}:{server_port}/dungeon/run/v1/",
         VIEW_DUNGEON_URL=f"http://{server_ip_address}:{server_port}/view-dungeon/v1/",

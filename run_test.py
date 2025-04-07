@@ -1,9 +1,6 @@
 from typing import List
-
-# from pydantic import BaseModel
 from models_v_0_0_1 import (
     ClientMessage,
-    MappingMessage,
     ClientMessageHead,
     StartResponse,
 )
@@ -21,12 +18,6 @@ def _test_base_model() -> None:
         ClientMessage(
             head=ClientMessageHead.AGENT_EVENT,
             body="",
-        ),
-        ClientMessage(
-            head=ClientMessageHead.AGENT_EVENT,
-            body=MappingMessage(
-                data={"agent1": ["actor1", "actor2"], "agent2": ["hhhh"]}
-            ).model_dump_json(),
         ),
     ]
 

@@ -19,6 +19,7 @@ def main(game_server: GameServerInstance) -> None:
     from services.home_gameplay_services import home_gameplay_router
     from services.dungeon_gameplay_services import dungeon_gameplay_router
     from services.view_dungeon_services import view_dungeon_router
+    from services.view_home_services import view_home_router
 
     # get测试。
     # 指向包含 runtime.json 的目录
@@ -48,6 +49,7 @@ def main(game_server: GameServerInstance) -> None:
     game_server.fast_api.include_router(router=home_gameplay_router)
     game_server.fast_api.include_router(router=dungeon_gameplay_router)
     game_server.fast_api.include_router(router=view_dungeon_router)
+    game_server.fast_api.include_router(router=view_home_router)
     # 加一些其他的。。。。。
 
     parser = argparse.ArgumentParser(description="启动 FastAPI 应用")

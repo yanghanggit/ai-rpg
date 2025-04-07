@@ -1,4 +1,4 @@
-from typing import List, final
+from typing import Dict, List, final
 from pydantic import BaseModel
 from .client_message import ClientMessage
 from .registry import register_base_model_class
@@ -21,6 +21,7 @@ class APIEndpointConfiguration(BaseModel):
     LOGOUT_URL: str = ""
     START_URL: str = ""
     HOME_RUN_URL: str = ""
+    VIEW_HOME_URL: str = ""
     HOME_TRANS_DUNGEON_URL: str = ""
     DUNGEON_RUN_URL: str = ""
     VIEW_DUNGEON_URL: str = ""
@@ -187,6 +188,26 @@ class ViewDungeonData(BaseModel):
 @register_base_model_class
 class ViewDungeonResponse(BaseModel):
     data: ViewDungeonData = ViewDungeonData()
+    error: int = 0
+    message: str = ""
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+
+@final
+@register_base_model_class
+class ViewHomeRequest(BaseModel):
+    user_name: str = ""
+    game_name: str = ""
+
+
+@final
+@register_base_model_class
+class ViewHomeResponse(BaseModel):
+    mapping: Dict[str, List[str]] = {}
     error: int = 0
     message: str = ""
 

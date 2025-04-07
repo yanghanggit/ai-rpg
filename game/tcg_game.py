@@ -910,7 +910,9 @@ class TCGGame(BaseGame, TCGGameContext):
         self._clear_dungeon()
 
     ###############################################################################################################################################
-    def retrieve_stage_actor_names_mapping(self) -> Dict[str, List[str]]:
+    def retrieve_stage_actor_names_mapping(
+        self, include_home: bool = True, include_dungeon: bool = True
+    ) -> Dict[str, List[str]]:
 
         entities_mapping = self.retrieve_stage_actor_mapping()
         if len(entities_mapping) == 0:
@@ -919,6 +921,13 @@ class TCGGame(BaseGame, TCGGameContext):
         names_mapping: Dict[str, List[str]] = {}
 
         for stage_entity, actor_entities in entities_mapping.items():
+
+            if not include_home and stage_entity.has(HomeComponent):
+                continue
+
+            if not include_dungeon and stage_entity.has(DungeonComponent):
+                continue
+
             actor_names = {actor_entity._name for actor_entity in actor_entities}
             stage_name = stage_entity._name
             names_mapping[stage_name] = list(actor_names)

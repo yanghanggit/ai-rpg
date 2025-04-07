@@ -1,6 +1,6 @@
-from typing import Dict, Final, List
+from typing import Final, List
 from loguru import logger
-from models_v_0_0_1 import ClientMessageHead, MappingMessage, ClientMessage, AgentEvent
+from models_v_0_0_1 import ClientMessageHead, ClientMessage, AgentEvent
 
 
 ##########################################################################################################################################################
@@ -33,17 +33,6 @@ class PlayerProxy:
             ClientMessage(
                 head=ClientMessageHead.AGENT_EVENT,
                 body=agent_event.model_dump_json(),
-            )
-        )
-
-    ##########################################################################################################################################################
-    def add_mapping(self, mapping: Dict[str, List[str]]) -> None:
-        logger.info(f"{self._name}, add_mapping: {mapping}")
-        mapping_message = MappingMessage(data=mapping)
-        self._client_messages.append(
-            ClientMessage(
-                head=ClientMessageHead.MAPPING,
-                body=mapping_message.model_dump_json(),
             )
         )
 

@@ -1,5 +1,5 @@
 from enum import IntEnum, unique
-from typing import Dict, List, final
+from typing import final
 from pydantic import BaseModel
 from .registry import register_base_model_class
 
@@ -12,7 +12,6 @@ from .registry import register_base_model_class
 class ClientMessageHead(IntEnum):
     NONE = 0
     AGENT_EVENT = 1
-    MAPPING = 2
 
 
 ################################################################################################################
@@ -23,15 +22,6 @@ class ClientMessageHead(IntEnum):
 class ClientMessage(BaseModel):
     head: int = ClientMessageHead.NONE
     body: str = ""
-
-
-################################################################################################################
-################################################################################################################
-################################################################################################################
-@final
-@register_base_model_class
-class MappingMessage(BaseModel):
-    data: Dict[str, List[str]] = {}
 
 
 ################################################################################################################

@@ -33,6 +33,7 @@ async def api_endpoints(
         HOME_TRANS_DUNGEON_URL=f"http://{server_ip_address}:{server_port}/home/trans_dungeon/v1/",
         DUNGEON_RUN_URL=f"http://{server_ip_address}:{server_port}/dungeon/run/v1/",
         DUNGEON_DRAW_CARDS_URL=f"http://{server_ip_address}:{server_port}/dungeon/draw_cards/v1/",
+        VIEW_DUNGEON_URL=f"http://{server_ip_address}:{server_port}/view-dungeon/v1/",
     )
 
     return APIEndpointConfigurationResponse(

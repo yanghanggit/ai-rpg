@@ -24,6 +24,7 @@ class APIEndpointConfiguration(BaseModel):
     HOME_TRANS_DUNGEON_URL: str = ""
     DUNGEON_RUN_URL: str = ""
     DUNGEON_DRAW_CARDS_URL: str = ""
+    VIEW_DUNGEON_URL: str = ""
 
 
 @final
@@ -174,6 +175,25 @@ class DungeonDrawCardsRequest(BaseModel):
 @register_base_model_class
 class DungeonDrawCardsResponse(BaseModel):
     client_messages: List[ClientMessage] = []
+    error: int = 0
+    message: str = ""
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+
+@final
+@register_base_model_class
+class ViewDungeonRequest(BaseModel):
+    user_name: str = ""
+    game_name: str = ""
+
+
+@final
+@register_base_model_class
+class ViewDungeonResponse(BaseModel):
     error: int = 0
     message: str = ""
 

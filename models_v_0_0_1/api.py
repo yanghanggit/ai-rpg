@@ -45,12 +45,12 @@ class APIEndpointConfigurationResponse(BaseModel):
 class LoginRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
+    actor_name: str = ""
 
 
 @final
 @register_base_model_class
 class LoginResponse(BaseModel):
-    actor: str = ""
     error: int = 0
     message: str = ""
 

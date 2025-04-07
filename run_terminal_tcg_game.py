@@ -8,9 +8,7 @@ from llm_serves.chat_system import ChatSystem
 from player.player_proxy import PlayerProxy
 from game.tcg_game_demo import (
     create_then_write_demo_world,
-    actor_warrior,
-    stage_dungeon_cave1,
-    stage_dungeon_cave2,
+    create_demo_dungeon_system,
 )
 from tcg_game_systems.draw_cards_utils import DrawCardsUtils
 from tcg_game_systems.monitor_utils import MonitorUtils
@@ -54,10 +52,8 @@ async def run_game(option: UserSessionOptions) -> None:
         # 重新生成world
         start_world = World(boot=world_boot)
         # 运行时生成地下城系统
-        start_world.dungeon = Dungeon(
-            name="哥布林与兽人",
-            levels=[stage_dungeon_cave1, stage_dungeon_cave2],
-        )
+        start_world.dungeon = create_demo_dungeon_system(name="哥布林与兽人")
+
     else:
 
         # 如果runtime文件存在，说明是恢复游戏
@@ -75,7 +71,7 @@ async def run_game(option: UserSessionOptions) -> None:
     # 依赖注入，创建新的游戏
     terminal_game = TerminalTCGGame(
         name=option.game,
-        player=PlayerProxy(name=option.user, actor=actor_warrior.name),
+        player=PlayerProxy(name=option.user, actor=option.actor),
         world=start_world,
         world_path=option.world_runtime_file,
         chat_system=ChatSystem(
@@ -85,6 +81,12 @@ async def run_game(option: UserSessionOptions) -> None:
         ),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
+
+    player_entity = terminal_game.get_player_entity()
+    assert player_entity is not None
+    if player_entity is None:
+        logger.error(f"玩家实体不存在 = {option.user}, {option.game}, {option.actor}")
+        exit(1)
 
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(terminal_game.world.entities_snapshot) == 0:
@@ -326,6 +328,7 @@ if __name__ == "__main__":
         new_game=True,
         server_setup_config="gen_configs/start_llm_serves.json",
         langserve_localhost_urls=[],
+        actor="角色.战士.卡恩",
     ).setup()
 
     # 运行游戏

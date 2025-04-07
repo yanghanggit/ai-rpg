@@ -1,6 +1,6 @@
 from pathlib import Path
 from loguru import logger
-from models_v_0_0_1 import Boot, ActorType, StageType, BaseAttributes
+from models_v_0_0_1 import Boot, ActorType, StageType, BaseAttributes, Dungeon
 
 from typing import Optional
 from game.tcg_game_demo_utils import (
@@ -177,6 +177,21 @@ def create_then_write_demo_world(game_name: str, write_path: Path) -> Optional[B
 
     assert False, "Should not reach here"
     return None
+
+
+#######################################################################################################################################
+#######################################################################################################################################
+#######################################################################################################################################
+def create_demo_dungeon_system(
+    name: str,
+) -> Dungeon:
+    return Dungeon(
+        name=name,
+        levels=[
+            stage_dungeon_cave1,
+            stage_dungeon_cave2,
+        ],
+    )
 
 
 #######################################################################################################################################

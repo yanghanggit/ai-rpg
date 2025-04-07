@@ -8,15 +8,12 @@ from models_v_0_0_1 import (
     LogoutResponse,
     Boot,
     World,
-    Dungeon,
 )
 from loguru import logger
 from game.user_session_options import UserSessionOptions
 from game.tcg_game_demo import (
     create_then_write_demo_world,
-    actor_warrior,
-    stage_dungeon_cave1,
-    stage_dungeon_cave2,
+    create_demo_dungeon_system,
 )
 import shutil
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
@@ -65,6 +62,7 @@ async def login(
         new_game=True,
         server_setup_config="gen_configs/start_llm_serves.json",
         langserve_localhost_urls=[],
+        actor=request_data.actor_name,
     ).setup()
 
     web_game_session = setup_game_session(
@@ -87,7 +85,7 @@ async def login(
         f"login: {request_data.user_name} create game = {new_room._game.name}, player = {web_game_session.player._name}, actor = {player_entity._name}"
     )
     return LoginResponse(
-        actor=player_entity._name,
+        # actor=player_entity._name,
         error=0,
         message=new_room._game.world.model_dump_json(),
     )
@@ -183,10 +181,7 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
         start_world = World(boot=world_boot)
 
         # 运行时生成地下城系统。
-        start_world.dungeon = Dungeon(
-            name="哥布林与兽人",
-            levels=[stage_dungeon_cave1, stage_dungeon_cave2],
-        )
+        start_world.dungeon = create_demo_dungeon_system(name="哥布林与兽人")
 
     else:
 
@@ -207,7 +202,7 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
     # 依赖注入，创建新的游戏
     terminal_game = WebTCGGame(
         name=option.game,
-        player=PlayerProxy(name=option.user, actor=actor_warrior.name),
+        player=PlayerProxy(name=option.user, actor=option.actor),
         world=start_world,
         world_path=option.world_runtime_file,
         chat_system=ChatSystem(
@@ -233,6 +228,13 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
 
         # 测试！回复ecs
         terminal_game.load_game().save()
+
+    # 出现了错误。
+    player_entity = terminal_game.get_player_entity()
+    assert player_entity is not None
+    if player_entity is None:
+        logger.error(f"没有找到玩家实体 = {option.actor}")
+        return None
 
     return terminal_game
 

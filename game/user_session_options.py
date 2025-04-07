@@ -19,6 +19,7 @@ class UserSessionOptions:
     new_game: bool
     server_setup_config: str
     langserve_localhost_urls: List[str]
+    actor: str
 
     ###############################################################################################################################################
     # 生成用户的运行时目录

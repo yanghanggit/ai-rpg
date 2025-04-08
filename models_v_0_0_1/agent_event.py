@@ -12,6 +12,7 @@ class AgentEventHead(IntEnum):
     WHISPER_EVENT = 2
     ANNOUNCE_EVENT = 3
     MIND_VOICE_EVENT = 4
+    COMBAT_KICK_OFF_EVENT = 5
 
 
 @register_base_model_class
@@ -68,6 +69,17 @@ class MindVoiceEvent(AgentEvent):
     head: int = AgentEventHead.MIND_VOICE_EVENT
     speaker: str
     dialogue: str
+
+
+####################################################################################################################################
+
+
+@final
+@register_base_model_class
+class CombatKickOffEvent(AgentEvent):
+    head: int = AgentEventHead.COMBAT_KICK_OFF_EVENT
+    actor: str
+    description: str
 
 
 ####################################################################################################################################

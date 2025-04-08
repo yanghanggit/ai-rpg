@@ -8,6 +8,7 @@ from loguru import logger
 from game.web_tcg_game import WebTCGGame
 from game.tcg_game import TCGGameState
 from tcg_game_systems.draw_cards_utils import DrawCardsUtils
+from tcg_game_systems.combat_round_utils import CombatRoundUtils
 
 ###################################################################################################################################################################
 dungeon_gameplay_router = APIRouter()
@@ -85,6 +86,10 @@ async def dungeon_run(
             message="没有战斗可以进行",
         )
 
+    # 提前拿出来。
+    player_stage_entity = current_room._game.get_player_entity()
+    assert player_stage_entity is not None
+
     # 处理逻辑
     match request_data.user_input.tag:
 
@@ -116,17 +121,65 @@ async def dungeon_run(
                     message="战斗不是进行中状态！！！！",
                 )
 
-            player_stage_entity = current_room._game.get_player_entity()
-            assert player_stage_entity is not None
-
-            # 清空消息。准备重新开始
-            current_room._game.player.clear_client_messages()
+            # 抽牌。
             draw_card_utils = DrawCardsUtils(
                 current_room._game,
                 current_room._game.retrieve_actors_on_stage(player_stage_entity),
             )
             # 抓牌
             await draw_card_utils.draw_cards()
+
+            # 返回！
+            # 清空消息。准备重新开始
+            current_room._game.player.clear_client_messages()
+            return DungeonRunResponse(
+                client_messages=current_room._game.player.client_messages,
+                error=0,
+                message="",
+            )
+
+        case "new_round":
+
+            if not current_room._game.current_engagement.is_on_going_phase:
+                logger.error(f"战斗不是进行中状态！！！！")
+                return DungeonRunResponse(
+                    error=1005,
+                    message="战斗不是进行中状态！！！！",
+                )
+
+            # 获得当前最新的回合数据。
+            combat_round_utils = CombatRoundUtils(
+                current_room._game,
+                current_room._game.retrieve_actors_on_stage(player_stage_entity),
+            )
+
+            round = combat_round_utils.initialize_round()
+            assert not round.completed
+            logger.info(f"新的回合开始 = {round.model_dump_json(indent=4)}")
+
+            # 返回数据。
+            current_room._game.player.clear_client_messages()
+            return DungeonRunResponse(
+                client_messages=current_room._game.player.client_messages,
+                error=0,
+                message=f"新的回合开始 = {round.model_dump_json()}",
+            )
+
+        case "play_cards":
+
+            if not current_room._game.current_engagement.is_on_going_phase:
+                logger.error(f"战斗不是进行中状态！！！！")
+                return DungeonRunResponse(
+                    error=1005,
+                    message="战斗不是进行中状态！！！！",
+                )
+
+            # 清空消息。准备重新开始
+            current_room._game.player.clear_client_messages()
+            logger.debug(f"玩家输入 = {request_data.user_input.tag}, 准备行动......")
+            if current_room._game.execute_play_card():
+                # 执行一次！！！！！
+                await _execute_web_game(current_room._game, request_data.user_input.tag)
 
             # 返回！
             return DungeonRunResponse(

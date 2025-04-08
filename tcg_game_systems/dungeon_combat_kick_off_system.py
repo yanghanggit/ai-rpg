@@ -8,6 +8,7 @@ from models_v_0_0_1 import (
     StageEnvironmentComponent,
     CombatRoleComponent,
     StatusEffect,
+    CombatKickOffEvent,
 )
 import format_string.json_format
 
@@ -219,10 +220,19 @@ class DungeonCombatKickOffSystem(ExecuteProcessor):
         # 添加记忆
         message = f"""# ！战斗触发！准备完毕。
 {format_response.description}
-## 你目前拥有的状态
+## 目前拥有的状态
 {status_effects_prompt}"""
 
         self._game.append_ai_message(entity2, message)
+
+        # 添加战斗开始事件
+        self._game.player.add_agent_event(
+            CombatKickOffEvent(
+                message=message,
+                actor=entity2._name,
+                description=format_response.description,
+            )
+        )
 
 
 ###################################################################################################################################################################

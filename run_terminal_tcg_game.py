@@ -216,7 +216,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             return
 
         if not terminal_game.current_engagement.is_on_going_phase:
-            logger.error(f"{usr_input} 只能在战斗中使用")
+            logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
@@ -226,9 +226,6 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         )
         await draw_card_utils.draw_cards()
 
-        # 执行一次！！！！！
-        # await _execute_terminal_game(terminal_game, usr_input)
-
     elif usr_input == "/nr" or usr_input == "/new-round":
 
         # 抽卡
@@ -237,10 +234,10 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             return
 
         if not terminal_game.current_engagement.is_on_going_phase:
-            logger.error(f"{usr_input} 只能在战斗中使用")
+            logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
             return
 
-        logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
+        # logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
         combat_round_utils = CombatRoundUtils(
             terminal_game,
             terminal_game.retrieve_actors_on_stage(player_stage_entity),
@@ -250,7 +247,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         assert not round.completed
         logger.info(f"新的回合开始 = {round.model_dump_json(indent=4)}")
 
-    elif usr_input == "/ta" or usr_input == "/turn-action":
+    elif usr_input == "/pc" or usr_input == "/play-card":
 
         # 抽卡
         if terminal_game.current_game_state != TCGGameState.DUNGEON:
@@ -258,11 +255,11 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             return
 
         if not terminal_game.current_engagement.is_on_going_phase:
-            logger.error(f"{usr_input} 只能在战斗中使用")
+            logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备行动......")
-        if terminal_game.execute_turn_action():
+        if terminal_game.execute_play_card():
             # 执行一次！！！！！
             await _execute_terminal_game(terminal_game, usr_input)
 

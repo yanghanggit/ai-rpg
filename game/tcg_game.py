@@ -933,7 +933,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     # TODO, 临时添加行动, 逻辑。
-    def execute_turn_action(self) -> bool:
+    def execute_play_card(self) -> bool:
 
         if len(self.current_engagement.rounds) == 0:
             logger.error("没有回合，不能添加行动！")

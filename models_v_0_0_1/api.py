@@ -2,6 +2,7 @@ from typing import Dict, List, final
 from pydantic import BaseModel
 from .client_message import ClientMessage
 from .registry import register_base_model_class
+from .dungeon import CombatPhase, CombatResult
 
 
 ################################################################################################################
@@ -183,6 +184,8 @@ class ViewDungeonData(BaseModel):
     levels: List[str] = []
     current_position: int = 0
     current_actors_in_level: List[str] = []
+    combat_phase: CombatPhase = CombatPhase.NONE
+    combat_result: CombatResult = CombatResult.NONE
 
 
 @final

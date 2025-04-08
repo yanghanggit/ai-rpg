@@ -66,7 +66,6 @@ class Round(BaseModel):
 @final
 @register_base_model_class
 class Combat(BaseModel):
-
     name: str
     phase: CombatPhase = CombatPhase.NONE
     result: CombatResult = CombatResult.NONE
@@ -106,6 +105,16 @@ class Engagement(BaseModel):
         return self.rounds[-1]
 
     ###############################################################################################################################################
+    @property
+    def combat_result(self) -> CombatResult:
+        return self.last_combat.result
+
+    ###############################################################################################################################################
+    @property
+    def combat_phase(self) -> CombatPhase:
+        return self.last_combat.phase
+
+    ###############################################################################################################################################
     def new_round(self) -> Round:
         round = Round(tag=f"round_{len(self.last_combat.rounds) + 1}")
         self.last_combat.rounds.append(round)
@@ -115,27 +124,22 @@ class Engagement(BaseModel):
     ###############################################################################################################################################
     @property
     def is_on_going_phase(self) -> bool:
-        return self.last_combat.phase == CombatPhase.ONGOING
+        return self.combat_phase == CombatPhase.ONGOING
 
     ###############################################################################################################################################
     @property
     def is_complete_phase(self) -> bool:
-        return self.last_combat.phase == CombatPhase.COMPLETE
+        return self.combat_phase == CombatPhase.COMPLETE
 
     ###############################################################################################################################################
     @property
     def is_kickoff_phase(self) -> bool:
-        return self.last_combat.phase == CombatPhase.KICK_OFF
+        return self.combat_phase == CombatPhase.KICK_OFF
 
     ###############################################################################################################################################
     @property
     def is_post_wait_phase(self) -> bool:
-        return self.last_combat.phase == CombatPhase.POST_WAIT
-
-    ###############################################################################################################################################
-    @property
-    def combat_result(self) -> CombatResult:
-        return self.last_combat.result
+        return self.combat_phase == CombatPhase.POST_WAIT
 
     ###############################################################################################################################################
     # 启动一个战斗！！！ 注意状态转移
@@ -146,16 +150,16 @@ class Engagement(BaseModel):
 
     ###############################################################################################################################################
     def combat_ongoing(self) -> None:
-        assert self.last_combat.phase == CombatPhase.KICK_OFF
-        assert self.last_combat.result == CombatResult.NONE
+        assert self.combat_phase == CombatPhase.KICK_OFF
+        assert self.combat_result == CombatResult.NONE
         self.last_combat.phase = CombatPhase.ONGOING
 
     ###############################################################################################################################################
     def combat_complete(self, result: CombatResult) -> None:
         # 设置战斗结束阶段！
-        assert self.last_combat.phase == CombatPhase.ONGOING
+        assert self.combat_phase == CombatPhase.ONGOING
         assert result == CombatResult.HERO_WIN or result == CombatResult.HERO_LOSE
-        assert self.last_combat.result == CombatResult.NONE
+        assert self.combat_result == CombatResult.NONE
 
         # "战斗已经结束"
         self.last_combat.phase = CombatPhase.COMPLETE
@@ -165,10 +169,10 @@ class Engagement(BaseModel):
     ###############################################################################################################################################
     def combat_post_wait(self) -> None:
         assert (
-            self.last_combat.result == CombatResult.HERO_WIN
-            or self.last_combat.result == CombatResult.HERO_LOSE
+            self.combat_result == CombatResult.HERO_WIN
+            or self.combat_result == CombatResult.HERO_LOSE
         )
-        assert self.last_combat.phase == CombatPhase.COMPLETE
+        assert self.combat_phase == CombatPhase.COMPLETE
 
         # 设置战斗等待阶段！
         self.last_combat.phase = CombatPhase.POST_WAIT

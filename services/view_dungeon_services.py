@@ -76,6 +76,8 @@ async def view_dungeon(
             current_level.name in mapping_data
         ), f"current_level: {current_level.name} not in mapping_data: {mapping_data}"
         view_data.current_actors_in_level = mapping_data.get(current_level.name, [])
+        view_data.combat_phase = current_room._game.current_engagement.combat_phase
+        view_data.combat_result = current_room._game.current_engagement.combat_result
 
     # 返回。
     return ViewDungeonResponse(

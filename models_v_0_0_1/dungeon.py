@@ -54,11 +54,21 @@ class Skill(BaseModel):
 @register_base_model_class
 class Round(BaseModel):
     tag: str
+    stage_environment: str = ""
     round_turns: List[str] = []
     select_report: Dict[str, str] = {}
     stage_director_calculation: str = ""
     stage_director_performance: str = ""
     feedback_report: Dict[str, str] = {}
+
+    @property
+    def completed(self) -> bool:
+        return (
+            len(self.round_turns) > 0
+            and self.stage_director_calculation != ""
+            and self.stage_director_performance != ""
+            and len(self.feedback_report) > 0
+        )
 
 
 ###############################################################################################################################################
@@ -115,8 +125,11 @@ class Engagement(BaseModel):
         return self.last_combat.phase
 
     ###############################################################################################################################################
-    def new_round(self) -> Round:
-        round = Round(tag=f"round_{len(self.last_combat.rounds) + 1}")
+    def new_round(self, input_round_turns: List[str]) -> Round:
+        round = Round(
+            tag=f"round_{len(self.last_combat.rounds) + 1}",
+            round_turns=input_round_turns,
+        )
         self.last_combat.rounds.append(round)
         logger.debug(f"新的回合开始 = {len(self.last_combat.rounds)}")
         return round

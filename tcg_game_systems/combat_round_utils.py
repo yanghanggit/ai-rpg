@@ -1,55 +1,52 @@
-import random
-from entitas import Matcher, Entity, Matcher, ExecuteProcessor  # type: ignore
-from models_v_0_0_1 import HandComponent, BaseAttributesComponent, TurnAction, Round
-from overrides import override
-from typing import List, Tuple, final
+from entitas import Entity  # type: ignore
+from typing import List, Set, final, Tuple
 from game.tcg_game import TCGGame
+import random
+from models_v_0_0_1 import BaseAttributesComponent, Round, StageEnvironmentComponent
 
 
-#######################################################################################################################################
 @final
-class DungeonCombatRoundSystem(ExecuteProcessor):
+class CombatRoundUtils:
 
-    def __init__(self, game_context: TCGGame) -> None:
-        self._game: TCGGame = game_context
+    ####################################################################################################################################
+    def __init__(
+        self,
+        game_context: TCGGame,
+        actor_entities: Set[Entity],
+    ) -> None:
+
+        self._game = game_context
+        self._actor_entities = actor_entities
+        assert len(actor_entities) > 0
 
     #######################################################################################################################################
-    @override
-    def execute(self) -> None:
+    def initialize_round(self) -> Round:
 
-        if not self._game.current_engagement.is_on_going_phase:
-            return  # 不是本阶段就直接返回
+        # 已经有一个回合，但是没有进行。
+        if (
+            len(self._game.current_engagement.rounds) > 0
+            and not self._game.current_engagement.last_round.completed
+        ):
+            # 返回正在进行中的回合。
+            return self._game.current_engagement.last_round
 
-        return
-
-        actor_entities = self._game.get_group(
-            Matcher(
-                all_of=[
-                    HandComponent,
-                ],
-            )
-        ).entities
-
-        if len(actor_entities) == 0:
-            return
-
-        # 回合增加一次
-        self._game.current_engagement.new_round([])
-
-        # 随机出手顺序
-        shuffled_reactive_entities = self._shuffle_action_order(list(actor_entities))
+        # 开启一个新的回合。
+        shuffled_reactive_entities = self._shuffle_action_order(
+            list(self._actor_entities)
+        )
         round_turns: List[str] = [entity._name for entity in shuffled_reactive_entities]
-        for _, name in enumerate(round_turns):
-            entity2 = self._game.get_entity_by_name(name)
-            assert entity2 is not None
-            assert not entity2.has(TurnAction)
-            # 添加这个动作。
-            entity2.replace(
-                TurnAction,
-                entity2._name,
-                len(self._game.current_engagement.rounds),
-                round_turns,
-            )
+        self._game.current_engagement.new_round(round_turns)
+
+        # 场景描写加上。
+        first_entity = next(iter(self._actor_entities))
+        stage_entity = self._game.safe_get_stage_entity(first_entity)
+        assert stage_entity is not None
+        stage_environment_comp = stage_entity.get(StageEnvironmentComponent)
+        self._game.current_engagement.last_round.stage_environment = (
+            stage_environment_comp.narrate
+        )
+
+        return self._game.current_engagement.last_round
 
     #######################################################################################################################################
     # 随机排序

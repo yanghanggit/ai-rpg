@@ -13,6 +13,7 @@ from game.tcg_game_demo import (
 from tcg_game_systems.draw_cards_utils import DrawCardsUtils
 from tcg_game_systems.monitor_utils import MonitorUtils
 from game.user_session_options import UserSessionOptions
+from tcg_game_systems.combat_round_utils import CombatRoundUtils
 
 
 ###############################################################################################################################################
@@ -189,7 +190,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         terminal_game.will_exit = True
 
     # 乱点乱点吧，测试用，不用太纠结。
-    elif usr_input == "/rd" or usr_input == "/run-dungeon":
+    elif usr_input == "/dk" or usr_input == "/dungeon_combat_kick_off":
 
         # 推进一次战斗。
         if terminal_game.current_game_state != TCGGameState.DUNGEON:
@@ -198,6 +199,10 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
 
         if len(terminal_game.current_engagement.combats) == 0:
             logger.error(f"{usr_input} 没有战斗可以进行！！！！")
+            return
+
+        if not terminal_game.current_engagement.is_kickoff_phase:
+            logger.error(f"{usr_input} 只能在战斗前is_kickoff_phase使用")
             return
 
         # 执行一次！！！！！
@@ -222,7 +227,28 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         await draw_card_utils.draw_cards()
 
         # 执行一次！！！！！
-        await _execute_terminal_game(terminal_game, usr_input)
+        # await _execute_terminal_game(terminal_game, usr_input)
+
+    elif usr_input == "/nr" or usr_input == "/new-round":
+
+        # 抽卡
+        if terminal_game.current_game_state != TCGGameState.DUNGEON:
+            logger.error(f"{usr_input} 只能在地下城中使用")
+            return
+
+        if not terminal_game.current_engagement.is_on_going_phase:
+            logger.error(f"{usr_input} 只能在战斗中使用")
+            return
+
+        logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
+        combat_round_utils = CombatRoundUtils(
+            terminal_game,
+            terminal_game.retrieve_actors_on_stage(player_stage_entity),
+        )
+
+        round = combat_round_utils.initialize_round()
+        assert not round.completed
+        logger.info(f"新的回合开始 = {round.model_dump_json(indent=4)}")
 
     elif usr_input == "/m" or usr_input == "/monitor":
 

@@ -1,9 +1,9 @@
-from entitas import Matcher, Entity, Matcher, ExecuteProcessor  # type: ignore
+from entitas import Entity, ExecuteProcessor  # type: ignore
 from pydantic import BaseModel
 from llm_serves.chat_request_handler import ChatRequestHandler
 from models_v_0_0_1 import (
     StageEnvironmentComponent,
-    HandComponent,
+    # HandComponent,
 )
 from overrides import override
 from typing import Dict, final
@@ -69,17 +69,17 @@ class DungeonStagePlanningSystem(ExecuteProcessor):
         ):
             return False
 
-        if self._game.current_engagement.is_on_going_phase:
-            actor_entities = self._game.get_group(
-                Matcher(
-                    all_of=[
-                        HandComponent,
-                    ],
-                )
-            ).entities
+        # if self._game.current_engagement.is_on_going_phase:
+        #     actor_entities = self._game.get_group(
+        #         Matcher(
+        #             all_of=[
+        #                 HandComponent,
+        #             ],
+        #         )
+        #     ).entities
 
-            if len(actor_entities) == 0:
-                return False
+        #     if len(actor_entities) == 0:
+        #         return False
 
         return True
 

@@ -164,14 +164,8 @@ class TCGGameProcessPipeline(Processors):
         # 启动agent的提示词。启动阶段
         processors.add(KickOffSystem(tcg_game))
 
-        # 场景先规划，可能会有一些变化。
-        processors.add(DungeonStagePlanningSystem(tcg_game))
-
-        # 战斗触发！！
-        processors.add(DungeonCombatKickOffSystem(tcg_game))
-
         ######动作开始！！！！！################################################################################################
-        processors.add(DungeonCombatRoundSystem(tcg_game))  # 开局系统。
+        # processors.add(DungeonCombatRoundSystem(tcg_game))  # 开局系统。
         processors.add(PreActionSystem(tcg_game))
         processors.add(TurnActionSystem(tcg_game))
         processors.add(StageDirectorActionSystem(tcg_game))
@@ -193,6 +187,12 @@ class TCGGameProcessPipeline(Processors):
 
         # 核心系统，存储系统。
         processors.add(SaveSystem(tcg_game))
+
+        # 场景先规划，可能会有一些变化。
+        processors.add(DungeonStagePlanningSystem(tcg_game))
+
+        # 战斗触发！！
+        processors.add(DungeonCombatKickOffSystem(tcg_game))
 
         # 结束
         processors.add(EndSystem(tcg_game))

@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from .client_message import ClientMessage
 from .registry import register_base_model_class
 from .dungeon import CombatPhase, CombatResult
+from .snapshot import EntitySnapshot
 
 
 ################################################################################################################
@@ -233,6 +234,7 @@ class ViewActorRequest(BaseModel):
 @final
 @register_base_model_class
 class ViewActorResponse(BaseModel):
+    actor_snapshots: List[EntitySnapshot] = []
     error: int = 0
     message: str = ""
 

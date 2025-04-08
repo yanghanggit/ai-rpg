@@ -72,6 +72,7 @@ async def view_actor(
 
     # 返回。
     return ViewActorResponse(
+        actor_snapshots=snapshots,
         error=0,
         message=f"{'\n'.join([snapshot.model_dump_json() for snapshot in snapshots])}",
     )

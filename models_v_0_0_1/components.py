@@ -208,7 +208,7 @@ class DeathComponent(NamedTuple):
 
 
 ############################################################################################################
-# 死亡标记
+# 核心属性组件
 @final
 @register_component_class
 class BaseAttributesComponent(NamedTuple):

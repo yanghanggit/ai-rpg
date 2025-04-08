@@ -585,18 +585,13 @@ class TCGGame(BaseGame, TCGGameContext):
         agent_event: AgentEvent,
     ) -> None:
 
+        # 正常的添加记忆。
         for entity in entities:
-
-            # 针对agent的事件通知。
             replace_message = _replace_with_you(agent_event.message, entity._name)
             self.append_human_message(entity, replace_message)
 
-            # 如果是玩家，就要补充一个事件信息，用于客户端接收
-            if entity.has(PlayerComponent):
-                logger.debug(
-                    f"notify_event = {entity.get(PlayerComponent).player_name}:{entity._name}"
-                )
-                self.player.add_agent_event(agent_event=agent_event)
+        # 客户端拿到这个事件，用于处理业务。
+        self.player.add_agent_event(agent_event=agent_event)
 
     ###############################################################################################################################################
     # 传送角色set里的角色到指定场景，游戏层面的行为，会添加记忆但不会触发action

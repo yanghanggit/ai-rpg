@@ -182,6 +182,7 @@ class ViewDungeonData(BaseModel):
     dungeon_name: str = ""
     levels: List[str] = []
     current_position: int = 0
+    current_actors_in_level: List[str] = []
 
 
 @final

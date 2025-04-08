@@ -57,17 +57,31 @@ async def view_dungeon(
         )
 
     # 创建返回数据。
-    data = ViewDungeonData(
+    view_data = ViewDungeonData(
         dungeon_name=current_room._game.current_dungeon.name,
         levels=[stage.name for stage in current_room._game.current_dungeon.levels],
         current_position=current_room._game.current_dungeon.position,
     )
 
+    # 如果已经正常进入了副本，获取当前副本的演员列表。
+    current_level = current_room._game.current_dungeon.current_level()
+    if current_level is not None:
+        assert view_data.current_position >= 0, "current_position should be >= 0"
+
+        mapping_data = current_room._game.retrieve_stage_actor_names_mapping(
+            include_home=False, include_dungeon=True
+        )
+        logger.info(f"home_run: {request_data.user_name} mapping_data: {mapping_data}")
+        assert (
+            current_level.name in mapping_data
+        ), f"current_level: {current_level.name} not in mapping_data: {mapping_data}"
+        view_data.current_actors_in_level = mapping_data.get(current_level.name, [])
+
     # 返回。
     return ViewDungeonResponse(
-        data=data,
+        data=view_data,
         error=0,
-        message=data.model_dump_json(),
+        message=view_data.model_dump_json(),
     )
 
 

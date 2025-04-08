@@ -35,6 +35,8 @@ from models_v_0_0_1 import (
     CombatRoleComponent,
     BaseAttributesComponent,
     AgentEvent,
+    TurnAction,
+    HandComponent,
 )
 
 from player.player_proxy import PlayerProxy
@@ -928,5 +930,50 @@ class TCGGame(BaseGame, TCGGameContext):
             names_mapping[stage_name] = list(actor_names)
 
         return names_mapping
+
+    ###############################################################################################################################################
+    # TODO, 临时添加行动, 逻辑。
+    def execute_turn_action(self) -> bool:
+
+        if len(self.current_engagement.rounds) == 0:
+            logger.error("没有回合，不能添加行动！")
+            return False
+
+        if not self.current_engagement.is_on_going_phase:
+            logger.error("没有进行中的回合，不能添加行动！")
+            return False
+
+        last_round = self.current_engagement.last_round
+        if last_round.completed:
+            logger.error("回合已经完成，不能添加行动！")
+            return False
+
+        # 检查一遍，如果条件不满足也要出去。
+        for turn_actor_name in last_round.round_turns:
+            actor_entity = self.get_actor_entity(turn_actor_name)
+            assert actor_entity is not None
+            if actor_entity is None:
+                logger.error(f"没有找到角色: {turn_actor_name}，不能添加行动！")
+                return False
+
+            if not actor_entity.has(HandComponent):
+                logger.error(f"角色: {actor_entity._name} 没有手牌，不能添加行动！")
+                return False
+
+        # 添加，到了这里就不能停了。
+        for turn_actor_name in last_round.round_turns:
+
+            actor_entity = self.get_actor_entity(turn_actor_name)
+            assert actor_entity is not None
+            assert not actor_entity.has(TurnAction)
+            # 添加这个动作。
+            actor_entity.replace(
+                TurnAction,
+                actor_entity._name,
+                len(self.current_engagement.rounds),
+                last_round.round_turns,
+            )
+
+        return True
 
     ###############################################################################################################################################

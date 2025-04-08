@@ -18,12 +18,13 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.end_system import EndSystem
         from tcg_game_systems.kick_off_system import KickOffSystem
         from tcg_game_systems.save_system import SaveSystem
-        from tcg_game_systems.handle_terminal_player_input_system import (
-            HandleTerminalPlayerInputSystem,
-        )
-        from tcg_game_systems.handle_web_player_input_system import (
-            HandleWebPlayerInputSystem,
-        )
+
+        # from tcg_game_systems.handle_terminal_player_input_system import (
+        #     HandleTerminalPlayerInputSystem,
+        # )
+        # from tcg_game_systems.handle_web_player_input_system import (
+        #     HandleWebPlayerInputSystem,
+        # )
         from tcg_game_systems.mind_voice_action_system import (
             MindVoiceActionSystem,
         )
@@ -53,8 +54,8 @@ class TCGGameProcessPipeline(Processors):
         processors = TCGGameProcessPipeline()
 
         # 进入动作前，处理输入。
-        processors.add(HandleTerminalPlayerInputSystem(tcg_game))
-        processors.add(HandleWebPlayerInputSystem(tcg_game))
+        # processors.add(HandleTerminalPlayerInputSystem(tcg_game))
+        # processors.add(HandleWebPlayerInputSystem(tcg_game))
 
         processors.add(BeginSystem(tcg_game))
 
@@ -109,12 +110,13 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.end_system import EndSystem
         from tcg_game_systems.kick_off_system import KickOffSystem
         from tcg_game_systems.save_system import SaveSystem
-        from tcg_game_systems.handle_terminal_player_input_system import (
-            HandleTerminalPlayerInputSystem,
-        )
-        from tcg_game_systems.handle_web_player_input_system import (
-            HandleWebPlayerInputSystem,
-        )
+
+        # from tcg_game_systems.handle_terminal_player_input_system import (
+        #     HandleTerminalPlayerInputSystem,
+        # )
+        # from tcg_game_systems.handle_web_player_input_system import (
+        #     HandleWebPlayerInputSystem,
+        # )
         from tcg_game_systems.pre_action_system import PreActionSystem
         from tcg_game_systems.post_action_system import PostActionSystem
         from tcg_game_systems.destroy_entity_system import DestroyEntitySystem
@@ -134,9 +136,9 @@ class TCGGameProcessPipeline(Processors):
         # from tcg_game_systems.terminal_player_interrupt_wait_system import (
         #     TerminalPlayerInterruptWaitSystem,
         # )
-        from tcg_game_systems.dungeon_combat_round_system import (
-            DungeonCombatRoundSystem,
-        )
+        # from tcg_game_systems.dungeon_combat_round_system import (
+        #     DungeonCombatRoundSystem,
+        # )
         from tcg_game_systems.dungeon_combat_complete_system import (
             DungeonCombatCompleteSystem,
         )
@@ -155,8 +157,8 @@ class TCGGameProcessPipeline(Processors):
         processors = TCGGameProcessPipeline()
 
         # 用户输入转入pipeline 执行序列
-        processors.add(HandleTerminalPlayerInputSystem(tcg_game))
-        processors.add(HandleWebPlayerInputSystem(tcg_game))
+        # processors.add(HandleTerminalPlayerInputSystem(tcg_game))
+        # processors.add(HandleWebPlayerInputSystem(tcg_game))
 
         # 标记开始。
         processors.add(BeginSystem(tcg_game))

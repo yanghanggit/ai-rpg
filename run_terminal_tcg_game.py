@@ -250,6 +250,22 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         assert not round.completed
         logger.info(f"新的回合开始 = {round.model_dump_json(indent=4)}")
 
+    elif usr_input == "/ta" or usr_input == "/turn-action":
+
+        # 抽卡
+        if terminal_game.current_game_state != TCGGameState.DUNGEON:
+            logger.error(f"{usr_input} 只能在地下城中使用")
+            return
+
+        if not terminal_game.current_engagement.is_on_going_phase:
+            logger.error(f"{usr_input} 只能在战斗中使用")
+            return
+
+        logger.debug(f"玩家输入 = {usr_input}, 准备行动......")
+        if terminal_game.execute_turn_action():
+            # 执行一次！！！！！
+            await _execute_terminal_game(terminal_game, usr_input)
+
     elif usr_input == "/m" or usr_input == "/monitor":
 
         # 监控

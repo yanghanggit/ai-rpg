@@ -26,6 +26,7 @@ class APIEndpointConfiguration(BaseModel):
     HOME_TRANS_DUNGEON_URL: str = ""
     DUNGEON_RUN_URL: str = ""
     VIEW_DUNGEON_URL: str = ""
+    VIEW_ACTOR_URL: str = ""
 
 
 @final
@@ -212,6 +213,26 @@ class ViewHomeRequest(BaseModel):
 @register_base_model_class
 class ViewHomeResponse(BaseModel):
     mapping: Dict[str, List[str]] = {}
+    error: int = 0
+    message: str = ""
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+
+@final
+@register_base_model_class
+class ViewActorRequest(BaseModel):
+    user_name: str = ""
+    game_name: str = ""
+    actors: List[str] = []
+
+
+@final
+@register_base_model_class
+class ViewActorResponse(BaseModel):
     error: int = 0
     message: str = ""
 

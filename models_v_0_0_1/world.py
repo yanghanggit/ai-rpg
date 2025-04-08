@@ -4,7 +4,7 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from .snapshot import EntitySnapshot
 from .database import DataBase
 from .objects import Actor, Stage, WorldSystem
-from .dungeon import Dungeon, Engagement
+from .dungeon import Dungeon
 from .registry import register_base_model_class
 
 

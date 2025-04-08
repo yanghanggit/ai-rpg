@@ -49,6 +49,18 @@ class TCGGameContext(Context):
         return super().destroy_entity(entity)
 
     ###############################################################################################################################################
+    def create_entity_snapshot(self, entity: Entity) -> EntitySnapshot:
+        entity_snapshot = EntitySnapshot(name=entity._name, components=[])
+
+        for key, value in entity._components.items():
+            if COMPONENTS_REGISTRY.get(key.__name__) is None:
+                continue
+            entity_snapshot.components.append(
+                ComponentSnapshot(name=key.__name__, data=value._asdict())
+            )
+        return entity_snapshot
+
+    ###############################################################################################################################################
     def make_entities_snapshot(self) -> List[EntitySnapshot]:
 
         ret: List[EntitySnapshot] = []
@@ -62,15 +74,7 @@ class TCGGameContext(Context):
         )
 
         for entity in sort_actors:
-            entity_snapshot = EntitySnapshot(name=entity._name, components=[])
-            for key, value in entity._components.items():
-
-                if COMPONENTS_REGISTRY.get(key.__name__) is None:
-                    continue
-
-                entity_snapshot.components.append(
-                    ComponentSnapshot(name=key.__name__, data=value._asdict())
-                )
+            entity_snapshot = self.create_entity_snapshot(entity)
             ret.append(entity_snapshot)
 
         return ret

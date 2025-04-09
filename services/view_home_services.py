@@ -55,9 +55,7 @@ async def view_home(
             message="游戏没有开始，请先开始游戏",
         )
 
-    mapping_data = current_room._game.retrieve_stage_actor_names_mapping(
-        include_home=True, include_dungeon=False
-    )
+    mapping_data = current_room._game.retrieve_stage_actor_names_mapping()
     logger.info(f"home_run: {request_data.user_name} mapping_data: {mapping_data}")
 
     # 返回。

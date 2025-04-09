@@ -183,8 +183,8 @@ class DungeonCombatResolutionSystem(ExecuteProcessor):
             # 血量更新
             self._update_combat_health(
                 actor_entity3,
-                feedback_action.hp,
-                feedback_action.max_hp,
+                feedback_action.update_hp,
+                feedback_action.update_max_hp,
             )
 
             # 效果更新
@@ -212,7 +212,7 @@ class DungeonCombatResolutionSystem(ExecuteProcessor):
             # 添加记忆
             message = f"""# 你的状态更新，请注意！
 {feedback_action.description}
-生命值：{feedback_action.hp}/{feedback_action.max_hp}
+生命值：{feedback_action.update_hp}/{feedback_action.update_max_hp}
 持续效果：
 {remaining_effects_prompt}
 失效效果：
@@ -258,25 +258,13 @@ class DungeonCombatResolutionSystem(ExecuteProcessor):
     def _update_combat_health(
         self,
         entity: Entity,
-        hp: float,
-        max_hp: float,
+        update_hp: float,
+        update_max_hp: float,
     ) -> None:
 
         combat_role_comp = entity.get(CombatRoleComponent)
         assert combat_role_comp is not None
-        combat_role_comp.base_attributes.hp = cast(int, hp)
-
-        # entity.replace(
-        #     CombatRoleComponent,
-        #     combat_role_comp.name,
-        #     hp,
-        #     max_hp,
-        #     combat_role_comp.physical_attack,
-        #     combat_role_comp.physical_defense,
-        #     combat_role_comp.magic_attack,
-        #     combat_role_comp.magic_defense,
-        #     combat_role_comp.status_effects,
-        # )
+        combat_role_comp.base_attributes.hp = cast(int, update_hp)
 
     ###############################################################################################################################################
     # 删除手牌组件
@@ -284,3 +272,5 @@ class DungeonCombatResolutionSystem(ExecuteProcessor):
         actor_entities = self._game.get_group(Matcher(HandComponent)).entities.copy()
         for entity in actor_entities:
             entity.remove(HandComponent)
+
+    ###############################################################################################################################################

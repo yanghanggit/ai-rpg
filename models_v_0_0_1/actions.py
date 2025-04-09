@@ -88,8 +88,8 @@ class FeedbackAction(NamedTuple):
     calculation: str
     performance: str
     description: str
-    hp: float
-    max_hp: float
+    update_hp: float
+    update_max_hp: float
     effects: List[StatusEffect]
 
 

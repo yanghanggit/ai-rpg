@@ -1,5 +1,4 @@
 from enum import Enum, IntEnum, unique
-import random
 import shutil
 from entitas import Entity, Matcher  # type: ignore
 from typing import Any, Dict, Final, Set, List, Optional, final
@@ -707,27 +706,10 @@ class TCGGame(BaseGame, TCGGameContext):
         base_attributes_comp = actor_entity.get(BaseAttributesComponent)
         assert isinstance(base_attributes_comp.base_attributes, BaseAttributes)
 
-        # hp: Final[float] = base_attributes_comp.base_attributes.hp
-        # max_hp: Final[float] = base_attributes_comp.base_attributes.max_hp
-        # physical_attack: Final[float] = (
-        #     base_attributes_comp.base_attributes.physical_attack
-        # )
-        # physical_defense: Final[float] = (
-        #     base_attributes_comp.base_attributes.physical_defense
-        # )
-        # magic_attack: Final[float] = base_attributes_comp.base_attributes.magic_attack
-        # magic_defense: Final[float] = base_attributes_comp.base_attributes.magic_defense
-
         actor_entity.replace(
             CombatRoleComponent,
             actor_entity._name,
             copy.copy(base_attributes_comp.base_attributes),
-            # hp,
-            # max_hp,
-            # physical_attack,
-            # physical_defense,
-            # magic_attack,
-            # magic_defense,
             [],
         )
 
@@ -755,12 +737,6 @@ class TCGGame(BaseGame, TCGGameContext):
             CombatRoleComponent,
             combat_role_comp.name,
             combat_role_comp.base_attributes,
-            # combat_role_comp.hp,
-            # combat_role_comp.max_hp,
-            # combat_role_comp.physical_attack,
-            # combat_role_comp.physical_defense,
-            # combat_role_comp.magic_attack,
-            # combat_role_comp.magic_defense,
             current_effects,
         )
 
@@ -911,24 +887,14 @@ class TCGGame(BaseGame, TCGGameContext):
         self._clear_dungeon()
 
     ###############################################################################################################################################
-    def retrieve_stage_actor_names_mapping(
-        self, include_home: bool = True, include_dungeon: bool = True
-    ) -> Dict[str, List[str]]:
+    def retrieve_stage_actor_names_mapping(self) -> Dict[str, List[str]]:
 
         entities_mapping = self.retrieve_stage_actor_mapping()
         if len(entities_mapping) == 0:
             return {}
 
         names_mapping: Dict[str, List[str]] = {}
-
         for stage_entity, actor_entities in entities_mapping.items():
-
-            if not include_home and stage_entity.has(HomeComponent):
-                continue
-
-            if not include_dungeon and stage_entity.has(DungeonComponent):
-                continue
-
             actor_names = {actor_entity._name for actor_entity in actor_entities}
             stage_name = stage_entity._name
             names_mapping[stage_name] = list(actor_names)

@@ -13,8 +13,8 @@ from models_v_0_0_1 import CombatRoleComponent, StatusEffect, FeedbackAction
 @final
 class FeedbackResponse(BaseModel):
     description: str
-    hp: float
-    max_hp: float
+    update_hp: float
+    update_max_hp: float
     status_effects: List[StatusEffect]
 
 
@@ -26,8 +26,8 @@ def _generate_prompt(
 
     response_example = FeedbackResponse(
         description="第一人称状态描述（<200字）",
-        hp=combat_attributes_component.hp,
-        max_hp=combat_attributes_component.max_hp,
+        update_hp=combat_attributes_component.hp,
+        update_max_hp=combat_attributes_component.max_hp,
         status_effects=[
             StatusEffect(name="效果1的名字", description="效果1的描述", rounds=1),
             StatusEffect(name="效果2的名字", description="效果2的描述", rounds=2),
@@ -143,8 +143,8 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
                 feedback_action2.calculation,
                 feedback_action2.performance,
                 format_response.description,
-                format_response.hp,
-                format_response.max_hp,
+                format_response.update_hp,
+                format_response.update_max_hp,
                 format_response.status_effects,
             )
 

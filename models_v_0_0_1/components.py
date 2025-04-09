@@ -190,27 +190,27 @@ class CombatRoleComponent(NamedTuple):
     status_effects: List[StatusEffect]
 
     @property
-    def hp(self) -> float:
+    def hp(self) -> int:
         return self.base_attributes.hp
 
     @property
-    def max_hp(self) -> float:
+    def max_hp(self) -> int:
         return self.base_attributes.max_hp
 
     @property
-    def physical_attack(self) -> float:
+    def physical_attack(self) -> int:
         return self.base_attributes.physical_attack
 
     @property
-    def physical_defense(self) -> float:
+    def physical_defense(self) -> int:
         return self.base_attributes.physical_defense
 
     @property
-    def magic_attack(self) -> float:
+    def magic_attack(self) -> int:
         return self.base_attributes.magic_attack
 
     @property
-    def magic_defense(self) -> float:
+    def magic_defense(self) -> int:
         return self.base_attributes.magic_defense
 
     @property

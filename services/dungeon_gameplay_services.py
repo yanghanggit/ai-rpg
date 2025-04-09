@@ -102,7 +102,7 @@ async def dungeon_run(
                 )
 
             # 清空消息。准备重新开始
-            current_room._game.player.clear_client_messages()
+            current_room._game.player.archive_and_clear_messages()
             # 推进一次游戏, 即可转换ONGOING状态。
             await _execute_web_game(current_room._game, request_data.user_input.tag)
             # 返回！
@@ -130,7 +130,7 @@ async def dungeon_run(
 
             # 返回！
             # 清空消息。准备重新开始
-            current_room._game.player.clear_client_messages()
+            current_room._game.player.archive_and_clear_messages()
             return DungeonRunResponse(
                 client_messages=current_room._game.player.client_messages,
                 error=0,
@@ -157,7 +157,7 @@ async def dungeon_run(
             logger.info(f"新的回合开始 = {round.model_dump_json(indent=4)}")
 
             # 返回数据。
-            current_room._game.player.clear_client_messages()
+            current_room._game.player.archive_and_clear_messages()
             return DungeonRunResponse(
                 client_messages=current_room._game.player.client_messages,
                 error=0,
@@ -174,7 +174,7 @@ async def dungeon_run(
                 )
 
             # 清空消息。准备重新开始
-            current_room._game.player.clear_client_messages()
+            current_room._game.player.archive_and_clear_messages()
             logger.debug(f"玩家输入 = {request_data.user_input.tag}, 准备行动......")
             if current_room._game.execute_play_card():
                 # 执行一次！！！！！

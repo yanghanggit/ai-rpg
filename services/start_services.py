@@ -54,7 +54,7 @@ async def start(
     room._game.is_game_started = True
 
     # 先清除掉之前的消息。
-    room._game.player.clear_client_messages()
+    room._game.player.archive_and_clear_messages()
 
     # 添加全局地图的数据。
     # names_mapping = room._game.retrieve_stage_actor_names_mapping()

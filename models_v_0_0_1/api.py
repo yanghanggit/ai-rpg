@@ -2,7 +2,7 @@ from typing import Dict, List, final
 from pydantic import BaseModel
 from .client_message import ClientMessage
 from .registry import register_base_model_class
-from .dungeon import CombatPhase, CombatResult
+from .dungeon import Dungeon
 from .snapshot import EntitySnapshot
 
 
@@ -106,15 +106,14 @@ class StartResponse(BaseModel):
 
 @final
 @register_base_model_class
-class HomeRunRequest(BaseModel):
+class HomeTransDungeonRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    user_input: str = ""
 
 
 @final
 @register_base_model_class
-class HomeRunResponse(BaseModel):
+class HomeTransDungeonResponse(BaseModel):
     client_messages: List[ClientMessage] = []
     error: int = 0
     message: str = ""
@@ -127,14 +126,15 @@ class HomeRunResponse(BaseModel):
 
 @final
 @register_base_model_class
-class HomeTransDungeonRequest(BaseModel):
+class HomeRunRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
+    user_input: str = ""
 
 
 @final
 @register_base_model_class
-class HomeTransDungeonResponse(BaseModel):
+class HomeRunResponse(BaseModel):
     client_messages: List[ClientMessage] = []
     error: int = 0
     message: str = ""
@@ -181,19 +181,9 @@ class ViewDungeonRequest(BaseModel):
 
 @final
 @register_base_model_class
-class ViewDungeonData(BaseModel):
-    dungeon_name: str = ""
-    levels: List[str] = []
-    current_position: int = 0
-    current_actors_in_level: List[str] = []
-    combat_phase: CombatPhase = CombatPhase.NONE
-    combat_result: CombatResult = CombatResult.NONE
-
-
-@final
-@register_base_model_class
 class ViewDungeonResponse(BaseModel):
-    data: ViewDungeonData = ViewDungeonData()
+    mapping: Dict[str, List[str]] = {}
+    dungeon: Dungeon = Dungeon(name="")
     error: int = 0
     message: str = ""
 

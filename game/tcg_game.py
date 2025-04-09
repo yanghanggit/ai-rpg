@@ -593,8 +593,9 @@ class TCGGame(BaseGame, TCGGameContext):
             replace_message = _replace_with_you(agent_event.message, entity._name)
             self.append_human_message(entity, replace_message)
 
-        # 客户端拿到这个事件，用于处理业务。
-        self.player.add_agent_event(agent_event=agent_event)
+            if entity.has(PlayerComponent):
+                # 客户端拿到这个事件，用于处理业务。
+                self.player.add_agent_event(agent_event=agent_event)
 
     ###############################################################################################################################################
     # 传送角色set里的角色到指定场景，游戏层面的行为，会添加记忆但不会触发action

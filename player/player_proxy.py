@@ -15,6 +15,7 @@ class PlayerProxy:
         self._name: Final[str] = name
         self._actor: Final[str] = actor
         self._client_messages: List[ClientMessage] = []
+        self._client_messages_archive: List[ClientMessage] = []
 
     # ##########################################################################################################################################################
     @property
@@ -41,8 +42,9 @@ class PlayerProxy:
         )
 
     ##########################################################################################################################################################
-    def clear_client_messages(self) -> None:
-        logger.info(f"{self._name}, clear_client_messages")
+    def archive_and_clear_messages(self) -> None:
+        logger.info(f"{self._name}, backup_and_clear_client_messages")
+        self._client_messages_archive.extend(self._client_messages)
         self._client_messages = []
 
     ##########################################################################################################################################################

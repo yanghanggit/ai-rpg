@@ -78,7 +78,7 @@ async def home_run(
         )
 
     # 清空消息。准备重新开始
-    current_room._game.player.clear_client_messages()
+    current_room._game.player.archive_and_clear_messages()
 
     # 测试推进一次游戏
     await _execute_web_game(current_room._game, request_data.user_input)
@@ -157,7 +157,7 @@ async def home_trans_dungeon(
         )
 
     # 清空消息。准备重新开始
-    current_room._game.player.clear_client_messages()
+    current_room._game.player.archive_and_clear_messages()
 
     # 测试推进一次游戏
     logger.info(f"!!!!!!!!!准备传送地下城!!!!!!!!!!!!")

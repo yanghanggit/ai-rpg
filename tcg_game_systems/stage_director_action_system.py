@@ -245,8 +245,8 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
                     format_response.calculation,
                     format_response.performance,
                     "",
-                    0.0,
-                    0.0,
+                    0,
+                    0,
                     [],
                 )
 

@@ -143,8 +143,8 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
                 feedback_action2.calculation,
                 feedback_action2.performance,
                 format_response.description,
-                format_response.update_hp,
-                format_response.update_max_hp,
+                int(format_response.update_hp),
+                int(format_response.update_max_hp),
                 format_response.status_effects,
             )
 

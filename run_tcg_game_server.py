@@ -1,4 +1,3 @@
-from typing import cast
 from fastapi.middleware.cors import CORSMiddleware
 from services.game_server_instance import (
     GameServerInstance,
@@ -75,8 +74,8 @@ def main(game_server: GameServerInstance) -> None:
     )
     uvicorn.run(
         game_server.fast_api,
-        host=cast(str, args.host),
-        port=cast(int, args.port),
+        host=str(args.host),
+        port=int(args.port),
     )
 
 

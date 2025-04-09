@@ -1,7 +1,7 @@
 from loguru import logger
 from entitas import Matcher, Entity, Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
-from typing import List, Set, Tuple, cast, final
+from typing import List, Set, Tuple, final
 from game.tcg_game import TCGGame
 from models_v_0_0_1 import (
     TurnAction,
@@ -264,7 +264,7 @@ class DungeonCombatResolutionSystem(ExecuteProcessor):
 
         combat_role_comp = entity.get(CombatRoleComponent)
         assert combat_role_comp is not None
-        combat_role_comp.base_attributes.hp = cast(int, update_hp)
+        combat_role_comp.base_attributes.hp = int(update_hp)
 
     ###############################################################################################################################################
     # 删除手牌组件

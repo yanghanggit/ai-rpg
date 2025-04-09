@@ -186,13 +186,32 @@ class BaseAttributesComponent(NamedTuple):
 @register_component_class
 class CombatRoleComponent(NamedTuple):
     name: str
-    hp: float
-    max_hp: float
-    physical_attack: float
-    physical_defense: float
-    magic_attack: float
-    magic_defense: float
+    base_attributes: BaseAttributes
     status_effects: List[StatusEffect]
+
+    @property
+    def hp(self) -> float:
+        return self.base_attributes.hp
+
+    @property
+    def max_hp(self) -> float:
+        return self.base_attributes.max_hp
+
+    @property
+    def physical_attack(self) -> float:
+        return self.base_attributes.physical_attack
+
+    @property
+    def physical_defense(self) -> float:
+        return self.base_attributes.physical_defense
+
+    @property
+    def magic_attack(self) -> float:
+        return self.base_attributes.magic_attack
+
+    @property
+    def magic_defense(self) -> float:
+        return self.base_attributes.magic_defense
 
     @property
     def attrs_prompt(self) -> str:
@@ -217,9 +236,15 @@ class CombatRoleComponent(NamedTuple):
 
     @staticmethod
     def __deserialize_component__(component_data: Dict[str, Any]) -> None:
-        key: Final[str] = "status_effects"
-        assert key in component_data
-        if key in component_data:
-            component_data[key] = [
-                StatusEffect(**effect) for effect in component_data[key]
+
+        assert "base_attributes" in component_data
+        if "base_attributes" in component_data:
+            component_data["base_attributes"] = BaseAttributes(
+                **component_data["base_attributes"]
+            )
+
+        assert "status_effects" in component_data
+        if "status_effects" in component_data:
+            component_data["status_effects"] = [
+                StatusEffect(**effect) for effect in component_data["status_effects"]
             ]

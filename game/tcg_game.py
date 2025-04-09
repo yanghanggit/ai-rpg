@@ -706,26 +706,27 @@ class TCGGame(BaseGame, TCGGameContext):
         base_attributes_comp = actor_entity.get(BaseAttributesComponent)
         assert isinstance(base_attributes_comp.base_attributes, BaseAttributes)
 
-        hp: Final[float] = base_attributes_comp.base_attributes.hp
-        max_hp: Final[float] = base_attributes_comp.base_attributes.max_hp
-        physical_attack: Final[float] = (
-            base_attributes_comp.base_attributes.physical_attack
-        )
-        physical_defense: Final[float] = (
-            base_attributes_comp.base_attributes.physical_defense
-        )
-        magic_attack: Final[float] = base_attributes_comp.base_attributes.magic_attack
-        magic_defense: Final[float] = base_attributes_comp.base_attributes.magic_defense
+        # hp: Final[float] = base_attributes_comp.base_attributes.hp
+        # max_hp: Final[float] = base_attributes_comp.base_attributes.max_hp
+        # physical_attack: Final[float] = (
+        #     base_attributes_comp.base_attributes.physical_attack
+        # )
+        # physical_defense: Final[float] = (
+        #     base_attributes_comp.base_attributes.physical_defense
+        # )
+        # magic_attack: Final[float] = base_attributes_comp.base_attributes.magic_attack
+        # magic_defense: Final[float] = base_attributes_comp.base_attributes.magic_defense
 
         actor_entity.replace(
             CombatRoleComponent,
             actor_entity._name,
-            hp,
-            max_hp,
-            physical_attack,
-            physical_defense,
-            magic_attack,
-            magic_defense,
+            copy.copy(base_attributes_comp.base_attributes),
+            # hp,
+            # max_hp,
+            # physical_attack,
+            # physical_defense,
+            # magic_attack,
+            # magic_defense,
             [],
         )
 
@@ -752,12 +753,13 @@ class TCGGame(BaseGame, TCGGameContext):
         entity.replace(
             CombatRoleComponent,
             combat_role_comp.name,
-            combat_role_comp.hp,
-            combat_role_comp.max_hp,
-            combat_role_comp.physical_attack,
-            combat_role_comp.physical_defense,
-            combat_role_comp.magic_attack,
-            combat_role_comp.magic_defense,
+            combat_role_comp.base_attributes,
+            # combat_role_comp.hp,
+            # combat_role_comp.max_hp,
+            # combat_role_comp.physical_attack,
+            # combat_role_comp.physical_defense,
+            # combat_role_comp.magic_attack,
+            # combat_role_comp.magic_defense,
             current_effects,
         )
 
@@ -898,8 +900,8 @@ class TCGGame(BaseGame, TCGGameContext):
             self.append_human_message(hero_entity, prompt)
 
             # 一些处理。
-            if hero_entity.has(CombatRoleComponent):
-                hero_entity.remove(CombatRoleComponent)
+            # if hero_entity.has(CombatRoleComponent):
+            #     hero_entity.remove(CombatRoleComponent)
 
         # 开始传送。
         self.stage_transition(heros_entities, stage_entity)

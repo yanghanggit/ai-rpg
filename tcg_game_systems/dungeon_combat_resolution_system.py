@@ -1,7 +1,7 @@
 from loguru import logger
 from entitas import Matcher, Entity, Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
-from typing import List, Set, Tuple, final
+from typing import List, Set, Tuple, cast, final
 from game.tcg_game import TCGGame
 from models_v_0_0_1 import (
     TurnAction,
@@ -245,19 +245,10 @@ class DungeonCombatResolutionSystem(ExecuteProcessor):
             else:
                 removed_effects.append(current_effects[i])
 
-        # entity.replace(
-        #     CombatRole, combat_role_comp.name, remaining_effects
-        # )
-
         entity.replace(
             CombatRoleComponent,
             combat_role_comp.name,
-            combat_role_comp.hp,
-            combat_role_comp.max_hp,
-            combat_role_comp.physical_attack,
-            combat_role_comp.physical_defense,
-            combat_role_comp.magic_attack,
-            combat_role_comp.magic_defense,
+            combat_role_comp.base_attributes,
             removed_effects,
         )
 
@@ -273,18 +264,19 @@ class DungeonCombatResolutionSystem(ExecuteProcessor):
 
         combat_role_comp = entity.get(CombatRoleComponent)
         assert combat_role_comp is not None
+        combat_role_comp.base_attributes.hp = cast(int, hp)
 
-        entity.replace(
-            CombatRoleComponent,
-            combat_role_comp.name,
-            hp,
-            max_hp,
-            combat_role_comp.physical_attack,
-            combat_role_comp.physical_defense,
-            combat_role_comp.magic_attack,
-            combat_role_comp.magic_defense,
-            combat_role_comp.status_effects,
-        )
+        # entity.replace(
+        #     CombatRoleComponent,
+        #     combat_role_comp.name,
+        #     hp,
+        #     max_hp,
+        #     combat_role_comp.physical_attack,
+        #     combat_role_comp.physical_defense,
+        #     combat_role_comp.magic_attack,
+        #     combat_role_comp.magic_defense,
+        #     combat_role_comp.status_effects,
+        # )
 
     ###############################################################################################################################################
     # 删除手牌组件

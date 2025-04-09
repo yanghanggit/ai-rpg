@@ -155,6 +155,32 @@ class HandComponent(NamedTuple):
 
 
 ############################################################################################################
+# 死亡标记
+@final
+@register_component_class
+class DeathComponent(NamedTuple):
+    name: str
+
+
+############################################################################################################
+# 核心属性组件
+@final
+@register_component_class
+class BaseAttributesComponent(NamedTuple):
+
+    name: str
+    base_attributes: BaseAttributes
+
+    # 有读取的组件需要这个。
+    @staticmethod
+    def __deserialize_component__(component_data: Dict[str, Any]) -> None:
+        key: Final[str] = "base_attributes"
+        assert key in component_data
+        if key in component_data:
+            component_data[key] = BaseAttributes(**component_data[key])
+
+
+############################################################################################################
 # 战斗中临时使用。
 @final
 @register_component_class
@@ -197,29 +223,3 @@ class CombatRoleComponent(NamedTuple):
             component_data[key] = [
                 StatusEffect(**effect) for effect in component_data[key]
             ]
-
-
-############################################################################################################
-# 死亡标记
-@final
-@register_component_class
-class DeathComponent(NamedTuple):
-    name: str
-
-
-############################################################################################################
-# 核心属性组件
-@final
-@register_component_class
-class BaseAttributesComponent(NamedTuple):
-
-    name: str
-    base_attributes: BaseAttributes
-
-    # 有读取的组件需要这个。
-    @staticmethod
-    def __deserialize_component__(component_data: Dict[str, Any]) -> None:
-        key: Final[str] = "base_attributes"
-        assert key in component_data
-        if key in component_data:
-            component_data[key] = BaseAttributes(**component_data[key])

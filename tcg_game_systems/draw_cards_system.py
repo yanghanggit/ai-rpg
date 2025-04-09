@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from entitas import Entity  # type: ignore
+from entitas import ExecuteProcessor, Entity  # type: ignore
 from llm_serves.chat_request_handler import ChatRequestHandler
 import format_string.json_format
 from models_v_0_0_1 import (
@@ -9,7 +9,7 @@ from models_v_0_0_1 import (
     MonsterComponent,
     Skill,
 )
-from typing import Final, List, Set, final
+from typing import Final, List, Set, final, override
 from loguru import logger
 from game.tcg_game import TCGGame
 
@@ -55,28 +55,38 @@ def _generate_prompt(
 
 #######################################################################################################################################
 @final
-class DrawCardsUtils:
+class DrawCardsSystem(ExecuteProcessor):
 
-    def __init__(self, game_context: TCGGame, actor_entities: Set[Entity]) -> None:
+    def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
-        self._actor_entities: Set[Entity] = actor_entities
         self._skill_creation_count: Final[int] = 2
 
-        for entity in self._actor_entities:
+    ######################################################################################################################################
+    @override
+    def execute(self) -> None:
+        pass
+
+    ######################################################################################################################################
+    @override
+    async def a_execute1(self) -> None:
+
+        player_entity = self._game.get_player_entity()
+        assert player_entity is not None
+
+        actor_entities = self._game.retrieve_actors_on_stage(player_entity)
+        for entity in actor_entities:
             assert entity.has(HeroComponent) or entity.has(
                 MonsterComponent
             ), f"{entity._name} must have HeroComponent or MonsterComponent"
 
-    #######################################################################################################################################
-    async def draw_cards(self) -> None:
-        if len(self._actor_entities) == 0:
+        if len(actor_entities) == 0:
             return
 
         # 先清除
-        self._clear(self._actor_entities)
+        self._clear(actor_entities)
 
         # 处理请求
-        await self._process_chat_requests(self._actor_entities)
+        await self._process_chat_requests(actor_entities)
 
     #######################################################################################################################################
     def _clear(self, actor_entities: Set[Entity]) -> None:

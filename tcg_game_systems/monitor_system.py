@@ -1,5 +1,5 @@
-from entitas import Entity  # type: ignore
-from typing import Dict, List, Set, Union, final
+from entitas import ExecuteProcessor, Entity  # type: ignore
+from typing import Dict, List, Set, Union, final, override
 from models_v_0_0_1 import StageComponent, ActorComponent, StatusEffect
 from llm_serves.chat_request_handler import ChatRequestHandler
 from loguru import logger
@@ -24,35 +24,37 @@ class ActorResponse(BaseModel):
 
 
 @final
-class MonitorUtils:
+class MonitorSystem(ExecuteProcessor):
 
     ####################################################################################################################################
     def __init__(
         self,
         game_context: TCGGame,
-        stage_entities: Set[Entity],
-        actor_entities: Set[Entity],
     ) -> None:
 
         self._game = game_context
-
-        self._stage_entities = stage_entities
-        assert all([entity.has(StageComponent) for entity in stage_entities])
-
-        self._actor_entities = actor_entities
-        assert all([entity.has(ActorComponent) for entity in actor_entities])
-
         self._request_handlers: list[ChatRequestHandler] = []
-
         self._result_mapping: Dict[Entity, Union[StageResponse, ActorResponse]] = {}
 
+    ######################################################################################################################################
+    @override
+    def execute(self) -> None:
+        pass
+
     ####################################################################################################################################
-    async def process(self) -> None:
+    @override
+    async def a_execute1(self) -> None:
+
+        player_entity = self._game.get_player_entity()
+        assert player_entity is not None
+
+        player_stage_entity = self._game.safe_get_stage_entity(player_entity)
+        assert player_stage_entity is not None
 
         # 合并一下 request 任务。
         self._request_handlers = self._gen_actors_requests(
-            self._actor_entities
-        ) + self._gen_stages_requests(self._stage_entities)
+            self._game.retrieve_actors_on_stage(player_stage_entity)
+        ) + self._gen_stages_requests(set({player_stage_entity}))
 
         # 并发执行。
         await self._game.chat_system.gather(request_handlers=self._request_handlers)

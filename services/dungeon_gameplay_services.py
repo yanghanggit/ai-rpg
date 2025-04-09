@@ -7,8 +7,8 @@ from models_v_0_0_1 import (
 from loguru import logger
 from game.web_tcg_game import WebTCGGame
 from game.tcg_game import TCGGameState
-from tcg_game_systems.draw_cards_utils import DrawCardsUtils
-from tcg_game_systems.combat_round_utils import CombatRoundUtils
+from tcg_game_systems.draw_cards_system import DrawCardsSystem
+from tcg_game_systems.dungeon_combat_round_system import DungeonCombatRoundSystem
 
 ###################################################################################################################################################################
 dungeon_gameplay_router = APIRouter()
@@ -122,12 +122,11 @@ async def dungeon_run(
                 )
 
             # 抽牌。
-            draw_card_utils = DrawCardsUtils(
+            draw_card_utils = DrawCardsSystem(
                 current_room._game,
-                current_room._game.retrieve_actors_on_stage(player_stage_entity),
             )
             # 抓牌
-            await draw_card_utils.draw_cards()
+            await draw_card_utils.a_execute1()
 
             # 返回！
             # 清空消息。准备重新开始
@@ -148,13 +147,13 @@ async def dungeon_run(
                 )
 
             # 获得当前最新的回合数据。
-            combat_round_utils = CombatRoundUtils(
+            combat_round_utils = DungeonCombatRoundSystem(
                 current_room._game,
-                current_room._game.retrieve_actors_on_stage(player_stage_entity),
+                # current_room._game.retrieve_actors_on_stage(player_stage_entity),
             )
 
-            round = combat_round_utils.initialize_round()
-            assert not round.completed
+            round = combat_round_utils.setup_round()
+            assert not round.is_round_complete
             logger.info(f"新的回合开始 = {round.model_dump_json(indent=4)}")
 
             # 返回数据。

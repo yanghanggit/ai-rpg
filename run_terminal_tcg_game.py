@@ -10,10 +10,10 @@ from game.tcg_game_demo import (
     create_then_write_demo_world,
     create_demo_dungeon_system,
 )
-from tcg_game_systems.draw_cards_utils import DrawCardsUtils
-from tcg_game_systems.monitor_utils import MonitorUtils
+from tcg_game_systems.draw_cards_system import DrawCardsSystem
+from tcg_game_systems.monitor_system import MonitorSystem
 from game.user_session_options import UserSessionOptions
-from tcg_game_systems.combat_round_utils import CombatRoundUtils
+from tcg_game_systems.dungeon_combat_round_system import DungeonCombatRoundSystem
 
 
 ###############################################################################################################################################
@@ -220,11 +220,10 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
-        draw_card_utils = DrawCardsUtils(
+        draw_card_utils = DrawCardsSystem(
             terminal_game,
-            terminal_game.retrieve_actors_on_stage(player_stage_entity),
         )
-        await draw_card_utils.draw_cards()
+        await draw_card_utils.a_execute1()
 
     elif usr_input == "/nr" or usr_input == "/new-round":
 
@@ -238,13 +237,13 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             return
 
         # logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
-        combat_round_utils = CombatRoundUtils(
+        combat_round_utils = DungeonCombatRoundSystem(
             terminal_game,
-            terminal_game.retrieve_actors_on_stage(player_stage_entity),
+            # terminal_game.retrieve_actors_on_stage(player_stage_entity),
         )
 
-        round = combat_round_utils.initialize_round()
-        assert not round.completed
+        round = combat_round_utils.setup_round()
+        assert not round.is_round_complete
         logger.info(f"新的回合开始 = {round.model_dump_json(indent=4)}")
 
     elif usr_input == "/pc" or usr_input == "/play-card":
@@ -275,12 +274,12 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备监控")
-        monitor_utils = MonitorUtils(
+        monitor_utils = MonitorSystem(
             terminal_game,
-            set({player_stage_entity}),
-            terminal_game.retrieve_actors_on_stage(player_stage_entity),
+            # set({player_stage_entity}),
+            # terminal_game.retrieve_actors_on_stage(player_stage_entity),
         )
-        await monitor_utils.process()
+        await monitor_utils.a_execute1()
 
     elif usr_input == "/th" or usr_input == "/trans-home":
 

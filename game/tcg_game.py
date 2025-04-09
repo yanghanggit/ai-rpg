@@ -1,4 +1,5 @@
 from enum import Enum, IntEnum, unique
+import random
 import shutil
 from entitas import Entity, Matcher  # type: ignore
 from typing import Any, Dict, Final, Set, List, Optional, final
@@ -944,7 +945,7 @@ class TCGGame(BaseGame, TCGGameContext):
             return False
 
         last_round = self.current_engagement.last_round
-        if last_round.completed:
+        if last_round.is_round_complete:
             logger.error("回合已经完成，不能添加行动！")
             return False
 
@@ -976,4 +977,4 @@ class TCGGame(BaseGame, TCGGameContext):
 
         return True
 
-    ###############################################################################################################################################
+    #######################################################################################################################################

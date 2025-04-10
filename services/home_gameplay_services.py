@@ -179,7 +179,7 @@ async def home_trans_dungeon(
         )
     #
     return HomeTransDungeonResponse(
-        client_messages=web_game.player.client_messages,
+        # client_messages=web_game.player.client_messages,
         error=0,
         message=request_data.model_dump_json(),
     )

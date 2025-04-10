@@ -8,7 +8,7 @@ from llm_serves.chat_system import ChatSystem
 from player.player_proxy import PlayerProxy
 from game.tcg_game_demo import (
     create_then_write_demo_world,
-    create_demo_dungeon_system,
+    create_demo_dungeon2,
 )
 from tcg_game_systems.combat_draw_cards_system import CombatDrawCardsSystem
 from tcg_game_systems.combat_monitor_system import CombatMonitorSystem
@@ -53,7 +53,7 @@ async def run_game(option: UserSessionOptions) -> None:
         # 重新生成world
         start_world = World(boot=world_boot)
         # 运行时生成地下城系统
-        start_world.dungeon = create_demo_dungeon_system(name="哥布林与兽人")
+        start_world.dungeon = create_demo_dungeon2(name="哥布林与兽人")
 
     else:
 

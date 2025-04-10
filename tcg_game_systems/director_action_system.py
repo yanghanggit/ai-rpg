@@ -58,7 +58,7 @@ class ActionPromptParameters(NamedTuple):
     targets: List[str]
     skill: Skill
     combat_role_component: CombatRoleComponent
-    interaction: str
+    dialogue: str
 
 
 #######################################################################################################################################
@@ -74,7 +74,7 @@ def _generate_prompt(prompt_params: List[ActionPromptParameters]) -> str:
 目标: {param.targets}
 描述: {param.skill.description}
 技能效果: {param.skill.effect}
-角色演出: {param.interaction}
+角色演出时说的话: {param.dialogue}
 属性: 
 {param.combat_role_component.attrs_prompt}
 角色状态: 
@@ -174,7 +174,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
                     targets=select_action.targets,
                     skill=select_action.skill,
                     combat_role_component=entity.get(CombatRoleComponent),
-                    interaction=select_action.interaction,
+                    dialogue=select_action.interaction,
                 )
             )
 

@@ -22,7 +22,7 @@ class PlayCardResponse(BaseModel):
     skill: str
     targets: List[str]
     reason: str
-    interaction: str
+    dialogue: str
 
 
 #######################################################################################################################################
@@ -39,7 +39,7 @@ def _generate_prompt(
         skill="技能名称",
         targets=["目标1", "目标2", "..."],
         reason="技能使用原因",
-        interaction="在使用技能时你要表演的交互性动作或者说的话",
+        dialogue="你要说的话",
     )
 
     return f"""# 战斗正在进行，请考虑后，在技能列表中选择你将要使用的技能！
@@ -143,7 +143,7 @@ class TurnActionSystem(BaseActionReactiveSystem):
                 entity2._name,
                 format_response.targets,
                 skill,
-                format_response.interaction,
+                format_response.dialogue,
                 format_response.reason,
             )
 

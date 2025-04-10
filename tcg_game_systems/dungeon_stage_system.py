@@ -54,21 +54,21 @@ class DungeonStageSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     def execute(self) -> None:
-        if not self._is_phase_valid():
-            logger.debug("StagePlanningSystem: 状态无效，跳过执行。")
-            return
+        # if not self._is_phase_valid():
+        #     logger.debug("StagePlanningSystem: 状态无效，跳过执行。")
+        #     return
         self._process_stage_planning()
 
     #######################################################################################################################################
-    def _is_phase_valid(self) -> bool:
+    # def _is_phase_valid(self) -> bool:
 
-        if (
-            self._game.current_engagement.is_post_wait_phase
-            or self._game.current_engagement.is_complete_phase
-        ):
-            return False
+    #     if (
+    #         self._game.current_engagement.is_post_wait_phase
+    #         or self._game.current_engagement.is_complete_phase
+    #     ):
+    #         return False
 
-        return True
+    #     return True
 
     #######################################################################################################################################
     def _process_stage_planning(self) -> None:

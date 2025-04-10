@@ -34,7 +34,6 @@ class APIEndpointConfiguration(BaseModel):
 @final
 @register_base_model_class
 class APIEndpointConfigurationResponse(BaseModel):
-    content: str = ""
     api_endpoints: APIEndpointConfiguration = APIEndpointConfiguration()
     error: int = 0
     message: str = ""
@@ -95,7 +94,6 @@ class StartRequest(BaseModel):
 @final
 @register_base_model_class
 class StartResponse(BaseModel):
-    client_messages: List[ClientMessage] = []
     error: int = 0
     message: str = ""
 

@@ -56,14 +56,8 @@ async def start(
     # 先清除掉之前的消息。
     room._game.player.archive_and_clear_messages()
 
-    # 添加全局地图的数据。
-    # names_mapping = room._game.retrieve_stage_actor_names_mapping()
-    # assert len(names_mapping) > 0, f"没有找到任何角色名称映射数据！"
-    # room._game.player.add_mapping(names_mapping)
-
     # 返回正确的数据。
     return StartResponse(
-        client_messages=room._game.player.client_messages,
         error=0,
         message=f"启动游戏成功！!= {';'.join([message.model_dump_json() for message in room._game.player.client_messages])}",
     )

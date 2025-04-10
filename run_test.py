@@ -22,7 +22,7 @@ def _test_base_model() -> None:
     ]
 
     ret = StartResponse(
-        client_messages=test,
+        # client_messages=test,
         error=0,
         message=f"启动游戏成功！!=",
     )

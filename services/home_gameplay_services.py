@@ -152,7 +152,7 @@ async def home_trans_dungeon(
             "没有地下城可以传送, 全部地下城已经结束。！！！！已经全部被清空！！！！或者不存在！！！！"
         )
         return HomeTransDungeonResponse(
-            error=0,
+            error=1005,
             message="没有地下城可以传送, 全部地下城已经结束。！！！！已经全部被清空！！！！或者不存在！！！！",
         )
 
@@ -164,7 +164,7 @@ async def home_trans_dungeon(
     if not current_room._game.launch_dungeon():
         logger.error("第一次地下城传送失败!!!!")
         return HomeTransDungeonResponse(
-            error=1005,
+            error=1006,
             message="第一次地下城传送失败!!!!",
         )
     #

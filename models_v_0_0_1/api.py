@@ -22,10 +22,10 @@ class APIEndpointConfiguration(BaseModel):
     LOGIN_URL: str = ""
     LOGOUT_URL: str = ""
     START_URL: str = ""
-    HOME_RUN_URL: str = ""
+    HOME_GAMEPLAY_URL: str = ""
     VIEW_HOME_URL: str = ""
     HOME_TRANS_DUNGEON_URL: str = ""
-    DUNGEON_RUN_URL: str = ""
+    DUNGEON_GAMEPLAY_URL: str = ""
     VIEW_DUNGEON_URL: str = ""
     VIEW_ACTOR_URL: str = ""
 
@@ -126,7 +126,7 @@ class HomeTransDungeonResponse(BaseModel):
 
 @final
 @register_base_model_class
-class HomeRunRequest(BaseModel):
+class HomeGamePlayRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
     user_input: str = ""
@@ -134,7 +134,7 @@ class HomeRunRequest(BaseModel):
 
 @final
 @register_base_model_class
-class HomeRunResponse(BaseModel):
+class HomeGamePlayResponse(BaseModel):
     client_messages: List[ClientMessage] = []
     error: int = 0
     message: str = ""
@@ -147,21 +147,21 @@ class HomeRunResponse(BaseModel):
 
 @final
 @register_base_model_class
-class DungeonRunUserInput(BaseModel):
+class DungeonGamePlayUserInput(BaseModel):
     tag: str = ""
 
 
 @final
 @register_base_model_class
-class DungeonRunRequest(BaseModel):
+class DungeonGamePlayRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    user_input: DungeonRunUserInput = DungeonRunUserInput()
+    user_input: DungeonGamePlayUserInput = DungeonGamePlayUserInput()
 
 
 @final
 @register_base_model_class
-class DungeonRunResponse(BaseModel):
+class DungeonGamePlayResponse(BaseModel):
     client_messages: List[ClientMessage] = []
     error: int = 0
     message: str = ""

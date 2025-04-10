@@ -855,7 +855,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     # TODO!!! 临时测试准备传送！！！
-    def transition_heroes_to_home(self) -> None:
+    def back_home(self) -> None:
 
         heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
         assert len(heros_entities) > 0

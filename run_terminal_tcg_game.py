@@ -298,7 +298,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         logger.debug(f"玩家输入 = {usr_input}, 准备传送回家")
 
         # 回家
-        terminal_game.transition_heroes_to_home()
+        terminal_game.back_home()
 
     elif usr_input == "/vd" or usr_input == "/view-dungeon":
         logger.info(

@@ -8,6 +8,7 @@ from models_v_0_0_1 import (
     HeroComponent,
     CombatRoleComponent,
     CombatResult,
+    CombatCompleteEvent,
 )
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from llm_serves.chat_request_handler import ChatRequestHandler
@@ -109,17 +110,20 @@ class CombatCompleteSystem(ExecuteProcessor):
 ## 你记录下了这次战斗的经历:
 {request_handler.response_content}"""
 
-            # 添加记忆。
-            self._game.append_human_message(
-                entity=entity2,
-                chat=summary,
-                summarize_combat=f"{stage_entity2._name}",
-            )
-
-            #  # 准备记录～
+            # 准备记录～
             self._game.current_engagement.last_combat.summarize_report[
                 entity2._name
             ] = summary
+
+            # 添加记忆，并给客户端。
+            self._game.notify_event(
+                set({entity2}),
+                CombatCompleteEvent(
+                    message=summary,
+                    actor=entity2._name,
+                    summary=summary,
+                ),
+            )
 
     #######################################################################################################################################
     # 压缩战斗历史。

@@ -13,6 +13,7 @@ class AgentEventHead(IntEnum):
     ANNOUNCE_EVENT = 3
     MIND_VOICE_EVENT = 4
     COMBAT_KICK_OFF_EVENT = 5
+    COMBAT_COMPLETE_EVENT = 6
 
 
 @register_base_model_class
@@ -80,6 +81,17 @@ class CombatKickOffEvent(AgentEvent):
     head: int = AgentEventHead.COMBAT_KICK_OFF_EVENT
     actor: str
     description: str
+
+
+####################################################################################################################################
+
+
+@final
+@register_base_model_class
+class CombatCompleteEvent(AgentEvent):
+    head: int = AgentEventHead.COMBAT_COMPLETE_EVENT
+    actor: str
+    summary: str
 
 
 ####################################################################################################################################

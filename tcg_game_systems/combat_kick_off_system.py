@@ -226,12 +226,13 @@ class CombatKickOffSystem(ExecuteProcessor):
         self._game.append_ai_message(entity2, message)
 
         # 添加战斗开始事件
-        self._game.player.add_agent_event(
+        self._game.notify_event(
+            set({entity2}),
             CombatKickOffEvent(
                 message=message,
                 actor=entity2._name,
                 description=format_response.description,
-            )
+            ),
         )
 
 

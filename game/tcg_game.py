@@ -876,10 +876,6 @@ class TCGGame(BaseGame, TCGGameContext):
             # 添加故事。
             self.append_human_message(hero_entity, prompt)
 
-            # 一些处理。
-            # if hero_entity.has(CombatRoleComponent):
-            #     hero_entity.remove(CombatRoleComponent)
-
         # 开始传送。
         self.stage_transition(heros_entities, stage_entity)
 

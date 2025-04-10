@@ -62,7 +62,7 @@ class ActionPromptParameters(NamedTuple):
 
 
 #######################################################################################################################################
-def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> str:
+def _generate_prompt(prompt_params: List[ActionPromptParameters]) -> str:
 
     details_prompt: List[str] = []
     for param in prompt_params:
@@ -190,7 +190,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         assert len(params) > 0
 
         # 生成推理信息。
-        message = _generate_director_prompt(params)
+        message = _generate_prompt(params)
 
         # 用场景推理。
         request_handler = ChatRequestHandler(

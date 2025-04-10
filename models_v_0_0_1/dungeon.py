@@ -155,6 +155,16 @@ class Engagement(BaseModel):
         return self.combat_phase == CombatPhase.POST_WAIT
 
     ###############################################################################################################################################
+    @property
+    def has_hero_won(self) -> bool:
+        return self.combat_result == CombatResult.HERO_WIN
+
+    ###############################################################################################################################################
+    @property
+    def has_hero_lost(self) -> bool:
+        return self.combat_result == CombatResult.HERO_LOSE
+
+    ###############################################################################################################################################
     # 启动一个战斗！！！ 注意状态转移
     def combat_kickoff(self, combat: Combat) -> None:
         assert combat.phase == CombatPhase.NONE

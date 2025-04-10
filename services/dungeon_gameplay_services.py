@@ -94,6 +94,7 @@ async def dungeon_run(
     match request_data.user_input.tag:
 
         case "dungeon_combat_kick_off":
+
             if not current_room._game.current_engagement.is_kickoff_phase:
                 logger.error(f"战斗不是在kickoff阶段！！！！")
                 return DungeonRunResponse(
@@ -122,11 +123,11 @@ async def dungeon_run(
                 )
 
             # 抽牌。
-            draw_card_utils = CombatDrawCardsSystem(
+            combat_draw_cards_system = CombatDrawCardsSystem(
                 current_room._game,
             )
             # 抓牌
-            await draw_card_utils.a_execute1()
+            await combat_draw_cards_system.a_execute1()
 
             # 返回！
             # 清空消息。准备重新开始
@@ -149,7 +150,6 @@ async def dungeon_run(
             # 获得当前最新的回合数据。
             combat_round_utils = CombatRoundSystem(
                 current_room._game,
-                # current_room._game.retrieve_actors_on_stage(player_stage_entity),
             )
 
             round = combat_round_utils.setup_round()
@@ -187,11 +187,59 @@ async def dungeon_run(
                 message="",
             )
 
-        case _:
-            logger.error(
-                f"{request_data.user_input} 是错误的输入，造成无法处理的情况！"
+        case "advance_next_dungeon":
+
+            if not current_room._game.current_engagement.is_post_wait_phase:
+                logger.error(
+                    f"not current_room._game.current_engagement.is_post_wait_phase"
+                )
+                return DungeonRunResponse(
+                    error=1005,
+                    message="not current_room._game.current_engagement.is_post_wait_phase",
+                )
+
+            if current_room._game.current_engagement.has_hero_won:
+                next_level = current_room._game.current_dungeon.next_level()
+                if next_level is None:
+                    logger.info("没有下一关，你胜利了，应该返回营地！！！！")
+                    return DungeonRunResponse(
+                        error=0,
+                        message="没有下一关，你胜利了，应该返回营地！！！！",
+                    )
+                else:
+                    current_room._game.advance_next_dungeon()
+                    return DungeonRunResponse(
+                        error=0,
+                        message=f"进入下一关：{next_level.name}",
+                    )
+            elif current_room._game.current_engagement.has_hero_lost:
+                return DungeonRunResponse(
+                    error=0,
+                    message="你已经失败了，不能继续进行游戏",
+                )
+
+        case "back_home":
+
+            if not current_room._game.current_engagement.is_post_wait_phase:
+                logger.error(
+                    f"not current_room._game.current_engagement.is_post_wait_phase:"
+                )
+                return DungeonRunResponse(
+                    error=1005,
+                    message="not current_room._game.current_engagement.is_post_wait_phase:",
+                )
+
+            # 回家
+            current_room._game.transition_heroes_to_home()
+            return DungeonRunResponse(
+                error=0,
+                message="回家了",
             )
 
+        case _:
+            logger.error(f"未知的请求类型 = {request_data.user_input.tag}, 不能处理！")
+
+    # 如果没有匹配到任何的请求类型，就返回错误。
     return DungeonRunResponse(
         error=1007,
         message=f"{request_data.user_input} 是错误的输入，造成无法处理的情况！",

@@ -73,7 +73,7 @@ class PlayCardAction(NamedTuple):
 @final
 @register_component_class
 @register_action_class
-class StageDirectorAction(NamedTuple):
+class DirectorAction(NamedTuple):
     name: str
     calculation: str
     performance: str

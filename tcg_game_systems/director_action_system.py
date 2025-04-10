@@ -5,7 +5,7 @@ from overrides import override
 from typing import Final, List, NamedTuple, final
 from loguru import logger
 from models_v_0_0_1 import (
-    StageDirectorAction,
+    DirectorAction,
     FeedbackAction,
     TurnAction,
     PlayCardAction,
@@ -108,17 +108,17 @@ def _generate_director_prompt(prompt_params: List[ActionPromptParameters]) -> st
 
 #######################################################################################################################################
 @final
-class StageDirectorActionSystem(BaseActionReactiveSystem):
+class DirectorActionSystem(BaseActionReactiveSystem):
 
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(StageDirectorAction): GroupEvent.ADDED}
+        return {Matcher(DirectorAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(StageDirectorAction) and entity.has(StageComponent)
+        return entity.has(DirectorAction) and entity.has(StageComponent)
 
     #######################################################################################################################################
     @override
@@ -228,9 +228,9 @@ class StageDirectorActionSystem(BaseActionReactiveSystem):
             )
 
             # 推理的场景记录下！
-            stage_director_action = stage_entity.get(StageDirectorAction)
+            stage_director_action = stage_entity.get(DirectorAction)
             stage_entity.replace(
-                StageDirectorAction,
+                DirectorAction,
                 stage_director_action.name,
                 format_response.calculation,
                 format_response.performance,

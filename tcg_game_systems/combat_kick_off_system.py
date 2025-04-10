@@ -60,7 +60,7 @@ def _generate_prompt(
 
 ###################################################################################################################################################################
 @final
-class DungeonCombatKickOffSystem(ExecuteProcessor):
+class CombatKickOffSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context

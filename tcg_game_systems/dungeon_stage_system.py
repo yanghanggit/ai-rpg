@@ -46,7 +46,7 @@ def _generate_prompt(
 
 #######################################################################################################################################
 @final
-class DungeonStagePlanningSystem(ExecuteProcessor):
+class DungeonStageSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context

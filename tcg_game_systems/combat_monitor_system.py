@@ -24,7 +24,7 @@ class ActorResponse(BaseModel):
 
 
 @final
-class MonitorSystem(ExecuteProcessor):
+class CombatMonitorSystem(ExecuteProcessor):
 
     ####################################################################################################################################
     def __init__(

@@ -16,7 +16,7 @@ from game.tcg_game import TCGGame
 
 #######################################################################################################################################
 @final
-class DrawCardResponse(BaseModel):
+class DrawCardsResponse(BaseModel):
     skills: List[Skill]
 
 
@@ -28,7 +28,7 @@ def _generate_prompt(
 ) -> str:
 
     assert skill_creation_count > 0
-    response_example = DrawCardResponse(
+    response_example = DrawCardsResponse(
         skills=[],
     )
 
@@ -55,7 +55,7 @@ def _generate_prompt(
 
 #######################################################################################################################################
 @final
-class DrawCardsSystem(ExecuteProcessor):
+class CombatDrawCardsSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
@@ -128,7 +128,7 @@ class DrawCardsSystem(ExecuteProcessor):
 
         try:
 
-            format_response = DrawCardResponse.model_validate_json(
+            format_response = DrawCardsResponse.model_validate_json(
                 format_string.json_format.strip_json_code_block(
                     request_handler.response_content
                 )

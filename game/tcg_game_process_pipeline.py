@@ -32,13 +32,13 @@ class TCGGameProcessPipeline(Processors):
         from tcg_game_systems.pre_action_system import PreActionSystem
         from tcg_game_systems.post_action_system import PostActionSystem
         from tcg_game_systems.destroy_entity_system import DestroyEntitySystem
-        from tcg_game_systems.home_pre_planning_system import HomePrePlanningSystem
-        from tcg_game_systems.home_post_planning_system import HomePostPlanningSystem
+        from tcg_game_systems.home_pre_system import HomePreSystem
+        from tcg_game_systems.home_post_system import HomePostSystem
 
-        from tcg_game_systems.home_stage_planning_system import (
-            HomeStagePlanningSystem,
+        from tcg_game_systems.home_stage_system import (
+            HomeStageSystem,
         )
-        from tcg_game_systems.home_actor_planning_system import (
+        from tcg_game_systems.home_actor_system import (
             HomeActorPlanningSystem,
         )
         from tcg_game_systems.whisper_action_system import WhisperActionSystem
@@ -67,10 +67,10 @@ class TCGGameProcessPipeline(Processors):
         # processors.add(
         #     TerminalPlayerInterruptWaitSystem(tcg_game)
         # )  # yh 调试用。因为后面要消耗tokens，如果不需要就在这里停掉。
-        processors.add(HomePrePlanningSystem(tcg_game))
-        processors.add(HomeStagePlanningSystem(tcg_game))
+        processors.add(HomePreSystem(tcg_game))
+        processors.add(HomeStageSystem(tcg_game))
         processors.add(HomeActorPlanningSystem(tcg_game))
-        processors.add(HomePostPlanningSystem(tcg_game))
+        processors.add(HomePostSystem(tcg_game))
         ####### 在所有规划之后! ##############################################################
 
         # 动作处理相关的系统 ##################################################################
@@ -125,12 +125,12 @@ class TCGGameProcessPipeline(Processors):
         # from tcg_game_systems.pre_dungeon_state_system import PreDungeonStateSystem
         # from tcg_game_systems.post_dungeon_state_system import PostDungeonStateSystem
         from tcg_game_systems.turn_action_system import TurnActionSystem
-        from tcg_game_systems.stage_director_action_system import (
-            StageDirectorActionSystem,
+        from tcg_game_systems.director_action_system import (
+            DirectorActionSystem,
         )
         from tcg_game_systems.feedback_action_system import FeedbackActionSystem
-        from tcg_game_systems.dungeon_combat_kick_off_system import (
-            DungeonCombatKickOffSystem,
+        from tcg_game_systems.combat_kick_off_system import (
+            CombatKickOffSystem,
         )
 
         # from tcg_game_systems.terminal_player_interrupt_wait_system import (
@@ -139,16 +139,16 @@ class TCGGameProcessPipeline(Processors):
         # from tcg_game_systems.dungeon_combat_round_system import (
         #     DungeonCombatRoundSystem,
         # )
-        from tcg_game_systems.dungeon_combat_complete_system import (
-            DungeonCombatCompleteSystem,
+        from tcg_game_systems.combat_complete_system import (
+            CombatCompleteSystem,
         )
 
-        from tcg_game_systems.dungeon_combat_resolution_system import (
-            DungeonCombatResolutionSystem,
+        from tcg_game_systems.combat_resolution_system import (
+            CombatResolutionSystem,
         )
 
-        from tcg_game_systems.dungeon_stage_planning_system import (
-            DungeonStagePlanningSystem,
+        from tcg_game_systems.dungeon_stage_system import (
+            DungeonStageSystem,
         )
 
         ##
@@ -170,10 +170,10 @@ class TCGGameProcessPipeline(Processors):
         # processors.add(DungeonCombatRoundSystem(tcg_game))  # 开局系统。
         processors.add(PreActionSystem(tcg_game))
         processors.add(TurnActionSystem(tcg_game))
-        processors.add(StageDirectorActionSystem(tcg_game))
+        processors.add(DirectorActionSystem(tcg_game))
         processors.add(FeedbackActionSystem(tcg_game))
         processors.add(
-            DungeonCombatResolutionSystem(tcg_game)
+            CombatResolutionSystem(tcg_game)
         )  # 最终将过程合成。因为中间会有很多request，防止断掉。
         processors.add(PostActionSystem(tcg_game))
         ###### 动作结束！！！！！################################################################################################
@@ -182,7 +182,7 @@ class TCGGameProcessPipeline(Processors):
         processors.add(DeathSystem(tcg_game))
 
         # 检查地下城是否结束？
-        processors.add(DungeonCombatCompleteSystem(tcg_game))
+        processors.add(CombatCompleteSystem(tcg_game))
 
         # 核心系统，检查需要删除的实体。
         processors.add(DestroyEntitySystem(tcg_game))
@@ -191,10 +191,10 @@ class TCGGameProcessPipeline(Processors):
         processors.add(SaveSystem(tcg_game))
 
         # 场景先规划，可能会有一些变化。
-        processors.add(DungeonStagePlanningSystem(tcg_game))
+        processors.add(DungeonStageSystem(tcg_game))
 
         # 战斗触发！！
-        processors.add(DungeonCombatKickOffSystem(tcg_game))
+        processors.add(CombatKickOffSystem(tcg_game))
 
         # 结束
         processors.add(EndSystem(tcg_game))

@@ -4,7 +4,7 @@ from game.tcg_game import TCGGame
 
 
 @final
-class HomePostPlanningSystem(ExecuteProcessor):
+class HomePostSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context

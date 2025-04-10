@@ -6,7 +6,7 @@ from overrides import override
 from typing import List, Optional, Set, final
 from loguru import logger
 from models_v_0_0_1 import (
-    StageDirectorAction,
+    DirectorAction,
     PlayCardAction,
     TurnAction,
     Skill,
@@ -128,9 +128,9 @@ class TurnActionSystem(BaseActionReactiveSystem):
             # 给场景添加！！！
             stage_entity = self._game.safe_get_stage_entity(entity2)
             assert stage_entity is not None
-            if not stage_entity.has(StageDirectorAction):
+            if not stage_entity.has(DirectorAction):
                 stage_entity.replace(
-                    StageDirectorAction,
+                    DirectorAction,
                     stage_entity._name,
                     "",
                     "",

@@ -7,8 +7,8 @@ from models_v_0_0_1 import (
 from loguru import logger
 from game.web_tcg_game import WebTCGGame
 from game.tcg_game import TCGGameState
-from tcg_game_systems.draw_cards_system import DrawCardsSystem
-from tcg_game_systems.dungeon_combat_round_system import DungeonCombatRoundSystem
+from tcg_game_systems.combat_draw_cards_system import CombatDrawCardsSystem
+from tcg_game_systems.combat_round_system import CombatRoundSystem
 
 ###################################################################################################################################################################
 dungeon_gameplay_router = APIRouter()
@@ -122,7 +122,7 @@ async def dungeon_run(
                 )
 
             # 抽牌。
-            draw_card_utils = DrawCardsSystem(
+            draw_card_utils = CombatDrawCardsSystem(
                 current_room._game,
             )
             # 抓牌
@@ -147,7 +147,7 @@ async def dungeon_run(
                 )
 
             # 获得当前最新的回合数据。
-            combat_round_utils = DungeonCombatRoundSystem(
+            combat_round_utils = CombatRoundSystem(
                 current_room._game,
                 # current_room._game.retrieve_actors_on_stage(player_stage_entity),
             )

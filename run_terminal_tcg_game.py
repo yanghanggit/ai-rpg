@@ -10,10 +10,10 @@ from game.tcg_game_demo import (
     create_then_write_demo_world,
     create_demo_dungeon_system,
 )
-from tcg_game_systems.draw_cards_system import DrawCardsSystem
-from tcg_game_systems.monitor_system import MonitorSystem
+from tcg_game_systems.combat_draw_cards_system import CombatDrawCardsSystem
+from tcg_game_systems.combat_monitor_system import CombatMonitorSystem
 from game.user_session_options import UserSessionOptions
-from tcg_game_systems.dungeon_combat_round_system import DungeonCombatRoundSystem
+from tcg_game_systems.combat_round_system import CombatRoundSystem
 
 
 ###############################################################################################################################################
@@ -220,7 +220,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
-        draw_card_utils = DrawCardsSystem(
+        draw_card_utils = CombatDrawCardsSystem(
             terminal_game,
         )
         await draw_card_utils.a_execute1()
@@ -237,7 +237,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             return
 
         # logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
-        combat_round_utils = DungeonCombatRoundSystem(
+        combat_round_utils = CombatRoundSystem(
             terminal_game,
             # terminal_game.retrieve_actors_on_stage(player_stage_entity),
         )
@@ -274,7 +274,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备监控")
-        monitor_utils = MonitorSystem(
+        monitor_utils = CombatMonitorSystem(
             terminal_game,
             # set({player_stage_entity}),
             # terminal_game.retrieve_actors_on_stage(player_stage_entity),

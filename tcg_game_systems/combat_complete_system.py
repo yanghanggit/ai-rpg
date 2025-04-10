@@ -15,7 +15,7 @@ from llm_serves.chat_request_handler import ChatRequestHandler
 
 #######################################################################################################################################
 @final
-class DungeonCombatCompleteSystem(ExecuteProcessor):
+class CombatCompleteSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context

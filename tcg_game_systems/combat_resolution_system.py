@@ -5,7 +5,7 @@ from typing import List, Set, Tuple, final
 from game.tcg_game import TCGGame
 from models_v_0_0_1 import (
     TurnAction,
-    StageDirectorAction,
+    DirectorAction,
     PlayCardAction,
     FeedbackAction,
     HandComponent,
@@ -18,7 +18,7 @@ from models_v_0_0_1 import (
 
 #######################################################################################################################################
 @final
-class DungeonCombatResolutionSystem(ExecuteProcessor):
+class CombatResolutionSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
@@ -94,11 +94,11 @@ class DungeonCombatResolutionSystem(ExecuteProcessor):
         assert len(available_skill_entities) == len(actors_on_stage)
 
         # 场景的也需要做检查！！！
-        if not stage_entity.has(StageDirectorAction):
+        if not stage_entity.has(DirectorAction):
             logger.error(f"{stage_entity._name} 没有进行战斗演出，应该是出错了。")
             return
 
-        stage_director_action = stage_entity.get(StageDirectorAction)
+        stage_director_action = stage_entity.get(DirectorAction)
         assert stage_director_action is not None
         if (
             stage_director_action.calculation == ""

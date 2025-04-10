@@ -6,7 +6,7 @@ from models_v_0_0_1 import BaseAttributesComponent, Round, StageEnvironmentCompo
 
 
 @final
-class DungeonCombatRoundSystem(ExecuteProcessor):
+class CombatRoundSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context

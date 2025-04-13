@@ -1,6 +1,6 @@
 from typing import Any, Dict, Final, NamedTuple, List, final
 from .dungeon import Skill, StatusEffect
-from .objects import BaseAttributes
+from .objects import BaseAttributes, RPGCharacterProfile
 from .registry import register_component_class
 
 
@@ -248,3 +248,34 @@ class CombatRoleComponent(NamedTuple):
             component_data["status_effects"] = [
                 StatusEffect(**effect) for effect in component_data["status_effects"]
             ]
+
+
+############################################################################################################
+############################################################################################################
+############################################################################################################
+# 新版本的重构！
+@final
+@register_component_class
+class RPGCharacterProfileComponent(NamedTuple):
+    name: str
+    rpg_character_profile: RPGCharacterProfile
+    status_effects: List[StatusEffect]
+
+    @staticmethod
+    def __deserialize_component__(component_data: Dict[str, Any]) -> None:
+        assert "rpg_character_profile" in component_data
+        if "rpg_character_profile" in component_data:
+            component_data["rpg_character_profile"] = RPGCharacterProfile(
+                **component_data["rpg_character_profile"]
+            )
+
+        assert "status_effects" in component_data
+        if "status_effects" in component_data:
+            component_data["status_effects"] = [
+                StatusEffect(**effect) for effect in component_data["status_effects"]
+            ]
+
+
+############################################################################################################
+############################################################################################################
+############################################################################################################

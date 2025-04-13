@@ -1,11 +1,12 @@
+from loguru import logger
 from models_v_0_0_1 import (
     Actor,
     Stage,
     WorldSystem,
-    # BaseAttributes,
     ActorPrototype,
     StagePrototype,
     RPGCharacterProfile,
+    generate_character_profile_string,
 )
 from typing import List, Final
 
@@ -146,6 +147,10 @@ def create_actor(
     actor_profile=actor_profile,
     appearance=appearance,
 )}"""
+
+    logger.debug(
+        f"Actor {ret.name}, rpg_character_profile:\n{generate_character_profile_string(ret.rpg_character_profile)}"
+    )
 
     return ret
 

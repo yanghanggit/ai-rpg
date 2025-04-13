@@ -4,7 +4,6 @@ from models_v_0_0_1 import (
     Boot,
     ActorType,
     StageType,
-    # BaseAttributes,
     Dungeon,
     RPGCharacterProfile,
 )
@@ -36,7 +35,7 @@ actor_warrior = create_actor(
     name="角色.战士.卡恩",
     prototype_name="warrior",
     kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）并告诉我你的战斗角色职能。回答简短(<100字)。""",
-    rpg_character_profile=RPGCharacterProfile(),  # BaseAttributes(strength=15 * 10, dexterity=9, wisdom=6),
+    rpg_character_profile=RPGCharacterProfile(base_max_hp=1000),
     type=ActorType.HERO,
     epoch_script=EPOCH_SCRIPT,
     actor_profile="你自幼出生在边境的小村庄，因多年与游荡的魔物作战而学会了实用的战斗技巧。你性格坚毅，却内心善良，为了保护家乡而加入王国军队。战乱平息后，你选择继续游历大陆，锻炼自身武技，同时寻找能为弱小者提供帮助的机会。",
@@ -50,7 +49,7 @@ actor_wizard = create_actor(
     name="角色.法师.奥露娜",
     prototype_name="wizard",
     kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）并告诉我你的战斗角色职能。回答简短(<100字)。""",
-    rpg_character_profile=RPGCharacterProfile(),  # BaseAttributes(strength=4 * 10, dexterity=7, wisdom=18),
+    rpg_character_profile=RPGCharacterProfile(base_max_hp=1000),
     type=ActorType.HERO,
     epoch_script=EPOCH_SCRIPT,
     actor_profile="你是精灵王国里少数天赋异禀的年轻法师之一。你自小展现出对元素魔法的惊人理解力，却也因此时常被视为“古怪”的存在。对魔法知识的渴求，让你离开了精灵之森，开始独自游历。你除了想提升自己的法术造诣，也希望用力量维护世界平衡。",
@@ -59,11 +58,12 @@ actor_wizard = create_actor(
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
+# 故意后出手
 actor_goblin = create_actor(
     name="角色.怪物.哥布林-拉格",
     prototype_name="goblin",
     kick_off_message="",
-    rpg_character_profile=RPGCharacterProfile(),  # BaseAttributes(strength=5, dexterity=12, wisdom=5),
+    rpg_character_profile=RPGCharacterProfile(base_dexterity=1),
     type=ActorType.MONSTER,
     epoch_script=EPOCH_SCRIPT,
     actor_profile="你是哥布林部落中狡黠而略有头脑的成员。与多数哥布林不同，你会主动与其他种族进行小规模交易，偶尔利用自己的狡诈为换取食物或装备做一些情报交换。这让你在部落内部既受嫉妒又被依赖。你心中对更强大的怪物势力既畏惧又渴望效忠，因此常常成为阴谋势力的耳目或先锋。",
@@ -72,11 +72,12 @@ actor_goblin = create_actor(
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
+# 故意后出手
 actor_orcs = create_actor(
     name="角色.怪物.兽人-库洛斯",
     prototype_name="orc",
     kick_off_message="",
-    rpg_character_profile=RPGCharacterProfile(),  # BaseAttributes(strength=18, dexterity=6, wisdom=4),
+    rpg_character_profile=RPGCharacterProfile(base_dexterity=1),
     type=ActorType.MONSTER,
     epoch_script=EPOCH_SCRIPT,
     actor_profile="""你是兽人部族中的一员，出生于荒野之地。你从小就展现出强大的战斗力，长大后夺取了自己的小型战团，带领部下四处征战与掠夺。在追求力量与战利品的道路上，你逐渐形成了狂热的好战性格，但也懂得利用最基本的谋略来维持在族群中的统治地位。""",

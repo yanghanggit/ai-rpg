@@ -11,7 +11,7 @@ from models_v_0_0_1 import (
     PlayCardAction,
     Skill,
     ActorComponent,
-    CombatRoleComponent,
+    RPGCharacterProfileComponent,
     DungeonComponent,
     StageComponent,
 )
@@ -57,7 +57,7 @@ class ActionPromptParameters(NamedTuple):
     actor: str
     targets: List[str]
     skill: Skill
-    combat_role_component: CombatRoleComponent
+    rpg_character_profile_component: RPGCharacterProfileComponent
     dialogue: str
 
 
@@ -76,9 +76,9 @@ def _generate_prompt(prompt_params: List[ActionPromptParameters]) -> str:
 技能效果: {param.skill.effect}
 角色演出时说的话: {param.dialogue}
 属性: 
-{param.combat_role_component.attrs_prompt}
+{param.rpg_character_profile_component.attrs_prompt}
 角色状态: 
-{param.combat_role_component.status_effects_prompt}"""
+{param.rpg_character_profile_component.status_effects_prompt}"""
 
         details_prompt.append(detail)
 
@@ -162,7 +162,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         for entity in react_entities:
 
             assert entity.has(ActorComponent)
-            assert entity.has(CombatRoleComponent)
+            assert entity.has(RPGCharacterProfileComponent)
             assert entity.has(PlayCardAction)
 
             select_action = entity.get(PlayCardAction)
@@ -173,7 +173,9 @@ class DirectorActionSystem(BaseActionReactiveSystem):
                     actor=entity._name,
                     targets=select_action.targets,
                     skill=select_action.skill,
-                    combat_role_component=entity.get(CombatRoleComponent),
+                    rpg_character_profile_component=entity.get(
+                        RPGCharacterProfileComponent
+                    ),
                     dialogue=select_action.interaction,
                 )
             )

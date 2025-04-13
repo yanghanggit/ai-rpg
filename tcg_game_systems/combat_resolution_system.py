@@ -9,7 +9,7 @@ from models_v_0_0_1 import (
     PlayCardAction,
     FeedbackAction,
     HandComponent,
-    CombatRoleComponent,
+    RPGCharacterProfileComponent,
     StatusEffect,
     Round,
     AgentEvent,
@@ -229,11 +229,11 @@ class CombatResolutionSystem(ExecuteProcessor):
     ) -> Tuple[List[StatusEffect], List[StatusEffect]]:
 
         # 效果更新
-        assert entity.has(CombatRoleComponent)
-        combat_role_comp = entity.get(CombatRoleComponent)
-        assert combat_role_comp is not None
+        assert entity.has(RPGCharacterProfileComponent)
+        character_profile_component = entity.get(RPGCharacterProfileComponent)
+        assert character_profile_component is not None
 
-        current_effects = combat_role_comp.status_effects.copy()
+        current_effects = character_profile_component.status_effects.copy()
         remaining_effects = []
         removed_effects = []
         for i, e in enumerate(current_effects):
@@ -246,9 +246,9 @@ class CombatResolutionSystem(ExecuteProcessor):
                 removed_effects.append(current_effects[i])
 
         entity.replace(
-            CombatRoleComponent,
-            combat_role_comp.name,
-            combat_role_comp.base_attributes,
+            RPGCharacterProfileComponent,
+            character_profile_component.name,
+            character_profile_component.rpg_character_profile,
             removed_effects,
         )
 
@@ -262,9 +262,9 @@ class CombatResolutionSystem(ExecuteProcessor):
         update_max_hp: float,
     ) -> None:
 
-        combat_role_comp = entity.get(CombatRoleComponent)
-        assert combat_role_comp is not None
-        combat_role_comp.base_attributes.hp = int(update_hp)
+        character_profile_component = entity.get(RPGCharacterProfileComponent)
+        assert character_profile_component is not None
+        character_profile_component.rpg_character_profile.hp = int(update_hp)
 
     ###############################################################################################################################################
     # 删除手牌组件

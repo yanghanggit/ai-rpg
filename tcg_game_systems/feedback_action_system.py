@@ -6,7 +6,7 @@ from typing import List, final
 from loguru import logger
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 import format_string.json_format
-from models_v_0_0_1 import CombatRoleComponent, StatusEffect, FeedbackAction
+from models_v_0_0_1 import RPGCharacterProfileComponent, StatusEffect, FeedbackAction
 
 
 #######################################################################################################################################
@@ -20,14 +20,14 @@ class FeedbackResponse(BaseModel):
 
 #######################################################################################################################################
 def _generate_prompt(
-    combat_attributes_component: CombatRoleComponent,
+    rpg_character_profile_component: RPGCharacterProfileComponent,
     feedback_component: FeedbackAction,
 ) -> str:
 
     response_example = FeedbackResponse(
         description="第一人称状态描述（<200字）",
-        update_hp=combat_attributes_component.hp,
-        update_max_hp=combat_attributes_component.max_hp,
+        update_hp=rpg_character_profile_component.rpg_character_profile.hp,
+        update_max_hp=rpg_character_profile_component.rpg_character_profile.max_hp,
         status_effects=[
             StatusEffect(name="效果1的名字", description="效果1的描述", rounds=1),
             StatusEffect(name="效果2的名字", description="效果2的描述", rounds=2),
@@ -160,13 +160,14 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
 
         for entity in actor_entities:
 
-            feedback_action2 = entity.get(FeedbackAction)
+            feedback_action = entity.get(FeedbackAction)
+            assert feedback_action is not None
 
-            combat_attributes_component = entity.get(CombatRoleComponent)
-            assert combat_attributes_component is not None
+            rpg_character_profile_component = entity.get(RPGCharacterProfileComponent)
+            assert rpg_character_profile_component is not None
 
             # 生成消息
-            message = _generate_prompt(combat_attributes_component, feedback_action2)
+            message = _generate_prompt(rpg_character_profile_component, feedback_action)
             # 生成请求处理器
             request_handlers.append(
                 ChatRequestHandler(

@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Set, final, override
 from game.tcg_game import TCGGame
 from models_v_0_0_1 import (
     StageEnvironmentComponent,
-    CombatRoleComponent,
+    RPGCharacterProfileComponent,
     StatusEffect,
     CombatKickOffEvent,
 )
@@ -25,7 +25,7 @@ def _generate_prompt(
     stage_name: str,
     stage_narrate: str,
     actors_apperances_mapping: Dict[str, str],
-    temp_combat_attr_component: CombatRoleComponent,
+    rpg_character_profile_component: RPGCharacterProfileComponent,
 ) -> str:
 
     actors_appearances_info = []
@@ -49,7 +49,7 @@ def _generate_prompt(
 ## （场景内）角色信息
 {"\n".join(actors_appearances_info)}
 ## 你的属性（仅在战斗中使用）
-{temp_combat_attr_component.attrs_prompt}
+{rpg_character_profile_component.attrs_prompt}
 ## 输出内容
 1. 状态感受：单段紧凑自述（禁用换行/空行/数字）
 2. 在你身上的持续效果：生成效果列表，包含效果名、效果描述、持续回合数。
@@ -85,7 +85,7 @@ class CombatKickOffSystem(ExecuteProcessor):
             return  # 人不够就返回。
 
         # step3: 重置战斗属性! 这个是必须的！
-        self._reset_combat_attributes(actor_entities)
+        # self._reset_combat_attributes(actor_entities)
 
         # step4: 处理角色规划请求
         request_handlers: List[ChatRequestHandler] = self._generate_requests(
@@ -132,7 +132,7 @@ class CombatKickOffSystem(ExecuteProcessor):
     ###################################################################################################################################################################
     def _reset_combat_attributes(self, actor_entities: Set[Entity]) -> None:
         for actor_entity in actor_entities:
-            self._game.setup_combat_attributes(actor_entity)
+            self._game.initialize_combat_components(actor_entity)
 
     ###################################################################################################################################################################
     def _generate_requests(
@@ -143,7 +143,7 @@ class CombatKickOffSystem(ExecuteProcessor):
 
         for actor_entity in actor_entities:
 
-            assert actor_entity.has(CombatRoleComponent)
+            assert actor_entity.has(RPGCharacterProfileComponent)
 
             current_stage = self._game.safe_get_stage_entity(actor_entity)
             assert current_stage is not None
@@ -159,7 +159,7 @@ class CombatKickOffSystem(ExecuteProcessor):
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
                 actors_apperances_mapping,
-                actor_entity.get(CombatRoleComponent),
+                actor_entity.get(RPGCharacterProfileComponent),
             )
 
             # 生成请求处理器

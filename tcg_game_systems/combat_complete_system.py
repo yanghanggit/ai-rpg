@@ -6,7 +6,7 @@ from game.tcg_game import TCGGame
 from models_v_0_0_1 import (
     ActorComponent,
     HeroComponent,
-    CombatRoleComponent,
+    RPGCharacterProfileComponent,
     CombatResult,
     CombatCompleteEvent,
 )
@@ -51,7 +51,7 @@ class CombatCompleteSystem(ExecuteProcessor):
         # 获取所有需要进行角色规划的角色
         actor_entities = self._game.get_group(
             Matcher(
-                all_of=[ActorComponent, HeroComponent, CombatRoleComponent],
+                all_of=[ActorComponent, HeroComponent, RPGCharacterProfileComponent],
             )
         ).entities
 
@@ -132,7 +132,7 @@ class CombatCompleteSystem(ExecuteProcessor):
         assert (
             entity.has(ActorComponent)
             and entity.has(HeroComponent)
-            and entity.has(CombatRoleComponent)
+            and entity.has(RPGCharacterProfileComponent)
         )
 
         # 先获取最近的战斗消息。

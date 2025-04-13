@@ -15,11 +15,11 @@ from models_v_0_0_1 import (
     Dungeon,
     Engagement,
     WorldSystem,
+    RPGCharacterProfile,
     Actor,
     Stage,
     ActorType,
     StageType,
-    BaseAttributes,
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
@@ -32,8 +32,7 @@ from models_v_0_0_1 import (
     DungeonComponent,
     HeroComponent,
     MonsterComponent,
-    CombatRoleComponent,
-    BaseAttributesComponent,
+    RPGCharacterProfileComponent,
     AgentEvent,
     TurnAction,
     HandComponent,
@@ -406,14 +405,17 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 必要组件：基础属性，这里用浅拷贝，不能动原有的。
             actor_entity.add(
-                BaseAttributesComponent,
+                RPGCharacterProfileComponent,
                 instance.name,
-                copy.copy(instance.base_attributes),
+                copy.copy(instance.rpg_character_profile),
+                [],
             )
 
             # 测试类型。
-            base_attributes_comp = actor_entity.get(BaseAttributesComponent)
-            assert isinstance(base_attributes_comp.base_attributes, BaseAttributes)
+            character_profile_component = actor_entity.get(RPGCharacterProfileComponent)
+            assert isinstance(
+                character_profile_component.rpg_character_profile, RPGCharacterProfile
+            )
 
             # 必要组件：类型标记
             match instance.prototype.type:
@@ -699,17 +701,19 @@ class TCGGame(BaseGame, TCGGameContext):
         return ConversationError.VALID
 
     ###############################################################################################################################################
-    def setup_combat_attributes(self, actor_entity: Entity) -> None:
+    def initialize_combat_components(self, actor_entity: Entity) -> None:
         assert actor_entity.has(ActorComponent)
-        assert actor_entity.has(BaseAttributesComponent)
+        assert actor_entity.has(RPGCharacterProfileComponent)
 
-        base_attributes_comp = actor_entity.get(BaseAttributesComponent)
-        assert isinstance(base_attributes_comp.base_attributes, BaseAttributes)
+        rpg_character_profile_comp = actor_entity.get(RPGCharacterProfileComponent)
+        assert isinstance(
+            rpg_character_profile_comp.rpg_character_profile, RPGCharacterProfile
+        )
 
         actor_entity.replace(
-            CombatRoleComponent,
+            RPGCharacterProfileComponent,
             actor_entity._name,
-            copy.copy(base_attributes_comp.base_attributes),
+            copy.copy(rpg_character_profile_comp.rpg_character_profile),
             [],
         )
 
@@ -719,10 +723,10 @@ class TCGGame(BaseGame, TCGGameContext):
     ) -> None:
 
         # 效果更新
-        assert entity.has(CombatRoleComponent)
-        combat_role_comp = entity.get(CombatRoleComponent)
+        assert entity.has(RPGCharacterProfileComponent)
+        character_profile_component = entity.get(RPGCharacterProfileComponent)
 
-        current_effects = combat_role_comp.status_effects
+        current_effects = character_profile_component.status_effects
         for new_effect in status_effects:
             for i, e in enumerate(current_effects):
                 if e.name == new_effect.name:
@@ -734,9 +738,9 @@ class TCGGame(BaseGame, TCGGameContext):
                 current_effects.append(new_effect)
 
         entity.replace(
-            CombatRoleComponent,
-            combat_role_comp.name,
-            combat_role_comp.base_attributes,
+            RPGCharacterProfileComponent,
+            character_profile_component.name,
+            character_profile_component.rpg_character_profile,
             current_effects,
         )
 

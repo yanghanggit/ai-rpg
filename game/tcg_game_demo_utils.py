@@ -2,9 +2,10 @@ from models_v_0_0_1 import (
     Actor,
     Stage,
     WorldSystem,
-    BaseAttributes,
+    # BaseAttributes,
     ActorPrototype,
     StagePrototype,
+    RPGCharacterProfile,
 )
 from typing import List, Final
 
@@ -110,7 +111,7 @@ def create_actor(
     name: str,
     prototype_name: str,
     kick_off_message: str,
-    attributes: BaseAttributes,
+    rpg_character_profile: RPGCharacterProfile,
     type: str,
     epoch_script: str,
     actor_profile: str,
@@ -129,13 +130,13 @@ def create_actor(
         prototype=prototype,
         system_message="",
         kick_off_message=kick_off_message,
-        base_attributes=attributes,
+        rpg_character_profile=rpg_character_profile,
     )
 
     # 血量加满!!!!
-    assert attributes.max_hp > 0, "Max HP must be greater than 0."
-    assert ret.base_attributes.hp == 0, "HP must be 0."
-    ret.base_attributes.hp = attributes.max_hp
+    assert rpg_character_profile.max_hp > 0, "Max HP must be greater than 0."
+    assert ret.rpg_character_profile.hp == 0, "HP must be 0."
+    ret.rpg_character_profile.hp = rpg_character_profile.max_hp
 
     # 初次编译system_message!!!!
     ret.system_message = f"""# {ret.name}

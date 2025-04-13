@@ -2,7 +2,11 @@ from entitas import ExecuteProcessor, Entity  # type: ignore
 from typing import List, final, Tuple, override
 from game.tcg_game import TCGGame
 import random
-from models_v_0_0_1 import BaseAttributesComponent, Round, StageEnvironmentComponent
+from models_v_0_0_1 import (
+    Round,
+    StageEnvironmentComponent,
+    RPGCharacterProfileComponent,
+)
 
 
 @final
@@ -61,10 +65,13 @@ class CombatRoundSystem(ExecuteProcessor):
         actor_dexterity_pairs: List[Tuple[Entity, int]] = []
         for entity in react_entities:
 
-            assert entity.has(BaseAttributesComponent)
-            base_attributes_comp = entity.get(BaseAttributesComponent)
+            assert entity.has(RPGCharacterProfileComponent)
+            rpg_character_profile_component = entity.get(RPGCharacterProfileComponent)
             actor_dexterity_pairs.append(
-                (entity, base_attributes_comp.base_attributes.dexterity)
+                (
+                    entity,
+                    rpg_character_profile_component.rpg_character_profile.dexterity,
+                )
             )
 
         return [

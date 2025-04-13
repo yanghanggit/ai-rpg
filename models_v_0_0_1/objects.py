@@ -32,39 +32,40 @@ class StageType(StrEnum):
 # Accuracy          = 5  + (2  × DEX)
 # Evasion           = 5  + (1  × DEX)
 ###############################################################################################################################################
-@final
-@register_base_model_class
-class BaseAttributes(BaseModel):
-    hp: int = 0
-    strength: int
-    dexterity: int
-    wisdom: int
+# @final
+# @register_base_model_class
+# class BaseAttributes(BaseModel):
+#     hp: int = 0
+#     strength: int
+#     dexterity: int
+#     wisdom: int
 
-    @property
-    def max_hp(self) -> int:
-        return 50 + (10 * self.strength)
+#     @property
+#     def max_hp(self) -> int:
+#         return 50 + (10 * self.strength)
 
-    @property
-    def physical_attack(self) -> int:
-        return 5 + (2 * self.strength)
+#     @property
+#     def physical_attack(self) -> int:
+#         return 5 + (2 * self.strength)
 
-    @property
-    def physical_defense(self) -> int:
-        return 5 + (1 * self.strength)
+#     @property
+#     def physical_defense(self) -> int:
+#         return 5 + (1 * self.strength)
 
-    @property
-    def magic_attack(self) -> int:
-        return 5 + (2 * self.wisdom)
+#     @property
+#     def magic_attack(self) -> int:
+#         return 5 + (2 * self.wisdom)
 
-    @property
-    def magic_defense(self) -> int:
-        return 5 + (1 * self.wisdom)
+#     @property
+#     def magic_defense(self) -> int:
+#         return 5 + (1 * self.wisdom)
 
 
 ###############################################################################################################################################
 @final
 @register_base_model_class
 class RPGCharacterProfile(BaseModel):
+    # rpg_character_profile
     experience: int = 0
     fixed_level: int = 1
     hp: int = 0
@@ -135,7 +136,8 @@ class Actor(BaseModel):
     prototype: ActorPrototype
     system_message: str
     kick_off_message: str
-    base_attributes: BaseAttributes
+    # base_attributes: BaseAttributes
+    rpg_character_profile: RPGCharacterProfile
 
 
 ###############################################################################################################################################

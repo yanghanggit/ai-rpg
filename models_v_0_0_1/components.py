@@ -1,6 +1,6 @@
 from typing import Any, Dict, Final, NamedTuple, List, final
 from .dungeon import Skill, StatusEffect
-from .objects import BaseAttributes, RPGCharacterProfile
+from .objects import RPGCharacterProfile
 from .registry import register_component_class
 
 
@@ -163,94 +163,6 @@ class DeathComponent(NamedTuple):
 
 
 ############################################################################################################
-# 核心属性组件
-@final
-@register_component_class
-class BaseAttributesComponent(NamedTuple):
-
-    name: str
-    base_attributes: BaseAttributes
-
-    # 有读取的组件需要这个。
-    @staticmethod
-    def __deserialize_component__(component_data: Dict[str, Any]) -> None:
-        key: Final[str] = "base_attributes"
-        assert key in component_data
-        if key in component_data:
-            component_data[key] = BaseAttributes(**component_data[key])
-
-
-############################################################################################################
-# 战斗中临时使用。
-@final
-@register_component_class
-class CombatRoleComponent(NamedTuple):
-    name: str
-    base_attributes: BaseAttributes
-    status_effects: List[StatusEffect]
-
-    @property
-    def hp(self) -> int:
-        return self.base_attributes.hp
-
-    @property
-    def max_hp(self) -> int:
-        return self.base_attributes.max_hp
-
-    @property
-    def physical_attack(self) -> int:
-        return self.base_attributes.physical_attack
-
-    @property
-    def physical_defense(self) -> int:
-        return self.base_attributes.physical_defense
-
-    @property
-    def magic_attack(self) -> int:
-        return self.base_attributes.magic_attack
-
-    @property
-    def magic_defense(self) -> int:
-        return self.base_attributes.magic_defense
-
-    @property
-    def attrs_prompt(self) -> str:
-        return f"""- 当前生命：{self.hp}
-- 最大生命：{self.max_hp}
-- 物理攻击：{self.physical_attack}
-- 物理防御：{self.physical_defense}
-- 魔法攻击：{self.magic_attack}
-- 魔法防御：{self.magic_defense}"""
-
-    @property
-    def status_effects_prompt(self) -> str:
-        ret = "- 无"
-        if len(self.status_effects) > 0:
-            ret = "\n".join(
-                [
-                    f"- {effect.name}: {effect.description} (剩余{effect.rounds}回合)"
-                    for effect in self.status_effects
-                ]
-            )
-        return ret
-
-    @staticmethod
-    def __deserialize_component__(component_data: Dict[str, Any]) -> None:
-
-        assert "base_attributes" in component_data
-        if "base_attributes" in component_data:
-            component_data["base_attributes"] = BaseAttributes(
-                **component_data["base_attributes"]
-            )
-
-        assert "status_effects" in component_data
-        if "status_effects" in component_data:
-            component_data["status_effects"] = [
-                StatusEffect(**effect) for effect in component_data["status_effects"]
-            ]
-
-
-############################################################################################################
 ############################################################################################################
 ############################################################################################################
 # 新版本的重构！
@@ -274,6 +186,27 @@ class RPGCharacterProfileComponent(NamedTuple):
             component_data["status_effects"] = [
                 StatusEffect(**effect) for effect in component_data["status_effects"]
             ]
+
+    @property
+    def attrs_prompt(self) -> str:
+        return f"""- 当前生命：{self.rpg_character_profile.hp}
+- 最大生命：{self.rpg_character_profile.max_hp}
+- 物理攻击：{self.rpg_character_profile.physical_attack}
+- 物理防御：{self.rpg_character_profile.physical_defense}
+- 魔法攻击：{self.rpg_character_profile.magic_attack}
+- 魔法防御：{self.rpg_character_profile.magic_defense}"""
+
+    @property
+    def status_effects_prompt(self) -> str:
+        ret = "- 无"
+        if len(self.status_effects) > 0:
+            ret = "\n".join(
+                [
+                    f"- {effect.name}: {effect.description} (剩余{effect.rounds}回合)"
+                    for effect in self.status_effects
+                ]
+            )
+        return ret
 
 
 ############################################################################################################

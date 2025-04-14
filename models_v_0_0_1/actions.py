@@ -65,7 +65,7 @@ class PlayCardsAction(NamedTuple):
     name: str
     targets: List[str]
     skill: Skill
-    interaction: str
+    dialogue: str
     reason: str
 
 

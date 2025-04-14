@@ -135,7 +135,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         assert stage_entity.has(StageComponent)
         assert stage_entity.has(DungeonComponent)
 
-        turn_then_select_actors = self._game.get_group(
+        turn_then_play_cards_actors = self._game.get_group(
             Matcher(
                 all_of=[
                     TurnAction,
@@ -144,11 +144,11 @@ class DirectorActionSystem(BaseActionReactiveSystem):
             )
         ).entities
 
-        if len(turn_then_select_actors) == 0:
+        if len(turn_then_play_cards_actors) == 0:
             return
 
         sort_actors = sorted(
-            turn_then_select_actors, key=lambda entity: entity.get(TurnAction).turn
+            turn_then_play_cards_actors, key=lambda entity: entity.get(TurnAction).turn
         )
 
         await self._process_request(stage_entity, sort_actors)
@@ -165,18 +165,18 @@ class DirectorActionSystem(BaseActionReactiveSystem):
             assert entity.has(RPGCharacterProfileComponent)
             assert entity.has(PlayCardsAction)
 
-            select_action = entity.get(PlayCardsAction)
-            assert select_action.skill.name != ""
+            play_cards_action = entity.get(PlayCardsAction)
+            assert play_cards_action.skill.name != ""
 
             ret.append(
                 ActionPromptParameters(
                     actor=entity._name,
-                    targets=select_action.targets,
-                    skill=select_action.skill,
+                    targets=play_cards_action.targets,
+                    skill=play_cards_action.skill,
                     rpg_character_profile_component=entity.get(
                         RPGCharacterProfileComponent
                     ),
-                    dialogue=select_action.interaction,
+                    dialogue=play_cards_action.dialogue,
                 )
             )
 

@@ -64,7 +64,7 @@ class CombatResolutionSystem(ExecuteProcessor):
         ).entities
 
         # 出手的角色
-        select_then_feedback_action_actors = self._game.get_group(
+        play_cards_then_feedback_action_actors = self._game.get_group(
             Matcher(
                 all_of=[
                     PlayCardsAction,
@@ -77,7 +77,7 @@ class CombatResolutionSystem(ExecuteProcessor):
             logger.info(f"没有角色出手。什么都没有发生。")
             return
 
-        if len(select_then_feedback_action_actors) != len(turn_action_actors):
+        if len(play_cards_then_feedback_action_actors) != len(turn_action_actors):
             logger.error(
                 f"出手的角色数量和选择技能的角色数量不一致。可能是request有问题。"
             )
@@ -90,7 +90,7 @@ class CombatResolutionSystem(ExecuteProcessor):
             )
             return
 
-        assert len(select_then_feedback_action_actors) == len(actors_on_stage)
+        assert len(play_cards_then_feedback_action_actors) == len(actors_on_stage)
         assert len(available_skill_entities) == len(actors_on_stage)
 
         # 场景的也需要做检查！！！
@@ -122,7 +122,9 @@ class CombatResolutionSystem(ExecuteProcessor):
         self._process_turn_action(turn_action_actors, last_round)
 
         # 第二步，添加决定使用什么技能 ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
-        self._process_select_action(select_then_feedback_action_actors, last_round)
+        self._process_play_cards_action(
+            play_cards_then_feedback_action_actors, last_round
+        )
 
         # 第三步，场景广播 ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
         self._game.broadcast_event(
@@ -136,7 +138,9 @@ class CombatResolutionSystem(ExecuteProcessor):
         last_round.stage_director_performance = stage_director_action.performance
 
         # 第四步，处理技能效果
-        self._process_feedback_action(select_then_feedback_action_actors, last_round)
+        self._process_feedback_action(
+            play_cards_then_feedback_action_actors, last_round
+        )
 
     #######################################################################################################################################
     def _process_turn_action(self, actor_entities: Set[Entity], round: Round) -> None:
@@ -151,18 +155,20 @@ class CombatResolutionSystem(ExecuteProcessor):
             )
 
     #######################################################################################################################################
-    def _process_select_action(self, actor_entities: Set[Entity], round: Round) -> None:
+    def _process_play_cards_action(
+        self, actor_entities: Set[Entity], round: Round
+    ) -> None:
         for actor_entity2 in actor_entities:
-            select_action = actor_entity2.get(PlayCardsAction)
-            assert select_action is not None
+            play_cards_action = actor_entity2.get(PlayCardsAction)
+            assert play_cards_action is not None
 
-            assert select_action.skill.name != ""
+            assert play_cards_action.skill.name != ""
             message = f""" # 发生事件！经过思考后，你决定行动！
-## 使用技能 = {select_action.skill.name}
-## 目标 = {select_action.targets}
-## 原因 = {select_action.reason}
+## 使用技能 = {play_cards_action.skill.name}
+## 目标 = {play_cards_action.targets}
+## 原因 = {play_cards_action.reason}
 ## 技能数据
-{select_action.skill.model_dump_json()}"""
+{play_cards_action.skill.model_dump_json()}"""
 
             self._game.append_human_message(actor_entity2, message)
 

@@ -9,6 +9,7 @@ from models_v_0_0_1 import (
     RPGCharacterProfileComponent,
     StatusEffect,
     CombatKickOffEvent,
+    PlayerComponent,
 )
 import format_string.json_format
 
@@ -225,15 +226,16 @@ class CombatKickOffSystem(ExecuteProcessor):
 
         self._game.append_ai_message(entity2, message)
 
-        # 添加战斗开始事件
-        self._game.notify_event(
-            set({entity2}),
-            CombatKickOffEvent(
-                message=message,
-                actor=entity2._name,
-                description=format_response.description,
-            ),
-        )
-
+        # TODO，临时这么写吧，不用notify了，因为里面会append_human_message，等于重复了。后续再优化。
+        if entity2.has(PlayerComponent):
+            # 添加战斗开始事件
+            self._game.player.add_agent_event(
+                # entity2,
+                CombatKickOffEvent(
+                    message=message,
+                    actor=entity2._name,
+                    description=format_response.description,
+                ),
+            )
 
 ###################################################################################################################################################################

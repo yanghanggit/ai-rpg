@@ -36,6 +36,8 @@ from models_v_0_0_1 import (
     AgentEvent,
     TurnAction,
     HandComponent,
+    SpeakAction,
+    PlayerActiveComponent,
 )
 
 from player.player_proxy import PlayerProxy
@@ -945,5 +947,17 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
         return True
+
+    #######################################################################################################################################
+    # TODO, speak action
+    def activate_speak_action(self, target: str, content: str) -> None:
+        assert target != "", "target is empty"
+        assert content != "", "content is empty"
+        logger.debug(f"activate_speak_action: {target} => \n{content}")
+        player_entity = self.get_player_entity()
+        assert player_entity is not None
+        data: Dict[str, str] = {target: content}
+        player_entity.replace(SpeakAction, player_entity._name, data)
+        player_entity.replace(PlayerActiveComponent, player_entity._name)  # 添加标记。
 
     #######################################################################################################################################

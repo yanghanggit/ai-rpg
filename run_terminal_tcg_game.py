@@ -2,19 +2,23 @@ from loguru import logger
 import shutil
 from game.terminal_tcg_game import TerminalTCGGame
 from game.tcg_game import TCGGameState
-from models_v_0_0_1 import Boot, World, CombatResult, Dungeon
+from models_v_0_0_1 import Boot, World, CombatResult
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from llm_serves.chat_system import ChatSystem
 from player.player_proxy import PlayerProxy
 from game.tcg_game_demo import (
     create_then_write_demo_world,
     create_demo_dungeon1,
-    create_demo_dungeon2,
+    # create_demo_dungeon2,
 )
 from tcg_game_systems.combat_draw_cards_system import CombatDrawCardsSystem
 from tcg_game_systems.combat_monitor_system import CombatMonitorSystem
 from game.user_session_options import UserSessionOptions
 from tcg_game_systems.combat_round_system import CombatRoundSystem
+from format_string.terminal_input import (
+    parse_speak_command_input,
+    # SpeakCommand,
+)
 
 
 ###############################################################################################################################################
@@ -338,8 +342,24 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         if not terminal_game.launch_dungeon():
             assert False, "传送地下城失败！"
 
-    else:
+    elif "/speak" in usr_input or "/ss" in usr_input:
 
+        # 分析输入
+        speak_command = parse_speak_command_input(usr_input)
+
+        # 处理输入
+        terminal_game.activate_speak_action(
+            target=speak_command["target"],
+            content=speak_command["content"],
+        )
+
+        # player 执行一次, 这次基本是忽略推理标记的，所有NPC不推理。
+        await _execute_terminal_game(terminal_game, usr_input)
+
+        # 其他人执行一次。对应的NPC进行推理。
+        await _execute_terminal_game(terminal_game, usr_input)
+
+    else:
         logger.error(
             f"玩家输入 = {usr_input}, 目前不做任何处理，不在处理范围内！！！！！"
         )

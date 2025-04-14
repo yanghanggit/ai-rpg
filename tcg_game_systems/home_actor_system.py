@@ -78,7 +78,7 @@ def _compress_prompt(
 
 #######################################################################################################################################
 @final
-class HomeActorPlanningSystem(ExecuteProcessor):
+class HomeActorSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context

@@ -9,6 +9,7 @@ from models_v_0_0_1 import (
     StageComponent,
     RuntimeComponent,
     PlayerComponent,
+    PlayerActiveComponent,
 )
 
 
@@ -44,6 +45,15 @@ class HomePreSystem(ExecuteProcessor):
     ############################################################################################################
     def _assign_planning_component_to_stages(self) -> None:
 
+        player_entity = self._game.get_player_entity()
+        assert player_entity is not None
+        if player_entity.has(PlayerActiveComponent):
+            # 如果玩家处于active状态，跳过。全部不用推理。
+            return
+
+        player_stage = self._game.safe_get_stage_entity(player_entity)
+        assert player_stage is not None
+
         stage_entities = self._game.get_group(
             Matcher(
                 all_of=[HomeComponent, StageComponent],
@@ -52,12 +62,6 @@ class HomePreSystem(ExecuteProcessor):
                 ],
             )
         ).entities.copy()
-
-        player_entity = self._game.get_player_entity()
-        assert player_entity is not None
-
-        player_stage = self._game.safe_get_stage_entity(player_entity)
-        assert player_stage is not None
 
         for stage_entity in stage_entities:
 
@@ -120,7 +124,7 @@ class HomePreSystem(ExecuteProcessor):
         action_order = home_comp.action_order
         if len(action_order) == 0:
             actors_on_stage = self._game.retrieve_actors_on_stage(stage_entity)
-            order_actors_by_action = self._sort_action_order_by_guid(
+            order_actors_by_action = self._sort_action_order_by_runtime_index(
                 list(actors_on_stage)
             )
             sorted_actor_names = [actor._name for actor in order_actors_by_action]
@@ -131,7 +135,9 @@ class HomePreSystem(ExecuteProcessor):
             )
 
     ############################################################################################################
-    def _sort_action_order_by_guid(self, actor_entities: List[Entity]) -> List[Entity]:
+    def _sort_action_order_by_runtime_index(
+        self, actor_entities: List[Entity]
+    ) -> List[Entity]:
 
         entity_guid_pairs: List[Tuple[Entity, int]] = []
         for entity in actor_entities:

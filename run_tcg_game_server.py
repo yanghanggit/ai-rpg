@@ -3,8 +3,6 @@ from services.game_server_instance import (
     GameServerInstance,
     initialize_game_server_instance,
 )
-from fastapi.staticfiles import StaticFiles
-import os
 
 
 ###############################################################################################################################################
@@ -20,19 +18,6 @@ def main(game_server: GameServerInstance) -> None:
     from services.view_dungeon_services import view_dungeon_router
     from services.view_home_services import view_home_router
     from services.view_actor_services import view_actor_router
-
-    # get测试。
-    # 指向包含 runtime.json 的目录
-    static_dir = os.path.join(
-        os.path.dirname(__file__), "gen_runtimes", "yanghang", "Game1"
-    )
-
-    # 将该目录挂载到 "/files" 路径上
-    game_server.fast_api.mount(
-        "/files", StaticFiles(directory=static_dir), name="files"
-    )
-
-    # http://127.0.0.1:8000/files/runtime.json
 
     game_server.fast_api.add_middleware(
         CORSMiddleware,
@@ -80,6 +65,13 @@ def main(game_server: GameServerInstance) -> None:
 
 
 if __name__ == "__main__":
+    # 本机回环。
     main(
         initialize_game_server_instance(server_ip_address="127.0.0.1", server_port=8000)
     )
+    # 开局域网。
+    # main(initialize_game_server_instance(server_ip_address="0.0.0.0", server_port=8000))
+
+    # 如果能开启就用get方法测试
+    # http://127.0.0.1:8000/files/runtime.json
+    # http://192.168.192.111:8000/files/runtime.json

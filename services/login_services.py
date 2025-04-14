@@ -1,3 +1,4 @@
+import os
 from typing import Optional
 from fastapi import APIRouter
 from services.game_server_instance import GameServerInstance
@@ -13,7 +14,7 @@ from loguru import logger
 from game.user_session_options import UserSessionOptions
 from game.tcg_game_demo import (
     create_then_write_demo_world,
-    create_demo_dungeon2,
+    # create_demo_dungeon2,
     create_demo_dungeon1,
 )
 import shutil
@@ -21,6 +22,8 @@ from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSyst
 from llm_serves.chat_system import ChatSystem
 from game.web_tcg_game import WebTCGGame
 from player.player_proxy import PlayerProxy
+from fastapi.staticfiles import StaticFiles
+from game.tcg_game_config import GEN_RUNTIME_DIR
 
 ###################################################################################################################################################################
 login_router = APIRouter()
@@ -85,8 +88,19 @@ async def login(
     logger.info(
         f"login: {request_data.user_name} create game = {new_room._game.name}, player = {web_game_session.player._name}, actor = {player_entity._name}"
     )
+
+    # TODO, get测试。
+    # 指向包含 runtime.json 的目录。
+    static_dir = os.path.join(GEN_RUNTIME_DIR, option.user, option.game)
+    # 将该目录挂载到 "/files" 路径上
+    game_server.fast_api.mount(
+        "/files", StaticFiles(directory=static_dir), name="files"
+    )
+    # 如果能开启就用get方法测试
+    # http://127.0.0.1:8000/files/runtime.json
+    # http://192.168.192.111:8000/files/runtime.json
+
     return LoginResponse(
-        # actor=player_entity._name,
         error=0,
         message=new_room._game.world.model_dump_json(),
     )

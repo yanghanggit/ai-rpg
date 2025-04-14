@@ -281,8 +281,6 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         logger.debug(f"玩家输入 = {usr_input}, 准备监控")
         monitor_utils = CombatMonitorSystem(
             terminal_game,
-            # set({player_stage_entity}),
-            # terminal_game.retrieve_actors_on_stage(player_stage_entity),
         )
         await monitor_utils.a_execute1()
 

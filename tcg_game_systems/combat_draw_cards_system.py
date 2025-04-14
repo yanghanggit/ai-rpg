@@ -134,6 +134,16 @@ class CombatDrawCardsSystem(ExecuteProcessor):
                 )
             )
 
+            if entity2._name == "角色.法师.奥露娜":
+                # hack 掉 问号牌。
+                format_response.skills = [
+                    Skill(
+                        name="邪龙降世",
+                        description="黑色的龙从天而降，咆哮者撕裂空间内的一切活物。邪龙长着三个头，六个翅膀，浑身环绕着黑色的火焰。他是来自另外空间的至高邪神，拥有无与伦比的力量。",
+                        effect="造成100点黑暗伤害，同时让被攻击者失去理智而死！",
+                    ),
+                ]
+
             # 设置3个技能
             entity2.replace(
                 HandComponent,

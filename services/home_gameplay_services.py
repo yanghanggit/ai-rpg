@@ -83,16 +83,48 @@ async def home_gameplay(
             message=f"{request_data.user_input} 只能在营地中使用",
         )
 
-    # 清空消息。准备重新开始
-    web_game.player.archive_and_clear_messages()
+    # 根据标记处理。
+    match request_data.user_input.tag:
 
-    # 测试推进一次游戏
-    await _execute_web_game(web_game)
+        case "/advancing":
+            # 推进一次。
+            # 清空消息。准备重新开始 + 测试推进一次游戏
+            web_game.player.archive_and_clear_messages()
+            await _execute_web_game(web_game)
+
+            # 返回消息
+            return HomeGamePlayResponse(
+                client_messages=web_game.player.client_messages,
+                error=0,
+                message=request_data.model_dump_json(),
+            )
+
+        case "/speak":
+
+            # player 添加说话的动作
+            if web_game.activate_speak_action(
+                target=request_data.user_input.data.get("target", ""),
+                content=request_data.user_input.data.get("content", ""),
+            ):
+
+                # 清空消息。准备重新开始 + 测试推进一次游戏
+                web_game.player.archive_and_clear_messages()
+                await _execute_web_game(web_game)
+
+                # 返回消息
+                return HomeGamePlayResponse(
+                    client_messages=web_game.player.client_messages,
+                    error=0,
+                    message=request_data.model_dump_json(),
+                )
+
+        case _:
+            logger.error(f"未知的请求类型 = {request_data.user_input.tag}, 不能处理！")
+            # assert False, f"未知的请求类型 = {request_data.user_input.tag}, 不能处理！"
 
     return HomeGamePlayResponse(
-        client_messages=web_game.player.client_messages,
-        error=0,
-        message=request_data.model_dump_json(),
+        error=1005,
+        message=f"未知的请求类型 = {request_data.model_dump_json()}, 不能处理！",
     )
 
 
@@ -179,7 +211,6 @@ async def home_trans_dungeon(
         )
     #
     return HomeTransDungeonResponse(
-        # client_messages=web_game.player.client_messages,
         error=0,
         message=request_data.model_dump_json(),
     )

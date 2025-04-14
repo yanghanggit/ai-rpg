@@ -348,16 +348,16 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         speak_command = parse_speak_command_input(usr_input)
 
         # 处理输入
-        terminal_game.activate_speak_action(
+        if terminal_game.activate_speak_action(
             target=speak_command["target"],
             content=speak_command["content"],
-        )
+        ):
 
-        # player 执行一次, 这次基本是忽略推理标记的，所有NPC不推理。
-        await _execute_terminal_game(terminal_game, usr_input)
+            # player 执行一次, 这次基本是忽略推理标记的，所有NPC不推理。
+            await _execute_terminal_game(terminal_game, usr_input)
 
-        # 其他人执行一次。对应的NPC进行推理。
-        await _execute_terminal_game(terminal_game, usr_input)
+            # 其他人执行一次。对应的NPC进行推理。
+            await _execute_terminal_game(terminal_game, usr_input)
 
     else:
         logger.error(

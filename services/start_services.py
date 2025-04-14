@@ -3,6 +3,8 @@ from services.game_server_instance import GameServerInstance
 from models_v_0_0_1 import StartRequest, StartResponse
 from loguru import logger
 
+# TODO, 这里后续会写的复杂一些，从这里开始决定 是继续玩游戏（重连），还是载入再复位然后开始。还是创建一个新游戏？
+
 ###################################################################################################################################################################
 start_router = APIRouter()
 

@@ -141,10 +141,17 @@ class DungeonTransHomeResponse(BaseModel):
 
 @final
 @register_base_model_class
+class HomeGamePlayUserInput(BaseModel):
+    tag: str = ""
+    data: Dict[str, str] = {}
+
+
+@final
+@register_base_model_class
 class HomeGamePlayRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    user_input: str = ""
+    user_input: HomeGamePlayUserInput = HomeGamePlayUserInput()
 
 
 @final

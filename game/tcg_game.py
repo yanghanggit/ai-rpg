@@ -950,14 +950,27 @@ class TCGGame(BaseGame, TCGGameContext):
 
     #######################################################################################################################################
     # TODO, speak action
-    def activate_speak_action(self, target: str, content: str) -> None:
+    def activate_speak_action(self, target: str, content: str) -> bool:
+
         assert target != "", "target is empty"
         assert content != "", "content is empty"
         logger.debug(f"activate_speak_action: {target} => \n{content}")
+
+        if content == "":
+            logger.error("内容不能为空！")
+            return False
+
+        target_entity = self.get_actor_entity(target)
+        if target_entity is None:
+            logger.error(f"目标角色: {target} 不存在！")
+            return False
+
         player_entity = self.get_player_entity()
         assert player_entity is not None
         data: Dict[str, str] = {target: content}
         player_entity.replace(SpeakAction, player_entity._name, data)
         player_entity.replace(PlayerActiveComponent, player_entity._name)  # 添加标记。
+
+        return True
 
     #######################################################################################################################################

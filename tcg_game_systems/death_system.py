@@ -1,6 +1,6 @@
 from loguru import logger
-from entitas import Matcher, ExecuteProcessor  # type: ignore
-from typing import final, override
+from entitas import Entity, Matcher, ExecuteProcessor  # type: ignore
+from typing import Set, final, override
 from models_v_0_0_1 import (
     DestroyComponent,
     DeathComponent,
@@ -67,34 +67,51 @@ class DeathSystem(ExecuteProcessor):
             logger.debug("combat continue!!!")
 
     ########################################################################################################################################################################
-    def _are_all_heroes_defeated(self) -> bool:
-        entities1 = self._game.get_group(
-            Matcher(
-                all_of=[HeroComponent, DeathComponent, RPGCharacterProfileComponent]
-            )
-        ).entities
+    def _are_all_monsters_defeated(self) -> bool:
 
-        entities2 = self._game.get_group(
-            Matcher(all_of=[HeroComponent, RPGCharacterProfileComponent])
-        ).entities
+        player_entity = self._game.get_player_entity()
+        assert player_entity is not None
 
-        assert len(entities2) > 0, f"entities with actions: {entities2}"
-        return len(entities2) > 0 and len(entities1) >= len(entities2)
+        actors_on_stage = self._game.retrieve_actors_on_stage(player_entity)
+        assert len(actors_on_stage) > 0, f"entities with actions: {actors_on_stage}"
+
+        active_monsters: Set[Entity] = set()
+        defeated_monsters: Set[Entity] = set()
+
+        for entity in actors_on_stage:
+
+            if not entity.has(MonsterComponent):
+                continue
+
+            active_monsters.add(entity)
+            if entity.has(DeathComponent):
+                defeated_monsters.add(entity)
+
+        return len(active_monsters) > 0 and len(defeated_monsters) >= len(
+            active_monsters
+        )
 
     ########################################################################################################################################################################
-    def _are_all_monsters_defeated(self) -> bool:
-        entities1 = self._game.get_group(
-            Matcher(
-                all_of=[MonsterComponent, DeathComponent, RPGCharacterProfileComponent]
-            )
-        ).entities
+    def _are_all_heroes_defeated(self) -> bool:
+        player_entity = self._game.get_player_entity()
+        assert player_entity is not None
 
-        entities2 = self._game.get_group(
-            Matcher(all_of=[MonsterComponent, RPGCharacterProfileComponent])
-        ).entities
+        actors_on_stage = self._game.retrieve_actors_on_stage(player_entity)
+        assert len(actors_on_stage) > 0, f"entities with actions: {actors_on_stage}"
 
-        assert len(entities2) > 0, f"entities with actions: {entities2}"
-        return len(entities2) > 0 and len(entities1) >= len(entities2)
+        active_heroes: Set[Entity] = set()
+        defeated_heroes: Set[Entity] = set()
+
+        for entity in actors_on_stage:
+
+            if not entity.has(HeroComponent):
+                continue
+
+            active_heroes.add(entity)
+            if entity.has(DeathComponent):
+                defeated_heroes.add(entity)
+
+        return len(active_heroes) > 0 and len(defeated_heroes) >= len(active_heroes)
 
 
 ########################################################################################################################################################################

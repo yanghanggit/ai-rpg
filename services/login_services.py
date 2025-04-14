@@ -14,7 +14,7 @@ from loguru import logger
 from game.user_session_options import UserSessionOptions
 from game.tcg_game_demo import (
     create_then_write_demo_world,
-    # create_demo_dungeon2,
+    create_demo_dungeon2,
     create_demo_dungeon1,
 )
 import shutil
@@ -196,7 +196,7 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
         start_world = World(boot=world_boot)
 
         # 运行时生成地下城系统。
-        start_world.dungeon = create_demo_dungeon1(name="兽人巢穴")
+        start_world.dungeon = create_demo_dungeon2(name="兽人巢穴")
 
     else:
 

@@ -27,7 +27,7 @@ from models_v_0_0_1 import (
     RuntimeComponent,
     KickOffMessageComponent,
     AppearanceComponent,
-    StageEnvironmentComponent,
+    EnvironmentComponent,
     HomeComponent,
     DungeonComponent,
     HeroComponent,
@@ -470,7 +470,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 必要组件：环境描述
             stage_entity.add(
-                StageEnvironmentComponent,
+                EnvironmentComponent,
                 instance.name,
                 "",
             )

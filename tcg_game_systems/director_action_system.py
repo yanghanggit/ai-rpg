@@ -8,7 +8,7 @@ from models_v_0_0_1 import (
     DirectorAction,
     FeedbackAction,
     TurnAction,
-    PlayCardAction,
+    PlayCardsAction,
     Skill,
     ActorComponent,
     RPGCharacterProfileComponent,
@@ -139,7 +139,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
             Matcher(
                 all_of=[
                     TurnAction,
-                    PlayCardAction,
+                    PlayCardsAction,
                 ],
             )
         ).entities
@@ -163,9 +163,9 @@ class DirectorActionSystem(BaseActionReactiveSystem):
 
             assert entity.has(ActorComponent)
             assert entity.has(RPGCharacterProfileComponent)
-            assert entity.has(PlayCardAction)
+            assert entity.has(PlayCardsAction)
 
-            select_action = entity.get(PlayCardAction)
+            select_action = entity.get(PlayCardsAction)
             assert select_action.skill.name != ""
 
             ret.append(

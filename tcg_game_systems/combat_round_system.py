@@ -4,7 +4,7 @@ from game.tcg_game import TCGGame
 import random
 from models_v_0_0_1 import (
     Round,
-    StageEnvironmentComponent,
+    EnvironmentComponent,
     RPGCharacterProfileComponent,
 )
 
@@ -41,7 +41,7 @@ class CombatRoundSystem(ExecuteProcessor):
         first_entity = next(iter(shuffled_reactive_entities))
         stage_entity = self._game.safe_get_stage_entity(first_entity)
         assert stage_entity is not None
-        stage_environment_comp = stage_entity.get(StageEnvironmentComponent)
+        stage_environment_comp = stage_entity.get(EnvironmentComponent)
 
         #
         round = self._game.current_engagement.new_round(

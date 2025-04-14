@@ -61,7 +61,7 @@ class TurnAction(NamedTuple):
 @final
 @register_component_class
 @register_action_class
-class PlayCardAction(NamedTuple):
+class PlayCardsAction(NamedTuple):
     name: str
     targets: List[str]
     skill: Skill

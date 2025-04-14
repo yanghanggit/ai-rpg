@@ -7,10 +7,10 @@ from typing import List, Optional, Set, final
 from loguru import logger
 from models_v_0_0_1 import (
     DirectorAction,
-    PlayCardAction,
+    PlayCardsAction,
     TurnAction,
     Skill,
-    StageEnvironmentComponent,
+    EnvironmentComponent,
     HandComponent,
 )
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
@@ -18,7 +18,7 @@ from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSyste
 
 #######################################################################################################################################
 @final
-class PlayCardResponse(BaseModel):
+class PlayCardsResponse(BaseModel):
     skill: str
     targets: List[str]
     reason: str
@@ -35,7 +35,7 @@ def _generate_prompt(
 
     available_skill_jsons = [skill.model_dump_json() for skill in available_skills]
 
-    example_play_card_response = PlayCardResponse(
+    example_response = PlayCardsResponse(
         skill="技能名称",
         targets=["目标1", "目标2", "..."],
         reason="技能使用原因",
@@ -53,7 +53,7 @@ def _generate_prompt(
 {action_order}
 ## 输出要求
 ### 输出格式(JSON)
-{example_play_card_response.model_dump_json()}
+{example_response.model_dump_json()}
 - 禁用换行/空行
 - 直接输出合规JSON"""
 
@@ -84,6 +84,9 @@ class TurnActionSystem(BaseActionReactiveSystem):
     #######################################################################################################################################
     async def _process_request(self, react_entities: List[Entity]) -> None:
 
+        if not self._game.current_engagement.is_on_going_phase:
+            return
+
         # 处理角色规划请求
         request_handlers: List[ChatRequestHandler] = self._generate_requests(
             set(react_entities),
@@ -112,7 +115,7 @@ class TurnActionSystem(BaseActionReactiveSystem):
 
         try:
 
-            format_response = PlayCardResponse.model_validate_json(
+            format_response = PlayCardsResponse.model_validate_json(
                 format_string.json_format.strip_json_code_block(
                     request_handler.response_content
                 )
@@ -137,9 +140,9 @@ class TurnActionSystem(BaseActionReactiveSystem):
                 )
 
             # 给角色添加！！！
-            assert not entity2.has(PlayCardAction)
+            assert not entity2.has(PlayCardsAction)
             entity2.replace(
-                PlayCardAction,
+                PlayCardsAction,
                 entity2._name,
                 format_response.targets,
                 skill,
@@ -179,7 +182,7 @@ class TurnActionSystem(BaseActionReactiveSystem):
             assert entity.has(HandComponent)
             message = _generate_prompt(
                 current_stage._name,
-                current_stage.get(StageEnvironmentComponent).narrate,
+                current_stage.get(EnvironmentComponent).narrate,
                 entity.get(HandComponent).skills,
                 entity.get(TurnAction).round_turns,
             )

@@ -4,7 +4,7 @@ from llm_serves.chat_request_handler import ChatRequestHandler
 from models_v_0_0_1 import (
     HomeComponent,
     StageComponent,
-    StageEnvironmentComponent,
+    EnvironmentComponent,
     CanStartPlanningComponent,
 )
 from overrides import override
@@ -98,7 +98,7 @@ class HomeStageSystem(ExecuteProcessor):
 
         for stage_entity in stage_entities:
 
-            environment_component = stage_entity.get(StageEnvironmentComponent)
+            environment_component = stage_entity.get(EnvironmentComponent)
             if environment_component.narrate != "":
                 # 如果环境描述不为空，跳过
                 continue
@@ -158,7 +158,7 @@ class HomeStageSystem(ExecuteProcessor):
             # 更新环境描写
             if format_response.environment_narration != "":
                 entity2.replace(
-                    StageEnvironmentComponent,
+                    EnvironmentComponent,
                     entity2._name,
                     format_response.environment_narration,
                 )

@@ -3,7 +3,7 @@ from entitas import ExecuteProcessor, Entity  # type: ignore
 from llm_serves.chat_request_handler import ChatRequestHandler
 import format_string.json_format
 from models_v_0_0_1 import (
-    StageEnvironmentComponent,
+    EnvironmentComponent,
     HandComponent,
     HeroComponent,
     MonsterComponent,
@@ -161,7 +161,7 @@ class CombatDrawCardsSystem(ExecuteProcessor):
             message = _generate_prompt(
                 self._skill_creation_count,
                 current_stage._name,
-                current_stage.get(StageEnvironmentComponent).narrate,
+                current_stage.get(EnvironmentComponent).narrate,
             )
 
             # 生成请求处理器

@@ -6,7 +6,7 @@ from game.tcg_game import TCGGame
 from models_v_0_0_1 import (
     TurnAction,
     DirectorAction,
-    PlayCardAction,
+    PlayCardsAction,
     FeedbackAction,
     HandComponent,
     RPGCharacterProfileComponent,
@@ -67,7 +67,7 @@ class CombatResolutionSystem(ExecuteProcessor):
         select_then_feedback_action_actors = self._game.get_group(
             Matcher(
                 all_of=[
-                    PlayCardAction,
+                    PlayCardsAction,
                     FeedbackAction,
                 ],
             )
@@ -153,7 +153,7 @@ class CombatResolutionSystem(ExecuteProcessor):
     #######################################################################################################################################
     def _process_select_action(self, actor_entities: Set[Entity], round: Round) -> None:
         for actor_entity2 in actor_entities:
-            select_action = actor_entity2.get(PlayCardAction)
+            select_action = actor_entity2.get(PlayCardsAction)
             assert select_action is not None
 
             assert select_action.skill.name != ""

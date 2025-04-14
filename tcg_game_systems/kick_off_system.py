@@ -7,7 +7,7 @@ from models_v_0_0_1 import (
     ActorComponent,
     KickOffMessageComponent,
     KickOffDoneComponent,
-    StageEnvironmentComponent,
+    EnvironmentComponent,
 )
 from typing import Set, final, List
 from game.tcg_game import TCGGame
@@ -122,7 +122,7 @@ class KickOffSystem(ExecuteProcessor):
             # 若是场景，用response替换narrate
             if entity2.has(StageComponent) and request_handler.response_content != "":
                 entity2.replace(
-                    StageEnvironmentComponent,
+                    EnvironmentComponent,
                     entity2._name,
                     request_handler.response_content,
                 )

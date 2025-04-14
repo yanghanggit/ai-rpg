@@ -2,7 +2,7 @@ from entitas import Entity, ExecuteProcessor  # type: ignore
 from pydantic import BaseModel
 from llm_serves.chat_request_handler import ChatRequestHandler
 from models_v_0_0_1 import (
-    StageEnvironmentComponent,
+    EnvironmentComponent,
 )
 from overrides import override
 from typing import Dict, final
@@ -113,7 +113,7 @@ class DungeonStageSystem(ExecuteProcessor):
         self, stage_entity: Entity, request_handler: ChatRequestHandler
     ) -> None:
 
-        assert stage_entity.has(StageEnvironmentComponent)
+        assert stage_entity.has(EnvironmentComponent)
 
         # 核心处理
         try:
@@ -130,7 +130,7 @@ class DungeonStageSystem(ExecuteProcessor):
             # 更新环境描写
             if format_response.environment_narration != "":
                 stage_entity.replace(
-                    StageEnvironmentComponent,
+                    EnvironmentComponent,
                     stage_entity._name,
                     format_response.environment_narration,
                 )

@@ -4,7 +4,7 @@ from llm_serves.chat_request_handler import ChatRequestHandler
 import format_string.json_format
 from models_v_0_0_1 import (
     ActorComponent,
-    StageEnvironmentComponent,
+    EnvironmentComponent,
     CanStartPlanningComponent,
     SpeakAction,
     MindVoiceAction,
@@ -196,7 +196,7 @@ class HomeActorSystem(ExecuteProcessor):
             # 生成消息
             message = _generate_prompt(
                 current_stage._name,
-                current_stage.get(StageEnvironmentComponent).narrate,
+                current_stage.get(EnvironmentComponent).narrate,
                 actors_apperances_mapping,
             )
 

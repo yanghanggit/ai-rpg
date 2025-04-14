@@ -50,7 +50,7 @@ class StageComponent(NamedTuple):
 # 记录场景的描述 #Environment
 @final
 @register_component_class
-class StageEnvironmentComponent(NamedTuple):
+class EnvironmentComponent(NamedTuple):
     name: str
     narrate: str
 

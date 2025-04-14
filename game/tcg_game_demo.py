@@ -209,7 +209,6 @@ def create_demo_dungeon1(
     return Dungeon(
         name=name,
         levels=[
-            # stage_dungeon_cave1,
             stage_dungeon_cave2,
         ],
     )

@@ -148,9 +148,9 @@ def create_actor(
     appearance=appearance,
 )}"""
 
-    logger.debug(
-        f"Actor {ret.name}, rpg_character_profile:\n{generate_character_profile_string(ret.rpg_character_profile)}"
-    )
+    # logger.debug(
+    #     f"Actor {ret.name}, rpg_character_profile:\n{generate_character_profile_string(ret.rpg_character_profile)}"
+    # )
 
     return ret
 

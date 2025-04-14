@@ -1,3 +1,4 @@
+from loguru import logger
 from entitas import ExecuteProcessor  # type: ignore
 from typing import final, override
 from game.tcg_game import TCGGame
@@ -5,7 +6,7 @@ from game.terminal_tcg_game import TerminalTCGGame
 
 
 @final
-class TerminalPlayerInterruptWaitSystem(ExecuteProcessor):
+class TerminalInterruptDebugSystem(ExecuteProcessor):
 
     ############################################################################################################
     def __init__(self, game_context: TCGGame) -> None:
@@ -19,9 +20,14 @@ class TerminalPlayerInterruptWaitSystem(ExecuteProcessor):
             return
 
         while True:
-            input(
+            user_input = input(
                 f"！！！！！TerminalTCGGame 打断调试！！！........请任意键继续........"
             )
+
+            if user_input == "test":
+                logger.warning("随便测试点啥啥啥，例如直接给agent一段消息之类的。")
+                break
+
             break
 
 

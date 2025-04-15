@@ -560,7 +560,6 @@ class TCGGame(BaseGame, TCGGameContext):
         assert not actor_entity.has(PlayerComponent)
         actor_entity.replace(PlayerComponent, self.player.name)
         logger.info(f"玩家: {self.player.name} 选择控制: {self.player.name}")
-
         return True
 
     ###############################################################################################################################################

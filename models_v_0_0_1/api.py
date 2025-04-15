@@ -171,6 +171,7 @@ class HomeGamePlayResponse(BaseModel):
 @register_base_model_class
 class DungeonGamePlayUserInput(BaseModel):
     tag: str = ""
+    data: Dict[str, str] = {}
 
 
 @final

@@ -221,3 +221,17 @@ class RPGCharacterProfileComponent(NamedTuple):
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
+
+
+# 问号牌
+@final
+@register_component_class
+class XCardPlayerComponent(NamedTuple):
+    name: str
+    skill: Skill
+
+    @staticmethod
+    def __deserialize_component__(component_data: Dict[str, Any]) -> None:
+        assert "skill" in component_data
+        if "skill" in component_data:
+            component_data["skill"] = Skill(**component_data["skill"])

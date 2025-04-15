@@ -5,6 +5,8 @@ from models_v_0_0_1 import (
     DungeonGamePlayResponse,
     DungeonTransHomeRequest,
     DungeonTransHomeResponse,
+    XCardPlayerComponent,
+    Skill,
 )
 from loguru import logger
 from game.web_tcg_game import WebTCGGame
@@ -189,6 +191,47 @@ async def dungeon_gameplay(
                 error=0,
                 message="",
             )
+
+        case "x_card":
+            if not web_game.current_engagement.is_on_going_phase:
+                logger.error(f"not web_game.current_engagement.is_on_going_phase")
+                return DungeonGamePlayResponse(
+                    error=1005,
+                    message="not web_game.current_engagement.is_on_going_phase",
+                )
+
+            # TODO, 先写死默认往上面加。
+            player_entity = web_game.get_player_entity()
+            assert player_entity is not None
+
+            skill_name = request_data.user_input.data.get("name", "")
+            skill_description = request_data.user_input.data.get("description", "")
+            skill_effect = request_data.user_input.data.get("effect", "")
+            if skill_name != "" and skill_description != "" and skill_effect != "":
+                player_entity.replace(
+                    XCardPlayerComponent,
+                    player_entity._name,
+                    Skill(
+                        name=skill_name,
+                        description=skill_description,
+                        effect=skill_effect,
+                    ),
+                )
+
+                web_game.player.archive_and_clear_messages()
+                logger.debug(
+                    f"玩家输入 = {request_data.user_input.tag}, 准备行动......"
+                )
+                return DungeonGamePlayResponse(
+                    client_messages=web_game.player.client_messages,
+                    error=0,
+                    message="",
+                )
+
+            else:
+                assert (
+                    False
+                ), f"技能名称错误: {player_entity._name}, Response = \n{request_data.user_input.data}"
 
         case "advance_next_dungeon":
 

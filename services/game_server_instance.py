@@ -7,16 +7,20 @@ from services.game_server import ServerConfig
 
 ###############################################################################################################################################
 def initialize_game_server_instance(
-    server_ip_address: str = "127.0.0.1", server_port: int = 8000
+    server_ip_address: str, server_port: int, local_network_ip: str
 ) -> GameServer:
 
     assert GameServer._singleton is None
-    assert server_ip_address is not None and server_port is not None
+
     if GameServer._singleton is None:
         GameServer._singleton = GameServer(
             fast_api=FastAPI(),
             room_manager=RoomManager(),
-            server_config=ServerConfig(server_ip_address, server_port),
+            server_config=ServerConfig(
+                server_ip_address=server_ip_address,
+                server_port=server_port,
+                local_network_ip=local_network_ip,
+            ),
         )
 
     return GameServer._singleton

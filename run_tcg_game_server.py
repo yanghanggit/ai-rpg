@@ -66,12 +66,17 @@ def main(game_server: GameServerInstance) -> None:
 
 if __name__ == "__main__":
     # 本机回环。
+    # main(
+    #     initialize_game_server_instance(server_ip_address="127.0.0.1", server_port=8000)
+    # )
+    # 开局域网, 问题还是很多的，Unity可能涉及安全访问的问题。
     main(
-        initialize_game_server_instance(server_ip_address="127.0.0.1", server_port=8000)
+        initialize_game_server_instance(
+            server_ip_address="0.0.0.0",
+            server_port=8000,
+            local_network_ip="192.168.192.111",
+        )
     )
-    # 开局域网。
-    # main(initialize_game_server_instance(server_ip_address="0.0.0.0", server_port=8000))
-
     # 如果能开启就用get方法测试
     # http://127.0.0.1:8000/files/runtime.json
     # http://192.168.192.111:8000/files/runtime.json

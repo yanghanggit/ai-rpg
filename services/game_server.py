@@ -10,6 +10,7 @@ import os
 class ServerConfig:
     server_ip_address: str
     server_port: int
+    local_network_ip: str
 
 
 ###############################################################################################################################################
@@ -43,6 +44,11 @@ class GameServer:
     @property
     def server_port(self) -> int:
         return self._server_config.server_port
+
+    ###############################################################################################################################################
+    @property
+    def local_network_ip(self) -> str:
+        return self._server_config.local_network_ip
 
     ###############################################################################################################################################
     @property

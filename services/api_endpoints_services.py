@@ -21,7 +21,12 @@ async def api_endpoints(
 
     logger.info(f"api_endpoints: {request_data.model_dump_json()}")
 
-    server_ip_address = game_server.server_ip_address
+    server_ip_address = str(game_server.server_ip_address)
+    if server_ip_address == "0.0.0.0":
+        # TODO, 这里需要改成获取本机的ip地址
+        server_ip_address = game_server.local_network_ip
+        logger.info(f"0.0.0.0, use local ip address: {server_ip_address}")
+
     server_port = game_server.server_port
 
     generated_api_endpoints: APIEndpointConfiguration = APIEndpointConfiguration(

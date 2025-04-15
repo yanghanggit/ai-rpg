@@ -370,7 +370,7 @@ async def dungeon_trans_home(
         )
 
     # 回家
-    web_game.back_home()
+    web_game.return_to_home()
     return DungeonTransHomeResponse(
         error=0,
         message="回家了",

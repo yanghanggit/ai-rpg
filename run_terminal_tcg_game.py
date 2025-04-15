@@ -238,7 +238,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             )
             await monitor_utils.a_execute1()
 
-        elif usr_input == "/bh" or usr_input == "/back-home":
+        elif usr_input == "/rth" or usr_input == "/return-to-home":
 
             if (
                 len(terminal_game.current_engagement.combats) == 0
@@ -248,7 +248,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
                 return
 
             logger.debug(f"玩家输入 = {usr_input}, 准备传送回家")
-            terminal_game.back_home()
+            terminal_game.return_to_home()
 
         elif usr_input == "/and" or usr_input == "/advance-next-dungeon":
 

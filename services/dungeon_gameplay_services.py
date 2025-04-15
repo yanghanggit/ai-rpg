@@ -118,6 +118,25 @@ async def dungeon_gameplay(
                 message="",
             )
 
+        case "dungeon_combat_complete":
+
+            if not web_game.current_engagement.is_complete_phase:
+                logger.error(f"not web_game.current_engagement.is_complete_phase")
+                return DungeonGamePlayResponse(
+                    error=1006,
+                    message="not web_game.current_engagement.is_complete_phase",
+                )
+            # 清空消息。准备重新开始
+            web_game.player.archive_and_clear_messages()
+            # 推进一次游戏, 即可转换ONGOING状态。
+            await _execute_web_game(web_game)
+            # 返回！
+            return DungeonGamePlayResponse(
+                client_messages=web_game.player.client_messages,
+                error=0,
+                message="",
+            )
+
         case "draw_cards":
 
             if not web_game.current_engagement.is_on_going_phase:

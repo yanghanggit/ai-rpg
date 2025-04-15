@@ -117,7 +117,6 @@ class TCGGameProcessPipeline(Processors):
 
         ##
         tcg_game = cast(TCGGame, game)
-        # assert isinstance(tcg_game, TCGGame)
         processors = TCGGameProcessPipeline()
 
         # 标记开始。
@@ -128,9 +127,10 @@ class TCGGameProcessPipeline(Processors):
 
         # 场景先规划，可能会有一些变化。
         processors.add(DungeonStageSystem(tcg_game))
-
-        # 战斗触发！！
+        # 大状态切换：战斗触发！！
         processors.add(CombatKickOffSystem(tcg_game))
+        # 大状态切换：战斗结束。
+        processors.add(CombatCompleteSystem(tcg_game))
 
         ######动作开始！！！！！################################################################################################
         # processors.add(DungeonCombatRoundSystem(tcg_game))  # 开局系统。
@@ -146,9 +146,6 @@ class TCGGameProcessPipeline(Processors):
 
         # 检查死亡
         processors.add(DeathSystem(tcg_game))
-
-        # 检查地下城是否结束？
-        processors.add(CombatCompleteSystem(tcg_game))
 
         # 核心系统，检查需要删除的实体。
         processors.add(DestroyEntitySystem(tcg_game))

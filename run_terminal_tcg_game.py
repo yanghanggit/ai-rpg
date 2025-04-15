@@ -176,6 +176,19 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             # 执行一次！！！！！
             await _execute_terminal_game(terminal_game, usr_input)
 
+        elif usr_input == "/dcmp" or usr_input == "/dungeon_combat_complete":
+
+            if len(terminal_game.current_engagement.combats) == 0:
+                logger.error(f"{usr_input} 没有战斗可以进行！！！！")
+                return
+
+            if not terminal_game.current_engagement.is_complete_phase:
+                logger.error(f"{usr_input} 只能在战斗后is_complete_phase使用")
+                return
+
+            # 执行一次！！！！！
+            await _execute_terminal_game(terminal_game, usr_input)
+
         elif usr_input == "/dc" or usr_input == "/draw-cards":
 
             if not terminal_game.current_engagement.is_on_going_phase:

@@ -198,12 +198,11 @@ class RPGCharacterProfileComponent(NamedTuple):
 
     @property
     def attrs_prompt(self) -> str:
-        return f"""- 当前生命：{self.rpg_character_profile.hp}
-- 最大生命：{self.rpg_character_profile.max_hp}
-- 物理攻击：{self.rpg_character_profile.physical_attack}
-- 物理防御：{self.rpg_character_profile.physical_defense}
-- 魔法攻击：{self.rpg_character_profile.magic_attack}
-- 魔法防御：{self.rpg_character_profile.magic_defense}"""
+        return f"""- 生命:{self.rpg_character_profile.hp}/{self.rpg_character_profile.max_hp}
+- 物理攻击:{self.rpg_character_profile.physical_attack}
+- 物理防御:{self.rpg_character_profile.physical_defense}
+- 魔法攻击:{self.rpg_character_profile.magic_attack}
+- 魔法防御:{self.rpg_character_profile.magic_defense}"""
 
     @property
     def status_effects_prompt(self) -> str:

@@ -186,7 +186,7 @@ class CombatResolutionSystem(ExecuteProcessor):
             assert feedback_action.performance != ""
             assert feedback_action.description != ""
 
-            # 血量更新
+            #
             self._update_combat_health(
                 actor_entity3,
                 feedback_action.update_hp,

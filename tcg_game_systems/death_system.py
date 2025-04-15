@@ -22,7 +22,7 @@ class DeathSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
 
-        # 处理血量为0的情况
+        # 处理hp为0的情况
         self._update_entities_to_dead_state()
 
         # 添加销毁

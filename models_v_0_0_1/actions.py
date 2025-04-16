@@ -51,6 +51,7 @@ class TurnAction(NamedTuple):
     name: str
     rounds: int
     round_turns: List[str]
+    skill: str
 
     @property
     def turn(self) -> int:

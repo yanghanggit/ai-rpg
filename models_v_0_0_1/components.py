@@ -1,7 +1,9 @@
 from typing import Any, Dict, Final, NamedTuple, List, final
+
+from pydantic import BaseModel
 from .dungeon import Skill, StatusEffect
 from .objects import RPGCharacterProfile
-from .registry import register_component_class
+from .registry import register_component_class, register_base_model_class
 
 
 ############################################################################################################
@@ -138,6 +140,8 @@ class PlayerActiveComponent(NamedTuple):
 
 
 ############################################################################################################
+
+
 # 以下是针对卡牌游戏中 牌组、弃牌堆、抽牌堆、手牌 的类名设计建议，结合常见游戏术语和编程习惯：
 # 方案 4：极简统一型
 # 组件	类名	说明
@@ -147,20 +151,50 @@ class PlayerActiveComponent(NamedTuple):
 # 手牌	Hand	简洁无冗余。
 # play_card
 # draw_card
-############################################################################################################
+
+
+@final
+@register_base_model_class
+class HandDetail(BaseModel):
+    skill: str
+    targets: List[str]
+    reason: str
+    dialogue: str
+
+
 # 手牌组件。
 @final
 @register_component_class
 class HandComponent(NamedTuple):
     name: str
     skills: List[Skill]
+    details: List[HandDetail]
 
     @staticmethod
     def __deserialize_component__(component_data: Dict[str, Any]) -> None:
-        key: Final[str] = "skills"
-        assert key in component_data
-        if key in component_data:
-            component_data[key] = [Skill(**skill) for skill in component_data[key]]
+
+        assert "skills" in component_data
+        if "skills" in component_data:
+            component_data["skills"] = [
+                Skill(**skill) for skill in component_data["skills"]
+            ]
+
+        if "details" in component_data:
+            component_data["details"] = [
+                HandDetail(**detail) for detail in component_data["details"]
+            ]
+
+    def get_skill(self, skill_name: str) -> Skill:
+        for skill in self.skills:
+            if skill.name == skill_name:
+                return skill
+        return Skill(name="", description="", effect="")
+
+    def get_detail(self, skill_name: str) -> HandDetail:
+        for detail in self.details:
+            if detail.skill == skill_name:
+                return detail
+        return HandDetail(skill="", targets=[], reason="", dialogue="")
 
 
 ############################################################################################################

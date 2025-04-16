@@ -20,7 +20,6 @@ class CombatRoundSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
         if not self._game.current_engagement.is_on_going_phase:
-            logger.error(f"not web_game.current_engagement.is_on_going_phase")
             return
 
         self._setup_round()
@@ -53,7 +52,7 @@ class CombatRoundSystem(ExecuteProcessor):
         )
 
         round.stage_environment = stage_environment_comp.narrate
-        logger.debug(f"CombatRoundSystem: _setup_round: {round.model_dump_json()}")
+        logger.info(f"CombatRoundSystem: _setup_round: {round.model_dump_json()}")
         return round
 
     #######################################################################################################################################

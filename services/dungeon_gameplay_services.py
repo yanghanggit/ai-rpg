@@ -22,6 +22,7 @@ dungeon_gameplay_router = APIRouter()
 ###################################################################################################################################################################
 async def _execute_web_game(web_game: WebTCGGame) -> None:
     assert web_game.player.name != ""
+    web_game.player.archive_and_clear_messages()
     await web_game.a_execute()
 
 
@@ -106,8 +107,6 @@ async def dungeon_gameplay(
                     message="not web_game.current_engagement.is_kickoff_phase",
                 )
 
-            # 清空消息。准备重新开始
-            web_game.player.archive_and_clear_messages()
             # 推进一次游戏, 即可转换ONGOING状态。
             await _execute_web_game(web_game)
             # 返回！
@@ -125,8 +124,7 @@ async def dungeon_gameplay(
                     error=1006,
                     message="not web_game.current_engagement.is_complete_phase",
                 )
-            # 清空消息。准备重新开始
-            web_game.player.archive_and_clear_messages()
+
             # 推进一次游戏, 即可转换ONGOING状态。
             await _execute_web_game(web_game)
             # 返回！
@@ -153,8 +151,6 @@ async def dungeon_gameplay(
             await combat_draw_cards_system.a_execute1()
 
             # 返回！
-            # 清空消息。准备重新开始
-            web_game.player.archive_and_clear_messages()
             return DungeonGamePlayResponse(
                 client_messages=web_game.player.client_messages,
                 error=0,
@@ -170,8 +166,6 @@ async def dungeon_gameplay(
                     message="not web_game.current_engagement.is_on_going_phase",
                 )
 
-            # 清空消息。准备重新开始
-            web_game.player.archive_and_clear_messages()
             logger.debug(f"玩家输入 = {request_data.user_input.tag}, 准备行动......")
             if web_game.execute_play_card():
                 # 执行一次！！！！！
@@ -210,7 +204,6 @@ async def dungeon_gameplay(
                     ),
                 )
 
-                web_game.player.archive_and_clear_messages()
                 logger.debug(
                     f"玩家输入 = {request_data.user_input.tag}, 准备行动......"
                 )

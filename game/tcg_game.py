@@ -46,6 +46,7 @@ from llm_serves.chat_system import ChatSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 import copy
+import random
 
 
 # ################################################################################################################################################
@@ -788,7 +789,7 @@ class TCGGame(BaseGame, TCGGameContext):
     # TODO!!! 进入地下城。
     def launch_dungeon(self) -> bool:
         # 第一次，必须是<0, 证明一次没来过。
-        assert self.current_dungeon.position < 0, "当前地下城关卡已经完成！"
+        # assert self.current_dungeon.position < 0, "当前地下城关卡已经完成！"
         if self.current_dungeon.position < 0:
             self.current_dungeon.position = 0  # 第一次设置，第一个关卡。
             self._create_dungeon_entities(self.current_dungeon)
@@ -933,18 +934,31 @@ class TCGGame(BaseGame, TCGGameContext):
                 logger.error(f"角色: {actor_entity._name} 没有手牌，不能添加行动！")
                 return False
 
+            hand_comp = actor_entity.get(HandComponent)
+            assert len(hand_comp.skills) > 0
+            if len(hand_comp.skills) == 0:
+                logger.error(f"角色: {actor_entity._name} 没有技能可用，不能添加行动！")
+                return False
+
         # 添加，到了这里就不能停了。
         for turn_actor_name in last_round.round_turns:
 
             actor_entity = self.get_actor_entity(turn_actor_name)
             assert actor_entity is not None
             assert not actor_entity.has(TurnAction)
+
+            # TODO, 目前先随机选择一个技能。
+            hand_comp = actor_entity.get(HandComponent)
+            assert len(hand_comp.skills) > 0
+            selected_skill = random.choice(hand_comp.skills)
+
             # 添加这个动作。
             actor_entity.replace(
                 TurnAction,
                 actor_entity._name,
                 len(self.current_engagement.rounds),
                 last_round.round_turns,
+                selected_skill.name,
             )
 
         return True

@@ -12,6 +12,7 @@ from models_v_0_0_1 import (
     AppearanceComponent,
     PlayerComponent,
     DeathComponent,
+    HandComponent,
 )
 
 from loguru import logger
@@ -236,5 +237,12 @@ class TCGGameContext(Context):
                 final_appearance = actor.get(AppearanceComponent)
                 ret.setdefault(final_appearance.name, final_appearance.appearance)
         return ret
+
+    ###############################################################################################################################################
+    def clear_hands(self) -> None:
+        actor_entities = self.get_group(Matcher(HandComponent)).entities.copy()
+        for entity in actor_entities:
+            logger.debug(f"clear hands: {entity._name}")
+            entity.remove(HandComponent)
 
     ###############################################################################################################################################

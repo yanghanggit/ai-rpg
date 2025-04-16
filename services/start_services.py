@@ -55,9 +55,6 @@ async def start(
     # 这里是启动游戏的逻辑，防止反复启动。
     room._game.is_game_started = True
 
-    # 先清除掉之前的消息。
-    room._game.player.archive_and_clear_messages()
-
     # 返回正确的数据。
     return StartResponse(
         error=0,

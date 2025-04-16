@@ -26,10 +26,11 @@ class CombatResolutionSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     def execute(self) -> None:
-        self._manage_battle_sequence()
+        self._manage_combat_sequence()
+        self._game.clear_hands()
 
     #######################################################################################################################################
-    def _manage_battle_sequence(self) -> None:
+    def _manage_combat_sequence(self) -> None:
         if not self._game.current_engagement.is_on_going_phase:
             return  # 不是本阶段就直接返回
 
@@ -270,12 +271,5 @@ class CombatResolutionSystem(ExecuteProcessor):
         character_profile_component = entity.get(RPGCharacterProfileComponent)
         assert character_profile_component is not None
         character_profile_component.rpg_character_profile.hp = int(update_hp)
-
-    ###############################################################################################################################################
-    # 删除手牌组件
-    def _remove_hand_components(self) -> None:
-        actor_entities = self._game.get_group(Matcher(HandComponent)).entities.copy()
-        for entity in actor_entities:
-            entity.remove(HandComponent)
 
     ###############################################################################################################################################

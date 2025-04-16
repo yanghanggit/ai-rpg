@@ -20,6 +20,7 @@ home_gameplay_router = APIRouter()
 ###################################################################################################################################################################
 async def _execute_web_game(web_game: WebTCGGame) -> None:
     assert web_game.player.name != ""
+    web_game.player.archive_and_clear_messages()
     await web_game.a_execute()
 
 
@@ -88,8 +89,6 @@ async def home_gameplay(
 
         case "/advancing":
             # 推进一次。
-            # 清空消息。准备重新开始 + 测试推进一次游戏
-            web_game.player.archive_and_clear_messages()
             await _execute_web_game(web_game)
 
             # 返回消息
@@ -108,7 +107,6 @@ async def home_gameplay(
             ):
 
                 # 清空消息。准备重新开始 + 测试推进一次游戏
-                web_game.player.archive_and_clear_messages()
                 await _execute_web_game(web_game)
 
                 # 返回消息
@@ -198,11 +196,7 @@ async def home_trans_dungeon(
             message="没有地下城可以传送, 全部地下城已经结束。！！！！已经全部被清空！！！！或者不存在！！！！",
         )
 
-    # 清空消息。准备重新开始
-    web_game.player.archive_and_clear_messages()
-
-    # 测试推进一次游戏
-    logger.info(f"!!!!!!!!!准备传送地下城!!!!!!!!!!!!")
+    # 传送地下城执行。
     if not web_game.launch_dungeon():
         logger.error("第一次地下城传送失败!!!!")
         return HomeTransDungeonResponse(

@@ -8,18 +8,26 @@ from models_v_0_0_1 import (
     HeroComponent,
     MonsterComponent,
     Skill,
-    XCardPlayerComponent,
+    HandDetail,
 )
 from typing import Final, List, Set, final, override
 from loguru import logger
 from game.tcg_game import TCGGame
-import copy
+
+
+#######################################################################################################################################
+@final
+class SkillResponse(BaseModel):
+    skill: Skill
+    targets: List[str]
+    reason: str
+    dialogue: str
 
 
 #######################################################################################################################################
 @final
 class DrawCardsResponse(BaseModel):
-    skills: List[Skill]
+    gen_skill_reponse: List[SkillResponse]
 
 
 #######################################################################################################################################
@@ -27,32 +35,43 @@ def _generate_prompt(
     skill_creation_count: int,
     current_stage: str,
     current_stage_narration: str,
+    round_turns: List[str],
 ) -> str:
-
     assert skill_creation_count > 0
+    if skill_creation_count <= 0:
+        return ""
+
     response_example = DrawCardsResponse(
-        skills=[],
+        gen_skill_reponse=[],
     )
 
     for i in range(skill_creation_count):
-        response_example.skills.append(
-            Skill(
+
+        skill_response_example = SkillResponse(
+            skill=Skill(
                 name=f"技能{i+1}",
                 description=f"技能{i+1}描述",
                 effect=f"技能{i+1}效果",
-            )
+            ),
+            targets=["目标1", "目标2"],
+            reason=f"技能{i+1}使用原因",
+            dialogue=f"技能{i+1}对话",
         )
 
-    return f"""# 请你生成 {skill_creation_count} 个技能
+        response_example.gen_skill_reponse.append(skill_response_example)
+
+    return f"""# 请你生成 {skill_creation_count} 个技能，并决定如何使用。
 ## 当前场景状态
 {current_stage} | {current_stage_narration}
-## 注意事项
-- 如生成的技能跟属性有关(增加/减少)，需在技能描述与影响里明确说明。
-## 输出要求
-- 禁用换行/空行
-- 直接输出合规JSON
-### 输出格式(JSON)
-{response_example.model_dump_json()}"""
+## (场景内角色) 行动顺序(从左到右)
+{round_turns}
+## 输出内容
+- 注意，如生成技能提到了属性(生命/物理攻击/物理防御/魔法攻击/魔法防御)，请在技能描述与影响里明确说明改变的数值。
+## 输出格式(JSON)
+{response_example.model_dump_json()}
+### 注意
+- 禁用换行/空行。
+- 直接输出合规JSON。"""
 
 
 #######################################################################################################################################
@@ -72,6 +91,10 @@ class CombatDrawCardsSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
 
+        if not self._game.current_engagement.is_on_going_phase:
+            logger.error(f"not web_game.current_engagement.is_on_going_phase")
+            return
+
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
 
@@ -85,17 +108,18 @@ class CombatDrawCardsSystem(ExecuteProcessor):
             return
 
         # 先清除
-        self._clear(actor_entities)
+        # self._clear(actor_entities)
+        self._game.clear_hands()
 
         # 处理请求
         await self._process_chat_requests(actor_entities)
 
     #######################################################################################################################################
-    def _clear(self, actor_entities: Set[Entity]) -> None:
-        copy_actor_entities = actor_entities.copy()
-        for entity in copy_actor_entities:
-            if entity.has(HandComponent):
-                entity.remove(HandComponent)
+    # def _clear(self, actor_entities: Set[Entity]) -> None:
+    #     copy_actor_entities = actor_entities.copy()
+    #     for entity in copy_actor_entities:
+    #         if entity.has(HandComponent):
+    #             entity.remove(HandComponent)
 
     #######################################################################################################################################
     async def _process_chat_requests(self, react_entities: Set[Entity]) -> None:
@@ -136,22 +160,26 @@ class CombatDrawCardsSystem(ExecuteProcessor):
                 )
             )
 
-            # 处理技能，就使用一次就拿掉。
-            if entity2.has(XCardPlayerComponent):
-                x_card_player_comp = entity2.get(XCardPlayerComponent)
-                assert (
-                    x_card_player_comp.skill.name != ""
-                ), f"{entity2._name} XCardPlayerComponent skill name is empty"
-                format_response.skills = [
-                    copy.copy(x_card_player_comp.skill),
-                ]
-                entity2.remove(XCardPlayerComponent)
+            skills: List[Skill] = [
+                skill_response.skill
+                for skill_response in format_response.gen_skill_reponse
+            ]
 
-            # 设置个技能
+            details: List[HandDetail] = [
+                HandDetail(
+                    skill=skill_response.skill.name,
+                    targets=skill_response.targets,
+                    reason=skill_response.reason,
+                    dialogue=skill_response.dialogue,
+                )
+                for skill_response in format_response.gen_skill_reponse
+            ]
+
             entity2.replace(
                 HandComponent,
                 entity2._name,
-                format_response.skills,
+                skills,
+                details,
             )
 
         except Exception as e:
@@ -164,6 +192,11 @@ class CombatDrawCardsSystem(ExecuteProcessor):
 
         request_handlers: List[ChatRequestHandler] = []
 
+        last_round = self._game.current_engagement.last_round
+        assert (
+            not last_round.is_round_complete
+        ), f"last_round.is_round_complete: {last_round.is_round_complete}"
+
         for entity in actor_entities:
 
             #
@@ -175,6 +208,7 @@ class CombatDrawCardsSystem(ExecuteProcessor):
                 self._skill_creation_count,
                 current_stage._name,
                 current_stage.get(EnvironmentComponent).narrate,
+                last_round.round_turns,
             )
 
             # 生成请求处理器

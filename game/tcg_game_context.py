@@ -1,6 +1,8 @@
+from dataclasses import dataclass
 from entitas import Context, Entity, Matcher  # type: ignore
 from typing import Optional, List, Set, override, Dict
 from models_v_0_0_1 import (
+    COMPONENTS_REGISTRY,
     ComponentSnapshot,
     EntitySnapshot,
     WorldSystemComponent,
@@ -9,7 +11,7 @@ from models_v_0_0_1 import (
     RuntimeComponent,
     AppearanceComponent,
     PlayerComponent,
-    COMPONENTS_REGISTRY,
+    DeathComponent,
 )
 
 from loguru import logger
@@ -23,6 +25,11 @@ from loguru import logger
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
+
+
+@dataclass
+class RetrieveMappingOptions:
+    filter_dead_actors: bool = True
 
 
 class TCGGameContext(Context):
@@ -167,7 +174,10 @@ class TCGGameContext(Context):
         return None
 
     ###############################################################################################################################################
-    def retrieve_stage_actor_mapping(self) -> Dict[Entity, Set[Entity]]:
+    def _retrieve_stage_actor_mapping(
+        self,
+        options: RetrieveMappingOptions,
+    ) -> Dict[Entity, Set[Entity]]:
 
         ret: Dict[Entity, Set[Entity]] = {}
 
@@ -182,6 +192,11 @@ class TCGGameContext(Context):
             assert stage_entity is not None, f"actor_entity = {actor_entity}"
             if stage_entity is None:
                 continue
+
+            if options.filter_dead_actors and actor_entity.has(DeathComponent):
+                # 死亡的actor不算在stage上
+                continue
+
             ret.setdefault(stage_entity, set()).add(actor_entity)
 
         # 补一下没有actor的stage
@@ -195,14 +210,16 @@ class TCGGameContext(Context):
         return ret
 
     ###############################################################################################################################################
-    def retrieve_actors_on_stage(self, entity: Entity) -> Set[Entity]:
+    def retrieve_actors_on_stage(
+        self, entity: Entity, options: RetrieveMappingOptions = RetrieveMappingOptions()
+    ) -> Set[Entity]:
 
         stage_entity = self.safe_get_stage_entity(entity)
         assert stage_entity is not None
         if stage_entity is None:
             return set()
 
-        mapping = self.retrieve_stage_actor_mapping()
+        mapping = self._retrieve_stage_actor_mapping(options)
         if stage_entity not in mapping:
             return set()
 

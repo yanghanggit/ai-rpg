@@ -4,7 +4,7 @@ from entitas import Entity, Matcher  # type: ignore
 from typing import Any, Dict, Final, Set, List, Optional, final
 from overrides import override
 from loguru import logger
-from game.tcg_game_context import TCGGameContext
+from game.tcg_game_context import TCGGameContext, RetrieveMappingOptions
 from game.base_game import BaseGame
 from game.tcg_game_process_pipeline import TCGGameProcessPipeline
 from models_v_0_0_1 import (
@@ -888,9 +888,11 @@ class TCGGame(BaseGame, TCGGameContext):
         self._clear_dungeon()
 
     ###############################################################################################################################################
-    def retrieve_stage_actor_names_mapping(self) -> Dict[str, List[str]]:
+    def retrieve_stage_actor_names_mapping(
+        self, options: RetrieveMappingOptions = RetrieveMappingOptions()
+    ) -> Dict[str, List[str]]:
 
-        entities_mapping = self.retrieve_stage_actor_mapping()
+        entities_mapping = self._retrieve_stage_actor_mapping(options)
         if len(entities_mapping) == 0:
             return {}
 

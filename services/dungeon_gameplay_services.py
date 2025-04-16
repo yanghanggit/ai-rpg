@@ -12,7 +12,6 @@ from loguru import logger
 from game.web_tcg_game import WebTCGGame
 from game.tcg_game import TCGGameState
 from tcg_game_systems.combat_draw_cards_system import CombatDrawCardsSystem
-from tcg_game_systems.combat_round_system import CombatRoundSystem
 
 ###################################################################################################################################################################
 dungeon_gameplay_router = APIRouter()
@@ -160,32 +159,6 @@ async def dungeon_gameplay(
                 client_messages=web_game.player.client_messages,
                 error=0,
                 message="",
-            )
-
-        case "new_round":
-
-            if not web_game.current_engagement.is_on_going_phase:
-                logger.error(f"not web_game.current_engagement.is_on_going_phase")
-                return DungeonGamePlayResponse(
-                    error=1005,
-                    message="not web_game.current_engagement.is_on_going_phase",
-                )
-
-            # 获得当前最新的回合数据。
-            combat_round_utils = CombatRoundSystem(
-                web_game,
-            )
-
-            round = combat_round_utils.setup_round()
-            assert not round.is_round_complete
-            logger.info(f"新的回合开始 = {round.model_dump_json(indent=4)}")
-
-            # 返回数据。
-            web_game.player.archive_and_clear_messages()
-            return DungeonGamePlayResponse(
-                client_messages=web_game.player.client_messages,
-                error=0,
-                message=f"新的回合开始 = {round.model_dump_json()}",
             )
 
         case "play_cards":

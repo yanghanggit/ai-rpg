@@ -14,7 +14,6 @@ from game.tcg_game_demo import (
 from tcg_game_systems.combat_draw_cards_system import CombatDrawCardsSystem
 from tcg_game_systems.combat_monitor_system import CombatMonitorSystem
 from game.user_session_options import UserSessionOptions
-from tcg_game_systems.combat_round_system import CombatRoundSystem
 from format_string.terminal_input import (
     parse_speak_command_input,
 )
@@ -200,20 +199,6 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
                 terminal_game,
             )
             await draw_card_utils.a_execute1()
-
-        elif usr_input == "/nr" or usr_input == "/new-round":
-
-            if not terminal_game.current_engagement.is_on_going_phase:
-                logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
-                return
-
-            combat_round_utils = CombatRoundSystem(
-                terminal_game,
-            )
-
-            round = combat_round_utils.setup_round()
-            assert not round.is_round_complete
-            logger.info(f"新的回合开始 = {round.model_dump_json(indent=4)}")
 
         elif usr_input == "/pc" or usr_input == "/play-card":
 

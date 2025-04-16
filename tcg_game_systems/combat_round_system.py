@@ -1,3 +1,4 @@
+from loguru import logger
 from entitas import ExecuteProcessor, Entity  # type: ignore
 from typing import List, final, Tuple, override
 from game.tcg_game import TCGGame
@@ -18,10 +19,14 @@ class CombatRoundSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     def execute(self) -> None:
-        pass
+        if not self._game.current_engagement.is_on_going_phase:
+            logger.error(f"not web_game.current_engagement.is_on_going_phase")
+            return
+
+        self._setup_round()
 
     #######################################################################################################################################
-    def setup_round(self) -> Round:
+    def _setup_round(self) -> Round:
 
         if (
             len(self._game.current_engagement.rounds) > 0
@@ -43,12 +48,12 @@ class CombatRoundSystem(ExecuteProcessor):
         assert stage_entity is not None
         stage_environment_comp = stage_entity.get(EnvironmentComponent)
 
-        #
         round = self._game.current_engagement.new_round(
             round_turns=[entity._name for entity in shuffled_reactive_entities]
         )
 
         round.stage_environment = stage_environment_comp.narrate
+        logger.debug(f"CombatRoundSystem: _setup_round: {round.model_dump_json()}")
         return round
 
     #######################################################################################################################################

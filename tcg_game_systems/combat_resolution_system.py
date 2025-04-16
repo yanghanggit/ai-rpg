@@ -27,7 +27,6 @@ class CombatResolutionSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
         self._manage_battle_sequence()
-        # self._remove_hand_components()
 
     #######################################################################################################################################
     def _manage_battle_sequence(self) -> None:

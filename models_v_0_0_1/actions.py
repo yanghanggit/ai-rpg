@@ -62,6 +62,14 @@ class TurnAction(NamedTuple):
 @final
 @register_component_class
 @register_action_class
+class DrawCardsAction(NamedTuple):
+    name: str
+
+
+############################################################################################################
+@final
+@register_component_class
+@register_action_class
 class PlayCardsAction(NamedTuple):
     name: str
     targets: List[str]

@@ -11,7 +11,6 @@ from game.tcg_game_demo import (
     create_demo_dungeon1,
     # create_demo_dungeon2,
 )
-from tcg_game_systems.combat_draw_cards_system import CombatDrawCardsSystem
 from tcg_game_systems.combat_monitor_system import CombatMonitorSystem
 from game.user_session_options import UserSessionOptions
 from format_string.terminal_input import (
@@ -195,10 +194,8 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
                 return
 
             logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
-            draw_card_utils = CombatDrawCardsSystem(
-                terminal_game,
-            )
-            await draw_card_utils.a_execute1()
+            terminal_game.activate_draw_cards_action()
+            await _execute_terminal_game(terminal_game, usr_input)
 
         elif usr_input == "/pc" or usr_input == "/play-card":
 

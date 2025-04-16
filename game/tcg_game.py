@@ -38,6 +38,7 @@ from models_v_0_0_1 import (
     HandComponent,
     SpeakAction,
     PlayerActiveComponent,
+    DrawCardsAction,
 )
 
 from player.player_proxy import PlayerProxy
@@ -987,5 +988,19 @@ class TCGGame(BaseGame, TCGGameContext):
         player_entity.replace(PlayerActiveComponent, player_entity._name)  # 添加标记。
 
         return True
+
+    #######################################################################################################################################
+    # TODO, draw_cards_action
+    def activate_draw_cards_action(self) -> None:
+
+        player_entity = self.get_player_entity()
+        assert player_entity is not None
+
+        actor_entities = self.retrieve_actors_on_stage(player_entity)
+        for entity in actor_entities:
+            entity.replace(
+                DrawCardsAction,
+                entity._name,
+            )
 
     #######################################################################################################################################

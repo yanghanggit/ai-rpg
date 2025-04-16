@@ -1,8 +1,10 @@
-from entitas import Entity, ExecuteProcessor  # type: ignore
+from entitas import Matcher, Entity, ExecuteProcessor  # type: ignore
 from pydantic import BaseModel
 from llm_serves.chat_request_handler import ChatRequestHandler
 from models_v_0_0_1 import (
     EnvironmentComponent,
+    TurnAction,
+    DrawCardsAction,
 )
 from overrides import override
 from typing import Dict, final
@@ -14,7 +16,7 @@ import format_string.json_format
 #######################################################################################################################################
 @final
 class StagePlanningResponse(BaseModel):
-    environment_narration: str = ""
+    environment: str = ""
 
 
 #######################################################################################################################################
@@ -28,9 +30,7 @@ def _generate_prompt(
     if len(actors_appearances_info) == 0:
         actors_appearances_info.append("无")
 
-    stage_response_example = StagePlanningResponse(
-        environment_narration="场景内的环境描述"
-    )
+    response_example = StagePlanningResponse(environment="场景内的环境描述")
 
     return f"""# 请你输出你的场景描述
 ## 场景内角色
@@ -41,7 +41,7 @@ def _generate_prompt(
 - 所有输出必须为第三人称视角。
 - 不要使用```json```来封装内容。
 ### 输出格式(JSON)
-{stage_response_example.model_dump_json()}"""
+{response_example.model_dump_json()}"""
 
 
 #######################################################################################################################################
@@ -54,21 +54,31 @@ class DungeonStageSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     def execute(self) -> None:
-        # if not self._is_phase_valid():
-        #     logger.debug("StagePlanningSystem: 状态无效，跳过执行。")
-        #     return
+        if not self._is_phase_valid():
+            logger.debug("StagePlanningSystem: 状态无效，跳过执行。")
+            return
         self._process_stage_planning()
 
     #######################################################################################################################################
-    # def _is_phase_valid(self) -> bool:
+    def _is_phase_valid(self) -> bool:
 
-    #     if (
-    #         self._game.current_engagement.is_post_wait_phase
-    #         or self._game.current_engagement.is_complete_phase
-    #     ):
-    #         return False
+        if (
+            self._game.current_engagement.is_post_wait_phase
+            or self._game.current_engagement.is_complete_phase
+        ):
+            return False
 
-    #     return True
+        if self._game.current_engagement.is_on_going_phase:
+            entities = self._game.get_group(
+                Matcher(any_of=[TurnAction, DrawCardsAction])
+            ).entities
+            if len(entities) > 0:
+                logger.debug(
+                    "StagePlanningSystem: 当前阶段有any_of=[TurnAction, DrawCardsAction]行动，跳过执行。"
+                )
+                return False
+
+        return True
 
     #######################################################################################################################################
     def _process_stage_planning(self) -> None:
@@ -113,8 +123,6 @@ class DungeonStageSystem(ExecuteProcessor):
         self, stage_entity: Entity, request_handler: ChatRequestHandler
     ) -> None:
 
-        assert stage_entity.has(EnvironmentComponent)
-
         # 核心处理
         try:
 
@@ -128,11 +136,11 @@ class DungeonStageSystem(ExecuteProcessor):
             self._game.append_ai_message(stage_entity, request_handler.response_content)
 
             # 更新环境描写
-            if format_response.environment_narration != "":
+            if format_response.environment != "":
                 stage_entity.replace(
                     EnvironmentComponent,
                     stage_entity._name,
-                    format_response.environment_narration,
+                    format_response.environment,
                 )
 
         except Exception as e:

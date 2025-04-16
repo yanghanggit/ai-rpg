@@ -1,18 +1,19 @@
 from pydantic import BaseModel
-from entitas import ExecuteProcessor, Entity  # type: ignore
+from entitas import Matcher, Entity, Matcher, GroupEvent  # type: ignore
 from llm_serves.chat_request_handler import ChatRequestHandler
 import format_string.json_format
 from models_v_0_0_1 import (
     EnvironmentComponent,
     HandComponent,
-    HeroComponent,
-    MonsterComponent,
     Skill,
     HandDetail,
+    XCardPlayerComponent,
+    DrawCardsAction,
 )
-from typing import Final, List, Set, final, override
+from typing import Final, List, final, override
 from loguru import logger
 from game.tcg_game import TCGGame
+from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 
 #######################################################################################################################################
@@ -76,53 +77,41 @@ def _generate_prompt(
 
 #######################################################################################################################################
 @final
-class CombatDrawCardsSystem(ExecuteProcessor):
+class DrawCardsActionSystem(BaseActionReactiveSystem):
 
     def __init__(self, game_context: TCGGame) -> None:
-        self._game: TCGGame = game_context
+        super().__init__(game_context)
         self._skill_creation_count: Final[int] = 2
 
-    ######################################################################################################################################
+    ####################################################################################################################################
     @override
-    def execute(self) -> None:
-        pass
+    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+        return {Matcher(DrawCardsAction): GroupEvent.ADDED}
+
+    ####################################################################################################################################
+    @override
+    def filter(self, entity: Entity) -> bool:
+        return entity.has(DrawCardsAction)
 
     ######################################################################################################################################
     @override
-    async def a_execute1(self) -> None:
+    async def a_execute2(self) -> None:
+
+        if len(self._react_entities_copy) == 0:
+            return
 
         if not self._game.current_engagement.is_on_going_phase:
             logger.error(f"not web_game.current_engagement.is_on_going_phase")
             return
 
-        player_entity = self._game.get_player_entity()
-        assert player_entity is not None
-
-        actor_entities = self._game.retrieve_actors_on_stage(player_entity)
-        for entity in actor_entities:
-            assert entity.has(HeroComponent) or entity.has(
-                MonsterComponent
-            ), f"{entity._name} must have HeroComponent or MonsterComponent"
-
-        if len(actor_entities) == 0:
-            return
-
         # 先清除
-        # self._clear(actor_entities)
         self._game.clear_hands()
 
         # 处理请求
-        await self._process_chat_requests(actor_entities)
+        await self._process_chat_requests(self._react_entities_copy)
 
     #######################################################################################################################################
-    # def _clear(self, actor_entities: Set[Entity]) -> None:
-    #     copy_actor_entities = actor_entities.copy()
-    #     for entity in copy_actor_entities:
-    #         if entity.has(HandComponent):
-    #             entity.remove(HandComponent)
-
-    #######################################################################################################################################
-    async def _process_chat_requests(self, react_entities: Set[Entity]) -> None:
+    async def _process_chat_requests(self, react_entities: List[Entity]) -> None:
 
         # 处理角色规划请求
         request_handlers: List[ChatRequestHandler] = self._generate_requests(
@@ -175,6 +164,22 @@ class CombatDrawCardsSystem(ExecuteProcessor):
                 for skill_response in format_response.gen_skill_reponse
             ]
 
+            if entity2.has(XCardPlayerComponent):
+                # 如果是玩家，则需要更新玩家的手牌
+                xcard_player_comp = entity2.get(XCardPlayerComponent)
+                skills = [xcard_player_comp.skill]
+                details = [
+                    HandDetail(
+                        skill=xcard_player_comp.skill.name,
+                        targets=["所有敌人"],
+                        reason="",
+                        dialogue=f"看招！{xcard_player_comp.skill.name}！",
+                    )
+                ]
+
+                # 只用这一次。
+                entity2.remove(XCardPlayerComponent)
+
             entity2.replace(
                 HandComponent,
                 entity2._name,
@@ -187,7 +192,7 @@ class CombatDrawCardsSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     def _generate_requests(
-        self, actor_entities: set[Entity]
+        self, actor_entities: List[Entity]
     ) -> List[ChatRequestHandler]:
 
         request_handlers: List[ChatRequestHandler] = []

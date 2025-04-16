@@ -123,6 +123,10 @@ class TCGGameProcessPipeline(Processors):
             CombatRoundSystem,
         )
 
+        from tcg_game_systems.draw_cards_action_system import (
+            DrawCardsActionSystem,
+        )
+
         ##
         tcg_game = cast(TCGGame, game)
         processors = TCGGameProcessPipeline()
@@ -142,8 +146,10 @@ class TCGGameProcessPipeline(Processors):
         # 自动开局
         processors.add(CombatRoundSystem(tcg_game))
 
+        # 抽卡。
         ######动作开始！！！！！################################################################################################
         processors.add(PreActionSystem(tcg_game))
+        processors.add(DrawCardsActionSystem(tcg_game))
         processors.add(TurnActionSystem(tcg_game))
         processors.add(DirectorActionSystem(tcg_game))
         processors.add(FeedbackActionSystem(tcg_game))

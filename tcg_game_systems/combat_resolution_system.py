@@ -27,7 +27,6 @@ class CombatResolutionSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
         self._manage_combat_sequence()
-        self._game.clear_hands()
 
     #######################################################################################################################################
     def _manage_combat_sequence(self) -> None:

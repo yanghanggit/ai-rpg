@@ -11,7 +11,6 @@ from models_v_0_0_1 import (
 from loguru import logger
 from game.web_tcg_game import WebTCGGame
 from game.tcg_game import TCGGameState
-from tcg_game_systems.combat_draw_cards_system import CombatDrawCardsSystem
 
 ###################################################################################################################################################################
 dungeon_gameplay_router = APIRouter()
@@ -143,12 +142,9 @@ async def dungeon_gameplay(
                     message="not web_game.current_engagement.is_on_going_phase",
                 )
 
-            # 抽牌。
-            combat_draw_cards_system = CombatDrawCardsSystem(
-                web_game,
-            )
-            # 抓牌
-            await combat_draw_cards_system.a_execute1()
+            # 推进一次游戏, 即可抽牌。
+            web_game.activate_draw_cards_action()
+            await _execute_web_game(web_game)
 
             # 返回！
             return DungeonGamePlayResponse(
@@ -179,6 +175,7 @@ async def dungeon_gameplay(
             )
 
         case "x_card":
+
             if not web_game.current_engagement.is_on_going_phase:
                 logger.error(f"not web_game.current_engagement.is_on_going_phase")
                 return DungeonGamePlayResponse(
@@ -204,9 +201,6 @@ async def dungeon_gameplay(
                     ),
                 )
 
-                logger.debug(
-                    f"玩家输入 = {request_data.user_input.tag}, 准备行动......"
-                )
                 return DungeonGamePlayResponse(
                     client_messages=web_game.player.client_messages,
                     error=0,

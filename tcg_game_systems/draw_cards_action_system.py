@@ -171,7 +171,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
                 details = [
                     HandDetail(
                         skill=xcard_player_comp.skill.name,
-                        targets=["所有敌人"],
+                        targets=["根据技能描述和效果，所有适用的目标"],
                         reason="",
                         dialogue=f"看招！{xcard_player_comp.skill.name}！",
                     )

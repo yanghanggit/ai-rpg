@@ -186,7 +186,9 @@ async def dungeon_gameplay(
             # TODO, 先写死默认往上面加。
             player_entity = web_game.get_player_entity()
             assert player_entity is not None
-
+            logger.debug(
+                f"玩家输入 x_card = \n{request_data.user_input.model_dump_json()}"
+            )
             skill_name = request_data.user_input.data.get("name", "")
             skill_description = request_data.user_input.data.get("description", "")
             skill_effect = request_data.user_input.data.get("effect", "")

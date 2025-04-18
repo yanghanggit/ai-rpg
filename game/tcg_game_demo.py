@@ -33,7 +33,7 @@ test_world_system = create_world_system(
 # TODO, 故意放大maxhp了。
 actor_warrior = create_actor(
     name="角色.战士.卡恩",
-    prototype_name="warrior",
+    character_sheet_name="warrior",
     kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）并告诉我你的战斗角色职能。回答简短(<100字)。""",
     rpg_character_profile=RPGCharacterProfile(base_max_hp=1000),
     type=ActorType.HERO,
@@ -47,7 +47,7 @@ actor_warrior = create_actor(
 # TODO, 故意放大maxhp了。
 actor_wizard = create_actor(
     name="角色.法师.奥露娜",
-    prototype_name="wizard",
+    character_sheet_name="wizard",
     kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）并告诉我你的战斗角色职能。回答简短(<100字)。""",
     rpg_character_profile=RPGCharacterProfile(base_max_hp=1000),
     type=ActorType.HERO,
@@ -61,7 +61,7 @@ actor_wizard = create_actor(
 # 故意后出手
 actor_goblin = create_actor(
     name="角色.怪物.哥布林-拉格",
-    prototype_name="goblin",
+    character_sheet_name="goblin",
     kick_off_message="",
     rpg_character_profile=RPGCharacterProfile(base_dexterity=1),
     type=ActorType.MONSTER,
@@ -75,7 +75,7 @@ actor_goblin = create_actor(
 # 故意后出手
 actor_orcs = create_actor(
     name="角色.怪物.兽人-库洛斯",
-    prototype_name="orc",
+    character_sheet_name="orc",
     kick_off_message="",
     rpg_character_profile=RPGCharacterProfile(base_dexterity=1),
     type=ActorType.MONSTER,
@@ -88,7 +88,7 @@ actor_orcs = create_actor(
 #######################################################################################################################################
 stage_heros_camp = create_stage(
     name="场景.营地",
-    prototype_name="camp",
+    character_sheet_name="camp",
     kick_off_message="营火静静地燃烧着。据消息附近的洞窟里出现了怪物，需要冒险者前去调查。",
     campaign_setting=CAMPAIGN_SETTING,
     type=StageType.HOME,
@@ -101,7 +101,7 @@ stage_heros_camp = create_stage(
 # 创建实例：洞穴1
 stage_dungeon_cave1 = create_stage(
     name="场景.洞窟之一",
-    prototype_name="goblin_cave",
+    character_sheet_name="goblin_cave",
     kick_off_message="",
     campaign_setting=CAMPAIGN_SETTING,
     type=StageType.DUNGEON,
@@ -113,7 +113,7 @@ stage_dungeon_cave1 = create_stage(
 #######################################################################################################################################
 stage_dungeon_cave2 = copy_stage(
     name="场景.洞窟之二",
-    prototype=stage_dungeon_cave1.prototype,
+    stage_character_sheet=stage_dungeon_cave1.character_sheet,
     kick_off_message="",
     campaign_setting=CAMPAIGN_SETTING,
     actors=[],

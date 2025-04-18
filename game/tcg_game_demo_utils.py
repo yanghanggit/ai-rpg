@@ -3,8 +3,8 @@ from models_v_0_0_1 import (
     Actor,
     Stage,
     WorldSystem,
-    ActorPrototype,
-    StagePrototype,
+    ActorCharacterSheet,
+    StageCharacterSheet,
     RPGCharacterProfile,
     # generate_character_profile_string,
 )
@@ -76,7 +76,7 @@ def _comple_world_system_system_prompt(
 #######################################################################################################################################
 def create_actor(
     name: str,
-    prototype_name: str,
+    character_sheet_name: str,
     kick_off_message: str,
     rpg_character_profile: RPGCharacterProfile,
     type: str,
@@ -85,8 +85,8 @@ def create_actor(
     appearance: str,
 ) -> Actor:
 
-    prototype = ActorPrototype(
-        name=prototype_name,
+    character_sheet = ActorCharacterSheet(
+        name=character_sheet_name,
         type=type,
         profile=actor_profile,
         appearance=appearance,
@@ -94,7 +94,7 @@ def create_actor(
 
     ret = Actor(
         name=name,
-        prototype=prototype,
+        character_sheet=character_sheet,
         system_message="",
         kick_off_message=kick_off_message,
         rpg_character_profile=rpg_character_profile,
@@ -124,7 +124,7 @@ def create_actor(
 #######################################################################################################################################
 def create_stage(
     name: str,
-    prototype_name: str,
+    character_sheet_name: str,
     kick_off_message: str,
     campaign_setting: str,
     type: str,
@@ -132,15 +132,15 @@ def create_stage(
     actors: List[Actor],
 ) -> Stage:
 
-    prototype = StagePrototype(
-        name=prototype_name,
+    character_sheet = StageCharacterSheet(
+        name=character_sheet_name,
         type=type,
         profile=stage_profile,
     )
 
     ret = Stage(
         name=name,
-        prototype=prototype,
+        character_sheet=character_sheet,
         system_message="",
         kick_off_message=kick_off_message,
         actors=[],
@@ -160,7 +160,7 @@ def create_stage(
 #######################################################################################################################################
 def copy_stage(
     name: str,
-    prototype: StagePrototype,
+    stage_character_sheet: StageCharacterSheet,
     kick_off_message: str,
     campaign_setting: str,
     actors: List[Actor],
@@ -168,11 +168,11 @@ def copy_stage(
 
     return create_stage(
         name=name,
-        prototype_name=prototype.name,
+        character_sheet_name=stage_character_sheet.name,
         kick_off_message=kick_off_message,
         campaign_setting=campaign_setting,
-        type=prototype.type,
-        stage_profile=prototype.profile,
+        type=stage_character_sheet.type,
+        stage_profile=stage_character_sheet.profile,
         actors=actors,
     )
 

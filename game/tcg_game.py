@@ -410,7 +410,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 必要组件：外观
             actor_entity.add(
-                AppearanceComponent, instance.name, instance.prototype.appearance
+                AppearanceComponent, instance.name, instance.character_sheet.appearance
             )
 
             # 必要组件：基础属性，这里用浅拷贝，不能动原有的。
@@ -428,20 +428,23 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
             # 必要组件：类型标记
-            match instance.prototype.type:
+            match instance.character_sheet.type:
                 case ActorType.HERO:
                     actor_entity.add(HeroComponent, instance.name)
                 case ActorType.MONSTER:
                     actor_entity.add(MonsterComponent, instance.name)
 
             # 添加进入数据库。
-            if instance.prototype.name in self.world.data_base.actors:
+            if (
+                instance.character_sheet.name
+                in self.world.data_base.actor_character_sheets
+            ):
                 logger.info(
-                    f"{instance.name}:{instance.prototype.name} = actor already exists in data_base.actors. is copy_actor?"
+                    f"{instance.name}:{instance.character_sheet.name} = actor already exists in data_base.actors. is copy_actor?"
                 )
             else:
-                self.world.data_base.actors.setdefault(
-                    instance.prototype.name, instance.prototype
+                self.world.data_base.actor_character_sheets.setdefault(
+                    instance.character_sheet.name, instance.character_sheet
                 )
 
             # 添加到返回值
@@ -484,9 +487,9 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
             # 必要组件：类型
-            if instance.prototype.type == StageType.DUNGEON:
+            if instance.character_sheet.type == StageType.DUNGEON:
                 stage_entity.add(DungeonComponent, instance.name)
-            elif instance.prototype.type == StageType.HOME:
+            elif instance.character_sheet.type == StageType.HOME:
                 stage_entity.add(HomeComponent, instance.name, [])
 
             ## 重新设置Actor和stage的关系
@@ -498,13 +501,16 @@ class TCGGame(BaseGame, TCGGameContext):
                 actor_entity.replace(ActorComponent, actor_instance.name, instance.name)
 
             # 添加进入数据库。
-            if instance.prototype.name in self.world.data_base.stages:
+            if (
+                instance.character_sheet.name
+                in self.world.data_base.stage_character_sheets
+            ):
                 logger.info(
-                    f"{instance.name}:{instance.prototype.name} = stage already exists in data_base.stages. is copy_stage?"
+                    f"{instance.name}:{instance.character_sheet.name} = stage already exists in data_base.stages. is copy_stage?"
                 )
             else:
-                self.world.data_base.stages.setdefault(
-                    instance.prototype.name, instance.prototype
+                self.world.data_base.stage_character_sheets.setdefault(
+                    instance.character_sheet.name, instance.character_sheet
                 )
 
             ret.append(stage_entity)

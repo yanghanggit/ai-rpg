@@ -1,5 +1,4 @@
-from typing import Any, Dict, Final, NamedTuple, List, final
-
+from typing import Any, Dict, NamedTuple, List, final
 from pydantic import BaseModel
 from .dungeon import Skill, StatusEffect
 from .objects import RPGCharacterProfile

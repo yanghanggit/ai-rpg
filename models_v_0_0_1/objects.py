@@ -1,7 +1,7 @@
 from typing import List, final
 from pydantic import BaseModel
 from enum import StrEnum, unique
-from .database import ActorPrototype, StagePrototype
+from .database import ActorCharacterSheet, StageCharacterSheet
 from .registry import register_base_model_class
 
 
@@ -134,10 +134,9 @@ def generate_character_profile_string(
 @register_base_model_class
 class Actor(BaseModel):
     name: str
-    prototype: ActorPrototype
+    character_sheet: ActorCharacterSheet
     system_message: str
     kick_off_message: str
-    # base_attributes: BaseAttributes
     rpg_character_profile: RPGCharacterProfile
 
 
@@ -146,7 +145,7 @@ class Actor(BaseModel):
 @register_base_model_class
 class Stage(BaseModel):
     name: str
-    prototype: StagePrototype
+    character_sheet: StageCharacterSheet
     system_message: str
     kick_off_message: str
     actors: List[Actor]

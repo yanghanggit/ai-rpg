@@ -6,7 +6,7 @@ from .registry import register_base_model_class
 ###############################################################################################################################################
 @final
 @register_base_model_class
-class ActorPrototype(BaseModel):
+class ActorCharacterSheet(BaseModel):
     name: str
     type: str
     profile: str
@@ -16,7 +16,7 @@ class ActorPrototype(BaseModel):
 ###############################################################################################################################################
 @final
 @register_base_model_class
-class StagePrototype(BaseModel):
+class StageCharacterSheet(BaseModel):
     name: str
     type: str
     profile: str
@@ -26,5 +26,5 @@ class StagePrototype(BaseModel):
 @final
 @register_base_model_class
 class DataBase(BaseModel):
-    actors: Dict[str, ActorPrototype] = {}
-    stages: Dict[str, StagePrototype] = {}
+    actor_character_sheets: Dict[str, ActorCharacterSheet] = {}
+    stage_character_sheets: Dict[str, StageCharacterSheet] = {}

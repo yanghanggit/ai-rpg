@@ -1,7 +1,7 @@
 from enum import Enum, IntEnum, unique
 import shutil
 from entitas import Entity, Matcher  # type: ignore
-from typing import Any, Dict, Final, Set, List, Optional, final
+from typing import Any, Dict, Final, Set, List, Optional, cast, final
 from overrides import override
 from loguru import logger
 from game.tcg_game_context import TCGGameContext, RetrieveMappingOptions
@@ -270,6 +270,11 @@ class TCGGame(BaseGame, TCGGameContext):
     def load_game(self) -> "TCGGame":
         assert len(self.world.entities_snapshot) > 0, "游戏中没有实体，不能恢复游戏"
         self.restore_entities_from_snapshot(self.world.entities_snapshot)
+
+        player_entity = self.get_player_entity()
+        assert player_entity is not None
+        assert player_entity.get(PlayerComponent).player_name == self.player.name
+
         return self
 
     ###############################################################################################################################################
@@ -1002,5 +1007,29 @@ class TCGGame(BaseGame, TCGGameContext):
                 DrawCardsAction,
                 entity._name,
             )
+
+    #######################################################################################################################################
+    def retrieve_recent_human_message_by_kargs(
+        self, actor_entity: Entity, kwargs_key: str, kwargs_value: str
+    ) -> Optional[HumanMessage]:
+
+        chat_history = self.get_agent_short_term_memory(actor_entity).chat_history
+        for chat_message in reversed(chat_history):
+
+            if not isinstance(chat_message, HumanMessage):
+                continue
+
+            kwargs = chat_message.model_dump()["kwargs"]
+            if kwargs == None:
+                continue
+
+            cast_dict = cast(Dict[str, Any], kwargs)
+            if not kwargs_key in cast_dict:
+                continue
+
+            if cast_dict.get(kwargs_key) == kwargs_value:
+                return chat_message
+
+        return None
 
     #######################################################################################################################################

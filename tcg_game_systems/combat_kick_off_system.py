@@ -85,9 +85,6 @@ class CombatKickOffSystem(ExecuteProcessor):
         if len(actor_entities) == 0:
             return  # 人不够就返回。
 
-        # step3: 重置战斗属性! 这个是必须的！
-        # self._reset_combat_attributes(actor_entities)
-
         # step4: 处理角色规划请求
         request_handlers: List[ChatRequestHandler] = self._generate_requests(
             actor_entities
@@ -206,10 +203,13 @@ class CombatKickOffSystem(ExecuteProcessor):
         self._game.update_combat_status_effects(entity2, format_response.status_effects)
 
         # 添加提示词上下文。
+
+        stage_entity = self._game.safe_get_stage_entity(entity2)
+        assert stage_entity is not None
         self._game.append_human_message(
             entity2,
             request_handler._prompt,
-            combat_init_tag="战斗触发！",
+            combat_kickoff_tag=stage_entity._name,
         )
 
         status_effects_prompt = "无"

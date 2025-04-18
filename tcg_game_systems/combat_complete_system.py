@@ -1,6 +1,7 @@
+from loguru import logger
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from overrides import override
-from typing import Any, Dict, List, cast, final
+from typing import List, final
 from game.tcg_game import TCGGame
 from models_v_0_0_1 import (
     ActorComponent,
@@ -9,10 +10,7 @@ from models_v_0_0_1 import (
     CombatResult,
     CombatCompleteEvent,
 )
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from llm_serves.chat_request_handler import ChatRequestHandler
-
-# from loguru import logger
 
 
 #######################################################################################################################################
@@ -130,51 +128,37 @@ class CombatCompleteSystem(ExecuteProcessor):
     # 压缩战斗历史。
     def _compress_chat_history_after_combat(self, entity: Entity) -> None:
 
-        assert (
-            entity.has(ActorComponent)
-            and entity.has(HeroComponent)
-            and entity.has(RPGCharacterProfileComponent)
-        )
+        assert entity.has(ActorComponent), f"实体: {entity._name} 不是角色！"
 
-        # 先获取最近的战斗消息。
-        extracted_combat_messages = self._extract_last_combat_messages(entity)
-        assert len(extracted_combat_messages) > 0
-        if len(extracted_combat_messages) == 0:
+        # 获取当前的战斗实体。
+        stage_entity = self._game.safe_get_stage_entity(entity)
+        assert stage_entity is not None
+
+        # 获取最近的战斗消息。
+        begin_message = self._game.retrieve_recent_human_message_by_kargs(
+            entity, "combat_kickoff_tag", stage_entity._name
+        )
+        assert begin_message is not None
+
+        # 获取最近的战斗消息。
+        end_message = self._game.retrieve_recent_human_message_by_kargs(
+            entity, "combat_result_tag", stage_entity._name
+        )
+        assert end_message is not None
+
+        if begin_message is None or end_message is None:
+            logger.error(
+                f"战斗消息不完整！{entity._name} begin_message: {begin_message} end_message: {end_message}"
+            )
             return
 
-        # 以extracted_combat_messages[0]为标记，从short_term_memory.chat_history找到对应的位置。
-        # 然后移除从extracted_combat_messages[0]到extracted_combat_messages[-1]之间的所有消息。
         short_term_memory = self._game.get_agent_short_term_memory(entity)
-        start_index = short_term_memory.chat_history.index(extracted_combat_messages[0])
-        end_index = (
-            short_term_memory.chat_history.index(extracted_combat_messages[-1]) + 1
-        )
+        begin_message_index = short_term_memory.chat_history.index(begin_message)
+        end_message_index = short_term_memory.chat_history.index(end_message) + 1
         # 移除！！！！。
-        del short_term_memory.chat_history[start_index:end_index]
-
-    #######################################################################################################################################
-    # 工具方法：提取最近的战斗消息。
-    def _extract_last_combat_messages(
-        self, actor_entity: Entity
-    ) -> List[SystemMessage | HumanMessage | AIMessage]:
-
-        extracted_combat_messages: List[SystemMessage | HumanMessage | AIMessage] = []
-        is_combat_init_found = False
-
-        chat_history = self._game.get_agent_short_term_memory(actor_entity).chat_history
-
-        for chat_message in chat_history:
-            if isinstance(chat_message, HumanMessage):
-                kwargs = chat_message.model_dump()["kwargs"]
-                if kwargs == None:
-                    continue
-                cast_dict = cast(Dict[str, Any], kwargs)
-                if "combat_init_tag" in cast_dict:
-                    is_combat_init_found = True
-
-            if is_combat_init_found:
-                extracted_combat_messages.append(chat_message)
-
-        return extracted_combat_messages
+        del short_term_memory.chat_history[begin_message_index:end_message_index]
+        logger.debug(
+            f"战斗消息压缩成功！{entity._name} begin_message: {begin_message} end_message: {end_message}"
+        )
 
     #######################################################################################################################################

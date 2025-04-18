@@ -28,8 +28,10 @@ class CombatResultSystem(ExecuteProcessor):
 
         if self._are_all_heroes_defeated():
             self._game.current_engagement.combat_complete(CombatResult.HERO_LOSE)
+            self._notify_combat_result(CombatResult.HERO_LOSE)
         elif self._are_all_monsters_defeated():
             self._game.current_engagement.combat_complete(CombatResult.HERO_WIN)
+            self._notify_combat_result(CombatResult.HERO_WIN)
         else:
             logger.debug("combat continue!!!")
 
@@ -83,5 +85,36 @@ class CombatResultSystem(ExecuteProcessor):
                 defeated_heroes.add(entity)
 
         return len(active_heroes) > 0 and len(defeated_heroes) >= len(active_heroes)
+
+    ########################################################################################################################################################################
+    def _notify_combat_result(self, result: CombatResult) -> None:
+        # TODO, 通知战斗结果
+        player_entity = self._game.get_player_entity()
+        assert player_entity is not None
+
+        player_stage_entity = self._game.safe_get_stage_entity(player_entity)
+        assert player_stage_entity is not None
+
+        actors_on_stage = self._game.retrieve_actors_on_stage(
+            player_entity, RetrieveMappingOptions(filter_dead_actors=False)
+        )
+        assert len(actors_on_stage) > 0, f"entities with actions: {actors_on_stage}"
+
+        for entity in actors_on_stage:
+            if not entity.has(HeroComponent):
+                continue
+            
+            if result == CombatResult.HERO_WIN:
+                self._game.append_human_message(
+                    entity,
+                    f"你胜利了！",
+                    combat_result_tag=player_stage_entity._name,
+                )
+            elif result == CombatResult.HERO_LOSE:
+                self._game.append_human_message(
+                    entity,
+                    f"你失败了！",
+                    combat_result_tag=player_stage_entity._name,
+                )
 
     ########################################################################################################################################################################

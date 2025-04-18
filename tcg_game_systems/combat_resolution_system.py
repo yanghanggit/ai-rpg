@@ -118,7 +118,7 @@ class CombatResolutionSystem(ExecuteProcessor):
         last_round.round_turns = first_turn_action.round_turns
 
         # 第一步，通知回合开始！！！提示! 添加一个记忆！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
-        self._process_turn_action(turn_action_actors, last_round)
+        self._process_turn_action(turn_action_actors)
 
         # 第二步，添加决定使用什么技能 ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
         self._process_play_cards_action(
@@ -142,15 +142,16 @@ class CombatResolutionSystem(ExecuteProcessor):
         )
 
     #######################################################################################################################################
-    def _process_turn_action(self, actor_entities: Set[Entity], round: Round) -> None:
-        for actor_entity1 in actor_entities:
-            turn_action = actor_entity1.get(TurnAction)
+    def _process_turn_action(self, actor_entities: Set[Entity]) -> None:
+
+        for actor_entity in actor_entities:
+
+            turn_action = actor_entity.get(TurnAction)
             assert turn_action is not None
 
             self._game.append_human_message(
-                entity=actor_entity1,
+                entity=actor_entity,
                 chat=f"# 提示！战斗回合开始，第 {turn_action.rounds} 回合！",
-                combat_rounds=f"{turn_action.rounds}",
             )
 
     #######################################################################################################################################

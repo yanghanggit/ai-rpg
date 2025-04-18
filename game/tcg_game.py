@@ -39,8 +39,9 @@ from models_v_0_0_1 import (
     SpeakAction,
     PlayerActiveComponent,
     DrawCardsAction,
+    DeathComponent,
 )
-
+from models_v_0_0_1.components import XCardPlayerComponent
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from llm_serves.chat_system import ChatSystem
@@ -794,13 +795,14 @@ class TCGGame(BaseGame, TCGGameContext):
     #######################################################################################################################################
     # TODO!!! 进入地下城。
     def launch_dungeon(self) -> bool:
-        # 第一次，必须是<0, 证明一次没来过。
-        # assert self.current_dungeon.position < 0, "当前地下城关卡已经完成！"
         if self.current_dungeon.position < 0:
             self.current_dungeon.position = 0  # 第一次设置，第一个关卡。
             self._create_dungeon_entities(self.current_dungeon)
             heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
             return self._process_dungeon_advance(self.current_dungeon, heros_entities)
+        else:
+            # 第一次，必须是<0, 证明一次没来过。
+            logger.error(f"launch_dungeon position = {self.current_dungeon.position}")
 
         return False
 
@@ -891,8 +893,28 @@ class TCGGame(BaseGame, TCGGameContext):
         # 开始传送。
         self.stage_transition(heros_entities, stage_entity)
 
-        # 设置空的地下城。
+        # 设置空的地下城的数据。
         self._clear_dungeon()
+
+        # 清除掉所有的战斗状态
+        for hero_entity in heros_entities:
+
+            # 不要的组件。
+            if hero_entity.has(DeathComponent):
+                logger.debug(f"remove death component: {hero_entity._name}")
+                hero_entity.remove(DeathComponent)
+
+            # 不要的组件
+            if hero_entity.has(XCardPlayerComponent):
+                logger.debug(f"remove xcard player component: {hero_entity._name}")
+                hero_entity.remove(XCardPlayerComponent)
+
+            # 生命全部恢复。
+            assert hero_entity.has(RPGCharacterProfileComponent)
+            rpg_character_profile_comp = hero_entity.get(RPGCharacterProfileComponent)
+            rpg_character_profile_comp.rpg_character_profile.hp = (
+                rpg_character_profile_comp.rpg_character_profile.max_hp
+            )
 
     ###############################################################################################################################################
     def retrieve_stage_actor_names_mapping(
@@ -970,7 +992,7 @@ class TCGGame(BaseGame, TCGGameContext):
         return True
 
     #######################################################################################################################################
-    # TODO, speak action
+    # TODO, 临时添加行动, 逻辑。
     def activate_speak_action(self, target: str, content: str) -> bool:
 
         assert target != "", "target is empty"
@@ -995,7 +1017,7 @@ class TCGGame(BaseGame, TCGGameContext):
         return True
 
     #######################################################################################################################################
-    # TODO, draw_cards_action
+    # TODO, 临时添加行动, 逻辑。
     def activate_draw_cards_action(self) -> None:
 
         player_entity = self.get_player_entity()

@@ -103,7 +103,7 @@ class CombatResultSystem(ExecuteProcessor):
         for entity in actors_on_stage:
             if not entity.has(HeroComponent):
                 continue
-            
+
             if result == CombatResult.HERO_WIN:
                 self._game.append_human_message(
                     entity,

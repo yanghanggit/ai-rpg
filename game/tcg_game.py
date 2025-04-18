@@ -517,7 +517,6 @@ class TCGGame(BaseGame, TCGGameContext):
         return self._player
 
     ###############################################################################################################################################
-    # 临时的，考虑后面把player直接挂在context或者game里，因为player设计上唯一
     def get_player_entity(self) -> Optional[Entity]:
         return self.get_entity_by_player_name(self.player.name)
 
@@ -532,7 +531,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
         logger.debug(f"append_human_message: {entity._name} => \n{chat}")
         if len(kwargs) > 0:
-            # 如果 **kwargs 不是 空，就打印一下
+            # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
             logger.debug(f"kwargs: {kwargs}")
 
         agent_short_term_memory = self.get_agent_short_term_memory(entity)
@@ -555,10 +554,8 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     def _assign_player_to_actor(self) -> bool:
-
-        # 玩家的名字，此时必须有
-        assert self.player.name != ""
-        assert self.player.actor != ""
+        assert self.player.name != "", "玩家名字不能为空"
+        assert self.player.actor != "", "玩家角色不能为空"
 
         actor_entity = self.get_actor_entity(self.player.actor)
         assert actor_entity is not None
@@ -608,7 +605,6 @@ class TCGGame(BaseGame, TCGGameContext):
                 self.player.add_agent_event(agent_event=agent_event)
 
     ###############################################################################################################################################
-    # 传送角色set里的角色到指定场景，游戏层面的行为，会添加记忆但不会触发action
     def stage_transition(self, actors: Set[Entity], stage_destination: Entity) -> None:
 
         assert self._debug_flag_pipeline is False, "传送前，不允许在pipeline中"
@@ -690,7 +686,6 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
     ###############################################################################################################################################
-    # 检查是否可以对话
     def validate_conversation(
         self, stage_or_actor: Entity, target_name: str
     ) -> ConversationError:
@@ -719,6 +714,7 @@ class TCGGame(BaseGame, TCGGameContext):
             rpg_character_profile_comp.rpg_character_profile, RPGCharacterProfile
         )
 
+        # 重置了。
         actor_entity.replace(
             RPGCharacterProfileComponent,
             actor_entity._name,

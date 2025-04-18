@@ -14,7 +14,7 @@ from .registry import register_base_model_class
 @register_base_model_class
 class Boot(BaseModel):
     name: str
-    epoch_script: str = ""
+    campaign_setting: str = ""
     stages: List[Stage] = []
     world_systems: List[WorldSystem] = []
     data_base: DataBase = DataBase()

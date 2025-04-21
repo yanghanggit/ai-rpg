@@ -52,7 +52,7 @@ import random
 
 
 # ################################################################################################################################################
-def _replace_with_you(input_text: str, your_name: str) -> str:
+def _replace_name_with_you(input_text: str, your_name: str) -> str:
 
     if len(input_text) == 0 or your_name not in input_text:
         return input_text
@@ -603,7 +603,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 正常的添加记忆。
         for entity in entities:
-            replace_message = _replace_with_you(agent_event.message, entity._name)
+            replace_message = _replace_name_with_you(agent_event.message, entity._name)
             self.append_human_message(entity, replace_message)
 
             if entity.has(PlayerComponent):
@@ -1043,16 +1043,22 @@ class TCGGame(BaseGame, TCGGameContext):
             if not isinstance(chat_message, HumanMessage):
                 continue
 
-            kwargs = chat_message.model_dump()["kwargs"]
-            if kwargs == None:
-                continue
+            try:
 
-            cast_dict = cast(Dict[str, Any], kwargs)
-            if not kwargs_key in cast_dict:
-                continue
+                kwargs = chat_message.model_dump()["kwargs"]
+                if kwargs == None:
+                    continue
 
-            if cast_dict.get(kwargs_key) == kwargs_value:
-                return chat_message
+                cast_dict = cast(Dict[str, Any], kwargs)
+                if not kwargs_key in cast_dict:
+                    continue
+
+                if cast_dict.get(kwargs_key) == kwargs_value:
+                    return chat_message
+
+            except Exception as e:
+                logger.error(f"retrieve_recent_human_message_by_kargs error: {e}")
+                continue
 
         return None
 

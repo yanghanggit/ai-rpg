@@ -3,7 +3,6 @@ from loguru import logger
 from services.game_server_instance import GameServerInstance
 from models_v_0_0_1 import (
     APIEndpointConfiguration,
-    APIEndpointConfigurationRequest,
     APIEndpointConfigurationResponse,
 )
 
@@ -11,15 +10,14 @@ from models_v_0_0_1 import (
 api_endpoints_router = APIRouter()
 
 
-@api_endpoints_router.post(
+@api_endpoints_router.get(
     path="/api_endpoints/v1/", response_model=APIEndpointConfigurationResponse
 )
 async def api_endpoints(
-    request_data: APIEndpointConfigurationRequest,
     game_server: GameServerInstance,
 ) -> APIEndpointConfigurationResponse:
 
-    logger.info(f"api_endpoints: {request_data.model_dump_json()}")
+    logger.info("获取API路由")
 
     server_ip_address = str(game_server.server_ip_address)
     if server_ip_address == "0.0.0.0":

@@ -193,13 +193,6 @@ class DungeonGamePlayResponse(BaseModel):
 
 @final
 @register_base_model_class
-class ViewDungeonRequest(BaseModel):
-    user_name: str = ""
-    game_name: str = ""
-
-
-@final
-@register_base_model_class
 class ViewDungeonResponse(BaseModel):
     mapping: Dict[str, List[str]] = {}
     dungeon: Dungeon = Dungeon(name="")
@@ -210,13 +203,6 @@ class ViewDungeonResponse(BaseModel):
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################
-
-
-@final
-@register_base_model_class
-class ViewHomeRequest(BaseModel):
-    user_name: str = ""
-    game_name: str = ""
 
 
 @final

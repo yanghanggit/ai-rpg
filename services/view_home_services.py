@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from game.web_tcg_game import WebTCGGame
 from services.game_server_instance import GameServerInstance
 from models_v_0_0_1 import (
     ViewHomeRequest,
@@ -26,7 +27,7 @@ async def view_home(
     room_manager = game_server.room_manager
     if not room_manager.has_room(request_data.user_name):
         logger.error(
-            f"home_run: {request_data.user_name} has no room, please login first."
+            f"view_home: {request_data.user_name} has no room, please login first."
         )
         return ViewHomeResponse(
             error=1001,
@@ -38,25 +39,29 @@ async def view_home(
     assert current_room is not None
     if current_room._game is None:
         logger.error(
-            f"home_run: {request_data.user_name} has no game, please login first."
+            f"view_home: {request_data.user_name} has no game, please login first."
         )
         return ViewHomeResponse(
             error=1002,
             message="没有游戏，请先登录",
         )
 
+    web_game = current_room._game
+    assert web_game is not None
+    assert isinstance(web_game, WebTCGGame)
+
     # 判断游戏是否开始
-    if not current_room._game.is_game_started:
+    if not web_game.is_game_started:
         logger.error(
-            f"home_run: {request_data.user_name} game not started, please start it first."
+            f"view_home: {request_data.user_name} game not started, please start it first."
         )
         return ViewHomeResponse(
             error=1003,
             message="游戏没有开始，请先开始游戏",
         )
 
-    mapping_data = current_room._game.retrieve_stage_actor_names_mapping()
-    logger.info(f"home_run: {request_data.user_name} mapping_data: {mapping_data}")
+    mapping_data = web_game.gen_map()
+    logger.info(f"view_home: {request_data.user_name} mapping_data: {mapping_data}")
 
     # 返回。
     return ViewHomeResponse(

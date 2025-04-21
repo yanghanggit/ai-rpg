@@ -1,13 +1,15 @@
+from entitas import Matcher  # type: ignore
 from typing import List
 from fastapi import APIRouter
+from game.web_tcg_game import WebTCGGame
 from services.game_server_instance import GameServerInstance
 from models_v_0_0_1 import (
     ViewActorRequest,
     ViewActorResponse,
     EntitySnapshot,
+    ActorComponent,
 )
 from loguru import logger
-
 
 ###################################################################################################################################################################
 view_actor_router = APIRouter()
@@ -57,17 +59,31 @@ async def view_actor(
             message="游戏没有开始，请先开始游戏",
         )
 
+    web_game = current_room._game
+    assert web_game is not None
+    assert isinstance(web_game, WebTCGGame)
+
     # 获取快照
     snapshots: List[EntitySnapshot] = []
+    if len(request_data.actors) == 0:
+        # 没有指定角色，获取所有角色
+        actor_entities = web_game.get_group(
+            Matcher(
+                all_of=[ActorComponent],
+            )
+        ).entities
+
+        request_data.actors = [actor_entity._name for actor_entity in actor_entities]
+
     for actor_name in request_data.actors:
 
-        actor_entity = current_room._game.get_entity_by_name(actor_name)
+        actor_entity = web_game.get_entity_by_name(actor_name)
         if actor_entity is None:
             logger.error(
                 f"view_actor: {request_data.user_name} actor {actor_name} not found."
             )
             continue
-        snapshot = current_room._game.create_entity_snapshot(actor_entity)
+        snapshot = web_game.create_entity_snapshot(actor_entity)
         snapshots.append(snapshot)
 
     # 返回。

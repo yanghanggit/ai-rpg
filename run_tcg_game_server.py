@@ -74,7 +74,7 @@ if __name__ == "__main__":
         initialize_game_server_instance(
             server_ip_address="0.0.0.0",
             server_port=8000,
-            local_network_ip="192.168.192.111",
+            local_network_ip="192.168.192.109",
         )
     )
     # 如果能开启就用get方法测试

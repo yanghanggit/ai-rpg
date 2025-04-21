@@ -919,7 +919,7 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
     ###############################################################################################################################################
-    def retrieve_stage_actor_names_mapping(
+    def gen_map(
         self, options: RetrieveMappingOptions = RetrieveMappingOptions()
     ) -> Dict[str, List[str]]:
 

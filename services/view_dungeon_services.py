@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from game.web_tcg_game import WebTCGGame
 from services.game_server_instance import GameServerInstance
 from models_v_0_0_1 import (
     ViewDungeonRequest,
@@ -26,7 +27,7 @@ async def view_dungeon(
     room_manager = game_server.room_manager
     if not room_manager.has_room(request_data.user_name):
         logger.error(
-            f"home_run: {request_data.user_name} has no room, please login first."
+            f"view_dungeon: {request_data.user_name} has no room, please login first."
         )
         return ViewDungeonResponse(
             error=1001,
@@ -38,31 +39,36 @@ async def view_dungeon(
     assert current_room is not None
     if current_room._game is None:
         logger.error(
-            f"home_run: {request_data.user_name} has no game, please login first."
+            f"view_dungeon: {request_data.user_name} has no game, please login first."
         )
         return ViewDungeonResponse(
             error=1002,
             message="没有游戏，请先登录",
         )
 
+    web_game = current_room._game
+    assert web_game is not None
+    assert isinstance(web_game, WebTCGGame)
+
     # 判断游戏是否开始
-    if not current_room._game.is_game_started:
+    if not web_game.is_game_started:
         logger.error(
-            f"home_run: {request_data.user_name} game not started, please start it first."
+            f"view_dungeon: {request_data.user_name} game not started, please start it first."
         )
         return ViewDungeonResponse(
             error=1003,
             message="游戏没有开始，请先开始游戏",
         )
 
-    mapping_data = current_room._game.retrieve_stage_actor_names_mapping()
+    mapping_data = web_game.gen_map()
+    logger.info(f"view_dungeon: {request_data.user_name} mapping_data: {mapping_data}")
 
     # 返回。
     return ViewDungeonResponse(
         mapping=mapping_data,
-        dungeon=current_room._game.current_dungeon,
+        dungeon=web_game.current_dungeon,
         error=0,
-        message=current_room._game.current_dungeon.model_dump_json(),
+        message=web_game.current_dungeon.model_dump_json(),
     )
 
 

@@ -19,13 +19,11 @@ class SaveSystem(ExecuteProcessor):
         self._game.save()
 
         # 保存时，打印当前场景中的所有角色
-        self._mapping()
+        self._log_map()
 
     ############################################################################################################
-    def _mapping(self) -> None:
-        names_mapping: Dict[str, List[str]] = (
-            self._game.retrieve_stage_actor_names_mapping()
-        )
-        logger.debug(f"names_mapping = {names_mapping}")
+    def _log_map(self) -> None:
+        names_mapping: Dict[str, List[str]] = self._game.gen_map()
+        logger.info(f"names_mapping = {names_mapping}")
 
     ############################################################################################################

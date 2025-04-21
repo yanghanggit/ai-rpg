@@ -220,14 +220,6 @@ class ViewHomeResponse(BaseModel):
 
 @final
 @register_base_model_class
-class ViewActorRequest(BaseModel):
-    user_name: str = ""
-    game_name: str = ""
-    actors: List[str] = []
-
-
-@final
-@register_base_model_class
 class ViewActorResponse(BaseModel):
     actor_snapshots: List[EntitySnapshot] = []
     error: int = 0

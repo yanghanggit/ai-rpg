@@ -1,10 +1,9 @@
 from entitas import Matcher  # type: ignore
 from typing import List
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from game.web_tcg_game import WebTCGGame
 from services.game_server_instance import GameServerInstance
 from models_v_0_0_1 import (
-    ViewActorRequest,
     ViewActorResponse,
     EntitySnapshot,
     ActorComponent,
@@ -18,32 +17,32 @@ view_actor_router = APIRouter()
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-@view_actor_router.post(path="/view-actor/v1/", response_model=ViewActorResponse)
+@view_actor_router.get(
+    path="/view-actor/v1/{user_name}/{game_name}", response_model=ViewActorResponse
+)
 async def view_actor(
-    request_data: ViewActorRequest,
+    user_name: str,
+    game_name: str,
     game_server: GameServerInstance,
+    actors: List[str] = Query(..., alias="actors"),
 ) -> ViewActorResponse:
 
-    logger.info(f"/view-actor/v1/: {request_data.model_dump_json()}")
+    logger.info(f"/view-actor/v1/: {user_name}, {game_name}, {actors}")
 
     # 是否有房间？！！
     room_manager = game_server.room_manager
-    if not room_manager.has_room(request_data.user_name):
-        logger.error(
-            f"view_actor: {request_data.user_name} has no room, please login first."
-        )
+    if not room_manager.has_room(user_name):
+        logger.error(f"view_actor: {user_name} has no room, please login first.")
         return ViewActorResponse(
             error=1001,
             message="没有登录，请先登录",
         )
 
     # 是否有游戏？！！
-    current_room = room_manager.get_room(request_data.user_name)
+    current_room = room_manager.get_room(user_name)
     assert current_room is not None
     if current_room._game is None:
-        logger.error(
-            f"view_actor: {request_data.user_name} has no game, please login first."
-        )
+        logger.error(f"view_actor: {user_name} has no game, please login first.")
         return ViewActorResponse(
             error=1002,
             message="没有游戏，请先登录",
@@ -52,7 +51,7 @@ async def view_actor(
     # 判断游戏是否开始
     if not current_room._game.is_game_started:
         logger.error(
-            f"view_actor: {request_data.user_name} game not started, please start it first."
+            f"view_actor: {user_name} game not started, please start it first."
         )
         return ViewActorResponse(
             error=1003,
@@ -60,12 +59,13 @@ async def view_actor(
         )
 
     web_game = current_room._game
+    assert web_game.name == game_name
     assert web_game is not None
     assert isinstance(web_game, WebTCGGame)
 
     # 获取快照
     snapshots: List[EntitySnapshot] = []
-    if len(request_data.actors) == 0:
+    if len(actors) == 0 or actors[0] == "":
         # 没有指定角色，获取所有角色
         actor_entities = web_game.get_group(
             Matcher(
@@ -73,15 +73,13 @@ async def view_actor(
             )
         ).entities
 
-        request_data.actors = [actor_entity._name for actor_entity in actor_entities]
+        actors = [actor_entity._name for actor_entity in actor_entities]
 
-    for actor_name in request_data.actors:
+    for actor_name in actors:
 
         actor_entity = web_game.get_entity_by_name(actor_name)
         if actor_entity is None:
-            logger.error(
-                f"view_actor: {request_data.user_name} actor {actor_name} not found."
-            )
+            logger.error(f"view_actor: {user_name} actor {actor_name} not found.")
             continue
         snapshot = web_game.create_entity_snapshot(actor_entity)
         snapshots.append(snapshot)

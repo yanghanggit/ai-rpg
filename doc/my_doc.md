@@ -126,3 +126,21 @@ def register_component_class(cls: T_COMPONENT) -> T_COMPONENT:
 
 ## 我的需求：
 1. 在 register_component_class 函数里加一个判断，cls必须是 NamedTuple 类。
+
+
+
+
+# 你的这个建议，我有一个需求
+
+
+请求URL示例：
+http://localhost:8000/items/?ids=1&ids=2&ids=3
+
+对应的requests代码：
+response = requests.get(
+    "http://localhost:8000/items/",
+    params={"ids": [1, 2, 3]}  # requests自动处理为重复参数
+)
+
+## 需求如下
+requests.get 这部分我希望用Unity 引擎的C#代码来实现。应该如何写？

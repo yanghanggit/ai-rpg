@@ -28,6 +28,7 @@ class ChatRequestHandler:
         )
         self._response: Optional[ChatResponseModel] = None
         self._user_name: str = user_name
+        self._timeout: Final[int] = 30
 
     ################################################################################################################################################################################
     @property
@@ -58,6 +59,7 @@ class ChatRequestHandler:
                     input=self._prompt,
                     chat_history=self._chat_history,
                 ).model_dump(),
+                timeout=self._timeout,
             )
 
             if response.status_code == 200:
@@ -99,6 +101,7 @@ class ChatRequestHandler:
                     input=self._prompt,
                     chat_history=self._chat_history,
                 ).model_dump(),
+                timeout=self._timeout,
             )
 
             if response.status_code == 200:

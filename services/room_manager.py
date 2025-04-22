@@ -5,7 +5,6 @@ from services.room import Room
 class RoomManager:
 
     def __init__(self) -> None:
-
         self._rooms: Dict[str, Room] = {}
 
     ###############################################################################################################################################

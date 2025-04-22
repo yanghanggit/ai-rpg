@@ -118,7 +118,6 @@ async def home_gameplay(
 
         case _:
             logger.error(f"未知的请求类型 = {request_data.user_input.tag}, 不能处理！")
-            # assert False, f"未知的请求类型 = {request_data.user_input.tag}, 不能处理！"
 
     return HomeGamePlayResponse(
         error=1005,

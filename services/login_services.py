@@ -15,7 +15,7 @@ from game.user_session_options import UserSessionOptions
 from game.tcg_game_demo import (
     create_then_write_demo_world,
     create_demo_dungeon2,
-    create_demo_dungeon1,
+    # create_demo_dungeon1,
 )
 import shutil
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
@@ -98,7 +98,7 @@ async def login(
     )
     # 如果能开启就用get方法测试
     # http://127.0.0.1:8000/files/runtime.json
-    # http://192.168.192.111:8000/files/runtime.json
+    # http://局域网地址:8000/files/runtime.json
 
     return LoginResponse(
         error=0,
@@ -210,9 +210,6 @@ def setup_game_session(option: UserSessionOptions) -> Optional[WebTCGGame]:
 
         # 重新生成world,直接反序列化。
         start_world = World.model_validate_json(world_runtime_file_content)
-
-    ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     # 依赖注入，创建新的游戏
     terminal_game = WebTCGGame(

@@ -134,10 +134,6 @@ def main(agent_startup_config_file_path: Path) -> None:
     except Exception as e:
         print(f"Exception: {e}")
 
-    # 主线程继续执行其他逻辑或挂起
-    # while True:
-    #     pass  # 保持主线程存活，防止子线程退出
-
 
 ############################################################################################################
 if __name__ == "__main__":

@@ -152,35 +152,3 @@ def _has_set_attr(cls: type, visited: set[type] | None = None) -> bool:
 
 
 ############################################################################################################
-
-"""
-@final
-@register_component_class2
-class TestComponent(NamedTuple):
-    name: str
-    runtime_index: int
-
-
-def main() -> None:
-
-    for key, value in __COMPONENTS_REGISTRY__.items():
-        print(f"Key: {key}, Value: {value}")
-
-    new_comp = TestComponent._make(("hello world", 1002))
-    print(new_comp)
-
-    component_data = new_comp._asdict()
-    print(component_data)
-
-    comp_class = __COMPONENTS_REGISTRY__.get(TestComponent.__name__)
-    assert comp_class is not None
-
-    restore_comp = comp_class(*component_data.values())
-    assert restore_comp is not None
-    print(restore_comp)
-    assert restore_comp is not new_comp, "restore_comp should not be equal to new_comp"
-
-
-if __name__ == "__main__":
-    main()
-"""

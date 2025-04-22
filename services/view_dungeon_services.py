@@ -18,9 +18,9 @@ view_dungeon_router = APIRouter()
     path="/view-dungeon/v1/{user_name}/{game_name}", response_model=ViewDungeonResponse
 )
 async def view_dungeon(
+    game_server: GameServerInstance,
     user_name: str,
     game_name: str,
-    game_server: GameServerInstance,
 ) -> ViewDungeonResponse:
 
     logger.info(f"/view-dungeon/v1/: {user_name}, {game_name}")

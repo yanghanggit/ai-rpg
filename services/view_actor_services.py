@@ -21,9 +21,9 @@ view_actor_router = APIRouter()
     path="/view-actor/v1/{user_name}/{game_name}", response_model=ViewActorResponse
 )
 async def view_actor(
+    game_server: GameServerInstance,
     user_name: str,
     game_name: str,
-    game_server: GameServerInstance,
     actors: List[str] = Query(..., alias="actors"),
 ) -> ViewActorResponse:
 

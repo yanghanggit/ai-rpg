@@ -18,9 +18,9 @@ view_home_router = APIRouter()
     path="/view-home/v1/{user_name}/{game_name}", response_model=ViewHomeResponse
 )
 async def view_home(
+    game_server: GameServerInstance,
     user_name: str,
     game_name: str,
-    game_server: GameServerInstance,
 ) -> ViewHomeResponse:
 
     logger.info(f"/view-home/v1/: {user_name}, {game_name}")

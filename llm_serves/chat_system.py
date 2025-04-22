@@ -1,6 +1,7 @@
 from loguru import logger
 from typing import Final, List, Any, final
-from langserve import RemoteRunnable
+import httpx
+import asyncio
 import asyncio
 import time
 from llm_serves.chat_request_handler import ChatRequestHandler
@@ -19,9 +20,8 @@ class ChatSystem:
 
         # 运行的服务器
         assert len(localhost_urls) > 0
-        self._remote_runnables: Final[List[RemoteRunnable[Any, Any]]] = [
-            RemoteRunnable(url=localhost_url) for localhost_url in localhost_urls
-        ]
+        self._localhost_urls: Final[List[str]] = localhost_urls
+        self._async_client: Final[httpx.AsyncClient] = httpx.AsyncClient()
 
     ################################################################################################################################################################################
     async def gather(self, request_handlers: List[ChatRequestHandler]) -> List[Any]:
@@ -29,15 +29,15 @@ class ChatSystem:
         if len(request_handlers) == 0:
             return []
 
-        if len(self._remote_runnables) == 0:
+        if len(self._localhost_urls) == 0:
             return []
 
         coros = []
         for idx, handler in enumerate(request_handlers):
-            # 循环复用 RemoteRunnable
-            runnable = self._remote_runnables[idx % len(self._remote_runnables)]
+            # 循环复用
+            endpoint_url = self._localhost_urls[idx % len(self._localhost_urls)]
             handler._user_name = self._user_name
-            coros.append(handler.a_request(runnable))
+            coros.append(handler.a_request(self._async_client, endpoint_url))
 
         # 允许异常捕获，不中断其他请求
         start_time = time.time()
@@ -58,13 +58,13 @@ class ChatSystem:
         if len(request_handlers) == 0:
             return
 
-        if len(self._remote_runnables) == 0:
+        if len(self._localhost_urls) == 0:
             return
 
         for request_handler in request_handlers:
             start_time = time.time()
             request_handler._user_name = self._user_name
-            request_handler.request(self._remote_runnables[0])
+            request_handler.request(self._localhost_urls[0])
             end_time = time.time()
             logger.debug(f"LangServeSystem.handle:{end_time - start_time:.2f} seconds")
 

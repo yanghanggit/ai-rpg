@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import os
 import traceback
-from typing import Annotated, cast, Dict, List, Any, override
+from typing import Annotated, cast, Dict, List
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
@@ -12,12 +12,14 @@ from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import BaseMessage
 from pydantic import SecretStr
 from langchain.schema import AIMessage, HumanMessage
-from langchain.schema.runnable import Runnable, RunnableConfig
+
+# from langchain.schema.runnable import Runnable, RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
-from llm_serves.request_protocol import (
-    RequestModel,
-    ResponseModel,
-)
+
+# from llm_serves.request_protocol import (
+#     RequestModel,
+#     ResponseModel,
+# )
 
 
 ############################################################################################################
@@ -86,46 +88,46 @@ def stream_graph_updates(
 
 
 ############################################################################################################
-class ChatExecutor(Runnable[Dict[str, Any], Dict[str, Any]]):
+# class ChatExecutor(Runnable[Dict[str, Any], Dict[str, Any]]):
 
-    def __init__(self, compiled_state_graph: CompiledStateGraph) -> None:
-        super().__init__()
-        self._compiled_state_graph = compiled_state_graph
+#     def __init__(self, compiled_state_graph: CompiledStateGraph) -> None:
+#         super().__init__()
+#         self._compiled_state_graph = compiled_state_graph
 
-    def _process_chat_request(self, request: RequestModel) -> ResponseModel:
+#     def _process_chat_request(self, request: RequestModel) -> ResponseModel:
 
-        # 聊天历史
-        chat_history_state: State = {
-            "messages": [message for message in request.chat_history]
-        }
+#         # 聊天历史
+#         chat_history_state: State = {
+#             "messages": [message for message in request.chat_history]
+#         }
 
-        # 用户输入
-        user_input_state: State = {"messages": [HumanMessage(content=request.input)]}
+#         # 用户输入
+#         user_input_state: State = {"messages": [HumanMessage(content=request.input)]}
 
-        # 获取回复
-        update_messages = stream_graph_updates(
-            state_compiled_graph=self._compiled_state_graph,
-            chat_history_state=chat_history_state,
-            user_input_state=user_input_state,
-        )
+#         # 获取回复
+#         update_messages = stream_graph_updates(
+#             state_compiled_graph=self._compiled_state_graph,
+#             chat_history_state=chat_history_state,
+#             user_input_state=user_input_state,
+#         )
 
-        # 返回
-        if len(update_messages) > 0:
-            return ResponseModel(
-                agent_name=request.agent_name,
-                user_name=request.user_name,
-                output=cast(str, update_messages[-1].content),
-            )
-        return ResponseModel(
-            agent_name=request.agent_name, user_name=request.user_name, output=""
-        )
+#         # 返回
+#         if len(update_messages) > 0:
+#             return ResponseModel(
+#                 agent_name=request.agent_name,
+#                 user_name=request.user_name,
+#                 output=cast(str, update_messages[-1].content),
+#             )
+#         return ResponseModel(
+#             agent_name=request.agent_name, user_name=request.user_name, output=""
+#         )
 
-    @override
-    def invoke(
-        self, input: Dict[str, Any], config: RunnableConfig | None = None, **kwargs: Any
-    ) -> Dict[str, Any]:
-        # 处理请求
-        return self._process_chat_request(RequestModel(**input)).model_dump()
+#     @override
+#     def invoke(
+#         self, input: Dict[str, Any], config: RunnableConfig | None = None, **kwargs: Any
+#     ) -> Dict[str, Any]:
+#         # 处理请求
+#         return self._process_chat_request(RequestModel(**input)).model_dump()
 
 
 ############################################################################################################

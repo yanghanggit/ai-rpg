@@ -1,13 +1,15 @@
 from loguru import logger
-from typing import List, Union, Any, Optional, Final
+from typing import List, Union, Optional, Final, final
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from langserve import RemoteRunnable
+import httpx
 from llm_serves.request_protocol import (
     RequestModel,
     ResponseModel,
 )
+import requests
 
 
+@final
 class ChatRequestHandler:
 
     ################################################################################################################################################################################
@@ -35,31 +37,38 @@ class ChatRequestHandler:
         return self._response.output
 
     ################################################################################################################################################################################
-    def request(self, remote_runnable: RemoteRunnable[Any, Any]) -> Optional[Any]:
+    def request(self, url: str) -> Optional[ResponseModel]:
 
         assert self._response is None
+        assert url != ""
 
-        if self._prompt == "":
-            logger.error(f"{self._name}: request error: prompt is empty")
+        if self._prompt == "" or url == "":
+            logger.error(f"{self._name}: request error: prompt or url is empty")
             return None
 
         try:
 
             logger.debug(f"{self._name} request prompt:\n{self._prompt}")
 
-            response = remote_runnable.invoke(
-                RequestModel(
+            response = requests.post(
+                url=url,
+                json=RequestModel(
                     agent_name=self._name,
                     user_name=self._user_name,
                     input=self._prompt,
                     chat_history=self._chat_history,
-                )
+                ).model_dump(),
             )
 
-            self._response = ResponseModel.model_validate(response)
-            logger.info(
-                f"{self._name} request-response:\n{self._response.model_dump_json()}"
-            )
+            if response.status_code == 200:
+                self._response = ResponseModel.model_validate(response.json())
+                logger.info(
+                    f"{self._name} request-response:\n{self._response.model_dump_json()}"
+                )
+            else:
+                logger.error(
+                    f"request-response Error: {response.status_code}, {response.text}"
+                )
 
         except Exception as e:
             logger.error(f"{self._name}: request error: {e}")
@@ -68,31 +77,39 @@ class ChatRequestHandler:
 
     ################################################################################################################################################################################
     async def a_request(
-        self, remote_runnable: RemoteRunnable[Any, Any]
-    ) -> Optional[Any]:
-        assert self._response is None
+        self, client: httpx.AsyncClient, url: str
+    ) -> Optional[ResponseModel]:
 
-        if self._prompt == "":
-            logger.error(f"{self._name}: a_request error: prompt is empty")
+        assert self._response is None
+        assert url != ""
+
+        if self._prompt == "" or url == "":
+            logger.error(f"{self._name}: a_request error: prompt or url is empty")
             return None
 
         try:
 
             logger.debug(f"{self._name} a_request prompt:\n{self._prompt}")
 
-            response = await remote_runnable.ainvoke(
-                RequestModel(
+            response = await client.post(
+                url=url,
+                json=RequestModel(
                     agent_name=self._name,
                     user_name=self._user_name,
                     input=self._prompt,
                     chat_history=self._chat_history,
-                )
+                ).model_dump(),
             )
 
-            self._response = ResponseModel.model_validate(response)
-            logger.info(
-                f"{self._name} a_request-response:\n{self._response.model_dump_json()}"
-            )
+            if response.status_code == 200:
+                self._response = ResponseModel.model_validate(response.json())
+                logger.info(
+                    f"{self._name} a_request-response:\n{self._response.model_dump_json()}"
+                )
+            else:
+                logger.error(
+                    f"a_request-response Error: {response.status_code}, {response.text}"
+                )
 
         except Exception as e:
             logger.error(f"{self._name}: a_request error: {e}")

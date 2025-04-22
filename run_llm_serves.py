@@ -84,7 +84,7 @@ def _execute_service_startup(config_file_path: Path) -> None:
 
         # 用配置文件的路径启动
         terminal_batch_start_command = (
-            f"pm2 start llm_serves/batch_start_langserve2.py -- {config_file_path}"
+            f"pm2 start llm_serves/batch_start_langserve.py -- {config_file_path}"
         )
         logger.debug(terminal_batch_start_command)
         os.system(terminal_batch_start_command)

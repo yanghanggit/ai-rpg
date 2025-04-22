@@ -21,6 +21,8 @@ class ChatSystem:
         # 运行的服务器
         assert len(localhost_urls) > 0
         self._localhost_urls: Final[List[str]] = localhost_urls
+
+        # 异步请求客户端
         self._async_client: Final[httpx.AsyncClient] = httpx.AsyncClient()
 
     ################################################################################################################################################################################
@@ -43,7 +45,7 @@ class ChatSystem:
         start_time = time.time()
         batch_results = await asyncio.gather(*coros, return_exceptions=True)
         end_time = time.time()
-        logger.debug(f"LangServeSystem.gather:{end_time - start_time:.2f} seconds")
+        logger.debug(f"ChatSystem.gather:{end_time - start_time:.2f} seconds")
 
         # 记录失败请求
         for result in batch_results:
@@ -66,6 +68,6 @@ class ChatSystem:
             request_handler._user_name = self._user_name
             request_handler.request(self._localhost_urls[0])
             end_time = time.time()
-            logger.debug(f"LangServeSystem.handle:{end_time - start_time:.2f} seconds")
+            logger.debug(f"ChatSystem.handle:{end_time - start_time:.2f} seconds")
 
     ################################################################################################################################################################################

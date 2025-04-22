@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 ############################################################################################################
-class RequestModel(BaseModel):
+class ChatRequestModel(BaseModel):
     agent_name: str = ""
     user_name: str = ""
     input: str = ""
@@ -15,7 +15,7 @@ class RequestModel(BaseModel):
 
 
 ############################################################################################################
-class ResponseModel(BaseModel):
+class ChatResponseModel(BaseModel):
     agent_name: str = ""
     user_name: str = ""
     output: str = ""

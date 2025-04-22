@@ -14,8 +14,8 @@ from llm_serves.service_config import (
 from langchain.schema import HumanMessage
 from langgraph.graph.state import CompiledStateGraph
 from llm_serves.request_protocol import (
-    RequestModel,
-    ResponseModel,
+    ChatRequestModel,
+    ChatResponseModel,
 )
 from llm_serves.azure_chat_openai_gpt_4o_graph import (
     create_compiled_stage_graph,
@@ -25,7 +25,7 @@ from llm_serves.azure_chat_openai_gpt_4o_graph import (
 
 
 ############################################################################################################
-class ChatSessionExecutor:
+class ChatExecutor:
 
     def __init__(self, api: str, compiled_state_graph: CompiledStateGraph) -> None:
         super().__init__()
@@ -38,7 +38,7 @@ class ChatSessionExecutor:
         return self._api
 
     ############################################################################################################
-    def process_chat_request(self, request: RequestModel) -> ResponseModel:
+    def process_chat_request(self, request: ChatRequestModel) -> ChatResponseModel:
 
         # 聊天历史
         chat_history_state: State = {
@@ -57,25 +57,25 @@ class ChatSessionExecutor:
 
         # 返回
         if len(update_messages) > 0:
-            return ResponseModel(
+            return ChatResponseModel(
                 agent_name=request.agent_name,
                 user_name=request.user_name,
                 output=cast(str, update_messages[-1].content),
             )
-        return ResponseModel(
+        return ChatResponseModel(
             agent_name=request.agent_name, user_name=request.user_name, output=""
         )
 
 
 ############################################################################################################
 def launch_localhost_chat_server(
-    app: FastAPI, port: int, chat_executor: ChatSessionExecutor
+    app: FastAPI, port: int, chat_executor: ChatExecutor
 ) -> None:
 
-    @app.post(path=chat_executor.post_url, response_model=ResponseModel)
+    @app.post(path=chat_executor.post_url, response_model=ChatResponseModel)
     async def process_chat_request(
-        request_data: RequestModel,
-    ) -> ResponseModel:
+        request_data: ChatRequestModel,
+    ) -> ChatResponseModel:
         return chat_executor.process_chat_request(request_data)
 
     # 启动 FastAPI 应用
@@ -111,7 +111,7 @@ def main(agent_startup_config_file_path: Path) -> None:
                 description=config.fast_api_description,
             )
 
-            chat_executor = ChatSessionExecutor(
+            chat_executor = ChatExecutor(
                 api=str(config.api),
                 compiled_state_graph=create_compiled_stage_graph(
                     "azure_chat_openai_chatbot_node", config.temperature

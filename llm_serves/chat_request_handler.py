@@ -3,8 +3,8 @@ from typing import List, Union, Optional, Final, final
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 import httpx
 from llm_serves.request_protocol import (
-    RequestModel,
-    ResponseModel,
+    ChatRequestModel,
+    ChatResponseModel,
 )
 import requests
 
@@ -26,7 +26,7 @@ class ChatRequestHandler:
         self._chat_history: List[Union[SystemMessage, HumanMessage, AIMessage]] = (
             chat_history
         )
-        self._response: Optional[ResponseModel] = None
+        self._response: Optional[ChatResponseModel] = None
         self._user_name: str = user_name
 
     ################################################################################################################################################################################
@@ -37,7 +37,7 @@ class ChatRequestHandler:
         return self._response.output
 
     ################################################################################################################################################################################
-    def request(self, url: str) -> Optional[ResponseModel]:
+    def request(self, url: str) -> Optional[ChatResponseModel]:
 
         assert self._response is None
         assert url != ""
@@ -52,7 +52,7 @@ class ChatRequestHandler:
 
             response = requests.post(
                 url=url,
-                json=RequestModel(
+                json=ChatRequestModel(
                     agent_name=self._name,
                     user_name=self._user_name,
                     input=self._prompt,
@@ -61,7 +61,7 @@ class ChatRequestHandler:
             )
 
             if response.status_code == 200:
-                self._response = ResponseModel.model_validate(response.json())
+                self._response = ChatResponseModel.model_validate(response.json())
                 logger.info(
                     f"{self._name} request-response:\n{self._response.model_dump_json()}"
                 )
@@ -78,7 +78,7 @@ class ChatRequestHandler:
     ################################################################################################################################################################################
     async def a_request(
         self, client: httpx.AsyncClient, url: str
-    ) -> Optional[ResponseModel]:
+    ) -> Optional[ChatResponseModel]:
 
         assert self._response is None
         assert url != ""
@@ -93,7 +93,7 @@ class ChatRequestHandler:
 
             response = await client.post(
                 url=url,
-                json=RequestModel(
+                json=ChatRequestModel(
                     agent_name=self._name,
                     user_name=self._user_name,
                     input=self._prompt,
@@ -102,7 +102,7 @@ class ChatRequestHandler:
             )
 
             if response.status_code == 200:
-                self._response = ResponseModel.model_validate(response.json())
+                self._response = ChatResponseModel.model_validate(response.json())
                 logger.info(
                     f"{self._name} a_request-response:\n{self._response.model_dump_json()}"
                 )

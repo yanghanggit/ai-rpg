@@ -6,8 +6,8 @@ from loguru import logger
 from langchain_core.messages import SystemMessage
 import requests
 from llm_serves.request_protocol import (
-    RequestModel,
-    ResponseModel,
+    ChatRequestModel,
+    ChatResponseModel,
 )
 
 
@@ -83,7 +83,7 @@ from llm_serves.request_protocol import (
 async def _send_chat_request() -> None:
 
     server_url = "http://localhost:8100/v1/llm_serve/chat/"
-    request_data = RequestModel(
+    request_data = ChatRequestModel(
         agent_name="test_agent",
         user_name="yh",
         input="你好！你是谁？",
@@ -102,7 +102,7 @@ async def _send_chat_request() -> None:
         response_data = response.json()
         logger.debug(f"Response: {response_data}")
 
-        response_model = ResponseModel.model_validate(response_data)
+        response_model = ChatResponseModel.model_validate(response_data)
         logger.debug(f"Response Model: {response_model.model_dump_json()}")
 
     else:

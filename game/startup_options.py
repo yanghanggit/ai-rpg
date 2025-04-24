@@ -3,7 +3,7 @@ from typing import List
 from loguru import logger
 import datetime
 from dataclasses import dataclass
-import game.tcg_game_config
+from game.tcg_game_config import LOGS_DIR, GEN_RUNTIME_DIR
 import shutil
 from llm_serves.service_config import (
     StartupConfiguration,
@@ -11,14 +11,24 @@ from llm_serves.service_config import (
 
 
 ###############################################################################################################################################
+def init_logger(user: str, game: str) -> None:
+    assert user != ""
+    assert game != ""
+    log_dir = LOGS_DIR / user / game
+    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    logger.add(log_dir / f"{log_start_time}.log", level="DEBUG")
+    logger.debug(f"准备进入游戏 = {game}, {user}")
+
+
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
 @dataclass
 class UserSessionOptions:
 
     user: str
     game: str
     new_game: bool
-    server_setup_config: str
-    langserve_localhost_urls: List[str]
     actor: str
 
     ###############################################################################################################################################
@@ -26,7 +36,7 @@ class UserSessionOptions:
     @property
     def world_runtime_dir(self) -> Path:
 
-        dir = game.tcg_game_config.GEN_RUNTIME_DIR / self.user / self.game
+        dir = GEN_RUNTIME_DIR / self.user / self.game
         if not dir.exists():
             dir.mkdir(parents=True, exist_ok=True)
 
@@ -44,7 +54,7 @@ class UserSessionOptions:
     # 生成用户的运行时文件
     @property
     def gen_world_boot_file(self) -> Path:
-        return game.tcg_game_config.GEN_WORLD_DIR / f"{self.game}.json"
+        return LOGS_DIR / f"{self.game}.json"
 
     ###############################################################################################################################################
     # 清除用户的运行时目录, 重新生成
@@ -56,31 +66,28 @@ class UserSessionOptions:
         self.world_runtime_dir.mkdir(parents=True, exist_ok=True)
         assert self.world_runtime_dir.exists()
 
-    ###############################################################################################################################################
+
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+@dataclass
+class ChatSystemOptions:
+    user: str
+    game: str
+    server_setup_config: str
+
     @property
-    def log_dir(self) -> Path:
-        return game.tcg_game_config.LOGS_DIR / self.user / self.game
-
-    ###############################################################################################################################################
-    def setup(self) -> "UserSessionOptions":
-        return self._init_logger()._generate_service_urls()
-
-    ###############################################################################################################################################
-    # 初始化logger
-    def _init_logger(self) -> "UserSessionOptions":
-        log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        logger.add(self.log_dir / f"{log_start_time}.log", level="DEBUG")
-        logger.debug(f"准备进入游戏 = {self.game}, {self.user}")
-        return self
-
-    ###############################################################################################################################################
-    # 生成服务URL
-    def _generate_service_urls(self) -> "UserSessionOptions":
+    def localhost_urls(self) -> List[str]:
 
         config_file_path = Path(self.server_setup_config)
         assert config_file_path.exists()
+        if not config_file_path.exists():
+            logger.error(f"没有找到配置文件: {config_file_path}")
+            return []
 
         try:
+
+            ret: List[str] = []
 
             config_file_content = config_file_path.read_text(encoding="utf-8")
             agent_startup_config = StartupConfiguration.model_validate_json(
@@ -88,14 +95,14 @@ class UserSessionOptions:
             )
 
             for config in agent_startup_config.service_configurations:
-                self.langserve_localhost_urls.append(
-                    f"http://localhost:{config.port}{config.api}"
-                )
+                ret.append(f"http://localhost:{config.port}{config.api}")
+
+            return ret
 
         except Exception as e:
             logger.error(f"Exception: {e}")
-            assert False, "没有找到配置!"
 
-        return self
+        return []
 
-    ###############################################################################################################################################
+
+###############################################################################################################################################

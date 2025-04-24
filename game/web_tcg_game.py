@@ -4,4 +4,4 @@ from typing import final
 
 @final
 class WebTCGGame(TCGGame):
-    is_game_started: bool = False
+    pass

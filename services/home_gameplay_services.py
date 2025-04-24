@@ -64,16 +64,6 @@ async def home_gameplay(
     assert web_game is not None
     assert isinstance(web_game, WebTCGGame)
 
-    # 判断游戏是否开始
-    if not web_game.is_game_started:
-        logger.error(
-            f"home/gameplay/v1: {request_data.user_name} game not started, please start it first."
-        )
-        return HomeGamePlayResponse(
-            error=1003,
-            message="游戏没有开始，请先开始游戏",
-        )
-
     # 判断游戏状态，不是Home状态不可以推进。
     if web_game.current_game_state != TCGGameState.HOME:
         logger.error(
@@ -164,16 +154,6 @@ async def home_trans_dungeon(
     web_game = current_room._game
     assert web_game is not None
     assert isinstance(web_game, WebTCGGame)
-
-    # 判断游戏是否开始
-    if not web_game.is_game_started:
-        logger.error(
-            f"home_trans_dungeon: {request_data.user_name} game not started, please start it first."
-        )
-        return HomeTransDungeonResponse(
-            error=1003,
-            message="游戏没有开始，请先开始游戏",
-        )
 
     # 判断游戏状态，不是Home状态不可以推进。
     if web_game.current_game_state != TCGGameState.HOME:

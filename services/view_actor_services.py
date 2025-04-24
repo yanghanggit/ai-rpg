@@ -48,16 +48,6 @@ async def view_actor(
             message="没有游戏，请先登录",
         )
 
-    # 判断游戏是否开始
-    if not current_room._game.is_game_started:
-        logger.error(
-            f"view_actor: {user_name} game not started, please start it first."
-        )
-        return ViewActorResponse(
-            error=1003,
-            message="游戏没有开始，请先开始游戏",
-        )
-
     web_game = current_room._game
     assert web_game.name == game_name
     assert web_game is not None

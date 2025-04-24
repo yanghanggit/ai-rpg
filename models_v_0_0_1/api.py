@@ -45,7 +45,6 @@ class APIEndpointConfigurationResponse(BaseModel):
 class LoginRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    actor_name: str = ""
 
 
 @final

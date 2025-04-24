@@ -3,7 +3,7 @@ from typing import List
 from loguru import logger
 import datetime
 from dataclasses import dataclass
-from game.tcg_game_config import LOGS_DIR, GEN_RUNTIME_DIR
+from game.tcg_game_config import LOGS_DIR, GEN_RUNTIME_DIR, GEN_WORLD_DIR
 import shutil
 from llm_serves.service_config import (
     StartupConfiguration,
@@ -42,8 +42,14 @@ class UserSessionOptions:
     ###############################################################################################################################################
     # 生成用户的运行时文件
     @property
+    def world_runtime_boot_file(self) -> Path:
+        return self.world_runtime_dir / f"{self.game}.json"
+
+    ###############################################################################################################################################
+    # 生成用户的运行时文件
+    @property
     def gen_world_boot_file(self) -> Path:
-        return LOGS_DIR / f"{self.game}.json"
+        return GEN_WORLD_DIR / f"{self.game}.json"
 
     ###############################################################################################################################################
     # 清除用户的运行时目录, 重新生成

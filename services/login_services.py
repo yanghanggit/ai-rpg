@@ -11,7 +11,7 @@ from models_v_0_0_1 import (
     World,
 )
 from loguru import logger
-from game.startup_options import UserSessionOptions, init_logger, ChatSystemOptions
+from game.startup_options import UserSessionOptions, ChatSystemOptions
 from game.tcg_game_demo import (
     create_then_write_demo_world,
     create_demo_dungeon2,
@@ -68,10 +68,7 @@ async def login(
     )
 
     # 初始化日志
-    init_logger(
-        user=user_session_options.user,
-        game=user_session_options.game,
-    )
+    user_session_options.setup_logger()
 
     # 创建ChatSystemOptions
     chat_system_setup_options = ChatSystemOptions(

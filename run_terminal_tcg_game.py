@@ -12,7 +12,7 @@ from game.tcg_game_demo import (
     # create_demo_dungeon2,
 )
 from tcg_game_systems.combat_monitor_system import CombatMonitorSystem
-from game.startup_options import UserSessionOptions, init_logger, ChatSystemOptions
+from game.startup_options import UserSessionOptions, ChatSystemOptions
 from format_string.terminal_input import (
     parse_speak_command_input,
 )
@@ -351,7 +351,7 @@ if __name__ == "__main__":
     )
 
     # 初始化日志
-    init_logger(user_session_options.user, user_session_options.game)
+    user_session_options.setup_logger()
 
     # 创建ChatSystemOptions
     chat_system_setup_options = ChatSystemOptions(

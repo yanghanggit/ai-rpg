@@ -11,21 +11,10 @@ from llm_serves.service_config import (
 
 
 ###############################################################################################################################################
-def init_logger(user: str, game: str) -> None:
-    assert user != ""
-    assert game != ""
-    log_dir = LOGS_DIR / user / game
-    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    logger.add(log_dir / f"{log_start_time}.log", level="DEBUG")
-    logger.debug(f"准备进入游戏 = {game}, {user}")
-
-
-###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
 @dataclass
 class UserSessionOptions:
-
     user: str
     game: str
     new_game: bool
@@ -65,6 +54,16 @@ class UserSessionOptions:
         # 创建目录
         self.world_runtime_dir.mkdir(parents=True, exist_ok=True)
         assert self.world_runtime_dir.exists()
+
+    ###############################################################################################################################################
+    # 设置logger
+    def setup_logger(self) -> None:
+        assert self.user != ""
+        assert self.game != ""
+        log_dir = LOGS_DIR / self.user / self.game
+        log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        logger.add(log_dir / f"{log_start_time}.log", level="DEBUG")
+        logger.debug(f"准备进入游戏 = {self.game}, 玩家 = {self.user}")
 
 
 ###############################################################################################################################################

@@ -1,5 +1,4 @@
 from fastapi import APIRouter
-from game.web_tcg_game import WebTCGGame
 from services.game_server_instance import GameServerInstance
 from models_v_0_0_1 import (
     ViewHomeResponse,
@@ -28,27 +27,26 @@ async def view_home(
     # 是否有房间？！！
     room_manager = game_server.room_manager
     if not room_manager.has_room(user_name):
-        logger.error(f"view_home: {user_name} has no room, please login first.")
+        logger.error(f"view_home: {user_name} has no room")
         return ViewHomeResponse(
             error=1001,
-            message="没有登录，请先登录",
+            message="没有房间",
         )
 
     # 是否有游戏？！！
     current_room = room_manager.get_room(user_name)
     assert current_room is not None
     if current_room._game is None:
-        logger.error(f"view_home: {user_name} has no game, please login first.")
+        logger.error(f"view_home: {user_name} has no game")
         return ViewHomeResponse(
             error=1002,
-            message="没有游戏，请先登录",
+            message="没有游戏",
         )
 
+    # 获取游戏
     web_game = current_room._game
-    assert web_game.name == game_name
-    assert web_game is not None
-    assert isinstance(web_game, WebTCGGame)
 
+    # 获取当前地图
     mapping_data = web_game.gen_map()
     logger.info(f"view_home: {user_name} mapping_data: {mapping_data}")
 

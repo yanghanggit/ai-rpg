@@ -28,6 +28,19 @@ async def start(
 
     logger.info(f"start/v1: {request_data.model_dump_json()}")
 
+    # 如果没有房间，就创建一个
+    room_manager = game_server.room_manager
+    if not room_manager.has_room(request_data.user_name):
+        logger.error(f"start/v1: {request_data.user_name} not found, create room")
+        return StartResponse(
+            error=1000,
+            message="房间不存在，请先登录",
+        )
+
+    # 如果有房间，就获取房间。
+    room = room_manager.get_room(request_data.user_name)
+    assert room is not None
+
     # 转化成复杂参数
     user_session_options = UserSessionOptions(
         user=request_data.user_name,
@@ -43,25 +56,8 @@ async def start(
         server_setup_config="gen_configs/start_llm_serves.json",
     )
 
-    # 如果没有房间，就创建一个
-    room_manager = game_server.room_manager
-    if not room_manager.has_room(request_data.user_name):
-        logger.info(f"start/v1: {request_data.user_name} not found, create room")
-        new_room = room_manager.create_room(
-            user_name=request_data.user_name,
-        )
-        logger.info(
-            f"login: {request_data.user_name} create room = {new_room._user_name}"
-        )
-        assert new_room._game is None
-
-    # 如果有房间，就获取房间。
-    room = room_manager.get_room(request_data.user_name)
-    assert room is not None
-
     if room._game is None:
-
-        # 如果没有游戏对象，就创建或者复位一个游戏。
+        # 如果没有游戏对象，就‘创建/复位’一个游戏。
         active_game_session = setup_web_game_session(
             user_session_options=user_session_options,
             chat_system_setup_options=chat_system_setup_options,
@@ -75,6 +71,9 @@ async def start(
             )
 
         room._game = active_game_session
+    else:
+        # 是继续玩
+        logger.info(f"start/v1: {request_data.user_name} has room, is running!")
 
     assert room._game is not None
     return StartResponse(

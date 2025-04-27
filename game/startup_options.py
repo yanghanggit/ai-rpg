@@ -16,10 +16,9 @@ from llm_serves.service_config import (
 @dataclass
 class UserSessionOptions:
 
-    def __init__(self, user: str, game: str, actor: str) -> None:
-        self.user: Final[str] = user
-        self.game: Final[str] = game
-        self.actor: Final[str] = actor
+    user: str
+    game: str
+    actor: str
 
     ###############################################################################################################################################
     # 生成用户的运行时目录
@@ -78,12 +77,7 @@ class UserSessionOptions:
 ###############################################################################################################################################
 @dataclass
 class TerminalUserSessionOptions(UserSessionOptions):
-
-    def __init__(
-        self, user: str, game: str, debug_enforce_new_game: bool, actor: str
-    ) -> None:
-        super().__init__(user, game, actor)
-        self.debug_enforce_new_game: Final[bool] = debug_enforce_new_game
+    debug_enforce_new_game: bool
 
 
 ###############################################################################################################################################

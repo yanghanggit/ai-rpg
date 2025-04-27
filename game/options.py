@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Final, List
+from typing import List
 from loguru import logger
 import datetime
 from dataclasses import dataclass

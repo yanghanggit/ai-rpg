@@ -10,7 +10,7 @@ from models_v_0_0_1 import (
     LogoutResponse,
 )
 from loguru import logger
-from game.startup_options import WebUserSessionOptions
+from game.options import WebUserSessionOptions
 from game.tcg_game_demo import (
     create_then_write_demo_world,
 )

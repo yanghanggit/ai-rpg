@@ -12,7 +12,7 @@ from game.tcg_game_demo import (
     # create_demo_dungeon2,
 )
 from tcg_game_systems.combat_monitor_system import CombatMonitorSystem
-from game.startup_options import TerminalUserSessionOptions, ChatSystemOptions
+from game.options import TerminalUserSessionOptions, ChatSystemOptions
 from format_string.terminal_input import (
     parse_speak_command_input,
 )

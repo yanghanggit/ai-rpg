@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from services.game_server_instance import GameServerInstance
 from models_v_0_0_1 import StartRequest, StartResponse, Boot, World
-from game.startup_options import WebUserSessionOptions, ChatSystemOptions
+from game.options import WebUserSessionOptions, ChatSystemOptions
 from loguru import logger
 from game.tcg_game_demo import (
     create_demo_dungeon2,

@@ -12,7 +12,7 @@ from game.tcg_game_demo import (
     # create_demo_dungeon2,
 )
 from tcg_game_systems.combat_monitor_system import CombatMonitorSystem
-from game.startup_options import UserSessionOptions, ChatSystemOptions
+from game.startup_options import TerminalUserSessionOptions, ChatSystemOptions
 from format_string.terminal_input import (
     parse_speak_command_input,
 )
@@ -20,43 +20,46 @@ from format_string.terminal_input import (
 
 ###############################################################################################################################################
 async def run_game(
-    user_session_options: UserSessionOptions,
+    terminal_user_session_options: TerminalUserSessionOptions,
     chat_system_setup_options: ChatSystemOptions,
 ) -> None:
 
     # 这里是临时的TODO
     demo_edit_boot = create_then_write_demo_world(
-        user_session_options.game, user_session_options.gen_world_boot_file
+        terminal_user_session_options.game,
+        terminal_user_session_options.gen_world_boot_file,
     )
     assert demo_edit_boot is not None
     if demo_edit_boot is None:
-        logger.error(f"创建游戏世界失败 = {user_session_options.game}")
+        logger.error(f"创建游戏世界失败 = {terminal_user_session_options.game}")
         return
 
     # 如果是新游戏，需要将game_resource_file_path这个文件拷贝一份到world_boot_file_path下
-    if user_session_options.new_game:
+    if terminal_user_session_options.debug_enforce_new_game:
 
         # 清除用户的运行时目录, 重新生成
-        user_session_options.clear_runtime_dir()
+        terminal_user_session_options.clear_runtime_dir()
 
         # 游戏资源可以被创建，则将game_resource_file_path这个文件拷贝一份到world_boot_file_path下
         shutil.copy(
-            user_session_options.gen_world_boot_file,
-            user_session_options.world_runtime_dir,
+            terminal_user_session_options.gen_world_boot_file,
+            terminal_user_session_options.world_runtime_dir,
         )
 
     # 创建runtime
     start_world = World()
 
     #
-    if not user_session_options.world_runtime_file.exists():
+    if not terminal_user_session_options.world_runtime_file.exists():
         # 肯定是新游戏
-        assert user_session_options.new_game
+        assert terminal_user_session_options.debug_enforce_new_game
         # 如果runtime文件不存在，说明是第一次启动，直接从gen文件中读取.
-        assert user_session_options.gen_world_boot_file.exists()
+        assert terminal_user_session_options.gen_world_boot_file.exists()
         # 假设有文件，直接读取
-        world_boot_file_content = user_session_options.gen_world_boot_file.read_text(
-            encoding="utf-8"
+        world_boot_file_content = (
+            terminal_user_session_options.gen_world_boot_file.read_text(
+                encoding="utf-8"
+            )
         )
         # 重新生成boot
         world_boot = Boot.model_validate_json(world_boot_file_content)
@@ -68,10 +71,10 @@ async def run_game(
     else:
 
         # 如果runtime文件存在，说明是恢复游戏
-        assert not user_session_options.new_game
+        assert not terminal_user_session_options.debug_enforce_new_game
         # runtime文件存在，需要做恢复
-        world_runtime_file_content = user_session_options.world_runtime_file.read_text(
-            encoding="utf-8"
+        world_runtime_file_content = (
+            terminal_user_session_options.world_runtime_file.read_text(encoding="utf-8")
         )
         # 重新生成world,直接反序列化。
         start_world = World.model_validate_json(world_runtime_file_content)
@@ -81,12 +84,13 @@ async def run_game(
 
     # 依赖注入，创建新的游戏
     terminal_game = TerminalTCGGame(
-        name=user_session_options.game,
+        name=terminal_user_session_options.game,
         player=PlayerProxy(
-            name=user_session_options.user, actor=user_session_options.actor
+            name=terminal_user_session_options.user,
+            actor=terminal_user_session_options.actor,
         ),
         world=start_world,
-        world_path=user_session_options.world_runtime_file,
+        world_path=terminal_user_session_options.world_runtime_file,
         chat_system=ChatSystem(
             name=f"{chat_system_setup_options.game}-chatsystem",
             user_name=chat_system_setup_options.user,
@@ -98,9 +102,9 @@ async def run_game(
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(terminal_game.world.entities_snapshot) == 0:
 
-        assert user_session_options.new_game
+        assert terminal_user_session_options.debug_enforce_new_game
         logger.warning(
-            f"游戏中没有实体 = {user_session_options.game}, 说明是第一次创建游戏"
+            f"游戏中没有实体 = {terminal_user_session_options.game}, 说明是第一次创建游戏"
         )
 
         # 直接构建ecs
@@ -108,9 +112,9 @@ async def run_game(
 
     else:
 
-        assert not user_session_options.new_game
+        assert not terminal_user_session_options.debug_enforce_new_game
         logger.warning(
-            f"游戏中有实体 = {user_session_options.game}，需要通过数据恢复实体，是游戏回复的过程"
+            f"游戏中有实体 = {terminal_user_session_options.game}，需要通过数据恢复实体，是游戏回复的过程"
         )
 
         # 测试！回复ecs
@@ -121,7 +125,7 @@ async def run_game(
     assert player_entity is not None
     if player_entity is None:
         logger.error(
-            f"玩家实体不存在 = {user_session_options.user}, {user_session_options.game}, {user_session_options.actor}"
+            f"玩家实体不存在 = {terminal_user_session_options.user}, {terminal_user_session_options.game}, {terminal_user_session_options.actor}"
         )
         exit(1)
 
@@ -343,22 +347,22 @@ if __name__ == "__main__":
     import asyncio
 
     # 做一些设置
-    user_session_options = UserSessionOptions(
+    terminal_user_session_options = TerminalUserSessionOptions(
         user="yanghang",
         game="Game1",
-        new_game=True,
+        debug_enforce_new_game=True,
         actor="角色.战士.卡恩",
     )
 
     # 初始化日志
-    user_session_options.setup_logger()
+    terminal_user_session_options.setup_logger()
 
     # 创建ChatSystemOptions
     chat_system_setup_options = ChatSystemOptions(
-        user=user_session_options.user,
-        game=user_session_options.game,
+        user=terminal_user_session_options.user,
+        game=terminal_user_session_options.game,
         server_setup_config="gen_configs/start_llm_serves.json",
     )
 
     # 运行游戏
-    asyncio.run(run_game(user_session_options, chat_system_setup_options))
+    asyncio.run(run_game(terminal_user_session_options, chat_system_setup_options))

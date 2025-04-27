@@ -10,7 +10,7 @@ from models_v_0_0_1 import (
     LogoutResponse,
 )
 from loguru import logger
-from game.startup_options import UserSessionOptions
+from game.startup_options import WebUserSessionOptions
 from game.tcg_game_demo import (
     create_then_write_demo_world,
 )
@@ -45,15 +45,14 @@ async def login(
     logger.info(f"login/v1: {request_data.model_dump_json()}")
 
     # 转化成复杂参数
-    user_session_options = UserSessionOptions(
+    web_user_session_options = WebUserSessionOptions(
         user=request_data.user_name,
         game=request_data.game_name,
-        new_game=True,
         actor="",
     )
 
     # 初始化日志
-    user_session_options.setup_logger()
+    web_user_session_options.setup_logger()
 
     # 检查房间是否存在
     room_manager = game_server.room_manager
@@ -71,24 +70,24 @@ async def login(
             room_manager.remove_room(pre_room)
 
         # TODO, 这里需要设置一个新的目录，清除旧的目录。
-        user_session_options.clear_runtime_dir()
+        web_user_session_options.clear_runtime_dir()
 
         # TODO, 临时创建一个
         demo_world_setup = create_then_write_demo_world(
-            user_session_options.game, user_session_options.gen_world_boot_file
+            web_user_session_options.game, web_user_session_options.gen_world_boot_file
         )
         assert demo_world_setup is not None
 
         # TODO, 游戏资源可以被创建，将gen_world_boot_file这个文件拷贝一份到world_runtime_dir下
         shutil.copy(
-            user_session_options.gen_world_boot_file,
-            user_session_options.world_runtime_dir,
+            web_user_session_options.gen_world_boot_file,
+            web_user_session_options.world_runtime_dir,
         )
 
     # TODO, get测试。
     # 指向包含 runtime.json 的目录。
     static_dir = os.path.join(
-        GEN_RUNTIME_DIR, user_session_options.user, user_session_options.game
+        GEN_RUNTIME_DIR, web_user_session_options.user, web_user_session_options.game
     )
     # 将该目录挂载到 "/files" 路径上
     game_server.fast_api.mount(
@@ -120,7 +119,7 @@ async def login(
         logger.info(f"login: {request_data.user_name} has room, is running!")
         response_message = GameSessionStatus.RESUME_GAME
     else:
-        if user_session_options.world_runtime_file.exists():
+        if web_user_session_options.world_runtime_file.exists():
             # 曾经运行过，此时已经存储，可以恢复
             logger.info(
                 f"login: {request_data.user_name} has room, but not running, can restore!"

@@ -36,7 +36,7 @@ async def view_dungeon(
     # 是否有游戏？！！
     current_room = room_manager.get_room(user_name)
     assert current_room is not None
-    if current_room._game is None:
+    if current_room.game is None:
         logger.error(f"view_dungeon: {user_name} has no game")
         return ViewDungeonResponse(
             error=1002,
@@ -44,7 +44,7 @@ async def view_dungeon(
         )
 
     # 获取游戏
-    web_game = current_room._game
+    web_game = current_room.game
 
     # 获取当前地图
     mapping_data = web_game.gen_map()

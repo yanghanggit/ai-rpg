@@ -106,7 +106,7 @@ async def login(
         logger.info(
             f"login: {request_data.user_name} create room = {new_room._user_name}"
         )
-        assert new_room._game is None
+        assert new_room.game is None
 
     # 如果有房间，就获取房间。
     room = room_manager.get_room(request_data.user_name)
@@ -114,7 +114,7 @@ async def login(
 
     # 返回结果。
     response_message = ""
-    if room._game is not None:
+    if room.game is not None:
         # 存在，正在运行
         logger.info(f"login: {request_data.user_name} has room, is running!")
         response_message = GameSessionStatus.RESUME_GAME
@@ -161,18 +161,18 @@ async def logout(
     # 删除房间
     pre_room = room_manager.get_room(request_data.user_name)
     assert pre_room is not None
-    if pre_room._game is not None:
+    if pre_room.game is not None:
         # 保存游戏的运行时数据
         logger.info(
-            f"logout: {request_data.user_name} save game = {pre_room._game.name}"
+            f"logout: {request_data.user_name} save game = {pre_room.game.name}"
         )
-        pre_room._game.save()
+        pre_room.game.save()
         # 退出游戏
         logger.info(
-            f"logout: {request_data.user_name} exit game = {pre_room._game.name}"
+            f"logout: {request_data.user_name} exit game = {pre_room.game.name}"
         )
         # 退出游戏
-        pre_room._game.exit()
+        pre_room.game.exit()
 
     else:
         logger.info(f"logout: {request_data.user_name} no game = {pre_room._user_name}")

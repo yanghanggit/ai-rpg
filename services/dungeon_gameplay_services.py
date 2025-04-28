@@ -52,7 +52,7 @@ async def dungeon_gameplay(
     # 是否有游戏？！！
     current_room = room_manager.get_room(request_data.user_name)
     assert current_room is not None
-    if current_room._game is None:
+    if current_room.game is None:
         logger.error(
             f"dungeon_run: {request_data.user_name} has no game, please login first."
         )
@@ -62,7 +62,7 @@ async def dungeon_gameplay(
         )
 
     # 是否是WebTCGGame？！！
-    web_game = current_room._game
+    web_game = current_room.game
     assert isinstance(web_game, WebTCGGame)
     assert web_game is not None
 
@@ -272,7 +272,7 @@ async def dungeon_trans_home(
     # 是否有游戏？！！
     current_room = room_manager.get_room(request_data.user_name)
     assert current_room is not None
-    if current_room._game is None:
+    if current_room.game is None:
         logger.error(
             f"dungeon_trans_home: {request_data.user_name} has no game, please login first."
         )
@@ -282,7 +282,7 @@ async def dungeon_trans_home(
         )
 
     # 是否是WebTCGGame？！！
-    web_game = current_room._game
+    web_game = current_room.game
     assert isinstance(web_game, WebTCGGame)
     assert web_game is not None
 

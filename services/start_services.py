@@ -55,7 +55,7 @@ async def start(
         server_setup_config="gen_configs/start_llm_serves.json",
     )
 
-    if room._game is None:
+    if room.game is None:
         # 如果没有游戏对象，就‘创建/复位’一个游戏。
         active_game_session = setup_web_game_session(
             web_user_session_options=web_user_session_options,
@@ -69,12 +69,12 @@ async def start(
                 message="创建游戏失败",
             )
 
-        room._game = active_game_session
+        room.game = active_game_session
     else:
         # 是继续玩
         logger.info(f"start/v1: {request_data.user_name} has room, is running!")
 
-    assert room._game is not None
+    assert room.game is not None
     return StartResponse(
         error=0,
         message=f"启动游戏成功！",

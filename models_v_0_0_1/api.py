@@ -4,6 +4,7 @@ from .client_message import ClientMessage
 from .registry import register_base_model_class
 from .dungeon import Dungeon
 from .snapshot import EntitySnapshot
+from .world import AgentShortTermMemory
 
 
 ################################################################################################################
@@ -221,6 +222,7 @@ class ViewHomeResponse(BaseModel):
 @register_base_model_class
 class ViewActorResponse(BaseModel):
     actor_snapshots: List[EntitySnapshot] = []
+    agent_short_term_memories: List[AgentShortTermMemory] = []
     error: int = 0
     message: str = ""
 

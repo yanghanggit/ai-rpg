@@ -127,66 +127,53 @@ stage_dungeon_cave2 = copy_stage(
 actor_warrior.kick_off_message += f"""\n注意:{actor_wizard.name} 是你的同伴。你目前只会使用防御类的技能！你讨厌黑暗法术，因为你认为它们是邪恶的。"""
 actor_wizard.kick_off_message += f"""\n注意:{actor_warrior.name} 是你的同伴。你最擅长的是闪电类的魔法，而且你还有一个不为别人知道的秘密：你深刻理解黑暗元素的力量，如果面对你最讨厌的东西——哥布林的时候你会毫不犹豫运用这种禁忌之力将其清除。"""
 
-#######################################################################################################################################
-#######################################################################################################################################
-#######################################################################################################################################
-def _build_world(world_boot: Boot) -> Boot:
+# 改变一些数据，例如将角色放入场景 !!!!!!!!!
+# 测试直接打死。
+actor_goblin.rpg_character_profile.hp = 1
+actor_orcs.rpg_character_profile.hp = 1
 
-    world_boot.campaign_setting = CAMPAIGN_SETTING
-    assert world_boot.campaign_setting != ""
+# 创建世界
+world_boot = Boot(name="", campaign_setting=CAMPAIGN_SETTING)
 
-    ############################################################
-    ############################################################
-    ############################################################
-    # 改变一些数据，例如将角色放入场景 !!!!!!!!!
-    # 测试直接打死。
-    actor_goblin.rpg_character_profile.hp = 1
-    actor_orcs.rpg_character_profile.hp = 1
+# 营地中放置角色，这里是战士和法师。
+stage_heros_camp.actors = [actor_warrior, actor_wizard]
 
-    # 营地中放置角色，这里是战士和法师。
-    stage_heros_camp.actors = [actor_warrior, actor_wizard]
+# 第一个洞穴，放置哥布林。
+stage_dungeon_cave1.actors = [actor_goblin]
 
-    # 第一个洞穴，放置哥布林。
-    stage_dungeon_cave1.actors = [actor_goblin]
+# 第二个洞穴，放置兽人。
+stage_dungeon_cave2.actors = [actor_orcs]
 
-    # 第二个洞穴，放置兽人。
-    stage_dungeon_cave2.actors = [actor_orcs]
+world_boot.stages = [
+    stage_heros_camp,
+]
 
-    ############################################################
-    ############################################################
-    ############################################################
-
-    assert world_boot.campaign_setting != ""
-    world_boot.stages = [
-        stage_heros_camp,
-    ]
-    world_boot.world_systems = []
-    return world_boot
+world_boot.world_systems = []
 
 
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
-def create_then_write_demo_world(game_name: str, write_path: Path) -> Optional[Boot]:
+def setup_demo_game_world(game_name: str, write_path: Path) -> Optional[Boot]:
 
     try:
-        # 创建世界
-        world_boot = Boot(name=game_name)
 
-        # 构建世界
-        _build_world(world_boot)
+        global world_boot
+
+        create_new_world = copy.deepcopy(world_boot)
+        create_new_world.name = game_name
 
         # 写入文件
-        write_path.write_text(world_boot.model_dump_json(), encoding="utf-8")
+        write_path.write_text(create_new_world.model_dump_json(), encoding="utf-8")
 
         # 返回
-        return world_boot
+        return create_new_world
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")
-        return None
+        # return None
 
-    assert False, "Should not reach here"
+    # assert False, "Should not reach here"
     return None
 
 

@@ -7,7 +7,7 @@ from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSyst
 from llm_serves.chat_system import ChatSystem
 from player.player_proxy import PlayerProxy
 from game.tcg_game_demo import (
-    create_then_write_demo_world,
+    setup_demo_game_world,
     create_demo_dungeon1,
     # create_demo_dungeon2,
 )
@@ -25,7 +25,7 @@ async def run_game(
 ) -> None:
 
     # 这里是临时的TODO
-    demo_edit_boot = create_then_write_demo_world(
+    demo_edit_boot = setup_demo_game_world(
         terminal_user_session_options.game,
         terminal_user_session_options.gen_world_boot_file,
     )

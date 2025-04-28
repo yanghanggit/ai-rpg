@@ -12,7 +12,7 @@ from models_v_0_0_1 import (
 from loguru import logger
 from game.options import WebUserSessionOptions
 from game.tcg_game_demo import (
-    create_then_write_demo_world,
+    setup_demo_game_world,
 )
 import shutil
 from fastapi.staticfiles import StaticFiles
@@ -73,7 +73,7 @@ async def login(
         web_user_session_options.clear_runtime_dir()
 
         # TODO, 临时创建一个
-        demo_world_setup = create_then_write_demo_world(
+        demo_world_setup = setup_demo_game_world(
             web_user_session_options.game, web_user_session_options.gen_world_boot_file
         )
         assert demo_world_setup is not None

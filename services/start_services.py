@@ -109,7 +109,7 @@ def setup_web_game_session(
         start_world = World(boot=world_boot)
 
         # 运行时生成地下城系统。
-        start_world.dungeon = create_demo_dungeon2(name="兽人巢穴")
+        start_world.dungeon = create_demo_dungeon2()
 
     else:
 

@@ -180,11 +180,9 @@ def setup_demo_game_world(game_name: str, write_path: Path) -> Optional[Boot]:
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
-def create_demo_dungeon2(
-    name: str,
-) -> Dungeon:
+def create_demo_dungeon2() -> Dungeon:
     return Dungeon(
-        name=name,
+        name="哥布林与兽人",
         levels=[
             stage_dungeon_cave1,
             stage_dungeon_cave2,
@@ -193,11 +191,9 @@ def create_demo_dungeon2(
 
 
 #######################################################################################################################################
-def create_demo_dungeon1(
-    name: str,
-) -> Dungeon:
+def create_demo_dungeon1() -> Dungeon:
     return Dungeon(
-        name=name,
+        name="兽人巢穴",
         levels=[
             stage_dungeon_cave2,
         ],

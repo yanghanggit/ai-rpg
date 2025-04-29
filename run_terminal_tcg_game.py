@@ -66,7 +66,7 @@ async def run_game(
         # 重新生成world
         start_world = World(boot=world_boot)
         # 运行时生成地下城系统
-        start_world.dungeon = create_demo_dungeon1(name="哥布林与兽人")
+        start_world.dungeon = create_demo_dungeon1()
 
     else:
 

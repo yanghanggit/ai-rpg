@@ -3,7 +3,7 @@ from game_services.game_server_instance import (
     initialize_game_server_instance,
 )
 from fastapi import FastAPI
-from game_services.api_endpoints_services import api_endpoints_router
+from game_services.url_config_services import url_config_router
 from game_services.login_services import login_router
 from game_services.start_services import start_router
 from game_services.home_gameplay_services import home_gameplay_router
@@ -25,7 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router=api_endpoints_router)
+app.include_router(router=url_config_router)
 app.include_router(router=login_router)
 app.include_router(router=start_router)
 app.include_router(router=home_gameplay_router)

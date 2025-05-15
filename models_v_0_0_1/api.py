@@ -14,26 +14,11 @@ from .world import AgentShortTermMemory
 
 @final
 @register_base_model_class
-class APIEndpointConfiguration(BaseModel):
-    TEST_URL: str = ""
-    LOGIN_URL: str = ""
-    LOGOUT_URL: str = ""
-    START_URL: str = ""
-    HOME_GAMEPLAY_URL: str = ""
-    HOME_TRANS_DUNGEON_URL: str = ""
-    DUNGEON_GAMEPLAY_URL: str = ""
-    DUNGEON_TRANS_HOME_URL: str = ""
-    VIEW_HOME_URL: str = ""
-    VIEW_DUNGEON_URL: str = ""
-    VIEW_ACTOR_URL: str = ""
-
-
-@final
-@register_base_model_class
-class APIEndpointConfigurationResponse(BaseModel):
-    api_endpoints: APIEndpointConfiguration = APIEndpointConfiguration()
-    error: int = 0
-    message: str = ""
+class URLConfigurationResponse(BaseModel):
+    api_version: str = ""
+    endpoints: dict[str, str] = {}
+    deprecated: bool = False
+    notice: str = ""
 
 
 ################################################################################################################

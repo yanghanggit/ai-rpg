@@ -1,14 +1,19 @@
 #!/bin/bash
-# filepath: /Users/yanghang/Documents/GitHub/multi-agents-game-framework/start_servers.sh
-# 注意和 chat_services/chat_server_config.py 一致。
-# 定义起始端口和实例数量
-start_port=8100
-instances=3
 
-for ((i=0; i<$instances; i++)); do
-  port=$((start_port + i))
-  echo "Starting server on port $port"
-  uvicorn chat_services.chat_server:app --host localhost --port $port --reload &
+# filepath: /Users/yanghang/Documents/GitHub/multi-agents-game-framework/chat_services/start_servers.sh
+
+# 配置文件路径
+CONFIG_FILE="$(dirname "$0")/chat_server_settings.json"
+
+# 从 JSON 配置文件中读取参数
+BASE_PORT=$(jq '.chat_service_base_port' "$CONFIG_FILE")
+INSTANCES=$(jq '.num_chat_service_instances' "$CONFIG_FILE")
+
+# 启动多个 uvicorn 实例
+for ((i=0; i<INSTANCES; i++)); do
+  PORT=$((BASE_PORT + i))
+  echo "Starting server on port $PORT"
+  uvicorn chat_services.chat_server:app --host localhost --port $PORT --reload &
 done
 
 echo "All servers started."

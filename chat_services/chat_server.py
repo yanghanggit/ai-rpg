@@ -6,7 +6,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from fastapi import FastAPI
 from langchain.schema import HumanMessage
 from langgraph.graph.state import CompiledStateGraph
-from chat_services.chat_server_config import chat_service_path
+from chat_services.chat_server_settings import chat_service_path
 from chat_services.chat_request_protocol import ChatRequestModel, ChatResponseModel
 from chat_services.azure_chat_openai_gpt_4o_graph import (
     create_compiled_stage_graph,

@@ -1,0 +1,4 @@
+{
+  "chat_service_base_port": 8100,
+  "num_chat_service_instances": 3
+}

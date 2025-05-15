@@ -1,8 +1,9 @@
-from services.game_server import GameServer
+from game_services.game_server import GameServer
 from fastapi import FastAPI, Depends
 from typing import Annotated
-from services.room_manager import RoomManager
-from services.game_server import ServerConfig
+from game_services.room_manager import RoomManager
+
+# from game_services.game_server import ServerConfig
 
 
 ###############################################################################################################################################
@@ -16,11 +17,14 @@ def initialize_game_server_instance(
         GameServer._singleton = GameServer(
             fast_api=FastAPI(),
             room_manager=RoomManager(),
-            server_config=ServerConfig(
-                server_ip_address=server_ip_address,
-                server_port=server_port,
-                local_network_ip=local_network_ip,
-            ),
+            # server_config=ServerConfig(
+            #     server_ip_address=server_ip_address,
+            #     server_port=server_port,
+            #     local_network_ip=local_network_ip,
+            # ),
+            server_ip_address=server_ip_address,
+            server_port=server_port,
+            local_network_ip=local_network_ip,
         )
 
     return GameServer._singleton

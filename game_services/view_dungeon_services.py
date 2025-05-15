@@ -1,34 +1,34 @@
 from fastapi import APIRouter
-from services.game_server_instance import GameServerInstance
+from game_services.game_server_instance import GameServerInstance
 from models_v_0_0_1 import (
-    ViewHomeResponse,
+    ViewDungeonResponse,
 )
 from loguru import logger
 
 
 ###################################################################################################################################################################
-view_home_router = APIRouter()
+view_dungeon_router = APIRouter()
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-@view_home_router.get(
-    path="/view-home/v1/{user_name}/{game_name}", response_model=ViewHomeResponse
+@view_dungeon_router.get(
+    path="/view-dungeon/v1/{user_name}/{game_name}", response_model=ViewDungeonResponse
 )
-async def view_home(
+async def view_dungeon(
     game_server: GameServerInstance,
     user_name: str,
     game_name: str,
-) -> ViewHomeResponse:
+) -> ViewDungeonResponse:
 
-    logger.info(f"/view-home/v1/: {user_name}, {game_name}")
+    logger.info(f"/view-dungeon/v1/: {user_name}, {game_name}")
 
     # 是否有房间？！！
     room_manager = game_server.room_manager
     if not room_manager.has_room(user_name):
-        logger.error(f"view_home: {user_name} has no room")
-        return ViewHomeResponse(
+        logger.error(f"view_dungeon: {user_name} has no room")
+        return ViewDungeonResponse(
             error=1001,
             message="没有房间",
         )
@@ -37,8 +37,8 @@ async def view_home(
     current_room = room_manager.get_room(user_name)
     assert current_room is not None
     if current_room.game is None:
-        logger.error(f"view_home: {user_name} has no game")
-        return ViewHomeResponse(
+        logger.error(f"view_dungeon: {user_name} has no game")
+        return ViewDungeonResponse(
             error=1002,
             message="没有游戏",
         )
@@ -48,13 +48,14 @@ async def view_home(
 
     # 获取当前地图
     mapping_data = web_game.gen_map()
-    logger.info(f"view_home: {user_name} mapping_data: {mapping_data}")
+    logger.info(f"view_dungeon: {user_name} mapping_data: {mapping_data}")
 
     # 返回。
-    return ViewHomeResponse(
+    return ViewDungeonResponse(
         mapping=mapping_data,
+        dungeon=web_game.current_dungeon,
         error=0,
-        message=f"{mapping_data}",
+        message=web_game.current_dungeon.model_dump_json(),
     )
 
 

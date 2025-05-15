@@ -1,5 +1,5 @@
 from typing import Optional, Dict
-from services.room import Room
+from game_services.room import Room
 
 
 class RoomManager:

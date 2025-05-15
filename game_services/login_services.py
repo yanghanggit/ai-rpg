@@ -2,7 +2,7 @@ from enum import StrEnum, unique
 import os
 from typing import Final, final
 from fastapi import APIRouter
-from services.game_server_instance import GameServerInstance
+from game_services.game_server_instance import GameServerInstance
 from models_v_0_0_1 import (
     LoginRequest,
     LoginResponse,

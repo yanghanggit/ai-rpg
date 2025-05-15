@@ -1,23 +1,27 @@
 from fastapi.middleware.cors import CORSMiddleware
-from services.game_server_instance import (
+from game_services.game_server_instance import (
     GameServerInstance,
     initialize_game_server_instance,
 )
 
+# server_ip_address: str ="0.0.0.0"
+# server_port: int = 8000,
+# local_network_ip: str = "192.168.192.100"
+
 
 ###############################################################################################################################################
 def main(game_server: GameServerInstance) -> None:
-    import argparse
+    # import argparse
     import uvicorn
 
-    from services.api_endpoints_services import api_endpoints_router
-    from services.login_services import login_router
-    from services.start_services import start_router
-    from services.home_gameplay_services import home_gameplay_router
-    from services.dungeon_gameplay_services import dungeon_gameplay_router
-    from services.view_dungeon_services import view_dungeon_router
-    from services.view_home_services import view_home_router
-    from services.view_actor_services import view_actor_router
+    from game_services.api_endpoints_services import api_endpoints_router
+    from game_services.login_services import login_router
+    from game_services.start_services import start_router
+    from game_services.home_gameplay_services import home_gameplay_router
+    from game_services.dungeon_gameplay_services import dungeon_gameplay_router
+    from game_services.view_dungeon_services import view_dungeon_router
+    from game_services.view_home_services import view_home_router
+    from game_services.view_actor_services import view_actor_router
 
     game_server.fast_api.add_middleware(
         CORSMiddleware,
@@ -38,29 +42,29 @@ def main(game_server: GameServerInstance) -> None:
     game_server.fast_api.include_router(router=view_actor_router)
     # 加一些其他的。。。。。
 
-    parser = argparse.ArgumentParser(description="启动 FastAPI 应用")
-    parser.add_argument(
-        "--host",
-        type=str,
-        default=game_server._server_config.server_ip_address,
-        help="主机地址",
-    )
-    parser.add_argument(
-        "--port",
-        type=int,
-        default=game_server._server_config.server_port,
-        help="端口号",
-    )
-    args = parser.parse_args()
+    # parser = argparse.ArgumentParser(description="启动 FastAPI 应用")
+    # parser.add_argument(
+    #     "--host",
+    #     type=str,
+    #     default=game_server._server_config.server_ip_address,
+    #     help="主机地址",
+    # )
+    # parser.add_argument(
+    #     "--port",
+    #     type=int,
+    #     default=game_server._server_config.server_port,
+    #     help="端口号",
+    # )
+    # args = parser.parse_args()
 
     # 启动 FastAPI 应用
-    print(
-        f"!!!!启动 FastAPI 应用在 {args.host}:{args.port}!!!!!!!, pid={game_server.pid}"
-    )
+    # print(
+    #     f"!!!!启动 FastAPI 应用在 {args.host}:{args.port}!!!!!!!, pid={game_server.pid}"
+    # )
     uvicorn.run(
         game_server.fast_api,
-        host=str(args.host),
-        port=int(args.port),
+        host=game_server.server_ip_address,
+        port=game_server.server_port,
     )
 
 

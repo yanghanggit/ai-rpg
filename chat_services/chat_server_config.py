@@ -3,9 +3,6 @@ from typing import List
 from pydantic import BaseModel
 
 
-
-
-
 ##################################################################################################################
 # 启动一个服务的配置原型
 class ChatServerConfig(BaseModel):
@@ -34,5 +31,7 @@ assert GEN_CONFIGS_DIR.exists(), f"找不到目录: {GEN_CONFIGS_DIR}"
 
 chat_server_config = ChatServerConfig()
 chat_server_config_path = GEN_CONFIGS_DIR / "chat_server_config.json"
-chat_server_config_path.write_text(chat_server_config.model_dump_json(), encoding="utf-8")
+chat_server_config_path.write_text(
+    chat_server_config.model_dump_json(), encoding="utf-8"
+)
 print(f"配置文件已保存到: {chat_server_config_path}")

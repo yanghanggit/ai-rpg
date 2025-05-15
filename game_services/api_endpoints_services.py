@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from loguru import logger
-from services.game_server_instance import GameServerInstance
+from game_services.game_server_instance import GameServerInstance
 from models_v_0_0_1 import (
     APIEndpointConfiguration,
     APIEndpointConfigurationResponse,

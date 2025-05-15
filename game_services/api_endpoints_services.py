@@ -5,6 +5,7 @@ from models_v_0_0_1 import (
     APIEndpointConfiguration,
     APIEndpointConfigurationResponse,
 )
+from game_services.game_server_config import GameServerConfig
 
 
 api_endpoints_router = APIRouter()
@@ -19,13 +20,15 @@ async def api_endpoints(
 
     logger.info("获取API路由")
 
-    server_ip_address = str(game_server.server_ip_address)
+    game_server_config = GameServerConfig()
+
+    server_ip_address = str(game_server_config.server_ip_address)
     if server_ip_address == "0.0.0.0":
         # TODO, 这里需要改成获取本机的ip地址
-        server_ip_address = game_server.local_network_ip
+        server_ip_address = game_server_config.local_network_ip
         logger.info(f"0.0.0.0, use local ip address: {server_ip_address}")
 
-    server_port = game_server.server_port
+    server_port = game_server_config.server_port
 
     generated_api_endpoints: APIEndpointConfiguration = APIEndpointConfiguration(
         # 测试

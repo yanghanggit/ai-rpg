@@ -87,11 +87,12 @@ async def login(
 
     # TODO, get测试。
     # 指向包含 runtime.json 的目录。
+    assert game_server._fast_api is not None
     static_dir = os.path.join(
         GEN_RUNTIME_DIR, web_user_session_options.user, web_user_session_options.game
     )
     # 将该目录挂载到 "/files" 路径上
-    game_server.fast_api.mount(
+    game_server._fast_api.mount(
         "/files", StaticFiles(directory=static_dir), name="files"
     )
     # 如果能开启就用get方法测试

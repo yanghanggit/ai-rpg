@@ -7,7 +7,7 @@ from loguru import logger
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import threading
 from fastapi import FastAPI
-from chat_services.service_config import (
+from chat_services.chat_server_config import (
     GEN_CONFIGS_DIR,
     StartupConfiguration,
 )

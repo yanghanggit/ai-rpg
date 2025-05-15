@@ -17,6 +17,7 @@ from format_string.terminal_input import (
     parse_speak_command_input,
 )
 from game.tcg_game_config import setup_logger
+from chat_services.chat_server_config import localhost_urls
 
 
 ###############################################################################################################################################
@@ -95,7 +96,7 @@ async def run_game(
         chat_system=ChatSystem(
             name=f"{chat_system_setup_options.game}-chatsystem",
             user_name=chat_system_setup_options.user,
-            localhost_urls=chat_system_setup_options.localhost_urls,
+            localhost_urls=localhost_urls(),
         ),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )

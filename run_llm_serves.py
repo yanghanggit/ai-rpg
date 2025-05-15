@@ -1,5 +1,5 @@
-from chat_services.service_config import (
-    ServiceConfiguration,
+from chat_services.chat_server_config import (
+    ChatServerConfig,
     StartupConfiguration,
     GEN_CONFIGS_DIR,
 )
@@ -13,7 +13,7 @@ def _create_startup_config(name: str) -> StartupConfiguration:
     agent_startup_config = StartupConfiguration()
     agent_startup_config.name = name
     agent_startup_config.service_configurations = [
-        ServiceConfiguration(
+        ChatServerConfig(
             port=8100,
             temperature=0.7,
             api="/v1/llm_serve/chat/",
@@ -21,7 +21,7 @@ def _create_startup_config(name: str) -> StartupConfiguration:
             fast_api_version="0.0.1",
             fast_api_description="description1",
         ),
-        ServiceConfiguration(
+        ChatServerConfig(
             port=8101,
             temperature=0.7,
             api="/v1/llm_serve/chat/",
@@ -29,7 +29,7 @@ def _create_startup_config(name: str) -> StartupConfiguration:
             fast_api_version="0.0.1",
             fast_api_description="description2",
         ),
-        ServiceConfiguration(
+        ChatServerConfig(
             port=8102,
             temperature=0.7,
             api="/v1/llm_serve/chat/",

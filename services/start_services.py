@@ -11,7 +11,7 @@ from chat_services.chat_system import ChatSystem
 from typing import Optional
 from game.web_tcg_game import WebTCGGame
 from player.player_proxy import PlayerProxy
-
+from chat_services.chat_server_config import localhost_urls
 
 ###################################################################################################################################################################
 start_router = APIRouter()
@@ -132,7 +132,7 @@ def setup_web_game_session(
         chat_system=ChatSystem(
             name=f"{chat_system_setup_options.game}-chatsystem",
             user_name=chat_system_setup_options.user,
-            localhost_urls=chat_system_setup_options.localhost_urls,
+            localhost_urls=localhost_urls(),
         ),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )

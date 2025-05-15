@@ -70,6 +70,6 @@ if __name__ == "__main__":
         initialize_game_server_instance(
             server_ip_address="0.0.0.0",
             server_port=8000,
-            local_network_ip="192.168.192.104",
+            local_network_ip="192.168.192.100",
         )
     )

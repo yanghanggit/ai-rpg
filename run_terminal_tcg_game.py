@@ -4,7 +4,7 @@ from game.terminal_tcg_game import TerminalTCGGame
 from game.tcg_game import TCGGameState
 from models_v_0_0_1 import Boot, World, CombatResult
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
-from llm_serves.chat_system import ChatSystem
+from chat_services.chat_system import ChatSystem
 from player.player_proxy import PlayerProxy
 from game.tcg_game_demo import (
     setup_demo_game_world,
@@ -16,6 +16,7 @@ from game.options import TerminalUserSessionOptions, ChatSystemOptions
 from format_string.terminal_input import (
     parse_speak_command_input,
 )
+from game.tcg_game_config import setup_logger
 
 
 ###############################################################################################################################################
@@ -355,7 +356,8 @@ if __name__ == "__main__":
     )
 
     # 初始化日志
-    terminal_user_session_options.setup_logger()
+    # terminal_user_session_options.setup_logger()
+    setup_logger()
 
     # 创建ChatSystemOptions
     chat_system_setup_options = ChatSystemOptions(

@@ -1,4 +1,4 @@
-from llm_serves.service_config import (
+from chat_services.service_config import (
     ServiceConfiguration,
     StartupConfiguration,
     GEN_CONFIGS_DIR,
@@ -84,7 +84,7 @@ def _execute_service_startup(config_file_path: Path) -> None:
 
         # 用配置文件的路径启动
         terminal_batch_start_command = (
-            f"pm2 start llm_serves/batch_start_langserve.py -- {config_file_path}"
+            f"pm2 start chat_services/batch_start_langserve.py -- {config_file_path}"
         )
         logger.debug(terminal_batch_start_command)
         os.system(terminal_batch_start_command)

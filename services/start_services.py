@@ -7,7 +7,7 @@ from game.tcg_game_demo import (
     create_demo_dungeon2,
 )
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
-from llm_serves.chat_system import ChatSystem
+from chat_services.chat_system import ChatSystem
 from typing import Optional
 from game.web_tcg_game import WebTCGGame
 from player.player_proxy import PlayerProxy

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
-from llm_serves.chat_request_handler import ChatRequestHandler
+from chat_services.chat_request_handler import ChatRequestHandler
 import format_string.json_format
 from models_v_0_0_1 import (
     ActorComponent,

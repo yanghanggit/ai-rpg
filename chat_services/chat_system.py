@@ -4,7 +4,7 @@ import httpx
 import asyncio
 import asyncio
 import time
-from llm_serves.chat_request_handler import ChatRequestHandler
+from chat_services.chat_request_handler import ChatRequestHandler
 
 
 @final

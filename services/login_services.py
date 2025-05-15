@@ -16,7 +16,7 @@ from game.tcg_game_demo import (
 )
 import shutil
 from fastapi.staticfiles import StaticFiles
-from game.tcg_game_config import GEN_RUNTIME_DIR
+from game.tcg_game_config import GEN_RUNTIME_DIR, setup_logger
 
 ###################################################################################################################################################################
 login_router = APIRouter()
@@ -52,7 +52,8 @@ async def login(
     )
 
     # 初始化日志
-    web_user_session_options.setup_logger()
+    # web_user_session_options.setup_logger()
+    setup_logger()
 
     # 检查房间是否存在
     room_manager = game_server.room_manager

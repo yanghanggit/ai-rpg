@@ -11,7 +11,7 @@ from models_v_0_0_1 import (
 )
 from typing import Set, final, List
 from game.tcg_game import TCGGame
-from llm_serves.chat_request_handler import ChatRequestHandler
+from chat_services.chat_request_handler import ChatRequestHandler
 
 
 ###############################################################################################################################################

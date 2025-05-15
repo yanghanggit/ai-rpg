@@ -1,6 +1,6 @@
 from loguru import logger
 from pydantic import BaseModel
-from llm_serves.chat_request_handler import ChatRequestHandler
+from chat_services.chat_request_handler import ChatRequestHandler
 from entitas import ExecuteProcessor, Entity  # type: ignore
 from typing import Dict, List, Optional, Set, final, override
 from game.tcg_game import TCGGame

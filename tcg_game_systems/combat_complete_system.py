@@ -10,7 +10,7 @@ from models_v_0_0_1 import (
     CombatResult,
     CombatCompleteEvent,
 )
-from llm_serves.chat_request_handler import ChatRequestHandler
+from chat_services.chat_request_handler import ChatRequestHandler
 
 
 #######################################################################################################################################

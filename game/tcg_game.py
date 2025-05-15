@@ -44,7 +44,7 @@ from models_v_0_0_1 import (
 from models_v_0_0_1.components import XCardPlayerComponent
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from llm_serves.chat_system import ChatSystem
+from chat_services.chat_system import ChatSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 import copy

@@ -1,10 +1,10 @@
 from typing import Dict, List, Union
 from loguru import logger
-from llm_serves.chat_system import ChatSystem
-from llm_serves.chat_request_handler import ChatRequestHandler
+from chat_services.chat_system import ChatSystem
+from chat_services.chat_request_handler import ChatRequestHandler
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 import requests
-from llm_serves.chat_request_protocol import (
+from chat_services.chat_request_protocol import (
     ChatRequestModel,
     ChatResponseModel,
 )

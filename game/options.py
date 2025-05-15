@@ -5,7 +5,7 @@ import datetime
 from dataclasses import dataclass
 from game.tcg_game_config import LOGS_DIR, GEN_RUNTIME_DIR, GEN_WORLD_DIR
 import shutil
-from llm_serves.service_config import (
+from chat_services.service_config import (
     StartupConfiguration,
 )
 
@@ -63,13 +63,13 @@ class UserSessionOptions:
 
     ###############################################################################################################################################
     # 设置logger
-    def setup_logger(self) -> None:
-        assert self.user != ""
-        assert self.game != ""
-        log_dir = LOGS_DIR / self.user / self.game
-        log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        logger.add(log_dir / f"{log_start_time}.log", level="DEBUG")
-        logger.debug(f"准备进入游戏 = {self.game}, 玩家 = {self.user}")
+    # def setup_logger(self) -> None:
+    #     # assert self.user != ""
+    #     # assert self.game != ""
+    #     # log_dir = LOGS_DIR / self.user / self.game
+    #     log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    #     logger.add(LOGS_DIR / f"{log_start_time}.log", level="DEBUG")
+    #     # logger.debug(f"准备进入游戏 = {self.game}, 玩家 = {self.user}")
 
 
 ###############################################################################################################################################

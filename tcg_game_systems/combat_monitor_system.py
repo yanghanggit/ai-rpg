@@ -1,7 +1,7 @@
 from entitas import ExecuteProcessor, Entity  # type: ignore
 from typing import Dict, List, Set, Union, final, override
 from models_v_0_0_1 import StageComponent, ActorComponent, StatusEffect
-from llm_serves.chat_request_handler import ChatRequestHandler
+from chat_services.chat_request_handler import ChatRequestHandler
 from loguru import logger
 from pydantic import BaseModel
 import format_string.json_format

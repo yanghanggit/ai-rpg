@@ -7,17 +7,17 @@ from loguru import logger
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import threading
 from fastapi import FastAPI
-from llm_serves.service_config import (
+from chat_services.service_config import (
     GEN_CONFIGS_DIR,
     StartupConfiguration,
 )
 from langchain.schema import HumanMessage
 from langgraph.graph.state import CompiledStateGraph
-from llm_serves.chat_request_protocol import (
+from chat_services.chat_request_protocol import (
     ChatRequestModel,
     ChatResponseModel,
 )
-from llm_serves.azure_chat_openai_gpt_4o_graph import (
+from chat_services.azure_chat_openai_gpt_4o_graph import (
     create_compiled_stage_graph,
     stream_graph_updates,
     State,

@@ -21,7 +21,8 @@ mypy --strict run_terminal_tcg_game.py run_tcg_game_server.py run_chat_server.py
 ## 注意添加权限
 
 ```shell
-chmod +x run_chat_server.sh
+chmod +x run_chat_servers.sh
+chmod +x run_pm2script.sh
 ```
 
 ## 升级langchain

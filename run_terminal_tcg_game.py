@@ -23,7 +23,6 @@ from chat_services.chat_server_config import localhost_urls
 ###############################################################################################################################################
 async def run_game(
     terminal_user_session_options: TerminalUserSessionOptions,
-    # chat_system_setup_options: ChatSystemOptions,
 ) -> None:
 
     # 这里是临时的TODO
@@ -357,7 +356,6 @@ if __name__ == "__main__":
     )
 
     # 初始化日志
-    # terminal_user_session_options.setup_logger()
     setup_logger()
 
     # 运行游戏

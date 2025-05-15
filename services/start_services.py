@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from services.game_server_instance import GameServerInstance
 from models_v_0_0_1 import StartRequest, StartResponse, Boot, World
-from game.options import WebUserSessionOptions, ChatSystemOptions
+from game.options import WebUserSessionOptions
 from loguru import logger
 from game.tcg_game_demo import (
     create_demo_dungeon2,
@@ -48,18 +48,10 @@ async def start(
         actor=request_data.actor_name,
     )
 
-    # 创建ChatSystemOptions
-    chat_system_setup_options = ChatSystemOptions(
-        user=web_user_session_options.user,
-        game=web_user_session_options.game,
-        server_setup_config="gen_configs/start_llm_serves.json",
-    )
-
     if room.game is None:
         # 如果没有游戏对象，就‘创建/复位’一个游戏。
         active_game_session = setup_web_game_session(
             web_user_session_options=web_user_session_options,
-            chat_system_setup_options=chat_system_setup_options,
         )
 
         if active_game_session is None:
@@ -86,7 +78,7 @@ async def start(
 ###################################################################################################################################################################
 def setup_web_game_session(
     web_user_session_options: WebUserSessionOptions,
-    chat_system_setup_options: ChatSystemOptions,
+    # chat_system_setup_options: ChatSystemOptions,
 ) -> Optional[WebTCGGame]:
 
     # 创建runtime
@@ -130,8 +122,8 @@ def setup_web_game_session(
         world=start_world,
         world_path=web_user_session_options.world_runtime_file,
         chat_system=ChatSystem(
-            name=f"{chat_system_setup_options.game}-chatsystem",
-            user_name=chat_system_setup_options.user,
+            name=f"{web_user_session_options.game}-chatsystem",
+            user_name=web_user_session_options.user,
             localhost_urls=localhost_urls(),
         ),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),

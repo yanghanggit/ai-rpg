@@ -12,7 +12,7 @@ from game.tcg_game_demo import (
     # create_demo_dungeon2,
 )
 from tcg_game_systems.combat_monitor_system import CombatMonitorSystem
-from game.options import TerminalUserSessionOptions, ChatSystemOptions
+from game.options import TerminalUserSessionOptions
 from format_string.terminal_input import (
     parse_speak_command_input,
 )
@@ -23,7 +23,7 @@ from chat_services.chat_server_config import localhost_urls
 ###############################################################################################################################################
 async def run_game(
     terminal_user_session_options: TerminalUserSessionOptions,
-    chat_system_setup_options: ChatSystemOptions,
+    # chat_system_setup_options: ChatSystemOptions,
 ) -> None:
 
     # 这里是临时的TODO
@@ -94,8 +94,8 @@ async def run_game(
         world=start_world,
         world_path=terminal_user_session_options.world_runtime_file,
         chat_system=ChatSystem(
-            name=f"{chat_system_setup_options.game}-chatsystem",
-            user_name=chat_system_setup_options.user,
+            name=f"{terminal_user_session_options.game}-chatsystem",
+            user_name=terminal_user_session_options.user,
             localhost_urls=localhost_urls(),
         ),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),
@@ -360,12 +360,5 @@ if __name__ == "__main__":
     # terminal_user_session_options.setup_logger()
     setup_logger()
 
-    # 创建ChatSystemOptions
-    chat_system_setup_options = ChatSystemOptions(
-        user=terminal_user_session_options.user,
-        game=terminal_user_session_options.game,
-        server_setup_config="gen_configs/start_llm_serves.json",
-    )
-
     # 运行游戏
-    asyncio.run(run_game(terminal_user_session_options, chat_system_setup_options))
+    asyncio.run(run_game(terminal_user_session_options))

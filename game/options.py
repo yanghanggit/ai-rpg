@@ -1,10 +1,12 @@
 from pathlib import Path
+
 # from typing import List
 # from loguru import logger
 # import datetime
 from dataclasses import dataclass
 from game.tcg_game_config import GEN_RUNTIME_DIR, GEN_WORLD_DIR
 import shutil
+
 # from chat_services.chat_server_config import (
 #     StartupConfiguration,
 # )
@@ -91,39 +93,39 @@ class WebUserSessionOptions(UserSessionOptions):
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
-@dataclass
-class ChatSystemOptions:
-    user: str
-    game: str
-    server_setup_config: str
+# @dataclass
+# class ChatSystemOptions:
+#     user: str
+#     game: str
+# server_setup_config: str
 
-    # @property
-    # def localhost_urls(self) -> List[str]:
+# @property
+# def localhost_urls(self) -> List[str]:
 
-    #     config_file_path = Path(self.server_setup_config)
-    #     assert config_file_path.exists()
-    #     if not config_file_path.exists():
-    #         logger.error(f"没有找到配置文件: {config_file_path}")
-    #         return []
+#     config_file_path = Path(self.server_setup_config)
+#     assert config_file_path.exists()
+#     if not config_file_path.exists():
+#         logger.error(f"没有找到配置文件: {config_file_path}")
+#         return []
 
-    #     try:
+#     try:
 
-    #         ret: List[str] = []
+#         ret: List[str] = []
 
-    #         config_file_content = config_file_path.read_text(encoding="utf-8")
-    #         agent_startup_config = StartupConfiguration.model_validate_json(
-    #             config_file_content
-    #         )
+#         config_file_content = config_file_path.read_text(encoding="utf-8")
+#         agent_startup_config = StartupConfiguration.model_validate_json(
+#             config_file_content
+#         )
 
-    #         for config in agent_startup_config.service_configurations:
-    #             ret.append(f"http://localhost:{config.port}{config.api}")
+#         for config in agent_startup_config.service_configurations:
+#             ret.append(f"http://localhost:{config.port}{config.api}")
 
-    #         return ret
+#         return ret
 
-    #     except Exception as e:
-    #         logger.error(f"Exception: {e}")
+#     except Exception as e:
+#         logger.error(f"Exception: {e}")
 
-    #     return []
+#     return []
 
 
 ###############################################################################################################################################

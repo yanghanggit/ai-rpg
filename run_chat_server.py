@@ -1,10 +1,11 @@
 # ##################################################################################################################
 def main() -> None:
 
-    from chat_services.chat_server import app, chat_server_config
+    from chat_services.chat_server import app
+    from chat_services.chat_server_config import chat_service_api_port
     import uvicorn
 
-    uvicorn.run(app, host="localhost", port=chat_server_config.port)
+    uvicorn.run(app, host="localhost", port=chat_service_api_port)
 
 
 ##################################################################################################################

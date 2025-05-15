@@ -15,9 +15,13 @@ pip install langchain langchain_core langserve langgraph fastapi langchain_opena
 ## 严格模式检查
 
 ```shell
-mypy --strict run_terminal_tcg_game.py run_tcg_game_server.py run_chat_server.py 
-mypy --strict run_test_chat_system.py
+mypy --strict run_terminal_tcg_game.py run_tcg_game_server.py run_chat_server.py
+```
 
+## 注意添加权限
+
+```shell
+chmod +x run_chat_server.sh
 ```
 
 ## 升级langchain

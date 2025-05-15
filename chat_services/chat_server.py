@@ -6,7 +6,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from fastapi import FastAPI
 from langchain.schema import HumanMessage
 from langgraph.graph.state import CompiledStateGraph
-from chat_services.chat_server_config import ChatServerConfig
+from chat_services.chat_server_config import chat_service_api
 from chat_services.chat_request_protocol import ChatRequestModel, ChatResponseModel
 from chat_services.azure_chat_openai_gpt_4o_graph import (
     create_compiled_stage_graph,
@@ -15,24 +15,18 @@ from chat_services.azure_chat_openai_gpt_4o_graph import (
 )
 
 ##################################################################################################################
-chat_server_config = ChatServerConfig()
-##################################################################################################################
 # 初始化 FastAPI 应用
-app = FastAPI(
-    title=chat_server_config.fast_api_title,
-    version=chat_server_config.fast_api_version,
-    description=chat_server_config.fast_api_description,
-)
+app = FastAPI()
 ##################################################################################################################
 # 创建编译后的状态图
 compiled_state_graph: CompiledStateGraph = create_compiled_stage_graph(
-    "azure_chat_openai_chatbot_node", chat_server_config.temperature
+    "azure_chat_openai_chatbot_node", 0.7
 )
 
 
 ##################################################################################################################
 # 定义 POST 请求处理逻辑
-@app.post(path=chat_server_config.api, response_model=ChatResponseModel)
+@app.post(path=chat_service_api, response_model=ChatResponseModel)
 async def process_chat_request(request: ChatRequestModel) -> ChatResponseModel:
     # 聊天历史
     chat_history_state: State = {

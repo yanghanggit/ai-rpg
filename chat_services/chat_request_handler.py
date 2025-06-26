@@ -46,6 +46,15 @@ class ChatRequestHandler:
         return cast(str, self._chat_response.messages[-1].content)
 
     ################################################################################################################################################################################
+    @property
+    def ai_message(self) -> AIMessage:
+        for message in reversed(self._chat_response.messages):
+            if isinstance(message, AIMessage):
+                return message
+
+        return AIMessage(content="")
+
+    ################################################################################################################################################################################
     def request(self, url: str) -> None:
 
         try:

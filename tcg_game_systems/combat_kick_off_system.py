@@ -1,6 +1,7 @@
 from loguru import logger
 from pydantic import BaseModel
 from chat_services.chat_request_handler import ChatRequestHandler
+from langchain.schema import AIMessage
 from entitas import ExecuteProcessor, Entity  # type: ignore
 from typing import Dict, List, Optional, Set, final, override
 from game.tcg_game import TCGGame
@@ -219,12 +220,12 @@ class CombatKickOffSystem(ExecuteProcessor):
             )
 
         # 添加记忆
-        message = f"""# ！战斗触发！准备完毕。
+        ai_message_content = f"""# ！战斗触发！准备完毕。
 {format_response.description}
 ## 目前拥有的状态
 {status_effects_prompt}"""
 
-        self._game.append_ai_message(entity2, message)
+        self._game.append_ai_message(entity2, AIMessage(content=ai_message_content))
 
         # TODO，临时这么写吧，不用notify了，因为里面会append_human_message，等于重复了。后续再优化。
         if entity2.has(PlayerComponent):
@@ -232,7 +233,7 @@ class CombatKickOffSystem(ExecuteProcessor):
             self._game.player.add_agent_event(
                 # entity2,
                 CombatKickOffEvent(
-                    message=message,
+                    message=ai_message_content,
                     actor=entity2._name,
                     description=format_response.description,
                 ),

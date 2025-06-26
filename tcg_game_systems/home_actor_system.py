@@ -146,7 +146,7 @@ class HomeActorSystem(ExecuteProcessor):
             self._game.append_human_message(
                 entity2, _compress_prompt(request_handler._prompt)
             )
-            self._game.append_ai_message(entity2, request_handler.last_message_content)
+            self._game.append_ai_message(entity2, request_handler.ai_message)
 
             # 添加说话动作
             if len(format_response.speak_actions) > 0:

@@ -114,7 +114,7 @@ class KickOffSystem(ExecuteProcessor):
                 continue
 
             self._game.append_human_message(entity2, request_handler._prompt)
-            self._game.append_ai_message(entity2, request_handler.last_message_content)
+            self._game.append_ai_message(entity2, request_handler.ai_message)
 
             # 必须执行
             entity2.replace(KickOffDoneComponent, entity2._name)

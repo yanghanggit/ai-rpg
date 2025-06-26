@@ -133,9 +133,7 @@ class DungeonStageSystem(ExecuteProcessor):
             )
 
             self._game.append_human_message(stage_entity, request_handler._prompt)
-            self._game.append_ai_message(
-                stage_entity, request_handler.last_message_content
-            )
+            self._game.append_ai_message(stage_entity, request_handler.ai_message)
 
             # 更新环境描写
             if format_response.environment != "":

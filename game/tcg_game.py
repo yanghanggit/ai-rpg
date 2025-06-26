@@ -533,6 +533,13 @@ class TCGGame(BaseGame, TCGGameContext):
         )
 
     ###############################################################################################################################################
+    def append_system_message(self, entity: Entity, chat: str) -> None:
+        logger.debug(f"append_system_message: {entity._name} => \n{chat}")
+        agent_short_term_memory = self.get_agent_short_term_memory(entity)
+        if len(agent_short_term_memory.chat_history) == 0:
+            agent_short_term_memory.chat_history.extend([SystemMessage(content=chat)])
+
+    ###############################################################################################################################################
     def append_human_message(self, entity: Entity, chat: str, **kwargs: Any) -> None:
 
         logger.debug(f"append_human_message: {entity._name} => \n{chat}")
@@ -546,17 +553,10 @@ class TCGGame(BaseGame, TCGGameContext):
         )
 
     ###############################################################################################################################################
-    def append_ai_message(self, entity: Entity, chat: str) -> None:
-        logger.debug(f"append_ai_message: {entity._name} => \n{chat}")
+    def append_ai_message(self, entity: Entity, ai_message: AIMessage) -> None:
+        logger.debug(f"append_ai_message: {entity._name} => \n{ai_message.content}")
         agent_short_term_memory = self.get_agent_short_term_memory(entity)
-        agent_short_term_memory.chat_history.extend([AIMessage(content=chat)])
-
-    ###############################################################################################################################################
-    def append_system_message(self, entity: Entity, chat: str) -> None:
-        logger.debug(f"append_system_message: {entity._name} => \n{chat}")
-        agent_short_term_memory = self.get_agent_short_term_memory(entity)
-        if len(agent_short_term_memory.chat_history) == 0:
-            agent_short_term_memory.chat_history.extend([SystemMessage(content=chat)])
+        agent_short_term_memory.chat_history.append(ai_message)
 
     ###############################################################################################################################################
     def _assign_player_to_actor(self) -> bool:

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from game_services.game_server_instance import GameServerInstance
+from game_services.game_server import GameServerInstance
 from models_v_0_0_1 import (
     ViewHomeResponse,
 )

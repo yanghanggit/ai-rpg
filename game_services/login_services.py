@@ -1,8 +1,8 @@
 from enum import StrEnum, unique
 import os
 from typing import Final, final
-from fastapi import APIRouter
-from game_services.game_server_instance import GameServerInstance
+from fastapi import APIRouter, Request
+from game_services.game_server import GameServerInstance
 from models_v_0_0_1 import (
     LoginRequest,
     LoginResponse,
@@ -40,6 +40,7 @@ class GameSessionStatus(StrEnum):
 async def login(
     request_data: LoginRequest,
     game_server: GameServerInstance,
+    request: Request,  # 新增
 ) -> LoginResponse:
 
     logger.info(f"login/v1: {request_data.model_dump_json()}")
@@ -87,14 +88,13 @@ async def login(
 
     # TODO, get测试。
     # 指向包含 runtime.json 的目录。
-    assert game_server._fast_api is not None
+    fastapi_app = request.app
+    # assert game_server._fast_api is not None
     static_dir = os.path.join(
         GEN_RUNTIME_DIR, web_user_session_options.user, web_user_session_options.game
     )
     # 将该目录挂载到 "/files" 路径上
-    game_server._fast_api.mount(
-        "/files", StaticFiles(directory=static_dir), name="files"
-    )
+    fastapi_app.mount("/files", StaticFiles(directory=static_dir), name="files")
     # 如果能开启就用get方法测试
     # http://127.0.0.1:8000/files/runtime.json
     # http://局域网地址:8000/files/runtime.json

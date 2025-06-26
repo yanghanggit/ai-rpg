@@ -12,7 +12,7 @@ url_config_router = APIRouter()
 ################################################################################################################
 ################################################################################################################
 @url_config_router.get(path="/config", response_model=URLConfigurationResponse)
-async def api_endpoints(
+async def get_url_config(
     request: Request,
 ) -> URLConfigurationResponse:
 

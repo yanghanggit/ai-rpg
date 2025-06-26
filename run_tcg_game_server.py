@@ -1,6 +1,6 @@
 def main() -> None:
 
-    from game_services.game_server_app import app
+    from game_services.game_server_fastapi import app
     import uvicorn
 
     uvicorn.run(

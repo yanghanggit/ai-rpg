@@ -1,7 +1,8 @@
 from fastapi.middleware.cors import CORSMiddleware
-from game_services.game_server_instance import (
-    initialize_game_server_instance,
-)
+
+# from game_services.game_server_instance import (
+#     initialize_game_server_instance,
+# )
 from fastapi import FastAPI
 from game_services.url_config_services import url_config_router
 from game_services.login_services import login_router
@@ -14,8 +15,8 @@ from game_services.view_actor_services import view_actor_router
 
 app = FastAPI()
 
-game_server = initialize_game_server_instance()
-game_server._fast_api = app
+# game_server = initialize_game_server_instance()
+# game_server._fast_api = app
 
 app.add_middleware(
     CORSMiddleware,

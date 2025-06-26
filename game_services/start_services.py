@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 from game_services.game_server import GameServerInstance
 from models_v_0_0_1 import StartRequest, StartResponse, Boot, World
 from game.options import WebUserSessionOptions
@@ -26,51 +26,57 @@ async def start(
     game_server: GameServerInstance,
 ) -> StartResponse:
 
-    logger.info(f"start/v1: {request_data.model_dump_json()}")
+    logger.info(f"/start/v1/: {request_data.model_dump_json()}")
 
-    # 如果没有房间，就创建一个
-    room_manager = game_server.room_manager
-    if not room_manager.has_room(request_data.user_name):
-        logger.error(f"start/v1: {request_data.user_name} not found, create room")
-        return StartResponse(
-            error=1000,
-            message="房间不存在，请先登录",
-        )
+    try:
 
-    # 如果有房间，就获取房间。
-    room = room_manager.get_room(request_data.user_name)
-    assert room is not None
-
-    # 转化成复杂参数
-    web_user_session_options = WebUserSessionOptions(
-        user=request_data.user_name,
-        game=request_data.game_name,
-        actor=request_data.actor_name,
-    )
-
-    if room.game is None:
-        # 如果没有游戏对象，就‘创建/复位’一个游戏。
-        active_game_session = setup_web_game_session(
-            web_user_session_options=web_user_session_options,
-        )
-
-        if active_game_session is None:
-            logger.error(f"创建游戏失败 = {web_user_session_options.game}")
-            return StartResponse(
-                error=1000,
-                message="创建游戏失败",
+        # 如果没有房间，就创建一个
+        room_manager = game_server.room_manager
+        if not room_manager.has_room(request_data.user_name):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"start/v1: {request_data.user_name} not found, create room",
             )
 
-        room.game = active_game_session
-    else:
-        # 是继续玩
-        logger.info(f"start/v1: {request_data.user_name} has room, is running!")
+        # 如果有房间，就获取房间。
+        room = room_manager.get_room(request_data.user_name)
+        assert room is not None
 
-    assert room.game is not None
-    return StartResponse(
-        error=0,
-        message=f"启动游戏成功！",
-    )
+        # 转化成复杂参数
+        web_user_session_options = WebUserSessionOptions(
+            user=request_data.user_name,
+            game=request_data.game_name,
+            actor=request_data.actor_name,
+        )
+
+        if room.game is None:
+            # 如果没有游戏对象，就‘创建/复位’一个游戏。
+            active_game_session = setup_web_game_session(
+                web_user_session_options=web_user_session_options,
+            )
+
+            if active_game_session is None:
+                logger.error(f"创建游戏失败 = {web_user_session_options.game}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"start/v1: {request_data.user_name} failed to create game",
+                )
+
+            room.game = active_game_session
+        else:
+            # 是继续玩
+            logger.info(f"start/v1: {request_data.user_name} has room, is running!")
+
+        assert room.game is not None
+        return StartResponse(
+            message=f"启动游戏成功！",
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"start/v1: {request_data.user_name} failed, error: {str(e)}",
+        )
 
 
 ###################################################################################################################################################################
@@ -78,7 +84,6 @@ async def start(
 ###################################################################################################################################################################
 def setup_web_game_session(
     web_user_session_options: WebUserSessionOptions,
-    # chat_system_setup_options: ChatSystemOptions,
 ) -> Optional[WebTCGGame]:
 
     # 创建runtime

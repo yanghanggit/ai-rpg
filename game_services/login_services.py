@@ -1,7 +1,7 @@
 from enum import StrEnum, unique
 import os
 from typing import Final, final
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, FastAPI, HTTPException, status
 from game_services.game_server import GameServerInstance
 from models_v_0_0_1 import (
     LoginRequest,
@@ -43,7 +43,7 @@ async def login(
     request: Request,  # 新增
 ) -> LoginResponse:
 
-    logger.info(f"login/v1: {request_data.model_dump_json()}")
+    logger.info(f"/login/v1/: {request_data.model_dump_json()}")
 
     # 转化成复杂参数
     web_user_session_options = WebUserSessionOptions(
@@ -53,7 +53,6 @@ async def login(
     )
 
     # 初始化日志
-    # web_user_session_options.setup_logger()
     setup_logger()
 
     # 检查房间是否存在
@@ -88,8 +87,7 @@ async def login(
 
     # TODO, get测试。
     # 指向包含 runtime.json 的目录。
-    fastapi_app = request.app
-    # assert game_server._fast_api is not None
+    fastapi_app: FastAPI = request.app
     static_dir = os.path.join(
         GEN_RUNTIME_DIR, web_user_session_options.user, web_user_session_options.game
     )
@@ -135,7 +133,6 @@ async def login(
             response_message = GameSessionStatus.NEW_GAME
 
     return LoginResponse(
-        error=0,
         message=response_message,
     )
 
@@ -149,42 +146,53 @@ async def logout(
     game_server: GameServerInstance,
 ) -> LogoutResponse:
 
-    logger.info(f"logout: {request_data.model_dump_json()}")
+    logger.info(f"/logout/v1/: {request_data.model_dump_json()}")
 
-    # 先检查房间是否存在
-    room_manager = game_server.room_manager
-    if not room_manager.has_room(request_data.user_name):
-        logger.error(f"logout: {request_data.user_name} not found")
+    try:
+
+        # 先检查房间是否存在
+        room_manager = game_server.room_manager
+        if not room_manager.has_room(request_data.user_name):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"logout: {request_data.user_name} not found",
+            )
+
+        # 删除房间
+        pre_room = room_manager.get_room(request_data.user_name)
+        assert pre_room is not None
+        if pre_room.game is not None:
+            # 保存游戏的运行时数据
+            logger.info(
+                f"logout: {request_data.user_name} save game = {pre_room.game.name}"
+            )
+            pre_room.game.save()
+            # 退出游戏
+            logger.info(
+                f"logout: {request_data.user_name} exit game = {pre_room.game.name}"
+            )
+            # 退出游戏
+            pre_room.game.exit()
+
+        else:
+            logger.info(
+                f"logout: {request_data.user_name} no game = {pre_room._user_name}"
+            )
+
+        logger.info(
+            f"logout: {request_data.user_name} remove room = {pre_room._user_name}"
+        )
+        room_manager.remove_room(pre_room)
         return LogoutResponse(
-            error=1001,
-            message="没有找到房间",
+            message=f"logout: {request_data.user_name} success",
         )
 
-    # 删除房间
-    pre_room = room_manager.get_room(request_data.user_name)
-    assert pre_room is not None
-    if pre_room.game is not None:
-        # 保存游戏的运行时数据
-        logger.info(
-            f"logout: {request_data.user_name} save game = {pre_room.game.name}"
-        )
-        pre_room.game.save()
-        # 退出游戏
-        logger.info(
-            f"logout: {request_data.user_name} exit game = {pre_room.game.name}"
-        )
-        # 退出游戏
-        pre_room.game.exit()
+    except Exception as e:
 
-    else:
-        logger.info(f"logout: {request_data.user_name} no game = {pre_room._user_name}")
-
-    logger.info(f"logout: {request_data.user_name} remove room = {pre_room._user_name}")
-    room_manager.remove_room(pre_room)
-    return LogoutResponse(
-        error=0,
-        message=f"logout: {request_data.user_name} success",
-    )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"logout: {request_data.user_name} failed, error: {str(e)}",
+        )
 
 
 ###################################################################################################################################################################

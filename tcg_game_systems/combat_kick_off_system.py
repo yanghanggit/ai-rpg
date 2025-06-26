@@ -94,13 +94,13 @@ class CombatKickOffSystem(ExecuteProcessor):
         # step5: 处理角色规划请求
         response_map: Dict[ChatRequestHandler, CombatKickOffResponse] = {}
         for request_handler in request_handlers:
-            if request_handler.last_response_message_content == "":
+            if request_handler.last_message_content == "":
                 continue
 
             format_response = self._validate_response_format(request_handler)
             if format_response is None:
                 logger.error(
-                    f"请求处理器返回的内容格式不正确！\n{request_handler._name}:{request_handler.last_response_message_content}"
+                    f"请求处理器返回的内容格式不正确！\n{request_handler._name}:{request_handler.last_message_content}"
                 )
                 continue
             response_map[request_handler] = format_response
@@ -180,7 +180,7 @@ class CombatKickOffSystem(ExecuteProcessor):
         try:
             format_response = CombatKickOffResponse.model_validate_json(
                 format_string.json_format.strip_json_code_block(
-                    request_handler.last_response_message_content
+                    request_handler.last_message_content
                 )
             )
             return format_response

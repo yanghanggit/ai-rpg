@@ -10,12 +10,12 @@ from chat_services.chat_request_handler import ChatRequestHandler
 class ChatSystem:
 
     ################################################################################################################################################################################
-    def __init__(self, name: str, user_name: str, localhost_urls: List[str]) -> None:
+    def __init__(self, name: str, username: str, localhost_urls: List[str]) -> None:
 
         # 名字
         self._name: Final[str] = name
 
-        self._user_name: Final[str] = user_name
+        self._username: Final[str] = username
 
         # 运行的服务器
         assert len(localhost_urls) > 0

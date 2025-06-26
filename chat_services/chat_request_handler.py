@@ -1,10 +1,10 @@
 from loguru import logger
-from typing import Optional, Final, final
+from typing import Optional, Final, cast, final
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 import httpx
 from chat_services.chat_api import (
-    ChatRequestModel,
-    ChatResponseModel,
+    ChatRequest,
+    ChatResponse,
     ChatRequestMessageListType,
 )
 import requests
@@ -32,7 +32,7 @@ class ChatRequestHandler:
         if len(self._chat_history) == 0:
             logger.warning(f"{self._name}: chat_history is empty")
 
-        self._response: Optional[ChatResponseModel] = None
+        self._chat_response: ChatResponse = ChatResponse()
         self._timeout: Final[int] = timeout if timeout is not None else 30
 
         for message in self._chat_history:
@@ -40,10 +40,10 @@ class ChatRequestHandler:
 
     ################################################################################################################################################################################
     @property
-    def last_response_message_content(self) -> str:
-        if self._response is None:
+    def last_message_content(self) -> str:
+        if len(self._chat_response.messages) == 0:
             return ""
-        return self._response.output
+        return cast(str, self._chat_response.messages[-1].content)
 
     ################################################################################################################################################################################
     def request(self, url: str) -> None:
@@ -54,17 +54,17 @@ class ChatRequestHandler:
 
             response = requests.post(
                 url=url,
-                json=ChatRequestModel(
-                    input=self._prompt,
+                json=ChatRequest(
+                    message=HumanMessage(content=self._prompt),
                     chat_history=self._chat_history,
                 ).model_dump(),
                 timeout=self._timeout,
             )
 
             if response.status_code == 200:
-                self._response = ChatResponseModel.model_validate(response.json())
+                self._chat_response = ChatResponse.model_validate(response.json())
                 logger.info(
-                    f"{self._name} request-response:\n{self._response.model_dump_json()}"
+                    f"{self._name} request-response:\n{self._chat_response.model_dump_json()}"
                 )
             else:
                 logger.error(
@@ -83,17 +83,17 @@ class ChatRequestHandler:
 
             response = await client.post(
                 url=url,
-                json=ChatRequestModel(
-                    input=self._prompt,
+                json=ChatRequest(
+                    message=HumanMessage(content=self._prompt),
                     chat_history=self._chat_history,
                 ).model_dump(),
                 timeout=self._timeout,
             )
 
             if response.status_code == 200:
-                self._response = ChatResponseModel.model_validate(response.json())
+                self._chat_response = ChatResponse.model_validate(response.json())
                 logger.info(
-                    f"{self._name} a_request-response:\n{self._response.model_dump_json()}"
+                    f"{self._name} a_request-response:\n{self._chat_response.model_dump_json()}"
                 )
             else:
                 logger.error(

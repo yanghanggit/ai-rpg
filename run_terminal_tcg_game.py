@@ -94,7 +94,7 @@ async def run_game(
         world_path=terminal_user_session_options.world_runtime_file,
         chat_system=ChatSystem(
             name=f"{terminal_user_session_options.game}-chatsystem",
-            user_name=terminal_user_session_options.user,
+            username=terminal_user_session_options.user,
             localhost_urls=chat_server_localhost_urls(),
         ),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),

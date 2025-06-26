@@ -122,7 +122,7 @@ class HomeActorSystem(ExecuteProcessor):
 
         for request_handler in request_handlers:
 
-            if request_handler.last_response_message_content == "":
+            if request_handler.last_message_content == "":
                 continue
 
             entity2 = self._game.get_entity_by_name(request_handler._name)
@@ -139,16 +139,14 @@ class HomeActorSystem(ExecuteProcessor):
 
             format_response = ActorPlanningResponse.model_validate_json(
                 format_string.json_format.strip_json_code_block(
-                    request_handler.last_response_message_content
+                    request_handler.last_message_content
                 )
             )
 
             self._game.append_human_message(
                 entity2, _compress_prompt(request_handler._prompt)
             )
-            self._game.append_ai_message(
-                entity2, request_handler.last_response_message_content
-            )
+            self._game.append_ai_message(entity2, request_handler.last_message_content)
 
             # 添加说话动作
             if len(format_response.speak_actions) > 0:

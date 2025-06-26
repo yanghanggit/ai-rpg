@@ -1,5 +1,5 @@
-from typing import List, Union
-from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from typing import List
+from langchain.schema import AIMessage, HumanMessage, SystemMessage, BaseMessage
 from pydantic import BaseModel
 
 
@@ -7,8 +7,8 @@ ChatRequestMessageListType = List[SystemMessage | HumanMessage | AIMessage]
 
 
 ############################################################################################################
-class ChatRequestModel(BaseModel):
-    input: str = ""
+class ChatRequest(BaseModel):
+    message: HumanMessage
     chat_history: ChatRequestMessageListType = []
 
     class Config:
@@ -16,8 +16,8 @@ class ChatRequestModel(BaseModel):
 
 
 ############################################################################################################
-class ChatResponseModel(BaseModel):
-    output: str = ""
+class ChatResponse(BaseModel):
+    messages: List[BaseMessage] = []
 
     class Config:
         arbitrary_types_allowed = True

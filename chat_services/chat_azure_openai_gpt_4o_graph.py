@@ -1,17 +1,19 @@
 import sys
 from pathlib import Path
 
+from loguru import logger
+
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import os
 import traceback
-from typing import Annotated, cast, Dict, List
+from typing import Annotated, Dict, List
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import BaseMessage
 from pydantic import SecretStr
-from langchain.schema import AIMessage, HumanMessage
+from langchain.schema import HumanMessage
 from langgraph.graph.state import CompiledStateGraph
 
 
@@ -41,15 +43,13 @@ def create_compiled_stage_graph(
         try:
             return {"messages": [llm.invoke(state["messages"])]}
         except Exception as e:
-
-            # 1) 打印异常信息本身
-            # print(f"invoke_azure_chat_openai_llm_action, An error occurred: {e}")
-
-            # 2) 打印完整堆栈信息，方便进一步排查
+            logger.error(
+                f"Error invoking Azure Chat OpenAI LLM: {e}\n" f"State: {state}"
+            )
             traceback.print_exc()
-
-        # 当出现 Azure 内容过滤的情况，或者其他类型异常时，视需求可在此返回空字符串或者自定义提示。
-        return {"messages": [AIMessage(content="")]}
+            return {
+                "messages": []
+            }  # 当出现 Azure 内容过滤的情况，或者其他类型异常时，视需求可在此返回空字符串或者自定义提示。
 
     graph_builder = StateGraph(State)
     graph_builder.add_node(node_name, invoke_azure_chat_openai_llm_action)
@@ -73,9 +73,7 @@ def stream_graph_updates(
 
     for event in state_compiled_graph.stream(merged_message_context):
         for value in event.values():
-            ai_messages: List[AIMessage] = cast(List[AIMessage], value["messages"])
-            # print("Assistant:", ai_messages[-1].content)
-            ret.extend(ai_messages)
+            ret.extend(value["messages"])
 
     return ret
 
@@ -116,7 +114,6 @@ def main() -> None:
 
         except Exception as e:
             assert False, f"Error in processing user input = {e}"
-            # break
 
 
 ############################################################################################################

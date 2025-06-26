@@ -129,7 +129,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
 
         for request_handler in request_handlers:
 
-            if request_handler.last_response_message_content == "":
+            if request_handler.last_message_content == "":
                 continue
 
             entity2 = self._game.get_entity_by_name(request_handler._name)
@@ -145,7 +145,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
 
             format_response = DrawCardsResponse.model_validate_json(
                 format_string.json_format.strip_json_code_block(
-                    request_handler.last_response_message_content
+                    request_handler.last_message_content
                 )
             )
 

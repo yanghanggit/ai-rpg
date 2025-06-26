@@ -123,7 +123,7 @@ def setup_web_game_session(
         world_path=web_user_session_options.world_runtime_file,
         chat_system=ChatSystem(
             name=f"{web_user_session_options.game}-chatsystem",
-            user_name=web_user_session_options.user,
+            username=web_user_session_options.user,
             localhost_urls=chat_server_localhost_urls(),
         ),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),

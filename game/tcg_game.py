@@ -1,4 +1,5 @@
 from enum import Enum, IntEnum, unique
+import uuid
 import shutil
 from entitas import Entity, Matcher  # type: ignore
 from typing import Any, Dict, Final, Set, List, Optional, cast, final
@@ -362,6 +363,7 @@ class TCGGame(BaseGame, TCGGameContext):
                 RuntimeComponent,
                 instance.name,
                 self.world.next_runtime_index(),
+                str(uuid.uuid4()),
             )
             world_system_entity.add(WorldSystemComponent, instance.name)
 
@@ -394,6 +396,7 @@ class TCGGame(BaseGame, TCGGameContext):
                 RuntimeComponent,
                 instance.name,
                 self.world.next_runtime_index(),
+                str(uuid.uuid4()),
             )
 
             # 必要组件：身份类型标记-角色Actor
@@ -467,6 +470,7 @@ class TCGGame(BaseGame, TCGGameContext):
                 RuntimeComponent,
                 instance.name,
                 self.world.next_runtime_index(),
+                str(uuid.uuid4()),
             )
             stage_entity.add(StageComponent, instance.name)
 

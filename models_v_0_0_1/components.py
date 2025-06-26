@@ -12,6 +12,7 @@ from .registry import register_component_class, register_base_model_class
 class RuntimeComponent(NamedTuple):
     name: str
     runtime_index: int
+    uuid: str
 
 
 ############################################################################################################

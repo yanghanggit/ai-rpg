@@ -43,7 +43,7 @@ def create_compiled_stage_graph(
         except Exception as e:
 
             # 1) 打印异常信息本身
-            print(f"invoke_azure_chat_openai_llm_action, An error occurred: {e}")
+            # print(f"invoke_azure_chat_openai_llm_action, An error occurred: {e}")
 
             # 2) 打印完整堆栈信息，方便进一步排查
             traceback.print_exc()
@@ -74,7 +74,7 @@ def stream_graph_updates(
     for event in state_compiled_graph.stream(merged_message_context):
         for value in event.values():
             ai_messages: List[AIMessage] = cast(List[AIMessage], value["messages"])
-            print("Assistant:", ai_messages[-1].content)
+            # print("Assistant:", ai_messages[-1].content)
             ret.extend(ai_messages)
 
     return ret

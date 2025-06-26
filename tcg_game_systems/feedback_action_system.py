@@ -114,7 +114,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
 
         for request_handler in request_handlers:
 
-            if request_handler.response_content == "":
+            if request_handler.last_response_message_content == "":
                 continue
 
             entity2 = self._game.get_entity_by_name(request_handler._name)
@@ -130,7 +130,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
 
             format_response = FeedbackResponse.model_validate_json(
                 format_string.json_format.strip_json_code_block(
-                    request_handler.response_content
+                    request_handler.last_response_message_content
                 )
             )
 
@@ -171,7 +171,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
             # 生成请求处理器
             request_handlers.append(
                 ChatRequestHandler(
-                    name=entity._name,
+                    agent_name=entity._name,
                     prompt=message,
                     chat_history=self._game.get_agent_short_term_memory(
                         entity

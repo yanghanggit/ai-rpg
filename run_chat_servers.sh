@@ -13,7 +13,7 @@ INSTANCES=$(jq '.num_chat_service_instances' "$CONFIG_FILE")
 for ((i=0; i<INSTANCES; i++)); do
   PORT=$((BASE_PORT + i))
   echo "Starting server on port $PORT"
-  uvicorn chat_services.chat_server:app --host localhost --port $PORT --reload &
+  uvicorn chat_services.chat_server_fastapi:app --host localhost --port $PORT &
 done
 
 echo "All servers started."

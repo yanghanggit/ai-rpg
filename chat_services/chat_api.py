@@ -3,12 +3,13 @@ from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel
 
 
+ChatRequestMessageListType = List[SystemMessage | HumanMessage | AIMessage]
+
+
 ############################################################################################################
 class ChatRequestModel(BaseModel):
-    agent_name: str = ""
-    user_name: str = ""
     input: str = ""
-    chat_history: List[Union[SystemMessage, HumanMessage, AIMessage]] = []
+    chat_history: ChatRequestMessageListType = []
 
     class Config:
         arbitrary_types_allowed = True
@@ -16,8 +17,6 @@ class ChatRequestModel(BaseModel):
 
 ############################################################################################################
 class ChatResponseModel(BaseModel):
-    agent_name: str = ""
-    user_name: str = ""
     output: str = ""
 
     class Config:

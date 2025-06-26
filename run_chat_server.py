@@ -1,7 +1,7 @@
 # ##################################################################################################################
 def main() -> None:
 
-    from chat_services.chat_server import app
+    from chat_services.chat_server_fastapi import app
     from chat_services.chat_server_settings import (
         chat_service_base_port,
         num_chat_service_instances,

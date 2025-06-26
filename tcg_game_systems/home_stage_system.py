@@ -114,7 +114,7 @@ class HomeStageSystem(ExecuteProcessor):
             # 生成请求处理器
             request_handlers.append(
                 ChatRequestHandler(
-                    name=stage_entity._name,
+                    agent_name=stage_entity._name,
                     prompt=message,
                     chat_history=self._game.get_agent_short_term_memory(
                         stage_entity
@@ -129,7 +129,7 @@ class HomeStageSystem(ExecuteProcessor):
     ) -> None:
         for request_handler in request_handlers:
 
-            if request_handler.response_content == "":
+            if request_handler.last_response_message_content == "":
                 continue
 
             entity2 = self._game.get_entity_by_name(request_handler._name)
@@ -146,14 +146,16 @@ class HomeStageSystem(ExecuteProcessor):
 
             format_response = StagePlanningResponse.model_validate_json(
                 format_string.json_format.strip_json_code_block(
-                    request_handler.response_content
+                    request_handler.last_response_message_content
                 )
             )
 
             self._game.append_human_message(
                 entity2, _compress_stage_plan_prompt(request_handler._prompt)
             )
-            self._game.append_ai_message(entity2, request_handler.response_content)
+            self._game.append_ai_message(
+                entity2, request_handler.last_response_message_content
+            )
 
             # 更新环境描写
             if format_response.environment_narration != "":

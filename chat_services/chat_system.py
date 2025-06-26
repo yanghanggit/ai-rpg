@@ -2,7 +2,6 @@ from loguru import logger
 from typing import Final, List, Any, final
 import httpx
 import asyncio
-import asyncio
 import time
 from chat_services.chat_request_handler import ChatRequestHandler
 
@@ -28,17 +27,13 @@ class ChatSystem:
     ################################################################################################################################################################################
     async def gather(self, request_handlers: List[ChatRequestHandler]) -> List[Any]:
 
-        if len(request_handlers) == 0:
-            return []
-
-        if len(self._localhost_urls) == 0:
+        if len(request_handlers) == 0 or len(self._localhost_urls) == 0:
             return []
 
         coros = []
         for idx, handler in enumerate(request_handlers):
             # 循环复用
             endpoint_url = self._localhost_urls[idx % len(self._localhost_urls)]
-            handler._user_name = self._user_name
             coros.append(handler.a_request(self._async_client, endpoint_url))
 
         # 允许异常捕获，不中断其他请求
@@ -57,15 +52,11 @@ class ChatSystem:
     ################################################################################################################################################################################
     def handle(self, request_handlers: List[ChatRequestHandler]) -> None:
 
-        if len(request_handlers) == 0:
-            return
-
-        if len(self._localhost_urls) == 0:
+        if len(request_handlers) == 0 or len(self._localhost_urls) == 0:
             return
 
         for request_handler in request_handlers:
             start_time = time.time()
-            request_handler._user_name = self._user_name
             request_handler.request(self._localhost_urls[0])
             end_time = time.time()
             logger.debug(f"ChatSystem.handle:{end_time - start_time:.2f} seconds")

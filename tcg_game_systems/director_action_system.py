@@ -196,7 +196,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
 
         # 用场景推理。
         request_handler = ChatRequestHandler(
-            name=stage_entity._name,
+            agent_name=stage_entity._name,
             prompt=message,
             chat_history=self._game.get_agent_short_term_memory(
                 stage_entity
@@ -207,7 +207,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         self._game.chat_system.handle([request_handler])
 
         # 处理返回结果。
-        if request_handler.response_content == "":
+        if request_handler.last_response_message_content == "":
             return
 
         # 处理返回结果。
@@ -225,7 +225,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
 
             format_response = DirectorResponse.model_validate_json(
                 format_string.json_format.strip_json_code_block(
-                    request_handler.response_content
+                    request_handler.last_response_message_content
                 )
             )
 

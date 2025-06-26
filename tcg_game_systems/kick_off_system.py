@@ -95,7 +95,7 @@ class KickOffSystem(ExecuteProcessor):
             agent_short_term_memory = self._game.get_agent_short_term_memory(entity1)
             request_handlers.append(
                 ChatRequestHandler(
-                    name=entity1._name,
+                    agent_name=entity1._name,
                     prompt=gen_prompt,
                     chat_history=agent_short_term_memory.chat_history,
                 )
@@ -110,21 +110,26 @@ class KickOffSystem(ExecuteProcessor):
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
 
-            if request_handler.response_content == "":
+            if request_handler.last_response_message_content == "":
                 continue
 
             self._game.append_human_message(entity2, request_handler._prompt)
-            self._game.append_ai_message(entity2, request_handler.response_content)
+            self._game.append_ai_message(
+                entity2, request_handler.last_response_message_content
+            )
 
             # 必须执行
             entity2.replace(KickOffDoneComponent, entity2._name)
 
             # 若是场景，用response替换narrate
-            if entity2.has(StageComponent) and request_handler.response_content != "":
+            if (
+                entity2.has(StageComponent)
+                and request_handler.last_response_message_content != ""
+            ):
                 entity2.replace(
                     EnvironmentComponent,
                     entity2._name,
-                    request_handler.response_content,
+                    request_handler.last_response_message_content,
                 )
             elif entity2.has(ActorComponent):
                 pass

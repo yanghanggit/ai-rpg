@@ -1,10 +1,11 @@
 from loguru import logger
-from typing import List, Union, Optional, Final, final
+from typing import Optional, Final, final
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 import httpx
-from chat_services.chat_request_protocol import (
+from chat_services.chat_api import (
     ChatRequestModel,
     ChatResponseModel,
+    ChatRequestMessageListType,
 )
 import requests
 
@@ -15,37 +16,37 @@ class ChatRequestHandler:
     ################################################################################################################################################################################
     def __init__(
         self,
-        name: str,
+        agent_name: str,
         prompt: str,
-        chat_history: List[Union[SystemMessage, HumanMessage, AIMessage]],
-        user_name: str = "",
+        chat_history: ChatRequestMessageListType,
+        timeout: Optional[int] = None,
     ) -> None:
 
-        self._name = name
+        self._name = agent_name
+        assert self._name != "", "agent_name should not be empty"
+
         self._prompt: Final[str] = prompt
-        self._chat_history: List[Union[SystemMessage, HumanMessage, AIMessage]] = (
-            chat_history
-        )
+        assert self._prompt != "", "prompt should not be empty"
+
+        self._chat_history: ChatRequestMessageListType = chat_history
+        if len(self._chat_history) == 0:
+            logger.warning(f"{self._name}: chat_history is empty")
+
         self._response: Optional[ChatResponseModel] = None
-        self._user_name: str = user_name
-        self._timeout: Final[int] = 30
+        self._timeout: Final[int] = timeout if timeout is not None else 30
+
+        for message in self._chat_history:
+            assert isinstance(message, (HumanMessage, AIMessage, SystemMessage))
 
     ################################################################################################################################################################################
     @property
-    def response_content(self) -> str:
+    def last_response_message_content(self) -> str:
         if self._response is None:
             return ""
         return self._response.output
 
     ################################################################################################################################################################################
-    def request(self, url: str) -> Optional[ChatResponseModel]:
-
-        assert self._response is None
-        assert url != ""
-
-        if self._prompt == "" or url == "":
-            logger.error(f"{self._name}: request error: prompt or url is empty")
-            return None
+    def request(self, url: str) -> None:
 
         try:
 
@@ -54,8 +55,6 @@ class ChatRequestHandler:
             response = requests.post(
                 url=url,
                 json=ChatRequestModel(
-                    agent_name=self._name,
-                    user_name=self._user_name,
                     input=self._prompt,
                     chat_history=self._chat_history,
                 ).model_dump(),
@@ -75,19 +74,8 @@ class ChatRequestHandler:
         except Exception as e:
             logger.error(f"{self._name}: request error: {e}")
 
-        return self._response
-
     ################################################################################################################################################################################
-    async def a_request(
-        self, client: httpx.AsyncClient, url: str
-    ) -> Optional[ChatResponseModel]:
-
-        assert self._response is None
-        assert url != ""
-
-        if self._prompt == "" or url == "":
-            logger.error(f"{self._name}: a_request error: prompt or url is empty")
-            return None
+    async def a_request(self, client: httpx.AsyncClient, url: str) -> None:
 
         try:
 
@@ -96,8 +84,6 @@ class ChatRequestHandler:
             response = await client.post(
                 url=url,
                 json=ChatRequestModel(
-                    agent_name=self._name,
-                    user_name=self._user_name,
                     input=self._prompt,
                     chat_history=self._chat_history,
                 ).model_dump(),
@@ -116,7 +102,5 @@ class ChatRequestHandler:
 
         except Exception as e:
             logger.error(f"{self._name}: a_request error: {e}")
-
-        return self._response
 
     ################################################################################################################################################################################

@@ -7,8 +7,8 @@ from fastapi import FastAPI
 from langchain.schema import HumanMessage
 from langgraph.graph.state import CompiledStateGraph
 from chat_services.chat_server_settings import chat_service_path
-from chat_services.chat_request_protocol import ChatRequestModel, ChatResponseModel
-from chat_services.azure_chat_openai_gpt_4o_graph import (
+from chat_services.chat_api import ChatRequestModel, ChatResponseModel
+from chat_services.chat_azure_openai_gpt_4o_graph import (
     create_compiled_stage_graph,
     stream_graph_updates,
     State,
@@ -46,13 +46,9 @@ async def process_chat_request(request: ChatRequestModel) -> ChatResponseModel:
     # 返回
     if len(update_messages) > 0:
         return ChatResponseModel(
-            agent_name=request.agent_name,
-            user_name=request.user_name,
             output=cast(str, update_messages[-1].content),
         )
-    return ChatResponseModel(
-        agent_name=request.agent_name, user_name=request.user_name, output=""
-    )
+    return ChatResponseModel(output="")
 
 
 ##################################################################################################################

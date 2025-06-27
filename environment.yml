@@ -29,18 +29,22 @@ dependencies:
       - attrs==23.2.0
       - black==24.8.0
       - certifi==2024.2.2
+      - cfgv==3.4.0
       - charset-normalizer==3.3.2
       - click==8.1.7
       - dataclasses-json==0.6.4
+      - distlib==0.3.9
       - distro==1.9.0
       - et-xmlfile==1.1.0
       - faiss-cpu==1.8.0
       - fastapi==0.110.0
+      - filelock==3.18.0
       - frozenlist==1.4.1
       - h11==0.14.0
       - httpcore==1.0.4
       - httpx==0.27.0
       - httpx-sse==0.4.0
+      - identify==2.6.12
       - idna==3.6
       - jinja2==3.1.4
       - jiter==0.8.2
@@ -62,9 +66,11 @@ dependencies:
       - markupsafe==2.1.5
       - marshmallow==3.21.0
       - msgpack==1.1.0
+      - multi-agents-game-framework==0.1.0
       - multidict==6.0.5
       - mypy==1.9.0
       - mypy-extensions==1.0.0
+      - nodeenv==1.9.1
       - numpy==1.26.4
       - openai==1.57.2
       - openpyxl==3.1.2
@@ -75,6 +81,7 @@ dependencies:
       - pandas-stubs==2.2.1.240316
       - pathspec==0.12.1
       - platformdirs==4.2.2
+      - pre-commit==3.8.0
       - pydantic==2.10.3
       - pydantic-core==2.27.1
       - pydantic-settings==2.6.1
@@ -103,5 +110,6 @@ dependencies:
       - tzdata==2024.1
       - urllib3==2.2.1
       - uvicorn==0.27.1
+      - virtualenv==20.31.2
       - yarl==1.9.4
 prefix: /Users/yanghang/anaconda3/envs/first_seed

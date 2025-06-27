@@ -94,6 +94,12 @@ make lint
 
 # 格式化代码
 make format
+
+# 安装 pre-commit 钩子
+pre-commit install
+
+# 运行所有代码质量检查
+pre-commit run --all-files
 ```
 
 ### 5. 快速启动服务器
@@ -134,6 +140,9 @@ make clean
 
 # 查看所有可用命令
 make help
+
+# 运行 pre-commit 检查（提交前推荐）
+pre-commit run --all-files
 ```
 
 ### 服务器管理
@@ -246,21 +255,51 @@ multi-agents-game-framework/
 - **统一配置管理**: 集中式配置文件管理所有服务器端口
 - **类型安全**: 完整的 MyPy 类型检查支持
 
-## 依赖包更新
-
-更新核心依赖包：
-
-```shell
-pip install --upgrade langchain langchain_core langserve langchain_openai langchain-community
-pip show langchain langchain_core langserve langchain_openai langchain-community
-```
-
 ## 开发指南
+
+### 代码质量规范
 
 1. **代码风格**: 使用 Black 进行代码格式化
 2. **类型检查**: 必须通过 MyPy 严格模式检查
 3. **测试**: 新功能需要添加对应的测试用例
 4. **文档**: 重要功能需要添加文档说明
+
+### Pre-commit 钩子
+
+项目配置了 pre-commit 钩子来自动检查代码质量：
+
+#### 安装和设置
+
+```bash
+# pre-commit 已包含在 requirements-dev.txt 中
+pip install -r requirements-dev.txt
+
+# 安装 pre-commit 钩子（首次设置）
+pre-commit install
+```
+
+#### 使用方式
+
+```bash
+# 手动运行所有检查（推荐在提交前执行）
+pre-commit run --all-files
+
+# 只检查暂存的文件
+pre-commit run
+
+# 跳过 pre-commit 检查（不推荐）
+git commit -m "your message" --no-verify
+```
+
+#### 常见问题处理
+
+如果遇到类似 `trailing-whitespace...Failed` 的错误：
+
+1. **不要恐慌** - pre-commit 已自动修复了格式问题
+2. **重新添加文件** - `git add .`
+3. **重新提交** - `git commit -m "your message"`
+
+这是正常的工作流程，确保代码质量一致性。
 
 ## 许可证
 

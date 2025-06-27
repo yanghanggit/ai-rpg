@@ -14,8 +14,15 @@ types-requests==2.32.0.20240907
 # Code formatting
 black==24.8.0
 
-# Pre-commit hooks
+# Pre-commit hooks (includes additional dependencies)
 pre-commit==3.8.0
+# Pre-commit 依赖的附加包（通常自动安装，但为了完整性列出）
+cfgv==3.4.0
+distlib==0.3.9
+filelock==3.18.0
+identify==2.6.12
+nodeenv==1.9.1
+virtualenv==20.31.2
 
 # Other dev tools
 mypy-extensions==1.0.0

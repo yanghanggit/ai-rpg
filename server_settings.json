@@ -1,5 +1,5 @@
 {
   "chat_service_base_port": 8100,
-  "num_chat_service_instances": 1,
+  "num_chat_service_instances": 3,
   "game_server_port": 8000
 }

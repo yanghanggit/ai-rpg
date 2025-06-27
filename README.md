@@ -96,6 +96,19 @@ make lint
 make format
 ```
 
+### 5. 快速启动服务器
+
+```bash
+# 一键启动所有服务器
+make server-start
+
+# 查看服务器状态
+make server-status
+
+# 停止所有服务器
+make server-stop
+```
+
 ## 开发工具
 
 ### 严格模式检查
@@ -118,33 +131,76 @@ make test
 
 # 清理构建文件
 make clean
+
+# 查看所有可用命令
+make help
 ```
 
 ### 服务器管理
 
-设置脚本执行权限：
+#### 设置脚本执行权限
+
+首次使用前，需要为脚本添加执行权限：
 
 ```shell
 chmod +x scripts/run_chat_servers.sh
-chmod +x scripts/run_pm2script.sh
+chmod +x scripts/restart_chat_servers.sh
 chmod +x scripts/kill_servers.sh
+chmod +x scripts/server_manager.sh
+chmod +x scripts/run_pm2script.sh
 ```
 
-启动服务：
+#### 使用 Makefile（推荐方式）
 
 ```bash
-# 启动聊天服务器
-scripts/run_chat_servers.sh
+# 查看服务器状态
+make server-status
 
-# 启动游戏服务器
-python scripts/run_tcg_game_server.py
-
-# 启动终端游戏
-python scripts/run_terminal_tcg_game.py
+# 启动所有服务器（自动清理端口冲突）
+make server-start
 
 # 停止所有服务器
-scripts/kill_servers.sh
+make server-stop
+
+# 重启所有服务器
+make server-restart
+
+# 启动单个服务
+make run-chat      # 单个聊天服务器实例
+make run-server    # 游戏服务器
+make run-terminal  # 终端游戏
 ```
+
+#### 直接使用脚本
+
+```bash
+# 统一管理脚本（推荐）
+scripts/server_manager.sh status        # 查看状态
+scripts/server_manager.sh start-all     # 启动所有服务器
+scripts/server_manager.sh start-chat    # 仅启动聊天服务器
+scripts/server_manager.sh start-game    # 仅启动游戏服务器
+scripts/server_manager.sh stop          # 停止所有服务器
+scripts/server_manager.sh restart-all   # 重启所有服务器
+scripts/server_manager.sh restart-chat  # 重启聊天服务器
+
+# 独立脚本
+scripts/run_chat_servers.sh             # 启动聊天服务器（自动清理端口）
+scripts/restart_chat_servers.sh         # 重启聊天服务器
+python scripts/run_tcg_game_server.py   # 启动游戏服务器（自动清理端口）
+python scripts/run_terminal_tcg_game.py # 启动终端游戏
+scripts/kill_servers.sh                 # 停止所有服务器
+```
+
+#### 智能端口管理
+
+所有服务器启动脚本现在都具备**智能端口清理功能**：
+
+- **自动检测端口占用**：启动前检查配置的端口是否被占用
+- **自动终止冲突进程**：如果端口被占用，自动终止相关进程
+- **双重清理机制**：同时使用 PID 文件和端口检测确保彻底清理
+- **状态监控**：提供实时的服务器运行状态查看
+
+这意味着你再也不会遇到 "address already in use" 错误！
 
 ## 项目结构
 
@@ -156,15 +212,26 @@ multi-agents-game-framework/
 │   ├── tcg_game_systems/          # TCG 游戏系统
 │   ├── chat_services/             # 聊天服务
 │   ├── game_services/             # 游戏服务
+│   ├── config/                    # 配置模块
 │   ├── format_string/             # 字符串格式化工具
 │   ├── chaos_engineering/         # 混沌工程
 │   ├── player/                    # 玩家模块
 │   └── entitas/                   # ECS 系统
 ├── scripts/                       # 运行脚本
+│   ├── server_manager.sh          # 统一服务器管理脚本
+│   ├── run_chat_servers.sh        # 聊天服务器启动脚本
+│   ├── restart_chat_servers.sh    # 聊天服务器重启脚本
+│   ├── kill_servers.sh            # 服务器停止脚本
+│   ├── run_tcg_game_server.py     # 游戏服务器启动脚本
+│   └── run_terminal_tcg_game.py   # 终端游戏启动脚本
 ├── tests/                         # 测试文件
 ├── docs/                          # 文档
+├── server_settings.json           # 服务器配置文件
 ├── environment.yml                # Conda 环境配置
 ├── pyproject.toml                 # 项目配置
+├── Makefile                       # 构建和管理命令
+├── mypy.ini                       # MyPy 类型检查配置
+├── .pre-commit-config.yaml        # Pre-commit 钩子配置
 └── README.md                      # 项目说明
 ```
 
@@ -175,6 +242,8 @@ multi-agents-game-framework/
 - **聊天服务**: 集成 AI 聊天功能，支持多实例部署
 - **Web 服务**: FastAPI 驱动的游戏服务器
 - **终端界面**: 支持终端模式的游戏交互
+- **智能端口管理**: 自动检测和清理端口冲突，无需手动处理
+- **统一配置管理**: 集中式配置文件管理所有服务器端口
 - **类型安全**: 完整的 MyPy 类型检查支持
 
 ## 依赖包更新

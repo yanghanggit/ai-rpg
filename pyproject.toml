@@ -1,0 +1,134 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "multi-agents-game-framework"
+version = "0.1.0"
+description = "A multi-agent game framework based on ECS architecture for TCG games"
+authors = [{name = "Yang Hang", email = "yanghang@example.com"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.12"
+keywords = ["multi-agent", "game", "framework", "ECS", "TCG", "AI"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Games/Entertainment",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+urls = {homepage = "https://github.com/your-username/multi-agents-game-framework"}
+dependencies = [
+    "aiohttp==3.9.3",
+    "aiosignal==1.3.1",
+    "annotated-types==0.6.0",
+    "anyio==4.3.0",
+    "attrs==23.2.0",
+    "certifi==2024.2.2",
+    "charset-normalizer==3.3.2",
+    "click==8.1.7",
+    "dataclasses-json==0.6.4",
+    "distro==1.9.0",
+    "et-xmlfile==1.1.0",
+    "faiss-cpu==1.8.0",
+    "fastapi==0.110.0",
+    "frozenlist==1.4.1",
+    "h11==0.14.0",
+    "httpcore==1.0.4",
+    "httpx==0.27.0",
+    "httpx-sse==0.4.0",
+    "idna==3.6",
+    "jinja2==3.1.4",
+    "jiter==0.8.2",
+    "jsonpatch==1.33",
+    "jsonpointer==2.4",
+    "jsonschema==4.22.0",
+    "jsonschema-specifications==2023.12.1",
+    "langchain==0.3.11",
+    "langchain-community==0.3.11",
+    "langchain-core==0.3.24",
+    "langchain-openai==0.2.12",
+    "langchain-text-splitters==0.3.2",
+    "langgraph==0.2.59",
+    "langgraph-checkpoint==2.0.8",
+    "langgraph-sdk==0.1.43",
+    "langserve==0.3.0",
+    "langsmith==0.2.3",
+    "loguru==0.7.2",
+    "markupsafe==2.1.5",
+    "marshmallow==3.21.0",
+    "msgpack==1.1.0",
+    "multidict==6.0.5",
+    "numpy==1.26.4",
+    "openai==1.57.2",
+    "openpyxl==3.1.2",
+    "orjson==3.10.12",
+    "overrides==7.7.0",
+    "packaging==23.2",
+    "pandas==2.2.3",
+    "pathspec==0.12.1",
+    "platformdirs==4.2.2",
+    "pydantic==2.10.3",
+    "pydantic-core==2.27.1",
+    "pydantic-settings==2.6.1",
+    "python-dateutil==2.9.0.post0",
+    "python-dotenv==1.0.1",
+    "pytz==2024.1",
+    "pyyaml==6.0.1",
+    "referencing==0.35.1",
+    "regex==2023.12.25",
+    "requests==2.31.0",
+    "requests-toolbelt==1.0.0",
+    "rpds-py==0.18.1",
+    "six==1.16.0",
+    "sniffio==1.3.1",
+    "sqlalchemy==2.0.27",
+    "sse-starlette==2.0.0",
+    "starlette==0.36.3",
+    "tenacity==8.2.3",
+    "tiktoken==0.8.0",
+    "tqdm==4.66.2",
+    "typing-extensions==4.12.2",
+    "typing-inspect==0.9.0",
+    "tzdata==2024.1",
+    "urllib3==2.2.1",
+    "uvicorn==0.27.1",
+    "yarl==1.9.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+    "mypy==1.9.0",
+    "black==24.8.0",
+    "pandas-stubs==2.2.1.240316",
+    "types-jsonschema==4.22.0.20240610",
+    "types-pytz==2024.1.0.20240203",
+    "types-requests==2.32.0.20240907",
+    "mypy-extensions==1.0.0",
+]
+
+# 移除不正确的脚本配置，因为脚本在项目根目录的 scripts/ 文件夹中
+# [project.scripts]
+# run-terminal-game = "multi_agents_game.scripts.run_terminal_tcg_game:main"
+# run-game-server = "multi_agents_game.scripts.run_tcg_game_server:main"
+# run-chat-server = "multi_agents_game.scripts.run_a_chat_server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true

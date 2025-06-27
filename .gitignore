@@ -6,3 +6,29 @@ gen_worlds/
 gen_runtimes/
 *.log
 server_pids.txt
+
+# Python package files
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Virtual environments
+venv/
+env/
+.env
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Type checking
+.mypy_cache/
+
+# Backup
+backup_old_structure/

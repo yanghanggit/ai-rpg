@@ -170,17 +170,17 @@ def main():
     file_path = "读表测试.xlsx"  # 替换为你的Excel文件路径
     sheet_name = "dungeons"  
     sheet_name2 = "actors"     # 替换为你的工作表名称
-    row = 0                     # 行索引（从0开始）
+                    # 行索引（从0开始）
     
     # 测试读取dungeon信息
-    dungeon_info = get_dungeon_info(file_path, sheet_name, row)
+    dungeon_info = get_dungeon_info(file_path, sheet_name, 2)
     if dungeon_info:
         logger.info("=== Dungeon Info ===")
         for key, value in dungeon_info.items():
             logger.info(f"{key}: {type(value)} = {value}")
 
     # 测试读取actor信息
-    actor_info = get_actor_info(file_path, sheet_name2, row)
+    actor_info = get_actor_info(file_path, sheet_name2, 0)
     if actor_info:
         logger.info("\n=== Actor Info ===")
         for key, value in actor_info.items():

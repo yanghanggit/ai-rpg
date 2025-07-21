@@ -129,13 +129,6 @@ def get_actor_info(file_path, sheet_name, row):
         return None
     
 
-class DungeonInfo(BaseModel):
-    name: str
-    character_sheet_name: str
-    dungeon_name: str
-    stage_profile: str
-    actor: str
-
 def display_excel_info(df):
     """
     显示Excel数据基本信息
@@ -178,7 +171,8 @@ def main():
         logger.info("=== Dungeon Info ===")
         for key, value in dungeon_info.items():
             logger.info(f"{key}: {type(value)} = {value}")
-
+        name = dungeon_info["name"]
+        logger.info(f"{type(name)}: {name}")
     # 测试读取actor信息
     actor_info = get_actor_info(file_path, sheet_name2, 0)
     if actor_info:

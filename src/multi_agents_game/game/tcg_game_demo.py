@@ -1,5 +1,8 @@
+from csv import excel
 from pathlib import Path
 from loguru import logger
+from numpy import character
+from regex import D
 from ..models import (
     Boot,
     ActorType,
@@ -7,7 +10,7 @@ from ..models import (
     Dungeon,
     RPGCharacterProfile,
 )
-
+from pydantic import BaseModel
 from typing import Optional
 from ..game.tcg_game_demo_utils import (
     CAMPAIGN_SETTING,
@@ -17,8 +20,31 @@ from ..game.tcg_game_demo_utils import (
     create_world_system,
 )
 import copy
+# 添加脚本路径并导入函数
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.parent.parent / "scripts"))
 import read_excel
 
+#######################################################################################################################################
+#######################################################################################################################################
+#######################################################################################################################################
+# 读表
+excel_file_path = "读表测试.xlsx"
+sheet_name1 = "dungeons"
+sheet_name2 = "actors"
+dungeon_info = read_excel.get_dungeon_info(excel_file_path, sheet_name1,2)
+actor_info = read_excel.get_actor_info(excel_file_path, sheet_name2,0)
+
+# if dungeon_info:
+#     class DungeonInfo(BaseModel):
+#         name: str = str(dungeon_info["name"])
+#         character_sheet_name: str = str(dungeon_info["character_sheet_name"])
+#         dungeon_name: str = str(dungeon_info["dungeon_name"])
+#         stage_profile: str = str(dungeon_info["stage_profile"])
+#         actor: str = str(dungeon_info["actor"])
+
+    
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
@@ -137,14 +163,15 @@ stage_dungeon_cave2 = copy_stage(
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
-stage_dungeon_cave3 = create_stage(
-    name="场景.洞窟之三",
-    character_sheet_name="spider_cave",
-    kick_off_message="",
-    campaign_setting=CAMPAIGN_SETTING,
-    type=StageType.DUNGEON,
-    stage_profile= "你是一个非常干燥的洞窟，洞窟内都是蜘蛛网和易燃的干草，如果在这使用火焰类魔法，会将干草都点燃并产生可怕的连锁反应。洞内有很多小蜘蛛，地上散落着各种动物的白骨。洞穴深处传来令人头皮发麻的声音，似乎有蜘蛛在进行某种活动。",
-    actors=[],
+if dungeon_info:
+    stage_dungeon_cave3 = create_stage(
+        name= str(dungeon_info["name"]),
+        character_sheet_name= str(dungeon_info["character_sheet_name"]),
+        kick_off_message="",
+        campaign_setting=CAMPAIGN_SETTING,
+        type=StageType.DUNGEON,
+        stage_profile= str(dungeon_info["stage_profile"]),
+        actors=[],
 )
 #######################################################################################################################################
 #######################################################################################################################################
@@ -232,7 +259,7 @@ def create_demo_dungeon1() -> Dungeon:
 #######################################################################################################################################
 def create_demo_dungeon3() -> Dungeon:
     return Dungeon(
-        name="史莱姆巢穴",
+        name="蜘蛛洞穴",
         levels=[
             stage_dungeon_cave3,
         ],

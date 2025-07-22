@@ -104,15 +104,17 @@ pre-commit run --all-files
 
 ### 5. 快速启动服务器
 
-```bash
-# 一键启动所有服务器
-make server-start
+使用独立脚本启动服务器：
 
-# 查看服务器状态
-make server-status
+```bash
+# 启动聊天服务器
+scripts/run_chat_servers.sh
+
+# 启动游戏服务器
+python scripts/run_tcg_game_server.py
 
 # 停止所有服务器
-make server-stop
+scripts/kill_servers.sh
 ```
 
 ## 开发工具
@@ -153,27 +155,13 @@ pre-commit run --all-files
 
 ```shell
 chmod +x scripts/run_chat_servers.sh
-chmod +x scripts/restart_chat_servers.sh
 chmod +x scripts/kill_servers.sh
-chmod +x scripts/server_manager.sh
 chmod +x scripts/run_pm2script.sh
 ```
 
 #### 使用 Makefile（推荐方式）
 
 ```bash
-# 查看服务器状态
-make server-status
-
-# 启动所有服务器（自动清理端口冲突）
-make server-start
-
-# 停止所有服务器
-make server-stop
-
-# 重启所有服务器
-make server-restart
-
 # 启动单个服务
 make run-chat      # 单个聊天服务器实例
 make run-server    # 游戏服务器
@@ -183,18 +171,8 @@ make run-terminal  # 终端游戏
 #### 直接使用脚本
 
 ```bash
-# 统一管理脚本（推荐）
-scripts/server_manager.sh status        # 查看状态
-scripts/server_manager.sh start-all     # 启动所有服务器
-scripts/server_manager.sh start-chat    # 仅启动聊天服务器
-scripts/server_manager.sh start-game    # 仅启动游戏服务器
-scripts/server_manager.sh stop          # 停止所有服务器
-scripts/server_manager.sh restart-all   # 重启所有服务器
-scripts/server_manager.sh restart-chat  # 重启聊天服务器
-
 # 独立脚本
 scripts/run_chat_servers.sh             # 启动聊天服务器（自动清理端口）
-scripts/restart_chat_servers.sh         # 重启聊天服务器
 python scripts/run_tcg_game_server.py   # 启动游戏服务器（自动清理端口）
 python scripts/run_terminal_tcg_game.py # 启动终端游戏
 scripts/kill_servers.sh                 # 停止所有服务器
@@ -227,9 +205,7 @@ multi-agents-game-framework/
 │   ├── player/                    # 玩家模块
 │   └── entitas/                   # ECS 系统
 ├── scripts/                       # 运行脚本
-│   ├── server_manager.sh          # 统一服务器管理脚本
 │   ├── run_chat_servers.sh        # 聊天服务器启动脚本
-│   ├── restart_chat_servers.sh    # 聊天服务器重启脚本
 │   ├── kill_servers.sh            # 服务器停止脚本
 │   ├── run_tcg_game_server.py     # 游戏服务器启动脚本
 │   └── run_terminal_tcg_game.py   # 终端游戏启动脚本

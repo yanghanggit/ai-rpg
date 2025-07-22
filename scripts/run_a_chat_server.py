@@ -13,8 +13,6 @@ def main() -> None:
             "This script is only for running a single instance of the chat server."
         )
     uvicorn.run(app, host="localhost", port=chat_service_base_port)
-    while True:
-        pass
 
 
 ##################################################################################################################
@@ -23,7 +21,3 @@ if __name__ == "__main__":
     main()
 
 ##################################################################################################################
-
-
-# lsof -i :8102
-# kill -9 87600

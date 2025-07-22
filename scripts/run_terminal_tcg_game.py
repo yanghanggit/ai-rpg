@@ -12,7 +12,7 @@ from multi_agents_game.game.tcg_game_demo import (
     setup_demo_game_world,
     create_demo_dungeon1,
     create_demo_dungeon2,
-    create_demo_dungeon3
+    create_demo_dungeon3,
 )
 from multi_agents_game.tcg_game_systems.combat_monitor_system import CombatMonitorSystem
 from multi_agents_game.game.options import TerminalUserSessionOptions

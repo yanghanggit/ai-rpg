@@ -1,6 +1,6 @@
 from pathlib import Path
 from dataclasses import dataclass
-from ..game.tcg_game_config import GEN_RUNTIME_DIR, GEN_WORLD_DIR
+from ..config.game_config import GEN_RUNTIME_DIR, GEN_WORLD_DIR
 import shutil
 
 

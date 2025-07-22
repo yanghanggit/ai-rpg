@@ -12,7 +12,7 @@ from multi_agents_game.game.tcg_game_demo import (
     setup_demo_game_world,
     create_demo_dungeon1,
     create_demo_dungeon2,
-    create_demo_dungeon3,
+    # create_demo_dungeon3,
 )
 from multi_agents_game.tcg_game_systems.combat_monitor_system import CombatMonitorSystem
 from multi_agents_game.game.options import TerminalUserSessionOptions
@@ -70,7 +70,7 @@ async def run_game(
         # 重新生成world
         start_world = World(boot=world_boot)
         # 运行时生成地下城系统
-        start_world.dungeon = create_demo_dungeon3()
+        start_world.dungeon = create_demo_dungeon1()
 
     else:
 

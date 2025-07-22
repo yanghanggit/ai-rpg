@@ -32,11 +32,11 @@ import read_excel
 #######################################################################################################################################
 #######################################################################################################################################
 # 读表
-excel_file_path = "读表测试.xlsx"
-sheet_name1 = "dungeons"
-sheet_name2 = "actors"
-dungeon_info = read_excel.get_dungeon_info(excel_file_path, sheet_name1, 2)
-actor_info = read_excel.get_actor_info(excel_file_path, sheet_name2, 0)
+# excel_file_path = "读表测试.xlsx"
+# sheet_name1 = "dungeons"
+# sheet_name2 = "actors"
+# dungeon_info = read_excel.get_dungeon_info(excel_file_path, sheet_name1, 2)
+# actor_info = read_excel.get_actor_info(excel_file_path, sheet_name2, 0)
 
 # if dungeon_info:
 #     class DungeonInfo(BaseModel):
@@ -170,16 +170,7 @@ stage_dungeon_cave2 = copy_stage(
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
-if dungeon_info:
-    stage_dungeon_cave3 = create_stage(
-        name=str(dungeon_info["name"]),
-        character_sheet_name=str(dungeon_info["character_sheet_name"]),
-        kick_off_message="",
-        campaign_setting=CAMPAIGN_SETTING,
-        type=StageType.DUNGEON,
-        stage_profile=str(dungeon_info["stage_profile"]),
-        actors=[],
-    )
+
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
@@ -205,7 +196,7 @@ stage_dungeon_cave1.actors = [actor_goblin]
 stage_dungeon_cave2.actors = [actor_orcs]
 
 # 第三个洞穴，放置蜘蛛。
-stage_dungeon_cave3.actors = [actor_spider]
+# stage_dungeon_cave3.actors = [actor_spider]
 
 world_boot.stages = [
     stage_heros_camp,
@@ -264,13 +255,13 @@ def create_demo_dungeon1() -> Dungeon:
 
 
 #######################################################################################################################################
-def create_demo_dungeon3() -> Dungeon:
-    return Dungeon(
-        name="蜘蛛洞穴",
-        levels=[
-            stage_dungeon_cave3,
-        ],
-    )
+# def create_demo_dungeon3() -> Dungeon:
+#     return Dungeon(
+#         name="蜘蛛洞穴",
+#         levels=[
+#             stage_dungeon_cave3,
+#         ],
+#     )
 
 
 #######################################################################################################################################

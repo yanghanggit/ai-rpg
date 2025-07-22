@@ -16,7 +16,7 @@ from ..game.tcg_game_demo import (
 )
 import shutil
 from fastapi.staticfiles import StaticFiles
-from ..game.tcg_game_config import GEN_RUNTIME_DIR, setup_logger
+from ..config.game_config import GEN_RUNTIME_DIR, setup_logger
 
 ###################################################################################################################################################################
 login_router = APIRouter()

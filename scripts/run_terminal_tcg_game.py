@@ -18,7 +18,7 @@ from multi_agents_game.game.options import TerminalUserSessionOptions
 from multi_agents_game.format_string.terminal_input import (
     parse_speak_command_input,
 )
-from multi_agents_game.game.tcg_game_config import setup_logger
+from multi_agents_game.config.game_config import setup_logger
 from multi_agents_game.config.server_config import chat_server_localhost_urls
 
 

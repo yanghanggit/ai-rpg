@@ -13,4 +13,3 @@ test_world_system = create_world_system(
     campaign_setting=CAMPAIGN_SETTING,
     world_system_profile="你是一个测试的系统。用于生成魔法",
 )
-

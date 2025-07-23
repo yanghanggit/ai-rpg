@@ -22,4 +22,3 @@ stage_heros_camp = create_stage(
     stage_profile="你是一个冒险者的临时营地，四周是一片未开发的原野。营地中有帐篷，营火，仓库等设施，虽然简陋，却也足够让人稍事休息，准备下一次冒险。",
     actors=[],
 )
-

@@ -14,20 +14,19 @@ from .demo_world import setup_demo_game_world
 __all__ = [
     # Demo actors
     "actor_warrior",
-    "actor_wizard", 
+    "actor_wizard",
     "actor_goblin",
     "actor_orcs",
     "actor_spider",
     # Demo stages
     "stage_heros_camp",
-    "stage_dungeon_cave1", 
+    "stage_dungeon_cave1",
     "stage_dungeon_cave2",
     "stage_dungeon_cave3",
     # Demo dungeons
     "create_demo_dungeon1",
-    "create_demo_dungeon2", 
+    "create_demo_dungeon2",
     "create_demo_dungeon3",
     # Demo world
-    "world_boot",
     "setup_demo_game_world",
 ]

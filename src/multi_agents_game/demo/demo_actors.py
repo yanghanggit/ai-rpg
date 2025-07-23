@@ -1,28 +1,20 @@
-from pathlib import Path
 from loguru import logger
-from regex import D
 from ..models import (
-    Boot,
     ActorType,
-    StageType,
     RPGCharacterProfile,
 )
 from multi_agents_game.builder.read_excel_utils import (
     read_excel_file,
     list_valid_rows,
-    safe_extract,
     safe_get_from_dict,
 )
-from typing import Optional
 from ..game.tcg_game_demo_utils import (
     CAMPAIGN_SETTING,
     create_actor,
 )
-import copy
 
 #######################################################################################################################################
 #######################################################################################################################################
-#
 file_path = "读表测试.xlsx"
 sheet_name = "actors"
 
@@ -51,8 +43,6 @@ for i, row_data in enumerate(valid_rows):
     appearance = safe_get_from_dict(row_data, "appearance", "默认怪物外观：")
 
 ########################################################################################################################################
-########################################################################################################################################
-
 actor_spider = create_actor(
     name=name,
     character_sheet_name=character_sheet_name,

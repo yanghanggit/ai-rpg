@@ -277,6 +277,30 @@ git commit -m "your message" --no-verify
 
 这是正常的工作流程，确保代码质量一致性。
 
+### 环境管理
+
+#### 更新 environment.yml
+
+当安装新的包后，需要更新 environment.yml 文件：
+
+```bash
+# 导出当前环境到 environment.yml
+conda env export > environment.yml
+
+# 或者只导出显式安装的包（推荐用于版本控制）
+conda env export --from-history > environment-minimal.yml
+```
+
+#### 验证环境配置
+
+```bash
+# 验证当前环境
+conda list
+
+# 检查特定包
+conda list | grep -E "(redis|jose|psycopg2|passlib|bcrypt)"
+```
+
 ### windows中的注意情况
 
 1.需安装git bash,使用git bash时需先定义conda安装路径，让git bash可以使用conda环境。

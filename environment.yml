@@ -2,25 +2,45 @@ name: first_seed
 channels:
   - defaults
 dependencies:
-  - bzip2=1.0.8
-  - ca-certificates
-  - expat=2.5.0
-  - iniconfig=1.1.1
-  - libcxx
-  - libffi=3.4.4
-  # - ncurses
-  - openssl=3.0.15
-  - pip=23.3.1
-  - pluggy=1.5.0
-  - pytest=8.3.4
-  - python=3.12.2
-  - pyreadline3==3.4.1
-  - setuptools=68.2.2
-  - sqlite=3.41.2
-  - tk=8.6.12
-  - wheel=0.41.2
-  - xz=5.4.6
-  - zlib=1.2.13
+  - argon2-cffi=21.3.0=pyhd3eb1b0_0
+  - argon2-cffi-bindings=21.2.0=py312h80987f9_1
+  - bcrypt=4.3.0=py312h2aea54e_0
+  - bzip2=1.0.8=h80987f9_5
+  - ca-certificates=2025.2.25=hca03da5_0
+  - cffi=1.17.1=py312h3eb5a62_1
+  - cryptography=45.0.5=py312hace6d20_0
+  - cyrus-sasl=2.1.28=h0121217_2
+  - ecdsa=0.19.0=pyhd3eb1b0_0
+  - expat=2.5.0=h313beb8_0
+  - iniconfig=1.1.1=pyhd3eb1b0_0
+  - krb5=1.21.3=h7414a1f_1
+  - libcxx=14.0.6=h848a8c0_0
+  - libedit=3.1.20230828=h80987f9_0
+  - libffi=3.4.4=hca03da5_0
+  - libpq=17.4=h6b53c48_1
+  - ncurses=6.4=h313beb8_0
+  - openldap=2.6.4=he7ef289_0
+  - openssl=3.0.17=h4ee41c1_0
+  - passlib=1.7.4=pyhd3eb1b0_0
+  - pip=23.3.1=py312hca03da5_0
+  - pluggy=1.5.0=py312hca03da5_0
+  - psycopg2=2.9.10=py312h80987f9_0
+  - pyasn1=0.6.1=py312hca03da5_0
+  - pycparser=2.21=pyhd3eb1b0_0
+  - pytest=8.3.4=py312hca03da5_0
+  - python=3.12.2=h99e199e_0
+  - python-jose=3.5.0=py312hca03da5_0
+  - readline=8.2=h1a28f6b_0
+  - redis=3.5.3=pyhd3eb1b0_0
+  - rsa=4.7.2=pyhd3eb1b0_1
+  - setuptools=68.2.2=py312hca03da5_0
+  - sqlite=3.41.2=h80987f9_0
+  - tk=8.6.12=hb8d0fd4_0
+  - typing-extensions=4.12.2=py312hca03da5_0
+  - typing_extensions=4.12.2=py312hca03da5_0
+  - wheel=0.41.2=py312hca03da5_0
+  - xz=5.4.6=h80987f9_0
+  - zlib=1.2.13=h5a0b063_0
   - pip:
       - aiohttp==3.9.3
       - aiosignal==1.3.1
@@ -105,7 +125,6 @@ dependencies:
       - types-jsonschema==4.22.0.20240610
       - types-pytz==2024.1.0.20240203
       - types-requests==2.32.0.20240907
-      - typing-extensions==4.12.2
       - typing-inspect==0.9.0
       - tzdata==2024.1
       - urllib3==2.2.1

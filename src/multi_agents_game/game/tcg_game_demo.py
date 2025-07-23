@@ -1,7 +1,5 @@
-from csv import excel
 from pathlib import Path
 from loguru import logger
-from numpy import character
 from regex import D
 from ..models import (
     Boot,
@@ -10,7 +8,6 @@ from ..models import (
     Dungeon,
     RPGCharacterProfile,
 )
-from pydantic import BaseModel
 from typing import Optional
 from ..game.tcg_game_demo_utils import (
     CAMPAIGN_SETTING,
@@ -21,12 +18,6 @@ from ..game.tcg_game_demo_utils import (
 )
 import copy
 
-# 添加脚本路径并导入函数
-import sys
-from pathlib import Path
-
-sys.path.append(str(Path(__file__).parent.parent.parent.parent / "scripts"))
-import read_excel
 
 #######################################################################################################################################
 #######################################################################################################################################
@@ -95,12 +86,8 @@ actor_goblin = create_actor(
     rpg_character_profile=RPGCharacterProfile(base_dexterity=1),
     type=ActorType.MONSTER,
     campaign_setting=CAMPAIGN_SETTING,
-    actor_profile=input(
-        "敌人1背景描述: "
-    ).strip(),  # "你是哥布林部落中狡黠而略有头脑的成员。与多数哥布林不同，你会主动与其他种族进行小规模交易，偶尔利用自己的狡诈为换取食物或装备做一些情报交换。这让你在部落内部既受嫉妒又被依赖。你心中对更强大的怪物势力既畏惧又渴望效忠，因此常常成为阴谋势力的耳目或先锋。",
-    appearance=input(
-        "敌人1外观描述: "
-    ).strip(),  # """身材比普通哥布林略微高挑，瘦削却敏捷。皮肤呈暗绿色，眼睛闪着黄褐色的光，透出无时无刻的警惕。鼻子小而上翘，双耳显得尖长。破旧的皮质护肩上挂着几颗用来炫耀战绩的兽牙，腰间除了短刃还挂着一个小皮囊，内里装着经常使用的毒粉或烟雾弹。""",
+    actor_profile="你是哥布林部落中狡黠而略有头脑的成员。与多数哥布林不同，你会主动与其他种族进行小规模交易，偶尔利用自己的狡诈为换取食物或装备做一些情报交换。这让你在部落内部既受嫉妒又被依赖。你心中对更强大的怪物势力既畏惧又渴望效忠，因此常常成为阴谋势力的耳目或先锋。",
+    appearance="""身材比普通哥布林略微高挑，瘦削却敏捷。皮肤呈暗绿色，眼睛闪着黄褐色的光，透出无时无刻的警惕。鼻子小而上翘，双耳显得尖长。破旧的皮质护肩上挂着几颗用来炫耀战绩的兽牙，腰间除了短刃还挂着一个小皮囊，内里装着经常使用的毒粉或烟雾弹。""",
 )
 #######################################################################################################################################
 #######################################################################################################################################
@@ -152,8 +139,7 @@ stage_dungeon_cave1 = create_stage(
     kick_off_message="",
     campaign_setting=CAMPAIGN_SETTING,
     type=StageType.DUNGEON,
-    stage_profile=input("洞窟场景描述: ").strip()
-    or "你是一个阴暗潮湿的洞窟，四周布满了苔藓和石笋。洞内有哥布林的营地，地上散落着破旧的武器和食物残渣。洞穴深处传来低语声和偶尔的金属碰撞声，似乎有哥布林在进行某种活动。",
+    stage_profile="你是一个阴暗潮湿的洞窟，四周布满了苔藓和石笋。洞内有哥布林的营地，地上散落着破旧的武器和食物残渣。洞穴深处传来低语声和偶尔的金属碰撞声，似乎有哥布林在进行某种活动。",
     actors=[],
 )
 #######################################################################################################################################

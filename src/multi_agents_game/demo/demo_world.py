@@ -3,7 +3,8 @@ from loguru import logger
 from ..models import (
     Boot,
 )
-from .demo_dungeons import (
+
+from .stage_heros_camp import (
     stage_heros_camp,
 )
 
@@ -13,7 +14,8 @@ from ..game.tcg_game_demo_utils import (
     create_world_system,
 )
 import copy
-
+from multi_agents_game.demo.actor_warrior import actor_warrior
+from multi_agents_game.demo.actor_wizard import actor_wizard
 
 #######################################################################################################################################
 #######################################################################################################################################
@@ -36,6 +38,9 @@ world_boot.stages = [
 ]
 
 world_boot.world_systems = []
+
+actor_warrior.kick_off_message += f"""\n注意:{actor_wizard.name} 是你的同伴。你目前只会使用防御类的技能！你讨厌黑暗法术，因为你认为它们是邪恶的。"""
+actor_wizard.kick_off_message += f"""\n注意:{actor_warrior.name} 是你的同伴。你最擅长的是火焰类的魔法，而且你还有一个不为别人知道的秘密：你深刻理解黑暗元素的力量，但是不会轻易使用它，如果面对你最讨厌的东西——哥布林的时候你会毫不犹豫运用这种禁忌之力将其清除。"""
 
 
 #######################################################################################################################################

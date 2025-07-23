@@ -8,13 +8,19 @@ from multi_agents_game.chaos_engineering.empty_engineering_system import (
 )
 from multi_agents_game.chat_services.chat_system import ChatSystem
 from multi_agents_game.player.player_proxy import PlayerProxy
-from multi_agents_game.game.tcg_game_demo import (
-    setup_demo_game_world,
-    # create_demo_dungeon1,
-    create_demo_dungeon2,
-    # create_demo_dungeon3,
-)
-from multi_agents_game.demo.demo_dungeons import create_demo_dungeon1
+
+# from multi_agents_game.game.tcg_game_demo import (
+#     setup_demo_game_world,
+#     create_demo_dungeon1,
+#     create_demo_dungeon2,
+#     create_demo_dungeon3,
+# )
+
+from multi_agents_game.demo.demo_world import setup_demo_game_world
+
+# from multi_agents_game.demo.stage_dungeon1 import create_demo_dungeon1
+# from multi_agents_game.demo.stage_dungeon2 import create_demo_dungeon2
+from multi_agents_game.demo.stage_dungeon3 import create_demo_dungeon3
 
 from multi_agents_game.tcg_game_systems.combat_monitor_system import CombatMonitorSystem
 from multi_agents_game.game.options import TerminalUserSessionOptions
@@ -72,7 +78,7 @@ async def run_game(
         # 重新生成world
         start_world = World(boot=world_boot)
         # 运行时生成地下城系统
-        start_world.dungeon = create_demo_dungeon1()
+        start_world.dungeon = create_demo_dungeon3()
 
     else:
 

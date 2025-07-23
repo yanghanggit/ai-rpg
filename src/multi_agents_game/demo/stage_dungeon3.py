@@ -14,12 +14,12 @@ from multi_agents_game.game.tcg_game_demo_utils import (
     create_stage,
     # copy_stage,
 )
-from multi_agents_game.demo.demo_actors import actor_spider
+from multi_agents_game.demo.actor_spider import actor_spider
 
 ########################################################################################################################################
 #######################################################################################################################################
 # 提取地牢信息
-file_path = "读表测试.xlsx"
+file_path = "excel_test.xlsx"
 sheet_name = "dungeons"
 
 df = read_excel_file(file_path, sheet_name)
@@ -47,21 +47,8 @@ for i, row_data in enumerate(valid_rows):
     actor = safe_get_from_dict(row_data, "actor", "默认怪物")
 #######################################################################################################################################
 #######################################################################################################################################
-
-stage_heros_camp = create_stage(
-    name="场景.营地",
-    character_sheet_name="camp",
-    kick_off_message="营火静静地燃烧着。据消息附近的洞窟里出现了怪物，需要冒险者前去调查。",
-    campaign_setting=CAMPAIGN_SETTING,
-    type=StageType.HOME,
-    stage_profile="你是一个冒险者的临时营地，四周是一片未开发的原野。营地中有帐篷，营火，仓库等设施，虽然简陋，却也足够让人稍事休息，准备下一次冒险。",
-    actors=[],
-)
-
-####################################################################################################
-#######################################################################################################
-
-stage_dungeon_cave1 = create_stage(
+# 创建地牢场景
+stage_dungeon_cave3 = create_stage(
     name=name,
     character_sheet_name=character_sheet_name,
     kick_off_message="",
@@ -74,13 +61,13 @@ stage_dungeon_cave1 = create_stage(
 ####################################################################################################
 #######################################################################################################
 
-stage_dungeon_cave1.actors = [actor_spider]
+stage_dungeon_cave3.actors = [actor_spider]
 
 
-def create_demo_dungeon1() -> Dungeon:
+def create_demo_dungeon3() -> Dungeon:
     return Dungeon(
         name=dungeon_name,
         levels=[
-            stage_dungeon_cave1,
+            stage_dungeon_cave3,
         ],
     )

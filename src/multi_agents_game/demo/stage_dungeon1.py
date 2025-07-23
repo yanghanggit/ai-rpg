@@ -1,5 +1,5 @@
 from loguru import logger
-from multi_agents_game.models import (
+from ..models import (
     StageType,
     Dungeon,
 )
@@ -10,12 +10,12 @@ from multi_agents_game.models import (
 #     # safe_extract,
 #     safe_get_from_dict,
 # )
-from multi_agents_game.game.tcg_game_demo_utils import (
+from ..game.tcg_game_demo_utils import (
     CAMPAIGN_SETTING,
     create_stage,
     # copy_stage,
 )
-from multi_agents_game.demo.actor_goblin import actor_goblin
+from ..demo.actor_goblin import actor_goblin
 
 ########################################################################################################################################
 #######################################################################################################################################
@@ -38,7 +38,10 @@ stage_dungeon_cave1 = create_stage(
 #######################################################################################################
 
 stage_dungeon_cave1.actors = [actor_goblin]
+actor_goblin.rpg_character_profile.hp = 1
 
+####################################################################################################
+#######################################################################################################
 
 def create_demo_dungeon1() -> Dungeon:
     return Dungeon(

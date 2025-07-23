@@ -1,14 +1,14 @@
 from loguru import logger
-from multi_agents_game.models import (
+from ..models import (
     StageType,
 )
 
-from multi_agents_game.game.tcg_game_demo_utils import (
+from ..game.tcg_game_demo_utils import (
     CAMPAIGN_SETTING,
     create_stage,
 )
-from multi_agents_game.demo.actor_warrior import actor_warrior
-from multi_agents_game.demo.actor_wizard import actor_wizard
+from ..demo.actor_warrior import actor_warrior
+from ..demo.actor_wizard import actor_wizard
 
 ########################################################################################################################################
 #######################################################################################################################################
@@ -23,4 +23,3 @@ stage_heros_camp = create_stage(
     actors=[],
 )
 
-stage_heros_camp.actors = [actor_warrior, actor_wizard]

@@ -3,7 +3,7 @@ from ..models import (
     ActorType,
     RPGCharacterProfile,
 )
-from multi_agents_game.builder.read_excel_utils import (
+from ..builder.read_excel_utils import (
     read_excel_file,
     list_valid_rows,
     safe_get_from_dict,

@@ -1,20 +1,20 @@
 from loguru import logger
-from multi_agents_game.models import (
+from ..models import (
     StageType,
     Dungeon,
 )
-from multi_agents_game.builder.read_excel_utils import (
+from ..builder.read_excel_utils import (
     read_excel_file,
     list_valid_rows,
     # safe_extract,
     safe_get_from_dict,
 )
-from multi_agents_game.game.tcg_game_demo_utils import (
+from ..game.tcg_game_demo_utils import (
     CAMPAIGN_SETTING,
     create_stage,
     # copy_stage,
 )
-from multi_agents_game.demo.actor_spider import actor_spider
+from ..demo.actor_spider import actor_spider
 
 ########################################################################################################################################
 #######################################################################################################################################
@@ -62,7 +62,10 @@ stage_dungeon_cave3 = create_stage(
 #######################################################################################################
 
 stage_dungeon_cave3.actors = [actor_spider]
+actor_spider.rpg_character_profile.hp = 1
 
+#######################################################################################################
+#########################################################################################################
 
 def create_demo_dungeon3() -> Dungeon:
     return Dungeon(

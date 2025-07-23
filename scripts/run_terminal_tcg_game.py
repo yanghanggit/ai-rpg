@@ -16,11 +16,11 @@ from multi_agents_game.player.player_proxy import PlayerProxy
 #     create_demo_dungeon3,
 # )
 
-from multi_agents_game.demo.demo_world import setup_demo_game_world
+from multi_agents_game.demo import setup_demo_game_world
 
-# from multi_agents_game.demo.stage_dungeon1 import create_demo_dungeon1
-# from multi_agents_game.demo.stage_dungeon2 import create_demo_dungeon2
-from multi_agents_game.demo.stage_dungeon3 import create_demo_dungeon3
+# from multi_agents_game.demo import create_demo_dungeon1
+# from multi_agents_game.demo import create_demo_dungeon2
+from multi_agents_game.demo import create_demo_dungeon3
 
 from multi_agents_game.tcg_game_systems.combat_monitor_system import CombatMonitorSystem
 from multi_agents_game.game.options import TerminalUserSessionOptions

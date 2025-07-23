@@ -122,7 +122,7 @@ scripts/kill_servers.sh
 ### 严格模式检查
 
 ```shell
-mypy --strict scripts/run_terminal_tcg_game.py scripts/run_tcg_game_server.py scripts/run_a_chat_server.py scripts/read_excel.py
+mypy --strict scripts/run_terminal_tcg_game.py scripts/run_tcg_game_server.py scripts/run_a_chat_server.py scripts/read_excel.py scripts/run_dev_clear_db.py
 ```
 
 ### 代码质量检查
@@ -277,13 +277,40 @@ git commit -m "your message" --no-verify
 
 这是正常的工作流程，确保代码质量一致性。
 
+### 环境管理
+
+#### 更新 environment.yml
+
+当安装新的包后，需要更新 environment.yml 文件：
+
+```bash
+# 导出当前环境到 environment.yml
+conda env export > environment.yml
+
+# 或者只导出显式安装的包（推荐用于版本控制）
+conda env export --from-history > environment-minimal.yml
+```
+
+#### 验证环境配置
+
+```bash
+# 验证当前环境
+conda list
+
+# 检查特定包
+conda list | grep -E "(redis|jose|psycopg2|passlib|bcrypt)"
+```
+
 ### windows中的注意情况
+
 1.需安装git bash,使用git bash时需先定义conda安装路径，让git bash可以使用conda环境。
 2.environment.yml 中的部分包需要更改安装版本号，其中ncurses不需要。
 3.注意python解释器，安装conda环境后选择时需选择带有firstseed的conda环境
 
 ### 其他情况
+
 如遇‘a_request error: Server disconnected without sending a response’ 检查vpn的情况，关掉vpn或者使用WireGuard（Astrill vpn）模式在重新运行。
+
 ## 许可证
 
 [添加您的许可证信息]

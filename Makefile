@@ -1,8 +1,13 @@
-.PHONY: install test lint format clean dev-install run-terminal run-server run-chat show-structure check help
+.PHONY: install test lint format clean dev-install conda-install run-terminal run-server run-chat show-structure check help
 
 # 安装包
 install:
 	pip install -e .
+
+# 使用conda环境安装
+conda-install:
+	conda env update -f environment.yml
+	conda run -n first_seed pip install -e .
 
 # 安装开发依赖
 dev-install:
@@ -56,6 +61,7 @@ check:
 help:
 	@echo "可用的 make 目标："
 	@echo "  install        - 安装项目包"
+	@echo "  conda-install  - 使用conda环境安装所有依赖"
 	@echo "  dev-install    - 安装开发依赖"
 	@echo "  test           - 运行测试"
 	@echo "  lint           - 运行类型检查"

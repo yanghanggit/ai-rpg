@@ -8,10 +8,10 @@ from ..models import (
     RPGCharacterProfile,
 )
 from multi_agents_game.builder.read_excel_utils import (
-    read_excel_file, 
-    list_valid_rows,  
-    safe_extract, 
-    safe_get_from_dict
+    read_excel_file,
+    list_valid_rows,
+    safe_extract,
+    safe_get_from_dict,
 )
 from typing import Optional
 from ..game.tcg_game_demo_utils import (
@@ -36,13 +36,19 @@ else:
         logger.warning("没有找到有效数据行")
 
 for i, row_data in enumerate(valid_rows):
-            logger.info(f"\n--- 处理第 {i+1} 行有效数据 ---")
+    logger.info(f"\n--- 处理第 {i+1} 行有效数据 ---")
 
-            # 提取地牢信息
-            name = safe_get_from_dict(row_data, "name", "未命名怪物")
-            character_sheet_name = safe_get_from_dict(row_data, "character_sheet_name", "default_monster")
-            actor_profile = safe_get_from_dict(row_data,"actor_profile","默认怪物描述：一个神秘的怪物，等待冒险者探索。",)
-            appearance = safe_get_from_dict(row_data, "appearance", "默认怪物外观：")
+    # 提取地牢信息
+    name = safe_get_from_dict(row_data, "name", "未命名怪物")
+    character_sheet_name = safe_get_from_dict(
+        row_data, "character_sheet_name", "default_monster"
+    )
+    actor_profile = safe_get_from_dict(
+        row_data,
+        "actor_profile",
+        "默认怪物描述：一个神秘的怪物，等待冒险者探索。",
+    )
+    appearance = safe_get_from_dict(row_data, "appearance", "默认怪物外观：")
 
 ########################################################################################################################################
 ########################################################################################################################################

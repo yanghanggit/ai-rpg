@@ -4,21 +4,20 @@ from multi_agents_game.models import (
     StageType,
     Dungeon,
     dungeon,
-    
 )
 from multi_agents_game.builder.read_excel_utils import (
-    read_excel_file, 
-    list_valid_rows,  
-    safe_extract, 
-    safe_get_from_dict
+    read_excel_file,
+    list_valid_rows,
+    safe_extract,
+    safe_get_from_dict,
 )
 from multi_agents_game.game.tcg_game_demo_utils import (
     CAMPAIGN_SETTING,
     create_stage,
     copy_stage,
-   
 )
 from multi_agents_game.demo.demo_actors import actor_spider
+
 ########################################################################################################################################
 #######################################################################################################################################
 # 提取地牢信息
@@ -35,13 +34,19 @@ else:
         logger.warning("没有找到有效数据行")
 
 for i, row_data in enumerate(valid_rows):
-            logger.info(f"\n--- 处理第 {i+1} 行有效数据 ---")
+    logger.info(f"\n--- 处理第 {i+1} 行有效数据 ---")
 
-            name = safe_get_from_dict(row_data, "name", "未命名地牢")
-            character_sheet_name = safe_get_from_dict(row_data, "character_sheet_name", "default_dungeon")
-            stage_profile = safe_get_from_dict(row_data,"stage_profile","默认地牢描述：一个神秘的地牢，等待冒险者探索。",)
-            dungeon_name = safe_get_from_dict(row_data, "dungeon_name")
-            actor = safe_get_from_dict(row_data, "actor", "默认怪物")
+    name = safe_get_from_dict(row_data, "name", "未命名地牢")
+    character_sheet_name = safe_get_from_dict(
+        row_data, "character_sheet_name", "default_dungeon"
+    )
+    stage_profile = safe_get_from_dict(
+        row_data,
+        "stage_profile",
+        "默认地牢描述：一个神秘的地牢，等待冒险者探索。",
+    )
+    dungeon_name = safe_get_from_dict(row_data, "dungeon_name")
+    actor = safe_get_from_dict(row_data, "actor", "默认怪物")
 #######################################################################################################################################
 #######################################################################################################################################
 
@@ -73,6 +78,7 @@ stage_dungeon_cave1 = create_stage(
 
 stage_dungeon_cave1.actors = [actor_spider]
 
+
 def create_demo_dungeon1() -> Dungeon:
     return Dungeon(
         name=dungeon_name,
@@ -80,4 +86,3 @@ def create_demo_dungeon1() -> Dungeon:
             stage_dungeon_cave1,
         ],
     )
-

@@ -22,7 +22,7 @@ test:
 # 运行类型检查
 lint:
 	mypy src/multi_agents_game/
-	mypy --strict scripts/run_terminal_tcg_game.py scripts/run_tcg_game_server.py scripts/run_a_chat_server.py
+	mypy --strict scripts/run_terminal_tcg_game.py scripts/run_tcg_game_server.py scripts/run_a_chat_server.py scripts/run_dev_clear_db.py scripts/get_dev_environment_info.py
 
 # 格式化代码
 format:

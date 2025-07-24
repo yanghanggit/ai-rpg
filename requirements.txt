@@ -56,7 +56,8 @@ overrides==7.7.0
 packaging==23.2
 pandas==2.2.3
 pathspec==0.12.1
-platformdirs==4.2.2
+platformdirs==4.3.8
+psutil==5.9.0
 pydantic==2.10.3
 pydantic-core==2.27.1
 pydantic-settings==2.6.1
@@ -77,9 +78,17 @@ starlette==0.36.3
 tenacity==8.2.3
 tiktoken==0.8.0
 tqdm==4.66.2
+types-cffi==1.17.0.20250523
+types-jsonschema==4.22.0.20240610
+types-pyopenssl==24.1.0.20240722
+types-pytz==2024.1.0.20240203
+types-redis==4.6.0.20241004
+types-requests==2.32.0.20240907
+types-setuptools==80.9.0.20250529
 typing-extensions==4.12.2
 typing-inspect==0.9.0
 tzdata==2024.1
 urllib3==2.2.1
 uvicorn==0.27.1
+virtualenv==20.31.2
 yarl==1.9.4

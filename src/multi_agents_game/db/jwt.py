@@ -56,23 +56,25 @@ def create_refresh_token(
 
 ############################################################################################################
 def _encode_jwt(
-    to_encode: dict[str, Any],
+    to_encode: Dict[str, Any],
 ) -> str:
     try:
         encoded_jwt = jwt.encode(
             to_encode, JWT_SIGNING_KEY, algorithm=JWT_SIGNING_ALGORITHM
         )
-        return encoded_jwt
+        return str(encoded_jwt)
     except Exception as e:
         print(f"JWT 编码失败: {e}")
         return ""
+
+    return ""
 
 
 ############################################################################################################
 def decode_jwt(token: str) -> Dict[str, Any]:
     try:
         payload = jwt.decode(token, JWT_SIGNING_KEY, algorithms=[JWT_SIGNING_ALGORITHM])
-        return payload
+        return dict(payload)
 
     except JWTError:
         return {}

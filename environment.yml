@@ -24,6 +24,7 @@ dependencies:
   - passlib=1.7.4=pyhd3eb1b0_0
   - pip=23.3.1=py312hca03da5_0
   - pluggy=1.5.0=py312hca03da5_0
+  - psutil=5.9.0=py312h80987f9_1
   - psycopg2=2.9.10=py312h80987f9_0
   - pyasn1=0.6.1=py312hca03da5_0
   - pycparser=2.21=pyhd3eb1b0_0
@@ -122,9 +123,13 @@ dependencies:
       - tenacity==8.2.3
       - tiktoken==0.8.0
       - tqdm==4.66.2
+      - types-cffi==1.17.0.20250523
       - types-jsonschema==4.22.0.20240610
+      - types-pyopenssl==24.1.0.20240722
       - types-pytz==2024.1.0.20240203
+      - types-redis==4.6.0.20241004
       - types-requests==2.32.0.20240907
+      - types-setuptools==80.9.0.20250529
       - typing-inspect==0.9.0
       - tzdata==2024.1
       - urllib3==2.2.1

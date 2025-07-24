@@ -61,14 +61,17 @@ stage_dungeon_cave3 = create_stage(
 ####################################################################################################
 #######################################################################################################
 
-stage_dungeon_cave3.actors = [actor_spider]
-actor_spider.rpg_character_profile.hp = 1
+
 
 #######################################################################################################
 #########################################################################################################
 
 
 def create_demo_dungeon3() -> Dungeon:
+
+    stage_dungeon_cave3.actors = [actor_spider]
+    actor_spider.rpg_character_profile.hp = 1
+
     return Dungeon(
         name=dungeon_name,
         levels=[

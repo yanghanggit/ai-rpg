@@ -3,12 +3,7 @@ from ..models import (
     StageType,
     Dungeon,
 )
-from ..builder.read_excel_utils import (
-    read_excel_file,
-    list_valid_rows,
-    # safe_extract,
-    safe_get_from_dict,
-)
+from ..builder.get_excel_data import dungeon_valid_rows
 from ..game.tcg_game_demo_utils import (
     CAMPAIGN_SETTING,
     create_stage,
@@ -18,33 +13,25 @@ from ..demo.actor_spider import actor_spider
 
 ########################################################################################################################################
 #######################################################################################################################################
-# 提取地牢信息
-file_path = "excel_test.xlsx"
-sheet_name = "dungeons"
+# 使用集中获取的地牢信息 - 现在使用BaseModel而不是Dict[str, Any]
+for i, dungeon_data in enumerate(dungeon_valid_rows):
+    logger.info(f"\n--- 处理第 {i+1} 行地牢数据 (BaseModel) ---")
 
-df = read_excel_file(file_path, sheet_name)
-if df is None:
-    logger.error("无法读取Excel文件")
-    valid_rows = []
-else:
-    valid_rows = list_valid_rows(df)
-    if not valid_rows:
-        logger.warning("没有找到有效数据行")
+    # 直接使用BaseModel的属性，类型安全且有默认值
+    name = dungeon_data.name
+    character_sheet_name = dungeon_data.character_sheet_name
+    stage_profile = dungeon_data.stage_profile
+    dungeon_name = dungeon_data.dungeon_name
+    actor = dungeon_data.actor
 
-for i, row_data in enumerate(valid_rows):
-    logger.info(f"\n--- 处理第 {i+1} 行有效数据 ---")
+    logger.info(f"地牢名称: {name}")
+    logger.info(f"角色表名: {character_sheet_name}")
+    logger.info(f"地牢描述: {stage_profile[:50]}...")
+    logger.info(f"相关角色: {actor}")
 
-    name = safe_get_from_dict(row_data, "name", "未命名地牢")
-    character_sheet_name = safe_get_from_dict(
-        row_data, "character_sheet_name", "default_dungeon"
-    )
-    stage_profile = safe_get_from_dict(
-        row_data,
-        "stage_profile",
-        "默认地牢描述：一个神秘的地牢，等待冒险者探索。",
-    )
-    dungeon_name = safe_get_from_dict(row_data, "dungeon_name")
-    actor = safe_get_from_dict(row_data, "actor", "默认怪物")
+    # 只处理第一行数据
+    if i == 0:
+        break
 #######################################################################################################################################
 #######################################################################################################################################
 # 创建地牢场景

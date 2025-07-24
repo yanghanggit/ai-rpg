@@ -1,8 +1,11 @@
 import pandas as pd
 import sys
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, TYPE_CHECKING
 from loguru import logger
+
+if TYPE_CHECKING:
+    from ..models.excel_data import DungeonExcelData, ActorExcelData
 
 # 添加模型导入路径
 
@@ -226,3 +229,118 @@ def get_column_names(file_path: str, sheet_name: str) -> Optional[List[str]]:
     except Exception as e:
         logger.error(f"获取列名时出错: {e}")
         return None
+
+
+############################################################################################################
+##############################################################################################
+# 新增：转换字典数据为BaseModel的函数
+def convert_dict_to_dungeon_model(row_dict: Dict[str, Any]) -> "DungeonExcelData":
+    """
+    将字典数据转换为DungeonExcelData BaseModel
+
+    Args:
+        row_dict (Dict[str, Any]): 从Excel读取的原始字典数据
+
+    Returns:
+        DungeonExcelData: 转换后的BaseModel实例
+    """
+    from ..models.excel_data import DungeonExcelData
+
+    # 安全提取数据，处理NaN值
+    data = {}
+    for key, value in row_dict.items():
+        if pd.isna(value):
+            continue  # 跳过NaN值，使用默认值
+        data[key] = str(value)
+
+    return DungeonExcelData(**data)
+
+
+############################################################################################################
+##############################################################################################
+# 新增：转换字典数据为BaseModel的函数
+def convert_dict_to_actor_model(row_dict: Dict[str, Any]) -> "ActorExcelData":
+    """
+    将字典数据转换为ActorExcelData BaseModel
+
+    Args:
+        row_dict (Dict[str, Any]): 从Excel读取的原始字典数据
+
+    Returns:
+        ActorExcelData: 转换后的BaseModel实例
+    """
+    from ..models.excel_data import ActorExcelData
+
+    # 安全提取数据，处理NaN值
+    data = {}
+    for key, value in row_dict.items():
+        if pd.isna(value):
+            continue  # 跳过NaN值，使用默认值
+        data[key] = str(value)
+
+    return ActorExcelData(**data)
+
+
+############################################################################################################
+##############################################################################################
+# 新增：获取类型安全的有效行数据
+def list_valid_rows_as_models(df: pd.DataFrame, model_type: str) -> List:
+    """
+    列举所有有效行数据并转换为BaseModel实例
+
+    Args:
+        df (pandas.DataFrame): 要列举的数据框
+        model_type (str): 模型类型，"dungeon" 或 "actor"
+
+    Returns:
+        List[BaseModel]: 有效行数据的BaseModel列表
+    """
+    if df.empty:
+        logger.warning("数据为空")
+        return []
+
+    valid_models = []
+    first_column = df.columns[0]  # 获取第一列的列名
+
+    logger.info(
+        f"\n=== 列举有效行数据并转换为{model_type}模型 (过滤第一列 '{first_column}' 为空的行) ==="
+    )
+
+    for index, row in df.iterrows():
+        first_value = row.iloc[0]  # 获取第一个元素
+        row_number = int(index) if isinstance(index, (int, float)) else 0
+
+        # 检查第一个元素是否为NaN或空字符串
+        if pd.isna(first_value) or (
+            isinstance(first_value, str) and first_value.strip() == ""
+        ):
+            logger.debug(f"跳过第 {row_number + 1} 行: 第一个元素为空 ({first_value})")
+            continue
+
+        # 转换为字典
+        row_dict = row.to_dict()
+
+        # 根据模型类型转换为相应的BaseModel
+        try:
+            if model_type == "dungeon":
+                model_instance = convert_dict_to_dungeon_model(row_dict)
+            elif model_type == "actor":
+                model_instance = convert_dict_to_actor_model(row_dict)
+            else:
+                logger.error(f"未知的模型类型: {model_type}")
+                continue
+
+            valid_models.append(model_instance)
+
+            logger.info(
+                f"\n第 {row_number + 1} 行 (索引 {index}) - 转换为{model_type}模型成功:"
+            )
+            logger.info(f"  模型: {model_instance}")
+            logger.info("-" * 50)
+
+        except Exception as e:
+            logger.error(f"第 {row_number + 1} 行转换为{model_type}模型失败: {e}")
+            continue
+
+    logger.info(f"\n总计转换 {len(valid_models)} 行数据为{model_type}模型")
+    return valid_models

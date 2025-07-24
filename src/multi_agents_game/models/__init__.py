@@ -6,6 +6,7 @@ from .registry import *
 from .components import *
 from .database import *
 from .dungeon import *
+from .excel_data import *
 from .objects import *
 from .snapshot import *
 from .world import *

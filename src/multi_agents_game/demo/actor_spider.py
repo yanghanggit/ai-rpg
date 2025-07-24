@@ -3,11 +3,7 @@ from ..models import (
     ActorType,
     RPGCharacterProfile,
 )
-from ..builder.read_excel_utils import (
-    read_excel_file,
-    list_valid_rows,
-    safe_get_from_dict,
-)
+from ..builder.get_excel_data import actor_valid_rows
 from ..game.tcg_game_demo_utils import (
     CAMPAIGN_SETTING,
     create_actor,
@@ -15,32 +11,24 @@ from ..game.tcg_game_demo_utils import (
 
 #######################################################################################################################################
 #######################################################################################################################################
-file_path = "excel_test.xlsx"
-sheet_name = "actors"
+# 使用集中获取的角色信息 - 现在使用BaseModel而不是Dict[str, Any]
+for i, actor_data in enumerate(actor_valid_rows):
+    logger.info(f"\n--- 处理第 {i+1} 行角色数据 (BaseModel) ---")
 
-df = read_excel_file(file_path, sheet_name)
-if df is None:
-    logger.error("无法读取Excel文件")
-    valid_rows = []
-else:
-    valid_rows = list_valid_rows(df)
-    if not valid_rows:
-        logger.warning("没有找到有效数据行")
+    # 直接使用BaseModel的属性，类型安全且有默认值
+    name = actor_data.name
+    character_sheet_name = actor_data.character_sheet_name
+    actor_profile = actor_data.actor_profile
+    appearance = actor_data.appearance
 
-for i, row_data in enumerate(valid_rows):
-    logger.info(f"\n--- 处理第 {i+1} 行有效数据 ---")
+    logger.info(f"角色名称: {name}")
+    logger.info(f"角色表名: {character_sheet_name}")
+    logger.info(f"角色描述: {actor_profile[:50]}...")
+    logger.info(f"角色外观: {appearance[:50]}...")
 
-    # 提取地牢信息
-    name = safe_get_from_dict(row_data, "name", "未命名怪物")
-    character_sheet_name = safe_get_from_dict(
-        row_data, "character_sheet_name", "default_monster"
-    )
-    actor_profile = safe_get_from_dict(
-        row_data,
-        "actor_profile",
-        "默认怪物描述：一个神秘的怪物，等待冒险者探索。",
-    )
-    appearance = safe_get_from_dict(row_data, "appearance", "默认怪物外观：")
+    # 只处理第一行数据
+    if i == 0:
+        break
 
 ########################################################################################################################################
 actor_spider = create_actor(

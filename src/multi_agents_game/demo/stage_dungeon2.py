@@ -44,7 +44,7 @@ def create_demo_dungeon2() -> Dungeon:
 
     stage_dungeon_cave2.actors = [actor_orcs]
     actor_orcs.rpg_character_profile.hp = 1
-    
+
     return Dungeon(
         name="兽人洞窟",
         levels=[

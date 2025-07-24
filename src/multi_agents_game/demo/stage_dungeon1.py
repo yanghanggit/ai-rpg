@@ -42,7 +42,7 @@ def create_demo_dungeon1() -> Dungeon:
     # 配置场景角色和属性
     stage_dungeon_cave1.actors = [actor_goblin]
     actor_goblin.rpg_character_profile.hp = 1
-    
+
     return Dungeon(
         name="哥布林洞窟",
         levels=[

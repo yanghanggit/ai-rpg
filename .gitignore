@@ -20,6 +20,7 @@ env/
 
 # IDE
 .vscode/settings.json
+.vscode/launch.json
 .idea/
 
 # Testing

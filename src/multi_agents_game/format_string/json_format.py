@@ -28,7 +28,7 @@ def _combine_json_fragments(json_str: str) -> Optional[Dict[str, List[str]]]:
         parsed_json_objects = [json.loads(part) for part in json_fragments]
 
         # 合并这两个JSON对象
-        combined_json: Any = {}
+        combined_json: Dict[str, Any] = {}
         for obj in parsed_json_objects:
             for key, value in obj.items():
                 if key in combined_json:

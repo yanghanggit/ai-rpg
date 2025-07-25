@@ -1,12 +1,9 @@
 from collections import deque
-
 from .entity import Entity
 from .matcher import Matcher
 from .group import Group
 from .exceptions import MissingEntity
 from typing import Any, Dict
-
-# from .entity_index import AbstractEntityIndex
 
 
 class Context(object):
@@ -25,8 +22,6 @@ class Context(object):
 
         #: Dictionary of matchers mapping groups.
         self._groups: Dict[Matcher, Group] = {}
-
-        # self._entity_indices: Dict[Any, AbstractEntityIndex] = {}
 
     @property
     def entities(self) -> set[Entity]:
@@ -88,21 +83,6 @@ class Context(object):
         self._groups[matcher] = group
 
         return group
-
-    # def set_unique_component(self, comp_type: Any, *args: Any) -> None:
-    #     self.create_entity().add(comp_type, *args)
-
-    # def get_unique_component(self, comp_type: Any) -> Any:
-    #     group = self.get_group(Matcher(comp_type))
-    #     if group.single_entity is not None:
-    #         return group.single_entity.get(comp_type)
-    #     return None
-
-    # def add_entity_index(self, entity_index: AbstractEntityIndex) -> None:
-    #     self._entity_indices[entity_index.type] = entity_index
-
-    # def get_entity_index(self, comp_type: Any) -> AbstractEntityIndex:
-    #     return self._entity_indices[comp_type]
 
     def _comp_added_or_removed(self, entity: Entity, comp: Any) -> None:
         for matcher in self._groups:

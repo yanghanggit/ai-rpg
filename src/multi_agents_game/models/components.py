@@ -2,7 +2,7 @@ from typing import Any, Dict, NamedTuple, List, final
 from pydantic import BaseModel
 from .dungeon import Skill, StatusEffect
 from .objects import RPGCharacterProfile
-from .registry import register_component_class, register_base_model_class
+from .registry import register_component_class
 
 
 ############################################################################################################
@@ -154,7 +154,7 @@ class PlayerActiveComponent(NamedTuple):
 
 
 @final
-@register_base_model_class
+# @register_base_model_class
 class HandDetail(BaseModel):
     skill: str
     targets: List[str]
@@ -171,18 +171,22 @@ class HandComponent(NamedTuple):
     details: List[HandDetail]
 
     @staticmethod
-    def __deserialize_component__(component_data: Dict[str, Any]) -> None:
+    def deserialize_component_data(component_data: Dict[str, Any]) -> Dict[str, Any]:
 
-        assert "skills" in component_data
-        if "skills" in component_data:
-            component_data["skills"] = [
-                Skill(**skill) for skill in component_data["skills"]
+        processed_data = component_data.copy()
+        assert "skills" in processed_data, "HandComponent must have skills."
+        if "skills" in processed_data:
+            processed_data["skills"] = [
+                Skill(**skill) for skill in processed_data["skills"]
             ]
 
-        if "details" in component_data:
-            component_data["details"] = [
-                HandDetail(**detail) for detail in component_data["details"]
+        assert "details" in processed_data, "HandComponent must have details."
+        if "details" in processed_data:
+            processed_data["details"] = [
+                HandDetail(**detail) for detail in processed_data["details"]
             ]
+
+        return processed_data
 
     def get_skill(self, skill_name: str) -> Skill:
         for skill in self.skills:
@@ -217,18 +221,26 @@ class RPGCharacterProfileComponent(NamedTuple):
     status_effects: List[StatusEffect]
 
     @staticmethod
-    def __deserialize_component__(component_data: Dict[str, Any]) -> None:
-        assert "rpg_character_profile" in component_data
-        if "rpg_character_profile" in component_data:
-            component_data["rpg_character_profile"] = RPGCharacterProfile(
-                **component_data["rpg_character_profile"]
+    def deserialize_component_data(component_data: Dict[str, Any]) -> Dict[str, Any]:
+        processed_data = component_data.copy()
+
+        assert (
+            "rpg_character_profile" in processed_data
+        ), "RPGCharacterProfileComponent must have a rpg_character_profile."
+        if "rpg_character_profile" in processed_data:
+            processed_data["rpg_character_profile"] = RPGCharacterProfile(
+                **processed_data["rpg_character_profile"]
             )
 
-        assert "status_effects" in component_data
-        if "status_effects" in component_data:
-            component_data["status_effects"] = [
-                StatusEffect(**effect) for effect in component_data["status_effects"]
+        assert (
+            "status_effects" in processed_data
+        ), "RPGCharacterProfileComponent must have status_effects."
+        if "status_effects" in processed_data:
+            processed_data["status_effects"] = [
+                StatusEffect(**effect) for effect in processed_data["status_effects"]
             ]
+
+        return processed_data
 
     @property
     def attrs_prompt(self) -> str:
@@ -264,10 +276,12 @@ class XCardPlayerComponent(NamedTuple):
     skill: Skill
 
     @staticmethod
-    def __deserialize_component__(component_data: Dict[str, Any]) -> None:
-        assert "skill" in component_data
-        if "skill" in component_data:
-            component_data["skill"] = Skill(**component_data["skill"])
+    def deserialize_component_data(component_data: Dict[str, Any]) -> Dict[str, Any]:
+        processed_data = component_data.copy()
+        assert "skill" in processed_data, "XCardPlayerComponent must have a skill."
+        if "skill" in processed_data:
+            processed_data["skill"] = Skill(**processed_data["skill"])
+        return processed_data
 
 
 ############################################################################################################

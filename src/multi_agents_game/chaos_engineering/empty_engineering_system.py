@@ -1,5 +1,6 @@
 from ..chaos_engineering.chaos_engineering_system import IChaosEngineering
-from typing import Any, final, override
+from typing import final, override
+from ..entitas import Context
 
 
 @final
@@ -17,5 +18,5 @@ class EmptyChaosEngineeringSystem(IChaosEngineering):
         pass
 
     @override
-    def initialize(self, execution_context: Any) -> None:
+    def initialize(self, execution_context: Context) -> None:
         pass

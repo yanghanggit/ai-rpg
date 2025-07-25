@@ -1066,4 +1066,11 @@ class TCGGame(BaseGame, TCGGameContext):
 
         return None
 
+    ###############################################################################################################################################
+    def clear_hands(self) -> None:
+        actor_entities = self.get_group(Matcher(HandComponent)).entities.copy()
+        for entity in actor_entities:
+            logger.debug(f"clear hands: {entity._name}")
+            entity.remove(HandComponent)
+
     #######################################################################################################################################

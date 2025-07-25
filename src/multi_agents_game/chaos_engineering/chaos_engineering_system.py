@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from ..entitas import Context
 
 
 class IChaosEngineering(ABC):
@@ -13,5 +13,5 @@ class IChaosEngineering(ABC):
         pass
 
     @abstractmethod
-    def initialize(self, execution_context: Any) -> None:
+    def initialize(self, execution_context: Context) -> None:
         pass

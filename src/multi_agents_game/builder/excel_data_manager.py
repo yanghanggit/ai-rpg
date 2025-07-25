@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Type, TypeVar
 from loguru import logger
 from .excel_data import DungeonExcelData, ActorExcelData
 from .read_excel_utils import (
@@ -6,6 +6,9 @@ from .read_excel_utils import (
     list_valid_rows,
     list_valid_rows_as_models,
 )
+
+# 定义泛型类型变量
+ExcelDataT = TypeVar("ExcelDataT", DungeonExcelData, ActorExcelData)
 
 # Excel文件路径
 file_path = "excel_test.xlsx"
@@ -19,14 +22,16 @@ dungeon_valid_rows_dict: List[Dict[str, Any]] = []
 actor_valid_rows_dict: List[Dict[str, Any]] = []
 
 
-def load_sheet_data(sheet_name: str, model_type: str) -> tuple[List, List[Dict[str, Any]]]:
+def load_sheet_data(
+    sheet_name: str, model_class: Type[ExcelDataT]
+) -> tuple[List[ExcelDataT], List[Dict[str, Any]]]:
     """
     通用的工作表数据加载函数
-    
+
     Args:
         sheet_name: 工作表名称
-        model_type: 模型类型 ("dungeon" 或 "actor")
-    
+        model_class: 要转换到的BaseModel类
+
     Returns:
         tuple: (BaseModel列表, 字典列表)
     """
@@ -34,15 +39,15 @@ def load_sheet_data(sheet_name: str, model_type: str) -> tuple[List, List[Dict[s
     if df is None:
         logger.error(f"无法读取Excel文件中的 '{sheet_name}' 工作表")
         return [], []
-    
-    # 使用新的BaseModel方式
-    model_rows = list_valid_rows_as_models(df, model_type)
+
+    # 使用新的泛型BaseModel方式
+    model_rows = list_valid_rows_as_models(df, model_class)
     # 保留原有字典格式，用于向后兼容
     dict_rows = list_valid_rows(df)
-    
+
     if not model_rows:
         logger.warning(f"在 '{sheet_name}' 工作表中没有找到有效数据行")
-    
+
     return model_rows, dict_rows
 
 
@@ -51,10 +56,12 @@ def load_excel_data() -> None:
     global dungeon_valid_rows, actor_valid_rows, dungeon_valid_rows_dict, actor_valid_rows_dict
 
     # 提取地牢信息
-    dungeon_valid_rows, dungeon_valid_rows_dict = load_sheet_data("dungeons", "dungeon")
-    
+    dungeon_valid_rows, dungeon_valid_rows_dict = load_sheet_data(
+        "dungeons", DungeonExcelData
+    )
+
     # 提取角色信息
-    actor_valid_rows, actor_valid_rows_dict = load_sheet_data("actors", "actor")
+    actor_valid_rows, actor_valid_rows_dict = load_sheet_data("actors", ActorExcelData)
 
 
 # 在模块导入时加载数据

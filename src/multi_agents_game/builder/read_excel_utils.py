@@ -1,11 +1,15 @@
 import pandas as pd
 import sys
 from pathlib import Path
-from typing import Optional, List, Dict, Any, TYPE_CHECKING
+from typing import Optional, List, Dict, Any, TYPE_CHECKING, TypeVar, Type
+from pydantic import BaseModel
 from loguru import logger
 
 if TYPE_CHECKING:
     from .excel_data import DungeonExcelData, ActorExcelData
+
+# 定义泛型类型变量，限定为BaseModel的子类
+T = TypeVar("T", bound=BaseModel)
 
 # 添加模型导入路径
 
@@ -233,19 +237,18 @@ def get_column_names(file_path: str, sheet_name: str) -> Optional[List[str]]:
 
 ############################################################################################################
 ##############################################################################################
-# 新增：转换字典数据为BaseModel的函数
-def convert_dict_to_dungeon_model(row_dict: Dict[str, Any]) -> "DungeonExcelData":
+# 通用的字典到BaseModel转换函数（使用泛型）
+def convert_dict_to_model(row_dict: Dict[str, Any], model_class: Type[T]) -> T:
     """
-    将字典数据转换为DungeonExcelData BaseModel
+    通用的字典数据转换为BaseModel的函数
 
     Args:
         row_dict (Dict[str, Any]): 从Excel读取的原始字典数据
+        model_class (Type[T]): 要转换到的BaseModel类
 
     Returns:
-        DungeonExcelData: 转换后的BaseModel实例
+        T: 转换后的BaseModel实例
     """
-    from .excel_data import DungeonExcelData
-
     # 安全提取数据，处理NaN值
     data = {}
     for key, value in row_dict.items():
@@ -253,57 +256,33 @@ def convert_dict_to_dungeon_model(row_dict: Dict[str, Any]) -> "DungeonExcelData
             continue  # 跳过NaN值，使用默认值
         data[key] = str(value)
 
-    return DungeonExcelData(**data)
+    return model_class(**data)
 
 
 ############################################################################################################
 ##############################################################################################
-# 新增：转换字典数据为BaseModel的函数
-def convert_dict_to_actor_model(row_dict: Dict[str, Any]) -> "ActorExcelData":
-    """
-    将字典数据转换为ActorExcelData BaseModel
-
-    Args:
-        row_dict (Dict[str, Any]): 从Excel读取的原始字典数据
-
-    Returns:
-        ActorExcelData: 转换后的BaseModel实例
-    """
-    from .excel_data import ActorExcelData
-
-    # 安全提取数据，处理NaN值
-    data = {}
-    for key, value in row_dict.items():
-        if pd.isna(value):
-            continue  # 跳过NaN值，使用默认值
-        data[key] = str(value)
-
-    return ActorExcelData(**data)
-
-
-############################################################################################################
-##############################################################################################
-# 新增：获取类型安全的有效行数据
-def list_valid_rows_as_models(df: pd.DataFrame, model_type: str) -> List:
+# 类型安全的泛型版本有效行数据转换函数
+def list_valid_rows_as_models(df: pd.DataFrame, model_class: Type[T]) -> List[T]:
     """
     列举所有有效行数据并转换为BaseModel实例
 
     Args:
         df (pandas.DataFrame): 要列举的数据框
-        model_type (str): 模型类型，"dungeon" 或 "actor"
+        model_class (Type[T]): 要转换到的BaseModel类
 
     Returns:
-        List[BaseModel]: 有效行数据的BaseModel列表
+        List[T]: 有效行数据的BaseModel列表
     """
     if df.empty:
         logger.warning("数据为空")
         return []
 
-    valid_models = []
+    valid_models: List[T] = []
     first_column = df.columns[0]  # 获取第一列的列名
+    model_name = model_class.__name__
 
     logger.info(
-        f"\n=== 列举有效行数据并转换为{model_type}模型 (过滤第一列 '{first_column}' 为空的行) ==="
+        f"\n=== 列举有效行数据并转换为{model_name}模型 (过滤第一列 '{first_column}' 为空的行) ==="
     )
 
     for index, row in df.iterrows():
@@ -320,27 +299,20 @@ def list_valid_rows_as_models(df: pd.DataFrame, model_type: str) -> List:
         # 转换为字典
         row_dict = row.to_dict()
 
-        # 根据模型类型转换为相应的BaseModel
+        # 使用通用转换函数
         try:
-            if model_type == "dungeon":
-                model_instance = convert_dict_to_dungeon_model(row_dict)
-            elif model_type == "actor":
-                model_instance = convert_dict_to_actor_model(row_dict)
-            else:
-                logger.error(f"未知的模型类型: {model_type}")
-                continue
-
+            model_instance = convert_dict_to_model(row_dict, model_class)
             valid_models.append(model_instance)
 
             logger.info(
-                f"\n第 {row_number + 1} 行 (索引 {index}) - 转换为{model_type}模型成功:"
+                f"\n第 {row_number + 1} 行 (索引 {index}) - 转换为{model_name}模型成功:"
             )
             logger.info(f"  模型: {model_instance}")
             logger.info("-" * 50)
 
         except Exception as e:
-            logger.error(f"第 {row_number + 1} 行转换为{model_type}模型失败: {e}")
+            logger.error(f"第 {row_number + 1} 行转换为{model_name}模型失败: {e}")
             continue
 
-    logger.info(f"\n总计转换 {len(valid_models)} 行数据为{model_type}模型")
+    logger.info(f"\n总计转换 {len(valid_models)} 行数据为{model_name}模型")
     return valid_models

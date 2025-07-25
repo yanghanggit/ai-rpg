@@ -5,7 +5,6 @@
 """
 
 import ast
-import os
 import sys
 from pathlib import Path
 from typing import List, Tuple, Set, Optional
@@ -21,41 +20,59 @@ class SetTypeChecker(ast.NodeVisitor):
         )  # (filename, class_name, line_number, attribute_info)
         self.current_class: Optional[str] = None
         self.basemodel_classes: Set[str] = set()
+        self.namedtuple_classes: Set[str] = set()
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """访问类定义"""
         # 检查是否继承自 BaseModel
         is_basemodel = False
+        is_namedtuple = False
+
         for base in node.bases:
-            if isinstance(base, ast.Name) and base.id == "BaseModel":
-                is_basemodel = True
-                break
-            elif isinstance(base, ast.Attribute) and base.attr == "BaseModel":
-                is_basemodel = True
-                break
+            if isinstance(base, ast.Name):
+                if base.id == "BaseModel":
+                    is_basemodel = True
+                    break
+                elif base.id == "NamedTuple":
+                    is_namedtuple = True
+                    break
+            elif isinstance(base, ast.Attribute):
+                if base.attr == "BaseModel":
+                    is_basemodel = True
+                    break
+                elif base.attr == "NamedTuple":
+                    is_namedtuple = True
+                    break
 
         if is_basemodel:
             self.basemodel_classes.add(node.name)
             self.current_class = node.name
-
-            # 检查类属性的类型注解
-            for stmt in node.body:
-                if isinstance(stmt, ast.AnnAssign) and stmt.annotation:
-                    attr_name = self._get_target_name(stmt.target)
-                    if attr_name and self._is_set_type(stmt.annotation):
-                        type_str = self._annotation_to_string(stmt.annotation)
-                        self.warnings.append(
-                            (
-                                self.filename,
-                                node.name,
-                                stmt.lineno,
-                                f"属性 '{attr_name}' 的类型是 '{type_str}'",
-                            )
-                        )
+            self._check_class_annotations(node)
+        elif is_namedtuple:
+            self.namedtuple_classes.add(node.name)
+            self.current_class = node.name
+            self._check_class_annotations(node)
 
         # 继续访问子节点
         self.generic_visit(node)
         self.current_class = None
+
+    def _check_class_annotations(self, node: ast.ClassDef) -> None:
+        """检查类属性的类型注解"""
+        # 检查类属性的类型注解
+        for stmt in node.body:
+            if isinstance(stmt, ast.AnnAssign) and stmt.annotation:
+                attr_name = self._get_target_name(stmt.target)
+                if attr_name and self._is_set_type(stmt.annotation):
+                    type_str = self._annotation_to_string(stmt.annotation)
+                    self.warnings.append(
+                        (
+                            self.filename,
+                            node.name,
+                            stmt.lineno,
+                            f"属性 '{attr_name}' 的类型是 '{type_str}'",
+                        )
+                    )
 
     def _get_target_name(self, target: ast.expr) -> Optional[str]:
         """获取赋值目标的名称"""
@@ -146,13 +163,14 @@ def main() -> None:
     # 检查每个文件
     all_warnings = []
     basemodel_classes_found = 0
+    namedtuple_classes_found = 0
 
     for file_path in python_files:
         warnings = check_file_for_set_types(file_path)
         if warnings:
             all_warnings.extend(warnings)
 
-        # 统计 BaseModel 类的数量
+        # 统计 BaseModel 和 NamedTuple 类的数量
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
@@ -160,10 +178,12 @@ def main() -> None:
             checker = SetTypeChecker(str(file_path))
             checker.visit(tree)
             basemodel_classes_found += len(checker.basemodel_classes)
+            namedtuple_classes_found += len(checker.namedtuple_classes)
         except:
             pass
 
     print(f"总共检查了 {basemodel_classes_found} 个 BaseModel 继承类")
+    print(f"总共检查了 {namedtuple_classes_found} 个 NamedTuple 继承类")
     print("=" * 60)
 
     # 报告结果
@@ -184,7 +204,7 @@ def main() -> None:
         sys.exit(1)
     else:
         print("✅ 没有发现 set 类型问题!")
-        print("所有 BaseModel 继承类都符合要求")
+        print("所有 BaseModel 和 NamedTuple 继承类都符合要求")
         sys.exit(0)
 
 

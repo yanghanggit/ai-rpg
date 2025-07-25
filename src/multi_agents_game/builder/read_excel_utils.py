@@ -103,8 +103,9 @@ def list_valid_rows(df: pd.DataFrame) -> List[Dict[str, Any]]:
     Returns:
         list: 有效行数据的列表
     """
-    if df.empty:
-        logger.warning("数据为空")
+    # 使用新的验证函数
+    if not validate_dataframe(df):
+        logger.warning("数据框无效或为空")
         return []
 
     valid_rows = []
@@ -114,7 +115,7 @@ def list_valid_rows(df: pd.DataFrame) -> List[Dict[str, Any]]:
 
     for index, row in df.iterrows():
         first_value = row.iloc[0]  # 获取第一个元素
-        row_number = int(index) if isinstance(index, (int, float)) else 0
+        row_number = safe_get_row_number(index)  # 使用安全的行号获取
 
         # 检查第一个元素是否为NaN或空字符串
         if pd.isna(first_value) or (
@@ -237,26 +238,123 @@ def get_column_names(file_path: str, sheet_name: str) -> Optional[List[str]]:
 
 ############################################################################################################
 ##############################################################################################
-# 通用的字典到BaseModel转换函数（使用泛型）
+# 智能类型推断和转换辅助函数
+def infer_and_convert_value(value: Any) -> Any:
+    """
+    智能推断并转换数据类型，保持原始数据类型特性
+    
+    Args:
+        value (Any): 原始值
+        
+    Returns:
+        Any: 转换后的值，保持合适的数据类型
+    """
+    if pd.isna(value):
+        return None
+    
+    # 如果已经是数字类型，直接返回
+    if isinstance(value, (int, float, bool)):
+        return value
+    
+    # 如果是字符串，尝试智能转换
+    if isinstance(value, str):
+        value = value.strip()
+        
+        # 空字符串返回 None
+        if not value:
+            return None
+            
+        # 尝试转换为布尔值
+        if value.lower() in ('true', 'false', 'yes', 'no', '是', '否', '1', '0'):
+            return value.lower() in ('true', 'yes', '是', '1')
+        
+        # 尝试转换为数字
+        try:
+            # 检查是否包含小数点
+            if '.' in value:
+                return float(value)
+            else:
+                return int(value)
+        except ValueError:
+            # 无法转换为数字，保持字符串
+            return value
+    
+    # 其他类型转换为字符串
+    return str(value)
+
+
+def validate_dataframe(df: pd.DataFrame) -> bool:
+    """
+    验证DataFrame是否有效且可用
+    
+    Args:
+        df (pd.DataFrame): 要验证的数据框
+        
+    Returns:
+        bool: 是否有效
+    """
+    if df is None:
+        return False
+    if df.empty:
+        return False
+    if len(df.columns) == 0:
+        return False
+    return True
+
+
+def safe_get_row_number(index: Any) -> int:
+    """
+    安全获取行号，处理各种索引类型
+    
+    Args:
+        index (Any): pandas行索引
+        
+    Returns:
+        int: 安全的行号
+    """
+    try:
+        if isinstance(index, (int, float)):
+            return int(index)
+        elif isinstance(index, str) and index.isdigit():
+            return int(index)
+        else:
+            return 0
+    except (ValueError, TypeError):
+        return 0
+
+
+# 通用的字典到BaseModel转换函数（使用泛型，增强类型安全）
 def convert_dict_to_model(row_dict: Dict[str, Any], model_class: Type[T]) -> T:
     """
-    通用的字典数据转换为BaseModel的函数
-
+    通用的字典数据转换为BaseModel的函数，智能保持数据类型
+    
     Args:
         row_dict (Dict[str, Any]): 从Excel读取的原始字典数据
         model_class (Type[T]): 要转换到的BaseModel类
-
+        
     Returns:
         T: 转换后的BaseModel实例
+        
+    Raises:
+        ValueError: 当数据转换失败时
+        TypeError: 当模型类型不匹配时
     """
-    # 安全提取数据，处理NaN值
+    # 安全提取数据，处理NaN值，智能转换类型
     data = {}
     for key, value in row_dict.items():
-        if pd.isna(value):
-            continue  # 跳过NaN值，使用默认值
-        data[key] = str(value)
-
-    return model_class(**data)
+        # 使用智能类型转换
+        converted_value = infer_and_convert_value(value)
+        
+        # 只有非None值才添加到数据中
+        if converted_value is not None:
+            data[key] = converted_value
+    
+    try:
+        return model_class(**data)
+    except Exception as e:
+        logger.error(f"转换数据到模型 {model_class.__name__} 失败: {e}")
+        logger.error(f"数据内容: {data}")
+        raise
 
 
 ############################################################################################################
@@ -273,8 +371,9 @@ def list_valid_rows_as_models(df: pd.DataFrame, model_class: Type[T]) -> List[T]
     Returns:
         List[T]: 有效行数据的BaseModel列表
     """
-    if df.empty:
-        logger.warning("数据为空")
+    # 使用新的验证函数
+    if not validate_dataframe(df):
+        logger.warning("数据框无效或为空")
         return []
 
     valid_models: List[T] = []
@@ -287,7 +386,7 @@ def list_valid_rows_as_models(df: pd.DataFrame, model_class: Type[T]) -> List[T]
 
     for index, row in df.iterrows():
         first_value = row.iloc[0]  # 获取第一个元素
-        row_number = int(index) if isinstance(index, (int, float)) else 0
+        row_number = safe_get_row_number(index)  # 使用安全的行号获取
 
         # 检查第一个元素是否为NaN或空字符串
         if pd.isna(first_value) or (
@@ -299,7 +398,7 @@ def list_valid_rows_as_models(df: pd.DataFrame, model_class: Type[T]) -> List[T]
         # 转换为字典
         row_dict = row.to_dict()
 
-        # 使用通用转换函数
+        # 使用改进的通用转换函数
         try:
             model_instance = convert_dict_to_model(row_dict, model_class)
             valid_models.append(model_instance)
@@ -310,9 +409,14 @@ def list_valid_rows_as_models(df: pd.DataFrame, model_class: Type[T]) -> List[T]
             logger.info(f"  模型: {model_instance}")
             logger.info("-" * 50)
 
+        except (ValueError, TypeError) as e:
+            logger.error(f"第 {row_number + 1} 行转换为{model_name}模型失败 (数据类型错误): {e}")
+            continue
         except Exception as e:
-            logger.error(f"第 {row_number + 1} 行转换为{model_name}模型失败: {e}")
+            logger.error(f"第 {row_number + 1} 行转换为{model_name}模型失败 (未知错误): {e}")
             continue
 
     logger.info(f"\n总计转换 {len(valid_models)} 行数据为{model_name}模型")
     return valid_models
+
+

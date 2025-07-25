@@ -1,7 +1,8 @@
 from enum import IntEnum, unique
 from typing import final
 from pydantic import BaseModel
-from .registry import register_base_model_class
+
+# from .registry import register_base_model_class
 
 
 ################################################################################################################
@@ -18,7 +19,7 @@ class ClientMessageHead(IntEnum):
 ################################################################################################################
 ################################################################################################################
 @final
-@register_base_model_class
+# @register_base_model_class
 class ClientMessage(BaseModel):
     head: int = ClientMessageHead.NONE
     body: str = ""

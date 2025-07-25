@@ -67,28 +67,28 @@ def register_action_class(cls: T_COMPONENT) -> T_COMPONENT:
 
 
 ############################################################################################################
-BASE_MODEL_REGISTRY: Final[Dict[str, Type[BaseModel]]] = {}
-T_BASE_MODEL = TypeVar("T_BASE_MODEL", bound=Type[BaseModel])
+# BASE_MODEL_REGISTRY: Final[Dict[str, Type[BaseModel]]] = {}
+# T_BASE_MODEL = TypeVar("T_BASE_MODEL", bound=Type[BaseModel])
 
 
-def register_base_model_class(cls: T_BASE_MODEL) -> T_BASE_MODEL:
+# def register_base_model_class(cls: T_BASE_MODEL) -> T_BASE_MODEL:
 
-    # 新增检查：确保类是通过 BaseModel 创建的
-    if not issubclass(cls, BaseModel):
-        assert False, f"{cls.__name__} is not a valid BaseModel class."
+#     # 新增检查：确保类是通过 BaseModel 创建的
+#     if not issubclass(cls, BaseModel):
+#         assert False, f"{cls.__name__} is not a valid BaseModel class."
 
-    # 注册类到全局字典
-    class_name = cls.__name__
-    if class_name in BASE_MODEL_REGISTRY:
-        raise ValueError(f"Class {class_name} is already registered.")
+#     # 注册类到全局字典
+#     class_name = cls.__name__
+#     if class_name in BASE_MODEL_REGISTRY:
+#         raise ValueError(f"Class {class_name} is already registered.")
 
-    BASE_MODEL_REGISTRY[class_name] = cls
+#     BASE_MODEL_REGISTRY[class_name] = cls
 
-    # 不可以有 set 类型的属性，影响序列化和存储
-    if _has_set_attr(cls):
-        assert False, f"{class_name}: BaseModel class contain set type !"
+#     # 不可以有 set 类型的属性，影响序列化和存储
+#     if _has_set_attr(cls):
+#         assert False, f"{class_name}: BaseModel class contain set type !"
 
-    return cls
+#     return cls
 
 
 ############################################################################################################

@@ -2,7 +2,7 @@ from typing import Any, Dict, NamedTuple, List, final
 from pydantic import BaseModel
 from .dungeon import Skill, StatusEffect
 from .objects import RPGCharacterProfile
-from .registry import register_component_class, register_base_model_class
+from .registry import register_component_class
 
 
 ############################################################################################################
@@ -154,7 +154,7 @@ class PlayerActiveComponent(NamedTuple):
 
 
 @final
-@register_base_model_class
+# @register_base_model_class
 class HandDetail(BaseModel):
     skill: str
     targets: List[str]

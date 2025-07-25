@@ -1,5 +1,5 @@
 from loguru import logger
-from typing import Final, List, Any, final
+from typing import Final, List, final
 import httpx
 import asyncio
 import time
@@ -25,10 +25,10 @@ class ChatSystem:
         self._async_client: Final[httpx.AsyncClient] = httpx.AsyncClient()
 
     ################################################################################################################################################################################
-    async def gather(self, request_handlers: List[ChatRequestHandler]) -> List[Any]:
+    async def gather(self, request_handlers: List[ChatRequestHandler]) -> None:
 
         if len(request_handlers) == 0 or len(self._localhost_urls) == 0:
-            return []
+            return
 
         coros = []
         for idx, handler in enumerate(request_handlers):
@@ -46,8 +46,6 @@ class ChatSystem:
         for result in batch_results:
             if isinstance(result, Exception):
                 logger.error(f"Request failed: {result}")
-
-        return batch_results
 
     ################################################################################################################################################################################
     def handle(self, request_handlers: List[ChatRequestHandler]) -> None:

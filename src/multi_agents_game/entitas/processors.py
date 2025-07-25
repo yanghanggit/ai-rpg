@@ -4,7 +4,7 @@ from .context import Context
 from .entity import Entity
 from .matcher import Matcher
 from .group import GroupEvent
-from typing import Any, Union
+from typing import Union
 
 
 # pipeline被第一次调用时执行的processor

@@ -126,6 +126,7 @@ mypy --strict scripts/run_terminal_tcg_game.py scripts/run_tcg_game_server.py sc
 
 mypy --strict scripts/
 mypy --strict src/
+mypy --strict src/multi_agents_game/entitas/
 ```
 
 ### 代码质量检查

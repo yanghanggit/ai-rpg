@@ -4,7 +4,7 @@ from .context import Context
 from .entity import Entity
 from .matcher import Matcher
 from .group import GroupEvent
-from typing import Any
+from typing import Any, Union
 
 
 # pipeline被第一次调用时执行的processor
@@ -103,7 +103,12 @@ class Processors(
         self._cleanup_processors: list[CleanupProcessor] = []
         self._tear_down_processors: list[TearDownProcessor] = []
 
-    def add(self, processor: Any) -> None:
+    def add(
+        self,
+        processor: Union[
+            InitializeProcessor, ExecuteProcessor, CleanupProcessor, TearDownProcessor
+        ],
+    ) -> None:
         if isinstance(processor, InitializeProcessor):
             self._initialize_processors.append(processor)
 

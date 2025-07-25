@@ -1,12 +1,10 @@
 from typing import final
 from pydantic import BaseModel, Field
-from ..models.registry import register_base_model_class
 
 
 ###############################################################################################################################################
 # Excel地牢数据模型
 @final
-@register_base_model_class
 class DungeonExcelData(BaseModel):
     """地牢Excel数据的BaseModel"""
 
@@ -26,7 +24,6 @@ class DungeonExcelData(BaseModel):
 ###############################################################################################################################################
 # Excel角色数据模型
 @final
-@register_base_model_class
 class ActorExcelData(BaseModel):
     """角色Excel数据的BaseModel"""
 

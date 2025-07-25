@@ -122,8 +122,6 @@ scripts/kill_servers.sh
 ### 严格模式检查
 
 ```shell
-mypy --strict scripts/
-mypy --strict src/
 mypy --strict scripts/ src/
 ```
 

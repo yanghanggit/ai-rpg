@@ -5,7 +5,7 @@ from typing import Optional, List, Dict, Any, TYPE_CHECKING
 from loguru import logger
 
 if TYPE_CHECKING:
-    from ..models.excel_data import DungeonExcelData, ActorExcelData
+    from .excel_data import DungeonExcelData, ActorExcelData
 
 # 添加模型导入路径
 
@@ -244,7 +244,7 @@ def convert_dict_to_dungeon_model(row_dict: Dict[str, Any]) -> "DungeonExcelData
     Returns:
         DungeonExcelData: 转换后的BaseModel实例
     """
-    from ..models.excel_data import DungeonExcelData
+    from .excel_data import DungeonExcelData
 
     # 安全提取数据，处理NaN值
     data = {}
@@ -269,7 +269,7 @@ def convert_dict_to_actor_model(row_dict: Dict[str, Any]) -> "ActorExcelData":
     Returns:
         ActorExcelData: 转换后的BaseModel实例
     """
-    from ..models.excel_data import ActorExcelData
+    from .excel_data import ActorExcelData
 
     # 安全提取数据，处理NaN值
     data = {}

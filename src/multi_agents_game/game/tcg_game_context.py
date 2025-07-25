@@ -105,11 +105,15 @@ class TCGGameContext(Context):
                 comp_class = COMPONENTS_REGISTRY.get(comp_snapshot.name)
                 assert comp_class is not None
 
-                assert hasattr(comp_class, "__deserialize_component__")
-                comp_class.__deserialize_component__(comp_snapshot.data)
+                assert hasattr(
+                    comp_class, "deserialize_component_data"
+                ), f"{comp_class.__name__} must have a deserialize_component_data method."
+                processed_data = comp_class.deserialize_component_data(
+                    comp_snapshot.data
+                )
 
                 # restore_comp = comp_class(**comp_snapshot.data) 这么写严格模式过不去，因为是OrderedDict，就直接用values()了
-                restore_comp = comp_class(*comp_snapshot.data.values())
+                restore_comp = comp_class(*processed_data.values())
                 assert restore_comp is not None
 
                 logger.debug(

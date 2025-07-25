@@ -5,7 +5,6 @@ from typing import (
     Type,
     TypeVar,
     Final,
-    cast,
 )
 
 ############################################################################################################
@@ -13,6 +12,7 @@ COMPONENTS_REGISTRY: Final[Dict[str, Type[NamedTuple]]] = {}
 T_COMPONENT = TypeVar("T_COMPONENT", bound=Type[NamedTuple])
 
 
+############################################################################################################
 # 注册组件类的装饰器
 def register_component_class(cls: T_COMPONENT) -> T_COMPONENT:
 
@@ -32,12 +32,18 @@ def register_component_class(cls: T_COMPONENT) -> T_COMPONENT:
     COMPONENTS_REGISTRY[class_name] = cls
 
     # 外挂一个方法到类上
-    if not hasattr(cast(Any, cls), "__deserialize_component__"):
-        ## 为了兼容性，给没有 __deserialize_component__ 方法的组件添加一个空实现
-        def _dummy_deserialize_component__(component_data: Dict[str, Any]) -> None:
-            pass
+    if not hasattr(cls, "deserialize_component_data"):
+        ## 为了兼容性，给没有 deserialize_component_data 方法的组件添加一个默认实现
+        def _dummy_deserialize_component_data(
+            component_data: Dict[str, Any]
+        ) -> Dict[str, Any]:
+            return component_data
 
-        cast(Any, cls).__deserialize_component__ = _dummy_deserialize_component__
+        setattr(
+            cls,
+            "deserialize_component_data",
+            staticmethod(_dummy_deserialize_component_data),
+        )
 
     return cls
 

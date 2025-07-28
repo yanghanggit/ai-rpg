@@ -4,7 +4,7 @@ from ..models import (
     RPGCharacterProfile,
 )
 from ..builder.excel_data_manager import actor_valid_rows
-from ..game.tcg_game_demo_utils import (
+from ..demo.tcg_game_demo_utils import (
     CAMPAIGN_SETTING,
     create_actor,
 )

@@ -11,7 +11,7 @@ from ..models import (
 )
 from loguru import logger
 from ..game.options import WebUserSessionOptions
-from ..game.tcg_game_demo import (
+from ..demo.demo_world import (
     setup_demo_game_world,
 )
 import shutil

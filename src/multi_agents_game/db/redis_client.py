@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Union, cast
+from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, TypeAlias, Union, cast
 
 import redis
 from loguru import logger
@@ -6,16 +6,16 @@ from loguru import logger
 from ..config.db_config import RedisConfig
 
 # Redis键值类型定义
-RedisKeyType = Union[str, bytes]
-RedisValueType = Union[str, bytes, int, float]
+RedisKeyType: TypeAlias = Union[str, bytes]
+RedisValueType: TypeAlias = Union[bytes, float, int, str]
 
 # 为Redis客户端定义明确的类型
 if TYPE_CHECKING:
     from redis import Redis
 
-    RedisClientType = Redis[str]
+    RedisClientType: TypeAlias = Redis[str]
 else:
-    RedisClientType = redis.Redis
+    RedisClientType: TypeAlias = redis.Redis[str]
 
 
 ###################################################################################################
@@ -70,8 +70,9 @@ def redis_hset(name: str, mapping_data: Mapping[str, RedisValueType]) -> None:
     """
     try:
         redis_client = _get_redis_instance()
-        # 直接使用mapping_data，不需要转换
-        redis_client.hset(name=name, mapping=mapping_data)  # type: ignore[arg-type]
+        # 将映射转换为 Redis 期望的类型
+        redis_mapping = cast(Mapping[RedisKeyType, RedisValueType], mapping_data)
+        redis_client.hset(name=name, mapping=redis_mapping)
     except redis.RedisError as e:
         logger.error(f"Redis error while setting data for {name}: {e}")
         raise e
@@ -96,7 +97,7 @@ def redis_hgetall(name: str) -> Dict[str, str]:
         if not redis_client.exists(name):
             return {}
         result = redis_client.hgetall(name)
-        return {} if result is None else result
+        return dict(result) if result is not None else {}
     except redis.RedisError as e:
         logger.error(f"Redis error while getting data for {name}: {e}")
         raise e
@@ -142,7 +143,7 @@ def redis_lrange(name: str, start: int = 0, end: int = -1) -> List[str]:
         if not redis_client.exists(name):
             return []
         result = redis_client.lrange(name, start, end)
-        return [] if result is None else result
+        return list(result) if result is not None else []
     except redis.RedisError as e:
         logger.error(f"Redis error while getting list range for {name}: {e}")
         raise e
@@ -165,7 +166,8 @@ def redis_rpush(name: str, *values: str) -> int:
     """
     try:
         redis_client = _get_redis_instance()
-        return redis_client.rpush(name, *values)
+        result = redis_client.rpush(name, *values)
+        return int(result) if result is not None else 0
     except redis.RedisError as e:
         logger.error(f"Redis error while pushing to list {name}: {e}")
         raise e
@@ -203,7 +205,8 @@ def redis_exists(name: str) -> bool:
     """
     try:
         redis_client = _get_redis_instance()
-        return redis_client.exists(name) > 0
+        result = redis_client.exists(name)
+        return bool(result) and result > 0
     except redis.RedisError as e:
         logger.error(f"Redis error while checking existence of {name}: {e}")
         raise e
@@ -226,7 +229,8 @@ def redis_expire(name: str, seconds: int) -> bool:
     """
     try:
         redis_client = _get_redis_instance()
-        return redis_client.expire(name, seconds)
+        result = redis_client.expire(name, seconds)
+        return bool(result) if result is not None else False
     except redis.RedisError as e:
         logger.error(f"Redis error while setting expiry for {name}: {e}")
         raise e
@@ -250,7 +254,8 @@ def redis_setex(name: str, seconds: int, value: RedisValueType) -> bool:
     """
     try:
         redis_client = _get_redis_instance()
-        return redis_client.setex(name, seconds, value)
+        result = redis_client.setex(name, seconds, value)
+        return bool(result) if result is not None else False
     except redis.RedisError as e:
         logger.error(f"Redis error while setting value for {name}: {e}")
         raise e
@@ -273,7 +278,8 @@ def redis_set(name: str, value: RedisValueType) -> bool | None:
     """
     try:
         redis_client = _get_redis_instance()
-        return redis_client.set(name, value)
+        result = redis_client.set(name, value)
+        return bool(result) if result is not None else False
     except redis.RedisError as e:
         logger.error(f"Redis error while setting value for {name}: {e}")
         raise e
@@ -297,7 +303,8 @@ def redis_get(name: str) -> Optional[str]:
         redis_client = _get_redis_instance()
         if not redis_client.exists(name):
             return None
-        return redis_client.get(name)
+        result = redis_client.get(name)
+        return str(result) if result is not None else None
     except redis.RedisError as e:
         logger.error(f"Redis error while getting value for {name}: {e}")
         raise e
@@ -317,8 +324,9 @@ def redis_hmset(name: str, mapping_data: Mapping[str, RedisValueType]) -> None:
     """
     try:
         redis_client = _get_redis_instance()
-        # 直接使用mapping_data，不需要转换
-        redis_client.hmset(name=name, mapping=mapping_data)  # type: ignore[arg-type]
+        # 将映射转换为 Redis 期望的类型
+        redis_mapping = cast(Mapping[RedisKeyType, RedisValueType], mapping_data)
+        redis_client.hmset(name, redis_mapping)
     except redis.RedisError as e:
         logger.error(f"Redis error while setting data for {name}: {e}")
         raise e

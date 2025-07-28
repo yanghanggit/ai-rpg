@@ -6,6 +6,7 @@ from .excel_utils import (
     list_valid_rows,
     list_valid_rows_as_models,
 )
+from pathlib import Path
 
 # 定义泛型类型变量
 ExcelDataT = TypeVar("ExcelDataT", DungeonExcelData, ActorExcelData)
@@ -18,7 +19,7 @@ class ExcelDataManager:
     """Excel数据管理器 - 统一管理Excel文件路径和缓存数据"""
 
     def __init__(
-        self, excel_file_path: str, dungeon_sheet_name: str, actor_sheet_name: str
+        self, excel_file_path: Path, dungeon_sheet_name: str, actor_sheet_name: str
     ):
         """
         初始化Excel数据管理器
@@ -26,7 +27,7 @@ class ExcelDataManager:
         Args:
             file_path: Excel文件路径
         """
-        self._excel_file_path: Final[str] = excel_file_path
+        self._excel_file_path: Final[Path] = excel_file_path
         self._dungeon_sheet_name: Final[str] = dungeon_sheet_name
         self._actor_sheet_name: Final[str] = actor_sheet_name
 
@@ -109,8 +110,9 @@ class ExcelDataManager:
 ###################################################################################################
 ###################################################################################################
 # 创建全局单例实例
+assert Path("excel_test.xlsx").exists(), "Excel test file does not exist."
 excel_data_manager = ExcelDataManager(
-    excel_file_path="excel_test.xlsx",
+    excel_file_path=Path("excel_test.xlsx"),
     dungeon_sheet_name="dungeons",
     actor_sheet_name="actors",
 )

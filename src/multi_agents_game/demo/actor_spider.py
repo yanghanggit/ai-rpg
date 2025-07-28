@@ -1,4 +1,3 @@
-from loguru import logger
 from ..models import (
     ActorType,
     RPGCharacterProfile,

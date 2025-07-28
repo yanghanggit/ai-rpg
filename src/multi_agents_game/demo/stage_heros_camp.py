@@ -1,4 +1,3 @@
-# from loguru import logger
 from ..models import (
     StageType,
 )
@@ -7,12 +6,6 @@ from .demo_utils import (
     CAMPAIGN_SETTING,
     create_stage,
 )
-
-# from ..demo.actor_warrior import actor_warrior
-# from ..demo.actor_wizard import actor_wizard
-
-########################################################################################################################################
-#######################################################################################################################################
 
 stage_heros_camp = create_stage(
     name="场景.营地",

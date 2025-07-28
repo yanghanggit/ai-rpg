@@ -1,22 +1,16 @@
 import pandas as pd
-
-# import sys
 from pathlib import Path
 from typing import Optional, List, Dict, Any, TypeVar, Type
 from pydantic import BaseModel
 from loguru import logger
 
-# if TYPE_CHECKING:
-#     from .excel_data import DungeonExcelData, ActorExcelData
-
-# 定义泛型类型变量，限定为BaseModel的子类
 T = TypeVar("T", bound=BaseModel)
 
-# 添加模型导入路径
 
-
+#####################################################################################################
+#####################################################################################################
 def read_excel_file(
-    file_path: str, sheet_name: Optional[str] = None
+    excel_file_path: Path, sheet_name: Optional[str] = None
 ) -> Optional[pd.DataFrame]:
     """
     读取Excel文件
@@ -29,18 +23,18 @@ def read_excel_file(
         pandas.DataFrame: 读取的数据
     """
     try:
-        file_path_obj = Path(file_path)
-        if not file_path_obj.exists():
-            logger.error(f"文件不存在: {file_path}")
+
+        if not excel_file_path.exists():
+            logger.error(f"文件不存在: {excel_file_path}")
             return None
 
         # 读取Excel文件
         if sheet_name:
-            df = pd.read_excel(file_path, sheet_name=sheet_name)
-            logger.info(f"成功读取工作表 '{sheet_name}' 从文件: {file_path}")
+            df = pd.read_excel(excel_file_path, sheet_name=sheet_name)
+            logger.info(f"成功读取工作表 '{sheet_name}' 从文件: {excel_file_path}")
         else:
-            df = pd.read_excel(file_path)
-            logger.info(f"成功读取文件: {file_path}")
+            df = pd.read_excel(excel_file_path)
+            logger.info(f"成功读取文件: {excel_file_path}")
 
         logger.info(f"数据形状: {df.shape}")
         return df
@@ -188,7 +182,7 @@ def safe_get_from_dict(data: Dict[str, Any], key: str, default: str = "") -> str
 ############################################################################################################
 ##############################################################################################
 # 这个函数用于获取指定工作表的列名（表头/第一行）
-def get_column_names(file_path: str, sheet_name: str) -> Optional[List[str]]:
+def get_column_names(excel_file_path: Path, sheet_name: str) -> Optional[List[str]]:
     """
     获取指定工作表的列名（表头/第一行）
     直接从Excel创建地牢Stage，不使用中间函数
@@ -203,7 +197,7 @@ def get_column_names(file_path: str, sheet_name: str) -> Optional[List[str]]:
         创建的Stage对象，如果失败则返回None
     """
     # 读取指定工作表
-    df = read_excel_file(file_path, sheet_name)
+    df = read_excel_file(excel_file_path, sheet_name)
     if df is None:
         logger.warning(f"无法读取工作表 '{sheet_name}'")
         return None
@@ -262,6 +256,8 @@ def validate_dataframe(df: pd.DataFrame) -> bool:
     return True
 
 
+#####################################################################################################
+#####################################################################################################
 def safe_get_row_number(index: Any) -> int:
     """
     安全获取行号，处理各种索引类型
@@ -283,6 +279,8 @@ def safe_get_row_number(index: Any) -> int:
         return 0
 
 
+#####################################################################################################
+#####################################################################################################
 # 通用的字典到BaseModel转换函数（使用泛型，增强类型安全）
 def convert_dict_to_model(row_dict: Dict[str, Any], model_class: Type[T]) -> T:
     """

@@ -8,14 +8,8 @@ from multi_agents_game.chaos_engineering.empty_engineering_system import (
 )
 from multi_agents_game.chat_services.chat_system import ChatSystem
 from multi_agents_game.player.player_proxy import PlayerProxy
-
-
 from multi_agents_game.demo import setup_demo_game_world
-
-# from multi_agents_game.demo import create_demo_dungeon1
-# from multi_agents_game.demo import create_demo_dungeon2
 from multi_agents_game.demo import create_demo_dungeon3
-
 from multi_agents_game.tcg_game_systems.combat_monitor_system import CombatMonitorSystem
 from multi_agents_game.game.options import TerminalUserSessionOptions
 from multi_agents_game.format_string.terminal_input import (

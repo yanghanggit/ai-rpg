@@ -8,7 +8,7 @@ from .actor_spider import actor_spider
 from .stage_heros_camp import stage_heros_camp
 from .stage_dungeon1 import stage_dungeon_cave1, create_demo_dungeon1
 from .stage_dungeon2 import stage_dungeon_cave2, create_demo_dungeon2
-from .stage_dungeon3 import stage_dungeon_cave3, create_demo_dungeon3
+from .stage_dungeon3 import create_demo_dungeon3
 from .demo_world import setup_demo_game_world
 
 __all__ = [

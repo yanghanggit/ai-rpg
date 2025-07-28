@@ -1,65 +1,41 @@
-from loguru import logger
+# from loguru import logger
 from ..models import (
     StageType,
     Dungeon,
 )
-from ..excel_builder.excel_data_manager import dungeon_valid_rows
+from ..excel_builder.excel_data_manager import excel_data_manager
 from .demo_utils import (
     CAMPAIGN_SETTING,
     create_stage,
-    # copy_stage,
 )
 from ..demo.actor_spider import actor_spider
-
-########################################################################################################################################
-#######################################################################################################################################
-# 使用集中获取的地牢信息 - 现在使用BaseModel而不是Dict[str, Any]
-for i, dungeon_data in enumerate(dungeon_valid_rows):
-    logger.info(f"\n--- 处理第 {i+1} 行地牢数据 (BaseModel) ---")
-
-    # 直接使用BaseModel的属性，类型安全且有默认值
-    name = dungeon_data.name
-    character_sheet_name = dungeon_data.character_sheet_name
-    stage_profile = dungeon_data.stage_profile
-    dungeon_name = dungeon_data.dungeon_name
-    actor = dungeon_data.actor
-
-    logger.info(f"地牢名称: {name}")
-    logger.info(f"角色表名: {character_sheet_name}")
-    logger.info(f"地牢描述: {stage_profile[:50]}...")
-    logger.info(f"相关角色: {actor}")
-
-    # 只处理第一行数据
-    if i == 0:
-        break
-#######################################################################################################################################
-#######################################################################################################################################
-# 创建地牢场景
-stage_dungeon_cave3 = create_stage(
-    name=name,
-    character_sheet_name=character_sheet_name,
-    kick_off_message="",
-    campaign_setting=CAMPAIGN_SETTING,
-    type=StageType.DUNGEON,
-    stage_profile=stage_profile,
-    actors=[],
-)
-
-####################################################################################################
-#######################################################################################################
-
-
-#######################################################################################################
-#########################################################################################################
+import copy
 
 
 def create_demo_dungeon3() -> Dungeon:
 
-    stage_dungeon_cave3.actors = [actor_spider]
-    actor_spider.rpg_character_profile.hp = 1
+    dungeon_data = excel_data_manager.get_dungeon_data("场景.洞窟之三")
+    assert dungeon_data is not None, "未找到名为 '场景.洞窟之三' 的地牢数据"
 
+    # 创建地牢场景
+    stage_dungeon_cave3 = create_stage(
+        name=dungeon_data.name,
+        character_sheet_name=dungeon_data.character_sheet_name,
+        kick_off_message="",
+        campaign_setting=CAMPAIGN_SETTING,
+        type=StageType.DUNGEON,
+        stage_profile=dungeon_data.stage_profile,
+        actors=[],
+    )
+
+    # 添加蜘蛛角色到地牢场景
+    copy_actor_spider = copy.deepcopy(actor_spider)
+    stage_dungeon_cave3.actors = [copy_actor_spider]
+    copy_actor_spider.rpg_character_profile.hp = 1
+
+    # 返回地牢对象
     return Dungeon(
-        name=dungeon_name,
+        name=dungeon_data.name,
         levels=[
             stage_dungeon_cave3,
         ],

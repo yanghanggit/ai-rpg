@@ -142,3 +142,58 @@ python_version = "3.12"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
+
+[tool.ruff]
+# 排除文件和目录
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "gen_runtimes",
+    "gen_worlds",
+    "logs",
+]
+
+# 每行最大字符数
+line-length = 88
+
+# Python版本
+target-version = "py312"
+
+[tool.ruff.lint]
+# 启用的规则：
+# F401 - 未使用的导入
+# F402 - 重定义导入但未使用
+# F403 - star import但未使用
+# F811 - 重复导入
+# E401 - 多个导入在一行
+# I001 - import排序
+select = ["F401", "F402", "F403", "F811", "E401", "I001"]
+
+# 忽略的规则
+ignore = []
+
+# 允许修复的规则
+fixable = ["F401", "F402", "F403", "F811", "E401", "I001"]
+
+[tool.ruff.lint.isort]
+# import排序配置
+known-first-party = ["multi_agents_game"]

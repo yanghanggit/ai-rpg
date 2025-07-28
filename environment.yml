@@ -1,12 +1,13 @@
 name: first_seed
 channels:
+  - conda-forge
   - defaults
 dependencies:
   - argon2-cffi=21.3.0=pyhd3eb1b0_0
   - argon2-cffi-bindings=21.2.0=py312h80987f9_1
   - bcrypt=4.3.0=py312h2aea54e_0
   - bzip2=1.0.8=h80987f9_5
-  - ca-certificates=2025.2.25=hca03da5_0
+  - ca-certificates=2025.7.14=hbd8a1cb_0
   - cffi=1.17.1=py312h3eb5a62_1
   - cryptography=45.0.5=py312hace6d20_0
   - cyrus-sasl=2.1.28=h0121217_2
@@ -20,7 +21,7 @@ dependencies:
   - libpq=17.4=h6b53c48_1
   - ncurses=6.4=h313beb8_0
   - openldap=2.6.4=he7ef289_0
-  - openssl=3.0.17=h4ee41c1_0
+  - openssl=3.5.1=h81ee809_0
   - passlib=1.7.4=pyhd3eb1b0_0
   - pip=23.3.1=py312hca03da5_0
   - pluggy=1.5.0=py312hca03da5_0
@@ -34,6 +35,7 @@ dependencies:
   - readline=8.2=h1a28f6b_0
   - redis=3.5.3=pyhd3eb1b0_0
   - rsa=4.7.2=pyhd3eb1b0_1
+  - ruff=0.12.5=h575f11b_0
   - setuptools=68.2.2=py312hca03da5_0
   - sqlite=3.41.2=h80987f9_0
   - tk=8.6.12=hb8d0fd4_0

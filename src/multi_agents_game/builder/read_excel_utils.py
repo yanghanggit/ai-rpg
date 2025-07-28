@@ -1,12 +1,13 @@
 import pandas as pd
-import sys
+
+# import sys
 from pathlib import Path
-from typing import Optional, List, Dict, Any, TYPE_CHECKING, TypeVar, Type
+from typing import Optional, List, Dict, Any, TypeVar, Type
 from pydantic import BaseModel
 from loguru import logger
 
-if TYPE_CHECKING:
-    from .excel_data import DungeonExcelData, ActorExcelData
+# if TYPE_CHECKING:
+#     from .excel_data import DungeonExcelData, ActorExcelData
 
 # 定义泛型类型变量，限定为BaseModel的子类
 T = TypeVar("T", bound=BaseModel)

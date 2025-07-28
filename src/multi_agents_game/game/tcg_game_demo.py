@@ -1,6 +1,7 @@
 from pathlib import Path
 from loguru import logger
-from regex import D
+
+# from regex import D
 from ..models import (
     Boot,
     ActorType,

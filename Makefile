@@ -28,6 +28,22 @@ lint:
 format:
 	black src/ tests/ scripts/
 
+# 检查未使用的导入
+check-imports:
+	python scripts/check_unused_imports.py --check
+
+# 修复未使用的导入
+fix-imports:
+	python scripts/check_unused_imports.py --fix
+
+# 运行ruff检查（包含更多规则）
+ruff-check:
+	ruff check src/
+
+# 运行ruff修复
+ruff-fix:
+	ruff check --fix src/
+
 # 清理构建文件
 clean:
 	rm -rf build/ dist/ *.egg-info/

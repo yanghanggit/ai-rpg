@@ -3,7 +3,7 @@ from ..game_services.game_server import GameServerInstance
 from ..models import StartRequest, StartResponse, Boot, World
 from ..game.options import WebUserSessionOptions
 from loguru import logger
-from ..demo.tcg_game_demo import (
+from ..demo.stage_dungeon4 import (
     create_demo_dungeon2,
 )
 from ..chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem

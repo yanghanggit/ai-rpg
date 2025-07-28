@@ -4,7 +4,7 @@ from ..models import StartRequest, StartResponse, Boot, World
 from ..game.options import WebUserSessionOptions
 from loguru import logger
 from ..demo.stage_dungeon4 import (
-    create_demo_dungeon2,
+    create_demo_dungeon4,
 )
 from ..chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from ..chat_services.chat_system import ChatSystem
@@ -106,7 +106,7 @@ def setup_web_game_session(
         start_world = World(boot=world_boot)
 
         # 运行时生成地下城系统。
-        start_world.dungeon = create_demo_dungeon2()
+        start_world.dungeon = create_demo_dungeon4()
 
     else:
 

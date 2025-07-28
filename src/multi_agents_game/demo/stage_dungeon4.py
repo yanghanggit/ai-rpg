@@ -2,14 +2,14 @@ from ..models import (
     Dungeon,
 )
 
-from.stage_dungeon1 import stage_dungeon_cave1
-from.stage_dungeon2 import stage_dungeon_cave2
+from .stage_dungeon1 import stage_dungeon_cave1
+from .stage_dungeon2 import stage_dungeon_cave2
 
 
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
-def create_demo_dungeon2() -> Dungeon:
+def create_demo_dungeon4() -> Dungeon:
     return Dungeon(
         name="哥布林与兽人",
         levels=[

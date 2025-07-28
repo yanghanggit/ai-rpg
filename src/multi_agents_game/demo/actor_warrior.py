@@ -2,7 +2,7 @@ from ..models import (
     ActorType,
     RPGCharacterProfile,
 )
-from ..demo.tcg_game_demo_utils import (
+from .demo_utils import (
     CAMPAIGN_SETTING,
     create_actor,
 )

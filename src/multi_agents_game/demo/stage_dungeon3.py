@@ -4,7 +4,7 @@ from ..models import (
     Dungeon,
 )
 from ..builder.excel_data_manager import dungeon_valid_rows
-from ..demo.tcg_game_demo_utils import (
+from .demo_utils import (
     CAMPAIGN_SETTING,
     create_stage,
     # copy_stage,

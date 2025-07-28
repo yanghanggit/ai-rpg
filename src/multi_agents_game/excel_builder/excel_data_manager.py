@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Type, TypeVar
 from loguru import logger
 from .excel_data import DungeonExcelData, ActorExcelData
-from .read_excel_utils import (
+from .excel_utils import (
     read_excel_file,
     list_valid_rows,
     list_valid_rows_as_models,

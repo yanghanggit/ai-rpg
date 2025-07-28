@@ -239,49 +239,8 @@ def get_column_names(file_path: str, sheet_name: str) -> Optional[List[str]]:
 
 ############################################################################################################
 ##############################################################################################
-# 智能类型推断和转换辅助函数
-def infer_and_convert_value(value: Any) -> Any:
-    """
-    智能推断并转换数据类型，保持原始数据类型特性
-
-    Args:
-        value (Any): 原始值
-
-    Returns:
-        Any: 转换后的值，保持合适的数据类型
-    """
-    if pd.isna(value):
-        return None
-
-    # 如果已经是数字类型，直接返回
-    if isinstance(value, (int, float, bool)):
-        return value
-
-    # 如果是字符串，尝试智能转换
-    if isinstance(value, str):
-        value = value.strip()
-
-        # 空字符串返回 None
-        if not value:
-            return None
-
-        # 尝试转换为布尔值
-        if value.lower() in ("true", "false", "yes", "no", "是", "否", "1", "0"):
-            return value.lower() in ("true", "yes", "是", "1")
-
-        # 尝试转换为数字
-        try:
-            # 检查是否包含小数点
-            if "." in value:
-                return float(value)
-            else:
-                return int(value)
-        except ValueError:
-            # 无法转换为数字，保持字符串
-            return value
-
-    # 其他类型转换为字符串
-    return str(value)
+############################################################################################################
+##############################################################################################
 
 
 def validate_dataframe(df: pd.DataFrame) -> bool:
@@ -327,7 +286,12 @@ def safe_get_row_number(index: Any) -> int:
 # 通用的字典到BaseModel转换函数（使用泛型，增强类型安全）
 def convert_dict_to_model(row_dict: Dict[str, Any], model_class: Type[T]) -> T:
     """
-    通用的字典数据转换为BaseModel的函数，智能保持数据类型
+    通用的字典数据转换为BaseModel的函数，利用BaseModel的默认值机制
+
+    策略：
+    1. 过滤掉 NaN 值，让 BaseModel 使用字段定义的默认值
+    2. 保留有效值，让 Pydantic 处理类型转换和验证
+    3. 依赖 BaseModel 的字段定义而不是猜测性类型推断
 
     Args:
         row_dict (Dict[str, Any]): 从Excel读取的原始字典数据
@@ -340,15 +304,14 @@ def convert_dict_to_model(row_dict: Dict[str, Any], model_class: Type[T]) -> T:
         ValueError: 当数据转换失败时
         TypeError: 当模型类型不匹配时
     """
-    # 安全提取数据，处理NaN值，智能转换类型
+    # 只过滤 NaN 值，保留其他所有值，让 Pydantic 处理类型转换
     data = {}
     for key, value in row_dict.items():
-        # 使用智能类型转换
-        converted_value = infer_and_convert_value(value)
-
-        # 只有非None值才添加到数据中
-        if converted_value is not None:
-            data[key] = converted_value
+        # 只处理 NaN 值，其他交给 Pydantic 的类型系统
+        if not pd.isna(value):
+            data[key] = value
+        # NaN 值被跳过，BaseModel 会使用字段定义的默认值
+        logger.debug(f"处理键 '{key}': 值 = {value} (NaN 跳过)")
 
     try:
         return model_class(**data)
@@ -359,7 +322,6 @@ def convert_dict_to_model(row_dict: Dict[str, Any], model_class: Type[T]) -> T:
 
 
 ############################################################################################################
-##############################################################################################
 # 类型安全的泛型版本有效行数据转换函数
 def list_valid_rows_as_models(df: pd.DataFrame, model_class: Type[T]) -> List[T]:
     """

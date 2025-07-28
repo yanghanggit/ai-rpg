@@ -3,7 +3,7 @@ from ..models import (
     StageType,
 )
 
-from ..game.tcg_game_demo_utils import (
+from ..demo.tcg_game_demo_utils import (
     CAMPAIGN_SETTING,
     create_stage,
 )

@@ -1,6 +1,5 @@
 from pathlib import Path
 from loguru import logger
-from regex import D
 from ..models import (
     Boot,
     ActorType,
@@ -9,7 +8,7 @@ from ..models import (
     RPGCharacterProfile,
 )
 from typing import Optional
-from ..game.tcg_game_demo_utils import (
+from ..demo.tcg_game_demo_utils import (
     CAMPAIGN_SETTING,
     create_actor,
     create_stage,

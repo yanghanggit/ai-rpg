@@ -83,7 +83,67 @@ pip install -e .
 - `num_chat_service_instances`: 聊天服务器实例数量
 - `game_server_port`: 游戏服务器端口
 
-### 4. 验证安装
+### 4. MongoDB 数据库配置
+
+项目使用 MongoDB 作为主要数据存储，用于保存游戏世界状态、玩家数据等。
+
+#### 安装 MongoDB
+
+**macOS 用户 (推荐使用 Homebrew):**
+
+```bash
+# 添加 MongoDB 官方 tap
+brew tap mongodb/brew
+
+# 安装 MongoDB Community Edition
+brew install mongodb-community
+
+# 启动 MongoDB 服务
+brew services start mongodb/brew/mongodb-community
+```
+
+**其他系统:**
+请参考 [MongoDB 官方安装文档](https://docs.mongodb.com/manual/installation/)
+
+#### 验证 MongoDB 安装
+
+```bash
+# 检查 MongoDB 服务状态
+make status-mongodb
+
+# 测试 MongoDB 连接和功能
+make test-mongodb
+
+# 连接到 MongoDB Shell
+make mongo-shell
+```
+
+#### MongoDB 管理命令
+
+```bash
+# 启动 MongoDB 服务
+make start-mongodb
+
+# 停止 MongoDB 服务  
+make stop-mongodb
+
+# 重启 MongoDB 服务
+make restart-mongodb
+
+# 查看 MongoDB 状态
+make status-mongodb
+```
+
+#### 配置信息
+
+- **连接地址**: `mongodb://localhost:27017/`
+- **数据库名**: `multi_agents_game`
+- **主要集合**: `worlds`, `players`, `game_sessions`
+- **配置文件**: `/opt/homebrew/etc/mongod.conf` (macOS)
+- **数据目录**: `/opt/homebrew/var/mongodb` (macOS)
+- **日志文件**: `/opt/homebrew/var/log/mongodb/mongo.log` (macOS)
+
+### 5. 验证安装
 
 ```bash
 # 运行测试

@@ -7,10 +7,11 @@ dependencies:
   - argon2-cffi-bindings=21.2.0=py312h80987f9_1
   - bcrypt=4.3.0=py312h2aea54e_0
   - bzip2=1.0.8=h80987f9_5
-  - ca-certificates=2025.7.14=hbd8a1cb_0
+  - ca-certificates=2025.2.25=hca03da5_0
   - cffi=1.17.1=py312h3eb5a62_1
   - cryptography=45.0.5=py312hace6d20_0
   - cyrus-sasl=2.1.28=h0121217_2
+  - dnspython=2.4.2=py312hca03da5_0
   - ecdsa=0.19.0=pyhd3eb1b0_0
   - expat=2.5.0=h313beb8_0
   - iniconfig=1.1.1=pyhd3eb1b0_0
@@ -21,7 +22,7 @@ dependencies:
   - libpq=17.4=h6b53c48_1
   - ncurses=6.4=h313beb8_0
   - openldap=2.6.4=he7ef289_0
-  - openssl=3.5.1=h81ee809_0
+  - openssl=3.0.17=h4ee41c1_0
   - passlib=1.7.4=pyhd3eb1b0_0
   - pip=23.3.1=py312hca03da5_0
   - pluggy=1.5.0=py312hca03da5_0
@@ -29,6 +30,7 @@ dependencies:
   - psycopg2=2.9.10=py312h80987f9_0
   - pyasn1=0.6.1=py312hca03da5_0
   - pycparser=2.21=pyhd3eb1b0_0
+  - pymongo=4.13.0=py312h80987f9_0
   - pytest=8.3.4=py312hca03da5_0
   - python=3.12.2=h99e199e_0
   - python-jose=3.5.0=py312hca03da5_0

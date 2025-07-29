@@ -1,5 +1,8 @@
 import sys
 from pathlib import Path
+import json
+import time
+from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
@@ -19,6 +22,13 @@ from multi_agents_game.db.redis_client import (
 )
 from multi_agents_game.db.mongodb_client import (
     mongodb_clear_database,
+    mongodb_insert_one,
+    mongodb_find_one,
+    mongodb_update_one,
+    mongodb_create_index,
+    mongodb_delete_many,
+    mongodb_count_documents,
+    get_mongodb_database_instance,
 )
 
 
@@ -171,6 +181,226 @@ def _test_postgresql() -> None:
 
 
 #######################################################################################################
+def _test_mongodb() -> None:
+    """
+    测试 MongoDB 连接和基本操作
+
+    使用模拟的 World 对象数据验证 MongoDB 连接的可用性
+    包括：连接测试、文档插入、查询、更新、索引创建和清理操作
+    """
+    collection_name = "test_worlds"
+    test_game_id = "game_123"
+
+    try:
+        logger.info("🔍 开始测试 MongoDB 连接...")
+
+        # 1. 测试数据库连接
+        logger.info("📡 测试 MongoDB 数据库连接...")
+        try:
+            db = get_mongodb_database_instance()
+            # 测试连接 - 通过列出集合来验证连接
+            collections = db.list_collection_names()
+            logger.success(
+                f"✅ MongoDB 数据库连接成功! 当前集合数量: {len(collections)}"
+            )
+        except Exception as e:
+            logger.error(f"❌ MongoDB 数据库连接失败: {e}")
+            return
+
+        # 2. 测试 World 对象存储
+        logger.info("🌍 测试 World 对象存储...")
+
+        # 模拟 World 类数据
+        world_data = {
+            "_id": "game_123_runtime_1001",
+            "game_id": test_game_id,
+            "runtime_index": 1001,
+            "version": "0.0.1",
+            "timestamp": datetime.now(),
+            "entities_snapshot": [
+                {
+                    "entity_id": "player_1",
+                    "type": "player",
+                    "name": "张三",
+                    "level": 5,
+                    "hp": 100,
+                    "position": {"x": 10, "y": 20},
+                },
+                {
+                    "entity_id": "monster_1",
+                    "type": "monster",
+                    "name": "哥布林",
+                    "level": 3,
+                    "hp": 50,
+                    "position": {"x": 15, "y": 25},
+                },
+            ],
+            "agents_short_term_memory": {
+                "player_1": {
+                    "name": "张三",
+                    "chat_history": [
+                        {
+                            "type": "human",
+                            "content": "我想攻击哥布林",
+                            "timestamp": datetime.now(),
+                        },
+                        {
+                            "type": "ai",
+                            "content": "你攻击了哥布林，造成了10点伤害",
+                            "timestamp": datetime.now(),
+                        },
+                    ],
+                }
+            },
+            "dungeon": {
+                "name": "新手村地牢",
+                "level": 1,
+                "monsters_count": 5,
+                "treasure_chests": 2,
+            },
+            "boot": {
+                "name": "游戏启动配置",
+                "campaign_setting": "奇幻世界",
+                "stages": ["新手村", "森林", "城堡"],
+                "world_systems": ["战斗系统", "经验系统", "装备系统"],
+            },
+        }
+
+        # 插入 World 数据
+        logger.info(f"📝 插入 World 数据到集合: {collection_name}")
+        inserted_id = mongodb_insert_one(collection_name, world_data)
+
+        if inserted_id:
+            logger.success(f"✅ World 数据插入成功, ID: {inserted_id}")
+        else:
+            logger.error("❌ World 数据插入失败!")
+            return
+
+        # 查询 World 数据
+        logger.info(f"📖 查询 World 数据: game_id = {test_game_id}")
+        stored_world = mongodb_find_one(collection_name, {"game_id": test_game_id})
+
+        if stored_world:
+            logger.success("✅ World 数据查询成功!")
+            logger.info(f"  - 游戏ID: {stored_world['game_id']}")
+            logger.info(f"  - 运行时索引: {stored_world['runtime_index']}")
+            logger.info(f"  - 实体数量: {len(stored_world['entities_snapshot'])}")
+            logger.info(
+                f"  - 智能体数量: {len(stored_world['agents_short_term_memory'])}"
+            )
+            logger.info(f"  - 地牢名称: {stored_world['dungeon']['name']}")
+
+            # 计算存储大小
+            json_str = json.dumps(stored_world, default=str)
+            size_mb = len(json_str.encode("utf-8")) / (1024 * 1024)
+            logger.info(f"  - 文档大小: {size_mb:.3f} MB")
+        else:
+            logger.error("❌ World 数据查询失败!")
+            return
+
+        # 3. 测试增量更新
+        logger.info("🔄 测试增量更新...")
+
+        update_result = mongodb_update_one(
+            collection_name,
+            {"game_id": test_game_id},
+            {
+                "$inc": {"runtime_index": 1},
+                "$set": {"last_updated": datetime.now()},
+                "$push": {
+                    "entities_snapshot": {
+                        "entity_id": "npc_1",
+                        "type": "npc",
+                        "name": "村长",
+                        "level": 10,
+                        "position": {"x": 5, "y": 5},
+                    }
+                },
+            },
+        )
+
+        if update_result:
+            logger.success("✅ 增量更新成功!")
+
+            # 查看更新后的数据
+            updated_world = mongodb_find_one(collection_name, {"game_id": test_game_id})
+            if updated_world:
+                logger.info(f"  - 新的运行时索引: {updated_world['runtime_index']}")
+                logger.info(f"  - 实体数量: {len(updated_world['entities_snapshot'])}")
+            else:
+                logger.warning("  - 无法获取更新后的数据")
+        else:
+            logger.error("❌ 增量更新失败!")
+            return
+
+        # 4. 测试查询性能和索引创建
+        logger.info("⚡ 测试查询性能和索引创建...")
+
+        # 创建索引
+        try:
+            index_name = mongodb_create_index(
+                collection_name, [("game_id", 1), ("runtime_index", -1)]
+            )
+            logger.success(f"✅ 创建索引成功: {index_name}")
+        except Exception as e:
+            logger.warning(f"⚠️ 索引创建失败或已存在: {e}")
+
+        # 测试查询速度
+        start_time = time.time()
+
+        # 查询最新的游戏状态（模拟按索引查询）
+        latest_world = mongodb_find_one(collection_name, {"game_id": test_game_id})
+
+        end_time = time.time()
+        query_time = (end_time - start_time) * 1000  # 转换为毫秒
+
+        if latest_world:
+            logger.success("✅ 查询性能测试完成")
+            logger.info(f"  - 查询时间: {query_time:.2f} ms")
+            logger.info(f"  - 最新运行时索引: {latest_world['runtime_index']}")
+        else:
+            logger.error("❌ 查询性能测试失败!")
+            return
+
+        # 5. 统计文档数量
+        logger.info("📊 统计测试文档数量...")
+        doc_count = mongodb_count_documents(collection_name, {"game_id": test_game_id})
+        logger.info(f"  - 测试文档数量: {doc_count}")
+
+        # 6. 清理测试数据
+        logger.info("🧹 清理测试数据...")
+        deleted_count = mongodb_delete_many(collection_name, {"game_id": test_game_id})
+
+        if deleted_count > 0:
+            logger.success(f"✅ 测试数据清理成功，删除了 {deleted_count} 条记录")
+        else:
+            logger.warning("⚠️ 未找到要清理的测试数据")
+
+        # 7. 验证清理结果
+        logger.info("🔍 验证测试数据已清理...")
+        remaining_count = mongodb_count_documents(
+            collection_name, {"game_id": test_game_id}
+        )
+
+        if remaining_count == 0:
+            logger.success("✅ 测试数据清理验证通过!")
+        else:
+            logger.warning(f"⚠️ 测试数据清理验证异常，仍有 {remaining_count} 条记录")
+
+        logger.success("🎉 MongoDB 连接和基本操作测试全部通过!")
+        logger.info("💡 MongoDB 使用建议:")
+        logger.info("  1. 为游戏ID和运行时索引创建复合索引")
+        logger.info("  2. 考虑定期归档旧的游戏状态")
+        logger.info("  3. 监控文档大小，避免超过16MB限制")
+        logger.info("  4. 使用批量操作提高写入性能")
+        logger.info("  5. 考虑数据压缩和分片策略")
+
+    except Exception as e:
+        logger.error(f"❌ MongoDB 连接测试失败: {e}")
+        raise
+
+
+#######################################################################################################
 # Clear database development utility
 def main() -> None:
     logger.info("🚀 首先测试 Redis 连接...")
@@ -179,6 +409,10 @@ def main() -> None:
     # 测试 PostgreSQL 连接
     logger.info("🚀 测试 PostgreSQL 连接...")
     _test_postgresql()
+
+    # 测试 MongoDB 连接
+    logger.info("🚀 测试 MongoDB 连接...")
+    _test_mongodb()
 
     # 清空 Redis 数据库
     logger.info("🚀 清空 Redis 数据库...")

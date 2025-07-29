@@ -22,7 +22,7 @@ test:
 # 运行类型检查
 lint:
 	mypy src/multi_agents_game/
-	mypy --strict scripts/run_terminal_tcg_game.py scripts/run_tcg_game_server.py scripts/run_a_chat_server.py scripts/run_dev_clear_db.py scripts/get_dev_environment_info.py scripts/test_mongodb.py
+	mypy --strict scripts/run_terminal_tcg_game.py scripts/run_tcg_game_server.py scripts/run_a_chat_server.py scripts/run_dev_clear_db.py scripts/get_dev_environment_info.py
 
 # 格式化代码
 format:
@@ -61,10 +61,6 @@ run-server:
 # 运行聊天服务器
 run-chat:
 	python scripts/run_a_chat_server.py
-
-# MongoDB 相关命令
-test-mongodb:
-	python scripts/test_mongodb.py
 
 # 启动 MongoDB 服务
 start-mongodb:

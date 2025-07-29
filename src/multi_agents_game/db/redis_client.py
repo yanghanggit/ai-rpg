@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
     RedisClientType: TypeAlias = Redis[str]
 else:
-    RedisClientType: TypeAlias = redis.Redis[str]
+    RedisClientType: TypeAlias = redis.Redis
 
 
 ###################################################################################################

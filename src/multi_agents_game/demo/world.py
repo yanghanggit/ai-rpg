@@ -11,9 +11,8 @@ from .actor_wizard import create_actor_wizard
 from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 
 
-def initialize_demo_game_world(game_name: str, write_path: Path) -> Boot:
-    """初始化演示游戏世界"""
-
+#######################################################################################################################
+def create_demo_game_world(game_name: str) -> Boot:
     # 创建世界
     world_boot = Boot(
         name=game_name, campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING
@@ -37,8 +36,17 @@ def initialize_demo_game_world(game_name: str, write_path: Path) -> Boot:
     # 添加世界系统
     world_boot.world_systems = []
 
-    # 写入文件
-    write_path.write_text(world_boot.model_dump_json(), encoding="utf-8")
-
     # 返回
     return world_boot
+
+
+#######################################################################################################################
+def initialize_demo_game_world(game_name: str, write_path: Path) -> Boot:
+    # 写入文件
+    world_boot = create_demo_game_world(game_name)
+    write_path.write_text(world_boot.model_dump_json(), encoding="utf-8")
+    # 返回
+    return world_boot
+
+
+#######################################################################################################################

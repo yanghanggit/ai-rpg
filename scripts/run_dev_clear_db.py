@@ -30,6 +30,8 @@ from multi_agents_game.db.mongodb_client import (
     mongodb_count_documents,
     get_mongodb_database_instance,
 )
+from multi_agents_game.demo.world import create_demo_game_world
+from multi_agents_game.config.game_config import GEN_WORLD_DIR
 
 
 #######################################################################################################
@@ -401,32 +403,12 @@ def _test_mongodb() -> None:
 
 
 #######################################################################################################
-# Clear database development utility
-def main() -> None:
-    logger.info("🚀 首先测试 Redis 连接...")
-    _test_redis()
+def _setup_test_user() -> None:
+    """
+    检查并保存测试用户
 
-    # 测试 PostgreSQL 连接
-    logger.info("🚀 测试 PostgreSQL 连接...")
-    _test_postgresql()
-
-    # 测试 MongoDB 连接
-    logger.info("🚀 测试 MongoDB 连接...")
-    _test_mongodb()
-
-    # 清空 Redis 数据库
-    logger.info("🚀 清空 Redis 数据库...")
-    redis_flushall()
-
-    # 清空 PostgreSQL 数据库
-    logger.info("🚀 清空 PostgreSQL 数据库...")
-    reset_database()
-
-    # 清空 MongoDB 数据库
-    logger.info("🚀 清空 MongoDB 数据库...")
-    mongodb_clear_database()
-
-    # 检查并保存测试用户
+    如果测试用户不存在，则创建一个用于开发测试的用户账号
+    """
     logger.info("🚀 检查并保存测试用户...")
     if not has_user(FAKE_USER.username):
         save_user(
@@ -435,6 +417,123 @@ def main() -> None:
             display_name=FAKE_USER.display_name,
         )
         logger.warning(f"测试用户 {FAKE_USER.username} 已创建")
+    else:
+        logger.info(f"测试用户 {FAKE_USER.username} 已存在，跳过创建")
+
+
+#######################################################################################################
+def _create_and_store_demo_world() -> None:
+    """
+    创建演示游戏世界并存储到 MongoDB
+
+    创建演示游戏世界的启动配置，并将其存储到 MongoDB 中进行持久化，
+    同时验证存储的数据完整性
+    """
+    logger.info("🚀 创建演示游戏世界...")
+    world_boot = create_demo_game_world("Game1")
+
+    # 存储 world_boot 到 MongoDB
+    game_name = "Game1"
+    collection_name = "worlds_boot"
+
+    try:
+        # 准备 world_boot 文档数据
+        world_boot_data = {
+            "_id": f"game_{game_name}_boot",
+            "game_name": game_name,
+            "timestamp": datetime.now(),
+            "version": "1.0.0",
+            "boot_data": world_boot.model_dump(),  # 序列化 Boot 对象
+        }
+
+        # 存储到 MongoDB
+        logger.info(f"📝 存储演示游戏世界到 MongoDB 集合: {collection_name}")
+        inserted_id = mongodb_insert_one(collection_name, world_boot_data)
+
+        if inserted_id:
+            logger.success(f"✅ 演示游戏世界已存储到 MongoDB!")
+            logger.info(f"  - 游戏名称: {game_name}")
+            logger.info(f"  - 集合名称: {collection_name}")
+            logger.info(f"  - 文档ID: {inserted_id}")
+            logger.info(f"  - 场景数量: {len(world_boot.stages)}")
+            logger.info(f"  - 角色数量: {len(world_boot.actors)}")
+            logger.info(f"  - 世界系统数量: {len(world_boot.world_systems)}")
+            logger.info(f"  - 战役设置: {world_boot.campaign_setting}")
+
+            # 立即获取验证
+            logger.info(f"📖 从 MongoDB 获取演示游戏世界进行验证...")
+            stored_boot = mongodb_find_one(collection_name, {"game_name": game_name})
+
+            if stored_boot:
+                logger.success(f"✅ 演示游戏世界已从 MongoDB 成功获取!")
+                logger.info(f"  - 存储时间: {stored_boot['timestamp']}")
+                logger.info(f"  - 版本: {stored_boot['version']}")
+                logger.info(f"  - Boot 名称: {stored_boot['boot_data']['name']}")
+                logger.info(
+                    f"  - Boot 场景数量: {len(stored_boot['boot_data']['stages'])}"
+                )
+
+                # 计算文档大小
+                json_str = json.dumps(stored_boot, default=str, ensure_ascii=False)
+                # logger.debug(json_str)
+
+                size_mb = len(json_str.encode("utf-8")) / (1024 * 1024)
+                logger.info(f"  - 文档大小: {size_mb:.3f} MB")
+
+                # 验证数据完整性
+                if stored_boot["boot_data"]["name"] == world_boot.name and len(
+                    stored_boot["boot_data"]["stages"]
+                ) == len(world_boot.stages):
+                    logger.success("✅ 数据完整性验证通过!")
+
+                    # 生成用户的运行时文件
+                    world_boot_file = GEN_WORLD_DIR / f"{world_boot.name}.json"
+                    Path(world_boot_file).write_text(
+                        json.dumps(
+                            stored_boot["boot_data"], ensure_ascii=False, indent=4
+                        )
+                    )
+                    logger.info(f"  - 世界启动配置已保存到: {world_boot_file}")
+
+                else:
+                    logger.warning("⚠️ 数据完整性验证异常")
+
+            else:
+                logger.error("❌ 从 MongoDB 获取演示游戏世界失败!")
+        else:
+            logger.error("❌ 演示游戏世界存储到 MongoDB 失败!")
+
+    except Exception as e:
+        logger.error(f"❌ 演示游戏世界 MongoDB 操作失败: {e}")
+        raise
+
+
+#######################################################################################################
+# Clear database development utility
+def main() -> None:
+    # 第一阶段：数据库连接测试
+    logger.info("🚀 首先测试 Redis 连接...")
+    _test_redis()
+
+    logger.info("🚀 测试 PostgreSQL 连接...")
+    _test_postgresql()
+
+    logger.info("🚀 测试 MongoDB 连接...")
+    _test_mongodb()
+
+    # 第二阶段：清空所有数据库
+    logger.info("🚀 清空 Redis 数据库...")
+    redis_flushall()
+
+    logger.info("🚀 清空 PostgreSQL 数据库...")
+    reset_database()
+
+    logger.info("🚀 清空 MongoDB 数据库...")
+    mongodb_clear_database()
+
+    # 第三阶段：初始化开发环境
+    _setup_test_user()
+    _create_and_store_demo_world()
 
 
 #######################################################################################################

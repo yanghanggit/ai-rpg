@@ -280,13 +280,8 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         if usr_input == "/ad" or usr_input == "/advancing":
             # 执行一次。
             await _execute_terminal_game(terminal_game, usr_input)
-            terminal_game.is_game_started = True
 
         elif usr_input == "/ld" or usr_input == "/launch-dungeon":
-
-            if not terminal_game.is_game_started:
-                logger.error(f"{usr_input} 至少要执行一次 /rh，才能准备传送战斗！")
-                return
 
             if len(terminal_game.current_dungeon.levels) == 0:
                 logger.error(

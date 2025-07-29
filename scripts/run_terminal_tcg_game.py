@@ -11,7 +11,7 @@ from multi_agents_game.player.player_proxy import PlayerProxy
 from multi_agents_game.demo import initialize_demo_game_world
 from multi_agents_game.demo import create_demo_dungeon3
 from multi_agents_game.tcg_game_systems.combat_monitor_system import CombatMonitorSystem
-from multi_agents_game.game.options import TerminalUserSessionOptions
+from multi_agents_game.game.options import TerminalGameUserOptions
 from multi_agents_game.format_string.terminal_input import (
     parse_speak_command_input,
 )
@@ -21,13 +21,13 @@ from multi_agents_game.config.server_config import chat_server_localhost_urls
 
 ###############################################################################################################################################
 async def run_game(
-    terminal_user_session_options: TerminalUserSessionOptions,
+    terminal_user_session_options: TerminalGameUserOptions,
 ) -> None:
 
     # 这里是临时的TODO
     initialize_demo_game_world(
         terminal_user_session_options.game,
-        terminal_user_session_options.gen_world_boot_file,
+        terminal_user_session_options.world_boot_file,
     )
 
     # 如果是新游戏，需要将game_resource_file_path这个文件拷贝一份到world_boot_file_path下
@@ -38,7 +38,7 @@ async def run_game(
 
         # 游戏资源可以被创建，则将game_resource_file_path这个文件拷贝一份到world_boot_file_path下
         shutil.copy(
-            terminal_user_session_options.gen_world_boot_file,
+            terminal_user_session_options.world_boot_file,
             terminal_user_session_options.world_runtime_dir,
         )
 
@@ -50,12 +50,10 @@ async def run_game(
         # 肯定是新游戏
         assert terminal_user_session_options.debug_enforce_new_game
         # 如果runtime文件不存在，说明是第一次启动，直接从gen文件中读取.
-        assert terminal_user_session_options.gen_world_boot_file.exists()
+        assert terminal_user_session_options.world_boot_file.exists()
         # 假设有文件，直接读取
         world_boot_file_content = (
-            terminal_user_session_options.gen_world_boot_file.read_text(
-                encoding="utf-8"
-            )
+            terminal_user_session_options.world_boot_file.read_text(encoding="utf-8")
         )
         # 重新生成boot
         world_boot = Boot.model_validate_json(world_boot_file_content)
@@ -338,7 +336,7 @@ if __name__ == "__main__":
     import asyncio
 
     # 做一些设置
-    terminal_user_session_options = TerminalUserSessionOptions(
+    terminal_user_session_options = TerminalGameUserOptions(
         user="yanghang",
         game="Game1",
         debug_enforce_new_game=True,

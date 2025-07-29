@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from ..game_services.game_server import GameServerInstance
 from ..models import StartRequest, StartResponse, Boot, World
-from ..game.options import WebUserSessionOptions
+from ..game.options import WebGameUserOptions
 from loguru import logger
 from ..demo.stage_dungeon4 import (
     create_demo_dungeon4,
@@ -43,7 +43,7 @@ async def start(
         assert room is not None
 
         # 转化成复杂参数
-        web_user_session_options = WebUserSessionOptions(
+        web_user_session_options = WebGameUserOptions(
             user=request_data.user_name,
             game=request_data.game_name,
             actor=request_data.actor_name,
@@ -83,7 +83,7 @@ async def start(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 def setup_web_game_session(
-    web_user_session_options: WebUserSessionOptions,
+    web_user_session_options: WebGameUserOptions,
 ) -> Optional[WebTCGGame]:
 
     # 创建runtime
@@ -92,11 +92,11 @@ def setup_web_game_session(
     if not web_user_session_options.world_runtime_file.exists():
 
         # 如果runtime文件不存在，说明是第一次启动，直接从gen文件中读取.
-        assert web_user_session_options.gen_world_boot_file.exists()
+        assert web_user_session_options.world_boot_file.exists()
 
         # 假设有文件，直接读取
-        world_boot_file_content = (
-            web_user_session_options.gen_world_boot_file.read_text(encoding="utf-8")
+        world_boot_file_content = web_user_session_options.world_boot_file.read_text(
+            encoding="utf-8"
         )
 
         # 重新生成boot

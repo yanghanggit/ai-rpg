@@ -10,7 +10,7 @@ from ..models import (
     LogoutResponse,
 )
 from loguru import logger
-from ..game.options import WebUserSessionOptions
+from ..game.options import WebGameUserOptions
 from ..demo.world import (
     initialize_demo_game_world,
 )
@@ -46,7 +46,7 @@ async def login(
     logger.info(f"/login/v1/: {request_data.model_dump_json()}")
 
     # 转化成复杂参数
-    web_user_session_options = WebUserSessionOptions(
+    web_user_session_options = WebGameUserOptions(
         user=request_data.user_name,
         game=request_data.game_name,
         actor="",
@@ -75,12 +75,12 @@ async def login(
 
         # TODO, 临时创建一个
         initialize_demo_game_world(
-            web_user_session_options.game, web_user_session_options.gen_world_boot_file
+            web_user_session_options.game, web_user_session_options.world_boot_file
         )
 
         # TODO, 游戏资源可以被创建，将gen_world_boot_file这个文件拷贝一份到world_runtime_dir下
         shutil.copy(
-            web_user_session_options.gen_world_boot_file,
+            web_user_session_options.world_boot_file,
             web_user_session_options.world_runtime_dir,
         )
 

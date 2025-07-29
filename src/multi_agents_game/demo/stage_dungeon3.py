@@ -2,7 +2,7 @@ from ..models import (
     StageType,
     Dungeon,
 )
-from ..excel_builder.excel_data_manager import excel_data_manager
+from ..excel_builder.excel_data_manager import get_excel_data_manager
 from .demo_utils import (
     CAMPAIGN_SETTING,
     create_stage,
@@ -16,6 +16,7 @@ def create_demo_dungeon3() -> Dungeon:
     actor_spider = create_actor_spider()
     actor_spider.rpg_character_profile.hp = 1
 
+    excel_data_manager = get_excel_data_manager()
     dungeon_data = excel_data_manager.get_dungeon_data("场景.洞窟之三")
     assert dungeon_data is not None, "未找到名为 '场景.洞窟之三' 的地牢数据"
 

@@ -3,7 +3,7 @@ from ..models import (
     Actor,
     RPGCharacterProfile,
 )
-from ..excel_builder.excel_data_manager import excel_data_manager
+from ..excel_builder.excel_data_manager import get_excel_data_manager
 from .demo_utils import (
     CAMPAIGN_SETTING,
     create_actor,
@@ -17,7 +17,7 @@ def create_actor_spider() -> Actor:
     Returns:
         Actor: 蜘蛛角色实例
     """
-
+    excel_data_manager = get_excel_data_manager()
     actor_data = excel_data_manager.get_actor_data("角色.怪物.蜘蛛-小红")
     assert actor_data is not None, "未找到名为 '角色.怪物.蜘蛛-小红' 的角色数据"
 

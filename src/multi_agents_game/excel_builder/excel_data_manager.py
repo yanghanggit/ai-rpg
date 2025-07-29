@@ -109,10 +109,20 @@ class ExcelDataManager:
 
 ###################################################################################################
 ###################################################################################################
-# 创建全局单例实例
-assert Path("excel_test.xlsx").exists(), "Excel test file does not exist."
-excel_data_manager = ExcelDataManager(
-    excel_file_path=Path("excel_test.xlsx"),
-    dungeon_sheet_name="dungeons",
-    actor_sheet_name="actors",
-)
+
+_cache_excel_data_manager: Optional[ExcelDataManager] = None
+
+
+def get_excel_data_manager() -> ExcelDataManager:
+    global _cache_excel_data_manager
+    if _cache_excel_data_manager is None:
+        # 创建全局单例实例
+        assert Path("excel_test.xlsx").exists(), "Excel test file does not exist."
+        _cache_excel_data_manager = ExcelDataManager(
+            excel_file_path=Path("excel_test.xlsx"),
+            dungeon_sheet_name="dungeons",
+            actor_sheet_name="actors",
+        )
+
+    assert _cache_excel_data_manager is not None, "ExcelDataManager is not initialized."
+    return _cache_excel_data_manager

@@ -17,6 +17,9 @@ from multi_agents_game.db.redis_client import (
     redis_get,
     redis_delete,
 )
+from multi_agents_game.db.mongodb_client import (
+    mongodb_clear_database,
+)
 
 
 #######################################################################################################
@@ -184,6 +187,10 @@ def main() -> None:
     # 清空 PostgreSQL 数据库
     logger.info("🚀 清空 PostgreSQL 数据库...")
     reset_database()
+
+    # 清空 MongoDB 数据库
+    logger.info("🚀 清空 MongoDB 数据库...")
+    mongodb_clear_database()
 
     # 检查并保存测试用户
     logger.info("🚀 检查并保存测试用户...")

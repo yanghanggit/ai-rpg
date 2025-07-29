@@ -1,11 +1,19 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypeAlias, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    TypeAlias,
+    cast,
+)
 import pymongo
 from loguru import logger
 from pymongo.errors import PyMongoError
-
 from ..config.db_config import MongoDBConfig
 
-# MongoDB数据类型定义
+
+# MongoDB文档类型 - 可以是字典或继承自BaseMongoDocument的类型
 MongoDocumentType: TypeAlias = Dict[str, Any]
 MongoFilterType: TypeAlias = Dict[str, Any]
 MongoUpdateType: TypeAlias = Dict[str, Any]
@@ -17,9 +25,9 @@ if TYPE_CHECKING:
     from pymongo.database import Database
     from pymongo.collection import Collection
 
-    MongoClientType: TypeAlias = "MongoClient[Any]"
-    MongoDatabaseType: TypeAlias = "Database[Any]"
-    MongoCollectionType: TypeAlias = "Collection[Any]"
+    MongoClientType: TypeAlias = "MongoClient[MongoDocumentType]"
+    MongoDatabaseType: TypeAlias = "Database[MongoDocumentType]"
+    MongoCollectionType: TypeAlias = "Collection[MongoDocumentType]"
 else:
     MongoClientType: TypeAlias = pymongo.MongoClient  # type: ignore[type-arg]
     MongoDatabaseType: TypeAlias = pymongo.database.Database  # type: ignore[type-arg]
@@ -456,6 +464,59 @@ def mongodb_drop_collection(collection_name: str) -> None:
         logger.warning(f"MongoDB删除集合: {collection_name}")
     except PyMongoError as e:
         logger.error(f"MongoDB删除集合失败，集合: {collection_name}, 错误: {e}")
+        raise e
+
+
+###################################################################################################
+def mongodb_clear_database() -> None:
+    """
+    清空MongoDB数据库中的所有集合（危险操作）。
+
+    注意：这是一个危险操作，会删除数据库中的所有集合和数据！
+    请在使用前确认操作的必要性。
+
+    抛出:
+        PyMongoError: 当MongoDB操作失败时
+    """
+    try:
+        db = _get_mongodb_database_instance()
+        collections = db.list_collection_names()
+
+        # 删除所有集合
+        for collection_name in collections:
+            db.drop_collection(collection_name)
+            logger.warning(f"已删除集合: {collection_name}")
+
+        logger.warning(f"MongoDB数据库清空完成，共删除 {len(collections)} 个集合")
+    except PyMongoError as e:
+        logger.error(f"MongoDB清空数据库失败，错误: {e}")
+        raise e
+
+
+###################################################################################################
+def mongodb_clear_collection(collection_name: str) -> int:
+    """
+    清空MongoDB集合中的所有文档（保留集合结构和索引）。
+
+    参数:
+        collection_name: 集合名称
+
+    返回:
+        int: 删除的文档数量
+
+    抛出:
+        PyMongoError: 当MongoDB操作失败时
+    """
+    try:
+        db = _get_mongodb_database_instance()
+        collection = db[collection_name]
+        result = collection.delete_many({})  # 空条件匹配所有文档
+        logger.warning(
+            f"MongoDB清空集合: {collection_name}, 删除文档数量: {result.deleted_count}"
+        )
+        return result.deleted_count
+    except PyMongoError as e:
+        logger.error(f"MongoDB清空集合失败，集合: {collection_name}, 错误: {e}")
         raise e
 
 

@@ -7,7 +7,7 @@ from .demo_utils import (
     CAMPAIGN_SETTING,
     create_stage,
 )
-from ..demo.actor_spider import actor_spider
+from ..demo.actor_spider import create_actor_spider
 import copy
 
 
@@ -28,9 +28,9 @@ def create_demo_dungeon3() -> Dungeon:
     )
 
     # 添加蜘蛛角色到地牢场景
-    copy_actor_spider = copy.deepcopy(actor_spider)
-    stage_dungeon_cave3.actors = [copy_actor_spider]
-    copy_actor_spider.rpg_character_profile.hp = 1
+    actor_spider = create_actor_spider()
+    stage_dungeon_cave3.actors = [actor_spider]
+    actor_spider.rpg_character_profile.hp = 1
 
     # 返回地牢对象
     return Dungeon(

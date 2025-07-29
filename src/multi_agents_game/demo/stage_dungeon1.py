@@ -6,7 +6,7 @@ from .demo_utils import (
     CAMPAIGN_SETTING,
     create_stage,
 )
-from ..demo.actor_goblin import actor_goblin
+from ..demo.actor_goblin import create_actor_goblin
 
 stage_dungeon_cave1 = create_stage(
     name="场景.洞窟之一",
@@ -21,6 +21,7 @@ stage_dungeon_cave1 = create_stage(
 
 def create_demo_dungeon1() -> Dungeon:
     # 配置场景角色和属性
+    actor_goblin = create_actor_goblin()
     stage_dungeon_cave1.actors = [actor_goblin]
     actor_goblin.rpg_character_profile.hp = 1
 

@@ -6,7 +6,7 @@ from .demo_utils import (
     copy_stage,
 )
 from ..demo.stage_dungeon1 import stage_dungeon_cave1
-from ..demo.actor_orc import actor_orcs
+from ..demo.actor_orc import create_actor_orc
 
 
 stage_dungeon_cave2 = copy_stage(
@@ -20,8 +20,9 @@ stage_dungeon_cave2 = copy_stage(
 
 def create_demo_dungeon2() -> Dungeon:
 
-    stage_dungeon_cave2.actors = [actor_orcs]
-    actor_orcs.rpg_character_profile.hp = 1
+    actor_orc = create_actor_orc()
+    stage_dungeon_cave2.actors = [actor_orc]
+    actor_orc.rpg_character_profile.hp = 1
 
     return Dungeon(
         name="兽人洞窟",

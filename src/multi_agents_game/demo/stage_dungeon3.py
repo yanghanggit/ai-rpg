@@ -8,10 +8,13 @@ from .demo_utils import (
     create_stage,
 )
 from ..demo.actor_spider import create_actor_spider
-import copy
 
 
 def create_demo_dungeon3() -> Dungeon:
+
+    # 添加蜘蛛角色到地牢场景
+    actor_spider = create_actor_spider()
+    actor_spider.rpg_character_profile.hp = 1
 
     dungeon_data = excel_data_manager.get_dungeon_data("场景.洞窟之三")
     assert dungeon_data is not None, "未找到名为 '场景.洞窟之三' 的地牢数据"
@@ -26,11 +29,7 @@ def create_demo_dungeon3() -> Dungeon:
         stage_profile=dungeon_data.stage_profile,
         actors=[],
     )
-
-    # 添加蜘蛛角色到地牢场景
-    actor_spider = create_actor_spider()
     stage_dungeon_cave3.actors = [actor_spider]
-    actor_spider.rpg_character_profile.hp = 1
 
     # 返回地牢对象
     return Dungeon(

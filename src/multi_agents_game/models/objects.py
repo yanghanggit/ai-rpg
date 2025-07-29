@@ -3,8 +3,6 @@ from pydantic import BaseModel
 from enum import StrEnum, unique
 from .database import ActorCharacterSheet, StageCharacterSheet
 
-# from .registry import register_base_model_class
-
 
 ###############################################################################################################################################
 @final

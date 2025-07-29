@@ -1,12 +1,9 @@
-from typing import Dict, final
+from typing import final
 from pydantic import BaseModel
-
-# from .registry import register_base_model_class
 
 
 ###############################################################################################################################################
 @final
-# @register_base_model_class
 class ActorCharacterSheet(BaseModel):
     name: str
     type: str
@@ -16,7 +13,6 @@ class ActorCharacterSheet(BaseModel):
 
 ###############################################################################################################################################
 @final
-# @register_base_model_class
 class StageCharacterSheet(BaseModel):
     name: str
     type: str
@@ -24,8 +20,3 @@ class StageCharacterSheet(BaseModel):
 
 
 ###############################################################################################################################################
-@final
-# @register_base_model_class
-class DataBase(BaseModel):
-    actor_character_sheets: Dict[str, ActorCharacterSheet] = {}
-    stage_character_sheets: Dict[str, StageCharacterSheet] = {}

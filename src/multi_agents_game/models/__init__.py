@@ -4,7 +4,7 @@ from .api import *
 from .client_message import *
 from .registry import *
 from .components import *
-from .database import *
+from .character_sheet import *
 from .dungeon import *
 from .objects import *
 from .snapshot import *

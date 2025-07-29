@@ -438,17 +438,17 @@ class TCGGame(BaseGame, TCGGameContext):
                     actor_entity.add(MonsterComponent, instance.name)
 
             # 添加进入数据库。
-            if (
-                instance.character_sheet.name
-                in self.world.data_base.actor_character_sheets
-            ):
-                logger.info(
-                    f"{instance.name}:{instance.character_sheet.name} = actor already exists in data_base.actors. is copy_actor?"
-                )
-            else:
-                self.world.data_base.actor_character_sheets.setdefault(
-                    instance.character_sheet.name, instance.character_sheet
-                )
+            # if (
+            #     instance.character_sheet.name
+            #     in self.world.data_base.actor_character_sheets
+            # ):
+            #     logger.info(
+            #         f"{instance.name}:{instance.character_sheet.name} = actor already exists in data_base.actors. is copy_actor?"
+            #     )
+            # else:
+            #     self.world.data_base.actor_character_sheets.setdefault(
+            #         instance.character_sheet.name, instance.character_sheet
+            #     )
 
             # 添加到返回值
             ret.append(actor_entity)
@@ -503,19 +503,6 @@ class TCGGame(BaseGame, TCGGameContext):
                 )
                 assert actor_entity is not None
                 actor_entity.replace(ActorComponent, actor_instance.name, instance.name)
-
-            # 添加进入数据库。
-            if (
-                instance.character_sheet.name
-                in self.world.data_base.stage_character_sheets
-            ):
-                logger.info(
-                    f"{instance.name}:{instance.character_sheet.name} = stage already exists in data_base.stages. is copy_stage?"
-                )
-            else:
-                self.world.data_base.stage_character_sheets.setdefault(
-                    instance.character_sheet.name, instance.character_sheet
-                )
 
             ret.append(stage_entity)
 

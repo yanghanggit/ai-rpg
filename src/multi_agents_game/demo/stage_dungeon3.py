@@ -3,11 +3,11 @@ from ..models import (
     Dungeon,
 )
 from ..excel_builder.excel_data_manager import get_excel_data_manager
-from .demo_utils import (
-    CAMPAIGN_SETTING,
+from .utils import (
     create_stage,
 )
 from ..demo.actor_spider import create_actor_spider
+from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 
 
 def create_demo_dungeon3() -> Dungeon:
@@ -25,7 +25,7 @@ def create_demo_dungeon3() -> Dungeon:
         name=dungeon_data.name,
         character_sheet_name=dungeon_data.character_sheet_name,
         kick_off_message="",
-        campaign_setting=CAMPAIGN_SETTING,
+        campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         type=StageType.DUNGEON,
         stage_profile=dungeon_data.stage_profile,
         actors=[],

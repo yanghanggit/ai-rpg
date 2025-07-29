@@ -8,7 +8,7 @@ from multi_agents_game.chaos_engineering.empty_engineering_system import (
 )
 from multi_agents_game.chat_services.chat_system import ChatSystem
 from multi_agents_game.player.player_proxy import PlayerProxy
-from multi_agents_game.demo import setup_demo_game_world
+from multi_agents_game.demo import initialize_demo_game_world
 from multi_agents_game.demo import create_demo_dungeon3
 from multi_agents_game.tcg_game_systems.combat_monitor_system import CombatMonitorSystem
 from multi_agents_game.game.options import TerminalUserSessionOptions
@@ -25,14 +25,10 @@ async def run_game(
 ) -> None:
 
     # 这里是临时的TODO
-    demo_edit_boot = setup_demo_game_world(
+    initialize_demo_game_world(
         terminal_user_session_options.game,
         terminal_user_session_options.gen_world_boot_file,
     )
-    assert demo_edit_boot is not None
-    if demo_edit_boot is None:
-        logger.error(f"创建游戏世界失败 = {terminal_user_session_options.game}")
-        return
 
     # 如果是新游戏，需要将game_resource_file_path这个文件拷贝一份到world_boot_file_path下
     if terminal_user_session_options.debug_enforce_new_game:

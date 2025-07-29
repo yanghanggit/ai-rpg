@@ -4,10 +4,10 @@ from ..models import (
     RPGCharacterProfile,
 )
 from ..excel_builder.excel_data_manager import get_excel_data_manager
-from .demo_utils import (
-    CAMPAIGN_SETTING,
+from .utils import (
     create_actor,
 )
+from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 
 
 def create_actor_spider() -> Actor:
@@ -27,7 +27,7 @@ def create_actor_spider() -> Actor:
         kick_off_message="",
         rpg_character_profile=RPGCharacterProfile(base_dexterity=1),
         type=ActorType.MONSTER,
-        campaign_setting=CAMPAIGN_SETTING,
+        campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         actor_profile=actor_data.actor_profile,
         appearance=actor_data.appearance,
     )

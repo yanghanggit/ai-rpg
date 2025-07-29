@@ -11,8 +11,8 @@ from ..models import (
 )
 from loguru import logger
 from ..game.options import WebUserSessionOptions
-from ..demo.demo_world import (
-    setup_demo_game_world,
+from ..demo.world import (
+    initialize_demo_game_world,
 )
 import shutil
 from fastapi.staticfiles import StaticFiles
@@ -74,10 +74,9 @@ async def login(
         web_user_session_options.clear_runtime_dir()
 
         # TODO, 临时创建一个
-        demo_world_setup = setup_demo_game_world(
+        initialize_demo_game_world(
             web_user_session_options.game, web_user_session_options.gen_world_boot_file
         )
-        assert demo_world_setup is not None
 
         # TODO, 游戏资源可以被创建，将gen_world_boot_file这个文件拷贝一份到world_runtime_dir下
         shutil.copy(

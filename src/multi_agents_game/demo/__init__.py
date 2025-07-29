@@ -9,7 +9,8 @@ from .stage_heros_camp import create_demo_heros_camp
 from .stage_dungeon1 import create_demo_dungeon1
 from .stage_dungeon2 import create_demo_dungeon2
 from .stage_dungeon3 import create_demo_dungeon3
-from .demo_world import setup_demo_game_world
+from .world import initialize_demo_game_world
+from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 
 __all__ = [
     # Demo actors
@@ -28,5 +29,7 @@ __all__ = [
     "create_demo_dungeon2",
     "create_demo_dungeon3",
     # Demo world
-    "setup_demo_game_world",
+    "initialize_demo_game_world",
+    # Campaign setting
+    "FANTASY_WORLD_RPG_CAMPAIGN_SETTING",
 ]

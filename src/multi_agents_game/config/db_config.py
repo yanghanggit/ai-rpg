@@ -21,6 +21,10 @@ class MongoDBConfig(BaseModel):
     username: str = ""
     password: str = ""
 
+    # 集合名称配置
+    worlds_boot_collection: Final[str] = "worlds_boot"
+    worlds_collection: Final[str] = "worlds"
+
     @property
     def connection_string(self) -> str:
         """获取MongoDB连接字符串"""
@@ -46,4 +50,8 @@ postgres_password: Final[str] = "123456"
 POSTGRES_DATABASE_URL: Final[str] = (
     f"postgresql://fastapi_user:{postgres_password}@localhost/my_fastapi_db"
 )
+
+##################################################################################################################
+# 默认配置实例
+DEFAULT_MONGODB_CONFIG: Final[MongoDBConfig] = MongoDBConfig()
 ##################################################################################################################

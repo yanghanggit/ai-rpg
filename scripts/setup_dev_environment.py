@@ -51,6 +51,7 @@ from multi_agents_game.db.mongodb_client import (
 )
 from multi_agents_game.demo.world import create_demo_game_world
 from multi_agents_game.config.game_config import GEN_WORLD_DIR
+from multi_agents_game.config.db_config import DEFAULT_MONGODB_CONFIG
 
 
 #######################################################################################################
@@ -453,7 +454,7 @@ def _create_and_store_demo_world() -> None:
 
     # 存储 world_boot 到 MongoDB
     game_name = "Game1"
-    collection_name = "worlds_boot"
+    collection_name = DEFAULT_MONGODB_CONFIG.worlds_boot_collection
 
     try:
         # 准备 world_boot 文档数据

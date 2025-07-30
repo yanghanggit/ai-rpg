@@ -10,7 +10,7 @@ from ..models import (
     LogoutResponse,
 )
 from loguru import logger
-from ..game.options import WebGameUserOptions
+from ..game.game_options import WebGameUserOptions
 from ..demo.world import (
     initialize_demo_game_world,
 )

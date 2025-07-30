@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from ..game_services.game_server import GameServerInstance
 from ..models import StartRequest, StartResponse, Boot, World
-from ..game.options import WebGameUserOptions
+from ..game.game_options import WebGameUserOptions
 from loguru import logger
 from ..demo.stage_dungeon4 import (
     create_demo_dungeon4,

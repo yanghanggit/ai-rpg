@@ -2,7 +2,7 @@ from loguru import logger
 import shutil
 from multi_agents_game.game.terminal_tcg_game import TerminalTCGGame
 from multi_agents_game.game.tcg_game import TCGGameState
-from multi_agents_game.models import Boot, World, CombatResult
+from multi_agents_game.models import World, CombatResult
 from multi_agents_game.chaos_engineering.empty_engineering_system import (
     EmptyChaosEngineeringSystem,
 )
@@ -11,7 +11,7 @@ from multi_agents_game.player.player_proxy import PlayerProxy
 from multi_agents_game.demo import initialize_demo_game_world
 from multi_agents_game.demo import create_demo_dungeon3
 from multi_agents_game.tcg_game_systems.combat_monitor_system import CombatMonitorSystem
-from multi_agents_game.game.options import TerminalGameUserOptions
+from multi_agents_game.game.game_options import TerminalGameUserOptions
 from multi_agents_game.format_string.terminal_input import (
     parse_speak_command_input,
 )
@@ -21,43 +21,46 @@ from multi_agents_game.config.server_config import chat_server_localhost_urls
 
 ###############################################################################################################################################
 async def run_game(
-    terminal_user_session_options: TerminalGameUserOptions,
+    terminal_game_user_options: TerminalGameUserOptions,
 ) -> None:
 
     # 这里是临时的TODO
     initialize_demo_game_world(
-        terminal_user_session_options.game,
-        terminal_user_session_options.world_boot_file,
+        terminal_game_user_options.game,
+        terminal_game_user_options.world_boot_file,
     )
 
     # 如果是新游戏，需要将game_resource_file_path这个文件拷贝一份到world_boot_file_path下
-    if terminal_user_session_options.debug_enforce_new_game:
+    if terminal_game_user_options.debug_enforce_new_game:
 
         # 清除用户的运行时目录, 重新生成
-        terminal_user_session_options.clear_runtime_dir()
+        terminal_game_user_options.clear_runtime_dir()
 
         # 游戏资源可以被创建，则将game_resource_file_path这个文件拷贝一份到world_boot_file_path下
         shutil.copy(
-            terminal_user_session_options.world_boot_file,
-            terminal_user_session_options.world_runtime_dir,
+            terminal_game_user_options.world_boot_file,
+            terminal_game_user_options.world_runtime_dir,
         )
 
     # 创建runtime
     start_world = World()
 
     #
-    if not terminal_user_session_options.world_runtime_file.exists():
+    if not terminal_game_user_options.world_runtime_file.exists():
         # 肯定是新游戏
-        assert terminal_user_session_options.debug_enforce_new_game
+        assert terminal_game_user_options.debug_enforce_new_game
         # 如果runtime文件不存在，说明是第一次启动，直接从gen文件中读取.
-        assert terminal_user_session_options.world_boot_file.exists()
+        assert terminal_game_user_options.world_boot_file.exists()
         # 假设有文件，直接读取
-        world_boot_file_content = (
-            terminal_user_session_options.world_boot_file.read_text(encoding="utf-8")
-        )
+        # world_boot_file_content = (
+        #     terminal_game_user_options.world_boot_file.read_text(encoding="utf-8")
+        # )
         # 重新生成boot
-        world_boot = Boot.model_validate_json(world_boot_file_content)
+        # world_boot = Boot.model_validate_json(world_boot_file_content)
+        # world_boot = terminal_game_user_options.world_boot_data
         # 重新生成world
+        world_boot = terminal_game_user_options.world_boot_data
+        assert world_boot is not None, "WorldBootDocument 反序列化失败"
         start_world = World(boot=world_boot)
         # 运行时生成地下城系统
         start_world.dungeon = create_demo_dungeon3()
@@ -65,10 +68,10 @@ async def run_game(
     else:
 
         # 如果runtime文件存在，说明是恢复游戏
-        assert not terminal_user_session_options.debug_enforce_new_game
+        assert not terminal_game_user_options.debug_enforce_new_game
         # runtime文件存在，需要做恢复
         world_runtime_file_content = (
-            terminal_user_session_options.world_runtime_file.read_text(encoding="utf-8")
+            terminal_game_user_options.world_runtime_file.read_text(encoding="utf-8")
         )
         # 重新生成world,直接反序列化。
         start_world = World.model_validate_json(world_runtime_file_content)
@@ -78,16 +81,16 @@ async def run_game(
 
     # 依赖注入，创建新的游戏
     terminal_game = TerminalTCGGame(
-        name=terminal_user_session_options.game,
+        name=terminal_game_user_options.game,
         player=PlayerProxy(
-            name=terminal_user_session_options.user,
-            actor=terminal_user_session_options.actor,
+            name=terminal_game_user_options.user,
+            actor=terminal_game_user_options.actor,
         ),
         world=start_world,
-        world_path=terminal_user_session_options.world_runtime_file,
+        world_path=terminal_game_user_options.world_runtime_file,
         chat_system=ChatSystem(
-            name=f"{terminal_user_session_options.game}-chatsystem",
-            username=terminal_user_session_options.user,
+            name=f"{terminal_game_user_options.game}-chatsystem",
+            username=terminal_game_user_options.user,
             localhost_urls=chat_server_localhost_urls(),
         ),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),
@@ -96,9 +99,9 @@ async def run_game(
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(terminal_game.world.entities_snapshot) == 0:
 
-        assert terminal_user_session_options.debug_enforce_new_game
+        assert terminal_game_user_options.debug_enforce_new_game
         logger.warning(
-            f"游戏中没有实体 = {terminal_user_session_options.game}, 说明是第一次创建游戏"
+            f"游戏中没有实体 = {terminal_game_user_options.game}, 说明是第一次创建游戏"
         )
 
         # 直接构建ecs
@@ -106,9 +109,9 @@ async def run_game(
 
     else:
 
-        assert not terminal_user_session_options.debug_enforce_new_game
+        assert not terminal_game_user_options.debug_enforce_new_game
         logger.warning(
-            f"游戏中有实体 = {terminal_user_session_options.game}，需要通过数据恢复实体，是游戏回复的过程"
+            f"游戏中有实体 = {terminal_game_user_options.game}，需要通过数据恢复实体，是游戏回复的过程"
         )
 
         # 测试！回复ecs
@@ -119,7 +122,7 @@ async def run_game(
     assert player_entity is not None
     if player_entity is None:
         logger.error(
-            f"玩家实体不存在 = {terminal_user_session_options.user}, {terminal_user_session_options.game}, {terminal_user_session_options.actor}"
+            f"玩家实体不存在 = {terminal_game_user_options.user}, {terminal_game_user_options.game}, {terminal_game_user_options.actor}"
         )
         exit(1)
 

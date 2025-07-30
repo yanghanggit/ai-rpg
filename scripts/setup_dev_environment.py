@@ -1,3 +1,22 @@
+#!/usr/bin/env python3
+"""
+Development Environment Setup Script
+
+This script sets up and initializes the development environment for the multi-agents game framework.
+
+Main functions:
+1. Test database connections (Redis, PostgreSQL, MongoDB)
+2. Clear and reset all databases
+3. Initialize development environment with test data
+4. Create and store demo game world
+
+Usage:
+    python setup_dev_environment.py
+
+Author: yanghanggit
+Date: 2025-07-30
+"""
+
 import sys
 from pathlib import Path
 import json
@@ -509,7 +528,7 @@ def _create_and_store_demo_world() -> None:
 
 
 #######################################################################################################
-# Clear database development utility
+# Development Environment Setup Utility
 def main() -> None:
     # 第一阶段：数据库连接测试
     logger.info("🚀 首先测试 Redis 连接...")

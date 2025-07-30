@@ -1,4 +1,4 @@
-.PHONY: install test lint format clean dev-install conda-install run-terminal run-server run-chat show-structure check test-mongodb start-mongodb stop-mongodb restart-mongodb status-mongodb mongo-shell help
+.PHONY: install test lint format clean dev-install conda-install run-terminal run-server run-chat setup-dev show-structure check test-mongodb start-mongodb stop-mongodb restart-mongodb status-mongodb mongo-shell help
 
 # 安装包
 install:
@@ -22,7 +22,7 @@ test:
 # 运行类型检查
 lint:
 	mypy src/multi_agents_game/
-	mypy --strict scripts/run_terminal_tcg_game.py scripts/run_tcg_game_server.py scripts/run_a_chat_server.py scripts/run_dev_clear_db.py scripts/get_dev_environment_info.py
+	mypy --strict scripts/run_terminal_tcg_game.py scripts/run_tcg_game_server.py scripts/run_a_chat_server.py scripts/setup_dev_environment.py scripts/get_dev_environment_info.py
 
 # 格式化代码
 format:
@@ -61,6 +61,10 @@ run-server:
 # 运行聊天服务器
 run-chat:
 	python scripts/run_a_chat_server.py
+
+# 设置开发环境
+setup-dev:
+	python scripts/setup_dev_environment.py
 
 # 启动 MongoDB 服务
 start-mongodb:
@@ -109,6 +113,7 @@ help:
 	@echo "  run-terminal   - 运行终端游戏"
 	@echo "  run-server     - 运行游戏服务器"
 	@echo "  run-chat       - 运行聊天服务器"
+	@echo "  setup-dev      - 设置开发环境（清理数据库并初始化）"
 	@echo "  show-structure - 显示项目结构"
 	@echo "  check          - 检查项目结构"
 	@echo "  test-mongodb   - 测试 MongoDB 连接和功能"
@@ -119,4 +124,4 @@ help:
 	@echo "  mongo-shell    - 连接到 MongoDB Shell"
 	@echo "  help           - 显示此帮助信息"
 
-.PHONY: install conda-install dev-install test lint format clean run-terminal run-server run-chat show-structure check test-mongodb start-mongodb stop-mongodb restart-mongodb status-mongodb mongo-shell help
+.PHONY: install conda-install dev-install test lint format clean run-terminal run-server run-chat setup-dev show-structure check test-mongodb start-mongodb stop-mongodb restart-mongodb status-mongodb mongo-shell help

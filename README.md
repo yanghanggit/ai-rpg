@@ -216,7 +216,7 @@ pre-commit run --all-files
 ```shell
 chmod +x scripts/run_chat_servers.sh
 chmod +x scripts/kill_servers.sh
-chmod +x scripts/run_pm2script.sh
+chmod +x scripts/run_pm2.sh
 ```
 
 #### 使用 Makefile（推荐方式）

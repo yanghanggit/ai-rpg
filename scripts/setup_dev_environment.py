@@ -42,6 +42,7 @@ from multi_agents_game.db.redis_client import (
 from multi_agents_game.db.mongodb_client import (
     mongodb_clear_database,
     mongodb_insert_one,
+    mongodb_upsert_one,
     mongodb_find_one,
     mongodb_update_one,
     mongodb_create_index,
@@ -49,6 +50,7 @@ from multi_agents_game.db.mongodb_client import (
     mongodb_count_documents,
     get_mongodb_database_instance,
 )
+from multi_agents_game.db.mongodb_documents import WorldBootDocument
 from multi_agents_game.demo.world import create_demo_game_world
 from multi_agents_game.config.game_config import GEN_WORLD_DIR
 from multi_agents_game.config.db_config import DEFAULT_MONGODB_CONFIG
@@ -457,27 +459,23 @@ def _create_and_store_demo_world() -> None:
     collection_name = DEFAULT_MONGODB_CONFIG.worlds_boot_collection
 
     try:
-        # 准备 world_boot 文档数据
-        world_boot_data = {
-            "_id": f"game_{game_name}_boot",
-            "game_name": game_name,
-            "timestamp": datetime.now(),
-            "version": "1.0.0",
-            "boot_data": world_boot.model_dump(),  # 序列化 Boot 对象
-        }
+        # 创建 WorldBootDocument 实例
+        world_boot_document = WorldBootDocument.create_from_boot(
+            game_name=game_name, boot=world_boot, version="0.0.1"
+        )
 
-        # 存储到 MongoDB
+        # 存储到 MongoDB（使用 upsert 语义，如果存在则完全覆盖）
         logger.info(f"📝 存储演示游戏世界到 MongoDB 集合: {collection_name}")
-        inserted_id = mongodb_insert_one(collection_name, world_boot_data)
+        inserted_id = mongodb_upsert_one(collection_name, world_boot_document.to_dict())
 
         if inserted_id:
             logger.success(f"✅ 演示游戏世界已存储到 MongoDB!")
             logger.info(f"  - 游戏名称: {game_name}")
             logger.info(f"  - 集合名称: {collection_name}")
-            logger.info(f"  - 文档ID: {inserted_id}")
-            logger.info(f"  - 场景数量: {len(world_boot.stages)}")
-            logger.info(f"  - 角色数量: {len(world_boot.actors)}")
-            logger.info(f"  - 世界系统数量: {len(world_boot.world_systems)}")
+            logger.info(f"  - 文档ID: {world_boot_document.document_id}")
+            logger.info(f"  - 场景数量: {world_boot_document.stages_count}")
+            logger.info(f"  - 角色数量: {world_boot_document.actors_count}")
+            logger.info(f"  - 世界系统数量: {world_boot_document.world_systems_count}")
             logger.info(f"  - 战役设置: {world_boot.campaign_setting}")
 
             # 立即获取验证

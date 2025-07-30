@@ -501,9 +501,11 @@ def _create_and_store_demo_world() -> None:
                         logger.success("✅ 数据完整性验证通过!")
 
                         # 使用便捷方法保存 Boot 配置文件
+                        # 使用Windows兼容的时间戳格式
+                        timestamp_str = stored_document.timestamp.strftime("%Y-%m-%d_%H-%M-%S")
                         boot_file_path = (
                             LOGS_DIR
-                            / f"boot-{stored_document.boot_data.name}-{stored_document.timestamp.isoformat()}.json"
+                            / f"boot-{stored_document.boot_data.name}-{timestamp_str}.json"
                         )
                         saved_path = stored_document.save_boot_to_file(boot_file_path)
                         logger.info(f"  - 世界启动配置已保存到: {saved_path}")

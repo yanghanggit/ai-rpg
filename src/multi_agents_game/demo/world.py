@@ -1,4 +1,4 @@
-from pathlib import Path
+# from pathlib import Path
 from ..models import (
     Boot,
 )
@@ -41,12 +41,12 @@ def create_demo_game_world(game_name: str) -> Boot:
 
 
 #######################################################################################################################
-def initialize_demo_game_world(game_name: str, write_path: Path) -> Boot:
-    # 写入文件
-    world_boot = create_demo_game_world(game_name)
-    write_path.write_text(world_boot.model_dump_json(), encoding="utf-8")
-    # 返回
-    return world_boot
+# def initialize_demo_game_world(game_name: str, write_path: Path) -> Boot:
+#     # 写入文件
+#     world_boot = create_demo_game_world(game_name)
+#     write_path.write_text(world_boot.model_dump_json(), encoding="utf-8")
+#     # 返回
+#     return world_boot
 
 
 #######################################################################################################################

@@ -11,10 +11,11 @@ from ..models import (
 )
 from loguru import logger
 from ..game.game_options import WebGameUserOptions
-from ..demo.world import (
-    initialize_demo_game_world,
-)
-import shutil
+
+# from ..demo.world import (
+#     initialize_demo_game_world,
+# )
+# import shutil
 from fastapi.staticfiles import StaticFiles
 from ..config.game_config import GEN_RUNTIME_DIR, setup_logger
 
@@ -74,15 +75,15 @@ async def login(
         web_user_session_options.clear_runtime_dir()
 
         # TODO, 临时创建一个
-        initialize_demo_game_world(
-            web_user_session_options.game, web_user_session_options.world_boot_file
-        )
+        # initialize_demo_game_world(
+        #     web_user_session_options.game, web_user_session_options.world_boot_file
+        # )
 
-        # TODO, 游戏资源可以被创建，将gen_world_boot_file这个文件拷贝一份到world_runtime_dir下
-        shutil.copy(
-            web_user_session_options.world_boot_file,
-            web_user_session_options.world_runtime_dir,
-        )
+        # # TODO, 游戏资源可以被创建，将gen_world_boot_file这个文件拷贝一份到world_runtime_dir下
+        # shutil.copy(
+        #     web_user_session_options.world_boot_file,
+        #     web_user_session_options.world_runtime_dir,
+        # )
 
     # TODO, get测试。
     # 指向包含 runtime.json 的目录。

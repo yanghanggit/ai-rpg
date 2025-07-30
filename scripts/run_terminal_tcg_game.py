@@ -1,5 +1,6 @@
 from loguru import logger
-import shutil
+
+# import shutil
 from multi_agents_game.game.terminal_tcg_game import TerminalTCGGame
 from multi_agents_game.game.tcg_game import TCGGameState
 from multi_agents_game.models import World, CombatResult
@@ -8,14 +9,15 @@ from multi_agents_game.chaos_engineering.empty_engineering_system import (
 )
 from multi_agents_game.chat_services.chat_system import ChatSystem
 from multi_agents_game.player.player_proxy import PlayerProxy
-from multi_agents_game.demo import initialize_demo_game_world
+
+# from multi_agents_game.demo import initialize_demo_game_world
 from multi_agents_game.demo import create_demo_dungeon3
 from multi_agents_game.tcg_game_systems.combat_monitor_system import CombatMonitorSystem
 from multi_agents_game.game.game_options import TerminalGameUserOptions
 from multi_agents_game.format_string.terminal_input import (
     parse_speak_command_input,
 )
-from multi_agents_game.config.game_config import setup_logger
+from multi_agents_game.config.game_config import setup_logger, GLOBAL_GAME_NAME
 from multi_agents_game.config.server_config import chat_server_localhost_urls
 
 
@@ -25,10 +27,10 @@ async def run_game(
 ) -> None:
 
     # 这里是临时的TODO
-    initialize_demo_game_world(
-        terminal_game_user_options.game,
-        terminal_game_user_options.world_boot_file,
-    )
+    # initialize_demo_game_world(
+    #     terminal_game_user_options.game,
+    #     terminal_game_user_options.world_boot_file,
+    # )
 
     # 如果是新游戏，需要将game_resource_file_path这个文件拷贝一份到world_boot_file_path下
     if terminal_game_user_options.debug_enforce_new_game:
@@ -37,10 +39,10 @@ async def run_game(
         terminal_game_user_options.clear_runtime_dir()
 
         # 游戏资源可以被创建，则将game_resource_file_path这个文件拷贝一份到world_boot_file_path下
-        shutil.copy(
-            terminal_game_user_options.world_boot_file,
-            terminal_game_user_options.world_runtime_dir,
-        )
+        # shutil.copy(
+        #     terminal_game_user_options.world_boot_file,
+        #     terminal_game_user_options.world_runtime_dir,
+        # )
 
     # 创建runtime
     start_world = World()
@@ -50,7 +52,7 @@ async def run_game(
         # 肯定是新游戏
         assert terminal_game_user_options.debug_enforce_new_game
         # 如果runtime文件不存在，说明是第一次启动，直接从gen文件中读取.
-        assert terminal_game_user_options.world_boot_file.exists()
+        # assert terminal_game_user_options.world_boot_file.exists()
         # 假设有文件，直接读取
         # world_boot_file_content = (
         #     terminal_game_user_options.world_boot_file.read_text(encoding="utf-8")
@@ -341,7 +343,7 @@ if __name__ == "__main__":
     # 做一些设置
     terminal_user_session_options = TerminalGameUserOptions(
         user="yanghang",
-        game="Game1",
+        game=GLOBAL_GAME_NAME,
         debug_enforce_new_game=True,
         actor="角色.战士.卡恩",
     )

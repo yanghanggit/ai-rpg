@@ -52,7 +52,7 @@ from multi_agents_game.db.mongodb_client import (
 )
 from multi_agents_game.db.mongodb_world_boot_document import WorldBootDocument
 from multi_agents_game.demo.world import create_demo_game_world
-from multi_agents_game.config.game_config import GEN_WORLD_DIR
+from multi_agents_game.config.game_config import LOGS_DIR, GLOBAL_GAME_NAME
 from multi_agents_game.config.db_config import DEFAULT_MONGODB_CONFIG
 
 
@@ -452,7 +452,7 @@ def _create_and_store_demo_world() -> None:
     同时验证存储的数据完整性
     """
     logger.info("🚀 创建演示游戏世界...")
-    game_name = "Game1"
+    game_name = GLOBAL_GAME_NAME
     version = "0.0.1"
     world_boot = create_demo_game_world(game_name)
 
@@ -502,7 +502,8 @@ def _create_and_store_demo_world() -> None:
 
                         # 使用便捷方法保存 Boot 配置文件
                         boot_file_path = (
-                            GEN_WORLD_DIR / f"{stored_document.boot_data.name}.json"
+                            LOGS_DIR
+                            / f"boot-{stored_document.boot_data.name}-{stored_document.timestamp.isoformat()}.json"
                         )
                         saved_path = stored_document.save_boot_to_file(boot_file_path)
                         logger.info(f"  - 世界启动配置已保存到: {saved_path}")

@@ -1,7 +1,7 @@
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
-from ..config.game_config import GEN_RUNTIME_DIR, GEN_WORLD_DIR
+from ..config.game_config import GEN_RUNTIME_DIR
 from ..config.db_config import DEFAULT_MONGODB_CONFIG
 import shutil
 from loguru import logger
@@ -49,9 +49,9 @@ class UserOptions:
 
     ###############################################################################################################################################
     # 生成用户的运行时文件
-    @property
-    def world_boot_file(self) -> Path:
-        return GEN_WORLD_DIR / f"{self.game}.json"
+    # @property
+    # def world_boot_file(self) -> Path:
+    #     return GEN_WORLD_DIR / f"{self.game}.json"
 
     ###############################################################################################################################################
     @property
@@ -85,6 +85,7 @@ class UserOptions:
         # 创建目录
         self.world_runtime_dir.mkdir(parents=True, exist_ok=True)
         assert self.world_runtime_dir.exists()
+
 
 ###############################################################################################################################################
 ###############################################################################################################################################

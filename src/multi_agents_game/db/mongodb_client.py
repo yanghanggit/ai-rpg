@@ -243,13 +243,11 @@ def mongodb_find_many(
 
 ###################################################################################################
 def mongodb_upsert_one(
-    collection_name: str, 
-    document: MongoDocumentType,
-    filter_key: str = "_id"
+    collection_name: str, document: MongoDocumentType, filter_key: str = "_id"
 ) -> Optional[str]:
     """
     插入或替换MongoDB文档（如果存在则完全覆盖）。
-    
+
     这是一个便捷方法，基于指定的键进行查找和替换。
     适用于需要"完全覆盖"语义的场景。
 
@@ -267,13 +265,13 @@ def mongodb_upsert_one(
     try:
         if filter_key not in document:
             raise ValueError(f"文档中缺少过滤键: {filter_key}")
-        
+
         # 构建过滤条件
         filter_dict = {filter_key: document[filter_key]}
-        
+
         # 使用 replace_one 实现 upsert（完全覆盖）
         return mongodb_replace_one(collection_name, filter_dict, document, upsert=True)
-        
+
     except PyMongoError as e:
         logger.error(f"MongoDB upsert 操作失败，集合: {collection_name}, 错误: {e}")
         raise e
@@ -305,7 +303,7 @@ def mongodb_replace_one(
         db = get_mongodb_database_instance()
         collection = db[collection_name]
         result = collection.replace_one(filter_dict, document, upsert=upsert)
-        
+
         if result.upserted_id:
             # 新插入的文档
             logger.debug(
@@ -315,17 +313,13 @@ def mongodb_replace_one(
         elif result.modified_count > 0:
             # 替换了现有文档
             document_id = document.get("_id", "unknown")
-            logger.debug(
-                f"MongoDB替换文档，集合: {collection_name}, ID: {document_id}"
-            )
+            logger.debug(f"MongoDB替换文档，集合: {collection_name}, ID: {document_id}")
             return str(document_id)
         else:
             # 没有匹配的文档且 upsert=False
-            logger.warning(
-                f"MongoDB替换操作未影响任何文档，集合: {collection_name}"
-            )
+            logger.warning(f"MongoDB替换操作未影响任何文档，集合: {collection_name}")
             return None
-            
+
     except PyMongoError as e:
         logger.error(f"MongoDB替换文档失败，集合: {collection_name}, 错误: {e}")
         raise e

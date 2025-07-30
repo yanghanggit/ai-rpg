@@ -50,7 +50,7 @@ from multi_agents_game.db.mongodb_client import (
     mongodb_count_documents,
     get_mongodb_database_instance,
 )
-from multi_agents_game.db.mongodb_documents import WorldBootDocument
+from multi_agents_game.db.mongodb_world_boot_document import WorldBootDocument
 from multi_agents_game.demo.world import create_demo_game_world
 from multi_agents_game.config.game_config import GEN_WORLD_DIR
 from multi_agents_game.config.db_config import DEFAULT_MONGODB_CONFIG
@@ -452,16 +452,17 @@ def _create_and_store_demo_world() -> None:
     同时验证存储的数据完整性
     """
     logger.info("🚀 创建演示游戏世界...")
-    world_boot = create_demo_game_world("Game1")
+    game_name = "Game1"
+    version = "0.0.1"
+    world_boot = create_demo_game_world(game_name)
 
     # 存储 world_boot 到 MongoDB
-    game_name = "Game1"
     collection_name = DEFAULT_MONGODB_CONFIG.worlds_boot_collection
 
     try:
         # 创建 WorldBootDocument 实例
         world_boot_document = WorldBootDocument.create_from_boot(
-            game_name=game_name, boot=world_boot, version="0.0.1"
+            game_name=game_name, boot=world_boot, version=version
         )
 
         # 存储到 MongoDB（使用 upsert 语义，如果存在则完全覆盖）
@@ -483,38 +484,45 @@ def _create_and_store_demo_world() -> None:
             stored_boot = mongodb_find_one(collection_name, {"game_name": game_name})
 
             if stored_boot:
-                logger.success(f"✅ 演示游戏世界已从 MongoDB 成功获取!")
-                logger.info(f"  - 存储时间: {stored_boot['timestamp']}")
-                logger.info(f"  - 版本: {stored_boot['version']}")
-                logger.info(f"  - Boot 名称: {stored_boot['boot_data']['name']}")
-                logger.info(
-                    f"  - Boot 场景数量: {len(stored_boot['boot_data']['stages'])}"
-                )
+                try:
+                    # 使用便捷方法反序列化为 WorldBootDocument 对象
+                    stored_document = WorldBootDocument.from_mongodb(stored_boot)
 
-                # 计算文档大小
-                json_str = json.dumps(stored_boot, default=str, ensure_ascii=False)
-                # logger.debug(json_str)
+                    logger.success(f"✅ 演示游戏世界已从 MongoDB 成功获取!")
 
-                size_mb = len(json_str.encode("utf-8")) / (1024 * 1024)
-                logger.info(f"  - 文档大小: {size_mb:.3f} MB")
+                    # 使用便捷方法获取摘要信息
+                    summary = stored_document.get_summary()
+                    logger.info(f"  - 文档摘要:")
+                    for key, value in summary.items():
+                        logger.info(f"    {key}: {value}")
 
-                # 验证数据完整性
-                if stored_boot["boot_data"]["name"] == world_boot.name and len(
-                    stored_boot["boot_data"]["stages"]
-                ) == len(world_boot.stages):
-                    logger.success("✅ 数据完整性验证通过!")
+                    # 验证数据完整性
+                    if stored_document.validate_integrity():
+                        logger.success("✅ 数据完整性验证通过!")
 
-                    # 生成用户的运行时文件
-                    world_boot_file = GEN_WORLD_DIR / f"{world_boot.name}.json"
-                    Path(world_boot_file).write_text(
-                        json.dumps(
-                            stored_boot["boot_data"], ensure_ascii=False, indent=4
+                        # 使用便捷方法保存 Boot 配置文件
+                        boot_file_path = (
+                            GEN_WORLD_DIR / f"{stored_document.boot_data.name}.json"
                         )
-                    )
-                    logger.info(f"  - 世界启动配置已保存到: {world_boot_file}")
+                        saved_path = stored_document.save_boot_to_file(boot_file_path)
+                        logger.info(f"  - 世界启动配置已保存到: {saved_path}")
 
-                else:
-                    logger.warning("⚠️ 数据完整性验证异常")
+                    else:
+                        logger.warning("⚠️ 数据完整性验证失败")
+
+                except Exception as validation_error:
+                    logger.error(
+                        f"❌ WorldBootDocument 便捷方法操作失败: {validation_error}"
+                    )
+                    logger.warning("⚠️ 使用原始字典数据继续验证...")
+
+                    # 备用验证逻辑（使用原始字典数据）
+                    logger.info(f"  - 存储时间: {stored_boot['timestamp']}")
+                    logger.info(f"  - 版本: {stored_boot['version']}")
+                    logger.info(f"  - Boot 名称: {stored_boot['boot_data']['name']}")
+                    logger.info(
+                        f"  - Boot 场景数量: {len(stored_boot['boot_data']['stages'])}"
+                    )
 
             else:
                 logger.error("❌ 从 MongoDB 获取演示游戏世界失败!")

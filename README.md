@@ -136,6 +136,8 @@ make status-mongodb
 
 #### 配置信息
 
+- **MongoDB 版本**: `8.0.12` (Community Edition)
+- **MongoDB Shell 版本**: `2.5.6` (mongosh)
 - **连接地址**: `mongodb://localhost:27017/`
 - **数据库名**: `multi_agents_game`
 - **主要集合**: `worlds`, `players`, `game_sessions`

@@ -143,3 +143,241 @@ A: 在IAM用户的"Security credentials"标签下创建Access Key，用于CLI和
 ### Q: 权限不足错误怎么解决？
 
 A: 检查用户或组的策略，确保包含所需的权限。可以使用IAM Policy Simulator测试权限。
+
+### Q: 创建Access Key时提示权限不足怎么办？
+
+A: 使用Root账号登录，在IAM控制台中直接为IAM用户创建Access Key。进入Users → 选择用户 → Security credentials → Create access key。
+
+## AWS Bedrock 使用指南
+
+### 步骤1：启用Bedrock模型访问权限
+
+在使用Bedrock之前，需要先启用你想要使用的模型：
+
+1. **登录AWS控制台**（使用IAM用户）
+2. **搜索"Bedrock"**并进入Amazon Bedrock服务
+3. **在左侧菜单中点击"Model access"**
+4. **点击"Manage model access"按钮**
+5. **选择你需要的模型**：
+   - **推荐开始模型**：
+     - `Claude 3 Haiku`（Anthropic）- 轻量级，适合简单任务
+     - `Claude 3 Sonnet`（Anthropic）- 平衡性能和成本
+     - `Titan Text G1 - Lite`（Amazon）- AWS自有模型
+6. **点击"Request model access"**
+7. **等待审批**（通常几分钟内完成）
+
+### 步骤2：配置AWS凭据
+
+有几种方式配置AWS凭据：
+
+#### 方式1：使用AWS CLI配置（推荐）
+
+1. **安装AWS CLI**：
+
+   ```bash
+   # macOS
+   brew install awscli
+   
+   # 或者使用pip
+   pip install awscli
+   ```
+
+2. **配置凭据**：
+
+   ```bash
+   aws configure
+   ```
+
+   输入：
+   - AWS Access Key ID: `你的Access Key ID`
+   - AWS Secret Access Key: `你的Secret Access Key`
+   - Default region name: `us-east-1`（Bedrock主要支持区域）
+   - Default output format: `json`
+
+#### 方式2：环境变量
+
+```bash
+export AWS_ACCESS_KEY_ID=你的Access_Key_ID
+export AWS_SECRET_ACCESS_KEY=你的Secret_Access_Key
+export AWS_DEFAULT_REGION=us-east-1
+```
+
+#### 方式3：在代码中配置（不推荐生产环境）
+
+```python
+import boto3
+
+client = boto3.client(
+    'bedrock-runtime',
+    aws_access_key_id='你的Access_Key_ID',
+    aws_secret_access_key='你的Secret_Access_Key',
+    region_name='us-east-1'
+)
+```
+
+### 步骤3：安装必要的Python库
+
+```bash
+pip install boto3
+pip install anthropic  # 如果使用Claude模型
+```
+
+### 步骤4：编写第一个Bedrock应用
+
+#### 使用Claude模型示例
+
+```python
+import boto3
+import json
+
+# 创建Bedrock客户端
+bedrock_runtime = boto3.client(
+    'bedrock-runtime',
+    region_name='us-east-1'
+)
+
+def call_claude_3_haiku(prompt):
+    """调用Claude 3 Haiku模型"""
+    
+    # 构建请求体
+    body = json.dumps({
+        "anthropic_version": "bedrock-2023-05-31",
+        "max_tokens": 1000,
+        "messages": [
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    })
+    
+    try:
+        # 调用模型
+        response = bedrock_runtime.invoke_model(
+            modelId='anthropic.claude-3-haiku-20240307-v1:0',
+            contentType='application/json',
+            accept='application/json',
+            body=body
+        )
+        
+        # 解析响应
+        response_body = json.loads(response['body'].read())
+        return response_body['content'][0]['text']
+        
+    except Exception as e:
+        print(f"调用Bedrock时出错: {e}")
+        return None
+
+# 使用示例
+if __name__ == "__main__":
+    prompt = "你好，请简单介绍一下Python编程语言。"
+    result = call_claude_3_haiku(prompt)
+    print(f"AI回复: {result}")
+```
+
+#### 使用Amazon Titan模型示例
+
+```python
+import boto3
+import json
+
+def call_titan_text(prompt):
+    """调用Amazon Titan Text模型"""
+    
+    bedrock_runtime = boto3.client(
+        'bedrock-runtime',
+        region_name='us-east-1'
+    )
+    
+    body = json.dumps({
+        "inputText": prompt,
+        "textGenerationConfig": {
+            "maxTokenCount": 1000,
+            "stopSequences": [],
+            "temperature": 0.7,
+            "topP": 0.9
+        }
+    })
+    
+    try:
+        response = bedrock_runtime.invoke_model(
+            modelId='amazon.titan-text-lite-v1',
+            contentType='application/json',
+            accept='application/json',
+            body=body
+        )
+        
+        response_body = json.loads(response['body'].read())
+        return response_body['results'][0]['outputText']
+        
+    except Exception as e:
+        print(f"调用Bedrock时出错: {e}")
+        return None
+
+# 使用示例
+result = call_titan_text("解释什么是机器学习")
+print(f"AI回复: {result}")
+```
+
+### 步骤5：集成到你的游戏框架
+
+根据你的多智能体游戏框架，可以这样集成：
+
+```python
+# 在你的游戏框架中添加AI服务
+class BedrockAIService:
+    def __init__(self):
+        self.bedrock_runtime = boto3.client(
+            'bedrock-runtime',
+            region_name='us-east-1'
+        )
+    
+    def generate_npc_dialogue(self, context, character_name):
+        """为NPC生成对话"""
+        prompt = f"""
+        你是游戏中的角色{character_name}。
+        当前情况：{context}
+        请生成一段符合角色设定的对话，不超过50字。
+        """
+        return self.call_claude(prompt)
+    
+    def generate_quest_description(self, quest_type, difficulty):
+        """生成任务描述"""
+        prompt = f"""
+        创建一个{quest_type}类型的游戏任务，难度为{difficulty}。
+        请提供任务名称、描述和目标。
+        """
+        return self.call_claude(prompt)
+    
+    def call_claude(self, prompt):
+        # 使用之前的Claude调用代码
+        pass
+```
+
+### 重要注意事项
+
+1. **成本控制**：
+   - Bedrock按使用量计费
+   - 设置CloudWatch告警监控成本
+   - 合理设置max_tokens限制
+
+2. **区域选择**：
+   - Bedrock主要在 `us-east-1` 和 `us-west-2` 可用
+   - 检查模型在你选择的区域是否可用
+
+3. **速率限制**：
+   - 注意API调用频率限制
+   - 实现重试机制
+
+4. **安全性**：
+   - 不要在代码中硬编码密钥
+   - 使用IAM角色（如果在EC2上运行）
+   - 定期轮换Access Key
+
+### 调试和监控
+
+1. **启用CloudTrail**：跟踪API调用
+2. **使用CloudWatch**：监控使用量和性能
+3. **检查模型访问状态**：确保模型已启用
+
+现在你可以开始使用Bedrock了！建议先从简单的文本生成开始测试。

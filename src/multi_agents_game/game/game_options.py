@@ -8,7 +8,7 @@ from loguru import logger
 from ..db.mongodb_client import (
     mongodb_find_one,
 )
-from ..db.mongodb_world_boot_document import WorldBootDocument
+from ..db.mongodb_boot_document import BootDocument
 from ..models.world import Boot
 
 
@@ -67,7 +67,7 @@ class UserOptions:
         # 尝试使用便捷方法反序列化为 WorldBootDocument 对象
         try:
 
-            world_boot_doc = WorldBootDocument.from_mongodb(stored_boot)
+            world_boot_doc = BootDocument.from_mongodb(stored_boot)
             assert world_boot_doc is not None, "WorldBootDocument 反序列化失败"
             return world_boot_doc.boot_data
 

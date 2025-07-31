@@ -19,7 +19,7 @@ from ..models.world import Boot
 
 ###############################################################################################################################################
 @final
-class WorldBootDocument(BaseModel):
+class BootDocument(BaseModel):
     """
     MongoDB 文档模型：游戏世界启动配置
 
@@ -45,7 +45,7 @@ class WorldBootDocument(BaseModel):
     @classmethod
     def create_from_boot(
         cls, game_name: str, boot: Boot, version: str = "1.0.0"
-    ) -> "WorldBootDocument":
+    ) -> "BootDocument":
         """
         从 Boot 对象创建 WorldBootDocument 实例
 
@@ -91,7 +91,7 @@ class WorldBootDocument(BaseModel):
 
     # 便捷方法
     @classmethod
-    def from_mongodb(cls, mongodb_doc: Dict[str, Any]) -> "WorldBootDocument":
+    def from_mongodb(cls, mongodb_doc: Dict[str, Any]) -> "BootDocument":
         """
         从 MongoDB 文档创建 WorldBootDocument 实例
 
@@ -185,7 +185,7 @@ class WorldBootDocument(BaseModel):
         except Exception:
             return False
 
-    def update_version(self, new_version: str) -> "WorldBootDocument":
+    def update_version(self, new_version: str) -> "BootDocument":
         """
         更新版本号并返回新的实例
 

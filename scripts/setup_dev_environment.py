@@ -50,7 +50,7 @@ from multi_agents_game.db.mongodb_client import (
     mongodb_count_documents,
     get_mongodb_database_instance,
 )
-from multi_agents_game.db.mongodb_world_boot_document import WorldBootDocument
+from multi_agents_game.db.mongodb_boot_document import BootDocument
 from multi_agents_game.demo.world import create_demo_game_world
 from multi_agents_game.config.game_config import LOGS_DIR, GLOBAL_GAME_NAME
 from multi_agents_game.config.db_config import DEFAULT_MONGODB_CONFIG
@@ -461,7 +461,7 @@ def _create_and_store_demo_world() -> None:
 
     try:
         # 创建 WorldBootDocument 实例
-        world_boot_document = WorldBootDocument.create_from_boot(
+        world_boot_document = BootDocument.create_from_boot(
             game_name=game_name, boot=world_boot, version=version
         )
 
@@ -486,7 +486,7 @@ def _create_and_store_demo_world() -> None:
             if stored_boot:
                 try:
                     # 使用便捷方法反序列化为 WorldBootDocument 对象
-                    stored_document = WorldBootDocument.from_mongodb(stored_boot)
+                    stored_document = BootDocument.from_mongodb(stored_boot)
 
                     logger.success(f"✅ 演示游戏世界已从 MongoDB 成功获取!")
 
@@ -502,7 +502,9 @@ def _create_and_store_demo_world() -> None:
 
                         # 使用便捷方法保存 Boot 配置文件
                         # 使用Windows兼容的时间戳格式
-                        timestamp_str = stored_document.timestamp.strftime("%Y-%m-%d_%H-%M-%S")
+                        timestamp_str = stored_document.timestamp.strftime(
+                            "%Y-%m-%d_%H-%M-%S"
+                        )
                         boot_file_path = (
                             LOGS_DIR
                             / f"boot-{stored_document.boot_data.name}-{timestamp_str}.json"

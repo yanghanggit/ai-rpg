@@ -111,14 +111,13 @@ def main() -> None:
             # 测试用：记录上下文。
             chat_history_state["messages"].extend(user_input_state["messages"])
             chat_history_state["messages"].extend(update_messages)
-            
+
             logger.debug("*" * 50)
             for message in chat_history_state["messages"]:
                 if isinstance(message, HumanMessage):
                     logger.info(f"User: {message.content}")
                 else:
                     logger.warning(f"AI: {message.content}")
-                
 
         except Exception as e:
             assert False, f"Error in processing user input = {e}"

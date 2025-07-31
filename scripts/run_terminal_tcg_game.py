@@ -33,17 +33,23 @@ async def run_game(
     #     terminal_game_user_options.world_boot_file,
     # )
 
+    world1 = terminal_game_user_options.world_data
+
     # 如果是新游戏，需要将game_resource_file_path这个文件拷贝一份到world_boot_file_path下
     if terminal_game_user_options.debug_enforce_new_game:
 
         # 清除用户的运行时目录, 重新生成
         terminal_game_user_options.clear_runtime_dir()
+        terminal_game_user_options.delete_world_data()
 
         # 游戏资源可以被创建，则将game_resource_file_path这个文件拷贝一份到world_boot_file_path下
         # shutil.copy(
         #     terminal_game_user_options.world_boot_file,
         #     terminal_game_user_options.world_runtime_dir,
         # )
+
+
+    world2 = terminal_game_user_options.world_data
 
     # 创建runtime
     start_world = World()
@@ -341,9 +347,12 @@ if __name__ == "__main__":
 
     import asyncio
 
+    random_name = f"player-{uuid4()}"
+    fixed_name = "player-fixed"
+
     # 做一些设置
     terminal_user_session_options = TerminalGameUserOptions(
-        user=f"""player-{uuid4()}""",
+        user=fixed_name,
         game=GLOBAL_GAME_NAME,
         debug_enforce_new_game=True,
         actor="角色.战士.卡恩",

@@ -47,7 +47,7 @@ async def login(
     logger.info(f"/login/v1/: {request_data.model_dump_json()}")
 
     # 转化成复杂参数
-    web_user_session_options = WebGameUserOptions(
+    web_game_user_options = WebGameUserOptions(
         user=request_data.user_name,
         game=request_data.game_name,
         actor="",
@@ -72,7 +72,8 @@ async def login(
             room_manager.remove_room(pre_room)
 
         # TODO, 这里需要设置一个新的目录，清除旧的目录。
-        web_user_session_options.clear_runtime_dir()
+        web_game_user_options.clear_runtime_dir()
+        web_game_user_options.delete_world_data()
 
         # TODO, 临时创建一个
         # initialize_demo_game_world(
@@ -89,7 +90,7 @@ async def login(
     # 指向包含 runtime.json 的目录。
     fastapi_app: FastAPI = request.app
     static_dir = os.path.join(
-        GEN_RUNTIME_DIR, web_user_session_options.user, web_user_session_options.game
+        GEN_RUNTIME_DIR, web_game_user_options.user, web_game_user_options.game
     )
     # 将该目录挂载到 "/files" 路径上
     fastapi_app.mount("/files", StaticFiles(directory=static_dir), name="files")
@@ -119,7 +120,7 @@ async def login(
         logger.info(f"login: {request_data.user_name} has room, is running!")
         response_message = GameSessionStatus.RESUME_GAME
     else:
-        if web_user_session_options.world_runtime_file.exists():
+        if web_game_user_options.world_runtime_file.exists():
             # 曾经运行过，此时已经存储，可以恢复
             logger.info(
                 f"login: {request_data.user_name} has room, but not running, can restore!"

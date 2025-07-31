@@ -13,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import final, Dict, Any, Optional
 from uuid import uuid4
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict, field_serializer
 from ..models.world import Boot
 
 
@@ -36,11 +36,16 @@ class BootDocument(BaseModel):
     version: str = Field(default="1.0.0", description="版本号")
     boot_data: Boot = Field(..., description="游戏世界启动配置数据")
 
-    class Config:
-        """Pydantic 配置"""
+    # Pydantic V2 配置
+    model_config = ConfigDict(
+        populate_by_name=True,  # 允许使用字段别名（如 _id）
+        arbitrary_types_allowed=True,  # 允许任意类型（如果需要）
+    )
 
-        populate_by_name = True  # 允许使用字段别名（如 _id）
-        json_encoders = {datetime: lambda v: v.isoformat()}  # 自定义 datetime 序列化
+    @field_serializer('timestamp')
+    def serialize_timestamp(self, value: datetime) -> str:
+        """序列化时间戳为 ISO 格式字符串"""
+        return value.isoformat()
 
     @classmethod
     def create_from_boot(

@@ -27,8 +27,8 @@ def create_demo_game_world(game_name: str) -> Boot:
     stage_heros_camp.actors = [actor_warrior, actor_wizard]
 
     # 设置角色的初始状态
-    actor_warrior.kick_off_message += f"""\n注意:{actor_wizard.name} 是你的同伴。你目前只会使用防御类的技能！你讨厌黑暗法术，因为你认为它们是邪恶的。"""
-    actor_wizard.kick_off_message += f"""\n注意:{actor_warrior.name} 是你的同伴。你最擅长的是火焰类的魔法，而且你还有一个不为别人知道的秘密：你深刻理解黑暗元素的力量，但是不会轻易使用它，如果面对你最讨厌的东西——哥布林的时候你会毫不犹豫运用这种禁忌之力将其清除。"""
+    actor_warrior.kick_off_message += f"""\n注意:{actor_wizard.name} 是你的同伴。你目前只会使用防御类的技能！你讨厌黑暗元素的法术，因为你认为它们是邪恶的。如果你遇到使用黑暗元素的人，你会毫不犹豫地与之对抗。如果你的同伴使用黑暗元素，你会感到非常愤怒并会与其产生冲突"""
+    actor_wizard.kick_off_message += f"""\n注意:{actor_warrior.name} 是你的同伴。你最擅长的是火焰类的魔法，而且你还有一个不为别人知道的秘密：你深刻理解黑暗元素的力量，但是不会轻易使用它，如果面对你最讨厌的东西——哥布林的时候你会暂时忘记别的魔法，毫不犹豫运用这种黑暗力量将其清除。"""
 
     # 设置英雄营地场景的初始状态
     world_boot.stages = [stage_heros_camp]

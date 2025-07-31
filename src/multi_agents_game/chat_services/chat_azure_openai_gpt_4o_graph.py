@@ -6,7 +6,7 @@ from loguru import logger
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import os
 import traceback
-from typing import Annotated, Dict, List
+from typing import Annotated, Dict, List, Any
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
@@ -25,7 +25,7 @@ class State(TypedDict):
 ############################################################################################################
 def create_compiled_stage_graph(
     node_name: str, temperature: float
-) -> CompiledStateGraph:
+) -> CompiledStateGraph[State, Any, State, State]:
     assert node_name != "", "node_name is empty"
 
     llm = AzureChatOpenAI(
@@ -60,14 +60,14 @@ def create_compiled_stage_graph(
 
 ############################################################################################################
 def stream_graph_updates(
-    state_compiled_graph: CompiledStateGraph,
+    state_compiled_graph: CompiledStateGraph[State, Any, State, State],
     chat_history_state: State,
     user_input_state: State,
 ) -> List[BaseMessage]:
 
     ret: List[BaseMessage] = []
 
-    merged_message_context = {
+    merged_message_context: State = {
         "messages": chat_history_state["messages"] + user_input_state["messages"]
     }
 
@@ -94,7 +94,7 @@ def main() -> None:
         try:
 
             user_input = input("User: ")
-            if user_input.lower() in ["quit", "exit", "q"]:
+            if user_input.lower() in ["/quit", "/exit", "/q"]:
                 print("Goodbye!")
                 break
 
@@ -117,10 +117,13 @@ def main() -> None:
                 if isinstance(message, HumanMessage):
                     logger.info(f"User: {message.content}")
                 else:
-                    logger.warning(f"AI: {message.content}")
+                    logger.success(f"AI: {message.content}")
 
         except Exception as e:
-            assert False, f"Error in processing user input = {e}"
+            logger.error(
+                f"Error in processing user input = {e}\n"
+                f"Traceback: {traceback.format_exc()}"
+            )
 
 
 ############################################################################################################

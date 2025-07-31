@@ -14,7 +14,7 @@ from typing import Annotated, Dict, List, Any
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
-from langchain_openai import AzureChatOpenAI
+from langchain_deepseek import ChatDeepSeek
 from langchain_core.messages import BaseMessage
 from pydantic import SecretStr
 from langchain.schema import HumanMessage
@@ -33,39 +33,32 @@ def create_compiled_stage_graph(
     assert node_name != "", "node_name is empty"
 
     # 检查必需的环境变量
-    azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-    azure_api_key = os.getenv("AZURE_OPENAI_API_KEY")
+    deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
 
-    if not azure_endpoint:
-        raise ValueError("AZURE_OPENAI_ENDPOINT environment variable is not set")
-    if not azure_api_key:
-        raise ValueError("AZURE_OPENAI_API_KEY environment variable is not set")
+    if not deepseek_api_key:
+        raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
 
-    llm = AzureChatOpenAI(
-        azure_endpoint=azure_endpoint,
-        api_key=SecretStr(azure_api_key),
-        azure_deployment="gpt-4o",
-        api_version="2024-02-01",
+    llm = ChatDeepSeek(
+        api_key=SecretStr(deepseek_api_key),
+        model="deepseek-chat",
         temperature=temperature,
     )
 
-    def invoke_azure_chat_openai_llm_action(
+    def invoke_deepseek_llm_action(
         state: State,
     ) -> Dict[str, List[BaseMessage]]:
 
         try:
             return {"messages": [llm.invoke(state["messages"])]}
         except Exception as e:
-            logger.error(
-                f"Error invoking Azure Chat OpenAI LLM: {e}\n" f"State: {state}"
-            )
+            logger.error(f"Error invoking DeepSeek LLM: {e}\n" f"State: {state}")
             traceback.print_exc()
             return {
                 "messages": []
-            }  # 当出现 Azure 内容过滤的情况，或者其他类型异常时，视需求可在此返回空字符串或者自定义提示。
+            }  # 当出现内容过滤的情况，或者其他类型异常时，视需求可在此返回空字符串或者自定义提示。
 
     graph_builder = StateGraph(State)
-    graph_builder.add_node(node_name, invoke_azure_chat_openai_llm_action)
+    graph_builder.add_node(node_name, invoke_deepseek_llm_action)
     graph_builder.set_entry_point(node_name)
     graph_builder.set_finish_point(node_name)
     return graph_builder.compile()
@@ -98,9 +91,7 @@ def main() -> None:
     chat_history_state: State = {"messages": []}
 
     # 生成聊天机器人状态图
-    compiled_stage_graph = create_compiled_stage_graph(
-        "azure_chat_openai_chatbot_node", 0.7
-    )
+    compiled_stage_graph = create_compiled_stage_graph("deepseek_chatbot_node", 0.7)
 
     while True:
 
@@ -130,7 +121,7 @@ def main() -> None:
                 if isinstance(message, HumanMessage):
                     logger.info(f"User: {message.content}")
                 else:
-                    logger.success(f"Azure-OpenAI-GPT4o: {message.content}")
+                    logger.success(f"Deepseek: {message.content}")
 
         except Exception as e:
             logger.error(

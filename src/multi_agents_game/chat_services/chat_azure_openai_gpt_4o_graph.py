@@ -2,6 +2,10 @@ import sys
 from pathlib import Path
 
 from loguru import logger
+from dotenv import load_dotenv
+
+# 加载 .env 文件中的环境变量
+load_dotenv()
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import os
@@ -28,9 +32,18 @@ def create_compiled_stage_graph(
 ) -> CompiledStateGraph[State, Any, State, State]:
     assert node_name != "", "node_name is empty"
 
+    # 检查必需的环境变量
+    azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+    azure_api_key = os.getenv("AZURE_OPENAI_API_KEY")
+
+    if not azure_endpoint:
+        raise ValueError("AZURE_OPENAI_ENDPOINT environment variable is not set")
+    if not azure_api_key:
+        raise ValueError("AZURE_OPENAI_API_KEY environment variable is not set")
+
     llm = AzureChatOpenAI(
-        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-        api_key=SecretStr(str(os.getenv("AZURE_OPENAI_API_KEY"))),
+        azure_endpoint=azure_endpoint,
+        api_key=SecretStr(azure_api_key),
         azure_deployment="gpt-4o",
         api_version="2024-02-01",
         temperature=temperature,

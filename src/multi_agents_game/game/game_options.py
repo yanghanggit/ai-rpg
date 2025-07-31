@@ -1,9 +1,6 @@
-from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
-from ..config.game_config import GEN_RUNTIME_DIR
 from ..config.db_config import DEFAULT_MONGODB_CONFIG
-import shutil
 from loguru import logger
 from ..db.mongodb_client import (
     mongodb_find_one,
@@ -23,31 +20,6 @@ class UserOptions:
     user: str
     game: str
     actor: str
-
-    ###############################################################################################################################################
-    # 生成用户的运行时目录
-    @property
-    def world_runtime_dir(self) -> Path:
-
-        dir = GEN_RUNTIME_DIR / self.user / self.game
-        if not dir.exists():
-            dir.mkdir(parents=True, exist_ok=True)
-
-        assert dir.exists()
-        assert dir.is_dir()
-        return dir
-
-    ###############################################################################################################################################
-    # 生成用户的运行时文件
-    @property
-    def world_runtime_file(self) -> Path:
-        return self.world_runtime_dir / f"runtime.json"
-
-    ###############################################################################################################################################
-    # # 生成用户的运行时文件
-    # @property
-    # def world_runtime_boot_file(self) -> Path:
-    #     return self.world_runtime_dir / f"{self.game}.json"
 
     ###############################################################################################################################################
     @property
@@ -112,16 +84,6 @@ class UserOptions:
 
         except Exception as e:
             logger.error(f"❌ 删除用户 {self.user} 的游戏世界数据失败: {str(e)}")
-
-    ###############################################################################################################################################
-    # 清除用户的运行时目录, 重新生成
-    def clear_runtime_dir(self) -> None:
-        # 强制删除一次
-        if self.world_runtime_dir.exists():
-            shutil.rmtree(self.world_runtime_dir)
-        # 创建目录
-        self.world_runtime_dir.mkdir(parents=True, exist_ok=True)
-        assert self.world_runtime_dir.exists()
 
 
 ###############################################################################################################################################

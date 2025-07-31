@@ -148,15 +148,10 @@ class TCGGame(BaseGame, TCGGameContext):
         return super().destroy_entity(entity)
 
     ###############################################################################################################################################
-    # @property
-    # def world_file_dir(self) -> Path:
-    #     return self._world_file_path.parent
-
-    ###############################################################################################################################################
     @property
     def verbose_dir(self) -> Path:
 
-        dir = LOGS_DIR / f"{self.player.name}_{self.name}"
+        dir = LOGS_DIR / f"{self.player.name}" / f"{self.name}"
         if not dir.exists():
             dir.mkdir(parents=True, exist_ok=True)
         assert dir.exists()

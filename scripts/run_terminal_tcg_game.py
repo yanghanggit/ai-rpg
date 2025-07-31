@@ -1,6 +1,4 @@
 from loguru import logger
-
-# import shutil
 from multi_agents_game.game.terminal_tcg_game import TerminalTCGGame
 from multi_agents_game.game.tcg_game import TCGGameState
 from multi_agents_game.models import World, CombatResult
@@ -9,9 +7,7 @@ from multi_agents_game.chaos_engineering.empty_engineering_system import (
 )
 from multi_agents_game.chat_services.chat_system import ChatSystem
 from multi_agents_game.player.player_proxy import PlayerProxy
-
-# from multi_agents_game.demo import initialize_demo_game_world
-from multi_agents_game.demo import create_demo_dungeon3
+from multi_agents_game.demo import create_demo_dungeon3, create_actor_warrior
 from multi_agents_game.tcg_game_systems.combat_monitor_system import CombatMonitorSystem
 from multi_agents_game.game.game_options import TerminalGameUserOptions
 from multi_agents_game.format_string.terminal_input import (
@@ -27,76 +23,43 @@ async def run_game(
     terminal_game_user_options: TerminalGameUserOptions,
 ) -> None:
 
-    # 这里是临时的TODO
-    # initialize_demo_game_world(
-    #     terminal_game_user_options.game,
-    #     terminal_game_user_options.world_boot_file,
-    # )
-
-    world_exists = terminal_game_user_options.world_data
+    # 注意，如果确定player是固定的，但是希望每次玩新游戏，就调用这句。
+    # 或者，换成random_name，随机生成一个player名字。
     terminal_game_user_options.delete_world_data()
 
-    # 如果是新游戏，需要将game_resource_file_path这个文件拷贝一份到world_boot_file_path下
-    # if terminal_game_user_options.debug_enforce_new_game:
-
-    #     # 清除用户的运行时目录, 重新生成
-    #     terminal_game_user_options.clear_runtime_dir()
-    #     terminal_game_user_options.delete_world_data()
-
-    # 游戏资源可以被创建，则将game_resource_file_path这个文件拷贝一份到world_boot_file_path下
-    # shutil.copy(
-    #     terminal_game_user_options.world_boot_file,
-    #     terminal_game_user_options.world_runtime_dir,
-    # )
-
-    # world2 = terminal_game_user_options.world_data
-
-    # 创建runtime
-    start_world = World()
+    # 先检查一下world_data是否存在
+    world_exists = terminal_game_user_options.world_data
 
     #
-    if not terminal_game_user_options.world_runtime_file.exists():
-        # 肯定是新游戏
-        # assert terminal_game_user_options.debug_enforce_new_game
-        # 如果runtime文件不存在，说明是第一次启动，直接从gen文件中读取.
-        # assert terminal_game_user_options.world_boot_file.exists()
-        # 假设有文件，直接读取
-        # world_boot_file_content = (
-        #     terminal_game_user_options.world_boot_file.read_text(encoding="utf-8")
-        # )
-        # 重新生成boot
-        # world_boot = Boot.model_validate_json(world_boot_file_content)
-        # world_boot = terminal_game_user_options.world_boot_data
-        # 重新生成world
+    if world_exists is None:
+
+        # 获取world_boot_data
         world_boot = terminal_game_user_options.world_boot_data
         assert world_boot is not None, "WorldBootDocument 反序列化失败"
-        start_world = World(boot=world_boot)
+
+        # 如果world不存在，说明是第一次创建游戏
+        world_exists = World(boot=world_boot)
+
         # 运行时生成地下城系统
-        start_world.dungeon = create_demo_dungeon3()
+        world_exists.dungeon = create_demo_dungeon3()
 
     else:
-
-        # 如果runtime文件存在，说明是恢复游戏
-        # assert not terminal_game_user_options.debug_enforce_new_game
-        # runtime文件存在，需要做恢复
-        world_runtime_file_content = (
-            terminal_game_user_options.world_runtime_file.read_text(encoding="utf-8")
+        logger.info(
+            f"恢复游戏: {terminal_game_user_options.user}, {terminal_game_user_options.game}"
         )
-        # 重新生成world,直接反序列化。
-        start_world = World.model_validate_json(world_runtime_file_content)
 
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     # 依赖注入，创建新的游戏
+    assert world_exists is not None, "World data must exist to create a game"
     terminal_game = TerminalTCGGame(
         name=terminal_game_user_options.game,
         player=PlayerProxy(
             name=terminal_game_user_options.user,
             actor=terminal_game_user_options.actor,
         ),
-        world=start_world,
-        # world_path=terminal_game_user_options.world_runtime_file,
+        world=world_exists,
         chat_system=ChatSystem(
             name=f"{terminal_game_user_options.game}-chatsystem",
             username=terminal_game_user_options.user,
@@ -107,22 +70,16 @@ async def run_game(
 
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(terminal_game.world.entities_snapshot) == 0:
-
-        # assert terminal_game_user_options.debug_enforce_new_game
         logger.warning(
             f"游戏中没有实体 = {terminal_game_user_options.game}, 说明是第一次创建游戏"
         )
-
         # 直接构建ecs
         terminal_game.new_game().save()
 
     else:
-
-        # assert not terminal_game_user_options.debug_enforce_new_game
         logger.warning(
             f"游戏中有实体 = {terminal_game_user_options.game}，需要通过数据恢复实体，是游戏回复的过程"
         )
-
         # 测试！回复ecs
         terminal_game.load_game().save()
 
@@ -353,10 +310,9 @@ if __name__ == "__main__":
 
     # 做一些设置
     terminal_user_session_options = TerminalGameUserOptions(
-        user=fixed_name,
+        user=random_name,
         game=GLOBAL_GAME_NAME,
-        # debug_enforce_new_game=True,
-        actor="角色.战士.卡恩",
+        actor=create_actor_warrior().name,
     )
 
     # 运行游戏

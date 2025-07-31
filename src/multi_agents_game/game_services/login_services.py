@@ -1,7 +1,6 @@
 from enum import StrEnum, unique
-import os
-from typing import Final, final
-from fastapi import APIRouter, Request, FastAPI, HTTPException, status
+from typing import final
+from fastapi import APIRouter, Request, HTTPException, status, FastAPI
 from ..game_services.game_server import GameServerInstance
 from ..models import (
     LoginRequest,
@@ -11,18 +10,13 @@ from ..models import (
 )
 from loguru import logger
 from ..game.game_options import WebGameUserOptions
-
-# from ..demo.world import (
-#     initialize_demo_game_world,
-# )
-# import shutil
+import os
 from fastapi.staticfiles import StaticFiles
-from ..config.game_config import GEN_RUNTIME_DIR, setup_logger
+from ..config.game_config import setup_logger, LOGS_DIR
 
 ###################################################################################################################################################################
 login_router = APIRouter()
 ###################################################################################################################################################################
-ENFORCE_NEW_GAME: Final[bool] = True
 
 
 ###################################################################################################################################################################
@@ -59,38 +53,23 @@ async def login(
     # 检查房间是否存在
     room_manager = game_server.room_manager
 
-    # TODO, 强制新游戏
-    if ENFORCE_NEW_GAME:
+    # TODO, 强制删除运行中的房间。
+    if room_manager.has_room(request_data.user_name):
+        pre_room = room_manager.get_room(request_data.user_name)
+        assert pre_room is not None
+        logger.info(
+            f"login: {request_data.user_name} has room, remove it = {pre_room._user_name}"
+        )
+        room_manager.remove_room(pre_room)
 
-        # TODO, 强制删除运行中的房间。
-        if room_manager.has_room(request_data.user_name):
-            pre_room = room_manager.get_room(request_data.user_name)
-            assert pre_room is not None
-            logger.info(
-                f"login: {request_data.user_name} has room, remove it = {pre_room._user_name}"
-            )
-            room_manager.remove_room(pre_room)
-
-        # TODO, 这里需要设置一个新的目录，清除旧的目录。
-        web_game_user_options.clear_runtime_dir()
-        web_game_user_options.delete_world_data()
-
-        # TODO, 临时创建一个
-        # initialize_demo_game_world(
-        #     web_user_session_options.game, web_user_session_options.world_boot_file
-        # )
-
-        # # TODO, 游戏资源可以被创建，将gen_world_boot_file这个文件拷贝一份到world_runtime_dir下
-        # shutil.copy(
-        #     web_user_session_options.world_boot_file,
-        #     web_user_session_options.world_runtime_dir,
-        # )
+    # TODO, 这里需要设置一个新的目录，清除旧的目录。
+    web_game_user_options.delete_world_data()
 
     # TODO, get测试。
     # 指向包含 runtime.json 的目录。
     fastapi_app: FastAPI = request.app
     static_dir = os.path.join(
-        GEN_RUNTIME_DIR, web_game_user_options.user, web_game_user_options.game
+        LOGS_DIR, web_game_user_options.user, web_game_user_options.game
     )
     # 将该目录挂载到 "/files" 路径上
     fastapi_app.mount("/files", StaticFiles(directory=static_dir), name="files")
@@ -120,7 +99,7 @@ async def login(
         logger.info(f"login: {request_data.user_name} has room, is running!")
         response_message = GameSessionStatus.RESUME_GAME
     else:
-        if web_game_user_options.world_runtime_file.exists():
+        if web_game_user_options.world_data is not None:
             # 曾经运行过，此时已经存储，可以恢复
             logger.info(
                 f"login: {request_data.user_name} has room, but not running, can restore!"

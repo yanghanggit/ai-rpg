@@ -42,7 +42,7 @@ class WorldDocument(BaseModel):
         arbitrary_types_allowed=True,  # 允许任意类型（如果需要）
     )
 
-    @field_serializer('timestamp')
+    @field_serializer("timestamp")
     def serialize_timestamp(self, value: datetime) -> str:
         """序列化时间戳为 ISO 格式字符串"""
         return value.isoformat()

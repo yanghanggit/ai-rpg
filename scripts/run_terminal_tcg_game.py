@@ -19,6 +19,7 @@ from multi_agents_game.format_string.terminal_input import (
 )
 from multi_agents_game.config.game_config import setup_logger, GLOBAL_GAME_NAME
 from multi_agents_game.config.server_config import chat_server_localhost_urls
+from uuid import uuid4
 
 
 ###############################################################################################################################################
@@ -342,7 +343,7 @@ if __name__ == "__main__":
 
     # 做一些设置
     terminal_user_session_options = TerminalGameUserOptions(
-        user="yanghang",
+        user=f"""player-{uuid4()}""",
         game=GLOBAL_GAME_NAME,
         debug_enforce_new_game=True,
         actor="角色.战士.卡恩",

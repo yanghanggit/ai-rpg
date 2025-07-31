@@ -33,23 +33,23 @@ async def run_game(
     #     terminal_game_user_options.world_boot_file,
     # )
 
-    world1 = terminal_game_user_options.world_data
+    world_exists = terminal_game_user_options.world_data
+    terminal_game_user_options.delete_world_data()
 
     # 如果是新游戏，需要将game_resource_file_path这个文件拷贝一份到world_boot_file_path下
-    if terminal_game_user_options.debug_enforce_new_game:
+    # if terminal_game_user_options.debug_enforce_new_game:
 
-        # 清除用户的运行时目录, 重新生成
-        terminal_game_user_options.clear_runtime_dir()
-        terminal_game_user_options.delete_world_data()
+    #     # 清除用户的运行时目录, 重新生成
+    #     terminal_game_user_options.clear_runtime_dir()
+    #     terminal_game_user_options.delete_world_data()
 
-        # 游戏资源可以被创建，则将game_resource_file_path这个文件拷贝一份到world_boot_file_path下
-        # shutil.copy(
-        #     terminal_game_user_options.world_boot_file,
-        #     terminal_game_user_options.world_runtime_dir,
-        # )
+    # 游戏资源可以被创建，则将game_resource_file_path这个文件拷贝一份到world_boot_file_path下
+    # shutil.copy(
+    #     terminal_game_user_options.world_boot_file,
+    #     terminal_game_user_options.world_runtime_dir,
+    # )
 
-
-    world2 = terminal_game_user_options.world_data
+    # world2 = terminal_game_user_options.world_data
 
     # 创建runtime
     start_world = World()
@@ -57,7 +57,7 @@ async def run_game(
     #
     if not terminal_game_user_options.world_runtime_file.exists():
         # 肯定是新游戏
-        assert terminal_game_user_options.debug_enforce_new_game
+        # assert terminal_game_user_options.debug_enforce_new_game
         # 如果runtime文件不存在，说明是第一次启动，直接从gen文件中读取.
         # assert terminal_game_user_options.world_boot_file.exists()
         # 假设有文件，直接读取
@@ -77,7 +77,7 @@ async def run_game(
     else:
 
         # 如果runtime文件存在，说明是恢复游戏
-        assert not terminal_game_user_options.debug_enforce_new_game
+        # assert not terminal_game_user_options.debug_enforce_new_game
         # runtime文件存在，需要做恢复
         world_runtime_file_content = (
             terminal_game_user_options.world_runtime_file.read_text(encoding="utf-8")
@@ -96,7 +96,7 @@ async def run_game(
             actor=terminal_game_user_options.actor,
         ),
         world=start_world,
-        world_path=terminal_game_user_options.world_runtime_file,
+        # world_path=terminal_game_user_options.world_runtime_file,
         chat_system=ChatSystem(
             name=f"{terminal_game_user_options.game}-chatsystem",
             username=terminal_game_user_options.user,
@@ -108,7 +108,7 @@ async def run_game(
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(terminal_game.world.entities_snapshot) == 0:
 
-        assert terminal_game_user_options.debug_enforce_new_game
+        # assert terminal_game_user_options.debug_enforce_new_game
         logger.warning(
             f"游戏中没有实体 = {terminal_game_user_options.game}, 说明是第一次创建游戏"
         )
@@ -118,7 +118,7 @@ async def run_game(
 
     else:
 
-        assert not terminal_game_user_options.debug_enforce_new_game
+        # assert not terminal_game_user_options.debug_enforce_new_game
         logger.warning(
             f"游戏中有实体 = {terminal_game_user_options.game}，需要通过数据恢复实体，是游戏回复的过程"
         )
@@ -345,7 +345,8 @@ async def _execute_terminal_game(
 ###############################################################################################################################################
 if __name__ == "__main__":
 
-    import asyncio
+    # 初始化日志
+    setup_logger()
 
     random_name = f"player-{uuid4()}"
     fixed_name = "player-fixed"
@@ -354,12 +355,11 @@ if __name__ == "__main__":
     terminal_user_session_options = TerminalGameUserOptions(
         user=fixed_name,
         game=GLOBAL_GAME_NAME,
-        debug_enforce_new_game=True,
+        # debug_enforce_new_game=True,
         actor="角色.战士.卡恩",
     )
 
-    # 初始化日志
-    setup_logger()
-
     # 运行游戏
+    import asyncio
+
     asyncio.run(run_game(terminal_user_session_options))

@@ -56,6 +56,7 @@ from ..db.mongodb_client import (
     mongodb_upsert_one,
     mongodb_find_one,
 )
+from ..config.game_config import LOGS_DIR
 
 
 # ################################################################################################################################################
@@ -99,7 +100,7 @@ class TCGGame(BaseGame, TCGGameContext):
         name: str,
         player: PlayerProxy,
         world: World,
-        world_path: Path,
+        # world_path: Path,
         chat_system: ChatSystem,
         chaos_engineering_system: IChaosEngineering,
     ) -> None:
@@ -110,7 +111,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 世界运行时
         self._world: Final[World] = world
-        self._world_file_path: Final[Path] = world_path
+        # self._world_file_path: Final[Path] = world_path
 
         # 处理器 与 对其控制的 状态。
         self._home_pipeline: Final[TCGGameProcessPipeline] = (
@@ -147,9 +148,21 @@ class TCGGame(BaseGame, TCGGameContext):
         return super().destroy_entity(entity)
 
     ###############################################################################################################################################
+    # @property
+    # def world_file_dir(self) -> Path:
+    #     return self._world_file_path.parent
+
+    ###############################################################################################################################################
     @property
-    def world_file_dir(self) -> Path:
-        return self._world_file_path.parent
+    def verbose_dir(self) -> Path:
+
+        dir = LOGS_DIR / f"{self.player.name}_{self.name}"
+        if not dir.exists():
+            dir.mkdir(parents=True, exist_ok=True)
+        assert dir.exists()
+        assert dir.is_dir()
+        logger.info(f"Verbose debug dir: {dir}")
+        return dir
 
     ###############################################################################################################################################
     @property
@@ -292,7 +305,7 @@ class TCGGame(BaseGame, TCGGameContext):
         self.world.entities_snapshot = self.make_entities_snapshot()
 
         # 保存快照
-        self._world_file_path.write_text(self.world.model_dump_json(), encoding="utf-8")
+        # self._world_file_path.write_text(self.world.model_dump_json(), encoding="utf-8")
         self._persist_world_to_mongodb()
 
         # 保存聊天记录和boot
@@ -323,7 +336,8 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 验证保存结果
             if inserted_id:
-                self._verify_saved_world_document(collection_name)
+                # self._verify_saved_world_document(collection_name)
+                pass
             else:
                 logger.error("❌ 演示游戏世界存储到 MongoDB 失败!")
 
@@ -377,7 +391,7 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     def _verbose_chat_history(self) -> None:
 
-        chat_history_dir = self.world_file_dir / "chat_history"
+        chat_history_dir = self.verbose_dir / "chat_history"
         chat_history_dir.mkdir(parents=True, exist_ok=True)
 
         for agent_name, agent_memory in self.world.agents_short_term_memory.items():
@@ -388,7 +402,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     def _verbose_entities_snapshot(self) -> None:
-        entities_snapshot_dir = self.world_file_dir / "entities_snapshot"
+        entities_snapshot_dir = self.verbose_dir / "entities_snapshot"
         # 强制删除一次
         if entities_snapshot_dir.exists():
             shutil.rmtree(entities_snapshot_dir)
@@ -410,7 +424,7 @@ class TCGGame(BaseGame, TCGGameContext):
         if self.current_dungeon.name == "":
             return
 
-        dungeon_system_dir = self.world_file_dir / "dungeons"
+        dungeon_system_dir = self.verbose_dir / "dungeons"
         dungeon_system_dir.mkdir(parents=True, exist_ok=True)
         dungeon_system_path = dungeon_system_dir / f"{self.current_dungeon.name}.json"
         dungeon_system_path.write_text(

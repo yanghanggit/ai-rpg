@@ -126,7 +126,7 @@ def setup_web_game_session(
             name=web_game_user_options.user, actor=web_game_user_options.actor
         ),
         world=start_world,
-        world_path=web_game_user_options.world_runtime_file,
+        # world_path=web_game_user_options.world_runtime_file,
         chat_system=ChatSystem(
             name=f"{web_game_user_options.game}-chatsystem",
             username=web_game_user_options.user,

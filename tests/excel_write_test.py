@@ -341,7 +341,7 @@ def main() -> None:
     excel_file = "test_excel_output.xlsx"
     dungeons_csv = "test_dungeons_data.csv"
     actors_csv = "test_actors_data.csv"
-    
+
     test_passed = 0
     test_total = 0
 
@@ -350,7 +350,7 @@ def main() -> None:
         print("\n📝 测试1: 创建示例CSV文件...")
         test_total += 1
         create_sample_files_with_custom_names(dungeons_csv, actors_csv)
-        
+
         if Path(dungeons_csv).exists() and Path(actors_csv).exists():
             print("✅ 示例文件创建成功")
             test_passed += 1
@@ -362,9 +362,11 @@ def main() -> None:
         test_total += 1
         dungeons_df = read_csv_safe(dungeons_csv)
         actors_df = read_csv_safe(actors_csv)
-        
+
         if dungeons_df is not None and actors_df is not None:
-            print(f"✅ CSV文件读取成功 - 地牢: {len(dungeons_df)}行, 角色: {len(actors_df)}行")
+            print(
+                f"✅ CSV文件读取成功 - 地牢: {len(dungeons_df)}行, 角色: {len(actors_df)}行"
+            )
             test_passed += 1
         else:
             print("❌ CSV文件读取失败")
@@ -372,8 +374,12 @@ def main() -> None:
         # 测试3: 验证数据内容
         print("\n🔍 测试3: 验证数据内容...")
         test_total += 1
-        if (dungeons_df is not None and len(dungeons_df) == 2 and 
-            actors_df is not None and len(actors_df) == 2):
+        if (
+            dungeons_df is not None
+            and len(dungeons_df) == 2
+            and actors_df is not None
+            and len(actors_df) == 2
+        ):
             print("✅ 数据内容验证成功")
             print(f"   地牢数据: {dungeons_df['name'].tolist()}")
             print(f"   角色数据: {actors_df['name'].tolist()}")
@@ -385,7 +391,7 @@ def main() -> None:
         print("\n💾 测试4: CSV转Excel文件...")
         test_total += 1
         success = update_excel_from_csv(excel_file, dungeons_csv, actors_csv)
-        
+
         if success and Path(excel_file).exists():
             print("✅ Excel文件创建成功")
             test_passed += 1
@@ -398,11 +404,15 @@ def main() -> None:
         try:
             excel_dungeons = pd.read_excel(excel_file, sheet_name="dungeons")
             excel_actors = pd.read_excel(excel_file, sheet_name="actors")
-            
-            if (dungeons_df is not None and actors_df is not None and
-                len(excel_dungeons) == 2 and len(excel_actors) == 2 and
-                excel_dungeons['name'].tolist() == dungeons_df['name'].tolist() and
-                excel_actors['name'].tolist() == actors_df['name'].tolist()):
+
+            if (
+                dungeons_df is not None
+                and actors_df is not None
+                and len(excel_dungeons) == 2
+                and len(excel_actors) == 2
+                and excel_dungeons["name"].tolist() == dungeons_df["name"].tolist()
+                and excel_actors["name"].tolist() == actors_df["name"].tolist()
+            ):
                 print("✅ Excel文件内容验证成功")
                 test_passed += 1
             else:
@@ -428,7 +438,7 @@ def main() -> None:
     # 测试结果汇总
     print(f"\n🎯 测试完成!")
     print(f"📊 测试结果: {test_passed}/{test_total} 通过")
-    
+
     if test_passed == test_total:
         print("🎉 所有测试通过!")
     else:
@@ -485,4 +495,3 @@ if __name__ == "__main__":
         print("\n\n👋 程序被中断")
     except Exception as e:
         logger.error(f"程序执行失败: {e}")
-

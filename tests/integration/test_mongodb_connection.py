@@ -9,7 +9,7 @@ Author: yanghanggit
 Date: 2025-08-01
 """
 
-from typing import Generator, Dict, Any, Optional
+from typing import Generator, Dict, Any
 import pytest
 import sys
 import json

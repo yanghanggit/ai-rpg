@@ -6,7 +6,6 @@
 
 import yaml  # type: ignore[import-untyped]
 import tomllib
-from pathlib import Path
 from typing import Any, Dict, List
 
 

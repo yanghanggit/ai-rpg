@@ -156,7 +156,7 @@ class TCGGame(BaseGame, TCGGameContext):
             dir.mkdir(parents=True, exist_ok=True)
         assert dir.exists()
         assert dir.is_dir()
-        logger.info(f"Verbose debug dir: {dir}")
+        #logger.info(f"Verbose debug dir: {dir}")
         return dir
 
     ###############################################################################################################################################

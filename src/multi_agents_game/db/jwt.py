@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional, final
 from jose import JWTError, jwt
 from pydantic import BaseModel
@@ -26,9 +26,9 @@ def create_access_token(
 ) -> str:
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.now() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now() + timedelta(minutes=15)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
 
     # 添加一个唯一标识符用于令牌撤销 (新增)
     jti = str(uuid.uuid4())
@@ -44,9 +44,9 @@ def create_refresh_token(
 ) -> str:
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.now() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now() + timedelta(
+        expire = datetime.now(timezone.utc) + timedelta(
             days=REFRESH_TOKEN_EXPIRE_DAYS
         )  # 默认 7 天有效期
     to_encode.update({"exp": expire})

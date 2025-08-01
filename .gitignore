@@ -31,5 +31,5 @@ htmlcov/
 # Type checking
 .mypy_cache/
 
-# Backup
-backup_old_structure/
+# Caches
+.cache/

@@ -9,7 +9,7 @@ src_path = Path(__file__).parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
 
-def test_package_structure():
+def test_package_structure() -> None:
     """Test that the package structure is correctly set up."""
     # 基本的包结构测试
     assert src_path.exists()
@@ -17,7 +17,7 @@ def test_package_structure():
     assert (src_path / "multi_agents_game" / "__init__.py").exists()
 
 
-def test_import_main_package():
+def test_import_main_package() -> None:
     """Test that the main package can be imported."""
     try:
         import multi_agents_game

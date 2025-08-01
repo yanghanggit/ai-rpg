@@ -3,6 +3,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from ..config.db_config import POSTGRES_DATABASE_URL
 from .pgsql_object import Base
+
 # 导入向量相关的表定义，确保它们被包含在元数据中
 from .pgsql_vector import VectorDocumentDB, ConversationVectorDB, GameKnowledgeVectorDB
 
@@ -25,7 +26,7 @@ def reset_database() -> None:
     with engine.begin() as conn:
         # 确保pgvector扩展已启用
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-        
+
         # 先禁用约束检查，然后删除所有表
         conn.execute(text("SET CONSTRAINTS ALL DEFERRED"))
 

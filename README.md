@@ -184,7 +184,7 @@ scripts/kill_servers.sh
 ### 严格模式检查
 
 ```shell
-mypy --strict scripts/ src/
+mypy --strict scripts/ src/ tests/
 ```
 
 ### 代码质量检查

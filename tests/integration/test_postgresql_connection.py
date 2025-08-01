@@ -60,7 +60,9 @@ class TestPostgreSQLConnection:
                 display_name=test_display_name,
             )
 
-            assert created_user and created_user.username == test_username, "用户创建失败!"
+            assert (
+                created_user and created_user.username == test_username
+            ), "用户创建失败!"
             logger.success(f"✅ 用户创建成功! 用户ID: {created_user.id}")
 
             # 3. 测试用户查询操作
@@ -140,13 +142,13 @@ class TestPostgreSQLConnection:
     def test_user_not_exists(self) -> None:
         """测试不存在的用户"""
         nonexistent_username = "definitely_does_not_exist_user_12345"
-        
+
         # 确保用户不存在
         self._cleanup_test_user(nonexistent_username)
-        
+
         # 检查用户不存在
         assert not has_user(nonexistent_username)
-        
+
         # 查询不存在的用户应该抛出 ValueError
         with pytest.raises(ValueError, match=f"用户 '{nonexistent_username}' 不存在"):
             get_user(nonexistent_username)
@@ -183,11 +185,11 @@ class TestPostgreSQLConnection:
         test_usernames = [
             "test_postgresql_connection",
             "test_crud_user",
-            "definitely_does_not_exist_user_12345"
+            "definitely_does_not_exist_user_12345",
         ]
-        
+
         yield  # 运行测试
-        
+
         # 清理所有测试用户
         for username in test_usernames:
             self._cleanup_test_user(username)

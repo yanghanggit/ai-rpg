@@ -153,7 +153,9 @@ class TestMongoDBConnection:
 
             # 5. 统计文档数量
             logger.info("📊 统计测试文档数量...")
-            doc_count = mongodb_count_documents(collection_name, {"game_id": test_game_id})
+            doc_count = mongodb_count_documents(
+                collection_name, {"game_id": test_game_id}
+            )
             logger.info(f"  - 测试文档数量: {doc_count}")
 
             logger.success("🎉 MongoDB 连接和基本操作测试全部通过!")
@@ -194,7 +196,7 @@ class TestMongoDBConnection:
                 "game_id": test_game_id,
                 "name": "Test Document",
                 "value": 42,
-                "timestamp": datetime.now()
+                "timestamp": datetime.now(),
             }
 
             # 插入文档
@@ -212,7 +214,7 @@ class TestMongoDBConnection:
             update_result = mongodb_update_one(
                 collection_name,
                 {"game_id": test_game_id},
-                {"$set": {"value": 100, "updated": True}}
+                {"$set": {"value": 100, "updated": True}},
             )
             assert update_result
 
@@ -242,7 +244,7 @@ class TestMongoDBConnection:
             test_doc = {
                 "_id": f"{test_game_id}_upsert",
                 "game_id": test_game_id,
-                "version": 1
+                "version": 1,
             }
 
             result1 = mongodb_upsert_one(collection_name, test_doc)
@@ -252,7 +254,7 @@ class TestMongoDBConnection:
             updated_doc = {
                 "_id": f"{test_game_id}_upsert",
                 "game_id": test_game_id,
-                "version": 2
+                "version": 2,
             }
 
             result2 = mongodb_upsert_one(collection_name, updated_doc)
@@ -332,7 +334,9 @@ class TestMongoDBConnection:
     def _cleanup_test_data(self, collection_name: str, test_game_id: str) -> None:
         """清理测试数据"""
         try:
-            deleted_count = mongodb_delete_many(collection_name, {"game_id": test_game_id})
+            deleted_count = mongodb_delete_many(
+                collection_name, {"game_id": test_game_id}
+            )
 
             if deleted_count > 0:
                 logger.success(f"✅ 测试数据清理成功，删除了 {deleted_count} 条记录")
@@ -360,9 +364,9 @@ class TestMongoDBConnection:
             ("test_crud_collection", "test_crud_game"),
             ("test_upsert_collection", "test_upsert_game"),
         ]
-        
+
         yield  # 运行测试
-        
+
         # 清理所有测试数据
         for collection_name, game_id in test_collections_and_games:
             self._cleanup_test_data(collection_name, game_id)

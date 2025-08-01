@@ -1,5 +1,6 @@
 from typing import Final, final, ClassVar
 from pydantic import BaseModel
+import os
 
 
 ##################################################################################################################
@@ -46,9 +47,16 @@ ACCESS_TOKEN_EXPIRE_MINUTES: Final[int] = 30  # 访问令牌的过期时间，�
 
 ##################################################################################################################
 # 数据库配置
-postgres_password: Final[str] = "123456"
+postgres_user: Final[str] = os.getenv("POSTGRES_USER", "yanghang")  # 使用实际的超级用户
+postgres_password: Final[str] = os.getenv("POSTGRES_PASSWORD", "")  # 无密码认证
+postgres_host: Final[str] = os.getenv("POSTGRES_HOST", "localhost")
+postgres_db: Final[str] = os.getenv("POSTGRES_DB", "my_fastapi_db")
+
+# 使用环境变量配置数据库连接，开发环境默认使用yanghang超级用户
 POSTGRES_DATABASE_URL: Final[str] = (
-    f"postgresql://fastapi_user:{postgres_password}@localhost/my_fastapi_db"
+    f"postgresql://{postgres_user}:{postgres_password}@{postgres_host}/{postgres_db}"
+    if postgres_password
+    else f"postgresql://{postgres_user}@{postgres_host}/{postgres_db}"
 )
 
 ##################################################################################################################

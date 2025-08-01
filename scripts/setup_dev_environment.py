@@ -25,17 +25,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 # Import all required modules at the top
 from loguru import logger
 from multi_agents_game.db.account import FAKE_USER
-from multi_agents_game.db.pgsql_client import reset_database
+from multi_agents_game.db.pgsql_client import reset_database, ensure_database_tables
 from multi_agents_game.db.pgsql_user import has_user, save_user
 from multi_agents_game.db.redis_client import (
     redis_flushall,
 )
 from multi_agents_game.db.mongodb_client import (
     mongodb_clear_database,
-  
     mongodb_upsert_one,
     mongodb_find_one,
- 
 )
 from multi_agents_game.db.mongodb_boot_document import BootDocument
 from multi_agents_game.demo.world import create_demo_game_world
@@ -161,7 +159,19 @@ def _create_and_store_demo_world() -> None:
 #######################################################################################################
 # Development Environment Setup Utility
 def main() -> None:
-    
+
+    logger.info("🚀 开始初始化开发环境...")
+
+    # 首先确保数据库表结构存在
+    logger.info("📋 确保数据库表结构...")
+    try:
+        ensure_database_tables()
+        logger.success("✅ 数据库表结构检查完成")
+    except Exception as e:
+        logger.error(f"❌ 数据库连接失败: {e}")
+        logger.info("💡 请检查PostgreSQL是否运行，以及用户权限配置")
+        raise
+
     # 第1阶段：清空所有数据库
     logger.info("🚀 清空 Redis 数据库...")
     redis_flushall()
@@ -181,6 +191,3 @@ def main() -> None:
 # Main execution
 if __name__ == "__main__":
     main()
-
-
-

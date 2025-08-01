@@ -50,9 +50,9 @@ class TestRedisConnection:
             retrieved_value = redis_get(test_key)
 
             # 验证结果
-            assert retrieved_value == test_value, (
-                f"Redis 连接测试失败! 期望值: {test_value}, 实际值: {retrieved_value}"
-            )
+            assert (
+                retrieved_value == test_value
+            ), f"Redis 连接测试失败! 期望值: {test_value}, 实际值: {retrieved_value}"
             logger.success(f"✅ Redis 连接测试成功! 读取到的值: {retrieved_value}")
 
             # 清理测试数据
@@ -61,9 +61,9 @@ class TestRedisConnection:
 
             # 验证删除
             deleted_value = redis_get(test_key)
-            assert deleted_value is None, (
-                f"测试数据清理失败，键值仍然存在: {deleted_value}"
-            )
+            assert (
+                deleted_value is None
+            ), f"测试数据清理失败，键值仍然存在: {deleted_value}"
             logger.success("✅ 测试数据清理成功!")
 
             logger.success("🎉 Redis 连接和基本操作测试全部通过!")
@@ -107,10 +107,10 @@ class TestRedisConnection:
     def test_redis_nonexistent_key(self) -> None:
         """测试获取不存在的键"""
         nonexistent_key = "definitely_does_not_exist_12345"
-        
+
         # 确保键不存在
         redis_delete(nonexistent_key)
-        
+
         # 获取不存在的键应该返回 None
         result = redis_get(nonexistent_key)
         assert result is None
@@ -120,13 +120,13 @@ class TestRedisConnection:
         """测试后自动清理测试键"""
         test_keys = [
             "test_redis_connection",
-            "test_set_get", 
+            "test_set_get",
             "test_delete",
-            "definitely_does_not_exist_12345"
+            "definitely_does_not_exist_12345",
         ]
-        
+
         yield  # 运行测试
-        
+
         # 清理所有测试键
         for key in test_keys:
             try:

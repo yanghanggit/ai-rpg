@@ -4,15 +4,23 @@ from sqlalchemy.orm import sessionmaker
 from ..config.db_config import POSTGRES_DATABASE_URL
 from .pgsql_object import Base
 
-# 导入向量相关的表定义，确保它们被包含在元数据中
-# from .pgsql_vector import VectorDocumentDB, ConversationVectorDB, GameKnowledgeVectorDB
-
 ############################################################################################################
 engine = create_engine(POSTGRES_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
 ############################################################################################################
-# 创建表
-Base.metadata.create_all(bind=engine)
+def ensure_database_tables() -> None:
+    """
+    确保数据库表已创建
+    这个函数在需要时才会被调用，避免导入时立即连接数据库
+    """
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("✅ 数据库表结构已确保存在")
+    except Exception as e:
+        logger.error(f"❌ 创建数据库表时出错: {e}")
+        raise
 
 
 ############################################################################################################
@@ -22,26 +30,44 @@ def reset_database() -> None:
     清空数据库并重建表结构
     注意：该方法会删除所有数据，只适用于开发环境
     """
-    # 使用直接的SQL命令执行级联删除
-    with engine.begin() as conn:
-        # 确保pgvector扩展已启用
-        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+    try:
+        # 使用直接的SQL命令执行级联删除
+        with engine.begin() as conn:
+            # 确保pgvector扩展已启用
+            conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
 
-        # 先禁用约束检查，然后删除所有表
-        conn.execute(text("SET CONSTRAINTS ALL DEFERRED"))
+            # 先禁用约束检查，然后删除所有表
+            conn.execute(text("SET CONSTRAINTS ALL DEFERRED"))
 
-        # 对所有表使用CASCADE选项执行删除
-        tables = conn.execute(
-            text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
-        ).fetchall()
+            # 获取所有表
+            tables = conn.execute(
+                text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
+            ).fetchall()
 
-        for table in tables:
-            conn.execute(text(f'DROP TABLE IF EXISTS "{table[0]}" CASCADE'))
+            # 对所有表使用CASCADE选项执行删除
+            for table in tables:
+                try:
+                    conn.execute(text(f'DROP TABLE IF EXISTS "{table[0]}" CASCADE'))
+                    logger.info(f"✅ 成功删除表: {table[0]}")
+                except Exception as table_error:
+                    logger.warning(f"⚠️ 删除表 {table[0]} 时出现警告: {table_error}")
+                    # 尝试使用RESTRICT模式删除
+                    try:
+                        conn.execute(
+                            text(f'DROP TABLE IF EXISTS "{table[0]}" RESTRICT')
+                        )
+                        logger.info(f"✅ 使用RESTRICT模式成功删除表: {table[0]}")
+                    except Exception as restrict_error:
+                        logger.error(f"❌ 无法删除表 {table[0]}: {restrict_error}")
 
-    # 重新创建所有表
-    Base.metadata.create_all(bind=engine)
+        # 重新创建所有表
+        ensure_database_tables()
+        logger.warning("🔄 数据库表已被清除然后重建")
 
-    logger.warning("🔄 数据库表已被清除然后重建")
+    except Exception as e:
+        logger.error(f"❌ 重置数据库时发生错误: {e}")
+        logger.info("💡 建议检查数据库用户权限和连接配置")
+        raise
 
 
 ############################################################################################################

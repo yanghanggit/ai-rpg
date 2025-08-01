@@ -17,8 +17,8 @@ def ensure_database_tables() -> None:
     """
     try:
         # 导入所有模型以确保它们被注册到Base.metadata中
-        from .pgsql_vector import VectorDocumentDB  # 确保向量表模型被注册
-        
+        from .pgsql_vector import VectorDocumentDB  # noqa: F401 # 确保向量表模型被注册
+
         Base.metadata.create_all(bind=engine)
         logger.info("✅ 数据库表结构已确保存在")
     except Exception as e:
@@ -35,8 +35,8 @@ def reset_database() -> None:
     """
     try:
         # 导入所有模型以确保它们被注册到Base.metadata中
-        from .pgsql_vector import VectorDocumentDB  # 确保向量表模型被注册
-        
+        from .pgsql_vector import VectorDocumentDB  # noqa: F401 # 确保向量表模型被注册
+
         # 使用直接的SQL命令执行级联删除
         with engine.begin() as conn:
             # 确保pgvector扩展已启用

@@ -32,6 +32,7 @@ class WorldDocument(BaseModel):
         description="文档唯一标识符，使用 UUID",
     )
     username: str = Field(..., description="用户名")
+    game_name: str = Field(..., description="游戏名称")
     timestamp: datetime = Field(default_factory=datetime.now, description="创建时间戳")
     version: str = Field(default="1.0.0", description="版本号")
     world_data: World = Field(..., description="游戏世界启动配置数据")
@@ -49,7 +50,7 @@ class WorldDocument(BaseModel):
 
     @classmethod
     def create_from_world(
-        cls, username: str, world: World, version: str = "1.0.0"
+        cls, username: str, world: World, version: str
     ) -> "WorldDocument":
         """
         从 World 对象创建 WorldDocument 实例
@@ -62,7 +63,12 @@ class WorldDocument(BaseModel):
         Returns:
             WorldDocument: 创建的文档实例
         """
-        return cls(username=username, version=version, world_data=world)
+        return cls(
+            username=username,
+            game_name=world.boot.name,
+            version=version,
+            world_data=world,
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -108,7 +114,12 @@ class WorldDocument(BaseModel):
             OSError: 当文件写入失败时
         """
         if file_path is None:
-            file_path = Path(f"{self.username}-{self.world_data.boot.name}.json")
+            assert self.game_name, "游戏名称不能为空"
+            assert self.username, "用户名不能为空"
+            assert (
+                self.game_name == self.world_data.boot.name
+            ), "游戏名称与 World 数据中的 boot.name 不匹配"
+            file_path = Path(f"{self.username}-{self.game_name}.json")
 
         try:
             # 确保目录存在

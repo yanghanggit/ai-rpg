@@ -48,9 +48,7 @@ class BootDocument(BaseModel):
         return value.isoformat()
 
     @classmethod
-    def create_from_boot(
-        cls, game_name: str, boot: Boot, version: str = "1.0.0"
-    ) -> "BootDocument":
+    def create_from_boot(cls, boot: Boot, version: str) -> "BootDocument":
         """
         从 Boot 对象创建 WorldBootDocument 实例
 
@@ -62,7 +60,7 @@ class BootDocument(BaseModel):
         Returns:
             WorldBootDocument: 创建的文档实例
         """
-        return cls(game_name=game_name, version=version, boot_data=boot)
+        return cls(game_name=boot.name, version=version, boot_data=boot)
 
     def to_dict(self) -> Dict[str, Any]:
         """

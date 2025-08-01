@@ -49,7 +49,8 @@ class UserOptions:
     def world_data(self) -> Optional[World]:
         logger.info(f"📖 从 MongoDB 获取游戏世界进行验证...")
         stored_world = mongodb_find_one(
-            DEFAULT_MONGODB_CONFIG.worlds_collection, {"username": self.user}
+            DEFAULT_MONGODB_CONFIG.worlds_collection,
+            {"username": self.user, "game_name": self.game},
         )
         if stored_world is None:
             logger.error("❌ 游戏世界存储到 MongoDB 失败!")

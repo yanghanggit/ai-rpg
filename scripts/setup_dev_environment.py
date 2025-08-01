@@ -462,7 +462,7 @@ def _create_and_store_demo_world() -> None:
     try:
         # 创建 WorldBootDocument 实例
         world_boot_document = BootDocument.create_from_boot(
-            game_name=game_name, boot=world_boot, version=version
+            boot=world_boot, version=version
         )
 
         # 存储到 MongoDB（使用 upsert 语义，如果存在则完全覆盖）

@@ -19,6 +19,34 @@ if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
 
 
+# Global fixtures for model caching to improve test performance
+@pytest.fixture(scope="session")
+def basic_model():
+    """Load the basic English model once per test session."""
+    from sentence_transformers import SentenceTransformer
+    print("\n🔄 Loading basic model (all-MiniLM-L6-v2)...")
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    print("✅ Basic model loaded and cached")
+    return model
+
+
+@pytest.fixture(scope="session") 
+def multilingual_model():
+    """Load the multilingual model once per test session."""
+    from sentence_transformers import SentenceTransformer
+    print("\n🔄 Loading multilingual model (paraphrase-multilingual-MiniLM-L12-v2)...")
+    model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+    print("✅ Multilingual model loaded and cached")
+    return model
+
+
+@pytest.fixture(scope="session")
+def cos_sim_func():
+    """Import cos_sim function once per test session."""
+    from sentence_transformers.util import cos_sim
+    return cos_sim
+
+
 class TestSentenceTransformersBasic:
     """Basic functionality tests for sentence-transformers."""
 
@@ -32,47 +60,30 @@ class TestSentenceTransformersBasic:
         except ImportError as e:
             pytest.fail(f"Failed to import sentence-transformers: {e}")
 
-    def test_load_model_basic(self):
-        """Test loading a lightweight model."""
-        from sentence_transformers import SentenceTransformer
-        
-        # 使用最轻量级的模型进行测试
-        model_name = "all-MiniLM-L6-v2"
-        
-        try:
-            model = SentenceTransformer(model_name)
-            assert model is not None
-            assert hasattr(model, 'encode')
-        except Exception as e:
-            pytest.fail(f"Failed to load model {model_name}: {e}")
+    def test_load_model_basic(self, basic_model):
+        """Test basic model functionality using cached model."""
+        assert basic_model is not None
+        assert hasattr(basic_model, 'encode')
 
-    def test_encode_single_sentence(self):
-        """Test encoding a single sentence."""
-        from sentence_transformers import SentenceTransformer
-        
-        model = SentenceTransformer("all-MiniLM-L6-v2")
-        
+    def test_encode_single_sentence(self, basic_model):
+        """Test encoding a single sentence using cached model."""
         test_sentence = "This is a test sentence."
-        embedding = model.encode(test_sentence)
+        embedding = basic_model.encode(test_sentence)
         
         assert isinstance(embedding, np.ndarray)
         assert len(embedding.shape) == 1  # 1D array for single sentence
         assert embedding.shape[0] > 0  # Non-empty embedding
         assert not np.isnan(embedding).any()  # No NaN values
 
-    def test_encode_multiple_sentences(self):
-        """Test encoding multiple sentences."""
-        from sentence_transformers import SentenceTransformer
-        
-        model = SentenceTransformer("all-MiniLM-L6-v2")
-        
+    def test_encode_multiple_sentences(self, basic_model):
+        """Test encoding multiple sentences using cached model."""
         test_sentences = [
             "This is the first sentence.",
             "This is the second sentence.",
             "This is a completely different sentence."
         ]
         
-        embeddings = model.encode(test_sentences)
+        embeddings = basic_model.encode(test_sentences)
         
         assert isinstance(embeddings, np.ndarray)
         assert len(embeddings.shape) == 2  # 2D array for multiple sentences
@@ -80,13 +91,8 @@ class TestSentenceTransformersBasic:
         assert embeddings.shape[1] > 0  # Non-empty embeddings
         assert not np.isnan(embeddings).any()  # No NaN values
 
-    def test_similarity_computation(self):
-        """Test computing similarity between sentences."""
-        from sentence_transformers import SentenceTransformer
-        from sentence_transformers.util import cos_sim
-        
-        model = SentenceTransformer("all-MiniLM-L6-v2")
-        
+    def test_similarity_computation(self, basic_model, cos_sim_func):
+        """Test computing similarity between sentences using cached model."""
         # Similar sentences
         sentence1 = "The cat is sleeping on the mat."
         sentence2 = "A cat is lying on a mat."
@@ -94,11 +100,11 @@ class TestSentenceTransformersBasic:
         # Different sentence
         sentence3 = "The weather is very nice today."
         
-        embeddings = model.encode([sentence1, sentence2, sentence3])
+        embeddings = basic_model.encode([sentence1, sentence2, sentence3])
         
         # Compute similarities
-        sim_1_2 = cos_sim(embeddings[0], embeddings[1])
-        sim_1_3 = cos_sim(embeddings[0], embeddings[2])
+        sim_1_2 = cos_sim_func(embeddings[0], embeddings[1])
+        sim_1_3 = cos_sim_func(embeddings[0], embeddings[2])
         
         # Extract scalar values from tensors
         sim_1_2_value = sim_1_2.item()
@@ -125,29 +131,19 @@ class TestSentenceTransformersGameContext:
             "失落的贤者之塔：古代魔法师的研究所，内藏强大的魔法道具和禁忌知识。",
         ]
 
-    def test_chinese_text_encoding(self, game_knowledge_base):
-        """Test encoding Chinese game content."""
-        from sentence_transformers import SentenceTransformer
-        
-        # 使用支持多语言的模型
-        model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
-        
-        embeddings = model.encode(game_knowledge_base)
+    def test_chinese_text_encoding(self, game_knowledge_base, multilingual_model):
+        """Test encoding Chinese game content using cached model."""
+        embeddings = multilingual_model.encode(game_knowledge_base)
         
         assert isinstance(embeddings, np.ndarray)
         assert embeddings.shape[0] == len(game_knowledge_base)
         assert embeddings.shape[1] > 0
         assert not np.isnan(embeddings).any()
 
-    def test_semantic_search_simulation(self, game_knowledge_base):
-        """Test simulating semantic search functionality."""
-        from sentence_transformers import SentenceTransformer
-        from sentence_transformers.util import cos_sim
-        
-        model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
-        
+    def test_semantic_search_simulation(self, game_knowledge_base, multilingual_model, cos_sim_func):
+        """Test simulating semantic search functionality using cached model."""
         # Encode knowledge base
-        kb_embeddings = model.encode(game_knowledge_base)
+        kb_embeddings = multilingual_model.encode(game_knowledge_base)
         
         # Test queries
         queries = [
@@ -157,8 +153,8 @@ class TestSentenceTransformersGameContext:
         ]
         
         for query in queries:
-            query_embedding = model.encode([query])
-            similarities = cos_sim(query_embedding, kb_embeddings)[0]
+            query_embedding = multilingual_model.encode([query])
+            similarities = cos_sim_func(query_embedding, kb_embeddings)[0]
             
             # Find most similar document
             best_match_idx = similarities.argmax().item()
@@ -170,21 +166,16 @@ class TestSentenceTransformersGameContext:
             # The similarity should be reasonable (> 0.1 for related content)
             assert best_similarity > 0.1, f"Query '{query}' has low similarity ({best_similarity})"
 
-    def test_document_ranking(self, game_knowledge_base):
-        """Test ranking documents by relevance."""
-        from sentence_transformers import SentenceTransformer
-        from sentence_transformers.util import cos_sim
-        
-        model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
-        
+    def test_document_ranking(self, game_knowledge_base, multilingual_model, cos_sim_func):
+        """Test ranking documents by relevance using cached model."""
         # Encode knowledge base
-        kb_embeddings = model.encode(game_knowledge_base)
+        kb_embeddings = multilingual_model.encode(game_knowledge_base)
         
         # Query about sword/weapon
         query = "武器和剑的信息"
-        query_embedding = model.encode([query])
+        query_embedding = multilingual_model.encode([query])
         
-        similarities = cos_sim(query_embedding, kb_embeddings)[0]
+        similarities = cos_sim_func(query_embedding, kb_embeddings)[0]
         
         # Get top 3 most relevant documents
         top_indices = similarities.argsort(descending=True)[:3]
@@ -201,91 +192,71 @@ class TestSentenceTransformersGameContext:
 class TestSentenceTransformersPerformance:
     """Performance and resource usage tests."""
 
-    def test_model_memory_usage(self):
-        """Test that model loading doesn't consume excessive memory."""
+    def test_model_memory_usage(self, basic_model):
+        """Test that model doesn't consume excessive memory using cached model."""
         import psutil
         import os
-        from sentence_transformers import SentenceTransformer
         
-        # Get initial memory usage
+        # Get current memory usage (model already loaded in fixture)
         process = psutil.Process(os.getpid())
-        initial_memory = process.memory_info().rss / 1024 / 1024  # MB
+        current_memory = process.memory_info().rss / 1024 / 1024  # MB
         
-        # Load model
-        model = SentenceTransformer("all-MiniLM-L6-v2")
+        # Use the model to ensure it's active
+        test_embedding = basic_model.encode("Memory test sentence")
         
-        # Get memory after loading
-        after_load_memory = process.memory_info().rss / 1024 / 1024  # MB
-        
-        memory_increase = after_load_memory - initial_memory
-        
-        # Model should not consume more than 500MB (reasonable limit)
-        assert memory_increase < 500, f"Model consumed too much memory: {memory_increase:.2f}MB"
+        # Memory should be reasonable (models are already loaded)
+        assert current_memory < 2000, f"Total memory usage too high: {current_memory:.2f}MB"
+        assert test_embedding.shape[0] > 0  # Ensure model works
 
-    def test_encoding_speed(self):
-        """Test encoding speed for reasonable performance."""
+    def test_encoding_speed(self, basic_model):
+        """Test encoding speed for reasonable performance using cached model."""
         import time
-        from sentence_transformers import SentenceTransformer
-        
-        model = SentenceTransformer("all-MiniLM-L6-v2")
         
         # Test sentences
         sentences = [f"This is test sentence number {i}." for i in range(100)]
         
-        # Measure encoding time
+        # Measure encoding time (model already loaded)
         start_time = time.time()
-        embeddings = model.encode(sentences)
+        embeddings = basic_model.encode(sentences)
         end_time = time.time()
         
         encoding_time = end_time - start_time
         sentences_per_second = len(sentences) / encoding_time
         
-        # Should be able to encode at least 10 sentences per second
-        assert sentences_per_second > 10, f"Encoding too slow: {sentences_per_second:.2f} sentences/sec"
+        # Should be much faster with pre-loaded model
+        assert sentences_per_second > 20, f"Encoding too slow: {sentences_per_second:.2f} sentences/sec"
 
 
 class TestSentenceTransformersErrorHandling:
     """Test error handling and edge cases."""
 
-    def test_empty_input(self):
-        """Test handling of empty input."""
-        from sentence_transformers import SentenceTransformer
-        
-        model = SentenceTransformer("all-MiniLM-L6-v2")
-        
+    def test_empty_input(self, basic_model):
+        """Test handling of empty input using cached model."""
         # Empty string
-        embedding = model.encode("")
+        embedding = basic_model.encode("")
         assert isinstance(embedding, np.ndarray)
         assert embedding.shape[0] > 0
         
         # Empty list
-        embeddings = model.encode([])
+        embeddings = basic_model.encode([])
         assert isinstance(embeddings, np.ndarray)
         assert embeddings.shape[0] == 0
 
-    def test_very_long_text(self):
-        """Test handling of very long text."""
-        from sentence_transformers import SentenceTransformer
-        
-        model = SentenceTransformer("all-MiniLM-L6-v2")
-        
+    def test_very_long_text(self, basic_model):
+        """Test handling of very long text using cached model."""
         # Very long text (beyond typical token limits)
         long_text = "This is a test sentence. " * 1000
         
         try:
-            embedding = model.encode(long_text)
+            embedding = basic_model.encode(long_text)
             assert isinstance(embedding, np.ndarray)
             assert embedding.shape[0] > 0
         except Exception as e:
             # If it fails, it should fail gracefully
             assert "token" in str(e).lower() or "length" in str(e).lower()
 
-    def test_special_characters(self):
-        """Test handling of special characters and mixed languages."""
-        from sentence_transformers import SentenceTransformer
-        
-        model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
-        
+    def test_special_characters(self, multilingual_model):
+        """Test handling of special characters and mixed languages using cached model."""
         special_texts = [
             "Hello 世界! 🌍",
             "Special chars: @#$%^&*()",
@@ -295,7 +266,7 @@ class TestSentenceTransformersErrorHandling:
         ]
         
         for text in special_texts:
-            embedding = model.encode(text)
+            embedding = multilingual_model.encode(text)
             assert isinstance(embedding, np.ndarray)
             assert embedding.shape[0] > 0
             assert not np.isnan(embedding).any()

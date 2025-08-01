@@ -55,8 +55,8 @@
 ### 1. 数据模型 (`src/multi_agents_game/db/pgsql_vector.py`)
 
 - ✅ `VectorDocumentDB`: 文档向量存储，支持RAG功能
-- ✅ `ConversationVectorDB`: 对话向量存储，支持对话记忆
-- ✅ `GameKnowledgeVectorDB`: 游戏知识向量存储
+- ❌ `ConversationVectorDB`: 对话向量存储（已移除）
+- ❌ `GameKnowledgeVectorDB`: 游戏知识向量存储（已移除）
 - 🔧 使用1536维向量（兼容OpenAI embeddings）
 - 🚀 IVFFlat索引优化搜索性能
 
@@ -64,10 +64,10 @@
 
 - ✅ `save_vector_document()`: 保存文档向量
 - ✅ `search_similar_documents()`: 相似文档搜索
-- ✅ `save_conversation_vector()`: 保存对话向量
-- ✅ `search_similar_conversations()`: 相似对话搜索
-- ✅ `save_game_knowledge_vector()`: 保存游戏知识向量
-- ✅ `search_game_knowledge()`: 游戏知识搜索
+- ❌ `save_conversation_vector()`: 保存对话向量（已移除）
+- ❌ `search_similar_conversations()`: 相似对话搜索（已移除）
+- ❌ `save_game_knowledge_vector()`: 保存游戏知识向量（已移除）
+- ❌ `search_game_knowledge()`: 游戏知识搜索（已移除）
 - ✅ `get_database_vector_stats()`: 数据库统计信息
 
 ### 3. 新增文件结构

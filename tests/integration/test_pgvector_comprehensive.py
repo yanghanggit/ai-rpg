@@ -6,7 +6,7 @@ pgvector 综合测试和演示文件
 
 import pytest
 import numpy as np
-from typing import List, Dict, Any, cast
+from typing import List, Any, cast
 from sqlalchemy import create_engine, text
 from loguru import logger
 import sys
@@ -22,12 +22,6 @@ if project_root not in sys.path:
 
 # 导入配置
 from multi_agents_game.config.db_config import POSTGRES_DATABASE_URL
-
-# 导入模型类型以支持类型检查
-from multi_agents_game.db.pgsql_vector import (
-    ConversationVectorDB,
-    GameKnowledgeVectorDB,
-)
 
 
 # ================================
@@ -407,178 +401,11 @@ def test_vector_document_operations() -> None:
 
 @pytest.mark.integration
 @pytest.mark.database
+# 该函数已被注释，因为 ConversationVectorDB 类已被移除
 def test_conversation_vector_operations() -> None:
-    """测试对话向量操作 - 使用ORM"""
-    from multi_agents_game.db.pgsql_vector_ops import (
-        save_conversation_vector,
-        search_similar_conversations,
-    )
-    from uuid import uuid4
-
-    logger.info("🧪 开始测试对话向量操作...")
-
-    # 模拟游戏会话ID
-    game_session_id = uuid4()
-
-    # 1. 保存一些测试对话
-    test_conversations = [
-        {
-            "content": "玩家请求查看当前的游戏状态和可用行动",
-            "sender": "player_1",
-            "receiver": "game_master",
-            "message_type": "player_request",
-        },
-        {
-            "content": "游戏主持回应：你现在在森林中，可以选择向北、向南或者停留",
-            "sender": "game_master",
-            "receiver": "player_1",
-            "message_type": "game_response",
-        },
-        {
-            "content": "玩家决定向北前进探索新区域",
-            "sender": "player_1",
-            "receiver": "game_master",
-            "message_type": "player_action",
-        },
-        {
-            "content": "遇到了一群友善的精灵，他们愿意提供帮助",
-            "sender": "game_master",
-            "receiver": "player_1",
-            "message_type": "game_event",
-        },
-    ]
-
-    saved_conversations = []
-    for conv_data in test_conversations:
-        try:
-            # 生成嵌入向量
-            embedding = mock_get_embedding(conv_data["content"])
-
-            # 保存到数据库
-            conv = save_conversation_vector(
-                message_content=conv_data["content"],
-                embedding=embedding,
-                sender=conv_data["sender"],
-                receiver=conv_data["receiver"],
-                message_type=conv_data["message_type"],
-                game_session_id=game_session_id,
-            )
-            saved_conversations.append(conv)
-            logger.info(f"✅ 已保存对话: {conv_data['message_type']}")
-
-        except Exception as e:
-            logger.error(f"❌ 保存对话失败: {e}")
-
-    # 2. 测试对话搜索
-    try:
-        query_text = "玩家想要探索和移动"
-        query_embedding = mock_get_embedding(query_text)
-
-        logger.info(f"🔍 搜索相似对话: {query_text}")
-
-        # 搜索相似对话
-        similar_convs = search_similar_conversations(
-            query_embedding=query_embedding,
-            limit=3,
-            game_session_id=game_session_id,
-            similarity_threshold=0.0,
-        )
-
-        logger.info(f"💬 找到 {len(similar_convs)} 个相似对话:")
-        for conv, similarity in similar_convs:
-            logger.info(f"  - {conv.message_type}: 相似度 {similarity:.4f}")
-            logger.info(f"    内容: {conv.message_content[:50]}...")
-
-    except Exception as e:
-        logger.error(f"❌ 对话搜索失败: {e}")
-
-
-@pytest.mark.integration
-@pytest.mark.database
-def test_game_knowledge_operations() -> None:
-    """测试游戏知识向量操作 - 使用ORM"""
-    from multi_agents_game.db.pgsql_vector_ops import (
-        save_game_knowledge_vector,
-        search_game_knowledge,
-    )
-
-    logger.info("🧪 开始测试游戏知识向量操作...")
-
-    # 1. 保存一些测试游戏知识
-    test_knowledge: List[Dict[str, Any]] = [
-        {
-            "content": "在RPG游戏中，角色属性包括力量、敏捷、智力和体力，这些属性影响战斗能力",
-            "title": "RPG角色属性系统",
-            "category": "game_mechanics",
-            "game_type": "rpg",
-            "difficulty": 1,
-            "tags": ["属性", "角色", "战斗"],
-        },
-        {
-            "content": "卡牌游戏的基本策略是平衡资源管理和攻击时机，需要考虑手牌数量和法力值",
-            "title": "卡牌游戏基础策略",
-            "category": "strategy",
-            "game_type": "card_game",
-            "difficulty": 2,
-            "tags": ["策略", "资源", "时机"],
-        },
-        {
-            "content": "多人合作游戏中，团队沟通和角色分工是获胜的关键要素",
-            "title": "多人合作技巧",
-            "category": "teamwork",
-            "game_type": "multiplayer",
-            "difficulty": 3,
-            "tags": ["合作", "沟通", "团队"],
-        },
-    ]
-
-    saved_knowledge = []
-    for knowledge_data in test_knowledge:
-        try:
-            # 生成嵌入向量
-            embedding = mock_get_embedding(cast(str, knowledge_data["content"]))
-
-            # 保存到数据库
-            knowledge = save_game_knowledge_vector(
-                knowledge_content=cast(str, knowledge_data["content"]),
-                embedding=embedding,
-                title=cast(str, knowledge_data["title"]),
-                knowledge_category=cast(str, knowledge_data["category"]),
-                game_type=cast(str, knowledge_data["game_type"]),
-                difficulty_level=cast(int, knowledge_data["difficulty"]),
-                tags=cast(List[str], knowledge_data["tags"]),
-                priority=cast(int, knowledge_data["difficulty"]),  # 难度越高优先级越高
-            )
-            saved_knowledge.append(knowledge)
-            logger.info(f"✅ 已保存游戏知识: {knowledge.title}")
-
-        except Exception as e:
-            logger.error(f"❌ 保存游戏知识失败: {e}")
-
-    # 2. 测试知识搜索
-    try:
-        query_text = "如何在游戏中提升角色战斗力"
-        query_embedding = mock_get_embedding(query_text)
-
-        logger.info(f"🔍 搜索游戏知识: {query_text}")
-
-        # 搜索相关知识
-        relevant_knowledge = search_game_knowledge(
-            query_embedding=query_embedding,
-            limit=3,
-            max_difficulty=2,  # 只搜索难度2级以下的知识
-            similarity_threshold=0.0,
-        )
-
-        logger.info(f"🎮 找到 {len(relevant_knowledge)} 个相关知识:")
-        for knowledge, similarity in relevant_knowledge:
-            logger.info(
-                f"  - {knowledge.title}: 相似度 {similarity:.4f}, 难度 {knowledge.difficulty_level}"
-            )
-            logger.info(f"    内容: {knowledge.knowledge_content[:50]}...")
-
-    except Exception as e:
-        logger.error(f"❌ 游戏知识搜索失败: {e}")
+    """测试对话向量操作 - 已移除，因为 ConversationVectorDB 类已被删除"""
+    logger.info("⚠️ test_conversation_vector_operations 已被移除")
+    pass
 
 
 # ================================
@@ -665,153 +492,22 @@ def demo_document_rag_system() -> None:
 
 @pytest.mark.integration
 @pytest.mark.demo
+# 该函数已被注释，因为 ConversationVectorDB 类已被移除
+@pytest.mark.integration
+@pytest.mark.demo
 def demo_conversation_memory() -> None:
-    """演示对话记忆系统"""
-    from multi_agents_game.db.pgsql_vector_ops import (
-        save_conversation_vector,
-        search_similar_conversations,
-    )
-    from uuid import uuid4
-
-    logger.info("💬 演示对话记忆系统...")
-
-    # 模拟游戏会话
-    session_id = uuid4()
-
-    # 保存一些对话历史
-    conversations: List[Dict[str, str]] = [
-        {
-            "content": "我想学习如何在游戏中提升角色的战斗能力",
-            "sender": "player_001",
-            "message_type": "player_question",
-        },
-        {
-            "content": "你可以通过升级装备、提高属性点和学习新技能来增强战斗力",
-            "sender": "ai_assistant",
-            "message_type": "assistant_response",
-        },
-        {
-            "content": "请帮我制定一个角色发展策略",
-            "sender": "player_001",
-            "message_type": "player_request",
-        },
-        {
-            "content": "建议优先提升核心属性，然后获取适合你职业的装备和技能",
-            "sender": "ai_assistant",
-            "message_type": "assistant_advice",
-        },
-    ]
-
-    logger.info("💾 保存对话历史...")
-    for conv in conversations:
-        embedding = mock_openai_embedding(conv["content"])
-        save_conversation_vector(
-            message_content=conv["content"],
-            embedding=embedding,
-            sender=conv["sender"],
-            message_type=conv["message_type"],
-            game_session_id=session_id,
-        )
-
-    # 查询相似对话
-    query = "如何提升游戏角色实力？"
-    logger.info(f"\n🔍 查询相似对话: {query}")
-
-    query_embedding = mock_openai_embedding(query)
-    similar_convs = search_similar_conversations(
-        query_embedding=query_embedding,
-        limit=3,
-        game_session_id=session_id,
-        similarity_threshold=0.1,
-    )
-
-    logger.info("🗨️ 相似的历史对话:")
-    result_conv: ConversationVectorDB
-    result_similarity: float
-    for result_conv, result_similarity in similar_convs:
-        # result_conv 是 ConversationVectorDB 对象，不是字典
-        logger.info(
-            f"   - {result_conv.sender}: {result_conv.message_content[:50]}... (相似度: {result_similarity:.3f})"
-        )
+    """演示对话记忆系统 - 已移除，因为 ConversationVectorDB 类已被删除"""
+    logger.info("⚠️ demo_conversation_memory 已被移除")
+    pass
 
 
+# 该函数已被注释，因为 GameKnowledgeVectorDB 类已被移除
 @pytest.mark.integration
 @pytest.mark.demo
 def demo_game_knowledge_system() -> None:
-    """演示游戏知识系统"""
-    from multi_agents_game.db.pgsql_vector_ops import (
-        save_game_knowledge_vector,
-        search_game_knowledge,
-    )
-
-    logger.info("🎮 演示游戏知识系统...")
-
-    # 保存游戏知识
-    knowledge_items: List[Dict[str, Any]] = [
-        {
-            "title": "RPG角色属性系统",
-            "content": "RPG游戏中，角色通常有力量、敏捷、智力、体力等基础属性。力量影响物理攻击，敏捷影响速度和暴击，智力影响魔法威力，体力影响生命值。",
-            "category": "game_mechanics",
-            "game_type": "rpg",
-            "difficulty": 1,
-            "tags": ["属性", "角色", "基础"],
-        },
-        {
-            "title": "战斗策略基础",
-            "content": "有效的战斗策略包括：了解敌人弱点、合理使用技能冷却、保持距离控制、团队配合等。需要根据不同敌人类型调整战术。",
-            "category": "strategy",
-            "game_type": "rpg",
-            "difficulty": 2,
-            "tags": ["战斗", "策略", "技巧"],
-        },
-        {
-            "title": "装备强化系统",
-            "content": "装备强化可以提升装备的基础属性。通常需要消耗强化石和金币。强化等级越高，成功率越低，但属性提升越明显。",
-            "category": "equipment",
-            "game_type": "rpg",
-            "difficulty": 2,
-            "tags": ["装备", "强化", "属性"],
-        },
-    ]
-
-    logger.info("📖 保存游戏知识...")
-    for knowledge in knowledge_items:
-        embedding = mock_openai_embedding(cast(str, knowledge["content"]))
-        save_game_knowledge_vector(
-            knowledge_content=cast(str, knowledge["content"]),
-            embedding=embedding,
-            title=cast(str, knowledge["title"]),
-            knowledge_category=cast(str, knowledge["category"]),
-            game_type=cast(str, knowledge["game_type"]),
-            difficulty_level=cast(int, knowledge["difficulty"]),
-            tags=cast(List[str], knowledge["tags"]),
-            priority=cast(int, knowledge["difficulty"]),
-        )
-
-    # 查询游戏知识
-    queries = ["如何提升角色的攻击力？", "战斗中需要注意什么？", "装备要怎么强化？"]
-
-    for query in queries:
-        logger.info(f"\n❓ 玩家问题: {query}")
-        query_embedding = mock_openai_embedding(query)
-
-        knowledge_results = search_game_knowledge(
-            query_embedding=query_embedding,
-            limit=2,
-            game_type_filter="rpg",
-            max_difficulty=2,
-            similarity_threshold=0.1,
-        )
-
-        logger.info("💡 相关知识:")
-        result_knowledge: GameKnowledgeVectorDB
-        result_similarity: float
-        for result_knowledge, result_similarity in knowledge_results:
-            # result_knowledge 是 GameKnowledgeVectorDB 对象，不是字典
-            logger.info(
-                f"   - {result_knowledge.title} (相似度: {result_similarity:.3f})"
-            )
-            logger.info(f"     知识: {result_knowledge.knowledge_content[:80]}...")
+    """演示游戏知识系统 - 已移除，因为 GameKnowledgeVectorDB 类已被删除"""
+    logger.info("⚠️ demo_game_knowledge_system 已被移除")
+    pass
 
 
 # ================================
@@ -833,8 +529,8 @@ def run_all_vector_tests() -> None:
 
         # 运行各项测试
         test_vector_document_operations()
-        test_conversation_vector_operations()
-        test_game_knowledge_operations()
+        test_conversation_vector_operations()  # 现在是占位符函数
+        # test_game_knowledge_operations()       # 已移除
 
         # 获取最终统计
         from multi_agents_game.db.pgsql_vector_ops import get_database_vector_stats
@@ -860,8 +556,8 @@ def run_all_demos() -> None:
 
         # 运行各种演示
         demo_document_rag_system()
-        demo_conversation_memory()
-        demo_game_knowledge_system()
+        demo_conversation_memory()  # 现在是占位符函数
+        demo_game_knowledge_system()  # 现在是占位符函数
 
         # 显示最终统计
         from multi_agents_game.db.pgsql_vector_ops import get_database_vector_stats
@@ -897,8 +593,8 @@ def test_comprehensive_pgvector_integration(setup_database_tables: Any) -> None:
         logger.info("第二部分：ORM向量操作测试")
         logger.info("=" * 50)
         test_vector_document_operations()
-        test_conversation_vector_operations()
-        test_game_knowledge_operations()
+        test_conversation_vector_operations()  # 现在是占位符函数
+        # test_game_knowledge_operations()       # 已移除
 
         # 最终总结
         logger.info("\n" + "=" * 50)
@@ -925,8 +621,8 @@ def test_comprehensive_pgvector_demos(setup_database_tables: Any) -> None:
         logger.info("第三部分：实际应用场景演示")
         logger.info("=" * 50)
         demo_document_rag_system()
-        demo_conversation_memory()
-        demo_game_knowledge_system()
+        demo_conversation_memory()  # 现在是占位符函数
+        demo_game_knowledge_system()  # 现在是占位符函数
 
         # 显示最终统计
         from multi_agents_game.db.pgsql_vector_ops import get_database_vector_stats

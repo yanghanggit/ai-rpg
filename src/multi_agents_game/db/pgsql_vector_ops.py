@@ -4,13 +4,12 @@ PostgreSQL + pgvector 向量操作工具集
 """
 
 from typing import List, Optional, Dict, Any, Tuple
-from uuid import UUID
 import json
 from sqlalchemy import text
 from loguru import logger
 
 from .pgsql_client import SessionLocal
-from .pgsql_vector import VectorDocumentDB, ConversationVectorDB, GameKnowledgeVectorDB
+from .pgsql_vector import VectorDocumentDB
 
 
 ##################################################################################################################
@@ -142,285 +141,8 @@ def search_similar_documents(
 
 
 ##################################################################################################################
-# 对话向量操作
-##################################################################################################################
-
-
-def save_conversation_vector(
-    message_content: str,
-    embedding: List[float],
-    sender: Optional[str] = None,
-    receiver: Optional[str] = None,
-    message_type: Optional[str] = None,
-    game_session_id: Optional[UUID] = None,
-) -> ConversationVectorDB:
-    """
-    保存对话消息及其向量嵌入
-
-    参数:
-        message_content: 消息内容
-        embedding: 向量嵌入
-        sender: 发送者
-        receiver: 接收者
-        message_type: 消息类型
-        game_session_id: 游戏会话ID
-
-    返回:
-        ConversationVectorDB: 保存的对话对象
-    """
-    db = SessionLocal()
-    try:
-        if len(embedding) != 1536:
-            raise ValueError(f"向量维度必须是1536，当前维度: {len(embedding)}")
-
-        conversation = ConversationVectorDB(
-            message_content=message_content,
-            embedding=embedding,
-            sender=sender,
-            receiver=receiver,
-            message_type=message_type,
-            game_session_id=game_session_id,
-        )
-
-        db.add(conversation)
-        db.commit()
-        db.refresh(conversation)
-
-        logger.info(f"✅ 对话向量已保存: ID={conversation.id}")
-        return conversation
-
-    except Exception as e:
-        db.rollback()
-        logger.error(f"❌ 保存对话向量失败: {e}")
-        raise e
-    finally:
-        db.close()
-
-
-def search_similar_conversations(
-    query_embedding: List[float],
-    limit: int = 10,
-    game_session_id: Optional[UUID] = None,
-    message_type_filter: Optional[str] = None,
-    similarity_threshold: float = 0.5,
-) -> List[Tuple[ConversationVectorDB, float]]:
-    """
-    搜索相似的对话消息
-
-    参数:
-        query_embedding: 查询向量
-        limit: 返回结果数量限制
-        game_session_id: 游戏会话ID过滤
-        message_type_filter: 消息类型过滤
-        similarity_threshold: 相似度阈值
-
-    返回:
-        List[Tuple[ConversationVectorDB, float]]: (对话对象, 相似度分数) 的列表
-    """
-    db = SessionLocal()
-    try:
-        if len(query_embedding) != 1536:
-            raise ValueError(
-                f"查询向量维度必须是1536，当前维度: {len(query_embedding)}"
-            )
-
-        # 构建SQL查询
-        conditions = ["embedding IS NOT NULL"]
-        # 将向量转换为PostgreSQL向量格式的字符串
-        vector_str = "[" + ",".join(map(str, query_embedding)) + "]"
-        params = {
-            "query_vector": vector_str,  # 转换为字符串格式
-            "threshold": similarity_threshold,
-            "limit": limit,
-        }
-
-        if game_session_id:
-            conditions.append("game_session_id = :game_session_id")
-            params["game_session_id"] = str(game_session_id)
-
-        if message_type_filter:
-            conditions.append("message_type = :message_type_filter")
-            params["message_type_filter"] = message_type_filter
-
-        where_clause = " AND ".join(conditions)
-
-        results = db.execute(
-            text(
-                f"""
-                SELECT *, (1 - (embedding <=> :query_vector)) as similarity
-                FROM conversation_vectors 
-                WHERE {where_clause}
-                    AND (1 - (embedding <=> :query_vector)) >= :threshold
-                ORDER BY embedding <=> :query_vector
-                LIMIT :limit
-            """
-            ),
-            params,
-        ).fetchall()
-
-        # 转换结果
-        conversations_with_scores = []
-        for row in results:
-            conv = db.get(ConversationVectorDB, row.id)
-            if conv:
-                conversations_with_scores.append((conv, float(row.similarity)))
-
-        logger.info(f"🔍 找到 {len(conversations_with_scores)} 个相似对话")
-        return conversations_with_scores
-
-    except Exception as e:
-        logger.error(f"❌ 对话向量搜索失败: {e}")
-        raise e
-    finally:
-        db.close()
-
-
-##################################################################################################################
 # 游戏知识向量操作
 ##################################################################################################################
-
-
-def save_game_knowledge_vector(
-    knowledge_content: str,
-    embedding: List[float],
-    title: Optional[str] = None,
-    knowledge_category: Optional[str] = None,
-    game_type: Optional[str] = None,
-    difficulty_level: Optional[int] = None,
-    tags: Optional[List[str]] = None,
-    priority: int = 0,
-) -> GameKnowledgeVectorDB:
-    """
-    保存游戏知识及其向量嵌入
-
-    参数:
-        knowledge_content: 知识内容
-        embedding: 向量嵌入
-        title: 知识标题
-        knowledge_category: 知识分类
-        game_type: 游戏类型
-        difficulty_level: 难度等级
-        tags: 标签列表
-        priority: 优先级
-
-    返回:
-        GameKnowledgeVectorDB: 保存的游戏知识对象
-    """
-    db = SessionLocal()
-    try:
-        if len(embedding) != 1536:
-            raise ValueError(f"向量维度必须是1536，当前维度: {len(embedding)}")
-
-        knowledge = GameKnowledgeVectorDB(
-            knowledge_content=knowledge_content,
-            embedding=embedding,
-            title=title,
-            knowledge_category=knowledge_category,
-            game_type=game_type,
-            difficulty_level=difficulty_level,
-            tags=",".join(tags) if tags else None,
-            priority=priority,
-        )
-
-        db.add(knowledge)
-        db.commit()
-        db.refresh(knowledge)
-
-        logger.info(f"✅ 游戏知识向量已保存: ID={knowledge.id}")
-        return knowledge
-
-    except Exception as e:
-        db.rollback()
-        logger.error(f"❌ 保存游戏知识向量失败: {e}")
-        raise e
-    finally:
-        db.close()
-
-
-def search_game_knowledge(
-    query_embedding: List[float],
-    limit: int = 10,
-    game_type_filter: Optional[str] = None,
-    knowledge_category_filter: Optional[str] = None,
-    max_difficulty: Optional[int] = None,
-    similarity_threshold: float = 0.4,
-) -> List[Tuple[GameKnowledgeVectorDB, float]]:
-    """
-    搜索相关的游戏知识
-
-    参数:
-        query_embedding: 查询向量
-        limit: 返回结果数量限制
-        game_type_filter: 游戏类型过滤
-        knowledge_category_filter: 知识分类过滤
-        max_difficulty: 最大难度等级
-        similarity_threshold: 相似度阈值
-
-    返回:
-        List[Tuple[GameKnowledgeVectorDB, float]]: (游戏知识对象, 相似度分数) 的列表
-    """
-    db = SessionLocal()
-    try:
-        if len(query_embedding) != 1536:
-            raise ValueError(
-                f"查询向量维度必须是1536，当前维度: {len(query_embedding)}"
-            )
-
-        # 构建SQL查询
-        conditions = ["embedding IS NOT NULL"]
-        # 将向量转换为PostgreSQL向量格式的字符串
-        vector_str = "[" + ",".join(map(str, query_embedding)) + "]"
-        params = {
-            "query_vector": vector_str,  # 转换为字符串格式
-            "threshold": similarity_threshold,
-            "limit": limit,
-        }
-
-        if game_type_filter:
-            conditions.append("game_type = :game_type_filter")
-            params["game_type_filter"] = game_type_filter
-
-        if knowledge_category_filter:
-            conditions.append("knowledge_category = :knowledge_category_filter")
-            params["knowledge_category_filter"] = knowledge_category_filter
-
-        if max_difficulty is not None:
-            conditions.append(
-                "(difficulty_level IS NULL OR difficulty_level <= :max_difficulty)"
-            )
-            params["max_difficulty"] = max_difficulty
-
-        where_clause = " AND ".join(conditions)
-
-        results = db.execute(
-            text(
-                f"""
-                SELECT *, (1 - (embedding <=> :query_vector)) as similarity
-                FROM game_knowledge_vectors 
-                WHERE {where_clause}
-                    AND (1 - (embedding <=> :query_vector)) >= :threshold
-                ORDER BY priority DESC, embedding <=> :query_vector
-                LIMIT :limit
-            """
-            ),
-            params,
-        ).fetchall()
-
-        # 转换结果
-        knowledge_with_scores = []
-        for row in results:
-            knowledge = db.get(GameKnowledgeVectorDB, row.id)
-            if knowledge:
-                knowledge_with_scores.append((knowledge, float(row.similarity)))
-
-        logger.info(f"🔍 找到 {len(knowledge_with_scores)} 个相关游戏知识")
-        return knowledge_with_scores
-
-    except Exception as e:
-        logger.error(f"❌ 游戏知识搜索失败: {e}")
-        raise e
-    finally:
-        db.close()
 
 
 ##################################################################################################################
@@ -452,32 +174,6 @@ def get_database_vector_stats() -> Dict[str, Any]:
             "without_embeddings": doc_count - doc_with_vectors,
         }
 
-        # 对话向量统计
-        conv_count = db.query(ConversationVectorDB).count()
-        conv_with_vectors = (
-            db.query(ConversationVectorDB)
-            .filter(ConversationVectorDB.embedding.is_not(None))
-            .count()
-        )
-        stats["conversation_vectors"] = {
-            "total_count": conv_count,
-            "with_embeddings": conv_with_vectors,
-            "without_embeddings": conv_count - conv_with_vectors,
-        }
-
-        # 游戏知识向量统计
-        knowledge_count = db.query(GameKnowledgeVectorDB).count()
-        knowledge_with_vectors = (
-            db.query(GameKnowledgeVectorDB)
-            .filter(GameKnowledgeVectorDB.embedding.is_not(None))
-            .count()
-        )
-        stats["game_knowledge_vectors"] = {
-            "total_count": knowledge_count,
-            "with_embeddings": knowledge_with_vectors,
-            "without_embeddings": knowledge_count - knowledge_with_vectors,
-        }
-
         logger.info(f"📊 向量数据库统计: {stats}")
         return stats
 
@@ -506,22 +202,6 @@ def cleanup_empty_embeddings() -> Dict[str, int]:
             .delete()
         )
         cleanup_stats["deleted_documents"] = deleted_docs
-
-        # 清理没有嵌入的对话
-        deleted_convs = (
-            db.query(ConversationVectorDB)
-            .filter(ConversationVectorDB.embedding.is_(None))
-            .delete()
-        )
-        cleanup_stats["deleted_conversations"] = deleted_convs
-
-        # 清理没有嵌入的游戏知识
-        deleted_knowledge = (
-            db.query(GameKnowledgeVectorDB)
-            .filter(GameKnowledgeVectorDB.embedding.is_(None))
-            .delete()
-        )
-        cleanup_stats["deleted_knowledge"] = deleted_knowledge
 
         db.commit()
 

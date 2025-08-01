@@ -35,6 +35,7 @@ langsmith==0.4.9
 openai==1.98.0
 tiktoken==0.8.0
 faiss-cpu==1.8.0
+sentence-transformers==4.1.0
 
 # Data processing
 numpy==1.26.4

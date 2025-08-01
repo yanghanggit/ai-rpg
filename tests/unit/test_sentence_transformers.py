@@ -20,7 +20,11 @@ if str(src_path) not in sys.path:
 
 # 导入模型加载工具
 try:
-    from multi_agents_game.utils.model_loader import load_basic_model, load_multilingual_model
+    from multi_agents_game.utils.model_loader import (
+        load_basic_model,
+        load_multilingual_model,
+    )
+
     USE_MODEL_LOADER = True
 except ImportError:
     # 如果导入失败，使用原始方式
@@ -33,18 +37,23 @@ except ImportError:
 def basic_model() -> "SentenceTransformer":
     """Load the basic English model once per test session."""
     print("\n🔄 Loading basic model (all-MiniLM-L6-v2)...")
-    
+
     if USE_MODEL_LOADER:
         # 使用模型加载工具（优先本地缓存）
         model = load_basic_model()
         if model is not None:
             print("✅ Basic model loaded from cache/local")
+            # 确保类型检查通过
+            from sentence_transformers import SentenceTransformer
+
+            assert isinstance(model, SentenceTransformer)
             return model
         else:
             print("⚠️  模型加载工具失败，回退到直接下载")
-    
+
     # 回退到直接下载
     from sentence_transformers import SentenceTransformer
+
     model = SentenceTransformer("all-MiniLM-L6-v2")
     print("✅ Basic model loaded and cached")
     return model
@@ -54,18 +63,23 @@ def basic_model() -> "SentenceTransformer":
 def multilingual_model() -> "SentenceTransformer":
     """Load the multilingual model once per test session."""
     print("\n🔄 Loading multilingual model (paraphrase-multilingual-MiniLM-L12-v2)...")
-    
+
     if USE_MODEL_LOADER:
         # 使用模型加载工具（优先本地缓存）
         model = load_multilingual_model()
         if model is not None:
             print("✅ Multilingual model loaded from cache/local")
+            # 确保类型检查通过
+            from sentence_transformers import SentenceTransformer
+
+            assert isinstance(model, SentenceTransformer)
             return model
         else:
             print("⚠️  模型加载工具失败，回退到直接下载")
-    
+
     # 回退到直接下载
     from sentence_transformers import SentenceTransformer
+
     model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
     print("✅ Multilingual model loaded and cached")
     return model
@@ -348,9 +362,11 @@ if __name__ == "__main__":
                 if model is None:
                     # 回退到直接加载
                     from sentence_transformers import SentenceTransformer
+
                     model = SentenceTransformer("all-MiniLM-L6-v2")
             else:
                 from sentence_transformers import SentenceTransformer
+
                 model = SentenceTransformer("all-MiniLM-L6-v2")
             print("✅ Model loaded successfully")
 
@@ -407,9 +423,11 @@ if __name__ == "__main__":
                 if model is None:
                     # 回退到直接加载
                     from sentence_transformers import SentenceTransformer
+
                     model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
             else:
                 from sentence_transformers import SentenceTransformer
+
                 model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
             print("✅ Multilingual model loaded")
 
@@ -472,9 +490,11 @@ if __name__ == "__main__":
                 if model is None:
                     # 回退到直接加载
                     from sentence_transformers import SentenceTransformer
+
                     model = SentenceTransformer("all-MiniLM-L6-v2")
             else:
                 from sentence_transformers import SentenceTransformer
+
                 model = SentenceTransformer("all-MiniLM-L6-v2")
 
             # Test sentences
@@ -566,9 +586,11 @@ if __name__ == "__main__":
                 if model is None:
                     # 回退到直接加载
                     from sentence_transformers import SentenceTransformer
+
                     model = SentenceTransformer("all-MiniLM-L6-v2")
             else:
                 from sentence_transformers import SentenceTransformer
+
                 model = SentenceTransformer("all-MiniLM-L6-v2")
 
             test_sentence = "Hello, world!"

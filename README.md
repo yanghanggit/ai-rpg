@@ -150,6 +150,7 @@ make status-mongodb
 ```bash
 # 运行测试
 pytest tests/ -v
+python -m pytest tests/ -v
 
 # 检查类型
 make lint

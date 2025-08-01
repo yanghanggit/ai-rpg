@@ -333,58 +333,149 @@ def convert_excel_to_csv(excel_file: str, dungeons_csv: str, actors_csv: str) ->
 
 
 def main() -> None:
-    """主函数"""
-    print("🎮 游戏数据编辑工具 (CSV格式)")
+    """主函数 - 测试模式"""
+    print("🎮 游戏数据编辑工具测试")
     print("=" * 50)
 
-    # 检查并处理原始Excel文件
-    excel_file = "excel_test.xlsx"
-    dungeons_csv = "dungeons_data.csv"
-    actors_csv = "actors_data.csv"
+    # 测试文件名
+    excel_file = "test_excel_output.xlsx"
+    dungeons_csv = "test_dungeons_data.csv"
+    actors_csv = "test_actors_data.csv"
+    
+    test_passed = 0
+    test_total = 0
 
-    # 如果CSV文件不存在但Excel文件存在，先转换为CSV
-    if not (Path(dungeons_csv).exists() or Path(actors_csv).exists()):
-        if Path(excel_file).exists():
-            print(f"📁 发现Excel文件: {excel_file}")
-            if input("是否将Excel文件转换为CSV格式进行编辑？(y/n): ").lower() == "y":
-                convert_excel_to_csv(excel_file, dungeons_csv, actors_csv)
+    try:
+        # 测试1: 创建示例文件
+        print("\n📝 测试1: 创建示例CSV文件...")
+        test_total += 1
+        create_sample_files_with_custom_names(dungeons_csv, actors_csv)
+        
+        if Path(dungeons_csv).exists() and Path(actors_csv).exists():
+            print("✅ 示例文件创建成功")
+            test_passed += 1
         else:
-            print("📁 未找到数据文件，创建示例文件...")
-            create_sample_files()
+            print("❌ 示例文件创建失败")
 
-    while True:
-        print("\n📋 主菜单:")
-        print("1. 编辑地牢数据")
-        print("2. 编辑角色数据")
-        print("3. 将CSV数据保存为Excel文件")
-        print("4. 创建示例文件")
-        print("5. 退出")
+        # 测试2: 读取CSV文件
+        print("\n📖 测试2: 读取CSV文件...")
+        test_total += 1
+        dungeons_df = read_csv_safe(dungeons_csv)
+        actors_df = read_csv_safe(actors_csv)
+        
+        if dungeons_df is not None and actors_df is not None:
+            print(f"✅ CSV文件读取成功 - 地牢: {len(dungeons_df)}行, 角色: {len(actors_df)}行")
+            test_passed += 1
+        else:
+            print("❌ CSV文件读取失败")
 
-        choice = input("\n请选择操作 (1-5): ").strip()
+        # 测试3: 验证数据内容
+        print("\n🔍 测试3: 验证数据内容...")
+        test_total += 1
+        if (dungeons_df is not None and len(dungeons_df) == 2 and 
+            actors_df is not None and len(actors_df) == 2):
+            print("✅ 数据内容验证成功")
+            print(f"   地牢数据: {dungeons_df['name'].tolist()}")
+            print(f"   角色数据: {actors_df['name'].tolist()}")
+            test_passed += 1
+        else:
+            print("❌ 数据内容验证失败")
 
-        if choice == "1":
-            manage_data(dungeons_csv, "地牢")
-        elif choice == "2":
-            manage_data(actors_csv, "角色")
-        elif choice == "3":
-            # 保存CSV数据为Excel文件
-            print("\n💾 导出Excel文件...")
-            excel_output = input("请输入Excel文件名 (默认: excel_test.xlsx): ").strip()
-            if not excel_output:
-                excel_output = "excel_test.xlsx"
+        # 测试4: CSV转Excel
+        print("\n💾 测试4: CSV转Excel文件...")
+        test_total += 1
+        success = update_excel_from_csv(excel_file, dungeons_csv, actors_csv)
+        
+        if success and Path(excel_file).exists():
+            print("✅ Excel文件创建成功")
+            test_passed += 1
+        else:
+            print("❌ Excel文件创建失败")
 
-            success = update_excel_from_csv(excel_output, dungeons_csv, actors_csv)
-            if success:
-                print(f"✅ 数据已成功保存为Excel文件: {excel_output}")
+        # 测试5: 读取Excel文件验证
+        print("\n🔄 测试5: 读取Excel文件验证...")
+        test_total += 1
+        try:
+            excel_dungeons = pd.read_excel(excel_file, sheet_name="dungeons")
+            excel_actors = pd.read_excel(excel_file, sheet_name="actors")
+            
+            if (dungeons_df is not None and actors_df is not None and
+                len(excel_dungeons) == 2 and len(excel_actors) == 2 and
+                excel_dungeons['name'].tolist() == dungeons_df['name'].tolist() and
+                excel_actors['name'].tolist() == actors_df['name'].tolist()):
+                print("✅ Excel文件内容验证成功")
+                test_passed += 1
             else:
-                print("❌ Excel文件保存失败")
-        elif choice == "4":
-            create_sample_files()
-        elif choice == "5":
-            print("👋 感谢使用游戏数据编辑工具!")
-            break
-        else:
-            print("❌ 无效选择，请重试。")
+                print("❌ Excel文件内容验证失败")
+        except Exception as e:
+            print(f"❌ Excel文件读取失败: {e}")
+
+    except Exception as e:
+        print(f"❌ 测试过程中发生错误: {e}")
+
+    finally:
+        # 清理测试文件
+        print("\n🧹 清理测试文件...")
+        cleanup_files = [dungeons_csv, actors_csv, excel_file]
+        for file_path in cleanup_files:
+            try:
+                if Path(file_path).exists():
+                    Path(file_path).unlink()
+                    print(f"   已删除: {file_path}")
+            except Exception as e:
+                print(f"   删除失败 {file_path}: {e}")
+
+    # 测试结果汇总
+    print(f"\n🎯 测试完成!")
+    print(f"📊 测试结果: {test_passed}/{test_total} 通过")
+    
+    if test_passed == test_total:
+        print("🎉 所有测试通过!")
+    else:
+        print("⚠️  部分测试失败，请检查相关功能")
+
+
+def create_sample_files_with_custom_names(dungeons_csv: str, actors_csv: str) -> None:
+    """创建示例CSV文件（自定义文件名）"""
+    print(f"创建示例CSV文件: {dungeons_csv}, {actors_csv}")
+
+    # 示例地牢数据
+    dungeons_data = pd.DataFrame(
+        [
+            {
+                "name": "测试洞窟",
+                "character_sheet_name": "test_cave",
+                "stage_profile": "一个用于测试的神秘洞窟，里面隐藏着未知的宝藏和危险。",
+            },
+            {
+                "name": "暗影森林",
+                "character_sheet_name": "shadow_forest",
+                "stage_profile": "充满暗影生物的危险森林，树木高耸入云，阳光难以穿透。",
+            },
+        ]
+    )
+
+    # 示例角色数据
+    actors_data = pd.DataFrame(
+        [
+            {
+                "name": "测试哥布林",
+                "character_sheet_name": "test_goblin",
+                "actor_profile": "一个用于测试的哥布林战士，虽然弱小但十分狡猾。",
+                "appearance": "绿色皮肤的小型人形生物，持有生锈的短剑。",
+            },
+            {
+                "name": "暗影狼",
+                "character_sheet_name": "shadow_wolf",
+                "actor_profile": "森林中的暗影生物，速度极快且善于隐蔽。",
+                "appearance": "黑色毛发的巨大狼类，眼中闪烁着红光。",
+            },
+        ]
+    )
+
+    # 保存为CSV文件
+    dungeons_data.to_csv(dungeons_csv, index=False, encoding="utf-8-sig")
+    actors_data.to_csv(actors_csv, index=False, encoding="utf-8-sig")
 
 
 if __name__ == "__main__":
@@ -394,3 +485,4 @@ if __name__ == "__main__":
         print("\n\n👋 程序被中断")
     except Exception as e:
         logger.error(f"程序执行失败: {e}")
+

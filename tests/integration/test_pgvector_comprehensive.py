@@ -33,10 +33,9 @@ from multi_agents_game.config.db_config import POSTGRES_DATABASE_URL
 def setup_database_tables() -> Any:
     """设置数据库表的 fixture"""
     try:
-        from multi_agents_game.db.pgsql_client import engine
-        from multi_agents_game.db.pgsql_client import Base  # type: ignore[attr-defined]
+        from multi_agents_game.db.pgsql_client import ensure_database_tables
 
-        Base.metadata.create_all(bind=engine)
+        ensure_database_tables()
         logger.info("✅ 数据库表已就绪")
         yield
     except Exception as e:

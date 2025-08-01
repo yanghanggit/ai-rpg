@@ -16,6 +16,9 @@ def ensure_database_tables() -> None:
     这个函数在需要时才会被调用，避免导入时立即连接数据库
     """
     try:
+        # 导入所有模型以确保它们被注册到Base.metadata中
+        from .pgsql_vector import VectorDocumentDB  # 确保向量表模型被注册
+        
         Base.metadata.create_all(bind=engine)
         logger.info("✅ 数据库表结构已确保存在")
     except Exception as e:
@@ -31,6 +34,9 @@ def reset_database() -> None:
     注意：该方法会删除所有数据，只适用于开发环境
     """
     try:
+        # 导入所有模型以确保它们被注册到Base.metadata中
+        from .pgsql_vector import VectorDocumentDB  # 确保向量表模型被注册
+        
         # 使用直接的SQL命令执行级联删除
         with engine.begin() as conn:
             # 确保pgvector扩展已启用
@@ -60,7 +66,7 @@ def reset_database() -> None:
                     except Exception as restrict_error:
                         logger.error(f"❌ 无法删除表 {table[0]}: {restrict_error}")
 
-        # 重新创建所有表
+        # 重新创建所有表（包括向量表）
         ensure_database_tables()
         logger.warning("🔄 数据库表已被清除然后重建")
 

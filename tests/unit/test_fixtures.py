@@ -1,6 +1,5 @@
 """Test the fixtures in conftest.py to ensure they work correctly."""
 
-import pytest
 from typing import Any
 
 

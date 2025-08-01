@@ -6,9 +6,7 @@ PostgreSQL + pgvector 向量操作工具集
 from typing import List, Optional, Dict, Any, Tuple
 from uuid import UUID
 import json
-import numpy as np
-from sqlalchemy import text, desc
-from sqlalchemy.orm import Session
+from sqlalchemy import text
 from loguru import logger
 
 from .pgsql_client import SessionLocal

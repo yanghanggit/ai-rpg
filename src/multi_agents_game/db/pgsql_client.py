@@ -5,7 +5,7 @@ from ..config.db_config import POSTGRES_DATABASE_URL
 from .pgsql_object import Base
 
 # 导入向量相关的表定义，确保它们被包含在元数据中
-from .pgsql_vector import VectorDocumentDB, ConversationVectorDB, GameKnowledgeVectorDB
+# from .pgsql_vector import VectorDocumentDB, ConversationVectorDB, GameKnowledgeVectorDB
 
 ############################################################################################################
 engine = create_engine(POSTGRES_DATABASE_URL)

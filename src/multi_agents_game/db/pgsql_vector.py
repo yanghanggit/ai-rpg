@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from uuid import UUID, uuid4
+from uuid import UUID
 from sqlalchemy import DateTime, String, Text, Integer, func, Index
 from sqlalchemy.orm import Mapped, mapped_column
 from pgvector.sqlalchemy import Vector

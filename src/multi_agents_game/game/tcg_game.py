@@ -1,5 +1,4 @@
 from enum import Enum, IntEnum, unique
-import re
 import uuid
 import shutil
 from ..entitas import Entity, Matcher

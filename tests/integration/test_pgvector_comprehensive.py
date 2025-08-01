@@ -4,6 +4,7 @@ pgvector 综合测试和演示文件
 包含：基础SQL操作测试、ORM向量操作测试、实际应用场景演示
 """
 
+import pytest
 import numpy as np
 from typing import List, Dict, Any, cast
 from sqlalchemy import create_engine, text
@@ -13,7 +14,9 @@ import os
 import hashlib
 
 # 添加项目根目录到路径
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+project_root = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
@@ -25,6 +28,26 @@ from multi_agents_game.db.pgsql_vector import (
     ConversationVectorDB,
     GameKnowledgeVectorDB,
 )
+
+
+# ================================
+# pytest fixtures
+# ================================
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_database_tables() -> Any:
+    """设置数据库表的 fixture"""
+    try:
+        from multi_agents_game.db.pgsql_client import engine
+        from multi_agents_game.db.pgsql_client import Base  # type: ignore[attr-defined]
+
+        Base.metadata.create_all(bind=engine)
+        logger.info("✅ 数据库表已就绪")
+        yield
+    except Exception as e:
+        logger.error(f"❌ 数据库表设置失败: {e}")
+        raise e
 
 
 # ================================
@@ -66,10 +89,29 @@ def mock_openai_embedding(text: str) -> List[float]:
 
 
 # ================================
+# pgvector 测试类
+# ================================
+
+
+class TestPgvectorIntegration:
+    """pgvector 集成测试类"""
+
+    def setup_method(self) -> None:
+        """在每个测试方法前运行"""
+        logger.info("🔧 设置测试环境...")
+
+    def teardown_method(self) -> None:
+        """在每个测试方法后运行"""
+        logger.info("🧹 清理测试环境...")
+
+
+# ================================
 # 第一部分：基础SQL向量操作测试
 # ================================
 
 
+@pytest.mark.integration
+@pytest.mark.database
 def test_basic_vector_operations() -> None:
     """测试基本的向量操作 - 直接SQL操作"""
     logger.info("🧪 开始测试基本向量操作...")
@@ -175,6 +217,8 @@ def test_basic_vector_operations() -> None:
         raise e
 
 
+@pytest.mark.integration
+@pytest.mark.database
 def test_high_dimension_vectors() -> None:
     """测试高维向量（1536维）- 直接SQL操作"""
     logger.info("🧪 开始测试高维向量操作...")
@@ -258,6 +302,8 @@ def test_high_dimension_vectors() -> None:
 # ================================
 
 
+@pytest.mark.integration
+@pytest.mark.database
 def test_vector_document_operations() -> None:
     """测试向量文档操作 - 使用ORM"""
     from multi_agents_game.db.pgsql_vector_ops import (
@@ -359,6 +405,8 @@ def test_vector_document_operations() -> None:
         logger.error(f"❌ 获取统计失败: {e}")
 
 
+@pytest.mark.integration
+@pytest.mark.database
 def test_conversation_vector_operations() -> None:
     """测试对话向量操作 - 使用ORM"""
     from multi_agents_game.db.pgsql_vector_ops import (
@@ -445,6 +493,8 @@ def test_conversation_vector_operations() -> None:
         logger.error(f"❌ 对话搜索失败: {e}")
 
 
+@pytest.mark.integration
+@pytest.mark.database
 def test_game_knowledge_operations() -> None:
     """测试游戏知识向量操作 - 使用ORM"""
     from multi_agents_game.db.pgsql_vector_ops import (
@@ -536,6 +586,8 @@ def test_game_knowledge_operations() -> None:
 # ================================
 
 
+@pytest.mark.integration
+@pytest.mark.demo
 def demo_document_rag_system() -> None:
     """演示基于文档的RAG系统"""
     from multi_agents_game.db.pgsql_vector_ops import (
@@ -611,6 +663,8 @@ def demo_document_rag_system() -> None:
             logger.info(f"     内容片段: {doc.content[:100]}...")
 
 
+@pytest.mark.integration
+@pytest.mark.demo
 def demo_conversation_memory() -> None:
     """演示对话记忆系统"""
     from multi_agents_game.db.pgsql_vector_ops import (
@@ -681,6 +735,8 @@ def demo_conversation_memory() -> None:
         )
 
 
+@pytest.mark.integration
+@pytest.mark.demo
 def demo_game_knowledge_system() -> None:
     """演示游戏知识系统"""
     from multi_agents_game.db.pgsql_vector_ops import (
@@ -822,18 +878,13 @@ def run_all_demos() -> None:
         logger.error(f"❌ 演示失败: {e}")
 
 
-def main() -> None:
-    """主函数 - 运行所有测试和演示"""
+@pytest.mark.integration
+@pytest.mark.comprehensive
+def test_comprehensive_pgvector_integration(setup_database_tables: Any) -> None:
+    """运行完整的 pgvector 集成测试"""
     logger.info("🌟 开始 pgvector 综合测试和演示...")
 
     try:
-        # 确保数据库表已创建
-        from multi_agents_game.db.pgsql_client import engine
-        from multi_agents_game.db.pgsql_client import Base  # type: ignore[attr-defined]
-
-        Base.metadata.create_all(bind=engine)
-        logger.info("✅ 数据库表已就绪")
-
         # 第一部分：基础SQL测试
         logger.info("\n" + "=" * 50)
         logger.info("第一部分：基础SQL向量操作测试")
@@ -845,17 +896,13 @@ def main() -> None:
         logger.info("\n" + "=" * 50)
         logger.info("第二部分：ORM向量操作测试")
         logger.info("=" * 50)
-        run_all_vector_tests()
-
-        # 第三部分：实际应用演示
-        logger.info("\n" + "=" * 50)
-        logger.info("第三部分：实际应用场景演示")
-        logger.info("=" * 50)
-        run_all_demos()
+        test_vector_document_operations()
+        test_conversation_vector_operations()
+        test_game_knowledge_operations()
 
         # 最终总结
         logger.info("\n" + "=" * 50)
-        logger.info("🎉 所有测试和演示完成！")
+        logger.info("🎉 所有测试完成！")
         logger.info("✅ pgvector 功能集成验证成功！")
         logger.info("💡 您现在可以在项目中使用完整的向量数据库功能了！")
         logger.info("=" * 50)
@@ -865,7 +912,42 @@ def main() -> None:
         raise e
 
 
+@pytest.mark.integration
+@pytest.mark.demo
+@pytest.mark.slow
+def test_comprehensive_pgvector_demos(setup_database_tables: Any) -> None:
+    """运行完整的 pgvector 演示"""
+    logger.info("🚀 pgvector集成演示开始...")
+
+    try:
+        # 第三部分：实际应用演示
+        logger.info("\n" + "=" * 50)
+        logger.info("第三部分：实际应用场景演示")
+        logger.info("=" * 50)
+        demo_document_rag_system()
+        demo_conversation_memory()
+        demo_game_knowledge_system()
+
+        # 显示最终统计
+        from multi_agents_game.db.pgsql_vector_ops import get_database_vector_stats
+
+        logger.info("\n📊 最终数据库统计:")
+        stats = get_database_vector_stats()
+        for table_name, table_stats in stats.items():
+            logger.info(f"   {table_name}: {table_stats['with_embeddings']} 条向量记录")
+
+        logger.info("\n✅ pgvector集成演示完成！")
+        logger.info("🎉 您现在可以在项目中使用向量数据库功能了！")
+
+    except Exception as e:
+        logger.error(f"❌ 演示失败: {e}")
+        raise e
+
+
 if __name__ == "__main__":
+    # 当直接运行脚本时，执行完整测试
+    import pytest
+
     # 可以选择运行不同的测试模块
     import argparse
 
@@ -880,14 +962,29 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.mode == "all":
-        main()
+        # 运行所有测试
+        pytest.main([__file__, "-v", "-s"])
     elif args.mode == "basic":
         logger.info("🧪 只运行基础SQL测试...")
-        test_basic_vector_operations()
-        test_high_dimension_vectors()
+        pytest.main(
+            [
+                __file__ + "::test_basic_vector_operations",
+                __file__ + "::test_high_dimension_vectors",
+                "-v",
+                "-s",
+            ]
+        )
     elif args.mode == "orm":
         logger.info("🧪 只运行ORM测试...")
-        run_all_vector_tests()
+        pytest.main(
+            [
+                __file__ + "::test_vector_document_operations",
+                __file__ + "::test_conversation_vector_operations",
+                __file__ + "::test_game_knowledge_operations",
+                "-v",
+                "-s",
+            ]
+        )
     elif args.mode == "demo":
         logger.info("🧪 只运行演示...")
-        run_all_demos()
+        pytest.main([__file__ + "::test_comprehensive_pgvector_demos", "-v", "-s"])

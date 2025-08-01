@@ -61,7 +61,7 @@ def create_compiled_stage_graph(
     graph_builder.add_node(node_name, invoke_deepseek_llm_action)
     graph_builder.set_entry_point(node_name)
     graph_builder.set_finish_point(node_name)
-    return graph_builder.compile()
+    return graph_builder.compile()  # type: ignore[return-value]
 
 
 ############################################################################################################

@@ -4,30 +4,28 @@
 # Testing
 pytest==8.3.4
 
-# Type checking
-mypy==1.9.0
-pandas-stubs==2.2.1.240316
-types-cffi==1.17.0.20250523
-types-jsonschema==4.22.0.20240610
-types-pyopenssl==24.1.0.20240722
-types-pytz==2024.1.0.20240203
-types-redis==4.6.0.20241004
-types-requests==2.32.0.20240907
-types-setuptools==80.9.0.20250529
+# Type checking  
+mypy==1.16.0
 
 # Code formatting and linting
-black==24.8.0
+black==25.1.0
 # Note: ruff is installed via conda, not pip
 
-# Pre-commit hooks (includes additional dependencies)
-pre-commit==3.8.0
-# Pre-commit 依赖的附加包（通常自动安装，但为了完整性列出）
-cfgv==3.4.0
-distlib==0.3.9
-filelock==3.18.0
-identify==2.6.12
-nodeenv==1.9.1
-virtualenv==20.31.2
+# Pre-commit hooks
+pre-commit==4.2.0
+# Pre-commit dependencies (these should be installed via conda for better performance)
+# cfgv==3.4.0          # included in requirements.txt
+# distlib==0.4.0       # installed via conda
+# filelock==3.18.0     # installed via conda  
+# identify==2.6.12     # installed via conda
+# nodeenv==1.9.1       # installed via conda
+# virtualenv==20.32.0  # installed via conda
+
+# Note: The following packages are now installed via conda for better performance:
+# - numpy, pandas, mypy, black, pytest, psycopg2, pymongo, redis
+# - bcrypt, passlib, python-jose, psutil, requests-toolbelt  
+# - python-dateutil, distro, pathspec, typing-inspect
+# - All pre-commit dependencies except cfgv
 
 # Other dev tools
 mypy-extensions==1.0.0

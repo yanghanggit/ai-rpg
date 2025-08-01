@@ -242,7 +242,8 @@ def create_rag_compiled_graph() -> (
         compiled_graph = graph_builder.compile()
         logger.success("🏗️ RAG状态图构建完成")
 
-        return compiled_graph
+        # 明确类型转换以满足mypy要求
+        return compiled_graph  # type: ignore[return-value]
 
     except Exception as e:
         logger.error(f"🏗️ 构建RAG状态图失败: {e}\n{traceback.format_exc()}")

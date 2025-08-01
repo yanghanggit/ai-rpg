@@ -21,7 +21,7 @@ import sys
 import json
 import shutil
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Dict, List, Optional, Tuple, TYPE_CHECKING, Any, Union
 import logging
 from datetime import datetime
 
@@ -164,9 +164,9 @@ class SentenceTransformerModelManager:
             logger.error(f"❌ 加载模型失败 {model_name}: {e}")
             return None
     
-    def list_cached_models(self) -> List[Dict]:
+    def list_cached_models(self) -> List[Dict[str, Any]]:
         """列出所有已缓存的模型"""
-        cached_models = []
+        cached_models: List[Dict[str, Any]] = []
         
         if not self.cache_dir.exists():
             return cached_models
@@ -189,9 +189,9 @@ class SentenceTransformerModelManager:
         
         return cached_models
     
-    def list_all_models(self) -> List[Dict]:
+    def list_all_models(self) -> List[Dict[str, Any]]:
         """列出所有支持的模型（包括未缓存的）"""
-        all_models = []
+        all_models: List[Dict[str, Any]] = []
         cached_models = {m["name"] for m in self.list_cached_models()}
         
         for model_name, config in self.MODELS_CONFIG.items():
@@ -244,7 +244,7 @@ class SentenceTransformerModelManager:
             logger.error(f"❌ 清理缓存失败: {e}")
             return False
     
-    def _update_model_info(self, model_name: str, model_path: Path):
+    def _update_model_info(self, model_name: str, model_path: Path) -> None:
         """更新模型信息缓存"""
         try:
             # 加载现有信息
@@ -268,9 +268,9 @@ class SentenceTransformerModelManager:
         except Exception as e:
             logger.warning(f"更新模型信息失败: {e}")
     
-    def get_cache_stats(self) -> Dict:
+    def get_cache_stats(self) -> Dict[str, Any]:
         """获取缓存统计信息"""
-        stats = {
+        stats: Dict[str, Any] = {
             "cache_dir": str(self.cache_dir),
             "total_models": len(self.MODELS_CONFIG),
             "cached_models": 0,
@@ -284,17 +284,22 @@ class SentenceTransformerModelManager:
         cached_models = self.list_cached_models()
         stats["cached_models"] = len(cached_models)
         
-        for model in cached_models:
-            if isinstance(model.get("actual_size_mb"), (int, float)):
-                stats["total_cache_size_mb"] += model["actual_size_mb"]
-            stats["models"].append(model)
+        total_size: float = 0.0
+        models_list: List[Dict[str, Any]] = []
         
-        stats["total_cache_size_mb"] = round(stats["total_cache_size_mb"], 2)
+        for model in cached_models:
+            actual_size = model.get("actual_size_mb")
+            if isinstance(actual_size, (int, float)):
+                total_size += actual_size
+            models_list.append(model)
+        
+        stats["total_cache_size_mb"] = round(total_size, 2)
+        stats["models"] = models_list
         
         return stats
 
 
-def print_models_table(models: List[Dict]):
+def print_models_table(models: List[Dict[str, Any]]) -> None:
     """打印模型表格"""
     print("\n" + "="*120)
     print(f"{'模型名称':<40} {'状态':<8} {'大小(MB)':<10} {'语言':<15} {'用途':<45}")
@@ -314,7 +319,7 @@ def print_models_table(models: List[Dict]):
     print("="*120)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="SentenceTransformer 模型下载和管理工具",
         formatter_class=argparse.RawDescriptionHelpFormatter,

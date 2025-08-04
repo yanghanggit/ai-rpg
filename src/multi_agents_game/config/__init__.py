@@ -7,18 +7,10 @@
 - 游戏服务配置
 """
 
-from .server_config import (
-    chat_service_base_port,
-    num_chat_service_instances,
-    game_server_port,
-    chat_service_path,
-    chat_server_localhost_urls,
+from .server_settings_config import (
+    DEFAULT_SERVER_SETTINGS_CONFIG,
 )
 
 __all__ = [
-    "chat_service_base_port",
-    "num_chat_service_instances",
-    "game_server_port",
-    "chat_service_path",
-    "chat_server_localhost_urls",
+    "DEFAULT_SERVER_SETTINGS_CONFIG",
 ]

@@ -14,7 +14,9 @@ from multi_agents_game.format_string.terminal_input import (
     parse_speak_command_input,
 )
 from multi_agents_game.config.game_config import setup_logger, GLOBAL_GAME_NAME
-from multi_agents_game.config.server_config import chat_server_localhost_urls
+from multi_agents_game.config.server_settings_config import (
+    DEFAULT_SERVER_SETTINGS_CONFIG,
+)
 from uuid import uuid4
 
 
@@ -63,7 +65,7 @@ async def run_game(
         chat_system=ChatSystem(
             name=f"{terminal_game_user_options.game}-chatsystem",
             username=terminal_game_user_options.user,
-            localhost_urls=chat_server_localhost_urls(),
+            localhost_urls=DEFAULT_SERVER_SETTINGS_CONFIG.chat_server_localhost_urls,
         ),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )

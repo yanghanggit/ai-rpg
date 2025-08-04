@@ -59,10 +59,15 @@ def get_system_info() -> None:
     print(f"内存使用率: {memory.percent}%")
 
     # 磁盘信息
-    disk = psutil.disk_usage("/")
-    print(f"磁盘总容量: {disk.total / (1024**3):.1f} GB")
-    print(f"磁盘可用空间: {disk.free / (1024**3):.1f} GB")
-    print(f"磁盘使用率: {(disk.used / disk.total) * 100:.1f}%")
+    try:
+        # 在Windows上使用当前驱动器，在Unix系统上使用根目录
+        disk_path = os.getcwd()[:3] if platform.system() == "Windows" else "/"
+        disk = psutil.disk_usage(disk_path)
+        print(f"磁盘总容量: {disk.total / (1024**3):.1f} GB")
+        print(f"磁盘可用空间: {disk.free / (1024**3):.1f} GB")
+        print(f"磁盘使用率: {(disk.used / disk.total) * 100:.1f}%")
+    except Exception as e:
+        print(f"磁盘信息获取失败: {e}")
 
     # 网络信息
     hostname = socket.gethostname()

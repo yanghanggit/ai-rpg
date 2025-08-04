@@ -19,8 +19,11 @@ try:
 except ImportError:
     # Python < 3.8 fallback
     import pkg_resources
-from multi_agents_game.config.db_config import (
+from multi_agents_game.config import (
+    DEFAULT_REDIS_CONFIG,
+    DEFAULT_MONGODB_CONFIG,
     DEFAULT_POSTGRES_CONFIG,
+    DEFAULT_JWT_CONFIG,
 )
 
 

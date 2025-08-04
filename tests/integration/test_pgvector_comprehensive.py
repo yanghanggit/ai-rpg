@@ -21,7 +21,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # 导入配置
-from multi_agents_game.config.db_config import DEFAULT_POSTGRES_CONFIG
+from multi_agents_game.config import DEFAULT_POSTGRES_CONFIG
 
 
 # ================================

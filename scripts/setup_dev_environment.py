@@ -37,8 +37,11 @@ from multi_agents_game.db.mongodb_client import (
 )
 from multi_agents_game.db.mongodb_boot_document import BootDocument
 from multi_agents_game.demo.world import create_demo_game_world
-from multi_agents_game.config.game_config import LOGS_DIR, GLOBAL_GAME_NAME
-from multi_agents_game.config.db_config import DEFAULT_MONGODB_CONFIG
+from multi_agents_game.config import (
+    LOGS_DIR,
+    GLOBAL_GAME_NAME,
+    DEFAULT_MONGODB_CONFIG,
+)
 
 
 #######################################################################################################

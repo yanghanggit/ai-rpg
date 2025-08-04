@@ -5,7 +5,7 @@ from typing import Any
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from fastapi import FastAPI
 from langgraph.graph.state import CompiledStateGraph
-from ..config.server_settings_config import DEFAULT_SERVER_SETTINGS_CONFIG
+from ..config import DEFAULT_SERVER_SETTINGS_CONFIG
 from ..chat_services.chat_api import ChatRequest, ChatResponse
 from ..chat_services.chat_azure_openai_gpt_4o_graph import (
     create_compiled_stage_graph,

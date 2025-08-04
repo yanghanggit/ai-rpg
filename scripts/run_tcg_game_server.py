@@ -1,5 +1,5 @@
 from loguru import logger
-from multi_agents_game.config.server_settings_config import (
+from multi_agents_game.config import (
     DEFAULT_SERVER_SETTINGS_CONFIG,
 )
 from multi_agents_game.game_services.game_server_fastapi import app

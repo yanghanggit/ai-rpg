@@ -11,7 +11,7 @@ from ..chat_services.chat_system import ChatSystem
 from typing import Optional
 from ..game.web_tcg_game import WebTCGGame
 from ..player.player_proxy import PlayerProxy
-from ..config.server_settings_config import DEFAULT_SERVER_SETTINGS_CONFIG
+from ..config import DEFAULT_SERVER_SETTINGS_CONFIG
 
 ###################################################################################################################################################################
 start_router = APIRouter()

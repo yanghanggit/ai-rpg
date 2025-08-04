@@ -12,7 +12,7 @@ from loguru import logger
 from ..game.game_options import WebGameUserOptions
 import os
 from fastapi.staticfiles import StaticFiles
-from ..config.game_config import setup_logger, LOGS_DIR
+from ..config import setup_logger, LOGS_DIR
 
 ###################################################################################################################################################################
 login_router = APIRouter()

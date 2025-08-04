@@ -13,8 +13,9 @@ from multi_agents_game.game.game_options import TerminalGameUserOptions
 from multi_agents_game.format_string.terminal_input import (
     parse_speak_command_input,
 )
-from multi_agents_game.config.game_config import setup_logger, GLOBAL_GAME_NAME
-from multi_agents_game.config.server_settings_config import (
+from multi_agents_game.config import (
+    setup_logger,
+    GLOBAL_GAME_NAME,
     DEFAULT_SERVER_SETTINGS_CONFIG,
 )
 from uuid import uuid4

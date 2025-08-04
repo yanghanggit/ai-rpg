@@ -20,7 +20,7 @@ except ImportError:
     # Python < 3.8 fallback
     import pkg_resources
 from multi_agents_game.config.db_config import (
-    POSTGRES_DATABASE_URL,
+    DEFAULT_POSTGRES_CONFIG,
 )
 
 
@@ -261,11 +261,13 @@ def get_network_and_services() -> None:
 
         # 尝试使用项目配置的数据库连接
         try:
-            conn = psycopg2.connect(POSTGRES_DATABASE_URL, connect_timeout=2)
+            conn = psycopg2.connect(
+                DEFAULT_POSTGRES_CONFIG.connection_string, connect_timeout=2
+            )
             conn.close()
             print("  ✅ PostgreSQL (项目数据库): 连接成功")
             print(
-                f"    数据库URL: {POSTGRES_DATABASE_URL.replace(':123456@', ':***@')}"
+                f"    数据库URL: {DEFAULT_POSTGRES_CONFIG.connection_string.replace(':123456@', ':***@')}"
             )  # 隐藏密码
         except Exception as project_db_error:
             print(f"  ❌ PostgreSQL (项目数据库): 连接失败 - {project_db_error}")

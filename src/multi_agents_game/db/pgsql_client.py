@@ -1,11 +1,11 @@
 from loguru import logger
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-from ..config.db_config import POSTGRES_DATABASE_URL
+from ..config.db_config import DEFAULT_POSTGRES_CONFIG
 from .pgsql_object import Base
 
 ############################################################################################################
-engine = create_engine(POSTGRES_DATABASE_URL)
+engine = create_engine(DEFAULT_POSTGRES_CONFIG.connection_string)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 

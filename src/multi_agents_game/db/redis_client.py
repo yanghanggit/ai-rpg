@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, TypeAlias, Unio
 import redis
 from loguru import logger
 
-from ..config.db_config import RedisConfig
+from ..config.db_config import DEFAULT_REDIS_CONFIG
 
 # Redis键值类型定义
 RedisKeyType: TypeAlias = Union[str, bytes]
@@ -26,11 +26,11 @@ def get_redis() -> RedisClientType:
     返回:
         RedisClientType: Redis客户端实例，已配置为返回字符串
     """
-    redis_config = RedisConfig()
+
     pool = redis.ConnectionPool(
-        host=redis_config.host,
-        port=redis_config.port,
-        db=redis_config.db,
+        host=DEFAULT_REDIS_CONFIG.host,
+        port=DEFAULT_REDIS_CONFIG.port,
+        db=DEFAULT_REDIS_CONFIG.db,
         decode_responses=True,
         # max_connections=20
     )

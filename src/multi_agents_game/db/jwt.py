@@ -3,11 +3,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional, final
 from jose import JWTError, jwt
 from pydantic import BaseModel
-from ..config.db_config import (
-    JWT_SIGNING_ALGORITHM,
-    JWT_SIGNING_KEY,
-    REFRESH_TOKEN_EXPIRE_DAYS,
-)
+from ..config.db_config import DEFAULT_JWT_CONFIG
 
 
 ############################################################################################################
@@ -47,7 +43,7 @@ def create_refresh_token(
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(
-            days=REFRESH_TOKEN_EXPIRE_DAYS
+            days=DEFAULT_JWT_CONFIG.refresh_token_expire_days
         )  # 默认 7 天有效期
     to_encode.update({"exp": expire})
     encoded_jwt = _encode_jwt(to_encode)
@@ -60,7 +56,9 @@ def _encode_jwt(
 ) -> str:
     try:
         encoded_jwt = jwt.encode(
-            to_encode, JWT_SIGNING_KEY, algorithm=JWT_SIGNING_ALGORITHM
+            to_encode,
+            DEFAULT_JWT_CONFIG.signing_key,
+            algorithm=DEFAULT_JWT_CONFIG.signing_algorithm,
         )
         return str(encoded_jwt)
     except Exception as e:
@@ -73,7 +71,11 @@ def _encode_jwt(
 ############################################################################################################
 def decode_jwt(token: str) -> Dict[str, Any]:
     try:
-        payload = jwt.decode(token, JWT_SIGNING_KEY, algorithms=[JWT_SIGNING_ALGORITHM])
+        payload = jwt.decode(
+            token,
+            DEFAULT_JWT_CONFIG.signing_key,
+            algorithms=[DEFAULT_JWT_CONFIG.signing_algorithm],
+        )
         return dict(payload)
 
     except JWTError:

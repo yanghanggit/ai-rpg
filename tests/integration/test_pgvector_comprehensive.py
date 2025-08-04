@@ -21,7 +21,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # 导入配置
-from multi_agents_game.config.db_config import POSTGRES_DATABASE_URL
+from multi_agents_game.config.db_config import DEFAULT_POSTGRES_CONFIG
 
 
 # ================================
@@ -110,7 +110,7 @@ def test_basic_vector_operations() -> None:
     logger.info("🧪 开始测试基本向量操作...")
 
     # 创建数据库连接
-    engine = create_engine(POSTGRES_DATABASE_URL)
+    engine = create_engine(DEFAULT_POSTGRES_CONFIG.connection_string)
 
     try:
         with engine.connect() as conn:
@@ -216,7 +216,7 @@ def test_high_dimension_vectors() -> None:
     """测试高维向量（1536维）- 直接SQL操作"""
     logger.info("🧪 开始测试高维向量操作...")
 
-    engine = create_engine(POSTGRES_DATABASE_URL)
+    engine = create_engine(DEFAULT_POSTGRES_CONFIG.connection_string)
 
     try:
         with engine.connect() as conn:

@@ -111,7 +111,7 @@ class TCGGameContext(Context):
                 logger.debug(
                     f"comp_class = {comp_class.__name__}, comp = {restore_comp}"
                 )
-                entity.insert(comp_class, restore_comp)
+                entity.set(comp_class, restore_comp)
 
     ###############################################################################################################################################
     def get_world_entity(self, world_name: str) -> Optional[Entity]:

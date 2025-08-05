@@ -277,7 +277,7 @@ class TestEntity:
 
         # Create component object directly
         pos_comp = Position(x=10, y=20)
-        entity.insert(Position, pos_comp)
+        entity.set(Position, pos_comp)
 
         assert entity.has(Position)
         retrieved_comp = entity.get(Position)
@@ -294,7 +294,7 @@ class TestEntity:
         pos_comp = Position(x=10, y=20)
 
         with pytest.raises(EntityNotEnabled):
-            entity.insert(Position, pos_comp)
+            entity.set(Position, pos_comp)
 
     def test_insert_duplicate_component(self) -> None:
         """Test that inserting duplicate component raises exception."""
@@ -304,10 +304,10 @@ class TestEntity:
         pos_comp1 = Position(x=10, y=20)
         pos_comp2 = Position(x=30, y=40)
 
-        entity.insert(Position, pos_comp1)
+        entity.set(Position, pos_comp1)
 
         with pytest.raises(AlreadyAddedComponent):
-            entity.insert(Position, pos_comp2)
+            entity.set(Position, pos_comp2)
 
     def test_component_with_no_fields(self) -> None:
         """Test component with no fields (edge case)."""

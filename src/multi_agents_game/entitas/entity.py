@@ -27,7 +27,7 @@ class Entity(object):
 
     def __init__(self) -> None:
 
-        self._name = ""  ##yh add
+        self._name = ""
 
         #: Occurs when a component gets added.
         self.on_component_added = Event()
@@ -151,7 +151,6 @@ class Entity(object):
             self._components[comp_type] = new_comp
             self.on_component_replaced(self, previous_comp, new_comp)
 
-    ## yh modified
     def get(self, comp_type: Type[ComponentT]) -> ComponentT:
         """Retrieves a component by its type.
         :param comp_type: Component type
@@ -202,8 +201,7 @@ class Entity(object):
             ", ".join([str(self._components[x]) for x in self._components]),
         )
 
-    # yh add
-    def insert(self, comp_type: Type[Component], comp_obj: Component) -> None:
+    def set(self, comp_type: Type[Component], comp_obj: Component) -> None:
 
         if not self._is_enabled:
             raise EntityNotEnabled(

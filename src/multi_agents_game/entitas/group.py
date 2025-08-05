@@ -3,7 +3,8 @@ from .utils import Event
 from .exceptions import GroupSingleEntity
 from .matcher import Matcher
 from .entity import Entity
-from typing import Any, Optional
+from .components import Component
+from typing import Optional
 
 
 class GroupEvent(Enum):
@@ -86,25 +87,25 @@ class Group(object):
         else:
             self._remove_entity_silently(entity)
 
-    def handle_entity(self, entity: Entity, component: Any) -> None:
+    def handle_entity(self, entity: Entity, component: Component) -> None:
         """This is used by the context to manage the group.
 
         Args:
             entity (Entity): The entity to handle.
-            component (Any): The component of the entity.
+            component (Component): The component of the entity.
         """
         if self._matcher.matches(entity):
             self._add_entity(entity, component)
         else:
             self._remove_entity(entity, component)
 
-    def update_entity(self, entity: Entity, previous_comp: Any, new_comp: Any) -> None:
+    def update_entity(self, entity: Entity, previous_comp: Component, new_comp: Component) -> None:
         """This is used by the context to manage the group.
 
         Args:
             entity (Entity): The entity to update.
-            previous_comp (Any): The previous component of the entity.
-            new_comp (Any): The new component of the entity.
+            previous_comp (Component): The previous component of the entity.
+            new_comp (Component): The new component of the entity.
         """
         if entity in self._entities:
             self.on_entity_removed(entity, previous_comp)
@@ -125,12 +126,12 @@ class Group(object):
             return True
         return False
 
-    def _add_entity(self, entity: Entity, component: Any) -> None:
+    def _add_entity(self, entity: Entity, component: Component) -> None:
         """Adds an entity to the group and triggers the on_entity_added event.
 
         Args:
             entity (Entity): The entity to add.
-            component (Any): The component of the entity.
+            component (Component): The component of the entity.
         """
         entity_added = self._add_entity_silently(entity)
         if entity_added:
@@ -150,12 +151,12 @@ class Group(object):
             return True
         return False
 
-    def _remove_entity(self, entity: Entity, component: Any) -> None:
+    def _remove_entity(self, entity: Entity, component: Component) -> None:
         """Removes an entity from the group and triggers the on_entity_removed event.
 
         Args:
             entity (Entity): The entity to remove.
-            component (Any): The component of the entity.
+            component (Component): The component of the entity.
         """
         entity_removed = self._remove_entity_silently(entity)
         if entity_removed:

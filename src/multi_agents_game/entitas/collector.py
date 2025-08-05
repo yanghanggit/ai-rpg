@@ -1,8 +1,8 @@
 from .group import GroupEvent
 from .entity import Entity
 from .group import Group
-from typing import Any, Dict
-
+from typing import Dict
+from .components import Component
 
 class Collector(object):
 
@@ -43,7 +43,7 @@ class Collector(object):
     def clear_collected_entities(self) -> None:
         self._collected_entities.clear()
 
-    def _add_entity(self, entity: Entity, component: Any) -> None:  # , component
+    def _add_entity(self, entity: Entity, component: Component) -> None:
         self._collected_entities.add(entity)
 
     def __repr__(self) -> str:

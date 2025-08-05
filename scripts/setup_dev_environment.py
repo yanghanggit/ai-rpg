@@ -25,12 +25,13 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
 
-from pathlib import Path
+# from pathlib import Path
 
 # Import all required modules at the top
 from loguru import logger
 from multi_agents_game.db.account import FAKE_USER
-from multi_agents_game.db.pgsql_client import reset_database, ensure_database_tables
+
+# from multi_agents_game.db.pgsql_client import reset_database, ensure_database_tables
 from multi_agents_game.db.pgsql_user import has_user, save_user
 from multi_agents_game.db.redis_client import (
     redis_flushall,

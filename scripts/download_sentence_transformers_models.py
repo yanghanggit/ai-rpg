@@ -16,7 +16,6 @@ SentenceTransformer 模型下载和本地缓存管理脚本
 """
 
 import argparse
-import sys
 import json
 import shutil
 from pathlib import Path

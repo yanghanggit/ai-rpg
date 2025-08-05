@@ -1,6 +1,4 @@
-.PHONY: install test lint format clean dev-install conda-install run-terminal run-server run-chat setup-dev show-structure check test-mongodb start-mongodb stop-mongodb restart-mongodb status-mongodb mongo-shell help
-
-.PHONY: install test lint format clean dev-install conda-install conda-setup pip-install run-terminal run-server run-chat setup-dev show-structure check test-mongodb start-mongodb stop-mongodb restart-mongodb status-mongodb mongo-shell help
+.PHONY: install test lint format clean dev-install conda-install conda-setup pip-install show-structure check help check-imports fix-imports
 
 # 推荐：Conda环境完整设置
 conda-setup:
@@ -118,5 +116,3 @@ help:
 	@echo "  2. conda activate first_seed"
 	@echo "  3. make check        # 验证环境"
 	@echo "  4. make test         # 运行测试"
-
-.PHONY: install test lint format clean dev-install conda-install conda-setup pip-install show-structure check help check-imports fix-imports

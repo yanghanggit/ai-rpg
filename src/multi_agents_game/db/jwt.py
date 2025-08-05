@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional, final
 from jose import JWTError, jwt
 from pydantic import BaseModel
-from ..config.db_config import DEFAULT_JWT_CONFIG
+from ..config import DEFAULT_JWT_CONFIG
 
 
 ############################################################################################################

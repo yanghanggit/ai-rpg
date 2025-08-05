@@ -16,13 +16,9 @@ from pathlib import Path
 from loguru import logger
 from sqlalchemy import text
 
-# 添加 src 目录到 Python 路径
-src_path = Path(__file__).parent.parent.parent / "src"
-sys.path.insert(0, str(src_path))
-
-from multi_agents_game.db.pgsql_client import SessionLocal
-from multi_agents_game.db.pgsql_object import UserDB
-from multi_agents_game.db.pgsql_user import has_user, save_user, get_user
+from src.multi_agents_game.db.pgsql_client import SessionLocal
+from src.multi_agents_game.db.pgsql_object import UserDB
+from src.multi_agents_game.db.pgsql_user import has_user, save_user, get_user
 
 
 class TestPostgreSQLConnection:

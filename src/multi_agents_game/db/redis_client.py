@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, TypeAlias, Unio
 import redis
 from loguru import logger
 
-from ..config.db_config import DEFAULT_REDIS_CONFIG
+from ..config import DEFAULT_REDIS_CONFIG
 
 # Redis键值类型定义
 RedisKeyType: TypeAlias = Union[str, bytes]

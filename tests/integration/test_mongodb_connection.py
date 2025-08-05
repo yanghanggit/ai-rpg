@@ -18,11 +18,7 @@ from pathlib import Path
 from datetime import datetime
 from loguru import logger
 
-# 添加 src 目录到 Python 路径
-src_path = Path(__file__).parent.parent.parent / "src"
-sys.path.insert(0, str(src_path))
-
-from multi_agents_game.db.mongodb_client import (
+from src.multi_agents_game.db.mongodb_client import (
     mongodb_insert_one,
     mongodb_upsert_one,
     mongodb_find_one,

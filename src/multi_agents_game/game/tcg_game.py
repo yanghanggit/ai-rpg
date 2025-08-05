@@ -50,13 +50,12 @@ from ..chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 import copy
 import random
-from ..config.db_config import DEFAULT_MONGODB_CONFIG
+from ..config import DEFAULT_MONGODB_CONFIG, LOGS_DIR
 from ..db.mongodb_world_document import WorldDocument
 from ..db.mongodb_client import (
     mongodb_upsert_one,
     mongodb_find_one,
 )
-from ..config.game_config import LOGS_DIR
 
 
 # ################################################################################################################################################

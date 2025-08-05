@@ -18,9 +18,14 @@ Date: 2025-07-30
 """
 
 import sys
-from pathlib import Path
+import os
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# 将 src 目录添加到模块搜索路径
+sys.path.insert(
+    0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
+)
+
+from pathlib import Path
 
 # Import all required modules at the top
 from loguru import logger
@@ -37,8 +42,11 @@ from multi_agents_game.db.mongodb_client import (
 )
 from multi_agents_game.db.mongodb_boot_document import BootDocument
 from multi_agents_game.demo.world import create_demo_game_world
-from multi_agents_game.config.game_config import LOGS_DIR, GLOBAL_GAME_NAME
-from multi_agents_game.config.db_config import DEFAULT_MONGODB_CONFIG
+from multi_agents_game.config import (
+    LOGS_DIR,
+    GLOBAL_GAME_NAME,
+    DEFAULT_MONGODB_CONFIG,
+)
 
 
 #######################################################################################################

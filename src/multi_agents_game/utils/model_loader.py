@@ -5,29 +5,12 @@ SentenceTransformer 模型加载工具模块
 """
 
 # import os
-import sys
 from pathlib import Path
-from typing import Optional, Union, TYPE_CHECKING, Any, Type
+from typing import Optional, Union, TYPE_CHECKING, Any
 import logging
 
 if TYPE_CHECKING:
     from sentence_transformers import SentenceTransformer  # noqa: F401
-
-# 添加 scripts 路径以便导入模型管理器
-project_root = Path(__file__).parent.parent.parent.parent
-scripts_path = project_root / "scripts"
-if str(scripts_path) not in sys.path:
-    sys.path.insert(0, str(scripts_path))
-
-try:
-    from download_sentence_transformers_models import SentenceTransformerModelManager
-
-    _SentenceTransformerModelManager: Optional[Type[Any]] = (
-        SentenceTransformerModelManager
-    )
-except ImportError:
-    # 如果无法导入，创建一个简化版本
-    _SentenceTransformerModelManager = None
 
 logger = logging.getLogger(__name__)
 
@@ -49,9 +32,8 @@ class ModelLoader:
         else:
             self.cache_dir = Path(cache_dir)
 
-        self.manager = None
-        if _SentenceTransformerModelManager is not None:
-            self.manager = _SentenceTransformerModelManager(self.cache_dir)
+        # 创建缓存目录
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def load_model(self, model_name: str, force_online: bool = False) -> Optional[Any]:
         """
@@ -67,15 +49,17 @@ class ModelLoader:
         try:
             from sentence_transformers import SentenceTransformer
 
-            if not force_online and self.manager:
-                # 尝试使用模型管理器加载（优先本地缓存）
-                model = self.manager.load_model(model_name, use_cache=True)
-                if model is not None:
-                    return model
+            # 检查本地缓存
+            if not force_online:
+                model_cache_path = self.cache_dir / model_name
+                if model_cache_path.exists():
+                    logger.info(f"从本地缓存加载模型: {model_name}")
+                    return SentenceTransformer(str(model_cache_path))
 
             # 直接从 Hugging Face 加载
             logger.info(f"从网络加载模型: {model_name}")
-            return SentenceTransformer(model_name)
+            model = SentenceTransformer(model_name, cache_folder=str(self.cache_dir))
+            return model
 
         except Exception as e:
             logger.error(f"加载模型失败 {model_name}: {e}")
@@ -83,9 +67,6 @@ class ModelLoader:
 
     def is_model_cached(self, model_name: str) -> bool:
         """检查模型是否已缓存"""
-        if not self.manager:
-            return False
-
         model_cache_path = self.cache_dir / model_name
         return model_cache_path.exists()
 

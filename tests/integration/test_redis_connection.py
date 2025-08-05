@@ -15,11 +15,7 @@ import sys
 from pathlib import Path
 from loguru import logger
 
-# 添加 src 目录到 Python 路径
-src_path = Path(__file__).parent.parent.parent / "src"
-sys.path.insert(0, str(src_path))
-
-from multi_agents_game.db.redis_client import (
+from src.multi_agents_game.db.redis_client import (
     redis_set,
     redis_get,
     redis_delete,

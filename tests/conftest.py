@@ -4,22 +4,16 @@ import pytest
 from pathlib import Path
 from typing import Type, Optional, Any
 
-# 添加 src 目录到 Python 路径
-import sys
-
-src_path = Path(__file__).parent.parent / "src"
-sys.path.insert(0, str(src_path))
-
 try:
-    from multi_agents_game.game.tcg_game import TCGGame
-    from multi_agents_game.models.objects import Actor
-    from multi_agents_game.models.character_sheet import ActorCharacterSheet
-    from multi_agents_game.models.objects import RPGCharacterProfile
-    from multi_agents_game.models.world import World, Boot
-    from multi_agents_game.models.dungeon import Dungeon
-    from multi_agents_game.player.player_proxy import PlayerProxy
-    from multi_agents_game.chat_services.chat_system import ChatSystem
-    from multi_agents_game.chaos_engineering.empty_engineering_system import (
+    from src.multi_agents_game.game.tcg_game import TCGGame
+    from src.multi_agents_game.models.objects import Actor
+    from src.multi_agents_game.models.character_sheet import ActorCharacterSheet
+    from src.multi_agents_game.models.objects import RPGCharacterProfile
+    from src.multi_agents_game.models.world import World, Boot
+    from src.multi_agents_game.models.dungeon import Dungeon
+    from src.multi_agents_game.player.player_proxy import PlayerProxy
+    from src.multi_agents_game.chat_services.chat_system import ChatSystem
+    from src.multi_agents_game.chaos_engineering.empty_engineering_system import (
         EmptyChaosEngineeringSystem,
     )
 

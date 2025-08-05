@@ -2,7 +2,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-sys.path.append(str(Path(__file__).resolve().parent.parent))
 from fastapi import FastAPI
 from langgraph.graph.state import CompiledStateGraph
 from ..config import DEFAULT_SERVER_SETTINGS_CONFIG

@@ -1,5 +1,5 @@
-from multi_agents_game.chat_services.chat_server_fastapi import app
-from multi_agents_game.config import (
+from src.multi_agents_game.chat_services.chat_server_fastapi import app
+from src.multi_agents_game.config import (
     DEFAULT_SERVER_SETTINGS_CONFIG,
 )
 

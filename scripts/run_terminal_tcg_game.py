@@ -1,19 +1,21 @@
 from loguru import logger
-from multi_agents_game.game.terminal_tcg_game import TerminalTCGGame
-from multi_agents_game.game.tcg_game import TCGGameState
-from multi_agents_game.models import World, CombatResult
-from multi_agents_game.chaos_engineering.empty_engineering_system import (
+from src.multi_agents_game.game.terminal_tcg_game import TerminalTCGGame
+from src.multi_agents_game.game.tcg_game import TCGGameState
+from src.multi_agents_game.models import World, CombatResult
+from src.multi_agents_game.chaos_engineering.empty_engineering_system import (
     EmptyChaosEngineeringSystem,
 )
-from multi_agents_game.chat_services.chat_system import ChatSystem
-from multi_agents_game.player.player_proxy import PlayerProxy
-from multi_agents_game.demo import create_demo_dungeon3, create_actor_warrior
-from multi_agents_game.tcg_game_systems.combat_monitor_system import CombatMonitorSystem
-from multi_agents_game.game.game_options import TerminalGameUserOptions
-from multi_agents_game.format_string.terminal_input import (
+from src.multi_agents_game.chat_services.chat_system import ChatSystem
+from src.multi_agents_game.player.player_proxy import PlayerProxy
+from src.multi_agents_game.demo import create_demo_dungeon3, create_actor_warrior
+from src.multi_agents_game.tcg_game_systems.combat_monitor_system import (
+    CombatMonitorSystem,
+)
+from src.multi_agents_game.game.game_options import TerminalGameUserOptions
+from src.multi_agents_game.format_string.terminal_input import (
     parse_speak_command_input,
 )
-from multi_agents_game.config import (
+from src.multi_agents_game.config import (
     setup_logger,
     GLOBAL_GAME_NAME,
     DEFAULT_SERVER_SETTINGS_CONFIG,

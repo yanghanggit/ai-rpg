@@ -1,4 +1,4 @@
-from multi_agents_game.models.objects import Stage
+from ..models.objects import Stage
 from ..models import (
     StageType,
     Dungeon,

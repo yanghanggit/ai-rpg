@@ -20,24 +20,22 @@ Date: 2025-07-30
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
 # Import all required modules at the top
 from loguru import logger
-from multi_agents_game.db.account import FAKE_USER
-from multi_agents_game.db.pgsql_client import reset_database, ensure_database_tables
-from multi_agents_game.db.pgsql_user import has_user, save_user
-from multi_agents_game.db.redis_client import (
+from src.multi_agents_game.db.account import FAKE_USER
+from src.multi_agents_game.db.pgsql_client import reset_database, ensure_database_tables
+from src.multi_agents_game.db.pgsql_user import has_user, save_user
+from src.multi_agents_game.db.redis_client import (
     redis_flushall,
 )
-from multi_agents_game.db.mongodb_client import (
+from src.multi_agents_game.db.mongodb_client import (
     mongodb_clear_database,
     mongodb_upsert_one,
     mongodb_find_one,
 )
-from multi_agents_game.db.mongodb_boot_document import BootDocument
-from multi_agents_game.demo.world import create_demo_game_world
-from multi_agents_game.config import (
+from src.multi_agents_game.db.mongodb_boot_document import BootDocument
+from src.multi_agents_game.demo.world import create_demo_game_world
+from src.multi_agents_game.config import (
     LOGS_DIR,
     GLOBAL_GAME_NAME,
     DEFAULT_MONGODB_CONFIG,

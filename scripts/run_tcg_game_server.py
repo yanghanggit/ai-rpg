@@ -1,8 +1,13 @@
+import sys
+import os
+# 将 src 目录添加到模块搜索路径
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src'))
+
 from loguru import logger
-from src.multi_agents_game.config import (
+from multi_agents_game.config import (
     DEFAULT_SERVER_SETTINGS_CONFIG,
 )
-from src.multi_agents_game.game_services.game_server_fastapi import app
+from multi_agents_game.game_services.game_server_fastapi import app
 
 
 def main() -> None:

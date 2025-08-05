@@ -1,5 +1,10 @@
-from src.multi_agents_game.chat_services.chat_server_fastapi import app
-from src.multi_agents_game.config import (
+import sys
+import os
+# 将 src 目录添加到模块搜索路径
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src'))
+
+from multi_agents_game.chat_services.chat_server_fastapi import app
+from multi_agents_game.config import (
     DEFAULT_SERVER_SETTINGS_CONFIG,
 )
 

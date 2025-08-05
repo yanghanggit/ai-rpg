@@ -157,8 +157,7 @@ class TestEntityContextIntegration:
 
         # Damage enemy
         old_health = hit_enemy.get(Health)
-        new_health = Health(old_health.value - 20, old_health.max_value)
-        hit_enemy.replace(Health, new_health.value, new_health.max_value)
+        hit_enemy.replace(Health, old_health.value - 20, old_health.max_value)
 
         # Remove projectile
         context.destroy_entity(hit_projectile)

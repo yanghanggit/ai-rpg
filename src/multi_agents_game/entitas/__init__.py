@@ -5,6 +5,7 @@ from .context import Context
 from .matcher import Matcher
 from .group import Group, GroupEvent
 from .collector import Collector
+from .components import Component
 from .processors import (
     Processors,
     InitializeProcessor,
@@ -29,6 +30,7 @@ __all__ = [
     "Group",
     "GroupEvent",
     "Collector",
+    "Component",
     "Processors",
     "InitializeProcessor",
     "ExecuteProcessor",

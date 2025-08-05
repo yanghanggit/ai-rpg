@@ -6,12 +6,14 @@ objects in your application. You can add, replace or remove data
 from entities.
 
 Those containers are called 'components'. They are represented by
-namedtuples for readability.
+Pydantic BaseModel classes for enhanced functionality including
+data validation, serialization, and documentation.
 """
 
 from .utils import Event
 from .exceptions import EntityNotEnabled, AlreadyAddedComponent, MissingComponent
 from typing import Any, Dict, Type, TypeVar, cast
+from pydantic import BaseModel
 
 T = TypeVar("T")  ##yh add
 
@@ -50,9 +52,36 @@ class Entity(object):
         self._creation_index = creation_index
         self._is_enabled = True
 
+    def _create_component(self, comp_type: Type[Any], *args: Any) -> Any:
+        """Creates a component instance using Pydantic BaseModel.
+        
+        :param comp_type: Pydantic BaseModel component type
+        :param *args: Component field values
+        :return: Component instance
+        """
+        # Get field names from Pydantic BaseModel
+        field_names = list(comp_type.model_fields.keys())
+        
+        # Handle components with no fields (like Marker)
+        if len(field_names) == 0:
+            if len(args) != 0:
+                raise ValueError(
+                    f"Component {comp_type.__name__} expects no arguments, got {len(args)}"
+                )
+            return comp_type()
+        
+        # Handle components with fields
+        if len(args) != len(field_names):
+            raise ValueError(
+                f"Component {comp_type.__name__} expects {len(field_names)} "
+                f"arguments ({field_names}), got {len(args)}"
+            )
+        kwargs = dict(zip(field_names, args))
+        return comp_type(**kwargs)
+
     def add(self, comp_type: Type[Any], *args: Any) -> None:
         """Adds a component.
-        :param comp_type: namedtuple type
+        :param comp_type: Pydantic BaseModel component type
         :param *args: (optional) data values
         """
         if not self._is_enabled:
@@ -69,13 +98,13 @@ class Entity(object):
                 )
             )
 
-        new_comp = comp_type._make(args)
+        new_comp = self._create_component(comp_type, *args)
         self._components[comp_type] = new_comp
         self.on_component_added(self, new_comp)
 
     def remove(self, comp_type: Type[Any]) -> None:
         """Removes a component.
-        :param comp_type: namedtuple type
+        :param comp_type: Pydantic BaseModel component type
         """
         if not self._is_enabled:
             raise EntityNotEnabled(
@@ -96,7 +125,7 @@ class Entity(object):
     def replace(self, comp_type: Type[Any], *args: Any) -> None:
         """Replaces an existing component or adds it if it doesn't exist
         yet.
-        :param comp_type: namedtuple type
+        :param comp_type: Pydantic BaseModel component type
         :param *args: (optional) data values
         """
         if not self._is_enabled:
@@ -117,15 +146,15 @@ class Entity(object):
             del self._components[comp_type]
             self.on_component_removed(self, previous_comp)
         else:
-            new_comp = comp_type._make(args)
+            new_comp = self._create_component(comp_type, *args)
             self._components[comp_type] = new_comp
             self.on_component_replaced(self, previous_comp, new_comp)
 
     ## yh modified
     def get(self, comp_type: Type[T]) -> T:
         """Retrieves a component by its type.
-        :param comp_type: namedtuple type
-        :rtype: namedtuple
+        :param comp_type: Pydantic BaseModel component type
+        :rtype: Pydantic BaseModel component instance
         """
         if not self.has(comp_type):
             raise MissingComponent(
@@ -138,7 +167,7 @@ class Entity(object):
 
     def has(self, *args: Type[Any]) -> bool:
         """Checks if the entity has all components of the given type(s).
-        :param args: namedtuple types
+        :param args: Pydantic BaseModel component types
         :rtype: bool
         """
         if len(args) == 1:
@@ -148,7 +177,7 @@ class Entity(object):
 
     def has_any(self, *args: Type[Any]) -> bool:
         """Checks if the entity has any component of the given type(s).
-        :param args: namedtuple types
+        :param args: Pydantic BaseModel component types
         :rtype: bool
         """
         return any([comp_type in self._components for comp_type in args])

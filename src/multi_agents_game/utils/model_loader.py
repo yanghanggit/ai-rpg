@@ -5,9 +5,8 @@ SentenceTransformer 模型加载工具模块
 """
 
 # import os
-import sys
 from pathlib import Path
-from typing import Optional, Union, TYPE_CHECKING, Any, Type
+from typing import Optional, Union, TYPE_CHECKING, Any
 import logging
 
 if TYPE_CHECKING:

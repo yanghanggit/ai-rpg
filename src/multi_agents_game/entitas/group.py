@@ -1,13 +1,15 @@
 from enum import Enum
-from .utils import Event
+from .event import Event
 from .exceptions import GroupSingleEntity
 from .matcher import Matcher
 from .entity import Entity
 from .components import Component
-from typing import Optional
+from typing import Optional, Set
 
 
 class GroupEvent(Enum):
+    """Enumeration of group events for entity tracking."""
+
     ADDED = 1
     REMOVED = 2
     ADDED_OR_REMOVED = 3
@@ -28,9 +30,7 @@ class Group(object):
     def __init__(self, matcher: Matcher) -> None:
         """Initializes a new instance of the Group class.
 
-        Args:
-            matcher (Matcher): The matcher used to determine if an entity
-                belongs to this group.
+        :param matcher: The matcher used to determine if an entity belongs to this group
         """
         #: Occurs when an entity gets added.
         self.on_entity_added = Event()
@@ -42,45 +42,56 @@ class Group(object):
         self.on_entity_updated = Event()
 
         self._matcher = matcher
-        self._entities: set[Entity] = set()
+        self._entities: Set[Entity] = set()
 
     @property
-    def entities(self) -> set[Entity]:
+    def entities(self) -> Set[Entity]:
         """Gets the set of entities in this group.
 
-        Returns:
-            set[Entity]: The set of entities in this group.
+        :return: Set of entities in this group
         """
         return self._entities
+
+    @property
+    def entity_count(self) -> int:
+        """Gets the number of entities in this group.
+
+        :return: Number of entities in this group
+        """
+        return len(self._entities)
+
+    @property
+    def matcher(self) -> Matcher:
+        """Gets the matcher used by this group.
+
+        :return: The matcher that defines this group's criteria
+        """
+        return self._matcher
 
     @property
     def single_entity(self) -> Optional[Entity]:
         """Returns the only entity in this group.
 
-        Returns:
-            Entity: The only entity in this group.
-
-        Raises:
-            GroupSingleEntity: If the group has more than one entity.
+        :return: The single entity if group contains exactly one entity, None if empty
+        :raises GroupSingleEntity: If the group has more than one entity
         """
         count = len(self._entities)
 
         if count == 1:
-            # return min(self._entities)
             return next(iter(self._entities))
         if count == 0:
             return None
 
         raise GroupSingleEntity(
-            "Cannot get a single entity from a group containing {} entities.",
-            len(self._entities),
+            f"Cannot get a single entity from a group containing {count} entities.", ""
         )
 
     def handle_entity_silently(self, entity: Entity) -> None:
-        """This is used by the context to manage the group.
+        """Handles an entity without triggering events.
 
-        Args:
-            entity (Entity): The entity to handle.
+        This is used by the context to manage the group during initialization.
+
+        :param entity: The entity to handle
         """
         if self._matcher.matches(entity):
             self._add_entity_silently(entity)
@@ -88,11 +99,12 @@ class Group(object):
             self._remove_entity_silently(entity)
 
     def handle_entity(self, entity: Entity, component: Component) -> None:
-        """This is used by the context to manage the group.
+        """Handles an entity and triggers appropriate events.
 
-        Args:
-            entity (Entity): The entity to handle.
-            component (Component): The component of the entity.
+        This is used by the context to manage the group during runtime.
+
+        :param entity: The entity to handle
+        :param component: The component involved in the change
         """
         if self._matcher.matches(entity):
             self._add_entity(entity, component)
@@ -102,12 +114,13 @@ class Group(object):
     def update_entity(
         self, entity: Entity, previous_comp: Component, new_comp: Component
     ) -> None:
-        """This is used by the context to manage the group.
+        """Updates an entity after component replacement.
 
-        Args:
-            entity (Entity): The entity to update.
-            previous_comp (Component): The previous component of the entity.
-            new_comp (Component): The new component of the entity.
+        This is used by the context to manage the group when components are replaced.
+
+        :param entity: The entity that was updated
+        :param previous_comp: The component that was replaced
+        :param new_comp: The new component
         """
         if entity in self._entities:
             self.on_entity_removed(entity, previous_comp)
@@ -117,11 +130,8 @@ class Group(object):
     def _add_entity_silently(self, entity: Entity) -> bool:
         """Adds an entity to the group without triggering events.
 
-        Args:
-            entity (Entity): The entity to add.
-
-        Returns:
-            bool: True if the entity was added, False if it was already in the group.
+        :param entity: The entity to add
+        :return: True if the entity was added, False if it was already in the group
         """
         if entity not in self._entities:
             self._entities.add(entity)
@@ -131,9 +141,8 @@ class Group(object):
     def _add_entity(self, entity: Entity, component: Component) -> None:
         """Adds an entity to the group and triggers the on_entity_added event.
 
-        Args:
-            entity (Entity): The entity to add.
-            component (Component): The component of the entity.
+        :param entity: The entity to add
+        :param component: The component involved in the addition
         """
         entity_added = self._add_entity_silently(entity)
         if entity_added:
@@ -142,11 +151,8 @@ class Group(object):
     def _remove_entity_silently(self, entity: Entity) -> bool:
         """Removes an entity from the group without triggering events.
 
-        Args:
-            entity (Entity): The entity to remove.
-
-        Returns:
-            bool: True if the entity was removed, False if it was not in the group.
+        :param entity: The entity to remove
+        :return: True if the entity was removed, False if it was not in the group
         """
         if entity in self._entities:
             self._entities.remove(entity)
@@ -156,9 +162,8 @@ class Group(object):
     def _remove_entity(self, entity: Entity, component: Component) -> None:
         """Removes an entity from the group and triggers the on_entity_removed event.
 
-        Args:
-            entity (Entity): The entity to remove.
-            component (Component): The component of the entity.
+        :param entity: The entity to remove
+        :param component: The component involved in the removal
         """
         entity_removed = self._remove_entity_silently(entity)
         if entity_removed:
@@ -167,7 +172,6 @@ class Group(object):
     def __repr__(self) -> str:
         """Returns a string representation of the Group.
 
-        Returns:
-            str: A string representation of the Group.
+        :return: String representation showing the matcher and entity count
         """
-        return "<Group [{}]>".format(self._matcher)
+        return f"<Group [{self._matcher}] ({len(self._entities)} entities)>"

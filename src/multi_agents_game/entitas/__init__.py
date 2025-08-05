@@ -14,7 +14,7 @@ from .processors import (
     TearDownProcessor,
     ReactiveProcessor,
 )
-from .utils import Event
+from .event import Event
 from .exceptions import (
     AlreadyAddedComponent,
     MissingComponent,

@@ -25,9 +25,6 @@ def register_component_class(cls: T_COMPONENT) -> T_COMPONENT:
         assert False, f"Class {class_name} is already registered."
 
     COMPONENTS_REGISTRY[class_name] = cls
-
-    # Pydantic 组件不需要手动添加 deserialize_component_data 方法
-    # Pydantic 自带序列化/反序列化功能
     return cls
 
 

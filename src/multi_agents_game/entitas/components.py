@@ -7,8 +7,6 @@ Provides both namedtuple compatibility and Pydantic BaseModel support.
 
 from pydantic import BaseModel, ConfigDict
 
-# from typing import Any
-
 
 class Component(BaseModel):
     """Base class for all Pydantic-based components.

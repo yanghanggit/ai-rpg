@@ -55,14 +55,14 @@ class Entity(object):
 
     def _create_component(self, comp_type: Type[Component], *args: Any) -> Component:
         """Creates a component instance using Pydantic BaseModel.
-        
+
         :param comp_type: Component type (Pydantic BaseModel subclass)
         :param *args: Component field values
         :return: Component instance
         """
         # Get field names from Pydantic BaseModel
         field_names = list(comp_type.model_fields.keys())
-        
+
         # Handle components with no fields (like Marker)
         if len(field_names) == 0:
             if len(args) != 0:
@@ -70,7 +70,7 @@ class Entity(object):
                     f"Component {comp_type.__name__} expects no arguments, got {len(args)}"
                 )
             return comp_type()
-        
+
         # Handle components with fields
         if len(args) != len(field_names):
             raise ValueError(

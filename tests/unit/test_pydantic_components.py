@@ -172,100 +172,100 @@ class TestPydanticComponents:
         for entity in positioned_group.entities:
             pos = entity.get(Position)
             assert isinstance(pos, Position)
-            assert hasattr(pos, 'x')
-            assert hasattr(pos, 'y')
-            
+            assert hasattr(pos, "x")
+            assert hasattr(pos, "y")
+
     def test_mutable_component(self) -> None:
         """Test that MutableComponent can be modified after creation."""
         entity = Entity()
         entity.activate(1)
-        
+
         # Add a mutable counter component
         entity.add(Counter, 5)
         counter = entity.get(Counter)
-        
+
         # Verify it's mutable
         assert isinstance(counter, MutableComponent)
-        
+
         # Test modifying the component directly
         counter.value = 10
         assert counter.value == 10
-        
+
         # Verify the entity still has the same component with updated value
         updated_counter = entity.get(Counter)
         assert updated_counter is counter  # Should be the same instance
         assert updated_counter.value == 10
-        
+
     def test_mutable_component_methods(self) -> None:
         """Test methods on mutable components that modify their state."""
         entity = Entity()
         entity.activate(1)
-        
+
         # Add a resource pool with methods
         entity.add(ResourcePool, 50, 100)
         pool = entity.get(ResourcePool)
-        
+
         # Test initial values
         assert pool.current == 50
         assert pool.maximum == 100
-        
+
         # Test consume method
         success = pool.consume(20)
         assert success
         assert pool.current == 30
-        
+
         # Test failed consumption
         success = pool.consume(40)
         assert not success
         assert pool.current == 30  # Should remain unchanged
-        
+
         # Test refill method
         pool.refill(40)
         assert pool.current == 70
-        
+
         # Test refill beyond maximum
         pool.refill(50)
         assert pool.current == 100  # Should cap at maximum
-        
+
         # Test validation
         with pytest.raises(ValueError, match="Consumption amount must be positive"):
             pool.consume(-10)
-            
+
         with pytest.raises(ValueError, match="Refill amount must be positive"):
             pool.refill(0)
-            
+
     def test_mutable_vs_immutable_components(self) -> None:
         """Compare behavior of mutable and immutable components."""
         # Immutable component (standard Component)
         pos = Position(x=10.0, y=20.0)
-        
+
         # Should not be modifiable
         with pytest.raises(Exception):
             pos.x = 30.0
-            
+
         # Mutable component
         counter = Counter(value=5)
-        
+
         # Should be modifiable
         counter.value = 10
         assert counter.value == 10
-        
+
     def test_mutable_component_in_context(self) -> None:
         """Test that mutable components work correctly with Context and Groups."""
         context = Context()
-        
+
         # Create entity with mutable component
         entity = context.create_entity()
         entity.add(Counter, 5)
-        
+
         # Get component and modify it
         counter = entity.get(Counter)
         counter.value = 10
-        
+
         # The group should still contain the entity with the modified component
         counter_group = context.get_group(Matcher(Counter))
         assert len(counter_group.entities) == 1
-        
+
         # Check that component in the group is updated
         for e in counter_group.entities:
             c = e.get(Counter)

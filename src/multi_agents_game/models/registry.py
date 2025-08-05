@@ -1,28 +1,23 @@
 from typing import (
-    Any,
     Dict,
-    NamedTuple,
     Type,
     TypeVar,
     Final,
 )
+from ..entitas.components import Component
 
 ############################################################################################################
-COMPONENTS_REGISTRY: Final[Dict[str, Type[NamedTuple]]] = {}
-T_COMPONENT = TypeVar("T_COMPONENT", bound=Type[NamedTuple])
+COMPONENTS_REGISTRY: Final[Dict[str, Type[Component]]] = {}
+T_COMPONENT = TypeVar("T_COMPONENT", bound=Type[Component])
 
 
 ############################################################################################################
 # 注册组件类的装饰器
 def register_component_class(cls: T_COMPONENT) -> T_COMPONENT:
 
-    # 新增检查：确保类是通过 NamedTuple 创建的
-    if not (
-        issubclass(cls, tuple)
-        and hasattr(cls, "_fields")
-        and hasattr(cls, "__annotations__")
-    ):
-        assert False, f"{cls.__name__} is not a valid NamedTuple class."
+    # 检查：确保类是 BaseModel 的子类（包括我们的 Component 和 MutableComponent）
+    if not issubclass(cls, Component):
+        assert False, f"{cls.__name__} is not a valid BaseModel/Component class."
 
     # 注册类到全局字典
     class_name = cls.__name__
@@ -31,25 +26,13 @@ def register_component_class(cls: T_COMPONENT) -> T_COMPONENT:
 
     COMPONENTS_REGISTRY[class_name] = cls
 
-    # 外挂一个方法到类上
-    if not hasattr(cls, "deserialize_component_data"):
-        ## 为了兼容性，给没有 deserialize_component_data 方法的组件添加一个默认实现
-        def _dummy_deserialize_component_data(
-            component_data: Dict[str, Any],
-        ) -> Dict[str, Any]:
-            return component_data
-
-        setattr(
-            cls,
-            "deserialize_component_data",
-            staticmethod(_dummy_deserialize_component_data),
-        )
-
+    # Pydantic 组件不需要手动添加 deserialize_component_data 方法
+    # Pydantic 自带序列化/反序列化功能
     return cls
 
 
 ############################################################################################################
-ACTION_COMPONENTS_REGISTRY: Final[Dict[str, Type[NamedTuple]]] = {}
+ACTION_COMPONENTS_REGISTRY: Final[Dict[str, Type[Component]]] = {}
 
 
 # 注册动作类的装饰器，必须同时注册到 COMPONENTS_REGISTRY 中

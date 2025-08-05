@@ -1,6 +1,7 @@
-from typing import Dict, NamedTuple, final, List
+from typing import Dict, final, List
 from .dungeon import Skill, StatusEffect
 from .registry import register_component_class, register_action_class
+from ..entitas.components import Component, MutableComponent
 
 
 ############################################################################################################
@@ -8,7 +9,7 @@ from .registry import register_component_class, register_action_class
 @final
 @register_component_class
 @register_action_class
-class SpeakAction(NamedTuple):
+class SpeakAction(Component):
     name: str
     data: Dict[str, str]
 
@@ -18,7 +19,7 @@ class SpeakAction(NamedTuple):
 @final
 @register_component_class
 @register_action_class
-class WhisperAction(NamedTuple):
+class WhisperAction(Component):
     name: str
     data: Dict[str, str]
 
@@ -28,7 +29,7 @@ class WhisperAction(NamedTuple):
 @final
 @register_component_class
 @register_action_class
-class AnnounceAction(NamedTuple):
+class AnnounceAction(Component):
     name: str
     data: str
 
@@ -38,7 +39,7 @@ class AnnounceAction(NamedTuple):
 @final
 @register_component_class
 @register_action_class
-class MindVoiceAction(NamedTuple):
+class MindVoiceAction(Component):
     name: str
     data: str
 
@@ -47,7 +48,7 @@ class MindVoiceAction(NamedTuple):
 @final
 @register_component_class
 @register_action_class
-class TurnAction(NamedTuple):
+class TurnAction(Component):
     name: str
     rounds: int
     round_turns: List[str]
@@ -62,7 +63,7 @@ class TurnAction(NamedTuple):
 @final
 @register_component_class
 @register_action_class
-class DrawCardsAction(NamedTuple):
+class DrawCardsAction(Component):
     name: str
 
 
@@ -70,7 +71,7 @@ class DrawCardsAction(NamedTuple):
 @final
 @register_component_class
 @register_action_class
-class PlayCardsAction(NamedTuple):
+class PlayCardsAction(MutableComponent):
     name: str
     targets: List[str]
     skill: Skill
@@ -82,7 +83,7 @@ class PlayCardsAction(NamedTuple):
 @final
 @register_component_class
 @register_action_class
-class DirectorAction(NamedTuple):
+class DirectorAction(Component):
     name: str
     calculation: str
     performance: str
@@ -92,7 +93,7 @@ class DirectorAction(NamedTuple):
 @final
 @register_component_class
 @register_action_class
-class FeedbackAction(NamedTuple):
+class FeedbackAction(MutableComponent):
     name: str
     calculation: str
     performance: str

@@ -4,6 +4,7 @@ from .group import Group
 from typing import Dict
 from .components import Component
 
+
 class Collector(object):
 
     def __init__(self) -> None:

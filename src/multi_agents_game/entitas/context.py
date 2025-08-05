@@ -89,7 +89,9 @@ class Context(object):
         for matcher in self._groups:
             self._groups[matcher].handle_entity(entity, comp)
 
-    def _comp_replaced(self, entity: Entity, previous_comp: Component, new_comp: Component) -> None:
+    def _comp_replaced(
+        self, entity: Entity, previous_comp: Component, new_comp: Component
+    ) -> None:
         for matcher in self._groups:
             group = self._groups[matcher]
             group.update_entity(entity, previous_comp, new_comp)

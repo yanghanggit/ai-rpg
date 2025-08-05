@@ -99,7 +99,9 @@ class Group(object):
         else:
             self._remove_entity(entity, component)
 
-    def update_entity(self, entity: Entity, previous_comp: Component, new_comp: Component) -> None:
+    def update_entity(
+        self, entity: Entity, previous_comp: Component, new_comp: Component
+    ) -> None:
         """This is used by the context to manage the group.
 
         Args:

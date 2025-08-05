@@ -13,15 +13,8 @@ import sys
 import os
 import hashlib
 
-# 添加项目根目录到路径
-project_root = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 # 导入配置
-from multi_agents_game.config.db_config import DEFAULT_POSTGRES_CONFIG
+from src.multi_agents_game.config import DEFAULT_POSTGRES_CONFIG
 
 
 # ================================
@@ -33,7 +26,7 @@ from multi_agents_game.config.db_config import DEFAULT_POSTGRES_CONFIG
 def setup_database_tables() -> Any:
     """设置数据库表的 fixture"""
     try:
-        from multi_agents_game.db.pgsql_client import ensure_database_tables
+        from src.multi_agents_game.db.pgsql_client import ensure_database_tables
 
         ensure_database_tables()
         logger.info("✅ 数据库表已就绪")
@@ -299,7 +292,7 @@ def test_high_dimension_vectors() -> None:
 @pytest.mark.database
 def test_vector_document_operations() -> None:
     """测试向量文档操作 - 使用ORM"""
-    from multi_agents_game.db.pgsql_vector_ops import (
+    from src.multi_agents_game.db.pgsql_vector_ops import (
         save_vector_document,
         search_similar_documents,
         get_database_vector_stats,
@@ -416,7 +409,7 @@ def test_conversation_vector_operations() -> None:
 @pytest.mark.demo
 def demo_document_rag_system() -> None:
     """演示基于文档的RAG系统"""
-    from multi_agents_game.db.pgsql_vector_ops import (
+    from src.multi_agents_game.db.pgsql_vector_ops import (
         save_vector_document,
         search_similar_documents,
     )
@@ -520,8 +513,8 @@ def run_all_vector_tests() -> None:
 
     try:
         # 确保数据库表已创建
-        from multi_agents_game.db.pgsql_client import engine
-        from multi_agents_game.db.pgsql_client import Base  # type: ignore[attr-defined]
+        from src.multi_agents_game.db.pgsql_client import engine
+        from src.multi_agents_game.db.pgsql_client import Base  # type: ignore[attr-defined]
 
         Base.metadata.create_all(bind=engine)
         logger.info("✅ 数据库表已就绪")
@@ -532,7 +525,7 @@ def run_all_vector_tests() -> None:
         # test_game_knowledge_operations()       # 已移除
 
         # 获取最终统计
-        from multi_agents_game.db.pgsql_vector_ops import get_database_vector_stats
+        from src.multi_agents_game.db.pgsql_vector_ops import get_database_vector_stats
 
         final_stats = get_database_vector_stats()
         logger.info(f"🏁 测试完成，最终统计: {final_stats}")
@@ -548,8 +541,8 @@ def run_all_demos() -> None:
 
     try:
         # 确保数据库表已创建
-        from multi_agents_game.db.pgsql_client import engine
-        from multi_agents_game.db.pgsql_client import Base  # type: ignore[attr-defined]
+        from src.multi_agents_game.db.pgsql_client import engine
+        from src.multi_agents_game.db.pgsql_client import Base  # type: ignore[attr-defined]
 
         Base.metadata.create_all(bind=engine)
 
@@ -559,7 +552,7 @@ def run_all_demos() -> None:
         demo_game_knowledge_system()  # 现在是占位符函数
 
         # 显示最终统计
-        from multi_agents_game.db.pgsql_vector_ops import get_database_vector_stats
+        from src.multi_agents_game.db.pgsql_vector_ops import get_database_vector_stats
 
         logger.info("\n📊 最终数据库统计:")
         stats = get_database_vector_stats()
@@ -624,7 +617,7 @@ def test_comprehensive_pgvector_demos(setup_database_tables: Any) -> None:
         demo_game_knowledge_system()  # 现在是占位符函数
 
         # 显示最终统计
-        from multi_agents_game.db.pgsql_vector_ops import get_database_vector_stats
+        from src.multi_agents_game.db.pgsql_vector_ops import get_database_vector_stats
 
         logger.info("\n📊 最终数据库统计:")
         stats = get_database_vector_stats()

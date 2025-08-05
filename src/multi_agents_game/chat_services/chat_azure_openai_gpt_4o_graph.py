@@ -1,13 +1,9 @@
-import sys
-from pathlib import Path
-
 from loguru import logger
 from dotenv import load_dotenv
 
 # 加载 .env 文件中的环境变量
 load_dotenv()
 
-sys.path.append(str(Path(__file__).resolve().parent.parent))
 import os
 import traceback
 from typing import Annotated, Dict, List, Any

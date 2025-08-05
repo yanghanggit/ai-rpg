@@ -6,6 +6,12 @@
 
 import os
 import sys
+
+# 将 src 目录添加到模块搜索路径
+sys.path.insert(
+    0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
+)
+
 import platform
 import subprocess
 import psutil
@@ -19,7 +25,7 @@ try:
 except ImportError:
     # Python < 3.8 fallback
     import pkg_resources
-from multi_agents_game.config.db_config import (
+from multi_agents_game.config import (
     DEFAULT_POSTGRES_CONFIG,
 )
 

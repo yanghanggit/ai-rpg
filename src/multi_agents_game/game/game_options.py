@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-from ..config.db_config import DEFAULT_MONGODB_CONFIG
+from ..config import DEFAULT_MONGODB_CONFIG
 from loguru import logger
 from ..db.mongodb_client import (
     mongodb_find_one,

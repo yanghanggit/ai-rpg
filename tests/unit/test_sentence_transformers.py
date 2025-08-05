@@ -12,15 +12,9 @@ import sys
 from pathlib import Path
 from typing import List, Callable, Any
 
-
-# Add src to path if needed for manual execution
-src_path = Path(__file__).parent.parent.parent / "src"
-if str(src_path) not in sys.path:
-    sys.path.insert(0, str(src_path))
-
 # 导入模型加载工具
 try:
-    from multi_agents_game.utils.model_loader import (
+    from src.multi_agents_game.utils.model_loader import (
         load_basic_model,
         load_multilingual_model,
     )

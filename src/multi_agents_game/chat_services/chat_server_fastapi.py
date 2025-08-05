@@ -1,11 +1,8 @@
-import sys
-from pathlib import Path
 from typing import Any
 
-sys.path.append(str(Path(__file__).resolve().parent.parent))
 from fastapi import FastAPI
 from langgraph.graph.state import CompiledStateGraph
-from ..config.server_config import chat_service_path
+from ..config import DEFAULT_SERVER_SETTINGS_CONFIG
 from ..chat_services.chat_api import ChatRequest, ChatResponse
 from ..chat_services.chat_azure_openai_gpt_4o_graph import (
     create_compiled_stage_graph,
@@ -25,7 +22,10 @@ compiled_state_graph: CompiledStateGraph[State, Any, State, State] = (
 
 ##################################################################################################################
 # 定义 POST 请求处理逻辑
-@app.post(path=chat_service_path, response_model=ChatResponse)
+@app.post(
+    path=DEFAULT_SERVER_SETTINGS_CONFIG.chat_service_endpoint,
+    response_model=ChatResponse,
+)
 async def process_chat_request(request: ChatRequest) -> ChatResponse:
     # 聊天历史
     chat_history_state: State = {

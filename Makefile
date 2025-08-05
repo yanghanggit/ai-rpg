@@ -1,6 +1,4 @@
-.PHONY: install test lint format clean dev-install conda-install run-terminal run-server run-chat setup-dev show-structure check test-mongodb start-mongodb stop-mongodb restart-mongodb status-mongodb mongo-shell help
-
-.PHONY: install test lint format clean dev-install conda-install conda-setup pip-install run-terminal run-server run-chat setup-dev show-structure check test-mongodb start-mongodb stop-mongodb restart-mongodb status-mongodb mongo-shell help
+.PHONY: install test lint format clean dev-install conda-install conda-setup pip-install show-structure check help check-imports fix-imports
 
 # 推荐：Conda环境完整设置
 conda-setup:
@@ -42,11 +40,16 @@ test:
 # 运行类型检查（适配conda和pip环境）
 lint:
 	@echo "🔍 运行类型检查..."
-	mypy --strict scripts/ src/ tests/
+	@echo "📁 检查 scripts/ 目录..."
+	mypy --strict scripts/
+	@echo "📁 检查 src/ 目录..."
+	mypy --strict src/
+	@echo "📁 检查 tests/ 目录..."
+	mypy --strict tests/
 
 # 格式化代码
 format:
-	black src/ tests/ scripts/
+	black .
 
 # 检查未使用的导入
 check-imports:
@@ -56,64 +59,15 @@ check-imports:
 fix-imports:
 	python scripts/check_unused_imports.py --fix
 
-# 运行ruff检查（包含更多规则）
-ruff-check:
-	ruff check src/
-
-# 运行ruff修复
-ruff-fix:
-	ruff check --fix src/
-
 # 清理构建文件
 clean:
 	rm -rf build/ dist/ *.egg-info/
 	find . -type d -name __pycache__ -delete
 	find . -type f -name "*.pyc" -delete
 
-# 运行终端游戏
-run-terminal:
-	python scripts/run_terminal_tcg_game.py
-
-# 运行游戏服务器
-run-server:
-	python scripts/run_tcg_game_server.py
-
-# 运行聊天服务器
-run-chat:
-	python scripts/run_a_chat_server.py
-
-# 设置开发环境
-setup-dev:
-	python scripts/setup_dev_environment.py
-
-# 启动 MongoDB 服务
-start-mongodb:
-	brew services start mongodb/brew/mongodb-community
-
-# 停止 MongoDB 服务
-stop-mongodb:
-	brew services stop mongodb/brew/mongodb-community
-
-# 重启 MongoDB 服务
-restart-mongodb:
-	brew services restart mongodb/brew/mongodb-community
-
-# 查看 MongoDB 状态
-status-mongodb:
-	brew services list | grep mongodb
-
-# 连接到 MongoDB Shell
-mongo-shell:
-	mongosh
-
 # 显示项目结构
 show-structure:
 	tree -I '__pycache__|*.pyc|*.pyo|*.pyd|*.so|.git|.pytest_cache|.mypy_cache' --dirsfirst
-
-# 验证环境配置一致性
-validate-config:
-	@echo "🔍 验证环境配置一致性..."
-	python scripts/validate_environment_config.py
 
 # 检查项目结构和环境
 check:
@@ -150,26 +104,10 @@ help:
 	@echo "  format         - ✨ 格式化代码"
 	@echo "  check-imports  - 🔍 检查未使用的导入"
 	@echo "  fix-imports    - 🔧 修复未使用的导入"
-	@echo "  ruff-check     - 🔍 运行ruff检查"
-	@echo "  ruff-fix       - 🔧 运行ruff修复"
-	@echo ""
-	@echo "🎮 运行应用:"
-	@echo "  run-terminal   - 🎮 运行终端游戏"
-	@echo "  run-server     - 🖥️  运行游戏服务器"
-	@echo "  run-chat       - 💬 运行聊天服务器"
-	@echo ""
-	@echo "🗃️  数据库:"
-	@echo "  start-mongodb  - ▶️  启动 MongoDB 服务"
-	@echo "  stop-mongodb   - ⏹️  停止 MongoDB 服务"
-	@echo "  restart-mongodb- 🔄 重启 MongoDB 服务"
-	@echo "  status-mongodb - 📊 查看 MongoDB 状态"
-	@echo "  mongo-shell    - 🐚 连接到 MongoDB Shell"
 	@echo ""
 	@echo "🔧 开发工具:"
-	@echo "  setup-dev      - 🔧 设置开发环境"
 	@echo "  show-structure - 📁 显示项目结构"
 	@echo "  check          - ✅ 检查项目和环境状态"
-	@echo "  validate-config- 🔍 验证配置文件一致性"
 	@echo "  clean          - 🧹 清理构建文件"
 	@echo "  help           - ❓ 显示此帮助信息"
 	@echo ""
@@ -178,5 +116,3 @@ help:
 	@echo "  2. conda activate first_seed"
 	@echo "  3. make check        # 验证环境"
 	@echo "  4. make test         # 运行测试"
-
-.PHONY: install test lint format clean dev-install conda-install conda-setup pip-install run-terminal run-server run-chat setup-dev show-structure check test-mongodb start-mongodb stop-mongodb restart-mongodb status-mongodb mongo-shell help check-imports fix-imports ruff-check ruff-fix validate-config

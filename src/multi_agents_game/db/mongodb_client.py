@@ -10,7 +10,7 @@ from typing import (
 import pymongo
 from loguru import logger
 from pymongo.errors import PyMongoError
-from ..config.db_config import MongoDBConfig
+from ..config import MongoDBConfig
 
 
 # MongoDB文档类型 - 可以是字典或继承自BaseMongoDocument的类型

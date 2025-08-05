@@ -16,7 +16,6 @@ SentenceTransformer 模型下载和本地缓存管理脚本
 """
 
 import argparse
-import sys
 import json
 import shutil
 from pathlib import Path
@@ -26,12 +25,6 @@ from datetime import datetime
 
 if TYPE_CHECKING:
     from sentence_transformers import SentenceTransformer
-
-# 添加 src 路径以便导入项目模块
-project_root = Path(__file__).parent.parent
-src_path = project_root / "src"
-if str(src_path) not in sys.path:
-    sys.path.insert(0, str(src_path))
 
 # 配置日志
 logging.basicConfig(

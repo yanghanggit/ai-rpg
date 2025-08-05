@@ -42,11 +42,16 @@ test:
 # 运行类型检查（适配conda和pip环境）
 lint:
 	@echo "🔍 运行类型检查..."
-	mypy --strict scripts/ src/ tests/
+	@echo "📁 检查 scripts/ 目录..."
+	mypy --strict scripts/
+	@echo "📁 检查 src/ 目录..."
+	mypy --strict src/
+	@echo "📁 检查 tests/ 目录..."
+	mypy --strict tests/
 
 # 格式化代码
 format:
-	black src/ tests/ scripts/
+	black .
 
 # 检查未使用的导入
 check-imports:

@@ -156,7 +156,7 @@ class TCGGame(BaseGame, TCGGameContext):
             dir.mkdir(parents=True, exist_ok=True)
         assert dir.exists()
         assert dir.is_dir()
-        logger.info(f"Verbose debug dir: {dir}")
+        # logger.info(f"Verbose debug dir: {dir}")
         return dir
 
     ###############################################################################################################################################
@@ -294,25 +294,27 @@ class TCGGame(BaseGame, TCGGameContext):
         return self
 
     ###############################################################################################################################################
-    def save(self, verbose: bool = True) -> "TCGGame":
+    def save(self) -> "TCGGame":
 
         # 生成快照
         self.world.entities_snapshot = self.make_entities_snapshot()
 
         # 保存快照
-        # self._world_file_path.write_text(self.world.model_dump_json(), encoding="utf-8")
         self._persist_world_to_mongodb()
 
-        # 保存聊天记录和boot
-        if verbose:
-            # 保存实体快照
-            self._verbose_entities_snapshot()
-            # 保存聊天记录
-            self._verbose_chat_history()
-            # 保存地下城记录。
-            self._verbose_dungeon_system()
-
+        # debug
+        self._verbose()
         return self
+
+    ###############################################################################################################################################
+    def _verbose(self) -> None:
+        """调试方法，保存游戏状态到文件"""
+        self._verbose_boot_data()
+        self._verbose_entities_snapshot()
+        self._verbose_chat_history()
+        self._verbose_dungeon_system()
+
+        logger.info(f"Verbose debug info saved to: {self.verbose_dir}")
 
     ###############################################################################################################################################
     def _persist_world_to_mongodb(self) -> None:
@@ -331,8 +333,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 验证保存结果
             if inserted_id:
-                # self._verify_saved_world_document(collection_name)
-                pass
+                self._verify_saved_world_document(collection_name)
             else:
                 logger.error("❌ 演示游戏世界存储到 MongoDB 失败!")
 
@@ -350,7 +351,7 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     def _save_world_document_to_mongodb(
         self, world_document: WorldDocument, collection_name: str
-    ) -> Any:
+    ) -> Optional[str]:
         """保存 WorldDocument 到 MongoDB"""
         logger.info(f"📝 存储演示游戏世界到 MongoDB 集合: {collection_name}")
         inserted_id = mongodb_upsert_one(collection_name, world_document.to_dict())
@@ -366,7 +367,8 @@ class TCGGame(BaseGame, TCGGameContext):
         logger.info("📖 从 MongoDB 获取演示游戏世界进行验证...")
 
         retrieved_world_data = mongodb_find_one(
-            collection_name, {"username": self.player.name}
+            collection_name,
+            {"username": self.player.name, "game_name": self.world.boot.name},
         )
 
         if not retrieved_world_data:
@@ -376,9 +378,9 @@ class TCGGame(BaseGame, TCGGameContext):
         try:
             # 使用便捷方法反序列化为 WorldDocument 对象
             retrieved_world_document = WorldDocument.from_mongodb(retrieved_world_data)
-            logger.success(
-                f"✅ 演示游戏世界已从 MongoDB 成功获取! = {retrieved_world_document.model_dump_json()}"
-            )
+            # logger.success(
+            #     f"✅ 演示游戏世界已从 MongoDB 成功获取! = {retrieved_world_document.model_dump_json()}"
+            # )
 
         except Exception as validation_error:
             logger.error(f"❌ WorldDocument 反序列化失败: {validation_error}")
@@ -394,6 +396,18 @@ class TCGGame(BaseGame, TCGGameContext):
             chat_history_path.write_text(
                 agent_memory.model_dump_json(), encoding="utf-8"
             )
+
+    ###############################################################################################################################################
+    def _verbose_boot_data(self) -> None:
+        boot_data_dir = self.verbose_dir / "boot_data"
+        boot_data_dir.mkdir(parents=True, exist_ok=True)
+
+        boot_file_path = boot_data_dir / f"{self.world.boot.name}.json"
+        if boot_file_path.exists():
+            return  # 如果文件已存在，则不覆盖
+
+        # 保存 Boot 数据到文件
+        boot_file_path.write_text(self.world.boot.model_dump_json(), encoding="utf-8")
 
     ###############################################################################################################################################
     def _verbose_entities_snapshot(self) -> None:
@@ -520,19 +534,6 @@ class TCGGame(BaseGame, TCGGameContext):
                     actor_entity.add(HeroComponent, instance.name)
                 case ActorType.MONSTER:
                     actor_entity.add(MonsterComponent, instance.name)
-
-            # 添加进入数据库。
-            # if (
-            #     instance.character_sheet.name
-            #     in self.world.data_base.actor_character_sheets
-            # ):
-            #     logger.info(
-            #         f"{instance.name}:{instance.character_sheet.name} = actor already exists in data_base.actors. is copy_actor?"
-            #     )
-            # else:
-            #     self.world.data_base.actor_character_sheets.setdefault(
-            #         instance.character_sheet.name, instance.character_sheet
-            #     )
 
             # 添加到返回值
             ret.append(actor_entity)

@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from typing import Any
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from fastapi import FastAPI
@@ -17,8 +18,8 @@ from ..chat_services.chat_azure_openai_gpt_4o_graph import (
 app = FastAPI()
 ##################################################################################################################
 # 创建编译后的状态图
-compiled_state_graph: CompiledStateGraph = create_compiled_stage_graph(
-    "azure_chat_openai_chatbot_node", 0.7
+compiled_state_graph: CompiledStateGraph[State, Any, State, State] = (
+    create_compiled_stage_graph("azure_chat_openai_chatbot_node", 0.7)
 )
 
 

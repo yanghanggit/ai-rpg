@@ -35,7 +35,7 @@ def register_component_class(cls: T_COMPONENT) -> T_COMPONENT:
     if not hasattr(cls, "deserialize_component_data"):
         ## 为了兼容性，给没有 deserialize_component_data 方法的组件添加一个默认实现
         def _dummy_deserialize_component_data(
-            component_data: Dict[str, Any]
+            component_data: Dict[str, Any],
         ) -> Dict[str, Any]:
             return component_data
 

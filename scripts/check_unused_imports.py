@@ -6,9 +6,9 @@
     python scripts/check_unused_imports.py --check          # 只检查，不修改
     python scripts/check_unused_imports.py --fix            # 自动修复
     python scripts/check_unused_imports.py --check-file <filepath>  # 检查单个文件
-    
-    
-    python scripts/check_unused_imports.py --check --file src/ 
+
+
+    python scripts/check_unused_imports.py --check --file src/
 """
 
 import subprocess

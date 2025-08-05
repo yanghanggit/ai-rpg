@@ -164,20 +164,20 @@ def main() -> None:
 
     # 首先确保数据库表结构存在
     logger.info("📋 确保数据库表结构...")
-    try:
-        ensure_database_tables()
-        logger.success("✅ 数据库表结构检查完成")
-    except Exception as e:
-        logger.error(f"❌ 数据库连接失败: {e}")
-        logger.info("💡 请检查PostgreSQL是否运行，以及用户权限配置")
-        raise
+    # try:
+    #     ensure_database_tables()
+    #     logger.success("✅ 数据库表结构检查完成")
+    # except Exception as e:
+    #     logger.error(f"❌ 数据库连接失败: {e}")
+    #     logger.info("💡 请检查PostgreSQL是否运行，以及用户权限配置")
+    #     raise
 
     # 第1阶段：清空所有数据库
     logger.info("🚀 清空 Redis 数据库...")
     redis_flushall()
 
-    logger.info("🚀 清空 PostgreSQL 数据库...")
-    reset_database()
+    # logger.info("🚀 清空 PostgreSQL 数据库...")
+    # reset_database()
 
     logger.info("🚀 清空 MongoDB 数据库...")
     mongodb_clear_database()

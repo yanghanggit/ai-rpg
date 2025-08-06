@@ -256,30 +256,21 @@ class TestChromaDBEnvironment:
         try:
             import chromadb
             from src.multi_agents_game.utils.model_loader import (
-                load_sentence_transformer,
+                load_multilingual_model,
                 is_model_cached,
                 get_model_loader,
             )
-
-            model_name = "all-MiniLM-L6-v2"
 
             # 获取模型加载器
             loader = get_model_loader()
             print(f"✅ 模型缓存目录: {loader.cache_dir}")
 
-            # 检查模型缓存状态
-            cached = is_model_cached(model_name)
-            print(
-                f"模型 {model_name} 缓存状态: {'✅ 已缓存' if cached else '❌ 未缓存'}"
-            )
+            # 使用项目的多语言模型加载器
+            model = load_multilingual_model()
+            if model is None:
+                pytest.skip("多语言模型未缓存，请先运行下载脚本")
 
-            if not cached:
-                pytest.skip(f"模型 {model_name} 未缓存，请先运行下载脚本")
-
-            # 使用项目的模型加载器加载模型
-            model = load_sentence_transformer(model_name)
-            assert model is not None, f"无法加载模型: {model_name}"
-            print(f"✅ 成功从项目缓存加载模型: {model_name}")
+            print(f"✅ 成功从项目缓存加载多语言模型")
 
             # 测试模型编码功能
             test_texts = ["这是测试文本", "another test text"]

@@ -33,3 +33,6 @@ htmlcov/
 
 # Caches
 .cache/
+
+# ChromaDB
+chroma_db/

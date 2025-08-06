@@ -15,6 +15,7 @@ from .db_config import (
     DEFAULT_MONGODB_CONFIG,
     DEFAULT_POSTGRES_CONFIG,
     DEFAULT_REDIS_CONFIG,
+    DEFAULT_RAG_CONFIG,
     JWTConfig,
     MongoDBConfig,
     PostgresConfig,
@@ -42,6 +43,7 @@ __all__ = [
     "DEFAULT_MONGODB_CONFIG",
     "DEFAULT_POSTGRES_CONFIG",
     "DEFAULT_JWT_CONFIG",
+    "DEFAULT_RAG_CONFIG",
     # 游戏配置
     "LOGS_DIR",
     "GLOBAL_GAME_NAME",

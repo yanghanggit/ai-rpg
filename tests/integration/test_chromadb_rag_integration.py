@@ -12,7 +12,9 @@ from loguru import logger
 from src.multi_agents_game.db.chromadb_client import (
     get_chroma_db,
     initialize_rag_system,
+    chromadb_clear_database,
 )
+from src.multi_agents_game.demo.campaign_setting import ALFANIA_KNOWLEDGE_BASE
 
 
 class TestChromaDBRAGIntegration:
@@ -28,7 +30,7 @@ class TestChromaDBRAGIntegration:
         logger.info(f"✅ ChromaDB实例创建成功: {type(chroma_db)}")
 
         # 测试完整初始化
-        success = initialize_rag_system()
+        success = initialize_rag_system(ALFANIA_KNOWLEDGE_BASE)
         assert success, "ChromaDB RAG系统初始化失败"
         logger.success("🎉 ChromaDB RAG系统初始化测试通过！")
 
@@ -39,7 +41,7 @@ class TestChromaDBRAGIntegration:
         # 确保系统已初始化
         chroma_db = get_chroma_db()
         if not chroma_db.initialized:
-            success = initialize_rag_system()
+            success = initialize_rag_system(ALFANIA_KNOWLEDGE_BASE)
             assert success, "系统初始化失败"
 
         # 测试语义搜索
@@ -76,7 +78,7 @@ class TestChromaDBRAGIntegration:
 
         # 确保系统已初始化
         if not chroma_db.initialized:
-            success = initialize_rag_system()
+            success = initialize_rag_system(ALFANIA_KNOWLEDGE_BASE)
             assert success, "系统初始化失败"
 
         # 验证数据库状态
@@ -98,7 +100,7 @@ class TestChromaDBRAGIntegration:
 
         # 确保系统已初始化
         if not chroma_db.initialized:
-            success = initialize_rag_system()
+            success = initialize_rag_system(ALFANIA_KNOWLEDGE_BASE)
             assert success, "系统初始化失败"
 
         # 测试空查询

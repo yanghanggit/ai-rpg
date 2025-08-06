@@ -1,5 +1,5 @@
 import os
-from typing import Any, ClassVar, Final, final
+from typing import Any, ClassVar, Dict, Final, final
 
 from pydantic import BaseModel
 
@@ -108,4 +108,11 @@ DEFAULT_REDIS_CONFIG: Final[RedisConfig] = RedisConfig()
 DEFAULT_MONGODB_CONFIG: Final[MongoDBConfig] = MongoDBConfig()
 DEFAULT_POSTGRES_CONFIG: Final[PostgresConfig] = PostgresConfig()
 DEFAULT_JWT_CONFIG: Final[JWTConfig] = JWTConfig()
+
+############################################################################################################
+# RAG 知识库配置
+DEFAULT_RAG_CONFIG: Final[Dict[str, str]] = {
+    "collection_name": "rag_knowledge_base",
+    "description": "is a knowledge base for RAG system",
+}
 ##################################################################################################################

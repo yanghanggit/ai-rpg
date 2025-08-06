@@ -10,7 +10,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 ############################################################################################################
-def ensure_database_tables() -> None:
+def pgsql_ensure_database_tables() -> None:
     """
     确保数据库表已创建
     这个函数在需要时才会被调用，避免导入时立即连接数据库
@@ -28,7 +28,7 @@ def ensure_database_tables() -> None:
 
 ############################################################################################################
 # 清库函数
-def reset_database() -> None:
+def pgsql_reset_database() -> None:
     """
     清空数据库并重建表结构
     注意：该方法会删除所有数据，只适用于开发环境
@@ -67,7 +67,7 @@ def reset_database() -> None:
                         logger.error(f"❌ 无法删除表 {table[0]}: {restrict_error}")
 
         # 重新创建所有表（包括向量表）
-        ensure_database_tables()
+        pgsql_ensure_database_tables()
         logger.warning("🔄 数据库表已被清除然后重建")
 
     except Exception as e:

@@ -26,9 +26,9 @@ from src.multi_agents_game.config import DEFAULT_POSTGRES_CONFIG
 def setup_database_tables() -> Any:
     """设置数据库表的 fixture"""
     try:
-        from src.multi_agents_game.db.pgsql_client import ensure_database_tables
+        from src.multi_agents_game.db.pgsql_client import pgsql_ensure_database_tables
 
-        ensure_database_tables()
+        pgsql_ensure_database_tables()
         logger.info("✅ 数据库表已就绪")
         yield
     except Exception as e:

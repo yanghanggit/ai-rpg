@@ -181,9 +181,25 @@ class TestChromaDBEnvironment:
             from chromadb.utils.embedding_functions import (
                 SentenceTransformerEmbeddingFunction,
             )
-
-            # 创建embedding函数（使用轻量级模型进行测试）
-            ef = SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+            
+            # 导入项目的模型加载器
+            from src.multi_agents_game.utils.model_loader import load_sentence_transformer, is_model_cached
+            
+            model_name = "all-MiniLM-L6-v2"
+            
+            # 检查模型是否已缓存
+            if is_model_cached(model_name):
+                print(f"✅ 使用项目缓存的模型: {model_name}")
+                # 使用项目的模型加载器加载模型
+                model = load_sentence_transformer(model_name)
+                if model is None:
+                    pytest.fail(f"无法从缓存加载模型: {model_name}")
+                # 使用已加载的模型创建embedding函数
+                ef = SentenceTransformerEmbeddingFunction(model_name=model_name)
+            else:
+                print(f"⚠️ 模型未缓存，将从网络下载: {model_name}")
+                # 创建embedding函数（使用轻量级模型进行测试）
+                ef = SentenceTransformerEmbeddingFunction(model_name=model_name)
 
             client = chromadb.Client()
             test_collection_name = "pytest_sentence_transformer_test"
@@ -229,6 +245,93 @@ class TestChromaDBEnvironment:
             pytest.skip("Sentence Transformers embedding function不可用")
         except Exception as e:
             pytest.fail(f"ChromaDB与Sentence Transformers集成测试失败: {e}")
+
+    def test_project_model_loader_integration(self) -> None:
+        """测试项目的ModelLoader与ChromaDB集成"""
+        try:
+            import chromadb
+            from src.multi_agents_game.utils.model_loader import (
+                load_sentence_transformer, 
+                is_model_cached, 
+                get_model_loader
+            )
+            
+            model_name = "all-MiniLM-L6-v2"
+            
+            # 获取模型加载器
+            loader = get_model_loader()
+            print(f"✅ 模型缓存目录: {loader.cache_dir}")
+            
+            # 检查模型缓存状态
+            cached = is_model_cached(model_name)
+            print(f"模型 {model_name} 缓存状态: {'✅ 已缓存' if cached else '❌ 未缓存'}")
+            
+            if not cached:
+                pytest.skip(f"模型 {model_name} 未缓存，请先运行下载脚本")
+            
+            # 使用项目的模型加载器加载模型
+            model = load_sentence_transformer(model_name)
+            assert model is not None, f"无法加载模型: {model_name}"
+            print(f"✅ 成功从项目缓存加载模型: {model_name}")
+            
+            # 测试模型编码功能
+            test_texts = ["这是测试文本", "another test text"]
+            embeddings = model.encode(test_texts)
+            
+            assert embeddings is not None
+            assert len(embeddings) == 2
+            print(f"✅ 模型编码测试成功，向量维度: {embeddings[0].shape}")
+            
+            # 测试与ChromaDB的集成
+            client = chromadb.Client()
+            test_collection_name = "pytest_model_loader_test"
+            
+            # 清理可能存在的测试集合
+            try:
+                client.delete_collection(test_collection_name)
+            except Exception:
+                pass
+            
+            try:
+                # 创建集合（不使用embedding函数，手动提供embeddings）
+                collection = client.create_collection(test_collection_name)
+                
+                # 使用加载的模型计算embeddings
+                documents = ["项目缓存模型测试文档1", "项目缓存模型测试文档2"]
+                doc_embeddings = model.encode(documents)
+                
+                # 添加文档和预计算的embeddings
+                collection.add(
+                    embeddings=doc_embeddings.tolist(),
+                    documents=documents,
+                    ids=["cached_model_doc1", "cached_model_doc2"],
+                )
+                
+                # 查询相似文档
+                query_text = "测试文档"
+                query_embedding = model.encode([query_text])
+                
+                results = collection.query(
+                    query_embeddings=query_embedding.tolist(),
+                    n_results=1,
+                )
+                
+                assert results is not None
+                assert "documents" in results
+                assert len(results["documents"][0]) > 0
+                print("✅ 项目ModelLoader与ChromaDB集成测试成功")
+                
+            finally:
+                # 清理测试集合
+                try:
+                    client.delete_collection(test_collection_name)
+                except Exception:
+                    pass
+                    
+        except ImportError as e:
+            pytest.skip(f"无法导入项目模型加载器: {e}")
+        except Exception as e:
+            pytest.fail(f"项目ModelLoader集成测试失败: {e}")
 
 
 class TestChromaDBPerformance:

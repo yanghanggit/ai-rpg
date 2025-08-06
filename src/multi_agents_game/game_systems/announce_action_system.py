@@ -1,6 +1,6 @@
 from ..entitas import Entity, Matcher, GroupEvent
 from typing import final, override
-from ..tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
+from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import AnnounceAction, HomeComponent, HeroComponent, AnnounceEvent
 
 

@@ -15,7 +15,7 @@ from ..models import (
     DungeonComponent,
     StageComponent,
 )
-from ..tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
+from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..utils import json_format
 
 COMBAT_MECHANICS_DESCRIPTION: Final[

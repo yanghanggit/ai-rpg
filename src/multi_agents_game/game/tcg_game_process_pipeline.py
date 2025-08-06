@@ -14,28 +14,28 @@ class TCGGameProcessPipeline(Processors):
         from ..game.tcg_game import TCGGame
 
         ## 添加一些系统。。。
-        from ..tcg_game_systems.begin_system import BeginSystem
-        from ..tcg_game_systems.end_system import EndSystem
-        from ..tcg_game_systems.kick_off_system import KickOffSystem
-        from ..tcg_game_systems.save_system import SaveSystem
-        from ..tcg_game_systems.mind_voice_action_system import (
+        from ..game_systems.begin_system import BeginSystem
+        from ..game_systems.end_system import EndSystem
+        from ..game_systems.kick_off_system import KickOffSystem
+        from ..game_systems.save_system import SaveSystem
+        from ..game_systems.mind_voice_action_system import (
             MindVoiceActionSystem,
         )
-        from ..tcg_game_systems.speak_action_system import SpeakActionSystem
-        from ..tcg_game_systems.pre_action_system import PreActionSystem
-        from ..tcg_game_systems.post_action_system import PostActionSystem
-        from ..tcg_game_systems.destroy_entity_system import DestroyEntitySystem
-        from ..tcg_game_systems.home_pre_system import HomePreSystem
-        from ..tcg_game_systems.home_post_system import HomePostSystem
+        from ..game_systems.speak_action_system import SpeakActionSystem
+        from ..game_systems.pre_action_system import PreActionSystem
+        from ..game_systems.post_action_system import PostActionSystem
+        from ..game_systems.destroy_entity_system import DestroyEntitySystem
+        from ..game_systems.home_pre_system import HomePreSystem
+        from ..game_systems.home_post_system import HomePostSystem
 
-        from ..tcg_game_systems.home_stage_system import (
+        from ..game_systems.home_stage_system import (
             HomeStageSystem,
         )
-        from ..tcg_game_systems.home_actor_system import (
+        from ..game_systems.home_actor_system import (
             HomeActorSystem,
         )
-        from ..tcg_game_systems.whisper_action_system import WhisperActionSystem
-        from ..tcg_game_systems.announce_action_system import AnnounceActionSystem
+        from ..game_systems.whisper_action_system import WhisperActionSystem
+        from ..game_systems.announce_action_system import AnnounceActionSystem
 
         ##
         tcg_game = cast(TCGGame, game)
@@ -87,43 +87,43 @@ class TCGGameProcessPipeline(Processors):
         from ..game.tcg_game import TCGGame
 
         ## 添加一些系统。。。
-        from ..tcg_game_systems.begin_system import BeginSystem
-        from ..tcg_game_systems.end_system import EndSystem
-        from ..tcg_game_systems.kick_off_system import KickOffSystem
-        from ..tcg_game_systems.save_system import SaveSystem
-        from ..tcg_game_systems.pre_action_system import PreActionSystem
-        from ..tcg_game_systems.post_action_system import PostActionSystem
-        from ..tcg_game_systems.destroy_entity_system import DestroyEntitySystem
-        from ..tcg_game_systems.combat_death_system import CombatDeathSystem
-        from ..tcg_game_systems.turn_action_system import TurnActionSystem
-        from ..tcg_game_systems.director_action_system import (
+        from ..game_systems.begin_system import BeginSystem
+        from ..game_systems.end_system import EndSystem
+        from ..game_systems.kick_off_system import KickOffSystem
+        from ..game_systems.save_system import SaveSystem
+        from ..game_systems.pre_action_system import PreActionSystem
+        from ..game_systems.post_action_system import PostActionSystem
+        from ..game_systems.destroy_entity_system import DestroyEntitySystem
+        from ..game_systems.combat_death_system import CombatDeathSystem
+        from ..game_systems.turn_action_system import TurnActionSystem
+        from ..game_systems.director_action_system import (
             DirectorActionSystem,
         )
-        from ..tcg_game_systems.feedback_action_system import FeedbackActionSystem
-        from ..tcg_game_systems.combat_kick_off_system import (
+        from ..game_systems.feedback_action_system import FeedbackActionSystem
+        from ..game_systems.combat_kick_off_system import (
             CombatKickOffSystem,
         )
-        from ..tcg_game_systems.combat_complete_system import (
+        from ..game_systems.combat_complete_system import (
             CombatCompleteSystem,
         )
 
-        from ..tcg_game_systems.combat_resolution_system import (
+        from ..game_systems.combat_resolution_system import (
             CombatResolutionSystem,
         )
 
-        from ..tcg_game_systems.dungeon_stage_system import (
+        from ..game_systems.dungeon_stage_system import (
             DungeonStageSystem,
         )
 
-        from ..tcg_game_systems.combat_result_system import (
+        from ..game_systems.combat_result_system import (
             CombatResultSystem,
         )
 
-        from ..tcg_game_systems.combat_round_system import (
+        from ..game_systems.combat_round_system import (
             CombatRoundSystem,
         )
 
-        from ..tcg_game_systems.draw_cards_action_system import (
+        from ..game_systems.draw_cards_action_system import (
             DrawCardsActionSystem,
         )
 

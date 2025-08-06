@@ -13,7 +13,7 @@ from multi_agents_game.models import World, CombatResult
 from multi_agents_game.chat_services.chat_system import ChatSystem
 from multi_agents_game.game.player_proxy import PlayerProxy
 from multi_agents_game.demo import create_demo_dungeon1, create_actor_warrior
-from multi_agents_game.tcg_game_systems.combat_monitor_system import (
+from multi_agents_game.game_systems.combat_monitor_system import (
     CombatMonitorSystem,
 )
 from multi_agents_game.game.game_options import TerminalGameUserOptions

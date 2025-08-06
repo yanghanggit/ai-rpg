@@ -13,7 +13,7 @@ from ..models import (
 from typing import Final, List, final, override
 from loguru import logger
 from ..game.tcg_game import TCGGame
-from ..tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
+from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 
 #######################################################################################################################################

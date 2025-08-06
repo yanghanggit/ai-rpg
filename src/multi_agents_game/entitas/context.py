@@ -1,10 +1,11 @@
 from collections import deque
-from .entity import Entity
-from .matcher import Matcher
-from .group import Group
-from .exceptions import MissingEntity
-from .components import Component
 from typing import Dict, Set
+
+from .components import Component
+from .entity import Entity
+from .exceptions import MissingEntity
+from .group import Group
+from .matcher import Matcher
 
 
 class Context(object):

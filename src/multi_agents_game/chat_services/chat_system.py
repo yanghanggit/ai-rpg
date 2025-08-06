@@ -1,8 +1,10 @@
-from loguru import logger
-from typing import Final, List, final
-import httpx
 import asyncio
 import time
+from typing import Final, List, final
+
+import httpx
+from loguru import logger
+
 from ..chat_services.chat_request_handler import ChatRequestHandler
 
 

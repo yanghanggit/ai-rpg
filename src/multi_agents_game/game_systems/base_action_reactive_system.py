@@ -1,5 +1,6 @@
-from ..entitas import ReactiveProcessor, CleanupProcessor, Entity
 from typing import List, override
+
+from ..entitas import CleanupProcessor, Entity, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 
 

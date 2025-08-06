@@ -1,11 +1,13 @@
-from loguru import logger
-from ..entitas import ExecuteProcessor, Entity
-from typing import List, final, Tuple, override
-from ..game.tcg_game import TCGGame
 import random
+from typing import List, Tuple, final, override
+
+from loguru import logger
+
+from ..entitas import Entity, ExecuteProcessor
+from ..game.tcg_game import TCGGame
 from ..models import (
-    Round,
     EnvironmentComponent,
+    Round,
     RPGCharacterProfileComponent,
 )
 

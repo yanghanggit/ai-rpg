@@ -1,9 +1,8 @@
-from ..models import StageType, Stage
-
+from ..models import Stage, StageType
+from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 from .utils import (
     create_stage,
 )
-from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 
 
 def create_demo_heros_camp() -> Stage:

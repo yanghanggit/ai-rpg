@@ -1,12 +1,13 @@
 from typing import Dict, List, final
+
 from pydantic import BaseModel
+
 from .client_message import ClientMessage
 
 # from .registry import register_base_model_class
 from .dungeon import Dungeon
 from .snapshot import EntitySnapshot
 from .world import AgentShortTermMemory
-
 
 ################################################################################################################
 ################################################################################################################

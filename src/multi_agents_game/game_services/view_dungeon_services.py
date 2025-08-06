@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, status
+from loguru import logger
+
 from ..game_services.game_server import GameServerInstance
 from ..models import (
     ViewDungeonResponse,
 )
-from loguru import logger
-
 
 ###################################################################################################################################################################
 view_dungeon_router = APIRouter()

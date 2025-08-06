@@ -7,11 +7,12 @@ from typing import (
     TypeAlias,
     cast,
 )
+
 import pymongo
 from loguru import logger
 from pymongo.errors import PyMongoError
-from ..config import MongoDBConfig
 
+from ..config import MongoDBConfig
 
 # MongoDB文档类型 - 可以是字典或继承自BaseMongoDocument的类型
 MongoDocumentType: TypeAlias = Dict[str, Any]
@@ -22,8 +23,8 @@ MongoSortType: TypeAlias = List[tuple[str, int]]
 # 为MongoDB客户端定义明确的类型
 if TYPE_CHECKING:
     from pymongo import MongoClient
-    from pymongo.database import Database
     from pymongo.collection import Collection
+    from pymongo.database import Database
 
     MongoClientType: TypeAlias = "MongoClient[MongoDocumentType]"
     MongoDatabaseType: TypeAlias = "Database[MongoDocumentType]"

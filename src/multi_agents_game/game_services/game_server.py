@@ -1,7 +1,7 @@
-from typing import Final, Optional
-from ..game_services.room_manager import RoomManager
+from typing import Annotated, Final, Optional
+
 from fastapi import Depends
-from typing import Annotated
+
 from ..game_services.room_manager import RoomManager
 
 

@@ -1,10 +1,11 @@
 from abc import ABCMeta, abstractmethod
+from typing import Dict, List, Union
+
 from .collector import Collector
 from .context import Context
 from .entity import Entity
-from .matcher import Matcher
 from .group import GroupEvent
-from typing import Union, List, Dict
+from .matcher import Matcher
 
 
 class InitializeProcessor(metaclass=ABCMeta):

@@ -1,13 +1,13 @@
-from ..models.objects import Stage
+from ..demo.actor_goblin import create_actor_goblin
 from ..models import (
-    StageType,
     Dungeon,
+    StageType,
 )
+from ..models.objects import Stage
+from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 from .utils import (
     create_stage,
 )
-from ..demo.actor_goblin import create_actor_goblin
-from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 
 
 def create_stage_cave1() -> Stage:

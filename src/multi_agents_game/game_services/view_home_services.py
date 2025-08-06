@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, status
+from loguru import logger
+
 from ..game_services.game_server import GameServerInstance
 from ..models import (
     ViewHomeResponse,
 )
-from loguru import logger
-
 
 ###################################################################################################################################################################
 view_home_router = APIRouter()

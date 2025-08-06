@@ -3,16 +3,17 @@ PostgreSQL + pgvector 向量操作工具集
 提供向量存储、检索、相似度搜索等功能
 """
 
-from datetime import datetime
-from typing import List, Optional, Dict, Any, Tuple
 import json
-from sqlalchemy import DateTime, String, Text, Integer, func, Index, text
-from sqlalchemy.orm import Mapped, mapped_column
-from pgvector.sqlalchemy import Vector
-from loguru import logger
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
 
-from .pgsql_client import SessionLocal
+from loguru import logger
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import DateTime, Index, Integer, String, Text, func, text
+from sqlalchemy.orm import Mapped, mapped_column
+
 from .pgsql_base import UUIDBase
+from .pgsql_client import SessionLocal
 
 
 class VectorDocumentDB(UUIDBase):

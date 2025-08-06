@@ -10,10 +10,11 @@ Pydantic BaseModel classes for enhanced functionality including
 data validation, serialization, and documentation.
 """
 
-from .event import Event
-from .exceptions import EntityNotEnabled, AlreadyAddedComponent, MissingComponent
-from typing import Any, Dict, Type, TypeVar, cast, Tuple
+from typing import Any, Dict, Tuple, Type, TypeVar, cast
+
 from .components import Component
+from .event import Event
+from .exceptions import AlreadyAddedComponent, EntityNotEnabled, MissingComponent
 
 # 用于泛型组件类型的类型变量，绑定到Component基类
 ComponentT = TypeVar("ComponentT", bound=Component)

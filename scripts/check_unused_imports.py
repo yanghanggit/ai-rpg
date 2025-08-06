@@ -17,13 +17,15 @@ import argparse
 from pathlib import Path
 
 
-def run_ruff_check(target_path: str = "src/", fix: bool = False, ignore_unused_imports: bool = False) -> int:
+def run_ruff_check(
+    target_path: str = "src/", fix: bool = False, ignore_unused_imports: bool = False
+) -> int:
     """运行ruff检查未使用的导入"""
     cmd = ["ruff", "check"]
-    
+
     if ignore_unused_imports:
-        # 忽略未使用的导入错误
-        cmd.extend(["--ignore", "F401"])
+        # 忽略未使用的导入错误和star import错误
+        cmd.extend(["--ignore", "F401,F403"])
     else:
         # 只检查未使用的导入
         cmd.extend(["--select", "F401"])
@@ -56,9 +58,9 @@ def main() -> int:
 
     parser.add_argument("--file", help="指定要检查的单个文件路径")
     parser.add_argument(
-        "--ignore-unused-imports", 
-        action="store_true", 
-        help="忽略未使用的导入错误（F401）"
+        "--ignore-unused-imports",
+        action="store_true",
+        help="忽略未使用的导入错误（F401）",
     )
 
     args = parser.parse_args()
@@ -77,7 +79,9 @@ def main() -> int:
 
     if args.check:
         print(f"🔍 检查 {target} 中的未使用导入...")
-        return_code = run_ruff_check(target, fix=False, ignore_unused_imports=args.ignore_unused_imports)
+        return_code = run_ruff_check(
+            target, fix=False, ignore_unused_imports=args.ignore_unused_imports
+        )
         if return_code == 0:
             if args.ignore_unused_imports:
                 print("✅ 代码检查完成（已忽略未使用的导入）！")
@@ -89,7 +93,9 @@ def main() -> int:
 
     elif args.fix:
         print(f"🔧 修复 {target} 中的未使用导入...")
-        return_code = run_ruff_check(target, fix=True, ignore_unused_imports=args.ignore_unused_imports)
+        return_code = run_ruff_check(
+            target, fix=True, ignore_unused_imports=args.ignore_unused_imports
+        )
         if return_code == 0:
             if args.ignore_unused_imports:
                 print("✅ 代码检查和修复完成（已忽略未使用的导入）！")

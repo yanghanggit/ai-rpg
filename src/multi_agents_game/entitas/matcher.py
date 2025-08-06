@@ -1,6 +1,7 @@
-from typing import Any, Tuple, Optional, Type
-from .entity import Entity
+from typing import Any, Optional, Tuple, Type
+
 from .components import Component
+from .entity import Entity
 
 
 def get_expr_repr(expr: Optional[Tuple[Type[Component], ...]]) -> str:

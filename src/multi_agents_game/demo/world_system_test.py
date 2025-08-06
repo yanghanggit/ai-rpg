@@ -1,11 +1,10 @@
-from .utils import (
-    create_world_system,
-)
-
 from ..models import (
     WorldSystem,
 )
 from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
+from .utils import (
+    create_world_system,
+)
 
 
 def create_world_system_test() -> WorldSystem:

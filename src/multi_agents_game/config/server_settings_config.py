@@ -1,6 +1,7 @@
-from typing import Final, List
-from pydantic import BaseModel
 from pathlib import Path
+from typing import Final, List
+
+from pydantic import BaseModel
 
 
 class ServerSettingsConfig(BaseModel):

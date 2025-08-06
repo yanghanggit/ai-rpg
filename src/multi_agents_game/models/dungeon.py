@@ -1,7 +1,9 @@
-from typing import List, Dict, final, Optional
-from pydantic import BaseModel
 from enum import IntEnum, unique
+from typing import Dict, List, Optional, final
+
 from loguru import logger
+from pydantic import BaseModel
+
 from .objects import Actor, Stage
 
 # from .registry import register_base_model_class

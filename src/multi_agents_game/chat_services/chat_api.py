@@ -1,7 +1,7 @@
 from typing import List
-from langchain.schema import AIMessage, HumanMessage, SystemMessage, BaseMessage
-from pydantic import BaseModel, ConfigDict
 
+from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from pydantic import BaseModel, ConfigDict
 
 ChatRequestMessageListType = List[SystemMessage | HumanMessage | AIMessage]
 

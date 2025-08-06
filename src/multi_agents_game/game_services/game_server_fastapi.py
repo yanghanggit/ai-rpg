@@ -1,13 +1,14 @@
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
-from ..game_services.url_config_services import url_config_router
+from fastapi.middleware.cors import CORSMiddleware
+
+from ..game_services.dungeon_gameplay_services import dungeon_gameplay_router
+from ..game_services.home_gameplay_services import home_gameplay_router
 from ..game_services.login_services import login_router
 from ..game_services.start_services import start_router
-from ..game_services.home_gameplay_services import home_gameplay_router
-from ..game_services.dungeon_gameplay_services import dungeon_gameplay_router
+from ..game_services.url_config_services import url_config_router
+from ..game_services.view_actor_services import view_actor_router
 from ..game_services.view_dungeon_services import view_dungeon_router
 from ..game_services.view_home_services import view_home_router
-from ..game_services.view_actor_services import view_actor_router
 
 app = FastAPI()
 

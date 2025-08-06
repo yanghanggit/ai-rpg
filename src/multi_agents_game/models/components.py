@@ -1,9 +1,11 @@
 from typing import List, final
+
 from pydantic import BaseModel
+
+from ..entitas.components import Component, MutableComponent
 from .dungeon import Skill, StatusEffect
 from .objects import RPGCharacterProfile
 from .registry import register_component_class
-from ..entitas.components import Component, MutableComponent
 
 
 ############################################################################################################

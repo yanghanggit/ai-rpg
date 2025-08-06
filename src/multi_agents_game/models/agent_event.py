@@ -1,4 +1,5 @@
 from enum import IntEnum, unique
+
 from overrides import final
 from pydantic import BaseModel
 

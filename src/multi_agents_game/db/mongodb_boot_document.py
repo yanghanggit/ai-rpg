@@ -11,9 +11,11 @@ Date: 2025-07-30
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import final, Dict, Any, Optional
+from typing import Any, Dict, Optional, final
 from uuid import uuid4
-from pydantic import BaseModel, Field, ConfigDict, field_serializer
+
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
+
 from ..models.world import Boot
 
 

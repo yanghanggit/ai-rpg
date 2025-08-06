@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Request
 from loguru import logger
+
 from ..models import (
     URLConfigurationResponse,
 )
-
 
 url_config_router = APIRouter()
 

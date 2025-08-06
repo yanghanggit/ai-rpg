@@ -1,7 +1,9 @@
-from ..entitas import ExecuteProcessor
-from typing import List, final, override, Dict
-from ..game.tcg_game import TCGGame
+from typing import Dict, List, final, override
+
 from loguru import logger
+
+from ..entitas import ExecuteProcessor
+from ..game.tcg_game import TCGGame
 
 
 @final

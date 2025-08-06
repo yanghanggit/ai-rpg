@@ -1,20 +1,21 @@
 from dataclasses import dataclass
-from ..entitas import Context, Entity, Matcher
-from typing import Optional, List, Set, override, Dict
-from ..models import (
-    COMPONENTS_REGISTRY,
-    ComponentSnapshot,
-    EntitySnapshot,
-    WorldSystemComponent,
-    StageComponent,
-    ActorComponent,
-    RuntimeComponent,
-    AppearanceComponent,
-    PlayerComponent,
-    DeathComponent,
-)
+from typing import Dict, List, Optional, Set, override
 
 from loguru import logger
+
+from ..entitas import Context, Entity, Matcher
+from ..models import (
+    COMPONENTS_REGISTRY,
+    ActorComponent,
+    AppearanceComponent,
+    ComponentSnapshot,
+    DeathComponent,
+    EntitySnapshot,
+    PlayerComponent,
+    RuntimeComponent,
+    StageComponent,
+    WorldSystemComponent,
+)
 
 """
 少做事，

@@ -1,8 +1,8 @@
-from .group import GroupEvent
-from .entity import Entity
-from .group import Group
 from typing import Dict, Set
+
 from .components import Component
+from .entity import Entity
+from .group import Group, GroupEvent
 
 
 class Collector(object):

@@ -1,6 +1,13 @@
+import os
 from enum import StrEnum, unique
 from typing import final
-from fastapi import APIRouter, Request, HTTPException, status, FastAPI
+
+from fastapi import APIRouter, FastAPI, HTTPException, Request, status
+from fastapi.staticfiles import StaticFiles
+from loguru import logger
+
+from ..config import LOGS_DIR, setup_logger
+from ..game.game_options import WebGameUserOptions
 from ..game_services.game_server import GameServerInstance
 from ..models import (
     LoginRequest,
@@ -8,11 +15,6 @@ from ..models import (
     LogoutRequest,
     LogoutResponse,
 )
-from loguru import logger
-from ..game.game_options import WebGameUserOptions
-import os
-from fastapi.staticfiles import StaticFiles
-from ..config import setup_logger, LOGS_DIR
 
 ###################################################################################################################################################################
 login_router = APIRouter()

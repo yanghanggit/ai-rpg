@@ -12,7 +12,7 @@ from ..models import (
     CombatKickOffEvent,
     PlayerComponent,
 )
-from ..format_string import json_format
+from ..utils import json_format
 
 
 #######################################################################################################################################

@@ -16,7 +16,7 @@ from ..models import (
     StageComponent,
 )
 from ..tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
-from ..format_string import json_format
+from ..utils import json_format
 
 COMBAT_MECHANICS_DESCRIPTION: Final[
     str

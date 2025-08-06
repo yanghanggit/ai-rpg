@@ -9,8 +9,6 @@ from .utils import (
 from ..demo.actor_goblin import create_actor_goblin
 from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 
-# from ..demo import actor_goblin
-
 
 def create_stage_cave1() -> Stage:
 

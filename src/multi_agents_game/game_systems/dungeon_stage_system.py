@@ -10,7 +10,7 @@ from overrides import override
 from typing import Dict, final
 from ..game.tcg_game import TCGGame
 from loguru import logger
-from ..format_string import json_format
+from ..utils import json_format
 
 
 #######################################################################################################################################

@@ -4,8 +4,8 @@ from ..chat_services.chat_request_handler import ChatRequestHandler
 from overrides import override
 from typing import List, final
 from loguru import logger
-from ..tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
-from ..format_string import json_format
+from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
+from ..utils import json_format
 from ..models import RPGCharacterProfileComponent, StatusEffect, FeedbackAction
 
 

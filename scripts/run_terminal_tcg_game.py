@@ -10,25 +10,66 @@ from loguru import logger
 from multi_agents_game.game.terminal_tcg_game import TerminalTCGGame
 from multi_agents_game.game.tcg_game import TCGGameState
 from multi_agents_game.models import World, CombatResult
-from multi_agents_game.chaos_engineering.empty_engineering_system import (
-    EmptyChaosEngineeringSystem,
-)
 from multi_agents_game.chat_services.chat_system import ChatSystem
-from multi_agents_game.player.player_proxy import PlayerProxy
+from multi_agents_game.game.player_proxy import PlayerProxy
 from multi_agents_game.demo import create_demo_dungeon1, create_actor_warrior
-from multi_agents_game.tcg_game_systems.combat_monitor_system import (
+from multi_agents_game.game_systems.combat_monitor_system import (
     CombatMonitorSystem,
 )
 from multi_agents_game.game.game_options import TerminalGameUserOptions
-from multi_agents_game.format_string.terminal_input import (
-    parse_speak_command_input,
-)
 from multi_agents_game.config import (
     setup_logger,
     GLOBAL_GAME_NAME,
     DEFAULT_SERVER_SETTINGS_CONFIG,
 )
 from uuid import uuid4
+from typing import Dict, Set, TypedDict, cast
+
+
+############################################################################################################
+############################################################################################################
+############################################################################################################
+def _parse_user_action_input(usr_input: str, keys: Set[str]) -> Dict[str, str]:
+
+    ret: Dict[str, str] = {}
+    try:
+        parts = usr_input.split("--")
+        args = {
+            part.split("=")[0].strip(): part.split("=")[1].strip()
+            for part in parts
+            if "=" in part
+        }
+
+        for key in keys:
+            if key in args:
+                ret[key] = args[key]
+
+    except Exception as e:
+        logger.error(f" {usr_input}, 解析输入时发生错误: {e}")
+
+    return ret
+
+
+############################################################################################################
+############################################################################################################
+############################################################################################################
+class SpeakCommand(TypedDict):
+    target: str
+    content: str
+
+
+############################################################################################################
+############################################################################################################
+############################################################################################################
+# sample: /speak --target=角色.法师.奥露娜 --content=我还是需要准备一下
+def _parse_speak_command_input(usr_input: str) -> SpeakCommand:
+    ret: SpeakCommand = {"target": "", "content": ""}
+    if "/speak" in usr_input or "/ss" in usr_input:
+        return cast(
+            SpeakCommand, _parse_user_action_input(usr_input, {"target", "content"})
+        )
+
+    return ret
 
 
 ###############################################################################################################################################
@@ -78,7 +119,7 @@ async def run_game(
             username=terminal_game_user_options.user,
             localhost_urls=DEFAULT_SERVER_SETTINGS_CONFIG.chat_server_localhost_urls,
         ),
-        chaos_engineering_system=EmptyChaosEngineeringSystem(),
+        # chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
 
     # 启动游戏的判断，是第一次建立还是恢复？
@@ -276,7 +317,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         elif "/speak" in usr_input or "/ss" in usr_input:
 
             # 分析输入
-            speak_command = parse_speak_command_input(usr_input)
+            speak_command = _parse_speak_command_input(usr_input)
 
             # 处理输入
             if terminal_game.activate_speak_action(

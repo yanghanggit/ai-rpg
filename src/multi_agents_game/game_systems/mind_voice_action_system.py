@@ -5,7 +5,7 @@ from ..models import (
     MindVoiceEvent,
 )
 from typing import final, override
-from ..tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
+from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 
 ####################################################################################################################################

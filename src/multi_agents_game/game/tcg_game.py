@@ -43,10 +43,11 @@ from ..models import (
     DeathComponent,
 )
 from ..models.components import XCardPlayerComponent
-from ..player.player_proxy import PlayerProxy
+from .player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from ..chat_services.chat_system import ChatSystem
-from ..chaos_engineering.chaos_engineering_system import IChaosEngineering
+
+# from ..chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 import copy
 import random
@@ -101,7 +102,7 @@ class TCGGame(BaseGame, TCGGameContext):
         world: World,
         # world_path: Path,
         chat_system: ChatSystem,
-        chaos_engineering_system: IChaosEngineering,
+        # chaos_engineering_system: IChaosEngineering,
     ) -> None:
 
         # 必须按着此顺序实现父
@@ -129,10 +130,10 @@ class TCGGame(BaseGame, TCGGameContext):
         self._chat_system: Final[ChatSystem] = chat_system
 
         # 混沌工程系统
-        self._chaos_engineering_system: Final[IChaosEngineering] = (
-            chaos_engineering_system
-        )
-        self.chaos_engineering_system.initialize(self)
+        # self._chaos_engineering_system: Final[IChaosEngineering] = (
+        #     chaos_engineering_system
+        # )
+        # self.chaos_engineering_system.initialize(self)
 
         # 是否开启调试
         self._debug_flag_pipeline: bool = False
@@ -197,9 +198,9 @@ class TCGGame(BaseGame, TCGGameContext):
         return self._chat_system
 
     ###############################################################################################################################################
-    @property
-    def chaos_engineering_system(self) -> IChaosEngineering:
-        return self._chaos_engineering_system
+    # @property
+    # def chaos_engineering_system(self) -> IChaosEngineering:
+    #     return self._chaos_engineering_system
 
     ###############################################################################################################################################
     @property
@@ -263,7 +264,7 @@ class TCGGame(BaseGame, TCGGameContext):
         assert len(self.world.entities_snapshot) == 0, "游戏中有实体，不能创建新的游戏"
 
         # 混沌系统
-        self.chaos_engineering_system.on_pre_new_game()
+        #        self.chaos_engineering_system.on_pre_new_game()
 
         ## 第1步，创建world_system
         self._create_world_system_entities(self.world.boot.world_systems)
@@ -276,7 +277,7 @@ class TCGGame(BaseGame, TCGGameContext):
         self._create_stage_entities(self.world.boot.stages)
 
         ## 最后！混沌系统，准备测试
-        self.chaos_engineering_system.on_post_new_game()
+        #        self.chaos_engineering_system.on_post_new_game()
 
         return self
 

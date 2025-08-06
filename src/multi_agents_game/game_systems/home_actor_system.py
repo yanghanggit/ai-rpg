@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from ..entitas import ExecuteProcessor, Matcher, Entity
 from ..chat_services.chat_request_handler import ChatRequestHandler
-from ..format_string import json_format
+from ..utils import json_format
 from ..models import (
     ActorComponent,
     EnvironmentComponent,

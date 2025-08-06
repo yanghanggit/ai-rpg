@@ -29,7 +29,7 @@ class UserOptions:
             DEFAULT_MONGODB_CONFIG.worlds_boot_collection, {"game_name": self.game}
         )
         if stored_boot is None:
-            logger.error("❌ 演示游戏世界存储到 MongoDB 失败!")
+            logger.error("❌ 启动世界的数据存储到 MongoDB 失败!")
             return None
 
         # 尝试使用便捷方法反序列化为 WorldBootDocument 对象
@@ -53,7 +53,7 @@ class UserOptions:
             {"username": self.user, "game_name": self.game},
         )
         if stored_world is None:
-            logger.error("❌ 游戏世界存储到 MongoDB 失败!")
+            logger.warning("没有找到游戏世界数据")
             return None
 
         # 尝试使用便捷方法反序列化为 World 对象

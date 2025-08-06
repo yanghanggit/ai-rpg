@@ -4,7 +4,7 @@ from ..models import StageComponent, ActorComponent, StatusEffect
 from ..chat_services.chat_request_handler import ChatRequestHandler
 from loguru import logger
 from pydantic import BaseModel
-from ..format_string import json_format
+from ..utils import json_format
 from ..game.tcg_game import TCGGame
 
 

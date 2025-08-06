@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from ..entitas import Matcher, Entity, Matcher, GroupEvent
 from ..chat_services.chat_request_handler import ChatRequestHandler
-from ..format_string import json_format
+from ..utils import json_format
 from ..models import (
     EnvironmentComponent,
     HandComponent,
@@ -13,7 +13,7 @@ from ..models import (
 from typing import Final, List, final, override
 from loguru import logger
 from ..game.tcg_game import TCGGame
-from ..tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
+from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 
 #######################################################################################################################################

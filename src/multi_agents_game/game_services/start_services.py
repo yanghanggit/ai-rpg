@@ -6,11 +6,12 @@ from loguru import logger
 from ..demo.stage_dungeon4 import (
     create_demo_dungeon4,
 )
-from ..chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
+
+# from ..chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from ..chat_services.chat_system import ChatSystem
 from typing import Optional
 from ..game.web_tcg_game import WebTCGGame
-from ..player.player_proxy import PlayerProxy
+from ..game.player_proxy import PlayerProxy
 from ..config import DEFAULT_SERVER_SETTINGS_CONFIG
 
 ###################################################################################################################################################################
@@ -115,7 +116,7 @@ def setup_web_game_session(
             username=web_game_user_options.user,
             localhost_urls=DEFAULT_SERVER_SETTINGS_CONFIG.chat_server_localhost_urls,
         ),
-        chaos_engineering_system=EmptyChaosEngineeringSystem(),
+        # chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
 
     # 启动游戏的判断，是第一次建立还是恢复？

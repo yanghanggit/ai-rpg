@@ -8,7 +8,7 @@ from ..models import (
     TurnAction,
     HandComponent,
 )
-from ..tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
+from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 
 #######################################################################################################################################

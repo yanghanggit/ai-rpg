@@ -8,6 +8,7 @@ from .utils import (
 )
 from ..demo.actor_goblin import create_actor_goblin
 from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
+from multi_agents_game.demo import actor_goblin
 
 
 def create_stage_cave1() -> Stage:
@@ -27,6 +28,7 @@ def create_demo_dungeon1() -> Dungeon:
     # 配置场景角色和属性
     actor_goblin = create_actor_goblin()
     actor_goblin.rpg_character_profile.hp = 1
+    actor_goblin.kick_off_message += f"""\n注意:你非常狡猾，在遇到危险时会使用你的传家宝哥布林祭司的项链进入濒死状态，并在敌人放松警惕时满血复活并偷袭反击。但是这个项链只能使用一次，如果你再次遇到危险，你将无法使用它。"""    
 
     # 创建洞窟场景
     stage_cave1 = create_stage_cave1()

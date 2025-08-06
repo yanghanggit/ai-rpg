@@ -13,6 +13,10 @@ from .stage_dungeon3 import create_demo_dungeon3
 # from .world import initialize_demo_game_world
 from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 
+# Excel data models and manager
+from .excel_data import DungeonExcelData, ActorExcelData
+from .excel_data_manager import ExcelDataManager, get_excel_data_manager
+
 __all__ = [
     # Demo actors
     "create_actor_warrior",
@@ -33,4 +37,9 @@ __all__ = [
     # "initialize_demo_game_world",
     # Campaign setting
     "FANTASY_WORLD_RPG_CAMPAIGN_SETTING",
+    # Excel data models and manager
+    "DungeonExcelData",
+    "ActorExcelData",
+    "ExcelDataManager",
+    "get_excel_data_manager",
 ]

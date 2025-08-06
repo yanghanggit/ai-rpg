@@ -3,7 +3,7 @@ from ..models import (
     Actor,
     RPGCharacterProfile,
 )
-from ..excel_builder.excel_data_manager import get_excel_data_manager
+from .excel_data_manager import get_excel_data_manager
 from .utils import (
     create_actor,
 )

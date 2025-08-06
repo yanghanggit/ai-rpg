@@ -7,12 +7,12 @@ SentenceTransformer 模型加载工具模块
 # import os
 from pathlib import Path
 from typing import Optional, Union, TYPE_CHECKING, Any
-import logging
-
+#import logging
+from loguru import logger
 if TYPE_CHECKING:
     from sentence_transformers import SentenceTransformer  # noqa: F401
 
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
 
 
 class ModelLoader:

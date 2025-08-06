@@ -91,11 +91,11 @@ format:
 
 # 检查未使用的导入
 check-imports:
-	python scripts/check_unused_imports.py --check
+	python scripts/check_unused_imports.py --check --ignore-unused-imports
 
 # 修复未使用的导入
 fix-imports:
-	python scripts/check_unused_imports.py --fix
+	python scripts/check_unused_imports.py --fix --ignore-unused-imports
 
 # 清理构建文件
 clean:

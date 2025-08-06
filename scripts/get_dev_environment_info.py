@@ -393,9 +393,8 @@ def get_chromadb_environment() -> None:
             client = chromadb.Client()
             print("    ✅ ChromaDB Client: 创建成功")
 
-            # 测试基本操作
+            # 简单检查集合列表
             try:
-                # 列出现有集合
                 collections = client.list_collections()
                 print(f"    ✅ 现有集合数量: {len(collections)}")
                 if collections:
@@ -403,59 +402,6 @@ def get_chromadb_environment() -> None:
                     print(
                         f"    📚 集合列表: {', '.join(collection_names[:5])}{'...' if len(collection_names) > 5 else ''}"
                     )
-
-                # 测试创建临时集合
-                test_collection_name = "test_connection_collection"
-                try:
-                    # 先尝试删除可能存在的测试集合
-                    try:
-                        client.delete_collection(test_collection_name)
-                    except Exception:
-                        pass
-
-                    # 创建测试集合
-                    test_collection = client.create_collection(test_collection_name)
-                    print("    ✅ 集合创建: 测试成功")
-
-                    # 测试基本的向量操作
-                    from typing import cast, List as ListType
-
-                    embeddings_data: ListType[ListType[float]] = [
-                        [1.0, 2.0, 3.0],
-                        [4.0, 5.0, 6.0],
-                    ]
-                    test_collection.add(
-                        embeddings=cast("list[Sequence[float]]", embeddings_data),
-                        documents=["测试文档1", "测试文档2"],
-                        ids=["test1", "test2"],
-                    )
-                    print("    ✅ 向量添加: 测试成功")
-
-                    # 测试查询
-                    query_embeddings_data: ListType[ListType[float]] = [[1.0, 2.0, 3.0]]
-                    results = test_collection.query(
-                        query_embeddings=cast(
-                            "list[Sequence[float]]", query_embeddings_data
-                        ),
-                        n_results=1,
-                    )
-                    if results and results["documents"]:
-                        print("    ✅ 向量查询: 测试成功")
-                    else:
-                        print("    ⚠️  向量查询: 结果为空")
-
-                    # 清理测试集合
-                    client.delete_collection(test_collection_name)
-                    print("    ✅ 测试清理: 完成")
-
-                except Exception as test_error:
-                    print(f"    ⚠️  基本操作测试失败: {test_error}")
-                    # 确保清理测试集合
-                    try:
-                        client.delete_collection(test_collection_name)
-                    except Exception:
-                        pass
-
             except Exception as e:
                 print(f"    ⚠️  集合操作失败: {e}")
 
@@ -481,29 +427,17 @@ def get_chromadb_environment() -> None:
         try:
             from sentence_transformers import SentenceTransformer
 
-            # 常用的模型列表
-            common_models = [
-                "all-MiniLM-L6-v2",
-                "all-mpnet-base-v2",
-                "paraphrase-MiniLM-L6-v2",
-                "distiluse-base-multilingual-cased",
-            ]
+            print("    🤖 Sentence Transformers: 可用")
 
-            print("    🤖 Sentence Transformers模型:")
-            for model_name in common_models:
-                try:
-                    # 检查模型是否可用（不实际加载以节省时间）
-                    import os
-                    from sentence_transformers import __file__ as st_file
+            # 检查是否可以创建默认embedding函数
+            try:
+                from chromadb.utils.embedding_functions import (
+                    SentenceTransformerEmbeddingFunction,
+                )
 
-                    models_cache_dir = os.path.join(
-                        os.path.dirname(st_file), "..", "..", "sentence_transformers"
-                    )
-
-                    print(f"      📦 {model_name}: 检查缓存...")
-
-                except Exception:
-                    print(f"      ❓ {model_name}: 状态未知")
+                print("    ✅ SentenceTransformerEmbeddingFunction: 可用")
+            except ImportError:
+                print("    ⚠️  SentenceTransformerEmbeddingFunction: 不可用")
 
         except ImportError:
             print("    ⚠️  Sentence Transformers未安装")

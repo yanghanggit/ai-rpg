@@ -11,7 +11,7 @@ try:
     from src.multi_agents_game.models.objects import RPGCharacterProfile
     from src.multi_agents_game.models.world import World, Boot
     from src.multi_agents_game.models.dungeon import Dungeon
-    from src.multi_agents_game.player.player_proxy import PlayerProxy
+    from src.multi_agents_game.game.player_proxy import PlayerProxy
     from src.multi_agents_game.chat_services.chat_system import ChatSystem
     from src.multi_agents_game.chaos_engineering.empty_engineering_system import (
         EmptyChaosEngineeringSystem,

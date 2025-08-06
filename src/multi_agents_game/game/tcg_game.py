@@ -43,7 +43,7 @@ from ..models import (
     DeathComponent,
 )
 from ..models.components import XCardPlayerComponent
-from ..player.player_proxy import PlayerProxy
+from .player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from ..chat_services.chat_system import ChatSystem
 from ..chaos_engineering.chaos_engineering_system import IChaosEngineering

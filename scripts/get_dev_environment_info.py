@@ -19,6 +19,7 @@ import socket
 from pathlib import Path
 from datetime import datetime
 from typing import Tuple, List, Dict
+from collections.abc import Sequence
 
 try:
     from importlib.metadata import distributions
@@ -293,6 +294,261 @@ def get_network_and_services() -> None:
         print(f"  ❌ PostgreSQL: 连接测试失败 - {e}")
 
 
+def get_chromadb_environment() -> None:
+    """获取ChromaDB环境信息"""
+    print("\n" + "=" * 50)
+    print("🗄️  ChromaDB向量数据库环境")
+    print("=" * 50)
+
+    # 检查ChromaDB安装状态
+    try:
+        import chromadb
+
+        print(f"  ✅ ChromaDB: 已安装 (版本 {chromadb.__version__})")
+
+        # 检查ChromaDB的主要组件
+        try:
+            from chromadb.config import Settings
+
+            print("  ✅ ChromaDB Settings: 可用")
+        except ImportError as e:
+            print(f"  ⚠️  ChromaDB Settings: 导入失败 - {e}")
+
+        try:
+            from chromadb.api import ClientAPI
+
+            print("  ✅ ChromaDB ClientAPI: 可用")
+        except ImportError as e:
+            print(f"  ⚠️  ChromaDB ClientAPI: 导入失败 - {e}")
+
+        # 检查embedding函数
+        try:
+            from chromadb.utils import embedding_functions
+
+            print("  ✅ ChromaDB Embedding Functions: 可用")
+
+            # 列出可用的embedding函数类型
+            available_embeddings = []
+            if hasattr(embedding_functions, "DefaultEmbeddingFunction"):
+                available_embeddings.append("DefaultEmbeddingFunction")
+            if hasattr(embedding_functions, "SentenceTransformerEmbeddingFunction"):
+                available_embeddings.append("SentenceTransformerEmbeddingFunction")
+            if hasattr(embedding_functions, "OpenAIEmbeddingFunction"):
+                available_embeddings.append("OpenAIEmbeddingFunction")
+            if hasattr(embedding_functions, "HuggingFaceEmbeddingFunction"):
+                available_embeddings.append("HuggingFaceEmbeddingFunction")
+
+            if available_embeddings:
+                print(f"    可用的Embedding函数: {', '.join(available_embeddings)}")
+
+        except ImportError as e:
+            print(f"  ⚠️  ChromaDB Embedding Functions: 导入失败 - {e}")
+
+        # 检查ChromaDB依赖
+        chroma_dependencies = [
+            "sentence-transformers",
+            "onnxruntime",
+            "tokenizers",
+            "huggingface-hub",
+            "transformers",
+        ]
+
+        print("\n  ChromaDB相关依赖检查:")
+        try:
+            try:
+                installed = {
+                    dist.metadata["name"].lower(): dist.version
+                    for dist in distributions()
+                }
+            except NameError:
+                installed = {
+                    pkg.project_name.lower(): pkg.version
+                    for pkg in pkg_resources.working_set
+                }
+
+            for dep in chroma_dependencies:
+                # 检查不同的包名格式
+                found_version = None
+                for pkg_name, version in installed.items():
+                    if (
+                        dep == pkg_name
+                        or dep.replace("-", "_") == pkg_name
+                        or dep.replace("_", "-") == pkg_name
+                    ):
+                        found_version = version
+                        break
+
+                if found_version:
+                    print(f"    ✅ {dep}: {found_version}")
+                else:
+                    print(f"    ❌ {dep}: 未安装")
+
+        except Exception as e:
+            print(f"    ⚠️  依赖检查失败: {e}")
+
+        # ChromaDB连接测试
+        print("\n  ChromaDB连接测试:")
+        try:
+            # 创建临时客户端进行连接测试
+            client = chromadb.Client()
+            print("    ✅ ChromaDB Client: 创建成功")
+
+            # 测试基本操作
+            try:
+                # 列出现有集合
+                collections = client.list_collections()
+                print(f"    ✅ 现有集合数量: {len(collections)}")
+                if collections:
+                    collection_names = [col.name for col in collections]
+                    print(
+                        f"    📚 集合列表: {', '.join(collection_names[:5])}{'...' if len(collection_names) > 5 else ''}"
+                    )
+
+                # 测试创建临时集合
+                test_collection_name = "test_connection_collection"
+                try:
+                    # 先尝试删除可能存在的测试集合
+                    try:
+                        client.delete_collection(test_collection_name)
+                    except Exception:
+                        pass
+
+                    # 创建测试集合
+                    test_collection = client.create_collection(test_collection_name)
+                    print("    ✅ 集合创建: 测试成功")
+
+                    # 测试基本的向量操作
+                    from typing import cast, List as ListType
+
+                    embeddings_data: ListType[ListType[float]] = [
+                        [1.0, 2.0, 3.0],
+                        [4.0, 5.0, 6.0],
+                    ]
+                    test_collection.add(
+                        embeddings=cast("list[Sequence[float]]", embeddings_data),
+                        documents=["测试文档1", "测试文档2"],
+                        ids=["test1", "test2"],
+                    )
+                    print("    ✅ 向量添加: 测试成功")
+
+                    # 测试查询
+                    query_embeddings_data: ListType[ListType[float]] = [[1.0, 2.0, 3.0]]
+                    results = test_collection.query(
+                        query_embeddings=cast(
+                            "list[Sequence[float]]", query_embeddings_data
+                        ),
+                        n_results=1,
+                    )
+                    if results and results["documents"]:
+                        print("    ✅ 向量查询: 测试成功")
+                    else:
+                        print("    ⚠️  向量查询: 结果为空")
+
+                    # 清理测试集合
+                    client.delete_collection(test_collection_name)
+                    print("    ✅ 测试清理: 完成")
+
+                except Exception as test_error:
+                    print(f"    ⚠️  基本操作测试失败: {test_error}")
+                    # 确保清理测试集合
+                    try:
+                        client.delete_collection(test_collection_name)
+                    except Exception:
+                        pass
+
+            except Exception as e:
+                print(f"    ⚠️  集合操作失败: {e}")
+
+        except Exception as e:
+            print(f"    ❌ ChromaDB Client创建失败: {e}")
+
+        # 检查ChromaDB持久化设置
+        print("\n  ChromaDB配置信息:")
+        try:
+            # 检查默认设置
+            settings = chromadb.get_settings()
+            if hasattr(settings, "persist_directory"):
+                print(f"    📁 持久化目录: {settings.persist_directory}")
+            if hasattr(settings, "chroma_db_impl"):
+                print(f"    🔧 数据库实现: {settings.chroma_db_impl}")
+            if hasattr(settings, "chroma_api_impl"):
+                print(f"    🔌 API实现: {settings.chroma_api_impl}")
+        except Exception as e:
+            print(f"    ⚠️  配置获取失败: {e}")
+
+        # 检查可用的embedding模型
+        print("\n  Embedding模型检查:")
+        try:
+            from sentence_transformers import SentenceTransformer
+
+            # 常用的模型列表
+            common_models = [
+                "all-MiniLM-L6-v2",
+                "all-mpnet-base-v2",
+                "paraphrase-MiniLM-L6-v2",
+                "distiluse-base-multilingual-cased",
+            ]
+
+            print("    🤖 Sentence Transformers模型:")
+            for model_name in common_models:
+                try:
+                    # 检查模型是否可用（不实际加载以节省时间）
+                    import os
+                    from sentence_transformers import __file__ as st_file
+
+                    models_cache_dir = os.path.join(
+                        os.path.dirname(st_file), "..", "..", "sentence_transformers"
+                    )
+
+                    print(f"      📦 {model_name}: 检查缓存...")
+
+                except Exception:
+                    print(f"      ❓ {model_name}: 状态未知")
+
+        except ImportError:
+            print("    ⚠️  Sentence Transformers未安装")
+        except Exception as e:
+            print(f"    ⚠️  模型检查失败: {e}")
+
+    except ImportError:
+        print("  ❌ ChromaDB: 未安装")
+        print("  💡 安装建议:")
+        print("    conda环境: pip install chromadb")
+        print("    或者: conda install -c conda-forge chromadb")
+
+        # 检查相关包是否缺失
+        missing_deps = []
+        related_packages = ["sentence-transformers", "onnxruntime", "tokenizers"]
+
+        try:
+            try:
+                installed = {
+                    dist.metadata["name"].lower(): dist.version
+                    for dist in distributions()
+                }
+            except NameError:
+                installed = {
+                    pkg.project_name.lower(): pkg.version
+                    for pkg in pkg_resources.working_set
+                }
+
+            for pkg in related_packages:
+                if not any(
+                    pkg == name or pkg.replace("-", "_") == name
+                    for name in installed.keys()
+                ):
+                    missing_deps.append(pkg)
+
+            if missing_deps:
+                print(f"  ⚠️  相关缺失依赖: {', '.join(missing_deps)}")
+
+        except Exception:
+            pass
+
+    except Exception as e:
+        print(f"  ❌ ChromaDB环境检查失败: {e}")
+
+
 def get_dependency_analysis() -> None:
     """分析项目依赖"""
     print("\n" + "=" * 50)
@@ -393,6 +649,7 @@ def get_dependency_analysis() -> None:
                     "pydantic",
                     "numpy",
                     "pandas",
+                    "chromadb",
                 ]
                 print("核心依赖检查:")
                 for dep in core_deps1:
@@ -432,6 +689,7 @@ def get_dependency_analysis() -> None:
                     "langchain",
                     "redis",
                     "psycopg2",
+                    "chromadb",
                 ]
                 print("核心依赖检查 (仅检查requirements.txt):")
                 for dep in core_deps2:
@@ -612,6 +870,7 @@ def main() -> None:
         get_project_config()
         get_development_tools()
         get_network_and_services()
+        get_chromadb_environment()
         get_dependency_analysis()
         get_environment_variables()
 

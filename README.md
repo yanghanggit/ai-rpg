@@ -17,6 +17,7 @@
 1. 打开命令面板 (`Cmd+Shift+P`)
 2. 选择 `Python: Select Interpreter`
 3. 选择 conda 环境路径：`/Users/your-username/anaconda3/envs/first_seed/bin/python`
+4. 在conda安装新的包后，需要执行`conda env export > environment.yml`进行刷新
 
 ## MongoDB 数据库配置
 

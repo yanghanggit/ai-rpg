@@ -3,16 +3,22 @@ from .entity import Entity
 from .matcher import Matcher
 from .group import Group
 from .exceptions import MissingEntity
-from typing import Any, Dict
+from .components import Component
+from typing import Dict, Set
 
 
 class Context(object):
-    """A context is a data structure managing entities."""
+    """A context is a data structure managing entities.
+
+    The context manages the lifecycle of entities and provides
+    functionality for creating, destroying, and organizing entities
+    into groups based on component patterns.
+    """
 
     def __init__(self) -> None:
 
         #: Entities retained by this context.
-        self._entities: set[Entity] = set()
+        self._entities: Set[Entity] = set()
 
         #: An object pool to recycle entities.
         self._reusable_entities: deque[Entity] = deque()
@@ -24,21 +30,45 @@ class Context(object):
         self._groups: Dict[Matcher, Group] = {}
 
     @property
-    def entities(self) -> set[Entity]:
+    def entities(self) -> Set[Entity]:
+        """Gets the set of all active entities in this context.
+
+        :return: Set of active entities
+        """
         return self._entities
+
+    @property
+    def entity_count(self) -> int:
+        """Gets the number of active entities in this context.
+
+        :return: Number of active entities
+        """
+        return len(self._entities)
+
+    @property
+    def reusable_entity_count(self) -> int:
+        """Gets the number of entities available for reuse.
+
+        :return: Number of reusable entities in the pool
+        """
+        return len(self._reusable_entities)
 
     def has_entity(self, entity: Entity) -> bool:
         """Checks if the context contains this entity.
-        :param entity: Entity
-        :rtype: bool
+
+        :param entity: Entity to check for
+        :return: True if the entity exists in this context, False otherwise
         """
         return entity in self._entities
 
     def create_entity(self) -> Entity:
-        """Creates an entity. Pop one entity from the pool if it is not
-        empty, otherwise creates a new one. Increments the entity index.
-        Then adds the entity to the list.
-        :rtype: Entity
+        """Creates an entity.
+
+        Pop one entity from the pool if it is not empty, otherwise
+        creates a new one. Increments the entity index and adds the
+        entity to the active entities set.
+
+        :return: A new or recycled entity
         """
         entity = self._reusable_entities.pop() if self._reusable_entities else Entity()
 
@@ -54,13 +84,18 @@ class Context(object):
         return entity
 
     def destroy_entity(self, entity: Entity) -> None:
-        """Removes an entity from the list and add it to the pool. If
-        the context does not contain this entity, a
-        :class:`MissingEntity` exception is raised.
-        :param entity: Entity
+        """Removes an entity from the active set and adds it to the pool.
+
+        If the context does not contain this entity, a MissingEntity
+        exception is raised.
+
+        :param entity: Entity to destroy
+        :raises MissingEntity: If the entity is not in this context
         """
         if not self.has_entity(entity):
-            raise MissingEntity()
+            raise MissingEntity(
+                f"Cannot destroy entity {entity}: not found in context."
+            )
 
         entity.destroy()
 
@@ -68,9 +103,14 @@ class Context(object):
         self._reusable_entities.append(entity)
 
     def get_group(self, matcher: Matcher) -> Group:
-        """User can ask for a group of entities from the context. The
-        group is identified through a :class:`Matcher`.
-        :param entity: Matcher
+        """Gets a group of entities from the context.
+
+        The group is identified through a Matcher. If the group doesn't
+        exist yet, it will be created and populated with all matching
+        entities from the context.
+
+        :param matcher: Matcher defining the group criteria
+        :return: Group containing entities matching the criteria
         """
         if matcher in self._groups:
             return self._groups[matcher]
@@ -84,16 +124,35 @@ class Context(object):
 
         return group
 
-    def _comp_added_or_removed(self, entity: Entity, comp: Any) -> None:
+    def _comp_added_or_removed(self, entity: Entity, comp: Component) -> None:
+        """Handles component addition or removal events.
+
+        Updates all groups to reflect the component change.
+
+        :param entity: Entity that had a component added or removed
+        :param comp: Component that was added or removed
+        """
         for matcher in self._groups:
             self._groups[matcher].handle_entity(entity, comp)
 
-    def _comp_replaced(self, entity: Entity, previous_comp: Any, new_comp: Any) -> None:
+    def _comp_replaced(
+        self, entity: Entity, previous_comp: Component, new_comp: Component
+    ) -> None:
+        """Handles component replacement events.
+
+        Updates all groups to reflect the component replacement.
+
+        :param entity: Entity that had a component replaced
+        :param previous_comp: The component that was replaced
+        :param new_comp: The new component
+        """
         for matcher in self._groups:
             group = self._groups[matcher]
             group.update_entity(entity, previous_comp, new_comp)
 
     def __repr__(self) -> str:
-        return "<Context ({}/{})>".format(
-            len(self._entities), len(self._reusable_entities)
-        )
+        """Returns a string representation of the context.
+
+        Format: <Context (active_entities/reusable_entities)>
+        """
+        return f"<Context ({len(self._entities)}/{len(self._reusable_entities)})>"

@@ -1,15 +1,16 @@
-from typing import Any, Dict, NamedTuple, List, final
+from typing import List, final
 from pydantic import BaseModel
 from .dungeon import Skill, StatusEffect
 from .objects import RPGCharacterProfile
 from .registry import register_component_class
+from ..entitas.components import Component, MutableComponent
 
 
 ############################################################################################################
 # 全局唯一标识符 RunTimeIndexComponent
 @final
 @register_component_class
-class RuntimeComponent(NamedTuple):
+class RuntimeComponent(Component):
     name: str
     runtime_index: int
     uuid: str
@@ -19,7 +20,7 @@ class RuntimeComponent(NamedTuple):
 # 记录kick off原始信息
 @final
 @register_component_class
-class KickOffMessageComponent(NamedTuple):
+class KickOffMessageComponent(Component):
     name: str
     content: str
 
@@ -28,7 +29,7 @@ class KickOffMessageComponent(NamedTuple):
 # 标记kick off已经完成
 @final
 @register_component_class
-class KickOffDoneComponent(NamedTuple):
+class KickOffDoneComponent(Component):
     name: str
 
 
@@ -36,7 +37,7 @@ class KickOffDoneComponent(NamedTuple):
 # 例如，世界级的entity就标记这个组件
 @final
 @register_component_class
-class WorldSystemComponent(NamedTuple):
+class WorldSystemComponent(Component):
     name: str
 
 
@@ -44,7 +45,7 @@ class WorldSystemComponent(NamedTuple):
 # 场景标记
 @final
 @register_component_class
-class StageComponent(NamedTuple):
+class StageComponent(Component):
     name: str
 
 
@@ -52,7 +53,7 @@ class StageComponent(NamedTuple):
 # 记录场景的描述 #Environment
 @final
 @register_component_class
-class EnvironmentComponent(NamedTuple):
+class EnvironmentComponent(Component):
     name: str
     narrate: str
 
@@ -61,7 +62,7 @@ class EnvironmentComponent(NamedTuple):
 # 角色标记
 @final
 @register_component_class
-class ActorComponent(NamedTuple):
+class ActorComponent(Component):
     name: str
     current_stage: str
 
@@ -70,7 +71,7 @@ class ActorComponent(NamedTuple):
 # 玩家标记
 @final
 @register_component_class
-class PlayerComponent(NamedTuple):
+class PlayerComponent(Component):
     player_name: str
 
 
@@ -78,7 +79,7 @@ class PlayerComponent(NamedTuple):
 # 摧毁Entity标记
 @final
 @register_component_class
-class DestroyComponent(NamedTuple):
+class DestroyComponent(Component):
     name: str
 
 
@@ -86,7 +87,7 @@ class DestroyComponent(NamedTuple):
 # 角色外观信息
 @final
 @register_component_class
-class AppearanceComponent(NamedTuple):
+class AppearanceComponent(Component):
     name: str
     appearance: str
 
@@ -95,7 +96,7 @@ class AppearanceComponent(NamedTuple):
 # Stage专用，标记该Stage是Home
 @final
 @register_component_class
-class HomeComponent(NamedTuple):
+class HomeComponent(Component):
     name: str
     action_order: List[str]
 
@@ -104,7 +105,7 @@ class HomeComponent(NamedTuple):
 # Stage专用，标记该Stage是Dungeon
 @final
 @register_component_class
-class DungeonComponent(NamedTuple):
+class DungeonComponent(Component):
     name: str
 
 
@@ -112,7 +113,7 @@ class DungeonComponent(NamedTuple):
 # Actor专用，标记该Actor是Hero
 @final
 @register_component_class
-class HeroComponent(NamedTuple):
+class HeroComponent(Component):
     name: str
 
 
@@ -120,14 +121,14 @@ class HeroComponent(NamedTuple):
 # Actor专用，标记该Actor是Monster
 @final
 @register_component_class
-class MonsterComponent(NamedTuple):
+class MonsterComponent(Component):
     name: str
 
 
 ############################################################################################################
 @final
 @register_component_class
-class CanStartPlanningComponent(NamedTuple):
+class CanStartPlanningComponent(Component):
     name: str
 
 
@@ -135,7 +136,7 @@ class CanStartPlanningComponent(NamedTuple):
 # 标记player主动行动。
 @final
 @register_component_class
-class PlayerActiveComponent(NamedTuple):
+class PlayerActiveComponent(Component):
     name: str
 
 
@@ -165,28 +166,10 @@ class HandDetail(BaseModel):
 # 手牌组件。
 @final
 @register_component_class
-class HandComponent(NamedTuple):
+class HandComponent(MutableComponent):
     name: str
     skills: List[Skill]
     details: List[HandDetail]
-
-    @staticmethod
-    def deserialize_component_data(component_data: Dict[str, Any]) -> Dict[str, Any]:
-
-        processed_data = component_data.copy()
-        assert "skills" in processed_data, "HandComponent must have skills."
-        if "skills" in processed_data:
-            processed_data["skills"] = [
-                Skill(**skill) for skill in processed_data["skills"]
-            ]
-
-        assert "details" in processed_data, "HandComponent must have details."
-        if "details" in processed_data:
-            processed_data["details"] = [
-                HandDetail(**detail) for detail in processed_data["details"]
-            ]
-
-        return processed_data
 
     def get_skill(self, skill_name: str) -> Skill:
         for skill in self.skills:
@@ -205,7 +188,7 @@ class HandComponent(NamedTuple):
 # 死亡标记
 @final
 @register_component_class
-class DeathComponent(NamedTuple):
+class DeathComponent(Component):
     name: str
 
 
@@ -215,32 +198,10 @@ class DeathComponent(NamedTuple):
 # 新版本的重构！
 @final
 @register_component_class
-class RPGCharacterProfileComponent(NamedTuple):
+class RPGCharacterProfileComponent(MutableComponent):
     name: str
     rpg_character_profile: RPGCharacterProfile
     status_effects: List[StatusEffect]
-
-    @staticmethod
-    def deserialize_component_data(component_data: Dict[str, Any]) -> Dict[str, Any]:
-        processed_data = component_data.copy()
-
-        assert (
-            "rpg_character_profile" in processed_data
-        ), "RPGCharacterProfileComponent must have a rpg_character_profile."
-        if "rpg_character_profile" in processed_data:
-            processed_data["rpg_character_profile"] = RPGCharacterProfile(
-                **processed_data["rpg_character_profile"]
-            )
-
-        assert (
-            "status_effects" in processed_data
-        ), "RPGCharacterProfileComponent must have status_effects."
-        if "status_effects" in processed_data:
-            processed_data["status_effects"] = [
-                StatusEffect(**effect) for effect in processed_data["status_effects"]
-            ]
-
-        return processed_data
 
     @property
     def attrs_prompt(self) -> str:
@@ -271,17 +232,9 @@ class RPGCharacterProfileComponent(NamedTuple):
 # 问号牌
 @final
 @register_component_class
-class XCardPlayerComponent(NamedTuple):
+class XCardPlayerComponent(MutableComponent):
     name: str
     skill: Skill
-
-    @staticmethod
-    def deserialize_component_data(component_data: Dict[str, Any]) -> Dict[str, Any]:
-        processed_data = component_data.copy()
-        assert "skill" in processed_data, "XCardPlayerComponent must have a skill."
-        if "skill" in processed_data:
-            processed_data["skill"] = Skill(**processed_data["skill"])
-        return processed_data
 
 
 ############################################################################################################

@@ -1,6 +1,7 @@
 from loguru import logger
 from ..entitas import ExecuteProcessor, Matcher
-from typing import Final, FrozenSet, NamedTuple, final, override
+from ..entitas.components import Component
+from typing import Final, FrozenSet, final, override
 from ..game.tcg_game import TCGGame
 from ..models import (
     ACTION_COMPONENTS_REGISTRY,
@@ -19,7 +20,7 @@ class PostActionSystem(ExecuteProcessor):
     ############################################################################################################
     @override
     def execute(self) -> None:
-        actions_set: Final[FrozenSet[type[NamedTuple]]] = frozenset(
+        actions_set: Final[FrozenSet[type[Component]]] = frozenset(
             ACTION_COMPONENTS_REGISTRY.values()
         )
         self._clear_actions(actions_set)
@@ -38,7 +39,7 @@ class PostActionSystem(ExecuteProcessor):
             entity.remove(PlayerActiveComponent)
 
     ############################################################################################################
-    def _clear_actions(self, registered_actions: FrozenSet[type[NamedTuple]]) -> None:
+    def _clear_actions(self, registered_actions: FrozenSet[type[Component]]) -> None:
         entities = self._game.get_group(
             Matcher(any_of=registered_actions)
         ).entities.copy()
@@ -51,7 +52,7 @@ class PostActionSystem(ExecuteProcessor):
                     entity.remove(action_class)
 
     ############################################################################################################
-    def _test(self, registered_actions: FrozenSet[type[NamedTuple]]) -> None:
+    def _test(self, registered_actions: FrozenSet[type[Component]]) -> None:
 
         # 动作必须被清理掉。
         entities1 = self._game.get_group(Matcher(any_of=registered_actions)).entities

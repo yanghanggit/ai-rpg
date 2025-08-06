@@ -63,7 +63,7 @@ class TCGGameContext(Context):
             if COMPONENTS_REGISTRY.get(key.__name__) is None:
                 continue
             entity_snapshot.components.append(
-                ComponentSnapshot(name=key.__name__, data=value._asdict())
+                ComponentSnapshot(name=key.__name__, data=value.model_dump())
             )
         return entity_snapshot
 
@@ -104,21 +104,14 @@ class TCGGameContext(Context):
                 comp_class = COMPONENTS_REGISTRY.get(comp_snapshot.name)
                 assert comp_class is not None
 
-                assert hasattr(
-                    comp_class, "deserialize_component_data"
-                ), f"{comp_class.__name__} must have a deserialize_component_data method."
-                processed_data = comp_class.deserialize_component_data(
-                    comp_snapshot.data
-                )
-
-                # restore_comp = comp_class(**comp_snapshot.data) 这么写严格模式过不去，因为是OrderedDict，就直接用values()了
-                restore_comp = comp_class(*processed_data.values())
+                # 使用 Pydantic 的方式直接从字典创建实例
+                restore_comp = comp_class(**comp_snapshot.data)
                 assert restore_comp is not None
 
                 logger.debug(
                     f"comp_class = {comp_class.__name__}, comp = {restore_comp}"
                 )
-                entity.insert(comp_class, restore_comp)
+                entity.set(comp_class, restore_comp)
 
     ###############################################################################################################################################
     def get_world_entity(self, world_name: str) -> Optional[Entity]:

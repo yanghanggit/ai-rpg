@@ -28,9 +28,13 @@ from loguru import logger
 from langchain.schema import HumanMessage
 from multi_agents_game.chat_services.chat_deepseek_rag_graph import (
     State,
-    initialize_rag_system,
     create_rag_compiled_graph,
     stream_rag_graph_updates,
+)
+
+# 更新导入路径
+from multi_agents_game.db.chromadb_client import (
+    initialize_rag_system,
     get_chroma_db,
 )
 

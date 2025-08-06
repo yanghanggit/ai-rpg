@@ -22,7 +22,6 @@ from multi_agents_game.config import (
     GLOBAL_GAME_NAME,
     DEFAULT_SERVER_SETTINGS_CONFIG,
 )
-from uuid import uuid4
 from typing import Dict, Set, TypedDict, cast
 
 
@@ -358,8 +357,9 @@ if __name__ == "__main__":
 
     # 初始化日志
     setup_logger()
+    import datetime
 
-    random_name = f"player-{uuid4()}"
+    random_name = f"player-{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}"
     fixed_name = "player-fixed"
 
     # 做一些设置

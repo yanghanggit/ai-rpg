@@ -46,8 +46,6 @@ from ..models.components import XCardPlayerComponent
 from .player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from ..chat_services.chat_system import ChatSystem
-
-# from ..chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 import copy
 import random
@@ -100,9 +98,7 @@ class TCGGame(BaseGame, TCGGameContext):
         name: str,
         player: PlayerProxy,
         world: World,
-        # world_path: Path,
         chat_system: ChatSystem,
-        # chaos_engineering_system: IChaosEngineering,
     ) -> None:
 
         # 必须按着此顺序实现父
@@ -129,12 +125,6 @@ class TCGGame(BaseGame, TCGGameContext):
         # agent 系统
         self._chat_system: Final[ChatSystem] = chat_system
 
-        # 混沌工程系统
-        # self._chaos_engineering_system: Final[IChaosEngineering] = (
-        #     chaos_engineering_system
-        # )
-        # self.chaos_engineering_system.initialize(self)
-
         # 是否开启调试
         self._debug_flag_pipeline: bool = False
 
@@ -156,7 +146,6 @@ class TCGGame(BaseGame, TCGGameContext):
             dir.mkdir(parents=True, exist_ok=True)
         assert dir.exists()
         assert dir.is_dir()
-        # logger.info(f"Verbose debug dir: {dir}")
         return dir
 
     ###############################################################################################################################################
@@ -196,11 +185,6 @@ class TCGGame(BaseGame, TCGGameContext):
     @property
     def chat_system(self) -> ChatSystem:
         return self._chat_system
-
-    ###############################################################################################################################################
-    # @property
-    # def chaos_engineering_system(self) -> IChaosEngineering:
-    #     return self._chaos_engineering_system
 
     ###############################################################################################################################################
     @property
@@ -263,9 +247,6 @@ class TCGGame(BaseGame, TCGGameContext):
 
         assert len(self.world.entities_snapshot) == 0, "游戏中有实体，不能创建新的游戏"
 
-        # 混沌系统
-        #        self.chaos_engineering_system.on_pre_new_game()
-
         ## 第1步，创建world_system
         self._create_world_system_entities(self.world.boot.world_systems)
 
@@ -275,9 +256,6 @@ class TCGGame(BaseGame, TCGGameContext):
 
         ## 第3步，创建stage
         self._create_stage_entities(self.world.boot.stages)
-
-        ## 最后！混沌系统，准备测试
-        #        self.chaos_engineering_system.on_post_new_game()
 
         return self
 
@@ -310,6 +288,7 @@ class TCGGame(BaseGame, TCGGameContext):
     def _verbose(self) -> None:
         """调试方法，保存游戏状态到文件"""
         self._verbose_boot_data()
+        self._verbose_world_data()
         self._verbose_entities_snapshot()
         self._verbose_chat_history()
         self._verbose_dungeon_system()
@@ -408,6 +387,15 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 保存 Boot 数据到文件
         boot_file_path.write_text(self.world.boot.model_dump_json(), encoding="utf-8")
+
+    ###############################################################################################################################################
+    def _verbose_world_data(self) -> None:
+        world_data_dir = self.verbose_dir / "world_data"
+        world_data_dir.mkdir(parents=True, exist_ok=True)
+        world_file_path = world_data_dir / f"{self.world.boot.name}.json"
+        world_file_path.write_text(
+            self.world.model_dump_json(), encoding="utf-8"
+        )  # 保存 World 数据到文件，覆盖
 
     ###############################################################################################################################################
     def _verbose_entities_snapshot(self) -> None:

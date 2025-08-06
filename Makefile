@@ -1,4 +1,4 @@
-.PHONY: install test lint format clean dev-install conda-install conda-setup pip-install show-structure check help check-imports fix-imports
+.PHONY: install test lint format clean dev-install conda-install conda-setup pip-install show-structure check help check-imports fix-imports restart-chat-servers kill-chat-servers kill-all-servers restart-all-servers
 
 # 推荐：Conda环境完整设置
 conda-setup:
@@ -32,6 +32,44 @@ dev-install:
 		echo "📦 安装开发依赖..."; \
 		pip install -r requirements-dev.txt; \
 	fi
+
+# 重启聊天服务器：停止所有服务器并重新启动聊天服务器
+restart-chat-servers:
+	@echo "🔄 重启聊天服务器..."
+	@echo "🛑 停止现有服务器..."
+	./scripts/kill_servers.sh
+	@echo "🗑️ 删除所有PM2进程..."
+	pm2 delete all || true
+	@echo "🚀 启动聊天服务器..."
+	pm2 start scripts/run_chat_servers.sh
+	@echo "✅ 聊天服务器重启完成！"
+
+# 停止聊天服务器：直接停止所有聊天服务器
+kill-chat-servers:
+	@echo "🛑 停止聊天服务器..."
+	./scripts/kill_servers.sh
+	@echo "✅ 聊天服务器已停止！"
+	@echo "🗑️ 删除所有PM2进程..."
+	pm2 delete all || true
+
+# 停止所有服务器：彻底停止所有服务器进程
+kill-all-servers:
+	@echo "🛑 停止所有服务器..."
+	./scripts/kill_servers.sh
+	@echo "🗑️ 删除所有PM2进程..."
+	pm2 delete all || true
+	@echo "✅ 所有服务器已停止！"
+
+# 重启所有服务器：停止所有服务器并重新启动聊天服务器和游戏服务器
+restart-all-servers:
+	@echo "� 重启所有服务器..."
+	@echo "🛑 停止现有服务器..."
+	./scripts/kill_servers.sh
+	@echo "🗑️ 删除所有现有PM2进程..."
+	pm2 delete all || true
+	@echo "🎮 启动聊天服务器和TCG游戏服务器..."
+	pm2 start scripts/run_chat_servers.sh scripts/run_tcg_game_server.py
+	@echo "✅ 所有服务器重启完成！"
 
 # 运行测试
 test:
@@ -106,6 +144,10 @@ help:
 	@echo "  fix-imports    - 🔧 修复未使用的导入"
 	@echo ""
 	@echo "🔧 开发工具:"
+	@echo "  restart-chat-servers - 🔄 重启聊天服务器（停止→删除PM2→启动）"
+	@echo "  restart-all-servers  - � 重启所有服务器（聊天+游戏）"
+	@echo "  kill-chat-servers    - 🛑 停止聊天服务器"
+	@echo "  kill-all-servers     - � 停止所有服务器"
 	@echo "  show-structure - 📁 显示项目结构"
 	@echo "  check          - ✅ 检查项目和环境状态"
 	@echo "  clean          - 🧹 清理构建文件"

@@ -10,9 +10,10 @@ from loguru import logger
 from multi_agents_game.game.terminal_tcg_game import TerminalTCGGame
 from multi_agents_game.game.tcg_game import TCGGameState
 from multi_agents_game.models import World, CombatResult
-from multi_agents_game.chaos_engineering.empty_engineering_system import (
-    EmptyChaosEngineeringSystem,
-)
+
+# from multi_agents_game.chaos_engineering.empty_engineering_system import (
+#     EmptyChaosEngineeringSystem,
+# )
 from multi_agents_game.chat_services.chat_system import ChatSystem
 from multi_agents_game.game.player_proxy import PlayerProxy
 from multi_agents_game.demo import create_demo_dungeon1, create_actor_warrior
@@ -78,7 +79,7 @@ async def run_game(
             username=terminal_game_user_options.user,
             localhost_urls=DEFAULT_SERVER_SETTINGS_CONFIG.chat_server_localhost_urls,
         ),
-        chaos_engineering_system=EmptyChaosEngineeringSystem(),
+        # chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
 
     # 启动游戏的判断，是第一次建立还是恢复？

@@ -19,11 +19,6 @@ import uuid
 # 加载环境变量
 load_dotenv()
 
-# 全局变量
-MODELS: Dict[str, Dict[str, str]] = {}
-API_TOKEN: str = ""
-DEFAULT_OUTPUT_DIR: Final[str] = "generated_images"
-
 
 def load_models_config() -> Dict[str, Dict[str, str]]:
     """从 JSON 文件加载模型配置"""
@@ -42,32 +37,27 @@ def load_models_config() -> Dict[str, Dict[str, str]]:
         raise ValueError(f"模型配置文件格式错误: {e}")
 
 
-def initialize_globals() -> None:
-    """初始化全局变量"""
-    global MODELS, API_TOKEN
-    
-    # 加载模型配置
-    MODELS = load_models_config()
-    
-    # 设置 API Token
-    #if api_token is None:
-    api_token = os.getenv("REPLICATE_API_TOKEN")
-    if not api_token:
-        raise ValueError(
-            "未找到 REPLICATE_API_TOKEN，请在 .env 文件中设置或作为参数传入"
-        )
-    
-    API_TOKEN = api_token
+# 全局变量
+try:
+    MODELS: Dict[str, Dict[str, str]] = load_models_config()
+    API_TOKEN: str = os.getenv("REPLICATE_API_TOKEN") or ""
+except Exception as e:
+    MODELS = {}
+    API_TOKEN = ""
+    print(f"⚠️ 配置加载失败: {e}")
+
+DEFAULT_OUTPUT_DIR: Final[str] = "generated_images"
+TEST_URL: Final[str] = "https://api.replicate.com/v1/models"
 
 
+# 测试连接
 def test_connection() -> bool:
     """测试连接是否正常"""
-    test_url = "https://api.replicate.com/v1/models"
     headers = {"Authorization": f"Token {API_TOKEN}"}
 
     try:
         print("🔄 测试 Replicate API 连接...")
-        response = requests.get(test_url, headers=headers, timeout=10)
+        response = requests.get(TEST_URL, headers=headers, timeout=10)
 
         if response.status_code == 200:
             print("✅ 连接成功! Replicate API 可正常访问")
@@ -95,70 +85,68 @@ def generate_image(
     num_inference_steps: int = 4,
     guidance_scale: float = 7.5,
 ) -> str:
-        """
-        生成图片
+    """
+    生成图片
 
-        Args:
-            prompt: 文本提示词
-            model_name: 模型名称 (sdxl-lightning, sdxl, playground, realvis)
-            negative_prompt: 负向提示词
-            width: 图片宽度
-            height: 图片高度
-            num_inference_steps: 推理步数
-            guidance_scale: 引导比例
+    Args:
+        prompt: 文本提示词
+        model_name: 模型名称 (sdxl-lightning, sdxl, playground, realvis)
+        negative_prompt: 负向提示词
+        width: 图片宽度
+        height: 图片高度
+        num_inference_steps: 推理步数
+        guidance_scale: 引导比例
 
-        Returns:
-            图片 URL
-        """
-        if model_name not in MODELS:
-            raise ValueError(
-                f"不支持的模型: {model_name}. 可用模型: {list(MODELS.keys())}"
-            )
+    Returns:
+        图片 URL
+    """
+    if model_name not in MODELS:
+        raise ValueError(f"不支持的模型: {model_name}. 可用模型: {list(MODELS.keys())}")
 
-        model_info = MODELS[model_name]
-        model_version = model_info["version"]
-        cost_estimate = model_info["cost_estimate"]
+    model_info = MODELS[model_name]
+    model_version = model_info["version"]
+    cost_estimate = model_info["cost_estimate"]
 
-        print(f"\n🎨 使用模型: {model_name}")
-        print(f"💰 预估成本: {cost_estimate}")
-        print(f"📝 提示词: {prompt[:80]}{'...' if len(prompt) > 80 else ''}")
-        print(f"⚙️  参数: {width}x{height}, {num_inference_steps} 步")
-        print("🔄 生成中...")
+    print(f"\n🎨 使用模型: {model_name}")
+    print(f"💰 预估成本: {cost_estimate}")
+    print(f"📝 提示词: {prompt[:80]}{'...' if len(prompt) > 80 else ''}")
+    print(f"⚙️  参数: {width}x{height}, {num_inference_steps} 步")
+    print("🔄 生成中...")
 
-        start_time = time.time()
+    start_time = time.time()
 
-        try:
-            # 根据不同模型调整参数
-            if model_name == "sdxl-lightning":
-                # Lightning 模型使用较少的步数
-                num_inference_steps = min(4, num_inference_steps)
+    try:
+        # 根据不同模型调整参数
+        if model_name == "sdxl-lightning":
+            # Lightning 模型使用较少的步数
+            num_inference_steps = min(4, num_inference_steps)
 
-            output = replicate.run(
-                model_version,
-                input={
-                    "prompt": prompt,
-                    "negative_prompt": negative_prompt,
-                    "width": width,
-                    "height": height,
-                    "num_outputs": 1,
-                    "num_inference_steps": num_inference_steps,
-                    "guidance_scale": guidance_scale,
-                    "scheduler": "K_EULER",
-                },
-            )
+        output = replicate.run(
+            model_version,
+            input={
+                "prompt": prompt,
+                "negative_prompt": negative_prompt,
+                "width": width,
+                "height": height,
+                "num_outputs": 1,
+                "num_inference_steps": num_inference_steps,
+                "guidance_scale": guidance_scale,
+                "scheduler": "K_EULER",
+            },
+        )
 
-            # 获取图片 URL
-            image_url: str = output[0] if isinstance(output, list) else str(output)
+        # 获取图片 URL
+        image_url: str = output[0] if isinstance(output, list) else str(output)
 
-            elapsed_time = time.time() - start_time
-            print(f"✅ 生成完成! 耗时: {elapsed_time:.2f}秒")
-            print(f"🔗 图片 URL: {image_url}")
+        elapsed_time = time.time() - start_time
+        print(f"✅ 生成完成! 耗时: {elapsed_time:.2f}秒")
+        print(f"🔗 图片 URL: {image_url}")
 
-            return image_url
+        return image_url
 
-        except Exception as e:
-            print(f"❌ 生成失败: {e}")
-            raise
+    except Exception as e:
+        print(f"❌ 生成失败: {e}")
+        raise
 
 
 def download_image(image_url: str, save_path: Optional[str] = None) -> str:
@@ -202,9 +190,7 @@ def download_image(image_url: str, save_path: Optional[str] = None) -> str:
         raise
 
 
-def generate_and_download(
-    prompt: str, output_dir: str, **kwargs: Any
-) -> str:
+def generate_and_download(prompt: str, output_dir: str, **kwargs: Any) -> str:
     """
     生成并下载图片的便捷方法
 
@@ -236,12 +222,6 @@ def run_demo() -> None:
     print("=" * 60)
     print("🎮 Replicate 文生图演示")
     print("=" * 60)
-
-    # 初始化全局变量
-    if not MODELS or not API_TOKEN:
-        initialize_globals()
-    
-    print("✅ Replicate 客户端初始化完成")
 
     # 1. 测试连接
     if not test_connection():
@@ -278,12 +258,19 @@ def run_demo() -> None:
 
 def main() -> None:
     """主函数 - 命令行接口"""
-    # 先初始化全局变量以获取可用模型列表
-    try:
-        initialize_globals()
-        available_models = list(MODELS.keys())
-    except (FileNotFoundError, ValueError) as e:
-        print(f"❌ 初始化失败: {e}")
+    # 检查配置是否正确加载
+    if not MODELS:
+        print("❌ 错误: 模型配置未正确加载")
+        print("💡 请检查:")
+        print("   1. replicate_models.json 文件是否存在")
+        print("   2. JSON 文件格式是否正确")
+        sys.exit(1)
+
+    if not API_TOKEN:
+        print("❌ 错误: API Token 未配置")
+        print("💡 请检查:")
+        print("   1. 环境变量 REPLICATE_API_TOKEN 是否设置")
+        print("   2. .env 文件是否存在且包含正确的 API Token")
         sys.exit(1)
 
     parser = argparse.ArgumentParser(description="Replicate 文生图工具")
@@ -292,7 +279,7 @@ def main() -> None:
         "--model",
         "-m",
         default="sdxl-lightning",
-        choices=available_models,
+        choices=list(MODELS.keys()),
         help="使用的模型 (默认: sdxl-lightning)",
     )
     parser.add_argument(
@@ -318,10 +305,6 @@ def main() -> None:
     parser.add_argument("--test", action="store_true", help="测试连接")
 
     args = parser.parse_args()
-
-    # 确保全局变量已初始化
-    if not MODELS or not API_TOKEN:
-        initialize_globals()
 
     try:
         print("✅ Replicate 客户端初始化完成")

@@ -23,7 +23,7 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
 
-
+# 导入必要的模块
 from loguru import logger
 from langchain.schema import HumanMessage
 from multi_agents_game.chat_services.chat_deepseek_rag_graph import (
@@ -31,12 +31,6 @@ from multi_agents_game.chat_services.chat_deepseek_rag_graph import (
     create_rag_compiled_graph,
     stream_rag_graph_updates,
 )
-
-# 更新导入路径
-from multi_agents_game.db.rag_ops import initialize_rag_system
-from multi_agents_game.db.chromadb_client import get_chroma_db
-
-from multi_agents_game.demo.campaign_setting import FANTASY_WORLD_RPG_KNOWLEDGE_BASE
 
 
 def main() -> None:
@@ -52,14 +46,6 @@ def main() -> None:
     logger.info("🎯 启动ChromaDB增强版RAG聊天系统...")
 
     try:
-        # 步骤1: 初始化RAG系统（ChromaDB + SentenceTransformer）
-        logger.info("🔄 [MAIN] 正在初始化向量数据库系统...")
-        init_success = initialize_rag_system(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)
-
-        if init_success:
-            logger.success("✨ [MAIN] ChromaDB向量搜索系统已就绪")
-        else:
-            logger.warning("⚠️ [MAIN] 向量搜索初始化失败，使用关键词匹配模式")
 
         # 步骤2: 创建RAG状态图
         rag_compiled_graph = create_rag_compiled_graph()
@@ -75,12 +61,6 @@ def main() -> None:
         logger.info("   - 有哪些种族生活在这片大陆？")
         logger.info("   - 著名的遗迹有哪些？")
         logger.info("   - 冒险者公会是如何运作的？")
-
-        if init_success:
-            logger.info("🔍 系统特性：使用语义向量搜索，支持相似度评分")
-        else:
-            logger.info("🔍 系统特性：使用关键词匹配搜索")
-
         logger.info("💡 输入 /quit、/exit 或 /q 退出程序")
 
         # 步骤4: 开始交互循环
@@ -131,13 +111,7 @@ def main() -> None:
         print("系统启动失败，请检查环境配置。")
 
     finally:
-        # 清理资源
-        try:
-            chroma_db = get_chroma_db()
-            chroma_db.close()
-            logger.info("🔒 [MAIN] 系统资源已清理")
-        except Exception as e:
-            logger.warning(f"⚠️ [MAIN] 资源清理时出现警告: {e}")
+        logger.info("🔒 [MAIN] 清理系统资源...")
 
 
 if __name__ == "__main__":

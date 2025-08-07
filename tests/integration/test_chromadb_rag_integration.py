@@ -11,10 +11,11 @@ from loguru import logger
 
 from src.multi_agents_game.db.chromadb_client import (
     get_chroma_db,
-    get_embedding_model,
     initialize_rag_system,
     chromadb_clear_database,
+    semantic_search,  # 添加全局语义搜索函数
 )
+from src.multi_agents_game.db.embedding_manager import get_embedding_model
 from src.multi_agents_game.demo.campaign_setting import ALFANIA_KNOWLEDGE_BASE
 
 
@@ -54,7 +55,7 @@ class TestChromaDBRAGIntegration:
         ]
 
         for test_query in test_queries:
-            docs, scores = chroma_db.semantic_search(test_query, top_k=3)
+            docs, scores = semantic_search(test_query, top_k=3)
 
             # 验证搜索结果
             assert isinstance(docs, list), f"搜索结果应该是列表: {test_query}"
@@ -108,12 +109,12 @@ class TestChromaDBRAGIntegration:
             assert success, "系统初始化失败"
 
         # 测试空查询
-        docs, scores = chroma_db.semantic_search("", top_k=3)
+        docs, scores = semantic_search("", top_k=3)
         assert isinstance(docs, list), "空查询应该返回列表"
         assert isinstance(scores, list), "空查询应该返回分数列表"
 
         # 测试异常查询参数
-        docs, scores = chroma_db.semantic_search("测试查询", top_k=0)
+        docs, scores = semantic_search("测试查询", top_k=0)
         assert isinstance(docs, list), "异常参数应该返回列表"
         assert isinstance(scores, list), "异常参数应该返回分数列表"
 

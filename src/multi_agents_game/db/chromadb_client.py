@@ -1,6 +1,6 @@
 import traceback
 from pathlib import Path
-from typing import List, Optional, Dict, Mapping
+from typing import List, Optional, Dict, Mapping, Tuple, Sequence, Union, Any
 
 import chromadb
 from chromadb.api import ClientAPI
@@ -15,9 +15,8 @@ from sentence_transformers import SentenceTransformer
 # 全局ChromaDB实例
 _chroma_db: Optional["ChromaRAGDatabase"] = None
 
-# ChromaDB持久化目录
-CHROMA_DB_PERSIST_DIR = Path("chroma_db")
-
+# 全局嵌入模型实例
+_embedding_model: Optional[SentenceTransformer] = None
 
 
 ############################################################################################################
@@ -44,7 +43,6 @@ class ChromaRAGDatabase:
         self.collection_description = collection_description
         self.client: Optional[ClientAPI] = None
         self.collection: Optional[Collection] = None
-        self.embedding_model: Optional[SentenceTransformer] = None
         self.initialized = False
 
         logger.info(f"🏗️ [CHROMADB] 初始化ChromaDB管理器，集合名称: {collection_name}")
@@ -60,21 +58,21 @@ class ChromaRAGDatabase:
             logger.info("🚀 [CHROMADB] 开始初始化向量数据库...")
 
             # 1. 初始化ChromaDB持久化客户端
-            persist_directory = CHROMA_DB_PERSIST_DIR
+            persist_directory = Path(DEFAULT_RAG_CONFIG.persist_directory)
             self.client = chromadb.PersistentClient(path=str(persist_directory))
             logger.success(
                 f"✅ [CHROMADB] ChromaDB持久化客户端创建成功，数据目录: {persist_directory}"
             )
 
-            # 2. 加载SentenceTransformer模型（使用项目缓存）
-            logger.info("🔄 [CHROMADB] 加载多语言语义模型...")
-            self.embedding_model = load_multilingual_model()
+            # 2. 获取全局嵌入模型实例
+            logger.info("🔄 [CHROMADB] 获取全局嵌入模型实例...")
+            embedding_model = get_embedding_model()
 
-            if self.embedding_model is None:
-                logger.error("❌ [CHROMADB] 多语言模型加载失败")
+            if embedding_model is None:
+                logger.error("❌ [CHROMADB] 嵌入模型获取失败")
                 return False
 
-            logger.success("✅ [CHROMADB] 多语言语义模型加载成功")
+            logger.success("✅ [CHROMADB] 嵌入模型获取成功")
 
             # 3. 检查集合是否已存在（持久化场景）
             try:
@@ -126,31 +124,19 @@ class ChromaRAGDatabase:
         try:
             logger.info("📚 [CHROMADB] 开始加载知识库数据...")
 
-            if not self.collection or not self.embedding_model:
-                logger.error("❌ [CHROMADB] 集合或模型未初始化")
+            if not self.collection:
+                logger.error("❌ [CHROMADB] 集合未初始化")
                 return False
 
-            # 准备文档数据
-            documents: List[str] = []
-            metadatas: List[Mapping[str, str | int | float | bool | None]] = []
-            ids: List[str] = []
+            # 使用独立函数准备知识库数据
+            embeddings_list, documents, metadatas, ids = (
+                prepare_knowledge_base_for_embedding(knowledge_base)
+            )
 
-            doc_id = 0
-            for category, docs in knowledge_base.items():
-                for doc in docs:
-                    documents.append(doc)
-                    metadatas.append({"category": category, "doc_id": doc_id})
-                    ids.append(f"{category}_{doc_id}")
-                    doc_id += 1
-
-            logger.info(f"📊 [CHROMADB] 准备向量化 {len(documents)} 个文档...")
-
-            # 使用SentenceTransformer计算向量嵌入
-            logger.info("🔄 [CHROMADB] 计算文档向量嵌入...")
-            embeddings = self.embedding_model.encode(documents)
-
-            # 转换为列表格式（ChromaDB要求）
-            embeddings_list = embeddings.tolist()
+            # 检查准备结果
+            if not embeddings_list or not documents:
+                logger.error("❌ [CHROMADB] 知识库数据准备失败")
+                return False
 
             # 批量添加到ChromaDB
             logger.info("💾 [CHROMADB] 存储向量到数据库...")
@@ -189,14 +175,20 @@ class ChromaRAGDatabase:
             tuple: (检索到的文档列表, 相似度分数列表)
         """
         try:
-            if not self.initialized or not self.collection or not self.embedding_model:
+            if not self.initialized or not self.collection:
                 logger.error("❌ [CHROMADB] 数据库未初始化")
+                return [], []
+
+            # 获取全局嵌入模型实例
+            embedding_model = get_embedding_model()
+            if embedding_model is None:
+                logger.error("❌ [CHROMADB] 嵌入模型未初始化")
                 return [], []
 
             logger.info(f"🔍 [CHROMADB] 执行语义搜索: '{query}'")
 
             # 计算查询向量
-            query_embedding = self.embedding_model.encode([query])
+            query_embedding = embedding_model.encode([query])
 
             # 在ChromaDB中执行向量搜索
             results = self.collection.query(
@@ -247,8 +239,85 @@ class ChromaRAGDatabase:
 
 
 ############################################################################################################
+def prepare_knowledge_base_for_embedding(
+    knowledge_base: Dict[str, List[str]],
+) -> Tuple[
+    List[Sequence[float]],
+    List[str],
+    List[Mapping[str, str | int | float | bool | None]],
+    List[str],
+]:
+    """
+    准备知识库数据用于向量化和存储
+
+    Args:
+        knowledge_base: 知识库数据，格式为 {category: [documents]}
+
+    Returns:
+        Tuple: (embeddings, documents, metadatas, ids) - collection.add()方法的参数
+    """
+    try:
+        logger.info("🔄 [PREPARE] 开始准备知识库数据...")
+
+        # 获取全局嵌入模型实例
+        embedding_model = get_embedding_model()
+        if embedding_model is None:
+            logger.error("❌ [PREPARE] 嵌入模型未初始化")
+            return [], [], [], []
+
+        # 准备文档数据
+        documents: List[str] = []
+        metadatas: List[Mapping[str, str | int | float | bool | None]] = []
+        ids: List[str] = []
+
+        doc_id = 0
+        for category, docs in knowledge_base.items():
+            for doc in docs:
+                documents.append(doc)
+                metadatas.append({"category": category, "doc_id": doc_id})
+                ids.append(f"{category}_{doc_id}")
+                doc_id += 1
+
+        logger.info(f"📊 [PREPARE] 准备向量化 {len(documents)} 个文档...")
+
+        # 使用SentenceTransformer计算向量嵌入
+        logger.info("🔄 [PREPARE] 计算文档向量嵌入...")
+        embeddings = embedding_model.encode(documents)
+
+        # 转换为列表格式（ChromaDB要求）
+        embeddings_list = embeddings.tolist()
+
+        logger.success(f"✅ [PREPARE] 成功准备 {len(documents)} 个文档的嵌入数据")
+
+        return embeddings_list, documents, metadatas, ids
+
+    except Exception as e:
+        logger.error(f"❌ [PREPARE] 准备知识库数据失败: {e}\n{traceback.format_exc()}")
+        return [], [], [], []
+
+
+############################################################################################################
+def get_embedding_model() -> Optional[SentenceTransformer]:
+    """
+    获取全局嵌入模型实例（单例模式）
+
+    Returns:
+        Optional[SentenceTransformer]: 全局嵌入模型实例，如果加载失败则返回None
+    """
+    global _embedding_model
+    if _embedding_model is None:
+        logger.info("🔄 [EMBEDDING] 加载多语言语义模型...")
+        _embedding_model = load_multilingual_model()
+        if _embedding_model is None:
+            logger.error("❌ [EMBEDDING] 多语言模型加载失败")
+        else:
+            logger.success("✅ [EMBEDDING] 多语言语义模型加载成功")
+    return _embedding_model
+
+
+############################################################################################################
 def get_chroma_db(
-    collection_name: Optional[str] = None, collection_description: Optional[str] = None
+    # collection_name: Optional[str] = None, collection_description: Optional[str] = None
 ) -> ChromaRAGDatabase:
     """
     获取全局ChromaDB实例（单例模式）
@@ -263,8 +332,8 @@ def get_chroma_db(
     global _chroma_db
     if _chroma_db is None:
         _chroma_db = ChromaRAGDatabase(
-            collection_name or DEFAULT_RAG_CONFIG.collection_name,
-            collection_description or DEFAULT_RAG_CONFIG.description,
+            collection_name=DEFAULT_RAG_CONFIG.collection_name,
+            collection_description=DEFAULT_RAG_CONFIG.description,
         )
     return _chroma_db
 
@@ -279,15 +348,18 @@ def chromadb_clear_database() -> None:
     import os
 
     try:
-        global _chroma_db
+        global _chroma_db, _embedding_model
 
         # 如果有现有实例，先关闭
         if _chroma_db:
             _chroma_db.close()
             _chroma_db = None
 
+        # 清理全局嵌入模型
+        _embedding_model = None
+
         # 删除持久化数据目录
-        persist_directory = CHROMA_DB_PERSIST_DIR
+        persist_directory = Path(DEFAULT_RAG_CONFIG.persist_directory)
         if persist_directory.exists():
             shutil.rmtree(persist_directory)
             logger.warning(f"🗑️ [CHROMADB] 已删除持久化数据目录: {persist_directory}")
@@ -298,45 +370,45 @@ def chromadb_clear_database() -> None:
 
     except Exception as e:
         logger.error(f"❌ 清空ChromaDB持久化数据库时发生错误: {e}")
-        logger.info(f"💡 建议手动删除 {CHROMA_DB_PERSIST_DIR} 目录")
+        logger.info(f"💡 建议手动删除 {DEFAULT_RAG_CONFIG.persist_directory} 目录")
         raise
 
 
 ############################################################################################################
-def chromadb_reset_database(knowledge_base: Dict[str, List[str]]) -> None:
-    """
-    清空ChromaDB数据库并重建（保留持久化能力）
-    注意：该方法会删除所有数据，然后重新加载指定数据
+# def chromadb_reset_database(knowledge_base: Dict[str, List[str]]) -> None:
+#     """
+#     清空ChromaDB数据库并重建（保留持久化能力）
+#     注意：该方法会删除所有数据，然后重新加载指定数据
 
-    Args:
-        collection_name: 集合名称
-        collection_description: 集合描述
-        knowledge_base: 要加载的知识库数据
-    """
-    try:
-        global _chroma_db
+#     Args:
+#         collection_name: 集合名称
+#         collection_description: 集合描述
+#         knowledge_base: 要加载的知识库数据
+#     """
+#     try:
+#         global _chroma_db, _embedding_model
 
-        # 先清空数据库
-        chromadb_clear_database()
+#         # 先清空数据库
+#         chromadb_clear_database()
 
-        # 重新创建并初始化
-        chroma_db = get_chroma_db()
-        success = chroma_db.initialize()
+#         # 重新创建并初始化
+#         chroma_db = get_chroma_db()
+#         success = chroma_db.initialize()
 
-        if success:
-            # 加载知识库数据
-            load_success = chroma_db.load_knowledge_base(knowledge_base)
-            if load_success:
-                logger.warning("🔄 ChromaDB持久化数据库已被清除然后重建")
-            else:
-                raise RuntimeError("ChromaDB知识库数据加载失败")
-        else:
-            raise RuntimeError("ChromaDB数据库重建失败")
+#         if success:
+#             # 加载知识库数据
+#             load_success = chroma_db.load_knowledge_base(knowledge_base)
+#             if load_success:
+#                 logger.warning("🔄 ChromaDB持久化数据库已被清除然后重建")
+#             else:
+#                 raise RuntimeError("ChromaDB知识库数据加载失败")
+#         else:
+#             raise RuntimeError("ChromaDB数据库重建失败")
 
-    except Exception as e:
-        logger.error(f"❌ 重置ChromaDB数据库时发生错误: {e}")
-        logger.info("💡 建议检查ChromaDB配置和依赖")
-        raise
+#     except Exception as e:
+#         logger.error(f"❌ 重置ChromaDB数据库时发生错误: {e}")
+#         logger.info("💡 建议检查ChromaDB配置和依赖")
+#         raise
 
 
 ############################################################################################################
@@ -387,4 +459,3 @@ def initialize_rag_system(knowledge_base: Dict[str, List[str]]) -> bool:
 
 
 ############################################################################################################
-

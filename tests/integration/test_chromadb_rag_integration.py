@@ -11,6 +11,7 @@ from loguru import logger
 
 from src.multi_agents_game.db.chromadb_client import (
     get_chroma_db,
+    get_embedding_model,
     initialize_rag_system,
     chromadb_clear_database,
 )
@@ -85,7 +86,10 @@ class TestChromaDBRAGIntegration:
         assert chroma_db.initialized, "数据库应该已初始化"
         assert chroma_db.client is not None, "ChromaDB客户端应该已创建"
         assert chroma_db.collection is not None, "ChromaDB集合应该已创建"
-        assert chroma_db.embedding_model is not None, "嵌入模型应该已加载"
+
+        # 验证全局嵌入模型已加载
+        embedding_model = get_embedding_model()
+        assert embedding_model is not None, "嵌入模型应该已加载"
 
         # 验证集合中有数据
         collection_count = chroma_db.collection.count()

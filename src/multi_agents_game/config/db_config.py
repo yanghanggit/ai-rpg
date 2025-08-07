@@ -108,6 +108,7 @@ class JWTConfig(BaseModel):
 class RAGConfig(BaseModel):
     collection_name: str = "rag_knowledge_base"
     description: str = "is a knowledge base for RAG system"
+    persist_base_dir: str = "chroma_db"
 
     def __init__(self, **kwargs: Any) -> None:
         # 从环境变量读取配置，如果没有则使用默认值
@@ -120,7 +121,16 @@ class RAGConfig(BaseModel):
                 "RAG_DESCRIPTION",
                 kwargs.get("description", "is a knowledge base for RAG system"),
             ),
+            persist_base_dir=os.getenv(
+                "RAG_PERSIST_BASE_DIR",
+                kwargs.get("persist_base_dir", "chroma_db"),
+            ),
         )
+
+    @property
+    def persist_directory(self) -> str:
+        """根据collection_name生成持久化目录路径"""
+        return f"{self.persist_base_dir}/{self.collection_name}"
 
 
 ##################################################################################################################
@@ -131,5 +141,3 @@ DEFAULT_POSTGRES_CONFIG: Final[PostgresConfig] = PostgresConfig()
 DEFAULT_JWT_CONFIG: Final[JWTConfig] = JWTConfig()
 DEFAULT_RAG_CONFIG: Final[RAGConfig] = RAGConfig()
 ##################################################################################################################
-
-

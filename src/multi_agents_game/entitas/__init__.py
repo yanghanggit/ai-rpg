@@ -1,26 +1,26 @@
-from .entity import Entity
+from .collector import Collector
+from .components import Component
 
 # from .entity_index import PrimaryEntityIndex, EntityIndex
 from .context import Context
-from .matcher import Matcher
-from .group import Group, GroupEvent
-from .collector import Collector
-from .components import Component
-from .processors import (
-    Processors,
-    InitializeProcessor,
-    ExecuteProcessor,
-    CleanupProcessor,
-    TearDownProcessor,
-    ReactiveProcessor,
-)
+from .entity import Entity
 from .event import Event
 from .exceptions import (
     AlreadyAddedComponent,
+    EntitasException,
+    GroupSingleEntity,
     MissingComponent,
     MissingEntity,
-    GroupSingleEntity,
-    EntitasException,
+)
+from .group import Group, GroupEvent
+from .matcher import Matcher
+from .processors import (
+    CleanupProcessor,
+    ExecuteProcessor,
+    InitializeProcessor,
+    Processors,
+    ReactiveProcessor,
+    TearDownProcessor,
 )
 
 __all__ = [

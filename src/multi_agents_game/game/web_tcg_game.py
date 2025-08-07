@@ -1,5 +1,6 @@
-from ..game.tcg_game import TCGGame
 from typing import final
+
+from ..game.tcg_game import TCGGame
 
 
 @final

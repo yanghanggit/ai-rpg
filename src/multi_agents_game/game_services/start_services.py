@@ -1,18 +1,19 @@
+from typing import Optional
+
 from fastapi import APIRouter, HTTPException, status
-from ..game_services.game_server import GameServerInstance
-from ..models import StartRequest, StartResponse, World
-from ..game.game_options import WebGameUserOptions
 from loguru import logger
-from ..demo.stage_dungeon4 import (
-    create_demo_dungeon4,
-)
 
 # from ..chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from ..chat_services.chat_system import ChatSystem
-from typing import Optional
-from ..game.web_tcg_game import WebTCGGame
-from ..game.player_proxy import PlayerProxy
 from ..config import DEFAULT_SERVER_SETTINGS_CONFIG
+from ..demo.stage_dungeon4 import (
+    create_demo_dungeon4,
+)
+from ..game.game_options import WebGameUserOptions
+from ..game.player_proxy import PlayerProxy
+from ..game.web_tcg_game import WebTCGGame
+from ..game_services.game_server import GameServerInstance
+from ..models import StartRequest, StartResponse, World
 
 ###################################################################################################################################################################
 start_router = APIRouter()

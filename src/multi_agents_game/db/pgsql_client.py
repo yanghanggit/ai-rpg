@@ -1,8 +1,9 @@
 from loguru import logger
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+
 from ..config import DEFAULT_POSTGRES_CONFIG
-from .pgsql_object import Base
+from .pgsql_base import Base
 
 ############################################################################################################
 engine = create_engine(DEFAULT_POSTGRES_CONFIG.connection_string)
@@ -17,7 +18,9 @@ def pgsql_ensure_database_tables() -> None:
     """
     try:
         # 导入所有模型以确保它们被注册到Base.metadata中
-        from .pgsql_vector import VectorDocumentDB  # noqa: F401 # 确保向量表模型被注册
+        from .pgsql_vector_document import (
+            VectorDocumentDB,
+        )  # noqa: F401 # 确保向量表模型被注册
 
         Base.metadata.create_all(bind=engine)
         logger.info("✅ 数据库表结构已确保存在")
@@ -35,7 +38,9 @@ def pgsql_reset_database() -> None:
     """
     try:
         # 导入所有模型以确保它们被注册到Base.metadata中
-        from .pgsql_vector import VectorDocumentDB  # noqa: F401 # 确保向量表模型被注册
+        from .pgsql_vector_document import (
+            VectorDocumentDB,
+        )  # noqa: F401 # 确保向量表模型被注册
 
         # 使用直接的SQL命令执行级联删除
         with engine.begin() as conn:

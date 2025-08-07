@@ -1,9 +1,10 @@
 from typing import (
     Dict,
+    Final,
     Type,
     TypeVar,
-    Final,
 )
+
 from ..entitas.components import Component
 
 ############################################################################################################

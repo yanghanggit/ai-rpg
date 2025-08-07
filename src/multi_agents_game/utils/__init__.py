@@ -10,6 +10,19 @@ Multi-Agents Game Framework 工具模块
 """
 
 # JSON格式化工具
+# Excel工具
+from .excel import (
+    convert_dict_to_model,
+    display_excel_info,
+    get_column_names,
+    list_valid_rows,
+    list_valid_rows_as_models,
+    read_excel_file,
+    safe_extract,
+    safe_get_from_dict,
+    safe_get_row_number,
+    validate_dataframe,
+)
 from .json_format import (
     clean_json_string,
     combine_json_fragments,
@@ -20,20 +33,6 @@ from .json_format import (
 
 # 模型加载工具
 from .model_loader import ModelLoader
-
-# Excel工具
-from .excel import (
-    read_excel_file,
-    display_excel_info,
-    list_valid_rows,
-    safe_extract,
-    safe_get_from_dict,
-    get_column_names,
-    validate_dataframe,
-    safe_get_row_number,
-    convert_dict_to_model,
-    list_valid_rows_as_models,
-)
 
 # 公开的API
 __all__ = [

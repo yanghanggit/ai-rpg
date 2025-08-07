@@ -9,8 +9,9 @@ import numpy as np
 from typing import List, Any, cast
 from sqlalchemy import create_engine, text
 from loguru import logger
-import sys
-import os
+
+# import sys
+# import os
 import hashlib
 
 # 导入配置
@@ -292,7 +293,7 @@ def test_high_dimension_vectors() -> None:
 @pytest.mark.database
 def test_vector_document_operations() -> None:
     """测试向量文档操作 - 使用ORM"""
-    from src.multi_agents_game.db.pgsql_vector_ops import (
+    from src.multi_agents_game.db.pgsql_vector_document import (
         save_vector_document,
         search_similar_documents,
         get_database_vector_stats,
@@ -409,7 +410,7 @@ def test_conversation_vector_operations() -> None:
 @pytest.mark.demo
 def demo_document_rag_system() -> None:
     """演示基于文档的RAG系统"""
-    from src.multi_agents_game.db.pgsql_vector_ops import (
+    from src.multi_agents_game.db.pgsql_vector_document import (
         save_vector_document,
         search_similar_documents,
     )
@@ -525,7 +526,9 @@ def run_all_vector_tests() -> None:
         # test_game_knowledge_operations()       # 已移除
 
         # 获取最终统计
-        from src.multi_agents_game.db.pgsql_vector_ops import get_database_vector_stats
+        from src.multi_agents_game.db.pgsql_vector_document import (
+            get_database_vector_stats,
+        )
 
         final_stats = get_database_vector_stats()
         logger.info(f"🏁 测试完成，最终统计: {final_stats}")
@@ -552,7 +555,9 @@ def run_all_demos() -> None:
         demo_game_knowledge_system()  # 现在是占位符函数
 
         # 显示最终统计
-        from src.multi_agents_game.db.pgsql_vector_ops import get_database_vector_stats
+        from src.multi_agents_game.db.pgsql_vector_document import (
+            get_database_vector_stats,
+        )
 
         logger.info("\n📊 最终数据库统计:")
         stats = get_database_vector_stats()
@@ -617,7 +622,9 @@ def test_comprehensive_pgvector_demos(setup_database_tables: Any) -> None:
         demo_game_knowledge_system()  # 现在是占位符函数
 
         # 显示最终统计
-        from src.multi_agents_game.db.pgsql_vector_ops import get_database_vector_stats
+        from src.multi_agents_game.db.pgsql_vector_document import (
+            get_database_vector_stats,
+        )
 
         logger.info("\n📊 最终数据库统计:")
         stats = get_database_vector_stats()

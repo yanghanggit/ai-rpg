@@ -1,20 +1,26 @@
-from loguru import logger
 from dotenv import load_dotenv
+from loguru import logger
 
 # 加载 .env 文件中的环境变量
 load_dotenv()
 
 import os
 import traceback
-from typing import Annotated, Dict, List, Any
-from typing_extensions import TypedDict
+from typing import Annotated, Any, Dict, List
+
+from langchain.schema import AIMessage, HumanMessage
+from langchain_core.messages import BaseMessage
+from langchain_deepseek import ChatDeepSeek
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
-from langchain_deepseek import ChatDeepSeek
-from langchain_core.messages import BaseMessage
-from pydantic import SecretStr
-from langchain.schema import HumanMessage, AIMessage
 from langgraph.graph.state import CompiledStateGraph
+from pydantic import SecretStr
+from typing_extensions import TypedDict
+
+# 导入ChromaDB相关功能
+from ..db.chromadb_client import (
+    get_chroma_db,
+)
 
 
 ############################################################################################################
@@ -26,53 +32,26 @@ class State(TypedDict):
 class RAGState(TypedDict):
     messages: Annotated[List[BaseMessage], add_messages]
     user_query: str  # 用户原始查询
-    retrieved_docs: List[str]  # 模拟检索到的文档
+    retrieved_docs: List[str]  # 检索到的文档
     enhanced_context: str  # 增强后的上下文
+    similarity_scores: List[float]  # 相似度分数（用于调试和分析）
 
 
 ############################################################################################################
-# 模拟测试数据 - 基于艾尔法尼亚世界设定的专有知识库
-MOCK_KNOWLEDGE_BASE = {
-    "艾尔法尼亚": [
-        "艾尔法尼亚大陆分为三大王国：人类的阿斯特拉王国、精灵的月桂森林联邦、兽人的铁爪部族联盟。",
-        "大陆中央矗立着古老的封印之塔，传说圣剑「晨曦之刃」就封印在塔顶，用来镇压魔王的力量。",
-        "艾尔法尼亚的魔法体系分为五个学派：火焰、冰霜、雷电、治愈和暗影，每个种族都有其擅长的魔法流派。",
-    ],
-    "圣剑": [
-        "晨曦之刃是传说中的圣剑，剑身由星辰钢打造，剑柄镶嵌着光明神的眼泪结晶。",
-        "只有拥有纯洁之心的勇者才能拔出圣剑，据说上一位持剑者是300年前的勇者莉莉丝。",
-        "圣剑具有三种神圣技能：净化之光（驱散黑暗魔法）、审判之炎（对邪恶生物造成巨大伤害）、希望守护（保护队友免受致命伤害）。",
-    ],
-    "魔王": [
-        "黑暗魔王阿巴顿曾经统治艾尔法尼亚大陆，将其变成死亡与绝望的土地。",
-        "阿巴顿拥有不死之身，唯一能彻底消灭他的方法是用圣剑击中他的黑暗之心。",
-        "最近黑暗气息再度出现，村民报告在月圆之夜听到魔王的咆哮声从封印之塔传来。",
-    ],
-    "种族": [
-        "人类以阿斯特拉王国为中心，擅长锻造和贸易，他们的骑士团以重甲和长剑闻名。",
-        "精灵居住在月桂森林，寿命可达千年，是最优秀的弓箭手和自然魔法师。",
-        "兽人部族生活在北方山脉，身体强壮，崇尚武力，他们的战士可以徒手撕裂钢铁。",
-        "还有传说中的龙族隐居在云端，偶尔会与勇敢的冒险者签订契约。",
-    ],
-    "遗迹": [
-        "失落的贤者之塔：古代魔法师的研究所，内藏强大的魔法道具和禁忌知识。",
-        "沉没的水晶城：曾经的矮人王国，因挖掘过深触怒了地底魔物而被淹没。",
-        "暗影墓地：魔王军队的埋骨之地，据说夜晚会有亡灵士兵游荡。",
-        "星辰神殿：供奉光明神的圣地，神殿中的圣水可以治愈任何诅咒。",
-    ],
-    "冒险者": [
-        "艾尔法尼亚的冒险者公会总部位于阿斯特拉王国首都，分为青铜、白银、黄金、铂金四个等级。",
-        "最著名的冒险者小队是「暴风雪团」，由人类剑士加伦、精灵法师艾莉娅和兽人战士格罗姆组成。",
-        "冒险者的基本装备包括：附魔武器、魔法药水、探测魔物的水晶球和紧急传送卷轴。",
-    ],
-}
-
-
+############################################################################################################
 ############################################################################################################
 def retrieval_node(state: RAGState) -> Dict[str, Any]:
-    """模拟文档检索节点"""
+    """
+    ChromaDB向量检索节点
+
+    功能改造：
+    1. 将原来的关键词匹配改为ChromaDB语义向量搜索
+    2. 使用SentenceTransformer计算查询向量
+    3. 返回最相似的文档和相似度分数
+    4. 保持原有的错误处理和日志记录
+    """
     try:
-        logger.info("🔍 [RETRIEVAL] 开始检索相关文档...")
+        logger.info("🔍 [RETRIEVAL] 开始向量语义检索...")
 
         user_query = state.get("user_query", "")
         if not user_query:
@@ -86,62 +65,132 @@ def retrieval_node(state: RAGState) -> Dict[str, Any]:
 
         logger.info(f"🔍 [RETRIEVAL] 用户查询: {user_query}")
 
-        # 简单的关键词匹配检索
-        retrieved_docs = []
-        query_lower = user_query.lower()
+        # 获取ChromaDB实例并执行语义搜索
+        chroma_db = get_chroma_db()
 
-        for keyword, docs in MOCK_KNOWLEDGE_BASE.items():
-            if keyword in query_lower:
-                retrieved_docs.extend(docs)
-                logger.info(
-                    f"🔍 [RETRIEVAL] 匹配关键词 '{keyword}', 找到 {len(docs)} 个文档"
-                )
+        if not chroma_db.initialized:
+            logger.error("❌ [RETRIEVAL] ChromaDB未初始化，无法执行搜索")
+            return {
+                "user_query": user_query,
+                "retrieved_docs": ["ChromaDB数据库未初始化，请检查系统配置。"],
+                "similarity_scores": [0.0],
+            }
 
-        # 如果没有匹配到任何关键词，返回通用信息
+        # 执行向量语义搜索
+        from ..db.rag_ops import rag_semantic_search
+
+        retrieved_docs, similarity_scores = rag_semantic_search(
+            query=user_query, top_k=5  # 返回最相似的5个文档
+        )
+
+        # 检查搜索结果
         if not retrieved_docs:
+            logger.warning("🔍 [RETRIEVAL] 语义搜索未找到相关文档，使用默认回复")
             retrieved_docs = [
                 "抱歉，没有找到相关的具体信息，我会尽力根据常识回答您的问题。"
             ]
-            logger.warning("🔍 [RETRIEVAL] 未找到匹配文档，使用默认回复")
+            similarity_scores = [0.0]
+
+        # 过滤低相似度结果（相似度阈值：0.3）
+        MIN_SIMILARITY = 0.3
+        filtered_docs = []
+        filtered_scores = []
+
+        for doc, score in zip(retrieved_docs, similarity_scores):
+            if score >= MIN_SIMILARITY:
+                filtered_docs.append(doc)
+                filtered_scores.append(score)
+
+        # 如果过滤后没有文档，保留最高分的文档
+        if not filtered_docs and retrieved_docs:
+            filtered_docs = [retrieved_docs[0]]
+            filtered_scores = [similarity_scores[0]]
+            logger.info(
+                f"🔍 [RETRIEVAL] 所有结果低于阈值，保留最高分文档 (相似度: {similarity_scores[0]:.3f})"
+            )
 
         logger.success(
-            f"🔍 [RETRIEVAL] 检索完成，共找到 {len(retrieved_docs)} 个相关文档"
+            f"🔍 [RETRIEVAL] 语义检索完成，共找到 {len(filtered_docs)} 个相关文档"
         )
 
-        return {"user_query": user_query, "retrieved_docs": retrieved_docs}
+        # 记录相似度信息
+        for i, (doc, score) in enumerate(zip(filtered_docs, filtered_scores)):
+            logger.info(f"  📄 [{i+1}] 相似度: {score:.3f}, 内容: {doc[:50]}...")
+
+        return {
+            "user_query": user_query,
+            "retrieved_docs": filtered_docs,
+            "similarity_scores": filtered_scores,
+        }
 
     except Exception as e:
         logger.error(f"🔍 [RETRIEVAL] 检索节点错误: {e}\n{traceback.format_exc()}")
         return {
             "user_query": state.get("user_query", ""),
             "retrieved_docs": ["检索过程中发生错误，将使用默认回复。"],
+            "similarity_scores": [0.0],
         }
 
 
 ############################################################################################################
 def context_enhancement_node(state: RAGState) -> Dict[str, Any]:
-    """模拟上下文增强节点"""
+    """
+    上下文增强节点（支持相似度信息）
+
+    功能增强：
+    1. 保持原有的上下文构建逻辑
+    2. 添加相似度分数信息到上下文中
+    3. 提供更丰富的检索质量信息
+    4. 为LLM提供更好的参考依据
+    """
     try:
         logger.info("📝 [ENHANCEMENT] 开始增强上下文...")
 
         user_query = state.get("user_query", "")
         retrieved_docs = state.get("retrieved_docs", [])
+        similarity_scores = state.get("similarity_scores", [])
 
         logger.info(f"📝 [ENHANCEMENT] 处理查询: {user_query}")
         logger.info(f"📝 [ENHANCEMENT] 检索到的文档数量: {len(retrieved_docs)}")
+
+        if similarity_scores:
+            avg_similarity = sum(similarity_scores) / len(similarity_scores)
+            max_similarity = max(similarity_scores)
+            logger.info(
+                f"📝 [ENHANCEMENT] 平均相似度: {avg_similarity:.3f}, 最高相似度: {max_similarity:.3f}"
+            )
 
         # 构建增强的上下文prompt
         context_parts = [
             "请基于以下相关信息回答用户的问题:",
             "",
-            "相关信息:",
+            "相关信息 (按相似度排序):",
         ]
 
-        for i, doc in enumerate(retrieved_docs, 1):
-            context_parts.append(f"{i}. {doc}")
+        # 将文档和相似度分数配对，并按相似度排序
+        if similarity_scores and len(similarity_scores) == len(retrieved_docs):
+            doc_score_pairs = list(zip(retrieved_docs, similarity_scores))
+            # 按相似度降序排序
+            doc_score_pairs.sort(key=lambda x: x[1], reverse=True)
+
+            for i, (doc, score) in enumerate(doc_score_pairs, 1):
+                # 添加相似度信息到上下文中（帮助LLM理解检索质量）
+                context_parts.append(f"{i}. [相似度: {score:.3f}] {doc}")
+        else:
+            # 回退到原来的格式（没有相似度信息）
+            for i, doc in enumerate(retrieved_docs, 1):
+                context_parts.append(f"{i}. {doc}")
 
         context_parts.extend(
-            ["", f"用户问题: {user_query}", "", "请基于上述信息给出准确、有帮助的回答:"]
+            [
+                "",
+                f"用户问题: {user_query}",
+                "",
+                "请基于上述信息给出准确、有帮助的回答:",
+                "- 优先使用相似度较高的信息",
+                "- 如果相似度较低，请适当提醒用户",
+                "- 保持回答的准确性和相关性",
+            ]
         )
 
         enhanced_context = "\n".join(context_parts)
@@ -273,6 +322,7 @@ def stream_rag_graph_updates(
             "user_query": user_query,
             "retrieved_docs": [],
             "enhanced_context": "",
+            "similarity_scores": [],  # 添加相似度分数字段
         }
 
         logger.info(f"🚀 RAG输入状态准备完成，用户查询: {user_query}")
@@ -299,64 +349,10 @@ def stream_rag_graph_updates(
 
 ############################################################################################################
 def main() -> None:
-    """RAG聊天系统主函数"""
-    logger.info("🎯 启动RAG测试聊天系统...")
-
-    # 聊天历史
-    chat_history_state: State = {"messages": []}
-
-    # 生成RAG状态图
-    rag_compiled_graph = create_rag_compiled_graph()
-
-    logger.success("🎯 RAG系统初始化完成，开始对话...")
-    logger.info("💡 提示：您可以询问关于艾尔法尼亚世界的问题，例如：")
-    logger.info("   - 艾尔法尼亚大陆有哪些王国？")
-    logger.info("   - 圣剑有什么特殊能力？")
-    logger.info("   - 魔王阿巴顿的弱点是什么？")
-    logger.info("   - 有哪些种族生活在这片大陆？")
-    logger.info("   - 著名的遗迹有哪些？")
-    logger.info("   - 冒险者公会是如何运作的？")
-    logger.info("💡 输入 /quit、/exit 或 /q 退出程序")
-
-    while True:
-        try:
-            print("\n" + "=" * 60)
-            user_input = input("User: ")
-
-            if user_input.lower() in ["/quit", "/exit", "/q"]:
-                print("Goodbye!")
-                break
-
-            # 用户输入
-            user_input_state: State = {"messages": [HumanMessage(content=user_input)]}
-
-            # 执行RAG流程
-            update_messages = stream_rag_graph_updates(
-                rag_compiled_graph=rag_compiled_graph,
-                chat_history_state=chat_history_state,
-                user_input_state=user_input_state,
-            )
-
-            # 更新聊天历史
-            chat_history_state["messages"].extend(user_input_state["messages"])
-            chat_history_state["messages"].extend(update_messages)
-
-            # 显示最新的AI回复
-            if update_messages:
-                latest_response = update_messages[-1]
-                print(f"\nDeepSeek: {latest_response.content}")
-                logger.success(f"✅ RAG回答: {latest_response.content}")
-
-            logger.debug("=" * 60)
-
-        except Exception as e:
-            logger.error(
-                f"❌ RAG流程处理错误: {e}\n" f"Traceback: {traceback.format_exc()}"
-            )
-            print("抱歉，处理您的请求时发生错误，请重试。")
+    pass
 
 
 ############################################################################################################
 if __name__ == "__main__":
-    # 启动RAG聊天系统
+    # 提示用户使用专用启动脚本
     main()

@@ -1,12 +1,13 @@
+from typing import Final, List
+
 from ..models import (
     Actor,
-    Stage,
-    WorldSystem,
     ActorCharacterSheet,
-    StageCharacterSheet,
     RPGCharacterProfile,
+    Stage,
+    StageCharacterSheet,
+    WorldSystem,
 )
-from typing import List, Final
 
 #######################################################################################################################################
 GLOBAL_GAME_MECHANICS: Final[

@@ -1,7 +1,8 @@
-from ..entitas import Entity, Matcher, GroupEvent
 from typing import final, override
+
+from ..entitas import Entity, GroupEvent, Matcher
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
-from ..models import AnnounceAction, HomeComponent, HeroComponent, AnnounceEvent
+from ..models import AnnounceAction, AnnounceEvent, HeroComponent, HomeComponent
 
 
 ####################################################################################################################################

@@ -1,6 +1,8 @@
-from typing import List, final
-from pydantic import BaseModel
 from enum import StrEnum, unique
+from typing import List, final
+
+from pydantic import BaseModel
+
 from .character_sheet import ActorCharacterSheet, StageCharacterSheet
 
 

@@ -1,6 +1,7 @@
-from typing import Final, final, ClassVar, Any
-from pydantic import BaseModel
 import os
+from typing import Any, ClassVar, Final, final
+
+from pydantic import BaseModel
 
 
 ##################################################################################################################
@@ -102,9 +103,41 @@ class JWTConfig(BaseModel):
 
 
 ##################################################################################################################
+# RAG 配置
+@final
+class RAGConfig(BaseModel):
+    collection_name: str = "rag_knowledge_base"
+    description: str = "is a knowledge base for RAG system"
+    persist_base_dir: str = "chroma_db"
+
+    def __init__(self, **kwargs: Any) -> None:
+        # 从环境变量读取配置，如果没有则使用默认值
+        super().__init__(
+            collection_name=os.getenv(
+                "RAG_COLLECTION_NAME",
+                kwargs.get("collection_name", "rag_knowledge_base"),
+            ),
+            description=os.getenv(
+                "RAG_DESCRIPTION",
+                kwargs.get("description", "is a knowledge base for RAG system"),
+            ),
+            persist_base_dir=os.getenv(
+                "RAG_PERSIST_BASE_DIR",
+                kwargs.get("persist_base_dir", "chroma_db"),
+            ),
+        )
+
+    @property
+    def persist_directory(self) -> str:
+        """根据collection_name生成持久化目录路径"""
+        return f"{self.persist_base_dir}/{self.collection_name}"
+
+
+##################################################################################################################
 # 默认配置实例
 DEFAULT_REDIS_CONFIG: Final[RedisConfig] = RedisConfig()
 DEFAULT_MONGODB_CONFIG: Final[MongoDBConfig] = MongoDBConfig()
 DEFAULT_POSTGRES_CONFIG: Final[PostgresConfig] = PostgresConfig()
 DEFAULT_JWT_CONFIG: Final[JWTConfig] = JWTConfig()
+DEFAULT_RAG_CONFIG: Final[RAGConfig] = RAGConfig()
 ##################################################################################################################

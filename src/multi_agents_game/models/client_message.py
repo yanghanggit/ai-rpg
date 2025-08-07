@@ -1,5 +1,6 @@
 from enum import IntEnum, unique
 from typing import final
+
 from pydantic import BaseModel
 
 # from .registry import register_base_model_class

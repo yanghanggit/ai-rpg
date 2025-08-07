@@ -1,13 +1,13 @@
+from ..demo.actor_spider import create_actor_spider
 from ..models import (
-    StageType,
     Dungeon,
+    StageType,
 )
+from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 from .excel_data_manager import get_excel_data_manager
 from .utils import (
     create_stage,
 )
-from ..demo.actor_spider import create_actor_spider
-from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 
 
 def create_demo_dungeon3() -> Dungeon:

@@ -1,8 +1,9 @@
-import pandas as pd
 from pathlib import Path
-from typing import Optional, List, Dict, Any, TypeVar, Type
-from pydantic import BaseModel
+from typing import Any, Dict, List, Optional, Type, TypeVar
+
+import pandas as pd
 from loguru import logger
+from pydantic import BaseModel
 
 T = TypeVar("T", bound=BaseModel)
 

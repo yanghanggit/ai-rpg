@@ -1,13 +1,13 @@
 from ..models import (
-    ActorType,
     Actor,
+    ActorType,
     RPGCharacterProfile,
 )
+from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 from .excel_data_manager import get_excel_data_manager
 from .utils import (
     create_actor,
 )
-from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 
 
 def create_actor_spider() -> Actor:

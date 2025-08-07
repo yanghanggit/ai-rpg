@@ -1,10 +1,11 @@
 from enum import Enum
+from typing import Optional, Set
+
+from .components import Component
+from .entity import Entity
 from .event import Event
 from .exceptions import GroupSingleEntity
 from .matcher import Matcher
-from .entity import Entity
-from .components import Component
-from typing import Optional, Set
 
 
 class GroupEvent(Enum):

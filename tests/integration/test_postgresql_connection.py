@@ -11,14 +11,11 @@ Date: 2025-08-01
 
 from typing import Generator
 import pytest
-import sys
-from pathlib import Path
 from loguru import logger
 from sqlalchemy import text
 
 from src.multi_agents_game.db.pgsql_client import SessionLocal
-from src.multi_agents_game.db.pgsql_object import UserDB
-from src.multi_agents_game.db.pgsql_user import has_user, save_user, get_user
+from src.multi_agents_game.db.pgsql_user import UserDB, has_user, save_user, get_user
 
 
 class TestPostgreSQLConnection:

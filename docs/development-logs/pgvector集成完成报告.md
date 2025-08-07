@@ -52,7 +52,7 @@
 
 ## 📂 核心功能模块
 
-### 1. 数据模型 (`src/multi_agents_game/db/pgsql_vector.py`)
+### 1. 数据模型 (`src/multi_agents_game/db/pgsql_vector_ops.py`)
 
 - ✅ `VectorDocumentDB`: 文档向量存储，支持RAG功能
 - ❌ `ConversationVectorDB`: 对话向量存储（已移除）
@@ -74,8 +74,7 @@
 
 ```text
 src/multi_agents_game/db/
-├── pgsql_vector.py          # 向量数据模型定义
-├── pgsql_vector_ops.py      # 向量操作封装函数
+├── pgsql_vector_ops.py      # 向量数据模型定义和操作封装函数
 └── (测试和演示文件已移至 /scripts 目录)
 ```
 

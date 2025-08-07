@@ -25,9 +25,6 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
 
-# from pathlib import Path
-
-# Import all required modules at the top
 from loguru import logger
 from multi_agents_game.db.account import FAKE_USER
 
@@ -169,6 +166,56 @@ def _mongodb_create_and_store_demo_world() -> None:
 
 
 #######################################################################################################
+def _setup_chromadb_rag_environment() -> None:
+    """
+    初始化RAG系统
+
+    清理现有的ChromaDB数据，然后使用正式的知识库数据重新初始化RAG系统，
+    包括向量数据库的设置和知识库数据的加载
+    """
+    logger.info("🚀 初始化RAG系统...")
+
+    # 导入必要的模块
+    from multi_agents_game.db.chromadb_client import chromadb_clear_database
+    from multi_agents_game.db.rag_ops import initialize_rag_system
+    from multi_agents_game.demo.campaign_setting import FANTASY_WORLD_RPG_KNOWLEDGE_BASE
+
+    try:
+        # 清理现有的ChromaDB数据
+        logger.info("🧹 清空ChromaDB数据库...")
+        chromadb_clear_database()
+
+        # 使用正式知识库数据初始化RAG系统
+        logger.info("📚 加载艾尔法尼亚世界知识库...")
+        success = initialize_rag_system(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)
+
+        if success:
+            logger.success("✅ RAG系统初始化成功!")
+            logger.info(f"  - 知识库类别数量: {len(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)}")
+
+            # 统计总文档数量
+            total_documents = sum(
+                len(docs) for docs in FANTASY_WORLD_RPG_KNOWLEDGE_BASE.values()
+            )
+            logger.info(f"  - 总文档数量: {total_documents}")
+
+            # 显示知识库类别
+            categories = list(FANTASY_WORLD_RPG_KNOWLEDGE_BASE.keys())
+            logger.info(f"  - 知识库类别: {', '.join(categories)}")
+
+        else:
+            logger.error("❌ RAG系统初始化失败!")
+            raise Exception("RAG系统初始化返回失败状态")
+
+    except ImportError as e:
+        logger.error(f"❌ RAG系统模块导入失败: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"❌ RAG系统初始化过程中发生错误: {e}")
+        raise
+
+
+#######################################################################################################
 # Development Environment Setup Utility
 def main() -> None:
 
@@ -203,6 +250,14 @@ def main() -> None:
         logger.success("✅ MongoDB 初始化完成")
     except Exception as e:
         logger.error(f"❌ MongoDB 初始化失败: {e}")
+
+    # RAG 系统相关操作
+    try:
+        logger.info("🚀 初始化RAG系统...")
+        _setup_chromadb_rag_environment()
+        logger.success("✅ RAG 系统初始化完成")
+    except Exception as e:
+        logger.error(f"❌ RAG 系统初始化失败: {e}")
 
     logger.info("🎉 开发环境初始化完成")
 

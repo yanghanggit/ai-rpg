@@ -1,5 +1,6 @@
-from ..entitas import ExecuteProcessor
 from typing import final, override
+
+from ..entitas import ExecuteProcessor
 from ..game.tcg_game import TCGGame
 
 

@@ -5,11 +5,11 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 
 from ..db.jwt import UserToken, decode_jwt
-from ..db.pgsql_user import has_user, get_user
+from ..db.pgsql_user import get_user, has_user
 from ..db.redis_user import (
+    assign_user_access_token,
     is_access_token_blacklisted,
     is_user_access_token_present,
-    assign_user_access_token,
 )
 
 # 获取当前用户

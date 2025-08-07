@@ -1,11 +1,12 @@
-from ..entitas import Entity, Matcher, GroupEvent
+from typing import final, override
+
+from ..entitas import Entity, GroupEvent, Matcher
+from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
-    MindVoiceAction,
     ActorComponent,
+    MindVoiceAction,
     MindVoiceEvent,
 )
-from typing import final, override
-from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 
 ####################################################################################################################################

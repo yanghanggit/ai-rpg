@@ -1,15 +1,17 @@
-from typing import Tuple, final, List
+from typing import List, Tuple, final
+
 from loguru import logger
-from ..entitas import ExecuteProcessor, Matcher, Entity
 from overrides import override
+
+from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
-    HomeComponent,
     CanStartPlanningComponent,
-    StageComponent,
-    RuntimeComponent,
-    PlayerComponent,
+    HomeComponent,
     PlayerActiveComponent,
+    PlayerComponent,
+    RuntimeComponent,
+    StageComponent,
 )
 
 

@@ -1,13 +1,15 @@
-from loguru import logger
-from typing import Optional, Final, cast, final
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from typing import Final, Optional, cast, final
+
 import httpx
+import requests
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from loguru import logger
+
 from ..chat_services.chat_api import (
     ChatRequest,
-    ChatResponse,
     ChatRequestMessageListType,
+    ChatResponse,
 )
-import requests
 
 
 @final

@@ -18,7 +18,7 @@ def create_stage_cave1() -> Stage:
         kick_off_message="",
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         type=StageType.DUNGEON,
-        stage_profile="你是一个阴暗潮湿的洞窟，墙壁上有会动的苔藓，地上没有一颗石头，全是杂草并且还会动。洞内还有哥布林的营地，地上散落着哥布林的粪便和食物残渣。洞穴深处传来低语声和偶尔的金属碰撞声，似乎有哥布林在进行某种活动。",
+        stage_profile="你是一个阴暗潮湿的洞窟，墙壁上是各种血迹和淬了毒的断掉的箭矢，地上全是各种中毒了的动物的尸骸。洞内还有哥布林的营地，地上散落着哥布林的粪便和食物残渣。洞穴深处传来低语声和偶尔的金属碰撞声，似乎有哥布林在进行某种活动。",
         actors=[],
     )
 

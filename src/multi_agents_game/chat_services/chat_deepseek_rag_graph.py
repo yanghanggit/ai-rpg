@@ -77,8 +77,9 @@ def retrieval_node(state: RAGState) -> Dict[str, Any]:
             }
 
         # 执行向量语义搜索
-        from ..db.chromadb_client import semantic_search
-        retrieved_docs, similarity_scores = semantic_search(
+        from ..db.rag_ops import rag_semantic_search
+
+        retrieved_docs, similarity_scores = rag_semantic_search(
             query=user_query, top_k=5  # 返回最相似的5个文档
         )
 

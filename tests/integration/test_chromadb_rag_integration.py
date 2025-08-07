@@ -11,12 +11,14 @@ from loguru import logger
 
 from src.multi_agents_game.db.chromadb_client import (
     get_chroma_db,
-    initialize_rag_system,
     chromadb_clear_database,
-    semantic_search,  # 添加全局语义搜索函数
+)
+from src.multi_agents_game.db.rag_ops import (
+    initialize_rag_system,
+    rag_semantic_search,  # 添加全局语义搜索函数
 )
 from src.multi_agents_game.db.embedding_manager import get_embedding_model
-from src.multi_agents_game.demo.campaign_setting import ALFANIA_KNOWLEDGE_BASE
+from src.multi_agents_game.demo.campaign_setting import FANTASY_WORLD_RPG_KNOWLEDGE_BASE
 
 
 class TestChromaDBRAGIntegration:
@@ -32,7 +34,7 @@ class TestChromaDBRAGIntegration:
         logger.info(f"✅ ChromaDB实例创建成功: {type(chroma_db)}")
 
         # 测试完整初始化
-        success = initialize_rag_system(ALFANIA_KNOWLEDGE_BASE)
+        success = initialize_rag_system(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)
         assert success, "ChromaDB RAG系统初始化失败"
         logger.success("🎉 ChromaDB RAG系统初始化测试通过！")
 
@@ -43,7 +45,7 @@ class TestChromaDBRAGIntegration:
         # 确保系统已初始化
         chroma_db = get_chroma_db()
         if not chroma_db.initialized:
-            success = initialize_rag_system(ALFANIA_KNOWLEDGE_BASE)
+            success = initialize_rag_system(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)
             assert success, "系统初始化失败"
 
         # 测试语义搜索
@@ -55,7 +57,7 @@ class TestChromaDBRAGIntegration:
         ]
 
         for test_query in test_queries:
-            docs, scores = semantic_search(test_query, top_k=3)
+            docs, scores = rag_semantic_search(test_query, top_k=3)
 
             # 验证搜索结果
             assert isinstance(docs, list), f"搜索结果应该是列表: {test_query}"
@@ -80,7 +82,7 @@ class TestChromaDBRAGIntegration:
 
         # 确保系统已初始化
         if not chroma_db.initialized:
-            success = initialize_rag_system(ALFANIA_KNOWLEDGE_BASE)
+            success = initialize_rag_system(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)
             assert success, "系统初始化失败"
 
         # 验证数据库状态
@@ -105,16 +107,16 @@ class TestChromaDBRAGIntegration:
 
         # 确保系统已初始化
         if not chroma_db.initialized:
-            success = initialize_rag_system(ALFANIA_KNOWLEDGE_BASE)
+            success = initialize_rag_system(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)
             assert success, "系统初始化失败"
 
         # 测试空查询
-        docs, scores = semantic_search("", top_k=3)
+        docs, scores = rag_semantic_search("", top_k=3)
         assert isinstance(docs, list), "空查询应该返回列表"
         assert isinstance(scores, list), "空查询应该返回分数列表"
 
         # 测试异常查询参数
-        docs, scores = semantic_search("测试查询", top_k=0)
+        docs, scores = rag_semantic_search("测试查询", top_k=0)
         assert isinstance(docs, list), "异常参数应该返回列表"
         assert isinstance(scores, list), "异常参数应该返回分数列表"
 

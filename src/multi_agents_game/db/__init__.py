@@ -17,6 +17,9 @@ from .pgsql_client import *
 from .pgsql_user import *
 from .pgsql_vector_document import VectorDocumentDB
 
+# Import RAG operations
+from .rag_ops import initialize_rag_system, rag_semantic_search
+
 # Import main database components
 from .redis_client import *
 from .redis_user import *

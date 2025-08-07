@@ -1,4 +1,4 @@
-from typing import Final, Dict, List
+from typing import Dict, Final, List
 
 FANTASY_WORLD_RPG_CAMPAIGN_SETTING: Final[
     str
@@ -8,15 +8,8 @@ FANTASY_WORLD_RPG_CAMPAIGN_SETTING: Final[
 动荡的时代来临，但希望犹存。新的勇者并非一人，而是所有敢于踏上征途的灵魂。无论是追寻散落的圣剑碎片、探索遗迹寻求救世知识、深入魔巢斩除威胁，还是斡旋各族促成联盟，每一个守护光明的选择，都将书写艾尔法尼亚未来的篇章。"""
 
 ############################################################################################################
-# RAG 知识库配置
-ALFANIA_RAG_CONFIG: Final[Dict[str, str]] = {
-    "collection_name": "alfania_knowledge_base",
-    "description": "test rag",
-}
-
-############################################################################################################
 # 艾尔法尼亚世界知识库数据
-ALFANIA_KNOWLEDGE_BASE: Final[Dict[str, List[str]]] = {
+FANTASY_WORLD_RPG_KNOWLEDGE_BASE: Final[Dict[str, List[str]]] = {
     "艾尔法尼亚": [
         "艾尔法尼亚大陆分为三大王国：人类的阿斯特拉王国、精灵的月桂森林联邦、兽人的铁爪部族联盟。",
         "大陆中央矗立着古老的封印之塔，传说圣剑「晨曦之刃」就封印在塔顶，用来镇压魔王的力量。",

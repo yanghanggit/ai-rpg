@@ -8,7 +8,7 @@
 """
 
 import traceback
-from typing import List, Optional, Dict, Mapping, Tuple, Sequence
+from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
 from loguru import logger
 from sentence_transformers import SentenceTransformer

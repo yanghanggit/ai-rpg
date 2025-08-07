@@ -33,12 +33,10 @@ from multi_agents_game.chat_services.chat_deepseek_rag_graph import (
 )
 
 # 更新导入路径
-from multi_agents_game.db.chromadb_client import (
-    initialize_rag_system,
-    get_chroma_db,
-)
+from multi_agents_game.db.rag_ops import initialize_rag_system
+from multi_agents_game.db.chromadb_client import get_chroma_db
 
-from multi_agents_game.demo.campaign_setting import ALFANIA_KNOWLEDGE_BASE
+from multi_agents_game.demo.campaign_setting import FANTASY_WORLD_RPG_KNOWLEDGE_BASE
 
 
 def main() -> None:
@@ -56,7 +54,7 @@ def main() -> None:
     try:
         # 步骤1: 初始化RAG系统（ChromaDB + SentenceTransformer）
         logger.info("🔄 [MAIN] 正在初始化向量数据库系统...")
-        init_success = initialize_rag_system(ALFANIA_KNOWLEDGE_BASE)
+        init_success = initialize_rag_system(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)
 
         if init_success:
             logger.success("✨ [MAIN] ChromaDB向量搜索系统已就绪")

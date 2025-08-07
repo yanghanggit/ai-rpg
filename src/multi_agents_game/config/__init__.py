@@ -14,11 +14,12 @@ from .db_config import (
     DEFAULT_JWT_CONFIG,
     DEFAULT_MONGODB_CONFIG,
     DEFAULT_POSTGRES_CONFIG,
-    DEFAULT_REDIS_CONFIG,
     DEFAULT_RAG_CONFIG,
+    DEFAULT_REDIS_CONFIG,
     JWTConfig,
     MongoDBConfig,
     PostgresConfig,
+    RAGConfig,
     RedisConfig,
 )
 from .game_config import (
@@ -38,6 +39,7 @@ __all__ = [
     "MongoDBConfig",
     "PostgresConfig",
     "JWTConfig",
+    "RAGConfig",
     # 数据库配置实例
     "DEFAULT_REDIS_CONFIG",
     "DEFAULT_MONGODB_CONFIG",

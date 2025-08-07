@@ -1,5 +1,6 @@
 import traceback
-from typing import List, Optional, Dict
+from pathlib import Path
+from typing import List, Optional, Dict, Mapping
 
 import chromadb
 from chromadb.api import ClientAPI
@@ -8,10 +9,15 @@ from loguru import logger
 
 from ..utils.model_loader import load_multilingual_model
 from ..config import DEFAULT_RAG_CONFIG
+from sentence_transformers import SentenceTransformer
 
 ############################################################################################################
 # 全局ChromaDB实例
 _chroma_db: Optional["ChromaRAGDatabase"] = None
+
+# ChromaDB持久化目录
+CHROMA_DB_PERSIST_DIR = Path("chroma_db")
+
 
 
 ############################################################################################################
@@ -38,7 +44,7 @@ class ChromaRAGDatabase:
         self.collection_description = collection_description
         self.client: Optional[ClientAPI] = None
         self.collection: Optional[Collection] = None
-        self.embedding_model = None
+        self.embedding_model: Optional[SentenceTransformer] = None
         self.initialized = False
 
         logger.info(f"🏗️ [CHROMADB] 初始化ChromaDB管理器，集合名称: {collection_name}")
@@ -54,8 +60,8 @@ class ChromaRAGDatabase:
             logger.info("🚀 [CHROMADB] 开始初始化向量数据库...")
 
             # 1. 初始化ChromaDB持久化客户端
-            persist_directory = "./chroma_db"
-            self.client = chromadb.PersistentClient(path=persist_directory)
+            persist_directory = CHROMA_DB_PERSIST_DIR
+            self.client = chromadb.PersistentClient(path=str(persist_directory))
             logger.success(
                 f"✅ [CHROMADB] ChromaDB持久化客户端创建成功，数据目录: {persist_directory}"
             )
@@ -125,9 +131,9 @@ class ChromaRAGDatabase:
                 return False
 
             # 准备文档数据
-            documents = []
-            metadatas = []
-            ids = []
+            documents: List[str] = []
+            metadatas: List[Mapping[str, str | int | float | bool | None]] = []
+            ids: List[str] = []
 
             doc_id = 0
             for category, docs in knowledge_base.items():
@@ -257,8 +263,8 @@ def get_chroma_db(
     global _chroma_db
     if _chroma_db is None:
         _chroma_db = ChromaRAGDatabase(
-            collection_name or DEFAULT_RAG_CONFIG["collection_name"],
-            collection_description or DEFAULT_RAG_CONFIG["description"],
+            collection_name or DEFAULT_RAG_CONFIG.collection_name,
+            collection_description or DEFAULT_RAG_CONFIG.description,
         )
     return _chroma_db
 
@@ -281,8 +287,8 @@ def chromadb_clear_database() -> None:
             _chroma_db = None
 
         # 删除持久化数据目录
-        persist_directory = "./chroma_db"
-        if os.path.exists(persist_directory):
+        persist_directory = CHROMA_DB_PERSIST_DIR
+        if persist_directory.exists():
             shutil.rmtree(persist_directory)
             logger.warning(f"🗑️ [CHROMADB] 已删除持久化数据目录: {persist_directory}")
         else:
@@ -292,7 +298,7 @@ def chromadb_clear_database() -> None:
 
     except Exception as e:
         logger.error(f"❌ 清空ChromaDB持久化数据库时发生错误: {e}")
-        logger.info("💡 建议手动删除 ./chroma_db 目录")
+        logger.info(f"💡 建议手动删除 {CHROMA_DB_PERSIST_DIR} 目录")
         raise
 
 
@@ -381,3 +387,4 @@ def initialize_rag_system(knowledge_base: Dict[str, List[str]]) -> bool:
 
 
 ############################################################################################################
+

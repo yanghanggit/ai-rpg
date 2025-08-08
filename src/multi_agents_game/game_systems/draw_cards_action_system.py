@@ -63,7 +63,7 @@ def _generate_prompt(
 
         response_example.gen_skill_reponse.append(skill_response_example)
 
-    return f"""# 请你生成 {skill_creation_count} 个技能，并决定如何使用。
+    return f"""# 请你生成 {skill_creation_count} 个技能，一个技能是防御或攻击类型的技能，受角色的属性影响，另一个是和环境互动的技能，不受角色属性影响。（注意，环境互动技能主要是和环境中的物体（石头，干草，陷阱等）交互而产生的影响敌人或己方的负面或正面效果，比如通过攻击敌方头顶松动的石头让石头坠落造成伤害，比如通过点燃地面上的干草堆让火焰蔓延造成持续伤害等等。）并决定如何使用。
 ## 当前场景状态
 {current_stage} | {current_stage_narration}
 ## (场景内角色) 行动顺序(从左到右)

@@ -1,5 +1,6 @@
 import os
 from enum import StrEnum, unique
+from pathlib import Path
 from typing import final
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request, status
@@ -70,9 +71,9 @@ async def login(
     # TODO, get测试。
     # 指向包含 runtime.json 的目录。
     fastapi_app: FastAPI = request.app
-    static_dir = os.path.join(
-        LOGS_DIR, web_game_user_options.user, web_game_user_options.game
-    )
+    static_dir = LOGS_DIR / web_game_user_options.user / web_game_user_options.game
+    if not static_dir.exists():
+        static_dir.mkdir(parents=True, exist_ok=True)
     # 将该目录挂载到 "/files" 路径上
     fastapi_app.mount("/files", StaticFiles(directory=static_dir), name="files")
     # 如果能开启就用get方法测试

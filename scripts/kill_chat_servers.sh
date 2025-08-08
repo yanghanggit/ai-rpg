@@ -5,7 +5,7 @@ CONFIG_FILE="$SCRIPT_DIR/../server_settings.json"
 
 # 函数：从 PID 文件终止进程
 kill_from_pid_file() {
-  local pid_file="$SCRIPT_DIR/server_pids.txt"
+  local pid_file="$SCRIPT_DIR/../chat_servers.pid"
   if [ -f "$pid_file" ]; then
     echo "从 PID 文件终止服务器进程..."
     while read -r pid; do
@@ -29,6 +29,12 @@ kill_from_ports() {
     local instances=$(jq '.num_chat_service_instances' "$CONFIG_FILE")
     local game_port=$(jq '.game_server_port' "$CONFIG_FILE")
 
+    # 检查配置是否有效
+    if [ "$base_port" = "null" ] || [ "$instances" = "null" ] || [ "$game_port" = "null" ]; then
+      echo "警告: 配置文件格式错误，跳过端口清理"
+      return 1
+    fi
+
     # 终止聊天服务器端口
     for ((i=0; i<instances; i++)); do
       local port=$((base_port + i))
@@ -47,6 +53,7 @@ kill_from_ports() {
     fi
   else
     echo "配置文件未找到或 jq 未安装，跳过端口清理"
+    return 1
   fi
 }
 

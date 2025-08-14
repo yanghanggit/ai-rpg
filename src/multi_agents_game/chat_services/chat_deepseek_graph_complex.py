@@ -42,19 +42,24 @@ class UnifiedState(TypedDict):
     confidence_score: float  # 路由决策的置信度
     processing_mode: str  # 处理模式描述
 
+    # 路由管理器（状态内管理）
+    route_manager: Optional[RouteDecisionManager]  # 路由决策管理器实例
 
-# 全局路由管理器实例（延迟初始化）
-_route_manager: Optional[RouteDecisionManager] = None
 
+def ensure_route_manager(state: UnifiedState) -> RouteDecisionManager:
+    """确保状态中存在路由管理器实例，如果不存在则创建"""
+    if state.get("route_manager") is None:
+        logger.info("🚦 初始化状态内路由管理器...")
+        state["route_manager"] = create_default_route_manager()
+        logger.success("🚦 状态内路由管理器初始化完成")
 
-def get_route_manager() -> RouteDecisionManager:
-    """获取全局路由管理器实例（单例模式）"""
-    global _route_manager
-    if _route_manager is None:
-        logger.info("🚦 初始化全局路由管理器...")
-        _route_manager = create_default_route_manager()
-        logger.success("🚦 全局路由管理器初始化完成")
-    return _route_manager
+    # 确保返回的不是None
+    route_manager = state["route_manager"]
+    if route_manager is None:
+        # 这种情况理论上不应该发生，但为了类型安全
+        raise RuntimeError("路由管理器初始化失败")
+
+    return route_manager
 
 
 ############################################################################################################
@@ -78,8 +83,8 @@ def router_node(state: UnifiedState) -> Dict[str, Any]:
 
         logger.info(f"🚦 [ROUTER] 分析用户查询: {user_query}")
 
-        # 使用新的路由系统进行决策
-        route_manager = get_route_manager()
+        # 使用状态内的路由系统进行决策
+        route_manager = ensure_route_manager(state)
         decision = route_manager.make_decision(user_query)
 
         # 转换决策结果到原有格式
@@ -497,6 +502,7 @@ def stream_unified_graph_updates(
             "similarity_scores": None,
             "confidence_score": 0.0,
             "processing_mode": "",
+            "route_manager": None,  # 将在需要时懒加载
         }
 
         logger.info(f"🚀 统一状态准备完成，用户查询: {user_query}")

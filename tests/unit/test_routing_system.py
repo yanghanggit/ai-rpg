@@ -185,10 +185,24 @@ class TestIntegration:
         """测试路由节点的替换"""
         # 这个测试验证新的路由系统能否替代原有的router_node
         from src.multi_agents_game.chat_services.chat_deepseek_graph_complex import (
-            get_route_manager,
+            ensure_route_manager,
+            UnifiedState,
         )
 
-        manager = get_route_manager()
+        # 创建测试状态
+        test_state: UnifiedState = {
+            "messages": [],
+            "user_query": "",
+            "route_decision": "",
+            "retrieved_docs": None,
+            "enhanced_context": None,
+            "similarity_scores": None,
+            "confidence_score": 0.0,
+            "processing_mode": "",
+            "route_manager": None,
+        }
+
+        manager = ensure_route_manager(test_state)
         assert manager is not None
 
         # 测试一些典型查询

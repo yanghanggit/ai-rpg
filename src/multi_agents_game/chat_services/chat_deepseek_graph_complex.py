@@ -22,7 +22,7 @@ from ..db.chromadb_client import get_chroma_db
 from ..db.rag_ops import rag_semantic_search
 
 # 导入新的路由系统
-from .routing import create_default_route_manager, RouteDecisionManager
+from .routing import RouteDecisionManager, create_default_route_manager
 
 
 ############################################################################################################
@@ -70,7 +70,7 @@ def router_node(state: UnifiedState) -> Dict[str, Any]:
         user_query = state.get("user_query", "")
         if not user_query:
             # 从最新消息中提取查询
-            if state["messages"]:
+            if state.get("messages"):
                 last_message = state["messages"][-1]
                 if isinstance(last_message, HumanMessage):
                     content = last_message.content
@@ -85,29 +85,36 @@ def router_node(state: UnifiedState) -> Dict[str, Any]:
         # 转换决策结果到原有格式
         route_decision = "rag" if decision.should_use_rag else "direct"
         confidence_score = decision.confidence
-        
+
         # 构建处理模式描述
         if decision.should_use_rag:
             # 从元数据中提取策略信息
-            strategies_used = decision.metadata.get("strategies_used", [])
-            processing_mode = f"RAG增强模式 (策略: {', '.join(strategies_used)})"
+            if decision.metadata:
+                strategies_used = decision.metadata.get("strategies_used", [])
+                processing_mode = f"RAG增强模式 (策略: {', '.join(strategies_used)})"
+            else:
+                processing_mode = "RAG增强模式"
         else:
             processing_mode = "直接对话模式"
 
         logger.success(
             f"🚦 [ROUTER] 路由决策完成: {route_decision} (置信度: {confidence_score:.2f})"
         )
-        
+
         # 记录详细的决策信息
-        if logger.level("DEBUG").no >= logger._core.min_level:
-            individual_decisions = decision.metadata.get("individual_decisions", {})
-            for strategy_name, strategy_info in individual_decisions.items():
-                logger.debug(
-                    f"🚦 [ROUTER] {strategy_name}: "
-                    f"RAG={strategy_info['should_use_rag']}, "
-                    f"置信度={strategy_info['confidence']:.3f}, "
-                    f"权重={strategy_info['weight']}"
-                )
+        try:
+            if decision.metadata:
+                individual_decisions = decision.metadata.get("individual_decisions", {})
+                for strategy_name, strategy_info in individual_decisions.items():
+                    logger.debug(
+                        f"🚦 [ROUTER] {strategy_name}: "
+                        f"RAG={strategy_info['should_use_rag']}, "
+                        f"置信度={strategy_info['confidence']:.3f}, "
+                        f"权重={strategy_info['weight']}"
+                    )
+        except Exception:
+            # 忽略日志记录错误
+            pass
 
         return {
             "user_query": user_query,
@@ -115,7 +122,7 @@ def router_node(state: UnifiedState) -> Dict[str, Any]:
             "confidence_score": confidence_score,
             "processing_mode": processing_mode,
             # 保留决策详情用于调试和分析
-            "route_metadata": decision.metadata
+            "route_metadata": decision.metadata,
         }
 
     except Exception as e:
@@ -126,7 +133,7 @@ def router_node(state: UnifiedState) -> Dict[str, Any]:
             "route_decision": "direct",
             "confidence_score": 0.1,
             "processing_mode": "错误回退-直接对话模式",
-            "route_metadata": {"error": str(e)}
+            "route_metadata": {"error": str(e)},
         }
 
 

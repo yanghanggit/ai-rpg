@@ -12,13 +12,13 @@ from typing import Dict, Final, List
 import replicate
 
 from multi_agents_game.config.replicate_config import (
+    ReplicateModelsConfig,
+    create_example_config,
     get_api_token,
     get_chat_models,
     test_api_connection,
     validate_config,
     validate_json_file,
-    print_pydantic_schema,
-    create_example_config,
 )
 
 # 全局变量
@@ -242,19 +242,27 @@ def test_pydantic_validation() -> None:
     print("=" * 60)
     print("🧪 Pydantic 数据验证测试")
     print("=" * 60)
-    
+
     # 测试JSON Schema验证
     print("1. 当前配置验证:")
     validate_json_file()
-    
+
     # 显示示例配置
     print("\n2. 示例配置:")
     example = create_example_config()
-    
+
     # 显示Schema
     print("\n3. Pydantic Schema:")
-    print_pydantic_schema()
-    
+    try:
+        schema = ReplicateModelsConfig.model_json_schema()
+        print("📋 Pydantic 数据模型 Schema:")
+        print("=" * 60)
+        import json
+
+        print(json.dumps(schema, indent=2, ensure_ascii=False)[:1000] + "...")
+    except Exception as e:
+        print(f"❌ 获取 Schema 失败: {e}")
+
     print("\n🎉 Pydantic 验证测试完成!")
 
 
@@ -263,15 +271,15 @@ def run_validation_demo() -> None:
     print("=" * 60)
     print("🔍 配置验证功能演示")
     print("=" * 60)
-    
+
     # 基础配置验证
     print("✅ 配置验证结果:")
     validate_config()
-    
+
     # JSON格式验证
     print("\n📋 JSON格式验证:")
     validate_json_file()
-    
+
     print("\n🎉 验证演示完成!")
 
 
@@ -315,9 +323,13 @@ def main() -> None:
     parser.add_argument("--list-models", action="store_true", help="列出可用模型")
     parser.add_argument("--demo", action="store_true", help="运行演示")
     parser.add_argument("--test", action="store_true", help="测试连接")
-    parser.add_argument("--validate", action="store_true", help="验证配置和JSON格式") 
-    parser.add_argument("--test-pydantic", action="store_true", help="测试Pydantic数据验证")
-    parser.add_argument("--schema", action="store_true", help="显示Pydantic数据模型Schema")
+    parser.add_argument("--validate", action="store_true", help="验证配置和JSON格式")
+    parser.add_argument(
+        "--test-pydantic", action="store_true", help="测试Pydantic数据验证"
+    )
+    parser.add_argument(
+        "--schema", action="store_true", help="显示Pydantic数据模型Schema"
+    )
 
     args = parser.parse_args()
 
@@ -338,15 +350,23 @@ def main() -> None:
         if args.validate:
             run_validation_demo()
             return
-            
+
         # 测试Pydantic验证
         if args.test_pydantic:
             test_pydantic_validation()
             return
-            
+
         # 显示Schema
         if args.schema:
-            print_pydantic_schema()
+            try:
+                schema = ReplicateModelsConfig.model_json_schema()
+                print("📋 Pydantic 数据模型 Schema:")
+                print("=" * 60)
+                import json
+
+                print(json.dumps(schema, indent=2, ensure_ascii=False))
+            except Exception as e:
+                print(f"❌ 获取 Schema 失败: {e}")
             return
 
         # 列出模型

@@ -20,7 +20,7 @@ from src.multi_agents_game.chat_services.routing import (
     SemanticRouteStrategy,
     RouteDecisionManager,
     StrategyWeight,
-    create_default_route_manager,
+    create_route_manager_with_strategies,
     create_alphania_keyword_strategy,
     create_game_semantic_strategy,
 )
@@ -167,7 +167,14 @@ class TestRouteDecisionManager:
 
     def test_default_manager(self) -> None:
         """测试默认管理器"""
-        manager = create_default_route_manager()
+        # 使用核心函数直接创建具体策略配置的管理器
+        manager = create_route_manager_with_strategies(
+            strategy_configs=[
+                (create_alphania_keyword_strategy, 0.4),
+                (create_game_semantic_strategy, 0.6),
+            ],
+            fallback_to_rag=False,
+        )
 
         # 测试游戏相关查询
         decision = manager.make_decision("艾尔法尼亚王国的历史")
@@ -245,7 +252,14 @@ if __name__ == "__main__":
 
     # 测试完整路由管理器
     print("\n=== 完整路由管理器测试 ===")
-    manager = create_default_route_manager()
+    # 使用核心函数创建具体策略配置的管理器
+    manager = create_route_manager_with_strategies(
+        strategy_configs=[
+            (create_alphania_keyword_strategy, 0.4),
+            (create_game_semantic_strategy, 0.6),
+        ],
+        fallback_to_rag=False,
+    )
 
     for query in test_queries:
         decision = manager.make_decision(query)

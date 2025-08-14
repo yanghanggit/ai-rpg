@@ -28,6 +28,7 @@ from .route_manager import (
     RouteDecisionManager,
     StrategyWeight,
     create_default_route_manager,
+    create_route_manager_with_strategies,
 )
 from .route_strategy import FallbackRouteStrategy, RouteDecision, RouteStrategy
 from .semantic_strategy import SemanticRouteStrategy, create_game_semantic_strategy
@@ -48,4 +49,5 @@ __all__ = [
     "create_alphania_keyword_strategy",
     "create_game_semantic_strategy",
     "create_default_route_manager",
+    "create_route_manager_with_strategies",
 ]

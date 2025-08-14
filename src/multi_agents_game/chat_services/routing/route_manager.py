@@ -5,7 +5,7 @@
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -155,15 +155,53 @@ class RouteConfigBuilder:
         return RouteDecisionManager(self.strategy_weights, self.fallback_strategy)
 
 
+def create_route_manager_with_strategies(
+    strategy_configs: List[Tuple[Callable[[], RouteStrategy], float]],
+    fallback_to_rag: bool = False,
+) -> RouteDecisionManager:
+    """
+    创建带有指定策略配置的路由决策管理器（核心参数化函数）
+
+    Args:
+        strategy_configs: 策略配置列表，每个元素是 (策略创建函数, 权重) 的元组
+        fallback_to_rag: 回退策略是否默认使用RAG
+
+    Returns:
+        RouteDecisionManager: 配置好的路由决策管理器
+
+    Example:
+        >>> from .keyword_strategy import create_alphania_keyword_strategy
+        >>> from .semantic_strategy import create_game_semantic_strategy
+        >>>
+        >>> manager = create_route_manager_with_strategies([
+        ...     (create_alphania_keyword_strategy, 0.4),
+        ...     (create_game_semantic_strategy, 0.6),
+        ... ], fallback_to_rag=False)
+    """
+    builder = RouteConfigBuilder()
+
+    # 添加所有策略配置
+    for strategy_factory, weight in strategy_configs:
+        strategy = strategy_factory()
+        builder.add_strategy(strategy, weight)
+
+    # 设置回退策略
+    fallback_strategy = FallbackRouteStrategy(default_to_rag=fallback_to_rag)
+    builder.set_fallback(fallback_strategy)
+
+    return builder.build()
+
+
 def create_default_route_manager() -> RouteDecisionManager:
     """创建默认的路由决策管理器"""
     from .keyword_strategy import create_alphania_keyword_strategy
     from .semantic_strategy import create_game_semantic_strategy
 
-    return (
-        RouteConfigBuilder()
-        .add_strategy(create_alphania_keyword_strategy(), 0.4)
-        .add_strategy(create_game_semantic_strategy(), 0.6)
-        .set_fallback(FallbackRouteStrategy(default_to_rag=False))
-        .build()
+    # 使用参数化的核心函数创建默认配置
+    return create_route_manager_with_strategies(
+        strategy_configs=[
+            (create_alphania_keyword_strategy, 0.4),
+            (create_game_semantic_strategy, 0.6),
+        ],
+        fallback_to_rag=False,
     )

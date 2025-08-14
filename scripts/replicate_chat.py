@@ -5,76 +5,23 @@ Replicate 对话工具
 """
 
 import argparse
-import os
 import sys
 import time
 from typing import Dict, Final, List
 
 import replicate
-import requests
-from dotenv import load_dotenv
 
-# 加载环境变量
-load_dotenv()
-
-# 内置对话模型配置
-CHAT_MODELS: Dict[str, Dict[str, str]] = {
-    "gpt-4o-mini": {
-        "version": "openai/gpt-4o-mini",
-        "cost_estimate": "$0.15/1M input + $0.6/1M output tokens",
-        "description": "OpenAI 低成本高效对话模型，推荐日常使用",
-    },
-    "gpt-4o": {
-        "version": "openai/gpt-4o",
-        "cost_estimate": "$2.5/1M input + $10/1M output tokens",
-        "description": "OpenAI 高智能多模态对话模型",
-    },
-    "claude-3.5-sonnet": {
-        "version": "anthropic/claude-3.5-sonnet",
-        "cost_estimate": "中等成本，高质量对话",
-        "description": "Anthropic 高智能对话模型，擅长分析和推理",
-    },
-    "llama-3.1-405b": {
-        "version": "meta/meta-llama-3.1-405b-instruct",
-        "cost_estimate": "开源大模型，成本较高",
-        "description": "Meta 开源旗舰对话模型",
-    },
-    "llama-3-70b": {
-        "version": "meta/meta-llama-3-70b-instruct",
-        "cost_estimate": "开源模型，平衡性能和成本",
-        "description": "Meta 开源对话模型，性价比高",
-    },
-}
+from multi_agents_game.config.replicate_config import (
+    get_api_token,
+    get_chat_models,
+    test_api_connection,
+    validate_config,
+)
 
 # 全局变量
-API_TOKEN: str = os.getenv("REPLICATE_API_TOKEN") or ""
-TEST_URL: Final[str] = "https://api.replicate.com/v1/models"
+API_TOKEN: str = get_api_token()
+CHAT_MODELS: Dict[str, Dict[str, str]] = get_chat_models()
 DEFAULT_MODEL: Final[str] = "gpt-4o-mini"
-
-
-def test_connection() -> bool:
-    """测试连接是否正常"""
-    headers = {"Authorization": f"Token {API_TOKEN}"}
-
-    try:
-        print("🔄 测试 Replicate API 连接...")
-        response = requests.get(TEST_URL, headers=headers, timeout=10)
-
-        if response.status_code == 200:
-            print("✅ 连接成功! Replicate API 可正常访问")
-            return True
-        else:
-            print(f"❌ 连接失败，状态码: {response.status_code}")
-            if response.status_code == 401:
-                print("💡 API Token 可能无效或已过期")
-            return False
-
-    except Exception as e:
-        print(f"❌ 连接错误: {e}")
-        print("💡 请检查:")
-        print("   1. 网络连接是否正常")
-        print("   2. API Token 是否有效")
-        return False
 
 
 def chat_single(
@@ -253,7 +200,7 @@ def run_demo() -> None:
     print("=" * 60)
 
     # 1. 测试连接
-    if not test_connection():
+    if not test_api_connection():
         print("❌ 连接测试失败，请检查网络设置")
         return
 
@@ -285,11 +232,17 @@ def run_demo() -> None:
 
 def main() -> None:
     """主函数 - 命令行接口"""
-    if not API_TOKEN:
-        print("❌ 错误: API Token 未配置")
+    # 验证配置
+    if not validate_config():
+        sys.exit(1)
+
+    # 检查对话模型配置是否正确加载
+    if not CHAT_MODELS:
+        print("❌ 错误: 对话模型配置未正确加载")
         print("💡 请检查:")
-        print("   1. 环境变量 REPLICATE_API_TOKEN 是否设置")
-        print("   2. .env 文件是否存在且包含正确的 API Token")
+        print("   1. replicate_models.json 文件是否存在")
+        print("   2. JSON 文件格式是否正确")
+        print("   3. chat_models 部分是否配置正确")
         sys.exit(1)
 
     parser = argparse.ArgumentParser(description="Replicate 对话工具")
@@ -330,7 +283,7 @@ def main() -> None:
 
         # 测试连接
         if args.test:
-            test_connection()
+            test_api_connection()
             return
 
         # 列出模型

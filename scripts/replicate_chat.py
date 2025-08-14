@@ -16,6 +16,9 @@ from multi_agents_game.config.replicate_config import (
     get_chat_models,
     test_api_connection,
     validate_config,
+    validate_json_file,
+    print_pydantic_schema,
+    create_example_config,
 )
 
 # 全局变量
@@ -204,7 +207,11 @@ def run_demo() -> None:
         print("❌ 连接测试失败，请检查网络设置")
         return
 
-    # 2. 查看可用模型
+    # 2. 验证JSON配置格式
+    print("\n📋 JSON配置验证:")
+    validate_json_file()
+
+    # 3. 查看可用模型
     print("\n📋 可用对话模型:")
     for name, info in CHAT_MODELS.items():
         cost = info["cost_estimate"]
@@ -213,7 +220,7 @@ def run_demo() -> None:
         print(f"    💰 {cost}")
         print(f"    📝 {description}")
 
-    # 3. 测试对话
+    # 4. 测试对话
     print("\n🤖 测试对话功能...")
 
     try:
@@ -228,6 +235,44 @@ def run_demo() -> None:
 
     except Exception as e:
         print(f"❌ 演示失败: {e}")
+
+
+def test_pydantic_validation() -> None:
+    """测试 Pydantic 数据验证功能"""
+    print("=" * 60)
+    print("🧪 Pydantic 数据验证测试")
+    print("=" * 60)
+    
+    # 测试JSON Schema验证
+    print("1. 当前配置验证:")
+    validate_json_file()
+    
+    # 显示示例配置
+    print("\n2. 示例配置:")
+    example = create_example_config()
+    
+    # 显示Schema
+    print("\n3. Pydantic Schema:")
+    print_pydantic_schema()
+    
+    print("\n🎉 Pydantic 验证测试完成!")
+
+
+def run_validation_demo() -> None:
+    """运行验证功能演示"""
+    print("=" * 60)
+    print("🔍 配置验证功能演示")
+    print("=" * 60)
+    
+    # 基础配置验证
+    print("✅ 配置验证结果:")
+    validate_config()
+    
+    # JSON格式验证
+    print("\n📋 JSON格式验证:")
+    validate_json_file()
+    
+    print("\n🎉 验证演示完成!")
 
 
 def main() -> None:
@@ -270,6 +315,9 @@ def main() -> None:
     parser.add_argument("--list-models", action="store_true", help="列出可用模型")
     parser.add_argument("--demo", action="store_true", help="运行演示")
     parser.add_argument("--test", action="store_true", help="测试连接")
+    parser.add_argument("--validate", action="store_true", help="验证配置和JSON格式") 
+    parser.add_argument("--test-pydantic", action="store_true", help="测试Pydantic数据验证")
+    parser.add_argument("--schema", action="store_true", help="显示Pydantic数据模型Schema")
 
     args = parser.parse_args()
 
@@ -284,6 +332,21 @@ def main() -> None:
         # 测试连接
         if args.test:
             test_api_connection()
+            return
+
+        # 验证配置和JSON格式
+        if args.validate:
+            run_validation_demo()
+            return
+            
+        # 测试Pydantic验证
+        if args.test_pydantic:
+            test_pydantic_validation()
+            return
+            
+        # 显示Schema
+        if args.schema:
+            print_pydantic_schema()
             return
 
         # 列出模型
@@ -312,6 +375,9 @@ def main() -> None:
             print("\n快速开始:")
             print("  python replicate_chat.py --demo              # 运行演示")
             print("  python replicate_chat.py --test              # 测试连接")
+            print("  python replicate_chat.py --validate          # 验证配置格式")
+            print("  python replicate_chat.py --test-pydantic     # 测试Pydantic验证")
+            print("  python replicate_chat.py --schema            # 显示数据模型Schema")
             print("  python replicate_chat.py --list-models       # 查看可用模型")
             print("  python replicate_chat.py --interactive       # 交互式对话")
             print('  python replicate_chat.py "你好，介绍一下自己"   # 单次对话')

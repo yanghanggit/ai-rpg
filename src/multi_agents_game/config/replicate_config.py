@@ -11,12 +11,75 @@ from typing import Any, Dict, Final, Optional
 
 import requests
 from dotenv import load_dotenv
+from pydantic import BaseModel, Field, ValidationError
 
 # 加载环境变量
 load_dotenv()
 
 # 常量定义
 TEST_URL: Final[str] = "https://api.replicate.com/v1/models"
+
+
+# Pydantic 数据模型定义
+class ModelInfo(BaseModel):
+    """单个模型信息的数据结构"""
+    version: str = Field(..., description="模型版本ID")
+    cost_estimate: str = Field(..., description="成本估算描述")
+    description: str = Field(..., description="模型描述")
+
+    class Config:
+        extra = "forbid"  # 禁止额外字段
+
+
+class ImageModels(BaseModel):
+    """图像模型配置数据结构"""
+    sdxl_lightning: Optional[ModelInfo] = Field(None, alias="sdxl-lightning")
+    sdxl: Optional[ModelInfo] = None
+    playground: Optional[ModelInfo] = None
+    realvis: Optional[ModelInfo] = None
+    ideogram_v3_turbo: Optional[ModelInfo] = Field(None, alias="ideogram-v3-turbo")
+
+    class Config:
+        populate_by_name = True  # 修复: 使用新的参数名
+        extra = "allow"  # 允许额外的图像模型
+        
+    def model_post_init(self, __context):
+        """验证额外字段也符合ModelInfo格式"""
+        for field_name, field_value in self.__dict__.items():
+            if field_name not in self.model_fields and field_value is not None:
+                if isinstance(field_value, dict):
+                    # 验证额外的模型是否符合ModelInfo格式
+                    ModelInfo(**field_value)
+
+
+class ChatModels(BaseModel):
+    """对话模型配置数据结构"""
+    gpt_4o_mini: Optional[ModelInfo] = Field(None, alias="gpt-4o-mini")
+    gpt_4o: Optional[ModelInfo] = Field(None, alias="gpt-4o")
+    claude_3_5_sonnet: Optional[ModelInfo] = Field(None, alias="claude-3.5-sonnet")
+    llama_3_1_405b: Optional[ModelInfo] = Field(None, alias="llama-3.1-405b")
+    llama_3_70b: Optional[ModelInfo] = Field(None, alias="llama-3-70b")
+
+    class Config:
+        populate_by_name = True  # 修复: 使用新的参数名
+        extra = "allow"  # 允许额外的对话模型
+        
+    def model_post_init(self, __context):
+        """验证额外字段也符合ModelInfo格式"""
+        for field_name, field_value in self.__dict__.items():
+            if field_name not in self.model_fields and field_value is not None:
+                if isinstance(field_value, dict):
+                    # 验证额外的模型是否符合ModelInfo格式
+                    ModelInfo(**field_value)
+
+
+class ReplicateModelsConfig(BaseModel):
+    """Replicate模型配置的完整数据结构"""
+    image_models: ImageModels = Field(..., description="图像生成模型配置")
+    chat_models: ChatModels = Field(..., description="对话模型配置")
+
+    class Config:
+        extra = "forbid"  # 严格模式，不允许额外字段
 
 
 class ReplicateConfig:
@@ -48,7 +111,7 @@ class ReplicateConfig:
             self._config_loaded = False
 
     def _load_models_config(self) -> None:
-        """从 JSON 文件加载模型配置"""
+        """从 JSON 文件加载模型配置，使用 Pydantic 验证格式"""
         # 获取项目根目录 - 从 src/multi_agents_game/config/ 到项目根目录
         current_dir = Path(__file__).parent  # src/multi_agents_game/config/
         project_root = current_dir.parent.parent.parent  # 回到项目根目录
@@ -58,16 +121,78 @@ class ReplicateConfig:
             with open(config_file, "r", encoding="utf-8") as f:
                 data: Dict[str, Any] = json.load(f)
 
-                # 加载图像模型配置
-                self._image_models = data.get("image_models", {})
+                # 使用 Pydantic 验证和解析配置
+                try:
+                    config_model = ReplicateModelsConfig(**data)
+                    print("✅ JSON 配置格式验证通过")
+                    
+                    # 转换为原有的字典格式以保持兼容性
+                    self._image_models = {}
+                    if config_model.image_models:
+                        # 将 Pydantic 模型转换回字典格式
+                        image_data = config_model.image_models.model_dump(by_alias=True, exclude_none=True)
+                        for key, value in image_data.items():
+                            if value:  # 只添加非空值
+                                self._image_models[key] = value
 
-                # 加载对话模型配置
-                self._chat_models = data.get("chat_models", {})
+                    self._chat_models = {}
+                    if config_model.chat_models:
+                        # 将 Pydantic 模型转换回字典格式  
+                        chat_data = config_model.chat_models.model_dump(by_alias=True, exclude_none=True)
+                        for key, value in chat_data.items():
+                            if value:  # 只添加非空值
+                                self._chat_models[key] = value
+                                
+                    # 如果原始数据有额外字段，也保留它们
+                    raw_image_models = data.get("image_models", {})
+                    raw_chat_models = data.get("chat_models", {})
+                    
+                    for key, value in raw_image_models.items():
+                        if key not in self._image_models:
+                            self._image_models[key] = value
+                            
+                    for key, value in raw_chat_models.items():
+                        if key not in self._chat_models:
+                            self._chat_models[key] = value
+
+                except ValidationError as ve:
+                    print(f"❌ JSON 配置格式验证失败:")
+                    for error in ve.errors():
+                        loc = " -> ".join(str(x) for x in error["loc"])
+                        print(f"   {loc}: {error['msg']}")
+                        if "input" in error:
+                            print(f"   输入值: {error['input']}")
+                    
+                    # 即使验证失败，也尝试加载原始数据
+                    print("🔄 尝试使用原始格式加载...")
+                    self._image_models = data.get("image_models", {})
+                    self._chat_models = data.get("chat_models", {})
 
         except FileNotFoundError:
             raise FileNotFoundError(f"模型配置文件未找到: {config_file}")
         except json.JSONDecodeError as e:
             raise ValueError(f"模型配置文件格式错误: {e}")
+
+    def validate_json_schema(self) -> bool:
+        """验证当前配置是否符合 Pydantic 数据模型"""
+        try:
+            # 构建当前配置数据
+            current_data = {
+                "image_models": self._image_models,
+                "chat_models": self._chat_models
+            }
+            
+            # 使用 Pydantic 验证
+            ReplicateModelsConfig(**current_data)
+            print("✅ 当前配置符合数据模型规范")
+            return True
+            
+        except ValidationError as ve:
+            print(f"❌ 当前配置不符合数据模型规范:")
+            for error in ve.errors():
+                loc = " -> ".join(str(x) for x in error["loc"])
+                print(f"   {loc}: {error['msg']}")
+            return False
 
     @property
     def api_token(self) -> str:
@@ -150,6 +275,7 @@ class ReplicateConfig:
             "chat_models_count": len(self._chat_models),
             "image_models": list(self._image_models.keys()),
             "chat_models": list(self._chat_models.keys()),
+            "schema_valid": self.validate_json_schema(),
         }
 
 
@@ -208,7 +334,21 @@ def validate_config() -> bool:
     if status["chat_models_count"] == 0:
         print("⚠️ 警告: 未找到对话模型配置")
 
+    # 新增：验证数据模型
+    if not status.get("schema_valid", False):
+        print("⚠️ 警告: JSON 配置不符合数据模型规范")
+
     return True
+
+
+def validate_json_file() -> bool:
+    """验证 JSON 文件格式是否符合 Pydantic 数据模型"""
+    return get_replicate_config().validate_json_schema()
+
+
+def get_pydantic_models() -> tuple[type[ReplicateModelsConfig], type[ModelInfo], type[ImageModels], type[ChatModels]]:
+    """获取 Pydantic 数据模型类，用于外部验证或文档生成"""
+    return ReplicateModelsConfig, ModelInfo, ImageModels, ChatModels
 
 
 def print_config_status() -> None:
@@ -219,6 +359,7 @@ def print_config_status() -> None:
     print("📋 Replicate 配置状态:")
     print(f"   配置加载: {'✅' if status['config_loaded'] else '❌'}")
     print(f"   API Token: {'✅' if status['api_token_configured'] else '❌'}")
+    print(f"   数据模型验证: {'✅' if status.get('schema_valid', False) else '❌'}")
     print(f"   图像模型: {status['image_models_count']} 个")
     print(f"   对话模型: {status['chat_models_count']} 个")
 
@@ -229,14 +370,97 @@ def print_config_status() -> None:
         print(f"   对话模型列表: {', '.join(status['chat_models'])}")
 
 
+def print_pydantic_schema() -> None:
+    """打印 Pydantic 数据模型的 JSON Schema"""
+    print("📋 Pydantic 数据模型 Schema:")
+    print("=" * 60)
+    
+    try:
+        schema = ReplicateModelsConfig.model_json_schema()
+        print(json.dumps(schema, indent=2, ensure_ascii=False))
+    except Exception as e:
+        print(f"❌ 获取 Schema 失败: {e}")
+
+
+def validate_json_file_with_path(json_file_path: str) -> bool:
+    """测试指定JSON文件的验证功能"""
+    try:
+        from pathlib import Path
+        
+        config_file = Path(json_file_path)
+        if not config_file.exists():
+            print(f"❌ 测试文件不存在: {config_file}")
+            return False
+            
+        print(f"🧪 测试JSON文件: {config_file}")
+        
+        with open(config_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            
+        try:
+            config_model = ReplicateModelsConfig(**data)
+            print("✅ JSON 配置格式验证通过")
+            return True
+            
+        except ValidationError as ve:
+            print(f"❌ JSON 配置格式验证失败:")
+            for error in ve.errors():
+                loc = " -> ".join(str(x) for x in error["loc"])
+                print(f"   {loc}: {error['msg']}")
+                if "input" in error:
+                    print(f"   输入值: {error['input']}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ 测试失败: {e}")
+        return False
+
+
+# 为了向后兼容，保留原函数名作为别名
+test_json_validation_with_file = validate_json_file_with_path
+
+
+def create_example_config() -> Dict[str, Any]:
+    """创建一个示例配置，符合 Pydantic 数据模型"""
+    example = {
+        "image_models": {
+            "sdxl-lightning": {
+                "version": "bytedance/sdxl-lightning-4step:5f24084160c9089501c1b3545d9be3c27883ae2239b6f412990e82d4a6210f8f",
+                "cost_estimate": "$0.005-0.01 (~2-5秒) 推荐测试",
+                "description": "快速生成模型，适合测试和原型开发"
+            }
+        },
+        "chat_models": {
+            "gpt-4o-mini": {
+                "version": "openai/gpt-4o-mini",
+                "cost_estimate": "$0.15/1M input + $0.6/1M output tokens",
+                "description": "OpenAI 低成本高效对话模型，推荐日常使用"
+            }
+        }
+    }
+    
+    # 验证示例配置
+    try:
+        ReplicateModelsConfig(**example)
+        print("✅ 示例配置验证通过")
+    except ValidationError as e:
+        print(f"❌ 示例配置验证失败: {e}")
+    
+    return example
+
+
 if __name__ == "__main__":
     """模块测试"""
     print("=" * 60)
-    print("🔧 Replicate 配置测试")
+    print("🔧 Replicate 配置测试 (带 Pydantic 验证)")
     print("=" * 60)
 
     # 打印配置状态
     print_config_status()
+
+    # 验证 JSON Schema
+    print(f"\n📋 数据模型验证:")
+    validate_json_file()
 
     # 测试连接
     print(f"\n🔗 API 连接测试:")
@@ -246,3 +470,20 @@ if __name__ == "__main__":
     print(f"\n✅ 配置验证:")
     is_valid = validate_config()
     print(f"配置有效性: {'✅ 通过' if is_valid else '❌ 失败'}")
+
+    # 显示 Pydantic Schema（可选）
+    print(f"\n📖 是否显示 Pydantic Schema? (y/n): ", end="")
+    try:
+        choice = input().strip().lower()
+        if choice in ['y', 'yes']:
+            print_pydantic_schema()
+    except (EOFError, KeyboardInterrupt):
+        print("跳过")
+
+    # 显示示例配置
+    print(f"\n📝 示例配置:")
+    example = create_example_config()
+    print("示例配置片段:")
+    print(json.dumps(example, indent=2, ensure_ascii=False)[:500] + "...")
+
+    print("\n🎉 测试完成！")

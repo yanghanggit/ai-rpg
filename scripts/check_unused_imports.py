@@ -3,22 +3,26 @@
 检查和清理项目中未使用的导入的脚本
 
 使用方法：
-    python scripts/check_unused_imports.py --check          # 只检查，不修改
-    python scripts/check_unused_imports.py --fix            # 自动修复
+    python scripts/check_unused_imports.py --check          # 检查 src/ 和 scripts/，不修改
+    python scripts/check_unused_imports.py --fix            # 自动修复 src/ 和 scripts/
     python scripts/check_unused_imports.py --check-file <filepath>  # 检查单个文件
     python scripts/check_unused_imports.py --check --ignore-unused-imports  # 检查但忽略F401错误
 
-    python scripts/check_unused_imports.py --check --file src/
+    python scripts/check_unused_imports.py --check --file src/      # 只检查 src/
+    python scripts/check_unused_imports.py --check --file scripts/  # 只检查 scripts/
 """
 
+import argparse
 import subprocess
 import sys
-import argparse
 from pathlib import Path
+from typing import List, Union
 
 
 def run_ruff_check(
-    target_path: str = "src/", fix: bool = False, ignore_unused_imports: bool = False
+    target_paths: Union[str, List[str]],
+    fix: bool = False,
+    ignore_unused_imports: bool = False,
 ) -> int:
     """运行ruff检查未使用的导入"""
     cmd = ["ruff", "check"]
@@ -33,7 +37,11 @@ def run_ruff_check(
     if fix:
         cmd.append("--fix")
 
-    cmd.append(target_path)
+    # 支持单个路径（字符串）或多个路径（列表）
+    if isinstance(target_paths, str):
+        cmd.append(target_paths)
+    else:
+        cmd.extend(target_paths)
 
     print(f"运行命令: {' '.join(cmd)}")
     print("-" * 50)
@@ -75,10 +83,15 @@ def main() -> int:
     os.chdir(project_root)
 
     # 确定检查目标
-    target = args.file if args.file else "src/"
+    if args.file:
+        target = args.file
+        target_display = target
+    else:
+        target = ["src/", "scripts/"]
+        target_display = "src/ 和 scripts/"
 
     if args.check:
-        print(f"🔍 检查 {target} 中的未使用导入...")
+        print(f"🔍 检查 {target_display} 中的未使用导入...")
         return_code = run_ruff_check(
             target, fix=False, ignore_unused_imports=args.ignore_unused_imports
         )
@@ -92,7 +105,7 @@ def main() -> int:
             print("💡 提示：使用 --fix 参数可以自动修复这些问题。")
 
     elif args.fix:
-        print(f"🔧 修复 {target} 中的未使用导入...")
+        print(f"🔧 修复 {target_display} 中的未使用导入...")
         return_code = run_ruff_check(
             target, fix=True, ignore_unused_imports=args.ignore_unused_imports
         )

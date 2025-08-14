@@ -17,8 +17,8 @@ Author: yanghanggit
 Date: 2025-07-30
 """
 
-import sys
 import os
+import sys
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -26,28 +26,28 @@ sys.path.insert(
 )
 
 from loguru import logger
-from multi_agents_game.db.account import FAKE_USER
 
+from multi_agents_game.config import (
+    DEFAULT_MONGODB_CONFIG,
+    GLOBAL_GAME_NAME,
+    LOGS_DIR,
+)
+from multi_agents_game.db.account import FAKE_USER
+from multi_agents_game.db.mongodb_boot_document import BootDocument
+from multi_agents_game.db.mongodb_client import (
+    mongodb_clear_database,
+    mongodb_find_one,
+    mongodb_upsert_one,
+)
 from multi_agents_game.db.pgsql_client import (
-    pgsql_reset_database,
     pgsql_ensure_database_tables,
+    pgsql_reset_database,
 )
 from multi_agents_game.db.pgsql_user import has_user, save_user
 from multi_agents_game.db.redis_client import (
     redis_flushall,
 )
-from multi_agents_game.db.mongodb_client import (
-    mongodb_clear_database,
-    mongodb_upsert_one,
-    mongodb_find_one,
-)
-from multi_agents_game.db.mongodb_boot_document import BootDocument
 from multi_agents_game.demo.world import create_demo_game_world
-from multi_agents_game.config import (
-    LOGS_DIR,
-    GLOBAL_GAME_NAME,
-    DEFAULT_MONGODB_CONFIG,
-)
 
 
 #######################################################################################################

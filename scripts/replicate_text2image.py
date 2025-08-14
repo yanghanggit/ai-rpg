@@ -4,17 +4,18 @@ Replicate 文生图工具
 一个简单易用的文生图脚本，包含完整功能和使用示例
 """
 
+import argparse
+import json
 import os
 import sys
 import time
-import json
-import argparse
-from pathlib import Path
-from typing import Dict, Final, Optional, Any
-import requests
-import replicate
-from dotenv import load_dotenv
 import uuid
+from pathlib import Path
+from typing import Any, Dict, Final, Optional
+
+import replicate
+import requests
+from dotenv import load_dotenv
 
 # 加载环境变量
 load_dotenv()

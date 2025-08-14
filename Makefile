@@ -69,11 +69,19 @@ format:
 
 # 检查未使用的导入
 check-imports:
-	python scripts/check_unused_imports.py --check --ignore-unused-imports
+	@if conda info --envs | grep -q first_seed; then \
+		conda run -n first_seed python scripts/check_unused_imports.py --check --ignore-unused-imports; \
+	else \
+		python scripts/check_unused_imports.py --check --ignore-unused-imports; \
+	fi
 
 # 修复未使用的导入
 fix-imports:
-	python scripts/check_unused_imports.py --fix --ignore-unused-imports
+	@if conda info --envs | grep -q first_seed; then \
+		conda run -n first_seed python scripts/check_unused_imports.py --fix --ignore-unused-imports; \
+	else \
+		python scripts/check_unused_imports.py --fix --ignore-unused-imports; \
+	fi
 
 # 清理构建文件
 clean:

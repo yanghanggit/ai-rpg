@@ -13,13 +13,14 @@ sys.path.insert(
 )
 
 import platform
-import subprocess
-import psutil
 import socket
-from pathlib import Path
-from datetime import datetime
-from typing import Tuple, List, Dict
+import subprocess
 from collections.abc import Sequence
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Tuple
+
+import psutil
 
 try:
     from importlib.metadata import distributions

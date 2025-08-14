@@ -15,8 +15,8 @@ ChromaDB增强版RAG聊天系统启动脚本
     python -m scripts.run_chromadb_rag_chat
 """
 
-import sys
 import os
+import sys
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -24,8 +24,9 @@ sys.path.insert(
 )
 
 # 导入必要的模块
-from loguru import logger
 from langchain.schema import HumanMessage
+from loguru import logger
+
 from multi_agents_game.chat_services.chat_deepseek_rag_graph import (
     State,
     create_rag_compiled_graph,

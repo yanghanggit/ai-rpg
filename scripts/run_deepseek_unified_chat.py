@@ -30,7 +30,7 @@ from multi_agents_game.chat_services.chat_deepseek_graph_complex import main
 def run_unified_chat_system() -> None:
     """
     启动统一聊天系统
-    
+
     功能特性：
     1. 🚦 智能路由：基于关键词的自动模式选择
     2. 💬 直接对话：快速响应一般性问题
@@ -41,7 +41,7 @@ def run_unified_chat_system() -> None:
         logger.info("🚀 统一聊天系统启动器...")
         logger.info("📋 系统特性:")
         logger.info("   🚦 智能路由 - 自动选择最佳处理模式")
-        logger.info("   💬 直接对话 - 快速响应一般性问题")  
+        logger.info("   💬 直接对话 - 快速响应一般性问题")
         logger.info("   🔍 RAG增强 - 艾尔法尼亚世界专业知识")
         logger.info("   🎯 无缝切换 - 无需手动选择模式")
         logger.info("")
@@ -49,10 +49,10 @@ def run_unified_chat_system() -> None:
         logger.info("   一般对话: '你好'、'今天天气如何'、'讲个笑话'")
         logger.info("   专业知识: '艾尔法尼亚有哪些王国'、'圣剑的能力'、'魔王的弱点'")
         logger.info("")
-        
+
         # 调用主函数
         main()
-        
+
     except KeyboardInterrupt:
         logger.info("🛑 用户中断程序")
     except Exception as e:

@@ -21,9 +21,42 @@ from src.multi_agents_game.chat_services.routing import (
     RouteDecisionManager,
     StrategyWeight,
     create_route_manager_with_strategies,
-    create_alphania_keyword_strategy,
-    create_game_semantic_strategy,
 )
+
+# 导入测试配置数据
+from src.multi_agents_game.demo.campaign_setting import (
+    FANTASY_WORLD_RPG_TEST_ROUTE_KEYWORDS,
+    FANTASY_WORLD_RPG_TEST_RAG_TOPICS,
+)
+
+
+# =============================================================================
+# 测试专用策略创建函数（与主代码数据隔离）
+# =============================================================================
+
+
+def create_test_alphania_keyword_strategy() -> KeywordRouteStrategy:
+    """创建测试专用的艾尔法尼亚关键词策略（数据与主代码隔离）"""
+
+    config = {
+        "keywords": FANTASY_WORLD_RPG_TEST_ROUTE_KEYWORDS,
+        "threshold": 0.1,  # 与主配置保持一致的阈值
+        "case_sensitive": False,
+    }
+
+    return KeywordRouteStrategy(config)
+
+
+def create_test_game_semantic_strategy() -> SemanticRouteStrategy:
+    """创建测试专用的游戏语义策略（数据与主代码隔离）"""
+
+    config = {
+        "similarity_threshold": 0.5,  # 与主配置保持一致的阈值
+        "use_multilingual": True,
+        "rag_topics": FANTASY_WORLD_RPG_TEST_RAG_TOPICS,
+    }
+
+    return SemanticRouteStrategy(config)
 
 
 class TestRouteDecision:
@@ -80,7 +113,7 @@ class TestKeywordRouteStrategy:
 
     def test_alphania_strategy(self) -> None:
         """测试艾尔法尼亚专用策略"""
-        strategy = create_alphania_keyword_strategy()
+        strategy = create_test_alphania_keyword_strategy()  # 使用测试版本
 
         # 测试游戏相关查询
         decision = strategy.should_route_to_rag("阿斯特拉王国的骑士团怎么样？")
@@ -120,7 +153,7 @@ class TestSemanticRouteStrategy:
     )
     def test_semantic_matching(self) -> None:
         """测试语义匹配功能"""
-        strategy = create_game_semantic_strategy()
+        strategy = create_test_game_semantic_strategy()  # 使用测试版本
 
         # 测试游戏相关查询（语义相关但无关键词）
         decision = strategy.should_route_to_rag("这个虚拟世界的政治结构是什么？")
@@ -136,7 +169,7 @@ class TestRouteDecisionManager:
     def test_combined_decision(self) -> None:
         """测试组合决策"""
         # 创建测试策略
-        keyword_strategy = create_alphania_keyword_strategy()
+        keyword_strategy = create_test_alphania_keyword_strategy()  # 使用测试版本
 
         # 创建管理器
         manager = RouteDecisionManager([StrategyWeight(keyword_strategy, 1.0)])
@@ -167,11 +200,11 @@ class TestRouteDecisionManager:
 
     def test_default_manager(self) -> None:
         """测试默认管理器"""
-        # 使用核心函数直接创建具体策略配置的管理器
+        # 使用核心函数直接创建具体策略配置的管理器（使用测试版本）
         manager = create_route_manager_with_strategies(
             strategy_configs=[
-                (create_alphania_keyword_strategy, 0.4),
-                (create_game_semantic_strategy, 0.6),
+                (create_test_alphania_keyword_strategy, 0.4),  # 使用测试版本
+                (create_test_game_semantic_strategy, 0.6),  # 使用测试版本
             ],
             fallback_to_rag=False,
         )
@@ -233,7 +266,7 @@ if __name__ == "__main__":
 
     # 测试关键词策略
     print("\n=== 关键词策略测试 ===")
-    keyword_strategy = create_alphania_keyword_strategy()
+    keyword_strategy = create_test_alphania_keyword_strategy()  # 使用测试版本
 
     test_queries = [
         "艾尔法尼亚的王国有哪些？",
@@ -252,11 +285,11 @@ if __name__ == "__main__":
 
     # 测试完整路由管理器
     print("\n=== 完整路由管理器测试 ===")
-    # 使用核心函数创建具体策略配置的管理器
+    # 使用核心函数创建具体策略配置的管理器（使用测试版本）
     manager = create_route_manager_with_strategies(
         strategy_configs=[
-            (create_alphania_keyword_strategy, 0.4),
-            (create_game_semantic_strategy, 0.6),
+            (create_test_alphania_keyword_strategy, 0.4),  # 使用测试版本
+            (create_test_game_semantic_strategy, 0.6),  # 使用测试版本
         ],
         fallback_to_rag=False,
     )

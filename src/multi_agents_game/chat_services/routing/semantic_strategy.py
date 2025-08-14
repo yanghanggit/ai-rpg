@@ -5,7 +5,9 @@
 """
 
 from typing import Any, Dict, List, Optional
+
 from loguru import logger
+
 from .route_strategy import RouteDecision, RouteStrategy
 
 
@@ -44,12 +46,12 @@ class SemanticRouteStrategy(RouteStrategy):
                 [
                     "游戏世界设定和背景知识",
                     "角色信息和人物介绍",
-                    "装备道具和物品详情",
-                    "地图位置和场景描述",
-                    "技能魔法和战斗系统",
-                    "剧情故事和历史背景",
-                    "组织势力和政治关系",
-                    "种族文化和社会结构",
+                    # "装备道具和物品详情",
+                    # "地图位置和场景描述",
+                    # "技能魔法和战斗系统",
+                    # "剧情故事和历史背景",
+                    # "组织势力和政治关系",
+                    # "种族文化和社会结构",
                 ],
             )
 

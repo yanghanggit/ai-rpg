@@ -23,8 +23,90 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
 
+import traceback
+from typing import Dict, List
+
+from langchain.schema import HumanMessage
+from langchain_core.messages import BaseMessage
 from loguru import logger
-from multi_agents_game.chat_services.chat_deepseek_graph_complex import main
+
+from multi_agents_game.chat_services.chat_deepseek_graph_complex import (
+    create_unified_chat_graph,
+    stream_unified_graph_updates,
+)
+
+
+def main() -> None:
+    """
+    统一聊天系统主函数
+
+    功能：
+    - 创建统一聊天图
+    - 提供交互式命令行界面
+    - 支持直接对话和RAG增强两种模式的智能切换
+    """
+    logger.info("🎯 启动统一聊天系统...")
+
+    try:
+        # 创建统一聊天图
+        unified_graph = create_unified_chat_graph()
+
+        # 初始化聊天历史
+        chat_history_state: Dict[str, List[BaseMessage]] = {"messages": []}
+
+        logger.success("🎯 统一聊天系统初始化完成")
+        logger.info("💡 提示：系统会自动检测您的查询类型并选择最佳处理模式")
+        logger.info("   - 涉及艾尔法尼亚世界的问题将使用RAG增强模式")
+        logger.info("   - 一般性对话将使用直接对话模式")
+        logger.info("💡 输入 /quit、/exit 或 /q 退出程序")
+
+        # 开始交互循环
+        while True:
+            try:
+                print("\n" + "=" * 60)
+                user_input = input("User: ")
+
+                if user_input.lower() in ["/quit", "/exit", "/q"]:
+                    print("Goodbye!")
+                    break
+
+                # 用户输入状态
+                user_input_state: Dict[str, List[BaseMessage]] = {
+                    "messages": [HumanMessage(content=user_input)]
+                }
+
+                # 执行统一图流程
+                update_messages = stream_unified_graph_updates(
+                    unified_compiled_graph=unified_graph,
+                    chat_history_state=chat_history_state,
+                    user_input_state=user_input_state,
+                )
+
+                # 更新聊天历史
+                chat_history_state["messages"].extend(user_input_state["messages"])
+                chat_history_state["messages"].extend(update_messages)
+
+                # 显示最新的AI回复
+                if update_messages:
+                    latest_response = update_messages[-1]
+                    print(f"\nDeepSeek: {latest_response.content}")
+                    logger.success(f"✅ 系统回答: {latest_response.content}")
+
+                logger.debug("=" * 60)
+
+            except KeyboardInterrupt:
+                logger.info("🛑 [MAIN] 用户中断程序")
+                break
+            except Exception as e:
+                logger.error(f"❌ 统一聊天流程处理错误: {e}\n{traceback.format_exc()}")
+                print("抱歉，处理您的请求时发生错误，请重试。")
+
+    except Exception as e:
+        logger.error(f"❌ [MAIN] 统一聊天系统启动失败: {e}")
+        print("系统启动失败，请检查环境配置。")
+
+    finally:
+        logger.info("🔒 [MAIN] 清理系统资源...")
 
 
 def run_unified_chat_system() -> None:

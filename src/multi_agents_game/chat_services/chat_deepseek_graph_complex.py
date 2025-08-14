@@ -21,6 +21,9 @@ from typing_extensions import TypedDict
 from ..db.chromadb_client import get_chroma_db
 from ..db.rag_ops import rag_semantic_search
 
+# 导入新的路由系统
+from .routing import create_default_route_manager, RouteDecisionManager
+
 
 ############################################################################################################
 class UnifiedState(TypedDict):
@@ -40,14 +43,26 @@ class UnifiedState(TypedDict):
     processing_mode: str  # 处理模式描述
 
 
+# 全局路由管理器实例（延迟初始化）
+_route_manager: Optional[RouteDecisionManager] = None
+
+
+def get_route_manager() -> RouteDecisionManager:
+    """获取全局路由管理器实例（单例模式）"""
+    global _route_manager
+    if _route_manager is None:
+        logger.info("🚦 初始化全局路由管理器...")
+        _route_manager = create_default_route_manager()
+        logger.success("🚦 全局路由管理器初始化完成")
+    return _route_manager
+
+
 ############################################################################################################
 def router_node(state: UnifiedState) -> Dict[str, Any]:
     """
-    路由决策节点
+    路由决策节点 - 重构版本
 
-    基于关键词的简单路由策略：
-    - 检测艾尔法尼亚世界相关关键词
-    - 决定使用直接对话还是RAG增强模式
+    使用可配置的路由策略进行决策，支持关键词匹配、语义分析等多种策略组合。
     """
     try:
         logger.info("🚦 [ROUTER] 开始路由决策...")
@@ -63,92 +78,44 @@ def router_node(state: UnifiedState) -> Dict[str, Any]:
 
         logger.info(f"🚦 [ROUTER] 分析用户查询: {user_query}")
 
-        # 艾尔法尼亚世界相关关键词
-        rag_keywords = [
-            # 地名和世界设定
-            "艾尔法尼亚",
-            "阿斯特拉王国",
-            "月桂森林联邦",
-            "铁爪部族联盟",
-            "封印之塔",
-            "贤者之塔",
-            "水晶城",
-            "暗影墓地",
-            "星辰神殿",
-            # 重要物品和角色
-            "圣剑",
-            "晨曦之刃",
-            "魔王",
-            "玛拉凯斯",
-            "黯蚀之主",
-            "勇者",
-            "莉莉丝",
-            # 种族和职业
-            "精灵",
-            "兽人",
-            "龙族",
-            "矮人",
-            "冒险者",
-            "骑士",
-            "法师",
-            "战士",
-            # 魔法和技能
-            "火焰",
-            "冰霜",
-            "雷电",
-            "治愈",
-            "暗影",
-            "净化之光",
-            "审判之炎",
-            "希望守护",
-            # 组织和物品
-            "冒险者公会",
-            "暴风雪团",
-            "时之沙漏",
-            "生命之泉",
-            "星辰钢",
-            "魔法药水",
-            # 通用游戏术语
-            "王国",
-            "联邦",
-            "部族",
-            "遗迹",
-            "地下城",
-            "魔法",
-            "技能",
-            "装备",
-            "等级",
-        ]
+        # 使用新的路由系统进行决策
+        route_manager = get_route_manager()
+        decision = route_manager.make_decision(user_query)
 
-        # 检查关键词匹配
-        query_lower = user_query.lower()
-        matched_keywords = [
-            keyword for keyword in rag_keywords if keyword in query_lower
-        ]
-
-        # 路由决策逻辑
-        if matched_keywords:
-            route_decision = "rag"
-            confidence_score = min(0.9, 0.5 + len(matched_keywords) * 0.1)
-            processing_mode = f"RAG增强模式 (匹配关键词: {', '.join(matched_keywords[:3])}{'...' if len(matched_keywords) > 3 else ''})"
-            logger.success(
-                f"🚦 [ROUTER] 选择RAG模式，匹配到 {len(matched_keywords)} 个关键词"
-            )
+        # 转换决策结果到原有格式
+        route_decision = "rag" if decision.should_use_rag else "direct"
+        confidence_score = decision.confidence
+        
+        # 构建处理模式描述
+        if decision.should_use_rag:
+            # 从元数据中提取策略信息
+            strategies_used = decision.metadata.get("strategies_used", [])
+            processing_mode = f"RAG增强模式 (策略: {', '.join(strategies_used)})"
         else:
-            route_decision = "direct"
-            confidence_score = 0.8
             processing_mode = "直接对话模式"
-            logger.info("🚦 [ROUTER] 选择直接对话模式，未检测到专业关键词")
 
-        logger.info(
+        logger.success(
             f"🚦 [ROUTER] 路由决策完成: {route_decision} (置信度: {confidence_score:.2f})"
         )
+        
+        # 记录详细的决策信息
+        if logger.level("DEBUG").no >= logger._core.min_level:
+            individual_decisions = decision.metadata.get("individual_decisions", {})
+            for strategy_name, strategy_info in individual_decisions.items():
+                logger.debug(
+                    f"🚦 [ROUTER] {strategy_name}: "
+                    f"RAG={strategy_info['should_use_rag']}, "
+                    f"置信度={strategy_info['confidence']:.3f}, "
+                    f"权重={strategy_info['weight']}"
+                )
 
         return {
             "user_query": user_query,
             "route_decision": route_decision,
             "confidence_score": confidence_score,
             "processing_mode": processing_mode,
+            # 保留决策详情用于调试和分析
+            "route_metadata": decision.metadata
         }
 
     except Exception as e:
@@ -157,8 +124,9 @@ def router_node(state: UnifiedState) -> Dict[str, Any]:
         return {
             "user_query": state.get("user_query", ""),
             "route_decision": "direct",
-            "confidence_score": 0.5,
+            "confidence_score": 0.1,
             "processing_mode": "错误回退-直接对话模式",
+            "route_metadata": {"error": str(e)}
         }
 
 

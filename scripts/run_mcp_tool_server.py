@@ -31,7 +31,6 @@ sys.path.insert(
 )
 
 import asyncio
-import json
 import traceback
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -50,13 +49,16 @@ from mcp.types import Tool
 # 数据模型定义
 # ============================================================================
 
+
 class ToolCallRequest(BaseModel):
     """工具调用请求模型"""
+
     arguments: Dict[str, Any] = Field(default_factory=dict, description="工具调用参数")
 
 
 class ToolCallResponse(BaseModel):
     """工具调用响应模型"""
+
     success: bool = Field(description="调用是否成功")
     result: Any = Field(description="工具执行结果")
     error: Optional[str] = Field(default=None, description="错误信息")
@@ -65,6 +67,7 @@ class ToolCallResponse(BaseModel):
 
 class ToolInfo(BaseModel):
     """工具信息模型"""
+
     name: str = Field(description="工具名称")
     description: str = Field(description="工具描述")
     input_schema: Dict[str, Any] = Field(description="输入参数schema")
@@ -72,6 +75,7 @@ class ToolInfo(BaseModel):
 
 class ServerStatus(BaseModel):
     """服务器状态模型"""
+
     status: str = Field(description="服务器状态")
     version: str = Field(description="服务器版本")
     available_tools: int = Field(description="可用工具数量")
@@ -82,27 +86,24 @@ class ServerStatus(BaseModel):
 # 工具实现
 # ============================================================================
 
+
 class McpToolRegistry:
     """MCP 工具注册表"""
-    
-    def __init__(self):
+
+    def __init__(self) -> None:
         self.tools: Dict[str, Dict[str, Any]] = {}
         self.start_time = datetime.now()
         self._register_builtin_tools()
-    
-    def _register_builtin_tools(self):
+
+    def _register_builtin_tools(self) -> None:
         """注册内置工具"""
         self.register_tool(
             name="get_current_time",
             description="获取当前系统时间",
-            input_schema={
-                "type": "object",
-                "properties": {},
-                "required": []
-            },
-            function=self._get_current_time
+            input_schema={"type": "object", "properties": {}, "required": []},
+            function=self._get_current_time,
         )
-        
+
         self.register_tool(
             name="calculator",
             description="执行数学计算",
@@ -111,113 +112,111 @@ class McpToolRegistry:
                 "properties": {
                     "expression": {
                         "type": "string",
-                        "description": "数学表达式，如 '2+3*4'"
+                        "description": "数学表达式，如 '2+3*4'",
                     }
                 },
-                "required": ["expression"]
+                "required": ["expression"],
             },
-            function=self._calculator
+            function=self._calculator,
         )
-        
+
         self.register_tool(
             name="text_processor",
             description="处理文本内容",
             input_schema={
                 "type": "object",
                 "properties": {
-                    "text": {
-                        "type": "string",
-                        "description": "要处理的文本"
-                    },
+                    "text": {"type": "string", "description": "要处理的文本"},
                     "operation": {
                         "type": "string",
                         "description": "操作类型：upper/lower/reverse/count",
-                        "default": "upper"
-                    }
+                        "default": "upper",
+                    },
                 },
-                "required": ["text"]
+                "required": ["text"],
             },
-            function=self._text_processor
+            function=self._text_processor,
         )
-    
-    def register_tool(self, name: str, description: str, input_schema: Dict[str, Any], function):
+
+    def register_tool(
+        self, name: str, description: str, input_schema: Dict[str, Any], function: Any
+    ) -> None:
         """注册工具"""
-        tool = Tool(
-            name=name,
-            description=description,
-            inputSchema=input_schema
-        )
-        
-        self.tools[name] = {
-            "tool": tool,
-            "function": function
-        }
+        tool = Tool(name=name, description=description, inputSchema=input_schema)
+
+        self.tools[name] = {"tool": tool, "function": function}
         logger.info(f"工具已注册: {name}")
-    
+
     def get_tool_list(self) -> List[ToolInfo]:
         """获取工具列表"""
         tools = []
         for name, tool_data in self.tools.items():
             tool = tool_data["tool"]
-            tools.append(ToolInfo(
-                name=tool.name,
-                description=tool.description,
-                input_schema=tool.inputSchema or {}
-            ))
+            tools.append(
+                ToolInfo(
+                    name=tool.name,
+                    description=tool.description,
+                    input_schema=tool.inputSchema or {},
+                )
+            )
         return tools
-    
+
     def get_tool_info(self, tool_name: str) -> Optional[ToolInfo]:
         """获取工具信息"""
         if tool_name not in self.tools:
             return None
-        
+
         tool = self.tools[tool_name]["tool"]
         return ToolInfo(
             name=tool.name,
             description=tool.description,
-            input_schema=tool.inputSchema or {}
+            input_schema=tool.inputSchema or {},
         )
-    
-    async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> ToolCallResponse:
+
+    async def call_tool(
+        self, tool_name: str, arguments: Dict[str, Any]
+    ) -> ToolCallResponse:
         """调用工具"""
         start_time = datetime.now()
-        
+
         try:
             if tool_name not in self.tools:
                 raise ValueError(f"工具 '{tool_name}' 不存在")
-            
+
             tool_function = self.tools[tool_name]["function"]
-            
+
             # 执行工具函数
             if asyncio.iscoroutinefunction(tool_function):
                 result = await tool_function(**arguments)
             else:
                 result = tool_function(**arguments)
-            
+
             execution_time = (datetime.now() - start_time).total_seconds()
-            
-            logger.info(f"工具调用成功: {tool_name} | 参数: {arguments} | 结果: {result}")
-            
-            return ToolCallResponse(
-                success=True,
-                result=result,
-                execution_time=execution_time
+
+            logger.info(
+                f"工具调用成功: {tool_name} | 参数: {arguments} | 结果: {result}"
             )
-        
+
+            return ToolCallResponse(
+                success=True, result=result, execution_time=execution_time
+            )
+
         except Exception as e:
             execution_time = (datetime.now() - start_time).total_seconds()
             error_msg = f"工具执行失败: {str(e)}"
-            
-            logger.error(f"工具调用失败: {tool_name} | 参数: {arguments} | 错误: {error_msg}")
+
+            logger.error(
+                f"工具调用失败: {tool_name} | 参数: {arguments} | 错误: {error_msg}"
+            )
             logger.error(f"详细错误: {traceback.format_exc()}")
-            
+
             return ToolCallResponse(
                 success=False,
                 result=None,
                 error=error_msg,
-                execution_time=execution_time
+                execution_time=execution_time,
             )
-    
+
     def get_server_status(self) -> ServerStatus:
         """获取服务器状态"""
         uptime = datetime.now() - self.start_time
@@ -225,17 +224,17 @@ class McpToolRegistry:
             status="running",
             version="1.0.0",
             available_tools=len(self.tools),
-            uptime=str(uptime)
+            uptime=str(uptime),
         )
-    
+
     # ========================================================================
     # 内置工具实现
     # ========================================================================
-    
+
     def _get_current_time(self) -> str:
         """获取当前时间"""
         return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
+
     def _calculator(self, expression: str) -> str:
         """安全的计算器工具"""
         try:
@@ -243,12 +242,12 @@ class McpToolRegistry:
             allowed_chars = set("0123456789+-*/.() ")
             if not all(c in allowed_chars for c in expression):
                 return "错误：表达式包含不允许的字符"
-            
+
             result = eval(expression)
             return f"计算结果：{result}"
         except Exception as e:
             return f"计算错误：{str(e)}"
-    
+
     def _text_processor(self, text: str, operation: str = "upper") -> str:
         """文本处理工具"""
         try:
@@ -275,7 +274,7 @@ app = FastAPI(
     description="Model Context Protocol (MCP) 工具服务器",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
 
 # 添加 CORS 中间件
@@ -288,27 +287,28 @@ app.add_middleware(
 )
 
 # 初始化工具注册表
-tool_registry = McpToolRegistry()
+tool_registry: McpToolRegistry = McpToolRegistry()
 
 
 # ============================================================================
 # API 端点
 # ============================================================================
 
+
 @app.get("/health", response_model=ServerStatus)
-async def health_check():
+async def health_check() -> ServerStatus:
     """健康检查"""
     return tool_registry.get_server_status()
 
 
 @app.get("/tools", response_model=List[ToolInfo])
-async def get_tools():
+async def get_tools() -> List[ToolInfo]:
     """获取所有可用工具"""
     return tool_registry.get_tool_list()
 
 
 @app.get("/tools/{tool_name}", response_model=ToolInfo)
-async def get_tool_info(tool_name: str):
+async def get_tool_info(tool_name: str) -> ToolInfo:
     """获取指定工具的详细信息"""
     tool_info = tool_registry.get_tool_info(tool_name)
     if not tool_info:
@@ -317,19 +317,19 @@ async def get_tool_info(tool_name: str):
 
 
 @app.post("/tools/{tool_name}/call", response_model=ToolCallResponse)
-async def call_tool(tool_name: str, request: ToolCallRequest):
+async def call_tool(tool_name: str, request: ToolCallRequest) -> ToolCallResponse:
     """调用指定工具"""
     return await tool_registry.call_tool(tool_name, request.arguments)
 
 
 @app.get("/")
-async def root():
+async def root() -> Dict[str, str]:
     """根路径"""
     return {
         "message": "MCP 工具服务器",
         "version": "1.0.0",
         "docs": "/docs",
-        "tools": "/tools"
+        "tools": "/tools",
     }
 
 
@@ -337,16 +337,17 @@ async def root():
 # 服务器启动
 # ============================================================================
 
-def main():
+
+def main() -> None:
     """启动 MCP 工具服务器"""
     logger.info("🚀 启动 MCP 工具服务器...")
-    
+
     uvicorn.run(
         app,
         host="127.0.0.1",
         port=8765,
         reload=False,  # 禁用 reload 避免模块导入问题
-        log_level="info"
+        log_level="info",
     )
 
 

@@ -41,7 +41,6 @@ from multi_agents_game.chat_services.chat_deepseek_mcp_graph import (
     stream_mcp_graph_updates,
     initialize_mcp_client,
 )
-from multi_agents_game.chat_services.mcp_client import McpClient
 
 
 def print_welcome_message() -> None:
@@ -111,7 +110,9 @@ def print_chat_history(chat_history_state: McpState) -> None:
         f"   • AI回复: {sum(1 for msg in messages if not isinstance(msg, HumanMessage))}"
     )
     print(f"   • 可用工具: {len(chat_history_state.get('available_tools', []))}")
-    print(f"   • 工具状态: {'启用' if chat_history_state.get('enable_tools', False) else '禁用'}")
+    print(
+        f"   • 工具状态: {'启用' if chat_history_state.get('enable_tools', False) else '禁用'}"
+    )
     print("-" * 60)
 
 
@@ -134,14 +135,16 @@ async def main() -> None:
         # 初始化 MCP 客户端和工具
         mcp_client = None
         available_tools = []
-        
+
         try:
             mcp_client = await initialize_mcp_client()
             available_tools = await mcp_client.get_available_tools()
             logger.success(f"🔗 MCP 客户端连接成功，可用工具: {len(available_tools)}")
         except Exception as e:
             logger.warning(f"⚠️ MCP 服务器连接失败: {e}")
-            logger.info("💡 请确保 MCP 服务器正在运行: python scripts/mcp_tool_server.py")
+            logger.info(
+                "💡 请确保 MCP 服务器正在运行: python scripts/mcp_tool_server.py"
+            )
             print("⚠️ MCP 服务器连接失败，将在无工具模式下运行")
 
         # 初始化 MCP 聊天历史状态
@@ -155,7 +158,9 @@ async def main() -> None:
 
         # 生成 MCP 增强的聊天机器人状态图
         compiled_mcp_stage_graph = await create_compiled_mcp_stage_graph(
-            "deepseek_mcp_chatbot_node", temperature=0.7, enable_tools=mcp_client is not None
+            "deepseek_mcp_chatbot_node",
+            temperature=0.7,
+            enable_tools=mcp_client is not None,
         )
 
         logger.success("🤖 DeepSeek + MCP 聊天系统初始化完成，开始对话...")
@@ -182,8 +187,14 @@ async def main() -> None:
                                 required = tool.input_schema.get("required", [])
                                 for param_name, param_info in properties.items():
                                     param_desc = param_info.get("description", "无描述")
-                                    is_required = " (必需)" if param_name in required else " (可选)"
-                                    print(f"     - {param_name}: {param_desc}{is_required}")
+                                    is_required = (
+                                        " (必需)"
+                                        if param_name in required
+                                        else " (可选)"
+                                    )
+                                    print(
+                                        f"     - {param_name}: {param_desc}{is_required}"
+                                    )
                             print()
                     else:
                         print_available_tools()

@@ -48,7 +48,7 @@ class TestMcpClient:
             McpToolInfo(
                 name="get_current_time",
                 description="获取当前时间",
-                input_schema={"type": "object", "properties": {}, "required": []}
+                input_schema={"type": "object", "properties": {}, "required": []},
             ),
             McpToolInfo(
                 name="calculator",
@@ -58,11 +58,11 @@ class TestMcpClient:
                     "properties": {
                         "expression": {
                             "type": "string",
-                            "description": "要计算的数学表达式"
+                            "description": "要计算的数学表达式",
                         }
                     },
-                    "required": ["expression"]
-                }
+                    "required": ["expression"],
+                },
             ),
             McpToolInfo(
                 name="text_processor",
@@ -70,60 +70,58 @@ class TestMcpClient:
                 input_schema={
                     "type": "object",
                     "properties": {
-                        "text": {
-                            "type": "string",
-                            "description": "要处理的文本"
-                        },
+                        "text": {"type": "string", "description": "要处理的文本"},
                         "operation": {
                             "type": "string",
-                            "description": "操作类型: upper, lower, reverse, count"
-                        }
+                            "description": "操作类型: upper, lower, reverse, count",
+                        },
                     },
-                    "required": ["text", "operation"]
-                }
-            )
+                    "required": ["text", "operation"],
+                },
+            ),
         ]
 
     @pytest.mark.asyncio
-    async def test_mcp_client_initialization(self):
+    async def test_mcp_client_initialization(self) -> None:
         """测试 MCP 客户端初始化"""
-        with patch('aiohttp.ClientSession.get') as mock_get:
+        with patch("aiohttp.ClientSession.get") as mock_get:
             mock_response = AsyncMock()
             mock_response.status = 200
             mock_get.return_value.__aenter__.return_value = mock_response
-            
+
             client = await initialize_mcp_client("http://127.0.0.1:8765")
             assert isinstance(client, McpClient)
             assert client.server_url == "http://127.0.0.1:8765"
 
     @pytest.mark.asyncio
-    async def test_mcp_client_health_check(self):
+    async def test_mcp_client_health_check(self) -> None:
         """测试 MCP 客户端健康检查"""
-        with patch('aiohttp.ClientSession.get') as mock_get:
+        with patch("aiohttp.ClientSession.get") as mock_get:
             mock_response = AsyncMock()
             mock_response.status = 200
             mock_get.return_value.__aenter__.return_value = mock_response
-            
+
             client = McpClient("http://127.0.0.1:8765")
             await client._ensure_session()
             result = await client.check_health()
             assert result is True
 
     @pytest.mark.asyncio
-    async def test_get_available_tools(self, sample_tools: List[McpToolInfo]):
+    async def test_get_available_tools(self, sample_tools: List[McpToolInfo]) -> None:
         """测试获取可用工具"""
-        with patch('aiohttp.ClientSession.get') as mock_get:
+        with patch("aiohttp.ClientSession.get") as mock_get:
             mock_response = AsyncMock()
             mock_response.status = 200
             mock_response.json.return_value = [
                 {
                     "name": tool.name,
                     "description": tool.description,
-                    "input_schema": tool.input_schema
-                } for tool in sample_tools
+                    "input_schema": tool.input_schema,
+                }
+                for tool in sample_tools
             ]
             mock_get.return_value.__aenter__.return_value = mock_response
-            
+
             client = McpClient("http://127.0.0.1:8765")
             await client._ensure_session()
             tools = await client.get_available_tools()
@@ -133,19 +131,19 @@ class TestMcpClient:
             assert tools[2].name == "text_processor"
 
     @pytest.mark.asyncio
-    async def test_call_tool_success(self):
+    async def test_call_tool_success(self) -> None:
         """测试成功调用工具"""
-        with patch('aiohttp.ClientSession.post') as mock_post:
+        with patch("aiohttp.ClientSession.post") as mock_post:
             mock_response = AsyncMock()
             mock_response.status = 200
             mock_response.json.return_value = {
                 "success": True,
                 "result": "2023-08-18 14:30:00",
                 "error": None,
-                "execution_time": 0.1
+                "execution_time": 0.1,
             }
             mock_post.return_value.__aenter__.return_value = mock_response
-            
+
             client = McpClient("http://127.0.0.1:8765")
             await client._ensure_session()
             result = await client.call_tool("get_current_time", {})
@@ -154,19 +152,19 @@ class TestMcpClient:
             assert result.result == "2023-08-18 14:30:00"
 
     @pytest.mark.asyncio
-    async def test_call_tool_failure(self):
+    async def test_call_tool_failure(self) -> None:
         """测试工具调用失败"""
-        with patch('aiohttp.ClientSession.post') as mock_post:
+        with patch("aiohttp.ClientSession.post") as mock_post:
             mock_response = AsyncMock()
             mock_response.status = 200
             mock_response.json.return_value = {
                 "success": False,
                 "result": None,
                 "error": "工具执行失败",
-                "execution_time": 0.05
+                "execution_time": 0.05,
             }
             mock_post.return_value.__aenter__.return_value = mock_response
-            
+
             client = McpClient("http://127.0.0.1:8765")
             await client._ensure_session()
             result = await client.call_tool("invalid_tool", {})
@@ -175,21 +173,22 @@ class TestMcpClient:
             assert result.error == "工具执行失败"
 
     @pytest.mark.asyncio
-    async def test_execute_mcp_tool_integration(self):
+    async def test_execute_mcp_tool_integration(self) -> None:
         """测试 execute_mcp_tool 函数"""
         # 创建模拟客户端
         mock_client = AsyncMock(spec=McpClient)
         mock_result = McpToolResult(
-            success=True,
-            result="计算结果：25",
-            error=None,
-            execution_time=0.1
+            success=True, result="计算结果：25", error=None, execution_time=0.1
         )
         mock_client.call_tool.return_value = mock_result
-        
-        result = await execute_mcp_tool("calculator", {"expression": "5*5"}, mock_client)
+
+        result = await execute_mcp_tool(
+            "calculator", {"expression": "5*5"}, mock_client
+        )
         assert result == "计算结果：25"
-        mock_client.call_tool.assert_called_once_with("calculator", {"expression": "5*5"})
+        mock_client.call_tool.assert_called_once_with(
+            "calculator", {"expression": "5*5"}
+        )
 
 
 class TestMcpState:
@@ -203,7 +202,7 @@ class TestMcpState:
             McpToolInfo(
                 name="test_tool",
                 description="测试工具",
-                input_schema={"type": "object", "properties": {}}
+                input_schema={"type": "object", "properties": {}},
             )
         ]
 
@@ -256,13 +255,13 @@ class TestMcpIntegration:
         """测试完整的 MCP 工作流程"""
         # 1. 创建模拟客户端
         mock_client = AsyncMock(spec=McpClient)
-        
+
         # 模拟工具列表
         mock_tools = [
             McpToolInfo(
                 name="get_current_time",
                 description="获取当前时间",
-                input_schema={"type": "object", "properties": {}}
+                input_schema={"type": "object", "properties": {}},
             ),
             McpToolInfo(
                 name="calculator",
@@ -272,13 +271,13 @@ class TestMcpIntegration:
                     "properties": {
                         "expression": {"type": "string", "description": "数学表达式"}
                     },
-                    "required": ["expression"]
-                }
-            )
+                    "required": ["expression"],
+                },
+            ),
         ]
-        
+
         mock_client.get_available_tools.return_value = mock_tools
-        
+
         # 2. 创建状态
         state: McpState = {
             "messages": [],
@@ -290,23 +289,19 @@ class TestMcpIntegration:
 
         # 3. 模拟工具执行结果
         time_result = McpToolResult(
-            success=True,
-            result="2023-08-18 14:30:00",
-            error=None,
-            execution_time=0.1
+            success=True, result="2023-08-18 14:30:00", error=None, execution_time=0.1
         )
         calc_result = McpToolResult(
-            success=True,
-            result="计算结果：25",
-            error=None,
-            execution_time=0.05
+            success=True, result="计算结果：25", error=None, execution_time=0.05
         )
-        
+
         mock_client.call_tool.side_effect = [time_result, calc_result]
 
         # 4. 执行工具
         time_output = await execute_mcp_tool("get_current_time", {}, mock_client)
-        calc_output = await execute_mcp_tool("calculator", {"expression": "5*5"}, mock_client)
+        calc_output = await execute_mcp_tool(
+            "calculator", {"expression": "5*5"}, mock_client
+        )
 
         # 5. 更新状态
         state["tool_outputs"].extend(
@@ -321,19 +316,16 @@ class TestMcpIntegration:
         assert "2023-08-18 14:30:00" in time_output, "时间工具应该返回正确时间"
         assert "计算结果：25" in calc_output, "计算器应该正确计算 5*5=25"
 
-    @pytest.mark.asyncio 
+    @pytest.mark.asyncio
     async def test_mcp_error_handling(self) -> None:
         """测试 MCP 错误处理"""
         # 创建会返回错误的模拟客户端
         mock_client = AsyncMock(spec=McpClient)
         error_result = McpToolResult(
-            success=False,
-            result=None,
-            error="工具执行失败",
-            execution_time=0.01
+            success=False, result=None, error="工具执行失败", execution_time=0.01
         )
         mock_client.call_tool.return_value = error_result
-        
+
         # 执行工具并验证错误处理
         result = await execute_mcp_tool("failing_tool", {"param": "value"}, mock_client)
         assert "工具执行失败" in result, "应该返回错误信息"

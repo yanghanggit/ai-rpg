@@ -266,7 +266,7 @@ class TestSentenceTransformersPerformance:
             print(f"⚠️  WARNING: Total memory usage is high: {current_memory:.2f}MB")
         else:
             print(f"✅ Memory usage is reasonable: {current_memory:.2f}MB")
-        
+
         assert test_embedding.shape[0] > 0  # Ensure model works
 
     def test_encoding_speed(self, basic_model: Any) -> None:

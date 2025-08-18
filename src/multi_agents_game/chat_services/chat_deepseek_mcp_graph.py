@@ -6,7 +6,7 @@ load_dotenv()
 
 import os
 import traceback
-from typing import Annotated, Any, Dict, List
+from typing import Annotated, Any, Dict, List, Optional
 
 from langchain.schema import AIMessage, SystemMessage
 from langchain_core.messages import BaseMessage
@@ -28,7 +28,7 @@ class McpState(TypedDict):
     """
 
     messages: Annotated[List[BaseMessage], add_messages]
-    mcp_client: McpClient  # MCP 客户端
+    mcp_client: Optional[McpClient]  # MCP 客户端
     available_tools: List[McpToolInfo]  # 可用的 MCP 工具
     tool_outputs: List[Dict[str, Any]]  # 工具执行结果
     enable_tools: bool  # 是否启用工具调用
@@ -46,12 +46,11 @@ async def initialize_mcp_client(server_url: str = "http://127.0.0.1:8765") -> Mc
         McpClient: 初始化后的 MCP 客户端
     """
     client = McpClient(server_url)
-    await client._ensure_session()
-    
-    # 检查服务器健康状态
+
+    # 检查服务器健康状态，这会自动初始化session
     if not await client.check_health():
         raise ConnectionError(f"无法连接到 MCP 服务器: {server_url}")
-    
+
     logger.info(f"MCP 客户端初始化成功: {server_url}")
     return client
 
@@ -73,9 +72,11 @@ async def execute_mcp_tool(
     """
     try:
         result = await mcp_client.call_tool(tool_name, tool_args)
-        
+
         if result.success:
-            logger.info(f"MCP工具执行成功: {tool_name} | 参数: {tool_args} | 结果: {result.result}")
+            logger.info(
+                f"MCP工具执行成功: {tool_name} | 参数: {tool_args} | 结果: {result.result}"
+            )
             return str(result.result)
         else:
             error_msg = f"工具执行失败: {tool_name} | 错误: {result.error}"
@@ -90,10 +91,10 @@ async def execute_mcp_tool(
 
 ############################################################################################################
 async def create_compiled_mcp_stage_graph(
-    node_name: str, 
-    temperature: float, 
+    node_name: str,
+    temperature: float,
     enable_tools: bool = True,
-    mcp_server_url: str = "http://127.0.0.1:8765"
+    mcp_server_url: str = "http://127.0.0.1:8765",
 ) -> CompiledStateGraph[McpState, Any, McpState, McpState]:
     """
     创建带 MCP 支持的编译状态图
@@ -124,7 +125,7 @@ async def create_compiled_mcp_stage_graph(
     # 初始化 MCP 客户端
     mcp_client = None
     available_tools = []
-    
+
     if enable_tools:
         try:
             mcp_client = await initialize_mcp_client(mcp_server_url)
@@ -344,6 +345,3 @@ async def stream_mcp_graph_updates(
         ret.append(error_message)
 
     return ret
-
-
-

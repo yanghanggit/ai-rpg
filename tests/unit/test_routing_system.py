@@ -59,6 +59,16 @@ def create_test_game_semantic_strategy() -> SemanticRouteStrategy:
     return SemanticRouteStrategy(config)
 
 
+def create_test_route_manager() -> RouteDecisionManager:
+    return create_route_manager_with_strategies(
+        strategy_configs=[
+            (create_test_alphania_keyword_strategy, 0.4),
+            (create_test_game_semantic_strategy, 0.6),
+        ],
+        fallback_to_rag=False,
+    )
+
+
 class TestRouteDecision:
     """测试路由决策结果类"""
 
@@ -227,12 +237,13 @@ class TestIntegration:
         from src.multi_agents_game.chat_services.chat_deepseek_graph_complex import (
             UnifiedState,
         )
-        from src.multi_agents_game.chat_services.routing import (
-            create_default_route_manager,
-        )
+
+        # from src.multi_agents_game.chat_services.routing import (
+        #     create_default_route_manager,
+        # )
 
         # 创建路由管理器实例
-        manager = create_default_route_manager()
+        manager = create_test_route_manager()
         assert manager is not None
 
         # 创建测试状态

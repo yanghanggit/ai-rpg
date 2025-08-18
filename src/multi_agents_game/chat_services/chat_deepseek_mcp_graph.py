@@ -8,7 +8,7 @@ import os
 import traceback
 from typing import Annotated, Any, Dict, List
 
-from langchain.schema import AIMessage
+from langchain.schema import AIMessage, SystemMessage
 from langchain_core.messages import BaseMessage
 from langchain_deepseek import ChatDeepSeek
 from langgraph.graph import StateGraph
@@ -17,195 +17,83 @@ from langgraph.graph.state import CompiledStateGraph
 from pydantic import SecretStr
 from typing_extensions import TypedDict
 
-# MCP imports
-from mcp.types import Tool
-
-
-# 简化的 MCP 工具包装器，包含 MCP Tool 和执行函数
-class McpToolWrapper(TypedDict):
-    tool: Tool  # 真正的 MCP Tool 对象
-    function: Any  # 实际执行函数
+# 导入 MCP 客户端
+from .mcp_client import McpClient, McpToolInfo
 
 
 ############################################################################################################
 class McpState(TypedDict):
     """
-    MCP 增强的状态，包含消息和工具相关信息
+    MCP 增强的状态，包含消息和 MCP 客户端相关信息
     """
 
     messages: Annotated[List[BaseMessage], add_messages]
-    tools_available: List[McpToolWrapper]  # 可用的 MCP 工具
+    mcp_client: McpClient  # MCP 客户端
+    available_tools: List[McpToolInfo]  # 可用的 MCP 工具
     tool_outputs: List[Dict[str, Any]]  # 工具执行结果
     enable_tools: bool  # 是否启用工具调用
 
 
 ############################################################################################################
-def create_sample_mcp_tools() -> List[McpToolWrapper]:
+async def initialize_mcp_client(server_url: str = "http://127.0.0.1:8765") -> McpClient:
     """
-    创建示例 MCP 工具，使用真正的 MCP Tool 对象
+    初始化 MCP 客户端
+
+    Args:
+        server_url: MCP 服务器地址
 
     Returns:
-        List[McpToolWrapper]: MCP 工具包装器列表
+        McpClient: 初始化后的 MCP 客户端
     """
-    tools: List[McpToolWrapper] = []
-
-    # 示例工具1：获取当前时间
-    def get_current_time() -> str:
-        """获取当前时间"""
-        import datetime
-
-        return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    # 示例工具2：简单计算器
-    def calculator(expression: str) -> str:
-        """
-        安全的计算器工具
-
-        Args:
-            expression: 数学表达式，如 "2+3*4"
-
-        Returns:
-            str: 计算结果
-        """
-        try:
-            # 安全的数学表达式求值（仅允许数字和基本运算符）
-            allowed_chars = set("0123456789+-*/.() ")
-            if not all(c in allowed_chars for c in expression):
-                return "错误：表达式包含不允许的字符"
-
-            result = eval(expression)
-            return f"计算结果：{result}"
-        except Exception as e:
-            return f"计算错误：{str(e)}"
-
-    # 示例工具3：文本处理
-    def text_processor(text: str, operation: str = "upper") -> str:
-        """
-        文本处理工具
-
-        Args:
-            text: 要处理的文本
-            operation: 操作类型 (upper/lower/reverse/count)
-
-        Returns:
-            str: 处理结果
-        """
-        try:
-            if operation == "upper":
-                return text.upper()
-            elif operation == "lower":
-                return text.lower()
-            elif operation == "reverse":
-                return text[::-1]
-            elif operation == "count":
-                return f"字符数：{len(text)}"
-            else:
-                return f"不支持的操作：{operation}"
-        except Exception as e:
-            return f"处理错误：{str(e)}"
-
-    # 创建真正的 MCP Tool 对象
-    time_tool = Tool(
-        name="get_current_time",
-        description="获取当前系统时间",
-        inputSchema={"type": "object", "properties": {}, "required": []},
-    )
-
-    calculator_tool = Tool(
-        name="calculator",
-        description="执行数学计算",
-        inputSchema={
-            "type": "object",
-            "properties": {
-                "expression": {
-                    "type": "string",
-                    "description": "数学表达式，如 '2+3*4'",
-                }
-            },
-            "required": ["expression"],
-        },
-    )
-
-    text_processor_tool = Tool(
-        name="text_processor",
-        description="处理文本内容",
-        inputSchema={
-            "type": "object",
-            "properties": {
-                "text": {"type": "string", "description": "要处理的文本"},
-                "operation": {
-                    "type": "string",
-                    "description": "操作类型：upper/lower/reverse/count",
-                    "default": "upper",
-                },
-            },
-            "required": ["text"],
-        },
-    )
-
-    # 创建工具包装器
-    tools_data: List[McpToolWrapper] = [
-        {
-            "tool": time_tool,
-            "function": get_current_time,
-        },
-        {
-            "tool": calculator_tool,
-            "function": calculator,
-        },
-        {
-            "tool": text_processor_tool,
-            "function": text_processor,
-        },
-    ]
-
-    tools.extend(tools_data)
-
-    return tools
+    client = McpClient(server_url)
+    await client._ensure_session()
+    
+    # 检查服务器健康状态
+    if not await client.check_health():
+        raise ConnectionError(f"无法连接到 MCP 服务器: {server_url}")
+    
+    logger.info(f"MCP 客户端初始化成功: {server_url}")
+    return client
 
 
 ############################################################################################################
-def execute_mcp_tool(
-    tool_name: str, tool_args: Dict[str, Any], available_tools: List[McpToolWrapper]
+async def execute_mcp_tool(
+    tool_name: str, tool_args: Dict[str, Any], mcp_client: McpClient
 ) -> str:
     """
-    执行 MCP 工具
+    通过 MCP 客户端执行工具
 
     Args:
         tool_name: 工具名称
         tool_args: 工具参数
-        available_tools: 可用工具包装器列表
+        mcp_client: MCP 客户端
 
     Returns:
         str: 工具执行结果
     """
     try:
-        # 查找对应的工具
-        target_tool_wrapper = None
-        for tool_wrapper in available_tools:
-            if tool_wrapper["tool"].name == tool_name:
-                target_tool_wrapper = tool_wrapper
-                break
-
-        if not target_tool_wrapper:
-            return f"工具 '{tool_name}' 未找到"
-
-        # 执行工具函数
-        tool_function = target_tool_wrapper["function"]
-        result = tool_function(**tool_args)
-
-        logger.info(f"MCP工具执行: {tool_name} | 参数: {tool_args} | 结果: {result}")
-        return str(result)
+        result = await mcp_client.call_tool(tool_name, tool_args)
+        
+        if result.success:
+            logger.info(f"MCP工具执行成功: {tool_name} | 参数: {tool_args} | 结果: {result.result}")
+            return str(result.result)
+        else:
+            error_msg = f"工具执行失败: {tool_name} | 错误: {result.error}"
+            logger.error(error_msg)
+            return error_msg
 
     except Exception as e:
-        error_msg = f"工具执行失败: {tool_name} | 错误: {str(e)}"
+        error_msg = f"工具执行异常: {tool_name} | 错误: {str(e)}"
         logger.error(error_msg)
         return error_msg
 
 
 ############################################################################################################
-def create_compiled_mcp_stage_graph(
-    node_name: str, temperature: float, enable_tools: bool = True
+async def create_compiled_mcp_stage_graph(
+    node_name: str, 
+    temperature: float, 
+    enable_tools: bool = True,
+    mcp_server_url: str = "http://127.0.0.1:8765"
 ) -> CompiledStateGraph[McpState, Any, McpState, McpState]:
     """
     创建带 MCP 支持的编译状态图
@@ -214,6 +102,7 @@ def create_compiled_mcp_stage_graph(
         node_name: 节点名称
         temperature: 模型温度
         enable_tools: 是否启用工具调用
+        mcp_server_url: MCP 服务器地址
 
     Returns:
         CompiledStateGraph: 编译后的状态图
@@ -232,10 +121,20 @@ def create_compiled_mcp_stage_graph(
         temperature=temperature,
     )
 
-    # 初始化 MCP 工具
-    available_tools = create_sample_mcp_tools() if enable_tools else []
+    # 初始化 MCP 客户端
+    mcp_client = None
+    available_tools = []
+    
+    if enable_tools:
+        try:
+            mcp_client = await initialize_mcp_client(mcp_server_url)
+            available_tools = await mcp_client.get_available_tools()
+            logger.info(f"MCP 工具初始化完成，可用工具数量: {len(available_tools)}")
+        except Exception as e:
+            logger.error(f"MCP 客户端初始化失败: {e}")
+            enable_tools = False
 
-    def invoke_deepseek_mcp_action(state: McpState) -> Dict[str, Any]:
+    async def invoke_deepseek_mcp_action(state: McpState) -> Dict[str, Any]:
         """
         DeepSeek + MCP 动作节点
 
@@ -247,7 +146,8 @@ def create_compiled_mcp_stage_graph(
         """
         try:
             messages = state["messages"]
-            tools_available = state.get("tools_available", available_tools)
+            current_mcp_client = state.get("mcp_client", mcp_client)
+            current_available_tools = state.get("available_tools", available_tools)
             enable_tools_flag = state.get("enable_tools", enable_tools)
 
             # 构建系统提示，包含工具信息
@@ -262,17 +162,16 @@ def create_compiled_mcp_stage_graph(
 
 你可以在回复中自然地解释你要做什么，然后调用工具，最后根据工具结果给出完整回答。"""
 
-            if enable_tools_flag and tools_available:
+            if enable_tools_flag and current_available_tools and current_mcp_client:
                 tool_descriptions = []
-                for tool_wrapper in tools_available:
-                    tool = tool_wrapper["tool"]
+                for tool in current_available_tools:
                     params_desc = ""
 
-                    # 从 MCP Tool 的 inputSchema 中提取参数描述
-                    if tool.inputSchema and "properties" in tool.inputSchema:
+                    # 从工具的 input_schema 中提取参数描述
+                    if tool.input_schema and "properties" in tool.input_schema:
                         param_list = []
-                        properties = tool.inputSchema["properties"]
-                        required = tool.inputSchema.get("required", [])
+                        properties = tool.input_schema["properties"]
+                        required = tool.input_schema.get("required", [])
 
                         for param_name, param_info in properties.items():
                             param_desc = param_info.get("description", "无描述")
@@ -296,11 +195,9 @@ def create_compiled_mcp_stage_graph(
             enhanced_messages = messages.copy()
             if (
                 not enhanced_messages
-                or not isinstance(enhanced_messages[0], type(messages[0]))
+                or not isinstance(enhanced_messages[0], SystemMessage)
                 or "你是一个智能助手" not in str(enhanced_messages[0].content)
             ):
-                from langchain.schema import SystemMessage
-
                 enhanced_messages.insert(0, SystemMessage(content=system_prompt))
 
             # 调用 LLM
@@ -308,7 +205,7 @@ def create_compiled_mcp_stage_graph(
 
             # 解析响应，检查是否包含工具调用
             tool_outputs = []
-            if enable_tools_flag and tools_available:
+            if enable_tools_flag and current_available_tools and current_mcp_client:
                 # 解析 LLM 响应中的工具调用请求
                 response_content = str(response.content) if response.content else ""
 
@@ -332,16 +229,15 @@ def create_compiled_mcp_stage_graph(
 
                         # 验证工具是否存在
                         tool_exists = any(
-                            tool_wrapper["tool"].name == tool_name
-                            for tool_wrapper in tools_available
+                            tool.name == tool_name for tool in current_available_tools
                         )
                         if not tool_exists:
                             logger.warning(f"工具 {tool_name} 不存在")
                             continue
 
                         # 执行工具
-                        tool_result = execute_mcp_tool(
-                            tool_name, tool_args, tools_available
+                        tool_result = await execute_mcp_tool(
+                            tool_name, tool_args, current_mcp_client
                         )
                         tool_outputs.append(
                             {
@@ -375,7 +271,8 @@ def create_compiled_mcp_stage_graph(
 
             return {
                 "messages": [response],
-                "tools_available": tools_available,
+                "mcp_client": current_mcp_client,
+                "available_tools": current_available_tools,
                 "tool_outputs": tool_outputs,
                 "enable_tools": enable_tools_flag,
             }
@@ -385,7 +282,8 @@ def create_compiled_mcp_stage_graph(
             error_message = AIMessage(content=f"抱歉，处理请求时发生错误：{str(e)}")
             return {
                 "messages": [error_message],
-                "tools_available": available_tools,
+                "mcp_client": mcp_client,
+                "available_tools": available_tools,
                 "tool_outputs": [],
                 "enable_tools": enable_tools,
             }
@@ -400,7 +298,7 @@ def create_compiled_mcp_stage_graph(
 
 
 ############################################################################################################
-def stream_mcp_graph_updates(
+async def stream_mcp_graph_updates(
     state_compiled_graph: CompiledStateGraph[McpState, Any, McpState, McpState],
     chat_history_state: McpState,
     user_input_state: McpState,
@@ -421,8 +319,11 @@ def stream_mcp_graph_updates(
     # 合并状态，保持 MCP 相关信息
     merged_message_context: McpState = {
         "messages": chat_history_state["messages"] + user_input_state["messages"],
-        "tools_available": user_input_state.get(
-            "tools_available", chat_history_state.get("tools_available", [])
+        "mcp_client": user_input_state.get(
+            "mcp_client", chat_history_state.get("mcp_client")
+        ),
+        "available_tools": user_input_state.get(
+            "available_tools", chat_history_state.get("available_tools", [])
         ),
         "tool_outputs": chat_history_state.get("tool_outputs", []),
         "enable_tools": user_input_state.get(
@@ -431,7 +332,7 @@ def stream_mcp_graph_updates(
     }
 
     try:
-        for event in state_compiled_graph.stream(merged_message_context):
+        async for event in state_compiled_graph.astream(merged_message_context):
             for value in event.values():
                 ret.extend(value["messages"])
                 # 记录工具执行信息
@@ -443,3 +344,6 @@ def stream_mcp_graph_updates(
         ret.append(error_message)
 
     return ret
+
+
+

@@ -31,6 +31,7 @@ sys.path.insert(
 )
 
 # 导入必要的模块
+import asyncio
 from langchain.schema import HumanMessage
 from loguru import logger
 
@@ -38,8 +39,9 @@ from multi_agents_game.chat_services.chat_deepseek_mcp_graph import (
     McpState,
     create_compiled_mcp_stage_graph,
     stream_mcp_graph_updates,
-    create_sample_mcp_tools,
+    initialize_mcp_client,
 )
+from multi_agents_game.chat_services.mcp_client import McpClient
 
 
 def print_welcome_message() -> None:
@@ -70,25 +72,12 @@ def print_welcome_message() -> None:
 
 def print_available_tools() -> None:
     """打印可用工具的详细信息"""
-    tools = create_sample_mcp_tools()
     print("\n🛠️ 可用工具详情：")
     print("-" * 50)
-
-    for i, tool_wrapper in enumerate(tools, 1):
-        tool = tool_wrapper["tool"]
-        print(f"{i}. {tool.name}")
-        print(f"   描述：{tool.description}")
-
-        if tool.inputSchema and "properties" in tool.inputSchema:
-            print("   参数：")
-            properties = tool.inputSchema["properties"]
-            required = tool.inputSchema.get("required", [])
-
-            for param_name, param_info in properties.items():
-                param_desc = param_info.get("description", "无描述")
-                is_required = " (必需)" if param_name in required else " (可选)"
-                print(f"     - {param_name}: {param_desc}{is_required}")
-        print()
+    print("工具信息将在连接到 MCP 服务器后显示")
+    print("请确保 MCP 服务器正在运行 (http://127.0.0.1:8765)")
+    print("启动命令: python scripts/mcp_tool_server.py")
+    print()
 
 
 def print_chat_history(chat_history_state: McpState) -> None:
@@ -121,12 +110,12 @@ def print_chat_history(chat_history_state: McpState) -> None:
     print(
         f"   • AI回复: {sum(1 for msg in messages if not isinstance(msg, HumanMessage))}"
     )
-    print(f"   • 可用工具: {len(chat_history_state['tools_available'])}")
-    print(f"   • 工具状态: {'启用' if chat_history_state['enable_tools'] else '禁用'}")
+    print(f"   • 可用工具: {len(chat_history_state.get('available_tools', []))}")
+    print(f"   • 工具状态: {'启用' if chat_history_state.get('enable_tools', False) else '禁用'}")
     print("-" * 60)
 
 
-def main() -> None:
+async def main() -> None:
     """
     DeepSeek + MCP 聊天系统主函数
 
@@ -142,17 +131,31 @@ def main() -> None:
         # 打印欢迎信息
         print_welcome_message()
 
+        # 初始化 MCP 客户端和工具
+        mcp_client = None
+        available_tools = []
+        
+        try:
+            mcp_client = await initialize_mcp_client()
+            available_tools = await mcp_client.get_available_tools()
+            logger.success(f"🔗 MCP 客户端连接成功，可用工具: {len(available_tools)}")
+        except Exception as e:
+            logger.warning(f"⚠️ MCP 服务器连接失败: {e}")
+            logger.info("💡 请确保 MCP 服务器正在运行: python scripts/mcp_tool_server.py")
+            print("⚠️ MCP 服务器连接失败，将在无工具模式下运行")
+
         # 初始化 MCP 聊天历史状态
         chat_history_state: McpState = {
             "messages": [],
-            "tools_available": create_sample_mcp_tools(),
+            "mcp_client": mcp_client,
+            "available_tools": available_tools,
             "tool_outputs": [],
-            "enable_tools": True,
+            "enable_tools": mcp_client is not None,
         }
 
         # 生成 MCP 增强的聊天机器人状态图
-        compiled_mcp_stage_graph = create_compiled_mcp_stage_graph(
-            "deepseek_mcp_chatbot_node", temperature=0.7, enable_tools=True
+        compiled_mcp_stage_graph = await create_compiled_mcp_stage_graph(
+            "deepseek_mcp_chatbot_node", temperature=0.7, enable_tools=mcp_client is not None
         )
 
         logger.success("🤖 DeepSeek + MCP 聊天系统初始化完成，开始对话...")
@@ -167,7 +170,23 @@ def main() -> None:
                     print("\n👋 感谢使用 DeepSeek + MCP 聊天系统！再见！")
                     break
                 elif user_input.lower() == "/tools":
-                    print_available_tools()
+                    if available_tools:
+                        print("\n🛠️ 可用工具详情：")
+                        print("-" * 50)
+                        for i, tool in enumerate(available_tools, 1):
+                            print(f"{i}. {tool.name}")
+                            print(f"   描述：{tool.description}")
+                            if tool.input_schema and "properties" in tool.input_schema:
+                                print("   参数：")
+                                properties = tool.input_schema["properties"]
+                                required = tool.input_schema.get("required", [])
+                                for param_name, param_info in properties.items():
+                                    param_desc = param_info.get("description", "无描述")
+                                    is_required = " (必需)" if param_name in required else " (可选)"
+                                    print(f"     - {param_name}: {param_desc}{is_required}")
+                            print()
+                    else:
+                        print_available_tools()
                     continue
                 elif user_input.lower() == "/history":
                     print_chat_history(chat_history_state)
@@ -182,14 +201,15 @@ def main() -> None:
                 # 用户输入状态
                 user_input_state: McpState = {
                     "messages": [HumanMessage(content=user_input)],
-                    "tools_available": chat_history_state["tools_available"],
+                    "mcp_client": mcp_client,
+                    "available_tools": available_tools,
                     "tool_outputs": [],
-                    "enable_tools": True,
+                    "enable_tools": mcp_client is not None,
                 }
 
                 # 获取 AI 回复（包含可能的工具调用）
                 logger.info(f"处理用户输入: {user_input}")
-                update_messages = stream_mcp_graph_updates(
+                update_messages = await stream_mcp_graph_updates(
                     state_compiled_graph=compiled_mcp_stage_graph,
                     chat_history_state=chat_history_state,
                     user_input_state=user_input_state,
@@ -229,10 +249,13 @@ def main() -> None:
         print("  1. DEEPSEEK_API_KEY 环境变量是否设置")
         print("  2. 网络连接是否正常")
         print("  3. 依赖包是否正确安装")
+        print("  4. MCP 服务器是否正在运行")
 
     finally:
         logger.info("🔒 [MAIN] 清理系统资源...")
+        if mcp_client and mcp_client.session:
+            await mcp_client.session.close()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

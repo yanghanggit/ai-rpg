@@ -22,16 +22,15 @@
         print("使用直接对话模式")
 """
 
-from .keyword_strategy import KeywordRouteStrategy, create_alphania_keyword_strategy
+from .keyword_strategy import KeywordRouteStrategy
 from .route_manager import (
     RouteConfigBuilder,
     RouteDecisionManager,
     StrategyWeight,
-    create_default_route_manager,
     create_route_manager_with_strategies,
 )
 from .route_strategy import FallbackRouteStrategy, RouteDecision, RouteStrategy
-from .semantic_strategy import SemanticRouteStrategy, create_game_semantic_strategy
+from .semantic_strategy import SemanticRouteStrategy
 
 __all__ = [
     # 基础类
@@ -46,8 +45,5 @@ __all__ = [
     "StrategyWeight",
     "RouteConfigBuilder",
     # 便捷函数
-    "create_alphania_keyword_strategy",
-    "create_game_semantic_strategy",
-    "create_default_route_manager",
     "create_route_manager_with_strategies",
 ]

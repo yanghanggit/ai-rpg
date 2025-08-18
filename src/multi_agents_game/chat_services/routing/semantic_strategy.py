@@ -129,26 +129,3 @@ class SemanticRouteStrategy(RouteStrategy):
                 strategy_name=self.name,
                 metadata={"error": str(e)},
             )
-
-
-def create_game_semantic_strategy() -> SemanticRouteStrategy:
-    """创建游戏专用的语义路由策略"""
-
-    config = {
-        "similarity_threshold": 0.5,  # 中等相似度阈值
-        "use_multilingual": True,  # 使用多语言模型支持中文
-        "rag_topics": [
-            # 游戏世界相关主题（中文）
-            "艾尔法尼亚世界的地理位置和王国介绍",
-            "游戏角色的背景故事和人物关系",
-            "武器装备的属性说明和获取方法",
-            "游戏地图的场景描述和探索指南",
-            "魔法技能的效果说明和学习条件",
-            "游戏剧情的发展脉络和重要事件",
-            "各个组织势力的政治关系和影响力",
-            "不同种族的文化特色和社会制度",
-            "游戏规则和战斗系统的详细说明",
-        ],
-    }
-
-    return SemanticRouteStrategy(config)

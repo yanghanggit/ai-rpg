@@ -190,18 +190,3 @@ def create_route_manager_with_strategies(
     builder.set_fallback(fallback_strategy)
 
     return builder.build()
-
-
-def create_default_route_manager() -> RouteDecisionManager:
-    """创建默认的路由决策管理器"""
-    from .keyword_strategy import create_alphania_keyword_strategy
-    from .semantic_strategy import create_game_semantic_strategy
-
-    # 使用参数化的核心函数创建默认配置
-    return create_route_manager_with_strategies(
-        strategy_configs=[
-            (create_alphania_keyword_strategy, 0.4),
-            (create_game_semantic_strategy, 0.6),
-        ],
-        fallback_to_rag=False,
-    )

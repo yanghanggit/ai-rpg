@@ -34,7 +34,131 @@ from multi_agents_game.chat_services.chat_deepseek_graph_complex import (
     create_unified_chat_graph,
     stream_unified_graph_updates,
 )
-from multi_agents_game.chat_services.routing import create_default_route_manager
+from multi_agents_game.chat_services.routing import (
+    KeywordRouteStrategy,
+    SemanticRouteStrategy,
+    RouteDecisionManager,
+    # StrategyWeight,
+    FallbackRouteStrategy,
+    RouteConfigBuilder,
+)
+
+
+# =============================================================================
+# 业务耦合的硬编码配置函数（移入脚本）
+# =============================================================================
+
+
+def create_alphania_keyword_strategy() -> KeywordRouteStrategy:
+    """创建艾尔法尼亚世界专用的关键词策略"""
+
+    # 艾尔法尼亚世界关键词配置
+    alphania_keywords = [
+        # 地名和世界设定
+        "艾尔法尼亚",
+        "阿斯特拉王国",
+        "月桂森林联邦",
+        "铁爪部族联盟",
+        "封印之塔",
+        "贤者之塔",
+        "水晶城",
+        "暗影墓地",
+        "星辰神殿",
+        # 重要物品和角色
+        "圣剑",
+        "晨曦之刃",
+        "魔王",
+        "玛拉凯斯",
+        "黯蚀之主",
+        "勇者",
+        "莉莉丝",
+        # 种族和职业
+        "精灵",
+        "兽人",
+        "龙族",
+        "矮人",
+        "冒险者",
+        "骑士",
+        "法师",
+        "战士",
+        # 魔法和技能
+        "火焰",
+        "冰霜",
+        "雷电",
+        "治愈",
+        "暗影",
+        "净化之光",
+        "审判之炎",
+        "希望守护",
+        # 组织和物品
+        "冒险者公会",
+        "暴风雪团",
+        "时之沙漏",
+        "生命之泉",
+        "星辰钢",
+        "魔法药水",
+        # 通用游戏术语
+        "王国",
+        "联邦",
+        "部族",
+        "遗迹",
+        "地下城",
+        "魔法",
+        "技能",
+        "装备",
+        "等级",
+    ]
+
+    config = {
+        "keywords": alphania_keywords,
+        "threshold": 0.1,  # 较低阈值，只要匹配到关键词就启用RAG
+        "case_sensitive": False,
+    }
+
+    return KeywordRouteStrategy(config)
+
+
+def create_game_semantic_strategy() -> SemanticRouteStrategy:
+    """创建游戏专用的语义路由策略"""
+
+    config = {
+        "similarity_threshold": 0.5,  # 中等相似度阈值
+        "use_multilingual": True,  # 使用多语言模型支持中文
+        "rag_topics": [
+            # 游戏世界相关主题（中文）
+            "艾尔法尼亚世界的地理位置和王国介绍",
+            "游戏角色的背景故事和人物关系",
+            "武器装备的属性说明和获取方法",
+            "游戏地图的场景描述和探索指南",
+            "魔法技能的效果说明和学习条件",
+            "游戏剧情的发展脉络和重要事件",
+            "各个组织势力的政治关系和影响力",
+            "不同种族的文化特色和社会制度",
+            "游戏规则和战斗系统的详细说明",
+        ],
+    }
+
+    return SemanticRouteStrategy(config)
+
+
+def create_default_route_manager() -> RouteDecisionManager:
+    """创建默认的路由决策管理器"""
+    # 创建策略实例
+    keyword_strategy = create_alphania_keyword_strategy()
+    semantic_strategy = create_game_semantic_strategy()
+
+    # 使用构建器创建管理器
+    builder = RouteConfigBuilder()
+    builder.add_strategy(keyword_strategy, 0.4)
+    builder.add_strategy(semantic_strategy, 0.6)
+    builder.set_fallback(FallbackRouteStrategy(default_to_rag=False))
+
+    return builder.build()
+
+
+# =============================================================================
+# 主要功能函数
+# =============================================================================
 
 
 def main() -> None:

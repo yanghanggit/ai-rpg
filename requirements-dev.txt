@@ -1,6 +1,9 @@
 # Development dependencies
 -r requirements.txt
 
+# Note: This file includes MCP (Model Context Protocol) support
+# through the main requirements.txt file
+
 # Testing
 pytest==8.3.4
 

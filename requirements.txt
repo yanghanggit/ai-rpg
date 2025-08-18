@@ -1,21 +1,21 @@
 # Core web framework and HTTP
 fastapi==0.110.0
 starlette==0.36.3
-uvicorn==0.27.1
-httpx==0.27.0
-httpcore==1.0.4
-h11==0.14.0
-anyio==4.3.0
-click==8.1.7
+uvicorn==0.35.0
+httpx==0.28.1
+httpcore==1.0.9
+h11==0.16.0
+anyio==4.10.0
+click==8.2.1
 
 # HTTP client libraries
-aiohttp==3.9.3
+aiohttp==3.11.10
 aiosignal==1.3.1
-requests==2.31.0
-urllib3==2.2.1
-certifi==2024.2.2
+requests==2.32.4
+urllib3==2.5.0
+certifi==2025.8.3
 charset-normalizer==3.3.2
-idna==3.6
+idna==3.10
 grpcio==1.74.0
 requests-oauthlib==2.0.0
 
@@ -32,6 +32,9 @@ langgraph-prebuilt==0.6.2
 langgraph-sdk==0.2.0
 langserve==0.3.1
 langsmith==0.4.9
+
+# Model Context Protocol (MCP)
+mcp==1.13.0
 
 # OpenAI and AI tools
 openai==1.98.0
@@ -59,8 +62,8 @@ sqlalchemy==2.0.27
 pgvector==0.4.1
 
 # Validation and serialization
-pydantic==2.10.3
-pydantic-core==2.27.1
+pydantic==2.11.7
+pydantic-core==2.33.2
 marshmallow==3.21.0
 dataclasses-json==0.6.4
 
@@ -77,9 +80,9 @@ jinja2==3.1.4
 markupsafe==2.1.5
 
 # Async and concurrency
-multidict==6.0.5
-frozenlist==1.4.1
-yarl==1.9.4
+multidict==6.1.0
+frozenlist==1.5.0
+yarl==1.18.0
 attrs==23.2.0
 
 # Streaming and events
@@ -87,13 +90,13 @@ sse-starlette==2.0.0
 
 # Utilities
 loguru==0.7.2
-python-dotenv==1.0.1
+python-dotenv==1.1.1
 tenacity==8.2.3
 overrides==7.7.0
-tqdm==4.66.2
+tqdm==4.67.1
 packaging==24.1
-platformdirs==4.2.2
-pytz==2024.1
+platformdirs==4.3.8
+pytz==2025.2
 tzdata==2024.1
 regex==2023.12.25
 six==1.16.0

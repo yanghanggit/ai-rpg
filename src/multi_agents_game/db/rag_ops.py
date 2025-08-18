@@ -11,15 +11,72 @@ RAG操作模块
 """
 
 import traceback
-from typing import Dict, List
+from typing import Dict, List, Mapping, Sequence, Tuple
 
 from loguru import logger
 
 from .chromadb_client import get_chroma_db
-from .embedding_manager import (
+from .sentence_transformer_embedding_model import (
     get_embedding_model,
-    prepare_knowledge_base_for_embedding,
 )
+
+
+############################################################################################################
+def initialize_knowledge_base_embeddings(
+    knowledge_base: Dict[str, List[str]],
+) -> Tuple[
+    List[Sequence[float]],
+    List[str],
+    List[Mapping[str, str | int | float | bool | None]],
+    List[str],
+]:
+    """
+    准备知识库数据用于向量化和存储
+
+    Args:
+        knowledge_base: 知识库数据，格式为 {category: [documents]}
+
+    Returns:
+        Tuple: (embeddings, documents, metadatas, ids) - collection.add()方法的参数
+    """
+    try:
+        logger.info("🔄 [PREPARE] 开始准备知识库数据...")
+
+        # 获取全局嵌入模型实例
+        embedding_model = get_embedding_model()
+        if embedding_model is None:
+            logger.error("❌ [PREPARE] 嵌入模型未初始化")
+            return [], [], [], []
+
+        # 准备文档数据
+        documents: List[str] = []
+        metadatas: List[Mapping[str, str | int | float | bool | None]] = []
+        ids: List[str] = []
+
+        doc_id = 0
+        for category, docs in knowledge_base.items():
+            for doc in docs:
+                documents.append(doc)
+                metadatas.append({"category": category, "doc_id": doc_id})
+                ids.append(f"{category}_{doc_id}")
+                doc_id += 1
+
+        logger.info(f"📊 [PREPARE] 准备向量化 {len(documents)} 个文档...")
+
+        # 使用SentenceTransformer计算向量嵌入
+        logger.info("🔄 [PREPARE] 计算文档向量嵌入...")
+        embeddings = embedding_model.encode(documents)
+
+        # 转换为列表格式（ChromaDB要求）
+        embeddings_list = embeddings.tolist()
+
+        logger.success(f"✅ [PREPARE] 成功准备 {len(documents)} 个文档的嵌入数据")
+
+        return embeddings_list, documents, metadatas, ids
+
+    except Exception as e:
+        logger.error(f"❌ [PREPARE] 准备知识库数据失败: {e}\n{traceback.format_exc()}")
+        return [], [], [], []
 
 
 ############################################################################################################
@@ -59,7 +116,7 @@ def initialize_rag_system(knowledge_base: Dict[str, List[str]]) -> bool:
 
                 # 使用独立函数准备知识库数据
                 embeddings_list, documents, metadatas, ids = (
-                    prepare_knowledge_base_for_embedding(knowledge_base)
+                    initialize_knowledge_base_embeddings(knowledge_base)
                 )
 
                 # 检查准备结果
@@ -173,3 +230,6 @@ def rag_semantic_search(query: str, top_k: int = 5) -> tuple[List[str], List[flo
     except Exception as e:
         logger.error(f"❌ [CHROMADB] 语义搜索失败: {e}\n{traceback.format_exc()}")
         return [], []
+
+
+############################################################################################################

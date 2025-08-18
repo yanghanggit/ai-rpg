@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """
-统一聊天系统启动脚本
-
-功能：
-1. 智能路由：自动检测查询类型并选择最佳处理模式
+统一聊天系统启动脚
+). 智能路由：自动检测查询类型并选择最佳处理模式
 2. 直接对话：一般性聊天使用DeepSeek直接回答
 3. RAG增强：艾尔法尼亚世界相关问题使用知识库增强
 4. 无缝切换：用户无需手动选择模式
@@ -38,9 +36,12 @@ from multi_agents_game.chat_services.routing import (
     KeywordRouteStrategy,
     SemanticRouteStrategy,
     RouteDecisionManager,
-    # StrategyWeight,
     FallbackRouteStrategy,
     RouteConfigBuilder,
+)
+from multi_agents_game.demo.campaign_setting import (
+    FANTASY_WORLD_RPG_TEST_ROUTE_KEYWORDS,
+    FANTASY_WORLD_RPG_TEST_RAG_TOPICS,
 )
 
 
@@ -52,62 +53,8 @@ from multi_agents_game.chat_services.routing import (
 def create_alphania_keyword_strategy() -> KeywordRouteStrategy:
     """创建艾尔法尼亚世界专用的关键词策略"""
 
-    # 艾尔法尼亚世界关键词配置
-    alphania_keywords = [
-        # 地名和世界设定
-        "艾尔法尼亚",
-        "阿斯特拉王国",
-        "月桂森林联邦",
-        "铁爪部族联盟",
-        "封印之塔",
-        "贤者之塔",
-        "水晶城",
-        "暗影墓地",
-        "星辰神殿",
-        # 重要物品和角色
-        "圣剑",
-        "晨曦之刃",
-        "魔王",
-        "玛拉凯斯",
-        "黯蚀之主",
-        "勇者",
-        "莉莉丝",
-        # 种族和职业
-        "精灵",
-        "兽人",
-        "龙族",
-        "矮人",
-        "冒险者",
-        "骑士",
-        "法师",
-        "战士",
-        # 魔法和技能
-        "火焰",
-        "冰霜",
-        "雷电",
-        "治愈",
-        "暗影",
-        "净化之光",
-        "审判之炎",
-        "希望守护",
-        # 组织和物品
-        "冒险者公会",
-        "暴风雪团",
-        "时之沙漏",
-        "生命之泉",
-        "星辰钢",
-        "魔法药水",
-        # 通用游戏术语
-        "王国",
-        "联邦",
-        "部族",
-        "遗迹",
-        "地下城",
-        "魔法",
-        "技能",
-        "装备",
-        "等级",
-    ]
+    # 使用测试配置中的关键词列表
+    alphania_keywords = FANTASY_WORLD_RPG_TEST_ROUTE_KEYWORDS
 
     config = {
         "keywords": alphania_keywords,
@@ -124,18 +71,7 @@ def create_game_semantic_strategy() -> SemanticRouteStrategy:
     config = {
         "similarity_threshold": 0.5,  # 中等相似度阈值
         "use_multilingual": True,  # 使用多语言模型支持中文
-        "rag_topics": [
-            # 游戏世界相关主题（中文）
-            "艾尔法尼亚世界的地理位置和王国介绍",
-            "游戏角色的背景故事和人物关系",
-            "武器装备的属性说明和获取方法",
-            "游戏地图的场景描述和探索指南",
-            "魔法技能的效果说明和学习条件",
-            "游戏剧情的发展脉络和重要事件",
-            "各个组织势力的政治关系和影响力",
-            "不同种族的文化特色和社会制度",
-            "游戏规则和战斗系统的详细说明",
-        ],
+        "rag_topics": FANTASY_WORLD_RPG_TEST_RAG_TOPICS,
     }
 
     return SemanticRouteStrategy(config)

@@ -63,6 +63,7 @@ def print_welcome_message() -> None:
     print("  • 你可以直接对话，AI会智能判断是否需要使用工具")
     print("  • 尝试说：'现在几点了？'、'计算 25 * 4'、'把HELLO转为小写'")
     print("  • 输入 /tools 查看可用工具详情")
+    print("  • 输入 /history 查看对话历史")
     print("  • 输入 /quit、/exit 或 /q 退出程序")
     print("\n" + "🎯" * 60 + "\n")
 
@@ -73,14 +74,56 @@ def print_available_tools() -> None:
     print("\n🛠️ 可用工具详情：")
     print("-" * 50)
 
-    for i, tool in enumerate(tools, 1):
-        print(f"{i}. {tool['name']}")
-        print(f"   描述：{tool['description']}")
-        if tool["parameters"]:
+    for i, tool_wrapper in enumerate(tools, 1):
+        tool = tool_wrapper["tool"]
+        print(f"{i}. {tool.name}")
+        print(f"   描述：{tool.description}")
+
+        if tool.inputSchema and "properties" in tool.inputSchema:
             print("   参数：")
-            for param, details in tool["parameters"].items():
-                print(f"     - {param}: {details.get('description', 'N/A')}")
+            properties = tool.inputSchema["properties"]
+            required = tool.inputSchema.get("required", [])
+
+            for param_name, param_info in properties.items():
+                param_desc = param_info.get("description", "无描述")
+                is_required = " (必需)" if param_name in required else " (可选)"
+                print(f"     - {param_name}: {param_desc}{is_required}")
         print()
+
+
+def print_chat_history(chat_history_state: McpState) -> None:
+    """打印对话历史"""
+    messages = chat_history_state["messages"]
+
+    if not messages:
+        print("\n📜 对话历史为空")
+        return
+
+    print("\n📜 对话历史：")
+    print("-" * 60)
+
+    for i, message in enumerate(messages, 1):
+        if isinstance(message, HumanMessage):
+            print(f"👤 用户 [{i}]: {message.content}")
+        else:
+            # 截断过长的回复以便显示
+            content = str(message.content)
+            if len(content) > 200:
+                content = content[:200] + "..."
+            print(f"🤖 DeepSeek [{i}]: {content}")
+        print()
+
+    print(f"📊 统计信息：")
+    print(f"   • 总消息数: {len(messages)}")
+    print(
+        f"   • 用户消息: {sum(1 for msg in messages if isinstance(msg, HumanMessage))}"
+    )
+    print(
+        f"   • AI回复: {sum(1 for msg in messages if not isinstance(msg, HumanMessage))}"
+    )
+    print(f"   • 可用工具: {len(chat_history_state['tools_available'])}")
+    print(f"   • 工具状态: {'启用' if chat_history_state['enable_tools'] else '禁用'}")
+    print("-" * 60)
 
 
 def main() -> None:
@@ -126,6 +169,9 @@ def main() -> None:
                 elif user_input.lower() == "/tools":
                     print_available_tools()
                     continue
+                elif user_input.lower() == "/history":
+                    print_chat_history(chat_history_state)
+                    continue
                 elif user_input.lower() == "/help":
                     print_welcome_message()
                     continue
@@ -160,13 +206,10 @@ def main() -> None:
                 else:
                     print("\n❌ 抱歉，没有收到回复。")
 
-                # 调试信息：显示对话历史（仅在调试模式下）
-                logger.debug("=" * 50)
-                for message in chat_history_state["messages"][-4:]:  # 只显示最近4条消息
-                    if isinstance(message, HumanMessage):
-                        logger.debug(f"User: {message.content}")
-                    else:
-                        logger.debug(f"DeepSeek: {message.content[:100]}...")
+                # 提示用户可以使用 /history 查看对话历史
+                logger.debug(
+                    f"💬 当前对话历史包含 {len(chat_history_state['messages'])} 条消息，使用 /history 查看详情"
+                )
 
             except KeyboardInterrupt:
                 logger.info("🛑 [MAIN] 用户中断程序")

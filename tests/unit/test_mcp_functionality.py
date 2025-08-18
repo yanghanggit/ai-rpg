@@ -1,5 +1,10 @@
 """
-MCP (Model Context Protocol) 功能单元测试
+MCP (Model Contfrom src.multi_agents_game.chat_services.chat_deepseek_mcp_graph import (
+    McpState,
+    create_sample_mcp_tools,
+    execute_mcp_tool,
+    McpToolWrapper
+)otocol) 功能单元测试
 
 测试 DeepSeek + MCP 集成的核心功能：
 - MCP 工具创建和执行
@@ -21,7 +26,7 @@ from src.multi_agents_game.chat_services.chat_deepseek_mcp_graph import (
     McpState,
     create_sample_mcp_tools,
     execute_mcp_tool,
-    ToolDict,
+    McpToolWrapper,
 )
 
 
@@ -29,31 +34,36 @@ class TestMcpTools:
     """MCP 工具功能测试类"""
 
     @pytest.fixture
-    def sample_tools(self) -> List[ToolDict]:
+    def sample_tools(self) -> List[McpToolWrapper]:
         """创建示例工具的测试夹具"""
         return create_sample_mcp_tools()
 
-    def test_create_sample_mcp_tools(self, sample_tools: List[ToolDict]) -> None:
+    def test_create_sample_mcp_tools(self, sample_tools: List[McpToolWrapper]) -> None:
         """测试 MCP 工具创建功能"""
         # 验证工具数量
         assert len(sample_tools) == 3, f"期望 3 个工具，实际得到 {len(sample_tools)} 个"
 
         # 验证工具名称
-        tool_names = [tool["name"] for tool in sample_tools]
+        tool_names = [tool_wrapper["tool"].name for tool_wrapper in sample_tools]
         expected_names = ["get_current_time", "calculator", "text_processor"]
         assert all(
             name in tool_names for name in expected_names
         ), f"工具名称不匹配: {tool_names}"
 
         # 验证工具结构
-        for tool in sample_tools:
-            assert "name" in tool, "工具缺少 name 字段"
-            assert "description" in tool, "工具缺少 description 字段"
-            assert "function" in tool, "工具缺少 function 字段"
-            assert "parameters" in tool, "工具缺少 parameters 字段"
-            assert callable(tool["function"]), "工具的 function 字段必须是可调用的"
+        for tool_wrapper in sample_tools:
+            assert "tool" in tool_wrapper, "工具包装器缺少 tool 字段"
+            assert "function" in tool_wrapper, "工具包装器缺少 function 字段"
 
-    def test_get_current_time_tool(self, sample_tools: List[ToolDict]) -> None:
+            tool = tool_wrapper["tool"]
+            assert hasattr(tool, "name"), "MCP工具缺少 name 属性"
+            assert hasattr(tool, "description"), "MCP工具缺少 description 属性"
+            assert hasattr(tool, "inputSchema"), "MCP工具缺少 inputSchema 属性"
+            assert callable(
+                tool_wrapper["function"]
+            ), "工具的 function 字段必须是可调用的"
+
+    def test_get_current_time_tool(self, sample_tools: List[McpToolWrapper]) -> None:
         """测试时间查询工具"""
         result = execute_mcp_tool("get_current_time", {}, sample_tools)
 
@@ -70,7 +80,7 @@ class TestMcpTools:
         assert len(time_part.split(":")) == 3, "时间部分应该有时分秒三部分"
 
     def test_calculator_tool_basic_operations(
-        self, sample_tools: List[ToolDict]
+        self, sample_tools: List[McpToolWrapper]
     ) -> None:
         """测试计算器工具的基本运算"""
         test_cases = [
@@ -90,7 +100,9 @@ class TestMcpTools:
                 result == expected
             ), f"表达式 {expression} 计算错误: 期望 {expected}, 实际 {result}"
 
-    def test_calculator_tool_error_handling(self, sample_tools: List[ToolDict]) -> None:
+    def test_calculator_tool_error_handling(
+        self, sample_tools: List[McpToolWrapper]
+    ) -> None:
         """测试计算器工具的错误处理"""
         # 测试非法字符
         result = execute_mcp_tool(
@@ -106,7 +118,9 @@ class TestMcpTools:
         result = execute_mcp_tool("calculator", {"expression": "2++"}, sample_tools)
         assert "计算错误" in result, "应该检测到语法错误"
 
-    def test_text_processor_tool_operations(self, sample_tools: List[ToolDict]) -> None:
+    def test_text_processor_tool_operations(
+        self, sample_tools: List[McpToolWrapper]
+    ) -> None:
         """测试文本处理工具的各种操作"""
         test_text = "Hello World"
 
@@ -128,7 +142,7 @@ class TestMcpTools:
             ), f"文本操作 {operation} 错误: 期望 {expected}, 实际 {result}"
 
     def test_text_processor_tool_invalid_operation(
-        self, sample_tools: List[ToolDict]
+        self, sample_tools: List[McpToolWrapper]
     ) -> None:
         """测试文本处理工具的无效操作处理"""
         result = execute_mcp_tool(
@@ -137,14 +151,14 @@ class TestMcpTools:
         assert "不支持的操作" in result, "应该检测到不支持的操作"
 
     def test_execute_mcp_tool_nonexistent_tool(
-        self, sample_tools: List[ToolDict]
+        self, sample_tools: List[McpToolWrapper]
     ) -> None:
         """测试执行不存在的工具"""
         result = execute_mcp_tool("nonexistent_tool", {}, sample_tools)
         assert "未找到" in result, "应该返回工具未找到的错误信息"
 
     def test_execute_mcp_tool_error_handling(
-        self, sample_tools: List[ToolDict]
+        self, sample_tools: List[McpToolWrapper]
     ) -> None:
         """测试工具执行的错误处理"""
         # 测试缺少必要参数

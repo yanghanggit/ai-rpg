@@ -18,14 +18,13 @@ from pydantic import SecretStr
 from typing_extensions import TypedDict
 
 # MCP imports
+from mcp.types import Tool
 
 
-# 定义工具的字典类型结构
-class ToolDict(TypedDict):
-    name: str
-    description: str
-    function: Any
-    parameters: Dict[str, Any]
+# 简化的 MCP 工具包装器，包含 MCP Tool 和执行函数
+class McpToolWrapper(TypedDict):
+    tool: Tool  # 真正的 MCP Tool 对象
+    function: Any  # 实际执行函数
 
 
 ############################################################################################################
@@ -35,20 +34,20 @@ class McpState(TypedDict):
     """
 
     messages: Annotated[List[BaseMessage], add_messages]
-    tools_available: List[ToolDict]  # 可用的 MCP 工具
+    tools_available: List[McpToolWrapper]  # 可用的 MCP 工具
     tool_outputs: List[Dict[str, Any]]  # 工具执行结果
     enable_tools: bool  # 是否启用工具调用
 
 
 ############################################################################################################
-def create_sample_mcp_tools() -> List[ToolDict]:
+def create_sample_mcp_tools() -> List[McpToolWrapper]:
     """
-    创建示例 MCP 工具
+    创建示例 MCP 工具，使用真正的 MCP Tool 对象
 
     Returns:
-        List[ToolDict]: MCP 工具列表
+        List[McpToolWrapper]: MCP 工具包装器列表
     """
-    tools: List[ToolDict] = []
+    tools: List[McpToolWrapper] = []
 
     # 示例工具1：获取当前时间
     def get_current_time() -> str:
@@ -105,35 +104,58 @@ def create_sample_mcp_tools() -> List[ToolDict]:
         except Exception as e:
             return f"处理错误：{str(e)}"
 
-    # 注意：这里是简化的工具定义，真实的 MCP Tool 对象会更复杂
-    # 我们用字典来模拟 Tool 对象的基本结构
-    tools_data: List[ToolDict] = [
-        {
-            "name": "get_current_time",
-            "description": "获取当前系统时间",
-            "function": get_current_time,
-            "parameters": {},
-        },
-        {
-            "name": "calculator",
-            "description": "执行数学计算",
-            "function": calculator,
-            "parameters": {
-                "expression": {"type": "string", "description": "数学表达式"}
+    # 创建真正的 MCP Tool 对象
+    time_tool = Tool(
+        name="get_current_time",
+        description="获取当前系统时间",
+        inputSchema={"type": "object", "properties": {}, "required": []},
+    )
+
+    calculator_tool = Tool(
+        name="calculator",
+        description="执行数学计算",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "expression": {
+                    "type": "string",
+                    "description": "数学表达式，如 '2+3*4'",
+                }
             },
+            "required": ["expression"],
         },
-        {
-            "name": "text_processor",
-            "description": "处理文本内容",
-            "function": text_processor,
-            "parameters": {
+    )
+
+    text_processor_tool = Tool(
+        name="text_processor",
+        description="处理文本内容",
+        inputSchema={
+            "type": "object",
+            "properties": {
                 "text": {"type": "string", "description": "要处理的文本"},
                 "operation": {
                     "type": "string",
-                    "description": "操作类型",
+                    "description": "操作类型：upper/lower/reverse/count",
                     "default": "upper",
                 },
             },
+            "required": ["text"],
+        },
+    )
+
+    # 创建工具包装器
+    tools_data: List[McpToolWrapper] = [
+        {
+            "tool": time_tool,
+            "function": get_current_time,
+        },
+        {
+            "tool": calculator_tool,
+            "function": calculator,
+        },
+        {
+            "tool": text_processor_tool,
+            "function": text_processor,
         },
     ]
 
@@ -144,7 +166,7 @@ def create_sample_mcp_tools() -> List[ToolDict]:
 
 ############################################################################################################
 def execute_mcp_tool(
-    tool_name: str, tool_args: Dict[str, Any], available_tools: List[ToolDict]
+    tool_name: str, tool_args: Dict[str, Any], available_tools: List[McpToolWrapper]
 ) -> str:
     """
     执行 MCP 工具
@@ -152,24 +174,24 @@ def execute_mcp_tool(
     Args:
         tool_name: 工具名称
         tool_args: 工具参数
-        available_tools: 可用工具列表
+        available_tools: 可用工具包装器列表
 
     Returns:
         str: 工具执行结果
     """
     try:
         # 查找对应的工具
-        target_tool = None
-        for tool in available_tools:
-            if tool["name"] == tool_name:
-                target_tool = tool
+        target_tool_wrapper = None
+        for tool_wrapper in available_tools:
+            if tool_wrapper["tool"].name == tool_name:
+                target_tool_wrapper = tool_wrapper
                 break
 
-        if not target_tool:
+        if not target_tool_wrapper:
             return f"工具 '{tool_name}' 未找到"
 
         # 执行工具函数
-        tool_function = target_tool["function"]
+        tool_function = target_tool_wrapper["function"]
         result = tool_function(**tool_args)
 
         logger.info(f"MCP工具执行: {tool_name} | 参数: {tool_args} | 结果: {result}")
@@ -229,17 +251,46 @@ def create_compiled_mcp_stage_graph(
             enable_tools_flag = state.get("enable_tools", enable_tools)
 
             # 构建系统提示，包含工具信息
-            system_prompt = "你是一个智能助手。"
+            system_prompt = """你是一个智能助手，具有使用工具的能力。
+
+当你需要获取实时信息或执行特定操作时，可以调用相应的工具。请按照以下格式调用工具：
+
+<tool_call>
+<tool_name>工具名称</tool_name>
+<tool_args>{"参数名": "参数值"}</tool_args>
+</tool_call>
+
+你可以在回复中自然地解释你要做什么，然后调用工具，最后根据工具结果给出完整回答。"""
+
             if enable_tools_flag and tools_available:
                 tool_descriptions = []
-                for tool in tools_available:
-                    tool_desc = f"- {tool['name']}: {tool['description']}"
+                for tool_wrapper in tools_available:
+                    tool = tool_wrapper["tool"]
+                    params_desc = ""
+
+                    # 从 MCP Tool 的 inputSchema 中提取参数描述
+                    if tool.inputSchema and "properties" in tool.inputSchema:
+                        param_list = []
+                        properties = tool.inputSchema["properties"]
+                        required = tool.inputSchema.get("required", [])
+
+                        for param_name, param_info in properties.items():
+                            param_desc = param_info.get("description", "无描述")
+                            is_required = (
+                                " (必需)" if param_name in required else " (可选)"
+                            )
+                            param_list.append(
+                                f"{param_name}: {param_desc}{is_required}"
+                            )
+
+                        params_desc = (
+                            f" 参数: {', '.join(param_list)}" if param_list else ""
+                        )
+
+                    tool_desc = f"- {tool.name}: {tool.description}{params_desc}"
                     tool_descriptions.append(tool_desc)
 
-                system_prompt += (
-                    f"\n\n你可以使用以下工具：\n{chr(10).join(tool_descriptions)}"
-                )
-                system_prompt += "\n\n如果用户的请求需要使用工具，请明确说明你要调用哪个工具以及参数。"
+                system_prompt += f"\n\n可用工具：\n{chr(10).join(tool_descriptions)}"
 
             # 添加系统消息到对话开头（如果还没有）
             enhanced_messages = messages.copy()
@@ -258,50 +309,69 @@ def create_compiled_mcp_stage_graph(
             # 解析响应，检查是否包含工具调用
             tool_outputs = []
             if enable_tools_flag and tools_available:
-                # 简单的工具调用检测和执行
-                response_content = (
-                    str(response.content).lower() if response.content else ""
-                )
+                # 解析 LLM 响应中的工具调用请求
+                response_content = str(response.content) if response.content else ""
 
-                # 检测工具调用模式
-                for tool in tools_available:
-                    tool_name = tool["name"]
-                    if tool_name in response_content:
-                        # 简化的参数提取（实际应用中应该更精确）
-                        tool_args: Dict[str, Any] = {}
+                # 使用正则表达式提取工具调用
+                import re
+                import json
 
-                        if tool_name == "get_current_time":
+                tool_call_pattern = r"<tool_call>\s*<tool_name>(.*?)</tool_name>\s*<tool_args>(.*?)</tool_args>\s*</tool_call>"
+                tool_calls = re.findall(tool_call_pattern, response_content, re.DOTALL)
+
+                for tool_name, tool_args_str in tool_calls:
+                    tool_name = tool_name.strip()
+                    tool_args_str = tool_args_str.strip()
+
+                    try:
+                        # 解析工具参数
+                        if tool_args_str:
+                            tool_args = json.loads(tool_args_str)
+                        else:
                             tool_args = {}
-                        elif tool_name == "calculator":
-                            # 尝试提取数学表达式
-                            import re
 
-                            math_pattern = r"[\d+\-*/().]+"
-                            matches = re.findall(math_pattern, str(response.content))
-                            if matches:
-                                tool_args = {"expression": matches[0]}
-                        elif tool_name == "text_processor":
-                            # 简化的文本处理参数提取
-                            if "大写" in response_content:
-                                tool_args = {"text": "示例文本", "operation": "upper"}
-                            elif "小写" in response_content:
-                                tool_args = {"text": "示例文本", "operation": "lower"}
+                        # 验证工具是否存在
+                        tool_exists = any(
+                            tool_wrapper["tool"].name == tool_name
+                            for tool_wrapper in tools_available
+                        )
+                        if not tool_exists:
+                            logger.warning(f"工具 {tool_name} 不存在")
+                            continue
 
-                        if tool_args:
-                            tool_result = execute_mcp_tool(
-                                tool_name, tool_args, tools_available
-                            )
-                            tool_outputs.append(
-                                {
-                                    "tool": tool_name,
-                                    "args": tool_args,
-                                    "result": tool_result,
-                                }
-                            )
+                        # 执行工具
+                        tool_result = execute_mcp_tool(
+                            tool_name, tool_args, tools_available
+                        )
+                        tool_outputs.append(
+                            {
+                                "tool": tool_name,
+                                "args": tool_args,
+                                "result": tool_result,
+                            }
+                        )
 
-                            # 更新响应内容，包含工具执行结果
-                            updated_content = f"{response.content}\n\n🔧 工具执行结果：\n{tool_result}"
-                            response.content = updated_content
+                        logger.info(f"工具调用成功: {tool_name} -> {tool_result}")
+
+                    except json.JSONDecodeError as e:
+                        logger.error(f"工具参数解析失败: {tool_args_str}, 错误: {e}")
+                        continue
+                    except Exception as e:
+                        logger.error(f"工具执行异常: {tool_name}, 错误: {e}")
+                        continue
+
+                # 如果有工具被执行，更新响应内容
+                if tool_outputs:
+                    # 移除原始的工具调用标记，添加工具执行结果
+                    updated_content = re.sub(
+                        tool_call_pattern, "", response_content, flags=re.DOTALL
+                    )
+
+                    # 添加工具执行结果
+                    for tool_output in tool_outputs:
+                        updated_content += f"\n\n🔧 {tool_output['tool']} 执行结果：\n{tool_output['result']}"
+
+                    response.content = updated_content.strip()
 
             return {
                 "messages": [response],

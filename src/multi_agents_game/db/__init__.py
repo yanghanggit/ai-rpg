@@ -25,5 +25,10 @@ from .redis_client import *
 from .redis_user import *
 
 __all__: List[str] = [
-    # Database clients and core utilities will be exported via star imports
+    # Vector database models
+    "VectorDocumentDB",
+    # RAG operations
+    "initialize_rag_system",
+    "rag_semantic_search",
+    # Database clients and core utilities are exported via star imports
 ]

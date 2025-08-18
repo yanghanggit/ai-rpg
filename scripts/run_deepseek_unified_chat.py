@@ -34,6 +34,7 @@ from multi_agents_game.chat_services.chat_deepseek_graph_complex import (
     create_unified_chat_graph,
     stream_unified_graph_updates,
 )
+from multi_agents_game.chat_services.routing import create_default_route_manager
 
 
 def main() -> None:
@@ -50,6 +51,9 @@ def main() -> None:
     try:
         # 创建统一聊天图
         unified_graph = create_unified_chat_graph()
+
+        # 创建路由管理器实例
+        route_manager = create_default_route_manager()
 
         # 初始化聊天历史
         chat_history_state: Dict[str, List[BaseMessage]] = {"messages": []}
@@ -80,6 +84,7 @@ def main() -> None:
                     unified_compiled_graph=unified_graph,
                     chat_history_state=chat_history_state,
                     user_input_state=user_input_state,
+                    route_manager=route_manager,  # 传入路由管理器
                 )
 
                 # 更新聊天历史

@@ -181,6 +181,12 @@ target-version = "py312"
 
 [tool.ruff.lint]
 # 启用规则：未使用导入、重复导入、import排序等
+# F401: 未使用的导入 - 现已全局启用，不再忽略
+# F402: 模块级导入被局部导入覆盖  
+# F403: 星号导入（from module import *）
+# F811: 重复定义
+# E401: 多个导入在一行
+# I001: import排序
 select = ["F401", "F402", "F403", "F811", "E401", "I001"]
 ignore = []
 fixable = ["F401", "F402", "F403", "F811", "E401", "I001"]

@@ -17,10 +17,10 @@ def pgsql_ensure_database_tables() -> None:
     这个函数在需要时才会被调用，避免导入时立即连接数据库
     """
     try:
-        # 导入所有模型以确保它们被注册到Base.metadata中
-        from .pgsql_vector_document import (
-            VectorDocumentDB,
-        )  # noqa: F401 # 确保向量表模型被注册
+        # 导入模型注册模块以确保所有模型被注册到Base.metadata中
+        from .model_registry import register_all_models
+
+        register_all_models()
 
         Base.metadata.create_all(bind=engine)
         logger.info("✅ 数据库表结构已确保存在")
@@ -37,10 +37,10 @@ def pgsql_reset_database() -> None:
     注意：该方法会删除所有数据，只适用于开发环境
     """
     try:
-        # 导入所有模型以确保它们被注册到Base.metadata中
-        from .pgsql_vector_document import (
-            VectorDocumentDB,
-        )  # noqa: F401 # 确保向量表模型被注册
+        # 导入模型注册模块以确保所有模型被注册到Base.metadata中
+        from .model_registry import register_all_models
+
+        register_all_models()
 
         # 使用直接的SQL命令执行级联删除
         with engine.begin() as conn:

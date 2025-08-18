@@ -1,6 +1,6 @@
 import traceback
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional
 
 import chromadb
 from chromadb.api import ClientAPI

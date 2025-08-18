@@ -1,4 +1,4 @@
-.PHONY: install test lint format clean dev-install conda-install conda-setup pip-install show-structure check help check-imports fix-imports restart-chat-servers kill-chat-servers
+.PHONY: install test lint format clean dev-install conda-install conda-setup check-imports fix-imports restart-chat-servers kill-chat-servers pip-install show-structure check help
 
 # 推荐：Conda环境完整设置
 conda-setup:
@@ -69,18 +69,20 @@ format:
 
 # 检查未使用的导入
 check-imports:
+	@echo "🔍 检查未使用的导入..."
 	@if conda info --envs | grep -q first_seed; then \
-		conda run -n first_seed python scripts/check_unused_imports.py --check --ignore-unused-imports; \
+		conda run -n first_seed python scripts/check_unused_imports.py --check; \
 	else \
-		python scripts/check_unused_imports.py --check --ignore-unused-imports; \
+		python scripts/check_unused_imports.py --check; \
 	fi
 
 # 修复未使用的导入
 fix-imports:
+	@echo "🔧 修复未使用的导入..."
 	@if conda info --envs | grep -q first_seed; then \
-		conda run -n first_seed python scripts/check_unused_imports.py --fix --ignore-unused-imports; \
+		conda run -n first_seed python scripts/check_unused_imports.py --fix; \
 	else \
-		python scripts/check_unused_imports.py --fix --ignore-unused-imports; \
+		python scripts/check_unused_imports.py --fix; \
 	fi
 
 # 清理构建文件

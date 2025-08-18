@@ -22,7 +22,55 @@ from ..db.chromadb_client import get_chroma_db
 from ..db.rag_ops import rag_semantic_search
 
 # 导入新的路由系统
-from .routing import RouteDecisionManager, create_default_route_manager
+from .routing import RouteDecisionManager
+
+# 全局DeepSeek LLM实例（懒加载单例）
+_global_deepseek_llm: Optional[ChatDeepSeek] = None
+
+
+def get_deepseek_llm() -> ChatDeepSeek:
+    """
+    获取全局DeepSeek LLM实例（懒加载单例模式）
+
+    Returns:
+        ChatDeepSeek: 配置好的DeepSeek LLM实例
+
+    Raises:
+        ValueError: 当DEEPSEEK_API_KEY环境变量未设置时
+    """
+    global _global_deepseek_llm
+
+    if _global_deepseek_llm is None:
+        logger.info("🤖 初始化全局DeepSeek LLM实例...")
+
+        # 检查必需的环境变量
+        deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
+        if not deepseek_api_key:
+            raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
+
+        _global_deepseek_llm = ChatDeepSeek(
+            api_key=SecretStr(deepseek_api_key),
+            model="deepseek-chat",
+            temperature=0.7,
+        )
+
+        logger.success("🤖 全局DeepSeek LLM实例创建完成")
+
+    return _global_deepseek_llm
+
+
+def reset_deepseek_llm() -> None:
+    """
+    重置全局DeepSeek LLM实例
+
+    用途：
+    - 测试时清理状态
+    - 配置更改后重新初始化
+    - 错误恢复
+    """
+    global _global_deepseek_llm
+    logger.info("🔄 重置全局DeepSeek LLM实例...")
+    _global_deepseek_llm = None
 
 
 ############################################################################################################
@@ -42,24 +90,8 @@ class UnifiedState(TypedDict):
     confidence_score: float  # 路由决策的置信度
     processing_mode: str  # 处理模式描述
 
-    # 路由管理器（状态内管理）
-    route_manager: Optional[RouteDecisionManager]  # 路由决策管理器实例
-
-
-def ensure_route_manager(state: UnifiedState) -> RouteDecisionManager:
-    """确保状态中存在路由管理器实例，如果不存在则创建"""
-    if state.get("route_manager") is None:
-        logger.info("🚦 初始化状态内路由管理器...")
-        state["route_manager"] = create_default_route_manager()
-        logger.success("🚦 状态内路由管理器初始化完成")
-
-    # 确保返回的不是None
-    route_manager = state["route_manager"]
-    if route_manager is None:
-        # 这种情况理论上不应该发生，但为了类型安全
-        raise RuntimeError("路由管理器初始化失败")
-
-    return route_manager
+    # 路由管理器（必传）
+    route_manager: Optional[RouteDecisionManager]  # 路由决策管理器实例（通过参数传入）
 
 
 ############################################################################################################
@@ -83,8 +115,11 @@ def router_node(state: UnifiedState) -> Dict[str, Any]:
 
         logger.info(f"🚦 [ROUTER] 分析用户查询: {user_query}")
 
-        # 使用状态内的路由系统进行决策
-        route_manager = ensure_route_manager(state)
+        # 直接从状态中获取路由管理器
+        route_manager = state["route_manager"]
+        if route_manager is None:
+            raise RuntimeError("路由管理器不能为空，请检查参数传递")
+
         decision = route_manager.make_decision(user_query)
 
         # 转换决策结果到原有格式
@@ -154,16 +189,8 @@ def direct_llm_node(state: UnifiedState) -> Dict[str, List[BaseMessage]]:
     try:
         logger.info("💬 [DIRECT_LLM] 开始直接对话模式...")
 
-        # 检查必需的环境变量
-        deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
-        if not deepseek_api_key:
-            raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
-
-        llm = ChatDeepSeek(
-            api_key=SecretStr(deepseek_api_key),
-            model="deepseek-chat",
-            temperature=0.7,
-        )
+        # 使用全局LLM实例
+        llm = get_deepseek_llm()
 
         # 直接使用原始消息调用LLM
         response = llm.invoke(state["messages"])
@@ -352,16 +379,8 @@ def rag_llm_node(state: UnifiedState) -> Dict[str, List[BaseMessage]]:
     try:
         logger.info("🤖 [RAG_LLM] 开始RAG增强回答生成...")
 
-        # 检查必需的环境变量
-        deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
-        if not deepseek_api_key:
-            raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
-
-        llm = ChatDeepSeek(
-            api_key=SecretStr(deepseek_api_key),
-            model="deepseek-chat",
-            temperature=0.7,
-        )
+        # 使用全局LLM实例
+        llm = get_deepseek_llm()
 
         # 使用增强的上下文替换原始消息
         enhanced_context = state.get("enhanced_context", "")
@@ -467,6 +486,7 @@ def stream_unified_graph_updates(
     ],
     chat_history_state: Dict[str, List[BaseMessage]],
     user_input_state: Dict[str, List[BaseMessage]],
+    route_manager: RouteDecisionManager,
 ) -> List[BaseMessage]:
     """
     执行统一图并返回结果
@@ -475,6 +495,7 @@ def stream_unified_graph_updates(
         unified_compiled_graph: 编译后的统一图
         chat_history_state: 聊天历史状态
         user_input_state: 用户输入状态
+        route_manager: 路由决策管理器实例（必传）
 
     Returns:
         List[BaseMessage]: 生成的回答消息列表
@@ -502,7 +523,7 @@ def stream_unified_graph_updates(
             "similarity_scores": None,
             "confidence_score": 0.0,
             "processing_mode": "",
-            "route_manager": None,  # 将在需要时懒加载
+            "route_manager": route_manager,  # 直接使用传入的route_manager
         }
 
         logger.info(f"🚀 统一状态准备完成，用户查询: {user_query}")

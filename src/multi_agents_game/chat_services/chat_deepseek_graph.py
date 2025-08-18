@@ -8,7 +8,6 @@ import os
 import traceback
 from typing import Annotated, Any, Dict, List
 
-from langchain.schema import HumanMessage
 from langchain_core.messages import BaseMessage
 from langchain_deepseek import ChatDeepSeek
 from langgraph.graph import StateGraph

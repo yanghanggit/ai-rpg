@@ -42,7 +42,7 @@ from multi_agents_game.chat_services.chat_deepseek_mcp_graph import (
 )
 
 
-def print_welcome_message():
+def print_welcome_message() -> None:
     """打印欢迎信息和功能说明"""
     print("\n" + "🚀" * 60)
     print("🤖 DeepSeek + MCP 聊天系统")
@@ -53,12 +53,12 @@ def print_welcome_message():
     print("  • 工具调用：集成 MCP 工具，支持实用功能")
     print("  • 上下文记忆：维护完整的对话历史")
     print("  • 实时反馈：工具执行结果即时显示")
-    
+
     print("\n🛠️ 内置工具：")
     print("  • 时间查询：获取当前系统时间")
     print("  • 计算器：执行数学计算")
     print("  • 文本处理：大小写转换、字符统计等")
-    
+
     print("\n💡 使用提示：")
     print("  • 你可以直接对话，AI会智能判断是否需要使用工具")
     print("  • 尝试说：'现在几点了？'、'计算 25 * 4'、'把HELLO转为小写'")
@@ -67,18 +67,18 @@ def print_welcome_message():
     print("\n" + "🎯" * 60 + "\n")
 
 
-def print_available_tools():
+def print_available_tools() -> None:
     """打印可用工具的详细信息"""
     tools = create_sample_mcp_tools()
     print("\n🛠️ 可用工具详情：")
     print("-" * 50)
-    
+
     for i, tool in enumerate(tools, 1):
         print(f"{i}. {tool['name']}")
         print(f"   描述：{tool['description']}")
-        if tool['parameters']:
+        if tool["parameters"]:
             print("   参数：")
-            for param, details in tool['parameters'].items():
+            for param, details in tool["parameters"].items():
                 print(f"     - {param}: {details.get('description', 'N/A')}")
         print()
 
@@ -98,20 +98,18 @@ def main() -> None:
     try:
         # 打印欢迎信息
         print_welcome_message()
-        
+
         # 初始化 MCP 聊天历史状态
         chat_history_state: McpState = {
             "messages": [],
             "tools_available": create_sample_mcp_tools(),
             "tool_outputs": [],
-            "enable_tools": True
+            "enable_tools": True,
         }
 
         # 生成 MCP 增强的聊天机器人状态图
         compiled_mcp_stage_graph = create_compiled_mcp_stage_graph(
-            "deepseek_mcp_chatbot_node", 
-            temperature=0.7,
-            enable_tools=True
+            "deepseek_mcp_chatbot_node", temperature=0.7, enable_tools=True
         )
 
         logger.success("🤖 DeepSeek + MCP 聊天系统初始化完成，开始对话...")
@@ -140,7 +138,7 @@ def main() -> None:
                     "messages": [HumanMessage(content=user_input)],
                     "tools_available": chat_history_state["tools_available"],
                     "tool_outputs": [],
-                    "enable_tools": True
+                    "enable_tools": True,
                 }
 
                 # 获取 AI 回复（包含可能的工具调用）
@@ -163,13 +161,12 @@ def main() -> None:
                     print("\n❌ 抱歉，没有收到回复。")
 
                 # 调试信息：显示对话历史（仅在调试模式下）
-                if logger.level.name == "DEBUG":
-                    logger.debug("=" * 50)
-                    for message in chat_history_state["messages"][-4:]:  # 只显示最近4条消息
-                        if isinstance(message, HumanMessage):
-                            logger.debug(f"User: {message.content}")
-                        else:
-                            logger.debug(f"DeepSeek: {message.content[:100]}...")
+                logger.debug("=" * 50)
+                for message in chat_history_state["messages"][-4:]:  # 只显示最近4条消息
+                    if isinstance(message, HumanMessage):
+                        logger.debug(f"User: {message.content}")
+                    else:
+                        logger.debug(f"DeepSeek: {message.content[:100]}...")
 
             except KeyboardInterrupt:
                 logger.info("🛑 [MAIN] 用户中断程序")

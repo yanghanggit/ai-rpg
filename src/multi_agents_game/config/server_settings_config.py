@@ -9,6 +9,7 @@ class ServerSettingsConfig(BaseModel):
     num_chat_service_instances: int
     game_server_port: int = 8000  # 默认值
     chat_service_endpoint: str = "/chat-service/v1/"  # 默认值
+    mcp_server_url: str = "http://127.0.0.1:8765"  # MCP 服务器地址
 
     @property
     def chat_server_localhost_urls(self) -> List[str]:

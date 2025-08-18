@@ -35,16 +35,18 @@ class McpState(TypedDict):
 
 
 ############################################################################################################
-async def initialize_mcp_client(server_url: str = "http://127.0.0.1:8765") -> McpClient:
+async def initialize_mcp_client(server_url: str) -> McpClient:
     """
     初始化 MCP 客户端
 
     Args:
-        server_url: MCP 服务器地址
+        server_url: MCP 服务器地址，如果为 None 则使用配置中的默认值
 
     Returns:
         McpClient: 初始化后的 MCP 客户端
     """
+    # if server_url is None:
+    #     server_url = DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url
     client = McpClient(server_url)
 
     # 检查服务器健康状态，这会自动初始化session
@@ -93,8 +95,8 @@ async def execute_mcp_tool(
 async def create_compiled_mcp_stage_graph(
     node_name: str,
     temperature: float,
-    enable_tools: bool = True,
-    mcp_server_url: str = "http://127.0.0.1:8765",
+    mcp_server_url: str,
+    enable_tools: bool,
 ) -> CompiledStateGraph[McpState, Any, McpState, McpState]:
     """
     创建带 MCP 支持的编译状态图
@@ -103,7 +105,7 @@ async def create_compiled_mcp_stage_graph(
         node_name: 节点名称
         temperature: 模型温度
         enable_tools: 是否启用工具调用
-        mcp_server_url: MCP 服务器地址
+        mcp_server_url: MCP 服务器地址，如果为 None 则使用配置中的默认值
 
     Returns:
         CompiledStateGraph: 编译后的状态图
@@ -114,6 +116,10 @@ async def create_compiled_mcp_stage_graph(
     deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
     if not deepseek_api_key:
         raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
+
+    # 使用配置中的默认 MCP 服务器地址
+    # if mcp_server_url is None:
+    #     mcp_server_url = DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url
 
     # 初始化 DeepSeek LLM
     llm = ChatDeepSeek(

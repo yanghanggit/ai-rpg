@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 from loguru import logger
+
 from pydantic import BaseModel
 
 
@@ -32,7 +33,9 @@ class McpToolResult(BaseModel):
 class McpClient:
     """MCP 客户端"""
 
-    def __init__(self, server_url: str = "http://127.0.0.1:8765"):
+    def __init__(self, server_url: str):
+        # if server_url is None:
+        #     server_url = DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url
         self.server_url = server_url.rstrip("/")
         self.session: Optional[aiohttp.ClientSession] = None
         self._tools_cache: Optional[List[McpToolInfo]] = None
@@ -184,7 +187,7 @@ class McpClient:
 
 
 # 便捷函数
-async def create_mcp_client(server_url: str = "http://127.0.0.1:8765") -> McpClient:
+async def create_mcp_client(server_url: str) -> McpClient:
     """创建 MCP 客户端"""
     client = McpClient(server_url)
     await client._ensure_session()

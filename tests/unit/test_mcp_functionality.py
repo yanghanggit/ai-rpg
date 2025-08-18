@@ -29,6 +29,9 @@ from src.multi_agents_game.chat_services.mcp_client import (
     McpToolInfo,
     McpToolResult,
 )
+from src.multi_agents_game.config.server_settings_config import (
+    DEFAULT_SERVER_SETTINGS_CONFIG,
+)
 
 
 class TestMcpClient:
@@ -37,7 +40,7 @@ class TestMcpClient:
     @pytest.fixture
     def mock_mcp_client(self) -> McpClient:
         """创建模拟 MCP 客户端的测试夹具"""
-        client = McpClient("http://127.0.0.1:8765")
+        client = McpClient(DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url)
         client.session = AsyncMock()
         return client
 
@@ -89,9 +92,11 @@ class TestMcpClient:
             mock_response.status = 200
             mock_get.return_value.__aenter__.return_value = mock_response
 
-            client = await initialize_mcp_client("http://127.0.0.1:8765")
+            client = await initialize_mcp_client(
+                DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url
+            )
             assert isinstance(client, McpClient)
-            assert client.server_url == "http://127.0.0.1:8765"
+            assert client.server_url == DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url
 
     @pytest.mark.asyncio
     async def test_mcp_client_health_check(self) -> None:
@@ -101,7 +106,7 @@ class TestMcpClient:
             mock_response.status = 200
             mock_get.return_value.__aenter__.return_value = mock_response
 
-            client = McpClient("http://127.0.0.1:8765")
+            client = McpClient(DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url)
             await client._ensure_session()
             result = await client.check_health()
             assert result is True
@@ -122,7 +127,7 @@ class TestMcpClient:
             ]
             mock_get.return_value.__aenter__.return_value = mock_response
 
-            client = McpClient("http://127.0.0.1:8765")
+            client = McpClient(DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url)
             await client._ensure_session()
             tools = await client.get_available_tools()
             assert len(tools) == 3
@@ -144,7 +149,7 @@ class TestMcpClient:
             }
             mock_post.return_value.__aenter__.return_value = mock_response
 
-            client = McpClient("http://127.0.0.1:8765")
+            client = McpClient(DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url)
             await client._ensure_session()
             result = await client.call_tool("get_current_time", {})
             assert isinstance(result, McpToolResult)
@@ -165,7 +170,7 @@ class TestMcpClient:
             }
             mock_post.return_value.__aenter__.return_value = mock_response
 
-            client = McpClient("http://127.0.0.1:8765")
+            client = McpClient(DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url)
             await client._ensure_session()
             result = await client.call_tool("invalid_tool", {})
             assert isinstance(result, McpToolResult)

@@ -41,6 +41,7 @@ from multi_agents_game.chat_services.chat_deepseek_mcp_graph import (
     stream_mcp_graph_updates,
     initialize_mcp_client,
 )
+from multi_agents_game.config import DEFAULT_SERVER_SETTINGS_CONFIG
 
 
 def print_welcome_message() -> None:
@@ -74,7 +75,9 @@ def print_available_tools() -> None:
     print("\n🛠️ 可用工具详情：")
     print("-" * 50)
     print("工具信息将在连接到 MCP 服务器后显示")
-    print("请确保 MCP 服务器正在运行 (http://127.0.0.1:8765)")
+    print(
+        f"请确保 MCP 服务器正在运行 ({DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url})"
+    )
     print("启动命令: python scripts/mcp_tool_server.py")
     print()
 
@@ -137,7 +140,9 @@ async def main() -> None:
         available_tools = []
 
         try:
-            mcp_client = await initialize_mcp_client()
+            mcp_client = await initialize_mcp_client(
+                DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url
+            )
             available_tools = await mcp_client.get_available_tools()
             logger.success(f"🔗 MCP 客户端连接成功，可用工具: {len(available_tools)}")
         except Exception as e:
@@ -160,7 +165,8 @@ async def main() -> None:
         compiled_mcp_stage_graph = await create_compiled_mcp_stage_graph(
             "deepseek_mcp_chatbot_node",
             temperature=0.7,
-            enable_tools=mcp_client is not None,
+            mcp_server_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
+            enable_tools=True,
         )
 
         logger.success("🤖 DeepSeek + MCP 聊天系统初始化完成，开始对话...")

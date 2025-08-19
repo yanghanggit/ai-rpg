@@ -1,14 +1,11 @@
 """
 统一 MCP 客户端实现
 
-基于官方 MCP Python SDK 的标准客户端实现，用于与标准 MCP 服务器通信。
-支持多种传输协议：stdio、streamable-http。
+基于官方 MCP Python SDK 的标准客户端实现，使用 stdio 传输协议。
+专注于稳定性和可靠性，遵循官方推荐的 stdio 传输方式。
 """
 
 import os
-
-# import asyncio
-import httpx
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
@@ -37,56 +34,31 @@ class McpToolResult(BaseModel):
 
 
 class McpClient:
-    """统一 MCP 客户端实现"""
+    """统一 MCP 客户端实现 - 使用 stdio 传输"""
 
     def __init__(
         self,
-        server_url: Optional[str] = None,
-        server_config: Optional[Dict[str, Any]] = None,
+        command: Optional[str] = None,
+        args: Optional[List[str]] = None,
+        env: Optional[Dict[str, str]] = None,
     ):
         """
         初始化 MCP 客户端
 
         Args:
-            server_url: 服务器 URL（会自动转换为适当的配置）
-                - http://localhost:8765 -> streamable-http 模式
-                - python script.py -> stdio 模式
-            server_config: 直接服务器配置（优先级更高）
-                对于 stdio 模式: {"transport": "stdio", "command": "python", "args": ["server.py"]}
-                对于 streamable-http 模式: {"transport": "streamable-http", "url": "http://localhost:8765"}
+            command: 服务器命令（如 "python"）
+            args: 服务器参数（如 ["scripts/run_sample_mcp_server.py"]）
+            env: 环境变量
         """
-        if server_config:
-            # 使用直接配置
-            self.server_config = server_config
-        elif server_url:
-            # 从 URL 自动推断配置
-            self.server_config = self._parse_server_url(server_url)
-        else:
-            # 默认配置（stdio 模式）
-            self.server_config = {
-                "transport": "stdio",
-                "command": "python",
-                "args": ["scripts/run_sample_mcp_server.py", "--transport", "stdio"],
-            }
+        # 设置默认配置
+        self.command = command or "python"
+        self.args = args or ["scripts/run_sample_mcp_server.py"]
+        self.env = env or {}
 
-        self.transport = self.server_config.get("transport", "stdio")
+        # 内部状态
         self.session: Optional[ClientSession] = None
         self._tools_cache: Optional[List[McpToolInfo]] = None
         self._connection_context: Optional[Any] = None
-        self._http_client: Optional[httpx.AsyncClient] = None
-
-    def _parse_server_url(self, server_url: str) -> Dict[str, Any]:
-        """解析服务器 URL 并返回相应的配置"""
-        if server_url.startswith("http"):
-            # streamable-http 模式
-            return {"transport": "streamable-http", "url": server_url.rstrip("/")}
-        else:
-            # 假设是命令行（stdio 模式）
-            return {
-                "transport": "stdio",
-                "command": server_url.split()[0],
-                "args": server_url.split()[1:] if " " in server_url else [],
-            }
 
     async def __aenter__(self) -> "McpClient":
         """异步上下文管理器入口"""
@@ -100,14 +72,8 @@ class McpClient:
     async def connect(self) -> None:
         """连接到 MCP 服务器"""
         try:
-            if self.transport == "stdio":
-                await self._connect_stdio()
-            elif self.transport == "streamable-http":
-                await self._connect_streamable_http()
-            else:
-                raise ValueError(f"不支持的传输协议: {self.transport}")
-
-            logger.success(f"✅ MCP 客户端已连接 (transport: {self.transport})")
+            await self._connect_stdio()
+            logger.success("✅ MCP 客户端已连接 (transport: stdio)")
 
         except Exception as e:
             logger.error(f"❌ MCP 客户端连接失败: {e}")
@@ -115,12 +81,10 @@ class McpClient:
 
     async def _connect_stdio(self) -> None:
         """连接 stdio 模式的服务器"""
-        command = self.server_config.get("command", "python")
-        args = self.server_config.get("args", [])
-        env = self.server_config.get("env", {})
-
         server_params = StdioServerParameters(
-            command=command, args=args, env={**os.environ, **env} if env else None
+            command=self.command,
+            args=self.args,
+            env={**os.environ, **self.env} if self.env else None,
         )
 
         # 使用 stdio_client 连接
@@ -129,47 +93,6 @@ class McpClient:
 
         # 创建会话
         self.session = ClientSession(read_stream, write_stream)
-        await self.session.initialize()
-
-    async def _connect_streamable_http(self) -> None:
-        """连接 streamable-http 模式的服务器"""
-        base_url = self.server_config.get("url", "http://localhost:8765")
-
-        # 创建 HTTP 客户端
-        self._http_client = httpx.AsyncClient(base_url=base_url, timeout=30.0)
-
-        # 对于 streamable-http，我们需要实现标准的 HTTP/WebSocket 连接
-        # 这里暂时使用简化实现，在实际部署中需要根据 MCP 规范实现完整的 streamable-http 协议
-
-        # 创建模拟的读写流用于兼容现有的 ClientSession API
-        from asyncio import Queue
-
-        # 创建消息队列
-        read_queue: Queue[Any] = Queue()
-        write_queue: Queue[Any] = Queue()
-
-        # 创建流适配器
-        class HttpStreamAdapter:
-            def __init__(self, queue: Queue[Any], is_reader: bool = True):
-                self._queue = queue
-                self._is_reader = is_reader
-
-            async def read_message(self) -> Any:
-                if self._is_reader:
-                    return await self._queue.get()
-                raise RuntimeError("Cannot read from write stream")
-
-            async def send_message(self, message: Any) -> None:
-                if not self._is_reader:
-                    await self._queue.put(message)
-                else:
-                    raise RuntimeError("Cannot write to read stream")
-
-        read_stream = HttpStreamAdapter(read_queue, True)
-        write_stream = HttpStreamAdapter(write_queue, False)
-
-        # 创建会话
-        self.session = ClientSession(read_stream, write_stream)  # type: ignore
         await self.session.initialize()
 
     async def disconnect(self) -> None:
@@ -182,10 +105,6 @@ class McpClient:
             if self._connection_context:
                 await self._connection_context.__aexit__(None, None, None)
                 self._connection_context = None
-
-            if self._http_client:
-                await self._http_client.aclose()
-                self._http_client = None
 
             logger.info("🔌 MCP 客户端已断开连接")
 
@@ -406,26 +325,14 @@ class McpClient:
 
 
 # ============================================================================
-# 工厂函数（保留以便扩展）
+# 工厂函数
 # ============================================================================
 
 
-def create_stdio_mcp_client(
-    command: str, args: Optional[List[str]] = None, env: Optional[Dict[str, str]] = None
+def create_mcp_client(
+    command: Optional[str] = None,
+    args: Optional[List[str]] = None,
+    env: Optional[Dict[str, str]] = None,
 ) -> McpClient:
-    """创建 stdio 模式的 MCP 客户端"""
-    config: Dict[str, Any] = {
-        "transport": "stdio",
-        "command": command,
-    }
-    if args:
-        config["args"] = args
-    if env:
-        config["env"] = env
-    return McpClient(server_config=config)
-
-
-def create_streamable_http_mcp_client(url: str) -> McpClient:
-    """创建 streamable-http 模式的 MCP 客户端"""
-    config = {"transport": "streamable-http", "url": url}
-    return McpClient(server_config=config)
+    """创建 MCP 客户端（stdio 模式）"""
+    return McpClient(command=command, args=args, env=env)

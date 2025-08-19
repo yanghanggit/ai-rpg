@@ -32,17 +32,9 @@ class TestMcpClient:
     """MCP 客户端功能测试类"""
 
     @pytest.fixture
-    def mock_server_config(self) -> Dict[str, Any]:
-        """创建测试用的服务器配置"""
-        return {
-            "transport": "streamable-http",
-            "url": DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
-        }
-
-    @pytest.fixture
-    def mock_mcp_client(self, mock_server_config: Dict[str, Any]) -> McpClient:
+    def mock_mcp_client(self) -> McpClient:
         """创建模拟 MCP 客户端的测试夹具"""
-        client = McpClient(server_config=mock_server_config)
+        client = McpClient(command="python", args=["scripts/run_sample_mcp_server.py"])
         # Mock the session to avoid actual network calls
         client.session = AsyncMock()
         client._connection_context = AsyncMock()
@@ -108,11 +100,9 @@ class TestMcpClient:
             mock_client.check_health.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_mcp_client_health_check(
-        self, mock_server_config: Dict[str, Any]
-    ) -> None:
+    async def test_mcp_client_health_check(self) -> None:
         """测试 MCP 客户端健康检查"""
-        client = McpClient(server_config=mock_server_config)
+        client = McpClient(command="python", args=["scripts/run_sample_mcp_server.py"])
         client.session = AsyncMock()
         client._connection_context = AsyncMock()
 
@@ -125,11 +115,9 @@ class TestMcpClient:
             assert result is True
 
     @pytest.mark.asyncio
-    async def test_get_available_tools(
-        self, sample_tools: List[McpToolInfo], mock_server_config: Dict[str, Any]
-    ) -> None:
+    async def test_get_available_tools(self, sample_tools: List[McpToolInfo]) -> None:
         """测试获取可用工具"""
-        client = McpClient(server_config=mock_server_config)
+        client = McpClient(command="python", args=["scripts/run_sample_mcp_server.py"])
         client.session = AsyncMock()
         client._connection_context = AsyncMock()
 
@@ -153,9 +141,9 @@ class TestMcpClient:
         assert tools[2].name == "text_processor"
 
     @pytest.mark.asyncio
-    async def test_call_tool_success(self, mock_server_config: Dict[str, Any]) -> None:
+    async def test_call_tool_success(self) -> None:
         """测试成功调用工具"""
-        client = McpClient(server_config=mock_server_config)
+        client = McpClient(command="python", args=["scripts/run_sample_mcp_server.py"])
         client.session = AsyncMock()
         client._connection_context = AsyncMock()
 
@@ -173,9 +161,9 @@ class TestMcpClient:
         assert "2023-08-18 14:30:00" in result.result
 
     @pytest.mark.asyncio
-    async def test_call_tool_failure(self, mock_server_config: Dict[str, Any]) -> None:
+    async def test_call_tool_failure(self) -> None:
         """测试工具调用失败"""
-        client = McpClient(server_config=mock_server_config)
+        client = McpClient(command="python", args=["scripts/run_sample_mcp_server.py"])
         client.session = AsyncMock()
         client._connection_context = AsyncMock()
 

@@ -75,25 +75,16 @@ async def initialize_mcp_client(server_url: str) -> McpClient:
     初始化 MCP 客户端
 
     Args:
-        server_url: MCP 服务器地址，如果为 None 则使用配置中的默认值
+        server_url: MCP 服务器地址（目前仅用于兼容性，实际使用 stdio 模式）
 
     Returns:
         McpClient: 初始化后的 MCP 客户端
     """
-    # 根据 server_url 创建配置
-    config: Dict[str, Any]
-    if server_url.startswith("http"):
-        # HTTP/SSE 模式
-        config = {"transport": "sse", "url": f"{server_url.rstrip('/')}/sse"}
-    else:
-        # 默认使用 stdio 模式
-        config = {
-            "transport": "stdio",
-            "command": "python",
-            "args": ["scripts/run_sample_mcp_server.py", "--transport", "stdio"],
-        }
-
-    client = McpClient(server_config=config)
+    # 使用 stdio 模式（官方推荐）
+    client = McpClient(
+        command="python",
+        args=["scripts/run_sample_mcp_server.py"],
+    )
 
     # 连接到服务器
     await client.connect()

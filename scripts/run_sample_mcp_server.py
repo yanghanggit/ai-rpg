@@ -6,24 +6,24 @@
 
 架构特点：
 1. 独立进程运行，可单独部署和管理
-2. 支持多种传输协议（stdio、streamable-http）
+2. 使用标准 stdio 传输协议（官方推荐）
 3. 标准 MCP 协议实现，兼容所有 MCP 客户端
 4. 生产级特性：日志记录、错误处理、资源管理
 5. 可扩展的工具和资源系统
 
 使用方法：
-    # 启动 stdio 模式（适合与单个客户端通信）
-    python scripts/run_sample_mcp_server.py --transport stdio
+    # 启动 stdio 模式（推荐）
+    python scripts/run_sample_mcp_server.py
 
-    # 启动 HTTP 模式（适合多客户端或 Web 集成）
-    python scripts/run_sample_mcp_server.py --transport streamable-http --port 8765
+    # 或者显式指定 stdio 模式
+    python scripts/run_sample_mcp_server.py --transport stdio
 """
 
 import os
 import sys
 import json
 from datetime import datetime
-from typing import Any, Dict, AsyncGenerator
+from typing import Any, Dict
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -48,16 +48,14 @@ class ServerConfig:
         self.name = "Production MCP Server"
         self.version = "1.0.0"
         self.description = "生产级 MCP 服务器，支持工具调用、资源访问和提示模板"
-        self.max_message_size = 10 * 1024 * 1024  # 10MB
-        self.timeout = 30  # 30秒超时
+        self.transport = "stdio"  # 固定使用 stdio 传输
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "version": self.version,
             "description": self.description,
-            "max_message_size": self.max_message_size,
-            "timeout": self.timeout,
+            "transport": self.transport,
             "started_at": datetime.now().isoformat(),
         }
 
@@ -70,7 +68,6 @@ app = FastMCP(
     name=config.name,
     instructions=config.description,
     debug=False,  # 生产环境设置为 False
-    log_level="INFO",
 )
 
 
@@ -186,7 +183,7 @@ async def get_capabilities() -> str:
     """获取服务器能力信息"""
     capabilities = {
         "协议版本": "MCP 1.0",
-        "支持的传输": ["stdio", "streamable-http"],
+        "支持的传输": ["stdio"],
         "工具功能": {
             "时间查询": "支持多种时间格式",
             "系统信息": "获取系统运行状态",
@@ -324,23 +321,18 @@ async def system_analysis(analysis_type: str = "general") -> types.GetPromptResu
 # ============================================================================
 
 
-# @app.lifespan()  # 注释掉，因为 FastMCP 可能不支持此装饰器
-async def lifespan_context() -> AsyncGenerator[None, None]:
-    """服务器生命周期管理"""
+async def startup_handler() -> None:
+    """服务器启动处理"""
     logger.info("🚀 Production MCP Server 启动中...")
     logger.info(f"📋 服务器配置: {config.name} v{config.version}")
+    logger.info(f"📡 传输协议: {config.transport}")
+    logger.info(f"⏰ 启动时间: {datetime.now()}")
 
-    # 启动时初始化
-    startup_time = datetime.now()
-    logger.info(f"⏰ 启动时间: {startup_time}")
 
-    yield  # 服务器运行期间
-
-    # 关闭时清理
-    shutdown_time = datetime.now()
-    uptime = shutdown_time - startup_time
-    logger.info(f"🛑 Production MCP Server 关闭中...")
-    logger.info(f"⏱️ 运行时长: {uptime}")
+async def shutdown_handler() -> None:
+    """服务器关闭处理"""
+    logger.info("🛑 Production MCP Server 关闭中...")
+    logger.info("👋 服务器已关闭")
 
 
 # ============================================================================
@@ -351,15 +343,9 @@ async def lifespan_context() -> AsyncGenerator[None, None]:
 @click.command()
 @click.option(
     "--transport",
-    type=click.Choice(["stdio", "streamable-http"]),
+    type=click.Choice(["stdio"]),
     default="stdio",
-    help="传输协议类型",
-)
-@click.option(
-    "--port", type=int, default=8765, help="端口号（仅适用于 streamable-http）"
-)
-@click.option(
-    "--host", default="127.0.0.1", help="主机地址（仅适用于 streamable-http）"
+    help="传输协议类型（当前仅支持 stdio）",
 )
 @click.option(
     "--log-level",
@@ -367,7 +353,7 @@ async def lifespan_context() -> AsyncGenerator[None, None]:
     default="INFO",
     help="日志级别",
 )
-def main(transport: str, port: int, host: str, log_level: str) -> None:
+def main(transport: str, log_level: str) -> None:
     """启动生产级 MCP 服务器"""
 
     # 配置日志
@@ -382,18 +368,10 @@ def main(transport: str, port: int, host: str, log_level: str) -> None:
     logger.info(f"📡 传输协议: {transport}")
     logger.info(f"📝 日志级别: {log_level}")
 
-    if transport == "streamable-http":
-        logger.info(f"🌐 服务地址: {host}:{port}")
-
-    # 更新服务器设置
-    app.settings.host = host
-    app.settings.port = port
-    app.settings.log_level = log_level  # type: ignore[assignment]
-
     try:
         # 启动服务器
         logger.info("✅ 服务器启动完成，等待客户端连接...")
-        app.run(transport=transport)  # type: ignore[arg-type]
+        app.run(transport="stdio")
     except KeyboardInterrupt:
         logger.info("🛑 收到中断信号，正在关闭服务器...")
     except Exception as e:

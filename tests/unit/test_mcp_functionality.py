@@ -9,22 +9,16 @@ MCP (Model Context Protocol) 功能单元测试
 """
 
 import pytest
-import sys
-import os
 from typing import List, Dict, Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
-# 添加 src 目录到路径
-sys.path.insert(
-    0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "src")
-)
 
-from src.multi_agents_game.chat_services.chat_deepseek_mcp_graph import (
+from src.multi_agents_game.chat_services.chat_deepseek_mcp_client_graph import (
     McpState,
     initialize_mcp_client,
     execute_mcp_tool,
 )
-from src.multi_agents_game.chat_services.standard_mcp_client import (
+from src.multi_agents_game.chat_services.mcp_client import (
     StandardMcpClient,
     McpToolInfo,
     McpToolResult,
@@ -42,7 +36,7 @@ class TestMcpClient:
         """创建测试用的服务器配置"""
         return {
             "transport": "sse",
-            "url": DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url
+            "url": DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
         }
 
     @pytest.fixture
@@ -98,12 +92,14 @@ class TestMcpClient:
     async def test_mcp_client_initialization(self) -> None:
         """测试 MCP 客户端初始化"""
         # Mock the initialize_mcp_client function directly
-        with patch("src.multi_agents_game.chat_services.chat_deepseek_mcp_graph.StandardMcpClient") as mock_client_class:
+        with patch(
+            "src.multi_agents_game.chat_services.chat_deepseek_mcp_client_graph.StandardMcpClient"
+        ) as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
             mock_client.connect.return_value = None
             mock_client.check_health.return_value = True
-            
+
             client = await initialize_mcp_client(
                 DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url
             )
@@ -112,25 +108,31 @@ class TestMcpClient:
             mock_client.check_health.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_mcp_client_health_check(self, mock_server_config: Dict[str, Any]) -> None:
+    async def test_mcp_client_health_check(
+        self, mock_server_config: Dict[str, Any]
+    ) -> None:
         """测试 MCP 客户端健康检查"""
         client = StandardMcpClient(server_config=mock_server_config)
         client.session = AsyncMock()
         client._connection_context = AsyncMock()
-        
+
         # Mock get_available_tools to simulate successful health check
-        client.get_available_tools = AsyncMock(return_value=[])
-        
-        result = await client.check_health()
-        assert result is True
+        with patch.object(
+            client, "get_available_tools", new_callable=AsyncMock
+        ) as mock_get_tools:
+            mock_get_tools.return_value = []
+            result = await client.check_health()
+            assert result is True
 
     @pytest.mark.asyncio
-    async def test_get_available_tools(self, sample_tools: List[McpToolInfo], mock_server_config: Dict[str, Any]) -> None:
+    async def test_get_available_tools(
+        self, sample_tools: List[McpToolInfo], mock_server_config: Dict[str, Any]
+    ) -> None:
         """测试获取可用工具"""
         client = StandardMcpClient(server_config=mock_server_config)
         client.session = AsyncMock()
         client._connection_context = AsyncMock()
-        
+
         # Mock the session.list_tools response with proper tool structure
         mock_tool_objects = []
         for tool in sample_tools:
@@ -139,11 +141,11 @@ class TestMcpClient:
             mock_tool.description = tool.description
             mock_tool.inputSchema = tool.input_schema
             mock_tool_objects.append(mock_tool)
-        
+
         mock_response = AsyncMock()
         mock_response.tools = mock_tool_objects
         client.session.list_tools.return_value = mock_response
-        
+
         tools = await client.get_available_tools()
         assert len(tools) == 3
         assert tools[0].name == "get_current_time"
@@ -156,7 +158,7 @@ class TestMcpClient:
         client = StandardMcpClient(server_config=mock_server_config)
         client.session = AsyncMock()
         client._connection_context = AsyncMock()
-        
+
         # Mock the session.call_tool response
         mock_response = AsyncMock()
         mock_content = AsyncMock()
@@ -164,7 +166,7 @@ class TestMcpClient:
         mock_content.text = "2023-08-18 14:30:00"
         mock_response.content = [mock_content]
         client.session.call_tool.return_value = mock_response
-        
+
         result = await client.call_tool("get_current_time", {})
         assert isinstance(result, McpToolResult)
         assert result.success is True
@@ -176,14 +178,14 @@ class TestMcpClient:
         client = StandardMcpClient(server_config=mock_server_config)
         client.session = AsyncMock()
         client._connection_context = AsyncMock()
-        
+
         # Mock an exception during tool call
         client.session.call_tool.side_effect = Exception("工具执行失败")
-        
+
         result = await client.call_tool("invalid_tool", {})
         assert isinstance(result, McpToolResult)
         assert result.success is False
-        assert "工具执行失败" in result.error
+        assert result.error is not None and "工具执行失败" in result.error
 
     @pytest.mark.asyncio
     async def test_execute_mcp_tool_integration(self) -> None:

@@ -3,7 +3,7 @@ Tests for the Processors module in entitas framework.
 """
 
 import pytest
-from unittest.mock import Mock, AsyncMock, call
+from unittest.mock import Mock
 from typing import Dict, List
 
 from src.multi_agents_game.entitas.processors import (

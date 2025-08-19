@@ -18,7 +18,7 @@ from pydantic import SecretStr
 from typing_extensions import TypedDict
 
 # 导入标准 MCP 客户端
-from .standard_mcp_client import StandardMcpClient, McpToolInfo
+from .mcp_client import StandardMcpClient, McpToolInfo
 
 # 全局 ChatDeepSeek 实例
 _global_deepseek_llm: Optional[ChatDeepSeek] = None
@@ -81,22 +81,20 @@ async def initialize_mcp_client(server_url: str) -> StandardMcpClient:
         StandardMcpClient: 初始化后的 MCP 客户端
     """
     # 根据 server_url 创建配置
+    config: Dict[str, Any]
     if server_url.startswith("http"):
         # HTTP/SSE 模式
-        config = {
-            "transport": "sse",
-            "url": f"{server_url.rstrip('/')}/sse"
-        }
+        config = {"transport": "sse", "url": f"{server_url.rstrip('/')}/sse"}
     else:
         # 默认使用 stdio 模式
         config = {
-            "transport": "stdio", 
+            "transport": "stdio",
             "command": "python",
-            "args": ["scripts/production_mcp_server.py", "--transport", "stdio"]
+            "args": ["scripts/run_sample_mcp_server.py", "--transport", "stdio"],
         }
 
     client = StandardMcpClient(server_config=config)
-    
+
     # 连接到服务器
     await client.connect()
 

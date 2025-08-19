@@ -15,10 +15,10 @@ DeepSeek + MCP 聊天系统启动脚本
 - 工具执行结果实时显示
 
 使用方法：
-    python scripts/run_deepseek_mcp_chat.py
+    python scripts/run_deepseek_mcp_chat_client.py
 
 或者在项目根目录下：
-    python -m scripts.run_deepseek_mcp_chat
+    python -m scripts.run_deepseek_mcp_chat_client
 """
 
 import os
@@ -35,7 +35,7 @@ import asyncio
 from langchain.schema import HumanMessage
 from loguru import logger
 
-from multi_agents_game.chat_services.chat_deepseek_mcp_graph import (
+from multi_agents_game.chat_services.chat_deepseek_mcp_client_graph import (
     McpState,
     create_compiled_mcp_stage_graph,
     stream_mcp_graph_updates,
@@ -79,7 +79,7 @@ def print_available_tools() -> None:
     print(
         f"请确保 MCP 服务器正在运行 ({DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url})"
     )
-    print("启动命令: python scripts/mcp_tool_server.py")
+    print("启动命令: python scripts/run_sample_mcp_server.py")
     print()
 
 
@@ -160,7 +160,7 @@ async def main() -> None:
         except Exception as e:
             logger.warning(f"⚠️ MCP 服务器连接失败: {e}")
             logger.info(
-                "💡 请确保 MCP 服务器正在运行: python scripts/mcp_tool_server.py"
+                "💡 请确保 MCP 服务器正在运行: python scripts/run_sample_mcp_server.py"
             )
             print("⚠️ MCP 服务器连接失败，将在无工具模式下运行")
 

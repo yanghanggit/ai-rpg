@@ -9,9 +9,6 @@ import numpy as np
 from typing import List, Any, cast
 from sqlalchemy import create_engine, text
 from loguru import logger
-
-# import sys
-# import os
 import hashlib
 
 # 导入配置

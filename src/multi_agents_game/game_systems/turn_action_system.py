@@ -29,11 +29,11 @@ class TurnActionSystem(BaseActionReactiveSystem):
 
     #######################################################################################################################################
     @override
-    async def a_execute2(self) -> None:
-        if len(self._react_entities_copy) == 0:
+    async def react(self, entities: list[Entity]) -> None:
+        if len(entities) == 0:
             return
         assert self._game.current_engagement.is_on_going_phase
-        await self._handle_turn_actions(self._react_entities_copy)
+        await self._handle_turn_actions(entities)
 
     #######################################################################################################################################
     async def _handle_turn_actions(self, react_entities: List[Entity]) -> None:

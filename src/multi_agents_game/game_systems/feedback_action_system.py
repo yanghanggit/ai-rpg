@@ -73,16 +73,17 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
 
     #######################################################################################################################################
     @override
-    async def a_execute2(self) -> None:
-        if len(self._react_entities_copy) > 0:
+    async def react(self, entities: list[Entity]) -> None:
+
+        if len(entities) > 0:
 
             assert self._game.current_engagement.is_on_going_phase
 
             # 处理请求
-            await self._process_request(self._react_entities_copy)
+            await self._process_request(entities)
 
             # 清理不完整的反馈
-            self._cleanup_incomplete_feedback(self._react_entities_copy)
+            self._cleanup_incomplete_feedback(entities)
 
     #######################################################################################################################################
     def _cleanup_incomplete_feedback(self, react_entities_copy: List[Entity]) -> None:

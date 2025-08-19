@@ -11,5 +11,5 @@ class PreActionSystem(ExecuteProcessor):
         self._game: TCGGame = game_context
 
     @override
-    def execute(self) -> None:
+    async def execute(self) -> None:
         pass

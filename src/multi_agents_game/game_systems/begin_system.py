@@ -12,7 +12,7 @@ class BeginSystem(ExecuteProcessor):
 
     ############################################################################################################
     @override
-    def execute(self) -> None:
+    async def execute(self) -> None:
         self._game._debug_flag_pipeline = True
 
     ############################################################################################################

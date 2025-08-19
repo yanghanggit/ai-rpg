@@ -97,9 +97,9 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
 
     ######################################################################################################################################
     @override
-    async def a_execute2(self) -> None:
+    async def react(self, entities: list[Entity]) -> None:
 
-        if len(self._react_entities_copy) == 0:
+        if len(entities) == 0:
             return
 
         if not self._game.current_engagement.is_on_going_phase:
@@ -110,7 +110,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
         self._game.clear_hands()
 
         # 处理请求
-        await self._process_chat_requests(self._react_entities_copy)
+        await self._process_chat_requests(entities)
 
     #######################################################################################################################################
     async def _process_chat_requests(self, react_entities: List[Entity]) -> None:

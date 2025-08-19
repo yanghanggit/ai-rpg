@@ -15,7 +15,7 @@ class SaveSystem(ExecuteProcessor):
 
     ############################################################################################################
     @override
-    def execute(self) -> None:
+    async def execute(self) -> None:
 
         # 核心调用
         self._game.save()

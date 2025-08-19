@@ -25,7 +25,7 @@ class MindVoiceActionSystem(BaseActionReactiveSystem):
 
     ####################################################################################################################################
     @override
-    def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: list[Entity]) -> None:
         for entity in entities:
             self._process_action(entity)
 

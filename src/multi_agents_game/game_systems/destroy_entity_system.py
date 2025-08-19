@@ -15,7 +15,7 @@ class DestroyEntitySystem(ExecuteProcessor):
 
     ####################################################################################################################################
     @override
-    def execute(self) -> None:
+    async def execute(self) -> None:
         entities = self._game.get_group(Matcher(DestroyComponent)).entities.copy()
         while len(entities) > 0:
             destory_entity = entities.pop()

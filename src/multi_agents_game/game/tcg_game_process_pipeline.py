@@ -1,7 +1,5 @@
 from typing import cast
 
-from loguru import logger
-from overrides import override
 
 from ..entitas import Processors
 from ..game.base_game import BaseGame
@@ -174,36 +172,6 @@ class TCGGameProcessPipeline(Processors):
     def __init__(self) -> None:
         super().__init__()
         self._initialized: bool = False
-
-    ###################################################################################################################################################################
-    @override
-    def initialize(self) -> None:
-        for processor in self._initialize_processors:
-            logger.warning(f"initialize {processor.__class__.__name__}")
-            processor.initialize()
-
-    ###################################################################################################################################################################
-    ## 异步执行方法
-    async def a_execute(self) -> None:
-        for processor in self._execute_processors:
-            logger.warning(f"a_execute {processor.__class__.__name__}")
-            await processor.a_execute1()
-            processor.execute()
-            await processor.a_execute2()
-
-    ###################################################################################################################################################################
-    @override
-    def execute(self) -> None:
-        for processor in self._execute_processors:
-            logger.warning(f"execute {processor.__class__.__name__}")
-            processor.execute()
-
-    ###################################################################################################################################################################
-    @override
-    def tear_down(self) -> None:
-        for processor in self._tear_down_processors:
-            logger.warning(f"tear_down {processor.__class__.__name__}")
-            processor.tear_down()
 
 
 ###################################################################################################################################################################

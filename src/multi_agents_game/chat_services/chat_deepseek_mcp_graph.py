@@ -17,8 +17,8 @@ from langgraph.graph.state import CompiledStateGraph
 from pydantic import SecretStr
 from typing_extensions import TypedDict
 
-# 导入 MCP 客户端
-from .mcp_client import McpClient, McpToolInfo
+# 导入标准 MCP 客户端
+from .standard_mcp_client import StandardMcpClient, McpToolInfo
 
 # 全局 ChatDeepSeek 实例
 _global_deepseek_llm: Optional[ChatDeepSeek] = None
@@ -64,13 +64,13 @@ class McpState(TypedDict):
     """
 
     messages: Annotated[List[BaseMessage], add_messages]
-    mcp_client: Optional[McpClient]  # MCP 客户端
+    mcp_client: Optional[StandardMcpClient]  # MCP 客户端
     available_tools: List[McpToolInfo]  # 可用的 MCP 工具
     tool_outputs: List[Dict[str, Any]]  # 工具执行结果
 
 
 ############################################################################################################
-async def initialize_mcp_client(server_url: str) -> McpClient:
+async def initialize_mcp_client(server_url: str) -> StandardMcpClient:
     """
     初始化 MCP 客户端
 
@@ -78,12 +78,31 @@ async def initialize_mcp_client(server_url: str) -> McpClient:
         server_url: MCP 服务器地址，如果为 None 则使用配置中的默认值
 
     Returns:
-        McpClient: 初始化后的 MCP 客户端
+        StandardMcpClient: 初始化后的 MCP 客户端
     """
-    client = McpClient(server_url)
+    # 根据 server_url 创建配置
+    if server_url.startswith("http"):
+        # HTTP/SSE 模式
+        config = {
+            "transport": "sse",
+            "url": f"{server_url.rstrip('/')}/sse"
+        }
+    else:
+        # 默认使用 stdio 模式
+        config = {
+            "transport": "stdio", 
+            "command": "python",
+            "args": ["scripts/production_mcp_server.py", "--transport", "stdio"]
+        }
 
-    # 检查服务器健康状态，这会自动初始化session
+    client = StandardMcpClient(server_config=config)
+    
+    # 连接到服务器
+    await client.connect()
+
+    # 检查服务器健康状态
     if not await client.check_health():
+        await client.disconnect()
         raise ConnectionError(f"无法连接到 MCP 服务器: {server_url}")
 
     logger.info(f"MCP 客户端初始化成功: {server_url}")
@@ -92,7 +111,7 @@ async def initialize_mcp_client(server_url: str) -> McpClient:
 
 ############################################################################################################
 async def execute_mcp_tool(
-    tool_name: str, tool_args: Dict[str, Any], mcp_client: McpClient
+    tool_name: str, tool_args: Dict[str, Any], mcp_client: StandardMcpClient
 ) -> str:
     """
     通过 MCP 客户端执行工具

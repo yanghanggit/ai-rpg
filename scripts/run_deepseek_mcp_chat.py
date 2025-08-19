@@ -279,8 +279,8 @@ async def main() -> None:
 
     finally:
         logger.info("🔒 [MAIN] 清理系统资源...")
-        if mcp_client and mcp_client.session:
-            await mcp_client.session.close()
+        if mcp_client:
+            await mcp_client.disconnect()
 
 
 if __name__ == "__main__":

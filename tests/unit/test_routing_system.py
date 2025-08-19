@@ -5,13 +5,14 @@
 """
 
 import pytest
-import sys
-from pathlib import Path
+
+# import sys
+# from pathlib import Path
 from typing import Dict, Any
 
-# 添加项目根目录到路径
-project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
+# # 添加项目根目录到路径
+# project_root = Path(__file__).parent.parent.parent
+# sys.path.insert(0, str(project_root))
 
 from src.multi_agents_game.chat_services.routing import (
     RouteStrategy,

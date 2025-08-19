@@ -113,105 +113,6 @@ async def get_current_time(format: str = "datetime") -> str:
 
 
 @app.tool()
-async def calculator(expression: str, precision: int = 2) -> str:
-    """
-    安全的数学计算器
-
-    Args:
-        expression: 数学表达式，支持 +, -, *, /, (), 幂运算(**)
-        precision: 小数精度（默认2位）
-
-    Returns:
-        计算结果或错误信息
-    """
-    try:
-        # 安全字符检查
-        allowed_chars = set("0123456789+-*/.() **")
-        if not all(c in allowed_chars for c in expression.replace(" ", "")):
-            return "错误：表达式包含不允许的字符。仅支持数字和基本运算符 (+, -, *, /, **, ())"
-
-        # 防止过长表达式
-        if len(expression) > 200:
-            return "错误：表达式过长，请限制在200个字符以内"
-
-        # 安全求值
-        result = eval(expression)
-
-        # 处理结果精度
-        if isinstance(result, float):
-            result = round(result, precision)
-
-        return f"计算结果：{result}"
-
-    except ZeroDivisionError:
-        return "错误：除零错误"
-    except SyntaxError:
-        return "错误：表达式语法错误"
-    except Exception as e:
-        logger.error(f"计算错误: {e}")
-        return f"计算错误：{str(e)}"
-
-
-@app.tool()
-async def text_processor(text: str, operation: str = "upper", **kwargs: Any) -> str:
-    """
-    高级文本处理工具
-
-    Args:
-        text: 要处理的文本
-        operation: 操作类型 (upper|lower|title|capitalize|reverse|count|trim|replace)
-        **kwargs: 额外参数
-            - old_text: 替换操作的源文本
-            - new_text: 替换操作的目标文本
-
-    Returns:
-        处理后的文本或统计信息
-    """
-    try:
-        if not text:
-            return "错误：输入文本为空"
-
-        operation = operation.lower()
-
-        if operation == "upper":
-            return text.upper()
-        elif operation == "lower":
-            return text.lower()
-        elif operation == "title":
-            return text.title()
-        elif operation == "capitalize":
-            return text.capitalize()
-        elif operation == "reverse":
-            return text[::-1]
-        elif operation == "count":
-            return json.dumps(
-                {
-                    "字符总数": len(text),
-                    "字符数（不含空格）": len(text.replace(" ", "")),
-                    "单词数": len(text.split()),
-                    "行数": len(text.split("\n")),
-                    "段落数": len([p for p in text.split("\n\n") if p.strip()]),
-                },
-                ensure_ascii=False,
-                indent=2,
-            )
-        elif operation == "trim":
-            return text.strip()
-        elif operation == "replace":
-            old_text = kwargs.get("old_text", "")
-            new_text = kwargs.get("new_text", "")
-            if not old_text:
-                return "错误：替换操作需要提供 old_text 参数"
-            return text.replace(old_text, new_text)
-        else:
-            return f"错误：不支持的操作 '{operation}'。支持的操作：upper, lower, title, capitalize, reverse, count, trim, replace"
-
-    except Exception as e:
-        logger.error(f"文本处理错误: {e}")
-        return f"处理错误：{str(e)}"
-
-
-@app.tool()
 async def system_info() -> str:
     """
     获取系统信息
@@ -248,101 +149,6 @@ async def system_info() -> str:
     except Exception as e:
         logger.error(f"获取系统信息失败: {e}")
         return f"错误：无法获取系统信息 - {str(e)}"
-
-
-@app.tool()
-async def file_operations(
-    operation: str, file_path: str = "", content: str = "", encoding: str = "utf-8"
-) -> str:
-    """
-    安全的文件操作工具
-
-    Args:
-        operation: 操作类型 (read|write|append|exists|size|list_dir)
-        file_path: 文件路径
-        content: 写入内容（仅用于写入操作）
-        encoding: 文件编码（默认 utf-8）
-
-    Returns:
-        操作结果
-    """
-    try:
-        # 安全检查：限制在当前目录及子目录
-        if file_path:
-            abs_path = os.path.abspath(file_path)
-            current_dir = os.path.abspath(".")
-            if not abs_path.startswith(current_dir):
-                return "错误：出于安全考虑，只能访问当前目录及其子目录的文件"
-
-        if operation == "read":
-            if not file_path:
-                return "错误：读取操作需要提供文件路径"
-            if not os.path.exists(file_path):
-                return f"错误：文件不存在 - {file_path}"
-
-            with open(file_path, "r", encoding=encoding) as f:
-                content = f.read()
-                # 限制读取大小
-                if len(content) > 50000:  # 50KB 限制
-                    return f"文件内容过大（{len(content)} 字符），仅显示前50000字符：\n\n{content[:50000]}..."
-                return content
-
-        elif operation == "write":
-            if not file_path:
-                return "错误：写入操作需要提供文件路径"
-
-            # 创建目录（如果不存在）
-            os.makedirs(
-                os.path.dirname(file_path) if os.path.dirname(file_path) else ".",
-                exist_ok=True,
-            )
-
-            with open(file_path, "w", encoding=encoding) as f:
-                f.write(content)
-            return f"成功写入文件：{file_path} ({len(content)} 字符)"
-
-        elif operation == "append":
-            if not file_path:
-                return "错误：追加操作需要提供文件路径"
-
-            with open(file_path, "a", encoding=encoding) as f:
-                f.write(content)
-            return f"成功追加到文件：{file_path} ({len(content)} 字符)"
-
-        elif operation == "exists":
-            return (
-                f"文件{'存在' if os.path.exists(file_path) else '不存在'}：{file_path}"
-            )
-
-        elif operation == "size":
-            if not os.path.exists(file_path):
-                return f"错误：文件不存在 - {file_path}"
-            size = os.path.getsize(file_path)
-            return f"文件大小：{size} 字节 ({size/1024:.2f} KB)"
-
-        elif operation == "list_dir":
-            dir_path = file_path if file_path else "."
-            if not os.path.exists(dir_path):
-                return f"错误：目录不存在 - {dir_path}"
-            if not os.path.isdir(dir_path):
-                return f"错误：不是目录 - {dir_path}"
-
-            items = []
-            for item in sorted(os.listdir(dir_path)):
-                item_path = os.path.join(dir_path, item)
-                item_type = "目录" if os.path.isdir(item_path) else "文件"
-                items.append(f"{item_type}: {item}")
-
-            return f"目录内容 ({dir_path}):\n" + "\n".join(items)
-
-        else:
-            return f"错误：不支持的操作 '{operation}'。支持的操作：read, write, append, exists, size, list_dir"
-
-    except PermissionError:
-        return f"错误：没有权限访问文件 - {file_path}"
-    except Exception as e:
-        logger.error(f"文件操作错误: {e}")
-        return f"文件操作错误：{str(e)}"
 
 
 # ============================================================================
@@ -385,19 +191,18 @@ async def get_capabilities() -> str:
         "协议版本": "MCP 1.0",
         "支持的传输": ["stdio", "sse", "streamable-http"],
         "工具功能": {
-            "数学计算": "支持基本四则运算和幂运算",
-            "文本处理": "支持多种文本操作和统计",
             "时间查询": "支持多种时间格式",
             "系统信息": "获取系统运行状态",
-            "文件操作": "安全的文件读写操作",
         },
         "资源功能": {
             "服务器状态": "实时服务器运行状态",
             "能力查询": "服务器功能说明",
             "配置信息": "服务器配置详情",
         },
+        "提示模板": {
+            "系统分析": "支持综合、性能、安全、故障排查四种分析类型",
+        },
         "安全特性": {
-            "文件访问": "限制在当前目录及子目录",
             "表达式求值": "限制危险字符和函数",
             "内容大小": "限制文件读取大小",
             "路径验证": "防止路径遍历攻击",
@@ -509,63 +314,6 @@ async def system_analysis(analysis_type: str = "general") -> types.GetPromptResu
 
     return types.GetPromptResult(
         description=f"系统{analysis_type}分析提示模板",
-        messages=[
-            types.PromptMessage(
-                role="user", content=types.TextContent(type="text", text=prompt_text)
-            )
-        ],
-    )
-
-
-@app.prompt()
-async def data_processing(
-    task_type: str = "analysis", data_format: str = "json"
-) -> types.GetPromptResult:
-    """
-    数据处理提示模板
-
-    Args:
-        task_type: 任务类型 (analysis|transformation|validation|reporting)
-        data_format: 数据格式 (json|csv|xml|text)
-    """
-    base_prompt = f"""请对以下 {data_format.upper()} 格式的数据执行{task_type}任务：
-
-{{data}}
-
-任务要求："""
-
-    task_requirements = {
-        "analysis": """
-1. 数据结构和质量分析
-2. 统计特征和分布模式
-3. 异常值和缺失值检测
-4. 数据关联性分析
-5. 趋势和模式识别""",
-        "transformation": """
-1. 数据清洗和标准化
-2. 格式转换和结构调整
-3. 字段映射和重命名
-4. 数据类型转换
-5. 衍生字段计算""",
-        "validation": """
-1. 数据完整性检查
-2. 格式规范性验证
-3. 业务规则验证
-4. 数据一致性检查
-5. 质量评分和报告""",
-        "reporting": """
-1. 数据摘要和统计
-2. 可视化建议
-3. 关键指标提取
-4. 异常情况报告
-5. 结论和建议""",
-    }
-
-    requirements = task_requirements.get(task_type, task_requirements["analysis"])
-    prompt_text = base_prompt + requirements + "\n\n请提供详细的处理结果和专业建议。"
-
-    return types.GetPromptResult(
-        description=f"{data_format.upper()} 数据{task_type}提示模板",
         messages=[
             types.PromptMessage(
                 role="user", content=types.TextContent(type="text", text=prompt_text)

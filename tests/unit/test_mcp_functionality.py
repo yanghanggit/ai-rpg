@@ -9,7 +9,7 @@ MCP (Model Context Protocol) 功能单元测试
 """
 
 import pytest
-from typing import List, Dict, Any
+from typing import List
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
@@ -34,10 +34,11 @@ class TestMcpClient:
     @pytest.fixture
     def mock_mcp_client(self) -> McpClient:
         """创建模拟 MCP 客户端的测试夹具"""
-        client = McpClient(command="python", args=["scripts/run_sample_mcp_server.py"])
-        # Mock the session to avoid actual network calls
-        client.session = AsyncMock()
-        client._connection_context = AsyncMock()
+        client = McpClient(base_url="http://127.0.0.1:8765")
+        # Mock the http session to avoid actual network calls
+        client.http_session = AsyncMock()
+        client._initialized = True
+        client.session_id = "test-session-123"
         return client
 
     @pytest.fixture
@@ -102,9 +103,10 @@ class TestMcpClient:
     @pytest.mark.asyncio
     async def test_mcp_client_health_check(self) -> None:
         """测试 MCP 客户端健康检查"""
-        client = McpClient(command="python", args=["scripts/run_sample_mcp_server.py"])
-        client.session = AsyncMock()
-        client._connection_context = AsyncMock()
+        client = McpClient(base_url="http://127.0.0.1:8765")
+        client.http_session = AsyncMock()
+        client._initialized = True
+        client.session_id = "test-session-123"
 
         # Mock get_available_tools to simulate successful health check
         with patch.object(
@@ -117,63 +119,75 @@ class TestMcpClient:
     @pytest.mark.asyncio
     async def test_get_available_tools(self, sample_tools: List[McpToolInfo]) -> None:
         """测试获取可用工具"""
-        client = McpClient(command="python", args=["scripts/run_sample_mcp_server.py"])
-        client.session = AsyncMock()
-        client._connection_context = AsyncMock()
+        client = McpClient(base_url="http://127.0.0.1:8765")
+        client.http_session = AsyncMock()
+        client._initialized = True
+        client.session_id = "test-session-123"
 
-        # Mock the session.list_tools response with proper tool structure
-        mock_tool_objects = []
-        for tool in sample_tools:
-            mock_tool = AsyncMock()
-            mock_tool.name = tool.name
-            mock_tool.description = tool.description
-            mock_tool.inputSchema = tool.input_schema
-            mock_tool_objects.append(mock_tool)
+        # Mock the _post_request method to return tools list response
+        mock_response = {
+            "jsonrpc": "2.0",
+            "id": "test-id",
+            "result": {
+                "tools": [
+                    {
+                        "name": tool.name,
+                        "description": tool.description,
+                        "inputSchema": tool.input_schema,
+                    }
+                    for tool in sample_tools
+                ]
+            },
+        }
 
-        mock_response = AsyncMock()
-        mock_response.tools = mock_tool_objects
-        client.session.list_tools.return_value = mock_response
+        with patch.object(client, "_post_request", new_callable=AsyncMock) as mock_post:
+            mock_post.return_value = mock_response
+            tools = await client.get_available_tools()
 
-        tools = await client.get_available_tools()
-        assert len(tools) == 3
-        assert tools[0].name == "get_current_time"
-        assert tools[1].name == "calculator"
-        assert tools[2].name == "text_processor"
+            assert len(tools) == 3
+            assert tools[0].name == "get_current_time"
+            assert tools[1].name == "calculator"
+            assert tools[2].name == "text_processor"
 
     @pytest.mark.asyncio
     async def test_call_tool_success(self) -> None:
         """测试成功调用工具"""
-        client = McpClient(command="python", args=["scripts/run_sample_mcp_server.py"])
-        client.session = AsyncMock()
-        client._connection_context = AsyncMock()
+        client = McpClient(base_url="http://127.0.0.1:8765")
+        client.http_session = AsyncMock()
+        client._initialized = True
+        client.session_id = "test-session-123"
 
-        # Mock the session.call_tool response
-        mock_response = AsyncMock()
-        mock_content = AsyncMock()
-        mock_content.type = "text"
-        mock_content.text = "2023-08-18 14:30:00"
-        mock_response.content = [mock_content]
-        client.session.call_tool.return_value = mock_response
+        # Mock the _post_request method to return successful tool call response
+        mock_response = {
+            "jsonrpc": "2.0",
+            "id": "test-id",
+            "result": {"content": [{"type": "text", "text": "2023-08-18 14:30:00"}]},
+        }
 
-        result = await client.call_tool("get_current_time", {})
-        assert isinstance(result, McpToolResult)
-        assert result.success is True
-        assert "2023-08-18 14:30:00" in result.result
+        with patch.object(client, "_post_request", new_callable=AsyncMock) as mock_post:
+            mock_post.return_value = mock_response
+            result = await client.call_tool("get_current_time", {})
+
+            assert isinstance(result, McpToolResult)
+            assert result.success is True
+            assert "2023-08-18 14:30:00" in result.result
 
     @pytest.mark.asyncio
     async def test_call_tool_failure(self) -> None:
         """测试工具调用失败"""
-        client = McpClient(command="python", args=["scripts/run_sample_mcp_server.py"])
-        client.session = AsyncMock()
-        client._connection_context = AsyncMock()
+        client = McpClient(base_url="http://127.0.0.1:8765")
+        client.http_session = AsyncMock()
+        client._initialized = True
+        client.session_id = "test-session-123"
 
         # Mock an exception during tool call
-        client.session.call_tool.side_effect = Exception("工具执行失败")
+        with patch.object(client, "_post_request", new_callable=AsyncMock) as mock_post:
+            mock_post.side_effect = Exception("工具执行失败")
+            result = await client.call_tool("invalid_tool", {})
 
-        result = await client.call_tool("invalid_tool", {})
-        assert isinstance(result, McpToolResult)
-        assert result.success is False
-        assert result.error is not None and "工具执行失败" in result.error
+            assert isinstance(result, McpToolResult)
+            assert result.success is False
+            assert result.error is not None and "工具执行失败" in result.error
 
     @pytest.mark.asyncio
     async def test_execute_mcp_tool_integration(self) -> None:

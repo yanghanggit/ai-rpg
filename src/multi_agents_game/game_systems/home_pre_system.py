@@ -23,7 +23,7 @@ class HomePreSystem(ExecuteProcessor):
 
     ############################################################################################################
     @override
-    def execute(self) -> None:
+    async def execute(self) -> None:
         # 清除所有的 planning 组件
         self._cleanup_planning_entities()
         # 给所有的stage添加 planning 组件

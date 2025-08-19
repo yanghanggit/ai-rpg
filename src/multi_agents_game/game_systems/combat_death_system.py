@@ -18,7 +18,7 @@ class CombatDeathSystem(ExecuteProcessor):
 
     ########################################################################################################################################################################
     @override
-    def execute(self) -> None:
+    async def execute(self) -> None:
 
         # 处理hp为0的情况
         entities = self._game.get_group(

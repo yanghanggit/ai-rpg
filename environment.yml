@@ -248,7 +248,6 @@ dependencies:
       - mcp==1.13.0
       - mmh3==5.2.0
       - msgpack==1.1.0
-      - multi-agents-game-framework==0.1.0
       - multidict==6.0.5
       - numpy==1.26.4
       - oauthlib==3.3.1

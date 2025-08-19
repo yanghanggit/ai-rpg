@@ -205,29 +205,29 @@ class TCGGame(BaseGame, TCGGameContext):
         return self.current_dungeon.engagement
 
     ###############################################################################################################################################
-    @override
-    def execute(self) -> None:
-        # 顺序不要动
-        active_processing_pipeline = self.current_process_pipeline
-        if not active_processing_pipeline._initialized:
-            active_processing_pipeline._initialized = True
-            active_processing_pipeline.activate_reactive_processors()
-            active_processing_pipeline.initialize()
+    # @override
+    # def execute(self) -> None:
+    #     # 顺序不要动
+    #     active_processing_pipeline = self.current_process_pipeline
+    #     if not active_processing_pipeline._initialized:
+    #         active_processing_pipeline._initialized = True
+    #         active_processing_pipeline.activate_reactive_processors()
+    #         active_processing_pipeline.initialize()
 
-        active_processing_pipeline.execute()
-        active_processing_pipeline.cleanup()
+    #     active_processing_pipeline.execute()
+    #     active_processing_pipeline.cleanup()
 
     ###############################################################################################################################################
     @override
-    async def a_execute(self) -> None:
+    async def run(self) -> None:
         # 顺序不要动
         active_process_pipeline = self.current_process_pipeline
         if not active_process_pipeline._initialized:
             active_process_pipeline._initialized = True
             active_process_pipeline.activate_reactive_processors()
-            active_process_pipeline.initialize()
+            await active_process_pipeline.initialize()
 
-        await active_process_pipeline.a_execute()
+        await active_process_pipeline.execute()
         active_process_pipeline.cleanup()
 
     ###############################################################################################################################################

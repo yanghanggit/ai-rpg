@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Dict, List, Union
+from typing import Dict, List, Union, override
 
 from .collector import Collector
 from .context import Context
@@ -17,7 +17,7 @@ class InitializeProcessor(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def initialize(self) -> None:
+    async def initialize(self) -> None:
         """Performs initialization logic.
 
         This method is called once when the processing pipeline starts.
@@ -33,26 +33,10 @@ class ExecuteProcessor(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def execute(self) -> None:
+    async def execute(self) -> None:
         """Performs the main processing logic.
 
         This method is called every frame/cycle of the game loop.
-        """
-        pass
-
-    async def a_execute1(self) -> None:
-        """Asynchronous execution method 1.
-
-        Optional asynchronous execution method that can be overridden
-        by subclasses for async processing logic.
-        """
-        pass
-
-    async def a_execute2(self) -> None:
-        """Asynchronous execution method 2.
-
-        Optional asynchronous execution method that can be overridden
-        by subclasses for async processing logic.
         """
         pass
 
@@ -126,7 +110,7 @@ class ReactiveProcessor(ExecuteProcessor):
         pass
 
     @abstractmethod
-    def react(self, entities: List[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
         """Processes the collected and filtered entities.
 
         :param entities: List of entities that triggered this processor and passed the filter
@@ -145,7 +129,7 @@ class ReactiveProcessor(ExecuteProcessor):
         """Clears all collected entities without processing them."""
         self._collector.clear_collected_entities()
 
-    def execute(self) -> None:
+    async def execute(self) -> None:
         """Executes the reactive processor logic.
 
         Collects entities, filters them, and processes them in batches.
@@ -158,7 +142,7 @@ class ReactiveProcessor(ExecuteProcessor):
             self._collector.clear_collected_entities()
 
             if self._buffer:
-                self.react(self._buffer)
+                await self.react(self._buffer)
                 self._buffer.clear()
 
     def _get_collector(self, context: Context) -> Collector:
@@ -220,21 +204,25 @@ class Processors(
         if isinstance(processor, TearDownProcessor):
             self._tear_down_processors.append(processor)
 
-    def initialize(self) -> None:
+    @override
+    async def initialize(self) -> None:
         """Executes all initialize processors in the order they were added."""
         for processor in self._initialize_processors:
-            processor.initialize()
+            await processor.initialize()
 
-    def execute(self) -> None:
+    @override
+    async def execute(self) -> None:
         """Executes all execute processors in the order they were added."""
         for processor in self._execute_processors:
-            processor.execute()
+            await processor.execute()
 
+    @override
     def cleanup(self) -> None:
         """Executes all cleanup processors in the order they were added."""
         for processor in self._cleanup_processors:
             processor.cleanup()
 
+    @override
     def tear_down(self) -> None:
         """Executes all tear down processors in the order they were added."""
         for processor in self._tear_down_processors:

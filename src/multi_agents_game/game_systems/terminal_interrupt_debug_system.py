@@ -16,7 +16,7 @@ class TerminalInterruptDebugSystem(ExecuteProcessor):
 
     ############################################################################################################
     @override
-    def execute(self) -> None:
+    async def execute(self) -> None:
 
         if not isinstance(self._game, TerminalTCGGame):
             return

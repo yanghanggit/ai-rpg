@@ -39,13 +39,13 @@ class CombatMonitorSystem(ExecuteProcessor):
         self._result_mapping: Dict[Entity, Union[StageResponse, ActorResponse]] = {}
 
     ######################################################################################################################################
-    @override
-    def execute(self) -> None:
-        pass
+    # @override
+    # def execute(self) -> None:
+    #     pass
 
     ####################################################################################################################################
     @override
-    async def a_execute1(self) -> None:
+    async def execute(self) -> None:
 
         player_entity = self._game.get_player_entity()
         assert player_entity is not None

@@ -254,7 +254,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             monitor_utils = CombatMonitorSystem(
                 terminal_game,
             )
-            await monitor_utils.a_execute1()
+            await monitor_utils.execute()
 
         elif usr_input == "/rth" or usr_input == "/return-to-home":
 
@@ -351,7 +351,7 @@ async def _execute_terminal_game(
     logger.debug(f"玩家输入: {terminal_game.player.name} = {usr_input}")
 
     # 执行一次！！！！！
-    await terminal_game.a_execute()
+    await terminal_game.run()
 
 
 ###############################################################################################################################################

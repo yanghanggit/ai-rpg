@@ -70,20 +70,21 @@ class McpState(TypedDict):
 
 
 ############################################################################################################
-async def initialize_mcp_client(server_url: str) -> McpClient:
+async def initialize_mcp_client(server_url: str = "http://127.0.0.1:8765") -> McpClient:
     """
     初始化 MCP 客户端
 
     Args:
-        server_url: MCP 服务器地址（目前仅用于兼容性，实际使用 stdio 模式）
+        server_url: MCP 服务器地址（Streamable HTTP 模式）
 
     Returns:
         McpClient: 初始化后的 MCP 客户端
     """
-    # 使用 stdio 模式（官方推荐）
+    # 使用 Streamable HTTP 模式（标准 2025-06-18 规范）
     client = McpClient(
-        command="python",
-        args=["scripts/run_sample_mcp_server.py"],
+        base_url=server_url,
+        protocol_version="2025-06-18",
+        timeout=30,
     )
 
     # 连接到服务器
@@ -136,7 +137,7 @@ async def execute_mcp_tool(
 async def create_compiled_mcp_stage_graph(
     node_name: str,
     temperature: float,
-    mcp_server_url: str,
+    mcp_server_url: str = "http://127.0.0.1:8765",
 ) -> CompiledStateGraph[McpState, Any, McpState, McpState]:
     """
     创建带 MCP 支持的编译状态图
@@ -144,7 +145,7 @@ async def create_compiled_mcp_stage_graph(
     Args:
         node_name: 节点名称
         temperature: 模型温度
-        mcp_server_url: MCP 服务器地址，如果为 None 则使用配置中的默认值
+        mcp_server_url: MCP 服务器地址，默认为 http://127.0.0.1:8765
 
     Returns:
         CompiledStateGraph: 编译后的状态图

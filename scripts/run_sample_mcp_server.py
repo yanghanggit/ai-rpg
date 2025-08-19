@@ -1,27 +1,28 @@
 #!/usr/bin/env python3
 """
-生产级 MCP 服务器
+生产级 MCP 服务器 - Streamable HTTP 传输
 
-这是一个独立部署的 MCP 服务器进程，设计用于与 MCP 客户端（如 run_deepseek_mcp_chat_client.py）通信。
+基于 MCP 2025-06-18 规范的 Streamable HTTP 传输实现。
 
 架构特点：
-1. 独立进程运行，可单独部署和管理
-2. 使用标准 stdio 传输协议（官方推荐）
-3. 标准 MCP 协议实现，兼容所有 MCP 客户端
+1. 标准 Streamable HTTP 传输（MCP 2025-06-18 规范）
+2. 支持 Server-Sent Events (SSE) 流
+3. 会话管理和安全控制
 4. 生产级特性：日志记录、错误处理、资源管理
 5. 可扩展的工具和资源系统
 
 使用方法：
-    # 启动 stdio 模式（推荐）
+    # 启动 HTTP 服务器（默认端口 8080）
     python scripts/run_sample_mcp_server.py
 
-    # 或者显式指定 stdio 模式
-    python scripts/run_sample_mcp_server.py --transport stdio
+    # 指定端口和主机
+    python scripts/run_sample_mcp_server.py --host 127.0.0.1 --port 8080
 """
 
 import os
 import sys
 import json
+import uuid
 from datetime import datetime
 from typing import Any, Dict
 
@@ -48,7 +49,9 @@ class ServerConfig:
         self.name = "Production MCP Server"
         self.version = "1.0.0"
         self.description = "生产级 MCP 服务器，支持工具调用、资源访问和提示模板"
-        self.transport = "stdio"  # 固定使用 stdio 传输
+        self.transport = "streamable-http"
+        self.protocol_version = "2025-06-18"
+        self.allowed_origins = ["http://localhost", "http://127.0.0.1"]
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -56,6 +59,7 @@ class ServerConfig:
             "version": self.version,
             "description": self.description,
             "transport": self.transport,
+            "protocol_version": self.protocol_version,
             "started_at": datetime.now().isoformat(),
         }
 
@@ -67,7 +71,7 @@ config = ServerConfig()
 app = FastMCP(
     name=config.name,
     instructions=config.description,
-    debug=False,  # 生产环境设置为 False
+    debug=True,  # HTTP 模式可以启用调试
 )
 
 
@@ -340,12 +344,22 @@ async def shutdown_handler() -> None:
 # ============================================================================
 
 
+# ============================================================================
+# 命令行接口
+# ============================================================================
+
+
 @click.command()
 @click.option(
-    "--transport",
-    type=click.Choice(["stdio"]),
-    default="stdio",
-    help="传输协议类型（当前仅支持 stdio）",
+    "--host",
+    default="127.0.0.1",
+    help="服务器绑定主机地址（安全起见默认仅本地）",
+)
+@click.option(
+    "--port",
+    default=8765,
+    type=int,
+    help="服务器端口号",
 )
 @click.option(
     "--log-level",
@@ -353,8 +367,8 @@ async def shutdown_handler() -> None:
     default="INFO",
     help="日志级别",
 )
-def main(transport: str, log_level: str) -> None:
-    """启动生产级 MCP 服务器"""
+def main(host: str, port: int, log_level: str) -> None:
+    """启动生产级 MCP 服务器 (Streamable HTTP)"""
 
     # 配置日志
     logger.remove()  # 移除默认处理器
@@ -365,13 +379,18 @@ def main(transport: str, log_level: str) -> None:
     )
 
     logger.info(f"🎯 启动 {config.name} v{config.version}")
-    logger.info(f"📡 传输协议: {transport}")
+    logger.info(f"📡 传输协议: {config.transport} ({config.protocol_version})")
+    logger.info(f"🌐 服务地址: http://{host}:{port}")
     logger.info(f"📝 日志级别: {log_level}")
 
+    # 配置 FastMCP 设置
+    app.settings.host = host
+    app.settings.port = port
+
     try:
-        # 启动服务器
+        # 启动 HTTP 服务器
         logger.info("✅ 服务器启动完成，等待客户端连接...")
-        app.run(transport="stdio")
+        app.run(transport="streamable-http")
     except KeyboardInterrupt:
         logger.info("🛑 收到中断信号，正在关闭服务器...")
     except Exception as e:

@@ -1,19 +1,23 @@
 """
-统一 MCP 客户端实现
+统一 MCP 客户端实现 - Streamable HTTP 传输
 
-基于官方 MCP Python SDK 的标准客户端实现，使用 stdio 传输协议。
-专注于稳定性和可靠性，遵循官方推荐的 stdio 传输方式。
+基于 MCP 2025-06-18 规范的 Streamable HTTP 传输实现。
+支持标准的 HTTP POST/GET 请求和 Server-Sent Events (SSE) 流。
 """
 
 import os
+import json
+import uuid
+import asyncio
 from typing import Any, Dict, List, Optional
+from urllib.parse import urljoin
 
+import aiohttp
 from loguru import logger
 from pydantic import BaseModel
 
 # MCP SDK 导入
-from mcp.client.session import ClientSession
-from mcp.client.stdio import StdioServerParameters, stdio_client
+import mcp.types as types
 
 
 class McpToolInfo(BaseModel):
@@ -34,31 +38,31 @@ class McpToolResult(BaseModel):
 
 
 class McpClient:
-    """统一 MCP 客户端实现 - 使用 stdio 传输"""
+    """统一 MCP 客户端实现 - 使用 Streamable HTTP 传输"""
 
     def __init__(
         self,
-        command: Optional[str] = None,
-        args: Optional[List[str]] = None,
-        env: Optional[Dict[str, str]] = None,
+        base_url: str = "http://127.0.0.1:8765",
+        protocol_version: str = "2024-11-05",
+        timeout: int = 30,
     ):
         """
         初始化 MCP 客户端
 
         Args:
-            command: 服务器命令（如 "python"）
-            args: 服务器参数（如 ["scripts/run_sample_mcp_server.py"]）
-            env: 环境变量
+            base_url: MCP 服务器基础 URL
+            protocol_version: MCP 协议版本
+            timeout: 请求超时时间（秒）
         """
-        # 设置默认配置
-        self.command = command or "python"
-        self.args = args or ["scripts/run_sample_mcp_server.py"]
-        self.env = env or {}
+        self.base_url = base_url.rstrip("/")
+        self.protocol_version = protocol_version
+        self.timeout = timeout
 
         # 内部状态
-        self.session: Optional[ClientSession] = None
+        self.session_id: Optional[str] = None
+        self.http_session: Optional[aiohttp.ClientSession] = None
         self._tools_cache: Optional[List[McpToolInfo]] = None
-        self._connection_context: Optional[Any] = None
+        self._initialized = False
 
     async def __aenter__(self) -> "McpClient":
         """异步上下文管理器入口"""
@@ -72,40 +76,203 @@ class McpClient:
     async def connect(self) -> None:
         """连接到 MCP 服务器"""
         try:
-            await self._connect_stdio()
-            logger.success("✅ MCP 客户端已连接 (transport: stdio)")
+            # 创建 HTTP 会话
+            self.http_session = aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=self.timeout),
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json, text/event-stream",
+                    "MCP-Protocol-Version": self.protocol_version,
+                }
+            )
+
+            # 执行 MCP 初始化
+            await self._initialize_mcp()
+            
+            logger.success(f"✅ MCP 客户端已连接 (transport: streamable-http, session: {self.session_id[:8] if self.session_id else 'no-session'}...)")
 
         except Exception as e:
             logger.error(f"❌ MCP 客户端连接失败: {e}")
+            if self.http_session:
+                await self.http_session.close()
             raise
 
-    async def _connect_stdio(self) -> None:
-        """连接 stdio 模式的服务器"""
-        server_params = StdioServerParameters(
-            command=self.command,
-            args=self.args,
-            env={**os.environ, **self.env} if self.env else None,
-        )
+    async def _initialize_mcp(self) -> None:
+        """执行 MCP 初始化协议"""
+        # 构建 InitializeRequest
+        request_data = {
+            "jsonrpc": "2.0",
+            "id": str(uuid.uuid4()),
+            "method": "initialize",
+            "params": {
+                "protocolVersion": self.protocol_version,
+                "capabilities": {
+                    "experimental": {},
+                    "sampling": {}
+                },
+                "clientInfo": {
+                    "name": "MCP Python Client",
+                    "version": "1.0.0"
+                }
+            }
+        }
 
-        # 使用 stdio_client 连接
-        self._connection_context = stdio_client(server_params)
-        read_stream, write_stream = await self._connection_context.__aenter__()
+        # 发送初始化请求
+        response = await self._post_request("/mcp", request_data)
+        
+        # 检查响应
+        if "error" in response:
+            raise RuntimeError(f"初始化失败: {response['error']}")
+        
+        # 确保会话ID已获取
+        if not self.session_id:
+            raise RuntimeError("服务器未返回会话ID")
+        
+        logger.info(f"🔗 MCP 会话已建立，会话ID: {self.session_id[:8]}...")
+        
+        # 发送 initialized 通知
+        notification_data = {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized"
+        }
+        
+        await self._post_notification("/mcp", notification_data)
+        self._initialized = True
 
-        # 创建会话
-        self.session = ClientSession(read_stream, write_stream)
-        await self.session.initialize()
+    async def _post_request(self, endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        """发送 POST 请求到 MCP 服务器"""
+        if not self.http_session:
+            raise RuntimeError("HTTP 会话未初始化")
+
+        url = urljoin(self.base_url, endpoint)
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": self.protocol_version,
+        }
+        
+        # 添加会话 ID（如果有）
+        if self.session_id:
+            headers["mcp-session-id"] = self.session_id
+
+        async with self.http_session.post(url, json=data, headers=headers) as response:
+            if response.status >= 400:
+                text = await response.text()
+                raise aiohttp.ClientResponseError(
+                    request_info=response.request_info,
+                    history=response.history,
+                    status=response.status,
+                    message=f"HTTP {response.status}: {text}"
+                )
+            
+            # 检查响应内容类型
+            content_type = response.headers.get("Content-Type", "")
+            logger.debug(f"📋 响应内容类型: {content_type}")
+            logger.debug(f"📋 响应头: {dict(response.headers)}")
+            
+            if "application/json" in content_type:
+                result = await response.json()
+                
+                # 检查并提取会话 ID（使用正确的头部名称）
+                if not self.session_id:
+                    session_headers = ["mcp-session-id", "Mcp-Session-Id", "MCP-Session-Id"]
+                    for header in session_headers:
+                        if header in response.headers:
+                            self.session_id = response.headers[header]
+                            logger.info(f"🔗 从响应头 {header} 提取会话ID: {self.session_id[:8]}...")
+                            break
+                    
+                    # 也尝试从响应体中提取会话ID
+                    if not self.session_id and isinstance(result, dict):
+                        if "sessionId" in result:
+                            self.session_id = result["sessionId"]
+                            logger.info(f"🔗 从响应体提取会话ID: {self.session_id[:8]}...")
+                    
+                return result
+            elif "text/event-stream" in content_type:
+                # SSE响应也需要提取会话ID
+                if not self.session_id:
+                    session_headers = ["mcp-session-id", "Mcp-Session-Id", "MCP-Session-Id"]
+                    for header in session_headers:
+                        if header in response.headers:
+                            self.session_id = response.headers[header]
+                            logger.info(f"🔗 从SSE响应头 {header} 提取会话ID: {self.session_id[:8]}...")
+                            break
+                
+                # 处理 SSE 流
+                return await self._handle_sse_stream(response)
+                # 处理 SSE 流
+                return await self._handle_sse_stream(response)
+            else:
+                raise RuntimeError(f"不支持的响应类型: {content_type}")
+
+    async def _post_notification(self, endpoint: str, data: Dict[str, Any]) -> None:
+        """发送 POST 通知到 MCP 服务器"""
+        if not self.http_session:
+            raise RuntimeError("HTTP 会话未初始化")
+
+        url = urljoin(self.base_url, endpoint)
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream", 
+            "MCP-Protocol-Version": self.protocol_version,
+        }
+        
+        # 添加会话 ID（如果有）
+        if self.session_id:
+            headers["mcp-session-id"] = self.session_id
+
+        async with self.http_session.post(url, json=data, headers=headers) as response:
+            # 通知应该返回 202 Accepted
+            if response.status != 202:
+                text = await response.text()
+                raise RuntimeError(f"通知失败 HTTP {response.status}: {text}")
+
+    async def _handle_sse_stream(self, response: aiohttp.ClientResponse) -> Dict[str, Any]:
+        """处理 Server-Sent Events 流"""
+        result = None
+        
+        async for line in response.content:
+            line = line.decode('utf-8').strip()
+            
+            if line.startswith('data: '):
+                data_str = line[6:]  # 移除 'data: ' 前缀
+                try:
+                    data = json.loads(data_str)
+                    
+                    # 检查是否是我们期待的响应
+                    if data.get("jsonrpc") == "2.0" and ("result" in data or "error" in data):
+                        result = data
+                        break
+                        
+                except json.JSONDecodeError:
+                    continue
+        
+        if result is None:
+            raise RuntimeError("未收到有效的 JSON-RPC 响应")
+            
+        return result
 
     async def disconnect(self) -> None:
         """断开与 MCP 服务器的连接"""
         try:
-            if self.session:
-                # 注意：ClientSession 没有 close 方法，连接会在上下文管理器退出时自动关闭
-                self.session = None
+            # 发送会话终止请求（如果支持）
+            if self.session_id and self.http_session:
+                try:
+                    headers = {"Mcp-Session-Id": self.session_id}
+                    async with self.http_session.delete(self.base_url, headers=headers) as response:
+                        pass  # 忽略响应（服务器可能不支持 DELETE）
+                except:
+                    pass  # 忽略错误
 
-            if self._connection_context:
-                await self._connection_context.__aexit__(None, None, None)
-                self._connection_context = None
+            # 关闭 HTTP 会话
+            if self.http_session:
+                await self.http_session.close()
+                self.http_session = None
 
+            self.session_id = None
+            self._initialized = False
+            
             logger.info("🔌 MCP 客户端已断开连接")
 
         except Exception as e:
@@ -114,7 +281,7 @@ class McpClient:
     async def check_health(self) -> bool:
         """检查连接健康状态"""
         try:
-            if not self.session:
+            if not self.http_session or not self._initialized:
                 return False
 
             # 尝试列出工具来检查连接
@@ -133,19 +300,35 @@ class McpClient:
             return self._tools_cache
 
         try:
-            if not self.session:
+            if not self.http_session or not self._initialized:
                 raise RuntimeError("MCP 客户端未连接")
 
-            # 调用标准 MCP 协议
-            response = await self.session.list_tools()
+            # 构建 list_tools 请求
+            request_data = {
+                "jsonrpc": "2.0",
+                "id": str(uuid.uuid4()),
+                "method": "tools/list",
+                "params": {}
+            }
 
+            # 发送请求
+            response = await self._post_request("/mcp", request_data)
+            
+            # 检查错误
+            if "error" in response:
+                raise RuntimeError(f"获取工具列表失败: {response['error']}")
+
+            # 解析工具列表
             tools = []
-            for tool in response.tools:
+            result = response.get("result", {})
+            tool_list = result.get("tools", [])
+            
+            for tool in tool_list:
                 tools.append(
                     McpToolInfo(
-                        name=tool.name,
-                        description=tool.description or "",
-                        input_schema=tool.inputSchema or {},
+                        name=tool.get("name", ""),
+                        description=tool.get("description", ""),
+                        input_schema=tool.get("inputSchema", {}),
                     )
                 )
 
@@ -179,28 +362,58 @@ class McpClient:
         start_time = time.time()
 
         try:
-            if not self.session:
+            if not self.http_session or not self._initialized:
                 raise RuntimeError("MCP 客户端未连接")
 
-            # 调用标准 MCP 协议
-            response = await self.session.call_tool(tool_name, arguments)
+            # 构建 call_tool 请求
+            request_data = {
+                "jsonrpc": "2.0",
+                "id": str(uuid.uuid4()),
+                "method": "tools/call",
+                "params": {
+                    "name": tool_name,
+                    "arguments": arguments
+                }
+            }
 
+            # 发送请求
+            response = await self._post_request("/mcp", request_data)
+            
             execution_time = time.time() - start_time
 
+            # 检查错误
+            if "error" in response:
+                error_info = response["error"]
+                error_msg = f"{error_info.get('code', 'UNKNOWN')}: {error_info.get('message', '未知错误')}"
+                
+                logger.error(f"❌ 工具调用失败: {tool_name} | {error_msg}")
+                
+                return McpToolResult(
+                    success=False,
+                    result=None,
+                    error=error_msg,
+                    execution_time=execution_time,
+                )
+
             # 提取结果内容
+            result = response.get("result", {})
+            content_list = result.get("content", [])
+            
             result_content = []
-            for content in response.content:
-                if content.type == "text":
-                    result_content.append(content.text)
+            for content in content_list:
+                if content.get("type") == "text":
+                    result_content.append(content.get("text", ""))
                 else:
                     result_content.append(str(content))
 
-            result = "\n".join(result_content) if result_content else "工具执行完成"
+            result_text = "\n".join(result_content) if result_content else "工具执行完成"
 
-            logger.info(f"🔧 工具调用成功: {tool_name} -> {result[:100]}...")
+            logger.info(f"🔧 工具调用成功: {tool_name} -> {result_text[:100]}...")
 
             return McpToolResult(
-                success=True, result=result, execution_time=execution_time
+                success=True, 
+                result=result_text, 
+                execution_time=execution_time
             )
 
         except Exception as e:
@@ -227,11 +440,26 @@ class McpClient:
     async def list_resources(self) -> List[str]:
         """列出可用资源"""
         try:
-            if not self.session:
+            if not self.http_session or not self._initialized:
                 raise RuntimeError("MCP 客户端未连接")
 
-            response = await self.session.list_resources()
-            return [str(resource.uri) for resource in response.resources]
+            # 构建 list_resources 请求
+            request_data = {
+                "jsonrpc": "2.0",
+                "id": str(uuid.uuid4()),
+                "method": "resources/list",
+                "params": {}
+            }
+
+            response = await self._post_request("/mcp", request_data)
+            
+            if "error" in response:
+                raise RuntimeError(f"获取资源列表失败: {response['error']}")
+
+            result = response.get("result", {})
+            resources = result.get("resources", [])
+            
+            return [resource.get("uri", "") for resource in resources]
 
         except Exception as e:
             logger.error(f"❌ 获取资源列表失败: {e}")
@@ -240,20 +468,36 @@ class McpClient:
     async def read_resource(self, uri: str) -> Optional[str]:
         """读取资源内容"""
         try:
-            if not self.session:
+            if not self.http_session or not self._initialized:
                 raise RuntimeError("MCP 客户端未连接")
 
-            response = await self.session.read_resource(uri)  # type: ignore[arg-type]
+            # 构建 read_resource 请求
+            request_data = {
+                "jsonrpc": "2.0",
+                "id": str(uuid.uuid4()),
+                "method": "resources/read",
+                "params": {
+                    "uri": uri
+                }
+            }
+
+            response = await self._post_request("/mcp", request_data)
+            
+            if "error" in response:
+                raise RuntimeError(f"读取资源失败: {response['error']}")
 
             # 提取资源内容
-            contents = []
-            for content in response.contents:
-                if hasattr(content, "type") and getattr(content, "type") == "text":
-                    contents.append(getattr(content, "text", str(content)))
+            result = response.get("result", {})
+            contents = result.get("contents", [])
+            
+            content_texts = []
+            for content in contents:
+                if content.get("type") == "text":
+                    content_texts.append(content.get("text", ""))
                 else:
-                    contents.append(str(content))
+                    content_texts.append(str(content))
 
-            return "\n".join(contents) if contents else None
+            return "\n".join(content_texts) if content_texts else None
 
         except Exception as e:
             logger.error(f"❌ 读取资源失败: {uri} | {e}")
@@ -262,11 +506,26 @@ class McpClient:
     async def list_prompts(self) -> List[str]:
         """列出可用提示模板"""
         try:
-            if not self.session:
+            if not self.http_session or not self._initialized:
                 raise RuntimeError("MCP 客户端未连接")
 
-            response = await self.session.list_prompts()
-            return [prompt.name for prompt in response.prompts]
+            # 构建 list_prompts 请求
+            request_data = {
+                "jsonrpc": "2.0",
+                "id": str(uuid.uuid4()),
+                "method": "prompts/list",
+                "params": {}
+            }
+
+            response = await self._post_request("/mcp", request_data)
+            
+            if "error" in response:
+                raise RuntimeError(f"获取提示列表失败: {response['error']}")
+
+            result = response.get("result", {})
+            prompts = result.get("prompts", [])
+            
+            return [prompt.get("name", "") for prompt in prompts]
 
         except Exception as e:
             logger.error(f"❌ 获取提示列表失败: {e}")
@@ -277,18 +536,36 @@ class McpClient:
     ) -> Optional[str]:
         """获取提示模板内容"""
         try:
-            if not self.session:
+            if not self.http_session or not self._initialized:
                 raise RuntimeError("MCP 客户端未连接")
 
-            response = await self.session.get_prompt(name, arguments or {})
+            # 构建 get_prompt 请求
+            request_data = {
+                "jsonrpc": "2.0",
+                "id": str(uuid.uuid4()),
+                "method": "prompts/get",
+                "params": {
+                    "name": name,
+                    "arguments": arguments or {}
+                }
+            }
+
+            response = await self._post_request("/mcp", request_data)
+            
+            if "error" in response:
+                raise RuntimeError(f"获取提示模板失败: {response['error']}")
 
             # 提取提示内容
-            messages = []
-            for message in response.messages:
-                if hasattr(message, "content") and hasattr(message.content, "text"):
-                    messages.append(message.content.text)
+            result = response.get("result", {})
+            messages = result.get("messages", [])
+            
+            message_texts = []
+            for message in messages:
+                content = message.get("content", {})
+                if content.get("type") == "text":
+                    message_texts.append(content.get("text", ""))
 
-            return "\n".join(messages) if messages else None
+            return "\n".join(message_texts) if message_texts else None
 
         except Exception as e:
             logger.error(f"❌ 获取提示模板失败: {name} | {e}")
@@ -330,9 +607,13 @@ class McpClient:
 
 
 def create_mcp_client(
-    command: Optional[str] = None,
-    args: Optional[List[str]] = None,
-    env: Optional[Dict[str, str]] = None,
+    base_url: str = "http://127.0.0.1:8765",
+    protocol_version: str = "2024-11-05",
+    timeout: int = 30,
 ) -> McpClient:
-    """创建 MCP 客户端（stdio 模式）"""
-    return McpClient(command=command, args=args, env=env)
+    """创建 MCP 客户端（Streamable HTTP 模式）"""
+    return McpClient(
+        base_url=base_url,
+        protocol_version=protocol_version,
+        timeout=timeout
+    )

@@ -6,7 +6,7 @@
 
 架构特点：
 1. 独立进程运行，可单独部署和管理
-2. 支持多种传输协议（stdio、SSE、streamable-http）
+2. 支持多种传输协议（stdio、streamable-http）
 3. 标准 MCP 协议实现，兼容所有 MCP 客户端
 4. 生产级特性：日志记录、错误处理、资源管理
 5. 可扩展的工具和资源系统
@@ -17,9 +17,6 @@
 
     # 启动 HTTP 模式（适合多客户端或 Web 集成）
     python scripts/run_sample_mcp_server.py --transport streamable-http --port 8765
-
-    # 启动 SSE 模式（适合 Web 应用）
-    python scripts/run_sample_mcp_server.py --transport sse --port 8766
 """
 
 import os
@@ -189,7 +186,7 @@ async def get_capabilities() -> str:
     """获取服务器能力信息"""
     capabilities = {
         "协议版本": "MCP 1.0",
-        "支持的传输": ["stdio", "sse", "streamable-http"],
+        "支持的传输": ["stdio", "streamable-http"],
         "工具功能": {
             "时间查询": "支持多种时间格式",
             "系统信息": "获取系统运行状态",
@@ -354,15 +351,15 @@ async def lifespan_context() -> AsyncGenerator[None, None]:
 @click.command()
 @click.option(
     "--transport",
-    type=click.Choice(["stdio", "sse", "streamable-http"]),
+    type=click.Choice(["stdio", "streamable-http"]),
     default="stdio",
     help="传输协议类型",
 )
 @click.option(
-    "--port", type=int, default=8765, help="端口号（仅适用于 sse 和 streamable-http）"
+    "--port", type=int, default=8765, help="端口号（仅适用于 streamable-http）"
 )
 @click.option(
-    "--host", default="127.0.0.1", help="主机地址（仅适用于 sse 和 streamable-http）"
+    "--host", default="127.0.0.1", help="主机地址（仅适用于 streamable-http）"
 )
 @click.option(
     "--log-level",
@@ -385,7 +382,7 @@ def main(transport: str, port: int, host: str, log_level: str) -> None:
     logger.info(f"📡 传输协议: {transport}")
     logger.info(f"📝 日志级别: {log_level}")
 
-    if transport in ["sse", "streamable-http"]:
+    if transport == "streamable-http":
         logger.info(f"🌐 服务地址: {host}:{port}")
 
     # 更新服务器设置
@@ -408,3 +405,5 @@ def main(transport: str, port: int, host: str, log_level: str) -> None:
 
 if __name__ == "__main__":
     main()
+
+

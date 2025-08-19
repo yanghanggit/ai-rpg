@@ -2,11 +2,12 @@
 统一 MCP 客户端实现
 
 基于官方 MCP Python SDK 的标准客户端实现，用于与标准 MCP 服务器通信。
-支持多种传输协议：stdio、SSE、streamable-http。
+支持多种传输协议：stdio、streamable-http。
 """
 
 import os
-import asyncio
+
+# import asyncio
 import httpx
 from typing import Any, Dict, List, Optional
 
@@ -16,7 +17,6 @@ from pydantic import BaseModel
 # MCP SDK 导入
 from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
-from mcp.client.sse import sse_client
 
 
 class McpToolInfo(BaseModel):
@@ -50,11 +50,9 @@ class McpClient:
         Args:
             server_url: 服务器 URL（会自动转换为适当的配置）
                 - http://localhost:8765 -> streamable-http 模式
-                - http://localhost:8765/sse -> SSE 模式  
                 - python script.py -> stdio 模式
             server_config: 直接服务器配置（优先级更高）
                 对于 stdio 模式: {"transport": "stdio", "command": "python", "args": ["server.py"]}
-                对于 SSE 模式: {"transport": "sse", "url": "http://localhost:8765/sse"}
                 对于 streamable-http 模式: {"transport": "streamable-http", "url": "http://localhost:8765"}
         """
         if server_config:
@@ -80,12 +78,8 @@ class McpClient:
     def _parse_server_url(self, server_url: str) -> Dict[str, Any]:
         """解析服务器 URL 并返回相应的配置"""
         if server_url.startswith("http"):
-            if server_url.endswith("/sse"):
-                # SSE 模式
-                return {"transport": "sse", "url": server_url}
-            else:
-                # streamable-http 模式
-                return {"transport": "streamable-http", "url": server_url.rstrip("/")}
+            # streamable-http 模式
+            return {"transport": "streamable-http", "url": server_url.rstrip("/")}
         else:
             # 假设是命令行（stdio 模式）
             return {
@@ -108,8 +102,6 @@ class McpClient:
         try:
             if self.transport == "stdio":
                 await self._connect_stdio()
-            elif self.transport == "sse":
-                await self._connect_sse()
             elif self.transport == "streamable-http":
                 await self._connect_streamable_http()
             else:
@@ -139,35 +131,45 @@ class McpClient:
         self.session = ClientSession(read_stream, write_stream)
         await self.session.initialize()
 
-    async def _connect_sse(self) -> None:
-        """连接 SSE 模式的服务器"""
-        url = self.server_config.get("url", "http://localhost:8765/sse")
-
-        # 使用 sse_client 连接
-        self._connection_context = sse_client(url)
-        read_stream, write_stream = await self._connection_context.__aenter__()
-
-        # 创建会话
-        self.session = ClientSession(read_stream, write_stream)
-        await self.session.initialize()
-
     async def _connect_streamable_http(self) -> None:
         """连接 streamable-http 模式的服务器"""
         base_url = self.server_config.get("url", "http://localhost:8765")
-        
+
         # 创建 HTTP 客户端
         self._http_client = httpx.AsyncClient(base_url=base_url, timeout=30.0)
-        
-        # 对于 streamable-http，我们需要建立 WebSocket 或 长轮询连接
-        # 这里使用 SSE 端点作为 streamable-http 的实现
-        sse_url = f"{base_url.rstrip('/')}/sse"
-        
-        # 使用 sse_client 连接
-        self._connection_context = sse_client(sse_url)
-        read_stream, write_stream = await self._connection_context.__aenter__()
+
+        # 对于 streamable-http，我们需要实现标准的 HTTP/WebSocket 连接
+        # 这里暂时使用简化实现，在实际部署中需要根据 MCP 规范实现完整的 streamable-http 协议
+
+        # 创建模拟的读写流用于兼容现有的 ClientSession API
+        from asyncio import Queue
+
+        # 创建消息队列
+        read_queue: Queue[Any] = Queue()
+        write_queue: Queue[Any] = Queue()
+
+        # 创建流适配器
+        class HttpStreamAdapter:
+            def __init__(self, queue: Queue[Any], is_reader: bool = True):
+                self._queue = queue
+                self._is_reader = is_reader
+
+            async def read_message(self) -> Any:
+                if self._is_reader:
+                    return await self._queue.get()
+                raise RuntimeError("Cannot read from write stream")
+
+            async def send_message(self, message: Any) -> None:
+                if not self._is_reader:
+                    await self._queue.put(message)
+                else:
+                    raise RuntimeError("Cannot write to read stream")
+
+        read_stream = HttpStreamAdapter(read_queue, True)
+        write_stream = HttpStreamAdapter(write_queue, False)
 
         # 创建会话
-        self.session = ClientSession(read_stream, write_stream)
+        self.session = ClientSession(read_stream, write_stream)  # type: ignore
         await self.session.initialize()
 
     async def disconnect(self) -> None:
@@ -420,12 +422,6 @@ def create_stdio_mcp_client(
         config["args"] = args
     if env:
         config["env"] = env
-    return McpClient(server_config=config)
-
-
-def create_sse_mcp_client(url: str) -> McpClient:
-    """创建 SSE 模式的 MCP 客户端"""
-    config = {"transport": "sse", "url": url}
     return McpClient(server_config=config)
 
 

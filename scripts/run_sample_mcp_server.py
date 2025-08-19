@@ -405,5 +405,3 @@ def main(transport: str, port: int, host: str, log_level: str) -> None:
 
 if __name__ == "__main__":
     main()
-
-

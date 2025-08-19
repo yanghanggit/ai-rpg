@@ -35,7 +35,7 @@ class TestMcpClient:
     def mock_server_config(self) -> Dict[str, Any]:
         """创建测试用的服务器配置"""
         return {
-            "transport": "sse",
+            "transport": "streamable-http",
             "url": DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
         }
 

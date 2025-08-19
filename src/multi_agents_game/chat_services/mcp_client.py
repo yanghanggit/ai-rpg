@@ -184,4 +184,3 @@ class McpClient:
             tool_descriptions.append(tool_desc)
 
         return "\n".join(tool_descriptions)
-

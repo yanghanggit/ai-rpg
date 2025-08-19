@@ -216,7 +216,6 @@ class TestMcpState:
             "mcp_client": mock_client,
             "available_tools": sample_tools,
             "tool_outputs": [],
-            "enable_tools": True,
         }
 
         # 验证状态结构
@@ -224,32 +223,28 @@ class TestMcpState:
         assert "mcp_client" in state, "状态应该包含 mcp_client 字段"
         assert "available_tools" in state, "状态应该包含 available_tools 字段"
         assert "tool_outputs" in state, "状态应该包含 tool_outputs 字段"
-        assert "enable_tools" in state, "状态应该包含 enable_tools 字段"
 
         # 验证状态值
         assert isinstance(state["messages"], list), "messages 应该是列表"
         assert isinstance(state["available_tools"], list), "available_tools 应该是列表"
         assert isinstance(state["tool_outputs"], list), "tool_outputs 应该是列表"
-        assert isinstance(state["enable_tools"], bool), "enable_tools 应该是布尔值"
 
         # 验证工具数量
         assert (
             len(state["available_tools"]) == 1
         ), f"应该有 1 个可用工具，实际: {len(state['available_tools'])}"
 
-    def test_mcp_state_disabled_tools(self) -> None:
-        """测试禁用工具的 MCP 状态"""
+    def test_mcp_state_no_client(self) -> None:
+        """测试没有客户端的 MCP 状态"""
         state: McpState = {
             "messages": [],
             "mcp_client": None,
             "available_tools": [],
             "tool_outputs": [],
-            "enable_tools": False,
         }
 
-        assert state["enable_tools"] is False, "工具应该被禁用"
-        assert len(state["available_tools"]) == 0, "禁用工具时应该没有可用工具"
-        assert state["mcp_client"] is None, "禁用工具时客户端应该为 None"
+        assert state["mcp_client"] is None, "没有客户端时应该为 None"
+        assert len(state["available_tools"]) == 0, "没有客户端时应该没有可用工具"
 
 
 class TestMcpIntegration:
@@ -289,7 +284,6 @@ class TestMcpIntegration:
             "mcp_client": mock_client,
             "available_tools": mock_tools,
             "tool_outputs": [],
-            "enable_tools": True,
         }
 
         # 3. 模拟工具执行结果

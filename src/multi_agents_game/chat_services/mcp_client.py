@@ -185,10 +185,3 @@ class McpClient:
 
         return "\n".join(tool_descriptions)
 
-
-# 便捷函数
-async def create_mcp_client(server_url: str) -> McpClient:
-    """创建 MCP 客户端"""
-    client = McpClient(server_url)
-    await client._ensure_session()
-    return client

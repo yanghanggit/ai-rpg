@@ -40,6 +40,7 @@ from multi_agents_game.chat_services.chat_deepseek_mcp_graph import (
     create_compiled_mcp_stage_graph,
     stream_mcp_graph_updates,
     initialize_mcp_client,
+    get_deepseek_llm,
 )
 from multi_agents_game.config import DEFAULT_SERVER_SETTINGS_CONFIG
 
@@ -113,9 +114,8 @@ def print_chat_history(chat_history_state: McpState) -> None:
         f"   • AI回复: {sum(1 for msg in messages if not isinstance(msg, HumanMessage))}"
     )
     print(f"   • 可用工具: {len(chat_history_state.get('available_tools', []))}")
-    print(
-        f"   • 工具状态: {'启用' if chat_history_state.get('enable_tools', False) else '禁用'}"
-    )
+    mcp_client = chat_history_state.get("mcp_client")
+    print(f"   • MCP状态: {'已连接' if mcp_client is not None else '未连接'}")
     print("-" * 60)
 
 
@@ -132,6 +132,18 @@ async def main() -> None:
     logger.info("🤖 启动 DeepSeek + MCP 聊天系统...")
 
     try:
+        # 预初始化 DeepSeek LLM（验证 API key 和配置）
+        try:
+            get_deepseek_llm()
+            logger.success("✅ DeepSeek LLM 初始化成功")
+        except Exception as e:
+            logger.error(f"❌ DeepSeek LLM 初始化失败: {e}")
+            print(f"\n❌ DeepSeek LLM 初始化失败：{e}")
+            print("请检查以下项目：")
+            print("  1. DEEPSEEK_API_KEY 环境变量是否设置")
+            print("  2. 网络连接是否正常")
+            return
+
         # 打印欢迎信息
         print_welcome_message()
 
@@ -158,7 +170,6 @@ async def main() -> None:
             "mcp_client": mcp_client,
             "available_tools": available_tools,
             "tool_outputs": [],
-            "enable_tools": mcp_client is not None,
         }
 
         # 生成 MCP 增强的聊天机器人状态图
@@ -166,7 +177,6 @@ async def main() -> None:
             "deepseek_mcp_chatbot_node",
             temperature=0.7,
             mcp_server_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
-            enable_tools=True,
         )
 
         logger.success("🤖 DeepSeek + MCP 聊天系统初始化完成，开始对话...")
@@ -221,7 +231,6 @@ async def main() -> None:
                     "mcp_client": mcp_client,
                     "available_tools": available_tools,
                     "tool_outputs": [],
-                    "enable_tools": mcp_client is not None,
                 }
 
                 # 获取 AI 回复（包含可能的工具调用）

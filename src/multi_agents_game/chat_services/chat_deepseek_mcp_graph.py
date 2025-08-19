@@ -20,6 +20,42 @@ from typing_extensions import TypedDict
 # 导入 MCP 客户端
 from .mcp_client import McpClient, McpToolInfo
 
+# 全局 ChatDeepSeek 实例
+_global_deepseek_llm: Optional[ChatDeepSeek] = None
+
+
+############################################################################################################
+def get_deepseek_llm() -> ChatDeepSeek:
+    """
+    获取 ChatDeepSeek 实例（懒加载）
+
+    Args:
+        temperature: 模型温度，默认为 0.7
+
+    Returns:
+        ChatDeepSeek: ChatDeepSeek 实例
+
+    Raises:
+        ValueError: 如果 DEEPSEEK_API_KEY 环境变量未设置
+    """
+    global _global_deepseek_llm
+
+    if _global_deepseek_llm is None:
+        # 检查必需的环境变量
+        deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
+        if not deepseek_api_key:
+            raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
+
+        # 创建 ChatDeepSeek 实例
+        _global_deepseek_llm = ChatDeepSeek(
+            api_key=SecretStr(deepseek_api_key),
+            model="deepseek-chat",
+            temperature=0.7,
+        )
+        # logger.info(f"ChatDeepSeek 实例已创建，温度: {temperature}")
+
+    return _global_deepseek_llm
+
 
 ############################################################################################################
 class McpState(TypedDict):
@@ -31,7 +67,6 @@ class McpState(TypedDict):
     mcp_client: Optional[McpClient]  # MCP 客户端
     available_tools: List[McpToolInfo]  # 可用的 MCP 工具
     tool_outputs: List[Dict[str, Any]]  # 工具执行结果
-    enable_tools: bool  # 是否启用工具调用
 
 
 ############################################################################################################
@@ -45,8 +80,6 @@ async def initialize_mcp_client(server_url: str) -> McpClient:
     Returns:
         McpClient: 初始化后的 MCP 客户端
     """
-    # if server_url is None:
-    #     server_url = DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url
     client = McpClient(server_url)
 
     # 检查服务器健康状态，这会自动初始化session
@@ -96,7 +129,6 @@ async def create_compiled_mcp_stage_graph(
     node_name: str,
     temperature: float,
     mcp_server_url: str,
-    enable_tools: bool,
 ) -> CompiledStateGraph[McpState, Any, McpState, McpState]:
     """
     创建带 MCP 支持的编译状态图
@@ -104,7 +136,6 @@ async def create_compiled_mcp_stage_graph(
     Args:
         node_name: 节点名称
         temperature: 模型温度
-        enable_tools: 是否启用工具调用
         mcp_server_url: MCP 服务器地址，如果为 None 则使用配置中的默认值
 
     Returns:
@@ -112,34 +143,20 @@ async def create_compiled_mcp_stage_graph(
     """
     assert node_name != "", "node_name is empty"
 
-    # 检查必需的环境变量
-    deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
-    if not deepseek_api_key:
-        raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
-
-    # 使用配置中的默认 MCP 服务器地址
-    # if mcp_server_url is None:
-    #     mcp_server_url = DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url
-
-    # 初始化 DeepSeek LLM
-    llm = ChatDeepSeek(
-        api_key=SecretStr(deepseek_api_key),
-        model="deepseek-chat",
-        temperature=temperature,
-    )
+    # 获取 ChatDeepSeek 实例（懒加载）
+    llm = get_deepseek_llm()
 
     # 初始化 MCP 客户端
     mcp_client = None
     available_tools = []
 
-    if enable_tools:
-        try:
-            mcp_client = await initialize_mcp_client(mcp_server_url)
-            available_tools = await mcp_client.get_available_tools()
-            logger.info(f"MCP 工具初始化完成，可用工具数量: {len(available_tools)}")
-        except Exception as e:
-            logger.error(f"MCP 客户端初始化失败: {e}")
-            enable_tools = False
+    try:
+        mcp_client = await initialize_mcp_client(mcp_server_url)
+        available_tools = await mcp_client.get_available_tools()
+        logger.info(f"MCP 工具初始化完成，可用工具数量: {len(available_tools)}")
+    except Exception as e:
+        logger.error(f"MCP 客户端初始化失败: {e}")
+        # MCP 初始化失败，但继续运行（只是没有工具支持）
 
     async def invoke_deepseek_mcp_action(state: McpState) -> Dict[str, Any]:
         """
@@ -155,7 +172,6 @@ async def create_compiled_mcp_stage_graph(
             messages = state["messages"]
             current_mcp_client = state.get("mcp_client", mcp_client)
             current_available_tools = state.get("available_tools", available_tools)
-            enable_tools_flag = state.get("enable_tools", enable_tools)
 
             # 构建系统提示，包含工具信息
             system_prompt = """你是一个智能助手，具有使用工具的能力。
@@ -169,7 +185,7 @@ async def create_compiled_mcp_stage_graph(
 
 你可以在回复中自然地解释你要做什么，然后调用工具，最后根据工具结果给出完整回答。"""
 
-            if enable_tools_flag and current_available_tools and current_mcp_client:
+            if current_available_tools and current_mcp_client:
                 tool_descriptions = []
                 for tool in current_available_tools:
                     params_desc = ""
@@ -212,7 +228,7 @@ async def create_compiled_mcp_stage_graph(
 
             # 解析响应，检查是否包含工具调用
             tool_outputs = []
-            if enable_tools_flag and current_available_tools and current_mcp_client:
+            if current_available_tools and current_mcp_client:
                 # 解析 LLM 响应中的工具调用请求
                 response_content = str(response.content) if response.content else ""
 
@@ -281,7 +297,6 @@ async def create_compiled_mcp_stage_graph(
                 "mcp_client": current_mcp_client,
                 "available_tools": current_available_tools,
                 "tool_outputs": tool_outputs,
-                "enable_tools": enable_tools_flag,
             }
 
         except Exception as e:
@@ -292,7 +307,6 @@ async def create_compiled_mcp_stage_graph(
                 "mcp_client": mcp_client,
                 "available_tools": available_tools,
                 "tool_outputs": [],
-                "enable_tools": enable_tools,
             }
 
     # 构建状态图
@@ -333,9 +347,6 @@ async def stream_mcp_graph_updates(
             "available_tools", chat_history_state.get("available_tools", [])
         ),
         "tool_outputs": chat_history_state.get("tool_outputs", []),
-        "enable_tools": user_input_state.get(
-            "enable_tools", chat_history_state.get("enable_tools", True)
-        ),
     }
 
     try:

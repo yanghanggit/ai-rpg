@@ -17,8 +17,8 @@ from langgraph.graph.state import CompiledStateGraph
 from pydantic import SecretStr
 from typing_extensions import TypedDict
 
-# 导入标准 MCP 客户端
-from .mcp_client import StandardMcpClient, McpToolInfo
+# 导入统一 MCP 客户端
+from .mcp_client import McpClient, McpToolInfo
 
 # 全局 ChatDeepSeek 实例
 _global_deepseek_llm: Optional[ChatDeepSeek] = None
@@ -64,13 +64,13 @@ class McpState(TypedDict):
     """
 
     messages: Annotated[List[BaseMessage], add_messages]
-    mcp_client: Optional[StandardMcpClient]  # MCP 客户端
+    mcp_client: Optional[McpClient]  # MCP 客户端
     available_tools: List[McpToolInfo]  # 可用的 MCP 工具
     tool_outputs: List[Dict[str, Any]]  # 工具执行结果
 
 
 ############################################################################################################
-async def initialize_mcp_client(server_url: str) -> StandardMcpClient:
+async def initialize_mcp_client(server_url: str) -> McpClient:
     """
     初始化 MCP 客户端
 
@@ -78,7 +78,7 @@ async def initialize_mcp_client(server_url: str) -> StandardMcpClient:
         server_url: MCP 服务器地址，如果为 None 则使用配置中的默认值
 
     Returns:
-        StandardMcpClient: 初始化后的 MCP 客户端
+        McpClient: 初始化后的 MCP 客户端
     """
     # 根据 server_url 创建配置
     config: Dict[str, Any]
@@ -93,7 +93,7 @@ async def initialize_mcp_client(server_url: str) -> StandardMcpClient:
             "args": ["scripts/run_sample_mcp_server.py", "--transport", "stdio"],
         }
 
-    client = StandardMcpClient(server_config=config)
+    client = McpClient(server_config=config)
 
     # 连接到服务器
     await client.connect()
@@ -109,7 +109,7 @@ async def initialize_mcp_client(server_url: str) -> StandardMcpClient:
 
 ############################################################################################################
 async def execute_mcp_tool(
-    tool_name: str, tool_args: Dict[str, Any], mcp_client: StandardMcpClient
+    tool_name: str, tool_args: Dict[str, Any], mcp_client: McpClient
 ) -> str:
     """
     通过 MCP 客户端执行工具

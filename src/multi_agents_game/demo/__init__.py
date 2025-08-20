@@ -2,6 +2,7 @@
 
 from .actor_goblin import create_actor_goblin
 from .actor_orc import create_actor_orc
+from .actor_slime import create_actor_slime
 from .actor_spider import create_actor_spider
 from .actor_warrior import create_actor_warrior
 from .actor_wizard import create_actor_wizard
@@ -15,6 +16,7 @@ from .excel_data_manager import ExcelDataManager, get_excel_data_manager
 from .stage_dungeon1 import create_demo_dungeon1
 from .stage_dungeon2 import create_demo_dungeon2
 from .stage_dungeon3 import create_demo_dungeon3
+from .stage_dungeon5 import create_demo_dungeon5
 from .stage_heros_camp import create_demo_heros_camp
 
 __all__ = [
@@ -23,12 +25,14 @@ __all__ = [
     "create_actor_wizard",
     "create_actor_goblin",
     "create_actor_orc",
+    "create_actor_slime",
     "create_actor_spider",
     # Demo stages
     "create_demo_heros_camp",
     "create_demo_dungeon1",
     "create_demo_dungeon2",
     "create_demo_dungeon3",
+    "create_demo_dungeon5",
     # Demo dungeons (legacy names, same as above)
     "create_demo_dungeon1",
     "create_demo_dungeon2",

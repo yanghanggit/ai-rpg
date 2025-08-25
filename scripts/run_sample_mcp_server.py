@@ -53,8 +53,11 @@ class ServerConfig:
         self.version = "1.0.0"
         self.description = "生产级 MCP 服务器，支持工具调用、资源访问和提示模板"
         self.transport = "streamable-http"
-        self.protocol_version = "2025-06-18"
-        self.allowed_origins = ["http://localhost", "http://127.0.0.1"]
+        self.protocol_version = DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version
+        self.allowed_origins = [
+            "http://localhost",
+            DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_host,
+        ]
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -355,14 +358,12 @@ async def shutdown_handler() -> None:
 @click.command()
 @click.option(
     "--host",
-    default=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url.split("//")[-1].split(":")[0],
+    default=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_host,
     help="服务器绑定主机地址（安全起见默认仅本地）",
 )
 @click.option(
     "--port",
-    default=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url.split("//")[-1].split(":")[
-        -1
-    ],
+    default=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_port,
     type=int,
     help="服务器端口号",
 )

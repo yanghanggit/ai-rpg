@@ -9,9 +9,15 @@ class ServerSettingsConfig(BaseModel):
     num_chat_service_instances: int
     game_server_port: int = 8000  # 默认值
     chat_service_endpoint: str = "/chat-service/v1/"  # 默认值
-    mcp_server_url: str = "http://127.0.0.1:8765"  # MCP 服务器地址
+    mcp_server_host: str = "127.0.0.1"  # MCP 服务器主机地址
+    mcp_server_port: int = 8765  # MCP 服务器端口
     protocol_version: str = "2025-06-18"  # MCP 协议版本
     mcp_timeout: int = 30  # 超时时间
+
+    @property
+    def mcp_server_url(self) -> str:
+        """MCP 服务器完整URL地址"""
+        return f"http://{self.mcp_server_host}:{self.mcp_server_port}"
 
     @property
     def chat_server_localhost_urls(self) -> List[str]:

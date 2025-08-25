@@ -8,8 +8,9 @@ MCP (Model Context Protocol) 功能单元测试
 - 工具参数处理和错误处理
 """
 
+from pathlib import Path
 import pytest
-from typing import List
+from typing import List, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
@@ -23,9 +24,18 @@ from src.multi_agents_game.chat_services.mcp_client import (
     McpToolInfo,
     McpToolResult,
 )
-from src.multi_agents_game.config.server_settings_config import (
-    DEFAULT_SERVER_SETTINGS_CONFIG,
-)
+from src.multi_agents_game.config.mcp_config import McpConfig, load_mcp_config
+
+
+_mcp_config: Optional[McpConfig] = None
+
+
+def _get_mcp_config() -> McpConfig:
+    global _mcp_config
+    if _mcp_config is None:
+        _mcp_config = load_mcp_config(Path("mcp_config.json"))
+        assert _mcp_config is not None, "MCP config loading failed"
+    return _mcp_config
 
 
 class TestMcpClient:
@@ -35,9 +45,9 @@ class TestMcpClient:
     def mock_mcp_client(self) -> McpClient:
         """创建模拟 MCP 客户端的测试夹具"""
         client = McpClient(
-            base_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
-            protocol_version=DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version,
-            timeout=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_timeout,
+            base_url=_get_mcp_config().mcp_server_url,
+            protocol_version=_get_mcp_config().protocol_version,
+            timeout=_get_mcp_config().mcp_timeout,
         )
         # Mock the http session to avoid actual network calls
         client.http_session = AsyncMock()
@@ -98,9 +108,9 @@ class TestMcpClient:
             mock_client.check_health.return_value = True
 
             client = await initialize_mcp_client(
-                DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
-                DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version,
-                DEFAULT_SERVER_SETTINGS_CONFIG.mcp_timeout,
+                _get_mcp_config().mcp_server_url,
+                _get_mcp_config().protocol_version,
+                _get_mcp_config().mcp_timeout,
             )
             assert isinstance(client, AsyncMock)  # It's our mock client
             mock_client.connect.assert_called_once()
@@ -110,9 +120,9 @@ class TestMcpClient:
     async def test_mcp_client_health_check(self) -> None:
         """测试 MCP 客户端健康检查"""
         client = McpClient(
-            base_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
-            protocol_version=DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version,
-            timeout=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_timeout,
+            base_url=_get_mcp_config().mcp_server_url,
+            protocol_version=_get_mcp_config().protocol_version,
+            timeout=_get_mcp_config().mcp_timeout,
         )
         client.http_session = AsyncMock()
         client._initialized = True
@@ -130,9 +140,9 @@ class TestMcpClient:
     async def test_get_available_tools(self, sample_tools: List[McpToolInfo]) -> None:
         """测试获取可用工具"""
         client = McpClient(
-            base_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
-            protocol_version=DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version,
-            timeout=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_timeout,
+            base_url=_get_mcp_config().mcp_server_url,
+            protocol_version=_get_mcp_config().protocol_version,
+            timeout=_get_mcp_config().mcp_timeout,
         )
         client.http_session = AsyncMock()
         client._initialized = True
@@ -167,9 +177,9 @@ class TestMcpClient:
     async def test_call_tool_success(self) -> None:
         """测试成功调用工具"""
         client = McpClient(
-            base_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
-            protocol_version=DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version,
-            timeout=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_timeout,
+            base_url=_get_mcp_config().mcp_server_url,
+            protocol_version=_get_mcp_config().protocol_version,
+            timeout=_get_mcp_config().mcp_timeout,
         )
         client.http_session = AsyncMock()
         client._initialized = True
@@ -194,9 +204,9 @@ class TestMcpClient:
     async def test_call_tool_failure(self) -> None:
         """测试工具调用失败"""
         client = McpClient(
-            base_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
-            protocol_version=DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version,
-            timeout=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_timeout,
+            base_url=_get_mcp_config().mcp_server_url,
+            protocol_version=_get_mcp_config().protocol_version,
+            timeout=_get_mcp_config().mcp_timeout,
         )
         client.http_session = AsyncMock()
         client._initialized = True

@@ -24,6 +24,7 @@ DeepSeek + MCP 聊天系统启动脚本
 import os
 import sys
 import traceback
+from typing import Optional
 
 
 # 将 src 目录添加到模块搜索路径
@@ -43,7 +44,20 @@ from multi_agents_game.chat_services.chat_deepseek_mcp_client_graph import (
     initialize_mcp_client,
     get_deepseek_llm,
 )
-from multi_agents_game.config import DEFAULT_SERVER_SETTINGS_CONFIG
+from multi_agents_game.config import McpConfig, load_mcp_config
+from pathlib import Path
+
+# ============================================================================
+
+_mcp_config: Optional[McpConfig] = None
+
+
+def _get_mcp_config() -> McpConfig:
+    global _mcp_config
+    if _mcp_config is None:
+        _mcp_config = load_mcp_config(Path("mcp_config.json"))
+        assert _mcp_config is not None, "MCP config loading failed"
+    return _mcp_config
 
 
 def print_welcome_message() -> None:
@@ -76,9 +90,7 @@ def print_available_tools() -> None:
     print("\n🛠️ 可用工具详情：")
     print("-" * 50)
     print("工具信息将在连接到 MCP 服务器后显示")
-    print(
-        f"请确保 MCP 服务器正在运行 ({DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url})"
-    )
+    print(f"请确保 MCP 服务器正在运行 ({_get_mcp_config().mcp_server_url})")
     print("启动命令: python scripts/run_sample_mcp_server.py")
     print()
 
@@ -153,9 +165,9 @@ async def main() -> None:
 
         try:
             mcp_client = await initialize_mcp_client(
-                mcp_server_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
-                mcp_protocol_version=DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version,
-                mcp_timeout=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_timeout,
+                mcp_server_url=_get_mcp_config().mcp_server_url,
+                mcp_protocol_version=_get_mcp_config().protocol_version,
+                mcp_timeout=_get_mcp_config().mcp_timeout,
             )
             available_tools = await mcp_client.get_available_tools()
             logger.success(f"🔗 MCP 客户端连接成功，可用工具: {len(available_tools)}")
@@ -178,7 +190,7 @@ async def main() -> None:
         compiled_mcp_stage_graph = await create_compiled_mcp_stage_graph(
             "deepseek_mcp_chatbot_node",
             # temperature=0.7,
-            mcp_server_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
+            # mcp_server_url=_mcp_config.mcp_server_url,
         )
 
         logger.success("🤖 DeepSeek + MCP 聊天系统初始化完成，开始对话...")

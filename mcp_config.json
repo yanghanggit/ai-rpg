@@ -1,0 +1,6 @@
+{
+  "mcp_server_host": "127.0.0.1",
+  "mcp_server_port": 8765,
+  "protocol_version": "2025-06-18",  
+  "mcp_timeout": 30
+}

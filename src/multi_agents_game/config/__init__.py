@@ -31,6 +31,8 @@ from .server_settings_config import (
     DEFAULT_SERVER_SETTINGS_CONFIG,
 )
 
+from .mcp_config import McpConfig, load_mcp_config
+
 __all__ = [
     # 服务器配置
     "DEFAULT_SERVER_SETTINGS_CONFIG",
@@ -50,4 +52,7 @@ __all__ = [
     "LOGS_DIR",
     "GLOBAL_GAME_NAME",
     "setup_logger",
+    # MCP 配置
+    "McpConfig",
+    "load_mcp_config",
 ]

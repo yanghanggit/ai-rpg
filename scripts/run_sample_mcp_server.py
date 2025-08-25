@@ -23,7 +23,7 @@ import os
 import sys
 import json
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -35,28 +35,40 @@ from loguru import logger
 from mcp.server.fastmcp import FastMCP
 import mcp.types as types
 from multi_agents_game.config import (
-    DEFAULT_SERVER_SETTINGS_CONFIG,
-    # GLOBAL_GAME_NAME,
-    # setup_logger,
+    McpConfig,
+    load_mcp_config,
 )
+from pathlib import Path
 
 # ============================================================================
 # 服务器配置
 # ============================================================================
+
+_mcp_config: Optional[McpConfig] = None
+
+
+def _get_mcp_config() -> McpConfig:
+    global _mcp_config
+    if _mcp_config is None:
+        _mcp_config = load_mcp_config(Path("mcp_config.json"))
+        assert _mcp_config is not None, "MCP config loading failed"
+    return _mcp_config
 
 
 class ServerConfig:
     """服务器配置类"""
 
     def __init__(self) -> None:
+
+        # assert _mcp_config is not None, "MCP config is not loaded"
         self.name = "Production MCP Server"
         self.version = "1.0.0"
         self.description = "生产级 MCP 服务器，支持工具调用、资源访问和提示模板"
         self.transport = "streamable-http"
-        self.protocol_version = DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version
+        self.protocol_version = _get_mcp_config().protocol_version
         self.allowed_origins = [
             "http://localhost",
-            DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_host,
+            _get_mcp_config().mcp_server_host,
         ]
 
     def to_dict(self) -> Dict[str, Any]:
@@ -358,12 +370,12 @@ async def shutdown_handler() -> None:
 @click.command()
 @click.option(
     "--host",
-    default=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_host,
+    default=_get_mcp_config().mcp_server_host,
     help="服务器绑定主机地址（安全起见默认仅本地）",
 )
 @click.option(
     "--port",
-    default=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_port,
+    default=_get_mcp_config().mcp_server_port,
     type=int,
     help="服务器端口号",
 )

@@ -2,9 +2,5 @@
   "chat_service_base_port": 8100,
   "num_chat_service_instances": 3,
   "game_server_port": 8000,
-  "chat_service_endpoint": "/chat-service/v1/",
-  "mcp_server_host": "127.0.0.1",
-  "mcp_server_port": 8765,
-  "protocol_version": "2025-06-18",  
-  "mcp_timeout": 30
+  "chat_service_endpoint": "/chat-service/v1/"
 }

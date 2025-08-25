@@ -1,3 +1,4 @@
+from pathlib import Path
 from dotenv import load_dotenv
 from loguru import logger
 
@@ -19,10 +20,12 @@ from typing_extensions import TypedDict
 
 # 导入统一 MCP 客户端
 from .mcp_client import McpClient, McpToolInfo
-from ..config import DEFAULT_SERVER_SETTINGS_CONFIG
+from ..config import McpConfig, load_mcp_config
 
 # 全局 ChatDeepSeek 实例
 _global_deepseek_llm: Optional[ChatDeepSeek] = None
+
+_mcp_config: Optional[McpConfig] = None
 
 
 ############################################################################################################
@@ -56,6 +59,15 @@ def get_deepseek_llm() -> ChatDeepSeek:
         # logger.info(f"ChatDeepSeek 实例已创建，温度: {temperature}")
 
     return _global_deepseek_llm
+
+
+############################################################################################################
+def _get_mcp_config() -> McpConfig:
+    global _mcp_config
+    if _mcp_config is None:
+        _mcp_config = load_mcp_config(Path("mcp_config.json"))
+        assert _mcp_config is not None, "MCP config loading failed"
+    return _mcp_config
 
 
 ############################################################################################################
@@ -140,7 +152,7 @@ async def execute_mcp_tool(
 async def create_compiled_mcp_stage_graph(
     node_name: str,
     # temperature: float,
-    mcp_server_url: str,
+    # mcp_server_url: str,
 ) -> CompiledStateGraph[McpState, Any, McpState, McpState]:
     """
     创建带 MCP 支持的编译状态图
@@ -157,6 +169,9 @@ async def create_compiled_mcp_stage_graph(
 
     # 获取 ChatDeepSeek 实例（懒加载）
     llm = get_deepseek_llm()
+    assert llm is not None, "ChatDeepSeek instance is not available"
+
+    mcp_config = _get_mcp_config()
 
     # 初始化 MCP 客户端
     mcp_client = None
@@ -164,9 +179,9 @@ async def create_compiled_mcp_stage_graph(
 
     try:
         mcp_client = await initialize_mcp_client(
-            mcp_server_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
-            mcp_protocol_version=DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version,
-            mcp_timeout=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_timeout,
+            mcp_server_url=mcp_config.mcp_server_url,
+            mcp_protocol_version=mcp_config.protocol_version,
+            mcp_timeout=mcp_config.mcp_timeout,
         )
         available_tools = await mcp_client.get_available_tools()
         logger.info(f"MCP 工具初始化完成，可用工具数量: {len(available_tools)}")

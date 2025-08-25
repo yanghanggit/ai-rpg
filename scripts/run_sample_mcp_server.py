@@ -69,9 +69,6 @@ def get_server_config_dict() -> Dict[str, Any]:
     }
 
 
-
-
-
 # 创建 FastMCP 服务器实例
 app = FastMCP(
     name=_get_mcp_config().server_name,

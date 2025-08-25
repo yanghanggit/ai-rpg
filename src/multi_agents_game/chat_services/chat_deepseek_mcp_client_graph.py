@@ -20,12 +20,9 @@ from typing_extensions import TypedDict
 
 # 导入统一 MCP 客户端
 from .mcp_client import McpClient, McpToolInfo
-from ..config import McpConfig, load_mcp_config
 
 # 全局 ChatDeepSeek 实例
 _global_deepseek_llm: Optional[ChatDeepSeek] = None
-
-_mcp_config: Optional[McpConfig] = None
 
 
 ############################################################################################################
@@ -56,22 +53,12 @@ def get_deepseek_llm() -> ChatDeepSeek:
             model="deepseek-chat",
             temperature=0.7,
         )
-        # logger.info(f"ChatDeepSeek 实例已创建，温度: {temperature}")
 
     return _global_deepseek_llm
 
 
 ############################################################################################################
-def _get_mcp_config() -> McpConfig:
-    global _mcp_config
-    if _mcp_config is None:
-        _mcp_config = load_mcp_config(Path("mcp_config.json"))
-        assert _mcp_config is not None, "MCP config loading failed"
-    return _mcp_config
-
-
-############################################################################################################
-class McpState(TypedDict):
+class McpState(TypedDict, total=False):
     """
     MCP 增强的状态，包含消息和 MCP 客户端相关信息
     """
@@ -80,6 +67,13 @@ class McpState(TypedDict):
     mcp_client: Optional[McpClient]  # MCP 客户端
     available_tools: List[McpToolInfo]  # 可用的 MCP 工具
     tool_outputs: List[Dict[str, Any]]  # 工具执行结果
+    
+    # 新增字段用于多节点流程
+    system_prompt: Optional[str]  # 系统提示缓存
+    enhanced_messages: List[BaseMessage]  # 包含系统提示的增强消息
+    llm_response: Optional[BaseMessage]  # LLM原始响应
+    parsed_tool_calls: List[Dict[str, Any]]  # 解析出的工具调用
+    needs_tool_execution: bool  # 是否需要执行工具
 
 
 ############################################################################################################
@@ -149,62 +143,17 @@ async def execute_mcp_tool(
 
 
 ############################################################################################################
-async def create_compiled_mcp_stage_graph(
-    node_name: str,
-    mcp_client: McpClient,
-) -> CompiledStateGraph[McpState, Any, McpState, McpState]:
+async def _build_system_prompt(available_tools: List[McpToolInfo]) -> str:
     """
-    创建带 MCP 支持的编译状态图
-
+    构建系统提示，包含工具信息
+    
     Args:
-        node_name: 节点名称
-        temperature: 模型温度
-        mcp_server_url: MCP 服务器地址
-
+        available_tools: 可用工具列表
+        
     Returns:
-        CompiledStateGraph: 编译后的状态图
+        str: 构建好的系统提示
     """
-    assert node_name != "", "node_name is empty"
-
-    # 获取 ChatDeepSeek 实例（懒加载）
-    llm = get_deepseek_llm()
-    assert llm is not None, "ChatDeepSeek instance is not available"
-
-    # mcp_config = _get_mcp_config()
-
-    # 初始化 MCP 客户端
-    # mcp_client = None
-    available_tools = []
-
-    try:
-        # mcp_client = await initialize_mcp_client(
-        #     mcp_server_url=mcp_config.mcp_server_url,
-        #     mcp_protocol_version=mcp_config.protocol_version,
-        #     mcp_timeout=mcp_config.mcp_timeout,
-        # )
-        available_tools = await mcp_client.get_available_tools()
-        logger.info(f"MCP 工具初始化完成，可用工具数量: {len(available_tools)}")
-    except Exception as e:
-        logger.error(f"MCP 客户端初始化失败: {e}")
-        # MCP 初始化失败，但继续运行（只是没有工具支持）
-
-    async def invoke_deepseek_mcp_action(state: McpState) -> Dict[str, Any]:
-        """
-        DeepSeek + MCP 动作节点
-
-        Args:
-            state: 当前状态
-
-        Returns:
-            Dict: 更新后的状态
-        """
-        try:
-            messages = state["messages"]
-            current_mcp_client = state.get("mcp_client", mcp_client)
-            current_available_tools = state.get("available_tools", available_tools)
-
-            # 构建系统提示，包含工具信息
-            system_prompt = """你是一个智能助手，具有使用工具的能力。
+    system_prompt = """你是一个智能助手，具有使用工具的能力。
 
 当你需要获取实时信息或执行特定操作时，可以调用相应的工具。请按照以下格式调用工具：
 
@@ -215,123 +164,376 @@ async def create_compiled_mcp_stage_graph(
 
 你可以在回复中自然地解释你要做什么，然后调用工具，最后根据工具结果给出完整回答。"""
 
-            if current_available_tools and current_mcp_client:
-                tool_descriptions = []
-                for tool in current_available_tools:
-                    params_desc = ""
+    if available_tools:
+        tool_descriptions = []
+        for tool in available_tools:
+            params_desc = ""
 
-                    # 从工具的 input_schema 中提取参数描述
-                    if tool.input_schema and "properties" in tool.input_schema:
-                        param_list = []
-                        properties = tool.input_schema["properties"]
-                        required = tool.input_schema.get("required", [])
+            # 从工具的 input_schema 中提取参数描述
+            if tool.input_schema and "properties" in tool.input_schema:
+                param_list = []
+                properties = tool.input_schema["properties"]
+                required = tool.input_schema.get("required", [])
 
-                        for param_name, param_info in properties.items():
-                            param_desc = param_info.get("description", "无描述")
-                            is_required = (
-                                " (必需)" if param_name in required else " (可选)"
-                            )
-                            param_list.append(
-                                f"{param_name}: {param_desc}{is_required}"
-                            )
-
-                        params_desc = (
-                            f" 参数: {', '.join(param_list)}" if param_list else ""
-                        )
-
-                    tool_desc = f"- {tool.name}: {tool.description}{params_desc}"
-                    tool_descriptions.append(tool_desc)
-
-                system_prompt += f"\n\n可用工具：\n{chr(10).join(tool_descriptions)}"
-
-            # 添加系统消息到对话开头（如果还没有）
-            enhanced_messages = messages.copy()
-            if (
-                not enhanced_messages
-                or not isinstance(enhanced_messages[0], SystemMessage)
-                or "你是一个智能助手" not in str(enhanced_messages[0].content)
-            ):
-                enhanced_messages.insert(0, SystemMessage(content=system_prompt))
-
-            # 调用 LLM
-            response = llm.invoke(enhanced_messages)
-
-            # 解析响应，检查是否包含工具调用
-            tool_outputs = []
-            if current_available_tools and current_mcp_client:
-                # 解析 LLM 响应中的工具调用请求
-                response_content = str(response.content) if response.content else ""
-
-                # 使用正则表达式提取工具调用
-                import re
-                import json
-
-                tool_call_pattern = r"<tool_call>\s*<tool_name>(.*?)</tool_name>\s*<tool_args>(.*?)</tool_args>\s*</tool_call>"
-                tool_calls = re.findall(tool_call_pattern, response_content, re.DOTALL)
-
-                for tool_name, tool_args_str in tool_calls:
-                    tool_name = tool_name.strip()
-                    tool_args_str = tool_args_str.strip()
-
-                    try:
-                        # 解析工具参数
-                        if tool_args_str:
-                            tool_args = json.loads(tool_args_str)
-                        else:
-                            tool_args = {}
-
-                        # 验证工具是否存在
-                        tool_exists = any(
-                            tool.name == tool_name for tool in current_available_tools
-                        )
-                        if not tool_exists:
-                            logger.warning(f"工具 {tool_name} 不存在")
-                            continue
-
-                        # 执行工具
-                        tool_result = await execute_mcp_tool(
-                            tool_name, tool_args, current_mcp_client
-                        )
-                        tool_outputs.append(
-                            {
-                                "tool": tool_name,
-                                "args": tool_args,
-                                "result": tool_result,
-                            }
-                        )
-
-                        logger.info(f"工具调用成功: {tool_name} -> {tool_result}")
-
-                    except json.JSONDecodeError as e:
-                        logger.error(f"工具参数解析失败: {tool_args_str}, 错误: {e}")
-                        continue
-                    except Exception as e:
-                        logger.error(f"工具执行异常: {tool_name}, 错误: {e}")
-                        continue
-
-                # 如果有工具被执行，更新响应内容
-                if tool_outputs:
-                    # 移除原始的工具调用标记，添加工具执行结果
-                    updated_content = re.sub(
-                        tool_call_pattern, "", response_content, flags=re.DOTALL
+                for param_name, param_info in properties.items():
+                    param_desc = param_info.get("description", "无描述")
+                    is_required = (
+                        " (必需)" if param_name in required else " (可选)"
+                    )
+                    param_list.append(
+                        f"{param_name}: {param_desc}{is_required}"
                     )
 
-                    # 添加工具执行结果
-                    for tool_output in tool_outputs:
-                        updated_content += f"\n\n🔧 {tool_output['tool']} 执行结果：\n{tool_output['result']}"
+                params_desc = (
+                    f" 参数: {', '.join(param_list)}" if param_list else ""
+                )
 
-                    response.content = updated_content.strip()
+            tool_desc = f"- {tool.name}: {tool.description}{params_desc}"
+            tool_descriptions.append(tool_desc)
 
+        system_prompt += f"\n\n可用工具：\n{chr(10).join(tool_descriptions)}"
+
+    return system_prompt
+
+
+############################################################################################################
+async def _preprocess_node(state: McpState) -> Dict[str, Any]:
+    """
+    预处理节点：准备系统提示和增强消息
+    
+    Args:
+        state: 当前状态
+        
+    Returns:
+        Dict: 更新后的状态
+    """
+    try:
+        messages = state["messages"]
+        available_tools = state.get("available_tools", [])
+        
+        # 构建系统提示
+        system_prompt = await _build_system_prompt(available_tools)
+        
+        # 添加系统消息到对话开头（如果还没有）
+        enhanced_messages = messages.copy()
+        if (
+            not enhanced_messages
+            or not isinstance(enhanced_messages[0], SystemMessage)
+            or "你是一个智能助手" not in str(enhanced_messages[0].content)
+        ):
+            enhanced_messages.insert(0, SystemMessage(content=system_prompt))
+        
+        return {
+            "messages": state["messages"],  # 保持原始消息不变
+            "mcp_client": state.get("mcp_client"),
+            "available_tools": available_tools,
+            "tool_outputs": state.get("tool_outputs", []),
+            "system_prompt": system_prompt,  # 保存系统提示供后续使用
+            "enhanced_messages": enhanced_messages,  # 保存增强消息供LLM使用
+        }
+        
+    except Exception as e:
+        logger.error(f"预处理节点错误: {e}")
+        return state
+
+
+############################################################################################################
+async def _llm_invoke_node(state: McpState) -> Dict[str, Any]:
+    """
+    LLM调用节点：调用DeepSeek生成响应
+    
+    Args:
+        state: 当前状态
+        
+    Returns:
+        Dict: 更新后的状态
+    """
+    try:
+        # 获取 ChatDeepSeek 实例
+        llm = get_deepseek_llm()
+        
+        # 使用增强消息（包含系统提示）进行LLM调用
+        enhanced_messages = state.get("enhanced_messages", state["messages"])
+        
+        # 调用 LLM
+        response = llm.invoke(enhanced_messages)
+        
+        return {
+            "messages": state["messages"],  # 保留原始消息
+            "mcp_client": state.get("mcp_client"),
+            "available_tools": state.get("available_tools", []),
+            "tool_outputs": state.get("tool_outputs", []),
+            "llm_response": response,  # 保存LLM响应供后续处理
+            "enhanced_messages": enhanced_messages,  # 传递增强消息
+        }
+        
+    except Exception as e:
+        logger.error(f"LLM调用节点错误: {e}")
+        error_message = AIMessage(content=f"抱歉，处理请求时发生错误：{str(e)}")
+        return {
+            "messages": [error_message],  # 只返回错误消息
+            "mcp_client": state.get("mcp_client"),
+            "available_tools": state.get("available_tools", []),
+            "tool_outputs": [],
+        }
+
+
+############################################################################################################
+async def _tool_parse_node(state: McpState) -> Dict[str, Any]:
+    """
+    工具解析节点：解析LLM响应中的工具调用
+    
+    Args:
+        state: 当前状态
+        
+    Returns:
+        Dict: 更新后的状态
+    """
+    try:
+        llm_response = state.get("llm_response")
+        available_tools = state.get("available_tools", [])
+        
+        parsed_tool_calls = []
+        
+        if llm_response and available_tools:
+            response_content = str(llm_response.content) if llm_response.content else ""
+            
+            # 使用正则表达式提取工具调用
+            import re
+            import json
+            
+            tool_call_pattern = r"<tool_call>\s*<tool_name>(.*?)</tool_name>\s*<tool_args>(.*?)</tool_args>\s*</tool_call>"
+            tool_calls = re.findall(tool_call_pattern, response_content, re.DOTALL)
+            
+            for tool_name, tool_args_str in tool_calls:
+                tool_name = tool_name.strip()
+                tool_args_str = tool_args_str.strip()
+                
+                try:
+                    # 解析工具参数
+                    if tool_args_str:
+                        tool_args = json.loads(tool_args_str)
+                    else:
+                        tool_args = {}
+                    
+                    # 验证工具是否存在
+                    tool_exists = any(
+                        tool.name == tool_name for tool in available_tools
+                    )
+                    if not tool_exists:
+                        logger.warning(f"工具 {tool_name} 不存在")
+                        continue
+                    
+                    parsed_tool_calls.append({
+                        "name": tool_name,
+                        "args": tool_args,
+                    })
+                    
+                except json.JSONDecodeError as e:
+                    logger.error(f"工具参数解析失败: {tool_args_str}, 错误: {e}")
+                    continue
+        
+        return {
+            "messages": state["messages"],
+            "mcp_client": state.get("mcp_client"),
+            "available_tools": available_tools,
+            "tool_outputs": state.get("tool_outputs", []),
+            "llm_response": llm_response,
+            "parsed_tool_calls": parsed_tool_calls,
+            "needs_tool_execution": len(parsed_tool_calls) > 0,
+        }
+        
+    except Exception as e:
+        logger.error(f"工具解析节点错误: {e}")
+        return state
+
+
+############################################################################################################
+async def _tool_execution_node(state: McpState) -> Dict[str, Any]:
+    """
+    工具执行节点：执行解析出的工具调用
+    
+    Args:
+        state: 当前状态
+        
+    Returns:
+        Dict: 更新后的状态
+    """
+    try:
+        parsed_tool_calls = state.get("parsed_tool_calls", [])
+        mcp_client = state.get("mcp_client")
+        
+        tool_outputs = []
+        
+        if parsed_tool_calls and mcp_client:
+            for tool_call in parsed_tool_calls:
+                tool_name = tool_call["name"]
+                tool_args = tool_call["args"]
+                
+                try:
+                    # 执行工具
+                    tool_result = await execute_mcp_tool(
+                        tool_name, tool_args, mcp_client
+                    )
+                    tool_outputs.append({
+                        "tool": tool_name,
+                        "args": tool_args,
+                        "result": tool_result,
+                    })
+                    
+                    logger.info(f"工具调用成功: {tool_name} -> {tool_result}")
+                    
+                except Exception as e:
+                    logger.error(f"工具执行异常: {tool_name}, 错误: {e}")
+                    continue
+        
+        return {
+            "messages": state["messages"],
+            "mcp_client": mcp_client,
+            "available_tools": state.get("available_tools", []),
+            "tool_outputs": tool_outputs,
+            "llm_response": state.get("llm_response"),
+            "parsed_tool_calls": parsed_tool_calls,
+        }
+        
+    except Exception as e:
+        logger.error(f"工具执行节点错误: {e}")
+        return state
+
+
+############################################################################################################
+async def _response_synthesis_node(state: McpState) -> Dict[str, Any]:
+    """
+    响应合成节点：将工具结果整合到最终响应
+    
+    Args:
+        state: 当前状态
+        
+    Returns:
+        Dict: 更新后的状态
+    """
+    try:
+        llm_response = state.get("llm_response")
+        tool_outputs = state.get("tool_outputs", [])
+        parsed_tool_calls = state.get("parsed_tool_calls", [])
+        
+        if not llm_response:
+            error_message = AIMessage(content="抱歉，没有收到LLM响应。")
             return {
-                "messages": [response],
-                "mcp_client": current_mcp_client,
-                "available_tools": current_available_tools,
+                "messages": [error_message],
+                "mcp_client": state.get("mcp_client"),
+                "available_tools": state.get("available_tools", []),
                 "tool_outputs": tool_outputs,
             }
+        
+        # 如果有工具被执行，更新响应内容
+        if tool_outputs:
+            import re
+            
+            response_content = str(llm_response.content) if llm_response.content else ""
+            tool_call_pattern = r"<tool_call>\s*<tool_name>.*?</tool_name>\s*<tool_args>.*?</tool_args>\s*</tool_call>"
+            
+            # 移除原始的工具调用标记
+            updated_content = re.sub(
+                tool_call_pattern, "", response_content, flags=re.DOTALL
+            )
+            
+            # 添加工具执行结果
+            for tool_output in tool_outputs:
+                updated_content += f"\n\n🔧 {tool_output['tool']} 执行结果：\n{tool_output['result']}"
+            
+            llm_response.content = updated_content.strip()
+        
+        return {
+            "messages": [llm_response],
+            "mcp_client": state.get("mcp_client"),
+            "available_tools": state.get("available_tools", []),
+            "tool_outputs": tool_outputs,
+        }
+        
+    except Exception as e:
+        logger.error(f"响应合成节点错误: {e}")
+        error_message = AIMessage(content=f"抱歉，合成响应时发生错误：{str(e)}")
+        return {
+            "messages": [error_message],
+            "mcp_client": state.get("mcp_client"),
+            "available_tools": state.get("available_tools", []),
+            "tool_outputs": [],
+        }
 
+
+############################################################################################################
+def _should_execute_tools(state: McpState) -> str:
+    """
+    条件路由：判断是否需要执行工具
+    
+    Args:
+        state: 当前状态
+        
+    Returns:
+        str: 下一个节点名称
+    """
+    needs_tool_execution = state.get("needs_tool_execution", False)
+    return "tool_execution" if needs_tool_execution else "response_synthesis"
+
+
+############################################################################################################
+async def create_compiled_mcp_stage_graph(
+    node_name: str,
+    mcp_client: McpClient,
+) -> CompiledStateGraph[McpState, Any, McpState, McpState]:
+    """
+    创建带 MCP 支持的编译状态图（多节点架构）
+
+    Args:
+        node_name: 基础节点名称前缀
+        mcp_client: MCP客户端实例
+
+    Returns:
+        CompiledStateGraph: 编译后的状态图
+    """
+    assert node_name != "", "node_name is empty"
+    assert mcp_client is not None, "mcp_client is required"
+
+    # 获取 ChatDeepSeek 实例（懒加载）
+    llm = get_deepseek_llm()
+    assert llm is not None, "ChatDeepSeek instance is not available"
+
+    # 初始化 MCP 工具
+    available_tools = []
+    try:
+        available_tools = await mcp_client.get_available_tools()
+        logger.info(f"MCP 工具初始化完成，可用工具数量: {len(available_tools)}")
+    except Exception as e:
+        logger.error(f"MCP 客户端初始化失败: {e}")
+        # MCP 初始化失败，但继续运行（只是没有工具支持）
+
+    # 创建包装函数，传递必要的上下文
+    async def preprocess_wrapper(state: McpState) -> Dict[str, Any]:
+        # 确保状态包含必要信息
+        state_with_context = {
+            **state,
+            "mcp_client": state.get("mcp_client", mcp_client),
+            "available_tools": state.get("available_tools", available_tools),
+        }
+        return await _preprocess_node(state_with_context)
+
+    async def error_fallback_wrapper(state: McpState) -> Dict[str, Any]:
+        """错误处理包装器，确保总能返回有效响应"""
+        try:
+            # 如果之前的节点都失败了，提供一个基本的错误响应
+            if not state.get("messages"):
+                error_message = AIMessage(content="抱歉，处理请求时发生错误。")
+                return {
+                    "messages": [error_message],
+                    "mcp_client": mcp_client,
+                    "available_tools": available_tools,
+                    "tool_outputs": [],
+                }
+            return state
         except Exception as e:
-            logger.error(f"Error in MCP action: {e}\n{traceback.format_exc()}")
-            error_message = AIMessage(content=f"抱歉，处理请求时发生错误：{str(e)}")
+            logger.error(f"错误处理包装器失败: {e}")
+            error_message = AIMessage(content="抱歉，系统发生未知错误。")
             return {
                 "messages": [error_message],
                 "mcp_client": mcp_client,
@@ -339,11 +541,34 @@ async def create_compiled_mcp_stage_graph(
                 "tool_outputs": [],
             }
 
-    # 构建状态图
+    # 构建多节点状态图
     graph_builder = StateGraph(McpState)
-    graph_builder.add_node(node_name, invoke_deepseek_mcp_action)
-    graph_builder.set_entry_point(node_name)
-    graph_builder.set_finish_point(node_name)
+    
+    # 添加各个节点
+    graph_builder.add_node("preprocess", preprocess_wrapper)
+    graph_builder.add_node("llm_invoke", _llm_invoke_node)
+    graph_builder.add_node("tool_parse", _tool_parse_node)
+    graph_builder.add_node("tool_execution", _tool_execution_node)
+    graph_builder.add_node("response_synthesis", _response_synthesis_node)
+    graph_builder.add_node("error_fallback", error_fallback_wrapper)
+    
+    # 设置流程路径
+    graph_builder.set_entry_point("preprocess")
+    graph_builder.add_edge("preprocess", "llm_invoke")
+    graph_builder.add_edge("llm_invoke", "tool_parse")
+    
+    # 添加条件路由
+    graph_builder.add_conditional_edges(
+        "tool_parse",
+        _should_execute_tools,
+        {
+            "tool_execution": "tool_execution",
+            "response_synthesis": "response_synthesis",
+        }
+    )
+    
+    graph_builder.add_edge("tool_execution", "response_synthesis")
+    graph_builder.set_finish_point("response_synthesis")
 
     return graph_builder.compile()  # type: ignore[return-value]
 
@@ -392,3 +617,4 @@ async def stream_mcp_graph_updates(
         ret.append(error_message)
 
     return ret
+

@@ -191,7 +191,6 @@ async def main() -> None:
         compiled_mcp_stage_graph = await create_compiled_mcp_stage_graph(
             "deepseek_mcp_chatbot_node",
             mcp_client,
-           
         )
 
         logger.success("🤖 DeepSeek + MCP 聊天系统初始化完成，开始对话...")

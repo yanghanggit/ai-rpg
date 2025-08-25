@@ -39,9 +39,9 @@ class McpClient:
 
     def __init__(
         self,
-        base_url: str = "http://127.0.0.1:8765",
-        protocol_version: str = "2024-11-05",
-        timeout: int = 30,
+        base_url: str,
+        protocol_version: str,
+        timeout: int,
     ):
         """
         初始化 MCP 客户端
@@ -603,19 +603,3 @@ class McpClient:
             tool_descriptions.append(tool_desc)
 
         return "\n".join(tool_descriptions)
-
-
-# ============================================================================
-# 工厂函数
-# ============================================================================
-
-
-def create_mcp_client(
-    base_url: str = "http://127.0.0.1:8765",
-    protocol_version: str = "2024-11-05",
-    timeout: int = 30,
-) -> McpClient:
-    """创建 MCP 客户端（Streamable HTTP 模式）"""
-    return McpClient(
-        base_url=base_url, protocol_version=protocol_version, timeout=timeout
-    )

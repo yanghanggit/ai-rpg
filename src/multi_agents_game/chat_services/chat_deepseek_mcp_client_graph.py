@@ -19,6 +19,7 @@ from typing_extensions import TypedDict
 
 # 导入统一 MCP 客户端
 from .mcp_client import McpClient, McpToolInfo
+from ..config import DEFAULT_SERVER_SETTINGS_CONFIG
 
 # 全局 ChatDeepSeek 实例
 _global_deepseek_llm: Optional[ChatDeepSeek] = None
@@ -70,7 +71,9 @@ class McpState(TypedDict):
 
 
 ############################################################################################################
-async def initialize_mcp_client(server_url: str = "http://127.0.0.1:8765") -> McpClient:
+async def initialize_mcp_client(
+    mcp_server_url: str, mcp_protocol_version: str, mcp_timeout: int
+) -> McpClient:
     """
     初始化 MCP 客户端
 
@@ -82,9 +85,9 @@ async def initialize_mcp_client(server_url: str = "http://127.0.0.1:8765") -> Mc
     """
     # 使用 Streamable HTTP 模式（标准 2025-06-18 规范）
     client = McpClient(
-        base_url=server_url,
-        protocol_version="2025-06-18",
-        timeout=30,
+        base_url=mcp_server_url,
+        protocol_version=mcp_protocol_version,
+        timeout=mcp_timeout,
     )
 
     # 连接到服务器
@@ -93,9 +96,9 @@ async def initialize_mcp_client(server_url: str = "http://127.0.0.1:8765") -> Mc
     # 检查服务器健康状态
     if not await client.check_health():
         await client.disconnect()
-        raise ConnectionError(f"无法连接到 MCP 服务器: {server_url}")
+        raise ConnectionError(f"无法连接到 MCP 服务器: {mcp_server_url}")
 
-    logger.info(f"MCP 客户端初始化成功: {server_url}")
+    logger.info(f"MCP 客户端初始化成功: {mcp_server_url}")
     return client
 
 
@@ -136,8 +139,8 @@ async def execute_mcp_tool(
 ############################################################################################################
 async def create_compiled_mcp_stage_graph(
     node_name: str,
-    temperature: float,
-    mcp_server_url: str = "http://127.0.0.1:8765",
+    # temperature: float,
+    mcp_server_url: str,
 ) -> CompiledStateGraph[McpState, Any, McpState, McpState]:
     """
     创建带 MCP 支持的编译状态图
@@ -145,7 +148,7 @@ async def create_compiled_mcp_stage_graph(
     Args:
         node_name: 节点名称
         temperature: 模型温度
-        mcp_server_url: MCP 服务器地址，默认为 http://127.0.0.1:8765
+        mcp_server_url: MCP 服务器地址
 
     Returns:
         CompiledStateGraph: 编译后的状态图
@@ -160,7 +163,11 @@ async def create_compiled_mcp_stage_graph(
     available_tools = []
 
     try:
-        mcp_client = await initialize_mcp_client(mcp_server_url)
+        mcp_client = await initialize_mcp_client(
+            mcp_server_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
+            mcp_protocol_version=DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version,
+            mcp_timeout=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_timeout,
+        )
         available_tools = await mcp_client.get_available_tools()
         logger.info(f"MCP 工具初始化完成，可用工具数量: {len(available_tools)}")
     except Exception as e:

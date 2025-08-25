@@ -34,7 +34,11 @@ import click
 from loguru import logger
 from mcp.server.fastmcp import FastMCP
 import mcp.types as types
-
+from multi_agents_game.config import (
+    DEFAULT_SERVER_SETTINGS_CONFIG,
+    # GLOBAL_GAME_NAME,
+    # setup_logger,
+)
 
 # ============================================================================
 # 服务器配置
@@ -351,12 +355,14 @@ async def shutdown_handler() -> None:
 @click.command()
 @click.option(
     "--host",
-    default="127.0.0.1",
+    default=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url.split("//")[-1].split(":")[0],
     help="服务器绑定主机地址（安全起见默认仅本地）",
 )
 @click.option(
     "--port",
-    default=8765,
+    default=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url.split("//")[-1].split(":")[
+        -1
+    ],
     type=int,
     help="服务器端口号",
 )

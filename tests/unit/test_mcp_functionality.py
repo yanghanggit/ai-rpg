@@ -34,7 +34,11 @@ class TestMcpClient:
     @pytest.fixture
     def mock_mcp_client(self) -> McpClient:
         """创建模拟 MCP 客户端的测试夹具"""
-        client = McpClient(base_url="http://127.0.0.1:8765")
+        client = McpClient(
+            base_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
+            protocol_version=DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version,
+            timeout=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_timeout,
+        )
         # Mock the http session to avoid actual network calls
         client.http_session = AsyncMock()
         client._initialized = True
@@ -94,7 +98,9 @@ class TestMcpClient:
             mock_client.check_health.return_value = True
 
             client = await initialize_mcp_client(
-                DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url
+                DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
+                DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version,
+                DEFAULT_SERVER_SETTINGS_CONFIG.mcp_timeout,
             )
             assert isinstance(client, AsyncMock)  # It's our mock client
             mock_client.connect.assert_called_once()
@@ -103,7 +109,11 @@ class TestMcpClient:
     @pytest.mark.asyncio
     async def test_mcp_client_health_check(self) -> None:
         """测试 MCP 客户端健康检查"""
-        client = McpClient(base_url="http://127.0.0.1:8765")
+        client = McpClient(
+            base_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
+            protocol_version=DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version,
+            timeout=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_timeout,
+        )
         client.http_session = AsyncMock()
         client._initialized = True
         client.session_id = "test-session-123"
@@ -119,7 +129,11 @@ class TestMcpClient:
     @pytest.mark.asyncio
     async def test_get_available_tools(self, sample_tools: List[McpToolInfo]) -> None:
         """测试获取可用工具"""
-        client = McpClient(base_url="http://127.0.0.1:8765")
+        client = McpClient(
+            base_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
+            protocol_version=DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version,
+            timeout=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_timeout,
+        )
         client.http_session = AsyncMock()
         client._initialized = True
         client.session_id = "test-session-123"
@@ -152,7 +166,11 @@ class TestMcpClient:
     @pytest.mark.asyncio
     async def test_call_tool_success(self) -> None:
         """测试成功调用工具"""
-        client = McpClient(base_url="http://127.0.0.1:8765")
+        client = McpClient(
+            base_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
+            protocol_version=DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version,
+            timeout=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_timeout,
+        )
         client.http_session = AsyncMock()
         client._initialized = True
         client.session_id = "test-session-123"
@@ -175,7 +193,11 @@ class TestMcpClient:
     @pytest.mark.asyncio
     async def test_call_tool_failure(self) -> None:
         """测试工具调用失败"""
-        client = McpClient(base_url="http://127.0.0.1:8765")
+        client = McpClient(
+            base_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
+            protocol_version=DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version,
+            timeout=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_timeout,
+        )
         client.http_session = AsyncMock()
         client._initialized = True
         client.session_id = "test-session-123"

@@ -25,6 +25,7 @@ import os
 import sys
 import traceback
 
+
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
@@ -152,7 +153,9 @@ async def main() -> None:
 
         try:
             mcp_client = await initialize_mcp_client(
-                DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url
+                mcp_server_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
+                mcp_protocol_version=DEFAULT_SERVER_SETTINGS_CONFIG.protocol_version,
+                mcp_timeout=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_timeout,
             )
             available_tools = await mcp_client.get_available_tools()
             logger.success(f"🔗 MCP 客户端连接成功，可用工具: {len(available_tools)}")
@@ -174,7 +177,7 @@ async def main() -> None:
         # 生成 MCP 增强的聊天机器人状态图
         compiled_mcp_stage_graph = await create_compiled_mcp_stage_graph(
             "deepseek_mcp_chatbot_node",
-            temperature=0.7,
+            # temperature=0.7,
             mcp_server_url=DEFAULT_SERVER_SETTINGS_CONFIG.mcp_server_url,
         )
 

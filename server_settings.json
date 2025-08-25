@@ -3,5 +3,7 @@
   "num_chat_service_instances": 3,
   "game_server_port": 8000,
   "chat_service_endpoint": "/chat-service/v1/",
-  "mcp_server_url": "http://127.0.0.1:8765"
+  "mcp_server_url": "http://127.0.0.1:8765",
+  "protocol_version": "2025-06-18",  
+  "mcp_timeout": 30
 }

@@ -56,40 +56,26 @@ def _get_mcp_config() -> McpConfig:
     return _mcp_config
 
 
-class ServerConfig:
-    """服务器配置类"""
-
-    def __init__(self) -> None:
-
-        # assert _mcp_config is not None, "MCP config is not loaded"
-        self.name = "Production MCP Server"
-        self.version = "1.0.0"
-        self.description = "生产级 MCP 服务器，支持工具调用、资源访问和提示模板"
-        self.transport = "streamable-http"
-        self.protocol_version = _get_mcp_config().protocol_version
-        self.allowed_origins = [
-            "http://localhost",
-            _get_mcp_config().mcp_server_host,
-        ]
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "name": self.name,
-            "version": self.version,
-            "description": self.description,
-            "transport": self.transport,
-            "protocol_version": self.protocol_version,
-            "started_at": datetime.now().isoformat(),
-        }
+def get_server_config_dict() -> Dict[str, Any]:
+    """获取服务器配置字典"""
+    config = _get_mcp_config()
+    return {
+        "name": config.server_name,
+        "version": config.server_version,
+        "description": config.server_description,
+        "transport": config.transport,
+        "protocol_version": config.protocol_version,
+        "started_at": datetime.now().isoformat(),
+    }
 
 
-# 全局配置实例
-config = ServerConfig()
+
+
 
 # 创建 FastMCP 服务器实例
 app = FastMCP(
-    name=config.name,
-    instructions=config.description,
+    name=_get_mcp_config().server_name,
+    instructions=_get_mcp_config().server_description,
     debug=True,  # HTTP 模式可以启用调试
 )
 
@@ -156,7 +142,7 @@ async def system_info() -> str:
                 "可用空间": f"{psutil.disk_usage('/').free / (1024**3):.2f} GB",
                 "使用率": f"{(psutil.disk_usage('/').used / psutil.disk_usage('/').total * 100):.2f}%",
             },
-            "服务器配置": config.to_dict(),
+            "服务器配置": get_server_config_dict(),
         }
 
         return json.dumps(info, ensure_ascii=False, indent=2)
@@ -178,7 +164,7 @@ async def get_server_status() -> str:
     """获取服务器状态信息"""
     try:
         status = {
-            "服务器配置": config.to_dict(),
+            "服务器配置": get_server_config_dict(),
             "运行状态": "正常",
             "可用工具数": len(getattr(app._tool_manager, "_tools", {})),
             "可用资源数": len(getattr(app._resource_manager, "_resources", {})),
@@ -346,9 +332,10 @@ async def system_analysis(analysis_type: str = "general") -> types.GetPromptResu
 
 async def startup_handler() -> None:
     """服务器启动处理"""
+    mcp_config = _get_mcp_config()
     logger.info("🚀 Production MCP Server 启动中...")
-    logger.info(f"📋 服务器配置: {config.name} v{config.version}")
-    logger.info(f"📡 传输协议: {config.transport}")
+    logger.info(f"📋 服务器配置: {mcp_config.server_name} v{mcp_config.server_version}")
+    logger.info(f"📡 传输协议: {mcp_config.transport}")
     logger.info(f"⏰ 启动时间: {datetime.now()}")
 
 
@@ -397,8 +384,9 @@ def main(host: str, port: int, log_level: str) -> None:
         format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
     )
 
-    logger.info(f"🎯 启动 {config.name} v{config.version}")
-    logger.info(f"📡 传输协议: {config.transport} ({config.protocol_version})")
+    mcp_config = _get_mcp_config()
+    logger.info(f"🎯 启动 {mcp_config.server_name} v{mcp_config.server_version}")
+    logger.info(f"📡 传输协议: {mcp_config.transport} ({mcp_config.protocol_version})")
     logger.info(f"🌐 服务地址: http://{host}:{port}")
     logger.info(f"📝 日志级别: {log_level}")
 

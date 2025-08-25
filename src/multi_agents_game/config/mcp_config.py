@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, Field
 from loguru import logger
 
@@ -10,11 +10,27 @@ class McpConfig(BaseModel):
     mcp_server_port: int = Field(..., description="MCP 服务器端口")
     protocol_version: str = Field(..., description="MCP 协议版本")
     mcp_timeout: int = Field(..., description="MCP 超时时间")
+    
+    # 服务器配置
+    server_name: str = Field(..., description="MCP 服务器名称")
+    server_version: str = Field(..., description="MCP 服务器版本")
+    server_description: str = Field(..., description="MCP 服务器描述")
+    transport: str = Field(..., description="MCP 传输协议")
+    allowed_origins: List[str] = Field(..., description="允许的来源列表")
 
     @property
     def mcp_server_url(self) -> str:
         """MCP 服务器完整URL地址"""
         return f"http://{self.mcp_server_host}:{self.mcp_server_port}"
+    
+    @property
+    def complete_allowed_origins(self) -> List[str]:
+        """获取完整的允许来源列表，包括动态生成的主机地址"""
+        origins = self.allowed_origins.copy()
+        host_origin = f"http://{self.mcp_server_host}"
+        if host_origin not in origins:
+            origins.append(host_origin)
+        return origins
 
 
 ##################################################################################################################

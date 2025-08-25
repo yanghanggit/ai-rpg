@@ -2,5 +2,10 @@
   "mcp_server_host": "127.0.0.1",
   "mcp_server_port": 8765,
   "protocol_version": "2025-06-18",  
-  "mcp_timeout": 30
+  "mcp_timeout": 30,
+  "server_name": "Production MCP Server",
+  "server_version": "1.0.0",
+  "server_description": "生产级 MCP 服务器，支持工具调用、资源访问和提示模板",
+  "transport": "streamable-http",
+  "allowed_origins": ["http://localhost"]
 }

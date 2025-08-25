@@ -12,7 +12,7 @@ from multi_agents_game.game.tcg_game import TCGGameState
 from multi_agents_game.models import World, CombatResult
 from multi_agents_game.chat_services.chat_system import ChatSystem
 from multi_agents_game.game.player_proxy import PlayerProxy
-from multi_agents_game.demo import create_demo_dungeon5, create_actor_warrior
+from multi_agents_game.demo import create_demo_dungeon1, create_actor_warrior
 from multi_agents_game.game_systems.combat_monitor_system import (
     CombatMonitorSystem,
 )
@@ -94,7 +94,7 @@ async def run_game(
         world_exists = World(boot=world_boot)
 
         # 运行时生成地下城系统
-        world_exists.dungeon = create_demo_dungeon5()
+        world_exists.dungeon = create_demo_dungeon1()
 
     else:
         logger.info(

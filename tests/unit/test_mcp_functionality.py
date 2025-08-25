@@ -234,7 +234,11 @@ class TestMcpClient:
         result = await execute_mcp_tool(
             "calculator", {"expression": "5*5"}, mock_client
         )
-        assert result == "计算结果：25"
+        # execute_mcp_tool 现在返回 (success, result, execution_time)
+        success, result_str, execution_time = result
+        assert success is True, "工具执行应该成功"
+        assert result_str == "计算结果：25", "应该返回正确的计算结果"
+        assert execution_time >= 0, "执行时间应该非负"
         mock_client.call_tool.assert_called_once_with(
             "calculator", {"expression": "5*5"}
         )
@@ -371,7 +375,11 @@ class TestMcpIntegration:
 
         # 执行工具并验证错误处理
         result = await execute_mcp_tool("failing_tool", {"param": "value"}, mock_client)
-        assert "工具执行失败" in result, "应该返回错误信息"
+        # execute_mcp_tool 现在返回 (success, result, execution_time)
+        success, error_msg, execution_time = result
+        assert success is False, "工具执行应该失败"
+        assert "工具执行失败" in error_msg, "应该返回错误信息"
+        assert execution_time >= 0, "执行时间应该非负"
 
 
 if __name__ == "__main__":

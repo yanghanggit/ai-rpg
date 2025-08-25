@@ -5,7 +5,11 @@ from loguru import logger
 load_dotenv()
 
 import os
-from typing import Annotated, Any, Dict, List, Optional
+import re
+import json
+import time
+import asyncio
+from typing import Annotated, Any, Dict, List, Optional, Tuple
 
 from langchain.schema import AIMessage, SystemMessage
 from langchain_core.messages import BaseMessage
@@ -21,6 +25,151 @@ from .mcp_client import McpClient, McpToolInfo
 
 # 全局 ChatDeepSeek 实例
 _global_deepseek_llm: Optional[ChatDeepSeek] = None
+
+
+############################################################################################################
+class ToolCallParser:
+    """简化的工具调用解析器 - 仅支持JSON格式"""
+
+    def __init__(self, available_tools: List[McpToolInfo]):
+        self.available_tools = available_tools
+        self.tool_names = {tool.name for tool in available_tools}
+
+    def parse_tool_calls(self, content: str) -> List[Dict[str, Any]]:
+        """
+        解析工具调用，仅支持JSON格式
+
+        Args:
+            content: LLM响应内容
+
+        Returns:
+            List[Dict[str, Any]]: 解析出的工具调用列表
+        """
+        parsed_calls = []
+
+        # 解析JSON格式的工具调用
+        parsed_calls.extend(self._parse_json_format(content))
+
+        # 去重和验证
+        return self._deduplicate_and_validate(parsed_calls)
+
+    def _parse_json_format(self, content: str) -> List[Dict[str, Any]]:
+        """解析JSON格式的工具调用 - 仅支持标准格式"""
+        calls = []
+
+        # 查找所有可能的JSON对象
+        # 首先寻找 "tool_call" 关键字的位置
+        tool_call_positions = []
+        start_pos = 0
+        while True:
+            pos = content.find('"tool_call"', start_pos)
+            if pos == -1:
+                break
+            tool_call_positions.append(pos)
+            start_pos = pos + 1
+
+        # 对每个 "tool_call" 位置，尝试向前和向后查找完整的JSON对象
+        for pos in tool_call_positions:
+            # 向前查找最近的 {
+            start_brace = content.rfind("{", 0, pos)
+            if start_brace == -1:
+                continue
+
+            # 从 { 开始，使用括号匹配找到对应的 }
+            brace_count = 0
+            json_end = start_brace
+            for i in range(start_brace, len(content)):
+                if content[i] == "{":
+                    brace_count += 1
+                elif content[i] == "}":
+                    brace_count -= 1
+                    if brace_count == 0:
+                        json_end = i + 1
+                        break
+
+            if brace_count == 0:  # 找到了完整的JSON对象
+                json_str = content[start_brace:json_end]
+                try:
+                    json_obj = json.loads(json_str)
+                    call = self._json_to_tool_call(json_obj)
+                    if call:
+                        calls.append(call)
+                except json.JSONDecodeError:
+                    logger.warning(f"JSON格式错误，跳过此工具调用: {json_str}")
+                    continue
+
+        return calls
+
+    def _json_to_tool_call(self, json_obj: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """将JSON对象转换为工具调用 - 仅支持标准格式"""
+        try:
+            # 只支持标准格式: {"tool_call": {"name": "...", "arguments": {...}}}
+            if "tool_call" not in json_obj:
+                return None
+
+            tool_call_obj = json_obj["tool_call"]
+            tool_name = tool_call_obj.get("name")
+            tool_args = tool_call_obj.get("arguments", {})
+
+            if tool_name and tool_name in self.tool_names:
+                return {
+                    "name": tool_name,
+                    "args": tool_args,
+                }
+
+        except Exception as e:
+            logger.warning(f"JSON转换工具调用失败: {e}")
+
+        return None
+
+    def _deduplicate_and_validate(
+        self, calls: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """去重和验证工具调用"""
+        seen = set()
+        unique_calls = []
+
+        for call in calls:
+            # 创建唯一标识
+            call_id = (call["name"], json.dumps(call["args"], sort_keys=True))
+            if call_id not in seen:
+                seen.add(call_id)
+
+                # 验证工具调用
+                if self._validate_tool_call(call):
+                    unique_calls.append(call)
+
+        return unique_calls
+
+    def _validate_tool_call(self, call: Dict[str, Any]) -> bool:
+        """验证工具调用的有效性"""
+        try:
+            tool_name = call["name"]
+            tool_args = call["args"]
+
+            # 找到对应的工具
+            tool_info = None
+            for tool in self.available_tools:
+                if tool.name == tool_name:
+                    tool_info = tool
+                    break
+
+            if not tool_info:
+                return False
+
+            # 验证参数
+            if tool_info.input_schema:
+                required_params = tool_info.input_schema.get("required", [])
+                for param in required_params:
+                    if param not in tool_args:
+                        logger.warning(f"工具 {tool_name} 缺少必需参数: {param}")
+                        return False
+
+            return True
+
+        except Exception as e:
+            logger.error(f"验证工具调用失败: {e}")
+            return False
 
 
 ############################################################################################################
@@ -108,42 +257,78 @@ async def initialize_mcp_client(
 
 ############################################################################################################
 async def execute_mcp_tool(
-    tool_name: str, tool_args: Dict[str, Any], mcp_client: McpClient
-) -> str:
+    tool_name: str,
+    tool_args: Dict[str, Any],
+    mcp_client: McpClient,
+    timeout: float = 30.0,
+    max_retries: int = 2,
+) -> Tuple[bool, str, float]:
     """
-    通过 MCP 客户端执行工具
+    通过 MCP 客户端执行工具（增强版）
 
     Args:
         tool_name: 工具名称
         tool_args: 工具参数
         mcp_client: MCP 客户端
+        timeout: 超时时间（秒）
+        max_retries: 最大重试次数
 
     Returns:
-        str: 工具执行结果
+        Tuple[bool, str, float]: (成功标志, 结果或错误信息, 执行时间)
     """
-    try:
-        result = await mcp_client.call_tool(tool_name, tool_args)
+    start_time = time.time()
 
-        if result.success:
-            logger.info(
-                f"MCP工具执行成功: {tool_name} | 参数: {tool_args} | 结果: {result.result}"
+    for attempt in range(max_retries + 1):
+        try:
+            # 使用asyncio.wait_for添加超时控制
+            result = await asyncio.wait_for(
+                mcp_client.call_tool(tool_name, tool_args), timeout=timeout
             )
-            return str(result.result)
-        else:
-            error_msg = f"工具执行失败: {tool_name} | 错误: {result.error}"
-            logger.error(error_msg)
-            return error_msg
 
-    except Exception as e:
-        error_msg = f"工具执行异常: {tool_name} | 错误: {str(e)}"
-        logger.error(error_msg)
-        return error_msg
+            execution_time = time.time() - start_time
+
+            if result.success:
+                logger.info(
+                    f"🔧 MCP工具执行成功: {tool_name} | 参数: {tool_args} | "
+                    f"耗时: {execution_time:.2f}s | 尝试: {attempt + 1}/{max_retries + 1}"
+                )
+                return True, str(result.result), execution_time
+            else:
+                error_msg = f"工具执行失败: {tool_name} | 错误: {result.error}"
+                logger.error(f"❌ {error_msg} | 尝试: {attempt + 1}/{max_retries + 1}")
+
+                # 如果是最后一次尝试，返回错误
+                if attempt == max_retries:
+                    return False, error_msg, time.time() - start_time
+
+        except asyncio.TimeoutError:
+            error_msg = f"工具执行超时: {tool_name} | 超时时间: {timeout}s"
+            logger.error(f"⏰ {error_msg} | 尝试: {attempt + 1}/{max_retries + 1}")
+
+            if attempt == max_retries:
+                return False, error_msg, time.time() - start_time
+
+        except Exception as e:
+            error_msg = f"工具执行异常: {tool_name} | 错误: {str(e)}"
+            logger.error(f"💥 {error_msg} | 尝试: {attempt + 1}/{max_retries + 1}")
+
+            if attempt == max_retries:
+                return False, error_msg, time.time() - start_time
+
+        # 重试前等待
+        if attempt < max_retries:
+            wait_time = min(2**attempt, 5)  # 指数退避，最大5秒
+            logger.info(f"🔄 等待 {wait_time}s 后重试...")
+            await asyncio.sleep(wait_time)
+
+    # 理论上不会到达这里
+    return False, "未知错误", time.time() - start_time
 
 
 ############################################################################################################
-async def _build_system_prompt(available_tools: List[McpToolInfo]) -> str:
+def _build_system_prompt(available_tools: List[McpToolInfo]) -> str:
     """
-    构建系统提示，包含工具信息
+    构建系统提示，仅支持JSON格式工具调用
 
     Args:
         available_tools: 可用工具列表
@@ -151,41 +336,193 @@ async def _build_system_prompt(available_tools: List[McpToolInfo]) -> str:
     Returns:
         str: 构建好的系统提示
     """
+    # 基础系统提示
     system_prompt = """你是一个智能助手，具有使用工具的能力。
 
-当你需要获取实时信息或执行特定操作时，可以调用相应的工具。请按照以下格式调用工具：
+当你需要获取实时信息或执行特定操作时，可以调用相应的工具。
 
-<tool_call>
-<tool_name>工具名称</tool_name>
-<tool_args>{"参数名": "参数值"}</tool_args>
-</tool_call>
+## 工具调用格式
 
-你可以在回复中自然地解释你要做什么，然后调用工具，最后根据工具结果给出完整回答。"""
+请严格按照以下JSON格式调用工具：
 
-    if available_tools:
-        tool_descriptions = []
+```json
+{
+  "tool_call": {
+    "name": "工具名称",
+    "arguments": {
+      "参数名": "参数值"
+    }
+  }
+}
+```
+
+**示例**：
+```json
+{"tool_call": {"name": "get_current_time", "arguments": {"format": "datetime"}}}
+```
+
+## 使用指南
+
+- 你可以在回复中自然地解释你要做什么
+- 然后在回复中包含JSON格式的工具调用
+- 工具执行完成后，根据结果给出完整的回答
+- 如果工具执行失败，请为用户提供替代方案或解释原因
+- 请确保JSON格式正确，避免语法错误"""
+
+    if not available_tools:
+        system_prompt += "\n\n⚠️ 当前没有可用工具，请仅使用你的知识回答问题。"
+        return system_prompt
+
+    # 按类型分组工具
+    tool_categories = _categorize_tools(available_tools)
+
+    # 构建工具描述
+    system_prompt += "\n\n## 可用工具"
+
+    if len(tool_categories) > 1:
+        # 多类别工具，按类别组织
+        for category, tools in tool_categories.items():
+            system_prompt += f"\n\n### {category}"
+            for tool in tools:
+                tool_desc = _format_tool_description(tool)
+                system_prompt += f"\n{tool_desc}"
+    else:
+        # 单类别或混合工具，简单列表
+        system_prompt += "\n"
         for tool in available_tools:
-            params_desc = ""
+            tool_desc = _format_tool_description(tool)
+            system_prompt += f"\n{tool_desc}"
 
-            # 从工具的 input_schema 中提取参数描述
-            if tool.input_schema and "properties" in tool.input_schema:
-                param_list = []
-                properties = tool.input_schema["properties"]
-                required = tool.input_schema.get("required", [])
-
-                for param_name, param_info in properties.items():
-                    param_desc = param_info.get("description", "无描述")
-                    is_required = " (必需)" if param_name in required else " (可选)"
-                    param_list.append(f"{param_name}: {param_desc}{is_required}")
-
-                params_desc = f" 参数: {', '.join(param_list)}" if param_list else ""
-
-            tool_desc = f"- {tool.name}: {tool.description}{params_desc}"
-            tool_descriptions.append(tool_desc)
-
-        system_prompt += f"\n\n可用工具：\n{chr(10).join(tool_descriptions)}"
+    # 添加JSON格式的使用示例
+    if len(available_tools) > 0:
+        example_tool = available_tools[0]
+        system_prompt += f"\n\n## 调用示例\n\n"
+        system_prompt += _build_json_tool_example(example_tool)
 
     return system_prompt
+
+
+def _build_json_tool_example(tool: McpToolInfo) -> str:
+    """为工具构建JSON格式的调用示例"""
+    try:
+        # 构建示例参数
+        example_args: Dict[str, Any] = {}
+        if tool.input_schema and "properties" in tool.input_schema:
+            properties = tool.input_schema["properties"]
+            for param_name, param_info in properties.items():
+                param_type = param_info.get("type", "string")
+                if param_type == "string":
+                    if "format" in param_name.lower():
+                        example_args[param_name] = "datetime"
+                    elif "time" in param_name.lower():
+                        example_args[param_name] = "current"
+                    else:
+                        example_args[param_name] = "示例值"
+                elif param_type == "integer":
+                    example_args[param_name] = 10
+                elif param_type == "boolean":
+                    example_args[param_name] = True
+                else:
+                    example_args[param_name] = "示例值"
+
+        # 构建JSON示例
+        example_json = {"tool_call": {"name": tool.name, "arguments": example_args}}
+
+        json_str = json.dumps(example_json, ensure_ascii=False, indent=2)
+
+        example = (
+            f"如需调用 {tool.name}，请使用以下JSON格式：\n\n```json\n{json_str}\n```"
+        )
+
+        return example
+
+    except Exception as e:
+        logger.warning(f"构建JSON工具示例失败: {tool.name}, 错误: {e}")
+        # 降级到简单示例
+        simple_example = {"tool_call": {"name": tool.name, "arguments": {}}}
+        json_str = json.dumps(simple_example, ensure_ascii=False)
+        return f"调用 {tool.name} 的示例：{json_str}"
+
+
+def _categorize_tools(tools: List[McpToolInfo]) -> Dict[str, List[McpToolInfo]]:
+    """按功能对工具进行分类"""
+    categories: Dict[str, List[McpToolInfo]] = {
+        "时间和日期": [],
+        "系统信息": [],
+        "文件操作": [],
+        "网络请求": [],
+        "数据处理": [],
+        "其他": [],
+    }
+
+    for tool in tools:
+        name_lower = tool.name.lower()
+        desc_lower = tool.description.lower()
+
+        if any(
+            keyword in name_lower or keyword in desc_lower
+            for keyword in ["time", "date", "时间", "日期"]
+        ):
+            categories["时间和日期"].append(tool)
+        elif any(
+            keyword in name_lower or keyword in desc_lower
+            for keyword in ["system", "info", "系统", "信息", "cpu", "memory", "内存"]
+        ):
+            categories["系统信息"].append(tool)
+        elif any(
+            keyword in name_lower or keyword in desc_lower
+            for keyword in ["file", "read", "write", "文件", "读取", "写入"]
+        ):
+            categories["文件操作"].append(tool)
+        elif any(
+            keyword in name_lower or keyword in desc_lower
+            for keyword in ["http", "request", "url", "网络", "请求"]
+        ):
+            categories["网络请求"].append(tool)
+        elif any(
+            keyword in name_lower or keyword in desc_lower
+            for keyword in ["data", "process", "analysis", "数据", "处理", "分析"]
+        ):
+            categories["数据处理"].append(tool)
+        else:
+            categories["其他"].append(tool)
+
+    # 移除空分类
+    return {k: v for k, v in categories.items() if v}
+
+
+def _format_tool_description(tool: McpToolInfo) -> str:
+    """格式化单个工具的描述"""
+    try:
+        params_desc = ""
+
+        # 从工具的 input_schema 中提取参数描述
+        if tool.input_schema and "properties" in tool.input_schema:
+            param_list = []
+            properties = tool.input_schema["properties"]
+            required = tool.input_schema.get("required", [])
+
+            for param_name, param_info in properties.items():
+                param_desc = param_info.get("description", "无描述")
+                param_type = param_info.get("type", "string")
+                is_required = "**必需**" if param_name in required else "*可选*"
+
+                param_list.append(
+                    f"  - `{param_name}` ({param_type}): {param_desc} [{is_required}]"
+                )
+
+            if param_list:
+                params_desc = f"\n{chr(10).join(param_list)}"
+
+        tool_desc = f"- **{tool.name}**: {tool.description}"
+        if params_desc:
+            tool_desc += f"\n  参数:{params_desc}"
+
+        return tool_desc
+
+    except Exception as e:
+        logger.warning(f"格式化工具描述失败: {tool.name}, 错误: {e}")
+        return f"- **{tool.name}**: {tool.description}"
 
 
 ############################################################################################################
@@ -204,7 +541,7 @@ async def _preprocess_node(state: McpState) -> McpState:
         available_tools = state.get("available_tools", [])
 
         # 构建系统提示
-        system_prompt = await _build_system_prompt(available_tools)
+        system_prompt = _build_system_prompt(available_tools)
 
         # 添加系统消息到对话开头（如果还没有）
         enhanced_messages = messages.copy()
@@ -276,7 +613,7 @@ async def _llm_invoke_node(state: McpState) -> McpState:
 ############################################################################################################
 async def _tool_parse_node(state: McpState) -> McpState:
     """
-    工具解析节点：解析LLM响应中的工具调用
+    工具解析节点：使用增强解析器解析LLM响应中的工具调用
 
     Args:
         state: 当前状态
@@ -293,42 +630,13 @@ async def _tool_parse_node(state: McpState) -> McpState:
         if llm_response and available_tools:
             response_content = str(llm_response.content) if llm_response.content else ""
 
-            # 使用正则表达式提取工具调用
-            import re
-            import json
+            # 使用增强的工具调用解析器
+            parser = ToolCallParser(available_tools)
+            parsed_tool_calls = parser.parse_tool_calls(response_content)
 
-            tool_call_pattern = r"<tool_call>\s*<tool_name>(.*?)</tool_name>\s*<tool_args>(.*?)</tool_args>\s*</tool_call>"
-            tool_calls = re.findall(tool_call_pattern, response_content, re.DOTALL)
-
-            for tool_name, tool_args_str in tool_calls:
-                tool_name = tool_name.strip()
-                tool_args_str = tool_args_str.strip()
-
-                try:
-                    # 解析工具参数
-                    if tool_args_str:
-                        tool_args = json.loads(tool_args_str)
-                    else:
-                        tool_args = {}
-
-                    # 验证工具是否存在
-                    tool_exists = any(
-                        tool.name == tool_name for tool in available_tools
-                    )
-                    if not tool_exists:
-                        logger.warning(f"工具 {tool_name} 不存在")
-                        continue
-
-                    parsed_tool_calls.append(
-                        {
-                            "name": tool_name,
-                            "args": tool_args,
-                        }
-                    )
-
-                except json.JSONDecodeError as e:
-                    logger.error(f"工具参数解析失败: {tool_args_str}, 错误: {e}")
-                    continue
+            logger.info(f"📋 解析到 {len(parsed_tool_calls)} 个工具调用")
+            for call in parsed_tool_calls:
+                logger.debug(f"   - {call['name']}: {call['args']}")
 
         result: McpState = {
             "messages": [],  # 工具解析节点不返回消息，避免重复累积
@@ -343,13 +651,23 @@ async def _tool_parse_node(state: McpState) -> McpState:
 
     except Exception as e:
         logger.error(f"工具解析节点错误: {e}")
-        return state
+        # 发生错误时，继续流程但不执行工具
+        error_result: McpState = {
+            "messages": [],
+            "mcp_client": state.get("mcp_client"),
+            "available_tools": state.get("available_tools", []),
+            "tool_outputs": state.get("tool_outputs", []),
+            "llm_response": state.get("llm_response"),
+            "parsed_tool_calls": [],
+            "needs_tool_execution": False,
+        }
+        return error_result
 
 
 ############################################################################################################
 async def _tool_execution_node(state: McpState) -> McpState:
     """
-    工具执行节点：执行解析出的工具调用
+    工具执行节点：执行解析出的工具调用（增强版）
 
     Args:
         state: 当前状态
@@ -364,28 +682,78 @@ async def _tool_execution_node(state: McpState) -> McpState:
         tool_outputs = []
 
         if parsed_tool_calls and mcp_client:
-            for tool_call in parsed_tool_calls:
-                tool_name = tool_call["name"]
-                tool_args = tool_call["args"]
+            logger.info(f"🔧 开始执行 {len(parsed_tool_calls)} 个工具调用")
 
-                try:
-                    # 执行工具
-                    tool_result = await execute_mcp_tool(
-                        tool_name, tool_args, mcp_client
+            # 并发执行工具调用（如果合适的话）
+            if len(parsed_tool_calls) == 1:
+                # 单个工具调用，直接执行
+                tool_call = parsed_tool_calls[0]
+                success, tool_result, exec_time = await execute_mcp_tool(
+                    tool_call["name"],
+                    tool_call["args"],
+                    mcp_client,
+                    timeout=30.0,
+                    max_retries=2,
+                )
+
+                tool_outputs.append(
+                    {
+                        "tool": tool_call["name"],
+                        "args": tool_call["args"],
+                        "result": tool_result,
+                        "success": success,
+                        "execution_time": exec_time,
+                    }
+                )
+
+            else:
+                # 多个工具调用，考虑并发执行
+                tasks = []
+                for tool_call in parsed_tool_calls:
+                    task = execute_mcp_tool(
+                        tool_call["name"],
+                        tool_call["args"],
+                        mcp_client,
+                        timeout=30.0,
+                        max_retries=1,  # 并发时减少重试次数
                     )
-                    tool_outputs.append(
-                        {
-                            "tool": tool_name,
-                            "args": tool_args,
-                            "result": tool_result,
-                        }
-                    )
+                    tasks.append((tool_call, task))
 
-                    logger.info(f"工具调用成功: {tool_name} -> {tool_result}")
+                # 执行所有任务
+                for tool_call, task in tasks:
+                    try:
+                        success, task_result, exec_time = await task
+                        tool_outputs.append(
+                            {
+                                "tool": tool_call["name"],
+                                "args": tool_call["args"],
+                                "result": task_result,
+                                "success": success,
+                                "execution_time": exec_time,
+                            }
+                        )
+                    except Exception as e:
+                        logger.error(
+                            f"工具执行任务失败: {tool_call['name']}, 错误: {e}"
+                        )
+                        tool_outputs.append(
+                            {
+                                "tool": tool_call["name"],
+                                "args": tool_call["args"],
+                                "result": f"执行失败: {str(e)}",
+                                "success": False,
+                                "execution_time": 0.0,
+                            }
+                        )
 
-                except Exception as e:
-                    logger.error(f"工具执行异常: {tool_name}, 错误: {e}")
-                    continue
+            # 统计执行结果
+            successful_calls = sum(1 for output in tool_outputs if output["success"])
+            total_time = sum(output["execution_time"] for output in tool_outputs)
+
+            logger.info(
+                f"✅ 工具执行完成: {successful_calls}/{len(tool_outputs)} 成功, "
+                f"总耗时: {total_time:.2f}s"
+            )
 
         result: McpState = {
             "messages": [],  # 工具执行节点不返回消息，避免重复累积
@@ -399,13 +767,30 @@ async def _tool_execution_node(state: McpState) -> McpState:
 
     except Exception as e:
         logger.error(f"工具执行节点错误: {e}")
-        return state
+        # 即使执行失败，也要返回状态以继续流程
+        error_result: McpState = {
+            "messages": [],
+            "mcp_client": state.get("mcp_client"),
+            "available_tools": state.get("available_tools", []),
+            "tool_outputs": [
+                {
+                    "tool": "系统",
+                    "args": {},
+                    "result": f"工具执行节点发生错误: {str(e)}",
+                    "success": False,
+                    "execution_time": 0.0,
+                }
+            ],
+            "llm_response": state.get("llm_response"),
+            "parsed_tool_calls": state.get("parsed_tool_calls", []),
+        }
+        return error_result
 
 
 ############################################################################################################
 async def _response_synthesis_node(state: McpState) -> McpState:
     """
-    响应合成节点：将工具结果整合到最终响应
+    响应合成节点：智能地将工具结果整合到最终响应（增强版）
 
     Args:
         state: 当前状态
@@ -428,25 +813,14 @@ async def _response_synthesis_node(state: McpState) -> McpState:
             }
             return synthesis_error_result
 
-        # 如果有工具被执行，更新响应内容
+        response_content = str(llm_response.content) if llm_response.content else ""
+
+        # 如果有工具被执行，智能合成响应
         if tool_outputs:
-            import re
-
-            response_content = str(llm_response.content) if llm_response.content else ""
-            tool_call_pattern = r"<tool_call>\s*<tool_name>.*?</tool_name>\s*<tool_args>.*?</tool_args>\s*</tool_call>"
-
-            # 移除原始的工具调用标记
-            updated_content = re.sub(
-                tool_call_pattern, "", response_content, flags=re.DOTALL
+            synthesized_content = _synthesize_response_with_tools(
+                response_content, tool_outputs, parsed_tool_calls
             )
-
-            # 添加工具执行结果
-            for tool_output in tool_outputs:
-                updated_content += (
-                    f"\n\n🔧 {tool_output['tool']} 执行结果：\n{tool_output['result']}"
-                )
-
-            llm_response.content = updated_content.strip()
+            llm_response.content = synthesized_content
 
         result: McpState = {
             "messages": [llm_response],
@@ -466,6 +840,114 @@ async def _response_synthesis_node(state: McpState) -> McpState:
             "tool_outputs": [],
         }
         return synthesis_exception_result
+
+
+def _synthesize_response_with_tools(
+    original_response: str,
+    tool_outputs: List[Dict[str, Any]],
+    parsed_tool_calls: List[Dict[str, Any]],
+) -> str:
+    """
+    智能合成包含工具结果的响应
+
+    Args:
+        original_response: 原始LLM响应
+        tool_outputs: 工具执行结果
+        parsed_tool_calls: 解析的工具调用
+
+    Returns:
+        str: 合成后的响应内容
+    """
+    try:
+        # 移除原始响应中的工具调用标记
+        cleaned_response = _remove_tool_call_markers(original_response)
+
+        # 如果没有工具输出，直接返回清理后的响应
+        if not tool_outputs:
+            return cleaned_response.strip()
+
+        # 构建工具结果部分
+        tool_results_section = _build_tool_results_section(tool_outputs)
+
+        # 智能组合响应
+        if cleaned_response.strip():
+            # 如果原响应有内容，在其后添加工具结果
+            synthesized = f"{cleaned_response.strip()}\n\n{tool_results_section}"
+        else:
+            # 如果原响应为空，只返回工具结果的友好描述
+            synthesized = _build_standalone_tool_response(tool_outputs)
+
+        return synthesized.strip()
+
+    except Exception as e:
+        logger.error(f"响应合成失败: {e}")
+        # 降级处理：简单拼接
+        return f"{original_response}\n\n工具执行结果：\n{str(tool_outputs)}"
+
+
+def _remove_tool_call_markers(content: str) -> str:
+    """移除内容中的JSON格式工具调用标记 - 仅支持标准格式"""
+    # 只移除标准格式: {"tool_call": {...}}
+    pattern = r'\{\s*"tool_call"\s*:\s*\{[^}]+\}\s*\}'
+    cleaned = re.sub(pattern, "", content, flags=re.DOTALL | re.IGNORECASE)
+
+    # 清理多余的空行
+    cleaned = re.sub(r"\n\s*\n\s*\n", "\n\n", cleaned)
+
+    return cleaned
+
+
+def _build_tool_results_section(tool_outputs: List[Dict[str, Any]]) -> str:
+    """构建工具结果部分"""
+    results = []
+
+    for output in tool_outputs:
+        tool_name = output.get("tool", "未知工具")
+        success = output.get("success", False)
+        result = output.get("result", "无结果")
+        exec_time = output.get("execution_time", 0.0)
+
+        if success:
+            status_icon = "✅"
+            status_text = "成功"
+        else:
+            status_icon = "❌"
+            status_text = "失败"
+
+        # 格式化执行时间
+        time_text = f" ({exec_time:.1f}s)" if exec_time > 0 else ""
+
+        # 构建结果文本
+        result_text = (
+            f"{status_icon} **{tool_name}** {status_text}{time_text}\n{result}"
+        )
+        results.append(result_text)
+
+    return "\n\n".join(results)
+
+
+def _build_standalone_tool_response(tool_outputs: List[Dict[str, Any]]) -> str:
+    """构建独立的工具响应（当原响应为空时）"""
+    if len(tool_outputs) == 1:
+        output = tool_outputs[0]
+        tool_name = output.get("tool", "工具")
+        success = output.get("success", False)
+        result = output.get("result", "无结果")
+
+        if success:
+            return f"已为您执行{tool_name}，结果如下：\n\n{result}"
+        else:
+            return f"抱歉，执行{tool_name}时发生错误：\n\n{result}"
+    else:
+        successful_count = sum(
+            1 for output in tool_outputs if output.get("success", False)
+        )
+        total_count = len(tool_outputs)
+
+        intro = f"已执行 {total_count} 个工具，其中 {successful_count} 个成功：\n\n"
+        results = _build_tool_results_section(tool_outputs)
+
+        return intro + results
 
 
 ############################################################################################################

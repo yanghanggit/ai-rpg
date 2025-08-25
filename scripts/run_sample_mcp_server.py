@@ -12,11 +12,12 @@
 5. 可扩展的工具和资源系统
 
 使用方法：
-    # 启动 HTTP 服务器（默认端口 8080）
+
+    直接运行
     python scripts/run_sample_mcp_server.py
 
     # 指定端口和主机
-    python scripts/run_sample_mcp_server.py --host 127.0.0.1 --port 8080
+    python scripts/run_sample_mcp_server.py --host 127.0.0.1 --port 8765
 """
 
 import os

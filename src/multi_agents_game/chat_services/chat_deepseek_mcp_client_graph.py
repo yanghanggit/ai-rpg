@@ -151,8 +151,7 @@ async def execute_mcp_tool(
 ############################################################################################################
 async def create_compiled_mcp_stage_graph(
     node_name: str,
-    # temperature: float,
-    # mcp_server_url: str,
+    mcp_client: McpClient,
 ) -> CompiledStateGraph[McpState, Any, McpState, McpState]:
     """
     创建带 MCP 支持的编译状态图
@@ -171,18 +170,18 @@ async def create_compiled_mcp_stage_graph(
     llm = get_deepseek_llm()
     assert llm is not None, "ChatDeepSeek instance is not available"
 
-    mcp_config = _get_mcp_config()
+    # mcp_config = _get_mcp_config()
 
     # 初始化 MCP 客户端
-    mcp_client = None
+    # mcp_client = None
     available_tools = []
 
     try:
-        mcp_client = await initialize_mcp_client(
-            mcp_server_url=mcp_config.mcp_server_url,
-            mcp_protocol_version=mcp_config.protocol_version,
-            mcp_timeout=mcp_config.mcp_timeout,
-        )
+        # mcp_client = await initialize_mcp_client(
+        #     mcp_server_url=mcp_config.mcp_server_url,
+        #     mcp_protocol_version=mcp_config.protocol_version,
+        #     mcp_timeout=mcp_config.mcp_timeout,
+        # )
         available_tools = await mcp_client.get_available_tools()
         logger.info(f"MCP 工具初始化完成，可用工具数量: {len(available_tools)}")
     except Exception as e:

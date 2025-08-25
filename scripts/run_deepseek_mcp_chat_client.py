@@ -187,10 +187,11 @@ async def main() -> None:
         }
 
         # 生成 MCP 增强的聊天机器人状态图
+        assert mcp_client is not None, "MCP client is not initialized"
         compiled_mcp_stage_graph = await create_compiled_mcp_stage_graph(
             "deepseek_mcp_chatbot_node",
-            # temperature=0.7,
-            # mcp_server_url=_mcp_config.mcp_server_url,
+            mcp_client,
+           
         )
 
         logger.success("🤖 DeepSeek + MCP 聊天系统初始化完成，开始对话...")

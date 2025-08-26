@@ -19,6 +19,9 @@ Date: 2025-07-30
 
 import os
 import sys
+from typing import final
+
+from pydantic import BaseModel
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -32,7 +35,6 @@ from multi_agents_game.config import (
     GLOBAL_GAME_NAME,
     LOGS_DIR,
 )
-from multi_agents_game.db.account import FAKE_USER
 from multi_agents_game.db.mongodb_boot_document import BootDocument
 from multi_agents_game.db.mongodb_client import (
     mongodb_clear_database,
@@ -48,6 +50,21 @@ from multi_agents_game.redis.redis_client import (
     redis_flushall,
 )
 from multi_agents_game.demo.world import create_demo_game_world
+
+
+
+@final
+class UserAccount(BaseModel):
+    username: str
+    hashed_password: str
+    display_name: str
+
+
+FAKE_USER = UserAccount(
+    username="yanghangethan@gmail.com",
+    hashed_password="$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",  # 明文是 secret
+    display_name="yh",
+)
 
 
 #######################################################################################################

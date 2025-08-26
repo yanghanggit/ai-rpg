@@ -6,11 +6,11 @@ from pydantic import BaseModel
 
 ##################################################################################################################
 # redis的配置
-@final
-class RedisConfig(BaseModel):
-    host: str = "localhost"
-    port: int = 6379
-    db: int = 0
+# @final
+# class RedisConfig(BaseModel):
+#     host: str = "localhost"
+#     port: int = 6379
+#     db: int = 0
 
 
 ##################################################################################################################
@@ -135,7 +135,7 @@ class RAGConfig(BaseModel):
 
 ##################################################################################################################
 # 默认配置实例
-DEFAULT_REDIS_CONFIG: Final[RedisConfig] = RedisConfig()
+# DEFAULT_REDIS_CONFIG: Final[RedisConfig] = RedisConfig()
 DEFAULT_MONGODB_CONFIG: Final[MongoDBConfig] = MongoDBConfig()
 DEFAULT_POSTGRES_CONFIG: Final[PostgresConfig] = PostgresConfig()
 DEFAULT_JWT_CONFIG: Final[JWTConfig] = JWTConfig()

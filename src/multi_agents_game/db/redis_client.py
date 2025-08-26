@@ -1,9 +1,20 @@
-from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, TypeAlias, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    TypeAlias,
+    Union,
+    cast,
+    final,
+)
 
+from pydantic import BaseModel
 import redis
 from loguru import logger
 
-from ..config import DEFAULT_REDIS_CONFIG
+# from ..config import DEFAULT_REDIS_CONFIG
 
 # Redis键值类型定义
 RedisKeyType: TypeAlias = Union[str, bytes]
@@ -18,6 +29,14 @@ else:
     RedisClientType: TypeAlias = redis.Redis
 
 
+# redis的配置
+@final
+class RedisConfig(BaseModel):
+    host: str = "localhost"
+    port: int = 6379
+    db: int = 0
+
+
 ###################################################################################################
 def get_redis() -> RedisClientType:
     """
@@ -27,10 +46,12 @@ def get_redis() -> RedisClientType:
         RedisClientType: Redis客户端实例，已配置为返回字符串
     """
 
+    config = RedisConfig()
+
     pool = redis.ConnectionPool(
-        host=DEFAULT_REDIS_CONFIG.host,
-        port=DEFAULT_REDIS_CONFIG.port,
-        db=DEFAULT_REDIS_CONFIG.db,
+        host=config.host,
+        port=config.port,
+        db=config.db,
         decode_responses=True,
         # max_connections=20
     )

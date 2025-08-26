@@ -24,7 +24,7 @@ DeepSeek + MCP 聊天系统启动脚本
 import os
 import sys
 import traceback
-from typing import Final, List, Optional
+from typing import Final, List
 
 
 # 将 src 目录添加到模块搜索路径
@@ -41,9 +41,8 @@ from multi_agents_game.deepseek.mcp_client_graph import (
     McpState,
     create_compiled_mcp_stage_graph,
     stream_mcp_graph_updates,
-    initialize_mcp_client,
 )
-from multi_agents_game.mcp import McpToolInfo
+from multi_agents_game.mcp import McpToolInfo, initialize_mcp_client
 from multi_agents_game.config import McpConfig, load_mcp_config
 from pathlib import Path
 

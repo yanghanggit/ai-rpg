@@ -10,32 +10,24 @@ MCP (Model Context Protocol) 功能单元测试
 
 from pathlib import Path
 import pytest
-from typing import Final, List, Optional
+from typing import Final, List
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
 from src.multi_agents_game.deepseek.mcp_client_graph import (
     McpState,
-    initialize_mcp_client,
-    execute_mcp_tool,
 )
 from src.multi_agents_game.mcp import (
     McpClient,
     McpToolInfo,
     McpToolResult,
+    initialize_mcp_client,
+    execute_mcp_tool,
 )
 from src.multi_agents_game.config.mcp_config import McpConfig, load_mcp_config
 
 
 _mcp_config: Final[McpConfig] = load_mcp_config(Path("mcp_config.json"))
-
-
-# def _get_mcp_config() -> McpConfig:
-#     global _mcp_config
-#     if _mcp_config is None:
-#         _mcp_config = load_mcp_config(Path("mcp_config.json"))
-#         assert _mcp_config is not None, "MCP config loading failed"
-#     return _mcp_config
 
 
 class TestMcpClient:
@@ -100,7 +92,7 @@ class TestMcpClient:
         """测试 MCP 客户端初始化"""
         # Mock the McpClient to avoid real network connections
         with patch(
-            "src.multi_agents_game.deepseek.mcp_client_graph.McpClient"
+            "src.multi_agents_game.mcp.execution.McpClient"
         ) as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client

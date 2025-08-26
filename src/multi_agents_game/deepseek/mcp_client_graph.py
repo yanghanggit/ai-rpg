@@ -5,11 +5,8 @@ from loguru import logger
 load_dotenv()
 
 import os
-import re
-import json
-import time
 import asyncio
-from typing import Annotated, Any, Dict, List, Optional, Tuple
+from typing import Annotated, Any, Dict, List, Optional
 
 from langchain.schema import AIMessage, SystemMessage
 from langchain_core.messages import BaseMessage
@@ -20,156 +17,19 @@ from langgraph.graph.state import CompiledStateGraph
 from pydantic import SecretStr
 from typing_extensions import TypedDict
 
-# 导入统一 MCP 客户端
-from ..mcp import McpClient, McpToolInfo
+# 导入统一 MCP 客户端和功能
+from ..mcp import (
+    McpClient,
+    McpToolInfo,
+    ToolCallParser,
+    execute_mcp_tool,
+    build_json_tool_example,
+    format_tool_description_simple,
+    synthesize_response_with_tools,
+)
 
 # 全局 ChatDeepSeek 实例
 _global_deepseek_llm: Optional[ChatDeepSeek] = None
-
-
-############################################################################################################
-class ToolCallParser:
-    """简化的工具调用解析器 - 仅支持JSON格式"""
-
-    def __init__(self, available_tools: List[McpToolInfo]):
-        self.available_tools = available_tools
-        self.tool_names = {tool.name for tool in available_tools}
-
-    def parse_tool_calls(self, content: str) -> List[Dict[str, Any]]:
-        """
-        解析工具调用，仅支持JSON格式
-
-        Args:
-            content: LLM响应内容
-
-        Returns:
-            List[Dict[str, Any]]: 解析出的工具调用列表
-        """
-        parsed_calls = []
-
-        # 解析JSON格式的工具调用
-        parsed_calls.extend(self._parse_json_format(content))
-
-        # 去重和验证
-        return self._deduplicate_and_validate(parsed_calls)
-
-    def _parse_json_format(self, content: str) -> List[Dict[str, Any]]:
-        """解析JSON格式的工具调用 - 仅支持标准格式"""
-        calls = []
-
-        # 查找所有可能的JSON对象
-        # 首先寻找 "tool_call" 关键字的位置
-        tool_call_positions = []
-        start_pos = 0
-        while True:
-            pos = content.find('"tool_call"', start_pos)
-            if pos == -1:
-                break
-            tool_call_positions.append(pos)
-            start_pos = pos + 1
-
-        # 对每个 "tool_call" 位置，尝试向前和向后查找完整的JSON对象
-        for pos in tool_call_positions:
-            # 向前查找最近的 {
-            start_brace = content.rfind("{", 0, pos)
-            if start_brace == -1:
-                continue
-
-            # 从 { 开始，使用括号匹配找到对应的 }
-            brace_count = 0
-            json_end = start_brace
-            for i in range(start_brace, len(content)):
-                if content[i] == "{":
-                    brace_count += 1
-                elif content[i] == "}":
-                    brace_count -= 1
-                    if brace_count == 0:
-                        json_end = i + 1
-                        break
-
-            if brace_count == 0:  # 找到了完整的JSON对象
-                json_str = content[start_brace:json_end]
-                try:
-                    json_obj = json.loads(json_str)
-                    call = self._json_to_tool_call(json_obj)
-                    if call:
-                        calls.append(call)
-                except json.JSONDecodeError:
-                    logger.warning(f"JSON格式错误，跳过此工具调用: {json_str}")
-                    continue
-
-        return calls
-
-    def _json_to_tool_call(self, json_obj: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """将JSON对象转换为工具调用 - 仅支持标准格式"""
-        try:
-            # 只支持标准格式: {"tool_call": {"name": "...", "arguments": {...}}}
-            if "tool_call" not in json_obj:
-                return None
-
-            tool_call_obj = json_obj["tool_call"]
-            tool_name = tool_call_obj.get("name")
-            tool_args = tool_call_obj.get("arguments", {})
-
-            if tool_name and tool_name in self.tool_names:
-                return {
-                    "name": tool_name,
-                    "args": tool_args,
-                }
-
-        except Exception as e:
-            logger.warning(f"JSON转换工具调用失败: {e}")
-
-        return None
-
-    def _deduplicate_and_validate(
-        self, calls: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        """去重和验证工具调用"""
-        seen = set()
-        unique_calls = []
-
-        for call in calls:
-            # 创建唯一标识
-            call_id = (call["name"], json.dumps(call["args"], sort_keys=True))
-            if call_id not in seen:
-                seen.add(call_id)
-
-                # 验证工具调用
-                if self._validate_tool_call(call):
-                    unique_calls.append(call)
-
-        return unique_calls
-
-    def _validate_tool_call(self, call: Dict[str, Any]) -> bool:
-        """验证工具调用的有效性"""
-        try:
-            tool_name = call["name"]
-            tool_args = call["args"]
-
-            # 找到对应的工具
-            tool_info = None
-            for tool in self.available_tools:
-                if tool.name == tool_name:
-                    tool_info = tool
-                    break
-
-            if not tool_info:
-                return False
-
-            # 验证参数
-            if tool_info.input_schema:
-                required_params = tool_info.input_schema.get("required", [])
-                for param in required_params:
-                    if param not in tool_args:
-                        logger.warning(f"工具 {tool_name} 缺少必需参数: {param}")
-                        return False
-
-            return True
-
-        except Exception as e:
-            logger.error(f"验证工具调用失败: {e}")
-            return False
 
 
 ############################################################################################################
@@ -224,108 +84,6 @@ class McpState(TypedDict, total=False):
 
 
 ############################################################################################################
-async def initialize_mcp_client(
-    mcp_server_url: str, mcp_protocol_version: str, mcp_timeout: int
-) -> McpClient:
-    """
-    初始化 MCP 客户端
-
-    Args:
-        server_url: MCP 服务器地址（Streamable HTTP 模式）
-
-    Returns:
-        McpClient: 初始化后的 MCP 客户端
-    """
-    # 使用 Streamable HTTP 模式（标准 2025-06-18 规范）
-    client = McpClient(
-        base_url=mcp_server_url,
-        protocol_version=mcp_protocol_version,
-        timeout=mcp_timeout,
-    )
-
-    # 连接到服务器
-    await client.connect()
-
-    # 检查服务器健康状态
-    if not await client.check_health():
-        await client.disconnect()
-        raise ConnectionError(f"无法连接到 MCP 服务器: {mcp_server_url}")
-
-    logger.info(f"MCP 客户端初始化成功: {mcp_server_url}")
-    return client
-
-
-############################################################################################################
-async def execute_mcp_tool(
-    tool_name: str,
-    tool_args: Dict[str, Any],
-    mcp_client: McpClient,
-    timeout: float = 30.0,
-    max_retries: int = 2,
-) -> Tuple[bool, str, float]:
-    """
-    通过 MCP 客户端执行工具（增强版）
-
-    Args:
-        tool_name: 工具名称
-        tool_args: 工具参数
-        mcp_client: MCP 客户端
-        timeout: 超时时间（秒）
-        max_retries: 最大重试次数
-
-    Returns:
-        Tuple[bool, str, float]: (成功标志, 结果或错误信息, 执行时间)
-    """
-    start_time = time.time()
-
-    for attempt in range(max_retries + 1):
-        try:
-            # 使用asyncio.wait_for添加超时控制
-            result = await asyncio.wait_for(
-                mcp_client.call_tool(tool_name, tool_args), timeout=timeout
-            )
-
-            execution_time = time.time() - start_time
-
-            if result.success:
-                logger.info(
-                    f"🔧 MCP工具执行成功: {tool_name} | 参数: {tool_args} | "
-                    f"耗时: {execution_time:.2f}s | 尝试: {attempt + 1}/{max_retries + 1}"
-                )
-                return True, str(result.result), execution_time
-            else:
-                error_msg = f"工具执行失败: {tool_name} | 错误: {result.error}"
-                logger.error(f"❌ {error_msg} | 尝试: {attempt + 1}/{max_retries + 1}")
-
-                # 如果是最后一次尝试，返回错误
-                if attempt == max_retries:
-                    return False, error_msg, time.time() - start_time
-
-        except asyncio.TimeoutError:
-            error_msg = f"工具执行超时: {tool_name} | 超时时间: {timeout}s"
-            logger.error(f"⏰ {error_msg} | 尝试: {attempt + 1}/{max_retries + 1}")
-
-            if attempt == max_retries:
-                return False, error_msg, time.time() - start_time
-
-        except Exception as e:
-            error_msg = f"工具执行异常: {tool_name} | 错误: {str(e)}"
-            logger.error(f"💥 {error_msg} | 尝试: {attempt + 1}/{max_retries + 1}")
-
-            if attempt == max_retries:
-                return False, error_msg, time.time() - start_time
-
-        # 重试前等待
-        if attempt < max_retries:
-            wait_time = min(2**attempt, 5)  # 指数退避，最大5秒
-            logger.info(f"🔄 等待 {wait_time}s 后重试...")
-            await asyncio.sleep(wait_time)
-
-    # 理论上不会到达这里
-    return False, "未知错误", time.time() - start_time
-
-
-############################################################################################################
 def _build_system_prompt(available_tools: List[McpToolInfo]) -> str:
     """
     构建系统提示，仅支持JSON格式工具调用
@@ -370,73 +128,15 @@ def _build_system_prompt(available_tools: List[McpToolInfo]) -> str:
 
     # 直接列表展示所有工具，无需分类
     for tool in available_tools:
-        tool_desc = _format_tool_description_simple(tool)
+        tool_desc = format_tool_description_simple(tool)
         system_prompt += f"\n{tool_desc}"
 
     # 添加实际工具的调用示例
     example_tool = available_tools[0]
     system_prompt += f"\n\n## 调用示例\n\n"
-    system_prompt += _build_json_tool_example(example_tool)
+    system_prompt += build_json_tool_example(example_tool)
 
     return system_prompt
-
-
-def _build_json_tool_example(tool: McpToolInfo) -> str:
-    """为工具构建JSON格式的调用示例 - 简化版本"""
-    try:
-        # 构建示例参数 - 只包含必需参数
-        example_args: Dict[str, Any] = {}
-        if tool.input_schema and "properties" in tool.input_schema:
-            properties = tool.input_schema["properties"]
-            required = tool.input_schema.get("required", [])
-
-            # 只为必需参数生成示例值
-            for param_name in required:
-                if param_name in properties:
-                    param_info = properties[param_name]
-                    param_type = param_info.get("type", "string")
-
-                    if param_type == "string":
-                        example_args[param_name] = "示例值"
-                    elif param_type == "integer":
-                        example_args[param_name] = 1
-                    elif param_type == "boolean":
-                        example_args[param_name] = True
-                    else:
-                        example_args[param_name] = "示例值"
-
-        # 构建JSON示例
-        example_json = {"tool_call": {"name": tool.name, "arguments": example_args}}
-        json_str = json.dumps(example_json, ensure_ascii=False)
-
-        return f"调用 {tool.name} 的示例：\n```json\n{json_str}\n```"
-
-    except Exception as e:
-        logger.warning(f"构建JSON工具示例失败: {tool.name}, 错误: {e}")
-        # 降级到简单示例
-        simple_example = {"tool_call": {"name": tool.name, "arguments": {}}}
-        json_str = json.dumps(simple_example, ensure_ascii=False)
-        return f"调用 {tool.name} 的示例：\n```json\n{json_str}\n```"
-
-
-def _format_tool_description_simple(tool: McpToolInfo) -> str:
-    """格式化单个工具的描述 - 简化版本"""
-    try:
-        # 基本工具信息
-        tool_desc = f"- **{tool.name}**: {tool.description}"
-
-        # 只显示必需参数
-        if tool.input_schema and "properties" in tool.input_schema:
-            required = tool.input_schema.get("required", [])
-            if required:
-                required_params = ", ".join(f"`{param}`" for param in required)
-                tool_desc += f" (必需参数: {required_params})"
-
-        return tool_desc
-
-    except Exception as e:
-        logger.warning(f"格式化工具描述失败: {tool.name}, 错误: {e}")
-        return f"- **{tool.name}**: {tool.description}"
 
 
 # def _format_tool_description(tool: McpToolInfo) -> str:
@@ -777,7 +477,7 @@ async def _response_synthesis_node(state: McpState) -> McpState:
 
         # 如果有工具被执行，智能合成响应
         if tool_outputs:
-            synthesized_content = _synthesize_response_with_tools(
+            synthesized_content = synthesize_response_with_tools(
                 response_content, tool_outputs, parsed_tool_calls
             )
             llm_response.content = synthesized_content
@@ -800,171 +500,6 @@ async def _response_synthesis_node(state: McpState) -> McpState:
             "tool_outputs": [],
         }
         return synthesis_exception_result
-
-
-def _synthesize_response_with_tools(
-    original_response: str,
-    tool_outputs: List[Dict[str, Any]],
-    parsed_tool_calls: List[Dict[str, Any]],
-) -> str:
-    """
-    智能合成包含工具结果的响应
-
-    Args:
-        original_response: 原始LLM响应
-        tool_outputs: 工具执行结果
-        parsed_tool_calls: 解析的工具调用
-
-    Returns:
-        str: 合成后的响应内容
-    """
-    try:
-        # 移除原始响应中的工具调用标记
-        cleaned_response = _remove_tool_call_markers(original_response)
-
-        # 如果没有工具输出，直接返回清理后的响应
-        if not tool_outputs:
-            return cleaned_response.strip()
-
-        # 构建工具结果部分
-        tool_results_section = _build_tool_results_section(tool_outputs)
-
-        # 智能组合响应
-        if cleaned_response.strip():
-            # 如果原响应有内容，在其后添加工具结果
-            synthesized = f"{cleaned_response.strip()}\n\n{tool_results_section}"
-        else:
-            # 如果原响应为空，只返回工具结果的友好描述
-            synthesized = _build_standalone_tool_response(tool_outputs)
-
-        return synthesized.strip()
-
-    except Exception as e:
-        logger.error(f"响应合成失败: {e}")
-        # 降级处理：简单拼接
-        return f"{original_response}\n\n工具执行结果：\n{str(tool_outputs)}"
-
-
-def _remove_tool_call_markers(content: str) -> str:
-    """移除内容中的JSON格式工具调用标记 - 增强版"""
-    # 查找所有 "tool_call" 的位置
-    tool_call_positions = []
-    start_pos = 0
-    while True:
-        pos = content.find('"tool_call"', start_pos)
-        if pos == -1:
-            break
-        tool_call_positions.append(pos)
-        start_pos = pos + 1
-
-    # 从后往前删除，避免位置偏移
-    for pos in reversed(tool_call_positions):
-        # 向前查找最近的 {
-        start_brace = content.rfind("{", 0, pos)
-        if start_brace == -1:
-            continue
-
-        # 从 { 开始，使用括号匹配找到对应的 }
-        brace_count = 0
-        json_end = start_brace
-        for i in range(start_brace, len(content)):
-            if content[i] == "{":
-                brace_count += 1
-            elif content[i] == "}":
-                brace_count -= 1
-                if brace_count == 0:
-                    json_end = i + 1
-                    break
-
-        if brace_count == 0:  # 找到了完整的JSON对象
-            # 检查是否确实包含 tool_call
-            json_str = content[start_brace:json_end]
-            if '"tool_call"' in json_str:
-                # 删除整个JSON块，包括可能的markdown代码块标记
-                # 查找是否在代码块中
-                before_start = max(0, start_brace - 10)
-                before_text = content[before_start:start_brace]
-                after_end = min(len(content), json_end + 10)
-                after_text = content[json_end:after_end]
-
-                # 扩展删除范围以包含markdown代码块
-                actual_start = start_brace
-                actual_end = json_end
-
-                if "```json" in before_text:
-                    # 找到代码块开始
-                    code_start = content.rfind("```json", before_start, start_brace)
-                    if code_start != -1:
-                        actual_start = code_start
-
-                if "```" in after_text:
-                    # 找到代码块结束
-                    code_end = content.find("```", json_end, after_end)
-                    if code_end != -1:
-                        actual_end = code_end + 3
-
-                # 执行删除
-                content = content[:actual_start] + content[actual_end:]
-
-    # 清理多余的空行和空的代码块
-    content = re.sub(r"```json\s*```", "", content)  # 移除空的json代码块
-    content = re.sub(r"```\s*```", "", content)  # 移除空的代码块
-    content = re.sub(r"\n\s*\n\s*\n+", "\n\n", content)  # 清理多余空行
-
-    return content
-
-
-def _build_tool_results_section(tool_outputs: List[Dict[str, Any]]) -> str:
-    """构建工具结果部分"""
-    results = []
-
-    for output in tool_outputs:
-        tool_name = output.get("tool", "未知工具")
-        success = output.get("success", False)
-        result = output.get("result", "无结果")
-        exec_time = output.get("execution_time", 0.0)
-
-        if success:
-            status_icon = "✅"
-            status_text = "成功"
-        else:
-            status_icon = "❌"
-            status_text = "失败"
-
-        # 格式化执行时间
-        time_text = f" ({exec_time:.1f}s)" if exec_time > 0 else ""
-
-        # 构建结果文本
-        result_text = (
-            f"{status_icon} **{tool_name}** {status_text}{time_text}\n{result}"
-        )
-        results.append(result_text)
-
-    return "\n\n".join(results)
-
-
-def _build_standalone_tool_response(tool_outputs: List[Dict[str, Any]]) -> str:
-    """构建独立的工具响应（当原响应为空时）"""
-    if len(tool_outputs) == 1:
-        output = tool_outputs[0]
-        tool_name = output.get("tool", "工具")
-        success = output.get("success", False)
-        result = output.get("result", "无结果")
-
-        if success:
-            return f"已为您执行{tool_name}，结果如下：\n\n{result}"
-        else:
-            return f"抱歉，执行{tool_name}时发生错误：\n\n{result}"
-    else:
-        successful_count = sum(
-            1 for output in tool_outputs if output.get("success", False)
-        )
-        total_count = len(tool_outputs)
-
-        intro = f"已执行 {total_count} 个工具，其中 {successful_count} 个成功：\n\n"
-        results = _build_tool_results_section(tool_outputs)
-
-        return intro + results
 
 
 ############################################################################################################

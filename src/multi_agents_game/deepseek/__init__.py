@@ -14,7 +14,6 @@ from .mcp_client_graph import (
     create_compiled_mcp_stage_graph,
     stream_mcp_graph_updates,
     McpState,
-    initialize_mcp_client,
 )
 from .unified_chat_graph import (
     create_unified_chat_graph,
@@ -35,7 +34,6 @@ __all__ = [
     "create_compiled_mcp_stage_graph",
     "stream_mcp_graph_updates",
     "McpState",
-    "initialize_mcp_client",
     # 统一聊天图
     "create_unified_chat_graph",
     "stream_unified_graph_updates",

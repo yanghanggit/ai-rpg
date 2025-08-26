@@ -13,15 +13,15 @@
 """
 
 from .db_config import (
-    DEFAULT_JWT_CONFIG,
+    # DEFAULT_JWT_CONFIG,
     DEFAULT_MONGODB_CONFIG,
     DEFAULT_POSTGRES_CONFIG,
-    DEFAULT_RAG_CONFIG,
+    # DEFAULT_RAG_CONFIG,
     # DEFAULT_REDIS_CONFIG,
-    JWTConfig,
+    # JWTConfig,
     MongoDBConfig,
     PostgresConfig,
-    RAGConfig,
+    # RAGConfig,
     # RedisConfig,
 )
 from .game_config import (
@@ -40,14 +40,14 @@ __all__ = [
     # "RedisConfig",
     "MongoDBConfig",
     "PostgresConfig",
-    "JWTConfig",
-    "RAGConfig",
+    # "JWTConfig",
+    # "RAGConfig",
     # 数据库配置实例
     # "DEFAULT_REDIS_CONFIG",
     "DEFAULT_MONGODB_CONFIG",
     "DEFAULT_POSTGRES_CONFIG",
-    "DEFAULT_JWT_CONFIG",
-    "DEFAULT_RAG_CONFIG",
+    # "DEFAULT_JWT_CONFIG",
+    # "DEFAULT_RAG_CONFIG",
     # 游戏配置
     "LOGS_DIR",
     "GLOBAL_GAME_NAME",

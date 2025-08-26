@@ -9,7 +9,7 @@ from typing import Generator
 import pytest
 from loguru import logger
 
-from src.multi_agents_game.db.chromadb_client import (
+from src.multi_agents_game.chroma import (
     get_chroma_db,
     chromadb_clear_database,
 )

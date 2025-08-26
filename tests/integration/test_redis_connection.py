@@ -13,7 +13,7 @@ from typing import Generator
 import pytest
 from loguru import logger
 
-from src.multi_agents_game.redis.redis_client import (
+from src.multi_agents_game.redis.client import (
     redis_set,
     redis_get,
     redis_delete,

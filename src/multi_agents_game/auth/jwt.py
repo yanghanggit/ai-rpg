@@ -1,11 +1,47 @@
+import os
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional, final
+from typing import Any, Dict, Final, Optional, final
 
 from jose import JWTError, jwt
 from pydantic import BaseModel
 
-from ..config import DEFAULT_JWT_CONFIG
+
+##################################################################################################################
+# JWT 相关配置
+@final
+class JWTConfig(BaseModel):
+    signing_key: str = "your-secret-key-here-please-change-it"
+    signing_algorithm: str = "HS256"
+    refresh_token_expire_days: int = 7
+    access_token_expire_minutes: int = 30
+
+    def __init__(self, **kwargs: Any) -> None:
+        # 从环境变量读取配置，如果没有则使用默认值
+        super().__init__(
+            signing_key=os.getenv(
+                "JWT_SIGNING_KEY",
+                kwargs.get("signing_key", "your-secret-key-here-please-change-it"),
+            ),
+            signing_algorithm=os.getenv(
+                "JWT_SIGNING_ALGORITHM", kwargs.get("signing_algorithm", "HS256")
+            ),
+            refresh_token_expire_days=int(
+                os.getenv(
+                    "JWT_REFRESH_TOKEN_EXPIRE_DAYS",
+                    str(kwargs.get("refresh_token_expire_days", 7)),
+                )
+            ),
+            access_token_expire_minutes=int(
+                os.getenv(
+                    "JWT_ACCESS_TOKEN_EXPIRE_MINUTES",
+                    str(kwargs.get("access_token_expire_minutes", 30)),
+                )
+            ),
+        )
+
+
+DEFAULT_JWT_CONFIG: Final[JWTConfig] = JWTConfig()
 
 
 ############################################################################################################

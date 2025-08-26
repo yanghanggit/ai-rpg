@@ -9,8 +9,8 @@ This module provides:
 
 from typing import List
 
-from .redis_client import *
-from .redis_user import *
+from .client import *
+from .user import *
 
 __all__: List[str] = [
     # Redis client and utilities are exported via star imports

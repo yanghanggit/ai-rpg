@@ -1,21 +1,55 @@
+import os
 import traceback
 from pathlib import Path
-from typing import Optional
+from typing import Any, Final, Optional, final
 
 import chromadb
 from chromadb.api import ClientAPI
 from chromadb.api.models.Collection import Collection
 from loguru import logger
+from pydantic import BaseModel
 
-from ..config import DEFAULT_RAG_CONFIG
+
+##################################################################################################################
+# RAG 配置
+@final
+class ChromaDatabaseConfig(BaseModel):
+    collection_name: str = "rag_knowledge_base"
+    description: str = "is a knowledge base for RAG system"
+    persist_base_dir: str = "chroma_db"
+
+    def __init__(self, **kwargs: Any) -> None:
+        # 从环境变量读取配置，如果没有则使用默认值
+        super().__init__(
+            collection_name=os.getenv(
+                "RAG_COLLECTION_NAME",
+                kwargs.get("collection_name", "rag_knowledge_base"),
+            ),
+            description=os.getenv(
+                "RAG_DESCRIPTION",
+                kwargs.get("description", "is a knowledge base for RAG system"),
+            ),
+            persist_base_dir=os.getenv(
+                "RAG_PERSIST_BASE_DIR",
+                kwargs.get("persist_base_dir", "chroma_db"),
+            ),
+        )
+
+    @property
+    def persist_directory(self) -> str:
+        """根据collection_name生成持久化目录路径"""
+        return f"{self.persist_base_dir}/{self.collection_name}"
+
 
 ############################################################################################################
 # 全局ChromaDB实例
-_chroma_db: Optional["ChromaRAGDatabase"] = None
+_chroma_db: Optional["ChromaDatabase"] = None
+
+DEFAULT_CHROMADB_CONFIG: Final[ChromaDatabaseConfig] = ChromaDatabaseConfig()
 
 
 ############################################################################################################
-class ChromaRAGDatabase:
+class ChromaDatabase:
     """
     ChromaDB向量数据库管理类
 
@@ -112,7 +146,7 @@ class ChromaRAGDatabase:
             logger.info("🚀 [CHROMADB] 开始初始化向量数据库...")
 
             # 1. 初始化ChromaDB持久化客户端
-            persist_directory = Path(DEFAULT_RAG_CONFIG.persist_directory)
+            persist_directory = Path(DEFAULT_CHROMADB_CONFIG.persist_directory)
             self.client = chromadb.PersistentClient(path=str(persist_directory))
             logger.success(
                 f"✅ [CHROMADB] ChromaDB持久化客户端创建成功，数据目录: {persist_directory}"
@@ -148,7 +182,7 @@ class ChromaRAGDatabase:
 
 
 ############################################################################################################
-def get_chroma_db() -> ChromaRAGDatabase:
+def get_chroma_db() -> ChromaDatabase:
     """
     获取全局ChromaDB实例（单例模式）
 
@@ -161,9 +195,9 @@ def get_chroma_db() -> ChromaRAGDatabase:
     """
     global _chroma_db
     if _chroma_db is None:
-        _chroma_db = ChromaRAGDatabase(
-            collection_name=DEFAULT_RAG_CONFIG.collection_name,
-            collection_description=DEFAULT_RAG_CONFIG.description,
+        _chroma_db = ChromaDatabase(
+            collection_name=DEFAULT_CHROMADB_CONFIG.collection_name,
+            collection_description=DEFAULT_CHROMADB_CONFIG.description,
         )
         _chroma_db.initialize()
     return _chroma_db
@@ -186,7 +220,7 @@ def chromadb_clear_database() -> None:
             _chroma_db = None
 
         # 删除持久化数据目录
-        persist_directory = Path(DEFAULT_RAG_CONFIG.persist_directory)
+        persist_directory = Path(DEFAULT_CHROMADB_CONFIG.persist_directory)
         if persist_directory.exists():
             shutil.rmtree(persist_directory)
             logger.warning(f"🗑️ [CHROMADB] 已删除持久化数据目录: {persist_directory}")
@@ -197,7 +231,7 @@ def chromadb_clear_database() -> None:
 
     except Exception as e:
         logger.error(f"❌ 清空ChromaDB持久化数据库时发生错误: {e}")
-        logger.info(f"💡 建议手动删除 {DEFAULT_RAG_CONFIG.persist_directory} 目录")
+        logger.info(f"💡 建议手动删除 {DEFAULT_CHROMADB_CONFIG.persist_directory} 目录")
         raise
 
 

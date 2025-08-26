@@ -46,7 +46,7 @@ from multi_agents_game.db.pgsql_client import (
     pgsql_reset_database,
 )
 from multi_agents_game.db.pgsql_user import has_user, save_user
-from multi_agents_game.redis.redis_client import (
+from multi_agents_game.redis.client import (
     redis_flushall,
 )
 from multi_agents_game.demo.world import create_demo_game_world
@@ -192,7 +192,7 @@ def _setup_chromadb_rag_environment() -> None:
     logger.info("🚀 初始化RAG系统...")
 
     # 导入必要的模块
-    from multi_agents_game.db.chromadb_client import chromadb_clear_database
+    from multi_agents_game.chroma import chromadb_clear_database
     from multi_agents_game.db.rag_ops import initialize_rag_system
     from multi_agents_game.demo.campaign_setting import FANTASY_WORLD_RPG_KNOWLEDGE_BASE
 

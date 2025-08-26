@@ -18,9 +18,7 @@ from pydantic import SecretStr
 from typing_extensions import TypedDict
 
 # 导入ChromaDB相关功能
-from ..db.chromadb_client import (
-    get_chroma_db,
-)
+from ..chroma import get_chroma_db
 
 
 ############################################################################################################

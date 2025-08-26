@@ -15,7 +15,7 @@ from typing import Dict, List, Mapping, Sequence, Tuple
 
 from loguru import logger
 
-from .chromadb_client import get_chroma_db
+from ..chroma import get_chroma_db
 from ..embedding_model.sentence_transformer_embedding_model import (
     get_embedding_model,
 )

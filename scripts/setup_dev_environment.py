@@ -44,7 +44,7 @@ from multi_agents_game.db.pgsql_client import (
     pgsql_reset_database,
 )
 from multi_agents_game.db.pgsql_user import has_user, save_user
-from multi_agents_game.db.redis_client import (
+from multi_agents_game.redis.redis_client import (
     redis_flushall,
 )
 from multi_agents_game.demo.world import create_demo_game_world

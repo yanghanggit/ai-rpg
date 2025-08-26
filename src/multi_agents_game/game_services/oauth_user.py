@@ -6,7 +6,7 @@ from jose import JWTError
 
 from ..db.jwt import UserToken, decode_jwt
 from ..db.pgsql_user import get_user, has_user
-from ..db.redis_user import (
+from ..redis.redis_user import (
     assign_user_access_token,
     is_access_token_blacklisted,
     is_user_access_token_present,

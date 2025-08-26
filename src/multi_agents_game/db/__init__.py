@@ -2,7 +2,7 @@
 Database access layer for the nirva_service application.
 
 This module provides:
-- Database clients (Redis, PostgreSQL)
+- Database clients (PostgreSQL)
 - ORM models and mappings
 - Database utilities and helpers
 - Data access objects (DAOs)
@@ -19,10 +19,6 @@ from .pgsql_vector_document import VectorDocumentDB
 
 # Import RAG operations
 from .rag_ops import initialize_rag_system, rag_semantic_search
-
-# Import main database components
-from .redis_client import *
-from .redis_user import *
 
 __all__: List[str] = [
     # Vector database models

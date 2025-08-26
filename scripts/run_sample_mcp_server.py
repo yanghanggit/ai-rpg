@@ -24,7 +24,7 @@ import os
 import sys
 import json
 from datetime import datetime
-from typing import Any, Dict, Final
+from typing import Any, Dict, Final, Callable, Union
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -151,6 +151,76 @@ async def system_info() -> str:
         return f"错误：无法获取系统信息 - {str(e)}"
 
 
+@app.tool()
+async def calculator(
+    operation: str, 
+    left_operand: float, 
+    right_operand: float
+) -> str:
+    """
+    简单计算器工具 - 支持基本数学运算
+    
+    Args:
+        operation: 运算类型 (add|subtract|multiply|divide|power|modulo)
+        left_operand: 左操作数（数字）
+        right_operand: 右操作数（数字）
+    
+    Returns:
+        计算结果的字符串表示
+    """
+    try:
+        # 参数验证
+        if not isinstance(operation, str):
+            return "错误：operation 必须是字符串类型"
+        
+        operation = operation.lower().strip()
+        
+        # 支持的运算类型 - 添加类型注解
+        operations: Dict[str, Callable[[float, float], Union[float, None]]] = {
+            "add": lambda x, y: x + y,
+            "subtract": lambda x, y: x - y, 
+            "multiply": lambda x, y: x * y,
+            "divide": lambda x, y: x / y if y != 0 else None,
+            "power": lambda x, y: x ** y,
+            "modulo": lambda x, y: x % y if y != 0 else None,
+            # 支持符号形式
+            "+": lambda x, y: x + y,
+            "-": lambda x, y: x - y,
+            "*": lambda x, y: x * y,
+            "/": lambda x, y: x / y if y != 0 else None,
+            "**": lambda x, y: x ** y,
+            "%": lambda x, y: x % y if y != 0 else None,
+        }
+        
+        if operation not in operations:
+            valid_ops = ", ".join([op for op in operations.keys() if op.isalpha()])
+            return f"错误：不支持的运算类型 '{operation}'。支持的运算：{valid_ops}"
+        
+        # 执行计算
+        result = operations[operation](left_operand, right_operand)
+        
+        if result is None:
+            return "错误：除零错误，无法除以零"
+        
+        # 格式化结果
+        result_info = {
+            "表达式": f"{left_operand} {operation} {right_operand}",
+            "结果": result,
+            "运算类型": operation,
+            "计算时间": datetime.now().isoformat()
+        }
+        
+        return json.dumps(result_info, ensure_ascii=False, indent=2)
+        
+    except (TypeError, ValueError) as e:
+        return f"错误：参数类型错误 - {str(e)}"
+    except OverflowError:
+        return "错误：计算结果溢出"
+    except Exception as e:
+        logger.error(f"计算器工具执行失败: {e}")
+        return f"错误：计算失败 - {str(e)}"
+
+
 # ============================================================================
 # 资源定义
 # ============================================================================
@@ -193,6 +263,7 @@ async def get_capabilities() -> str:
         "工具功能": {
             "时间查询": "支持多种时间格式",
             "系统信息": "获取系统运行状态",
+            "计算器": "支持基本数学运算（加减乘除、幂运算、取模）",
         },
         "资源功能": {
             "服务器状态": "实时服务器运行状态",

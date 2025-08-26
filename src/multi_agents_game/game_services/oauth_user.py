@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 
-from ..db.jwt import UserToken, decode_jwt
+from ..auth.jwt import UserToken, decode_jwt
 from ..db.pgsql_user import get_user, has_user
 from ..redis.redis_user import (
     assign_user_access_token,

@@ -52,7 +52,6 @@ from multi_agents_game.redis.redis_client import (
 from multi_agents_game.demo.world import create_demo_game_world
 
 
-
 @final
 class UserAccount(BaseModel):
     username: str

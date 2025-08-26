@@ -6,6 +6,7 @@ Replicate 对话工具
 
 import argparse
 import os
+from pathlib import Path
 import sys
 import time
 from typing import Dict, Final, List
@@ -15,15 +16,22 @@ import replicate
 from multi_agents_game.config.replicate_config import (
     ReplicateModelsConfig,
     # create_example_config,
-    get_chat_models,
+    # get_chat_models,
     test_replicate_api_connection,
     # validate_config,
     # validate_json_file,
+    load_replicate_config,
 )
 
 # 全局变量
 API_TOKEN: str = os.getenv("REPLICATE_API_TOKEN") or ""
-CHAT_MODELS: Dict[str, Dict[str, str]] = get_chat_models()
+
+replicate_config = load_replicate_config(Path("replicate_models.json"))
+
+
+CHAT_MODELS: Dict[str, Dict[str, str]] = replicate_config.chat_models.model_dump(
+    by_alias=True, exclude_none=True
+)
 DEFAULT_MODEL: Final[str] = "gpt-4o-mini"
 
 

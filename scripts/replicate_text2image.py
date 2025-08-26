@@ -16,14 +16,21 @@ import replicate
 import requests
 
 from multi_agents_game.config.replicate_config import (
-    get_image_models,
+    # get_image_models,
     test_replicate_api_connection,
     # validate_config,
+    load_replicate_config,
 )
 
 # 全局变量
 API_TOKEN: str = os.getenv("REPLICATE_API_TOKEN") or ""
-MODELS: Dict[str, Dict[str, str]] = get_image_models()
+
+replicate_config = load_replicate_config(Path("replicate_models.json"))
+
+MODELS: Dict[str, Dict[str, str]] = replicate_config.image_models.model_dump(
+    by_alias=True, exclude_none=True
+)
+
 DEFAULT_OUTPUT_DIR: Final[str] = "generated_images"
 
 

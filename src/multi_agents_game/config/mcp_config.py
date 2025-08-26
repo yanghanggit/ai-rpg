@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 from pydantic import BaseModel, Field
 from loguru import logger
 
@@ -34,7 +34,7 @@ class McpConfig(BaseModel):
 
 
 ##################################################################################################################
-def load_mcp_config(config_path: Path) -> Optional[McpConfig]:
+def load_mcp_config(config_path: Path) -> McpConfig:
     try:
         assert config_path.exists(), f"{config_path} not found"
         mcp_config = McpConfig.model_validate_json(
@@ -46,7 +46,7 @@ def load_mcp_config(config_path: Path) -> Optional[McpConfig]:
         return mcp_config
     except Exception as e:
         logger.error(f"Error loading MCP config: {e}")
-        return None
+        raise RuntimeError("Failed to load MCP config")
 
 
 ##################################################################################################################

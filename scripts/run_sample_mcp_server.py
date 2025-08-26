@@ -24,7 +24,7 @@ import os
 import sys
 import json
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Final
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -45,34 +45,34 @@ from pathlib import Path
 # 服务器配置
 # ============================================================================
 
-_mcp_config: Optional[McpConfig] = None
+_mcp_config: Final[McpConfig] = load_mcp_config(Path("mcp_config.json"))
 
 
-def _get_mcp_config() -> McpConfig:
-    global _mcp_config
-    if _mcp_config is None:
-        _mcp_config = load_mcp_config(Path("mcp_config.json"))
-        assert _mcp_config is not None, "MCP config loading failed"
-    return _mcp_config
+# def _get_mcp_config() -> McpConfig:
+#     global _mcp_config
+#     if _mcp_config is None:
+#         _mcp_config = load_mcp_config(Path("mcp_config.json"))
+#         assert _mcp_config is not None, "MCP config loading failed"
+#     return _mcp_config
 
 
 def get_server_config_dict() -> Dict[str, Any]:
     """获取服务器配置字典"""
-    config = _get_mcp_config()
+    # config = _get_mcp_config()
     return {
-        "name": config.server_name,
-        "version": config.server_version,
-        "description": config.server_description,
-        "transport": config.transport,
-        "protocol_version": config.protocol_version,
+        "name": _mcp_config.server_name,
+        "version": _mcp_config.server_version,
+        "description": _mcp_config.server_description,
+        "transport": _mcp_config.transport,
+        "protocol_version": _mcp_config.protocol_version,
         "started_at": datetime.now().isoformat(),
     }
 
 
 # 创建 FastMCP 服务器实例
 app = FastMCP(
-    name=_get_mcp_config().server_name,
-    instructions=_get_mcp_config().server_description,
+    name=_mcp_config.server_name,
+    instructions=_mcp_config.server_description,
     debug=True,  # HTTP 模式可以启用调试
 )
 
@@ -329,10 +329,12 @@ async def system_analysis(analysis_type: str = "general") -> types.GetPromptResu
 
 async def startup_handler() -> None:
     """服务器启动处理"""
-    mcp_config = _get_mcp_config()
+    # mcp_config = _get_mcp_config()
     logger.info("🚀 Production MCP Server 启动中...")
-    logger.info(f"📋 服务器配置: {mcp_config.server_name} v{mcp_config.server_version}")
-    logger.info(f"📡 传输协议: {mcp_config.transport}")
+    logger.info(
+        f"📋 服务器配置: {_mcp_config.server_name} v{_mcp_config.server_version}"
+    )
+    logger.info(f"📡 传输协议: {_mcp_config.transport}")
     logger.info(f"⏰ 启动时间: {datetime.now()}")
 
 
@@ -355,12 +357,12 @@ async def shutdown_handler() -> None:
 @click.command()
 @click.option(
     "--host",
-    default=_get_mcp_config().mcp_server_host,
+    default=_mcp_config.mcp_server_host,
     help="服务器绑定主机地址（安全起见默认仅本地）",
 )
 @click.option(
     "--port",
-    default=_get_mcp_config().mcp_server_port,
+    default=_mcp_config.mcp_server_port,
     type=int,
     help="服务器端口号",
 )
@@ -381,9 +383,11 @@ def main(host: str, port: int, log_level: str) -> None:
         format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
     )
 
-    mcp_config = _get_mcp_config()
-    logger.info(f"🎯 启动 {mcp_config.server_name} v{mcp_config.server_version}")
-    logger.info(f"📡 传输协议: {mcp_config.transport} ({mcp_config.protocol_version})")
+    # mcp_config = _get_mcp_config()
+    logger.info(f"🎯 启动 {_mcp_config.server_name} v{_mcp_config.server_version}")
+    logger.info(
+        f"📡 传输协议: {_mcp_config.transport} ({_mcp_config.protocol_version})"
+    )
     logger.info(f"🌐 服务地址: http://{host}:{port}")
     logger.info(f"📝 日志级别: {log_level}")
 

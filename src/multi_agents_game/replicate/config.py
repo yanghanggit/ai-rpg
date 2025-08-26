@@ -122,7 +122,6 @@ class ReplicateModelsConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")  # 严格模式，不允许额外字段
 
 
-
 def load_replicate_config(config_path: Path) -> ReplicateModelsConfig:
     """
     加载MCP配置文件

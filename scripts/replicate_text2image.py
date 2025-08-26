@@ -15,7 +15,7 @@ from typing import Any, Dict, Final, Optional
 import replicate
 import requests
 
-from multi_agents_game.config.replicate_config import (
+from multi_agents_game.replicate import (
     # get_image_models,
     test_replicate_api_connection,
     # validate_config,

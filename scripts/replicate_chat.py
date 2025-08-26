@@ -13,13 +13,9 @@ from typing import Dict, Final, List
 
 import replicate
 
-from multi_agents_game.config.replicate_config import (
+from multi_agents_game.replicate import (
     ReplicateModelsConfig,
-    # create_example_config,
-    # get_chat_models,
     test_replicate_api_connection,
-    # validate_config,
-    # validate_json_file,
     load_replicate_config,
 )
 
@@ -251,14 +247,6 @@ def test_pydantic_validation() -> None:
     print("🧪 Pydantic 数据验证测试")
     print("=" * 60)
 
-    # 测试JSON Schema验证
-    # print("1. 当前配置验证:")
-    # validate_json_file()
-
-    # 显示示例配置
-    # print("\n2. 示例配置:")
-    # example = create_example_config()
-
     # 显示Schema
     print("\n3. Pydantic Schema:")
     try:
@@ -280,22 +268,11 @@ def run_validation_demo() -> None:
     print("🔍 配置验证功能演示")
     print("=" * 60)
 
-    # 基础配置验证
-    # print("✅ 配置验证结果:")
-    # validate_config()
-
-    # JSON格式验证
-    # print("\n📋 JSON格式验证:")
-    # validate_json_file()
-
     print("\n🎉 验证演示完成!")
 
 
 def main() -> None:
     """主函数 - 命令行接口"""
-    # 验证配置
-    # if not validate_config():
-    #     sys.exit(1)
 
     # 检查对话模型配置是否正确加载
     if not CHAT_MODELS:

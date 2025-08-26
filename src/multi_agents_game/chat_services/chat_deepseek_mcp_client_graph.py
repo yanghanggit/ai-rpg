@@ -634,45 +634,41 @@ async def _tool_execution_node(state: McpState) -> McpState:
         if parsed_tool_calls and mcp_client:
             logger.info(f"🔧 开始执行 {len(parsed_tool_calls)} 个工具调用")
 
-            # 并发执行工具调用（如果合适的话）
-            if len(parsed_tool_calls) == 1:
-                # 单个工具调用，直接执行
-                tool_call = parsed_tool_calls[0]
-                success, tool_result, exec_time = await execute_mcp_tool(
+            # 使用 asyncio.gather() 统一处理所有工具调用（真正并发执行）
+            tasks = []
+            for tool_call in parsed_tool_calls:
+                task = execute_mcp_tool(
                     tool_call["name"],
                     tool_call["args"],
                     mcp_client,
                     timeout=30.0,
-                    max_retries=2,
+                    max_retries=2,  # 统一使用2次重试
                 )
+                tasks.append((tool_call, task))
 
-                tool_outputs.append(
-                    {
-                        "tool": tool_call["name"],
-                        "args": tool_call["args"],
-                        "result": tool_result,
-                        "success": success,
-                        "execution_time": exec_time,
-                    }
+            # 真正并发执行所有任务
+            try:
+                execution_results = await asyncio.gather(
+                    *[task for _, task in tasks], 
+                    return_exceptions=True
                 )
-
-            else:
-                # 多个工具调用，考虑并发执行
-                tasks = []
-                for tool_call in parsed_tool_calls:
-                    task = execute_mcp_tool(
-                        tool_call["name"],
-                        tool_call["args"],
-                        mcp_client,
-                        timeout=30.0,
-                        max_retries=1,  # 并发时减少重试次数
-                    )
-                    tasks.append((tool_call, task))
-
-                # 执行所有任务
-                for tool_call, task in tasks:
-                    try:
-                        success, task_result, exec_time = await task
+                
+                for (tool_call, _), exec_result in zip(tasks, execution_results):
+                    if isinstance(exec_result, Exception):
+                        logger.error(
+                            f"工具执行任务失败: {tool_call['name']}, 错误: {exec_result}"
+                        )
+                        tool_outputs.append(
+                            {
+                                "tool": tool_call["name"],
+                                "args": tool_call["args"],
+                                "result": f"执行失败: {str(exec_result)}",
+                                "success": False,
+                                "execution_time": 0.0,
+                            }
+                        )
+                    elif isinstance(exec_result, tuple) and len(exec_result) == 3:
+                        success, task_result, exec_time = exec_result
                         tool_outputs.append(
                             {
                                 "tool": tool_call["name"],
@@ -682,19 +678,33 @@ async def _tool_execution_node(state: McpState) -> McpState:
                                 "execution_time": exec_time,
                             }
                         )
-                    except Exception as e:
+                    else:
+                        # 意外的结果类型
                         logger.error(
-                            f"工具执行任务失败: {tool_call['name']}, 错误: {e}"
+                            f"工具执行返回意外结果类型: {tool_call['name']}, 结果: {exec_result}"
                         )
                         tool_outputs.append(
                             {
                                 "tool": tool_call["name"],
                                 "args": tool_call["args"],
-                                "result": f"执行失败: {str(e)}",
+                                "result": f"意外结果类型: {type(exec_result)}",
                                 "success": False,
                                 "execution_time": 0.0,
                             }
                         )
+            except Exception as e:
+                logger.error(f"并发执行工具失败: {e}")
+                # 降级处理：为所有工具调用记录错误
+                for tool_call in parsed_tool_calls:
+                    tool_outputs.append(
+                        {
+                            "tool": tool_call["name"],
+                            "args": tool_call["args"],
+                            "result": f"并发执行失败: {str(e)}",
+                            "success": False,
+                            "execution_time": 0.0,
+                        }
+                    )
 
             # 统计执行结果
             successful_calls = sum(1 for output in tool_outputs if output["success"])
@@ -705,7 +715,7 @@ async def _tool_execution_node(state: McpState) -> McpState:
                 f"总耗时: {total_time:.2f}s"
             )
 
-        result: McpState = {
+        final_result: McpState = {
             "messages": [],  # 工具执行节点不返回消息，避免重复累积
             "mcp_client": mcp_client,
             "available_tools": state.get("available_tools", []),
@@ -713,7 +723,7 @@ async def _tool_execution_node(state: McpState) -> McpState:
             "llm_response": state.get("llm_response"),
             "parsed_tool_calls": parsed_tool_calls,
         }
-        return result
+        return final_result
 
     except Exception as e:
         logger.error(f"工具执行节点错误: {e}")

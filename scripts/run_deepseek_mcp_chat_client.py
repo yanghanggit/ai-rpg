@@ -24,7 +24,7 @@ DeepSeek + MCP 聊天系统启动脚本
 import os
 import sys
 import traceback
-from typing import Final
+from typing import Final, List, Optional
 
 
 # 将 src 目录添加到模块搜索路径
@@ -43,6 +43,7 @@ from multi_agents_game.deepseek.mcp_client_graph import (
     stream_mcp_graph_updates,
     initialize_mcp_client,
 )
+from multi_agents_game.mcp import McpToolInfo
 from multi_agents_game.config import McpConfig, load_mcp_config
 from pathlib import Path
 
@@ -141,7 +142,7 @@ async def main() -> None:
 
         # 初始化 MCP 客户端和工具
         mcp_client = None
-        available_tools = []
+        available_tools: List[McpToolInfo] = []
 
         try:
             mcp_client = await initialize_mcp_client(
@@ -149,7 +150,8 @@ async def main() -> None:
                 mcp_protocol_version=_mcp_config.protocol_version,
                 mcp_timeout=_mcp_config.mcp_timeout,
             )
-            available_tools = await mcp_client.get_available_tools()
+            tools_result = await mcp_client.list_tools()
+            available_tools = tools_result if tools_result is not None else []
             logger.success(f"🔗 MCP 客户端连接成功，可用工具: {len(available_tools)}")
         except Exception as e:
             logger.warning(f"⚠️ MCP 服务器连接失败: {e}")

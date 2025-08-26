@@ -19,7 +19,7 @@ from src.multi_agents_game.deepseek.mcp_client_graph import (
     initialize_mcp_client,
     execute_mcp_tool,
 )
-from src.multi_agents_game.deepseek.mcp_client import (
+from src.multi_agents_game.mcp import (
     McpClient,
     McpToolInfo,
     McpToolResult,
@@ -98,7 +98,7 @@ class TestMcpClient:
     @pytest.mark.asyncio
     async def test_mcp_client_initialization(self) -> None:
         """测试 MCP 客户端初始化"""
-        # Mock the initialize_mcp_client function directly
+        # Mock the McpClient to avoid real network connections
         with patch(
             "src.multi_agents_game.deepseek.mcp_client_graph.McpClient"
         ) as mock_client_class:
@@ -112,9 +112,16 @@ class TestMcpClient:
                 _mcp_config.protocol_version,
                 _mcp_config.mcp_timeout,
             )
-            assert isinstance(client, AsyncMock)  # It's our mock client
+
+            # Verify that the client was created with correct parameters
+            mock_client_class.assert_called_once_with(
+                base_url=_mcp_config.mcp_server_url,
+                protocol_version=_mcp_config.protocol_version,
+                timeout=_mcp_config.mcp_timeout,
+            )
             mock_client.connect.assert_called_once()
             mock_client.check_health.assert_called_once()
+            assert client == mock_client
 
     @pytest.mark.asyncio
     async def test_mcp_client_health_check(self) -> None:
@@ -124,20 +131,22 @@ class TestMcpClient:
             protocol_version=_mcp_config.protocol_version,
             timeout=_mcp_config.mcp_timeout,
         )
-        client.http_session = AsyncMock()
+
+        # Set up the client state
+        client.http_session = AsyncMock()  # Mock the http session
         client._initialized = True
         client.session_id = "test-session-123"
 
-        # Mock get_available_tools to simulate successful health check
-        with patch.object(
-            client, "get_available_tools", new_callable=AsyncMock
-        ) as mock_get_tools:
-            mock_get_tools.return_value = []
+        # Mock the _post_request method to avoid real network calls
+        with patch.object(client, "_post_request", new_callable=AsyncMock) as mock_post:
+            mock_post.return_value = {"result": "pong"}  # Successful ping response
+
             result = await client.check_health()
             assert result is True
+            mock_post.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_get_available_tools(self, sample_tools: List[McpToolInfo]) -> None:
+    async def test_list_tools(self, sample_tools: List[McpToolInfo]) -> None:
         """测试获取可用工具"""
         client = McpClient(
             base_url=_mcp_config.mcp_server_url,
@@ -166,8 +175,9 @@ class TestMcpClient:
 
         with patch.object(client, "_post_request", new_callable=AsyncMock) as mock_post:
             mock_post.return_value = mock_response
-            tools = await client.get_available_tools()
+            tools = await client.list_tools()
 
+            assert tools is not None
             assert len(tools) == 3
             assert tools[0].name == "get_current_time"
             assert tools[1].name == "calculator"
@@ -324,7 +334,7 @@ class TestMcpIntegration:
             ),
         ]
 
-        mock_client.get_available_tools.return_value = mock_tools
+        mock_client.list_tools.return_value = mock_tools
 
         # 2. 创建状态
         state: McpState = {

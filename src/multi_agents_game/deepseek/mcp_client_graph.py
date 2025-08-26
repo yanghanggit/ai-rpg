@@ -21,7 +21,7 @@ from pydantic import SecretStr
 from typing_extensions import TypedDict
 
 # 导入统一 MCP 客户端
-from .mcp_client import McpClient, McpToolInfo
+from ..mcp import McpClient, McpToolInfo
 
 # 全局 ChatDeepSeek 实例
 _global_deepseek_llm: Optional[ChatDeepSeek] = None
@@ -1007,7 +1007,8 @@ async def create_compiled_mcp_stage_graph(
     # 初始化 MCP 工具
     available_tools = []
     try:
-        available_tools = await mcp_client.get_available_tools()
+        tools_result = await mcp_client.list_tools()
+        available_tools = tools_result if tools_result is not None else []
         logger.info(f"MCP 工具初始化完成，可用工具数量: {len(available_tools)}")
     except Exception as e:
         logger.error(f"MCP 客户端初始化失败: {e}")

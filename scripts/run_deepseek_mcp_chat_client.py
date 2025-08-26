@@ -34,7 +34,7 @@ sys.path.insert(
 
 # 导入必要的模块
 import asyncio
-from langchain.schema import HumanMessage
+from langchain.schema import HumanMessage, SystemMessage
 from loguru import logger
 
 from multi_agents_game.chat_services.chat_deepseek_mcp_client_graph import (
@@ -103,8 +103,8 @@ def print_chat_history(chat_history_state: McpState) -> None:
         else:
             # 截断过长的回复以便显示
             content = str(message.content)
-            if len(content) > 200:
-                content = content[:200] + "..."
+            # if len(content) > 200:
+            #     content = content[:200] + "..."
             print(f"🤖 DeepSeek [{i}]: {content}")
         print()
 
@@ -158,9 +158,12 @@ async def main() -> None:
             )
             print("⚠️ MCP 服务器连接失败，将在无工具模式下运行")
 
+        # 设置系统提示
+        system_prompt = """# 你作为一个人工智能助手要扮演一个海盗，你需要用海盗的语气来回答问题。"""
+
         # 初始化 MCP 聊天历史状态
         chat_history_state: McpState = {
-            "messages": [],
+            "messages": [SystemMessage(content=system_prompt)],
             "mcp_client": mcp_client,
             "available_tools": available_tools,
             "tool_outputs": [],

@@ -336,10 +336,8 @@ def _build_system_prompt(available_tools: List[McpToolInfo]) -> str:
     Returns:
         str: 构建好的系统提示
     """
-    # 基础系统提示
-    system_prompt = """你是一个智能助手，具有使用工具的能力。
-
-当你需要获取实时信息或执行特定操作时，可以调用相应的工具。
+    # 工具使用说明（不包含角色设定）
+    system_prompt = """当你需要获取实时信息或执行特定操作时，可以调用相应的工具。
 
 ## 工具调用格式
 
@@ -493,14 +491,15 @@ async def _preprocess_node(state: McpState) -> McpState:
         # 构建系统提示
         system_prompt = _build_system_prompt(available_tools)
 
-        # 添加系统消息到对话开头（如果还没有）
+        # 智能添加系统消息：如果已有系统消息则追加，否则插入到开头
         enhanced_messages = messages.copy()
-        if (
-            not enhanced_messages
-            or not isinstance(enhanced_messages[0], SystemMessage)
-            or "你是一个智能助手" not in str(enhanced_messages[0].content)
-        ):
-            enhanced_messages.insert(0, SystemMessage(content=system_prompt))
+        if enhanced_messages and isinstance(enhanced_messages[0], SystemMessage):
+            # 已经有系统消息在开头，追加新的工具说明
+            enhanced_messages.append(SystemMessage(content=system_prompt))
+        else:
+            # 没有系统消息，插入默认角色设定和工具说明到开头
+            default_role_prompt = "你是一个智能助手，具有使用工具的能力。\n\n" + system_prompt
+            enhanced_messages.insert(0, SystemMessage(content=default_role_prompt))
 
         result: McpState = {
             "messages": [],  # 预处理节点不返回消息，避免重复累积

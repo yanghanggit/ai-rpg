@@ -8,6 +8,8 @@
 - 数据库配置（Redis、MongoDB、PostgreSQL）
 - JWT配置
 - 游戏配置（日志、游戏名称等）
+
+注意：MCP配置已移至 multi_agents_game.mcp.config 模块
 """
 
 from .db_config import (
@@ -31,8 +33,6 @@ from .server_settings_config import (
     DEFAULT_SERVER_SETTINGS_CONFIG,
 )
 
-from .mcp_config import McpConfig, load_mcp_config
-
 __all__ = [
     # 服务器配置
     "DEFAULT_SERVER_SETTINGS_CONFIG",
@@ -52,7 +52,4 @@ __all__ = [
     "LOGS_DIR",
     "GLOBAL_GAME_NAME",
     "setup_logger",
-    # MCP 配置
-    "McpConfig",
-    "load_mcp_config",
 ]

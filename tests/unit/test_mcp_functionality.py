@@ -23,8 +23,9 @@ from src.multi_agents_game.mcp import (
     McpToolResult,
     initialize_mcp_client,
     execute_mcp_tool,
+    McpConfig,
+    load_mcp_config,
 )
-from src.multi_agents_game.config.mcp_config import McpConfig, load_mcp_config
 
 
 _mcp_config: Final[McpConfig] = load_mcp_config(Path("mcp_config.json"))

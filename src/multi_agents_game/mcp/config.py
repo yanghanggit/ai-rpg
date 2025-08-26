@@ -1,11 +1,18 @@
+"""
+MCP配置管理模块
+
+提供MCP服务器配置的加载和管理功能
+"""
+
 from pathlib import Path
 from typing import List
 from pydantic import BaseModel, Field
 from loguru import logger
 
 
-##################################################################################################################
 class McpConfig(BaseModel):
+    """MCP服务器配置模型"""
+
     mcp_server_host: str = Field(..., description="MCP 服务器主机地址")
     mcp_server_port: int = Field(..., description="MCP 服务器端口")
     protocol_version: str = Field(..., description="MCP 协议版本")
@@ -33,8 +40,19 @@ class McpConfig(BaseModel):
         return origins
 
 
-##################################################################################################################
 def load_mcp_config(config_path: Path) -> McpConfig:
+    """
+    加载MCP配置文件
+
+    Args:
+        config_path: 配置文件路径
+
+    Returns:
+        McpConfig: MCP配置对象
+
+    Raises:
+        RuntimeError: 配置加载失败时抛出
+    """
     try:
         assert config_path.exists(), f"{config_path} not found"
         mcp_config = McpConfig.model_validate_json(
@@ -47,6 +65,3 @@ def load_mcp_config(config_path: Path) -> McpConfig:
     except Exception as e:
         logger.error(f"Error loading MCP config: {e}")
         raise RuntimeError("Failed to load MCP config")
-
-
-##################################################################################################################

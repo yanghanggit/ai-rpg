@@ -42,8 +42,12 @@ from multi_agents_game.deepseek.mcp_client_graph import (
     create_compiled_mcp_stage_graph,
     stream_mcp_graph_updates,
 )
-from multi_agents_game.mcp import McpToolInfo, initialize_mcp_client
-from multi_agents_game.config import McpConfig, load_mcp_config
+from multi_agents_game.mcp import (
+    McpToolInfo,
+    initialize_mcp_client,
+    McpConfig,
+    load_mcp_config,
+)
 from pathlib import Path
 
 # ============================================================================
@@ -153,11 +157,15 @@ async def main() -> None:
             available_tools = tools_result if tools_result is not None else []
             logger.success(f"🔗 MCP 客户端连接成功，可用工具: {len(available_tools)}")
         except Exception as e:
-            logger.warning(f"⚠️ MCP 服务器连接失败: {e}")
+            logger.error(f"❌ MCP 服务器连接失败: {e}")
             logger.info(
-                "💡 请确保 MCP 服务器正在运行: python scripts/run_sample_mcp_server.py"
+                "💡 请确保 MCP 服务器正在运行: python scripts/run_sample_mcp_server.py --config mcp_config.json"
             )
-            print("⚠️ MCP 服务器连接失败，将在无工具模式下运行")
+            print("❌ MCP 服务器连接失败，程序退出")
+            print(
+                "请先启动 MCP 服务器: python scripts/run_sample_mcp_server.py --config mcp_config.json"
+            )
+            return
 
         # 设置系统提示
         system_prompt = (

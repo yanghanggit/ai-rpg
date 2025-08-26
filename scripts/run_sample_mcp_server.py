@@ -59,10 +59,7 @@ import click
 from loguru import logger
 from mcp.server.fastmcp import FastMCP
 import mcp.types as types
-from multi_agents_game.config import (
-    McpConfig,
-    load_mcp_config,
-)
+from multi_agents_game.mcp import McpConfig, load_mcp_config
 from pathlib import Path
 
 # ============================================================================
@@ -70,7 +67,7 @@ from pathlib import Path
 # ============================================================================
 
 
-def get_server_config_dict(mcp_config: McpConfig) -> Dict[str, Any]:
+def _get_server_config_dict(mcp_config: McpConfig) -> Dict[str, Any]:
     """获取服务器配置字典"""
     return {
         "name": mcp_config.server_name,
@@ -82,7 +79,7 @@ def get_server_config_dict(mcp_config: McpConfig) -> Dict[str, Any]:
     }
 
 
-def create_mcp_app(mcp_config: McpConfig) -> FastMCP:
+def _initialize_fast_mcp_server(mcp_config: McpConfig) -> FastMCP:
     """创建 FastMCP 服务器实例"""
     app = FastMCP(
         name=mcp_config.server_name,
@@ -90,14 +87,71 @@ def create_mcp_app(mcp_config: McpConfig) -> FastMCP:
         debug=True,  # HTTP 模式可以启用调试
     )
 
+    # 添加健康检查端点
+    _register_health_endpoint(app)
+
     # 注册工具
-    register_tools(app, mcp_config)
+    _register_tools(app, mcp_config)
     # 注册资源
-    register_resources(app, mcp_config)
+    _register_resources(app, mcp_config)
     # 注册提示模板
-    register_prompts(app)
+    _register_prompts(app)
 
     return app
+
+
+# ============================================================================
+# 健康检查端点
+# ============================================================================
+
+
+def _register_health_endpoint(app: FastMCP) -> None:
+    """注册健康检查端点"""
+    from fastapi import Request, Response
+    import json
+
+    @app.custom_route("/health", methods=["POST"])  # type: ignore[misc]
+    async def health_check(request: Request) -> Response:
+        """处理 MCP 健康检查请求"""
+        try:
+            # 解析请求体
+            body = await request.body()
+            data = json.loads(body.decode("utf-8"))
+
+            # 检查是否是 ping 方法
+            if data.get("method") == "ping":
+                response_data = {
+                    "jsonrpc": "2.0",
+                    "id": data.get("id"),
+                    "result": {"status": "ok"},
+                }
+                return Response(
+                    content=json.dumps(response_data),
+                    media_type="application/json",
+                    status_code=200,
+                )
+            else:
+                error_response = {
+                    "jsonrpc": "2.0",
+                    "id": data.get("id"),
+                    "error": {"code": -32601, "message": "Method not found"},
+                }
+                return Response(
+                    content=json.dumps(error_response),
+                    media_type="application/json",
+                    status_code=200,
+                )
+        except Exception as e:
+            error_response = {
+                "jsonrpc": "2.0",
+                "id": None,
+                "error": {"code": -32700, "message": f"Parse error: {str(e)}"},
+            }
+            return Response(
+                content=json.dumps(error_response),
+                media_type="application/json",
+                status_code=400,
+            )
 
 
 # ============================================================================
@@ -105,7 +159,7 @@ def create_mcp_app(mcp_config: McpConfig) -> FastMCP:
 # ============================================================================
 
 
-def register_tools(app: FastMCP, mcp_config: McpConfig) -> None:
+def _register_tools(app: FastMCP, mcp_config: McpConfig) -> None:
     """注册所有工具"""
 
     @app.tool()
@@ -164,7 +218,7 @@ def register_tools(app: FastMCP, mcp_config: McpConfig) -> None:
                     "可用空间": f"{psutil.disk_usage('/').free / (1024**3):.2f} GB",
                     "使用率": f"{(psutil.disk_usage('/').used / psutil.disk_usage('/').total * 100):.2f}%",
                 },
-                "服务器配置": get_server_config_dict(mcp_config),
+                "服务器配置": _get_server_config_dict(mcp_config),
             }
 
             return json.dumps(info, ensure_ascii=False, indent=2)
@@ -248,7 +302,7 @@ def register_tools(app: FastMCP, mcp_config: McpConfig) -> None:
 # ============================================================================
 
 
-def register_resources(app: FastMCP, mcp_config: McpConfig) -> None:
+def _register_resources(app: FastMCP, mcp_config: McpConfig) -> None:
     """注册所有资源"""
 
     @app.resource("config://server-status")
@@ -256,7 +310,7 @@ def register_resources(app: FastMCP, mcp_config: McpConfig) -> None:
         """获取服务器状态信息"""
         try:
             status = {
-                "服务器配置": get_server_config_dict(mcp_config),
+                "服务器配置": _get_server_config_dict(mcp_config),
                 "运行状态": "正常",
                 "可用工具数": len(getattr(app._tool_manager, "_tools", {})),
                 "可用资源数": len(getattr(app._resource_manager, "_resources", {})),
@@ -345,7 +399,7 @@ def register_resources(app: FastMCP, mcp_config: McpConfig) -> None:
 # ============================================================================
 
 
-def register_prompts(app: FastMCP) -> None:
+def _register_prompts(app: FastMCP) -> None:
     """注册所有提示模板"""
 
     @app.prompt()
@@ -420,30 +474,6 @@ def register_prompts(app: FastMCP) -> None:
         )
 
 
-# ============================================================================
-# 服务器生命周期管理
-# ============================================================================
-
-
-async def startup_handler(mcp_config: McpConfig) -> None:
-    """服务器启动处理"""
-    logger.info("🚀 Production MCP Server 启动中...")
-    logger.info(f"📋 服务器配置: {mcp_config.server_name} v{mcp_config.server_version}")
-    logger.info(f"📡 传输协议: {mcp_config.transport}")
-    logger.info(f"⏰ 启动时间: {datetime.now()}")
-
-
-async def shutdown_handler() -> None:
-    """服务器关闭处理"""
-    logger.info("🛑 Production MCP Server 关闭中...")
-    logger.info("👋 服务器已关闭")
-
-
-# ============================================================================
-# 命令行接口
-# ============================================================================
-
-
 @click.command()
 @click.option(
     "--config",
@@ -484,7 +514,7 @@ def main(config: Path, log_level: str) -> None:
     logger.info(f"⚙️  配置文件: {config}")
 
     # 创建应用实例
-    app = create_mcp_app(mcp_config)
+    app = _initialize_fast_mcp_server(mcp_config)
 
     # 配置 FastMCP 设置
     app.settings.host = mcp_config.mcp_server_host

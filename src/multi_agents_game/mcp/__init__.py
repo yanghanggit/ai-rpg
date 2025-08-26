@@ -9,6 +9,7 @@ MCP (Model Context Protocol) 模块
 - 工具执行：执行MCP工具并处理结果
 - 提示构建：生成工具相关的提示信息
 - 响应处理：处理和合成工具执行结果
+- 配置管理：MCP服务器配置加载和管理
 
 主要特性：
 - 基于 MCP 2025-06-18 规范
@@ -29,6 +30,7 @@ from .response import (
     build_standalone_tool_response,
     synthesize_response_with_tools,
 )
+from .config import McpConfig, load_mcp_config
 
 __all__ = [
     # 客户端
@@ -49,4 +51,7 @@ __all__ = [
     "build_tool_results_section",
     "build_standalone_tool_response",
     "synthesize_response_with_tools",
+    # 配置管理
+    "McpConfig",
+    "load_mcp_config",
 ]

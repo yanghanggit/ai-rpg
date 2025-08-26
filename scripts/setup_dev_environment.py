@@ -19,7 +19,7 @@ Date: 2025-07-30
 
 import os
 import sys
-from typing import final
+from typing import Final, final
 
 from pydantic import BaseModel
 
@@ -31,12 +31,13 @@ sys.path.insert(
 from loguru import logger
 
 from multi_agents_game.config import (
-    DEFAULT_MONGODB_CONFIG,
     GLOBAL_GAME_NAME,
     LOGS_DIR,
 )
-from multi_agents_game.db.mongodb_boot_document import BootDocument
-from multi_agents_game.db.mongodb_client import (
+from multi_agents_game.mongodb import (
+    BootDocument,
+    DEFAULT_MONGODB_CONFIG,
+    MongoDBConfig,
     mongodb_clear_database,
     mongodb_find_one,
     mongodb_upsert_one,

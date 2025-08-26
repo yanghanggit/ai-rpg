@@ -14,16 +14,15 @@
 
 from .db_config import (
     # DEFAULT_JWT_CONFIG,
-    DEFAULT_MONGODB_CONFIG,
     DEFAULT_POSTGRES_CONFIG,
     # DEFAULT_RAG_CONFIG,
     # DEFAULT_REDIS_CONFIG,
     # JWTConfig,
-    MongoDBConfig,
     PostgresConfig,
     # RAGConfig,
     # RedisConfig,
 )
+from ..mongodb import DEFAULT_MONGODB_CONFIG, MongoDBConfig
 from .game_config import (
     GLOBAL_GAME_NAME,
     LOGS_DIR,

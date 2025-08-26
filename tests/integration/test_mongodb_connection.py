@@ -16,15 +16,15 @@ import time
 from datetime import datetime
 from loguru import logger
 
-from src.multi_agents_game.db.mongodb_client import (
-    mongodb_insert_one,
-    mongodb_upsert_one,
-    mongodb_find_one,
-    mongodb_update_one,
+from src.multi_agents_game.mongodb import (
+    get_mongodb_database_instance,
+    mongodb_count_documents,
     mongodb_create_index,
     mongodb_delete_many,
-    mongodb_count_documents,
-    get_mongodb_database_instance,
+    mongodb_find_one,
+    mongodb_insert_one,
+    mongodb_update_one,
+    mongodb_upsert_one,
 )
 
 

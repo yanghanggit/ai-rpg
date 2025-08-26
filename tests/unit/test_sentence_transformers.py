@@ -13,7 +13,7 @@ from typing import List, Callable, Any
 
 # 导入模型加载工具
 try:
-    from src.multi_agents_game.utils.model_loader import (
+    from src.multi_agents_game.embedding_model.model_loader import (
         load_basic_model,
         load_multilingual_model,
     )

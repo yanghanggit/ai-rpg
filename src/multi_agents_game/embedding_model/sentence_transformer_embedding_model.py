@@ -12,7 +12,7 @@ from typing import Optional
 from loguru import logger
 from sentence_transformers import SentenceTransformer
 
-from ..utils.model_loader import load_multilingual_model
+from .model_loader import load_multilingual_model
 
 ############################################################################################################
 # 全局嵌入模型实例

@@ -17,7 +17,7 @@ from src.multi_agents_game.db.rag_ops import (
     initialize_rag_system,
     rag_semantic_search,  # 添加全局语义搜索函数
 )
-from src.multi_agents_game.db.sentence_transformer_embedding_model import (
+from src.multi_agents_game.embedding_model.sentence_transformer_embedding_model import (
     get_embedding_model,
 )
 from src.multi_agents_game.demo.campaign_setting import (

@@ -27,12 +27,12 @@ class SemanticRouteStrategy(RouteStrategy):
         try:
             # 加载模型
             if self.use_multilingual:
-                from ...utils.model_loader import load_multilingual_model
+                from ...embedding_model.model_loader import load_multilingual_model
 
                 self.model = load_multilingual_model()
                 model_name = "multilingual"
             else:
-                from ...utils.model_loader import load_basic_model
+                from ...embedding_model.model_loader import load_basic_model
 
                 self.model = load_basic_model()
                 model_name = "basic"

@@ -5,7 +5,6 @@ Multi-Agents Game Framework 工具模块
 
 主要模块：
 - json_format: JSON格式化和处理工具
-- model_loader: SentenceTransformer模型加载工具
 - excel_utils: Excel文件读取、处理和数据转换工具
 """
 
@@ -31,9 +30,6 @@ from .json_format import (
     strip_json_code_block,
 )
 
-# 模型加载工具
-from .model_loader import ModelLoader
-
 # 公开的API
 __all__ = [
     # JSON格式化工具
@@ -42,8 +38,6 @@ __all__ = [
     "contains_duplicate_segments",
     "contains_json_code_block",
     "strip_json_code_block",
-    # 模型加载工具
-    "ModelLoader",
     # Excel工具
     "read_excel_file",
     "display_excel_info",

@@ -42,7 +42,6 @@ from multi_agents_game.chat_services.chat_deepseek_mcp_client_graph import (
     create_compiled_mcp_stage_graph,
     stream_mcp_graph_updates,
     initialize_mcp_client,
-    get_deepseek_llm,
 )
 from multi_agents_game.config import McpConfig, load_mcp_config
 from pathlib import Path
@@ -136,17 +135,6 @@ async def main() -> None:
     logger.info("🤖 启动 DeepSeek + MCP 聊天系统...")
 
     try:
-        # 预初始化 DeepSeek LLM（验证 API key 和配置）
-        try:
-            get_deepseek_llm()
-            logger.success("✅ DeepSeek LLM 初始化成功")
-        except Exception as e:
-            logger.error(f"❌ DeepSeek LLM 初始化失败: {e}")
-            print(f"\n❌ DeepSeek LLM 初始化失败：{e}")
-            print("请检查以下项目：")
-            print("  1. DEEPSEEK_API_KEY 环境变量是否设置")
-            print("  2. 网络连接是否正常")
-            return
 
         # 打印欢迎信息
         print_welcome_message()

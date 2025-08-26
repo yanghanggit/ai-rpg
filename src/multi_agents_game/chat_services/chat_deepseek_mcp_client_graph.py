@@ -356,173 +356,123 @@ def _build_system_prompt(available_tools: List[McpToolInfo]) -> str:
 }
 ```
 
-**示例**：
-```json
-{"tool_call": {"name": "get_current_time", "arguments": {"format": "datetime"}}}
-```
-
 ## 使用指南
 
 - 你可以在回复中自然地解释你要做什么
 - 然后在回复中包含JSON格式的工具调用
 - 工具执行完成后，根据结果给出完整的回答
-- 如果工具执行失败，请为用户提供替代方案或解释原因
-- 请确保JSON格式正确，避免语法错误"""
+- 如果工具执行失败，请为用户提供替代方案或解释原因"""
 
     if not available_tools:
         system_prompt += "\n\n⚠️ 当前没有可用工具，请仅使用你的知识回答问题。"
         return system_prompt
 
-    # 按类型分组工具
-    tool_categories = _categorize_tools(available_tools)
-
-    # 构建工具描述
+    # 构建工具描述 - 简化版本，统一使用线性展示
     system_prompt += "\n\n## 可用工具"
+    
+    # 直接列表展示所有工具，无需分类
+    for tool in available_tools:
+        tool_desc = _format_tool_description_simple(tool)
+        system_prompt += f"\n{tool_desc}"
 
-    if len(tool_categories) > 1:
-        # 多类别工具，按类别组织
-        for category, tools in tool_categories.items():
-            system_prompt += f"\n\n### {category}"
-            for tool in tools:
-                tool_desc = _format_tool_description(tool)
-                system_prompt += f"\n{tool_desc}"
-    else:
-        # 单类别或混合工具，简单列表
-        system_prompt += "\n"
-        for tool in available_tools:
-            tool_desc = _format_tool_description(tool)
-            system_prompt += f"\n{tool_desc}"
-
-    # 添加JSON格式的使用示例
-    if len(available_tools) > 0:
-        example_tool = available_tools[0]
-        system_prompt += f"\n\n## 调用示例\n\n"
-        system_prompt += _build_json_tool_example(example_tool)
+    # 添加实际工具的调用示例
+    example_tool = available_tools[0]
+    system_prompt += f"\n\n## 调用示例\n\n"
+    system_prompt += _build_json_tool_example(example_tool)
 
     return system_prompt
 
 
 def _build_json_tool_example(tool: McpToolInfo) -> str:
-    """为工具构建JSON格式的调用示例"""
+    """为工具构建JSON格式的调用示例 - 简化版本"""
     try:
-        # 构建示例参数
+        # 构建示例参数 - 只包含必需参数
         example_args: Dict[str, Any] = {}
         if tool.input_schema and "properties" in tool.input_schema:
             properties = tool.input_schema["properties"]
-            for param_name, param_info in properties.items():
-                param_type = param_info.get("type", "string")
-                if param_type == "string":
-                    if "format" in param_name.lower():
-                        example_args[param_name] = "datetime"
-                    elif "time" in param_name.lower():
-                        example_args[param_name] = "current"
+            required = tool.input_schema.get("required", [])
+            
+            # 只为必需参数生成示例值
+            for param_name in required:
+                if param_name in properties:
+                    param_info = properties[param_name]
+                    param_type = param_info.get("type", "string")
+                    
+                    if param_type == "string":
+                        example_args[param_name] = "示例值"
+                    elif param_type == "integer":
+                        example_args[param_name] = 1
+                    elif param_type == "boolean":
+                        example_args[param_name] = True
                     else:
                         example_args[param_name] = "示例值"
-                elif param_type == "integer":
-                    example_args[param_name] = 10
-                elif param_type == "boolean":
-                    example_args[param_name] = True
-                else:
-                    example_args[param_name] = "示例值"
 
         # 构建JSON示例
         example_json = {"tool_call": {"name": tool.name, "arguments": example_args}}
+        json_str = json.dumps(example_json, ensure_ascii=False)
 
-        json_str = json.dumps(example_json, ensure_ascii=False, indent=2)
-
-        example = (
-            f"如需调用 {tool.name}，请使用以下JSON格式：\n\n```json\n{json_str}\n```"
-        )
-
-        return example
+        return f"调用 {tool.name} 的示例：\n```json\n{json_str}\n```"
 
     except Exception as e:
         logger.warning(f"构建JSON工具示例失败: {tool.name}, 错误: {e}")
         # 降级到简单示例
         simple_example = {"tool_call": {"name": tool.name, "arguments": {}}}
         json_str = json.dumps(simple_example, ensure_ascii=False)
-        return f"调用 {tool.name} 的示例：{json_str}"
+        return f"调用 {tool.name} 的示例：\n```json\n{json_str}\n```"
 
 
-def _categorize_tools(tools: List[McpToolInfo]) -> Dict[str, List[McpToolInfo]]:
-    """按功能对工具进行分类"""
-    categories: Dict[str, List[McpToolInfo]] = {
-        "时间和日期": [],
-        "系统信息": [],
-        "文件操作": [],
-        "网络请求": [],
-        "数据处理": [],
-        "其他": [],
-    }
-
-    for tool in tools:
-        name_lower = tool.name.lower()
-        desc_lower = tool.description.lower()
-
-        if any(
-            keyword in name_lower or keyword in desc_lower
-            for keyword in ["time", "date", "时间", "日期"]
-        ):
-            categories["时间和日期"].append(tool)
-        elif any(
-            keyword in name_lower or keyword in desc_lower
-            for keyword in ["system", "info", "系统", "信息", "cpu", "memory", "内存"]
-        ):
-            categories["系统信息"].append(tool)
-        elif any(
-            keyword in name_lower or keyword in desc_lower
-            for keyword in ["file", "read", "write", "文件", "读取", "写入"]
-        ):
-            categories["文件操作"].append(tool)
-        elif any(
-            keyword in name_lower or keyword in desc_lower
-            for keyword in ["http", "request", "url", "网络", "请求"]
-        ):
-            categories["网络请求"].append(tool)
-        elif any(
-            keyword in name_lower or keyword in desc_lower
-            for keyword in ["data", "process", "analysis", "数据", "处理", "分析"]
-        ):
-            categories["数据处理"].append(tool)
-        else:
-            categories["其他"].append(tool)
-
-    # 移除空分类
-    return {k: v for k, v in categories.items() if v}
-
-
-def _format_tool_description(tool: McpToolInfo) -> str:
-    """格式化单个工具的描述"""
+def _format_tool_description_simple(tool: McpToolInfo) -> str:
+    """格式化单个工具的描述 - 简化版本"""
     try:
-        params_desc = ""
-
-        # 从工具的 input_schema 中提取参数描述
-        if tool.input_schema and "properties" in tool.input_schema:
-            param_list = []
-            properties = tool.input_schema["properties"]
-            required = tool.input_schema.get("required", [])
-
-            for param_name, param_info in properties.items():
-                param_desc = param_info.get("description", "无描述")
-                param_type = param_info.get("type", "string")
-                is_required = "**必需**" if param_name in required else "*可选*"
-
-                param_list.append(
-                    f"  - `{param_name}` ({param_type}): {param_desc} [{is_required}]"
-                )
-
-            if param_list:
-                params_desc = f"\n{chr(10).join(param_list)}"
-
+        # 基本工具信息
         tool_desc = f"- **{tool.name}**: {tool.description}"
-        if params_desc:
-            tool_desc += f"\n  参数:{params_desc}"
+        
+        # 只显示必需参数
+        if tool.input_schema and "properties" in tool.input_schema:
+            required = tool.input_schema.get("required", [])
+            if required:
+                required_params = ", ".join(f"`{param}`" for param in required)
+                tool_desc += f" (必需参数: {required_params})"
 
         return tool_desc
 
     except Exception as e:
         logger.warning(f"格式化工具描述失败: {tool.name}, 错误: {e}")
         return f"- **{tool.name}**: {tool.description}"
+
+
+# def _format_tool_description(tool: McpToolInfo) -> str:
+#     """格式化单个工具的描述"""
+#     try:
+#         params_desc = ""
+
+#         # 从工具的 input_schema 中提取参数描述
+#         if tool.input_schema and "properties" in tool.input_schema:
+#             param_list = []
+#             properties = tool.input_schema["properties"]
+#             required = tool.input_schema.get("required", [])
+
+#             for param_name, param_info in properties.items():
+#                 param_desc = param_info.get("description", "无描述")
+#                 param_type = param_info.get("type", "string")
+#                 is_required = "**必需**" if param_name in required else "*可选*"
+
+#                 param_list.append(
+#                     f"  - `{param_name}` ({param_type}): {param_desc} [{is_required}]"
+#                 )
+
+#             if param_list:
+#                 params_desc = f"\n{chr(10).join(param_list)}"
+
+#         tool_desc = f"- **{tool.name}**: {tool.description}"
+#         if params_desc:
+#             tool_desc += f"\n  参数:{params_desc}"
+
+#         return tool_desc
+
+#     except Exception as e:
+#         logger.warning(f"格式化工具描述失败: {tool.name}, 错误: {e}")
+#         return f"- **{tool.name}**: {tool.description}"
 
 
 ############################################################################################################
@@ -886,15 +836,72 @@ def _synthesize_response_with_tools(
 
 
 def _remove_tool_call_markers(content: str) -> str:
-    """移除内容中的JSON格式工具调用标记 - 仅支持标准格式"""
-    # 只移除标准格式: {"tool_call": {...}}
-    pattern = r'\{\s*"tool_call"\s*:\s*\{[^}]+\}\s*\}'
-    cleaned = re.sub(pattern, "", content, flags=re.DOTALL | re.IGNORECASE)
+    """移除内容中的JSON格式工具调用标记 - 增强版"""
+    # 查找所有 "tool_call" 的位置
+    tool_call_positions = []
+    start_pos = 0
+    while True:
+        pos = content.find('"tool_call"', start_pos)
+        if pos == -1:
+            break
+        tool_call_positions.append(pos)
+        start_pos = pos + 1
 
-    # 清理多余的空行
-    cleaned = re.sub(r"\n\s*\n\s*\n", "\n\n", cleaned)
+    # 从后往前删除，避免位置偏移
+    for pos in reversed(tool_call_positions):
+        # 向前查找最近的 {
+        start_brace = content.rfind("{", 0, pos)
+        if start_brace == -1:
+            continue
 
-    return cleaned
+        # 从 { 开始，使用括号匹配找到对应的 }
+        brace_count = 0
+        json_end = start_brace
+        for i in range(start_brace, len(content)):
+            if content[i] == "{":
+                brace_count += 1
+            elif content[i] == "}":
+                brace_count -= 1
+                if brace_count == 0:
+                    json_end = i + 1
+                    break
+
+        if brace_count == 0:  # 找到了完整的JSON对象
+            # 检查是否确实包含 tool_call
+            json_str = content[start_brace:json_end]
+            if '"tool_call"' in json_str:
+                # 删除整个JSON块，包括可能的markdown代码块标记
+                # 查找是否在代码块中
+                before_start = max(0, start_brace - 10)
+                before_text = content[before_start:start_brace]
+                after_end = min(len(content), json_end + 10) 
+                after_text = content[json_end:after_end]
+                
+                # 扩展删除范围以包含markdown代码块
+                actual_start = start_brace
+                actual_end = json_end
+                
+                if '```json' in before_text:
+                    # 找到代码块开始
+                    code_start = content.rfind('```json', before_start, start_brace)
+                    if code_start != -1:
+                        actual_start = code_start
+                
+                if '```' in after_text:
+                    # 找到代码块结束
+                    code_end = content.find('```', json_end, after_end)
+                    if code_end != -1:
+                        actual_end = code_end + 3
+                
+                # 执行删除
+                content = content[:actual_start] + content[actual_end:]
+
+    # 清理多余的空行和空的代码块
+    content = re.sub(r'```json\s*```', '', content)  # 移除空的json代码块
+    content = re.sub(r'```\s*```', '', content)  # 移除空的代码块
+    content = re.sub(r'\n\s*\n\s*\n+', '\n\n', content)  # 清理多余空行
+
+    return content
 
 
 def _build_tool_results_section(tool_outputs: List[Dict[str, Any]]) -> str:

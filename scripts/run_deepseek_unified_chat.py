@@ -28,7 +28,7 @@ from langchain.schema import HumanMessage
 from langchain_core.messages import BaseMessage
 from loguru import logger
 
-from multi_agents_game.chat_services.chat_deepseek_graph_complex import (
+from multi_agents_game.deepseek.unified_chat_graph import (
     create_unified_chat_graph,
     stream_unified_graph_updates,
 )

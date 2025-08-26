@@ -69,6 +69,7 @@ from pathlib import Path
 # 服务器配置
 # ============================================================================
 
+
 def get_server_config_dict(mcp_config: McpConfig) -> Dict[str, Any]:
     """获取服务器配置字典"""
     return {
@@ -88,20 +89,21 @@ def create_mcp_app(mcp_config: McpConfig) -> FastMCP:
         instructions=mcp_config.server_description,
         debug=True,  # HTTP 模式可以启用调试
     )
-    
+
     # 注册工具
     register_tools(app, mcp_config)
     # 注册资源
     register_resources(app, mcp_config)
     # 注册提示模板
     register_prompts(app)
-    
+
     return app
 
 
 # ============================================================================
 # 工具实现
 # ============================================================================
+
 
 def register_tools(app: FastMCP, mcp_config: McpConfig) -> None:
     """注册所有工具"""
@@ -175,18 +177,16 @@ def register_tools(app: FastMCP, mcp_config: McpConfig) -> None:
 
     @app.tool()
     async def calculator(
-        operation: str, 
-        left_operand: float, 
-        right_operand: float
+        operation: str, left_operand: float, right_operand: float
     ) -> str:
         """
         简单计算器工具 - 支持基本数学运算
-        
+
         Args:
             operation: 运算类型 (add|subtract|multiply|divide|power|modulo)
             left_operand: 左操作数（数字）
             right_operand: 右操作数（数字）
-        
+
         Returns:
             计算结果的字符串表示
         """
@@ -194,46 +194,46 @@ def register_tools(app: FastMCP, mcp_config: McpConfig) -> None:
             # 参数验证
             if not isinstance(operation, str):
                 return "错误：operation 必须是字符串类型"
-            
+
             operation = operation.lower().strip()
-            
+
             # 支持的运算类型 - 添加类型注解
             operations: Dict[str, Callable[[float, float], Union[float, None]]] = {
                 "add": lambda x, y: x + y,
-                "subtract": lambda x, y: x - y, 
+                "subtract": lambda x, y: x - y,
                 "multiply": lambda x, y: x * y,
                 "divide": lambda x, y: x / y if y != 0 else None,
-                "power": lambda x, y: x ** y,
+                "power": lambda x, y: x**y,
                 "modulo": lambda x, y: x % y if y != 0 else None,
                 # 支持符号形式
                 "+": lambda x, y: x + y,
                 "-": lambda x, y: x - y,
                 "*": lambda x, y: x * y,
                 "/": lambda x, y: x / y if y != 0 else None,
-                "**": lambda x, y: x ** y,
+                "**": lambda x, y: x**y,
                 "%": lambda x, y: x % y if y != 0 else None,
             }
-            
+
             if operation not in operations:
                 valid_ops = ", ".join([op for op in operations.keys() if op.isalpha()])
                 return f"错误：不支持的运算类型 '{operation}'。支持的运算：{valid_ops}"
-            
+
             # 执行计算
             result = operations[operation](left_operand, right_operand)
-            
+
             if result is None:
                 return "错误：除零错误，无法除以零"
-            
+
             # 格式化结果
             result_info = {
                 "表达式": f"{left_operand} {operation} {right_operand}",
                 "结果": result,
                 "运算类型": operation,
-                "计算时间": datetime.now().isoformat()
+                "计算时间": datetime.now().isoformat(),
             }
-            
+
             return json.dumps(result_info, ensure_ascii=False, indent=2)
-            
+
         except (TypeError, ValueError) as e:
             return f"错误：参数类型错误 - {str(e)}"
         except OverflowError:
@@ -246,6 +246,7 @@ def register_tools(app: FastMCP, mcp_config: McpConfig) -> None:
 # ============================================================================
 # 资源定义
 # ============================================================================
+
 
 def register_resources(app: FastMCP, mcp_config: McpConfig) -> None:
     """注册所有资源"""
@@ -343,6 +344,7 @@ def register_resources(app: FastMCP, mcp_config: McpConfig) -> None:
 # 提示模板定义
 # ============================================================================
 
+
 def register_prompts(app: FastMCP) -> None:
     """注册所有提示模板"""
 
@@ -411,7 +413,8 @@ def register_prompts(app: FastMCP) -> None:
             description=f"系统{analysis_type}分析提示模板",
             messages=[
                 types.PromptMessage(
-                    role="user", content=types.TextContent(type="text", text=prompt_text)
+                    role="user",
+                    content=types.TextContent(type="text", text=prompt_text),
                 )
             ],
         )
@@ -421,12 +424,11 @@ def register_prompts(app: FastMCP) -> None:
 # 服务器生命周期管理
 # ============================================================================
 
+
 async def startup_handler(mcp_config: McpConfig) -> None:
     """服务器启动处理"""
     logger.info("🚀 Production MCP Server 启动中...")
-    logger.info(
-        f"📋 服务器配置: {mcp_config.server_name} v{mcp_config.server_version}"
-    )
+    logger.info(f"📋 服务器配置: {mcp_config.server_name} v{mcp_config.server_version}")
     logger.info(f"📡 传输协议: {mcp_config.transport}")
     logger.info(f"⏰ 启动时间: {datetime.now()}")
 
@@ -440,6 +442,7 @@ async def shutdown_handler() -> None:
 # ============================================================================
 # 命令行接口
 # ============================================================================
+
 
 @click.command()
 @click.option(
@@ -473,10 +476,10 @@ def main(config: Path, log_level: str) -> None:
         raise click.ClickException(f"配置文件加载失败: {e}")
 
     logger.info(f"🎯 启动 {mcp_config.server_name} v{mcp_config.server_version}")
+    logger.info(f"📡 传输协议: {mcp_config.transport} ({mcp_config.protocol_version})")
     logger.info(
-        f"📡 传输协议: {mcp_config.transport} ({mcp_config.protocol_version})"
+        f"🌐 服务地址: http://{mcp_config.mcp_server_host}:{mcp_config.mcp_server_port}"
     )
-    logger.info(f"🌐 服务地址: http://{mcp_config.mcp_server_host}:{mcp_config.mcp_server_port}")
     logger.info(f"📝 日志级别: {log_level}")
     logger.info(f"⚙️  配置文件: {config}")
 

@@ -235,7 +235,7 @@ class TestIntegration:
     def test_router_node_replacement(self) -> None:
         """测试路由节点的替换"""
         # 这个测试验证新的路由系统能否替代原有的router_node
-        from src.multi_agents_game.chat_services.chat_deepseek_graph_complex import (
+        from src.multi_agents_game.deepseek.unified_chat_graph import (
             UnifiedState,
         )
 

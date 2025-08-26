@@ -22,7 +22,7 @@ from ..db.chromadb_client import get_chroma_db
 from ..db.rag_ops import rag_semantic_search
 
 # 导入新的路由系统
-from .routing import RouteDecisionManager
+from ..chat_services.routing import RouteDecisionManager
 
 # 全局DeepSeek LLM实例（懒加载单例）
 _global_deepseek_llm: Optional[ChatDeepSeek] = None

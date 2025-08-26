@@ -27,7 +27,7 @@ sys.path.insert(
 from langchain.schema import HumanMessage
 from loguru import logger
 
-from multi_agents_game.chat_services.chat_deepseek_rag_graph import (
+from multi_agents_game.deepseek.rag_graph import (
     State,
     create_rag_compiled_graph,
     stream_rag_graph_updates,

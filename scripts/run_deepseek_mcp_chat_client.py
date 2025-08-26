@@ -37,7 +37,7 @@ import asyncio
 from langchain.schema import HumanMessage, SystemMessage
 from loguru import logger
 
-from multi_agents_game.chat_services.chat_deepseek_mcp_client_graph import (
+from multi_agents_game.deepseek.mcp_client_graph import (
     McpState,
     create_compiled_mcp_stage_graph,
     stream_mcp_graph_updates,
@@ -159,7 +159,9 @@ async def main() -> None:
             print("⚠️ MCP 服务器连接失败，将在无工具模式下运行")
 
         # 设置系统提示
-        system_prompt = """# 你作为一个人工智能助手要扮演一个海盗，你需要用海盗的语气来回答问题。"""
+        system_prompt = (
+            """# 你作为一个人工智能助手要扮演一个海盗，你需要用海盗的语气来回答问题。"""
+        )
 
         # 初始化 MCP 聊天历史状态
         chat_history_state: McpState = {

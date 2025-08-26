@@ -367,7 +367,7 @@ def _build_system_prompt(available_tools: List[McpToolInfo]) -> str:
 
     # 构建工具描述 - 简化版本，统一使用线性展示
     system_prompt += "\n\n## 可用工具"
-    
+
     # 直接列表展示所有工具，无需分类
     for tool in available_tools:
         tool_desc = _format_tool_description_simple(tool)
@@ -389,13 +389,13 @@ def _build_json_tool_example(tool: McpToolInfo) -> str:
         if tool.input_schema and "properties" in tool.input_schema:
             properties = tool.input_schema["properties"]
             required = tool.input_schema.get("required", [])
-            
+
             # 只为必需参数生成示例值
             for param_name in required:
                 if param_name in properties:
                     param_info = properties[param_name]
                     param_type = param_info.get("type", "string")
-                    
+
                     if param_type == "string":
                         example_args[param_name] = "示例值"
                     elif param_type == "integer":
@@ -424,7 +424,7 @@ def _format_tool_description_simple(tool: McpToolInfo) -> str:
     try:
         # 基本工具信息
         tool_desc = f"- **{tool.name}**: {tool.description}"
-        
+
         # 只显示必需参数
         if tool.input_schema and "properties" in tool.input_schema:
             required = tool.input_schema.get("required", [])
@@ -498,7 +498,9 @@ async def _preprocess_node(state: McpState) -> McpState:
             enhanced_messages.append(SystemMessage(content=system_prompt))
         else:
             # 没有系统消息，插入默认角色设定和工具说明到开头
-            default_role_prompt = "你是一个智能助手，具有使用工具的能力。\n\n" + system_prompt
+            default_role_prompt = (
+                "你是一个智能助手，具有使用工具的能力。\n\n" + system_prompt
+            )
             enhanced_messages.insert(0, SystemMessage(content=default_role_prompt))
 
         result: McpState = {
@@ -648,10 +650,9 @@ async def _tool_execution_node(state: McpState) -> McpState:
             # 真正并发执行所有任务
             try:
                 execution_results = await asyncio.gather(
-                    *[task for _, task in tasks], 
-                    return_exceptions=True
+                    *[task for _, task in tasks], return_exceptions=True
                 )
-                
+
                 for (tool_call, _), exec_result in zip(tasks, execution_results):
                     if isinstance(exec_result, Exception):
                         logger.error(
@@ -883,32 +884,32 @@ def _remove_tool_call_markers(content: str) -> str:
                 # 查找是否在代码块中
                 before_start = max(0, start_brace - 10)
                 before_text = content[before_start:start_brace]
-                after_end = min(len(content), json_end + 10) 
+                after_end = min(len(content), json_end + 10)
                 after_text = content[json_end:after_end]
-                
+
                 # 扩展删除范围以包含markdown代码块
                 actual_start = start_brace
                 actual_end = json_end
-                
-                if '```json' in before_text:
+
+                if "```json" in before_text:
                     # 找到代码块开始
-                    code_start = content.rfind('```json', before_start, start_brace)
+                    code_start = content.rfind("```json", before_start, start_brace)
                     if code_start != -1:
                         actual_start = code_start
-                
-                if '```' in after_text:
+
+                if "```" in after_text:
                     # 找到代码块结束
-                    code_end = content.find('```', json_end, after_end)
+                    code_end = content.find("```", json_end, after_end)
                     if code_end != -1:
                         actual_end = code_end + 3
-                
+
                 # 执行删除
                 content = content[:actual_start] + content[actual_end:]
 
     # 清理多余的空行和空的代码块
-    content = re.sub(r'```json\s*```', '', content)  # 移除空的json代码块
-    content = re.sub(r'```\s*```', '', content)  # 移除空的代码块
-    content = re.sub(r'\n\s*\n\s*\n+', '\n\n', content)  # 清理多余空行
+    content = re.sub(r"```json\s*```", "", content)  # 移除空的json代码块
+    content = re.sub(r"```\s*```", "", content)  # 移除空的代码块
+    content = re.sub(r"\n\s*\n\s*\n+", "\n\n", content)  # 清理多余空行
 
     return content
 

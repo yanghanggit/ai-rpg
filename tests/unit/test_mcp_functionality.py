@@ -14,12 +14,12 @@ from typing import Final, List, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
-from src.multi_agents_game.chat_services.chat_deepseek_mcp_client_graph import (
+from src.multi_agents_game.deepseek.mcp_client_graph import (
     McpState,
     initialize_mcp_client,
     execute_mcp_tool,
 )
-from src.multi_agents_game.chat_services.mcp_client import (
+from src.multi_agents_game.deepseek.mcp_client import (
     McpClient,
     McpToolInfo,
     McpToolResult,
@@ -100,7 +100,7 @@ class TestMcpClient:
         """测试 MCP 客户端初始化"""
         # Mock the initialize_mcp_client function directly
         with patch(
-            "src.multi_agents_game.chat_services.chat_deepseek_mcp_client_graph.McpClient"
+            "src.multi_agents_game.deepseek.mcp_client_graph.McpClient"
         ) as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client

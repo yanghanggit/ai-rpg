@@ -20,6 +20,42 @@ load_dotenv()
 TEST_URL: Final[str] = "https://api.replicate.com/v1/models"
 
 
+def test_replicate_api_connection() -> bool:
+    """
+    测试 Replicate API 连接
+    独立函数，不依赖配置类实例
+
+    Returns:
+        bool: 连接成功返回 True，失败返回 False
+    """
+    api_token = os.getenv("REPLICATE_API_TOKEN")
+    if not api_token:
+        print("❌ API Token 未配置")
+        return False
+
+    headers = {"Authorization": f"Token {api_token}"}
+
+    try:
+        print("🔄 测试 Replicate API 连接...")
+        response = requests.get(TEST_URL, headers=headers, timeout=10)
+
+        if response.status_code == 200:
+            print("✅ 连接成功! Replicate API 可正常访问")
+            return True
+        else:
+            print(f"❌ 连接失败，状态码: {response.status_code}")
+            if response.status_code == 401:
+                print("💡 API Token 可能无效或已过期")
+            return False
+
+    except Exception as e:
+        print(f"❌ 连接错误: {e}")
+        print("💡 请检查:")
+        print("   1. 网络连接是否正常")
+        print("   2. API Token 是否有效")
+        return False
+
+
 # Pydantic 数据模型定义
 class ModelInfo(BaseModel):
     """单个模型信息的数据结构"""
@@ -91,7 +127,6 @@ class ReplicateConfig:
 
     def __init__(self) -> None:
         """初始化配置"""
-        self._api_token: str = ""
         self._image_models: Dict[str, Dict[str, str]] = {}
         self._chat_models: Dict[str, Dict[str, str]] = {}
         self._config_loaded: bool = False
@@ -102,9 +137,6 @@ class ReplicateConfig:
     def _load_config(self) -> None:
         """加载所有配置"""
         try:
-            # 加载 API Token
-            self._api_token = os.getenv("REPLICATE_API_TOKEN") or ""
-
             # 加载模型配置
             self._load_models_config()
 
@@ -181,46 +213,41 @@ class ReplicateConfig:
         except json.JSONDecodeError as e:
             raise ValueError(f"模型配置文件格式错误: {e}")
 
-    def validate_json_schema(self) -> bool:
-        """验证当前配置是否符合 Pydantic 数据模型"""
-        try:
-            # 构建当前配置数据，将字典转换为模型实例
-            image_models_dict = {}
-            for key, value in self._image_models.items():
-                if isinstance(value, dict):
-                    image_models_dict[key] = ModelInfo(**value)
-                else:
-                    image_models_dict[key] = value
+    # def validate_json_schema(self) -> bool:
+    #     """验证当前配置是否符合 Pydantic 数据模型"""
+    #     try:
+    #         # 构建当前配置数据，将字典转换为模型实例
+    #         image_models_dict = {}
+    #         for key, value in self._image_models.items():
+    #             if isinstance(value, dict):
+    #                 image_models_dict[key] = ModelInfo(**value)
+    #             else:
+    #                 image_models_dict[key] = value
 
-            chat_models_dict = {}
-            for key, value in self._chat_models.items():
-                if isinstance(value, dict):
-                    chat_models_dict[key] = ModelInfo(**value)
-                else:
-                    chat_models_dict[key] = value
+    #         chat_models_dict = {}
+    #         for key, value in self._chat_models.items():
+    #             if isinstance(value, dict):
+    #                 chat_models_dict[key] = ModelInfo(**value)
+    #             else:
+    #                 chat_models_dict[key] = value
 
-            # 创建子模型实例
-            image_models_data = ImageModels(**image_models_dict)
-            chat_models_data = ChatModels(**chat_models_dict)
+    #         # 创建子模型实例
+    #         image_models_data = ImageModels(**image_models_dict)
+    #         chat_models_data = ChatModels(**chat_models_dict)
 
-            # 使用 Pydantic 验证
-            ReplicateModelsConfig(
-                image_models=image_models_data, chat_models=chat_models_data
-            )
-            print("✅ 当前配置符合数据模型规范")
-            return True
+    #         # 使用 Pydantic 验证
+    #         ReplicateModelsConfig(
+    #             image_models=image_models_data, chat_models=chat_models_data
+    #         )
+    #         print("✅ 当前配置符合数据模型规范")
+    #         return True
 
-        except ValidationError as ve:
-            print(f"❌ 当前配置不符合数据模型规范:")
-            for error in ve.errors():
-                loc = " -> ".join(str(x) for x in error["loc"])
-                print(f"   {loc}: {error['msg']}")
-            return False
-
-    @property
-    def api_token(self) -> str:
-        """获取 API Token"""
-        return self._api_token
+    #     except ValidationError as ve:
+    #         print(f"❌ 当前配置不符合数据模型规范:")
+    #         for error in ve.errors():
+    #             loc = " -> ".join(str(x) for x in error["loc"])
+    #             print(f"   {loc}: {error['msg']}")
+    #         return False
 
     @property
     def image_models(self) -> Dict[str, Dict[str, str]]:
@@ -237,49 +264,28 @@ class ReplicateConfig:
         """检查配置是否成功加载"""
         return self._config_loaded
 
-    def test_connection(self) -> bool:
-        """测试 Replicate API 连接"""
-        if not self._api_token:
-            print("❌ API Token 未配置")
-            return False
+    # def test_connection(self) -> bool:
+    #     """
+    #     测试 Replicate API 连接
+    #     保持向后兼容性，内部调用独立的测试函数
+    #     """
+    #     return test_replicate_api_connection()
 
-        headers = {"Authorization": f"Token {self._api_token}"}
+    # def get_image_model_info(self, model_name: str) -> Optional[Dict[str, str]]:
+    #     """获取指定图像模型的信息"""
+    #     return self._image_models.get(model_name)
 
-        try:
-            print("🔄 测试 Replicate API 连接...")
-            response = requests.get(TEST_URL, headers=headers, timeout=10)
+    # def get_chat_model_info(self, model_name: str) -> Optional[Dict[str, str]]:
+    #     """获取指定对话模型的信息"""
+    #     return self._chat_models.get(model_name)
 
-            if response.status_code == 200:
-                print("✅ 连接成功! Replicate API 可正常访问")
-                return True
-            else:
-                print(f"❌ 连接失败，状态码: {response.status_code}")
-                if response.status_code == 401:
-                    print("💡 API Token 可能无效或已过期")
-                return False
+    # def list_image_models(self) -> Dict[str, Dict[str, str]]:
+    #     """列出所有图像模型"""
+    #     return self._image_models.copy()
 
-        except Exception as e:
-            print(f"❌ 连接错误: {e}")
-            print("💡 请检查:")
-            print("   1. 网络连接是否正常")
-            print("   2. API Token 是否有效")
-            return False
-
-    def get_image_model_info(self, model_name: str) -> Optional[Dict[str, str]]:
-        """获取指定图像模型的信息"""
-        return self._image_models.get(model_name)
-
-    def get_chat_model_info(self, model_name: str) -> Optional[Dict[str, str]]:
-        """获取指定对话模型的信息"""
-        return self._chat_models.get(model_name)
-
-    def list_image_models(self) -> Dict[str, Dict[str, str]]:
-        """列出所有图像模型"""
-        return self._image_models.copy()
-
-    def list_chat_models(self) -> Dict[str, Dict[str, str]]:
-        """列出所有对话模型"""
-        return self._chat_models.copy()
+    # def list_chat_models(self) -> Dict[str, Dict[str, str]]:
+    #     """列出所有对话模型"""
+    #     return self._chat_models.copy()
 
     def validate_image_model(self, model_name: str) -> bool:
         """验证图像模型是否存在"""
@@ -289,17 +295,18 @@ class ReplicateConfig:
         """验证对话模型是否存在"""
         return model_name in self._chat_models
 
-    def get_config_status(self) -> Dict[str, Any]:
-        """获取配置状态信息"""
-        return {
-            "config_loaded": self._config_loaded,
-            "api_token_configured": bool(self._api_token),
-            "image_models_count": len(self._image_models),
-            "chat_models_count": len(self._chat_models),
-            "image_models": list(self._image_models.keys()),
-            "chat_models": list(self._chat_models.keys()),
-            "schema_valid": self.validate_json_schema(),
-        }
+    # def get_config_status(self) -> Dict[str, Any]:
+    #     """获取配置状态信息"""
+    #     api_token = os.getenv("REPLICATE_API_TOKEN")
+    #     return {
+    #         "config_loaded": self._config_loaded,
+    #         "api_token_configured": bool(api_token),
+    #         "image_models_count": len(self._image_models),
+    #         "chat_models_count": len(self._chat_models),
+    #         "image_models": list(self._image_models.keys()),
+    #         "chat_models": list(self._chat_models.keys()),
+    #         "schema_valid": self.validate_json_schema(),
+    #     }
 
 
 # 全局配置实例
@@ -314,10 +321,10 @@ def get_replicate_config() -> ReplicateConfig:
     return _replicate_config
 
 
-# 便捷函数
-def get_api_token() -> str:
-    """获取 API Token"""
-    return get_replicate_config().api_token
+# # 便捷函数
+# def get_api_token() -> str:
+#     """获取 API Token"""
+#     return os.getenv("REPLICATE_API_TOKEN") or ""
 
 
 def get_image_models() -> Dict[str, Dict[str, str]]:
@@ -330,82 +337,35 @@ def get_chat_models() -> Dict[str, Dict[str, str]]:
     return get_replicate_config().chat_models
 
 
-def test_api_connection() -> bool:
-    """测试 API 连接"""
-    return get_replicate_config().test_connection()
+# def validate_config() -> bool:
+#     """验证配置是否完整"""
+#     config = get_replicate_config()
+#     status = config.get_config_status()
+
+#     if not status["config_loaded"]:
+#         print("❌ 配置加载失败")
+#         return False
+
+#     if not status["api_token_configured"]:
+#         print("❌ API Token 未配置")
+#         print("💡 请检查:")
+#         print("   1. 环境变量 REPLICATE_API_TOKEN 是否设置")
+#         print("   2. .env 文件是否存在且包含正确的 API Token")
+#         return False
+
+#     if status["image_models_count"] == 0:
+#         print("⚠️ 警告: 未找到图像模型配置")
+
+#     if status["chat_models_count"] == 0:
+#         print("⚠️ 警告: 未找到对话模型配置")
+
+#     # 新增：验证数据模型
+#     if not status.get("schema_valid", False):
+#         print("⚠️ 警告: JSON 配置不符合数据模型规范")
+
+#     return True
 
 
-def validate_config() -> bool:
-    """验证配置是否完整"""
-    config = get_replicate_config()
-    status = config.get_config_status()
-
-    if not status["config_loaded"]:
-        print("❌ 配置加载失败")
-        return False
-
-    if not status["api_token_configured"]:
-        print("❌ API Token 未配置")
-        print("💡 请检查:")
-        print("   1. 环境变量 REPLICATE_API_TOKEN 是否设置")
-        print("   2. .env 文件是否存在且包含正确的 API Token")
-        return False
-
-    if status["image_models_count"] == 0:
-        print("⚠️ 警告: 未找到图像模型配置")
-
-    if status["chat_models_count"] == 0:
-        print("⚠️ 警告: 未找到对话模型配置")
-
-    # 新增：验证数据模型
-    if not status.get("schema_valid", False):
-        print("⚠️ 警告: JSON 配置不符合数据模型规范")
-
-    return True
-
-
-def validate_json_file() -> bool:
-    """验证 JSON 文件格式是否符合 Pydantic 数据模型"""
-    return get_replicate_config().validate_json_schema()
-
-
-def get_pydantic_models() -> tuple[
-    type[ReplicateModelsConfig],
-    type[ModelInfo],
-    type[ImageModels],
-    type[ChatModels],
-]:
-    """获取 Pydantic 数据模型类，用于外部验证或文档生成"""
-    return ReplicateModelsConfig, ModelInfo, ImageModels, ChatModels
-
-
-def validate_json_file_with_path(json_file_path: str) -> bool:
-    """验证指定JSON文件是否符合 Pydantic 数据模型"""
-    try:
-        from pathlib import Path
-
-        config_file = Path(json_file_path)
-        if not config_file.exists():
-            print(f"❌ 测试文件不存在: {config_file}")
-            return False
-
-        with open(config_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-
-        try:
-            ReplicateModelsConfig(**data)
-            print("✅ JSON 配置格式验证通过")
-            return True
-
-        except ValidationError as ve:
-            print(f"❌ JSON 配置格式验证失败:")
-            for error in ve.errors():
-                loc = " -> ".join(str(x) for x in error["loc"])
-                print(f"   {loc}: {error['msg']}")
-                if "input" in error:
-                    print(f"   输入值: {error['input']}")
-            return False
-
-    except Exception as e:
-        print(f"❌ 验证失败: {e}")
-        return False
+# def validate_json_file() -> bool:
+#     """验证 JSON 文件格式是否符合 Pydantic 数据模型"""
+#     return get_replicate_config().validate_json_schema()

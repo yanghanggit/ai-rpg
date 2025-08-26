@@ -5,6 +5,7 @@ Replicate 对话工具
 """
 
 import argparse
+import os
 import sys
 import time
 from typing import Dict, Final, List
@@ -13,16 +14,15 @@ import replicate
 
 from multi_agents_game.config.replicate_config import (
     ReplicateModelsConfig,
-    #create_example_config,
-    get_api_token,
+    # create_example_config,
     get_chat_models,
-    test_api_connection,
-    validate_config,
-    validate_json_file,
+    test_replicate_api_connection,
+    # validate_config,
+    # validate_json_file,
 )
 
 # 全局变量
-API_TOKEN: str = get_api_token()
+API_TOKEN: str = os.getenv("REPLICATE_API_TOKEN") or ""
 CHAT_MODELS: Dict[str, Dict[str, str]] = get_chat_models()
 DEFAULT_MODEL: Final[str] = "gpt-4o-mini"
 
@@ -203,13 +203,13 @@ def run_demo() -> None:
     print("=" * 60)
 
     # 1. 测试连接
-    if not test_api_connection():
+    if not test_replicate_api_connection():
         print("❌ 连接测试失败，请检查网络设置")
         return
 
-    # 2. 验证JSON配置格式
-    print("\n📋 JSON配置验证:")
-    validate_json_file()
+        # 2. 验证JSON配置格式
+        # rint("\n📋 JSON配置验证:")
+        # validate_json_file()
 
     # 3. 查看可用模型
     print("\n📋 可用对话模型:")
@@ -244,8 +244,8 @@ def test_pydantic_validation() -> None:
     print("=" * 60)
 
     # 测试JSON Schema验证
-    print("1. 当前配置验证:")
-    validate_json_file()
+    # print("1. 当前配置验证:")
+    # validate_json_file()
 
     # 显示示例配置
     # print("\n2. 示例配置:")
@@ -273,12 +273,12 @@ def run_validation_demo() -> None:
     print("=" * 60)
 
     # 基础配置验证
-    print("✅ 配置验证结果:")
-    validate_config()
+    # print("✅ 配置验证结果:")
+    # validate_config()
 
     # JSON格式验证
-    print("\n📋 JSON格式验证:")
-    validate_json_file()
+    # print("\n📋 JSON格式验证:")
+    # validate_json_file()
 
     print("\n🎉 验证演示完成!")
 
@@ -286,8 +286,8 @@ def run_validation_demo() -> None:
 def main() -> None:
     """主函数 - 命令行接口"""
     # 验证配置
-    if not validate_config():
-        sys.exit(1)
+    # if not validate_config():
+    #     sys.exit(1)
 
     # 检查对话模型配置是否正确加载
     if not CHAT_MODELS:
@@ -343,7 +343,7 @@ def main() -> None:
 
         # 测试连接
         if args.test:
-            test_api_connection()
+            test_replicate_api_connection()
             return
 
         # 验证配置和JSON格式

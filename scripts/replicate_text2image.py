@@ -5,6 +5,7 @@ Replicate 文生图工具
 """
 
 import argparse
+import os
 import sys
 import time
 import uuid
@@ -15,14 +16,13 @@ import replicate
 import requests
 
 from multi_agents_game.config.replicate_config import (
-    get_api_token,
     get_image_models,
-    test_api_connection,
-    validate_config,
+    test_replicate_api_connection,
+    # validate_config,
 )
 
 # 全局变量
-API_TOKEN: str = get_api_token()
+API_TOKEN: str = os.getenv("REPLICATE_API_TOKEN") or ""
 MODELS: Dict[str, Dict[str, str]] = get_image_models()
 DEFAULT_OUTPUT_DIR: Final[str] = "generated_images"
 
@@ -175,7 +175,7 @@ def run_demo() -> None:
     print("=" * 60)
 
     # 1. 测试连接
-    if not test_api_connection():
+    if not test_replicate_api_connection():
         print("❌ 连接测试失败，请检查网络设置")
         return
 
@@ -210,8 +210,8 @@ def run_demo() -> None:
 def main() -> None:
     """主函数 - 命令行接口"""
     # 验证配置
-    if not validate_config():
-        sys.exit(1)
+    # if not validate_config():
+    #     sys.exit(1)
 
     # 检查模型配置是否正确加载
     if not MODELS:
@@ -277,7 +277,7 @@ def main() -> None:
 
         # 如果是测试连接
         if args.test:
-            test_api_connection()
+            test_replicate_api_connection()
             return
 
         # 如果只是列出模型

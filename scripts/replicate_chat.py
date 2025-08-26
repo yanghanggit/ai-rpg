@@ -13,7 +13,7 @@ import replicate
 
 from multi_agents_game.config.replicate_config import (
     ReplicateModelsConfig,
-    create_example_config,
+    #create_example_config,
     get_api_token,
     get_chat_models,
     test_api_connection,
@@ -248,8 +248,8 @@ def test_pydantic_validation() -> None:
     validate_json_file()
 
     # 显示示例配置
-    print("\n2. 示例配置:")
-    example = create_example_config()
+    # print("\n2. 示例配置:")
+    # example = create_example_config()
 
     # 显示Schema
     print("\n3. Pydantic Schema:")

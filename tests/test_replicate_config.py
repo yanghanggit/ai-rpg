@@ -9,6 +9,7 @@ import json
 import os
 import tempfile
 from pathlib import Path
+from typing import Any, Dict
 from unittest.mock import Mock, patch
 
 import pytest
@@ -20,7 +21,6 @@ from src.multi_agents_game.config.replicate_config import (
     ModelInfo,
     ReplicateConfig,
     ReplicateModelsConfig,
-    create_example_config,
     get_api_token,
     get_chat_models,
     get_image_models,
@@ -31,6 +31,49 @@ from src.multi_agents_game.config.replicate_config import (
     validate_config,
     validate_json_file,
 )
+
+
+def create_example_config() -> Dict[str, Any]:
+    """创建一个示例配置，符合 Pydantic 数据模型"""
+    example = {
+        "image_models": {
+            "sdxl-lightning": {
+                "version": "bytedance/sdxl-lightning-4step:5f24084160c9089501c1b3545d9be3c27883ae2239b6f412990e82d4a6210f8f",
+                "cost_estimate": "$0.005-0.01 (~2-5秒) 推荐测试",
+                "description": "快速生成模型，适合测试和原型开发",
+            }
+        },
+        "chat_models": {
+            "gpt-4o-mini": {
+                "version": "openai/gpt-4o-mini",
+                "cost_estimate": "$0.15/1M input + $0.6/1M output tokens",
+                "description": "OpenAI 低成本高效对话模型，推荐日常使用",
+            }
+        },
+    }
+
+    # 验证示例配置
+    try:
+        # 将字典转换为模型实例
+        image_models_dict = {}
+        for key, value in example["image_models"].items():
+            image_models_dict[key] = ModelInfo(**value)
+
+        chat_models_dict = {}
+        for key, value in example["chat_models"].items():
+            chat_models_dict[key] = ModelInfo(**value)
+
+        # 创建子模型实例
+        image_models = ImageModels(**image_models_dict)
+        chat_models = ChatModels(**chat_models_dict)
+
+        # 然后创建完整配置
+        ReplicateModelsConfig(image_models=image_models, chat_models=chat_models)
+        print("✅ 示例配置验证通过")
+    except ValidationError as e:
+        print(f"❌ 示例配置验证失败: {e}")
+
+    return example
 
 
 class TestReplicateConfigSummary:

@@ -4,7 +4,7 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel
 
-from ..chat_services.chat_request_handler import ChatRequestHandler
+from ..chat_services.client import ChatClient
 from ..entitas import Entity, GroupEvent, Matcher
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
@@ -209,7 +209,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         message = _generate_prompt(params)
 
         # 用场景推理。
-        request_handler = ChatRequestHandler(
+        request_handler = ChatClient(
             agent_name=stage_entity._name,
             prompt=message,
             chat_history=self._game.get_agent_short_term_memory(
@@ -218,7 +218,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         )
 
         # 用语言服务系统进行推理。
-        self._game.chat_system.handle([request_handler])
+        self._game.chat_system.request([request_handler])
 
         # 处理返回结果。
         if request_handler.last_message_content == "":
@@ -231,7 +231,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
     def _handle_response(
         self,
         stage_entity: Entity,
-        request_handler: ChatRequestHandler,
+        request_handler: ChatClient,
         actor_entities: List[Entity],
     ) -> None:
 

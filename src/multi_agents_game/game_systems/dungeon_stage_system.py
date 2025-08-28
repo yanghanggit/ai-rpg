@@ -4,7 +4,7 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel
 
-from ..chat_services.chat_request_handler import ChatRequestHandler
+from ..chat_services.client import ChatClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -92,7 +92,7 @@ class DungeonStageSystem(ExecuteProcessor):
         assert current_stage is not None
 
         request_handler = self._generate_requests(current_stage)
-        self._game.chat_system.handle(request_handlers=[request_handler])
+        self._game.chat_system.request(request_handlers=[request_handler])
 
         if request_handler.last_message_content == "":
             logger.error(f"Agent: {request_handler._name}, Response is empty.")
@@ -101,7 +101,7 @@ class DungeonStageSystem(ExecuteProcessor):
         self._handle_response(current_stage, request_handler)
 
     #######################################################################################################################################
-    def _generate_requests(self, stage_entity: Entity) -> ChatRequestHandler:
+    def _generate_requests(self, stage_entity: Entity) -> ChatClient:
 
         # 获取场景内角色的外貌信息
         actors_appearances_mapping: Dict[str, str] = (
@@ -112,7 +112,7 @@ class DungeonStageSystem(ExecuteProcessor):
         message = _generate_prompt(actors_appearances_mapping)
 
         # 生成请求处理器
-        return ChatRequestHandler(
+        return ChatClient(
             agent_name=stage_entity._name,
             prompt=message,
             chat_history=self._game.get_agent_short_term_memory(
@@ -122,7 +122,7 @@ class DungeonStageSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     def _handle_response(
-        self, stage_entity: Entity, request_handler: ChatRequestHandler
+        self, stage_entity: Entity, request_handler: ChatClient
     ) -> None:
 
         # 核心处理

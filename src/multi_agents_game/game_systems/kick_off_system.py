@@ -3,7 +3,7 @@ from typing import List, Set, final
 from loguru import logger
 from overrides import override
 
-from ..chat_services.chat_request_handler import ChatRequestHandler
+from ..chat_services.client import ChatClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -83,7 +83,7 @@ class KickOffSystem(ExecuteProcessor):
     async def _process_request(self, entities: Set[Entity]) -> None:
 
         # 添加请求处理器
-        request_handlers: List[ChatRequestHandler] = []
+        request_handlers: List[ChatClient] = []
 
         for entity1 in entities:
             # 不同实体生成不同的提示
@@ -96,7 +96,7 @@ class KickOffSystem(ExecuteProcessor):
 
             agent_short_term_memory = self._game.get_agent_short_term_memory(entity1)
             request_handlers.append(
-                ChatRequestHandler(
+                ChatClient(
                     agent_name=entity1._name,
                     prompt=gen_prompt,
                     chat_history=agent_short_term_memory.chat_history,

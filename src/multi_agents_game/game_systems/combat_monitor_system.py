@@ -3,7 +3,7 @@ from typing import Dict, List, Set, Union, final, override
 from loguru import logger
 from pydantic import BaseModel
 
-from ..chat_services.chat_request_handler import ChatRequestHandler
+from ..chat_services.client import ChatClient
 from ..entitas import Entity, ExecuteProcessor
 from ..game.tcg_game import TCGGame
 from ..models import ActorComponent, StageComponent, StatusEffect
@@ -35,7 +35,7 @@ class CombatMonitorSystem(ExecuteProcessor):
     ) -> None:
 
         self._game = game_context
-        self._request_handlers: list[ChatRequestHandler] = []
+        self._request_handlers: list[ChatClient] = []
         self._result_mapping: Dict[Entity, Union[StageResponse, ActorResponse]] = {}
 
     ######################################################################################################################################
@@ -82,11 +82,9 @@ class CombatMonitorSystem(ExecuteProcessor):
 
     ####################################################################################################################################
     # 生成请求
-    def _gen_stages_requests(
-        self, stage_entities: Set[Entity]
-    ) -> List[ChatRequestHandler]:
+    def _gen_stages_requests(self, stage_entities: Set[Entity]) -> List[ChatClient]:
 
-        ret: List[ChatRequestHandler] = []
+        ret: List[ChatClient] = []
 
         # 准备模板
         stage_response_template = StageResponse(
@@ -113,7 +111,7 @@ class CombatMonitorSystem(ExecuteProcessor):
                 stage_entity
             )
             ret.append(
-                ChatRequestHandler(
+                ChatClient(
                     agent_name=stage_entity._name,
                     prompt=message,
                     chat_history=agent_short_term_memory.chat_history,
@@ -123,11 +121,9 @@ class CombatMonitorSystem(ExecuteProcessor):
 
     ####################################################################################################################################
     # 生成请求
-    def _gen_actors_requests(
-        self, actor_entities: Set[Entity]
-    ) -> List[ChatRequestHandler]:
+    def _gen_actors_requests(self, actor_entities: Set[Entity]) -> List[ChatClient]:
 
-        ret: List[ChatRequestHandler] = []
+        ret: List[ChatClient] = []
 
         # 准备模板
         actor_response_template = ActorResponse(
@@ -162,7 +158,7 @@ class CombatMonitorSystem(ExecuteProcessor):
             )
 
             ret.append(
-                ChatRequestHandler(
+                ChatClient(
                     agent_name=actor_entity._name,
                     prompt=message,
                     chat_history=agent_short_term_memory.chat_history,
@@ -173,7 +169,7 @@ class CombatMonitorSystem(ExecuteProcessor):
     ####################################################################################################################################
     # 后续处理：处理场景的返回
     def _handle_stage_response(
-        self, stage_entity: Entity, request_handler: ChatRequestHandler
+        self, stage_entity: Entity, request_handler: ChatClient
     ) -> None:
         assert stage_entity.has(StageComponent)
         assert stage_entity._name == request_handler._name
@@ -196,7 +192,7 @@ class CombatMonitorSystem(ExecuteProcessor):
     ####################################################################################################################################
     # 后续处理：处理角色的返回
     def _handle_actor_response(
-        self, actor_entity: Entity, request_handler: ChatRequestHandler
+        self, actor_entity: Entity, request_handler: ChatClient
     ) -> None:
         assert actor_entity.has(ActorComponent)
         assert actor_entity._name == request_handler._name

@@ -4,7 +4,7 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel
 
-from ..chat_services.chat_request_handler import ChatRequestHandler
+from ..chat_services.client import ChatClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -109,9 +109,7 @@ class HomeActorSystem(ExecuteProcessor):
             return
 
         # 处理角色规划请求
-        request_handlers: List[ChatRequestHandler] = self._generate_requests(
-            actor_entities
-        )
+        request_handlers: List[ChatClient] = self._generate_requests(actor_entities)
 
         # 语言服务
         await self._game.chat_system.gather(request_handlers=request_handlers)
@@ -120,7 +118,7 @@ class HomeActorSystem(ExecuteProcessor):
         self._handle_responses(request_handlers)
 
     #######################################################################################################################################
-    def _handle_responses(self, request_handlers: List[ChatRequestHandler]) -> None:
+    def _handle_responses(self, request_handlers: List[ChatClient]) -> None:
 
         for request_handler in request_handlers:
 
@@ -132,9 +130,7 @@ class HomeActorSystem(ExecuteProcessor):
             self._handle_response(entity2, request_handler)
 
     #######################################################################################################################################
-    def _handle_response(
-        self, entity2: Entity, request_handler: ChatRequestHandler
-    ) -> None:
+    def _handle_response(self, entity2: Entity, request_handler: ChatClient) -> None:
 
         # 核心处理
         try:
@@ -176,11 +172,9 @@ class HomeActorSystem(ExecuteProcessor):
             logger.error(f"Exception: {e}")
 
     #######################################################################################################################################
-    def _generate_requests(
-        self, actor_entities: set[Entity]
-    ) -> List[ChatRequestHandler]:
+    def _generate_requests(self, actor_entities: set[Entity]) -> List[ChatClient]:
 
-        request_handlers: List[ChatRequestHandler] = []
+        request_handlers: List[ChatClient] = []
 
         for entity in actor_entities:
 
@@ -202,7 +196,7 @@ class HomeActorSystem(ExecuteProcessor):
 
             # 生成请求处理器
             request_handlers.append(
-                ChatRequestHandler(
+                ChatClient(
                     agent_name=entity._name,
                     prompt=message,
                     chat_history=self._game.get_agent_short_term_memory(

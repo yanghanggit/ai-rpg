@@ -4,7 +4,7 @@ from langchain.schema import AIMessage
 from loguru import logger
 from pydantic import BaseModel
 
-from ..chat_services.chat_request_handler import ChatRequestHandler
+from ..chat_services.client import ChatClient
 from ..entitas import Entity, ExecuteProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -84,13 +84,11 @@ class CombatKickOffSystem(ExecuteProcessor):
             return  # 人不够就返回。
 
         # step4: 处理角色规划请求
-        request_handlers: List[ChatRequestHandler] = self._generate_requests(
-            actor_entities
-        )
+        request_handlers: List[ChatClient] = self._generate_requests(actor_entities)
         await self._game.chat_system.gather(request_handlers=request_handlers)
 
         # step5: 处理角色规划请求
-        response_map: Dict[ChatRequestHandler, CombatKickOffResponse] = {}
+        response_map: Dict[ChatClient, CombatKickOffResponse] = {}
         for request_handler in request_handlers:
             if request_handler.last_message_content == "":
                 continue
@@ -131,11 +129,9 @@ class CombatKickOffSystem(ExecuteProcessor):
             self._game.initialize_combat_components(actor_entity)
 
     ###################################################################################################################################################################
-    def _generate_requests(
-        self, actor_entities: set[Entity]
-    ) -> List[ChatRequestHandler]:
+    def _generate_requests(self, actor_entities: set[Entity]) -> List[ChatClient]:
 
-        request_handlers: List[ChatRequestHandler] = []
+        request_handlers: List[ChatClient] = []
 
         for actor_entity in actor_entities:
 
@@ -160,7 +156,7 @@ class CombatKickOffSystem(ExecuteProcessor):
 
             # 生成请求处理器
             request_handlers.append(
-                ChatRequestHandler(
+                ChatClient(
                     agent_name=actor_entity._name,
                     prompt=message,
                     chat_history=self._game.get_agent_short_term_memory(
@@ -173,7 +169,7 @@ class CombatKickOffSystem(ExecuteProcessor):
 
     ###################################################################################################################################################################
     def _validate_response_format(
-        self, request_handler: ChatRequestHandler
+        self, request_handler: ChatClient
     ) -> Optional[CombatKickOffResponse]:
         try:
             format_response = CombatKickOffResponse.model_validate_json(
@@ -191,7 +187,7 @@ class CombatKickOffSystem(ExecuteProcessor):
     def _handle_response(
         self,
         entity2: Entity,
-        request_handler: ChatRequestHandler,
+        request_handler: ChatClient,
         format_response: CombatKickOffResponse,
     ) -> None:
 

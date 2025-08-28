@@ -3,7 +3,7 @@ from typing import List, final
 from loguru import logger
 from overrides import override
 
-from ..chat_services.chat_request_handler import ChatRequestHandler
+from ..chat_services.client import ChatClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -57,7 +57,7 @@ class CombatCompleteSystem(ExecuteProcessor):
         ).entities
 
         # 处理角色规划请求
-        request_handlers: List[ChatRequestHandler] = []
+        request_handlers: List[ChatClient] = []
         for entity1 in actor_entities:
 
             stage_entity1 = self._game.safe_get_stage_entity(entity1)
@@ -78,7 +78,7 @@ class CombatCompleteSystem(ExecuteProcessor):
 
             # 生成请求处理器
             request_handlers.append(
-                ChatRequestHandler(
+                ChatClient(
                     agent_name=entity1._name,
                     prompt=message,
                     chat_history=self._game.get_agent_short_term_memory(

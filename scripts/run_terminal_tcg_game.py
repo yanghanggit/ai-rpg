@@ -11,13 +11,13 @@ from typing import Dict, Set, TypedDict, cast
 
 from loguru import logger
 
-from multi_agents_game.chat_services.chat_system import ChatSystem
+from multi_agents_game.chat_services.manager import ChatClientManager
 from multi_agents_game.settings import (
     # DEFAULT_SERVER_SETTINGS_CONFIG,
     ServerSettings,
 )
 from multi_agents_game.game.game_config import GLOBAL_GAME_NAME, setup_logger
-from multi_agents_game.demo import create_actor_warrior, create_demo_dungeon1
+from multi_agents_game.demo import create_actor_warrior, create_demo_dungeon5
 from multi_agents_game.game.game_options import TerminalGameUserOptions
 from multi_agents_game.game.player_proxy import PlayerProxy
 from multi_agents_game.game.tcg_game import TCGGameState
@@ -121,9 +121,9 @@ async def run_game(
             actor=terminal_game_user_options.actor,
         ),
         world=world_exists,
-        chat_system=ChatSystem(
+        chat_system=ChatClientManager(
             name=f"{terminal_game_user_options.game}-chatsystem",
-            username=terminal_game_user_options.user,
+            # username=terminal_game_user_options.user,
             localhost_urls=server_config.azure_openai_chat_server_localhost_urls,
         ),
     )

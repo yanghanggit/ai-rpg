@@ -1,9 +1,9 @@
-from typing import List
+from typing import List, TypeAlias
 
 from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel, ConfigDict
 
-ChatRequestMessageListType = List[SystemMessage | HumanMessage | AIMessage]
+ChatRequestMessageListType: TypeAlias = List[SystemMessage | HumanMessage | AIMessage]
 
 
 ############################################################################################################

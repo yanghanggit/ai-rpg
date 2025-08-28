@@ -17,11 +17,12 @@ class ChatClientManager:
         # 名字
         self._name: Final[str] = name
 
-        # self._username: Final[str] = username
-
         # 运行的服务器
         assert len(localhost_urls) > 0
         self._chat_server_localhost_urls: Final[List[str]] = localhost_urls
+
+        # 当前服务器索引，用于轮询
+        self._current_server_index: int = 0
 
         # 异步请求客户端
         self._async_client: Final[httpx.AsyncClient] = httpx.AsyncClient()
@@ -59,7 +60,16 @@ class ChatClientManager:
 
         for request_handler in request_handlers:
             start_time = time.time()
-            request_handler.request(self._chat_server_localhost_urls[0])
+
+            # 使用当前索引获取服务器URL
+            current_url = self._chat_server_localhost_urls[self._current_server_index]
+            request_handler.request(current_url)
+
+            # 移动到下一个服务器，循环轮询
+            self._current_server_index = (self._current_server_index + 1) % len(
+                self._chat_server_localhost_urls
+            )
+
             end_time = time.time()
             logger.debug(f"ChatSystem.handle:{end_time - start_time:.2f} seconds")
 

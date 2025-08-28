@@ -43,17 +43,3 @@ def get_deepseek_llm() -> ChatDeepSeek:
         logger.success("🤖 全局DeepSeek LLM实例创建完成")
 
     return _global_deepseek_llm
-
-
-# def reset_deepseek_llm() -> None:
-#     """
-#     重置全局DeepSeek LLM实例
-
-#     用途：
-#     - 测试时清理状态
-#     - 配置更改后重新初始化
-#     - 错误恢复
-#     """
-#     global _global_deepseek_llm
-#     logger.info("🔄 重置全局DeepSeek LLM实例...")
-#     _global_deepseek_llm = None

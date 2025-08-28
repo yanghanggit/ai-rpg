@@ -6,7 +6,7 @@ load_dotenv()
 
 import os
 import traceback
-from typing import Annotated, Any, Dict, List
+from typing import Annotated, Any, Dict, List, Optional
 
 from langchain.schema import HumanMessage
 from langchain_core.messages import BaseMessage
@@ -18,6 +18,48 @@ from pydantic import SecretStr
 from typing_extensions import TypedDict
 
 
+# 全局Azure OpenAI GPT实例（懒加载单例）
+_global_azure_openai_gpt_llm: Optional[AzureChatOpenAI] = None
+
+
+def get_azure_openai_gpt_llm() -> AzureChatOpenAI:
+    """
+    获取全局Azure OpenAI GPT实例（懒加载单例模式）
+
+    Returns:
+        AzureChatOpenAI: 配置好的Azure OpenAI GPT实例
+
+    Raises:
+        ValueError: 当AZURE_OPENAI_API_KEY环境变量未设置时
+    """
+    global _global_azure_openai_gpt_llm
+
+    if _global_azure_openai_gpt_llm is None:
+        logger.info("🤖 初始化全局Azure OpenAI GPT实例...")
+
+        # 检查必需的环境变量
+        azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+        azure_api_key = os.getenv("AZURE_OPENAI_API_KEY")
+
+        if not azure_endpoint:
+            raise ValueError("AZURE_OPENAI_ENDPOINT environment variable is not set")
+
+        if not azure_api_key:
+            raise ValueError("AZURE_OPENAI_API_KEY environment variable is not set")
+
+        _global_azure_openai_gpt_llm = AzureChatOpenAI(
+            azure_endpoint=azure_endpoint,
+            api_key=SecretStr(azure_api_key),
+            azure_deployment="gpt-4o",
+            api_version="2024-02-01",
+            temperature=0.7,
+        )
+
+        logger.success("🤖 全局DeepSeek LLM实例创建完成")
+
+    return _global_azure_openai_gpt_llm
+
+
 ############################################################################################################
 class State(TypedDict):
     messages: Annotated[List[BaseMessage], add_messages]
@@ -25,33 +67,19 @@ class State(TypedDict):
 
 ############################################################################################################
 def create_compiled_stage_graph(
-    node_name: str, temperature: float
+    node_name: str,
 ) -> CompiledStateGraph[State, Any, State, State]:
     assert node_name != "", "node_name is empty"
-
-    # 检查必需的环境变量
-    azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-    azure_api_key = os.getenv("AZURE_OPENAI_API_KEY")
-
-    if not azure_endpoint:
-        raise ValueError("AZURE_OPENAI_ENDPOINT environment variable is not set")
-    if not azure_api_key:
-        raise ValueError("AZURE_OPENAI_API_KEY environment variable is not set")
-
-    llm = AzureChatOpenAI(
-        azure_endpoint=azure_endpoint,
-        api_key=SecretStr(azure_api_key),
-        azure_deployment="gpt-4o",
-        api_version="2024-02-01",
-        temperature=temperature,
-    )
 
     def invoke_azure_chat_openai_llm_action(
         state: State,
     ) -> Dict[str, List[BaseMessage]]:
 
         try:
+            llm = get_azure_openai_gpt_llm()
+            assert llm is not None, "Failed to get Azure OpenAI GPT instance"
             return {"messages": [llm.invoke(state["messages"])]}
+
         except Exception as e:
             logger.error(
                 f"Error invoking Azure Chat OpenAI LLM: {e}\n" f"State: {state}"
@@ -95,9 +123,7 @@ def main() -> None:
     chat_history_state: State = {"messages": []}
 
     # 生成聊天机器人状态图
-    compiled_stage_graph = create_compiled_stage_graph(
-        "azure_chat_openai_chatbot_node", 0.7
-    )
+    compiled_stage_graph = create_compiled_stage_graph("azure_chat_openai_chatbot_node")
 
     while True:
 

@@ -17,7 +17,7 @@ app = FastAPI()
 ##################################################################################################################
 # 创建编译后的状态图
 compiled_state_graph: CompiledStateGraph[State, Any, State, State] = (
-    create_compiled_stage_graph("azure_chat_openai_chatbot_node", 0.7)
+    create_compiled_stage_graph("azure_chat_openai_chatbot_node")
 )
 
 

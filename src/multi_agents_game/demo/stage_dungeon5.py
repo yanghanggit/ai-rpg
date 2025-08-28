@@ -19,7 +19,7 @@ def create_stage_cave5() -> Stage:
         kick_off_message="",
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         type=StageType.DUNGEON,
-        stage_profile="你是一个用来测试技能和战斗策略的训练场，训练场里只有干草和木桩。",
+        stage_profile="你是一个用来测试技能和战斗策略的训练场，训练场里有干草和木桩，地型被改造成了沼泽，所以训练场里也充满了沼气和水，地上还插着生锈的剑和各种生物的白骨来营造气氛。",
         actors=[],
     )
 
@@ -27,8 +27,8 @@ def create_stage_cave5() -> Stage:
 def create_demo_dungeon5() -> Dungeon:
 
     actor_training_robot = create_actor_training_robot()
-    actor_training_robot.rpg_character_profile.hp = 1
-    actor_training_robot.kick_off_message += f"""\n注意：你作为一个训练机器人只会最基本的攻击和防御技能，但是每个回合结束时都会回满血量。"""
+    actor_training_robot.rpg_character_profile.hp = 999
+    actor_training_robot.kick_off_message += f"""\n注意：你作为一个训练机器人只会最基本的攻击和防御技能，但是你死不掉，并且每个回合结束时都会回满血量。"""
 
     stage_cave5 = create_stage_cave5()
     stage_cave5.actors = [actor_training_robot]

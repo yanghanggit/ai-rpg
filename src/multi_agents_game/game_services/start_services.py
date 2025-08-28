@@ -1,11 +1,12 @@
+from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 
 # from ..chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
-from ..chat_services.chat_system import ChatSystem
-from ..config import DEFAULT_SERVER_SETTINGS_CONFIG
+from ..chat_services.manager import ChatClientManager
+from ..settings import ServerSettings
 from ..demo.stage_dungeon4 import (
     create_demo_dungeon4,
 )
@@ -17,6 +18,12 @@ from ..models import StartRequest, StartResponse, World
 
 ###################################################################################################################################################################
 start_router = APIRouter()
+
+
+# server_config: Final[ServerSettingsConfig] = ServerSettingsConfig()
+
+
+# write_path.write_text(server_config.model_dump_json(indent=4), encoding="utf-8")
 
 
 ###################################################################################################################################################################
@@ -104,6 +111,11 @@ def setup_web_game_session(
     else:
         pass
 
+    write_path = Path("server_settings.json")
+    assert write_path.exists(), "server_settings.json must exist"
+    content = write_path.read_text(encoding="utf-8")
+    server_config = ServerSettings.model_validate_json(content)
+
     # 依赖注入，创建新的游戏
     assert world_exists is not None, "World data must exist to create a game"
     web_game = WebTCGGame(
@@ -112,12 +124,11 @@ def setup_web_game_session(
             name=web_game_user_options.user, actor=web_game_user_options.actor
         ),
         world=world_exists,
-        chat_system=ChatSystem(
+        chat_system=ChatClientManager(
             name=f"{web_game_user_options.game}-chatsystem",
-            username=web_game_user_options.user,
-            localhost_urls=DEFAULT_SERVER_SETTINGS_CONFIG.chat_server_localhost_urls,
+            # username=web_game_user_options.user,
+            localhost_urls=server_config.azure_openai_chat_server_localhost_urls,
         ),
-        # chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
 
     # 启动游戏的判断，是第一次建立还是恢复？

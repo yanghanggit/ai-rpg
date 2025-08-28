@@ -5,55 +5,32 @@ from loguru import logger
 load_dotenv()
 
 import os
-from typing import Optional
 from pydantic import SecretStr
 from langchain_deepseek import ChatDeepSeek
 
 
-# 全局DeepSeek LLM实例（懒加载单例）
-_global_deepseek_llm: Optional[ChatDeepSeek] = None
-
-
-def get_deepseek_llm() -> ChatDeepSeek:
+def create_deepseek_llm() -> ChatDeepSeek:
     """
-    获取全局DeepSeek LLM实例（懒加载单例模式）
+    创建新的DeepSeek LLM实例
 
     Returns:
-        ChatDeepSeek: 配置好的DeepSeek LLM实例
+        ChatDeepSeek: 新创建的DeepSeek LLM实例
 
     Raises:
         ValueError: 当DEEPSEEK_API_KEY环境变量未设置时
     """
-    global _global_deepseek_llm
+    logger.debug("🤖 创建新的DeepSeek LLM实例...")
 
-    if _global_deepseek_llm is None:
-        logger.info("🤖 初始化全局DeepSeek LLM实例...")
+    # 检查必需的环境变量
+    deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
+    if not deepseek_api_key:
+        raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
 
-        # 检查必需的环境变量
-        deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
-        if not deepseek_api_key:
-            raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
+    llm = ChatDeepSeek(
+        api_key=SecretStr(deepseek_api_key),
+        model="deepseek-chat",
+        temperature=0.7,
+    )
 
-        _global_deepseek_llm = ChatDeepSeek(
-            api_key=SecretStr(deepseek_api_key),
-            model="deepseek-chat",
-            temperature=0.7,
-        )
-
-        logger.success("🤖 全局DeepSeek LLM实例创建完成")
-
-    return _global_deepseek_llm
-
-
-# def reset_deepseek_llm() -> None:
-#     """
-#     重置全局DeepSeek LLM实例
-
-#     用途：
-#     - 测试时清理状态
-#     - 配置更改后重新初始化
-#     - 错误恢复
-#     """
-#     global _global_deepseek_llm
-#     logger.info("🔄 重置全局DeepSeek LLM实例...")
-#     _global_deepseek_llm = None
+    logger.debug("🤖 DeepSeek LLM实例创建完成")
+    return llm

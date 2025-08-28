@@ -9,6 +9,7 @@ from typing import Annotated, Any, Dict, List
 
 from langchain.schema import AIMessage, HumanMessage
 from langchain_core.messages import BaseMessage
+from langchain_deepseek import ChatDeepSeek
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.graph.state import CompiledStateGraph
@@ -18,17 +19,18 @@ from typing_extensions import TypedDict
 from ..chroma import get_chroma_db
 
 # 导入统一的 DeepSeek LLM 客户端
-from .client import get_deepseek_llm
 
 
 ############################################################################################################
 class State(TypedDict):
     messages: Annotated[List[BaseMessage], add_messages]
+    llm: ChatDeepSeek  # DeepSeek LLM实例，整个流程共享
 
 
 ############################################################################################################
 class RAGState(TypedDict):
     messages: Annotated[List[BaseMessage], add_messages]
+    llm: ChatDeepSeek  # DeepSeek LLM实例，整个RAG流程共享
     user_query: str  # 用户原始查询
     retrieved_docs: List[str]  # 检索到的文档
     enhanced_context: str  # 增强后的上下文
@@ -212,8 +214,9 @@ def rag_llm_node(state: RAGState) -> Dict[str, List[BaseMessage]]:
     try:
         logger.info("🤖 [LLM] 开始生成回答...")
 
-        # 使用统一的 DeepSeek LLM 客户端
-        llm = get_deepseek_llm()
+        # 使用状态中的 DeepSeek LLM 实例
+        llm = state["llm"]
+        assert llm is not None, "LLM instance is None in state"
 
         # 使用增强的上下文替换原始消息
         enhanced_context = state.get("enhanced_context", "")
@@ -298,6 +301,12 @@ def stream_rag_graph_updates(
     try:
         logger.info("🚀 开始执行RAG流程...")
 
+        # 创建 DeepSeek LLM 实例
+        from .client import create_deepseek_llm
+
+        llm = create_deepseek_llm()
+        logger.info("🚀 创建 DeepSeek LLM 实例完成")
+
         # 准备RAG状态
         user_message = (
             user_input_state["messages"][-1] if user_input_state["messages"] else None
@@ -313,6 +322,7 @@ def stream_rag_graph_updates(
             "retrieved_docs": [],
             "enhanced_context": "",
             "similarity_scores": [],  # 添加相似度分数字段
+            "llm": llm,  # 添加LLM实例到状态中
         }
 
         logger.info(f"🚀 RAG输入状态准备完成，用户查询: {user_query}")

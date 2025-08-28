@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import sys
 
 # 将 src 目录添加到模块搜索路径
@@ -10,12 +11,12 @@ from typing import Dict, Set, TypedDict, cast
 
 from loguru import logger
 
-from multi_agents_game.chat_services.chat_system import ChatSystem
-from multi_agents_game.config import (
-    DEFAULT_SERVER_SETTINGS_CONFIG,
-    GLOBAL_GAME_NAME,
-    setup_logger,
+from multi_agents_game.chat_services.manager import ChatClientManager
+from multi_agents_game.settings import (
+    # DEFAULT_SERVER_SETTINGS_CONFIG,
+    ServerSettings,
 )
+from multi_agents_game.game.game_config import GLOBAL_GAME_NAME, setup_logger
 from multi_agents_game.demo import create_actor_warrior, create_demo_dungeon5
 from multi_agents_game.game.game_options import TerminalGameUserOptions
 from multi_agents_game.game.player_proxy import PlayerProxy
@@ -106,6 +107,11 @@ async def run_game(
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+    write_path = Path("server_settings.json")
+    assert write_path.exists(), "server_settings.json must exist"
+    content = write_path.read_text(encoding="utf-8")
+    server_config = ServerSettings.model_validate_json(content)
+
     # 依赖注入，创建新的游戏
     assert world_exists is not None, "World data must exist to create a game"
     terminal_game = TerminalTCGGame(
@@ -115,12 +121,11 @@ async def run_game(
             actor=terminal_game_user_options.actor,
         ),
         world=world_exists,
-        chat_system=ChatSystem(
+        chat_system=ChatClientManager(
             name=f"{terminal_game_user_options.game}-chatsystem",
-            username=terminal_game_user_options.user,
-            localhost_urls=DEFAULT_SERVER_SETTINGS_CONFIG.chat_server_localhost_urls,
+            # username=terminal_game_user_options.user,
+            localhost_urls=server_config.azure_openai_chat_server_localhost_urls,
         ),
-        # chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
 
     # 启动游戏的判断，是第一次建立还是恢复？

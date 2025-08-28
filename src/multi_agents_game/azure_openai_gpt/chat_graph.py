@@ -6,21 +6,18 @@ load_dotenv()
 
 import traceback
 from typing import Annotated, Any, Dict, List
-
 from langchain_core.messages import BaseMessage
-from langchain_deepseek import ChatDeepSeek
+from langchain_openai import AzureChatOpenAI
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.graph.state import CompiledStateGraph
 from typing_extensions import TypedDict
 
-# 导入统一的 DeepSeek LLM 客户端
-
 
 ############################################################################################################
 class State(TypedDict):
     messages: Annotated[List[BaseMessage], add_messages]
-    llm: ChatDeepSeek
+    llm: AzureChatOpenAI
 
 
 ############################################################################################################
@@ -29,7 +26,7 @@ def create_compiled_stage_graph(
 ) -> CompiledStateGraph[State, Any, State, State]:
     assert node_name != "", "node_name is empty"
 
-    def invoke_deepseek_llm_action(
+    def invoke_azure_chat_openai_llm_action(
         state: State,
     ) -> Dict[str, List[BaseMessage]]:
 
@@ -37,15 +34,18 @@ def create_compiled_stage_graph(
             llm = state["llm"]  # 使用状态中的LLM实例
             assert llm is not None, "LLM instance is None in state"
             return {"messages": [llm.invoke(state["messages"])]}
+
         except Exception as e:
-            logger.error(f"Error invoking DeepSeek LLM: {e}\n" f"State: {state}")
+            logger.error(
+                f"Error invoking Azure Chat OpenAI LLM: {e}\n" f"State: {state}"
+            )
             traceback.print_exc()
             return {
                 "messages": []
-            }  # 当出现内容过滤的情况，或者其他类型异常时，视需求可在此返回空字符串或者自定义提示。
+            }  # 当出现 Azure 内容过滤的情况，或者其他类型异常时，视需求可在此返回空字符串或者自定义提示。
 
     graph_builder = StateGraph(State)
-    graph_builder.add_node(node_name, invoke_deepseek_llm_action)
+    graph_builder.add_node(node_name, invoke_azure_chat_openai_llm_action)
     graph_builder.set_entry_point(node_name)
     graph_builder.set_finish_point(node_name)
     return graph_builder.compile()  # type: ignore[return-value]

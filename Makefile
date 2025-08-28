@@ -1,4 +1,4 @@
-.PHONY: install test lint format clean dev-install conda-install conda-setup check-imports fix-imports restart-chat-servers kill-chat-servers pip-install show-structure check help
+.PHONY: install test lint format clean dev-install conda-install conda-setup check-imports fix-imports pip-install show-structure check help
 
 # 默认目标：显示帮助信息
 .DEFAULT_GOAL := help
@@ -39,22 +39,6 @@ dev-install:
 		echo "📦 安装开发依赖..."; \
 		pip install -r requirements-dev.txt; \
 	fi
-
-# 停止聊天服务器：直接停止所有聊天服务器
-kill-chat-servers:
-	@echo "🛑 停止聊天服务器..."
-	./scripts/kill_chat_servers.sh
-	@echo "✅ 聊天服务器已停止！"
-
-
-# 重启聊天服务器：停止所有服务器并重新启动聊天服务器
-restart-chat-servers:
-	@echo "🔄 重启聊天服务器..."
-	@echo "🛑 停止现有服务器..."
-	./scripts/kill_chat_servers.sh
-	@echo "🚀 启动聊天服务器..."
-	scripts/run_chat_servers.sh
-	@echo "✅ 聊天服务器重启完成！"
 
 # 运行测试
 test:
@@ -139,8 +123,6 @@ help:
 	@echo "  fix-imports    - 🔧 修复未使用的导入"
 	@echo ""
 	@echo "🔧 开发工具:"
-	@echo "  restart-chat-servers - 🔄 重启聊天服务器（停止→启动）"
-	@echo "  kill-chat-servers    - 🛑 停止聊天服务器"
 	@echo "  show-structure - 📁 显示项目结构"
 	@echo "  check          - ✅ 检查项目和环境状态"
 	@echo "  clean          - 🧹 清理构建文件"

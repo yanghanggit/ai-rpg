@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-DeepSeek聊天系统启动脚本
+Azure OpenAI GPT-4o聊天系统启动脚本
 
 功能：
-1. 基于LangGraph构建的DeepSeek聊天机器人
+1. 基于LangGraph构建的Azure OpenAI GPT-4o聊天机器人
 2. 支持连续对话和上下文记忆
 3. 提供交互式聊天界面
 
 使用方法：
-    python scripts/run_deepseek_chat.py
+    python scripts/run_azure_openai_chat.py
 
 或者在项目根目录下：
-    python -m scripts.run_deepseek_chat
+    python -m scripts.run_azure_openai_chat
 """
 
 import os
@@ -27,38 +27,40 @@ sys.path.insert(
 from langchain.schema import HumanMessage
 from loguru import logger
 
-from multi_agents_game.deepseek import (
+from multi_agents_game.azure_openai_gpt import (
     State,
     create_compiled_stage_graph,
     stream_graph_updates,
-    create_deepseek_llm,
+    create_azure_openai_gpt_llm,
 )
 
 
 def main() -> None:
     """
-    DeepSeek聊天系统主函数
+    Azure OpenAI GPT-4o聊天系统主函数
 
     功能：
-    1. 初始化DeepSeek聊天机器人
+    1. 初始化Azure OpenAI GPT-4o聊天机器人
     2. 提供连续对话能力
     3. 支持上下文记忆
     4. 优雅的错误处理
     """
-    logger.info("🤖 启动DeepSeek聊天系统...")
+    logger.info("🤖 启动Azure OpenAI GPT-4o聊天系统...")
 
     try:
         # 为每个会话创建独立的LLM实例
-        llm = create_deepseek_llm()
+        llm = create_azure_openai_gpt_llm()
 
         # 聊天历史（包含LLM实例）
         chat_history_state: State = {"messages": [], "llm": llm}
 
         # 生成聊天机器人状态图
-        compiled_stage_graph = create_compiled_stage_graph("deepseek_chatbot_node")
+        compiled_stage_graph = create_compiled_stage_graph(
+            "azure_chat_openai_chatbot_node"
+        )
 
-        logger.success("🤖 DeepSeek聊天系统初始化完成，开始对话...")
-        logger.info("💡 提示：您可以与DeepSeek AI进行自由对话")
+        logger.success("🤖 Azure OpenAI GPT-4o聊天系统初始化完成，开始对话...")
+        logger.info("💡 提示：您可以与Azure OpenAI GPT-4o进行自由对话")
         logger.info("💡 输入 /quit、/exit 或 /q 退出程序")
 
         while True:
@@ -90,14 +92,14 @@ def main() -> None:
                 # 显示最新的AI回复
                 if update_messages:
                     latest_response = update_messages[-1]
-                    print(f"\nDeepSeek: {latest_response.content}")
+                    print(f"\nAzure-OpenAI-GPT4o: {latest_response.content}")
 
                 logger.debug("*" * 50)
                 for message in chat_history_state["messages"]:
                     if isinstance(message, HumanMessage):
                         logger.info(f"User: {message.content}")
                     else:
-                        logger.success(f"Deepseek: {message.content}")
+                        logger.success(f"Azure-OpenAI-GPT4o: {message.content}")
 
             except KeyboardInterrupt:
                 logger.info("🛑 [MAIN] 用户中断程序")

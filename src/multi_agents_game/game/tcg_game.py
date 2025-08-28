@@ -10,8 +10,8 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
 
-from ..chat_services.chat_system import ChatSystem
-from ..config import LOGS_DIR
+from ..chat_services.manager import ChatClientManager
+from ..game.game_config import LOGS_DIR
 from ..mongodb import (
     DEFAULT_MONGODB_CONFIG,
     WorldDocument,
@@ -101,7 +101,7 @@ class TCGGame(BaseGame, TCGGameContext):
         name: str,
         player: PlayerProxy,
         world: World,
-        chat_system: ChatSystem,
+        chat_system: ChatClientManager,
     ) -> None:
 
         # 必须按着此顺序实现父
@@ -126,7 +126,7 @@ class TCGGame(BaseGame, TCGGameContext):
         assert self._player.actor != ""
 
         # agent 系统
-        self._chat_system: Final[ChatSystem] = chat_system
+        self._chat_system: Final[ChatClientManager] = chat_system
 
         # 是否开启调试
         self._debug_flag_pipeline: bool = False
@@ -186,7 +186,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     @property
-    def chat_system(self) -> ChatSystem:
+    def chat_system(self) -> ChatClientManager:
         return self._chat_system
 
     ###############################################################################################################################################

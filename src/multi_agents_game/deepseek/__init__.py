@@ -8,7 +8,7 @@ DeepSeek 聊天服务模块
 - 统一聊天图（unified_chat_graph.py）
 """
 
-from .chat_graph import create_compiled_stage_graph, stream_graph_updates
+from .chat_graph import create_compiled_stage_graph, stream_graph_updates, State
 from .rag_graph import create_rag_compiled_graph, stream_rag_graph_updates
 from .mcp_client_graph import (
     create_compiled_mcp_stage_graph,
@@ -21,12 +21,13 @@ from .unified_chat_graph import (
     UnifiedState,
     # reset_deepseek_llm,
 )
-from .client import get_deepseek_llm
+from .client import create_deepseek_llm
 
 __all__ = [
     # 基础聊天图
     "create_compiled_stage_graph",
     "stream_graph_updates",
+    "State",
     # RAG 聊天图
     "create_rag_compiled_graph",
     "stream_rag_graph_updates",
@@ -38,6 +39,6 @@ __all__ = [
     "create_unified_chat_graph",
     "stream_unified_graph_updates",
     "UnifiedState",
-    "get_deepseek_llm",
+    "create_deepseek_llm",
     # "reset_deepseek_llm",
 ]

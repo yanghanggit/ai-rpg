@@ -4,7 +4,7 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel
 
-from ..chat_services.chat_request_handler import ChatRequestHandler
+from ..chat_services.client import ChatClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -73,8 +73,8 @@ class HomeStageSystem(ExecuteProcessor):
             Matcher(all_of=[CanStartPlanningComponent, StageComponent, HomeComponent])
         ).entities.copy()
 
-        request_handlers: List[ChatRequestHandler] = (
-            self._generate_chat_request_handlers(stage_entities)
+        request_handlers: List[ChatClient] = self._generate_chat_request_handlers(
+            stage_entities
         )
 
         await self._game.chat_system.gather(request_handlers=request_handlers)
@@ -84,9 +84,9 @@ class HomeStageSystem(ExecuteProcessor):
     #######################################################################################################################################
     def _generate_chat_request_handlers(
         self, stage_entities: Set[Entity]
-    ) -> List[ChatRequestHandler]:
+    ) -> List[ChatClient]:
 
-        request_handlers: List[ChatRequestHandler] = []
+        request_handlers: List[ChatClient] = []
 
         for stage_entity in stage_entities:
 
@@ -105,7 +105,7 @@ class HomeStageSystem(ExecuteProcessor):
 
             # 生成请求处理器
             request_handlers.append(
-                ChatRequestHandler(
+                ChatClient(
                     agent_name=stage_entity._name,
                     prompt=message,
                     chat_history=self._game.get_agent_short_term_memory(
@@ -116,9 +116,7 @@ class HomeStageSystem(ExecuteProcessor):
         return request_handlers
 
     #######################################################################################################################################
-    def _handle_chat_responses(
-        self, request_handlers: List[ChatRequestHandler]
-    ) -> None:
+    def _handle_chat_responses(self, request_handlers: List[ChatClient]) -> None:
         for request_handler in request_handlers:
 
             if request_handler.last_message_content == "":
@@ -131,7 +129,7 @@ class HomeStageSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     def _handle_stage_response(
-        self, entity2: Entity, request_handler: ChatRequestHandler
+        self, entity2: Entity, request_handler: ChatClient
     ) -> None:
 
         try:

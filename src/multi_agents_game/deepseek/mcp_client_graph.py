@@ -9,6 +9,7 @@ from typing import Annotated, Any, Dict, List, Optional
 
 from langchain.schema import AIMessage, SystemMessage
 from langchain_core.messages import BaseMessage
+from langchain_deepseek import ChatDeepSeek
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.graph.state import CompiledStateGraph
@@ -26,7 +27,7 @@ from ..mcp import (
 )
 
 # 导入统一的 DeepSeek LLM 客户端
-from .client import get_deepseek_llm
+from .client import create_deepseek_llm
 
 
 ############################################################################################################
@@ -36,6 +37,7 @@ class McpState(TypedDict, total=False):
     """
 
     messages: Annotated[List[BaseMessage], add_messages]
+    llm: ChatDeepSeek  # DeepSeek LLM实例，整个graph流程共享
     mcp_client: Optional[McpClient]  # MCP 客户端
     available_tools: List[McpToolInfo]  # 可用的 MCP 工具
     tool_outputs: List[Dict[str, Any]]  # 工具执行结果
@@ -104,40 +106,6 @@ def _build_system_prompt(available_tools: List[McpToolInfo]) -> str:
     return system_prompt
 
 
-# def _format_tool_description(tool: McpToolInfo) -> str:
-#     """格式化单个工具的描述"""
-#     try:
-#         params_desc = ""
-
-#         # 从工具的 input_schema 中提取参数描述
-#         if tool.input_schema and "properties" in tool.input_schema:
-#             param_list = []
-#             properties = tool.input_schema["properties"]
-#             required = tool.input_schema.get("required", [])
-
-#             for param_name, param_info in properties.items():
-#                 param_desc = param_info.get("description", "无描述")
-#                 param_type = param_info.get("type", "string")
-#                 is_required = "**必需**" if param_name in required else "*可选*"
-
-#                 param_list.append(
-#                     f"  - `{param_name}` ({param_type}): {param_desc} [{is_required}]"
-#                 )
-
-#             if param_list:
-#                 params_desc = f"\n{chr(10).join(param_list)}"
-
-#         tool_desc = f"- **{tool.name}**: {tool.description}"
-#         if params_desc:
-#             tool_desc += f"\n  参数:{params_desc}"
-
-#         return tool_desc
-
-#     except Exception as e:
-#         logger.warning(f"格式化工具描述失败: {tool.name}, 错误: {e}")
-#         return f"- **{tool.name}**: {tool.description}"
-
-
 ############################################################################################################
 async def _preprocess_node(state: McpState) -> McpState:
     """
@@ -170,6 +138,7 @@ async def _preprocess_node(state: McpState) -> McpState:
 
         result: McpState = {
             "messages": [],  # 预处理节点不返回消息，避免重复累积
+            "llm": state["llm"],  # 直接使用状态中的LLM实例
             "mcp_client": state.get("mcp_client"),
             "available_tools": available_tools,
             "tool_outputs": state.get("tool_outputs", []),
@@ -195,8 +164,9 @@ async def _llm_invoke_node(state: McpState) -> McpState:
         McpState: 更新后的状态
     """
     try:
-        # 获取 ChatDeepSeek 实例
-        llm = get_deepseek_llm()
+        # 使用状态中的 ChatDeepSeek 实例
+        llm = state["llm"]
+        assert llm is not None, "LLM instance is None in state"
 
         # 使用增强消息（包含系统提示）进行LLM调用
         enhanced_messages = state.get("enhanced_messages", state["messages"])
@@ -206,6 +176,7 @@ async def _llm_invoke_node(state: McpState) -> McpState:
 
         result: McpState = {
             "messages": [],  # LLM调用节点不返回消息，避免重复累积
+            "llm": llm,  # 传递LLM实例
             "mcp_client": state.get("mcp_client"),
             "available_tools": state.get("available_tools", []),
             "tool_outputs": state.get("tool_outputs", []),
@@ -219,6 +190,7 @@ async def _llm_invoke_node(state: McpState) -> McpState:
         error_message = AIMessage(content=f"抱歉，处理请求时发生错误：{str(e)}")
         llm_error_result: McpState = {
             "messages": [error_message],  # 只返回错误消息
+            "llm": state["llm"],  # 保持LLM实例
             "mcp_client": state.get("mcp_client"),
             "available_tools": state.get("available_tools", []),
             "tool_outputs": [],
@@ -256,6 +228,7 @@ async def _tool_parse_node(state: McpState) -> McpState:
 
         result: McpState = {
             "messages": [],  # 工具解析节点不返回消息，避免重复累积
+            "llm": state["llm"],  # 传递LLM实例
             "mcp_client": state.get("mcp_client"),
             "available_tools": available_tools,
             "tool_outputs": state.get("tool_outputs", []),
@@ -270,6 +243,7 @@ async def _tool_parse_node(state: McpState) -> McpState:
         # 发生错误时，继续流程但不执行工具
         error_result: McpState = {
             "messages": [],
+            "llm": state["llm"],  # 传递LLM实例
             "mcp_client": state.get("mcp_client"),
             "available_tools": state.get("available_tools", []),
             "tool_outputs": state.get("tool_outputs", []),
@@ -382,6 +356,7 @@ async def _tool_execution_node(state: McpState) -> McpState:
 
         final_result: McpState = {
             "messages": [],  # 工具执行节点不返回消息，避免重复累积
+            "llm": state["llm"],  # 传递LLM实例
             "mcp_client": mcp_client,
             "available_tools": state.get("available_tools", []),
             "tool_outputs": tool_outputs,
@@ -395,6 +370,7 @@ async def _tool_execution_node(state: McpState) -> McpState:
         # 即使执行失败，也要返回状态以继续流程
         error_result: McpState = {
             "messages": [],
+            "llm": state["llm"],  # 传递LLM实例
             "mcp_client": state.get("mcp_client"),
             "available_tools": state.get("available_tools", []),
             "tool_outputs": [
@@ -432,6 +408,7 @@ async def _response_synthesis_node(state: McpState) -> McpState:
             error_message = AIMessage(content="抱歉，没有收到LLM响应。")
             synthesis_error_result: McpState = {
                 "messages": [error_message],
+                "llm": state["llm"],  # 传递LLM实例
                 "mcp_client": state.get("mcp_client"),
                 "available_tools": state.get("available_tools", []),
                 "tool_outputs": tool_outputs,
@@ -449,6 +426,7 @@ async def _response_synthesis_node(state: McpState) -> McpState:
 
         result: McpState = {
             "messages": [llm_response],
+            "llm": state["llm"],  # 传递LLM实例
             "mcp_client": state.get("mcp_client"),
             "available_tools": state.get("available_tools", []),
             "tool_outputs": tool_outputs,
@@ -460,6 +438,7 @@ async def _response_synthesis_node(state: McpState) -> McpState:
         error_message = AIMessage(content=f"抱歉，合成响应时发生错误：{str(e)}")
         synthesis_exception_result: McpState = {
             "messages": [error_message],
+            "llm": state["llm"],  # 传递LLM实例
             "mcp_client": state.get("mcp_client"),
             "available_tools": state.get("available_tools", []),
             "tool_outputs": [],
@@ -500,8 +479,8 @@ async def create_compiled_mcp_stage_graph(
     assert node_name != "", "node_name is empty"
     assert mcp_client is not None, "mcp_client is required"
 
-    # 获取 ChatDeepSeek 实例（懒加载）
-    llm = get_deepseek_llm()
+    # 创建新的 ChatDeepSeek 实例
+    llm = create_deepseek_llm()
     assert llm is not None, "ChatDeepSeek instance is not available"
 
     # 初始化 MCP 工具
@@ -516,9 +495,10 @@ async def create_compiled_mcp_stage_graph(
 
     # 创建包装函数，传递必要的上下文
     async def preprocess_wrapper(state: McpState) -> McpState:
-        # 确保状态包含必要信息
+        # 确保状态包含必要信息，包括LLM实例
         state_with_context: McpState = {
             "messages": state.get("messages", []),
+            "llm": state.get("llm", llm),  # 确保LLM实例存在
             "mcp_client": state.get("mcp_client", mcp_client),
             "available_tools": state.get("available_tools", available_tools),
             "tool_outputs": state.get("tool_outputs", []),
@@ -533,6 +513,7 @@ async def create_compiled_mcp_stage_graph(
                 error_message = AIMessage(content="抱歉，处理请求时发生错误。")
                 fallback_result: McpState = {
                     "messages": [error_message],
+                    "llm": llm,  # 确保LLM实例存在
                     "mcp_client": mcp_client,
                     "available_tools": available_tools,
                     "tool_outputs": [],
@@ -544,6 +525,7 @@ async def create_compiled_mcp_stage_graph(
             error_message = AIMessage(content="抱歉，系统发生未知错误。")
             fallback_exception_result: McpState = {
                 "messages": [error_message],
+                "llm": llm,  # 确保LLM实例存在
                 "mcp_client": mcp_client,
                 "available_tools": available_tools,
                 "tool_outputs": [],
@@ -602,8 +584,14 @@ async def stream_mcp_graph_updates(
     ret: List[BaseMessage] = []
 
     # 合并状态，保持 MCP 相关信息
+    llm_instance = user_input_state.get("llm") or chat_history_state.get("llm")
+    if not llm_instance:
+        # 如果两个状态都没有LLM实例，创建一个新的
+        llm_instance = create_deepseek_llm()
+
     merged_message_context: McpState = {
         "messages": chat_history_state["messages"] + user_input_state["messages"],
+        "llm": llm_instance,  # 确保LLM实例存在
         "mcp_client": user_input_state.get(
             "mcp_client", chat_history_state.get("mcp_client")
         ),

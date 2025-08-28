@@ -5,7 +5,7 @@ import requests
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 
-from ..chat_services.chat_api import (
+from .protocol import (
     ChatRequest,
     ChatRequestMessageListType,
     ChatResponse,
@@ -13,7 +13,7 @@ from ..chat_services.chat_api import (
 
 
 @final
-class ChatRequestHandler:
+class ChatClient:
 
     ################################################################################################################################################################################
     def __init__(

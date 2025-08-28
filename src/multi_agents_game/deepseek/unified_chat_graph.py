@@ -22,7 +22,8 @@ from ..rag import rag_semantic_search
 from ..rag.routing import RouteDecisionManager
 
 # 导入统一的 DeepSeek LLM 客户端
-from .client import get_deepseek_llm
+from .client import create_deepseek_llm
+from langchain_deepseek import ChatDeepSeek
 
 
 ############################################################################################################
@@ -44,6 +45,9 @@ class UnifiedState(TypedDict):
 
     # 路由管理器（必传）
     route_manager: Optional[RouteDecisionManager]  # 路由决策管理器实例（通过参数传入）
+
+    # LLM实例（统一管理）
+    llm: ChatDeepSeek  # DeepSeek LLM实例，在图级别共享
 
 
 ############################################################################################################
@@ -141,8 +145,9 @@ def direct_llm_node(state: UnifiedState) -> Dict[str, List[BaseMessage]]:
     try:
         logger.info("💬 [DIRECT_LLM] 开始直接对话模式...")
 
-        # 使用全局LLM实例
-        llm = get_deepseek_llm()
+        # 使用状态中的LLM实例
+        llm = state["llm"]
+        assert llm is not None, "LLM instance is None in state"
 
         # 直接使用原始消息调用LLM
         response = llm.invoke(state["messages"])
@@ -331,8 +336,9 @@ def rag_llm_node(state: UnifiedState) -> Dict[str, List[BaseMessage]]:
     try:
         logger.info("🤖 [RAG_LLM] 开始RAG增强回答生成...")
 
-        # 使用全局LLM实例
-        llm = get_deepseek_llm()
+        # 使用状态中的LLM实例
+        llm = state["llm"]
+        assert llm is not None, "LLM instance is None in state"
 
         # 使用增强的上下文替换原始消息
         enhanced_context = state.get("enhanced_context", "")
@@ -457,6 +463,10 @@ def stream_unified_graph_updates(
     try:
         logger.info("🚀 开始执行统一聊天流程...")
 
+        # 创建 DeepSeek LLM 实例
+        llm = create_deepseek_llm()
+        logger.info("🚀 创建 DeepSeek LLM 实例完成")
+
         # 准备统一状态
         user_message = (
             user_input_state["messages"][-1] if user_input_state["messages"] else None
@@ -476,6 +486,7 @@ def stream_unified_graph_updates(
             "confidence_score": 0.0,
             "processing_mode": "",
             "route_manager": route_manager,  # 直接使用传入的route_manager
+            "llm": llm,  # 添加LLM实例到状态中
         }
 
         logger.info(f"🚀 统一状态准备完成，用户查询: {user_query}")

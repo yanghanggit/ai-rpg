@@ -4,7 +4,7 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel
 
-from ..chat_services.chat_request_handler import ChatRequestHandler
+from ..chat_services.client import ChatClient
 from ..entitas import Entity, GroupEvent, Matcher
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import FeedbackAction, RPGCharacterProfileComponent, StatusEffect
@@ -113,7 +113,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
         self._handle_responses(chat_requests)
 
     #######################################################################################################################################
-    def _handle_responses(self, request_handlers: List[ChatRequestHandler]) -> None:
+    def _handle_responses(self, request_handlers: List[ChatClient]) -> None:
 
         for request_handler in request_handlers:
 
@@ -125,9 +125,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
             self._handle_response(entity2, request_handler)
 
     #######################################################################################################################################
-    def _handle_response(
-        self, entity: Entity, request_handler: ChatRequestHandler
-    ) -> None:
+    def _handle_response(self, entity: Entity, request_handler: ChatClient) -> None:
 
         try:
 
@@ -153,11 +151,9 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
             logger.error(f"Exception: {e}")
 
     #######################################################################################################################################
-    def _generate_requests(
-        self, actor_entities: set[Entity]
-    ) -> List[ChatRequestHandler]:
+    def _generate_requests(self, actor_entities: set[Entity]) -> List[ChatClient]:
 
-        request_handlers: List[ChatRequestHandler] = []
+        request_handlers: List[ChatClient] = []
 
         for entity in actor_entities:
 
@@ -171,7 +167,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
             message = _generate_prompt(rpg_character_profile_component, feedback_action)
             # 生成请求处理器
             request_handlers.append(
-                ChatRequestHandler(
+                ChatClient(
                     agent_name=entity._name,
                     prompt=message,
                     chat_history=self._game.get_agent_short_term_memory(

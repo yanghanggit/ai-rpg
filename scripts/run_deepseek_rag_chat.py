@@ -52,7 +52,9 @@ def main() -> None:
         rag_compiled_graph = create_rag_compiled_graph()
 
         # 步骤3: 初始化聊天历史
-        chat_history_state: State = {"messages": []}
+        from multi_agents_game.deepseek.client import create_deepseek_llm
+        llm = create_deepseek_llm()
+        chat_history_state: State = {"messages": [], "llm": llm}
 
         logger.success("🎯 RAG系统初始化完成，开始对话...")
         logger.info("💡 提示：您可以询问关于艾尔法尼亚世界的问题，例如：")
@@ -76,7 +78,8 @@ def main() -> None:
 
                 # 用户输入
                 user_input_state: State = {
-                    "messages": [HumanMessage(content=user_input)]
+                    "messages": [HumanMessage(content=user_input)],
+                    "llm": llm  # 使用同一个LLM实例
                 }
 
                 # 执行RAG流程

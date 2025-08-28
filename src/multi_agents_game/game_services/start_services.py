@@ -117,7 +117,6 @@ def setup_web_game_session(
             username=web_game_user_options.user,
             localhost_urls=DEFAULT_SERVER_SETTINGS_CONFIG.chat_server_localhost_urls,
         ),
-        # chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
 
     # 启动游戏的判断，是第一次建立还是恢复？

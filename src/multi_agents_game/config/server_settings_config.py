@@ -5,28 +5,31 @@ from pydantic import BaseModel
 
 
 class ServerSettingsConfig(BaseModel):
-    chat_service_base_port: int
-    num_chat_service_instances: int
+    chat_service_base_port: int = 8100
+    # num_chat_service_instances: int = 1
     game_server_port: int = 8000  # 默认值
     chat_service_endpoint: str = "/chat-service/v1/"  # 默认值
 
     @property
     def chat_server_localhost_urls(self) -> List[str]:
+        return [
+            f"http://localhost:{self.chat_service_base_port}{self.chat_service_endpoint}"
+        ]
 
-        assert (
-            self.num_chat_service_instances > 0
-        ), "Number of chat service instances must be greater than 0"
-        assert (
-            self.chat_service_base_port > 0
-        ), "Chat service base port must be greater than 0"
+        # assert (
+        #     self.num_chat_service_instances > 0
+        # ), "Number of chat service instances must be greater than 0"
+        # assert (
+        #     self.chat_service_base_port > 0
+        # ), "Chat service base port must be greater than 0"
 
-        """获取所有聊天服务器的 URL 列表"""
-        ret: List[str] = []
-        for i in range(self.num_chat_service_instances):
-            ret.append(
-                f"http://localhost:{self.chat_service_base_port + i}{self.chat_service_endpoint}"
-            )
-        return ret
+        # """获取所有聊天服务器的 URL 列表"""
+        # ret: List[str] = []
+        # for i in range(self.num_chat_service_instances):
+        #     ret.append(
+        #         f"http://localhost:{self.chat_service_base_port + i}{self.chat_service_endpoint}"
+        #     )
+        # return ret
 
 
 # 配置文件路径
@@ -42,9 +45,9 @@ DEFAULT_SERVER_SETTINGS_CONFIG: Final[ServerSettingsConfig] = (
 assert (
     DEFAULT_SERVER_SETTINGS_CONFIG.chat_service_base_port > 0
 ), "chat_service_base_port must be greater than 0"
-assert (
-    DEFAULT_SERVER_SETTINGS_CONFIG.num_chat_service_instances > 0
-), "num_chat_service_instances must be greater than 0"
+# assert (
+#     DEFAULT_SERVER_SETTINGS_CONFIG.num_chat_service_instances > 0
+# ), "num_chat_service_instances must be greater than 0"
 assert (
     DEFAULT_SERVER_SETTINGS_CONFIG.game_server_port > 0
 ), "game_server_port must be greater than 0"

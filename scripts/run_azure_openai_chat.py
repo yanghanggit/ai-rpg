@@ -27,7 +27,7 @@ sys.path.insert(
 from langchain.schema import HumanMessage
 from loguru import logger
 
-from multi_agents_game.chat_services.chat_azure_openai_gpt_4o_graph import (
+from multi_agents_game.azure_openai_gpt import (
     State,
     create_compiled_stage_graph,
     stream_graph_updates,

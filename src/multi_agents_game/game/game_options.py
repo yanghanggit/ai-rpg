@@ -3,13 +3,13 @@ from typing import Optional
 
 from loguru import logger
 
-from ..config import DEFAULT_MONGODB_CONFIG
-from ..db.mongodb_boot_document import BootDocument
-from ..db.mongodb_client import (
+from ..mongodb import (
+    BootDocument,
+    DEFAULT_MONGODB_CONFIG,
+    WorldDocument,
     mongodb_delete_one,
     mongodb_find_one,
 )
-from ..db.mongodb_world_document import WorldDocument
 from ..models.world import Boot, World
 
 

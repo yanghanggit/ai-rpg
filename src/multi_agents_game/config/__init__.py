@@ -8,21 +8,22 @@
 - 数据库配置（Redis、MongoDB、PostgreSQL）
 - JWT配置
 - 游戏配置（日志、游戏名称等）
+
+注意：MCP配置已移至 multi_agents_game.mcp.config 模块
 """
 
-from .db_config import (
-    DEFAULT_JWT_CONFIG,
-    DEFAULT_MONGODB_CONFIG,
+from ..pgsql import (
+    # DEFAULT_JWT_CONFIG,
     DEFAULT_POSTGRES_CONFIG,
-    DEFAULT_RAG_CONFIG,
-    DEFAULT_REDIS_CONFIG,
-    JWTConfig,
-    MongoDBConfig,
+    # DEFAULT_RAG_CONFIG,
+    # DEFAULT_REDIS_CONFIG,
+    # JWTConfig,
     PostgresConfig,
-    RAGConfig,
-    RedisConfig,
+    # RAGConfig,
+    # RedisConfig,
 )
-from .game_config import (
+from ..mongodb import DEFAULT_MONGODB_CONFIG, MongoDBConfig
+from ..game.game_config import (
     GLOBAL_GAME_NAME,
     LOGS_DIR,
     setup_logger,
@@ -35,17 +36,17 @@ __all__ = [
     # 服务器配置
     "DEFAULT_SERVER_SETTINGS_CONFIG",
     # 数据库配置类
-    "RedisConfig",
+    # "RedisConfig",
     "MongoDBConfig",
     "PostgresConfig",
-    "JWTConfig",
-    "RAGConfig",
+    # "JWTConfig",
+    # "RAGConfig",
     # 数据库配置实例
-    "DEFAULT_REDIS_CONFIG",
+    # "DEFAULT_REDIS_CONFIG",
     "DEFAULT_MONGODB_CONFIG",
     "DEFAULT_POSTGRES_CONFIG",
-    "DEFAULT_JWT_CONFIG",
-    "DEFAULT_RAG_CONFIG",
+    # "DEFAULT_JWT_CONFIG",
+    # "DEFAULT_RAG_CONFIG",
     # 游戏配置
     "LOGS_DIR",
     "GLOBAL_GAME_NAME",

@@ -21,7 +21,7 @@ class CombatResultSystem(ExecuteProcessor):
 
     ########################################################################################################################################################################
     @override
-    def execute(self) -> None:
+    async def execute(self) -> None:
 
         # 检查战斗结果的死亡情况
         if not self._game.current_engagement.is_on_going_phase:

@@ -9,13 +9,10 @@ import numpy as np
 from typing import List, Any, cast
 from sqlalchemy import create_engine, text
 from loguru import logger
-
-# import sys
-# import os
 import hashlib
 
 # 导入配置
-from src.multi_agents_game.config import DEFAULT_POSTGRES_CONFIG
+from src.multi_agents_game.pgsql import DEFAULT_POSTGRES_CONFIG
 
 
 # ================================
@@ -27,7 +24,9 @@ from src.multi_agents_game.config import DEFAULT_POSTGRES_CONFIG
 def setup_database_tables() -> Any:
     """设置数据库表的 fixture"""
     try:
-        from src.multi_agents_game.db.pgsql_client import pgsql_ensure_database_tables
+        from src.multi_agents_game.pgsql.client import (
+            pgsql_ensure_database_tables,
+        )
 
         pgsql_ensure_database_tables()
         logger.info("✅ 数据库表已就绪")
@@ -293,7 +292,7 @@ def test_high_dimension_vectors() -> None:
 @pytest.mark.database
 def test_vector_document_operations() -> None:
     """测试向量文档操作 - 使用ORM"""
-    from src.multi_agents_game.db.pgsql_vector_document import (
+    from src.multi_agents_game.pgsql.vector_document import (
         save_vector_document,
         search_similar_documents,
         get_database_vector_stats,
@@ -410,7 +409,7 @@ def test_conversation_vector_operations() -> None:
 @pytest.mark.demo
 def demo_document_rag_system() -> None:
     """演示基于文档的RAG系统"""
-    from src.multi_agents_game.db.pgsql_vector_document import (
+    from src.multi_agents_game.pgsql.vector_document import (
         save_vector_document,
         search_similar_documents,
     )
@@ -514,8 +513,8 @@ def run_all_vector_tests() -> None:
 
     try:
         # 确保数据库表已创建
-        from src.multi_agents_game.db.pgsql_client import engine
-        from src.multi_agents_game.db.pgsql_client import Base  # type: ignore[attr-defined]
+        from src.multi_agents_game.pgsql.client import engine
+        from src.multi_agents_game.pgsql.client import Base  # type: ignore[attr-defined]
 
         Base.metadata.create_all(bind=engine)
         logger.info("✅ 数据库表已就绪")
@@ -526,7 +525,7 @@ def run_all_vector_tests() -> None:
         # test_game_knowledge_operations()       # 已移除
 
         # 获取最终统计
-        from src.multi_agents_game.db.pgsql_vector_document import (
+        from src.multi_agents_game.pgsql.vector_document import (
             get_database_vector_stats,
         )
 
@@ -544,8 +543,8 @@ def run_all_demos() -> None:
 
     try:
         # 确保数据库表已创建
-        from src.multi_agents_game.db.pgsql_client import engine
-        from src.multi_agents_game.db.pgsql_client import Base  # type: ignore[attr-defined]
+        from src.multi_agents_game.pgsql.client import engine
+        from src.multi_agents_game.pgsql.client import Base  # type: ignore[attr-defined]
 
         Base.metadata.create_all(bind=engine)
 
@@ -555,7 +554,7 @@ def run_all_demos() -> None:
         demo_game_knowledge_system()  # 现在是占位符函数
 
         # 显示最终统计
-        from src.multi_agents_game.db.pgsql_vector_document import (
+        from src.multi_agents_game.pgsql.vector_document import (
             get_database_vector_stats,
         )
 
@@ -622,7 +621,7 @@ def test_comprehensive_pgvector_demos(setup_database_tables: Any) -> None:
         demo_game_knowledge_system()  # 现在是占位符函数
 
         # 显示最终统计
-        from src.multi_agents_game.db.pgsql_vector_document import (
+        from src.multi_agents_game.pgsql.vector_document import (
             get_database_vector_stats,
         )
 

@@ -10,6 +10,24 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "🚀 Debug MCP Server",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/run_sample_mcp_server.py",
+            "args": [
+                "--config",
+                "mcp_config.json",
+                "--log-level",
+                "DEBUG"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "python": "${command:python.interpreterPath}",
+            "justMyCode": false,
+            "stopOnEntry": false
         }
     ]
 }

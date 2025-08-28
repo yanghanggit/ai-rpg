@@ -17,8 +17,11 @@ Author: yanghanggit
 Date: 2025-07-30
 """
 
-import sys
 import os
+import sys
+from typing import final
+
+from pydantic import BaseModel
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -26,27 +29,40 @@ sys.path.insert(
 )
 
 from loguru import logger
-from multi_agents_game.db.account import FAKE_USER
 
-from multi_agents_game.db.pgsql_client import (
-    pgsql_reset_database,
-    pgsql_ensure_database_tables,
+from multi_agents_game.config import (
+    GLOBAL_GAME_NAME,
+    LOGS_DIR,
 )
-from multi_agents_game.db.pgsql_user import has_user, save_user
-from multi_agents_game.db.redis_client import (
+from multi_agents_game.mongodb import (
+    BootDocument,
+    DEFAULT_MONGODB_CONFIG,
+    mongodb_clear_database,
+    mongodb_find_one,
+    mongodb_upsert_one,
+)
+from multi_agents_game.pgsql.client import (
+    pgsql_ensure_database_tables,
+    pgsql_reset_database,
+)
+from multi_agents_game.pgsql.user import has_user, save_user
+from multi_agents_game.redis.client import (
     redis_flushall,
 )
-from multi_agents_game.db.mongodb_client import (
-    mongodb_clear_database,
-    mongodb_upsert_one,
-    mongodb_find_one,
-)
-from multi_agents_game.db.mongodb_boot_document import BootDocument
 from multi_agents_game.demo.world import create_demo_game_world
-from multi_agents_game.config import (
-    LOGS_DIR,
-    GLOBAL_GAME_NAME,
-    DEFAULT_MONGODB_CONFIG,
+
+
+@final
+class UserAccount(BaseModel):
+    username: str
+    hashed_password: str
+    display_name: str
+
+
+FAKE_USER = UserAccount(
+    username="yanghangethan@gmail.com",
+    hashed_password="$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",  # 明文是 secret
+    display_name="yh",
 )
 
 
@@ -176,8 +192,8 @@ def _setup_chromadb_rag_environment() -> None:
     logger.info("🚀 初始化RAG系统...")
 
     # 导入必要的模块
-    from multi_agents_game.db.chromadb_client import chromadb_clear_database
-    from multi_agents_game.db.rag_ops import initialize_rag_system
+    from multi_agents_game.chroma import chromadb_clear_database
+    from multi_agents_game.rag import initialize_rag_system
     from multi_agents_game.demo.campaign_setting import FANTASY_WORLD_RPG_KNOWLEDGE_BASE
 
     try:

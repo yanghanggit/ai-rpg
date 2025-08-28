@@ -11,12 +11,13 @@ from loguru import logger
 from overrides import override
 
 from ..chat_services.chat_system import ChatSystem
-from ..config import DEFAULT_MONGODB_CONFIG, LOGS_DIR
-from ..db.mongodb_client import (
+from ..config import LOGS_DIR
+from ..mongodb import (
+    DEFAULT_MONGODB_CONFIG,
+    WorldDocument,
     mongodb_find_one,
     mongodb_upsert_one,
 )
-from ..db.mongodb_world_document import WorldDocument
 from ..entitas import Entity, Matcher
 from ..game.base_game import BaseGame
 from ..game.tcg_game_context import RetrieveMappingOptions, TCGGameContext
@@ -205,29 +206,29 @@ class TCGGame(BaseGame, TCGGameContext):
         return self.current_dungeon.engagement
 
     ###############################################################################################################################################
-    @override
-    def execute(self) -> None:
-        # 顺序不要动
-        active_processing_pipeline = self.current_process_pipeline
-        if not active_processing_pipeline._initialized:
-            active_processing_pipeline._initialized = True
-            active_processing_pipeline.activate_reactive_processors()
-            active_processing_pipeline.initialize()
+    # @override
+    # def execute(self) -> None:
+    #     # 顺序不要动
+    #     active_processing_pipeline = self.current_process_pipeline
+    #     if not active_processing_pipeline._initialized:
+    #         active_processing_pipeline._initialized = True
+    #         active_processing_pipeline.activate_reactive_processors()
+    #         active_processing_pipeline.initialize()
 
-        active_processing_pipeline.execute()
-        active_processing_pipeline.cleanup()
+    #     active_processing_pipeline.execute()
+    #     active_processing_pipeline.cleanup()
 
     ###############################################################################################################################################
     @override
-    async def a_execute(self) -> None:
+    async def run(self) -> None:
         # 顺序不要动
         active_process_pipeline = self.current_process_pipeline
         if not active_process_pipeline._initialized:
             active_process_pipeline._initialized = True
             active_process_pipeline.activate_reactive_processors()
-            active_process_pipeline.initialize()
+            await active_process_pipeline.initialize()
 
-        await active_process_pipeline.a_execute()
+        await active_process_pipeline.execute()
         active_process_pipeline.cleanup()
 
     ###############################################################################################################################################

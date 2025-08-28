@@ -23,7 +23,7 @@ dungeon_gameplay_router = APIRouter()
 async def _execute_web_game(web_game: WebTCGGame) -> None:
     assert web_game.player.name != ""
     web_game.player.archive_and_clear_messages()
-    await web_game.a_execute()
+    await web_game.run()
 
 
 ###################################################################################################################################################################

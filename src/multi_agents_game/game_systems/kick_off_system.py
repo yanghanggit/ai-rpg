@@ -57,13 +57,13 @@ class KickOffSystem(ExecuteProcessor):
         self._game: TCGGame = game_context
 
     ###############################################################################################################################################
-    @override
-    def execute(self) -> None:
-        pass
+    # @override
+    # async def execute(self) -> None:
+    #     pass
 
     ###############################################################################################################################################
     @override
-    async def a_execute1(self) -> None:
+    async def execute(self) -> None:
 
         # 获取所有的舞台实体
         entities = self._game.get_group(

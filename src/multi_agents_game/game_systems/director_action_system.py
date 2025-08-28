@@ -136,16 +136,16 @@ class DirectorActionSystem(BaseActionReactiveSystem):
 
     #######################################################################################################################################
     @override
-    async def a_execute2(self) -> None:
+    async def react(self, entities: list[Entity]) -> None:
 
-        if len(self._react_entities_copy) == 0:
+        if len(entities) == 0:
             return
 
         assert self._game.current_engagement.is_on_going_phase
-        assert len(self._react_entities_copy) == 1
+        assert len(entities) == 1
 
         # 排序角色！
-        stage_entity = self._react_entities_copy[0]
+        stage_entity = entities[0]
         assert stage_entity.has(StageComponent)
         assert stage_entity.has(DungeonComponent)
 

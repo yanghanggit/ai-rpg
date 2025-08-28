@@ -71,12 +71,7 @@ class CombatKickOffSystem(ExecuteProcessor):
 
     ###################################################################################################################################################################
     @override
-    def execute(self) -> None:
-        pass
-
-    ###################################################################################################################################################################
-    @override
-    async def a_execute1(self) -> None:
+    async def execute(self) -> None:
 
         # step1: 不是本阶段就直接返回
         if not self._game.current_engagement.is_kickoff_phase:

@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -7,6 +7,7 @@ sys.path.insert(
 )
 
 from loguru import logger
+
 from multi_agents_game.config import (
     DEFAULT_SERVER_SETTINGS_CONFIG,
 )

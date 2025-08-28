@@ -4,76 +4,34 @@ Replicate 文生图工具
 一个简单易用的文生图脚本，包含完整功能和使用示例
 """
 
+import argparse
 import os
 import sys
 import time
-import json
-import argparse
-from pathlib import Path
-from typing import Dict, Final, Optional, Any
-import requests
-import replicate
-from dotenv import load_dotenv
 import uuid
+from pathlib import Path
+from typing import Any, Dict, Final, Optional
 
-# 加载环境变量
-load_dotenv()
+import replicate
+import requests
 
-
-def load_models_config() -> Dict[str, Dict[str, str]]:
-    """从 JSON 文件加载模型配置"""
-    # 获取项目根目录
-    current_dir = Path(__file__).parent
-    project_root = current_dir.parent
-    config_file = project_root / "replicate_models.json"
-
-    try:
-        with open(config_file, "r", encoding="utf-8") as f:
-            data: Dict[str, Dict[str, str]] = json.load(f)
-            return data
-    except FileNotFoundError:
-        raise FileNotFoundError(f"模型配置文件未找到: {config_file}")
-    except json.JSONDecodeError as e:
-        raise ValueError(f"模型配置文件格式错误: {e}")
-
+from multi_agents_game.replicate import (
+    # get_image_models,
+    test_replicate_api_connection,
+    # validate_config,
+    load_replicate_config,
+)
 
 # 全局变量
-try:
-    MODELS: Dict[str, Dict[str, str]] = load_models_config()
-    API_TOKEN: str = os.getenv("REPLICATE_API_TOKEN") or ""
-except Exception as e:
-    MODELS = {}
-    API_TOKEN = ""
-    print(f"⚠️ 配置加载失败: {e}")
+API_TOKEN: str = os.getenv("REPLICATE_API_TOKEN") or ""
+
+replicate_config = load_replicate_config(Path("replicate_models.json"))
+
+MODELS: Dict[str, Dict[str, str]] = replicate_config.image_models.model_dump(
+    by_alias=True, exclude_none=True
+)
 
 DEFAULT_OUTPUT_DIR: Final[str] = "generated_images"
-TEST_URL: Final[str] = "https://api.replicate.com/v1/models"
-
-
-# 测试连接
-def test_connection() -> bool:
-    """测试连接是否正常"""
-    headers = {"Authorization": f"Token {API_TOKEN}"}
-
-    try:
-        print("🔄 测试 Replicate API 连接...")
-        response = requests.get(TEST_URL, headers=headers, timeout=10)
-
-        if response.status_code == 200:
-            print("✅ 连接成功! Replicate API 可正常访问")
-            return True
-        else:
-            print(f"❌ 连接失败，状态码: {response.status_code}")
-            if response.status_code == 401:
-                print("💡 API Token 可能无效或已过期")
-            return False
-
-    except Exception as e:
-        print(f"❌ 连接错误: {e}")
-        print("💡 请检查:")
-        print("   1. 网络连接是否正常")
-        print("   2. API Token 是否有效")
-        return False
 
 
 def generate_image(
@@ -224,7 +182,7 @@ def run_demo() -> None:
     print("=" * 60)
 
     # 1. 测试连接
-    if not test_connection():
+    if not test_replicate_api_connection():
         print("❌ 连接测试失败，请检查网络设置")
         return
 
@@ -258,19 +216,17 @@ def run_demo() -> None:
 
 def main() -> None:
     """主函数 - 命令行接口"""
-    # 检查配置是否正确加载
+    # 验证配置
+    # if not validate_config():
+    #     sys.exit(1)
+
+    # 检查模型配置是否正确加载
     if not MODELS:
-        print("❌ 错误: 模型配置未正确加载")
+        print("❌ 错误: 图像模型配置未正确加载")
         print("💡 请检查:")
         print("   1. replicate_models.json 文件是否存在")
         print("   2. JSON 文件格式是否正确")
-        sys.exit(1)
-
-    if not API_TOKEN:
-        print("❌ 错误: API Token 未配置")
-        print("💡 请检查:")
-        print("   1. 环境变量 REPLICATE_API_TOKEN 是否设置")
-        print("   2. .env 文件是否存在且包含正确的 API Token")
+        print("   3. image_models 部分是否配置正确")
         sys.exit(1)
 
     parser = argparse.ArgumentParser(description="Replicate 文生图工具")
@@ -328,7 +284,7 @@ def main() -> None:
 
         # 如果是测试连接
         if args.test:
-            test_connection()
+            test_replicate_api_connection()
             return
 
         # 如果只是列出模型

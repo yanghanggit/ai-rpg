@@ -13,20 +13,20 @@ sys.path.insert(
 )
 
 import platform
-import subprocess
-import psutil
 import socket
-from pathlib import Path
+import subprocess
 from datetime import datetime
-from typing import Tuple, List, Dict
-from collections.abc import Sequence
+from pathlib import Path
+from typing import Dict, List, Tuple
+
+import psutil
 
 try:
     from importlib.metadata import distributions
 except ImportError:
     # Python < 3.8 fallback
     import pkg_resources
-from multi_agents_game.config import (
+from multi_agents_game.pgsql import (
     DEFAULT_POSTGRES_CONFIG,
 )
 
@@ -308,14 +308,14 @@ def get_chromadb_environment() -> None:
 
         # 检查ChromaDB的主要组件
         try:
-            from chromadb.config import Settings
+            from chromadb.config import Settings  # noqa: F401 # 用于检测模块可用性
 
             print("  ✅ ChromaDB Settings: 可用")
         except ImportError as e:
             print(f"  ⚠️  ChromaDB Settings: 导入失败 - {e}")
 
         try:
-            from chromadb.api import ClientAPI
+            from chromadb.api import ClientAPI  # noqa: F401 # 用于检测模块可用性
 
             print("  ✅ ChromaDB ClientAPI: 可用")
         except ImportError as e:
@@ -425,13 +425,15 @@ def get_chromadb_environment() -> None:
         # 检查可用的embedding模型
         print("\n  Embedding模型检查:")
         try:
-            from sentence_transformers import SentenceTransformer
+            from sentence_transformers import (  # noqa: F401 # 用于检测模块可用性
+                SentenceTransformer,
+            )
 
             print("    🤖 Sentence Transformers: 可用")
 
             # 检查是否可以创建默认embedding函数
             try:
-                from chromadb.utils.embedding_functions import (
+                from chromadb.utils.embedding_functions import (  # noqa: F401 # 用于检测模块可用性
                     SentenceTransformerEmbeddingFunction,
                 )
 

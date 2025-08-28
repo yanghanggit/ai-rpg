@@ -1,9 +1,16 @@
-.PHONY: install test lint format clean dev-install conda-install conda-setup pip-install show-structure check help check-imports fix-imports restart-chat-servers kill-chat-servers
+.PHONY: install test lint format clean dev-install conda-install conda-setup check-imports fix-imports restart-chat-servers kill-chat-servers pip-install show-structure check help
+
+# 默认目标：显示帮助信息
+.DEFAULT_GOAL := help
 
 # 推荐：Conda环境完整设置
 conda-setup:
 	@echo "🚀 设置Conda环境..."
-	conda env create -f environment.yml --force
+	@if conda info --envs | grep -q first_seed; then \
+		echo "⚠️  环境 first_seed 已存在，正在移除..."; \
+		conda env remove -n first_seed -y; \
+	fi
+	conda env create -f environment.yml
 	conda run -n first_seed pip install -e .
 	@echo "✅ Conda环境设置完成！运行: conda activate first_seed"
 
@@ -69,11 +76,21 @@ format:
 
 # 检查未使用的导入
 check-imports:
-	python scripts/check_unused_imports.py --check --ignore-unused-imports
+	@echo "🔍 检查未使用的导入..."
+	@if conda info --envs | grep -q first_seed; then \
+		conda run -n first_seed python scripts/check_unused_imports.py --check; \
+	else \
+		python scripts/check_unused_imports.py --check; \
+	fi
 
 # 修复未使用的导入
 fix-imports:
-	python scripts/check_unused_imports.py --fix --ignore-unused-imports
+	@echo "🔧 修复未使用的导入..."
+	@if conda info --envs | grep -q first_seed; then \
+		conda run -n first_seed python scripts/check_unused_imports.py --fix; \
+	else \
+		python scripts/check_unused_imports.py --fix; \
+	fi
 
 # 清理构建文件
 clean:

@@ -21,7 +21,7 @@ class PostActionSystem(ExecuteProcessor):
 
     ############################################################################################################
     @override
-    def execute(self) -> None:
+    async def execute(self) -> None:
         actions_set: Final[FrozenSet[type[Component]]] = frozenset(
             ACTION_COMPONENTS_REGISTRY.values()
         )

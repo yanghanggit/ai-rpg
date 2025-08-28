@@ -4,9 +4,10 @@
 验证pyproject.toml, requirements.txt和environment.yml之间的一致性
 """
 
-import yaml  # type: ignore[import-untyped]
 import tomllib
 from typing import Any, Dict, List
+
+import yaml  # type: ignore[import-untyped]
 
 
 def load_environment_yml() -> Any:

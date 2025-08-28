@@ -14,8 +14,8 @@ import pytest
 from loguru import logger
 from sqlalchemy import text
 
-from src.multi_agents_game.db.pgsql_client import SessionLocal
-from src.multi_agents_game.db.pgsql_user import UserDB, has_user, save_user, get_user
+from src.multi_agents_game.pgsql.client import SessionLocal
+from src.multi_agents_game.pgsql.user import UserDB, has_user, save_user, get_user
 
 
 class TestPostgreSQLConnection:

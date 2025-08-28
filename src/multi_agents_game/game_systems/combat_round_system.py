@@ -20,7 +20,7 @@ class CombatRoundSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     @override
-    def execute(self) -> None:
+    async def execute(self) -> None:
         if not self._game.current_engagement.is_on_going_phase:
             return
 

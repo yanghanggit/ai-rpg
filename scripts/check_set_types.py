@@ -7,7 +7,7 @@
 import ast
 import sys
 from pathlib import Path
-from typing import List, Tuple, Set, Optional
+from typing import List, Optional, Set, Tuple
 
 
 class SetTypeChecker(ast.NodeVisitor):

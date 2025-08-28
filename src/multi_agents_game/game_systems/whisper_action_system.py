@@ -37,7 +37,7 @@ class WhisperActionSystem(BaseActionReactiveSystem):
 
     ####################################################################################################################################
     @override
-    def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: list[Entity]) -> None:
         for entity in entities:
             self._prosses_action(entity)
 

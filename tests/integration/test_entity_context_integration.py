@@ -2,10 +2,8 @@
 Integration tests for Entity and Context working together.
 """
 
-import pytest
-
 from src.multi_agents_game.entitas import Context, Entity, Matcher
-from tests.unit.test_components import Position, Velocity, Health, Name, Age, Score
+from tests.unit.test_components import Position, Velocity, Health, Name, Score
 
 
 class TestEntityContextIntegration:

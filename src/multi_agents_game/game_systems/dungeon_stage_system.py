@@ -55,7 +55,7 @@ class DungeonStageSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     @override
-    def execute(self) -> None:
+    async def execute(self) -> None:
         if not self._is_phase_valid():
             logger.debug("StagePlanningSystem: 状态无效，跳过执行。")
             return

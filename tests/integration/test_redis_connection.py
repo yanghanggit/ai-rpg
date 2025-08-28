@@ -11,11 +11,9 @@ Date: 2025-08-01
 
 from typing import Generator
 import pytest
-import sys
-from pathlib import Path
 from loguru import logger
 
-from src.multi_agents_game.db.redis_client import (
+from src.multi_agents_game.redis.client import (
     redis_set,
     redis_get,
     redis_delete,

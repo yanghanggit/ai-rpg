@@ -115,7 +115,7 @@ def setup_web_game_session(
         chat_system=ChatSystem(
             name=f"{web_game_user_options.game}-chatsystem",
             username=web_game_user_options.user,
-            localhost_urls=DEFAULT_SERVER_SETTINGS_CONFIG.chat_server_localhost_urls,
+            localhost_urls=DEFAULT_SERVER_SETTINGS_CONFIG.azure_openai_chat_server_localhost_urls,
         ),
     )
 

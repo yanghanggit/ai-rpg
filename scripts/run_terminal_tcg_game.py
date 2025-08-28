@@ -118,7 +118,7 @@ async def run_game(
         chat_system=ChatSystem(
             name=f"{terminal_game_user_options.game}-chatsystem",
             username=terminal_game_user_options.user,
-            localhost_urls=DEFAULT_SERVER_SETTINGS_CONFIG.chat_server_localhost_urls,
+            localhost_urls=DEFAULT_SERVER_SETTINGS_CONFIG.azure_openai_chat_server_localhost_urls,
         ),
     )
 

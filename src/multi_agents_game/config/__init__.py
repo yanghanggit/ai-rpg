@@ -12,7 +12,7 @@
 注意：MCP配置已移至 multi_agents_game.mcp.config 模块
 """
 
-from .db_config import (
+from ..pgsql import (
     # DEFAULT_JWT_CONFIG,
     DEFAULT_POSTGRES_CONFIG,
     # DEFAULT_RAG_CONFIG,

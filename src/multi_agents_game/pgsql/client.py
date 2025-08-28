@@ -2,7 +2,7 @@ from loguru import logger
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from ..config import DEFAULT_POSTGRES_CONFIG
+from .config import DEFAULT_POSTGRES_CONFIG
 from .base import Base
 
 ############################################################################################################

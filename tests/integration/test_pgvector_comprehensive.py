@@ -12,7 +12,7 @@ from loguru import logger
 import hashlib
 
 # 导入配置
-from src.multi_agents_game.config import DEFAULT_POSTGRES_CONFIG
+from src.multi_agents_game.pgsql import DEFAULT_POSTGRES_CONFIG
 
 
 # ================================

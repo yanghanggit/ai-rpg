@@ -14,11 +14,15 @@ from .base import *
 from .client import *
 from .user import *
 from .vector_document import VectorDocumentDB
+from .config import PostgresConfig, DEFAULT_POSTGRES_CONFIG
 
 # Import RAG operations from new rag module
 from ..rag import initialize_rag_system, rag_semantic_search
 
 __all__: List[str] = [
+    # PostgreSQL configuration
+    "PostgresConfig",
+    "DEFAULT_POSTGRES_CONFIG",
     # Vector database models
     "VectorDocumentDB",
     # RAG operations (re-exported for backward compatibility)

@@ -26,7 +26,7 @@ try:
 except ImportError:
     # Python < 3.8 fallback
     import pkg_resources
-from multi_agents_game.config import (
+from multi_agents_game.pgsql import (
     DEFAULT_POSTGRES_CONFIG,
 )
 

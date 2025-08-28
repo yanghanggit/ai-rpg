@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Final, List
 
 from pydantic import BaseModel
@@ -6,7 +5,6 @@ from pydantic import BaseModel
 
 class ServerSettingsConfig(BaseModel):
     chat_service_base_port: int = 8100
-    # num_chat_service_instances: int = 1
     game_server_port: int = 8000  # 默认值
     chat_service_endpoint: str = "/chat-service/v1/"  # 默认值
 
@@ -32,25 +30,27 @@ class ServerSettingsConfig(BaseModel):
         # return ret
 
 
+DEFAULT_SERVER_SETTINGS_CONFIG: Final[ServerSettingsConfig] = ServerSettingsConfig()
+
 # 配置文件路径
-server_setting_path: Path = Path("server_settings.json")
-assert (
-    server_setting_path.exists()
-), f"server_settings.json not found in {server_setting_path.parent}"
-DEFAULT_SERVER_SETTINGS_CONFIG: Final[ServerSettingsConfig] = (
-    ServerSettingsConfig.model_validate_json(
-        server_setting_path.read_text(encoding="utf-8")
-    )
-)
-assert (
-    DEFAULT_SERVER_SETTINGS_CONFIG.chat_service_base_port > 0
-), "chat_service_base_port must be greater than 0"
+# server_setting_path: Path = Path("server_settings.json")
 # assert (
-#     DEFAULT_SERVER_SETTINGS_CONFIG.num_chat_service_instances > 0
-# ), "num_chat_service_instances must be greater than 0"
-assert (
-    DEFAULT_SERVER_SETTINGS_CONFIG.game_server_port > 0
-), "game_server_port must be greater than 0"
+#     server_setting_path.exists()
+# ), f"server_settings.json not found in {server_setting_path.parent}"
+# DEFAULT_SERVER_SETTINGS_CONFIG: Final[ServerSettingsConfig] = (
+#     ServerSettingsConfig.model_validate_json(
+#         server_setting_path.read_text(encoding="utf-8")
+#     )
+# )
+# assert (
+#     DEFAULT_SERVER_SETTINGS_CONFIG.chat_service_base_port > 0
+# ), "chat_service_base_port must be greater than 0"
+# # assert (
+# #     DEFAULT_SERVER_SETTINGS_CONFIG.num_chat_service_instances > 0
+# # ), "num_chat_service_instances must be greater than 0"
+# assert (
+#     DEFAULT_SERVER_SETTINGS_CONFIG.game_server_port > 0
+# ), "game_server_port must be greater than 0"
 
 
 ##################################################################################################################

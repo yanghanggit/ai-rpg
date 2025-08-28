@@ -156,7 +156,6 @@ def get_project_config() -> None:
         "environment.yml": "Conda环境配置",
         "Makefile": "构建配置",
         "mypy.ini": "MyPy类型检查配置",
-        "server_settings.json": "服务器配置",
         ".gitignore": "Git忽略规则",
         "README.md": "项目说明文档",
     }

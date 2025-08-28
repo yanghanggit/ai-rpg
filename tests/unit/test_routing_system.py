@@ -14,7 +14,7 @@ from typing import Dict, Any
 # project_root = Path(__file__).parent.parent.parent
 # sys.path.insert(0, str(project_root))
 
-from src.multi_agents_game.chat_services.routing import (
+from src.multi_agents_game.rag.routing import (
     RouteStrategy,
     RouteDecision,
     KeywordRouteStrategy,
@@ -239,7 +239,7 @@ class TestIntegration:
             UnifiedState,
         )
 
-        # from src.multi_agents_game.chat_services.routing import (
+        # from src.multi_agents_game.rag.routing import (
         #     create_default_route_manager,
         # )
 

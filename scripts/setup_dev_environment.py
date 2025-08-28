@@ -194,7 +194,7 @@ def _setup_chromadb_rag_environment() -> None:
 
     # 导入必要的模块
     from multi_agents_game.chroma import chromadb_clear_database
-    from multi_agents_game.db.rag_ops import initialize_rag_system
+    from multi_agents_game.rag import initialize_rag_system
     from multi_agents_game.demo.campaign_setting import FANTASY_WORLD_RPG_KNOWLEDGE_BASE
 
     try:

@@ -13,7 +13,7 @@ from src.multi_agents_game.chroma import (
     get_chroma_db,
     chromadb_clear_database,
 )
-from src.multi_agents_game.db.rag_ops import (
+from src.multi_agents_game.rag import (
     initialize_rag_system,
     rag_semantic_search,  # 添加全局语义搜索函数
 )

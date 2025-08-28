@@ -157,7 +157,7 @@ def initialize_rag_system(knowledge_base: Dict[str, List[str]]) -> bool:
 
 
 ############################################################################################################
-def rag_semantic_search(query: str, top_k: int = 5) -> tuple[List[str], List[float]]:
+def rag_semantic_search(query: str, top_k: int = 5) -> Tuple[List[str], List[float]]:
     """
     执行全局语义搜索
 

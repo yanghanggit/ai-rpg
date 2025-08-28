@@ -19,10 +19,10 @@ from typing_extensions import TypedDict
 
 # 导入ChromaDB相关功能
 from ..chroma import get_chroma_db
-from ..db.rag_ops import rag_semantic_search
+from ..rag import rag_semantic_search
 
 # 导入新的路由系统
-from ..chat_services.routing import RouteDecisionManager
+from ..rag.routing import RouteDecisionManager
 
 # 全局DeepSeek LLM实例（懒加载单例）
 _global_deepseek_llm: Optional[ChatDeepSeek] = None

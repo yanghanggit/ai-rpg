@@ -8,34 +8,34 @@ import traceback
 from typing import Annotated, Any, Dict, List
 
 from langchain_core.messages import BaseMessage
+from langchain_deepseek import ChatDeepSeek
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.graph.state import CompiledStateGraph
 from typing_extensions import TypedDict
 
 # 导入统一的 DeepSeek LLM 客户端
-from .client import get_deepseek_llm
 
 
 ############################################################################################################
 class State(TypedDict):
     messages: Annotated[List[BaseMessage], add_messages]
+    llm: ChatDeepSeek
 
 
 ############################################################################################################
 def create_compiled_stage_graph(
-    node_name: str, temperature: float
+    node_name: str,
 ) -> CompiledStateGraph[State, Any, State, State]:
     assert node_name != "", "node_name is empty"
-
-    # 使用统一的 DeepSeek LLM 客户端
-    llm = get_deepseek_llm()
 
     def invoke_deepseek_llm_action(
         state: State,
     ) -> Dict[str, List[BaseMessage]]:
 
         try:
+            llm = state["llm"]  # 使用状态中的LLM实例
+            assert llm is not None, "LLM instance is None in state"
             return {"messages": [llm.invoke(state["messages"])]}
         except Exception as e:
             logger.error(f"Error invoking DeepSeek LLM: {e}\n" f"State: {state}")
@@ -61,7 +61,8 @@ def stream_graph_updates(
     ret: List[BaseMessage] = []
 
     merged_message_context: State = {
-        "messages": chat_history_state["messages"] + user_input_state["messages"]
+        "messages": chat_history_state["messages"] + user_input_state["messages"],
+        "llm": chat_history_state["llm"],  # 使用聊天历史状态中的LLM实例
     }
 
     for event in state_compiled_graph.stream(merged_message_context):

@@ -26,7 +26,7 @@ from ..mcp import (
 )
 
 # 导入统一的 DeepSeek LLM 客户端
-from .client import get_deepseek_llm
+from .client import create_deepseek_llm
 
 
 ############################################################################################################
@@ -104,40 +104,6 @@ def _build_system_prompt(available_tools: List[McpToolInfo]) -> str:
     return system_prompt
 
 
-# def _format_tool_description(tool: McpToolInfo) -> str:
-#     """格式化单个工具的描述"""
-#     try:
-#         params_desc = ""
-
-#         # 从工具的 input_schema 中提取参数描述
-#         if tool.input_schema and "properties" in tool.input_schema:
-#             param_list = []
-#             properties = tool.input_schema["properties"]
-#             required = tool.input_schema.get("required", [])
-
-#             for param_name, param_info in properties.items():
-#                 param_desc = param_info.get("description", "无描述")
-#                 param_type = param_info.get("type", "string")
-#                 is_required = "**必需**" if param_name in required else "*可选*"
-
-#                 param_list.append(
-#                     f"  - `{param_name}` ({param_type}): {param_desc} [{is_required}]"
-#                 )
-
-#             if param_list:
-#                 params_desc = f"\n{chr(10).join(param_list)}"
-
-#         tool_desc = f"- **{tool.name}**: {tool.description}"
-#         if params_desc:
-#             tool_desc += f"\n  参数:{params_desc}"
-
-#         return tool_desc
-
-#     except Exception as e:
-#         logger.warning(f"格式化工具描述失败: {tool.name}, 错误: {e}")
-#         return f"- **{tool.name}**: {tool.description}"
-
-
 ############################################################################################################
 async def _preprocess_node(state: McpState) -> McpState:
     """
@@ -195,8 +161,8 @@ async def _llm_invoke_node(state: McpState) -> McpState:
         McpState: 更新后的状态
     """
     try:
-        # 获取 ChatDeepSeek 实例
-        llm = get_deepseek_llm()
+        # 创建新的 ChatDeepSeek 实例
+        llm = create_deepseek_llm()
 
         # 使用增强消息（包含系统提示）进行LLM调用
         enhanced_messages = state.get("enhanced_messages", state["messages"])
@@ -500,8 +466,8 @@ async def create_compiled_mcp_stage_graph(
     assert node_name != "", "node_name is empty"
     assert mcp_client is not None, "mcp_client is required"
 
-    # 获取 ChatDeepSeek 实例（懒加载）
-    llm = get_deepseek_llm()
+    # 创建新的 ChatDeepSeek 实例
+    llm = create_deepseek_llm()
     assert llm is not None, "ChatDeepSeek instance is not available"
 
     # 初始化 MCP 工具

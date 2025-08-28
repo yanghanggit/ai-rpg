@@ -18,7 +18,7 @@ from typing_extensions import TypedDict
 from ..chroma import get_chroma_db
 
 # 导入统一的 DeepSeek LLM 客户端
-from .client import get_deepseek_llm
+from .client import create_deepseek_llm
 
 
 ############################################################################################################
@@ -212,8 +212,8 @@ def rag_llm_node(state: RAGState) -> Dict[str, List[BaseMessage]]:
     try:
         logger.info("🤖 [LLM] 开始生成回答...")
 
-        # 使用统一的 DeepSeek LLM 客户端
-        llm = get_deepseek_llm()
+        # 创建新的 DeepSeek LLM 实例
+        llm = create_deepseek_llm()
 
         # 使用增强的上下文替换原始消息
         enhanced_context = state.get("enhanced_context", "")

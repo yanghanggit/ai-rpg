@@ -22,7 +22,7 @@ from ..rag import rag_semantic_search
 from ..rag.routing import RouteDecisionManager
 
 # 导入统一的 DeepSeek LLM 客户端
-from .client import get_deepseek_llm
+from .client import create_deepseek_llm
 
 
 ############################################################################################################
@@ -141,8 +141,8 @@ def direct_llm_node(state: UnifiedState) -> Dict[str, List[BaseMessage]]:
     try:
         logger.info("💬 [DIRECT_LLM] 开始直接对话模式...")
 
-        # 使用全局LLM实例
-        llm = get_deepseek_llm()
+        # 创建新的LLM实例
+        llm = create_deepseek_llm()
 
         # 直接使用原始消息调用LLM
         response = llm.invoke(state["messages"])
@@ -331,8 +331,8 @@ def rag_llm_node(state: UnifiedState) -> Dict[str, List[BaseMessage]]:
     try:
         logger.info("🤖 [RAG_LLM] 开始RAG增强回答生成...")
 
-        # 使用全局LLM实例
-        llm = get_deepseek_llm()
+        # 创建新的LLM实例
+        llm = create_deepseek_llm()
 
         # 使用增强的上下文替换原始消息
         enhanced_context = state.get("enhanced_context", "")

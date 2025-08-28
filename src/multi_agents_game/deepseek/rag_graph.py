@@ -4,17 +4,14 @@ from loguru import logger
 # 加载 .env 文件中的环境变量
 load_dotenv()
 
-import os
 import traceback
 from typing import Annotated, Any, Dict, List
 
 from langchain.schema import AIMessage, HumanMessage
 from langchain_core.messages import BaseMessage
-from langchain_deepseek import ChatDeepSeek
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.graph.state import CompiledStateGraph
-from pydantic import SecretStr
 from typing_extensions import TypedDict
 
 # 导入ChromaDB相关功能

@@ -4,17 +4,14 @@ from loguru import logger
 # 加载 .env 文件中的环境变量
 load_dotenv()
 
-import os
 import traceback
 from typing import Annotated, Any, Dict, List, Literal, Optional
 
 from langchain.schema import AIMessage, HumanMessage
 from langchain_core.messages import BaseMessage
-from langchain_deepseek import ChatDeepSeek
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.graph.state import CompiledStateGraph
-from pydantic import SecretStr
 from typing_extensions import TypedDict
 
 # 导入ChromaDB相关功能
@@ -26,22 +23,6 @@ from ..rag.routing import RouteDecisionManager
 
 # 导入统一的 DeepSeek LLM 客户端
 from .client import get_deepseek_llm
-
-
-# def reset_deepseek_llm() -> None:
-#     """
-#     重置全局DeepSeek LLM实例
-
-#     用途：
-#     - 测试时清理状态
-#     - 配置更改后重新初始化
-#     - 错误恢复
-
-#     注意：此函数现在调用 client 模块中的重置功能
-#     """
-#     from .client import reset_deepseek_llm as client_reset
-#     logger.info("🔄 重置全局DeepSeek LLM实例...")
-#     client_reset()
 
 
 ############################################################################################################

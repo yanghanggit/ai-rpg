@@ -23,7 +23,7 @@ from ..pgsql import (
     # RedisConfig,
 )
 from ..mongodb import DEFAULT_MONGODB_CONFIG, MongoDBConfig
-from .game_config import (
+from ..game.game_config import (
     GLOBAL_GAME_NAME,
     LOGS_DIR,
     setup_logger,

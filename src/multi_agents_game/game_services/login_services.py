@@ -5,7 +5,7 @@ from fastapi import APIRouter, FastAPI, HTTPException, Request, status
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
-from ..settings import LOGS_DIR, setup_logger
+from ..game.game_config import LOGS_DIR, setup_logger
 from ..game.game_options import WebGameUserOptions
 from ..game_services.game_server import GameServerInstance
 from ..models import (

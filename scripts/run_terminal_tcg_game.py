@@ -14,10 +14,9 @@ from loguru import logger
 from multi_agents_game.chat_services.chat_system import ChatSystem
 from multi_agents_game.settings import (
     # DEFAULT_SERVER_SETTINGS_CONFIG,
-    GLOBAL_GAME_NAME,
-    setup_logger,
     ServerSettings,
 )
+from multi_agents_game.game.game_config import GLOBAL_GAME_NAME, setup_logger
 from multi_agents_game.demo import create_actor_warrior, create_demo_dungeon1
 from multi_agents_game.game.game_options import TerminalGameUserOptions
 from multi_agents_game.game.player_proxy import PlayerProxy

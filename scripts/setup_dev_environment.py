@@ -37,10 +37,12 @@ sys.path.insert(
 from loguru import logger
 
 from multi_agents_game.settings import (
-    GLOBAL_GAME_NAME,
-    LOGS_DIR,
+    # GLOBAL_GAME_NAME,
+    # LOGS_DIR,
     ServerSettings,
 )
+from multi_agents_game.game.game_config import GLOBAL_GAME_NAME, LOGS_DIR
+
 from multi_agents_game.mongodb import (
     BootDocument,
     DEFAULT_MONGODB_CONFIG,

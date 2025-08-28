@@ -240,6 +240,82 @@ def _setup_chromadb_rag_environment() -> None:
         raise
 
 
+def _generate_pm2_ecosystem_config(
+    server_settings: ServerSettings, target_directory: str = "."
+) -> None:
+    """
+    根据 ServerSettings 配置生成 ecosystem.config.js 文件
+
+    Args:
+        target_directory: 目标目录路径，默认为当前目录
+
+    确保在项目根目录
+
+    启动所有服务
+    pm2 start ecosystem.config.js
+
+    查看状态
+    pm2 status
+
+    停止所有服务
+    pm2 delete ecosystem.config.js
+    """
+    ecosystem_config_content = f"""module.exports = {{
+  apps: [
+    // 聊天服务器实例 - 端口 {server_settings.azure_openai_chat_server_port}
+    {{
+      name: 'azure-openai-chat-server-{server_settings.azure_openai_chat_server_port}',
+      script: 'uvicorn',
+      args: 'scripts.run_azure_openai_chat_server:app --host 0.0.0.0 --port {server_settings.azure_openai_chat_server_port}',
+      interpreter: 'python',
+      cwd: process.cwd(),
+      env: {{
+        PYTHONPATH: `${{process.cwd()}}`,
+        PORT: '{server_settings.azure_openai_chat_server_port}'
+      }},
+      instances: 1,
+      autorestart: false,
+      watch: false,
+      max_memory_restart: '2G',
+      log_file: './logs/azure-openai-chat-server-{server_settings.azure_openai_chat_server_port}.log',
+      error_file: './logs/azure-openai-chat-server-{server_settings.azure_openai_chat_server_port}-error.log',
+      out_file: './logs/azure-openai-chat-server-{server_settings.azure_openai_chat_server_port}-out.log',
+      time: true
+    }},
+    // 游戏服务器实例 - 端口 {server_settings.game_server_port}
+    {{
+      name: 'game-server-{server_settings.game_server_port}',
+      script: 'uvicorn',
+      args: 'scripts.run_tcg_game_server:app --host 0.0.0.0 --port {server_settings.game_server_port}',
+      interpreter: 'python',
+      cwd: process.cwd(),
+      env: {{
+        PYTHONPATH: `${{process.cwd()}}`,
+        PORT: '{server_settings.game_server_port}'
+      }},
+      instances: 1,
+      autorestart: false,
+      watch: false,
+      max_memory_restart: '2G',
+      log_file: './logs/game-server-{server_settings.game_server_port}.log',
+      error_file: './logs/game-server-{server_settings.game_server_port}-error.log',
+      out_file: './logs/game-server-{server_settings.game_server_port}-out.log',
+      time: true
+    }}
+  ]
+}};
+"""
+    # 确保目标目录存在
+    target_path = Path(target_directory)
+    target_path.mkdir(parents=True, exist_ok=True)
+
+    # 写入文件
+    config_file_path = target_path / "ecosystem.config.js"
+    config_file_path.write_text(ecosystem_config_content, encoding="utf-8")
+
+    print(f"已生成 ecosystem.config.js 文件到: {config_file_path.absolute()}")
+
+
 #######################################################################################################
 def _setup_server_settings() -> None:
     """
@@ -251,6 +327,10 @@ def _setup_server_settings() -> None:
     write_path = Path("server_settings.json")
     write_path.write_text(server_config.model_dump_json(indent=4), encoding="utf-8")
     logger.success("✅ 服务器设置配置构建完成")
+
+    # 生成PM2生态系统配置
+    # server_config.generate_pm2_ecosystem_config()
+    _generate_pm2_ecosystem_config(server_config)
 
 
 #######################################################################################################

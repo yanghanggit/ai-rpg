@@ -7,16 +7,17 @@ load_dotenv()
 import traceback
 from typing import Annotated, Any, Dict, List
 from langchain_core.messages import BaseMessage
+from langchain_openai import AzureChatOpenAI
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.graph.state import CompiledStateGraph
 from typing_extensions import TypedDict
-from .client import get_azure_openai_gpt_llm
 
 
 ############################################################################################################
 class State(TypedDict):
     messages: Annotated[List[BaseMessage], add_messages]
+    llm: AzureChatOpenAI
 
 
 ############################################################################################################
@@ -30,8 +31,8 @@ def create_compiled_stage_graph(
     ) -> Dict[str, List[BaseMessage]]:
 
         try:
-            llm = get_azure_openai_gpt_llm()
-            assert llm is not None, "Failed to get Azure OpenAI GPT instance"
+            llm = state["llm"]  # 使用状态中的LLM实例
+            assert llm is not None, "LLM instance is None in state"
             return {"messages": [llm.invoke(state["messages"])]}
 
         except Exception as e:
@@ -60,7 +61,8 @@ def stream_graph_updates(
     ret: List[BaseMessage] = []
 
     merged_message_context: State = {
-        "messages": chat_history_state["messages"] + user_input_state["messages"]
+        "messages": chat_history_state["messages"] + user_input_state["messages"],
+        "llm": chat_history_state["llm"],  # 使用聊天历史状态中的LLM实例
     }
 
     for event in state_compiled_graph.stream(merged_message_context):

@@ -31,6 +31,7 @@ from multi_agents_game.azure_openai_gpt import (
     State,
     create_compiled_stage_graph,
     stream_graph_updates,
+    create_azure_openai_gpt_llm,
 )
 
 
@@ -47,8 +48,11 @@ def main() -> None:
     logger.info("🤖 启动Azure OpenAI GPT-4o聊天系统...")
 
     try:
-        # 聊天历史
-        chat_history_state: State = {"messages": []}
+        # 为每个会话创建独立的LLM实例
+        llm = create_azure_openai_gpt_llm()
+
+        # 聊天历史（包含LLM实例）
+        chat_history_state: State = {"messages": [], "llm": llm}
 
         # 生成聊天机器人状态图
         compiled_stage_graph = create_compiled_stage_graph(
@@ -70,7 +74,8 @@ def main() -> None:
 
                 # 用户输入
                 user_input_state: State = {
-                    "messages": [HumanMessage(content=user_input)]
+                    "messages": [HumanMessage(content=user_input)],
+                    "llm": llm,
                 }
 
                 # 获取回复

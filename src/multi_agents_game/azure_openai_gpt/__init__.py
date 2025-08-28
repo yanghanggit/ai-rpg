@@ -10,13 +10,13 @@ Azure OpenAI GPT聊天模块
 from .chat_graph import (
     State,
     create_compiled_stage_graph,
-    # get_azure_openai_gpt_llm,
     stream_graph_updates,
 )
+from .client import create_azure_openai_gpt_llm
 
 __all__ = [
     "State",
     "create_compiled_stage_graph",
-    # "get_azure_openai_gpt_llm",
+    "create_azure_openai_gpt_llm",
     "stream_graph_updates",
 ]

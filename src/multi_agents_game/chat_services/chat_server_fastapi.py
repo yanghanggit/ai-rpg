@@ -1,24 +1,17 @@
-from typing import Any
-
 from fastapi import FastAPI
-from langgraph.graph.state import CompiledStateGraph
 
 from ..chat_services.chat_api import ChatRequest, ChatResponse
 from ..azure_openai_gpt import (
     State,
     create_compiled_stage_graph,
     stream_graph_updates,
+    create_azure_openai_gpt_llm,
 )
 from ..config import DEFAULT_SERVER_SETTINGS_CONFIG
 
 ##################################################################################################################
 # 初始化 FastAPI 应用
 app = FastAPI()
-##################################################################################################################
-# 创建编译后的状态图
-compiled_state_graph: CompiledStateGraph[State, Any, State, State] = (
-    create_compiled_stage_graph("azure_chat_openai_chatbot_node")
-)
 
 
 ##################################################################################################################
@@ -28,13 +21,20 @@ compiled_state_graph: CompiledStateGraph[State, Any, State, State] = (
     response_model=ChatResponse,
 )
 async def process_chat_request(request: ChatRequest) -> ChatResponse:
-    # 聊天历史
+    # 为每个请求创建独立的LLM实例
+    llm = create_azure_openai_gpt_llm()
+
+    # 为每个请求创建独立的状态图实例
+    compiled_state_graph = create_compiled_stage_graph("azure_chat_openai_chatbot_node")
+
+    # 聊天历史（包含LLM实例）
     chat_history_state: State = {
-        "messages": [message for message in request.chat_history]
+        "messages": [message for message in request.chat_history],
+        "llm": llm,
     }
 
     # 用户输入
-    user_input_state: State = {"messages": [request.message]}
+    user_input_state: State = {"messages": [request.message], "llm": llm}
 
     # 获取回复
     update_messages = stream_graph_updates(

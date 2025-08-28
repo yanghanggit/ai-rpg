@@ -19,6 +19,7 @@ API端点：
 """
 
 import os
+from pathlib import Path
 import sys
 
 # 将 src 目录添加到模块搜索路径
@@ -35,6 +36,10 @@ from multi_agents_game.azure_openai_gpt import (
     create_compiled_stage_graph,
     stream_graph_updates,
     create_azure_openai_gpt_llm,
+)
+
+from multi_agents_game.settings import (
+    ServerSettings,
 )
 
 ##################################################################################################################
@@ -115,6 +120,11 @@ def main() -> None:
     """
     logger.info("🚀 启动Azure OpenAI聊天服务器...")
 
+    write_path = Path("server_settings.json")
+    assert write_path.exists(), "server_settings.json must exist"
+    content = write_path.read_text(encoding="utf-8")
+    server_config = ServerSettings.model_validate_json(content)
+
     try:
         import uvicorn
 
@@ -122,7 +132,7 @@ def main() -> None:
         uvicorn.run(
             app,
             host="localhost",
-            port=8100,
+            port=server_config.azure_openai_chat_server_port,
             log_level="debug",
         )
 

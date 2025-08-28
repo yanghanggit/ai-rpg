@@ -12,8 +12,8 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import DateTime, Index, Integer, String, Text, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .pgsql_base import UUIDBase
-from .pgsql_client import SessionLocal
+from .base import UUIDBase
+from .client import SessionLocal
 
 
 class VectorDocumentDB(UUIDBase):

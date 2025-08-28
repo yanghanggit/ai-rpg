@@ -8,7 +8,7 @@
 from loguru import logger
 
 # 导入所有数据库模型以确保它们被注册到Base.metadata中
-from .pgsql_vector_document import VectorDocumentDB
+from .vector_document import VectorDocumentDB
 
 # 可以在这里添加其他模型的导入
 # from .other_model import OtherModel

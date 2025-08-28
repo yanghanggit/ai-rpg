@@ -3,7 +3,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from ..config import DEFAULT_POSTGRES_CONFIG
-from .pgsql_base import Base
+from .base import Base
 
 ############################################################################################################
 engine = create_engine(DEFAULT_POSTGRES_CONFIG.connection_string)

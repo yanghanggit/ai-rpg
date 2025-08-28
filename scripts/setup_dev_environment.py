@@ -41,11 +41,11 @@ from multi_agents_game.mongodb import (
     mongodb_find_one,
     mongodb_upsert_one,
 )
-from multi_agents_game.pgsql.pgsql_client import (
+from multi_agents_game.pgsql.client import (
     pgsql_ensure_database_tables,
     pgsql_reset_database,
 )
-from multi_agents_game.pgsql.pgsql_user import has_user, save_user
+from multi_agents_game.pgsql.user import has_user, save_user
 from multi_agents_game.redis.client import (
     redis_flushall,
 )

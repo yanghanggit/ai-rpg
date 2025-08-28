@@ -10,10 +10,10 @@ This module provides:
 
 from typing import List
 
-from .pgsql_base import *
-from .pgsql_client import *
-from .pgsql_user import *
-from .pgsql_vector_document import VectorDocumentDB
+from .base import *
+from .client import *
+from .user import *
+from .vector_document import VectorDocumentDB
 
 # Import RAG operations from new rag module
 from ..rag import initialize_rag_system, rag_semantic_search

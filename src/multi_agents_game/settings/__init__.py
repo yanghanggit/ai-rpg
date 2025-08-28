@@ -29,12 +29,14 @@ from ..game.game_config import (
     setup_logger,
 )
 from .server_settings_config import (
-    DEFAULT_SERVER_SETTINGS_CONFIG,
+    ServerSettings,
+    # DEFAULT_SERVER_SETTINGS_CONFIG,
 )
 
 __all__ = [
     # 服务器配置
-    "DEFAULT_SERVER_SETTINGS_CONFIG",
+    "ServerSettings",
+    # "DEFAULT_SERVER_SETTINGS_CONFIG",
     # 数据库配置类
     # "RedisConfig",
     "MongoDBConfig",

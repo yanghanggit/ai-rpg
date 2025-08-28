@@ -18,8 +18,9 @@ Date: 2025-07-30
 """
 
 import os
+from pathlib import Path
 import sys
-from typing import final
+from typing import Final, final
 
 from pydantic import BaseModel
 
@@ -27,12 +28,18 @@ from pydantic import BaseModel
 sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
-
+# from multi_agents_game.config import (
+#     ServerSettingsConfig,
+#     #DEFAULT_SERVER_SETTINGS_CONFIG,
+#     GLOBAL_GAME_NAME,
+#     #setup_logger,
+# )
 from loguru import logger
 
-from multi_agents_game.config import (
+from multi_agents_game.settings import (
     GLOBAL_GAME_NAME,
     LOGS_DIR,
+    ServerSettings,
 )
 from multi_agents_game.mongodb import (
     BootDocument,
@@ -232,6 +239,19 @@ def _setup_chromadb_rag_environment() -> None:
 
 
 #######################################################################################################
+def _setup_server_settings() -> None:
+    """
+    构建服务器设置配置
+    """
+    logger.info("🚀 构建服务器设置配置...")
+    # 这里可以添加构建服务器设置配置的逻辑
+    server_config: Final[ServerSettings] = ServerSettings()
+    write_path = Path("server_settings.json")
+    write_path.write_text(server_config.model_dump_json(indent=4), encoding="utf-8")
+    logger.success("✅ 服务器设置配置构建完成")
+
+
+#######################################################################################################
 # Development Environment Setup Utility
 def main() -> None:
 
@@ -274,6 +294,14 @@ def main() -> None:
         logger.success("✅ RAG 系统初始化完成")
     except Exception as e:
         logger.error(f"❌ RAG 系统初始化失败: {e}")
+
+    # 服务器设置相关操作
+    try:
+        logger.info("🚀 设置服务器配置...")
+        _setup_server_settings()
+        logger.success("✅ 服务器配置设置完成")
+    except Exception as e:
+        logger.error(f"❌ 服务器配置设置失败: {e}")
 
     logger.info("🎉 开发环境初始化完成")
 

@@ -11,7 +11,7 @@ from loguru import logger
 from overrides import override
 
 from ..chat_services.chat_system import ChatSystem
-from ..config import LOGS_DIR
+from ..settings import LOGS_DIR
 from ..mongodb import (
     DEFAULT_MONGODB_CONFIG,
     WorldDocument,

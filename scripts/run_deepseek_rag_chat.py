@@ -53,6 +53,7 @@ def main() -> None:
 
         # 步骤3: 初始化聊天历史
         from multi_agents_game.deepseek.client import create_deepseek_llm
+
         llm = create_deepseek_llm()
         chat_history_state: State = {"messages": [], "llm": llm}
 
@@ -79,7 +80,7 @@ def main() -> None:
                 # 用户输入
                 user_input_state: State = {
                     "messages": [HumanMessage(content=user_input)],
-                    "llm": llm  # 使用同一个LLM实例
+                    "llm": llm,  # 使用同一个LLM实例
                 }
 
                 # 执行RAG流程

@@ -588,7 +588,7 @@ async def stream_mcp_graph_updates(
     if not llm_instance:
         # 如果两个状态都没有LLM实例，创建一个新的
         llm_instance = create_deepseek_llm()
-    
+
     merged_message_context: McpState = {
         "messages": chat_history_state["messages"] + user_input_state["messages"],
         "llm": llm_instance,  # 确保LLM实例存在

@@ -7,7 +7,8 @@ from ..azure_openai_gpt import (
     stream_graph_updates,
     create_azure_openai_gpt_llm,
 )
-from ..config import DEFAULT_SERVER_SETTINGS_CONFIG
+
+# from ..config import DEFAULT_SERVER_SETTINGS_CONFIG
 
 ##################################################################################################################
 # 初始化 FastAPI 应用
@@ -17,7 +18,7 @@ app = FastAPI()
 ##################################################################################################################
 # 定义 POST 请求处理逻辑
 @app.post(
-    path=DEFAULT_SERVER_SETTINGS_CONFIG.chat_service_endpoint,
+    path="/chat-service/v1/",
     response_model=ChatResponse,
 )
 async def process_chat_request(request: ChatRequest) -> ChatResponse:

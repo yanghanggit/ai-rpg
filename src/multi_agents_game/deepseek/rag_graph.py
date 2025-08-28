@@ -19,7 +19,6 @@ from typing_extensions import TypedDict
 from ..chroma import get_chroma_db
 
 # 导入统一的 DeepSeek LLM 客户端
-from .client import create_deepseek_llm
 
 
 ############################################################################################################
@@ -304,6 +303,7 @@ def stream_rag_graph_updates(
 
         # 创建 DeepSeek LLM 实例
         from .client import create_deepseek_llm
+
         llm = create_deepseek_llm()
         logger.info("🚀 创建 DeepSeek LLM 实例完成")
 

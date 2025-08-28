@@ -19,8 +19,8 @@ DeepSeek + MCP 聊天系统启动脚本
 
 或者在项目根目录下：
     python -m scripts.run_deepseek_mcp_chat_client
-    
-    
+
+
 
 你好，你是谁？几点了？系统配置是多少？11 * 22 是多少？
 """

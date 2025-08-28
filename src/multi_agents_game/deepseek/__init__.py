@@ -19,9 +19,9 @@ from .unified_chat_graph import (
     create_unified_chat_graph,
     stream_unified_graph_updates,
     UnifiedState,
-    get_deepseek_llm,
-    reset_deepseek_llm,
+    # reset_deepseek_llm,
 )
+from .client import get_deepseek_llm
 
 __all__ = [
     # 基础聊天图
@@ -39,5 +39,5 @@ __all__ = [
     "stream_unified_graph_updates",
     "UnifiedState",
     "get_deepseek_llm",
-    "reset_deepseek_llm",
+    # "reset_deepseek_llm",
 ]

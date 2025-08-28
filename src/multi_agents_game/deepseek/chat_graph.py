@@ -16,6 +16,9 @@ from langgraph.graph.state import CompiledStateGraph
 from pydantic import SecretStr
 from typing_extensions import TypedDict
 
+# 导入统一的 DeepSeek LLM 客户端
+from .client import get_deepseek_llm
+
 
 ############################################################################################################
 class State(TypedDict):
@@ -28,17 +31,8 @@ def create_compiled_stage_graph(
 ) -> CompiledStateGraph[State, Any, State, State]:
     assert node_name != "", "node_name is empty"
 
-    # 检查必需的环境变量
-    deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
-
-    if not deepseek_api_key:
-        raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
-
-    llm = ChatDeepSeek(
-        api_key=SecretStr(deepseek_api_key),
-        model="deepseek-chat",
-        temperature=temperature,
-    )
+    # 使用统一的 DeepSeek LLM 客户端
+    llm = get_deepseek_llm()
 
     def invoke_deepseek_llm_action(
         state: State,

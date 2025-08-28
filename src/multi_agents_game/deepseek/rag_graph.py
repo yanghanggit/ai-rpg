@@ -20,6 +20,9 @@ from typing_extensions import TypedDict
 # 导入ChromaDB相关功能
 from ..chroma import get_chroma_db
 
+# 导入统一的 DeepSeek LLM 客户端
+from .client import get_deepseek_llm
+
 
 ############################################################################################################
 class State(TypedDict):
@@ -212,16 +215,8 @@ def rag_llm_node(state: RAGState) -> Dict[str, List[BaseMessage]]:
     try:
         logger.info("🤖 [LLM] 开始生成回答...")
 
-        # 检查必需的环境变量
-        deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
-        if not deepseek_api_key:
-            raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
-
-        llm = ChatDeepSeek(
-            api_key=SecretStr(deepseek_api_key),
-            model="deepseek-chat",
-            temperature=0.7,
-        )
+        # 使用统一的 DeepSeek LLM 客户端
+        llm = get_deepseek_llm()
 
         # 使用增强的上下文替换原始消息
         enhanced_context = state.get("enhanced_context", "")

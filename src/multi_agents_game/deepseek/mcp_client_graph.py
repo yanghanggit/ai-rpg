@@ -28,40 +28,8 @@ from ..mcp import (
     synthesize_response_with_tools,
 )
 
-# 全局 ChatDeepSeek 实例
-_global_deepseek_llm: Optional[ChatDeepSeek] = None
-
-
-############################################################################################################
-def get_deepseek_llm() -> ChatDeepSeek:
-    """
-    获取 ChatDeepSeek 实例（懒加载）
-
-    Args:
-        temperature: 模型温度，默认为 0.7
-
-    Returns:
-        ChatDeepSeek: ChatDeepSeek 实例
-
-    Raises:
-        ValueError: 如果 DEEPSEEK_API_KEY 环境变量未设置
-    """
-    global _global_deepseek_llm
-
-    if _global_deepseek_llm is None:
-        # 检查必需的环境变量
-        deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
-        if not deepseek_api_key:
-            raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
-
-        # 创建 ChatDeepSeek 实例
-        _global_deepseek_llm = ChatDeepSeek(
-            api_key=SecretStr(deepseek_api_key),
-            model="deepseek-chat",
-            temperature=0.7,
-        )
-
-    return _global_deepseek_llm
+# 导入统一的 DeepSeek LLM 客户端
+from .client import get_deepseek_llm
 
 
 ############################################################################################################

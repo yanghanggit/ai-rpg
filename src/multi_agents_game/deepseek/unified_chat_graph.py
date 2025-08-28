@@ -24,53 +24,24 @@ from ..rag import rag_semantic_search
 # 导入新的路由系统
 from ..rag.routing import RouteDecisionManager
 
-# 全局DeepSeek LLM实例（懒加载单例）
-_global_deepseek_llm: Optional[ChatDeepSeek] = None
+# 导入统一的 DeepSeek LLM 客户端
+from .client import get_deepseek_llm
 
 
-def get_deepseek_llm() -> ChatDeepSeek:
-    """
-    获取全局DeepSeek LLM实例（懒加载单例模式）
+# def reset_deepseek_llm() -> None:
+#     """
+#     重置全局DeepSeek LLM实例
 
-    Returns:
-        ChatDeepSeek: 配置好的DeepSeek LLM实例
+#     用途：
+#     - 测试时清理状态
+#     - 配置更改后重新初始化
+#     - 错误恢复
 
-    Raises:
-        ValueError: 当DEEPSEEK_API_KEY环境变量未设置时
-    """
-    global _global_deepseek_llm
-
-    if _global_deepseek_llm is None:
-        logger.info("🤖 初始化全局DeepSeek LLM实例...")
-
-        # 检查必需的环境变量
-        deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
-        if not deepseek_api_key:
-            raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
-
-        _global_deepseek_llm = ChatDeepSeek(
-            api_key=SecretStr(deepseek_api_key),
-            model="deepseek-chat",
-            temperature=0.7,
-        )
-
-        logger.success("🤖 全局DeepSeek LLM实例创建完成")
-
-    return _global_deepseek_llm
-
-
-def reset_deepseek_llm() -> None:
-    """
-    重置全局DeepSeek LLM实例
-
-    用途：
-    - 测试时清理状态
-    - 配置更改后重新初始化
-    - 错误恢复
-    """
-    global _global_deepseek_llm
-    logger.info("🔄 重置全局DeepSeek LLM实例...")
-    _global_deepseek_llm = None
+#     注意：此函数现在调用 client 模块中的重置功能
+#     """
+#     from .client import reset_deepseek_llm as client_reset
+#     logger.info("🔄 重置全局DeepSeek LLM实例...")
+#     client_reset()
 
 
 ############################################################################################################

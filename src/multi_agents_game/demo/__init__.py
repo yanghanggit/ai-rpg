@@ -2,7 +2,7 @@
 
 from .actor_goblin import create_actor_goblin
 from .actor_orc import create_actor_orc
-from .actor_slime import create_actor_slime
+from .actor_training_robot import create_actor_training_robot
 from .actor_spider import create_actor_spider
 from .actor_warrior import create_actor_warrior
 from .actor_wizard import create_actor_wizard
@@ -25,7 +25,7 @@ __all__ = [
     "create_actor_wizard",
     "create_actor_goblin",
     "create_actor_orc",
-    "create_actor_slime",
+    "create_actor_training_robot",
     "create_actor_spider",
     # Demo stages
     "create_demo_heros_camp",

@@ -2,9 +2,22 @@
 """
 Replicate 文生图工具
 一个简单易用的文生图脚本，包含完整功能和使用示例
+
+
+# 基础使用
+python scripts/run_replicate_text2image.py "prompt text"
+
+# 演示功能
+python scripts/run_replicate_text2image.py --demo            # 单张演示
+python scripts/run_replicate_text2image.py --concurrent     # 并发演示
+
+# 实用功能
+python scripts/run_replicate_text2image.py --test           # 测试连接
+python scripts/run_replicate_text2image.py --list-models    # 查看模型
 """
 
 import argparse
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -15,6 +28,7 @@ from multi_agents_game.replicate import (
     load_replicate_config,
     get_default_generation_params,
     generate_and_download,
+    generate_multiple_images,
 )
 
 # 全局变量
@@ -29,7 +43,7 @@ MODELS: Dict[str, Dict[str, str]] = replicate_config.image_models.model_dump(
 DEFAULT_OUTPUT_DIR: Final[str] = "generated_images"
 
 
-def run_demo() -> None:
+async def run_demo() -> None:
     """运行演示示例"""
     print("=" * 60)
     print("🎮 Replicate 文生图演示")
@@ -58,7 +72,7 @@ def run_demo() -> None:
         # 获取默认参数
         default_params = get_default_generation_params()
 
-        saved_path = generate_and_download(
+        saved_path = await generate_and_download(
             prompt=test_prompt,
             model_name=default_params["model_name"],
             negative_prompt=default_params["negative_prompt"],
@@ -77,7 +91,56 @@ def run_demo() -> None:
         print(f"❌ 演示失败: {e}")
 
 
-def main() -> None:
+async def run_concurrent_demo() -> None:
+    """运行并发生成演示"""
+    print("=" * 60)
+    print("🚀 Replicate 并发文生图演示")
+    print("=" * 60)
+
+    # 1. 测试连接
+    if not test_replicate_api_connection():
+        print("❌ 连接测试失败，请检查网络设置")
+        return
+
+    # 2. 多个提示词
+    prompts = [
+        "peaceful mountain landscape",
+        "ocean waves on sandy beach",
+        "forest path in autumn",
+    ]
+
+    print(f"\n🎨 并发生成 {len(prompts)} 张图片...")
+    print("📝 提示词列表:")
+    for i, prompt in enumerate(prompts, 1):
+        print(f"  {i}. {prompt}")
+
+    try:
+        # 获取默认参数
+        default_params = get_default_generation_params()
+
+        # 并发生成
+        results = await generate_multiple_images(
+            prompts=prompts,
+            model_name="ideogram-v3-turbo",  # 使用相对稳定的模型
+            negative_prompt=default_params["negative_prompt"],
+            width=512,  # 使用较小尺寸加快测试
+            height=512,
+            num_inference_steps=default_params["num_inference_steps"],
+            guidance_scale=default_params["guidance_scale"],
+            output_dir=DEFAULT_OUTPUT_DIR,
+            models_config=MODELS,
+        )
+
+        print(f"\n🎉 并发生成完成! 生成了 {len(results)} 张图片:")
+        for i, path in enumerate(results, 1):
+            print(f"  {i}. {path}")
+        print("💡 这展示了异步并发的强大能力！")
+
+    except Exception as e:
+        print(f"❌ 并发演示失败: {e}")
+
+
+async def main() -> None:
     """主函数 - 命令行接口"""
 
     # 检查模型配置是否正确加载
@@ -143,6 +206,7 @@ def main() -> None:
     parser.add_argument("--output", "-o", default=DEFAULT_OUTPUT_DIR, help="输出目录")
     parser.add_argument("--list-models", action="store_true", help="列出可用模型")
     parser.add_argument("--demo", action="store_true", help="运行演示")
+    parser.add_argument("--concurrent", action="store_true", help="运行并发生成演示")
     parser.add_argument("--test", action="store_true", help="测试连接")
 
     args = parser.parse_args()
@@ -164,7 +228,12 @@ def main() -> None:
 
         # 如果是运行演示
         if args.demo:
-            run_demo()
+            await run_demo()
+            return
+
+        # 如果是运行并发演示
+        if args.concurrent:
+            await run_concurrent_demo()
             return
 
         # 如果是测试连接
@@ -186,7 +255,12 @@ def main() -> None:
         if not args.prompt:
             print("🎨 Replicate 文生图工具")
             print("\n快速开始:")
-            print("  python run_replicate_text2image.py --demo            # 运行演示")
+            print(
+                "  python run_replicate_text2image.py --demo            # 运行单张演示"
+            )
+            print(
+                "  python run_replicate_text2image.py --concurrent      # 运行并发演示"
+            )
             print("  python run_replicate_text2image.py --test            # 测试连接")
             print(
                 "  python run_replicate_text2image.py --list-models     # 查看内置模型"
@@ -203,7 +277,7 @@ def main() -> None:
             return
 
         # 生成并下载图片
-        saved_path = generate_and_download(
+        saved_path = await generate_and_download(
             prompt=args.prompt,
             model_name=args.model,
             negative_prompt=args.negative,
@@ -223,4 +297,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

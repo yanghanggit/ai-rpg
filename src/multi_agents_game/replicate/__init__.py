@@ -14,9 +14,11 @@ from .config import (
 )
 from .image_tools import (
     get_default_generation_params,
+    # 异步版本
     generate_image,
     download_image,
     generate_and_download,
+    generate_multiple_images,
 )
 
 __all__ = [
@@ -27,7 +29,9 @@ __all__ = [
     "load_replicate_config",
     "test_replicate_api_connection",
     "get_default_generation_params",
+    # 异步版本
     "generate_image",
     "download_image",
     "generate_and_download",
+    "generate_multiple_images",
 ]

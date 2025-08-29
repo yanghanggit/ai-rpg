@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """
 Replicate 图像生成工具模块
-包含纯函数的图像生成和下载工具
+包含异步图像生成和下载工具
 """
 
+import asyncio
 import time
 import uuid
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
+import aiohttp
 import replicate
-import requests
 from loguru import logger
 
 
@@ -31,7 +32,7 @@ def get_default_generation_params() -> Dict[str, Any]:
     }
 
 
-def generate_image(
+async def generate_image(
     prompt: str,
     model_name: str,
     negative_prompt: str,
@@ -42,7 +43,7 @@ def generate_image(
     models_config: Dict[str, Dict[str, str]],
 ) -> str:
     """
-    生成图片
+    异步生成图片
 
     Args:
         prompt: 文本提示词
@@ -74,7 +75,7 @@ def generate_image(
     logger.info(f"💰 预估成本: {cost_estimate}")
     logger.info(f"📝 提示词: {prompt[:80]}{'...' if len(prompt) > 80 else ''}")
     logger.info(f"⚙️  参数: {width}x{height}, {num_inference_steps} 步")
-    logger.info("🔄 生成中...")
+    logger.info("🔄 异步生成中...")
 
     start_time = time.time()
 
@@ -84,7 +85,8 @@ def generate_image(
             # Lightning 模型使用较少的步数
             num_inference_steps = min(4, num_inference_steps)
 
-        output = replicate.run(
+        # 使用异步版本
+        output = await replicate.async_run(
             model_version,
             input={
                 "prompt": prompt,
@@ -102,19 +104,19 @@ def generate_image(
         image_url: str = output[0] if isinstance(output, list) else str(output)
 
         elapsed_time = time.time() - start_time
-        logger.info(f"✅ 生成完成! 耗时: {elapsed_time:.2f}秒")
+        logger.info(f"✅ 异步生成完成! 耗时: {elapsed_time:.2f}秒")
         logger.info(f"🔗 图片 URL: {image_url}")
 
         return image_url
 
     except Exception as e:
-        logger.error(f"❌ 生成失败: {e}")
+        logger.error(f"❌ 异步生成失败: {e}")
         raise
 
 
-def download_image(image_url: str, save_path: str) -> str:
+async def download_image(image_url: str, save_path: str) -> str:
     """
-    下载图片
+    异步下载图片
 
     Args:
         image_url: 图片 URL
@@ -131,27 +133,29 @@ def download_image(image_url: str, save_path: str) -> str:
     save_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        logger.info(f"📥 下载图片到: {save_path}")
+        logger.info(f"📥 异步下载图片到: {save_path}")
 
-        # 下载图片
-        response = requests.get(image_url, timeout=30)
-        response.raise_for_status()
+        # 异步下载图片
+        async with aiohttp.ClientSession() as session:
+            async with session.get(image_url) as response:
+                response.raise_for_status()
+                content = await response.read()
 
         # 保存图片
         with open(save_path, "wb") as f:
-            f.write(response.content)
+            f.write(content)
 
-        file_size = len(response.content) / 1024  # KB
-        logger.info(f"✅ 下载完成! 文件大小: {file_size:.1f} KB")
+        file_size = len(content) / 1024  # KB
+        logger.info(f"✅ 异步下载完成! 文件大小: {file_size:.1f} KB")
 
         return save_path
 
     except Exception as e:
-        logger.error(f"❌ 下载失败: {e}")
+        logger.error(f"❌ 异步下载失败: {e}")
         raise
 
 
-def generate_and_download(
+async def generate_and_download(
     prompt: str,
     model_name: str,
     negative_prompt: str,
@@ -163,7 +167,7 @@ def generate_and_download(
     models_config: Dict[str, Dict[str, str]],
 ) -> str:
     """
-    生成并下载图片的便捷方法
+    异步生成并下载图片的便捷方法
 
     Args:
         prompt: 文本提示词
@@ -179,8 +183,8 @@ def generate_and_download(
     Returns:
         保存的文件路径
     """
-    # 生成图片
-    image_url = generate_image(
+    # 异步生成图片
+    image_url = await generate_image(
         prompt=prompt,
         model_name=model_name,
         negative_prompt=negative_prompt,
@@ -196,7 +200,66 @@ def generate_and_download(
     filename = f"{model_name}_{timestamp}.png"
     save_path = Path(output_dir) / filename
 
-    # 下载图片
-    downloaded_path = download_image(image_url, str(save_path))
+    # 异步下载图片
+    downloaded_path = await download_image(image_url, str(save_path))
 
     return downloaded_path
+
+
+async def generate_multiple_images(
+    prompts: List[str],
+    model_name: str,
+    negative_prompt: str,
+    width: int,
+    height: int,
+    num_inference_steps: int,
+    guidance_scale: float,
+    output_dir: str,
+    models_config: Dict[str, Dict[str, str]],
+) -> List[str]:
+    """
+    并发生成多张图片
+
+    Args:
+        prompts: 提示词列表
+        model_name: 模型名称
+        negative_prompt: 负向提示词
+        width: 图片宽度
+        height: 图片高度
+        num_inference_steps: 推理步数
+        guidance_scale: 引导比例
+        output_dir: 输出目录
+        models_config: 模型配置字典
+
+    Returns:
+        保存的文件路径列表
+    """
+    logger.info(f"🚀 开始并发生成 {len(prompts)} 张图片...")
+
+    # 创建任务列表
+    tasks = [
+        generate_and_download(
+            prompt=prompt,
+            model_name=model_name,
+            negative_prompt=negative_prompt,
+            width=width,
+            height=height,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            output_dir=output_dir,
+            models_config=models_config,
+        )
+        for prompt in prompts
+    ]
+
+    # 并发执行所有任务
+    start_time = time.time()
+    try:
+        results = await asyncio.gather(*tasks)
+        elapsed_time = time.time() - start_time
+        logger.info(f"🎉 并发生成完成! 总耗时: {elapsed_time:.2f}秒")
+        logger.info(f"📊 平均每张图片: {elapsed_time/len(prompts):.2f}秒")
+        return results
+    except Exception as e:
+        logger.error(f"❌ 并发生成失败: {e}")
+        raise

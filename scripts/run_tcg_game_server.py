@@ -9,11 +9,10 @@ sys.path.insert(
 
 from loguru import logger
 from multi_agents_game.settings import (
-    ServerSettings,
+    initialize_server_settings_instance,
 )
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
 from multi_agents_game.game_services.dungeon_gameplay_services import (
     dungeon_gameplay_router,
 )
@@ -47,10 +46,8 @@ app.include_router(router=view_actor_router)
 
 def main() -> None:
 
-    write_path = Path("server_settings.json")
-    assert write_path.exists(), "server_settings.json must exist"
-    content = write_path.read_text(encoding="utf-8")
-    server_config = ServerSettings.model_validate_json(content)
+    # 加载服务器配置
+    server_config = initialize_server_settings_instance(Path("server_settings.json"))
 
     logger.info(f"启动游戏服务器，端口: {server_config.game_server_port}")
     import uvicorn

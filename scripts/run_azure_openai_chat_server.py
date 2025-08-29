@@ -39,7 +39,7 @@ from multi_agents_game.azure_openai_gpt import (
 )
 
 from multi_agents_game.settings import (
-    ServerSettings,
+    initialize_server_settings_instance,
 )
 
 ##################################################################################################################
@@ -120,10 +120,8 @@ def main() -> None:
     """
     logger.info("🚀 启动Azure OpenAI聊天服务器...")
 
-    write_path = Path("server_settings.json")
-    assert write_path.exists(), "server_settings.json must exist"
-    content = write_path.read_text(encoding="utf-8")
-    server_config = ServerSettings.model_validate_json(content)
+    # 加载服务器配置
+    server_config = initialize_server_settings_instance(Path("server_settings.json"))
 
     try:
         import uvicorn

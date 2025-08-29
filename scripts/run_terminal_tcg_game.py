@@ -8,13 +8,10 @@ sys.path.insert(
 )
 
 from typing import Dict, Set, TypedDict, cast
-
 from loguru import logger
-
 from multi_agents_game.chat_services.manager import ChatClientManager
 from multi_agents_game.settings import (
-    # DEFAULT_SERVER_SETTINGS_CONFIG,
-    ServerSettings,
+    initialize_server_settings_instance,
 )
 from multi_agents_game.game.game_config import GLOBAL_GAME_NAME, setup_logger
 from multi_agents_game.demo import create_actor_warrior, create_demo_dungeon5
@@ -105,12 +102,7 @@ async def run_game(
         )
 
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    write_path = Path("server_settings.json")
-    assert write_path.exists(), "server_settings.json must exist"
-    content = write_path.read_text(encoding="utf-8")
-    server_config = ServerSettings.model_validate_json(content)
+    server_config = initialize_server_settings_instance(Path("server_settings.json"))
 
     # 依赖注入，创建新的游戏
     assert world_exists is not None, "World data must exist to create a game"

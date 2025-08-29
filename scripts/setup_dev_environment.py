@@ -329,7 +329,6 @@ def _setup_server_settings() -> None:
     logger.success("✅ 服务器设置配置构建完成")
 
     # 生成PM2生态系统配置
-    # server_config.generate_pm2_ecosystem_config()
     _generate_pm2_ecosystem_config(server_config)
 
 

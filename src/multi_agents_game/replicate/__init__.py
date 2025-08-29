@@ -12,6 +12,12 @@ from .config import (
     load_replicate_config,
     test_replicate_api_connection,
 )
+from .image_tools import (
+    get_default_generation_params,
+    generate_image,
+    download_image,
+    generate_and_download,
+)
 
 __all__ = [
     "ModelInfo",
@@ -20,4 +26,8 @@ __all__ = [
     "ReplicateModelsConfig",
     "load_replicate_config",
     "test_replicate_api_connection",
+    "get_default_generation_params",
+    "generate_image",
+    "download_image",
+    "generate_and_download",
 ]

@@ -7,19 +7,14 @@ Replicate 文生图工具
 import argparse
 import os
 import sys
-import time
-import uuid
 from pathlib import Path
-from typing import Any, Dict, Final, Optional
-
-import replicate
-import requests
+from typing import Dict, Final
 
 from multi_agents_game.replicate import (
-    # get_image_models,
     test_replicate_api_connection,
-    # validate_config,
     load_replicate_config,
+    get_default_generation_params,
+    generate_and_download,
 )
 
 # 全局变量
@@ -32,147 +27,6 @@ MODELS: Dict[str, Dict[str, str]] = replicate_config.image_models.model_dump(
 )
 
 DEFAULT_OUTPUT_DIR: Final[str] = "generated_images"
-
-
-def generate_image(
-    prompt: str,
-    model_name: str = "sdxl-lightning",
-    negative_prompt: str = "worst quality, low quality, blurry",
-    width: int = 768,
-    height: int = 768,
-    num_inference_steps: int = 4,
-    guidance_scale: float = 7.5,
-) -> str:
-    """
-    生成图片
-
-    Args:
-        prompt: 文本提示词
-        model_name: 模型名称 (sdxl-lightning, sdxl, playground, realvis)
-        negative_prompt: 负向提示词
-        width: 图片宽度
-        height: 图片高度
-        num_inference_steps: 推理步数
-        guidance_scale: 引导比例
-
-    Returns:
-        图片 URL
-    """
-    if model_name not in MODELS:
-        raise ValueError(f"不支持的模型: {model_name}. 可用模型: {list(MODELS.keys())}")
-
-    model_info = MODELS[model_name]
-    model_version = model_info["version"]
-    cost_estimate = model_info["cost_estimate"]
-
-    print(f"\n🎨 使用模型: {model_name}")
-    print(f"💰 预估成本: {cost_estimate}")
-    print(f"📝 提示词: {prompt[:80]}{'...' if len(prompt) > 80 else ''}")
-    print(f"⚙️  参数: {width}x{height}, {num_inference_steps} 步")
-    print("🔄 生成中...")
-
-    start_time = time.time()
-
-    try:
-        # 根据不同模型调整参数
-        if model_name == "sdxl-lightning":
-            # Lightning 模型使用较少的步数
-            num_inference_steps = min(4, num_inference_steps)
-
-        output = replicate.run(
-            model_version,
-            input={
-                "prompt": prompt,
-                "negative_prompt": negative_prompt,
-                "width": width,
-                "height": height,
-                "num_outputs": 1,
-                "num_inference_steps": num_inference_steps,
-                "guidance_scale": guidance_scale,
-                "scheduler": "K_EULER",
-            },
-        )
-
-        # 获取图片 URL
-        image_url: str = output[0] if isinstance(output, list) else str(output)
-
-        elapsed_time = time.time() - start_time
-        print(f"✅ 生成完成! 耗时: {elapsed_time:.2f}秒")
-        print(f"🔗 图片 URL: {image_url}")
-
-        return image_url
-
-    except Exception as e:
-        print(f"❌ 生成失败: {e}")
-        raise
-
-
-def download_image(image_url: str, save_path: Optional[str] = None) -> str:
-    """
-    下载图片
-
-    Args:
-        image_url: 图片 URL
-        save_path: 保存路径，如果为 None 则自动生成
-
-    Returns:
-        保存的文件路径
-    """
-    if save_path is None:
-        # 自动生成文件名
-        timestamp = str(uuid.uuid4())
-        save_path = f"generated_image_{timestamp}.png"
-
-    # 确保保存目录存在
-    save_dir = Path(save_path).parent
-    save_dir.mkdir(parents=True, exist_ok=True)
-
-    try:
-        print(f"📥 下载图片到: {save_path}")
-
-        # 下载图片
-        response = requests.get(image_url, timeout=30)
-        response.raise_for_status()
-
-        # 保存图片
-        with open(save_path, "wb") as f:
-            f.write(response.content)
-
-        file_size = len(response.content) / 1024  # KB
-        print(f"✅ 下载完成! 文件大小: {file_size:.1f} KB")
-
-        return save_path
-
-    except Exception as e:
-        print(f"❌ 下载失败: {e}")
-        raise
-
-
-def generate_and_download(prompt: str, output_dir: str, **kwargs: Any) -> str:
-    """
-    生成并下载图片的便捷方法
-
-    Args:
-        prompt: 文本提示词
-        output_dir: 输出目录
-        **kwargs: 其他生成参数
-
-    Returns:
-        保存的文件路径
-    """
-    # 生成图片
-    image_url = generate_image(prompt, **kwargs)
-
-    # 准备保存路径
-    timestamp = str(uuid.uuid4())
-    model_name = kwargs.get("model_name", "sdxl-lightning")
-    filename = f"{model_name}_{timestamp}.png"
-    save_path = Path(output_dir) / filename
-
-    # 下载图片
-    downloaded_path = download_image(image_url, str(save_path))
-
-    return downloaded_path
 
 
 def run_demo() -> None:
@@ -201,10 +55,19 @@ def run_demo() -> None:
         # 快速测试 - 使用成本最低的模型
         test_prompt = "a beautiful landscape with mountains and a lake"
 
+        # 获取默认参数
+        default_params = get_default_generation_params()
+
         saved_path = generate_and_download(
             prompt=test_prompt,
-            model_name="sdxl-lightning",  # 使用最快最便宜的模型
+            model_name=default_params["model_name"],
+            negative_prompt=default_params["negative_prompt"],
+            width=default_params["width"],
+            height=default_params["height"],
+            num_inference_steps=default_params["num_inference_steps"],
+            guidance_scale=default_params["guidance_scale"],
             output_dir=DEFAULT_OUTPUT_DIR,
+            models_config=MODELS,
         )
 
         print(f"\n🎉 演示完成! 图片已保存到: {saved_path}")
@@ -216,9 +79,6 @@ def run_demo() -> None:
 
 def main() -> None:
     """主函数 - 命令行接口"""
-    # 验证配置
-    # if not validate_config():
-    #     sys.exit(1)
 
     # 检查模型配置是否正确加载
     if not MODELS:
@@ -230,31 +90,56 @@ def main() -> None:
         sys.exit(1)
 
     parser = argparse.ArgumentParser(description="Replicate 文生图工具")
+
+    # 获取默认参数
+    default_params = get_default_generation_params()
+
     parser.add_argument("prompt", nargs="?", help="文本提示词")
     parser.add_argument(
         "--model",
         "-m",
-        default="sdxl-lightning",
+        default=default_params["model_name"],
         choices=list(MODELS.keys()),
-        help="使用的模型 (默认: sdxl-lightning)",
+        help=f"使用的模型 (默认: {default_params['model_name']})",
     )
     parser.add_argument(
         "--negative",
         "-n",
-        default="worst quality, low quality, blurry",
+        default=default_params["negative_prompt"],
         help="负向提示词",
     )
     parser.add_argument(
-        "--width", "-w", type=int, default=768, help="图片宽度 (默认: 768)"
+        "--width",
+        "-w",
+        type=int,
+        default=default_params["width"],
+        help=f"图片宽度 (默认: {default_params['width']})",
     )
-    parser.add_argument("--height", type=int, default=768, help="图片高度 (默认: 768)")
+    parser.add_argument(
+        "--height",
+        type=int,
+        default=default_params["height"],
+        help=f"图片高度 (默认: {default_params['height']})",
+    )
     parser.add_argument(
         "--size",
         choices=["small", "medium", "large", "wide", "tall"],
         help="预设尺寸: small(512x512), medium(768x768), large(1024x1024), wide(1024x768), tall(768x1024)",
     )
-    parser.add_argument("--steps", "-s", type=int, default=4, help="推理步数")
-    parser.add_argument("--guidance", "-g", type=float, default=7.5, help="引导比例")
+    parser.add_argument(
+        "--steps",
+        "-s",
+        type=int,
+        default=default_params["num_inference_steps"],
+        help="推理步数",
+    )
+    parser.add_argument(
+        "--guidance",
+        "-g",
+        type=float,
+        default=default_params["guidance_scale"],
+        help="引导比例",
+    )
     parser.add_argument("--output", "-o", default=DEFAULT_OUTPUT_DIR, help="输出目录")
     parser.add_argument("--list-models", action="store_true", help="列出可用模型")
     parser.add_argument("--demo", action="store_true", help="运行演示")
@@ -301,10 +186,12 @@ def main() -> None:
         if not args.prompt:
             print("🎨 Replicate 文生图工具")
             print("\n快速开始:")
-            print("  python replicate_text2image.py --demo            # 运行演示")
-            print("  python replicate_text2image.py --test            # 测试连接")
-            print("  python replicate_text2image.py --list-models     # 查看内置模型")
-            print('  python replicate_text2image.py "生成一只猫"       # 生成图片')
+            print("  python run_replicate_text2image.py --demo            # 运行演示")
+            print("  python run_replicate_text2image.py --test            # 测试连接")
+            print(
+                "  python run_replicate_text2image.py --list-models     # 查看内置模型"
+            )
+            print('  python run_replicate_text2image.py "生成一只猫"       # 生成图片')
             print("\n尺寸选项:")
             print("  --size small    # 512x512  (最快)")
             print("  --size medium   # 768x768  (推荐)")
@@ -312,7 +199,7 @@ def main() -> None:
             print("  --size wide     # 1024x768 (横向)")
             print("  --size tall     # 768x1024 (纵向)")
             print("\n详细帮助:")
-            print("  python replicate_text2image.py -h")
+            print("  python run_replicate_text2image.py -h")
             return
 
         # 生成并下载图片
@@ -325,6 +212,7 @@ def main() -> None:
             num_inference_steps=args.steps,
             guidance_scale=args.guidance,
             output_dir=args.output,
+            models_config=MODELS,
         )
 
         print(f"\n🎉 完成! 图片已保存到: {saved_path}")

@@ -63,7 +63,7 @@ def _generate_prompt(
 
         response_example.gen_skill_reponse.append(skill_response_example)
 
-    return f"""请你生成 {skill_creation_count} 个技能，并决定如何使用。
+    return f"""请你生成 {skill_creation_count} 个技能，所生成的技能要严格符合角色的职业，性格等特点。并决定如何使用。
 
 ## 当前场景状态
 {current_stage} | {current_stage_narration}

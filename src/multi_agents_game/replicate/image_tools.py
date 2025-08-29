@@ -8,7 +8,7 @@ import asyncio
 import time
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import aiohttp
 import replicate
@@ -73,7 +73,7 @@ async def generate_image(
 
     logger.info(f"🎨 使用模型: {model_name}")
     logger.info(f"💰 预估成本: {cost_estimate}")
-    logger.info(f"📝 提示词: {prompt[:80]}{'...' if len(prompt) > 80 else ''}")
+    logger.info(f"📝 提示词: {prompt}")
     logger.info(f"⚙️  参数: {width}x{height}, {num_inference_steps} 步")
     logger.info("🔄 异步生成中...")
 
@@ -165,6 +165,7 @@ async def generate_and_download(
     guidance_scale: float,
     output_dir: str,
     models_config: Dict[str, Dict[str, str]],
+    filename: Optional[str] = None,
 ) -> str:
     """
     异步生成并下载图片的便捷方法
@@ -179,6 +180,7 @@ async def generate_and_download(
         guidance_scale: 引导比例
         output_dir: 输出目录
         models_config: 模型配置字典
+        filename: 可选的文件名，不包含扩展名。如果为 None，则使用默认命名规则
 
     Returns:
         保存的文件路径
@@ -196,9 +198,18 @@ async def generate_and_download(
     )
 
     # 准备保存路径
-    timestamp = str(uuid.uuid4())
-    filename = f"{model_name}_{timestamp}.png"
-    save_path = Path(output_dir) / filename
+    if filename is None:
+        # 使用默认命名规则
+        timestamp = str(uuid.uuid4())
+        final_filename = f"{model_name}_{timestamp}.png"
+    else:
+        # 使用外部传入的文件名，确保有 .png 扩展名
+        if not filename.endswith(".png"):
+            final_filename = f"{filename}.png"
+        else:
+            final_filename = filename
+
+    save_path = Path(output_dir) / final_filename
 
     # 异步下载图片
     downloaded_path = await download_image(image_url, str(save_path))
@@ -216,6 +227,7 @@ async def generate_multiple_images(
     guidance_scale: float,
     output_dir: str,
     models_config: Dict[str, Dict[str, str]],
+    filenames: Optional[List[str]] = None,
 ) -> List[str]:
     """
     并发生成多张图片
@@ -230,15 +242,27 @@ async def generate_multiple_images(
         guidance_scale: 引导比例
         output_dir: 输出目录
         models_config: 模型配置字典
+        filenames: 可选的文件名列表，不包含扩展名。如果为 None 或长度不匹配，则使用默认命名规则
 
     Returns:
         保存的文件路径列表
     """
     logger.info(f"🚀 开始并发生成 {len(prompts)} 张图片...")
 
+    # 确保 filenames 长度匹配，如果不匹配则使用 None
+    if filenames is not None and len(filenames) != len(prompts):
+        logger.warning(
+            f"文件名列表长度 ({len(filenames)}) 与提示词列表长度 ({len(prompts)}) 不匹配，将使用默认命名"
+        )
+        filenames = None
+
     # 创建任务列表
-    tasks = [
-        generate_and_download(
+    tasks = []
+    for i, prompt in enumerate(prompts):
+        # 获取对应的文件名，如果没有则为 None
+        current_filename = filenames[i] if filenames is not None else None
+
+        task = generate_and_download(
             prompt=prompt,
             model_name=model_name,
             negative_prompt=negative_prompt,
@@ -248,9 +272,9 @@ async def generate_multiple_images(
             guidance_scale=guidance_scale,
             output_dir=output_dir,
             models_config=models_config,
+            filename=current_filename,
         )
-        for prompt in prompts
-    ]
+        tasks.append(task)
 
     # 并发执行所有任务
     start_time = time.time()

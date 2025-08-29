@@ -14,7 +14,11 @@ from multi_agents_game.settings import (
     initialize_server_settings_instance,
 )
 from multi_agents_game.game.game_config import GLOBAL_GAME_NAME, setup_logger
-from multi_agents_game.demo import create_actor_warrior, create_demo_dungeon5
+from multi_agents_game.demo import (
+    create_actor_warrior,
+    create_demo_dungeon5,
+    create_demo_dungeon1,
+)
 from multi_agents_game.game.game_options import TerminalGameUserOptions
 from multi_agents_game.game.player_proxy import PlayerProxy
 from multi_agents_game.game.tcg_game import TCGGameState
@@ -258,6 +262,14 @@ async def _process_dungeon_state_input(
                 logger.info("英雄失败，应该返回营地！！！！")
             else:
                 assert False, "不可能出现的情况！"
+
+    elif usr_input == "/images":
+
+        logger.debug(f"玩家输入 = {usr_input}, 准备生成图片")
+        image_system = ImagesSystem(
+            terminal_game,
+        )
+        await image_system.execute()
 
     else:
         logger.error(

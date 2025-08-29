@@ -22,6 +22,7 @@ sys.path.insert(
 )
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
@@ -45,6 +46,14 @@ app = FastAPI(
     title="下载图片服务",
     description="测试的下载图片服务",
     version="1.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # 获取项目根目录和图片目录路径

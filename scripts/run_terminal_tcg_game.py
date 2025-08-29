@@ -320,6 +320,16 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             if not terminal_game.launch_dungeon():
                 assert False, "传送地下城失败！"
 
+            if len(terminal_game.current_engagement.combats) == 0:
+                logger.error(f"{usr_input} 没有战斗可以进行！！！！")
+                return
+
+            if not terminal_game.current_engagement.combat_phase:
+                logger.error(f"{usr_input} 错误，未进入战斗！！！")
+                return
+            
+            await _execute_terminal_game(terminal_game, usr_input)     
+
         elif "/speak" in usr_input or "/ss" in usr_input:
 
             # 分析输入

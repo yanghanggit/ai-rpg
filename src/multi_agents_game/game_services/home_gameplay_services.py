@@ -136,7 +136,7 @@ async def _handle_speak_action(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @home_gameplay_router.post(
-    path="/home/gameplay/v1/", response_model=HomeGamePlayResponse
+    path="/api/home/gameplay/v1/", response_model=HomeGamePlayResponse
 )
 async def home_gameplay(
     request_data: HomeGamePlayRequest,
@@ -184,7 +184,7 @@ async def home_gameplay(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @home_gameplay_router.post(
-    path="/home/trans_dungeon/v1/", response_model=HomeTransDungeonResponse
+    path="/api/home/trans_dungeon/v1/", response_model=HomeTransDungeonResponse
 )
 async def home_trans_dungeon(
     request_data: HomeTransDungeonRequest,

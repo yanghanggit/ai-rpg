@@ -8,7 +8,7 @@ from fastapi import Depends
 class ServerSettings(BaseModel):
     azure_openai_chat_server_port: int = 8100
     game_server_port: int = 8000
-    azure_openai_chat_service_api_endpoint: str = "/chat-service/v1/"
+    azure_openai_chat_service_api_endpoint: str = "/api/chat-service/v1/"
 
     @property
     def azure_openai_chat_server_localhost_urls(self) -> List[str]:

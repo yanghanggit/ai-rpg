@@ -20,7 +20,7 @@ view_actor_router = APIRouter()
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @view_actor_router.get(
-    path="/view-actor/v1/{user_name}/{game_name}", response_model=ViewActorResponse
+    path="/api/view-actor/v1/{user_name}/{game_name}", response_model=ViewActorResponse
 )
 async def view_actor(
     game_server: GameServerInstance,

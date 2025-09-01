@@ -252,7 +252,7 @@ async def _handle_advance_next_dungeon(web_game: WebTCGGame) -> DungeonGamePlayR
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @dungeon_gameplay_router.post(
-    path="/dungeon/gameplay/v1/", response_model=DungeonGamePlayResponse
+    path="/api/dungeon/gameplay/v1/", response_model=DungeonGamePlayResponse
 )
 async def dungeon_gameplay(
     request_data: DungeonGamePlayRequest,
@@ -313,7 +313,7 @@ async def dungeon_gameplay(
 
 
 @dungeon_gameplay_router.post(
-    path="/dungeon/trans_home/v1/", response_model=DungeonTransHomeResponse
+    path="/api/dungeon/trans_home/v1/", response_model=DungeonTransHomeResponse
 )
 async def dungeon_trans_home(
     request_data: DungeonTransHomeRequest,

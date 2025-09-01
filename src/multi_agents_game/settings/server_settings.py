@@ -9,6 +9,7 @@ class ServerSettings(BaseModel):
     azure_openai_chat_server_port: int = 8100
     game_server_port: int = 8000
     azure_openai_chat_service_api_endpoint: str = "/api/chat-service/v1/"
+    image_generation_server_port: int = 8300
 
     @property
     def azure_openai_chat_server_localhost_urls(self) -> List[str]:

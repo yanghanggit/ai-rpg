@@ -37,6 +37,7 @@ from typing import List, Dict, Any, Optional
 from pathlib import Path
 from pydantic import BaseModel, ConfigDict
 
+
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
@@ -50,6 +51,9 @@ from multi_agents_game.replicate import (
     load_replicate_config,
     generate_and_download,
     generate_multiple_images,
+)
+from multi_agents_game.settings.server_settings import (
+    initialize_server_settings_instance,
 )
 
 
@@ -360,8 +364,6 @@ async def list_images(http_request: Request) -> ImageListResponse:
 
 ##################################################################################################################
 def main() -> None:
-    # 硬编码端口号，只在main函数中使用
-    DEFAULT_PORT = 8300
 
     try:
         # 确保图片目录存在
@@ -378,15 +380,24 @@ def main() -> None:
 
         import uvicorn
 
+        ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        server_config = initialize_server_settings_instance(
+            Path("server_settings.json")
+        )
+
         logger.info("🚀 启动图片生成服务器...")
-        logger.info(f"📡 API文档: http://localhost:{DEFAULT_PORT}/docs")
-        logger.info(f"🖼️  静态文件: http://localhost:{DEFAULT_PORT}/images/")
+        logger.info(
+            f"📡 API文档: http://localhost:{server_config.image_generation_server_port}/docs"
+        )
+        logger.info(
+            f"🖼️  静态文件: http://localhost:{server_config.image_generation_server_port}/images/"
+        )
 
         # 启动服务器
         uvicorn.run(
             app,
             host="localhost",
-            port=DEFAULT_PORT,
+            port=server_config.image_generation_server_port,
             log_level="debug",
         )
 

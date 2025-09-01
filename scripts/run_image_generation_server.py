@@ -16,17 +16,17 @@ API 端点：
 
 使用示例：
 # 服务信息
-curl http://localhost:{DEFAULT_PORT}/
+curl http://localhost:8300/
 
 # 生成单张图片
-curl -X POST http://localhost:{DEFAULT_PORT}/api/generate -H "Content-Type: application/json" -d '{"prompt": "a beautiful cat"}'
+curl -X POST http://localhost:8300/api/generate -H "Content-Type: application/json" -d '{"prompt": "a beautiful cat"}'
 
 # 批量生成图片
-curl -X POST http://localhost:{DEFAULT_PORT}/api/generate/batch -H "Content-Type: application/json" -d '{"prompts": ["a beautiful cat", "a peaceful landscape", "a magical forest"]}'
+curl -X POST http://localhost:8300/api/generate/batch -H "Content-Type: application/json" -d '{"prompts": ["a beautiful cat", "a peaceful landscape", "a magical forest"]}'
 
 # 获取图片列表和访问图片
-curl http://localhost:{DEFAULT_PORT}/api/images/list
-curl http://localhost:{DEFAULT_PORT}/images/filename.png
+curl http://localhost:8300/api/images/list
+curl http://localhost:8300/images/filename.png
 """
 
 import os
@@ -42,7 +42,7 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
@@ -51,9 +51,6 @@ from multi_agents_game.replicate import (
     generate_and_download,
     generate_multiple_images,
 )
-
-# 全局常量
-DEFAULT_PORT = 8300
 
 
 ############################################################################################################
@@ -187,7 +184,9 @@ async def root() -> Dict[str, Any]:
 
 ##################################################################################################################
 @app.post("/api/generate", response_model=GenerateImageResponse)
-async def generate_image(request: GenerateImageRequest) -> GenerateImageResponse:
+async def generate_image(
+    request: GenerateImageRequest, http_request: Request
+) -> GenerateImageResponse:
     """生成图片的API端点"""
     try:
         # 确保所有参数都有值（处理 Optional 类型）
@@ -227,8 +226,8 @@ async def generate_image(request: GenerateImageRequest) -> GenerateImageResponse
         # 提取文件名
         filename = os.path.basename(saved_path)
 
-        # 构建访问URL
-        image_url = f"http://localhost:{DEFAULT_PORT}/images/{filename}"
+        # 动态构建访问URL
+        image_url = f"{http_request.base_url}images/{filename}"
 
         logger.info(f"✅ 图片生成成功: {filename}")
 
@@ -250,7 +249,7 @@ async def generate_image(request: GenerateImageRequest) -> GenerateImageResponse
 ##################################################################################################################
 @app.post("/api/generate/batch", response_model=GenerateBatchImagesResponse)
 async def generate_batch_images(
-    request: GenerateBatchImagesRequest,
+    request: GenerateBatchImagesRequest, http_request: Request
 ) -> GenerateBatchImagesResponse:
     """批量生成图片的API端点"""
     try:
@@ -300,7 +299,7 @@ async def generate_batch_images(
         images_info = []
         for i, (prompt, saved_path) in enumerate(zip(request.prompts, saved_paths)):
             filename = os.path.basename(saved_path)
-            image_url = f"http://localhost:{DEFAULT_PORT}/images/{filename}"
+            image_url = f"{http_request.base_url}images/{filename}"
 
             images_info.append(
                 ImageInfo(
@@ -329,7 +328,7 @@ async def generate_batch_images(
 
 ##################################################################################################################
 @app.get("/api/images/list", response_model=ImageListResponse)
-async def list_images() -> ImageListResponse:
+async def list_images(http_request: Request) -> ImageListResponse:
     """获取所有可用图片的列表"""
     try:
         if not os.path.exists(IMAGES_DIR):
@@ -351,7 +350,7 @@ async def list_images() -> ImageListResponse:
         return ImageListResponse(
             images=image_files,
             total_count=len(image_files),
-            base_url=f"http://localhost:{DEFAULT_PORT}/images",
+            base_url=f"{http_request.base_url}images",
         )
 
     except Exception as e:
@@ -361,6 +360,9 @@ async def list_images() -> ImageListResponse:
 
 ##################################################################################################################
 def main() -> None:
+    # 硬编码端口号，只在main函数中使用
+    DEFAULT_PORT = 8300
+
     try:
         # 确保图片目录存在
         os.makedirs(IMAGES_DIR, exist_ok=True)

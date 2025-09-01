@@ -14,10 +14,10 @@ API 端点：
 - GET /images/{filename} : 访问静态图片文件
 
 使用示例：
-curl http://localhost:8300/
-curl -X POST http://localhost:8300/api/generate -H "Content-Type: application/json" -d '{"prompt": "a beautiful cat"}'
-curl http://localhost:8300/api/images/list
-curl http://localhost:8300/images/filename.png
+curl http://localhost:{DEFAULT_PORT}/
+curl -X POST http://localhost:{DEFAULT_PORT}/api/generate -H "Content-Type: application/json" -d '{"prompt": "a beautiful cat"}'
+curl http://localhost:{DEFAULT_PORT}/api/images/list
+curl http://localhost:{DEFAULT_PORT}/images/filename.png
 """
 
 import os
@@ -40,6 +40,9 @@ from multi_agents_game.replicate import (
     generate_and_download,
 )
 
+# 全局常量
+DEFAULT_PORT = 8300
+
 
 ############################################################################################################
 class GenerateImageRequest(BaseModel):
@@ -55,6 +58,8 @@ class GenerateImageRequest(BaseModel):
     num_inference_steps: Optional[int] = 4
     guidance_scale: Optional[float] = 7.5
 
+请注意 GenerateImageRequest 的参数prompt、negative_prompt、width、height、num_inference_steps 和 guidance_scale，它们共同决定了生成图像的效果。
+我希望你做一下分析，找出是否能够一次生成多个图像的方案？
 
 ############################################################################################################
 class GenerateImageResponse(BaseModel):
@@ -173,7 +178,7 @@ async def generate_image(request: GenerateImageRequest) -> GenerateImageResponse
         filename = os.path.basename(saved_path)
 
         # 构建访问URL
-        image_url = f"http://localhost:8300/images/{filename}"
+        image_url = f"http://localhost:{DEFAULT_PORT}/images/{filename}"
 
         logger.info(f"✅ 图片生成成功: {filename}")
 
@@ -216,7 +221,7 @@ async def list_images() -> ImageListResponse:
         return ImageListResponse(
             images=image_files,
             total_count=len(image_files),
-            base_url="http://localhost:8300/images",
+            base_url=f"http://localhost:{DEFAULT_PORT}/images",
         )
 
     except Exception as e:
@@ -242,14 +247,14 @@ def main() -> None:
         import uvicorn
 
         logger.info("🚀 启动图片生成服务器...")
-        logger.info("📡 API文档: http://localhost:8300/docs")
-        logger.info("🖼️  静态文件: http://localhost:8300/images/")
+        logger.info(f"📡 API文档: http://localhost:{DEFAULT_PORT}/docs")
+        logger.info(f"🖼️  静态文件: http://localhost:{DEFAULT_PORT}/images/")
 
         # 启动服务器
         uvicorn.run(
             app,
             host="localhost",
-            port=8300,
+            port=DEFAULT_PORT,
             log_level="debug",
         )
 

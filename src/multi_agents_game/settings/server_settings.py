@@ -24,7 +24,7 @@ _server_settings: Optional[ServerSettings] = None
 ###############################################################################################################################################
 def initialize_server_settings_instance(path: Path) -> ServerSettings:
     global _server_settings
-    assert _server_settings is None, "ServerSettings is already initialized"
+    # assert _server_settings is None, "ServerSettings is already initialized"
     if _server_settings is None:
         assert path.exists(), f"{path} must exist"
         content = path.read_text(encoding="utf-8")

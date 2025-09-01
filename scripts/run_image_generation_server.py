@@ -9,19 +9,30 @@
 
 API 端点：
 - GET / : 服务信息
-- POST /api/generate : 生成图片
+- POST /api/generate : 生成单张图片
+- POST /api/generate/batch : 批量生成图片
 - GET /api/images/list : 获取图片列表
 - GET /images/{filename} : 访问静态图片文件
 
 使用示例：
+# 服务信息
 curl http://localhost:{DEFAULT_PORT}/
+
+# 生成单张图片
 curl -X POST http://localhost:{DEFAULT_PORT}/api/generate -H "Content-Type: application/json" -d '{"prompt": "a beautiful cat"}'
+
+# 批量生成图片
+curl -X POST http://localhost:{DEFAULT_PORT}/api/generate/batch -H "Content-Type: application/json" -d '{"prompts": ["a beautiful cat", "a peaceful landscape", "a magical forest"]}'
+
+# 获取图片列表和访问图片
 curl http://localhost:{DEFAULT_PORT}/api/images/list
 curl http://localhost:{DEFAULT_PORT}/images/filename.png
 """
 
 import os
 import sys
+
+# import asyncio
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 from pydantic import BaseModel, ConfigDict
@@ -38,6 +49,7 @@ from loguru import logger
 from multi_agents_game.replicate import (
     load_replicate_config,
     generate_and_download,
+    generate_multiple_images,
 )
 
 # 全局常量
@@ -58,8 +70,33 @@ class GenerateImageRequest(BaseModel):
     num_inference_steps: Optional[int] = 4
     guidance_scale: Optional[float] = 7.5
 
-请注意 GenerateImageRequest 的参数prompt、negative_prompt、width、height、num_inference_steps 和 guidance_scale，它们共同决定了生成图像的效果。
-我希望你做一下分析，找出是否能够一次生成多个图像的方案？
+
+############################################################################################################
+class GenerateBatchImagesRequest(BaseModel):
+    """批量图片生成请求模型"""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    prompts: List[str]  # 多个提示词
+    model_name: Optional[str] = "sdxl-lightning"
+    negative_prompt: Optional[str] = "worst quality, low quality, blurry"
+    width: Optional[int] = 768
+    height: Optional[int] = 768
+    num_inference_steps: Optional[int] = 4
+    guidance_scale: Optional[float] = 7.5
+
+
+############################################################################################################
+class ImageInfo(BaseModel):
+    """单张图片信息模型"""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    prompt: str
+    filename: str
+    image_url: str
+    local_path: str
+
 
 ############################################################################################################
 class GenerateImageResponse(BaseModel):
@@ -72,6 +109,18 @@ class GenerateImageResponse(BaseModel):
     image_url: Optional[str] = None
     local_path: Optional[str] = None
     filename: Optional[str] = None
+
+
+############################################################################################################
+class GenerateBatchImagesResponse(BaseModel):
+    """批量图片生成响应模型"""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    success: bool
+    message: str
+    total_count: int
+    images: List[ImageInfo]
 
 
 ############################################################################################################
@@ -120,6 +169,7 @@ async def root() -> Dict[str, Any]:
         "version": "1.0.0",
         "endpoints": {
             "generate": "/api/generate",
+            "generate_batch": "/api/generate/batch",
             "images_list": "/api/images/list",
             "static_images": "/images/{filename}",
             "docs": "/docs",
@@ -195,6 +245,86 @@ async def generate_image(request: GenerateImageRequest) -> GenerateImageResponse
     except Exception as e:
         logger.error(f"❌ 图片生成失败: {e}")
         raise HTTPException(status_code=500, detail=f"图片生成失败: {str(e)}")
+
+
+##################################################################################################################
+@app.post("/api/generate/batch", response_model=GenerateBatchImagesResponse)
+async def generate_batch_images(
+    request: GenerateBatchImagesRequest,
+) -> GenerateBatchImagesResponse:
+    """批量生成图片的API端点"""
+    try:
+        # 验证输入
+        if not request.prompts:
+            raise HTTPException(status_code=400, detail="提示词列表不能为空")
+
+        if len(request.prompts) > 10:  # 限制最大批量数量
+            raise HTTPException(status_code=400, detail="单次最多生成10张图片")
+
+        # 确保所有参数都有值
+        model_name = request.model_name or "sdxl-lightning"
+        negative_prompt = (
+            request.negative_prompt or "worst quality, low quality, blurry"
+        )
+        width = request.width or 768
+        height = request.height or 768
+        num_inference_steps = request.num_inference_steps or 4
+        guidance_scale = request.guidance_scale or 7.5
+
+        # 验证模型是否支持
+        if model_name not in MODELS:
+            available_models = list(MODELS.keys())
+            raise HTTPException(
+                status_code=400,
+                detail=f"不支持的模型: {model_name}. 可用模型: {available_models}",
+            )
+
+        logger.info(f"🎨 收到批量图片生成请求: {len(request.prompts)} 张图片")
+        logger.info(f"📐 参数: {width}x{height}, 模型: {model_name}")
+        logger.info(f"📝 提示词: {request.prompts}")
+
+        # 使用 generate_multiple_images 并发生成
+        saved_paths = await generate_multiple_images(
+            prompts=request.prompts,
+            model_name=model_name,
+            negative_prompt=negative_prompt,
+            width=width,
+            height=height,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            output_dir=IMAGES_DIR,
+            models_config=MODELS,
+        )
+
+        # 构建响应数据
+        images_info = []
+        for i, (prompt, saved_path) in enumerate(zip(request.prompts, saved_paths)):
+            filename = os.path.basename(saved_path)
+            image_url = f"http://localhost:{DEFAULT_PORT}/images/{filename}"
+
+            images_info.append(
+                ImageInfo(
+                    prompt=prompt,
+                    filename=filename,
+                    image_url=image_url,
+                    local_path=saved_path,
+                )
+            )
+
+        logger.info(f"✅ 批量生成成功: {len(images_info)} 张图片")
+
+        return GenerateBatchImagesResponse(
+            success=True,
+            message=f"批量生成成功，共生成 {len(images_info)} 张图片",
+            total_count=len(images_info),
+            images=images_info,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ 批量图片生成失败: {e}")
+        raise HTTPException(status_code=500, detail=f"批量图片生成失败: {str(e)}")
 
 
 ##################################################################################################################

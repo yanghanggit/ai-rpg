@@ -13,7 +13,6 @@ from .config import (
     test_replicate_api_connection,
 )
 from .image_tools import (
-    get_default_generation_params,
     # 异步版本
     generate_image,
     download_image,

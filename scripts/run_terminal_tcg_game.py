@@ -17,7 +17,6 @@ from multi_agents_game.game.game_config import GLOBAL_GAME_NAME, setup_logger
 from multi_agents_game.demo import (
     create_actor_warrior,
     create_demo_dungeon5,
-    create_demo_dungeon1,
 )
 from multi_agents_game.game.game_options import TerminalGameUserOptions
 from multi_agents_game.game.player_proxy import PlayerProxy
@@ -26,9 +25,10 @@ from multi_agents_game.game.terminal_tcg_game import TerminalTCGGame
 from multi_agents_game.game_systems.combat_monitor_system import (
     CombatMonitorSystem,
 )
-from multi_agents_game.game_systems.images_system import (
-    ImagesSystem,
-)
+
+# from multi_agents_game.game_systems.images_system import (
+#     ImagesSystem,
+# )
 from multi_agents_game.models import CombatResult, World
 
 
@@ -263,13 +263,13 @@ async def _process_dungeon_state_input(
             else:
                 assert False, "不可能出现的情况！"
 
-    elif usr_input == "/images":
+    # elif usr_input == "/images":
 
-        logger.debug(f"玩家输入 = {usr_input}, 准备生成图片")
-        image_system = ImagesSystem(
-            terminal_game,
-        )
-        await image_system.execute()
+    #     logger.debug(f"玩家输入 = {usr_input}, 准备生成图片")
+    #     image_system = ImagesSystem(
+    #         terminal_game,
+    #     )
+    #     await image_system.execute()
 
     else:
         logger.error(
@@ -326,13 +326,13 @@ async def _process_home_state_input(
             # 其他人执行一次。对应的NPC进行推理。
             await _execute_terminal_game(terminal_game, usr_input)
 
-    elif usr_input == "/images":
+    # elif usr_input == "/images":
 
-        logger.debug(f"玩家输入 = {usr_input}, 准备生成图片")
-        image_system = ImagesSystem(
-            terminal_game,
-        )
-        await image_system.execute()
+    #     logger.debug(f"玩家输入 = {usr_input}, 准备生成图片")
+    #     image_system = ImagesSystem(
+    #         terminal_game,
+    #     )
+    #     await image_system.execute()
 
     else:
         logger.error(

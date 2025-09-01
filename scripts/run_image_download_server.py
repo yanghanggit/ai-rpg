@@ -80,6 +80,7 @@ async def root() -> Dict[str, Any]:
     }
 
 
+##################################################################################################################
 @app.get("/api/images/list", response_model=ImageListResponse)
 async def list_images() -> ImageListResponse:
     """获取所有可用图片的列表"""

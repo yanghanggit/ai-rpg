@@ -21,12 +21,12 @@ import asyncio
 import os
 import sys
 from pathlib import Path
-from typing import Dict, Final
+from typing import Any, Dict, Final
 
 from multi_agents_game.replicate import (
     test_replicate_api_connection,
     load_replicate_config,
-    get_default_generation_params,
+    # get_default_generation_params,
     generate_and_download,
     generate_multiple_images,
 )
@@ -41,6 +41,23 @@ MODELS: Dict[str, Dict[str, str]] = replicate_config.image_models.model_dump(
 )
 
 DEFAULT_OUTPUT_DIR: Final[str] = "generated_images"
+
+
+def _get_default_generation_params() -> Dict[str, Any]:
+    """
+    获取默认的图片生成参数
+
+    Returns:
+        包含默认参数的字典
+    """
+    return {
+        "model_name": "sdxl-lightning",
+        "negative_prompt": "worst quality, low quality, blurry",
+        "width": 768,
+        "height": 768,
+        "num_inference_steps": 4,
+        "guidance_scale": 7.5,
+    }
 
 
 async def run_demo() -> None:
@@ -70,7 +87,7 @@ async def run_demo() -> None:
         test_prompt = "a beautiful landscape with mountains and a lake"
 
         # 获取默认参数
-        default_params = get_default_generation_params()
+        default_params = _get_default_generation_params()
 
         saved_path = await generate_and_download(
             prompt=test_prompt,
@@ -116,7 +133,7 @@ async def run_concurrent_demo() -> None:
 
     try:
         # 获取默认参数
-        default_params = get_default_generation_params()
+        default_params = _get_default_generation_params()
 
         # 并发生成
         results = await generate_multiple_images(
@@ -155,7 +172,7 @@ async def main() -> None:
     parser = argparse.ArgumentParser(description="Replicate 文生图工具")
 
     # 获取默认参数
-    default_params = get_default_generation_params()
+    default_params = _get_default_generation_params()
 
     parser.add_argument("prompt", nargs="?", help="文本提示词")
     parser.add_argument(

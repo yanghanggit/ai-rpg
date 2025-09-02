@@ -89,7 +89,6 @@ def _initialize_fast_mcp_server(mcp_config: McpConfig) -> FastMCP:
 
     # 添加健康检查端点
     _register_health_endpoint(app)
-
     # 注册工具
     _register_tools(app, mcp_config)
     # 注册资源

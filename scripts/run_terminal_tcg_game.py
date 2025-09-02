@@ -97,7 +97,7 @@ async def run_game(
         world_exists = World(boot=world_boot)
 
         # 运行时生成地下城系统
-        world_exists.dungeon = create_demo_dungeon5()
+        world_exists.dungeon = create_demo_dungeon1()
 
     else:
         logger.info(

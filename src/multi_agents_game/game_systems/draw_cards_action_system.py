@@ -63,7 +63,15 @@ def _generate_prompt(
 
         response_example.gen_skill_reponse.append(skill_response_example)
 
-    return f"""请你生成 {skill_creation_count} 个技能，所生成的技能要严格符合角色的职业，性格等特点。并决定如何使用。
+    return f"""请你生成 {skill_creation_count} 个技能，
+## 技能生成规则
+1. 不会保留到下回合。
+2. 使用时需在两个技能中选择一个，另一个丢弃。
+3. 技能需包含：
+   - 技能名称
+   - 具体效果描述
+   - 数值公式
+4. 技能要和角色的职业、性格等特点相符。
 
 ## 当前场景状态
 {current_stage} | {current_stage_narration}

@@ -378,19 +378,23 @@ def main() -> None:
         if not args.prompt:
             print("🤖 Replicate 对话工具")
             print("\n快速开始:")
-            print("  python replicate_chat.py --demo              # 运行演示")
-            print("  python replicate_chat.py --test              # 测试连接")
-            print("  python replicate_chat.py --validate          # 验证配置格式")
-            print("  python replicate_chat.py --test-pydantic     # 测试Pydantic验证")
-            print("  python replicate_chat.py --schema            # 显示数据模型Schema")
-            print("  python replicate_chat.py --list-models       # 查看可用模型")
-            print("  python replicate_chat.py --interactive       # 交互式对话")
-            print('  python replicate_chat.py "你好，介绍一下自己"   # 单次对话')
+            print("  python run_replicate_chat.py --demo              # 运行演示")
+            print("  python run_replicate_chat.py --test              # 测试连接")
+            print("  python run_replicate_chat.py --validate          # 验证配置格式")
+            print(
+                "  python run_replicate_chat.py --test-pydantic     # 测试Pydantic验证"
+            )
+            print(
+                "  python run_replicate_chat.py --schema            # 显示数据模型Schema"
+            )
+            print("  python run_replicate_chat.py --list-models       # 查看可用模型")
+            print("  python run_replicate_chat.py --interactive       # 交互式对话")
+            print('  python run_replicate_chat.py "你好，介绍一下自己"   # 单次对话')
             print("\n模型选择:")
             for name, info in CHAT_MODELS.items():
                 print(f"  --model {name:<15} # {info['description']}")
             print("\n详细帮助:")
-            print("  python replicate_chat.py -h")
+            print("  python run_replicate_chat.py -h")
             return
 
         # 单次对话

@@ -1,12 +1,7 @@
-from pathlib import Path
 from typing import Optional
-
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-
-# from ..chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from ..chat_services.manager import ChatClientManager
-from ..settings import ServerSettings
 from ..demo.stage_dungeon4 import (
     create_demo_dungeon4,
 )
@@ -15,24 +10,20 @@ from ..game.player_proxy import PlayerProxy
 from ..game.web_tcg_game import WebTCGGame
 from ..game_services.game_server import GameServerInstance
 from ..models import StartRequest, StartResponse, World
+from ..settings.server_settings import ServerSettingsInstance
 
 ###################################################################################################################################################################
 start_router = APIRouter()
 
 
-# server_config: Final[ServerSettingsConfig] = ServerSettingsConfig()
-
-
-# write_path.write_text(server_config.model_dump_json(indent=4), encoding="utf-8")
-
-
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-@start_router.post(path="/start/v1/", response_model=StartResponse)
+@start_router.post(path="/api/start/v1/", response_model=StartResponse)
 async def start(
     request_data: StartRequest,
     game_server: GameServerInstance,
+    server_settings: ServerSettingsInstance,
 ) -> StartResponse:
 
     logger.info(f"/start/v1/: {request_data.model_dump_json()}")
@@ -62,6 +53,7 @@ async def start(
             # 如果没有游戏对象，就‘创建/复位’一个游戏。
             active_game_session = setup_web_game_session(
                 web_game_user_options=web_user_session_options,
+                server_settings=server_settings,
             )
 
             if active_game_session is None:
@@ -93,6 +85,7 @@ async def start(
 ###################################################################################################################################################################
 def setup_web_game_session(
     web_game_user_options: WebGameUserOptions,
+    server_settings: ServerSettingsInstance,
 ) -> Optional[WebTCGGame]:
 
     world_exists = web_game_user_options.world_data
@@ -111,11 +104,6 @@ def setup_web_game_session(
     else:
         pass
 
-    write_path = Path("server_settings.json")
-    assert write_path.exists(), "server_settings.json must exist"
-    content = write_path.read_text(encoding="utf-8")
-    server_config = ServerSettings.model_validate_json(content)
-
     # 依赖注入，创建新的游戏
     assert world_exists is not None, "World data must exist to create a game"
     web_game = WebTCGGame(
@@ -127,7 +115,7 @@ def setup_web_game_session(
         chat_system=ChatClientManager(
             name=f"{web_game_user_options.game}-chatsystem",
             # username=web_game_user_options.user,
-            localhost_urls=server_config.azure_openai_chat_server_localhost_urls,
+            localhost_urls=server_settings.azure_openai_chat_server_localhost_urls,
         ),
     )
 

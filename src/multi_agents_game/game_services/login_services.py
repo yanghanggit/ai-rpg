@@ -1,11 +1,10 @@
 from enum import StrEnum, unique
 from typing import final
 
-from fastapi import APIRouter, FastAPI, HTTPException, Request, status
-from fastapi.staticfiles import StaticFiles
+from fastapi import APIRouter, HTTPException, Request, status
 from loguru import logger
 
-from ..game.game_config import LOGS_DIR, setup_logger
+from ..game.game_config import setup_logger
 from ..game.game_options import WebGameUserOptions
 from ..game_services.game_server import GameServerInstance
 from ..models import (
@@ -32,7 +31,7 @@ class GameSessionStatus(StrEnum):
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-@login_router.post(path="/login/v1/", response_model=LoginResponse)
+@login_router.post(path="/api/login/v1/", response_model=LoginResponse)
 async def login(
     request_data: LoginRequest,
     game_server: GameServerInstance,
@@ -68,12 +67,12 @@ async def login(
 
     # TODO, get测试。
     # 指向包含 runtime.json 的目录。
-    fastapi_app: FastAPI = request.app
-    static_dir = LOGS_DIR / web_game_user_options.user / web_game_user_options.game
-    if not static_dir.exists():
-        static_dir.mkdir(parents=True, exist_ok=True)
-    # 将该目录挂载到 "/files" 路径上
-    fastapi_app.mount("/files", StaticFiles(directory=static_dir), name="files")
+    # fastapi_app: FastAPI = request.app
+    # static_dir = LOGS_DIR / web_game_user_options.user / web_game_user_options.game
+    # if not static_dir.exists():
+    #     static_dir.mkdir(parents=True, exist_ok=True)
+    # # 将该目录挂载到 "/files" 路径上
+    # fastapi_app.mount("/files", StaticFiles(directory=static_dir), name="files")
     # 如果能开启就用get方法测试
     # http://127.0.0.1:8000/files/runtime.json
     # http://局域网地址:8000/files/runtime.json
@@ -121,7 +120,7 @@ async def login(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-@login_router.post(path="/logout/v1/", response_model=LogoutResponse)
+@login_router.post(path="/api/logout/v1/", response_model=LogoutResponse)
 async def logout(
     request_data: LogoutRequest,
     game_server: GameServerInstance,

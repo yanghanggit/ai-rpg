@@ -17,10 +17,9 @@ from .world import AgentShortTermMemory
 @final
 # @register_base_model_class
 class URLConfigurationResponse(BaseModel):
-    api_version: str = ""
+    message: str = "API URL Configuration"
+    version: str = "0.0.1"
     endpoints: Dict[str, str] = {}
-    deprecated: bool = False
-    notice: str = ""
 
 
 ################################################################################################################

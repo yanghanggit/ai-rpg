@@ -137,13 +137,13 @@ def load_replicate_config(config_path: Path) -> ReplicateModelsConfig:
     """
     try:
         assert config_path.exists(), f"{config_path} not found"
-        mcp_config = ReplicateModelsConfig.model_validate_json(
+        replicate_models_config = ReplicateModelsConfig.model_validate_json(
             config_path.read_text(encoding="utf-8")
         )
 
-        logger.info(f"MCP Config loaded from {config_path}: {mcp_config}")
+        logger.info(f"MCP Config loaded from {config_path}: {replicate_models_config}")
 
-        return mcp_config
+        return replicate_models_config
     except Exception as e:
         logger.error(f"Error loading MCP config: {e}")
         raise RuntimeError("Failed to load MCP config")

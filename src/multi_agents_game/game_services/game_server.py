@@ -21,17 +21,17 @@ class GameServer:
     ###############################################################################################################################################
 
 
-game_server: Optional[GameServer] = None
+_game_server: Optional[GameServer] = None
 
 
 ###############################################################################################################################################
 def get_game_server_instance() -> GameServer:
-    global game_server
-    if game_server is None:
-        game_server = GameServer(
+    global _game_server
+    if _game_server is None:
+        _game_server = GameServer(
             room_manager=RoomManager(),
         )
-    return game_server
+    return _game_server
 
 
 ###############################################################################################################################################

@@ -14,7 +14,7 @@ view_home_router = APIRouter()
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @view_home_router.get(
-    path="/view-home/v1/{user_name}/{game_name}", response_model=ViewHomeResponse
+    path="/api/view-home/v1/{user_name}/{game_name}", response_model=ViewHomeResponse
 )
 async def view_home(
     game_server: GameServerInstance,

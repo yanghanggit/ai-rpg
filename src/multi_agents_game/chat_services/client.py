@@ -83,7 +83,7 @@ class ChatClient:
             if response.status_code == 200:
                 self._chat_response = ChatResponse.model_validate(response.json())
                 logger.info(
-                    f"{self._name} request-response:\n{self._chat_response.model_dump_json(indent=4)}"
+                    f"{self._name} request-response:\n{self._chat_response.model_dump_json}"
                 )
             else:
                 logger.error(
@@ -112,7 +112,7 @@ class ChatClient:
             if response.status_code == 200:
                 self._chat_response = ChatResponse.model_validate(response.json())
                 logger.info(
-                    f"{self._name} a_request-response:\n{self._chat_response.model_dump_json(indent=4)}"
+                    f"{self._name} a_request-response:\n{self._chat_response.model_dump_json}"
                 )
             else:
                 logger.error(

@@ -17,6 +17,7 @@ from .stage_dungeon1 import create_demo_dungeon1
 from .stage_dungeon2 import create_demo_dungeon2
 from .stage_dungeon3 import create_demo_dungeon3
 from .stage_dungeon5 import create_demo_dungeon5
+from .stage_dungeon6 import create_demo_dungeon6
 from .stage_heros_camp import create_demo_heros_camp
 
 __all__ = [
@@ -33,6 +34,7 @@ __all__ = [
     "create_demo_dungeon2",
     "create_demo_dungeon3",
     "create_demo_dungeon5",
+    "create_demo_dungeon6",
     # Demo dungeons (legacy names, same as above)
     "create_demo_dungeon1",
     "create_demo_dungeon2",

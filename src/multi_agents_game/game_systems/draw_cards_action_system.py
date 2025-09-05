@@ -142,8 +142,8 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
 
         for request_handler in request_handlers:
 
-            if request_handler.last_message_content == "":
-                continue
+            # if request_handler.last_message_content == "":
+            #     continue
 
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
@@ -155,7 +155,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
         try:
 
             format_response = DrawCardsResponse.model_validate_json(
-                json_format.strip_json_code_block(request_handler.last_message_content)
+                json_format.strip_json_code_block(request_handler.response_content)
             )
 
             skills: List[Skill] = [

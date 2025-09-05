@@ -17,7 +17,6 @@ from multi_agents_game.game.game_config import GLOBAL_GAME_NAME, setup_logger
 from multi_agents_game.demo import (
     create_actor_warrior,
     create_demo_dungeon5,
-    create_demo_dungeon1,
 )
 from multi_agents_game.game.game_options import TerminalGameUserOptions
 from multi_agents_game.game.player_proxy import PlayerProxy

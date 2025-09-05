@@ -93,8 +93,8 @@ class CombatCompleteSystem(ExecuteProcessor):
         # 结束的处理。
         for request_handler in request_handlers:
 
-            if request_handler.last_message_content == "":
-                continue
+            # if request_handler.last_message_content == "":
+            #     continue
 
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
@@ -109,7 +109,7 @@ class CombatCompleteSystem(ExecuteProcessor):
             summary = f"""# 发生事件! 你经历了一场战斗！
 ## 场景: {stage_entity2._name}
 ## 你记录下了这次战斗的经历:
-{request_handler.last_message_content}"""
+{request_handler.response_content}"""
 
             # 准备记录～
             self._game.current_engagement.last_combat.summarize_report[

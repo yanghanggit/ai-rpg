@@ -64,8 +64,8 @@ class CombatMonitorSystem(ExecuteProcessor):
         # 后续处理
         for request_handler in self._request_handlers:
 
-            if request_handler.last_message_content == "":
-                continue
+            # if request_handler.last_message_content == "":
+            #     continue
 
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
@@ -178,7 +178,7 @@ class CombatMonitorSystem(ExecuteProcessor):
         try:
 
             format_response = StageResponse.model_validate_json(
-                json_format.strip_json_code_block(request_handler.last_message_content)
+                json_format.strip_json_code_block(request_handler.response_content)
             )
             logger.warning(
                 f"Stage: {stage_entity._name}, Response:\n{format_response.model_dump_json()}"
@@ -201,7 +201,7 @@ class CombatMonitorSystem(ExecuteProcessor):
         try:
 
             format_response = ActorResponse.model_validate_json(
-                json_format.strip_json_code_block(request_handler.last_message_content)
+                json_format.strip_json_code_block(request_handler.response_content)
             )
             logger.warning(
                 f"Actor: {actor_entity._name}, Response:\n{format_response.model_dump_json()}"

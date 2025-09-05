@@ -94,9 +94,9 @@ class DungeonStageSystem(ExecuteProcessor):
         request_handler = self._generate_requests(current_stage)
         self._game.chat_system.request(request_handlers=[request_handler])
 
-        if request_handler.last_message_content == "":
-            logger.error(f"Agent: {request_handler._name}, Response is empty.")
-            return
+        # if request_handler.last_message_content == "":
+        #     logger.error(f"Agent: {request_handler._name}, Response is empty.")
+        #     return
 
         self._handle_response(current_stage, request_handler)
 
@@ -129,7 +129,7 @@ class DungeonStageSystem(ExecuteProcessor):
         try:
 
             format_response = StagePlanningResponse.model_validate_json(
-                json_format.strip_json_code_block(request_handler.last_message_content)
+                json_format.strip_json_code_block(request_handler.response_content)
             )
 
             self._game.append_human_message(stage_entity, request_handler._prompt)

@@ -117,8 +117,8 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
 
         for request_handler in request_handlers:
 
-            if request_handler.last_message_content == "":
-                continue
+            # if request_handler.last_message_content == "":
+            #     continue
 
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
@@ -130,7 +130,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
         try:
 
             format_response = FeedbackResponse.model_validate_json(
-                json_format.strip_json_code_block(request_handler.last_message_content)
+                json_format.strip_json_code_block(request_handler.response_content)
             )
 
             feedback_action2 = entity.get(FeedbackAction)

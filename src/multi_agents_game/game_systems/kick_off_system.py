@@ -112,8 +112,8 @@ class KickOffSystem(ExecuteProcessor):
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
 
-            if request_handler.last_message_content == "":
-                continue
+            # if request_handler.last_message_content == "":
+            #     continue
 
             self._game.append_human_message(entity2, request_handler._prompt)
             self._game.append_ai_message(entity2, request_handler.ai_messages)
@@ -124,12 +124,12 @@ class KickOffSystem(ExecuteProcessor):
             # 若是场景，用response替换narrate
             if (
                 entity2.has(StageComponent)
-                and request_handler.last_message_content != ""
+                # and request_handler.last_message_content != ""
             ):
                 entity2.replace(
                     EnvironmentComponent,
                     entity2._name,
-                    request_handler.last_message_content,
+                    request_handler.response_content,
                 )
             elif entity2.has(ActorComponent):
                 pass

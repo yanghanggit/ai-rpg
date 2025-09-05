@@ -72,7 +72,7 @@ class DrawCardsAction(Component):
 @final
 @register_component_class
 @register_action_class
-class PlayCardsAction(MutableComponent):
+class PlayCardsAction(Component):
     name: str
     targets: List[str]
     skill: Skill
@@ -94,7 +94,7 @@ class DirectorAction(Component):
 @final
 @register_component_class
 @register_action_class
-class FeedbackAction(MutableComponent):
+class FeedbackAction(Component):
     name: str
     calculation: str
     performance: str

@@ -168,7 +168,7 @@ class HandDetail(BaseModel):
 # 手牌组件。
 @final
 @register_component_class
-class HandComponent(MutableComponent):
+class HandComponent(Component):
     name: str
     skills: List[Skill]
     details: List[HandDetail]
@@ -234,7 +234,7 @@ class RPGCharacterProfileComponent(MutableComponent):
 # 问号牌
 @final
 @register_component_class
-class XCardPlayerComponent(MutableComponent):
+class XCardPlayerComponent(Component):
     name: str
     skill: Skill
 

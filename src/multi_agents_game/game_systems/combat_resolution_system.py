@@ -196,9 +196,7 @@ class CombatResolutionSystem(ExecuteProcessor):
             )
 
             # 效果更新
-            self._game.update_combat_status_effects(
-                actor_entity3, feedback_action.effects
-            )
+            self._game.apply_status_effects(actor_entity3, feedback_action.effects)
 
             # 效果扣除
             remaining_effects, removed_effects = self._update_combat_remaining_effects(
@@ -241,25 +239,25 @@ class CombatResolutionSystem(ExecuteProcessor):
         character_profile_component = entity.get(RPGCharacterProfileComponent)
         assert character_profile_component is not None
 
-        current_effects = character_profile_component.status_effects.copy()
         remaining_effects = []
         removed_effects = []
-        for i, e in enumerate(current_effects):
-            current_effects[i].rounds -= 0
-            current_effects[i].rounds = max(0, current_effects[i].rounds)
 
-            if current_effects[i].rounds > 0:
-                remaining_effects.append(current_effects[i])
+        for status_effect in character_profile_component.status_effects:
+            # 效果回合数扣除
+            status_effect.rounds -= 1
+            status_effect.rounds = max(0, status_effect.rounds)
+
+            # status_effect持续回合数大于0，继续保留，否则移除
+            if status_effect.rounds > 0:
+                remaining_effects.append(status_effect)
             else:
-                removed_effects.append(current_effects[i])
+                # 添加移除
+                removed_effects.append(status_effect)
 
-        entity.replace(
-            RPGCharacterProfileComponent,
-            character_profile_component.name,
-            character_profile_component.rpg_character_profile,
-            removed_effects,
-        )
+        # 需要从总的 character_profile_component.status_effects 内移除所有rounds <= 0的数据。
+        character_profile_component.status_effects = remaining_effects
 
+        # 外部返回
         return remaining_effects, removed_effects
 
     ###############################################################################################################################################

@@ -124,9 +124,9 @@ class CombatKickOffSystem(ExecuteProcessor):
         return self._game.retrieve_actors_on_stage(player_entity)
 
     ###################################################################################################################################################################
-    def _reset_combat_attributes(self, actor_entities: Set[Entity]) -> None:
-        for actor_entity in actor_entities:
-            self._game.initialize_combat_components(actor_entity)
+    # def _reset_combat_attributes(self, actor_entities: Set[Entity]) -> None:
+    #     for actor_entity in actor_entities:
+    #         self._game.initialize_combat_components(actor_entity)
 
     ###################################################################################################################################################################
     def _generate_requests(self, actor_entities: set[Entity]) -> List[ChatClient]:
@@ -192,7 +192,7 @@ class CombatKickOffSystem(ExecuteProcessor):
     ) -> None:
 
         # 效果更新
-        self._game.update_combat_status_effects(entity2, format_response.status_effects)
+        self._game.apply_status_effects(entity2, format_response.status_effects)
 
         # 添加提示词上下文。
 

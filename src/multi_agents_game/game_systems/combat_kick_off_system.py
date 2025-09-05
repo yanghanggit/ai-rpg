@@ -210,13 +210,13 @@ class CombatKickOffSystem(ExecuteProcessor):
                 [e.model_dump_json() for e in format_response.status_effects]
             )
 
-        # 添加记忆
+        # 添加记忆 TODO，临时这么写吧，不然就得改interface了。
         ai_message_content = f"""# ！战斗触发！准备完毕。
 {format_response.description}
 ## 目前拥有的状态
 {status_effects_prompt}"""
 
-        self._game.append_ai_message(entity2, AIMessage(content=ai_message_content))
+        self._game.append_ai_message(entity2, [AIMessage(content=ai_message_content)])
 
         # TODO，临时这么写吧，不用notify了，因为里面会append_human_message，等于重复了。后续再优化。
         if entity2.has(PlayerComponent):

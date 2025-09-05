@@ -245,7 +245,7 @@ class CombatResolutionSystem(ExecuteProcessor):
         remaining_effects = []
         removed_effects = []
         for i, e in enumerate(current_effects):
-            current_effects[i].rounds -= 1
+            current_effects[i].rounds -= 0
             current_effects[i].rounds = max(0, current_effects[i].rounds)
 
             if current_effects[i].rounds > 0:

@@ -785,49 +785,18 @@ class TCGGame(BaseGame, TCGGameContext):
         return ConversationError.VALID
 
     ###############################################################################################################################################
-    def initialize_combat_components(self, actor_entity: Entity) -> None:
-        assert actor_entity.has(ActorComponent)
-        assert actor_entity.has(RPGCharacterProfileComponent)
-
-        rpg_character_profile_comp = actor_entity.get(RPGCharacterProfileComponent)
-        assert isinstance(
-            rpg_character_profile_comp.rpg_character_profile, RPGCharacterProfile
-        )
-
-        # 重置了。
-        actor_entity.replace(
-            RPGCharacterProfileComponent,
-            actor_entity._name,
-            copy.copy(rpg_character_profile_comp.rpg_character_profile),
-            [],
-        )
-
-    ###############################################################################################################################################
-    def update_combat_status_effects(
+    def apply_status_effects(
         self, entity: Entity, status_effects: List[StatusEffect]
     ) -> None:
 
         # 效果更新
         assert entity.has(RPGCharacterProfileComponent)
         character_profile_component = entity.get(RPGCharacterProfileComponent)
+        character_profile_component.status_effects = copy.copy(status_effects)
 
-        current_effects = character_profile_component.status_effects
-        for new_effect in status_effects:
-            for i, e in enumerate(current_effects):
-                if e.name == new_effect.name:
-                    current_effects[i].name = new_effect.name
-                    current_effects[i].description = new_effect.description
-                    current_effects[i].rounds = new_effect.rounds
-                    break
-            else:
-                current_effects.append(new_effect)
-
-        entity.replace(
-            RPGCharacterProfileComponent,
-            character_profile_component.name,
-            character_profile_component.rpg_character_profile,
-            current_effects,
-        )
+        logger.debug(f"update_combat_status_effects: {entity._name} => ")
+        for e in character_profile_component.status_effects:
+            logger.debug(f"status_effects: {e.model_dump_json()}")
 
     #######################################################################################################################################
     def _create_dungeon_entities(self, dungeon: Dungeon) -> None:

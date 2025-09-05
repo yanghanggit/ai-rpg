@@ -620,10 +620,17 @@ class TCGGame(BaseGame, TCGGameContext):
         )
 
     ###############################################################################################################################################
-    def append_ai_message(self, entity: Entity, ai_message: AIMessage) -> None:
-        logger.debug(f"append_ai_message: {entity._name} => \n{ai_message.content}")
+    def append_ai_message(self, entity: Entity, ai_messages: List[AIMessage]) -> None:
+
+        assert len(ai_messages) > 0, "ai_messages should not be empty"
+        for ai_message in ai_messages:
+            assert isinstance(ai_message, AIMessage)
+            assert ai_message.content != "", "ai_message content should not be empty"
+            logger.debug(f"append_ai_message: {entity._name} => \n{ai_message.content}")
+
+        # 添加多条 AIMessage
         agent_short_term_memory = self.get_agent_short_term_memory(entity)
-        agent_short_term_memory.chat_history.append(ai_message)
+        agent_short_term_memory.chat_history.extend(ai_messages)
 
     ###############################################################################################################################################
     def _assign_player_to_actor(self) -> bool:

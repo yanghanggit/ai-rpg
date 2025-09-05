@@ -1,10 +1,8 @@
-from typing import Final, Optional, cast, final
-
+from typing import Final, List, Optional, cast, final
 import httpx
 import requests
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
-
 from .protocol import (
     ChatRequest,
     ChatRequestMessageListType,
@@ -35,7 +33,9 @@ class ChatClient:
             logger.warning(f"{self._name}: chat_history is empty")
 
         self._chat_response: ChatResponse = ChatResponse()
+
         self._timeout: Final[int] = timeout if timeout is not None else 30
+        assert self._timeout > 0, "timeout should be positive"
 
         for message in self._chat_history:
             assert isinstance(message, (HumanMessage, AIMessage, SystemMessage))
@@ -49,12 +49,20 @@ class ChatClient:
 
     ################################################################################################################################################################################
     @property
-    def ai_message(self) -> AIMessage:
-        for message in reversed(self._chat_response.messages):
-            if isinstance(message, AIMessage):
-                return message
+    def ai_messages(self) -> List[AIMessage]:
+        ret: List[AIMessage] = []
+        for message in self._chat_response.messages:
+            if message.type == "ai":
+                if isinstance(message, AIMessage):
+                    ret.append(message)
+                else:
+                    ret.append(AIMessage.model_validate(message.model_dump()))
 
-        return AIMessage(content="")
+        # 再检查一次！！！
+        for check_message in ret:
+            assert isinstance(check_message, AIMessage)
+
+        return ret
 
     ################################################################################################################################################################################
     def request(self, url: str) -> None:
@@ -75,7 +83,7 @@ class ChatClient:
             if response.status_code == 200:
                 self._chat_response = ChatResponse.model_validate(response.json())
                 logger.info(
-                    f"{self._name} request-response:\n{self._chat_response.model_dump_json()}"
+                    f"{self._name} request-response:\n{self._chat_response.model_dump_json(indent=4)}"
                 )
             else:
                 logger.error(
@@ -104,7 +112,7 @@ class ChatClient:
             if response.status_code == 200:
                 self._chat_response = ChatResponse.model_validate(response.json())
                 logger.info(
-                    f"{self._name} a_request-response:\n{self._chat_response.model_dump_json()}"
+                    f"{self._name} a_request-response:\n{self._chat_response.model_dump_json(indent=4)}"
                 )
             else:
                 logger.error(

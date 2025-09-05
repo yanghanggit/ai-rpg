@@ -237,8 +237,8 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         self._game.chat_system.request([request_handler])
 
         # 处理返回结果。
-        if request_handler.last_message_content == "":
-            return
+        # if request_handler.last_message_content == "":
+        #     return
 
         # 处理返回结果。
         self._handle_response(stage_entity, request_handler, actor_entities)
@@ -254,7 +254,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         try:
 
             format_response = DirectorResponse.model_validate_json(
-                json_format.strip_json_code_block(request_handler.last_message_content)
+                json_format.strip_json_code_block(request_handler.response_content)
             )
 
             # 推理的场景记录下！

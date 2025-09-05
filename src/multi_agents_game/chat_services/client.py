@@ -1,4 +1,4 @@
-from typing import Final, List, Optional, cast, final
+from typing import Final, List, Optional, final
 import httpx
 import requests
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -40,29 +40,39 @@ class ChatClient:
         for message in self._chat_history:
             assert isinstance(message, (HumanMessage, AIMessage, SystemMessage))
 
+        self._cache_ai_messages: Optional[List[AIMessage]] = None
+
     ################################################################################################################################################################################
     @property
-    def last_message_content(self) -> str:
-        if len(self._chat_response.messages) == 0:
-            return ""
-        return cast(str, self._chat_response.messages[-1].content)
+    def response_content(self) -> str:
+        message_contents: List[str] = []
+        for ai_message in self.ai_messages:
+            message_contents.append(str(ai_message.content))
+
+        return "\n".join(message_contents).strip()
 
     ################################################################################################################################################################################
     @property
     def ai_messages(self) -> List[AIMessage]:
-        ret: List[AIMessage] = []
+
+        if self._cache_ai_messages is not None:
+            return self._cache_ai_messages
+
+        self._cache_ai_messages = []
         for message in self._chat_response.messages:
             if message.type == "ai":
                 if isinstance(message, AIMessage):
-                    ret.append(message)
+                    self._cache_ai_messages.append(message)
                 else:
-                    ret.append(AIMessage.model_validate(message.model_dump()))
+                    self._cache_ai_messages.append(
+                        AIMessage.model_validate(message.model_dump())
+                    )
 
         # 再检查一次！！！
-        for check_message in ret:
+        for check_message in self._cache_ai_messages:
             assert isinstance(check_message, AIMessage)
 
-        return ret
+        return self._cache_ai_messages
 
     ################################################################################################################################################################################
     def request(self, url: str) -> None:

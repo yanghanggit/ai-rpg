@@ -26,10 +26,6 @@ from multi_agents_game.game.terminal_tcg_game import TerminalTCGGame
 from multi_agents_game.game_systems.combat_monitor_system import (
     CombatMonitorSystem,
 )
-
-# from multi_agents_game.game_systems.images_system import (
-#     ImagesSystem,
-# )
 from multi_agents_game.models import CombatResult, World
 
 

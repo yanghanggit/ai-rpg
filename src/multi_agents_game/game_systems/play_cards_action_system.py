@@ -114,6 +114,6 @@ class PlayCardsActionSystem(BaseActionReactiveSystem):
 
             self._game.append_human_message(actor_entity2, message)
 
-            round.select_report[actor_entity2._name] = message
+            # round.select_report[actor_entity2._name] = message
 
     #######################################################################################################################################

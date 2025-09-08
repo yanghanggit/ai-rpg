@@ -1,7 +1,5 @@
 from typing import final, override
-
 from loguru import logger
-
 from ..entitas import ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import DestroyComponent

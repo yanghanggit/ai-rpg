@@ -18,6 +18,7 @@ from ..models import (
     Skill,
     StageComponent,
     # TurnAction,
+    AgentEvent,
 )
 from ..utils import json_format
 
@@ -261,10 +262,6 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         self._game.chat_system.request([request_handler])
 
         # 处理返回结果。
-        # if request_handler.last_message_content == "":
-        #     return
-
-        # 处理返回结果。
         self._handle_response(stage_entity, request_handler, actor_entities)
 
     #######################################################################################################################################
@@ -303,6 +300,18 @@ class DirectorActionSystem(BaseActionReactiveSystem):
             #         0,
             #         [],
             #     )
+
+            # 第三步，场景广播 ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+            last_round = self._game.current_engagement.last_round
+            self._game.broadcast_event(
+                entity=stage_entity,
+                agent_event=AgentEvent(
+                    message=f"# 发生事件！战斗回合:{format_response.calculation}\n{format_response.performance}",
+                ),
+            )
+            # 记录
+            last_round.stage_director_calculation = format_response.calculation
+            last_round.stage_director_performance = format_response.performance
 
         except Exception as e:
             logger.error(f"Exception: {e}")

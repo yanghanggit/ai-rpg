@@ -57,10 +57,10 @@ class Round(BaseModel):
     tag: str
     round_turns: List[str]
     stage_environment: str = ""
-    select_report: Dict[str, str] = {}
+    # select_report: Dict[str, str] = {}
     stage_director_calculation: str = ""
     stage_director_performance: str = ""
-    feedback_report: Dict[str, str] = {}
+    # feedback_report: Dict[str, str] = {}
 
     @property
     def has_ended(self) -> bool:
@@ -68,7 +68,7 @@ class Round(BaseModel):
             len(self.round_turns) > 0
             and self.stage_director_calculation != ""
             and self.stage_director_performance != ""
-            and len(self.feedback_report) > 0
+            # and len(self.feedback_report) > 0
         )
 
 

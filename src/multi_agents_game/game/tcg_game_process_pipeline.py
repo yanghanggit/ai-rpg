@@ -87,26 +87,18 @@ class TCGGameProcessPipeline(Processors):
 
         ## 添加一些系统。。。
         from ..game_systems.begin_system import BeginSystem
-        from ..game_systems.combat_complete_system import (
-            CombatCompleteSystem,
-        )
         from ..game_systems.combat_death_system import CombatDeathSystem
         from ..game_systems.combat_kick_off_system import (
             CombatKickOffSystem,
         )
-        from ..game_systems.combat_resolution_system import (
-            CombatResolutionSystem,
-        )
-        from ..game_systems.combat_result_system import (
-            CombatResultSystem,
-        )
-        from ..game_systems.combat_round_system import (
-            CombatRoundSystem,
-        )
+        # from ..game_systems.combat_result_system import (
+        #     CombatResultSystem,
+        # )
+
+        # from ..game_systems.combat_round_system import (
+        #     CombatRoundSystem,
+        # )
         from ..game_systems.destroy_entity_system import DestroyEntitySystem
-        from ..game_systems.director_action_system import (
-            DirectorActionSystem,
-        )
         from ..game_systems.draw_cards_action_system import (
             DrawCardsActionSystem,
         )
@@ -115,12 +107,10 @@ class TCGGameProcessPipeline(Processors):
         #     DungeonStageSystem,
         # )
         from ..game_systems.end_system import EndSystem
-        from ..game_systems.feedback_action_system import FeedbackActionSystem
         from ..game_systems.kick_off_system import KickOffSystem
         from ..game_systems.post_action_system import PostActionSystem
         from ..game_systems.pre_action_system import PreActionSystem
         from ..game_systems.save_system import SaveSystem
-        from ..game_systems.turn_action_system import TurnActionSystem
 
         ##
         tcg_game = cast(TCGGame, game)
@@ -137,26 +127,29 @@ class TCGGameProcessPipeline(Processors):
         # 大状态切换：战斗触发！！
         processors.add(CombatKickOffSystem(tcg_game))
         # 大状态切换：战斗结束。
-        processors.add(CombatCompleteSystem(tcg_game))
+        # processors.add(CombatCompleteSystem(tcg_game))
         # 自动开局
-        processors.add(CombatRoundSystem(tcg_game))
+        # processors.add(CombatRoundSystem(tcg_game))
 
         # 抽卡。
         ######动作开始！！！！！################################################################################################
         processors.add(PreActionSystem(tcg_game))
         processors.add(DrawCardsActionSystem(tcg_game))
-        processors.add(TurnActionSystem(tcg_game))
-        processors.add(DirectorActionSystem(tcg_game))
-        processors.add(FeedbackActionSystem(tcg_game))
-        processors.add(
-            CombatResolutionSystem(tcg_game)
-        )  # 最终将过程合成。因为中间会有很多request，防止断掉。
+        #processors.add(CombatDeathSystem(tcg_game))
+        #processors.add(CombatResultSystem(tcg_game))
+
+        # processors.add(TurnActionSystem(tcg_game))
+        # processors.add(DirectorActionSystem(tcg_game))
+        # processors.add(FeedbackActionSystem(tcg_game))
+        # processors.add(
+        #     CombatResolutionSystem(tcg_game)
+        # )  # 最终将过程合成。因为中间会有很多request，防止断掉。
         processors.add(PostActionSystem(tcg_game))
         ###### 动作结束！！！！！################################################################################################
 
         # 检查死亡
         processors.add(CombatDeathSystem(tcg_game))
-        processors.add(CombatResultSystem(tcg_game))
+        # processors.add(CombatResultSystem(tcg_game))
 
         # 核心系统，检查需要删除的实体。
         processors.add(DestroyEntitySystem(tcg_game))

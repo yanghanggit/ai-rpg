@@ -98,7 +98,7 @@ class FeedbackAction(Component):
     name: str
     calculation: str
     performance: str
-    description: str
+    # description: str
     update_hp: int
     update_max_hp: int
     effects: List[StatusEffect]

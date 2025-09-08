@@ -14,7 +14,7 @@ from ..utils import json_format
 #######################################################################################################################################
 @final
 class FeedbackResponse(BaseModel):
-    description: str
+    # description: str
     update_hp: float
     update_max_hp: float
     status_effects: List[StatusEffect]
@@ -27,7 +27,7 @@ def _generate_prompt(
 ) -> str:
 
     response_example = FeedbackResponse(
-        description="第一人称状态描述（<200字）",
+        # description="第一人称状态描述（<200字）",
         update_hp=rpg_character_profile_component.rpg_character_profile.hp,
         update_max_hp=rpg_character_profile_component.rpg_character_profile.max_hp,
         status_effects=[
@@ -92,7 +92,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
             if (
                 feedback_action.calculation == ""
                 or feedback_action.performance == ""
-                or feedback_action.description == ""
+                # or feedback_action.description == ""
             ):
                 logger.error(
                     f"FeedbackActionSystem: {entity._name}, FeedbackAction is not complete."
@@ -141,7 +141,7 @@ class FeedbackActionSystem(BaseActionReactiveSystem):
                 feedback_action2.name,
                 feedback_action2.calculation,
                 feedback_action2.performance,
-                format_response.description,
+                # format_response.description,
                 int(format_response.update_hp),
                 int(format_response.update_max_hp),
                 format_response.status_effects,

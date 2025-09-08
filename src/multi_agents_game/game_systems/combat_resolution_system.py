@@ -186,7 +186,7 @@ class CombatResolutionSystem(ExecuteProcessor):
             feedback_action = actor_entity3.get(FeedbackAction)
             assert feedback_action.calculation != ""
             assert feedback_action.performance != ""
-            assert feedback_action.description != ""
+            #            assert feedback_action.description != ""
 
             #
             self._update_combat_health(
@@ -196,7 +196,7 @@ class CombatResolutionSystem(ExecuteProcessor):
             )
 
             # 效果更新
-            self._game.apply_status_effects(actor_entity3, feedback_action.effects)
+            self._game.append_status_effects(actor_entity3, feedback_action.effects)
 
             # 效果扣除
             remaining_effects, removed_effects = self._update_combat_remaining_effects(
@@ -217,7 +217,6 @@ class CombatResolutionSystem(ExecuteProcessor):
 
             # 添加记忆
             message = f"""# 你的状态更新，请注意！
-{feedback_action.description}
 生命值：{feedback_action.update_hp}/{feedback_action.update_max_hp}
 持续效果：
 {remaining_effects_prompt}

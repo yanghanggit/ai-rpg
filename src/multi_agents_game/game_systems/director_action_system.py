@@ -274,7 +274,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
                     actor_entity._name,
                     format_response.calculation,
                     format_response.performance,
-                    "",
+                    # "",
                     0,
                     0,
                     [],

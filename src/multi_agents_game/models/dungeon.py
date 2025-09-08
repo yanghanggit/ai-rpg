@@ -2,7 +2,7 @@ from enum import IntEnum, unique
 from typing import Dict, List, Optional, final
 
 from loguru import logger
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .objects import Actor, Stage
 
@@ -36,19 +36,18 @@ class CombatResult(IntEnum):
 @final
 # @register_base_model_class
 class StatusEffect(BaseModel):
-    name: str
-    description: str
-    rounds: int
+    name: str = Field(..., description="效果名称")
+    description: str = Field(..., description="效果描述")
+    rounds: int = Field(..., description="持续回合数")
 
 
 ###############################################################################################################################################
 # 技能是一种特殊的道具，它有一个额外的效果。
 @final
-# @register_base_model_class
 class Skill(BaseModel):
-    name: str
-    description: str
-    effect: str
+    name: str = Field(..., description="此技能名称")
+    description: str = Field(..., description="此技能描述")
+    effect: str = Field(..., description="此技能产生的效果以及造成的影响")
 
 
 ###############################################################################################################################################

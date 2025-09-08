@@ -785,14 +785,14 @@ class TCGGame(BaseGame, TCGGameContext):
         return ConversationError.VALID
 
     ###############################################################################################################################################
-    def apply_status_effects(
+    def append_status_effects(
         self, entity: Entity, status_effects: List[StatusEffect]
     ) -> None:
 
         # 效果更新
         assert entity.has(RPGCharacterProfileComponent)
         character_profile_component = entity.get(RPGCharacterProfileComponent)
-        character_profile_component.status_effects = copy.copy(status_effects)
+        character_profile_component.status_effects.extend(copy.copy(status_effects))
 
         logger.debug(f"update_combat_status_effects: {entity._name} => ")
         for e in character_profile_component.status_effects:
@@ -1148,11 +1148,11 @@ class TCGGame(BaseGame, TCGGameContext):
         return None
 
     #######################################################################################################################################
-    def clear_hands(self) -> None:
-        actor_entities = self.get_group(Matcher(HandComponent)).entities.copy()
-        for entity in actor_entities:
-            logger.debug(f"clear hands: {entity._name}")
-            entity.remove(HandComponent)
+    # def clear_hands(self) -> None:
+    #     actor_entities = self.get_group(Matcher(HandComponent)).entities.copy()
+    #     for entity in actor_entities:
+    #         logger.debug(f"clear hands: {entity._name}")
+    #         entity.remove(HandComponent)
 
     #######################################################################################################################################
     def setup_round(self) -> bool:

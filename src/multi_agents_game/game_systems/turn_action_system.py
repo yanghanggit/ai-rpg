@@ -59,7 +59,7 @@ class TurnActionSystem(BaseActionReactiveSystem):
             turn_action = actor_entity.get(TurnAction)
 
             skill = hand_comp.get_skill(turn_action.skill)
-            detail = hand_comp.get_detail(turn_action.skill)
+            detail = hand_comp.get_action_detail(turn_action.skill)
             assert skill.name != "", f"技能名称错误: {actor_entity._name}"
             assert (
                 detail.skill != "" and detail.skill == skill.name
@@ -70,14 +70,14 @@ class TurnActionSystem(BaseActionReactiveSystem):
             actor_entity.replace(
                 PlayCardsAction,
                 actor_entity._name,
-                detail.targets,
+                # detail.targets,
                 skill,
                 detail.dialogue,
                 detail.reason,
             )
 
             logger.debug(
-                f"actor_entity: {actor_entity._name}, skill: {skill.name}, targets: {detail.targets}, reason: {detail.reason}, dialogue: {detail.dialogue}"
+                f"actor_entity: {actor_entity._name}, skill: {skill.name}, reason: {detail.reason}, dialogue: {detail.dialogue}"
             )
 
     #######################################################################################################################################

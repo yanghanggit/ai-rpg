@@ -206,8 +206,8 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
 
         last_round = self._game.current_engagement.last_round
         assert (
-            not last_round.is_round_complete
-        ), f"last_round.is_round_complete: {last_round.is_round_complete}"
+            not last_round.has_ended
+        ), f"last_round.is_round_complete: {last_round.has_ended}"
 
         for entity in actor_entities:
 

@@ -54,7 +54,6 @@ class Skill(BaseModel):
 ###############################################################################################################################################
 # 表示一个回合
 @final
-# @register_base_model_class
 class Round(BaseModel):
     tag: str
     round_turns: List[str]
@@ -65,7 +64,7 @@ class Round(BaseModel):
     feedback_report: Dict[str, str] = {}
 
     @property
-    def is_round_complete(self) -> bool:
+    def has_ended(self) -> bool:
         return (
             len(self.round_turns) > 0
             and self.stage_director_calculation != ""
@@ -77,7 +76,6 @@ class Round(BaseModel):
 ###############################################################################################################################################
 # 表示一个战斗
 @final
-# @register_base_model_class
 class Combat(BaseModel):
     name: str
     phase: CombatPhase = CombatPhase.NONE

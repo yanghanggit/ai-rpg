@@ -110,9 +110,10 @@ class TCGGameProcessPipeline(Processors):
         from ..game_systems.draw_cards_action_system import (
             DrawCardsActionSystem,
         )
-        from ..game_systems.dungeon_stage_system import (
-            DungeonStageSystem,
-        )
+
+        # from ..game_systems.dungeon_stage_system import (
+        #     DungeonStageSystem,
+        # )
         from ..game_systems.end_system import EndSystem
         from ..game_systems.feedback_action_system import FeedbackActionSystem
         from ..game_systems.kick_off_system import KickOffSystem
@@ -132,7 +133,7 @@ class TCGGameProcessPipeline(Processors):
         processors.add(KickOffSystem(tcg_game))
 
         # 场景先规划，可能会有一些变化。
-        processors.add(DungeonStageSystem(tcg_game))
+        # processors.add(DungeonStageSystem(tcg_game))
         # 大状态切换：战斗触发！！
         processors.add(CombatKickOffSystem(tcg_game))
         # 大状态切换：战斗结束。

@@ -45,11 +45,35 @@ class ChatClient:
     ################################################################################################################################################################################
     @property
     def response_content(self) -> str:
-        message_contents: List[str] = []
-        for ai_message in self.ai_messages:
-            message_contents.append(str(ai_message.content))
+        if len(self.ai_messages) == 0:
+            return ""
 
-        return "\n".join(message_contents).strip()
+        last_message = self.ai_messages[-1]
+
+        # 处理 content 的不同类型
+        content = last_message.content
+
+        # 如果 content 已经是字符串，直接返回
+        if isinstance(content, str):
+            return content
+
+        # 如果 content 是列表，需要处理列表中的元素
+        if isinstance(content, list):
+            # 将列表中的每个元素转换为字符串并连接
+            content_parts = []
+            for item in content:
+                if isinstance(item, str):
+                    content_parts.append(item)
+                elif isinstance(item, dict):
+                    # 对于字典类型，转换为 JSON 字符串或简单的字符串表示
+                    content_parts.append(str(item))
+                else:
+                    # 其他类型，直接转换为字符串
+                    content_parts.append(str(item))
+            return "\n".join(content_parts)
+
+        # 兜底情况：直接转换为字符串
+        return str(content)
 
     ################################################################################################################################################################################
     @property

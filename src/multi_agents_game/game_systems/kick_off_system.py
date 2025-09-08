@@ -30,10 +30,16 @@ def _generate_stage_kick_off_prompt(
     kick_off_message: str,
 ) -> str:
     return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
+
 ## 这是你的启动消息
 {kick_off_message}
+
+## 输出内容-场景描述
+- 场景内的环境描述，不要包含任何角色信息。
+
 ## 输出要求
-- 输出场景描述，单段紧凑自述（禁用换行/空行）"""
+- 输出场景描述，单段紧凑自述（禁用换行/空行）。
+- 输出必须为第三人称视角。"""
 
 
 ###############################################################################################################################################
@@ -55,11 +61,6 @@ class KickOffSystem(ExecuteProcessor):
     ###############################################################################################################################################
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
-
-    ###############################################################################################################################################
-    # @override
-    # async def execute(self) -> None:
-    #     pass
 
     ###############################################################################################################################################
     @override
@@ -89,8 +90,8 @@ class KickOffSystem(ExecuteProcessor):
             # 不同实体生成不同的提示
             gen_prompt = self._generate_prompt(entity1)
             if gen_prompt == "":
-                logger.warning(
-                    f"KickOffSystem: {entity1._name} kick off message is empty. dungeon or monster?"
+                logger.error(
+                    f"KickOffSystem: {entity1._name} kick off message is empty !!!!!!!"
                 )
                 continue
 
@@ -112,9 +113,6 @@ class KickOffSystem(ExecuteProcessor):
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
 
-            # if request_handler.last_message_content == "":
-            #     continue
-
             self._game.append_human_message(entity2, request_handler._prompt)
             self._game.append_ai_message(entity2, request_handler.ai_messages)
 
@@ -122,10 +120,7 @@ class KickOffSystem(ExecuteProcessor):
             entity2.replace(KickOffDoneComponent, entity2._name)
 
             # 若是场景，用response替换narrate
-            if (
-                entity2.has(StageComponent)
-                # and request_handler.last_message_content != ""
-            ):
+            if entity2.has(StageComponent):
                 entity2.replace(
                     EnvironmentComponent,
                     entity2._name,

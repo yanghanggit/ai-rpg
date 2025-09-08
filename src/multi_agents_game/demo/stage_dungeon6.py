@@ -5,7 +5,8 @@ from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 from .utils import (
     create_stage,
 )
-from multi_agents_game.demo import actor_goblin
+
+# from multi_agents_game.demo import actor_goblin
 
 
 def create_stage_cave6() -> Stage:

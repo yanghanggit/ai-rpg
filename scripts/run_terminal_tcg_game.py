@@ -16,6 +16,7 @@ from multi_agents_game.settings import (
 from multi_agents_game.game.game_config import GLOBAL_GAME_NAME, setup_logger
 from multi_agents_game.demo import (
     create_actor_warrior,
+    create_demo_dungeon1,
     create_demo_dungeon5,
     create_demo_dungeon6,
 )
@@ -98,7 +99,7 @@ async def _run_game(
         world_exists = World(boot=world_boot)
 
         # 运行时生成地下城系统
-        world_exists.dungeon = create_demo_dungeon6()
+        world_exists.dungeon = create_demo_dungeon1()
 
     else:
         logger.info(
@@ -169,20 +170,20 @@ async def _process_dungeon_state_input(
 ) -> None:
     """处理地下城状态下的玩家输入"""
 
-    if usr_input == "/dk" or usr_input == "/dungeon_combat_kick_off":
+    # if usr_input == "/dk" or usr_input == "/dungeon_combat_kick_off":
 
-        if len(terminal_game.current_engagement.combats) == 0:
-            logger.error(f"{usr_input} 没有战斗可以进行！！！！")
-            return
+    #     if len(terminal_game.current_engagement.combats) == 0:
+    #         logger.error(f"{usr_input} 没有战斗可以进行！！！！")
+    #         return
 
-        if not terminal_game.current_engagement.is_kickoff_phase:
-            logger.error(f"{usr_input} 只能在战斗前is_kickoff_phase使用")
-            return
+    #     if not terminal_game.current_engagement.is_kickoff_phase:
+    #         logger.error(f"{usr_input} 只能在战斗前is_kickoff_phase使用")
+    #         return
 
-        # 执行一次！！！！！
-        await _execute_terminal_game(terminal_game, usr_input)
+    #     # 执行一次！！！！！
+    #     await _execute_terminal_game(terminal_game, usr_input)
 
-    elif usr_input == "/dcmp" or usr_input == "/dungeon_combat_complete":
+    if usr_input == "/dcmp" or usr_input == "/dungeon_combat_complete":
 
         if len(terminal_game.current_engagement.combats) == 0:
             logger.error(f"{usr_input} 没有战斗可以进行！！！！")

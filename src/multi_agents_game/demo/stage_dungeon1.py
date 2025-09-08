@@ -1,4 +1,4 @@
-from ..demo.actor_goblin import create_actor_goblin
+from .actor_goblin import create_actor_goblin
 from ..models import (
     Dungeon,
     StageType,

@@ -1,4 +1,5 @@
 import copy
+from math import log
 import random
 import shutil
 import uuid
@@ -906,6 +907,48 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 开始传送。
         self.stage_transition(heros_entities, stage_entity)
+
+        # 需要在这里补充设置地下城与怪物的kickoff信息。
+        stage_kick_off_comp = stage_entity.get(KickOffMessageComponent)
+        assert stage_kick_off_comp is not None
+        logger.debug(
+            f"当前 {stage_entity._name} 的kickoff信息: {stage_kick_off_comp.content}"
+        )
+
+        # 获取场景内角色的外貌信息
+        actors_appearances_mapping: Dict[str, str] = (
+            self.retrieve_actor_appearance_on_stage_mapping(stage_entity)
+        )
+
+        # 重新组织一下
+        actors_appearances_info = []
+        for actor_name, appearance in actors_appearances_mapping.items():
+            actors_appearances_info.append(f"{actor_name}: {appearance}")
+        if len(actors_appearances_info) == 0:
+            actors_appearances_info.append("无")
+
+        # 生成追加的kickoff信息
+        append_kickoff_message = f"""# 场景内角色
+{"\n".join(actors_appearances_info)}"""
+
+        # 设置组件
+        stage_entity.replace(
+            KickOffMessageComponent,
+            stage_kick_off_comp.name,
+            stage_kick_off_comp.content + "\n" + append_kickoff_message,
+        )
+        logger.debug(
+            f"更新设置{stage_entity._name} 的kickoff信息: {stage_entity.get(KickOffMessageComponent).content}"
+        )
+
+        actors = self.retrieve_actors_on_stage(stage_entity)
+        for actor in actors:
+            if actor.has(MonsterComponent):
+                monster_kick_off_comp = actor.get(KickOffMessageComponent)
+                assert monster_kick_off_comp is not None
+                logger.debug(
+                    f"需要设置{actor._name} 的kickoff信息: {monster_kick_off_comp.content}"
+                )
 
         # 设置一个战斗为kickoff状态。
         dungeon.engagement.combat_kickoff(Combat(name=stage_entity._name))

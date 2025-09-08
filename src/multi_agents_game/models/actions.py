@@ -1,6 +1,6 @@
 from typing import Dict, List, final
 
-from ..entitas.components import Component, MutableComponent
+from ..entitas.components import Component
 from .dungeon import Skill, StatusEffect
 from .registry import register_action_class, register_component_class
 

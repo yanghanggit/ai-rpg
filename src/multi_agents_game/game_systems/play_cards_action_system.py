@@ -1,4 +1,3 @@
-from math import log
 from typing import List, final
 
 from loguru import logger
@@ -10,6 +9,7 @@ from ..models import (
     DirectorAction,
     HandComponent,
     PlayCardsAction,
+    Round,
     # TurnAction,
 )
 
@@ -56,38 +56,64 @@ class PlayCardsActionSystem(BaseActionReactiveSystem):
             f"PlayCardsActionSystem: stage_entity: {current_stage._name}, react_entities: {[entity._name for entity in react_entities]}"
         )
 
+        last_round = self._game.current_engagement.last_round
+
         # # 处理角色
-        for actor_entity in react_entities:
-            #
-            assert actor_entity.has(HandComponent)
-            assert actor_entity.has(PlayCardsAction)
-            logger.debug(
-                f"actor_entity: {actor_entity._name}, play_cards_action: {actor_entity.get(PlayCardsAction).model_dump_json()}"
-            )
+        # for actor_entity in react_entities:
+        #     #
+        #     assert actor_entity.has(HandComponent)
+        #     assert actor_entity.has(PlayCardsAction)
+        #     logger.debug(
+        #         f"actor_entity: {actor_entity._name}, play_cards_action: {actor_entity.get(PlayCardsAction).model_dump_json()}"
+        #     )
 
-            # hand_comp = actor_entity.get(HandComponent)
-            # turn_action = actor_entity.get(TurnAction)
+        self._handle_card_play_action(react_entities, last_round)
 
-            # skill = hand_comp.get_skill(turn_action.skill)
-            # detail = hand_comp.get_action_detail(turn_action.skill)
-            # assert skill.name != "", f"技能名称错误: {actor_entity._name}"
-            # assert (
-            #     detail.skill != "" and detail.skill == skill.name
-            # ), f"技能名称错误: {actor_entity._name}"
+        # hand_comp = actor_entity.get(HandComponent)
+        # turn_action = actor_entity.get(TurnAction)
 
-            # # 给角色添加！！！
-            # assert not actor_entity.has(PlayCardsAction)
-            # actor_entity.replace(
-            #     PlayCardsAction,
-            #     actor_entity._name,
-            #     # detail.targets,
-            #     skill,
-            #     detail.dialogue,
-            #     detail.reason,
-            # )
+        # skill = hand_comp.get_skill(turn_action.skill)
+        # detail = hand_comp.get_action_detail(turn_action.skill)
+        # assert skill.name != "", f"技能名称错误: {actor_entity._name}"
+        # assert (
+        #     detail.skill != "" and detail.skill == skill.name
+        # ), f"技能名称错误: {actor_entity._name}"
 
-            # logger.debug(
-            #     f"actor_entity: {actor_entity._name}, skill: {skill.name}, reason: {detail.reason}, dialogue: {detail.dialogue}"
-            # )
+        # # 给角色添加！！！
+        # assert not actor_entity.has(PlayCardsAction)
+        # actor_entity.replace(
+        #     PlayCardsAction,
+        #     actor_entity._name,
+        #     # detail.targets,
+        #     skill,
+        #     detail.dialogue,
+        #     detail.reason,
+        # )
+
+        # logger.debug(
+        #     f"actor_entity: {actor_entity._name}, skill: {skill.name}, reason: {detail.reason}, dialogue: {detail.dialogue}"
+        # )
+
+    #######################################################################################################################################
+    def _handle_card_play_action(
+        self, actor_entities: List[Entity], round: Round
+    ) -> None:
+        for actor_entity2 in actor_entities:
+
+            assert actor_entity2.has(HandComponent)
+            play_cards_action = actor_entity2.get(PlayCardsAction)
+            assert play_cards_action is not None
+            assert play_cards_action.skill.name != ""
+
+            message = f""" # 发生事件！你开始行动！         
+使用技能 = {play_cards_action.skill.name}
+目标 = {play_cards_action.target}
+原因 = {play_cards_action.reason}
+技能数据
+{play_cards_action.skill.model_dump_json()}"""
+
+            self._game.append_human_message(actor_entity2, message)
+
+            round.select_report[actor_entity2._name] = message
 
     #######################################################################################################################################

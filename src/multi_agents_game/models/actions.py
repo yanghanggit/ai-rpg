@@ -1,7 +1,7 @@
-from typing import Dict, List, final
+from typing import Dict, final
 
 from ..entitas.components import Component
-from .dungeon import Skill, StatusEffect
+from .dungeon import Skill
 from .registry import register_action_class, register_component_class
 
 
@@ -91,17 +91,17 @@ class DirectorAction(Component):
 
 
 ############################################################################################################
-@final
-@register_component_class
-@register_action_class
-class FeedbackAction(Component):
-    name: str
-    calculation: str
-    performance: str
-    # description: str
-    update_hp: int
-    update_max_hp: int
-    effects: List[StatusEffect]
+# @final
+# @register_component_class
+# @register_action_class
+# class FeedbackAction(Component):
+#     name: str
+#     calculation: str
+#     performance: str
+#     # description: str
+#     update_hp: int
+#     update_max_hp: int
+#     effects: List[StatusEffect]
 
 
 ############################################################################################################

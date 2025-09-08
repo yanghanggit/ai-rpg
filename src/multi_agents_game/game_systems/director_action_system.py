@@ -1,3 +1,4 @@
+# from math import log
 from typing import Final, List, NamedTuple, final
 
 from loguru import logger
@@ -11,7 +12,7 @@ from ..models import (
     ActorComponent,
     DirectorAction,
     DungeonComponent,
-    FeedbackAction,
+    # FeedbackAction,
     PlayCardsAction,
     RPGCharacterProfileComponent,
     Skill,
@@ -78,16 +79,16 @@ class DirectorResponse(BaseModel):
 
 #######################################################################################################################################
 @final
-class ActionPromptParameters(NamedTuple):
+class PromptParameters(NamedTuple):
     actor: str
-    targets: List[str]
+    target: str
     skill: Skill
     rpg_character_profile_component: RPGCharacterProfileComponent
     dialogue: str
 
 
 #######################################################################################################################################
-def _generate_prompt(prompt_params: List[ActionPromptParameters]) -> str:
+def _generate_prompt(prompt_params: List[PromptParameters]) -> str:
 
     details_prompt: List[str] = []
     for param in prompt_params:
@@ -96,7 +97,7 @@ def _generate_prompt(prompt_params: List[ActionPromptParameters]) -> str:
 
         detail = f"""### {param.actor}
 技能: {param.skill.name}
-目标: {param.targets}
+目标: {param.target}
 描述: {param.skill.description}
 技能效果: {param.skill.effect}
 角色演出时说的话: {param.dialogue}
@@ -165,33 +166,53 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         assert stage_entity.has(StageComponent)
         assert stage_entity.has(DungeonComponent)
 
-        turn_then_play_cards_actors = self._game.get_group(
+        play_cards_actors = self._game.get_group(
             Matcher(
                 all_of=[
-                    # TurnAction,
                     PlayCardsAction,
                 ],
             )
         ).entities
 
-        if len(turn_then_play_cards_actors) == 0:
+        if len(play_cards_actors) == 0:
             return
 
         # sort_actors = sorted(
         #     turn_then_play_cards_actors, key=lambda entity: entity.get(TurnAction).turn
         # )
 
-        logger.warning(
-            f"还没有排序！！！！ DirectorActionSystem: stage_entity: {stage_entity._name}, turn_then_play_cards_actors: {[entity._name for entity in turn_then_play_cards_actors]}"
-        )
-        # await self._process_request(stage_entity, turn_then_play_cards_actors)
+        # logger.warning(
+        #     f"还没有排序！！！！ DirectorActionSystem: stage_entity: {stage_entity._name}, turn_then_play_cards_actors: {[entity._name for entity in play_cards_actors]}"
+        # )
+
+        round_turns = self._game.current_engagement.last_round.round_turns
+        logger.info(f"round_turns: {round_turns}")
+        sort_actors: List[Entity] = []
+        for turn in round_turns:
+            for entity in play_cards_actors:
+                if entity._name == turn:
+                    sort_actors.append(entity)
+                    break
+
+        # sort_actors: List[str] = []
+        for sort_actor in sort_actors:
+            logger.info(f"sort_actor: {sort_actor._name}")
+
+        # sort_actors = sorted(
+        #     play_cards_actors,
+        #     key=lambda entity: next(
+        #         (turn for turn in round_turns if turn == entity._name),
+        #         float('inf')  # 如果找不到对应的turn，则放在最后
+        #     )
+        # )
+        await self._process_request(stage_entity, sort_actors)
 
     #######################################################################################################################################
     def _generate_action_prompt_parameters(
         self, react_entities: List[Entity]
-    ) -> List[ActionPromptParameters]:
+    ) -> List[PromptParameters]:
 
-        ret: List[ActionPromptParameters] = []
+        ret: List[PromptParameters] = []
         for entity in react_entities:
 
             assert entity.has(ActorComponent)
@@ -201,17 +222,17 @@ class DirectorActionSystem(BaseActionReactiveSystem):
             play_cards_action = entity.get(PlayCardsAction)
             assert play_cards_action.skill.name != ""
 
-            # ret.append(
-            #     ActionPromptParameters(
-            #         actor=entity._name,
-            #         targets=play_cards_action.targets,
-            #         skill=play_cards_action.skill,
-            #         rpg_character_profile_component=entity.get(
-            #             RPGCharacterProfileComponent
-            #         ),
-            #         dialogue=play_cards_action.dialogue,
-            #     )
-            # )
+            ret.append(
+                PromptParameters(
+                    actor=entity._name,
+                    target=play_cards_action.target,
+                    skill=play_cards_action.skill,
+                    rpg_character_profile_component=entity.get(
+                        RPGCharacterProfileComponent
+                    ),
+                    dialogue=play_cards_action.dialogue,
+                )
+            )
 
         return ret
 
@@ -270,18 +291,18 @@ class DirectorActionSystem(BaseActionReactiveSystem):
             )
 
             # 通知角色！！！！
-            for actor_entity in actor_entities:
+            # for actor_entity in actor_entities:
 
-                actor_entity.replace(
-                    FeedbackAction,
-                    actor_entity._name,
-                    format_response.calculation,
-                    format_response.performance,
-                    # "",
-                    0,
-                    0,
-                    [],
-                )
+            #     actor_entity.replace(
+            #         FeedbackAction,
+            #         actor_entity._name,
+            #         format_response.calculation,
+            #         format_response.performance,
+            #         # "",
+            #         0,
+            #         0,
+            #         [],
+            #     )
 
         except Exception as e:
             logger.error(f"Exception: {e}")

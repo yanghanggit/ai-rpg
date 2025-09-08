@@ -1,5 +1,4 @@
 import copy
-from email import message
 from typing import Final, List, final, override
 from loguru import logger
 from pydantic import BaseModel, Field
@@ -150,10 +149,6 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
 
         if not self._game.current_engagement.is_on_going_phase:
             logger.error(f"not web_game.current_engagement.is_on_going_phase")
-            return
-
-        if not self._game.setup_round():
-            logger.error(f"not web_game.setup_round()")
             return
 
         # 先清除

@@ -103,7 +103,7 @@ class TCGGameProcessPipeline(Processors):
         from ..game_systems.draw_cards_action_system import (
             DrawCardsActionSystem,
         )
-        from ..game_systems.player_cards_action_system import (
+        from ..game_systems.play_cards_action_system import (
             PlayCardsActionSystem,
         )
 
@@ -115,6 +115,7 @@ class TCGGameProcessPipeline(Processors):
         from ..game_systems.post_action_system import PostActionSystem
         from ..game_systems.pre_action_system import PreActionSystem
         from ..game_systems.save_system import SaveSystem
+        from ..game_systems.director_action_system import DirectorActionSystem
 
         ##
         tcg_game = cast(TCGGame, game)
@@ -140,12 +141,7 @@ class TCGGameProcessPipeline(Processors):
         processors.add(PreActionSystem(tcg_game))
         processors.add(DrawCardsActionSystem(tcg_game))
         processors.add(PlayCardsActionSystem(tcg_game))
-
-        # processors.add(CombatDeathSystem(tcg_game))
-        # processors.add(CombatResultSystem(tcg_game))
-
-        # processors.add(TurnActionSystem(tcg_game))
-        # processors.add(DirectorActionSystem(tcg_game))
+        processors.add(DirectorActionSystem(tcg_game))
         # processors.add(FeedbackActionSystem(tcg_game))
         # processors.add(
         #     CombatResolutionSystem(tcg_game)

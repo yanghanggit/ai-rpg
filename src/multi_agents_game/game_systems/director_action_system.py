@@ -16,7 +16,7 @@ from ..models import (
     RPGCharacterProfileComponent,
     Skill,
     StageComponent,
-    TurnAction,
+    # TurnAction,
 )
 from ..utils import json_format
 
@@ -168,7 +168,7 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         turn_then_play_cards_actors = self._game.get_group(
             Matcher(
                 all_of=[
-                    TurnAction,
+                    # TurnAction,
                     PlayCardsAction,
                 ],
             )
@@ -177,11 +177,14 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         if len(turn_then_play_cards_actors) == 0:
             return
 
-        sort_actors = sorted(
-            turn_then_play_cards_actors, key=lambda entity: entity.get(TurnAction).turn
-        )
+        # sort_actors = sorted(
+        #     turn_then_play_cards_actors, key=lambda entity: entity.get(TurnAction).turn
+        # )
 
-        await self._process_request(stage_entity, sort_actors)
+        logger.warning(
+            f"还没有排序！！！！ DirectorActionSystem: stage_entity: {stage_entity._name}, turn_then_play_cards_actors: {[entity._name for entity in turn_then_play_cards_actors]}"
+        )
+        # await self._process_request(stage_entity, turn_then_play_cards_actors)
 
     #######################################################################################################################################
     def _generate_action_prompt_parameters(
@@ -198,17 +201,17 @@ class DirectorActionSystem(BaseActionReactiveSystem):
             play_cards_action = entity.get(PlayCardsAction)
             assert play_cards_action.skill.name != ""
 
-            ret.append(
-                ActionPromptParameters(
-                    actor=entity._name,
-                    targets=play_cards_action.targets,
-                    skill=play_cards_action.skill,
-                    rpg_character_profile_component=entity.get(
-                        RPGCharacterProfileComponent
-                    ),
-                    dialogue=play_cards_action.dialogue,
-                )
-            )
+            # ret.append(
+            #     ActionPromptParameters(
+            #         actor=entity._name,
+            #         targets=play_cards_action.targets,
+            #         skill=play_cards_action.skill,
+            #         rpg_character_profile_component=entity.get(
+            #             RPGCharacterProfileComponent
+            #         ),
+            #         dialogue=play_cards_action.dialogue,
+            #     )
+            # )
 
         return ret
 

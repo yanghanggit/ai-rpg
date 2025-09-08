@@ -14,7 +14,7 @@ from ..models import (
     Round,
     RPGCharacterProfileComponent,
     StatusEffect,
-    TurnAction,
+    # TurnAction,
 )
 
 
@@ -56,13 +56,13 @@ class CombatResolutionSystem(ExecuteProcessor):
         ).entities
 
         # 出手的角色
-        turn_action_actors = self._game.get_group(
-            Matcher(
-                all_of=[
-                    TurnAction,
-                ],
-            )
-        ).entities
+        # turn_action_actors = self._game.get_group(
+        #     Matcher(
+        #         all_of=[
+        #             TurnAction,
+        #         ],
+        #     )
+        # ).entities
 
         # 出手的角色
         play_cards_then_feedback_action_actors = self._game.get_group(
@@ -74,22 +74,22 @@ class CombatResolutionSystem(ExecuteProcessor):
             )
         ).entities
 
-        if len(turn_action_actors) == 0:
-            logger.info(f"没有角色出手。什么都没有发生。")
-            return
+        # if len(turn_action_actors) == 0:
+        #     logger.info(f"没有角色出手。什么都没有发生。")
+        #     return
 
-        if len(play_cards_then_feedback_action_actors) != len(turn_action_actors):
-            logger.error(
-                f"出手的角色数量和选择技能的角色数量不一致。可能是request有问题。"
-            )
-            return
+        # if len(play_cards_then_feedback_action_actors) != len(turn_action_actors):
+        #     logger.error(
+        #         f"出手的角色数量和选择技能的角色数量不一致。可能是request有问题。"
+        #     )
+        #     return
 
-        # 所有的角色，理论上都出手了。
-        if len(turn_action_actors) != len(actors_on_stage):
-            logger.error(
-                f"出手的角色数量和场景中的角色数量不一致。可能是request有问题。"
-            )
-            return
+        # # 所有的角色，理论上都出手了。
+        # if len(turn_action_actors) != len(actors_on_stage):
+        #     logger.error(
+        #         f"出手的角色数量和场景中的角色数量不一致。可能是request有问题。"
+        #     )
+        #     return
 
         assert len(play_cards_then_feedback_action_actors) == len(actors_on_stage)
         assert len(available_skill_entities) == len(actors_on_stage)
@@ -111,16 +111,16 @@ class CombatResolutionSystem(ExecuteProcessor):
         last_round = self._game.current_engagement.last_round
 
         # 看一看出手顺序。
-        first_turn_actor = next(iter(turn_action_actors))
-        first_turn_action = first_turn_actor.get(TurnAction)
-        logger.debug(
-            f"First turn actor: {first_turn_action.rounds}, {first_turn_action.round_turns}"
-        )
-        # 记录
-        last_round.round_turns = first_turn_action.round_turns
+        # first_turn_actor = next(iter(turn_action_actors))
+        # first_turn_action = first_turn_actor.get(TurnAction)
+        # logger.debug(
+        #     f"First turn actor: {first_turn_action.rounds}, {first_turn_action.round_turns}"
+        # )
+        # # 记录
+        # last_round.round_turns = first_turn_action.round_turns
 
-        # 第一步，通知回合开始！！！提示! 添加一个记忆！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
-        self._process_turn_action(turn_action_actors)
+        # # 第一步，通知回合开始！！！提示! 添加一个记忆！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+        # self._process_turn_action(turn_action_actors)
 
         # 第二步，添加决定使用什么技能 ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
         self._process_play_cards_action(
@@ -147,14 +147,14 @@ class CombatResolutionSystem(ExecuteProcessor):
     def _process_turn_action(self, actor_entities: Set[Entity]) -> None:
 
         for actor_entity in actor_entities:
+            pass
+            # turn_action = actor_entity.get(TurnAction)
+            # assert turn_action is not None
 
-            turn_action = actor_entity.get(TurnAction)
-            assert turn_action is not None
-
-            self._game.append_human_message(
-                entity=actor_entity,
-                chat=f"# 提示！战斗回合开始，第 {turn_action.rounds} 回合！",
-            )
+            # self._game.append_human_message(
+            #     entity=actor_entity,
+            #     chat=f"# 提示！战斗回合开始，第 {turn_action.rounds} 回合！",
+            # )
 
     #######################################################################################################################################
     def _process_play_cards_action(
@@ -167,7 +167,7 @@ class CombatResolutionSystem(ExecuteProcessor):
             assert play_cards_action.skill.name != ""
             message = f""" # 发生事件！经过思考后，你决定行动！
 ## 使用技能 = {play_cards_action.skill.name}
-## 目标 = {play_cards_action.targets}
+## 目标 = {play_cards_action.target}
 ## 原因 = {play_cards_action.reason}
 ## 技能数据
 {play_cards_action.skill.model_dump_json()}"""

@@ -91,6 +91,7 @@ class TCGGameProcessPipeline(Processors):
         from ..game_systems.combat_kick_off_system import (
             CombatKickOffSystem,
         )
+
         # from ..game_systems.combat_result_system import (
         #     CombatResultSystem,
         # )
@@ -101,6 +102,9 @@ class TCGGameProcessPipeline(Processors):
         from ..game_systems.destroy_entity_system import DestroyEntitySystem
         from ..game_systems.draw_cards_action_system import (
             DrawCardsActionSystem,
+        )
+        from ..game_systems.player_cards_action_system import (
+            PlayCardsActionSystem,
         )
 
         # from ..game_systems.dungeon_stage_system import (
@@ -135,8 +139,10 @@ class TCGGameProcessPipeline(Processors):
         ######动作开始！！！！！################################################################################################
         processors.add(PreActionSystem(tcg_game))
         processors.add(DrawCardsActionSystem(tcg_game))
-        #processors.add(CombatDeathSystem(tcg_game))
-        #processors.add(CombatResultSystem(tcg_game))
+        processors.add(PlayCardsActionSystem(tcg_game))
+
+        # processors.add(CombatDeathSystem(tcg_game))
+        # processors.add(CombatResultSystem(tcg_game))
 
         # processors.add(TurnActionSystem(tcg_game))
         # processors.add(DirectorActionSystem(tcg_game))

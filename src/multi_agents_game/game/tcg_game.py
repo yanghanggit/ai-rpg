@@ -51,7 +51,8 @@ from ..models import (
     StageComponent,
     StageType,
     StatusEffect,
-    TurnAction,
+    # TurnAction,
+    PlayCardsAction,
     World,
     WorldSystem,
     WorldSystemComponent,
@@ -1055,25 +1056,29 @@ class TCGGame(BaseGame, TCGGameContext):
                 logger.error(f"角色: {actor_entity._name} 没有技能可用，不能添加行动！")
                 return False
 
-        # 添加，到了这里就不能停了。
         for turn_actor_name in last_round.round_turns:
 
             actor_entity = self.get_actor_entity(turn_actor_name)
             assert actor_entity is not None
-            assert not actor_entity.has(TurnAction)
+            assert not actor_entity.has(PlayCardsAction)
 
             # TODO, 目前先随机选择一个技能。
             hand_comp = actor_entity.get(HandComponent)
             assert len(hand_comp.skills) > 0
             selected_skill = random.choice(hand_comp.skills)
 
+            action_detail = hand_comp.get_action_detail(selected_skill.name)
+            assert action_detail is not None
+            assert action_detail.skill == selected_skill.name
+
             # 添加这个动作。
             actor_entity.replace(
-                TurnAction,
+                PlayCardsAction,
                 actor_entity._name,
-                len(self.current_engagement.rounds),
-                last_round.round_turns,
-                selected_skill.name,
+                selected_skill,
+                action_detail.target,
+                action_detail.dialogue,
+                action_detail.reason,
             )
 
         return True

@@ -1,4 +1,5 @@
 import copy
+from email import message
 from typing import Final, List, final, override
 from loguru import logger
 from pydantic import BaseModel, Field
@@ -151,6 +152,10 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
             logger.error(f"not web_game.current_engagement.is_on_going_phase")
             return
 
+        if not self._game.setup_round():
+            logger.error(f"not web_game.setup_round()")
+            return
+
         # 先清除
         self._clear_hands()
 
@@ -234,6 +239,13 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
             self._append_status_effects(
                 entity2, validated_response.combat_status.status_effects
             )
+
+            # 添加上下文。
+            # self._game.append_human_message(
+            #     entity=entity2,
+            #     chat=request_handler._prompt
+            # )
+            # self._game.append_ai_message(entity2, request_handler.ai_messages)
 
         except Exception as e:
             logger.error(f"Exception: {e}")

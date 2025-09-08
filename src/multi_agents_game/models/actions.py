@@ -46,18 +46,18 @@ class MindVoiceAction(Component):
 
 
 ############################################################################################################
-@final
-@register_component_class
-@register_action_class
-class TurnAction(Component):
-    name: str
-    rounds: int
-    round_turns: List[str]
-    skill: str
+# @final
+# @register_component_class
+# @register_action_class
+# class TurnAction(Component):
+#     name: str
+#     rounds: int
+#     round_turns: List[str]
+#     skill: str
 
-    @property
-    def turn(self) -> int:
-        return self.round_turns.index(self.name)
+#     @property
+#     def turn(self) -> int:
+#         return self.round_turns.index(self.name)
 
 
 ############################################################################################################
@@ -74,8 +74,8 @@ class DrawCardsAction(Component):
 @register_action_class
 class PlayCardsAction(Component):
     name: str
-    targets: List[str]
     skill: Skill
+    target: str
     dialogue: str
     reason: str
 

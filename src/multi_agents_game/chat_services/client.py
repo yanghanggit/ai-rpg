@@ -1,3 +1,4 @@
+from math import log
 from typing import Final, List, Optional, final
 import httpx
 import requests
@@ -116,9 +117,10 @@ class ChatClient:
 
             if response.status_code == 200:
                 self._chat_response = ChatResponse.model_validate(response.json())
-                logger.info(
-                    f"{self._name} request-response:\n{self._chat_response.model_dump_json()}"
-                )
+                # logger.info(
+                #     f"{self._name} request-response:\n{self._chat_response.model_dump_json()}"
+                # )
+                logger.info(f"{self._name} response_content:\n{self.response_content}")
             else:
                 logger.error(
                     f"request-response Error: {response.status_code}, {response.text}"
@@ -145,9 +147,10 @@ class ChatClient:
 
             if response.status_code == 200:
                 self._chat_response = ChatResponse.model_validate(response.json())
-                logger.info(
-                    f"{self._name} a_request-response:\n{self._chat_response.model_dump_json()}"
-                )
+                # logger.info(
+                #     f"{self._name} a_request-response:\n{self._chat_response.model_dump_json()}"
+                # )
+                logger.info(f"{self._name} response_content:\n{self.response_content}")
             else:
                 logger.error(
                     f"a_request-response Error: {response.status_code}, {response.text}"

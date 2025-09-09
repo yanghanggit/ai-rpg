@@ -773,20 +773,6 @@ class TCGGame(BaseGame, TCGGameContext):
 
         return ConversationError.VALID
 
-    ###############################################################################################################################################
-    def append_status_effects(
-        self, entity: Entity, status_effects: List[StatusEffect]
-    ) -> None:
-
-        # 效果更新
-        assert entity.has(RPGCharacterProfileComponent)
-        character_profile_component = entity.get(RPGCharacterProfileComponent)
-        character_profile_component.status_effects.extend(copy.copy(status_effects))
-
-        logger.debug(f"update_combat_status_effects: {entity._name} => ")
-        for e in character_profile_component.status_effects:
-            logger.debug(f"status_effects: {e.model_dump_json()}")
-
     #######################################################################################################################################
     def _create_dungeon_entities(self, dungeon: Dungeon) -> None:
 

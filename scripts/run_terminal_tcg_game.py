@@ -115,7 +115,6 @@ async def _run_game(
         world=world_exists,
         chat_system=ChatClientManager(
             name=f"{terminal_game_user_options.game}-chatsystem",
-            # username=terminal_game_user_options.user,
             localhost_urls=server_config.azure_openai_chat_server_localhost_urls,
         ),
     )
@@ -165,32 +164,6 @@ async def _process_dungeon_state_input(
 ) -> None:
     """处理地下城状态下的玩家输入"""
 
-    # if usr_input == "/dk" or usr_input == "/dungeon_combat_kick_off":
-
-    #     if len(terminal_game.current_engagement.combats) == 0:
-    #         logger.error(f"{usr_input} 没有战斗可以进行！！！！")
-    #         return
-
-    #     if not terminal_game.current_engagement.is_kickoff_phase:
-    #         logger.error(f"{usr_input} 只能在战斗前is_kickoff_phase使用")
-    #         return
-
-    #     # 执行一次！！！！！
-    #     await _execute_terminal_game(terminal_game, usr_input)
-
-    # if usr_input == "/dcmp" or usr_input == "/dungeon_combat_complete":
-
-    #     if len(terminal_game.current_engagement.combats) == 0:
-    #         logger.error(f"{usr_input} 没有战斗可以进行！！！！")
-    #         return
-
-    #     if not terminal_game.current_engagement.is_complete_phase:
-    #         logger.error(f"{usr_input} 只能在战斗后is_complete_phase使用")
-    #         return
-
-    #     # 执行一次！！！！！
-    #     await _execute_terminal_game(terminal_game, usr_input)
-
     if usr_input == "/dc" or usr_input == "/draw-cards":
 
         if not terminal_game.current_engagement.is_on_going_phase:
@@ -199,7 +172,7 @@ async def _process_dungeon_state_input(
 
         logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
         terminal_game.activate_draw_cards_action()
-        # await _execute_terminal_game(terminal_game)
+
         await terminal_game.dungeon_combat_pipeline.process()
 
     elif usr_input == "/pc" or usr_input == "/play-card":
@@ -210,8 +183,6 @@ async def _process_dungeon_state_input(
 
         logger.debug(f"玩家输入 = {usr_input}, 准备行动......")
         if terminal_game.execute_play_card():
-            # 执行一次！！！！！
-            # await _execute_terminal_game(terminal_game)
             await terminal_game.dungeon_combat_pipeline.process()
 
     elif usr_input == "/rth" or usr_input == "/return-to-home":
@@ -258,8 +229,6 @@ async def _process_home_state_input(
     """处理家园状态下的玩家输入"""
 
     if usr_input == "/ad" or usr_input == "/advancing":
-        # 执行一次。
-        # await _execute_terminal_game(terminal_game)
         await terminal_game.home_state_pipeline.process()
 
     elif usr_input == "/ld" or usr_input == "/launch-dungeon":
@@ -297,11 +266,9 @@ async def _process_home_state_input(
         ):
 
             # player 执行一次, 这次基本是忽略推理标记的，所有NPC不推理。
-            # await _execute_terminal_game(terminal_game)
             await terminal_game.home_state_pipeline.process()
 
             # 其他人执行一次。对应的NPC进行推理。
-            # await _execute_terminal_game(terminal_game)
             await terminal_game.home_state_pipeline.process()
 
     else:

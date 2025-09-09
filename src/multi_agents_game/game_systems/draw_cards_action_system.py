@@ -29,19 +29,13 @@ class SkillGeneration(BaseModel):
 
 #######################################################################################################################################
 @final
-class CombatStatusUpdate(BaseModel):
+class DrawCardsResponse(BaseModel):
+    combat_skills: List[SkillGeneration] = Field(..., description="生成的战斗技能列表")
     update_hp: Optional[float] = Field(None, description="更新的生命值")
     status_effects: List[StatusEffect] = Field(
         ...,
         description="你自身的状态效果列表，注意！场景与角色，已发生事件均可能对你产生影响！",
     )
-
-
-#######################################################################################################################################
-@final
-class DrawCardsResponse(BaseModel):
-    combat_skills: List[SkillGeneration] = Field(..., description="生成的战斗技能列表")
-    combat_status: CombatStatusUpdate = Field(..., description="战斗状态更新")
 
 
 #######################################################################################################################################
@@ -65,16 +59,14 @@ def _generate_prompt1(
                 dialogue="[角色使用技能时的台词]",
             ),
         ],
-        combat_status=CombatStatusUpdate(
-            update_hp=None,
-            status_effects=[
-                StatusEffect(
-                    name="[新增状态效果名称]",
-                    description="[新增状态效果的具体描述和影响]",
-                    rounds=1,
-                ),
-            ],
-        ),
+        update_hp=None,
+        status_effects=[
+            StatusEffect(
+                name="[新增状态效果名称]",
+                description="[新增状态效果的具体描述和影响]",
+                rounds=1,
+            ),
+        ],
     )
 
     return f"""# 指令！请你更新状态，并生成 {skill_creation_count} 个技能。
@@ -106,8 +98,7 @@ def _generate_prompt1(
 
 ### 注意
 - 禁用换行/空行
-- 直接输出合规JSON
-- 方括号内容为字段说明，需要替换为实际内容，不要照抄示例"""
+- 请严格按照示例格式输出合规JSON"""
 
 
 #######################################################################################################################################
@@ -131,16 +122,14 @@ def _generate_prompt2(
                 dialogue="[角色使用技能时的台词]",
             ),
         ],
-        combat_status=CombatStatusUpdate(
-            update_hp=85.0,
-            status_effects=[
-                StatusEffect(
-                    name="[新增状态效果名称]",
-                    description="[新增状态效果的具体描述和影响]",
-                    rounds=1,
-                ),
-            ],
-        ),
+        update_hp=85.0,
+        status_effects=[
+            StatusEffect(
+                name="[新增状态效果名称]",
+                description="[新增状态效果的具体描述和影响]",
+                rounds=1,
+            ),
+        ],
     )
 
     return f"""# 指令！请你更新自身状态，并生成 {skill_creation_count} 个技能。
@@ -168,12 +157,11 @@ def _generate_prompt2(
 - 使用有趣、意想不到的风格描述效果产生的原因
 
 ## 输出格式(JSON)示意：
-{response_sample.model_dump_json()}
+{response_sample.model_dump_json(exclude_none=True)}
 
 ### 注意
 - 禁用换行/空行
-- 直接输出合规JSON
-- 方括号内容为字段说明，需要替换为实际内容，不要照抄示例"""
+- 请严格按照示例格式输出合规JSON"""
 
 
 #######################################################################################################################################
@@ -221,7 +209,12 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
                 last_round.round_turns,
             )
         else:
+
             logger.debug(f"不是第一局，继续当前数据！")
+
+            # 注意！因为是第二局及以后，所以状态效果需要结算
+            self._process_status_effects_settlement(entities)
+
             # 处理角色规划请求
             prompt = _generate_prompt2(
                 self._skill_creation_count,
@@ -306,13 +299,11 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
             if need_update_health:
                 self._update_combat_health(
                     entity2,
-                    validated_response.combat_status.update_hp,
+                    validated_response.update_hp,
                 )
 
             # 更新状态效果。
-            self._append_status_effects(
-                entity2, validated_response.combat_status.status_effects
-            )
+            self._append_status_effects(entity2, validated_response.status_effects)
 
         except Exception as e:
             logger.error(f"Exception: {e}")
@@ -361,5 +352,76 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
         logger.info(
             f"update_combat_status_effects: {entity._name} => {'\n'.join([e.model_dump_json() for e in character_profile_component.status_effects])}"
         )
+
+    ###############################################################################################################################################
+    def _settle_status_effects(
+        self, entity: Entity
+    ) -> tuple[List[StatusEffect], List[StatusEffect]]:
+        """
+        结算一次status_effect。
+        所有的status_effect全部round - 1，如果round == 0则删除。
+
+        Args:
+            entity: 需要结算状态效果的实体
+
+        Returns:
+            tuple: (剩余的状态效果列表, 被移除的状态效果列表)
+        """
+        # 确保实体有RPGCharacterProfileComponent
+        assert entity.has(RPGCharacterProfileComponent)
+        character_profile_component = entity.get(RPGCharacterProfileComponent)
+        assert character_profile_component is not None
+
+        remaining_effects = []
+        removed_effects = []
+
+        for status_effect in character_profile_component.status_effects:
+            # 效果回合数扣除
+            status_effect.rounds -= 1
+            status_effect.rounds = max(0, status_effect.rounds)
+
+            # status_effect持续回合数大于0，继续保留，否则移除
+            if status_effect.rounds > 0:
+                remaining_effects.append(status_effect)
+            else:
+                # 添加到移除列表
+                removed_effects.append(status_effect)
+
+        # 更新角色的状态效果列表，只保留剩余的效果
+        character_profile_component.status_effects = remaining_effects
+
+        logger.info(
+            f"settle_status_effects: {entity._name} => "
+            f"remaining: {len(remaining_effects)}, removed: {len(removed_effects)}"
+        )
+
+        # 外部返回
+        return remaining_effects, removed_effects
+
+    ###############################################################################################################################################
+    def _process_status_effects_settlement(self, entities: List[Entity]) -> None:
+        """
+        处理状态效果结算。
+        为每个实体结算状态效果，并发送更新消息给角色。
+
+        Args:
+            entities: 需要结算状态效果的实体列表
+        """
+        for entity in entities:
+            remaining_effects, removed_effects = self._settle_status_effects(entity)
+            logger.debug(
+                f"settle_status_effects: {entity._name} => "
+                f"remaining: {len(remaining_effects)}, removed: {len(removed_effects)}"
+            )
+
+            status_effects_update_msg = f"""# 提示！你的状态效果已更新：
+
+## 移除的状态效果
+{'\n'.join([f'- {e.name}: {e.description}' for e in removed_effects]) if len(removed_effects) > 0 else '无'}
+
+## 剩余的状态效果
+{'\n'.join([f'- {e.name} (剩余回合: {e.rounds}): {e.description}' for e in remaining_effects]) if len(remaining_effects) > 0 else '无'}"""
+
+            self._game.append_human_message(entity, status_effects_update_msg)
 
     #######################################################################################################################################

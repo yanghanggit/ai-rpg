@@ -154,7 +154,7 @@ class TCGGameProcessPipeline(Processors):
         self._name: str = name
 
     ###################################################################################################################################################################
-    async def execute(self) -> None:
+    async def process(self) -> None:
         # 顺序不要动
         logger.debug(
             f"================= {self._name} process pipeline start ================="

@@ -266,12 +266,20 @@ class ArbitrationActionSystem(BaseActionReactiveSystem):
                 format_response.performance,
             )
 
+            message_content = f"""# 发生事件！战斗回合: 
+
+## 演出过程
+{format_response.performance}
+     
+## 计算过程
+{format_response.calculation}"""
+
             # 广播事件
             last_round = self._game.current_engagement.last_round
             self._game.broadcast_event(
                 entity=stage_entity,
                 agent_event=AgentEvent(
-                    message=f"# 发生事件！战斗回合:{format_response.calculation}\n{format_response.performance}",
+                    message=message_content,
                 ),
             )
             # 记录

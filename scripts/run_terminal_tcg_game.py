@@ -200,7 +200,7 @@ async def _process_dungeon_state_input(
         logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
         terminal_game.activate_draw_cards_action()
         # await _execute_terminal_game(terminal_game)
-        await terminal_game.dungeon_combat_pipeline.execute()
+        await terminal_game.dungeon_combat_pipeline.process()
 
     elif usr_input == "/pc" or usr_input == "/play-card":
 
@@ -212,19 +212,7 @@ async def _process_dungeon_state_input(
         if terminal_game.execute_play_card():
             # 执行一次！！！！！
             # await _execute_terminal_game(terminal_game)
-            await terminal_game.dungeon_combat_pipeline.execute()
-
-    # elif usr_input == "/m" or usr_input == "/monitor":
-
-    #     if not terminal_game.current_engagement.is_on_going_phase:
-    #         logger.error(f"{usr_input} 只能在战斗on_going_phase中使用")
-    #         return
-
-    #     logger.debug(f"玩家输入 = {usr_input}, 准备监控")
-    #     monitor_utils = CombatMonitorSystem(
-    #         terminal_game,
-    #     )
-    #     await monitor_utils.execute()
+            await terminal_game.dungeon_combat_pipeline.process()
 
     elif usr_input == "/rth" or usr_input == "/return-to-home":
 
@@ -272,7 +260,7 @@ async def _process_home_state_input(
     if usr_input == "/ad" or usr_input == "/advancing":
         # 执行一次。
         # await _execute_terminal_game(terminal_game)
-        await terminal_game.home_state_pipeline.execute()
+        await terminal_game.home_state_pipeline.process()
 
     elif usr_input == "/ld" or usr_input == "/launch-dungeon":
 
@@ -295,7 +283,7 @@ async def _process_home_state_input(
             return
 
         # await _execute_terminal_game(terminal_game)
-        await terminal_game.home_state_pipeline.execute()
+        await terminal_game.dungeon_combat_pipeline.process()
 
     elif "/speak" in usr_input or "/ss" in usr_input:
 
@@ -310,19 +298,11 @@ async def _process_home_state_input(
 
             # player 执行一次, 这次基本是忽略推理标记的，所有NPC不推理。
             # await _execute_terminal_game(terminal_game)
-            await terminal_game.home_state_pipeline.execute()
+            await terminal_game.home_state_pipeline.process()
 
             # 其他人执行一次。对应的NPC进行推理。
             # await _execute_terminal_game(terminal_game)
-            await terminal_game.home_state_pipeline.execute()
-
-    # elif usr_input == "/images":
-
-    #     logger.debug(f"玩家输入 = {usr_input}, 准备生成图片")
-    #     image_system = ImagesSystem(
-    #         terminal_game,
-    #     )
-    #     await image_system.execute()
+            await terminal_game.home_state_pipeline.process()
 
     else:
         logger.error(

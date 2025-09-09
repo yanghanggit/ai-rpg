@@ -1141,14 +1141,7 @@ class TCGGame(BaseGame, TCGGameContext):
         return None
 
     #######################################################################################################################################
-    # def clear_hands(self) -> None:
-    #     actor_entities = self.get_group(Matcher(HandComponent)).entities.copy()
-    #     for entity in actor_entities:
-    #         logger.debug(f"clear hands: {entity._name}")
-    #         entity.remove(HandComponent)
-
-    #######################################################################################################################################
-    def setup_round(self) -> bool:
+    def new_round(self) -> bool:
 
         if not self.current_engagement.is_on_going_phase:
             logger.warning("当前没有进行中的战斗，不能设置回合。")
@@ -1180,7 +1173,7 @@ class TCGGame(BaseGame, TCGGameContext):
         )
 
         round.environment = stage_environment_comp.narrate
-        logger.info(f"CombatRoundSystem: _setup_round: {round.model_dump_json()}")
+        logger.info(f"new_round:\n{round.model_dump_json()}")
         return True
 
     #######################################################################################################################################

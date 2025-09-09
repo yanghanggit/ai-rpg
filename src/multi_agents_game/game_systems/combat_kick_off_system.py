@@ -58,7 +58,6 @@ class CombatKickOffSystem(ExecuteProcessor):
 
             # 生成提示词, 就是添加上下文，标记战斗初始化。
             gen_prompt = f"""# 发生事件！战斗触发！这是本次战斗你的初始化信息。
-            
 ## 场景信息
 {current_stage_entity._name} ｜ {current_stage_narrate}
 
@@ -84,7 +83,7 @@ class CombatKickOffSystem(ExecuteProcessor):
             f"{current_stage_entity._name}, 战斗触发阶段完成，进入战斗进行阶段。"
         )
 
-        if not self._game.setup_round():
+        if not self._game.new_round():
             logger.error(f"not web_game.setup_round()")
 
 

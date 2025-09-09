@@ -1,5 +1,5 @@
 import copy
-from typing import Final, List, final, override
+from typing import Final, List, Optional, final, override
 from loguru import logger
 from pydantic import BaseModel, Field
 from ..chat_services.client import ChatClient
@@ -30,8 +30,7 @@ class SkillGeneration(BaseModel):
 #######################################################################################################################################
 @final
 class CombatStatusUpdate(BaseModel):
-    update_hp: float = Field(..., description="更新的生命值")
-    update_max_hp: float = Field(..., description="更新的最大生命值")
+    update_hp: Optional[float] = Field(None, description="更新的生命值")
     status_effects: List[StatusEffect] = Field(
         ...,
         description="你自身的状态效果列表，注意！场景与角色，已发生事件均可能对你产生影响！",
@@ -46,7 +45,70 @@ class DrawCardsResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _generate_prompt(
+def _generate_prompt1(
+    skill_creation_count: int,
+    round_turns: List[str],
+) -> str:
+    assert skill_creation_count > 0
+
+    # 生成示例
+    response_sample = DrawCardsResponse(
+        combat_skills=[
+            SkillGeneration(
+                skill=Skill(
+                    name="炽热斩击",
+                    description="挥舞燃烧的利刃对敌人造成火焰伤害",
+                    effect="对目标造成120点火焰伤害，附加灼烧效果2回合。因为过度燃烧体力，使用者下回合物理攻击力减少30%",
+                ),
+                target="敌方角色的全名",
+                reason="敌人防御较弱，使用火焰攻击可以造成更大伤害",
+                dialogue="感受烈火的力量吧！炽热斩击！",
+            ),
+        ],
+        combat_status=CombatStatusUpdate(
+            update_hp=None,
+            status_effects=[
+                StatusEffect(
+                    name="战斗专注",
+                    description="进入战斗状态，注意力高度集中",
+                    rounds=3,
+                ),
+            ],
+        ),
+    )
+
+    return f"""# 指令！请你更新状态，并生成 {skill_creation_count} 个技能。
+
+## (场景内角色) 行动顺序(从左到右)
+{round_turns}
+
+## 技能生成规则
+1. 技能效果中必须有一个对角色自身的限制效果：  
+       限制效果示例（特殊状态）：
+       - 眩晕：下回合无法行动  
+       - 沉默：下回合无法使用法术类技能  
+       - 力竭：体力透支，下一回合无法防御  
+       - 反噬：下回合技能释放时自己也受到部分伤害或异常状态  
+       - 虚弱：下回合受到的伤害增加  
+       - 致盲：下回合命中率降低
+       - 缴械：下回合无法攻击
+   - 技能本身的威力/数值越大，限制效果越严重，持续时间越长。  
+2. 技能生成格式统一为：技能描述 → 技能效果 = 技能本身效果 + 限制效果（格式：因为什么产生了什么效果。使用有趣，意想不到的风格来描述。）。
+3. 技能生成必须按照角色的战斗循环顺序进行生成。
+
+## 输出内容
+- 注意，如生成技能提到了属性(生命/物理攻击/物理防御/魔法攻击/魔法防御)，请在技能描述与影响里明确说明改变的数值。
+
+## 输出格式(JSON)示意：
+{response_sample.model_dump_json(exclude_none=True)}
+
+### 注意
+- 禁用换行/空行。
+- 直接输出合规JSON。"""
+
+
+#######################################################################################################################################
+def _generate_prompt2(
     skill_creation_count: int,
     round_turns: List[str],
 ) -> str:
@@ -78,7 +140,6 @@ def _generate_prompt(
         ],
         combat_status=CombatStatusUpdate(
             update_hp=85.0,
-            update_max_hp=100.0,
             status_effects=[
                 StatusEffect(
                     name="战斗专注",
@@ -94,6 +155,9 @@ def _generate_prompt(
 
     return f"""# 指令！请你更新自身状态，并生成 {skill_creation_count} 个技能。
 
+## (场景内角色) 行动顺序(从左到右)
+{round_turns}
+
 ## 技能生成规则
 1. 技能效果中必须有一个对角色自身的限制效果：  
        限制效果示例（特殊状态）：
@@ -107,9 +171,6 @@ def _generate_prompt(
    - 技能本身的威力/数值越大，限制效果越严重，持续时间越长。  
 2. 技能生成格式统一为：技能描述 → 技能效果 = 技能本身效果 + 限制效果（格式：因为什么产生了什么效果。使用有趣，意想不到的风格来描述。）。
 3. 技能生成必须按照角色的战斗循环顺序进行生成。
-
-## (场景内角色) 行动顺序(从左到右)
-{round_turns}
 
 ## 输出内容
 - 注意，如生成技能提到了属性(生命/物理攻击/物理防御/魔法攻击/魔法防御)，请在技能描述与影响里明确说明改变的数值。
@@ -151,11 +212,34 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
             logger.error(f"not web_game.current_engagement.is_on_going_phase")
             return
 
+        last_round = self._game.current_engagement.last_round
+        if last_round.has_ended:
+            logger.error(f"last_round.has_ended, so setup new round")
+            self._game.new_round()
+
+        assert (
+            len(self._game.current_engagement.rounds) > 0
+        ), "当前没有进行中的战斗，不能设置回合。"
+        if len(self._game.current_engagement.rounds) == 1:
+            logger.debug(f"是第一局，一些数据已经被初始化了！")
+            # 处理角色规划请求
+            prompt = _generate_prompt1(
+                self._skill_creation_count,
+                last_round.round_turns,
+            )
+        else:
+            logger.debug(f"不是第一局，继续当前数据！")
+            # 处理角色规划请求
+            prompt = _generate_prompt2(
+                self._skill_creation_count,
+                last_round.round_turns,
+            )
+
         # 先清除
         self._clear_hands()
 
-        # 处理角色规划请求
-        request_handlers: List[ChatClient] = self._generate_requests(entities)
+        # 生成请求
+        request_handlers: List[ChatClient] = self._generate_requests(entities, prompt)
 
         # 语言服务
         await self._game.chat_system.gather(request_handlers=request_handlers)
@@ -164,9 +248,9 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
         for request_handler in request_handlers:
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
-            self._handle_response(entity2, request_handler)
-
-        self._test()
+            self._handle_response(
+                entity2, request_handler, len(self._game.current_engagement.rounds) > 1
+            )
 
     #######################################################################################################################################
     def _clear_hands(self) -> None:
@@ -176,7 +260,9 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
             entity.remove(HandComponent)
 
     #######################################################################################################################################
-    def _handle_response(self, entity2: Entity, request_handler: ChatClient) -> None:
+    def _handle_response(
+        self, entity2: Entity, request_handler: ChatClient, need_update_health: bool
+    ) -> None:
 
         try:
 
@@ -224,11 +310,11 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
             )
 
             # 更新健康属性。
-            self._update_combat_health(
-                entity2,
-                validated_response.combat_status.update_hp,
-                validated_response.combat_status.update_max_hp,
-            )
+            if need_update_health:
+                self._update_combat_health(
+                    entity2,
+                    validated_response.combat_status.update_hp,
+                )
 
             # 更新状态效果。
             self._append_status_effects(
@@ -239,29 +325,17 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
             logger.error(f"Exception: {e}")
 
     #######################################################################################################################################
-    def _generate_requests(self, actor_entities: List[Entity]) -> List[ChatClient]:
-
+    def _generate_requests(
+        self, actor_entities: List[Entity], prompt: str
+    ) -> List[ChatClient]:
         request_handlers: List[ChatClient] = []
-
-        last_round = self._game.current_engagement.last_round
 
         for entity in actor_entities:
 
-            #
-            current_stage = self._game.safe_get_stage_entity(entity)
-            assert current_stage is not None
-
-            # 生成消息
-            message = _generate_prompt(
-                self._skill_creation_count,
-                last_round.round_turns,
-            )
-
-            # 生成请求处理器
             request_handlers.append(
                 ChatClient(
                     agent_name=entity._name,
-                    prompt=message,
+                    prompt=prompt,
                     chat_history=self._game.get_agent_short_term_memory(
                         entity
                     ).chat_history,
@@ -271,16 +345,16 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
         return request_handlers
 
     #######################################################################################################################################
-    def _update_combat_health(
-        self,
-        entity: Entity,
-        update_hp: float,
-        update_max_hp: float,
-    ) -> None:
+    def _update_combat_health(self, entity: Entity, update_hp: Optional[float]) -> None:
 
         character_profile_component = entity.get(RPGCharacterProfileComponent)
         assert character_profile_component is not None
-        character_profile_component.rpg_character_profile.hp = int(update_hp)
+
+        if update_hp is not None:
+            character_profile_component.rpg_character_profile.hp = int(update_hp)
+            logger.debug(
+                f"update_combat_health: {entity._name} => hp: {character_profile_component.rpg_character_profile.hp}"
+            )
 
     ###############################################################################################################################################
     def _append_status_effects(
@@ -291,30 +365,8 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
         assert entity.has(RPGCharacterProfileComponent)
         character_profile_component = entity.get(RPGCharacterProfileComponent)
         character_profile_component.status_effects.extend(copy.copy(status_effects))
-
-        logger.debug(f"update_combat_status_effects: {entity._name} => ")
-        for e in character_profile_component.status_effects:
-            logger.debug(f"status_effects: {e.model_dump_json()}")
-
-    #######################################################################################################################################
-    def _test(self) -> None:
-
-        # 测试
-        actor_entities1 = self._game.get_group(Matcher(HandComponent)).entities.copy()
-        for entity in actor_entities1:
-            hand_comp = entity.get(HandComponent)
-            assert hand_comp is not None
-            logger.debug(f"{entity._name} hands: {hand_comp.model_dump_json()}")
-
-        # 测试
-        actor_entities2 = self._game.get_group(
-            Matcher(RPGCharacterProfileComponent)
-        ).entities.copy()
-        for entity2 in actor_entities2:
-            rpg_character_profile_comp = entity2.get(RPGCharacterProfileComponent)
-            assert rpg_character_profile_comp is not None
-            logger.debug(
-                f"{entity2._name} rpg_character_profile: {rpg_character_profile_comp.model_dump_json()}"
-            )
+        logger.info(
+            f"update_combat_status_effects: {entity._name} => {'\n'.join([e.model_dump_json() for e in character_profile_component.status_effects])}"
+        )
 
     #######################################################################################################################################

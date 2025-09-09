@@ -267,7 +267,6 @@ class ArbitrationActionSystem(BaseActionReactiveSystem):
             )
 
             message_content = f"""# 发生事件！战斗回合:
-            
 ## 演出过程
 {format_response.performance}
 

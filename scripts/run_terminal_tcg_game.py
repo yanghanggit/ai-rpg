@@ -351,17 +351,6 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
             f"玩家输入 = {usr_input}, 目前不做任何处理，不在处理范围内！！！！！"
         )
 
-
-###############################################################################################################################################
-# async def _execute_terminal_game(terminal_game: TerminalTCGGame) -> None:
-
-#     # assert terminal_game.player.name != ""
-#     # logger.debug(f"玩家输入: {terminal_game.player.name} = {usr_input}")
-
-#     # 执行一次！！！！！
-#     await terminal_game.run()
-
-
 ###############################################################################################################################################
 if __name__ == "__main__":
 

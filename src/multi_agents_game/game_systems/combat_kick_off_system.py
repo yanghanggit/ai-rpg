@@ -58,12 +58,16 @@ class CombatKickOffSystem(ExecuteProcessor):
 
             # 生成提示词, 就是添加上下文，标记战斗初始化。
             gen_prompt = f"""# 发生事件！战斗触发！这是本次战斗你的初始化信息。
+            
 ## 场景信息
 {current_stage_entity._name} ｜ {current_stage_narrate}
+
 ## （场景内）角色信息
 {str(copy_actors_apperances_mapping)}
+
 ## 你的属性 (仅在战斗中使用)
 {rpg_character_profile_component.attrs_prompt}
+
 ## 你的状态 (仅在战斗中使用)
 {rpg_character_profile_component.status_effects_prompt}。"""
 

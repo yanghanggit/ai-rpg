@@ -69,7 +69,7 @@ class PlayCardsActionSystem(BaseActionReactiveSystem):
             assert play_cards_action is not None
             assert play_cards_action.skill.name != ""
 
-            message = f""" # 发生事件！你开始行动!   
+            message = f""" # 发生事件！你开始行动
 使用技能 = {play_cards_action.skill.name}
 目标 = {play_cards_action.target}
 原因 = {play_cards_action.reason}

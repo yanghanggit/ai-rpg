@@ -1,5 +1,4 @@
 from typing import cast
-
 from loguru import logger
 from ..entitas import Processors
 from ..game.base_game import BaseGame
@@ -13,12 +12,7 @@ class TCGGameProcessPipeline(Processors):
         ### 不这样就循环引用
         from ..game.tcg_game import TCGGame
         from ..game_systems.announce_action_system import AnnounceActionSystem
-
-        ## 添加一些系统。。。
-        # from ..game_systems.begin_system import BeginSystem
         from ..game_systems.destroy_entity_system import DestroyEntitySystem
-
-        # from ..game_systems.end_system import EndSystem
         from ..game_systems.home_actor_system import (
             HomeActorSystem,
         )
@@ -32,8 +26,6 @@ class TCGGameProcessPipeline(Processors):
             MindVoiceActionSystem,
         )
         from ..game_systems.action_cleanup_system import ActionCleanupSystem
-
-        # from ..game_systems.pre_action_system import PreActionSystem
         from ..game_systems.save_system import SaveSystem
         from ..game_systems.speak_action_system import SpeakActionSystem
         from ..game_systems.whisper_action_system import WhisperActionSystem
@@ -41,8 +33,6 @@ class TCGGameProcessPipeline(Processors):
         ##
         tcg_game = cast(TCGGame, game)
         processors = TCGGameProcessPipeline("Home State Pipeline")
-
-        # processors.add(BeginSystem(tcg_game))
 
         # 启动agent的提示词。启动阶段
         processors.add(KickOffSystem(tcg_game))
@@ -57,7 +47,6 @@ class TCGGameProcessPipeline(Processors):
 
         # 动作处理相关的系统 ##################################################################
         ####################################################################################
-        # processors.add(PreActionSystem(tcg_game))
         processors.add(MindVoiceActionSystem(tcg_game))
         processors.add(SpeakActionSystem(tcg_game))
         processors.add(WhisperActionSystem(tcg_game))
@@ -72,9 +61,6 @@ class TCGGameProcessPipeline(Processors):
         # 存储系统。
         processors.add(SaveSystem(tcg_game))
 
-        # 结束
-        # processors.add(EndSystem(tcg_game))
-
         return processors
 
     ###################################################################################################################################################################
@@ -86,9 +72,6 @@ class TCGGameProcessPipeline(Processors):
 
         ### 不这样就循环引用
         from ..game.tcg_game import TCGGame
-
-        ## 添加一些系统。。。
-        # from ..game_systems.begin_system import BeginSystem
         from ..game_systems.combat_death_system import CombatDeathSystem
         from ..game_systems.combat_kick_off_system import (
             CombatKickOffSystem,
@@ -103,12 +86,8 @@ class TCGGameProcessPipeline(Processors):
         from ..game_systems.combat_complete_system import (
             CombatCompleteSystem,
         )
-
-        # from ..game_systems.end_system import EndSystem
         from ..game_systems.kick_off_system import KickOffSystem
         from ..game_systems.action_cleanup_system import ActionCleanupSystem
-
-        # from ..game_systems.pre_action_system import PreActionSystem
         from ..game_systems.save_system import SaveSystem
         from ..game_systems.arbitration_action_system import ArbitrationActionSystem
 
@@ -116,16 +95,12 @@ class TCGGameProcessPipeline(Processors):
         tcg_game = cast(TCGGame, game)
         processors = TCGGameProcessPipeline("Dungeon Combat State Pipeline")
 
-        # 标记开始。
-        # processors.add(BeginSystem(tcg_game))
-
         # 启动agent的提示词。启动阶段
         processors.add(KickOffSystem(tcg_game))
         processors.add(CombatKickOffSystem(tcg_game))
 
         # 抽卡。
         ######动作开始！！！！！################################################################################################
-        # processors.add(PreActionSystem(tcg_game))
         processors.add(DrawCardsActionSystem(tcg_game))
         processors.add(PlayCardsActionSystem(tcg_game))
         processors.add(ArbitrationActionSystem(tcg_game))
@@ -141,9 +116,6 @@ class TCGGameProcessPipeline(Processors):
 
         # 核心系统，存储系统。
         processors.add(SaveSystem(tcg_game))
-
-        # 结束
-        # processors.add(EndSystem(tcg_game))
 
         return processors
 

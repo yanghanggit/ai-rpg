@@ -17,6 +17,7 @@ from multi_agents_game.game.game_config import GLOBAL_GAME_NAME, setup_logger
 from multi_agents_game.demo import (
     create_actor_warrior,
     create_demo_dungeon1,
+    create_demo_dungeon4,
 )
 from multi_agents_game.game.game_options import TerminalGameUserOptions
 from multi_agents_game.game.player_client import PlayerClient
@@ -94,7 +95,7 @@ async def _run_game(
         world_exists = World(boot=world_boot)
 
         # 运行时生成地下城系统
-        world_exists.dungeon = create_demo_dungeon1()
+        world_exists.dungeon = create_demo_dungeon4()
 
     else:
         logger.info(
@@ -210,6 +211,7 @@ async def _process_dungeon_state_input(
                         f"玩家输入 = {usr_input}, 进入下一关 = {next_level.name}"
                     )
                     terminal_game.advance_next_dungeon()
+                    await terminal_game.dungeon_combat_pipeline.process()
             elif (
                 terminal_game.current_engagement.combat_result == CombatResult.HERO_LOSE
             ):

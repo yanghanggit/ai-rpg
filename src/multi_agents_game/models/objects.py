@@ -1,8 +1,6 @@
 from enum import StrEnum, unique
 from typing import List, final
-
 from pydantic import BaseModel
-
 from .character_sheet import ActorCharacterSheet, StageCharacterSheet
 
 
@@ -26,7 +24,6 @@ class StageType(StrEnum):
 
 ###############################################################################################################################################
 @final
-# @register_base_model_class
 class RPGCharacterProfile(BaseModel):
     experience: int = 0
     fixed_level: int = 1
@@ -132,7 +129,6 @@ def generate_character_profile_string(
 
 ###############################################################################################################################################
 @final
-# @register_base_model_class
 class Actor(BaseModel):
     name: str
     character_sheet: ActorCharacterSheet
@@ -143,7 +139,6 @@ class Actor(BaseModel):
 
 ###############################################################################################################################################
 @final
-# @register_base_model_class
 class Stage(BaseModel):
     name: str
     character_sheet: StageCharacterSheet
@@ -154,7 +149,6 @@ class Stage(BaseModel):
 
 ###############################################################################################################################################
 @final
-# @register_base_model_class
 class WorldSystem(BaseModel):
     name: str
     system_message: str

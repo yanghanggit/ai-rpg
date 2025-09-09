@@ -1,12 +1,8 @@
 from enum import IntEnum, unique
 from typing import List, Optional, final
-
 from loguru import logger
 from pydantic import BaseModel, Field
-
 from .objects import Actor, Stage
-
-# from .registry import register_base_model_class
 
 
 ###############################################################################################################################################
@@ -57,10 +53,8 @@ class Round(BaseModel):
     tag: str
     round_turns: List[str]
     environment: str = ""
-    # select_report: Dict[str, str] = {}
     calculation: str = ""
     performance: str = ""
-    # feedback_report: Dict[str, str] = {}
 
     @property
     def has_ended(self) -> bool:
@@ -68,7 +62,6 @@ class Round(BaseModel):
             len(self.round_turns) > 0
             and self.calculation != ""
             and self.performance != ""
-            # and len(self.feedback_report) > 0
         )
 
 
@@ -80,14 +73,12 @@ class Combat(BaseModel):
     phase: CombatPhase = CombatPhase.NONE
     result: CombatResult = CombatResult.NONE
     rounds: List[Round] = []
-    # summarize_report: Dict[str, str] = {}
 
 
 ###############################################################################################################################################
 
 
 @final
-# @register_base_model_class
 class Engagement(BaseModel):
     combats: List[Combat] = []
 
@@ -206,7 +197,6 @@ class Engagement(BaseModel):
 ###############################################################################################################################################
 # TODO, 临时的，先管理下。
 @final
-# @register_base_model_class
 class Dungeon(BaseModel):
     name: str
     levels: List[Stage] = []

@@ -1,9 +1,6 @@
 from enum import IntEnum, unique
-
 from overrides import final
 from pydantic import BaseModel
-
-# from .registry import register_base_model_class
 
 
 @final
@@ -18,7 +15,6 @@ class AgentEventHead(IntEnum):
     COMBAT_COMPLETE_EVENT = 6
 
 
-# @register_base_model_class
 class AgentEvent(BaseModel):
     head: int = AgentEventHead.NONE
     message: str
@@ -27,7 +23,6 @@ class AgentEvent(BaseModel):
 ####################################################################################################################################
 # 说话事件
 @final
-# @register_base_model_class
 class SpeakEvent(AgentEvent):
     head: int = AgentEventHead.SPEAK_EVENT
     speaker: str
@@ -38,7 +33,6 @@ class SpeakEvent(AgentEvent):
 ####################################################################################################################################
 # 耳语事件
 @final
-# @register_base_model_class
 class WhisperEvent(AgentEvent):
     head: int = AgentEventHead.WHISPER_EVENT
     speaker: str
@@ -49,7 +43,6 @@ class WhisperEvent(AgentEvent):
 ####################################################################################################################################
 # 宣布事件
 @final
-# @register_base_model_class
 class AnnounceEvent(AgentEvent):
     head: int = AgentEventHead.ANNOUNCE_EVENT
     announcement_speaker: str
@@ -60,7 +53,6 @@ class AnnounceEvent(AgentEvent):
 ####################################################################################################################################
 # 心灵语音事件
 @final
-# @register_base_model_class
 class MindVoiceEvent(AgentEvent):
     head: int = AgentEventHead.MIND_VOICE_EVENT
     speaker: str
@@ -71,7 +63,6 @@ class MindVoiceEvent(AgentEvent):
 
 
 @final
-# @register_base_model_class
 class CombatKickOffEvent(AgentEvent):
     head: int = AgentEventHead.COMBAT_KICK_OFF_EVENT
     actor: str
@@ -82,7 +73,6 @@ class CombatKickOffEvent(AgentEvent):
 
 
 @final
-# @register_base_model_class
 class CombatCompleteEvent(AgentEvent):
     head: int = AgentEventHead.COMBAT_COMPLETE_EVENT
     actor: str

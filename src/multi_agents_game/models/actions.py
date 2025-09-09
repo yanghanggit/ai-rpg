@@ -1,5 +1,4 @@
 from typing import Dict, final
-
 from ..entitas.components import Component
 from .dungeon import Skill
 from .registry import register_action_class, register_component_class
@@ -46,21 +45,6 @@ class MindVoiceAction(Component):
 
 
 ############################################################################################################
-# @final
-# @register_component_class
-# @register_action_class
-# class TurnAction(Component):
-#     name: str
-#     rounds: int
-#     round_turns: List[str]
-#     skill: str
-
-#     @property
-#     def turn(self) -> int:
-#         return self.round_turns.index(self.name)
-
-
-############################################################################################################
 @final
 @register_component_class
 @register_action_class
@@ -88,20 +72,6 @@ class ArbitrationAction(Component):
     name: str
     calculation: str
     performance: str
-
-
-############################################################################################################
-# @final
-# @register_component_class
-# @register_action_class
-# class FeedbackAction(Component):
-#     name: str
-#     calculation: str
-#     performance: str
-#     # description: str
-#     update_hp: int
-#     update_max_hp: int
-#     effects: List[StatusEffect]
 
 
 ############################################################################################################

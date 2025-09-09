@@ -363,6 +363,12 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
             f"update_combat_status_effects: {entity._name} => {'\n'.join([e.model_dump_json() for e in character_profile_component.status_effects])}"
         )
 
+        updated_status_effects_message = f"""# 提示！你的状态效果已更新
+## 当前状态效果
+{'\n'.join([f'- {e.name} (剩余回合: {e.rounds}): {e.description}' for e in character_profile_component.status_effects]) if len(character_profile_component.status_effects) > 0 else '无'}"""
+
+        self._game.append_human_message(entity, updated_status_effects_message)
+
     ###############################################################################################################################################
     def _settle_status_effects(
         self, entity: Entity
@@ -424,14 +430,10 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
                 f"remaining: {len(remaining_effects)}, removed: {len(removed_effects)}"
             )
 
-            status_effects_update_msg = f"""# 提示！你的状态效果已更新：
-
+            updated_status_effects_message = f"""# 提示！你的状态效果已更新：
 ## 移除的状态效果
-{'\n'.join([f'- {e.name}: {e.description}' for e in removed_effects]) if len(removed_effects) > 0 else '无'}
+{'\n'.join([f'- {e.name}: {e.description}' for e in removed_effects]) if len(removed_effects) > 0 else '无'}"""
 
-## 剩余的状态效果
-{'\n'.join([f'- {e.name} (剩余回合: {e.rounds}): {e.description}' for e in remaining_effects]) if len(remaining_effects) > 0 else '无'}"""
-
-            self._game.append_human_message(entity, status_effects_update_msg)
+            self._game.append_human_message(entity, updated_status_effects_message)
 
     #######################################################################################################################################

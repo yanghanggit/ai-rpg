@@ -20,7 +20,7 @@ from ..utils import json_format
 
 #######################################################################################################################################
 @final
-class SkillGeneration(BaseModel):
+class SkillResponse(BaseModel):
     skill: Skill = Field(..., description="生成的技能对象")
     target: str = Field(..., description="技能针对的场景内目标")
     reason: str = Field(..., description="技能使用原因")
@@ -30,7 +30,7 @@ class SkillGeneration(BaseModel):
 #######################################################################################################################################
 @final
 class DrawCardsResponse(BaseModel):
-    combat_skills: List[SkillGeneration] = Field(..., description="生成的战斗技能列表")
+    skills: List[SkillResponse] = Field(..., description="生成的战斗技能列表")
     update_hp: Optional[float] = Field(None, description="更新的生命值")
     status_effects: List[StatusEffect] = Field(
         ...,
@@ -47,8 +47,8 @@ def _generate_prompt1(
 
     # 生成抽象化规则示例
     response_sample = DrawCardsResponse(
-        combat_skills=[
-            SkillGeneration(
+        skills=[
+            SkillResponse(
                 skill=Skill(
                     name="[技能名称]",
                     description="[技能的基本描述和作用方式]",
@@ -93,8 +93,10 @@ def _generate_prompt1(
 - 技能效果格式：主要效果 + 可选状态效果 + 自身限制效果
 - 使用有趣、意想不到的风格描述效果产生的原因
 
-## 输出格式(JSON)示意：
-{response_sample.model_dump_json(exclude_none=True)}
+## 输出格式(JSON)要求：
+```json
+{response_sample.model_dump_json(exclude_none=True, indent=2)}
+```
 
 ### 注意
 - 禁用换行/空行
@@ -110,8 +112,8 @@ def _generate_prompt2(
 
     # 生成抽象化规则示例
     response_sample = DrawCardsResponse(
-        combat_skills=[
-            SkillGeneration(
+        skills=[
+            SkillResponse(
                 skill=Skill(
                     name="[技能名称]",
                     description="[技能的基本描述和作用方式]",
@@ -132,7 +134,7 @@ def _generate_prompt2(
         ],
     )
 
-    return f"""# 指令！请你更新自身状态，并生成 {skill_creation_count} 个技能。
+    return f"""# 指令！请你回顾战斗内发生事件及对你的影响，然后更新自身状态，并生成 {skill_creation_count} 个技能。
 
 ## (场景内角色) 行动顺序(从左到右)
 {round_turns}
@@ -156,8 +158,14 @@ def _generate_prompt2(
 - 技能效果格式：主要效果 + 可选状态效果 + 自身限制效果
 - 使用有趣、意想不到的风格描述效果产生的原因
 
-## 输出格式(JSON)示意：
-{response_sample.model_dump_json(exclude_none=True)}
+## 输出格式(JSON)要求：
+```json
+{response_sample.model_dump_json(exclude_none=True, indent=2)}
+```
+
+### 特殊规则
+- 根据最近的[发生事件！战斗回合]，update_hp应当是你事件更新后的生命值。
+- 如果你已经死亡，即update_hp=0，则不需要生成技能与状态，返回空列表即可。
 
 ### 注意
 - 禁用换行/空行
@@ -252,14 +260,16 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
 
         try:
 
-            validated_response = DrawCardsResponse.model_validate_json(
-                json_format.strip_json_code_block(request_handler.response_content)
+            json_code = json_format.strip_json_code_block(
+                request_handler.response_content
             )
+
+            validated_response = DrawCardsResponse.model_validate_json(json_code)
 
             # 生成的结果。
             skills: List[Skill] = []
             action_details: List[ActionDetail] = []
-            for skill_response in validated_response.combat_skills:
+            for skill_response in validated_response.skills:
                 skills.append(skill_response.skill)
                 action_details.append(
                     ActionDetail(

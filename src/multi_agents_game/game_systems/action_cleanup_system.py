@@ -1,6 +1,5 @@
 from typing import Final, FrozenSet, final, override
 
-from loguru import logger
 
 from ..entitas import ExecuteProcessor, Matcher
 from ..entitas.components import Component
@@ -35,9 +34,9 @@ class ActionCleanupSystem(ExecuteProcessor):
             Matcher(all_of=[PlayerActiveComponent])
         ).entities.copy()
         for entity in player_entities:
-            logger.debug(
-                f"PostActionSystem: 清理动作: {PlayerActiveComponent} from entity: {entity._name}"
-            )
+            # logger.debug(
+            #     f"PostActionSystem: 清理动作: {PlayerActiveComponent} from entity: {entity._name}"
+            # )
             entity.remove(PlayerActiveComponent)
 
     ############################################################################################################
@@ -48,9 +47,9 @@ class ActionCleanupSystem(ExecuteProcessor):
         for entity in entities:
             for action_class in registered_actions:
                 if entity.has(action_class):
-                    logger.debug(
-                        f"PostActionSystem: 清理动作: {action_class} from entity: {entity._name}"
-                    )
+                    # logger.debug(
+                    #     f"PostActionSystem: 清理动作: {action_class} from entity: {entity._name}"
+                    # )
                     entity.remove(action_class)
 
     ############################################################################################################

@@ -271,7 +271,10 @@ class ArbitrationActionSystem(BaseActionReactiveSystem):
 {format_response.performance}
 
 ## 计算过程
-{format_response.calculation}"""
+{format_response.calculation}
+
+请注意**计算过程**中的中关于**你**的当前生命值/最大生命值的描述，后续你会依据此进行状态更新。
+"""
 
             # 广播事件
             last_round = self._game.current_engagement.last_round

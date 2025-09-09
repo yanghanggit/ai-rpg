@@ -31,8 +31,8 @@ class CombatCompleteSystem(ExecuteProcessor):
             or self._game.current_engagement.combat_result == CombatResult.HERO_LOSE
         ):
             # 测试，总结战斗结果。
-            # logger.info("战斗结束，准备总结战斗结果！！，可以做一些压缩提示词的行为")
-            # await self._summarize_combat_result()
+            logger.info("战斗结束，准备总结战斗结果！！，可以做一些压缩提示词的行为!!!!!!!!")
+            #await self._summarize_combat_result()
 
             # TODO, 进入战斗后准备的状态，离开当前状态。
             self._game.current_engagement.combat_post_wait()

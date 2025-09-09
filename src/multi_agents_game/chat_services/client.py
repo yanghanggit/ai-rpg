@@ -1,4 +1,3 @@
-from math import log
 from typing import Final, List, Optional, final
 import httpx
 import requests

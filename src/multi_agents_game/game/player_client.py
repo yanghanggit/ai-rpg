@@ -1,6 +1,6 @@
 from typing import Final, List
 from loguru import logger
-from ..models import AgentEvent, ClientMessage, ClientMessageHead
+from ..models import AgentEvent, ClientMessage, MessageType
 
 
 ##########################################################################################################################################################
@@ -35,7 +35,7 @@ class PlayerClient:
         )
         self._client_messages.append(
             ClientMessage(
-                head=ClientMessageHead.AGENT_EVENT, body=agent_event.model_dump()
+                message_type=MessageType.AGENT_EVENT, data=agent_event.model_dump()
             )
         )
 

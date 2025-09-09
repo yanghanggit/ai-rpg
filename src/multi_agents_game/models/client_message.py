@@ -8,7 +8,7 @@ from pydantic import BaseModel
 ################################################################################################################
 @final
 @unique
-class ClientMessageHead(IntEnum):
+class MessageType(IntEnum):
     NONE = 0
     AGENT_EVENT = 1
 
@@ -18,8 +18,8 @@ class ClientMessageHead(IntEnum):
 ################################################################################################################
 @final
 class ClientMessage(BaseModel):
-    head: int = ClientMessageHead.NONE
-    body: Dict[str, Any] = {}
+    message_type: int = MessageType.NONE
+    data: Dict[str, Any] = {}
 
 
 ################################################################################################################

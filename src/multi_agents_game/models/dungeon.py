@@ -1,5 +1,5 @@
 from enum import IntEnum, unique
-from typing import Dict, List, Optional, final
+from typing import List, Optional, final
 
 from loguru import logger
 from pydantic import BaseModel, Field
@@ -56,18 +56,18 @@ class Skill(BaseModel):
 class Round(BaseModel):
     tag: str
     round_turns: List[str]
-    stage_environment: str = ""
+    environment: str = ""
     # select_report: Dict[str, str] = {}
-    stage_director_calculation: str = ""
-    stage_director_performance: str = ""
+    calculation: str = ""
+    performance: str = ""
     # feedback_report: Dict[str, str] = {}
 
     @property
     def has_ended(self) -> bool:
         return (
             len(self.round_turns) > 0
-            and self.stage_director_calculation != ""
-            and self.stage_director_performance != ""
+            and self.calculation != ""
+            and self.performance != ""
             # and len(self.feedback_report) > 0
         )
 
@@ -80,7 +80,7 @@ class Combat(BaseModel):
     phase: CombatPhase = CombatPhase.NONE
     result: CombatResult = CombatResult.NONE
     rounds: List[Round] = []
-    summarize_report: Dict[str, str] = {}
+    # summarize_report: Dict[str, str] = {}
 
 
 ###############################################################################################################################################

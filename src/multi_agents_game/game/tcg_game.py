@@ -58,7 +58,7 @@ from ..models import (
     WorldSystemComponent,
 )
 from ..models.components import XCardPlayerComponent
-from .player_proxy import PlayerProxy
+from .player_client import PlayerClient
 
 
 # ################################################################################################################################################
@@ -100,7 +100,7 @@ class TCGGame(BaseGame, TCGGameContext):
     def __init__(
         self,
         name: str,
-        player: PlayerProxy,
+        player: PlayerClient,
         world: World,
         chat_system: ChatClientManager,
     ) -> None:
@@ -121,8 +121,13 @@ class TCGGame(BaseGame, TCGGameContext):
             TCGGameProcessPipeline.create_dungeon_combat_state_pipeline(self)
         )
 
+        self._all_pipelines: List[TCGGameProcessPipeline] = [
+            self._home_pipeline,
+            self._dungeon_combat_pipeline,
+        ]
+
         # 玩家
-        self._player: PlayerProxy = player
+        self._player: PlayerClient = player
         assert self._player.name != ""
         assert self._player.actor != ""
 
@@ -207,6 +212,16 @@ class TCGGame(BaseGame, TCGGameContext):
         return self.current_dungeon.engagement
 
     ###############################################################################################################################################
+    @property
+    def home_state_pipeline(self) -> TCGGameProcessPipeline:
+        return self._home_pipeline
+
+    ###############################################################################################################################################
+    @property
+    def dungeon_combat_pipeline(self) -> TCGGameProcessPipeline:
+        return self._dungeon_combat_pipeline
+
+    ###############################################################################################################################################
     # @override
     # def execute(self) -> None:
     #     # 顺序不要动
@@ -220,31 +235,35 @@ class TCGGame(BaseGame, TCGGameContext):
     #     active_processing_pipeline.cleanup()
 
     ###############################################################################################################################################
-    @override
-    async def run(self) -> None:
-        # 顺序不要动
-        active_process_pipeline = self.current_process_pipeline
-        if not active_process_pipeline._initialized:
-            active_process_pipeline._initialized = True
-            active_process_pipeline.activate_reactive_processors()
-            await active_process_pipeline.initialize()
+    # @override
+    # async def run(self) -> None:
+    #     # 顺序不要动
+    #     active_process_pipeline = self.current_process_pipeline
+    #     if not active_process_pipeline._initialized:
+    #         active_process_pipeline._initialized = True
+    #         active_process_pipeline.activate_reactive_processors()
+    #         await active_process_pipeline.initialize()
 
-        await active_process_pipeline.execute()
-        active_process_pipeline.cleanup()
+    #     await active_process_pipeline.execute()
+    #     active_process_pipeline.cleanup()
 
     ###############################################################################################################################################
     @override
     def exit(self) -> None:
         # TODO 加上所有processors pipeline
-        all = [
-            self._home_pipeline,
-            self._dungeon_combat_pipeline,
-        ]
-        for processor in all:
-            processor.tear_down()
-            processor.clear_reactive_processors()
-
+        # all = [
+        #     self._home_pipeline,
+        #     self._dungeon_combat_pipeline,
+        # ]
+        self._shutsdown_all_pipelines()
         logger.warning(f"{self.name}, game over!!!!!!!!!!!!!!!!!!!!")
+
+    ###############################################################################################################################################
+    def _shutsdown_all_pipelines(self) -> None:
+        for processor in self._all_pipelines:
+            processor.shutdown()
+        self._all_pipelines.clear()
+        # logger.warning(f"{self.name}, game over!!!!!!!!!!!!!!!!!!!!")
 
     ###############################################################################################################################################
     def new_game(self) -> "TCGGame":
@@ -587,7 +606,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     @property
-    def player(self) -> PlayerProxy:
+    def player(self) -> PlayerClient:
         return self._player
 
     ###############################################################################################################################################
@@ -1191,7 +1210,7 @@ class TCGGame(BaseGame, TCGGameContext):
             round_turns=[entity._name for entity in shuffled_reactive_entities]
         )
 
-        round.stage_environment = stage_environment_comp.narrate
+        round.environment = stage_environment_comp.narrate
         logger.info(f"CombatRoundSystem: _setup_round: {round.model_dump_json()}")
         return True
 

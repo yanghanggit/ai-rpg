@@ -71,10 +71,10 @@ async def _validate_home_game_preconditions(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-async def _execute_web_game(web_game: WebTCGGame) -> None:
-    assert web_game.player.name != ""
-    web_game.player.archive_and_clear_messages()
-    await web_game.run()
+# async def _execute_web_game(web_game: WebTCGGame) -> None:
+#     assert web_game.player.name != ""
+#     web_game.player.clear_messages()
+#     await web_game.run()
 
 
 ###################################################################################################################################################################
@@ -91,7 +91,8 @@ async def _handle_advancing_action(web_game: WebTCGGame) -> HomeGamePlayResponse
         HomeGamePlayResponse: 包含客户端消息的响应
     """
     # 推进一次。
-    await _execute_web_game(web_game)
+    web_game.player.clear_messages()
+    await web_game.home_state_pipeline.execute()
 
     # 返回消息
     return HomeGamePlayResponse(
@@ -119,7 +120,8 @@ async def _handle_speak_action(
     # player 添加说话的动作
     if web_game.activate_speak_action(target=target, content=content):
         # 清空消息。准备重新开始 + 测试推进一次游戏
-        await _execute_web_game(web_game)
+        web_game.player.clear_messages()
+        await web_game.home_state_pipeline.execute()
 
         # 返回消息
         return HomeGamePlayResponse(

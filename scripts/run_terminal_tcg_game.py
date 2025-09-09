@@ -19,12 +19,9 @@ from multi_agents_game.demo import (
     create_demo_dungeon1,
 )
 from multi_agents_game.game.game_options import TerminalGameUserOptions
-from multi_agents_game.game.player_proxy import PlayerProxy
+from multi_agents_game.game.player_client import PlayerClient
 from multi_agents_game.game.tcg_game import TCGGameState
 from multi_agents_game.game.terminal_tcg_game import TerminalTCGGame
-from multi_agents_game.game_systems.combat_monitor_system import (
-    CombatMonitorSystem,
-)
 from multi_agents_game.models import CombatResult, World
 
 
@@ -111,7 +108,7 @@ async def _run_game(
     assert world_exists is not None, "World data must exist to create a game"
     terminal_game = TerminalTCGGame(
         name=terminal_game_user_options.game,
-        player=PlayerProxy(
+        player=PlayerClient(
             name=terminal_game_user_options.user,
             actor=terminal_game_user_options.actor,
         ),
@@ -181,20 +178,20 @@ async def _process_dungeon_state_input(
     #     # 执行一次！！！！！
     #     await _execute_terminal_game(terminal_game, usr_input)
 
-    if usr_input == "/dcmp" or usr_input == "/dungeon_combat_complete":
+    # if usr_input == "/dcmp" or usr_input == "/dungeon_combat_complete":
 
-        if len(terminal_game.current_engagement.combats) == 0:
-            logger.error(f"{usr_input} 没有战斗可以进行！！！！")
-            return
+    #     if len(terminal_game.current_engagement.combats) == 0:
+    #         logger.error(f"{usr_input} 没有战斗可以进行！！！！")
+    #         return
 
-        if not terminal_game.current_engagement.is_complete_phase:
-            logger.error(f"{usr_input} 只能在战斗后is_complete_phase使用")
-            return
+    #     if not terminal_game.current_engagement.is_complete_phase:
+    #         logger.error(f"{usr_input} 只能在战斗后is_complete_phase使用")
+    #         return
 
-        # 执行一次！！！！！
-        await _execute_terminal_game(terminal_game, usr_input)
+    #     # 执行一次！！！！！
+    #     await _execute_terminal_game(terminal_game, usr_input)
 
-    elif usr_input == "/dc" or usr_input == "/draw-cards":
+    if usr_input == "/dc" or usr_input == "/draw-cards":
 
         if not terminal_game.current_engagement.is_on_going_phase:
             logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
@@ -202,7 +199,8 @@ async def _process_dungeon_state_input(
 
         logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
         terminal_game.activate_draw_cards_action()
-        await _execute_terminal_game(terminal_game, usr_input)
+        # await _execute_terminal_game(terminal_game)
+        await terminal_game.dungeon_combat_pipeline.execute()
 
     elif usr_input == "/pc" or usr_input == "/play-card":
 
@@ -213,19 +211,20 @@ async def _process_dungeon_state_input(
         logger.debug(f"玩家输入 = {usr_input}, 准备行动......")
         if terminal_game.execute_play_card():
             # 执行一次！！！！！
-            await _execute_terminal_game(terminal_game, usr_input)
+            # await _execute_terminal_game(terminal_game)
+            await terminal_game.dungeon_combat_pipeline.execute()
 
-    elif usr_input == "/m" or usr_input == "/monitor":
+    # elif usr_input == "/m" or usr_input == "/monitor":
 
-        if not terminal_game.current_engagement.is_on_going_phase:
-            logger.error(f"{usr_input} 只能在战斗on_going_phase中使用")
-            return
+    #     if not terminal_game.current_engagement.is_on_going_phase:
+    #         logger.error(f"{usr_input} 只能在战斗on_going_phase中使用")
+    #         return
 
-        logger.debug(f"玩家输入 = {usr_input}, 准备监控")
-        monitor_utils = CombatMonitorSystem(
-            terminal_game,
-        )
-        await monitor_utils.execute()
+    #     logger.debug(f"玩家输入 = {usr_input}, 准备监控")
+    #     monitor_utils = CombatMonitorSystem(
+    #         terminal_game,
+    #     )
+    #     await monitor_utils.execute()
 
     elif usr_input == "/rth" or usr_input == "/return-to-home":
 
@@ -258,15 +257,6 @@ async def _process_dungeon_state_input(
                 logger.info("英雄失败，应该返回营地！！！！")
             else:
                 assert False, "不可能出现的情况！"
-
-    # elif usr_input == "/images":
-
-    #     logger.debug(f"玩家输入 = {usr_input}, 准备生成图片")
-    #     image_system = ImagesSystem(
-    #         terminal_game,
-    #     )
-    #     await image_system.execute()
-
     else:
         logger.error(
             f"玩家输入 = {usr_input}, 目前不做任何处理，不在处理范围内！！！！！"
@@ -281,7 +271,8 @@ async def _process_home_state_input(
 
     if usr_input == "/ad" or usr_input == "/advancing":
         # 执行一次。
-        await _execute_terminal_game(terminal_game, usr_input)
+        # await _execute_terminal_game(terminal_game)
+        await terminal_game.home_state_pipeline.execute()
 
     elif usr_input == "/ld" or usr_input == "/launch-dungeon":
 
@@ -303,7 +294,8 @@ async def _process_home_state_input(
             logger.error(f"{usr_input} 错误，未进入战斗！！！")
             return
 
-        await _execute_terminal_game(terminal_game, usr_input)
+        # await _execute_terminal_game(terminal_game)
+        await terminal_game.home_state_pipeline.execute()
 
     elif "/speak" in usr_input or "/ss" in usr_input:
 
@@ -317,10 +309,12 @@ async def _process_home_state_input(
         ):
 
             # player 执行一次, 这次基本是忽略推理标记的，所有NPC不推理。
-            await _execute_terminal_game(terminal_game, usr_input)
+            # await _execute_terminal_game(terminal_game)
+            await terminal_game.home_state_pipeline.execute()
 
             # 其他人执行一次。对应的NPC进行推理。
-            await _execute_terminal_game(terminal_game, usr_input)
+            # await _execute_terminal_game(terminal_game)
+            await terminal_game.home_state_pipeline.execute()
 
     # elif usr_input == "/images":
 
@@ -379,15 +373,13 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
 
 
 ###############################################################################################################################################
-async def _execute_terminal_game(
-    terminal_game: TerminalTCGGame, usr_input: str
-) -> None:
+# async def _execute_terminal_game(terminal_game: TerminalTCGGame) -> None:
 
-    assert terminal_game.player.name != ""
-    logger.debug(f"玩家输入: {terminal_game.player.name} = {usr_input}")
+#     # assert terminal_game.player.name != ""
+#     # logger.debug(f"玩家输入: {terminal_game.player.name} = {usr_input}")
 
-    # 执行一次！！！！！
-    await terminal_game.run()
+#     # 执行一次！！！！！
+#     await terminal_game.run()
 
 
 ###############################################################################################################################################

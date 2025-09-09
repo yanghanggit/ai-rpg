@@ -11,7 +11,7 @@ try:
     from src.multi_agents_game.models.objects import RPGCharacterProfile
     from src.multi_agents_game.models.world import World, Boot
     from src.multi_agents_game.models.dungeon import Dungeon
-    from src.multi_agents_game.game.player_proxy import PlayerProxy
+    from src.multi_agents_game.game.player_client import PlayerClient
     from src.multi_agents_game.chat_services.manager import ChatClientManager
 
     _TCGGame: Optional[Type[TCGGame]] = TCGGame
@@ -38,7 +38,7 @@ def sample_game() -> Any:
         dungeon=dungeon,
         boot=boot,
     )
-    player = PlayerProxy(name="test_player", actor="test_actor")
+    player = PlayerClient(name="test_player", actor="test_actor")
     chat_system = ChatClientManager(
         name="test_chat", localhost_urls=["http://localhost:8000"]
     )

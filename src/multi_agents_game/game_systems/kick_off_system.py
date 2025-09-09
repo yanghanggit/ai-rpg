@@ -135,23 +135,21 @@ class KickOffSystem(ExecuteProcessor):
         kick_off_message_comp = entity.get(KickOffMessageComponent)
         assert kick_off_message_comp is not None
         if kick_off_message_comp.content == "":
-            # kick off消息为空，直接返回
             return ""
 
         # 不同实体生成不同的提示
-        gen_prompt = ""
         if entity.has(ActorComponent):
             # 角色的
-            gen_prompt = _generate_actor_kick_off_prompt(kick_off_message_comp.content)
+            return _generate_actor_kick_off_prompt(kick_off_message_comp.content)
         elif entity.has(StageComponent):
             # 舞台的
-            gen_prompt = _generate_stage_kick_off_prompt(
+            return _generate_stage_kick_off_prompt(
                 kick_off_message_comp.content,
             )
         elif entity.has(WorldSystemComponent):
             # 世界系统的
-            gen_prompt = _generate_world_system_kick_off_prompt()
+            return _generate_world_system_kick_off_prompt()
 
-        return gen_prompt
+        return ""
 
     ###############################################################################################################################################

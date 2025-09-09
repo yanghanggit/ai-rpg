@@ -1,5 +1,4 @@
 from typing import final, override
-
 from ..entitas import Entity, GroupEvent, Matcher
 from ..game.tcg_game import ConversationError
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem

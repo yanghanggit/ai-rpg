@@ -1,12 +1,10 @@
 from typing import Final, List
-
 from loguru import logger
-
 from ..models import AgentEvent, ClientMessage, ClientMessageHead
 
 
 ##########################################################################################################################################################
-class PlayerProxy:
+class PlayerClient:
 
     def __init__(
         self,
@@ -17,7 +15,6 @@ class PlayerProxy:
         self._name: Final[str] = name
         self._actor: Final[str] = actor
         self._client_messages: List[ClientMessage] = []
-        self._client_messages_archive: List[ClientMessage] = []
 
     # ##########################################################################################################################################################
     @property
@@ -38,15 +35,12 @@ class PlayerProxy:
         )
         self._client_messages.append(
             ClientMessage(
-                head=ClientMessageHead.AGENT_EVENT,
-                body=agent_event.model_dump_json(),
+                head=ClientMessageHead.AGENT_EVENT, body=agent_event.model_dump()
             )
         )
 
     ##########################################################################################################################################################
-    def archive_and_clear_messages(self) -> None:
-        logger.info(f"{self._name}, backup_and_clear_client_messages")
-        self._client_messages_archive.extend(self._client_messages)
+    def clear_messages(self) -> None:
         self._client_messages = []
 
     ##########################################################################################################################################################

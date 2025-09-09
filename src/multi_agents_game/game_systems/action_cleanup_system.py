@@ -13,7 +13,7 @@ from ..models import (
 
 
 @final
-class PostActionSystem(ExecuteProcessor):
+class ActionCleanupSystem(ExecuteProcessor):
 
     ############################################################################################################
     def __init__(self, game_context: TCGGame) -> None:

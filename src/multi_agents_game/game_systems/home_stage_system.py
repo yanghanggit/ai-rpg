@@ -119,9 +119,6 @@ class HomeStageSystem(ExecuteProcessor):
     def _handle_chat_responses(self, request_handlers: List[ChatClient]) -> None:
         for request_handler in request_handlers:
 
-            # if request_handler.last_message_content == "":
-            #     continue
-
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
 

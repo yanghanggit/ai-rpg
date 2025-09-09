@@ -6,7 +6,6 @@ from ..models import (
     DeathComponent,
     RPGCharacterProfileComponent,
     CombatResult,
-    # DeathComponent,
     HeroComponent,
     MonsterComponent,
 )
@@ -22,17 +21,6 @@ class CombatDeathSystem(ExecuteProcessor):
     ########################################################################################################################################################################
     @override
     async def execute(self) -> None:
-
-        # 处理hp为0的情况
-        # entities = self._game.get_group(
-        #     Matcher(all_of=[RPGCharacterProfileComponent], none_of=[DeathComponent])
-        # ).entities.copy()
-        # for entity in entities:
-        #     rpg_character_profile_component = entity.get(RPGCharacterProfileComponent)
-        #     if rpg_character_profile_component.rpg_character_profile.hp <= 0:
-        #         logger.warning(f"{rpg_character_profile_component.name} is dead")
-        #         self._game.append_human_message(entity, "# 你已被击败！")
-        #         entity.replace(DeathComponent, rpg_character_profile_component.name)
 
         self._check_health_status()
 
@@ -148,3 +136,5 @@ class CombatDeathSystem(ExecuteProcessor):
                     f"你失败了！",
                     combat_result_tag=player_stage_entity._name,
                 )
+
+    ########################################################################################################################################################################

@@ -235,13 +235,6 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
                 entity2, validated_response.combat_status.status_effects
             )
 
-            # 添加上下文。
-            # self._game.append_human_message(
-            #     entity=entity2,
-            #     chat=request_handler._prompt
-            # )
-            # self._game.append_ai_message(entity2, request_handler.ai_messages)
-
         except Exception as e:
             logger.error(f"Exception: {e}")
 
@@ -251,9 +244,6 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
         request_handlers: List[ChatClient] = []
 
         last_round = self._game.current_engagement.last_round
-        assert (
-            not last_round.has_ended
-        ), f"last_round.is_round_complete: {last_round.has_ended}"
 
         for entity in actor_entities:
 

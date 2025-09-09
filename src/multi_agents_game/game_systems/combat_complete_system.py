@@ -1,8 +1,6 @@
 from typing import List, final
-
 from loguru import logger
 from overrides import override
-
 from ..chat_services.client import ChatClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
@@ -23,11 +21,6 @@ class CombatCompleteSystem(ExecuteProcessor):
         self._game: TCGGame = game_context
 
     #######################################################################################################################################
-    # @override
-    # def execute(self) -> None:
-    #     pass
-
-    #######################################################################################################################################
     @override
     async def execute(self) -> None:
         if not self._game.current_engagement.is_complete_phase:
@@ -38,6 +31,7 @@ class CombatCompleteSystem(ExecuteProcessor):
             or self._game.current_engagement.combat_result == CombatResult.HERO_LOSE
         ):
             # 测试，总结战斗结果。
+            # logger.info("战斗结束，准备总结战斗结果！！，可以做一些压缩提示词的行为")
             await self._summarize_combat_result()
 
             # TODO, 进入战斗后准备的状态，离开当前状态。
@@ -93,9 +87,6 @@ class CombatCompleteSystem(ExecuteProcessor):
         # 结束的处理。
         for request_handler in request_handlers:
 
-            # if request_handler.last_message_content == "":
-            #     continue
-
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
 
@@ -107,14 +98,9 @@ class CombatCompleteSystem(ExecuteProcessor):
 
             # 压缩后的战斗经历，就是战斗过程做成摘要。
             summary = f"""# 发生事件! 你经历了一场战斗！
-## 场景: {stage_entity2._name}
-## 你记录下了这次战斗的经历:
+场景: {stage_entity2._name}
+你记录下了这次战斗的经历:
 {request_handler.response_content}"""
-
-            # 准备记录～
-            self._game.current_engagement.last_combat.summarize_report[
-                entity2._name
-            ] = summary
 
             # 添加记忆，并给客户端。
             self._game.notify_event(

@@ -84,10 +84,10 @@ def _validate_dungeon_prerequisites(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-async def _execute_web_game(web_game: WebTCGGame) -> None:
-    assert web_game.player.name != ""
-    web_game.player.archive_and_clear_messages()
-    await web_game.run()
+# async def _execute_web_game(web_game: WebTCGGame) -> None:
+#     assert web_game.player.name != ""
+#     web_game.player.clear_messages()
+#     await web_game.run()
 
 
 ###################################################################################################################################################################
@@ -105,7 +105,9 @@ async def _handle_dungeon_combat_kick_off(
         )
 
     # 推进一次游戏, 即可转换ONGOING状态。
-    await _execute_web_game(web_game)
+    # await _execute_web_game(web_game)
+    web_game.player.clear_messages()
+    await web_game.dungeon_combat_pipeline.execute()
     # 返回！
     return DungeonGamePlayResponse(
         client_messages=web_game.player.client_messages,
@@ -124,7 +126,9 @@ async def _handle_dungeon_combat_complete(
         )
 
     # 推进一次游戏, 即可转换ONGOING状态。
-    await _execute_web_game(web_game)
+    # await _execute_web_game(web_game)
+    web_game.player.clear_messages()
+    await web_game.dungeon_combat_pipeline.execute()
     # 返回！
     return DungeonGamePlayResponse(
         client_messages=web_game.player.client_messages,
@@ -142,7 +146,9 @@ async def _handle_draw_cards(web_game: WebTCGGame) -> DungeonGamePlayResponse:
 
     # 推进一次游戏, 即可抽牌。
     web_game.activate_draw_cards_action()
-    await _execute_web_game(web_game)
+    # await _execute_web_game(web_game)
+    web_game.player.clear_messages()
+    await web_game.dungeon_combat_pipeline.execute()
 
     # 返回！
     return DungeonGamePlayResponse(
@@ -164,7 +170,9 @@ async def _handle_play_cards(
     logger.debug(f"玩家输入 = {request_data.user_input.tag}, 准备行动......")
     if web_game.execute_play_card():
         # 执行一次！！！！！
-        await _execute_web_game(web_game)
+        # await _execute_web_game(web_game)
+        web_game.player.clear_messages()
+        await web_game.dungeon_combat_pipeline.execute()
 
     # 返回！
     return DungeonGamePlayResponse(

@@ -6,11 +6,10 @@ from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher
 from .base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
-    DirectorAction,
+    ArbitrationAction,
     HandComponent,
     PlayCardsAction,
     Round,
-    # TurnAction,
 )
 
 
@@ -45,9 +44,9 @@ class PlayCardsActionSystem(BaseActionReactiveSystem):
         # 处理场景
         current_stage = self._game.safe_get_stage_entity(react_entities[0])
         assert current_stage is not None
-        assert not current_stage.has(DirectorAction)
+        assert not current_stage.has(ArbitrationAction)
         current_stage.replace(
-            DirectorAction,
+            ArbitrationAction,
             current_stage._name,
             "",
             "",
@@ -57,42 +56,7 @@ class PlayCardsActionSystem(BaseActionReactiveSystem):
         )
 
         last_round = self._game.current_engagement.last_round
-
-        # # 处理角色
-        # for actor_entity in react_entities:
-        #     #
-        #     assert actor_entity.has(HandComponent)
-        #     assert actor_entity.has(PlayCardsAction)
-        #     logger.debug(
-        #         f"actor_entity: {actor_entity._name}, play_cards_action: {actor_entity.get(PlayCardsAction).model_dump_json()}"
-        #     )
-
         self._handle_card_play_action(react_entities, last_round)
-
-        # hand_comp = actor_entity.get(HandComponent)
-        # turn_action = actor_entity.get(TurnAction)
-
-        # skill = hand_comp.get_skill(turn_action.skill)
-        # detail = hand_comp.get_action_detail(turn_action.skill)
-        # assert skill.name != "", f"技能名称错误: {actor_entity._name}"
-        # assert (
-        #     detail.skill != "" and detail.skill == skill.name
-        # ), f"技能名称错误: {actor_entity._name}"
-
-        # # 给角色添加！！！
-        # assert not actor_entity.has(PlayCardsAction)
-        # actor_entity.replace(
-        #     PlayCardsAction,
-        #     actor_entity._name,
-        #     # detail.targets,
-        #     skill,
-        #     detail.dialogue,
-        #     detail.reason,
-        # )
-
-        # logger.debug(
-        #     f"actor_entity: {actor_entity._name}, skill: {skill.name}, reason: {detail.reason}, dialogue: {detail.dialogue}"
-        # )
 
     #######################################################################################################################################
     def _handle_card_play_action(
@@ -113,7 +77,5 @@ class PlayCardsActionSystem(BaseActionReactiveSystem):
 {play_cards_action.skill.model_dump_json()}"""
 
             self._game.append_human_message(actor_entity2, message)
-
-            # round.select_report[actor_entity2._name] = message
 
     #######################################################################################################################################

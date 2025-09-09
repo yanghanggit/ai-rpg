@@ -82,7 +82,6 @@ class CombatKickOffSystem(ExecuteProcessor):
 
         if not self._game.setup_round():
             logger.error(f"not web_game.setup_round()")
-            # return
 
 
 ###################################################################################################################################################################

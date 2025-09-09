@@ -84,7 +84,7 @@ class PlayCardsAction(Component):
 @final
 @register_component_class
 @register_action_class
-class DirectorAction(Component):
+class ArbitrationAction(Component):
     name: str
     calculation: str
     performance: str

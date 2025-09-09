@@ -1,23 +1,18 @@
-# from math import log
 from typing import Final, List, NamedTuple, final
-
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-
 from ..chat_services.client import ChatClient
 from ..entitas import Entity, GroupEvent, Matcher
-from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
+from .base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
     ActorComponent,
-    DirectorAction,
+    ArbitrationAction,
     DungeonComponent,
-    # FeedbackAction,
     PlayCardsAction,
     RPGCharacterProfileComponent,
     Skill,
     StageComponent,
-    # TurnAction,
     AgentEvent,
 )
 from ..utils import json_format
@@ -73,7 +68,7 @@ COMBAT_MECHANICS_DESCRIPTION: Final[
 
 #######################################################################################################################################
 @final
-class DirectorResponse(BaseModel):
+class ArbitrationResponse(BaseModel):
     calculation: str
     performance: str
 
@@ -110,7 +105,7 @@ def _generate_prompt(prompt_params: List[PromptParameters]) -> str:
         details_prompt.append(detail)
 
     # 模版
-    director_response_sample = DirectorResponse(
+    response_sample = ArbitrationResponse(
         calculation="计算过程", performance="演出过程"
     )
 
@@ -133,24 +128,24 @@ def _generate_prompt(prompt_params: List[PromptParameters]) -> str:
 2. 演出过程（~200字）
     - 文学化描写，禁用数字与计算过程
 ## 输出格式规范
-{director_response_sample.model_dump_json()}
+{response_sample.model_dump_json()}
 - 禁用换行/空行
 - 直接输出合规JSON"""
 
 
 #######################################################################################################################################
 @final
-class DirectorActionSystem(BaseActionReactiveSystem):
+class ArbitrationActionSystem(BaseActionReactiveSystem):
 
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(DirectorAction): GroupEvent.ADDED}
+        return {Matcher(ArbitrationAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(DirectorAction) and entity.has(StageComponent)
+        return entity.has(ArbitrationAction) and entity.has(StageComponent)
 
     #######################################################################################################################################
     @override
@@ -178,14 +173,6 @@ class DirectorActionSystem(BaseActionReactiveSystem):
         if len(play_cards_actors) == 0:
             return
 
-        # sort_actors = sorted(
-        #     turn_then_play_cards_actors, key=lambda entity: entity.get(TurnAction).turn
-        # )
-
-        # logger.warning(
-        #     f"还没有排序！！！！ DirectorActionSystem: stage_entity: {stage_entity._name}, turn_then_play_cards_actors: {[entity._name for entity in play_cards_actors]}"
-        # )
-
         round_turns = self._game.current_engagement.last_round.round_turns
         logger.info(f"round_turns: {round_turns}")
         sort_actors: List[Entity] = []
@@ -195,17 +182,9 @@ class DirectorActionSystem(BaseActionReactiveSystem):
                     sort_actors.append(entity)
                     break
 
-        # sort_actors: List[str] = []
         for sort_actor in sort_actors:
             logger.info(f"sort_actor: {sort_actor._name}")
 
-        # sort_actors = sorted(
-        #     play_cards_actors,
-        #     key=lambda entity: next(
-        #         (turn for turn in round_turns if turn == entity._name),
-        #         float('inf')  # 如果找不到对应的turn，则放在最后
-        #     )
-        # )
         await self._process_request(stage_entity, sort_actors)
 
     #######################################################################################################################################
@@ -274,34 +253,20 @@ class DirectorActionSystem(BaseActionReactiveSystem):
 
         try:
 
-            format_response = DirectorResponse.model_validate_json(
+            format_response = ArbitrationResponse.model_validate_json(
                 json_format.strip_json_code_block(request_handler.response_content)
             )
 
             # 推理的场景记录下！
-            stage_director_action = stage_entity.get(DirectorAction)
+            arbitration_action = stage_entity.get(ArbitrationAction)
             stage_entity.replace(
-                DirectorAction,
-                stage_director_action.name,
+                ArbitrationAction,
+                arbitration_action.name,
                 format_response.calculation,
                 format_response.performance,
             )
 
-            # 通知角色！！！！
-            # for actor_entity in actor_entities:
-
-            #     actor_entity.replace(
-            #         FeedbackAction,
-            #         actor_entity._name,
-            #         format_response.calculation,
-            #         format_response.performance,
-            #         # "",
-            #         0,
-            #         0,
-            #         [],
-            #     )
-
-            # 第三步，场景广播 ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+            # 广播事件
             last_round = self._game.current_engagement.last_round
             self._game.broadcast_event(
                 entity=stage_entity,
@@ -310,8 +275,8 @@ class DirectorActionSystem(BaseActionReactiveSystem):
                 ),
             )
             # 记录
-            last_round.stage_director_calculation = format_response.calculation
-            last_round.stage_director_performance = format_response.performance
+            last_round.calculation = format_response.calculation
+            last_round.performance = format_response.performance
 
         except Exception as e:
             logger.error(f"Exception: {e}")

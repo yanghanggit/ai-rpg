@@ -6,7 +6,7 @@ from ..demo.stage_dungeon4 import (
     create_demo_dungeon4,
 )
 from ..game.game_options import WebGameUserOptions
-from ..game.player_proxy import PlayerProxy
+from ..game.player_client import PlayerClient
 from ..game.web_tcg_game import WebTCGGame
 from ..game_services.game_server import GameServerInstance
 from ..models import StartRequest, StartResponse, World
@@ -108,7 +108,7 @@ def setup_web_game_session(
     assert world_exists is not None, "World data must exist to create a game"
     web_game = WebTCGGame(
         name=web_game_user_options.game,
-        player=PlayerProxy(
+        player=PlayerClient(
             name=web_game_user_options.user, actor=web_game_user_options.actor
         ),
         world=world_exists,

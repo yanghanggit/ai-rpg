@@ -9,7 +9,7 @@ from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
     DrawCardsAction,
     HandComponent,
-    ActionDetail,
+    SkillExecutionPlan,
     Skill,
     XCardPlayerComponent,
     StatusEffect,
@@ -21,7 +21,9 @@ from ..utils import json_format
 #######################################################################################################################################
 @final
 class SkillResponse(BaseModel):
-    skill: Skill = Field(..., description="生成的技能对象")
+    name: str = Field(..., description="此技能名称")
+    description: str = Field(..., description="此技能描述")
+    effect: str = Field(..., description="此技能产生的效果以及造成的影响")
     target: str = Field(..., description="技能针对的场景内目标")
     reason: str = Field(..., description="技能使用原因")
     dialogue: str = Field(..., description="技能对话")
@@ -30,8 +32,8 @@ class SkillResponse(BaseModel):
 #######################################################################################################################################
 @final
 class DrawCardsResponse(BaseModel):
-    skills: List[SkillResponse] = Field(..., description="生成的战斗技能列表")
     update_hp: Optional[float] = Field(None, description="更新的生命值")
+    skills: List[SkillResponse] = Field(..., description="生成的战斗技能列表")
     status_effects: List[StatusEffect] = Field(
         ...,
         description="你自身的状态效果列表，注意！场景，角色，已发生事件均可能对你产生影响！",
@@ -47,19 +49,17 @@ def _generate_prompt1(
 
     # 生成抽象化规则示例
     response_sample = DrawCardsResponse(
+        update_hp=None,
         skills=[
             SkillResponse(
-                skill=Skill(
-                    name="[技能名称]",
-                    description="[技能的基本描述和作用方式]",
-                    effect="[技能的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：技能附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制效果描述]",
-                ),
+                name="[技能名称]",
+                description="[技能的基本描述和作用方式]",
+                effect="[对目标的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：对目标附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制效果描述]",
                 target="[目标角色的完整名称]",
                 reason="[选择此目标和技能的战术原因]",
                 dialogue="[角色使用技能时的台词]",
             ),
         ],
-        update_hp=None,
         status_effects=[
             StatusEffect(
                 name="[新增状态效果名称]",
@@ -112,19 +112,17 @@ def _generate_prompt2(
 
     # 生成抽象化规则示例
     response_sample = DrawCardsResponse(
+        update_hp=85.0,
         skills=[
             SkillResponse(
-                skill=Skill(
-                    name="[技能名称]",
-                    description="[技能的基本描述和作用方式]",
-                    effect="[对目标的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：对目标附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制效果描述]",
-                ),
+                name="[技能名称]",
+                description="[技能的基本描述和作用方式]",
+                effect="[对目标的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：对目标附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制效果描述]",
                 target="[目标角色的完整名称]",
                 reason="[选择此目标和技能的战术原因]",
                 dialogue="[角色使用技能时的台词]",
             ),
         ],
-        update_hp=85.0,
         status_effects=[
             StatusEffect(
                 name="[新增状态效果名称]",
@@ -253,12 +251,51 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
                 entity2, request_handler, len(self._game.current_engagement.rounds) > 1
             )
 
+        # 最后的兜底，遍历所有参与的角色，如果没有手牌，说明_handle_response出现了错误，可能是LLM返回的内容无法正确解析。
+        # 此时，就需要给角色一个默认的手牌，避免游戏卡死。
+        self._ensure_all_entities_have_hands(entities)
+
     #######################################################################################################################################
     def _clear_hands(self) -> None:
         actor_entities = self._game.get_group(Matcher(HandComponent)).entities.copy()
         for entity in actor_entities:
             logger.debug(f"clear hands: {entity._name}")
             entity.remove(HandComponent)
+
+    #######################################################################################################################################
+    def _ensure_all_entities_have_hands(self, entities: List[Entity]) -> None:
+        """
+        确保所有实体都有手牌组件的兜底机制。
+        如果某个实体缺少HandComponent，说明_handle_response出现了错误，
+        可能是LLM返回的内容无法正确解析。此时给角色一个默认的等待技能，避免游戏卡死。
+
+        Args:
+            entities: 需要检查的实体列表
+        """
+        for entity in entities:
+            if not entity.has(HandComponent):
+                wait_skill = Skill(
+                    name="等待",
+                    description="什么都不做，等待下一回合。",
+                    effect="不产生任何效果",
+                )
+
+                wait_action_detail = SkillExecutionPlan(
+                    skill=wait_skill.name,
+                    target=entity._name,
+                    reason="无",
+                    dialogue="无",
+                )
+
+                logger.warning(
+                    f"entity {entity._name} has no HandComponent, add default skill"
+                )
+                entity.replace(
+                    HandComponent,
+                    entity._name,
+                    [wait_skill],
+                    [wait_action_detail],
+                )
 
     #######################################################################################################################################
     def _handle_response(
@@ -275,12 +312,18 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
 
             # 生成的结果。
             skills: List[Skill] = []
-            action_details: List[ActionDetail] = []
+            execution_plans: List[SkillExecutionPlan] = []
             for skill_response in validated_response.skills:
-                skills.append(skill_response.skill)
-                action_details.append(
-                    ActionDetail(
-                        skill=skill_response.skill.name,
+                skills.append(
+                    Skill(
+                        name=skill_response.name,
+                        description=skill_response.description,
+                        effect=skill_response.effect,
+                    )
+                )
+                execution_plans.append(
+                    SkillExecutionPlan(
+                        skill=skill_response.name,
                         target=skill_response.target,
                         reason=skill_response.reason,
                         dialogue=skill_response.dialogue,
@@ -292,8 +335,8 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
                 # 如果是玩家，则需要更新玩家的手牌
                 xcard_player_comp = entity2.get(XCardPlayerComponent)
                 skills = [xcard_player_comp.skill]
-                action_details = [
-                    ActionDetail(
+                execution_plans = [
+                    SkillExecutionPlan(
                         skill=xcard_player_comp.skill.name,
                         target="根据技能描述和效果，所有适用的目标",
                         reason="",
@@ -309,7 +352,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
                 HandComponent,
                 entity2._name,
                 skills,
-                action_details,
+                execution_plans,
             )
 
             # 更新健康属性。

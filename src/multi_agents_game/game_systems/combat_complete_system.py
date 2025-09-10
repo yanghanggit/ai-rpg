@@ -1,4 +1,4 @@
-from typing import List, final
+from typing import Any, Dict, List, Optional, cast, final
 from loguru import logger
 from overrides import override
 from ..chat_services.client import ChatClient
@@ -11,6 +11,7 @@ from ..models import (
     HeroComponent,
     RPGCharacterProfileComponent,
 )
+from langchain_core.messages import HumanMessage
 
 
 #######################################################################################################################################
@@ -125,13 +126,13 @@ class CombatCompleteSystem(ExecuteProcessor):
         assert stage_entity is not None
 
         # 获取最近的战斗消息。
-        begin_message = self._game.retrieve_recent_human_message_by_kargs(
+        begin_message = self._retrieve_recent_human_message_by_kargs(
             entity, "combat_kickoff_tag", stage_entity._name
         )
         assert begin_message is not None
 
         # 获取最近的战斗消息。
-        end_message = self._game.retrieve_recent_human_message_by_kargs(
+        end_message = self._retrieve_recent_human_message_by_kargs(
             entity, "combat_result_tag", stage_entity._name
         )
         assert end_message is not None
@@ -150,5 +151,35 @@ class CombatCompleteSystem(ExecuteProcessor):
         logger.debug(
             f"战斗消息压缩成功！{entity._name} begin_message: {begin_message} end_message: {end_message}"
         )
+
+    #######################################################################################################################################
+    def _retrieve_recent_human_message_by_kargs(
+        self, actor_entity: Entity, kwargs_key: str, kwargs_value: str
+    ) -> Optional[HumanMessage]:
+
+        chat_history = self._game.get_agent_short_term_memory(actor_entity).chat_history
+        for chat_message in reversed(chat_history):
+
+            if not isinstance(chat_message, HumanMessage):
+                continue
+
+            try:
+
+                kwargs = chat_message.model_dump()["kwargs"]
+                if kwargs == None:
+                    continue
+
+                cast_dict = cast(Dict[str, Any], kwargs)
+                if not kwargs_key in cast_dict:
+                    continue
+
+                if cast_dict.get(kwargs_key) == kwargs_value:
+                    return chat_message
+
+            except Exception as e:
+                logger.error(f"retrieve_recent_human_message_by_kargs error: {e}")
+                continue
+
+        return None
 
     #######################################################################################################################################

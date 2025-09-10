@@ -4,12 +4,10 @@ import shutil
 import uuid
 from enum import Enum, IntEnum, unique
 from pathlib import Path
-from typing import Any, Dict, Final, List, Optional, Set, Tuple, cast, final
-
+from typing import Any, Dict, Final, List, Optional, Set, Tuple, final
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
-
 from ..chat_services.manager import ChatClientManager
 from ..game.game_config import LOGS_DIR
 from ..mongodb import (
@@ -109,7 +107,6 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 世界运行时
         self._world: Final[World] = world
-        # self._world_file_path: Final[Path] = world_path
 
         # 处理器 与 对其控制的 状态。
         self._home_pipeline: Final[TCGGameProcessPipeline] = (
@@ -132,8 +129,10 @@ class TCGGame(BaseGame, TCGGameContext):
         # agent 系统
         self._chat_system: Final[ChatClientManager] = chat_system
 
-        # 是否开启调试
-        self._debug_flag_pipeline: bool = False
+    ###############################################################################################################################################
+    @property
+    def player(self) -> PlayerClient:
+        return self._player
 
     ###############################################################################################################################################
     @override
@@ -176,17 +175,6 @@ class TCGGame(BaseGame, TCGGameContext):
             assert False, "stage type is not defined"
 
         return TCGGameState.NONE
-
-    ###############################################################################################################################################
-    @property
-    def current_process_pipeline(self) -> TCGGameProcessPipeline:
-
-        if self.current_game_state == TCGGameState.HOME:
-            return self._home_pipeline
-        elif self.current_game_state == TCGGameState.DUNGEON:
-            return self._dungeon_combat_pipeline
-        else:
-            assert False, "game state is not defined"
 
     ###############################################################################################################################################
     @property
@@ -242,9 +230,11 @@ class TCGGame(BaseGame, TCGGameContext):
 
         ## 第2步，创建actor
         self._create_actor_entities(self.world.boot.actors)
+
+        ## 第3步，分配玩家控制的actor
         self._assign_player_to_actor()
 
-        ## 第3步，创建stage
+        ## 第4步，创建stage
         self._create_stage_entities(self.world.boot.stages)
 
         return self
@@ -572,11 +562,6 @@ class TCGGame(BaseGame, TCGGameContext):
         return []
 
     ###############################################################################################################################################
-    @property
-    def player(self) -> PlayerClient:
-        return self._player
-
-    ###############################################################################################################################################
     def get_player_entity(self) -> Optional[Entity]:
         return self.get_entity_by_player_name(self.player.name)
 
@@ -674,7 +659,7 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     def stage_transition(self, actors: Set[Entity], stage_destination: Entity) -> None:
 
-        assert self._debug_flag_pipeline is False, "传送前，不允许在pipeline中"
+        # assert self._debug_flag_pipeline is False, "传送前，不允许在pipeline中"
 
         for actor1 in actors:
             assert actor1.has(ActorComponent)
@@ -817,7 +802,7 @@ class TCGGame(BaseGame, TCGGameContext):
             self.current_dungeon.position = 0  # 第一次设置，第一个关卡。
             self._create_dungeon_entities(self.current_dungeon)
             heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
-            return self._process_dungeon_advance(self.current_dungeon, heros_entities)
+            return self._dungeon_advance(self.current_dungeon, heros_entities)
         else:
             # 第一次，必须是<0, 证明一次没来过。
             logger.error(f"launch_dungeon position = {self.current_dungeon.position}")
@@ -826,17 +811,15 @@ class TCGGame(BaseGame, TCGGameContext):
 
     #######################################################################################################################################
     # TODO, 地下城下一关。
-    def advance_next_dungeon(self) -> None:
+    def next_dungeon(self) -> None:
         # 位置+1
         if self.current_dungeon.advance_level():
             heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
-            self._process_dungeon_advance(self.current_dungeon, heros_entities)
+            self._dungeon_advance(self.current_dungeon, heros_entities)
 
     #######################################################################################################################################
     # TODO, 进入地下城！
-    def _process_dungeon_advance(
-        self, dungeon: Dungeon, heros_entities: Set[Entity]
-    ) -> bool:
+    def _dungeon_advance(self, dungeon: Dungeon, heros_entities: Set[Entity]) -> bool:
 
         # 是否有可以进入的关卡？
         upcoming_dungeon = dungeon.current_level()
@@ -929,7 +912,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     # TODO!!! 临时测试准备传送！！！
-    def return_to_home(self) -> None:
+    def return_home(self) -> None:
 
         heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
         assert len(heros_entities) > 0
@@ -994,8 +977,8 @@ class TCGGame(BaseGame, TCGGameContext):
         return names_mapping
 
     ###############################################################################################################################################
-    # TODO, 临时添加行动, 逻辑。
-    def execute_play_card(self) -> bool:
+    # TODO, 临时添加行动, 逻辑。 activate_play_cards_action
+    def activate_play_cards_action(self) -> bool:
 
         if len(self.current_engagement.rounds) == 0:
             logger.error("没有回合，不能添加行动！")
@@ -1039,7 +1022,7 @@ class TCGGame(BaseGame, TCGGameContext):
             assert len(hand_comp.skills) > 0
             selected_skill = random.choice(hand_comp.skills)
 
-            action_detail = hand_comp.get_action_detail(selected_skill.name)
+            action_detail = hand_comp.get_execution_plan(selected_skill.name)
             assert action_detail is not None
             assert action_detail.skill == selected_skill.name
 
@@ -1093,36 +1076,6 @@ class TCGGame(BaseGame, TCGGameContext):
                 DrawCardsAction,
                 entity._name,
             )
-
-    #######################################################################################################################################
-    def retrieve_recent_human_message_by_kargs(
-        self, actor_entity: Entity, kwargs_key: str, kwargs_value: str
-    ) -> Optional[HumanMessage]:
-
-        chat_history = self.get_agent_short_term_memory(actor_entity).chat_history
-        for chat_message in reversed(chat_history):
-
-            if not isinstance(chat_message, HumanMessage):
-                continue
-
-            try:
-
-                kwargs = chat_message.model_dump()["kwargs"]
-                if kwargs == None:
-                    continue
-
-                cast_dict = cast(Dict[str, Any], kwargs)
-                if not kwargs_key in cast_dict:
-                    continue
-
-                if cast_dict.get(kwargs_key) == kwargs_value:
-                    return chat_message
-
-            except Exception as e:
-                logger.error(f"retrieve_recent_human_message_by_kargs error: {e}")
-                continue
-
-        return None
 
     #######################################################################################################################################
     def new_round(self) -> bool:

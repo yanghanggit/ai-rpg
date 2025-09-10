@@ -16,7 +16,6 @@ from multi_agents_game.settings import (
 from multi_agents_game.game.game_config import GLOBAL_GAME_NAME, setup_logger
 from multi_agents_game.demo import (
     create_actor_warrior,
-    create_demo_dungeon1,
     create_demo_dungeon4,
 )
 from multi_agents_game.game.game_options import TerminalGameUserOptions
@@ -183,7 +182,7 @@ async def _process_dungeon_state_input(
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备行动......")
-        if terminal_game.execute_play_card():
+        if terminal_game.activate_play_cards_action():
             await terminal_game.dungeon_combat_pipeline.process()
 
     elif usr_input == "/rth" or usr_input == "/return-to-home":
@@ -196,7 +195,7 @@ async def _process_dungeon_state_input(
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备传送回家")
-        terminal_game.return_to_home()
+        terminal_game.return_home()
 
     elif usr_input == "/and" or usr_input == "/advance-next-dungeon":
 
@@ -210,7 +209,7 @@ async def _process_dungeon_state_input(
                     logger.info(
                         f"玩家输入 = {usr_input}, 进入下一关 = {next_level.name}"
                     )
-                    terminal_game.advance_next_dungeon()
+                    terminal_game.next_dungeon()
                     await terminal_game.dungeon_combat_pipeline.process()
             elif (
                 terminal_game.current_engagement.combat_result == CombatResult.HERO_LOSE

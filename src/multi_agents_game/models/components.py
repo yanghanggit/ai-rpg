@@ -158,7 +158,7 @@ class PlayerActiveComponent(Component):
 
 
 @final
-class ActionDetail(BaseModel):
+class SkillExecutionPlan(BaseModel):
     skill: str
     target: str
     reason: str
@@ -171,7 +171,7 @@ class ActionDetail(BaseModel):
 class HandComponent(Component):
     name: str
     skills: List[Skill]
-    action_details: List[ActionDetail]
+    action_details: List[SkillExecutionPlan]
 
     def get_skill(self, skill_name: str) -> Skill:
         for skill in self.skills:
@@ -179,11 +179,11 @@ class HandComponent(Component):
                 return skill
         return Skill(name="", description="", effect="")
 
-    def get_action_detail(self, skill_name: str) -> ActionDetail:
+    def get_execution_plan(self, skill_name: str) -> SkillExecutionPlan:
         for detail in self.action_details:
             if detail.skill == skill_name:
                 return detail
-        return ActionDetail(skill="", target="", reason="", dialogue="")
+        return SkillExecutionPlan(skill="", target="", reason="", dialogue="")
 
 
 ############################################################################################################

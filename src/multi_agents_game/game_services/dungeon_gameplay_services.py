@@ -142,7 +142,7 @@ async def _handle_play_cards(
         )
 
     logger.debug(f"玩家输入 = {request_data.user_input.tag}, 准备行动......")
-    if web_game.execute_play_card():
+    if web_game.activate_play_cards_action():
         # 执行一次！！！！！
         # await _execute_web_game(web_game)
         web_game.player.clear_messages()
@@ -219,7 +219,7 @@ async def _handle_advance_next_dungeon(web_game: WebTCGGame) -> DungeonGamePlayR
                 detail="没有下一关，你胜利了，应该返回营地！！！！",
             )
         else:
-            web_game.advance_next_dungeon()
+            web_game.next_dungeon()
             return DungeonGamePlayResponse(
                 client_messages=[],
             )
@@ -324,7 +324,7 @@ async def dungeon_trans_home(
             )
 
         # 回家
-        web_game.return_to_home()
+        web_game.return_home()
         return DungeonTransHomeResponse(
             message="回家了",
         )

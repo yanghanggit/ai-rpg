@@ -46,10 +46,10 @@ def _generate_prompt(
         speak_actions={
             "场景内角色全名": "你要说的内容（场景内其他角色会听见）",
         },
-        whisper_actions={
-            "场景内角色全名": "你要说的内容（只有你和目标角色能听见）",
-        },
-        announce_actions="你要说的内容（所有的角色都能听见）",
+        # whisper_actions={
+        #     "场景内角色全名": "你要说的内容（只有你和目标角色能听见）",
+        # },
+        # announce_actions="你要说的内容（所有的角色都能听见）",
         mind_voice_actions="你要说的内容（内心独白，只有你自己能听见）",
     )
 

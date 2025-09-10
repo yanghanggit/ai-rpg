@@ -134,6 +134,12 @@ def _generate_prompt2(
         ],
     )
 
+    response_empty_sample = DrawCardsResponse(
+        skills=[],
+        update_hp=0.0,
+        status_effects=[],
+    )
+
     return f"""# 指令！请你回顾战斗内发生事件及对你的影响，然后更新自身状态，并生成 {skill_creation_count} 个技能。
 
 ## (场景内角色) 行动顺序(从左到右)
@@ -164,8 +170,11 @@ def _generate_prompt2(
 ```
 
 ### 特殊规则
-- 根据最近的[发生事件！战斗回合]，update_hp应当是你事件更新后的生命值。
-- 如果你已经死亡，即update_hp=0，则不需要生成技能与状态，返回空列表即可。
+根据最近的[发生事件！战斗回合]，update_hp应当是你事件更新后的生命值。
+如果你已经死亡，则不需要生成技能与状态，返回空对象即可（其中update_hp=0），即:
+```json
+{response_empty_sample.model_dump_json(exclude_none=True, indent=2)}
+```
 
 ### 注意
 - 禁用换行/空行

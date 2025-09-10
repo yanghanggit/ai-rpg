@@ -91,7 +91,7 @@ class KickOffSystem(ExecuteProcessor):
             # 不同实体生成不同的提示
             gen_prompt = self._generate_prompt(entity1)
             if gen_prompt == "":
-                logger.error(
+                logger.warning(
                     f"KickOffSystem: {entity1._name} kick off message is empty !!!!!!!"
                 )
                 continue

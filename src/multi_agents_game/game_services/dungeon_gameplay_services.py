@@ -215,7 +215,7 @@ async def _handle_advance_next_dungeon(web_game: WebTCGGame) -> DungeonGamePlayR
         if next_level is None:
             logger.info("没有下一关，你胜利了，应该返回营地！！！！")
             raise HTTPException(
-                status_code=status.HTTP_200_OK,
+                status_code=status.HTTP_409_CONFLICT,
                 detail="没有下一关，你胜利了，应该返回营地！！！！",
             )
         else:
@@ -225,7 +225,7 @@ async def _handle_advance_next_dungeon(web_game: WebTCGGame) -> DungeonGamePlayR
             )
     elif web_game.current_engagement.has_hero_lost:
         raise HTTPException(
-            status_code=status.HTTP_200_OK,
+            status_code=status.HTTP_409_CONFLICT,
             detail="你已经失败了，不能继续进行游戏",
         )
 

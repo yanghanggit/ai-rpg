@@ -1022,7 +1022,7 @@ class TCGGame(BaseGame, TCGGameContext):
             assert len(hand_comp.skills) > 0
             selected_skill = random.choice(hand_comp.skills)
 
-            action_detail = hand_comp.get_action_detail(selected_skill.name)
+            action_detail = hand_comp.get_execution_plan(selected_skill.name)
             assert action_detail is not None
             assert action_detail.skill == selected_skill.name
 

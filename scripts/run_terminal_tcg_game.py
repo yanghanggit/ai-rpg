@@ -249,9 +249,9 @@ async def _process_home_state_input(
             logger.error(f"{usr_input} 没有战斗可以进行！！！！")
             return
 
-        if not terminal_game.current_engagement.combat_phase:
-            logger.error(f"{usr_input} 错误，未进入战斗！！！")
-            return
+        # if not terminal_game.current_engagement.combat_phase:
+        #     logger.error(f"{usr_input} 错误，未进入战斗！！！")
+        #     return
 
         # await _execute_terminal_game(terminal_game)
         await terminal_game.dungeon_combat_pipeline.process()

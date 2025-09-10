@@ -84,15 +84,6 @@ def _validate_dungeon_prerequisites(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-# async def _execute_web_game(web_game: WebTCGGame) -> None:
-#     assert web_game.player.name != ""
-#     web_game.player.clear_messages()
-#     await web_game.run()
-
-
-###################################################################################################################################################################
-###################################################################################################################################################################
-###################################################################################################################################################################
 async def _handle_dungeon_combat_kick_off(
     web_game: WebTCGGame,
 ) -> DungeonGamePlayResponse:
@@ -105,7 +96,6 @@ async def _handle_dungeon_combat_kick_off(
         )
 
     # 推进一次游戏, 即可转换ONGOING状态。
-    # await _execute_web_game(web_game)
     web_game.player.clear_messages()
     await web_game.dungeon_combat_pipeline.process()
     # 返回！
@@ -114,27 +104,9 @@ async def _handle_dungeon_combat_kick_off(
     )
 
 
-async def _handle_dungeon_combat_complete(
-    web_game: WebTCGGame,
-) -> DungeonGamePlayResponse:
-    """处理地下城战斗完成"""
-    if not web_game.current_engagement.is_complete_phase:
-        logger.error(f"not web_game.current_engagement.is_complete_phase")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="not web_game.current_engagement.is_complete_phase",
-        )
-
-    # 推进一次游戏, 即可转换ONGOING状态。
-    # await _execute_web_game(web_game)
-    web_game.player.clear_messages()
-    await web_game.dungeon_combat_pipeline.process()
-    # 返回！
-    return DungeonGamePlayResponse(
-        client_messages=web_game.player.client_messages,
-    )
-
-
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
 async def _handle_draw_cards(web_game: WebTCGGame) -> DungeonGamePlayResponse:
     """处理抽卡操作"""
     if not web_game.current_engagement.is_on_going_phase:
@@ -146,7 +118,6 @@ async def _handle_draw_cards(web_game: WebTCGGame) -> DungeonGamePlayResponse:
 
     # 推进一次游戏, 即可抽牌。
     web_game.activate_draw_cards_action()
-    # await _execute_web_game(web_game)
     web_game.player.clear_messages()
     await web_game.dungeon_combat_pipeline.process()
 
@@ -156,6 +127,9 @@ async def _handle_draw_cards(web_game: WebTCGGame) -> DungeonGamePlayResponse:
     )
 
 
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
 async def _handle_play_cards(
     web_game: WebTCGGame, request_data: DungeonGamePlayRequest
 ) -> DungeonGamePlayResponse:
@@ -180,6 +154,9 @@ async def _handle_play_cards(
     )
 
 
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
 async def _handle_x_card(
     web_game: WebTCGGame, request_data: DungeonGamePlayRequest
 ) -> DungeonGamePlayResponse:
@@ -221,6 +198,9 @@ async def _handle_x_card(
         )
 
 
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
 async def _handle_advance_next_dungeon(web_game: WebTCGGame) -> DungeonGamePlayResponse:
     """处理前进下一个地下城"""
     if not web_game.current_engagement.is_post_wait_phase:
@@ -235,7 +215,7 @@ async def _handle_advance_next_dungeon(web_game: WebTCGGame) -> DungeonGamePlayR
         if next_level is None:
             logger.info("没有下一关，你胜利了，应该返回营地！！！！")
             raise HTTPException(
-                status_code=status.HTTP_200_OK,
+                status_code=status.HTTP_409_CONFLICT,
                 detail="没有下一关，你胜利了，应该返回营地！！！！",
             )
         else:
@@ -245,7 +225,7 @@ async def _handle_advance_next_dungeon(web_game: WebTCGGame) -> DungeonGamePlayR
             )
     elif web_game.current_engagement.has_hero_lost:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail="你已经失败了，不能继续进行游戏",
         )
 
@@ -280,8 +260,8 @@ async def dungeon_gameplay(
             case "dungeon_combat_kick_off":
                 return await _handle_dungeon_combat_kick_off(web_game)
 
-            case "dungeon_combat_complete":
-                return await _handle_dungeon_combat_complete(web_game)
+            # case "dungeon_combat_complete":
+            #     return await _handle_dungeon_combat_complete(web_game)
 
             case "draw_cards":
                 return await _handle_draw_cards(web_game)
@@ -304,10 +284,10 @@ async def dungeon_gameplay(
                     detail=f"未知的请求类型 = {request_data.user_input.tag}, 不能处理！",
                 )
 
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"{request_data.user_input} 是错误的输入，造成无法处理的情况！",
-        )
+        # raise HTTPException(
+        #     status_code=status.HTTP_400_BAD_REQUEST,
+        #     detail=f"{request_data.user_input} 是错误的输入，造成无法处理的情况！",
+        # )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

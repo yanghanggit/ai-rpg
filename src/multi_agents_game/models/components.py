@@ -33,6 +33,7 @@ class KickOffMessageComponent(Component):
 @register_component_class
 class KickOffDoneComponent(Component):
     name: str
+    response: str
 
 
 ############################################################################################################

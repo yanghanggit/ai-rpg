@@ -134,6 +134,12 @@ def _generate_prompt2(
         ],
     )
 
+    response_empty_sample = DrawCardsResponse(
+        skills=[],
+        update_hp=0.0,
+        status_effects=[],
+    )
+
     return f"""# 指令！请你回顾战斗内发生事件及对你的影响，然后更新自身状态，并生成 {skill_creation_count} 个技能。
 
 ## (场景内角色) 行动顺序(从左到右)

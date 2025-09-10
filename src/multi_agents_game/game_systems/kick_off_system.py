@@ -14,6 +14,7 @@ from ..models import (
     StageComponent,
     WorldSystemComponent,
 )
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 
 ###############################################################################################################################################
@@ -90,7 +91,7 @@ class KickOffSystem(ExecuteProcessor):
             # 不同实体生成不同的提示
             gen_prompt = self._generate_prompt(entity1)
             if gen_prompt == "":
-                logger.error(
+                logger.warning(
                     f"KickOffSystem: {entity1._name} kick off message is empty !!!!!!!"
                 )
                 continue
@@ -113,11 +114,44 @@ class KickOffSystem(ExecuteProcessor):
             entity2 = self._game.get_entity_by_name(request_handler._name)
             assert entity2 is not None
 
-            self._game.append_human_message(entity2, request_handler._prompt)
-            self._game.append_ai_message(entity2, request_handler.ai_messages)
+            agent_short_term_memory = self._game.get_agent_short_term_memory(entity2)
+            if (
+                len(agent_short_term_memory.chat_history) > 0
+                and agent_short_term_memory.chat_history[0].type == "system"
+            ):
+
+                # 确保类型正确的消息列表
+                contextual_message_list: List[
+                    SystemMessage | HumanMessage | AIMessage
+                ] = []
+
+                # 添加原有的system message（确保类型匹配）
+                first_message = agent_short_term_memory.chat_history[0]
+                if isinstance(first_message, (SystemMessage, HumanMessage, AIMessage)):
+                    contextual_message_list.append(first_message)
+
+                # 添加human message
+                contextual_message_list.append(
+                    HumanMessage(content=request_handler._prompt)
+                )
+
+                # 添加AI messages
+                contextual_message_list.extend(request_handler.ai_messages)
+
+                agent_short_term_memory.chat_history.pop(0)  # 移除原有的system message
+                # 将新的上下文消息添加到聊天历史的开头
+                agent_short_term_memory.chat_history = (
+                    contextual_message_list + agent_short_term_memory.chat_history
+                )
+            else:
+                # 常规添加。
+                self._game.append_human_message(entity2, request_handler._prompt)
+                self._game.append_ai_message(entity2, request_handler.ai_messages)
 
             # 必须执行
-            entity2.replace(KickOffDoneComponent, entity2._name)
+            entity2.replace(
+                KickOffDoneComponent, entity2._name, request_handler.response_content
+            )
 
             # 若是场景，用response替换narrate
             if entity2.has(StageComponent):

@@ -1,7 +1,5 @@
 from typing import List, final
-
 from pydantic import BaseModel
-
 from ..entitas.components import Component, MutableComponent
 from .dungeon import Skill, StatusEffect
 from .objects import RPGCharacterProfile
@@ -171,7 +169,7 @@ class SkillExecutionPlan(BaseModel):
 class HandComponent(Component):
     name: str
     skills: List[Skill]
-    action_details: List[SkillExecutionPlan]
+    skill_execution_plans: List[SkillExecutionPlan]
 
     def get_skill(self, skill_name: str) -> Skill:
         for skill in self.skills:
@@ -180,7 +178,7 @@ class HandComponent(Component):
         return Skill(name="", description="", effect="")
 
     def get_execution_plan(self, skill_name: str) -> SkillExecutionPlan:
-        for detail in self.action_details:
+        for detail in self.skill_execution_plans:
             if detail.skill == skill_name:
                 return detail
         return SkillExecutionPlan(skill="", target="", reason="", dialogue="")
@@ -194,8 +192,6 @@ class DeathComponent(Component):
     name: str
 
 
-############################################################################################################
-############################################################################################################
 ############################################################################################################
 # 新版本的重构！
 @final
@@ -239,6 +235,4 @@ class XCardPlayerComponent(Component):
     skill: Skill
 
 
-############################################################################################################
-############################################################################################################
 ############################################################################################################

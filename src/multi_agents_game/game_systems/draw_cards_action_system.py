@@ -9,7 +9,6 @@ from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
     DrawCardsAction,
     HandComponent,
-    SkillExecutionPlan,
     Skill,
     XCardPlayerComponent,
     StatusEffect,
@@ -24,9 +23,7 @@ class SkillResponse(BaseModel):
     name: str = Field(..., description="此技能名称")
     description: str = Field(..., description="此技能描述")
     effect: str = Field(..., description="此技能产生的效果以及造成的影响")
-    target: str = Field(..., description="技能针对的场景内目标")
-    # reason: str = Field(..., description="技能使用原因")
-    # dialogue: str = Field(..., description="技能对话")
+    target: str = Field(..., description="技能的目标")
 
 
 #######################################################################################################################################
@@ -296,13 +293,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
                 name="等待",
                 description="什么都不做，等待下一回合。",
                 effect="不产生任何效果",
-            )
-
-            wait_action_detail = SkillExecutionPlan(
-                skill=wait_skill.name,
                 target=entity._name,
-                # reason="无",
-                # dialogue="无",
             )
 
             logger.warning(
@@ -312,7 +303,6 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
                 HandComponent,
                 entity._name,
                 [wait_skill],
-                [wait_action_detail],
             )
 
     #######################################################################################################################################
@@ -330,21 +320,13 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
 
             # 生成的结果。
             skills: List[Skill] = []
-            execution_plans: List[SkillExecutionPlan] = []
             for skill_response in validated_response.skills:
                 skills.append(
                     Skill(
                         name=skill_response.name,
                         description=skill_response.description,
                         effect=skill_response.effect,
-                    )
-                )
-                execution_plans.append(
-                    SkillExecutionPlan(
-                        skill=skill_response.name,
                         target=skill_response.target,
-                        # reason=skill_response.reason,
-                        # dialogue=skill_response.dialogue,
                     )
                 )
 
@@ -352,15 +334,14 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
             if entity2.has(XCardPlayerComponent):
                 # 如果是玩家，则需要更新玩家的手牌
                 xcard_player_comp = entity2.get(XCardPlayerComponent)
-                skills = [xcard_player_comp.skill]
-                execution_plans = [
-                    SkillExecutionPlan(
-                        skill=xcard_player_comp.skill.name,
-                        target="根据技能描述和效果，所有适用的目标",
-                        # reason="",
-                        # dialogue=f"看招！{xcard_player_comp.skill.name}！",
-                    )
-                ]
+                # 更新技能的target字段
+                xcard_skill = Skill(
+                    name=xcard_player_comp.skill.name,
+                    description=xcard_player_comp.skill.description,
+                    effect=xcard_player_comp.skill.effect,
+                    target=xcard_player_comp.skill.target,
+                )
+                skills = [xcard_skill]
 
                 # 只用这一次。
                 entity2.remove(XCardPlayerComponent)
@@ -370,7 +351,6 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
                 HandComponent,
                 entity2._name,
                 skills,
-                execution_plans,
             )
 
             # 更新健康属性。

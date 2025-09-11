@@ -1079,11 +1079,6 @@ class TCGGame(BaseGame, TCGGameContext):
             logger.error(f"无法为角色 {actor_entity._name} 选择技能")
             return False
 
-        # 获取技能执行计划
-        skill_execution_plan = hand_comp.get_execution_plan(selected_skill.name)
-        assert skill_execution_plan is not None
-        assert skill_execution_plan.skill == selected_skill.name
-
         # 创建打牌行动
         actor_entity.replace(
             PlayCardsAction,
@@ -1135,8 +1130,7 @@ class TCGGame(BaseGame, TCGGameContext):
         if target_override is not None:
             final_target = target_override
         else:
-            skill_execution_plan = hand_comp.get_execution_plan(selected_skill.name)
-            final_target = skill_execution_plan.target if skill_execution_plan else ""
+            final_target = selected_skill.target
 
         return selected_skill, final_target
 

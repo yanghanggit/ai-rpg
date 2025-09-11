@@ -44,6 +44,7 @@ class Skill(BaseModel):
     name: str = Field(..., description="此技能名称")
     description: str = Field(..., description="此技能描述")
     effect: str = Field(..., description="此技能产生的效果以及造成的影响")
+    target: str = Field(default="", description="技能的目标")
 
 
 ###############################################################################################################################################

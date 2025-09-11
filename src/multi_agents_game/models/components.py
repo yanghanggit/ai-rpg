@@ -155,33 +155,18 @@ class PlayerActiveComponent(Component):
 # draw_card
 
 
-@final
-class SkillExecutionPlan(BaseModel):
-    skill: str
-    target: str
-    # reason: str
-    # dialogue: str
-
-
 # 手牌组件。
 @final
 @register_component_class
 class HandComponent(Component):
     name: str
     skills: List[Skill]
-    skill_execution_plans: List[SkillExecutionPlan]
 
     def get_skill(self, skill_name: str) -> Skill:
         for skill in self.skills:
             if skill.name == skill_name:
                 return skill
-        return Skill(name="", description="", effect="")
-
-    def get_execution_plan(self, skill_name: str) -> SkillExecutionPlan:
-        for detail in self.skill_execution_plans:
-            if detail.skill == skill_name:
-                return detail
-        return SkillExecutionPlan(skill="", target="")
+        return Skill(name="", description="", effect="", target="")
 
 
 ############################################################################################################

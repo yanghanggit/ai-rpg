@@ -20,7 +20,7 @@ def create_actor_training_robot() -> Actor:
         name="角色.怪物.训练机器人",
         character_sheet_name="training_robot",
         kick_off_message="",
-        rpg_character_profile=RPGCharacterProfile(base_dexterity=1),
+        rpg_character_profile=RPGCharacterProfile(base_dexterity=1, base_max_hp=1000),
         type=ActorType.MONSTER,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         actor_profile="""你是一个训练机器人，只会最基本的防御和攻击，你不会生成观察和利用环境的技能，但你是死不掉的，你有无限的血量，

@@ -62,8 +62,8 @@ def _generate_prompt1(
         ],
         status_effects=[
             StatusEffect(
-                name="[正在生效的状态效果名称]",
-                description="[正在生效的状态效果的具体描述和影响]",
+                name="[上回合受到的状态效果名称]",
+                description="[上回合受到的状态效果的具体描述和影响]",
                 rounds=1,
             ),
         ],
@@ -127,8 +127,8 @@ def _generate_prompt2(
         ],
         status_effects=[
             StatusEffect(
-                name="[新增状态效果名称]",
-                description="[新增状态效果的具体描述和影响]",
+                name="[上回合受到的状态效果名称]",
+                description="[上回合受到的状态效果名称]",
                 rounds=1,
             ),
         ],
@@ -163,6 +163,7 @@ def _generate_prompt2(
 ## 输出要求
 - 涉及数值变化时必须明确具体数值(生命/物理攻击/物理防御/魔法攻击/魔法防御)
 - 技能效果格式：主要效果 + 可选状态效果 + 自身限制效果
+- 技能的description和effect里禁止包含角色名称
 - 使用有趣、意想不到的风格描述效果产生的原因
 
 ## 输出格式(JSON)要求：

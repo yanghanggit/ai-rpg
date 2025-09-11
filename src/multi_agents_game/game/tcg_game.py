@@ -44,6 +44,7 @@ from ..models import (
     RPGCharacterProfile,
     RPGCharacterProfileComponent,
     RuntimeComponent,
+    Skill,
     SpeakAction,
     Stage,
     StageComponent,
@@ -978,8 +979,46 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     # TODO, 临时添加行动, 逻辑。 activate_play_cards_action
-    def activate_play_cards_action(self) -> bool:
+    def activate_play_cards_action(
+        self, skill_execution_plan_options: Optional[Dict[str, str]] = None
+    ) -> bool:
+        """
+        激活打牌行动，为所有轮次中的角色选择技能并设置执行计划。
 
+        Args:
+            skill_execution_plan_options: 可选的技能执行计划选项
+                格式: {技能名称: 目标名称}
+                如果提供，会优先选择指定的技能并使用指定的目标
+
+        Returns:
+            bool: 是否成功激活打牌行动
+        """
+
+        # 1. 验证游戏状态
+        if not self._validate_combat_state():
+            return False
+
+        # 2. 验证所有角色的手牌状态
+        if not self._validate_actors_hand_cards():
+            return False
+
+        # 3. 记录传入的技能选项
+        if skill_execution_plan_options is not None:
+            logger.debug(f"收到技能执行计划选项: {skill_execution_plan_options}")
+
+        # 4. 为每个角色设置打牌行动
+        last_round = self.current_engagement.last_round
+        for turn_actor_name in last_round.round_turns:
+            if not self._setup_actor_play_cards_action(
+                turn_actor_name, skill_execution_plan_options
+            ):
+                return False
+
+        return True
+
+    ###############################################################################################################################################
+    def _validate_combat_state(self) -> bool:
+        """验证战斗状态是否允许添加行动"""
         if len(self.current_engagement.rounds) == 0:
             logger.error("没有回合，不能添加行动！")
             return False
@@ -993,10 +1032,15 @@ class TCGGame(BaseGame, TCGGameContext):
             logger.error("回合已经完成，不能添加行动！")
             return False
 
-        # 检查一遍，如果条件不满足也要出去。
+        return True
+
+    ###############################################################################################################################################
+    def _validate_actors_hand_cards(self) -> bool:
+        """验证所有角色的手牌状态"""
+        last_round = self.current_engagement.last_round
+
         for turn_actor_name in last_round.round_turns:
             actor_entity = self.get_actor_entity(turn_actor_name)
-            assert actor_entity is not None
             if actor_entity is None:
                 logger.error(f"没有找到角色: {turn_actor_name}，不能添加行动！")
                 return False
@@ -1006,37 +1050,95 @@ class TCGGame(BaseGame, TCGGameContext):
                 return False
 
             hand_comp = actor_entity.get(HandComponent)
-            assert len(hand_comp.skills) > 0
             if len(hand_comp.skills) == 0:
                 logger.error(f"角色: {actor_entity._name} 没有技能可用，不能添加行动！")
                 return False
 
-        for turn_actor_name in last_round.round_turns:
+        return True
 
-            actor_entity = self.get_actor_entity(turn_actor_name)
-            assert actor_entity is not None
-            assert not actor_entity.has(PlayCardsAction)
+    ###############################################################################################################################################
+    def _setup_actor_play_cards_action(
+        self,
+        turn_actor_name: str,
+        skill_execution_plan_options: Optional[Dict[str, str]],
+    ) -> bool:
+        """为单个角色设置打牌行动"""
 
-            # TODO, 目前先随机选择一个技能。
-            hand_comp = actor_entity.get(HandComponent)
-            assert len(hand_comp.skills) > 0
-            selected_skill = random.choice(hand_comp.skills)
+        actor_entity = self.get_actor_entity(turn_actor_name)
+        assert actor_entity is not None
+        assert not actor_entity.has(PlayCardsAction)
 
-            action_detail = hand_comp.get_execution_plan(selected_skill.name)
-            assert action_detail is not None
-            assert action_detail.skill == selected_skill.name
+        hand_comp = actor_entity.get(HandComponent)
 
-            # 添加这个动作。
-            actor_entity.replace(
-                PlayCardsAction,
-                actor_entity._name,
-                selected_skill,
-                action_detail.target,
-                action_detail.dialogue,
-                action_detail.reason,
-            )
+        # 选择技能和目标
+        selected_skill, final_target = self._select_skill_and_target(
+            actor_entity, hand_comp, skill_execution_plan_options
+        )
+
+        if selected_skill is None:
+            logger.error(f"无法为角色 {actor_entity._name} 选择技能")
+            return False
+
+        # 获取技能执行计划
+        skill_execution_plan = hand_comp.get_execution_plan(selected_skill.name)
+        assert skill_execution_plan is not None
+        assert skill_execution_plan.skill == selected_skill.name
+
+        # 创建打牌行动
+        actor_entity.replace(
+            PlayCardsAction,
+            actor_entity._name,
+            selected_skill,
+            final_target,
+            skill_execution_plan.dialogue,
+            skill_execution_plan.reason,
+        )
 
         return True
+
+    ###############################################################################################################################################
+    def _select_skill_and_target(
+        self,
+        actor_entity: Entity,
+        hand_comp: HandComponent,
+        skill_execution_plan_options: Optional[Dict[str, str]],
+    ) -> Tuple[Optional[Skill], str]:
+        """
+        为角色选择技能和目标
+
+        Returns:
+            Tuple[技能对象, 最终目标]
+        """
+
+        selected_skill = None
+        target_override = None
+
+        # 优先从指定选项中选择技能
+        if skill_execution_plan_options is not None:
+            for skill in hand_comp.skills:
+                if skill.name in skill_execution_plan_options:
+                    selected_skill = skill
+                    target_override = skill_execution_plan_options[skill.name]
+                    logger.debug(
+                        f"为角色 {actor_entity._name} 选择指定技能: {skill.name}, 目标: {target_override}"
+                    )
+                    break
+
+        # 如果没有找到指定技能，随机选择
+        if selected_skill is None:
+            selected_skill = random.choice(hand_comp.skills)
+            logger.debug(
+                f"为角色 {actor_entity._name} 随机选择技能: {selected_skill.name}"
+            )
+
+        # 确定最终目标
+        if target_override is not None:
+            final_target = target_override
+        else:
+            skill_execution_plan = hand_comp.get_execution_plan(selected_skill.name)
+            final_target = skill_execution_plan.target if skill_execution_plan else ""
+
+        return selected_skill, final_target
 
     #######################################################################################################################################
     # TODO, 临时添加行动, 逻辑。

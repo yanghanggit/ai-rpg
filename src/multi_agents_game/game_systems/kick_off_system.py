@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List, Set, final
 import json
+import hashlib
 from loguru import logger
 from overrides import override
 from ..chat_services.client import ChatClient
@@ -102,7 +103,12 @@ class KickOffSystem(ExecuteProcessor):
         entities_to_process = entities.copy()
 
         for entity in entities:
-            cache_path = self._get_kick_off_cache_path(entity)
+            # 获取系统消息和提示内容
+            system_content = self._get_system_content(entity)
+            prompt = self._generate_prompt(entity)
+            cache_path = self._get_kick_off_cache_path(
+                entity._name, system_content, prompt
+            )
 
             if cache_path.exists():
                 try:
@@ -114,10 +120,7 @@ class KickOffSystem(ExecuteProcessor):
                         AIMessage.model_validate(msg_data) for msg_data in cached_data
                     ]
 
-                    # 整合到聊天上下文
-                    prompt = self._generate_prompt(entity)
-
-                    # 使用现有函数整合聊天上下文
+                    # 使用现有函数整合聊天上下文（prompt已在上面获取）
                     self._integrate_chat_context(entity, prompt, ai_messages)
 
                     # 标记为已完成
@@ -208,8 +211,14 @@ class KickOffSystem(ExecuteProcessor):
             ai_messages: AI消息列表
         """
         try:
-            # 构建文件路径
-            path = self._get_kick_off_cache_path(entity)
+            # 获取系统消息和提示内容
+            system_content = self._get_system_content(entity)
+            prompt_content = self._generate_prompt(entity)
+
+            # 构建基于内容哈希的文件路径
+            path = self._get_kick_off_cache_path(
+                entity._name, system_content, prompt_content
+            )
 
             # 确保目录存在
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -223,7 +232,9 @@ class KickOffSystem(ExecuteProcessor):
                 encoding="utf-8",
             )
 
-            logger.info(f"KickOffSystem: Cached kick off response for {entity._name}")
+            logger.info(
+                f"KickOffSystem: Cached kick off response for {entity._name} to {path.name}"
+            )
 
         except Exception as e:
             logger.error(
@@ -231,17 +242,43 @@ class KickOffSystem(ExecuteProcessor):
             )
 
     ###############################################################################################################################################
-    def _get_kick_off_cache_path(self, entity: Entity) -> Path:
+    def _get_system_content(self, entity: Entity) -> str:
         """
-        解析并返回实体的kick off缓存文件路径
+        获取实体的系统消息内容
 
         Args:
             entity: 实体对象
 
         Returns:
-            Path: 实体的kick off缓存文件路径
+            str: 系统消息内容，如果没有则返回空字符串
         """
-        return LOGS_DIR / f"{self._game._name}_kick_off_cache" / f"{entity._name}.json"
+        agent_memory = self._game.get_agent_short_term_memory(entity)
+        if (
+            len(agent_memory.chat_history) > 0
+            and agent_memory.chat_history[0].type == "system"
+        ):
+            return str(agent_memory.chat_history[0].content)
+        return ""
+
+    ###############################################################################################################################################
+    def _get_kick_off_cache_path(
+        self, entity_name: str, system_content: str, prompt_content: str
+    ) -> Path:
+        """
+        解析并返回基于内容哈希的kick off缓存文件路径
+
+        Args:
+            system_content: 系统消息内容
+            prompt_content: 提示内容
+
+        Returns:
+            Path: 基于内容哈希的缓存文件路径
+        """
+        # 合并内容并生成哈希
+        content = entity_name + system_content + prompt_content
+        hash_name = hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+        return LOGS_DIR / f"{self._game._name}_kick_off_cache" / f"{hash_name}.json"
 
     ###############################################################################################################################################
     async def _process_request(self, entities: Set[Entity]) -> None:

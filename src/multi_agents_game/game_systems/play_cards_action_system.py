@@ -72,7 +72,6 @@ class PlayCardsActionSystem(BaseActionReactiveSystem):
             message = f""" # 发生事件！你开始行动
 使用技能 = {play_cards_action.skill.name}
 目标 = {play_cards_action.target}
-原因 = {play_cards_action.reason}
 技能数据
 {play_cards_action.skill.model_dump_json()}"""
 

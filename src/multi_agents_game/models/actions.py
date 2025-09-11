@@ -60,8 +60,8 @@ class PlayCardsAction(Component):
     name: str
     skill: Skill
     target: str
-    dialogue: str
-    reason: str
+    # dialogue: str
+    # reason: str
 
 
 ############################################################################################################

@@ -1090,8 +1090,8 @@ class TCGGame(BaseGame, TCGGameContext):
             actor_entity._name,
             selected_skill,
             final_target,
-            skill_execution_plan.dialogue,
-            skill_execution_plan.reason,
+            # skill_execution_plan.dialogue,
+            # skill_execution_plan.reason,
         )
 
         return True

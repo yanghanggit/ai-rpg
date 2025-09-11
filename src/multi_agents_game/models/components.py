@@ -159,8 +159,8 @@ class PlayerActiveComponent(Component):
 class SkillExecutionPlan(BaseModel):
     skill: str
     target: str
-    reason: str
-    dialogue: str
+    # reason: str
+    # dialogue: str
 
 
 # 手牌组件。
@@ -181,7 +181,7 @@ class HandComponent(Component):
         for detail in self.skill_execution_plans:
             if detail.skill == skill_name:
                 return detail
-        return SkillExecutionPlan(skill="", target="", reason="", dialogue="")
+        return SkillExecutionPlan(skill="", target="")
 
 
 ############################################################################################################

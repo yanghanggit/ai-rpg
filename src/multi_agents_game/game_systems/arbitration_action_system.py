@@ -80,7 +80,7 @@ class PromptParameters(NamedTuple):
     target: str
     skill: Skill
     rpg_character_profile_component: RPGCharacterProfileComponent
-    dialogue: str
+    # dialogue: str
 
 
 #######################################################################################################################################
@@ -96,7 +96,6 @@ def _generate_prompt(prompt_params: List[PromptParameters]) -> str:
 目标: {param.target}
 描述: {param.skill.description}
 技能效果: {param.skill.effect}
-角色演出时说的话: {param.dialogue}
 属性:
 {param.rpg_character_profile_component.attrs_prompt}
 角色状态:
@@ -210,7 +209,7 @@ class ArbitrationActionSystem(BaseActionReactiveSystem):
                     rpg_character_profile_component=entity.get(
                         RPGCharacterProfileComponent
                     ),
-                    dialogue=play_cards_action.dialogue,
+                    # dialogue=play_cards_action.dialogue,
                 )
             )
 

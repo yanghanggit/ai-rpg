@@ -25,8 +25,8 @@ class SkillResponse(BaseModel):
     description: str = Field(..., description="此技能描述")
     effect: str = Field(..., description="此技能产生的效果以及造成的影响")
     target: str = Field(..., description="技能针对的场景内目标")
-    reason: str = Field(..., description="技能使用原因")
-    dialogue: str = Field(..., description="技能对话")
+    # reason: str = Field(..., description="技能使用原因")
+    # dialogue: str = Field(..., description="技能对话")
 
 
 #######################################################################################################################################
@@ -56,8 +56,8 @@ def _generate_prompt1(
                 description="[技能的基本描述和作用方式]",
                 effect="[技能的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：技能附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制效果描述]",
                 target="[目标角色的完整名称]",
-                reason="[选择此目标和技能的战术原因]",
-                dialogue="[角色使用技能时的台词]",
+                # reason="[选择此目标和技能的战术原因]",
+                # dialogue="[角色使用技能时的台词]",
             ),
         ],
         status_effects=[
@@ -121,8 +121,8 @@ def _generate_prompt2(
                 description="[技能的基本描述和作用方式]",
                 effect="[技能的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：技能附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制效果描述]",
                 target="[目标角色的完整名称]",
-                reason="[选择此目标和技能的战术原因]",
-                dialogue="[角色使用技能时的台词]",
+                # reason="[选择此目标和技能的战术原因]",
+                # dialogue="[角色使用技能时的台词]",
             ),
         ],
         status_effects=[
@@ -301,8 +301,8 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
             wait_action_detail = SkillExecutionPlan(
                 skill=wait_skill.name,
                 target=entity._name,
-                reason="无",
-                dialogue="无",
+                # reason="无",
+                # dialogue="无",
             )
 
             logger.warning(
@@ -343,8 +343,8 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
                     SkillExecutionPlan(
                         skill=skill_response.name,
                         target=skill_response.target,
-                        reason=skill_response.reason,
-                        dialogue=skill_response.dialogue,
+                        # reason=skill_response.reason,
+                        # dialogue=skill_response.dialogue,
                     )
                 )
 
@@ -357,8 +357,8 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
                     SkillExecutionPlan(
                         skill=xcard_player_comp.skill.name,
                         target="根据技能描述和效果，所有适用的目标",
-                        reason="",
-                        dialogue=f"看招！{xcard_player_comp.skill.name}！",
+                        # reason="",
+                        # dialogue=f"看招！{xcard_player_comp.skill.name}！",
                     )
                 ]
 

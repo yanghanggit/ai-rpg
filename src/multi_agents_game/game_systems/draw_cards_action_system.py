@@ -172,9 +172,12 @@ def _generate_prompt2(
 ```
 
 ### 特殊规则
-- 根据最近的[发生事件！战斗回合]，来更新你的生命值，update_hp应当是你事件更新后的生命值。
-- 更新你当前身上的状态效果，包括环境影响、之前行动的后果等
-- 如果你已经死亡，即update_hp<=0，则不需要生成技能与状态，返回空列表即可。
+根据最近的[发生事件！战斗回合]，来更新你的生命值，update_hp应当是你事件更新后的生命值。
+更新你当前身上的状态效果，包括环境影响、之前行动的后果等
+如果你已经死亡，即update_hp<=0，则不需要生成技能与状态，返回 空对象 即可。
+```json
+{response_empty_sample.model_dump_json(exclude_none=True, indent=2)}
+```
 
 ### 注意
 - 禁用换行/空行
@@ -278,29 +281,40 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
             entities: 需要检查的实体列表
         """
         for entity in entities:
-            if not entity.has(HandComponent):
-                wait_skill = Skill(
-                    name="等待",
-                    description="什么都不做，等待下一回合。",
-                    effect="不产生任何效果",
-                )
+            if entity.has(HandComponent):
+                continue
 
-                wait_action_detail = SkillExecutionPlan(
-                    skill=wait_skill.name,
-                    target=entity._name,
-                    reason="无",
-                    dialogue="无",
-                )
-
+            character_profile_component = entity.get(RPGCharacterProfileComponent)
+            assert character_profile_component is not None
+            if character_profile_component.rpg_character_profile.hp <= 0:
+                # 如果角色已经死亡，就不需要添加等待技能了。
                 logger.warning(
-                    f"entity {entity._name} has no HandComponent, add default skill"
+                    f"entity {entity._name} is dead (hp <= 0), no need to add default skill"
                 )
-                entity.replace(
-                    HandComponent,
-                    entity._name,
-                    [wait_skill],
-                    [wait_action_detail],
-                )
+                continue
+
+            wait_skill = Skill(
+                name="等待",
+                description="什么都不做，等待下一回合。",
+                effect="不产生任何效果",
+            )
+
+            wait_action_detail = SkillExecutionPlan(
+                skill=wait_skill.name,
+                target=entity._name,
+                reason="无",
+                dialogue="无",
+            )
+
+            logger.warning(
+                f"entity {entity._name} has no HandComponent, add default skill"
+            )
+            entity.replace(
+                HandComponent,
+                entity._name,
+                [wait_skill],
+                [wait_action_detail],
+            )
 
     #######################################################################################################################################
     def _handle_response(

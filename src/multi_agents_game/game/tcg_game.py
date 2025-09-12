@@ -337,10 +337,11 @@ class TCGGame(BaseGame, TCGGameContext):
 
         try:
             # 使用便捷方法反序列化为 WorldDocument 对象
-            retrieved_world_document = WorldDocument.from_mongodb(retrieved_world_data)
+            # retrieved_world_document = WorldDocument.from_mongodb(retrieved_world_data)
             # logger.success(
             #     f"✅ 演示游戏世界已从 MongoDB 成功获取! = {retrieved_world_document.model_dump_json()}"
             # )
+            pass
 
         except Exception as validation_error:
             logger.error(f"❌ WorldDocument 反序列化失败: {validation_error}")
@@ -418,8 +419,6 @@ class TCGGame(BaseGame, TCGGameContext):
         ret: List[Entity] = []
 
         for instance in world_system_instances:
-
-            # break  # TODO, 先注释掉
 
             # 创建实体
             world_system_entity = self.__create_entity__(instance.name)
@@ -658,24 +657,50 @@ class TCGGame(BaseGame, TCGGameContext):
                 self.player.add_agent_event(agent_event=agent_event)
 
     ###############################################################################################################################################
-    def stage_transition(self, actors: Set[Entity], stage_destination: Entity) -> None:
+    def _validate_stage_transition_prerequisites(
+        self, actors: Set[Entity], stage_destination: Entity
+    ) -> Set[Entity]:
+        """
+        验证场景传送的前置条件并过滤有效的角色
 
-        # assert self._debug_flag_pipeline is False, "传送前，不允许在pipeline中"
+        Args:
+            actors: 需要传送的角色集合
+            stage_destination: 目标场景
 
-        for actor1 in actors:
-            assert actor1.has(ActorComponent)
+        Returns:
+            Set[Entity]: 需要实际传送的角色集合（排除已在目标场景的角色）
+        """
+        # 验证所有角色都有ActorComponent
+        for actor in actors:
+            assert actor.has(ActorComponent), f"角色 {actor._name} 缺少 ActorComponent"
 
-        # 传送前处理
+        # 过滤掉已经在目标场景的角色
+        actors_to_transfer = set()
         for actor_entity in actors:
-
-            # 检查自身是否已经在目标场景
             current_stage = self.safe_get_stage_entity(actor_entity)
-            assert current_stage is not None
-            if current_stage is not None and current_stage == stage_destination:
+            assert current_stage is not None, f"角色 {actor_entity._name} 没有当前场景"
+
+            if current_stage == stage_destination:
                 logger.warning(
                     f"{actor_entity._name} 已经存在于 {stage_destination._name}"
                 )
                 continue
+
+            actors_to_transfer.add(actor_entity)
+
+        return actors_to_transfer
+
+    ###############################################################################################################################################
+    def _handle_actors_leaving_stage(self, actors: Set[Entity]) -> None:
+        """
+        处理角色离开场景的通知
+
+        Args:
+            actors: 要离开的角色集合
+        """
+        for actor_entity in actors:
+            current_stage = self.safe_get_stage_entity(actor_entity)
+            assert current_stage is not None
 
             # 向所在场景及所在场景内除自身外的其他人宣布，这货要离开了
             self.broadcast_event(
@@ -686,9 +711,18 @@ class TCGGame(BaseGame, TCGGameContext):
                 exclude_entities={actor_entity},
             )
 
-        # 传送中处理
-        for actor_entity in actors:
+    ###############################################################################################################################################
+    def _execute_actors_stage_transfer(
+        self, actors: Set[Entity], stage_destination: Entity
+    ) -> None:
+        """
+        执行角色的场景传送，包括更新场景归属和行动队列
 
+        Args:
+            actors: 要传送的角色集合
+            stage_destination: 目标场景
+        """
+        for actor_entity in actors:
             current_stage = self.safe_get_stage_entity(actor_entity)
             assert current_stage is not None
 
@@ -697,6 +731,7 @@ class TCGGame(BaseGame, TCGGameContext):
                 ActorComponent, actor_entity._name, stage_destination._name
             )
 
+            # 通知角色自身的传送过程
             self.notify_event(
                 entities={actor_entity},
                 agent_event=AgentEvent(
@@ -704,31 +739,66 @@ class TCGGame(BaseGame, TCGGameContext):
                 ),
             )
 
-            # 从当前的行动队列里移除
-            if current_stage.has(HomeComponent):
-                home_comp = current_stage.get(HomeComponent)
-                if actor_entity._name in home_comp.action_order:
-                    home_comp.action_order.remove(actor_entity._name)
-                    current_stage.replace(
-                        HomeComponent,
-                        home_comp.name,
-                        home_comp.action_order,
-                    )
+            # 从当前场景的行动队列里移除
+            self._remove_actor_from_stage_action_queue(actor_entity, current_stage)
 
             # 加入到目标场景的行动队列里
-            if stage_destination.has(HomeComponent):
-                home_comp = stage_destination.get(HomeComponent)
-                if actor_entity._name not in home_comp.action_order:
-                    home_comp.action_order.append(actor_entity._name)
-                    stage_destination.replace(
-                        HomeComponent,
-                        home_comp.name,
-                        home_comp.action_order,
-                    )
+            self._add_actor_to_stage_action_queue(actor_entity, stage_destination)
 
-        # 传送后处理
+    ###############################################################################################################################################
+    def _remove_actor_from_stage_action_queue(
+        self, actor_entity: Entity, stage_entity: Entity
+    ) -> None:
+        """
+        从场景的行动队列中移除角色
+
+        Args:
+            actor_entity: 要移除的角色
+            stage_entity: 源场景
+        """
+        if stage_entity.has(HomeComponent):
+            home_comp = stage_entity.get(HomeComponent)
+            if actor_entity._name in home_comp.action_order:
+                home_comp.action_order.remove(actor_entity._name)
+                stage_entity.replace(
+                    HomeComponent,
+                    home_comp.name,
+                    home_comp.action_order,
+                )
+
+    ###############################################################################################################################################
+    def _add_actor_to_stage_action_queue(
+        self, actor_entity: Entity, stage_entity: Entity
+    ) -> None:
+        """
+        将角色加入场景的行动队列
+
+        Args:
+            actor_entity: 要加入的角色
+            stage_entity: 目标场景
+        """
+        if stage_entity.has(HomeComponent):
+            home_comp = stage_entity.get(HomeComponent)
+            if actor_entity._name not in home_comp.action_order:
+                home_comp.action_order.append(actor_entity._name)
+                stage_entity.replace(
+                    HomeComponent,
+                    home_comp.name,
+                    home_comp.action_order,
+                )
+
+    ###############################################################################################################################################
+    def _handle_actors_entering_stage(
+        self, actors: Set[Entity], stage_destination: Entity
+    ) -> None:
+        """
+        处理角色进入场景的通知
+
+        Args:
+            actors: 进入的角色集合
+            stage_destination: 目标场景
+        """
         for actor_entity in actors:
-
             # 向所在场景及所在场景内除自身外的其他人宣布，这货到了
             self.broadcast_event(
                 entity=stage_destination,
@@ -737,6 +807,33 @@ class TCGGame(BaseGame, TCGGameContext):
                 ),
                 exclude_entities={actor_entity},
             )
+
+    ###############################################################################################################################################
+    def stage_transition(self, actors: Set[Entity], stage_destination: Entity) -> None:
+        """
+        场景传送的主协调函数
+
+        Args:
+            actors: 需要传送的角色集合
+            stage_destination: 目标场景
+        """
+        # 1. 验证前置条件并过滤有效角色
+        actors_to_transfer = self._validate_stage_transition_prerequisites(
+            actors, stage_destination
+        )
+
+        # 如果没有角色需要传送，直接返回
+        if not actors_to_transfer:
+            return
+
+        # 2. 处理角色离开场景
+        self._handle_actors_leaving_stage(actors_to_transfer)
+
+        # 3. 执行场景传送
+        self._execute_actors_stage_transfer(actors_to_transfer, stage_destination)
+
+        # 4. 处理角色进入场景
+        self._handle_actors_entering_stage(actors_to_transfer, stage_destination)
 
     ###############################################################################################################################################
     def validate_conversation(
@@ -819,38 +916,48 @@ class TCGGame(BaseGame, TCGGameContext):
             self._dungeon_advance(self.current_dungeon, heros_entities)
 
     #######################################################################################################################################
-    # TODO, 进入地下城！
-    def _dungeon_advance(self, dungeon: Dungeon, heros_entities: Set[Entity]) -> bool:
+    def _validate_dungeon_advance_prerequisites(
+        self, dungeon: Dungeon, heros_entities: Set[Entity]
+    ) -> Tuple[bool, Optional[Entity]]:
+        """
+        验证地下城推进的前置条件
 
+        Returns:
+            Tuple[是否验证通过, 场景实体(如果验证通过)]
+        """
         # 是否有可以进入的关卡？
         upcoming_dungeon = dungeon.current_level()
-        assert upcoming_dungeon is not None
         if upcoming_dungeon is None:
             logger.error(
                 f"{self.current_dungeon.name} 没有下一个地下城！position = {self.current_dungeon.position}"
             )
-            return False
+            return False, None
 
         # 下一个关卡实体, 没有就是错误的。
         stage_entity = self.get_stage_entity(upcoming_dungeon.name)
-        assert stage_entity is not None
-        assert stage_entity.has(DungeonComponent)
-        if stage_entity is None:
+        if stage_entity is None or not stage_entity.has(DungeonComponent):
             logger.error(f"{upcoming_dungeon.name} 没有对应的stage实体！")
-            return False
+            return False, None
 
         # 集体准备传送
-        assert len(heros_entities) > 0
         if len(heros_entities) == 0:
             logger.error(f"没有英雄不能进入地下城!= {stage_entity._name}")
-            return False
+            return False, None
 
         logger.debug(
             f"{self.current_dungeon.name} = [{self.current_dungeon.position}]关为：{stage_entity._name}，可以进入！！！！"
         )
 
-        # TODO, 准备提示词。
-        trans_message = ""
+        return True, stage_entity
+
+    #######################################################################################################################################
+    def _generate_and_send_dungeon_transition_message(
+        self, dungeon: Dungeon, stage_entity: Entity, heros_entities: Set[Entity]
+    ) -> None:
+        """
+        生成并发送地下城传送提示消息
+        """
+        # 准备提示词
         if dungeon.position == 0:
             trans_message = (
                 f"""# 提示！你将要开始一次冒险，准备进入地下城: {stage_entity._name}"""
@@ -861,9 +968,11 @@ class TCGGame(BaseGame, TCGGameContext):
         for hero_entity in heros_entities:
             self.append_human_message(hero_entity, trans_message)  # 添加故事
 
-        # 开始传送。
-        self.stage_transition(heros_entities, stage_entity)
-
+    #######################################################################################################################################
+    def _setup_dungeon_kickoff_messages(self, stage_entity: Entity) -> None:
+        """
+        设置地下城场景和怪物的KickOff消息
+        """
         # 需要在这里补充设置地下城与怪物的kickoff信息。
         stage_kick_off_comp = stage_entity.get(KickOffMessageComponent)
         assert stage_kick_off_comp is not None
@@ -897,6 +1006,7 @@ class TCGGame(BaseGame, TCGGameContext):
             f"更新设置{stage_entity._name} 的kickoff信息: {stage_entity.get(KickOffMessageComponent).content}"
         )
 
+        # 设置怪物的kickoff信息
         actors = self.retrieve_actors_on_stage(stage_entity)
         for actor in actors:
             if actor.has(MonsterComponent):
@@ -906,7 +1016,38 @@ class TCGGame(BaseGame, TCGGameContext):
                     f"需要设置{actor._name} 的kickoff信息: {monster_kick_off_comp.content}"
                 )
 
-        # 设置一个战斗为kickoff状态。
+    #######################################################################################################################################
+    # TODO, 进入地下城！
+    def _dungeon_advance(self, dungeon: Dungeon, heros_entities: Set[Entity]) -> bool:
+        """
+        地下城关卡推进的主协调函数
+
+        Args:
+            dungeon: 地下城实例
+            heros_entities: 英雄实体集合
+
+        Returns:
+            bool: 是否成功推进到下一关卡
+        """
+        # 1. 验证前置条件
+        is_valid, stage_entity = self._validate_dungeon_advance_prerequisites(
+            dungeon, heros_entities
+        )
+        if not is_valid or stage_entity is None:
+            return False
+
+        # 2. 生成并发送传送提示消息
+        self._generate_and_send_dungeon_transition_message(
+            dungeon, stage_entity, heros_entities
+        )
+
+        # 3. 执行场景传送
+        self.stage_transition(heros_entities, stage_entity)
+
+        # 4. 设置KickOff消息
+        self._setup_dungeon_kickoff_messages(stage_entity)
+
+        # 5. 初始化战斗状态
         dungeon.engagement.combat_kickoff(Combat(name=stage_entity._name))
 
         return True
@@ -961,21 +1102,21 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
     ###############################################################################################################################################
-    def gen_map(
+    def get_stage_actor_distribution(
         self, options: RetrieveMappingOptions = RetrieveMappingOptions()
     ) -> Dict[str, List[str]]:
 
-        entities_mapping = self._retrieve_stage_actor_mapping(options)
-        if len(entities_mapping) == 0:
+        stage_entity_to_actor_entities = self._get_stage_actor_distribution(options)
+        if len(stage_entity_to_actor_entities) == 0:
             return {}
 
-        names_mapping: Dict[str, List[str]] = {}
-        for stage_entity, actor_entities in entities_mapping.items():
+        stage_to_actor_names: Dict[str, List[str]] = {}
+        for stage_entity, actor_entities in stage_entity_to_actor_entities.items():
             actor_names = {actor_entity._name for actor_entity in actor_entities}
             stage_name = stage_entity._name
-            names_mapping[stage_name] = list(actor_names)
+            stage_to_actor_names[stage_name] = list(actor_names)
 
-        return names_mapping
+        return stage_to_actor_names
 
     ###############################################################################################################################################
     # TODO, 临时添加行动, 逻辑。 activate_play_cards_action

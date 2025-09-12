@@ -48,7 +48,7 @@ async def view_home(
         web_game = current_room.game
 
         # 获取当前地图
-        mapping_data = web_game.gen_map()
+        mapping_data = web_game.get_stage_actor_distribution()
         logger.info(f"view_home: {user_name} mapping_data: {mapping_data}")
 
         # 返回。

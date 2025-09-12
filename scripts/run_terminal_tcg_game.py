@@ -33,11 +33,15 @@ def _parse_user_action_input(usr_input: str, keys: Set[str]) -> Dict[str, str]:
     ret: Dict[str, str] = {}
     try:
         parts = usr_input.split("--")
-        args = {
-            part.split("=")[0].strip(): part.split("=")[1].strip()
-            for part in parts
-            if "=" in part
-        }
+        args = {}
+        for part in parts:
+            if "=" in part:
+                # 使用 maxsplit=1 确保只在第一个等号处分割
+                key_value = part.split("=", 1)
+                if len(key_value) == 2:
+                    key = key_value[0].strip()
+                    value = key_value[1].strip()
+                    args[key] = value
 
         for key in keys:
             if key in args:
@@ -60,8 +64,49 @@ class SpeakCommand(TypedDict):
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
+class PlayCardsCommand(TypedDict):
+    params: Dict[str, str]  # 卡牌名称 -> 目标名称
+
+
+############################################################################################################
+############################################################################################################
+############################################################################################################
 # sample: /speak --target=角色.法师.奥露娜 --content=我还是需要准备一下
 def _parse_speak_command_input(usr_input: str) -> SpeakCommand:
+    """
+    解析用户输入的说话命令，提取目标角色和说话内容。
+
+    该函数专门处理游戏中的角色对话命令，支持两种命令格式：
+    - /speak：完整的说话命令
+    - /ss：说话命令的简写形式
+
+    Args:
+        usr_input (str): 用户输入的原始字符串，应包含说话命令及其参数
+
+    Returns:
+        SpeakCommand: 包含以下字段的类型化字典：
+            - target (str): 目标角色的名称或路径，如果未找到则为空字符串
+            - content (str): 要说的内容，如果未找到则为空字符串
+
+    Command Format:
+        /speak --target=<角色名称> --content=<说话内容>
+        /ss --target=<角色名称> --content=<说话内容>
+
+    Examples:
+        >>> _parse_speak_command_input("/speak --target=角色.法师.奥露娜 --content=我还是需要准备一下")
+        {'target': '角色.法师.奥露娜', 'content': '我还是需要准备一下'}
+
+        >>> _parse_speak_command_input("/ss --target=玩家 --content=你好")
+        {'target': '玩家', 'content': '你好'}
+
+        >>> _parse_speak_command_input("/move --direction=north")  # 非说话命令
+        {'target': '', 'content': ''}
+
+    Note:
+        - 如果输入不包含 /speak 或 /ss 命令，函数将返回空的 SpeakCommand
+        - 参数解析失败时，相应字段将保持为空字符串
+        - 依赖于 _parse_user_action_input 函数进行实际的参数解析
+    """
     ret: SpeakCommand = {"target": "", "content": ""}
     if "/speak" in usr_input or "/ss" in usr_input:
         return cast(
@@ -71,6 +116,78 @@ def _parse_speak_command_input(usr_input: str) -> SpeakCommand:
     return ret
 
 
+###############################################################################################################################################
+# sample: /play-cards --params=火球术=敌人.哥布林;治疗术=自己
+def _parse_play_cards_command_input(usr_input: str) -> PlayCardsCommand:
+    """
+    解析用户输入的打牌命令，提取卡牌使用参数。
+
+    该函数专门处理游戏中的卡牌使用命令，支持两种命令格式：
+    - /play-cards：完整的打牌命令
+    - /pc：打牌命令的简写形式（在其他地方使用）
+
+    Args:
+        usr_input (str): 用户输入的原始字符串，应包含打牌命令及其参数
+
+    Returns:
+        PlayCardsCommand: 包含以下字段的类型化字典：
+            - params (Dict[str, str]): 卡牌名称到目标的映射字典
+                如果未找到有效参数则为空字典
+
+    Command Format:
+        /play-cards --params=<卡牌1>=<目标1>;<卡牌2>=<目标2>;...
+
+    参数格式说明：
+        - 使用分号(;)分隔多个卡牌-目标对
+        - 使用等号(=)连接卡牌名称和目标
+        - 卡牌名称：如"火球术"、"治疗术"等
+        - 目标名称：如"敌人.哥布林"、"自己"、"队友.法师"等
+
+    Examples:
+        >>> _parse_play_cards_command_input("/play-cards --params=火球术=敌人.哥布林;治疗术=自己")
+        {'params': {'火球术': '敌人.哥布林', '治疗术': '自己'}}
+
+        >>> _parse_play_cards_command_input("/play-cards --params=闪电链=敌人.哥布林")
+        {'params': {'闪电链': '敌人.哥布林'}}
+
+        >>> _parse_play_cards_command_input("/speak --target=玩家 --content=你好")  # 非打牌命令
+        {'params': {}}
+
+    Note:
+        - 如果输入不包含 /play-cards 命令，函数将返回空的 PlayCardsCommand
+        - 参数解析失败时，params 字段将保持为空字典
+        - 依赖于 _parse_user_action_input 函数进行基础参数解析
+        - 对 params 参数进行特殊的键值对解析处理
+    """
+    ret: PlayCardsCommand = {"params": {}}
+
+    if "/play-cards" in usr_input or "/pc" in usr_input:
+        # 使用基础解析函数获取 params 字符串
+        parsed_args = _parse_user_action_input(usr_input, {"params"})
+
+        if "params" in parsed_args and parsed_args["params"]:
+            try:
+                # 解析 params 字符串：火球术=敌人.哥布林;治疗术=自己
+                params_str = parsed_args["params"]
+                card_target_pairs = params_str.split(";")
+
+                params_dict = {}
+                for pair in card_target_pairs:
+                    if "=" in pair:
+                        card_name, target = pair.split(
+                            "=", 1
+                        )  # 使用 maxsplit=1 防止目标名称中包含=
+                        params_dict[card_name.strip()] = target.strip()
+
+                ret["params"] = params_dict
+
+            except Exception as e:
+                logger.error(f"解析打牌命令参数时发生错误: {usr_input}, 错误: {e}")
+
+    return ret
+
+
+###############################################################################################################################################
 ###############################################################################################################################################
 async def _run_game(
     terminal_game_user_options: TerminalGameUserOptions,
@@ -94,7 +211,7 @@ async def _run_game(
         world_exists = World(boot=world_boot)
 
         # 运行时生成地下城系统
-        world_exists.dungeon = create_demo_dungeon5()
+        world_exists.dungeon = create_demo_dungeon1()
 
     else:
         logger.info(
@@ -175,14 +292,23 @@ async def _process_dungeon_state_input(
 
         await terminal_game.dungeon_combat_pipeline.process()
 
-    elif usr_input == "/pc" or usr_input == "/play-card":
+    elif usr_input == "/pc" or "/play-cards" in usr_input:
 
         if not terminal_game.current_engagement.is_on_going_phase:
             logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
             return
 
-        logger.debug(f"玩家输入 = {usr_input}, 准备行动......")
-        if terminal_game.activate_play_cards_action():
+        # 统一解析卡牌命令（/pc 和 /play-cards 都用同样的逻辑处理）
+        player_cards_command = _parse_play_cards_command_input(usr_input)
+        logger.debug(
+            f"玩家输入 = {usr_input}, 解析到的卡牌命令: {player_cards_command}"
+        )
+
+        # 传入解析到的卡牌参数，如果没有参数则传入None
+        skill_options = (
+            player_cards_command["params"] if player_cards_command["params"] else None
+        )
+        if terminal_game.activate_play_cards_action(skill_options):
             await terminal_game.dungeon_combat_pipeline.process()
 
     elif usr_input == "/rth" or usr_input == "/return-to-home":
@@ -322,6 +448,8 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
 
 ###############################################################################################################################################
 if __name__ == "__main__":
+
+    # player_cards_command = _parse_play_cards_command_input("/play-cards --params=火球术=敌人.哥布林;治疗术=自己")
 
     # 初始化日志
     setup_logger()

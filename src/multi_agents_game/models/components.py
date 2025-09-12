@@ -1,7 +1,5 @@
 from typing import List, final
-
 from pydantic import BaseModel
-
 from ..entitas.components import Component, MutableComponent
 from .dungeon import Skill, StatusEffect
 from .objects import RPGCharacterProfile
@@ -157,33 +155,18 @@ class PlayerActiveComponent(Component):
 # draw_card
 
 
-@final
-class SkillExecutionPlan(BaseModel):
-    skill: str
-    target: str
-    reason: str
-    dialogue: str
-
-
 # 手牌组件。
 @final
 @register_component_class
 class HandComponent(Component):
     name: str
     skills: List[Skill]
-    action_details: List[SkillExecutionPlan]
 
     def get_skill(self, skill_name: str) -> Skill:
         for skill in self.skills:
             if skill.name == skill_name:
                 return skill
-        return Skill(name="", description="", effect="")
-
-    def get_execution_plan(self, skill_name: str) -> SkillExecutionPlan:
-        for detail in self.action_details:
-            if detail.skill == skill_name:
-                return detail
-        return SkillExecutionPlan(skill="", target="", reason="", dialogue="")
+        return Skill(name="", description="", effect="", target="")
 
 
 ############################################################################################################
@@ -194,8 +177,6 @@ class DeathComponent(Component):
     name: str
 
 
-############################################################################################################
-############################################################################################################
 ############################################################################################################
 # 新版本的重构！
 @final
@@ -239,6 +220,4 @@ class XCardPlayerComponent(Component):
     skill: Skill
 
 
-############################################################################################################
-############################################################################################################
 ############################################################################################################

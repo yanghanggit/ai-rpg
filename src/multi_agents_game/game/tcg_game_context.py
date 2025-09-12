@@ -172,7 +172,7 @@ class TCGGameContext(Context):
         return None
 
     ###############################################################################################################################################
-    def _retrieve_stage_actor_mapping(
+    def _get_stage_actor_distribution(
         self,
         options: RetrieveMappingOptions,
     ) -> Dict[Entity, Set[Entity]]:
@@ -217,7 +217,7 @@ class TCGGameContext(Context):
         if stage_entity is None:
             return set()
 
-        mapping = self._retrieve_stage_actor_mapping(options)
+        mapping = self._get_stage_actor_distribution(options)
         if stage_entity not in mapping:
             return set()
 

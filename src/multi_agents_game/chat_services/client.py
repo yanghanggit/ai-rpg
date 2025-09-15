@@ -1,6 +1,7 @@
 from typing import Final, List, Optional, final
 import httpx
 import requests
+import traceback
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from .protocol import (
@@ -125,8 +126,17 @@ class ChatClient:
                     f"request-response Error: {response.status_code}, {response.text}"
                 )
 
+        except requests.exceptions.Timeout as e:
+            logger.error(
+                f"{self._name}: request timeout error: {type(e).__name__}: {e}"
+            )
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"{self._name}: connection error: {type(e).__name__}: {e}")
+        except requests.exceptions.RequestException as e:
+            logger.error(f"{self._name}: request error: {type(e).__name__}: {e}")
         except Exception as e:
-            logger.error(f"{self._name}: request error: {e}")
+            logger.error(f"{self._name}: unexpected error: {type(e).__name__}: {e}")
+            logger.debug(f"{self._name}: full traceback:\n{traceback.format_exc()}")
 
     ################################################################################################################################################################################
     async def a_request(self, client: httpx.AsyncClient, url: str) -> None:
@@ -155,7 +165,18 @@ class ChatClient:
                     f"a_request-response Error: {response.status_code}, {response.text}"
                 )
 
+        except httpx.TimeoutException as e:
+            logger.error(f"{self._name}: async timeout error: {type(e).__name__}: {e}")
+        except httpx.ConnectError as e:
+            logger.error(
+                f"{self._name}: async connection error: {type(e).__name__}: {e}"
+            )
+        except httpx.RequestError as e:
+            logger.error(f"{self._name}: async request error: {type(e).__name__}: {e}")
         except Exception as e:
-            logger.error(f"{self._name}: a_request error: {e}")
+            logger.error(
+                f"{self._name}: unexpected async error: {type(e).__name__}: {e}"
+            )
+            logger.debug(f"{self._name}: full traceback:\n{traceback.format_exc()}")
 
     ################################################################################################################################################################################

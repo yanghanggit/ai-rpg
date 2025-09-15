@@ -17,6 +17,10 @@ class ServerSettings(BaseModel):
             f"http://localhost:{self.azure_openai_chat_server_port}{self.azure_openai_chat_service_api_endpoint}"
         ]
 
+    @property
+    def deepseek_chat_server_localhost_urls(self) -> List[str]:
+        return []
+
 
 _server_settings: Optional[ServerSettings] = None
 

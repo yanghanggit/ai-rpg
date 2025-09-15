@@ -39,19 +39,22 @@ class ChatClientManager:
 
     ################################################################################################################################################################################
     async def gather(self, request_handlers: List[ChatClient]) -> None:
+        return await self._gather(
+            request_handlers, self.current_chat_server_localhost_urls
+        )
 
-        if (
-            len(request_handlers) == 0
-            or len(self.current_chat_server_localhost_urls) == 0
-        ):
+    ################################################################################################################################################################################
+    async def _gather(
+        self, request_handlers: List[ChatClient], urls: List[str]
+    ) -> None:
+
+        if len(request_handlers) == 0 or len(urls) == 0:
             return
 
         coros = []
         for idx, handler in enumerate(request_handlers):
             # 循环复用
-            endpoint_url = self.current_chat_server_localhost_urls[
-                idx % len(self.current_chat_server_localhost_urls)
-            ]
+            endpoint_url = urls[idx % len(urls)]
             coros.append(handler.a_request(self._async_client, endpoint_url))
 
         # 允许异常捕获，不中断其他请求
@@ -67,26 +70,20 @@ class ChatClientManager:
 
     ################################################################################################################################################################################
     def request(self, request_handlers: List[ChatClient]) -> None:
+        return self._request(request_handlers, self.current_chat_server_localhost_urls)
 
-        if (
-            len(request_handlers) == 0
-            or len(self.current_chat_server_localhost_urls) == 0
-        ):
+    ################################################################################################################################################################################
+    def _request(self, request_handlers: List[ChatClient], urls: List[str]) -> None:
+
+        if len(request_handlers) == 0 or len(urls) == 0:
             return
 
-        for request_handler in request_handlers:
+        for idx, request_handler in enumerate(request_handlers):
             start_time = time.time()
 
             # 使用当前索引获取服务器URL
-            current_url = self.current_chat_server_localhost_urls[
-                self._current_server_index
-            ]
+            current_url = urls[idx % len(urls)]
             request_handler.request(current_url)
-
-            # 移动到下一个服务器，循环轮询
-            self._current_server_index = (self._current_server_index + 1) % len(
-                self.current_chat_server_localhost_urls
-            )
 
             end_time = time.time()
             logger.debug(f"ChatSystem.handle:{end_time - start_time:.2f} seconds")

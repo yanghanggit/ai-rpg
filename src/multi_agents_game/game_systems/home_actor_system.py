@@ -182,8 +182,8 @@ class HomeActorSystem(ExecuteProcessor):
             assert current_stage is not None
 
             # 找到当前场景内所有角色
-            actors_apperances_mapping = (
-                self._game.retrieve_actor_appearance_on_stage_mapping(current_stage)
+            actors_apperances_mapping = self._game.get_stage_actor_appearances(
+                current_stage
             )
             actors_apperances_mapping.pop(entity._name, None)
 

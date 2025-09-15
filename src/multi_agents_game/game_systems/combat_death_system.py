@@ -9,7 +9,7 @@ from ..models import (
     HeroComponent,
     MonsterComponent,
 )
-from ..game.tcg_game_context import RetrieveMappingOptions
+from ..game.tcg_game_context import ActorFilterSettings
 
 
 @final
@@ -61,8 +61,8 @@ class CombatDeathSystem(ExecuteProcessor):
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
 
-        actors_on_stage = self._game.retrieve_actors_on_stage(
-            player_entity, RetrieveMappingOptions(filter_dead_actors=False)
+        actors_on_stage = self._game.get_actors_on_stage(
+            player_entity, ActorFilterSettings(filter_dead_actors=False)
         )
         assert len(actors_on_stage) > 0, f"entities with actions: {actors_on_stage}"
 
@@ -87,8 +87,8 @@ class CombatDeathSystem(ExecuteProcessor):
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
 
-        actors_on_stage = self._game.retrieve_actors_on_stage(
-            player_entity, RetrieveMappingOptions(filter_dead_actors=False)
+        actors_on_stage = self._game.get_actors_on_stage(
+            player_entity, ActorFilterSettings(filter_dead_actors=False)
         )
         assert len(actors_on_stage) > 0, f"entities with actions: {actors_on_stage}"
 
@@ -115,8 +115,8 @@ class CombatDeathSystem(ExecuteProcessor):
         player_stage_entity = self._game.safe_get_stage_entity(player_entity)
         assert player_stage_entity is not None
 
-        actors_on_stage = self._game.retrieve_actors_on_stage(
-            player_entity, RetrieveMappingOptions(filter_dead_actors=False)
+        actors_on_stage = self._game.get_actors_on_stage(
+            player_entity, ActorFilterSettings(filter_dead_actors=False)
         )
         assert len(actors_on_stage) > 0, f"entities with actions: {actors_on_stage}"
 

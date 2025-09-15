@@ -29,7 +29,7 @@ from ..models import (
 
 
 @dataclass
-class RetrieveMappingOptions:
+class ActorFilterSettings:
     filter_dead_actors: bool = True
 
 
@@ -174,7 +174,7 @@ class TCGGameContext(Context):
     ###############################################################################################################################################
     def _get_stage_actor_distribution(
         self,
-        options: RetrieveMappingOptions,
+        options: ActorFilterSettings,
     ) -> Dict[Entity, Set[Entity]]:
 
         ret: Dict[Entity, Set[Entity]] = {}
@@ -208,8 +208,8 @@ class TCGGameContext(Context):
         return ret
 
     ###############################################################################################################################################
-    def retrieve_actors_on_stage(
-        self, entity: Entity, options: RetrieveMappingOptions = RetrieveMappingOptions()
+    def get_actors_on_stage(
+        self, entity: Entity, options: ActorFilterSettings = ActorFilterSettings()
     ) -> Set[Entity]:
 
         stage_entity = self.safe_get_stage_entity(entity)
@@ -225,11 +225,9 @@ class TCGGameContext(Context):
 
     ###############################################################################################################################################
     # 以actor的final_appearance.name为key，final_appearance.final_appearance为value
-    def retrieve_actor_appearance_on_stage_mapping(
-        self, entity: Entity
-    ) -> Dict[str, str]:
+    def get_stage_actor_appearances(self, entity: Entity) -> Dict[str, str]:
         ret: Dict[str, str] = {}
-        for actor in self.retrieve_actors_on_stage(entity):
+        for actor in self.get_actors_on_stage(entity):
             if actor.has(AppearanceComponent):
                 final_appearance = actor.get(AppearanceComponent)
                 ret.setdefault(final_appearance.name, final_appearance.appearance)

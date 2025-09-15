@@ -41,13 +41,13 @@ class TestRedisConnection:
 
             # 测试 GET 操作
             logger.info(f"📖 读取测试键值: {test_key}")
-            retrieved_value = redis_get(test_key)
+            redis_response_value = redis_get(test_key)
 
             # 验证结果
             assert (
-                retrieved_value == test_value
-            ), f"Redis 连接测试失败! 期望值: {test_value}, 实际值: {retrieved_value}"
-            logger.success(f"✅ Redis 连接测试成功! 读取到的值: {retrieved_value}")
+                redis_response_value == test_value
+            ), f"Redis 连接测试失败! 期望值: {test_value}, 实际值: {redis_response_value}"
+            logger.success(f"✅ Redis 连接测试成功! 读取到的值: {redis_response_value}")
 
             # 清理测试数据
             logger.info(f"🧹 清理测试数据: {test_key}")
@@ -75,8 +75,8 @@ class TestRedisConnection:
         redis_set(test_key, test_value)
 
         # 获取值并验证
-        retrieved_value = redis_get(test_key)
-        assert retrieved_value == test_value
+        redis_value = redis_get(test_key)
+        assert redis_value == test_value
 
         # 清理
         redis_delete(test_key)

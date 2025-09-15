@@ -21,14 +21,14 @@
 使用方法：
 
     # 使用指定配置文件启动（必需参数）
-    python scripts/run_mcp_server.py --config mcp_config.json
+    python scripts/run_tcg_game_mcp_server.py --config mcp_config.json
 
     # 指定日志级别
-    python scripts/run_mcp_server.py --config mcp_config.json --log-level DEBUG
+    python scripts/run_tcg_game_mcp_server.py --config mcp_config.json --log-level DEBUG
 
     # 使用不同环境的配置文件
-    python scripts/run_mcp_server.py --config config/production.json
-    python scripts/run_mcp_server.py --config config/development.json
+    python scripts/run_tcg_game_mcp_server.py --config config/production.json
+    python scripts/run_tcg_game_mcp_server.py --config config/development.json
 
 配置文件示例 (mcp_config.json)：
 {

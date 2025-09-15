@@ -36,8 +36,8 @@ class ChatClientManager:
     ################################################################################################################################################################################
     @property
     def current_chat_server_localhost_urls(self) -> List[str]:
-        return self._deepseek_chat_server_localhost_urls
-        # return self._azure_openai_chat_server_localhost_urls
+        # return self._deepseek_chat_server_localhost_urls
+        return self._azure_openai_chat_server_localhost_urls
 
     ################################################################################################################################################################################
     async def gather(self, request_handlers: List[ChatClient]) -> None:

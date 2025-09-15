@@ -34,7 +34,7 @@ class ChatClient:
 
         self._chat_response: ChatResponse = ChatResponse()
 
-        self._timeout: Final[int] = timeout if timeout is not None else 60
+        self._timeout: Final[int] = timeout if timeout is not None else 30
         assert self._timeout > 0, "timeout should be positive"
 
         for message in self._chat_history:

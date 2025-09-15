@@ -21,6 +21,7 @@ API端点：
 import os
 from pathlib import Path
 import sys
+import asyncio
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -85,8 +86,9 @@ async def process_chat_request(request: ChatRequest) -> ChatResponse:
         # 用户输入
         user_input_state: State = {"messages": [request.message], "llm": llm}
 
-        # 获取回复
-        update_messages = stream_graph_updates(
+        # 获取回复 - 使用 asyncio.to_thread 将阻塞调用包装为异步
+        update_messages = await asyncio.to_thread(
+            stream_graph_updates,
             state_compiled_graph=compiled_state_graph,
             chat_history_state=chat_history_state,
             user_input_state=user_input_state,

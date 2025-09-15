@@ -60,15 +60,15 @@ class TestPostgreSQLConnection:
 
             # 3. 测试用户查询操作
             logger.info(f"🔍 查询测试用户: {test_username}")
-            retrieved_user = get_user(test_username)
+            found_user = get_user(test_username)
 
             assert (
-                retrieved_user
-                and retrieved_user.username == test_username
-                and retrieved_user.hashed_password == test_password
-                and retrieved_user.display_name == test_display_name
+                found_user
+                and found_user.username == test_username
+                and found_user.hashed_password == test_password
+                and found_user.display_name == test_display_name
             ), "用户查询失败或数据不匹配!"
-            logger.success(f"✅ 用户查询成功! 显示名: {retrieved_user.display_name}")
+            logger.success(f"✅ 用户查询成功! 显示名: {found_user.display_name}")
 
             # 4. 测试用户存在性检查
             logger.info(f"🔎 检查用户是否存在: {test_username}")
@@ -120,11 +120,11 @@ class TestPostgreSQLConnection:
             assert has_user(test_username), "用户创建后应该存在"
 
             # 查询用户
-            retrieved_user = get_user(test_username)
-            assert retrieved_user is not None
-            assert retrieved_user.username == test_username
-            assert retrieved_user.hashed_password == test_password
-            assert retrieved_user.display_name == test_display_name
+            found_user = get_user(test_username)
+            assert found_user is not None
+            assert found_user.username == test_username
+            assert found_user.hashed_password == test_password
+            assert found_user.display_name == test_display_name
 
             logger.info("✅ 用户 CRUD 操作测试通过")
 

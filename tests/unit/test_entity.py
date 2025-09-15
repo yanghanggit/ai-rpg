@@ -280,8 +280,8 @@ class TestEntity:
         entity.set(Position, pos_comp)
 
         assert entity.has(Position)
-        retrieved_comp = entity.get(Position)
-        assert retrieved_comp == pos_comp
+        acquired_position_component = entity.get(Position)
+        assert acquired_position_component == pos_comp
 
         # Event should be called
         entity.on_component_added.assert_called_once_with(entity, pos_comp)

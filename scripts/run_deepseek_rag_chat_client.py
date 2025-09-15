@@ -9,10 +9,10 @@ ChromaDB增强版RAG聊天系统启动脚本
 4. 提供交互式聊天界面
 
 使用方法：
-    python scripts/run_deepseek_rag_chat.py
+    python scripts/run_deepseek_rag_chat_client.py
 
 或者在项目根目录下：
-    python -m scripts.run_deepseek_rag_chat
+    python -m scripts.run_deepseek_rag_chat_client
 """
 
 import os

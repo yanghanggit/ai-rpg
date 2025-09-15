@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-Azure OpenAI Chat Server启动脚本
+DeepSeek Chat Server启动脚本
 
 功能：
-1. 基于FastAPI构建的Azure OpenAI GPT聊天服务器
+1. 基于FastAPI构建的DeepSeek聊天服务器
 2. 提供RESTful API接口
 3. 支持聊天历史和上下文记忆
 4. 异步处理聊天请求
 
 使用方法：
-    python scripts/run_azure_openai_chat_server.py
+    python scripts/run_deepseek_chat_server.py
 
 或者在项目根目录下：
-    python -m scripts.run_azure_openai_chat_server
+    python -m scripts.run_deepseek_chat_server
 
 API端点：
     POST /api/chat-service/v1/
@@ -32,11 +32,11 @@ from fastapi import FastAPI
 from loguru import logger
 
 from multi_agents_game.chat_services.protocol import ChatRequest, ChatResponse
-from multi_agents_game.azure_openai_gpt import (
+from multi_agents_game.deepseek import (
     State,
     create_compiled_stage_graph,
     stream_graph_updates,
-    create_azure_openai_gpt_llm,
+    create_deepseek_llm,
 )
 
 from multi_agents_game.settings import (
@@ -46,8 +46,8 @@ from multi_agents_game.settings import (
 ##################################################################################################################
 # 初始化 FastAPI 应用
 app = FastAPI(
-    title="Azure OpenAI Chat Server",
-    description="基于Azure OpenAI GPT的聊天服务器",
+    title="DeepSeek Chat Server",
+    description="基于DeepSeek的聊天服务器",
     version="1.0.0",
 )
 
@@ -72,12 +72,10 @@ async def process_chat_request(request: ChatRequest) -> ChatResponse:
         logger.info(f"收到聊天请求: {request.message.content}")
 
         # 为每个请求创建独立的LLM实例
-        llm = create_azure_openai_gpt_llm()
+        llm = create_deepseek_llm()
 
         # 为每个请求创建独立的状态图实例
-        compiled_state_graph = create_compiled_stage_graph(
-            "azure_chat_openai_chatbot_node"
-        )
+        compiled_state_graph = create_compiled_stage_graph("deepseek_chatbot_node")
 
         # 聊天历史（包含LLM实例）
         chat_history_state: State = {
@@ -117,14 +115,14 @@ async def process_chat_request(request: ChatRequest) -> ChatResponse:
 ##################################################################################################################
 def main() -> None:
     """
-    Azure OpenAI聊天服务器主函数
+    DeepSeek聊天服务器主函数
 
     功能：
     1. 启动FastAPI服务器
     2. 配置服务器参数
     3. 提供聊天API服务
     """
-    logger.info("🚀 启动Azure OpenAI聊天服务器...")
+    logger.info("🚀 启动DeepSeek聊天服务器...")
 
     # 加载服务器配置
     server_config = initialize_server_settings_instance(Path("server_settings.json"))
@@ -136,7 +134,7 @@ def main() -> None:
         uvicorn.run(
             app,
             host="localhost",
-            port=server_config.azure_openai_chat_server_port,
+            port=server_config.deepseek_chat_server_port,
             log_level="debug",
         )
 

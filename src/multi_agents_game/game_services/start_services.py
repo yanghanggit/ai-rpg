@@ -5,9 +5,8 @@ from ..chat_services.manager import ChatClientManager
 from ..demo.stage_dungeon4 import (
     create_demo_dungeon4,
 )
-from ..game.game_options import WebGameUserOptions
 from ..game.player_client import PlayerClient
-from ..game.web_tcg_game import WebTCGGame
+from ..game.web_tcg_game import WebTCGGame, WebGameUserOptions
 from ..game_services.game_server import GameServerInstance
 from ..models import StartRequest, StartResponse, World
 from ..settings.server_settings import ServerSettingsInstance
@@ -113,9 +112,9 @@ def setup_web_game_session(
         ),
         world=world_exists,
         chat_system=ChatClientManager(
-            name=f"{web_game_user_options.game}-chatsystem",
-            # username=web_game_user_options.user,
-            localhost_urls=server_settings.azure_openai_chat_server_localhost_urls,
+            # name=f"{web_game_user_options.game}-chatsystem",
+            azure_openai_chat_server_localhost_urls=server_settings.azure_openai_chat_server_localhost_urls,
+            deepseek_chat_server_localhost_urls=server_settings.deepseek_chat_server_localhost_urls,
         ),
     )
 

@@ -30,7 +30,7 @@ class CombatKickOffSystem(ExecuteProcessor):
         # 参与战斗的人
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
-        actor_entities = self._game.retrieve_actors_on_stage(player_entity)
+        actor_entities = self._game.get_actors_on_stage(player_entity)
         assert len(actor_entities) > 0, "不可能出现没人参与战斗的情况！"
 
         # 取场景
@@ -38,8 +38,8 @@ class CombatKickOffSystem(ExecuteProcessor):
         assert current_stage_entity is not None
 
         # 取场景内所有角色的外观
-        actors_apperances_mapping = (
-            self._game.retrieve_actor_appearance_on_stage_mapping(current_stage_entity)
+        actors_apperances_mapping = self._game.get_stage_actor_appearances(
+            current_stage_entity
         )
 
         # 取场景描述

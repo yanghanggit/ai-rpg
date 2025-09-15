@@ -8,10 +8,10 @@ DeepSeek聊天系统启动脚本
 3. 提供交互式聊天界面
 
 使用方法：
-    python scripts/run_deepseek_chat.py
+    python scripts/run_deepseek_chat_client.py
 
 或者在项目根目录下：
-    python -m scripts.run_deepseek_chat
+    python -m scripts.run_deepseek_chat_client
 """
 
 import os

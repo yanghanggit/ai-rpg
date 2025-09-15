@@ -18,7 +18,7 @@ from ..mongodb import (
 )
 from ..entitas import Entity, Matcher
 from ..game.base_game import BaseGame
-from ..game.tcg_game_context import RetrieveMappingOptions, TCGGameContext
+from ..game.tcg_game_context import ActorFilterSettings, TCGGameContext
 from ..game.tcg_game_process_pipeline import TCGGameProcessPipeline
 from ..models import (
     Actor,
@@ -262,11 +262,11 @@ class TCGGame(BaseGame, TCGGameContext):
         self._persist_world_to_mongodb()
 
         # debug
-        self._verbose()
+        self.verbose()
         return self
 
     ###############################################################################################################################################
-    def _verbose(self) -> None:
+    def verbose(self) -> "TCGGame":
         """调试方法，保存游戏状态到文件"""
         self._verbose_boot_data()
         self._verbose_world_data()
@@ -275,6 +275,7 @@ class TCGGame(BaseGame, TCGGameContext):
         self._verbose_dungeon_system()
 
         logger.info(f"Verbose debug info saved to: {self.verbose_dir}")
+        return self
 
     ###############################################################################################################################################
     def _persist_world_to_mongodb(self) -> None:
@@ -326,20 +327,20 @@ class TCGGame(BaseGame, TCGGameContext):
         """验证已保存的 WorldDocument"""
         logger.info("📖 从 MongoDB 获取演示游戏世界进行验证...")
 
-        retrieved_world_data = mongodb_find_one(
+        saved_world_data = mongodb_find_one(
             collection_name,
             {"username": self.player.name, "game_name": self.world.boot.name},
         )
 
-        if not retrieved_world_data:
+        if not saved_world_data:
             logger.error("❌ 从 MongoDB 获取演示游戏世界失败!")
             return
 
         try:
             # 使用便捷方法反序列化为 WorldDocument 对象
-            # retrieved_world_document = WorldDocument.from_mongodb(retrieved_world_data)
+            # _world_document = WorldDocument.from_mongodb(retrieved_world_data)
             # logger.success(
-            #     f"✅ 演示游戏世界已从 MongoDB 成功获取! = {retrieved_world_document.model_dump_json()}"
+            #     f"✅ 演示游戏世界已从 MongoDB 成功获取! = {_world_document.model_dump_json()}"
             # )
             pass
 
@@ -632,7 +633,7 @@ class TCGGame(BaseGame, TCGGameContext):
         if stage_entity is None:
             return
 
-        need_broadcast_entities = self.retrieve_actors_on_stage(stage_entity)
+        need_broadcast_entities = self.get_actors_on_stage(stage_entity)
         need_broadcast_entities.add(stage_entity)
 
         if len(exclude_entities) > 0:
@@ -981,8 +982,8 @@ class TCGGame(BaseGame, TCGGameContext):
         )
 
         # 获取场景内角色的外貌信息
-        actors_appearances_mapping: Dict[str, str] = (
-            self.retrieve_actor_appearance_on_stage_mapping(stage_entity)
+        actors_appearances_mapping: Dict[str, str] = self.get_stage_actor_appearances(
+            stage_entity
         )
 
         # 重新组织一下
@@ -1007,7 +1008,7 @@ class TCGGame(BaseGame, TCGGameContext):
         )
 
         # 设置怪物的kickoff信息
-        actors = self.retrieve_actors_on_stage(stage_entity)
+        actors = self.get_actors_on_stage(stage_entity)
         for actor in actors:
             if actor.has(MonsterComponent):
                 monster_kick_off_comp = actor.get(KickOffMessageComponent)
@@ -1103,7 +1104,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     def get_stage_actor_distribution(
-        self, options: RetrieveMappingOptions = RetrieveMappingOptions()
+        self, options: ActorFilterSettings = ActorFilterSettings()
     ) -> Dict[str, List[str]]:
 
         stage_entity_to_actor_entities = self._get_stage_actor_distribution(options)
@@ -1307,7 +1308,7 @@ class TCGGame(BaseGame, TCGGameContext):
         player_entity = self.get_player_entity()
         assert player_entity is not None
 
-        actor_entities = self.retrieve_actors_on_stage(player_entity)
+        actor_entities = self.get_actors_on_stage(player_entity)
         for entity in actor_entities:
             entity.replace(
                 DrawCardsAction,
@@ -1332,7 +1333,7 @@ class TCGGame(BaseGame, TCGGameContext):
         # 排序角色
         player_entity = self.get_player_entity()
         assert player_entity is not None
-        actors_on_stage = self.retrieve_actors_on_stage(player_entity)
+        actors_on_stage = self.get_actors_on_stage(player_entity)
         assert len(actors_on_stage) > 0
         shuffled_reactive_entities = self._shuffle_action_order(list(actors_on_stage))
 

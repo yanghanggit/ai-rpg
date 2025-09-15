@@ -372,6 +372,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
             self._append_status_effects(entity2, validated_response.status_effects)
 
         except Exception as e:
+            logger.error(f"{request_handler.response_content}")
             logger.error(f"Exception: {e}")
 
     #######################################################################################################################################

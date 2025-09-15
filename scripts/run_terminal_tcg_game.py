@@ -18,10 +18,12 @@ from multi_agents_game.demo import (
     create_actor_warrior,
     create_demo_dungeon5,
 )
-from multi_agents_game.game.game_options import TerminalGameUserOptions
 from multi_agents_game.game.player_client import PlayerClient
 from multi_agents_game.game.tcg_game import TCGGameState
-from multi_agents_game.game.terminal_tcg_game import TerminalTCGGame
+from multi_agents_game.game.terminal_tcg_game import (
+    TerminalTCGGame,
+    TerminalGameUserOptions,
+)
 from multi_agents_game.models import CombatResult, World
 
 
@@ -231,8 +233,8 @@ async def _run_game(
         ),
         world=world_exists,
         chat_system=ChatClientManager(
-            name=f"{terminal_game_user_options.game}-chatsystem",
-            localhost_urls=server_config.azure_openai_chat_server_localhost_urls,
+            azure_openai_chat_server_localhost_urls=server_config.azure_openai_chat_server_localhost_urls,
+            deepseek_chat_server_localhost_urls=server_config.deepseek_chat_server_localhost_urls,
         ),
     )
 

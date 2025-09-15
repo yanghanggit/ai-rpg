@@ -10,11 +10,19 @@ class ServerSettings(BaseModel):
     game_server_port: int = 8000
     azure_openai_chat_service_api_endpoint: str = "/api/chat-service/v1/"
     image_generation_server_port: int = 8300
+    deepseek_chat_server_port: int = 8200
+    deepseek_chat_service_api_endpoint: str = "/api/chat-service/v1/"
 
     @property
     def azure_openai_chat_server_localhost_urls(self) -> List[str]:
         return [
             f"http://localhost:{self.azure_openai_chat_server_port}{self.azure_openai_chat_service_api_endpoint}"
+        ]
+
+    @property
+    def deepseek_chat_server_localhost_urls(self) -> List[str]:
+        return [
+            f"http://localhost:{self.deepseek_chat_server_port}{self.deepseek_chat_service_api_endpoint}"
         ]
 
 

@@ -1,11 +1,9 @@
 from enum import StrEnum, unique
 from typing import final
-
 from fastapi import APIRouter, HTTPException, Request, status
 from loguru import logger
-
 from ..game.game_config import setup_logger
-from ..game.game_options import WebGameUserOptions
+from ..game.web_tcg_game import WebGameUserOptions
 from ..game_services.game_server import GameServerInstance
 from ..models import (
     LoginRequest,

@@ -18,10 +18,12 @@ from multi_agents_game.demo import (
     create_actor_warrior,
     create_demo_dungeon4,
 )
-from multi_agents_game.game.game_options import TerminalGameUserOptions
 from multi_agents_game.game.player_client import PlayerClient
 from multi_agents_game.game.tcg_game import TCGGameState
-from multi_agents_game.game.terminal_tcg_game import TerminalTCGGame
+from multi_agents_game.game.terminal_tcg_game import (
+    TerminalTCGGame,
+    TerminalGameUserOptions,
+)
 from multi_agents_game.models import CombatResult, World
 
 

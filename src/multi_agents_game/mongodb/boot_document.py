@@ -13,9 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional, final
 from uuid import uuid4
-
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
-
 from ..models.world import Boot
 
 
@@ -189,20 +187,6 @@ class BootDocument(BaseModel):
             return True
         except Exception:
             return False
-
-    def update_version(self, new_version: str) -> "BootDocument":
-        """
-        更新版本号并返回新的实例
-
-        Args:
-            new_version: 新的版本号
-
-        Returns:
-            WorldBootDocument: 更新版本后的新实例
-        """
-        return self.model_copy(
-            update={"version": new_version, "timestamp": datetime.now()}
-        )
 
 
 ###############################################################################################################################################

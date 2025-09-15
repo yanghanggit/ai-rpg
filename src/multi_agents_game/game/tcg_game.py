@@ -262,11 +262,11 @@ class TCGGame(BaseGame, TCGGameContext):
         self._persist_world_to_mongodb()
 
         # debug
-        self._verbose()
+        self.verbose()
         return self
 
     ###############################################################################################################################################
-    def _verbose(self) -> None:
+    def verbose(self) -> "TCGGame":
         """调试方法，保存游戏状态到文件"""
         self._verbose_boot_data()
         self._verbose_world_data()
@@ -275,6 +275,7 @@ class TCGGame(BaseGame, TCGGameContext):
         self._verbose_dungeon_system()
 
         logger.info(f"Verbose debug info saved to: {self.verbose_dir}")
+        return self
 
     ###############################################################################################################################################
     def _persist_world_to_mongodb(self) -> None:

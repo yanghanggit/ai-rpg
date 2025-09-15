@@ -8,15 +8,14 @@ Author: yanghanggit
 Date: 2025-07-30
 """
 
+import gzip
 import json
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, Optional, final
+from typing import Any, Dict, final
 from uuid import uuid4
-
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
-
 from ..models.world import World
+from loguru import logger
 
 
 ###############################################################################################################################################
@@ -37,13 +36,62 @@ class WorldDocument(BaseModel):
     game_name: str = Field(..., description="游戏名称")
     timestamp: datetime = Field(default_factory=datetime.now, description="创建时间戳")
     version: str = Field(default="1.0.0", description="版本号")
-    world_data: World = Field(..., description="游戏世界启动配置数据")
+    world_data_compressed: bytes = Field(
+        ..., description="压缩后的游戏世界数据（gzip）"
+    )
 
     # Pydantic V2 配置
     model_config = ConfigDict(
         populate_by_name=True,  # 允许使用字段别名（如 _id）
         arbitrary_types_allowed=True,  # 允许任意类型（如果需要）
     )
+
+    @property
+    def world_data(self) -> World:
+        """
+        获取解压缩后的游戏世界数据
+
+        Returns:
+            World: 解压缩后的游戏世界对象
+        """
+        return self._decompress_world_data(self.world_data_compressed)
+
+    @staticmethod
+    def _compress_world_data(world: World) -> bytes:
+        """
+        压缩 World 对象为 gzip 字节数据
+
+        Args:
+            world: 要压缩的 World 对象
+
+        Returns:
+            bytes: 压缩后的字节数据
+        """
+        json_str = world.model_dump_json()
+        compressed_data = gzip.compress(json_str.encode("utf-8"))
+
+        # 检查压缩后数据大小，MongoDB 文档限制为 16MB
+        if len(compressed_data) > 15 * 1024 * 1024:
+            logger.error(
+                f"警告: 压缩后的世界数据大小 {len(compressed_data) / (1024 * 1024):.2f}MB 即将超过 MongoDB 16MB 限制！"
+            )
+
+        return compressed_data
+
+    @staticmethod
+    def _decompress_world_data(compressed_data: bytes) -> World:
+        """
+        解压缩字节数据为 World 对象
+
+        Args:
+            compressed_data: 压缩的字节数据
+
+        Returns:
+            World: 解压缩后的 World 对象
+        """
+        json_str = gzip.decompress(compressed_data).decode("utf-8")
+        world_dict = json.loads(json_str)
+        return World(**world_dict)
 
     @field_serializer("timestamp")
     def serialize_timestamp(self, value: datetime) -> str:
@@ -65,16 +113,19 @@ class WorldDocument(BaseModel):
         Returns:
             WorldDocument: 创建的文档实例
         """
+        compressed_data = cls._compress_world_data(world)
         return cls(
             username=username,
             game_name=world.boot.name,
             version=version,
-            world_data=world,
+            world_data_compressed=compressed_data,
         )
 
     def to_dict(self) -> Dict[str, Any]:
         """
         转换为字典格式，用于 MongoDB 存储
+
+        注意：world_data_compressed 字段包含 gzip 压缩的游戏世界数据
 
         Returns:
             dict: 包含所有字段的字典，使用 MongoDB 的 _id 字段名
@@ -101,41 +152,6 @@ class WorldDocument(BaseModel):
             return cls(**mongodb_doc)
         except Exception as e:
             raise ValueError(f"无法从 MongoDB 文档创建 WorldDocument: {e}") from e
-
-    def save_world_to_file(self, file_path: Optional[Path] = None) -> Path:
-        """
-        将 World 数据保存到 JSON 文件
-
-        Args:
-            file_path: 保存路径，如果为 None 则使用游戏名称作为文件名
-
-        Returns:
-            Path: 保存的文件路径
-
-        Raises:
-            OSError: 当文件写入失败时
-        """
-        if file_path is None:
-            assert self.game_name, "游戏名称不能为空"
-            assert self.username, "用户名不能为空"
-            assert (
-                self.game_name == self.world_data.boot.name
-            ), "游戏名称与 World 数据中的 boot.name 不匹配"
-            file_path = Path(f"{self.username}-{self.game_name}.json")
-
-        try:
-            # 确保目录存在
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-
-            # 保存 World 数据到文件
-            world_dict = self.world_data.model_dump()
-            file_path.write_text(
-                json.dumps(world_dict, ensure_ascii=False, indent=4), encoding="utf-8"
-            )
-
-            return file_path
-        except Exception as e:
-            raise OSError(f"保存 World 数据到文件失败: {e}") from e
 
 
 ###############################################################################################################################################

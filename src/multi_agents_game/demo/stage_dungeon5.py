@@ -28,7 +28,7 @@ def create_demo_dungeon5() -> Dungeon:
 
     actor_training_robot = create_actor_training_robot()
     actor_training_robot.rpg_character_profile.hp = 1
-    actor_training_robot.kick_off_message += f"""\n注意：你作为一个训练机器人只会最基本的攻击和防御技能，但是你死不掉，你有无限血量，每个回合结束时都会回满血量HP，这是一个status_effects，战斗开始后就会生效，不会消失。"""
+    actor_training_robot.kick_off_message += f"""\n注意：你作为一个训练机器人只会最基本的攻击和防御技能，但是你死不掉。你有无限生命，每个回合结束时都会回满至Max_HP，这是一个status_effects，战斗开始后就会生效，rounds=999。"""
 
     stage_cave5 = create_stage_cave5()
     stage_cave5.actors = [actor_training_robot]

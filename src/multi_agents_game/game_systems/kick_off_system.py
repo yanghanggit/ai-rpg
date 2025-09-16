@@ -327,7 +327,7 @@ class KickOffSystem(ExecuteProcessor):
         # 并发
         await self._game.chat_client_manager.gather(
             request_handlers=request_handlers,
-            options=ChatApiEndpointOptions.DEEPSEEK_RAG_CHAT,
+            options=ChatApiEndpointOptions.DEEPSEEK_UNDEFINED_CHAT,
         )
 
         # 添加上下文。

@@ -29,7 +29,7 @@ class SkillResponse(BaseModel):
 #######################################################################################################################################
 @final
 class DrawCardsResponse(BaseModel):
-    update_hp: Optional[float] = Field(None, description="更新的生命值")
+    update_hp: Optional[float] = Field(None, description="更新后的生命值")
     skills: List[SkillResponse] = Field(..., description="生成的战斗技能列表")
     status_effects: List[StatusEffect] = Field(
         ...,
@@ -90,6 +90,7 @@ def _generate_prompt1(
 - 技能的description和effect里禁止包含角色名称
 - 第一局一定会有新增的status_effects，根据角色进入战斗时的环境，内心活动，kick_off_message和其他角色的情况生成，而不是技能里提到的状态
 - 同一时间可以出现多个status_effects
+- 如果角色的kick_off_message里有提到‘无限生命’，‘无限血量’之类的描述，在更新生命值时，update_hp应当更新为最大生命值
 - 使用有趣、意想不到的风格描述效果产生的原因
 
 ## 输出格式(JSON)要求：
@@ -163,6 +164,7 @@ def _generate_prompt2(
 - 技能的description和effect里禁止包含角色名称
 - status_effects根据角色上回合结束时受到的其他角色的技能状态效果和自身技能的限制状态生成，而不是这回合生成的技能里提到的状态
 - 同一时间可以存在多个status_effects
+- 如果角色的kick_off_message里有提到‘无限生命’，‘无限血量’之类的描述，在更新生命值时，update_hp应当更新为最大生命值
 - 使用有趣、意想不到的风格描述效果产生的原因
 
 ## 输出格式(JSON)要求：

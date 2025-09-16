@@ -43,22 +43,29 @@ class ChatClientManager:
         self._azure_openai_chat_localhost_urls: Final[List[str]] = (
             azure_openai_chat_localhost_urls
         )
+        logger.debug(f"Azure OpenAI URLs: {self._azure_openai_chat_localhost_urls}")
 
         assert len(deepseek_chat_localhost_urls) > 0
         self._deepseek_chat_localhost_urls: Final[List[str]] = (
             deepseek_chat_localhost_urls
         )
+        logger.debug(f"DeepSeek Chat URLs: {self._deepseek_chat_localhost_urls}")
 
         # 临时添加的
         self._deepseek_rag_chat_localhost_urls: Final[List[str]] = (
             deepseek_rag_chat_localhost_urls
         )
+        logger.debug(f"DeepSeek RAG URLs: {self._deepseek_rag_chat_localhost_urls}")
         self._deepseek_undefined_chat_localhost_urls: Final[List[str]] = (
             deepseek_undefined_chat_localhost_urls
+        )
+        logger.debug(
+            f"DeepSeek Undefined URLs: {self._deepseek_undefined_chat_localhost_urls}"
         )
         self._deepseek_mcp_chat_localhost_urls: Final[List[str]] = (
             deepseek_mcp_chat_localhost_urls
         )
+        logger.debug(f"DeepSeekMCP URLs: {self._deepseek_mcp_chat_localhost_urls}")
 
         # 异步请求客户端
         self._async_client: Final[httpx.AsyncClient] = httpx.AsyncClient()
@@ -71,6 +78,12 @@ class ChatClientManager:
             return self._azure_openai_chat_localhost_urls
         elif options == ChatApiEndpointOptions.DEEPSEEK_CHAT:
             return self._deepseek_chat_localhost_urls
+        elif options == ChatApiEndpointOptions.DEEPSEEK_RAG_CHAT:
+            return self._deepseek_rag_chat_localhost_urls
+        elif options == ChatApiEndpointOptions.DEEPSEEK_UNDEFINED_CHAT:
+            return self._deepseek_undefined_chat_localhost_urls
+        elif options == ChatApiEndpointOptions.DEEPSEEK_MCP_CHAT:
+            return self._deepseek_mcp_chat_localhost_urls
 
         # 兜底情况，如果有新的未处理的选项
         return self._azure_openai_chat_localhost_urls

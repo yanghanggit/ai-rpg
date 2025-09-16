@@ -4,11 +4,6 @@ from pydantic import BaseModel
 from fastapi import Depends
 
 
-#  DEEPSEEK_RAG_CHAT = "deepseek_rag_chat"
-#     DEEPSEEK_UNDEFINED_CHAT = "deepseek_undefined_chat"
-#     DEEPSEEK_MCP_CHAT = "deepseek_mcp_chat"
-
-
 @final
 class ServerSettings(BaseModel):
     game_server_port: int = 8000

@@ -113,6 +113,63 @@ async def process_chat_request(request: ChatRequest) -> ChatResponse:
 
 
 ##################################################################################################################
+@app.post(
+    path="/api/chat/rag/v1/",
+    response_model=ChatResponse,
+)
+async def process_chat_rag_request(request: ChatRequest) -> ChatResponse:
+    """
+    处理RAG聊天请求
+
+    Args:
+        request: 包含聊天历史和用户消息的请求对象
+
+    Returns:
+        ChatResponse: 包含AI回复消息的响应对象
+    """
+    # TODO: 实现RAG聊天逻辑
+    return ChatResponse(messages=[])
+
+
+##################################################################################################################
+@app.post(
+    path="/api/chat/undefined/v1/",
+    response_model=ChatResponse,
+)
+async def process_chat_undefined_request(request: ChatRequest) -> ChatResponse:
+    """
+    处理未定义类型的聊天请求
+
+    Args:
+        request: 包含聊天历史和用户消息的请求对象
+
+    Returns:
+        ChatResponse: 包含AI回复消息的响应对象
+    """
+    # TODO: 实现未定义类型聊天逻辑
+    return ChatResponse(messages=[])
+
+
+##################################################################################################################
+@app.post(
+    path="/api/chat/mcp/v1/",
+    response_model=ChatResponse,
+)
+async def process_chat_mcp_request(request: ChatRequest) -> ChatResponse:
+    """
+    处理MCP聊天请求
+
+    Args:
+        request: 包含聊天历史和用户消息的请求对象
+
+    Returns:
+        ChatResponse: 包含AI回复消息的响应对象
+    """
+    # TODO: 实现MCP聊天逻辑
+    return ChatResponse(messages=[])
+
+
+##################################################################################################################
 def main() -> None:
     """
     DeepSeek聊天服务器主函数

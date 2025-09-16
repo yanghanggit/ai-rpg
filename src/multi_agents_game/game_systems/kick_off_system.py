@@ -5,6 +5,7 @@ import hashlib
 from loguru import logger
 from overrides import override
 from ..chat_services.client import ChatClient
+from ..chat_services.manager import ChatClientManager, ChatApiEndpointOptions
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -75,7 +76,7 @@ class KickOffSystem(ExecuteProcessor):
     ###############################################################################################################################################
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
-        self._read_kick_off_cache: bool = True
+        self._read_kick_off_cache: bool = False
 
     ###############################################################################################################################################
     @override
@@ -324,7 +325,10 @@ class KickOffSystem(ExecuteProcessor):
             )
 
         # 并发
-        await self._game.chat_client_manager.gather(request_handlers=request_handlers)
+        await self._game.chat_client_manager.gather(
+            request_handlers=request_handlers,
+            options=ChatApiEndpointOptions.DEEPSEEK_RAG_CHAT,
+        )
 
         # 添加上下文。
         for request_handler in request_handlers:

@@ -42,6 +42,8 @@ from multi_agents_game.deepseek import (
     create_compiled_stage_graph,
     stream_graph_updates,
     create_deepseek_llm,
+    create_rag_compiled_graph,
+    stream_rag_graph_updates,
 )
 
 from multi_agents_game.settings import (
@@ -160,8 +162,48 @@ async def process_chat_rag_request(request: ChatRequest) -> ChatResponse:
     Returns:
         ChatResponse: 包含AI回复消息的响应对象
     """
-    # TODO: 实现RAG聊天逻辑
-    return ChatResponse(messages=[])
+    try:
+        logger.info(f"收到RAG聊天请求: {request.message.content}")
+
+        # 为每个请求创建独立的LLM实例
+        llm = create_deepseek_llm()
+
+        # 为每个请求创建独立的RAG状态图实例
+        rag_compiled_graph = create_rag_compiled_graph()
+
+        # 聊天历史（包含LLM实例）
+        chat_history_state: State = {
+            "messages": [message for message in request.chat_history],
+            "llm": llm,
+        }
+
+        # 用户输入
+        user_input_state: State = {"messages": [request.message], "llm": llm}
+
+        # 获取RAG回复 - 使用 asyncio.to_thread 将阻塞调用包装为异步
+        update_messages = await asyncio.to_thread(
+            stream_rag_graph_updates,
+            rag_compiled_graph=rag_compiled_graph,
+            chat_history_state=chat_history_state,
+            user_input_state=user_input_state,
+        )
+
+        logger.success(f"生成RAG回复消息数量: {len(update_messages)}")
+
+        # 打印所有消息的详细内容
+        for i, message in enumerate(update_messages):
+            logger.success(f"RAG消息 {i+1}: {message.model_dump_json(indent=2)}")
+
+        # 返回
+        return ChatResponse(messages=update_messages)
+
+    except Exception as e:
+        logger.error(f"处理RAG聊天请求时发生错误: {e}")
+        # 返回错误消息
+        from langchain.schema import AIMessage
+
+        error_message = AIMessage(content=f"抱歉，处理您的RAG请求时发生错误: {str(e)}")
+        return ChatResponse(messages=[error_message])
 
 
 ##################################################################################################################

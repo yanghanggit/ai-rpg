@@ -1,8 +1,10 @@
 {
-    "azure_openai_chat_server_port": 8100,
     "game_server_port": 8000,
-    "azure_openai_chat_service_api_endpoint": "/api/chat-service/v1/",
-    "image_generation_server_port": 8300,
+    "azure_openai_chat_server_port": 8100,
     "deepseek_chat_server_port": 8200,
-    "deepseek_chat_service_api_endpoint": "/api/chat-service/v1/"
+    "image_generation_server_port": 8300,
+    "chat_api_endpoint": "/api/chat/v1/",
+    "chat_rag_api_endpoint": "/api/chat/rag/v1/",
+    "chat_undefined_api_endpoint": "/api/chat/undefined/v1/",
+    "chat_mcp_api_endpoint": "/api/chat/mcp/v1/"
 }

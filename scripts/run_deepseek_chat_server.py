@@ -15,13 +15,18 @@ DeepSeek Chat Server启动脚本
     python -m scripts.run_deepseek_chat_server
 
 API端点：
-    POST /api/chat-service/v1/
+    GET  /                    - 健康检查
+    POST /api/chat/v1/        - 标准聊天
+    POST /api/chat/rag/v1/    - RAG聊天
+    POST /api/chat/undefined/v1/ - 未定义类型聊天
+    POST /api/chat/mcp/v1/    - MCP聊天
 """
 
 import os
 from pathlib import Path
 import sys
 import asyncio
+from typing import Any, Dict
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -53,9 +58,37 @@ app = FastAPI(
 
 
 ##################################################################################################################
+# 健康检查端点
+@app.get("/")
+async def health_check() -> Dict[str, Any]:
+    """
+    服务器健康检查端点
+
+    Returns:
+        dict: 包含服务器状态信息的字典
+    """
+    from datetime import datetime
+
+    return {
+        "service": "DeepSeek Chat Server",
+        "version": "1.0.0",
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "available_endpoints": [
+            "GET /",
+            "POST /api/chat/v1/",
+            "POST /api/chat/rag/v1/",
+            "POST /api/chat/undefined/v1/",
+            "POST /api/chat/mcp/v1/",
+        ],
+        "description": "基于DeepSeek的聊天服务器正在正常运行",
+    }
+
+
+##################################################################################################################
 # 定义 POST 请求处理逻辑
 @app.post(
-    path="/api/chat-service/v1/",
+    path="/api/chat/v1/",
     response_model=ChatResponse,
 )
 async def process_chat_request(request: ChatRequest) -> ChatResponse:
@@ -110,6 +143,63 @@ async def process_chat_request(request: ChatRequest) -> ChatResponse:
 
         error_message = AIMessage(content=f"抱歉，处理您的请求时发生错误: {str(e)}")
         return ChatResponse(messages=[error_message])
+
+
+##################################################################################################################
+@app.post(
+    path="/api/chat/rag/v1/",
+    response_model=ChatResponse,
+)
+async def process_chat_rag_request(request: ChatRequest) -> ChatResponse:
+    """
+    处理RAG聊天请求
+
+    Args:
+        request: 包含聊天历史和用户消息的请求对象
+
+    Returns:
+        ChatResponse: 包含AI回复消息的响应对象
+    """
+    # TODO: 实现RAG聊天逻辑
+    return ChatResponse(messages=[])
+
+
+##################################################################################################################
+@app.post(
+    path="/api/chat/undefined/v1/",
+    response_model=ChatResponse,
+)
+async def process_chat_undefined_request(request: ChatRequest) -> ChatResponse:
+    """
+    处理未定义类型的聊天请求
+
+    Args:
+        request: 包含聊天历史和用户消息的请求对象
+
+    Returns:
+        ChatResponse: 包含AI回复消息的响应对象
+    """
+    # TODO: 实现未定义类型聊天逻辑
+    return ChatResponse(messages=[])
+
+
+##################################################################################################################
+@app.post(
+    path="/api/chat/mcp/v1/",
+    response_model=ChatResponse,
+)
+async def process_chat_mcp_request(request: ChatRequest) -> ChatResponse:
+    """
+    处理MCP聊天请求
+
+    Args:
+        request: 包含聊天历史和用户消息的请求对象
+
+    Returns:
+        ChatResponse: 包含AI回复消息的响应对象
+    """
+    # TODO: 实现MCP聊天逻辑
+    return ChatResponse(messages=[])
 
 
 ##################################################################################################################

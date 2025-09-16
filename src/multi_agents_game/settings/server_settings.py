@@ -6,33 +6,65 @@ from fastapi import Depends
 
 @final
 class ServerSettings(BaseModel):
-    azure_openai_chat_server_port: int = 8100
     game_server_port: int = 8000
-    azure_openai_chat_service_api_endpoint: str = "/api/chat-service/v1/"
-    image_generation_server_port: int = 8300
+    azure_openai_chat_server_port: int = 8100
     deepseek_chat_server_port: int = 8200
-    deepseek_chat_service_api_endpoint: str = "/api/chat-service/v1/"
+    image_generation_server_port: int = 8300
+    chat_api_endpoint: str = "/api/chat/v1/"
+    chat_rag_api_endpoint: str = "/api/chat/rag/v1/"
+    chat_undefined_api_endpoint: str = "/api/chat/undefined/v1/"
+    chat_mcp_api_endpoint: str = "/api/chat/mcp/v1/"
 
     @property
-    def azure_openai_chat_server_localhost_urls(self) -> List[str]:
+    def azure_openai_base_localhost_urls(self) -> List[str]:
+        return [f"http://localhost:{self.azure_openai_chat_server_port}/"]
+
+    @property
+    def azure_openai_chat_localhost_urls(self) -> List[str]:
+        base_urls = self.azure_openai_base_localhost_urls
+        return [base_url.rstrip("/") + self.chat_api_endpoint for base_url in base_urls]
+
+    """    DeepSeek 服务器相关设置 """
+
+    @property
+    def deepseek_base_localhost_urls(self) -> List[str]:
+        return [f"http://localhost:{self.deepseek_chat_server_port}/"]
+
+    @property
+    def deepseek_chat_localhost_urls(self) -> List[str]:
+        base_urls = self.deepseek_base_localhost_urls
+        return [base_url.rstrip("/") + self.chat_api_endpoint for base_url in base_urls]
+
+    @property
+    def deepseek_rag_chat_localhost_urls(self) -> List[str]:
+        base_urls = self.deepseek_base_localhost_urls
         return [
-            f"http://localhost:{self.azure_openai_chat_server_port}{self.azure_openai_chat_service_api_endpoint}"
+            base_url.rstrip("/") + self.chat_rag_api_endpoint for base_url in base_urls
         ]
 
     @property
-    def deepseek_chat_server_localhost_urls(self) -> List[str]:
+    def deepseek_undefined_chat_localhost_urls(self) -> List[str]:
+        base_urls = self.deepseek_base_localhost_urls
         return [
-            f"http://localhost:{self.deepseek_chat_server_port}{self.deepseek_chat_service_api_endpoint}"
+            base_url.rstrip("/") + self.chat_undefined_api_endpoint
+            for base_url in base_urls
+        ]
+
+    @property
+    def deepseek_mcp_chat_localhost_urls(self) -> List[str]:
+        base_urls = self.deepseek_base_localhost_urls
+        return [
+            base_url.rstrip("/") + self.chat_mcp_api_endpoint for base_url in base_urls
         ]
 
 
+###############################################################################################################################################
 _server_settings: Optional[ServerSettings] = None
 
 
 ###############################################################################################################################################
 def initialize_server_settings_instance(path: Path) -> ServerSettings:
     global _server_settings
-    # assert _server_settings is None, "ServerSettings is already initialized"
     if _server_settings is None:
         assert path.exists(), f"{path} must exist"
         content = path.read_text(encoding="utf-8")

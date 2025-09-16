@@ -9,7 +9,10 @@ sys.path.insert(
 
 from typing import Dict, Set, TypedDict, cast
 from loguru import logger
-from multi_agents_game.chat_services.manager import ChatClientManager
+from multi_agents_game.chat_services.manager import (
+    ChatClientManager,
+    ChatApiEndpointOptions,
+)
 from multi_agents_game.settings import (
     initialize_server_settings_instance,
 )
@@ -190,7 +193,6 @@ def _parse_play_cards_command_input(usr_input: str) -> PlayCardsCommand:
 
 
 ###############################################################################################################################################
-###############################################################################################################################################
 async def _run_game(
     terminal_game_user_options: TerminalGameUserOptions,
 ) -> None:
@@ -232,9 +234,14 @@ async def _run_game(
             actor=terminal_game_user_options.actor,
         ),
         world=world_exists,
-        chat_system=ChatClientManager(
-            azure_openai_chat_server_localhost_urls=server_config.azure_openai_chat_server_localhost_urls,
-            deepseek_chat_server_localhost_urls=server_config.deepseek_chat_server_localhost_urls,
+        chat_client_manager=ChatClientManager(
+            azure_openai_base_localhost_urls=server_config.azure_openai_base_localhost_urls,
+            azure_openai_chat_localhost_urls=server_config.azure_openai_chat_localhost_urls,
+            deepseek_base_localhost_urls=server_config.deepseek_base_localhost_urls,
+            deepseek_chat_localhost_urls=server_config.deepseek_chat_localhost_urls,
+            deepseek_rag_chat_localhost_urls=server_config.deepseek_rag_chat_localhost_urls,
+            deepseek_undefined_chat_localhost_urls=server_config.deepseek_undefined_chat_localhost_urls,
+            deepseek_mcp_chat_localhost_urls=server_config.deepseek_mcp_chat_localhost_urls,
         ),
     )
 
@@ -430,10 +437,24 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         terminal_game.will_exit = True
         return
 
-    # 公用的。
+    # 公用: 查看当前地下城系统
     if usr_input == "/vd" or usr_input == "/view-dungeon":
         logger.info(
             f"当前地下城系统 =\n{terminal_game.current_dungeon.model_dump_json(indent=4)}\n"
+        )
+        return
+
+    # 公用：检查内网的llm服务的健康状态
+    if usr_input == "/deepseek":
+        await terminal_game.chat_client_manager.health_check(
+            ChatApiEndpointOptions.DEEPSEEK_BASE
+        )
+        return
+
+    # 公用：检查内网的llm服务的健康状态
+    if usr_input == "/azure_openai":
+        await terminal_game.chat_client_manager.health_check(
+            ChatApiEndpointOptions.AZURE_OPENAI_BASE
         )
         return
 

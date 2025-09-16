@@ -15,13 +15,14 @@ Azure OpenAI Chat Server启动脚本
     python -m scripts.run_azure_openai_chat_server
 
 API端点：
-    POST /api/chat-service/v1/
+    POST /api/chat/v1/
 """
 
 import os
 from pathlib import Path
 import sys
 import asyncio
+from typing import Any, Dict
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -53,9 +54,34 @@ app = FastAPI(
 
 
 ##################################################################################################################
+# 健康检查端点
+@app.get("/")
+async def health_check() -> Dict[str, Any]:
+    """
+    服务器健康检查端点
+
+    Returns:
+        dict: 包含服务器状态信息的字典
+    """
+    from datetime import datetime
+
+    return {
+        "service": "Azure OpenAI Chat Server",
+        "version": "1.0.0",
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "available_endpoints": [
+            "GET /",
+            "POST /api/chat/v1/",
+        ],
+        "description": "基于Azure OpenAI的聊天服务器正在正常运行",
+    }
+
+
+##################################################################################################################
 # 定义 POST 请求处理逻辑
 @app.post(
-    path="/api/chat-service/v1/",
+    path="/api/chat/v1/",
     response_model=ChatResponse,
 )
 async def process_chat_request(request: ChatRequest) -> ChatResponse:

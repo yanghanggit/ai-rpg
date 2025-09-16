@@ -239,13 +239,13 @@ class TestIntegration:
             UnifiedState,
         )
 
-        # from src.multi_agents_game.rag.routing import (
-        #     create_default_route_manager,
-        # )
+        from src.multi_agents_game.deepseek import create_deepseek_llm
 
         # 创建路由管理器实例
         manager = create_test_route_manager()
         assert manager is not None
+
+        llm = create_deepseek_llm()
 
         # 创建测试状态
         test_state: UnifiedState = {
@@ -258,6 +258,7 @@ class TestIntegration:
             "confidence_score": 0.0,
             "processing_mode": "",
             "route_manager": manager,  # 直接设置路由管理器
+            "llm": llm,  # 添加LLM实例到状态中
         }
 
         # 测试一些典型查询

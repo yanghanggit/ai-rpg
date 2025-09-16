@@ -263,6 +263,8 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # debug
         self.verbose()
+
+        logger.debug(f"游戏已保存，实体数量: {len(self.world.entities_snapshot)}")
         return self
 
     ###############################################################################################################################################

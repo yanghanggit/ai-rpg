@@ -22,9 +22,13 @@ from ..game.game_config import LOGS_DIR
 ###############################################################################################################################################
 def _generate_actor_kick_off_prompt(kick_off_message: str) -> str:
     return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
+
 ## 这是你的启动消息
+
 {kick_off_message}
+
 ## 输出要求
+
 - 你的内心活动，单段紧凑自述（禁用换行/空行）"""
 
 
@@ -35,12 +39,15 @@ def _generate_stage_kick_off_prompt(
     return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
 
 ## 这是你的启动消息
+
 {kick_off_message}
 
 ## 输出内容-场景描述
+
 - 场景内的环境描述，不要包含任何角色信息。
 
 ## 输出要求
+
 - 输出场景描述，单段紧凑自述（禁用换行/空行）。
 - 输出必须为第三人称视角。"""
 
@@ -48,9 +55,13 @@ def _generate_stage_kick_off_prompt(
 ###############################################################################################################################################
 def _generate_world_system_kick_off_prompt() -> str:
     return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
+
 ## 这是你的启动消息
+
 - 请回答你的职能与描述。
+
 ## 输出要求
+
 - 确认你的职能，单段紧凑自述（禁用换行/空行）"""
 
 
@@ -189,11 +200,23 @@ class KickOffSystem(ExecuteProcessor):
             # 添加AI messages
             contextual_message_list.extend(ai_messages)
 
-            agent_short_term_memory.chat_history.pop(0)  # 移除原有的system message
+            # 移除原有的system message
+            agent_short_term_memory.chat_history.pop(0)
+
             # 将新的上下文消息添加到聊天历史的开头
             agent_short_term_memory.chat_history = (
                 contextual_message_list + agent_short_term_memory.chat_history
             )
+
+            # 打印调试信息
+            logger.debug(
+                f"integrate_chat_context human message: {entity._name} => \n{prompt}"
+            )
+            for ai_msg in ai_messages:
+                logger.debug(
+                    f"integrate_chat_context ai message: {entity._name} => \n{str(ai_msg.content)}"
+                )
+
         else:
             # 常规添加
             self._game.append_human_message(entity, prompt)

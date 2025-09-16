@@ -270,7 +270,7 @@ def enhancement_node(state: UnifiedState) -> Dict[str, Any]:
 
         # 构建增强的上下文prompt
         context_parts = [
-            "请基于以下相关信息回答用户的问题:",
+            "请基于以下相关信息回复用户:",
             "",
             "相关信息 (按相似度排序):",
         ]

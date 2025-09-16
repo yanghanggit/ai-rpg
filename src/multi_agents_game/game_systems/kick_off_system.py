@@ -324,7 +324,10 @@ class KickOffSystem(ExecuteProcessor):
             )
 
         # 并发
-        await self._game.chat_client_manager.gather(request_handlers=request_handlers)
+        await self._game.chat_client_manager.gather(
+            request_handlers=request_handlers,
+            # options=ChatApiEndpointOptions.DEEPSEEK_MCP_CHAT,
+        )
 
         # 添加上下文。
         for request_handler in request_handlers:

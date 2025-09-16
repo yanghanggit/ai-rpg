@@ -112,7 +112,7 @@ class HomeActorSystem(ExecuteProcessor):
         request_handlers: List[ChatClient] = self._generate_requests(actor_entities)
 
         # 语言服务
-        await self._game.chat_system.gather(request_handlers=request_handlers)
+        await self._game.chat_client_manager.gather(request_handlers=request_handlers)
 
         # 处理角色规划请求
         self._handle_responses(request_handlers)

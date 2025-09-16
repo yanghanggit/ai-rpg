@@ -18,7 +18,9 @@ class ChatClientEndpoint(NamedTuple):
 @final
 @unique
 class ChatApiEndpointOptions(StrEnum):
+    AZURE_OPENAI_BASE = "azure_openai_base"
     AZURE_OPENAI_CHAT = "azure_openai_chat"
+    DEEPSEEK_BASE = "deepseek_base"
     DEEPSEEK_CHAT = "deepseek_chat"
     DEEPSEEK_RAG_CHAT = "deepseek_rag_chat"
     DEEPSEEK_UNDEFINED_CHAT = "deepseek_undefined_chat"
@@ -31,19 +33,37 @@ class ChatClientManager:
     ################################################################################################################################################################################
     def __init__(
         self,
+        azure_openai_base_localhost_urls: List[str],
         azure_openai_chat_localhost_urls: List[str],
+        deepseek_base_localhost_urls: List[str],
         deepseek_chat_localhost_urls: List[str],
         deepseek_rag_chat_localhost_urls: List[str],
         deepseek_undefined_chat_localhost_urls: List[str],
         deepseek_mcp_chat_localhost_urls: List[str],
     ) -> None:
 
+        assert len(azure_openai_base_localhost_urls) > 0
+        self._azure_openai_base_localhost_urls: Final[List[str]] = (
+            azure_openai_base_localhost_urls
+        )
+        logger.debug(
+            f"Azure OpenAI Base URLs: {self._azure_openai_base_localhost_urls}"
+        )
+
         # 运行的服务器
         assert len(azure_openai_chat_localhost_urls) > 0
         self._azure_openai_chat_localhost_urls: Final[List[str]] = (
             azure_openai_chat_localhost_urls
         )
-        logger.debug(f"Azure OpenAI URLs: {self._azure_openai_chat_localhost_urls}")
+        logger.debug(
+            f"Azure OpenAI Chat URLs: {self._azure_openai_chat_localhost_urls}"
+        )
+
+        assert len(deepseek_base_localhost_urls) > 0
+        self._deepseek_base_localhost_urls: Final[List[str]] = (
+            deepseek_base_localhost_urls
+        )
+        logger.debug(f"DeepSeek Base URLs: {self._deepseek_base_localhost_urls}")
 
         assert len(deepseek_chat_localhost_urls) > 0
         self._deepseek_chat_localhost_urls: Final[List[str]] = (
@@ -76,6 +96,10 @@ class ChatClientManager:
     ) -> List[str]:
         if options is None or options == ChatApiEndpointOptions.AZURE_OPENAI_CHAT:
             return self._azure_openai_chat_localhost_urls
+        elif options == ChatApiEndpointOptions.AZURE_OPENAI_BASE:
+            return self._azure_openai_base_localhost_urls
+        elif options == ChatApiEndpointOptions.DEEPSEEK_BASE:
+            return self._deepseek_base_localhost_urls
         elif options == ChatApiEndpointOptions.DEEPSEEK_CHAT:
             return self._deepseek_chat_localhost_urls
         elif options == ChatApiEndpointOptions.DEEPSEEK_RAG_CHAT:
@@ -173,5 +197,27 @@ class ChatClientManager:
             endpoint.chat_client.request(endpoint.url)
             end_time = time.time()
             logger.debug(f"ChatSystem.handle:{end_time - start_time:.2f} seconds")
+
+    ################################################################################################################################################################################
+    async def health_check(
+        self, options: Optional[ChatApiEndpointOptions] = None
+    ) -> None:
+        """检查所有客户端的健康状态"""
+        base_urls = self.get_urls_by_option(options)
+        if not base_urls:
+            return
+
+        for base_url in base_urls:
+            try:
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(f"{base_url}")
+                    response.raise_for_status()
+                    # 打印response
+                    logger.info(
+                        f"Health check response from {base_url}: {response.text}"
+                    )
+                    logger.info(f"Health check passed: {base_url}")
+            except Exception as e:
+                logger.error(f"Health check failed: {base_url}, error: {e}")
 
     ################################################################################################################################################################################

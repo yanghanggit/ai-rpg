@@ -40,7 +40,9 @@ def sample_game() -> Any:
     )
     player = PlayerClient(name="test_player", actor="test_actor")
     chat_system = ChatClientManager(
+        azure_openai_base_localhost_urls=["http://localhost:8000"],
         azure_openai_chat_localhost_urls=["http://localhost:8000"],
+        deepseek_base_localhost_urls=["http://localhost:8000"],
         deepseek_chat_localhost_urls=["http://localhost:8000"],
         deepseek_rag_chat_localhost_urls=["http://localhost:8000"],
         deepseek_undefined_chat_localhost_urls=["http://localhost:8000"],
@@ -50,7 +52,7 @@ def sample_game() -> Any:
         name="test_game",
         player=player,
         world=world,
-        chat_system=chat_system,
+        chat_client_manager=chat_system,
     )
 
 

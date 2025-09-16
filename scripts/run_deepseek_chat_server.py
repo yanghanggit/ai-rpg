@@ -15,13 +15,18 @@ DeepSeek Chat Server启动脚本
     python -m scripts.run_deepseek_chat_server
 
 API端点：
-    POST /api/chat/v1/
+    GET  /                    - 健康检查
+    POST /api/chat/v1/        - 标准聊天
+    POST /api/chat/rag/v1/    - RAG聊天
+    POST /api/chat/undefined/v1/ - 未定义类型聊天
+    POST /api/chat/mcp/v1/    - MCP聊天
 """
 
 import os
 from pathlib import Path
 import sys
 import asyncio
+from typing import Any, Dict
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -50,6 +55,34 @@ app = FastAPI(
     description="基于DeepSeek的聊天服务器",
     version="1.0.0",
 )
+
+
+##################################################################################################################
+# 健康检查端点
+@app.get("/")
+async def health_check() -> Dict[str, Any]:
+    """
+    服务器健康检查端点
+
+    Returns:
+        dict: 包含服务器状态信息的字典
+    """
+    from datetime import datetime
+
+    return {
+        "service": "DeepSeek Chat Server",
+        "version": "1.0.0",
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "available_endpoints": [
+            "GET /",
+            "POST /api/chat/v1/",
+            "POST /api/chat/rag/v1/",
+            "POST /api/chat/undefined/v1/",
+            "POST /api/chat/mcp/v1/",
+        ],
+        "description": "基于DeepSeek的聊天服务器正在正常运行",
+    }
 
 
 ##################################################################################################################

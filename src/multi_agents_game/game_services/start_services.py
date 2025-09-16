@@ -111,8 +111,10 @@ def setup_web_game_session(
             name=web_game_user_options.user, actor=web_game_user_options.actor
         ),
         world=world_exists,
-        chat_system=ChatClientManager(
+        chat_client_manager=ChatClientManager(
+            azure_openai_base_localhost_urls=server_settings.azure_openai_base_localhost_urls,
             azure_openai_chat_localhost_urls=server_settings.azure_openai_chat_localhost_urls,
+            deepseek_base_localhost_urls=server_settings.deepseek_base_localhost_urls,
             deepseek_chat_localhost_urls=server_settings.deepseek_chat_localhost_urls,
             deepseek_rag_chat_localhost_urls=server_settings.deepseek_rag_chat_localhost_urls,
             deepseek_undefined_chat_localhost_urls=server_settings.deepseek_undefined_chat_localhost_urls,

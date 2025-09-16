@@ -99,7 +99,7 @@ class TCGGame(BaseGame, TCGGameContext):
         name: str,
         player: PlayerClient,
         world: World,
-        chat_system: ChatClientManager,
+        chat_client_manager: ChatClientManager,
     ) -> None:
 
         # 必须按着此顺序实现父
@@ -128,7 +128,7 @@ class TCGGame(BaseGame, TCGGameContext):
         assert self._player.actor != ""
 
         # agent 系统
-        self._chat_system: Final[ChatClientManager] = chat_system
+        self._chat_client_manager: Final[ChatClientManager] = chat_client_manager
 
     ###############################################################################################################################################
     @property
@@ -179,8 +179,8 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     @property
-    def chat_system(self) -> ChatClientManager:
-        return self._chat_system
+    def chat_client_manager(self) -> ChatClientManager:
+        return self._chat_client_manager
 
     ###############################################################################################################################################
     @property

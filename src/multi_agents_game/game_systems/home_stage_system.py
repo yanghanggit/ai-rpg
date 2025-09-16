@@ -77,7 +77,7 @@ class HomeStageSystem(ExecuteProcessor):
             stage_entities
         )
 
-        await self._game.chat_system.gather(request_handlers=request_handlers)
+        await self._game.chat_client_manager.gather(request_handlers=request_handlers)
 
         self._handle_chat_responses(request_handlers)
 

@@ -240,7 +240,7 @@ class ArbitrationActionSystem(BaseActionReactiveSystem):
         )
 
         # 用语言服务系统进行推理。
-        self._game.chat_system.request([request_handler])
+        self._game.chat_client_manager.request([request_handler])
 
         # 处理返回结果。
         self._handle_response(stage_entity, request_handler, actor_entities)

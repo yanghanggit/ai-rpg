@@ -324,7 +324,7 @@ class KickOffSystem(ExecuteProcessor):
             )
 
         # 并发
-        await self._game.chat_system.gather(request_handlers=request_handlers)
+        await self._game.chat_client_manager.gather(request_handlers=request_handlers)
 
         # 添加上下文。
         for request_handler in request_handlers:

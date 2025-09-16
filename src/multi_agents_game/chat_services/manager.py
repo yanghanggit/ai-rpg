@@ -94,6 +94,8 @@ class ChatClientManager:
     def get_urls_by_option(
         self, options: Optional[ChatApiEndpointOptions]
     ) -> List[str]:
+        # return self._deepseek_chat_localhost_urls
+
         if options is None or options == ChatApiEndpointOptions.AZURE_OPENAI_CHAT:
             return self._azure_openai_chat_localhost_urls
         elif options == ChatApiEndpointOptions.AZURE_OPENAI_BASE:

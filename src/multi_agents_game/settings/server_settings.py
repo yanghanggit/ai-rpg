@@ -4,6 +4,11 @@ from pydantic import BaseModel
 from fastapi import Depends
 
 
+#  DEEPSEEK_RAG_CHAT = "deepseek_rag_chat"
+#     DEEPSEEK_UNDEFINED_CHAT = "deepseek_undefined_chat"
+#     DEEPSEEK_MCP_CHAT = "deepseek_mcp_chat"
+
+
 @final
 class ServerSettings(BaseModel):
     game_server_port: int = 8000
@@ -11,6 +16,9 @@ class ServerSettings(BaseModel):
     deepseek_chat_server_port: int = 8200
     image_generation_server_port: int = 8300
     chat_api_endpoint: str = "/api/chat/v1/"
+    chat_rag_api_endpoint: str = "/api/chat/rag/v1/"
+    chat_undefined_api_endpoint: str = "/api/chat/undefined/v1/"
+    chat_mcp_api_endpoint: str = "/api/chat/mcp/v1/"
 
     @property
     def azure_openai_chat_localhost_urls(self) -> List[str]:
@@ -22,6 +30,24 @@ class ServerSettings(BaseModel):
     def deepseek_chat_localhost_urls(self) -> List[str]:
         return [
             f"http://localhost:{self.deepseek_chat_server_port}{self.chat_api_endpoint}"
+        ]
+
+    @property
+    def deepseek_rag_chat_localhost_urls(self) -> List[str]:
+        return [
+            f"http://localhost:{self.deepseek_chat_server_port}{self.chat_rag_api_endpoint}"
+        ]
+
+    @property
+    def deepseek_undefined_chat_localhost_urls(self) -> List[str]:
+        return [
+            f"http://localhost:{self.deepseek_chat_server_port}{self.chat_undefined_api_endpoint}"
+        ]
+
+    @property
+    def deepseek_mcp_chat_localhost_urls(self) -> List[str]:
+        return [
+            f"http://localhost:{self.deepseek_chat_server_port}{self.chat_mcp_api_endpoint}"
         ]
 
 

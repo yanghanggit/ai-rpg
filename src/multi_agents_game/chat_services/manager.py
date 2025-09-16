@@ -33,6 +33,9 @@ class ChatClientManager:
         self,
         azure_openai_chat_localhost_urls: List[str],
         deepseek_chat_localhost_urls: List[str],
+        deepseek_rag_chat_localhost_urls: List[str],
+        deepseek_undefined_chat_localhost_urls: List[str],
+        deepseek_mcp_chat_localhost_urls: List[str],
     ) -> None:
 
         # 运行的服务器
@@ -44,6 +47,17 @@ class ChatClientManager:
         assert len(deepseek_chat_localhost_urls) > 0
         self._deepseek_chat_localhost_urls: Final[List[str]] = (
             deepseek_chat_localhost_urls
+        )
+
+        # 临时添加的
+        self._deepseek_rag_chat_localhost_urls: Final[List[str]] = (
+            deepseek_rag_chat_localhost_urls
+        )
+        self._deepseek_undefined_chat_localhost_urls: Final[List[str]] = (
+            deepseek_undefined_chat_localhost_urls
+        )
+        self._deepseek_mcp_chat_localhost_urls: Final[List[str]] = (
+            deepseek_mcp_chat_localhost_urls
         )
 
         # 异步请求客户端

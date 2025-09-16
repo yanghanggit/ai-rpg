@@ -235,6 +235,9 @@ async def _run_game(
         chat_system=ChatClientManager(
             azure_openai_chat_localhost_urls=server_config.azure_openai_chat_localhost_urls,
             deepseek_chat_localhost_urls=server_config.deepseek_chat_localhost_urls,
+            deepseek_rag_chat_localhost_urls=server_config.deepseek_rag_chat_localhost_urls,
+            deepseek_undefined_chat_localhost_urls=server_config.deepseek_undefined_chat_localhost_urls,
+            deepseek_mcp_chat_localhost_urls=server_config.deepseek_mcp_chat_localhost_urls,
         ),
     )
 

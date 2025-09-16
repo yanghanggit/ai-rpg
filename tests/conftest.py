@@ -40,8 +40,8 @@ def sample_game() -> Any:
     )
     player = PlayerClient(name="test_player", actor="test_actor")
     chat_system = ChatClientManager(
-        azure_openai_chat_server_localhost_urls=["http://localhost:8000"],
-        deepseek_chat_server_localhost_urls=["http://localhost:8000"],
+        azure_openai_chat_localhost_urls=["http://localhost:8000"],
+        deepseek_chat_localhost_urls=["http://localhost:8000"],
     )
     return _TCGGame(
         name="test_game",

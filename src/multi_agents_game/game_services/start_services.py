@@ -113,8 +113,8 @@ def setup_web_game_session(
         world=world_exists,
         chat_system=ChatClientManager(
             # name=f"{web_game_user_options.game}-chatsystem",
-            azure_openai_chat_server_localhost_urls=server_settings.azure_openai_chat_server_localhost_urls,
-            deepseek_chat_server_localhost_urls=server_settings.deepseek_chat_server_localhost_urls,
+            azure_openai_chat_localhost_urls=server_settings.azure_openai_chat_localhost_urls,
+            deepseek_chat_localhost_urls=server_settings.deepseek_chat_localhost_urls,
         ),
     )
 

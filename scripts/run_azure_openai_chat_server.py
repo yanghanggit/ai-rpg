@@ -15,7 +15,7 @@ Azure OpenAI Chat Server启动脚本
     python -m scripts.run_azure_openai_chat_server
 
 API端点：
-    POST /api/chat-service/v1/
+    POST /api/chat/v1/
 """
 
 import os
@@ -55,7 +55,7 @@ app = FastAPI(
 ##################################################################################################################
 # 定义 POST 请求处理逻辑
 @app.post(
-    path="/api/chat-service/v1/",
+    path="/api/chat/v1/",
     response_model=ChatResponse,
 )
 async def process_chat_request(request: ChatRequest) -> ChatResponse:

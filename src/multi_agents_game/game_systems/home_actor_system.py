@@ -112,7 +112,8 @@ class HomeActorSystem(ExecuteProcessor):
         request_handlers: List[ChatClient] = self._generate_requests(actor_entities)
 
         # 语言服务
-        await self._game.chat_client_manager.gather(request_handlers=request_handlers)
+        # await self._game.chat_client_manager.gather(request_handlers=request_handlers)
+        await ChatClient.gather_request_post(clients=request_handlers)
 
         # 处理角色规划请求
         self._handle_responses(request_handlers)
@@ -125,7 +126,7 @@ class HomeActorSystem(ExecuteProcessor):
             # if request_handler.last_message_content == "":
             #     continue
 
-            entity2 = self._game.get_entity_by_name(request_handler._name)
+            entity2 = self._game.get_entity_by_name(request_handler.name)
             assert entity2 is not None
             self._handle_response(entity2, request_handler)
 
@@ -140,9 +141,9 @@ class HomeActorSystem(ExecuteProcessor):
             )
 
             self._game.append_human_message(
-                entity2, _compress_prompt(request_handler._prompt)
+                entity2, _compress_prompt(request_handler.prompt)
             )
-            self._game.append_ai_message(entity2, request_handler.ai_messages)
+            self._game.append_ai_message(entity2, request_handler.response_ai_messages)
 
             # 添加说话动作
             if len(format_response.speak_actions) > 0:
@@ -197,7 +198,7 @@ class HomeActorSystem(ExecuteProcessor):
             # 生成请求处理器
             request_handlers.append(
                 ChatClient(
-                    agent_name=entity._name,
+                    name=entity._name,
                     prompt=message,
                     chat_history=self._game.get_agent_short_term_memory(
                         entity

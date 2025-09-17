@@ -317,31 +317,32 @@ class KickOffSystem(ExecuteProcessor):
             agent_short_term_memory = self._game.get_agent_short_term_memory(entity1)
             request_handlers.append(
                 ChatClient(
-                    agent_name=entity1._name,
+                    name=entity1._name,
                     prompt=gen_prompt,
                     chat_history=agent_short_term_memory.chat_history,
                 )
             )
 
         # 并发
-        await self._game.chat_client_manager.gather(
-            request_handlers=request_handlers,
-            # options=ChatApiEndpointOptions.DEEPSEEK_MCP_CHAT,
-        )
+        # await self._game.chat_client_manager.gather(
+        #     request_handlers=request_handlers,
+        #     # options=ChatApiEndpointOptions.DEEPSEEK_MCP_CHAT,
+        # )
+        await ChatClient.gather_request_post(clients=request_handlers)
 
         # 添加上下文。
         for request_handler in request_handlers:
 
-            entity2 = self._game.get_entity_by_name(request_handler._name)
+            entity2 = self._game.get_entity_by_name(request_handler.name)
             assert entity2 is not None
 
             # 使用封装的函数整合聊天上下文
             self._integrate_chat_context(
-                entity2, request_handler._prompt, request_handler.ai_messages
+                entity2, request_handler.prompt, request_handler.response_ai_messages
             )
 
             # 缓存启动响应
-            self._cache_kick_off_response(entity2, request_handler.ai_messages)
+            self._cache_kick_off_response(entity2, request_handler.response_ai_messages)
 
             # 必须执行
             entity2.replace(

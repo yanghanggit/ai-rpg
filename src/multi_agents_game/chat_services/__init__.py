@@ -6,10 +6,11 @@ Please use: from multi_agents_game.rag.routing import RouteDecisionManager
 
 from .protocol import ChatRequest, ChatResponse
 from .client import ChatClient
-from .manager import ChatClientManager
+
+# from .manager import ChatClientManager
 
 __all__ = [
-    "ChatClientManager",
+    # "ChatClientManager",
     "ChatRequest",
     "ChatResponse",
     "ChatClient",

@@ -12,7 +12,8 @@ try:
     from src.multi_agents_game.models.world import World, Boot
     from src.multi_agents_game.models.dungeon import Dungeon
     from src.multi_agents_game.game.player_client import PlayerClient
-    from src.multi_agents_game.chat_services.manager import ChatClientManager
+
+    #    from src.multi_agents_game.chat_services.manager import ChatClientManager
 
     _TCGGame: Optional[Type[TCGGame]] = TCGGame
     _Actor: Optional[Type[Actor]] = Actor
@@ -39,20 +40,20 @@ def sample_game() -> Any:
         boot=boot,
     )
     player = PlayerClient(name="test_player", actor="test_actor")
-    chat_system = ChatClientManager(
-        azure_openai_base_localhost_urls=["http://localhost:8000"],
-        azure_openai_chat_localhost_urls=["http://localhost:8000"],
-        deepseek_base_localhost_urls=["http://localhost:8000"],
-        deepseek_chat_localhost_urls=["http://localhost:8000"],
-        deepseek_rag_chat_localhost_urls=["http://localhost:8000"],
-        deepseek_undefined_chat_localhost_urls=["http://localhost:8000"],
-        deepseek_mcp_chat_localhost_urls=["http://localhost:8000"],
-    )
+    # chat_system = ChatClientManager(
+    #     azure_openai_base_localhost_urls=["http://localhost:8000"],
+    #     azure_openai_chat_localhost_urls=["http://localhost:8000"],
+    #     deepseek_base_localhost_urls=["http://localhost:8000"],
+    #     deepseek_chat_localhost_urls=["http://localhost:8000"],
+    #     deepseek_rag_chat_localhost_urls=["http://localhost:8000"],
+    #     deepseek_undefined_chat_localhost_urls=["http://localhost:8000"],
+    #     deepseek_mcp_chat_localhost_urls=["http://localhost:8000"],
+    # )
     return _TCGGame(
         name="test_game",
         player=player,
         world=world,
-        chat_client_manager=chat_system,
+        # chat_client_manager=chat_system,
     )
 
 

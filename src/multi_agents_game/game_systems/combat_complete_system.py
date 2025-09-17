@@ -76,7 +76,7 @@ class CombatCompleteSystem(ExecuteProcessor):
             # 生成请求处理器
             request_handlers.append(
                 ChatClient(
-                    agent_name=entity1._name,
+                    name=entity1._name,
                     prompt=message,
                     chat_history=self._game.get_agent_short_term_memory(
                         entity1
@@ -85,12 +85,13 @@ class CombatCompleteSystem(ExecuteProcessor):
             )
 
         # 语言服务
-        await self._game.chat_client_manager.gather(request_handlers=request_handlers)
+        # await self._game.chat_client_manager.gather(request_handlers=request_handlers)
+        await ChatClient.gather_request_post(clients=request_handlers)
 
         # 结束的处理。
         for request_handler in request_handlers:
 
-            entity2 = self._game.get_entity_by_name(request_handler._name)
+            entity2 = self._game.get_entity_by_name(request_handler.name)
             assert entity2 is not None
 
             stage_entity2 = self._game.safe_get_stage_entity(entity2)

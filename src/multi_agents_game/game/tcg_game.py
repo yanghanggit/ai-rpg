@@ -8,7 +8,8 @@ from typing import Any, Dict, Final, List, Optional, Set, Tuple, final
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
-from ..chat_services.manager import ChatClientManager
+
+# from ..chat_services.manager import ChatClientManager
 from ..game.game_config import LOGS_DIR
 from ..mongodb import (
     DEFAULT_MONGODB_CONFIG,
@@ -99,7 +100,7 @@ class TCGGame(BaseGame, TCGGameContext):
         name: str,
         player: PlayerClient,
         world: World,
-        chat_client_manager: ChatClientManager,
+        # chat_client_manager: ChatClientManager,
     ) -> None:
 
         # 必须按着此顺序实现父
@@ -128,7 +129,7 @@ class TCGGame(BaseGame, TCGGameContext):
         assert self._player.actor != ""
 
         # agent 系统
-        self._chat_client_manager: Final[ChatClientManager] = chat_client_manager
+        # self._chat_client_manager: Final[ChatClientManager] = chat_client_manager
 
     ###############################################################################################################################################
     @property
@@ -178,9 +179,9 @@ class TCGGame(BaseGame, TCGGameContext):
         return TCGGameState.NONE
 
     ###############################################################################################################################################
-    @property
-    def chat_client_manager(self) -> ChatClientManager:
-        return self._chat_client_manager
+    # @property
+    # def chat_client_manager(self) -> ChatClientManager:
+    #     return self._chat_client_manager
 
     ###############################################################################################################################################
     @property

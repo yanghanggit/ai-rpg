@@ -1,4 +1,5 @@
 import copy
+from math import log
 import random
 import shutil
 import uuid
@@ -1157,21 +1158,34 @@ class TCGGame(BaseGame, TCGGameContext):
         if not self._validate_combat_state():
             return False
 
-        # 2. 验证所有角色的手牌状态
-        if not self._validate_actors_hand_cards():
-            return False
-
-        # 3. 记录传入的技能选项
         if skill_execution_plan_options is not None:
             logger.debug(f"收到技能执行计划选项: {skill_execution_plan_options}")
 
-        # 4. 为每个角色设置打牌行动
-        last_round = self.current_engagement.last_round
-        for turn_actor_name in last_round.round_turns:
+        # 2. 验证所有角色的手牌状态
+        actor_entities: Set[Entity] = self.get_group(
+            Matcher(all_of=[ActorComponent, HandComponent], none_of=[DeathComponent])
+        ).entities
+
+        if len(actor_entities) == 0:
+            logger.error("没有存活的并拥有手牌的角色，不能添加行动！")
+            return False
+
+        # 测试一下！
+        for actor_entity in actor_entities:
+
+            # 必须没有打牌行动
+            assert (
+                actor_entity._name in self.current_engagement.last_round.round_turns
+            ), f"{actor_entity._name} 不在本回合行动队列里"
+
+            # 必须没有打牌行动
+            hand_comp = actor_entity.get(HandComponent)
+            assert len(hand_comp.skills) > 0, f"{actor_entity._name} 没有技能可用"
+
             if not self._setup_actor_play_cards_action(
-                turn_actor_name, skill_execution_plan_options
+                actor_entity, skill_execution_plan_options
             ):
-                return False
+                assert False, f"为角色 {actor_entity._name} 设置打牌行动失败"
 
         return True
 
@@ -1186,47 +1200,21 @@ class TCGGame(BaseGame, TCGGameContext):
             logger.error("没有进行中的回合，不能添加行动！")
             return False
 
-        last_round = self.current_engagement.last_round
-        if last_round.has_ended:
+        if self.current_engagement.last_round.has_ended:
             logger.error("回合已经完成，不能添加行动！")
             return False
 
         return True
 
     ###############################################################################################################################################
-    def _validate_actors_hand_cards(self) -> bool:
-        """验证所有角色的手牌状态"""
-        last_round = self.current_engagement.last_round
-
-        for turn_actor_name in last_round.round_turns:
-            actor_entity = self.get_actor_entity(turn_actor_name)
-            if actor_entity is None:
-                logger.error(f"没有找到角色: {turn_actor_name}，不能添加行动！")
-                return False
-
-            if not actor_entity.has(HandComponent):
-                logger.error(f"角色: {actor_entity._name} 没有手牌，不能添加行动！")
-                return False
-
-            hand_comp = actor_entity.get(HandComponent)
-            if len(hand_comp.skills) == 0:
-                logger.error(f"角色: {actor_entity._name} 没有技能可用，不能添加行动！")
-                return False
-
-        return True
-
-    ###############################################################################################################################################
     def _setup_actor_play_cards_action(
         self,
-        turn_actor_name: str,
+        actor_entity: Entity,
         skill_execution_plan_options: Optional[Dict[str, str]],
     ) -> bool:
         """为单个角色设置打牌行动"""
 
-        actor_entity = self.get_actor_entity(turn_actor_name)
-        assert actor_entity is not None
         assert not actor_entity.has(PlayCardsAction)
-
         hand_comp = actor_entity.get(HandComponent)
 
         # 选择技能和目标
@@ -1244,8 +1232,6 @@ class TCGGame(BaseGame, TCGGameContext):
             actor_entity._name,
             selected_skill,
             final_target,
-            # skill_execution_plan.dialogue,
-            # skill_execution_plan.reason,
         )
 
         return True

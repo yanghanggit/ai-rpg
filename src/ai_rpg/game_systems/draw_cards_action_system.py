@@ -175,7 +175,7 @@ def _generate_prompt2(
 ### 特殊规则
 如果角色的设定里有提到‘无限生命’，‘无限血量’之类的描述，在更新生命值时，应当更新为最大生命值Max_HP
 更新你当前身上的状态效果，包括环境影响、之前行动的后果等
-如果你已经死亡，即update_hp<=0，则不需要生成技能与状态，返回 空对象 即可。
+如果你已经死亡，即update_hp<=0，则不需要生成技能与状态，返回如下对象:
 ```json
 {response_empty_sample.model_dump_json(exclude_none=True, indent=2)}
 ```
@@ -217,7 +217,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
 
         last_round = self._game.current_engagement.last_round
         if last_round.has_ended:
-            logger.error(f"last_round.has_ended, so setup new round")
+            logger.success(f"last_round.has_ended, so setup new round")
             self._game.new_round()
 
         turn = len(self._game.current_engagement.rounds)

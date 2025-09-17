@@ -30,6 +30,7 @@ from ai_rpg.chat_services.client import ChatClient
 _server_setting_path: Final[Path] = Path("server_settings.json")
 assert _server_setting_path.exists(), f"{_server_setting_path} must exist"
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """

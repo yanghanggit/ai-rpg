@@ -1,7 +1,6 @@
 from pathlib import Path
-from typing import Optional, final, Annotated
+from typing import Optional, final
 from pydantic import BaseModel
-from fastapi import Depends
 
 
 @final
@@ -14,48 +13,6 @@ class ServerSettings(BaseModel):
     chat_rag_api_endpoint: str = "/api/chat/rag/v1/"
     chat_undefined_api_endpoint: str = "/api/chat/undefined/v1/"
     chat_mcp_api_endpoint: str = "/api/chat/mcp/v1/"
-
-    # @property
-    # def azure_openai_base_localhost_urls(self) -> List[str]:
-    #     return [f"http://localhost:{self.azure_openai_chat_server_port}/"]
-
-    # @property
-    # def azure_openai_chat_localhost_urls(self) -> List[str]:
-    #     base_urls = self.azure_openai_base_localhost_urls
-    #     return [base_url.rstrip("/") + self.chat_api_endpoint for base_url in base_urls]
-
-    # """  DeepSeek 服务器相关设置 """
-
-    # @property
-    # def deepseek_base_localhost_urls(self) -> List[str]:
-    #     return [f"http://localhost:{self.deepseek_chat_server_port}/"]
-
-    # @property
-    # def deepseek_chat_localhost_urls(self) -> List[str]:
-    #     base_urls = self.deepseek_base_localhost_urls
-    #     return [base_url.rstrip("/") + self.chat_api_endpoint for base_url in base_urls]
-
-    # @property
-    # def deepseek_rag_chat_localhost_urls(self) -> List[str]:
-    #     base_urls = self.deepseek_base_localhost_urls
-    #     return [
-    #         base_url.rstrip("/") + self.chat_rag_api_endpoint for base_url in base_urls
-    #     ]
-
-    # @property
-    # def deepseek_undefined_chat_localhost_urls(self) -> List[str]:
-    #     base_urls = self.deepseek_base_localhost_urls
-    #     return [
-    #         base_url.rstrip("/") + self.chat_undefined_api_endpoint
-    #         for base_url in base_urls
-    #     ]
-
-    # @property
-    # def deepseek_mcp_chat_localhost_urls(self) -> List[str]:
-    #     base_urls = self.deepseek_base_localhost_urls
-    #     return [
-    #         base_url.rstrip("/") + self.chat_mcp_api_endpoint for base_url in base_urls
-    #     ]
 
 
 ###############################################################################################################################################
@@ -71,14 +28,3 @@ def initialize_server_settings_instance(path: Path) -> ServerSettings:
         _server_settings = ServerSettings.model_validate_json(content)
 
     return _server_settings
-
-
-###############################################################################################################################################
-def get_server_setting_instance() -> ServerSettings:
-    global _server_settings
-    assert _server_settings is not None, "ServerSettings must be initialized"
-    return _server_settings
-
-
-###############################################################################################################################################
-ServerSettingsInstance = Annotated[ServerSettings, Depends(get_server_setting_instance)]

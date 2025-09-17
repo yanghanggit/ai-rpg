@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 import sys
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
+from typing import AsyncIterator, Final
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -25,7 +25,10 @@ from ai_rpg.game_services.url_config_services import url_config_router
 from ai_rpg.game_services.view_actor_services import view_actor_router
 from ai_rpg.game_services.view_dungeon_services import view_dungeon_router
 from ai_rpg.game_services.view_home_services import view_home_router
+from ai_rpg.chat_services.client import ChatClient
 
+_server_setting_path: Final[Path] = Path("server_settings.json")
+assert _server_setting_path.exists(), f"{_server_setting_path} must exist"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -39,10 +42,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # 在这里添加启动时需要执行的初始化操作
     try:
         # 初始化服务器设置
-        server_config = initialize_server_settings_instance(
-            Path("server_settings.json")
-        )
-        logger.info(f"✅ 服务器配置已加载，端口: {server_config.game_server_port}")
+        server_settings = initialize_server_settings_instance(_server_setting_path)
+        logger.info(f"✅ 服务器配置已加载，端口: {server_settings.game_server_port}")
 
         # 可以在这里添加其他初始化操作，比如：
         # - 数据库连接初始化
@@ -51,6 +52,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         # - 游戏数据预加载
 
         logger.info("✅ TCG游戏服务器初始化完成")
+        ChatClient.initialize_url_config(server_settings)
+        logger.info("✅ ChatClient URL配置已初始化")
 
     except Exception as e:
         logger.error(f"❌ 服务器初始化失败: {e}")
@@ -98,15 +101,15 @@ app.include_router(router=view_actor_router)
 def main() -> None:
 
     # 服务器配置在lifespan中已经初始化，这里直接获取
-    server_config = initialize_server_settings_instance(Path("server_settings.json"))
+    server_settings = initialize_server_settings_instance(_server_setting_path)
 
-    logger.info(f"启动游戏服务器，端口: {server_config.game_server_port}")
+    logger.info(f"启动游戏服务器，端口: {server_settings.game_server_port}")
     import uvicorn
 
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=server_config.game_server_port,
+        port=server_settings.game_server_port,
     )
 
 

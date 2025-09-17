@@ -1,9 +1,6 @@
 from typing import Optional
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-
-# from ..chat_services.manager import ChatClientManager
-from ..chat_services.client import ChatClient
 from ..demo.stage_dungeon4 import (
     create_demo_dungeon4,
 )
@@ -11,7 +8,6 @@ from ..game.player_client import PlayerClient
 from ..game.web_tcg_game import WebTCGGame, WebGameUserOptions
 from ..game_services.game_server import GameServerInstance
 from ..models import StartRequest, StartResponse, World
-from ..settings.server_settings import ServerSettingsInstance
 
 ###################################################################################################################################################################
 start_router = APIRouter()
@@ -24,7 +20,7 @@ start_router = APIRouter()
 async def start(
     request_data: StartRequest,
     game_server: GameServerInstance,
-    server_settings: ServerSettingsInstance,
+    # server_settings: ServerSettingsInstance,
 ) -> StartResponse:
 
     logger.info(f"/start/v1/: {request_data.model_dump_json()}")
@@ -54,7 +50,7 @@ async def start(
             # 如果没有游戏对象，就‘创建/复位’一个游戏。
             active_game_session = setup_web_game_session(
                 web_game_user_options=web_user_session_options,
-                server_settings=server_settings,
+                # server_settings=server_settings,
             )
 
             if active_game_session is None:
@@ -86,7 +82,7 @@ async def start(
 ###################################################################################################################################################################
 def setup_web_game_session(
     web_game_user_options: WebGameUserOptions,
-    server_settings: ServerSettingsInstance,
+    # server_settings: ServerSettingsInstance,
 ) -> Optional[WebTCGGame]:
 
     world_exists = web_game_user_options.world_data
@@ -113,18 +109,7 @@ def setup_web_game_session(
             name=web_game_user_options.user, actor=web_game_user_options.actor
         ),
         world=world_exists,
-        # chat_client_manager=ChatClientManager(
-        #     azure_openai_base_localhost_urls=server_settings.azure_openai_base_localhost_urls,
-        #     azure_openai_chat_localhost_urls=server_settings.azure_openai_chat_localhost_urls,
-        #     deepseek_base_localhost_urls=server_settings.deepseek_base_localhost_urls,
-        #     deepseek_chat_localhost_urls=server_settings.deepseek_chat_localhost_urls,
-        #     deepseek_rag_chat_localhost_urls=server_settings.deepseek_rag_chat_localhost_urls,
-        #     deepseek_undefined_chat_localhost_urls=server_settings.deepseek_undefined_chat_localhost_urls,
-        #     deepseek_mcp_chat_localhost_urls=server_settings.deepseek_mcp_chat_localhost_urls,
-        # ),
     )
-
-    ChatClient.initialize_url_config(server_settings)
 
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(web_game.world.entities_snapshot) == 0:

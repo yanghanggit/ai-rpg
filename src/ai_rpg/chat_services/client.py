@@ -351,8 +351,8 @@ class ChatClient:
                 response = await ChatClient.get_async_client().get(f"{base_url}")
                 response.raise_for_status()
                 # 打印response
-                logger.info(f"Health check response from {base_url}: {response.text}")
-                logger.info(f"Health check passed: {base_url}")
+                logger.debug(f"Health check response from {base_url}: {response.text}")
+                logger.debug(f"Health check passed: {base_url}")
             except Exception as e:
                 logger.error(f"Health check failed: {base_url}, error: {e}")
 

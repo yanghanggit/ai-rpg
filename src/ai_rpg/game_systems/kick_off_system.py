@@ -92,7 +92,7 @@ class KickOffSystem(ExecuteProcessor):
             entities_to_process = valid_entities
 
         if len(entities_to_process) == 0:
-            logger.info(
+            logger.debug(
                 "KickOffSystem: All entities loaded from cache, no new requests needed"
             )
             return
@@ -152,7 +152,7 @@ class KickOffSystem(ExecuteProcessor):
                     # 从待处理集合中移除
                     entities_to_process.discard(entity)
 
-                    logger.info(
+                    logger.debug(
                         f"KickOffSystem: Loaded cached response for {entity.name}"
                     )
 

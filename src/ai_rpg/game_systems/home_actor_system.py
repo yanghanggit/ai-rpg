@@ -191,7 +191,7 @@ class HomeActorSystem(ExecuteProcessor):
             # 生成消息
             message = _generate_prompt(
                 current_stage.name,
-                current_stage.get(EnvironmentComponent).narrate,
+                current_stage.get(EnvironmentComponent).description,
                 actors_apperances_mapping,
             )
 

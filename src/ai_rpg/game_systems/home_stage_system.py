@@ -1,14 +1,11 @@
 from typing import Dict, List, Set, final
-
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-
 from ..chat_services.client import ChatClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
-    CanStartPlanningComponent,
     EnvironmentComponent,
     HomeComponent,
     StageComponent,
@@ -18,39 +15,45 @@ from ..utils import json_format
 
 #######################################################################################################################################
 @final
-class StagePlanningResponse(BaseModel):
-    environment_narration: str = ""
+class EnvironmentResponse(BaseModel):
+    description: str = ""
 
 
 #######################################################################################################################################
-def _generate_stage_plan_prompt(
-    actors_appearances_mapping: Dict[str, str],
+def _generate_prompt(
+    stage_actor_appearances: Dict[str, str],
 ) -> str:
 
-    actors_appearances_info = []
-    for actor_name, appearance in actors_appearances_mapping.items():
-        actors_appearances_info.append(f"{actor_name}: {appearance}")
-    if len(actors_appearances_info) == 0:
-        actors_appearances_info.append("无")
+    stage_actor_appearances_info = []
+    for actor_name, appearance in stage_actor_appearances.items():
+        stage_actor_appearances_info.append(f"{actor_name}: {appearance}")
+    if len(stage_actor_appearances_info) == 0:
+        stage_actor_appearances_info.append("无")
 
-    stage_response_example = StagePlanningResponse(
-        environment_narration="场景内的环境描述"
-    )
+    response_example = EnvironmentResponse(description="场景内的环境描述")
 
     return f"""# 请你输出你的场景描述
+
 ## 场景内角色
-{"\n".join(actors_appearances_info)}
+
+{"\n".join(stage_actor_appearances_info)}
+
 ## 输出内容-场景描述
+
 - 场景内的环境描述，不要包含任何角色信息。
-## 输出要求
 - 所有输出必须为第三人称视角。
-- 不要使用```json```来封装内容。
+
 ### 输出格式(JSON)
-{stage_response_example.model_dump_json()}"""
+
+```json
+{response_example.model_dump_json()}
+```
+"""
 
 
 #######################################################################################################################################
-def _compress_stage_plan_prompt(prompt: str) -> str:
+def _compress_prompt(prompt: str) -> str:
+    logger.debug(f"准备压缩原始提示词 {prompt}")
     return "# 请你输出你的场景描述。并以 JSON 格式输出。"
 
 
@@ -64,26 +67,30 @@ class HomeStageSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     async def execute(self) -> None:
-        await self._process_stage_planning_request()
 
-    #######################################################################################################################################
-    async def _process_stage_planning_request(self) -> None:
-
+        # 获取所有可以进行场景规划的场景实体
         stage_entities = self._game.get_group(
-            Matcher(all_of=[CanStartPlanningComponent, StageComponent, HomeComponent])
+            Matcher(all_of=[StageComponent, HomeComponent])
         ).entities.copy()
 
-        request_handlers: List[ChatClient] = self._generate_chat_request_handlers(
+        # 生成请求处理器
+        request_handlers: List[ChatClient] = self._generate_request_handlers(
             stage_entities
         )
 
-        # await self._game.chat_client_manager.gather(request_handlers=request_handlers)
+        # 并行发送请求
         await ChatClient.gather_request_post(clients=request_handlers)
 
-        self._handle_chat_responses(request_handlers)
+        # 处理响应
+        for request_handler in request_handlers:
+
+            entity2 = self._game.get_entity_by_name(request_handler.name)
+            assert entity2 is not None
+
+            self._handle_response(entity2, request_handler)
 
     #######################################################################################################################################
-    def _generate_chat_request_handlers(
+    def _generate_request_handlers(
         self, stage_entities: Set[Entity]
     ) -> List[ChatClient]:
 
@@ -92,17 +99,20 @@ class HomeStageSystem(ExecuteProcessor):
         for stage_entity in stage_entities:
 
             environment_component = stage_entity.get(EnvironmentComponent)
-            if environment_component.narrate != "":
+            if environment_component.description != "":
                 # 如果环境描述不为空，跳过
+                logger.debug(
+                    f"跳过场景 {stage_entity.name} 的规划请求，因其环境描述不为空 = \n{environment_component.description}"
+                )
                 continue
 
             # 获取场景内角色的外貌信息
-            actors_appearances_mapping: Dict[str, str] = (
+            stage_actor_appearances: Dict[str, str] = (
                 self._game.get_stage_actor_appearances(stage_entity)
             )
 
             # 生成提示信息
-            message = _generate_stage_plan_prompt(actors_appearances_mapping)
+            message = _generate_prompt(stage_actor_appearances)
 
             # 生成请求处理器
             request_handlers.append(
@@ -117,36 +127,25 @@ class HomeStageSystem(ExecuteProcessor):
         return request_handlers
 
     #######################################################################################################################################
-    def _handle_chat_responses(self, request_handlers: List[ChatClient]) -> None:
-        for request_handler in request_handlers:
-
-            entity2 = self._game.get_entity_by_name(request_handler.name)
-            assert entity2 is not None
-
-            self._handle_stage_response(entity2, request_handler)
-
-    #######################################################################################################################################
-    def _handle_stage_response(
-        self, entity2: Entity, request_handler: ChatClient
-    ) -> None:
+    def _handle_response(self, entity2: Entity, request_handler: ChatClient) -> None:
 
         try:
 
-            format_response = StagePlanningResponse.model_validate_json(
+            format_response = EnvironmentResponse.model_validate_json(
                 json_format.strip_json_code_block(request_handler.response_content)
             )
 
             self._game.append_human_message(
-                entity2, _compress_stage_plan_prompt(request_handler.prompt)
+                entity2, _compress_prompt(request_handler.prompt)
             )
             self._game.append_ai_message(entity2, request_handler.response_ai_messages)
 
             # 更新环境描写
-            if format_response.environment_narration != "":
+            if format_response.description != "":
                 entity2.replace(
                     EnvironmentComponent,
                     entity2.name,
-                    format_response.environment_narration,
+                    format_response.description,
                 )
 
         except Exception as e:

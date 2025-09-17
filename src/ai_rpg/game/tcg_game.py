@@ -321,7 +321,7 @@ class TCGGame(BaseGame, TCGGameContext):
         inserted_id = mongodb_upsert_one(collection_name, world_document.to_dict())
 
         if inserted_id:
-            logger.success("✅ 演示游戏世界已存储到 MongoDB!")
+            logger.debug("✅ 演示游戏世界已存储到 MongoDB!")
 
         return inserted_id
 
@@ -1364,7 +1364,7 @@ class TCGGame(BaseGame, TCGGameContext):
             round_turns=[entity.name for entity in shuffled_reactive_entities]
         )
 
-        round.environment = stage_environment_comp.narrate
+        round.environment = stage_environment_comp.description
         logger.info(f"new_round:\n{round.model_dump_json()}")
         return True
 

@@ -43,7 +43,9 @@ class CombatKickOffSystem(ExecuteProcessor):
         )
 
         # 取场景描述
-        current_stage_narrate = current_stage_entity.get(EnvironmentComponent).narrate
+        current_stage_narrate = current_stage_entity.get(
+            EnvironmentComponent
+        ).description
 
         for actor_entity in actor_entities:
 

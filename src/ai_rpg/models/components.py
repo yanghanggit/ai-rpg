@@ -55,7 +55,7 @@ class StageComponent(Component):
 @register_component_class
 class EnvironmentComponent(Component):
     name: str
-    narrate: str
+    description: str
 
 
 ############################################################################################################

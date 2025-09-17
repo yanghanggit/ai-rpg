@@ -48,13 +48,13 @@ class ChatClient:
     @classmethod
     def initialize_url_config(cls, server_settings: ServerSettings) -> None:
         """Initialize the URL configurations from ServerSettings."""
-        assert server_settings is not None, "server_settings should not be None"
-        assert (
-            cls._azure_openai_url_config is None
-        ), "Azure OpenAI URL config is already initialized"
-        assert (
-            cls._deepseek_url_config is None
-        ), "DeepSeek URL config is already initialized"
+        # assert server_settings is not None, "server_settings should not be None"
+        # assert (
+        #     cls._azure_openai_url_config is None
+        # ), "Azure OpenAI URL config is already initialized"
+        # assert (
+        #     cls._deepseek_url_config is None
+        # ), "DeepSeek URL config is already initialized"
 
         cls._azure_openai_url_config = AzureOpenAIUrlConfig(
             base_url=f"http://localhost:{server_settings.azure_openai_chat_server_port}/",

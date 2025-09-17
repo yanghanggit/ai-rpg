@@ -9,10 +9,11 @@ sys.path.insert(
 
 from typing import Dict, Set, TypedDict, cast
 from loguru import logger
-from multi_agents_game.chat_services.manager import (
-    ChatClientManager,
-    ChatApiEndpointOptions,
-)
+
+# from multi_agents_game.chat_services.manager import (
+#     ChatClientManager,
+#     ChatApiEndpointOptions,
+# )
 from multi_agents_game.chat_services.client import ChatClient
 from multi_agents_game.settings import (
     initialize_server_settings_instance,
@@ -235,15 +236,15 @@ async def _run_game(
             actor=terminal_game_user_options.actor,
         ),
         world=world_exists,
-        chat_client_manager=ChatClientManager(
-            azure_openai_base_localhost_urls=server_settings.azure_openai_base_localhost_urls,
-            azure_openai_chat_localhost_urls=server_settings.azure_openai_chat_localhost_urls,
-            deepseek_base_localhost_urls=server_settings.deepseek_base_localhost_urls,
-            deepseek_chat_localhost_urls=server_settings.deepseek_chat_localhost_urls,
-            deepseek_rag_chat_localhost_urls=server_settings.deepseek_rag_chat_localhost_urls,
-            deepseek_undefined_chat_localhost_urls=server_settings.deepseek_undefined_chat_localhost_urls,
-            deepseek_mcp_chat_localhost_urls=server_settings.deepseek_mcp_chat_localhost_urls,
-        ),
+        # chat_client_manager=ChatClientManager(
+        #     azure_openai_base_localhost_urls=server_settings.azure_openai_base_localhost_urls,
+        #     azure_openai_chat_localhost_urls=server_settings.azure_openai_chat_localhost_urls,
+        #     deepseek_base_localhost_urls=server_settings.deepseek_base_localhost_urls,
+        #     deepseek_chat_localhost_urls=server_settings.deepseek_chat_localhost_urls,
+        #     deepseek_rag_chat_localhost_urls=server_settings.deepseek_rag_chat_localhost_urls,
+        #     deepseek_undefined_chat_localhost_urls=server_settings.deepseek_undefined_chat_localhost_urls,
+        #     deepseek_mcp_chat_localhost_urls=server_settings.deepseek_mcp_chat_localhost_urls,
+        # ),
     )
 
     ChatClient.initialize_url_config(server_settings)

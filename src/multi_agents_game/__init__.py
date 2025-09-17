@@ -8,7 +8,7 @@ __author__ = "Yang Hang"
 
 # 导出主要类和函数
 try:
-    from .chat_services.manager import ChatClientManager
+    #    from .chat_services.manager import ChatClientManager
     from .entitas import Context, Entity
     from .game.base_game import BaseGame
     from .game.tcg_game import TCGGame
@@ -21,7 +21,7 @@ try:
         "Actor",
         "Stage",
         "Dungeon",
-        "ChatClientManager",
+        # "ChatClientManager",
         "Context",
         "Entity",
     ]

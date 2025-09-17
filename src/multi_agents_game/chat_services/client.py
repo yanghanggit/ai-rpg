@@ -1,5 +1,4 @@
 import asyncio
-from math import log
 from typing import Final, List, Optional, final
 import httpx
 import requests
@@ -16,12 +15,14 @@ from ..settings.server_settings import ServerSettings
 from dataclasses import dataclass
 
 
+################################################################################################################################################################################
 @dataclass
 class AzureOpenAIUrlConfig:
     base_url: str
     chat_url: str
 
 
+################################################################################################################################################################################
 @dataclass
 class DeepSeekUrlConfig:
     base_url: str
@@ -31,6 +32,7 @@ class DeepSeekUrlConfig:
     mcp_chat_url: str
 
 
+################################################################################################################################################################################
 @final
 class ChatClient:
 
@@ -111,9 +113,15 @@ class ChatClient:
 
         self._chat_response: ChatResponse = ChatResponse()
 
-        assert self._azure_openai_url_config is not None, "Azure OpenAI URL config is not initialized"
-        assert self._deepseek_url_config is not None, "DeepSeek URL config is not initialized"
-        self._url: Optional[str] = url if url is not None else self._azure_openai_url_config.chat_url
+        assert (
+            self._azure_openai_url_config is not None
+        ), "Azure OpenAI URL config is not initialized"
+        assert (
+            self._deepseek_url_config is not None
+        ), "DeepSeek URL config is not initialized"
+        self._url: Optional[str] = (
+            url if url is not None else self._azure_openai_url_config.chat_url
+        )
 
         self._timeout: Final[int] = timeout if timeout is not None else 30
         assert self._timeout > 0, "timeout should be positive"
@@ -197,7 +205,7 @@ class ChatClient:
         return self._cache_response_ai_messages
 
     ################################################################################################################################################################################
-    def request_post(self, url: str) -> None:
+    def request_post(self) -> None:
 
         try:
 
@@ -206,7 +214,7 @@ class ChatClient:
             start_time = time.time()
 
             response = requests.post(
-                url=url,
+                url=self.url,
                 json=ChatRequest(
                     message=HumanMessage(content=self._prompt),
                     chat_history=self._chat_history,
@@ -243,7 +251,7 @@ class ChatClient:
             logger.debug(f"{self._name}: full traceback:\n{traceback.format_exc()}")
 
     ################################################################################################################################################################################
-    async def a_request_post(self, client: httpx.AsyncClient, url: str) -> None:
+    async def a_request_post(self) -> None:
 
         try:
 
@@ -251,8 +259,8 @@ class ChatClient:
 
             start_time = time.time()
 
-            response = await client.post(
-                url=url,
+            response = await ChatClient.get_async_client().post(
+                url=self.url,
                 json=ChatRequest(
                     message=HumanMessage(content=self._prompt),
                     chat_history=self._chat_history,
@@ -300,9 +308,7 @@ class ChatClient:
 
         coros = []
         for client in clients:
-            coros.append(
-                client.a_request_post(ChatClient.get_async_client(), client.url)
-            )
+            coros.append(client.a_request_post())
 
         # 允许异常捕获，不中断其他请求
         start_time = time.time()
@@ -350,14 +356,11 @@ class ChatClient:
 
         for base_url in base_urls:
             try:
-                async with ChatClient.get_async_client() as client:
-                    response = await client.get(f"{base_url}")
-                    response.raise_for_status()
-                    # 打印response
-                    logger.info(
-                        f"Health check response from {base_url}: {response.text}"
-                    )
-                    logger.info(f"Health check passed: {base_url}")
+                response = await ChatClient.get_async_client().get(f"{base_url}")
+                response.raise_for_status()
+                # 打印response
+                logger.info(f"Health check response from {base_url}: {response.text}")
+                logger.info(f"Health check passed: {base_url}")
             except Exception as e:
                 logger.error(f"Health check failed: {base_url}, error: {e}")
 

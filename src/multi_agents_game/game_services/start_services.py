@@ -1,7 +1,8 @@
 from typing import Optional
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from ..chat_services.manager import ChatClientManager
+
+# from ..chat_services.manager import ChatClientManager
 from ..chat_services.client import ChatClient
 from ..demo.stage_dungeon4 import (
     create_demo_dungeon4,
@@ -112,15 +113,15 @@ def setup_web_game_session(
             name=web_game_user_options.user, actor=web_game_user_options.actor
         ),
         world=world_exists,
-        chat_client_manager=ChatClientManager(
-            azure_openai_base_localhost_urls=server_settings.azure_openai_base_localhost_urls,
-            azure_openai_chat_localhost_urls=server_settings.azure_openai_chat_localhost_urls,
-            deepseek_base_localhost_urls=server_settings.deepseek_base_localhost_urls,
-            deepseek_chat_localhost_urls=server_settings.deepseek_chat_localhost_urls,
-            deepseek_rag_chat_localhost_urls=server_settings.deepseek_rag_chat_localhost_urls,
-            deepseek_undefined_chat_localhost_urls=server_settings.deepseek_undefined_chat_localhost_urls,
-            deepseek_mcp_chat_localhost_urls=server_settings.deepseek_mcp_chat_localhost_urls,
-        ),
+        # chat_client_manager=ChatClientManager(
+        #     azure_openai_base_localhost_urls=server_settings.azure_openai_base_localhost_urls,
+        #     azure_openai_chat_localhost_urls=server_settings.azure_openai_chat_localhost_urls,
+        #     deepseek_base_localhost_urls=server_settings.deepseek_base_localhost_urls,
+        #     deepseek_chat_localhost_urls=server_settings.deepseek_chat_localhost_urls,
+        #     deepseek_rag_chat_localhost_urls=server_settings.deepseek_rag_chat_localhost_urls,
+        #     deepseek_undefined_chat_localhost_urls=server_settings.deepseek_undefined_chat_localhost_urls,
+        #     deepseek_mcp_chat_localhost_urls=server_settings.deepseek_mcp_chat_localhost_urls,
+        # ),
     )
 
     ChatClient.initialize_url_config(server_settings)

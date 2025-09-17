@@ -253,7 +253,8 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
         request_handlers: List[ChatClient] = self._generate_requests(entities, prompt)
 
         # 语言服务
-        await self._game.chat_client_manager.gather(request_handlers=request_handlers)
+        # await self._game.chat_client_manager.gather(request_handlers=request_handlers)
+        await ChatClient.gather_request_post(clients=request_handlers)
 
         # 处理角色规划请求
         for request_handler in request_handlers:

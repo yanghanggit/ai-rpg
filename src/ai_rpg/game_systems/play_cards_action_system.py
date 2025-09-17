@@ -47,12 +47,12 @@ class PlayCardsActionSystem(BaseActionReactiveSystem):
         assert not current_stage.has(ArbitrationAction)
         current_stage.replace(
             ArbitrationAction,
-            current_stage._name,
+            current_stage.name,
             "",
             "",
         )
         logger.debug(
-            f"PlayCardsActionSystem: stage_entity: {current_stage._name}, react_entities: {[entity._name for entity in react_entities]}"
+            f"PlayCardsActionSystem: stage_entity: {current_stage.name}, react_entities: {[entity.name for entity in react_entities]}"
         )
 
         # last_round = self._game.current_engagement.last_round

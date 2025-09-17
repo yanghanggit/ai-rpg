@@ -26,7 +26,7 @@ class UserOptions:
     ###############################################################################################################################################
     @property
     def world_boot_data(self) -> Optional[Boot]:
-        logger.info(f"📖 从 MongoDB 获取演示游戏世界进行验证...")
+        logger.debug(f"📖 从 MongoDB 获取演示游戏世界进行验证...")
         stored_boot = mongodb_find_one(
             DEFAULT_MONGODB_CONFIG.worlds_boot_collection, {"game_name": self.game}
         )

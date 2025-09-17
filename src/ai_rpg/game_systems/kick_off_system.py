@@ -255,7 +255,7 @@ class KickOffSystem(ExecuteProcessor):
                 encoding="utf-8",
             )
 
-            logger.info(
+            logger.debug(
                 f"KickOffSystem: Cached kick off response for {entity.name} to {path.name}"
             )
 

@@ -1,8 +1,7 @@
 import asyncio
 from typing import Dict, List, final, override
 from loguru import logger
-
-from ai_rpg.models.components import DeathComponent
+from ..models.components import DeathComponent
 from ..entitas import ExecuteProcessor, Entity
 from ..game.tcg_game import TCGGame
 
@@ -26,10 +25,10 @@ class SaveSystem(ExecuteProcessor):
         #
         actor_distribution_info: Dict[str, List[str]] = {}
         for stage, actors in actor_distribution.items():
-            actor_distribution_info[stage._name] = []
+            actor_distribution_info[stage.name] = []
             for actor in actors:
-                actor_distribution_info[stage._name].append(
-                    f"{actor._name}{'(Dead)' if actor.has(DeathComponent) else ''}"
+                actor_distribution_info[stage.name].append(
+                    f"{actor.name}{'(Dead)' if actor.has(DeathComponent) else ''}"
                 )
 
         logger.info(f"mapping = {actor_distribution_info}")

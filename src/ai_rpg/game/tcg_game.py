@@ -1,5 +1,4 @@
 import copy
-from math import log
 import random
 import shutil
 import uuid
@@ -278,13 +277,13 @@ class TCGGame(BaseGame, TCGGameContext):
         self._verbose_chat_history()
         self._verbose_dungeon_system()
 
-        logger.info(f"Verbose debug info saved to: {self.verbose_dir}")
+        logger.debug(f"Verbose debug info saved to: {self.verbose_dir}")
         return self
 
     ###############################################################################################################################################
     def _persist_world_to_mongodb(self) -> None:
         """将游戏世界持久化到 MongoDB"""
-        logger.info("📝 创建演示游戏世界并存储到 MongoDB...")
+        logger.debug("📝 创建演示游戏世界并存储到 MongoDB...")
 
         version = "0.0.1"
         collection_name = DEFAULT_MONGODB_CONFIG.worlds_collection
@@ -318,7 +317,7 @@ class TCGGame(BaseGame, TCGGameContext):
         self, world_document: WorldDocument, collection_name: str
     ) -> Optional[str]:
         """保存 WorldDocument 到 MongoDB"""
-        logger.info(f"📝 存储演示游戏世界到 MongoDB 集合: {collection_name}")
+        logger.debug(f"📝 存储演示游戏世界到 MongoDB 集合: {collection_name}")
         inserted_id = mongodb_upsert_one(collection_name, world_document.to_dict())
 
         if inserted_id:
@@ -329,7 +328,7 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     def _verify_saved_world_document(self, collection_name: str) -> None:
         """验证已保存的 WorldDocument"""
-        logger.info("📖 从 MongoDB 获取演示游戏世界进行验证...")
+        logger.debug("📖 从 MongoDB 获取演示游戏世界进行验证...")
 
         saved_world_data = mongodb_find_one(
             collection_name,

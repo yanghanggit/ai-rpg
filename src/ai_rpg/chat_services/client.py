@@ -333,7 +333,7 @@ class ChatClient:
                 f"ChatClient.gather_request_post: {failed_count}/{len(clients)} requests failed"
             )
         else:
-            logger.info(
+            logger.debug(
                 f"ChatClient.gather_request_post: All {len(clients)} requests completed successfully"
             )
 

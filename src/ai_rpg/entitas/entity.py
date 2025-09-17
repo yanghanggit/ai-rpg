@@ -11,7 +11,6 @@ data validation, serialization, and documentation.
 """
 
 from typing import Any, Dict, Tuple, Type, TypeVar, cast
-
 from .components import Component
 from .event import Event
 from .exceptions import AlreadyAddedComponent, EntityNotEnabled, MissingComponent

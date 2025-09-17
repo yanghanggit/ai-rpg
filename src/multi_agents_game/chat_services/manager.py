@@ -166,7 +166,7 @@ class ChatClientManager:
         coros = []
         for endpoint in client_endpoints:
             coros.append(
-                endpoint.chat_client.a_request(self._async_client, endpoint.url)
+                endpoint.chat_client.a_request_post(self._async_client, endpoint.url)
             )
 
         # 允许异常捕获，不中断其他请求
@@ -201,7 +201,7 @@ class ChatClientManager:
 
         for endpoint in client_endpoints:
             start_time = time.time()
-            endpoint.chat_client.request(endpoint.url)
+            endpoint.chat_client.request_post(endpoint.url)
             end_time = time.time()
             logger.debug(f"ChatSystem.handle:{end_time - start_time:.2f} seconds")
 

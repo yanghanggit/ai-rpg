@@ -106,7 +106,7 @@ class HomeStageSystem(ExecuteProcessor):
             # 生成请求处理器
             request_handlers.append(
                 ChatClient(
-                    agent_name=stage_entity._name,
+                    name=stage_entity._name,
                     prompt=message,
                     chat_history=self._game.get_agent_short_term_memory(
                         stage_entity
@@ -119,7 +119,7 @@ class HomeStageSystem(ExecuteProcessor):
     def _handle_chat_responses(self, request_handlers: List[ChatClient]) -> None:
         for request_handler in request_handlers:
 
-            entity2 = self._game.get_entity_by_name(request_handler._name)
+            entity2 = self._game.get_entity_by_name(request_handler.name)
             assert entity2 is not None
 
             self._handle_stage_response(entity2, request_handler)
@@ -136,9 +136,9 @@ class HomeStageSystem(ExecuteProcessor):
             )
 
             self._game.append_human_message(
-                entity2, _compress_stage_plan_prompt(request_handler._prompt)
+                entity2, _compress_stage_plan_prompt(request_handler.prompt)
             )
-            self._game.append_ai_message(entity2, request_handler.ai_messages)
+            self._game.append_ai_message(entity2, request_handler.response_ai_messages)
 
             # 更新环境描写
             if format_response.environment_narration != "":

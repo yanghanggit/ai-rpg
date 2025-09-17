@@ -232,7 +232,7 @@ class ArbitrationActionSystem(BaseActionReactiveSystem):
 
         # 用场景推理。
         request_handler = ChatClient(
-            agent_name=stage_entity._name,
+            name=stage_entity._name,
             prompt=message,
             chat_history=self._game.get_agent_short_term_memory(
                 stage_entity

@@ -13,6 +13,7 @@ from multi_agents_game.chat_services.manager import (
     ChatClientManager,
     ChatApiEndpointOptions,
 )
+from multi_agents_game.chat_services.client import ChatClient
 from multi_agents_game.settings import (
     initialize_server_settings_instance,
 )
@@ -223,7 +224,7 @@ async def _run_game(
         )
 
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    server_config = initialize_server_settings_instance(Path("server_settings.json"))
+    server_settings = initialize_server_settings_instance(Path("server_settings.json"))
 
     # 依赖注入，创建新的游戏
     assert world_exists is not None, "World data must exist to create a game"
@@ -235,15 +236,17 @@ async def _run_game(
         ),
         world=world_exists,
         chat_client_manager=ChatClientManager(
-            azure_openai_base_localhost_urls=server_config.azure_openai_base_localhost_urls,
-            azure_openai_chat_localhost_urls=server_config.azure_openai_chat_localhost_urls,
-            deepseek_base_localhost_urls=server_config.deepseek_base_localhost_urls,
-            deepseek_chat_localhost_urls=server_config.deepseek_chat_localhost_urls,
-            deepseek_rag_chat_localhost_urls=server_config.deepseek_rag_chat_localhost_urls,
-            deepseek_undefined_chat_localhost_urls=server_config.deepseek_undefined_chat_localhost_urls,
-            deepseek_mcp_chat_localhost_urls=server_config.deepseek_mcp_chat_localhost_urls,
+            azure_openai_base_localhost_urls=server_settings.azure_openai_base_localhost_urls,
+            azure_openai_chat_localhost_urls=server_settings.azure_openai_chat_localhost_urls,
+            deepseek_base_localhost_urls=server_settings.deepseek_base_localhost_urls,
+            deepseek_chat_localhost_urls=server_settings.deepseek_chat_localhost_urls,
+            deepseek_rag_chat_localhost_urls=server_settings.deepseek_rag_chat_localhost_urls,
+            deepseek_undefined_chat_localhost_urls=server_settings.deepseek_undefined_chat_localhost_urls,
+            deepseek_mcp_chat_localhost_urls=server_settings.deepseek_mcp_chat_localhost_urls,
         ),
     )
+
+    ChatClient.initialize_url_config(server_settings)
 
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(terminal_game.world.entities_snapshot) == 0:
@@ -445,18 +448,16 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         return
 
     # 公用：检查内网的llm服务的健康状态
-    if usr_input == "/deepseek":
-        await terminal_game.chat_client_manager.health_check(
-            ChatApiEndpointOptions.DEEPSEEK_BASE
-        )
+    if usr_input == "/hc":
+        await ChatClient.health_check()
         return
 
     # 公用：检查内网的llm服务的健康状态
-    if usr_input == "/azure_openai":
-        await terminal_game.chat_client_manager.health_check(
-            ChatApiEndpointOptions.AZURE_OPENAI_BASE
-        )
-        return
+    # if usr_input == "/azure_openai":
+    #     await terminal_game.chat_client_manager.health_check(
+    #         ChatApiEndpointOptions.AZURE_OPENAI_BASE
+    #     )
+    #     return
 
     # 根据游戏状态分发处理逻辑
     if terminal_game.current_game_state == TCGGameState.DUNGEON:

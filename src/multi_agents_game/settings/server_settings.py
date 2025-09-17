@@ -24,7 +24,7 @@ class ServerSettings(BaseModel):
         base_urls = self.azure_openai_base_localhost_urls
         return [base_url.rstrip("/") + self.chat_api_endpoint for base_url in base_urls]
 
-    """    DeepSeek 服务器相关设置 """
+    """  DeepSeek 服务器相关设置 """
 
     @property
     def deepseek_base_localhost_urls(self) -> List[str]:

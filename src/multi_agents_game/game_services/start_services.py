@@ -2,6 +2,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..chat_services.manager import ChatClientManager
+from ..chat_services.client import ChatClient
 from ..demo.stage_dungeon4 import (
     create_demo_dungeon4,
 )
@@ -121,6 +122,8 @@ def setup_web_game_session(
             deepseek_mcp_chat_localhost_urls=server_settings.deepseek_mcp_chat_localhost_urls,
         ),
     )
+
+    ChatClient.initialize_url_config(server_settings)
 
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(web_game.world.entities_snapshot) == 0:

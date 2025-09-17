@@ -257,7 +257,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
 
         # 处理角色规划请求
         for request_handler in request_handlers:
-            entity2 = self._game.get_entity_by_name(request_handler._name)
+            entity2 = self._game.get_entity_by_name(request_handler.name)
             assert entity2 is not None
             self._handle_response(
                 entity2, request_handler, len(self._game.current_engagement.rounds) > 1
@@ -385,7 +385,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
 
             request_handlers.append(
                 ChatClient(
-                    agent_name=entity._name,
+                    name=entity._name,
                     prompt=prompt,
                     chat_history=self._game.get_agent_short_term_memory(
                         entity

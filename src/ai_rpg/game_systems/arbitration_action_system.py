@@ -14,6 +14,7 @@ from ..models import (
     Skill,
     StageComponent,
     AgentEvent,
+    DeathComponent,
 )
 from ..utils import json_format
 
@@ -176,11 +177,12 @@ class ArbitrationActionSystem(BaseActionReactiveSystem):
         if len(play_cards_actors) == 0:
             return
 
-        round_turns = self._game.current_engagement.last_round.round_turns
-        logger.info(f"round_turns: {round_turns}")
+        # round_turns = self._game.current_engagement.last_round.round_turns
+        # logger.info(f"round_turns: {round_turns}")
         sort_actors: List[Entity] = []
-        for turn in round_turns:
+        for turn in self._game.current_engagement.last_round.round_turns:
             for entity in play_cards_actors:
+                assert not entity.has(DeathComponent)
                 if entity._name == turn:
                     sort_actors.append(entity)
                     break

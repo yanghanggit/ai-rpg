@@ -6,7 +6,7 @@ JSON 格式化模块的兼容性和集成测试 - 仅函数式 API
 import json
 import pytest
 
-from src.multi_agents_game.utils.json_format import (
+from src.ai_rpg.utils.json_format import (
     strip_json_code_block,
     combine_json_fragments,
     contains_duplicate_segments,
@@ -64,7 +64,7 @@ class TestJsonFormatCompatibility:
     def test_backwards_compatibility_with_module_import(self) -> None:
         """测试模块导入的向后兼容性"""
         # 测试通过模块方式的导入和使用
-        from src.multi_agents_game.utils import json_format
+        from src.ai_rpg.utils import json_format
 
         test_response = """```json
         {"player_action": "cast_spell", "spell_name": "fireball"}

@@ -27,7 +27,7 @@ sys.path.insert(
 from langchain.schema import HumanMessage
 from loguru import logger
 
-from multi_agents_game.deepseek.rag_graph import (
+from ai_rpg.deepseek.rag_graph import (
     State,
     create_rag_compiled_graph,
     stream_rag_graph_updates,
@@ -52,7 +52,7 @@ def main() -> None:
         rag_compiled_graph = create_rag_compiled_graph()
 
         # 步骤3: 初始化聊天历史
-        from multi_agents_game.deepseek.client import create_deepseek_llm
+        from ai_rpg.deepseek.client import create_deepseek_llm
 
         llm = create_deepseek_llm()
         chat_history_state: State = {"messages": [], "llm": llm}

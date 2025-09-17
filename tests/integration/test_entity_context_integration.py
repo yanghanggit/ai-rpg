@@ -2,7 +2,7 @@
 Integration tests for Entity and Context working together.
 """
 
-from src.multi_agents_game.entitas import Context, Entity, Matcher
+from src.ai_rpg.entitas import Context, Entity, Matcher
 from tests.unit.test_components import Position, Velocity, Health, Name, Score
 
 

@@ -10,26 +10,26 @@ sys.path.insert(
 from typing import Dict, Set, TypedDict, cast
 from loguru import logger
 
-# from multi_agents_game.chat_services.manager import (
+# from ai_rpg.chat_services.manager import (
 #     ChatClientManager,
 #     ChatApiEndpointOptions,
 # )
-from multi_agents_game.chat_services.client import ChatClient
-from multi_agents_game.settings import (
+from ai_rpg.chat_services.client import ChatClient
+from ai_rpg.settings import (
     initialize_server_settings_instance,
 )
-from multi_agents_game.game.game_config import GLOBAL_GAME_NAME, setup_logger
-from multi_agents_game.demo import (
+from ai_rpg.game.game_config import GLOBAL_GAME_NAME, setup_logger
+from ai_rpg.demo import (
     create_actor_warrior,
     create_demo_dungeon6,
 )
-from multi_agents_game.game.player_client import PlayerClient
-from multi_agents_game.game.tcg_game import TCGGameState
-from multi_agents_game.game.terminal_tcg_game import (
+from ai_rpg.game.player_client import PlayerClient
+from ai_rpg.game.tcg_game import TCGGameState
+from ai_rpg.game.terminal_tcg_game import (
     TerminalTCGGame,
     TerminalGameUserOptions,
 )
-from multi_agents_game.models import CombatResult, World
+from ai_rpg.models import CombatResult, World
 
 
 ############################################################################################################

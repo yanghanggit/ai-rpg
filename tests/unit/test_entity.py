@@ -5,8 +5,8 @@ Tests for the Entity class in entitas framework.
 import pytest
 from unittest.mock import Mock, call
 
-from src.multi_agents_game.entitas import Entity
-from src.multi_agents_game.entitas.exceptions import (
+from src.ai_rpg.entitas import Entity
+from src.ai_rpg.entitas.exceptions import (
     EntityNotEnabled,
     AlreadyAddedComponent,
     MissingComponent,

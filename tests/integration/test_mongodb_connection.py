@@ -16,7 +16,7 @@ import time
 from datetime import datetime
 from loguru import logger
 
-from src.multi_agents_game.mongodb import (
+from src.ai_rpg.mongodb import (
     get_mongodb_database_instance,
     mongodb_count_documents,
     mongodb_create_index,

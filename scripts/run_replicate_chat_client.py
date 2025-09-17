@@ -13,7 +13,7 @@ from typing import Dict, Final, List
 
 import replicate
 
-from multi_agents_game.replicate import (
+from ai_rpg.replicate import (
     ReplicateModelsConfig,
     test_replicate_api_connection,
     load_replicate_config,

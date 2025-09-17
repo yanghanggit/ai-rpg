@@ -44,11 +44,11 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
-from multi_agents_game.replicate import (
+from ai_rpg.replicate import (
     load_replicate_config,
     generate_multiple_images,
 )
-from multi_agents_game.settings.server_settings import (
+from ai_rpg.settings.server_settings import (
     initialize_server_settings_instance,
 )
 

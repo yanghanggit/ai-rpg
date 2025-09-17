@@ -41,12 +41,12 @@ import asyncio
 from langchain.schema import HumanMessage, SystemMessage
 from loguru import logger
 
-from multi_agents_game.deepseek.mcp_client_graph import (
+from ai_rpg.deepseek.mcp_client_graph import (
     McpState,
     create_compiled_mcp_stage_graph,
     stream_mcp_graph_updates,
 )
-from multi_agents_game.mcp import (
+from ai_rpg.mcp import (
     McpToolInfo,
     initialize_mcp_client,
     McpConfig,

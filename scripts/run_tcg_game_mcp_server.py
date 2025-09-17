@@ -58,8 +58,8 @@ sys.path.insert(
 import click
 from loguru import logger
 from mcp.server.fastmcp import FastMCP
-from multi_agents_game.mcp import McpConfig, load_mcp_config
-from multi_agents_game.rag.rag_system import rag_semantic_search
+from ai_rpg.mcp import McpConfig, load_mcp_config
+from ai_rpg.rag.rag_system import rag_semantic_search
 from pathlib import Path
 
 # ============================================================================

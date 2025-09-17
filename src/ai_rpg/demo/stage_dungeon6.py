@@ -6,7 +6,7 @@ from .utils import (
     create_stage,
 )
 
-# from multi_agents_game.demo import actor_goblin
+# from ai_rpg.demo import actor_goblin
 
 
 def create_stage_cave6() -> Stage:
@@ -30,7 +30,7 @@ def create_stage_cave6() -> Stage:
 def create_demo_dungeon6() -> Dungeon:
 
     actor_goblin = create_actor_goblin()
-    actor_goblin.rpg_character_profile.hp = 50
+    actor_goblin.rpg_character_profile.hp = 1
     actor_goblin.kick_off_message += f"""\n注意：你非常狡猾，所以身上带了一件哥布林的传家宝项链用来保命，这个项链会让你在死亡时以百分之十的血量复活，并且复活后的第一次攻击会造成双倍伤害。但是这个项链只能让你复活一次。项链属于status_effects，rounds=999，死亡时会自动触发，触发后消失，不受负面效果影响，不占用行动回合。"""
 
     actor_orc = create_actor_orc()

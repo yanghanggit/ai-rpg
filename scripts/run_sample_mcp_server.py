@@ -59,7 +59,7 @@ import click
 from loguru import logger
 from mcp.server.fastmcp import FastMCP
 import mcp.types as types
-from multi_agents_game.mcp import McpConfig, load_mcp_config
+from ai_rpg.mcp import McpConfig, load_mcp_config
 from pathlib import Path
 
 # ============================================================================

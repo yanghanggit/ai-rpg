@@ -55,8 +55,10 @@ class PlayCardsActionSystem(BaseActionReactiveSystem):
             f"PlayCardsActionSystem: stage_entity: {current_stage._name}, react_entities: {[entity._name for entity in react_entities]}"
         )
 
-        last_round = self._game.current_engagement.last_round
-        self._handle_card_play_action(react_entities, last_round)
+        # last_round = self._game.current_engagement.last_round
+        self._handle_card_play_action(
+            react_entities, self._game.current_engagement.last_round
+        )
 
     #######################################################################################################################################
     def _handle_card_play_action(

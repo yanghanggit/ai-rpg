@@ -196,4 +196,4 @@ fixable = ["F401", "F402", "F403", "F811", "E401", "I001"]
 
 [tool.ruff.lint.isort]
 # import排序配置
-known-first-party = ["multi_agents_game"]
+known-first-party = ["ai_rpg"]

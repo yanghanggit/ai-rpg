@@ -10,21 +10,21 @@ sys.path.insert(
 )
 
 from loguru import logger
-from multi_agents_game.settings import (
+from ai_rpg.settings import (
     initialize_server_settings_instance,
 )
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from multi_agents_game.game_services.dungeon_gameplay_services import (
+from ai_rpg.game_services.dungeon_gameplay_services import (
     dungeon_gameplay_router,
 )
-from multi_agents_game.game_services.home_gameplay_services import home_gameplay_router
-from multi_agents_game.game_services.login_services import login_router
-from multi_agents_game.game_services.start_services import start_router
-from multi_agents_game.game_services.url_config_services import url_config_router
-from multi_agents_game.game_services.view_actor_services import view_actor_router
-from multi_agents_game.game_services.view_dungeon_services import view_dungeon_router
-from multi_agents_game.game_services.view_home_services import view_home_router
+from ai_rpg.game_services.home_gameplay_services import home_gameplay_router
+from ai_rpg.game_services.login_services import login_router
+from ai_rpg.game_services.start_services import start_router
+from ai_rpg.game_services.url_config_services import url_config_router
+from ai_rpg.game_services.view_actor_services import view_actor_router
+from ai_rpg.game_services.view_dungeon_services import view_dungeon_router
+from ai_rpg.game_services.view_home_services import view_home_router
 
 
 @asynccontextmanager

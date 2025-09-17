@@ -36,8 +36,8 @@ sys.path.insert(
 from fastapi import FastAPI
 from loguru import logger
 
-from multi_agents_game.chat_services.protocol import ChatRequest, ChatResponse
-from multi_agents_game.deepseek import (
+from ai_rpg.chat_services.protocol import ChatRequest, ChatResponse
+from ai_rpg.deepseek import (
     State,
     create_compiled_stage_graph,
     stream_graph_updates,
@@ -51,25 +51,25 @@ from multi_agents_game.deepseek import (
     stream_mcp_graph_updates,
 )
 
-from multi_agents_game.settings import (
+from ai_rpg.settings import (
     initialize_server_settings_instance,
 )
 
 # 导入路由管理器相关模块
-from multi_agents_game.rag.routing import (
+from ai_rpg.rag.routing import (
     KeywordRouteStrategy,
     SemanticRouteStrategy,
     RouteDecisionManager,
     FallbackRouteStrategy,
     RouteConfigBuilder,
 )
-from multi_agents_game.demo.campaign_setting import (
+from ai_rpg.demo.campaign_setting import (
     FANTASY_WORLD_RPG_TEST_ROUTE_KEYWORDS,
     FANTASY_WORLD_RPG_TEST_RAG_TOPICS,
 )
 
 # 导入 MCP 相关模块
-from multi_agents_game.mcp import (
+from ai_rpg.mcp import (
     McpToolInfo,
     initialize_mcp_client,
     McpConfig,
@@ -93,7 +93,7 @@ def _load_mcp_config_for_server() -> McpConfig:
     except Exception as e:
         logger.warning(f"加载 MCP 配置失败: {e}，使用默认配置")
         # 返回默认配置
-        from multi_agents_game.mcp.config import McpConfig
+        from ai_rpg.mcp.config import McpConfig
 
         return McpConfig(
             mcp_server_url="stdio://python scripts/run_sample_mcp_server.py --config mcp_config.json",

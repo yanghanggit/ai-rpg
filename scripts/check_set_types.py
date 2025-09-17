@@ -147,7 +147,7 @@ def main() -> None:
     # 确定 models 目录路径
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
-    models_dir = project_root / "src" / "multi_agents_game" / "models"
+    models_dir = project_root / "src" / "ai_rpg" / "models"
 
     if not models_dir.exists():
         print(f"错误: models 目录不存在: {models_dir}")

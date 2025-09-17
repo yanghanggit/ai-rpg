@@ -82,8 +82,8 @@ pip install --upgrade --force-reinstall langgraph==0.6.2
 #### 修复前的错误
 
 ```bash
-src/multi_agents_game/chat_services/chat_azure_openai_gpt_4o_graph.py:28: error: Missing type parameters for generic type "CompiledStateGraph"  [type-arg]
-src/multi_agents_game/chat_services/chat_azure_openai_gpt_4o_graph.py:63: error: Missing type parameters for generic type "CompiledStateGraph"  [type-arg]
+src/ai_rpg/chat_services/chat_azure_openai_gpt_4o_graph.py:28: error: Missing type parameters for generic type "CompiledStateGraph"  [type-arg]
+src/ai_rpg/chat_services/chat_azure_openai_gpt_4o_graph.py:63: error: Missing type parameters for generic type "CompiledStateGraph"  [type-arg]
 ```
 
 #### 修复内容

@@ -75,7 +75,7 @@ class HomePreSystem(ExecuteProcessor):
             logger.debug(
                 f"HomePrePlanningSystem: _can_stage_planning: {stage_entity.get(StageComponent).name}，添加 CanStartPlanningComponent。"
             )
-            stage_entity.replace(CanStartPlanningComponent, stage_entity._name)
+            stage_entity.replace(CanStartPlanningComponent, stage_entity.name)
 
     ############################################################################################################
     def _assign_planning_component_to_actors(self) -> None:
@@ -129,7 +129,7 @@ class HomePreSystem(ExecuteProcessor):
             order_actors_by_action = self._sort_action_order_by_runtime_index(
                 list(actors_on_stage)
             )
-            sorted_actor_names = [actor._name for actor in order_actors_by_action]
+            sorted_actor_names = [actor.name for actor in order_actors_by_action]
             stage_entity.replace(
                 HomeComponent,
                 home_comp.name,

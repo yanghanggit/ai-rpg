@@ -29,11 +29,6 @@ from ..models import (
 ###############################################################################################################################################
 
 
-# @dataclass
-# class ActorFilterSettings:
-#     filter_dead_actors: bool = True
-
-
 class TCGGameContext(Context):
 
     ###############################################################################################################################################
@@ -46,7 +41,7 @@ class TCGGameContext(Context):
     ###############################################################################################################################################
     def __create_entity__(self, name: str) -> Entity:
         entity = super().create_entity()
-        entity._name = name
+        entity._name = str(name)
         self._query_entities[name] = entity
         return entity
 
@@ -54,12 +49,12 @@ class TCGGameContext(Context):
     @override
     def destroy_entity(self, entity: Entity) -> None:
         # logger.debug(f"destroy entity: {entity._name}")
-        self._query_entities.pop(entity._name, None)
+        self._query_entities.pop(entity.name, None)
         return super().destroy_entity(entity)
 
     ###############################################################################################################################################
     def create_entity_snapshot(self, entity: Entity) -> EntitySnapshot:
-        entity_snapshot = EntitySnapshot(name=entity._name, components=[])
+        entity_snapshot = EntitySnapshot(name=entity.name, components=[])
 
         for key, value in entity._components.items():
             if COMPONENTS_REGISTRY.get(key.__name__) is None:

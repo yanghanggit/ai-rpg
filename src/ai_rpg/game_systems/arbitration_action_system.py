@@ -89,7 +89,7 @@ class PromptParameters(NamedTuple):
 
 #######################################################################################################################################
 def _generate_prompt(prompt_params: List[PromptParameters]) -> str:
-
+    # 技能效果: {param.skill.effect}
     details_prompt: List[str] = []
     for param in prompt_params:
 
@@ -99,7 +99,6 @@ def _generate_prompt(prompt_params: List[PromptParameters]) -> str:
 技能: {param.skill.name}
 目标: {param.target}
 描述: {param.skill.description}
-技能效果: {param.skill.effect}
 属性:
 {param.rpg_character_profile_component.attrs_prompt}
 角色状态:
@@ -183,12 +182,12 @@ class ArbitrationActionSystem(BaseActionReactiveSystem):
         for turn in self._game.current_engagement.last_round.round_turns:
             for entity in play_cards_actors:
                 assert not entity.has(DeathComponent)
-                if entity._name == turn:
+                if entity.name == turn:
                     sort_actors.append(entity)
                     break
 
         for sort_actor in sort_actors:
-            logger.info(f"sort_actor: {sort_actor._name}")
+            logger.info(f"sort_actor: {sort_actor.name}")
 
         await self._process_request(stage_entity, sort_actors)
 
@@ -209,7 +208,7 @@ class ArbitrationActionSystem(BaseActionReactiveSystem):
 
             ret.append(
                 PromptParameters(
-                    actor=entity._name,
+                    actor=entity.name,
                     target=play_cards_action.target,
                     skill=play_cards_action.skill,
                     rpg_character_profile_component=entity.get(
@@ -235,7 +234,7 @@ class ArbitrationActionSystem(BaseActionReactiveSystem):
 
         # 用场景推理。
         request_handler = ChatClient(
-            name=stage_entity._name,
+            name=stage_entity.name,
             prompt=message,
             chat_history=self._game.get_agent_short_term_memory(
                 stage_entity

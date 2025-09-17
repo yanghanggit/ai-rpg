@@ -165,7 +165,7 @@ class HandComponent(Component):
         for skill in self.skills:
             if skill.name == skill_name:
                 return skill
-        return Skill(name="", description="", effect="", target="")
+        return Skill(name="", description="", target="")
 
 
 ############################################################################################################
@@ -199,7 +199,7 @@ class RPGCharacterProfileComponent(MutableComponent):
         if len(self.status_effects) > 0:
             ret = "\n".join(
                 [
-                    f"- {effect.name}: {effect.description} (剩余{effect.rounds}回合)"
+                    f"- {effect.name}: {effect.description} (剩余{effect.duration}回合)"
                     for effect in self.status_effects
                 ]
             )

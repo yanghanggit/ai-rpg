@@ -18,6 +18,6 @@ class DestroyEntitySystem(ExecuteProcessor):
         while len(entities) > 0:
             destory_entity = entities.pop()
             self._game.destroy_entity(destory_entity)
-            logger.debug(f"Destroy entity: {destory_entity._name}")
+            logger.debug(f"Destroy entity: {destory_entity.name}")
 
     ####################################################################################################################################

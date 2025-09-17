@@ -175,16 +175,16 @@ async def _handle_x_card(
 
     skill_name = request_data.user_input.data.get("name", "")
     skill_description = request_data.user_input.data.get("description", "")
-    skill_effect = request_data.user_input.data.get("effect", "")
+    # skill_effect = request_data.user_input.data.get("effect", "")
 
-    if skill_name != "" and skill_description != "" and skill_effect != "":
+    if skill_name != "" and skill_description != "":
         player_entity.replace(
             XCardPlayerComponent,
-            player_entity._name,
+            player_entity.name,
             Skill(
                 name=skill_name,
                 description=skill_description,
-                effect=skill_effect,
+                # effect=skill_effect,
             ),
         )
 
@@ -194,7 +194,7 @@ async def _handle_x_card(
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"技能名称错误: {player_entity._name}, Response = \n{request_data.user_input.data}",
+            detail=f"技能名称错误: {player_entity.name}, Response = \n{request_data.user_input.data}",
         )
 
 

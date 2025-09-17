@@ -54,12 +54,12 @@ class CombatKickOffSystem(ExecuteProcessor):
 
             # 复制一份角色外观映射，并且去掉自己的外观
             copy_actors_apperances_mapping = actors_apperances_mapping.copy()
-            copy_actors_apperances_mapping.pop(actor_entity._name, None)
+            copy_actors_apperances_mapping.pop(actor_entity.name, None)
 
             # 生成提示词, 就是添加上下文，标记战斗初始化。
             gen_prompt = f"""# 发生事件！战斗触发！这是本次战斗你的初始化信息。
 ## 场景信息
-{current_stage_entity._name} ｜ {current_stage_narrate}
+{current_stage_entity.name} ｜ {current_stage_narrate}
 
 ## （场景内）角色信息
 {str(copy_actors_apperances_mapping)}
@@ -73,14 +73,14 @@ class CombatKickOffSystem(ExecuteProcessor):
             self._game.append_human_message(
                 actor_entity,
                 gen_prompt,
-                combat_kickoff_tag=current_stage_entity._name,
+                combat_kickoff_tag=current_stage_entity.name,
             )
 
         # final 开始战斗，最后一步，转换到战斗阶段。!!!
         self._game.current_engagement.combat_ongoing()
 
         logger.info(
-            f"{current_stage_entity._name}, 战斗触发阶段完成，进入战斗进行阶段。"
+            f"{current_stage_entity.name}, 战斗触发阶段完成，进入战斗进行阶段。"
         )
 
         if not self._game.new_round():

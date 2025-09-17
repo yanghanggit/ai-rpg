@@ -428,7 +428,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
 
     # 其他状态下的玩家输入！！！！！！
     usr_input = input(
-        f"[{terminal_game.player.name}/{player_stage_entity._name}/{player_actor_entity._name}]:"
+        f"[{terminal_game.player.name}/{player_stage_entity.name}/{player_actor_entity.name}]:"
     )
     usr_input = usr_input.strip().lower()
 
@@ -436,7 +436,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
     if usr_input == "/q" or usr_input == "/quit":
         # 退出游戏
         logger.debug(
-            f"玩家 主动 退出游戏 = {terminal_game.player.name}, {player_stage_entity._name}"
+            f"玩家 主动 退出游戏 = {terminal_game.player.name}, {player_stage_entity.name}"
         )
         terminal_game.will_exit = True
         return

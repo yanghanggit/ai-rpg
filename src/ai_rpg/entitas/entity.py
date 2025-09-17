@@ -241,11 +241,6 @@ class Entity(object):
         """Gets the entity's name."""
         return self._name
 
-    @name.setter
-    def name(self, value: str) -> None:
-        """Sets the entity's name."""
-        self._name = value
-
     @property
     def creation_index(self) -> int:
         """Gets the entity's creation index."""

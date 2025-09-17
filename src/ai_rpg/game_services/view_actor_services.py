@@ -66,7 +66,7 @@ async def view_actor(
                 )
             ).entities
 
-            actor_names = [actor_entity._name for actor_entity in actor_entities]
+            actor_names = [actor_entity.name for actor_entity in actor_entities]
 
         for actor_name in actor_names:
 

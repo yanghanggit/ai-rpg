@@ -148,25 +148,25 @@ class HomeActorSystem(ExecuteProcessor):
             # 添加说话动作
             if len(format_response.speak_actions) > 0:
                 entity2.replace(
-                    SpeakAction, entity2._name, format_response.speak_actions
+                    SpeakAction, entity2.name, format_response.speak_actions
                 )
 
             # 添加耳语动作
             if len(format_response.whisper_actions) > 0:
                 entity2.replace(
-                    WhisperAction, entity2._name, format_response.whisper_actions
+                    WhisperAction, entity2.name, format_response.whisper_actions
                 )
 
             # 添加宣布动作
             if format_response.announce_actions != "":
                 entity2.replace(
-                    AnnounceAction, entity2._name, format_response.announce_actions
+                    AnnounceAction, entity2.name, format_response.announce_actions
                 )
 
             # 添加内心独白
             if format_response.mind_voice_actions != "":
                 entity2.replace(
-                    MindVoiceAction, entity2._name, format_response.mind_voice_actions
+                    MindVoiceAction, entity2.name, format_response.mind_voice_actions
                 )
 
         except Exception as e:
@@ -186,11 +186,11 @@ class HomeActorSystem(ExecuteProcessor):
             actors_apperances_mapping = self._game.get_stage_actor_appearances(
                 current_stage
             )
-            actors_apperances_mapping.pop(entity._name, None)
+            actors_apperances_mapping.pop(entity.name, None)
 
             # 生成消息
             message = _generate_prompt(
-                current_stage._name,
+                current_stage.name,
                 current_stage.get(EnvironmentComponent).narrate,
                 actors_apperances_mapping,
             )
@@ -198,7 +198,7 @@ class HomeActorSystem(ExecuteProcessor):
             # 生成请求处理器
             request_handlers.append(
                 ChatClient(
-                    name=entity._name,
+                    name=entity.name,
                     prompt=message,
                     chat_history=self._game.get_agent_short_term_memory(
                         entity

@@ -123,13 +123,13 @@ class CombatDeathSystem(ExecuteProcessor):
                 self._game.append_human_message(
                     entity,
                     f"你胜利了！",
-                    combat_result_tag=player_stage_entity._name,
+                    combat_result_tag=player_stage_entity.name,
                 )
             elif result == CombatResult.HERO_LOSE:
                 self._game.append_human_message(
                     entity,
                     f"你失败了！",
-                    combat_result_tag=player_stage_entity._name,
+                    combat_result_tag=player_stage_entity.name,
                 )
 
     ########################################################################################################################################################################

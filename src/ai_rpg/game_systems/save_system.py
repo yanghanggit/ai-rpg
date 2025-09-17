@@ -1,7 +1,9 @@
 import asyncio
 from typing import Dict, List, final, override
 from loguru import logger
-from ..entitas import ExecuteProcessor
+
+from ai_rpg.models.components import DeathComponent
+from ..entitas import ExecuteProcessor, Entity
 from ..game.tcg_game import TCGGame
 
 
@@ -17,8 +19,20 @@ class SaveSystem(ExecuteProcessor):
     async def execute(self) -> None:
 
         # 保存时，打印当前场景中的所有角色
-        names_mapping: Dict[str, List[str]] = self._game.get_stage_actor_distribution()
-        logger.info(f"names_mapping = {names_mapping}")
+        actor_distribution: Dict[Entity, List[Entity]] = (
+            self._game.get_stage_actor_distribution()
+        )
+
+        #
+        actor_distribution_info: Dict[str, List[str]] = {}
+        for stage, actors in actor_distribution.items():
+            actor_distribution_info[stage._name] = []
+            for actor in actors:
+                actor_distribution_info[stage._name].append(
+                    f"{actor._name}{'(Dead)' if actor.has(DeathComponent) else ''}"
+                )
+
+        logger.info(f"mapping = {actor_distribution_info}")
 
         # 核心调用
         # self._game.save()

@@ -118,7 +118,7 @@ class KickOffSystem(ExecuteProcessor):
             system_content = self._get_system_content(entity)
             prompt = self._generate_prompt(entity)
             cache_path = self._get_kick_off_cache_path(
-                entity._name, system_content, prompt
+                entity.name, system_content, prompt
             )
 
             if cache_path.exists():
@@ -137,7 +137,7 @@ class KickOffSystem(ExecuteProcessor):
                     # 标记为已完成
                     entity.replace(
                         KickOffDoneComponent,
-                        entity._name,
+                        entity.name,
                         ai_messages[0].content if ai_messages else "",
                     )
 
@@ -145,7 +145,7 @@ class KickOffSystem(ExecuteProcessor):
                     if entity.has(StageComponent):
                         entity.replace(
                             EnvironmentComponent,
-                            entity._name,
+                            entity.name,
                             ai_messages[0].content if ai_messages else "",
                         )
 
@@ -153,12 +153,12 @@ class KickOffSystem(ExecuteProcessor):
                     entities_to_process.discard(entity)
 
                     logger.info(
-                        f"KickOffSystem: Loaded cached response for {entity._name}"
+                        f"KickOffSystem: Loaded cached response for {entity.name}"
                     )
 
                 except Exception as e:
                     logger.warning(
-                        f"KickOffSystem: Failed to load cache for {entity._name}: {e}, will process normally"
+                        f"KickOffSystem: Failed to load cache for {entity.name}: {e}, will process normally"
                     )
                     # 如果加载缓存失败，保留在待处理集合中
 
@@ -210,11 +210,11 @@ class KickOffSystem(ExecuteProcessor):
 
             # 打印调试信息
             logger.debug(
-                f"integrate_chat_context human message: {entity._name} => \n{prompt}"
+                f"integrate_chat_context human message: {entity.name} => \n{prompt}"
             )
             for ai_msg in ai_messages:
                 logger.debug(
-                    f"integrate_chat_context ai message: {entity._name} => \n{str(ai_msg.content)}"
+                    f"integrate_chat_context ai message: {entity.name} => \n{str(ai_msg.content)}"
                 )
 
         else:
@@ -240,7 +240,7 @@ class KickOffSystem(ExecuteProcessor):
 
             # 构建基于内容哈希的文件路径
             path = self._get_kick_off_cache_path(
-                entity._name, system_content, prompt_content
+                entity.name, system_content, prompt_content
             )
 
             # 确保目录存在
@@ -256,12 +256,12 @@ class KickOffSystem(ExecuteProcessor):
             )
 
             logger.info(
-                f"KickOffSystem: Cached kick off response for {entity._name} to {path.name}"
+                f"KickOffSystem: Cached kick off response for {entity.name} to {path.name}"
             )
 
         except Exception as e:
             logger.error(
-                f"KickOffSystem: Failed to cache kick off response for {entity._name}: {e}"
+                f"KickOffSystem: Failed to cache kick off response for {entity.name}: {e}"
             )
 
     ###############################################################################################################################################
@@ -317,7 +317,7 @@ class KickOffSystem(ExecuteProcessor):
             agent_short_term_memory = self._game.get_agent_short_term_memory(entity1)
             request_handlers.append(
                 ChatClient(
-                    name=entity1._name,
+                    name=entity1.name,
                     prompt=gen_prompt,
                     chat_history=agent_short_term_memory.chat_history,
                 )
@@ -346,14 +346,14 @@ class KickOffSystem(ExecuteProcessor):
 
             # 必须执行
             entity2.replace(
-                KickOffDoneComponent, entity2._name, request_handler.response_content
+                KickOffDoneComponent, entity2.name, request_handler.response_content
             )
 
             # 若是场景，用response替换narrate
             if entity2.has(StageComponent):
                 entity2.replace(
                     EnvironmentComponent,
-                    entity2._name,
+                    entity2.name,
                     request_handler.response_content,
                 )
             elif entity2.has(ActorComponent):
@@ -383,7 +383,7 @@ class KickOffSystem(ExecuteProcessor):
             kick_off_message_comp = entity.get(KickOffMessageComponent)
             if kick_off_message_comp is None or kick_off_message_comp.content == "":
                 logger.warning(
-                    f"KickOffSystem: {entity._name} kick off message is empty, skipping"
+                    f"KickOffSystem: {entity.name} kick off message is empty, skipping"
                 )
                 continue
 
@@ -394,7 +394,7 @@ class KickOffSystem(ExecuteProcessor):
                 or entity.has(WorldSystemComponent)
             ):
                 logger.warning(
-                    f"KickOffSystem: {entity._name} is not a valid entity type (Actor/Stage/WorldSystem), skipping"
+                    f"KickOffSystem: {entity.name} is not a valid entity type (Actor/Stage/WorldSystem), skipping"
                 )
                 continue
 

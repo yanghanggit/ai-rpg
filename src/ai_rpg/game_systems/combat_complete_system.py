@@ -61,7 +61,7 @@ class CombatCompleteSystem(ExecuteProcessor):
             assert stage_entity1 is not None
 
             # 生成消息
-            message = f"""# 提示！{stage_entity1._name} 战斗结束，你决定记录下这次战斗的经历。
+            message = f"""# 提示！{stage_entity1.name} 战斗结束，你决定记录下这次战斗的经历。
 ## 输出内容:
 1. 战斗发生的场景。
 2. 你的对手是谁，他们的特点。
@@ -76,7 +76,7 @@ class CombatCompleteSystem(ExecuteProcessor):
             # 生成请求处理器
             request_handlers.append(
                 ChatClient(
-                    name=entity1._name,
+                    name=entity1.name,
                     prompt=message,
                     chat_history=self._game.get_agent_short_term_memory(
                         entity1
@@ -102,7 +102,7 @@ class CombatCompleteSystem(ExecuteProcessor):
 
             # 压缩后的战斗经历，就是战斗过程做成摘要。
             summary = f"""# 发生事件! 你经历了一场战斗！
-场景: {stage_entity2._name}
+场景: {stage_entity2.name}
 你记录下了这次战斗的经历:
 {request_handler.response_content}"""
 
@@ -111,7 +111,7 @@ class CombatCompleteSystem(ExecuteProcessor):
                 set({entity2}),
                 CombatCompleteEvent(
                     message=summary,
-                    actor=entity2._name,
+                    actor=entity2.name,
                     summary=summary,
                 ),
             )
@@ -120,7 +120,7 @@ class CombatCompleteSystem(ExecuteProcessor):
     # 压缩战斗历史。
     def _compress_chat_history_after_combat(self, entity: Entity) -> None:
 
-        assert entity.has(ActorComponent), f"实体: {entity._name} 不是角色！"
+        assert entity.has(ActorComponent), f"实体: {entity.name} 不是角色！"
 
         # 获取当前的战斗实体。
         stage_entity = self._game.safe_get_stage_entity(entity)
@@ -128,19 +128,19 @@ class CombatCompleteSystem(ExecuteProcessor):
 
         # 获取最近的战斗消息。
         begin_message = self._retrieve_recent_human_message_by_kargs(
-            entity, "combat_kickoff_tag", stage_entity._name
+            entity, "combat_kickoff_tag", stage_entity.name
         )
         assert begin_message is not None
 
         # 获取最近的战斗消息。
         end_message = self._retrieve_recent_human_message_by_kargs(
-            entity, "combat_result_tag", stage_entity._name
+            entity, "combat_result_tag", stage_entity.name
         )
         assert end_message is not None
 
         if begin_message is None or end_message is None:
             logger.error(
-                f"战斗消息不完整！{entity._name} begin_message: {begin_message} end_message: {end_message}"
+                f"战斗消息不完整！{entity.name} begin_message: {begin_message} end_message: {end_message}"
             )
             return
 
@@ -150,7 +150,7 @@ class CombatCompleteSystem(ExecuteProcessor):
         # 移除！！！！。
         del short_term_memory.chat_history[begin_message_index:end_message_index]
         logger.debug(
-            f"战斗消息压缩成功！{entity._name} begin_message: {begin_message} end_message: {end_message}"
+            f"战斗消息压缩成功！{entity.name} begin_message: {begin_message} end_message: {end_message}"
         )
 
     #######################################################################################################################################

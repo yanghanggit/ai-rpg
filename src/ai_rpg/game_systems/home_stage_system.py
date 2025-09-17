@@ -107,7 +107,7 @@ class HomeStageSystem(ExecuteProcessor):
             # 生成请求处理器
             request_handlers.append(
                 ChatClient(
-                    name=stage_entity._name,
+                    name=stage_entity.name,
                     prompt=message,
                     chat_history=self._game.get_agent_short_term_memory(
                         stage_entity
@@ -145,7 +145,7 @@ class HomeStageSystem(ExecuteProcessor):
             if format_response.environment_narration != "":
                 entity2.replace(
                     EnvironmentComponent,
-                    entity2._name,
+                    entity2.name,
                     format_response.environment_narration,
                 )
 

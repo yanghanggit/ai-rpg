@@ -140,10 +140,10 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     @override
     def destroy_entity(self, entity: Entity) -> None:
-        logger.debug(f"TCGGame destroy entity: {entity._name}")
-        if entity._name in self.world.agents_short_term_memory:
-            logger.debug(f"TCGGame destroy entity: {entity._name} in short term memory")
-            self.world.agents_short_term_memory.pop(entity._name, None)
+        logger.debug(f"TCGGame destroy entity: {entity.name}")
+        if entity.name in self.world.agents_short_term_memory:
+            logger.debug(f"TCGGame destroy entity: {entity.name} in short term memory")
+            self.world.agents_short_term_memory.pop(entity.name, None)
         return super().destroy_entity(entity)
 
     ###############################################################################################################################################
@@ -573,12 +573,12 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     def get_agent_short_term_memory(self, entity: Entity) -> AgentShortTermMemory:
         return self.world.agents_short_term_memory.setdefault(
-            entity._name, AgentShortTermMemory(name=entity._name, chat_history=[])
+            entity.name, AgentShortTermMemory(name=entity.name, chat_history=[])
         )
 
     ###############################################################################################################################################
     def append_system_message(self, entity: Entity, chat: str) -> None:
-        logger.debug(f"append_system_message: {entity._name} => \n{chat}")
+        logger.debug(f"append_system_message: {entity.name} => \n{chat}")
         agent_short_term_memory = self.get_agent_short_term_memory(entity)
         if len(agent_short_term_memory.chat_history) == 0:
             agent_short_term_memory.chat_history.extend([SystemMessage(content=chat)])
@@ -586,7 +586,7 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     def append_human_message(self, entity: Entity, chat: str, **kwargs: Any) -> None:
 
-        logger.debug(f"append_human_message: {entity._name} => \n{chat}")
+        logger.debug(f"append_human_message: {entity.name} => \n{chat}")
         if len(kwargs) > 0:
             # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
             logger.debug(f"kwargs: {kwargs}")
@@ -603,7 +603,7 @@ class TCGGame(BaseGame, TCGGameContext):
         for ai_message in ai_messages:
             assert isinstance(ai_message, AIMessage)
             assert ai_message.content != "", "ai_message content should not be empty"
-            logger.debug(f"append_ai_message: {entity._name} => \n{ai_message.content}")
+            logger.debug(f"append_ai_message: {entity.name} => \n{ai_message.content}")
 
         # 添加多条 AIMessage
         agent_short_term_memory = self.get_agent_short_term_memory(entity)
@@ -654,7 +654,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 正常的添加记忆。
         for entity in entities:
-            replace_message = _replace_name_with_you(agent_event.message, entity._name)
+            replace_message = _replace_name_with_you(agent_event.message, entity.name)
             self.append_human_message(entity, replace_message)
 
             if entity.has(PlayerComponent):
@@ -677,17 +677,17 @@ class TCGGame(BaseGame, TCGGameContext):
         """
         # 验证所有角色都有ActorComponent
         for actor in actors:
-            assert actor.has(ActorComponent), f"角色 {actor._name} 缺少 ActorComponent"
+            assert actor.has(ActorComponent), f"角色 {actor.name} 缺少 ActorComponent"
 
         # 过滤掉已经在目标场景的角色
         actors_to_transfer = set()
         for actor_entity in actors:
             current_stage = self.safe_get_stage_entity(actor_entity)
-            assert current_stage is not None, f"角色 {actor_entity._name} 没有当前场景"
+            assert current_stage is not None, f"角色 {actor_entity.name} 没有当前场景"
 
             if current_stage == stage_destination:
                 logger.warning(
-                    f"{actor_entity._name} 已经存在于 {stage_destination._name}"
+                    f"{actor_entity.name} 已经存在于 {stage_destination.name}"
                 )
                 continue
 
@@ -711,7 +711,7 @@ class TCGGame(BaseGame, TCGGameContext):
             self.broadcast_event(
                 entity=current_stage,
                 agent_event=AgentEvent(
-                    message=f"# 发生事件！{actor_entity._name} 离开了场景: {current_stage._name}",
+                    message=f"# 发生事件！{actor_entity.name} 离开了场景: {current_stage.name}",
                 ),
                 exclude_entities={actor_entity},
             )
@@ -733,14 +733,14 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 更改所处场景的标识
             actor_entity.replace(
-                ActorComponent, actor_entity._name, stage_destination._name
+                ActorComponent, actor_entity.name, stage_destination.name
             )
 
             # 通知角色自身的传送过程
             self.notify_event(
                 entities={actor_entity},
                 agent_event=AgentEvent(
-                    message=f"# 发生事件！{actor_entity._name} 从 场景: {current_stage._name} 离开，然后进入了 场景: {stage_destination._name}",
+                    message=f"# 发生事件！{actor_entity.name} 从 场景: {current_stage.name} 离开，然后进入了 场景: {stage_destination.name}",
                 ),
             )
 
@@ -763,8 +763,8 @@ class TCGGame(BaseGame, TCGGameContext):
         """
         if stage_entity.has(HomeComponent):
             home_comp = stage_entity.get(HomeComponent)
-            if actor_entity._name in home_comp.action_order:
-                home_comp.action_order.remove(actor_entity._name)
+            if actor_entity.name in home_comp.action_order:
+                home_comp.action_order.remove(actor_entity.name)
                 stage_entity.replace(
                     HomeComponent,
                     home_comp.name,
@@ -784,8 +784,8 @@ class TCGGame(BaseGame, TCGGameContext):
         """
         if stage_entity.has(HomeComponent):
             home_comp = stage_entity.get(HomeComponent)
-            if actor_entity._name not in home_comp.action_order:
-                home_comp.action_order.append(actor_entity._name)
+            if actor_entity.name not in home_comp.action_order:
+                home_comp.action_order.append(actor_entity.name)
                 stage_entity.replace(
                     HomeComponent,
                     home_comp.name,
@@ -808,7 +808,7 @@ class TCGGame(BaseGame, TCGGameContext):
             self.broadcast_event(
                 entity=stage_destination,
                 agent_event=AgentEvent(
-                    message=f"# 发生事件！{actor_entity._name} 进入了 场景: {stage_destination._name}",
+                    message=f"# 发生事件！{actor_entity.name} 进入了 场景: {stage_destination.name}",
                 ),
                 exclude_entities={actor_entity},
             )
@@ -946,11 +946,11 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 集体准备传送
         if len(heros_entities) == 0:
-            logger.error(f"没有英雄不能进入地下城!= {stage_entity._name}")
+            logger.error(f"没有英雄不能进入地下城!= {stage_entity.name}")
             return False, None
 
         logger.debug(
-            f"{self.current_dungeon.name} = [{self.current_dungeon.position}]关为：{stage_entity._name}，可以进入！！！！"
+            f"{self.current_dungeon.name} = [{self.current_dungeon.position}]关为：{stage_entity.name}，可以进入！！！！"
         )
 
         return True, stage_entity
@@ -965,10 +965,10 @@ class TCGGame(BaseGame, TCGGameContext):
         # 准备提示词
         if dungeon.position == 0:
             trans_message = (
-                f"""# 提示！你将要开始一次冒险，准备进入地下城: {stage_entity._name}"""
+                f"""# 提示！你将要开始一次冒险，准备进入地下城: {stage_entity.name}"""
             )
         else:
-            trans_message = f"""# 提示！你准备继续你的冒险，准备进入下一个地下城: {stage_entity._name}"""
+            trans_message = f"""# 提示！你准备继续你的冒险，准备进入下一个地下城: {stage_entity.name}"""
 
         for hero_entity in heros_entities:
             self.append_human_message(hero_entity, trans_message)  # 添加故事
@@ -982,7 +982,7 @@ class TCGGame(BaseGame, TCGGameContext):
         stage_kick_off_comp = stage_entity.get(KickOffMessageComponent)
         assert stage_kick_off_comp is not None
         logger.debug(
-            f"当前 {stage_entity._name} 的kickoff信息: {stage_kick_off_comp.content}"
+            f"当前 {stage_entity.name} 的kickoff信息: {stage_kick_off_comp.content}"
         )
 
         # 获取场景内角色的外貌信息
@@ -1008,7 +1008,7 @@ class TCGGame(BaseGame, TCGGameContext):
             stage_kick_off_comp.content + "\n" + append_kickoff_message,
         )
         logger.debug(
-            f"更新设置{stage_entity._name} 的kickoff信息: {stage_entity.get(KickOffMessageComponent).content}"
+            f"更新设置{stage_entity.name} 的kickoff信息: {stage_entity.get(KickOffMessageComponent).content}"
         )
 
         # 设置怪物的kickoff信息
@@ -1018,7 +1018,7 @@ class TCGGame(BaseGame, TCGGameContext):
                 monster_kick_off_comp = actor.get(KickOffMessageComponent)
                 assert monster_kick_off_comp is not None
                 logger.debug(
-                    f"需要设置{actor._name} 的kickoff信息: {monster_kick_off_comp.content}"
+                    f"需要设置{actor.name} 的kickoff信息: {monster_kick_off_comp.content}"
                 )
 
     #######################################################################################################################################
@@ -1053,7 +1053,7 @@ class TCGGame(BaseGame, TCGGameContext):
         self._setup_dungeon_kickoff_messages(stage_entity)
 
         # 5. 初始化战斗状态
-        dungeon.engagement.combat_kickoff(Combat(name=stage_entity._name))
+        dungeon.engagement.combat_kickoff(Combat(name=stage_entity.name))
 
         return True
 
@@ -1074,7 +1074,7 @@ class TCGGame(BaseGame, TCGGameContext):
             return
 
         stage_entity = next(iter(home_stage_entities))
-        prompt = f"""# 提示！冒险结束，你将要返回: {stage_entity._name}"""
+        prompt = f"""# 提示！冒险结束，你将要返回: {stage_entity.name}"""
         for hero_entity in heros_entities:
 
             # 添加故事。
@@ -1091,12 +1091,12 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 不要的组件。
             if hero_entity.has(DeathComponent):
-                logger.debug(f"remove death component: {hero_entity._name}")
+                logger.debug(f"remove death component: {hero_entity.name}")
                 hero_entity.remove(DeathComponent)
 
             # 不要的组件
             if hero_entity.has(XCardPlayerComponent):
-                logger.debug(f"remove xcard player component: {hero_entity._name}")
+                logger.debug(f"remove xcard player component: {hero_entity.name}")
                 hero_entity.remove(XCardPlayerComponent)
 
             # 生命全部恢复。
@@ -1109,9 +1109,9 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     def get_stage_actor_distribution(
         self,
-    ) -> Dict[str, List[str]]:
+    ) -> Dict[Entity, List[Entity]]:
 
-        ret: Dict[str, List[str]] = {}
+        ret: Dict[Entity, List[Entity]] = {}
 
         actor_entities: Set[Entity] = self.get_group(
             Matcher(all_of=[ActorComponent])
@@ -1125,15 +1125,30 @@ class TCGGame(BaseGame, TCGGameContext):
             if stage_entity is None:
                 continue
 
-            ret.setdefault(stage_entity._name, []).append(actor_entity._name)
+            ret.setdefault(stage_entity, []).append(actor_entity)
 
         # 补一下没有actor的stage
         stage_entities: Set[Entity] = self.get_group(
             Matcher(all_of=[StageComponent])
         ).entities
         for stage_entity in stage_entities:
-            if stage_entity._name not in ret:
-                ret.setdefault(stage_entity._name, [])
+            if stage_entity not in ret:
+                ret.setdefault(stage_entity, [])
+
+        return ret
+
+    ###############################################################################################################################################
+    def get_stage_actor_distribution_mapping(
+        self,
+    ) -> Dict[str, List[str]]:
+
+        ret: Dict[str, List[str]] = {}
+        mapping = self.get_stage_actor_distribution()
+
+        for stage_entity, actor_entities in mapping.items():
+            ret[stage_entity.name] = [
+                actor_entity.name for actor_entity in actor_entities
+            ]
 
         return ret
 
@@ -1175,17 +1190,17 @@ class TCGGame(BaseGame, TCGGameContext):
 
             # 必须没有打牌行动
             assert (
-                actor_entity._name in self.current_engagement.last_round.round_turns
-            ), f"{actor_entity._name} 不在本回合行动队列里"
+                actor_entity.name in self.current_engagement.last_round.round_turns
+            ), f"{actor_entity.name} 不在本回合行动队列里"
 
             # 必须没有打牌行动
             hand_comp = actor_entity.get(HandComponent)
-            assert len(hand_comp.skills) > 0, f"{actor_entity._name} 没有技能可用"
+            assert len(hand_comp.skills) > 0, f"{actor_entity.name} 没有技能可用"
 
             if not self._setup_actor_play_cards_action(
                 actor_entity, skill_execution_plan_options
             ):
-                assert False, f"为角色 {actor_entity._name} 设置打牌行动失败"
+                assert False, f"为角色 {actor_entity.name} 设置打牌行动失败"
 
         return True
 
@@ -1223,13 +1238,13 @@ class TCGGame(BaseGame, TCGGameContext):
         )
 
         if selected_skill is None:
-            logger.error(f"无法为角色 {actor_entity._name} 选择技能")
+            logger.error(f"无法为角色 {actor_entity.name} 选择技能")
             return False
 
         # 创建打牌行动
         actor_entity.replace(
             PlayCardsAction,
-            actor_entity._name,
+            actor_entity.name,
             selected_skill,
             final_target,
         )
@@ -1260,7 +1275,7 @@ class TCGGame(BaseGame, TCGGameContext):
                     selected_skill = skill
                     target_override = skill_execution_plan_options[skill.name]
                     logger.debug(
-                        f"为角色 {actor_entity._name} 选择指定技能: {skill.name}, 目标: {target_override}"
+                        f"为角色 {actor_entity.name} 选择指定技能: {skill.name}, 目标: {target_override}"
                     )
                     break
 
@@ -1268,7 +1283,7 @@ class TCGGame(BaseGame, TCGGameContext):
         if selected_skill is None:
             selected_skill = random.choice(hand_comp.skills)
             logger.debug(
-                f"为角色 {actor_entity._name} 随机选择技能: {selected_skill.name}"
+                f"为角色 {actor_entity.name} 随机选择技能: {selected_skill.name}"
             )
 
         # 确定最终目标
@@ -1299,8 +1314,8 @@ class TCGGame(BaseGame, TCGGameContext):
         player_entity = self.get_player_entity()
         assert player_entity is not None
         data: Dict[str, str] = {target: content}
-        player_entity.replace(SpeakAction, player_entity._name, data)
-        player_entity.replace(PlayerActiveComponent, player_entity._name)  # 添加标记。
+        player_entity.replace(SpeakAction, player_entity.name, data)
+        player_entity.replace(PlayerActiveComponent, player_entity.name)  # 添加标记。
 
         return True
 
@@ -1315,7 +1330,7 @@ class TCGGame(BaseGame, TCGGameContext):
         for entity in actor_entities:
             entity.replace(
                 DrawCardsAction,
-                entity._name,
+                entity.name,
             )
 
     #######################################################################################################################################
@@ -1347,7 +1362,7 @@ class TCGGame(BaseGame, TCGGameContext):
         stage_environment_comp = stage_entity.get(EnvironmentComponent)
 
         round = self.current_engagement.new_round(
-            round_turns=[entity._name for entity in shuffled_reactive_entities]
+            round_turns=[entity.name for entity in shuffled_reactive_entities]
         )
 
         round.environment = stage_environment_comp.narrate

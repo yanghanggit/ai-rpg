@@ -18,19 +18,19 @@ from ..utils import json_format
 
 
 #######################################################################################################################################
-@final
-class SkillResponse(BaseModel):
-    name: str = Field(..., description="此技能名称")
-    description: str = Field(..., description="此技能描述")
-    effect: str = Field(..., description="此技能产生的效果以及造成的影响")
-    target: str = Field(..., description="技能的目标")
+# @final
+# class SkillResponse(BaseModel):
+#     name: str = Field(..., description="此技能名称")
+#     description: str = Field(..., description="此技能描述")
+#     # effect: str = Field(..., description="此技能产生的效果以及造成的影响")
+#     target: str = Field(..., description="技能的目标")
 
 
 #######################################################################################################################################
 @final
 class DrawCardsResponse(BaseModel):
     update_hp: Optional[float] = Field(None, description="更新后的生命值")
-    skills: List[SkillResponse] = Field(..., description="生成的战斗技能列表")
+    skills: List[Skill] = Field(..., description="生成的战斗技能列表")
     status_effects: List[StatusEffect] = Field(
         ...,
         description="你自身的状态效果列表，注意！场景，角色，设定和已发生事件均可能对你产生影响并生成状态效果！",
@@ -48,10 +48,10 @@ def _generate_prompt1(
     response_sample = DrawCardsResponse(
         update_hp=None,
         skills=[
-            SkillResponse(
+            Skill(
                 name="[技能名称]",
-                description="[技能的基本描述和作用方式]",
-                effect="[技能的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：技能附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制状态描述]",
+                description="[技能的基本描述和作用方式][技能的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：技能附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制状态描述]",
+                # effect="[技能的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：技能附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制状态描述]",
                 target="[目标角色的完整名称]",
                 # reason="[选择此目标和技能的战术原因]",
                 # dialogue="[角色使用技能时的台词]",
@@ -61,7 +61,7 @@ def _generate_prompt1(
             StatusEffect(
                 name="[状态效果名称]",
                 description="[状态效果生成的原因，具体描述和影响]",
-                rounds=1,
+                duration=1,
             ),
         ],
     )
@@ -87,7 +87,7 @@ def _generate_prompt1(
 ## 输出要求
 - 涉及数值变化时必须明确具体数值(生命/物理攻击/物理防御/魔法攻击/魔法防御)
 - 技能效果格式：主要效果 + 可选状态效果 + 自身限制状态
-- 技能的description和effect里禁止包含角色名称
+- 技能的description里禁止包含角色名称
 - 第一局一定会有新增的status_effects，根据角色进入战斗时的设定，环境，内心活动，和其他角色的情况生成，而不是技能里提到的状态
 - 同一时间可以出现多个status_effects
 - 如果角色的设定里有提到‘无限生命’，‘无限血量’之类的描述，在更新生命值时，应当更新为Max_HP
@@ -115,10 +115,10 @@ def _generate_prompt2(
     response_sample = DrawCardsResponse(
         update_hp=0.0,
         skills=[
-            SkillResponse(
+            Skill(
                 name="[技能名称]",
-                description="[技能的基本描述和作用方式]",
-                effect="[技能的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：技能附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制状态描述]",
+                description="[技能的基本描述和作用方式][技能的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：技能附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制状态描述]",
+                # effect="[技能的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：技能附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制状态描述]",
                 target="[目标角色的完整名称]",
                 # reason="[选择此目标和技能的战术原因]",
                 # dialogue="[角色使用技能时的台词]",
@@ -128,7 +128,7 @@ def _generate_prompt2(
             StatusEffect(
                 name="[状态效果名称]",
                 description="[状态效果生成的原因，具体描述和影响]",
-                rounds=1,
+                duration=1,
             ),
         ],
     )
@@ -162,7 +162,7 @@ def _generate_prompt2(
 - 涉及数值变化时必须明确具体数值(生命/物理攻击/物理防御/魔法攻击/魔法防御)
 - 技能效果格式：主要效果 + 可选状态效果 + 自身限制状态
 - 根据最近的[发生事件！战斗回合]中的”计算过程“结果来更新你的update_hp，而不是使用已有的值。
-- 技能的description和effect里禁止包含角色名称
+- 技能的description里禁止包含角色名称
 - status_effects根据角色上回合结束时受到的其他角色的技能状态效果和自身技能的限制状态生成，而不是这回合生成的技能里提到的状态
 - 同一时间可以存在多个status_effects
 - 使用有趣、意想不到的风格描述效果产生的原因
@@ -272,7 +272,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
     def _clear_hands(self) -> None:
         actor_entities = self._game.get_group(Matcher(HandComponent)).entities.copy()
         for entity in actor_entities:
-            logger.debug(f"clear hands: {entity._name}")
+            logger.debug(f"clear hands: {entity.name}")
             entity.remove(HandComponent)
 
     #######################################################################################################################################
@@ -294,23 +294,23 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
             if character_profile_component.rpg_character_profile.hp <= 0:
                 # 如果角色已经死亡，就不需要添加等待技能了。
                 logger.warning(
-                    f"entity {entity._name} is dead (hp <= 0), no need to add default skill"
+                    f"entity {entity.name} is dead (hp <= 0), no need to add default skill"
                 )
                 continue
 
             wait_skill = Skill(
                 name="等待",
                 description="什么都不做，等待下一回合。",
-                effect="不产生任何效果",
-                target=entity._name,
+                # effect="不产生任何效果",
+                target=entity.name,
             )
 
             logger.warning(
-                f"entity {entity._name} has no HandComponent, add default skill"
+                f"entity {entity.name} has no HandComponent, add default skill"
             )
             entity.replace(
                 HandComponent,
-                entity._name,
+                entity.name,
                 [wait_skill],
             )
 
@@ -334,7 +334,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
                     Skill(
                         name=skill_response.name,
                         description=skill_response.description,
-                        effect=skill_response.effect,
+                        # effect=skill_response.effect,
                         target=skill_response.target,
                     )
                 )
@@ -347,7 +347,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
                 xcard_skill = Skill(
                     name=xcard_player_comp.skill.name,
                     description=xcard_player_comp.skill.description,
-                    effect=xcard_player_comp.skill.effect,
+                    # effect=xcard_player_comp.skill.effect,
                     target=xcard_player_comp.skill.target,
                 )
                 skills = [xcard_skill]
@@ -359,11 +359,11 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
             if len(skills) > 0:
                 entity2.replace(
                     HandComponent,
-                    entity2._name,
+                    entity2.name,
                     skills,
                 )
             else:
-                logger.debug(f"entity {entity2._name} has no skills from LLM response")
+                logger.debug(f"entity {entity2.name} has no skills from LLM response")
 
             # 更新健康属性。
             if need_update_health:
@@ -389,7 +389,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
 
             request_handlers.append(
                 ChatClient(
-                    name=entity._name,
+                    name=entity.name,
                     prompt=prompt,
                     chat_history=self._game.get_agent_short_term_memory(
                         entity
@@ -408,7 +408,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
         if update_hp is not None:
             character_profile_component.rpg_character_profile.hp = int(update_hp)
             logger.debug(
-                f"update_combat_health: {entity._name} => hp: {character_profile_component.rpg_character_profile.hp}"
+                f"update_combat_health: {entity.name} => hp: {character_profile_component.rpg_character_profile.hp}"
             )
 
     ###############################################################################################################################################
@@ -421,12 +421,12 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
         character_profile_component = entity.get(RPGCharacterProfileComponent)
         character_profile_component.status_effects.extend(copy.copy(status_effects))
         logger.info(
-            f"update_combat_status_effects: {entity._name} => {'\n'.join([e.model_dump_json() for e in character_profile_component.status_effects])}"
+            f"update_combat_status_effects: {entity.name} => {'\n'.join([e.model_dump_json() for e in character_profile_component.status_effects])}"
         )
 
         updated_status_effects_message = f"""# 提示！你的状态效果已更新
 ## 当前状态效果
-{'\n'.join([f'- {e.name} (剩余回合: {e.rounds}): {e.description}' for e in character_profile_component.status_effects]) if len(character_profile_component.status_effects) > 0 else '无'}"""
+{'\n'.join([f'- {e.name} (剩余回合: {e.duration}): {e.description}' for e in character_profile_component.status_effects]) if len(character_profile_component.status_effects) > 0 else '无'}"""
 
         self._game.append_human_message(entity, updated_status_effects_message)
 
@@ -454,11 +454,11 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
 
         for status_effect in character_profile_component.status_effects:
             # 效果回合数扣除
-            status_effect.rounds -= 1
-            status_effect.rounds = max(0, status_effect.rounds)
+            status_effect.duration -= 1
+            status_effect.duration = max(0, status_effect.duration)
 
             # status_effect持续回合数大于0，继续保留，否则移除
-            if status_effect.rounds > 0:
+            if status_effect.duration > 0:
                 remaining_effects.append(status_effect)
             else:
                 # 添加到移除列表
@@ -468,7 +468,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
         character_profile_component.status_effects = remaining_effects
 
         logger.info(
-            f"settle_status_effects: {entity._name} => "
+            f"settle_status_effects: {entity.name} => "
             f"remaining: {len(remaining_effects)}, removed: {len(removed_effects)}"
         )
 
@@ -487,7 +487,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
         for entity in entities:
             remaining_effects, removed_effects = self._settle_status_effects(entity)
             logger.debug(
-                f"settle_status_effects: {entity._name} => "
+                f"settle_status_effects: {entity.name} => "
                 f"remaining: {len(remaining_effects)}, removed: {len(removed_effects)}"
             )
 

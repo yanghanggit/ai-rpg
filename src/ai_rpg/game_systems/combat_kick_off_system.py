@@ -30,7 +30,7 @@ class CombatKickOffSystem(ExecuteProcessor):
         # 参与战斗的人
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
-        actor_entities = self._game.get_actors_on_stage(player_entity)
+        actor_entities = self._game.get_alive_actors_on_stage(player_entity)
         assert len(actor_entities) > 0, "不可能出现没人参与战斗的情况！"
 
         # 取场景

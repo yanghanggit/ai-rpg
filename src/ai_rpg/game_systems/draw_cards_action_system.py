@@ -356,11 +356,14 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
                 entity2.remove(XCardPlayerComponent)
 
             # 更新手牌。
-            entity2.replace(
-                HandComponent,
-                entity2._name,
-                skills,
-            )
+            if len(skills) > 0:
+                entity2.replace(
+                    HandComponent,
+                    entity2._name,
+                    skills,
+                )
+            else:
+                logger.debug(f"entity {entity2._name} has no skills from LLM response")
 
             # 更新健康属性。
             if need_update_health:

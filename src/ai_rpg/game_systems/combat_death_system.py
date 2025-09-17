@@ -9,7 +9,8 @@ from ..models import (
     HeroComponent,
     MonsterComponent,
 )
-from ..game.tcg_game_context import ActorFilterSettings
+
+# from ..game.tcg_game_context import ActorFilterSettings
 
 
 @final
@@ -61,9 +62,7 @@ class CombatDeathSystem(ExecuteProcessor):
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
 
-        actors_on_stage = self._game.get_actors_on_stage(
-            player_entity, ActorFilterSettings(filter_dead_actors=False)
-        )
+        actors_on_stage = self._game.get_all_actors_on_stage(player_entity)
         assert len(actors_on_stage) > 0, f"entities with actions: {actors_on_stage}"
 
         active_monsters: Set[Entity] = set()
@@ -87,9 +86,7 @@ class CombatDeathSystem(ExecuteProcessor):
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
 
-        actors_on_stage = self._game.get_actors_on_stage(
-            player_entity, ActorFilterSettings(filter_dead_actors=False)
-        )
+        actors_on_stage = self._game.get_all_actors_on_stage(player_entity)
         assert len(actors_on_stage) > 0, f"entities with actions: {actors_on_stage}"
 
         active_heroes: Set[Entity] = set()
@@ -115,9 +112,7 @@ class CombatDeathSystem(ExecuteProcessor):
         player_stage_entity = self._game.safe_get_stage_entity(player_entity)
         assert player_stage_entity is not None
 
-        actors_on_stage = self._game.get_actors_on_stage(
-            player_entity, ActorFilterSettings(filter_dead_actors=False)
-        )
+        actors_on_stage = self._game.get_all_actors_on_stage(player_entity)
         assert len(actors_on_stage) > 0, f"entities with actions: {actors_on_stage}"
 
         for entity in actors_on_stage:

@@ -19,7 +19,7 @@ from ..mongodb import (
 )
 from ..entitas import Entity, Matcher
 from ..game.base_game import BaseGame
-from ..game.tcg_game_context import ActorFilterSettings, TCGGameContext
+from ..game.tcg_game_context import TCGGameContext
 from ..game.tcg_game_process_pipeline import TCGGameProcessPipeline
 from ..models import (
     Actor,
@@ -636,7 +636,7 @@ class TCGGame(BaseGame, TCGGameContext):
         if stage_entity is None:
             return
 
-        need_broadcast_entities = self.get_actors_on_stage(stage_entity)
+        need_broadcast_entities = self.get_alive_actors_on_stage(stage_entity)
         need_broadcast_entities.add(stage_entity)
 
         if len(exclude_entities) > 0:
@@ -1011,7 +1011,7 @@ class TCGGame(BaseGame, TCGGameContext):
         )
 
         # 设置怪物的kickoff信息
-        actors = self.get_actors_on_stage(stage_entity)
+        actors = self.get_alive_actors_on_stage(stage_entity)
         for actor in actors:
             if actor.has(MonsterComponent):
                 monster_kick_off_comp = actor.get(KickOffMessageComponent)
@@ -1107,20 +1107,34 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     def get_stage_actor_distribution(
-        self, options: ActorFilterSettings = ActorFilterSettings()
+        self,
     ) -> Dict[str, List[str]]:
 
-        stage_entity_to_actor_entities = self._get_stage_actor_distribution(options)
-        if len(stage_entity_to_actor_entities) == 0:
-            return {}
+        ret: Dict[str, List[str]] = {}
 
-        stage_to_actor_names: Dict[str, List[str]] = {}
-        for stage_entity, actor_entities in stage_entity_to_actor_entities.items():
-            actor_names = {actor_entity._name for actor_entity in actor_entities}
-            stage_name = stage_entity._name
-            stage_to_actor_names[stage_name] = list(actor_names)
+        actor_entities: Set[Entity] = self.get_group(
+            Matcher(all_of=[ActorComponent])
+        ).entities
 
-        return stage_to_actor_names
+        # 以stage为key，actor为value
+        for actor_entity in actor_entities:
+
+            stage_entity = self.safe_get_stage_entity(actor_entity)
+            assert stage_entity is not None, f"actor_entity = {actor_entity}"
+            if stage_entity is None:
+                continue
+
+            ret.setdefault(stage_entity._name, []).append(actor_entity._name)
+
+        # 补一下没有actor的stage
+        stage_entities: Set[Entity] = self.get_group(
+            Matcher(all_of=[StageComponent])
+        ).entities
+        for stage_entity in stage_entities:
+            if stage_entity._name not in ret:
+                ret.setdefault(stage_entity._name, [])
+
+        return ret
 
     ###############################################################################################################################################
     # TODO, 临时添加行动, 逻辑。 activate_play_cards_action
@@ -1311,7 +1325,7 @@ class TCGGame(BaseGame, TCGGameContext):
         player_entity = self.get_player_entity()
         assert player_entity is not None
 
-        actor_entities = self.get_actors_on_stage(player_entity)
+        actor_entities = self.get_alive_actors_on_stage(player_entity)
         for entity in actor_entities:
             entity.replace(
                 DrawCardsAction,
@@ -1336,7 +1350,7 @@ class TCGGame(BaseGame, TCGGameContext):
         # 排序角色
         player_entity = self.get_player_entity()
         assert player_entity is not None
-        actors_on_stage = self.get_actors_on_stage(player_entity)
+        actors_on_stage = self.get_alive_actors_on_stage(player_entity)
         assert len(actors_on_stage) > 0
         shuffled_reactive_entities = self._shuffle_action_order(list(actors_on_stage))
 

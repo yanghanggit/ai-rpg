@@ -125,7 +125,7 @@ class HomePreSystem(ExecuteProcessor):
         home_comp = stage_entity.get(HomeComponent)
         action_order = home_comp.action_order
         if len(action_order) == 0:
-            actors_on_stage = self._game.get_actors_on_stage(stage_entity)
+            actors_on_stage = self._game.get_alive_actors_on_stage(stage_entity)
             order_actors_by_action = self._sort_action_order_by_runtime_index(
                 list(actors_on_stage)
             )

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import re
 from typing import Dict, List, Optional, Set, override
 
 from loguru import logger
@@ -28,9 +29,9 @@ from ..models import (
 ###############################################################################################################################################
 
 
-@dataclass
-class ActorFilterSettings:
-    filter_dead_actors: bool = True
+# @dataclass
+# class ActorFilterSettings:
+#     filter_dead_actors: bool = True
 
 
 class TCGGameContext(Context):
@@ -172,12 +173,15 @@ class TCGGameContext(Context):
         return None
 
     ###############################################################################################################################################
-    def _get_stage_actor_distribution(
-        self,
-        options: ActorFilterSettings,
-    ) -> Dict[Entity, Set[Entity]]:
+    def get_all_actors_on_stage(self, entity: Entity) -> Set[Entity]:
 
-        ret: Dict[Entity, Set[Entity]] = {}
+        stage_entity = self.safe_get_stage_entity(entity)
+        assert stage_entity is not None
+        if stage_entity is None:
+            return set()
+
+        # 直接在这里构建stage到actor的映射
+        ret: Set[Entity] = set()
 
         actor_entities: Set[Entity] = self.get_group(
             Matcher(all_of=[ActorComponent])
@@ -185,49 +189,26 @@ class TCGGameContext(Context):
 
         # 以stage为key，actor为value
         for actor_entity in actor_entities:
-
-            stage_entity = self.safe_get_stage_entity(actor_entity)
-            assert stage_entity is not None, f"actor_entity = {actor_entity}"
-            if stage_entity is None:
+            actor_stage_entity = self.safe_get_stage_entity(actor_entity)
+            assert actor_stage_entity is not None, f"actor_entity = {actor_entity}"
+            if actor_stage_entity != stage_entity:
+                # 不同的stage不算在内
                 continue
 
-            if options.filter_dead_actors and actor_entity.has(DeathComponent):
-                # 死亡的actor不算在stage上
-                continue
-
-            ret.setdefault(stage_entity, set()).add(actor_entity)
-
-        # 补一下没有actor的stage
-        stage_entities: Set[Entity] = self.get_group(
-            Matcher(all_of=[StageComponent])
-        ).entities
-        for stage_entity in stage_entities:
-            if stage_entity not in ret:
-                ret.setdefault(stage_entity, set())
+            ret.add(actor_entity)
 
         return ret
 
     ###############################################################################################################################################
-    def get_actors_on_stage(
-        self, entity: Entity, options: ActorFilterSettings = ActorFilterSettings()
-    ) -> Set[Entity]:
-
-        stage_entity = self.safe_get_stage_entity(entity)
-        assert stage_entity is not None
-        if stage_entity is None:
-            return set()
-
-        mapping = self._get_stage_actor_distribution(options)
-        if stage_entity not in mapping:
-            return set()
-
-        return mapping.get(stage_entity, set())
+    def get_alive_actors_on_stage(self, entity: Entity) -> Set[Entity]:
+        ret = self.get_all_actors_on_stage(entity)
+        return {actor for actor in ret if not actor.has(DeathComponent)}
 
     ###############################################################################################################################################
     # 以actor的final_appearance.name为key，final_appearance.final_appearance为value
     def get_stage_actor_appearances(self, entity: Entity) -> Dict[str, str]:
         ret: Dict[str, str] = {}
-        for actor in self.get_actors_on_stage(entity):
+        for actor in self.get_alive_actors_on_stage(entity):
             if actor.has(AppearanceComponent):
                 final_appearance = actor.get(AppearanceComponent)
                 ret.setdefault(final_appearance.name, final_appearance.appearance)

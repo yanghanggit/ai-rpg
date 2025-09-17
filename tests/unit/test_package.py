@@ -9,16 +9,16 @@ def test_package_structure() -> None:
     # 基本的包结构测试
     src_path = Path(__file__).parent.parent.parent / "src"
     assert src_path.exists()
-    assert (src_path / "multi_agents_game").exists()
-    assert (src_path / "multi_agents_game" / "__init__.py").exists()
+    assert (src_path / "ai_rpg").exists()
+    assert (src_path / "ai_rpg" / "__init__.py").exists()
 
 
 def test_import_main_package() -> None:
     """Test that the main package can be imported."""
     try:
-        import src.multi_agents_game as multi_agents_game
+        import src.ai_rpg as ai_rpg
 
-        assert multi_agents_game.__version__ == "0.1.0"
+        assert ai_rpg.__version__ == "0.1.0"
     except ImportError as e:
         pytest.skip(f"Package import failed: {e}")
 

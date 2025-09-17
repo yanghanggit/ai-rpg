@@ -28,18 +28,18 @@ from langchain.schema import HumanMessage
 from langchain_core.messages import BaseMessage
 from loguru import logger
 
-from multi_agents_game.deepseek.unified_chat_graph import (
+from ai_rpg.deepseek.unified_chat_graph import (
     create_unified_chat_graph,
     stream_unified_graph_updates,
 )
-from multi_agents_game.rag.routing import (
+from ai_rpg.rag.routing import (
     KeywordRouteStrategy,
     SemanticRouteStrategy,
     RouteDecisionManager,
     FallbackRouteStrategy,
     RouteConfigBuilder,
 )
-from multi_agents_game.demo.campaign_setting import (
+from ai_rpg.demo.campaign_setting import (
     FANTASY_WORLD_RPG_TEST_ROUTE_KEYWORDS,
     FANTASY_WORLD_RPG_TEST_RAG_TOPICS,
 )

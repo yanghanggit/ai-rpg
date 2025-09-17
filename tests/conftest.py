@@ -5,15 +5,15 @@ from pathlib import Path
 from typing import Type, Optional, Any
 
 try:
-    from src.multi_agents_game.game.tcg_game import TCGGame
-    from src.multi_agents_game.models.objects import Actor
-    from src.multi_agents_game.models.character_sheet import ActorCharacterSheet
-    from src.multi_agents_game.models.objects import RPGCharacterProfile
-    from src.multi_agents_game.models.world import World, Boot
-    from src.multi_agents_game.models.dungeon import Dungeon
-    from src.multi_agents_game.game.player_client import PlayerClient
+    from src.ai_rpg.game.tcg_game import TCGGame
+    from src.ai_rpg.models.objects import Actor
+    from src.ai_rpg.models.character_sheet import ActorCharacterSheet
+    from src.ai_rpg.models.objects import RPGCharacterProfile
+    from src.ai_rpg.models.world import World, Boot
+    from src.ai_rpg.models.dungeon import Dungeon
+    from src.ai_rpg.game.player_client import PlayerClient
 
-    #    from src.multi_agents_game.chat_services.manager import ChatClientManager
+    #    from src.ai_rpg.chat_services.manager import ChatClientManager
 
     _TCGGame: Optional[Type[TCGGame]] = TCGGame
     _Actor: Optional[Type[Actor]] = Actor

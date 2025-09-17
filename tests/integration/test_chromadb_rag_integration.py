@@ -9,18 +9,18 @@ from typing import Generator
 import pytest
 from loguru import logger
 
-from src.multi_agents_game.chroma import (
+from src.ai_rpg.chroma import (
     get_chroma_db,
     chromadb_clear_database,
 )
-from src.multi_agents_game.rag import (
+from src.ai_rpg.rag import (
     initialize_rag_system,
     rag_semantic_search,  # 添加全局语义搜索函数
 )
-from src.multi_agents_game.embedding_model.sentence_transformer_embedding_model import (
+from src.ai_rpg.embedding_model.sentence_transformer_embedding_model import (
     get_embedding_model,
 )
-from src.multi_agents_game.demo.campaign_setting import (
+from src.ai_rpg.demo.campaign_setting import (
     FANTASY_WORLD_RPG_KNOWLEDGE_BASE,
 )
 

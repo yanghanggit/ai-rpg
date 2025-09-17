@@ -14,7 +14,7 @@ from typing import Dict, Any
 # project_root = Path(__file__).parent.parent.parent
 # sys.path.insert(0, str(project_root))
 
-from src.multi_agents_game.rag.routing import (
+from src.ai_rpg.rag.routing import (
     RouteStrategy,
     RouteDecision,
     KeywordRouteStrategy,
@@ -25,7 +25,7 @@ from src.multi_agents_game.rag.routing import (
 )
 
 # 导入测试配置数据
-from src.multi_agents_game.demo.campaign_setting import (
+from src.ai_rpg.demo.campaign_setting import (
     FANTASY_WORLD_RPG_TEST_ROUTE_KEYWORDS,
     FANTASY_WORLD_RPG_TEST_RAG_TOPICS,
 )
@@ -235,11 +235,11 @@ class TestIntegration:
     def test_router_node_replacement(self) -> None:
         """测试路由节点的替换"""
         # 这个测试验证新的路由系统能否替代原有的router_node
-        from src.multi_agents_game.deepseek.unified_chat_graph import (
+        from src.ai_rpg.deepseek.unified_chat_graph import (
             UnifiedState,
         )
 
-        from src.multi_agents_game.deepseek import create_deepseek_llm
+        from src.ai_rpg.deepseek import create_deepseek_llm
 
         # 创建路由管理器实例
         manager = create_test_route_manager()

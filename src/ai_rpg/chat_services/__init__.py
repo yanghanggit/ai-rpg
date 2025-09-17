@@ -1,7 +1,7 @@
 """Chat services module for handling AI chat functionality.
 
 Note: Routing functionality has been moved to the rag module.
-Please use: from multi_agents_game.rag.routing import RouteDecisionManager
+Please use: from ai_rpg.rag.routing import RouteDecisionManager
 """
 
 from .protocol import ChatRequest, ChatResponse

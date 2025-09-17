@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Final
 
-from multi_agents_game.replicate import (
+from ai_rpg.replicate import (
     test_replicate_api_connection,
     load_replicate_config,
     # get_default_generation_params,

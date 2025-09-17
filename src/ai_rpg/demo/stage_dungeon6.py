@@ -6,7 +6,7 @@ from .utils import (
     create_stage,
 )
 
-# from multi_agents_game.demo import actor_goblin
+# from ai_rpg.demo import actor_goblin
 
 
 def create_stage_cave6() -> Stage:

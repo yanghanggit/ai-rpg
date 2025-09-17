@@ -184,7 +184,7 @@ class TestChromaDBEnvironment:
             )
 
             # 导入项目的模型加载器
-            from src.multi_agents_game.embedding_model.model_loader import (
+            from src.ai_rpg.embedding_model.model_loader import (
                 load_sentence_transformer,
                 is_model_cached,
             )
@@ -255,7 +255,7 @@ class TestChromaDBEnvironment:
         """测试项目的ModelLoader与ChromaDB集成"""
         try:
             import chromadb
-            from src.multi_agents_game.embedding_model.model_loader import (
+            from src.ai_rpg.embedding_model.model_loader import (
                 load_multilingual_model,
                 is_model_cached,
                 get_model_loader,

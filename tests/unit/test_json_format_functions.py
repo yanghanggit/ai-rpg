@@ -5,7 +5,7 @@
 import pytest
 from typing import List
 
-from src.multi_agents_game.utils.json_format import (
+from src.ai_rpg.utils.json_format import (
     strip_json_code_block,
     clean_json_string,
     combine_json_fragments,

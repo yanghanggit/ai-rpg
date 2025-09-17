@@ -99,7 +99,7 @@ project_root/
 │       └── paraphrase-multilingual-MiniLM-L12-v2/  # 多语言模型 (135MB)
 ├── scripts/
 │   └── download_sentence_transformers_models.py    # 模型下载管理脚本
-├── src/multi_agents_game/utils/
+├── src/ai_rpg/utils/
 │   └── model_loader.py                             # 模型加载工具
 └── tests/unit/
     └── test_sentence_transformers.py              # 已更新支持缓存
@@ -132,7 +132,7 @@ python scripts/download_sentence_transformers_models.py --check-cache
 #### 推荐方式 (使用缓存加载工具)
 
 ```python
-from multi_agents_game.utils.model_loader import load_multilingual_model
+from ai_rpg.utils.model_loader import load_multilingual_model
 
 # 优先使用本地缓存，自动回退到网络下载
 model = load_multilingual_model()
@@ -186,7 +186,7 @@ python scripts/download_sentence_transformers_models.py --clear-cache
 ### 灵活的加载方式
 
 ```python
-from multi_agents_game.utils.model_loader import (
+from ai_rpg.utils.model_loader import (
     load_sentence_transformer, 
     is_model_cached, 
     load_basic_model,
@@ -211,7 +211,7 @@ any_model = load_sentence_transformer("model-name")
 
 ```python
 # 在游戏服务器启动脚本中
-from multi_agents_game.utils.model_loader import load_multilingual_model
+from ai_rpg.utils.model_loader import load_multilingual_model
 
 print("🔄 预加载语义搜索模型...")
 semantic_model = load_multilingual_model()
@@ -224,7 +224,7 @@ else:
 ### RAG 功能集成
 
 ```python
-from multi_agents_game.utils.model_loader import load_multilingual_model
+from ai_rpg.utils.model_loader import load_multilingual_model
 from sentence_transformers.util import cos_sim
 
 class GameKnowledgeBase:
@@ -287,7 +287,7 @@ class GameKnowledgeBase:
    ```bash
    # 确保在项目根目录
    cd /path/to/multi-agents-game-framework
-   python -c "from src.multi_agents_game.utils.model_loader import load_multilingual_model; print('✅ 导入成功')"
+   python -c "from src.ai_rpg.utils.model_loader import load_multilingual_model; print('✅ 导入成功')"
    ```
 
 2. **缓存目录权限问题**
@@ -368,6 +368,6 @@ CMD ["python", "your_app.py"]
 **相关文件**:
 
 - `scripts/download_sentence_transformers_models.py` - 模型下载管理
-- `src/multi_agents_game/utils/model_loader.py` - 模型加载工具
+- `src/ai_rpg/utils/model_loader.py` - 模型加载工具
 - `tests/unit/test_sentence_transformers.py` - 模型测试套件
 - `.cache/sentence_transformers/` - 本地模型缓存

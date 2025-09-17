@@ -32,15 +32,15 @@ sys.path.insert(
 from fastapi import FastAPI
 from loguru import logger
 
-from multi_agents_game.chat_services.protocol import ChatRequest, ChatResponse
-from multi_agents_game.azure_openai_gpt import (
+from ai_rpg.chat_services.protocol import ChatRequest, ChatResponse
+from ai_rpg.azure_openai_gpt import (
     State,
     create_compiled_stage_graph,
     stream_graph_updates,
     create_azure_openai_gpt_llm,
 )
 
-from multi_agents_game.settings import (
+from ai_rpg.settings import (
     initialize_server_settings_instance,
 )
 

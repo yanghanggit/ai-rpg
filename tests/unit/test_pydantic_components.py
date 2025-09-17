@@ -4,8 +4,8 @@ This tests the new Pydantic-based component system.
 """
 
 import pytest
-from src.multi_agents_game.entitas import Entity, Context, Matcher
-from src.multi_agents_game.entitas.components import Component, MutableComponent
+from src.ai_rpg.entitas import Entity, Context, Matcher
+from src.ai_rpg.entitas.components import Component, MutableComponent
 from tests.unit.test_components import Position, Health, Marker, Counter, ResourcePool
 
 

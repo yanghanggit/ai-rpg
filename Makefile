@@ -79,7 +79,7 @@ fix-imports:
 # 清理构建文件
 clean:
 	rm -rf build/ dist/ *.egg-info/
-	find . -type d -name __pycache__ -delete
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete
 
 # 显示项目结构

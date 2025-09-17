@@ -30,27 +30,27 @@ sys.path.insert(
 )
 from loguru import logger
 
-from multi_agents_game.settings import (
+from ai_rpg.settings import (
     ServerSettings,
 )
-from multi_agents_game.game.game_config import GLOBAL_GAME_NAME, LOGS_DIR
+from ai_rpg.game.game_config import GLOBAL_GAME_NAME, LOGS_DIR
 
-from multi_agents_game.mongodb import (
+from ai_rpg.mongodb import (
     BootDocument,
     DEFAULT_MONGODB_CONFIG,
     mongodb_clear_database,
     mongodb_find_one,
     mongodb_upsert_one,
 )
-from multi_agents_game.pgsql.client import (
+from ai_rpg.pgsql.client import (
     pgsql_ensure_database_tables,
     pgsql_reset_database,
 )
-from multi_agents_game.pgsql.user import has_user, save_user
-from multi_agents_game.redis.client import (
+from ai_rpg.pgsql.user import has_user, save_user
+from ai_rpg.redis.client import (
     redis_flushall,
 )
-from multi_agents_game.demo.world import create_demo_game_world
+from ai_rpg.demo.world import create_demo_game_world
 
 
 @final
@@ -193,9 +193,9 @@ def _setup_chromadb_rag_environment() -> None:
     logger.info("🚀 初始化RAG系统...")
 
     # 导入必要的模块
-    from multi_agents_game.chroma import chromadb_clear_database
-    from multi_agents_game.rag import initialize_rag_system
-    from multi_agents_game.demo.campaign_setting import FANTASY_WORLD_RPG_KNOWLEDGE_BASE
+    from ai_rpg.chroma import chromadb_clear_database
+    from ai_rpg.rag import initialize_rag_system
+    from ai_rpg.demo.campaign_setting import FANTASY_WORLD_RPG_KNOWLEDGE_BASE
 
     try:
         # 清理现有的ChromaDB数据

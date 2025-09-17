@@ -3,7 +3,7 @@ Demo script showing how to use the entitas Entity and Context classes.
 This demonstrates the basic usage patterns tested in our test suite.
 """
 
-from src.multi_agents_game.entitas import Context, Matcher
+from src.ai_rpg.entitas import Context, Matcher
 from tests.unit.test_components import Position, Velocity, Health, Name, Score
 
 

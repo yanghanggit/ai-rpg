@@ -52,7 +52,7 @@
 
 ## 📂 核心功能模块
 
-### 1. 数据模型 (`src/multi_agents_game/db/pgsql_vector_ops.py`)
+### 1. 数据模型 (`src/ai_rpg/db/pgsql_vector_ops.py`)
 
 - ✅ `VectorDocumentDB`: 文档向量存储，支持RAG功能
 - ❌ `ConversationVectorDB`: 对话向量存储（已移除）
@@ -60,7 +60,7 @@
 - 🔧 使用1536维向量（兼容OpenAI embeddings）
 - 🚀 IVFFlat索引优化搜索性能
 
-### 2. 向量操作API (`src/multi_agents_game/db/pgsql_vector_ops.py`)
+### 2. 向量操作API (`src/ai_rpg/db/pgsql_vector_ops.py`)
 
 - ✅ `save_vector_document()`: 保存文档向量
 - ✅ `search_similar_documents()`: 相似文档搜索
@@ -73,7 +73,7 @@
 ### 3. 新增文件结构
 
 ```text
-src/multi_agents_game/db/
+src/ai_rpg/db/
 ├── pgsql_vector_ops.py      # 向量数据模型定义和操作封装函数
 └── (测试和演示文件已移至 /scripts 目录)
 ```

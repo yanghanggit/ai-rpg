@@ -6,7 +6,7 @@ import pytest
 from unittest.mock import Mock
 from typing import Dict, List
 
-from src.multi_agents_game.entitas.processors import (
+from src.ai_rpg.entitas.processors import (
     InitializeProcessor,
     ExecuteProcessor,
     CleanupProcessor,
@@ -14,10 +14,10 @@ from src.multi_agents_game.entitas.processors import (
     ReactiveProcessor,
     Processors,
 )
-from src.multi_agents_game.entitas.context import Context
-from src.multi_agents_game.entitas.entity import Entity
-from src.multi_agents_game.entitas.matcher import Matcher
-from src.multi_agents_game.entitas.group import GroupEvent
+from src.ai_rpg.entitas.context import Context
+from src.ai_rpg.entitas.entity import Entity
+from src.ai_rpg.entitas.matcher import Matcher
+from src.ai_rpg.entitas.group import GroupEvent
 from tests.unit.test_components import Position, Velocity, Health, Name
 
 

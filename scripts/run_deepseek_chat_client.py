@@ -27,7 +27,7 @@ sys.path.insert(
 from langchain.schema import HumanMessage
 from loguru import logger
 
-from multi_agents_game.deepseek import (
+from ai_rpg.deepseek import (
     State,
     create_compiled_stage_graph,
     stream_graph_updates,

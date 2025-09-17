@@ -17,7 +17,8 @@ class TCGGameProcessPipeline(Processors):
             HomeActorSystem,
         )
         from ..game_systems.home_post_system import HomePostSystem
-        from ..game_systems.home_pre_system import HomePreSystem
+
+        # from ..game_systems.home_pre_system import HomePreSystem
         from ..game_systems.home_stage_system import (
             HomeStageSystem,
         )
@@ -39,7 +40,7 @@ class TCGGameProcessPipeline(Processors):
 
         # 规划逻辑
         ######## 在所有规划之前!##############################################################
-        processors.add(HomePreSystem(tcg_game))
+        # processors.add(HomePreSystem(tcg_game))
         processors.add(HomeStageSystem(tcg_game))
         processors.add(HomeActorSystem(tcg_game))
         processors.add(HomePostSystem(tcg_game))

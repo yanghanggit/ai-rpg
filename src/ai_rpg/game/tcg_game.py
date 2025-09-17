@@ -40,7 +40,7 @@ from ..models import (
     HomeComponent,
     KickOffMessageComponent,
     MonsterComponent,
-    PlayerActiveComponent,
+    # PlayerActiveComponent,
     PlayerComponent,
     RPGCharacterProfile,
     RPGCharacterProfileComponent,
@@ -551,7 +551,7 @@ class TCGGame(BaseGame, TCGGameContext):
             if instance.character_sheet.type == StageType.DUNGEON:
                 stage_entity.add(DungeonComponent, instance.name)
             elif instance.character_sheet.type == StageType.HOME:
-                stage_entity.add(HomeComponent, instance.name, [])
+                stage_entity.add(HomeComponent, instance.name)
 
             ## 重新设置Actor和stage的关系
             for actor_instance in instance.actors:
@@ -744,52 +744,52 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
             # 从当前场景的行动队列里移除
-            self._remove_actor_from_stage_action_queue(actor_entity, current_stage)
+            # self._remove_actor_from_stage_action_queue(actor_entity, current_stage)
 
             # 加入到目标场景的行动队列里
-            self._add_actor_to_stage_action_queue(actor_entity, stage_destination)
+            # self._add_actor_to_stage_action_queue(actor_entity, stage_destination)
 
     ###############################################################################################################################################
-    def _remove_actor_from_stage_action_queue(
-        self, actor_entity: Entity, stage_entity: Entity
-    ) -> None:
-        """
-        从场景的行动队列中移除角色
+    # def _remove_actor_from_stage_action_queue(
+    #     self, actor_entity: Entity, stage_entity: Entity
+    # ) -> None:
+    #     """
+    #     从场景的行动队列中移除角色
 
-        Args:
-            actor_entity: 要移除的角色
-            stage_entity: 源场景
-        """
-        if stage_entity.has(HomeComponent):
-            home_comp = stage_entity.get(HomeComponent)
-            if actor_entity.name in home_comp.action_order:
-                home_comp.action_order.remove(actor_entity.name)
-                stage_entity.replace(
-                    HomeComponent,
-                    home_comp.name,
-                    home_comp.action_order,
-                )
+    #     Args:
+    #         actor_entity: 要移除的角色
+    #         stage_entity: 源场景
+    #     """
+    #     if stage_entity.has(HomeComponent):
+    #         home_comp = stage_entity.get(HomeComponent)
+    #         if actor_entity.name in home_comp.action_order:
+    #             home_comp.action_order.remove(actor_entity.name)
+    #             stage_entity.replace(
+    #                 HomeComponent,
+    #                 home_comp.name,
+    #                 home_comp.action_order,
+    #             )
 
     ###############################################################################################################################################
-    def _add_actor_to_stage_action_queue(
-        self, actor_entity: Entity, stage_entity: Entity
-    ) -> None:
-        """
-        将角色加入场景的行动队列
+    # def _add_actor_to_stage_action_queue(
+    #     self, actor_entity: Entity, stage_entity: Entity
+    # ) -> None:
+    #     """
+    #     将角色加入场景的行动队列
 
-        Args:
-            actor_entity: 要加入的角色
-            stage_entity: 目标场景
-        """
-        if stage_entity.has(HomeComponent):
-            home_comp = stage_entity.get(HomeComponent)
-            if actor_entity.name not in home_comp.action_order:
-                home_comp.action_order.append(actor_entity.name)
-                stage_entity.replace(
-                    HomeComponent,
-                    home_comp.name,
-                    home_comp.action_order,
-                )
+    #     Args:
+    #         actor_entity: 要加入的角色
+    #         stage_entity: 目标场景
+    #     """
+    #     if stage_entity.has(HomeComponent):
+    #         home_comp = stage_entity.get(HomeComponent)
+    #         if actor_entity.name not in home_comp.action_order:
+    #             home_comp.action_order.append(actor_entity.name)
+    #             stage_entity.replace(
+    #                 HomeComponent,
+    #                 home_comp.name,
+    #                 home_comp.action_order,
+    #             )
 
     ###############################################################################################################################################
     def _handle_actors_entering_stage(
@@ -1314,7 +1314,7 @@ class TCGGame(BaseGame, TCGGameContext):
         assert player_entity is not None
         data: Dict[str, str] = {target: content}
         player_entity.replace(SpeakAction, player_entity.name, data)
-        player_entity.replace(PlayerActiveComponent, player_entity.name)  # 添加标记。
+        # player_entity.replace(PlayerActiveComponent, player_entity.name)  # 添加标记。
 
         return True
 

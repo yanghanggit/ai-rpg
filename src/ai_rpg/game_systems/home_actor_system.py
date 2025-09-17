@@ -1,16 +1,14 @@
 from typing import Dict, List, final
-
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-
 from ..chat_services.client import ChatClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
     ActorComponent,
     AnnounceAction,
-    CanStartPlanningComponent,
+    PlayerComponent,
     EnvironmentComponent,
     MindVoiceAction,
     SpeakAction,
@@ -21,7 +19,7 @@ from ..utils import json_format
 
 #######################################################################################################################################
 @final
-class ActorPlanningResponse(BaseModel):
+class ActorResponse(BaseModel):
     speak_actions: Dict[str, str] = {}
     whisper_actions: Dict[str, str] = {}
     announce_actions: str = ""
@@ -42,30 +40,41 @@ def _generate_prompt(
         actors_appearances_info.append("无")
 
     # 格式示例
-    actor_response_example = ActorPlanningResponse(
+    response_example = ActorResponse(
         speak_actions={
             "场景内角色全名": "你要说的内容（场景内其他角色会听见）",
         },
-        # whisper_actions={
-        #     "场景内角色全名": "你要说的内容（只有你和目标角色能听见）",
-        # },
-        # announce_actions="你要说的内容（所有的角色都能听见）",
+        whisper_actions={
+            "场景内角色全名": "你要说的内容（只有你和目标角色能听见）",
+        },
+        announce_actions="你要说的内容（所有的角色都能听见）",
         mind_voice_actions="你要说的内容（内心独白，只有你自己能听见）",
     )
 
     return f"""# 请制定你的行动计划！决定你将要做什么，并以 JSON 格式输出。
+
 ## 当前场景
+
 {current_stage} | {current_stage_narration}
+
 ## 场景内角色
+
 {"\n".join(actors_appearances_info)}
+
 ## 输出内容
+
 - 请根据当前场景，角色信息与你的历史，制定你的行动计划。
 - 请严格遵守全名机制。
 - 第一人称视角。
+
 ## 输出格式
+
 ### 标准示例
-{actor_response_example.model_dump_json()}
+
+{response_example.model_dump_json()}
+
 ### 注意事项
+
 - speak_actions/whisper_actions/announce_actions 这三种行动只能选其一
 - mind_voice_actions可选。
 - 根据‘标准示例’，直接输出合规JSON。"""
@@ -75,6 +84,7 @@ def _generate_prompt(
 def _compress_prompt(
     prompt: str,
 ) -> str:
+    logger.debug(f"原始 Prompt =>\n{prompt}")
     return "# 请做出你的计划，决定你将要做什么，并以 JSON 格式输出。"
 
 
@@ -86,46 +96,31 @@ class HomeActorSystem(ExecuteProcessor):
         self._game: TCGGame = game_context
 
     #######################################################################################################################################
-    # @override
-    # def execute(self) -> None:
-    #     pass
-
-    #######################################################################################################################################
     @override
     async def execute(self) -> None:
-        await self._process_actor_planning_request()
-
-    #######################################################################################################################################
-    async def _process_actor_planning_request(self) -> None:
 
         # 获取所有需要进行角色规划的角色
         actor_entities = self._game.get_group(
             Matcher(
-                all_of=[CanStartPlanningComponent, ActorComponent],
+                all_of=[ActorComponent],
+                none_of=[PlayerComponent],
             )
         ).entities.copy()
 
+        # 没有需要处理的角色
         if len(actor_entities) == 0:
             return
 
         # 处理角色规划请求
-        request_handlers: List[ChatClient] = self._generate_requests(actor_entities)
+        request_handlers: List[ChatClient] = self._generate_request_handlers(
+            actor_entities
+        )
 
         # 语言服务
-        # await self._game.chat_client_manager.gather(request_handlers=request_handlers)
         await ChatClient.gather_request_post(clients=request_handlers)
 
         # 处理角色规划请求
-        self._handle_responses(request_handlers)
-
-    #######################################################################################################################################
-    def _handle_responses(self, request_handlers: List[ChatClient]) -> None:
-
         for request_handler in request_handlers:
-
-            # if request_handler.last_message_content == "":
-            #     continue
-
             entity2 = self._game.get_entity_by_name(request_handler.name)
             assert entity2 is not None
             self._handle_response(entity2, request_handler)
@@ -133,10 +128,9 @@ class HomeActorSystem(ExecuteProcessor):
     #######################################################################################################################################
     def _handle_response(self, entity2: Entity, request_handler: ChatClient) -> None:
 
-        # 核心处理
         try:
 
-            format_response = ActorPlanningResponse.model_validate_json(
+            format_response = ActorResponse.model_validate_json(
                 json_format.strip_json_code_block(request_handler.response_content)
             )
 
@@ -173,7 +167,9 @@ class HomeActorSystem(ExecuteProcessor):
             logger.error(f"Exception: {e}")
 
     #######################################################################################################################################
-    def _generate_requests(self, actor_entities: set[Entity]) -> List[ChatClient]:
+    def _generate_request_handlers(
+        self, actor_entities: set[Entity]
+    ) -> List[ChatClient]:
 
         request_handlers: List[ChatClient] = []
 

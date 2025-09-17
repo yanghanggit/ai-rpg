@@ -98,7 +98,7 @@ class AppearanceComponent(Component):
 @register_component_class
 class HomeComponent(Component):
     name: str
-    action_order: List[str]
+    # action_order: List[str]
 
 
 ############################################################################################################
@@ -126,18 +126,18 @@ class MonsterComponent(Component):
 
 
 ############################################################################################################
-@final
-@register_component_class
-class CanStartPlanningComponent(Component):
-    name: str
+# @final
+# @register_component_class
+# class CanStartPlanningComponent(Component):
+#     name: str
 
 
 ############################################################################################################
-# 标记player主动行动。
-@final
-@register_component_class
-class PlayerActiveComponent(Component):
-    name: str
+# # 标记player主动行动。
+# @final
+# @register_component_class
+# class PlayerActiveComponent(Component):
+#     name: str
 
 
 ############################################################################################################

@@ -19,7 +19,7 @@ from multi_agents_game.settings import (
 from multi_agents_game.game.game_config import GLOBAL_GAME_NAME, setup_logger
 from multi_agents_game.demo import (
     create_actor_warrior,
-    create_demo_dungeon5,
+    create_demo_dungeon6,
 )
 from multi_agents_game.game.player_client import PlayerClient
 from multi_agents_game.game.tcg_game import TCGGameState
@@ -215,7 +215,7 @@ async def _run_game(
         world_exists = World(boot=world_boot)
 
         # 运行时生成地下城系统
-        world_exists.dungeon = create_demo_dungeon5()
+        world_exists.dungeon = create_demo_dungeon6()
 
     else:
         logger.info(

@@ -1,14 +1,12 @@
 from typing import Final, FrozenSet, final, override
-
-
 from ..entitas import ExecuteProcessor, Matcher
 from ..entitas.components import Component
 from ..game.tcg_game import TCGGame
 from ..models import (
     ACTION_COMPONENTS_REGISTRY,
     COMPONENTS_REGISTRY,
-    # PlayerActiveComponent,
 )
+from loguru import logger
 
 
 @final
@@ -25,19 +23,7 @@ class ActionCleanupSystem(ExecuteProcessor):
             ACTION_COMPONENTS_REGISTRY.values()
         )
         self._clear_actions(actions_set)
-        # self._clear_player_active()
         self._test(actions_set)
-
-    ############################################################################################################
-    # def _clear_player_active(self) -> None:
-    #     player_entities = self._game.get_group(
-    #         Matcher(all_of=[PlayerActiveComponent])
-    #     ).entities.copy()
-    #     for entity in player_entities:
-    #         # logger.debug(
-    #         #     f"PostActionSystem: 清理动作: {PlayerActiveComponent} from entity: {entity._name}"
-    #         # )
-    #         entity.remove(PlayerActiveComponent)
 
     ############################################################################################################
     def _clear_actions(self, registered_actions: FrozenSet[type[Component]]) -> None:
@@ -47,9 +33,9 @@ class ActionCleanupSystem(ExecuteProcessor):
         for entity in entities:
             for action_class in registered_actions:
                 if entity.has(action_class):
-                    # logger.debug(
-                    #     f"PostActionSystem: 清理动作: {action_class} from entity: {entity._name}"
-                    # )
+                    logger.debug(
+                        f"PostActionSystem: 清理动作: {action_class} from entity: {entity._name}"
+                    )
                     entity.remove(action_class)
 
     ############################################################################################################
@@ -64,11 +50,6 @@ class ActionCleanupSystem(ExecuteProcessor):
             assert (
                 action_class in COMPONENTS_REGISTRY
             ), f"{action_class} not in COMPONENTS_REGISTRY"
-
-        # entities2 = self._game.get_group(
-        #     Matcher(all_of=[PlayerActiveComponent])
-        # ).entities.copy()
-        # assert len(entities2) == 0, f"entities with PlayerActiveComponent: {entities2}"
 
 
 ############################################################################################################

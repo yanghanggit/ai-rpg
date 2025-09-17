@@ -274,6 +274,7 @@ async def _run_game(
         exit(1)
 
     # 游戏循环。。。。。。
+    await terminal_game.initialize()
     while True:
 
         await _process_player_input(terminal_game)
@@ -406,10 +407,10 @@ async def _process_home_state_input(
         ):
 
             # player 执行一次, 这次基本是忽略推理标记的，所有NPC不推理。
-            await terminal_game.home_state_pipeline.process()
+            await terminal_game.player_home_state_pipeline.process()
 
             # 其他人执行一次。对应的NPC进行推理。
-            await terminal_game.home_state_pipeline.process()
+            # await terminal_game.home_state_pipeline.process()
 
     else:
         logger.error(

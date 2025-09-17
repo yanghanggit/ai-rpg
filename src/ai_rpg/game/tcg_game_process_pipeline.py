@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Final, cast
 from loguru import logger
 from ..entitas import Processors
 from ..game.base_game import BaseGame
@@ -7,7 +7,7 @@ from ..game.base_game import BaseGame
 class TCGGameProcessPipeline(Processors):
 
     @staticmethod
-    def create_home_state_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
+    def create_home_state_pipline1(game: BaseGame) -> "TCGGameProcessPipeline":
 
         ### 不这样就循环引用
         from ..game.tcg_game import TCGGame
@@ -16,9 +16,6 @@ class TCGGameProcessPipeline(Processors):
         from ..game_systems.home_actor_system import (
             HomeActorSystem,
         )
-        from ..game_systems.home_post_system import HomePostSystem
-
-        # from ..game_systems.home_pre_system import HomePreSystem
         from ..game_systems.home_stage_system import (
             HomeStageSystem,
         )
@@ -33,18 +30,58 @@ class TCGGameProcessPipeline(Processors):
 
         ##
         tcg_game = cast(TCGGame, game)
-        processors = TCGGameProcessPipeline("Home State Pipeline")
+        processors = TCGGameProcessPipeline("Home State Pipeline 1")
 
         # 启动agent的提示词。启动阶段
         processors.add(KickOffSystem(tcg_game))
 
         # 规划逻辑
         ######## 在所有规划之前!##############################################################
-        # processors.add(HomePreSystem(tcg_game))
         processors.add(HomeStageSystem(tcg_game))
         processors.add(HomeActorSystem(tcg_game))
-        processors.add(HomePostSystem(tcg_game))
         ####### 在所有规划之后! ##############################################################
+
+        # 动作处理相关的系统 ##################################################################
+        ####################################################################################
+        processors.add(MindVoiceActionSystem(tcg_game))
+        processors.add(SpeakActionSystem(tcg_game))
+        processors.add(WhisperActionSystem(tcg_game))
+        processors.add(AnnounceActionSystem(tcg_game))
+        processors.add(ActionCleanupSystem(tcg_game))
+        ####################################################################################
+        ####################################################################################
+
+        # 动作处理后，可能清理。
+        processors.add(DestroyEntitySystem(tcg_game))
+
+        # 存储系统。
+        processors.add(SaveSystem(tcg_game))
+
+        return processors
+
+    ###################################################################################################################################################################
+    @staticmethod
+    def create_home_state_pipline2(game: BaseGame) -> "TCGGameProcessPipeline":
+
+        ### 不这样就循环引用
+        from ..game.tcg_game import TCGGame
+        from ..game_systems.announce_action_system import AnnounceActionSystem
+        from ..game_systems.destroy_entity_system import DestroyEntitySystem
+        from ..game_systems.kick_off_system import KickOffSystem
+        from ..game_systems.mind_voice_action_system import (
+            MindVoiceActionSystem,
+        )
+        from ..game_systems.action_cleanup_system import ActionCleanupSystem
+        from ..game_systems.save_system import SaveSystem
+        from ..game_systems.speak_action_system import SpeakActionSystem
+        from ..game_systems.whisper_action_system import WhisperActionSystem
+
+        ##
+        tcg_game = cast(TCGGame, game)
+        processors = TCGGameProcessPipeline("Home State Pipeline 2")
+
+        # 启动agent的提示词。启动阶段
+        processors.add(KickOffSystem(tcg_game))
 
         # 动作处理相关的系统 ##################################################################
         ####################################################################################
@@ -123,20 +160,14 @@ class TCGGameProcessPipeline(Processors):
     ###################################################################################################################################################################
     def __init__(self, name: str) -> None:
         super().__init__()
-        self._initialized: bool = False
-        self._name: str = name
+        self._name: Final[str] = name
 
     ###################################################################################################################################################################
     async def process(self) -> None:
         # 顺序不要动
         logger.debug(
-            f"================= {self._name} process pipeline start ================="
+            f"================= {self._name} process pipeline process ================="
         )
-        if not self._initialized:
-            self._initialized = True
-            self.activate_reactive_processors()
-            await self.initialize()
-
         await self.execute()
         self.cleanup()
 

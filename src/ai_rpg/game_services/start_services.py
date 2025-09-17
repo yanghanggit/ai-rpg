@@ -48,24 +48,25 @@ async def start(
 
         if room.game is None:
             # 如果没有游戏对象，就‘创建/复位’一个游戏。
-            active_game_session = setup_web_game_session(
+            web_game = setup_web_game_session(
                 web_game_user_options=web_user_session_options,
                 # server_settings=server_settings,
             )
 
-            if active_game_session is None:
+            if web_game is None:
                 logger.error(f"创建游戏失败 = {web_user_session_options.game}")
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"start/v1: {request_data.user_name} failed to create game",
                 )
 
-            room.game = active_game_session
+            room.game = web_game
         else:
             # 是继续玩
             logger.info(f"start/v1: {request_data.user_name} has room, is running!")
 
         assert room.game is not None
+        await room.game.initialize()
         return StartResponse(
             message=f"启动游戏成功！",
         )

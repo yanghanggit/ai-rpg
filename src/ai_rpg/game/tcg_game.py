@@ -8,8 +8,6 @@ from typing import Any, Dict, Final, List, Optional, Set, Tuple, final
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
-
-# from ..chat_services.manager import ChatClientManager
 from ..game.game_config import LOGS_DIR
 from ..mongodb import (
     DEFAULT_MONGODB_CONFIG,
@@ -40,7 +38,6 @@ from ..models import (
     HomeComponent,
     KickOffMessageComponent,
     MonsterComponent,
-    # PlayerActiveComponent,
     PlayerComponent,
     RPGCharacterProfile,
     RPGCharacterProfileComponent,
@@ -100,7 +97,6 @@ class TCGGame(BaseGame, TCGGameContext):
         name: str,
         player: PlayerClient,
         world: World,
-        # chat_client_manager: ChatClientManager,
     ) -> None:
 
         # 必须按着此顺序实现父
@@ -110,26 +106,32 @@ class TCGGame(BaseGame, TCGGameContext):
         # 世界运行时
         self._world: Final[World] = world
 
-        # 处理器 与 对其控制的 状态。
+        # 常规home 的流程
         self._home_pipeline: Final[TCGGameProcessPipeline] = (
-            TCGGameProcessPipeline.create_home_state_pipline(self)
+            TCGGameProcessPipeline.create_home_state_pipline1(self)
         )
+
+        # 仅处理player的home流程
+        self._player_home_pipeline: Final[TCGGameProcessPipeline] = (
+            TCGGameProcessPipeline.create_home_state_pipline2(self)
+        )
+
+        # 地下城战斗流程
         self._dungeon_combat_pipeline: Final[TCGGameProcessPipeline] = (
             TCGGameProcessPipeline.create_dungeon_combat_state_pipeline(self)
         )
 
         self._all_pipelines: List[TCGGameProcessPipeline] = [
             self._home_pipeline,
+            self._player_home_pipeline,
             self._dungeon_combat_pipeline,
         ]
 
         # 玩家
-        self._player: PlayerClient = player
+        self._player: Final[PlayerClient] = player
+        logger.debug(f"TCGGame init player: {self._player.name}: {self._player.actor}")
         assert self._player.name != ""
         assert self._player.actor != ""
-
-        # agent 系统
-        # self._chat_client_manager: Final[ChatClientManager] = chat_client_manager
 
     ###############################################################################################################################################
     @property
@@ -179,11 +181,6 @@ class TCGGame(BaseGame, TCGGameContext):
         return TCGGameState.NONE
 
     ###############################################################################################################################################
-    # @property
-    # def chat_client_manager(self) -> ChatClientManager:
-    #     return self._chat_client_manager
-
-    ###############################################################################################################################################
     @property
     def world(self) -> World:
         return self._world
@@ -206,6 +203,11 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     @property
+    def player_home_state_pipeline(self) -> TCGGameProcessPipeline:
+        return self._player_home_pipeline
+
+    ###############################################################################################################################################
+    @property
     def dungeon_combat_pipeline(self) -> TCGGameProcessPipeline:
         return self._dungeon_combat_pipeline
 
@@ -213,14 +215,32 @@ class TCGGame(BaseGame, TCGGameContext):
     @override
     def exit(self) -> None:
         self._shutsdown_all_pipelines()
-        logger.warning(f"{self.name}, game over!!!!!!!!!!!!!!!!!!!!")
+        logger.warning(f"{self.name}, exit!!!!!!!!!!!!!!!!!!!!")
+
+    ###############################################################################################################################################
+    @override
+    async def initialize(self) -> None:
+        # 初始化所有管道
+        await self._initialize_all_pipelines()
 
     ###############################################################################################################################################
     def _shutsdown_all_pipelines(self) -> None:
+
+        # 关闭
         for processor in self._all_pipelines:
             processor.shutdown()
+            logger.debug(f"Shutdown pipeline: {processor._name}")
+
+        # 清空
         self._all_pipelines.clear()
-        # logger.warning(f"{self.name}, game over!!!!!!!!!!!!!!!!!!!!")
+
+    ###############################################################################################################################################
+    async def _initialize_all_pipelines(self) -> None:
+        # 初始化
+        for processor in self._all_pipelines:
+            processor.activate_reactive_processors()
+            await processor.initialize()
+            logger.debug(f"Initialized pipeline: {processor._name}")
 
     ###############################################################################################################################################
     def new_game(self) -> "TCGGame":
@@ -742,54 +762,6 @@ class TCGGame(BaseGame, TCGGameContext):
                     message=f"# 发生事件！{actor_entity.name} 从 场景: {current_stage.name} 离开，然后进入了 场景: {stage_destination.name}",
                 ),
             )
-
-            # 从当前场景的行动队列里移除
-            # self._remove_actor_from_stage_action_queue(actor_entity, current_stage)
-
-            # 加入到目标场景的行动队列里
-            # self._add_actor_to_stage_action_queue(actor_entity, stage_destination)
-
-    ###############################################################################################################################################
-    # def _remove_actor_from_stage_action_queue(
-    #     self, actor_entity: Entity, stage_entity: Entity
-    # ) -> None:
-    #     """
-    #     从场景的行动队列中移除角色
-
-    #     Args:
-    #         actor_entity: 要移除的角色
-    #         stage_entity: 源场景
-    #     """
-    #     if stage_entity.has(HomeComponent):
-    #         home_comp = stage_entity.get(HomeComponent)
-    #         if actor_entity.name in home_comp.action_order:
-    #             home_comp.action_order.remove(actor_entity.name)
-    #             stage_entity.replace(
-    #                 HomeComponent,
-    #                 home_comp.name,
-    #                 home_comp.action_order,
-    #             )
-
-    ###############################################################################################################################################
-    # def _add_actor_to_stage_action_queue(
-    #     self, actor_entity: Entity, stage_entity: Entity
-    # ) -> None:
-    #     """
-    #     将角色加入场景的行动队列
-
-    #     Args:
-    #         actor_entity: 要加入的角色
-    #         stage_entity: 目标场景
-    #     """
-    #     if stage_entity.has(HomeComponent):
-    #         home_comp = stage_entity.get(HomeComponent)
-    #         if actor_entity.name not in home_comp.action_order:
-    #             home_comp.action_order.append(actor_entity.name)
-    #             stage_entity.replace(
-    #                 HomeComponent,
-    #                 home_comp.name,
-    #                 home_comp.action_order,
-    #             )
 
     ###############################################################################################################################################
     def _handle_actors_entering_stage(

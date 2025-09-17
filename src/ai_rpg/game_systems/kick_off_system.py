@@ -14,6 +14,7 @@ from ..models import (
     KickOffMessageComponent,
     StageComponent,
     WorldSystemComponent,
+    # SpeakAction,
 )
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from ..game.game_config import LOGS_DIR
@@ -80,6 +81,16 @@ class KickOffSystem(ExecuteProcessor):
     ###############################################################################################################################################
     @override
     async def execute(self) -> None:
+
+        # test_entities = self._game.get_group(
+        #     Matcher(
+        #         all_of=[SpeakAction],
+        #         # none_of=[KickOffDoneComponent],
+        #     )
+        # ).entities.copy()
+        # if len(test_entities) > 0:
+        #     pass
+
         # 处理请求
         valid_entities = self._get_valid_kick_off_entities()
         if len(valid_entities) == 0:
@@ -324,10 +335,6 @@ class KickOffSystem(ExecuteProcessor):
             )
 
         # 并发
-        # await self._game.chat_client_manager.gather(
-        #     request_handlers=request_handlers,
-        #     # options=ChatApiEndpointOptions.DEEPSEEK_MCP_CHAT,
-        # )
         await ChatClient.gather_request_post(clients=request_handlers)
 
         # 添加上下文。

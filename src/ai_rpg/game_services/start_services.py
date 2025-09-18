@@ -114,14 +114,14 @@ def setup_web_game_session(
 
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(web_game.world.entities_snapshot) == 0:
-        logger.warning(
+        logger.info(
             f"游戏中没有实体 = {web_game_user_options.game}, 说明是第一次创建游戏"
         )
 
         # 直接构建ecs
         web_game.new_game().save()
     else:
-        logger.warning(
+        logger.info(
             f"游戏中有实体 = {web_game_user_options.game}，需要通过数据恢复实体，是游戏回复的过程"
         )
 

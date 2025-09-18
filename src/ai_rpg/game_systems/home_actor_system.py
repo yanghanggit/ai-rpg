@@ -3,20 +3,17 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel
 from ..chat_services.client import ChatClient
-from ..entitas import Entity, ExecuteProcessor, Matcher
-from ..game.tcg_game import TCGGame
+from ..entitas import Entity, Matcher, GroupEvent
 from ..models import (
-    ActorComponent,
-    HeroComponent,
     AnnounceAction,
-    PlayerComponent,
     EnvironmentComponent,
     MindVoiceAction,
     SpeakAction,
     WhisperAction,
-    HomeComponent,
+    PlanAction,
 )
 from ..utils import json_format
+from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 
 #######################################################################################################################################
@@ -92,34 +89,27 @@ def _compress_prompt(
 
 #######################################################################################################################################
 @final
-class HomeActorSystem(ExecuteProcessor):
+class HomeActorSystem(BaseActionReactiveSystem):
 
-    def __init__(self, game_context: TCGGame) -> None:
-        self._game: TCGGame = game_context
+    ####################################################################################################################################
+    @override
+    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+        return {Matcher(PlanAction): GroupEvent.ADDED}
+
+    ####################################################################################################################################
+    @override
+    def filter(self, entity: Entity) -> bool:
+        return entity.has(PlanAction)
 
     #######################################################################################################################################
     @override
-    async def execute(self) -> None:
+    async def react(self, entities: list[Entity]) -> None:
 
-        # 测试：所有的hero的场景都必须是home！！！
-        self._assert_hero_stage_is_home()
-
-        # 获取所有需要进行角色规划的角色
-        actor_entities = self._game.get_group(
-            Matcher(
-                all_of=[ActorComponent, HeroComponent],
-                none_of=[PlayerComponent],
-            )
-        ).entities.copy()
-
-        # 没有需要处理的角色
-        if len(actor_entities) == 0:
+        if len(entities) == 0:
             return
 
         # 处理角色规划请求
-        request_handlers: List[ChatClient] = self._generate_request_handlers(
-            actor_entities
-        )
+        request_handlers: List[ChatClient] = self._generate_request_handlers(entities)
 
         # 语言服务
         await ChatClient.gather_request_post(clients=request_handlers)
@@ -173,7 +163,7 @@ class HomeActorSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     def _generate_request_handlers(
-        self, actor_entities: set[Entity]
+        self, actor_entities: List[Entity]
     ) -> List[ChatClient]:
 
         request_handlers: List[ChatClient] = []
@@ -208,21 +198,5 @@ class HomeActorSystem(ExecuteProcessor):
             )
 
         return request_handlers
-
-    #######################################################################################################################################
-    def _assert_hero_stage_is_home(self) -> None:
-        actor_entities = self._game.get_group(
-            Matcher(
-                all_of=[ActorComponent, HeroComponent],
-            )
-        ).entities.copy()
-        for actor_entity in actor_entities:
-
-            # 测试：运行到此处，所有的hero的场景都必须是home！！！
-            current_stage_entity = self._game.safe_get_stage_entity(actor_entity)
-            assert current_stage_entity is not None
-            assert current_stage_entity.has(
-                HomeComponent
-            ), f"{actor_entity.name} 的场景不是 Home！"
 
     #######################################################################################################################################

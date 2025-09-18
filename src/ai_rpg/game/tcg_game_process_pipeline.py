@@ -27,6 +27,7 @@ class TCGGameProcessPipeline(Processors):
         from ..game_systems.save_system import SaveSystem
         from ..game_systems.speak_action_system import SpeakActionSystem
         from ..game_systems.whisper_action_system import WhisperActionSystem
+        from ..game_systems.home_auto_plan_system import HomeAutoPlanSystem
 
         ##
         tcg_game = cast(TCGGame, game)
@@ -37,6 +38,7 @@ class TCGGameProcessPipeline(Processors):
 
         # 规划逻辑
         ######## 在所有规划之前!##############################################################
+        processors.add(HomeAutoPlanSystem(tcg_game))
         processors.add(HomeStageSystem(tcg_game))
         processors.add(HomeActorSystem(tcg_game))
         ####### 在所有规划之后! ##############################################################

@@ -51,7 +51,7 @@ def get_mongodb_client() -> MongoClientType:
     # 测试连接
     try:
         client.admin.command("ping")
-        logger.info("MongoDB连接成功")
+        logger.debug("MongoDB连接成功")
     except Exception as e:
         logger.error(f"MongoDB连接失败: {e}")
         raise e

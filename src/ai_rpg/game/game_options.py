@@ -49,13 +49,13 @@ class UserOptions:
     ###############################################################################################################################################
     @property
     def world_data(self) -> Optional[World]:
-        logger.info(f"📖 从 MongoDB 获取游戏世界进行验证...")
+        logger.debug(f"📖 从 MongoDB 获取游戏世界进行验证...")
         stored_world = mongodb_find_one(
             DEFAULT_MONGODB_CONFIG.worlds_collection,
             {"username": self.user, "game_name": self.game},
         )
         if stored_world is None:
-            logger.warning("没有找到游戏世界数据")
+            logger.warning(f"没有找到游戏世界数据 = {self.user}:{self.game}")
             return None
 
         # 尝试使用便捷方法反序列化为 World 对象
@@ -75,7 +75,7 @@ class UserOptions:
         """
         删除用户的游戏世界数据
         """
-        logger.info(f"🗑️ 删除用户 {self.user} 的游戏世界数据...")
+        logger.warning(f"🗑️ 删除用户 {self.user} 的游戏世界数据...")
 
         try:
             # 删除 MongoDB 中的世界数据

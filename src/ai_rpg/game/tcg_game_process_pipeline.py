@@ -110,7 +110,7 @@ class TCGGameProcessPipeline(Processors):
 
         ### 不这样就循环引用
         from ..game.tcg_game import TCGGame
-        from ..game_systems.combat_death_system import CombatDeathSystem
+        from ..game_systems.combat_outcome_system import CombatOutcomeSystem
         from ..game_systems.combat_kick_off_system import (
             CombatKickOffSystem,
         )
@@ -121,8 +121,8 @@ class TCGGameProcessPipeline(Processors):
         from ..game_systems.play_cards_action_system import (
             PlayCardsActionSystem,
         )
-        from ..game_systems.combat_complete_system import (
-            CombatCompleteSystem,
+        from ..game_systems.combat_post_processing_system import (
+            CombatPostProcessingSystem,
         )
         from ..game_systems.kick_off_system import KickOffSystem
         from ..game_systems.action_cleanup_system import ActionCleanupSystem
@@ -146,8 +146,8 @@ class TCGGameProcessPipeline(Processors):
         ###### 动作结束！！！！！################################################################################################
 
         # 检查死亡
-        processors.add(CombatDeathSystem(tcg_game))
-        processors.add(CombatCompleteSystem(tcg_game))
+        processors.add(CombatOutcomeSystem(tcg_game))
+        processors.add(CombatPostProcessingSystem(tcg_game))
 
         # 核心系统，检查需要删除的实体。
         processors.add(DestroyEntitySystem(tcg_game))

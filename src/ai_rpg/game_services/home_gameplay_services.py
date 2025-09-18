@@ -91,12 +91,12 @@ async def _handle_advancing_action(web_game: WebTCGGame) -> HomeGamePlayResponse
         HomeGamePlayResponse: 包含客户端消息的响应
     """
     # 推进一次。
-    web_game.player.clear_messages()
+    web_game.player_client.clear_messages()
     await web_game.home_state_pipeline.process()
 
     # 返回消息
     return HomeGamePlayResponse(
-        client_messages=web_game.player.client_messages,
+        client_messages=web_game.player_client.client_messages,
     )
 
 
@@ -120,17 +120,17 @@ async def _handle_speak_action(
     # player 添加说话的动作
     if web_game.activate_speak_action(target=target, content=content):
         # 清空消息。准备重新开始 + 测试推进一次游戏
-        web_game.player.clear_messages()
-        await web_game.home_state_pipeline.process()
+        web_game.player_client.clear_messages()
+        await web_game.player_home_state_pipeline.process()
 
         # 返回消息
         return HomeGamePlayResponse(
-            client_messages=web_game.player.client_messages,
+            client_messages=web_game.player_client.client_messages,
         )
 
     # 如果说话动作激活失败，返回空消息
     return HomeGamePlayResponse(
-        client_messages=web_game.player.client_messages,
+        client_messages=web_game.player_client.client_messages,
     )
 
 

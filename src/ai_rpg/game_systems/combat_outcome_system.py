@@ -10,11 +10,9 @@ from ..models import (
     MonsterComponent,
 )
 
-# from ..game.tcg_game_context import ActorFilterSettings
-
 
 @final
-class CombatDeathSystem(ExecuteProcessor):
+class CombatOutcomeSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
@@ -25,7 +23,7 @@ class CombatDeathSystem(ExecuteProcessor):
 
         self._check_health_status()
 
-        self._evaluate_battle_outcome()
+        self._evaluate_outcome()
 
     ########################################################################################################################################################################
     def _check_health_status(self) -> None:
@@ -41,7 +39,7 @@ class CombatDeathSystem(ExecuteProcessor):
                 entity.replace(DeathComponent, rpg_character_profile_component.name)
 
     ########################################################################################################################################################################
-    def _evaluate_battle_outcome(self) -> None:
+    def _evaluate_outcome(self) -> None:
 
         # 检查战斗结果的死亡情况
         if not self._game.current_engagement.is_on_going_phase:

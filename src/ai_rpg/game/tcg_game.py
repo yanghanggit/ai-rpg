@@ -8,8 +8,7 @@ from typing import Any, Dict, Final, List, Optional, Set, Tuple, final
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
-
-# from ..chat_services.manager import ChatClientManager
+from ai_rpg.models.actions import PlanAction
 from ..game.game_config import LOGS_DIR
 from ..mongodb import (
     DEFAULT_MONGODB_CONFIG,
@@ -40,7 +39,6 @@ from ..models import (
     HomeComponent,
     KickOffMessageComponent,
     MonsterComponent,
-    PlayerActiveComponent,
     PlayerComponent,
     RPGCharacterProfile,
     RPGCharacterProfileComponent,
@@ -98,9 +96,8 @@ class TCGGame(BaseGame, TCGGameContext):
     def __init__(
         self,
         name: str,
-        player: PlayerClient,
+        player_client: PlayerClient,
         world: World,
-        # chat_client_manager: ChatClientManager,
     ) -> None:
 
         # 必须按着此顺序实现父
@@ -110,31 +107,39 @@ class TCGGame(BaseGame, TCGGameContext):
         # 世界运行时
         self._world: Final[World] = world
 
-        # 处理器 与 对其控制的 状态。
+        # 常规home 的流程
         self._home_pipeline: Final[TCGGameProcessPipeline] = (
-            TCGGameProcessPipeline.create_home_state_pipline(self)
+            TCGGameProcessPipeline.create_home_state_pipline1(self)
         )
+
+        # 仅处理player的home流程
+        self._player_home_pipeline: Final[TCGGameProcessPipeline] = (
+            TCGGameProcessPipeline.create_home_state_pipline2(self)
+        )
+
+        # 地下城战斗流程
         self._dungeon_combat_pipeline: Final[TCGGameProcessPipeline] = (
             TCGGameProcessPipeline.create_dungeon_combat_state_pipeline(self)
         )
 
         self._all_pipelines: List[TCGGameProcessPipeline] = [
             self._home_pipeline,
+            self._player_home_pipeline,
             self._dungeon_combat_pipeline,
         ]
 
         # 玩家
-        self._player: PlayerClient = player
-        assert self._player.name != ""
-        assert self._player.actor != ""
-
-        # agent 系统
-        # self._chat_client_manager: Final[ChatClientManager] = chat_client_manager
+        self._player_client: Final[PlayerClient] = player_client
+        logger.debug(
+            f"TCGGame init player: {self._player_client.name}: {self._player_client.actor}"
+        )
+        assert self._player_client.name != ""
+        assert self._player_client.actor != ""
 
     ###############################################################################################################################################
     @property
-    def player(self) -> PlayerClient:
-        return self._player
+    def player_client(self) -> PlayerClient:
+        return self._player_client
 
     ###############################################################################################################################################
     @override
@@ -149,7 +154,7 @@ class TCGGame(BaseGame, TCGGameContext):
     @property
     def verbose_dir(self) -> Path:
 
-        dir = LOGS_DIR / f"{self.player.name}" / f"{self.name}"
+        dir = LOGS_DIR / f"{self.player_client.name}" / f"{self.name}"
         if not dir.exists():
             dir.mkdir(parents=True, exist_ok=True)
         assert dir.exists()
@@ -179,11 +184,6 @@ class TCGGame(BaseGame, TCGGameContext):
         return TCGGameState.NONE
 
     ###############################################################################################################################################
-    # @property
-    # def chat_client_manager(self) -> ChatClientManager:
-    #     return self._chat_client_manager
-
-    ###############################################################################################################################################
     @property
     def world(self) -> World:
         return self._world
@@ -206,6 +206,11 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     @property
+    def player_home_state_pipeline(self) -> TCGGameProcessPipeline:
+        return self._player_home_pipeline
+
+    ###############################################################################################################################################
+    @property
     def dungeon_combat_pipeline(self) -> TCGGameProcessPipeline:
         return self._dungeon_combat_pipeline
 
@@ -213,14 +218,32 @@ class TCGGame(BaseGame, TCGGameContext):
     @override
     def exit(self) -> None:
         self._shutsdown_all_pipelines()
-        logger.warning(f"{self.name}, game over!!!!!!!!!!!!!!!!!!!!")
+        logger.warning(f"{self.name}, exit!!!!!!!!!!!!!!!!!!!!")
+
+    ###############################################################################################################################################
+    @override
+    async def initialize(self) -> None:
+        # 初始化所有管道
+        await self._initialize_all_pipelines()
 
     ###############################################################################################################################################
     def _shutsdown_all_pipelines(self) -> None:
+
+        # 关闭
         for processor in self._all_pipelines:
             processor.shutdown()
+            logger.debug(f"Shutdown pipeline: {processor._name}")
+
+        # 清空
         self._all_pipelines.clear()
-        # logger.warning(f"{self.name}, game over!!!!!!!!!!!!!!!!!!!!")
+
+    ###############################################################################################################################################
+    async def _initialize_all_pipelines(self) -> None:
+        # 初始化
+        for processor in self._all_pipelines:
+            processor.activate_reactive_processors()
+            await processor.initialize()
+            logger.debug(f"Initialized pipeline: {processor._name}")
 
     ###############################################################################################################################################
     def new_game(self) -> "TCGGame":
@@ -249,7 +272,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
         player_entity = self.get_player_entity()
         assert player_entity is not None
-        assert player_entity.get(PlayerComponent).player_name == self.player.name
+        assert player_entity.get(PlayerComponent).player_name == self.player_client.name
 
         return self
 
@@ -309,7 +332,7 @@ class TCGGame(BaseGame, TCGGameContext):
     def _create_world_document(self, version: str) -> WorldDocument:
         """创建 WorldDocument 实例"""
         return WorldDocument.create_from_world(
-            username=self.player.name, world=self.world, version=version
+            username=self.player_client.name, world=self.world, version=version
         )
 
     ###############################################################################################################################################
@@ -321,7 +344,7 @@ class TCGGame(BaseGame, TCGGameContext):
         inserted_id = mongodb_upsert_one(collection_name, world_document.to_dict())
 
         if inserted_id:
-            logger.success("✅ 演示游戏世界已存储到 MongoDB!")
+            logger.debug("✅ 演示游戏世界已存储到 MongoDB!")
 
         return inserted_id
 
@@ -332,7 +355,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
         saved_world_data = mongodb_find_one(
             collection_name,
-            {"username": self.player.name, "game_name": self.world.boot.name},
+            {"username": self.player_client.name, "game_name": self.world.boot.name},
         )
 
         if not saved_world_data:
@@ -551,7 +574,7 @@ class TCGGame(BaseGame, TCGGameContext):
             if instance.character_sheet.type == StageType.DUNGEON:
                 stage_entity.add(DungeonComponent, instance.name)
             elif instance.character_sheet.type == StageType.HOME:
-                stage_entity.add(HomeComponent, instance.name, [])
+                stage_entity.add(HomeComponent, instance.name)
 
             ## 重新设置Actor和stage的关系
             for actor_instance in instance.actors:
@@ -567,7 +590,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     def get_player_entity(self) -> Optional[Entity]:
-        return self.get_entity_by_player_name(self.player.name)
+        return self.get_entity_by_player_name(self.player_client.name)
 
     ###############################################################################################################################################
     def get_agent_short_term_memory(self, entity: Entity) -> AgentShortTermMemory:
@@ -610,17 +633,19 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     def _assign_player_to_actor(self) -> bool:
-        assert self.player.name != "", "玩家名字不能为空"
-        assert self.player.actor != "", "玩家角色不能为空"
+        assert self.player_client.name != "", "玩家名字不能为空"
+        assert self.player_client.actor != "", "玩家角色不能为空"
 
-        actor_entity = self.get_actor_entity(self.player.actor)
+        actor_entity = self.get_actor_entity(self.player_client.actor)
         assert actor_entity is not None
         if actor_entity is None:
             return False
 
         assert not actor_entity.has(PlayerComponent)
-        actor_entity.replace(PlayerComponent, self.player.name)
-        logger.info(f"玩家: {self.player.name} 选择控制: {self.player.name}")
+        actor_entity.replace(PlayerComponent, self.player_client.name)
+        logger.info(
+            f"玩家: {self.player_client.name} 选择控制: {self.player_client.name}"
+        )
         return True
 
     ###############################################################################################################################################
@@ -656,9 +681,11 @@ class TCGGame(BaseGame, TCGGameContext):
             replace_message = _replace_name_with_you(agent_event.message, entity.name)
             self.append_human_message(entity, replace_message)
 
-            if entity.has(PlayerComponent):
-                # 客户端拿到这个事件，用于处理业务。
-                self.player.add_agent_event(agent_event=agent_event)
+            # if entity.has(PlayerComponent):
+            # 客户端拿到这个事件，用于处理业务。
+
+        # 最后都要发给客户端。
+        self.player_client.add_agent_event_message(agent_event=agent_event)
 
     ###############################################################################################################################################
     def _validate_stage_transition_prerequisites(
@@ -742,54 +769,6 @@ class TCGGame(BaseGame, TCGGameContext):
                     message=f"# 发生事件！{actor_entity.name} 从 场景: {current_stage.name} 离开，然后进入了 场景: {stage_destination.name}",
                 ),
             )
-
-            # 从当前场景的行动队列里移除
-            self._remove_actor_from_stage_action_queue(actor_entity, current_stage)
-
-            # 加入到目标场景的行动队列里
-            self._add_actor_to_stage_action_queue(actor_entity, stage_destination)
-
-    ###############################################################################################################################################
-    def _remove_actor_from_stage_action_queue(
-        self, actor_entity: Entity, stage_entity: Entity
-    ) -> None:
-        """
-        从场景的行动队列中移除角色
-
-        Args:
-            actor_entity: 要移除的角色
-            stage_entity: 源场景
-        """
-        if stage_entity.has(HomeComponent):
-            home_comp = stage_entity.get(HomeComponent)
-            if actor_entity.name in home_comp.action_order:
-                home_comp.action_order.remove(actor_entity.name)
-                stage_entity.replace(
-                    HomeComponent,
-                    home_comp.name,
-                    home_comp.action_order,
-                )
-
-    ###############################################################################################################################################
-    def _add_actor_to_stage_action_queue(
-        self, actor_entity: Entity, stage_entity: Entity
-    ) -> None:
-        """
-        将角色加入场景的行动队列
-
-        Args:
-            actor_entity: 要加入的角色
-            stage_entity: 目标场景
-        """
-        if stage_entity.has(HomeComponent):
-            home_comp = stage_entity.get(HomeComponent)
-            if actor_entity.name not in home_comp.action_order:
-                home_comp.action_order.append(actor_entity.name)
-                stage_entity.replace(
-                    HomeComponent,
-                    home_comp.name,
-                    home_comp.action_order,
-                )
 
     ###############################################################################################################################################
     def _handle_actors_entering_stage(
@@ -1314,7 +1293,7 @@ class TCGGame(BaseGame, TCGGameContext):
         assert player_entity is not None
         data: Dict[str, str] = {target: content}
         player_entity.replace(SpeakAction, player_entity.name, data)
-        player_entity.replace(PlayerActiveComponent, player_entity.name)  # 添加标记。
+        # player_entity.replace(PlayerActiveComponent, player_entity.name)  # 添加标记。
 
         return True
 
@@ -1364,7 +1343,7 @@ class TCGGame(BaseGame, TCGGameContext):
             round_turns=[entity.name for entity in shuffled_reactive_entities]
         )
 
-        round.environment = stage_environment_comp.narrate
+        round.environment = stage_environment_comp.description
         logger.info(f"new_round:\n{round.model_dump_json()}")
         return True
 
@@ -1397,5 +1376,28 @@ class TCGGame(BaseGame, TCGGameContext):
                 actor_dexterity_pairs, key=lambda x: x[1], reverse=True
             )
         ]
+
+    #######################################################################################################################################
+    # TODO, 临时添加行动, 逻辑。
+    def activate_plan_action(self, actors: List[str]) -> None:
+
+        for actor_name in actors:
+
+            actor_entity = self.get_actor_entity(actor_name)
+            assert actor_entity is not None
+            if actor_entity is None:
+                logger.error(f"角色: {actor_name} 不存在！")
+                continue
+
+            if not actor_entity.has(HeroComponent):
+                logger.error(f"角色: {actor_name} 不是英雄，不能有行动计划！")
+                continue
+
+            if actor_entity.has(PlayerComponent):
+                logger.error(f"角色: {actor_name} 是玩家控制的，不能有行动计划！")
+                continue
+
+            logger.debug(f"为角色: {actor_name} 激活行动计划！")
+            actor_entity.replace(PlanAction, actor_entity.name)
 
     #######################################################################################################################################

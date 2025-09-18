@@ -1,5 +1,4 @@
 from typing import final, override
-
 from ..entitas import Entity, GroupEvent, Matcher
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import AnnounceAction, AnnounceEvent, HeroComponent, HomeComponent
@@ -33,31 +32,18 @@ class AnnounceActionSystem(BaseActionReactiveSystem):
     @override
     async def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            self._prosses_announce_action(entity)
+            self._prosses_action(entity)
 
     ####################################################################################################################################
-    def _prosses_announce_action(self, entity: Entity) -> None:
+    def _prosses_action(self, entity: Entity) -> None:
 
         assert entity.has(HeroComponent)
-        if not entity.has(HeroComponent):
-            # 不是hero，不处理
-            return
-
         home_stage_entity = self._game.safe_get_stage_entity(entity)
         assert home_stage_entity is not None
-        if home_stage_entity is None:
-            return
-
         assert home_stage_entity.has(HomeComponent)
-        if not home_stage_entity.has(HomeComponent):
-            # 不是home场景，不处理
-            return
-
         announce_action = entity.get(AnnounceAction)
         assert announce_action is not None
         assert announce_action.data != ""
-        if announce_action.data == "":
-            return
 
         # 获取所有需要进行角色规划的角色
         home_stage_entities = self._game.get_group(

@@ -27,11 +27,11 @@ class PlayerClient:
         return self._actor
 
     ##########################################################################################################################################################
-    def add_agent_event(self, agent_event: AgentEvent) -> None:
+    def add_agent_event_message(self, agent_event: AgentEvent) -> None:
         assert self.actor != ""
         assert self.name != ""
-        logger.info(
-            f"[{self.name}:{self.actor}] = add_agent_event: {agent_event.model_dump_json()}"
+        logger.debug(
+            f"[{self.name}:{self.actor}] = add_agent_event_message: {agent_event.model_dump_json()}"
         )
         self._client_messages.append(
             ClientMessage(

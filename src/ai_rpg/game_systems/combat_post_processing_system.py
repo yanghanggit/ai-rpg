@@ -16,7 +16,8 @@ from langchain_core.messages import HumanMessage
 
 #######################################################################################################################################
 @final
-class CombatCompleteSystem(ExecuteProcessor):
+class CombatPostProcessingSystem(ExecuteProcessor):
+    # combat_post_processing_system
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context

@@ -96,11 +96,11 @@ async def _handle_dungeon_combat_kick_off(
         )
 
     # 推进一次游戏, 即可转换ONGOING状态。
-    web_game.player.clear_messages()
+    web_game.player_client.clear_messages()
     await web_game.dungeon_combat_pipeline.process()
     # 返回！
     return DungeonGamePlayResponse(
-        client_messages=web_game.player.client_messages,
+        client_messages=web_game.player_client.client_messages,
     )
 
 
@@ -118,12 +118,12 @@ async def _handle_draw_cards(web_game: WebTCGGame) -> DungeonGamePlayResponse:
 
     # 推进一次游戏, 即可抽牌。
     web_game.activate_draw_cards_action()
-    web_game.player.clear_messages()
+    web_game.player_client.clear_messages()
     await web_game.dungeon_combat_pipeline.process()
 
     # 返回！
     return DungeonGamePlayResponse(
-        client_messages=web_game.player.client_messages,
+        client_messages=web_game.player_client.client_messages,
     )
 
 
@@ -145,12 +145,12 @@ async def _handle_play_cards(
     if web_game.activate_play_cards_action():
         # 执行一次！！！！！
         # await _execute_web_game(web_game)
-        web_game.player.clear_messages()
+        web_game.player_client.clear_messages()
         await web_game.dungeon_combat_pipeline.process()
 
     # 返回！
     return DungeonGamePlayResponse(
-        client_messages=web_game.player.client_messages,
+        client_messages=web_game.player_client.client_messages,
     )
 
 
@@ -189,7 +189,7 @@ async def _handle_x_card(
         )
 
         return DungeonGamePlayResponse(
-            client_messages=web_game.player.client_messages,
+            client_messages=web_game.player_client.client_messages,
         )
     else:
         raise HTTPException(

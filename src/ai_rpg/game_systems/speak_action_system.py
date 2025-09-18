@@ -1,5 +1,4 @@
 from typing import final, override
-
 from ..entitas import Entity, GroupEvent, Matcher
 from ..game.tcg_game import ConversationError
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
@@ -8,13 +7,19 @@ from ..models import AgentEvent, SpeakAction, SpeakEvent
 
 ####################################################################################################################################
 def _generate_prompt(speaker_name: str, target_name: str, content: str) -> str:
-    return f"# 发生事件: {speaker_name} 对 {target_name} 说: {content}"
+    return f"""# 发生对话事件
+
+## 事件内容
+
+{speaker_name} 对 {target_name} 说: {content}"""
 
 
 ####################################################################################################################################
 def _generate_invalid_prompt(speaker_name: str, target_name: str) -> str:
     return f"""# 提示: {speaker_name} 试图和一个不存在的目标 {target_name} 进行对话。
+
 ## 原因分析与建议
+
 - 请检查目标的全名: {target_name}。
 - 请检查目标是否存在于当前场景中。"""
 
@@ -44,11 +49,9 @@ class SpeakActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     def _prosses_action(self, entity: Entity) -> None:
         stage_entity = self._game.safe_get_stage_entity(entity)
-        if stage_entity is None:
-            return
+        assert stage_entity is not None
 
         speak_action = entity.get(SpeakAction)
-
         for target_name, speak_content in speak_action.data.items():
 
             error = self._game.validate_conversation(entity, target_name)

@@ -11,6 +11,8 @@ from ..models import (
     SpeakAction,
     WhisperAction,
     PlanAction,
+    TransStageAction,
+    HomeComponent,
 )
 from ..utils import json_format
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
@@ -23,6 +25,7 @@ class ActorResponse(BaseModel):
     whisper_actions: Dict[str, str] = {}
     announce_actions: str = ""
     mind_voice_actions: str = ""
+    trans_stage_name: str = ""
 
 
 #######################################################################################################################################
@@ -30,6 +33,7 @@ def _generate_prompt(
     current_stage: str,
     current_stage_narration: str,
     actors_appearance_mapping: Dict[str, str],
+    available_home_stages: List[str],
 ) -> str:
 
     actors_appearances_info = []
@@ -39,7 +43,7 @@ def _generate_prompt(
         actors_appearances_info.append("无")
 
     # 格式示例
-    response_example = ActorResponse(
+    response_sample = ActorResponse(
         speak_actions={
             "场景内角色全名": "你要说的内容（场景内其他角色会听见）",
         },
@@ -48,6 +52,7 @@ def _generate_prompt(
         },
         announce_actions="你要说的内容（所有的角色都能听见）",
         mind_voice_actions="你要说的内容（内心独白，只有你自己能听见）",
+        trans_stage_name="你希望离开当前场景并去往的 目标场景名称 的全名，如没有则为空字符串",
     )
 
     return f"""# 请制定你的行动计划！决定你将要做什么，并以 JSON 格式输出。
@@ -60,6 +65,10 @@ def _generate_prompt(
 
 {"\n".join(actors_appearances_info)}
 
+## 由当前场景可去往的场景
+
+{"\n- ".join(available_home_stages) if len(available_home_stages) > 0 else "无场景可去往"}
+
 ## 输出内容
 
 - 请根据当前场景，角色信息与你的历史，制定你的行动计划。
@@ -70,7 +79,7 @@ def _generate_prompt(
 
 ### 标准示例
 
-{response_example.model_dump_json()}
+{response_sample.model_dump_json()}
 
 ### 注意事项
 
@@ -125,7 +134,7 @@ class HomeActorSystem(BaseActionReactiveSystem):
 
         try:
 
-            format_response = ActorResponse.model_validate_json(
+            response = ActorResponse.model_validate_json(
                 json_format.strip_json_code_block(request_handler.response_content)
             )
 
@@ -135,27 +144,27 @@ class HomeActorSystem(BaseActionReactiveSystem):
             self._game.append_ai_message(entity2, request_handler.response_ai_messages)
 
             # 添加说话动作
-            if len(format_response.speak_actions) > 0:
-                entity2.replace(
-                    SpeakAction, entity2.name, format_response.speak_actions
-                )
+            if len(response.speak_actions) > 0:
+                entity2.replace(SpeakAction, entity2.name, response.speak_actions)
 
             # 添加耳语动作
-            if len(format_response.whisper_actions) > 0:
-                entity2.replace(
-                    WhisperAction, entity2.name, format_response.whisper_actions
-                )
+            if len(response.whisper_actions) > 0:
+                entity2.replace(WhisperAction, entity2.name, response.whisper_actions)
 
             # 添加宣布动作
-            if format_response.announce_actions != "":
-                entity2.replace(
-                    AnnounceAction, entity2.name, format_response.announce_actions
-                )
+            if response.announce_actions != "":
+                entity2.replace(AnnounceAction, entity2.name, response.announce_actions)
 
             # 添加内心独白
-            if format_response.mind_voice_actions != "":
+            if response.mind_voice_actions != "":
                 entity2.replace(
-                    MindVoiceAction, entity2.name, format_response.mind_voice_actions
+                    MindVoiceAction, entity2.name, response.mind_voice_actions
+                )
+
+            # 最后：如果需要可以添加传送场景。
+            if response.trans_stage_name != "":
+                entity2.replace(
+                    TransStageAction, entity2.name, response.trans_stage_name
                 )
 
         except Exception as e:
@@ -166,6 +175,12 @@ class HomeActorSystem(BaseActionReactiveSystem):
         self, actor_entities: List[Entity]
     ) -> List[ChatClient]:
 
+        all_home_entities = self._game.get_group(
+            Matcher(
+                all_of=[HomeComponent],
+            )
+        ).entities.copy()
+
         request_handlers: List[ChatClient] = []
 
         for entity in actor_entities:
@@ -173,17 +188,25 @@ class HomeActorSystem(BaseActionReactiveSystem):
             current_stage = self._game.safe_get_stage_entity(entity)
             assert current_stage is not None
 
-            # 找到当前场景内所有角色
+            # 找到当前场景内所有角色 & 他们的外观描述
             actors_apperances_mapping = self._game.get_stage_actor_appearances(
                 current_stage
             )
+            # 移除自己
             actors_apperances_mapping.pop(entity.name, None)
+
+            # 找到当前场景可去往的家园场景
+            available_home_stages = all_home_entities.copy()  # 注意这里必须 copy
+            available_home_stages.discard(current_stage)
 
             # 生成消息
             message = _generate_prompt(
-                current_stage.name,
-                current_stage.get(EnvironmentComponent).description,
-                actors_apperances_mapping,
+                current_stage=current_stage.name,
+                current_stage_narration=current_stage.get(
+                    EnvironmentComponent
+                ).description,
+                actors_appearance_mapping=actors_apperances_mapping,
+                available_home_stages=[e.name for e in available_home_stages],
             )
 
             # 生成请求处理器

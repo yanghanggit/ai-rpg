@@ -52,6 +52,13 @@ class HeroPlanCommand(TypedDict):
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
+class HomeTransStageCommand(TypedDict):
+    stage_name: str  # 目标场景名称
+
+
+############################################################################################################
+############################################################################################################
+############################################################################################################
 def _parse_user_action_input(usr_input: str, keys: Set[str]) -> Dict[str, str]:
 
     ret: Dict[str, str] = {}
@@ -256,6 +263,65 @@ def _parse_hero_plan_command_input(usr_input: str) -> HeroPlanCommand:
 
             except Exception as e:
                 logger.error(f"解析英雄命令参数时发生错误: {usr_input}, 错误: {e}")
+
+    return ret
+
+
+###############################################################################################################################################
+# sample: /trans_home --params=场景.营地
+def _parse_home_trans_stage_command_input(usr_input: str) -> HomeTransStageCommand:
+    """
+    解析用户输入的家园传送命令，提取目标场景名称。
+
+    该函数专门处理游戏中的家园场景传送命令，支持两种命令格式：
+    - /trans_home：完整的家园传送命令
+    - /th：家园传送命令的简写形式
+
+    Args:
+        usr_input (str): 用户输入的原始字符串，应包含家园传送命令及其参数
+
+    Returns:
+        HomeTransStageCommand: 包含以下字段的类型化字典：
+            - stage_name (str): 目标场景名称，如果未找到有效参数则为空字符串
+
+    Command Format:
+        /trans_home --params=<目标场景名称>
+
+    参数格式说明：
+        - 场景名称格式：如"场景.营地"、"场景.训练场"等
+        - 支持完整的场景路径格式
+
+    Examples:
+        >>> _parse_home_trans_stage_command_input("/trans_home --params=场景.营地")
+        {'stage_name': '场景.营地'}
+
+        >>> _parse_home_trans_stage_command_input("/th --params=场景.训练场")
+        {'stage_name': '场景.训练场'}
+
+        >>> _parse_home_trans_stage_command_input("/speak --target=玩家 --content=你好")  # 非传送命令
+        {'stage_name': ''}
+
+    Note:
+        - 如果输入不包含 /trans_home 或 /th 命令，函数将返回空的 HomeTransStageCommand
+        - 参数解析失败时，stage_name 字段将保持为空字符串
+        - 依赖于 _parse_user_action_input 函数进行基础参数解析
+        - 对 params 参数进行场景名称解析处理
+    """
+    ret: HomeTransStageCommand = {"stage_name": ""}
+
+    if "/trans_home" in usr_input or "/th" in usr_input:
+        # 使用基础解析函数获取 params 字符串
+        parsed_args = _parse_user_action_input(usr_input, {"params"})
+
+        if "params" in parsed_args and parsed_args["params"]:
+            try:
+                # 解析 params 字符串：场景.营地
+                stage_name = parsed_args["params"].strip()
+                if stage_name:
+                    ret["stage_name"] = stage_name
+
+            except Exception as e:
+                logger.error(f"解析家园传送命令参数时发生错误: {usr_input}, 错误: {e}")
 
     return ret
 
@@ -471,6 +537,16 @@ async def _process_home_state_input(
             # 其他人执行一次。对应的NPC进行推理。
             # await terminal_game.home_state_pipeline.process()
 
+    elif "/trans_home" in usr_input or "/th" in usr_input:
+        # 分析输入
+        home_trans_stage_command = _parse_home_trans_stage_command_input(usr_input)
+        logger.info(f"解析到的家园传送命令: {home_trans_stage_command}")
+        if terminal_game.activate_home_trans_stage_action(
+            home_trans_stage_command["stage_name"]
+        ):
+            # player 执行一次, 这次基本是忽略推理标记的，所有NPC不推理。
+            await terminal_game.player_home_state_pipeline.process()
+
     else:
         logger.error(
             f"玩家输入 = {usr_input}, 目前不做任何处理，不在处理范围内！！！！！"
@@ -532,6 +608,8 @@ if __name__ == "__main__":
     #     "/hero --params=角色.法师.奥露娜;角色.战士.卡恩"
     # )
     # logger.info(f"解析到的英雄命令: {hero_command}")
+    # home_trans_stage_command = _parse_home_trans_stage_command_input("/trans_home --params=场景.营地")
+    # logger.info(f"解析到的家园传送命令: {home_trans_stage_command}")
 
     # 初始化日志
     setup_logger()

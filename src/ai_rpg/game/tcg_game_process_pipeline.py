@@ -28,6 +28,9 @@ class TCGGameProcessPipeline(Processors):
         from ..game_systems.speak_action_system import SpeakActionSystem
         from ..game_systems.whisper_action_system import WhisperActionSystem
         from ..game_systems.home_auto_plan_system import HomeAutoPlanSystem
+        from ..game_systems.trans_stage_action_system import (
+            TransStageActionSystem,
+        )
 
         ##
         tcg_game = cast(TCGGame, game)
@@ -49,6 +52,7 @@ class TCGGameProcessPipeline(Processors):
         processors.add(SpeakActionSystem(tcg_game))
         processors.add(WhisperActionSystem(tcg_game))
         processors.add(AnnounceActionSystem(tcg_game))
+        processors.add(TransStageActionSystem(tcg_game))
         processors.add(ActionCleanupSystem(tcg_game))
         ####################################################################################
         ####################################################################################
@@ -77,6 +81,9 @@ class TCGGameProcessPipeline(Processors):
         from ..game_systems.save_system import SaveSystem
         from ..game_systems.speak_action_system import SpeakActionSystem
         from ..game_systems.whisper_action_system import WhisperActionSystem
+        from ..game_systems.trans_stage_action_system import (
+            TransStageActionSystem,
+        )
 
         ##
         tcg_game = cast(TCGGame, game)
@@ -91,6 +98,7 @@ class TCGGameProcessPipeline(Processors):
         processors.add(SpeakActionSystem(tcg_game))
         processors.add(WhisperActionSystem(tcg_game))
         processors.add(AnnounceActionSystem(tcg_game))
+        processors.add(TransStageActionSystem(tcg_game))
         processors.add(ActionCleanupSystem(tcg_game))
         ####################################################################################
         ####################################################################################

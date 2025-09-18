@@ -106,7 +106,7 @@ def setup_web_game_session(
     assert world_exists is not None, "World data must exist to create a game"
     web_game = WebTCGGame(
         name=web_game_user_options.game,
-        player=PlayerClient(
+        player_client=PlayerClient(
             name=web_game_user_options.user, actor=web_game_user_options.actor
         ),
         world=world_exists,

@@ -95,7 +95,7 @@ class TCGGame(BaseGame, TCGGameContext):
     def __init__(
         self,
         name: str,
-        player: PlayerClient,
+        player_client: PlayerClient,
         world: World,
     ) -> None:
 
@@ -128,15 +128,17 @@ class TCGGame(BaseGame, TCGGameContext):
         ]
 
         # 玩家
-        self._player: Final[PlayerClient] = player
-        logger.debug(f"TCGGame init player: {self._player.name}: {self._player.actor}")
-        assert self._player.name != ""
-        assert self._player.actor != ""
+        self._player_client: Final[PlayerClient] = player_client
+        logger.debug(
+            f"TCGGame init player: {self._player_client.name}: {self._player_client.actor}"
+        )
+        assert self._player_client.name != ""
+        assert self._player_client.actor != ""
 
     ###############################################################################################################################################
     @property
-    def player(self) -> PlayerClient:
-        return self._player
+    def player_client(self) -> PlayerClient:
+        return self._player_client
 
     ###############################################################################################################################################
     @override
@@ -151,7 +153,7 @@ class TCGGame(BaseGame, TCGGameContext):
     @property
     def verbose_dir(self) -> Path:
 
-        dir = LOGS_DIR / f"{self.player.name}" / f"{self.name}"
+        dir = LOGS_DIR / f"{self.player_client.name}" / f"{self.name}"
         if not dir.exists():
             dir.mkdir(parents=True, exist_ok=True)
         assert dir.exists()
@@ -269,7 +271,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
         player_entity = self.get_player_entity()
         assert player_entity is not None
-        assert player_entity.get(PlayerComponent).player_name == self.player.name
+        assert player_entity.get(PlayerComponent).player_name == self.player_client.name
 
         return self
 
@@ -329,7 +331,7 @@ class TCGGame(BaseGame, TCGGameContext):
     def _create_world_document(self, version: str) -> WorldDocument:
         """创建 WorldDocument 实例"""
         return WorldDocument.create_from_world(
-            username=self.player.name, world=self.world, version=version
+            username=self.player_client.name, world=self.world, version=version
         )
 
     ###############################################################################################################################################
@@ -352,7 +354,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
         saved_world_data = mongodb_find_one(
             collection_name,
-            {"username": self.player.name, "game_name": self.world.boot.name},
+            {"username": self.player_client.name, "game_name": self.world.boot.name},
         )
 
         if not saved_world_data:
@@ -587,7 +589,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     def get_player_entity(self) -> Optional[Entity]:
-        return self.get_entity_by_player_name(self.player.name)
+        return self.get_entity_by_player_name(self.player_client.name)
 
     ###############################################################################################################################################
     def get_agent_short_term_memory(self, entity: Entity) -> AgentShortTermMemory:
@@ -630,17 +632,19 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     def _assign_player_to_actor(self) -> bool:
-        assert self.player.name != "", "玩家名字不能为空"
-        assert self.player.actor != "", "玩家角色不能为空"
+        assert self.player_client.name != "", "玩家名字不能为空"
+        assert self.player_client.actor != "", "玩家角色不能为空"
 
-        actor_entity = self.get_actor_entity(self.player.actor)
+        actor_entity = self.get_actor_entity(self.player_client.actor)
         assert actor_entity is not None
         if actor_entity is None:
             return False
 
         assert not actor_entity.has(PlayerComponent)
-        actor_entity.replace(PlayerComponent, self.player.name)
-        logger.info(f"玩家: {self.player.name} 选择控制: {self.player.name}")
+        actor_entity.replace(PlayerComponent, self.player_client.name)
+        logger.info(
+            f"玩家: {self.player_client.name} 选择控制: {self.player_client.name}"
+        )
         return True
 
     ###############################################################################################################################################
@@ -676,9 +680,11 @@ class TCGGame(BaseGame, TCGGameContext):
             replace_message = _replace_name_with_you(agent_event.message, entity.name)
             self.append_human_message(entity, replace_message)
 
-            if entity.has(PlayerComponent):
-                # 客户端拿到这个事件，用于处理业务。
-                self.player.add_agent_event(agent_event=agent_event)
+            # if entity.has(PlayerComponent):
+            # 客户端拿到这个事件，用于处理业务。
+
+        # 最后都要发给客户端。
+        self.player_client.add_agent_event_message(agent_event=agent_event)
 
     ###############################################################################################################################################
     def _validate_stage_transition_prerequisites(

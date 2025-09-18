@@ -27,7 +27,7 @@ class PlayerClient:
         return self._actor
 
     ##########################################################################################################################################################
-    def add_agent_event(self, agent_event: AgentEvent) -> None:
+    def add_agent_event_message(self, agent_event: AgentEvent) -> None:
         assert self.actor != ""
         assert self.name != ""
         logger.info(

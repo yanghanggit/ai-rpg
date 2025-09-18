@@ -7,12 +7,14 @@ from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
     ActorComponent,
+    HeroComponent,
     AnnounceAction,
     PlayerComponent,
     EnvironmentComponent,
     MindVoiceAction,
     SpeakAction,
     WhisperAction,
+    HomeComponent,
 )
 from ..utils import json_format
 
@@ -99,10 +101,13 @@ class HomeActorSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
 
+        # 测试：所有的hero的场景都必须是home！！！
+        self._assert_hero_stage_is_home()
+
         # 获取所有需要进行角色规划的角色
         actor_entities = self._game.get_group(
             Matcher(
-                all_of=[ActorComponent],
+                all_of=[ActorComponent, HeroComponent],
                 none_of=[PlayerComponent],
             )
         ).entities.copy()
@@ -203,5 +208,21 @@ class HomeActorSystem(ExecuteProcessor):
             )
 
         return request_handlers
+
+    #######################################################################################################################################
+    def _assert_hero_stage_is_home(self) -> None:
+        actor_entities = self._game.get_group(
+            Matcher(
+                all_of=[ActorComponent, HeroComponent],
+            )
+        ).entities.copy()
+        for actor_entity in actor_entities:
+
+            # 测试：运行到此处，所有的hero的场景都必须是home！！！
+            current_stage_entity = self._game.safe_get_stage_entity(actor_entity)
+            assert current_stage_entity is not None
+            assert current_stage_entity.has(
+                HomeComponent
+            ), f"{actor_entity.name} 的场景不是 Home！"
 
     #######################################################################################################################################

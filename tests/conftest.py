@@ -51,7 +51,7 @@ def sample_game() -> Any:
     # )
     return _TCGGame(
         name="test_game",
-        player=player,
+        player_client=player,
         world=world,
         # chat_client_manager=chat_system,
     )

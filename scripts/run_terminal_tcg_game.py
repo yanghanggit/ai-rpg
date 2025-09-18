@@ -231,7 +231,7 @@ async def _run_game(
     assert world_exists is not None, "World data must exist to create a game"
     terminal_game = TerminalTCGGame(
         name=terminal_game_user_options.game,
-        player=PlayerClient(
+        player_client=PlayerClient(
             name=terminal_game_user_options.user,
             actor=terminal_game_user_options.actor,
         ),
@@ -429,7 +429,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
 
     # 其他状态下的玩家输入！！！！！！
     usr_input = input(
-        f"[{terminal_game.player.name}/{player_stage_entity.name}/{player_actor_entity.name}]:"
+        f"[{terminal_game.player_client.name}/{player_stage_entity.name}/{player_actor_entity.name}]:"
     )
     usr_input = usr_input.strip().lower()
 
@@ -437,7 +437,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
     if usr_input == "/q" or usr_input == "/quit":
         # 退出游戏
         logger.debug(
-            f"玩家 主动 退出游戏 = {terminal_game.player.name}, {player_stage_entity.name}"
+            f"玩家 主动 退出游戏 = {terminal_game.player_client.name}, {player_stage_entity.name}"
         )
         terminal_game.will_exit = True
         return

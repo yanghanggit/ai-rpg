@@ -10,6 +10,7 @@ def _generate_prompt(speaker_name: str, target_name: str, content: str) -> str:
     return f"""# 发生对话事件
 
 ## 事件内容
+
 {speaker_name} 对 {target_name} 说: {content}"""
 
 

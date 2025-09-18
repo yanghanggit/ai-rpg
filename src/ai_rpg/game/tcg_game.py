@@ -8,6 +8,7 @@ from typing import Any, Dict, Final, List, Optional, Set, Tuple, final
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
+from ai_rpg.models.actions import PlanAction
 from ..game.game_config import LOGS_DIR
 from ..mongodb import (
     DEFAULT_MONGODB_CONFIG,
@@ -1375,5 +1376,28 @@ class TCGGame(BaseGame, TCGGameContext):
                 actor_dexterity_pairs, key=lambda x: x[1], reverse=True
             )
         ]
+
+    #######################################################################################################################################
+    # TODO, 临时添加行动, 逻辑。
+    def activate_plan_action(self, actors: List[str]) -> None:
+
+        for actor_name in actors:
+
+            actor_entity = self.get_actor_entity(actor_name)
+            assert actor_entity is not None
+            if actor_entity is None:
+                logger.error(f"角色: {actor_name} 不存在！")
+                continue
+
+            if not actor_entity.has(HeroComponent):
+                logger.error(f"角色: {actor_name} 不是英雄，不能有行动计划！")
+                continue
+
+            if actor_entity.has(PlayerComponent):
+                logger.error(f"角色: {actor_name} 是玩家控制的，不能有行动计划！")
+                continue
+
+            logger.debug(f"为角色: {actor_name} 激活行动计划！")
+            actor_entity.replace(PlanAction, actor_entity.name)
 
     #######################################################################################################################################

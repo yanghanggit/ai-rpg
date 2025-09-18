@@ -7,13 +7,8 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
 
-from typing import Dict, Set, TypedDict, cast
+from typing import Dict, List, Set, TypedDict, cast
 from loguru import logger
-
-# from ai_rpg.chat_services.manager import (
-#     ChatClientManager,
-#     ChatApiEndpointOptions,
-# )
 from ai_rpg.chat_services.client import ChatClient
 from ai_rpg.settings import (
     initialize_server_settings_instance,
@@ -30,6 +25,28 @@ from ai_rpg.game.terminal_tcg_game import (
     TerminalGameUserOptions,
 )
 from ai_rpg.models import CombatResult, World
+
+
+############################################################################################################
+############################################################################################################
+############################################################################################################
+class SpeakCommand(TypedDict):
+    target: str
+    content: str
+
+
+############################################################################################################
+############################################################################################################
+############################################################################################################
+class PlayCardsCommand(TypedDict):
+    params: Dict[str, str]  # 卡牌名称 -> 目标名称
+
+
+############################################################################################################
+############################################################################################################
+############################################################################################################
+class HeroPlanCommand(TypedDict):
+    heroes: List[str]  # 英雄列表
 
 
 ############################################################################################################
@@ -58,21 +75,6 @@ def _parse_user_action_input(usr_input: str, keys: Set[str]) -> Dict[str, str]:
         logger.error(f" {usr_input}, 解析输入时发生错误: {e}")
 
     return ret
-
-
-############################################################################################################
-############################################################################################################
-############################################################################################################
-class SpeakCommand(TypedDict):
-    target: str
-    content: str
-
-
-############################################################################################################
-############################################################################################################
-############################################################################################################
-class PlayCardsCommand(TypedDict):
-    params: Dict[str, str]  # 卡牌名称 -> 目标名称
 
 
 ############################################################################################################
@@ -195,6 +197,70 @@ def _parse_play_cards_command_input(usr_input: str) -> PlayCardsCommand:
 
 
 ###############################################################################################################################################
+# sample: /hero --params=角色.法师.奥露娜;角色.战士.卡恩
+def _parse_hero_plan_command_input(usr_input: str) -> HeroPlanCommand:
+    """
+    解析用户输入的英雄命令，提取英雄列表参数。
+
+    该函数专门处理游戏中的英雄选择命令，支持两种命令格式：
+    - /hero：完整的英雄命令
+    - /h：英雄命令的简写形式
+
+    Args:
+        usr_input (str): 用户输入的原始字符串，应包含英雄命令及其参数
+
+    Returns:
+        HeroCommand: 包含以下字段的类型化字典：
+            - heroes (list[str]): 英雄名称列表，如果未找到有效参数则为空列表
+
+    Command Format:
+        /hero --params=<英雄1>;<英雄2>;<英雄3>;...
+
+    参数格式说明：
+        - 使用分号(;)分隔多个英雄名称
+        - 英雄名称格式：如"角色.法师.奥露娜"、"角色.战士.卡恩"等
+        - 支持完整的角色路径格式
+
+    Examples:
+        >>> _parse_hero_command_input("/hero --params=角色.法师.奥露娜;角色.战士.卡恩")
+        {'heroes': ['角色.法师.奥露娜', '角色.战士.卡恩']}
+
+        >>> _parse_hero_command_input("/h --params=角色.盗贼.艾琳")
+        {'heroes': ['角色.盗贼.艾琳']}
+
+        >>> _parse_hero_command_input("/speak --target=玩家 --content=你好")  # 非英雄命令
+        {'heroes': []}
+
+    Note:
+        - 如果输入不包含 /hero 或 /h 命令，函数将返回空的 HeroCommand
+        - 参数解析失败时，heroes 字段将保持为空列表
+        - 依赖于 _parse_user_action_input 函数进行基础参数解析
+        - 对 params 参数进行特殊的英雄列表解析处理
+        - 会自动过滤掉空的英雄名称
+    """
+    ret: HeroPlanCommand = {"heroes": []}
+
+    if "/hero" in usr_input or "/ho" in usr_input:
+        # 使用基础解析函数获取 params 字符串
+        parsed_args = _parse_user_action_input(usr_input, {"params"})
+
+        if "params" in parsed_args and parsed_args["params"]:
+            try:
+                # 解析 params 字符串：角色.法师.奥露娜;角色.战士.卡恩
+                params_str = parsed_args["params"]
+                hero_names = params_str.split(";")
+
+                # 过滤空字符串并去除首尾空格
+                heroes_list = [hero.strip() for hero in hero_names if hero.strip()]
+                ret["heroes"] = heroes_list
+
+            except Exception as e:
+                logger.error(f"解析英雄命令参数时发生错误: {usr_input}, 错误: {e}")
+
+    return ret
+
+
+###############################################################################################################################################
 async def _run_game(
     terminal_game_user_options: TerminalGameUserOptions,
 ) -> None:
@@ -236,15 +302,6 @@ async def _run_game(
             actor=terminal_game_user_options.actor,
         ),
         world=world_exists,
-        # chat_client_manager=ChatClientManager(
-        #     azure_openai_base_localhost_urls=server_settings.azure_openai_base_localhost_urls,
-        #     azure_openai_chat_localhost_urls=server_settings.azure_openai_chat_localhost_urls,
-        #     deepseek_base_localhost_urls=server_settings.deepseek_base_localhost_urls,
-        #     deepseek_chat_localhost_urls=server_settings.deepseek_chat_localhost_urls,
-        #     deepseek_rag_chat_localhost_urls=server_settings.deepseek_rag_chat_localhost_urls,
-        #     deepseek_undefined_chat_localhost_urls=server_settings.deepseek_undefined_chat_localhost_urls,
-        #     deepseek_mcp_chat_localhost_urls=server_settings.deepseek_mcp_chat_localhost_urls,
-        # ),
     )
 
     ChatClient.initialize_url_config(server_settings)
@@ -388,12 +445,14 @@ async def _process_home_state_input(
             logger.error(f"{usr_input} 没有战斗可以进行！！！！")
             return
 
-        # if not terminal_game.current_engagement.combat_phase:
-        #     logger.error(f"{usr_input} 错误，未进入战斗！！！")
-        #     return
-
-        # await _execute_terminal_game(terminal_game)
         await terminal_game.dungeon_combat_pipeline.process()
+
+    elif "/hero" in usr_input or "/ho" in usr_input:
+        # "/hero --params=角色.法师.奥露娜;角色.战士.卡恩"
+        hero_command = _parse_hero_plan_command_input(usr_input)
+        logger.debug(f"解析到的英雄命令: {hero_command}")
+        terminal_game.activate_plan_action(actors=hero_command["heroes"])
+        await terminal_game.home_state_pipeline.process()
 
     elif "/speak" in usr_input or "/ss" in usr_input:
 
@@ -454,13 +513,6 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         await ChatClient.health_check()
         return
 
-    # 公用：检查内网的llm服务的健康状态
-    # if usr_input == "/azure_openai":
-    #     await terminal_game.chat_client_manager.health_check(
-    #         ChatApiEndpointOptions.AZURE_OPENAI_BASE
-    #     )
-    #     return
-
     # 根据游戏状态分发处理逻辑
     if terminal_game.current_game_state == TCGGameState.DUNGEON:
         await _process_dungeon_state_input(terminal_game, usr_input)
@@ -476,6 +528,10 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
 if __name__ == "__main__":
 
     # player_cards_command = _parse_play_cards_command_input("/play-cards --params=火球术=敌人.哥布林;治疗术=自己")
+    # hero_command = _parse_hero_command_input(
+    #     "/hero --params=角色.法师.奥露娜;角色.战士.卡恩"
+    # )
+    # logger.info(f"解析到的英雄命令: {hero_command}")
 
     # 初始化日志
     setup_logger()

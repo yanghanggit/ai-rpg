@@ -33,7 +33,7 @@ class DrawCardsResponse(BaseModel):
     skills: List[Skill] = Field(..., description="生成的战斗技能列表")
     status_effects: List[StatusEffect] = Field(
         ...,
-        description="你自身的状态效果列表，注意！场景，角色，设定和已发生事件均可能对你产生影响并生成状态效果！",
+        description="你自身的状态效果列表，注意！场景，角色，设定，kick_off_message，和已发生事件都会对你产生影响并生成状态效果！",
     )
 
 
@@ -88,7 +88,7 @@ def _generate_prompt1(
 - 涉及数值变化时必须明确具体数值(生命/物理攻击/物理防御/魔法攻击/魔法防御)
 - 技能效果格式：主要效果 + 可选状态效果 + 自身限制状态
 - 技能的description里禁止包含角色名称
-- 第一局一定会有新增的status_effects，根据角色进入战斗时的设定，环境，内心活动，和其他角色的情况生成，而不是技能里提到的状态
+- 第一局一定会有新增的status_effects，根据角色进入战斗时的设定，kick_off_message，环境，内心活动，和其他角色的情况生成，而不是技能里提到的状态
 - 同一时间可以出现多个status_effects
 - 如果角色的设定里有提到‘无限生命’，‘无限血量’之类的描述，在更新生命值时，应当更新为Max_HP
 - 使用有趣、意想不到的风格描述效果产生的原因

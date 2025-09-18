@@ -52,6 +52,7 @@ from ..models import (
     World,
     WorldSystem,
     WorldSystemComponent,
+    TransStageAction,
 )
 from ..models.components import XCardPlayerComponent
 from .player_client import PlayerClient
@@ -1399,5 +1400,22 @@ class TCGGame(BaseGame, TCGGameContext):
 
             logger.debug(f"为角色: {actor_name} 激活行动计划！")
             actor_entity.replace(PlanAction, actor_entity.name)
+
+    #######################################################################################################################################
+    # TODO, 临时添加行动, 逻辑。
+    def activate_home_trans_stage_action(self, stage_name: str) -> bool:
+        target_stage_entity = self.get_stage_entity(stage_name)
+        assert target_stage_entity is not None, f"目标场景: {stage_name} 不存在！"
+        if target_stage_entity is None:
+            logger.error(f"目标场景: {stage_name} 不存在！")
+            return
+
+        assert target_stage_entity.has(
+            HomeComponent
+        ), f"目标场景: {stage_name} 不是家园！"
+        player_entity = self.get_player_entity()
+        assert player_entity is not None, "玩家实体不存在！"
+        player_entity.replace(TransStageAction, player_entity.name, stage_name)
+        return True
 
     #######################################################################################################################################

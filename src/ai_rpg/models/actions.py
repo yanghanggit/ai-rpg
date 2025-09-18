@@ -52,6 +52,15 @@ class MindVoiceAction(Component):
 @final
 @register_component_class
 @register_action_class
+class TransStageAction(Component):
+    name: str
+    data: str
+
+
+############################################################################################################
+@final
+@register_component_class
+@register_action_class
 class DrawCardsAction(Component):
     name: str
 

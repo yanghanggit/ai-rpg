@@ -11,8 +11,9 @@ class AgentEventHead(IntEnum):
     WHISPER_EVENT = 2
     ANNOUNCE_EVENT = 3
     MIND_VOICE_EVENT = 4
-    COMBAT_KICK_OFF_EVENT = 5
-    COMBAT_COMPLETE_EVENT = 6
+    TRANS_STAGE_EVENT = 5
+    COMBAT_KICK_OFF_EVENT = 6
+    COMBAT_COMPLETE_EVENT = 7
 
 
 class AgentEvent(BaseModel):
@@ -57,6 +58,15 @@ class MindVoiceEvent(AgentEvent):
     head: int = AgentEventHead.MIND_VOICE_EVENT
     speaker: str
     dialogue: str
+
+
+####################################################################################################################################
+@final
+class TransStageEvent(AgentEvent):
+    head: int = AgentEventHead.TRANS_STAGE_EVENT
+    actor: str
+    from_stage: str
+    to_stage: str
 
 
 ####################################################################################################################################

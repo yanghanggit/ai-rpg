@@ -9,7 +9,6 @@ from ..models import (
     PlayerComponent,
     PlanAction,
     HomeComponent,
-    MindVoiceAction,
 )
 
 
@@ -70,6 +69,6 @@ class HomeAutoPlanSystem(ExecuteProcessor):
             ), f"{actor_entity.name} 的场景不是 Home！"
 
             # 测试：如果角色在家里，且没有心灵语音，则添加一个心灵语音，表示安心修养
-            actor_entity.replace(MindVoiceAction, actor_entity.name, "艾尔法尼亚?")
+            #actor_entity.replace(MindVoiceAction, actor_entity.name, "艾尔法尼亚?")
 
     ###############################################################################################################################################

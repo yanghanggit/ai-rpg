@@ -6,7 +6,6 @@ from ..models import (
     MindVoiceAction,
     MindVoiceEvent,
 )
-
 from ..rag.routing import (
     KeywordRouteStrategy,
     SemanticRouteStrategy,
@@ -38,7 +37,7 @@ class MindVoiceActionSystem(BaseActionReactiveSystem, InitializeProcessor):
         """初始化处理器"""
         if self._route_manager is None:
             self._initialize_route_system()
-        logger.info("🚀 MindVoiceActionSystem 初始化完成")
+        logger.debug("🚀 MindVoiceActionSystem 初始化完成")
 
     ####################################################################################################################################
     def _initialize_route_system(self) -> None:
@@ -47,14 +46,14 @@ class MindVoiceActionSystem(BaseActionReactiveSystem, InitializeProcessor):
             # 创建关键词策略
             keyword_config = {
                 "keywords": FANTASY_WORLD_RPG_TEST_ROUTE_KEYWORDS,
-                "threshold": 0.1,
+                "threshold": 0.05,  # 降低阈值：只要匹配到关键词就触发RAG
                 "case_sensitive": False,
             }
             keyword_strategy = KeywordRouteStrategy(keyword_config)
 
             # 创建语义策略
             semantic_config = {
-                "similarity_threshold": 0.5,
+                "similarity_threshold": 0.4,  # 降低相似度阈值：0.488 > 0.4
                 "use_multilingual": True,
                 "rag_topics": FANTASY_WORLD_RPG_TEST_RAG_TOPICS,
             }
@@ -95,11 +94,6 @@ class MindVoiceActionSystem(BaseActionReactiveSystem, InitializeProcessor):
         mind_voice_action = entity.get(MindVoiceAction)
         assert mind_voice_action is not None
 
-        # 获取相关信息
-        related_info = self._get_related_info(mind_voice_action.message)
-        logger.debug(f"🧠 原始消息: {mind_voice_action.message}")
-        logger.debug(f"� 相关信息: {related_info}")
-
         # 保持原有的事件生成逻辑
         self._game.notify_event(
             set({entity}),
@@ -109,6 +103,10 @@ class MindVoiceActionSystem(BaseActionReactiveSystem, InitializeProcessor):
                 content=mind_voice_action.message,
             ),
         )
+
+        # 获取相关信息
+        related_info = self._get_related_info(mind_voice_action.message)
+        logger.debug(f"retrieval 相关信息: {related_info}")
 
     ####################################################################################################################################
     def _get_related_info(self, original_message: str) -> str:
@@ -121,7 +119,7 @@ class MindVoiceActionSystem(BaseActionReactiveSystem, InitializeProcessor):
             # 1. 路由决策
             decision = self._route_manager.make_decision(original_message)
 
-            logger.info(
+            logger.debug(
                 f"🎯 路由决策: {'检索相关信息' if decision.should_use_rag else '无需检索'} (置信度: {decision.confidence:.3f})"
             )
 
@@ -140,7 +138,7 @@ class MindVoiceActionSystem(BaseActionReactiveSystem, InitializeProcessor):
     def _query_with_rag(self, message: str) -> str:
         """RAG查询处理 - 仅执行查询并返回结果"""
         try:
-            logger.info(f"🔍 RAG查询: {message[:50]}...")
+            logger.debug(f"🔍 RAG查询: {message}...")
 
             # 1. 检查ChromaDB状态
             chroma_db = get_chroma_db()

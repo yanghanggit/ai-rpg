@@ -33,19 +33,21 @@ class TransStageActionSystem(BaseActionReactiveSystem):
 
         trans_stage_action = entity.get(TransStageAction)
         logger.debug(
-            f"角色 {entity.name} 触发场景转换动作, 准备从场景 {current_stage_entity.name} 转换到场景 {trans_stage_action.data}."
+            f"角色 {entity.name} 触发场景转换动作, 准备从场景 {current_stage_entity.name} 转换到场景 {trans_stage_action.target_stage_name}."
         )
 
-        target_stage_entity = self._game.get_stage_entity(trans_stage_action.data)
+        target_stage_entity = self._game.get_stage_entity(
+            trans_stage_action.target_stage_name
+        )
         assert target_stage_entity is not None, "目标场景不能为空"
         if target_stage_entity is None:
             logger.warning(
-                f"角色 {entity.name} 触发场景转换动作失败, 找不到目标场景 {trans_stage_action.data}."
+                f"角色 {entity.name} 触发场景转换动作失败, 找不到目标场景 {trans_stage_action.target_stage_name}."
             )
             self._game.notify_event(
                 {entity},
                 AgentEvent(
-                    message=f"# {entity.name} 触发场景转换动作失败, 找不到目标场景 {trans_stage_action.data}.",
+                    message=f"# {entity.name} 触发场景转换动作失败, 找不到目标场景 {trans_stage_action.target_stage_name}.",
                 ),
             )
             return
@@ -53,12 +55,12 @@ class TransStageActionSystem(BaseActionReactiveSystem):
         # 不能转换到当前场景
         if target_stage_entity == current_stage_entity:
             logger.warning(
-                f"角色 {entity.name} 触发场景转换动作失败, 目标场景 {trans_stage_action.data} 与当前场景 {current_stage_entity.name} 相同."
+                f"角色 {entity.name} 触发场景转换动作失败, 目标场景 {trans_stage_action.target_stage_name} 与当前场景 {current_stage_entity.name} 相同."
             )
             self._game.notify_event(
                 {entity},
                 AgentEvent(
-                    message=f"# {entity.name} 触发场景转换动作失败, 目标场景 {trans_stage_action.data} 与当前场景 {current_stage_entity.name} 相同."
+                    message=f"# {entity.name} 触发场景转换动作失败, 目标场景 {trans_stage_action.target_stage_name} 与当前场景 {current_stage_entity.name} 相同."
                 ),
             )
             return
@@ -73,10 +75,10 @@ class TransStageActionSystem(BaseActionReactiveSystem):
         self._game.notify_event(
             set({entity}),
             TransStageEvent(
-                message=f"# 发生事件！{trans_stage_action.name} 从场景 {current_stage_entity.name} 转换到场景 {trans_stage_action.data}",
+                message=f"# 发生事件！{trans_stage_action.name} 从场景 {current_stage_entity.name} 转换到场景 {trans_stage_action.target_stage_name}",
                 actor=trans_stage_action.name,
                 from_stage=current_stage_entity.name,
-                to_stage=trans_stage_action.data,
+                to_stage=trans_stage_action.target_stage_name,
             ),
         )
 

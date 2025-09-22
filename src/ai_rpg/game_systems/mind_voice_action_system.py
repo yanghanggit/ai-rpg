@@ -35,9 +35,9 @@ class MindVoiceActionSystem(BaseActionReactiveSystem):
         self._game.notify_event(
             set({entity}),
             MindVoiceEvent(
-                message=f"# 发生事件！{mind_voice_action.name} 的内心独白:{mind_voice_action.data}",
-                speaker=mind_voice_action.name,
-                dialogue=mind_voice_action.data,
+                message=f"# 发生事件！{mind_voice_action.name} 的内心独白:{mind_voice_action.message}",
+                actor=mind_voice_action.name,
+                content=mind_voice_action.message,
             ),
         )
 

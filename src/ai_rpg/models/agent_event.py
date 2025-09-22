@@ -16,6 +16,7 @@ class AgentEventHead(IntEnum):
     COMBAT_COMPLETE_EVENT = 7
 
 
+####################################################################################################################################
 class AgentEvent(BaseModel):
     head: int = AgentEventHead.NONE
     message: str
@@ -26,9 +27,9 @@ class AgentEvent(BaseModel):
 @final
 class SpeakEvent(AgentEvent):
     head: int = AgentEventHead.SPEAK_EVENT
-    speaker: str
-    listener: str
-    dialogue: str
+    actor: str
+    target: str
+    content: str
 
 
 ####################################################################################################################################
@@ -36,9 +37,9 @@ class SpeakEvent(AgentEvent):
 @final
 class WhisperEvent(AgentEvent):
     head: int = AgentEventHead.WHISPER_EVENT
-    speaker: str
-    listener: str
-    dialogue: str
+    actor: str
+    target: str
+    content: str
 
 
 ####################################################################################################################################
@@ -46,9 +47,9 @@ class WhisperEvent(AgentEvent):
 @final
 class AnnounceEvent(AgentEvent):
     head: int = AgentEventHead.ANNOUNCE_EVENT
-    announcement_speaker: str
-    event_stage: str
-    announcement_message: str
+    actor: str
+    stage: str
+    content: str
 
 
 ####################################################################################################################################
@@ -56,8 +57,8 @@ class AnnounceEvent(AgentEvent):
 @final
 class MindVoiceEvent(AgentEvent):
     head: int = AgentEventHead.MIND_VOICE_EVENT
-    speaker: str
-    dialogue: str
+    actor: str
+    content: str
 
 
 ####################################################################################################################################

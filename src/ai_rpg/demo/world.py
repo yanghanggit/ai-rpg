@@ -23,7 +23,6 @@ def create_demo_game_world(game_name: str) -> Boot:
     stage_heros_camp = create_demo_heros_camp()
     stage_heros_restaurant = create_demo_heros_restaurant()
 
-
     # 设置关系和消息
     stage_heros_camp.actors = [actor_warrior, actor_wizard]
 

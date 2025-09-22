@@ -67,7 +67,7 @@ class MindVoiceActionSystem(BaseActionReactiveSystem, InitializeProcessor):
 
             self._route_manager = builder.build()
 
-            logger.success("🎯 MindVoiceActionSystem 路由系统初始化完成")
+            logger.debug("🎯 MindVoiceActionSystem 路由系统初始化完成")
 
         except Exception as e:
             logger.error(f"❌ MindVoiceActionSystem 路由系统初始化失败: {e}")

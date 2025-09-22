@@ -1,6 +1,6 @@
 from typing import final, override
 from ..entitas import Entity, GroupEvent, Matcher
-from ..game.tcg_game import ConversationError
+from ..game.tcg_game import ConversationValidationResult
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import AgentEvent, SpeakAction, SpeakEvent
 
@@ -55,8 +55,8 @@ class SpeakActionSystem(BaseActionReactiveSystem):
         for target_name, speak_content in speak_action.target_messages.items():
 
             error = self._game.validate_conversation(entity, target_name)
-            if error != ConversationError.VALID:
-                if error == ConversationError.INVALID_TARGET:
+            if error != ConversationValidationResult.VALID:
+                if error == ConversationValidationResult.INVALID_TARGET:
                     self._game.notify_event(
                         set({entity}),
                         AgentEvent(

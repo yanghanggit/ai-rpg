@@ -84,7 +84,7 @@ class TCGGameState(IntEnum):
 ###############################################################################################################################################
 @unique
 @final
-class ConversationError(Enum):
+class ConversationValidationResult(Enum):
     VALID = 0
     INVALID_TARGET = 1
     NO_STAGE = 2
@@ -822,21 +822,21 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     def validate_conversation(
         self, stage_or_actor: Entity, target_name: str
-    ) -> ConversationError:
+    ) -> ConversationValidationResult:
 
         actor_entity: Optional[Entity] = self.get_actor_entity(target_name)
         if actor_entity is None:
-            return ConversationError.INVALID_TARGET
+            return ConversationValidationResult.INVALID_TARGET
 
         current_stage_entity = self.safe_get_stage_entity(stage_or_actor)
         if current_stage_entity is None:
-            return ConversationError.NO_STAGE
+            return ConversationValidationResult.NO_STAGE
 
         target_stage_entity = self.safe_get_stage_entity(actor_entity)
         if target_stage_entity != current_stage_entity:
-            return ConversationError.NOT_SAME_STAGE
+            return ConversationValidationResult.NOT_SAME_STAGE
 
-        return ConversationError.VALID
+        return ConversationValidationResult.VALID
 
     #######################################################################################################################################
     def _create_dungeon_entities(self, dungeon: Dungeon) -> None:

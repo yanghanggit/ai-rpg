@@ -1,11 +1,11 @@
 import asyncio
-from math import log
 from typing import Final, List, Optional, final
 import httpx
 import requests
 import traceback
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-#from langchain_core.messages import get_buffer_string
+
+# from langchain_core.messages import get_buffer_string
 from loguru import logger
 from .protocol import (
     ChatRequest,
@@ -277,7 +277,7 @@ class ChatClient:
                 logger.error(
                     f"a_request-response Error: {response.status_code}, {response.text}"
                 )
-                
+
             # buffer_str = get_buffer_string(self._chat_history + self.response_ai_messages)
             # logger.debug(f"{self._name} full chat buffer:\n{buffer_str}")
 

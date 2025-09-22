@@ -67,3 +67,5 @@ class HomeAutoPlanSystem(ExecuteProcessor):
             assert current_stage_entity.has(
                 HomeComponent
             ), f"{actor_entity.name} 的场景不是 Home！"
+
+    ###############################################################################################################################################

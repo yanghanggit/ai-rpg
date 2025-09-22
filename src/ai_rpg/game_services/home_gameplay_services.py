@@ -92,7 +92,7 @@ async def _handle_advancing_action(web_game: WebTCGGame) -> HomeGamePlayResponse
     """
     # 推进一次。
     web_game.player_client.clear_messages()
-    await web_game.home_state_pipeline.process()
+    await web_game.npc_home_pipeline.process()
 
     # 返回消息
     return HomeGamePlayResponse(
@@ -121,7 +121,7 @@ async def _handle_speak_action(
     if web_game.activate_speak_action(target=target, content=content):
         # 清空消息。准备重新开始 + 测试推进一次游戏
         web_game.player_client.clear_messages()
-        await web_game.player_home_state_pipeline.process()
+        await web_game.player_home_pipeline.process()
 
         # 返回消息
         return HomeGamePlayResponse(

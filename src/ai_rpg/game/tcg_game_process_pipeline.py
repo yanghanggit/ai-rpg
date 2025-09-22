@@ -7,7 +7,7 @@ from ..game.base_game import BaseGame
 class TCGGameProcessPipeline(Processors):
 
     @staticmethod
-    def create_home_state_pipline1(game: BaseGame) -> "TCGGameProcessPipeline":
+    def create_npc_home_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
 
         ### 不这样就循环引用
         from ..game.tcg_game import TCGGame
@@ -67,16 +67,17 @@ class TCGGameProcessPipeline(Processors):
 
     ###################################################################################################################################################################
     @staticmethod
-    def create_home_state_pipline2(game: BaseGame) -> "TCGGameProcessPipeline":
+    def create_player_home_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
 
         ### 不这样就循环引用
         from ..game.tcg_game import TCGGame
         from ..game_systems.announce_action_system import AnnounceActionSystem
         from ..game_systems.destroy_entity_system import DestroyEntitySystem
         from ..game_systems.kick_off_system import KickOffSystem
-        from ..game_systems.mind_voice_action_system import (
-            MindVoiceActionSystem,
-        )
+
+        # from ..game_systems.mind_voice_action_system import (
+        #     MindVoiceActionSystem,
+        # )
         from ..game_systems.action_cleanup_system import ActionCleanupSystem
         from ..game_systems.save_system import SaveSystem
         from ..game_systems.speak_action_system import SpeakActionSystem
@@ -94,7 +95,7 @@ class TCGGameProcessPipeline(Processors):
 
         # 动作处理相关的系统 ##################################################################
         ####################################################################################
-        processors.add(MindVoiceActionSystem(tcg_game))
+        # processors.add(MindVoiceActionSystem(tcg_game))
         processors.add(SpeakActionSystem(tcg_game))
         processors.add(WhisperActionSystem(tcg_game))
         processors.add(AnnounceActionSystem(tcg_game))

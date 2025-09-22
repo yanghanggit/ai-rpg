@@ -109,13 +109,13 @@ class TCGGame(BaseGame, TCGGameContext):
         self._world: Final[World] = world
 
         # 常规home 的流程
-        self._home_pipeline: Final[TCGGameProcessPipeline] = (
-            TCGGameProcessPipeline.create_home_state_pipline1(self)
+        self._npc_home_pipeline: Final[TCGGameProcessPipeline] = (
+            TCGGameProcessPipeline.create_npc_home_pipline(self)
         )
 
         # 仅处理player的home流程
         self._player_home_pipeline: Final[TCGGameProcessPipeline] = (
-            TCGGameProcessPipeline.create_home_state_pipline2(self)
+            TCGGameProcessPipeline.create_player_home_pipline(self)
         )
 
         # 地下城战斗流程
@@ -124,7 +124,7 @@ class TCGGame(BaseGame, TCGGameContext):
         )
 
         self._all_pipelines: List[TCGGameProcessPipeline] = [
-            self._home_pipeline,
+            self._npc_home_pipeline,
             self._player_home_pipeline,
             self._dungeon_combat_pipeline,
         ]
@@ -202,12 +202,12 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     @property
-    def home_state_pipeline(self) -> TCGGameProcessPipeline:
-        return self._home_pipeline
+    def npc_home_pipeline(self) -> TCGGameProcessPipeline:
+        return self._npc_home_pipeline
 
     ###############################################################################################################################################
     @property
-    def player_home_state_pipeline(self) -> TCGGameProcessPipeline:
+    def player_home_pipeline(self) -> TCGGameProcessPipeline:
         return self._player_home_pipeline
 
     ###############################################################################################################################################

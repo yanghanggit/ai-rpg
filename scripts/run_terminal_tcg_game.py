@@ -493,7 +493,7 @@ async def _process_home_state_input(
     """处理家园状态下的玩家输入"""
 
     if usr_input == "/ad" or usr_input == "/advancing":
-        await terminal_game.home_state_pipeline.process()
+        await terminal_game.npc_home_pipeline.process()
 
     elif usr_input == "/ld" or usr_input == "/launch-dungeon":
 
@@ -518,7 +518,7 @@ async def _process_home_state_input(
         hero_command = _parse_hero_plan_command_input(usr_input)
         logger.debug(f"解析到的英雄命令: {hero_command}")
         terminal_game.activate_plan_action(actors=hero_command["heroes"])
-        await terminal_game.home_state_pipeline.process()
+        await terminal_game.npc_home_pipeline.process()
 
     elif "/speak" in usr_input or "/ss" in usr_input:
 
@@ -532,7 +532,7 @@ async def _process_home_state_input(
         ):
 
             # player 执行一次, 这次基本是忽略推理标记的，所有NPC不推理。
-            await terminal_game.player_home_state_pipeline.process()
+            await terminal_game.player_home_pipeline.process()
 
             # 其他人执行一次。对应的NPC进行推理。
             # await terminal_game.home_state_pipeline.process()
@@ -545,7 +545,7 @@ async def _process_home_state_input(
             home_trans_stage_command["stage_name"]
         ):
             # player 执行一次, 这次基本是忽略推理标记的，所有NPC不推理。
-            await terminal_game.player_home_state_pipeline.process()
+            await terminal_game.player_home_pipeline.process()
 
     else:
         logger.error(

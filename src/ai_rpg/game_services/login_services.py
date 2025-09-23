@@ -3,7 +3,7 @@ from typing import final
 from fastapi import APIRouter, HTTPException, Request, status
 from loguru import logger
 from ..game.game_config import setup_logger
-from ..game.web_tcg_game import WebGameUserOptions
+from ..game.web_tcg_game import WebGameSessionContext
 from ..game_services.game_server import GameServerInstance
 from ..models import (
     LoginRequest,
@@ -39,7 +39,7 @@ async def login(
     logger.info(f"/login/v1/: {request_data.model_dump_json()}")
 
     # 转化成复杂参数
-    web_game_user_options = WebGameUserOptions(
+    web_game_user_options = WebGameSessionContext(
         user=request_data.user_name,
         game=request_data.game_name,
         actor="",

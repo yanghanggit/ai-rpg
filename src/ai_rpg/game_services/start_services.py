@@ -5,7 +5,7 @@ from ..demo.stage_dungeon4 import (
     create_demo_dungeon4,
 )
 from ..game.player_client import PlayerClient
-from ..game.web_tcg_game import WebTCGGame, WebGameUserOptions
+from ..game.web_tcg_game import WebTCGGame, WebGameSessionContext
 from ..game_services.game_server import GameServerInstance
 from ..models import StartRequest, StartResponse, World
 
@@ -40,7 +40,7 @@ async def start(
         assert room is not None
 
         # 转化成复杂参数
-        web_user_session_options = WebGameUserOptions(
+        web_user_session_options = WebGameSessionContext(
             user=request_data.user_name,
             game=request_data.game_name,
             actor=request_data.actor_name,
@@ -82,7 +82,7 @@ async def start(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 def setup_web_game_session(
-    web_game_user_options: WebGameUserOptions,
+    web_game_user_options: WebGameSessionContext,
     # server_settings: ServerSettingsInstance,
 ) -> Optional[WebTCGGame]:
 

@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 from typing import final
 from ..game.tcg_game import TCGGame
-from ..game.game_options import UserOptions
+from .game_session_context import GameSessionContext
 
 
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
 @dataclass
-class TerminalGameUserOptions(UserOptions):
+class TerminalGameSessionContext(GameSessionContext):
     pass
 
 

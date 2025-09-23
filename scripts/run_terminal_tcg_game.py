@@ -17,13 +17,13 @@ from ai_rpg.game.game_config import GLOBAL_GAME_NAME, setup_logger
 from ai_rpg.demo import (
     create_actor_warrior,
     create_demo_dungeon6,
-    # create_demo_dungeon1,
+    create_demo_dungeon1,
 )
 from ai_rpg.game.player_client import PlayerClient
 from ai_rpg.game.tcg_game import TCGGameState
 from ai_rpg.game.terminal_tcg_game import (
     TerminalTCGGame,
-    TerminalGameUserOptions,
+    TerminalGameSessionContext,
 )
 from ai_rpg.models import CombatResult, World
 
@@ -329,7 +329,7 @@ def _parse_home_trans_stage_command_input(usr_input: str) -> HomeTransStageComma
 
 ###############################################################################################################################################
 async def _run_game(
-    terminal_game_user_options: TerminalGameUserOptions,
+    terminal_game_user_options: TerminalGameSessionContext,
 ) -> None:
 
     # 注意，如果确定player是固定的，但是希望每次玩新游戏，就调用这句。
@@ -350,7 +350,8 @@ async def _run_game(
         world_exists = World(boot=world_boot)
 
         # 运行时生成地下城系统
-        world_exists.dungeon = create_demo_dungeon6()
+        # world_exists.dungeon = create_demo_dungeon6()
+        world_exists.dungeon = create_demo_dungeon1()
 
     else:
         logger.info(
@@ -620,7 +621,7 @@ if __name__ == "__main__":
     fixed_name = "player-fixed"
 
     # 做一些设置
-    terminal_user_session_options = TerminalGameUserOptions(
+    terminal_user_session_options = TerminalGameSessionContext(
         user=random_name,
         game=GLOBAL_GAME_NAME,
         actor=create_actor_warrior().name,

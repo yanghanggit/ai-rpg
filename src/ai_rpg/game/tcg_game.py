@@ -602,9 +602,11 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     def append_system_message(self, entity: Entity, chat: str) -> None:
         logger.debug(f"append_system_message: {entity.name} => \n{chat}")
-        agent_short_term_memory = self.get_agent_chat_history(entity)
-        if len(agent_short_term_memory.chat_history) == 0:
-            agent_short_term_memory.chat_history.extend([SystemMessage(content=chat)])
+        agent_chat_history = self.get_agent_chat_history(entity)
+        assert (
+            len(agent_chat_history.chat_history) == 0
+        ), "system message should be the first message"
+        agent_chat_history.chat_history.append(SystemMessage(content=chat))
 
     ###############################################################################################################################################
     def append_human_message(self, entity: Entity, chat: str, **kwargs: Any) -> None:
@@ -616,7 +618,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
         agent_short_term_memory = self.get_agent_chat_history(entity)
         agent_short_term_memory.chat_history.extend(
-            [HumanMessage(content=chat, kwargs=kwargs)]
+            [HumanMessage(content=chat, **kwargs)]
         )
 
     ###############################################################################################################################################
@@ -1417,5 +1419,33 @@ class TCGGame(BaseGame, TCGGameContext):
         assert player_entity is not None, "玩家实体不存在！"
         player_entity.replace(TransStageAction, player_entity.name, stage_name)
         return True
+
+    #######################################################################################################################################
+    def find_recent_human_message_by_attribute(
+        self,
+        actor_entity: Entity,
+        attribute_key: str,
+        attribute_value: str,
+    ) -> Optional[HumanMessage]:
+
+        chat_history = self.get_agent_chat_history(actor_entity).chat_history
+
+        # 注意，这里是倒序遍历！
+        for chat_message in reversed(chat_history):
+
+            if not isinstance(chat_message, HumanMessage):
+                continue
+
+            try:
+                # 直接从 HumanMessage 对象获取属性，而不是从嵌套的 kwargs 中获取
+                if hasattr(chat_message, attribute_key):
+                    if getattr(chat_message, attribute_key) == attribute_value:
+                        return chat_message
+
+            except Exception as e:
+                logger.error(f"find_recent_human_message_by_attribute error: {e}")
+                continue
+
+        return None
 
     #######################################################################################################################################

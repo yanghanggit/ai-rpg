@@ -20,7 +20,7 @@ from ..game.game_config import LOGS_DIR
 
 
 ###############################################################################################################################################
-def _generate_actor_kick_off_prompt(kick_off_message: str) -> str:
+def _generate_actor_prompt(kick_off_message: str) -> str:
     return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
 
 ## 这是你的启动消息
@@ -33,7 +33,7 @@ def _generate_actor_kick_off_prompt(kick_off_message: str) -> str:
 
 
 ###############################################################################################################################################
-def _generate_stage_kick_off_prompt(
+def _generate_stage_prompt(
     kick_off_message: str,
 ) -> str:
     return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
@@ -53,7 +53,7 @@ def _generate_stage_kick_off_prompt(
 
 
 ###############################################################################################################################################
-def _generate_world_system_kick_off_prompt() -> str:
+def _generate_world_system_prompt() -> str:
     return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
 
 ## 这是你的启动消息
@@ -196,7 +196,9 @@ class KickOffSystem(ExecuteProcessor):
                 contextual_message_list.append(first_message)
 
             # 添加human message
-            contextual_message_list.append(HumanMessage(content=prompt))
+            contextual_message_list.append(
+                HumanMessage(content=prompt, kickoff=entity.name)
+            )
 
             # 添加AI messages
             contextual_message_list.extend(ai_messages)
@@ -220,7 +222,7 @@ class KickOffSystem(ExecuteProcessor):
 
         else:
             # 常规添加
-            self._game.append_human_message(entity, prompt)
+            self._game.append_human_message(entity, prompt, kickoff=entity.name)
             self._game.append_ai_message(entity, ai_messages)
 
     ###############################################################################################################################################
@@ -411,15 +413,15 @@ class KickOffSystem(ExecuteProcessor):
         # 不同实体生成不同的提示
         if entity.has(ActorComponent):
             # 角色的
-            return _generate_actor_kick_off_prompt(kick_off_message_comp.content)
+            return _generate_actor_prompt(kick_off_message_comp.content)
         elif entity.has(StageComponent):
             # 舞台的
-            return _generate_stage_kick_off_prompt(
+            return _generate_stage_prompt(
                 kick_off_message_comp.content,
             )
         elif entity.has(WorldSystemComponent):
             # 世界系统的
-            return _generate_world_system_kick_off_prompt()
+            return _generate_world_system_prompt()
 
         return ""
 

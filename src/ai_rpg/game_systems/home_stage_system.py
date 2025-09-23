@@ -119,7 +119,7 @@ class HomeStageSystem(ExecuteProcessor):
                 ChatClient(
                     name=stage_entity.name,
                     prompt=message,
-                    chat_history=self._game.get_agent_short_term_memory(
+                    chat_history=self._game.get_agent_chat_history(
                         stage_entity
                     ).chat_history,
                 )

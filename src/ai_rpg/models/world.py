@@ -24,7 +24,7 @@ class Boot(BaseModel):
 
 ###############################################################################################################################################
 @final
-class AgentShortTermMemory(BaseModel):
+class AgentChatHistory(BaseModel):
     name: str
     chat_history: List[SystemMessage | HumanMessage | AIMessage] = []
 
@@ -35,7 +35,7 @@ class AgentShortTermMemory(BaseModel):
 class World(BaseModel):
     runtime_index: int = 1000
     entities_snapshot: List[EntitySnapshot] = []
-    agents_short_term_memory: Dict[str, AgentShortTermMemory] = {}
+    agents_chat_history: Dict[str, AgentChatHistory] = {}
     dungeon: Dungeon = Dungeon(name="")
     boot: Boot = Boot(name="")
 

@@ -62,7 +62,7 @@ class RouteDecisionManager:
         Returns:
             RouteDecision: 最终的路由决策
         """
-        logger.info(f"🎯 开始路由决策，查询: {query[:50]}...")
+        logger.debug(f"🎯 开始路由决策，查询: {query[:50]}...")
 
         decisions = []
         total_weighted_confidence = 0.0

@@ -181,7 +181,7 @@ class KickOffSystem(ExecuteProcessor):
         1. 如果聊天历史第一条是system message，则重新构建消息序列
         2. 否则使用常规方式添加消息
         """
-        agent_short_term_memory = self._game.get_agent_short_term_memory(entity)
+        agent_short_term_memory = self._game.get_agent_chat_history(entity)
 
         if (
             len(agent_short_term_memory.chat_history) > 0
@@ -276,7 +276,7 @@ class KickOffSystem(ExecuteProcessor):
         Returns:
             str: 系统消息内容，如果没有则返回空字符串
         """
-        agent_memory = self._game.get_agent_short_term_memory(entity)
+        agent_memory = self._game.get_agent_chat_history(entity)
         if (
             len(agent_memory.chat_history) > 0
             and agent_memory.chat_history[0].type == "system"
@@ -315,7 +315,7 @@ class KickOffSystem(ExecuteProcessor):
             gen_prompt = self._generate_prompt(entity1)
             assert gen_prompt != "", "Generated prompt should not be empty"
 
-            agent_short_term_memory = self._game.get_agent_short_term_memory(entity1)
+            agent_short_term_memory = self._game.get_agent_chat_history(entity1)
             request_handlers.append(
                 ChatClient(
                     name=entity1.name,

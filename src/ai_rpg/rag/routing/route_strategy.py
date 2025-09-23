@@ -56,7 +56,7 @@ class RouteStrategy(ABC):
         子类可以重写此方法进行资源加载等操作
         """
         if not self._initialized:
-            logger.info(f"📝 初始化路由策略: {self.name}")
+            logger.debug(f"📝 初始化路由策略: {self.name}")
             self._do_initialize()
             self._initialized = True
 

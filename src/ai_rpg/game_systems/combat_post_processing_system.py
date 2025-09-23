@@ -79,7 +79,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
                 ChatClient(
                     name=entity1.name,
                     prompt=message,
-                    chat_history=self._game.get_agent_short_term_memory(
+                    chat_history=self._game.get_agent_chat_history(
                         entity1
                     ).chat_history,
                 )
@@ -145,7 +145,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
             )
             return
 
-        short_term_memory = self._game.get_agent_short_term_memory(entity)
+        short_term_memory = self._game.get_agent_chat_history(entity)
         begin_message_index = short_term_memory.chat_history.index(begin_message)
         end_message_index = short_term_memory.chat_history.index(end_message) + 1
         # 移除！！！！。
@@ -159,7 +159,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
         self, actor_entity: Entity, kwargs_key: str, kwargs_value: str
     ) -> Optional[HumanMessage]:
 
-        chat_history = self._game.get_agent_short_term_memory(actor_entity).chat_history
+        chat_history = self._game.get_agent_chat_history(actor_entity).chat_history
         for chat_message in reversed(chat_history):
 
             if not isinstance(chat_message, HumanMessage):

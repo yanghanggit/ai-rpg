@@ -43,7 +43,7 @@ class AnnounceActionSystem(BaseActionReactiveSystem):
         assert home_stage_entity.has(HomeComponent)
         announce_action = entity.get(AnnounceAction)
         assert announce_action is not None
-        assert announce_action.data != ""
+        assert announce_action.message != ""
 
         # 获取所有需要进行角色规划的角色
         home_stage_entities = self._game.get_group(
@@ -60,12 +60,12 @@ class AnnounceActionSystem(BaseActionReactiveSystem):
                 AnnounceEvent(
                     message=_generate_prompt(
                         entity.get(HeroComponent).name,
-                        announce_action.data,
+                        announce_action.message,
                         home_stage_entity.get(HomeComponent).name,
                     ),
-                    announcement_speaker=entity.get(HeroComponent).name,
-                    event_stage=home_stage_entity.get(HomeComponent).name,
-                    announcement_message=announce_action.data,
+                    actor=entity.get(HeroComponent).name,
+                    stage=home_stage_entity.get(HomeComponent).name,
+                    content=announce_action.message,
                 ),
             )
 

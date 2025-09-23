@@ -1,6 +1,6 @@
 from typing import final, override
 from ..entitas import Entity, GroupEvent, Matcher
-from ..game.tcg_game import ConversationError
+from ..game.tcg_game import ConversationValidationResult
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import AgentEvent, WhisperAction, WhisperEvent
 
@@ -48,11 +48,11 @@ class WhisperActionSystem(BaseActionReactiveSystem):
 
         whisper_action = entity.get(WhisperAction)
 
-        for target_name, whisper_content in whisper_action.data.items():
+        for target_name, whisper_content in whisper_action.target_messages.items():
 
             error = self._game.validate_conversation(entity, target_name)
-            if error != ConversationError.VALID:
-                if error == ConversationError.INVALID_TARGET:
+            if error != ConversationValidationResult.VALID:
+                if error == ConversationValidationResult.INVALID_TARGET:
                     self._game.notify_event(
                         set({entity}),
                         AgentEvent(
@@ -72,9 +72,9 @@ class WhisperActionSystem(BaseActionReactiveSystem):
                     message=_generate_prompt(
                         whisper_action.name, target_name, whisper_content
                     ),
-                    speaker=whisper_action.name,
-                    listener=target_name,
-                    dialogue=whisper_content,
+                    actor=whisper_action.name,
+                    target=target_name,
+                    content=whisper_content,
                 ),
             )
 

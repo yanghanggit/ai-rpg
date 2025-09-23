@@ -15,7 +15,7 @@ from ..utils import json_format
 
 #######################################################################################################################################
 @final
-class EnvironmentResponse(BaseModel):
+class StageEnvironmentResponse(BaseModel):
     description: str = ""
 
 
@@ -30,7 +30,7 @@ def _generate_prompt(
     if len(stage_actor_appearances_info) == 0:
         stage_actor_appearances_info.append("无")
 
-    response_example = EnvironmentResponse(description="场景内的环境描述")
+    response_example = StageEnvironmentResponse(description="场景内的环境描述")
 
     return f"""# 请你输出你的场景描述
 
@@ -131,7 +131,7 @@ class HomeStageSystem(ExecuteProcessor):
 
         try:
 
-            format_response = EnvironmentResponse.model_validate_json(
+            format_response = StageEnvironmentResponse.model_validate_json(
                 json_format.strip_json_code_block(request_handler.response_content)
             )
 

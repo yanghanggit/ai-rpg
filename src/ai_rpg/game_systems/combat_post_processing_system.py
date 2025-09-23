@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, cast, final
+from typing import List, Optional, final
 from loguru import logger
 from overrides import override
 from ..chat_services.client import ChatClient
@@ -17,7 +17,6 @@ from langchain_core.messages import HumanMessage
 #######################################################################################################################################
 @final
 class CombatPostProcessingSystem(ExecuteProcessor):
-    # combat_post_processing_system
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
@@ -36,7 +35,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
             logger.warning(
                 "战斗结束，准备总结战斗结果！！，可以做一些压缩提示词的行为!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
             )
-            # await self._summarize_combat_result()
+            await self._summarize_combat_result()
 
             # TODO, 进入战斗后准备的状态，离开当前状态。
             self._game.current_engagement.combat_post_wait()
@@ -86,7 +85,6 @@ class CombatPostProcessingSystem(ExecuteProcessor):
             )
 
         # 语言服务
-        # await self._game.chat_client_manager.gather(request_handlers=request_handlers)
         await ChatClient.gather_request_post(clients=request_handlers)
 
         # 结束的处理。
@@ -166,18 +164,21 @@ class CombatPostProcessingSystem(ExecuteProcessor):
                 continue
 
             try:
-
-                kwargs = chat_message.model_dump()["kwargs"]
-                if kwargs == None:
+                if not hasattr(chat_message, "kwargs"):
                     continue
 
-                cast_dict = cast(Dict[str, Any], kwargs)
-                if not kwargs_key in cast_dict:
+                kwargs = getattr(chat_message, "kwargs", {})
+                if not isinstance(kwargs, dict):
                     continue
 
-                if cast_dict.get(kwargs_key) == kwargs_value:
-                    return chat_message
+                value = kwargs.get(kwargs_key, None)
+                if value != kwargs_value:
+                    continue
 
+                logger.debug(
+                    f"retrieve_recent_human_message_by_kargs found: {chat_message}, {getattr(chat_message, 'kwargs', None)}"
+                )
+                return chat_message
             except Exception as e:
                 logger.error(f"retrieve_recent_human_message_by_kargs error: {e}")
                 continue

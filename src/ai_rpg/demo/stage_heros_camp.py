@@ -17,6 +17,7 @@ def create_demo_heros_camp() -> Stage:
         actors=[],
     )
 
+
 def create_demo_heros_restaurant() -> Stage:
 
     return create_stage(

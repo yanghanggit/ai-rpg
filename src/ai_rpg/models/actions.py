@@ -18,7 +18,7 @@ class PlanAction(Component):
 @register_action_class
 class SpeakAction(Component):
     name: str
-    data: Dict[str, str]
+    target_messages: Dict[str, str]
 
 
 ############################################################################################################
@@ -27,7 +27,7 @@ class SpeakAction(Component):
 @register_action_class
 class WhisperAction(Component):
     name: str
-    data: Dict[str, str]
+    target_messages: Dict[str, str]
 
 
 ############################################################################################################
@@ -36,7 +36,7 @@ class WhisperAction(Component):
 @register_action_class
 class AnnounceAction(Component):
     name: str
-    data: str
+    message: str
 
 
 ############################################################################################################
@@ -45,7 +45,7 @@ class AnnounceAction(Component):
 @register_action_class
 class MindVoiceAction(Component):
     name: str
-    data: str
+    message: str
 
 
 ############################################################################################################
@@ -54,7 +54,7 @@ class MindVoiceAction(Component):
 @register_action_class
 class TransStageAction(Component):
     name: str
-    data: str
+    target_stage_name: str
 
 
 ############################################################################################################

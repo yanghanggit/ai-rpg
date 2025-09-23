@@ -126,8 +126,8 @@ class TestKeywordRouteStrategy:
         """测试艾尔法尼亚专用策略"""
         strategy = create_test_alphania_keyword_strategy()  # 使用测试版本
 
-        # 测试游戏相关查询
-        decision = strategy.should_route_to_rag("阿斯特拉王国的骑士团怎么样？")
+        # 测试游戏相关查询 - 使用实际存在的关键词
+        decision = strategy.should_route_to_rag("新奥拉西斯的圣剑和魔法怎么样？")
         # 检查匹配的关键词数量是否合理
         matched_keywords = (
             decision.metadata.get("matched_keywords", []) if decision.metadata else []
@@ -185,8 +185,8 @@ class TestRouteDecisionManager:
         # 创建管理器
         manager = RouteDecisionManager([StrategyWeight(keyword_strategy, 1.0)])
 
-        # 测试决策
-        decision = manager.make_decision("艾尔法尼亚的魔法系统如何？")
+        # 测试决策 - 使用存在的关键词
+        decision = manager.make_decision("新奥拉西斯的魔法系统如何？")
         assert decision.strategy_name == "combined"
         if decision.metadata:
             assert "strategies_used" in decision.metadata
@@ -220,8 +220,8 @@ class TestRouteDecisionManager:
             fallback_to_rag=False,
         )
 
-        # 测试游戏相关查询
-        decision = manager.make_decision("艾尔法尼亚王国的历史")
+        # 测试游戏相关查询 - 使用存在的关键词
+        decision = manager.make_decision("新奥拉西斯的历史和封印之塔")
         assert decision.should_use_rag is True
 
         # 测试一般查询
@@ -261,9 +261,9 @@ class TestIntegration:
             "llm": llm,  # 添加LLM实例到状态中
         }
 
-        # 测试一些典型查询
+        # 测试一些典型查询 - 使用存在的关键词
         test_queries = [
-            "艾尔法尼亚的王国有哪些？",
+            "新奥拉西斯的圣剑有哪些？",
             "晨曦之刃的属性是什么？",
             "今天天气怎么样？",
             "你好，我是新手玩家",
@@ -285,7 +285,7 @@ if __name__ == "__main__":
     keyword_strategy = create_test_alphania_keyword_strategy()  # 使用测试版本
 
     test_queries = [
-        "艾尔法尼亚的王国有哪些？",
+        "新奥拉西斯的魔法系统有哪些？",
         "晨曦之刃是什么武器？",
         "今天天气很好",
         "Python编程难吗？",

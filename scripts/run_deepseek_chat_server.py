@@ -74,13 +74,17 @@ from ai_rpg.mcp import (
     initialize_mcp_client,
     McpConfig,
     load_mcp_config,
+    McpClient,
 )
-from typing import List, Optional
-from langchain.schema import SystemMessage
+from typing import List, Optional, Dict, Any
+from langchain.schema import SystemMessage, BaseMessage
+from ai_rpg.mcp.config import McpConfig
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 ##################################################################################################################
 # 全局 MCP 客户端和工具变量
-_global_mcp_client: Optional[object] = None
+_global_mcp_client: Optional[McpClient] = None
 _global_available_tools: List[McpToolInfo] = []
 
 
@@ -91,14 +95,17 @@ def _load_mcp_config_for_server() -> McpConfig:
     try:
         return load_mcp_config(Path("mcp_config.json"))
     except Exception as e:
-        logger.warning(f"加载 MCP 配置失败: {e}，使用默认配置")
-        # 返回默认配置
-        from ai_rpg.mcp.config import McpConfig
-
+        logger.error(f"加载 MCP 配置失败: {e}，使用默认配置")
         return McpConfig(
-            mcp_server_url="stdio://python scripts/run_sample_mcp_server.py --config mcp_config.json",
+            mcp_server_host="127.0.0.1",
+            mcp_server_port=8765,
             protocol_version="2024-11-05",
-            mcp_timeout=30.0,
+            mcp_timeout=30,
+            server_name="Default MCP Server",
+            server_version="1.0.0",
+            server_description="默认 MCP 服务器配置",
+            transport="streamable-http",
+            allowed_origins=["http://localhost"],
         )
 
 
@@ -136,13 +143,6 @@ async def _initialize_global_mcp_client() -> None:
         logger.error(f"❌ 全局MCP客户端初始化错误: {e}")
         _global_mcp_client = None
         _global_available_tools = []
-
-
-##################################################################################################################
-def _get_global_mcp_client() -> tuple[Optional[object], List[McpToolInfo]]:
-    """获取全局 MCP 客户端和工具（请求处理时调用）"""
-    global _global_mcp_client, _global_available_tools
-    return _global_mcp_client, _global_available_tools
 
 
 ##################################################################################################################
@@ -185,9 +185,6 @@ def _create_default_route_manager() -> RouteDecisionManager:
 
 
 ##################################################################################################################
-# 添加服务器生命周期事件处理器
-from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 
 @asynccontextmanager
@@ -199,7 +196,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     # 启动时执行
     logger.info("🚀 应用启动中...")
-    await startup_initialize()
+    await _initialize_global_mcp_client()
     logger.success("✅ 应用启动完成")
 
     yield  # 应用运行期间
@@ -397,10 +394,12 @@ async def process_chat_undefined_request(request: ChatRequest) -> ChatResponse:
         route_manager = _create_default_route_manager()
 
         # 聊天历史状态（使用字典格式，符合统一图的要求）
-        chat_history_state = {"messages": [message for message in request.chat_history]}
+        chat_history_state: Dict[str, List[BaseMessage]] = {
+            "messages": [message for message in request.chat_history]
+        }
 
         # 用户输入状态
-        user_input_state = {"messages": [request.message]}
+        user_input_state: Dict[str, List[BaseMessage]] = {"messages": [request.message]}
 
         # 执行统一聊天流程 - 使用 asyncio.to_thread 将阻塞调用包装为异步
         update_messages = await asyncio.to_thread(
@@ -456,7 +455,8 @@ async def process_chat_mcp_request(request: ChatRequest) -> ChatResponse:
         logger.info(f"收到MCP聊天请求: {request.message.content}")
 
         # 获取全局 MCP 客户端和工具
-        mcp_client, available_tools = _get_global_mcp_client()
+        global _global_mcp_client, _global_available_tools
+        mcp_client, available_tools = _global_mcp_client, _global_available_tools
 
         if mcp_client is None:
             # MCP 服务器连接失败，返回错误信息
@@ -471,6 +471,8 @@ async def process_chat_mcp_request(request: ChatRequest) -> ChatResponse:
         system_prompt = """你是一个智能AI助手，具备工具调用能力。你可以使用各种工具来帮助用户完成任务，包括获取时间、系统信息等。当用户询问相关信息时，你应该主动使用相应的工具来获取准确的信息。"""
 
         # 创建 MCP 聊天历史状态
+        # 类型断言：此时 mcp_client 已经确保不为 None
+        assert mcp_client is not None
         chat_history_state: McpState = {
             "messages": [SystemMessage(content=system_prompt)]
             + [message for message in request.chat_history],
@@ -516,17 +518,6 @@ async def process_chat_mcp_request(request: ChatRequest) -> ChatResponse:
 
         error_message = AIMessage(content=f"抱歉，处理您的MCP请求时发生错误: {str(e)}")
         return ChatResponse(messages=[error_message])
-
-
-##################################################################################################################
-async def startup_initialize() -> None:
-    """服务器启动时的初始化函数"""
-    logger.info("🔧 执行服务器启动初始化...")
-
-    # 初始化全局 MCP 客户端
-    await _initialize_global_mcp_client()
-
-    logger.success("✅ 服务器启动初始化完成")
 
 
 ##################################################################################################################

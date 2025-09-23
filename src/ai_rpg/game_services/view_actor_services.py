@@ -7,7 +7,7 @@ from ..entitas import Matcher
 from ..game_services.game_server import GameServerInstance
 from ..models import (
     ActorComponent,
-    AgentShortTermMemory,
+    AgentChatHistory,
     EntitySnapshot,
     ViewActorResponse,
 )
@@ -56,7 +56,7 @@ async def view_actor(
 
         # 获取快照
         snapshots: List[EntitySnapshot] = []
-        agent_short_term_memories: List[AgentShortTermMemory] = []
+        agent_short_term_memories: List[AgentChatHistory] = []
 
         if len(actor_names) == 0 or actor_names[0] == "":
             # 没有指定角色，获取所有角色
@@ -80,7 +80,7 @@ async def view_actor(
             snapshots.append(snapshot)
 
             # 获取短期记忆
-            agent_short_term_memory = web_game.get_agent_short_term_memory(actor_entity)
+            agent_short_term_memory = web_game.get_agent_chat_history(actor_entity)
             agent_short_term_memories.append(agent_short_term_memory)
 
         # 返回。

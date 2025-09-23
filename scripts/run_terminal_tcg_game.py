@@ -17,6 +17,7 @@ from ai_rpg.game.game_config import GLOBAL_GAME_NAME, setup_logger
 from ai_rpg.demo import (
     create_actor_warrior,
     create_demo_dungeon6,
+    # create_demo_dungeon1,
 )
 from ai_rpg.game.player_client import PlayerClient
 from ai_rpg.game.tcg_game import TCGGameState

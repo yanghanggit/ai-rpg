@@ -20,7 +20,7 @@ from ..game.game_config import LOGS_DIR
 
 
 ###############################################################################################################################################
-def _generate_actor_kick_off_prompt(kick_off_message: str) -> str:
+def _generate_actor_prompt(kick_off_message: str) -> str:
     return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
 
 ## 这是你的启动消息
@@ -33,7 +33,7 @@ def _generate_actor_kick_off_prompt(kick_off_message: str) -> str:
 
 
 ###############################################################################################################################################
-def _generate_stage_kick_off_prompt(
+def _generate_stage_prompt(
     kick_off_message: str,
 ) -> str:
     return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
@@ -53,7 +53,7 @@ def _generate_stage_kick_off_prompt(
 
 
 ###############################################################################################################################################
-def _generate_world_system_kick_off_prompt() -> str:
+def _generate_world_system_prompt() -> str:
     return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
 
 ## 这是你的启动消息
@@ -181,7 +181,7 @@ class KickOffSystem(ExecuteProcessor):
         1. 如果聊天历史第一条是system message，则重新构建消息序列
         2. 否则使用常规方式添加消息
         """
-        agent_short_term_memory = self._game.get_agent_short_term_memory(entity)
+        agent_short_term_memory = self._game.get_agent_chat_history(entity)
 
         if (
             len(agent_short_term_memory.chat_history) > 0
@@ -196,7 +196,9 @@ class KickOffSystem(ExecuteProcessor):
                 contextual_message_list.append(first_message)
 
             # 添加human message
-            contextual_message_list.append(HumanMessage(content=prompt))
+            contextual_message_list.append(
+                HumanMessage(content=prompt, kickoff=entity.name)
+            )
 
             # 添加AI messages
             contextual_message_list.extend(ai_messages)
@@ -220,7 +222,7 @@ class KickOffSystem(ExecuteProcessor):
 
         else:
             # 常规添加
-            self._game.append_human_message(entity, prompt)
+            self._game.append_human_message(entity, prompt, kickoff=entity.name)
             self._game.append_ai_message(entity, ai_messages)
 
     ###############################################################################################################################################
@@ -276,7 +278,7 @@ class KickOffSystem(ExecuteProcessor):
         Returns:
             str: 系统消息内容，如果没有则返回空字符串
         """
-        agent_memory = self._game.get_agent_short_term_memory(entity)
+        agent_memory = self._game.get_agent_chat_history(entity)
         if (
             len(agent_memory.chat_history) > 0
             and agent_memory.chat_history[0].type == "system"
@@ -315,7 +317,7 @@ class KickOffSystem(ExecuteProcessor):
             gen_prompt = self._generate_prompt(entity1)
             assert gen_prompt != "", "Generated prompt should not be empty"
 
-            agent_short_term_memory = self._game.get_agent_short_term_memory(entity1)
+            agent_short_term_memory = self._game.get_agent_chat_history(entity1)
             request_handlers.append(
                 ChatClient(
                     name=entity1.name,
@@ -411,15 +413,15 @@ class KickOffSystem(ExecuteProcessor):
         # 不同实体生成不同的提示
         if entity.has(ActorComponent):
             # 角色的
-            return _generate_actor_kick_off_prompt(kick_off_message_comp.content)
+            return _generate_actor_prompt(kick_off_message_comp.content)
         elif entity.has(StageComponent):
             # 舞台的
-            return _generate_stage_kick_off_prompt(
+            return _generate_stage_prompt(
                 kick_off_message_comp.content,
             )
         elif entity.has(WorldSystemComponent):
             # 世界系统的
-            return _generate_world_system_kick_off_prompt()
+            return _generate_world_system_prompt()
 
         return ""
 

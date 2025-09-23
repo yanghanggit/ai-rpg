@@ -1,4 +1,4 @@
-from typing import List, Optional, final
+from typing import List, final
 from loguru import logger
 from overrides import override
 from ..chat_services.client import ChatClient
@@ -11,7 +11,6 @@ from ..models import (
     HeroComponent,
     RPGCharacterProfileComponent,
 )
-from langchain_core.messages import HumanMessage
 
 
 #######################################################################################################################################
@@ -35,7 +34,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
             logger.warning(
                 "战斗结束，准备总结战斗结果！！，可以做一些压缩提示词的行为!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
             )
-            await self._summarize_combat_result()
+            await self._process_combat_summary()
 
             # TODO, 进入战斗后准备的状态，离开当前状态。
             self._game.current_engagement.combat_post_wait()
@@ -45,7 +44,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     # 总结！！！
-    async def _summarize_combat_result(self) -> None:
+    async def _process_combat_summary(self) -> None:
         # 获取所有需要进行角色规划的角色
         actor_entities = self._game.get_group(
             Matcher(
@@ -61,14 +60,18 @@ class CombatPostProcessingSystem(ExecuteProcessor):
             assert stage_entity1 is not None
 
             # 生成消息
-            message = f"""# 提示！{stage_entity1.name} 战斗结束，你决定记录下这次战斗的经历。
+            message = f"""# 指令！{stage_entity1.name} 的战斗已经结束，你需要记录下这次战斗的经历。
+            
 ## 输出内容:
+
 1. 战斗发生的场景。
 2. 你的对手是谁，他们的特点。
 3. 战斗的开始，过程以及如何结束的。
 4. 你的感受，你的状态。
 5. 你的同伴，他们的表现。
+
 ## 输出格式规范:
+
 - 第一人称视角。
 - 要求单段紧凑自述（禁用换行/空行/数字）。
 - 尽量简短。"""
@@ -78,7 +81,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
                 ChatClient(
                     name=entity1.name,
                     prompt=message,
-                    chat_history=self._game.get_agent_short_term_memory(
+                    chat_history=self._game.get_agent_chat_history(
                         entity1
                     ).chat_history,
                 )
@@ -97,12 +100,14 @@ class CombatPostProcessingSystem(ExecuteProcessor):
             assert stage_entity2 is not None
 
             # 在这里做压缩！！先测试，可以不做。TODO。
-            self._compress_chat_history_after_combat(entity2)
+            self._remove_combat_chat_messages(entity2)
 
             # 压缩后的战斗经历，就是战斗过程做成摘要。
-            summary = f"""# 发生事件! 你经历了一场战斗！
-场景: {stage_entity2.name}
-你记录下了这次战斗的经历:
+            summary = f"""# 提示！ 你经历了一场战斗！
+战斗所在场景：{stage_entity2.name}
+
+## 你记录下了这次战斗的经历
+
 {request_handler.response_content}"""
 
             # 添加记忆，并给客户端。
@@ -117,7 +122,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     # 压缩战斗历史。
-    def _compress_chat_history_after_combat(self, entity: Entity) -> None:
+    def _remove_combat_chat_messages(self, entity: Entity) -> None:
 
         assert entity.has(ActorComponent), f"实体: {entity.name} 不是角色！"
 
@@ -126,14 +131,18 @@ class CombatPostProcessingSystem(ExecuteProcessor):
         assert stage_entity is not None
 
         # 获取最近的战斗消息。
-        begin_message = self._retrieve_recent_human_message_by_kargs(
-            entity, "combat_kickoff_tag", stage_entity.name
+        begin_message = self._game.find_recent_human_message_by_attribute(
+            actor_entity=entity,
+            attribute_key="combat_kickoff_tag",
+            attribute_value=stage_entity.name,
         )
         assert begin_message is not None
 
         # 获取最近的战斗消息。
-        end_message = self._retrieve_recent_human_message_by_kargs(
-            entity, "combat_result_tag", stage_entity.name
+        end_message = self._game.find_recent_human_message_by_attribute(
+            actor_entity=entity,
+            attribute_key="combat_result_tag",
+            attribute_value=stage_entity.name,
         )
         assert end_message is not None
 
@@ -143,46 +152,13 @@ class CombatPostProcessingSystem(ExecuteProcessor):
             )
             return
 
-        short_term_memory = self._game.get_agent_short_term_memory(entity)
-        begin_message_index = short_term_memory.chat_history.index(begin_message)
-        end_message_index = short_term_memory.chat_history.index(end_message) + 1
-        # 移除！！！！。
-        del short_term_memory.chat_history[begin_message_index:end_message_index]
-        logger.debug(
-            f"战斗消息压缩成功！{entity.name} begin_message: {begin_message} end_message: {end_message}"
-        )
-
-    #######################################################################################################################################
-    def _retrieve_recent_human_message_by_kargs(
-        self, actor_entity: Entity, kwargs_key: str, kwargs_value: str
-    ) -> Optional[HumanMessage]:
-
-        chat_history = self._game.get_agent_short_term_memory(actor_entity).chat_history
-        for chat_message in reversed(chat_history):
-
-            if not isinstance(chat_message, HumanMessage):
-                continue
-
-            try:
-                if not hasattr(chat_message, "kwargs"):
-                    continue
-
-                kwargs = getattr(chat_message, "kwargs", {})
-                if not isinstance(kwargs, dict):
-                    continue
-
-                value = kwargs.get(kwargs_key, None)
-                if value != kwargs_value:
-                    continue
-
-                logger.debug(
-                    f"retrieve_recent_human_message_by_kargs found: {chat_message}, {getattr(chat_message, 'kwargs', None)}"
-                )
-                return chat_message
-            except Exception as e:
-                logger.error(f"retrieve_recent_human_message_by_kargs error: {e}")
-                continue
-
-        return None
+        agent_chat_history = self._game.get_agent_chat_history(entity)
+        begin_message_index = agent_chat_history.chat_history.index(begin_message)
+        end_message_index = agent_chat_history.chat_history.index(end_message) + 1
+        # 开始移除！！！！。
+        del agent_chat_history.chat_history[begin_message_index:end_message_index]
+        logger.info(f"战斗消息压缩成功！{entity.name}")
+        logger.debug(f"begin_message: \n{begin_message.model_dump_json(indent=2)}")
+        logger.debug(f"end_message: \n{end_message.model_dump_json(indent=2)}")
 
     #######################################################################################################################################

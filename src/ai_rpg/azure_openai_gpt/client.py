@@ -1,3 +1,4 @@
+from typing import Optional
 from dotenv import load_dotenv
 from loguru import logger
 
@@ -9,7 +10,7 @@ from langchain_openai import AzureChatOpenAI
 from pydantic import SecretStr
 
 
-def create_azure_openai_gpt_llm() -> AzureChatOpenAI:
+def create_azure_openai_gpt_llm(temperature: Optional[float] = None) -> AzureChatOpenAI:
     """
     创建新的Azure OpenAI GPT实例
 
@@ -36,7 +37,7 @@ def create_azure_openai_gpt_llm() -> AzureChatOpenAI:
         api_key=SecretStr(azure_api_key),
         azure_deployment="gpt-4o",
         api_version="2024-02-01",
-        temperature=0.7,
+        temperature=temperature if temperature is not None else 0.7,
     )
 
     logger.debug("🤖 Azure OpenAI GPT实例创建完成")

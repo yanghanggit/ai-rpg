@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from .client_message import ClientMessage
 from .dungeon import Dungeon
 from .snapshot import EntitySnapshot
-from .world import AgentShortTermMemory
+from .world import AgentChatHistory
 
 ################################################################################################################
 ################################################################################################################
@@ -171,7 +171,7 @@ class ViewHomeResponse(BaseModel):
 @final
 class ViewActorResponse(BaseModel):
     actor_snapshots: List[EntitySnapshot]
-    agent_short_term_memories: List[AgentShortTermMemory]
+    agent_short_term_memories: List[AgentChatHistory]
 
 
 ################################################################################################################

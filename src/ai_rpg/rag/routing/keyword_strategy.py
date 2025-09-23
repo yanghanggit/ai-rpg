@@ -31,7 +31,7 @@ class KeywordRouteStrategy(RouteStrategy):
             else:
                 self.keywords = set(keyword.lower() for keyword in keywords_list)
 
-        logger.info(f"🔑 关键词路由策略加载了 {len(self.keywords)} 个关键词")
+        logger.debug(f"🔑 关键词路由策略加载了 {len(self.keywords)} 个关键词")
         logger.debug(f"🔑 关键词列表样例: {list(self.keywords)[:5]}...")
 
     def should_route_to_rag(

@@ -214,9 +214,7 @@ class HomeActorSystem(BaseActionReactiveSystem):
                 ChatClient(
                     name=entity.name,
                     prompt=message,
-                    chat_history=self._game.get_agent_short_term_memory(
-                        entity
-                    ).chat_history,
+                    chat_history=self._game.get_agent_chat_history(entity).chat_history,
                 )
             )
 

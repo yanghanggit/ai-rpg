@@ -25,7 +25,7 @@ from ..models import (
     ActorComponent,
     ActorType,
     AgentEvent,
-    AgentShortTermMemory,
+    AgentChatHistory,
     AppearanceComponent,
     Combat,
     DeathComponent,
@@ -146,9 +146,9 @@ class TCGGame(BaseGame, TCGGameContext):
     @override
     def destroy_entity(self, entity: Entity) -> None:
         logger.debug(f"TCGGame destroy entity: {entity.name}")
-        if entity.name in self.world.agents_short_term_memory:
+        if entity.name in self.world.agents_chat_history:
             logger.debug(f"TCGGame destroy entity: {entity.name} in short term memory")
-            self.world.agents_short_term_memory.pop(entity.name, None)
+            self.world.agents_chat_history.pop(entity.name, None)
         return super().destroy_entity(entity)
 
     ###############################################################################################################################################
@@ -380,7 +380,7 @@ class TCGGame(BaseGame, TCGGameContext):
         chat_history_dir = self.verbose_dir / "chat_history"
         chat_history_dir.mkdir(parents=True, exist_ok=True)
 
-        for agent_name, agent_memory in self.world.agents_short_term_memory.items():
+        for agent_name, agent_memory in self.world.agents_chat_history.items():
             chat_history_path = chat_history_dir / f"{agent_name}.json"
             chat_history_path.write_text(
                 agent_memory.model_dump_json(), encoding="utf-8"
@@ -594,17 +594,19 @@ class TCGGame(BaseGame, TCGGameContext):
         return self.get_entity_by_player_name(self.player_client.name)
 
     ###############################################################################################################################################
-    def get_agent_short_term_memory(self, entity: Entity) -> AgentShortTermMemory:
-        return self.world.agents_short_term_memory.setdefault(
-            entity.name, AgentShortTermMemory(name=entity.name, chat_history=[])
+    def get_agent_chat_history(self, entity: Entity) -> AgentChatHistory:
+        return self.world.agents_chat_history.setdefault(
+            entity.name, AgentChatHistory(name=entity.name, chat_history=[])
         )
 
     ###############################################################################################################################################
     def append_system_message(self, entity: Entity, chat: str) -> None:
         logger.debug(f"append_system_message: {entity.name} => \n{chat}")
-        agent_short_term_memory = self.get_agent_short_term_memory(entity)
-        if len(agent_short_term_memory.chat_history) == 0:
-            agent_short_term_memory.chat_history.extend([SystemMessage(content=chat)])
+        agent_chat_history = self.get_agent_chat_history(entity)
+        assert (
+            len(agent_chat_history.chat_history) == 0
+        ), "system message should be the first message"
+        agent_chat_history.chat_history.append(SystemMessage(content=chat))
 
     ###############################################################################################################################################
     def append_human_message(self, entity: Entity, chat: str, **kwargs: Any) -> None:
@@ -614,9 +616,9 @@ class TCGGame(BaseGame, TCGGameContext):
             # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
             logger.debug(f"kwargs: {kwargs}")
 
-        agent_short_term_memory = self.get_agent_short_term_memory(entity)
+        agent_short_term_memory = self.get_agent_chat_history(entity)
         agent_short_term_memory.chat_history.extend(
-            [HumanMessage(content=chat, kwargs=kwargs)]
+            [HumanMessage(content=chat, **kwargs)]
         )
 
     ###############################################################################################################################################
@@ -629,7 +631,7 @@ class TCGGame(BaseGame, TCGGameContext):
             logger.debug(f"append_ai_message: {entity.name} => \n{ai_message.content}")
 
         # 添加多条 AIMessage
-        agent_short_term_memory = self.get_agent_short_term_memory(entity)
+        agent_short_term_memory = self.get_agent_chat_history(entity)
         agent_short_term_memory.chat_history.extend(ai_messages)
 
     ###############################################################################################################################################
@@ -1417,5 +1419,33 @@ class TCGGame(BaseGame, TCGGameContext):
         assert player_entity is not None, "玩家实体不存在！"
         player_entity.replace(TransStageAction, player_entity.name, stage_name)
         return True
+
+    #######################################################################################################################################
+    def find_recent_human_message_by_attribute(
+        self,
+        actor_entity: Entity,
+        attribute_key: str,
+        attribute_value: str,
+    ) -> Optional[HumanMessage]:
+
+        chat_history = self.get_agent_chat_history(actor_entity).chat_history
+
+        # 注意，这里是倒序遍历！
+        for chat_message in reversed(chat_history):
+
+            if not isinstance(chat_message, HumanMessage):
+                continue
+
+            try:
+                # 直接从 HumanMessage 对象获取属性，而不是从嵌套的 kwargs 中获取
+                if hasattr(chat_message, attribute_key):
+                    if getattr(chat_message, attribute_key) == attribute_value:
+                        return chat_message
+
+            except Exception as e:
+                logger.error(f"find_recent_human_message_by_attribute error: {e}")
+                continue
+
+        return None
 
     #######################################################################################################################################

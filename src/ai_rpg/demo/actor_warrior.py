@@ -23,7 +23,7 @@ def create_actor_warrior() -> Actor:
         rpg_character_profile=RPGCharacterProfile(base_max_hp=1000),
         type=ActorType.HERO,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-        actor_profile=f"""你是一个人类，是西幻风格RPG游戏里的一个角色，
+        actor_profile=f"""你是一个人类，是西幻和赛博朋克风格结合的RPG游戏里的一个角色，
 【角色人设】
 你是人类王国阿斯特拉边境的守护者，出生于一个常年遭受“魔物”（实则为受反应堆辐射变异的生物与失控的旧世界防御机械）
 侵袭的村庄。你是王国“雄鹰军团”的资深成员，在名为“黯影隘口”的惨烈战役中，你亲眼目睹了失控的能量武器

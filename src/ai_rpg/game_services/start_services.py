@@ -20,7 +20,6 @@ start_router = APIRouter()
 async def start(
     request_data: StartRequest,
     game_server: GameServerInstance,
-    # server_settings: ServerSettingsInstance,
 ) -> StartResponse:
 
     logger.info(f"/start/v1/: {request_data.model_dump_json()}")
@@ -39,34 +38,40 @@ async def start(
         room = room_manager.get_room(request_data.user_name)
         assert room is not None
 
-        # 转化成复杂参数
-        web_user_session_options = WebGameSessionContext(
-            user=request_data.user_name,
-            game=request_data.game_name,
-            actor=request_data.actor_name,
-        )
-
         if room.game is None:
-            # 如果没有游戏对象，就‘创建/复位’一个游戏。
-            web_game = setup_web_game_session(
-                web_game_user_options=web_user_session_options,
-                # server_settings=server_settings,
+
+            # 转化成复杂参数
+            game_session_context = WebGameSessionContext(
+                user=request_data.user_name,
+                game=request_data.game_name,
+                actor=request_data.actor_name,
             )
 
+            # 创建游戏
+            web_game = setup_web_game_session(
+                web_game_user_options=game_session_context,
+            )
+
+            assert web_game is not None, "Web game setup failed"
             if web_game is None:
-                logger.error(f"创建游戏失败 = {web_user_session_options.game}")
+                logger.error(f"创建游戏失败 = {game_session_context.game}")
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"start/v1: {request_data.user_name} failed to create game",
                 )
 
+            # 赋值给房间
             room.game = web_game
+
+            # 需要初始化游戏！
+            logger.info(f"start/v1: {request_data.user_name} init game!")
+            assert room.game is not None, "房间游戏实例不存在"
+            await room.game.initialize()
+
         else:
-            # 是继续玩
-            logger.info(f"start/v1: {request_data.user_name} has room, is running!")
+            assert False, "游戏已经在进行中，无法重新启动! 尚未实现！"
 
         assert room.game is not None
-        await room.game.initialize()
         return StartResponse(
             message=f"启动游戏成功！",
         )
@@ -83,7 +88,6 @@ async def start(
 ###################################################################################################################################################################
 def setup_web_game_session(
     web_game_user_options: WebGameSessionContext,
-    # server_settings: ServerSettingsInstance,
 ) -> Optional[WebTCGGame]:
 
     world_exists = web_game_user_options.world_data

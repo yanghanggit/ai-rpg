@@ -128,7 +128,7 @@ class MindVoiceActionSystem(BaseActionReactiveSystem, InitializeProcessor):
                 return self._query_with_rag(original_message)
             else:
                 # 3. 不需检索，返回空
-                return ""
+                return self._query_with_rag(original_message)
 
         except Exception as e:
             logger.error(f"❌ 相关信息检索失败: {e}")

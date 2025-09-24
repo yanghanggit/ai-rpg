@@ -218,29 +218,19 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     @override
     def exit(self) -> None:
-        self._shutsdown_all_pipelines()
-        logger.warning(f"{self.name}, exit!!!!!!!!!!!!!!!!!!!!")
-
-    ###############################################################################################################################################
-    @override
-    async def initialize(self) -> None:
-        # 初始化所有管道
-        await self._initialize_all_pipelines()
-
-    ###############################################################################################################################################
-    def _shutsdown_all_pipelines(self) -> None:
-
-        # 关闭
+        # 关闭所有管道
         for processor in self._all_pipelines:
             processor.shutdown()
             logger.debug(f"Shutdown pipeline: {processor._name}")
 
         # 清空
         self._all_pipelines.clear()
+        logger.warning(f"{self.name}, exit!!!!!!!!!!!!!!!!!!!!")
 
     ###############################################################################################################################################
-    async def _initialize_all_pipelines(self) -> None:
-        # 初始化
+    @override
+    async def initialize(self) -> None:
+        # 初始化所有管道
         for processor in self._all_pipelines:
             processor.activate_reactive_processors()
             await processor.initialize()
@@ -314,7 +304,10 @@ class TCGGame(BaseGame, TCGGameContext):
 
         try:
             # 创建并保存 WorldDocument
-            world_document = self._create_world_document(version)
+            world_document = WorldDocument.create_from_world(
+                username=self.player_client.name, world=self.world, version=version
+            )
+            # self._create_world_document(version)
             inserted_id = self._save_world_document_to_mongodb(
                 world_document, collection_name
             )
@@ -328,13 +321,6 @@ class TCGGame(BaseGame, TCGGameContext):
         except Exception as e:
             logger.error(f"❌ 演示游戏世界 MongoDB 操作失败: {e}")
             raise
-
-    ###############################################################################################################################################
-    def _create_world_document(self, version: str) -> WorldDocument:
-        """创建 WorldDocument 实例"""
-        return WorldDocument.create_from_world(
-            username=self.player_client.name, world=self.world, version=version
-        )
 
     ###############################################################################################################################################
     def _save_world_document_to_mongodb(
@@ -683,9 +669,6 @@ class TCGGame(BaseGame, TCGGameContext):
         for entity in entities:
             replace_message = _replace_name_with_you(agent_event.message, entity.name)
             self.append_human_message(entity, replace_message)
-
-            # if entity.has(PlayerComponent):
-            # 客户端拿到这个事件，用于处理业务。
 
         # 最后都要发给客户端。
         self.player_client.add_agent_event_message(agent_event=agent_event)
@@ -1296,7 +1279,6 @@ class TCGGame(BaseGame, TCGGameContext):
         assert player_entity is not None
         data: Dict[str, str] = {target: content}
         player_entity.replace(SpeakAction, player_entity.name, data)
-        # player_entity.replace(PlayerActiveComponent, player_entity.name)  # 添加标记。
 
         return True
 

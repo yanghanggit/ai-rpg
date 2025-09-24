@@ -2,9 +2,8 @@ import copy
 import random
 import shutil
 import uuid
-from enum import IntEnum, unique
 from pathlib import Path
-from typing import Any, Dict, Final, List, Optional, Set, Tuple, final
+from typing import Any, Dict, Final, List, Optional, Set, Tuple
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
@@ -70,16 +69,6 @@ def _replace_name_with_you(input_text: str, your_name: str) -> str:
         return input_text
 
     return input_text.replace(your_name, "你")
-
-
-###############################################################################################################################################
-@unique
-@final
-class ConversationValidationResult(IntEnum):
-    VALID = 0
-    INVALID_TARGET = 1
-    NO_STAGE = 2
-    NOT_SAME_STAGE = 3
 
 
 ###############################################################################################################################################
@@ -161,17 +150,7 @@ class TCGGame(BaseGame, TCGGameContext):
         if player_entity is None:
             return False
 
-        stage_entity = self.safe_get_stage_entity(player_entity)
-        assert stage_entity is not None, "stage_entity is None"
-        if stage_entity is None:
-            return False
-
-        if stage_entity.has(HomeComponent):
-            assert not stage_entity.has(
-                DungeonComponent
-            ), "stage_entity has both HomeComponent and DungeonComponent!"
-
-        return stage_entity.has(HomeComponent)
+        return self.is_actor_at_home(player_entity)
 
     ###############################################################################################################################################
     @property
@@ -181,17 +160,7 @@ class TCGGame(BaseGame, TCGGameContext):
         if player_entity is None:
             return False
 
-        stage_entity = self.safe_get_stage_entity(player_entity)
-        assert stage_entity is not None, "stage_entity is None"
-        if stage_entity is None:
-            return False
-
-        if stage_entity.has(DungeonComponent):
-            assert not stage_entity.has(
-                HomeComponent
-            ), "stage_entity has both HomeComponent and DungeonComponent!"
-
-        return stage_entity.has(DungeonComponent)
+        return self.is_actor_in_dungeon(player_entity)
 
     ###############################################################################################################################################
     @property
@@ -811,25 +780,6 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 4. 处理角色进入场景
         self._handle_actors_entering_stage(actors_to_transfer, stage_destination)
-
-    ###############################################################################################################################################
-    def validate_conversation(
-        self, stage_or_actor: Entity, target_name: str
-    ) -> ConversationValidationResult:
-
-        actor_entity: Optional[Entity] = self.get_actor_entity(target_name)
-        if actor_entity is None:
-            return ConversationValidationResult.INVALID_TARGET
-
-        current_stage_entity = self.safe_get_stage_entity(stage_or_actor)
-        if current_stage_entity is None:
-            return ConversationValidationResult.NO_STAGE
-
-        target_stage_entity = self.safe_get_stage_entity(actor_entity)
-        if target_stage_entity != current_stage_entity:
-            return ConversationValidationResult.NOT_SAME_STAGE
-
-        return ConversationValidationResult.VALID
 
     #######################################################################################################################################
     def _create_dungeon_entities(self, dungeon: Dungeon) -> None:

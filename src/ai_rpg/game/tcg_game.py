@@ -272,25 +272,24 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 生成快照
         self.world.entities_snapshot = self.make_entities_snapshot()
+        logger.debug(f"游戏将要保存，实体数量: {len(self.world.entities_snapshot)}")
 
         # 保存快照
         self._persist_world_to_mongodb()
 
         # debug
-        self.verbose()
+        self._debug_verbose()
 
-        logger.debug(f"游戏已保存，实体数量: {len(self.world.entities_snapshot)}")
         return self
 
     ###############################################################################################################################################
-    def verbose(self) -> "TCGGame":
+    def _debug_verbose(self) -> "TCGGame":
         """调试方法，保存游戏状态到文件"""
         self._verbose_boot_data()
         self._verbose_world_data()
         self._verbose_entities_snapshot()
         self._verbose_chat_history()
         self._verbose_dungeon_system()
-
         logger.debug(f"Verbose debug info saved to: {self.verbose_dir}")
         return self
 

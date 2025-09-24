@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from ..game.tcg_game import TCGGameState
+
+# from ..game.tcg_game import TCGGameState
 from ..game.web_tcg_game import WebTCGGame
 from ..game_services.game_server import GameServerInstance
 from ..models import (
@@ -61,9 +62,10 @@ def _validate_dungeon_prerequisites(
     assert web_game is not None
 
     # 判断游戏状态，不是DUNGEON状态不可以推进。
-    if web_game.current_game_state != TCGGameState.DUNGEON:
+    # if web_game.current_game_state != TCGGameState.DUNGEON:
+    if not web_game.is_player_in_dungeon:
         logger.error(
-            f"dungeon operation: {user_name} game state error = {web_game.current_game_state}"
+            f"dungeon operation: {user_name} game state error !!!!! not in dungeon state."
         )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -2,13 +2,12 @@ import copy
 import random
 import shutil
 import uuid
-from enum import Enum, IntEnum, unique
+from enum import IntEnum, unique
 from pathlib import Path
 from typing import Any, Dict, Final, List, Optional, Set, Tuple, final
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
-from ai_rpg.models.actions import PlanAction
 from ..game.game_config import LOGS_DIR
 from ..mongodb import (
     DEFAULT_MONGODB_CONFIG,
@@ -53,8 +52,9 @@ from ..models import (
     WorldSystem,
     WorldSystemComponent,
     TransStageAction,
+    PlanAction,
+    XCardPlayerComponent,
 )
-from ..models.components import XCardPlayerComponent
 from .player_client import PlayerClient
 
 
@@ -75,16 +75,7 @@ def _replace_name_with_you(input_text: str, your_name: str) -> str:
 ###############################################################################################################################################
 @unique
 @final
-class TCGGameState(IntEnum):
-    NONE = 0
-    HOME = 1
-    DUNGEON = 2
-
-
-###############################################################################################################################################
-@unique
-@final
-class ConversationValidationResult(Enum):
+class ConversationValidationResult(IntEnum):
     VALID = 0
     INVALID_TARGET = 1
     NO_STAGE = 2
@@ -134,8 +125,8 @@ class TCGGame(BaseGame, TCGGameContext):
         logger.debug(
             f"TCGGame init player: {self._player_client.name}: {self._player_client.actor}"
         )
-        assert self._player_client.name != ""
-        assert self._player_client.actor != ""
+        assert self._player_client.name != "", "玩家名字不能为空"
+        assert self._player_client.actor != "", "玩家角色不能为空"
 
     ###############################################################################################################################################
     @property
@@ -164,25 +155,43 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     @property
-    def current_game_state(self) -> TCGGameState:
-
+    def is_player_at_home(self) -> bool:
         player_entity = self.get_player_entity()
+        assert player_entity is not None, "player_entity is None"
         if player_entity is None:
-            return TCGGameState.NONE
+            return False
 
         stage_entity = self.safe_get_stage_entity(player_entity)
-        assert stage_entity is not None
+        assert stage_entity is not None, "stage_entity is None"
         if stage_entity is None:
-            return TCGGameState.NONE
+            return False
 
         if stage_entity.has(HomeComponent):
-            return TCGGameState.HOME
-        elif stage_entity.has(DungeonComponent):
-            return TCGGameState.DUNGEON
-        else:
-            assert False, "stage type is not defined"
+            assert not stage_entity.has(
+                DungeonComponent
+            ), "stage_entity has both HomeComponent and DungeonComponent!"
 
-        return TCGGameState.NONE
+        return stage_entity.has(HomeComponent)
+
+    ###############################################################################################################################################
+    @property
+    def is_player_in_dungeon(self) -> bool:
+        player_entity = self.get_player_entity()
+        assert player_entity is not None, "player_entity is None"
+        if player_entity is None:
+            return False
+
+        stage_entity = self.safe_get_stage_entity(player_entity)
+        assert stage_entity is not None, "stage_entity is None"
+        if stage_entity is None:
+            return False
+
+        if stage_entity.has(DungeonComponent):
+            assert not stage_entity.has(
+                HomeComponent
+            ), "stage_entity has both HomeComponent and DungeonComponent!"
+
+        return stage_entity.has(DungeonComponent)
 
     ###############################################################################################################################################
     @property

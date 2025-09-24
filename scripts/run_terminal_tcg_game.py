@@ -19,7 +19,8 @@ from ai_rpg.demo import (
     create_demo_dungeon1,
 )
 from ai_rpg.game.player_client import PlayerClient
-from ai_rpg.game.tcg_game import TCGGameState
+
+# from ai_rpg.game.tcg_game import TCGGameState
 from ai_rpg.game.terminal_tcg_game import (
     TerminalTCGGame,
     TerminalGameSessionContext,
@@ -589,9 +590,9 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         return
 
     # 根据游戏状态分发处理逻辑
-    if terminal_game.current_game_state == TCGGameState.DUNGEON:
+    if terminal_game.is_player_in_dungeon:
         await _process_dungeon_state_input(terminal_game, usr_input)
-    elif terminal_game.current_game_state == TCGGameState.HOME:
+    elif terminal_game.is_player_at_home:
         await _process_home_state_input(terminal_game, usr_input)
     else:
         logger.error(

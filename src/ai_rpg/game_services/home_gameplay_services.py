@@ -118,7 +118,7 @@ async def _handle_speak_action(
         HomeGamePlayResponse: 包含客户端消息的响应
     """
     # player 添加说话的动作
-    if web_game.activate_speak_action(target=target, content=content):
+    if web_game.speak_action(target=target, content=content):
         # 清空消息。准备重新开始 + 测试推进一次游戏
         web_game.player_client.clear_messages()
         await web_game.player_home_pipeline.process()

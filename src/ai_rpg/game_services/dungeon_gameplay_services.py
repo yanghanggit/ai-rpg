@@ -117,7 +117,7 @@ async def _handle_draw_cards(web_game: WebTCGGame) -> DungeonGamePlayResponse:
         )
 
     # 推进一次游戏, 即可抽牌。
-    web_game.activate_draw_cards_action()
+    web_game.draw_cards_action()
     web_game.player_client.clear_messages()
     await web_game.dungeon_combat_pipeline.process()
 
@@ -142,7 +142,7 @@ async def _handle_play_cards(
         )
 
     logger.debug(f"玩家输入 = {request_data.user_input.tag}, 准备行动......")
-    if web_game.activate_play_cards_action():
+    if web_game.play_cards_action():
         # 执行一次！！！！！
         # await _execute_web_game(web_game)
         web_game.player_client.clear_messages()

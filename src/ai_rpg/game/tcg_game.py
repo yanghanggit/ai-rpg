@@ -1117,7 +1117,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     # TODO, 临时添加行动, 逻辑。 activate_play_cards_action
-    def activate_play_cards_action(
+    def play_cards_action(
         self, skill_execution_plan_options: Optional[Dict[str, str]] = None
     ) -> bool:
         """
@@ -1259,7 +1259,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     #######################################################################################################################################
     # TODO, 临时添加行动, 逻辑。
-    def activate_speak_action(self, target: str, content: str) -> bool:
+    def speak_action(self, target: str, content: str) -> bool:
 
         assert target != "", "target is empty"
         assert content != "", "content is empty"
@@ -1283,7 +1283,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     #######################################################################################################################################
     # TODO, 临时添加行动, 逻辑。
-    def activate_draw_cards_action(self) -> None:
+    def draw_cards_action(self) -> None:
 
         player_entity = self.get_player_entity()
         assert player_entity is not None
@@ -1363,7 +1363,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     #######################################################################################################################################
     # TODO, 临时添加行动, 逻辑。
-    def activate_plan_action(self, actors: List[str]) -> None:
+    def plan_action(self, actors: List[str]) -> None:
 
         for actor_name in actors:
 
@@ -1386,7 +1386,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     #######################################################################################################################################
     # TODO, 临时添加行动, 逻辑。
-    def activate_home_trans_stage_action(self, stage_name: str) -> bool:
+    def trans_stage_action(self, stage_name: str) -> bool:
         target_stage_entity = self.get_stage_entity(stage_name)
         assert target_stage_entity is not None, f"目标场景: {stage_name} 不存在！"
         if target_stage_entity is None:

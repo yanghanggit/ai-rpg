@@ -426,7 +426,7 @@ async def _process_dungeon_state_input(
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
-        terminal_game.activate_draw_cards_action()
+        terminal_game.draw_cards_action()
 
         await terminal_game.dungeon_combat_pipeline.process()
 
@@ -446,7 +446,7 @@ async def _process_dungeon_state_input(
         skill_options = (
             player_cards_command["params"] if player_cards_command["params"] else None
         )
-        if terminal_game.activate_play_cards_action(skill_options):
+        if terminal_game.play_cards_action(skill_options):
             await terminal_game.dungeon_combat_pipeline.process()
 
     elif usr_input == "/rth" or usr_input == "/return-to-home":
@@ -518,7 +518,7 @@ async def _process_home_state_input(
         # "/hero --params=角色.法师.奥露娜;角色.战士.卡恩"
         hero_command = _parse_hero_plan_command_input(usr_input)
         logger.debug(f"解析到的英雄命令: {hero_command}")
-        terminal_game.activate_plan_action(actors=hero_command["heroes"])
+        terminal_game.plan_action(actors=hero_command["heroes"])
         await terminal_game.npc_home_pipeline.process()
 
     elif "/speak" in usr_input or "/ss" in usr_input:
@@ -527,7 +527,7 @@ async def _process_home_state_input(
         speak_command = _parse_speak_command_input(usr_input)
 
         # 处理输入
-        if terminal_game.activate_speak_action(
+        if terminal_game.speak_action(
             target=speak_command["target"],
             content=speak_command["content"],
         ):
@@ -542,9 +542,7 @@ async def _process_home_state_input(
         # 分析输入
         home_trans_stage_command = _parse_home_trans_stage_command_input(usr_input)
         logger.info(f"解析到的家园传送命令: {home_trans_stage_command}")
-        if terminal_game.activate_home_trans_stage_action(
-            home_trans_stage_command["stage_name"]
-        ):
+        if terminal_game.trans_stage_action(home_trans_stage_command["stage_name"]):
             # player 执行一次, 这次基本是忽略推理标记的，所有NPC不推理。
             await terminal_game.player_home_pipeline.process()
 

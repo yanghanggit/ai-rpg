@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from ..game.tcg_game import TCGGameState
+
+# from ..game.tcg_game import TCGGameState
 from ..game.web_tcg_game import WebTCGGame
 from ..game_services.game_server import GameServerInstance
 from ..models import (
@@ -58,23 +59,15 @@ async def _validate_home_game_preconditions(
     assert isinstance(web_game, WebTCGGame)
 
     # 判断游戏状态，不是Home状态不可以推进。
-    if web_game.current_game_state != TCGGameState.HOME:
-        logger.error(f"{user_name} game state error = {web_game.current_game_state}")
+    # if web_game.current_game_state != TCGGameState.HOME:
+    if not web_game.is_player_at_home:
+        logger.error(f"{user_name} game state error !!!!! not in home state.")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="只能在营地中使用",
         )
 
     return web_game
-
-
-###################################################################################################################################################################
-###################################################################################################################################################################
-###################################################################################################################################################################
-# async def _execute_web_game(web_game: WebTCGGame) -> None:
-#     assert web_game.player.name != ""
-#     web_game.player.clear_messages()
-#     await web_game.run()
 
 
 ###################################################################################################################################################################
@@ -118,7 +111,7 @@ async def _handle_speak_action(
         HomeGamePlayResponse: 包含客户端消息的响应
     """
     # player 添加说话的动作
-    if web_game.activate_speak_action(target=target, content=content):
+    if web_game.speak_action(target=target, content=content):
         # 清空消息。准备重新开始 + 测试推进一次游戏
         web_game.player_client.clear_messages()
         await web_game.player_home_pipeline.process()

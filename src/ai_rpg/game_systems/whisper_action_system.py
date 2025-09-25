@@ -1,6 +1,6 @@
 from typing import final, override
 from ..entitas import Entity, GroupEvent, Matcher
-from ..game.tcg_game import ConversationValidationResult
+from ..game.tcg_game_context import InteractionValidationResult
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import AgentEvent, WhisperAction, WhisperEvent
 
@@ -13,7 +13,9 @@ def _generate_prompt(speaker_name: str, target_name: str, content: str) -> str:
 ####################################################################################################################################
 def _generate_invalid_prompt(speaker_name: str, target_name: str) -> str:
     return f"""# 提示: {speaker_name} 试图和一个不存在的目标 {target_name} 进行对话。
+
 ## 原因分析与建议
+
 - 请检查目标的全名: {target_name}。
 - 请检查目标是否存在于当前场景中。"""
 
@@ -50,9 +52,9 @@ class WhisperActionSystem(BaseActionReactiveSystem):
 
         for target_name, whisper_content in whisper_action.target_messages.items():
 
-            error = self._game.validate_conversation(entity, target_name)
-            if error != ConversationValidationResult.VALID:
-                if error == ConversationValidationResult.INVALID_TARGET:
+            error = self._game.validate_interaction(entity, target_name)
+            if error != InteractionValidationResult.SUCCESS:
+                if error == InteractionValidationResult.TARGET_NOT_FOUND:
                     self._game.notify_event(
                         set({entity}),
                         AgentEvent(

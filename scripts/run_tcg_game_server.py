@@ -26,9 +26,13 @@ from ai_rpg.game_services.view_actor_services import view_actor_router
 from ai_rpg.game_services.view_dungeon_services import view_dungeon_router
 from ai_rpg.game_services.view_home_services import view_home_router
 from ai_rpg.chat_services.client import ChatClient
+from ai_rpg.game.game_config import setup_logger
 
 _server_setting_path: Final[Path] = Path("server_settings.json")
 assert _server_setting_path.exists(), f"{_server_setting_path} must exist"
+
+# 初始化日志系统！
+setup_logger()
 
 
 @asynccontextmanager

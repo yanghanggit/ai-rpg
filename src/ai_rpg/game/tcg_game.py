@@ -2,13 +2,11 @@ import copy
 import random
 import shutil
 import uuid
-from enum import Enum, IntEnum, unique
 from pathlib import Path
-from typing import Any, Dict, Final, List, Optional, Set, Tuple, final
+from typing import Any, Dict, Final, List, Optional, Set, Tuple
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
-from ai_rpg.models.actions import PlanAction
 from ..game.game_config import LOGS_DIR
 from ..mongodb import (
     DEFAULT_MONGODB_CONFIG,
@@ -53,8 +51,9 @@ from ..models import (
     WorldSystem,
     WorldSystemComponent,
     TransStageAction,
+    PlanAction,
+    XCardPlayerComponent,
 )
-from ..models.components import XCardPlayerComponent
 from .player_client import PlayerClient
 
 
@@ -70,25 +69,6 @@ def _replace_name_with_you(input_text: str, your_name: str) -> str:
         return input_text
 
     return input_text.replace(your_name, "你")
-
-
-###############################################################################################################################################
-@unique
-@final
-class TCGGameState(IntEnum):
-    NONE = 0
-    HOME = 1
-    DUNGEON = 2
-
-
-###############################################################################################################################################
-@unique
-@final
-class ConversationValidationResult(Enum):
-    VALID = 0
-    INVALID_TARGET = 1
-    NO_STAGE = 2
-    NOT_SAME_STAGE = 3
 
 
 ###############################################################################################################################################
@@ -134,8 +114,8 @@ class TCGGame(BaseGame, TCGGameContext):
         logger.debug(
             f"TCGGame init player: {self._player_client.name}: {self._player_client.actor}"
         )
-        assert self._player_client.name != ""
-        assert self._player_client.actor != ""
+        assert self._player_client.name != "", "玩家名字不能为空"
+        assert self._player_client.actor != "", "玩家角色不能为空"
 
     ###############################################################################################################################################
     @property
@@ -164,25 +144,23 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     @property
-    def current_game_state(self) -> TCGGameState:
-
+    def is_player_at_home(self) -> bool:
         player_entity = self.get_player_entity()
+        assert player_entity is not None, "player_entity is None"
         if player_entity is None:
-            return TCGGameState.NONE
+            return False
 
-        stage_entity = self.safe_get_stage_entity(player_entity)
-        assert stage_entity is not None
-        if stage_entity is None:
-            return TCGGameState.NONE
+        return self.is_actor_at_home(player_entity)
 
-        if stage_entity.has(HomeComponent):
-            return TCGGameState.HOME
-        elif stage_entity.has(DungeonComponent):
-            return TCGGameState.DUNGEON
-        else:
-            assert False, "stage type is not defined"
+    ###############################################################################################################################################
+    @property
+    def is_player_in_dungeon(self) -> bool:
+        player_entity = self.get_player_entity()
+        assert player_entity is not None, "player_entity is None"
+        if player_entity is None:
+            return False
 
-        return TCGGameState.NONE
+        return self.is_actor_in_dungeon(player_entity)
 
     ###############################################################################################################################################
     @property
@@ -272,25 +250,24 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 生成快照
         self.world.entities_snapshot = self.make_entities_snapshot()
+        logger.debug(f"游戏将要保存，实体数量: {len(self.world.entities_snapshot)}")
 
         # 保存快照
         self._persist_world_to_mongodb()
 
         # debug
-        self.verbose()
+        self._debug_verbose()
 
-        logger.debug(f"游戏已保存，实体数量: {len(self.world.entities_snapshot)}")
         return self
 
     ###############################################################################################################################################
-    def verbose(self) -> "TCGGame":
+    def _debug_verbose(self) -> "TCGGame":
         """调试方法，保存游戏状态到文件"""
         self._verbose_boot_data()
         self._verbose_world_data()
         self._verbose_entities_snapshot()
         self._verbose_chat_history()
         self._verbose_dungeon_system()
-
         logger.debug(f"Verbose debug info saved to: {self.verbose_dir}")
         return self
 
@@ -804,25 +781,6 @@ class TCGGame(BaseGame, TCGGameContext):
         # 4. 处理角色进入场景
         self._handle_actors_entering_stage(actors_to_transfer, stage_destination)
 
-    ###############################################################################################################################################
-    def validate_conversation(
-        self, stage_or_actor: Entity, target_name: str
-    ) -> ConversationValidationResult:
-
-        actor_entity: Optional[Entity] = self.get_actor_entity(target_name)
-        if actor_entity is None:
-            return ConversationValidationResult.INVALID_TARGET
-
-        current_stage_entity = self.safe_get_stage_entity(stage_or_actor)
-        if current_stage_entity is None:
-            return ConversationValidationResult.NO_STAGE
-
-        target_stage_entity = self.safe_get_stage_entity(actor_entity)
-        if target_stage_entity != current_stage_entity:
-            return ConversationValidationResult.NOT_SAME_STAGE
-
-        return ConversationValidationResult.VALID
-
     #######################################################################################################################################
     def _create_dungeon_entities(self, dungeon: Dungeon) -> None:
 
@@ -1118,7 +1076,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     # TODO, 临时添加行动, 逻辑。 activate_play_cards_action
-    def activate_play_cards_action(
+    def play_cards_action(
         self, skill_execution_plan_options: Optional[Dict[str, str]] = None
     ) -> bool:
         """
@@ -1260,7 +1218,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     #######################################################################################################################################
     # TODO, 临时添加行动, 逻辑。
-    def activate_speak_action(self, target: str, content: str) -> bool:
+    def speak_action(self, target: str, content: str) -> bool:
 
         assert target != "", "target is empty"
         assert content != "", "content is empty"
@@ -1284,7 +1242,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     #######################################################################################################################################
     # TODO, 临时添加行动, 逻辑。
-    def activate_draw_cards_action(self) -> None:
+    def draw_cards_action(self) -> None:
 
         player_entity = self.get_player_entity()
         assert player_entity is not None
@@ -1364,7 +1322,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     #######################################################################################################################################
     # TODO, 临时添加行动, 逻辑。
-    def activate_plan_action(self, actors: List[str]) -> None:
+    def plan_action(self, actors: List[str]) -> None:
 
         for actor_name in actors:
 
@@ -1387,7 +1345,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
     #######################################################################################################################################
     # TODO, 临时添加行动, 逻辑。
-    def activate_home_trans_stage_action(self, stage_name: str) -> bool:
+    def trans_stage_action(self, stage_name: str) -> bool:
         target_stage_entity = self.get_stage_entity(stage_name)
         assert target_stage_entity is not None, f"目标场景: {stage_name} 不存在！"
         if target_stage_entity is None:

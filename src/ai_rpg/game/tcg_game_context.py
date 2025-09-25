@@ -1,4 +1,5 @@
-from typing import Dict, List, Optional, Set, override
+from enum import IntEnum, unique
+from typing import Dict, List, Optional, Set, final, override
 
 from loguru import logger
 
@@ -14,6 +15,8 @@ from ..models import (
     RuntimeComponent,
     StageComponent,
     WorldSystemComponent,
+    HomeComponent,
+    DungeonComponent,
 )
 
 """
@@ -27,6 +30,17 @@ from ..models import (
 ###############################################################################################################################################
 
 
+###############################################################################################################################################
+@unique
+@final
+class InteractionValidationResult(IntEnum):
+    SUCCESS = 0
+    TARGET_NOT_FOUND = 1
+    INITIATOR_NOT_IN_STAGE = 2
+    DIFFERENT_STAGES = 3
+
+
+###############################################################################################################################################
 class TCGGameContext(Context):
 
     ###############################################################################################################################################
@@ -159,6 +173,8 @@ class TCGGameContext(Context):
                 all_of=[PlayerComponent],
             )
         ).entities
+
+        assert len(player_entities) <= 1, "There should be at most one player entity."
         for player_entity in player_entities:
             player_comp = player_entity.get(PlayerComponent)
             if player_comp.player_name == player_name:
@@ -206,5 +222,60 @@ class TCGGameContext(Context):
                 final_appearance = actor.get(AppearanceComponent)
                 ret.setdefault(final_appearance.name, final_appearance.appearance)
         return ret
+
+    ###############################################################################################################################################
+    def is_actor_at_home(self, actor_entity: Entity) -> bool:
+        assert actor_entity.has(ActorComponent), "actor_entity must have ActorComponent"
+        if not actor_entity.has(ActorComponent):
+            return False
+
+        stage_entity = self.safe_get_stage_entity(actor_entity)
+        assert stage_entity is not None, "stage_entity is None"
+        if stage_entity is None:
+            return False
+
+        if stage_entity.has(HomeComponent):
+            assert not stage_entity.has(
+                DungeonComponent
+            ), "stage_entity has both HomeComponent and DungeonComponent!"
+
+        return stage_entity.has(HomeComponent)
+
+    ###############################################################################################################################################
+    def is_actor_in_dungeon(self, actor_entity: Entity) -> bool:
+        assert actor_entity.has(ActorComponent), "actor_entity must have ActorComponent"
+        if not actor_entity.has(ActorComponent):
+            return False
+
+        stage_entity = self.safe_get_stage_entity(actor_entity)
+        assert stage_entity is not None, "stage_entity is None"
+        if stage_entity is None:
+            return False
+
+        if stage_entity.has(DungeonComponent):
+            assert not stage_entity.has(
+                HomeComponent
+            ), "stage_entity has both DungeonComponent and HomeComponent!"
+
+        return stage_entity.has(DungeonComponent)
+
+    ###############################################################################################################################################
+    def validate_interaction(
+        self, initiator_entity: Entity, target_name: str
+    ) -> InteractionValidationResult:
+
+        actor_entity: Optional[Entity] = self.get_actor_entity(target_name)
+        if actor_entity is None:
+            return InteractionValidationResult.TARGET_NOT_FOUND
+
+        current_stage_entity = self.safe_get_stage_entity(initiator_entity)
+        if current_stage_entity is None:
+            return InteractionValidationResult.INITIATOR_NOT_IN_STAGE
+
+        target_stage_entity = self.safe_get_stage_entity(actor_entity)
+        if target_stage_entity != current_stage_entity:
+            return InteractionValidationResult.DIFFERENT_STAGES
+
+        return InteractionValidationResult.SUCCESS
 
     ###############################################################################################################################################

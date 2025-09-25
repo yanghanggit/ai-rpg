@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from ..game.tcg_game import TCGGameState
+
+# from ..game.tcg_game import TCGGameState
 from ..game.web_tcg_game import WebTCGGame
 from ..game_services.game_server import GameServerInstance
 from ..models import (
@@ -61,9 +62,10 @@ def _validate_dungeon_prerequisites(
     assert web_game is not None
 
     # 判断游戏状态，不是DUNGEON状态不可以推进。
-    if web_game.current_game_state != TCGGameState.DUNGEON:
+    # if web_game.current_game_state != TCGGameState.DUNGEON:
+    if not web_game.is_player_in_dungeon:
         logger.error(
-            f"dungeon operation: {user_name} game state error = {web_game.current_game_state}"
+            f"dungeon operation: {user_name} game state error !!!!! not in dungeon state."
         )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -117,7 +119,7 @@ async def _handle_draw_cards(web_game: WebTCGGame) -> DungeonGamePlayResponse:
         )
 
     # 推进一次游戏, 即可抽牌。
-    web_game.activate_draw_cards_action()
+    web_game.draw_cards_action()
     web_game.player_client.clear_messages()
     await web_game.dungeon_combat_pipeline.process()
 
@@ -142,7 +144,7 @@ async def _handle_play_cards(
         )
 
     logger.debug(f"玩家输入 = {request_data.user_input.tag}, 准备行动......")
-    if web_game.activate_play_cards_action():
+    if web_game.play_cards_action():
         # 执行一次！！！！！
         # await _execute_web_game(web_game)
         web_game.player_client.clear_messages()

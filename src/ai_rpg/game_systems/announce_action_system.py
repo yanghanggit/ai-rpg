@@ -9,6 +9,7 @@ def _generate_prompt(
     announcer_name: str, announcement_message: str, event_stage: str
 ) -> str:
     return f"""# 发生事件: {announcer_name} 宣布: {announcement_message}
+
 ## {announcer_name} 所在场景: {event_stage}"""
 
 

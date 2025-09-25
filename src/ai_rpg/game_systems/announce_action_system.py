@@ -1,7 +1,7 @@
-from typing import final, override
+from typing import Set, final, override
 from ..entitas import Entity, GroupEvent, Matcher
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
-from ..models import AnnounceAction, AnnounceEvent, HeroComponent, HomeComponent
+from ..models import AnnounceAction, AnnounceEvent, HomeComponent, DungeonComponent
 
 
 ####################################################################################################################################
@@ -38,34 +38,49 @@ class AnnounceActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     def _prosses_action(self, entity: Entity) -> None:
 
-        assert entity.has(HeroComponent)
-        home_stage_entity = self._game.safe_get_stage_entity(entity)
-        assert home_stage_entity is not None
-        assert home_stage_entity.has(HomeComponent)
+        current_stage_entity = self._game.safe_get_stage_entity(entity)
+        assert current_stage_entity is not None
         announce_action = entity.get(AnnounceAction)
         assert announce_action is not None
-        assert announce_action.message != ""
 
-        # 获取所有需要进行角色规划的角色
-        home_stage_entities = self._game.get_group(
-            Matcher(
-                all_of=[
-                    HomeComponent,
-                ],
-            )
-        ).entities
+        stage_entities: Set[Entity] = set()
 
-        for home_stage_entity in home_stage_entities:
+        # 根据当前场景类型，选择相应的广播范围
+        if current_stage_entity.has(HomeComponent):
+
+            stage_entities = self._game.get_group(
+                Matcher(
+                    all_of=[
+                        HomeComponent,
+                    ],
+                )
+            ).entities.copy()
+
+        elif current_stage_entity.has(DungeonComponent):
+
+            stage_entities = self._game.get_group(
+                Matcher(
+                    all_of=[
+                        DungeonComponent,
+                    ],
+                )
+            ).entities.copy()
+        else:
+            assert False, "未知的场景类型，无法广播公告。"
+
+        # 广播事件
+        for stage_entity in stage_entities:
+
             self._game.broadcast_event(
-                home_stage_entity,
+                stage_entity,
                 AnnounceEvent(
                     message=_generate_prompt(
-                        entity.get(HeroComponent).name,
+                        entity.name,
                         announce_action.message,
-                        home_stage_entity.get(HomeComponent).name,
+                        stage_entity.name,
                     ),
-                    actor=entity.get(HeroComponent).name,
-                    stage=home_stage_entity.get(HomeComponent).name,
+                    actor=entity.name,
+                    stage=stage_entity.name,
                     content=announce_action.message,
                 ),
             )

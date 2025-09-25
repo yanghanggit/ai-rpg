@@ -36,8 +36,8 @@ async def _validate_home_game_preconditions(
         HTTPException: 当验证失败时抛出相应的HTTP异常
     """
     # 是否有房间？！！
-    room_manager = game_server.room_manager
-    if not room_manager.has_room(user_name):
+    # room_manager = game_server.room_manager
+    if not game_server.has_room(user_name):
         logger.error(f"{user_name} has no room, please login first.")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -45,16 +45,16 @@ async def _validate_home_game_preconditions(
         )
 
     # 是否有游戏？！！
-    current_room = room_manager.get_room(user_name)
+    current_room = game_server.get_room(user_name)
     assert current_room is not None
-    if current_room.game is None:
+    if current_room._game is None:
         logger.error(f"{user_name} has no game, please login first.")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="没有游戏，请先登录",
         )
 
-    web_game = current_room.game
+    web_game = current_room._game
     assert web_game is not None
     assert isinstance(web_game, WebTCGGame)
 

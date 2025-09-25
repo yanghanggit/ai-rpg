@@ -27,8 +27,8 @@ async def view_dungeon(
     try:
 
         # 是否有房间？！！
-        room_manager = game_server.room_manager
-        if not room_manager.has_room(user_name):
+        # room_manager = game_server.room_manager
+        if not game_server.has_room(user_name):
             logger.error(f"view_dungeon: {user_name} has no room")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -36,9 +36,9 @@ async def view_dungeon(
             )
 
         # 是否有游戏？！！
-        current_room = room_manager.get_room(user_name)
+        current_room = game_server.get_room(user_name)
         assert current_room is not None
-        if current_room.game is None:
+        if current_room._game is None:
             logger.error(f"view_dungeon: {user_name} has no game")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -46,7 +46,7 @@ async def view_dungeon(
             )
 
         # 获取游戏
-        web_game = current_room.game
+        web_game = current_room._game
 
         # 获取当前地图
         mapping_data = web_game.get_stage_actor_distribution_mapping()

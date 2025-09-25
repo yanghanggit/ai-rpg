@@ -27,18 +27,18 @@ async def start(
     try:
 
         # 如果没有房间，就创建一个
-        room_manager = game_server.room_manager
-        if not room_manager.has_room(request_data.user_name):
+        # room_manager = game_server.room_manager
+        if not game_server.has_room(request_data.user_name):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"start/v1: {request_data.user_name} not found, create room",
             )
 
         # 如果有房间，就获取房间。
-        room = room_manager.get_room(request_data.user_name)
+        room = game_server.get_room(request_data.user_name)
         assert room is not None
 
-        if room.game is None:
+        if room._game is None:
 
             # 转化成复杂参数
             game_session_context = WebGameSessionContext(
@@ -47,31 +47,38 @@ async def start(
                 actor=request_data.actor_name,
             )
 
+            # 创建玩家客户端
+            room._player_client = PlayerClient(
+                name=request_data.user_name,
+                actor=request_data.actor_name,
+            )
+            assert room._player_client is not None, "房间玩家客户端实例不存在"
+
             # 创建游戏
-            web_game = setup_web_game_session(
-                web_game_user_options=game_session_context,
+            room._game = setup_web_game_session(
+                web_game_session_context=game_session_context,
+                player_client=room._player_client,
             )
 
-            assert web_game is not None, "Web game setup failed"
-            if web_game is None:
+            assert room._game is not None, "Web game setup failed"
+            if room._game is None:
                 logger.error(f"创建游戏失败 = {game_session_context.game}")
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"start/v1: {request_data.user_name} failed to create game",
                 )
 
-            # 赋值给房间
-            room.game = web_game
+            assert room._game is not None, "房间游戏实例不存在"
+            assert room._player_client is not None, "房间玩家客户端实例不存在"
 
-            # 需要初始化游戏！
+            # 初始化游戏
             logger.info(f"start/v1: {request_data.user_name} init game!")
-            assert room.game is not None, "房间游戏实例不存在"
-            await room.game.initialize()
+            await room._game.initialize()
 
         else:
             assert False, "游戏已经在进行中，无法重新启动! 尚未实现！"
 
-        assert room.game is not None
+        assert room._game is not None
         return StartResponse(
             message=f"启动游戏成功！",
         )
@@ -87,14 +94,15 @@ async def start(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 def setup_web_game_session(
-    web_game_user_options: WebGameSessionContext,
+    web_game_session_context: WebGameSessionContext,
+    player_client: PlayerClient,
 ) -> Optional[WebTCGGame]:
 
-    world_exists = web_game_user_options.world_data
+    world_exists = web_game_session_context.world_data
     if world_exists is None:
 
         # 如果没有world数据，就创建一个新的world
-        world_boot = web_game_user_options.world_boot_data
+        world_boot = web_game_session_context.world_boot_data
         assert world_boot is not None, "world_boot is None"
 
         # 重新生成world
@@ -109,24 +117,22 @@ def setup_web_game_session(
     # 依赖注入，创建新的游戏
     assert world_exists is not None, "World data must exist to create a game"
     web_game = WebTCGGame(
-        name=web_game_user_options.game,
-        player_client=PlayerClient(
-            name=web_game_user_options.user, actor=web_game_user_options.actor
-        ),
+        name=web_game_session_context.game,
+        player_client=player_client,
         world=world_exists,
     )
 
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(web_game.world.entities_snapshot) == 0:
         logger.info(
-            f"游戏中没有实体 = {web_game_user_options.game}, 说明是第一次创建游戏"
+            f"游戏中没有实体 = {web_game_session_context.game}, 说明是第一次创建游戏"
         )
 
         # 直接构建ecs
         web_game.new_game().save()
     else:
         logger.info(
-            f"游戏中有实体 = {web_game_user_options.game}，需要通过数据恢复实体，是游戏回复的过程"
+            f"游戏中有实体 = {web_game_session_context.game}，需要通过数据恢复实体，是游戏回复的过程"
         )
 
         # 测试！回复ecs
@@ -136,7 +142,7 @@ def setup_web_game_session(
     player_entity = web_game.get_player_entity()
     assert player_entity is not None
     if player_entity is None:
-        logger.error(f"没有找到玩家实体 = {web_game_user_options.actor}")
+        logger.error(f"没有找到玩家实体 = {web_game_session_context.actor}")
         return None
 
     return web_game

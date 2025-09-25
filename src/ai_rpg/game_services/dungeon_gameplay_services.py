@@ -38,8 +38,8 @@ def _validate_dungeon_prerequisites(
         HTTPException: 验证失败时抛出异常
     """
     # 是否有房间？！！
-    room_manager = game_server.room_manager
-    if not room_manager.has_room(user_name):
+    # room_manager = game_server.room_manager
+    if not game_server.has_room(user_name):
         logger.error(f"dungeon operation: {user_name} has no room, please login first.")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -47,9 +47,9 @@ def _validate_dungeon_prerequisites(
         )
 
     # 是否有游戏？！！
-    current_room = room_manager.get_room(user_name)
+    current_room = game_server.get_room(user_name)
     assert current_room is not None
-    if current_room.game is None:
+    if current_room._game is None:
         logger.error(f"dungeon operation: {user_name} has no game, please login first.")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -57,7 +57,7 @@ def _validate_dungeon_prerequisites(
         )
 
     # 是否是WebTCGGame？！！
-    web_game = current_room.game
+    web_game = current_room._game
     assert isinstance(web_game, WebTCGGame)
     assert web_game is not None
 

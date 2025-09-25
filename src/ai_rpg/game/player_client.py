@@ -28,8 +28,6 @@ class PlayerClient:
 
     ##########################################################################################################################################################
     def add_agent_event_message(self, agent_event: AgentEvent) -> None:
-        assert self.actor != ""
-        assert self.name != ""
         logger.debug(
             f"[{self.name}:{self.actor}] = add_agent_event_message: {agent_event.model_dump_json()}"
         )

@@ -1,22 +1,46 @@
-from typing import Annotated, Final, Optional
+from typing import Annotated, Dict, Optional
 
 from fastapi import Depends
 
-from ..game_services.room_manager import RoomManager
+# from ..game_services.room_manager import RoomManager
+from ..game_services.room import Room
 
 
 ###############################################################################################################################################
 class GameServer:
     def __init__(
         self,
-        room_manager: RoomManager,
+        # room_manager: RoomManager,
     ) -> None:
-        self._room_manager: Final[RoomManager] = room_manager
+        # self._room_manager: Final[RoomManager] = room_manager
+        self._rooms: Dict[str, Room] = {}
 
     ###############################################################################################################################################
-    @property
-    def room_manager(self) -> RoomManager:
-        return self._room_manager
+    # @property
+    # def room_manager(self) -> RoomManager:
+    #     return self._room_manager
+
+    ###############################################################################################################################################
+    def has_room(self, user_name: str) -> bool:
+        return user_name in self._rooms
+
+    ###############################################################################################################################################
+    def get_room(self, user_name: str) -> Optional[Room]:
+        return self._rooms.get(user_name, None)
+
+    ###############################################################################################################################################
+    def create_room(self, user_name: str) -> Room:
+        if self.has_room(user_name):
+            assert False, f"room {user_name} already exists"
+        room = Room(user_name)
+        self._rooms[user_name] = room
+        return room
+
+    ###############################################################################################################################################
+    def remove_room(self, room: Room) -> None:
+        user_name = room._username
+        assert user_name in self._rooms
+        self._rooms.pop(user_name, None)
 
     ###############################################################################################################################################
 
@@ -29,7 +53,7 @@ def get_game_server_instance() -> GameServer:
     global _game_server
     if _game_server is None:
         _game_server = GameServer(
-            room_manager=RoomManager(),
+            # room_manager=RoomManager(),
         )
     return _game_server
 

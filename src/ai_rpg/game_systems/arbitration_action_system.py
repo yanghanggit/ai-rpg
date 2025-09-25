@@ -84,7 +84,6 @@ class PromptParameters(NamedTuple):
     target: str
     skill: Skill
     rpg_character_profile_component: RPGCharacterProfileComponent
-    # dialogue: str
 
 
 #######################################################################################################################################
@@ -176,8 +175,6 @@ class ArbitrationActionSystem(BaseActionReactiveSystem):
         if len(play_cards_actors) == 0:
             return
 
-        # round_turns = self._game.current_engagement.last_round.round_turns
-        # logger.info(f"round_turns: {round_turns}")
         sort_actors: List[Entity] = []
         for turn in self._game.current_engagement.last_round.round_turns:
             for entity in play_cards_actors:
@@ -214,7 +211,6 @@ class ArbitrationActionSystem(BaseActionReactiveSystem):
                     rpg_character_profile_component=entity.get(
                         RPGCharacterProfileComponent
                     ),
-                    # dialogue=play_cards_action.dialogue,
                 )
             )
 
@@ -240,7 +236,6 @@ class ArbitrationActionSystem(BaseActionReactiveSystem):
         )
 
         # 用语言服务系统进行推理。
-        # self._game.chat_client_manager.request([request_handler])
         request_handler.request_post()
 
         # 处理返回结果。

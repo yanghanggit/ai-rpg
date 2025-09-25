@@ -1,8 +1,6 @@
 from typing import List, final
-
 from loguru import logger
 from overrides import override
-
 from ..entitas import Entity, GroupEvent, Matcher
 from .base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (

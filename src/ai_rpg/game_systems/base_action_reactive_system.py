@@ -1,5 +1,4 @@
 from typing import override
-
 from ..entitas import CleanupProcessor, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 

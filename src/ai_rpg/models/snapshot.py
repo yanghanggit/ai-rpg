@@ -1,5 +1,4 @@
 from typing import Any, Dict, List, final
-
 from pydantic import BaseModel
 
 

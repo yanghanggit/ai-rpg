@@ -98,8 +98,6 @@ class AppearanceComponent(Component):
 @register_component_class
 class HomeComponent(Component):
     name: str
-    # action_order: List[str]
-
 
 ############################################################################################################
 # Stage专用，标记该Stage是Dungeon
@@ -123,21 +121,6 @@ class HeroComponent(Component):
 @register_component_class
 class MonsterComponent(Component):
     name: str
-
-
-############################################################################################################
-# @final
-# @register_component_class
-# class CanStartPlanningComponent(Component):
-#     name: str
-
-
-############################################################################################################
-# # 标记player主动行动。
-# @final
-# @register_component_class
-# class PlayerActiveComponent(Component):
-#     name: str
 
 
 ############################################################################################################

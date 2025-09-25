@@ -18,15 +18,6 @@ from ..utils import json_format
 
 
 #######################################################################################################################################
-# @final
-# class SkillResponse(BaseModel):
-#     name: str = Field(..., description="此技能名称")
-#     description: str = Field(..., description="此技能描述")
-#     # effect: str = Field(..., description="此技能产生的效果以及造成的影响")
-#     target: str = Field(..., description="技能的目标")
-
-
-#######################################################################################################################################
 @final
 class DrawCardsResponse(BaseModel):
     update_hp: Optional[float] = Field(None, description="更新后的生命值")

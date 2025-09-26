@@ -404,33 +404,37 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     def _create_world_system_entities(
         self,
-        world_system_instances: List[WorldSystem],
+        world_system_models: List[WorldSystem],
     ) -> List[Entity]:
 
         ret: List[Entity] = []
 
-        for instance in world_system_instances:
+        for world_system_model in world_system_models:
 
             # 创建实体
-            world_system_entity = self.__create_entity__(instance.name)
+            world_system_entity = self.__create_entity__(world_system_model.name)
             assert world_system_entity is not None
 
             # 必要组件
             world_system_entity.add(
                 RuntimeComponent,
-                instance.name,
+                world_system_model.name,
                 self.world.next_runtime_index(),
                 str(uuid.uuid4()),
             )
-            world_system_entity.add(WorldSystemComponent, instance.name)
+            world_system_entity.add(WorldSystemComponent, world_system_model.name)
 
             # system prompt
-            assert instance.name in instance.system_message
-            self.append_system_message(world_system_entity, instance.system_message)
+            assert world_system_model.name in world_system_model.system_message
+            self.append_system_message(
+                world_system_entity, world_system_model.system_message
+            )
 
             # kickoff prompt
             world_system_entity.add(
-                KickOffMessageComponent, instance.name, instance.kick_off_message
+                KickOffMessageComponent,
+                world_system_model.name,
+                world_system_model.kick_off_message,
             )
 
             # 添加到返回值
@@ -439,45 +443,47 @@ class TCGGame(BaseGame, TCGGameContext):
         return ret
 
     ###############################################################################################################################################
-    def _create_actor_entities(self, actor_instances: List[Actor]) -> List[Entity]:
+    def _create_actor_entities(self, actor_models: List[Actor]) -> List[Entity]:
 
         ret: List[Entity] = []
-        for instance in actor_instances:
+        for actor_model in actor_models:
 
             # 创建实体
-            actor_entity = self.__create_entity__(instance.name)
+            actor_entity = self.__create_entity__(actor_model.name)
             assert actor_entity is not None
 
             # 必要组件：guid
             actor_entity.add(
                 RuntimeComponent,
-                instance.name,
+                actor_model.name,
                 self.world.next_runtime_index(),
                 str(uuid.uuid4()),
             )
 
             # 必要组件：身份类型标记-角色Actor
-            actor_entity.add(ActorComponent, instance.name, "")
+            actor_entity.add(ActorComponent, actor_model.name, "")
 
             # 必要组件：系统消息
-            assert instance.name in instance.system_message
-            self.append_system_message(actor_entity, instance.system_message)
+            assert actor_model.name in actor_model.system_message
+            self.append_system_message(actor_entity, actor_model.system_message)
 
             # 必要组件：启动消息
             actor_entity.add(
-                KickOffMessageComponent, instance.name, instance.kick_off_message
+                KickOffMessageComponent, actor_model.name, actor_model.kick_off_message
             )
 
             # 必要组件：外观
             actor_entity.add(
-                AppearanceComponent, instance.name, instance.character_sheet.appearance
+                AppearanceComponent,
+                actor_model.name,
+                actor_model.character_sheet.appearance,
             )
 
             # 必要组件：基础属性，这里用浅拷贝，不能动原有的。
             actor_entity.add(
                 RPGCharacterProfileComponent,
-                instance.name,
-                copy.copy(instance.rpg_character_profile),
+                actor_model.name,
+                copy.copy(actor_model.rpg_character_profile),
                 [],
             )
 
@@ -488,11 +494,19 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
             # 必要组件：类型标记
-            match instance.character_sheet.type:
+            match actor_model.character_sheet.type:
                 case ActorType.HERO:
-                    actor_entity.add(HeroComponent, instance.name)
+                    actor_entity.add(HeroComponent, actor_model.name)
                 case ActorType.MONSTER:
-                    actor_entity.add(MonsterComponent, instance.name)
+                    actor_entity.add(MonsterComponent, actor_model.name)
+
+            # 测试一下检查item
+            if len(actor_model.inventory.items) > 0:
+                logger.info(
+                    f"角色 {actor_model.name} 有 {len(actor_model.inventory.items)} 个物品"
+                )
+                for item in actor_model.inventory.items:
+                    logger.info(f"物品: {item.name}, 描述: {item.description}")
 
             # 添加到返回值
             ret.append(actor_entity)
@@ -500,53 +514,51 @@ class TCGGame(BaseGame, TCGGameContext):
         return ret
 
     ###############################################################################################################################################
-    def _create_stage_entities(self, stage_instances: List[Stage]) -> List[Entity]:
+    def _create_stage_entities(self, stage_models: List[Stage]) -> List[Entity]:
 
         ret: List[Entity] = []
 
-        for instance in stage_instances:
+        for stage_model in stage_models:
 
             # 创建实体
-            stage_entity = self.__create_entity__(instance.name)
+            stage_entity = self.__create_entity__(stage_model.name)
 
             # 必要组件
             stage_entity.add(
                 RuntimeComponent,
-                instance.name,
+                stage_model.name,
                 self.world.next_runtime_index(),
                 str(uuid.uuid4()),
             )
-            stage_entity.add(StageComponent, instance.name)
+            stage_entity.add(StageComponent, stage_model.name)
 
             # system prompt
-            assert instance.name in instance.system_message
-            self.append_system_message(stage_entity, instance.system_message)
+            assert stage_model.name in stage_model.system_message
+            self.append_system_message(stage_entity, stage_model.system_message)
 
             # kickoff prompt
             stage_entity.add(
-                KickOffMessageComponent, instance.name, instance.kick_off_message
+                KickOffMessageComponent, stage_model.name, stage_model.kick_off_message
             )
 
             # 必要组件：环境描述
             stage_entity.add(
                 EnvironmentComponent,
-                instance.name,
+                stage_model.name,
                 "",
             )
 
             # 必要组件：类型
-            if instance.character_sheet.type == StageType.DUNGEON:
-                stage_entity.add(DungeonComponent, instance.name)
-            elif instance.character_sheet.type == StageType.HOME:
-                stage_entity.add(HomeComponent, instance.name)
+            if stage_model.character_sheet.type == StageType.DUNGEON:
+                stage_entity.add(DungeonComponent, stage_model.name)
+            elif stage_model.character_sheet.type == StageType.HOME:
+                stage_entity.add(HomeComponent, stage_model.name)
 
             ## 重新设置Actor和stage的关系
-            for actor_instance in instance.actors:
-                actor_entity: Optional[Entity] = self.get_actor_entity(
-                    actor_instance.name
-                )
+            for actor_model in stage_model.actors:
+                actor_entity: Optional[Entity] = self.get_actor_entity(actor_model.name)
                 assert actor_entity is not None
-                actor_entity.replace(ActorComponent, actor_instance.name, instance.name)
+                actor_entity.replace(ActorComponent, actor_model.name, stage_model.name)
 
             ret.append(stage_entity)
 
@@ -782,23 +794,23 @@ class TCGGame(BaseGame, TCGGameContext):
         self._handle_actors_entering_stage(actors_to_transfer, stage_destination)
 
     #######################################################################################################################################
-    def _create_dungeon_entities(self, dungeon: Dungeon) -> None:
+    def _create_dungeon_entities(self, dungeon_model: Dungeon) -> None:
 
         # 加一步测试: 不可以存在！如果存在说明没有清空。
-        for actor in dungeon.actors:
+        for actor in dungeon_model.actors:
             actor_entity = self.get_actor_entity(actor.name)
             assert actor_entity is None, "actor_entity is not None"
 
         # 加一步测试: 不可以存在！如果存在说明没有清空。
-        for stage in dungeon.levels:
+        for stage in dungeon_model.levels:
             stage_entity = self.get_stage_entity(stage.name)
             assert stage_entity is None, "stage_entity is not None"
 
         # 正式创建。。。。。。。。。。
         # 创建地下城的怪物。
-        self._create_actor_entities(dungeon.actors)
+        self._create_actor_entities(dungeon_model.actors)
         ## 创建地下城的场景
-        self._create_stage_entities(dungeon.levels)
+        self._create_stage_entities(dungeon_model.levels)
 
     #######################################################################################################################################
     def _destroy_dungeon_entities(self, dungeon: Dungeon) -> None:

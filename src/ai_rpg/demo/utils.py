@@ -7,6 +7,7 @@ from ..models import (
     Stage,
     StageCharacterSheet,
     WorldSystem,
+    Inventory,
 )
 
 #######################################################################################################################################
@@ -89,6 +90,7 @@ def create_actor(
         system_message="",
         kick_off_message=kick_off_message,
         rpg_character_profile=rpg_character_profile,
+        inventory=Inventory(items=[]),
     )
 
     # 血量加满!!!!

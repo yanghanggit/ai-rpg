@@ -1,19 +1,16 @@
 """Test configuration and fixtures."""
 
 import pytest
-from pathlib import Path
 from typing import Type, Optional, Any
 
 try:
     from src.ai_rpg.game.tcg_game import TCGGame
     from src.ai_rpg.models.objects import Actor
     from src.ai_rpg.models.character_sheet import ActorCharacterSheet
-    from src.ai_rpg.models.objects import RPGCharacterProfile
+    from src.ai_rpg.models.objects import RPGCharacterProfile, Inventory
     from src.ai_rpg.models.world import World, Boot
     from src.ai_rpg.models.dungeon import Dungeon
     from src.ai_rpg.game.player_client import PlayerClient
-
-    #    from src.ai_rpg.chat_services.manager import ChatClientManager
 
     _TCGGame: Optional[Type[TCGGame]] = TCGGame
     _Actor: Optional[Type[Actor]] = Actor
@@ -40,20 +37,10 @@ def sample_game() -> Any:
         boot=boot,
     )
     player = PlayerClient(name="test_player", actor="test_actor")
-    # chat_system = ChatClientManager(
-    #     azure_openai_base_localhost_urls=["http://localhost:8000"],
-    #     azure_openai_chat_localhost_urls=["http://localhost:8000"],
-    #     deepseek_base_localhost_urls=["http://localhost:8000"],
-    #     deepseek_chat_localhost_urls=["http://localhost:8000"],
-    #     deepseek_rag_chat_localhost_urls=["http://localhost:8000"],
-    #     deepseek_undefined_chat_localhost_urls=["http://localhost:8000"],
-    #     deepseek_mcp_chat_localhost_urls=["http://localhost:8000"],
-    # )
     return _TCGGame(
         name="test_game",
         player_client=player,
         world=world,
-        # chat_client_manager=chat_system,
     )
 
 
@@ -78,4 +65,5 @@ def sample_actor() -> Any:
         system_message="test system message",
         kick_off_message="test kick off message",
         rpg_character_profile=rpg_profile,
+        inventory=Inventory(items=[]),
     )

@@ -127,6 +127,83 @@ def _persist(
 
 
 ###############################################################################################################################################
+def _debug_verbose(verbose_dir: Path, world: World) -> None:
+    """调试方法，保存游戏状态到文件"""
+    _verbose_boot_data(verbose_dir, world)
+    _verbose_world_data(verbose_dir, world)
+    _verbose_entities_snapshot(verbose_dir, world)
+    _verbose_chat_history(verbose_dir, world)
+    _verbose_dungeon_system(verbose_dir, world)
+    logger.debug(f"Verbose debug info saved to: {verbose_dir}")
+
+
+###############################################################################################################################################
+def _verbose_chat_history(verbose_dir: Path, world: World) -> None:
+    """保存聊天历史到文件"""
+    chat_history_dir = verbose_dir / "chat_history"
+    chat_history_dir.mkdir(parents=True, exist_ok=True)
+
+    for agent_name, agent_memory in world.agents_chat_history.items():
+        chat_history_path = chat_history_dir / f"{agent_name}.json"
+        chat_history_path.write_text(agent_memory.model_dump_json(), encoding="utf-8")
+
+
+###############################################################################################################################################
+def _verbose_boot_data(verbose_dir: Path, world: World) -> None:
+    """保存启动数据到文件"""
+    boot_data_dir = verbose_dir / "boot_data"
+    boot_data_dir.mkdir(parents=True, exist_ok=True)
+
+    boot_file_path = boot_data_dir / f"{world.boot.name}.json"
+    if boot_file_path.exists():
+        return  # 如果文件已存在，则不覆盖
+
+    # 保存 Boot 数据到文件
+    boot_file_path.write_text(world.boot.model_dump_json(), encoding="utf-8")
+
+
+###############################################################################################################################################
+def _verbose_world_data(verbose_dir: Path, world: World) -> None:
+    """保存世界数据到文件"""
+    world_data_dir = verbose_dir / "world_data"
+    world_data_dir.mkdir(parents=True, exist_ok=True)
+    world_file_path = world_data_dir / f"{world.boot.name}.json"
+    world_file_path.write_text(
+        world.model_dump_json(), encoding="utf-8"
+    )  # 保存 World 数据到文件，覆盖
+
+
+###############################################################################################################################################
+def _verbose_entities_snapshot(verbose_dir: Path, world: World) -> None:
+    """保存实体快照到文件"""
+    entities_snapshot_dir = verbose_dir / "entities_snapshot"
+    # 强制删除一次
+    if entities_snapshot_dir.exists():
+        shutil.rmtree(entities_snapshot_dir)
+    # 创建目录
+    entities_snapshot_dir.mkdir(parents=True, exist_ok=True)
+    assert entities_snapshot_dir.exists()
+
+    for entity_snapshot in world.entities_snapshot:
+        entity_snapshot_path = entities_snapshot_dir / f"{entity_snapshot.name}.json"
+        entity_snapshot_path.write_text(
+            entity_snapshot.model_dump_json(), encoding="utf-8"
+        )
+
+
+###############################################################################################################################################
+def _verbose_dungeon_system(verbose_dir: Path, world: World) -> None:
+    """保存地下城系统数据到文件"""
+    if world.dungeon.name == "":
+        return
+
+    dungeon_system_dir = verbose_dir / "dungeons"
+    dungeon_system_dir.mkdir(parents=True, exist_ok=True)
+    dungeon_system_path = dungeon_system_dir / f"{world.dungeon.name}.json"
+    dungeon_system_path.write_text(world.dungeon.model_dump_json(), encoding="utf-8")
+
+
+###############################################################################################################################################
 class TCGGame(BaseGame, TCGGameContext):
 
     def __init__(
@@ -313,85 +390,13 @@ class TCGGame(BaseGame, TCGGameContext):
             world=self.world,
         )
 
-        # debug
-        self.debug_verbose()
-
-        return self
-
-    ###############################################################################################################################################
-    def debug_verbose(self) -> "TCGGame":
-        """调试方法，保存游戏状态到文件"""
-        self._verbose_boot_data()
-        self._verbose_world_data()
-        self._verbose_entities_snapshot()
-        self._verbose_chat_history()
-        self._verbose_dungeon_system()
-        logger.debug(f"Verbose debug info saved to: {self.verbose_dir}")
-        return self
-
-    ###############################################################################################################################################
-    def _verbose_chat_history(self) -> None:
-
-        chat_history_dir = self.verbose_dir / "chat_history"
-        chat_history_dir.mkdir(parents=True, exist_ok=True)
-
-        for agent_name, agent_memory in self.world.agents_chat_history.items():
-            chat_history_path = chat_history_dir / f"{agent_name}.json"
-            chat_history_path.write_text(
-                agent_memory.model_dump_json(), encoding="utf-8"
-            )
-
-    ###############################################################################################################################################
-    def _verbose_boot_data(self) -> None:
-        boot_data_dir = self.verbose_dir / "boot_data"
-        boot_data_dir.mkdir(parents=True, exist_ok=True)
-
-        boot_file_path = boot_data_dir / f"{self.world.boot.name}.json"
-        if boot_file_path.exists():
-            return  # 如果文件已存在，则不覆盖
-
-        # 保存 Boot 数据到文件
-        boot_file_path.write_text(self.world.boot.model_dump_json(), encoding="utf-8")
-
-    ###############################################################################################################################################
-    def _verbose_world_data(self) -> None:
-        world_data_dir = self.verbose_dir / "world_data"
-        world_data_dir.mkdir(parents=True, exist_ok=True)
-        world_file_path = world_data_dir / f"{self.world.boot.name}.json"
-        world_file_path.write_text(
-            self.world.model_dump_json(), encoding="utf-8"
-        )  # 保存 World 数据到文件，覆盖
-
-    ###############################################################################################################################################
-    def _verbose_entities_snapshot(self) -> None:
-        entities_snapshot_dir = self.verbose_dir / "entities_snapshot"
-        # 强制删除一次
-        if entities_snapshot_dir.exists():
-            shutil.rmtree(entities_snapshot_dir)
-        # 创建目录
-        entities_snapshot_dir.mkdir(parents=True, exist_ok=True)
-        assert entities_snapshot_dir.exists()
-
-        for entity_snapshot in self.world.entities_snapshot:
-            entity_snapshot_path = (
-                entities_snapshot_dir / f"{entity_snapshot.name}.json"
-            )
-            entity_snapshot_path.write_text(
-                entity_snapshot.model_dump_json(), encoding="utf-8"
-            )
-
-    ###############################################################################################################################################
-    def _verbose_dungeon_system(self) -> None:
-
-        if self.current_dungeon.name == "":
-            return
-
-        dungeon_system_dir = self.verbose_dir / "dungeons"
-        dungeon_system_dir.mkdir(parents=True, exist_ok=True)
-        dungeon_system_path = dungeon_system_dir / f"{self.current_dungeon.name}.json"
-        dungeon_system_path.write_text(
-            self.current_dungeon.model_dump_json(), encoding="utf-8"
+        # debug - 调用模块级函数
+        _debug_verbose(
+            verbose_dir=self.verbose_dir,
+            world=self.world,
         )
+
+        return self
 
     ###############################################################################################################################################
     def _create_world_system_entities(

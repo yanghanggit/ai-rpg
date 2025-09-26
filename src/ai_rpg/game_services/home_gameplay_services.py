@@ -1,7 +1,9 @@
+from typing import Dict
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 
 # from ..game.tcg_game import TCGGameState
+from ..game.tcg_game import TCGGame
 from ..game.web_tcg_game import WebTCGGame
 from ..game_services.game_server import GameServerInstance
 from ..models import (
@@ -9,6 +11,7 @@ from ..models import (
     HomeGamePlayResponse,
     HomeTransDungeonRequest,
     HomeTransDungeonResponse,
+    SpeakAction,
 )
 
 ###################################################################################################################################################################
@@ -95,6 +98,33 @@ async def _handle_advancing_action(web_game: WebTCGGame) -> HomeGamePlayResponse
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+# TODO, 临时添加行动, 逻辑。
+def player_add_speak_action(tcg_game: TCGGame, target: str, content: str) -> bool:
+
+    # assert target != "", "target is empty"
+    assert content != "", "content is empty"
+    logger.debug(f"activate_speak_action: {target} => \n{content}")
+
+    # if content == "":
+    #     logger.error("内容不能为空！")
+    #     return False
+
+    target_entity = tcg_game.get_actor_entity(target)
+    assert target_entity is not None, "target_entity is None"
+    if target_entity is None:
+        logger.error(f"目标角色: {target} 不存在！")
+        return False
+
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None
+    # data: Dict[str, str] = {target: content}
+    player_entity.replace(SpeakAction, player_entity.name, {target: content})
+
+    return True
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
 ###################################################################################################################################################################
 async def _handle_speak_action(
     web_game: WebTCGGame, target: str, content: str
@@ -111,7 +141,8 @@ async def _handle_speak_action(
         HomeGamePlayResponse: 包含客户端消息的响应
     """
     # player 添加说话的动作
-    if web_game.speak_action(target=target, content=content):
+    # if web_game.speak_action(target=target, content=content):
+    if player_add_speak_action(web_game, target=target, content=content):
         # 清空消息。准备重新开始 + 测试推进一次游戏
         web_game.player_client.clear_messages()
         await web_game.player_home_pipeline.process()

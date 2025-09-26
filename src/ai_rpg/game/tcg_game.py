@@ -42,7 +42,6 @@ from ..models import (
     RPGCharacterProfileComponent,
     RuntimeComponent,
     Skill,
-    SpeakAction,
     Stage,
     StageComponent,
     StageType,
@@ -51,7 +50,6 @@ from ..models import (
     WorldSystem,
     WorldSystemComponent,
     TransStageAction,
-    PlanAction,
     XCardPlayerComponent,
 )
 from .player_client import PlayerClient
@@ -792,7 +790,7 @@ class TCGGame(BaseGame, TCGGameContext):
         self._broadcast_arrival_notifications(actors_to_transfer, stage_destination)
 
     #######################################################################################################################################
-    def _create_dungeon_entities(self, dungeon_model: Dungeon) -> None:
+    def create_dungeon_entities(self, dungeon_model: Dungeon) -> None:
 
         # 加一步测试: 不可以存在！如果存在说明没有清空。
         for actor in dungeon_model.actors:
@@ -811,31 +809,25 @@ class TCGGame(BaseGame, TCGGameContext):
         self._create_stage_entities(dungeon_model.levels)
 
     #######################################################################################################################################
-    def _destroy_dungeon_entities(self, dungeon: Dungeon) -> None:
-
+    def destroy_dungeon_entities(self, dungeon_model: Dungeon) -> None:
         # 清空地下城的怪物。
-        for actor in dungeon.actors:
-            actor_entity = self.get_actor_entity(actor.name)
-            if actor_entity is not None:
-                self.destroy_entity(actor_entity)
+        for actor in dungeon_model.actors:
+            destroy_actor_entity = self.get_actor_entity(actor.name)
+            if destroy_actor_entity is not None:
+                self.destroy_entity(destroy_actor_entity)
 
         # 清空地下城的场景
-        for stage in dungeon.levels:
-            stage_entity = self.get_stage_entity(stage.name)
-            if stage_entity is not None:
-                self.destroy_entity(stage_entity)
-
-    #######################################################################################################################################
-    def _clear_dungeon(self) -> None:
-        self._destroy_dungeon_entities(self._world.dungeon)
-        self._world.dungeon = Dungeon(name="")
+        for stage in dungeon_model.levels:
+            destroy_stage_entity = self.get_stage_entity(stage.name)
+            if destroy_stage_entity is not None:
+                self.destroy_entity(destroy_stage_entity)
 
     #######################################################################################################################################
     # TODO!!! 进入地下城。
     def launch_dungeon(self) -> bool:
         if self.current_dungeon.position < 0:
             self.current_dungeon.position = 0  # 第一次设置，第一个关卡。
-            self._create_dungeon_entities(self.current_dungeon)
+            self.create_dungeon_entities(self.current_dungeon)
             heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
             return self._dungeon_advance(self.current_dungeon, heros_entities)
         else:
@@ -1005,18 +997,21 @@ class TCGGame(BaseGame, TCGGameContext):
             logger.error("没有找到家园!")
             return
 
-        stage_entity = next(iter(home_stage_entities))
-        prompt = f"""# 提示！冒险结束，你将要返回: {stage_entity.name}"""
+        return_home_stage = next(iter(home_stage_entities))
+        prompt = f"""# 提示！冒险结束，你将要返回: {return_home_stage.name}"""
         for hero_entity in heros_entities:
 
             # 添加故事。
             self.append_human_message(hero_entity, prompt)
 
         # 开始传送。
-        self.stage_transition(heros_entities, stage_entity)
+        self.stage_transition(heros_entities, return_home_stage)
 
-        # 设置空的地下城的数据。
-        self._clear_dungeon()
+        # 清空地下城的实体!
+        self.destroy_dungeon_entities(self._world.dungeon)
+
+        # 设置空的地下城
+        self._world.dungeon = Dungeon(name="")
 
         # 清除掉所有的战斗状态
         for hero_entity in heros_entities:
@@ -1037,6 +1032,9 @@ class TCGGame(BaseGame, TCGGameContext):
             rpg_character_profile_comp.rpg_character_profile.hp = (
                 rpg_character_profile_comp.rpg_character_profile.max_hp
             )
+
+            # 清空状态效果
+            rpg_character_profile_comp.status_effects.clear()
 
     ###############################################################################################################################################
     # TODO, 临时添加行动, 逻辑。 activate_play_cards_action
@@ -1181,44 +1179,6 @@ class TCGGame(BaseGame, TCGGameContext):
         return selected_skill, final_target
 
     #######################################################################################################################################
-    # TODO, 临时添加行动, 逻辑。
-    def speak_action(self, target: str, content: str) -> bool:
-
-        assert target != "", "target is empty"
-        assert content != "", "content is empty"
-        logger.debug(f"activate_speak_action: {target} => \n{content}")
-
-        if content == "":
-            logger.error("内容不能为空！")
-            return False
-
-        target_entity = self.get_actor_entity(target)
-        if target_entity is None:
-            logger.error(f"目标角色: {target} 不存在！")
-            return False
-
-        player_entity = self.get_player_entity()
-        assert player_entity is not None
-        data: Dict[str, str] = {target: content}
-        player_entity.replace(SpeakAction, player_entity.name, data)
-
-        return True
-
-    #######################################################################################################################################
-    # TODO, 临时添加行动, 逻辑。
-    def draw_cards_action(self) -> None:
-
-        player_entity = self.get_player_entity()
-        assert player_entity is not None
-
-        actor_entities = self.get_alive_actors_on_stage(player_entity)
-        for entity in actor_entities:
-            entity.replace(
-                DrawCardsAction,
-                entity.name,
-            )
-
-    #######################################################################################################################################
     def new_round(self) -> bool:
 
         if not self.current_engagement.is_on_going_phase:
@@ -1283,46 +1243,6 @@ class TCGGame(BaseGame, TCGGameContext):
                 actor_dexterity_pairs, key=lambda x: x[1], reverse=True
             )
         ]
-
-    #######################################################################################################################################
-    # TODO, 临时添加行动, 逻辑。
-    def plan_action(self, actors: List[str]) -> None:
-
-        for actor_name in actors:
-
-            actor_entity = self.get_actor_entity(actor_name)
-            assert actor_entity is not None
-            if actor_entity is None:
-                logger.error(f"角色: {actor_name} 不存在！")
-                continue
-
-            if not actor_entity.has(HeroComponent):
-                logger.error(f"角色: {actor_name} 不是英雄，不能有行动计划！")
-                continue
-
-            if actor_entity.has(PlayerComponent):
-                logger.error(f"角色: {actor_name} 是玩家控制的，不能有行动计划！")
-                continue
-
-            logger.debug(f"为角色: {actor_name} 激活行动计划！")
-            actor_entity.replace(PlanAction, actor_entity.name)
-
-    #######################################################################################################################################
-    # TODO, 临时添加行动, 逻辑。
-    def trans_stage_action(self, stage_name: str) -> bool:
-        target_stage_entity = self.get_stage_entity(stage_name)
-        assert target_stage_entity is not None, f"目标场景: {stage_name} 不存在！"
-        if target_stage_entity is None:
-            logger.error(f"目标场景: {stage_name} 不存在！")
-            return
-
-        assert target_stage_entity.has(
-            HomeComponent
-        ), f"目标场景: {stage_name} 不是家园！"
-        player_entity = self.get_player_entity()
-        assert player_entity is not None, "玩家实体不存在！"
-        player_entity.replace(TransStageAction, player_entity.name, stage_name)
-        return True
 
     #######################################################################################################################################
     def find_recent_human_message_by_attribute(

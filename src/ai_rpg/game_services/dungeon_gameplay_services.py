@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-
-# from ..game.tcg_game import TCGGameState
+from ..game.tcg_game import TCGGame
 from ..game.web_tcg_game import WebTCGGame
 from ..game_services.game_server import GameServerInstance
 from ..models import (
@@ -11,10 +10,25 @@ from ..models import (
     DungeonTransHomeResponse,
     Skill,
     XCardPlayerComponent,
+    DrawCardsAction,
 )
 
 ###################################################################################################################################################################
 dungeon_gameplay_router = APIRouter()
+
+
+# TODO, 临时添加行动, 逻辑。
+def combat_actors_draw_cards_action(tcg_game: TCGGame) -> None:
+
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None
+
+    actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
+    for entity in actor_entities:
+        entity.replace(
+            DrawCardsAction,
+            entity.name,
+        )
 
 
 ###################################################################################################################################################################
@@ -119,7 +133,8 @@ async def _handle_draw_cards(web_game: WebTCGGame) -> DungeonGamePlayResponse:
         )
 
     # 推进一次游戏, 即可抽牌。
-    web_game.draw_cards_action()
+    # web_game.draw_cards_action()
+    combat_actors_draw_cards_action(web_game)
     web_game.player_client.clear_messages()
     await web_game.dungeon_combat_pipeline.process()
 
@@ -286,10 +301,6 @@ async def dungeon_gameplay(
                     detail=f"未知的请求类型 = {request_data.user_input.tag}, 不能处理！",
                 )
 
-        # raise HTTPException(
-        #     status_code=status.HTTP_400_BAD_REQUEST,
-        #     detail=f"{request_data.user_input} 是错误的输入，造成无法处理的情况！",
-        # )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

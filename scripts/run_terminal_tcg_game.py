@@ -25,7 +25,25 @@ from ai_rpg.game.terminal_tcg_game import (
     TerminalTCGGame,
     TerminalGameSessionContext,
 )
-from ai_rpg.models import CombatResult, World
+from ai_rpg.models import (
+    CombatResult,
+    World,
+    HeroComponent,
+    PlayerComponent,
+    PlanAction,
+    HomeComponent,
+    TransStageAction,
+)
+from ai_rpg.game_services.home_gameplay_services import (
+    _player_add_speak_action,
+    _all_heros_launch_dungeon,
+)
+from ai_rpg.game_services.dungeon_gameplay_services import (
+    _combat_actors_draw_cards_action,
+    _all_heros_return_home,
+    _combat_actors_random_play_cards_action,
+    _all_heros_next_dungeon,
+)
 
 
 ############################################################################################################
@@ -327,6 +345,46 @@ def _parse_home_trans_stage_command_input(usr_input: str) -> HomeTransStageComma
     return ret
 
 
+#######################################################################################################################################
+# TODO, 临时添加行动, 逻辑。
+def _plan_action(terminal_game: TerminalTCGGame, actors: List[str]) -> None:
+
+    for actor_name in actors:
+
+        actor_entity = terminal_game.get_actor_entity(actor_name)
+        assert actor_entity is not None
+        if actor_entity is None:
+            logger.error(f"角色: {actor_name} 不存在！")
+            continue
+
+        if not actor_entity.has(HeroComponent):
+            logger.error(f"角色: {actor_name} 不是英雄，不能有行动计划！")
+            continue
+
+        if actor_entity.has(PlayerComponent):
+            logger.error(f"角色: {actor_name} 是玩家控制的，不能有行动计划！")
+            continue
+
+        logger.debug(f"为角色: {actor_name} 激活行动计划！")
+        actor_entity.replace(PlanAction, actor_entity.name)
+
+
+#######################################################################################################################################
+# TODO, 临时添加行动, 逻辑。
+def _trans_stage_action(terminal_game: TerminalTCGGame, stage_name: str) -> bool:
+    target_stage_entity = terminal_game.get_stage_entity(stage_name)
+    assert target_stage_entity is not None, f"目标场景: {stage_name} 不存在！"
+    if target_stage_entity is None:
+        logger.error(f"目标场景: {stage_name} 不存在！")
+        return False
+
+    assert target_stage_entity.has(HomeComponent), f"目标场景: {stage_name} 不是家园！"
+    player_entity = terminal_game.get_player_entity()
+    assert player_entity is not None, "玩家实体不存在！"
+    player_entity.replace(TransStageAction, player_entity.name, stage_name)
+    return True
+
+
 ###############################################################################################################################################
 async def _run_game(
     terminal_game_user_options: TerminalGameSessionContext,
@@ -427,7 +485,7 @@ async def _process_dungeon_state_input(
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
-        terminal_game.draw_cards_action()
+        _combat_actors_draw_cards_action(terminal_game)
 
         await terminal_game.dungeon_combat_pipeline.process()
 
@@ -443,11 +501,8 @@ async def _process_dungeon_state_input(
             f"玩家输入 = {usr_input}, 解析到的卡牌命令: {player_cards_command}"
         )
 
-        # 传入解析到的卡牌参数，如果没有参数则传入None
-        skill_options = (
-            player_cards_command["params"] if player_cards_command["params"] else None
-        )
-        if terminal_game.play_cards_action(skill_options):
+        # 执行打牌行动（现在使用随机选择技能）
+        if _combat_actors_random_play_cards_action(terminal_game):
             await terminal_game.dungeon_combat_pipeline.process()
 
     elif usr_input == "/rth" or usr_input == "/return-to-home":
@@ -460,7 +515,8 @@ async def _process_dungeon_state_input(
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备传送回家")
-        terminal_game.return_home()
+        # terminal_game.return_home()
+        _all_heros_return_home(terminal_game)
 
     elif usr_input == "/and" or usr_input == "/advance-next-dungeon":
 
@@ -474,7 +530,8 @@ async def _process_dungeon_state_input(
                     logger.info(
                         f"玩家输入 = {usr_input}, 进入下一关 = {next_level.name}"
                     )
-                    terminal_game.next_dungeon()
+                    # terminal_game.next_dungeon()
+                    _all_heros_next_dungeon(terminal_game)
                     await terminal_game.dungeon_combat_pipeline.process()
             elif (
                 terminal_game.current_engagement.combat_result == CombatResult.HERO_LOSE
@@ -506,7 +563,7 @@ async def _process_home_state_input(
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备传送地下城")
-        if not terminal_game.launch_dungeon():
+        if not _all_heros_launch_dungeon(terminal_game):
             assert False, "传送地下城失败！"
 
         if len(terminal_game.current_engagement.combats) == 0:
@@ -519,7 +576,7 @@ async def _process_home_state_input(
         # "/hero --params=角色.法师.奥露娜;角色.战士.卡恩"
         hero_command = _parse_hero_plan_command_input(usr_input)
         logger.debug(f"解析到的英雄命令: {hero_command}")
-        terminal_game.plan_action(actors=hero_command["heroes"])
+        _plan_action(terminal_game, hero_command["heroes"])
         await terminal_game.npc_home_pipeline.process()
 
     elif "/speak" in usr_input or "/ss" in usr_input:
@@ -528,7 +585,8 @@ async def _process_home_state_input(
         speak_command = _parse_speak_command_input(usr_input)
 
         # 处理输入
-        if terminal_game.speak_action(
+        if _player_add_speak_action(
+            tcg_game=terminal_game,
             target=speak_command["target"],
             content=speak_command["content"],
         ):
@@ -543,7 +601,7 @@ async def _process_home_state_input(
         # 分析输入
         home_trans_stage_command = _parse_home_trans_stage_command_input(usr_input)
         logger.info(f"解析到的家园传送命令: {home_trans_stage_command}")
-        if terminal_game.trans_stage_action(home_trans_stage_command["stage_name"]):
+        if _trans_stage_action(terminal_game, home_trans_stage_command["stage_name"]):
             # player 执行一次, 这次基本是忽略推理标记的，所有NPC不推理。
             await terminal_game.player_home_pipeline.process()
 

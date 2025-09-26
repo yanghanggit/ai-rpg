@@ -1,7 +1,8 @@
+import random
+from typing import Set
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-
-# from ..game.tcg_game import TCGGameState
+from ..game.tcg_game import TCGGame
 from ..game.web_tcg_game import WebTCGGame
 from ..game_services.game_server import GameServerInstance
 from ..models import (
@@ -11,10 +12,171 @@ from ..models import (
     DungeonTransHomeResponse,
     Skill,
     XCardPlayerComponent,
+    DrawCardsAction,
+    Dungeon,
+    HomeComponent,
+    HeroComponent,
+    DeathComponent,
+    RPGCharacterProfileComponent,
+    ActorComponent,
+    HandComponent,
+    PlayCardsAction,
 )
+from ..entitas import Matcher, Entity
+from .home_gameplay_services import _dungeon_advance
 
 ###################################################################################################################################################################
 dungeon_gameplay_router = APIRouter()
+
+
+###############################################################################################################################################
+# TODO, 临时添加行动, 逻辑。
+def _combat_actors_draw_cards_action(tcg_game: TCGGame) -> None:
+
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None
+
+    actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
+    for entity in actor_entities:
+        entity.replace(
+            DrawCardsAction,
+            entity.name,
+        )
+
+
+###############################################################################################################################################
+# TODO!!! 临时测试准备传送！！！
+def _all_heros_return_home(tcg_game: TCGGame) -> None:
+
+    heros_entities = tcg_game.get_group(Matcher(all_of=[HeroComponent])).entities
+    assert len(heros_entities) > 0
+    if len(heros_entities) == 0:
+        logger.error("没有找到英雄!")
+        return
+
+    home_stage_entities = tcg_game.get_group(Matcher(all_of=[HomeComponent])).entities
+    assert len(home_stage_entities) > 0
+    if len(home_stage_entities) == 0:
+        logger.error("没有找到家园!")
+        return
+
+    return_home_stage = next(iter(home_stage_entities))
+    prompt = f"""# 提示！冒险结束，你将要返回: {return_home_stage.name}"""
+    for hero_entity in heros_entities:
+
+        # 添加故事。
+        tcg_game.append_human_message(hero_entity, prompt)
+
+    # 开始传送。
+    tcg_game.stage_transition(heros_entities, return_home_stage)
+
+    # 清空地下城的实体!
+    tcg_game.destroy_dungeon_entities(tcg_game._world.dungeon)
+
+    # 设置空的地下城
+    tcg_game._world.dungeon = Dungeon(name="")
+
+    # 清除掉所有的战斗状态
+    for hero_entity in heros_entities:
+
+        # 不要的组件。
+        if hero_entity.has(DeathComponent):
+            logger.debug(f"remove death component: {hero_entity.name}")
+            hero_entity.remove(DeathComponent)
+
+        # 不要的组件
+        if hero_entity.has(XCardPlayerComponent):
+            logger.debug(f"remove xcard player component: {hero_entity.name}")
+            hero_entity.remove(XCardPlayerComponent)
+
+        # 生命全部恢复。
+        assert hero_entity.has(RPGCharacterProfileComponent)
+        rpg_character_profile_comp = hero_entity.get(RPGCharacterProfileComponent)
+        rpg_character_profile_comp.rpg_character_profile.hp = (
+            rpg_character_profile_comp.rpg_character_profile.max_hp
+        )
+
+        # 清空状态效果
+        rpg_character_profile_comp.status_effects.clear()
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+
+
+# TODO, 地下城下一关。
+def _all_heros_next_dungeon(tcg_game: TCGGame) -> None:
+    # 位置+1
+    if tcg_game.current_dungeon.advance_level():
+        heros_entities = tcg_game.get_group(Matcher(all_of=[HeroComponent])).entities
+        # tcg_game._dungeon_advance(tcg_game.current_dungeon, heros_entities)
+        _dungeon_advance(tcg_game, tcg_game.current_dungeon, heros_entities)
+    else:
+        logger.error("没有下一关了，不能前进了！")
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+# TODO, 临时添加行动, 逻辑。 activate_play_cards_action
+def _combat_actors_random_play_cards_action(tcg_game: TCGGame) -> bool:
+    """
+    激活打牌行动，为所有轮次中的角色选择技能并设置执行计划。
+
+    Returns:
+        bool: 是否成功激活打牌行动
+    """
+
+    # 1. 验证游戏状态
+    if len(tcg_game.current_engagement.rounds) == 0:
+        logger.error("没有回合，不能添加行动！")
+        return False
+
+    if not tcg_game.current_engagement.is_on_going_phase:
+        logger.error("没有进行中的回合，不能添加行动！")
+        return False
+
+    if tcg_game.current_engagement.last_round.has_ended:
+        logger.error("回合已经完成，不能添加行动！")
+        return False
+
+    # 2. 验证所有角色的手牌状态
+    actor_entities: Set[Entity] = tcg_game.get_group(
+        Matcher(all_of=[ActorComponent, HandComponent], none_of=[DeathComponent])
+    ).entities
+
+    if len(actor_entities) == 0:
+        logger.error("没有存活的并拥有手牌的角色，不能添加行动！")
+        return False
+
+    # 测试一下！
+    for actor_entity in actor_entities:
+
+        # 必须没有打牌行动
+        assert (
+            actor_entity.name in tcg_game.current_engagement.last_round.round_turns
+        ), f"{actor_entity.name} 不在本回合行动队列里"
+
+        # 必须没有打牌行动
+        assert not actor_entity.has(PlayCardsAction)
+        hand_comp = actor_entity.get(HandComponent)
+        assert len(hand_comp.skills) > 0, f"{actor_entity.name} 没有技能可用"
+
+        # 选择技能和目标
+        selected_skill = random.choice(hand_comp.skills)
+        logger.debug(f"为角色 {actor_entity.name} 随机选择技能: {selected_skill.name}")
+        final_target = selected_skill.target
+
+        # 创建打牌行动
+        actor_entity.replace(
+            PlayCardsAction,
+            actor_entity.name,
+            selected_skill,
+            final_target,
+        )
+
+    return True
 
 
 ###################################################################################################################################################################
@@ -119,7 +281,8 @@ async def _handle_draw_cards(web_game: WebTCGGame) -> DungeonGamePlayResponse:
         )
 
     # 推进一次游戏, 即可抽牌。
-    web_game.draw_cards_action()
+    # web_game.draw_cards_action()
+    _combat_actors_draw_cards_action(web_game)
     web_game.player_client.clear_messages()
     await web_game.dungeon_combat_pipeline.process()
 
@@ -144,7 +307,8 @@ async def _handle_play_cards(
         )
 
     logger.debug(f"玩家输入 = {request_data.user_input.tag}, 准备行动......")
-    if web_game.play_cards_action():
+    # if web_game.play_cards_action():
+    if _combat_actors_random_play_cards_action(web_game):
         # 执行一次！！！！！
         # await _execute_web_game(web_game)
         web_game.player_client.clear_messages()
@@ -221,7 +385,8 @@ async def _handle_advance_next_dungeon(web_game: WebTCGGame) -> DungeonGamePlayR
                 detail="没有下一关，你胜利了，应该返回营地！！！！",
             )
         else:
-            web_game.next_dungeon()
+            # web_game.next_dungeon()
+            _all_heros_next_dungeon(web_game)
             return DungeonGamePlayResponse(
                 client_messages=[],
             )
@@ -286,10 +451,6 @@ async def dungeon_gameplay(
                     detail=f"未知的请求类型 = {request_data.user_input.tag}, 不能处理！",
                 )
 
-        # raise HTTPException(
-        #     status_code=status.HTTP_400_BAD_REQUEST,
-        #     detail=f"{request_data.user_input} 是错误的输入，造成无法处理的情况！",
-        # )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -326,7 +487,8 @@ async def dungeon_trans_home(
             )
 
         # 回家
-        web_game.return_home()
+        # web_game.return_home()
+        _all_heros_return_home(web_game)
         return DungeonTransHomeResponse(
             message="回家了",
         )

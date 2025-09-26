@@ -3,7 +3,7 @@ import random
 import shutil
 import uuid
 from pathlib import Path
-from typing import Any, Dict, Final, List, Optional, Set, Tuple
+from typing import Any, Final, List, Optional, Set
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
@@ -14,7 +14,7 @@ from ..mongodb import (
     mongodb_find_one,
     mongodb_upsert_one,
 )
-from ..entitas import Entity, Matcher
+from ..entitas import Entity
 from ..game.base_game import BaseGame
 from ..game.tcg_game_context import TCGGameContext
 from ..game.tcg_game_process_pipeline import TCGGameProcessPipeline
@@ -25,14 +25,10 @@ from ..models import (
     AgentEvent,
     AgentChatHistory,
     AppearanceComponent,
-    Combat,
-    DeathComponent,
-    DrawCardsAction,
     Dungeon,
     DungeonComponent,
     Engagement,
     EnvironmentComponent,
-    HandComponent,
     HeroComponent,
     HomeComponent,
     KickOffMessageComponent,
@@ -41,18 +37,13 @@ from ..models import (
     RPGCharacterProfile,
     RPGCharacterProfileComponent,
     RuntimeComponent,
-    Skill,
-    SpeakAction,
     Stage,
     StageComponent,
     StageType,
-    PlayCardsAction,
     World,
     WorldSystem,
     WorldSystemComponent,
-    TransStageAction,
-    PlanAction,
-    XCardPlayerComponent,
+    Round,
 )
 from .player_client import PlayerClient
 
@@ -792,7 +783,7 @@ class TCGGame(BaseGame, TCGGameContext):
         self._broadcast_arrival_notifications(actors_to_transfer, stage_destination)
 
     #######################################################################################################################################
-    def _create_dungeon_entities(self, dungeon_model: Dungeon) -> None:
+    def create_dungeon_entities(self, dungeon_model: Dungeon) -> None:
 
         # 加一步测试: 不可以存在！如果存在说明没有清空。
         for actor in dungeon_model.actors:
@@ -811,419 +802,25 @@ class TCGGame(BaseGame, TCGGameContext):
         self._create_stage_entities(dungeon_model.levels)
 
     #######################################################################################################################################
-    def _destroy_dungeon_entities(self, dungeon: Dungeon) -> None:
-
+    def destroy_dungeon_entities(self, dungeon_model: Dungeon) -> None:
         # 清空地下城的怪物。
-        for actor in dungeon.actors:
-            actor_entity = self.get_actor_entity(actor.name)
-            if actor_entity is not None:
-                self.destroy_entity(actor_entity)
+        for actor in dungeon_model.actors:
+            destroy_actor_entity = self.get_actor_entity(actor.name)
+            if destroy_actor_entity is not None:
+                self.destroy_entity(destroy_actor_entity)
 
         # 清空地下城的场景
-        for stage in dungeon.levels:
-            stage_entity = self.get_stage_entity(stage.name)
-            if stage_entity is not None:
-                self.destroy_entity(stage_entity)
+        for stage in dungeon_model.levels:
+            destroy_stage_entity = self.get_stage_entity(stage.name)
+            if destroy_stage_entity is not None:
+                self.destroy_entity(destroy_stage_entity)
 
     #######################################################################################################################################
-    def _clear_dungeon(self) -> None:
-        self._destroy_dungeon_entities(self._world.dungeon)
-        self._world.dungeon = Dungeon(name="")
-
-    #######################################################################################################################################
-    # TODO!!! 进入地下城。
-    def launch_dungeon(self) -> bool:
-        if self.current_dungeon.position < 0:
-            self.current_dungeon.position = 0  # 第一次设置，第一个关卡。
-            self._create_dungeon_entities(self.current_dungeon)
-            heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
-            return self._dungeon_advance(self.current_dungeon, heros_entities)
-        else:
-            # 第一次，必须是<0, 证明一次没来过。
-            logger.error(f"launch_dungeon position = {self.current_dungeon.position}")
-
-        return False
-
-    #######################################################################################################################################
-    # TODO, 地下城下一关。
-    def next_dungeon(self) -> None:
-        # 位置+1
-        if self.current_dungeon.advance_level():
-            heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
-            self._dungeon_advance(self.current_dungeon, heros_entities)
-
-    #######################################################################################################################################
-    def _validate_dungeon_advance_prerequisites(
-        self, dungeon: Dungeon, heros_entities: Set[Entity]
-    ) -> Tuple[bool, Optional[Entity]]:
-        """
-        验证地下城推进的前置条件
-
-        Returns:
-            Tuple[是否验证通过, 场景实体(如果验证通过)]
-        """
-        # 是否有可以进入的关卡？
-        upcoming_dungeon = dungeon.current_level()
-        if upcoming_dungeon is None:
-            logger.error(
-                f"{self.current_dungeon.name} 没有下一个地下城！position = {self.current_dungeon.position}"
-            )
-            return False, None
-
-        # 下一个关卡实体, 没有就是错误的。
-        stage_entity = self.get_stage_entity(upcoming_dungeon.name)
-        if stage_entity is None or not stage_entity.has(DungeonComponent):
-            logger.error(f"{upcoming_dungeon.name} 没有对应的stage实体！")
-            return False, None
-
-        # 集体准备传送
-        if len(heros_entities) == 0:
-            logger.error(f"没有英雄不能进入地下城!= {stage_entity.name}")
-            return False, None
-
-        logger.debug(
-            f"{self.current_dungeon.name} = [{self.current_dungeon.position}]关为：{stage_entity.name}，可以进入！！！！"
-        )
-
-        return True, stage_entity
-
-    #######################################################################################################################################
-    def _generate_and_send_dungeon_transition_message(
-        self, dungeon: Dungeon, stage_entity: Entity, heros_entities: Set[Entity]
-    ) -> None:
-        """
-        生成并发送地下城传送提示消息
-        """
-        # 准备提示词
-        if dungeon.position == 0:
-            trans_message = (
-                f"""# 提示！你将要开始一次冒险，准备进入地下城: {stage_entity.name}"""
-            )
-        else:
-            trans_message = f"""# 提示！你准备继续你的冒险，准备进入下一个地下城: {stage_entity.name}"""
-
-        for hero_entity in heros_entities:
-            self.append_human_message(hero_entity, trans_message)  # 添加故事
-
-    #######################################################################################################################################
-    def _setup_dungeon_kickoff_messages(self, stage_entity: Entity) -> None:
-        """
-        设置地下城场景和怪物的KickOff消息
-        """
-        # 需要在这里补充设置地下城与怪物的kickoff信息。
-        stage_kick_off_comp = stage_entity.get(KickOffMessageComponent)
-        assert stage_kick_off_comp is not None
-        logger.debug(
-            f"当前 {stage_entity.name} 的kickoff信息: {stage_kick_off_comp.content}"
-        )
-
-        # 获取场景内角色的外貌信息
-        actors_appearances_mapping: Dict[str, str] = self.get_stage_actor_appearances(
-            stage_entity
-        )
-
-        # 重新组织一下
-        actors_appearances_info = []
-        for actor_name, appearance in actors_appearances_mapping.items():
-            actors_appearances_info.append(f"{actor_name}: {appearance}")
-        if len(actors_appearances_info) == 0:
-            actors_appearances_info.append("无")
-
-        # 生成追加的kickoff信息
-        append_kickoff_message = f"""# 场景内角色
-{"\n".join(actors_appearances_info)}"""
-
-        # 设置组件
-        stage_entity.replace(
-            KickOffMessageComponent,
-            stage_kick_off_comp.name,
-            stage_kick_off_comp.content + "\n" + append_kickoff_message,
-        )
-        logger.debug(
-            f"更新设置{stage_entity.name} 的kickoff信息: {stage_entity.get(KickOffMessageComponent).content}"
-        )
-
-        # 设置怪物的kickoff信息
-        actors = self.get_alive_actors_on_stage(stage_entity)
-        for actor in actors:
-            if actor.has(MonsterComponent):
-                monster_kick_off_comp = actor.get(KickOffMessageComponent)
-                assert monster_kick_off_comp is not None
-                logger.debug(
-                    f"需要设置{actor.name} 的kickoff信息: {monster_kick_off_comp.content}"
-                )
-
-    #######################################################################################################################################
-    # TODO, 进入地下城！
-    def _dungeon_advance(self, dungeon: Dungeon, heros_entities: Set[Entity]) -> bool:
-        """
-        地下城关卡推进的主协调函数
-
-        Args:
-            dungeon: 地下城实例
-            heros_entities: 英雄实体集合
-
-        Returns:
-            bool: 是否成功推进到下一关卡
-        """
-        # 1. 验证前置条件
-        is_valid, stage_entity = self._validate_dungeon_advance_prerequisites(
-            dungeon, heros_entities
-        )
-        if not is_valid or stage_entity is None:
-            return False
-
-        # 2. 生成并发送传送提示消息
-        self._generate_and_send_dungeon_transition_message(
-            dungeon, stage_entity, heros_entities
-        )
-
-        # 3. 执行场景传送
-        self.stage_transition(heros_entities, stage_entity)
-
-        # 4. 设置KickOff消息
-        self._setup_dungeon_kickoff_messages(stage_entity)
-
-        # 5. 初始化战斗状态
-        dungeon.engagement.combat_kickoff(Combat(name=stage_entity.name))
-
-        return True
-
-    ###############################################################################################################################################
-    # TODO!!! 临时测试准备传送！！！
-    def return_home(self) -> None:
-
-        heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
-        assert len(heros_entities) > 0
-        if len(heros_entities) == 0:
-            logger.error("没有找到英雄!")
-            return
-
-        home_stage_entities = self.get_group(Matcher(all_of=[HomeComponent])).entities
-        assert len(home_stage_entities) > 0
-        if len(home_stage_entities) == 0:
-            logger.error("没有找到家园!")
-            return
-
-        stage_entity = next(iter(home_stage_entities))
-        prompt = f"""# 提示！冒险结束，你将要返回: {stage_entity.name}"""
-        for hero_entity in heros_entities:
-
-            # 添加故事。
-            self.append_human_message(hero_entity, prompt)
-
-        # 开始传送。
-        self.stage_transition(heros_entities, stage_entity)
-
-        # 设置空的地下城的数据。
-        self._clear_dungeon()
-
-        # 清除掉所有的战斗状态
-        for hero_entity in heros_entities:
-
-            # 不要的组件。
-            if hero_entity.has(DeathComponent):
-                logger.debug(f"remove death component: {hero_entity.name}")
-                hero_entity.remove(DeathComponent)
-
-            # 不要的组件
-            if hero_entity.has(XCardPlayerComponent):
-                logger.debug(f"remove xcard player component: {hero_entity.name}")
-                hero_entity.remove(XCardPlayerComponent)
-
-            # 生命全部恢复。
-            assert hero_entity.has(RPGCharacterProfileComponent)
-            rpg_character_profile_comp = hero_entity.get(RPGCharacterProfileComponent)
-            rpg_character_profile_comp.rpg_character_profile.hp = (
-                rpg_character_profile_comp.rpg_character_profile.max_hp
-            )
-
-    ###############################################################################################################################################
-    # TODO, 临时添加行动, 逻辑。 activate_play_cards_action
-    def play_cards_action(
-        self, skill_execution_plan_options: Optional[Dict[str, str]] = None
-    ) -> bool:
-        """
-        激活打牌行动，为所有轮次中的角色选择技能并设置执行计划。
-
-        Args:
-            skill_execution_plan_options: 可选的技能执行计划选项
-                格式: {技能名称: 目标名称}
-                如果提供，会优先选择指定的技能并使用指定的目标
-
-        Returns:
-            bool: 是否成功激活打牌行动
-        """
-
-        # 1. 验证游戏状态
-        if not self._validate_combat_state():
-            return False
-
-        if skill_execution_plan_options is not None:
-            logger.debug(f"收到技能执行计划选项: {skill_execution_plan_options}")
-
-        # 2. 验证所有角色的手牌状态
-        actor_entities: Set[Entity] = self.get_group(
-            Matcher(all_of=[ActorComponent, HandComponent], none_of=[DeathComponent])
-        ).entities
-
-        if len(actor_entities) == 0:
-            logger.error("没有存活的并拥有手牌的角色，不能添加行动！")
-            return False
-
-        # 测试一下！
-        for actor_entity in actor_entities:
-
-            # 必须没有打牌行动
-            assert (
-                actor_entity.name in self.current_engagement.last_round.round_turns
-            ), f"{actor_entity.name} 不在本回合行动队列里"
-
-            # 必须没有打牌行动
-            hand_comp = actor_entity.get(HandComponent)
-            assert len(hand_comp.skills) > 0, f"{actor_entity.name} 没有技能可用"
-
-            if not self._setup_actor_play_cards_action(
-                actor_entity, skill_execution_plan_options
-            ):
-                assert False, f"为角色 {actor_entity.name} 设置打牌行动失败"
-
-        return True
-
-    ###############################################################################################################################################
-    def _validate_combat_state(self) -> bool:
-        """验证战斗状态是否允许添加行动"""
-        if len(self.current_engagement.rounds) == 0:
-            logger.error("没有回合，不能添加行动！")
-            return False
-
-        if not self.current_engagement.is_on_going_phase:
-            logger.error("没有进行中的回合，不能添加行动！")
-            return False
-
-        if self.current_engagement.last_round.has_ended:
-            logger.error("回合已经完成，不能添加行动！")
-            return False
-
-        return True
-
-    ###############################################################################################################################################
-    def _setup_actor_play_cards_action(
-        self,
-        actor_entity: Entity,
-        skill_execution_plan_options: Optional[Dict[str, str]],
-    ) -> bool:
-        """为单个角色设置打牌行动"""
-
-        assert not actor_entity.has(PlayCardsAction)
-        hand_comp = actor_entity.get(HandComponent)
-
-        # 选择技能和目标
-        selected_skill, final_target = self._select_skill_and_target(
-            actor_entity, hand_comp, skill_execution_plan_options
-        )
-
-        if selected_skill is None:
-            logger.error(f"无法为角色 {actor_entity.name} 选择技能")
-            return False
-
-        # 创建打牌行动
-        actor_entity.replace(
-            PlayCardsAction,
-            actor_entity.name,
-            selected_skill,
-            final_target,
-        )
-
-        return True
-
-    ###############################################################################################################################################
-    def _select_skill_and_target(
-        self,
-        actor_entity: Entity,
-        hand_comp: HandComponent,
-        skill_execution_plan_options: Optional[Dict[str, str]],
-    ) -> Tuple[Optional[Skill], str]:
-        """
-        为角色选择技能和目标
-
-        Returns:
-            Tuple[技能对象, 最终目标]
-        """
-
-        selected_skill = None
-        target_override = None
-
-        # 优先从指定选项中选择技能
-        if skill_execution_plan_options is not None:
-            for skill in hand_comp.skills:
-                if skill.name in skill_execution_plan_options:
-                    selected_skill = skill
-                    target_override = skill_execution_plan_options[skill.name]
-                    logger.debug(
-                        f"为角色 {actor_entity.name} 选择指定技能: {skill.name}, 目标: {target_override}"
-                    )
-                    break
-
-        # 如果没有找到指定技能，随机选择
-        if selected_skill is None:
-            selected_skill = random.choice(hand_comp.skills)
-            logger.debug(
-                f"为角色 {actor_entity.name} 随机选择技能: {selected_skill.name}"
-            )
-
-        # 确定最终目标
-        if target_override is not None:
-            final_target = target_override
-        else:
-            final_target = selected_skill.target
-
-        return selected_skill, final_target
-
-    #######################################################################################################################################
-    # TODO, 临时添加行动, 逻辑。
-    def speak_action(self, target: str, content: str) -> bool:
-
-        assert target != "", "target is empty"
-        assert content != "", "content is empty"
-        logger.debug(f"activate_speak_action: {target} => \n{content}")
-
-        if content == "":
-            logger.error("内容不能为空！")
-            return False
-
-        target_entity = self.get_actor_entity(target)
-        if target_entity is None:
-            logger.error(f"目标角色: {target} 不存在！")
-            return False
-
-        player_entity = self.get_player_entity()
-        assert player_entity is not None
-        data: Dict[str, str] = {target: content}
-        player_entity.replace(SpeakAction, player_entity.name, data)
-
-        return True
-
-    #######################################################################################################################################
-    # TODO, 临时添加行动, 逻辑。
-    def draw_cards_action(self) -> None:
-
-        player_entity = self.get_player_entity()
-        assert player_entity is not None
-
-        actor_entities = self.get_alive_actors_on_stage(player_entity)
-        for entity in actor_entities:
-            entity.replace(
-                DrawCardsAction,
-                entity.name,
-            )
-
-    #######################################################################################################################################
-    def new_round(self) -> bool:
+    def start_new_round(self) -> Optional[Round]:
 
         if not self.current_engagement.is_on_going_phase:
             logger.warning("当前没有进行中的战斗，不能设置回合。")
-            return False
+            return None
 
         if (
             len(self.current_engagement.rounds) > 0
@@ -1231,111 +828,48 @@ class TCGGame(BaseGame, TCGGameContext):
         ):
             # 有回合正在进行中，所以不能添加新的回合。
             logger.warning("有回合正在进行中，所以不能添加新的回合。")
-            return False
+            return None
 
-        # 排序角色
+        # 玩家角色
         player_entity = self.get_player_entity()
-        assert player_entity is not None
+        assert player_entity is not None, "player_entity is None"
+
+        # 所有角色
         actors_on_stage = self.get_alive_actors_on_stage(player_entity)
-        assert len(actors_on_stage) > 0
-        shuffled_reactive_entities = self._shuffle_action_order(list(actors_on_stage))
+        assert len(actors_on_stage) > 0, "actors_on_stage is empty"
 
-        # 场景描写加上。
-        first_entity = next(iter(shuffled_reactive_entities))
-        stage_entity = self.safe_get_stage_entity(first_entity)
-        assert stage_entity is not None
-        stage_environment_comp = stage_entity.get(EnvironmentComponent)
+        # 当前舞台(必然是地下城！)
+        stage_entity = self.safe_get_stage_entity(player_entity)
+        assert stage_entity is not None, "stage_entity is None"
+        assert stage_entity.has(DungeonComponent), "stage_entity 没有 DungeonComponent"
 
-        round = self.current_engagement.new_round(
+        # 随机打乱角色行动顺序
+        shuffled_reactive_entities = list(actors_on_stage)
+        random.shuffle(shuffled_reactive_entities)
+
+        # 创建新的回合
+        new_round = self.current_engagement.start_new_round(
             round_turns=[entity.name for entity in shuffled_reactive_entities]
         )
 
-        round.environment = stage_environment_comp.description
-        logger.info(f"new_round:\n{round.model_dump_json()}")
-        return True
+        # 设置回合的环境描写
+        new_round.environment = stage_entity.get(EnvironmentComponent).description
+        logger.info(f"new_round:\n{new_round.model_dump_json(indent=2)}")
+        return new_round
 
     #######################################################################################################################################
-    # 随机排序
-    def _shuffle_action_order(self, actor_entities: List[Entity]) -> List[Entity]:
-        shuffled_reactive_entities = actor_entities.copy()
-        random.shuffle(shuffled_reactive_entities)
-        return shuffled_reactive_entities
-
-    #######################################################################################################################################
-    # 正式的排序方式，按着敏捷度排序
-    def _sort_action_order_by_dex(self, actor_entities: List[Entity]) -> List[Entity]:
-
-        actor_dexterity_pairs: List[Tuple[Entity, int]] = []
-        for entity in actor_entities:
-
-            assert entity.has(RPGCharacterProfileComponent)
-            rpg_character_profile_component = entity.get(RPGCharacterProfileComponent)
-            actor_dexterity_pairs.append(
-                (
-                    entity,
-                    rpg_character_profile_component.rpg_character_profile.dexterity,
-                )
-            )
-
-        return [
-            entity
-            for entity, _ in sorted(
-                actor_dexterity_pairs, key=lambda x: x[1], reverse=True
-            )
-        ]
-
-    #######################################################################################################################################
-    # TODO, 临时添加行动, 逻辑。
-    def plan_action(self, actors: List[str]) -> None:
-
-        for actor_name in actors:
-
-            actor_entity = self.get_actor_entity(actor_name)
-            assert actor_entity is not None
-            if actor_entity is None:
-                logger.error(f"角色: {actor_name} 不存在！")
-                continue
-
-            if not actor_entity.has(HeroComponent):
-                logger.error(f"角色: {actor_name} 不是英雄，不能有行动计划！")
-                continue
-
-            if actor_entity.has(PlayerComponent):
-                logger.error(f"角色: {actor_name} 是玩家控制的，不能有行动计划！")
-                continue
-
-            logger.debug(f"为角色: {actor_name} 激活行动计划！")
-            actor_entity.replace(PlanAction, actor_entity.name)
-
-    #######################################################################################################################################
-    # TODO, 临时添加行动, 逻辑。
-    def trans_stage_action(self, stage_name: str) -> bool:
-        target_stage_entity = self.get_stage_entity(stage_name)
-        assert target_stage_entity is not None, f"目标场景: {stage_name} 不存在！"
-        if target_stage_entity is None:
-            logger.error(f"目标场景: {stage_name} 不存在！")
-            return
-
-        assert target_stage_entity.has(
-            HomeComponent
-        ), f"目标场景: {stage_name} 不是家园！"
-        player_entity = self.get_player_entity()
-        assert player_entity is not None, "玩家实体不存在！"
-        player_entity.replace(TransStageAction, player_entity.name, stage_name)
-        return True
-
-    #######################################################################################################################################
-    def find_recent_human_message_by_attribute(
+    def find_human_message_by_attribute(
         self,
         actor_entity: Entity,
         attribute_key: str,
         attribute_value: str,
+        reverse_order: bool = True,
     ) -> Optional[HumanMessage]:
 
         chat_history = self.get_agent_chat_history(actor_entity).chat_history
 
-        # 注意，这里是倒序遍历！
-        for chat_message in reversed(chat_history):
+        # 进行查找。
+        for chat_message in reversed(chat_history) if reverse_order else chat_history:
 
             if not isinstance(chat_message, HumanMessage):
                 continue

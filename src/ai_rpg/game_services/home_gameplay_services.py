@@ -1,7 +1,7 @@
+from typing import Dict, Set
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-
-# from ..game.tcg_game import TCGGameState
+from ..game.tcg_game import TCGGame
 from ..game.web_tcg_game import WebTCGGame
 from ..game_services.game_server import GameServerInstance
 from ..models import (
@@ -9,7 +9,15 @@ from ..models import (
     HomeGamePlayResponse,
     HomeTransDungeonRequest,
     HomeTransDungeonResponse,
+    SpeakAction,
+    HeroComponent,
+    Dungeon,
+    DungeonComponent,
+    KickOffMessageComponent,
+    MonsterComponent,
+    Combat,
 )
+from ..entitas import Matcher, Entity
 
 ###################################################################################################################################################################
 home_gameplay_router = APIRouter()
@@ -95,6 +103,155 @@ async def _handle_advancing_action(web_game: WebTCGGame) -> HomeGamePlayResponse
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+# TODO, 临时添加行动, 逻辑。
+def _player_add_speak_action(tcg_game: TCGGame, target: str, content: str) -> bool:
+
+    # assert target != "", "target is empty"
+    assert content != "", "content is empty"
+    logger.debug(f"activate_speak_action: {target} => \n{content}")
+
+    # if content == "":
+    #     logger.error("内容不能为空！")
+    #     return False
+
+    target_entity = tcg_game.get_actor_entity(target)
+    assert target_entity is not None, "target_entity is None"
+    if target_entity is None:
+        logger.error(f"目标角色: {target} 不存在！")
+        return False
+
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None
+    # data: Dict[str, str] = {target: content}
+    player_entity.replace(SpeakAction, player_entity.name, {target: content})
+
+    return True
+
+
+#######################################################################################################################################
+# TODO, 进入地下城！
+def _dungeon_advance(
+    tcg_game: TCGGame, dungeon: Dungeon, heros_entities: Set[Entity]
+) -> bool:
+    """
+    地下城关卡推进的主协调函数
+
+    Args:
+        dungeon: 地下城实例
+        heros_entities: 英雄实体集合
+
+    Returns:
+        bool: 是否成功推进到下一关卡
+    """
+    # 1. 验证前置条件
+    # 是否有可以进入的关卡？
+    upcoming_dungeon = dungeon.current_level()
+    if upcoming_dungeon is None:
+        logger.error(
+            f"{tcg_game.current_dungeon.name} 没有下一个地下城！position = {tcg_game.current_dungeon.position}"
+        )
+        return False
+
+    # 下一个关卡实体, 没有就是错误的。
+    stage_entity = tcg_game.get_stage_entity(upcoming_dungeon.name)
+    if stage_entity is None or not stage_entity.has(DungeonComponent):
+        logger.error(f"{upcoming_dungeon.name} 没有对应的stage实体！")
+        return False
+
+    # 集体准备传送
+    if len(heros_entities) == 0:
+        logger.error(f"没有英雄不能进入地下城!= {stage_entity.name}")
+        return False
+
+    logger.debug(
+        f"{tcg_game.current_dungeon.name} = [{tcg_game.current_dungeon.position}]关为：{stage_entity.name}，可以进入！！！！"
+    )
+
+    # 2. 生成并发送传送提示消息
+    # 准备提示词
+    if dungeon.position == 0:
+        trans_message = (
+            f"""# 提示！你将要开始一次冒险，准备进入地下城: {stage_entity.name}"""
+        )
+    else:
+        trans_message = (
+            f"""# 提示！你准备继续你的冒险，准备进入下一个地下城: {stage_entity.name}"""
+        )
+
+    for hero_entity in heros_entities:
+        tcg_game.append_human_message(hero_entity, trans_message)  # 添加故事
+
+    # 3. 执行场景传送
+    tcg_game.stage_transition(heros_entities, stage_entity)
+
+    # 4. 设置KickOff消息
+    # 需要在这里补充设置地下城与怪物的kickoff信息。
+    stage_kick_off_comp = stage_entity.get(KickOffMessageComponent)
+    assert stage_kick_off_comp is not None
+    logger.debug(
+        f"当前 {stage_entity.name} 的kickoff信息: {stage_kick_off_comp.content}"
+    )
+
+    # 获取场景内角色的外貌信息
+    actors_appearances_mapping: Dict[str, str] = tcg_game.get_stage_actor_appearances(
+        stage_entity
+    )
+
+    # 重新组织一下
+    actors_appearances_info = []
+    for actor_name, appearance in actors_appearances_mapping.items():
+        actors_appearances_info.append(f"{actor_name}: {appearance}")
+    if len(actors_appearances_info) == 0:
+        actors_appearances_info.append("无")
+
+    # 生成追加的kickoff信息
+    append_kickoff_message = f"""# 场景内角色
+{"\n".join(actors_appearances_info)}"""
+
+    # 设置组件
+    stage_entity.replace(
+        KickOffMessageComponent,
+        stage_kick_off_comp.name,
+        stage_kick_off_comp.content + "\n" + append_kickoff_message,
+    )
+    logger.debug(
+        f"更新设置{stage_entity.name} 的kickoff信息: {stage_entity.get(KickOffMessageComponent).content}"
+    )
+
+    # 设置怪物的kickoff信息
+    actors = tcg_game.get_alive_actors_on_stage(stage_entity)
+    for actor in actors:
+        if actor.has(MonsterComponent):
+            monster_kick_off_comp = actor.get(KickOffMessageComponent)
+            assert monster_kick_off_comp is not None
+            logger.debug(
+                f"需要设置{actor.name} 的kickoff信息: {monster_kick_off_comp.content}"
+            )
+
+    # 5. 初始化战斗状态
+    dungeon.engagement.combat_kickoff(Combat(name=stage_entity.name))
+
+    return True
+
+
+#######################################################################################################################################
+# TODO!!! 进入地下城。
+def _all_heros_launch_dungeon(tcg_game: TCGGame) -> bool:
+    if tcg_game.current_dungeon.position < 0:
+        tcg_game.current_dungeon.position = 0  # 第一次设置，第一个关卡。
+        tcg_game.create_dungeon_entities(tcg_game.current_dungeon)
+        heros_entities = tcg_game.get_group(Matcher(all_of=[HeroComponent])).entities
+        # return tcg_game._dungeon_advance(tcg_game.current_dungeon, heros_entities)
+        return _dungeon_advance(tcg_game, tcg_game.current_dungeon, heros_entities)
+    else:
+        # 第一次，必须是<0, 证明一次没来过。
+        logger.error(f"launch_dungeon position = {tcg_game.current_dungeon.position}")
+
+    return False
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
 ###################################################################################################################################################################
 async def _handle_speak_action(
     web_game: WebTCGGame, target: str, content: str
@@ -111,7 +268,8 @@ async def _handle_speak_action(
         HomeGamePlayResponse: 包含客户端消息的响应
     """
     # player 添加说话的动作
-    if web_game.speak_action(target=target, content=content):
+    # if web_game.speak_action(target=target, content=content):
+    if _player_add_speak_action(web_game, target=target, content=content):
         # 清空消息。准备重新开始 + 测试推进一次游戏
         web_game.player_client.clear_messages()
         await web_game.player_home_pipeline.process()
@@ -205,7 +363,8 @@ async def home_trans_dungeon(
             )
 
         # 传送地下城执行。
-        if not web_game.launch_dungeon():
+        # if not web_game.launch_dungeon():
+        if not _all_heros_launch_dungeon(web_game):
             logger.error("第一次地下城传送失败!!!!")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

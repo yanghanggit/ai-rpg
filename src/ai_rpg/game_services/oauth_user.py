@@ -1,9 +1,7 @@
 from typing import Optional
-
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
-
 from ..auth.jwt import UserToken, decode_jwt
 from ..pgsql.user import get_user, has_user
 from ..redis.user import (

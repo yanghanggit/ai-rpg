@@ -214,7 +214,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
         last_round = self._game.current_engagement.last_round
         if last_round.has_ended:
             logger.success(f"last_round.has_ended, so setup new round")
-            self._game.new_round()
+            self._game.start_new_round()
 
         turn = len(self._game.current_engagement.rounds)
         logger.debug(f"当前回合数: {turn}")

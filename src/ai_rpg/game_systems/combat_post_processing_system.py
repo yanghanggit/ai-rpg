@@ -131,7 +131,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
         assert stage_entity is not None
 
         # 获取最近的战斗消息。
-        begin_message = self._game.find_recent_human_message_by_attribute(
+        begin_message = self._game.find_human_message_by_attribute(
             actor_entity=entity,
             attribute_key="combat_kickoff_tag",
             attribute_value=stage_entity.name,
@@ -139,7 +139,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
         assert begin_message is not None
 
         # 获取最近的战斗消息。
-        end_message = self._game.find_recent_human_message_by_attribute(
+        end_message = self._game.find_human_message_by_attribute(
             actor_entity=entity,
             attribute_key="combat_result_tag",
             attribute_value=stage_entity.name,

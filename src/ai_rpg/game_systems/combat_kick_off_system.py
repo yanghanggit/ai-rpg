@@ -85,7 +85,7 @@ class CombatKickOffSystem(ExecuteProcessor):
             f"{current_stage_entity.name}, 战斗触发阶段完成，进入战斗进行阶段。"
         )
 
-        if not self._game.new_round():
+        if not self._game.start_new_round():
             logger.error(f"not web_game.setup_round()")
 
 

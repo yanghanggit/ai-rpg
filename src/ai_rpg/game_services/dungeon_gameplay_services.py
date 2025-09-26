@@ -2,8 +2,6 @@ import random
 from typing import Set
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-
-# from sympy import im
 from ..game.tcg_game import TCGGame
 from ..game.web_tcg_game import WebTCGGame
 from ..game_services.game_server import GameServerInstance
@@ -25,13 +23,15 @@ from ..models import (
     PlayCardsAction,
 )
 from ..entitas import Matcher, Entity
+from .home_gameplay_services import _dungeon_advance
 
 ###################################################################################################################################################################
 dungeon_gameplay_router = APIRouter()
 
 
+###############################################################################################################################################
 # TODO, 临时添加行动, 逻辑。
-def combat_actors_draw_cards_action(tcg_game: TCGGame) -> None:
+def _combat_actors_draw_cards_action(tcg_game: TCGGame) -> None:
 
     player_entity = tcg_game.get_player_entity()
     assert player_entity is not None
@@ -46,7 +46,7 @@ def combat_actors_draw_cards_action(tcg_game: TCGGame) -> None:
 
 ###############################################################################################################################################
 # TODO!!! 临时测试准备传送！！！
-def all_heros_return_home(tcg_game: TCGGame) -> None:
+def _all_heros_return_home(tcg_game: TCGGame) -> None:
 
     heros_entities = tcg_game.get_group(Matcher(all_of=[HeroComponent])).entities
     assert len(heros_entities) > 0
@@ -103,8 +103,24 @@ def all_heros_return_home(tcg_game: TCGGame) -> None:
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+
+
+# TODO, 地下城下一关。
+def _all_heros_next_dungeon(tcg_game: TCGGame) -> None:
+    # 位置+1
+    if tcg_game.current_dungeon.advance_level():
+        heros_entities = tcg_game.get_group(Matcher(all_of=[HeroComponent])).entities
+        # tcg_game._dungeon_advance(tcg_game.current_dungeon, heros_entities)
+        _dungeon_advance(tcg_game, tcg_game.current_dungeon, heros_entities)
+    else:
+        logger.error("没有下一关了，不能前进了！")
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
 # TODO, 临时添加行动, 逻辑。 activate_play_cards_action
-def combat_actors_random_play_cards_action(tcg_game: TCGGame) -> bool:
+def _combat_actors_random_play_cards_action(tcg_game: TCGGame) -> bool:
     """
     激活打牌行动，为所有轮次中的角色选择技能并设置执行计划。
 
@@ -266,7 +282,7 @@ async def _handle_draw_cards(web_game: WebTCGGame) -> DungeonGamePlayResponse:
 
     # 推进一次游戏, 即可抽牌。
     # web_game.draw_cards_action()
-    combat_actors_draw_cards_action(web_game)
+    _combat_actors_draw_cards_action(web_game)
     web_game.player_client.clear_messages()
     await web_game.dungeon_combat_pipeline.process()
 
@@ -292,7 +308,7 @@ async def _handle_play_cards(
 
     logger.debug(f"玩家输入 = {request_data.user_input.tag}, 准备行动......")
     # if web_game.play_cards_action():
-    if combat_actors_random_play_cards_action(web_game):
+    if _combat_actors_random_play_cards_action(web_game):
         # 执行一次！！！！！
         # await _execute_web_game(web_game)
         web_game.player_client.clear_messages()
@@ -369,7 +385,8 @@ async def _handle_advance_next_dungeon(web_game: WebTCGGame) -> DungeonGamePlayR
                 detail="没有下一关，你胜利了，应该返回营地！！！！",
             )
         else:
-            web_game.next_dungeon()
+            # web_game.next_dungeon()
+            _all_heros_next_dungeon(web_game)
             return DungeonGamePlayResponse(
                 client_messages=[],
             )
@@ -471,7 +488,7 @@ async def dungeon_trans_home(
 
         # 回家
         # web_game.return_home()
-        all_heros_return_home(web_game)
+        _all_heros_return_home(web_game)
         return DungeonTransHomeResponse(
             message="回家了",
         )

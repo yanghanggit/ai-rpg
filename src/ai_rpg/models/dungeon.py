@@ -114,7 +114,7 @@ class Engagement(BaseModel):
         return self.last_combat.phase
 
     ###############################################################################################################################################
-    def new_round(self, round_turns: List[str]) -> Round:
+    def start_new_round(self, round_turns: List[str]) -> Round:
         round = Round(
             tag=f"round_{len(self.last_combat.rounds) + 1}",
             round_turns=round_turns,

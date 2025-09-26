@@ -34,11 +34,15 @@ from ai_rpg.models import (
     HomeComponent,
     TransStageAction,
 )
-from ai_rpg.game_services.home_gameplay_services import player_add_speak_action
+from ai_rpg.game_services.home_gameplay_services import (
+    _player_add_speak_action,
+    _all_heros_launch_dungeon,
+)
 from ai_rpg.game_services.dungeon_gameplay_services import (
-    combat_actors_draw_cards_action,
-    all_heros_return_home,
-    combat_actors_random_play_cards_action,
+    _combat_actors_draw_cards_action,
+    _all_heros_return_home,
+    _combat_actors_random_play_cards_action,
+    _all_heros_next_dungeon,
 )
 
 
@@ -481,7 +485,7 @@ async def _process_dungeon_state_input(
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
-        combat_actors_draw_cards_action(terminal_game)
+        _combat_actors_draw_cards_action(terminal_game)
 
         await terminal_game.dungeon_combat_pipeline.process()
 
@@ -498,7 +502,7 @@ async def _process_dungeon_state_input(
         )
 
         # 执行打牌行动（现在使用随机选择技能）
-        if combat_actors_random_play_cards_action(terminal_game):
+        if _combat_actors_random_play_cards_action(terminal_game):
             await terminal_game.dungeon_combat_pipeline.process()
 
     elif usr_input == "/rth" or usr_input == "/return-to-home":
@@ -512,7 +516,7 @@ async def _process_dungeon_state_input(
 
         logger.debug(f"玩家输入 = {usr_input}, 准备传送回家")
         # terminal_game.return_home()
-        all_heros_return_home(terminal_game)
+        _all_heros_return_home(terminal_game)
 
     elif usr_input == "/and" or usr_input == "/advance-next-dungeon":
 
@@ -526,7 +530,8 @@ async def _process_dungeon_state_input(
                     logger.info(
                         f"玩家输入 = {usr_input}, 进入下一关 = {next_level.name}"
                     )
-                    terminal_game.next_dungeon()
+                    # terminal_game.next_dungeon()
+                    _all_heros_next_dungeon(terminal_game)
                     await terminal_game.dungeon_combat_pipeline.process()
             elif (
                 terminal_game.current_engagement.combat_result == CombatResult.HERO_LOSE
@@ -558,7 +563,7 @@ async def _process_home_state_input(
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备传送地下城")
-        if not terminal_game.launch_dungeon():
+        if not _all_heros_launch_dungeon(terminal_game):
             assert False, "传送地下城失败！"
 
         if len(terminal_game.current_engagement.combats) == 0:
@@ -580,7 +585,7 @@ async def _process_home_state_input(
         speak_command = _parse_speak_command_input(usr_input)
 
         # 处理输入
-        if player_add_speak_action(
+        if _player_add_speak_action(
             tcg_game=terminal_game,
             target=speak_command["target"],
             content=speak_command["content"],

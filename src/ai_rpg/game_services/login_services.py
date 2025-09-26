@@ -15,15 +15,6 @@ login_router = APIRouter()
 
 
 ###################################################################################################################################################################
-# @final
-# @unique
-# class GameSessionStatus(StrEnum):
-#     RESUME_GAME = "resume_game"
-#     LOAD_GAME = "load_game"
-#     NEW_GAME = "new_game"
-
-
-###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @login_router.post(path="/api/login/v1/", response_model=LoginResponse)
@@ -41,12 +32,6 @@ async def login(
         game=request_data.game_name,
         actor="",
     )
-
-    # 初始化日志
-    # setup_logger()
-
-    # 检查房间是否存在
-    # room_manager = game_server.room_manager
 
     # TODO, 强制删除运行中的房间。
     if game_server.has_room(request_data.user_name):
@@ -90,26 +75,6 @@ async def login(
     # 如果有房间，就获取房间。
     room = game_server.get_room(request_data.user_name)
     assert room is not None
-
-    # 返回结果。
-    # response_message = ""
-    # if room.game is not None:
-    #     # 存在，正在运行
-    #     logger.info(f"login: {request_data.user_name} has room, is running!")
-    #     response_message = GameSessionStatus.RESUME_GAME
-    # else:
-    #     if web_game_user_options.world_data is not None:
-    #         # 曾经运行过，此时已经存储，可以恢复
-    #         logger.info(
-    #             f"login: {request_data.user_name} has room, but not running, can restore!"
-    #         )
-    #         response_message = GameSessionStatus.LOAD_GAME
-    #     else:
-    #         # 没有运行过，直接创建
-    #         logger.info(
-    #             f"login: {request_data.user_name} has room, but not running, create new room!"
-    #         )
-    #         response_message = GameSessionStatus.NEW_GAME
 
     return LoginResponse(
         message=f"{request_data.user_name} 登录成功！并创建房间！",

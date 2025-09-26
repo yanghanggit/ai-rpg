@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
+
+# from sympy import im
 from ..game.tcg_game import TCGGame
 from ..game.web_tcg_game import WebTCGGame
 from ..game_services.game_server import GameServerInstance
@@ -11,7 +13,13 @@ from ..models import (
     Skill,
     XCardPlayerComponent,
     DrawCardsAction,
+    Dungeon,
+    HomeComponent,
+    HeroComponent,
+    DeathComponent,
+    RPGCharacterProfileComponent,
 )
+from ..entitas import Matcher
 
 ###################################################################################################################################################################
 dungeon_gameplay_router = APIRouter()
@@ -29,6 +37,62 @@ def combat_actors_draw_cards_action(tcg_game: TCGGame) -> None:
             DrawCardsAction,
             entity.name,
         )
+
+
+###############################################################################################################################################
+# TODO!!! 临时测试准备传送！！！
+def return_home(tcg_game: TCGGame) -> None:
+
+    heros_entities = tcg_game.get_group(Matcher(all_of=[HeroComponent])).entities
+    assert len(heros_entities) > 0
+    if len(heros_entities) == 0:
+        logger.error("没有找到英雄!")
+        return
+
+    home_stage_entities = tcg_game.get_group(Matcher(all_of=[HomeComponent])).entities
+    assert len(home_stage_entities) > 0
+    if len(home_stage_entities) == 0:
+        logger.error("没有找到家园!")
+        return
+
+    return_home_stage = next(iter(home_stage_entities))
+    prompt = f"""# 提示！冒险结束，你将要返回: {return_home_stage.name}"""
+    for hero_entity in heros_entities:
+
+        # 添加故事。
+        tcg_game.append_human_message(hero_entity, prompt)
+
+    # 开始传送。
+    tcg_game.stage_transition(heros_entities, return_home_stage)
+
+    # 清空地下城的实体!
+    tcg_game.destroy_dungeon_entities(tcg_game._world.dungeon)
+
+    # 设置空的地下城
+    tcg_game._world.dungeon = Dungeon(name="")
+
+    # 清除掉所有的战斗状态
+    for hero_entity in heros_entities:
+
+        # 不要的组件。
+        if hero_entity.has(DeathComponent):
+            logger.debug(f"remove death component: {hero_entity.name}")
+            hero_entity.remove(DeathComponent)
+
+        # 不要的组件
+        if hero_entity.has(XCardPlayerComponent):
+            logger.debug(f"remove xcard player component: {hero_entity.name}")
+            hero_entity.remove(XCardPlayerComponent)
+
+        # 生命全部恢复。
+        assert hero_entity.has(RPGCharacterProfileComponent)
+        rpg_character_profile_comp = hero_entity.get(RPGCharacterProfileComponent)
+        rpg_character_profile_comp.rpg_character_profile.hp = (
+            rpg_character_profile_comp.rpg_character_profile.max_hp
+        )
+
+        # 清空状态效果
+        rpg_character_profile_comp.status_effects.clear()
 
 
 ###################################################################################################################################################################
@@ -337,7 +401,8 @@ async def dungeon_trans_home(
             )
 
         # 回家
-        web_game.return_home()
+        # web_game.return_home()
+        return_home(web_game)
         return DungeonTransHomeResponse(
             message="回家了",
         )

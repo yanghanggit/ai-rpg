@@ -38,6 +38,7 @@ from ai_rpg.models import (
 from ai_rpg.game_services.home_gameplay_services import player_add_speak_action
 from ai_rpg.game_services.dungeon_gameplay_services import (
     combat_actors_draw_cards_action,
+    return_home,
 )
 
 
@@ -513,7 +514,8 @@ async def _process_dungeon_state_input(
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备传送回家")
-        terminal_game.return_home()
+        # terminal_game.return_home()
+        return_home(terminal_game)
 
     elif usr_input == "/and" or usr_input == "/advance-next-dungeon":
 

@@ -983,58 +983,58 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     # TODO!!! 临时测试准备传送！！！
-    def return_home(self) -> None:
+    # def return_home(self) -> None:
 
-        heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
-        assert len(heros_entities) > 0
-        if len(heros_entities) == 0:
-            logger.error("没有找到英雄!")
-            return
+    #     heros_entities = self.get_group(Matcher(all_of=[HeroComponent])).entities
+    #     assert len(heros_entities) > 0
+    #     if len(heros_entities) == 0:
+    #         logger.error("没有找到英雄!")
+    #         return
 
-        home_stage_entities = self.get_group(Matcher(all_of=[HomeComponent])).entities
-        assert len(home_stage_entities) > 0
-        if len(home_stage_entities) == 0:
-            logger.error("没有找到家园!")
-            return
+    #     home_stage_entities = self.get_group(Matcher(all_of=[HomeComponent])).entities
+    #     assert len(home_stage_entities) > 0
+    #     if len(home_stage_entities) == 0:
+    #         logger.error("没有找到家园!")
+    #         return
 
-        return_home_stage = next(iter(home_stage_entities))
-        prompt = f"""# 提示！冒险结束，你将要返回: {return_home_stage.name}"""
-        for hero_entity in heros_entities:
+    #     return_home_stage = next(iter(home_stage_entities))
+    #     prompt = f"""# 提示！冒险结束，你将要返回: {return_home_stage.name}"""
+    #     for hero_entity in heros_entities:
 
-            # 添加故事。
-            self.append_human_message(hero_entity, prompt)
+    #         # 添加故事。
+    #         self.append_human_message(hero_entity, prompt)
 
-        # 开始传送。
-        self.stage_transition(heros_entities, return_home_stage)
+    #     # 开始传送。
+    #     self.stage_transition(heros_entities, return_home_stage)
 
-        # 清空地下城的实体!
-        self.destroy_dungeon_entities(self._world.dungeon)
+    #     # 清空地下城的实体!
+    #     self.destroy_dungeon_entities(self._world.dungeon)
 
-        # 设置空的地下城
-        self._world.dungeon = Dungeon(name="")
+    #     # 设置空的地下城
+    #     self._world.dungeon = Dungeon(name="")
 
-        # 清除掉所有的战斗状态
-        for hero_entity in heros_entities:
+    #     # 清除掉所有的战斗状态
+    #     for hero_entity in heros_entities:
 
-            # 不要的组件。
-            if hero_entity.has(DeathComponent):
-                logger.debug(f"remove death component: {hero_entity.name}")
-                hero_entity.remove(DeathComponent)
+    #         # 不要的组件。
+    #         if hero_entity.has(DeathComponent):
+    #             logger.debug(f"remove death component: {hero_entity.name}")
+    #             hero_entity.remove(DeathComponent)
 
-            # 不要的组件
-            if hero_entity.has(XCardPlayerComponent):
-                logger.debug(f"remove xcard player component: {hero_entity.name}")
-                hero_entity.remove(XCardPlayerComponent)
+    #         # 不要的组件
+    #         if hero_entity.has(XCardPlayerComponent):
+    #             logger.debug(f"remove xcard player component: {hero_entity.name}")
+    #             hero_entity.remove(XCardPlayerComponent)
 
-            # 生命全部恢复。
-            assert hero_entity.has(RPGCharacterProfileComponent)
-            rpg_character_profile_comp = hero_entity.get(RPGCharacterProfileComponent)
-            rpg_character_profile_comp.rpg_character_profile.hp = (
-                rpg_character_profile_comp.rpg_character_profile.max_hp
-            )
+    #         # 生命全部恢复。
+    #         assert hero_entity.has(RPGCharacterProfileComponent)
+    #         rpg_character_profile_comp = hero_entity.get(RPGCharacterProfileComponent)
+    #         rpg_character_profile_comp.rpg_character_profile.hp = (
+    #             rpg_character_profile_comp.rpg_character_profile.max_hp
+    #         )
 
-            # 清空状态效果
-            rpg_character_profile_comp.status_effects.clear()
+    #         # 清空状态效果
+    #         rpg_character_profile_comp.status_effects.clear()
 
     ###############################################################################################################################################
     # TODO, 临时添加行动, 逻辑。 activate_play_cards_action

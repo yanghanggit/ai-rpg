@@ -1,4 +1,3 @@
-from math import fabs
 import os
 from pathlib import Path
 import sys
@@ -38,7 +37,8 @@ from ai_rpg.models import (
 from ai_rpg.game_services.home_gameplay_services import player_add_speak_action
 from ai_rpg.game_services.dungeon_gameplay_services import (
     combat_actors_draw_cards_action,
-    return_home,
+    all_heros_return_home,
+    combat_actors_random_play_cards_action,
 )
 
 
@@ -497,11 +497,8 @@ async def _process_dungeon_state_input(
             f"玩家输入 = {usr_input}, 解析到的卡牌命令: {player_cards_command}"
         )
 
-        # 传入解析到的卡牌参数，如果没有参数则传入None
-        skill_options = (
-            player_cards_command["params"] if player_cards_command["params"] else None
-        )
-        if terminal_game.play_cards_action(skill_options):
+        # 执行打牌行动（现在使用随机选择技能）
+        if combat_actors_random_play_cards_action(terminal_game):
             await terminal_game.dungeon_combat_pipeline.process()
 
     elif usr_input == "/rth" or usr_input == "/return-to-home":
@@ -515,7 +512,7 @@ async def _process_dungeon_state_input(
 
         logger.debug(f"玩家输入 = {usr_input}, 准备传送回家")
         # terminal_game.return_home()
-        return_home(terminal_game)
+        all_heros_return_home(terminal_game)
 
     elif usr_input == "/and" or usr_input == "/advance-next-dungeon":
 

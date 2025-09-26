@@ -1,3 +1,5 @@
+import random
+from typing import Set
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 
@@ -18,8 +20,11 @@ from ..models import (
     HeroComponent,
     DeathComponent,
     RPGCharacterProfileComponent,
+    ActorComponent,
+    HandComponent,
+    PlayCardsAction,
 )
-from ..entitas import Matcher
+from ..entitas import Matcher, Entity
 
 ###################################################################################################################################################################
 dungeon_gameplay_router = APIRouter()
@@ -41,7 +46,7 @@ def combat_actors_draw_cards_action(tcg_game: TCGGame) -> None:
 
 ###############################################################################################################################################
 # TODO!!! 临时测试准备传送！！！
-def return_home(tcg_game: TCGGame) -> None:
+def all_heros_return_home(tcg_game: TCGGame) -> None:
 
     heros_entities = tcg_game.get_group(Matcher(all_of=[HeroComponent])).entities
     assert len(heros_entities) > 0
@@ -93,6 +98,69 @@ def return_home(tcg_game: TCGGame) -> None:
 
         # 清空状态效果
         rpg_character_profile_comp.status_effects.clear()
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+# TODO, 临时添加行动, 逻辑。 activate_play_cards_action
+def combat_actors_random_play_cards_action(tcg_game: TCGGame) -> bool:
+    """
+    激活打牌行动，为所有轮次中的角色选择技能并设置执行计划。
+
+    Returns:
+        bool: 是否成功激活打牌行动
+    """
+
+    # 1. 验证游戏状态
+    if len(tcg_game.current_engagement.rounds) == 0:
+        logger.error("没有回合，不能添加行动！")
+        return False
+
+    if not tcg_game.current_engagement.is_on_going_phase:
+        logger.error("没有进行中的回合，不能添加行动！")
+        return False
+
+    if tcg_game.current_engagement.last_round.has_ended:
+        logger.error("回合已经完成，不能添加行动！")
+        return False
+
+    # 2. 验证所有角色的手牌状态
+    actor_entities: Set[Entity] = tcg_game.get_group(
+        Matcher(all_of=[ActorComponent, HandComponent], none_of=[DeathComponent])
+    ).entities
+
+    if len(actor_entities) == 0:
+        logger.error("没有存活的并拥有手牌的角色，不能添加行动！")
+        return False
+
+    # 测试一下！
+    for actor_entity in actor_entities:
+
+        # 必须没有打牌行动
+        assert (
+            actor_entity.name in tcg_game.current_engagement.last_round.round_turns
+        ), f"{actor_entity.name} 不在本回合行动队列里"
+
+        # 必须没有打牌行动
+        assert not actor_entity.has(PlayCardsAction)
+        hand_comp = actor_entity.get(HandComponent)
+        assert len(hand_comp.skills) > 0, f"{actor_entity.name} 没有技能可用"
+
+        # 选择技能和目标
+        selected_skill = random.choice(hand_comp.skills)
+        logger.debug(f"为角色 {actor_entity.name} 随机选择技能: {selected_skill.name}")
+        final_target = selected_skill.target
+
+        # 创建打牌行动
+        actor_entity.replace(
+            PlayCardsAction,
+            actor_entity.name,
+            selected_skill,
+            final_target,
+        )
+
+    return True
 
 
 ###################################################################################################################################################################
@@ -223,7 +291,8 @@ async def _handle_play_cards(
         )
 
     logger.debug(f"玩家输入 = {request_data.user_input.tag}, 准备行动......")
-    if web_game.play_cards_action():
+    # if web_game.play_cards_action():
+    if combat_actors_random_play_cards_action(web_game):
         # 执行一次！！！！！
         # await _execute_web_game(web_game)
         web_game.player_client.clear_messages()
@@ -402,7 +471,7 @@ async def dungeon_trans_home(
 
         # 回家
         # web_game.return_home()
-        return_home(web_game)
+        all_heros_return_home(web_game)
         return DungeonTransHomeResponse(
             message="回家了",
         )

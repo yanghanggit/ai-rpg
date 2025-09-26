@@ -26,13 +26,10 @@ from ..models import (
     AgentChatHistory,
     AppearanceComponent,
     Combat,
-    DeathComponent,
-    DrawCardsAction,
     Dungeon,
     DungeonComponent,
     Engagement,
     EnvironmentComponent,
-    HandComponent,
     HeroComponent,
     HomeComponent,
     KickOffMessageComponent,
@@ -41,16 +38,12 @@ from ..models import (
     RPGCharacterProfile,
     RPGCharacterProfileComponent,
     RuntimeComponent,
-    Skill,
     Stage,
     StageComponent,
     StageType,
-    PlayCardsAction,
     World,
     WorldSystem,
     WorldSystemComponent,
-    TransStageAction,
-    XCardPlayerComponent,
 )
 from .player_client import PlayerClient
 
@@ -1038,145 +1031,65 @@ class TCGGame(BaseGame, TCGGameContext):
 
     ###############################################################################################################################################
     # TODO, 临时添加行动, 逻辑。 activate_play_cards_action
-    def play_cards_action(
-        self, skill_execution_plan_options: Optional[Dict[str, str]] = None
-    ) -> bool:
-        """
-        激活打牌行动，为所有轮次中的角色选择技能并设置执行计划。
+    # def play_cards_action(self) -> bool:
+    #     """
+    #     激活打牌行动，为所有轮次中的角色选择技能并设置执行计划。
 
-        Args:
-            skill_execution_plan_options: 可选的技能执行计划选项
-                格式: {技能名称: 目标名称}
-                如果提供，会优先选择指定的技能并使用指定的目标
+    #     Returns:
+    #         bool: 是否成功激活打牌行动
+    #     """
 
-        Returns:
-            bool: 是否成功激活打牌行动
-        """
+    #     # 1. 验证游戏状态
+    #     if len(self.current_engagement.rounds) == 0:
+    #         logger.error("没有回合，不能添加行动！")
+    #         return False
 
-        # 1. 验证游戏状态
-        if not self._validate_combat_state():
-            return False
+    #     if not self.current_engagement.is_on_going_phase:
+    #         logger.error("没有进行中的回合，不能添加行动！")
+    #         return False
 
-        if skill_execution_plan_options is not None:
-            logger.debug(f"收到技能执行计划选项: {skill_execution_plan_options}")
+    #     if self.current_engagement.last_round.has_ended:
+    #         logger.error("回合已经完成，不能添加行动！")
+    #         return False
 
-        # 2. 验证所有角色的手牌状态
-        actor_entities: Set[Entity] = self.get_group(
-            Matcher(all_of=[ActorComponent, HandComponent], none_of=[DeathComponent])
-        ).entities
+    #     # 2. 验证所有角色的手牌状态
+    #     actor_entities: Set[Entity] = self.get_group(
+    #         Matcher(all_of=[ActorComponent, HandComponent], none_of=[DeathComponent])
+    #     ).entities
 
-        if len(actor_entities) == 0:
-            logger.error("没有存活的并拥有手牌的角色，不能添加行动！")
-            return False
+    #     if len(actor_entities) == 0:
+    #         logger.error("没有存活的并拥有手牌的角色，不能添加行动！")
+    #         return False
 
-        # 测试一下！
-        for actor_entity in actor_entities:
+    #     # 测试一下！
+    #     for actor_entity in actor_entities:
 
-            # 必须没有打牌行动
-            assert (
-                actor_entity.name in self.current_engagement.last_round.round_turns
-            ), f"{actor_entity.name} 不在本回合行动队列里"
+    #         # 必须没有打牌行动
+    #         assert (
+    #             actor_entity.name in self.current_engagement.last_round.round_turns
+    #         ), f"{actor_entity.name} 不在本回合行动队列里"
 
-            # 必须没有打牌行动
-            hand_comp = actor_entity.get(HandComponent)
-            assert len(hand_comp.skills) > 0, f"{actor_entity.name} 没有技能可用"
+    #         # 必须没有打牌行动
+    #         assert not actor_entity.has(PlayCardsAction)
+    #         hand_comp = actor_entity.get(HandComponent)
+    #         assert len(hand_comp.skills) > 0, f"{actor_entity.name} 没有技能可用"
 
-            if not self._setup_actor_play_cards_action(
-                actor_entity, skill_execution_plan_options
-            ):
-                assert False, f"为角色 {actor_entity.name} 设置打牌行动失败"
+    #         # 选择技能和目标
+    #         selected_skill = random.choice(hand_comp.skills)
+    #         logger.debug(
+    #             f"为角色 {actor_entity.name} 随机选择技能: {selected_skill.name}"
+    #         )
+    #         final_target = selected_skill.target
 
-        return True
+    #         # 创建打牌行动
+    #         actor_entity.replace(
+    #             PlayCardsAction,
+    #             actor_entity.name,
+    #             selected_skill,
+    #             final_target,
+    #         )
 
-    ###############################################################################################################################################
-    def _validate_combat_state(self) -> bool:
-        """验证战斗状态是否允许添加行动"""
-        if len(self.current_engagement.rounds) == 0:
-            logger.error("没有回合，不能添加行动！")
-            return False
-
-        if not self.current_engagement.is_on_going_phase:
-            logger.error("没有进行中的回合，不能添加行动！")
-            return False
-
-        if self.current_engagement.last_round.has_ended:
-            logger.error("回合已经完成，不能添加行动！")
-            return False
-
-        return True
-
-    ###############################################################################################################################################
-    def _setup_actor_play_cards_action(
-        self,
-        actor_entity: Entity,
-        skill_execution_plan_options: Optional[Dict[str, str]],
-    ) -> bool:
-        """为单个角色设置打牌行动"""
-
-        assert not actor_entity.has(PlayCardsAction)
-        hand_comp = actor_entity.get(HandComponent)
-
-        # 选择技能和目标
-        selected_skill, final_target = self._select_skill_and_target(
-            actor_entity, hand_comp, skill_execution_plan_options
-        )
-
-        if selected_skill is None:
-            logger.error(f"无法为角色 {actor_entity.name} 选择技能")
-            return False
-
-        # 创建打牌行动
-        actor_entity.replace(
-            PlayCardsAction,
-            actor_entity.name,
-            selected_skill,
-            final_target,
-        )
-
-        return True
-
-    ###############################################################################################################################################
-    def _select_skill_and_target(
-        self,
-        actor_entity: Entity,
-        hand_comp: HandComponent,
-        skill_execution_plan_options: Optional[Dict[str, str]],
-    ) -> Tuple[Optional[Skill], str]:
-        """
-        为角色选择技能和目标
-
-        Returns:
-            Tuple[技能对象, 最终目标]
-        """
-
-        selected_skill = None
-        target_override = None
-
-        # 优先从指定选项中选择技能
-        if skill_execution_plan_options is not None:
-            for skill in hand_comp.skills:
-                if skill.name in skill_execution_plan_options:
-                    selected_skill = skill
-                    target_override = skill_execution_plan_options[skill.name]
-                    logger.debug(
-                        f"为角色 {actor_entity.name} 选择指定技能: {skill.name}, 目标: {target_override}"
-                    )
-                    break
-
-        # 如果没有找到指定技能，随机选择
-        if selected_skill is None:
-            selected_skill = random.choice(hand_comp.skills)
-            logger.debug(
-                f"为角色 {actor_entity.name} 随机选择技能: {selected_skill.name}"
-            )
-
-        # 确定最终目标
-        if target_override is not None:
-            final_target = target_override
-        else:
-            final_target = selected_skill.target
-
-        return selected_skill, final_target
+    #     return True
 
     #######################################################################################################################################
     def new_round(self) -> bool:
@@ -1198,7 +1111,10 @@ class TCGGame(BaseGame, TCGGameContext):
         assert player_entity is not None
         actors_on_stage = self.get_alive_actors_on_stage(player_entity)
         assert len(actors_on_stage) > 0
-        shuffled_reactive_entities = self._shuffle_action_order(list(actors_on_stage))
+
+        # 随机打乱角色行动顺序
+        shuffled_reactive_entities = list(actors_on_stage)
+        random.shuffle(shuffled_reactive_entities)
 
         # 场景描写加上。
         first_entity = next(iter(shuffled_reactive_entities))
@@ -1215,47 +1131,41 @@ class TCGGame(BaseGame, TCGGameContext):
         return True
 
     #######################################################################################################################################
-    # 随机排序
-    def _shuffle_action_order(self, actor_entities: List[Entity]) -> List[Entity]:
-        shuffled_reactive_entities = actor_entities.copy()
-        random.shuffle(shuffled_reactive_entities)
-        return shuffled_reactive_entities
-
-    #######################################################################################################################################
     # 正式的排序方式，按着敏捷度排序
-    def _sort_action_order_by_dex(self, actor_entities: List[Entity]) -> List[Entity]:
+    # def _sort_action_order_by_dex(self, actor_entities: List[Entity]) -> List[Entity]:
 
-        actor_dexterity_pairs: List[Tuple[Entity, int]] = []
-        for entity in actor_entities:
+    #     actor_dexterity_pairs: List[Tuple[Entity, int]] = []
+    #     for entity in actor_entities:
 
-            assert entity.has(RPGCharacterProfileComponent)
-            rpg_character_profile_component = entity.get(RPGCharacterProfileComponent)
-            actor_dexterity_pairs.append(
-                (
-                    entity,
-                    rpg_character_profile_component.rpg_character_profile.dexterity,
-                )
-            )
+    #         assert entity.has(RPGCharacterProfileComponent)
+    #         rpg_character_profile_component = entity.get(RPGCharacterProfileComponent)
+    #         actor_dexterity_pairs.append(
+    #             (
+    #                 entity,
+    #                 rpg_character_profile_component.rpg_character_profile.dexterity,
+    #             )
+    #         )
 
-        return [
-            entity
-            for entity, _ in sorted(
-                actor_dexterity_pairs, key=lambda x: x[1], reverse=True
-            )
-        ]
+    #     return [
+    #         entity
+    #         for entity, _ in sorted(
+    #             actor_dexterity_pairs, key=lambda x: x[1], reverse=True
+    #         )
+    #     ]
 
     #######################################################################################################################################
-    def find_recent_human_message_by_attribute(
+    def find_human_message_by_attribute(
         self,
         actor_entity: Entity,
         attribute_key: str,
         attribute_value: str,
+        reverse_order: bool = True,
     ) -> Optional[HumanMessage]:
 
         chat_history = self.get_agent_chat_history(actor_entity).chat_history
 
-        # 注意，这里是倒序遍历！
-        for chat_message in reversed(chat_history):
+        # 进行查找。
+        for chat_message in reversed(chat_history) if reverse_order else chat_history:
 
             if not isinstance(chat_message, HumanMessage):
                 continue

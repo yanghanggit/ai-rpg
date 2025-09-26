@@ -1,8 +1,6 @@
 from enum import IntEnum, unique
 from typing import Dict, List, Optional, Set, final, override
-
 from loguru import logger
-
 from ..entitas import Context, Entity, Matcher
 from ..models import (
     COMPONENTS_REGISTRY,
@@ -277,5 +275,51 @@ class TCGGameContext(Context):
             return InteractionValidationResult.DIFFERENT_STAGES
 
         return InteractionValidationResult.SUCCESS
+
+    ###############################################################################################################################################
+    def get_stage_actor_distribution(
+        self,
+    ) -> Dict[Entity, List[Entity]]:
+
+        ret: Dict[Entity, List[Entity]] = {}
+
+        actor_entities: Set[Entity] = self.get_group(
+            Matcher(all_of=[ActorComponent])
+        ).entities
+
+        # 以stage为key，actor为value
+        for actor_entity in actor_entities:
+
+            stage_entity = self.safe_get_stage_entity(actor_entity)
+            assert stage_entity is not None, f"actor_entity = {actor_entity}"
+            if stage_entity is None:
+                continue
+
+            ret.setdefault(stage_entity, []).append(actor_entity)
+
+        # 补一下没有actor的stage
+        stage_entities: Set[Entity] = self.get_group(
+            Matcher(all_of=[StageComponent])
+        ).entities
+        for stage_entity in stage_entities:
+            if stage_entity not in ret:
+                ret.setdefault(stage_entity, [])
+
+        return ret
+
+    ###############################################################################################################################################
+    def get_stage_actor_distribution_mapping(
+        self,
+    ) -> Dict[str, List[str]]:
+
+        ret: Dict[str, List[str]] = {}
+        mapping = self.get_stage_actor_distribution()
+
+        for stage_entity, actor_entities in mapping.items():
+            ret[stage_entity.name] = [
+                actor_entity.name for actor_entity in actor_entities
+            ]
+
+        return ret
 
     ###############################################################################################################################################

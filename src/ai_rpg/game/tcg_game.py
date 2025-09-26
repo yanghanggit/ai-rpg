@@ -694,7 +694,7 @@ class TCGGame(BaseGame, TCGGameContext):
         return actors_to_transfer
 
     ###############################################################################################################################################
-    def _handle_actors_leaving_stage(self, actors: Set[Entity]) -> None:
+    def _broadcast_departure_notifications(self, actors: Set[Entity]) -> None:
         """
         处理角色离开场景的通知
 
@@ -715,7 +715,7 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
     ###############################################################################################################################################
-    def _execute_actors_stage_transfer(
+    def _update_actors_stage_membership(
         self, actors: Set[Entity], stage_destination: Entity
     ) -> None:
         """
@@ -727,7 +727,8 @@ class TCGGame(BaseGame, TCGGameContext):
         """
         for actor_entity in actors:
             current_stage = self.safe_get_stage_entity(actor_entity)
-            assert current_stage is not None
+            assert current_stage is not None, "角色没有当前场景"
+            assert current_stage != stage_destination, "不应该传送到当前场景"
 
             # 更改所处场景的标识
             actor_entity.replace(
@@ -743,7 +744,7 @@ class TCGGame(BaseGame, TCGGameContext):
             )
 
     ###############################################################################################################################################
-    def _handle_actors_entering_stage(
+    def _broadcast_arrival_notifications(
         self, actors: Set[Entity], stage_destination: Entity
     ) -> None:
         """
@@ -782,13 +783,13 @@ class TCGGame(BaseGame, TCGGameContext):
             return
 
         # 2. 处理角色离开场景
-        self._handle_actors_leaving_stage(actors_to_transfer)
+        self._broadcast_departure_notifications(actors_to_transfer)
 
         # 3. 执行场景传送
-        self._execute_actors_stage_transfer(actors_to_transfer, stage_destination)
+        self._update_actors_stage_membership(actors_to_transfer, stage_destination)
 
         # 4. 处理角色进入场景
-        self._handle_actors_entering_stage(actors_to_transfer, stage_destination)
+        self._broadcast_arrival_notifications(actors_to_transfer, stage_destination)
 
     #######################################################################################################################################
     def _create_dungeon_entities(self, dungeon_model: Dungeon) -> None:
@@ -1036,52 +1037,6 @@ class TCGGame(BaseGame, TCGGameContext):
             rpg_character_profile_comp.rpg_character_profile.hp = (
                 rpg_character_profile_comp.rpg_character_profile.max_hp
             )
-
-    ###############################################################################################################################################
-    def get_stage_actor_distribution(
-        self,
-    ) -> Dict[Entity, List[Entity]]:
-
-        ret: Dict[Entity, List[Entity]] = {}
-
-        actor_entities: Set[Entity] = self.get_group(
-            Matcher(all_of=[ActorComponent])
-        ).entities
-
-        # 以stage为key，actor为value
-        for actor_entity in actor_entities:
-
-            stage_entity = self.safe_get_stage_entity(actor_entity)
-            assert stage_entity is not None, f"actor_entity = {actor_entity}"
-            if stage_entity is None:
-                continue
-
-            ret.setdefault(stage_entity, []).append(actor_entity)
-
-        # 补一下没有actor的stage
-        stage_entities: Set[Entity] = self.get_group(
-            Matcher(all_of=[StageComponent])
-        ).entities
-        for stage_entity in stage_entities:
-            if stage_entity not in ret:
-                ret.setdefault(stage_entity, [])
-
-        return ret
-
-    ###############################################################################################################################################
-    def get_stage_actor_distribution_mapping(
-        self,
-    ) -> Dict[str, List[str]]:
-
-        ret: Dict[str, List[str]] = {}
-        mapping = self.get_stage_actor_distribution()
-
-        for stage_entity, actor_entities in mapping.items():
-            ret[stage_entity.name] = [
-                actor_entity.name for actor_entity in actor_entities
-            ]
-
-        return ret
 
     ###############################################################################################################################################
     # TODO, 临时添加行动, 逻辑。 activate_play_cards_action

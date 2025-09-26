@@ -98,11 +98,11 @@ def setup_web_game_session(
     player_client: PlayerClient,
 ) -> Optional[WebTCGGame]:
 
-    world_exists = web_game_session_context.world_data
+    world_exists = web_game_session_context.world
     if world_exists is None:
 
         # 如果没有world数据，就创建一个新的world
-        world_boot = web_game_session_context.world_boot_data
+        world_boot = web_game_session_context.boot
         assert world_boot is not None, "world_boot is None"
 
         # 重新生成world

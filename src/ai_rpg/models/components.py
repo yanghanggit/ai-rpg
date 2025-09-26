@@ -99,6 +99,7 @@ class AppearanceComponent(Component):
 class HomeComponent(Component):
     name: str
 
+
 ############################################################################################################
 # Stage专用，标记该Stage是Dungeon
 @final

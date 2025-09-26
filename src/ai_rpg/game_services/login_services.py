@@ -62,7 +62,7 @@ async def login(
     logger.debug(
         f"这是测试，强制删除旧的游戏数据 = {game_session_context.user}, {game_session_context.game}"
     )
-    game_session_context.delete_world_data()
+    game_session_context.delete_world()
 
     # TODO, get测试。
     # 指向包含 runtime.json 的目录。

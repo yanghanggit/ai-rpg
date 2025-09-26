@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-
 from loguru import logger
-
 from ..mongodb import (
     BootDocument,
     DEFAULT_MONGODB_CONFIG,
@@ -19,15 +17,13 @@ from ..models.world import Boot, World
 @dataclass
 class GameSessionContext:
 
-    # game_session_context.py
-
     user: str
     game: str
     actor: str
 
     ###############################################################################################################################################
     @property
-    def world_boot_data(self) -> Optional[Boot]:
+    def boot(self) -> Optional[Boot]:
         logger.debug(f"📖 从 MongoDB 获取演示游戏世界进行验证...")
         stored_boot = mongodb_find_one(
             DEFAULT_MONGODB_CONFIG.worlds_boot_collection, {"game_name": self.game}
@@ -50,7 +46,7 @@ class GameSessionContext:
 
     ###############################################################################################################################################
     @property
-    def world_data(self) -> Optional[World]:
+    def world(self) -> Optional[World]:
         logger.debug(f"📖 从 MongoDB 获取游戏世界进行验证...")
         stored_world = mongodb_find_one(
             DEFAULT_MONGODB_CONFIG.worlds_collection,
@@ -73,7 +69,7 @@ class GameSessionContext:
         return None
 
     ###############################################################################################################################################
-    def delete_world_data(self) -> None:
+    def delete_world(self) -> None:
         """
         删除用户的游戏世界数据
         """
@@ -89,3 +85,5 @@ class GameSessionContext:
 
         except Exception as e:
             logger.error(f"❌ 删除用户 {self.user} 的游戏世界数据失败: {str(e)}")
+
+    ###############################################################################################################################################

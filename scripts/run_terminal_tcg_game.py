@@ -334,16 +334,16 @@ async def _run_game(
 
     # 注意，如果确定player是固定的，但是希望每次玩新游戏，就调用这句。
     # 或者，换成random_name，随机生成一个player名字。
-    terminal_game_user_options.delete_world_data()
+    terminal_game_user_options.delete_world()
 
     # 先检查一下world_data是否存在
-    world_exists = terminal_game_user_options.world_data
+    world_exists = terminal_game_user_options.world
 
     #
     if world_exists is None:
 
         # 获取world_boot_data
-        world_boot = terminal_game_user_options.world_boot_data
+        world_boot = terminal_game_user_options.boot
         assert world_boot is not None, "WorldBootDocument 反序列化失败"
 
         # 如果world不存在，说明是第一次创建游戏

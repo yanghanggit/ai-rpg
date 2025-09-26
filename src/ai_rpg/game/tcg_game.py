@@ -72,6 +72,61 @@ def _replace_name_with_you(input_text: str, your_name: str) -> str:
 
 
 ###############################################################################################################################################
+def _persist(
+    username: str,
+    world: World,
+) -> None:
+    """将游戏世界持久化到 MongoDB"""
+    logger.debug("📝 创建演示游戏世界并存储到 MongoDB...")
+
+    # version = "0.0.1"
+    collection_name = DEFAULT_MONGODB_CONFIG.worlds_collection
+
+    try:
+        # 创建 WorldDocument
+        world_document = WorldDocument.create_from_world(
+            username=username, world=world, version="0.0.1"
+        )
+
+        # 保存 WorldDocument 到 MongoDB
+        logger.debug(f"📝 存储演示游戏世界到 MongoDB 集合: {collection_name}")
+        inserted_id = mongodb_upsert_one(collection_name, world_document.to_dict())
+
+        if inserted_id:
+            logger.debug("✅ 演示游戏世界已存储到 MongoDB!")
+
+            # 验证已保存的 WorldDocument
+            logger.debug("📖 从 MongoDB 获取演示游戏世界进行验证...")
+
+            saved_world_data = mongodb_find_one(
+                collection_name,
+                {
+                    "username": username,
+                    "game_name": world.boot.name,
+                },
+            )
+
+            if not saved_world_data:
+                logger.error("❌ 从 MongoDB 获取演示游戏世界失败!")
+            else:
+                try:
+                    # 使用便捷方法反序列化为 WorldDocument 对象
+                    # _world_document = WorldDocument.from_mongodb(retrieved_world_data)
+                    # logger.success(
+                    #     f"✅ 演示游戏世界已从 MongoDB 成功获取! = {_world_document.model_dump_json()}"
+                    # )
+                    pass
+                except Exception as validation_error:
+                    logger.error(f"❌ WorldDocument 反序列化失败: {validation_error}")
+        else:
+            logger.error("❌ 演示游戏世界存储到 MongoDB 失败!")
+
+    except Exception as e:
+        logger.error(f"❌ 演示游戏世界 MongoDB 操作失败: {e}")
+        raise
+
+
+###############################################################################################################################################
 class TCGGame(BaseGame, TCGGameContext):
 
     def __init__(
@@ -253,15 +308,18 @@ class TCGGame(BaseGame, TCGGameContext):
         logger.debug(f"游戏将要保存，实体数量: {len(self.world.entities_snapshot)}")
 
         # 保存快照
-        self._persist_world_to_mongodb()
+        _persist(
+            username=self.player_client.name,
+            world=self.world,
+        )
 
         # debug
-        self._debug_verbose()
+        self.debug_verbose()
 
         return self
 
     ###############################################################################################################################################
-    def _debug_verbose(self) -> "TCGGame":
+    def debug_verbose(self) -> "TCGGame":
         """调试方法，保存游戏状态到文件"""
         self._verbose_boot_data()
         self._verbose_world_data()
@@ -270,72 +328,6 @@ class TCGGame(BaseGame, TCGGameContext):
         self._verbose_dungeon_system()
         logger.debug(f"Verbose debug info saved to: {self.verbose_dir}")
         return self
-
-    ###############################################################################################################################################
-    def _persist_world_to_mongodb(self) -> None:
-        """将游戏世界持久化到 MongoDB"""
-        logger.debug("📝 创建演示游戏世界并存储到 MongoDB...")
-
-        version = "0.0.1"
-        collection_name = DEFAULT_MONGODB_CONFIG.worlds_collection
-
-        try:
-            # 创建并保存 WorldDocument
-            world_document = WorldDocument.create_from_world(
-                username=self.player_client.name, world=self.world, version=version
-            )
-            # self._create_world_document(version)
-            inserted_id = self._save_world_document_to_mongodb(
-                world_document, collection_name
-            )
-
-            # 验证保存结果
-            if inserted_id:
-                self._verify_saved_world_document(collection_name)
-            else:
-                logger.error("❌ 演示游戏世界存储到 MongoDB 失败!")
-
-        except Exception as e:
-            logger.error(f"❌ 演示游戏世界 MongoDB 操作失败: {e}")
-            raise
-
-    ###############################################################################################################################################
-    def _save_world_document_to_mongodb(
-        self, world_document: WorldDocument, collection_name: str
-    ) -> Optional[str]:
-        """保存 WorldDocument 到 MongoDB"""
-        logger.debug(f"📝 存储演示游戏世界到 MongoDB 集合: {collection_name}")
-        inserted_id = mongodb_upsert_one(collection_name, world_document.to_dict())
-
-        if inserted_id:
-            logger.debug("✅ 演示游戏世界已存储到 MongoDB!")
-
-        return inserted_id
-
-    ###############################################################################################################################################
-    def _verify_saved_world_document(self, collection_name: str) -> None:
-        """验证已保存的 WorldDocument"""
-        logger.debug("📖 从 MongoDB 获取演示游戏世界进行验证...")
-
-        saved_world_data = mongodb_find_one(
-            collection_name,
-            {"username": self.player_client.name, "game_name": self.world.boot.name},
-        )
-
-        if not saved_world_data:
-            logger.error("❌ 从 MongoDB 获取演示游戏世界失败!")
-            return
-
-        try:
-            # 使用便捷方法反序列化为 WorldDocument 对象
-            # _world_document = WorldDocument.from_mongodb(retrieved_world_data)
-            # logger.success(
-            #     f"✅ 演示游戏世界已从 MongoDB 成功获取! = {_world_document.model_dump_json()}"
-            # )
-            pass
-
-        except Exception as validation_error:
-            logger.error(f"❌ WorldDocument 反序列化失败: {validation_error}")
 
     ###############################################################################################################################################
     def _verbose_chat_history(self) -> None:

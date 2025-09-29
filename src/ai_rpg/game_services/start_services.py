@@ -140,7 +140,7 @@ def setup_web_game_session(
 
     # 出现了错误。
     player_entity = web_game.get_player_entity()
-    assert player_entity is not None
+    # assert player_entity is not None
     if player_entity is None:
         logger.error(f"没有找到玩家实体 = {web_game_session_context.actor}")
         return None

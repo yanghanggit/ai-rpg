@@ -1,5 +1,5 @@
 """
-Authentication module for the multi-agents-game-framework.
+Authentication module for the ai-rpg.
 
 This module provides:
 - Password encryption and verification utilities

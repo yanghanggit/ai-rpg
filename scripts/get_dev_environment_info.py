@@ -60,7 +60,7 @@ def get_system_info() -> None:
     )
 
     # 内存信息
-    memory = psutil.virtual_memory()
+    memory = psutil.virtual_memory()  # type: ignore
     print(f"内存总量: {memory.total / (1024**3):.1f} GB")
     print(f"内存可用: {memory.available / (1024**3):.1f} GB")
     print(f"内存使用率: {memory.percent}%")

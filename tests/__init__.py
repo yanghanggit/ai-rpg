@@ -1,3 +1,3 @@
 """
-Tests package for multi-agents-game-framework.
+Tests package for ai-rpg.
 """

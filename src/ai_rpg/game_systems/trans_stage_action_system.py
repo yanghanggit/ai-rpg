@@ -39,7 +39,7 @@ class TransStageActionSystem(BaseActionReactiveSystem):
         target_stage_entity = self._game.get_stage_entity(
             trans_stage_action.target_stage_name
         )
-        assert target_stage_entity is not None, "目标场景不能为空"
+        # assert target_stage_entity is not None, "目标场景不能为空"
         if target_stage_entity is None:
             logger.warning(
                 f"角色 {entity.name} 触发场景转换动作失败, 找不到目标场景 {trans_stage_action.target_stage_name}."

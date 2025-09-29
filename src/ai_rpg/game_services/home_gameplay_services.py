@@ -115,7 +115,7 @@ def _player_add_speak_action(tcg_game: TCGGame, target: str, content: str) -> bo
     #     return False
 
     target_entity = tcg_game.get_actor_entity(target)
-    assert target_entity is not None, "target_entity is None"
+    # assert target_entity is not None, "target_entity is None"
     if target_entity is None:
         logger.error(f"目标角色: {target} 不存在！")
         return False

@@ -1,3 +1,3 @@
 """
-Source package for multi-agents-game-framework.
+Source package for ai-rpg.
 """

@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "multi-agents-game-framework"
+name = "ai-rpg"
 version = "0.1.0"
 description = "A multi-agent game framework based on ECS architecture for TCG games"
 authors = [{name = "Yang Hang", email = "yanghang@example.com"}]
@@ -20,7 +20,7 @@ classifiers = [
     "Topic :: Games/Entertainment",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-urls = {homepage = "https://github.com/your-username/multi-agents-game-framework"}
+urls = {homepage = "https://github.com/yanghanggit/ai-rpg"}
 dependencies = [
     # Core web framework and HTTP
     "fastapi>=0.110.0",

@@ -1,3 +1,4 @@
+from ast import Not
 from typing import final, override, Optional
 from ..entitas import Entity, GroupEvent, Matcher, InitializeProcessor
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
@@ -94,6 +95,24 @@ class MindVoiceActionSystem(BaseActionReactiveSystem, InitializeProcessor):
         mind_voice_action = entity.get(MindVoiceAction)
         assert mind_voice_action is not None
 
+        # 获取相关信息
+        related_info = self._get_related_info(mind_voice_action.message)
+        logger.debug(f"retrieval 相关信息: {related_info}")
+
+        # 如果有相关信息，指导AI将信息融入到后续对话中
+        if related_info:
+            from langchain_core.messages import AIMessage
+            self._game.append_ai_message(
+                entity,
+                [AIMessage(content=f"基于以下背景信息回答问题：\n{related_info}\n\n选择你认为最合适的信息直接复述出来。")]
+            )
+        else:
+            from langchain_core.messages import AIMessage
+            self._game.append_ai_message(
+                entity,
+                [AIMessage(content="没有找到相关背景信息。在接下来的对话中，如果涉及没有找到的或者不在你的上下文中的内容，请诚实地表示不知道，不要编造。")]
+            )
+
         # 保持原有的事件生成逻辑
         self._game.notify_event(
             set({entity}),
@@ -104,35 +123,22 @@ class MindVoiceActionSystem(BaseActionReactiveSystem, InitializeProcessor):
             ),
         )
 
-        # 获取相关信息
-        related_info = self._get_related_info(mind_voice_action.message)
-        logger.debug(f"retrieval 相关信息: {related_info}")
+        # # 获取相关信息
+        # related_info = self._get_related_info(mind_voice_action.message)
+        # logger.debug(f"retrieval 相关信息: {related_info}")
 
     ####################################################################################################################################
     def _get_related_info(self, original_message: str) -> str:
-        """检索相关信息 - 能找到就返回，找不到就返回空"""
+        """检索相关信息 - 直接进行检索，能找到就返回，找不到就返回空"""
         try:
-            if not self._route_manager:
-                logger.warning("⚠️ 路由系统未初始化，返回原始消息")
-                return original_message
-
-            # 1. 路由决策
-            decision = self._route_manager.make_decision(original_message)
-
-            logger.debug(
-                f"🎯 路由决策: {'检索相关信息' if decision.should_use_rag else '无需检索'} (置信度: {decision.confidence:.3f})"
-            )
-
-            if decision.should_use_rag:
-                # 2. 执行RAG检索
-                return self._query_with_rag(original_message)
-            else:
-                # 3. 不需检索，返回空
-                return self._query_with_rag(original_message)
+            logger.success(f"🔍 直接进行RAG检索: {original_message}")
+            
+            # 直接执行RAG检索，不需要路由决策
+            return self._query_with_rag(original_message)
 
         except Exception as e:
             logger.error(f"❌ 相关信息检索失败: {e}")
-            return ""  # 失败时返回空，而不是原始消息
+            return ""  # 失败时返回空
 
     ####################################################################################################################################
     def _query_with_rag(self, message: str) -> str:

@@ -1,4 +1,3 @@
-from ast import Not
 from typing import final, override, Optional
 from ..entitas import Entity, GroupEvent, Matcher, InitializeProcessor
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem

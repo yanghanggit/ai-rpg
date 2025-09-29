@@ -1,5 +1,5 @@
 from .actor_training_robot import create_actor_training_robot
-from ..models import Dungeon, Stage, StageType
+from ..models import Dungeon, Stage, StageType, Item, ItemType
 from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 from .utils import (
     create_stage,
@@ -28,7 +28,16 @@ def create_demo_dungeon5() -> Dungeon:
 
     actor_training_robot = create_actor_training_robot()
     actor_training_robot.rpg_character_profile.hp = 10
-    actor_training_robot.kick_off_message += f"""\n注意：你作为一个训练机器人只会最基本的攻击和防御技能，但是你死不掉。你有‘无限生命’，每个回合结束时都会回满至Max_HP，这是一个status_effects，战斗开始后就会生效，duration=999。"""
+    actor_training_robot.kick_off_message += (
+        f"""\n注意：你作为一个训练机器人只会最基本的攻击和防御技能。"""
+    )
+    actor_training_robot.inventory.items.append(
+        Item(
+            name="传奇道具.钢铁之心",
+            type=ItemType.UNIQUE_ITEM,
+            description="此道具让你你拥有无限生命! 即：每个战斗回合在生成技能与更新状态时，都会将生命恢复到你至你的Max_HP。你会在更新状态时，创建status_effect，标记此道具的存在，duration=999。而且在战斗中如果你的生命值降到0，你不会死掉，而是会周身冒烟并坚挺地站立着，等待下一个回合的开始。",
+        )
+    )
 
     stage_cave5 = create_stage_cave5()
     stage_cave5.actors = [actor_training_robot]

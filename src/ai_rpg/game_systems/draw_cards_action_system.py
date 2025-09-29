@@ -13,6 +13,8 @@ from ..models import (
     XCardPlayerComponent,
     StatusEffect,
     RPGCharacterProfileComponent,
+    InventoryComponent,
+    ItemType,
 )
 from ..utils import json_format
 
@@ -81,7 +83,6 @@ def _generate_prompt1(
 - 技能的description里禁止包含角色名称
 - 第一局一定会有新增的status_effects，根据角色进入战斗时的设定，kick_off_message，环境，内心活动，和其他角色的情况生成，而不是技能里提到的状态
 - 同一时间可以出现多个status_effects
-- 如果角色的设定里有提到‘无限生命’，‘无限血量’之类的描述，在更新生命值时，应当更新为Max_HP
 - 使用有趣、意想不到的风格描述效果产生的原因
 
 ## 输出格式(JSON)要求：
@@ -164,7 +165,6 @@ def _generate_prompt2(
 ```
 
 ### 特殊规则
-- 如果角色的设定里有提到‘无限生命’，‘无限血量’之类的描述，在更新生命值时，应当更新为最大生命值Max_HP
 - 更新你当前身上的状态效果，包括环境影响、之前行动的后果等
 - 如果你已经死亡，即update_hp<=0，则不需要生成技能与状态，返回如下对象:
 ```json
@@ -218,6 +218,9 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
 
         turn = len(self._game.current_engagement.rounds)
         logger.debug(f"当前回合数: {turn}")
+
+        # 测试道具的问题
+        self._test_unique_item(entities)
 
         assert (
             len(self._game.current_engagement.rounds) > 0
@@ -343,7 +346,6 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
                 xcard_skill = Skill(
                     name=xcard_player_comp.skill.name,
                     description=xcard_player_comp.skill.description,
-                    # effect=xcard_player_comp.skill.effect,
                     target=xcard_player_comp.skill.target,
                 )
                 skills = [xcard_skill]
@@ -490,5 +492,32 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
 {'\n'.join([f'- {e.name}: {e.description}' for e in removed_effects]) if len(removed_effects) > 0 else '无'}"""
 
             self._game.append_human_message(entity, updated_status_effects_message)
+
+    #######################################################################################################################################
+    def _test_unique_item(self, entities: List[Entity]) -> None:
+
+        for entity in entities:
+
+            if not entity.has(InventoryComponent):
+                continue
+
+            inventory_component = entity.get(InventoryComponent)
+            assert inventory_component is not None
+            if len(inventory_component.items) == 0:
+                continue
+
+            for item in inventory_component.items:
+                if item.type == ItemType.UNIQUE_ITEM:
+                    logger.debug(
+                        f"entity {entity.name} has unique item {item.model_dump_json()}"
+                    )
+                    self._game.append_human_message(
+                        entity,
+                        f"""# 提示！你拥有道具: {item.name}。\n{item.model_dump_json()}""",
+                    )
+                else:
+                    logger.debug(
+                        f"entity {entity.name} has item {item.model_dump_json()}, 暂时不处理！"
+                    )
 
     #######################################################################################################################################

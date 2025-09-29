@@ -16,7 +16,7 @@ from ai_rpg.settings import (
 from ai_rpg.game.game_config import GLOBAL_GAME_NAME, setup_logger
 from ai_rpg.demo import (
     create_actor_warrior,
-    create_demo_dungeon1,
+    create_demo_dungeon5,
 )
 from ai_rpg.game.player_client import PlayerClient
 
@@ -409,7 +409,7 @@ async def _run_game(
 
         # 运行时生成地下城系统
         # world_exists.dungeon = create_demo_dungeon6()
-        world_exists.dungeon = create_demo_dungeon1()
+        world_exists.dungeon = create_demo_dungeon5()
 
     else:
         logger.info(

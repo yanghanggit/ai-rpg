@@ -1,7 +1,7 @@
 from typing import List, final
 from ..entitas.components import Component, MutableComponent
 from .dungeon import Skill, StatusEffect
-from .objects import RPGCharacterProfile
+from .objects import RPGCharacterProfile, Item
 from .registry import register_component_class
 
 
@@ -127,29 +127,24 @@ class MonsterComponent(Component):
 ############################################################################################################
 
 
-# 以下是针对卡牌游戏中 牌组、弃牌堆、抽牌堆、手牌 的类名设计建议，结合常见游戏术语和编程习惯：
-# 方案 4：极简统一型
-# 组件	类名	说明
-# 牌组	Deck	直接命名为 Deck，表示通用牌组。
-# 抽牌堆	DrawDeck	与 Deck 统一，通过前缀区分功能。
-# 弃牌堆	DiscardDeck	同上，保持命名一致性。
-# 手牌	Hand	简洁无冗余。
-# play_card
-# draw_card
-
-
 # 手牌组件。
 @final
 @register_component_class
 class HandComponent(Component):
+    """
+    以下是针对卡牌游戏中 牌组、弃牌堆、抽牌堆、手牌 的类名设计建议，结合常见游戏术语和编程习惯：
+    方案 4：极简统一型
+    组件	类名	说明
+    牌组	Deck	直接命名为 Deck，表示通用牌组。
+    抽牌堆	DrawDeck	与 Deck 统一，通过前缀区分功能。
+    弃牌堆	DiscardDeck	同上，保持命名一致性。
+    手牌	Hand	简洁无冗余。
+    play_card
+    draw_card
+    """
+
     name: str
     skills: List[Skill]
-
-    def get_skill(self, skill_name: str) -> Skill:
-        for skill in self.skills:
-            if skill.name == skill_name:
-                return skill
-        return Skill(name="", description="", target="")
 
 
 ############################################################################################################
@@ -204,3 +199,10 @@ class XCardPlayerComponent(Component):
 
 
 ############################################################################################################
+
+
+@final
+@register_component_class
+class InventoryComponent(MutableComponent):
+    name: str
+    items: List[Item]  # 物品列表，存储物品名称

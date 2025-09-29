@@ -16,7 +16,7 @@ from ai_rpg.settings import (
 from ai_rpg.game.game_config import GLOBAL_GAME_NAME, setup_logger
 from ai_rpg.demo import (
     create_actor_warrior,
-    create_demo_dungeon1,
+    create_demo_dungeon5,
 )
 from ai_rpg.game.player_client import PlayerClient
 
@@ -352,7 +352,7 @@ def _plan_action(terminal_game: TerminalTCGGame, actors: List[str]) -> None:
     for actor_name in actors:
 
         actor_entity = terminal_game.get_actor_entity(actor_name)
-        assert actor_entity is not None
+        # assert actor_entity is not None
         if actor_entity is None:
             logger.error(f"角色: {actor_name} 不存在！")
             continue
@@ -373,7 +373,7 @@ def _plan_action(terminal_game: TerminalTCGGame, actors: List[str]) -> None:
 # TODO, 临时添加行动, 逻辑。
 def _trans_stage_action(terminal_game: TerminalTCGGame, stage_name: str) -> bool:
     target_stage_entity = terminal_game.get_stage_entity(stage_name)
-    assert target_stage_entity is not None, f"目标场景: {stage_name} 不存在！"
+    # assert target_stage_entity is not None, f"目标场景: {stage_name} 不存在！"
     if target_stage_entity is None:
         logger.error(f"目标场景: {stage_name} 不存在！")
         return False
@@ -409,7 +409,7 @@ async def _run_game(
 
         # 运行时生成地下城系统
         # world_exists.dungeon = create_demo_dungeon6()
-        world_exists.dungeon = create_demo_dungeon1()
+        world_exists.dungeon = create_demo_dungeon5()
 
     else:
         logger.info(
@@ -449,7 +449,7 @@ async def _run_game(
 
     # 测试一下玩家控制角色，如果没有就是错误。
     player_entity = terminal_game.get_player_entity()
-    assert player_entity is not None
+    # assert player_entity is not None
     if player_entity is None:
         logger.error(
             f"玩家实体不存在 = {terminal_game_user_options.user}, {terminal_game_user_options.game}, {terminal_game_user_options.actor}"
@@ -461,7 +461,7 @@ async def _run_game(
     while True:
 
         await _process_player_input(terminal_game)
-        if terminal_game.will_exit:
+        if terminal_game.should_terminate:
             break
 
     # 会保存一下。
@@ -632,7 +632,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         logger.debug(
             f"玩家 主动 退出游戏 = {terminal_game.player_client.name}, {player_stage_entity.name}"
         )
-        terminal_game.will_exit = True
+        terminal_game.should_terminate = True
         return
 
     # 公用: 查看当前地下城系统

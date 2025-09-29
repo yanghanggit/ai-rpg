@@ -1,6 +1,6 @@
 # Core web framework and HTTP
-fastapi==0.110.0
-starlette==0.36.3
+fastapi==0.116.1
+starlette==0.47.2
 uvicorn==0.35.0
 httpx==0.28.1
 httpcore==1.0.4
@@ -144,3 +144,15 @@ jiter==0.8.2
 
 # Development tools (pre-commit dependencies)
 cfgv==3.4.0
+
+# Type checking stub packages
+types-cffi==1.17.0.20250523
+types-jsonschema==4.22.0.20240610
+types-passlib==1.7.7.20250602
+types-pyasn1==0.6.0.20250914
+types-pyopenssl==24.1.0.20240722
+types-python-jose==3.5.0.20250531
+types-pytz==2024.1.0.20240203
+types-redis==4.6.0.20241004
+types-requests==2.32.0.20240907
+types-setuptools==80.9.0.20250529

@@ -70,7 +70,7 @@ def main() -> None:
     pip_packages_env = {
         extract_package_name(pkg)
         for pkg in pip_deps_env
-        if not pkg.startswith("multi-agents-game-framework")
+        if not pkg.startswith("ai-rpg")
     }
 
     pyproject_packages = {

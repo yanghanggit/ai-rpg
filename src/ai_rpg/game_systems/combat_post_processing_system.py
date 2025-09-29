@@ -131,34 +131,35 @@ class CombatPostProcessingSystem(ExecuteProcessor):
         assert stage_entity is not None
 
         # 获取最近的战斗消息。
-        begin_message = self._game.find_human_message_by_attribute(
+        begin_messages = self._game.find_human_messages_by_attribute(
             actor_entity=entity,
             attribute_key="combat_kickoff_tag",
             attribute_value=stage_entity.name,
         )
-        assert begin_message is not None
+        assert (
+            len(begin_messages) == 1
+        ), f"没有找到战斗开始消息！entity: {entity.name}, stage_entity: {stage_entity.name}"
 
         # 获取最近的战斗消息。
-        end_message = self._game.find_human_message_by_attribute(
+        end_messages = self._game.find_human_messages_by_attribute(
             actor_entity=entity,
             attribute_key="combat_result_tag",
             attribute_value=stage_entity.name,
         )
-        assert end_message is not None
+        assert (
+            len(end_messages) == 1
+        ), f"没有找到战斗结束消息！entity: {entity.name}, stage_entity: {stage_entity.name}"
 
-        if begin_message is None or end_message is None:
+        # 必须同时有开始和结束消息。
+        if not begin_messages or not end_messages:
             logger.error(
-                f"战斗消息不完整！{entity.name} begin_message: {begin_message} end_message: {end_message}"
+                f"战斗消息不完整！{entity.name} begin_message: {begin_messages} end_message: {end_messages}"
             )
             return
 
-        agent_chat_history = self._game.get_agent_chat_history(entity)
-        begin_message_index = agent_chat_history.chat_history.index(begin_message)
-        end_message_index = agent_chat_history.chat_history.index(end_message) + 1
-        # 开始移除！！！！。
-        del agent_chat_history.chat_history[begin_message_index:end_message_index]
-        logger.info(f"战斗消息压缩成功！{entity.name}")
-        logger.debug(f"begin_message: \n{begin_message.model_dump_json(indent=2)}")
-        logger.debug(f"end_message: \n{end_message.model_dump_json(indent=2)}")
+        # 压缩战斗消息。
+        self._game.compress_combat_chat_history(
+            entity, begin_messages[0], end_messages[0]
+        )
 
     #######################################################################################################################################

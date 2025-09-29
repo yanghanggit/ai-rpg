@@ -1,8 +1,5 @@
 from typing import Annotated, Dict, Optional
-
 from fastapi import Depends
-
-# from ..game_services.room_manager import RoomManager
 from ..game_services.room import Room
 
 
@@ -10,15 +7,8 @@ from ..game_services.room import Room
 class GameServer:
     def __init__(
         self,
-        # room_manager: RoomManager,
     ) -> None:
-        # self._room_manager: Final[RoomManager] = room_manager
         self._rooms: Dict[str, Room] = {}
-
-    ###############################################################################################################################################
-    # @property
-    # def room_manager(self) -> RoomManager:
-    #     return self._room_manager
 
     ###############################################################################################################################################
     def has_room(self, user_name: str) -> bool:
@@ -52,9 +42,7 @@ _game_server: Optional[GameServer] = None
 def get_game_server_instance() -> GameServer:
     global _game_server
     if _game_server is None:
-        _game_server = GameServer(
-            # room_manager=RoomManager(),
-        )
+        _game_server = GameServer()
     return _game_server
 
 

@@ -1,7 +1,5 @@
 from ..models import (
     Boot,
-    Item,
-    # ItemType,
 )
 from .actor_warrior import create_actor_warrior
 from .actor_wizard import create_actor_wizard
@@ -21,12 +19,13 @@ def create_demo_game_world(game_name: str) -> Boot:
 
     # 创建英雄营地场景和角色
     actor_warrior = create_actor_warrior()
-    actor_warrior.inventory.items.append(
-        Item(
-            name="消耗品.测试的药水",
-            description="这是一瓶测试用的药水，能恢复50%生命值。",
-        )
-    )
+    # actor_warrior.inventory.items.append(
+    #     Item(
+    #         name="消耗品.测试的药水",
+    #         type=ItemType.CONSUMABLE,
+    #         description="这是一瓶测试用的药水，能恢复50%生命值。",
+    #     )
+    # )
 
     actor_wizard = create_actor_wizard()
     stage_heros_camp = create_demo_heros_camp()

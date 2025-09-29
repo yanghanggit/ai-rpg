@@ -44,10 +44,7 @@ def _generate_prompt1(
             Skill(
                 name="[技能名称]",
                 description="[技能的基本描述和作用方式][技能的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：技能附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制状态描述]",
-                # effect="[技能的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：技能附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制状态描述]",
                 target="[目标角色的完整名称]",
-                # reason="[选择此目标和技能的战术原因]",
-                # dialogue="[角色使用技能时的台词]",
             ),
         ],
         status_effects=[
@@ -110,10 +107,7 @@ def _generate_prompt2(
             Skill(
                 name="[技能名称]",
                 description="[技能的基本描述和作用方式][技能的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：技能附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制状态描述]",
-                # effect="[技能的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：技能附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制状态描述]",
                 target="[目标角色的完整名称]",
-                # reason="[选择此目标和技能的战术原因]",
-                # dialogue="[角色使用技能时的台词]",
             ),
         ],
         status_effects=[
@@ -252,7 +246,6 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
         request_handlers: List[ChatClient] = self._generate_requests(entities, prompt)
 
         # 语言服务
-        # await self._game.chat_client_manager.gather(request_handlers=request_handlers)
         await ChatClient.gather_request_post(clients=request_handlers)
 
         # 处理角色规划请求
@@ -300,7 +293,6 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
             wait_skill = Skill(
                 name="等待",
                 description="什么都不做，等待下一回合。",
-                # effect="不产生任何效果",
                 target=entity.name,
             )
 
@@ -511,9 +503,36 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
                     logger.debug(
                         f"entity {entity.name} has unique item {item.model_dump_json()}"
                     )
+
+                    existing_human_messages = (
+                        self._game.find_human_messages_by_attribute(
+                            actor_entity=entity,
+                            attribute_key="test_unique_item",
+                            attribute_value=item.name,
+                        )
+                    )
+
+                    if len(existing_human_messages) > 0:
+                        self._game.delete_human_messages_by_attribute(
+                            actor_entity=entity,
+                            human_messages=existing_human_messages,
+                        )
+
+                    duplicate_message_test = (
+                        self._game.find_human_messages_by_attribute(
+                            actor_entity=entity,
+                            attribute_key="test_unique_item",
+                            attribute_value=item.name,
+                        )
+                    )
+                    assert (
+                        len(duplicate_message_test) == 0
+                    ), f"test_unique_item not deleted!"
+
                     self._game.append_human_message(
                         entity,
                         f"""# 提示！你拥有道具: {item.name}。\n{item.model_dump_json()}""",
+                        test_unique_item=item.name,
                     )
                 else:
                     logger.debug(

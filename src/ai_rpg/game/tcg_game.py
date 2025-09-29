@@ -866,13 +866,15 @@ class TCGGame(BaseGame, TCGGameContext):
         return new_round
 
     #######################################################################################################################################
-    def find_human_message_by_attribute(
+    def find_human_messages_by_attribute(
         self,
         actor_entity: Entity,
         attribute_key: str,
         attribute_value: str,
         reverse_order: bool = True,
-    ) -> Optional[HumanMessage]:
+    ) -> List[HumanMessage]:
+
+        found_messages: List[HumanMessage] = []
 
         chat_history = self.get_agent_chat_history(actor_entity).chat_history
 
@@ -886,12 +888,52 @@ class TCGGame(BaseGame, TCGGameContext):
                 # 直接从 HumanMessage 对象获取属性，而不是从嵌套的 kwargs 中获取
                 if hasattr(chat_message, attribute_key):
                     if getattr(chat_message, attribute_key) == attribute_value:
-                        return chat_message
+                        found_messages.append(chat_message)
 
             except Exception as e:
                 logger.error(f"find_recent_human_message_by_attribute error: {e}")
                 continue
 
-        return None
+        return found_messages
+
+    #######################################################################################################################################
+    def delete_human_messages_by_attribute(
+        self,
+        actor_entity: Entity,
+        human_messages: List[HumanMessage],
+    ) -> int:
+
+        if len(human_messages) == 0:
+            return 0
+
+        chat_history = self.get_agent_chat_history(actor_entity).chat_history
+        original_length = len(chat_history)
+
+        # 删除指定的 HumanMessage 对象
+        chat_history[:] = [msg for msg in chat_history if msg not in human_messages]
+
+        deleted_count = original_length - len(chat_history)
+        if deleted_count > 0:
+            logger.debug(
+                f"Deleted {deleted_count} HumanMessage(s) from {actor_entity.name}'s chat history."
+            )
+        return deleted_count
+
+    #######################################################################################################################################
+    def compress_combat_chat_history(
+        self, entity: Entity, begin_message: HumanMessage, end_message: HumanMessage
+    ) -> None:
+        assert (
+            begin_message != end_message
+        ), "begin_message and end_message should not be the same"
+
+        agent_chat_history = self.get_agent_chat_history(entity)
+        begin_message_index = agent_chat_history.chat_history.index(begin_message)
+        end_message_index = agent_chat_history.chat_history.index(end_message) + 1
+        # 开始移除！！！！。
+        del agent_chat_history.chat_history[begin_message_index:end_message_index]
+        logger.debug(f"compress_combat_chat_history！= {entity.name}")
+        logger.debug(f"begin_message: \n{begin_message.model_dump_json(indent=2)}")
+        logger.debug(f"end_message: \n{end_message.model_dump_json(indent=2)}")
 
     #######################################################################################################################################

@@ -461,7 +461,7 @@ async def _run_game(
     while True:
 
         await _process_player_input(terminal_game)
-        if terminal_game.will_exit:
+        if terminal_game.should_terminate:
             break
 
     # 会保存一下。
@@ -632,7 +632,7 @@ async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
         logger.debug(
             f"玩家 主动 退出游戏 = {terminal_game.player_client.name}, {player_stage_entity.name}"
         )
-        terminal_game.will_exit = True
+        terminal_game.should_terminate = True
         return
 
     # 公用: 查看当前地下城系统

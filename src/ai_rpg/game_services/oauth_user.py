@@ -14,6 +14,7 @@ from ..redis.user import (
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
+###################################################################################################################################################################
 async def get_authenticated_user(token: str = Depends(oauth2_scheme)) -> str:
     try:
         payload = decode_jwt(token)
@@ -64,3 +65,6 @@ async def get_authenticated_user(token: str = Depends(oauth2_scheme)) -> str:
             detail="无效的认证凭证",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+###################################################################################################################################################################

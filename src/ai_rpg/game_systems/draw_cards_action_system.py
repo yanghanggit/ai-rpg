@@ -201,30 +201,29 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
         if len(entities) == 0:
             return
 
-        if not self._game.current_engagement.is_on_going_phase:
+        if not self._game.current_engagement.is_ongoing:
             logger.error(f"not web_game.current_engagement.is_on_going_phase")
             return
 
-        last_round = self._game.current_engagement.last_round
+        last_round = self._game.current_engagement.latest_round
         if last_round.has_ended:
             logger.success(f"last_round.has_ended, so setup new round")
             self._game.start_new_round()
 
-        turn = len(self._game.current_engagement.rounds)
-        logger.debug(f"当前回合数: {turn}")
+        logger.debug(f"当前回合数: {len(self._game.current_engagement.current_rounds)}")
 
         # 测试道具的问题
         self._test_unique_item(entities)
 
         assert (
-            len(self._game.current_engagement.rounds) > 0
+            len(self._game.current_engagement.current_rounds) > 0
         ), "当前没有进行中的战斗，不能设置回合。"
-        if len(self._game.current_engagement.rounds) == 1:
+        if len(self._game.current_engagement.current_rounds) == 1:
             logger.debug(f"是第一局，一些数据已经被初始化了！")
             # 处理角色规划请求
             prompt = _generate_prompt1(
                 self._skill_creation_count,
-                last_round.round_turns,
+                last_round.action_order,
             )
         else:
 
@@ -236,7 +235,7 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
             # 处理角色规划请求
             prompt = _generate_prompt2(
                 self._skill_creation_count,
-                last_round.round_turns,
+                last_round.action_order,
             )
 
         # 先清除
@@ -253,7 +252,9 @@ class DrawCardsActionSystem(BaseActionReactiveSystem):
             entity2 = self._game.get_entity_by_name(request_handler.name)
             assert entity2 is not None
             self._handle_response(
-                entity2, request_handler, len(self._game.current_engagement.rounds) > 1
+                entity2,
+                request_handler,
+                len(self._game.current_engagement.current_rounds) > 1,
             )
 
         # 最后的兜底，遍历所有参与的角色，如果没有手牌，说明_handle_response出现了错误，可能是LLM返回的内容无法正确解析。

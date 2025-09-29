@@ -229,7 +229,7 @@ def _dungeon_advance(
             )
 
     # 5. 初始化战斗状态
-    dungeon.engagement.combat_kickoff(Combat(name=stage_entity.name))
+    dungeon.engagement.start_combat(Combat(name=stage_entity.name))
 
     return True
 

@@ -155,7 +155,7 @@ class ArbitrationActionSystem(BaseActionReactiveSystem):
         if len(entities) == 0:
             return
 
-        assert self._game.current_engagement.is_on_going_phase
+        assert self._game.current_engagement.is_ongoing
         assert len(entities) == 1
 
         # 排序角色！
@@ -175,10 +175,10 @@ class ArbitrationActionSystem(BaseActionReactiveSystem):
             return
 
         sort_actors: List[Entity] = []
-        for turn in self._game.current_engagement.last_round.round_turns:
+        for action_order in self._game.current_engagement.latest_round.action_order:
             for entity in play_cards_actors:
                 assert not entity.has(DeathComponent)
-                if entity.name == turn:
+                if entity.name == action_order:
                     sort_actors.append(entity)
                     break
 
@@ -274,7 +274,7 @@ class ArbitrationActionSystem(BaseActionReactiveSystem):
 """
 
             # 广播事件
-            last_round = self._game.current_engagement.last_round
+            last_round = self._game.current_engagement.latest_round
             self._game.broadcast_event(
                 entity=stage_entity,
                 agent_event=AgentEvent(

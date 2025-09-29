@@ -480,7 +480,7 @@ async def _process_dungeon_state_input(
 
     if usr_input == "/dc" or usr_input == "/draw-cards":
 
-        if not terminal_game.current_engagement.is_on_going_phase:
+        if not terminal_game.current_engagement.is_ongoing:
             logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
             return
 
@@ -491,7 +491,7 @@ async def _process_dungeon_state_input(
 
     elif usr_input == "/pc" or "/play-cards" in usr_input:
 
-        if not terminal_game.current_engagement.is_on_going_phase:
+        if not terminal_game.current_engagement.is_ongoing:
             logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
             return
 
@@ -509,7 +509,7 @@ async def _process_dungeon_state_input(
 
         if (
             len(terminal_game.current_engagement.combats) == 0
-            or not terminal_game.current_engagement.is_post_wait_phase
+            or not terminal_game.current_engagement.is_waiting
         ):
             logger.error(f"{usr_input} 只能在战斗后使用!!!!!")
             return
@@ -520,8 +520,8 @@ async def _process_dungeon_state_input(
 
     elif usr_input == "/and" or usr_input == "/advance-next-dungeon":
 
-        if terminal_game.current_engagement.is_post_wait_phase:
-            if terminal_game.current_engagement.combat_result == CombatResult.HERO_WIN:
+        if terminal_game.current_engagement.is_waiting:
+            if terminal_game.current_engagement.current_result == CombatResult.HERO_WIN:
 
                 next_level = terminal_game.current_dungeon.peek_next_stage()
                 if next_level is None:
@@ -534,7 +534,8 @@ async def _process_dungeon_state_input(
                     _all_heros_next_dungeon(terminal_game)
                     await terminal_game.dungeon_combat_pipeline.process()
             elif (
-                terminal_game.current_engagement.combat_result == CombatResult.HERO_LOSE
+                terminal_game.current_engagement.current_result
+                == CombatResult.HERO_LOSE
             ):
                 logger.info("英雄失败，应该返回营地！！！！")
             else:

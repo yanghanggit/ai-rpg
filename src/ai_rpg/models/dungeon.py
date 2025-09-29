@@ -11,10 +11,10 @@ from .objects import Actor, Stage
 @unique
 class CombatPhase(IntEnum):
     NONE = (0,)
-    KICK_OFF = (1,)  # 初始化，需要同步一些数据与状态
+    KICKOFF = (1,)  # 初始化，需要同步一些数据与状态
     ONGOING = (2,)  # 运行中，不断进行战斗推理
     COMPLETE = 3  # 结束，需要进行结算
-    POST_WAIT = 4  # 战斗等待进入新一轮战斗或者回家
+    POSTWAIT = 4  # 战斗等待进入新一轮战斗或者回家
 
 
 ###############################################################################################################################################
@@ -49,7 +49,7 @@ class Skill(BaseModel):
 @final
 class Round(BaseModel):
     tag: str
-    round_turns: List[str]
+    action_order: List[str]
     environment: str = ""
     calculation: str = ""
     performance: str = ""
@@ -57,7 +57,7 @@ class Round(BaseModel):
     @property
     def has_ended(self) -> bool:
         return (
-            len(self.round_turns) > 0
+            len(self.action_order) > 0
             and self.calculation != ""
             and self.performance != ""
         )
@@ -82,7 +82,7 @@ class Engagement(BaseModel):
 
     ###############################################################################################################################################
     @property
-    def last_combat(self) -> Combat:
+    def current_combat(self) -> Combat:
         assert len(self.combats) > 0
         if len(self.combats) == 0:
             return Combat(name="")
@@ -91,103 +91,104 @@ class Engagement(BaseModel):
 
     ###############################################################################################################################################
     @property
-    def rounds(self) -> List[Round]:
-        return self.last_combat.rounds
+    def current_rounds(self) -> List[Round]:
+        return self.current_combat.rounds
 
     ###############################################################################################################################################
     @property
-    def last_round(self) -> Round:
-        assert len(self.rounds) > 0
-        if len(self.rounds) == 0:
-            return Round(tag="", round_turns=[])
+    def latest_round(self) -> Round:
+        assert len(self.current_rounds) > 0
+        if len(self.current_rounds) == 0:
+            return Round(tag="", action_order=[])
 
-        return self.rounds[-1]
-
-    ###############################################################################################################################################
-    @property
-    def combat_result(self) -> CombatResult:
-        return self.last_combat.result
+        return self.current_rounds[-1]
 
     ###############################################################################################################################################
     @property
-    def combat_phase(self) -> CombatPhase:
-        return self.last_combat.phase
+    def current_result(self) -> CombatResult:
+        return self.current_combat.result
 
     ###############################################################################################################################################
-    def start_new_round(self, round_turns: List[str]) -> Round:
+    @property
+    def current_phase(self) -> CombatPhase:
+        return self.current_combat.phase
+
+    ###############################################################################################################################################
+    # ============ 状态查询 ============
+    @property
+    def is_ongoing(self) -> bool:
+        return self.current_phase == CombatPhase.ONGOING
+
+    ###############################################################################################################################################
+    @property
+    def is_completed(self) -> bool:
+        return self.current_phase == CombatPhase.COMPLETE
+
+    ###############################################################################################################################################
+    @property
+    def is_starting(self) -> bool:
+        return self.current_phase == CombatPhase.KICKOFF
+
+    ###############################################################################################################################################
+    @property
+    def is_waiting(self) -> bool:
+        return self.current_phase == CombatPhase.POSTWAIT
+
+    ###############################################################################################################################################
+    @property
+    def hero_won(self) -> bool:
+        return self.current_result == CombatResult.HERO_WIN
+
+    ###############################################################################################################################################
+    @property
+    def hero_lost(self) -> bool:
+        return self.current_result == CombatResult.HERO_LOSE
+
+    ###############################################################################################################################################
+    def create_new_round(self, action_order: List[str]) -> Round:
         round = Round(
-            tag=f"round_{len(self.last_combat.rounds) + 1}",
-            round_turns=round_turns,
+            tag=f"round_{len(self.current_combat.rounds) + 1}",
+            action_order=action_order,
         )
-        self.last_combat.rounds.append(round)
-        logger.debug(f"新的回合开始 = {len(self.last_combat.rounds)}")
+        self.current_combat.rounds.append(round)
+        logger.debug(f"新的回合开始 = {len(self.current_combat.rounds)}")
         return round
 
     ###############################################################################################################################################
-    @property
-    def is_on_going_phase(self) -> bool:
-        return self.combat_phase == CombatPhase.ONGOING
-
-    ###############################################################################################################################################
-    @property
-    def is_complete_phase(self) -> bool:
-        return self.combat_phase == CombatPhase.COMPLETE
-
-    ###############################################################################################################################################
-    @property
-    def is_kickoff_phase(self) -> bool:
-        return self.combat_phase == CombatPhase.KICK_OFF
-
-    ###############################################################################################################################################
-    @property
-    def is_post_wait_phase(self) -> bool:
-        return self.combat_phase == CombatPhase.POST_WAIT
-
-    ###############################################################################################################################################
-    @property
-    def has_hero_won(self) -> bool:
-        return self.combat_result == CombatResult.HERO_WIN
-
-    ###############################################################################################################################################
-    @property
-    def has_hero_lost(self) -> bool:
-        return self.combat_result == CombatResult.HERO_LOSE
-
-    ###############################################################################################################################################
     # 启动一个战斗！！！ 注意状态转移
-    def combat_kickoff(self, combat: Combat) -> None:
+    def start_combat(self, combat: Combat) -> None:
         assert combat.phase == CombatPhase.NONE
-        combat.phase = CombatPhase.KICK_OFF
+        combat.phase = CombatPhase.KICKOFF
         self.combats.append(combat)
 
     ###############################################################################################################################################
-    def combat_ongoing(self) -> None:
-        assert self.combat_phase == CombatPhase.KICK_OFF
-        assert self.combat_result == CombatResult.NONE
-        self.last_combat.phase = CombatPhase.ONGOING
+    def transition_to_ongoing(self) -> None:
+        assert self.current_phase == CombatPhase.KICKOFF
+        assert self.current_result == CombatResult.NONE
+        self.current_combat.phase = CombatPhase.ONGOING
 
     ###############################################################################################################################################
-    def combat_complete(self, result: CombatResult) -> None:
+    def complete_combat(self, result: CombatResult) -> None:
         # 设置战斗结束阶段！
-        assert self.combat_phase == CombatPhase.ONGOING
+        assert self.current_phase == CombatPhase.ONGOING
         assert result == CombatResult.HERO_WIN or result == CombatResult.HERO_LOSE
-        assert self.combat_result == CombatResult.NONE
+        assert self.current_result == CombatResult.NONE
 
         # "战斗已经结束"
-        self.last_combat.phase = CombatPhase.COMPLETE
+        self.current_combat.phase = CombatPhase.COMPLETE
         # 设置战斗结果！
-        self.last_combat.result = result
+        self.current_combat.result = result
 
     ###############################################################################################################################################
-    def combat_post_wait(self) -> None:
+    def enter_post_combat_phase(self) -> None:
         assert (
-            self.combat_result == CombatResult.HERO_WIN
-            or self.combat_result == CombatResult.HERO_LOSE
+            self.current_result == CombatResult.HERO_WIN
+            or self.current_result == CombatResult.HERO_LOSE
         )
-        assert self.combat_phase == CombatPhase.COMPLETE
+        assert self.current_phase == CombatPhase.COMPLETE
 
         # 设置战斗等待阶段！
-        self.last_combat.phase = CombatPhase.POST_WAIT
+        self.current_combat.phase = CombatPhase.POSTWAIT
 
     ###############################################################################################################################################
 

@@ -34,7 +34,7 @@ def create_demo_dungeon2() -> Dungeon:
 
     return Dungeon(
         name="兽人洞窟",
-        levels=[
+        stages=[
             stage_cave2,
         ],
     )

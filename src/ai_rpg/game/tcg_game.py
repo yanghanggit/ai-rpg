@@ -799,7 +799,7 @@ class TCGGame(BaseGame, TCGGameContext):
             assert actor_entity is None, "actor_entity is not None"
 
         # 加一步测试: 不可以存在！如果存在说明没有清空。
-        for stage in dungeon_model.levels:
+        for stage in dungeon_model.stages:
             stage_entity = self.get_stage_entity(stage.name)
             assert stage_entity is None, "stage_entity is not None"
 
@@ -807,7 +807,7 @@ class TCGGame(BaseGame, TCGGameContext):
         # 创建地下城的怪物。
         self._create_actor_entities(dungeon_model.actors)
         ## 创建地下城的场景
-        self._create_stage_entities(dungeon_model.levels)
+        self._create_stage_entities(dungeon_model.stages)
 
     #######################################################################################################################################
     def destroy_dungeon_entities(self, dungeon_model: Dungeon) -> None:
@@ -818,7 +818,7 @@ class TCGGame(BaseGame, TCGGameContext):
                 self.destroy_entity(destroy_actor_entity)
 
         # 清空地下城的场景
-        for stage in dungeon_model.levels:
+        for stage in dungeon_model.stages:
             destroy_stage_entity = self.get_stage_entity(stage.name)
             if destroy_stage_entity is not None:
                 self.destroy_entity(destroy_stage_entity)

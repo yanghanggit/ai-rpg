@@ -197,59 +197,59 @@ class Engagement(BaseModel):
 @final
 class Dungeon(BaseModel):
     name: str
-    levels: List[Stage] = []
+    stages: List[Stage] = []
     engagement: Engagement = Engagement()
-    position: int = -1
+    current_stage_index: int = -1
 
     @property
     def actors(self) -> List[Actor]:
-        return [actor for stage in self.levels for actor in stage.actors]
+        return [actor for stage in self.stages for actor in stage.actors]
 
     ########################################################################################################################
-    def current_level(self) -> Optional[Stage]:
-        if len(self.levels) == 0:
+    def get_current_stage(self) -> Optional[Stage]:
+        if len(self.stages) == 0:
             logger.warning("地下城系统为空！")
             return None
 
-        if not self._validate_position(self.position):
+        if not self._is_valid_stage_index(self.current_stage_index):
             logger.warning("当前地下城关卡已经完成！或者尚未开始！")
             return None
 
-        return self.levels[self.position]
+        return self.stages[self.current_stage_index]
 
     ########################################################################################################################
-    def next_level(self) -> Optional[Stage]:
+    def peek_next_stage(self) -> Optional[Stage]:
 
-        if len(self.levels) == 0:
+        if len(self.stages) == 0:
             logger.warning("地下城系统为空！")
             return None
 
-        if not self._validate_position(self.position):
+        if not self._is_valid_stage_index(self.current_stage_index):
             logger.warning("当前地下城关卡已经完成！或者尚未开始！")
             return None
 
         return (
-            self.levels[self.position + 1]
-            if self.position + 1 < len(self.levels)
+            self.stages[self.current_stage_index + 1]
+            if self.current_stage_index + 1 < len(self.stages)
             else None
         )
 
     ########################################################################################################################
-    def advance_level(self) -> bool:
+    def advance_to_next_stage(self) -> bool:
 
-        if len(self.levels) == 0:
+        if len(self.stages) == 0:
             logger.warning("地下城系统为空！")
             return False
 
-        if not self._validate_position(self.position):
+        if not self._is_valid_stage_index(self.current_stage_index):
             logger.warning("当前地下城关卡已经完成！或者尚未开始！")
             return False
 
-        self.position += 1
+        self.current_stage_index += 1
         return True
 
     ########################################################################################################################
-    def _validate_position(self, position: int) -> bool:
-        return position >= 0 and position < len(self.levels)
+    def _is_valid_stage_index(self, position: int) -> bool:
+        return position >= 0 and position < len(self.stages)
 
     ########################################################################################################################

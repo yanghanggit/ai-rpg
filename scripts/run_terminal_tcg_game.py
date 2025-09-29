@@ -523,7 +523,7 @@ async def _process_dungeon_state_input(
         if terminal_game.current_engagement.is_post_wait_phase:
             if terminal_game.current_engagement.combat_result == CombatResult.HERO_WIN:
 
-                next_level = terminal_game.current_dungeon.next_level()
+                next_level = terminal_game.current_dungeon.peek_next_stage()
                 if next_level is None:
                     logger.info("没有下一关，你胜利了，应该返回营地！！！！")
                 else:
@@ -556,7 +556,7 @@ async def _process_home_state_input(
 
     elif usr_input == "/ld" or usr_input == "/launch-dungeon":
 
-        if len(terminal_game.current_dungeon.levels) == 0:
+        if len(terminal_game.current_dungeon.stages) == 0:
             logger.error(
                 f"全部地下城已经结束。！！！！已经全部被清空！！！！或者不存在！！！！"
             )

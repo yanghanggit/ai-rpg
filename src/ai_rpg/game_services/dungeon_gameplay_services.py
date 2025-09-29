@@ -108,7 +108,7 @@ def _all_heros_return_home(tcg_game: TCGGame) -> None:
 # TODO, 地下城下一关。
 def _all_heros_next_dungeon(tcg_game: TCGGame) -> None:
     # 位置+1
-    if tcg_game.current_dungeon.advance_level():
+    if tcg_game.current_dungeon.advance_to_next_stage():
         heros_entities = tcg_game.get_group(Matcher(all_of=[HeroComponent])).entities
         # tcg_game._dungeon_advance(tcg_game.current_dungeon, heros_entities)
         _dungeon_advance(tcg_game, tcg_game.current_dungeon, heros_entities)
@@ -377,7 +377,7 @@ async def _handle_advance_next_dungeon(web_game: WebTCGGame) -> DungeonGamePlayR
         )
 
     if web_game.current_engagement.has_hero_won:
-        next_level = web_game.current_dungeon.next_level()
+        next_level = web_game.current_dungeon.peek_next_stage()
         if next_level is None:
             logger.info("没有下一关，你胜利了，应该返回营地！！！！")
             raise HTTPException(

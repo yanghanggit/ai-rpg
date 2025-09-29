@@ -145,10 +145,10 @@ def _dungeon_advance(
     """
     # 1. 验证前置条件
     # 是否有可以进入的关卡？
-    upcoming_dungeon = dungeon.current_level()
+    upcoming_dungeon = dungeon.get_current_stage()
     if upcoming_dungeon is None:
         logger.error(
-            f"{tcg_game.current_dungeon.name} 没有下一个地下城！position = {tcg_game.current_dungeon.position}"
+            f"{tcg_game.current_dungeon.name} 没有下一个地下城！position = {tcg_game.current_dungeon.current_stage_index}"
         )
         return False
 
@@ -164,12 +164,12 @@ def _dungeon_advance(
         return False
 
     logger.debug(
-        f"{tcg_game.current_dungeon.name} = [{tcg_game.current_dungeon.position}]关为：{stage_entity.name}，可以进入！！！！"
+        f"{tcg_game.current_dungeon.name} = [{tcg_game.current_dungeon.current_stage_index}]关为：{stage_entity.name}，可以进入！！！！"
     )
 
     # 2. 生成并发送传送提示消息
     # 准备提示词
-    if dungeon.position == 0:
+    if dungeon.current_stage_index == 0:
         trans_message = (
             f"""# 提示！你将要开始一次冒险，准备进入地下城: {stage_entity.name}"""
         )
@@ -237,15 +237,17 @@ def _dungeon_advance(
 #######################################################################################################################################
 # TODO!!! 进入地下城。
 def _all_heros_launch_dungeon(tcg_game: TCGGame) -> bool:
-    if tcg_game.current_dungeon.position < 0:
-        tcg_game.current_dungeon.position = 0  # 第一次设置，第一个关卡。
+    if tcg_game.current_dungeon.current_stage_index < 0:
+        tcg_game.current_dungeon.current_stage_index = 0  # 第一次设置，第一个关卡。
         tcg_game.create_dungeon_entities(tcg_game.current_dungeon)
         heros_entities = tcg_game.get_group(Matcher(all_of=[HeroComponent])).entities
         # return tcg_game._dungeon_advance(tcg_game.current_dungeon, heros_entities)
         return _dungeon_advance(tcg_game, tcg_game.current_dungeon, heros_entities)
     else:
         # 第一次，必须是<0, 证明一次没来过。
-        logger.error(f"launch_dungeon position = {tcg_game.current_dungeon.position}")
+        logger.error(
+            f"launch_dungeon position = {tcg_game.current_dungeon.current_stage_index}"
+        )
 
     return False
 
@@ -353,7 +355,7 @@ async def home_trans_dungeon(
         )
 
         # 判断地下城是否存在
-        if len(web_game.current_dungeon.levels) == 0:
+        if len(web_game.current_dungeon.stages) == 0:
             logger.warning(
                 "没有地下城可以传送, 全部地下城已经结束。！！！！已经全部被清空！！！！或者不存在！！！！"
             )

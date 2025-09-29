@@ -36,7 +36,7 @@ def create_demo_dungeon1() -> Dungeon:
     # 添加哥布林角色到洞窟场景
     return Dungeon(
         name="哥布林洞窟",
-        levels=[
+        stages=[
             stage_cave1,
         ],
     )

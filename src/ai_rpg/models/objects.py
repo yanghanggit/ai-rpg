@@ -163,6 +163,7 @@ class Item(BaseModel):
     """物品基类"""
 
     name: str
+    uuid: str
     type: ItemType
     description: str
 

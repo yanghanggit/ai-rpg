@@ -127,29 +127,24 @@ class MonsterComponent(Component):
 ############################################################################################################
 
 
-# 以下是针对卡牌游戏中 牌组、弃牌堆、抽牌堆、手牌 的类名设计建议，结合常见游戏术语和编程习惯：
-# 方案 4：极简统一型
-# 组件	类名	说明
-# 牌组	Deck	直接命名为 Deck，表示通用牌组。
-# 抽牌堆	DrawDeck	与 Deck 统一，通过前缀区分功能。
-# 弃牌堆	DiscardDeck	同上，保持命名一致性。
-# 手牌	Hand	简洁无冗余。
-# play_card
-# draw_card
-
-
 # 手牌组件。
 @final
 @register_component_class
 class HandComponent(Component):
+    """
+    以下是针对卡牌游戏中 牌组、弃牌堆、抽牌堆、手牌 的类名设计建议，结合常见游戏术语和编程习惯：
+    方案 4：极简统一型
+    组件	类名	说明
+    牌组	Deck	直接命名为 Deck，表示通用牌组。
+    抽牌堆	DrawDeck	与 Deck 统一，通过前缀区分功能。
+    弃牌堆	DiscardDeck	同上，保持命名一致性。
+    手牌	Hand	简洁无冗余。
+    play_card
+    draw_card
+    """
+
     name: str
     skills: List[Skill]
-
-    # def get_skill(self, skill_name: str) -> Skill:
-    #     for skill in self.skills:
-    #         if skill.name == skill_name:
-    #             return skill
-    #     return Skill(name="", description="", target="")
 
 
 ############################################################################################################
@@ -211,12 +206,3 @@ class XCardPlayerComponent(Component):
 class InventoryComponent(MutableComponent):
     name: str
     items: List[Item]  # 物品列表，存储物品名称
-
-    # def add_item(self, item_name: str) -> None:
-    #     self.items.append(item_name)
-
-    # def remove_item(self, item_name: str) -> bool:
-    #     if item_name in self.items:
-    #         self.items.remove(item_name)
-    #         return True
-    #     return False

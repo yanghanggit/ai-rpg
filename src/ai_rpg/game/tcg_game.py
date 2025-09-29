@@ -44,6 +44,7 @@ from ..models import (
     WorldSystem,
     WorldSystemComponent,
     Round,
+    InventoryComponent,
 )
 from .player_client import PlayerClient
 
@@ -488,13 +489,20 @@ class TCGGame(BaseGame, TCGGameContext):
                 case ActorType.MONSTER:
                     actor_entity.add(MonsterComponent, actor_model.name)
 
-            # 测试一下检查item
-            if len(actor_model.inventory.items) > 0:
+            # 必要组件：背包组件, 必须copy一份, 不要进行直接引用。
+            actor_entity.add(
+                InventoryComponent,
+                actor_model.name,
+                copy.copy(actor_model.inventory.items),
+            )
+            inventory_component = actor_entity.get(InventoryComponent)
+            assert inventory_component is not None, "inventory_component is None"
+            if len(inventory_component.items) > 0:
                 logger.info(
-                    f"角色 {actor_model.name} 有 {len(actor_model.inventory.items)} 个物品"
+                    f"InventoryComponent 角色 {actor_model.name} 有 {len(inventory_component.items)} 个物品"
                 )
-                for item in actor_model.inventory.items:
-                    logger.info(f"物品: {item.name}, 描述: {item.description}")
+                for item in inventory_component.items:
+                    logger.info(f"物品: {item.model_dump_json(indent=2)}")
 
             # 添加到返回值
             ret.append(actor_entity)

@@ -1,7 +1,7 @@
 from ..models import (
     Boot,
     Item,
-    # ItemType,
+    ItemType,
 )
 from .actor_warrior import create_actor_warrior
 from .actor_wizard import create_actor_wizard
@@ -24,6 +24,7 @@ def create_demo_game_world(game_name: str) -> Boot:
     actor_warrior.inventory.items.append(
         Item(
             name="消耗品.测试的药水",
+            type=ItemType.CONSUMABLE,
             description="这是一瓶测试用的药水，能恢复50%生命值。",
         )
     )

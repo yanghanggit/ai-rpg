@@ -1,7 +1,7 @@
 from typing import List, final
 from ..entitas.components import Component, MutableComponent
 from .dungeon import Skill, StatusEffect
-from .objects import RPGCharacterProfile
+from .objects import RPGCharacterProfile, Item
 from .registry import register_component_class
 
 
@@ -145,11 +145,11 @@ class HandComponent(Component):
     name: str
     skills: List[Skill]
 
-    def get_skill(self, skill_name: str) -> Skill:
-        for skill in self.skills:
-            if skill.name == skill_name:
-                return skill
-        return Skill(name="", description="", target="")
+    # def get_skill(self, skill_name: str) -> Skill:
+    #     for skill in self.skills:
+    #         if skill.name == skill_name:
+    #             return skill
+    #     return Skill(name="", description="", target="")
 
 
 ############################################################################################################
@@ -204,3 +204,19 @@ class XCardPlayerComponent(Component):
 
 
 ############################################################################################################
+
+
+@final
+@register_component_class
+class InventoryComponent(MutableComponent):
+    name: str
+    items: List[Item]  # 物品列表，存储物品名称
+
+    # def add_item(self, item_name: str) -> None:
+    #     self.items.append(item_name)
+
+    # def remove_item(self, item_name: str) -> bool:
+    #     if item_name in self.items:
+    #         self.items.remove(item_name)
+    #         return True
+    #     return False

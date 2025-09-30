@@ -36,3 +36,6 @@ mypy-extensions==1.0.0
 
 # Additional type stubs for development
 pandas-stubs==2.2.1.240316
+
+# Note: types-psutil==7.0.0.20250822 is now included in requirements.txt
+# Note: types-pyyaml is installed via conda for better performance

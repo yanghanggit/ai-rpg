@@ -5,8 +5,10 @@ ChromaDB RAG系统集成测试
 用于验证改造后的RAG系统是否能正常初始化和运行
 """
 
-from typing import Generator
+from typing import Generator, cast
 import pytest
+import asyncio
+import time
 from loguru import logger
 
 from src.ai_rpg.chroma import (
@@ -140,6 +142,107 @@ class TestChromaDBRAGIntegration:
         assert isinstance(scores, list), "异常参数应该返回分数列表"
 
         logger.info("⚠️ 错误处理测试通过")
+
+    async def test_parallel_semantic_search(self) -> None:
+        """测试并行语义搜索功能"""
+        logger.info("🚀 开始测试并行语义搜索功能...")
+
+        # 确保系统已初始化
+        chroma_db = get_chroma_db()
+        if not chroma_db.initialized:
+            success = initialize_rag_system(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)
+            assert success, "系统初始化失败"
+
+        # 确保数据库中有数据
+        assert chroma_db.collection is not None, "ChromaDB集合应该已创建"
+        collection_count = chroma_db.collection.count()
+        if collection_count == 0:
+            success = initialize_rag_system(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)
+            assert success, "系统初始化失败"
+            collection_count = chroma_db.collection.count()
+            assert collection_count > 0, f"初始化后数据库仍为空"
+
+        # 定义多个测试查询
+        test_queries = [
+            "晨曦之刃的神圣技能",
+            "艾尔法尼亚大陆有哪些王国", 
+            "魔王阿巴顿的弱点",
+            "冒险者公会的等级制度",
+            "时之沙漏的神秘力量",
+            "精灵的魔法能力",
+            "失落的贤者之塔",
+            "暴风雪团的成员组成",
+        ]
+
+        # 创建异步任务包装器
+        async def async_search(query: str) -> tuple[str, list[str], list[float]]:
+            """异步搜索包装器 - 使用推荐的 asyncio.to_thread 方法"""
+            docs, scores = await asyncio.to_thread(rag_semantic_search, query, top_k=3)
+            return query, docs, scores
+
+        # 记录开始时间
+        start_time = time.time()
+
+        # 并行执行所有搜索查询
+        logger.info(f"🔍 并行执行 {len(test_queries)} 个搜索查询...")
+        results = await asyncio.gather(
+            *[async_search(query) for query in test_queries],
+            return_exceptions=True
+        )
+
+        # 记录结束时间
+        parallel_time = time.time() - start_time
+        logger.info(f"⚡ 并行搜索耗时: {parallel_time:.2f}秒")
+
+        # 验证并行搜索结果
+        successful_results: list[tuple[str, list[str], list[float]]] = []
+        for result in results:
+            if isinstance(result, Exception):
+                logger.error(f"搜索失败: {result}")
+                pytest.fail(f"并行搜索中出现异常: {result}")
+            else:
+                # 使用类型断言确保mypy理解这里的类型
+                successful_results.append(cast(tuple[str, list[str], list[float]], result))
+
+        assert len(successful_results) == len(test_queries), "所有查询都应该成功"
+
+        # 验证每个搜索结果
+        for query, docs, scores in successful_results:
+            assert isinstance(docs, list), f"搜索结果应该是列表: {query}"
+            assert isinstance(scores, list), f"相似度分数应该是列表: {query}"
+            assert len(docs) == len(scores), f"文档和分数数量应该一致: {query}"
+
+            logger.info(f"🔍 并行查询: '{query}' - 找到 {len(docs)} 个结果")
+
+            for i, (doc, score) in enumerate(zip(docs, scores)):
+                assert isinstance(doc, str), f"文档内容应该是字符串: {query}"
+                assert isinstance(
+                    score, (int, float)
+                ), f"相似度分数应该是数字: {query}"
+                assert 0 <= score <= 1, f"相似度分数应该在0-1之间: {score}"
+
+        # 比较串行执行时间（可选）
+        logger.info("⏱️ 开始串行执行对比测试...")
+        start_time = time.time()
+        
+        for query in test_queries:
+            docs, scores = rag_semantic_search(query, top_k=3)
+            assert isinstance(docs, list) and isinstance(scores, list)
+            
+        serial_time = time.time() - start_time
+        logger.info(f"⏱️ 串行搜索耗时: {serial_time:.2f}秒")
+        
+        # 计算性能提升
+        if serial_time > 0:
+            speedup = serial_time / parallel_time
+            logger.success(f"🚀 并行搜索性能提升: {speedup:.2f}x")
+        
+        logger.success("🎉 并行语义搜索测试通过！")
+
+    def test_parallel_semantic_search_sync(self) -> None:
+        """同步调用并行语义搜索测试的包装器"""
+        logger.info("🔄 启动并行语义搜索测试...")
+        asyncio.run(self.test_parallel_semantic_search())
 
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self) -> Generator[None, None, None]:

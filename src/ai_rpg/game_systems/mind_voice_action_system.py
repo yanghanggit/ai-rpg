@@ -129,7 +129,7 @@ class MindVoiceActionSystem(BaseActionReactiveSystem, InitializeProcessor):
         """检索相关信息 - 直接进行检索，能找到就返回，找不到就返回空"""
         try:
             logger.success(f"🔍 直接进行RAG检索: {original_message}")
-            
+
             # 直接执行RAG检索，不需要路由决策
             return self._query_with_rag(original_message)
 

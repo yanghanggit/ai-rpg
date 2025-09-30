@@ -100,16 +100,14 @@ class MindVoiceActionSystem(BaseActionReactiveSystem, InitializeProcessor):
 
         # 如果有相关信息，指导AI将信息融入到后续对话中
         if related_info:
-            from langchain_core.messages import AIMessage
-            self._game.append_ai_message(
+            self._game.append_human_message(
                 entity,
-                [AIMessage(content=f"基于以下背景信息回答问题：\n{related_info}\n\n选择你认为最合适的信息直接复述出来。")]
+                f"基于以下背景信息回答问题：\n{related_info}\n\n选择你认为最合适的信息出来作为参考来回答问题。"
             )
         else:
-            from langchain_core.messages import AIMessage
-            self._game.append_ai_message(
+            self._game.append_human_message(
                 entity,
-                [AIMessage(content="没有找到相关背景信息。在接下来的对话中，如果涉及没有找到的或者不在你的上下文中的内容，请诚实地表示不知道，不要编造。")]
+                "没有找到相关背景信息。在接下来的对话中，如果涉及没有找到的或者不在你的上下文中的内容，请诚实地表示不知道，不要编造。"
             )
 
         # 保持原有的事件生成逻辑

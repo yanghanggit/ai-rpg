@@ -31,10 +31,10 @@ class PlayCardsActionSystem(BaseActionReactiveSystem):
         if len(entities) == 0:
             return
 
-        if not self._game.current_engagement.is_on_going_phase:
+        if not self._game.current_engagement.is_ongoing:
             return
 
-        assert self._game.current_engagement.is_on_going_phase
+        assert self._game.current_engagement.is_ongoing
         await self._handle_actions(entities)
 
     #######################################################################################################################################
@@ -55,7 +55,7 @@ class PlayCardsActionSystem(BaseActionReactiveSystem):
 
         # last_round = self._game.current_engagement.last_round
         self._handle_card_play_action(
-            react_entities, self._game.current_engagement.last_round
+            react_entities, self._game.current_engagement.latest_round
         )
 
     #######################################################################################################################################

@@ -25,7 +25,7 @@ try:
     from importlib.metadata import distributions
 except ImportError:
     # Python < 3.8 fallback
-    import pkg_resources  # type: ignore[import-untyped]
+    import pkg_resources
 from ai_rpg.pgsql import (
     DEFAULT_POSTGRES_CONFIG,
 )

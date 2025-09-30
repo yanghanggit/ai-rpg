@@ -20,11 +20,11 @@ class CombatKickOffSystem(ExecuteProcessor):
     async def execute(self) -> None:
 
         # 分析阶段
-        if not self._game.current_engagement.is_kickoff_phase:
+        if not self._game.current_engagement.is_starting:
             return
 
         assert (
-            len(self._game.current_engagement.rounds) == 0
+            len(self._game.current_engagement.current_rounds) == 0
         ), "战斗触发阶段不允许有回合数！"
 
         # 参与战斗的人
@@ -79,7 +79,7 @@ class CombatKickOffSystem(ExecuteProcessor):
             )
 
         # final 开始战斗，最后一步，转换到战斗阶段。!!!
-        self._game.current_engagement.combat_ongoing()
+        self._game.current_engagement.transition_to_ongoing()
 
         logger.info(
             f"{current_stage_entity.name}, 战斗触发阶段完成，进入战斗进行阶段。"

@@ -23,12 +23,12 @@ class CombatPostProcessingSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     async def execute(self) -> None:
-        if not self._game.current_engagement.is_complete_phase:
+        if not self._game.current_engagement.is_completed:
             return  # 不是本阶段就直接返回
 
         if (
-            self._game.current_engagement.combat_result == CombatResult.HERO_WIN
-            or self._game.current_engagement.combat_result == CombatResult.HERO_LOSE
+            self._game.current_engagement.current_result == CombatResult.HERO_WIN
+            or self._game.current_engagement.current_result == CombatResult.HERO_LOSE
         ):
             # 测试，总结战斗结果。
             logger.warning(
@@ -37,7 +37,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
             await self._process_combat_summary()
 
             # TODO, 进入战斗后准备的状态，离开当前状态。
-            self._game.current_engagement.combat_post_wait()
+            self._game.current_engagement.enter_post_combat_phase()
 
         else:
             assert False, "不可能出现的情况！"

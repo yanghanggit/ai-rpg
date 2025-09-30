@@ -1,6 +1,6 @@
 from .actions import *
 from .agent_event import *
-from .game_api_protocol import *
+from .api import *
 from .character_sheet import *
 from .client_message import *
 from .components import *

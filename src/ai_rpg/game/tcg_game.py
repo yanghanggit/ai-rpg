@@ -799,7 +799,7 @@ class TCGGame(BaseGame, TCGGameContext):
             assert actor_entity is None, "actor_entity is not None"
 
         # 加一步测试: 不可以存在！如果存在说明没有清空。
-        for stage in dungeon_model.levels:
+        for stage in dungeon_model.stages:
             stage_entity = self.get_stage_entity(stage.name)
             assert stage_entity is None, "stage_entity is not None"
 
@@ -807,7 +807,7 @@ class TCGGame(BaseGame, TCGGameContext):
         # 创建地下城的怪物。
         self._create_actor_entities(dungeon_model.actors)
         ## 创建地下城的场景
-        self._create_stage_entities(dungeon_model.levels)
+        self._create_stage_entities(dungeon_model.stages)
 
     #######################################################################################################################################
     def destroy_dungeon_entities(self, dungeon_model: Dungeon) -> None:
@@ -818,7 +818,7 @@ class TCGGame(BaseGame, TCGGameContext):
                 self.destroy_entity(destroy_actor_entity)
 
         # 清空地下城的场景
-        for stage in dungeon_model.levels:
+        for stage in dungeon_model.stages:
             destroy_stage_entity = self.get_stage_entity(stage.name)
             if destroy_stage_entity is not None:
                 self.destroy_entity(destroy_stage_entity)
@@ -826,13 +826,13 @@ class TCGGame(BaseGame, TCGGameContext):
     #######################################################################################################################################
     def start_new_round(self) -> Optional[Round]:
 
-        if not self.current_engagement.is_on_going_phase:
+        if not self.current_engagement.is_ongoing:
             logger.warning("当前没有进行中的战斗，不能设置回合。")
             return None
 
         if (
-            len(self.current_engagement.rounds) > 0
-            and not self.current_engagement.last_round.has_ended
+            len(self.current_engagement.current_rounds) > 0
+            and not self.current_engagement.latest_round.has_ended
         ):
             # 有回合正在进行中，所以不能添加新的回合。
             logger.warning("有回合正在进行中，所以不能添加新的回合。")
@@ -856,8 +856,8 @@ class TCGGame(BaseGame, TCGGameContext):
         random.shuffle(shuffled_reactive_entities)
 
         # 创建新的回合
-        new_round = self.current_engagement.start_new_round(
-            round_turns=[entity.name for entity in shuffled_reactive_entities]
+        new_round = self.current_engagement.create_new_round(
+            action_order=[entity.name for entity in shuffled_reactive_entities]
         )
 
         # 设置回合的环境描写

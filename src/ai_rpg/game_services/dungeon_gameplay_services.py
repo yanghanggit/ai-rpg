@@ -108,7 +108,7 @@ def _all_heros_return_home(tcg_game: TCGGame) -> None:
 # TODO, 地下城下一关。
 def _all_heros_next_dungeon(tcg_game: TCGGame) -> None:
     # 位置+1
-    if tcg_game.current_dungeon.advance_level():
+    if tcg_game.current_dungeon.advance_to_next_stage():
         heros_entities = tcg_game.get_group(Matcher(all_of=[HeroComponent])).entities
         # tcg_game._dungeon_advance(tcg_game.current_dungeon, heros_entities)
         _dungeon_advance(tcg_game, tcg_game.current_dungeon, heros_entities)
@@ -129,15 +129,15 @@ def _combat_actors_random_play_cards_action(tcg_game: TCGGame) -> bool:
     """
 
     # 1. 验证游戏状态
-    if len(tcg_game.current_engagement.rounds) == 0:
+    if len(tcg_game.current_engagement.current_rounds) == 0:
         logger.error("没有回合，不能添加行动！")
         return False
 
-    if not tcg_game.current_engagement.is_on_going_phase:
+    if not tcg_game.current_engagement.is_ongoing:
         logger.error("没有进行中的回合，不能添加行动！")
         return False
 
-    if tcg_game.current_engagement.last_round.has_ended:
+    if tcg_game.current_engagement.latest_round.has_ended:
         logger.error("回合已经完成，不能添加行动！")
         return False
 
@@ -155,7 +155,7 @@ def _combat_actors_random_play_cards_action(tcg_game: TCGGame) -> bool:
 
         # 必须没有打牌行动
         assert (
-            actor_entity.name in tcg_game.current_engagement.last_round.round_turns
+            actor_entity.name in tcg_game.current_engagement.latest_round.action_order
         ), f"{actor_entity.name} 不在本回合行动队列里"
 
         # 必须没有打牌行动
@@ -252,7 +252,7 @@ async def _handle_dungeon_combat_kick_off(
     web_game: WebTCGGame,
 ) -> DungeonGamePlayResponse:
     """处理地下城战斗开始"""
-    if not web_game.current_engagement.is_kickoff_phase:
+    if not web_game.current_engagement.is_starting:
         logger.error(f"not web_game.current_engagement.is_kickoff_phase")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -273,7 +273,7 @@ async def _handle_dungeon_combat_kick_off(
 ###################################################################################################################################################################
 async def _handle_draw_cards(web_game: WebTCGGame) -> DungeonGamePlayResponse:
     """处理抽卡操作"""
-    if not web_game.current_engagement.is_on_going_phase:
+    if not web_game.current_engagement.is_ongoing:
         logger.error(f"not web_game.current_engagement.is_on_going_phase")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -299,7 +299,7 @@ async def _handle_play_cards(
     web_game: WebTCGGame, request_data: DungeonGamePlayRequest
 ) -> DungeonGamePlayResponse:
     """处理出牌操作"""
-    if not web_game.current_engagement.is_on_going_phase:
+    if not web_game.current_engagement.is_ongoing:
         logger.error(f"not web_game.current_engagement.is_on_going_phase")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -327,7 +327,7 @@ async def _handle_x_card(
     web_game: WebTCGGame, request_data: DungeonGamePlayRequest
 ) -> DungeonGamePlayResponse:
     """处理X卡操作"""
-    if not web_game.current_engagement.is_on_going_phase:
+    if not web_game.current_engagement.is_ongoing:
         logger.error(f"not web_game.current_engagement.is_on_going_phase")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -369,15 +369,15 @@ async def _handle_x_card(
 ###################################################################################################################################################################
 async def _handle_advance_next_dungeon(web_game: WebTCGGame) -> DungeonGamePlayResponse:
     """处理前进下一个地下城"""
-    if not web_game.current_engagement.is_post_wait_phase:
+    if not web_game.current_engagement.is_waiting:
         logger.error(f"not web_game.current_engagement.is_post_wait_phase")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="not web_game.current_engagement.is_post_wait_phase",
         )
 
-    if web_game.current_engagement.has_hero_won:
-        next_level = web_game.current_dungeon.next_level()
+    if web_game.current_engagement.hero_won:
+        next_level = web_game.current_dungeon.peek_next_stage()
         if next_level is None:
             logger.info("没有下一关，你胜利了，应该返回营地！！！！")
             raise HTTPException(
@@ -390,7 +390,7 @@ async def _handle_advance_next_dungeon(web_game: WebTCGGame) -> DungeonGamePlayR
             return DungeonGamePlayResponse(
                 client_messages=[],
             )
-    elif web_game.current_engagement.has_hero_lost:
+    elif web_game.current_engagement.hero_lost:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="你已经失败了，不能继续进行游戏",
@@ -479,7 +479,7 @@ async def dungeon_trans_home(
             game_server=game_server,
         )
 
-        if not web_game.current_engagement.is_post_wait_phase:
+        if not web_game.current_engagement.is_waiting:
             logger.error(f"not web_game.current_engagement.is_post_wait_phase:")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

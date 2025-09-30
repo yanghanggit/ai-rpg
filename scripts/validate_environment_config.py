@@ -7,7 +7,7 @@
 import tomllib
 from typing import Any, Dict, List
 
-import yaml  
+import yaml
 
 
 def load_environment_yml() -> Any:

@@ -25,7 +25,7 @@ try:
     from importlib.metadata import distributions
 except ImportError:
     # Python < 3.8 fallback
-    import pkg_resources # type: ignore[import-untyped]
+    import pkg_resources  # type: ignore[import-untyped]
 from ai_rpg.pgsql import (
     DEFAULT_POSTGRES_CONFIG,
 )
@@ -60,7 +60,7 @@ def get_system_info() -> None:
     )
 
     # 内存信息
-    memory = psutil.virtual_memory()  
+    memory = psutil.virtual_memory()
     print(f"内存总量: {memory.total / (1024**3):.1f} GB")
     print(f"内存可用: {memory.available / (1024**3):.1f} GB")
     print(f"内存使用率: {memory.percent}%")
@@ -500,7 +500,7 @@ def get_dependency_analysis() -> None:
         env_file = project_root / "environment.yml"
         if env_file.exists():
             try:
-                import yaml  
+                import yaml
 
                 with open(env_file, "r") as f:
                     env_config = yaml.safe_load(f)

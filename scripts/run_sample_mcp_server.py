@@ -208,9 +208,9 @@ def _register_tools(app: FastMCP, mcp_config: McpConfig) -> None:
                 "Python版本": platform.python_version(),
                 "处理器": platform.processor(),
                 "内存信息": {
-                    "总内存": f"{psutil.virtual_memory().total / (1024**3):.2f} GB",  
-                    "可用内存": f"{psutil.virtual_memory().available / (1024**3):.2f} GB",  
-                    "内存使用率": f"{psutil.virtual_memory().percent}%",  
+                    "总内存": f"{psutil.virtual_memory().total / (1024**3):.2f} GB",
+                    "可用内存": f"{psutil.virtual_memory().available / (1024**3):.2f} GB",
+                    "内存使用率": f"{psutil.virtual_memory().percent}%",
                 },
                 "磁盘信息": {
                     "总空间": f"{psutil.disk_usage('/').total / (1024**3):.2f} GB",

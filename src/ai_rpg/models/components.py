@@ -37,7 +37,7 @@ class KickOffDoneComponent(Component):
 # 例如，世界级的entity就标记这个组件
 @final
 @register_component_class
-class WorldSystemComponent(Component):
+class WorldComponent(Component):
     name: str
 
 

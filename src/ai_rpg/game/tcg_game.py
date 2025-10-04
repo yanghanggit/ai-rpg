@@ -42,7 +42,7 @@ from ..models import (
     StageType,
     World,
     WorldSystem,
-    WorldSystemComponent,
+    WorldComponent,
     Round,
     InventoryComponent,
 )
@@ -344,7 +344,7 @@ class TCGGame(BaseGame, TCGGameContext):
         assert len(self.world.entities_snapshot) == 0, "游戏中有实体，不能创建新的游戏"
 
         ## 第1步，创建world_system
-        self._create_world_system_entities(self.world.boot.world_systems)
+        self._create_world_entities(self.world.boot.world_systems)
 
         ## 第2步，创建actor
         self._create_actor_entities(self.world.boot.actors)
@@ -391,7 +391,7 @@ class TCGGame(BaseGame, TCGGameContext):
         return self
 
     ###############################################################################################################################################
-    def _create_world_system_entities(
+    def _create_world_entities(
         self,
         world_system_models: List[WorldSystem],
     ) -> List[Entity]:
@@ -411,7 +411,7 @@ class TCGGame(BaseGame, TCGGameContext):
                 self.world.next_runtime_index(),
                 str(uuid.uuid4()),
             )
-            world_system_entity.add(WorldSystemComponent, world_system_model.name)
+            world_system_entity.add(WorldComponent, world_system_model.name)
 
             # system prompt
             assert world_system_model.name in world_system_model.system_message
@@ -489,12 +489,20 @@ class TCGGame(BaseGame, TCGGameContext):
                 case ActorType.MONSTER:
                     actor_entity.add(MonsterComponent, actor_model.name)
 
-            # 必要组件：背包组件, 必须copy一份, 不要进行直接引用。
+            # 必要组件：背包组件, 必须copy一份, 不要进行直接引用，而且在此处生成uuid
+            copy_items = copy.deepcopy(actor_model.inventory.items)
+            for item in copy_items:
+                assert item.uuid == "", "item.uuid should be empty"
+                item.uuid = str(uuid.uuid4())
+
+            # 添加InventoryComponent！
             actor_entity.add(
                 InventoryComponent,
                 actor_model.name,
-                copy.copy(actor_model.inventory.items),
+                copy_items,
             )
+
+            # 测试一下
             inventory_component = actor_entity.get(InventoryComponent)
             assert inventory_component is not None, "inventory_component is None"
             if len(inventory_component.items) > 0:

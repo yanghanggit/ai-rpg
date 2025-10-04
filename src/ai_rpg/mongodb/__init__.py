@@ -5,6 +5,7 @@ MongoDB 模块
 """
 
 from .boot_document import BootDocument
+from .dungeon_document import DungeonDocument
 from .client import (
     MongoClientType,
     MongoCollectionType,
@@ -44,6 +45,7 @@ __all__ = [
     "DEFAULT_MONGODB_CONFIG",
     # 文档模型
     "BootDocument",
+    "DungeonDocument",
     "WorldDocument",
     # 客户端类型
     "MongoClientType",

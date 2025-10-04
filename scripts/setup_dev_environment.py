@@ -37,6 +37,7 @@ from ai_rpg.game.game_config import GLOBAL_GAME_NAME, LOGS_DIR
 
 from ai_rpg.mongodb import (
     BootDocument,
+    DungeonDocument,
     DEFAULT_MONGODB_CONFIG,
     mongodb_clear_database,
     mongodb_find_one,
@@ -51,6 +52,9 @@ from ai_rpg.redis.client import (
     redis_flushall,
 )
 from ai_rpg.demo.world import create_demo_game_world
+from ai_rpg.demo.stage_dungeon4 import (
+    create_demo_dungeon4,
+)
 
 
 @final
@@ -81,13 +85,13 @@ def _pgsql_setup_test_user() -> None:
             hashed_password=FAKE_USER.hashed_password,
             display_name=FAKE_USER.display_name,
         )
-        logger.warning(f"测试用户 {FAKE_USER.username} 已创建")
+        logger.info(f"测试用户 {FAKE_USER.username} 已创建")
     else:
         logger.info(f"测试用户 {FAKE_USER.username} 已存在，跳过创建")
 
 
 #######################################################################################################
-def _mongodb_create_and_store_demo_world() -> None:
+def _mongodb_create_and_store_demo_boot() -> None:
     """
     创建演示游戏世界并存储到 MongoDB
 
@@ -156,13 +160,13 @@ def _mongodb_create_and_store_demo_world() -> None:
                         logger.info(f"  - 世界启动配置已保存到: {saved_path}")
 
                     else:
-                        logger.warning("⚠️ 数据完整性验证失败")
+                        logger.error("⚠️ 数据完整性验证失败")
 
                 except Exception as validation_error:
                     logger.error(
                         f"❌ WorldBootDocument 便捷方法操作失败: {validation_error}"
                     )
-                    logger.warning("⚠️ 使用原始字典数据继续验证...")
+                    logger.info("⚠️ 使用原始字典数据继续验证...")
 
                     # 备用验证逻辑（使用原始字典数据）
                     logger.info(f"  - 存储时间: {stored_boot['timestamp']}")
@@ -179,6 +183,77 @@ def _mongodb_create_and_store_demo_world() -> None:
 
     except Exception as e:
         logger.error(f"❌ 演示游戏世界 MongoDB 操作失败: {e}")
+        raise
+
+
+#######################################################################################################
+def _mongodb_create_and_store_demo_dungeon() -> None:
+    """
+    创建演示地下城并存储到 MongoDB
+
+    创建演示地下城数据，并将其存储到 MongoDB 中进行持久化，
+    同时验证存储的数据完整性
+    """
+    logger.info("🚀 创建演示地下城...")
+    version = "0.0.1"
+    demo_dungeon = create_demo_dungeon4()
+
+    # 存储 demo_dungeon 到 MongoDB
+    collection_name = DEFAULT_MONGODB_CONFIG.dungeons_collection  # 地下城集合名称
+
+    try:
+        # 创建 DungeonDocument 实例
+        dungeon_document = DungeonDocument.create_from_dungeon(
+            dungeon=demo_dungeon, version=version
+        )
+
+        # 存储到 MongoDB（使用 upsert 语义，如果存在则完全覆盖）
+        logger.info(f"📝 存储演示地下城到 MongoDB 集合: {collection_name}")
+        inserted_id = mongodb_upsert_one(collection_name, dungeon_document.to_dict())
+
+        if inserted_id:
+            logger.success(
+                f"✅ 演示地下城已存储到 MongoDB! = \n{dungeon_document.dungeon_data.model_dump_json(indent=2)}"
+            )
+
+            # 立即获取验证
+            logger.info(f"📖 从 MongoDB 获取演示地下城进行验证...")
+            stored_dungeon = mongodb_find_one(
+                collection_name, {"dungeon_name": demo_dungeon.name}
+            )
+
+            if stored_dungeon:
+                try:
+                    # 使用便捷方法反序列化为 DungeonDocument 对象
+                    stored_document = DungeonDocument.from_mongodb(stored_dungeon)
+                    assert (
+                        stored_document.dungeon_name == demo_dungeon.name
+                    ), "地下城名称不匹配!"
+                    logger.success(f"✅ 演示地下城已从 MongoDB 成功获取!")
+
+                except Exception as validation_error:
+                    logger.error(
+                        f"❌ DungeonDocument 便捷方法操作失败: {validation_error}"
+                    )
+                    logger.info("⚠️ 使用原始字典数据继续验证...")
+
+                    # 备用验证逻辑（使用原始字典数据）
+                    logger.info(f"  - 存储时间: {stored_dungeon['timestamp']}")
+                    logger.info(f"  - 版本: {stored_dungeon['version']}")
+                    logger.info(
+                        f"  - Dungeon 名称: {stored_dungeon['dungeon_data']['name']}"
+                    )
+                    logger.info(
+                        f"  - Dungeon 关卡数量: {len(stored_dungeon['dungeon_data']['stages'])}"
+                    )
+
+            else:
+                logger.error("❌ 从 MongoDB 获取演示地下城失败!")
+        else:
+            logger.error("❌ 演示地下城存储到 MongoDB 失败!")
+
+    except Exception as e:
+        logger.error(f"❌ 演示地下城 MongoDB 操作失败: {e}")
         raise
 
 
@@ -395,7 +470,9 @@ def main() -> None:
         logger.info("🚀 清空 MongoDB 数据库...")
         mongodb_clear_database()
         logger.info("🚀 创建MongoDB演示游戏世界...")
-        _mongodb_create_and_store_demo_world()
+        _mongodb_create_and_store_demo_boot()
+        logger.info("🚀 创建MongoDB演示地下城...")
+        _mongodb_create_and_store_demo_dungeon()
         logger.success("✅ MongoDB 初始化完成")
     except Exception as e:
         logger.error(f"❌ MongoDB 初始化失败: {e}")

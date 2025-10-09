@@ -6,7 +6,7 @@ from ..game_services.game_server import GameServerInstance
 from ..models import (
     ActorComponent,
     AgentChatHistory,
-    EntitySnapshot,
+    EntitySerialization,
     ViewActorResponse,
 )
 
@@ -53,7 +53,7 @@ async def view_actor(
         web_game = current_room._game
 
         # 获取快照
-        snapshots: List[EntitySnapshot] = []
+        entities_serialization: List[EntitySerialization] = []
         agent_short_term_memories: List[AgentChatHistory] = []
 
         if len(actor_names) == 0 or actor_names[0] == "":
@@ -74,8 +74,8 @@ async def view_actor(
                 continue
 
             # 获取快照
-            snapshot = web_game.create_entity_snapshot(actor_entity)
-            snapshots.append(snapshot)
+            entity_serialization = web_game.serialize_entity(actor_entity)
+            entities_serialization.append(entity_serialization)
 
             # 获取短期记忆
             agent_short_term_memory = web_game.get_agent_chat_history(actor_entity)
@@ -83,7 +83,7 @@ async def view_actor(
 
         # 返回。
         return ViewActorResponse(
-            actor_snapshots=snapshots,
+            actor_entities_serialization=entities_serialization,
             agent_short_term_memories=agent_short_term_memories,
         )
     except Exception as e:

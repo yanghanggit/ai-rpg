@@ -7,5 +7,5 @@ from .components import *
 from .dungeon import *
 from .objects import *
 from .registry import *
-from .snapshot import *
+from .serialization import *
 from .world import *

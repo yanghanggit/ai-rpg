@@ -123,7 +123,7 @@ def _debug_verbose(verbose_dir: Path, world: World) -> None:
     """调试方法，保存游戏状态到文件"""
     _verbose_boot_data(verbose_dir, world)
     _verbose_world_data(verbose_dir, world)
-    _verbose_entities_snapshot(verbose_dir, world)
+    _verbose_entities_serialization(verbose_dir, world)
     _verbose_chat_history(verbose_dir, world)
     _verbose_dungeon_system(verbose_dir, world)
     logger.debug(f"Verbose debug info saved to: {verbose_dir}")
@@ -166,20 +166,22 @@ def _verbose_world_data(verbose_dir: Path, world: World) -> None:
 
 
 ###############################################################################################################################################
-def _verbose_entities_snapshot(verbose_dir: Path, world: World) -> None:
+def _verbose_entities_serialization(verbose_dir: Path, world: World) -> None:
     """保存实体快照到文件"""
-    entities_snapshot_dir = verbose_dir / "entities_snapshot"
+    entities_serialization_dir = verbose_dir / "entities_serialization"
     # 强制删除一次
-    if entities_snapshot_dir.exists():
-        shutil.rmtree(entities_snapshot_dir)
+    if entities_serialization_dir.exists():
+        shutil.rmtree(entities_serialization_dir)
     # 创建目录
-    entities_snapshot_dir.mkdir(parents=True, exist_ok=True)
-    assert entities_snapshot_dir.exists()
+    entities_serialization_dir.mkdir(parents=True, exist_ok=True)
+    assert entities_serialization_dir.exists()
 
-    for entity_snapshot in world.entities_snapshot:
-        entity_snapshot_path = entities_snapshot_dir / f"{entity_snapshot.name}.json"
-        entity_snapshot_path.write_text(
-            entity_snapshot.model_dump_json(), encoding="utf-8"
+    for entity_serialization in world.entities_serialization:
+        entity_serialization_path = (
+            entities_serialization_dir / f"{entity_serialization.name}.json"
+        )
+        entity_serialization_path.write_text(
+            entity_serialization.model_dump_json(), encoding="utf-8"
         )
 
 
@@ -341,7 +343,9 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     def new_game(self) -> "TCGGame":
 
-        assert len(self.world.entities_snapshot) == 0, "游戏中有实体，不能创建新的游戏"
+        assert (
+            len(self.world.entities_serialization) == 0
+        ), "游戏中有实体，不能创建新的游戏"
 
         ## 第1步，创建world_system
         self._create_world_entities(self.world.boot.world_systems)
@@ -360,8 +364,10 @@ class TCGGame(BaseGame, TCGGameContext):
     ###############################################################################################################################################
     # 测试！回复ecs
     def load_game(self) -> "TCGGame":
-        assert len(self.world.entities_snapshot) > 0, "游戏中没有实体，不能恢复游戏"
-        self.restore_entities_from_snapshot(self.world.entities_snapshot)
+        assert (
+            len(self.world.entities_serialization) > 0
+        ), "游戏中没有实体，不能恢复游戏"
+        self.deserialize_entities(self.world.entities_serialization)
 
         player_entity = self.get_player_entity()
         assert player_entity is not None
@@ -373,8 +379,10 @@ class TCGGame(BaseGame, TCGGameContext):
     def save(self) -> "TCGGame":
 
         # 生成快照
-        self.world.entities_snapshot = self.make_entities_snapshot()
-        logger.debug(f"游戏将要保存，实体数量: {len(self.world.entities_snapshot)}")
+        self.world.entities_serialization = self.serialize_entities()
+        logger.debug(
+            f"游戏将要保存，实体数量: {len(self.world.entities_serialization)}"
+        )
 
         # 保存快照
         _persist(

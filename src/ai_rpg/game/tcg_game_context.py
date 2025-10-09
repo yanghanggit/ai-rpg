@@ -6,9 +6,9 @@ from ..models import (
     COMPONENTS_REGISTRY,
     ActorComponent,
     AppearanceComponent,
-    ComponentSnapshot,
+    ComponentSerialization,
     DeathComponent,
-    EntitySnapshot,
+    EntitySerialization,
     PlayerComponent,
     RuntimeComponent,
     StageComponent,
@@ -63,21 +63,21 @@ class TCGGameContext(Context):
         return super().destroy_entity(entity)
 
     ###############################################################################################################################################
-    def create_entity_snapshot(self, entity: Entity) -> EntitySnapshot:
-        entity_snapshot = EntitySnapshot(name=entity.name, components=[])
+    def serialize_entity(self, entity: Entity) -> EntitySerialization:
+        entity_serialization = EntitySerialization(name=entity.name, components=[])
 
         for key, value in entity._components.items():
             if COMPONENTS_REGISTRY.get(key.__name__) is None:
                 continue
-            entity_snapshot.components.append(
-                ComponentSnapshot(name=key.__name__, data=value.model_dump())
+            entity_serialization.components.append(
+                ComponentSerialization(name=key.__name__, data=value.model_dump())
             )
-        return entity_snapshot
+        return entity_serialization
 
     ###############################################################################################################################################
-    def make_entities_snapshot(self) -> List[EntitySnapshot]:
+    def serialize_entities(self) -> List[EntitySerialization]:
 
-        ret: List[EntitySnapshot] = []
+        ret: List[EntitySerialization] = []
 
         entities_copy = self._entities.copy()
 
@@ -88,31 +88,31 @@ class TCGGameContext(Context):
         )
 
         for entity in sort_actors:
-            entity_snapshot = self.create_entity_snapshot(entity)
-            ret.append(entity_snapshot)
+            entity_serialization = self.serialize_entity(entity)
+            ret.append(entity_serialization)
 
         return ret
 
     ###############################################################################################################################################
-    def restore_entities_from_snapshot(
-        self, entity_snapshots: List[EntitySnapshot]
+    def deserialize_entities(
+        self, entities_serialization: List[EntitySerialization]
     ) -> None:
 
         assert len(self._entities) == 0
         if len(self._entities) > 0:
             return
 
-        for en_snapshot in entity_snapshots:
+        for entity_serialization in entities_serialization:
 
-            entity = self.__create_entity__(en_snapshot.name)
+            entity = self.__create_entity__(entity_serialization.name)
 
-            for comp_snapshot in en_snapshot.components:
+            for comp_serialization in entity_serialization.components:
 
-                comp_class = COMPONENTS_REGISTRY.get(comp_snapshot.name)
+                comp_class = COMPONENTS_REGISTRY.get(comp_serialization.name)
                 assert comp_class is not None
 
                 # 使用 Pydantic 的方式直接从字典创建实例
-                restore_comp = comp_class(**comp_snapshot.data)
+                restore_comp = comp_class(**comp_serialization.data)
                 assert restore_comp is not None
 
                 logger.debug(
@@ -155,14 +155,14 @@ class TCGGameContext(Context):
         return None
 
     ###############################################################################################################################################
-    def get_entity_by_runtime_index(self, runtime_index: int) -> Optional[Entity]:
+    # def get_entity_by_runtime_index(self, runtime_index: int) -> Optional[Entity]:
 
-        for entity in self.get_group(Matcher(RuntimeComponent)).entities:
-            guid_comp = entity.get(RuntimeComponent)
-            if guid_comp.runtime_index == runtime_index:
-                return entity
+    #     for entity in self.get_group(Matcher(RuntimeComponent)).entities:
+    #         guid_comp = entity.get(RuntimeComponent)
+    #         if guid_comp.runtime_index == runtime_index:
+    #             return entity
 
-        return None
+    #     return None
 
     ###############################################################################################################################################
     def get_entity_by_player_name(self, player_name: str) -> Optional[Entity]:

@@ -143,7 +143,7 @@ def setup_web_game_session(
     )
 
     # 启动游戏的判断，是第一次建立还是恢复？
-    if len(web_game.world.entities_snapshot) == 0:
+    if len(web_game.world.entities_serialization) == 0:
         logger.info(
             f"游戏中没有实体 = {web_game_session_context.game}, 说明是第一次创建游戏"
         )

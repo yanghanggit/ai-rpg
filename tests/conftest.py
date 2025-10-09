@@ -31,7 +31,7 @@ def sample_game() -> Any:
     dungeon = Dungeon(name="")
     world = World(
         runtime_index=1000,
-        entities_snapshot=[],
+        entities_serialization=[],
         agents_chat_history={},
         dungeon=dungeon,
         boot=boot,

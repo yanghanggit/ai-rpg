@@ -2,7 +2,7 @@ from typing import Dict, List, final
 from pydantic import BaseModel
 from .client_message import ClientMessage
 from .dungeon import Dungeon
-from .snapshot import EntitySnapshot
+from .serialization import EntitySerialization
 from .world import AgentChatHistory
 
 ################################################################################################################
@@ -170,7 +170,7 @@ class ViewHomeResponse(BaseModel):
 
 @final
 class ViewActorResponse(BaseModel):
-    actor_snapshots: List[EntitySnapshot]
+    actor_entities_serialization: List[EntitySerialization]
     agent_short_term_memories: List[AgentChatHistory]
 
 

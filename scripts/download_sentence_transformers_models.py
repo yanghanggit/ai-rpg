@@ -17,7 +17,6 @@ SentenceTransformer 模型下载和本地缓存管理脚本
 
 import argparse
 import json
-import logging
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -26,11 +25,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 if TYPE_CHECKING:
     from sentence_transformers import SentenceTransformer
 
-# 配置日志
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
+
+from loguru import logger
 
 
 class SentenceTransformerModelManager:

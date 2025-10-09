@@ -5,10 +5,8 @@ This module provides common utility classes used throughout the ECS framework,
 including event handling and observer pattern implementations.
 """
 
-import logging
 from typing import Any, Callable, Iterator, List
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 class Event:

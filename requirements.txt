@@ -45,12 +45,15 @@ sentence-transformers==4.1.0
 # Text-to-image generation
 replicate==1.0.7
 
-# Vector database
+# Vector database and graph database
 chromadb==1.0.15
 onnxruntime==1.22.1
 mmh3==5.2.0
 pypika==0.48.9
 posthog==5.4.0
+
+# Graph database
+neo4j==5.28.1
 
 # Data processing
 numpy==1.26.4

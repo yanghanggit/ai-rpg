@@ -4,17 +4,14 @@ SentenceTransformer 模型加载工具模块
 提供统一的模型加载接口，优先使用本地缓存，支持离线使用。
 """
 
-# import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
-
-# import logging
-from loguru import logger
 
 if TYPE_CHECKING:
     from sentence_transformers import SentenceTransformer  # noqa: F401
 
-# logger = logging.getLogger(__name__)
+
+from loguru import logger
 
 
 class ModelLoader:

@@ -1,14 +1,16 @@
 """
 RAG查询服务 - 提供独立的查询功能，可被其他系统调用
 """
+
 from ..chroma import get_chroma_db
 from ..rag import rag_semantic_search
 from loguru import logger
 
+
 ###################################################################################################################################
 class QueryService:
     """RAG查询服务 - 专门处理知识库查询"""
-    
+
     def __init__(self) -> None:
         self._initialized = False
 
@@ -17,7 +19,7 @@ class QueryService:
         """初始化查询服务"""
         if self._initialized:
             return
-            
+
         try:
             # 检查ChromaDB是否可用
             chroma_db = get_chroma_db()
@@ -34,24 +36,24 @@ class QueryService:
     def query(self, query_text: str) -> str:
         """
         执行查询 - 直接进行RAG检索
-        
+
         Args:
             query_text: 查询文本
-            
+
         Returns:
             查询结果字符串
         """
         if not self._initialized:
             self.initialize()
-        
+
         try:
             # 直接执行RAG查询
             return self._execute_rag_query(query_text)
-            
+
         except Exception as e:
             logger.error(f"❌ 查询执行失败: {e}")
             return ""
-        
+
     ####################################################################################################################################
     def _execute_rag_query(self, query_text: str) -> str:
         """执行RAG查询"""
@@ -88,25 +90,29 @@ class QueryService:
             logger.error(f"❌ RAG查询失败: {e}")
             return ""
 
+
 ###################################################################################################################################
 # 全局查询服务实例
 _query_service = QueryService()
+
 
 def get_query_service() -> QueryService:
     """获取查询服务实例"""
     return _query_service
 
+
 #####################################################################################################################################
 def quick_query(query_text: str) -> str:
     """
     便捷查询函数 - 可在任何地方直接调用
-    
+
     Args:
         query_text: 查询文本
-        
+
     Returns:
         查询结果字符串
     """
     return _query_service.query(query_text)
+
 
 #####################################################################################################################################

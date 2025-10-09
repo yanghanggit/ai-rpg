@@ -68,6 +68,8 @@ class MindVoiceActionSystem(BaseActionReactiveSystem):
             ),
         )
 
-        logger.debug(f"💭 处理内心独白: {mind_voice_action.name} - {mind_voice_action.message}")
+        logger.debug(
+            f"💭 处理内心独白: {mind_voice_action.name} - {mind_voice_action.message}"
+        )
 
     ####################################################################################################################################

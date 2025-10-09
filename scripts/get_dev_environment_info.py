@@ -201,6 +201,8 @@ def get_development_tools() -> None:
         "docker-compose --version": "Docker Compose",
         "redis-cli --version": "Redis CLI",
         "psql --version": "PostgreSQL客户端",
+        "neo4j version": "Neo4j数据库",
+        "cypher-shell --version": "Neo4j Cypher Shell",
         "conda --version": "Conda包管理器",
     }
 
@@ -227,6 +229,8 @@ def get_network_and_services() -> None:
         6379: "Redis数据库",
         27017: "MongoDB数据库",
         3306: "MySQL数据库",
+        7687: "Neo4j Bolt协议",
+        7474: "Neo4j HTTP Web界面",
     }
 
     print("端口占用情况:")
@@ -291,6 +295,205 @@ def get_network_and_services() -> None:
         print("  ⚠️  PostgreSQL: psycopg2库未安装")
     except Exception as e:
         print(f"  ❌ PostgreSQL: 连接测试失败 - {e}")
+
+
+def get_neo4j_environment() -> None:
+    """获取Neo4j环境信息"""
+    print("\n" + "=" * 50)
+    print("🔗 Neo4j图数据库环境")
+    print("=" * 50)
+
+    # 检查Neo4j Python驱动安装状态
+    try:
+        import neo4j
+        from neo4j import GraphDatabase
+
+        print(f"  ✅ Neo4j Python驱动: 已安装 (版本 {neo4j.__version__})")
+
+        # 检查关键组件
+        try:
+            from neo4j.exceptions import ServiceUnavailable, AuthError
+
+            print("  ✅ Neo4j异常类: 可用")
+        except ImportError as e:
+            print(f"  ⚠️  Neo4j异常类: 导入失败 - {e}")
+
+        # 检查Neo4j服务状态
+        print("\n  Neo4j服务检查:")
+
+        # 检查端口占用 (Neo4j默认端口)
+        neo4j_ports = {
+            7687: "Bolt协议端口",
+            7474: "HTTP Web界面端口",
+            7473: "HTTPS端口",
+        }
+
+        for port, description in neo4j_ports.items():
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1)
+            result = sock.connect_ex(("localhost", port))
+            sock.close()
+
+            if result == 0:
+                print(f"    🟢 端口 {port}: 已占用 ({description})")
+            else:
+                print(f"    ⚪ 端口 {port}: 可用 ({description})")
+
+        # Neo4j连接测试
+        print("\n  Neo4j连接测试:")
+        try:
+            # 尝试连接Neo4j数据库
+            driver = GraphDatabase.driver(
+                "bolt://localhost:7687",
+                auth=("neo4j", "password123"),
+                connection_timeout=3,
+            )
+
+            # 测试连接
+            with driver.session() as session:
+                test_result = session.run("RETURN 1 as test")
+                test_record = test_result.single()
+                if test_record:
+                    test_value = test_record["test"]
+                    if test_value == 1:
+                        print("    ✅ Neo4j数据库: 连接成功")
+
+                        # 获取服务器信息
+                        try:
+                            components_result = session.run(
+                                "CALL dbms.components() YIELD name, versions, edition"
+                            )
+                            for record in components_result:
+                                print(
+                                    f"    📊 {record['name']}: {record['versions'][0]} ({record['edition']})"
+                                )
+                        except Exception as info_error:
+                            print(f"    ⚠️  服务器信息获取失败: {info_error}")
+
+                        # 检查数据库状态
+                        try:
+                            databases_result = session.run("SHOW DATABASES")
+                            databases = [record["name"] for record in databases_result]
+                            print(f"    🗄️  可用数据库: {', '.join(databases)}")
+                        except Exception:
+                            # 某些版本可能不支持SHOW DATABASES
+                            print("    🗄️  数据库信息: 无法获取 (可能权限不足)")
+                    else:
+                        print("    ❌ Neo4j连接测试失败")
+                else:
+                    print("    ❌ Neo4j连接测试失败：无返回结果")
+
+            driver.close()
+
+        except AuthError:
+            print("    ❌ Neo4j认证失败 (用户名/密码错误)")
+            print("    💡 建议检查密码或访问 http://localhost:7474 重新设置")
+        except ServiceUnavailable:
+            print("    ❌ Neo4j服务不可用 (服务未启动)")
+            print("    💡 启动建议: brew services start neo4j")
+        except Exception as e:
+            print(f"    ❌ Neo4j连接失败: {e}")
+
+        # 检查Neo4j命令行工具
+        print("\n  Neo4j命令行工具:")
+        neo4j_tools = {
+            "neo4j version": "Neo4j服务器",
+            "cypher-shell --version": "Cypher Shell客户端",
+        }
+
+        for command, description in neo4j_tools.items():
+            stdout, stderr, code = run_command(command)
+            if code == 0:
+                print(f"    ✅ {description}: {stdout}")
+            else:
+                print(f"    ❌ {description}: 未安装或不可用")
+
+        # 检查Neo4j安装方式
+        print("\n  Neo4j安装检查:")
+
+        # 检查Homebrew安装
+        homebrew_neo4j, _, homebrew_code = run_command("brew list neo4j")
+        if homebrew_code == 0:
+            print("    ✅ Neo4j通过Homebrew安装")
+            # 获取安装路径
+            neo4j_path, _, _ = run_command("brew --prefix neo4j")
+            if neo4j_path:
+                print(f"    📁 安装路径: {neo4j_path}")
+        else:
+            print("    ⚪ Neo4j未通过Homebrew安装")
+
+        # 检查Docker安装
+        docker_neo4j, _, docker_code = run_command(
+            "docker ps --filter name=neo4j --format '{{.Names}}'"
+        )
+        if docker_code == 0 and docker_neo4j.strip():
+            print(f"    ✅ Neo4j Docker容器运行中: {docker_neo4j.strip()}")
+        else:
+            print("    ⚪ 无Neo4j Docker容器运行")
+
+        # 检查配置文件
+        print("\n  Neo4j配置文件:")
+        potential_config_paths = [
+            "/opt/homebrew/etc/neo4j/neo4j.conf",
+            "/usr/local/etc/neo4j/neo4j.conf",
+            "~/.neo4j/neo4j.conf",
+            "/etc/neo4j/neo4j.conf",
+        ]
+
+        config_found = False
+        for config_path in potential_config_paths:
+            expanded_path = os.path.expanduser(config_path)
+            if os.path.exists(expanded_path):
+                print(f"    ✅ 配置文件: {config_path}")
+                config_found = True
+                break
+
+        if not config_found:
+            print("    ⚪ 未找到标准位置的配置文件")
+
+        # Java环境检查 (Neo4j需要Java)
+        print("\n  Java环境检查 (Neo4j依赖):")
+        java_version, _, java_code = run_command("java -version")
+        if java_code == 0:
+            # 解析Java版本
+            java_info = java_version.split("\n")[0] if java_version else "未知版本"
+            print(f"    ✅ Java: {java_info}")
+
+            # 检查JAVA_HOME
+            java_home = os.environ.get("JAVA_HOME")
+            if java_home:
+                print(f"    ✅ JAVA_HOME: {java_home}")
+            else:
+                print("    ⚠️  JAVA_HOME: 未设置")
+        else:
+            print("    ❌ Java: 未安装 (Neo4j需要Java运行)")
+
+    except ImportError:
+        print("  ❌ Neo4j Python驱动: 未安装")
+        print("  💡 安装建议:")
+        print("    conda环境: conda install neo4j-python-driver")
+        print("    或者: pip install neo4j")
+
+        # 即使驱动未安装，也检查服务状态
+        print("\n  Neo4j服务状态检查 (无驱动):")
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+        bolt_result = sock.connect_ex(("localhost", 7687))
+        sock.close()
+
+        sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock2.settimeout(1)
+        http_result = sock2.connect_ex(("localhost", 7474))
+        sock2.close()
+
+        if bolt_result == 0 or http_result == 0:
+            print("    🟢 Neo4j服务似乎正在运行")
+            print("    💡 安装Python驱动后可进行完整测试")
+        else:
+            print("    ⚪ Neo4j服务未检测到")
+
+    except Exception as e:
+        print(f"  ❌ Neo4j环境检查失败: {e}")
 
 
 def get_chromadb_environment() -> None:
@@ -805,6 +1008,7 @@ def main() -> None:
         get_project_config()
         get_development_tools()
         get_network_and_services()
+        get_neo4j_environment()
         get_chromadb_environment()
         get_dependency_analysis()
         get_environment_variables()

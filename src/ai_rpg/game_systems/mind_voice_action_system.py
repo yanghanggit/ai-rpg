@@ -102,12 +102,12 @@ class MindVoiceActionSystem(BaseActionReactiveSystem, InitializeProcessor):
         if related_info:
             self._game.append_human_message(
                 entity,
-                f"基于以下背景信息回答问题：\n{related_info}\n\n选择你认为最合适的信息出来作为参考来回答问题。"
+                f"基于以下背景信息回答问题：\n{related_info}\n\n选择你认为最合适的信息出来作为参考来回答问题。",
             )
         else:
             self._game.append_human_message(
                 entity,
-                "没有找到相关背景信息。在接下来的对话中，如果涉及没有找到的或者不在你的上下文中的内容，请诚实地表示不知道，不要编造。"
+                "没有找到相关背景信息。在接下来的对话中，如果涉及没有找到的或者不在你的上下文中的内容，请诚实地表示不知道，不要编造。",
             )
 
         # 保持原有的事件生成逻辑

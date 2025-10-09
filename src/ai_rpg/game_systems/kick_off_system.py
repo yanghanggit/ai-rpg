@@ -13,7 +13,7 @@ from ..models import (
     KickOffDoneComponent,
     KickOffMessageComponent,
     StageComponent,
-    WorldSystemComponent,
+    WorldComponent,
 )
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from ..game.game_config import LOGS_DIR
@@ -390,7 +390,7 @@ class KickOffSystem(ExecuteProcessor):
             if not (
                 entity.has(ActorComponent)
                 or entity.has(StageComponent)
-                or entity.has(WorldSystemComponent)
+                or entity.has(WorldComponent)
             ):
                 logger.warning(
                     f"KickOffSystem: {entity.name} is not a valid entity type (Actor/Stage/WorldSystem), skipping"
@@ -419,7 +419,7 @@ class KickOffSystem(ExecuteProcessor):
             return _generate_stage_prompt(
                 kick_off_message_comp.content,
             )
-        elif entity.has(WorldSystemComponent):
+        elif entity.has(WorldComponent):
             # 世界系统的
             return _generate_world_system_prompt()
 

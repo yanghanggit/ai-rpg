@@ -165,7 +165,7 @@ class TestChromaDBRAGIntegration:
         # 定义多个测试查询
         test_queries = [
             "晨曦之刃的神圣技能",
-            "艾尔法尼亚大陆有哪些王国", 
+            "艾尔法尼亚大陆有哪些王国",
             "魔王阿巴顿的弱点",
             "冒险者公会的等级制度",
             "时之沙漏的神秘力量",
@@ -186,8 +186,7 @@ class TestChromaDBRAGIntegration:
         # 并行执行所有搜索查询
         logger.info(f"🔍 并行执行 {len(test_queries)} 个搜索查询...")
         results = await asyncio.gather(
-            *[async_search(query) for query in test_queries],
-            return_exceptions=True
+            *[async_search(query) for query in test_queries], return_exceptions=True
         )
 
         # 记录结束时间
@@ -202,7 +201,9 @@ class TestChromaDBRAGIntegration:
                 pytest.fail(f"并行搜索中出现异常: {result}")
             else:
                 # 使用类型断言确保mypy理解这里的类型
-                successful_results.append(cast(tuple[str, list[str], list[float]], result))
+                successful_results.append(
+                    cast(tuple[str, list[str], list[float]], result)
+                )
 
         assert len(successful_results) == len(test_queries), "所有查询都应该成功"
 
@@ -216,27 +217,25 @@ class TestChromaDBRAGIntegration:
 
             for i, (doc, score) in enumerate(zip(docs, scores)):
                 assert isinstance(doc, str), f"文档内容应该是字符串: {query}"
-                assert isinstance(
-                    score, (int, float)
-                ), f"相似度分数应该是数字: {query}"
+                assert isinstance(score, (int, float)), f"相似度分数应该是数字: {query}"
                 assert 0 <= score <= 1, f"相似度分数应该在0-1之间: {score}"
 
         # 比较串行执行时间（可选）
         logger.info("⏱️ 开始串行执行对比测试...")
         start_time = time.time()
-        
+
         for query in test_queries:
             docs, scores = rag_semantic_search(query, top_k=3)
             assert isinstance(docs, list) and isinstance(scores, list)
-            
+
         serial_time = time.time() - start_time
         logger.info(f"⏱️ 串行搜索耗时: {serial_time:.2f}秒")
-        
+
         # 计算性能提升
         if serial_time > 0:
             speedup = serial_time / parallel_time
             logger.success(f"🚀 并行搜索性能提升: {speedup:.2f}x")
-        
+
         logger.success("🎉 并行语义搜索测试通过！")
 
     def test_parallel_semantic_search_sync(self) -> None:

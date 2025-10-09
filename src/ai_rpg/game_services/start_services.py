@@ -1,13 +1,19 @@
 from typing import Optional
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from ..demo.stage_dungeon4 import (
-    create_demo_dungeon4,
-)
+
+# from ..demo.stage_dungeon4 import (
+#     create_demo_dungeon4,
+# )
 from ..game.player_client import PlayerClient
 from ..game.web_tcg_game import WebTCGGame, WebGameSessionContext
 from ..game_services.game_server import GameServerInstance
 from ..models import StartRequest, StartResponse, World
+from ..mongodb import (
+    DungeonDocument,
+    DEFAULT_MONGODB_CONFIG,
+    mongodb_find_one,
+)
 
 ###################################################################################################################################################################
 start_router = APIRouter()
@@ -109,10 +115,24 @@ def setup_web_game_session(
         world_exists = World(boot=world_boot)
 
         # 运行时生成地下城系统。
-        world_exists.dungeon = create_demo_dungeon4()
+        # "哥布林与兽人"
+        # world_exists.dungeon = create_demo_dungeon4()
+
+        # 读数据库! 测试的写死的地下城名字，本质就是dungeon4!!!!
+        fixed_dungeon_name = "哥布林与兽人"
+        stored_dungeon = mongodb_find_one(
+            DEFAULT_MONGODB_CONFIG.dungeons_collection,
+            {"dungeon_name": fixed_dungeon_name},
+        )
+        assert stored_dungeon is not None, "数据库中已经存在该地下城数据"
+        logger.success(
+            f"从数据库加载地下城{fixed_dungeon_name}数据成功！{stored_dungeon}"
+        )
+        stored_document = DungeonDocument.from_mongodb(stored_dungeon)
+        world_exists.dungeon = stored_document.dungeon_data
 
     else:
-        pass
+        assert False, "尚未实现从数据库加载world的逻辑"
 
     # 依赖注入，创建新的游戏
     assert world_exists is not None, "World data must exist to create a game"

@@ -12,7 +12,7 @@ from ..models import (
     PlayerComponent,
     RuntimeComponent,
     StageComponent,
-    WorldSystemComponent,
+    WorldComponent,
     HomeComponent,
     DungeonComponent,
 )
@@ -123,7 +123,7 @@ class TCGGameContext(Context):
     ###############################################################################################################################################
     def get_world_entity(self, world_name: str) -> Optional[Entity]:
         entity: Optional[Entity] = self.get_entity_by_name(world_name)
-        if entity is not None and entity.has(WorldSystemComponent):
+        if entity is not None and entity.has(WorldComponent):
             return entity
         return None
 

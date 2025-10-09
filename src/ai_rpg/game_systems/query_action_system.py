@@ -1,13 +1,11 @@
-from math import log
 from typing import final, override
+
+from ai_rpg.game_systems import query_action
 from ..entitas import Entity, GroupEvent, Matcher
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
     QueryAction,
-    QueryEvent,
 )
-from ..chroma import get_chroma_db
-from ..rag import rag_semantic_search
 from loguru import logger
 
 
@@ -33,4 +31,8 @@ class QueryActionSystem(BaseActionReactiveSystem):
 
     #############################################################################################################################
     def _process_action(self, entity: Entity) -> None:
-        logger.success("🕵️‍♂️ 处理 QueryAction")
+        query_action = entity.get(QueryAction)
+        assert query_action is not None
+
+        logger.success(
+            f"🔎 角色发起查询行动，问题: {query_action.question}")

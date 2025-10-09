@@ -54,7 +54,7 @@ def _generate_prompt(
         },
         announce_actions="你要说的内容（所有的角色都能听见）",
         mind_voice_actions="你要说的内容。判断逻辑：1) 如果在本次对话中有人向你提问，且你在本次的speak_actions中回复了“让我想想”，则这次的mind_voice_actions只能是复述这个最新的问题；2) 如果没有最新的提问，则生成你的内心独白。注意：只关注本次的提问，对于之前的提问，严禁再次回答。（只有你自己能听见）",
-        query_actions="你要说的内容，复述你听到的问题。（这个行动会触发RAG查询）",
+        query_actions="你要说的内容，结合上下文的内容来决定是否发问以及如何发问。（这个行动会触发RAG查询）",
     )
 
     return f"""# 请制定你的行动计划！决定你将要做什么，并以 JSON 格式输出。
@@ -88,7 +88,6 @@ def _generate_prompt(
 
 ### 注意事项
 - speak_actions/whisper_actions/announce_actions 这三种行动只能选其一。
-- query_actions默认不触发，但是如果在本次speak_actions中说了“让我想想”，则本次一定会进行query_actions查询行动。
 - mind_voice_actions可选。
 - 严格按照‘标准示例’进行输出。"""
 

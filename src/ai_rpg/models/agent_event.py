@@ -62,15 +62,6 @@ class MindVoiceEvent(AgentEvent):
     content: str
 
 
-################################################################################################################
-# 查询事件
-@final
-class QueryEvent(AgentEvent):
-    head: int = AgentEventHead.QUERY_EVENT
-    actor: str
-    question: str
-
-
 ####################################################################################################################################
 @final
 class TransStageEvent(AgentEvent):

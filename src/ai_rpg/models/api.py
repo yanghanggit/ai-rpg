@@ -11,7 +11,7 @@ from .world import AgentChatHistory
 
 
 @final
-class URLConfigurationResponse(BaseModel):
+class URLConfigResponse(BaseModel):
     message: str = "API URL Configuration"
     version: str = "0.0.1"
     endpoints: Dict[str, str] = {}
@@ -148,7 +148,7 @@ class DungeonGamePlayResponse(BaseModel):
 
 
 @final
-class ViewDungeonResponse(BaseModel):
+class DungeonStateResponse(BaseModel):
     mapping: Dict[str, List[str]]
     dungeon: Dungeon
 
@@ -159,7 +159,7 @@ class ViewDungeonResponse(BaseModel):
 
 
 @final
-class ViewHomeResponse(BaseModel):
+class HomeStateResponse(BaseModel):
     mapping: Dict[str, List[str]]
 
 
@@ -169,7 +169,7 @@ class ViewHomeResponse(BaseModel):
 
 
 @final
-class ViewActorResponse(BaseModel):
+class ActorDetailsResponse(BaseModel):
     actor_entities_serialization: List[EntitySerialization]
     agent_short_term_memories: List[AgentChatHistory]
 

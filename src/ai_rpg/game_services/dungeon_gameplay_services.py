@@ -26,7 +26,7 @@ from ..entitas import Matcher, Entity
 from .home_gameplay_services import _dungeon_advance
 
 ###################################################################################################################################################################
-dungeon_gameplay_router = APIRouter()
+dungeon_gameplay_api_router = APIRouter()
 
 
 ###############################################################################################################################################
@@ -406,7 +406,7 @@ async def _handle_advance_next_dungeon(web_game: WebTCGGame) -> DungeonGamePlayR
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-@dungeon_gameplay_router.post(
+@dungeon_gameplay_api_router.post(
     path="/api/dungeon/gameplay/v1/", response_model=DungeonGamePlayResponse
 )
 async def dungeon_gameplay(
@@ -463,7 +463,7 @@ async def dungeon_gameplay(
 ###################################################################################################################################################################
 
 
-@dungeon_gameplay_router.post(
+@dungeon_gameplay_api_router.post(
     path="/api/dungeon/trans_home/v1/", response_model=DungeonTransHomeResponse
 )
 async def dungeon_trans_home(

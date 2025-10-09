@@ -23,6 +23,9 @@ class TCGGameProcessPipeline(Processors):
         from ..game_systems.mind_voice_action_system import (
             MindVoiceActionSystem,
         )
+        from ..game_systems.query_action_system import (
+            QueryActionSystem,
+        )
         from ..game_systems.action_cleanup_system import ActionCleanupSystem
         from ..game_systems.save_system import SaveSystem
         from ..game_systems.speak_action_system import SpeakActionSystem
@@ -49,6 +52,7 @@ class TCGGameProcessPipeline(Processors):
         # 动作处理相关的系统 ##################################################################
         ####################################################################################
         processors.add(MindVoiceActionSystem(tcg_game))
+        processors.add(QueryActionSystem(tcg_game))
         processors.add(SpeakActionSystem(tcg_game))
         processors.add(WhisperActionSystem(tcg_game))
         processors.add(AnnounceActionSystem(tcg_game))

@@ -48,6 +48,15 @@ class MindVoiceAction(Component):
     message: str
 
 
+################################################################################################################
+@final
+@register_component_class
+@register_action_class
+class QueryAction(Component):
+    name: str
+    question: str
+
+
 ############################################################################################################
 @final
 @register_component_class

@@ -11,9 +11,10 @@ class AgentEventHead(IntEnum):
     WHISPER_EVENT = 2
     ANNOUNCE_EVENT = 3
     MIND_VOICE_EVENT = 4
-    TRANS_STAGE_EVENT = 5
-    COMBAT_KICK_OFF_EVENT = 6
-    COMBAT_COMPLETE_EVENT = 7
+    QUERY_EVENT = 5
+    TRANS_STAGE_EVENT = 6
+    COMBAT_KICK_OFF_EVENT = 7
+    COMBAT_COMPLETE_EVENT = 8
 
 
 ####################################################################################################################################
@@ -59,6 +60,15 @@ class MindVoiceEvent(AgentEvent):
     head: int = AgentEventHead.MIND_VOICE_EVENT
     actor: str
     content: str
+
+
+################################################################################################################
+# 查询事件
+@final
+class QueryEvent(AgentEvent):
+    head: int = AgentEventHead.QUERY_EVENT
+    actor: str
+    question: str
 
 
 ####################################################################################################################################

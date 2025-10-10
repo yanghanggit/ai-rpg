@@ -1,6 +1,6 @@
 from typing import final, override
 
-from ai_rpg.game_systems import query_action
+# from ai_rpg.game_systems import query_action
 from ..entitas import Entity, GroupEvent, Matcher
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
@@ -34,5 +34,4 @@ class QueryActionSystem(BaseActionReactiveSystem):
         query_action = entity.get(QueryAction)
         assert query_action is not None
 
-        logger.success(
-            f"🔎 角色发起查询行动，问题: {query_action.question}")
+        logger.success(f"🔎 角色发起查询行动，问题: {query_action.question}")

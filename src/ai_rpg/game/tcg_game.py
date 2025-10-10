@@ -367,6 +367,7 @@ class TCGGame(BaseGame, TCGGameContext):
         assert (
             len(self.world.entities_serialization) > 0
         ), "游戏中没有实体，不能恢复游戏"
+        assert len(self._entities) == 0, "游戏中有实体，不能恢复游戏"
         self.deserialize_entities(self.world.entities_serialization)
 
         player_entity = self.get_player_entity()
@@ -379,7 +380,7 @@ class TCGGame(BaseGame, TCGGameContext):
     def save(self) -> "TCGGame":
 
         # 生成快照
-        self.world.entities_serialization = self.serialize_entities()
+        self.world.entities_serialization = self.serialize_entities(self._entities)
         logger.debug(
             f"游戏将要保存，实体数量: {len(self.world.entities_serialization)}"
         )

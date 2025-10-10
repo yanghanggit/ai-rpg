@@ -63,7 +63,7 @@ class TCGGameContext(Context):
         return super().destroy_entity(entity)
 
     ###############################################################################################################################################
-    def serialize_entity(self, entity: Entity) -> EntitySerialization:
+    def _serialize_entity(self, entity: Entity) -> EntitySerialization:
         entity_serialization = EntitySerialization(name=entity.name, components=[])
 
         for key, value in entity._components.items():
@@ -75,11 +75,11 @@ class TCGGameContext(Context):
         return entity_serialization
 
     ###############################################################################################################################################
-    def serialize_entities(self) -> List[EntitySerialization]:
+    def serialize_entities(self, entities: Set[Entity]) -> List[EntitySerialization]:
 
         ret: List[EntitySerialization] = []
 
-        entities_copy = self._entities.copy()
+        entities_copy = list(entities)
 
         # 保证有顺序。防止set引起的顺序不一致。
         sort_actors = sorted(
@@ -88,7 +88,7 @@ class TCGGameContext(Context):
         )
 
         for entity in sort_actors:
-            entity_serialization = self.serialize_entity(entity)
+            entity_serialization = self._serialize_entity(entity)
             ret.append(entity_serialization)
 
         return ret
@@ -96,15 +96,22 @@ class TCGGameContext(Context):
     ###############################################################################################################################################
     def deserialize_entities(
         self, entities_serialization: List[EntitySerialization]
-    ) -> None:
+    ) -> Set[Entity]:
 
-        assert len(self._entities) == 0
-        if len(self._entities) > 0:
-            return
+        ret: Set[Entity] = set()
+
+        # assert len(self._entities) == 0
+        # if len(self._entities) > 0:
+        #     return ret
 
         for entity_serialization in entities_serialization:
 
+            assert (
+                self.get_entity_by_name(entity_serialization.name) is None
+            ), f"Entity with name already exists: {entity_serialization.name}"
+
             entity = self.__create_entity__(entity_serialization.name)
+            ret.add(entity)  # 添加到返回的集合中
 
             for comp_serialization in entity_serialization.components:
 
@@ -119,6 +126,8 @@ class TCGGameContext(Context):
                     f"comp_class = {comp_class.__name__}, comp = {restore_comp}"
                 )
                 entity.set(comp_class, restore_comp)
+
+        return ret
 
     ###############################################################################################################################################
     def get_world_entity(self, world_name: str) -> Optional[Entity]:
@@ -153,16 +162,6 @@ class TCGGameContext(Context):
             actor_comp = entity.get(ActorComponent)
             return self.get_stage_entity(actor_comp.current_stage)
         return None
-
-    ###############################################################################################################################################
-    # def get_entity_by_runtime_index(self, runtime_index: int) -> Optional[Entity]:
-
-    #     for entity in self.get_group(Matcher(RuntimeComponent)).entities:
-    #         guid_comp = entity.get(RuntimeComponent)
-    #         if guid_comp.runtime_index == runtime_index:
-    #             return entity
-
-    #     return None
 
     ###############################################################################################################################################
     def get_entity_by_player_name(self, player_name: str) -> Optional[Entity]:

@@ -1,11 +1,9 @@
-from typing import List
+from typing import List, Set
 from fastapi import APIRouter, HTTPException, Query, status
 from loguru import logger
-from ..entitas import Matcher
+from ..entitas import Entity
 from .game_server import GameServerInstance
 from ..models import (
-    ActorComponent,
-    AgentChatHistory,
     EntitySerialization,
     ActorDetailsResponse,
 )
@@ -52,42 +50,38 @@ async def get_actors_details(
                 detail="没有游戏",
             )
 
+        if len(actor_names) == 0 or actor_names[0] == "":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="请提供至少一个角色名称",
+            )
+
         # 获取游戏
         web_game = current_room._game
 
-        # 获取快照
+        # 获取所有角色实体
         entities_serialization: List[EntitySerialization] = []
-        agent_short_term_memories: List[AgentChatHistory] = []
 
-        if len(actor_names) == 0 or actor_names[0] == "":
-            # 没有指定角色，获取所有角色
-            actor_entities = web_game.get_group(
-                Matcher(
-                    all_of=[ActorComponent],
-                )
-            ).entities
-
-            actor_names = [actor_entity.name for actor_entity in actor_entities]
+        # 获取指定角色实体
+        actor_entities: Set[Entity] = set()
 
         for actor_name in actor_names:
-
+            # 获取角色实体
             actor_entity = web_game.get_entity_by_name(actor_name)
             if actor_entity is None:
                 logger.error(f"view_actor: {user_name} actor {actor_name} not found.")
                 continue
 
-            # 获取快照
-            entity_serialization = web_game.serialize_entity(actor_entity)
-            entities_serialization.append(entity_serialization)
+            # 添加到集合中
+            actor_entities.add(actor_entity)
 
-            # 获取短期记忆
-            agent_short_term_memory = web_game.get_agent_chat_history(actor_entity)
-            agent_short_term_memories.append(agent_short_term_memory)
+        # 序列化角色实体
+        entities_serialization = web_game.serialize_entities(actor_entities)
 
-        # 返回。
+        # 返回!
         return ActorDetailsResponse(
             actor_entities_serialization=entities_serialization,
-            agent_short_term_memories=agent_short_term_memories,
+            agent_short_term_memories=[],  # 太长了，先注释掉
         )
     except Exception as e:
         logger.error(f"view_actor: {user_name} error: {str(e)}")

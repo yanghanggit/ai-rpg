@@ -26,9 +26,9 @@ if TYPE_CHECKING:
     from pymongo.collection import Collection
     from pymongo.database import Database
 
-    MongoClientType: TypeAlias = "MongoClient[MongoDocumentType]"
-    MongoDatabaseType: TypeAlias = "Database[MongoDocumentType]"
-    MongoCollectionType: TypeAlias = "Collection[MongoDocumentType]"
+    MongoClientType: TypeAlias = "MongoClient"
+    MongoDatabaseType: TypeAlias = "Database"
+    MongoCollectionType: TypeAlias = "Collection"
 else:
     MongoClientType: TypeAlias = pymongo.MongoClient  # type: ignore[type-arg]
     MongoDatabaseType: TypeAlias = pymongo.database.Database  # type: ignore[type-arg]
@@ -44,9 +44,7 @@ def get_mongodb_client() -> MongoClientType:
         MongoClientType: MongoDB客户端实例
     """
     mongodb_config = MongoDBConfig()
-    client = cast(
-        MongoClientType, pymongo.MongoClient(mongodb_config.connection_string)
-    )
+    client = pymongo.MongoClient(mongodb_config.connection_string)
 
     # 测试连接
     try:

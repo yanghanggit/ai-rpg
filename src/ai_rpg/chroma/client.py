@@ -12,7 +12,7 @@ chroma_client: ClientAPI = chromadb.PersistentClient()
 logger.info(f"ChromaDB Settings: {chroma_client.get_settings().persist_directory}")
 
 
-def clear() -> None:
+def clear_client() -> None:
 
     global chroma_client
 
@@ -33,7 +33,17 @@ def clear() -> None:
         logger.warning(f"🗑️ [CHROMADB] 已删除持久化数据目录: {persist_directory}")
     else:
         logger.info(f"📁 [CHROMADB] 持久化数据目录不存在: {persist_directory}")
-        logger.warning("🔄 [CHROMADB] ChromaDB持久化数据库已被完全清除")
+        # logger.warning("🔄 [CHROMADB] ChromaDB持久化数据库已被完全清除")
+
+
+##################################################################################################################
+def get_default_collection() -> Collection:
+    global chroma_client
+
+    return chroma_client.get_or_create_collection(
+        name="default name",
+        metadata={"description": "default description"},
+    )
 
 
 ##################################################################################################################
@@ -43,23 +53,6 @@ class ChromaDatabaseConfig(BaseModel):
     collection_name: str = "rag_knowledge_base"
     description: str = "is a knowledge base for RAG system"
     persist_base_dir: str = "chroma_db"
-
-    # def __init__(self, **kwargs: Any) -> None:
-    #     # 从环境变量读取配置，如果没有则使用默认值
-    #     super().__init__(
-    #         collection_name=os.getenv(
-    #             "RAG_COLLECTION_NAME",
-    #             kwargs.get("collection_name", "rag_knowledge_base"),
-    #         ),
-    #         description=os.getenv(
-    #             "RAG_DESCRIPTION",
-    #             kwargs.get("description", "is a knowledge base for RAG system"),
-    #         ),
-    #         persist_base_dir=os.getenv(
-    #             "RAG_PERSIST_BASE_DIR",
-    #             kwargs.get("persist_base_dir", "chroma_db"),
-    #         ),
-    #     )
 
     @property
     def persist_directory(self) -> str:
@@ -196,15 +189,6 @@ class ChromaDatabase:
         except Exception as e:
             logger.error(f"❌ [CHROMADB] 初始化失败: {e}\n{traceback.format_exc()}")
             return False
-
-    # def close(self) -> None:
-    #     """关闭数据库连接（清理资源），数据已持久化到磁盘"""
-    #     try:
-    #         if self.client and self.collection_name:
-    #             # ChromaDB持久化客户端，数据已保存到磁盘
-    #             logger.info("🔄 [CHROMADB] 数据库连接已清理，数据已持久化")
-    #     except Exception as e:
-    #         logger.warning(f"⚠️ [CHROMADB] 关闭数据库时出现警告: {e}")
 
 
 ############################################################################################################

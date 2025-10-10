@@ -12,18 +12,19 @@ RAG操作模块
 
 import traceback
 from typing import Dict, List, Mapping, Sequence, Tuple
-
 from loguru import logger
-
-from ..chroma import get_chroma_db
+from ..chroma import get_chroma_db, ChromaDatabase
 from ..embedding_model.sentence_transformer_embedding_model import (
     get_embedding_model,
 )
+from sentence_transformers import SentenceTransformer
 
 
 ############################################################################################################
-def initialize_knowledge_base_embeddings(
+# 本页的内部函数。
+def _prepare_documents_for_vector_storage(
     knowledge_base: Dict[str, List[str]],
+    embedding_model: SentenceTransformer,  # SentenceTransformer 实例（非可选）
 ) -> Tuple[
     List[Sequence[float]],
     List[str],
@@ -35,18 +36,13 @@ def initialize_knowledge_base_embeddings(
 
     Args:
         knowledge_base: 知识库数据，格式为 {category: [documents]}
+        embedding_model: SentenceTransformer 嵌入模型实例
 
     Returns:
         Tuple: (embeddings, documents, metadatas, ids) - collection.add()方法的参数
     """
     try:
         logger.info("🔄 [PREPARE] 开始准备知识库数据...")
-
-        # 获取全局嵌入模型实例
-        embedding_model = get_embedding_model()
-        if embedding_model is None:
-            logger.error("❌ [PREPARE] 嵌入模型未初始化")
-            return [], [], [], []
 
         # 准备文档数据
         documents: List[str] = []
@@ -80,18 +76,22 @@ def initialize_knowledge_base_embeddings(
 
 
 ############################################################################################################
-def initialize_rag_system(knowledge_base: Dict[str, List[str]]) -> bool:
+def load_knowledge_base_to_vector_db(
+    knowledge_base: Dict[str, List[str]],
+    embedding_model: SentenceTransformer,
+    chroma_db: ChromaDatabase,
+) -> bool:
     """
     初始化RAG系统
 
     功能：
-    1. 初始化ChromaDB向量数据库
-    2. 加载SentenceTransformer模型
-    3. 将知识库数据向量化并存储
-    4. 验证系统就绪状态
+    1. 将知识库数据向量化并存储
+    2. 验证系统就绪状态
 
     Args:
         knowledge_base: 要加载的知识库数据
+        embedding_model: SentenceTransformer 嵌入模型实例
+        chroma_db: ChromaDatabase 向量数据库实例
 
     Returns:
         bool: 初始化是否成功
@@ -99,10 +99,7 @@ def initialize_rag_system(knowledge_base: Dict[str, List[str]]) -> bool:
     logger.info("🚀 [INIT] 开始初始化RAG系统...")
 
     try:
-        # 1. 获取ChromaDB实例并初始化
-        chroma_db = get_chroma_db()
-
-        # 2. 检查是否需要加载知识库数据
+        # 1. 检查是否需要加载知识库数据
         if chroma_db.collection and chroma_db.collection.count() == 0:
             logger.info("📚 [INIT] 集合为空，开始加载知识库数据...")
 
@@ -114,9 +111,11 @@ def initialize_rag_system(knowledge_base: Dict[str, List[str]]) -> bool:
                     logger.error("❌ [CHROMADB] 集合未初始化")
                     return False
 
-                # 使用独立函数准备知识库数据
+                # 使用传入的嵌入模型准备知识库数据
                 embeddings_list, documents, metadatas, ids = (
-                    initialize_knowledge_base_embeddings(knowledge_base)
+                    _prepare_documents_for_vector_storage(
+                        knowledge_base, embedding_model
+                    )
                 )
 
                 # 检查准备结果
@@ -156,6 +155,7 @@ def initialize_rag_system(knowledge_base: Dict[str, List[str]]) -> bool:
         return False
 
 
+############################################################################################################
 ############################################################################################################
 def rag_semantic_search(query: str, top_k: int = 5) -> Tuple[List[str], List[float]]:
     """

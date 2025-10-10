@@ -16,7 +16,7 @@ from src.ai_rpg.chroma import (
     chromadb_clear_database,
 )
 from src.ai_rpg.rag import (
-    initialize_rag_system,
+    load_knowledge_base_to_vector_db,
     rag_semantic_search,  # 添加全局语义搜索函数
 )
 from src.ai_rpg.embedding_model.sentence_transformer_embedding_model import (
@@ -25,6 +25,17 @@ from src.ai_rpg.embedding_model.sentence_transformer_embedding_model import (
 from src.ai_rpg.demo.campaign_setting import (
     FANTASY_WORLD_RPG_KNOWLEDGE_BASE,
 )
+
+
+def _init_rag_system_with_model() -> bool:
+    """辅助函数：使用默认模型初始化RAG系统"""
+    embedding_model = get_embedding_model()
+    if embedding_model is None:
+        return False
+    chroma_db = get_chroma_db()
+    return load_knowledge_base_to_vector_db(
+        FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, chroma_db
+    )
 
 
 class TestChromaDBRAGIntegration:
@@ -41,8 +52,14 @@ class TestChromaDBRAGIntegration:
         assert chroma_db is not None, "ChromaDB实例创建失败"
         logger.info(f"✅ ChromaDB实例创建成功: {type(chroma_db)}")
 
+        # 获取嵌入模型
+        embedding_model = get_embedding_model()
+        assert embedding_model is not None, "嵌入模型初始化失败"
+
         # 测试完整初始化
-        success = initialize_rag_system(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)
+        success = load_knowledge_base_to_vector_db(
+            FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, chroma_db
+        )
         assert success, "ChromaDB RAG系统初始化失败"
         logger.success("🎉 ChromaDB RAG系统初始化测试通过！")
 
@@ -53,14 +70,14 @@ class TestChromaDBRAGIntegration:
         # 确保系统已初始化
         chroma_db = get_chroma_db()
         if not chroma_db.initialized:
-            success = initialize_rag_system(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)
+            success = _init_rag_system_with_model()
             assert success, "系统初始化失败"
 
         # 确保数据库中有数据
         assert chroma_db.collection is not None, "ChromaDB集合应该已创建"
         collection_count = chroma_db.collection.count()
         if collection_count == 0:
-            success = initialize_rag_system(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)
+            success = _init_rag_system_with_model()
             assert success, "系统初始化失败"
             collection_count = chroma_db.collection.count()
             assert collection_count > 0, f"初始化后数据库仍为空"
@@ -103,7 +120,7 @@ class TestChromaDBRAGIntegration:
 
         # 确保系统已初始化
         if not chroma_db.initialized:
-            success = initialize_rag_system(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)
+            success = _init_rag_system_with_model()
             assert success, "系统初始化失败"
 
         # 验证数据库状态
@@ -128,7 +145,7 @@ class TestChromaDBRAGIntegration:
 
         # 确保系统已初始化
         if not chroma_db.initialized:
-            success = initialize_rag_system(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)
+            success = _init_rag_system_with_model()
             assert success, "系统初始化失败"
 
         # 测试空查询
@@ -150,14 +167,14 @@ class TestChromaDBRAGIntegration:
         # 确保系统已初始化
         chroma_db = get_chroma_db()
         if not chroma_db.initialized:
-            success = initialize_rag_system(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)
+            success = _init_rag_system_with_model()
             assert success, "系统初始化失败"
 
         # 确保数据库中有数据
         assert chroma_db.collection is not None, "ChromaDB集合应该已创建"
         collection_count = chroma_db.collection.count()
         if collection_count == 0:
-            success = initialize_rag_system(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)
+            success = _init_rag_system_with_model()
             assert success, "系统初始化失败"
             collection_count = chroma_db.collection.count()
             assert collection_count > 0, f"初始化后数据库仍为空"

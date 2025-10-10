@@ -32,3 +32,6 @@
 ## 其他情况
 
 如遇‘a_request error: Server disconnected without sending a response’ 检查vpn的情况，关掉vpn或者使用WireGuard（Astrill vpn）模式在重新运行。
+
+source .venv/bin/activate
+python your_script.py

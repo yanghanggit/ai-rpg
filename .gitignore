@@ -2,8 +2,6 @@ __pycache__/
 *.DS_Store
 .VSCodeCounter
 logs
-gen_worlds/
-gen_runtimes/
 *.log
 server_pids.txt
 

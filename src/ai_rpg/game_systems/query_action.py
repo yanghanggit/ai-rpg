@@ -4,7 +4,7 @@ RAG查询服务 - 提供独立的查询功能，可被其他系统调用
 
 from ..chroma import get_chroma_db
 from ..rag import search_similar_documents
-from ..embedding_model.sentence_transformer_embedding_model import get_embedding_model
+from ..embedding_model.sentence_transformer import get_embedding_model
 from loguru import logger
 
 
@@ -73,12 +73,17 @@ class QueryService:
                 logger.warning("⚠️ 嵌入模型未初始化，返回空结果")
                 return ""
 
+            # 1.6. 检查collection是否可用
+            if chroma_db.collection is None:
+                logger.warning("⚠️ ChromaDB collection未初始化，返回空结果")
+                return ""
+
             # 2. 执行语义搜索查询
             retrieved_docs, similarity_scores = search_similar_documents(
                 query=query_text,
-                chroma_db=chroma_db,
+                collection=chroma_db.collection,
                 embedding_model=embedding_model,
-                top_k=3,
+                top_k=5,
             )
 
             # 3. 检查查询结果

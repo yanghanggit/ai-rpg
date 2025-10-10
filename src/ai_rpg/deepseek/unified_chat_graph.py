@@ -17,7 +17,7 @@ from typing_extensions import TypedDict
 # 导入ChromaDB相关功能
 from ..chroma import get_chroma_db
 from ..rag import search_similar_documents
-from ..embedding_model.sentence_transformer_embedding_model import get_embedding_model
+from ..embedding_model.sentence_transformer import get_embedding_model
 
 # 导入新的路由系统
 from ..rag.routing import RouteDecisionManager
@@ -196,10 +196,17 @@ def retrieval_node(state: UnifiedState) -> Dict[str, Any]:
                 "similarity_scores": [0.0],
             }
 
+        # 检查collection是否可用
+        if chroma_db.collection is None:
+            return {
+                "retrieved_docs": ["ChromaDB collection未初始化，请检查系统配置。"],
+                "similarity_scores": [0.0],
+            }
+
         # 执行向量语义搜索
         retrieved_docs, similarity_scores = search_similar_documents(
             query=user_query,
-            chroma_db=chroma_db,
+            collection=chroma_db.collection,
             embedding_model=embedding_model,
             top_k=5,
         )

@@ -270,7 +270,7 @@ def _setup_chromadb_rag_environment() -> None:
     # 导入必要的模块
     from ai_rpg.chroma import chromadb_clear_database, clear_client, get_chroma_db
     from ai_rpg.rag import load_knowledge_base_to_vector_db
-    from ai_rpg.embedding_model.sentence_transformer_embedding_model import (
+    from ai_rpg.embedding_model.sentence_transformer import (
         get_embedding_model,
     )
     from ai_rpg.demo.campaign_setting import FANTASY_WORLD_RPG_KNOWLEDGE_BASE
@@ -292,11 +292,14 @@ def _setup_chromadb_rag_environment() -> None:
 
         # 获取ChromaDB实例
         chroma_db = get_chroma_db()
+        if chroma_db is None or chroma_db.collection is None:
+            logger.error("❌ ChromaDB实例初始化失败")
+            return
 
         # 使用正式知识库数据初始化RAG系统
         logger.info("📚 加载艾尔法尼亚世界知识库...")
         success = load_knowledge_base_to_vector_db(
-            FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, chroma_db
+            FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, chroma_db.collection
         )
 
         if success:

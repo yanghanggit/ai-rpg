@@ -19,7 +19,7 @@ from src.ai_rpg.rag import (
     load_knowledge_base_to_vector_db,
     search_similar_documents,  # 导入重构后的函数
 )
-from src.ai_rpg.embedding_model.sentence_transformer_embedding_model import (
+from src.ai_rpg.embedding_model.sentence_transformer import (
     get_embedding_model,
 )
 from src.ai_rpg.demo.campaign_setting import (
@@ -33,8 +33,10 @@ def _init_rag_system_with_model() -> bool:
     if embedding_model is None:
         return False
     chroma_db = get_chroma_db()
+    if chroma_db.collection is None:
+        raise RuntimeError("ChromaDB collection未初始化")
     return load_knowledge_base_to_vector_db(
-        FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, chroma_db
+        FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, chroma_db.collection
     )
 
 
@@ -45,8 +47,10 @@ def _rag_search_with_defaults(
     chroma_db = get_chroma_db()
     embedding_model = get_embedding_model()
     if embedding_model is None:
-        return [], []
-    return search_similar_documents(query, chroma_db, embedding_model, top_k)
+        raise RuntimeError("嵌入模型未初始化")
+    if chroma_db.collection is None:
+        raise RuntimeError("ChromaDB collection未初始化")
+    return search_similar_documents(query, chroma_db.collection, embedding_model, top_k)
 
 
 class TestChromaDBRAGIntegration:
@@ -67,9 +71,12 @@ class TestChromaDBRAGIntegration:
         embedding_model = get_embedding_model()
         assert embedding_model is not None, "嵌入模型初始化失败"
 
+        # 检查collection是否可用
+        assert chroma_db.collection is not None, "ChromaDB collection未初始化"
+
         # 测试完整初始化
         success = load_knowledge_base_to_vector_db(
-            FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, chroma_db
+            FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, chroma_db.collection
         )
         assert success, "ChromaDB RAG系统初始化失败"
         logger.success("🎉 ChromaDB RAG系统初始化测试通过！")
@@ -209,8 +216,14 @@ class TestChromaDBRAGIntegration:
             embedding_model = get_embedding_model()
             if embedding_model is None:
                 return query, [], []
+            if chroma_db.collection is None:
+                return query, [], []
             docs, scores = await asyncio.to_thread(
-                search_similar_documents, query, chroma_db, embedding_model, 3
+                search_similar_documents,
+                query,
+                chroma_db.collection,
+                embedding_model,
+                3,
             )
             return query, docs, scores
 

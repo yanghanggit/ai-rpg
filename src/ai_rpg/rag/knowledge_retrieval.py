@@ -13,7 +13,7 @@ RAG操作模块
 import traceback
 from typing import Dict, List, Mapping, Sequence, Tuple
 from loguru import logger
-from ..chroma import ChromaDatabase
+from chromadb.api.models.Collection import Collection
 from sentence_transformers import SentenceTransformer
 
 
@@ -76,7 +76,7 @@ def _prepare_documents_for_vector_storage(
 def load_knowledge_base_to_vector_db(
     knowledge_base: Dict[str, List[str]],
     embedding_model: SentenceTransformer,
-    chroma_db: ChromaDatabase,
+    collection: Collection,
 ) -> bool:
     """
     初始化RAG系统
@@ -88,7 +88,7 @@ def load_knowledge_base_to_vector_db(
     Args:
         knowledge_base: 要加载的知识库数据
         embedding_model: SentenceTransformer 嵌入模型实例
-        chroma_db: ChromaDatabase 向量数据库实例
+        collection: ChromaDB Collection 实例
 
     Returns:
         bool: 初始化是否成功
@@ -97,14 +97,14 @@ def load_knowledge_base_to_vector_db(
 
     try:
         # 1. 检查是否需要加载知识库数据
-        if chroma_db.collection and chroma_db.collection.count() == 0:
+        if collection and collection.count() == 0:
             logger.info("📚 [INIT] 集合为空，开始加载知识库数据...")
 
             # 3. 展开知识库加载逻辑（原 load_knowledge_base 方法的内容）
             try:
                 logger.info("📚 [CHROMADB] 开始加载知识库数据...")
 
-                if not chroma_db.collection:
+                if not collection:
                     logger.error("❌ [CHROMADB] 集合未初始化")
                     return False
 
@@ -122,7 +122,7 @@ def load_knowledge_base_to_vector_db(
 
                 # 批量添加到ChromaDB
                 logger.info("💾 [CHROMADB] 存储向量到数据库...")
-                chroma_db.collection.add(
+                collection.add(
                     embeddings=embeddings_list,
                     documents=documents,
                     metadatas=metadatas,  # type: ignore[arg-type]
@@ -134,7 +134,7 @@ def load_knowledge_base_to_vector_db(
                 )
 
                 # 验证数据加载
-                count = chroma_db.collection.count()
+                count = collection.count()
                 logger.info(f"📊 [CHROMADB] 数据库中现有文档数量: {count}")
 
             except Exception as e:
@@ -156,7 +156,7 @@ def load_knowledge_base_to_vector_db(
 ############################################################################################################
 def search_similar_documents(
     query: str,
-    chroma_db: ChromaDatabase,
+    collection: Collection,
     embedding_model: SentenceTransformer,
     top_k: int = 5,
 ) -> Tuple[List[str], List[float]]:
@@ -170,7 +170,7 @@ def search_similar_documents(
 
     Args:
         query: 用户查询文本
-        chroma_db: ChromaDatabase 向量数据库实例
+        collection: ChromaDB Collection 实例
         embedding_model: SentenceTransformer 嵌入模型实例
         top_k: 返回最相似的文档数量
 
@@ -178,9 +178,9 @@ def search_similar_documents(
         tuple: (检索到的文档列表, 相似度分数列表)
     """
     try:
-        # 1. 验证数据库状态
-        if not chroma_db.initialized or not chroma_db.collection:
-            logger.error("❌ [CHROMADB] 数据库未初始化")
+        # 1. 验证集合状态
+        if not collection:
+            logger.error("❌ [CHROMADB] 集合未初始化")
             return [], []
 
         logger.info(f"🔍 [CHROMADB] 执行语义搜索: '{query}'")
@@ -189,7 +189,7 @@ def search_similar_documents(
         query_embedding = embedding_model.encode([query])
 
         # 3. 在ChromaDB中执行向量搜索
-        results = chroma_db.collection.query(
+        results = collection.query(
             query_embeddings=query_embedding.tolist(),
             n_results=top_k,
             include=["documents", "distances", "metadatas"],

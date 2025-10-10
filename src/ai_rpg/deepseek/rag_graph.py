@@ -78,7 +78,7 @@ def retrieval_node(state: RAGState) -> Dict[str, Any]:
 
         # 执行向量语义搜索
         from ..rag import search_similar_documents
-        from ..embedding_model.sentence_transformer_embedding_model import (
+        from ..embedding_model.sentence_transformer import (
             get_embedding_model,
         )
 
@@ -90,8 +90,15 @@ def retrieval_node(state: RAGState) -> Dict[str, Any]:
                 "similarity_scores": [0.0],
             }
 
+        # 检查collection是否可用
+        if chroma_db.collection is None:
+            return {
+                "retrieved_docs": ["ChromaDB collection未初始化，请检查系统配置。"],
+                "similarity_scores": [0.0],
+            }
+
         retrieved_docs, similarity_scores = search_similar_documents(
-            user_query, chroma_db, embedding_model, top_k=5
+            user_query, chroma_db.collection, embedding_model, top_k=5
         )
 
         # 检查搜索结果

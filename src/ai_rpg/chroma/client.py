@@ -1,7 +1,9 @@
-import os
+# from ast import Dict
+# from gc import collect
+# import os
 import traceback
 from pathlib import Path
-from typing import Any, Final, Optional, final
+from typing import Any, Final, Optional, final, Dict
 
 import chromadb
 from chromadb.api import ClientAPI
@@ -9,16 +11,22 @@ from chromadb.api import ClientAPI
 from chromadb.api.models.Collection import Collection
 from loguru import logger
 from pydantic import BaseModel
-
+import shutil
 
 chroma_client: ClientAPI = chromadb.PersistentClient()
-settings = chroma_client.get_settings()
-logger.info(f"ChromaDB Settings: {settings.persist_directory}")
+logger.info(f"ChromaDB Settings: {chroma_client.get_settings().persist_directory}")
+collections_cache: Dict[str, Collection] = {}
 
 def clear() -> None:
     
-    import shutil
     
+    global chroma_client
+    global collections_cache
+    
+    # 清除 collections_cache
+    collections_cache.clear()
+    
+    # 获取 ChromaDB 设置，然后删除持久化目录！
     settings = chroma_client.get_settings()
     logger.info(f"ChromaDB Settings: {settings.persist_directory}")
     
@@ -31,8 +39,37 @@ def clear() -> None:
         logger.info(f"📁 [CHROMADB] 持久化数据目录不存在: {persist_directory}")
 
         logger.warning("🔄 [CHROMADB] ChromaDB持久化数据库已被完全清除")
+        
     
+def get_collection(name: str) -> Collection:
+    """
+    获取或创建ChromaDB集合
+
+    Args:
+        name: 集合名称
+
+    Returns:
+        Collection: ChromaDB集合实例
+    """
+    global chroma_client
+    global collections_cache
+
+    if name in collections_cache:
+        return collections_cache[name]
+
+    try:
+        collection = chroma_client.get_collection(name=name)
+        logger.info(f"📁 [CHROMADB] 加载已存在的集合: {name}")
+    except Exception as e:
+        logger.info(f"🔄 [CHROMADB] 集合不存在，正在创建新集合: {name}，错误: {e}")
+        collection = chroma_client.create_collection(name=name)
+
+    collections_cache[name] = collection
+    return collection
     
+
+
+
 
 
 ##################################################################################################################
@@ -43,22 +80,22 @@ class ChromaDatabaseConfig(BaseModel):
     description: str = "is a knowledge base for RAG system"
     persist_base_dir: str = "chroma_db"
 
-    def __init__(self, **kwargs: Any) -> None:
-        # 从环境变量读取配置，如果没有则使用默认值
-        super().__init__(
-            collection_name=os.getenv(
-                "RAG_COLLECTION_NAME",
-                kwargs.get("collection_name", "rag_knowledge_base"),
-            ),
-            description=os.getenv(
-                "RAG_DESCRIPTION",
-                kwargs.get("description", "is a knowledge base for RAG system"),
-            ),
-            persist_base_dir=os.getenv(
-                "RAG_PERSIST_BASE_DIR",
-                kwargs.get("persist_base_dir", "chroma_db"),
-            ),
-        )
+    # def __init__(self, **kwargs: Any) -> None:
+    #     # 从环境变量读取配置，如果没有则使用默认值
+    #     super().__init__(
+    #         collection_name=os.getenv(
+    #             "RAG_COLLECTION_NAME",
+    #             kwargs.get("collection_name", "rag_knowledge_base"),
+    #         ),
+    #         description=os.getenv(
+    #             "RAG_DESCRIPTION",
+    #             kwargs.get("description", "is a knowledge base for RAG system"),
+    #         ),
+    #         persist_base_dir=os.getenv(
+    #             "RAG_PERSIST_BASE_DIR",
+    #             kwargs.get("persist_base_dir", "chroma_db"),
+    #         ),
+    #     )
 
     @property
     def persist_directory(self) -> str:

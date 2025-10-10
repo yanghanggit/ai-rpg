@@ -1,13 +1,8 @@
-# from ast import Dict
-# from gc import collect
-# import os
 import traceback
 from pathlib import Path
-from typing import Any, Final, Optional, final, Dict
-
+from typing import Final, Optional, final
 import chromadb
 from chromadb.api import ClientAPI
-#from chromadb.config import Settings
 from chromadb.api.models.Collection import Collection
 from loguru import logger
 from pydantic import BaseModel
@@ -15,61 +10,30 @@ import shutil
 
 chroma_client: ClientAPI = chromadb.PersistentClient()
 logger.info(f"ChromaDB Settings: {chroma_client.get_settings().persist_directory}")
-collections_cache: Dict[str, Collection] = {}
+
 
 def clear() -> None:
-    
-    
+
     global chroma_client
-    global collections_cache
-    
-    # 清除 collections_cache
-    collections_cache.clear()
-    
+
+    # 清理系统缓存
+    chroma_client.clear_system_cache()
+
+    # 确认 collections 已清空
+    assert (
+        len(chroma_client.list_collections()) == 0
+    ), "ChromaDB collections should be empty after clear_system_cache"
+
     # 获取 ChromaDB 设置，然后删除持久化目录！
     settings = chroma_client.get_settings()
     logger.info(f"ChromaDB Settings: {settings.persist_directory}")
-    
     persist_directory = Path(settings.persist_directory)
-    
     if persist_directory.exists():
         shutil.rmtree(persist_directory)
         logger.warning(f"🗑️ [CHROMADB] 已删除持久化数据目录: {persist_directory}")
     else:
         logger.info(f"📁 [CHROMADB] 持久化数据目录不存在: {persist_directory}")
-
         logger.warning("🔄 [CHROMADB] ChromaDB持久化数据库已被完全清除")
-        
-    
-def get_collection(name: str) -> Collection:
-    """
-    获取或创建ChromaDB集合
-
-    Args:
-        name: 集合名称
-
-    Returns:
-        Collection: ChromaDB集合实例
-    """
-    global chroma_client
-    global collections_cache
-
-    if name in collections_cache:
-        return collections_cache[name]
-
-    try:
-        collection = chroma_client.get_collection(name=name)
-        logger.info(f"📁 [CHROMADB] 加载已存在的集合: {name}")
-    except Exception as e:
-        logger.info(f"🔄 [CHROMADB] 集合不存在，正在创建新集合: {name}，错误: {e}")
-        collection = chroma_client.create_collection(name=name)
-
-    collections_cache[name] = collection
-    return collection
-    
-
-
-
 
 
 ##################################################################################################################
@@ -233,14 +197,14 @@ class ChromaDatabase:
             logger.error(f"❌ [CHROMADB] 初始化失败: {e}\n{traceback.format_exc()}")
             return False
 
-    def close(self) -> None:
-        """关闭数据库连接（清理资源），数据已持久化到磁盘"""
-        try:
-            if self.client and self.collection_name:
-                # ChromaDB持久化客户端，数据已保存到磁盘
-                logger.info("🔄 [CHROMADB] 数据库连接已清理，数据已持久化")
-        except Exception as e:
-            logger.warning(f"⚠️ [CHROMADB] 关闭数据库时出现警告: {e}")
+    # def close(self) -> None:
+    #     """关闭数据库连接（清理资源），数据已持久化到磁盘"""
+    #     try:
+    #         if self.client and self.collection_name:
+    #             # ChromaDB持久化客户端，数据已保存到磁盘
+    #             logger.info("🔄 [CHROMADB] 数据库连接已清理，数据已持久化")
+    #     except Exception as e:
+    #         logger.warning(f"⚠️ [CHROMADB] 关闭数据库时出现警告: {e}")
 
 
 ############################################################################################################
@@ -278,7 +242,7 @@ def chromadb_clear_database() -> None:
 
         # 如果有现有实例，先关闭
         if _chroma_db:
-            _chroma_db.close()
+            # _chroma_db.close()
             _chroma_db = None
 
         # 删除持久化数据目录

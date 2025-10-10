@@ -5,7 +5,6 @@ from typing import (
     List,
     Optional,
     TypeAlias,
-    cast,
 )
 
 import pymongo

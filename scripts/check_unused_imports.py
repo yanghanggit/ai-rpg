@@ -25,7 +25,7 @@ def run_ruff_check(
     fix: bool = False,
 ) -> int:
     """运行ruff检查未使用的导入"""
-    cmd = ["ruff", "check"]
+    cmd = ["uv", "run", "ruff", "check"]
 
     # 只检查未使用的导入（F401错误）
     cmd.extend(["--select", "F401"])
@@ -46,9 +46,9 @@ def run_ruff_check(
         result = subprocess.run(cmd, capture_output=False, text=True)
         return result.returncode
     except FileNotFoundError:
-        print("错误: 找不到ruff命令。请确保已安装ruff:")
-        print("  conda install -c conda-forge ruff")
-        print("  或者: pip install ruff")
+        print("错误: 找不到uv或ruff命令。请确保已安装:")
+        print("  uv sync --extra dev  # 安装开发依赖")
+        print("  或者: uv add --dev ruff")
         return 1
 
 

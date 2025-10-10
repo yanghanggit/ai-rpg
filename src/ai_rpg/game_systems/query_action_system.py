@@ -24,7 +24,11 @@ from ..game.tcg_game import TCGGame
 
 #####################################################################################################################################
 @final
-class QueryActionSystem(BaseActionReactiveSystem):
+class QueryActionSystem(BaseActionReactiveSystem, InitializeProcessor):
+
+    def __init__(self, game_context: TCGGame) -> None:
+        super().__init__(game_context)
+        self._route_manager: RouteDecisionManager | None = None
 
     #############################################################################################################################
     @override
@@ -32,6 +36,7 @@ class QueryActionSystem(BaseActionReactiveSystem):
         return {Matcher(QueryAction): GroupEvent.ADDED}
 
     #############################################################################################################################
+    @override
     async def initialize(self) -> None:
         """初始化处理器"""
         if self._route_manager is None:
@@ -71,6 +76,7 @@ class QueryActionSystem(BaseActionReactiveSystem):
         except Exception as e:
             logger.error(f"❌ MindVoiceActionSystem 路由系统初始化失败: {e}")
             self._route_manager = None
+
     #############################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
@@ -91,7 +97,6 @@ class QueryActionSystem(BaseActionReactiveSystem):
         logger.success(f"🔎 角色发起查询行动，问题: {query_action.question}")
         logger.debug(f"💭 内心独白查询结果: {related_info}")
 
-        
         if related_info:
             self._game.append_human_message(
                 entity,
@@ -102,7 +107,7 @@ class QueryActionSystem(BaseActionReactiveSystem):
                 entity,
                 "没有找到相关背景信息。在接下来的对话中，如果涉及没有找到的或者不在你的上下文中的内容，请诚实地表示不知道，不要编造。",
             )
-            
+
     ####################################################################################################################################
     def _get_related_info(self, original_message: str) -> str:
         """检索相关信息 - 直接进行检索，能找到就返回，找不到就返回空"""
@@ -151,4 +156,3 @@ class QueryActionSystem(BaseActionReactiveSystem):
         except Exception as e:
             logger.error(f"❌ RAG查询失败: {e}")
             return ""
-

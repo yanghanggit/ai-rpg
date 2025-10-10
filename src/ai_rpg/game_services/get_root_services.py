@@ -1,43 +1,46 @@
 from fastapi import APIRouter, Request
 from loguru import logger
 from ..models import (
-    URLConfigResponse,
+    RootResponse,
 )
 
 ################################################################################################################
-get_url_config_api_router = APIRouter()
-
-# @app.get("/")
+get_root_api_router = APIRouter()
 
 
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################
-@get_url_config_api_router.get(path="/config", response_model=URLConfigResponse)
+@get_root_api_router.get(path="/", response_model=RootResponse)
 async def get_url_config(
     request: Request,
-) -> URLConfigResponse:
+) -> RootResponse:
 
-    logger.info("获取API路由")
+    # logger.info("获取API路由")
     base_url = str(request.base_url)
-    logger.info(f"URLConfigurationResponse: {base_url}")
+    logger.info(f"获取API路由 RootResponse: {base_url}")
+
+    from datetime import datetime
 
     # 获取请求的基础URL（含http(s)://域名）
     # 'http://192.168.192.121:8000/' ?
-    return URLConfigResponse(
-        message="game server url configuration",
+    return RootResponse(
+        service="AI RPG TCG Game Server",
+        description="AI RPG TCG Game Server API Root Endpoint",
+        status="healthy",
+        timestamp=datetime.now().isoformat(),
         version="0.0.1",
         endpoints={
-            "LOGIN_URL": base_url + "api/login/v1/",
-            "LOGOUT_URL": base_url + "api/logout/v1/",
-            "START_URL": base_url + "api/start/v1/",
-            "HOME_GAMEPLAY_URL": base_url + "api/home/gameplay/v1/",
-            "HOME_TRANS_DUNGEON_URL": base_url + "api/home/trans_dungeon/v1/",
-            "DUNGEON_GAMEPLAY_URL": base_url + "api/dungeon/gameplay/v1/",
-            "DUNGEON_TRANS_HOME_URL": base_url + "api/dungeon/trans_home/v1/",
-            "HOME_STATE_URL": base_url + "api/homes/v1/",
-            "DUNGEON_STATE_URL": base_url + "api/dungeons/v1/",
-            "ACTOR_DETAILS_URL": base_url + "api/actors/v1/",
+            "login": base_url + "api/login/v1/",
+            "logout": base_url + "api/logout/v1/",
+            "start": base_url + "api/start/v1/",
+            "home_gameplay": base_url + "api/home/gameplay/v1/",
+            "home_trans_dungeon": base_url + "api/home/trans_dungeon/v1/",
+            "dungeon_gameplay": base_url + "api/dungeon/gameplay/v1/",
+            "dungeon_trans_home": base_url + "api/dungeon/trans_home/v1/",
+            "home_state": base_url + "api/homes/v1/",
+            "dungeon_state": base_url + "api/dungeons/v1/",
+            "actor_details": base_url + "api/actors/v1/",
         },
     )
 

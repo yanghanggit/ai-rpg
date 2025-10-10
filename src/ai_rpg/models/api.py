@@ -11,10 +11,13 @@ from .world import AgentChatHistory
 
 
 @final
-class URLConfigResponse(BaseModel):
-    message: str = "API URL Configuration"
-    version: str = "0.0.1"
-    endpoints: Dict[str, str] = {}
+class RootResponse(BaseModel):
+    service: str
+    description: str
+    version: str
+    status: str
+    timestamp: str
+    endpoints: Dict[str, str]
 
 
 ################################################################################################################

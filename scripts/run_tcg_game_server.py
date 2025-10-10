@@ -21,7 +21,7 @@ from ai_rpg.game_services.dungeon_gameplay_services import (
 from ai_rpg.game_services.home_gameplay_services import home_gameplay_api_router
 from ai_rpg.game_services.login_services import login_api_router
 from ai_rpg.game_services.start_services import start_api_router
-from ai_rpg.game_services.get_url_config_services import get_url_config_api_router
+from ai_rpg.game_services.get_root_services import get_root_api_router
 from ai_rpg.game_services.get_actor_details_services import (
     get_actor_details_api_router,
 )
@@ -95,7 +95,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router=get_url_config_api_router)
+app.include_router(router=get_root_api_router)
 app.include_router(router=login_api_router)
 app.include_router(router=start_api_router)
 app.include_router(router=home_gameplay_api_router)

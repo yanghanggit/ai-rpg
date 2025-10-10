@@ -42,21 +42,21 @@ class MindVoiceActionSystem(BaseActionReactiveSystem):
         mind_voice_action = entity.get(MindVoiceAction)
         assert mind_voice_action is not None
 
-        # 使用查询服务获取相关信息
-        related_info = self._query_service.query(mind_voice_action.message)
-        logger.debug(f"💭 内心独白查询结果: {related_info}")
+        # # 使用查询服务获取相关信息
+        # related_info = self._query_service.query(mind_voice_action.message)
+        # logger.debug(f"💭 内心独白查询结果: {related_info}")
 
-        # 如果有相关信息，指导AI将信息融入到后续对话中
-        if related_info:
-            self._game.append_human_message(
-                entity,
-                f"基于以下背景信息回答问题：\n{related_info}\n\n选择你认为最合适的信息出来作为参考来回答问题。",
-            )
-        else:
-            self._game.append_human_message(
-                entity,
-                "没有找到相关背景信息。在接下来的对话中，如果涉及没有找到的或者不在你的上下文中的内容，请诚实地表示不知道，不要编造。",
-            )
+        # # 如果有相关信息，指导AI将信息融入到后续对话中
+        # if related_info:
+        #     self._game.append_human_message(
+        #         entity,
+        #         f"基于以下背景信息回答问题：\n{related_info}\n\n选择你认为最合适的信息出来作为参考来回答问题。",
+        #     )
+        # else:
+        #     self._game.append_human_message(
+        #         entity,
+        #         "没有找到相关背景信息。在接下来的对话中，如果涉及没有找到的或者不在你的上下文中的内容，请诚实地表示不知道，不要编造。",
+        #     )
 
         # 生成内心独白事件
         self._game.notify_event(

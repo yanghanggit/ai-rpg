@@ -14,10 +14,10 @@ Main components:
 
 from typing import List
 
-from .rag_system import (
+from .knowledge_retrieval import (
     # _prepare_documents_for_vector_storage,
     load_knowledge_base_to_vector_db,
-    rag_semantic_search,
+    search_similar_documents,
 )
 
 # Import routing components for convenience
@@ -36,7 +36,7 @@ __all__: List[str] = [
     # RAG core functions
     # "_prepare_documents_for_vector_storage",
     "load_knowledge_base_to_vector_db",
-    "rag_semantic_search",
+    "search_similar_documents",
     # Routing components
     "RouteStrategy",
     "RouteDecision",

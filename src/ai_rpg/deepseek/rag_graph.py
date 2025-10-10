@@ -77,10 +77,21 @@ def retrieval_node(state: RAGState) -> Dict[str, Any]:
             }
 
         # 执行向量语义搜索
-        from ..rag import rag_semantic_search
+        from ..rag import search_similar_documents
+        from ..embedding_model.sentence_transformer_embedding_model import (
+            get_embedding_model,
+        )
 
-        retrieved_docs, similarity_scores = rag_semantic_search(
-            query=user_query, top_k=5  # 返回最相似的5个文档
+        # 获取嵌入模型
+        embedding_model = get_embedding_model()
+        if embedding_model is None:
+            return {
+                "retrieved_docs": ["嵌入模型未初始化，请检查系统配置。"],
+                "similarity_scores": [0.0],
+            }
+
+        retrieved_docs, similarity_scores = search_similar_documents(
+            user_query, chroma_db, embedding_model, top_k=5
         )
 
         # 检查搜索结果

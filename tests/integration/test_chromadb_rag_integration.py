@@ -17,7 +17,7 @@ from src.ai_rpg.chroma import (
 )
 from src.ai_rpg.rag import (
     load_knowledge_base_to_vector_db,
-    rag_semantic_search,  # 添加全局语义搜索函数
+    search_similar_documents,  # 导入重构后的函数
 )
 from src.ai_rpg.embedding_model.sentence_transformer_embedding_model import (
     get_embedding_model,
@@ -36,6 +36,17 @@ def _init_rag_system_with_model() -> bool:
     return load_knowledge_base_to_vector_db(
         FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, chroma_db
     )
+
+
+def _rag_search_with_defaults(
+    query: str, top_k: int = 5
+) -> tuple[list[str], list[float]]:
+    """辅助函数：使用默认实例执行语义搜索"""
+    chroma_db = get_chroma_db()
+    embedding_model = get_embedding_model()
+    if embedding_model is None:
+        return [], []
+    return search_similar_documents(query, chroma_db, embedding_model, top_k)
 
 
 class TestChromaDBRAGIntegration:
@@ -95,7 +106,7 @@ class TestChromaDBRAGIntegration:
         ]
 
         for test_query in test_queries:
-            docs, scores = rag_semantic_search(test_query, top_k=3)
+            docs, scores = _rag_search_with_defaults(test_query, top_k=3)
 
             # 验证搜索结果
             assert isinstance(docs, list), f"搜索结果应该是列表: {test_query}"
@@ -149,12 +160,12 @@ class TestChromaDBRAGIntegration:
             assert success, "系统初始化失败"
 
         # 测试空查询
-        docs, scores = rag_semantic_search("", top_k=3)
+        docs, scores = _rag_search_with_defaults("", top_k=3)
         assert isinstance(docs, list), "空查询应该返回列表"
         assert isinstance(scores, list), "空查询应该返回分数列表"
 
         # 测试异常查询参数
-        docs, scores = rag_semantic_search("测试查询", top_k=0)
+        docs, scores = _rag_search_with_defaults("测试查询", top_k=0)
         assert isinstance(docs, list), "异常参数应该返回列表"
         assert isinstance(scores, list), "异常参数应该返回分数列表"
 
@@ -194,7 +205,13 @@ class TestChromaDBRAGIntegration:
         # 创建异步任务包装器
         async def async_search(query: str) -> tuple[str, list[str], list[float]]:
             """异步搜索包装器 - 使用推荐的 asyncio.to_thread 方法"""
-            docs, scores = await asyncio.to_thread(rag_semantic_search, query, top_k=3)
+            chroma_db = get_chroma_db()
+            embedding_model = get_embedding_model()
+            if embedding_model is None:
+                return query, [], []
+            docs, scores = await asyncio.to_thread(
+                search_similar_documents, query, chroma_db, embedding_model, 3
+            )
             return query, docs, scores
 
         # 记录开始时间
@@ -242,7 +259,7 @@ class TestChromaDBRAGIntegration:
         start_time = time.time()
 
         for query in test_queries:
-            docs, scores = rag_semantic_search(query, top_k=3)
+            docs, scores = _rag_search_with_defaults(query, top_k=3)
             assert isinstance(docs, list) and isinstance(scores, list)
 
         serial_time = time.time() - start_time

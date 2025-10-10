@@ -16,7 +16,8 @@ from typing_extensions import TypedDict
 
 # 导入ChromaDB相关功能
 from ..chroma import get_chroma_db
-from ..rag import rag_semantic_search
+from ..rag import search_similar_documents
+from ..embedding_model.sentence_transformer_embedding_model import get_embedding_model
 
 # 导入新的路由系统
 from ..rag.routing import RouteDecisionManager
@@ -187,9 +188,20 @@ def retrieval_node(state: UnifiedState) -> Dict[str, Any]:
                 "similarity_scores": [0.0],
             }
 
+        # 获取嵌入模型
+        embedding_model = get_embedding_model()
+        if embedding_model is None:
+            return {
+                "retrieved_docs": ["嵌入模型未初始化，请检查系统配置。"],
+                "similarity_scores": [0.0],
+            }
+
         # 执行向量语义搜索
-        retrieved_docs, similarity_scores = rag_semantic_search(
-            query=user_query, top_k=5
+        retrieved_docs, similarity_scores = search_similar_documents(
+            query=user_query,
+            chroma_db=chroma_db,
+            embedding_model=embedding_model,
+            top_k=5,
         )
 
         # 检查搜索结果

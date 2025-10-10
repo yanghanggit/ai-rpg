@@ -13,10 +13,7 @@ RAG操作模块
 import traceback
 from typing import Dict, List, Mapping, Sequence, Tuple
 from loguru import logger
-from ..chroma import get_chroma_db, ChromaDatabase
-from ..embedding_model.sentence_transformer_embedding_model import (
-    get_embedding_model,
-)
+from ..chroma import ChromaDatabase
 from sentence_transformers import SentenceTransformer
 
 
@@ -157,55 +154,53 @@ def load_knowledge_base_to_vector_db(
 
 ############################################################################################################
 ############################################################################################################
-def rag_semantic_search(query: str, top_k: int = 5) -> Tuple[List[str], List[float]]:
+def search_similar_documents(
+    query: str,
+    chroma_db: ChromaDatabase,
+    embedding_model: SentenceTransformer,
+    top_k: int = 5,
+) -> Tuple[List[str], List[float]]:
     """
-    执行全局语义搜索
+    执行语义搜索
 
     功能：
-    1. 获取ChromaDB实例
-    2. 获取嵌入模型
-    3. 执行语义搜索
-    4. 返回搜索结果
+    1. 计算查询向量
+    2. 执行向量搜索
+    3. 返回搜索结果
 
     Args:
         query: 用户查询文本
+        chroma_db: ChromaDatabase 向量数据库实例
+        embedding_model: SentenceTransformer 嵌入模型实例
         top_k: 返回最相似的文档数量
 
     Returns:
         tuple: (检索到的文档列表, 相似度分数列表)
     """
     try:
-        # 1. 获取ChromaDB实例
-        chroma_db = get_chroma_db()
-
+        # 1. 验证数据库状态
         if not chroma_db.initialized or not chroma_db.collection:
             logger.error("❌ [CHROMADB] 数据库未初始化")
             return [], []
 
-        # 2. 获取全局嵌入模型实例
-        embedding_model = get_embedding_model()
-        if embedding_model is None:
-            logger.error("❌ [CHROMADB] 嵌入模型未初始化")
-            return [], []
-
         logger.info(f"🔍 [CHROMADB] 执行语义搜索: '{query}'")
 
-        # 3. 计算查询向量
+        # 2. 计算查询向量
         query_embedding = embedding_model.encode([query])
 
-        # 4. 在ChromaDB中执行向量搜索
+        # 3. 在ChromaDB中执行向量搜索
         results = chroma_db.collection.query(
             query_embeddings=query_embedding.tolist(),
             n_results=top_k,
             include=["documents", "distances", "metadatas"],
         )
 
-        # 5. 提取结果
+        # 4. 提取结果
         documents = results["documents"][0] if results["documents"] else []
         distances = results["distances"][0] if results["distances"] else []
         metadatas = results["metadatas"][0] if results["metadatas"] else []
 
-        # 6. 将距离转换为相似度分数（距离越小，相似度越高）
+        # 5. 将距离转换为相似度分数（距离越小，相似度越高）
         # 相似度 = 1 - 标准化距离
         if distances:
             max_distance = max(distances) if distances else 1.0
@@ -217,7 +212,7 @@ def rag_semantic_search(query: str, top_k: int = 5) -> Tuple[List[str], List[flo
 
         logger.info(f"✅ [CHROMADB] 搜索完成，找到 {len(documents)} 个相关文档")
 
-        # 7. 打印搜索结果详情（用于调试）
+        # 6. 打印搜索结果详情（用于调试）
         for i, (doc, score, metadata) in enumerate(
             zip(documents, similarity_scores, metadatas)
         ):

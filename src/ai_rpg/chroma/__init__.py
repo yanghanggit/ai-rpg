@@ -12,6 +12,6 @@ from .client import (
 
 __all__ = [
     "chroma_client",
-    "clear_client", 
+    "clear_client",
     "get_default_collection",
 ]

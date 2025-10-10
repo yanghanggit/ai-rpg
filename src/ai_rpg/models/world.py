@@ -3,7 +3,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel
 from .dungeon import Dungeon
 from .objects import Actor, Stage, WorldSystem
-from .snapshot import EntitySnapshot
+from .serialization import EntitySerialization
 
 
 ###############################################################################################################################################
@@ -32,7 +32,7 @@ class AgentChatHistory(BaseModel):
 @final
 class World(BaseModel):
     runtime_index: int = 1000
-    entities_snapshot: List[EntitySnapshot] = []
+    entities_serialization: List[EntitySerialization] = []
     agents_chat_history: Dict[str, AgentChatHistory] = {}
     dungeon: Dungeon = Dungeon(name="")
     boot: Boot = Boot(name="")

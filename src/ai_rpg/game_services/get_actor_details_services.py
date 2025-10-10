@@ -2,32 +2,35 @@ from typing import List
 from fastapi import APIRouter, HTTPException, Query, status
 from loguru import logger
 from ..entitas import Matcher
-from ..game_services.game_server import GameServerInstance
+from .game_server import GameServerInstance
 from ..models import (
     ActorComponent,
     AgentChatHistory,
-    EntitySnapshot,
-    ViewActorResponse,
+    EntitySerialization,
+    ActorDetailsResponse,
 )
 
 ###################################################################################################################################################################
-view_actor_router = APIRouter()
+get_actor_details_api_router = APIRouter()
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-@view_actor_router.get(
-    path="/api/view-actor/v1/{user_name}/{game_name}", response_model=ViewActorResponse
+@get_actor_details_api_router.get(
+    path="/api/actors/v1/{user_name}/{game_name}/details",
+    response_model=ActorDetailsResponse,
 )
-async def view_actor(
+async def get_actors_details(
     game_server: GameServerInstance,
     user_name: str,
     game_name: str,
     actor_names: List[str] = Query(..., alias="actors"),
-) -> ViewActorResponse:
+) -> ActorDetailsResponse:
 
-    logger.info(f"/view-actor/v1/: {user_name}, {game_name}, {actor_names}")
+    logger.info(
+        f"/actors/v1/{user_name}/{game_name}/details: {user_name}, {game_name}, {actor_names}"
+    )
     try:
 
         # 是否有房间？！！
@@ -53,7 +56,7 @@ async def view_actor(
         web_game = current_room._game
 
         # 获取快照
-        snapshots: List[EntitySnapshot] = []
+        entities_serialization: List[EntitySerialization] = []
         agent_short_term_memories: List[AgentChatHistory] = []
 
         if len(actor_names) == 0 or actor_names[0] == "":
@@ -74,16 +77,16 @@ async def view_actor(
                 continue
 
             # 获取快照
-            snapshot = web_game.create_entity_snapshot(actor_entity)
-            snapshots.append(snapshot)
+            entity_serialization = web_game.serialize_entity(actor_entity)
+            entities_serialization.append(entity_serialization)
 
             # 获取短期记忆
             agent_short_term_memory = web_game.get_agent_chat_history(actor_entity)
             agent_short_term_memories.append(agent_short_term_memory)
 
         # 返回。
-        return ViewActorResponse(
-            actor_snapshots=snapshots,
+        return ActorDetailsResponse(
+            actor_entities_serialization=entities_serialization,
             agent_short_term_memories=agent_short_term_memories,
         )
     except Exception as e:

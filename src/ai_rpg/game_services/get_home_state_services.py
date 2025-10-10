@@ -1,31 +1,30 @@
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from ..game_services.game_server import GameServerInstance
+from .game_server import GameServerInstance
 from ..models import (
-    ViewHomeResponse,
+    HomeStateResponse,
 )
 
 ###################################################################################################################################################################
-view_home_router = APIRouter()
+get_home_state_api_router = APIRouter()
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-@view_home_router.get(
-    path="/api/view-home/v1/{user_name}/{game_name}", response_model=ViewHomeResponse
+@get_home_state_api_router.get(
+    path="/api/homes/v1/{user_name}/{game_name}/state", response_model=HomeStateResponse
 )
-async def view_home(
+async def get_home_state(
     game_server: GameServerInstance,
     user_name: str,
     game_name: str,
-) -> ViewHomeResponse:
+) -> HomeStateResponse:
 
-    logger.info(f"/view-home/v1/: {user_name}, {game_name}")
+    logger.info(f"/homes/v1/{user_name}/{game_name}/state: {user_name}, {game_name}")
     try:
 
         # 是否有房间？！！
-        # room_manager = game_server.room_manager
         if not game_server.has_room(user_name):
             logger.error(f"view_home: {user_name} has no room")
             raise HTTPException(
@@ -51,7 +50,7 @@ async def view_home(
         logger.info(f"view_home: {user_name} mapping_data: {mapping_data}")
 
         # 返回。
-        return ViewHomeResponse(
+        return HomeStateResponse(
             mapping=mapping_data,
         )
     except Exception as e:

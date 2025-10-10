@@ -1,28 +1,28 @@
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from ..game_services.game_server import GameServerInstance
+from .game_server import GameServerInstance
 from ..models import (
-    ViewDungeonResponse,
+    DungeonStateResponse,
 )
 
 ###################################################################################################################################################################
-view_dungeon_router = APIRouter()
+get_dungeon_state_api_router = APIRouter()
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-@view_dungeon_router.get(
-    path="/api/view-dungeon/v1/{user_name}/{game_name}",
-    response_model=ViewDungeonResponse,
+@get_dungeon_state_api_router.get(
+    path="/api/dungeons/v1/{user_name}/{game_name}/state",
+    response_model=DungeonStateResponse,
 )
-async def view_dungeon(
+async def get_dungeon_state(
     game_server: GameServerInstance,
     user_name: str,
     game_name: str,
-) -> ViewDungeonResponse:
+) -> DungeonStateResponse:
 
-    logger.info(f"/view-dungeon/v1/: {user_name}, {game_name}")
+    logger.info(f"/dungeons/v1/{user_name}/{game_name}/state: {user_name}, {game_name}")
     try:
 
         # 是否有房间？！！
@@ -52,7 +52,7 @@ async def view_dungeon(
         logger.info(f"view_dungeon: {user_name} mapping_data: {mapping_data}")
 
         # 返回。
-        return ViewDungeonResponse(
+        return DungeonStateResponse(
             mapping=mapping_data,
             dungeon=web_game.current_dungeon,
         )

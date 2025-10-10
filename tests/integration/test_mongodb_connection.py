@@ -78,7 +78,7 @@ class TestMongoDBConnection:
             logger.success("✅ World 数据查询成功!")
             logger.info(f"  - 游戏ID: {stored_world['game_id']}")
             logger.info(f"  - 运行时索引: {stored_world['runtime_index']}")
-            logger.info(f"  - 实体数量: {len(stored_world['entities_snapshot'])}")
+            logger.info(f"  - 实体数量: {len(stored_world['entities_serialization'])}")
             logger.info(
                 f"  - 智能体数量: {len(stored_world['agents_short_term_memory'])}"
             )
@@ -99,7 +99,7 @@ class TestMongoDBConnection:
                     "$inc": {"runtime_index": 1},
                     "$set": {"last_updated": datetime.now()},
                     "$push": {
-                        "entities_snapshot": {
+                        "entities_serialization": {
                             "entity_id": "npc_1",
                             "type": "npc",
                             "name": "村长",
@@ -117,7 +117,9 @@ class TestMongoDBConnection:
             updated_world = mongodb_find_one(collection_name, {"game_id": test_game_id})
             if updated_world:
                 logger.info(f"  - 新的运行时索引: {updated_world['runtime_index']}")
-                logger.info(f"  - 实体数量: {len(updated_world['entities_snapshot'])}")
+                logger.info(
+                    f"  - 实体数量: {len(updated_world['entities_serialization'])}"
+                )
 
             # 4. 测试查询性能和索引创建
             logger.info("⚡ 测试查询性能和索引创建...")
@@ -276,7 +278,7 @@ class TestMongoDBConnection:
             "runtime_index": 1001,
             "version": "0.0.1",
             "timestamp": datetime.now(),
-            "entities_snapshot": [
+            "entities_serialization": [
                 {
                     "entity_id": "player_1",
                     "type": "player",

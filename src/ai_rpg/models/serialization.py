@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 ###############################################################################################################################################
 @final
-class ComponentSnapshot(BaseModel):
+class ComponentSerialization(BaseModel):
     name: str
     data: Dict[
         str, Any
@@ -13,9 +13,9 @@ class ComponentSnapshot(BaseModel):
 
 ###############################################################################################################################################
 @final
-class EntitySnapshot(BaseModel):
+class EntitySerialization(BaseModel):
     name: str
-    components: List[ComponentSnapshot]
+    components: List[ComponentSerialization]
 
 
 ###############################################################################################################################################

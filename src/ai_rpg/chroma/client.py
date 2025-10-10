@@ -5,9 +5,34 @@ from typing import Any, Final, Optional, final
 
 import chromadb
 from chromadb.api import ClientAPI
+#from chromadb.config import Settings
 from chromadb.api.models.Collection import Collection
 from loguru import logger
 from pydantic import BaseModel
+
+
+chroma_client: ClientAPI = chromadb.PersistentClient()
+settings = chroma_client.get_settings()
+logger.info(f"ChromaDB Settings: {settings.persist_directory}")
+
+def clear() -> None:
+    
+    import shutil
+    
+    settings = chroma_client.get_settings()
+    logger.info(f"ChromaDB Settings: {settings.persist_directory}")
+    
+    persist_directory = Path(settings.persist_directory)
+    
+    if persist_directory.exists():
+        shutil.rmtree(persist_directory)
+        logger.warning(f"🗑️ [CHROMADB] 已删除持久化数据目录: {persist_directory}")
+    else:
+        logger.info(f"📁 [CHROMADB] 持久化数据目录不存在: {persist_directory}")
+
+        logger.warning("🔄 [CHROMADB] ChromaDB持久化数据库已被完全清除")
+    
+    
 
 
 ##################################################################################################################

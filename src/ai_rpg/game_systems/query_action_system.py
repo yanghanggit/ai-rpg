@@ -16,7 +16,7 @@ from ..demo.campaign_setting import (
     FANTASY_WORLD_RPG_TEST_ROUTE_KEYWORDS,
     FANTASY_WORLD_RPG_TEST_RAG_TOPICS,
 )
-from ..chroma import get_chroma_db
+from ..chroma import get_default_collection
 from ..rag import search_similar_documents
 from ..embedding_model.sentence_transformer import get_embedding_model
 from loguru import logger
@@ -129,10 +129,10 @@ class QueryActionSystem(BaseActionReactiveSystem, InitializeProcessor):
             logger.debug(f"🔍 RAG查询: {message}...")
 
             # 1. 检查ChromaDB状态
-            chroma_db = get_chroma_db()
-            if not chroma_db.initialized:
-                logger.warning("⚠️ ChromaDB未初始化，返回空结果")
-                return ""
+            # chroma_db = get_chroma_db()
+            # if not chroma_db.initialized:
+            #     logger.warning("⚠️ ChromaDB未初始化，返回空结果")
+            #     return ""
 
             # 1.5. 获取嵌入模型
             embedding_model = get_embedding_model()
@@ -141,14 +141,14 @@ class QueryActionSystem(BaseActionReactiveSystem, InitializeProcessor):
                 return ""
 
             # 1.6. 检查collection是否可用
-            if chroma_db.collection is None:
-                logger.warning("⚠️ ChromaDB collection未初始化，返回空结果")
-                return ""
+            # if chroma_db.collection is None:
+            #     logger.warning("⚠️ ChromaDB collection未初始化，返回空结果")
+            #     return ""
 
             # 2. 执行语义搜索查询
             retrieved_docs, similarity_scores = search_similar_documents(
                 query=message,
-                collection=chroma_db.collection,
+                collection=get_default_collection(),
                 embedding_model=embedding_model,
                 top_k=3,
             )

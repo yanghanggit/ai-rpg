@@ -12,8 +12,9 @@ import time
 from loguru import logger
 
 from src.ai_rpg.chroma import (
-    get_chroma_db,
-    chromadb_clear_database,
+    chroma_client,
+    clear_client,
+    get_default_collection,
 )
 from src.ai_rpg.rag import (
     load_knowledge_base_to_vector_db,
@@ -32,11 +33,9 @@ def _init_rag_system_with_model() -> bool:
     embedding_model = get_embedding_model()
     if embedding_model is None:
         return False
-    chroma_db = get_chroma_db()
-    if chroma_db.collection is None:
-        raise RuntimeError("ChromaDB collection未初始化")
+    collection = get_default_collection()
     return load_knowledge_base_to_vector_db(
-        FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, chroma_db.collection
+        FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, collection
     )
 
 
@@ -44,13 +43,11 @@ def _rag_search_with_defaults(
     query: str, top_k: int = 5
 ) -> tuple[list[str], list[float]]:
     """辅助函数：使用默认实例执行语义搜索"""
-    chroma_db = get_chroma_db()
+    collection = get_default_collection()
     embedding_model = get_embedding_model()
     if embedding_model is None:
         raise RuntimeError("嵌入模型未初始化")
-    if chroma_db.collection is None:
-        raise RuntimeError("ChromaDB collection未初始化")
-    return search_similar_documents(query, chroma_db.collection, embedding_model, top_k)
+    return search_similar_documents(query, collection, embedding_model, top_k)
 
 
 class TestChromaDBRAGIntegration:
@@ -62,21 +59,18 @@ class TestChromaDBRAGIntegration:
         """测试ChromaDB初始化"""
         logger.info("🧪 开始测试ChromaDB RAG系统初始化...")
 
-        # 测试ChromaDB实例创建
-        chroma_db = get_chroma_db()
-        assert chroma_db is not None, "ChromaDB实例创建失败"
-        logger.info(f"✅ ChromaDB实例创建成功: {type(chroma_db)}")
+        # 测试ChromaDB collection创建
+        collection = get_default_collection()
+        assert collection is not None, "ChromaDB collection创建失败"
+        logger.info(f"✅ ChromaDB collection创建成功: {type(collection)}")
 
         # 获取嵌入模型
         embedding_model = get_embedding_model()
         assert embedding_model is not None, "嵌入模型初始化失败"
 
-        # 检查collection是否可用
-        assert chroma_db.collection is not None, "ChromaDB collection未初始化"
-
         # 测试完整初始化
         success = load_knowledge_base_to_vector_db(
-            FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, chroma_db.collection
+            FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, collection
         )
         assert success, "ChromaDB RAG系统初始化失败"
         logger.success("🎉 ChromaDB RAG系统初始化测试通过！")
@@ -85,19 +79,14 @@ class TestChromaDBRAGIntegration:
         """测试语义搜索功能"""
         logger.info("🔍 开始测试语义搜索功能...")
 
-        # 确保系统已初始化
-        chroma_db = get_chroma_db()
-        if not chroma_db.initialized:
-            success = _init_rag_system_with_model()
-            assert success, "系统初始化失败"
-
-        # 确保数据库中有数据
-        assert chroma_db.collection is not None, "ChromaDB集合应该已创建"
-        collection_count = chroma_db.collection.count()
+        # 获取collection并确保数据库中有数据
+        collection = get_default_collection()
+        assert collection is not None, "ChromaDB集合应该已创建"
+        collection_count = collection.count()
         if collection_count == 0:
             success = _init_rag_system_with_model()
             assert success, "系统初始化失败"
-            collection_count = chroma_db.collection.count()
+            collection_count = collection.count()
             assert collection_count > 0, f"初始化后数据库仍为空"
 
         # 测试语义搜索
@@ -134,24 +123,23 @@ class TestChromaDBRAGIntegration:
         """测试数据库状态"""
         logger.info("📊 开始测试数据库状态...")
 
-        chroma_db = get_chroma_db()
+        # 获取collection和客户端
+        collection = get_default_collection()
+        assert collection is not None, "ChromaDB集合应该已创建"
+        assert chroma_client is not None, "ChromaDB客户端应该已创建"
 
-        # 确保系统已初始化
-        if not chroma_db.initialized:
+        # 确保数据库中有数据
+        collection_count = collection.count()
+        if collection_count == 0:
             success = _init_rag_system_with_model()
             assert success, "系统初始化失败"
-
-        # 验证数据库状态
-        assert chroma_db.initialized, "数据库应该已初始化"
-        assert chroma_db.client is not None, "ChromaDB客户端应该已创建"
-        assert chroma_db.collection is not None, "ChromaDB集合应该已创建"
+            collection_count = collection.count()
 
         # 验证全局嵌入模型已加载
         embedding_model = get_embedding_model()
         assert embedding_model is not None, "嵌入模型应该已加载"
 
         # 验证集合中有数据
-        collection_count = chroma_db.collection.count()
         assert collection_count > 0, f"集合中应该有数据，当前数量: {collection_count}"
         logger.info(f"📊 数据库状态正常，文档数量: {collection_count}")
 
@@ -159,10 +147,10 @@ class TestChromaDBRAGIntegration:
         """测试错误处理"""
         logger.info("⚠️ 开始测试错误处理...")
 
-        chroma_db = get_chroma_db()
-
-        # 确保系统已初始化
-        if not chroma_db.initialized:
+        # 获取collection并确保数据库中有数据
+        collection = get_default_collection()
+        collection_count = collection.count()
+        if collection_count == 0:
             success = _init_rag_system_with_model()
             assert success, "系统初始化失败"
 
@@ -182,19 +170,14 @@ class TestChromaDBRAGIntegration:
         """测试并行语义搜索功能"""
         logger.info("🚀 开始测试并行语义搜索功能...")
 
-        # 确保系统已初始化
-        chroma_db = get_chroma_db()
-        if not chroma_db.initialized:
-            success = _init_rag_system_with_model()
-            assert success, "系统初始化失败"
-
-        # 确保数据库中有数据
-        assert chroma_db.collection is not None, "ChromaDB集合应该已创建"
-        collection_count = chroma_db.collection.count()
+        # 获取collection并确保数据库中有数据
+        collection = get_default_collection()
+        assert collection is not None, "ChromaDB集合应该已创建"
+        collection_count = collection.count()
         if collection_count == 0:
             success = _init_rag_system_with_model()
             assert success, "系统初始化失败"
-            collection_count = chroma_db.collection.count()
+            collection_count = collection.count()
             assert collection_count > 0, f"初始化后数据库仍为空"
 
         # 定义多个测试查询
@@ -212,16 +195,14 @@ class TestChromaDBRAGIntegration:
         # 创建异步任务包装器
         async def async_search(query: str) -> tuple[str, list[str], list[float]]:
             """异步搜索包装器 - 使用推荐的 asyncio.to_thread 方法"""
-            chroma_db = get_chroma_db()
+            collection = get_default_collection()
             embedding_model = get_embedding_model()
             if embedding_model is None:
-                return query, [], []
-            if chroma_db.collection is None:
                 return query, [], []
             docs, scores = await asyncio.to_thread(
                 search_similar_documents,
                 query,
-                chroma_db.collection,
+                collection,
                 embedding_model,
                 3,
             )
@@ -297,7 +278,7 @@ class TestChromaDBRAGIntegration:
 
         # 只在第一次测试时清理数据库，确保使用干净的测试环境
         if not TestChromaDBRAGIntegration._db_initialized:
-            chromadb_clear_database()
+            clear_client()
             logger.info("🧹 首次测试前：清理了现有数据库，准备创建新的测试数据")
             TestChromaDBRAGIntegration._db_initialized = True
         else:

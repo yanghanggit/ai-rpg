@@ -268,7 +268,7 @@ def _setup_chromadb_rag_environment() -> None:
     logger.info("🚀 初始化RAG系统...")
 
     # 导入必要的模块
-    from ai_rpg.chroma import chromadb_clear_database, clear_client, get_chroma_db
+    from ai_rpg.chroma import get_default_collection, clear_client
     from ai_rpg.rag import load_knowledge_base_to_vector_db
     from ai_rpg.embedding_model.sentence_transformer import (
         get_embedding_model,
@@ -278,11 +278,12 @@ def _setup_chromadb_rag_environment() -> None:
     try:
 
         # 新的测试
+        logger.info("🧹 清空ChromaDB数据库...")
         clear_client()
 
         # 清理现有的ChromaDB数据
-        logger.info("🧹 清空ChromaDB数据库...")
-        chromadb_clear_database()
+
+        # chromadb_clear_database()
 
         # 获取嵌入模型
         embedding_model = get_embedding_model()
@@ -291,15 +292,15 @@ def _setup_chromadb_rag_environment() -> None:
             return
 
         # 获取ChromaDB实例
-        chroma_db = get_chroma_db()
-        if chroma_db is None or chroma_db.collection is None:
-            logger.error("❌ ChromaDB实例初始化失败")
-            return
+        # chroma_db = get_chroma_db()
+        # if chroma_db is None or chroma_db.collection is None:
+        #     logger.error("❌ ChromaDB实例初始化失败")
+        #     return
 
         # 使用正式知识库数据初始化RAG系统
         logger.info("📚 加载艾尔法尼亚世界知识库...")
         success = load_knowledge_base_to_vector_db(
-            FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, chroma_db.collection
+            FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, get_default_collection()
         )
 
         if success:

@@ -6,7 +6,8 @@ from ..models import (
     MindVoiceAction,
     MindVoiceEvent,
 )
-from .query_action import get_query_service
+
+# from .query_action import get_query_service
 from loguru import logger
 from ..game.tcg_game import TCGGame
 
@@ -18,7 +19,7 @@ class MindVoiceActionSystem(BaseActionReactiveSystem):
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
-        self._query_service = get_query_service()
+        # self._query_service = get_query_service()
 
     ####################################################################################################################################
     @override

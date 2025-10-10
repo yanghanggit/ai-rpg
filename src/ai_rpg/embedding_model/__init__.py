@@ -6,7 +6,6 @@
 
 from .model_loader import (
     ModelLoader,
-    get_model_loader,
     is_model_cached,
     load_basic_model,
     load_multilingual_model,
@@ -20,7 +19,6 @@ from .sentence_transformer import (
 __all__ = [
     # model_loader
     "ModelLoader",
-    "get_model_loader",
     "is_model_cached",
     "load_basic_model",
     "load_multilingual_model",

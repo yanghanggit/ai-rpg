@@ -14,6 +14,21 @@ if TYPE_CHECKING:
 from loguru import logger
 
 
+def find_project_root() -> Path:
+    """通过寻找项目标志文件来确定项目根目录"""
+    current = Path(__file__).resolve()
+
+    # 寻找包含这些标志文件的目录
+    markers = ["pyproject.toml", "Makefile", ".git", "README.md"]
+
+    for parent in [current] + list(current.parents):
+        if any((parent / marker).exists() for marker in markers):
+            return parent
+
+    # 如果找不到，回退到当前工作目录
+    return Path.cwd()
+
+
 class ModelLoader:
     """统一的模型加载器"""
 
@@ -24,7 +39,7 @@ class ModelLoader:
         Args:
             cache_dir: 模型缓存目录
         """
-        self.project_root = Path(__file__).parent.parent.parent.parent
+        self.project_root = find_project_root()
 
         if cache_dir is None:
             self.cache_dir = self.project_root / ".cache" / "sentence_transformers"
@@ -75,18 +90,6 @@ class ModelLoader:
         return model_cache_path if model_cache_path.exists() else None
 
 
-# 全局模型加载器实例
-_model_loader = None
-
-
-def get_model_loader() -> ModelLoader:
-    """获取全局模型加载器实例"""
-    global _model_loader
-    if _model_loader is None:
-        _model_loader = ModelLoader()
-    return _model_loader
-
-
 def load_sentence_transformer(
     model_name: str,
     force_online: bool = False,
@@ -113,7 +116,7 @@ def load_sentence_transformer(
     if cache_dir:
         loader = ModelLoader(Path(cache_dir))
     else:
-        loader = get_model_loader()
+        loader = ModelLoader()
 
     return loader.load_model(model_name, force_online)
 
@@ -134,7 +137,7 @@ def is_model_cached(
     if cache_dir:
         loader = ModelLoader(Path(cache_dir))
     else:
-        loader = get_model_loader()
+        loader = ModelLoader()
 
     return loader.is_model_cached(model_name)
 
@@ -156,7 +159,7 @@ if __name__ == "__main__":
     # 测试模块功能
     print("🧪 测试模型加载工具...")
 
-    loader = get_model_loader()
+    loader = ModelLoader()
 
     print(f"缓存目录: {loader.cache_dir}")
 

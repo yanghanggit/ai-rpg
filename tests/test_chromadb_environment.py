@@ -258,11 +258,11 @@ class TestChromaDBEnvironment:
             from src.ai_rpg.embedding_model.model_loader import (
                 load_multilingual_model,
                 is_model_cached,
-                get_model_loader,
+                ModelLoader,
             )
 
             # 获取模型加载器
-            loader = get_model_loader()
+            loader = ModelLoader()
             print(f"✅ 模型缓存目录: {loader.cache_dir}")
 
             # 使用项目的多语言模型加载器

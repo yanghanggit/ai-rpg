@@ -14,7 +14,6 @@ WEREWOLF_CAMPAIGN_SETTING = """在一个名为月影村的偏远小镇上，夜�
 这是一场善恶之间的较量，只有一方能够获得最终的胜利。"""
 
 
-
 def create_actor_moderator() -> Actor:
     """
     创建一个主持人角色实例

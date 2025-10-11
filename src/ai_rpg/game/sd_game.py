@@ -1,5 +1,4 @@
 import copy
-import random
 import shutil
 import uuid
 from pathlib import Path
@@ -11,7 +10,7 @@ from .config import LOGS_DIR
 from ..entitas import Entity
 from ..game.base_game import BaseGame
 from .rpg_game_context import RPGGameContext
-from ..game.tcg_game_process_pipeline import TCGGameProcessPipeline
+from ..game.sd_game_process_pipeline import SDGameProcessPipeline
 from ..models import (
     Actor,
     ActorComponent,
@@ -19,9 +18,7 @@ from ..models import (
     AgentEvent,
     AgentChatHistory,
     AppearanceComponent,
-    Dungeon,
     DungeonComponent,
-    Engagement,
     EnvironmentComponent,
     HeroComponent,
     HomeComponent,
@@ -37,7 +34,6 @@ from ..models import (
     World,
     WorldSystem,
     WorldComponent,
-    Round,
     InventoryComponent,
 )
 from .player_client import PlayerClient
@@ -58,68 +54,12 @@ def _replace_name_with_you(input_text: str, your_name: str) -> str:
 
 
 ###############################################################################################################################################
-# def _persist(
-#     username: str,
-#     world: World,
-# ) -> None:
-#     """将游戏世界持久化到 MongoDB"""
-#     logger.debug("📝 创建演示游戏世界并存储到 MongoDB...")
-
-#     # version = "0.0.1"
-#     collection_name = WorldDocument.__name__  # 使用类名作为集合名称
-
-#     try:
-#         # 创建 WorldDocument
-#         world_document = WorldDocument.create_from_world(
-#             username=username, world=world, version="0.0.1"
-#         )
-
-#         # 保存 WorldDocument 到 MongoDB
-#         logger.debug(f"📝 存储演示游戏世界到 MongoDB 集合: {collection_name}")
-#         inserted_id = mongodb_upsert_one(collection_name, world_document.to_dict())
-
-#         if inserted_id:
-#             logger.debug("✅ 演示游戏世界已存储到 MongoDB!")
-
-#             # 验证已保存的 WorldDocument
-#             logger.debug("📖 从 MongoDB 获取演示游戏世界进行验证...")
-
-#             saved_world_data = mongodb_find_one(
-#                 collection_name,
-#                 {
-#                     "username": username,
-#                     "game_name": world.boot.name,
-#                 },
-#             )
-
-#             if not saved_world_data:
-#                 logger.error("❌ 从 MongoDB 获取演示游戏世界失败!")
-#             else:
-#                 try:
-#                     # 使用便捷方法反序列化为 WorldDocument 对象
-#                     # _world_document = WorldDocument.from_mongodb(retrieved_world_data)
-#                     # logger.success(
-#                     #     f"✅ 演示游戏世界已从 MongoDB 成功获取! = {_world_document.model_dump_json()}"
-#                     # )
-#                     pass
-#                 except Exception as validation_error:
-#                     logger.error(f"❌ WorldDocument 反序列化失败: {validation_error}")
-#         else:
-#             logger.error("❌ 演示游戏世界存储到 MongoDB 失败!")
-
-#     except Exception as e:
-#         logger.error(f"❌ 演示游戏世界 MongoDB 操作失败: {e}")
-#         raise
-
-
-###############################################################################################################################################
 def _debug_verbose(verbose_dir: Path, world: World) -> None:
     """调试方法，保存游戏状态到文件"""
     _verbose_boot_data(verbose_dir, world)
     _verbose_world_data(verbose_dir, world)
     _verbose_entities_serialization(verbose_dir, world)
     _verbose_chat_history(verbose_dir, world)
-    _verbose_dungeon_system(verbose_dir, world)
     logger.debug(f"Verbose debug info saved to: {verbose_dir}")
 
 
@@ -180,18 +120,6 @@ def _verbose_entities_serialization(verbose_dir: Path, world: World) -> None:
 
 
 ###############################################################################################################################################
-def _verbose_dungeon_system(verbose_dir: Path, world: World) -> None:
-    """保存地下城系统数据到文件"""
-    if world.dungeon.name == "":
-        return
-
-    dungeon_system_dir = verbose_dir / "dungeons"
-    dungeon_system_dir.mkdir(parents=True, exist_ok=True)
-    dungeon_system_path = dungeon_system_dir / f"{world.dungeon.name}.json"
-    dungeon_system_path.write_text(world.dungeon.model_dump_json(), encoding="utf-8")
-
-
-###############################################################################################################################################
 class SDGame(BaseGame, RPGGameContext):
 
     # Social Deduction Game
@@ -211,24 +139,24 @@ class SDGame(BaseGame, RPGGameContext):
         self._world: Final[World] = world
 
         # 常规home 的流程
-        self._npc_home_pipeline: Final[TCGGameProcessPipeline] = (
-            TCGGameProcessPipeline.create_npc_home_pipline(self)
+        self._main_pipeline: Final[SDGameProcessPipeline] = (
+            SDGameProcessPipeline.create_main_pipline(self)
         )
 
         # 仅处理player的home流程
-        self._player_home_pipeline: Final[TCGGameProcessPipeline] = (
-            TCGGameProcessPipeline.create_player_home_pipline(self)
-        )
+        # self._player_home_pipeline: Final[TCGGameProcessPipeline] = (
+        #     TCGGameProcessPipeline.create_player_home_pipline(self)
+        # )
 
-        # 地下城战斗流程
-        self._dungeon_combat_pipeline: Final[TCGGameProcessPipeline] = (
-            TCGGameProcessPipeline.create_dungeon_combat_state_pipeline(self)
-        )
+        # # 地下城战斗流程
+        # self._dungeon_combat_pipeline: Final[TCGGameProcessPipeline] = (
+        #     TCGGameProcessPipeline.create_dungeon_combat_state_pipeline(self)
+        # )
 
-        self._all_pipelines: List[TCGGameProcessPipeline] = [
-            self._npc_home_pipeline,
-            self._player_home_pipeline,
-            self._dungeon_combat_pipeline,
+        self._all_pipelines: List[SDGameProcessPipeline] = [
+            self._main_pipeline,
+            # self._player_home_pipeline,
+            # self._dungeon_combat_pipeline,
         ]
 
         # 玩家
@@ -266,54 +194,8 @@ class SDGame(BaseGame, RPGGameContext):
 
     ###############################################################################################################################################
     @property
-    def is_player_at_home(self) -> bool:
-        player_entity = self.get_player_entity()
-        assert player_entity is not None, "player_entity is None"
-        if player_entity is None:
-            return False
-
-        return self.is_actor_at_home(player_entity)
-
-    ###############################################################################################################################################
-    @property
-    def is_player_in_dungeon(self) -> bool:
-        player_entity = self.get_player_entity()
-        assert player_entity is not None, "player_entity is None"
-        if player_entity is None:
-            return False
-
-        return self.is_actor_in_dungeon(player_entity)
-
-    ###############################################################################################################################################
-    @property
     def world(self) -> World:
         return self._world
-
-    ###############################################################################################################################################
-    @property
-    def current_dungeon(self) -> Dungeon:
-        assert isinstance(self._world.dungeon, Dungeon)
-        return self._world.dungeon
-
-    ###############################################################################################################################################
-    @property
-    def current_engagement(self) -> Engagement:
-        return self.current_dungeon.engagement
-
-    ###############################################################################################################################################
-    @property
-    def npc_home_pipeline(self) -> TCGGameProcessPipeline:
-        return self._npc_home_pipeline
-
-    ###############################################################################################################################################
-    @property
-    def player_home_pipeline(self) -> TCGGameProcessPipeline:
-        return self._player_home_pipeline
-
-    ###############################################################################################################################################
-    @property
-    def dungeon_combat_pipeline(self) -> TCGGameProcessPipeline:
-        return self._dungeon_combat_pipeline
 
     ###############################################################################################################################################
     @override
@@ -380,12 +262,6 @@ class SDGame(BaseGame, RPGGameContext):
         logger.debug(
             f"游戏将要保存，实体数量: {len(self.world.entities_serialization)}"
         )
-
-        # 保存快照
-        # _persist(
-        #     username=self.player_client.name,
-        #     world=self.world,
-        # )
 
         # debug - 调用模块级函数
         _debug_verbose(
@@ -670,213 +546,6 @@ class SDGame(BaseGame, RPGGameContext):
 
         # 最后都要发给客户端。
         self.player_client.add_agent_event_message(agent_event=agent_event)
-
-    ###############################################################################################################################################
-    def _validate_stage_transition_prerequisites(
-        self, actors: Set[Entity], stage_destination: Entity
-    ) -> Set[Entity]:
-        """
-        验证场景传送的前置条件并过滤有效的角色
-
-        Args:
-            actors: 需要传送的角色集合
-            stage_destination: 目标场景
-
-        Returns:
-            Set[Entity]: 需要实际传送的角色集合（排除已在目标场景的角色）
-        """
-        # 验证所有角色都有ActorComponent
-        for actor in actors:
-            assert actor.has(ActorComponent), f"角色 {actor.name} 缺少 ActorComponent"
-
-        # 过滤掉已经在目标场景的角色
-        actors_to_transfer = set()
-        for actor_entity in actors:
-            current_stage = self.safe_get_stage_entity(actor_entity)
-            assert current_stage is not None, f"角色 {actor_entity.name} 没有当前场景"
-
-            if current_stage == stage_destination:
-                logger.warning(
-                    f"{actor_entity.name} 已经存在于 {stage_destination.name}"
-                )
-                continue
-
-            actors_to_transfer.add(actor_entity)
-
-        return actors_to_transfer
-
-    ###############################################################################################################################################
-    def _broadcast_departure_notifications(self, actors: Set[Entity]) -> None:
-        """
-        处理角色离开场景的通知
-
-        Args:
-            actors: 要离开的角色集合
-        """
-        for actor_entity in actors:
-            current_stage = self.safe_get_stage_entity(actor_entity)
-            assert current_stage is not None
-
-            # 向所在场景及所在场景内除自身外的其他人宣布，这货要离开了
-            self.broadcast_event(
-                entity=current_stage,
-                agent_event=AgentEvent(
-                    message=f"# 发生事件！{actor_entity.name} 离开了场景: {current_stage.name}",
-                ),
-                exclude_entities={actor_entity},
-            )
-
-    ###############################################################################################################################################
-    def _update_actors_stage_membership(
-        self, actors: Set[Entity], stage_destination: Entity
-    ) -> None:
-        """
-        执行角色的场景传送，包括更新场景归属和行动队列
-
-        Args:
-            actors: 要传送的角色集合
-            stage_destination: 目标场景
-        """
-        for actor_entity in actors:
-            current_stage = self.safe_get_stage_entity(actor_entity)
-            assert current_stage is not None, "角色没有当前场景"
-            assert current_stage != stage_destination, "不应该传送到当前场景"
-
-            # 更改所处场景的标识
-            actor_entity.replace(
-                ActorComponent, actor_entity.name, stage_destination.name
-            )
-
-            # 通知角色自身的传送过程
-            self.notify_event(
-                entities={actor_entity},
-                agent_event=AgentEvent(
-                    message=f"# 发生事件！{actor_entity.name} 从 场景: {current_stage.name} 离开，然后进入了 场景: {stage_destination.name}",
-                ),
-            )
-
-    ###############################################################################################################################################
-    def _broadcast_arrival_notifications(
-        self, actors: Set[Entity], stage_destination: Entity
-    ) -> None:
-        """
-        处理角色进入场景的通知
-
-        Args:
-            actors: 进入的角色集合
-            stage_destination: 目标场景
-        """
-        for actor_entity in actors:
-            # 向所在场景及所在场景内除自身外的其他人宣布，这货到了
-            self.broadcast_event(
-                entity=stage_destination,
-                agent_event=AgentEvent(
-                    message=f"# 发生事件！{actor_entity.name} 进入了 场景: {stage_destination.name}",
-                ),
-                exclude_entities={actor_entity},
-            )
-
-    ###############################################################################################################################################
-    def stage_transition(self, actors: Set[Entity], stage_destination: Entity) -> None:
-        """
-        场景传送的主协调函数
-
-        Args:
-            actors: 需要传送的角色集合
-            stage_destination: 目标场景
-        """
-        # 1. 验证前置条件并过滤有效角色
-        actors_to_transfer = self._validate_stage_transition_prerequisites(
-            actors, stage_destination
-        )
-
-        # 如果没有角色需要传送，直接返回
-        if not actors_to_transfer:
-            return
-
-        # 2. 处理角色离开场景
-        self._broadcast_departure_notifications(actors_to_transfer)
-
-        # 3. 执行场景传送
-        self._update_actors_stage_membership(actors_to_transfer, stage_destination)
-
-        # 4. 处理角色进入场景
-        self._broadcast_arrival_notifications(actors_to_transfer, stage_destination)
-
-    #######################################################################################################################################
-    def create_dungeon_entities(self, dungeon_model: Dungeon) -> None:
-
-        # 加一步测试: 不可以存在！如果存在说明没有清空。
-        for actor in dungeon_model.actors:
-            actor_entity = self.get_actor_entity(actor.name)
-            assert actor_entity is None, "actor_entity is not None"
-
-        # 加一步测试: 不可以存在！如果存在说明没有清空。
-        for stage in dungeon_model.stages:
-            stage_entity = self.get_stage_entity(stage.name)
-            assert stage_entity is None, "stage_entity is not None"
-
-        # 正式创建。。。。。。。。。。
-        # 创建地下城的怪物。
-        self._create_actor_entities(dungeon_model.actors)
-        ## 创建地下城的场景
-        self._create_stage_entities(dungeon_model.stages)
-
-    #######################################################################################################################################
-    def destroy_dungeon_entities(self, dungeon_model: Dungeon) -> None:
-        # 清空地下城的怪物。
-        for actor in dungeon_model.actors:
-            destroy_actor_entity = self.get_actor_entity(actor.name)
-            if destroy_actor_entity is not None:
-                self.destroy_entity(destroy_actor_entity)
-
-        # 清空地下城的场景
-        for stage in dungeon_model.stages:
-            destroy_stage_entity = self.get_stage_entity(stage.name)
-            if destroy_stage_entity is not None:
-                self.destroy_entity(destroy_stage_entity)
-
-    #######################################################################################################################################
-    def start_new_round(self) -> Optional[Round]:
-
-        if not self.current_engagement.is_ongoing:
-            logger.warning("当前没有进行中的战斗，不能设置回合。")
-            return None
-
-        if (
-            len(self.current_engagement.current_rounds) > 0
-            and not self.current_engagement.latest_round.has_ended
-        ):
-            # 有回合正在进行中，所以不能添加新的回合。
-            logger.warning("有回合正在进行中，所以不能添加新的回合。")
-            return None
-
-        # 玩家角色
-        player_entity = self.get_player_entity()
-        assert player_entity is not None, "player_entity is None"
-
-        # 所有角色
-        actors_on_stage = self.get_alive_actors_on_stage(player_entity)
-        assert len(actors_on_stage) > 0, "actors_on_stage is empty"
-
-        # 当前舞台(必然是地下城！)
-        stage_entity = self.safe_get_stage_entity(player_entity)
-        assert stage_entity is not None, "stage_entity is None"
-        assert stage_entity.has(DungeonComponent), "stage_entity 没有 DungeonComponent"
-
-        # 随机打乱角色行动顺序
-        shuffled_reactive_entities = list(actors_on_stage)
-        random.shuffle(shuffled_reactive_entities)
-
-        # 创建新的回合
-        new_round = self.current_engagement.create_new_round(
-            action_order=[entity.name for entity in shuffled_reactive_entities]
-        )
-
-        # 设置回合的环境描写
-        new_round.environment = stage_entity.get(EnvironmentComponent).description
-        logger.info(f"new_round:\n{new_round.model_dump_json(indent=2)}")
-        return new_round
 
     #######################################################################################################################################
     def find_human_messages_by_attribute(

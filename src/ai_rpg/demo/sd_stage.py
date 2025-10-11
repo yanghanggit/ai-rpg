@@ -2,13 +2,9 @@ from ..models import Stage, StageType
 from .utils import (
     create_stage,
 )
-
-
-# 狼人杀世界观设定
-WEREWOLF_CAMPAIGN_SETTING = """在一个名为月影村的偏远小镇上，夜幕降临时邪恶的狼人开始觅食。
-村民们必须在白天通过讨论和投票找出隐藏在他们中间的狼人，而狼人则要在夜晚悄悄消灭村民。
-神秘的预言家能够洞察他人的真实身份，智慧的女巫掌握着生死的药剂。
-这是一场善恶之间的较量，只有一方能够获得最终的胜利。"""
+from .sd_setting import (
+    WEREWOLF_CAMPAIGN_SETTING,
+)
 
 
 def create_demo_werewolf_stage() -> Stage:

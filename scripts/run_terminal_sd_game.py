@@ -123,7 +123,7 @@ async def _process_player_input(terminal_game: TerminalSDGame) -> None:
         await ChatClient.health_check()
         return
 
-    if usr_input == "/ad" or usr_input == "/advancing":
+    if usr_input == "/run":
         await terminal_game.main_pipeline.process()
 
 

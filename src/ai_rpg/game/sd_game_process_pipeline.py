@@ -12,14 +12,17 @@ class SDGameProcessPipeline(Processors):
         ### 不这样就循环引用
         from ..game.sd_game import SDGame
         from ..game_systems.sd_kick_off_system import SDKickOffSystem
+        from ..game_systems.sd_test_system import SDTestSystem
 
         ##
         sd_game = cast(SDGame, game)
-        processors = SDGameProcessPipeline("Home State Pipeline 1")
+        processors = SDGameProcessPipeline("Main Pipeline")
 
         # 启动agent的提示词。启动阶段
         processors.add(SDKickOffSystem(sd_game))
 
+        # 测试系统
+        processors.add(SDTestSystem(sd_game))
         # # 规划逻辑
         # ######## 在所有规划之前!##############################################################
         # processors.add(HomeAutoPlanSystem(tcg_game))

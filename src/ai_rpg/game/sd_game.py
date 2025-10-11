@@ -8,11 +8,6 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
 from .config import LOGS_DIR
-from ..mongodb import (
-    WorldDocument,
-    mongodb_find_one,
-    mongodb_upsert_one,
-)
 from ..entitas import Entity
 from ..game.base_game import BaseGame
 from .rpg_game_context import RPGGameContext
@@ -63,58 +58,58 @@ def _replace_name_with_you(input_text: str, your_name: str) -> str:
 
 
 ###############################################################################################################################################
-def _persist(
-    username: str,
-    world: World,
-) -> None:
-    """将游戏世界持久化到 MongoDB"""
-    logger.debug("📝 创建演示游戏世界并存储到 MongoDB...")
+# def _persist(
+#     username: str,
+#     world: World,
+# ) -> None:
+#     """将游戏世界持久化到 MongoDB"""
+#     logger.debug("📝 创建演示游戏世界并存储到 MongoDB...")
 
-    # version = "0.0.1"
-    collection_name = WorldDocument.__name__  # 使用类名作为集合名称
+#     # version = "0.0.1"
+#     collection_name = WorldDocument.__name__  # 使用类名作为集合名称
 
-    try:
-        # 创建 WorldDocument
-        world_document = WorldDocument.create_from_world(
-            username=username, world=world, version="0.0.1"
-        )
+#     try:
+#         # 创建 WorldDocument
+#         world_document = WorldDocument.create_from_world(
+#             username=username, world=world, version="0.0.1"
+#         )
 
-        # 保存 WorldDocument 到 MongoDB
-        logger.debug(f"📝 存储演示游戏世界到 MongoDB 集合: {collection_name}")
-        inserted_id = mongodb_upsert_one(collection_name, world_document.to_dict())
+#         # 保存 WorldDocument 到 MongoDB
+#         logger.debug(f"📝 存储演示游戏世界到 MongoDB 集合: {collection_name}")
+#         inserted_id = mongodb_upsert_one(collection_name, world_document.to_dict())
 
-        if inserted_id:
-            logger.debug("✅ 演示游戏世界已存储到 MongoDB!")
+#         if inserted_id:
+#             logger.debug("✅ 演示游戏世界已存储到 MongoDB!")
 
-            # 验证已保存的 WorldDocument
-            logger.debug("📖 从 MongoDB 获取演示游戏世界进行验证...")
+#             # 验证已保存的 WorldDocument
+#             logger.debug("📖 从 MongoDB 获取演示游戏世界进行验证...")
 
-            saved_world_data = mongodb_find_one(
-                collection_name,
-                {
-                    "username": username,
-                    "game_name": world.boot.name,
-                },
-            )
+#             saved_world_data = mongodb_find_one(
+#                 collection_name,
+#                 {
+#                     "username": username,
+#                     "game_name": world.boot.name,
+#                 },
+#             )
 
-            if not saved_world_data:
-                logger.error("❌ 从 MongoDB 获取演示游戏世界失败!")
-            else:
-                try:
-                    # 使用便捷方法反序列化为 WorldDocument 对象
-                    # _world_document = WorldDocument.from_mongodb(retrieved_world_data)
-                    # logger.success(
-                    #     f"✅ 演示游戏世界已从 MongoDB 成功获取! = {_world_document.model_dump_json()}"
-                    # )
-                    pass
-                except Exception as validation_error:
-                    logger.error(f"❌ WorldDocument 反序列化失败: {validation_error}")
-        else:
-            logger.error("❌ 演示游戏世界存储到 MongoDB 失败!")
+#             if not saved_world_data:
+#                 logger.error("❌ 从 MongoDB 获取演示游戏世界失败!")
+#             else:
+#                 try:
+#                     # 使用便捷方法反序列化为 WorldDocument 对象
+#                     # _world_document = WorldDocument.from_mongodb(retrieved_world_data)
+#                     # logger.success(
+#                     #     f"✅ 演示游戏世界已从 MongoDB 成功获取! = {_world_document.model_dump_json()}"
+#                     # )
+#                     pass
+#                 except Exception as validation_error:
+#                     logger.error(f"❌ WorldDocument 反序列化失败: {validation_error}")
+#         else:
+#             logger.error("❌ 演示游戏世界存储到 MongoDB 失败!")
 
-    except Exception as e:
-        logger.error(f"❌ 演示游戏世界 MongoDB 操作失败: {e}")
-        raise
+#     except Exception as e:
+#         logger.error(f"❌ 演示游戏世界 MongoDB 操作失败: {e}")
+#         raise
 
 
 ###############################################################################################################################################
@@ -387,10 +382,10 @@ class SDGame(BaseGame, RPGGameContext):
         )
 
         # 保存快照
-        _persist(
-            username=self.player_client.name,
-            world=self.world,
-        )
+        # _persist(
+        #     username=self.player_client.name,
+        #     world=self.world,
+        # )
 
         # debug - 调用模块级函数
         _debug_verbose(

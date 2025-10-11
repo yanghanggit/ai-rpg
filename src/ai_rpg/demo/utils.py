@@ -1,5 +1,4 @@
 from typing import Final, List
-
 from ..models import (
     Actor,
     ActorCharacterSheet,

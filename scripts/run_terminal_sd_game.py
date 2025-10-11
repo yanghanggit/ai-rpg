@@ -12,11 +12,12 @@ from ai_rpg.chat_services.client import ChatClient
 from ai_rpg.settings import (
     initialize_server_settings_instance,
 )
-from ai_rpg.game.config import GLOBAL_GAME_NAME, setup_logger
-from ai_rpg.demo import (
-    create_actor_warrior,
-    create_demo_dungeon5,
+from ai_rpg.game.config import setup_logger
+from ai_rpg.demo.sd_actors import (
+    create_actor_moderator,
+    # create_demo_dungeon5,
 )
+from ai_rpg.demo.sd_world import create_demo_sd_game_boot
 from ai_rpg.game.player_client import PlayerClient
 
 # from ai_rpg.game.tcg_game import TCGGameState
@@ -375,47 +376,51 @@ async def _run_game(
 
     # 注意，如果确定player是固定的，但是希望每次玩新游戏，就调用这句。
     # 或者，换成random_name，随机生成一个player名字。
-    terminal_game_user_options.delete_world()
+    # terminal_game_user_options.delete_world()
 
     # 先检查一下world_data是否存在
-    world_exists = terminal_game_user_options.world
+    world_boot = create_demo_sd_game_boot(terminal_game_user_options.game)
 
     #
-    if world_exists is None:
+    # if world_exists is None:
 
-        # 获取world_boot_data
-        world_boot = terminal_game_user_options.boot
-        assert world_boot is not None, "WorldBootDocument 反序列化失败"
+    #     # 获取world_boot_data
+    #     #world_boot = terminal_game_user_options.boot
+    #     #assert world_boot is not None, "WorldBootDocument 反序列化失败"
 
-        # 如果world不存在，说明是第一次创建游戏
-        world_exists = World(boot=world_boot)
+    # 如果world不存在，说明是第一次创建游戏
+    new_world = World(boot=world_boot)
 
-        # 运行时生成地下城系统
-        # world_exists.dungeon = create_demo_dungeon6()
-        world_exists.dungeon = create_demo_dungeon5()
+    # 运行时生成地下城系统
+    # world_exists.dungeon = create_demo_dungeon6()
+    # world_exists.dungeon = create_demo_dungeon5()
 
-    else:
-        logger.info(
-            f"恢复游戏: {terminal_game_user_options.user}, {terminal_game_user_options.game}"
-        )
+    # else:
+    #     assert world_exists is not None
+    #     logger.info(
+    #         f"恢复游戏: {terminal_game_user_options.user}, {terminal_game_user_options.game}"
+    #     )
 
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     server_settings = initialize_server_settings_instance(Path("server_settings.json"))
 
     # 依赖注入，创建新的游戏
-    assert world_exists is not None, "World data must exist to create a game"
+    assert new_world is not None, "World data must exist to create a game"
     terminal_game = TerminalSDGame(
         name=terminal_game_user_options.game,
         player_client=PlayerClient(
             name=terminal_game_user_options.user,
             actor=terminal_game_user_options.actor,
         ),
-        world=world_exists,
+        world=new_world,
     )
 
     ChatClient.initialize_url_config(server_settings)
 
     # 启动游戏的判断，是第一次建立还是恢复？
+    assert (
+        len(terminal_game.world.entities_serialization) == 0
+    ), "World data must be empty to create a new game"
     if len(terminal_game.world.entities_serialization) == 0:
         logger.info(
             f"游戏中没有实体 = {terminal_game_user_options.game}, 说明是第一次创建游戏"
@@ -423,12 +428,12 @@ async def _run_game(
         # 直接构建ecs
         terminal_game.new_game().save()
 
-    else:
-        logger.warning(
-            f"游戏中有实体 = {terminal_game_user_options.game}，需要通过数据恢复实体，是游戏回复的过程"
-        )
-        # 测试！回复ecs
-        terminal_game.load_game().save()
+    # else:
+    #     logger.warning(
+    #         f"游戏中有实体 = {terminal_game_user_options.game}，需要通过数据恢复实体，是游戏回复的过程"
+    #     )
+    #     # 测试！回复ecs
+    #     terminal_game.load_game().save()
 
     # 测试一下玩家控制角色，如果没有就是错误。
     player_entity = terminal_game.get_player_entity()
@@ -652,7 +657,7 @@ if __name__ == "__main__":
     # logger.info(f"解析到的英雄命令: {hero_command}")
     # home_trans_stage_command = _parse_home_trans_stage_command_input("/trans_home --params=场景.营地")
     # logger.info(f"解析到的家园传送命令: {home_trans_stage_command}")
-
+    # "SocialDeductionGame"
     # 初始化日志
     setup_logger()
     import datetime
@@ -663,8 +668,8 @@ if __name__ == "__main__":
     # 做一些设置
     terminal_user_session_options = TerminalSDGameSessionContext(
         user=random_name,
-        game=GLOBAL_GAME_NAME,
-        actor=create_actor_warrior().name,
+        game="Game2",
+        actor=create_actor_moderator().name,
     )
 
     # 运行游戏

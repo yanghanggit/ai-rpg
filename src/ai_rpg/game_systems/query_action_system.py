@@ -5,22 +5,14 @@ from ..models import (
     QueryAction,
 )
 from loguru import logger
-from ..rag.routing import (
-    RouteDecisionManager,
-)
 from ..chroma import get_chroma_db
 from ..rag import rag_semantic_search
 from loguru import logger
-from ..game.tcg_game import TCGGame
 
 
 #####################################################################################################################################
 @final
 class QueryActionSystem(BaseActionReactiveSystem):
-
-    def __init__(self, game_context: TCGGame) -> None:
-        super().__init__(game_context)
-        self._route_manager: RouteDecisionManager | None = None
 
     #############################################################################################################################
     @override

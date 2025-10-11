@@ -36,6 +36,6 @@ htmlcov/
 
 # ChromaDB
 chroma_db/
-
+/chroma/
 # Generated images
 generated_images/

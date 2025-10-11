@@ -1,13 +1,39 @@
-import os
 import traceback
 from pathlib import Path
-from typing import Any, Final, Optional, final
-
+from typing import Final, Optional, final
 import chromadb
 from chromadb.api import ClientAPI
 from chromadb.api.models.Collection import Collection
 from loguru import logger
 from pydantic import BaseModel
+import shutil
+
+chroma_client: ClientAPI = chromadb.PersistentClient()
+logger.info(f"ChromaDB Settings: {chroma_client.get_settings().persist_directory}")
+
+
+def clear() -> None:
+
+    global chroma_client
+
+    # 清理系统缓存
+    chroma_client.clear_system_cache()
+
+    # 确认 collections 已清空
+    assert (
+        len(chroma_client.list_collections()) == 0
+    ), "ChromaDB collections should be empty after clear_system_cache"
+
+    # 获取 ChromaDB 设置，然后删除持久化目录！
+    settings = chroma_client.get_settings()
+    logger.info(f"ChromaDB Settings: {settings.persist_directory}")
+    persist_directory = Path(settings.persist_directory)
+    if persist_directory.exists():
+        shutil.rmtree(persist_directory)
+        logger.warning(f"🗑️ [CHROMADB] 已删除持久化数据目录: {persist_directory}")
+    else:
+        logger.info(f"📁 [CHROMADB] 持久化数据目录不存在: {persist_directory}")
+        logger.warning("🔄 [CHROMADB] ChromaDB持久化数据库已被完全清除")
 
 
 ##################################################################################################################
@@ -18,22 +44,22 @@ class ChromaDatabaseConfig(BaseModel):
     description: str = "is a knowledge base for RAG system"
     persist_base_dir: str = "chroma_db"
 
-    def __init__(self, **kwargs: Any) -> None:
-        # 从环境变量读取配置，如果没有则使用默认值
-        super().__init__(
-            collection_name=os.getenv(
-                "RAG_COLLECTION_NAME",
-                kwargs.get("collection_name", "rag_knowledge_base"),
-            ),
-            description=os.getenv(
-                "RAG_DESCRIPTION",
-                kwargs.get("description", "is a knowledge base for RAG system"),
-            ),
-            persist_base_dir=os.getenv(
-                "RAG_PERSIST_BASE_DIR",
-                kwargs.get("persist_base_dir", "chroma_db"),
-            ),
-        )
+    # def __init__(self, **kwargs: Any) -> None:
+    #     # 从环境变量读取配置，如果没有则使用默认值
+    #     super().__init__(
+    #         collection_name=os.getenv(
+    #             "RAG_COLLECTION_NAME",
+    #             kwargs.get("collection_name", "rag_knowledge_base"),
+    #         ),
+    #         description=os.getenv(
+    #             "RAG_DESCRIPTION",
+    #             kwargs.get("description", "is a knowledge base for RAG system"),
+    #         ),
+    #         persist_base_dir=os.getenv(
+    #             "RAG_PERSIST_BASE_DIR",
+    #             kwargs.get("persist_base_dir", "chroma_db"),
+    #         ),
+    #     )
 
     @property
     def persist_directory(self) -> str:
@@ -171,14 +197,14 @@ class ChromaDatabase:
             logger.error(f"❌ [CHROMADB] 初始化失败: {e}\n{traceback.format_exc()}")
             return False
 
-    def close(self) -> None:
-        """关闭数据库连接（清理资源），数据已持久化到磁盘"""
-        try:
-            if self.client and self.collection_name:
-                # ChromaDB持久化客户端，数据已保存到磁盘
-                logger.info("🔄 [CHROMADB] 数据库连接已清理，数据已持久化")
-        except Exception as e:
-            logger.warning(f"⚠️ [CHROMADB] 关闭数据库时出现警告: {e}")
+    # def close(self) -> None:
+    #     """关闭数据库连接（清理资源），数据已持久化到磁盘"""
+    #     try:
+    #         if self.client and self.collection_name:
+    #             # ChromaDB持久化客户端，数据已保存到磁盘
+    #             logger.info("🔄 [CHROMADB] 数据库连接已清理，数据已持久化")
+    #     except Exception as e:
+    #         logger.warning(f"⚠️ [CHROMADB] 关闭数据库时出现警告: {e}")
 
 
 ############################################################################################################
@@ -216,7 +242,7 @@ def chromadb_clear_database() -> None:
 
         # 如果有现有实例，先关闭
         if _chroma_db:
-            _chroma_db.close()
+            # _chroma_db.close()
             _chroma_db = None
 
         # 删除持久化数据目录

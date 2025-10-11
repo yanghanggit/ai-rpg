@@ -129,7 +129,7 @@ def initialize_rag_system(knowledge_base: Dict[str, List[str]]) -> bool:
                 chroma_db.collection.add(
                     embeddings=embeddings_list,
                     documents=documents,
-                    metadatas=metadatas,
+                    metadatas=metadatas,  # type: ignore[arg-type]
                     ids=ids,
                 )
 

@@ -7,9 +7,8 @@ from typing import Any, Final, List, Optional, Set
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
-from ..game.game_config import LOGS_DIR
+from .config import LOGS_DIR
 from ..mongodb import (
-    DEFAULT_MONGODB_CONFIG,
     WorldDocument,
     mongodb_find_one,
     mongodb_upsert_one,
@@ -72,7 +71,7 @@ def _persist(
     logger.debug("📝 创建演示游戏世界并存储到 MongoDB...")
 
     # version = "0.0.1"
-    collection_name = DEFAULT_MONGODB_CONFIG.worlds_collection
+    collection_name = WorldDocument.__name__  # 使用类名作为集合名称
 
     try:
         # 创建 WorldDocument

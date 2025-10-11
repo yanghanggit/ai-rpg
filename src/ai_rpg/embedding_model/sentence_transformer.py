@@ -16,7 +16,7 @@ from .model_loader import load_multilingual_model
 
 ############################################################################################################
 # 全局嵌入模型实例
-_sentence_transformer_embedding_model: Optional[SentenceTransformer] = None
+_sentence_transformer: Optional[SentenceTransformer] = None
 
 
 ############################################################################################################
@@ -27,25 +27,25 @@ def get_embedding_model() -> Optional[SentenceTransformer]:
     Returns:
         Optional[SentenceTransformer]: 全局嵌入模型实例，如果加载失败则返回None
     """
-    global _sentence_transformer_embedding_model
-    if _sentence_transformer_embedding_model is None:
+    global _sentence_transformer
+    if _sentence_transformer is None:
         logger.info("🔄 [EMBEDDING] 加载多语言语义模型...")
-        _sentence_transformer_embedding_model = load_multilingual_model()
-        if _sentence_transformer_embedding_model is None:
+        _sentence_transformer = load_multilingual_model()
+        if _sentence_transformer is None:
             logger.error("❌ [EMBEDDING] 多语言模型加载失败")
         else:
             logger.success("✅ [EMBEDDING] 多语言语义模型加载成功")
-    return _sentence_transformer_embedding_model
+    return _sentence_transformer
 
 
 ############################################################################################################
-def clear_embedding_model() -> None:
-    """
-    清理全局嵌入模型实例
-    """
-    global _sentence_transformer_embedding_model
-    _sentence_transformer_embedding_model = None
-    logger.info("🔄 [EMBEDDING] 全局嵌入模型实例已清理")
+# def clear_embedding_model() -> None:
+#     """
+#     清理全局嵌入模型实例
+#     """
+#     global _sentence_transformer_embedding_model
+#     _sentence_transformer_embedding_model = None
+#     logger.info("🔄 [EMBEDDING] 全局嵌入模型实例已清理")
 
 
 ############################################################################################################

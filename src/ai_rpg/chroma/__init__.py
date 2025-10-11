@@ -5,17 +5,13 @@ ChromaDB 向量数据库模块
 """
 
 from .client import (
-    ChromaDatabase,
-    ChromaDatabaseConfig,
-    chromadb_clear_database,
-    get_chroma_db,
-    DEFAULT_CHROMADB_CONFIG,
+    chroma_client,
+    clear_client,
+    get_default_collection,
 )
 
 __all__ = [
-    "ChromaDatabase",
-    "ChromaDatabaseConfig",
-    "chromadb_clear_database",
-    "get_chroma_db",
-    "DEFAULT_CHROMADB_CONFIG",
+    "chroma_client",
+    "clear_client",
+    "get_default_collection",
 ]

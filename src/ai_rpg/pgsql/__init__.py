@@ -17,7 +17,7 @@ from .vector_document import VectorDocumentDB
 from .config import PostgresConfig, DEFAULT_POSTGRES_CONFIG
 
 # Import RAG operations from new rag module
-from ..rag import initialize_rag_system, rag_semantic_search
+from ..rag import load_knowledge_base_to_vector_db, search_similar_documents
 
 __all__: List[str] = [
     # PostgreSQL configuration
@@ -26,7 +26,7 @@ __all__: List[str] = [
     # Vector database models
     "VectorDocumentDB",
     # RAG operations (re-exported for backward compatibility)
-    "initialize_rag_system",
-    "rag_semantic_search",
+    "load_knowledge_base_to_vector_db",
+    "search_similar_documents",
     # Database clients and core utilities are exported via star imports
 ]

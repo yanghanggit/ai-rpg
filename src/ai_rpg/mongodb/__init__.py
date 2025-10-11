@@ -4,6 +4,7 @@ MongoDB 模块
 包含 MongoDB 相关的配置、客户端操作、文档模型等功能
 """
 
+from .world_document import WorldDocument
 from .boot_document import BootDocument
 from .dungeon_document import DungeonDocument
 from .client import (
@@ -14,13 +15,8 @@ from .client import (
     MongoFilterType,
     MongoSortType,
     MongoUpdateType,
-    get_mongodb_client,
-    get_mongodb_client_instance,
-    get_mongodb_database,
-    get_mongodb_database_instance,
     mongodb_clear_collection,
     mongodb_clear_database,
-    mongodb_close_connection,
     mongodb_count_documents,
     mongodb_create_index,
     mongodb_delete_many,
@@ -35,19 +31,15 @@ from .client import (
     mongodb_update_many,
     mongodb_update_one,
     mongodb_upsert_one,
+    mongodb_client,
+    mongodb_database,
 )
-from .config import DEFAULT_MONGODB_CONFIG, MongoDBConfig
-from .world_document import WorldDocument
+
 
 __all__ = [
-    # 配置
-    "MongoDBConfig",
-    "DEFAULT_MONGODB_CONFIG",
-    # 文档模型
     "BootDocument",
     "DungeonDocument",
     "WorldDocument",
-    # 客户端类型
     "MongoClientType",
     "MongoDatabaseType",
     "MongoCollectionType",
@@ -55,13 +47,6 @@ __all__ = [
     "MongoFilterType",
     "MongoUpdateType",
     "MongoSortType",
-    # 客户端连接函数
-    "get_mongodb_client",
-    "get_mongodb_database",
-    "get_mongodb_client_instance",
-    "get_mongodb_database_instance",
-    "mongodb_close_connection",
-    # 数据库操作函数
     "mongodb_insert_one",
     "mongodb_insert_many",
     "mongodb_find_one",
@@ -78,4 +63,6 @@ __all__ = [
     "mongodb_drop_collection",
     "mongodb_clear_collection",
     "mongodb_clear_database",
+    "mongodb_client",
+    "mongodb_database",
 ]

@@ -59,7 +59,11 @@ import click
 from loguru import logger
 from mcp.server.fastmcp import FastMCP
 from ai_rpg.mcp import McpConfig, load_mcp_config
-from ai_rpg.rag.rag_system import rag_semantic_search
+from ai_rpg.rag.knowledge_retrieval import search_similar_documents
+from ai_rpg.chroma import get_default_collection
+from ai_rpg.embedding_model.sentence_transformer import (
+    get_embedding_model,
+)
 from pathlib import Path
 
 # ============================================================================
@@ -184,9 +188,35 @@ def _register_tools(app: FastMCP, mcp_config: McpConfig) -> None:
                 f"🔍 RAG查询请求: query='{query}', context_limit={context_limit}"
             )
 
+            # 获取必要的依赖
+            # chroma_db = get_chroma_db()
+            embedding_model = get_embedding_model()
+
+            if embedding_model is None:
+                logger.error("❌ 嵌入模型未初始化")
+                return json.dumps(
+                    {
+                        "status": "error",
+                        "message": "嵌入模型未初始化",
+                        "documents": [],
+                        "total_count": 0,
+                    }
+                )
+
+            # if chroma_db is None or chroma_db.collection is None:
+            #     logger.error("❌ ChromaDB未初始化")
+            #     return json.dumps(
+            #         {
+            #             "status": "error",
+            #             "message": "ChromaDB未初始化",
+            #             "documents": [],
+            #             "total_count": 0,
+            #         }
+            #     )
+
             # 调用RAG语义搜索函数
-            documents, similarity_scores = rag_semantic_search(
-                query, top_k=context_limit
+            documents, similarity_scores = search_similar_documents(
+                query, get_default_collection(), embedding_model, top_k=context_limit
             )
 
             # 构建返回结果

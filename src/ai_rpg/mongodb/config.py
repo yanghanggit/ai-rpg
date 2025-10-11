@@ -1,4 +1,4 @@
-from typing import ClassVar, Final, final
+from typing import Final, final
 from pydantic import BaseModel
 
 
@@ -13,9 +13,9 @@ class MongoDBConfig(BaseModel):
     password: str = ""
 
     # 集合名称配置 - 使用 ClassVar 标注类变量
-    worlds_boot_collection: ClassVar[str] = "worlds_boot"
-    worlds_collection: ClassVar[str] = "worlds"
-    dungeons_collection: ClassVar[str] = "dungeons"
+    # worlds_boot_collection: ClassVar[str] = "worlds_boot"
+    # worlds_collection: ClassVar[str] = "worlds"
+    # dungeons_collection: ClassVar[str] = "dungeons"
 
     @property
     def connection_string(self) -> str:

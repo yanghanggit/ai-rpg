@@ -15,8 +15,9 @@ from langgraph.graph.state import CompiledStateGraph
 from typing_extensions import TypedDict
 
 # 导入ChromaDB相关功能
-from ..chroma import get_chroma_db
-from ..rag import rag_semantic_search
+from ..chroma import get_default_collection
+from ..rag import search_similar_documents
+from ..embedding_model.sentence_transformer import get_embedding_model
 
 # 导入新的路由系统
 from ..rag.routing import RouteDecisionManager
@@ -178,18 +179,36 @@ def retrieval_node(state: UnifiedState) -> Dict[str, Any]:
         logger.info(f"🔍 [RETRIEVAL] 用户查询: {user_query}")
 
         # 获取ChromaDB实例并执行语义搜索
-        chroma_db = get_chroma_db()
+        # chroma_db = get_chroma_db()
 
-        if not chroma_db.initialized:
-            logger.error("❌ [RETRIEVAL] ChromaDB未初始化，无法执行搜索")
+        # if not chroma_db.initialized:
+        #     logger.error("❌ [RETRIEVAL] ChromaDB未初始化，无法执行搜索")
+        #     return {
+        #         "retrieved_docs": ["ChromaDB数据库未初始化，请检查系统配置。"],
+        #         "similarity_scores": [0.0],
+        #     }
+
+        # 获取嵌入模型
+        embedding_model = get_embedding_model()
+        if embedding_model is None:
             return {
-                "retrieved_docs": ["ChromaDB数据库未初始化，请检查系统配置。"],
+                "retrieved_docs": ["嵌入模型未初始化，请检查系统配置。"],
                 "similarity_scores": [0.0],
             }
 
+        # 检查collection是否可用
+        # if chroma_db.collection is None:
+        #     return {
+        #         "retrieved_docs": ["ChromaDB collection未初始化，请检查系统配置。"],
+        #         "similarity_scores": [0.0],
+        #     }
+
         # 执行向量语义搜索
-        retrieved_docs, similarity_scores = rag_semantic_search(
-            query=user_query, top_k=5
+        retrieved_docs, similarity_scores = search_similar_documents(
+            query=user_query,
+            collection=get_default_collection(),
+            embedding_model=embedding_model,
+            top_k=5,
         )
 
         # 检查搜索结果

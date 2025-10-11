@@ -5,9 +5,12 @@ from ..models import (
     QueryAction,
 )
 from loguru import logger
-from ..chroma import get_chroma_db
-from ..rag import rag_semantic_search
 from loguru import logger
+from ..embedding_model.sentence_transformer import (
+    get_embedding_model,
+)
+from ..chroma import get_default_collection
+from ..rag import search_similar_documents
 
 
 #####################################################################################################################################
@@ -70,14 +73,29 @@ class QueryActionSystem(BaseActionReactiveSystem):
             logger.debug(f"🔍 RAG查询: {message}...")
 
             # 1. 检查ChromaDB状态
-            chroma_db = get_chroma_db()
-            if not chroma_db.initialized:
-                logger.warning("⚠️ ChromaDB未初始化，返回空结果")
+            # chroma_db = get_chroma_db()
+            # if not chroma_db.initialized:
+            #     logger.warning("⚠️ ChromaDB未初始化，返回空结果")
+            #     return ""
+
+            # 1.5. 获取嵌入模型
+            embedding_model = get_embedding_model()
+            assert embedding_model is not None, "嵌入模型未初始化"
+            if embedding_model is None:
+                logger.warning("⚠️ 嵌入模型未初始化，返回空结果")
                 return ""
 
+            # 1.6. 检查collection是否可用
+            # if chroma_db.collection is None:
+            #     logger.warning("⚠️ ChromaDB collection未初始化，返回空结果")
+            #     return ""
+
             # 2. 执行语义搜索查询
-            retrieved_docs, similarity_scores = rag_semantic_search(
-                query=message, top_k=3
+            retrieved_docs, similarity_scores = search_similar_documents(
+                query=message,
+                collection=get_default_collection(),
+                embedding_model=embedding_model,
+                top_k=3,
             )
 
             # 3. 检查查询结果

@@ -6,12 +6,26 @@ SentenceTransformer 模型加载工具模块
 
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
+from loguru import logger
+from .config import SENTENCE_TRANSFORMERS_CACHE
 
 if TYPE_CHECKING:
     from sentence_transformers import SentenceTransformer  # noqa: F401
 
 
-from loguru import logger
+# def find_project_root() -> Path:
+#     """通过寻找项目标志文件来确定项目根目录"""
+#     current = Path(__file__).resolve()
+
+#     # 寻找包含这些标志文件的目录
+#     markers = ["pyproject.toml", "Makefile", ".git", "README.md"]
+
+#     for parent in [current] + list(current.parents):
+#         if any((parent / marker).exists() for marker in markers):
+#             return parent
+
+#     # 如果找不到，回退到当前工作目录
+#     return Path.cwd()
 
 
 class ModelLoader:
@@ -24,10 +38,10 @@ class ModelLoader:
         Args:
             cache_dir: 模型缓存目录
         """
-        self.project_root = Path(__file__).parent.parent.parent.parent
+        # self.project_root = find_project_root()
 
         if cache_dir is None:
-            self.cache_dir = self.project_root / ".cache" / "sentence_transformers"
+            self.cache_dir = SENTENCE_TRANSFORMERS_CACHE  # self.project_root / ".cache" / "sentence_transformers"
         else:
             self.cache_dir = Path(cache_dir)
 
@@ -75,18 +89,6 @@ class ModelLoader:
         return model_cache_path if model_cache_path.exists() else None
 
 
-# 全局模型加载器实例
-_model_loader = None
-
-
-def get_model_loader() -> ModelLoader:
-    """获取全局模型加载器实例"""
-    global _model_loader
-    if _model_loader is None:
-        _model_loader = ModelLoader()
-    return _model_loader
-
-
 def load_sentence_transformer(
     model_name: str,
     force_online: bool = False,
@@ -113,7 +115,7 @@ def load_sentence_transformer(
     if cache_dir:
         loader = ModelLoader(Path(cache_dir))
     else:
-        loader = get_model_loader()
+        loader = ModelLoader()
 
     return loader.load_model(model_name, force_online)
 
@@ -134,7 +136,7 @@ def is_model_cached(
     if cache_dir:
         loader = ModelLoader(Path(cache_dir))
     else:
-        loader = get_model_loader()
+        loader = ModelLoader()
 
     return loader.is_model_cached(model_name)
 
@@ -152,20 +154,20 @@ def load_multilingual_model(force_online: bool = False) -> Optional[Any]:
     )
 
 
-if __name__ == "__main__":
-    # 测试模块功能
-    print("🧪 测试模型加载工具...")
+# if __name__ == "__main__":
+#     # 测试模块功能
+#     print("🧪 测试模型加载工具...")
 
-    loader = get_model_loader()
+#     loader = ModelLoader()
 
-    print(f"缓存目录: {loader.cache_dir}")
+#     print(f"缓存目录: {loader.cache_dir}")
 
-    # 检查模型缓存状态
-    models_to_check = ["all-MiniLM-L6-v2", "paraphrase-multilingual-MiniLM-L12-v2"]
+#     # 检查模型缓存状态
+#     models_to_check = ["all-MiniLM-L6-v2", "paraphrase-multilingual-MiniLM-L12-v2"]
 
-    for model_name in models_to_check:
-        cached = is_model_cached(model_name)
-        status = "✅ 已缓存" if cached else "❌ 未缓存"
-        print(f"{model_name}: {status}")
+#     for model_name in models_to_check:
+#         cached = is_model_cached(model_name)
+#         status = "✅ 已缓存" if cached else "❌ 未缓存"
+#         print(f"{model_name}: {status}")
 
-    print("\n💡 使用 scripts/download_sentence_transformers_models.py 来下载模型")
+#     print("\n💡 使用 scripts/download_sentence_transformers_models.py 来下载模型")

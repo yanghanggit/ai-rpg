@@ -3,7 +3,6 @@ from typing import Optional
 from loguru import logger
 from ..mongodb import (
     BootDocument,
-    DEFAULT_MONGODB_CONFIG,
     WorldDocument,
     mongodb_delete_one,
     mongodb_find_one,
@@ -25,9 +24,7 @@ class GameSessionContext:
     @property
     def boot(self) -> Optional[Boot]:
         logger.debug(f"📖 从 MongoDB 获取演示游戏世界进行验证...")
-        stored_boot = mongodb_find_one(
-            DEFAULT_MONGODB_CONFIG.worlds_boot_collection, {"game_name": self.game}
-        )
+        stored_boot = mongodb_find_one(BootDocument.__name__, {"game_name": self.game})
         if stored_boot is None:
             logger.error("❌ 启动世界的数据存储到 MongoDB 失败!")
             return None
@@ -49,7 +46,8 @@ class GameSessionContext:
     def world(self) -> Optional[World]:
         logger.debug(f"📖 从 MongoDB 获取游戏世界进行验证...")
         stored_world = mongodb_find_one(
-            DEFAULT_MONGODB_CONFIG.worlds_collection,
+            # DEFAULT_MONGODB_CONFIG.worlds_collection,
+            WorldDocument.__name__,
             {"username": self.user, "game_name": self.game},
         )
         if stored_world is None:
@@ -77,9 +75,7 @@ class GameSessionContext:
 
         try:
             # 删除 MongoDB 中的世界数据
-            result = mongodb_delete_one(
-                DEFAULT_MONGODB_CONFIG.worlds_collection, {"username": self.user}
-            )
+            result = mongodb_delete_one(WorldDocument.__name__, {"username": self.user})
             if not result:
                 logger.warning(f"❌ 用户 {self.user} 的游戏世界数据删除失败或不存在。")
 

@@ -2,8 +2,6 @@ __pycache__/
 *.DS_Store
 .VSCodeCounter
 logs
-gen_worlds/
-gen_runtimes/
 *.log
 server_pids.txt
 
@@ -35,7 +33,6 @@ htmlcov/
 .cache/
 
 # ChromaDB
-chroma_db/
 /chroma/
 # Generated images
 generated_images/

@@ -33,12 +33,11 @@ from loguru import logger
 from ai_rpg.settings import (
     ServerSettings,
 )
-from ai_rpg.game.game_config import GLOBAL_GAME_NAME, LOGS_DIR
+from ai_rpg.game.config import GLOBAL_GAME_NAME, LOGS_DIR
 
 from ai_rpg.mongodb import (
     BootDocument,
     DungeonDocument,
-    DEFAULT_MONGODB_CONFIG,
     mongodb_clear_database,
     mongodb_find_one,
     mongodb_upsert_one,
@@ -104,7 +103,8 @@ def _mongodb_create_and_store_demo_boot() -> None:
     world_boot = create_demo_game_world(game_name)
 
     # 存储 world_boot 到 MongoDB
-    collection_name = DEFAULT_MONGODB_CONFIG.worlds_boot_collection
+    collection_name = BootDocument.__name__  # 使用类名作为集合名称
+    # DEFAULT_MONGODB_CONFIG.worlds_boot_collection
 
     try:
         # 创建 WorldBootDocument 实例
@@ -199,7 +199,8 @@ def _mongodb_create_and_store_demo_dungeon() -> None:
     demo_dungeon = create_demo_dungeon4()
 
     # 存储 demo_dungeon 到 MongoDB
-    collection_name = DEFAULT_MONGODB_CONFIG.dungeons_collection  # 地下城集合名称
+    collection_name = DungeonDocument.__name__  # 使用类名作为集合名称
+    # DEFAULT_MONGODB_CONFIG.dungeons_collection  # 地下城集合名称
 
     try:
         # 创建 DungeonDocument 实例
@@ -268,18 +269,40 @@ def _setup_chromadb_rag_environment() -> None:
     logger.info("🚀 初始化RAG系统...")
 
     # 导入必要的模块
-    from ai_rpg.chroma import chromadb_clear_database
-    from ai_rpg.rag import initialize_rag_system
+    from ai_rpg.chroma import get_default_collection, clear_client
+    from ai_rpg.rag import load_knowledge_base_to_vector_db
+    from ai_rpg.embedding_model.sentence_transformer import (
+        get_embedding_model,
+    )
     from ai_rpg.demo.campaign_setting import FANTASY_WORLD_RPG_KNOWLEDGE_BASE
 
     try:
-        # 清理现有的ChromaDB数据
+
+        # 新的测试
         logger.info("🧹 清空ChromaDB数据库...")
-        chromadb_clear_database()
+        clear_client()
+
+        # 清理现有的ChromaDB数据
+
+        # chromadb_clear_database()
+
+        # 获取嵌入模型
+        embedding_model = get_embedding_model()
+        if embedding_model is None:
+            logger.error("❌ 嵌入模型初始化失败")
+            return
+
+        # 获取ChromaDB实例
+        # chroma_db = get_chroma_db()
+        # if chroma_db is None or chroma_db.collection is None:
+        #     logger.error("❌ ChromaDB实例初始化失败")
+        #     return
 
         # 使用正式知识库数据初始化RAG系统
         logger.info("📚 加载艾尔法尼亚世界知识库...")
-        success = initialize_rag_system(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)
+        success = load_knowledge_base_to_vector_db(
+            FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, get_default_collection()
+        )
 
         if success:
             logger.success("✅ RAG系统初始化成功!")

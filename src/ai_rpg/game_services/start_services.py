@@ -11,7 +11,6 @@ from ..game_services.game_server import GameServerInstance
 from ..models import StartRequest, StartResponse, World
 from ..mongodb import (
     DungeonDocument,
-    DEFAULT_MONGODB_CONFIG,
     mongodb_find_one,
 )
 
@@ -121,7 +120,8 @@ def setup_web_game_session(
         # 读数据库! 测试的写死的地下城名字，本质就是dungeon4!!!!
         fixed_dungeon_name = "哥布林与兽人"
         stored_dungeon = mongodb_find_one(
-            DEFAULT_MONGODB_CONFIG.dungeons_collection,
+            # DEFAULT_MONGODB_CONFIG.dungeons_collection,
+            DungeonDocument.__name__,
             {"dungeon_name": fixed_dungeon_name},
         )
         assert stored_dungeon is not None, "数据库中已经存在该地下城数据"

@@ -12,18 +12,16 @@ RAG操作模块
 
 import traceback
 from typing import Dict, List, Mapping, Sequence, Tuple
-
 from loguru import logger
-
-from ..chroma import get_chroma_db
-from ..embedding_model.sentence_transformer_embedding_model import (
-    get_embedding_model,
-)
+from chromadb.api.models.Collection import Collection
+from sentence_transformers import SentenceTransformer
 
 
 ############################################################################################################
-def initialize_knowledge_base_embeddings(
+# 本页的内部函数。
+def _prepare_documents_for_vector_storage(
     knowledge_base: Dict[str, List[str]],
+    embedding_model: SentenceTransformer,  # SentenceTransformer 实例（非可选）
 ) -> Tuple[
     List[Sequence[float]],
     List[str],
@@ -35,18 +33,13 @@ def initialize_knowledge_base_embeddings(
 
     Args:
         knowledge_base: 知识库数据，格式为 {category: [documents]}
+        embedding_model: SentenceTransformer 嵌入模型实例
 
     Returns:
         Tuple: (embeddings, documents, metadatas, ids) - collection.add()方法的参数
     """
     try:
         logger.info("🔄 [PREPARE] 开始准备知识库数据...")
-
-        # 获取全局嵌入模型实例
-        embedding_model = get_embedding_model()
-        if embedding_model is None:
-            logger.error("❌ [PREPARE] 嵌入模型未初始化")
-            return [], [], [], []
 
         # 准备文档数据
         documents: List[str] = []
@@ -80,18 +73,22 @@ def initialize_knowledge_base_embeddings(
 
 
 ############################################################################################################
-def initialize_rag_system(knowledge_base: Dict[str, List[str]]) -> bool:
+def load_knowledge_base_to_vector_db(
+    knowledge_base: Dict[str, List[str]],
+    embedding_model: SentenceTransformer,
+    collection: Collection,
+) -> bool:
     """
     初始化RAG系统
 
     功能：
-    1. 初始化ChromaDB向量数据库
-    2. 加载SentenceTransformer模型
-    3. 将知识库数据向量化并存储
-    4. 验证系统就绪状态
+    1. 将知识库数据向量化并存储
+    2. 验证系统就绪状态
 
     Args:
         knowledge_base: 要加载的知识库数据
+        embedding_model: SentenceTransformer 嵌入模型实例
+        collection: ChromaDB Collection 实例
 
     Returns:
         bool: 初始化是否成功
@@ -99,24 +96,23 @@ def initialize_rag_system(knowledge_base: Dict[str, List[str]]) -> bool:
     logger.info("🚀 [INIT] 开始初始化RAG系统...")
 
     try:
-        # 1. 获取ChromaDB实例并初始化
-        chroma_db = get_chroma_db()
-
-        # 2. 检查是否需要加载知识库数据
-        if chroma_db.collection and chroma_db.collection.count() == 0:
+        # 1. 检查是否需要加载知识库数据
+        if collection and collection.count() == 0:
             logger.info("📚 [INIT] 集合为空，开始加载知识库数据...")
 
             # 3. 展开知识库加载逻辑（原 load_knowledge_base 方法的内容）
             try:
                 logger.info("📚 [CHROMADB] 开始加载知识库数据...")
 
-                if not chroma_db.collection:
+                if not collection:
                     logger.error("❌ [CHROMADB] 集合未初始化")
                     return False
 
-                # 使用独立函数准备知识库数据
+                # 使用传入的嵌入模型准备知识库数据
                 embeddings_list, documents, metadatas, ids = (
-                    initialize_knowledge_base_embeddings(knowledge_base)
+                    _prepare_documents_for_vector_storage(
+                        knowledge_base, embedding_model
+                    )
                 )
 
                 # 检查准备结果
@@ -126,7 +122,7 @@ def initialize_rag_system(knowledge_base: Dict[str, List[str]]) -> bool:
 
                 # 批量添加到ChromaDB
                 logger.info("💾 [CHROMADB] 存储向量到数据库...")
-                chroma_db.collection.add(
+                collection.add(
                     embeddings=embeddings_list,
                     documents=documents,
                     metadatas=metadatas,  # type: ignore[arg-type]
@@ -138,7 +134,7 @@ def initialize_rag_system(knowledge_base: Dict[str, List[str]]) -> bool:
                 )
 
                 # 验证数据加载
-                count = chroma_db.collection.count()
+                count = collection.count()
                 logger.info(f"📊 [CHROMADB] 数据库中现有文档数量: {count}")
 
             except Exception as e:
@@ -157,55 +153,54 @@ def initialize_rag_system(knowledge_base: Dict[str, List[str]]) -> bool:
 
 
 ############################################################################################################
-def rag_semantic_search(query: str, top_k: int = 5) -> Tuple[List[str], List[float]]:
+############################################################################################################
+def search_similar_documents(
+    query: str,
+    collection: Collection,
+    embedding_model: SentenceTransformer,
+    top_k: int = 5,
+) -> Tuple[List[str], List[float]]:
     """
-    执行全局语义搜索
+    执行语义搜索
 
     功能：
-    1. 获取ChromaDB实例
-    2. 获取嵌入模型
-    3. 执行语义搜索
-    4. 返回搜索结果
+    1. 计算查询向量
+    2. 执行向量搜索
+    3. 返回搜索结果
 
     Args:
         query: 用户查询文本
+        collection: ChromaDB Collection 实例
+        embedding_model: SentenceTransformer 嵌入模型实例
         top_k: 返回最相似的文档数量
 
     Returns:
         tuple: (检索到的文档列表, 相似度分数列表)
     """
     try:
-        # 1. 获取ChromaDB实例
-        chroma_db = get_chroma_db()
-
-        if not chroma_db.initialized or not chroma_db.collection:
-            logger.error("❌ [CHROMADB] 数据库未初始化")
-            return [], []
-
-        # 2. 获取全局嵌入模型实例
-        embedding_model = get_embedding_model()
-        if embedding_model is None:
-            logger.error("❌ [CHROMADB] 嵌入模型未初始化")
+        # 1. 验证集合状态
+        if not collection:
+            logger.error("❌ [CHROMADB] 集合未初始化")
             return [], []
 
         logger.info(f"🔍 [CHROMADB] 执行语义搜索: '{query}'")
 
-        # 3. 计算查询向量
+        # 2. 计算查询向量
         query_embedding = embedding_model.encode([query])
 
-        # 4. 在ChromaDB中执行向量搜索
-        results = chroma_db.collection.query(
+        # 3. 在ChromaDB中执行向量搜索
+        results = collection.query(
             query_embeddings=query_embedding.tolist(),
             n_results=top_k,
             include=["documents", "distances", "metadatas"],
         )
 
-        # 5. 提取结果
+        # 4. 提取结果
         documents = results["documents"][0] if results["documents"] else []
         distances = results["distances"][0] if results["distances"] else []
         metadatas = results["metadatas"][0] if results["metadatas"] else []
 
-        # 6. 将距离转换为相似度分数（距离越小，相似度越高）
+        # 5. 将距离转换为相似度分数（距离越小，相似度越高）
         # 相似度 = 1 - 标准化距离
         if distances:
             max_distance = max(distances) if distances else 1.0
@@ -217,7 +212,7 @@ def rag_semantic_search(query: str, top_k: int = 5) -> Tuple[List[str], List[flo
 
         logger.info(f"✅ [CHROMADB] 搜索完成，找到 {len(documents)} 个相关文档")
 
-        # 7. 打印搜索结果详情（用于调试）
+        # 6. 打印搜索结果详情（用于调试）
         for i, (doc, score, metadata) in enumerate(
             zip(documents, similarity_scores, metadatas)
         ):

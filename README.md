@@ -23,7 +23,7 @@
 
 1.需安装git bash。
 2.使用UV后需安装Make工具 使用命令`winget install ezwinports.make`
-3.注意python解释器，安装uv后选择    .\\.venv\\Scripts\\python.exe
+3.注意python解释器，安装uv后选择    `.\.venv\Scripts\python.exe`
 
 ## 其他情况
 

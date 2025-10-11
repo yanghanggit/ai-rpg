@@ -15,7 +15,7 @@ from ..mongodb import (
 )
 from ..entitas import Entity
 from ..game.base_game import BaseGame
-from ..game.tcg_game_context import TCGGameContext
+from .rpg_game_context import RPGGameContext
 from ..game.tcg_game_process_pipeline import TCGGameProcessPipeline
 from ..models import (
     Actor,
@@ -197,7 +197,7 @@ def _verbose_dungeon_system(verbose_dir: Path, world: World) -> None:
 
 
 ###############################################################################################################################################
-class TCGGame(BaseGame, TCGGameContext):
+class TCGGame(BaseGame, RPGGameContext):
 
     def __init__(
         self,
@@ -208,7 +208,7 @@ class TCGGame(BaseGame, TCGGameContext):
 
         # 必须按着此顺序实现父
         BaseGame.__init__(self, name)  # 需要传递 name
-        TCGGameContext.__init__(self)  # 继承 Context, 需要调用其 __init__
+        RPGGameContext.__init__(self)  # 继承 Context, 需要调用其 __init__
 
         # 世界运行时
         self._world: Final[World] = world

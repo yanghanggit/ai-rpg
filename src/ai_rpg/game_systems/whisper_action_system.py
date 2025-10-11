@@ -1,6 +1,6 @@
 from typing import final, override
 from ..entitas import Entity, GroupEvent, Matcher
-from ..game.tcg_game_context import InteractionValidationResult
+from ..game.rpg_game_context import InteractionValidationResult
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import AgentEvent, WhisperAction, WhisperEvent
 

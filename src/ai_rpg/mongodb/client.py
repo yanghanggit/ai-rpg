@@ -11,6 +11,7 @@ import pymongo
 from loguru import logger
 from pymongo.errors import PyMongoError
 
+# from ai_rpg import mongodb
 from .config import MongoDBConfig
 
 # MongoDB文档类型 - 可以是字典或继承自BaseMongoDocument的类型
@@ -35,72 +36,83 @@ else:
 
 
 ###################################################################################################
-def get_mongodb_client() -> MongoClientType:
-    """
-    获取MongoDB连接实例。
+# def get_mongodb_client() -> MongoClientType:
+#     """
+#     获取MongoDB连接实例。
 
-    返回:
-        MongoClientType: MongoDB客户端实例
-    """
-    mongodb_config = MongoDBConfig()
-    client = pymongo.MongoClient(mongodb_config.connection_string)
+#     返回:
+#         MongoClientType: MongoDB客户端实例
+#     """
+#     mongodb_config = MongoDBConfig()
+#     client = pymongo.MongoClient(mongodb_config.connection_string)
 
-    # 测试连接
-    try:
-        client.admin.command("ping")
-        logger.debug("MongoDB连接成功")
-    except Exception as e:
-        logger.error(f"MongoDB连接失败: {e}")
-        raise e
+#     # 测试连接
+#     try:
+#         client.admin.command("ping")
+#         logger.debug("MongoDB连接成功")
+#     except Exception as e:
+#         logger.error(f"MongoDB连接失败: {e}")
+#         raise e
 
-    return client
+#     return client
+
+
+# ###################################################################################################
+# def get_mongodb_database() -> MongoDatabaseType:
+#     """
+#     获取MongoDB数据库实例。
+
+#     返回:
+#         MongoDatabaseType: MongoDB数据库实例
+#     """
+#     mongodb_config = MongoDBConfig()
+#     client = get_mongodb_client()
+#     return client[mongodb_config.database]
+
+
+mongodb_config = MongoDBConfig()
+mongodb_client: MongoClientType = pymongo.MongoClient(mongodb_config.connection_string)
+mongodb_database: MongoDatabaseType = mongodb_client[mongodb_config.database]
+
+try:
+    mongodb_client.admin.command("ping")
+    logger.debug("MongoDB连接成功")
+except Exception as e:
+    logger.error(f"MongoDB连接失败: {e}")
+    # raise e
+
+###################################################################################################
+# # 获取MongoDB客户端的单例实例
+# _mongodb_client_instance: Optional[MongoClientType] = None
+# _mongodb_database_instance: Optional[MongoDatabaseType] = None
 
 
 ###################################################################################################
-def get_mongodb_database() -> MongoDatabaseType:
-    """
-    获取MongoDB数据库实例。
+# def get_mongodb_client_instance() -> MongoClientType:
+#     """
+#     获取MongoDB客户端单例实例。
 
-    返回:
-        MongoDatabaseType: MongoDB数据库实例
-    """
-    mongodb_config = MongoDBConfig()
-    client = get_mongodb_client()
-    return client[mongodb_config.database]
-
-
-###################################################################################################
-# 获取MongoDB客户端的单例实例
-_mongodb_client_instance: Optional[MongoClientType] = None
-_mongodb_database_instance: Optional[MongoDatabaseType] = None
+#     返回:
+#         MongoClientType: MongoDB客户端实例
+#     """
+#     global _mongodb_client_instance
+#     if _mongodb_client_instance is None:
+#         _mongodb_client_instance = get_mongodb_client()
+#     return _mongodb_client_instance
 
 
-###################################################################################################
-def get_mongodb_client_instance() -> MongoClientType:
-    """
-    获取MongoDB客户端单例实例。
+# ###################################################################################################
+# def get_mongodb_database_instance() -> MongoDatabaseType:
+#     """
+#     获取MongoDB数据库单例实例。
 
-    返回:
-        MongoClientType: MongoDB客户端实例
-    """
-    global _mongodb_client_instance
-    if _mongodb_client_instance is None:
-        _mongodb_client_instance = get_mongodb_client()
-    return _mongodb_client_instance
-
-
-###################################################################################################
-def get_mongodb_database_instance() -> MongoDatabaseType:
-    """
-    获取MongoDB数据库单例实例。
-
-    返回:
-        MongoDatabaseType: MongoDB数据库实例
-    """
-    global _mongodb_database_instance
-    if _mongodb_database_instance is None:
-        _mongodb_database_instance = get_mongodb_database()
-    return _mongodb_database_instance
+#     返回:
+#         MongoDatabaseType: MongoDB数据库实例
+#     """
+#     global _mongodb_database_instance
+#     if _mongodb_database_instance is None:
+#         _mongodb_database_instance = get_mongodb_database()
+#     return _mongodb_database_instance
 
 
 ###################################################################################################
@@ -120,9 +132,11 @@ def mongodb_insert_one(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
+    global mongodb_database
+
     try:
-        db = get_mongodb_database_instance()
-        collection = db[collection_name]
+        # db = mongodb_database
+        collection = mongodb_database[collection_name]
         result = collection.insert_one(document)
         logger.debug(
             f"MongoDB插入文档成功，集合: {collection_name}, ID: {result.inserted_id}"
@@ -150,9 +164,11 @@ def mongodb_insert_many(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
+    global mongodb_database
+
     try:
-        db = get_mongodb_database_instance()
-        collection = db[collection_name]
+        # db = get_mongodb_database_instance()
+        collection = mongodb_database[collection_name]
         result = collection.insert_many(documents)
         logger.debug(
             f"MongoDB批量插入文档成功，集合: {collection_name}, 数量: {len(result.inserted_ids)}"
@@ -180,9 +196,12 @@ def mongodb_find_one(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
+
+    global mongodb_database
+
     try:
-        db = get_mongodb_database_instance()
-        collection = db[collection_name]
+        # db = get_mongodb_database_instance()
+        collection = mongodb_database[collection_name]
         result = collection.find_one(filter_dict or {})
         logger.debug(
             f"MongoDB查找文档，集合: {collection_name}, 找到: {result is not None}"
@@ -217,9 +236,11 @@ def mongodb_find_many(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
+    global mongodb_database
+
     try:
-        db = get_mongodb_database_instance()
-        collection = db[collection_name]
+        # db = get_mongodb_database_instance()
+        collection = mongodb_database[collection_name]
         cursor = collection.find(filter_dict or {})
 
         if sort:
@@ -260,6 +281,9 @@ def mongodb_upsert_one(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
+
+    # global mongodb_database
+
     try:
         if filter_key not in document:
             raise ValueError(f"文档中缺少过滤键: {filter_key}")
@@ -297,9 +321,12 @@ def mongodb_replace_one(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
+
+    global mongodb_database
+
     try:
-        db = get_mongodb_database_instance()
-        collection = db[collection_name]
+        # db = get_mongodb_database_instance()
+        collection = mongodb_database[collection_name]
         result = collection.replace_one(filter_dict, document, upsert=upsert)
 
         if result.upserted_id:
@@ -345,9 +372,12 @@ def mongodb_update_one(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
+
+    global mongodb_database
+
     try:
-        db = get_mongodb_database_instance()
-        collection = db[collection_name]
+        # db = get_mongodb_database_instance()
+        collection = mongodb_database[collection_name]
         result = collection.update_one(filter_dict, update_dict, upsert=upsert)
         success = result.modified_count > 0 or (
             upsert and result.upserted_id is not None
@@ -383,9 +413,11 @@ def mongodb_update_many(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
+    global mongodb_database
+
     try:
-        db = get_mongodb_database_instance()
-        collection = db[collection_name]
+        # db = get_mongodb_database_instance()
+        collection = mongodb_database[collection_name]
         result = collection.update_many(filter_dict, update_dict, upsert=upsert)
         logger.debug(
             f"MongoDB批量更新文档，集合: {collection_name}, 修改数量: {result.modified_count}"
@@ -411,9 +443,12 @@ def mongodb_delete_one(collection_name: str, filter_dict: MongoFilterType) -> bo
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
+
+    global mongodb_database
+
     try:
-        db = get_mongodb_database_instance()
-        collection = db[collection_name]
+        # db = get_mongodb_database_instance()
+        collection = mongodb_database[collection_name]
         result = collection.delete_one(filter_dict)
         success = result.deleted_count > 0
         logger.debug(f"MongoDB删除文档，集合: {collection_name}, 成功: {success}")
@@ -438,9 +473,12 @@ def mongodb_delete_many(collection_name: str, filter_dict: MongoFilterType) -> i
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
+
+    global mongodb_database
+
     try:
-        db = get_mongodb_database_instance()
-        collection = db[collection_name]
+        # db = get_mongodb_database_instance()
+        collection = mongodb_database[collection_name]
         result = collection.delete_many(filter_dict)
         logger.debug(
             f"MongoDB批量删除文档，集合: {collection_name}, 删除数量: {result.deleted_count}"
@@ -468,9 +506,12 @@ def mongodb_count_documents(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
+
+    global mongodb_database
+
     try:
-        db = get_mongodb_database_instance()
-        collection = db[collection_name]
+        # db = get_mongodb_database_instance()
+        collection = mongodb_database[collection_name]
         count = collection.count_documents(filter_dict or {})
         logger.debug(f"MongoDB统计文档数量，集合: {collection_name}, 数量: {count}")
         return count
@@ -497,9 +538,12 @@ def mongodb_create_index(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
+
+    global mongodb_database
+
     try:
-        db = get_mongodb_database_instance()
-        collection = db[collection_name]
+        # db = get_mongodb_database_instance()
+        collection = mongodb_database[collection_name]
         index_name = collection.create_index(index_keys, unique=unique)
         logger.info(f"MongoDB创建索引成功，集合: {collection_name}, 索引: {index_name}")
         return index_name
@@ -519,9 +563,12 @@ def mongodb_list_collections() -> List[str]:
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
+
+    global mongodb_database
+
     try:
-        db = get_mongodb_database_instance()
-        collections = db.list_collection_names()
+        # db = get_mongodb_database_instance()
+        collections = mongodb_database.list_collection_names()
         logger.debug(f"MongoDB列出集合，数量: {len(collections)}")
         return collections
     except PyMongoError as e:
@@ -540,9 +587,12 @@ def mongodb_drop_collection(collection_name: str) -> None:
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
+
+    global mongodb_database
+
     try:
-        db = get_mongodb_database_instance()
-        db.drop_collection(collection_name)
+        # db = get_mongodb_database_instance()
+        mongodb_database.drop_collection(collection_name)
         logger.warning(f"MongoDB删除集合: {collection_name}")
     except PyMongoError as e:
         logger.error(f"MongoDB删除集合失败，集合: {collection_name}, 错误: {e}")
@@ -560,13 +610,16 @@ def mongodb_clear_database() -> None:
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
+
+    global mongodb_database
+
     try:
-        db = get_mongodb_database_instance()
-        collections = db.list_collection_names()
+        # db = get_mongodb_database_instance()
+        collections = mongodb_database.list_collection_names()
 
         # 删除所有集合
         for collection_name in collections:
-            db.drop_collection(collection_name)
+            mongodb_database.drop_collection(collection_name)
             logger.warning(f"已删除集合: {collection_name}")
 
         logger.warning(f"MongoDB数据库清空完成，共删除 {len(collections)} 个集合")
@@ -589,9 +642,12 @@ def mongodb_clear_collection(collection_name: str) -> int:
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
+
+    global mongodb_database
+
     try:
-        db = get_mongodb_database_instance()
-        collection = db[collection_name]
+        # db = get_mongodb_database_instance()
+        collection = mongodb_database[collection_name]
         result = collection.delete_many({})  # 空条件匹配所有文档
         logger.warning(
             f"MongoDB清空集合: {collection_name}, 删除文档数量: {result.deleted_count}"
@@ -603,19 +659,19 @@ def mongodb_clear_collection(collection_name: str) -> int:
 
 
 ###################################################################################################
-def mongodb_close_connection() -> None:
-    """
-    关闭MongoDB连接。
-    """
-    global _mongodb_client_instance, _mongodb_database_instance
-    try:
-        if _mongodb_client_instance is not None:
-            _mongodb_client_instance.close()
-            _mongodb_client_instance = None
-            _mongodb_database_instance = None
-            logger.info("MongoDB连接已关闭")
-    except Exception as e:
-        logger.error(f"关闭MongoDB连接时出错: {e}")
+# def mongodb_close_connection() -> None:
+#     """
+#     关闭MongoDB连接。
+#     """
+#     global _mongodb_client_instance, _mongodb_database_instance
+#     try:
+#         if _mongodb_client_instance is not None:
+#             _mongodb_client_instance.close()
+#             _mongodb_client_instance = None
+#             _mongodb_database_instance = None
+#             logger.info("MongoDB连接已关闭")
+#     except Exception as e:
+#         logger.error(f"关闭MongoDB连接时出错: {e}")
 
 
 ###################################################################################################

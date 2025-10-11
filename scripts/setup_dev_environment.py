@@ -104,7 +104,8 @@ def _mongodb_create_and_store_demo_boot() -> None:
     world_boot = create_demo_game_world(game_name)
 
     # 存储 world_boot 到 MongoDB
-    collection_name = DEFAULT_MONGODB_CONFIG.worlds_boot_collection
+    collection_name = BootDocument.__name__  # 使用类名作为集合名称
+    #DEFAULT_MONGODB_CONFIG.worlds_boot_collection
 
     try:
         # 创建 WorldBootDocument 实例
@@ -199,7 +200,8 @@ def _mongodb_create_and_store_demo_dungeon() -> None:
     demo_dungeon = create_demo_dungeon4()
 
     # 存储 demo_dungeon 到 MongoDB
-    collection_name = DEFAULT_MONGODB_CONFIG.dungeons_collection  # 地下城集合名称
+    collection_name = DungeonDocument.__name__  # 使用类名作为集合名称
+    #DEFAULT_MONGODB_CONFIG.dungeons_collection  # 地下城集合名称
 
     try:
         # 创建 DungeonDocument 实例

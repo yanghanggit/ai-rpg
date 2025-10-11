@@ -72,7 +72,7 @@ def _persist(
     logger.debug("📝 创建演示游戏世界并存储到 MongoDB...")
 
     # version = "0.0.1"
-    collection_name = DEFAULT_MONGODB_CONFIG.worlds_collection
+    collection_name = WorldDocument.__name__  # 使用类名作为集合名称
 
     try:
         # 创建 WorldDocument

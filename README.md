@@ -1,6 +1,6 @@
-# Multi-Agents Game Framework
+# AI_RPG
 
-一个基于多智能体系统的游戏框架。
+一个基于多智能体架构的网络游戏开发框架，采用先进的提示词工程和上下文管理技术。
 
 ## 核心操作见 Makefile
 
@@ -15,19 +15,15 @@
 如果使用 VS Code 进行开发 + 使用 Anaconda：
 
 1. 打开命令面板 (`Cmd+Shift+P`)
-2. 选择 `Python: Select Interpreter`
-3. 选择 conda 环境路径：`/Users/your-username/anaconda3/envs/first_seed/bin/python`
-4. 在conda安装新的包后，需要执行`conda env export > environment.yml`进行刷新
+2. 选择解释器 `Python: Select Interpreter`
+3. 选择 uv 环境路径：`/.venv/Scripts/python.exe`
 
-## MongoDB 数据库配置
-
-项目使用 MongoDB 作为主要数据存储，用于保存游戏世界状态、玩家数据等。
 
 ## Windows中的注意情况
 
-1.需安装git bash,使用git bash时需先定义conda安装路径，让git bash可以使用conda环境。
-2.environment.yml 中的部分包需要更改安装版本号，其中ncurses不需要。
-3.注意python解释器，安装conda环境后选择时需选择带有firstseed的conda环境
+1.需安装git bash。
+2.使用UV后需安装Make工具 使用命令`winget install ezwinports.make`
+3.注意python解释器，安装uv后选择    .\\.venv\\Scripts\\python.exe
 
 ## 其他情况
 

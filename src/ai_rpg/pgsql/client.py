@@ -2,11 +2,11 @@ from loguru import logger
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from .config import DEFAULT_POSTGRES_CONFIG
+from .config import DEFAULT_POSTGRESQL_CONFIG
 from .base import Base
 
 ############################################################################################################
-engine = create_engine(DEFAULT_POSTGRES_CONFIG.connection_string)
+engine = create_engine(DEFAULT_POSTGRESQL_CONFIG.connection_string)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 

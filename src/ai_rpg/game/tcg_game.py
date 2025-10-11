@@ -7,7 +7,7 @@ from typing import Any, Final, List, Optional, Set
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
-from ..game.game_config import LOGS_DIR
+from .config import LOGS_DIR
 from ..mongodb import (
     DEFAULT_MONGODB_CONFIG,
     WorldDocument,

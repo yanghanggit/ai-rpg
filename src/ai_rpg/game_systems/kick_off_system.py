@@ -16,7 +16,7 @@ from ..models import (
     WorldComponent,
 )
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from ..game.game_config import LOGS_DIR
+from ..game.config import LOGS_DIR
 
 
 ###############################################################################################################################################

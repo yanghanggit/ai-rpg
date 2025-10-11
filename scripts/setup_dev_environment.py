@@ -33,7 +33,7 @@ from loguru import logger
 from ai_rpg.settings import (
     ServerSettings,
 )
-from ai_rpg.game.game_config import GLOBAL_GAME_NAME, LOGS_DIR
+from ai_rpg.game.config import GLOBAL_GAME_NAME, LOGS_DIR
 
 from ai_rpg.mongodb import (
     BootDocument,

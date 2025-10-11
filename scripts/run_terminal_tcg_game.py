@@ -13,7 +13,7 @@ from ai_rpg.chat_services.client import ChatClient
 from ai_rpg.settings import (
     initialize_server_settings_instance,
 )
-from ai_rpg.game.game_config import GLOBAL_GAME_NAME, setup_logger
+from ai_rpg.game.config import GLOBAL_GAME_NAME, setup_logger
 from ai_rpg.demo import (
     create_actor_warrior,
     create_demo_dungeon5,

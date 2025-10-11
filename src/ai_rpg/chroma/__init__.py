@@ -6,12 +6,12 @@ ChromaDB 向量数据库模块
 
 from .client import (
     chroma_client,
-    clear_client,
+    reset_client,
     get_default_collection,
 )
 
 __all__ = [
     "chroma_client",
-    "clear_client",
+    "reset_client",
     "get_default_collection",
 ]

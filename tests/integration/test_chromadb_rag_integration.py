@@ -13,7 +13,7 @@ from loguru import logger
 
 from src.ai_rpg.chroma import (
     chroma_client,
-    clear_client,
+    reset_client,
     get_default_collection,
 )
 from src.ai_rpg.rag import (
@@ -278,7 +278,7 @@ class TestChromaDBRAGIntegration:
 
         # 只在第一次测试时清理数据库，确保使用干净的测试环境
         if not TestChromaDBRAGIntegration._db_initialized:
-            clear_client()
+            reset_client()
             logger.info("🧹 首次测试前：清理了现有数据库，准备创建新的测试数据")
             TestChromaDBRAGIntegration._db_initialized = True
         else:

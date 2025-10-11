@@ -269,7 +269,7 @@ def _setup_chromadb_rag_environment() -> None:
     logger.info("🚀 初始化RAG系统...")
 
     # 导入必要的模块
-    from ai_rpg.chroma import get_default_collection, clear_client
+    from ai_rpg.chroma import get_default_collection, reset_client
     from ai_rpg.rag import load_knowledge_base_to_vector_db
     from ai_rpg.embedding_model.sentence_transformer import (
         get_embedding_model,
@@ -278,13 +278,21 @@ def _setup_chromadb_rag_environment() -> None:
 
     try:
 
+        # 直接删除持久化目录
+        # settings = chroma_client.get_settings()
+        # logger.info(f"ChromaDB Settings: {settings.persist_directory}")
+        # persist_directory = Path(settings.persist_directory)
+
+        # # 删除持久化目录
+        # if persist_directory.exists():
+        #     shutil.rmtree(persist_directory)
+        #     logger.warning(f"🗑️ [CHROMADB] 已删除持久化数据目录: {persist_directory}")
+        # else:
+        #     logger.info(f"📁 [CHROMADB] 持久化数据目录不存在: {persist_directory}")
+
         # 新的测试
         logger.info("🧹 清空ChromaDB数据库...")
-        clear_client()
-
-        # 清理现有的ChromaDB数据
-
-        # chromadb_clear_database()
+        reset_client()
 
         # 获取嵌入模型
         embedding_model = get_embedding_model()

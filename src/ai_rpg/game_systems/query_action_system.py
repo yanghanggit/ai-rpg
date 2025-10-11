@@ -1,82 +1,26 @@
 from typing import final, override
-from ..entitas import Entity, GroupEvent, Matcher, InitializeProcessor
+from ..entitas import Entity, GroupEvent, Matcher
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
     QueryAction,
 )
 from loguru import logger
-from ..rag.routing import (
-    KeywordRouteStrategy,
-    SemanticRouteStrategy,
-    RouteDecisionManager,
-    FallbackRouteStrategy,
-    RouteConfigBuilder,
-)
-from ..demo.campaign_setting import (
-    FANTASY_WORLD_RPG_TEST_ROUTE_KEYWORDS,
-    FANTASY_WORLD_RPG_TEST_RAG_TOPICS,
+from loguru import logger
+from ..embedding_model.sentence_transformer import (
+    get_embedding_model,
 )
 from ..chroma import get_default_collection
 from ..rag import search_similar_documents
-from ..embedding_model.sentence_transformer import get_embedding_model
-from loguru import logger
-from ..game.tcg_game import TCGGame
 
 
 #####################################################################################################################################
 @final
-class QueryActionSystem(BaseActionReactiveSystem, InitializeProcessor):
-
-    def __init__(self, game_context: TCGGame) -> None:
-        super().__init__(game_context)
-        self._route_manager: RouteDecisionManager | None = None
+class QueryActionSystem(BaseActionReactiveSystem):
 
     #############################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {Matcher(QueryAction): GroupEvent.ADDED}
-
-    #############################################################################################################################
-    @override
-    async def initialize(self) -> None:
-        """初始化处理器"""
-        if self._route_manager is None:
-            self._initialize_route_system()
-        logger.debug("🚀 MindVoiceActionSystem 初始化完成")
-
-    ####################################################################################################################################
-    def _initialize_route_system(self) -> None:
-        """初始化路由系统"""
-        try:
-            # 创建关键词策略
-            keyword_config = {
-                "keywords": FANTASY_WORLD_RPG_TEST_ROUTE_KEYWORDS,
-                "threshold": 0.05,  # 降低阈值：只要匹配到关键词就触发RAG
-                "case_sensitive": False,
-            }
-            keyword_strategy = KeywordRouteStrategy(keyword_config)
-
-            # 创建语义策略
-            semantic_config = {
-                "similarity_threshold": 0.4,  # 降低相似度阈值：0.488 > 0.4
-                "use_multilingual": True,
-                "rag_topics": FANTASY_WORLD_RPG_TEST_RAG_TOPICS,
-            }
-            semantic_strategy = SemanticRouteStrategy(semantic_config)
-
-            # 创建路由管理器
-            builder = RouteConfigBuilder()
-            builder.add_strategy(keyword_strategy, 0.4)
-            builder.add_strategy(semantic_strategy, 0.6)
-            builder.set_fallback(FallbackRouteStrategy(default_to_rag=False))
-
-            self._route_manager = builder.build()
-
-            logger.debug("🎯 MindVoiceActionSystem 路由系统初始化完成")
-
-        except Exception as e:
-            logger.error(f"❌ MindVoiceActionSystem 路由系统初始化失败: {e}")
-            self._route_manager = None
 
     #############################################################################################################################
     @override
@@ -96,12 +40,12 @@ class QueryActionSystem(BaseActionReactiveSystem, InitializeProcessor):
 
         related_info = self._get_related_info(query_action.question)
         logger.success(f"🔎 角色发起查询行动，问题: {query_action.question}")
-        logger.debug(f"💭 内心独白查询结果: {related_info}")
+        logger.success(f"💭 角色记忆查询结果: {related_info}")
 
         if related_info:
             self._game.append_human_message(
                 entity,
-                f"基于以下回忆出来的信息回答问题或回复对话：\n{related_info}\n\n选择你认为最合适的信息出来作为参考来回答问题。",
+                f"经过回忆，这些是你回忆到的信息：\n{related_info}\n\n选择性地将这些信息作为参考",
             )
         else:
             self._game.append_human_message(
@@ -136,6 +80,7 @@ class QueryActionSystem(BaseActionReactiveSystem, InitializeProcessor):
 
             # 1.5. 获取嵌入模型
             embedding_model = get_embedding_model()
+            assert embedding_model is not None, "嵌入模型未初始化"
             if embedding_model is None:
                 logger.warning("⚠️ 嵌入模型未初始化，返回空结果")
                 return ""
@@ -171,3 +116,6 @@ class QueryActionSystem(BaseActionReactiveSystem, InitializeProcessor):
         except Exception as e:
             logger.error(f"❌ RAG查询失败: {e}")
             return ""
+
+
+#####################################################################################################################################

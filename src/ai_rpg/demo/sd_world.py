@@ -33,14 +33,14 @@ def create_demo_sd_game_boot(game_name: str) -> Boot:
     moderator = create_actor_moderator()
 
     # 狼人阵营 (2人)
-    werewolf1 = create_actor_werewolf("1号")
-    werewolf2 = create_actor_werewolf("2号")
+    werewolf1 = create_actor_werewolf("1号玩家")
+    werewolf2 = create_actor_werewolf("2号玩家")
 
     # 好人阵营 (3人)
-    seer = create_actor_seer()
-    witch = create_actor_witch()
-    villager1 = create_actor_villager("1号")
-    villager2 = create_actor_villager("2号")
+    seer = create_actor_seer("3号玩家")
+    witch = create_actor_witch("4号玩家")
+    villager1 = create_actor_villager("5号玩家")
+    villager2 = create_actor_villager("6号玩家")
 
     # 创建游戏场地
     stage_werewolf_stage = create_demo_werewolf_stage()

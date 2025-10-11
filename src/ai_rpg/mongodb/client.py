@@ -63,8 +63,6 @@ def mongodb_insert_one(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
-    global mongodb_database
-
     try:
         # db = mongodb_database
         collection = mongodb_database[collection_name]
@@ -95,8 +93,6 @@ def mongodb_insert_many(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
-    global mongodb_database
-
     try:
         # db = get_mongodb_database_instance()
         collection = mongodb_database[collection_name]
@@ -127,9 +123,6 @@ def mongodb_find_one(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
-
-    global mongodb_database
-
     try:
         # db = get_mongodb_database_instance()
         collection = mongodb_database[collection_name]
@@ -167,8 +160,6 @@ def mongodb_find_many(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
-    global mongodb_database
-
     try:
         # db = get_mongodb_database_instance()
         collection = mongodb_database[collection_name]
@@ -252,9 +243,6 @@ def mongodb_replace_one(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
-
-    global mongodb_database
-
     try:
         # db = get_mongodb_database_instance()
         collection = mongodb_database[collection_name]
@@ -303,9 +291,6 @@ def mongodb_update_one(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
-
-    global mongodb_database
-
     try:
         # db = get_mongodb_database_instance()
         collection = mongodb_database[collection_name]
@@ -344,8 +329,6 @@ def mongodb_update_many(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
-    global mongodb_database
-
     try:
         # db = get_mongodb_database_instance()
         collection = mongodb_database[collection_name]
@@ -374,9 +357,6 @@ def mongodb_delete_one(collection_name: str, filter_dict: MongoFilterType) -> bo
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
-
-    global mongodb_database
-
     try:
         # db = get_mongodb_database_instance()
         collection = mongodb_database[collection_name]
@@ -404,9 +384,6 @@ def mongodb_delete_many(collection_name: str, filter_dict: MongoFilterType) -> i
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
-
-    global mongodb_database
-
     try:
         # db = get_mongodb_database_instance()
         collection = mongodb_database[collection_name]
@@ -437,9 +414,6 @@ def mongodb_count_documents(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
-
-    global mongodb_database
-
     try:
         # db = get_mongodb_database_instance()
         collection = mongodb_database[collection_name]
@@ -469,9 +443,6 @@ def mongodb_create_index(
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
-
-    global mongodb_database
-
     try:
         # db = get_mongodb_database_instance()
         collection = mongodb_database[collection_name]
@@ -494,9 +465,6 @@ def mongodb_list_collections() -> List[str]:
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
-
-    global mongodb_database
-
     try:
         # db = get_mongodb_database_instance()
         collections = mongodb_database.list_collection_names()
@@ -518,9 +486,6 @@ def mongodb_drop_collection(collection_name: str) -> None:
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
-
-    global mongodb_database
-
     try:
         # db = get_mongodb_database_instance()
         mongodb_database.drop_collection(collection_name)
@@ -541,9 +506,6 @@ def mongodb_clear_database() -> None:
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
-
-    global mongodb_database
-
     try:
         # db = get_mongodb_database_instance()
         collections = mongodb_database.list_collection_names()
@@ -573,9 +535,6 @@ def mongodb_clear_collection(collection_name: str) -> int:
     抛出:
         PyMongoError: 当MongoDB操作失败时
     """
-
-    global mongodb_database
-
     try:
         # db = get_mongodb_database_instance()
         collection = mongodb_database[collection_name]

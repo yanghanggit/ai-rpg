@@ -14,8 +14,6 @@ from pydantic import BaseModel
 import redis
 from loguru import logger
 
-# from ..config import DEFAULT_REDIS_CONFIG
-
 # Redis键值类型定义
 RedisKeyType: TypeAlias = Union[str, bytes]
 RedisValueType: TypeAlias = Union[bytes, float, int, str]
@@ -59,22 +57,16 @@ def get_redis() -> RedisClientType:
 
 
 ###################################################################################################
-# 获取Redis客户端的单例实例 - 用于直接调用
-_redis_instance: Optional[RedisClientType] = None
-
-
-###################################################################################################
-def _get_redis_instance() -> RedisClientType:
-    """
-    获取Redis客户端单例实例。
-
-    返回:
-        RedisClient: Redis客户端实例
-    """
-    global _redis_instance
-    if _redis_instance is None:
-        _redis_instance = get_redis()
-    return _redis_instance
+# 获取Redis客户端的全局实例 - 用于直接调用
+config = RedisConfig()
+pool = redis.ConnectionPool(
+    host=config.host,
+    port=config.port,
+    db=config.db,
+    decode_responses=True,
+    # max_connections=20
+)
+redis_client = cast(RedisClientType, redis.Redis(connection_pool=pool))
 
 
 ###################################################################################################
@@ -90,7 +82,6 @@ def redis_hset(name: str, mapping_data: Mapping[str, RedisValueType]) -> None:
         redis.RedisError: 当Redis操作失败时
     """
     try:
-        redis_client = _get_redis_instance()
         # 将映射转换为 Redis 期望的类型
         redis_mapping = cast(Mapping[RedisKeyType, RedisValueType], mapping_data)
         redis_client.hset(name=name, mapping=redis_mapping)
@@ -114,7 +105,6 @@ def redis_hgetall(name: str) -> Dict[str, str]:
         redis.RedisError: 当Redis操作失败时
     """
     try:
-        redis_client = _get_redis_instance()
         if not redis_client.exists(name):
             return {}
         result = redis_client.hgetall(name)
@@ -136,7 +126,6 @@ def redis_delete(name: str) -> None:
         redis.RedisError: 当Redis操作失败时
     """
     try:
-        redis_client = _get_redis_instance()
         redis_client.delete(name)
     except redis.RedisError as e:
         logger.error(f"Redis error while deleting data for {name}: {e}")
@@ -160,7 +149,6 @@ def redis_lrange(name: str, start: int = 0, end: int = -1) -> List[str]:
         redis.RedisError: 当Redis操作失败时
     """
     try:
-        redis_client = _get_redis_instance()
         if not redis_client.exists(name):
             return []
         result = redis_client.lrange(name, start, end)
@@ -186,7 +174,6 @@ def redis_rpush(name: str, *values: str) -> int:
         redis.RedisError: 当Redis操作失败时
     """
     try:
-        redis_client = _get_redis_instance()
         result = redis_client.rpush(name, *values)
         return int(result) if result is not None else 0
     except redis.RedisError as e:
@@ -203,7 +190,6 @@ def redis_flushall() -> None:
         redis.RedisError: 当Redis操作失败时
     """
     try:
-        redis_client = _get_redis_instance()
         redis_client.flushall()
     except redis.RedisError as e:
         logger.error(f"Redis error while flushing all data: {e}")
@@ -225,7 +211,6 @@ def redis_exists(name: str) -> bool:
         redis.RedisError: 当Redis操作失败时
     """
     try:
-        redis_client = _get_redis_instance()
         result = redis_client.exists(name)
         return bool(result) and result > 0
     except redis.RedisError as e:
@@ -249,7 +234,6 @@ def redis_expire(name: str, seconds: int) -> bool:
         redis.RedisError: 当Redis操作失败时
     """
     try:
-        redis_client = _get_redis_instance()
         result = redis_client.expire(name, seconds)
         return bool(result) if result is not None else False
     except redis.RedisError as e:
@@ -274,7 +258,6 @@ def redis_setex(name: str, seconds: int, value: RedisValueType) -> bool:
         redis.RedisError: 当Redis操作失败时
     """
     try:
-        redis_client = _get_redis_instance()
         result = redis_client.setex(name, seconds, value)
         return bool(result) if result is not None else False
     except redis.RedisError as e:
@@ -298,7 +281,6 @@ def redis_set(name: str, value: RedisValueType) -> bool | None:
         redis.RedisError: 当Redis操作失败时
     """
     try:
-        redis_client = _get_redis_instance()
         result = redis_client.set(name, value)
         return bool(result) if result is not None else False
     except redis.RedisError as e:
@@ -321,7 +303,6 @@ def redis_get(name: str) -> Optional[str]:
         redis.RedisError: 当Redis操作失败时
     """
     try:
-        redis_client = _get_redis_instance()
         if not redis_client.exists(name):
             return None
         result = redis_client.get(name)
@@ -344,7 +325,6 @@ def redis_hmset(name: str, mapping_data: Mapping[str, RedisValueType]) -> None:
         redis.RedisError: 当Redis操作失败时
     """
     try:
-        redis_client = _get_redis_instance()
         # 将映射转换为 Redis 期望的类型
         redis_mapping = cast(Mapping[RedisKeyType, RedisValueType], mapping_data)
         redis_client.hmset(name, redis_mapping)

@@ -38,7 +38,6 @@ from ai_rpg.game.config import GLOBAL_GAME_NAME, LOGS_DIR
 from ai_rpg.mongodb import (
     BootDocument,
     DungeonDocument,
-    DEFAULT_MONGODB_CONFIG,
     mongodb_clear_database,
     mongodb_find_one,
     mongodb_upsert_one,
@@ -105,7 +104,7 @@ def _mongodb_create_and_store_demo_boot() -> None:
 
     # 存储 world_boot 到 MongoDB
     collection_name = BootDocument.__name__  # 使用类名作为集合名称
-    #DEFAULT_MONGODB_CONFIG.worlds_boot_collection
+    # DEFAULT_MONGODB_CONFIG.worlds_boot_collection
 
     try:
         # 创建 WorldBootDocument 实例
@@ -201,7 +200,7 @@ def _mongodb_create_and_store_demo_dungeon() -> None:
 
     # 存储 demo_dungeon 到 MongoDB
     collection_name = DungeonDocument.__name__  # 使用类名作为集合名称
-    #DEFAULT_MONGODB_CONFIG.dungeons_collection  # 地下城集合名称
+    # DEFAULT_MONGODB_CONFIG.dungeons_collection  # 地下城集合名称
 
     try:
         # 创建 DungeonDocument 实例

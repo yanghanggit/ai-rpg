@@ -9,7 +9,6 @@ from loguru import logger
 from overrides import override
 from .config import LOGS_DIR
 from ..mongodb import (
-    DEFAULT_MONGODB_CONFIG,
     WorldDocument,
     mongodb_find_one,
     mongodb_upsert_one,

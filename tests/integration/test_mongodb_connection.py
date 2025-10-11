@@ -17,7 +17,7 @@ from datetime import datetime
 from loguru import logger
 
 from src.ai_rpg.mongodb import (
-    get_mongodb_database_instance,
+    # get_mongodb_database_instance,
     mongodb_count_documents,
     mongodb_create_index,
     mongodb_delete_many,
@@ -25,6 +25,8 @@ from src.ai_rpg.mongodb import (
     mongodb_insert_one,
     mongodb_update_one,
     mongodb_upsert_one,
+    # mongodb_client,
+    mongodb_database,
 )
 
 
@@ -47,9 +49,9 @@ class TestMongoDBConnection:
             # 1. 测试数据库连接
             logger.info("📡 测试 MongoDB 数据库连接...")
             try:
-                db = get_mongodb_database_instance()
+                # db = get_mongodb_database_instance()
                 # 测试连接 - 通过列出集合来验证连接
-                collections = db.list_collection_names()
+                collections = mongodb_database.list_collection_names()
                 logger.success(
                     f"✅ MongoDB 数据库连接成功! 当前集合数量: {len(collections)}"
                 )
@@ -173,8 +175,8 @@ class TestMongoDBConnection:
     def test_database_connection(self) -> None:
         """测试 MongoDB 数据库连接"""
         try:
-            db = get_mongodb_database_instance()
-            collections = db.list_collection_names()
+            # db = get_mongodb_database_instance()
+            collections = mongodb_database.list_collection_names()
             logger.info(f"✅ MongoDB 连接测试通过，集合数量: {len(collections)}")
         except Exception as e:
             logger.error(f"❌ MongoDB 连接失败: {e}")

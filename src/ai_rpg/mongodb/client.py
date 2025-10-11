@@ -10,8 +10,6 @@ from typing import (
 import pymongo
 from loguru import logger
 from pymongo.errors import PyMongoError
-
-# from ai_rpg import mongodb
 from .config import MongoDBConfig
 
 # MongoDB文档类型 - 可以是字典或继承自BaseMongoDocument的类型
@@ -35,44 +33,8 @@ else:
     MongoCollectionType: TypeAlias = pymongo.collection.Collection  # type: ignore[type-arg]
 
 
-###################################################################################################
-# def get_mongodb_client() -> MongoClientType:
-#     """
-#     获取MongoDB连接实例。
-
-#     返回:
-#         MongoClientType: MongoDB客户端实例
-#     """
-#     mongodb_config = MongoDBConfig()
-#     client = pymongo.MongoClient(mongodb_config.connection_string)
-
-#     # 测试连接
-#     try:
-#         client.admin.command("ping")
-#         logger.debug("MongoDB连接成功")
-#     except Exception as e:
-#         logger.error(f"MongoDB连接失败: {e}")
-#         raise e
-
-#     return client
-
-
-# ###################################################################################################
-# def get_mongodb_database() -> MongoDatabaseType:
-#     """
-#     获取MongoDB数据库实例。
-
-#     返回:
-#         MongoDatabaseType: MongoDB数据库实例
-#     """
-#     mongodb_config = MongoDBConfig()
-#     client = get_mongodb_client()
-#     return client[mongodb_config.database]
-
-
 mongodb_config = MongoDBConfig()
 mongodb_client: MongoClientType = pymongo.MongoClient(mongodb_config.connection_string)
-mongodb_database: MongoDatabaseType = mongodb_client[mongodb_config.database]
 
 try:
     mongodb_client.admin.command("ping")
@@ -81,38 +43,7 @@ except Exception as e:
     logger.error(f"MongoDB连接失败: {e}")
     # raise e
 
-###################################################################################################
-# # 获取MongoDB客户端的单例实例
-# _mongodb_client_instance: Optional[MongoClientType] = None
-# _mongodb_database_instance: Optional[MongoDatabaseType] = None
-
-
-###################################################################################################
-# def get_mongodb_client_instance() -> MongoClientType:
-#     """
-#     获取MongoDB客户端单例实例。
-
-#     返回:
-#         MongoClientType: MongoDB客户端实例
-#     """
-#     global _mongodb_client_instance
-#     if _mongodb_client_instance is None:
-#         _mongodb_client_instance = get_mongodb_client()
-#     return _mongodb_client_instance
-
-
-# ###################################################################################################
-# def get_mongodb_database_instance() -> MongoDatabaseType:
-#     """
-#     获取MongoDB数据库单例实例。
-
-#     返回:
-#         MongoDatabaseType: MongoDB数据库实例
-#     """
-#     global _mongodb_database_instance
-#     if _mongodb_database_instance is None:
-#         _mongodb_database_instance = get_mongodb_database()
-#     return _mongodb_database_instance
+mongodb_database: MongoDatabaseType = mongodb_client[mongodb_config.database]
 
 
 ###################################################################################################
@@ -656,22 +587,6 @@ def mongodb_clear_collection(collection_name: str) -> int:
     except PyMongoError as e:
         logger.error(f"MongoDB清空集合失败，集合: {collection_name}, 错误: {e}")
         raise e
-
-
-###################################################################################################
-# def mongodb_close_connection() -> None:
-#     """
-#     关闭MongoDB连接。
-#     """
-#     global _mongodb_client_instance, _mongodb_database_instance
-#     try:
-#         if _mongodb_client_instance is not None:
-#             _mongodb_client_instance.close()
-#             _mongodb_client_instance = None
-#             _mongodb_database_instance = None
-#             logger.info("MongoDB连接已关闭")
-#     except Exception as e:
-#         logger.error(f"关闭MongoDB连接时出错: {e}")
 
 
 ###################################################################################################

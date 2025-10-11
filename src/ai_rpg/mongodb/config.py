@@ -1,4 +1,4 @@
-from typing import ClassVar, Final, final
+from typing import Final, final
 from pydantic import BaseModel
 
 

@@ -1,6 +1,5 @@
 import copy
 import random
-import shutil
 import uuid
 from pathlib import Path
 from typing import Any, Final, List, Optional, Set
@@ -8,11 +7,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
 from .config import LOGS_DIR
-from ..mongodb import (
-    WorldDocument,
-    mongodb_find_one,
-    mongodb_upsert_one,
-)
+from .world_data_service import persist_world_data, debug_verbose_world_data
 from ..entitas import Entity
 from ..game.base_game import BaseGame
 from .rpg_game_context import RPGGameContext
@@ -62,141 +57,7 @@ def _replace_name_with_you(input_text: str, your_name: str) -> str:
     return input_text.replace(your_name, "你")
 
 
-###############################################################################################################################################
-def _persist(
-    username: str,
-    world: World,
-) -> None:
-    """将游戏世界持久化到 MongoDB"""
-    logger.debug("📝 创建演示游戏世界并存储到 MongoDB...")
-
-    # version = "0.0.1"
-    collection_name = WorldDocument.__name__  # 使用类名作为集合名称
-
-    try:
-        # 创建 WorldDocument
-        world_document = WorldDocument.create_from_world(
-            username=username, world=world, version="0.0.1"
-        )
-
-        # 保存 WorldDocument 到 MongoDB
-        logger.debug(f"📝 存储演示游戏世界到 MongoDB 集合: {collection_name}")
-        inserted_id = mongodb_upsert_one(collection_name, world_document.to_dict())
-
-        if inserted_id:
-            logger.debug("✅ 演示游戏世界已存储到 MongoDB!")
-
-            # 验证已保存的 WorldDocument
-            logger.debug("📖 从 MongoDB 获取演示游戏世界进行验证...")
-
-            saved_world_data = mongodb_find_one(
-                collection_name,
-                {
-                    "username": username,
-                    "game_name": world.boot.name,
-                },
-            )
-
-            if not saved_world_data:
-                logger.error("❌ 从 MongoDB 获取演示游戏世界失败!")
-            else:
-                try:
-                    # 使用便捷方法反序列化为 WorldDocument 对象
-                    # _world_document = WorldDocument.from_mongodb(retrieved_world_data)
-                    # logger.success(
-                    #     f"✅ 演示游戏世界已从 MongoDB 成功获取! = {_world_document.model_dump_json()}"
-                    # )
-                    pass
-                except Exception as validation_error:
-                    logger.error(f"❌ WorldDocument 反序列化失败: {validation_error}")
-        else:
-            logger.error("❌ 演示游戏世界存储到 MongoDB 失败!")
-
-    except Exception as e:
-        logger.error(f"❌ 演示游戏世界 MongoDB 操作失败: {e}")
-        raise
-
-
-###############################################################################################################################################
-def _debug_verbose(verbose_dir: Path, world: World) -> None:
-    """调试方法，保存游戏状态到文件"""
-    _verbose_boot_data(verbose_dir, world)
-    _verbose_world_data(verbose_dir, world)
-    _verbose_entities_serialization(verbose_dir, world)
-    _verbose_chat_history(verbose_dir, world)
-    _verbose_dungeon_system(verbose_dir, world)
-    logger.debug(f"Verbose debug info saved to: {verbose_dir}")
-
-
-###############################################################################################################################################
-def _verbose_chat_history(verbose_dir: Path, world: World) -> None:
-    """保存聊天历史到文件"""
-    chat_history_dir = verbose_dir / "chat_history"
-    chat_history_dir.mkdir(parents=True, exist_ok=True)
-
-    for agent_name, agent_memory in world.agents_chat_history.items():
-        chat_history_path = chat_history_dir / f"{agent_name}.json"
-        chat_history_path.write_text(agent_memory.model_dump_json(), encoding="utf-8")
-
-
-###############################################################################################################################################
-def _verbose_boot_data(verbose_dir: Path, world: World) -> None:
-    """保存启动数据到文件"""
-    boot_data_dir = verbose_dir / "boot_data"
-    boot_data_dir.mkdir(parents=True, exist_ok=True)
-
-    boot_file_path = boot_data_dir / f"{world.boot.name}.json"
-    if boot_file_path.exists():
-        return  # 如果文件已存在，则不覆盖
-
-    # 保存 Boot 数据到文件
-    boot_file_path.write_text(world.boot.model_dump_json(), encoding="utf-8")
-
-
-###############################################################################################################################################
-def _verbose_world_data(verbose_dir: Path, world: World) -> None:
-    """保存世界数据到文件"""
-    world_data_dir = verbose_dir / "world_data"
-    world_data_dir.mkdir(parents=True, exist_ok=True)
-    world_file_path = world_data_dir / f"{world.boot.name}.json"
-    world_file_path.write_text(
-        world.model_dump_json(), encoding="utf-8"
-    )  # 保存 World 数据到文件，覆盖
-
-
-###############################################################################################################################################
-def _verbose_entities_serialization(verbose_dir: Path, world: World) -> None:
-    """保存实体快照到文件"""
-    entities_serialization_dir = verbose_dir / "entities_serialization"
-    # 强制删除一次
-    if entities_serialization_dir.exists():
-        shutil.rmtree(entities_serialization_dir)
-    # 创建目录
-    entities_serialization_dir.mkdir(parents=True, exist_ok=True)
-    assert entities_serialization_dir.exists()
-
-    for entity_serialization in world.entities_serialization:
-        entity_serialization_path = (
-            entities_serialization_dir / f"{entity_serialization.name}.json"
-        )
-        entity_serialization_path.write_text(
-            entity_serialization.model_dump_json(), encoding="utf-8"
-        )
-
-
-###############################################################################################################################################
-def _verbose_dungeon_system(verbose_dir: Path, world: World) -> None:
-    """保存地下城系统数据到文件"""
-    if world.dungeon.name == "":
-        return
-
-    dungeon_system_dir = verbose_dir / "dungeons"
-    dungeon_system_dir.mkdir(parents=True, exist_ok=True)
-    dungeon_system_path = dungeon_system_dir / f"{world.dungeon.name}.json"
-    dungeon_system_path.write_text(world.dungeon.model_dump_json(), encoding="utf-8")
-
-
-###############################################################################################################################################
+# ################################################################################################################################################
 class TCGGame(BaseGame, RPGGameContext):
 
     def __init__(
@@ -385,13 +246,13 @@ class TCGGame(BaseGame, RPGGameContext):
         )
 
         # 保存快照
-        _persist(
+        persist_world_data(
             username=self.player_client.name,
             world=self.world,
         )
 
         # debug - 调用模块级函数
-        _debug_verbose(
+        debug_verbose_world_data(
             verbose_dir=self.verbose_dir,
             world=self.world,
         )

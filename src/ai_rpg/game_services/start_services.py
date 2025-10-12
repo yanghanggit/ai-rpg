@@ -6,7 +6,8 @@ from loguru import logger
 #     create_demo_dungeon4,
 # )
 from ..game.player_client import PlayerClient
-from ..game.web_tcg_game import WebTCGGame, WebGameSessionContext
+from ..game.web_tcg_game import WebTCGGame
+from ..game.world_data_service import get_user_world_data, get_game_boot_data
 from ..game_services.game_server import GameServerInstance
 from ..models import StartRequest, StartResponse, World
 from ..mongodb import (
@@ -45,13 +46,6 @@ async def start(
 
         if room._game is None:
 
-            # 转化成复杂参数
-            game_session_context = WebGameSessionContext(
-                user=request_data.user_name,
-                game=request_data.game_name,
-                actor=request_data.actor_name,
-            )
-
             # 创建玩家客户端
             room._player_client = PlayerClient(
                 name=request_data.user_name,
@@ -61,13 +55,15 @@ async def start(
 
             # 创建游戏
             room._game = setup_web_game_session(
-                web_game_session_context=game_session_context,
+                user=request_data.user_name,
+                game=request_data.game_name,
+                actor=request_data.actor_name,
                 player_client=room._player_client,
             )
 
             assert room._game is not None, "Web game setup failed"
             if room._game is None:
-                logger.error(f"创建游戏失败 = {game_session_context.game}")
+                logger.error(f"创建游戏失败 = {request_data.game_name}")
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"start/v1: {request_data.user_name} failed to create game",
@@ -99,15 +95,17 @@ async def start(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 def setup_web_game_session(
-    web_game_session_context: WebGameSessionContext,
+    user: str,
+    game: str,
+    actor: str,
     player_client: PlayerClient,
 ) -> Optional[WebTCGGame]:
 
-    world_exists = web_game_session_context.world
+    world_exists = get_user_world_data(user, game)
     if world_exists is None:
 
         # 如果没有world数据，就创建一个新的world
-        world_boot = web_game_session_context.boot
+        world_boot = get_game_boot_data(game)
         assert world_boot is not None, "world_boot is None"
 
         # 重新生成world
@@ -137,23 +135,19 @@ def setup_web_game_session(
     # 依赖注入，创建新的游戏
     assert world_exists is not None, "World data must exist to create a game"
     web_game = WebTCGGame(
-        name=web_game_session_context.game,
+        name=game,
         player_client=player_client,
         world=world_exists,
     )
 
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(web_game.world.entities_serialization) == 0:
-        logger.info(
-            f"游戏中没有实体 = {web_game_session_context.game}, 说明是第一次创建游戏"
-        )
+        logger.info(f"游戏中没有实体 = {game}, 说明是第一次创建游戏")
 
         # 直接构建ecs
         web_game.new_game().save()
     else:
-        logger.info(
-            f"游戏中有实体 = {web_game_session_context.game}，需要通过数据恢复实体，是游戏回复的过程"
-        )
+        logger.info(f"游戏中有实体 = {game}，需要通过数据恢复实体，是游戏回复的过程")
 
         # 测试！回复ecs
         web_game.load_game().save()
@@ -162,7 +156,7 @@ def setup_web_game_session(
     player_entity = web_game.get_player_entity()
     # assert player_entity is not None
     if player_entity is None:
-        logger.error(f"没有找到玩家实体 = {web_game_session_context.actor}")
+        logger.error(f"没有找到玩家实体 = {actor}")
         return None
 
     return web_game

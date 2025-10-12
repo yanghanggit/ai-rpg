@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from ..game.web_tcg_game import WebGameSessionContext
+from ..game.world_data_service import delete_user_world_data
 from ..game_services.game_server import GameServerInstance
 from ..models import (
     LoginRequest,
@@ -26,13 +26,6 @@ async def login(
 
     logger.info(f"/login/v1/: {request_data.model_dump_json()}")
 
-    # 转化成复杂参数
-    game_session_context = WebGameSessionContext(
-        user=request_data.user_name,
-        game=request_data.game_name,
-        actor="",
-    )
-
     # TODO, 强制删除运行中的房间。
     if game_server.has_room(request_data.user_name):
         logger.debug(f"这是测试，强制删除旧房间 = {request_data.user_name}")
@@ -45,9 +38,9 @@ async def login(
 
     # TODO, 这里需要设置一个新的目录，清除旧的目录。
     logger.debug(
-        f"这是测试，强制删除旧的游戏数据 = {game_session_context.user}, {game_session_context.game}"
+        f"这是测试，强制删除旧的游戏数据 = {request_data.user_name}, {request_data.game_name}"
     )
-    game_session_context.delete_world()
+    delete_user_world_data(request_data.user_name)
 
     # TODO, get测试。
     # 指向包含 runtime.json 的目录。

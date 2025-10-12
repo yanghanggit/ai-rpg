@@ -23,7 +23,11 @@ from ai_rpg.game.player_client import PlayerClient
 # from ai_rpg.game.tcg_game import TCGGameState
 from ai_rpg.game.terminal_tcg_game import (
     TerminalTCGGame,
-    TerminalGameSessionContext,
+)
+from ai_rpg.game.world_data_service import (
+    get_user_world_data,
+    get_game_boot_data,
+    delete_user_world_data,
 )
 from ai_rpg.models import (
     CombatResult,
@@ -387,21 +391,23 @@ def _trans_stage_action(terminal_game: TerminalTCGGame, stage_name: str) -> bool
 
 ###############################################################################################################################################
 async def _run_game(
-    terminal_game_user_options: TerminalGameSessionContext,
+    user: str,
+    game: str,
+    actor: str,
 ) -> None:
 
     # 注意，如果确定player是固定的，但是希望每次玩新游戏，就调用这句。
     # 或者，换成random_name，随机生成一个player名字。
-    terminal_game_user_options.delete_world()
+    delete_user_world_data(user)
 
     # 先检查一下world_data是否存在
-    world_exists = terminal_game_user_options.world
+    world_exists = get_user_world_data(user, game)
 
     #
     if world_exists is None:
 
         # 获取world_boot_data
-        world_boot = terminal_game_user_options.boot
+        world_boot = get_game_boot_data(game)
         assert world_boot is not None, "WorldBootDocument 反序列化失败"
 
         # 如果world不存在，说明是第一次创建游戏
@@ -412,20 +418,18 @@ async def _run_game(
         world_exists.dungeon = create_demo_dungeon5()
 
     else:
-        logger.info(
-            f"恢复游戏: {terminal_game_user_options.user}, {terminal_game_user_options.game}"
-        )
+        logger.info(f"恢复游戏: {user}, {game}")
 
-    ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     server_settings = initialize_server_settings_instance(Path("server_settings.json"))
 
     # 依赖注入，创建新的游戏
     assert world_exists is not None, "World data must exist to create a game"
     terminal_game = TerminalTCGGame(
-        name=terminal_game_user_options.game,
+        name=game,
         player_client=PlayerClient(
-            name=terminal_game_user_options.user,
-            actor=terminal_game_user_options.actor,
+            name=user,
+            actor=actor,
         ),
         world=world_exists,
     )
@@ -434,16 +438,12 @@ async def _run_game(
 
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(terminal_game.world.entities_serialization) == 0:
-        logger.info(
-            f"游戏中没有实体 = {terminal_game_user_options.game}, 说明是第一次创建游戏"
-        )
+        logger.info(f"游戏中没有实体 = {game}, 说明是第一次创建游戏")
         # 直接构建ecs
         terminal_game.new_game().save()
 
     else:
-        logger.warning(
-            f"游戏中有实体 = {terminal_game_user_options.game}，需要通过数据恢复实体，是游戏回复的过程"
-        )
+        logger.warning(f"游戏中有实体 = {game}，需要通过数据恢复实体，是游戏回复的过程")
         # 测试！回复ecs
         terminal_game.load_game().save()
 
@@ -451,9 +451,7 @@ async def _run_game(
     player_entity = terminal_game.get_player_entity()
     # assert player_entity is not None
     if player_entity is None:
-        logger.error(
-            f"玩家实体不存在 = {terminal_game_user_options.user}, {terminal_game_user_options.game}, {terminal_game_user_options.actor}"
-        )
+        logger.error(f"玩家实体不存在 = {user}, {game}, {actor}")
         exit(1)
 
     # 游戏循环。。。。。。
@@ -678,13 +676,11 @@ if __name__ == "__main__":
     fixed_name = "player-fixed"
 
     # 做一些设置
-    terminal_user_session_options = TerminalGameSessionContext(
-        user=random_name,
-        game=GLOBAL_GAME_NAME,
-        actor=create_actor_warrior().name,
-    )
+    user = random_name
+    game = GLOBAL_GAME_NAME
+    actor = create_actor_warrior().name
 
     # 运行游戏
     import asyncio
 
-    asyncio.run(_run_game(terminal_user_session_options))
+    asyncio.run(_run_game(user, game, actor))

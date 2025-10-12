@@ -33,7 +33,7 @@ from loguru import logger
 from ai_rpg.settings import (
     ServerSettings,
 )
-from ai_rpg.game.config import GLOBAL_GAME_NAME, LOGS_DIR
+from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, LOGS_DIR
 
 from ai_rpg.mongodb import (
     BootDocument,
@@ -98,7 +98,7 @@ def _mongodb_create_and_store_demo_boot() -> None:
     同时验证存储的数据完整性
     """
     logger.info("🚀 创建演示游戏世界...")
-    game_name = GLOBAL_GAME_NAME
+    game_name = GLOBAL_TCG_GAME_NAME
     version = "0.0.1"
     world_boot = create_demo_game_world(game_name)
 

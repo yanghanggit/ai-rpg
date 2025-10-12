@@ -5,6 +5,7 @@ from ..models import (
     Actor,
     ActorType,
     RPGCharacterProfile,
+    SDCharacterSheetName,
 )
 from .utils import (
     create_stage,
@@ -36,6 +37,8 @@ def create_demo_werewolf_stage() -> Stage:
 #######################################################################################################################
 # Actor Creation Functions
 #######################################################################################################################
+
+
 def create_actor_moderator() -> Actor:
     """
     创建一个主持人角色实例
@@ -45,7 +48,7 @@ def create_actor_moderator() -> Actor:
     """
     return create_actor(
         name="角色.主持人",
-        character_sheet_name="moderator",
+        character_sheet_name=SDCharacterSheetName.MODERATOR,
         kick_off_message="你已苏醒，准备开始新的一局狼人杀。告诉我你是谁？（请说出你的全名。）并告诉我你的角色职能。回答简短(<100字)。",
         rpg_character_profile=RPGCharacterProfile(),
         type=ActorType.HERO,
@@ -71,7 +74,7 @@ def create_actor_werewolf(name: str) -> Actor:
     """
     return create_actor(
         name=f"角色.{name}",
-        character_sheet_name="werewolf",
+        character_sheet_name=SDCharacterSheetName.WEREWOLF,
         kick_off_message="你已苏醒，准备开始新的一局狼人杀。告诉我你是谁？（请说出你的全名。）并告诉我你的角色职能。回答简短(<100字)。",
         rpg_character_profile=RPGCharacterProfile(),
         type=ActorType.HERO,
@@ -103,7 +106,7 @@ def create_actor_seer(name: str) -> Actor:
     """
     return create_actor(
         name=f"角色.{name}",
-        character_sheet_name="seer",
+        character_sheet_name=SDCharacterSheetName.SEER,
         kick_off_message="你已苏醒，准备开始新的一局狼人杀。告诉我你是谁？（请说出你的全名。）并告诉我你的角色职能。回答简短(<100字)。",
         rpg_character_profile=RPGCharacterProfile(),
         type=ActorType.HERO,
@@ -135,7 +138,7 @@ def create_actor_witch(name: str) -> Actor:
     """
     return create_actor(
         name=f"角色.{name}",
-        character_sheet_name="witch",
+        character_sheet_name=SDCharacterSheetName.WITCH,
         kick_off_message="你已苏醒，准备开始新的一局狼人杀。告诉我你是谁？（请说出你的全名。）并告诉我你的角色职能。回答简短(<100字)。",
         rpg_character_profile=RPGCharacterProfile(),
         type=ActorType.HERO,
@@ -163,7 +166,7 @@ def create_actor_villager(name: str) -> Actor:
     """
     return create_actor(
         name=f"角色.{name}",
-        character_sheet_name="villager",
+        character_sheet_name=SDCharacterSheetName.VILLAGER,
         kick_off_message="你已苏醒，准备开始新的一局狼人杀。告诉我你是谁？（请说出你的全名。）并告诉我你的角色职能。回答简短(<100字)。",
         rpg_character_profile=RPGCharacterProfile(),
         type=ActorType.HERO,

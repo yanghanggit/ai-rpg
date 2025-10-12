@@ -14,8 +14,8 @@ from ai_rpg.settings import (
 )
 from ai_rpg.game.config import GLOBAL_SD_GAME_NAME, setup_logger
 from ai_rpg.game.player_client import PlayerClient
-from ai_rpg.game.terminal_tcg_game import (
-    TerminalTCGGame,
+from ai_rpg.game.terminal_sd_game import (
+    TerminalSDGame,
 )
 from ai_rpg.models import (
     World,
@@ -37,7 +37,7 @@ async def _run_game(
     assert world_boot is not None, "WorldBoot 创建失败"
 
     # 创建游戏实例
-    terminal_game = TerminalTCGGame(
+    terminal_game = TerminalSDGame(
         name=game,
         player_client=PlayerClient(
             name=user,
@@ -55,6 +55,8 @@ async def _run_game(
         len(terminal_game.world.entities_serialization) == 0
     ), "World data 中已经有实体，说明不是第一次创建游戏"
     terminal_game.new_game().save()
+    # terminal_game.post_new_game()
+    # terminal_game.save()
 
     # 测试一下玩家控制角色，如果没有就是错误。
     player_entity = terminal_game.get_player_entity()
@@ -87,7 +89,7 @@ async def _run_game(
 
 
 ###############################################################################################################################################
-async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
+async def _process_player_input(terminal_game: TerminalSDGame) -> None:
 
     player_actor_entity = terminal_game.get_player_entity()
     assert player_actor_entity is not None

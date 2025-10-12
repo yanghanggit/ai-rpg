@@ -16,6 +16,17 @@ class ActorType(StrEnum):
 ###############################################################################################################################################
 @final
 @unique
+class SDCharacterSheetName(StrEnum):
+    MODERATOR = "moderator"
+    WEREWOLF = "werewolf"
+    SEER = "seer"
+    WITCH = "witch"
+    VILLAGER = "villager"
+
+
+###############################################################################################################################################
+@final
+@unique
 class StageType(StrEnum):
     NONE = "None"
     HOME = "Home"

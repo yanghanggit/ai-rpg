@@ -44,6 +44,12 @@ from ..models import (
     WorldComponent,
     Round,
     InventoryComponent,
+    # ModeratorComponent,
+    # WerewolfComponent,
+    # SeerComponent,
+    # WitchComponent,
+    # VillagerComponent,
+    # SDCharacterSheetName,
 )
 from .player_client import PlayerClient
 
@@ -380,7 +386,7 @@ class TCGGame(BaseGame, RPGGameContext):
                 copy_items,
             )
 
-            # 测试一下
+            # 测试一下 道具！
             inventory_component = actor_entity.get(InventoryComponent)
             assert inventory_component is not None, "inventory_component is None"
             if len(inventory_component.items) > 0:
@@ -389,6 +395,23 @@ class TCGGame(BaseGame, RPGGameContext):
                 )
                 for item in inventory_component.items:
                     logger.info(f"物品: {item.model_dump_json(indent=2)}")
+
+            # TODO 狼人杀的特殊组件
+            # match actor_model.character_sheet.name:
+            #     case SDCharacterSheetName.MODERATOR:
+            #         actor_entity.add(ModeratorComponent, actor_model.name)
+            #     case SDCharacterSheetName.WEREWOLF:
+            #         actor_entity.add(WerewolfComponent, actor_model.name)
+            #     case SDCharacterSheetName.SEER:
+            #         actor_entity.add(SeerComponent, actor_model.name)
+            #     case SDCharacterSheetName.WITCH:
+            #         actor_entity.add(WitchComponent, actor_model.name)
+            #     case SDCharacterSheetName.VILLAGER:
+            #         actor_entity.add(VillagerComponent, actor_model.name)
+            #     case _:
+            #         logger.warning(
+            #             f"非狼人杀型的角色名字: {actor_model.character_sheet.name}"
+            #         )
 
             # 添加到返回值
             ret.append(actor_entity)

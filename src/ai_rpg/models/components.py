@@ -204,3 +204,41 @@ class XCardPlayerComponent(Component):
 class InventoryComponent(MutableComponent):
     name: str
     items: List[Item]  # 物品列表，存储物品名称
+
+
+############################################################################################################
+############################################################################################################
+############################################################################################################
+############################################################################################################
+############################################################################################################
+# 以下是狼人杀的用的组件。
+
+
+@final
+@register_component_class
+class ModeratorComponent(Component):
+    name: str
+
+
+@final
+@register_component_class
+class WerewolfComponent(Component):
+    name: str
+
+
+@final
+@register_component_class
+class SeerComponent(Component):
+    name: str
+
+
+@final
+@register_component_class
+class WitchComponent(Component):
+    name: str
+
+
+@final
+@register_component_class
+class VillagerComponent(Component):
+    name: str

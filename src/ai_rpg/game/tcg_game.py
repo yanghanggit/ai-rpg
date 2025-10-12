@@ -357,6 +357,10 @@ class TCGGame(BaseGame, RPGGameContext):
                     actor_entity.add(HeroComponent, actor_model.name)
                 case ActorType.MONSTER:
                     actor_entity.add(MonsterComponent, actor_model.name)
+                case _:
+                    assert (
+                        False
+                    ), f"未知的 ActorType: {actor_model.character_sheet.type}"
 
             # 必要组件：背包组件, 必须copy一份, 不要进行直接引用，而且在此处生成uuid
             copy_items = copy.deepcopy(actor_model.inventory.items)

@@ -3,7 +3,10 @@ from ..models import (
     ActorType,
     RPGCharacterProfile,
 )
-from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
+from .campaign_setting import (
+    FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+    FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+)
 from .utils import (
     create_actor,
 )
@@ -61,4 +64,5 @@ def create_actor_wizard() -> Actor:
 身披一件下摆闪烁着幽蓝电路纹路的法袍，你手中那柄名为“逻各斯”的合金法杖最为醒目，
 其顶端的机械核心在你调动能量时会炽热旋转并嗡鸣作响。腰间的复合材质皮包和手中记录数据的发光石板，
 让你看起来更像一位行走于魔法世界的工程师。。""",
+        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )

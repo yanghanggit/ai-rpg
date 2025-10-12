@@ -3,7 +3,10 @@ from ..models import (
     ActorType,
     RPGCharacterProfile,
 )
-from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
+from .campaign_setting import (
+    FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+    FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+)
 from .utils import (
     create_actor,
 )
@@ -49,4 +52,5 @@ def create_actor_warrior() -> Actor:
 身形精悍，古铜肤色，眼神坚毅。身披一件染有旧渍的复合纤维战术背心，胸口佩戴着一枚被摩挲光滑的金属图腾徽章。
 背负一把保养极佳的高频振动长剑和一把样式古老却异常精密的全新能源弩。右臂上一道能量爪留下的晶体化疤痕格外醒目，
 左臂则挂着一面可展开能量力场的便携盾牌。整体装束实用而沉重，带着历经战火与辐射尘埃的痕迹。""",
+        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )

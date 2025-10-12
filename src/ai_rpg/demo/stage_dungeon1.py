@@ -4,7 +4,10 @@ from ..models import (
     StageType,
 )
 from ..models.objects import Stage
-from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
+from .campaign_setting import (
+    FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+    FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+)
 from .utils import (
     create_stage,
 )
@@ -20,6 +23,7 @@ def create_stage_cave1() -> Stage:
         type=StageType.DUNGEON,
         stage_profile="你是一个黑暗干燥的洞窟，地上都是易燃的干草，墙上插着各种箭矢，地上还有破损的盔甲和断剑。洞窟深处似乎有哥布林在进行某种活动。",
         actors=[],
+        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )
 
 

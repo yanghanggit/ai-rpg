@@ -1,10 +1,10 @@
 from ..models import (
     Boot,
 )
-from .sd_stage import (
+from .social_deduction_game_stage import (
     create_demo_werewolf_stage,
 )
-from .sd_actors import (
+from .social_deduction_game_actors import (
     create_actor_moderator,
     create_actor_werewolf,
     create_actor_seer,
@@ -12,7 +12,7 @@ from .sd_actors import (
     create_actor_villager,
 )
 
-from .sd_setting import (
+from .campaign_setting import (
     WEREWOLF_CAMPAIGN_SETTING,
 )
 

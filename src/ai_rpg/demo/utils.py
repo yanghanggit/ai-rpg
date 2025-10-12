@@ -1,4 +1,4 @@
-from typing import Final, List
+from typing import List
 from ..models import (
     Actor,
     ActorCharacterSheet,
@@ -9,60 +9,67 @@ from ..models import (
     Inventory,
 )
 
-#######################################################################################################################################
-GLOBAL_GAME_MECHANICS: Final[
-    str
-] = """### 文本风格与内容过滤：
-游戏可能包含恐怖、血腥和暴力场景，以提供沉浸式、有趣的游戏体验，请你接受。
-### 核心要素：
-角色：包括人、动物、怪物等与之交流和交互的对象。
-场景：角色活动的地点，仅在场景中活动。
-技能：角色间战斗的主要方式。
-### 对话机制：
-角色对于自己不知道的事情（上下文中没有的信息）不能编造答案。
-### 全名机制：
-游戏中的角色、道具、场景、技能等都有全名，全名是游戏系统中的唯一标识符。
-名字可以由多个单词组成，单词之间用英文句号`.`分隔。例如：角色.战士.凯尔。
-注意请完整引用全名以确保一致性。"""
-
 
 #######################################################################################################################################
 def _comple_actor_system_prompt(
-    campaign_setting: str, actor_profile: str, appearance: str
+    campaign_setting: str,
+    actor_profile: str,
+    appearance: str,
+    global_game_mechanics: str,
 ) -> str:
 
     return f"""## 当前游戏背景
+
 {campaign_setting}
+
 ## 全局规则
-{GLOBAL_GAME_MECHANICS}
+
+{global_game_mechanics}
+
 ## 你的角色设定
+
 {actor_profile}
+
 ## 你的外观特征
+
 {appearance}"""
 
 
 #######################################################################################################################################
-def _comple_stage_system_prompt(campaign_setting: str, stage_profile: str) -> str:
+def _comple_stage_system_prompt(
+    campaign_setting: str, stage_profile: str, global_game_mechanics: str
+) -> str:
 
     return f"""你将是角色活动的地点也是战斗系统。
+
 ## 游戏背景
+
 {campaign_setting}
+
 ## 全局规则
-{GLOBAL_GAME_MECHANICS}
+
+{global_game_mechanics}
+
 ## 场景设定
+
 {stage_profile}"""
 
 
 #######################################################################################################################################
 def _comple_world_system_system_prompt(
-    campaign_setting: str, world_system_profile: str
+    campaign_setting: str, world_system_profile: str, global_game_mechanics: str
 ) -> str:
 
     return f"""## 游戏背景
+
 {campaign_setting}
+
 ## 全局规则
-{GLOBAL_GAME_MECHANICS}
+
+{global_game_mechanics}
+
 ## 你的系统设定
+
 {world_system_profile}"""
 
 
@@ -76,6 +83,7 @@ def create_actor(
     campaign_setting: str,
     actor_profile: str,
     appearance: str,
+    global_game_mechanics: str,
 ) -> Actor:
 
     character_sheet = ActorCharacterSheet(
@@ -106,6 +114,7 @@ def create_actor(
     campaign_setting=campaign_setting,
     actor_profile=actor_profile,
     appearance=appearance,
+    global_game_mechanics=global_game_mechanics,
 )}"""
 
     # logger.debug(
@@ -124,6 +133,7 @@ def create_stage(
     type: str,
     stage_profile: str,
     actors: List[Actor],
+    global_game_mechanics: str,
 ) -> Stage:
 
     character_sheet = StageCharacterSheet(
@@ -146,29 +156,10 @@ def create_stage(
 {_comple_stage_system_prompt(
     campaign_setting=campaign_setting,
     stage_profile=stage_profile,
+    global_game_mechanics=global_game_mechanics,
 )}"""
 
     return ret
-
-
-#######################################################################################################################################
-def copy_stage(
-    name: str,
-    stage_character_sheet: StageCharacterSheet,
-    kick_off_message: str,
-    campaign_setting: str,
-    actors: List[Actor],
-) -> Stage:
-
-    return create_stage(
-        name=name,
-        character_sheet_name=stage_character_sheet.name,
-        kick_off_message=kick_off_message,
-        campaign_setting=campaign_setting,
-        type=stage_character_sheet.type,
-        stage_profile=stage_character_sheet.profile,
-        actors=actors,
-    )
 
 
 #######################################################################################################################################
@@ -177,6 +168,7 @@ def create_world_system(
     kick_off_message: str,
     campaign_setting: str,
     world_system_profile: str,
+    global_game_mechanics: str,
 ) -> WorldSystem:
 
     ret = WorldSystem(
@@ -191,6 +183,7 @@ def create_world_system(
 {_comple_world_system_system_prompt(
     campaign_setting=campaign_setting,
     world_system_profile=world_system_profile,
+    global_game_mechanics=global_game_mechanics,
 )}"""
 
     return ret

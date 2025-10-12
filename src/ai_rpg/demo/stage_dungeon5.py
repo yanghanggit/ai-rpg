@@ -1,6 +1,9 @@
 from .actor_training_robot import create_actor_training_robot
 from ..models import Dungeon, Stage, StageType, Item, ItemType
-from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
+from .campaign_setting import (
+    FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+    FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+)
 from .utils import (
     create_stage,
 )
@@ -21,6 +24,7 @@ def create_stage_cave5() -> Stage:
         type=StageType.DUNGEON,
         stage_profile="你是一个用来测试技能和战斗策略的训练场，训练场里有干草和木桩，地型被改造成了沼泽，所以训练场里也充满了沼气和水，地上还插着生锈的剑和各种生物的白骨来营造气氛。",
         actors=[],
+        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )
 
 

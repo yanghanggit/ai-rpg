@@ -1,7 +1,10 @@
 from ..models import (
     WorldSystem,
 )
-from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
+from .campaign_setting import (
+    FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+    FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+)
 from .utils import (
     create_world_system,
 )
@@ -19,4 +22,5 @@ def create_world_system_test() -> WorldSystem:
         kick_off_message=f"""你已苏醒，准备开始冒险。请告诉我你的职能和目标。""",
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         world_system_profile="你是一个测试的系统。用于生成魔法",
+        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )

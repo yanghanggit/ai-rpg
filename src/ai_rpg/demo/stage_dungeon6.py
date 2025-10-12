@@ -1,7 +1,10 @@
 from .actor_goblin import create_actor_goblin
 from .actor_orc import create_actor_orc
 from ..models import Dungeon, Stage, StageType
-from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
+from .campaign_setting import (
+    FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+    FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+)
 from .utils import (
     create_stage,
 )
@@ -24,6 +27,7 @@ def create_stage_cave6() -> Stage:
         type=StageType.DUNGEON,
         stage_profile="你是一个黑暗干燥的古代科技遗迹，被发现于城市地下的溶洞里，地上都是散落的机械零件，还有许多罐子和从罐子里流出的不明液体，看起来似乎和油一样易燃。墙壁上还有许多暴露出来的电子元件，有的甚至还在冒着电流。遗迹中不时还能看到一些闪烁的光点，那是古代科技遗留下来的老旧机器人，虽然时间久远，但仍然具有威胁。遗迹深处传来说话的声音，似乎有人在争吵。",
         actors=[],
+        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )
 
 

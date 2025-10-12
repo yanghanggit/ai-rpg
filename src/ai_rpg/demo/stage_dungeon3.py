@@ -3,7 +3,10 @@ from ..models import (
     Dungeon,
     StageType,
 )
-from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
+from .campaign_setting import (
+    FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+    FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+)
 from .excel_data_manager import get_excel_data_manager
 from .utils import (
     create_stage,
@@ -29,6 +32,7 @@ def create_demo_dungeon3() -> Dungeon:
         type=StageType.DUNGEON,
         stage_profile=dungeon_data.stage_profile,
         actors=[],
+        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )
     stage_dungeon_cave3.actors = [actor_spider]
 

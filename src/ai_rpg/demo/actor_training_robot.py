@@ -3,7 +3,10 @@ from ..models import (
     ActorType,
     RPGCharacterProfile,
 )
-from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
+from .campaign_setting import (
+    FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+    FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+)
 from .utils import (
     create_actor,
 )
@@ -31,4 +34,5 @@ def create_actor_training_robot() -> Actor:
         4. 攻击（基础轻攻击或者重击）。  
         → 然后再次回到 1. 防御，循环往复。""",
         appearance="""长的和稻草人一模一样，但是身上多了一些金属盔甲，你被绑在一根柱子上,手上只握着一根木棍。""",
+        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )

@@ -3,7 +3,10 @@ from ..models import (
     ActorType,
     RPGCharacterProfile,
 )
-from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
+from .campaign_setting import (
+    FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+    FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+)
 from .excel_data_manager import get_excel_data_manager
 from .utils import (
     create_actor,
@@ -30,4 +33,5 @@ def create_actor_spider() -> Actor:
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         actor_profile=actor_data.actor_profile,
         appearance=actor_data.appearance,
+        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )

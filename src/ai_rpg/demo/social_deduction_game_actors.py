@@ -6,9 +6,7 @@ from ..models import (
 from .utils import (
     create_actor,
 )
-from .sd_setting import (
-    WEREWOLF_CAMPAIGN_SETTING,
-)
+from .campaign_setting import WEREWOLF_CAMPAIGN_SETTING, WEREWOLF_GLOBAL_GAME_MECHANICS
 
 
 def create_actor_moderator() -> Actor:
@@ -33,6 +31,7 @@ def create_actor_moderator() -> Actor:
 保持神秘而权威的氛围，用简洁明了的语言引导游戏进程。
 营造紧张刺激的游戏体验，但保持公正中立的立场。""",
         appearance="身着深色长袍，面容隐藏在兜帽阴影中，手持一本记录着村民命运的古老羊皮卷。眼神深邃。",
+        global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )
 
 
@@ -64,6 +63,7 @@ def create_actor_werewolf(name: str) -> Actor:
             if hash(name) % 2 == 0
             else "面容端正的男性，短发干练"
         ),
+        global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )
 
 
@@ -95,6 +95,7 @@ def create_actor_seer(name: str) -> Actor:
             if hash(name) % 2 == 0
             else "稳重的男性，胡须修剪整齐"
         ),
+        global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )
 
 
@@ -122,6 +123,7 @@ def create_actor_witch(name: str) -> Actor:
 解药的使用时机关系到关键角色的存亡。
 毒药可以在关键时刻消灭可疑的狼人。""",
         appearance="一位看起来非常普通的村民，穿着朴素的村民服装。温婉的女性，笑容和善亲切。",
+        global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )
 
 
@@ -154,4 +156,5 @@ def create_actor_villager(name: str) -> Actor:
             if hash(name) % 2 == 0
             else "憨厚的男性，神情朴实诚恳"
         ),
+        global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )

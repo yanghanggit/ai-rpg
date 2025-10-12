@@ -55,8 +55,6 @@ async def _run_game(
         len(terminal_game.world.entities_serialization) == 0
     ), "World data 中已经有实体，说明不是第一次创建游戏"
     terminal_game.new_game().save()
-    # terminal_game.post_new_game()
-    # terminal_game.save()
 
     # 测试一下玩家控制角色，如果没有就是错误。
     player_entity = terminal_game.get_player_entity()
@@ -115,6 +113,11 @@ async def _process_player_input(terminal_game: TerminalSDGame) -> None:
     # 公用：检查内网的llm服务的健康状态
     if usr_input == "/hc":
         await ChatClient.health_check()
+        return
+
+    if usr_input == "/ko" or usr_input == "/kickoff":
+        # 游戏开始
+        await terminal_game.social_deduction_pipeline.process()
         return
 
 

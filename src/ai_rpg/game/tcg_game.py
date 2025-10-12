@@ -16,6 +16,7 @@ from ..game.tcg_game_process_pipeline import (
     create_npc_home_pipline,
     create_player_home_pipline,
     create_dungeon_combat_state_pipeline,
+    create_social_deduction_pipline,
 )
 from ..models import (
     Actor,
@@ -44,12 +45,6 @@ from ..models import (
     WorldComponent,
     Round,
     InventoryComponent,
-    # ModeratorComponent,
-    # WerewolfComponent,
-    # SeerComponent,
-    # WitchComponent,
-    # VillagerComponent,
-    # SDCharacterSheetName,
 )
 from .player_client import PlayerClient
 
@@ -100,10 +95,16 @@ class TCGGame(BaseGame, RPGGameContext):
             create_dungeon_combat_state_pipeline(self)
         )
 
+        # 狼人杀的流程
+        self._social_deduction_pipeline: Final[TCGGameProcessPipeline] = (
+            create_social_deduction_pipline(self)
+        )
+
         self._all_pipelines: List[TCGGameProcessPipeline] = [
             self._npc_home_pipeline,
             self._player_home_pipeline,
             self._dungeon_combat_pipeline,
+            self._social_deduction_pipeline,
         ]
 
         # 玩家
@@ -189,6 +190,11 @@ class TCGGame(BaseGame, RPGGameContext):
     @property
     def dungeon_combat_pipeline(self) -> TCGGameProcessPipeline:
         return self._dungeon_combat_pipeline
+
+    ###############################################################################################################################################
+    @property
+    def social_deduction_pipeline(self) -> TCGGameProcessPipeline:
+        return self._social_deduction_pipeline
 
     ###############################################################################################################################################
     @override
@@ -395,23 +401,6 @@ class TCGGame(BaseGame, RPGGameContext):
                 )
                 for item in inventory_component.items:
                     logger.info(f"物品: {item.model_dump_json(indent=2)}")
-
-            # TODO 狼人杀的特殊组件
-            # match actor_model.character_sheet.name:
-            #     case SDCharacterSheetName.MODERATOR:
-            #         actor_entity.add(ModeratorComponent, actor_model.name)
-            #     case SDCharacterSheetName.WEREWOLF:
-            #         actor_entity.add(WerewolfComponent, actor_model.name)
-            #     case SDCharacterSheetName.SEER:
-            #         actor_entity.add(SeerComponent, actor_model.name)
-            #     case SDCharacterSheetName.WITCH:
-            #         actor_entity.add(WitchComponent, actor_model.name)
-            #     case SDCharacterSheetName.VILLAGER:
-            #         actor_entity.add(VillagerComponent, actor_model.name)
-            #     case _:
-            #         logger.warning(
-            #             f"非狼人杀型的角色名字: {actor_model.character_sheet.name}"
-            #         )
 
             # 添加到返回值
             ret.append(actor_entity)

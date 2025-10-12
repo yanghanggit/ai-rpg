@@ -162,6 +162,52 @@ def create_dungeon_combat_state_pipeline(
     return processors
 
 
+def create_social_deduction_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
+    ### 不这样就循环引用
+    from ..game.tcg_game import TCGGame
+    from ..game_systems.destroy_entity_system import DestroyEntitySystem
+    from ..game_systems.action_cleanup_system import ActionCleanupSystem
+    from ..game_systems.save_system import SaveSystem
+    from ..game_systems.social_deduction_kick_off_system import (
+        SocialDeductionKickOffSystem,
+    )
+
+    ##
+    tcg_game = cast(TCGGame, game)
+    processors = TCGGameProcessPipeline("Social Deduction Pipeline")
+
+    # 启动agent的提示词。启动阶段
+    processors.add(SocialDeductionKickOffSystem(tcg_game))
+
+    # 规划逻辑
+    ######## 在所有规划之前!##############################################################
+    # processors.add(HomeAutoPlanSystem(tcg_game))
+    # processors.add(HomeStageSystem(tcg_game))
+    # processors.add(HomeActorSystem(tcg_game))
+    # ####### 在所有规划之后! ##############################################################
+
+    # # 动作处理相关的系统 ##################################################################
+    # ####################################################################################
+    # processors.add(MindVoiceActionSystem(tcg_game))
+    # processors.add(QueryActionSystem(tcg_game))
+    # processors.add(SpeakActionSystem(tcg_game))
+    # processors.add(WhisperActionSystem(tcg_game))
+    # processors.add(AnnounceActionSystem(tcg_game))
+    # processors.add(TransStageActionSystem(tcg_game))
+    processors.add(ActionCleanupSystem(tcg_game))
+    ####################################################################################
+    ####################################################################################
+
+    # 动作处理后，可能清理。
+    processors.add(DestroyEntitySystem(tcg_game))
+
+    # 存储系统。
+    processors.add(SaveSystem(tcg_game))
+
+    return processors
+
+
+###################################################################################################################################################################
 class TCGGameProcessPipeline(Processors):
 
     def __init__(self, name: str) -> None:

@@ -21,8 +21,8 @@ from ai_rpg.demo import (
 from ai_rpg.game.player_client import PlayerClient
 
 # from ai_rpg.game.tcg_game import TCGGameState
-from ai_rpg.game.terminal_tcg_game import (
-    TerminalTCGGame,
+from ai_rpg.game.tcg_game import (
+    TCGGame,
 )
 from ai_rpg.game.world_data_service import (
     get_user_world_data,
@@ -351,7 +351,7 @@ def _parse_home_trans_stage_command_input(usr_input: str) -> HomeTransStageComma
 
 #######################################################################################################################################
 # TODO, 临时添加行动, 逻辑。
-def _plan_action(terminal_game: TerminalTCGGame, actors: List[str]) -> None:
+def _plan_action(terminal_game: TCGGame, actors: List[str]) -> None:
 
     for actor_name in actors:
 
@@ -375,7 +375,7 @@ def _plan_action(terminal_game: TerminalTCGGame, actors: List[str]) -> None:
 
 #######################################################################################################################################
 # TODO, 临时添加行动, 逻辑。
-def _trans_stage_action(terminal_game: TerminalTCGGame, stage_name: str) -> bool:
+def _trans_stage_action(terminal_game: TCGGame, stage_name: str) -> bool:
     target_stage_entity = terminal_game.get_stage_entity(stage_name)
     # assert target_stage_entity is not None, f"目标场景: {stage_name} 不存在！"
     if target_stage_entity is None:
@@ -425,7 +425,7 @@ async def _run_game(
 
     # 依赖注入，创建新的游戏
     assert world_exists is not None, "World data must exist to create a game"
-    terminal_game = TerminalTCGGame(
+    terminal_game = TCGGame(
         name=game,
         player_client=PlayerClient(
             name=user,
@@ -471,9 +471,7 @@ async def _run_game(
 
 
 ###############################################################################################################################################
-async def _process_dungeon_state_input(
-    terminal_game: TerminalTCGGame, usr_input: str
-) -> None:
+async def _process_dungeon_state_input(terminal_game: TCGGame, usr_input: str) -> None:
     """处理地下城状态下的玩家输入"""
 
     if usr_input == "/dc" or usr_input == "/draw-cards":
@@ -545,9 +543,7 @@ async def _process_dungeon_state_input(
 
 
 ###############################################################################################################################################
-async def _process_home_state_input(
-    terminal_game: TerminalTCGGame, usr_input: str
-) -> None:
+async def _process_home_state_input(terminal_game: TCGGame, usr_input: str) -> None:
     """处理家园状态下的玩家输入"""
 
     if usr_input == "/ad" or usr_input == "/advancing":
@@ -611,7 +607,7 @@ async def _process_home_state_input(
 
 
 ###############################################################################################################################################
-async def _process_player_input(terminal_game: TerminalTCGGame) -> None:
+async def _process_player_input(terminal_game: TCGGame) -> None:
 
     player_actor_entity = terminal_game.get_player_entity()
     assert player_actor_entity is not None

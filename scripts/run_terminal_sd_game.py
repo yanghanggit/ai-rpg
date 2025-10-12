@@ -14,8 +14,8 @@ from ai_rpg.settings import (
 )
 from ai_rpg.game.config import GLOBAL_SD_GAME_NAME, setup_logger
 from ai_rpg.game.player_client import PlayerClient
-from ai_rpg.game.terminal_sd_game import (
-    TerminalSDGame,
+from ai_rpg.game.tcg_game import (
+    TCGGame,
 )
 from ai_rpg.models import (
     World,
@@ -37,7 +37,7 @@ async def _run_game(
     assert world_boot is not None, "WorldBoot 创建失败"
 
     # 创建游戏实例
-    terminal_game = TerminalSDGame(
+    terminal_game = TCGGame(
         name=game,
         player_client=PlayerClient(
             name=user,
@@ -87,7 +87,7 @@ async def _run_game(
 
 
 ###############################################################################################################################################
-async def _process_player_input(terminal_game: TerminalSDGame) -> None:
+async def _process_player_input(terminal_game: TCGGame) -> None:
 
     player_actor_entity = terminal_game.get_player_entity()
     assert player_actor_entity is not None

@@ -6,7 +6,7 @@ from loguru import logger
 #     create_demo_dungeon4,
 # )
 from ..game.player_client import PlayerClient
-from ..game.web_tcg_game import WebTCGGame
+from ..game.tcg_game import TCGGame
 from ..game.world_data_service import get_user_world_data, get_game_boot_data
 from ..game_services.game_server import GameServerInstance
 from ..models import StartRequest, StartResponse, World
@@ -99,7 +99,7 @@ def setup_web_game_session(
     game: str,
     actor: str,
     player_client: PlayerClient,
-) -> Optional[WebTCGGame]:
+) -> Optional[TCGGame]:
 
     world_exists = get_user_world_data(user, game)
     if world_exists is None:
@@ -134,7 +134,7 @@ def setup_web_game_session(
 
     # 依赖注入，创建新的游戏
     assert world_exists is not None, "World data must exist to create a game"
-    web_game = WebTCGGame(
+    web_game = TCGGame(
         name=game,
         player_client=player_client,
         world=world_exists,

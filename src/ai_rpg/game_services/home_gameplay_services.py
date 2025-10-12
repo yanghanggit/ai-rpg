@@ -2,7 +2,6 @@ from typing import Dict, Set
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
-from ..game.web_tcg_game import WebTCGGame
 from ..game_services.game_server import GameServerInstance
 from ..models import (
     HomeGamePlayRequest,
@@ -29,7 +28,7 @@ home_gameplay_api_router = APIRouter()
 async def _validate_home_game_preconditions(
     user_name: str,
     game_server: GameServerInstance,
-) -> WebTCGGame:
+) -> TCGGame:
     """
     验证家园操作的前置条件，包括房间检查、游戏检查和游戏状态检查
 
@@ -64,7 +63,7 @@ async def _validate_home_game_preconditions(
 
     web_game = current_room._game
     assert web_game is not None
-    assert isinstance(web_game, WebTCGGame)
+    assert isinstance(web_game, TCGGame)
 
     # 判断游戏状态，不是Home状态不可以推进。
     # if web_game.current_game_state != TCGGameState.HOME:
@@ -81,7 +80,7 @@ async def _validate_home_game_preconditions(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-async def _handle_advancing_action(web_game: WebTCGGame) -> HomeGamePlayResponse:
+async def _handle_advancing_action(web_game: TCGGame) -> HomeGamePlayResponse:
     """
     处理推进游戏的动作
 
@@ -256,7 +255,7 @@ def _all_heros_launch_dungeon(tcg_game: TCGGame) -> bool:
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 async def _handle_speak_action(
-    web_game: WebTCGGame, target: str, content: str
+    web_game: TCGGame, target: str, content: str
 ) -> HomeGamePlayResponse:
     """
     处理说话动作

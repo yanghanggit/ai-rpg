@@ -3,7 +3,6 @@ from typing import Set
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
-from ..game.web_tcg_game import WebTCGGame
 from ..game_services.game_server import GameServerInstance
 from ..models import (
     DungeonGamePlayRequest,
@@ -185,7 +184,7 @@ def _combat_actors_random_play_cards_action(tcg_game: TCGGame) -> bool:
 def _validate_dungeon_prerequisites(
     user_name: str,
     game_server: GameServerInstance,
-) -> WebTCGGame:
+) -> TCGGame:
     """
     验证地下城操作的前置条件
 
@@ -220,7 +219,7 @@ def _validate_dungeon_prerequisites(
 
     # 是否是WebTCGGame？！！
     web_game = current_room._game
-    assert isinstance(web_game, WebTCGGame)
+    assert isinstance(web_game, TCGGame)
     assert web_game is not None
 
     # 判断游戏状态，不是DUNGEON状态不可以推进。
@@ -249,7 +248,7 @@ def _validate_dungeon_prerequisites(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 async def _handle_dungeon_combat_kick_off(
-    web_game: WebTCGGame,
+    web_game: TCGGame,
 ) -> DungeonGamePlayResponse:
     """处理地下城战斗开始"""
     if not web_game.current_engagement.is_starting:
@@ -271,7 +270,7 @@ async def _handle_dungeon_combat_kick_off(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-async def _handle_draw_cards(web_game: WebTCGGame) -> DungeonGamePlayResponse:
+async def _handle_draw_cards(web_game: TCGGame) -> DungeonGamePlayResponse:
     """处理抽卡操作"""
     if not web_game.current_engagement.is_ongoing:
         logger.error(f"not web_game.current_engagement.is_on_going_phase")
@@ -296,7 +295,7 @@ async def _handle_draw_cards(web_game: WebTCGGame) -> DungeonGamePlayResponse:
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 async def _handle_play_cards(
-    web_game: WebTCGGame, request_data: DungeonGamePlayRequest
+    web_game: TCGGame, request_data: DungeonGamePlayRequest
 ) -> DungeonGamePlayResponse:
     """处理出牌操作"""
     if not web_game.current_engagement.is_ongoing:
@@ -324,7 +323,7 @@ async def _handle_play_cards(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 async def _handle_x_card(
-    web_game: WebTCGGame, request_data: DungeonGamePlayRequest
+    web_game: TCGGame, request_data: DungeonGamePlayRequest
 ) -> DungeonGamePlayResponse:
     """处理X卡操作"""
     if not web_game.current_engagement.is_ongoing:
@@ -367,7 +366,7 @@ async def _handle_x_card(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-async def _handle_advance_next_dungeon(web_game: WebTCGGame) -> DungeonGamePlayResponse:
+async def _handle_advance_next_dungeon(web_game: TCGGame) -> DungeonGamePlayResponse:
     """处理前进下一个地下城"""
     if not web_game.current_engagement.is_waiting:
         logger.error(f"not web_game.current_engagement.is_post_wait_phase")

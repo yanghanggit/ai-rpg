@@ -11,7 +11,12 @@ from .world_data_service import persist_world_data, debug_verbose_world_data
 from ..entitas import Entity
 from ..game.base_game import BaseGame
 from .rpg_game_context import RPGGameContext
-from ..game.tcg_game_process_pipeline import TCGGameProcessPipeline
+from ..game.tcg_game_process_pipeline import (
+    TCGGameProcessPipeline,
+    create_npc_home_pipline,
+    create_player_home_pipline,
+    create_dungeon_combat_state_pipeline,
+)
 from ..models import (
     Actor,
     ActorComponent,
@@ -76,17 +81,17 @@ class TCGGame(BaseGame, RPGGameContext):
 
         # 常规home 的流程
         self._npc_home_pipeline: Final[TCGGameProcessPipeline] = (
-            TCGGameProcessPipeline.create_npc_home_pipline(self)
+            create_npc_home_pipline(self)
         )
 
         # 仅处理player的home流程
         self._player_home_pipeline: Final[TCGGameProcessPipeline] = (
-            TCGGameProcessPipeline.create_player_home_pipline(self)
+            create_player_home_pipline(self)
         )
 
         # 地下城战斗流程
         self._dungeon_combat_pipeline: Final[TCGGameProcessPipeline] = (
-            TCGGameProcessPipeline.create_dungeon_combat_state_pipeline(self)
+            create_dungeon_combat_state_pipeline(self)
         )
 
         self._all_pipelines: List[TCGGameProcessPipeline] = [

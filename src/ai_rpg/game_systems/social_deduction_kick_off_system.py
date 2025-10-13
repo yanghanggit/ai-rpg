@@ -1,5 +1,5 @@
 import copy
-from typing import final, Dict
+from typing import List, final, Dict
 from loguru import logger
 from overrides import override
 from ..entitas import ExecuteProcessor, InitializeProcessor, Matcher
@@ -13,8 +13,10 @@ from ..models import (
     SDCharacterSheetName,
     AppearanceComponent,
     EnvironmentComponent,
+    DiscussionAction,
 )
 from ..utils.md_format import format_dict_as_markdown_list
+from ..chat_services.client import ChatClient
 
 
 ###############################################################################################################################################
@@ -43,6 +45,9 @@ class SocialDeductionKickOffSystem(ExecuteProcessor, InitializeProcessor):
 
         # 第一次观察其他的参赛选手
         self._initialize_player_awareness()
+
+        # 每一个人都自我介绍一下
+        await self._conduct_player_introductions()
 
     ###############################################################################################################################################
     def _assign_role_to_all_actors(self) -> None:
@@ -148,7 +153,7 @@ class SocialDeductionKickOffSystem(ExecuteProcessor, InitializeProcessor):
             copy_stage_actor_appearances_mapping.pop(actor_entity.name, None)
 
             prompt = f"""# 提示！准备开始比赛！你观察了场景与参赛的人员。
-            
+
 ## 场景描述: 
  
 {environment_comp.description}
@@ -159,5 +164,63 @@ class SocialDeductionKickOffSystem(ExecuteProcessor, InitializeProcessor):
 
             # 添加上下文！
             self._game.append_human_message(actor_entity, prompt)
+
+    ###############################################################################################################################################
+    # 每一个人都自我介绍一下
+    async def _conduct_player_introductions(self) -> None:
+        """每一个人都自我介绍一下"""
+
+        # 获取所有的参赛选手实体
+        all_actor_entities = self._game.get_group(
+            Matcher(
+                any_of=[
+                    WerewolfComponent,
+                    SeerComponent,
+                    WitchComponent,
+                    VillagerComponent,
+                ],
+                none_of=[ModeratorComponent],
+            )
+        ).entities.copy()
+
+        # 生成请求处理器列表
+        request_handlers: List[ChatClient] = []
+
+        # 每一个人都自我介绍一下
+        for entity1 in all_actor_entities:
+
+            prompt = f"""# 指令！现在请你做一个自我介绍的发言。
+
+## 内容建议
+
+介绍你是谁，你的外貌，你的性格，你的兴趣爱好，你的特长。
+
+
+## 注意！
+
+不要暴露你的身份信息! 你可以编造一些信息来掩盖你的身份。"""
+
+            agent_short_term_memory = self._game.get_agent_chat_history(entity1)
+            request_handlers.append(
+                ChatClient(
+                    name=entity1.name,
+                    prompt=prompt,
+                    chat_history=agent_short_term_memory.chat_history,
+                )
+            )
+
+        # 并发
+        await ChatClient.gather_request_post(clients=request_handlers)
+
+        # 添加上下文。
+        for request_handler in request_handlers:
+            entity2 = self._game.get_entity_by_name(request_handler.name)
+            assert entity2 is not None, f"实体不存在: {request_handler.name}"
+            logger.info(
+                f"{request_handler.name} 的自我介绍: {request_handler.response_content}"
+            )
+            entity2.replace(
+                DiscussionAction, entity2.name, request_handler.response_content
+            )
 
     ###############################################################################################################################################

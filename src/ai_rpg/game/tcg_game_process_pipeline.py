@@ -172,6 +172,7 @@ def create_social_deduction_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
         SocialDeductionKickOffSystem,
     )
     from ..game_systems.kick_off_system import KickOffSystem
+    from ..game_systems.discussion_action_system import DiscussionActionSystem
 
     ##
     tcg_game = cast(TCGGame, game)
@@ -196,6 +197,8 @@ def create_social_deduction_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
     # processors.add(WhisperActionSystem(tcg_game))
     # processors.add(AnnounceActionSystem(tcg_game))
     # processors.add(TransStageActionSystem(tcg_game))
+
+    processors.add(DiscussionActionSystem(tcg_game))
     processors.add(ActionCleanupSystem(tcg_game))
     ####################################################################################
     ####################################################################################

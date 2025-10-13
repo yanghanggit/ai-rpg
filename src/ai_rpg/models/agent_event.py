@@ -15,6 +15,7 @@ class AgentEventHead(IntEnum):
     TRANS_STAGE_EVENT = 6
     COMBAT_KICK_OFF_EVENT = 7
     COMBAT_COMPLETE_EVENT = 8
+    DISCUSSION_EVENT = 9
 
 
 ####################################################################################################################################
@@ -89,6 +90,17 @@ class CombatCompleteEvent(AgentEvent):
     head: int = AgentEventHead.COMBAT_COMPLETE_EVENT
     actor: str
     summary: str
+
+
+####################################################################################################################################
+
+
+@final
+class DiscussionEvent(AgentEvent):
+    head: int = AgentEventHead.DISCUSSION_EVENT
+    actor: str
+    stage: str
+    content: str
 
 
 ####################################################################################################################################

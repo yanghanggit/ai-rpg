@@ -50,20 +50,6 @@ from .player_client import PlayerClient
 
 
 # ################################################################################################################################################
-def _replace_name_with_you(input_text: str, your_name: str) -> str:
-
-    if len(input_text) == 0 or your_name not in input_text:
-        return input_text
-
-    at_name = f"@{your_name}"
-    if at_name in input_text:
-        # 如果有@名字，就略过
-        return input_text
-
-    return input_text.replace(your_name, "你")
-
-
-# ################################################################################################################################################
 class TCGGame(BaseGame, RPGGameContext):
 
     def __init__(
@@ -553,8 +539,8 @@ class TCGGame(BaseGame, RPGGameContext):
 
         # 正常的添加记忆。
         for entity in entities:
-            replace_message = _replace_name_with_you(agent_event.message, entity.name)
-            self.append_human_message(entity, replace_message)
+            # replace_message = replace_name_with_you(agent_event.message, entity.name)
+            self.append_human_message(entity, agent_event.message)
 
         # 最后都要发给客户端。
         self.player_client.add_agent_event_message(agent_event=agent_event)

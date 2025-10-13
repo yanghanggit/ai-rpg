@@ -220,7 +220,7 @@ class SocialDeductionKickOffSystem(ExecuteProcessor, InitializeProcessor):
     def _create_introduction_prompt(self) -> str:
         """创建自我介绍提示"""
         response_sample = PlayerAwarenessResponse(
-            mind_voice="你此时的内心想法，你为什么要如此的发言。",
+            mind_voice="你此时的内心想法，你为什么要如此的发言。如果你是狼人，请你确认谁是你的同伴。如果是不是，请你猜测谁是狼人。",
             discussion="你要发言的内容。",
         )
 

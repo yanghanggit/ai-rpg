@@ -163,7 +163,7 @@ def create_dungeon_combat_state_pipeline(
     return processors
 
 
-def create_social_deduction_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
+def create_social_deduction_kickoff_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
     ### 不这样就循环引用
     from ..game.tcg_game import TCGGame
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
@@ -178,7 +178,7 @@ def create_social_deduction_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
 
     ##
     tcg_game = cast(TCGGame, game)
-    processors = TCGGameProcessPipeline("Social Deduction Pipeline")
+    processors = TCGGameProcessPipeline("Social Deduction Kickoff Pipeline")
 
     # 启动agent的提示词。启动阶段
     processors.add(KickOffSystem(tcg_game))
@@ -189,6 +189,44 @@ def create_social_deduction_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
     # 行为执行阶段
     processors.add(MindVoiceActionSystem(tcg_game))
     processors.add(DiscussionActionSystem(tcg_game))
+    processors.add(ActionCleanupSystem(tcg_game))
+
+    # 动作处理后，可能清理。
+    processors.add(DestroyEntitySystem(tcg_game))
+
+    # 存储系统。
+    processors.add(SaveSystem(tcg_game))
+
+    return processors
+
+
+###################################################################################################################################################################
+def create_social_deduction_night_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
+    ### 不这样就循环引用
+    from ..game.tcg_game import TCGGame
+    from ..game_systems.destroy_entity_system import DestroyEntitySystem
+    from ..game_systems.action_cleanup_system import ActionCleanupSystem
+    from ..game_systems.save_system import SaveSystem
+    from ..game_systems.social_deduction_werewolf_system import (
+        SocialDeductionWerewolfSystem,
+    )
+    from ..game_systems.social_deduction_seer_system import (
+        SocialDeductionSeerSystem,
+    )
+    from ..game_systems.social_deduction_witch_system import (
+        SocialDeductionWitchSystem,
+    )
+
+    ##
+    tcg_game = cast(TCGGame, game)
+    processors = TCGGameProcessPipeline("Social Deduction Night Pipeline")
+
+    # 启动agent的提示词。启动阶段
+    processors.add(SocialDeductionWerewolfSystem(tcg_game))
+    processors.add(SocialDeductionSeerSystem(tcg_game))
+    processors.add(SocialDeductionWitchSystem(tcg_game))
+
+    # 动作系统。
     processors.add(ActionCleanupSystem(tcg_game))
 
     # 动作处理后，可能清理。

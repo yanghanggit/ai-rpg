@@ -117,15 +117,22 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
 
     if usr_input == "/ko" or usr_input == "/kickoff":
         # 游戏开始
-        await terminal_game.social_deduction_pipeline.process()
+        await terminal_game.social_deduction_kickoff_pipeline.process()
         assert terminal_game._time_marker == 0, "时间标记应该是0"
-        terminal_game._time_marker += 1
+
+        # 第一夜！赋值称为1
+        terminal_game._time_marker = 1
         return
 
-    if usr_input == "/r" or usr_input == "/run":
+    if usr_input == "/ng" or usr_input == "/night":
         # 运行游戏逻辑
-        await terminal_game.social_deduction_pipeline.process()
-        terminal_game._time_marker += 1
+        if terminal_game._time_marker % 2 == 1:
+            await terminal_game.social_deduction_night_pipeline.process()
+            terminal_game._time_marker += 1
+        else:
+            logger.warning("当前不是夜晚，不能执行 /night 命令")
+
+        # 返回！
         return
 
 

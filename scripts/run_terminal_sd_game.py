@@ -116,12 +116,20 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
         return
 
     if usr_input == "/ko" or usr_input == "/kickoff":
-        # 游戏开始
-        await terminal_game.social_deduction_kickoff_pipeline.process()
-        assert terminal_game._time_marker == 0, "时间标记应该是0"
 
-        # 第一夜！赋值称为1
-        terminal_game._time_marker = 1
+        if terminal_game._time_marker == 0:
+            # 游戏开始
+            await terminal_game.social_deduction_kickoff_pipeline.process()
+            assert terminal_game._time_marker == 0, "时间标记应该是0"
+
+            # 第一夜！赋值称为1
+            terminal_game._time_marker = 1
+        else:
+            logger.warning(
+                f"当前时间标记不是0，是{terminal_game._time_marker}，不能执行 /kickoff 命令"
+            )
+
+        # 返回！
         return
 
     if usr_input == "/ng" or usr_input == "/night":

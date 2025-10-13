@@ -2,6 +2,7 @@ from typing import final, override
 from ..entitas import Entity, GroupEvent, Matcher
 from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import DiscussionAction, DiscussionEvent
+from loguru import logger
 
 
 ####################################################################################################################################
@@ -48,6 +49,9 @@ class DiscussionActionSystem(BaseActionReactiveSystem):
         discussion_action = entity.get(DiscussionAction)
         assert discussion_action is not None
 
+        logger.debug(
+            f"讨论行动: {entity.name} 在场景 {current_stage_entity.name} 说: {discussion_action.message}"
+        )
         self._game.broadcast_event(
             current_stage_entity,
             DiscussionEvent(

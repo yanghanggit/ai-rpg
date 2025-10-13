@@ -1,5 +1,7 @@
-from typing import final, Set
+from math import log
+from typing import final, Set, Tuple, List
 from overrides import override
+from pydantic import BaseModel
 from ..entitas import ExecuteProcessor, Entity, Matcher
 from ..game.tcg_game import TCGGame
 from loguru import logger
@@ -18,6 +20,15 @@ from ..models import (
     WitchCureAction,
 )
 import random
+from ..utils.md_format import format_list_as_markdown_list
+from ..chat_services.client import ChatClient
+
+
+@final
+class WitchDecisionResponse(BaseModel):
+    mind_voice: str
+    cure_target: str
+    poison_target: str
 
 
 ###############################################################################################################################################
@@ -38,12 +49,87 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
         logger.info(f"夜晚 {night_number} 开始")
         logger.info("女巫请睁眼，选择你要救的玩家或毒的玩家")
 
-        witch_entity = self._find_alive_witch()
+        witch_entity = self._find_witch()
         if witch_entity is None:
             return
 
         logger.debug(f"当前女巫实体 = {witch_entity.name}")
         self._refresh_witch_inventory_display(witch_entity)
+
+        killed = self._game.get_group(
+            Matcher(
+                all_of=[
+                    WolfKillAction,
+                    DeathComponent,
+                ],
+            )
+        ).entities.copy()
+
+        all = self._game.get_group(
+            Matcher(
+                any_of=[
+                    WerewolfComponent,
+                    SeerComponent,
+                    WitchComponent,
+                    VillagerComponent,
+                ],
+            )
+        ).entities.copy()
+
+        status_info: List[Tuple[str, str]] = []
+        for one in all:
+            if one in killed:
+                status_info.append((one.name, "被杀害"))
+            else:
+                status_info.append((one.name, "存活中"))
+
+        logger.info(f"当前玩家状态: {status_info}")
+
+        response_sample = WitchDecisionResponse(
+            mind_voice="你内心独白，你的想法已经你为什么要这么决策",
+            cure_target="目标的全名 或者 空字符串 表示不救人",
+            poison_target="目标的全名 或者 空字符串 表示不毒人",
+        )
+
+        # 当前玩家状态: [('角色.5号玩家', '存活中'), ('角色.6号玩家', '存活中'), ('角色.4号玩家', '存活中'), ('角色.2号玩家', '存活中'), ('角色.1号玩家', '存活中'), ('角色.3号玩家', '存活中')]
+        prompt = f"""# 指令！作为女巫，你将决定夜晚的行动。
+
+## 当前可选的查看目标:
+
+{format_list_as_markdown_list(status_info)}
+
+## 决策建议
+
+作为女巫，你应该考虑以下因素来决定你的行动：
+1. **救人**: 如果有玩家被狼人杀害，你可以选择使用解药救活其中一人。考虑救谁时，可以基于该玩家的角色重要性（如预言家）或游戏策略（如怀疑某人为狼人）。
+2. **毒人**: 你也可以选择使用毒药毒杀一名存活的玩家。选择毒谁时，可以基于你对其他玩家的怀疑或游戏策略。
+3. **资源管理**: 记住，你只有一瓶解药和一瓶毒药，每种只能使用一次。合理利用这些资源是关键。
+4. **游戏局势**: 考虑当前的游戏局势和其他玩家的行为，做出最有利于你阵营的决策。
+
+## 输出格式
+
+### 标准示例
+
+```json
+{response_sample.model_dump_json()}
+```
+
+## 输出要求
+
+请严格按照上述的 JSON 标准示例 格式输出！你必须从上述可选目标中选择一个作为target_name。 如果你决定不救人或不毒人，请将对应的字段填写为空字符串。"""
+
+    
+        agent_short_term_memory = self._game.get_agent_chat_history(witch_entity)
+        request_handler = ChatClient(
+            name=witch_entity.name,
+            prompt=prompt,
+            chat_history=agent_short_term_memory.chat_history,
+        )
+
+        # 执行请求
+        await ChatClient.gather_request_post(clients=[request_handler])
+
+        return
 
         # 尝试救人
         self._attempt_healing(witch_entity)
@@ -55,12 +141,11 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
         self._test()
 
     ################################################################################################################################################
-    def _find_alive_witch(self) -> Entity | None:
+    def _find_witch(self) -> Entity | None:
         """查找存活的女巫实体"""
         alive_witches = self._game.get_group(
             Matcher(
                 all_of=[WitchComponent],
-                none_of=[DeathComponent],
             )
         ).entities.copy()
 
@@ -71,6 +156,17 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
         assert len(alive_witches) == 1, "女巫不可能有多个"
         witch_entity = next(iter(alive_witches))
         assert witch_entity is not None, "女巫实体不可能为空"
+
+        if witch_entity.has(WolfKillAction) and witch_entity.has(DeathComponent):
+            logger.warning(
+                f"女巫 {witch_entity.name} 走到这里说明是本轮被狼人杀害了，所以算作可以行动的女巫"
+            )
+            return witch_entity
+
+        if witch_entity.has(DeathComponent):
+            logger.warning(f"女巫 {witch_entity.name} 已经彻底死亡，无法进行女巫行动")
+            return None
+
         return witch_entity
 
     ################################################################################################################################################

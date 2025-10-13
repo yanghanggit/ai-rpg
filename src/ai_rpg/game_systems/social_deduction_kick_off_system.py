@@ -63,6 +63,7 @@ class SocialDeductionKickOffSystem(ExecuteProcessor, InitializeProcessor):
         await self._conduct_player_introductions()
 
     ###############################################################################################################################################
+    # TODO: 这里可以优化成配置化的, 临时先写死。
     def _assign_role_to_all_actors(self) -> None:
         """为所有角色分配狼人杀角色"""
 
@@ -132,7 +133,7 @@ class SocialDeductionKickOffSystem(ExecuteProcessor, InitializeProcessor):
                     WitchComponent,
                     VillagerComponent,
                 ],
-                none_of=[ModeratorComponent],
+                # none_of=[ModeratorComponent],
             )
         ).entities.copy()
 

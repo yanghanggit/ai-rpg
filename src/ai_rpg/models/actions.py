@@ -126,8 +126,26 @@ class WolfKillAction(Component):
 class SeerCheckAction(Component):
     name: str
     seer_name: str
-    # werewolf_name: str
-    # message: str
+
+
+############################################################################################################
+
+
+@final
+@register_component_class
+@register_action_class
+class WitchPoisonAction(Component):
+    name: str
+    witch_name: str
+
+
+############################################################################################################
+@final
+@register_component_class
+@register_action_class
+class WitchCureAction(Component):
+    name: str
+    witch_name: str
 
 
 ############################################################################################################

@@ -8,6 +8,7 @@ from ..models import (
     SDCharacterSheetName,
     Item,
     ItemType,
+    SDWitchItemName,
 )
 from .utils import (
     create_stage,
@@ -219,13 +220,13 @@ def create_demo_sd_game_boot(game_name: str) -> Boot:
     witch.inventory.items.extend(
         [
             Item(
-                name="道具.毒药",
+                name=SDWitchItemName.POISON,
                 uuid="",
                 type=ItemType.CONSUMABLE,
                 description="此道具让你拥有一瓶毒药! 你可以在夜晚使用它来毒死任意一名玩家，整局游戏只能使用一次。",
             ),
             Item(
-                name="道具.解药",
+                name=SDWitchItemName.CURE,
                 uuid="",
                 type=ItemType.CONSUMABLE,
                 description="此道具让你拥有一瓶解药! 你可以在夜晚使用它来救活当晚被狼人杀害的玩家，整局游戏只能使用一次。",

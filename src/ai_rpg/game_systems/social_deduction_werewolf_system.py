@@ -30,7 +30,6 @@ class SocialDeductionWerewolfSystem(ExecuteProcessor):
         logger.info("狼人请睁眼，选择你要击杀的玩家")
 
         # 临时先这么写！
-
         alive_werewolf_entities = self._game.get_group(
             Matcher(
                 all_of=[WerewolfComponent],
@@ -58,6 +57,9 @@ class SocialDeductionWerewolfSystem(ExecuteProcessor):
         ).entities.copy()
 
         logger.debug(f"当前存活的村民实体 = {[e.name for e in alive_town_entities]}")
+        if len(alive_town_entities) == 0:
+            logger.warning("当前没有存活的村民，无法进行击杀")
+            return
 
         # 从存活的村民中随机选择一个目标
         import random

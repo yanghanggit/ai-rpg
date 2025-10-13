@@ -3,7 +3,6 @@ from typing import List, final, Dict, Set
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-from torch import le
 from ..entitas import ExecuteProcessor, InitializeProcessor, Matcher, Entity
 from ..game.tcg_game import TCGGame
 from ..models import (

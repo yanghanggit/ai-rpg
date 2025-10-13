@@ -480,10 +480,10 @@ class TCGGame(BaseGame, RPGGameContext):
     ###############################################################################################################################################
     def append_human_message(self, entity: Entity, chat: str, **kwargs: Any) -> None:
 
-        # logger.debug(f"append_human_message: {entity.name} => \n{chat}")
-        # if len(kwargs) > 0:
-        #     # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
-        #     logger.debug(f"kwargs: {kwargs}")
+        logger.debug(f"append_human_message: {entity.name} => \n{chat}")
+        if len(kwargs) > 0:
+            # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
+            logger.debug(f"kwargs: {kwargs}")
 
         agent_short_term_memory = self.get_agent_chat_history(entity)
         agent_short_term_memory.chat_history.extend(

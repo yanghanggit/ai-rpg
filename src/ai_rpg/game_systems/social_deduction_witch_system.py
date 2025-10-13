@@ -1,5 +1,4 @@
-from math import log
-from typing import final, Set, Tuple, List
+from typing import final, Tuple, List
 from overrides import override
 from pydantic import BaseModel
 from ..entitas import ExecuteProcessor, Entity, Matcher
@@ -19,9 +18,9 @@ from ..models import (
     WitchPoisonAction,
     WitchCureAction,
 )
-import random
 from ..utils.md_format import format_list_as_markdown_list
 from ..chat_services.client import ChatClient
+from ..utils import json_format
 
 
 @final
@@ -91,7 +90,6 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
             poison_target="目标的全名 或者 空字符串 表示不毒人",
         )
 
-        # 当前玩家状态: [('角色.5号玩家', '存活中'), ('角色.6号玩家', '存活中'), ('角色.4号玩家', '存活中'), ('角色.2号玩家', '存活中'), ('角色.1号玩家', '存活中'), ('角色.3号玩家', '存活中')]
         prompt = f"""# 指令！作为女巫，你将决定夜晚的行动。
 
 ## 当前可选的查看目标:
@@ -118,7 +116,6 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
 
 请严格按照上述的 JSON 标准示例 格式输出！你必须从上述可选目标中选择一个作为target_name。 如果你决定不救人或不毒人，请将对应的字段填写为空字符串。"""
 
-    
         agent_short_term_memory = self._game.get_agent_chat_history(witch_entity)
         request_handler = ChatClient(
             name=witch_entity.name,
@@ -129,13 +126,71 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
         # 执行请求
         await ChatClient.gather_request_post(clients=[request_handler])
 
-        return
+        try:
+            response = WitchDecisionResponse.model_validate_json(
+                json_format.strip_json_code_block(request_handler.response_content)
+            )
 
-        # 尝试救人
-        self._attempt_healing(witch_entity)
+            if response.mind_voice != "":
+                self._game.append_human_message(
+                    witch_entity,
+                    f"""# 提示！你内心独白: {response.mind_voice}""",
+                )
 
-        # 尝试毒人
-        self._attempt_poisoning(witch_entity)
+            # 是否救人？
+            if response.cure_target != "":
+
+                cure_target_entity = self._game.get_actor_entity(response.cure_target)
+
+                if cure_target_entity is None:
+                    logger.error(
+                        f"女巫 {witch_entity.name} 想要救的玩家 {response.cure_target} 不存在，跳过救人"
+                    )
+                else:
+                    if self._revive_target(
+                        witch_entity, cure_target_entity, SDWitchItemName.CURE
+                    ):
+                        self._remove_potion(witch_entity, SDWitchItemName.CURE)
+
+                    else:
+                        logger.error(
+                            f"女巫 {witch_entity.name} 想要救的玩家 {response.cure_target} 失败，跳过救人"
+                        )
+
+            # 是否毒人？
+            if response.poison_target != "":
+
+                poison_target_entity = self._game.get_actor_entity(
+                    response.poison_target
+                )
+
+                if poison_target_entity is None:
+                    logger.error(
+                        f"女巫 {witch_entity.name} 想要毒的玩家 {response.poison_target} 不存在，跳过毒人"
+                    )
+                else:
+                    if self._poison_target(
+                        witch_entity, poison_target_entity, SDWitchItemName.POISON
+                    ):
+                        self._remove_potion(witch_entity, SDWitchItemName.POISON)
+                    else:
+                        logger.error(
+                            f"女巫 {witch_entity.name} 想要毒的玩家 {response.poison_target} 失败，跳过毒人"
+                        )
+
+            # 最终什么都不做？
+            if response.cure_target == "" and response.poison_target == "":
+                self._game.append_human_message(
+                    witch_entity,
+                    f"""# 提示！你决定本轮不使用任何道具，跳过女巫行动。""",
+                )
+
+        except Exception as e:
+            logger.error(f"Exception: {e}")
+            self._game.append_human_message(
+                witch_entity,
+                f"""# 提示！在解析你的决策时出现错误。本轮你将跳过女巫行动。""",
+            )
 
         # 验证行动结果
         self._test()
@@ -168,58 +223,6 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
             return None
 
         return witch_entity
-
-    ################################################################################################################################################
-    def _attempt_healing(self, witch_entity: Entity) -> None:
-        """尝试使用解药救人"""
-        wolf_victims = self._get_wolf_kill_victims()
-        if not wolf_victims:
-            return
-
-        logger.debug(f"被狼人杀害的玩家实体 = {[e.name for e in wolf_victims]}")
-        # 随机选择一个被杀的玩家进行救治
-        victim = random.choice(list(wolf_victims))
-        if self._revive_target(witch_entity, victim, SDWitchItemName.CURE):
-            self._remove_potion(witch_entity, SDWitchItemName.CURE)
-
-    ################################################################################################################################################
-    def _attempt_poisoning(self, witch_entity: Entity) -> None:
-        """尝试使用毒药毒人"""
-        potential_targets = self._get_poisoning_targets()
-        if not potential_targets:
-            return
-
-        logger.debug(f"当前存活的可毒杀目标 = {[e.name for e in potential_targets]}")
-        # 随机选择一个存活的玩家进行毒杀
-        target = random.choice(list(potential_targets))
-        if self._poison_target(witch_entity, target, SDWitchItemName.POISON):
-            self._remove_potion(witch_entity, SDWitchItemName.POISON)
-
-    ################################################################################################################################################
-    def _get_wolf_kill_victims(self) -> Set[Entity]:
-        """获取被狼人杀害的玩家列表"""
-        return self._game.get_group(
-            Matcher(
-                all_of=[
-                    WolfKillAction,
-                    DeathComponent,
-                ],
-            )
-        ).entities.copy()
-
-    ################################################################################################################################################
-    def _get_poisoning_targets(self) -> Set[Entity]:
-        """获取可以被毒杀的目标列表（排除已被救活的玩家）"""
-        return self._game.get_group(
-            Matcher(
-                any_of=[
-                    WerewolfComponent,
-                    SeerComponent,
-                    VillagerComponent,
-                ],
-                none_of=[DeathComponent, WitchCureAction],
-            )
-        ).entities.copy()
 
     ################################################################################################################################################
     # 更新道具的信息
@@ -279,6 +282,10 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
         poison_item = self._has_potion(witch_entity, item_name)
         if poison_item is None:
             logger.warning(f"女巫 {witch_entity.name} 没有毒药，无法使用毒药")
+            self._game.append_human_message(
+                witch_entity,
+                f"""# 提示！你没有毒药，无法对 {target_entity.name} 使用毒药。""",
+            )
             return False
 
         logger.info(f"女巫 {witch_entity.name} 对 {target_entity.name} 使用了毒药")
@@ -286,6 +293,11 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
         # 记录使用毒药的动作
         target_entity.replace(WitchPoisonAction, target_entity.name, witch_entity.name)
         target_entity.replace(DeathComponent, target_entity.name)
+
+        self._game.append_human_message(
+            witch_entity,
+            f"""# 提示！你使用了毒药，成功毒死了玩家 {target_entity.name} 。""",
+        )
 
         return True
 
@@ -301,6 +313,10 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
         cure_item = self._has_potion(witch_entity, item_name)
         if cure_item is None:
             logger.warning(f"女巫 {witch_entity.name} 没有解药，无法使用解药")
+            self._game.append_human_message(
+                witch_entity,
+                f"""# 提示！你没有解药，无法对 {target_entity.name} 使用解药。""",
+            )
             return False
 
         logger.debug(f"女巫 {witch_entity.name} 对 {target_entity.name} 使用了解药")
@@ -319,6 +335,12 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
                 WitchCureAction, target_entity.name, witch_entity.name
             )
 
+            # 给女巫一个提示
+            self._game.append_human_message(
+                witch_entity,
+                f"""# 提示！你使用了解药，成功救活了玩家 {target_entity.name} 。""",
+            )
+
         return True
 
     ###############################################################################################################################################
@@ -334,7 +356,6 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     def _remove_potion(self, from_entity: Entity, item_name: str) -> bool:
-        # return True
         assert from_entity.has(InventoryComponent)
         inventory_component = from_entity.get(InventoryComponent)
         assert inventory_component is not None
@@ -342,6 +363,10 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
         for item in inventory_component.items:
             if item.name == item_name:
                 inventory_component.items.remove(item)
+                self._game.append_human_message(
+                    from_entity,
+                    f"""# 提示！ {item.name} 被移除了！""",
+                )
                 return True
         return False
 

@@ -292,21 +292,17 @@ class SocialDeductionKickOffSystem(ExecuteProcessor, InitializeProcessor):
         entity = self._game.get_entity_by_name(request_handler.name)
         assert entity is not None, f"实体不存在: {request_handler.name}"
 
-        logger.info(
-            f"{request_handler.name} 的自我介绍: {request_handler.response_content}"
-        )
-
         try:
             response = PlayerAwarenessResponse.model_validate_json(
                 json_format.strip_json_code_block(request_handler.response_content)
             )
 
             if response.mind_voice != "":
-                logger.info(f"{request_handler.name} 的内心独白: {response.mind_voice}")
+                #logger.info(f"{request_handler.name} 的内心独白: {response.mind_voice}")
                 entity.replace(MindVoiceAction, entity.name, response.mind_voice)
 
             if response.discussion != "":
-                logger.info(f"{request_handler.name} 的发言: {response.discussion}")
+                #logger.info(f"{request_handler.name} 的发言: {response.discussion}")
                 entity.replace(DiscussionAction, entity.name, response.discussion)
 
         except Exception as e:

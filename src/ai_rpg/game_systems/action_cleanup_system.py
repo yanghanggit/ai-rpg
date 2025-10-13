@@ -42,9 +42,9 @@ class ActionCleanupSystem(ExecuteProcessor):
 
                     action = entity.get(action_class)
                     assert action is not None, "动作组件不可能为空"
-                    logger.debug(
-                        f"清理动作: {action_class} from entity: {entity._name}:\n{action.model_dump_json(indent=2)}"
-                    )
+                    # logger.debug(
+                    #     f"清理动作: {action_class} from entity: {entity._name}:\n{action.model_dump_json(indent=2)}"
+                    # )
 
                     entity.remove(action_class)
 

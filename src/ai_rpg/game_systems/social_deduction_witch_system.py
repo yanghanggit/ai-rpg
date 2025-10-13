@@ -19,6 +19,7 @@ from ..models import (
 )
 import random
 
+
 ###############################################################################################################################################
 @final
 class SocialDeductionWitchSystem(ExecuteProcessor):

@@ -128,7 +128,7 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
         # 运行游戏逻辑
         if terminal_game._time_marker > 0 and terminal_game._time_marker % 2 == 1:
             await terminal_game.social_deduction_night_pipeline.process()
-            terminal_game._time_marker += 1
+            # terminal_game._time_marker += 1
         else:
             logger.warning(
                 f"当前不是夜晚{terminal_game._time_marker}，不能执行 /night 命令"

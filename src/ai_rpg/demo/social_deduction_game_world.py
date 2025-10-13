@@ -6,6 +6,8 @@ from ..models import (
     ActorType,
     RPGCharacterProfile,
     SDCharacterSheetName,
+    Item,
+    ItemType,
 )
 from .utils import (
     create_stage,
@@ -212,6 +214,24 @@ def create_demo_sd_game_boot(game_name: str) -> Boot:
     witch = create_actor_witch("4号玩家")
     villager1 = create_actor_villager("5号玩家")
     villager2 = create_actor_villager("6号玩家")
+
+    # 给女巫添加道具
+    witch.inventory.items.extend(
+        [
+            Item(
+                name="道具.毒药",
+                uuid="",
+                type=ItemType.CONSUMABLE,
+                description="此道具让你拥有一瓶毒药! 你可以在夜晚使用它来毒死任意一名玩家，整局游戏只能使用一次。",
+            ),
+            Item(
+                name="道具.解药",
+                uuid="",
+                type=ItemType.CONSUMABLE,
+                description="此道具让你拥有一瓶解药! 你可以在夜晚使用它来救活当晚被狼人杀害的玩家，整局游戏只能使用一次。",
+            ),
+        ]
+    )
 
     # 创建游戏场地
     stage_werewolf_stage = create_demo_werewolf_stage()

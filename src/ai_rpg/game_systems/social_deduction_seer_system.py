@@ -37,7 +37,7 @@ class SocialDeductionSeerSystem(ExecuteProcessor):
         ).entities.copy()
 
         if len(alive_seer_entities) == 0:
-            logger.warning("当前没有存活的狼人，无法进行击杀")
+            logger.warning("当前没有存活的预言家，无法进行查看")
             return
 
         assert len(alive_seer_entities) == 1, "预言家不可能有多个"

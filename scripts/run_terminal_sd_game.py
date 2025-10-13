@@ -118,6 +118,14 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
     if usr_input == "/ko" or usr_input == "/kickoff":
         # 游戏开始
         await terminal_game.social_deduction_pipeline.process()
+        assert terminal_game._time_marker == 0, "时间标记应该是0"
+        terminal_game._time_marker += 1
+        return
+
+    if usr_input == "/r" or usr_input == "/run":
+        # 运行游戏逻辑
+        await terminal_game.social_deduction_pipeline.process()
+        terminal_game._time_marker += 1
         return
 
 

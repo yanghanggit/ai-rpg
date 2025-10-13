@@ -1,5 +1,6 @@
 from typing import Final, cast
 from loguru import logger
+
 from ..entitas import Processors
 from ..game.base_game import BaseGame
 
@@ -173,6 +174,7 @@ def create_social_deduction_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
     )
     from ..game_systems.kick_off_system import KickOffSystem
     from ..game_systems.discussion_action_system import DiscussionActionSystem
+    from ..game_systems.mind_voice_action_system import MindVoiceActionSystem
 
     ##
     tcg_game = cast(TCGGame, game)
@@ -180,28 +182,14 @@ def create_social_deduction_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
 
     # 启动agent的提示词。启动阶段
     processors.add(KickOffSystem(tcg_game))
+
+    # 社交推理游戏的启动系统，一些必要的上下文同步！
     processors.add(SocialDeductionKickOffSystem(tcg_game))
 
-    # 规划逻辑
-    ######## 在所有规划之前!##############################################################
-    # processors.add(HomeAutoPlanSystem(tcg_game))
-    # processors.add(HomeStageSystem(tcg_game))
-    # processors.add(HomeActorSystem(tcg_game))
-    # ####### 在所有规划之后! ##############################################################
-
-    # # 动作处理相关的系统 ##################################################################
-    # ####################################################################################
-    # processors.add(MindVoiceActionSystem(tcg_game))
-    # processors.add(QueryActionSystem(tcg_game))
-    # processors.add(SpeakActionSystem(tcg_game))
-    # processors.add(WhisperActionSystem(tcg_game))
-    # processors.add(AnnounceActionSystem(tcg_game))
-    # processors.add(TransStageActionSystem(tcg_game))
-
+    # 行为执行阶段
+    processors.add(MindVoiceActionSystem(tcg_game))
     processors.add(DiscussionActionSystem(tcg_game))
     processors.add(ActionCleanupSystem(tcg_game))
-    ####################################################################################
-    ####################################################################################
 
     # 动作处理后，可能清理。
     processors.add(DestroyEntitySystem(tcg_game))

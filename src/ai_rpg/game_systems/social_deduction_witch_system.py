@@ -1,4 +1,4 @@
-from typing import final
+from typing import final, Set
 from overrides import override
 from ..entitas import ExecuteProcessor, Entity, Matcher
 from ..game.tcg_game import TCGGame
@@ -19,10 +19,6 @@ from ..models import (
 )
 import random
 
-# 解药	Healing Potion 或 Cure	用于救活被狼人杀害的玩家。
-# 毒药	Poison Potion 或 Poison	用于毒死一名玩家。
-
-
 ###############################################################################################################################################
 @final
 class SocialDeductionWitchSystem(ExecuteProcessor):
@@ -34,33 +30,78 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
     ###############################################################################################################################################
     @override
     async def execute(self) -> None:
+        """女巫夜晚行动的主流程"""
+        """验证当前是否为夜晚阶段"""
         assert self._game._time_marker % 2 == 1, "时间标记必须是奇数，是夜晚"
-        logger.info(f"夜晚 {self._game._time_marker // 2 + 1} 开始")
+        night_number = self._game._time_marker // 2 + 1
+        logger.info(f"夜晚 {night_number} 开始")
         logger.info("女巫请睁眼，选择你要救的玩家或毒的玩家")
 
-        # 临时先这么写！
-        alive_witch_entities = self._game.get_group(
+        witch_entity = self._find_alive_witch()
+        if witch_entity is None:
+            return
+
+        logger.debug(f"当前女巫实体 = {witch_entity.name}")
+        self._refresh_witch_inventory_display(witch_entity)
+
+        # 尝试救人
+        self._attempt_healing(witch_entity)
+
+        # 尝试毒人
+        self._attempt_poisoning(witch_entity)
+
+        # 验证行动结果
+        self._test()
+
+    ################################################################################################################################################
+    def _find_alive_witch(self) -> Entity | None:
+        """查找存活的女巫实体"""
+        alive_witches = self._game.get_group(
             Matcher(
                 all_of=[WitchComponent],
                 none_of=[DeathComponent],
             )
         ).entities.copy()
 
-        if len(alive_witch_entities) == 0:
-            logger.warning("当前没有存活的女巫，无法进行击杀")
+        if len(alive_witches) == 0:
+            logger.warning("当前没有存活的女巫，无法进行女巫行动")
+            return None
+
+        assert len(alive_witches) == 1, "女巫不可能有多个"
+        witch_entity = next(iter(alive_witches))
+        assert witch_entity is not None, "女巫实体不可能为空"
+        return witch_entity
+
+    ################################################################################################################################################
+    def _attempt_healing(self, witch_entity: Entity) -> None:
+        """尝试使用解药救人"""
+        wolf_victims = self._get_wolf_kill_victims()
+        if not wolf_victims:
             return
 
-        assert len(alive_witch_entities) == 1, "女巫不可能有多个"
-        witch_entity = next(iter(alive_witch_entities))
-        assert witch_entity is not None, "女巫实体不可能为空"
+        logger.debug(f"被狼人杀害的玩家实体 = {[e.name for e in wolf_victims]}")
+        # 随机选择一个被杀的玩家进行救治
+        victim = random.choice(list(wolf_victims))
+        if self._revive_target(witch_entity, victim, SDWitchItemName.CURE):
+            self._remove_potion(witch_entity, SDWitchItemName.CURE)
 
-        logger.debug(f"当前女巫实体 = {witch_entity.name}")
+    ################################################################################################################################################
+    def _attempt_poisoning(self, witch_entity: Entity) -> None:
+        """尝试使用毒药毒人"""
+        potential_targets = self._get_poisoning_targets()
+        if not potential_targets:
+            return
 
-        # 更新女巫的道具信息
-        self._refresh_witch_inventory_display(witch_entity)
+        logger.debug(f"当前存活的可毒杀目标 = {[e.name for e in potential_targets]}")
+        # 随机选择一个存活的玩家进行毒杀
+        target = random.choice(list(potential_targets))
+        if self._poison_target(witch_entity, target, SDWitchItemName.POISON):
+            self._remove_potion(witch_entity, SDWitchItemName.POISON)
 
-        #
-        killed_by_wolf_players = self._game.get_group(
+    ################################################################################################################################################
+    def _get_wolf_kill_victims(self) -> Set[Entity]:
+        """获取被狼人杀害的玩家列表"""
+        return self._game.get_group(
             Matcher(
                 all_of=[
                     WolfKillAction,
@@ -69,18 +110,10 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
             )
         ).entities.copy()
 
-        if len(killed_by_wolf_players) > 0:
-            logger.debug(
-                f"被狼人杀害的玩家实体 = {[e.name for e in killed_by_wolf_players]}"
-            )
-            # 随机选择一个被杀的玩家进行救治
-            kill_player = random.choice(list(killed_by_wolf_players))
-            if self._revive_target(witch_entity, kill_player, SDWitchItemName.CURE):
-                # 移除解药
-                self._remove_potion(witch_entity, SDWitchItemName.CURE)
-
-        # 使用毒药
-        alive_town_entities = self._game.get_group(
+    ################################################################################################################################################
+    def _get_poisoning_targets(self) -> Set[Entity]:
+        """获取可以被毒杀的目标列表（排除已被救活的玩家）"""
+        return self._game.get_group(
             Matcher(
                 any_of=[
                     WerewolfComponent,
@@ -90,19 +123,6 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
                 none_of=[DeathComponent, WitchCureAction],
             )
         ).entities.copy()
-
-        if len(alive_town_entities) > 0:
-            logger.debug(
-                f"当前存活的村民实体 = {[e.name for e in alive_town_entities]}"
-            )
-            # 随机选择一个存活的玩家进行毒杀
-            poison_player = random.choice(list(alive_town_entities))
-            if self._poison_target(witch_entity, poison_player, SDWitchItemName.POISON):
-                # 移除毒药
-                self._remove_potion(witch_entity, SDWitchItemName.POISON)
-
-        # 最后测试一下
-        self._test()
 
     ################################################################################################################################################
     # 更新道具的信息
@@ -217,6 +237,7 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     def _remove_potion(self, from_entity: Entity, item_name: str) -> bool:
+        # return True
         assert from_entity.has(InventoryComponent)
         inventory_component = from_entity.get(InventoryComponent)
         assert inventory_component is not None

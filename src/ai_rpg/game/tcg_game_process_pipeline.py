@@ -216,6 +216,9 @@ def create_social_deduction_night_pipline(game: BaseGame) -> "TCGGameProcessPipe
     from ..game_systems.social_deduction_witch_system import (
         SocialDeductionWitchSystem,
     )
+    from ..game_systems.social_deduction_outcome_system import (
+        SocialDeductionOutcomeSystem,
+    )
 
     ##
     tcg_game = cast(TCGGame, game)
@@ -228,6 +231,9 @@ def create_social_deduction_night_pipline(game: BaseGame) -> "TCGGameProcessPipe
 
     # 动作系统。
     processors.add(ActionCleanupSystem(tcg_game))
+
+    # 结算系统。
+    processors.add(SocialDeductionOutcomeSystem(tcg_game))
 
     # 动作处理后，可能清理。
     processors.add(DestroyEntitySystem(tcg_game))

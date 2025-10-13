@@ -1,4 +1,4 @@
-from typing import final, List, Set, Dict
+from typing import final, List, Set, Dict, Tuple
 from overrides import override
 from pydantic import BaseModel
 from ..entitas import ExecuteProcessor, Matcher, Entity
@@ -66,20 +66,28 @@ class SocialDeductionWerewolfSystem(ExecuteProcessor):
         )
 
         if target_recommendations:
-            chosen_target_name = random.choice(target_recommendations)
-            await self._perform_kill_action(chosen_target_name, alive_werewolf_entities)
+            chosen_target, recommender = random.choice(target_recommendations)
+            await self._perform_kill_action(
+                chosen_target, recommender, alive_werewolf_entities
+            )
         else:
             logger.warning("狼人没有推荐任何击杀目标")
 
     ###############################################################################################################################################
     def _notify_werewolves_kill_decision(
-        self, alive_werewolf_entities: Set[Entity], chosen_target_name: str
+        self,
+        alive_werewolf_entities: Set[Entity],
+        chosen_target_name: str,
+        recommender_name: str,
     ) -> None:
         """通知所有狼人最终的击杀决定"""
+        logger.info(
+            f"最终的事件通知: 狼人 {recommender_name} 推荐击杀: {chosen_target_name}"
+        )
         for werewolf in alive_werewolf_entities:
             self._game.append_human_message(
                 werewolf,
-                f"# 发生事件！经过团队商议，最终你们决定击杀 {chosen_target_name}。",
+                f"# 发生事件！经过团队商议，最终采纳了 {recommender_name} 的建议，决定击杀 {chosen_target_name}。",
             )
 
     ###############################################################################################################################################
@@ -122,29 +130,28 @@ class SocialDeductionWerewolfSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     async def _perform_kill_action(
-        self, chosen_target_name: str, alive_werewolf_entities: Set[Entity]
+        self,
+        chosen_target_name: str,
+        recommender_name: str,
+        alive_werewolf_entities: Set[Entity],
     ) -> None:
         """执行具体的击杀行动"""
         target_entity = self._game.get_entity_by_name(chosen_target_name)
 
         if target_entity is not None:
-            # 选择一个狼人作为击杀者（这里选择第一个存活的狼人）
-            killer_werewolf = next(iter(alive_werewolf_entities))
 
             # 添加击杀动作和死亡状态
             target_entity.replace(
                 WolfKillAction,
                 target_entity.name,
-                killer_werewolf.name,
-                f"狼人团队经过商议决定击杀 {chosen_target_name}",
+                recommender_name,
+                f"根据 {recommender_name} 的建议，狼人团队决定击杀 {chosen_target_name}",
             )
             target_entity.replace(DeathComponent, target_entity.name)
 
-            logger.info(f"狼人团队击杀了玩家 {target_entity.name}")
-
             # 通知所有活着的狼人最终决定
             self._notify_werewolves_kill_decision(
-                alive_werewolf_entities, chosen_target_name
+                alive_werewolf_entities, chosen_target_name, recommender_name
             )
         else:
             logger.error(f"找不到目标实体: {chosen_target_name}")
@@ -152,8 +159,8 @@ class SocialDeductionWerewolfSystem(ExecuteProcessor):
     ###############################################################################################################################################
     async def _get_werewolf_kill_decisions(
         self, alive_werewolf_entities: Set[Entity], alive_town_entities: Set[Entity]
-    ) -> List[str]:
-        """让每个狼人进行击杀决策推理，返回推荐的目标名称列表"""
+    ) -> List[Tuple[str, str]]:
+        """让每个狼人进行击杀决策推理，返回推荐的目标名称和发起者的元组列表"""
 
         # 创建可选目标的外貌映射
         target_options_mapping = self._create_target_options_mapping(
@@ -169,11 +176,11 @@ class SocialDeductionWerewolfSystem(ExecuteProcessor):
         await ChatClient.gather_request_post(clients=request_handlers)
 
         # 处理响应并收集推荐目标
-        target_recommendations: List[str] = []
+        target_recommendations: List[Tuple[str, str]] = []
         for request_handler in request_handlers:
             target_name = self._process_kill_decision_response(request_handler)
             if target_name and target_name in [e.name for e in alive_town_entities]:
-                target_recommendations.append(target_name)
+                target_recommendations.append((target_name, request_handler.name))
                 logger.info(f"狼人 {request_handler.name} 推荐击杀: {target_name}")
 
         return target_recommendations

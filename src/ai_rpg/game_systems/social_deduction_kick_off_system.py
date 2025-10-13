@@ -35,8 +35,9 @@ class SocialDeductionKickOffSystem(ExecuteProcessor, InitializeProcessor):
 
     ###############################################################################################################################################
     def _assign_role_to_all_actors(self) -> None:
-        all_actors = self._game._world.boot.actors
+        """为所有角色分配狼人杀角色"""
 
+        all_actors = self._game._world.boot.actors
         for actor in all_actors:
 
             actor_entity = self._game.get_entity_by_name(actor.name)

@@ -171,12 +171,14 @@ def create_social_deduction_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
     from ..game_systems.social_deduction_kick_off_system import (
         SocialDeductionKickOffSystem,
     )
+    from ..game_systems.kick_off_system import KickOffSystem
 
     ##
     tcg_game = cast(TCGGame, game)
     processors = TCGGameProcessPipeline("Social Deduction Pipeline")
 
     # 启动agent的提示词。启动阶段
+    processors.add(KickOffSystem(tcg_game))
     processors.add(SocialDeductionKickOffSystem(tcg_game))
 
     # 规划逻辑

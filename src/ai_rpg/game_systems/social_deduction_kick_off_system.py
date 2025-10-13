@@ -3,6 +3,7 @@ from typing import List, final, Dict, Set
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
+from torch import le
 from ..entitas import ExecuteProcessor, InitializeProcessor, Matcher, Entity
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -20,6 +21,7 @@ from ..models import (
 from ..utils.md_format import format_dict_as_markdown_list
 from ..chat_services.client import ChatClient
 from ..utils import json_format
+from ..game.config import GLOBAL_SD_GAME_NAME
 
 
 ###############################################################################################################################################
@@ -43,8 +45,29 @@ class SocialDeductionKickOffSystem(ExecuteProcessor, InitializeProcessor):
     ###############################################################################################################################################
     @override
     async def initialize(self) -> None:
-        # 分配角色
-        self._assign_role_to_all_actors()
+
+        is_werewolf_game = False
+        all_actors = self._game._world.boot.actors
+        for actor in all_actors:
+            if actor.character_sheet.name in {
+                SDCharacterSheetName.MODERATOR,
+                SDCharacterSheetName.WEREWOLF,
+                SDCharacterSheetName.SEER,
+                SDCharacterSheetName.WITCH,
+                SDCharacterSheetName.VILLAGER,
+            }:
+                is_werewolf_game = True
+                break
+
+        if is_werewolf_game:
+            logger.info("是狼人杀游戏")
+            assert (
+                self._game.name == GLOBAL_SD_GAME_NAME
+            ), f"游戏名称错误, 不是 {GLOBAL_SD_GAME_NAME}"
+            # 分配角色
+            self._assign_role_to_all_actors()
+        else:
+            logger.info("不是狼人杀游戏")
 
     ###############################################################################################################################################
     @override

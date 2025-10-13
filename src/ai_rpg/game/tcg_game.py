@@ -115,6 +115,9 @@ class TCGGame(BaseGame, RPGGameContext):
         assert self._player_client.name != "", "玩家名字不能为空"
         assert self._player_client.actor != "", "玩家角色不能为空"
 
+        # TODO, 游戏时间标记, 目前就狼人杀用。
+        self._time_marker: int = 0
+
     ###############################################################################################################################################
     @property
     def player_client(self) -> PlayerClient:

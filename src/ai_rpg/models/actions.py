@@ -95,3 +95,14 @@ class ArbitrationAction(Component):
 
 
 ############################################################################################################
+
+
+@final
+@register_component_class
+@register_action_class
+class DiscussionAction(Component):
+    name: str
+    message: str
+
+
+############################################################################################################

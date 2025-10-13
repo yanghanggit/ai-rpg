@@ -6,7 +6,6 @@ from ..models import (
     ACTION_COMPONENTS_REGISTRY,
     COMPONENTS_REGISTRY,
 )
-from loguru import logger
 
 
 @final

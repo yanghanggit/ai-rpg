@@ -1,5 +1,4 @@
 from typing import Final, List
-from loguru import logger
 from ..models import AgentEvent, ClientMessage, MessageType
 
 

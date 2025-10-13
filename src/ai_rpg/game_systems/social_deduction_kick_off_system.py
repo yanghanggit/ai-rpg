@@ -298,11 +298,11 @@ class SocialDeductionKickOffSystem(ExecuteProcessor, InitializeProcessor):
             )
 
             if response.mind_voice != "":
-                #logger.info(f"{request_handler.name} 的内心独白: {response.mind_voice}")
+                # logger.info(f"{request_handler.name} 的内心独白: {response.mind_voice}")
                 entity.replace(MindVoiceAction, entity.name, response.mind_voice)
 
             if response.discussion != "":
-                #logger.info(f"{request_handler.name} 的发言: {response.discussion}")
+                # logger.info(f"{request_handler.name} 的发言: {response.discussion}")
                 entity.replace(DiscussionAction, entity.name, response.discussion)
 
         except Exception as e:

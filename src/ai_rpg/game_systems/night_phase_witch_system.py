@@ -11,11 +11,10 @@ from ..models import (
     SeerComponent,
     VillagerComponent,
     WolfKillAction,
-    SDWitchItemName,
-    Item,
     WitchPoisonAction,
     WitchCureAction,
     NightPhaseAction,
+    AgentEvent,
 )
 from ..utils.md_format import format_list_as_markdown_list
 from ..chat_services.client import ChatClient
@@ -149,50 +148,39 @@ class NightPhaseWitchSystem(BaseActionReactiveSystem):
 
             # 是否救人？
             if response.cure_target != "":
-
                 cure_target_entity = self._game.get_actor_entity(response.cure_target)
-
-                if cure_target_entity is None:
+                assert cure_target_entity is not None, "找不到救治目标实体"
+                if cure_target_entity is not None:
+                    cure_target_entity.replace(
+                        WitchCureAction, cure_target_entity.name, witch_entity.name
+                    )
+                else:
                     logger.error(
                         f"女巫 {witch_entity.name} 想要救的玩家 {response.cure_target} 不存在，跳过救人"
                     )
-                else:
-                    if self._revive_target(
-                        witch_entity, cure_target_entity, SDWitchItemName.CURE
-                    ):
-                        self._remove_potion(witch_entity, SDWitchItemName.CURE)
-
-                    else:
-                        logger.error(
-                            f"女巫 {witch_entity.name} 想要救的玩家 {response.cure_target} 失败，跳过救人"
-                        )
 
             # 是否毒人？
             if response.poison_target != "":
-
                 poison_target_entity = self._game.get_actor_entity(
                     response.poison_target
                 )
-
-                if poison_target_entity is None:
+                assert poison_target_entity is not None, "找不到毒人目标实体"
+                if poison_target_entity is not None:
+                    poison_target_entity.replace(
+                        WitchPoisonAction, poison_target_entity.name, witch_entity.name
+                    )
+                else:
                     logger.error(
                         f"女巫 {witch_entity.name} 想要毒的玩家 {response.poison_target} 不存在，跳过毒人"
                     )
-                else:
-                    if self._poison_target(
-                        witch_entity, poison_target_entity, SDWitchItemName.POISON
-                    ):
-                        self._remove_potion(witch_entity, SDWitchItemName.POISON)
-                    else:
-                        logger.error(
-                            f"女巫 {witch_entity.name} 想要毒的玩家 {response.poison_target} 失败，跳过毒人"
-                        )
 
             # 最终什么都不做？
             if response.cure_target == "" and response.poison_target == "":
-                self._game.append_human_message(
-                    witch_entity,
-                    f"""# 提示！你决定本轮不使用任何道具，跳过女巫行动。""",
+                self._game.notify_event(
+                    set({witch_entity}),
+                    AgentEvent(
+                        message=f"""# 提示！你决定本轮不使用任何道具，跳过女巫行动。""",
+                    ),
                 )
 
         except Exception as e:
@@ -201,105 +189,5 @@ class NightPhaseWitchSystem(BaseActionReactiveSystem):
                 witch_entity,
                 f"""# 提示！在解析你的决策时出现错误。本轮你将跳过女巫行动。""",
             )
-
-    ###############################################################################################################################################
-    # 对。。。使用毒药
-    def _poison_target(
-        self,
-        witch_entity: Entity,
-        target_entity: Entity,
-        item_name: str,
-    ) -> bool:
-
-        poison_item = self._has_potion(witch_entity, item_name)
-        if poison_item is None:
-            logger.warning(f"女巫 {witch_entity.name} 没有毒药，无法使用毒药")
-            self._game.append_human_message(
-                witch_entity,
-                f"""# 提示！你没有毒药，无法对 {target_entity.name} 使用毒药。""",
-            )
-            return False
-
-        logger.info(f"女巫 {witch_entity.name} 对 {target_entity.name} 使用了毒药")
-
-        # 记录使用毒药的动作
-        target_entity.replace(WitchPoisonAction, target_entity.name, witch_entity.name)
-
-        self._game.append_human_message(
-            witch_entity,
-            f"""# 提示！你使用了毒药，成功毒死了玩家 {target_entity.name} 。""",
-        )
-
-        return True
-
-    ###############################################################################################################################################
-    # 对。。。使用解药
-    def _revive_target(
-        self,
-        witch_entity: Entity,
-        target_entity: Entity,
-        item_name: str,
-    ) -> bool:
-
-        cure_item = self._has_potion(witch_entity, item_name)
-        if cure_item is None:
-            logger.warning(f"女巫 {witch_entity.name} 没有解药，无法使用解药")
-            self._game.append_human_message(
-                witch_entity,
-                f"""# 提示！你没有解药，无法对 {target_entity.name} 使用解药。""",
-            )
-            return False
-
-        logger.debug(f"女巫 {witch_entity.name} 对 {target_entity.name} 使用了解药")
-
-        if target_entity.has(WolfKillAction):
-
-            # 移除被狼人杀害的状态
-            target_entity.remove(WolfKillAction)
-            logger.info(
-                f"女巫 {witch_entity.name} 使用了解药，救活了玩家 {target_entity.name}"
-            )
-
-            # 记录使用解药的动作
-            target_entity.replace(
-                WitchCureAction, target_entity.name, witch_entity.name
-            )
-
-            # 给女巫一个提示
-            self._game.append_human_message(
-                witch_entity,
-                f"""# 提示！你使用了解药，成功救活了玩家 {target_entity.name} 。""",
-            )
-
-        return True
-
-    ###############################################################################################################################################
-    def _has_potion(self, from_entity: Entity, item_name: str) -> Item | None:
-        assert from_entity.has(InventoryComponent)
-        inventory_component = from_entity.get(InventoryComponent)
-        assert inventory_component is not None
-        return inventory_component.get_item(item_name)
-
-        # for item in inventory_component.items:
-        #     if item.name == item_name:
-        #         return item
-        # return None
-
-    ###############################################################################################################################################
-    def _remove_potion(self, from_entity: Entity, item_name: str) -> bool:
-        assert from_entity.has(InventoryComponent)
-        inventory_component = from_entity.get(InventoryComponent)
-        assert inventory_component is not None
-        return inventory_component.remove_item(item_name)
-
-        # for item in inventory_component.items:
-        #     if item.name == item_name:
-        #         inventory_component.items.remove(item)
-        #         self._game.append_human_message(
-        #             from_entity,
-        #             f"""# 提示！ {item.name} 被移除了！""",
-        #         )
-        #         return True
-        # return False
 
     ###############################################################################################################################################

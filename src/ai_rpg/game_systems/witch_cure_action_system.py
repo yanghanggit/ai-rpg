@@ -3,6 +3,10 @@ from ..entitas import Entity, GroupEvent, Matcher
 from .base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
     WitchCureAction,
+    SDWitchItemName,
+    InventoryComponent,
+    AgentEvent,
+    WolfKillAction,
 )
 from loguru import logger
 
@@ -29,6 +33,52 @@ class WitchCureActionSystem(BaseActionReactiveSystem):
 
     ####################################################################################################################################
     def _process_action(self, entity: Entity) -> None:
+
         logger.debug(f"💊 处理女巫救治行动 = {entity.name}")
+
+        witch_cure_action = entity.get(WitchCureAction)
+        assert entity.name == witch_cure_action.name, "实体名称和目标名称不匹配"
+
+        witch_entity = self._game.get_entity_by_name(witch_cure_action.witch_name)
+        assert witch_entity is not None, "找不到女巫实体"
+        if witch_entity is None:
+            logger.error(f"找不到女巫实体 = {witch_cure_action.witch_name}")
+            return
+
+        inventory_component = witch_entity.get(InventoryComponent)
+        assert inventory_component is not None, "女巫实体没有道具组件"
+
+        cure_item = inventory_component.find_item(SDWitchItemName.CURE)
+        assert cure_item is not None, "女巫没有解药，无法使用解药"
+        if cure_item is None:
+            logger.warning(f"女巫 {witch_entity.name} 没有解药，无法使用解药")
+            self._game.notify_event(
+                set({witch_entity}),
+                AgentEvent(
+                    message=f"# 提示！你没有解药，无法对 {entity.name} 使用解药。",
+                ),
+            )
+            return
+
+        logger.debug(f"女巫 {witch_entity.name} 对 {entity.name} 使用了解药")
+
+        # 移除被杀害状态
+        assert entity.has(WolfKillAction), "目标玩家没有被狼人杀害，无法使用解药"
+        if entity.has(WolfKillAction):
+            entity.remove(WolfKillAction)
+            logger.debug(
+                f"女巫 {witch_entity.name} 使用了解药，救活了玩家 {entity.name}"
+            )
+
+        # 移除解药道具
+        inventory_component.items.remove(cure_item)
+
+        # 通知女巫使用解药成功
+        self._game.notify_event(
+            set({witch_entity}),
+            AgentEvent(
+                message=f"# 女巫 {witch_entity.name} 使用了解药，成功救活了玩家 {entity.name}, 并且解药已被使用。",
+            ),
+        )
 
     ####################################################################################################################################

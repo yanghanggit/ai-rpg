@@ -76,8 +76,6 @@ class NightPhaseSeerSystem(BaseActionReactiveSystem):
     def filter(self, entity: Entity) -> bool:
         return entity.has(NightPhaseAction) and entity.has(SeerComponent)
 
-    #######################################################################################################################################
-
     ###############################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
@@ -208,23 +206,5 @@ class NightPhaseSeerSystem(BaseActionReactiveSystem):
                 target_entity.name,
                 seer_entity.name,
             )
-
-            logger.info(f"预言家查看了玩家 {target_entity.name}")
-
-            # 揭示查看结果
-            if target_entity.has(WerewolfComponent):
-                logger.info(f"预言家查看的玩家 {target_entity.name} 是 狼人")
-                self._game.append_human_message(
-                    seer_entity,
-                    f"# 提示！你查看了玩家 {target_entity.name} 的身份，结论：{target_entity.name} 是 狼人！",
-                )
-            else:
-                logger.info(f"预言家查看的玩家 {target_entity.name} 不是 狼人")
-                self._game.append_human_message(
-                    seer_entity,
-                    f"# 提示！你查看了玩家 {target_entity.name} 的身份，结论：{target_entity.name} 不是 狼人。",
-                )
-        else:
-            logger.error(f"找不到目标实体: {target_name}")
 
     ###############################################################################################################################################

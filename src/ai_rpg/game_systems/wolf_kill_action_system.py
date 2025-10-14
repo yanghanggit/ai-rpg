@@ -3,6 +3,8 @@ from ..entitas import Entity, GroupEvent, Matcher
 from .base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
     WolfKillAction,
+    NightKillFlagComponent,
+    DeathComponent,
 )
 from loguru import logger
 
@@ -29,6 +31,13 @@ class WolfKillActionSystem(BaseActionReactiveSystem):
 
     ####################################################################################################################################
     def _process_action(self, entity: Entity) -> None:
-        logger.debug(f"🪓 处理狼人杀人行动 = {entity.name}")
+        logger.warning(f"🪓 处理狼人杀人行动 = {entity.name}, 有这个就是被杀害了！")
+
+        entity.replace(DeathComponent, entity.name)
+        entity.replace(NightKillFlagComponent, entity.name, self._game._time_marker)
+
+        logger.warning(
+            f"狼人杀人行动完成，玩家 {entity.name} 被标记为死亡, 击杀时间标记 {self._game._time_marker}"
+        )
 
     ####################################################################################################################################

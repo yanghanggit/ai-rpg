@@ -23,14 +23,14 @@ from ..utils import json_format
 
 ###############################################################################################################################################
 @final
-class TestResponse(BaseModel):
+class DayDiscussionResponse(BaseModel):
     mind_voice: str
     discussion: str
 
 
 ###############################################################################################################################################
 @final
-class WerewolfGameTestSystem(ExecuteProcessor):
+class WerewolfDayDiscussionSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     def __init__(self, game_context: TCGGame) -> None:
@@ -42,17 +42,35 @@ class WerewolfGameTestSystem(ExecuteProcessor):
         logger.info(f"狼人杀测试系统启动 = {self._game._time_marker}")
         assert self._game._time_marker % 2 == 0, "time_marker 必须是偶数"
 
-        alive_players = self._game.get_group(
-            Matcher(
-                any_of=[
-                    WerewolfComponent,
-                    SeerComponent,
-                    WitchComponent,
-                    VillagerComponent,
-                ],
-                none_of=[DeathComponent, DayDiscussionFlagComponent],
-            )
-        ).entities.copy()
+        if self._game._time_marker == 2:
+
+            # 第一个白天是特殊的，所有人尚未讨论过的人都可以发言
+            alive_players = self._game.get_group(
+                Matcher(
+                    any_of=[
+                        WerewolfComponent,
+                        SeerComponent,
+                        WitchComponent,
+                        VillagerComponent,
+                    ],
+                    none_of=[DayDiscussionFlagComponent],
+                )
+            ).entities.copy()
+
+        else:
+
+            # 从此后每个白天，只能活着的且没讨论过的玩家可以发言
+            alive_players = self._game.get_group(
+                Matcher(
+                    any_of=[
+                        WerewolfComponent,
+                        SeerComponent,
+                        WitchComponent,
+                        VillagerComponent,
+                    ],
+                    none_of=[DeathComponent, DayDiscussionFlagComponent],
+                )
+            ).entities.copy()
 
         if len(alive_players) == 0:
             logger.warning("没有存活的玩家，或者都已经讨论过了，所以不用进入白天讨论")
@@ -60,7 +78,7 @@ class WerewolfGameTestSystem(ExecuteProcessor):
 
         selected_entity = random.choice(list(alive_players))
 
-        response_sample = TestResponse(
+        response_sample = DayDiscussionResponse(
             mind_voice="你此时的内心想法，你为什么要如此的发言。",
             discussion="你要发言的内容",
         )
@@ -102,7 +120,7 @@ class WerewolfGameTestSystem(ExecuteProcessor):
         )
 
         try:
-            response = TestResponse.model_validate_json(
+            response = DayDiscussionResponse.model_validate_json(
                 json_format.strip_json_code_block(request_handlers[0].response_content)
             )
 
@@ -129,8 +147,62 @@ class WerewolfGameTestSystem(ExecuteProcessor):
             request_handlers[0].response_content,
         )
 
-        # selected_entity.replace(
-        #     DiscussionAction, selected_entity.name, request_handlers[0].response_content
-        # )
+    ###############################################################################################################################################
+
+
+###############################################################################################################################################
+@final
+class DayVoteResponse(BaseModel):
+    mind_voice: str
+    target_name: str
+
+
+@final
+class WerewolfDayVoteSystem(ExecuteProcessor):
+
+    ###############################################################################################################################################
+    def __init__(self, game_context: TCGGame) -> None:
+        self._game: TCGGame = game_context
+
+    ###############################################################################################################################################
+    @override
+    async def execute(self) -> None:
+
+        if not self._is_day_discussion_complete():
+            logger.warning("白天讨论还没有完成，不能进行投票")
+            return
+
+        while True:
+
+            usr_input = input(f"所有发言完毕，任意键发起投票:")
+            if usr_input.strip() != "":
+                break
+
+    ###############################################################################################################################################
+    def _is_day_discussion_complete(self) -> bool:
+        players1 = self._game.get_group(
+            Matcher(
+                all_of=[DayDiscussionFlagComponent],
+                any_of=[
+                    WerewolfComponent,
+                    SeerComponent,
+                    WitchComponent,
+                    VillagerComponent,
+                ],
+            )
+        ).entities.copy()
+
+        players2 = self._game.get_group(
+            Matcher(
+                any_of=[
+                    WerewolfComponent,
+                    SeerComponent,
+                    WitchComponent,
+                    VillagerComponent,
+                ],
+            )
+        ).entities.copy()
+
+        return len(players1) >= len(players2)
 
     ###############################################################################################################################################

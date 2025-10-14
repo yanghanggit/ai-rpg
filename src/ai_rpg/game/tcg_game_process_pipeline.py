@@ -271,14 +271,19 @@ def create_werewolf_game_day_pipline(game: BaseGame) -> "TCGGameProcessPipeline"
         WerewolfVictoryConditionSystem,
     )
     from ..game_systems.discussion_action_system import DiscussionActionSystem
-    from ..game_systems.werewolf_game_test_system import WerewolfGameTestSystem
+    from ..game_systems.werewolf_game_test_system import (
+        WerewolfDayDiscussionSystem,
+        WerewolfDayVoteSystem,
+    )
     from ..game_systems.mind_voice_action_system import MindVoiceActionSystem
 
     ##
     tcg_game = cast(TCGGame, game)
     processors = TCGGameProcessPipeline("Social Deduction Day Pipeline")
 
-    processors.add(WerewolfGameTestSystem(tcg_game))
+    processors.add(WerewolfDayDiscussionSystem(tcg_game))
+    processors.add(WerewolfDayVoteSystem(tcg_game))
+
     # # 动作系统。
     processors.add(MindVoiceActionSystem(tcg_game))
     processors.add(DiscussionActionSystem(tcg_game))

@@ -1,12 +1,10 @@
 from typing import final, Tuple, List
 from overrides import override
 from pydantic import BaseModel
-from ..entitas import ExecuteProcessor, Entity, Matcher
-from ..game.tcg_game import TCGGame
+from ..entitas import Entity, Matcher, GroupEvent
 from loguru import logger
 from ..models import (
     InventoryComponent,
-    ItemType,
     WitchComponent,
     DeathComponent,
     WerewolfComponent,
@@ -17,10 +15,12 @@ from ..models import (
     Item,
     WitchPoisonAction,
     WitchCureAction,
+    NightPhaseAction,
 )
 from ..utils.md_format import format_list_as_markdown_list
 from ..chat_services.client import ChatClient
 from ..utils import json_format
+from .base_action_reactive_system import BaseActionReactiveSystem
 
 
 @final
@@ -32,38 +32,40 @@ class WitchDecisionResponse(BaseModel):
 
 ###############################################################################################################################################
 @final
-class NightPhaseWitchSystem(ExecuteProcessor):
+class NightPhaseWitchSystem(BaseActionReactiveSystem):
 
-    ###############################################################################################################################################
-    def __init__(self, game_context: TCGGame) -> None:
-        self._game: TCGGame = game_context
+    ####################################################################################################################################
+    @override
+    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+        return {Matcher(NightPhaseAction): GroupEvent.ADDED}
+
+    ####################################################################################################################################
+    @override
+    def filter(self, entity: Entity) -> bool:
+        return entity.has(NightPhaseAction) and entity.has(WitchComponent)
+
+    #######################################################################################################################################
 
     ###############################################################################################################################################
     @override
-    async def execute(self) -> None:
+    async def react(self, entities: list[Entity]) -> None:
         """女巫夜晚行动的主流程"""
-        """验证当前是否为夜晚阶段"""
-        assert self._game._time_marker % 2 == 1, "时间标记必须是奇数，是夜晚"
-        night_number = self._game._time_marker // 2 + 1
-        logger.info(f"夜晚 {night_number} 开始")
+        assert len(entities) == 1, "不可能有多个女巫同时行动"
         logger.info("女巫请睁眼，选择你要救的玩家或毒的玩家")
 
-        witch_entity = self._get_witch()
-        if witch_entity is None:
-            return
+        # 一个女巫
+        witch_entity = entities[0]
 
-        logger.debug(f"当前女巫实体 = {witch_entity.name}")
-        self._refresh_witch_inventory_display(witch_entity)
-
+        # 被狼人杀害的
         killed = self._game.get_group(
             Matcher(
                 all_of=[
                     WolfKillAction,
-                    # DeathComponent,
                 ],
             )
         ).entities.copy()
 
+        # 所有的人。
         all = self._game.get_group(
             Matcher(
                 any_of=[
@@ -72,6 +74,7 @@ class NightPhaseWitchSystem(ExecuteProcessor):
                     WitchComponent,
                     VillagerComponent,
                 ],
+                none_of=[DeathComponent],
             )
         ).entities.copy()
 
@@ -90,7 +93,14 @@ class NightPhaseWitchSystem(ExecuteProcessor):
             poison_target="目标的全名 或者 空字符串 表示不毒人",
         )
 
+        inventory_component = witch_entity.get(InventoryComponent)
+        assert inventory_component is not None
+
         prompt = f"""# 指令！作为女巫，你将决定夜晚的行动。
+        
+## 你的道具信息
+
+{inventory_component.list_items_prompt}
 
 ## 当前可选的查看目标:
 
@@ -192,73 +202,6 @@ class NightPhaseWitchSystem(ExecuteProcessor):
                 f"""# 提示！在解析你的决策时出现错误。本轮你将跳过女巫行动。""",
             )
 
-        # 验证行动结果
-        self._test()
-
-    ################################################################################################################################################
-    def _get_witch(self) -> Entity | None:
-        """查找存活的女巫实体"""
-        alive_witches = self._game.get_group(
-            Matcher(
-                all_of=[WitchComponent],
-                none_of=[DeathComponent],
-            )
-        ).entities.copy()
-
-        if len(alive_witches) == 0:
-            logger.warning("当前没有存活的女巫，无法进行女巫行动")
-            return None
-
-        assert len(alive_witches) == 1, "女巫不可能有多个"
-        witch_entity = next(iter(alive_witches))
-        return witch_entity
-
-    ################################################################################################################################################
-    # 更新道具的信息
-    def _refresh_witch_inventory_display(self, witch_entity: Entity) -> None:
-
-        assert witch_entity.has(WitchComponent)
-        assert witch_entity.has(InventoryComponent)
-
-        existing_update_item_messages = self._game.find_human_messages_by_attribute(
-            actor_entity=witch_entity,
-            attribute_key="witch_items",
-            attribute_value=witch_entity.name,
-        )
-
-        if len(existing_update_item_messages) > 0:
-            logger.debug(
-                f"删除 entity {witch_entity.name} 之前的道具信息提示消息 {existing_update_item_messages}"
-            )
-            self._game.delete_human_messages_by_attribute(
-                actor_entity=witch_entity,
-                human_messages=existing_update_item_messages,
-            )
-
-        inventory_component = witch_entity.get(InventoryComponent)
-        assert inventory_component is not None
-        if len(inventory_component.items) == 0:
-            self._game.append_human_message(
-                witch_entity,
-                f"""# 提示！你目前没有任何道具了。""",
-                witch_items=witch_entity.name,
-            )
-        else:
-
-            for item in inventory_component.items:
-
-                assert (
-                    item.type == ItemType.CONSUMABLE
-                ), f"女巫的道具只能是消耗品类型，现在是 {item.type}"
-                if item.type != ItemType.CONSUMABLE:
-                    continue
-
-                self._game.append_human_message(
-                    witch_entity,
-                    f"""# 提示！你目前拥有道具: {item.name}。\n{item.model_dump_json()}""",
-                    witch_items=witch_entity.name,
-                )
-
     ###############################################################################################################################################
     # 对。。。使用毒药
     def _poison_target(
@@ -281,7 +224,6 @@ class NightPhaseWitchSystem(ExecuteProcessor):
 
         # 记录使用毒药的动作
         target_entity.replace(WitchPoisonAction, target_entity.name, witch_entity.name)
-        # target_entity.replace(DeathComponent, target_entity.name)
 
         self._game.append_human_message(
             witch_entity,
@@ -336,61 +278,28 @@ class NightPhaseWitchSystem(ExecuteProcessor):
         assert from_entity.has(InventoryComponent)
         inventory_component = from_entity.get(InventoryComponent)
         assert inventory_component is not None
+        return inventory_component.get_item(item_name)
 
-        for item in inventory_component.items:
-            if item.name == item_name:
-                return item
-        return None
+        # for item in inventory_component.items:
+        #     if item.name == item_name:
+        #         return item
+        # return None
 
     ###############################################################################################################################################
     def _remove_potion(self, from_entity: Entity, item_name: str) -> bool:
         assert from_entity.has(InventoryComponent)
         inventory_component = from_entity.get(InventoryComponent)
         assert inventory_component is not None
+        return inventory_component.remove_item(item_name)
 
-        for item in inventory_component.items:
-            if item.name == item_name:
-                inventory_component.items.remove(item)
-                self._game.append_human_message(
-                    from_entity,
-                    f"""# 提示！ {item.name} 被移除了！""",
-                )
-                return True
-        return False
-
-    ###############################################################################################################################################
-    def _test(self) -> None:
-        pass
-        # test_entities1 = self._game.get_group(
-        #     Matcher(
-        #         all_of=[
-        #             WitchCureAction,
-        #         ],
-        #     )
-        # ).entities.copy()
-
-        # for test_entity in test_entities1:
-        #     assert not test_entity.has(
-        #         DeathComponent
-        #     ), f"被女巫救活的玩家 {test_entity.name} 不应该有死亡状态"
-        #     assert not test_entity.has(
-        #         WolfKillAction
-        #     ), f"被女巫救活的玩家 {test_entity.name} 不应该有被狼人杀害状态"
-
-        # test_entities2 = self._game.get_group(
-        #     Matcher(
-        #         all_of=[
-        #             WitchPoisonAction,
-        #         ],
-        #     )
-        # ).entities.copy()
-
-        # for test_entity in test_entities2:
-        #     assert test_entity.has(
-        #         DeathComponent
-        #     ), f"被女巫毒死的玩家 {test_entity.name} 应该有死亡状态"
-        #     assert not test_entity.has(
-        #         WolfKillAction
-        #     ), f"被女巫毒死的玩家 {test_entity.name} 不应该有被狼人杀害状态"
+        # for item in inventory_component.items:
+        #     if item.name == item_name:
+        #         inventory_component.items.remove(item)
+        #         self._game.append_human_message(
+        #             from_entity,
+        #             f"""# 提示！ {item.name} 被移除了！""",
+        #         )
+        #         return True
+        # return False
 
     ###############################################################################################################################################

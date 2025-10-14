@@ -227,6 +227,18 @@ class InventoryComponent(MutableComponent):
         if len(item_names) != len(set(item_names)):
             assert False, f"InventoryComponent 自我检查失败，发现重复物品: {item_names}"
 
+    #
+    @property
+    def list_items_prompt(self) -> str:
+        if len(self.items) == 0:
+            return "- 无"
+        return "\n".join(
+            [
+                f"- {item.name}: {item.description}, 数量: {item.count}"
+                for item in self.items
+            ]
+        )
+
 
 ############################################################################################################
 ############################################################################################################

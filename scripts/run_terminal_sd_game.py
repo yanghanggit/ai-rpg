@@ -45,7 +45,6 @@ def _is_day_discussion_complete(tcg_game: TCGGame) -> bool:
                 SeerComponent,
                 WitchComponent,
                 VillagerComponent,
-                # DayDiscussionFlagComponent,
             ],
         )
     ).entities.copy()
@@ -268,15 +267,32 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
         # 运行游戏逻辑
         if terminal_game._time_marker > 0 and terminal_game._time_marker % 2 == 0:
             await terminal_game.werewolf_game_day_pipeline.process()
-            # terminal_game._time_marker += 1
-            if _is_day_discussion_complete(terminal_game):
-                logger.warning(
-                    "白天讨论环节完成，需要进入投票阶段！！！！！！！！！！！！"
-                )
 
         else:
             logger.warning(
                 f"当前不是白天{terminal_game._time_marker}，不能执行 /day 命令"
+            )
+
+        # 返回！
+        return
+
+    if usr_input == "/v" or usr_input == "/vote":
+        # 运行游戏逻辑
+        if terminal_game._time_marker > 0 and terminal_game._time_marker % 2 == 0:
+            if _is_day_discussion_complete(terminal_game):
+                await terminal_game.werewolf_game_vote_pipeline.process()
+
+                # 进入下一个夜晚
+                terminal_game._time_marker += 1
+                _announce_night_phase(terminal_game)
+
+            else:
+                logger.warning(
+                    "白天讨论环节没有完成，不能进入投票阶段！！！！！！！！！！！！"
+                )
+        else:
+            logger.warning(
+                f"当前不是白天{terminal_game._time_marker}，不能执行 /vote 命令"
             )
 
         # 返回！

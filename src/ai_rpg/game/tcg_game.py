@@ -19,6 +19,7 @@ from ..game.tcg_game_process_pipeline import (
     create_werewolf_game_kickoff_pipline,
     create_werewolf_game_night_pipline,
     create_werewolf_game_day_pipline,
+    create_werewolf_game_vote_pipline,
 )
 from ..models import (
     Actor,
@@ -103,6 +104,11 @@ class TCGGame(BaseGame, RPGGameContext):
             create_werewolf_game_day_pipline(self)
         )
 
+        # create_werewolf_game_vote_pipline
+        self._werewolf_game_vote_pipeline: Final[TCGGameProcessPipeline] = (
+            create_werewolf_game_vote_pipline(self)
+        )
+
         self._all_pipelines: List[TCGGameProcessPipeline] = [
             self._npc_home_pipeline,
             self._player_home_pipeline,
@@ -110,6 +116,7 @@ class TCGGame(BaseGame, RPGGameContext):
             self._werewolf_game_kickoff_pipeline,
             self._werewolf_game_night_pipeline,
             self._werewolf_game_day_pipeline,
+            self._werewolf_game_vote_pipeline,
         ]
 
         # 玩家
@@ -213,6 +220,10 @@ class TCGGame(BaseGame, RPGGameContext):
     @property
     def werewolf_game_day_pipeline(self) -> TCGGameProcessPipeline:
         return self._werewolf_game_day_pipeline
+
+    @property
+    def werewolf_game_vote_pipeline(self) -> TCGGameProcessPipeline:
+        return self._werewolf_game_vote_pipeline
 
     ###############################################################################################################################################
     @override

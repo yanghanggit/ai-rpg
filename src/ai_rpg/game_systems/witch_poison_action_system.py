@@ -6,6 +6,7 @@ from ..models import (
     SDWitchItemName,
     InventoryComponent,
     AgentEvent,
+    NightKillFlagComponent,
 )
 from loguru import logger
 
@@ -70,5 +71,7 @@ class WitchPoisonActionSystem(BaseActionReactiveSystem):
                 message=f"# 女巫 {witch_entity.name} 使用了毒药，成功毒杀了玩家 {entity.name}, 并且毒药已被使用。",
             ),
         )
+
+        entity.replace(NightKillFlagComponent, entity.name, self._game._time_marker)
 
     ####################################################################################################################################

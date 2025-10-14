@@ -271,9 +271,8 @@ def create_werewolf_game_day_pipline(game: BaseGame) -> "TCGGameProcessPipeline"
         WerewolfVictoryConditionSystem,
     )
     from ..game_systems.discussion_action_system import DiscussionActionSystem
-    from ..game_systems.werewolf_game_test_system import (
+    from ..game_systems.werewolf_day_discussion_system import (
         WerewolfDayDiscussionSystem,
-        WerewolfDayVoteSystem,
     )
     from ..game_systems.mind_voice_action_system import MindVoiceActionSystem
     from ..game_systems.vote_action_system import VoteActionSystem
@@ -283,6 +282,48 @@ def create_werewolf_game_day_pipline(game: BaseGame) -> "TCGGameProcessPipeline"
     processors = TCGGameProcessPipeline("Social Deduction Day Pipeline")
 
     processors.add(WerewolfDayDiscussionSystem(tcg_game))
+    # processors.add(WerewolfDayVoteSystem(tcg_game))
+
+    # # 动作系统。
+    processors.add(MindVoiceActionSystem(tcg_game))
+    processors.add(DiscussionActionSystem(tcg_game))
+    processors.add(VoteActionSystem(tcg_game))
+    processors.add(ActionCleanupSystem(tcg_game))
+
+    # 结算系统。
+    processors.add(WerewolfVictoryConditionSystem(tcg_game))
+
+    # 动作处理后，可能清理。
+    processors.add(DestroyEntitySystem(tcg_game))
+
+    # 存储系统。
+    processors.add(SaveSystem(tcg_game))
+
+    return processors
+
+
+###################################################################################################################################################################
+def create_werewolf_game_vote_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
+    ### 不这样就循环引用
+    from ..game.tcg_game import TCGGame
+    from ..game_systems.destroy_entity_system import DestroyEntitySystem
+    from ..game_systems.action_cleanup_system import ActionCleanupSystem
+    from ..game_systems.save_system import SaveSystem
+    from ..game_systems.werewolf_victory_condition_system import (
+        WerewolfVictoryConditionSystem,
+    )
+    from ..game_systems.discussion_action_system import DiscussionActionSystem
+    from ..game_systems.werewolf_day_vote_system import (
+        WerewolfDayVoteSystem,
+    )
+    from ..game_systems.mind_voice_action_system import MindVoiceActionSystem
+    from ..game_systems.vote_action_system import VoteActionSystem
+
+    ##
+    tcg_game = cast(TCGGame, game)
+    processors = TCGGameProcessPipeline("Social Deduction Day Pipeline")
+
+    # processors.add(WerewolfDayDiscussionSystem(tcg_game))
     processors.add(WerewolfDayVoteSystem(tcg_game))
 
     # # 动作系统。

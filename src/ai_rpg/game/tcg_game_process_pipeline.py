@@ -276,6 +276,7 @@ def create_werewolf_game_day_pipline(game: BaseGame) -> "TCGGameProcessPipeline"
         WerewolfDayVoteSystem,
     )
     from ..game_systems.mind_voice_action_system import MindVoiceActionSystem
+    from ..game_systems.vote_action_system import VoteActionSystem
 
     ##
     tcg_game = cast(TCGGame, game)
@@ -287,6 +288,7 @@ def create_werewolf_game_day_pipline(game: BaseGame) -> "TCGGameProcessPipeline"
     # # 动作系统。
     processors.add(MindVoiceActionSystem(tcg_game))
     processors.add(DiscussionActionSystem(tcg_game))
+    processors.add(VoteActionSystem(tcg_game))
     processors.add(ActionCleanupSystem(tcg_game))
 
     # 结算系统。

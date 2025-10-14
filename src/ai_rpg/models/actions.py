@@ -157,3 +157,12 @@ class WitchCureAction(Component):
 
 
 ############################################################################################################
+@final
+@register_component_class
+@register_action_class
+class VoteAction(Component):
+    name: str
+    target_name: str
+
+
+############################################################################################################

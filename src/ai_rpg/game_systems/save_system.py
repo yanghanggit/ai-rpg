@@ -28,7 +28,8 @@ class SaveSystem(ExecuteProcessor):
             actor_distribution_info[stage.name] = []
             for actor in actors:
                 actor_distribution_info[stage.name].append(
-                    f"{actor.name}{'(Dead)' if actor.has(DeathComponent) or actor.has(NightKillFlagComponent) else ''}"
+                    # f"{actor.name}{'(Dead)' if actor.has(DeathComponent) or actor.has(NightKillFlagComponent) else ''}"
+                    self._tag_name(actor)
                 )
 
         logger.info(f"mapping = {actor_distribution_info}")
@@ -37,5 +38,17 @@ class SaveSystem(ExecuteProcessor):
         # self._game.save()
         logger.debug("开始保存游戏...")
         await asyncio.to_thread(self._game.save)
+
+    ############################################################################################################
+    def _tag_name(self, entity: Entity) -> str:
+        tags = []
+        if entity.has(DeathComponent):
+            tags.append("dead")
+        if entity.has(NightKillFlagComponent):
+            tags.append("night-killed")
+        if len(tags) == 0:
+            return entity.name
+        else:
+            return f"{entity.name}({' & '.join(tags)})"
 
     ############################################################################################################

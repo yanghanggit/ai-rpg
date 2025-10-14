@@ -24,6 +24,117 @@ from ai_rpg.demo.werewolf_game_world import (
     create_demo_sd_game_boot,
 )
 
+from ai_rpg.entitas import Matcher
+from ai_rpg.models import (
+    WerewolfComponent,
+    SeerComponent,
+    WitchComponent,
+    VillagerComponent,
+    NightKillFlagComponent,
+    DayDiscussionFlagComponent,
+)
+
+
+###############################################################################################################################################
+def _is_day_discussion_complete(tcg_game: TCGGame) -> bool:
+    players1 = tcg_game.get_group(
+        Matcher(
+            all_of=[DayDiscussionFlagComponent],
+            any_of=[
+                WerewolfComponent,
+                SeerComponent,
+                WitchComponent,
+                VillagerComponent,
+                # DayDiscussionFlagComponent,
+            ],
+        )
+    ).entities.copy()
+
+    players2 = tcg_game.get_group(
+        Matcher(
+            any_of=[
+                WerewolfComponent,
+                SeerComponent,
+                WitchComponent,
+                VillagerComponent,
+            ],
+        )
+    ).entities.copy()
+
+    return len(players1) >= len(players2)
+
+
+###############################################################################################################################################
+def _announce_night_phase(tcg_game: TCGGame) -> None:
+
+    all_players = tcg_game.get_group(
+        Matcher(
+            any_of=[
+                WerewolfComponent,
+                SeerComponent,
+                WitchComponent,
+                VillagerComponent,
+            ],
+        )
+    ).entities.copy()
+
+    # 判断夜晚的逻辑, 0 游戏开始，1 第一夜，2 第一白天，3 第二夜，4 第二白天
+    assert tcg_game._time_marker % 2 == 1, "当前时间标记不是夜晚"
+    night_value = (tcg_game._time_marker + 1) // 2
+
+    for player in all_players:
+        tcg_game.append_human_message(
+            player, f"# 注意！天黑请闭眼！这是第 {night_value} 个夜晚"
+        )
+
+
+###############################################################################################################################################
+def _announce_day_phase(tcg_game: TCGGame) -> None:
+
+    all_players = tcg_game.get_group(
+        Matcher(
+            any_of=[
+                WerewolfComponent,
+                SeerComponent,
+                WitchComponent,
+                VillagerComponent,
+            ],
+        )
+    ).entities.copy()
+
+    # 判断白天的逻辑, 0 游戏开始，1 第一夜，2 第一白天，3 第二夜，4 第二白天
+    assert (
+        tcg_game._time_marker % 2 == 0 and tcg_game._time_marker > 0
+    ), "当前时间标记不是白天"
+    day_value = tcg_game._time_marker // 2
+
+    for player in all_players:
+        tcg_game.append_human_message(
+            player, f"# 注意！天亮请睁眼！这是第 {day_value} 个白天"
+        )
+
+    killed_players = tcg_game.get_group(
+        Matcher(
+            all_of=[NightKillFlagComponent],
+        )
+    ).entities.copy()
+
+    # 组织提示词，提示哪些玩家被杀害，以及时间
+    if killed_players:
+        killed_players_info = ", ".join(
+            f"{player.name}(被杀害)" for player in killed_players
+        )
+        logger.info(f"在夜晚，以下玩家被杀害: {killed_players_info}")
+        for player in all_players:
+            tcg_game.append_human_message(
+                player, f"# 昨晚被杀害的玩家有: {killed_players_info}"
+            )
+
+    else:
+        logger.info("在夜晚，没有玩家被杀害")
+        for player in all_players:
+            tcg_game.append_human_message(player, f"# 昨晚没有玩家被杀害，平安夜")
+
 
 ###############################################################################################################################################
 async def _run_game(
@@ -119,11 +230,9 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
 
         if terminal_game._time_marker == 0:
             # 游戏开始
-            await terminal_game.social_deduction_kickoff_pipeline.process()
+            await terminal_game.werewolf_game_kickoff_pipeline.process()
             assert terminal_game._time_marker == 0, "时间标记应该是0"
 
-            # 第一夜！赋值称为1
-            terminal_game._time_marker = 2  # 测试白天的逻辑
         else:
             logger.warning(
                 f"当前时间标记不是0，是{terminal_game._time_marker}，不能执行 /kickoff 命令"
@@ -133,10 +242,20 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
         return
 
     if usr_input == "/n" or usr_input == "/night":
+
+        # 第一夜的特殊处理
+        if terminal_game._time_marker == 0:
+            # 第一夜！赋值称为1
+            terminal_game._time_marker = 1
+            # 通知黑天！
+            _announce_night_phase(terminal_game)
+
         # 运行游戏逻辑
         if terminal_game._time_marker > 0 and terminal_game._time_marker % 2 == 1:
-            await terminal_game.social_deduction_night_pipeline.process()
+            await terminal_game.werewolf_game_night_pipeline.process()
             terminal_game._time_marker += 1
+
+            _announce_day_phase(terminal_game)
         else:
             logger.warning(
                 f"当前不是夜晚{terminal_game._time_marker}，不能执行 /night 命令"
@@ -148,8 +267,13 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
     if usr_input == "/d" or usr_input == "/day":
         # 运行游戏逻辑
         if terminal_game._time_marker > 0 and terminal_game._time_marker % 2 == 0:
-            await terminal_game.social_deduction_day_pipeline.process()
+            await terminal_game.werewolf_game_day_pipeline.process()
             # terminal_game._time_marker += 1
+            if _is_day_discussion_complete(terminal_game):
+                logger.warning(
+                    "白天讨论环节完成，需要进入投票阶段！！！！！！！！！！！！"
+                )
+
         else:
             logger.warning(
                 f"当前不是白天{terminal_game._time_marker}，不能执行 /day 命令"

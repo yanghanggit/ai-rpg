@@ -16,9 +16,9 @@ from ..game.tcg_game_process_pipeline import (
     create_npc_home_pipline,
     create_player_home_pipline,
     create_dungeon_combat_state_pipeline,
-    create_social_deduction_kickoff_pipline,
-    create_social_deduction_night_pipline,
-    create_social_deduction_day_pipline,
+    create_werewolf_game_kickoff_pipline,
+    create_werewolf_game_night_pipline,
+    create_werewolf_game_day_pipline,
 )
 from ..models import (
     Actor,
@@ -90,26 +90,26 @@ class TCGGame(BaseGame, RPGGameContext):
         )
 
         # 狼人杀的流程
-        self._social_deduction_kickoff_pipeline: Final[TCGGameProcessPipeline] = (
-            create_social_deduction_kickoff_pipline(self)
+        self._werewolf_game_kickoff_pipeline: Final[TCGGameProcessPipeline] = (
+            create_werewolf_game_kickoff_pipline(self)
         )
 
-        self._social_deduction_night_pipeline: Final[TCGGameProcessPipeline] = (
-            create_social_deduction_night_pipline(self)
+        self._werewolf_game_night_pipeline: Final[TCGGameProcessPipeline] = (
+            create_werewolf_game_night_pipline(self)
         )
 
         # create_social_deduction_day_pipline
-        self._social_deduction_day_pipeline: Final[TCGGameProcessPipeline] = (
-            create_social_deduction_day_pipline(self)
+        self._werewolf_game_day_pipeline: Final[TCGGameProcessPipeline] = (
+            create_werewolf_game_day_pipline(self)
         )
 
         self._all_pipelines: List[TCGGameProcessPipeline] = [
             self._npc_home_pipeline,
             self._player_home_pipeline,
             self._dungeon_combat_pipeline,
-            self._social_deduction_kickoff_pipeline,
-            self._social_deduction_night_pipeline,
-            self._social_deduction_day_pipeline,
+            self._werewolf_game_kickoff_pipeline,
+            self._werewolf_game_night_pipeline,
+            self._werewolf_game_day_pipeline,
         ]
 
         # 玩家
@@ -201,18 +201,18 @@ class TCGGame(BaseGame, RPGGameContext):
 
     ###############################################################################################################################################
     @property
-    def social_deduction_kickoff_pipeline(self) -> TCGGameProcessPipeline:
-        return self._social_deduction_kickoff_pipeline
+    def werewolf_game_kickoff_pipeline(self) -> TCGGameProcessPipeline:
+        return self._werewolf_game_kickoff_pipeline
 
     ###############################################################################################################################################
     @property
-    def social_deduction_night_pipeline(self) -> TCGGameProcessPipeline:
-        return self._social_deduction_night_pipeline
+    def werewolf_game_night_pipeline(self) -> TCGGameProcessPipeline:
+        return self._werewolf_game_night_pipeline
 
     ###############################################################################################################################################
     @property
-    def social_deduction_day_pipeline(self) -> TCGGameProcessPipeline:
-        return self._social_deduction_day_pipeline
+    def werewolf_game_day_pipeline(self) -> TCGGameProcessPipeline:
+        return self._werewolf_game_day_pipeline
 
     ###############################################################################################################################################
     @override

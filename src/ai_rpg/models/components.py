@@ -276,3 +276,10 @@ class VillagerComponent(Component):
 class NightKillFlagComponent(Component):
     name: str
     time: int
+
+
+@final
+@register_component_class
+class DayDiscussionFlagComponent(Component):
+    name: str
+    message: str

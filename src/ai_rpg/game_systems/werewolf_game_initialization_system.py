@@ -34,38 +34,9 @@ class PlayerAwarenessResponse(BaseModel):
 @final
 class WerewolfGameInitializationSystem(ExecuteProcessor):
 
-    # werewolf_game_initialization_system.py
-
     ###############################################################################################################################################
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
-
-    ###############################################################################################################################################
-    # @override
-    # async def initialize(self) -> None:
-
-    #     is_werewolf_game = False
-    #     all_actors = self._game._world.boot.actors
-    #     for actor in all_actors:
-    #         if actor.character_sheet.name in {
-    #             SDCharacterSheetName.MODERATOR,
-    #             SDCharacterSheetName.WEREWOLF,
-    #             SDCharacterSheetName.SEER,
-    #             SDCharacterSheetName.WITCH,
-    #             SDCharacterSheetName.VILLAGER,
-    #         }:
-    #             is_werewolf_game = True
-    #             break
-
-    #     if is_werewolf_game:
-    #         logger.info("是狼人杀游戏")
-    #         assert (
-    #             self._game.name == GLOBAL_SD_GAME_NAME
-    #         ), f"游戏名称错误, 不是 {GLOBAL_SD_GAME_NAME}"
-    #         # 分配角色
-    #         self._assign_role_to_all_actors()
-    #     else:
-    #         logger.info("不是狼人杀游戏")
 
     ###############################################################################################################################################
     @override
@@ -82,41 +53,6 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
 
         # 每一个人都自我介绍一下
         await self._conduct_player_introductions()
-
-    ###############################################################################################################################################
-    # TODO: 这里可以优化成配置化的, 临时先写死。
-    # def _assign_role_to_all_actors(self) -> None:
-    #     """为所有角色分配狼人杀角色"""
-
-    #     all_actors = self._game._world.boot.actors
-    #     for actor in all_actors:
-
-    #         actor_entity = self._game.get_entity_by_name(actor.name)
-    #         assert actor_entity is not None, f"Actor Entity 不存在: {actor.name}"
-
-    #         match actor.character_sheet.name:
-    #             case SDCharacterSheetName.MODERATOR:
-    #                 actor_entity.replace(ModeratorComponent, actor.name)
-    #                 logger.info(f"分配角色: {actor.name} -> Moderator")
-
-    #             case SDCharacterSheetName.WEREWOLF:
-    #                 actor_entity.replace(WerewolfComponent, actor.name)
-    #                 logger.info(f"分配角色: {actor.name} -> Werewolf")
-
-    #             case SDCharacterSheetName.SEER:
-    #                 actor_entity.replace(SeerComponent, actor.name)
-    #                 logger.info(f"分配角色: {actor.name} -> Seer")
-
-    #             case SDCharacterSheetName.WITCH:
-    #                 actor_entity.replace(WitchComponent, actor.name)
-    #                 logger.info(f"分配角色: {actor.name} -> Witch")
-
-    #             case SDCharacterSheetName.VILLAGER:
-    #                 actor_entity.replace(VillagerComponent, actor.name)
-    #                 logger.info(f"分配角色: {actor.name} -> Villager")
-
-    #             case _:
-    #                 assert False, f"未知的狼人杀角色: {actor.character_sheet.name}"
 
     ###############################################################################################################################################
     # 写一个函数，给狼人添加上下文来识别同伴
@@ -154,7 +90,6 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
                     WitchComponent,
                     VillagerComponent,
                 ],
-                # none_of=[ModeratorComponent],
             )
         ).entities.copy()
 

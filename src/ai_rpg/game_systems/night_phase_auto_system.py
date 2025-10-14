@@ -43,7 +43,7 @@ class NightPhaseAutoSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     def _auto_add_night_phase_action(self) -> None:
-        logger.debug("自动为存活的预言家添加夜晚行动")
+        # logger.debug("自动为存活的预言家添加夜晚行动")
 
         alive_werewolf_player_entities = self._game.get_group(
             Matcher(

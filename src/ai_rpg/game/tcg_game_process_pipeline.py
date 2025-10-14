@@ -163,7 +163,7 @@ def create_dungeon_combat_state_pipeline(
     return processors
 
 
-def create_social_deduction_kickoff_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
+def create_werewolf_game_kickoff_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
     ### 不这样就循环引用
     from ..game.tcg_game import TCGGame
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
@@ -201,7 +201,7 @@ def create_social_deduction_kickoff_pipline(game: BaseGame) -> "TCGGameProcessPi
 
 
 ###################################################################################################################################################################
-def create_social_deduction_night_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
+def create_werewolf_game_night_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
     ### 不这样就循环引用
     from ..game.tcg_game import TCGGame
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
@@ -261,7 +261,7 @@ def create_social_deduction_night_pipline(game: BaseGame) -> "TCGGameProcessPipe
 
 
 ###################################################################################################################################################################
-def create_social_deduction_day_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
+def create_werewolf_game_day_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
     ### 不这样就循环引用
     from ..game.tcg_game import TCGGame
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
@@ -272,28 +272,16 @@ def create_social_deduction_day_pipline(game: BaseGame) -> "TCGGameProcessPipeli
     )
     from ..game_systems.discussion_action_system import DiscussionActionSystem
     from ..game_systems.werewolf_game_test_system import WerewolfGameTestSystem
+    from ..game_systems.mind_voice_action_system import MindVoiceActionSystem
 
     ##
     tcg_game = cast(TCGGame, game)
     processors = TCGGameProcessPipeline("Social Deduction Day Pipeline")
-    
-    
-    
-    
-    processors.add(WerewolfGameTestSystem(tcg_game))
-    # 启动agent的提示词。启动阶段
-    # processors.add(NightPhaseAutoSystem(tcg_game))
-    # processors.add(NightPhaseWerewolfSystem(tcg_game))
-    # processors.add(NightPhaseSeerSystem(tcg_game))
-    # processors.add(NightPhaseWitchSystem(tcg_game))
 
+    processors.add(WerewolfGameTestSystem(tcg_game))
     # # 动作系统。
-    # processors.add(MindVoiceActionSystem(tcg_game))
+    processors.add(MindVoiceActionSystem(tcg_game))
     processors.add(DiscussionActionSystem(tcg_game))
-    # processors.add(SeerCheckActionSystem(tcg_game))
-    # processors.add(WitchCureActionSystem(tcg_game))
-    # processors.add(WitchPoisonActionSystem(tcg_game))
-    # processors.add(WolfKillActionSystem(tcg_game))
     processors.add(ActionCleanupSystem(tcg_game))
 
     # 结算系统。

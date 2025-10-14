@@ -106,6 +106,14 @@ class DiscussionAction(Component):
 
 
 ############################################################################################################
+@final
+@register_component_class
+@register_action_class
+class NightPhaseAction(Component):
+    name: str
+
+
+############################################################################################################
 
 
 @final
@@ -149,11 +157,3 @@ class WitchCureAction(Component):
 
 
 ############################################################################################################
-
-
-############################################################################################################
-@final
-@register_component_class
-@register_action_class
-class NightPhaseAction(Component):
-    name: str

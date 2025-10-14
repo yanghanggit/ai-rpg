@@ -224,6 +224,10 @@ def create_social_deduction_night_pipline(game: BaseGame) -> "TCGGameProcessPipe
     from ..game_systems.night_phase_auto_system import (
         NightPhaseAutoSystem,
     )
+    from ..game_systems.seer_check_action_system import SeerCheckActionSystem
+    from ..game_systems.witch_cure_action_system import WitchCureActionSystem
+    from ..game_systems.witch_poison_action_system import WitchPoisonActionSystem
+    from ..game_systems.wolf_kill_action_system import WolfKillActionSystem
 
     ##
     tcg_game = cast(TCGGame, game)
@@ -238,6 +242,10 @@ def create_social_deduction_night_pipline(game: BaseGame) -> "TCGGameProcessPipe
     # 动作系统。
     processors.add(MindVoiceActionSystem(tcg_game))
     processors.add(DiscussionActionSystem(tcg_game))
+    processors.add(SeerCheckActionSystem(tcg_game))
+    processors.add(WitchCureActionSystem(tcg_game))
+    processors.add(WitchPoisonActionSystem(tcg_game))
+    processors.add(WolfKillActionSystem(tcg_game))
     processors.add(ActionCleanupSystem(tcg_game))
 
     # 结算系统。

@@ -221,12 +221,16 @@ def create_social_deduction_night_pipline(game: BaseGame) -> "TCGGameProcessPipe
     )
     from ..game_systems.discussion_action_system import DiscussionActionSystem
     from ..game_systems.mind_voice_action_system import MindVoiceActionSystem
+    from ..game_systems.night_phase_auto_system import (
+        NightPhaseAutoSystem,
+    )
 
     ##
     tcg_game = cast(TCGGame, game)
     processors = TCGGameProcessPipeline("Social Deduction Night Pipeline")
 
     # 启动agent的提示词。启动阶段
+    processors.add(NightPhaseAutoSystem(tcg_game))
     processors.add(NightPhaseWerewolfSystem(tcg_game))
     processors.add(NightPhaseSeerSystem(tcg_game))
     processors.add(NightPhaseWitchSystem(tcg_game))

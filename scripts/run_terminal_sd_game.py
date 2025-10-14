@@ -20,7 +20,7 @@ from ai_rpg.game.tcg_game import (
 from ai_rpg.models import (
     World,
 )
-from ai_rpg.demo.social_deduction_game_world import (
+from ai_rpg.demo.werewolf_game_world import (
     create_demo_sd_game_boot,
 )
 
@@ -115,7 +115,7 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
         await ChatClient.health_check()
         return
 
-    if usr_input == "/ko" or usr_input == "/kickoff":
+    if usr_input == "/k" or usr_input == "/kickoff":
 
         if terminal_game._time_marker == 0:
             # 游戏开始
@@ -123,7 +123,7 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
             assert terminal_game._time_marker == 0, "时间标记应该是0"
 
             # 第一夜！赋值称为1
-            terminal_game._time_marker = 1
+            terminal_game._time_marker = 2  # 测试白天的逻辑
         else:
             logger.warning(
                 f"当前时间标记不是0，是{terminal_game._time_marker}，不能执行 /kickoff 命令"
@@ -132,14 +132,27 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
         # 返回！
         return
 
-    if usr_input == "/ng" or usr_input == "/night":
+    if usr_input == "/n" or usr_input == "/night":
         # 运行游戏逻辑
         if terminal_game._time_marker > 0 and terminal_game._time_marker % 2 == 1:
             await terminal_game.social_deduction_night_pipeline.process()
-            # terminal_game._time_marker += 1
+            terminal_game._time_marker += 1
         else:
             logger.warning(
                 f"当前不是夜晚{terminal_game._time_marker}，不能执行 /night 命令"
+            )
+
+        # 返回！
+        return
+
+    if usr_input == "/d" or usr_input == "/day":
+        # 运行游戏逻辑
+        if terminal_game._time_marker > 0 and terminal_game._time_marker % 2 == 0:
+            await terminal_game.social_deduction_day_pipeline.process()
+            # terminal_game._time_marker += 1
+        else:
+            logger.warning(
+                f"当前不是白天{terminal_game._time_marker}，不能执行 /day 命令"
             )
 
         # 返回！

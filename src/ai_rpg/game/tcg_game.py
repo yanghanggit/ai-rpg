@@ -18,6 +18,7 @@ from ..game.tcg_game_process_pipeline import (
     create_dungeon_combat_state_pipeline,
     create_social_deduction_kickoff_pipline,
     create_social_deduction_night_pipline,
+    create_social_deduction_day_pipline,
 )
 from ..models import (
     Actor,
@@ -97,12 +98,18 @@ class TCGGame(BaseGame, RPGGameContext):
             create_social_deduction_night_pipline(self)
         )
 
+        # create_social_deduction_day_pipline
+        self._social_deduction_day_pipeline: Final[TCGGameProcessPipeline] = (
+            create_social_deduction_day_pipline(self)
+        )
+
         self._all_pipelines: List[TCGGameProcessPipeline] = [
             self._npc_home_pipeline,
             self._player_home_pipeline,
             self._dungeon_combat_pipeline,
             self._social_deduction_kickoff_pipeline,
             self._social_deduction_night_pipeline,
+            self._social_deduction_day_pipeline,
         ]
 
         # 玩家
@@ -201,6 +208,11 @@ class TCGGame(BaseGame, RPGGameContext):
     @property
     def social_deduction_night_pipeline(self) -> TCGGameProcessPipeline:
         return self._social_deduction_night_pipeline
+
+    ###############################################################################################################################################
+    @property
+    def social_deduction_day_pipeline(self) -> TCGGameProcessPipeline:
+        return self._social_deduction_day_pipeline
 
     ###############################################################################################################################################
     @override

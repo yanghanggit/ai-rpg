@@ -28,7 +28,7 @@ class WerewolfKillDecisionResponse(BaseModel):
 
 ###############################################################################################################################################
 @final
-class SocialDeductionWerewolfSystem(ExecuteProcessor):
+class NightPhaseWerewolfSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     def __init__(self, game_context: TCGGame) -> None:
@@ -147,7 +147,7 @@ class SocialDeductionWerewolfSystem(ExecuteProcessor):
                 recommender_name,
                 f"根据 {recommender_name} 的建议，狼人团队决定击杀 {chosen_target_name}",
             )
-            target_entity.replace(DeathComponent, target_entity.name)
+            # target_entity.replace(DeathComponent, target_entity.name)
 
             # 通知所有活着的狼人最终决定
             self._notify_werewolves_kill_decision(

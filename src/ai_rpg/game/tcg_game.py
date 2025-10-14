@@ -46,6 +46,12 @@ from ..models import (
     WorldComponent,
     Round,
     InventoryComponent,
+    SDCharacterSheetName,
+    ModeratorComponent,
+    WerewolfComponent,
+    SeerComponent,
+    WitchComponent,
+    VillagerComponent,
 )
 from .player_client import PlayerClient
 
@@ -378,6 +384,34 @@ class TCGGame(BaseGame, RPGGameContext):
                     assert (
                         False
                     ), f"未知的 ActorType: {actor_model.character_sheet.type}"
+
+            # 狼人杀专用，临时这么写。。。
+            match actor_model.character_sheet.name:
+                case SDCharacterSheetName.MODERATOR:
+                    actor_entity.replace(ModeratorComponent, actor_model.name)
+                    logger.info(f"分配角色: {actor_model.name} -> Moderator")
+
+                case SDCharacterSheetName.WEREWOLF:
+                    actor_entity.replace(WerewolfComponent, actor_model.name)
+                    logger.info(f"分配角色: {actor_model.name} -> Werewolf")
+
+                case SDCharacterSheetName.SEER:
+                    actor_entity.replace(SeerComponent, actor_model.name)
+                    logger.info(f"分配角色: {actor_model.name} -> Seer")
+
+                case SDCharacterSheetName.WITCH:
+                    actor_entity.replace(WitchComponent, actor_model.name)
+                    logger.info(f"分配角色: {actor_model.name} -> Witch")
+
+                case SDCharacterSheetName.VILLAGER:
+                    actor_entity.replace(VillagerComponent, actor_model.name)
+                    logger.info(f"分配角色: {actor_model.name} -> Villager")
+
+                case _:
+                    logger.debug(
+                        f"应该不是狼人杀的角色: {actor_model.character_sheet.name}"
+                    )
+                    # assert False, f"未知的狼人杀角色: {actor_model.character_sheet.name}"
 
             # 必要组件：背包组件, 必须copy一份, 不要进行直接引用，而且在此处生成uuid
             copy_items = copy.deepcopy(actor_model.inventory.items)

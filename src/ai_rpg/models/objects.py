@@ -17,11 +17,11 @@ class ActorType(StrEnum):
 @final
 @unique
 class SDCharacterSheetName(StrEnum):
-    MODERATOR = "moderator"
-    WEREWOLF = "werewolf"
-    SEER = "seer"
-    WITCH = "witch"
-    VILLAGER = "villager"
+    MODERATOR = "sd.moderator"
+    WEREWOLF = "sd.werewolf"
+    SEER = "sd.seer"
+    WITCH = "sd.witch"
+    VILLAGER = "sd.villager"
 
 
 ###############################################################################################################################################

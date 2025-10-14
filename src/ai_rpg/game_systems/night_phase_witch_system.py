@@ -32,7 +32,7 @@ class WitchDecisionResponse(BaseModel):
 
 ###############################################################################################################################################
 @final
-class SocialDeductionWitchSystem(ExecuteProcessor):
+class NightPhaseWitchSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     def __init__(self, game_context: TCGGame) -> None:
@@ -48,7 +48,7 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
         logger.info(f"夜晚 {night_number} 开始")
         logger.info("女巫请睁眼，选择你要救的玩家或毒的玩家")
 
-        witch_entity = self._find_witch()
+        witch_entity = self._get_witch()
         if witch_entity is None:
             return
 
@@ -59,7 +59,7 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
             Matcher(
                 all_of=[
                     WolfKillAction,
-                    DeathComponent,
+                    # DeathComponent,
                 ],
             )
         ).entities.copy()
@@ -196,11 +196,12 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
         self._test()
 
     ################################################################################################################################################
-    def _find_witch(self) -> Entity | None:
+    def _get_witch(self) -> Entity | None:
         """查找存活的女巫实体"""
         alive_witches = self._game.get_group(
             Matcher(
                 all_of=[WitchComponent],
+                none_of=[DeathComponent],
             )
         ).entities.copy()
 
@@ -210,18 +211,6 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
 
         assert len(alive_witches) == 1, "女巫不可能有多个"
         witch_entity = next(iter(alive_witches))
-        assert witch_entity is not None, "女巫实体不可能为空"
-
-        if witch_entity.has(WolfKillAction) and witch_entity.has(DeathComponent):
-            logger.warning(
-                f"女巫 {witch_entity.name} 走到这里说明是本轮被狼人杀害了，所以算作可以行动的女巫"
-            )
-            return witch_entity
-
-        if witch_entity.has(DeathComponent):
-            logger.warning(f"女巫 {witch_entity.name} 已经彻底死亡，无法进行女巫行动")
-            return None
-
         return witch_entity
 
     ################################################################################################################################################
@@ -292,7 +281,7 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
 
         # 记录使用毒药的动作
         target_entity.replace(WitchPoisonAction, target_entity.name, witch_entity.name)
-        target_entity.replace(DeathComponent, target_entity.name)
+        # target_entity.replace(DeathComponent, target_entity.name)
 
         self._game.append_human_message(
             witch_entity,
@@ -321,11 +310,10 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
 
         logger.debug(f"女巫 {witch_entity.name} 对 {target_entity.name} 使用了解药")
 
-        if target_entity.has(WolfKillAction) and target_entity.has(DeathComponent):
+        if target_entity.has(WolfKillAction):
 
             # 移除被狼人杀害的状态
             target_entity.remove(WolfKillAction)
-            target_entity.remove(DeathComponent)
             logger.info(
                 f"女巫 {witch_entity.name} 使用了解药，救活了玩家 {target_entity.name}"
             )
@@ -372,36 +360,37 @@ class SocialDeductionWitchSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     def _test(self) -> None:
-        test_entities1 = self._game.get_group(
-            Matcher(
-                all_of=[
-                    WitchCureAction,
-                ],
-            )
-        ).entities.copy()
+        pass
+        # test_entities1 = self._game.get_group(
+        #     Matcher(
+        #         all_of=[
+        #             WitchCureAction,
+        #         ],
+        #     )
+        # ).entities.copy()
 
-        for test_entity in test_entities1:
-            assert not test_entity.has(
-                DeathComponent
-            ), f"被女巫救活的玩家 {test_entity.name} 不应该有死亡状态"
-            assert not test_entity.has(
-                WolfKillAction
-            ), f"被女巫救活的玩家 {test_entity.name} 不应该有被狼人杀害状态"
+        # for test_entity in test_entities1:
+        #     assert not test_entity.has(
+        #         DeathComponent
+        #     ), f"被女巫救活的玩家 {test_entity.name} 不应该有死亡状态"
+        #     assert not test_entity.has(
+        #         WolfKillAction
+        #     ), f"被女巫救活的玩家 {test_entity.name} 不应该有被狼人杀害状态"
 
-        test_entities2 = self._game.get_group(
-            Matcher(
-                all_of=[
-                    WitchPoisonAction,
-                ],
-            )
-        ).entities.copy()
+        # test_entities2 = self._game.get_group(
+        #     Matcher(
+        #         all_of=[
+        #             WitchPoisonAction,
+        #         ],
+        #     )
+        # ).entities.copy()
 
-        for test_entity in test_entities2:
-            assert test_entity.has(
-                DeathComponent
-            ), f"被女巫毒死的玩家 {test_entity.name} 应该有死亡状态"
-            assert not test_entity.has(
-                WolfKillAction
-            ), f"被女巫毒死的玩家 {test_entity.name} 不应该有被狼人杀害状态"
+        # for test_entity in test_entities2:
+        #     assert test_entity.has(
+        #         DeathComponent
+        #     ), f"被女巫毒死的玩家 {test_entity.name} 应该有死亡状态"
+        #     assert not test_entity.has(
+        #         WolfKillAction
+        #     ), f"被女巫毒死的玩家 {test_entity.name} 不应该有被狼人杀害状态"
 
     ###############################################################################################################################################

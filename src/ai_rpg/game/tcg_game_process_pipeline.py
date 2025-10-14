@@ -116,8 +116,8 @@ def create_dungeon_combat_state_pipeline(
     ### 不这样就循环引用
     from ..game.tcg_game import TCGGame
     from ..game_systems.combat_outcome_system import CombatOutcomeSystem
-    from ..game_systems.combat_kick_off_system import (
-        CombatKickOffSystem,
+    from ..game_systems.combat_initialization_system import (
+        CombatInitializationSystem,
     )
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
     from ..game_systems.draw_cards_action_system import (
@@ -140,7 +140,7 @@ def create_dungeon_combat_state_pipeline(
 
     # 启动agent的提示词。启动阶段
     processors.add(KickOffSystem(tcg_game))
-    processors.add(CombatKickOffSystem(tcg_game))
+    processors.add(CombatInitializationSystem(tcg_game))
 
     # 抽卡。
     ######动作开始！！！！！################################################################################################
@@ -169,8 +169,8 @@ def create_social_deduction_kickoff_pipline(game: BaseGame) -> "TCGGameProcessPi
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
     from ..game_systems.action_cleanup_system import ActionCleanupSystem
     from ..game_systems.save_system import SaveSystem
-    from ..game_systems.social_deduction_kick_off_system import (
-        SocialDeductionKickOffSystem,
+    from ..game_systems.werewolf_game_initialization_system import (
+        WerewolfGameInitializationSystem,
     )
     from ..game_systems.kick_off_system import KickOffSystem
     from ..game_systems.discussion_action_system import DiscussionActionSystem
@@ -184,7 +184,7 @@ def create_social_deduction_kickoff_pipline(game: BaseGame) -> "TCGGameProcessPi
     processors.add(KickOffSystem(tcg_game))
 
     # 社交推理游戏的启动系统，一些必要的上下文同步！
-    processors.add(SocialDeductionKickOffSystem(tcg_game))
+    processors.add(WerewolfGameInitializationSystem(tcg_game))
 
     # 行为执行阶段
     processors.add(MindVoiceActionSystem(tcg_game))
@@ -207,17 +207,17 @@ def create_social_deduction_night_pipline(game: BaseGame) -> "TCGGameProcessPipe
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
     from ..game_systems.action_cleanup_system import ActionCleanupSystem
     from ..game_systems.save_system import SaveSystem
-    from ..game_systems.social_deduction_werewolf_system import (
-        SocialDeductionWerewolfSystem,
+    from ..game_systems.night_phase_werewolf_system import (
+        NightPhaseWerewolfSystem,
     )
-    from ..game_systems.social_deduction_seer_system import (
-        SocialDeductionSeerSystem,
+    from ..game_systems.night_phase_seer_system import (
+        NightPhaseSeerSystem,
     )
-    from ..game_systems.social_deduction_witch_system import (
-        SocialDeductionWitchSystem,
+    from ..game_systems.night_phase_witch_system import (
+        NightPhaseWitchSystem,
     )
-    from ..game_systems.social_deduction_outcome_system import (
-        SocialDeductionOutcomeSystem,
+    from ..game_systems.werewolf_victory_condition_system import (
+        WerewolfVictoryConditionSystem,
     )
     from ..game_systems.discussion_action_system import DiscussionActionSystem
     from ..game_systems.mind_voice_action_system import MindVoiceActionSystem
@@ -227,9 +227,9 @@ def create_social_deduction_night_pipline(game: BaseGame) -> "TCGGameProcessPipe
     processors = TCGGameProcessPipeline("Social Deduction Night Pipeline")
 
     # 启动agent的提示词。启动阶段
-    processors.add(SocialDeductionWerewolfSystem(tcg_game))
-    processors.add(SocialDeductionSeerSystem(tcg_game))
-    processors.add(SocialDeductionWitchSystem(tcg_game))
+    processors.add(NightPhaseWerewolfSystem(tcg_game))
+    processors.add(NightPhaseSeerSystem(tcg_game))
+    processors.add(NightPhaseWitchSystem(tcg_game))
 
     # 动作系统。
     processors.add(MindVoiceActionSystem(tcg_game))
@@ -237,7 +237,7 @@ def create_social_deduction_night_pipline(game: BaseGame) -> "TCGGameProcessPipe
     processors.add(ActionCleanupSystem(tcg_game))
 
     # 结算系统。
-    processors.add(SocialDeductionOutcomeSystem(tcg_game))
+    processors.add(WerewolfVictoryConditionSystem(tcg_game))
 
     # 动作处理后，可能清理。
     processors.add(DestroyEntitySystem(tcg_game))

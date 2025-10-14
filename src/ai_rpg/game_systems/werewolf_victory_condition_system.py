@@ -14,7 +14,7 @@ from ..models import (
 
 ###############################################################################################################################################
 @final
-class SocialDeductionOutcomeSystem(ExecuteProcessor):
+class WerewolfVictoryConditionSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     def __init__(self, game_context: TCGGame) -> None:

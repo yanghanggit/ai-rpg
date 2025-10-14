@@ -205,6 +205,28 @@ class InventoryComponent(MutableComponent):
     name: str
     items: List[Item]  # 物品列表，存储物品名称
 
+    # 获取物品
+    def get_item(self, item_name: str) -> Item | None:
+        for item in self.items:
+            if item.name == item_name:
+                return item
+        return None
+
+    # 移除物品
+    def remove_item(self, item_name: str) -> bool:
+        for item in self.items:
+            if item.name == item_name:
+                self.items.remove(item)
+                return True
+        return False
+
+    # 自我检查
+    def self_check(self) -> None:
+        # 如果有两个同名的物品，就是错误的！
+        item_names = [item.name for item in self.items]
+        if len(item_names) != len(set(item_names)):
+            assert False, f"InventoryComponent 自我检查失败，发现重复物品: {item_names}"
+
 
 ############################################################################################################
 ############################################################################################################

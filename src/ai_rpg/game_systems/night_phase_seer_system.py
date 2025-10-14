@@ -12,7 +12,6 @@ from ..models import (
     DeathComponent,
     SeerCheckAction,
     AppearanceComponent,
-    WolfKillAction,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
@@ -28,7 +27,7 @@ class SeerCheckDecisionResponse(BaseModel):
 
 ###############################################################################################################################################
 @final
-class SocialDeductionSeerSystem(ExecuteProcessor):
+class NightPhaseSeerSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     def __init__(self, game_context: TCGGame) -> None:
@@ -59,6 +58,7 @@ class SocialDeductionSeerSystem(ExecuteProcessor):
         alive_seer_entities = self._game.get_group(
             Matcher(
                 all_of=[SeerComponent],
+                none_of=[DeathComponent],
             )
         ).entities.copy()
 
@@ -68,24 +68,6 @@ class SocialDeductionSeerSystem(ExecuteProcessor):
 
         assert len(alive_seer_entities) == 1, "预言家不可能有多个"
         seer_entity = next(iter(alive_seer_entities))
-        logger.debug(f"当前预言家实体 = {seer_entity.name}")
-
-        if (
-            self._game._time_marker == 1
-            and seer_entity.has(WolfKillAction)
-            and seer_entity.has(DeathComponent)
-        ):
-            logger.warning(
-                f"预言家 {seer_entity.name} 走到这里说明是第一夜预言家被狼人杀害了，所以算作可以行动的预言家"
-            )
-            return seer_entity
-
-        if seer_entity.has(DeathComponent):
-            logger.warning(
-                f"预言家 {seer_entity.name} 已经彻底死亡，无法进行预言家行动"
-            )
-            return None
-
         return seer_entity
 
     ###############################################################################################################################################

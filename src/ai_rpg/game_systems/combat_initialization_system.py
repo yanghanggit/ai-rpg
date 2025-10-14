@@ -10,7 +10,9 @@ from ..models import (
 
 ###################################################################################################################################################################
 @final
-class CombatKickOffSystem(ExecuteProcessor):
+class CombatInitializationSystem(ExecuteProcessor):
+
+    # combat_initialization_system.py
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context

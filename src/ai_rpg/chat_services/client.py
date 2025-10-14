@@ -125,6 +125,12 @@ class ChatClient:
 
         self._cache_response_ai_messages: Optional[List[AIMessage]] = None
 
+        # mapping = {'场景.中央广场': ['角色.4号玩家', '角色.1号玩家', '角色.5号玩家', '角色.6号玩家', '角色.主持人', '角色.3号玩家', '角色.2号玩家']}
+        # 测试！！！
+        # if self._name in ["角色.1号玩家", "角色.2号玩家"]:
+        #     self._url = self._deepseek_url_config.chat_url
+        #     logger.warning(f"====================={self._name} use DeepSeek chat_url: {self._url}")
+
     ################################################################################################################################################################################
     @property
     def name(self) -> str:

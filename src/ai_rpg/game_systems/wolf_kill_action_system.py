@@ -1,4 +1,5 @@
 from typing import final, override
+from ..models.components import DeathComponent
 from ..entitas import Entity, GroupEvent, Matcher
 from .base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
@@ -33,6 +34,7 @@ class WolfKillActionSystem(BaseActionReactiveSystem):
         logger.warning(f"🪓 处理狼人杀人行动 = {entity.name}, 有这个就是被杀害了！")
 
         entity.replace(NightKillFlagComponent, entity.name, self._game._time_marker)
+        entity.replace(DeathComponent, entity.name)
 
         logger.warning(
             f"狼人杀人行动完成，玩家 {entity.name} 被标记为死亡, 击杀时间标记 {self._game._time_marker}"

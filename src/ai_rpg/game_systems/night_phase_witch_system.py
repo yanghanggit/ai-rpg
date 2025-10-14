@@ -64,7 +64,7 @@ class NightPhaseWitchSystem(BaseActionReactiveSystem):
             )
         ).entities.copy()
 
-        # 所有的人。
+        # 所有的人，必须算上自己！
         all = self._game.get_group(
             Matcher(
                 any_of=[

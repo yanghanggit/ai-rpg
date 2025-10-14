@@ -7,6 +7,7 @@ from ..models import (
     InventoryComponent,
     AgentEvent,
     NightKillFlagComponent,
+    DeathComponent,
 )
 from loguru import logger
 
@@ -73,5 +74,6 @@ class WitchPoisonActionSystem(BaseActionReactiveSystem):
         )
 
         entity.replace(NightKillFlagComponent, entity.name, self._game._time_marker)
+        entity.replace(DeathComponent, entity.name)
 
     ####################################################################################################################################

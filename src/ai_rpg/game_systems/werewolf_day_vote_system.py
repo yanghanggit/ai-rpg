@@ -38,7 +38,7 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
 
-        if not self._is_day_discussion_complete():
+        if not WerewolfDayVoteSystem.is_day_discussion_complete(self._game):
             logger.info("白天讨论还没有完成，不能进行投票")
             return
 
@@ -51,7 +51,7 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
                     WitchComponent,
                     VillagerComponent,
                 ],
-                none_of=[DeathComponent, NightKillFlagComponent],
+                none_of=[DeathComponent],
             )
         ).entities.copy()
 
@@ -154,8 +154,9 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
             player.remove(NightKillFlagComponent)
 
     ###############################################################################################################################################
-    def _is_day_discussion_complete(self) -> bool:
-        players1 = self._game.get_group(
+    @staticmethod
+    def is_day_discussion_complete(game: TCGGame) -> bool:
+        players1 = game.get_group(
             Matcher(
                 all_of=[DayDiscussionFlagComponent],
                 any_of=[
@@ -164,10 +165,11 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
                     WitchComponent,
                     VillagerComponent,
                 ],
+                # none_of=[DeathComponent],
             )
         ).entities.copy()
 
-        players2 = self._game.get_group(
+        players2 = game.get_group(
             Matcher(
                 any_of=[
                     WerewolfComponent,
@@ -175,8 +177,13 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
                     WitchComponent,
                     VillagerComponent,
                 ],
+                none_of=[DeathComponent],
             )
         ).entities.copy()
+
+        logger.info(
+            f"讨论完成标记玩家数量: {len(players1)} / 存活玩家数量: {len(players2)}"
+        )
 
         return len(players1) >= len(players2)
 

@@ -1,7 +1,11 @@
 import asyncio
 from typing import Dict, List, final, override
 from loguru import logger
-from ..models.components import DeathComponent, NightKillFlagComponent
+from ..models.components import (
+    DeathComponent,
+    NightKillFlagComponent,
+    DayDiscussionFlagComponent,
+)
 from ..entitas import ExecuteProcessor, Entity
 from ..game.tcg_game import TCGGame
 
@@ -29,7 +33,7 @@ class SaveSystem(ExecuteProcessor):
             for actor in actors:
                 actor_distribution_info[stage.name].append(
                     # f"{actor.name}{'(Dead)' if actor.has(DeathComponent) or actor.has(NightKillFlagComponent) else ''}"
-                    self._tag_name(actor)
+                    self._format_entity_name_with_status(actor)
                 )
 
         logger.info(f"mapping = {actor_distribution_info}")
@@ -40,12 +44,15 @@ class SaveSystem(ExecuteProcessor):
         await asyncio.to_thread(self._game.save)
 
     ############################################################################################################
-    def _tag_name(self, entity: Entity) -> str:
+    def _format_entity_name_with_status(self, entity: Entity) -> str:
         tags = []
         if entity.has(DeathComponent):
             tags.append("dead")
         if entity.has(NightKillFlagComponent):
             tags.append("night-killed")
+        if entity.has(DayDiscussionFlagComponent):
+            tags.append("day-discussed")
+
         if len(tags) == 0:
             return entity.name
         else:

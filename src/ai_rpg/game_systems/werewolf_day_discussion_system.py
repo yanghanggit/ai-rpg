@@ -13,7 +13,6 @@ from ..models import (
     DayDiscussionFlagComponent,
     DiscussionAction,
     MindVoiceAction,
-    NightKillFlagComponent,
     MindVoiceAction,
 )
 import random
@@ -74,7 +73,7 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
                     none_of=[
                         DeathComponent,
                         DayDiscussionFlagComponent,
-                        NightKillFlagComponent,
+                        # NightKillFlagComponent,
                     ],
                 )
             ).entities.copy()

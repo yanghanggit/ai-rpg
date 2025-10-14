@@ -1,3 +1,4 @@
+from typing import Final
 from ..models import (
     Boot,
     Stage,
@@ -41,6 +42,10 @@ def create_demo_werewolf_stage() -> Stage:
 # Actor Creation Functions
 #######################################################################################################################
 
+PUB_KICK_OFF_MESSAGE: Final[str] = (
+    "你已苏醒，准备开始新的一局狼人杀(参与角色仅有 狼人，预言家，女巫，平民与支持人)。现在请告诉我你是谁？（请说出你的全名。）并告诉我你的角色职能。回答简短(<100字)。"
+)
+
 
 def create_actor_moderator() -> Actor:
     """
@@ -52,7 +57,7 @@ def create_actor_moderator() -> Actor:
     return create_actor(
         name="角色.主持人",
         character_sheet_name=SDCharacterSheetName.MODERATOR,
-        kick_off_message="你已苏醒，准备开始新的一局狼人杀。告诉我你是谁？（请说出你的全名。）并告诉我你的角色职能。回答简短(<100字)。",
+        kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
         type=ActorType.HERO,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
@@ -78,7 +83,7 @@ def create_actor_werewolf(name: str) -> Actor:
     return create_actor(
         name=f"角色.{name}",
         character_sheet_name=SDCharacterSheetName.WEREWOLF,
-        kick_off_message="你已苏醒，准备开始新的一局狼人杀。告诉我你是谁？（请说出你的全名。）并告诉我你的角色职能。回答简短(<100字)。",
+        kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
         type=ActorType.HERO,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
@@ -110,7 +115,7 @@ def create_actor_seer(name: str) -> Actor:
     return create_actor(
         name=f"角色.{name}",
         character_sheet_name=SDCharacterSheetName.SEER,
-        kick_off_message="你已苏醒，准备开始新的一局狼人杀。告诉我你是谁？（请说出你的全名。）并告诉我你的角色职能。回答简短(<100字)。",
+        kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
         type=ActorType.HERO,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
@@ -142,7 +147,7 @@ def create_actor_witch(name: str) -> Actor:
     return create_actor(
         name=f"角色.{name}",
         character_sheet_name=SDCharacterSheetName.WITCH,
-        kick_off_message="你已苏醒，准备开始新的一局狼人杀。告诉我你是谁？（请说出你的全名。）并告诉我你的角色职能。回答简短(<100字)。",
+        kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
         type=ActorType.HERO,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
@@ -170,7 +175,7 @@ def create_actor_villager(name: str) -> Actor:
     return create_actor(
         name=f"角色.{name}",
         character_sheet_name=SDCharacterSheetName.VILLAGER,
-        kick_off_message="你已苏醒，准备开始新的一局狼人杀。告诉我你是谁？（请说出你的全名。）并告诉我你的角色职能。回答简短(<100字)。",
+        kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
         type=ActorType.HERO,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,

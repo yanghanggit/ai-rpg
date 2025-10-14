@@ -73,7 +73,7 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
             allied_werewolf_names = [
                 e.get(WerewolfComponent).name for e in copy_entities
             ]
-            logger.info(f"Werewolf {entity.name} 的同伴: {allied_werewolf_names}")
+            # logger.info(f"Werewolf {entity.name} 的同伴: {allied_werewolf_names}")
             self._game.append_human_message(
                 entity,
                 f"# 提示！你的同伴狼人有: {', '.join(allied_werewolf_names)}",
@@ -105,9 +105,9 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
                 appearance_comp.appearance
             )
 
-        logger.info(
-            f"stage_actor_appearances_mapping = {stage_actor_appearances_mapping}"
-        )
+        # logger.info(
+        #     f"stage_actor_appearances_mapping = {stage_actor_appearances_mapping}"
+        # )
         return stage_actor_appearances_mapping
 
     ###############################################################################################################################################

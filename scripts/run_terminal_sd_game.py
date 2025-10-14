@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 import sys
 
+from ai_rpg.models.components import DeathComponent
+
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
@@ -31,36 +33,37 @@ from ai_rpg.models import (
     WitchComponent,
     VillagerComponent,
     NightKillFlagComponent,
-    DayDiscussionFlagComponent,
+    # DeathComponent,
 )
+from ai_rpg.game_systems.werewolf_day_vote_system import WerewolfDayVoteSystem
 
 
 ###############################################################################################################################################
-def _is_day_discussion_complete(tcg_game: TCGGame) -> bool:
-    players1 = tcg_game.get_group(
-        Matcher(
-            all_of=[DayDiscussionFlagComponent],
-            any_of=[
-                WerewolfComponent,
-                SeerComponent,
-                WitchComponent,
-                VillagerComponent,
-            ],
-        )
-    ).entities.copy()
+# def _is_day_discussion_complete(tcg_game: TCGGame) -> bool:
+#     players1 = tcg_game.get_group(
+#         Matcher(
+#             all_of=[DayDiscussionFlagComponent],
+#             any_of=[
+#                 WerewolfComponent,
+#                 SeerComponent,
+#                 WitchComponent,
+#                 VillagerComponent,
+#             ],
+#         )
+#     ).entities.copy()
 
-    players2 = tcg_game.get_group(
-        Matcher(
-            any_of=[
-                WerewolfComponent,
-                SeerComponent,
-                WitchComponent,
-                VillagerComponent,
-            ],
-        )
-    ).entities.copy()
+#     players2 = tcg_game.get_group(
+#         Matcher(
+#             any_of=[
+#                 WerewolfComponent,
+#                 SeerComponent,
+#                 WitchComponent,
+#                 VillagerComponent,
+#             ],
+#         )
+#     ).entities.copy()
 
-    return len(players1) >= len(players2)
+#     return len(players1) >= len(players2)
 
 
 ###############################################################################################################################################
@@ -114,7 +117,7 @@ def _announce_day_phase(tcg_game: TCGGame) -> None:
 
     killed_players = tcg_game.get_group(
         Matcher(
-            all_of=[NightKillFlagComponent],
+            all_of=[NightKillFlagComponent, DeathComponent],
         )
     ).entities.copy()
 
@@ -279,7 +282,9 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
     if usr_input == "/v" or usr_input == "/vote":
         # 运行游戏逻辑
         if terminal_game._time_marker > 0 and terminal_game._time_marker % 2 == 0:
-            if _is_day_discussion_complete(terminal_game):
+            if WerewolfDayVoteSystem.is_day_discussion_complete(terminal_game):
+
+                # 进入投票环节
                 await terminal_game.werewolf_game_vote_pipeline.process()
 
                 # 进入下一个夜晚

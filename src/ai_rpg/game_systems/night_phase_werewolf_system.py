@@ -13,6 +13,7 @@ from ..models import (
     AppearanceComponent,
     NightTurnActionComponent,
     MindVoiceAction,
+    NightKillMarkerComponent,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
@@ -139,7 +140,7 @@ class NightPhaseWerewolfSystem(BaseActionReactiveSystem):
     ) -> None:
         """通知所有狼人最终的击杀决定"""
         logger.info(
-            f"最终的事件通知: 狼人 {recommender_name} 推荐击杀: {chosen_target_name}"
+            f"最终的事件通知: 采取狼人 {recommender_name} 击杀的击杀目标 => {chosen_target_name}"
         )
         for werewolf in werewolf_entities:
             # self._game.append_human_message(
@@ -178,6 +179,16 @@ class NightPhaseWerewolfSystem(BaseActionReactiveSystem):
             target_entity.name,
             recommender_name,
             f"根据 {recommender_name} 的建议，狼人团队决定击杀 {chosen_target_name}",
+        )
+
+        # 注意！！！！添加标记，方便女巫的规划时可以进行参考，也防止女巫与狼人不在一个pass下的执行，aciton被清除的问题。
+        logger.debug(
+            f"狼人杀人行动完成，玩家 {target_entity.name} 被标记为死亡, 击杀时间标记 {self._game._werewolf_game_turn_counter}"
+        )
+        target_entity.replace(
+            NightKillMarkerComponent,
+            target_entity.name,
+            self._game._werewolf_game_turn_counter,
         )
 
         # 通知所有活着的狼人最终决定

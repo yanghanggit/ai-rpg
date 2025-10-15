@@ -22,7 +22,7 @@ class VoteActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
-        logger.debug("投票行动系统触发")
+        # logger.debug("投票行动系统触发")
 
         # 加一个统计的数据结构dict[str, int], 将投票结果统计出来， str是 target_name， int是票数
         vote_count: dict[str, int] = {}
@@ -34,7 +34,7 @@ class VoteActionSystem(BaseActionReactiveSystem):
                 vote_count[target_name] = 0
             vote_count[target_name] += 1
 
-            logger.debug(f"投票行动: {entity.name} 投票给 {target_name}")
+            # logger.debug(f"投票行动: {entity.name} 投票给 {target_name}")
 
         # 从 vote_count 中找出票数最高的 target_name
         if len(vote_count) == 0:
@@ -54,7 +54,9 @@ class VoteActionSystem(BaseActionReactiveSystem):
         else:
             chosen_one = winners[0]
 
-        logger.debug(f"投票结果: {chosen_one} 获得最高票数 {max_votes}")
+        logger.info(
+            f"最终投票结果（如果有平局就会系统从最高票数中随机选择）: {chosen_one} 获得最高票数 {max_votes}"
+        )
         target_entity = self._game.get_entity_by_name(chosen_one)
         if target_entity is None:
             logger.error(f"无法找到投票结果实体: {chosen_one}")

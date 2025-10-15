@@ -108,7 +108,7 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
         # 批量发送投票推理请求
         await ChatClient.gather_request_post(clients=request_handlers)
 
-        logger.info("=== 投票结果 ===")
+        # logger.info("=== 投票结果 ===")
 
         for request2 in request_handlers:
 

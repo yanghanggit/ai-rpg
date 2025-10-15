@@ -15,6 +15,7 @@ from ..models import (
     WitchCureAction,
     NightTurnActionComponent,
     MindVoiceAction,
+    NightKillMarkerComponent,
 )
 from ..utils.md_format import format_list_as_markdown_list
 from ..chat_services.client import ChatClient
@@ -29,77 +30,19 @@ class WitchDecisionResponse(BaseModel):
     poison_target: str
 
 
-###############################################################################################################################################
-@final
-class NightPhaseWitchSystem(BaseActionReactiveSystem):
+def _generate_prompt(list_items_prompt: str, status_info: List[Tuple[str, str]]) -> str:
 
-    ####################################################################################################################################
-    @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(NightTurnActionComponent): GroupEvent.ADDED}
+    response_sample = WitchDecisionResponse(
+        mind_voice="你内心独白，你的想法已经你为什么要这么决策",
+        cure_target="目标的全名 或者 空字符串 表示不救人",
+        poison_target="目标的全名 或者 空字符串 表示不毒人",
+    )
 
-    ####################################################################################################################################
-    @override
-    def filter(self, entity: Entity) -> bool:
-        return entity.has(NightTurnActionComponent) and entity.has(WitchComponent)
-
-    #######################################################################################################################################
-
-    ###############################################################################################################################################
-    @override
-    async def react(self, entities: list[Entity]) -> None:
-        """女巫夜晚行动的主流程"""
-        assert len(entities) == 1, "不可能有多个女巫同时行动"
-        logger.info("女巫请睁眼，选择你要救的玩家或毒的玩家")
-
-        # 一个女巫
-        witch_entity = entities[0]
-
-        # 被狼人杀害的
-        killed = self._game.get_group(
-            Matcher(
-                all_of=[
-                    WolfKillAction,
-                ],
-            )
-        ).entities.copy()
-
-        # 所有的人，必须算上自己！
-        all = self._game.get_group(
-            Matcher(
-                any_of=[
-                    WerewolfComponent,
-                    SeerComponent,
-                    WitchComponent,
-                    VillagerComponent,
-                ],
-                none_of=[DeathComponent],
-            )
-        ).entities.copy()
-
-        status_info: List[Tuple[str, str]] = []
-        for one in all:
-            if one in killed:
-                status_info.append((one.name, "被杀害"))
-            else:
-                status_info.append((one.name, "存活中"))
-
-        logger.info(f"当前玩家状态: {status_info}")
-
-        response_sample = WitchDecisionResponse(
-            mind_voice="你内心独白，你的想法已经你为什么要这么决策",
-            cure_target="目标的全名 或者 空字符串 表示不救人",
-            poison_target="目标的全名 或者 空字符串 表示不毒人",
-        )
-
-        inventory_component = witch_entity.get(InventoryComponent)
-        assert inventory_component is not None
-
-        prompt = f"""# 指令！作为女巫，你将决定夜晚的行动。
+    return f"""# 指令！作为女巫，你将决定夜晚的行动。
         
 ## 你的道具信息
 
-{inventory_component.list_items_prompt}
+{list_items_prompt}
 
 ## 当前可选的查看目标:
 
@@ -126,66 +69,149 @@ class NightPhaseWitchSystem(BaseActionReactiveSystem):
 
 请严格按照上述的 JSON 标准示例 格式输出！你必须从上述可选目标中选择一个作为target_name。 如果你决定不救人或不毒人，请将对应的字段填写为空字符串。"""
 
-        agent_short_term_memory = self._game.get_agent_chat_history(witch_entity)
+
+###############################################################################################################################################
+@final
+class NightPhaseWitchSystem(BaseActionReactiveSystem):
+
+    ####################################################################################################################################
+    @override
+    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+        return {Matcher(NightTurnActionComponent): GroupEvent.ADDED}
+
+    ####################################################################################################################################
+    @override
+    def filter(self, entity: Entity) -> bool:
+        return entity.has(NightTurnActionComponent) and entity.has(WitchComponent)
+
+    #######################################################################################################################################
+
+    ###############################################################################################################################################
+    @override
+    async def react(self, entities: list[Entity]) -> None:
+        """女巫夜晚行动的主流程"""
+        assert len(entities) == 1, "不可能有多个女巫同时行动"
+        # logger.info("女巫请睁眼，选择你要救的玩家或毒的玩家")
+
+        # 一个女巫
+        witch_entity = entities[0]
+
+        # 本夜晚被狼人杀害的人！
+        victims_of_wolf = self._game.get_group(
+            Matcher(
+                any_of=[WolfKillAction, NightKillMarkerComponent],
+            )
+        ).entities.copy()
+
+        # 所有还活着的玩家
+        alive_players = self._game.get_group(
+            Matcher(
+                any_of=[
+                    WerewolfComponent,
+                    SeerComponent,
+                    WitchComponent,
+                    VillagerComponent,
+                ],
+                none_of=[DeathComponent],
+            )
+        ).entities.copy()
+
+        # 玩家状态信息
+        victim_survivor_status: List[Tuple[str, str]] = []
+        for one in victims_of_wolf:
+            victim_survivor_status.append((one.name, "今夜被杀害"))
+        for one in alive_players:
+            # if one not in victims_of_wolf:
+            victim_survivor_status.append((one.name, "存活中"))
+
+        # for one in alive_players:
+        #     if one in victims_of_wolf:
+        #         victim_survivor_status.append((one.name, "今夜被杀害"))
+        #     else:
+        #         victim_survivor_status.append((one.name, "存活中"))
+
+        # logger.info(f"当前玩家状态: {victim_survivor_status}")
+
+        # 女巫的道具信息
+        inventory_component = witch_entity.get(InventoryComponent)
+        assert inventory_component is not None
+
+        # 生成 prompt
+        prompt = _generate_prompt(
+            inventory_component.list_items_prompt, victim_survivor_status
+        )
+
+        # 获取上下文。
+        witch_agent_memory = self._game.get_agent_chat_history(witch_entity)
+
+        # 构建请求处理器
         request_handler = ChatClient(
             name=witch_entity.name,
             prompt=prompt,
-            chat_history=agent_short_term_memory.chat_history,
+            chat_history=witch_agent_memory.chat_history,
         )
 
         # 执行请求
         await ChatClient.gather_request_post(clients=[request_handler])
 
         try:
+
+            # 解析女巫的决策
             response = WitchDecisionResponse.model_validate_json(
                 json_format.strip_json_code_block(request_handler.response_content)
             )
 
+            # 如果有内心独白，则需要添加行动
             if response.mind_voice != "":
-                # self._game.append_human_message(
-                #     witch_entity,
-                #     f"""# 提示！你内心独白: {response.mind_voice}""",
-                # )
                 witch_entity.replace(
                     MindVoiceAction, witch_entity.name, response.mind_voice
                 )
 
             # 是否救人？
             if response.cure_target != "":
+
+                # 获取救治目标实体
                 cure_target_entity = self._game.get_actor_entity(response.cure_target)
                 assert cure_target_entity is not None, "找不到救治目标实体"
                 if cure_target_entity is not None:
+
+                    # 执行救人行动
                     cure_target_entity.replace(
                         WitchCureAction, cure_target_entity.name, witch_entity.name
                     )
+
                 else:
+
+                    # 目标实体不存在
                     logger.error(
                         f"女巫 {witch_entity.name} 想要救的玩家 {response.cure_target} 不存在，跳过救人"
                     )
 
             # 是否毒人？
             if response.poison_target != "":
+
+                # 获取毒人目标实体
                 poison_target_entity = self._game.get_actor_entity(
                     response.poison_target
                 )
                 assert poison_target_entity is not None, "找不到毒人目标实体"
                 if poison_target_entity is not None:
+
+                    # 执行毒人行动
                     poison_target_entity.replace(
                         WitchPoisonAction, poison_target_entity.name, witch_entity.name
                     )
                 else:
+
+                    # 目标实体不存在
                     logger.error(
                         f"女巫 {witch_entity.name} 想要毒的玩家 {response.poison_target} 不存在，跳过毒人"
                     )
 
             # 最终什么都不做？
             if response.cure_target == "" and response.poison_target == "":
-                # self._game.notify_entities(
-                #     set({witch_entity}),
-                #     AgentEvent(
-                #         message=f"""# 提示！你决定本轮不使用任何道具，跳过女巫行动。""",
-                #     ),
-                # )
+
+                # 什么都不做，就是添加上下文即可。
                 witch_entity.replace(
                     MindVoiceAction,
                     witch_entity.name,
@@ -193,7 +219,10 @@ class NightPhaseWitchSystem(BaseActionReactiveSystem):
                 )
 
         except Exception as e:
+
             logger.error(f"Exception: {e}")
+
+            # 保底添加上下文，也是跳过女巫行动
             self._game.append_human_message(
                 witch_entity,
                 f"""# 提示！在解析你的决策时出现错误。本轮你将跳过女巫行动。""",

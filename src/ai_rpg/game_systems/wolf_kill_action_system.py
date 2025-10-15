@@ -32,7 +32,7 @@ class WolfKillActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     def _process_action(self, entity: Entity) -> None:
         logger.warning(
-            f"🪓 处理狼人杀人行动 = {entity.name}, 有这个就是被杀害了！,击杀时间标记 {self._game._werewolf_game_turn_counter}"
+            f"🪓 狼人杀 => {entity.name},击杀时间标记 {self._game._werewolf_game_turn_counter}"
         )
 
         entity.replace(
@@ -41,9 +41,5 @@ class WolfKillActionSystem(BaseActionReactiveSystem):
             self._game._werewolf_game_turn_counter,
         )
         entity.replace(DeathComponent, entity.name)
-
-        # logger.warning(
-        #     f"狼人杀人行动完成，玩家 {entity.name} 被标记为死亡, 击杀时间标记 {self._game._time_marker}"
-        # )
 
     ####################################################################################################################################

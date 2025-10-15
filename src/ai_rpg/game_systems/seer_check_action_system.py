@@ -31,7 +31,7 @@ class SeerCheckActionSystem(BaseActionReactiveSystem):
 
     ####################################################################################################################################
     def _process_action(self, entity: Entity) -> None:
-        logger.debug(f"🔮 处理预言家查验行动 = {entity.name} <=== 在被查")
+        # logger.debug(f"🔮 处理预言家查验行动 = {entity.name} <=== 在被查")
 
         seer_check_action = entity.get(SeerCheckAction)
         assert entity.name == seer_check_action.name, "实体名称和目标名称不匹配"
@@ -42,13 +42,13 @@ class SeerCheckActionSystem(BaseActionReactiveSystem):
             logger.error(f"找不到预言家实体 = {seer_check_action.seer_name}")
             return
 
-        logger.debug(
-            f"预言家查验行动的执行者 = {seer_check_action.seer_name},  ==> {entity.name}"
-        )
+        # logger.debug(
+        #     f"预言家查验行动的执行者 = {seer_check_action.seer_name},  ==> {entity.name}"
+        # )
 
         # 揭示查看结果
         if entity.has(WerewolfComponent):
-            logger.debug(f"预言家查看的玩家 {entity.name} 是 狼人")
+            logger.warning(f"预言家查看的玩家 {entity.name} 是 狼人")
             self._game.notify_entities(
                 set({seer_entity}),
                 AgentEvent(
@@ -56,7 +56,7 @@ class SeerCheckActionSystem(BaseActionReactiveSystem):
                 ),
             )
         else:
-            logger.debug(f"预言家查看的玩家 {entity.name} 不是 狼人")
+            logger.warning(f"预言家查看的玩家 {entity.name} 不是 狼人")
             self._game.notify_entities(
                 set({seer_entity}),
                 AgentEvent(

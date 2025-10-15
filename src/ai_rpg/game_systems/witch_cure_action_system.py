@@ -35,7 +35,7 @@ class WitchCureActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     def _process_action(self, entity: Entity) -> None:
 
-        logger.debug(f"💊 处理女巫救治行动 = {entity.name}")
+        # logger.debug(f"💊 处理女巫救治行动 = {entity.name}")
 
         witch_cure_action = entity.get(WitchCureAction)
         assert entity.name == witch_cure_action.name, "实体名称和目标名称不匹配"
@@ -61,25 +61,15 @@ class WitchCureActionSystem(BaseActionReactiveSystem):
             )
             return
 
-        logger.debug(f"女巫 {witch_entity.name} 对 {entity.name} 使用了解药")
-
-        # 移除被杀害状态
-        # assert entity.has(WolfKillAction), "目标玩家没有被狼人杀害，无法使用解药"
-        # if entity.has(WolfKillAction):
-        #     entity.remove(WolfKillAction)
-        #     logger.debug(
-        #         f"女巫 {witch_entity.name} 使用了解药，救活了玩家 {entity.name}"
-        #     )
-
         if entity.has(NightKillMarkerComponent):
             entity.remove(NightKillMarkerComponent)
-            logger.debug(
+            logger.warning(
                 f"女巫 {witch_entity.name} 使用了解药，救活了玩家 {entity.name}, 移除了夜晚死亡标记"
             )
 
         if entity.has(DeathComponent):
             entity.remove(DeathComponent)
-            logger.debug(
+            logger.warning(
                 f"女巫 {witch_entity.name} 使用了解药，救活了玩家 {entity.name}, 移除了死亡组件"
             )
 

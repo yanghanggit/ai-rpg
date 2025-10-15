@@ -1,4 +1,3 @@
-from math import log
 from typing import final
 from overrides import override
 from ..entitas import ExecuteProcessor, Matcher

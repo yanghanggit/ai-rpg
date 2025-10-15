@@ -239,20 +239,15 @@ def create_werewolf_game_night_pipline(game: BaseGame) -> "TCGGameProcessPipelin
     # 狼人规划与行动 与 预言家可以进行规划。
     processors.add(NightPhaseWerewolfSystem(tcg_game))
     processors.add(NightPhaseSeerSystem(tcg_game))
-
-    # 狼人与预言家的行动处理
-    processors.add(WolfKillActionSystem(tcg_game))
-    processors.add(SeerCheckActionSystem(tcg_game))
-    processors.add(MindVoiceActionSystem(tcg_game))
+    processors.add(NightPhaseWitchSystem(tcg_game))
 
     # 女巫规划与行动
-    processors.add(NightPhaseWitchSystem(tcg_game))
+    processors.add(MindVoiceActionSystem(tcg_game))
+    processors.add(DiscussionActionSystem(tcg_game))
+    processors.add(SeerCheckActionSystem(tcg_game))
+    processors.add(WolfKillActionSystem(tcg_game))
     processors.add(WitchCureActionSystem(tcg_game))
     processors.add(WitchPoisonActionSystem(tcg_game))
-    processors.add(MindVoiceActionSystem(tcg_game))
-
-    # 公共的讨论系统。
-    processors.add(DiscussionActionSystem(tcg_game))
 
     # 清理动作！必须清理。
     processors.add(ActionCleanupSystem(tcg_game))

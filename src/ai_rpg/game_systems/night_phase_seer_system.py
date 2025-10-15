@@ -83,7 +83,7 @@ class NightPhaseSeerSystem(BaseActionReactiveSystem):
         """预言家夜晚行动的主要执行逻辑"""
 
         assert len(entities) == 1, "不可能有多个预言家同时行动"
-        logger.info("预言家行动阶段！！！")
+        # logger.info("预言家行动阶段！！！")
 
         seer_entity = entities[0]
 

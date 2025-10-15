@@ -23,8 +23,9 @@ class WerewolfVictoryConditionSystem(ExecuteProcessor):
     ###############################################################################################################################################
     @override
     async def execute(self) -> None:
-        logger.debug("SocialDeductionOutcomeSystem 执行")
-
+        logger.info(
+            "==================== WerewolfVictoryConditionSystem 执行 ==================== "
+        )
         check_town_victory = self._check_town_victory()
         check_werewolves_victory = self._check_werewolves_victory()
 
@@ -35,9 +36,9 @@ class WerewolfVictoryConditionSystem(ExecuteProcessor):
 
             ## 随便打印一下！
             if check_town_victory:
-                logger.warning("!!!!!!!!!!!!!!!!!村民阵营胜利!!!!!!!!!!!!!!!!!!!")
+                logger.success("!!!!!!!!!!!!!!!!!村民阵营胜利!!!!!!!!!!!!!!!!!!!")
             elif check_werewolves_victory:
-                logger.warning("!!!!!!!!!!!!!!!!!狼人阵营胜利!!!!!!!!!!!!!!!!!!!")
+                logger.success("!!!!!!!!!!!!!!!!!狼人阵营胜利!!!!!!!!!!!!!!!!!!!")
 
     ################################################################################################################################################
     # 判断村民阵营胜利：所有狼人都被淘汰且至少有一个村民存活

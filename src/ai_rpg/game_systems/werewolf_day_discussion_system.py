@@ -10,7 +10,7 @@ from ..models import (
     WitchComponent,
     VillagerComponent,
     DeathComponent,
-    DayDiscussionFlagComponent,
+    DayParticipantComponent,
     DiscussionAction,
     MindVoiceAction,
     MindVoiceAction,
@@ -55,7 +55,7 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
                         WitchComponent,
                         VillagerComponent,
                     ],
-                    none_of=[DayDiscussionFlagComponent],
+                    none_of=[DayParticipantComponent],
                 )
             ).entities.copy()
 
@@ -72,7 +72,7 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
                     ],
                     none_of=[
                         DeathComponent,
-                        DayDiscussionFlagComponent,
+                        DayParticipantComponent,
                         # NightKillFlagComponent,
                     ],
                 )
@@ -146,7 +146,7 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
             )
 
         selected_entity.replace(
-            DayDiscussionFlagComponent,
+            DayParticipantComponent,
             selected_entity.name,
             request_handlers[0].response_content,
         )

@@ -10,9 +10,9 @@ from ..models import (
     WitchComponent,
     VillagerComponent,
     DeathComponent,
-    DayDiscussionFlagComponent,
+    DayParticipantComponent,
     MindVoiceAction,
-    NightKillFlagComponent,
+    NightKillMarkerComponent,
     VoteAction,
     MindVoiceAction,
 )
@@ -138,27 +138,27 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
         # 清除所有玩家的 DayDiscussionFlagComponent 标记。
         all1 = self._game.get_group(
             Matcher(
-                all_of=[DayDiscussionFlagComponent],
+                all_of=[DayParticipantComponent],
             )
         ).entities.copy()
         for player in all1:
-            player.remove(DayDiscussionFlagComponent)
+            player.remove(DayParticipantComponent)
 
         # 清除所有玩家的 NightKillFlagComponent 标记。
         all2 = self._game.get_group(
             Matcher(
-                all_of=[NightKillFlagComponent],
+                all_of=[NightKillMarkerComponent],
             )
         ).entities.copy()
         for player in all2:
-            player.remove(NightKillFlagComponent)
+            player.remove(NightKillMarkerComponent)
 
     ###############################################################################################################################################
     @staticmethod
     def is_day_discussion_complete(game: TCGGame) -> bool:
         players1 = game.get_group(
             Matcher(
-                all_of=[DayDiscussionFlagComponent],
+                all_of=[DayParticipantComponent],
                 any_of=[
                     WerewolfComponent,
                     SeerComponent,

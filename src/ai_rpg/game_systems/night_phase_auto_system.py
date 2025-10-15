@@ -9,7 +9,7 @@ from ..models import (
     WitchComponent,
     VillagerComponent,
     DeathComponent,
-    NightPhaseAction,
+    NightTurnActionComponent,
 )
 
 
@@ -30,7 +30,7 @@ class NightPhaseAutoSystem(ExecuteProcessor):
 
         night_phase_action_entities = self._game.get_group(
             Matcher(
-                all_of=[NightPhaseAction],
+                all_of=[NightTurnActionComponent],
             )
         ).entities.copy()
 
@@ -58,6 +58,6 @@ class NightPhaseAutoSystem(ExecuteProcessor):
         ).entities.copy()
 
         for entity in alive_werewolf_player_entities:
-            entity.replace(NightPhaseAction, entity.name)
+            entity.replace(NightTurnActionComponent, entity.name)
 
     ###############################################################################################################################################

@@ -11,7 +11,8 @@ from ..models import (
     DeathComponent,
     SeerCheckAction,
     AppearanceComponent,
-    NightPhaseAction,
+    NightTurnActionComponent,
+    MindVoiceAction,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
@@ -69,12 +70,12 @@ class NightPhaseSeerSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(NightPhaseAction): GroupEvent.ADDED}
+        return {Matcher(NightTurnActionComponent): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(NightPhaseAction) and entity.has(SeerComponent)
+        return entity.has(NightTurnActionComponent) and entity.has(SeerComponent)
 
     ###############################################################################################################################################
     @override
@@ -182,9 +183,15 @@ class NightPhaseSeerSystem(BaseActionReactiveSystem):
             # 记录预言家的决策过程
             seer_entity = self._game.get_entity_by_name(request_handler.name)
             if seer_entity:
-                self._game.append_human_message(
-                    seer_entity,
-                    f"# 发生事件，经过你的思考之后，你决定今晚要查看 {response.target_name} 的身份，理由是：{response.reasoning}",
+                # self._game.append_human_message(
+                #     seer_entity,
+                #     f"# 发生事件，经过你的思考之后，你决定今晚要查看 {response.target_name} 的身份，理由是：{response.reasoning}",
+                # )
+
+                seer_entity.replace(
+                    MindVoiceAction,
+                    seer_entity.name,
+                    f"经过你的思考之后，你决定今晚要查看 {response.target_name} 的身份，理由是：{response.reasoning}",
                 )
 
             return response.target_name

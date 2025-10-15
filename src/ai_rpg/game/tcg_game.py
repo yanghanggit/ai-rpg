@@ -578,7 +578,7 @@ class TCGGame(BaseGame, RPGGameContext):
         return True
 
     ###############################################################################################################################################
-    def broadcast_event(
+    def broadcast_to_stage(
         self,
         entity: Entity,
         agent_event: AgentEvent,
@@ -596,10 +596,10 @@ class TCGGame(BaseGame, RPGGameContext):
         if len(exclude_entities) > 0:
             need_broadcast_entities = need_broadcast_entities - exclude_entities
 
-        self.notify_event(need_broadcast_entities, agent_event)
+        self.notify_entities(need_broadcast_entities, agent_event)
 
     ###############################################################################################################################################
-    def notify_event(
+    def notify_entities(
         self,
         entities: Set[Entity],
         agent_event: AgentEvent,
@@ -660,7 +660,7 @@ class TCGGame(BaseGame, RPGGameContext):
             assert current_stage is not None
 
             # 向所在场景及所在场景内除自身外的其他人宣布，这货要离开了
-            self.broadcast_event(
+            self.broadcast_to_stage(
                 entity=current_stage,
                 agent_event=AgentEvent(
                     message=f"# 发生事件！{actor_entity.name} 离开了场景: {current_stage.name}",
@@ -690,7 +690,7 @@ class TCGGame(BaseGame, RPGGameContext):
             )
 
             # 通知角色自身的传送过程
-            self.notify_event(
+            self.notify_entities(
                 entities={actor_entity},
                 agent_event=AgentEvent(
                     message=f"# 发生事件！{actor_entity.name} 从 场景: {current_stage.name} 离开，然后进入了 场景: {stage_destination.name}",
@@ -710,7 +710,7 @@ class TCGGame(BaseGame, RPGGameContext):
         """
         for actor_entity in actors:
             # 向所在场景及所在场景内除自身外的其他人宣布，这货到了
-            self.broadcast_event(
+            self.broadcast_to_stage(
                 entity=stage_destination,
                 agent_event=AgentEvent(
                     message=f"# 发生事件！{actor_entity.name} 进入了 场景: {stage_destination.name}",

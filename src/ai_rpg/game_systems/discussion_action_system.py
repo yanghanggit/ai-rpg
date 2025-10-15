@@ -51,7 +51,7 @@ class DiscussionActionSystem(BaseActionReactiveSystem):
         # logger.debug(
         #     f"讨论行动: {entity.name} 在场景 {current_stage_entity.name} 说: {discussion_action.message}"
         # )
-        self._game.broadcast_event(
+        self._game.broadcast_to_stage(
             current_stage_entity,
             DiscussionEvent(
                 message=_generate_prompt(

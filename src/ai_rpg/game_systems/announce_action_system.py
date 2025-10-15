@@ -71,7 +71,7 @@ class AnnounceActionSystem(BaseActionReactiveSystem):
         # 广播事件
         for stage_entity in stage_entities:
 
-            self._game.broadcast_event(
+            self._game.broadcast_to_stage(
                 stage_entity,
                 AnnounceEvent(
                     message=_generate_prompt(

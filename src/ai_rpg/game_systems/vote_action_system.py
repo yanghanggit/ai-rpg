@@ -63,7 +63,7 @@ class VoteActionSystem(BaseActionReactiveSystem):
         target_entity.replace(DeathComponent, target_entity.name)
 
         # 宣布被投票出局了
-        self._game.broadcast_event(
+        self._game.broadcast_to_stage(
             entity=target_entity,
             agent_event=AgentEvent(
                 message=f"# 发生事件！{target_entity.name} 被投票出局了！",

@@ -35,7 +35,7 @@ class MindVoiceActionSystem(BaseActionReactiveSystem):
         assert mind_voice_action is not None
 
         # 生成内心独白事件
-        self._game.notify_event(
+        self._game.notify_entities(
             set({entity}),
             MindVoiceEvent(
                 message=f"# 发生事件！{mind_voice_action.name} 的内心独白: {mind_voice_action.message}",

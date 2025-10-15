@@ -109,7 +109,7 @@ class DiscussionAction(Component):
 @final
 @register_component_class
 @register_action_class
-class NightPhaseAction(Component):
+class NightTurnActionComponent(Component):
     name: str
 
 

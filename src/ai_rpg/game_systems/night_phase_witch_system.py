@@ -13,8 +13,8 @@ from ..models import (
     WolfKillAction,
     WitchPoisonAction,
     WitchCureAction,
-    NightPhaseAction,
-    AgentEvent,
+    NightTurnActionComponent,
+    MindVoiceAction,
 )
 from ..utils.md_format import format_list_as_markdown_list
 from ..chat_services.client import ChatClient
@@ -36,12 +36,12 @@ class NightPhaseWitchSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(NightPhaseAction): GroupEvent.ADDED}
+        return {Matcher(NightTurnActionComponent): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(NightPhaseAction) and entity.has(WitchComponent)
+        return entity.has(NightTurnActionComponent) and entity.has(WitchComponent)
 
     #######################################################################################################################################
 
@@ -142,9 +142,12 @@ class NightPhaseWitchSystem(BaseActionReactiveSystem):
             )
 
             if response.mind_voice != "":
-                self._game.append_human_message(
-                    witch_entity,
-                    f"""# 提示！你内心独白: {response.mind_voice}""",
+                # self._game.append_human_message(
+                #     witch_entity,
+                #     f"""# 提示！你内心独白: {response.mind_voice}""",
+                # )
+                witch_entity.replace(
+                    MindVoiceAction, witch_entity.name, response.mind_voice
                 )
 
             # 是否救人？
@@ -177,11 +180,16 @@ class NightPhaseWitchSystem(BaseActionReactiveSystem):
 
             # 最终什么都不做？
             if response.cure_target == "" and response.poison_target == "":
-                self._game.notify_event(
-                    set({witch_entity}),
-                    AgentEvent(
-                        message=f"""# 提示！你决定本轮不使用任何道具，跳过女巫行动。""",
-                    ),
+                # self._game.notify_entities(
+                #     set({witch_entity}),
+                #     AgentEvent(
+                #         message=f"""# 提示！你决定本轮不使用任何道具，跳过女巫行动。""",
+                #     ),
+                # )
+                witch_entity.replace(
+                    MindVoiceAction,
+                    witch_entity.name,
+                    "决定本轮不使用任何道具，跳过女巫行动。",
                 )
 
         except Exception as e:

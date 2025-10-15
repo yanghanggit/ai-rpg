@@ -55,7 +55,7 @@ class WhisperActionSystem(BaseActionReactiveSystem):
             error = self._game.validate_interaction(entity, target_name)
             if error != InteractionValidationResult.SUCCESS:
                 if error == InteractionValidationResult.TARGET_NOT_FOUND:
-                    self._game.notify_event(
+                    self._game.notify_entities(
                         set({entity}),
                         AgentEvent(
                             message=_generate_invalid_prompt(
@@ -68,7 +68,7 @@ class WhisperActionSystem(BaseActionReactiveSystem):
             # 通知双方，其余人不知道
             target_entity = self._game.get_entity_by_name(target_name)
             assert target_entity is not None
-            self._game.notify_event(
+            self._game.notify_entities(
                 set({entity, target_entity}),
                 WhisperEvent(
                     message=_generate_prompt(

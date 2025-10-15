@@ -32,7 +32,7 @@ from ai_rpg.models import (
     SeerComponent,
     WitchComponent,
     VillagerComponent,
-    NightKillFlagComponent,
+    NightKillMarkerComponent,
     # DeathComponent,
 )
 from ai_rpg.game_systems.werewolf_day_vote_system import WerewolfDayVoteSystem
@@ -117,7 +117,7 @@ def _announce_day_phase(tcg_game: TCGGame) -> None:
 
     killed_players = tcg_game.get_group(
         Matcher(
-            all_of=[NightKillFlagComponent, DeathComponent],
+            all_of=[NightKillMarkerComponent, DeathComponent],
         )
     ).entities.copy()
 

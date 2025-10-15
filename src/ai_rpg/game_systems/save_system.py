@@ -3,8 +3,8 @@ from typing import Dict, List, final, override
 from loguru import logger
 from ..models.components import (
     DeathComponent,
-    NightKillFlagComponent,
-    DayDiscussionFlagComponent,
+    NightKillMarkerComponent,
+    DayParticipantComponent,
 )
 from ..entitas import ExecuteProcessor, Entity
 from ..game.tcg_game import TCGGame
@@ -48,9 +48,9 @@ class SaveSystem(ExecuteProcessor):
         tags = []
         if entity.has(DeathComponent):
             tags.append("dead")
-        if entity.has(NightKillFlagComponent):
+        if entity.has(NightKillMarkerComponent):
             tags.append("night-killed")
-        if entity.has(DayDiscussionFlagComponent):
+        if entity.has(DayParticipantComponent):
             tags.append("day-discussed")
 
         if len(tags) == 0:

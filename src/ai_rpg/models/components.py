@@ -273,13 +273,13 @@ class VillagerComponent(Component):
 
 @final
 @register_component_class
-class NightKillFlagComponent(Component):
+class NightKillMarkerComponent(Component):
     name: str
     time: int
 
 
 @final
 @register_component_class
-class DayDiscussionFlagComponent(Component):
+class DayParticipantComponent(Component):
     name: str
     message: str

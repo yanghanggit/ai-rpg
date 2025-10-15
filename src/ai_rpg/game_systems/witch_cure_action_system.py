@@ -6,7 +6,8 @@ from ..models import (
     SDWitchItemName,
     InventoryComponent,
     AgentEvent,
-    WolfKillAction,
+    NightKillMarkerComponent,
+    DeathComponent,
 )
 from loguru import logger
 
@@ -52,7 +53,7 @@ class WitchCureActionSystem(BaseActionReactiveSystem):
         assert cure_item is not None, "女巫没有解药，无法使用解药"
         if cure_item is None:
             logger.warning(f"女巫 {witch_entity.name} 没有解药，无法使用解药")
-            self._game.notify_event(
+            self._game.notify_entities(
                 set({witch_entity}),
                 AgentEvent(
                     message=f"# 提示！你没有解药，无法对 {entity.name} 使用解药。",
@@ -63,18 +64,30 @@ class WitchCureActionSystem(BaseActionReactiveSystem):
         logger.debug(f"女巫 {witch_entity.name} 对 {entity.name} 使用了解药")
 
         # 移除被杀害状态
-        assert entity.has(WolfKillAction), "目标玩家没有被狼人杀害，无法使用解药"
-        if entity.has(WolfKillAction):
-            entity.remove(WolfKillAction)
+        # assert entity.has(WolfKillAction), "目标玩家没有被狼人杀害，无法使用解药"
+        # if entity.has(WolfKillAction):
+        #     entity.remove(WolfKillAction)
+        #     logger.debug(
+        #         f"女巫 {witch_entity.name} 使用了解药，救活了玩家 {entity.name}"
+        #     )
+
+        if entity.has(NightKillMarkerComponent):
+            entity.remove(NightKillMarkerComponent)
             logger.debug(
-                f"女巫 {witch_entity.name} 使用了解药，救活了玩家 {entity.name}"
+                f"女巫 {witch_entity.name} 使用了解药，救活了玩家 {entity.name}, 移除了夜晚死亡标记"
+            )
+
+        if entity.has(DeathComponent):
+            entity.remove(DeathComponent)
+            logger.debug(
+                f"女巫 {witch_entity.name} 使用了解药，救活了玩家 {entity.name}, 移除了死亡组件"
             )
 
         # 移除解药道具
         inventory_component.items.remove(cure_item)
 
         # 通知女巫使用解药成功
-        self._game.notify_event(
+        self._game.notify_entities(
             set({witch_entity}),
             AgentEvent(
                 message=f"# 女巫 {witch_entity.name} 使用了解药，成功救活了玩家 {entity.name}, 并且解药已被使用。",

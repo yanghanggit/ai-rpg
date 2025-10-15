@@ -235,17 +235,26 @@ def create_werewolf_game_night_pipline(game: BaseGame) -> "TCGGameProcessPipelin
 
     # 启动agent的提示词。启动阶段
     processors.add(NightPhaseAutoSystem(tcg_game))
+
+    # 狼人规划与行动 与 预言家可以进行规划。
     processors.add(NightPhaseWerewolfSystem(tcg_game))
     processors.add(NightPhaseSeerSystem(tcg_game))
-    processors.add(NightPhaseWitchSystem(tcg_game))
 
-    # 动作系统。
-    processors.add(MindVoiceActionSystem(tcg_game))
-    processors.add(DiscussionActionSystem(tcg_game))
+    # 狼人与预言家的行动处理
+    processors.add(WolfKillActionSystem(tcg_game))
     processors.add(SeerCheckActionSystem(tcg_game))
+    processors.add(MindVoiceActionSystem(tcg_game))
+
+    # 女巫规划与行动
+    processors.add(NightPhaseWitchSystem(tcg_game))
     processors.add(WitchCureActionSystem(tcg_game))
     processors.add(WitchPoisonActionSystem(tcg_game))
-    processors.add(WolfKillActionSystem(tcg_game))
+    processors.add(MindVoiceActionSystem(tcg_game))
+
+    # 公共的讨论系统。
+    processors.add(DiscussionActionSystem(tcg_game))
+
+    # 清理动作！必须清理。
     processors.add(ActionCleanupSystem(tcg_game))
 
     # 结算系统。
@@ -323,7 +332,7 @@ def create_werewolf_game_vote_pipline(game: BaseGame) -> "TCGGameProcessPipeline
     tcg_game = cast(TCGGame, game)
     processors = TCGGameProcessPipeline("Social Deduction Day Pipeline")
 
-    # processors.add(WerewolfDayDiscussionSystem(tcg_game))
+    # 投票系统。
     processors.add(WerewolfDayVoteSystem(tcg_game))
 
     # # 动作系统。

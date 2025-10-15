@@ -44,7 +44,7 @@ class TransStageActionSystem(BaseActionReactiveSystem):
             logger.warning(
                 f"角色 {entity.name} 触发场景转换动作失败, 找不到目标场景 {trans_stage_action.target_stage_name}."
             )
-            self._game.notify_event(
+            self._game.notify_entities(
                 {entity},
                 AgentEvent(
                     message=f"# {entity.name} 触发场景转换动作失败, 找不到目标场景 {trans_stage_action.target_stage_name}.",
@@ -57,7 +57,7 @@ class TransStageActionSystem(BaseActionReactiveSystem):
             logger.warning(
                 f"角色 {entity.name} 触发场景转换动作失败, 目标场景 {trans_stage_action.target_stage_name} 与当前场景 {current_stage_entity.name} 相同."
             )
-            self._game.notify_event(
+            self._game.notify_entities(
                 {entity},
                 AgentEvent(
                     message=f"# {entity.name} 触发场景转换动作失败, 目标场景 {trans_stage_action.target_stage_name} 与当前场景 {current_stage_entity.name} 相同."
@@ -72,7 +72,7 @@ class TransStageActionSystem(BaseActionReactiveSystem):
         self._game.stage_transition({entity}, target_stage_entity)
 
         # 通知事件
-        self._game.notify_event(
+        self._game.notify_entities(
             set({entity}),
             TransStageEvent(
                 message=f"# 发生事件！{trans_stage_action.name} 从场景 {current_stage_entity.name} 转换到场景 {trans_stage_action.target_stage_name}",

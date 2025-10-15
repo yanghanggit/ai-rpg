@@ -57,7 +57,7 @@ class SpeakActionSystem(BaseActionReactiveSystem):
             error = self._game.validate_interaction(entity, target_name)
             if error != InteractionValidationResult.SUCCESS:
                 if error == InteractionValidationResult.TARGET_NOT_FOUND:
-                    self._game.notify_event(
+                    self._game.notify_entities(
                         set({entity}),
                         AgentEvent(
                             message=_generate_invalid_prompt(
@@ -68,7 +68,7 @@ class SpeakActionSystem(BaseActionReactiveSystem):
                 continue
 
             assert self._game.get_entity_by_name(target_name) is not None
-            self._game.broadcast_event(
+            self._game.broadcast_to_stage(
                 stage_entity,
                 SpeakEvent(
                     message=_generate_prompt(

@@ -111,7 +111,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
 {request_handler.response_content}"""
 
             # 添加记忆，并给客户端。
-            self._game.notify_event(
+            self._game.notify_entities(
                 set({entity2}),
                 CombatCompleteEvent(
                     message=summary,

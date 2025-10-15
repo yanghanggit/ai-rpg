@@ -275,7 +275,7 @@ class ArbitrationActionSystem(BaseActionReactiveSystem):
 
             # 广播事件
             last_round = self._game.current_engagement.latest_round
-            self._game.broadcast_event(
+            self._game.broadcast_to_stage(
                 entity=stage_entity,
                 agent_event=AgentEvent(
                     message=message_content,

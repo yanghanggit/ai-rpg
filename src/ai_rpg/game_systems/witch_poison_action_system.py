@@ -6,7 +6,7 @@ from ..models import (
     SDWitchItemName,
     InventoryComponent,
     AgentEvent,
-    NightKillFlagComponent,
+    NightKillMarkerComponent,
     DeathComponent,
 )
 from loguru import logger
@@ -52,7 +52,7 @@ class WitchPoisonActionSystem(BaseActionReactiveSystem):
         assert poison_item is not None, "女巫没有毒药，无法使用毒药"
         if poison_item is None:
             logger.warning(f"女巫 {witch_entity.name} 没有毒药，无法使用毒药")
-            self._game.notify_event(
+            self._game.notify_entities(
                 set({witch_entity}),
                 AgentEvent(
                     message=f"# 提示！你没有毒药，无法对 {entity.name} 使用毒药。",
@@ -66,14 +66,14 @@ class WitchPoisonActionSystem(BaseActionReactiveSystem):
         inventory_component.items.remove(poison_item)
 
         # 通知女巫使用毒药成功
-        self._game.notify_event(
+        self._game.notify_entities(
             set({witch_entity}),
             AgentEvent(
                 message=f"# 女巫 {witch_entity.name} 使用了毒药，成功毒杀了玩家 {entity.name}, 并且毒药已被使用。",
             ),
         )
 
-        entity.replace(NightKillFlagComponent, entity.name, self._game._time_marker)
+        entity.replace(NightKillMarkerComponent, entity.name, self._game._time_marker)
         entity.replace(DeathComponent, entity.name)
 
     ####################################################################################################################################

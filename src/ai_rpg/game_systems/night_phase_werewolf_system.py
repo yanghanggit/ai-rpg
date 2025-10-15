@@ -11,7 +11,8 @@ from ..models import (
     DeathComponent,
     WolfKillAction,
     AppearanceComponent,
-    NightPhaseAction,
+    NightTurnActionComponent,
+    MindVoiceAction,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
@@ -70,12 +71,12 @@ class NightPhaseWerewolfSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(NightPhaseAction): GroupEvent.ADDED}
+        return {Matcher(NightTurnActionComponent): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(NightPhaseAction) and entity.has(WerewolfComponent)
+        return entity.has(NightTurnActionComponent) and entity.has(WerewolfComponent)
 
     #######################################################################################################################################
 
@@ -139,9 +140,21 @@ class NightPhaseWerewolfSystem(BaseActionReactiveSystem):
             f"最终的事件通知: 狼人 {recommender_name} 推荐击杀: {chosen_target_name}"
         )
         for werewolf in werewolf_entities:
-            self._game.append_human_message(
-                werewolf,
-                f"# 发生事件！经过团队商议，最终采纳了 {recommender_name} 的建议，决定击杀 {chosen_target_name}。",
+            # self._game.append_human_message(
+            #     werewolf,
+            #     f"# 发生事件！经过团队商议，最终采纳了 {recommender_name} 的建议，决定击杀 {chosen_target_name}。",
+            # )
+
+            mind_voice_action = werewolf.get(MindVoiceAction)
+            if mind_voice_action:
+                mind_voice_message = str(mind_voice_action.message)
+            else:
+                mind_voice_message = ""
+
+            werewolf.replace(
+                MindVoiceAction,
+                werewolf.name,
+                f"{mind_voice_message}\n经过团队商议，最终采纳了 {recommender_name} 的建议，决定击杀 {chosen_target_name}。",
             )
 
     ###############################################################################################################################################
@@ -247,12 +260,18 @@ class NightPhaseWerewolfSystem(BaseActionReactiveSystem):
             werewolf_entity = self._game.get_entity_by_name(request_handler.name)
             assert werewolf_entity is not None, "找不到狼人实体"
 
-            self._game.append_human_message(
-                werewolf_entity,
-                f"# 发生事件，经过你的思考之后，你决定今晚要击杀 {response.target_name}，理由是：{response.reasoning}",
+            # self._game.append_human_message(
+            #     werewolf_entity,
+            #     f"# 发生事件，经过你的思考之后，你决定今晚要击杀 {response.target_name}，理由是：{response.reasoning}",
+            # )
+
+            werewolf_entity.replace(
+                MindVoiceAction,
+                werewolf_entity.name,
+                f"经过你的思考之后，你决定今晚要击杀 {response.target_name}，理由是：{response.reasoning}",
             )
 
-            return response.target_name, request_handler.name
+            return response.target_name, werewolf_entity.name
 
         except Exception as e:
             logger.error(f"处理狼人 {request_handler.name} 的决策响应时出现异常: {e}")

@@ -73,9 +73,9 @@ def _generate_world_system_prompt() -> str:
 class KickOffSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
-    def __init__(self, game_context: TCGGame) -> None:
+    def __init__(self, game_context: TCGGame, read_kick_off_cache: bool) -> None:
         self._game: TCGGame = game_context
-        self._read_kick_off_cache: bool = True
+        self._read_kick_off_cache: bool = read_kick_off_cache
 
     ###############################################################################################################################################
     @override
@@ -93,7 +93,7 @@ class KickOffSystem(ExecuteProcessor):
             entities_to_process = valid_entities
 
         if len(entities_to_process) == 0:
-            logger.debug(
+            logger.warning(
                 "KickOffSystem: All entities loaded from cache, no new requests needed"
             )
             return
@@ -133,7 +133,7 @@ class KickOffSystem(ExecuteProcessor):
                     ]
 
                     # 使用现有函数整合聊天上下文（prompt已在上面获取）
-                    self._integrate_chat_context(entity, prompt, ai_messages)
+                    self._integrate_cache_chat_context(entity, prompt, ai_messages)
 
                     # 标记为已完成
                     entity.replace(
@@ -166,7 +166,7 @@ class KickOffSystem(ExecuteProcessor):
         return entities_to_process
 
     ###############################################################################################################################################
-    def _integrate_chat_context(
+    def _integrate_cache_chat_context(
         self, entity: Entity, prompt: str, ai_messages: List[AIMessage]
     ) -> None:
         """
@@ -181,49 +181,53 @@ class KickOffSystem(ExecuteProcessor):
         1. 如果聊天历史第一条是system message，则重新构建消息序列
         2. 否则使用常规方式添加消息
         """
-        agent_short_term_memory = self._game.get_agent_chat_history(entity)
+        agent_memory = self._game.get_agent_chat_history(entity)
+        assert len(agent_memory.chat_history) == 1, "仅有一个system message!"
+        assert (
+            agent_memory.chat_history[0].type == "system"
+        ), "第一条必须是system message!"
 
         if (
-            len(agent_short_term_memory.chat_history) > 0
-            and agent_short_term_memory.chat_history[0].type == "system"
+            len(agent_memory.chat_history) == 1
+            and agent_memory.chat_history[0].type == "system"
         ):
             # 确保类型正确的消息列表
-            contextual_message_list: List[SystemMessage | HumanMessage | AIMessage] = []
+            message_context_list: List[SystemMessage | HumanMessage | AIMessage] = [
+                agent_memory.chat_history[0]  # system message
+            ]
 
             # 添加原有的system message（确保类型匹配）
-            first_message = agent_short_term_memory.chat_history[0]
-            if isinstance(first_message, (SystemMessage, HumanMessage, AIMessage)):
-                contextual_message_list.append(first_message)
+            # first_message = agent_memory.chat_history[0]
+            # assert isinstance(first_message, (SystemMessage))
+            # if isinstance(first_message, (SystemMessage)):
+            #     contextual_message_list.append(first_message)
 
             # 添加human message
-            contextual_message_list.append(
-                HumanMessage(content=prompt, kickoff=entity.name)
+            message_context_list.append(
+                HumanMessage(content=prompt, kickoff=entity.name)  # human message
             )
 
             # 添加AI messages
-            contextual_message_list.extend(ai_messages)
+            message_context_list.extend(ai_messages)  # cache response ai messages
 
             # 移除原有的system message
-            agent_short_term_memory.chat_history.pop(0)
+            agent_memory.chat_history.pop(0)
 
             # 将新的上下文消息添加到聊天历史的开头
-            agent_short_term_memory.chat_history = (
-                contextual_message_list + agent_short_term_memory.chat_history
-            )
+            agent_memory.chat_history = message_context_list + agent_memory.chat_history
 
             # 打印调试信息
-            logger.warning(
-                f"!cache human message: {entity.name} => \n{prompt}"
-            )
+            logger.warning(f"!cache human message: {entity.name} => \n{prompt}")
             for ai_msg in ai_messages:
                 logger.warning(
                     f"!cache ai message: {entity.name} => \n{str(ai_msg.content)}"
                 )
 
         else:
+            assert False, "不应该走到这里!!!!!"
             # 常规添加
-            self._game.append_human_message(entity, prompt, kickoff=entity.name)
-            self._game.append_ai_message(entity, ai_messages)
+            # self._game.append_human_message(entity, prompt, kickoff=entity.name)
+            # self._game.append_ai_message(entity, ai_messages)
 
     ###############################################################################################################################################
     def _cache_kick_off_response(
@@ -336,9 +340,14 @@ class KickOffSystem(ExecuteProcessor):
             assert entity2 is not None
 
             # 使用封装的函数整合聊天上下文
-            self._integrate_chat_context(
-                entity2, request_handler.prompt, request_handler.response_ai_messages
+            # self._integrate_chat_context(
+            #     entity2, request_handler.prompt, request_handler.response_ai_messages
+            # )
+
+            self._game.append_human_message(
+                entity2, request_handler.prompt, kickoff=entity2.name
             )
+            self._game.append_ai_message(entity2, request_handler.response_ai_messages)
 
             # 缓存启动响应
             self._cache_kick_off_response(entity2, request_handler.response_ai_messages)

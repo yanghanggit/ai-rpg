@@ -37,7 +37,7 @@ def create_npc_home_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
     processors = TCGGameProcessPipeline("Home State Pipeline 1")
 
     # 启动agent的提示词。启动阶段
-    processors.add(KickOffSystem(tcg_game))
+    processors.add(KickOffSystem(tcg_game, True))
 
     # 规划逻辑
     ######## 在所有规划之前!##############################################################
@@ -87,7 +87,7 @@ def create_player_home_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
     processors = TCGGameProcessPipeline("Home State Pipeline 2")
 
     # 启动agent的提示词。启动阶段
-    processors.add(KickOffSystem(tcg_game))
+    processors.add(KickOffSystem(tcg_game, True))
 
     # 动作处理相关的系统 ##################################################################
     ####################################################################################
@@ -138,7 +138,7 @@ def create_dungeon_combat_state_pipeline(
     processors = TCGGameProcessPipeline("Dungeon Combat State Pipeline")
 
     # 启动agent的提示词。启动阶段
-    processors.add(KickOffSystem(tcg_game))
+    processors.add(KickOffSystem(tcg_game, True))
     processors.add(CombatInitializationSystem(tcg_game))
 
     # 抽卡。
@@ -180,7 +180,7 @@ def create_werewolf_game_kickoff_pipline(game: BaseGame) -> "TCGGameProcessPipel
     processors = TCGGameProcessPipeline("Social Deduction Kickoff Pipeline")
 
     # 启动agent的提示词。启动阶段
-    processors.add(KickOffSystem(tcg_game))
+    processors.add(KickOffSystem(tcg_game, False))
 
     # 社交推理游戏的启动系统，一些必要的上下文同步！
     processors.add(WerewolfGameInitializationSystem(tcg_game))

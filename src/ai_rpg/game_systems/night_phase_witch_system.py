@@ -1,7 +1,8 @@
 from typing import final, Tuple, List
 from overrides import override
 from pydantic import BaseModel
-from ..entitas import Entity, Matcher, GroupEvent
+from ..entitas import Entity, Matcher, GroupEvent, ReactiveProcessor
+from ..game.tcg_game import TCGGame
 from loguru import logger
 from ..models import (
     InventoryComponent,
@@ -20,7 +21,6 @@ from ..models import (
 from ..utils.md_format import format_list_as_markdown_list
 from ..chat_services.client import ChatClient
 from ..utils import json_format
-from .base_action_reactive_system import BaseActionReactiveSystem
 
 
 @final
@@ -72,7 +72,11 @@ def _generate_prompt(list_items_prompt: str, status_info: List[Tuple[str, str]])
 
 ###############################################################################################################################################
 @final
-class NightPhaseWitchSystem(BaseActionReactiveSystem):
+class NightPhaseWitchSystem(ReactiveProcessor):
+
+    def __init__(self, game_context: TCGGame) -> None:
+        super().__init__(game_context)
+        self._game: TCGGame = game_context
 
     ####################################################################################################################################
     @override

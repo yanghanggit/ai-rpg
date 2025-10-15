@@ -38,7 +38,7 @@ mongodb_client: MongoClientType = pymongo.MongoClient(mongodb_config.connection_
 
 try:
     mongodb_client.admin.command("ping")
-    logger.debug("MongoDB连接成功")
+    #logger.debug("MongoDB连接成功")
 except Exception as e:
     logger.error(f"MongoDB连接失败: {e}")
     # raise e

@@ -3,7 +3,7 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel
 from ..chat_services.client import ChatClient
-from ..entitas import Entity, Matcher, GroupEvent
+from ..entitas import Entity, Matcher, GroupEvent, ReactiveProcessor
 from ..models import (
     AnnounceAction,
     EnvironmentComponent,
@@ -16,7 +16,9 @@ from ..models import (
     HomeComponent,
 )
 from ..utils import json_format
-from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
+
+# from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
+from ..game.tcg_game import TCGGame
 
 
 #######################################################################################################################################
@@ -103,7 +105,11 @@ def _compress_prompt(
 
 #######################################################################################################################################
 @final
-class HomeActorSystem(BaseActionReactiveSystem):
+class HomeActorSystem(ReactiveProcessor):
+
+    def __init__(self, game_context: TCGGame) -> None:
+        super().__init__(game_context)
+        self._game: TCGGame = game_context
 
     ####################################################################################################################################
     @override

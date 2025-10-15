@@ -3,8 +3,10 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel
 from ..chat_services.client import ChatClient
-from ..entitas import Entity, GroupEvent, Matcher
-from .base_action_reactive_system import BaseActionReactiveSystem
+from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
+from ..game.tcg_game import TCGGame
+
+# from .base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
     ActorComponent,
     ArbitrationAction,
@@ -136,7 +138,11 @@ def _generate_prompt(prompt_params: List[PromptParameters]) -> str:
 
 #######################################################################################################################################
 @final
-class ArbitrationActionSystem(BaseActionReactiveSystem):
+class ArbitrationActionSystem(ReactiveProcessor):
+
+    def __init__(self, game_context: TCGGame) -> None:
+        super().__init__(game_context)
+        self._game: TCGGame = game_context
 
     ####################################################################################################################################
     @override

@@ -1,8 +1,10 @@
 from typing import final, override
-from ..entitas import Entity, GroupEvent, Matcher
+from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.rpg_game_context import InteractionValidationResult
-from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
+
+# from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import AgentEvent, WhisperAction, WhisperEvent
+from ..game.tcg_game import TCGGame
 
 
 ####################################################################################################################################
@@ -24,7 +26,11 @@ def _generate_invalid_prompt(speaker_name: str, target_name: str) -> str:
 
 
 @final
-class WhisperActionSystem(BaseActionReactiveSystem):
+class WhisperActionSystem(ReactiveProcessor):
+
+    def __init__(self, game_context: TCGGame) -> None:
+        super().__init__(game_context)
+        self._game: TCGGame = game_context
 
     ####################################################################################################################################
     @override

@@ -3,9 +3,10 @@ from typing import Final, List, Optional, final, override
 from loguru import logger
 from pydantic import BaseModel, Field
 from ..chat_services.client import ChatClient
-from ..entitas import Entity, GroupEvent, Matcher
+from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
-from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
+
+# from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
     DrawCardsAction,
     HandComponent,
@@ -178,10 +179,11 @@ def _generate_prompt2(
 
 #######################################################################################################################################
 @final
-class DrawCardsActionSystem(BaseActionReactiveSystem):
+class DrawCardsActionSystem(ReactiveProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
+        self._game: TCGGame = game_context
         self._skill_creation_count: Final[int] = 2
 
     ####################################################################################################################################

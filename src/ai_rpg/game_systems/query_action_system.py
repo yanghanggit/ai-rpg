@@ -1,6 +1,7 @@
 from typing import final, override
-from ..entitas import Entity, GroupEvent, Matcher
-from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
+from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
+
+# from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
     QueryAction,
 )
@@ -11,11 +12,16 @@ from ..embedding_model.sentence_transformer import (
 )
 from ..chroma import get_default_collection
 from ..rag import search_similar_documents
+from ..game.tcg_game import TCGGame
 
 
 #####################################################################################################################################
 @final
-class QueryActionSystem(BaseActionReactiveSystem):
+class QueryActionSystem(ReactiveProcessor):
+
+    def __init__(self, game_context: TCGGame) -> None:
+        super().__init__(game_context)
+        self._game: TCGGame = game_context
 
     #############################################################################################################################
     @override

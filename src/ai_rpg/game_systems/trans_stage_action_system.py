@@ -1,12 +1,18 @@
 from typing import final, override
-from ..entitas import Entity, GroupEvent, Matcher
-from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
+from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
+
+# from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import TransStageAction, TransStageEvent, AgentEvent, HomeComponent
 from loguru import logger
+from ..game.tcg_game import TCGGame
 
 
 @final
-class TransStageActionSystem(BaseActionReactiveSystem):
+class TransStageActionSystem(ReactiveProcessor):
+
+    def __init__(self, game_context: TCGGame) -> None:
+        super().__init__(game_context)
+        self._game: TCGGame = game_context
 
     ####################################################################################################################################
     @override

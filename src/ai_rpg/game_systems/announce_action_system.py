@@ -1,7 +1,9 @@
 from typing import Set, final, override
-from ..entitas import Entity, GroupEvent, Matcher
-from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
+from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
+
+# from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import AnnounceAction, AnnounceEvent, HomeComponent, DungeonComponent
+from ..game.tcg_game import TCGGame
 
 
 ####################################################################################################################################
@@ -17,7 +19,11 @@ def _generate_prompt(
 
 
 @final
-class AnnounceActionSystem(BaseActionReactiveSystem):
+class AnnounceActionSystem(ReactiveProcessor):
+
+    def __init__(self, game_context: TCGGame) -> None:
+        super().__init__(game_context)
+        self._game: TCGGame = game_context
 
     ####################################################################################################################################
     @override

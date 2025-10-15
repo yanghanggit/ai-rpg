@@ -195,6 +195,7 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
         f"[{terminal_game.player_client.name}/{player_stage_entity.name}/{player_actor_entity.name}]:"
     )
     usr_input = usr_input.strip().lower()
+    logger.success(f"玩家输入 = {usr_input}")
 
     # 处理输入
     if usr_input == "/q" or usr_input == "/quit":

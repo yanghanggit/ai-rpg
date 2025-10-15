@@ -128,7 +128,7 @@ class TCGGame(BaseGame, RPGGameContext):
         assert self._player_client.actor != "", "玩家角色不能为空"
 
         # TODO, 游戏时间标记, 目前就狼人杀用。
-        self._time_marker: int = 0
+        self._werewolf_game_turn_counter: int = 0
 
     ###############################################################################################################################################
     @property

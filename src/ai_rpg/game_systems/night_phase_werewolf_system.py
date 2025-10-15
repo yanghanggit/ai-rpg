@@ -88,8 +88,10 @@ class NightPhaseWerewolfSystem(BaseActionReactiveSystem):
         if len(entities) == 0:
             return
 
-        assert self._game._time_marker % 2 == 1, "时间标记必须是奇数，是夜晚"
-        logger.debug(f"夜晚 {self._game._time_marker // 2 + 1} 开始")
+        # assert (
+        #     self._game._werewolf_game_turn_counter % 2 == 1
+        # ), "时间标记必须是奇数，是夜晚"
+        # logger.debug(f"夜晚 {self._game._werewolf_game_turn_counter // 2 + 1} 开始")
         logger.debug("狼人行动阶段！！！！！！！！")
 
         # 获取所有存活的好人

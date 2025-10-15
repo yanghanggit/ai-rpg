@@ -1,3 +1,4 @@
+from math import log
 from typing import final
 from overrides import override
 from ..entitas import ExecuteProcessor, Matcher
@@ -24,9 +25,9 @@ class NightPhaseAutoSystem(ExecuteProcessor):
     ###############################################################################################################################################
     @override
     async def execute(self) -> None:
-        logger.info(
-            f"夜晚 {self._game._time_marker // 2 + 1} 开始, time_marker: {self._game._time_marker}"
-        )
+        # logger.info(
+        #     f"夜晚 {self._game._werewolf_game_turn_counter // 2 + 1} 开始, time_marker: {self._game._werewolf_game_turn_counter}"
+        # )
 
         night_phase_action_entities = self._game.get_group(
             Matcher(
@@ -39,6 +40,7 @@ class NightPhaseAutoSystem(ExecuteProcessor):
             return
 
         # 自动为存活的预言家添加夜晚行动
+        logger.debug("自动为存活的玩家添加夜晚行动")
         self._auto_add_night_phase_action()
 
     ###############################################################################################################################################

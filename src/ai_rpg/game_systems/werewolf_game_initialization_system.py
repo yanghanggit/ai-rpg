@@ -41,8 +41,12 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
     ###############################################################################################################################################
     @override
     async def execute(self) -> None:
-        if self._game._time_marker > 0:
-            return
+        assert (
+            self._game._werewolf_game_turn_counter == 0
+        ), "时间标记必须是0，是夜晚!!!!!!"
+        # if self._game._werewolf_game_turn_counter > 0:
+        #     log
+        #     return
         logger.info("第一夜，狼人请睁眼")
 
         # 给狼人添加上下文来识别同伴

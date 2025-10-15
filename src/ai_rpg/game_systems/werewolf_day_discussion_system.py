@@ -1,3 +1,4 @@
+from math import log
 from typing import final, List
 from loguru import logger
 from overrides import override
@@ -41,10 +42,12 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
         # return  # 先屏蔽掉白天讨论系统
-        logger.info(f"狼人杀测试系统启动 = {self._game._time_marker}")
-        assert self._game._time_marker % 2 == 0, "time_marker 必须是偶数"
+        # logger.info(f"狼人杀测试系统启动 = {self._game._werewolf_game_turn_counter}")
+        # assert self._game._werewolf_game_turn_counter % 2 == 0, "time_marker 必须是偶数"
 
-        if self._game._time_marker == 2:
+        if self._game._werewolf_game_turn_counter == 2:
+
+            logger.debug("第一个白天讨论")
 
             # 第一个白天是特殊的，所有人尚未讨论过的人都可以发言
             alive_players = self._game.get_group(
@@ -60,6 +63,8 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
             ).entities.copy()
 
         else:
+
+            logger.debug("非第一个白天讨论")
 
             # 从此后每个白天，只能活着的且没讨论过的玩家可以发言
             alive_players = self._game.get_group(
@@ -85,6 +90,8 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
             return
 
         selected_entity = random.choice(list(alive_players))
+
+        logger.debug(f"选择玩家 {selected_entity.name} 进行白天讨论")
 
         response_sample = DayDiscussionResponse(
             mind_voice="你此时的内心想法，你为什么要如此的发言。",

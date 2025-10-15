@@ -73,7 +73,11 @@ class WitchPoisonActionSystem(BaseActionReactiveSystem):
             ),
         )
 
-        entity.replace(NightKillMarkerComponent, entity.name, self._game._time_marker)
+        entity.replace(
+            NightKillMarkerComponent,
+            entity.name,
+            self._game._werewolf_game_turn_counter,
+        )
         entity.replace(DeathComponent, entity.name)
 
     ####################################################################################################################################

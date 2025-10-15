@@ -39,7 +39,7 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
     async def execute(self) -> None:
 
         if not WerewolfDayVoteSystem.is_day_discussion_complete(self._game):
-            logger.info("白天讨论还没有完成，不能进行投票")
+            logger.warning("白天讨论还没有完成，不能进行投票")
             return
 
         # 获取所有存活的玩家（用于投票）
@@ -135,22 +135,26 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
             except Exception as e:
                 logger.error(f"Exception: {e}")
 
+        self._cleanup()
+
+    ###############################################################################################################################################
+    def _cleanup(self) -> None:
         # 清除所有玩家的 DayDiscussionFlagComponent 标记。
-        all1 = self._game.get_group(
+        day_participants = self._game.get_group(
             Matcher(
                 all_of=[DayParticipantComponent],
             )
         ).entities.copy()
-        for player in all1:
+        for player in day_participants:
             player.remove(DayParticipantComponent)
 
         # 清除所有玩家的 NightKillFlagComponent 标记。
-        all2 = self._game.get_group(
+        night_kill_marked_players = self._game.get_group(
             Matcher(
                 all_of=[NightKillMarkerComponent],
             )
         ).entities.copy()
-        for player in all2:
+        for player in night_kill_marked_players:
             player.remove(NightKillMarkerComponent)
 
     ###############################################################################################################################################
@@ -165,7 +169,6 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
                     WitchComponent,
                     VillagerComponent,
                 ],
-                # none_of=[DeathComponent],
             )
         ).entities.copy()
 

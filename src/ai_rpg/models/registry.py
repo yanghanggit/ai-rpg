@@ -4,8 +4,7 @@ from typing import (
     Type,
     TypeVar,
 )
-from venv import logger
-
+from loguru import logger
 from ..entitas.components import Component, MutableComponent
 
 ############################################################################################################

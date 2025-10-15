@@ -146,7 +146,7 @@ class NightPhaseWerewolfSystem(ReactiveProcessor):
     ) -> None:
         """通知所有狼人最终的击杀决定"""
         logger.info(
-            f"最终的事件通知: 采取狼人 {recommender_name} 击杀的击杀目标 => {chosen_target_name}"
+            f"最终的事件通知: 狼人团队最终 {recommender_name} 击杀的击杀目标 => {chosen_target_name}"
         )
         for werewolf in werewolf_entities:
             # self._game.append_human_message(
@@ -188,9 +188,9 @@ class NightPhaseWerewolfSystem(ReactiveProcessor):
         )
 
         # 注意！！！！添加标记，方便女巫的规划时可以进行参考，也防止女巫与狼人不在一个pass下的执行，aciton被清除的问题。
-        logger.debug(
-            f"狼人杀人行动完成，玩家 {target_entity.name} 被标记为死亡, 击杀时间标记 {self._game._werewolf_game_turn_counter}"
-        )
+        # logger.debug(
+        #     f"狼人杀人行动完成，玩家 {target_entity.name} 被标记为死亡, 击杀时间标记 {self._game._werewolf_game_turn_counter}"
+        # )
         target_entity.replace(
             NightKillMarkerComponent,
             target_entity.name,

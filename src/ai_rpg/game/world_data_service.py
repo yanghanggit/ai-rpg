@@ -104,7 +104,7 @@ def delete_user_world_data(user: str) -> None:
 ###############################################################################################################################################
 def persist_world_data(username: str, world: World) -> None:
     """将游戏世界持久化到 MongoDB"""
-    logger.debug("📝 创建演示游戏世界并存储到 MongoDB...")
+    # logger.debug("📝 创建演示游戏世界并存储到 MongoDB...")
 
     # version = "0.0.1"
     collection_name = WorldDocument.__name__  # 使用类名作为集合名称
@@ -116,14 +116,14 @@ def persist_world_data(username: str, world: World) -> None:
         )
 
         # 保存 WorldDocument 到 MongoDB
-        logger.debug(f"📝 存储演示游戏世界到 MongoDB 集合: {collection_name}")
+        # logger.debug(f"📝 存储演示游戏世界到 MongoDB 集合: {collection_name}")
         inserted_id = mongodb_upsert_one(collection_name, world_document.to_dict())
 
         if inserted_id:
-            logger.debug("✅ 演示游戏世界已存储到 MongoDB!")
+            # logger.debug("✅ 演示游戏世界已存储到 MongoDB!")
 
             # 验证已保存的 WorldDocument
-            logger.debug("📖 从 MongoDB 获取演示游戏世界进行验证...")
+            # logger.debug("📖 从 MongoDB 获取演示游戏世界进行验证...")
 
             saved_world_data = mongodb_find_one(
                 collection_name,
@@ -161,7 +161,7 @@ def debug_verbose_world_data(verbose_dir: Path, world: World) -> None:
     verbose_entities_serialization(verbose_dir, world)
     verbose_chat_history(verbose_dir, world)
     verbose_dungeon_system(verbose_dir, world)
-    logger.debug(f"Verbose debug info saved to: {verbose_dir}")
+    # logger.debug(f"Verbose debug info saved to: {verbose_dir}")
 
 
 ###############################################################################################################################################

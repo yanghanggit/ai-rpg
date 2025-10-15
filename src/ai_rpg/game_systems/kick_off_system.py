@@ -216,7 +216,7 @@ class KickOffSystem(ExecuteProcessor):
                 f"integrate_chat_context human message: {entity.name} => \n{prompt}"
             )
             for ai_msg in ai_messages:
-                logger.debug(
+                logger.info(
                     f"integrate_chat_context ai message: {entity.name} => \n{str(ai_msg.content)}"
                 )
 

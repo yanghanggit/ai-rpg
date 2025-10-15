@@ -37,7 +37,7 @@ class WolfKillActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def _process_action(self, entity: Entity) -> None:
-        logger.warning(
+        logger.info(
             f"🪓 狼人杀 => {entity.name},击杀时间标记 {self._game._werewolf_game_turn_counter}"
         )
 

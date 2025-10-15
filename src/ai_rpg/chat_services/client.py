@@ -64,10 +64,10 @@ class ChatClient:
             mcp_chat_url=f"http://localhost:{server_settings.deepseek_chat_server_port}{server_settings.chat_mcp_api_endpoint}",
         )
 
-        logger.debug(
+        logger.info(
             f"ChatClient initialized with Azure OpenAI URLs: {cls._azure_openai_url_config}"
         )
-        logger.debug(
+        logger.info(
             f"ChatClient initialized with DeepSeek URLs: {cls._deepseek_url_config}"
         )
 

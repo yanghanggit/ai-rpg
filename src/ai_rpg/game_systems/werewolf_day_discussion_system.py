@@ -46,7 +46,7 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
 
         if self._game._werewolf_game_turn_counter == 2:
 
-            logger.debug("第一个白天讨论")
+            logger.warning("第一个白天讨论")
 
             # 第一个白天是特殊的，所有人尚未讨论过的人都可以发言
             alive_players = self._game.get_group(
@@ -63,7 +63,7 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
 
         else:
 
-            logger.debug("非第一个白天讨论")
+            # logger.debug("非第一个白天讨论")
 
             # 从此后每个白天，只能活着的且没讨论过的玩家可以发言
             alive_players = self._game.get_group(
@@ -90,7 +90,7 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
 
         selected_entity = random.choice(list(alive_players))
 
-        logger.debug(f"选择玩家 {selected_entity.name} 进行白天讨论")
+        # logger.debug(f"选择玩家 {selected_entity.name} 进行白天讨论")
 
         response_sample = DayDiscussionResponse(
             mind_voice="你此时的内心想法，你为什么要如此的发言。",

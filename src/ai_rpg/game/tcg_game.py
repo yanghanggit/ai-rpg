@@ -121,7 +121,7 @@ class TCGGame(BaseGame, RPGGameContext):
 
         # 玩家
         self._player_client: Final[PlayerClient] = player_client
-        logger.debug(
+        logger.info(
             f"TCGGame init player: {self._player_client.name}: {self._player_client.actor}"
         )
         assert self._player_client.name != "", "玩家名字不能为空"
@@ -231,11 +231,11 @@ class TCGGame(BaseGame, RPGGameContext):
         # 关闭所有管道
         for processor in self._all_pipelines:
             processor.shutdown()
-            logger.debug(f"Shutdown pipeline: {processor._name}")
+            # logger.debug(f"Shutdown pipeline: {processor._name}")
 
         # 清空
         self._all_pipelines.clear()
-        logger.warning(f"{self.name}, exit!!!!!!!!!!!!!!!!!!!!")
+        # logger.warning(f"{self.name}, exit!!!!!!!!!!!!!!!!!!!!")
 
     ###############################################################################################################################################
     @override
@@ -244,7 +244,7 @@ class TCGGame(BaseGame, RPGGameContext):
         for processor in self._all_pipelines:
             processor.activate_reactive_processors()
             await processor.initialize()
-            logger.debug(f"Initialized pipeline: {processor._name}")
+            # logger.debug(f"Initialized pipeline: {processor._name}")
 
     ###############################################################################################################################################
     def new_game(self) -> "TCGGame":
@@ -287,9 +287,7 @@ class TCGGame(BaseGame, RPGGameContext):
 
         # 生成快照
         self.world.entities_serialization = self.serialize_entities(self._entities)
-        logger.debug(
-            f"游戏将要保存，实体数量: {len(self.world.entities_serialization)}"
-        )
+        logger.info(f"游戏将要保存，实体数量: {len(self.world.entities_serialization)}")
 
         # 保存快照
         persist_world_data(

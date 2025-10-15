@@ -63,13 +63,13 @@ class WitchCureActionSystem(BaseActionReactiveSystem):
 
         if entity.has(NightKillMarkerComponent):
             entity.remove(NightKillMarkerComponent)
-            logger.warning(
+            logger.info(
                 f"女巫 {witch_entity.name} 使用了解药，救活了玩家 {entity.name}, 移除了夜晚死亡标记"
             )
 
         if entity.has(DeathComponent):
             entity.remove(DeathComponent)
-            logger.warning(
+            logger.info(
                 f"女巫 {witch_entity.name} 使用了解药，救活了玩家 {entity.name}, 移除了死亡组件"
             )
 

@@ -48,7 +48,7 @@ class SeerCheckActionSystem(BaseActionReactiveSystem):
 
         # 揭示查看结果
         if entity.has(WerewolfComponent):
-            logger.warning(f"预言家查看的玩家 {entity.name} 是 狼人")
+            logger.info(f"预言家查看的玩家 {entity.name} 是 狼人")
             self._game.notify_entities(
                 set({seer_entity}),
                 AgentEvent(
@@ -56,7 +56,7 @@ class SeerCheckActionSystem(BaseActionReactiveSystem):
                 ),
             )
         else:
-            logger.warning(f"预言家查看的玩家 {entity.name} 不是 狼人")
+            logger.info(f"预言家查看的玩家 {entity.name} 不是 狼人")
             self._game.notify_entities(
                 set({seer_entity}),
                 AgentEvent(

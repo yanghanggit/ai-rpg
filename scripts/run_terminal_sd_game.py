@@ -46,6 +46,8 @@ def _announce_night_phase(tcg_game: TCGGame) -> None:
         or tcg_game._werewolf_game_turn_counter > 0
     ), "当前时间标记不是夜晚"
 
+    logger.warning(f"进入夜晚，时间标记 = {tcg_game._werewolf_game_turn_counter}")
+
     all_players = tcg_game.get_group(
         Matcher(
             any_of=[
@@ -72,6 +74,8 @@ def _announce_day_phase(tcg_game: TCGGame) -> None:
         tcg_game._werewolf_game_turn_counter % 2 == 0
         and tcg_game._werewolf_game_turn_counter > 0
     ), "当前时间标记不是白天"
+
+    logger.warning(f"进入白天，时间标记 = {tcg_game._werewolf_game_turn_counter}")
 
     all_players = tcg_game.get_group(
         Matcher(
@@ -164,6 +168,8 @@ async def _run_game(
         # 检查是否需要终止游戏
         if terminal_game.should_terminate:
             break
+
+    logger.warning("！！！！游戏主循环结束====================================")
 
     # 会保存一下。
     terminal_game.save()

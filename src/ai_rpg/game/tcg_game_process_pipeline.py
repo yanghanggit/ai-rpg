@@ -1,5 +1,4 @@
 from typing import Final, cast
-from loguru import logger
 
 from ..entitas import Processors
 from ..game.base_game import BaseGame
@@ -358,17 +357,17 @@ class TCGGameProcessPipeline(Processors):
     ###################################################################################################################################################################
     async def process(self) -> None:
         # 顺序不要动
-        logger.debug(
-            f"================= {self._name} process pipeline process ================="
-        )
+        # logger.debug(
+        #     f"================= {self._name} process pipeline process ================="
+        # )
         await self.execute()
         self.cleanup()
 
     ###############################################################################################################################################
     def shutdown(self) -> None:
-        logger.debug(
-            f"================= {self._name} process pipeline shutdown ================="
-        )
+        # logger.debug(
+        #     f"================= {self._name} process pipeline shutdown ================="
+        # )
         self.tear_down()
         self.clear_reactive_processors()
 

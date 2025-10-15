@@ -47,7 +47,7 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
         # if self._game._werewolf_game_turn_counter > 0:
         #     log
         #     return
-        # logger.info("第一夜，狼人请睁眼")
+        logger.info("狼人杀游戏初始化系统执行")
 
         # 给狼人添加上下文来识别同伴
         self._reveal_werewolf_allies()

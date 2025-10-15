@@ -38,7 +38,7 @@ mongodb_client: MongoClientType = pymongo.MongoClient(mongodb_config.connection_
 
 try:
     mongodb_client.admin.command("ping")
-    logger.debug("MongoDB连接成功")
+    # logger.debug("MongoDB连接成功")
 except Exception as e:
     logger.error(f"MongoDB连接失败: {e}")
     # raise e
@@ -127,9 +127,9 @@ def mongodb_find_one(
         # db = get_mongodb_database_instance()
         collection = mongodb_database[collection_name]
         result = collection.find_one(filter_dict or {})
-        logger.debug(
-            f"MongoDB查找文档，集合: {collection_name}, 找到: {result is not None}"
-        )
+        # logger.debug(
+        #     f"MongoDB查找文档，集合: {collection_name}, 找到: {result is not None}"
+        # )
         return result
     except PyMongoError as e:
         logger.error(f"MongoDB查找文档失败，集合: {collection_name}, 错误: {e}")

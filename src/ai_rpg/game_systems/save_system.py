@@ -36,7 +36,7 @@ class SaveSystem(ExecuteProcessor):
                     self._format_entity_name_with_status(actor)
                 )
 
-        logger.info(f"mapping = {actor_distribution_info}")
+        logger.warning(f"mapping = {actor_distribution_info}")
 
         # 核心调用
         # self._game.save()

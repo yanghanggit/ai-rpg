@@ -212,12 +212,12 @@ class KickOffSystem(ExecuteProcessor):
             )
 
             # 打印调试信息
-            logger.debug(
-                f"integrate_chat_context human message: {entity.name} => \n{prompt}"
+            logger.warning(
+                f"!cache human message: {entity.name} => \n{prompt}"
             )
             for ai_msg in ai_messages:
-                logger.info(
-                    f"integrate_chat_context ai message: {entity.name} => \n{str(ai_msg.content)}"
+                logger.warning(
+                    f"!cache ai message: {entity.name} => \n{str(ai_msg.content)}"
                 )
 
         else:

@@ -273,6 +273,12 @@ class VillagerComponent(Component):
 
 @final
 @register_component_class
+class NightPlanComponent(Component):
+    name: str
+
+
+@final
+@register_component_class
 class NightKillComponent(Component):
     name: str
     time: int
@@ -283,3 +289,10 @@ class NightKillComponent(Component):
 class DayDiscussionComponent(Component):
     name: str
     message: str
+
+
+@final
+@register_component_class
+class DayVoteComponent(Component):
+    name: str
+    # message: str

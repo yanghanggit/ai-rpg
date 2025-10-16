@@ -32,6 +32,8 @@ from ai_rpg.models import (
     NightKillComponent,
     DeathComponent,
     DayDiscussionComponent,
+    NightPlanComponent,
+    DayVoteComponent,
 )
 from ai_rpg.game_systems.werewolf_day_vote_system import WerewolfDayVoteSystem
 
@@ -67,13 +69,16 @@ def _announce_night_phase(tcg_game: TCGGame) -> None:
     # 删除白天参与标记
     day_participants = tcg_game.get_group(
         Matcher(
-            any_of=[
-                DayDiscussionComponent,
-            ],
+            any_of=[DayDiscussionComponent, DayVoteComponent],
         )
     ).entities.copy()
     for player in day_participants:
-        player.remove(DayDiscussionComponent)
+
+        if player.has(DayDiscussionComponent):
+            player.remove(DayDiscussionComponent)
+
+        if player.has(DayVoteComponent):
+            player.remove(DayVoteComponent)
 
 
 ###############################################################################################################################################
@@ -142,6 +147,16 @@ def _announce_day_phase(tcg_game: TCGGame) -> None:
             f"玩家 {killed_player.name} 在第 {day_phase_number} 个白天 被标记为死亡状态, 昨夜因为某种原因被杀害"
         )
         killed_player.replace(DeathComponent, killed_player.name)
+
+    # 检索NightPlanComponent，全部删除
+    night_plans = tcg_game.get_group(
+        Matcher(
+            all_of=[NightPlanComponent],
+        )
+    ).entities.copy()
+
+    for night_plan in night_plans:
+        night_plan.remove(NightPlanComponent)
 
 
 ###############################################################################################################################################

@@ -14,7 +14,7 @@ from ..models import (
     # WolfKillAction,
     WitchPoisonAction,
     WitchCureAction,
-    NightPlanAction,
+    NightPlanComponent,
     MindVoiceAction,
     NightKillComponent,
 )
@@ -81,12 +81,12 @@ class NightWitchPlanSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(NightPlanAction): GroupEvent.ADDED}
+        return {Matcher(NightPlanComponent): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(NightPlanAction) and entity.has(WitchComponent)
+        return entity.has(NightPlanComponent) and entity.has(WitchComponent)
 
     #######################################################################################################################################
 

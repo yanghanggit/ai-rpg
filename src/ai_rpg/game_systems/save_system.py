@@ -1,4 +1,5 @@
 import asyncio
+import json
 from typing import Dict, List, final, override
 from loguru import logger
 from ..models.components import (
@@ -36,7 +37,9 @@ class SaveSystem(ExecuteProcessor):
                     self._format_entity_name_with_status(actor)
                 )
 
-        logger.warning(f"mapping = {actor_distribution_info}")
+        logger.warning(
+            f"mapping = {json.dumps(actor_distribution_info, indent=2, ensure_ascii=False)}"
+        )
 
         # 核心调用
         # self._game.save()

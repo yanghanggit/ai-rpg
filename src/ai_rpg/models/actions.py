@@ -116,13 +116,13 @@ class NightPlanAction(Component):
 ############################################################################################################
 
 
-@final
-@register_component_class
-@register_action_class
-class WolfKillAction(Component):
-    name: str
-    werewolf_name: str
-    message: str
+# @final
+# @register_component_class
+# @register_action_class
+# class WolfKillAction(Component):
+#     name: str
+#     werewolf_name: str
+#     message: str
 
 
 ############################################################################################################

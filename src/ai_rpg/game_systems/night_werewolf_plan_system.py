@@ -1,4 +1,5 @@
-from typing import final, List, Set, Dict, Tuple
+import random
+from typing import final, List, Dict, Tuple
 from overrides import override
 from pydantic import BaseModel
 from ..entitas import Matcher, Entity, GroupEvent, ReactiveProcessor
@@ -9,16 +10,14 @@ from ..models import (
     WitchComponent,
     VillagerComponent,
     DeathComponent,
-    WolfKillAction,
     AppearanceComponent,
     NightPlanAction,
+    NightKillComponent,
     MindVoiceAction,
-    NightKillMarkerComponent,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
 from ..utils.md_format import format_dict_as_markdown_list
-import random
 from ..game.tcg_game import TCGGame
 
 
@@ -83,15 +82,11 @@ class NightWerewolfPlanSystem(ReactiveProcessor):
     def filter(self, entity: Entity) -> bool:
         return entity.has(NightPlanAction) and entity.has(WerewolfComponent)
 
-    #######################################################################################################################################
-
     ###############################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
         """狼人夜晚行动的主要执行逻辑"""
         assert len(entities) > 0, "触发实体列表不能为空"
-        if len(entities) == 0:
-            return
 
         logger.debug("狼人行动阶段！！！！！！！！")
 
@@ -107,124 +102,11 @@ class NightWerewolfPlanSystem(ReactiveProcessor):
             )
         ).entities.copy()
 
-        if not alive_town_entities:
+        if len(alive_town_entities) == 0:
+            logger.debug("没有存活的好人，狼人无法进行击杀")
             return
-
-        # 执行狼人击杀决策和行动
-        await self._execute_werewolf_kill_action(entities, alive_town_entities)
-
-    ###############################################################################################################################################
-    async def _execute_werewolf_kill_action(
-        self, werewolf_entities: List[Entity], alive_town_entities: Set[Entity]
-    ) -> None:
-        """执行狼人击杀决策和行动"""
-        # 让每个狼人进行击杀决策推理
-        target_recommendations = await self._get_werewolf_kill_decisions(
-            werewolf_entities, alive_town_entities
-        )
-
-        if target_recommendations:
-            chosen_target, recommender = random.choice(target_recommendations)
-            await self._perform_kill_action(
-                chosen_target, recommender, werewolf_entities
-            )
-        else:
-            logger.warning("狼人没有推荐任何击杀目标")
-
-    ###############################################################################################################################################
-    def _notify_werewolves_kill_decision(
-        self,
-        werewolf_entities: List[Entity],
-        chosen_target_name: str,
-        recommender_name: str,
-    ) -> None:
-        """通知所有狼人最终的击杀决定"""
-        logger.info(
-            f"最终的事件通知: 狼人团队最终 {recommender_name} 击杀的击杀目标 => {chosen_target_name}"
-        )
-        for werewolf in werewolf_entities:
-
-            mind_voice_action = werewolf.get(MindVoiceAction)
-            if mind_voice_action:
-                mind_voice_message = str(mind_voice_action.message)
-            else:
-                mind_voice_message = ""
-
-            werewolf.replace(
-                MindVoiceAction,
-                werewolf.name,
-                f"{mind_voice_message}\n经过团队商议，最终采纳了 {recommender_name} 的建议，决定击杀 {chosen_target_name}。",
-            )
-
-    ###############################################################################################################################################
-    async def _perform_kill_action(
-        self,
-        chosen_target_name: str,
-        recommender_name: str,
-        werewolf_entities: List[Entity],
-    ) -> None:
-        """执行具体的击杀行动"""
-        target_entity = self._game.get_entity_by_name(chosen_target_name)
-        if target_entity is None:
-            logger.error(f"找不到目标实体: {chosen_target_name}")
-            return
-
-        # 添加击杀动作和死亡状态
-        target_entity.replace(
-            WolfKillAction,
-            target_entity.name,
-            recommender_name,
-            f"根据 {recommender_name} 的建议，狼人团队决定击杀 {chosen_target_name}",
-        )
-
-        # 注意！！！！添加标记，方便女巫的规划时可以进行参考，也防止女巫与狼人不在一个pass下的执行，aciton被清除的问题。
-        # logger.debug(
-        #     f"狼人杀人行动完成，玩家 {target_entity.name} 被标记为死亡, 击杀时间标记 {self._game._werewolf_game_turn_counter}"
-        # )
-        target_entity.replace(
-            NightKillMarkerComponent,
-            target_entity.name,
-            self._game._werewolf_game_turn_counter,
-        )
-
-        # 通知所有活着的狼人最终决定
-        self._notify_werewolves_kill_decision(
-            werewolf_entities, chosen_target_name, recommender_name
-        )
-
-    ###############################################################################################################################################
-    async def _get_werewolf_kill_decisions(
-        self, werewolf_entities: List[Entity], alive_town_entities: Set[Entity]
-    ) -> List[Tuple[str, str]]:
-        """让每个狼人进行击杀决策推理，返回推荐的目标名称和发起者的元组列表"""
 
         # 创建可选目标的外貌映射
-        target_options_mapping = self._create_target_options_mapping(
-            alive_town_entities
-        )
-
-        # 为每个狼人创建决策请求
-        request_handlers = self._create_kill_decision_requests(
-            werewolf_entities, target_options_mapping
-        )
-
-        # 并发执行所有请求
-        await ChatClient.gather_request_post(clients=request_handlers)
-
-        # 处理响应并收集推荐目标
-        target_recommendations: List[Tuple[str, str]] = []
-        for request_handler in request_handlers:
-            target_recommendations.append(
-                self._process_kill_decision_response(request_handler)
-            )
-
-        return target_recommendations
-
-    ###############################################################################################################################################
-    def _create_target_options_mapping(
-        self, alive_town_entities: Set[Entity]
-    ) -> Dict[str, str]:
-        """创建可选目标的外貌映射"""
         target_mapping = {}
         for entity in alive_town_entities:
             appearance_comp = entity.get(AppearanceComponent)
@@ -232,60 +114,89 @@ class NightWerewolfPlanSystem(ReactiveProcessor):
                 target_mapping[entity.name] = appearance_comp.appearance
             else:
                 target_mapping[entity.name] = "外貌未知"
-        return target_mapping
 
-    ###############################################################################################################################################
-    def _create_kill_decision_requests(
-        self,
-        werewolf_entities: List[Entity],
-        target_options_mapping: Dict[str, str],
-    ) -> List[ChatClient]:
-        """为所有狼人创建击杀决策请求"""
+        # 生成提示词
+        prompt = _generate_prompt(target_mapping)
+
+        # 创建请求处理器
         request_handlers: List[ChatClient] = []
-        prompt = _generate_prompt(target_options_mapping)
-
-        for entity in werewolf_entities:
-            agent_short_term_memory = self._game.get_agent_chat_history(entity)
+        for entity in entities:
+            agent_memory = self._game.get_agent_chat_history(entity)
             request_handlers.append(
                 ChatClient(
                     name=entity.name,
                     prompt=prompt,
-                    chat_history=agent_short_term_memory.chat_history,
+                    chat_history=agent_memory.chat_history,
                 )
             )
 
-        return request_handlers
+        # 并发执行所有请求
+        await ChatClient.gather_request_post(clients=request_handlers)
 
-    ###############################################################################################################################################
-    def _process_kill_decision_response(
-        self, request_handler: ChatClient
-    ) -> Tuple[str, str]:
-        """处理狼人击杀决策响应，返回推荐的目标名称和推理过程"""
-        try:
-            response = WerewolfKillDecisionResponse.model_validate_json(
-                json_format.strip_json_code_block(request_handler.response_content)
-            )
+        # 处理所有响应, 收集格式化后的响应
+        format_responses: List[Tuple[Entity, Entity, str]] = []
+        for request_handler in request_handlers:
 
-            werewolf_entity = self._game.get_entity_by_name(request_handler.name)
-            assert werewolf_entity is not None, "找不到狼人实体"
+            try:
 
-            # self._game.append_human_message(
-            #     werewolf_entity,
-            #     f"# 发生事件，经过你的思考之后，你决定今晚要击杀 {response.target_name}，理由是：{response.reasoning}",
-            # )
+                format_response = WerewolfKillDecisionResponse.model_validate_json(
+                    json_format.strip_json_code_block(request_handler.response_content)
+                )
 
-            werewolf_entity.replace(
+                werewolf_entity = self._game.get_entity_by_name(request_handler.name)
+                assert werewolf_entity is not None, "找不到狼人实体"
+
+                target_entity = self._game.get_entity_by_name(
+                    format_response.target_name
+                )
+
+                if target_entity is None:
+                    logger.error(f"找不到目标实体: {format_response.target_name}")
+                    continue
+
+                format_responses.append(
+                    (werewolf_entity, target_entity, format_response.reasoning)
+                )
+
+            except Exception as e:
+                logger.error(
+                    f"处理狼人 {request_handler.name} 的决策响应时出现异常: {e}"
+                )
+
+        if len(format_responses) == 0:
+            logger.error("没有有效的狼人击杀决策响应，无法进行击杀")
+            return
+
+        # 随机选择一个响应作为最终决定
+        chosen_response = random.choice(format_responses)
+
+        # 目标直接做击杀标记, 最终决定！
+        chosen_response[1].replace(
+            NightKillComponent,
+            chosen_response[1].name,
+            self._game._werewolf_game_turn_counter,
+        )
+        logger.debug(
+            f"狼人杀人{chosen_response[0].name} 行动完成，玩家 {chosen_response[1].name} 被标记为死亡, 击杀时间标记 {self._game._werewolf_game_turn_counter}"
+        )
+
+        # 自身的添加上下文。
+        chosen_response[0].replace(
+            MindVoiceAction,
+            chosen_response[0].name,
+            f"经过你的思考之后，你决定今晚要击杀 {chosen_response[1].name}，理由是：{chosen_response[2]}",
+        )
+
+        # 通知所有活着的狼人最终决定
+        for other_response in format_responses:
+
+            if other_response == chosen_response:
+                continue
+
+            other_response[0].replace(
                 MindVoiceAction,
-                werewolf_entity.name,
-                f"经过你的思考之后，你决定今晚要击杀 {response.target_name}，理由是：{response.reasoning}",
+                other_response[0].name,
+                f"经过你的思考之后，你决定今晚要击杀 {other_response[1].name}，理由是：{other_response[2]}。\n 经过团队商议，最终采纳了 {chosen_response[0].name} 的建议，决定击杀 {chosen_response[1]}。",
             )
-
-            return response.target_name, werewolf_entity.name
-
-        except Exception as e:
-            logger.error(f"处理狼人 {request_handler.name} 的决策响应时出现异常: {e}")
-            logger.error(f"原始响应内容: {request_handler.response_content}")
-
-        return "", ""
 
     ###############################################################################################################################################

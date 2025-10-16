@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 import sys
 
-from ai_rpg.models.components import DeathComponent
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -19,20 +18,20 @@ from ai_rpg.game.player_client import PlayerClient
 from ai_rpg.game.tcg_game import (
     TCGGame,
 )
-from ai_rpg.models import (
-    World,
-)
 from ai_rpg.demo.werewolf_game_world import (
     create_demo_sd_game_boot,
 )
 
 from ai_rpg.entitas import Matcher
 from ai_rpg.models import (
+    World,
     WerewolfComponent,
     SeerComponent,
     WitchComponent,
     VillagerComponent,
-    NightKillMarkerComponent,
+    NightKillComponent,
+    DeathComponent,
+    DayDiscussionComponent,
 )
 from ai_rpg.game_systems.werewolf_day_vote_system import WerewolfDayVoteSystem
 
@@ -64,6 +63,17 @@ def _announce_night_phase(tcg_game: TCGGame) -> None:
         tcg_game.append_human_message(
             player, f"# 注意！天黑请闭眼！这是第 {night_phase_number} 个夜晚"
         )
+
+    # 删除白天参与标记
+    day_participants = tcg_game.get_group(
+        Matcher(
+            any_of=[
+                DayDiscussionComponent,
+            ],
+        )
+    ).entities.copy()
+    for player in day_participants:
+        player.remove(DayDiscussionComponent)
 
 
 ###############################################################################################################################################
@@ -97,7 +107,7 @@ def _announce_day_phase(tcg_game: TCGGame) -> None:
 
     killed_players = tcg_game.get_group(
         Matcher(
-            all_of=[NightKillMarkerComponent, DeathComponent],
+            all_of=[NightKillComponent],
         )
     ).entities.copy()
 
@@ -116,6 +126,22 @@ def _announce_day_phase(tcg_game: TCGGame) -> None:
         logger.info("在夜晚，没有玩家被杀害")
         for player in all_players:
             tcg_game.append_human_message(player, f"# 昨晚没有玩家被杀害，平安夜")
+
+    # 添加死亡组件。
+    for killed_player in killed_players:
+
+        # 这个标记不需要了
+        if killed_player.has(NightKillComponent):
+            logger.info(
+                f"玩家 {killed_player.name} 在第 {day_phase_number} 个白天 被移除夜晚杀手标记"
+            )
+            killed_player.remove(NightKillComponent)
+
+        # 需要添加这个标记。
+        logger.info(
+            f"玩家 {killed_player.name} 在第 {day_phase_number} 个白天 被标记为死亡状态, 昨夜因为某种原因被杀害"
+        )
+        killed_player.replace(DeathComponent, killed_player.name)
 
 
 ###############################################################################################################################################

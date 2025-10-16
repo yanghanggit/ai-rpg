@@ -18,6 +18,12 @@
 2. 选择解释器 `Python: Select Interpreter`
 3. 选择 uv 环境路径：`/.venv/Scripts/python.exe`
 
+## 启动方式
+
+1. 终端直接启动聊天服务器：在终端里运行`python scripts/run_azure_openai_chat_server.py`   
+2. 使用pm2启动
+    先运行`setup_dev_environment.py`
+    在终端里运行`pm2 start ecosystem.config.js`
 
 ## Windows中的注意情况
 

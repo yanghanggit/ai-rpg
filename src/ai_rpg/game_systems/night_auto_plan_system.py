@@ -9,13 +9,13 @@ from ..models import (
     WitchComponent,
     VillagerComponent,
     DeathComponent,
-    NightTurnActionComponent,
+    NightPlanAction,
 )
 
 
 ###############################################################################################################################################
 @final
-class NightPhaseAutoSystem(ExecuteProcessor):
+class NightAutoPlanSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     def __init__(self, game_context: TCGGame) -> None:
@@ -24,13 +24,10 @@ class NightPhaseAutoSystem(ExecuteProcessor):
     ###############################################################################################################################################
     @override
     async def execute(self) -> None:
-        # logger.info(
-        #     f"夜晚 {self._game._werewolf_game_turn_counter // 2 + 1} 开始, time_marker: {self._game._werewolf_game_turn_counter}"
-        # )
 
         night_phase_action_entities = self._game.get_group(
             Matcher(
-                all_of=[NightTurnActionComponent],
+                all_of=[NightPlanAction],
             )
         ).entities.copy()
 
@@ -40,11 +37,10 @@ class NightPhaseAutoSystem(ExecuteProcessor):
 
         # 自动为存活的预言家添加夜晚行动
         logger.debug("自动为存活的玩家添加夜晚行动")
-        self._auto_add_night_phase_action()
+        self._add_night_plan_for_alive_players()
 
     ###############################################################################################################################################
-    def _auto_add_night_phase_action(self) -> None:
-        # logger.debug("自动为存活的预言家添加夜晚行动")
+    def _add_night_plan_for_alive_players(self) -> None:
 
         alive_werewolf_player_entities = self._game.get_group(
             Matcher(
@@ -59,6 +55,6 @@ class NightPhaseAutoSystem(ExecuteProcessor):
         ).entities.copy()
 
         for entity in alive_werewolf_player_entities:
-            entity.replace(NightTurnActionComponent, entity.name)
+            entity.replace(NightPlanAction, entity.name)
 
     ###############################################################################################################################################

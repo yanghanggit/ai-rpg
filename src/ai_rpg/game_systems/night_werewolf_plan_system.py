@@ -11,7 +11,7 @@ from ..models import (
     DeathComponent,
     WolfKillAction,
     AppearanceComponent,
-    NightTurnActionComponent,
+    NightPlanAction,
     MindVoiceAction,
     NightKillMarkerComponent,
 )
@@ -19,13 +19,11 @@ from ..chat_services.client import ChatClient
 from ..utils import json_format
 from ..utils.md_format import format_dict_as_markdown_list
 import random
-
-# from .base_action_reactive_system import BaseActionReactiveSystem
 from ..game.tcg_game import TCGGame
 
 
 ###############################################################################################################################################
-def _generate_kill_decision_prompt(target_options_mapping: Dict[str, str]) -> str:
+def _generate_prompt(target_options_mapping: Dict[str, str]) -> str:
     """创建狼人击杀决策提示"""
     response_sample = WerewolfKillDecisionResponse(
         target_name="目标玩家的名字",
@@ -69,7 +67,7 @@ class WerewolfKillDecisionResponse(BaseModel):
 
 ###############################################################################################################################################
 @final
-class NightPhaseWerewolfSystem(ReactiveProcessor):
+class NightWerewolfPlanSystem(ReactiveProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
@@ -78,12 +76,12 @@ class NightPhaseWerewolfSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(NightTurnActionComponent): GroupEvent.ADDED}
+        return {Matcher(NightPlanAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(NightTurnActionComponent) and entity.has(WerewolfComponent)
+        return entity.has(NightPlanAction) and entity.has(WerewolfComponent)
 
     #######################################################################################################################################
 
@@ -95,10 +93,6 @@ class NightPhaseWerewolfSystem(ReactiveProcessor):
         if len(entities) == 0:
             return
 
-        # assert (
-        #     self._game._werewolf_game_turn_counter % 2 == 1
-        # ), "时间标记必须是奇数，是夜晚"
-        # logger.debug(f"夜晚 {self._game._werewolf_game_turn_counter // 2 + 1} 开始")
         logger.debug("狼人行动阶段！！！！！！！！")
 
         # 获取所有存活的好人
@@ -149,10 +143,6 @@ class NightPhaseWerewolfSystem(ReactiveProcessor):
             f"最终的事件通知: 狼人团队最终 {recommender_name} 击杀的击杀目标 => {chosen_target_name}"
         )
         for werewolf in werewolf_entities:
-            # self._game.append_human_message(
-            #     werewolf,
-            #     f"# 发生事件！经过团队商议，最终采纳了 {recommender_name} 的建议，决定击杀 {chosen_target_name}。",
-            # )
 
             mind_voice_action = werewolf.get(MindVoiceAction)
             if mind_voice_action:
@@ -252,7 +242,7 @@ class NightPhaseWerewolfSystem(ReactiveProcessor):
     ) -> List[ChatClient]:
         """为所有狼人创建击杀决策请求"""
         request_handlers: List[ChatClient] = []
-        prompt = _generate_kill_decision_prompt(target_options_mapping)
+        prompt = _generate_prompt(target_options_mapping)
 
         for entity in werewolf_entities:
             agent_short_term_memory = self._game.get_agent_chat_history(entity)

@@ -206,22 +206,22 @@ def create_werewolf_game_night_pipline(game: BaseGame) -> "TCGGameProcessPipelin
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
     from ..game_systems.action_cleanup_system import ActionCleanupSystem
     from ..game_systems.save_system import SaveSystem
-    from ..game_systems.night_phase_werewolf_system import (
-        NightPhaseWerewolfSystem,
+    from ..game_systems.night_werewolf_plan_system import (
+        NightWerewolfPlanSystem,
     )
-    from ..game_systems.night_phase_seer_system import (
-        NightPhaseSeerSystem,
+    from ..game_systems.night_seer_plan_system import (
+        NightSeerPlanSystem,
     )
-    from ..game_systems.night_phase_witch_system import (
-        NightPhaseWitchSystem,
+    from ..game_systems.night_witch_plan_system import (
+        NightWitchPlanSystem,
     )
     from ..game_systems.werewolf_victory_condition_system import (
         WerewolfVictoryConditionSystem,
     )
     from ..game_systems.discussion_action_system import DiscussionActionSystem
     from ..game_systems.mind_voice_action_system import MindVoiceActionSystem
-    from ..game_systems.night_phase_auto_system import (
-        NightPhaseAutoSystem,
+    from ..game_systems.night_auto_plan_system import (
+        NightAutoPlanSystem,
     )
     from ..game_systems.seer_check_action_system import SeerCheckActionSystem
     from ..game_systems.witch_cure_action_system import WitchCureActionSystem
@@ -233,12 +233,12 @@ def create_werewolf_game_night_pipline(game: BaseGame) -> "TCGGameProcessPipelin
     processors = TCGGameProcessPipeline("Social Deduction Night Pipeline")
 
     # 启动agent的提示词。启动阶段
-    processors.add(NightPhaseAutoSystem(tcg_game))
+    processors.add(NightAutoPlanSystem(tcg_game))
 
     # 狼人规划与行动 与 预言家可以进行规划。
-    processors.add(NightPhaseWerewolfSystem(tcg_game))
-    processors.add(NightPhaseSeerSystem(tcg_game))
-    processors.add(NightPhaseWitchSystem(tcg_game))
+    processors.add(NightWerewolfPlanSystem(tcg_game))
+    processors.add(NightSeerPlanSystem(tcg_game))
+    processors.add(NightWitchPlanSystem(tcg_game))
 
     # 女巫规划与行动
     processors.add(MindVoiceActionSystem(tcg_game))

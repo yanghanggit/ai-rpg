@@ -196,7 +196,7 @@ class NightWerewolfPlanSystem(ReactiveProcessor):
             other_response[0].replace(
                 MindVoiceAction,
                 other_response[0].name,
-                f"经过你的思考之后，你决定今晚要击杀 {other_response[1].name}，理由是：{other_response[2]}。\n 经过团队商议，最终采纳了 {chosen_response[0].name} 的建议，决定击杀 {chosen_response[1]}。",
+                f"经过你的思考之后，你决定今晚要击杀 {other_response[1].name}，理由是：{other_response[2]} 经过团队商议，最终采纳了 {chosen_response[0].name} 的建议，决定击杀 {chosen_response[1].name}。",
             )
 
     ###############################################################################################################################################

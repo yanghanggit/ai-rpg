@@ -14,7 +14,7 @@ from ..models import (
     WolfKillAction,
     WitchPoisonAction,
     WitchCureAction,
-    NightTurnActionComponent,
+    NightPlanAction,
     MindVoiceAction,
     NightKillMarkerComponent,
 )
@@ -72,7 +72,7 @@ def _generate_prompt(list_items_prompt: str, status_info: List[Tuple[str, str]])
 
 ###############################################################################################################################################
 @final
-class NightPhaseWitchSystem(ReactiveProcessor):
+class NightWitchPlanSystem(ReactiveProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
@@ -81,12 +81,12 @@ class NightPhaseWitchSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(NightTurnActionComponent): GroupEvent.ADDED}
+        return {Matcher(NightPlanAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(NightTurnActionComponent) and entity.has(WitchComponent)
+        return entity.has(NightPlanAction) and entity.has(WitchComponent)
 
     #######################################################################################################################################
 
@@ -95,7 +95,6 @@ class NightPhaseWitchSystem(ReactiveProcessor):
     async def react(self, entities: list[Entity]) -> None:
         """女巫夜晚行动的主流程"""
         assert len(entities) == 1, "不可能有多个女巫同时行动"
-        # logger.info("女巫请睁眼，选择你要救的玩家或毒的玩家")
 
         # 一个女巫
         witch_entity = entities[0]
@@ -124,17 +123,10 @@ class NightPhaseWitchSystem(ReactiveProcessor):
         victim_survivor_status: List[Tuple[str, str]] = []
         for one in victims_of_wolf:
             victim_survivor_status.append((one.name, "今夜被杀害"))
+
         for one in alive_players:
             # if one not in victims_of_wolf:
             victim_survivor_status.append((one.name, "存活中"))
-
-        # for one in alive_players:
-        #     if one in victims_of_wolf:
-        #         victim_survivor_status.append((one.name, "今夜被杀害"))
-        #     else:
-        #         victim_survivor_status.append((one.name, "存活中"))
-
-        # logger.info(f"当前玩家状态: {victim_survivor_status}")
 
         # 女巫的道具信息
         inventory_component = witch_entity.get(InventoryComponent)

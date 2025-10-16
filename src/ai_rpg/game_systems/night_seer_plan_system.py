@@ -11,7 +11,7 @@ from ..models import (
     DeathComponent,
     SeerCheckAction,
     AppearanceComponent,
-    NightTurnActionComponent,
+    NightPlanAction,
     MindVoiceAction,
 )
 from ..chat_services.client import ChatClient
@@ -67,7 +67,7 @@ class SeerCheckDecisionResponse(BaseModel):
 
 ###############################################################################################################################################
 @final
-class NightPhaseSeerSystem(ReactiveProcessor):
+class NightSeerPlanSystem(ReactiveProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
@@ -76,12 +76,12 @@ class NightPhaseSeerSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(NightTurnActionComponent): GroupEvent.ADDED}
+        return {Matcher(NightPlanAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(NightTurnActionComponent) and entity.has(SeerComponent)
+        return entity.has(NightPlanAction) and entity.has(SeerComponent)
 
     ###############################################################################################################################################
     @override

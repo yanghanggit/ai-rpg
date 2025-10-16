@@ -1,4 +1,6 @@
 from typing import Final
+import random
+from webbrowser import get
 from ..models import (
     Boot,
     Stage,
@@ -45,6 +47,60 @@ def create_demo_werewolf_stage() -> Stage:
 PUB_KICK_OFF_MESSAGE: Final[str] = (
     "你已苏醒，准备开始新的一局狼人杀(参与角色仅有 狼人，预言家，女巫，平民与主持人)。现在请告诉我你是谁？（请说出你的全名。）并告诉我你的角色职能。回答简短(<100字)。"
 )
+
+
+def generate_random_appearance() -> str:
+    """
+    随机生成角色的外观描述
+    
+    从面具、身材、性别三个类别中各随机抽取一个特征，组合成完整的外观描述
+    
+    Returns:
+        str: 角色的外观描述字符串
+    """
+    # 面具类别
+    masks = [
+        "银白与赤红交织的白羊面具，眉处突出两根弯曲的公羊角。",
+        "深棕与铜金配色的金牛面具，厚重的面具两侧有短而粗的牛角。",
+        "一半冷银一半暖金的双子面具，面具中央以细线分割成两张对称的脸。",
+        "海蓝与银白的贝壳状的巨蟹面具，面具两侧伸出类似蟹钳的装饰。",
+        "金色的狮子面具，外缘环绕着仿佛火焰的鬃毛。",
+        "纯白的线条简洁优雅的处女面具，额头处雕刻麦穗与花瓣。",
+        "蓝金色对称的天秤面具，额头中央悬浮着一座小型天平。",
+        "金色的天蝎面具，上面有一只立体的蝎子盘踞在额头上，尾针向上弯起。",
+        "深蓝与银灰的射手面具，右侧延伸出弓箭造型的纹饰。",
+        "乌黑与岩灰的摩羯面具，头顶有如山羊般的卷角。",
+        "银蓝半透明的水瓶面具，形似流水凝结。",
+        "梦幻的海蓝与紫粉渐变的双鱼面具，面具左右两侧各有一条鱼围绕着眼眶。",
+    ]
+    
+    # 身材类别
+    body_types = [
+        "身材高挑",
+        "身材矮小",
+        "身材魁梧",
+        "身材纤细",
+        "身材匀称",
+        "身材瘦弱",
+        "身材健壮",
+        "身材圆润",
+    ]
+    
+    # 性别类别
+    genders = [
+        "男性",
+        "女性",
+    ]
+    
+    # 从每个类别中随机抽取一个
+    mask = random.choice(masks)
+    body_type = random.choice(body_types)
+    gender = random.choice(genders)
+    
+    # 组合成完整的外观描述
+    appearance = f"戴着{mask}{body_type}的{gender}。"
+    
+    return appearance
 
 
 def create_actor_moderator() -> Actor:
@@ -95,12 +151,13 @@ def create_actor_werewolf(name: str) -> Actor:
 善于伪装和欺骗，能够巧妙地转移怀疑，挑拨村民之间的关系。
 在投票时会暗中保护狼人同伴，引导村民投票给好人。
 保持冷静，不轻易暴露身份。""",
-        appearance="一位看起来非常普通的村民，穿着朴素的村民服装。"
-        + (
-            "面容清秀的女性，长发及肩"
-            if hash(name) % 2 == 0
-            else "面容端正的男性，短发干练"
-        ),
+        appearance= generate_random_appearance(),
+        # appearance="一位看起来非常普通的村民，穿着朴素的村民服装。"
+        # + (
+        #     "面容清秀的女性，长发及肩"
+        #     if hash(name) % 2 == 0
+        #     else "面容端正的男性，短发干练"
+        # ),
         global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )
 
@@ -124,15 +181,16 @@ def create_actor_seer(name: str) -> Actor:
 每个夜晚可以选择一名玩家，得知其是好人还是狼人。
 掌握着重要的信息，是村民阵营的关键角色。
 【行为策略】
-如果你找到了狼人，你一定会暴露自己的身份来带领村民。
+如果你找到了狼人，你一定会暴露自己的身份来告知村民信息。
 通过暗示和推理帮助村民找出狼人，在获得关键信息前保护自己不被狼人发现。
 合理选择查验目标，收集关键信息。""",
-        appearance="一位看起来非常普通的村民，穿着朴素的村民服装。"
-        + (
-            "温柔的女性，梳着简单的发髻"
-            if hash(name) % 2 == 0
-            else "稳重的男性，胡须修剪整齐"
-        ),
+        appearance= generate_random_appearance(),
+        # appearance="一位看起来非常普通的村民，穿着朴素的村民服装。"
+        # + (
+        #     "温柔的女性，梳着简单的发髻"
+        #     if hash(name) % 2 == 0
+        #     else "稳重的男性，胡须修剪整齐"
+        # ),
         global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )
 
@@ -189,12 +247,13 @@ def create_actor_villager(name: str) -> Actor:
 在投票时做出理性判断，不被狼人误导。
 判断谁是真的好人，谁是隐藏的狼人。
 虽然没有特殊能力，但人数是村民阵营的优势。""",
-        appearance="一位典型的普通村民，穿着朴素的村民服装。"
-        + (
-            "勤劳的女性，双手有劳作的痕迹"
-            if hash(name) % 2 == 0
-            else "憨厚的男性，神情朴实诚恳"
-        ),
+        appearance= generate_random_appearance(),
+        # appearance="一位典型的普通村民，穿着朴素的村民服装。"
+        # + (
+        #     "勤劳的女性，双手有劳作的痕迹"
+        #     if hash(name) % 2 == 0
+        #     else "憨厚的男性，神情朴实诚恳"
+        # ),
         global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )
 

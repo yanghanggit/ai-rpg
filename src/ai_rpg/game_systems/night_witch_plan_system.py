@@ -11,12 +11,12 @@ from ..models import (
     WerewolfComponent,
     SeerComponent,
     VillagerComponent,
-    WolfKillAction,
+    # WolfKillAction,
     WitchPoisonAction,
     WitchCureAction,
     NightPlanAction,
     MindVoiceAction,
-    NightKillMarkerComponent,
+    NightKillComponent,
 )
 from ..utils.md_format import format_list_as_markdown_list
 from ..chat_services.client import ChatClient
@@ -102,7 +102,7 @@ class NightWitchPlanSystem(ReactiveProcessor):
         # 本夜晚被狼人杀害的人！
         victims_of_wolf = self._game.get_group(
             Matcher(
-                any_of=[WolfKillAction, NightKillMarkerComponent],
+                any_of=[NightKillComponent],
             )
         ).entities.copy()
 

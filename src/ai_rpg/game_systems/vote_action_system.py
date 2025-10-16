@@ -68,6 +68,8 @@ class VoteActionSystem(ReactiveProcessor):
             logger.error(f"无法找到投票结果实体: {chosen_one}")
             return
 
+        logger.info(f"玩家 {target_entity.name} 被投票出局了")
+        # 给被投票出局的玩家添加死亡标记
         target_entity.replace(DeathComponent, target_entity.name)
 
         # 宣布被投票出局了

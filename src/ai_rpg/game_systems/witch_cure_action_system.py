@@ -7,8 +7,7 @@ from ..models import (
     SDWitchItemName,
     InventoryComponent,
     AgentEvent,
-    NightKillMarkerComponent,
-    DeathComponent,
+    NightKillComponent,
 )
 from loguru import logger
 from ..game.tcg_game import TCGGame
@@ -67,17 +66,17 @@ class WitchCureActionSystem(ReactiveProcessor):
             )
             return
 
-        if entity.has(NightKillMarkerComponent):
-            entity.remove(NightKillMarkerComponent)
+        if entity.has(NightKillComponent):
+            entity.remove(NightKillComponent)
             logger.info(
                 f"女巫 {witch_entity.name} 使用了解药，救活了玩家 {entity.name}, 移除了夜晚死亡标记"
             )
 
-        if entity.has(DeathComponent):
-            entity.remove(DeathComponent)
-            logger.info(
-                f"女巫 {witch_entity.name} 使用了解药，救活了玩家 {entity.name}, 移除了死亡组件"
-            )
+        # if entity.has(DeathComponent):
+        #     entity.remove(DeathComponent)
+        #     logger.info(
+        #         f"女巫 {witch_entity.name} 使用了解药，救活了玩家 {entity.name}, 移除了死亡组件"
+        #     )
 
         # 移除解药道具
         inventory_component.items.remove(cure_item)

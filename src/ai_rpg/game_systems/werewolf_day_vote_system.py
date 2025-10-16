@@ -10,9 +10,8 @@ from ..models import (
     WitchComponent,
     VillagerComponent,
     DeathComponent,
-    DayParticipantComponent,
+    DayDiscussionComponent,
     MindVoiceAction,
-    NightKillMarkerComponent,
     VoteAction,
     MindVoiceAction,
 )
@@ -135,34 +134,12 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
             except Exception as e:
                 logger.error(f"Exception: {e}")
 
-        self._cleanup()
-
-    ###############################################################################################################################################
-    def _cleanup(self) -> None:
-        # 清除所有玩家的 DayDiscussionFlagComponent 标记。
-        day_participants = self._game.get_group(
-            Matcher(
-                all_of=[DayParticipantComponent],
-            )
-        ).entities.copy()
-        for player in day_participants:
-            player.remove(DayParticipantComponent)
-
-        # 清除所有玩家的 NightKillFlagComponent 标记。
-        night_kill_marked_players = self._game.get_group(
-            Matcher(
-                all_of=[NightKillMarkerComponent],
-            )
-        ).entities.copy()
-        for player in night_kill_marked_players:
-            player.remove(NightKillMarkerComponent)
-
     ###############################################################################################################################################
     @staticmethod
     def is_day_discussion_complete(game: TCGGame) -> bool:
         players1 = game.get_group(
             Matcher(
-                all_of=[DayParticipantComponent],
+                all_of=[DayDiscussionComponent],
                 any_of=[
                     WerewolfComponent,
                     SeerComponent,

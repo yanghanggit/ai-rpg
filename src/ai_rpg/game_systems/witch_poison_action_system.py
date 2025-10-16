@@ -1,14 +1,11 @@
 from typing import final, override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-
-# from .base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
     WitchPoisonAction,
     SDWitchItemName,
     InventoryComponent,
     AgentEvent,
-    NightKillMarkerComponent,
-    DeathComponent,
+    NightKillComponent,
 )
 from loguru import logger
 from ..game.tcg_game import TCGGame
@@ -80,10 +77,10 @@ class WitchPoisonActionSystem(ReactiveProcessor):
         )
 
         entity.replace(
-            NightKillMarkerComponent,
+            NightKillComponent,
             entity.name,
             self._game._werewolf_game_turn_counter,
         )
-        entity.replace(DeathComponent, entity.name)
+        # entity.replace(DeathComponent, entity.name)
 
     ####################################################################################################################################

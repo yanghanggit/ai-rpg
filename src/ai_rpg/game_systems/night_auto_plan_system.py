@@ -9,7 +9,7 @@ from ..models import (
     WitchComponent,
     VillagerComponent,
     DeathComponent,
-    NightPlanAction,
+    NightPlanComponent,
 )
 
 
@@ -27,7 +27,7 @@ class NightAutoPlanSystem(ExecuteProcessor):
 
         night_phase_action_entities = self._game.get_group(
             Matcher(
-                all_of=[NightPlanAction],
+                all_of=[NightPlanComponent],
             )
         ).entities.copy()
 
@@ -37,10 +37,10 @@ class NightAutoPlanSystem(ExecuteProcessor):
 
         # 自动为存活的预言家添加夜晚行动
         logger.debug("自动为存活的玩家添加夜晚行动")
-        self._add_night_plan_for_alive_players()
+        self._initialize_night_plans_for_alive_players()
 
     ###############################################################################################################################################
-    def _add_night_plan_for_alive_players(self) -> None:
+    def _initialize_night_plans_for_alive_players(self) -> None:
 
         alive_werewolf_player_entities = self._game.get_group(
             Matcher(
@@ -55,6 +55,6 @@ class NightAutoPlanSystem(ExecuteProcessor):
         ).entities.copy()
 
         for entity in alive_werewolf_player_entities:
-            entity.replace(NightPlanAction, entity.name)
+            entity.replace(NightPlanComponent, entity.name)
 
     ###############################################################################################################################################

@@ -6,6 +6,8 @@ from ..models.components import (
     DeathComponent,
     NightKillComponent,
     DayDiscussionComponent,
+    NightPlanComponent,
+    DayVoteComponent,
 )
 from ..entitas import ExecuteProcessor, Entity
 from ..game.tcg_game import TCGGame
@@ -49,12 +51,21 @@ class SaveSystem(ExecuteProcessor):
     ############################################################################################################
     def _format_entity_name_with_status(self, entity: Entity) -> str:
         tags = []
+
         if entity.has(DeathComponent):
             tags.append("dead")
+
+        if entity.has(NightPlanComponent):
+            tags.append("night-planned")
+
         if entity.has(NightKillComponent):
             tags.append("night-killed")
+
         if entity.has(DayDiscussionComponent):
             tags.append("day-discussed")
+
+        if entity.has(DayVoteComponent):
+            tags.append("day-voted")
 
         if len(tags) == 0:
             return entity.name

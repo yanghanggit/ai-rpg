@@ -14,6 +14,7 @@ from ..models import (
     MindVoiceAction,
     VoteAction,
     MindVoiceAction,
+    DayVoteComponent,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
@@ -50,12 +51,12 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
                     WitchComponent,
                     VillagerComponent,
                 ],
-                none_of=[DeathComponent],
+                none_of=[DeathComponent, DayVoteComponent],
             )
         ).entities.copy()
 
         if len(alive_players) == 0:
-            logger.warning("没有存活的玩家，无法进行投票")
+            logger.warning("没有存活的玩家，无法进行投票。或者所有玩家都已经投过票了")
             return
 
         logger.info(f"开始投票阶段，存活玩家数量: {len(alive_players)}")
@@ -115,6 +116,8 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
             if entity2 is None:
                 logger.error(f"无法找到玩家实体: {request2.name}")
                 continue
+
+            entity2.replace(DayVoteComponent, entity2.name)
 
             try:
                 format_response = DayVoteResponse.model_validate_json(

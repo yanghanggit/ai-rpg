@@ -106,14 +106,6 @@ class DiscussionAction(Component):
 
 
 ############################################################################################################
-@final
-@register_component_class
-@register_action_class
-class NightPlanAction(Component):
-    name: str
-
-
-############################################################################################################
 
 
 # @final

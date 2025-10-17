@@ -43,6 +43,8 @@ def _generate_check_decision_prompt(target_options_mapping: Dict[str, str]) -> s
 4. **团队利益**: 选择查看能帮助好人阵营获胜的关键玩家
 5. **逐步排除**: 从最可疑的玩家开始逐步排除
 
+## 注意，严格遵循推理机制
+
 ## 输出格式
 
 ### 标准示例

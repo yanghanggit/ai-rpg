@@ -32,12 +32,12 @@ def read_excel_file(
         # 读取Excel文件
         if sheet_name:
             df = pd.read_excel(excel_file_path, sheet_name=sheet_name)
-            logger.info(f"成功读取工作表 '{sheet_name}' 从文件: {excel_file_path}")
+            # logger.info(f"成功读取工作表 '{sheet_name}' 从文件: {excel_file_path}")
         else:
             df = pd.read_excel(excel_file_path)
-            logger.info(f"成功读取文件: {excel_file_path}")
+            # logger.info(f"成功读取文件: {excel_file_path}")
 
-        logger.info(f"数据形状: {df.shape}")
+        # logger.info(f"数据形状: {df.shape}")
         return df
 
     except Exception as e:
@@ -107,7 +107,7 @@ def list_valid_rows(df: pd.DataFrame) -> List[Dict[str, Any]]:
     valid_rows = []
     first_column = df.columns[0]  # 获取第一列的列名
 
-    logger.info(f"\n=== 列举有效行数据 (过滤第一列 '{first_column}' 为空的行) ===")
+    # logger.info(f"\n=== 列举有效行数据 (过滤第一列 '{first_column}' 为空的行) ===")
 
     for index, row in df.iterrows():
         first_value = row.iloc[0]  # 获取第一个元素
@@ -124,12 +124,12 @@ def list_valid_rows(df: pd.DataFrame) -> List[Dict[str, Any]]:
         row_dict = row.to_dict()
         valid_rows.append(row_dict)
 
-        logger.info(f"\n第 {row_number + 1} 行 (索引 {index}) - 有效:")
-        for col_name, value in row_dict.items():
-            logger.info(f"  {col_name}: {type(value).__name__} = {value}")
-        logger.info("-" * 50)
+        # logger.info(f"\n第 {row_number + 1} 行 (索引 {index}) - 有效:")
+        # for col_name, value in row_dict.items():
+        #     logger.info(f"  {col_name}: {type(value).__name__} = {value}")
+        # logger.info("-" * 50)
 
-    logger.info(f"\n总计找到 {len(valid_rows)} 行有效数据")
+    # logger.info(f"\n总计找到 {len(valid_rows)} 行有效数据")
     return valid_rows
 
 
@@ -308,7 +308,7 @@ def convert_dict_to_model(row_dict: Dict[str, Any], model_class: Type[T]) -> T:
         if not pd.isna(value):
             data[key] = value
         # NaN 值被跳过，BaseModel 会使用字段定义的默认值
-        logger.debug(f"处理键 '{key}': 值 = {value} (NaN 跳过)")
+        # logger.debug(f"处理键 '{key}': 值 = {value} (NaN 跳过)")
 
     try:
         return model_class(**data)
@@ -341,9 +341,9 @@ def list_valid_rows_as_models(df: pd.DataFrame, model_class: Type[T]) -> List[T]
     first_column = df.columns[0]  # 获取第一列的列名
     model_name = model_class.__name__
 
-    logger.info(
-        f"\n=== 列举有效行数据并转换为{model_name}模型 (过滤第一列 '{first_column}' 为空的行) ==="
-    )
+    # logger.info(
+    #     f"\n=== 列举有效行数据并转换为{model_name}模型 (过滤第一列 '{first_column}' 为空的行) ==="
+    # )
 
     for index, row in df.iterrows():
         first_value = row.iloc[0]  # 获取第一个元素
@@ -364,11 +364,11 @@ def list_valid_rows_as_models(df: pd.DataFrame, model_class: Type[T]) -> List[T]
             model_instance = convert_dict_to_model(row_dict, model_class)
             valid_models.append(model_instance)
 
-            logger.info(
-                f"\n第 {row_number + 1} 行 (索引 {index}) - 转换为{model_name}模型成功:"
-            )
-            logger.info(f"  模型: {model_instance}")
-            logger.info("-" * 50)
+            # logger.info(
+            #     f"\n第 {row_number + 1} 行 (索引 {index}) - 转换为{model_name}模型成功:"
+            # )
+            # logger.info(f"  模型: {model_instance}")
+            # logger.info("-" * 50)
 
         except (ValueError, TypeError) as e:
             logger.error(
@@ -381,5 +381,5 @@ def list_valid_rows_as_models(df: pd.DataFrame, model_class: Type[T]) -> List[T]
             )
             continue
 
-    logger.info(f"\n总计转换 {len(valid_models)} 行数据为{model_name}模型")
+    # logger.info(f"\n总计转换 {len(valid_models)} 行数据为{model_name}模型")
     return valid_models

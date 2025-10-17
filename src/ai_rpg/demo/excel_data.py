@@ -41,3 +41,13 @@ class ActorExcelData(BaseModel):
 
 
 ###############################################################################################################################################
+# 狼人杀角色Excel数据模型
+@final
+class WerewolfAppearanceExcelData(BaseModel):
+    """狼人杀角色Excel数据的BaseModel"""
+
+    mask: str = Field(default="默认面具", description="面具")
+    body_type: str = Field(default="身材高挑", description="身材")
+    gender: str = Field(default="男性", description="性别")
+
+######

@@ -103,6 +103,8 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
 4. 讨论村庄的整体策略
 5. 任何其他与游戏相关的讨论
 
+## 注意，严格遵循推理机制
+
 ## 输出格式
 
 ### 标准示例

@@ -44,6 +44,8 @@ def _generate_prompt(target_options_mapping: Dict[str, str]) -> str:
 4. **隐蔽性**: 避免选择那些可能暴露你身份的目标
 5. **团队配合**: 考虑与其他狼人同伴的策略配合
 
+## 注意，严格遵循推理机制
+
 ## 输出格式
 
 ### 标准示例

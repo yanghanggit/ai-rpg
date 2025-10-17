@@ -81,6 +81,8 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
 3. 选择你推理出来的那个玩家做为投票目标
 4. target_name 必须是存活玩家列表中的一个确切姓名
 
+## 注意，严格遵循推理机制
+
 ## 输出格式
 
 ### 标准示例

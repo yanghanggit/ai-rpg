@@ -60,6 +60,7 @@ def _generate_prompt(list_items_prompt: str, status_info: List[Tuple[str, str]])
 ## 注意事项
 
 - 你每个回合只能使用一种药剂，或者救人，或者毒人，或者什么都不做。
+- 严格遵循推理机制
 
 ## 输出格式
 

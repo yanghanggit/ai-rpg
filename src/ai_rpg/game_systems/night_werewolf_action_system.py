@@ -11,8 +11,8 @@ from ..models import (
     VillagerComponent,
     DeathComponent,
     AppearanceComponent,
-    NightPlanComponent,
-    NightKillComponent,
+    NightActionReadyComponent,
+    NightKillTargetComponent,
     MindVoiceAction,
 )
 from ..chat_services.client import ChatClient
@@ -66,7 +66,7 @@ class WerewolfKillDecisionResponse(BaseModel):
 
 ###############################################################################################################################################
 @final
-class NightWerewolfPlanSystem(ReactiveProcessor):
+class NightWerewolfActionSystem(ReactiveProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
@@ -75,12 +75,12 @@ class NightWerewolfPlanSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(NightPlanComponent): GroupEvent.ADDED}
+        return {Matcher(NightActionReadyComponent): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(NightPlanComponent) and entity.has(WerewolfComponent)
+        return entity.has(NightActionReadyComponent) and entity.has(WerewolfComponent)
 
     ###############################################################################################################################################
     @override
@@ -172,7 +172,7 @@ class NightWerewolfPlanSystem(ReactiveProcessor):
 
         # 目标直接做击杀标记, 最终决定！
         chosen_response[1].replace(
-            NightKillComponent,
+            NightKillTargetComponent,
             chosen_response[1].name,
             self._game._werewolf_game_turn_counter,
         )

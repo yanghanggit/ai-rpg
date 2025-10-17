@@ -29,11 +29,11 @@ from ai_rpg.models import (
     SeerComponent,
     WitchComponent,
     VillagerComponent,
-    NightKillComponent,
+    NightKillTargetComponent,
     DeathComponent,
-    DayDiscussionComponent,
-    NightPlanComponent,
-    DayVoteComponent,
+    DayDiscussedComponent,
+    NightActionReadyComponent,
+    DayVotedComponent,
 )
 from ai_rpg.game_systems.werewolf_day_vote_system import WerewolfDayVoteSystem
 
@@ -81,7 +81,7 @@ def _announce_night_phase(tcg_game: TCGGame) -> None:
     # 获取所有带有白天讨论或投票标记的玩家
     players_with_day_markers = tcg_game.get_group(
         Matcher(
-            any_of=[DayDiscussionComponent, DayVoteComponent, NightKillComponent],
+            any_of=[DayDiscussedComponent, DayVotedComponent, NightKillTargetComponent],
         )
     ).entities.copy()
 
@@ -89,16 +89,16 @@ def _announce_night_phase(tcg_game: TCGGame) -> None:
     for player in players_with_day_markers:
 
         # 前一个白天的讨论标记，进入新的夜晚也要清理掉
-        if player.has(DayDiscussionComponent):
-            player.remove(DayDiscussionComponent)
+        if player.has(DayDiscussedComponent):
+            player.remove(DayDiscussedComponent)
 
         # 前一个白天的投票标记，进入新的夜晚也要清理掉
-        if player.has(DayVoteComponent):
-            player.remove(DayVoteComponent)
+        if player.has(DayVotedComponent):
+            player.remove(DayVotedComponent)
 
         # 前一天晚上的击杀标记，进入新的夜晚也要清理掉
-        if player.has(NightKillComponent):
-            player.remove(NightKillComponent)
+        if player.has(NightKillTargetComponent):
+            player.remove(NightKillTargetComponent)
 
 
 ###############################################################################################################################################
@@ -145,7 +145,7 @@ def _announce_day_phase(tcg_game: TCGGame) -> None:
     # 获取所有在昨夜被标记为击杀的玩家
     players_killed_last_night = tcg_game.get_group(
         Matcher(
-            all_of=[NightKillComponent],
+            all_of=[NightKillTargetComponent],
         )
     ).entities.copy()
 
@@ -180,13 +180,13 @@ def _announce_day_phase(tcg_game: TCGGame) -> None:
     # 获取所有带有夜晚计划标记的实体
     entities_with_night_plans = tcg_game.get_group(
         Matcher(
-            all_of=[NightPlanComponent],
+            all_of=[NightActionReadyComponent],
         )
     ).entities.copy()
 
     # 移除所有夜晚计划标记,为新的一天做准备
     for entity_with_plan in entities_with_night_plans:
-        entity_with_plan.remove(NightPlanComponent)
+        entity_with_plan.remove(NightActionReadyComponent)
 
 
 ###############################################################################################################################################

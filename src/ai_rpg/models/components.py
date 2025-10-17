@@ -273,26 +273,25 @@ class VillagerComponent(Component):
 
 @final
 @register_component_class
-class NightPlanComponent(Component):
+class NightActionReadyComponent(Component):
     name: str
 
 
 @final
 @register_component_class
-class NightKillComponent(Component):
+class NightKillTargetComponent(Component):
     name: str
-    time: int
+    turn: int
 
 
 @final
 @register_component_class
-class DayDiscussionComponent(Component):
+class DayDiscussedComponent(Component):
     name: str
     message: str
 
 
 @final
 @register_component_class
-class DayVoteComponent(Component):
+class DayVotedComponent(Component):
     name: str
-    # message: str

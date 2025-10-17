@@ -1,13 +1,11 @@
 from typing import final, override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-
-# from .base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
     WitchCureAction,
     SDWitchItemName,
     InventoryComponent,
     AgentEvent,
-    NightKillComponent,
+    NightKillTargetComponent,
 )
 from loguru import logger
 from ..game.tcg_game import TCGGame
@@ -64,8 +62,8 @@ class WitchCureActionSystem(ReactiveProcessor):
             )
             return
 
-        if entity.has(NightKillComponent):
-            entity.remove(NightKillComponent)
+        if entity.has(NightKillTargetComponent):
+            entity.remove(NightKillTargetComponent)
             logger.info(
                 f"女巫 {witch_entity.name} 使用了解药，救活了玩家 {entity.name}, 移除了夜晚死亡标记"
             )

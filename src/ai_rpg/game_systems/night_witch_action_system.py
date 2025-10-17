@@ -13,9 +13,9 @@ from ..models import (
     VillagerComponent,
     WitchPoisonAction,
     WitchCureAction,
-    NightPlanComponent,
+    NightActionReadyComponent,
     MindVoiceAction,
-    NightKillComponent,
+    NightKillTargetComponent,
 )
 from ..utils.md_format import format_list_as_markdown_list
 from ..chat_services.client import ChatClient
@@ -75,7 +75,7 @@ def _generate_prompt(list_items_prompt: str, status_info: List[Tuple[str, str]])
 
 ###############################################################################################################################################
 @final
-class NightWitchPlanSystem(ReactiveProcessor):
+class NightWitchActionSystem(ReactiveProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
@@ -84,12 +84,12 @@ class NightWitchPlanSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(NightPlanComponent): GroupEvent.ADDED}
+        return {Matcher(NightActionReadyComponent): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(NightPlanComponent) and entity.has(WitchComponent)
+        return entity.has(NightActionReadyComponent) and entity.has(WitchComponent)
 
     #######################################################################################################################################
 
@@ -105,7 +105,7 @@ class NightWitchPlanSystem(ReactiveProcessor):
         # 本夜晚被狼人杀害的人！
         victims_of_wolf = self._game.get_group(
             Matcher(
-                any_of=[NightKillComponent],
+                any_of=[NightKillTargetComponent],
             )
         ).entities.copy()
 

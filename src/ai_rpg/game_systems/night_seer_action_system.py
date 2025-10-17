@@ -11,14 +11,12 @@ from ..models import (
     DeathComponent,
     SeerCheckAction,
     AppearanceComponent,
-    NightPlanComponent,
+    NightActionReadyComponent,
     MindVoiceAction,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
 from ..utils.md_format import format_dict_as_markdown_list
-
-# from .base_action_reactive_system import BaseActionReactiveSystem
 from ..game.tcg_game import TCGGame
 
 
@@ -67,7 +65,7 @@ class SeerCheckDecisionResponse(BaseModel):
 
 ###############################################################################################################################################
 @final
-class NightSeerPlanSystem(ReactiveProcessor):
+class NightSeerActionSystem(ReactiveProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
@@ -76,12 +74,12 @@ class NightSeerPlanSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(NightPlanComponent): GroupEvent.ADDED}
+        return {Matcher(NightActionReadyComponent): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(NightPlanComponent) and entity.has(SeerComponent)
+        return entity.has(NightActionReadyComponent) and entity.has(SeerComponent)
 
     ###############################################################################################################################################
     @override
@@ -89,7 +87,6 @@ class NightSeerPlanSystem(ReactiveProcessor):
         """预言家夜晚行动的主要执行逻辑"""
 
         assert len(entities) == 1, "不可能有多个预言家同时行动"
-        # logger.info("预言家行动阶段！！！")
 
         seer_entity = entities[0]
 
@@ -177,6 +174,7 @@ class NightSeerPlanSystem(ReactiveProcessor):
     ) -> str:
         """处理预言家查看决策响应，返回目标名称"""
         try:
+
             response = SeerCheckDecisionResponse.model_validate_json(
                 json_format.strip_json_code_block(request_handler.response_content)
             )
@@ -189,10 +187,6 @@ class NightSeerPlanSystem(ReactiveProcessor):
             # 记录预言家的决策过程
             seer_entity = self._game.get_entity_by_name(request_handler.name)
             if seer_entity:
-                # self._game.append_human_message(
-                #     seer_entity,
-                #     f"# 发生事件，经过你的思考之后，你决定今晚要查看 {response.target_name} 的身份，理由是：{response.reasoning}",
-                # )
 
                 seer_entity.replace(
                     MindVoiceAction,

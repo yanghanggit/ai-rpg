@@ -10,12 +10,12 @@ from ..models import (
     WitchComponent,
     VillagerComponent,
     DeathComponent,
-    DayDiscussionComponent,
+    DayDiscussedComponent,
     MindVoiceAction,
     VoteAction,
     MindVoiceAction,
-    DayVoteComponent,
-    NightKillComponent,
+    DayVotedComponent,
+    NightKillTargetComponent,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
@@ -52,7 +52,7 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
                     WitchComponent,
                     VillagerComponent,
                 ],
-                none_of=[DeathComponent, DayVoteComponent, NightKillComponent],
+                none_of=[DeathComponent, DayVotedComponent, NightKillTargetComponent],
             )
         ).entities.copy()
 
@@ -118,7 +118,7 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
                 logger.error(f"无法找到玩家实体: {request2.name}")
                 continue
 
-            entity2.replace(DayVoteComponent, entity2.name)
+            entity2.replace(DayVotedComponent, entity2.name)
 
             try:
                 format_response = DayVoteResponse.model_validate_json(
@@ -143,7 +143,7 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
     def is_day_discussion_complete(game: TCGGame) -> bool:
         players1 = game.get_group(
             Matcher(
-                all_of=[DayDiscussionComponent],
+                all_of=[DayDiscussedComponent],
                 any_of=[
                     WerewolfComponent,
                     SeerComponent,

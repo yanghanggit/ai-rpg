@@ -11,7 +11,6 @@ from ..models import (
     WerewolfComponent,
     SeerComponent,
     VillagerComponent,
-    # WolfKillAction,
     WitchPoisonAction,
     WitchCureAction,
     NightPlanComponent,
@@ -126,7 +125,7 @@ class NightWitchPlanSystem(ReactiveProcessor):
         # 玩家状态信息
         victim_survivor_status: List[Tuple[str, str]] = []
         for one in victims_of_wolf:
-            victim_survivor_status.append((one.name, "今夜被杀害"))
+            victim_survivor_status.append((one.name, "今夜被狼人杀害"))
 
         for one in alive_players:
             # if one not in victims_of_wolf:

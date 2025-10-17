@@ -15,6 +15,7 @@ from ..models import (
     VoteAction,
     MindVoiceAction,
     DayVoteComponent,
+    NightKillComponent,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
@@ -51,7 +52,7 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
                     WitchComponent,
                     VillagerComponent,
                 ],
-                none_of=[DeathComponent, DayVoteComponent],
+                none_of=[DeathComponent, DayVoteComponent, NightKillComponent],
             )
         ).entities.copy()
 

@@ -33,6 +33,7 @@ from ..chat_services import ChatClient
 from ..game.config import GLOBAL_SD_GAME_NAME
 from typing import List, Set
 from ..entitas import Entity, Matcher
+from ..game_systems.werewolf_day_vote_system import WerewolfDayVoteSystem
 
 ###################################################################################################################################################################
 werewolf_game_api_router = APIRouter()
@@ -259,7 +260,9 @@ async def start_werewolf_game(
 ###################################################################################################################################################################
 
 
-@werewolf_game_api_router.post(path="/api/werewolf/gameplay/v1/", response_model=WerewolfGamePlayResponse)
+@werewolf_game_api_router.post(
+    path="/api/werewolf/gameplay/v1/", response_model=WerewolfGamePlayResponse
+)
 async def play_werewolf_game(
     request_data: WerewolfGamePlayRequest,
     game_server: GameServerInstance,
@@ -309,7 +312,7 @@ async def play_werewolf_game(
                 )
 
             else:
-                logger.warning(
+                logger.error(
                     f"当前时间标记不是0，是{web_game._werewolf_game_turn_counter}，不能执行 /kickoff 命令"
                 )
                 raise HTTPException(
@@ -317,6 +320,120 @@ async def play_werewolf_game(
                     detail="游戏已经开始，不能重复执行 /kickoff 命令",
                 )
 
+        if user_input == "/t" or user_input == "/time":
+
+            last = web_game._werewolf_game_turn_counter
+            web_game._werewolf_game_turn_counter += 1
+            logger.info(
+                f"时间推进了一步，{last} -> {web_game._werewolf_game_turn_counter}"
+            )
+
+            # 判断是夜晚还是白天
+            if web_game._werewolf_game_turn_counter % 2 == 1:
+
+                # 进入下一个夜晚
+                announce_night_phase(web_game)
+
+            else:
+                # 进入下一个白天
+                announce_day_phase(web_game)
+
+            # 返回！
+            return WerewolfGamePlayResponse(client_messages=[])
+
+        if user_input == "/n" or user_input == "/night":
+
+            # 如果是夜晚
+            if web_game._werewolf_game_turn_counter % 2 == 1:
+
+                # 清除之前的消息
+                web_game.player_client.clear_messages()
+
+                # 运行游戏逻辑
+                await web_game.werewolf_game_night_pipeline.process()
+
+                #
+                return WerewolfGamePlayResponse(
+                    client_messages=web_game.player_client.client_messages
+                )
+
+            else:
+
+                logger.error(
+                    f"当前不是夜晚，是{web_game._werewolf_game_turn_counter}，不能执行 /night 命令"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="当前不是夜晚，不能执行 /night 命令",
+                )
+
+        if user_input == "/d" or user_input == "/day":
+
+            # 如果是白天
+            if (
+                web_game._werewolf_game_turn_counter % 2 == 0
+                and web_game._werewolf_game_turn_counter > 0
+            ):
+                # 清理之前的消息
+                web_game.player_client.clear_messages()
+                # 运行游戏逻辑
+                await web_game.werewolf_game_day_pipeline.process()
+
+                return WerewolfGamePlayResponse(
+                    client_messages=web_game.player_client.client_messages
+                )
+
+            else:
+
+                logger.error(
+                    f"当前不是白天，是{web_game._werewolf_game_turn_counter}，不能执行 /day 命令"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="当前不是白天，不能执行 /day 命令",
+                )
+
+        if user_input == "/v" or user_input == "/vote":
+
+            # 如果是白天
+            if (
+                web_game._werewolf_game_turn_counter % 2 == 0
+                and web_game._werewolf_game_turn_counter > 0
+            ):
+
+                # 判断是否讨论完毕
+                if WerewolfDayVoteSystem.is_day_discussion_complete(web_game):
+
+                    # 清理之前的消息
+                    web_game.player_client.clear_messages()
+
+                    # 如果讨论完毕，则进入投票环节
+                    await web_game.werewolf_game_vote_pipeline.process()
+
+                    return WerewolfGamePlayResponse(
+                        client_messages=web_game.player_client.client_messages
+                    )
+
+                else:
+
+                    logger.error(
+                        "白天讨论环节没有完成，不能进入投票阶段！！！！！！！！！！！！"
+                    )
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="白天讨论环节没有完成，不能进入投票阶段",
+                    )
+            else:
+
+                logger.error(
+                    f"当前不是白天，是{web_game._werewolf_game_turn_counter}，不能执行 /vote 命令"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="当前不是白天，不能执行 /vote 命令",
+                )
+
+        logger.error(f"未知命令: {user_input}, 什么都没做")
         return WerewolfGamePlayResponse(client_messages=[])
 
     except Exception as e:

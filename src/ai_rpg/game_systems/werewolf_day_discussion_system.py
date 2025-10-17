@@ -10,10 +10,9 @@ from ..models import (
     WitchComponent,
     VillagerComponent,
     DeathComponent,
-    DayDiscussionComponent,
+    DayDiscussedComponent,
     DiscussionAction,
-    MindVoiceAction,
-    MindVoiceAction,
+    MindEvent,
 )
 import random
 from ..chat_services.client import ChatClient
@@ -40,9 +39,6 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
     ###############################################################################################################################################
     @override
     async def execute(self) -> None:
-        # return  # 先屏蔽掉白天讨论系统
-        # logger.info(f"狼人杀测试系统启动 = {self._game._werewolf_game_turn_counter}")
-        # assert self._game._werewolf_game_turn_counter % 2 == 0, "time_marker 必须是偶数"
 
         if self._game._werewolf_game_turn_counter == 2:
 
@@ -57,7 +53,7 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
                         WitchComponent,
                         VillagerComponent,
                     ],
-                    none_of=[DayDiscussionComponent],
+                    none_of=[DayDiscussedComponent],
                 )
             ).entities.copy()
 
@@ -75,7 +71,7 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
                         VillagerComponent,
                     ],
                     none_of=[
-                        DayDiscussionComponent,
+                        DayDiscussedComponent,
                         DeathComponent,
                     ],
                 )
@@ -136,8 +132,14 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
             )
 
             if response.mind_voice != "":
-                selected_entity.replace(
-                    MindVoiceAction, selected_entity.name, response.mind_voice
+
+                self._game.notify_entities(
+                    set({selected_entity}),
+                    MindEvent(
+                        message=f"{selected_entity.name} : {response.mind_voice}",
+                        actor=selected_entity.name,
+                        content=response.mind_voice,
+                    ),
                 )
 
             if response.discussion != "":
@@ -153,7 +155,7 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
             )
 
         selected_entity.replace(
-            DayDiscussionComponent,
+            DayDiscussedComponent,
             selected_entity.name,
             request_handlers[0].response_content,
         )

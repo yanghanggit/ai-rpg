@@ -9,13 +9,13 @@ from ..models import (
     WitchComponent,
     VillagerComponent,
     DeathComponent,
-    NightPlanComponent,
+    NightActionReadyComponent,
 )
 
 
 ###############################################################################################################################################
 @final
-class NightAutoPlanSystem(ExecuteProcessor):
+class NightActionInitializationSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     def __init__(self, game_context: TCGGame) -> None:
@@ -27,7 +27,7 @@ class NightAutoPlanSystem(ExecuteProcessor):
 
         night_phase_action_entities = self._game.get_group(
             Matcher(
-                all_of=[NightPlanComponent],
+                all_of=[NightActionReadyComponent],
             )
         ).entities.copy()
 
@@ -37,12 +37,8 @@ class NightAutoPlanSystem(ExecuteProcessor):
 
         # 自动为存活的预言家添加夜晚行动
         logger.debug("自动为存活的玩家添加夜晚行动")
-        self._initialize_night_plans_for_alive_players()
 
-    ###############################################################################################################################################
-    def _initialize_night_plans_for_alive_players(self) -> None:
-
-        alive_werewolf_player_entities = self._game.get_group(
+        alive_player_entities = self._game.get_group(
             Matcher(
                 any_of=[
                     WerewolfComponent,
@@ -54,7 +50,7 @@ class NightAutoPlanSystem(ExecuteProcessor):
             )
         ).entities.copy()
 
-        for entity in alive_werewolf_player_entities:
-            entity.replace(NightPlanComponent, entity.name)
+        for entity in alive_player_entities:
+            entity.replace(NightActionReadyComponent, entity.name)
 
     ###############################################################################################################################################

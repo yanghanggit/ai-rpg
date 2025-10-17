@@ -10,11 +10,11 @@ from ..models import (
     WitchComponent,
     VillagerComponent,
     DeathComponent,
-    DayDiscussionComponent,
-    MindVoiceAction,
+    DayDiscussedComponent,
     VoteAction,
-    MindVoiceAction,
-    DayVoteComponent,
+    DayVotedComponent,
+    NightKillTargetComponent,
+    MindEvent,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
@@ -51,7 +51,7 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
                     WitchComponent,
                     VillagerComponent,
                 ],
-                none_of=[DeathComponent, DayVoteComponent],
+                none_of=[DeathComponent, DayVotedComponent, NightKillTargetComponent],
             )
         ).entities.copy()
 
@@ -119,7 +119,7 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
                 logger.error(f"无法找到玩家实体: {request2.name}")
                 continue
 
-            entity2.replace(DayVoteComponent, entity2.name)
+            entity2.replace(DayVotedComponent, entity2.name)
 
             try:
                 format_response = DayVoteResponse.model_validate_json(
@@ -127,8 +127,14 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
                 )
 
                 if format_response.mind_voice != "":
-                    entity2.replace(
-                        MindVoiceAction, entity2.name, format_response.mind_voice
+
+                    self._game.notify_entities(
+                        set({entity2}),
+                        MindEvent(
+                            message=f"{entity2.name} : {format_response.mind_voice}",
+                            actor=entity2.name,
+                            content=format_response.mind_voice,
+                        ),
                     )
 
                 if format_response.target_name != "":
@@ -144,7 +150,7 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
     def is_day_discussion_complete(game: TCGGame) -> bool:
         players1 = game.get_group(
             Matcher(
-                all_of=[DayDiscussionComponent],
+                all_of=[DayDiscussedComponent],
                 any_of=[
                     WerewolfComponent,
                     SeerComponent,

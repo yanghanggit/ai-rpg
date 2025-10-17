@@ -8,16 +8,14 @@ from ..models import (
     AnnounceAction,
     EnvironmentComponent,
     QueryAction,
-    MindVoiceAction,
     SpeakAction,
     WhisperAction,
     PlanAction,
     TransStageAction,
     HomeComponent,
+    MindEvent,
 )
 from ..utils import json_format
-
-# from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..game.tcg_game import TCGGame
 
 
@@ -154,6 +152,18 @@ class HomeActorSystem(ReactiveProcessor):
             )
             self._game.append_ai_message(entity2, request_handler.response_ai_messages)
 
+            # 添加内心独白: 上下文！
+            if response.mind_voice_actions != "":
+
+                self._game.notify_entities(
+                    set({entity2}),
+                    MindEvent(
+                        message=f"{entity2.name} : {response.mind_voice_actions}",
+                        actor=entity2.name,
+                        content=response.mind_voice_actions,
+                    ),
+                )
+
             # 添加说话动作
             if len(response.speak_actions) > 0:
                 entity2.replace(SpeakAction, entity2.name, response.speak_actions)
@@ -165,12 +175,6 @@ class HomeActorSystem(ReactiveProcessor):
             # 添加宣布动作
             if response.announce_actions != "":
                 entity2.replace(AnnounceAction, entity2.name, response.announce_actions)
-
-            # 添加内心独白
-            if response.mind_voice_actions != "":
-                entity2.replace(
-                    MindVoiceAction, entity2.name, response.mind_voice_actions
-                )
 
             # 添加查询动作
             if response.query_actions != "":

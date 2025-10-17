@@ -10,7 +10,7 @@ class AgentEventHead(IntEnum):
     SPEAK_EVENT = 1
     WHISPER_EVENT = 2
     ANNOUNCE_EVENT = 3
-    MIND_VOICE_EVENT = 4
+    MIND_EVENT = 4
     QUERY_EVENT = 5
     TRANS_STAGE_EVENT = 6
     COMBAT_KICK_OFF_EVENT = 7
@@ -57,8 +57,8 @@ class AnnounceEvent(AgentEvent):
 ####################################################################################################################################
 # 心灵语音事件
 @final
-class MindVoiceEvent(AgentEvent):
-    head: int = AgentEventHead.MIND_VOICE_EVENT
+class MindEvent(AgentEvent):
+    head: int = AgentEventHead.MIND_EVENT
     actor: str
     content: str
 

@@ -39,15 +39,6 @@ class AnnounceAction(Component):
     message: str
 
 
-############################################################################################################
-@final
-@register_component_class
-@register_action_class
-class MindVoiceAction(Component):
-    name: str
-    message: str
-
-
 ################################################################################################################
 @final
 @register_component_class

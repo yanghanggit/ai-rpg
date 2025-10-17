@@ -11,9 +11,9 @@ from ..models import (
     VillagerComponent,
     DeathComponent,
     AppearanceComponent,
-    NightPlanComponent,
-    NightKillComponent,
-    MindVoiceAction,
+    NightActionReadyComponent,
+    NightKillTargetComponent,
+    MindEvent,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
@@ -68,7 +68,7 @@ class WerewolfKillDecisionResponse(BaseModel):
 
 ###############################################################################################################################################
 @final
-class NightWerewolfPlanSystem(ReactiveProcessor):
+class NightWerewolfActionSystem(ReactiveProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
@@ -77,12 +77,12 @@ class NightWerewolfPlanSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(NightPlanComponent): GroupEvent.ADDED}
+        return {Matcher(NightActionReadyComponent): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(NightPlanComponent) and entity.has(WerewolfComponent)
+        return entity.has(NightActionReadyComponent) and entity.has(WerewolfComponent)
 
     ###############################################################################################################################################
     @override
@@ -174,7 +174,7 @@ class NightWerewolfPlanSystem(ReactiveProcessor):
 
         # 目标直接做击杀标记, 最终决定！
         chosen_response[1].replace(
-            NightKillComponent,
+            NightKillTargetComponent,
             chosen_response[1].name,
             self._game._werewolf_game_turn_counter,
         )
@@ -183,10 +183,13 @@ class NightWerewolfPlanSystem(ReactiveProcessor):
         )
 
         # 自身的添加上下文。
-        chosen_response[0].replace(
-            MindVoiceAction,
-            chosen_response[0].name,
-            f"经过你的思考之后，你决定今晚要击杀 {chosen_response[1].name}，理由是：{chosen_response[2]}",
+        self._game.notify_entities(
+            set({chosen_response[0]}),
+            MindEvent(
+                message=f"经过你的思考之后，你决定今晚要击杀 {chosen_response[1].name}，理由是：{chosen_response[2]}",
+                actor=chosen_response[0].name,
+                content=f"经过你的思考之后，你决定今晚要击杀 {chosen_response[1].name}，理由是：{chosen_response[2]}",
+            ),
         )
 
         # 通知所有活着的狼人最终决定
@@ -195,10 +198,13 @@ class NightWerewolfPlanSystem(ReactiveProcessor):
             if other_response == chosen_response:
                 continue
 
-            other_response[0].replace(
-                MindVoiceAction,
-                other_response[0].name,
-                f"经过你的思考之后，你决定今晚要击杀 {other_response[1].name}，理由是：{other_response[2]} 经过团队商议，最终采纳了 {chosen_response[0].name} 的建议，决定击杀 {chosen_response[1].name}。",
+            self._game.notify_entities(
+                set({other_response[0]}),
+                MindEvent(
+                    message=f"经过你的思考之后，你决定今晚要击杀 {other_response[1].name}，理由是：{other_response[2]} 经过团队商议，最终采纳了 {chosen_response[0].name} 的建议，决定击杀 {chosen_response[1].name}。",
+                    actor=other_response[0].name,
+                    content=f"经过你的思考之后，你决定今晚要击杀 {other_response[1].name}，理由是：{other_response[2]} 经过团队商议，最终采纳了 {chosen_response[0].name} 的建议，决定击杀 {chosen_response[1].name}。",
+                ),
             )
 
     ###############################################################################################################################################

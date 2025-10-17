@@ -5,7 +5,7 @@ from ..models import (
     SDWitchItemName,
     InventoryComponent,
     AgentEvent,
-    NightKillComponent,
+    NightKillTargetComponent,
 )
 from loguru import logger
 from ..game.tcg_game import TCGGame
@@ -77,10 +77,9 @@ class WitchPoisonActionSystem(ReactiveProcessor):
         )
 
         entity.replace(
-            NightKillComponent,
+            NightKillTargetComponent,
             entity.name,
             self._game._werewolf_game_turn_counter,
         )
-        # entity.replace(DeathComponent, entity.name)
 
     ####################################################################################################################################

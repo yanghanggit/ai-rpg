@@ -11,12 +11,11 @@ from ..models import (
     WerewolfComponent,
     SeerComponent,
     VillagerComponent,
-    # WolfKillAction,
     WitchPoisonAction,
     WitchCureAction,
-    NightPlanComponent,
-    MindVoiceAction,
-    NightKillComponent,
+    NightActionReadyComponent,
+    NightKillTargetComponent,
+    MindEvent,
 )
 from ..utils.md_format import format_list_as_markdown_list
 from ..chat_services.client import ChatClient
@@ -77,7 +76,7 @@ def _generate_prompt(list_items_prompt: str, status_info: List[Tuple[str, str]])
 
 ###############################################################################################################################################
 @final
-class NightWitchPlanSystem(ReactiveProcessor):
+class NightWitchActionSystem(ReactiveProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
@@ -86,12 +85,12 @@ class NightWitchPlanSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(NightPlanComponent): GroupEvent.ADDED}
+        return {Matcher(NightActionReadyComponent): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(NightPlanComponent) and entity.has(WitchComponent)
+        return entity.has(NightActionReadyComponent) and entity.has(WitchComponent)
 
     #######################################################################################################################################
 
@@ -107,7 +106,7 @@ class NightWitchPlanSystem(ReactiveProcessor):
         # 本夜晚被狼人杀害的人！
         victims_of_wolf = self._game.get_group(
             Matcher(
-                any_of=[NightKillComponent],
+                any_of=[NightKillTargetComponent],
             )
         ).entities.copy()
 
@@ -127,7 +126,7 @@ class NightWitchPlanSystem(ReactiveProcessor):
         # 玩家状态信息
         victim_survivor_status: List[Tuple[str, str]] = []
         for one in victims_of_wolf:
-            victim_survivor_status.append((one.name, "今夜被杀害"))
+            victim_survivor_status.append((one.name, "今夜被狼人杀害"))
 
         for one in alive_players:
             # if one not in victims_of_wolf:
@@ -164,8 +163,14 @@ class NightWitchPlanSystem(ReactiveProcessor):
 
             # 如果有内心独白，则需要添加行动
             if response.mind_voice != "":
-                witch_entity.replace(
-                    MindVoiceAction, witch_entity.name, response.mind_voice
+
+                self._game.notify_entities(
+                    set({witch_entity}),
+                    MindEvent(
+                        message=f"{witch_entity.name} : {response.mind_voice}",
+                        actor=witch_entity.name,
+                        content=response.mind_voice,
+                    ),
                 )
 
             # 是否救人？
@@ -212,11 +217,13 @@ class NightWitchPlanSystem(ReactiveProcessor):
             # 最终什么都不做？
             if response.cure_target == "" and response.poison_target == "":
 
-                # 什么都不做，就是添加上下文即可。
-                witch_entity.replace(
-                    MindVoiceAction,
-                    witch_entity.name,
-                    "决定本轮不使用任何道具，跳过女巫行动。",
+                self._game.notify_entities(
+                    set({witch_entity}),
+                    MindEvent(
+                        message=f"{witch_entity.name} : {response.mind_voice}",
+                        actor=witch_entity.name,
+                        content=response.mind_voice,
+                    ),
                 )
 
         except Exception as e:

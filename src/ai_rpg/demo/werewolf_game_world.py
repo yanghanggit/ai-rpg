@@ -123,6 +123,7 @@ def create_actor_werewolf(name: str) -> Actor:
 夜晚与其他狼人商议，选择要杀害的村民。
 【行为特点】
 善于伪装和欺骗，能够巧妙地转移怀疑，挑拨村民之间的关系。
+白天讨论时一定会冒充预言家或者女巫来骗取村民信任。
 在投票时会暗中保护狼人同伴，引导村民投票给好人。
 保持冷静，不轻易暴露身份。""",
         appearance=generate_random_appearance(),

@@ -131,8 +131,6 @@ class ExcelDataManager:
     def get_all_werewolf_appearance_data(self) -> List[WerewolfAppearanceExcelData]:
         """获取所有狼人杀外观数据"""
         return self._werewolf_appearance_valid_rows
-        return appearance_data.mask, appearance_data.body_type, appearance_data.gender
-
 
 ###################################################################################################
 ###################################################################################################

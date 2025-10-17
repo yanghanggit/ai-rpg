@@ -59,7 +59,65 @@ from .player_client import PlayerClient
 
 
 # ################################################################################################################################################
-class TCGGame(BaseGame, RPGEntityManager):
+class RPGWorldContext:
+    """
+    游戏数据访问器基类
+    负责提供对 player_client 和 world 的纯数据访问，不涉及ECS操作
+
+    注意：此类依赖于 BaseGame 提供的 name 属性
+    """
+
+    def __init__(
+        self,
+        player_client: PlayerClient,
+        world: World,
+        verbose_name: str,
+    ) -> None:
+        self._verbose_name: Final[str] = verbose_name
+        self._player_client: Final[PlayerClient] = player_client
+        self._world: Final[World] = world
+
+        # 验证玩家信息
+        logger.info(
+            f"TCGGame init player: {self.player_client.name}: {self.player_client.actor}"
+        )
+        assert self.player_client.name != "", "玩家名字不能为空"
+        assert self.player_client.actor != "", "玩家角色不能为空"
+
+    ###############################################################################################################################################
+    @property
+    def player_client(self) -> PlayerClient:
+        return self._player_client
+
+    ###############################################################################################################################################
+    @property
+    def world(self) -> World:
+        return self._world
+
+    ###############################################################################################################################################
+    @property
+    def current_dungeon(self) -> Dungeon:
+        return self.world.dungeon
+
+    ###############################################################################################################################################
+    @property
+    def current_engagement(self) -> Engagement:
+        return self.current_dungeon.engagement
+
+    ###############################################################################################################################################
+    @property
+    def verbose_dir(self) -> Path:
+        # 依赖 BaseGame 提供的 name 属性
+        dir = LOGS_DIR / f"{self.player_client.name}" / f"{self._verbose_name}"
+        if not dir.exists():
+            dir.mkdir(parents=True, exist_ok=True)
+        assert dir.exists()
+        assert dir.is_dir()
+        return dir
+
+
+# ################################################################################################################################################
+class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext):
 
     def __init__(
         self,
@@ -68,12 +126,10 @@ class TCGGame(BaseGame, RPGEntityManager):
         world: World,
     ) -> None:
 
-        # 必须按着此顺序实现父
+        # 必须按着此顺序实现父类
         BaseGame.__init__(self, name)  # 需要传递 name
         RPGEntityManager.__init__(self)  # 继承 Context, 需要调用其 __init__
-
-        # 世界运行时
-        self._world: Final[World] = world
+        RPGWorldContext.__init__(self, player_client, world, name)  # 数据访问器初始化
 
         # 常规home 的流程
         self._npc_home_pipeline: Final[TCGGameProcessPipeline] = (
@@ -119,21 +175,8 @@ class TCGGame(BaseGame, RPGEntityManager):
             self._werewolf_game_vote_pipeline,
         ]
 
-        # 玩家
-        self._player_client: Final[PlayerClient] = player_client
-        logger.info(
-            f"TCGGame init player: {self._player_client.name}: {self._player_client.actor}"
-        )
-        assert self._player_client.name != "", "玩家名字不能为空"
-        assert self._player_client.actor != "", "玩家角色不能为空"
-
         # TODO, 游戏时间标记, 目前就狼人杀用。
         self._werewolf_game_turn_counter: int = 0
-
-    ###############################################################################################################################################
-    @property
-    def player_client(self) -> PlayerClient:
-        return self._player_client
 
     ###############################################################################################################################################
     @override
@@ -143,17 +186,6 @@ class TCGGame(BaseGame, RPGEntityManager):
             logger.debug(f"TCGGame destroy entity: {entity.name} in short term memory")
             self.world.agents_chat_history.pop(entity.name, None)
         return super().destroy_entity(entity)
-
-    ###############################################################################################################################################
-    @property
-    def verbose_dir(self) -> Path:
-
-        dir = LOGS_DIR / f"{self.player_client.name}" / f"{self.name}"
-        if not dir.exists():
-            dir.mkdir(parents=True, exist_ok=True)
-        assert dir.exists()
-        assert dir.is_dir()
-        return dir
 
     ###############################################################################################################################################
     @property
@@ -174,22 +206,6 @@ class TCGGame(BaseGame, RPGEntityManager):
             return False
 
         return self.is_actor_in_dungeon(player_entity)
-
-    ###############################################################################################################################################
-    @property
-    def world(self) -> World:
-        return self._world
-
-    ###############################################################################################################################################
-    @property
-    def current_dungeon(self) -> Dungeon:
-        # assert isinstance(self.world.dungeon, Dungeon)
-        return self.world.dungeon
-
-    ###############################################################################################################################################
-    @property
-    def current_engagement(self) -> Engagement:
-        return self.current_dungeon.engagement
 
     ###############################################################################################################################################
     @property

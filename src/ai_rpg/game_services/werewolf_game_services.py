@@ -230,7 +230,7 @@ async def get_werewolf_actors_details(
         # 返回!
         return WerewolfGameActorDetailsResponse(
             actor_entities_serialization=entities_serialization,
-            agent_short_term_memories=[],  # 太长了，先注释掉
+            # agent_short_term_memories=[],  # 太长了，先注释掉
         )
     except Exception as e:
         logger.error(f"get_actors_details: {user_name} error: {e}")

@@ -36,4 +36,4 @@ class WerewolfGameStateResponse(BaseModel):
 @final
 class WerewolfGameActorDetailsResponse(BaseModel):
     actor_entities_serialization: List[EntitySerialization]
-    agent_short_term_memories: List[AgentChatHistory]
+    # agent_short_term_memories: List[AgentChatHistory]

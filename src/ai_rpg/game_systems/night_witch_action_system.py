@@ -14,8 +14,8 @@ from ..models import (
     WitchPoisonAction,
     WitchCureAction,
     NightActionReadyComponent,
-    MindVoiceAction,
     NightKillTargetComponent,
+    MindVoiceEvent,
 )
 from ..utils.md_format import format_list_as_markdown_list
 from ..chat_services.client import ChatClient
@@ -162,8 +162,14 @@ class NightWitchActionSystem(ReactiveProcessor):
 
             # 如果有内心独白，则需要添加行动
             if response.mind_voice != "":
-                witch_entity.replace(
-                    MindVoiceAction, witch_entity.name, response.mind_voice
+
+                self._game.notify_entities(
+                    set({witch_entity}),
+                    MindVoiceEvent(
+                        message=f"{witch_entity.name} : {response.mind_voice}",
+                        actor=witch_entity.name,
+                        content=response.mind_voice,
+                    ),
                 )
 
             # 是否救人？
@@ -210,11 +216,13 @@ class NightWitchActionSystem(ReactiveProcessor):
             # 最终什么都不做？
             if response.cure_target == "" and response.poison_target == "":
 
-                # 什么都不做，就是添加上下文即可。
-                witch_entity.replace(
-                    MindVoiceAction,
-                    witch_entity.name,
-                    "决定本轮不使用任何道具，跳过女巫行动。",
+                self._game.notify_entities(
+                    set({witch_entity}),
+                    MindVoiceEvent(
+                        message=f"{witch_entity.name} : {response.mind_voice}",
+                        actor=witch_entity.name,
+                        content=response.mind_voice,
+                    ),
                 )
 
         except Exception as e:

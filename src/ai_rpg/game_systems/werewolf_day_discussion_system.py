@@ -12,8 +12,7 @@ from ..models import (
     DeathComponent,
     DayDiscussedComponent,
     DiscussionAction,
-    MindVoiceAction,
-    MindVoiceAction,
+    MindVoiceEvent,
 )
 import random
 from ..chat_services.client import ChatClient
@@ -131,8 +130,14 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
             )
 
             if response.mind_voice != "":
-                selected_entity.replace(
-                    MindVoiceAction, selected_entity.name, response.mind_voice
+
+                self._game.notify_entities(
+                    set({selected_entity}),
+                    MindVoiceEvent(
+                        message=f"{selected_entity.name} : {response.mind_voice}",
+                        actor=selected_entity.name,
+                        content=response.mind_voice,
+                    ),
                 )
 
             if response.discussion != "":

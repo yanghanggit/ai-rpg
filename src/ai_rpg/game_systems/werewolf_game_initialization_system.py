@@ -13,7 +13,7 @@ from ..models import (
     AppearanceComponent,
     EnvironmentComponent,
     DiscussionAction,
-    MindVoiceAction,
+    MindVoiceEvent,
 )
 from ..utils.md_format import format_dict_as_markdown_list
 from ..chat_services.client import ChatClient
@@ -111,9 +111,6 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
                 appearance_comp.appearance
             )
 
-        # logger.info(
-        #     f"stage_actor_appearances_mapping = {stage_actor_appearances_mapping}"
-        # )
         return stage_actor_appearances_mapping
 
     ###############################################################################################################################################
@@ -238,7 +235,15 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
             )
 
             if response.mind_voice != "":
-                entity.replace(MindVoiceAction, entity.name, response.mind_voice)
+
+                self._game.notify_entities(
+                    set({entity}),
+                    MindVoiceEvent(
+                        message=f"{entity.name} : {response.mind_voice}",
+                        actor=entity.name,
+                        content=response.mind_voice,
+                    ),
+                )
 
             if response.discussion != "":
                 entity.replace(DiscussionAction, entity.name, response.discussion)

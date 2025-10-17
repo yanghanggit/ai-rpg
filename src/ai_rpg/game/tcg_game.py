@@ -10,7 +10,7 @@ from .config import LOGS_DIR
 from .world_data_service import persist_world_data, debug_verbose_world_data
 from ..entitas import Entity
 from ..game.base_game import BaseGame
-from .rpg_game_context import RPGGameContext
+from .rpg_entity_manager import RPGEntityManager
 from ..game.tcg_game_process_pipeline import (
     TCGGameProcessPipeline,
     create_npc_home_pipline,
@@ -59,7 +59,7 @@ from .player_client import PlayerClient
 
 
 # ################################################################################################################################################
-class TCGGame(BaseGame, RPGGameContext):
+class TCGGame(BaseGame, RPGEntityManager):
 
     def __init__(
         self,
@@ -70,7 +70,7 @@ class TCGGame(BaseGame, RPGGameContext):
 
         # 必须按着此顺序实现父
         BaseGame.__init__(self, name)  # 需要传递 name
-        RPGGameContext.__init__(self)  # 继承 Context, 需要调用其 __init__
+        RPGEntityManager.__init__(self)  # 继承 Context, 需要调用其 __init__
 
         # 世界运行时
         self._world: Final[World] = world
@@ -183,8 +183,8 @@ class TCGGame(BaseGame, RPGGameContext):
     ###############################################################################################################################################
     @property
     def current_dungeon(self) -> Dungeon:
-        assert isinstance(self._world.dungeon, Dungeon)
-        return self._world.dungeon
+        # assert isinstance(self.world.dungeon, Dungeon)
+        return self.world.dungeon
 
     ###############################################################################################################################################
     @property
@@ -276,9 +276,9 @@ class TCGGame(BaseGame, RPGGameContext):
         assert len(self._entities) == 0, "游戏中有实体，不能恢复游戏"
         self.deserialize_entities(self.world.entities_serialization)
 
-        player_entity = self.get_player_entity()
-        assert player_entity is not None
-        assert player_entity.get(PlayerComponent).player_name == self.player_client.name
+        # player_entity = self.get_player_entity()
+        # assert player_entity is not None
+        # assert player_entity.get(PlayerComponent).player_name == self.player_client.name
 
         return self
 

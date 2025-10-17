@@ -70,7 +70,7 @@ def _all_heros_return_home(tcg_game: TCGGame) -> None:
     tcg_game.stage_transition(heros_entities, return_home_stage)
 
     # 清空地下城的实体!
-    tcg_game.destroy_dungeon_entities(tcg_game._world.dungeon)
+    tcg_game.destroy_dungeon_entities(tcg_game.world.dungeon)
 
     # 设置空的地下城
     tcg_game._world.dungeon = Dungeon(name="")

@@ -20,6 +20,7 @@ from .campaign_setting import (
     WEREWOLF_CAMPAIGN_SETTING,
     WEREWOLF_GLOBAL_GAME_MECHANICS,
 )
+from .excel_data_manager import get_excel_data_manager
 
 
 #######################################################################################################################
@@ -49,57 +50,31 @@ PUB_KICK_OFF_MESSAGE: Final[str] = (
 
 
 def generate_random_appearance() -> str:
-    """
-    随机生成角色的外观描述
+    """从Excel读取mask、body_type、gender并随机组合"""
+    try:
+        manager = get_excel_data_manager()
+        appearance_data_list = manager.get_all_werewolf_appearance_data()
 
-    从面具、身材、性别三个类别中各随机抽取一个特征，组合成完整的外观描述
+        if not appearance_data_list:
+            return "戴着默认面具，默认身材的默认性别。"
 
-    Returns:
-        str: 角色的外观描述字符串
-    """
-    # 面具类别
-    masks = [
-        "银白与赤红交织的白羊面具，眉处突出两根弯曲的公羊角。",
-        "深棕与铜金配色的金牛面具，厚重的面具两侧有短而粗的牛角。",
-        "一半冷银一半暖金的双子面具，面具中央以细线分割成两张对称的脸。",
-        "海蓝与银白的贝壳状的巨蟹面具，面具两侧伸出类似蟹钳的装饰。",
-        "金色的狮子面具，外缘环绕着仿佛火焰的鬃毛。",
-        "纯白的线条简洁优雅的处女面具，额头处雕刻麦穗与花瓣。",
-        "蓝金色对称的天秤面具，额头中央悬浮着一座小型天平。",
-        "金色的天蝎面具，上面有一只立体的蝎子盘踞在额头上，尾针向上弯起。",
-        "深蓝与银灰的射手面具，右侧延伸出弓箭造型的纹饰。",
-        "乌黑与岩灰的摩羯面具，头顶有如山羊般的卷角。",
-        "银蓝半透明的水瓶面具，形似流水凝结。",
-        "梦幻的海蓝与紫粉渐变的双鱼面具，面具左右两侧各有一条鱼围绕着眼眶。",
-    ]
+        # 提取各类别的不重复值
+        masks = list(set(data.mask for data in appearance_data_list if data.mask))
+        body_types = list(set(data.body_type for data in appearance_data_list if data.body_type))
+        genders = list(set(data.gender for data in appearance_data_list if data.gender))
 
-    # 身材类别
-    body_types = [
-        "身材高挑",
-        "身材矮小",
-        "身材魁梧",
-        "身材纤细",
-        "身材匀称",
-        "身材瘦弱",
-        "身材健壮",
-        "身材圆润",
-    ]
+        # 随机选择并组合（确保列表不为空）
+        mask = random.choice(masks) if masks else "默认面具"
+        body_type = random.choice(body_types) if body_types else "默认身材"
+        gender = random.choice(genders) if genders else "默认性别"
 
-    # 性别类别
-    genders = [
-        "男性",
-        "女性",
-    ]
+        return f"一位{gender}戴着{mask}看上去{body_type}。"
 
-    # 从每个类别中随机抽取一个
-    mask = random.choice(masks)
-    body_type = random.choice(body_types)
-    gender = random.choice(genders)
-
-    # 组合成完整的外观描述
-    appearance = f"戴着{mask}{body_type}的{gender}。"
-
-    return appearance
+    except Exception as e:
+        # 记录异常信息以便调试
+        from loguru import logger
+        logger.error(f"生成随机外观时出错: {e}")
+        return "戴着默认面具，默认身材的默认性别。"
 
 
 def create_actor_moderator() -> Actor:

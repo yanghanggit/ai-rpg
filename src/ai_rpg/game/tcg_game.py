@@ -117,7 +117,38 @@ class RPGWorldContext:
 
 
 # ################################################################################################################################################
-class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext):
+class RPGGamePipelineManager:
+    """
+    RPG游戏流程管道管理器
+
+    负责管理和协调所有游戏流程管道的生命周期
+    """
+
+    def __init__(self) -> None:
+        self._all_pipelines: List[TCGGameProcessPipeline] = []
+
+    ###############################################################################################################################################
+    def register_pipeline(self, pipeline: TCGGameProcessPipeline) -> None:
+        """注册一个游戏流程管道"""
+        self._all_pipelines.append(pipeline)
+
+    ###############################################################################################################################################
+    async def initialize_all_pipelines(self) -> None:
+        """初始化所有已注册的管道"""
+        for processor in self._all_pipelines:
+            processor.activate_reactive_processors()
+            await processor.initialize()
+
+    ###############################################################################################################################################
+    def shutdown_all_pipelines(self) -> None:
+        """关闭所有管道并清空管道列表"""
+        for processor in self._all_pipelines:
+            processor.shutdown()
+        self._all_pipelines.clear()
+
+
+# ################################################################################################################################################
+class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext, RPGGamePipelineManager):
 
     def __init__(
         self,
@@ -130,6 +161,7 @@ class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext):
         BaseGame.__init__(self, name)  # 需要传递 name
         RPGEntityManager.__init__(self)  # 继承 Context, 需要调用其 __init__
         RPGWorldContext.__init__(self, player_client, world, name)  # 数据访问器初始化
+        RPGGamePipelineManager.__init__(self)  # 管道管理器初始化
 
         # 常规home 的流程
         self._npc_home_pipeline: Final[TCGGameProcessPipeline] = (
@@ -165,15 +197,14 @@ class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext):
             create_werewolf_game_vote_pipline(self)
         )
 
-        self._all_pipelines: List[TCGGameProcessPipeline] = [
-            self._npc_home_pipeline,
-            self._player_home_pipeline,
-            self._dungeon_combat_pipeline,
-            self._werewolf_game_kickoff_pipeline,
-            self._werewolf_game_night_pipeline,
-            self._werewolf_game_day_pipeline,
-            self._werewolf_game_vote_pipeline,
-        ]
+        # 注册所有管道到管道管理器
+        self.register_pipeline(self._npc_home_pipeline)
+        self.register_pipeline(self._player_home_pipeline)
+        self.register_pipeline(self._dungeon_combat_pipeline)
+        self.register_pipeline(self._werewolf_game_kickoff_pipeline)
+        self.register_pipeline(self._werewolf_game_night_pipeline)
+        self.register_pipeline(self._werewolf_game_day_pipeline)
+        self.register_pipeline(self._werewolf_game_vote_pipeline)
 
         # TODO, 游戏时间标记, 目前就狼人杀用。
         self._werewolf_game_turn_counter: int = 0
@@ -245,22 +276,15 @@ class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext):
     @override
     def exit(self) -> None:
         # 关闭所有管道
-        for processor in self._all_pipelines:
-            processor.shutdown()
-            # logger.debug(f"Shutdown pipeline: {processor._name}")
-
-        # 清空
-        self._all_pipelines.clear()
-        # logger.warning(f"{self.name}, exit!!!!!!!!!!!!!!!!!!!!")
+        self.shutdown_all_pipelines()
+        # logger.warning(f"{self.name}, exit!!!!!!!!!!!!!!!!!!!!)")
 
     ###############################################################################################################################################
     @override
     async def initialize(self) -> None:
         # 初始化所有管道
-        for processor in self._all_pipelines:
-            processor.activate_reactive_processors()
-            await processor.initialize()
-            # logger.debug(f"Initialized pipeline: {processor._name}")
+        await self.initialize_all_pipelines()
+        # logger.debug(f"Initialized all pipelines")
 
     ###############################################################################################################################################
     def new_game(self) -> "TCGGame":
@@ -291,11 +315,6 @@ class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext):
         ), "游戏中没有实体，不能恢复游戏"
         assert len(self._entities) == 0, "游戏中有实体，不能恢复游戏"
         self.deserialize_entities(self.world.entities_serialization)
-
-        # player_entity = self.get_player_entity()
-        # assert player_entity is not None
-        # assert player_entity.get(PlayerComponent).player_name == self.player_client.name
-
         return self
 
     ###############################################################################################################################################
@@ -448,7 +467,6 @@ class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext):
                     logger.debug(
                         f"应该不是狼人杀的角色: {actor_model.character_sheet.name}"
                     )
-                    # assert False, f"未知的狼人杀角色: {actor_model.character_sheet.name}"
 
             # 必要组件：背包组件, 必须copy一份, 不要进行直接引用，而且在此处生成uuid
             copy_items = copy.deepcopy(actor_model.inventory.items)

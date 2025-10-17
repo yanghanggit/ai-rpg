@@ -29,7 +29,8 @@ class WerewolfGamePlayResponse(BaseModel):
 
 @final
 class WerewolfGameStateResponse(BaseModel):
-    message: str
+    mapping: Dict[str, List[str]]
+    game_time: int
 
 
 @final

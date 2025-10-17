@@ -125,10 +125,43 @@ async def get_werewolf_game_state(
     game_name: str,
 ) -> WerewolfGameStateResponse:
     logger.info(f"Getting werewolf game state for user: {user_name}, game: {game_name}")
-    # 在这里添加获取游戏状态的逻辑
-    return WerewolfGameStateResponse(
-        message="Werewolf game state retrieved successfully."
-    )
+
+    try:
+
+        # 是否有房间？！！
+        if not game_server.has_room(user_name):
+            # logger.error(f"view_home: {user_name} has no room")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="没有房间",
+            )
+
+        # 是否有游戏？！！
+        current_room = game_server.get_room(user_name)
+        assert current_room is not None
+        if current_room._game is None:
+            # logger.error(f"view_home: {user_name} has no game")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="没有游戏",
+            )
+
+        # 获取当前地图
+        mapping_data = current_room._game.get_stage_actor_distribution_mapping()
+        logger.info(
+            f"view_home: {user_name} mapping_data: {mapping_data}, time={current_room._game._werewolf_game_turn_counter}"
+        )
+
+        # 返回。
+        return WerewolfGameStateResponse(
+            mapping=mapping_data,
+            game_time=current_room._game._werewolf_game_turn_counter,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"服务器错误: {str(e)}",
+        )
 
 
 ###################################################################################################################################################################

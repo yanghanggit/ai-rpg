@@ -1,6 +1,7 @@
 from typing import Dict, List, final
 from pydantic import BaseModel
 from .client_message import ClientMessage
+from ..models import EntitySerialization, AgentChatHistory
 
 
 @final
@@ -29,3 +30,9 @@ class WerewolfGamePlayResponse(BaseModel):
 @final
 class WerewolfGameStateResponse(BaseModel):
     message: str
+
+
+@final
+class WerewolfGameActorDetailsResponse(BaseModel):
+    actor_entities_serialization: List[EntitySerialization]
+    agent_short_term_memories: List[AgentChatHistory]

@@ -22,6 +22,7 @@ class SDCharacterSheetName(StrEnum):
     SEER = "sd.seer"
     WITCH = "sd.witch"
     VILLAGER = "sd.villager"
+    GUARD = "sd.guard"
 
 
 ###############################################################################################################################################

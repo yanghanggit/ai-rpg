@@ -20,6 +20,7 @@ from .campaign_setting import (
     WEREWOLF_CAMPAIGN_SETTING,
     WEREWOLF_GLOBAL_GAME_MECHANICS,
 )
+from .excel_data_manager import get_excel_data_manager
 
 
 #######################################################################################################################
@@ -49,57 +50,31 @@ PUB_KICK_OFF_MESSAGE: Final[str] = (
 
 
 def generate_random_appearance() -> str:
-    """
-    随机生成角色的外观描述
+    """从Excel读取mask、body_type、gender并随机组合"""
+    try:
+        manager = get_excel_data_manager()
+        appearance_data_list = manager.get_all_werewolf_appearance_data()
 
-    从面具、身材、性别三个类别中各随机抽取一个特征，组合成完整的外观描述
+        if not appearance_data_list:
+            return "戴着默认面具，默认身材的默认性别。"
 
-    Returns:
-        str: 角色的外观描述字符串
-    """
-    # 面具类别
-    masks = [
-        "银白与赤红交织的白羊面具，眉处突出两根弯曲的公羊角。",
-        "深棕与铜金配色的金牛面具，厚重的面具两侧有短而粗的牛角。",
-        "一半冷银一半暖金的双子面具，面具中央以细线分割成两张对称的脸。",
-        "海蓝与银白的贝壳状的巨蟹面具，面具两侧伸出类似蟹钳的装饰。",
-        "金色的狮子面具，外缘环绕着仿佛火焰的鬃毛。",
-        "纯白的线条简洁优雅的处女面具，额头处雕刻麦穗与花瓣。",
-        "蓝金色对称的天秤面具，额头中央悬浮着一座小型天平。",
-        "金色的天蝎面具，上面有一只立体的蝎子盘踞在额头上，尾针向上弯起。",
-        "深蓝与银灰的射手面具，右侧延伸出弓箭造型的纹饰。",
-        "乌黑与岩灰的摩羯面具，头顶有如山羊般的卷角。",
-        "银蓝半透明的水瓶面具，形似流水凝结。",
-        "梦幻的海蓝与紫粉渐变的双鱼面具，面具左右两侧各有一条鱼围绕着眼眶。",
-    ]
+        # 提取各类别的不重复值
+        masks = list(set(data.mask for data in appearance_data_list if data.mask))
+        body_types = list(set(data.body_type for data in appearance_data_list if data.body_type))
+        genders = list(set(data.gender for data in appearance_data_list if data.gender))
 
-    # 身材类别
-    body_types = [
-        "身材高挑",
-        "身材矮小",
-        "身材魁梧",
-        "身材纤细",
-        "身材匀称",
-        "身材瘦弱",
-        "身材健壮",
-        "身材圆润",
-    ]
+        # 随机选择并组合（确保列表不为空）
+        mask = random.choice(masks) if masks else "默认面具"
+        body_type = random.choice(body_types) if body_types else "默认身材"
+        gender = random.choice(genders) if genders else "默认性别"
 
-    # 性别类别
-    genders = [
-        "男性",
-        "女性",
-    ]
+        return f"一位{gender}戴着{mask}看上去{body_type}。"
 
-    # 从每个类别中随机抽取一个
-    mask = random.choice(masks)
-    body_type = random.choice(body_types)
-    gender = random.choice(genders)
-
-    # 组合成完整的外观描述
-    appearance = f"戴着{mask}{body_type}的{gender}。"
-
-    return appearance
+    except Exception as e:
+        # 记录异常信息以便调试
+        from loguru import logger
+        logger.error(f"生成随机外观时出错: {e}")
+        return "戴着默认面具，默认身材的默认性别。"
 
 
 def create_actor_moderator() -> Actor:
@@ -148,6 +123,7 @@ def create_actor_werewolf(name: str) -> Actor:
 夜晚与其他狼人商议，选择要杀害的村民。
 【行为特点】
 善于伪装和欺骗，能够巧妙地转移怀疑，挑拨村民之间的关系。
+白天讨论时一定会冒充预言家或者女巫来骗取村民信任。
 在投票时会暗中保护狼人同伴，引导村民投票给好人。
 保持冷静，不轻易暴露身份。""",
         appearance=generate_random_appearance(),
@@ -217,7 +193,8 @@ def create_actor_witch(name: str) -> Actor:
 需要判断何时使用珍贵的药剂才能最大化收益。
 解药的使用时机关系到关键角色的存亡。
 毒药可以在关键时刻消灭可疑的狼人。""",
-        appearance="一位看起来非常普通的村民，穿着朴素的村民服装。温婉的女性，笑容和善亲切。",
+        appearance= generate_random_appearance(),
+        # appearance="一位看起来非常普通的村民，穿着朴素的村民服装。温婉的女性，笑容和善亲切。",
         global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )
 
@@ -256,6 +233,39 @@ def create_actor_villager(name: str) -> Actor:
         global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )
 
+
+def create_actor_guard(name: str) -> Actor:
+    """
+    创建一个守卫角色实例
+
+    Returns:
+        Actor: 守卫角色实例
+    """
+    return create_actor(
+        name=f"角色.{name}",
+        character_sheet_name=SDCharacterSheetName.GUARD,
+        kick_off_message=PUB_KICK_OFF_MESSAGE,
+        rpg_character_profile=RPGCharacterProfile(),
+        type=ActorType.HERO,
+        campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
+        actor_profile="""你是月影村的守卫，拥有保护他人的能力。
+【特殊能力】
+每晚可以选择保护一名玩家，防止其被狼人杀害。
+你无法保护自己。
+你不能连续两晚保护同一名玩家。
+【行为策略】
+合理选择保护目标，优先保护有特殊能力的好人角色。
+需要谨慎行事，避免暴露自己的身份。
+预判狼人可能的攻击目标，进行有效保护。""",
+        appearance= generate_random_appearance(),
+        # appearance="一位典型的普通村民，穿着朴素的村民服装。"
+        # + (
+        #     "勤劳的女性，双手有劳作的痕迹"
+        #     if hash(name) % 2 == 0
+        #     else "憨厚的男性，神情朴实诚恳"
+        # ),
+        global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
+    )
 
 #######################################################################################################################
 # World Creation Function

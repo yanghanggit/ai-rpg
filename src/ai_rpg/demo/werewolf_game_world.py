@@ -60,7 +60,9 @@ def generate_random_appearance() -> str:
 
         # 提取各类别的不重复值
         masks = list(set(data.mask for data in appearance_data_list if data.mask))
-        body_types = list(set(data.body_type for data in appearance_data_list if data.body_type))
+        body_types = list(
+            set(data.body_type for data in appearance_data_list if data.body_type)
+        )
         genders = list(set(data.gender for data in appearance_data_list if data.gender))
 
         # 随机选择并组合（确保列表不为空）
@@ -73,6 +75,7 @@ def generate_random_appearance() -> str:
     except Exception as e:
         # 记录异常信息以便调试
         from loguru import logger
+
         logger.error(f"生成随机外观时出错: {e}")
         return "戴着默认面具，默认身材的默认性别。"
 
@@ -193,7 +196,7 @@ def create_actor_witch(name: str) -> Actor:
 需要判断何时使用珍贵的药剂才能最大化收益。
 解药的使用时机关系到关键角色的存亡。
 毒药可以在关键时刻消灭可疑的狼人。""",
-        appearance= generate_random_appearance(),
+        appearance=generate_random_appearance(),
         # appearance="一位看起来非常普通的村民，穿着朴素的村民服装。温婉的女性，笑容和善亲切。",
         global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )
@@ -257,7 +260,7 @@ def create_actor_guard(name: str) -> Actor:
 合理选择保护目标，优先保护有特殊能力的好人角色。
 需要谨慎行事，避免暴露自己的身份。
 预判狼人可能的攻击目标，进行有效保护。""",
-        appearance= generate_random_appearance(),
+        appearance=generate_random_appearance(),
         # appearance="一位典型的普通村民，穿着朴素的村民服装。"
         # + (
         #     "勤劳的女性，双手有劳作的痕迹"
@@ -266,6 +269,7 @@ def create_actor_guard(name: str) -> Actor:
         # ),
         global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )
+
 
 #######################################################################################################################
 # World Creation Function

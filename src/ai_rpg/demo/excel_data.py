@@ -50,4 +50,5 @@ class WerewolfAppearanceExcelData(BaseModel):
     body_type: str = Field(default="身材高挑", description="身材")
     gender: str = Field(default="男性", description="性别")
 
+
 ######

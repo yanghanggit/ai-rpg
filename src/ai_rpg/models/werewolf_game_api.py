@@ -1,7 +1,7 @@
 from typing import Dict, List, final
 from pydantic import BaseModel
 from .client_message import ClientMessage
-from ..models import EntitySerialization, AgentChatHistory
+from ..models import EntitySerialization
 
 
 @final

@@ -22,171 +22,14 @@ from ai_rpg.demo.werewolf_game_world import (
     create_demo_sd_game_boot,
 )
 
-from ai_rpg.entitas import Matcher
 from ai_rpg.models import (
     World,
-    WerewolfComponent,
-    SeerComponent,
-    WitchComponent,
-    VillagerComponent,
-    NightKillTargetComponent,
-    DeathComponent,
-    DayDiscussedComponent,
-    NightActionReadyComponent,
-    DayVotedComponent,
 )
 from ai_rpg.game_systems.werewolf_day_vote_system import WerewolfDayVoteSystem
-
-
-###############################################################################################################################################
-def _announce_night_phase(tcg_game: TCGGame) -> None:
-    """
-    宣布夜晚阶段开始,并进行夜晚阶段的初始化工作:
-    1. 向所有存活玩家宣布进入夜晚
-    2. 清理上一个白天阶段的标记(讨论和投票组件)
-    """
-
-    # 验证当前回合计数器是否处于夜晚阶段
-    # 回合计数器规则: 0=游戏开始, 1=第一夜, 2=第一白天, 3=第二夜, 4=第二白天...
-    # 夜晚阶段的特征: 计数器为奇数(1,3,5...)
-    assert (
-        tcg_game._werewolf_game_turn_counter % 2 == 1
-        or tcg_game._werewolf_game_turn_counter > 0
-    ), "当前时间标记不是夜晚"
-
-    logger.warning(f"进入夜晚,时间标记 = {tcg_game._werewolf_game_turn_counter}")
-
-    # 获取所有角色玩家(狼人、预言家、女巫、村民)
-    all_role_players = tcg_game.get_group(
-        Matcher(
-            any_of=[
-                WerewolfComponent,
-                SeerComponent,
-                WitchComponent,
-                VillagerComponent,
-            ],
-        )
-    ).entities.copy()
-
-    # 计算当前是第几个夜晚(从1开始计数)
-    current_night_number = (tcg_game._werewolf_game_turn_counter + 1) // 2
-
-    # 向所有玩家发送夜晚开始的消息
-    for player in all_role_players:
-        tcg_game.append_human_message(
-            player, f"# 注意!天黑请闭眼!这是第 {current_night_number} 个夜晚"
-        )
-
-    # 清理白天阶段的标记组件
-    # 获取所有带有白天讨论或投票标记的玩家
-    players_with_day_markers = tcg_game.get_group(
-        Matcher(
-            any_of=[DayDiscussedComponent, DayVotedComponent, NightKillTargetComponent],
-        )
-    ).entities.copy()
-
-    # 移除这些玩家身上的白天阶段标记
-    for player in players_with_day_markers:
-
-        # 前一个白天的讨论标记，进入新的夜晚也要清理掉
-        if player.has(DayDiscussedComponent):
-            player.remove(DayDiscussedComponent)
-
-        # 前一个白天的投票标记，进入新的夜晚也要清理掉
-        if player.has(DayVotedComponent):
-            player.remove(DayVotedComponent)
-
-        # 前一天晚上的击杀标记，进入新的夜晚也要清理掉
-        if player.has(NightKillTargetComponent):
-            player.remove(NightKillTargetComponent)
-
-
-###############################################################################################################################################
-def _announce_day_phase(tcg_game: TCGGame) -> None:
-    """
-    宣布白天阶段开始,并进行白天阶段的初始化工作:
-    1. 向所有存活玩家宣布进入白天
-    2. 公布昨夜死亡的玩家信息
-    3. 处理被杀玩家的状态转换(从夜晚击杀标记转为死亡状态)
-    4. 清理夜晚阶段的计划标记
-    """
-
-    # 验证当前回合计数器是否处于白天阶段
-    # 回合计数器规则: 0=游戏开始, 1=第一夜, 2=第一白天, 3=第二夜, 4=第二白天...
-    # 白天阶段的特征: 计数器为偶数且大于0(2,4,6...)
-    assert (
-        tcg_game._werewolf_game_turn_counter % 2 == 0
-        and tcg_game._werewolf_game_turn_counter > 0
-    ), "当前时间标记不是白天"
-
-    logger.warning(f"进入白天,时间标记 = {tcg_game._werewolf_game_turn_counter}")
-
-    # 获取所有角色玩家(狼人、预言家、女巫、村民)
-    all_role_players = tcg_game.get_group(
-        Matcher(
-            any_of=[
-                WerewolfComponent,
-                SeerComponent,
-                WitchComponent,
-                VillagerComponent,
-            ],
-        )
-    ).entities.copy()
-
-    # 计算当前是第几个白天(从1开始计数)
-    current_day_number = tcg_game._werewolf_game_turn_counter // 2
-
-    # 向所有玩家发送白天开始的消息
-    for player in all_role_players:
-        tcg_game.append_human_message(
-            player, f"# 注意!天亮请睁眼!这是第 {current_day_number} 个白天"
-        )
-
-    # 获取所有在昨夜被标记为击杀的玩家
-    players_killed_last_night = tcg_game.get_group(
-        Matcher(
-            all_of=[NightKillTargetComponent],
-        )
-    ).entities.copy()
-
-    # 公布昨夜死亡信息
-    if players_killed_last_night:
-        # 格式化死亡玩家列表信息
-        death_announcement = ", ".join(
-            f"{player.name}(被杀害)" for player in players_killed_last_night
-        )
-        logger.info(f"在夜晚,以下玩家被杀害: {death_announcement}")
-
-        # 向所有玩家广播死亡信息
-        for player in all_role_players:
-            tcg_game.append_human_message(
-                player, f"# 昨晚被杀害的玩家有: {death_announcement}"
-            )
-    else:
-        # 平安夜,无人死亡
-        logger.info("在夜晚,没有玩家被杀害")
-        for player in all_role_players:
-            tcg_game.append_human_message(player, f"# 昨晚没有玩家被杀害,平安夜")
-
-    # 处理被杀玩家的状态转换
-    for killed_player in players_killed_last_night:
-        # 添加正式的死亡状态标记
-        logger.info(
-            f"玩家 {killed_player.name} 在第 {current_day_number} 个白天 被标记为死亡状态, 昨夜因为某种原因被杀害"
-        )
-        killed_player.replace(DeathComponent, killed_player.name)
-
-    # 清理夜晚阶段的计划标记组件
-    # 获取所有带有夜晚计划标记的实体
-    entities_with_night_plans = tcg_game.get_group(
-        Matcher(
-            all_of=[NightActionReadyComponent],
-        )
-    ).entities.copy()
-
-    # 移除所有夜晚计划标记,为新的一天做准备
-    for entity_with_plan in entities_with_night_plans:
-        entity_with_plan.remove(NightActionReadyComponent)
+from ai_rpg.game_services.werewolf_game_services import (
+    announce_night_phase,
+    announce_day_phase,
+)
 
 
 ###############################################################################################################################################
@@ -311,11 +154,11 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
         if terminal_game._werewolf_game_turn_counter % 2 == 1:
 
             # 进入下一个夜晚
-            _announce_night_phase(terminal_game)
+            announce_night_phase(terminal_game)
 
         else:
             # 进入下一个白天
-            _announce_day_phase(terminal_game)
+            announce_day_phase(terminal_game)
 
         # 返回！
         return

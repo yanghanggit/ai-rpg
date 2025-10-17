@@ -11,6 +11,16 @@ from ..models import (
     World,
     WerewolfGameActorDetailsResponse,
     EntitySerialization,
+    World,
+    WerewolfComponent,
+    SeerComponent,
+    WitchComponent,
+    VillagerComponent,
+    NightKillTargetComponent,
+    DeathComponent,
+    DayDiscussedComponent,
+    NightActionReadyComponent,
+    DayVotedComponent,
 )
 from ..demo.werewolf_game_world import create_demo_sd_game_boot
 from ..game_services.game_server import GameServerInstance
@@ -22,10 +32,161 @@ from ..settings import (
 from ..chat_services import ChatClient
 from ..game.config import GLOBAL_SD_GAME_NAME
 from typing import List, Set
-from ..entitas import Entity
+from ..entitas import Entity, Matcher
 
 ###################################################################################################################################################################
 werewolf_game_api_router = APIRouter()
+
+
+###############################################################################################################################################
+def announce_night_phase(tcg_game: TCGGame) -> None:
+    """
+    宣布夜晚阶段开始,并进行夜晚阶段的初始化工作:
+    1. 向所有存活玩家宣布进入夜晚
+    2. 清理上一个白天阶段的标记(讨论和投票组件)
+    """
+
+    # 验证当前回合计数器是否处于夜晚阶段
+    # 回合计数器规则: 0=游戏开始, 1=第一夜, 2=第一白天, 3=第二夜, 4=第二白天...
+    # 夜晚阶段的特征: 计数器为奇数(1,3,5...)
+    assert (
+        tcg_game._werewolf_game_turn_counter % 2 == 1
+        or tcg_game._werewolf_game_turn_counter > 0
+    ), "当前时间标记不是夜晚"
+
+    logger.warning(f"进入夜晚,时间标记 = {tcg_game._werewolf_game_turn_counter}")
+
+    # 获取所有角色玩家(狼人、预言家、女巫、村民)
+    all_role_players = tcg_game.get_group(
+        Matcher(
+            any_of=[
+                WerewolfComponent,
+                SeerComponent,
+                WitchComponent,
+                VillagerComponent,
+            ],
+        )
+    ).entities.copy()
+
+    # 计算当前是第几个夜晚(从1开始计数)
+    current_night_number = (tcg_game._werewolf_game_turn_counter + 1) // 2
+
+    # 向所有玩家发送夜晚开始的消息
+    for player in all_role_players:
+        tcg_game.append_human_message(
+            player, f"# 注意!天黑请闭眼!这是第 {current_night_number} 个夜晚"
+        )
+
+    # 清理白天阶段的标记组件
+    # 获取所有带有白天讨论或投票标记的玩家
+    players_with_day_markers = tcg_game.get_group(
+        Matcher(
+            any_of=[DayDiscussedComponent, DayVotedComponent, NightKillTargetComponent],
+        )
+    ).entities.copy()
+
+    # 移除这些玩家身上的白天阶段标记
+    for player in players_with_day_markers:
+
+        # 前一个白天的讨论标记，进入新的夜晚也要清理掉
+        if player.has(DayDiscussedComponent):
+            player.remove(DayDiscussedComponent)
+
+        # 前一个白天的投票标记，进入新的夜晚也要清理掉
+        if player.has(DayVotedComponent):
+            player.remove(DayVotedComponent)
+
+        # 前一天晚上的击杀标记，进入新的夜晚也要清理掉
+        if player.has(NightKillTargetComponent):
+            player.remove(NightKillTargetComponent)
+
+
+###############################################################################################################################################
+def announce_day_phase(tcg_game: TCGGame) -> None:
+    """
+    宣布白天阶段开始,并进行白天阶段的初始化工作:
+    1. 向所有存活玩家宣布进入白天
+    2. 公布昨夜死亡的玩家信息
+    3. 处理被杀玩家的状态转换(从夜晚击杀标记转为死亡状态)
+    4. 清理夜晚阶段的计划标记
+    """
+
+    # 验证当前回合计数器是否处于白天阶段
+    # 回合计数器规则: 0=游戏开始, 1=第一夜, 2=第一白天, 3=第二夜, 4=第二白天...
+    # 白天阶段的特征: 计数器为偶数且大于0(2,4,6...)
+    assert (
+        tcg_game._werewolf_game_turn_counter % 2 == 0
+        and tcg_game._werewolf_game_turn_counter > 0
+    ), "当前时间标记不是白天"
+
+    logger.warning(f"进入白天,时间标记 = {tcg_game._werewolf_game_turn_counter}")
+
+    # 获取所有角色玩家(狼人、预言家、女巫、村民)
+    all_role_players = tcg_game.get_group(
+        Matcher(
+            any_of=[
+                WerewolfComponent,
+                SeerComponent,
+                WitchComponent,
+                VillagerComponent,
+            ],
+        )
+    ).entities.copy()
+
+    # 计算当前是第几个白天(从1开始计数)
+    current_day_number = tcg_game._werewolf_game_turn_counter // 2
+
+    # 向所有玩家发送白天开始的消息
+    for player in all_role_players:
+        tcg_game.append_human_message(
+            player, f"# 注意!天亮请睁眼!这是第 {current_day_number} 个白天"
+        )
+
+    # 获取所有在昨夜被标记为击杀的玩家
+    players_killed_last_night = tcg_game.get_group(
+        Matcher(
+            all_of=[NightKillTargetComponent],
+        )
+    ).entities.copy()
+
+    # 公布昨夜死亡信息
+    if players_killed_last_night:
+        # 格式化死亡玩家列表信息
+        death_announcement = ", ".join(
+            f"{player.name}(被杀害)" for player in players_killed_last_night
+        )
+        logger.info(f"在夜晚,以下玩家被杀害: {death_announcement}")
+
+        # 向所有玩家广播死亡信息
+        for player in all_role_players:
+            tcg_game.append_human_message(
+                player, f"# 昨晚被杀害的玩家有: {death_announcement}"
+            )
+    else:
+        # 平安夜,无人死亡
+        logger.info("在夜晚,没有玩家被杀害")
+        for player in all_role_players:
+            tcg_game.append_human_message(player, f"# 昨晚没有玩家被杀害,平安夜")
+
+    # 处理被杀玩家的状态转换
+    for killed_player in players_killed_last_night:
+        # 添加正式的死亡状态标记
+        logger.info(
+            f"玩家 {killed_player.name} 在第 {current_day_number} 个白天 被标记为死亡状态, 昨夜因为某种原因被杀害"
+        )
+        killed_player.replace(DeathComponent, killed_player.name)
+
+    # 清理夜晚阶段的计划标记组件
+    # 获取所有带有夜晚计划标记的实体
+    entities_with_night_plans = tcg_game.get_group(
+        Matcher(
+            all_of=[NightActionReadyComponent],
+        )
+    ).entities.copy()
+
+    # 移除所有夜晚计划标记,为新的一天做准备
+    for entity_with_plan in entities_with_night_plans:
+        entity_with_plan.remove(NightActionReadyComponent)
 
 
 ###################################################################################################################################################################
@@ -98,18 +259,71 @@ async def start_werewolf_game(
 ###################################################################################################################################################################
 
 
-werewolf_game_api_router.post(
-    path="/api/werewolf/gameplay/v1/", response_model=WerewolfGamePlayResponse
-)
-
-
+@werewolf_game_api_router.post(path="/api/werewolf/gameplay/v1/", response_model=WerewolfGamePlayResponse)
 async def play_werewolf_game(
     request_data: WerewolfGamePlayRequest,
     game_server: GameServerInstance,
 ) -> WerewolfGamePlayResponse:
     logger.info(f"Playing werewolf game: {request_data.model_dump_json()}")
-    # 在这里添加游戏玩法的逻辑
-    return WerewolfGamePlayResponse(client_messages=[])
+
+    try:
+
+        # 是否有房间？！！
+        if not game_server.has_room(user_name=request_data.user_name):
+            logger.error(f"{request_data.user_name} has no room, please login first.")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="没有登录，请先登录",
+            )
+
+        # 是否有游戏？！！
+        current_room = game_server.get_room(user_name=request_data.user_name)
+        assert current_room is not None
+        if current_room._game is None:
+            logger.error(f"{request_data.user_name} has no game, please login first.")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="没有游戏，请先登录",
+            )
+
+        user_input = request_data.data.get("user_input", "")
+        logger.info(f"{request_data.user_name} user_input: {user_input}")
+
+        web_game = current_room._game
+
+        if user_input == "/k" or user_input == "/kickoff":
+
+            if web_game._werewolf_game_turn_counter == 0:
+
+                logger.info("游戏开始，准备入场记阶段！！！！！！")
+
+                # 清理之前的消息
+                web_game.player_client.clear_messages()
+
+                # 初始化游戏的开场流程
+                await web_game.werewolf_game_kickoff_pipeline.process()
+
+                # 返回当前的客户端消息
+                return WerewolfGamePlayResponse(
+                    client_messages=web_game.player_client.client_messages
+                )
+
+            else:
+                logger.warning(
+                    f"当前时间标记不是0，是{web_game._werewolf_game_turn_counter}，不能执行 /kickoff 命令"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="游戏已经开始，不能重复执行 /kickoff 命令",
+                )
+
+        return WerewolfGamePlayResponse(client_messages=[])
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"home/gameplay/v1: {request_data.user_name} failed, error: {str(e)}",
+        )
 
 
 ###################################################################################################################################################################

@@ -42,7 +42,8 @@ async def get_url_config(
             "dungeon_state": base_url + "api/dungeons/v1/",
             "actor_details": base_url + "api/actors/v1/",
             "werewolf_game_start": base_url + "api/werewolf/start/v1/",
-            "werewolf_gameplay": base_url + "api/werewolf/gameplay/v1/",
+            "werewolf_gameplay": base_url
+            + "api/werewolf/gameplay/v1/",  # "/api/werewolf/gameplay/v1/"
             "werewolf_game_state": base_url + "api/werewolf/state/v1/",
             "werewolf_game_actor_details": base_url + "api/werewolf/actors/v1/",
         },

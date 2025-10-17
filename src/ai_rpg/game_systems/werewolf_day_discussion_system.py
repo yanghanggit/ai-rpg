@@ -12,7 +12,7 @@ from ..models import (
     DeathComponent,
     DayDiscussedComponent,
     DiscussionAction,
-    MindVoiceEvent,
+    MindEvent,
 )
 import random
 from ..chat_services.client import ChatClient
@@ -133,7 +133,7 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
 
                 self._game.notify_entities(
                     set({selected_entity}),
-                    MindVoiceEvent(
+                    MindEvent(
                         message=f"{selected_entity.name} : {response.mind_voice}",
                         actor=selected_entity.name,
                         content=response.mind_voice,

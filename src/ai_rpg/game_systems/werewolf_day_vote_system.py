@@ -14,7 +14,7 @@ from ..models import (
     VoteAction,
     DayVotedComponent,
     NightKillTargetComponent,
-    MindVoiceEvent,
+    MindEvent,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
@@ -128,7 +128,7 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
 
                     self._game.notify_entities(
                         set({entity2}),
-                        MindVoiceEvent(
+                        MindEvent(
                             message=f"{entity2.name} : {format_response.mind_voice}",
                             actor=entity2.name,
                             content=format_response.mind_voice,

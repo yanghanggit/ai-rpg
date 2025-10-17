@@ -12,7 +12,7 @@ from ..models import (
     SeerCheckAction,
     AppearanceComponent,
     NightActionReadyComponent,
-    MindVoiceEvent,
+    MindEvent,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
@@ -190,7 +190,7 @@ class NightSeerActionSystem(ReactiveProcessor):
 
                 self._game.notify_entities(
                     set({seer_entity}),
-                    MindVoiceEvent(
+                    MindEvent(
                         message=f"经过你的思考之后，你决定今晚要查看 {response.target_name} 的身份，理由是：{response.reasoning}",
                         actor=seer_entity.name,
                         content=f"经过你的思考之后，你决定今晚要查看 {response.target_name} 的身份，理由是：{response.reasoning}",

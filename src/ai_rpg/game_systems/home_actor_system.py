@@ -13,7 +13,7 @@ from ..models import (
     PlanAction,
     TransStageAction,
     HomeComponent,
-    MindVoiceEvent,
+    MindEvent,
 )
 from ..utils import json_format
 from ..game.tcg_game import TCGGame
@@ -157,7 +157,7 @@ class HomeActorSystem(ReactiveProcessor):
 
                 self._game.notify_entities(
                     set({entity2}),
-                    MindVoiceEvent(
+                    MindEvent(
                         message=f"{entity2.name} : {response.mind_voice_actions}",
                         actor=entity2.name,
                         content=response.mind_voice_actions,

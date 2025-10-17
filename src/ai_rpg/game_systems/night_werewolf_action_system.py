@@ -13,7 +13,7 @@ from ..models import (
     AppearanceComponent,
     NightActionReadyComponent,
     NightKillTargetComponent,
-    MindVoiceEvent,
+    MindEvent,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
@@ -183,7 +183,7 @@ class NightWerewolfActionSystem(ReactiveProcessor):
         # 自身的添加上下文。
         self._game.notify_entities(
             set({chosen_response[0]}),
-            MindVoiceEvent(
+            MindEvent(
                 message=f"经过你的思考之后，你决定今晚要击杀 {chosen_response[1].name}，理由是：{chosen_response[2]}",
                 actor=chosen_response[0].name,
                 content=f"经过你的思考之后，你决定今晚要击杀 {chosen_response[1].name}，理由是：{chosen_response[2]}",
@@ -198,7 +198,7 @@ class NightWerewolfActionSystem(ReactiveProcessor):
 
             self._game.notify_entities(
                 set({other_response[0]}),
-                MindVoiceEvent(
+                MindEvent(
                     message=f"经过你的思考之后，你决定今晚要击杀 {other_response[1].name}，理由是：{other_response[2]} 经过团队商议，最终采纳了 {chosen_response[0].name} 的建议，决定击杀 {chosen_response[1].name}。",
                     actor=other_response[0].name,
                     content=f"经过你的思考之后，你决定今晚要击杀 {other_response[1].name}，理由是：{other_response[2]} 经过团队商议，最终采纳了 {chosen_response[0].name} 的建议，决定击杀 {chosen_response[1].name}。",

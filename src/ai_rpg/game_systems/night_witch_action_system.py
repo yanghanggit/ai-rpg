@@ -15,7 +15,7 @@ from ..models import (
     WitchCureAction,
     NightActionReadyComponent,
     NightKillTargetComponent,
-    MindVoiceEvent,
+    MindEvent,
 )
 from ..utils.md_format import format_list_as_markdown_list
 from ..chat_services.client import ChatClient
@@ -165,7 +165,7 @@ class NightWitchActionSystem(ReactiveProcessor):
 
                 self._game.notify_entities(
                     set({witch_entity}),
-                    MindVoiceEvent(
+                    MindEvent(
                         message=f"{witch_entity.name} : {response.mind_voice}",
                         actor=witch_entity.name,
                         content=response.mind_voice,
@@ -218,7 +218,7 @@ class NightWitchActionSystem(ReactiveProcessor):
 
                 self._game.notify_entities(
                     set({witch_entity}),
-                    MindVoiceEvent(
+                    MindEvent(
                         message=f"{witch_entity.name} : {response.mind_voice}",
                         actor=witch_entity.name,
                         content=response.mind_voice,

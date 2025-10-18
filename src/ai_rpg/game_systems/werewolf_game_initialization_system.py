@@ -4,7 +4,7 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel
 from ..entitas import ExecuteProcessor, Matcher, Entity
-from ..game.sd_game import SDGame
+from ..game.sdg_game import SDGGame
 from ..models import (
     WerewolfComponent,
     SeerComponent,
@@ -35,8 +35,8 @@ class PlayerAwarenessResponse(BaseModel):
 class WerewolfGameInitializationSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
-    def __init__(self, game_context: SDGame) -> None:
-        self._game: SDGame = game_context
+    def __init__(self, game_context: SDGGame) -> None:
+        self._game: SDGGame = game_context
 
     ###############################################################################################################################################
     @override

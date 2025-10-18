@@ -25,7 +25,7 @@ from ..models import (
 from ..demo.werewolf_game_world import create_demo_sd_game_boot
 from ..game_services.game_server import GameServerInstance
 from ..game.player_session import PlayerSession
-from ..game.sd_game import SDGame
+from ..game.sdg_game import SDGGame
 from ..settings import (
     initialize_server_settings_instance,
 )
@@ -40,7 +40,7 @@ werewolf_game_api_router = APIRouter()
 
 
 ###############################################################################################################################################
-def announce_night_phase(sd_game: SDGame) -> None:
+def announce_night_phase(sd_game: SDGGame) -> None:
     """
     宣布夜晚阶段开始,并进行夜晚阶段的初始化工作:
     1. 向所有存活玩家宣布进入夜晚
@@ -103,7 +103,7 @@ def announce_night_phase(sd_game: SDGame) -> None:
 
 
 ###############################################################################################################################################
-def announce_day_phase(sd_game: SDGame) -> None:
+def announce_day_phase(sd_game: SDGGame) -> None:
     """
     宣布白天阶段开始,并进行白天阶段的初始化工作:
     1. 向所有存活玩家宣布进入白天
@@ -218,7 +218,7 @@ async def start_werewolf_game(
         user_name=payload.user_name,
     )
     logger.info(f"start/v1: {payload.user_name} create room = {new_room._username}")
-    assert new_room._sd_game is None
+    assert new_room._sdg_game is None
 
     # 创建boot数据
     assert GLOBAL_SD_GAME_NAME == payload.game_name, "目前只支持 SD 游戏"
@@ -226,7 +226,7 @@ async def start_werewolf_game(
     assert world_boot is not None, "WorldBoot 创建失败"
 
     # 创建游戏实例
-    new_room._sd_game = web_game = SDGame(
+    new_room._sdg_game = web_game = SDGGame(
         name=payload.game_name,
         player_session=PlayerSession(
             name=payload.user_name, actor="角色.主持人"  # 写死先！
@@ -276,7 +276,7 @@ async def play_werewolf_game(
         # 是否有游戏？！！
         current_room = game_server.get_room(user_name=payload.user_name)
         assert current_room is not None
-        if current_room._sd_game is None:
+        if current_room._sdg_game is None:
             logger.error(f"{payload.user_name} has no game, please login first.")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -287,7 +287,7 @@ async def play_werewolf_game(
         logger.info(f"{payload.user_name} user_input: {user_input}")
 
         # web_game = cast(SDGame, current_room._game)
-        web_game = current_room._sd_game
+        web_game = current_room._sdg_game
 
         if user_input == "/k" or user_input == "/kickoff":
 
@@ -465,7 +465,7 @@ async def get_werewolf_game_state(
         # 是否有游戏？！！
         current_room = game_server.get_room(user_name)
         assert current_room is not None
-        if current_room._sd_game is None:
+        if current_room._sdg_game is None:
             # logger.error(f"view_home: {user_name} has no game")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -474,7 +474,7 @@ async def get_werewolf_game_state(
 
         # 获取当前地图
         # sd_game = cast(SDGame, current_room._game)
-        sd_game = current_room._sd_game
+        sd_game = current_room._sdg_game
         # assert sd_game is not None
         mapping_data = sd_game.get_stage_actor_distribution_mapping()
         logger.info(
@@ -524,7 +524,7 @@ async def get_werewolf_actors_details(
         # 是否有游戏？！！
         current_room = game_server.get_room(user_name)
         assert current_room is not None
-        if current_room._sd_game is None:
+        if current_room._sdg_game is None:
             logger.error(f"view_actor: {user_name} has no game")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -545,7 +545,7 @@ async def get_werewolf_actors_details(
 
         for actor_name in actor_names:
             # 获取角色实体
-            actor_entity = current_room._sd_game.get_entity_by_name(actor_name)
+            actor_entity = current_room._sdg_game.get_entity_by_name(actor_name)
             if actor_entity is None:
                 logger.error(f"view_actor: {user_name} actor {actor_name} not found.")
                 continue
@@ -554,7 +554,7 @@ async def get_werewolf_actors_details(
             actor_entities.add(actor_entity)
 
         # 序列化角色实体
-        entities_serialization = current_room._sd_game.serialize_entities(
+        entities_serialization = current_room._sdg_game.serialize_entities(
             actor_entities
         )
 

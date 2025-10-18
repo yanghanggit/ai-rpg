@@ -2,7 +2,7 @@ from typing import final, Tuple, List
 from overrides import override
 from pydantic import BaseModel
 from ..entitas import Entity, Matcher, GroupEvent, ReactiveProcessor
-from ..game.sd_game import SDGame
+from ..game.sdg_game import SDGGame
 from loguru import logger
 from ..models import (
     InventoryComponent,
@@ -78,9 +78,9 @@ def _generate_prompt(list_items_prompt: str, status_info: List[Tuple[str, str]])
 @final
 class NightWitchActionSystem(ReactiveProcessor):
 
-    def __init__(self, game_context: SDGame) -> None:
+    def __init__(self, game_context: SDGGame) -> None:
         super().__init__(game_context)
-        self._game: SDGame = game_context
+        self._game: SDGGame = game_context
 
     ####################################################################################################################################
     @override

@@ -6,7 +6,7 @@ from overrides import override
 from ..entitas import Entity
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 from .rpg_game import RPGGame
-from .sd_game_process_pipeline import (
+from .sdg_game_process_pipeline import (
     create_werewolf_game_kickoff_pipline,
     create_werewolf_game_night_pipline,
     create_werewolf_game_day_pipline,
@@ -27,7 +27,7 @@ from .player_session import PlayerSession
 
 
 #################################################################################################################################################
-class SDGame(RPGGame):
+class SDGGame(RPGGame):
     """
     Social Deduction Game (狼人杀游戏)
     专门处理狼人杀相关的游戏逻辑
@@ -94,7 +94,7 @@ class SDGame(RPGGame):
 
     ###############################################################################################################################################
     @override
-    def new_game(self) -> "SDGame":
+    def new_game(self) -> "SDGGame":
         """
         创建新的狼人杀游戏
         在父类的基础上增加狼人杀角色分配

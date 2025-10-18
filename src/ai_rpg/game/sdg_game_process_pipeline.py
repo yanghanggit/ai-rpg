@@ -5,7 +5,7 @@ from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 
 def create_werewolf_game_kickoff_pipline(game: GameSession) -> "RPGGameProcessPipeline":
     ### 不这样就循环引用
-    from ..game.sd_game import SDGame
+    from .sdg_game import SDGGame
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
     from ..game_systems.action_cleanup_system import ActionCleanupSystem
     from ..game_systems.save_system import SaveSystem
@@ -16,7 +16,7 @@ def create_werewolf_game_kickoff_pipline(game: GameSession) -> "RPGGameProcessPi
     from ..game_systems.discussion_action_system import DiscussionActionSystem
 
     ##
-    tcg_game = cast(SDGame, game)
+    tcg_game = cast(SDGGame, game)
     processors = RPGGameProcessPipeline("Social Deduction Kickoff Pipeline")
 
     # 启动agent的提示词。启动阶段
@@ -41,7 +41,7 @@ def create_werewolf_game_kickoff_pipline(game: GameSession) -> "RPGGameProcessPi
 ###################################################################################################################################################################
 def create_werewolf_game_night_pipline(game: GameSession) -> "RPGGameProcessPipeline":
     ### 不这样就循环引用
-    from ..game.sd_game import SDGame
+    from .sdg_game import SDGGame
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
     from ..game_systems.action_cleanup_system import ActionCleanupSystem
     from ..game_systems.save_system import SaveSystem
@@ -69,7 +69,7 @@ def create_werewolf_game_night_pipline(game: GameSession) -> "RPGGameProcessPipe
     # from ..game_systems.wolf_kill_action_system import WolfKillActionSystem
 
     ##
-    tcg_game = cast(SDGame, game)
+    tcg_game = cast(SDGGame, game)
     processors = RPGGameProcessPipeline("Social Deduction Night Pipeline")
 
     # 启动agent的提示词。启动阶段
@@ -104,7 +104,7 @@ def create_werewolf_game_night_pipline(game: GameSession) -> "RPGGameProcessPipe
 ###################################################################################################################################################################
 def create_werewolf_game_day_pipline(game: GameSession) -> "RPGGameProcessPipeline":
     ### 不这样就循环引用
-    from ..game.sd_game import SDGame
+    from .sdg_game import SDGGame
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
     from ..game_systems.action_cleanup_system import ActionCleanupSystem
     from ..game_systems.save_system import SaveSystem
@@ -117,7 +117,7 @@ def create_werewolf_game_day_pipline(game: GameSession) -> "RPGGameProcessPipeli
     )
 
     ##
-    tcg_game = cast(SDGame, game)
+    tcg_game = cast(SDGGame, game)
     processors = RPGGameProcessPipeline("Social Deduction Day Pipeline")
 
     processors.add(WerewolfDayDiscussionSystem(tcg_game))
@@ -141,7 +141,7 @@ def create_werewolf_game_day_pipline(game: GameSession) -> "RPGGameProcessPipeli
 ###################################################################################################################################################################
 def create_werewolf_game_vote_pipline(game: GameSession) -> "RPGGameProcessPipeline":
     ### 不这样就循环引用
-    from ..game.sd_game import SDGame
+    from .sdg_game import SDGGame
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
     from ..game_systems.action_cleanup_system import ActionCleanupSystem
     from ..game_systems.save_system import SaveSystem
@@ -156,7 +156,7 @@ def create_werewolf_game_vote_pipline(game: GameSession) -> "RPGGameProcessPipel
     from ..game_systems.vote_action_system import VoteActionSystem
 
     ##
-    tcg_game = cast(SDGame, game)
+    tcg_game = cast(SDGGame, game)
     processors = RPGGameProcessPipeline("Social Deduction Day Pipeline")
 
     # 投票系统。

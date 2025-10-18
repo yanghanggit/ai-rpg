@@ -15,7 +15,7 @@ from ai_rpg.settings import (
 )
 from ai_rpg.game.config import GLOBAL_SD_GAME_NAME, setup_logger
 from ai_rpg.game.player_session import PlayerSession
-from ai_rpg.game.sd_game import SDGame
+from ai_rpg.game.sdg_game import SDGGame
 from ai_rpg.demo.werewolf_game_world import (
     create_demo_sd_game_boot,
 )
@@ -42,7 +42,7 @@ async def _run_game(
     assert world_boot is not None, "WorldBoot 创建失败"
 
     # 创建游戏实例
-    terminal_game = SDGame(
+    terminal_game = SDGGame(
         name=game,
         player_session=PlayerSession(
             name=user,
@@ -94,7 +94,7 @@ async def _run_game(
 
 
 ###############################################################################################################################################
-async def _process_player_input(terminal_game: SDGame) -> None:
+async def _process_player_input(terminal_game: SDGGame) -> None:
 
     player_actor_entity = terminal_game.get_player_entity()
     assert player_actor_entity is not None

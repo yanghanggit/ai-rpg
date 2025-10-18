@@ -21,6 +21,8 @@ from .player_session import PlayerSession
 
 #################################################################################################################################################
 class TCGGame(RPGGame):
+    
+    """Trading Card Game"""
 
     def __init__(
         self,

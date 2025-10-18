@@ -2,7 +2,7 @@ from typing import final, override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     WitchCureAction,
-    SDWitchItemName,
+    WitchItemName,
     InventoryComponent,
     AgentEvent,
     NightKillTargetComponent,
@@ -50,7 +50,7 @@ class WitchCureActionSystem(ReactiveProcessor):
         inventory_component = witch_entity.get(InventoryComponent)
         assert inventory_component is not None, "女巫实体没有道具组件"
 
-        cure_item = inventory_component.find_item(SDWitchItemName.CURE)
+        cure_item = inventory_component.find_item(WitchItemName.CURE)
         assert cure_item is not None, "女巫没有解药，无法使用解药"
         if cure_item is None:
             logger.warning(f"女巫 {witch_entity.name} 没有解药，无法使用解药")

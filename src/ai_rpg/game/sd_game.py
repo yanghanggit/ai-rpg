@@ -16,7 +16,7 @@ from ..models import (
     Actor,
     ActorComponent,
     World,
-    SDCharacterSheetName,
+    WerewolfCharacterSheetName,
     ModeratorComponent,
     WerewolfComponent,
     SeerComponent,
@@ -132,23 +132,23 @@ class SDGame(RPGGame):
 
             # 狼人杀专用，根据角色表分配组件
             match actor_model.character_sheet.name:
-                case SDCharacterSheetName.MODERATOR:
+                case WerewolfCharacterSheetName.MODERATOR:
                     actor_entity.replace(ModeratorComponent, actor_model.name)
                     logger.info(f"分配角色: {actor_model.name} -> Moderator")
 
-                case SDCharacterSheetName.WEREWOLF:
+                case WerewolfCharacterSheetName.WEREWOLF:
                     actor_entity.replace(WerewolfComponent, actor_model.name)
                     logger.info(f"分配角色: {actor_model.name} -> Werewolf")
 
-                case SDCharacterSheetName.SEER:
+                case WerewolfCharacterSheetName.SEER:
                     actor_entity.replace(SeerComponent, actor_model.name)
                     logger.info(f"分配角色: {actor_model.name} -> Seer")
 
-                case SDCharacterSheetName.WITCH:
+                case WerewolfCharacterSheetName.WITCH:
                     actor_entity.replace(WitchComponent, actor_model.name)
                     logger.info(f"分配角色: {actor_model.name} -> Witch")
 
-                case SDCharacterSheetName.VILLAGER:
+                case WerewolfCharacterSheetName.VILLAGER:
                     actor_entity.replace(VillagerComponent, actor_model.name)
                     logger.info(f"分配角色: {actor_model.name} -> Villager")
 

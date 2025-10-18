@@ -3,11 +3,10 @@
 from typing import Final, List
 from loguru import logger
 from overrides import override
-
 from ..entitas import Entity
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 from .rpg_game import RPGGame
-from .tcg_game_process_pipeline import (
+from .sd_game_process_pipeline import (
     create_werewolf_game_kickoff_pipline,
     create_werewolf_game_night_pipline,
     create_werewolf_game_day_pipline,

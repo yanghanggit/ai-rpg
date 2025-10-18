@@ -9,7 +9,7 @@ from overrides import override
 from .config import LOGS_DIR
 from .world_data_service import persist_world_data, debug_verbose_world_data
 from ..entitas import Entity
-from ..game.base_game import BaseGame
+from .game_session import GameSession
 from .rpg_entity_manager import RPGEntityManager
 from ..game.tcg_game_process_pipeline import (
     TCGGameProcessPipeline,
@@ -90,7 +90,7 @@ class RPGGamePipelineManager:
 
 
 #################################################################################################################################################
-class RPGGame(BaseGame, RPGEntityManager, RPGGamePipelineManager):
+class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
 
     def __init__(
         self,
@@ -100,7 +100,7 @@ class RPGGame(BaseGame, RPGEntityManager, RPGGamePipelineManager):
     ) -> None:
 
         # 必须按着此顺序实现父类
-        BaseGame.__init__(self, name)  # 需要传递 name
+        GameSession.__init__(self, name)  # 需要传递 name
         RPGEntityManager.__init__(self)  # 继承 Context, 需要调用其 __init__
         RPGGamePipelineManager.__init__(self)  # 管道管理器初始化
 

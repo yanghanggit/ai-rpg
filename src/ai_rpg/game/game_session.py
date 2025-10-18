@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from typing import Final
 
 
-class BaseGame(ABC):
+class GameSession(ABC):
     """
     游戏框架基础抽象类
 

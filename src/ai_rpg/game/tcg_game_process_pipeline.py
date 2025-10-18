@@ -1,10 +1,10 @@
 from typing import Final, cast
 
 from ..entitas import Processors
-from ..game.base_game import BaseGame
+from .game_session import GameSession
 
 
-def create_npc_home_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
+def create_npc_home_pipline(game: GameSession) -> "TCGGameProcessPipeline":
 
     ### 不这样就循环引用
     from ..game.tcg_game import TCGGame
@@ -63,7 +63,7 @@ def create_npc_home_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
     return processors
 
 
-def create_player_home_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
+def create_player_home_pipline(game: GameSession) -> "TCGGameProcessPipeline":
 
     ### 不这样就循环引用
     from ..game.tcg_game import TCGGame
@@ -105,7 +105,7 @@ def create_player_home_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
 
 
 def create_dungeon_combat_state_pipeline(
-    game: BaseGame,
+    game: GameSession,
 ) -> "TCGGameProcessPipeline":
 
     ### 不这样就循环引用
@@ -158,7 +158,7 @@ def create_dungeon_combat_state_pipeline(
     return processors
 
 
-def create_werewolf_game_kickoff_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
+def create_werewolf_game_kickoff_pipline(game: GameSession) -> "TCGGameProcessPipeline":
     ### 不这样就循环引用
     from ..game.tcg_game import SDGame
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
@@ -194,7 +194,7 @@ def create_werewolf_game_kickoff_pipline(game: BaseGame) -> "TCGGameProcessPipel
 
 
 ###################################################################################################################################################################
-def create_werewolf_game_night_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
+def create_werewolf_game_night_pipline(game: GameSession) -> "TCGGameProcessPipeline":
     ### 不这样就循环引用
     from ..game.tcg_game import SDGame
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
@@ -257,7 +257,7 @@ def create_werewolf_game_night_pipline(game: BaseGame) -> "TCGGameProcessPipelin
 
 
 ###################################################################################################################################################################
-def create_werewolf_game_day_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
+def create_werewolf_game_day_pipline(game: GameSession) -> "TCGGameProcessPipeline":
     ### 不这样就循环引用
     from ..game.tcg_game import SDGame
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
@@ -294,7 +294,7 @@ def create_werewolf_game_day_pipline(game: BaseGame) -> "TCGGameProcessPipeline"
 
 
 ###################################################################################################################################################################
-def create_werewolf_game_vote_pipline(game: BaseGame) -> "TCGGameProcessPipeline":
+def create_werewolf_game_vote_pipline(game: GameSession) -> "TCGGameProcessPipeline":
     ### 不这样就循环引用
     from ..game.tcg_game import SDGame
     from ..game_systems.destroy_entity_system import DestroyEntitySystem

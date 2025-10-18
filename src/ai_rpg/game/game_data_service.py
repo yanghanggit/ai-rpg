@@ -10,6 +10,7 @@ from ..mongodb import (
     mongodb_upsert_one,
 )
 from ..models.world import Boot, World
+from .player_session import PlayerSession
 
 
 ###############################################################################################################################################
@@ -154,12 +155,15 @@ def persist_world_data(username: str, world: World) -> None:
 
 
 ###############################################################################################################################################
-def debug_verbose_world_data(verbose_dir: Path, world: World) -> None:
+def debug_verbose_world_data(
+    verbose_dir: Path, world: World, player_session: PlayerSession
+) -> None:
     """调试方法，保存游戏状态到文件"""
     verbose_boot_data(verbose_dir, world)
     verbose_world_data(verbose_dir, world)
     verbose_entities_serialization(verbose_dir, world)
     verbose_chat_history(verbose_dir, world)
+    verbose_player_session(verbose_dir, player_session)
     verbose_dungeon_system(verbose_dir, world)
     # logger.debug(f"Verbose debug info saved to: {verbose_dir}")
 
@@ -198,6 +202,18 @@ def verbose_world_data(verbose_dir: Path, world: World) -> None:
     world_file_path.write_text(
         world.model_dump_json(), encoding="utf-8"
     )  # 保存 World 数据到文件，覆盖
+
+
+###############################################################################################################################################
+def verbose_player_session(verbose_dir: Path, player_session: PlayerSession) -> None:
+    """保存玩家会话数据到文件"""
+    player_session_dir = verbose_dir / "player_session"
+    player_session_dir.mkdir(parents=True, exist_ok=True)
+
+    player_session_file_path = player_session_dir / f"{player_session.name}.json"
+    player_session_file_path.write_text(
+        player_session.model_dump_json(), encoding="utf-8"
+    )
 
 
 ###############################################################################################################################################

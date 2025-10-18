@@ -91,7 +91,7 @@ async def _handle_advancing_action(web_game: TCGGame) -> HomeGamePlayResponse:
         HomeGamePlayResponse: 包含客户端消息的响应
     """
     # 推进一次。
-    web_game.player_session.clear_messages()
+    web_game.player_session.session_messages.clear()
     await web_game.npc_home_pipeline.process()
 
     # 返回消息
@@ -272,7 +272,7 @@ async def _handle_speak_action(
     # if web_game.speak_action(target=target, content=content):
     if _player_add_speak_action(web_game, target=target, content=content):
         # 清空消息。准备重新开始 + 测试推进一次游戏
-        web_game.player_session.clear_messages()
+        web_game.player_session.session_messages.clear()
         await web_game.player_home_pipeline.process()
 
         # 返回消息

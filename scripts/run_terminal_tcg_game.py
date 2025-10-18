@@ -24,7 +24,7 @@ from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import (
     TCGGame,
 )
-from ai_rpg.game.world_data_service import (
+from ai_rpg.game.game_data_service import (
     get_user_world_data,
     get_game_boot_data,
     delete_user_world_data,

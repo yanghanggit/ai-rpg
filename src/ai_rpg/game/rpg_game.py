@@ -12,7 +12,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
 from .config import LOGS_DIR
-from .world_data_service import persist_world_data, debug_verbose_world_data
+from .game_data_service import persist_world_data, debug_verbose_world_data
 from ..entitas import Entity
 from .game_session import GameSession
 from .rpg_entity_manager import RPGEntityManager
@@ -169,6 +169,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         debug_verbose_world_data(
             verbose_dir=self.verbose_dir,
             world=self.world,
+            player_session=self.player_session,
         )
 
         return self

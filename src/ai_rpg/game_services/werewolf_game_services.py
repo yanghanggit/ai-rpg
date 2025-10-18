@@ -296,7 +296,7 @@ async def play_werewolf_game(
                 logger.info("游戏开始，准备入场记阶段！！！！！！")
 
                 # 清理之前的消息
-                web_game.player_session.clear_messages()
+                web_game.player_session.session_messages.clear()
 
                 # 初始化游戏的开场流程
                 await web_game.werewolf_game_kickoff_pipeline.process()
@@ -342,7 +342,7 @@ async def play_werewolf_game(
             if web_game._werewolf_game_turn_counter % 2 == 1:
 
                 # 清除之前的消息
-                web_game.player_session.clear_messages()
+                web_game.player_session.session_messages.clear()
 
                 # 运行游戏逻辑
                 await web_game.werewolf_game_night_pipeline.process()
@@ -370,7 +370,7 @@ async def play_werewolf_game(
                 and web_game._werewolf_game_turn_counter > 0
             ):
                 # 清理之前的消息
-                web_game.player_session.clear_messages()
+                web_game.player_session.session_messages.clear()
                 # 运行游戏逻辑
                 await web_game.werewolf_game_day_pipeline.process()
 
@@ -400,7 +400,7 @@ async def play_werewolf_game(
                 if WerewolfDayVoteSystem.is_day_discussion_complete(web_game):
 
                     # 清理之前的消息
-                    web_game.player_session.clear_messages()
+                    web_game.player_session.session_messages.clear()
 
                     # 如果讨论完毕，则进入投票环节
                     await web_game.werewolf_game_vote_pipeline.process()

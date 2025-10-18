@@ -259,7 +259,7 @@ async def _handle_dungeon_combat_kick_off(
         )
 
     # 推进一次游戏, 即可转换ONGOING状态。
-    web_game.player_session.clear_messages()
+    web_game.player_session.session_messages.clear()
     await web_game.dungeon_combat_pipeline.process()
     # 返回！
     return DungeonGamePlayResponse(
@@ -282,7 +282,7 @@ async def _handle_draw_cards(web_game: TCGGame) -> DungeonGamePlayResponse:
     # 推进一次游戏, 即可抽牌。
     # web_game.draw_cards_action()
     _combat_actors_draw_cards_action(web_game)
-    web_game.player_session.clear_messages()
+    web_game.player_session.session_messages.clear()
     await web_game.dungeon_combat_pipeline.process()
 
     # 返回！
@@ -309,8 +309,7 @@ async def _handle_play_cards(
     # if web_game.play_cards_action():
     if _combat_actors_random_play_cards_action(web_game):
         # 执行一次！！！！！
-        # await _execute_web_game(web_game)
-        web_game.player_session.clear_messages()
+        web_game.player_session.session_messages.clear()
         await web_game.dungeon_combat_pipeline.process()
 
     # 返回！

@@ -8,7 +8,7 @@ from ..models import (
     NightKillTargetComponent,
 )
 from loguru import logger
-from ..game.tcg_game import SDGame
+from ..game.sd_game import SDGame
 
 
 ####################################################################################################################################

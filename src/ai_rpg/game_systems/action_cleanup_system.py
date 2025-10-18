@@ -1,7 +1,7 @@
 from typing import Final, FrozenSet, final, override
 from ..entitas import ExecuteProcessor, Matcher
 from ..entitas.components import Component
-from ..game.tcg_game import RPGGame
+from ..game.rpg_game import RPGGame
 from ..models import (
     ACTION_COMPONENTS_REGISTRY,
     COMPONENTS_REGISTRY,

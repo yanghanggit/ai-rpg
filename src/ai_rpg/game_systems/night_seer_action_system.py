@@ -17,7 +17,7 @@ from ..models import (
 from ..chat_services.client import ChatClient
 from ..utils import json_format
 from ..utils.md_format import format_dict_as_markdown_list
-from ..game.tcg_game import SDGame
+from ..game.sd_game import SDGame
 
 
 ###############################################################################################################################################

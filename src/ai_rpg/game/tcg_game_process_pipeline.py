@@ -1,10 +1,10 @@
-from typing import Final, cast
+from typing import cast
 
-from ..entitas import Processors
 from .game_session import GameSession
+from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 
 
-def create_npc_home_pipline(game: GameSession) -> "TCGGameProcessPipeline":
+def create_npc_home_pipline(game: GameSession) -> "RPGGameProcessPipeline":
 
     ### 不这样就循环引用
     from ..game.tcg_game import TCGGame
@@ -31,7 +31,7 @@ def create_npc_home_pipline(game: GameSession) -> "TCGGameProcessPipeline":
 
     ##
     tcg_game = cast(TCGGame, game)
-    processors = TCGGameProcessPipeline("Home State Pipeline 1")
+    processors = RPGGameProcessPipeline("Home State Pipeline 1")
 
     # 启动agent的提示词。启动阶段
     processors.add(KickOffSystem(tcg_game, True))
@@ -63,7 +63,7 @@ def create_npc_home_pipline(game: GameSession) -> "TCGGameProcessPipeline":
     return processors
 
 
-def create_player_home_pipline(game: GameSession) -> "TCGGameProcessPipeline":
+def create_player_home_pipline(game: GameSession) -> "RPGGameProcessPipeline":
 
     ### 不这样就循环引用
     from ..game.tcg_game import TCGGame
@@ -80,7 +80,7 @@ def create_player_home_pipline(game: GameSession) -> "TCGGameProcessPipeline":
 
     ##
     tcg_game = cast(TCGGame, game)
-    processors = TCGGameProcessPipeline("Home State Pipeline 2")
+    processors = RPGGameProcessPipeline("Home State Pipeline 2")
 
     # 启动agent的提示词。启动阶段
     processors.add(KickOffSystem(tcg_game, True))
@@ -106,7 +106,7 @@ def create_player_home_pipline(game: GameSession) -> "TCGGameProcessPipeline":
 
 def create_dungeon_combat_state_pipeline(
     game: GameSession,
-) -> "TCGGameProcessPipeline":
+) -> "RPGGameProcessPipeline":
 
     ### 不这样就循环引用
     from ..game.tcg_game import TCGGame
@@ -131,7 +131,7 @@ def create_dungeon_combat_state_pipeline(
 
     ##
     tcg_game = cast(TCGGame, game)
-    processors = TCGGameProcessPipeline("Dungeon Combat State Pipeline")
+    processors = RPGGameProcessPipeline("Dungeon Combat State Pipeline")
 
     # 启动agent的提示词。启动阶段
     processors.add(KickOffSystem(tcg_game, True))
@@ -158,9 +158,9 @@ def create_dungeon_combat_state_pipeline(
     return processors
 
 
-def create_werewolf_game_kickoff_pipline(game: GameSession) -> "TCGGameProcessPipeline":
+def create_werewolf_game_kickoff_pipline(game: GameSession) -> "RPGGameProcessPipeline":
     ### 不这样就循环引用
-    from ..game.tcg_game import SDGame
+    from ..game.sd_game import SDGame
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
     from ..game_systems.action_cleanup_system import ActionCleanupSystem
     from ..game_systems.save_system import SaveSystem
@@ -172,7 +172,7 @@ def create_werewolf_game_kickoff_pipline(game: GameSession) -> "TCGGameProcessPi
 
     ##
     tcg_game = cast(SDGame, game)
-    processors = TCGGameProcessPipeline("Social Deduction Kickoff Pipeline")
+    processors = RPGGameProcessPipeline("Social Deduction Kickoff Pipeline")
 
     # 启动agent的提示词。启动阶段
     processors.add(KickOffSystem(tcg_game, True))
@@ -194,9 +194,9 @@ def create_werewolf_game_kickoff_pipline(game: GameSession) -> "TCGGameProcessPi
 
 
 ###################################################################################################################################################################
-def create_werewolf_game_night_pipline(game: GameSession) -> "TCGGameProcessPipeline":
+def create_werewolf_game_night_pipline(game: GameSession) -> "RPGGameProcessPipeline":
     ### 不这样就循环引用
-    from ..game.tcg_game import SDGame
+    from ..game.sd_game import SDGame
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
     from ..game_systems.action_cleanup_system import ActionCleanupSystem
     from ..game_systems.save_system import SaveSystem
@@ -225,7 +225,7 @@ def create_werewolf_game_night_pipline(game: GameSession) -> "TCGGameProcessPipe
 
     ##
     tcg_game = cast(SDGame, game)
-    processors = TCGGameProcessPipeline("Social Deduction Night Pipeline")
+    processors = RPGGameProcessPipeline("Social Deduction Night Pipeline")
 
     # 启动agent的提示词。启动阶段
     processors.add(NightActionInitializationSystem(tcg_game))
@@ -257,9 +257,9 @@ def create_werewolf_game_night_pipline(game: GameSession) -> "TCGGameProcessPipe
 
 
 ###################################################################################################################################################################
-def create_werewolf_game_day_pipline(game: GameSession) -> "TCGGameProcessPipeline":
+def create_werewolf_game_day_pipline(game: GameSession) -> "RPGGameProcessPipeline":
     ### 不这样就循环引用
-    from ..game.tcg_game import SDGame
+    from ..game.sd_game import SDGame
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
     from ..game_systems.action_cleanup_system import ActionCleanupSystem
     from ..game_systems.save_system import SaveSystem
@@ -273,7 +273,7 @@ def create_werewolf_game_day_pipline(game: GameSession) -> "TCGGameProcessPipeli
 
     ##
     tcg_game = cast(SDGame, game)
-    processors = TCGGameProcessPipeline("Social Deduction Day Pipeline")
+    processors = RPGGameProcessPipeline("Social Deduction Day Pipeline")
 
     processors.add(WerewolfDayDiscussionSystem(tcg_game))
 
@@ -294,9 +294,9 @@ def create_werewolf_game_day_pipline(game: GameSession) -> "TCGGameProcessPipeli
 
 
 ###################################################################################################################################################################
-def create_werewolf_game_vote_pipline(game: GameSession) -> "TCGGameProcessPipeline":
+def create_werewolf_game_vote_pipline(game: GameSession) -> "RPGGameProcessPipeline":
     ### 不这样就循环引用
-    from ..game.tcg_game import SDGame
+    from ..game.sd_game import SDGame
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
     from ..game_systems.action_cleanup_system import ActionCleanupSystem
     from ..game_systems.save_system import SaveSystem
@@ -312,7 +312,7 @@ def create_werewolf_game_vote_pipline(game: GameSession) -> "TCGGameProcessPipel
 
     ##
     tcg_game = cast(SDGame, game)
-    processors = TCGGameProcessPipeline("Social Deduction Day Pipeline")
+    processors = RPGGameProcessPipeline("Social Deduction Day Pipeline")
 
     # 投票系统。
     processors.add(WerewolfDayVoteSystem(tcg_game))
@@ -332,31 +332,3 @@ def create_werewolf_game_vote_pipline(game: GameSession) -> "TCGGameProcessPipel
     processors.add(SaveSystem(tcg_game))
 
     return processors
-
-
-###################################################################################################################################################################
-class TCGGameProcessPipeline(Processors):
-
-    def __init__(self, name: str) -> None:
-        super().__init__()
-        self._name: Final[str] = name
-
-    ###################################################################################################################################################################
-    async def process(self) -> None:
-        # 顺序不要动
-        # logger.debug(
-        #     f"================= {self._name} process pipeline process ================="
-        # )
-        await self.execute()
-        self.cleanup()
-
-    ###############################################################################################################################################
-    def shutdown(self) -> None:
-        # logger.debug(
-        #     f"================= {self._name} process pipeline shutdown ================="
-        # )
-        self.tear_down()
-        self.clear_reactive_processors()
-
-
-###################################################################################################################################################################

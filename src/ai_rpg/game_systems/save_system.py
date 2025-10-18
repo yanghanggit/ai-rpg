@@ -10,7 +10,7 @@ from ..models.components import (
     DayVotedComponent,
 )
 from ..entitas import ExecuteProcessor, Entity
-from ..game.tcg_game import RPGGame
+from ..game.rpg_game import RPGGame
 
 
 @final

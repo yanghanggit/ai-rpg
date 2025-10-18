@@ -1,0 +1,165 @@
+"""Social Deduction Game (狼人杀游戏)模块"""
+
+from typing import Final, List
+from loguru import logger
+from overrides import override
+
+from ..entitas import Entity
+from .rpg_game_pipeline_manager import RPGGameProcessPipeline
+from .rpg_game import RPGGame
+from .tcg_game_process_pipeline import (
+    create_werewolf_game_kickoff_pipline,
+    create_werewolf_game_night_pipline,
+    create_werewolf_game_day_pipline,
+    create_werewolf_game_vote_pipline,
+)
+from ..models import (
+    Actor,
+    ActorComponent,
+    World,
+    SDCharacterSheetName,
+    ModeratorComponent,
+    WerewolfComponent,
+    SeerComponent,
+    WitchComponent,
+    VillagerComponent,
+)
+from .player_session import PlayerSession
+
+
+#################################################################################################################################################
+class SDGame(RPGGame):
+    """
+    Social Deduction Game (狼人杀游戏)
+    专门处理狼人杀相关的游戏逻辑
+    """
+
+    def __init__(
+        self,
+        name: str,
+        player_session: PlayerSession,
+        world: World,
+    ) -> None:
+        # 调用父类初始化
+        super().__init__(name, player_session, world)
+
+        # 狼人杀的流程管道
+        self._werewolf_game_kickoff_pipeline: Final[RPGGameProcessPipeline] = (
+            create_werewolf_game_kickoff_pipline(self)
+        )
+
+        self._werewolf_game_night_pipeline: Final[RPGGameProcessPipeline] = (
+            create_werewolf_game_night_pipline(self)
+        )
+
+        self._werewolf_game_day_pipeline: Final[RPGGameProcessPipeline] = (
+            create_werewolf_game_day_pipline(self)
+        )
+
+        self._werewolf_game_vote_pipeline: Final[RPGGameProcessPipeline] = (
+            create_werewolf_game_vote_pipline(self)
+        )
+
+        # 注册狼人杀管道到管道管理器
+        self.register_pipeline(self._werewolf_game_kickoff_pipeline)
+        self.register_pipeline(self._werewolf_game_night_pipeline)
+        self.register_pipeline(self._werewolf_game_day_pipeline)
+        self.register_pipeline(self._werewolf_game_vote_pipeline)
+
+        # 狼人杀专用：游戏回合计数器
+        self._werewolf_game_turn_counter: int = 0
+
+    ###############################################################################################################################################
+    @property
+    def werewolf_game_kickoff_pipeline(self) -> RPGGameProcessPipeline:
+        """获取狼人杀启动流程管道"""
+        return self._werewolf_game_kickoff_pipeline
+
+    ###############################################################################################################################################
+    @property
+    def werewolf_game_night_pipeline(self) -> RPGGameProcessPipeline:
+        """获取狼人杀夜晚流程管道"""
+        return self._werewolf_game_night_pipeline
+
+    ###############################################################################################################################################
+    @property
+    def werewolf_game_day_pipeline(self) -> RPGGameProcessPipeline:
+        """获取狼人杀白天流程管道"""
+        return self._werewolf_game_day_pipeline
+
+    ###############################################################################################################################################
+    @property
+    def werewolf_game_vote_pipeline(self) -> RPGGameProcessPipeline:
+        """获取狼人杀投票流程管道"""
+        return self._werewolf_game_vote_pipeline
+
+    ###############################################################################################################################################
+    @override
+    def new_game(self) -> "SDGame":
+        """
+        创建新的狼人杀游戏
+        在父类的基础上增加狼人杀角色分配
+        """
+        # 调用父类的 new_game 方法
+        super().new_game()
+
+        # 第5步，狼人杀专用，分配角色
+        self._assign_werewolf_roles_to_actors(self.world.boot.actors)
+
+        return self
+
+    ###############################################################################################################################################
+    def _assign_werewolf_roles_to_actors(
+        self, actor_models: List[Actor]
+    ) -> List[Entity]:
+        """
+        为角色分配狼人杀专用的角色组件
+
+        Args:
+            actor_models: 角色模型列表
+
+        Returns:
+            List[Entity]: 分配了角色的实体列表
+        """
+        ret: List[Entity] = []
+        for actor_model in actor_models:
+
+            # 创建实体
+            actor_entity = self.get_actor_entity(actor_model.name)
+            assert actor_entity is not None, "actor_entity is not None"
+            assert actor_entity.has(
+                ActorComponent
+            ), "actor_entity should have ActorComponent"
+
+            # 狼人杀专用，根据角色表分配组件
+            match actor_model.character_sheet.name:
+                case SDCharacterSheetName.MODERATOR:
+                    actor_entity.replace(ModeratorComponent, actor_model.name)
+                    logger.info(f"分配角色: {actor_model.name} -> Moderator")
+
+                case SDCharacterSheetName.WEREWOLF:
+                    actor_entity.replace(WerewolfComponent, actor_model.name)
+                    logger.info(f"分配角色: {actor_model.name} -> Werewolf")
+
+                case SDCharacterSheetName.SEER:
+                    actor_entity.replace(SeerComponent, actor_model.name)
+                    logger.info(f"分配角色: {actor_model.name} -> Seer")
+
+                case SDCharacterSheetName.WITCH:
+                    actor_entity.replace(WitchComponent, actor_model.name)
+                    logger.info(f"分配角色: {actor_model.name} -> Witch")
+
+                case SDCharacterSheetName.VILLAGER:
+                    actor_entity.replace(VillagerComponent, actor_model.name)
+                    logger.info(f"分配角色: {actor_model.name} -> Villager")
+
+                case _:
+                    logger.debug(
+                        f"应该不是狼人杀的角色: {actor_model.character_sheet.name}"
+                    )
+            # 添加到返回值
+            ret.append(actor_entity)
+
+        return ret
+
+    ###############################################################################################################################################

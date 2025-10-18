@@ -1,5 +1,6 @@
 from typing import Final, Optional
-from ..game.tcg_game import TCGGame, SDGame
+from ..game.tcg_game import TCGGame
+from ..game.sd_game import SDGame
 from ..game.player_session import PlayerSession
 
 

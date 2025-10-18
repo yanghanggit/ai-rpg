@@ -2,7 +2,7 @@ from typing import final, Tuple, List
 from overrides import override
 from pydantic import BaseModel
 from ..entitas import Entity, Matcher, GroupEvent, ReactiveProcessor
-from ..game.tcg_game import SDGame
+from ..game.sd_game import SDGame
 from loguru import logger
 from ..models import (
     InventoryComponent,

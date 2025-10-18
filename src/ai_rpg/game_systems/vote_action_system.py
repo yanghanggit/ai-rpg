@@ -3,7 +3,7 @@ from typing import final, override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import VoteAction, DeathComponent, AgentEvent
 from loguru import logger
-from ..game.tcg_game import SDGame
+from ..game.sd_game import SDGame
 
 
 @final

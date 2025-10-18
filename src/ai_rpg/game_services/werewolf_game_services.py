@@ -25,7 +25,7 @@ from ..models import (
 from ..demo.werewolf_game_world import create_demo_sd_game_boot
 from ..game_services.game_server import GameServerInstance
 from ..game.player_session import PlayerSession
-from ..game.tcg_game import SDGame
+from ..game.sd_game import SDGame
 from ..settings import (
     initialize_server_settings_instance,
 )

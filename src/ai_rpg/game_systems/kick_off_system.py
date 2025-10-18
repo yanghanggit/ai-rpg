@@ -6,7 +6,7 @@ from loguru import logger
 from overrides import override
 from ..chat_services.client import ChatClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
-from ..game.tcg_game import RPGGame
+from ..game.rpg_game import RPGGame
 from ..models import (
     ActorComponent,
     EnvironmentComponent,

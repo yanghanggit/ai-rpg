@@ -15,9 +15,7 @@ from ai_rpg.settings import (
 )
 from ai_rpg.game.config import GLOBAL_SD_GAME_NAME, setup_logger
 from ai_rpg.game.player_session import PlayerSession
-from ai_rpg.game.tcg_game import (
-    SDGame,
-)
+from ai_rpg.game.sd_game import SDGame
 from ai_rpg.demo.werewolf_game_world import (
     create_demo_sd_game_boot,
 )

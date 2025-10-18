@@ -1,7 +1,7 @@
 from typing import final
 from overrides import override
 from ..entitas import ExecuteProcessor, Matcher
-from ..game.tcg_game import SDGame
+from ..game.sd_game import SDGame
 from loguru import logger
 from ..models import (
     WitchComponent,

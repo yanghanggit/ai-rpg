@@ -4,7 +4,7 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel
 from ..entitas import ExecuteProcessor, Matcher, Entity
-from ..game.tcg_game import SDGame
+from ..game.sd_game import SDGame
 from ..models import (
     WerewolfComponent,
     SeerComponent,

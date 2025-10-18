@@ -3,7 +3,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 
 # from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import DiscussionAction, DiscussionEvent
-from ..game.tcg_game import RPGGame
+from ..game.rpg_game import RPGGame
 
 
 ####################################################################################################################################

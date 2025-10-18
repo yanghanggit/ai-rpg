@@ -8,16 +8,16 @@ from ..models import (
     NightKillTargetComponent,
 )
 from loguru import logger
-from ..game.tcg_game import TCGGame
+from ..game.tcg_game import SDGame
 
 
 ####################################################################################################################################
 @final
 class WitchPoisonActionSystem(ReactiveProcessor):
 
-    def __init__(self, game_context: TCGGame) -> None:
+    def __init__(self, game_context: SDGame) -> None:
         super().__init__(game_context)
-        self._game: TCGGame = game_context
+        self._game: SDGame = game_context
 
     ####################################################################################################################################
     @override

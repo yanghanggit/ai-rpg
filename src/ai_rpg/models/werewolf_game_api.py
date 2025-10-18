@@ -1,6 +1,6 @@
 from typing import Dict, List, final
 from pydantic import BaseModel
-from .client_message import ClientMessage
+from .session_message import SessionMessage
 from ..models import EntitySerialization
 
 
@@ -24,7 +24,7 @@ class WerewolfGamePlayRequest(BaseModel):
 
 @final
 class WerewolfGamePlayResponse(BaseModel):
-    client_messages: List[ClientMessage]
+    client_messages: List[SessionMessage]
 
 
 @final

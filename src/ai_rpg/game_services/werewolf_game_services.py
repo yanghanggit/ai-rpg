@@ -24,8 +24,8 @@ from ..models import (
 )
 from ..demo.werewolf_game_world import create_demo_sd_game_boot
 from ..game_services.game_server import GameServerInstance
-from ..game.player_client import PlayerClient
-from ..game.tcg_game import TCGGame
+from ..game.player_session import PlayerSession
+from ..game.tcg_game import SDGame
 from ..settings import (
     initialize_server_settings_instance,
 )
@@ -40,7 +40,7 @@ werewolf_game_api_router = APIRouter()
 
 
 ###############################################################################################################################################
-def announce_night_phase(tcg_game: TCGGame) -> None:
+def announce_night_phase(sd_game: SDGame) -> None:
     """
     宣布夜晚阶段开始,并进行夜晚阶段的初始化工作:
     1. 向所有存活玩家宣布进入夜晚
@@ -51,14 +51,14 @@ def announce_night_phase(tcg_game: TCGGame) -> None:
     # 回合计数器规则: 0=游戏开始, 1=第一夜, 2=第一白天, 3=第二夜, 4=第二白天...
     # 夜晚阶段的特征: 计数器为奇数(1,3,5...)
     assert (
-        tcg_game._werewolf_game_turn_counter % 2 == 1
-        or tcg_game._werewolf_game_turn_counter > 0
+        sd_game._werewolf_game_turn_counter % 2 == 1
+        or sd_game._werewolf_game_turn_counter > 0
     ), "当前时间标记不是夜晚"
 
-    logger.warning(f"进入夜晚,时间标记 = {tcg_game._werewolf_game_turn_counter}")
+    logger.warning(f"进入夜晚,时间标记 = {sd_game._werewolf_game_turn_counter}")
 
     # 获取所有角色玩家(狼人、预言家、女巫、村民)
-    all_role_players = tcg_game.get_group(
+    all_role_players = sd_game.get_group(
         Matcher(
             any_of=[
                 WerewolfComponent,
@@ -70,17 +70,17 @@ def announce_night_phase(tcg_game: TCGGame) -> None:
     ).entities.copy()
 
     # 计算当前是第几个夜晚(从1开始计数)
-    current_night_number = (tcg_game._werewolf_game_turn_counter + 1) // 2
+    current_night_number = (sd_game._werewolf_game_turn_counter + 1) // 2
 
     # 向所有玩家发送夜晚开始的消息
     for player in all_role_players:
-        tcg_game.append_human_message(
+        sd_game.append_human_message(
             player, f"# 注意!天黑请闭眼!这是第 {current_night_number} 个夜晚"
         )
 
     # 清理白天阶段的标记组件
     # 获取所有带有白天讨论或投票标记的玩家
-    players_with_day_markers = tcg_game.get_group(
+    players_with_day_markers = sd_game.get_group(
         Matcher(
             any_of=[DayDiscussedComponent, DayVotedComponent, NightKillTargetComponent],
         )
@@ -103,7 +103,7 @@ def announce_night_phase(tcg_game: TCGGame) -> None:
 
 
 ###############################################################################################################################################
-def announce_day_phase(tcg_game: TCGGame) -> None:
+def announce_day_phase(sd_game: SDGame) -> None:
     """
     宣布白天阶段开始,并进行白天阶段的初始化工作:
     1. 向所有存活玩家宣布进入白天
@@ -116,14 +116,14 @@ def announce_day_phase(tcg_game: TCGGame) -> None:
     # 回合计数器规则: 0=游戏开始, 1=第一夜, 2=第一白天, 3=第二夜, 4=第二白天...
     # 白天阶段的特征: 计数器为偶数且大于0(2,4,6...)
     assert (
-        tcg_game._werewolf_game_turn_counter % 2 == 0
-        and tcg_game._werewolf_game_turn_counter > 0
+        sd_game._werewolf_game_turn_counter % 2 == 0
+        and sd_game._werewolf_game_turn_counter > 0
     ), "当前时间标记不是白天"
 
-    logger.warning(f"进入白天,时间标记 = {tcg_game._werewolf_game_turn_counter}")
+    logger.warning(f"进入白天,时间标记 = {sd_game._werewolf_game_turn_counter}")
 
     # 获取所有角色玩家(狼人、预言家、女巫、村民)
-    all_role_players = tcg_game.get_group(
+    all_role_players = sd_game.get_group(
         Matcher(
             any_of=[
                 WerewolfComponent,
@@ -135,16 +135,16 @@ def announce_day_phase(tcg_game: TCGGame) -> None:
     ).entities.copy()
 
     # 计算当前是第几个白天(从1开始计数)
-    current_day_number = tcg_game._werewolf_game_turn_counter // 2
+    current_day_number = sd_game._werewolf_game_turn_counter // 2
 
     # 向所有玩家发送白天开始的消息
     for player in all_role_players:
-        tcg_game.append_human_message(
+        sd_game.append_human_message(
             player, f"# 注意!天亮请睁眼!这是第 {current_day_number} 个白天"
         )
 
     # 获取所有在昨夜被标记为击杀的玩家
-    players_killed_last_night = tcg_game.get_group(
+    players_killed_last_night = sd_game.get_group(
         Matcher(
             all_of=[NightKillTargetComponent],
         )
@@ -160,14 +160,14 @@ def announce_day_phase(tcg_game: TCGGame) -> None:
 
         # 向所有玩家广播死亡信息
         for player in all_role_players:
-            tcg_game.append_human_message(
+            sd_game.append_human_message(
                 player, f"# 昨晚被杀害的玩家有: {death_announcement}"
             )
     else:
         # 平安夜,无人死亡
         logger.info("在夜晚,没有玩家被杀害")
         for player in all_role_players:
-            tcg_game.append_human_message(player, f"# 昨晚没有玩家被杀害,平安夜")
+            sd_game.append_human_message(player, f"# 昨晚没有玩家被杀害,平安夜")
 
     # 处理被杀玩家的状态转换
     for killed_player in players_killed_last_night:
@@ -179,7 +179,7 @@ def announce_day_phase(tcg_game: TCGGame) -> None:
 
     # 清理夜晚阶段的计划标记组件
     # 获取所有带有夜晚计划标记的实体
-    entities_with_night_plans = tcg_game.get_group(
+    entities_with_night_plans = sd_game.get_group(
         Matcher(
             all_of=[NightActionReadyComponent],
         )
@@ -222,7 +222,7 @@ async def start_werewolf_game(
     logger.info(
         f"start/v1: {request_data.user_name} create room = {new_room._username}"
     )
-    assert new_room._game is None
+    assert new_room._sd_game is None
 
     # 创建boot数据
     assert GLOBAL_SD_GAME_NAME == request_data.game_name, "目前只支持 SD 游戏"
@@ -230,9 +230,9 @@ async def start_werewolf_game(
     assert world_boot is not None, "WorldBoot 创建失败"
 
     # 创建游戏实例
-    new_room._game = terminal_game = TCGGame(
+    new_room._sd_game = web_game = SDGame(
         name=request_data.game_name,
-        player_client=PlayerClient(
+        player_session=PlayerSession(
             name=request_data.user_name, actor="角色.主持人"  # 写死先！
         ),
         world=World(boot=world_boot),
@@ -243,18 +243,16 @@ async def start_werewolf_game(
     ChatClient.initialize_url_config(server_settings)
 
     # 新游戏！
-    terminal_game.new_game().save()
+    web_game.new_game().save()
 
     # 测试一下玩家控制角色，如果没有就是错误。
-    assert terminal_game.get_player_entity() is not None, "玩家实体不存在"
+    assert web_game.get_player_entity() is not None, "玩家实体不存在"
 
     # 初始化!
-    await terminal_game.initialize()
+    await web_game.initialize()
 
     # 在这里添加启动游戏的逻辑
-    return WerewolfGameStartResponse(
-        message=terminal_game.world.model_dump_json(indent=2)
-    )
+    return WerewolfGameStartResponse(message=web_game.world.model_dump_json(indent=2))
 
 
 ###################################################################################################################################################################
@@ -282,7 +280,7 @@ async def play_werewolf_game(
         # 是否有游戏？！！
         current_room = game_server.get_room(user_name=request_data.user_name)
         assert current_room is not None
-        if current_room._game is None:
+        if current_room._sd_game is None:
             logger.error(f"{request_data.user_name} has no game, please login first.")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -292,7 +290,8 @@ async def play_werewolf_game(
         user_input = request_data.data.get("user_input", "")
         logger.info(f"{request_data.user_name} user_input: {user_input}")
 
-        web_game = current_room._game
+        # web_game = cast(SDGame, current_room._game)
+        web_game = current_room._sd_game
 
         if user_input == "/k" or user_input == "/kickoff":
 
@@ -301,14 +300,14 @@ async def play_werewolf_game(
                 logger.info("游戏开始，准备入场记阶段！！！！！！")
 
                 # 清理之前的消息
-                web_game.player_client.clear_messages()
+                web_game.player_session.clear_messages()
 
                 # 初始化游戏的开场流程
                 await web_game.werewolf_game_kickoff_pipeline.process()
 
                 # 返回当前的客户端消息
                 return WerewolfGamePlayResponse(
-                    client_messages=web_game.player_client.client_messages
+                    client_messages=web_game.player_session.session_messages
                 )
 
             else:
@@ -347,14 +346,14 @@ async def play_werewolf_game(
             if web_game._werewolf_game_turn_counter % 2 == 1:
 
                 # 清除之前的消息
-                web_game.player_client.clear_messages()
+                web_game.player_session.clear_messages()
 
                 # 运行游戏逻辑
                 await web_game.werewolf_game_night_pipeline.process()
 
                 #
                 return WerewolfGamePlayResponse(
-                    client_messages=web_game.player_client.client_messages
+                    client_messages=web_game.player_session.session_messages
                 )
 
             else:
@@ -375,12 +374,12 @@ async def play_werewolf_game(
                 and web_game._werewolf_game_turn_counter > 0
             ):
                 # 清理之前的消息
-                web_game.player_client.clear_messages()
+                web_game.player_session.clear_messages()
                 # 运行游戏逻辑
                 await web_game.werewolf_game_day_pipeline.process()
 
                 return WerewolfGamePlayResponse(
-                    client_messages=web_game.player_client.client_messages
+                    client_messages=web_game.player_session.session_messages
                 )
 
             else:
@@ -405,13 +404,13 @@ async def play_werewolf_game(
                 if WerewolfDayVoteSystem.is_day_discussion_complete(web_game):
 
                     # 清理之前的消息
-                    web_game.player_client.clear_messages()
+                    web_game.player_session.clear_messages()
 
                     # 如果讨论完毕，则进入投票环节
                     await web_game.werewolf_game_vote_pipeline.process()
 
                     return WerewolfGamePlayResponse(
-                        client_messages=web_game.player_client.client_messages
+                        client_messages=web_game.player_session.session_messages
                     )
 
                 else:
@@ -470,7 +469,7 @@ async def get_werewolf_game_state(
         # 是否有游戏？！！
         current_room = game_server.get_room(user_name)
         assert current_room is not None
-        if current_room._game is None:
+        if current_room._sd_game is None:
             # logger.error(f"view_home: {user_name} has no game")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -478,15 +477,18 @@ async def get_werewolf_game_state(
             )
 
         # 获取当前地图
-        mapping_data = current_room._game.get_stage_actor_distribution_mapping()
+        # sd_game = cast(SDGame, current_room._game)
+        sd_game = current_room._sd_game
+        # assert sd_game is not None
+        mapping_data = sd_game.get_stage_actor_distribution_mapping()
         logger.info(
-            f"view_home: {user_name} mapping_data: {mapping_data}, time={current_room._game._werewolf_game_turn_counter}"
+            f"view_home: {user_name} mapping_data: {mapping_data}, time={sd_game._werewolf_game_turn_counter}"
         )
 
         # 返回。
         return WerewolfGameStateResponse(
             mapping=mapping_data,
-            game_time=current_room._game._werewolf_game_turn_counter,
+            game_time=sd_game._werewolf_game_turn_counter,
         )
     except Exception as e:
         raise HTTPException(
@@ -526,7 +528,7 @@ async def get_werewolf_actors_details(
         # 是否有游戏？！！
         current_room = game_server.get_room(user_name)
         assert current_room is not None
-        if current_room._game is None:
+        if current_room._sd_game is None:
             logger.error(f"view_actor: {user_name} has no game")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -547,7 +549,7 @@ async def get_werewolf_actors_details(
 
         for actor_name in actor_names:
             # 获取角色实体
-            actor_entity = current_room._game.get_entity_by_name(actor_name)
+            actor_entity = current_room._sd_game.get_entity_by_name(actor_name)
             if actor_entity is None:
                 logger.error(f"view_actor: {user_name} actor {actor_name} not found.")
                 continue
@@ -556,7 +558,9 @@ async def get_werewolf_actors_details(
             actor_entities.add(actor_entity)
 
         # 序列化角色实体
-        entities_serialization = current_room._game.serialize_entities(actor_entities)
+        entities_serialization = current_room._sd_game.serialize_entities(
+            actor_entities
+        )
 
         # 返回!
         return WerewolfGameActorDetailsResponse(

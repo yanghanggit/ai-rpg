@@ -37,7 +37,7 @@ async def get_dungeon_state(
         # 是否有游戏？！！
         current_room = game_server.get_room(user_name)
         assert current_room is not None
-        if current_room._game is None:
+        if current_room._tcg_game is None:
             logger.error(f"view_dungeon: {user_name} has no game")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -45,7 +45,7 @@ async def get_dungeon_state(
             )
 
         # 获取游戏
-        web_game = current_room._game
+        web_game = current_room._tcg_game
 
         # 获取当前地图
         mapping_data = web_game.get_stage_actor_distribution_mapping()

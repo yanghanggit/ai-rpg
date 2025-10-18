@@ -1,6 +1,6 @@
 from typing import Dict, List, final
 from pydantic import BaseModel
-from .client_message import ClientMessage
+from .session_message import SessionMessage
 from .dungeon import Dungeon
 from .serialization import EntitySerialization
 from .world import AgentChatHistory
@@ -119,7 +119,7 @@ class HomeGamePlayRequest(BaseModel):
 
 @final
 class HomeGamePlayResponse(BaseModel):
-    client_messages: List[ClientMessage]
+    client_messages: List[SessionMessage]
 
 
 ################################################################################################################
@@ -142,7 +142,7 @@ class DungeonGamePlayRequest(BaseModel):
 
 @final
 class DungeonGamePlayResponse(BaseModel):
-    client_messages: List[ClientMessage]
+    client_messages: List[SessionMessage]
 
 
 ################################################################################################################

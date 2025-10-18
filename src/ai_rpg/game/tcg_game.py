@@ -55,68 +55,10 @@ from ..models import (
     WitchComponent,
     VillagerComponent,
 )
-from .player_client import PlayerClient
+from .player_session import PlayerSession
 
 
-# ################################################################################################################################################
-class RPGWorldContext:
-    """
-    游戏数据访问器基类
-    负责提供对 player_client 和 world 的纯数据访问，不涉及ECS操作
-
-    注意：此类依赖于 BaseGame 提供的 name 属性
-    """
-
-    def __init__(
-        self,
-        player_client: PlayerClient,
-        world: World,
-        verbose_name: str,
-    ) -> None:
-        self._verbose_name: Final[str] = verbose_name
-        self._player_client: Final[PlayerClient] = player_client
-        self._world: Final[World] = world
-
-        # 验证玩家信息
-        logger.info(
-            f"TCGGame init player: {self.player_client.name}: {self.player_client.actor}"
-        )
-        assert self.player_client.name != "", "玩家名字不能为空"
-        assert self.player_client.actor != "", "玩家角色不能为空"
-
-    ###############################################################################################################################################
-    @property
-    def player_client(self) -> PlayerClient:
-        return self._player_client
-
-    ###############################################################################################################################################
-    @property
-    def world(self) -> World:
-        return self._world
-
-    ###############################################################################################################################################
-    @property
-    def current_dungeon(self) -> Dungeon:
-        return self.world.dungeon
-
-    ###############################################################################################################################################
-    @property
-    def current_engagement(self) -> Engagement:
-        return self.current_dungeon.engagement
-
-    ###############################################################################################################################################
-    @property
-    def verbose_dir(self) -> Path:
-        # 依赖 BaseGame 提供的 name 属性
-        dir = LOGS_DIR / f"{self.player_client.name}" / f"{self._verbose_name}"
-        if not dir.exists():
-            dir.mkdir(parents=True, exist_ok=True)
-        assert dir.exists()
-        assert dir.is_dir()
-        return dir
-
-
-# ################################################################################################################################################
+################################################################################################################################################
 class RPGGamePipelineManager:
     """
     RPG游戏流程管道管理器
@@ -148,66 +90,51 @@ class RPGGamePipelineManager:
 
 
 #################################################################################################################################################
-class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext, RPGGamePipelineManager):
+class RPGGame(BaseGame, RPGEntityManager, RPGGamePipelineManager):
 
     def __init__(
         self,
         name: str,
-        player_client: PlayerClient,
+        player_session: PlayerSession,
         world: World,
     ) -> None:
 
         # 必须按着此顺序实现父类
         BaseGame.__init__(self, name)  # 需要传递 name
         RPGEntityManager.__init__(self)  # 继承 Context, 需要调用其 __init__
-        RPGWorldContext.__init__(self, player_client, world, name)  # 数据访问器初始化
         RPGGamePipelineManager.__init__(self)  # 管道管理器初始化
 
-        # 常规home 的流程
-        self._npc_home_pipeline: Final[TCGGameProcessPipeline] = (
-            create_npc_home_pipline(self)
+        # 初始化player_session 和 world
+        self._player_session: Final[PlayerSession] = player_session
+        self._world: Final[World] = world
+
+        # 验证玩家信息
+        logger.info(
+            f"TCGGame init player: {self.player_session.name}: {self.player_session.actor}"
         )
+        assert self.player_session.name != "", "玩家名字不能为空"
+        assert self.player_session.actor != "", "玩家角色不能为空"
 
-        # 仅处理player的home流程
-        self._player_home_pipeline: Final[TCGGameProcessPipeline] = (
-            create_player_home_pipline(self)
-        )
+    ###############################################################################################################################################
+    @property
+    def player_session(self) -> PlayerSession:
+        return self._player_session
 
-        # 地下城战斗流程
-        self._dungeon_combat_pipeline: Final[TCGGameProcessPipeline] = (
-            create_dungeon_combat_state_pipeline(self)
-        )
+    ###############################################################################################################################################
+    @property
+    def world(self) -> World:
+        return self._world
 
-        # 狼人杀的流程
-        self._werewolf_game_kickoff_pipeline: Final[TCGGameProcessPipeline] = (
-            create_werewolf_game_kickoff_pipline(self)
-        )
-
-        self._werewolf_game_night_pipeline: Final[TCGGameProcessPipeline] = (
-            create_werewolf_game_night_pipline(self)
-        )
-
-        # create_social_deduction_day_pipline
-        self._werewolf_game_day_pipeline: Final[TCGGameProcessPipeline] = (
-            create_werewolf_game_day_pipline(self)
-        )
-
-        # create_werewolf_game_vote_pipline
-        self._werewolf_game_vote_pipeline: Final[TCGGameProcessPipeline] = (
-            create_werewolf_game_vote_pipline(self)
-        )
-
-        # 注册所有管道到管道管理器
-        self.register_pipeline(self._npc_home_pipeline)
-        self.register_pipeline(self._player_home_pipeline)
-        self.register_pipeline(self._dungeon_combat_pipeline)
-        self.register_pipeline(self._werewolf_game_kickoff_pipeline)
-        self.register_pipeline(self._werewolf_game_night_pipeline)
-        self.register_pipeline(self._werewolf_game_day_pipeline)
-        self.register_pipeline(self._werewolf_game_vote_pipeline)
-
-        # TODO, 游戏时间标记, 目前就狼人杀用。
-        self._werewolf_game_turn_counter: int = 0
+    ###############################################################################################################################################
+    @property
+    def verbose_dir(self) -> Path:
+        # 依赖 BaseGame 提供的 name 属性
+        dir = LOGS_DIR / f"{self.player_session.name}" / f"{self.name}"
+        if not dir.exists():
+            dir.mkdir(parents=True, exist_ok=True)
+        assert dir.exists()
+        assert dir.is_dir()
+        return dir
 
     ###############################################################################################################################################
     @override
@@ -217,60 +144,6 @@ class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext, RPGGamePipelineManage
             logger.debug(f"TCGGame destroy entity: {entity.name} in short term memory")
             self.world.agents_chat_history.pop(entity.name, None)
         return super().destroy_entity(entity)
-
-    ###############################################################################################################################################
-    @property
-    def is_player_at_home(self) -> bool:
-        player_entity = self.get_player_entity()
-        assert player_entity is not None, "player_entity is None"
-        if player_entity is None:
-            return False
-
-        return self.is_actor_at_home(player_entity)
-
-    ###############################################################################################################################################
-    @property
-    def is_player_in_dungeon(self) -> bool:
-        player_entity = self.get_player_entity()
-        assert player_entity is not None, "player_entity is None"
-        if player_entity is None:
-            return False
-
-        return self.is_actor_in_dungeon(player_entity)
-
-    ###############################################################################################################################################
-    @property
-    def npc_home_pipeline(self) -> TCGGameProcessPipeline:
-        return self._npc_home_pipeline
-
-    ###############################################################################################################################################
-    @property
-    def player_home_pipeline(self) -> TCGGameProcessPipeline:
-        return self._player_home_pipeline
-
-    ###############################################################################################################################################
-    @property
-    def dungeon_combat_pipeline(self) -> TCGGameProcessPipeline:
-        return self._dungeon_combat_pipeline
-
-    ###############################################################################################################################################
-    @property
-    def werewolf_game_kickoff_pipeline(self) -> TCGGameProcessPipeline:
-        return self._werewolf_game_kickoff_pipeline
-
-    ###############################################################################################################################################
-    @property
-    def werewolf_game_night_pipeline(self) -> TCGGameProcessPipeline:
-        return self._werewolf_game_night_pipeline
-
-    ###############################################################################################################################################
-    @property
-    def werewolf_game_day_pipeline(self) -> TCGGameProcessPipeline:
-        return self._werewolf_game_day_pipeline
-
-    @property
-    def werewolf_game_vote_pipeline(self) -> TCGGameProcessPipeline:
-        return self._werewolf_game_vote_pipeline
 
     ###############################################################################################################################################
     @override
@@ -287,7 +160,7 @@ class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext, RPGGamePipelineManage
         # logger.debug(f"Initialized all pipelines")
 
     ###############################################################################################################################################
-    def new_game(self) -> "TCGGame":
+    def new_game(self) -> "RPGGame":
 
         assert (
             len(self.world.entities_serialization) == 0
@@ -305,59 +178,11 @@ class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext, RPGGamePipelineManage
         ## 第4步，创建stage
         self._create_stage_entities(self.world.boot.stages)
 
-        ## 第5步，狼人杀专用，分配角色
-        self._assign_werewolf_roles_to_actors(self.world.boot.actors)
-
         return self
 
     ###############################################################################################################################################
-    def _assign_werewolf_roles_to_actors(
-        self, actor_models: List[Actor]
-    ) -> List[Entity]:
-        ret: List[Entity] = []
-        for actor_model in actor_models:
-
-            # 创建实体
-            actor_entity = self.get_actor_entity(actor_model.name)
-            assert actor_entity is not None, "actor_entity is not None"
-            assert actor_entity.has(
-                ActorComponent
-            ), "actor_entity should have ActorComponent"
-
-            # 狼人杀专用，临时这么写。。。
-            match actor_model.character_sheet.name:
-                case SDCharacterSheetName.MODERATOR:
-                    actor_entity.replace(ModeratorComponent, actor_model.name)
-                    logger.info(f"分配角色: {actor_model.name} -> Moderator")
-
-                case SDCharacterSheetName.WEREWOLF:
-                    actor_entity.replace(WerewolfComponent, actor_model.name)
-                    logger.info(f"分配角色: {actor_model.name} -> Werewolf")
-
-                case SDCharacterSheetName.SEER:
-                    actor_entity.replace(SeerComponent, actor_model.name)
-                    logger.info(f"分配角色: {actor_model.name} -> Seer")
-
-                case SDCharacterSheetName.WITCH:
-                    actor_entity.replace(WitchComponent, actor_model.name)
-                    logger.info(f"分配角色: {actor_model.name} -> Witch")
-
-                case SDCharacterSheetName.VILLAGER:
-                    actor_entity.replace(VillagerComponent, actor_model.name)
-                    logger.info(f"分配角色: {actor_model.name} -> Villager")
-
-                case _:
-                    logger.debug(
-                        f"应该不是狼人杀的角色: {actor_model.character_sheet.name}"
-                    )
-            # 添加到返回值
-            ret.append(actor_entity)
-
-        return ret
-
-    ###############################################################################################################################################
     # 测试！回复ecs
-    def load_game(self) -> "TCGGame":
+    def load_game(self) -> "RPGGame":
         assert (
             len(self.world.entities_serialization) > 0
         ), "游戏中没有实体，不能恢复游戏"
@@ -366,7 +191,7 @@ class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext, RPGGamePipelineManage
         return self
 
     ###############################################################################################################################################
-    def save(self) -> "TCGGame":
+    def save(self) -> "RPGGame":
 
         # 生成快照
         self.world.entities_serialization = self.serialize_entities(self._entities)
@@ -374,7 +199,7 @@ class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext, RPGGamePipelineManage
 
         # 保存快照
         persist_world_data(
-            username=self.player_client.name,
+            username=self.player_session.name,
             world=self.world,
         )
 
@@ -570,7 +395,7 @@ class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext, RPGGamePipelineManage
 
     ###############################################################################################################################################
     def get_player_entity(self) -> Optional[Entity]:
-        return self.get_entity_by_player_name(self.player_client.name)
+        return self.get_entity_by_player_name(self.player_session.name)
 
     ###############################################################################################################################################
     def get_agent_chat_history(self, entity: Entity) -> AgentChatHistory:
@@ -615,18 +440,18 @@ class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext, RPGGamePipelineManage
 
     ###############################################################################################################################################
     def _assign_player_to_actor(self) -> bool:
-        assert self.player_client.name != "", "玩家名字不能为空"
-        assert self.player_client.actor != "", "玩家角色不能为空"
+        assert self.player_session.name != "", "玩家名字不能为空"
+        assert self.player_session.actor != "", "玩家角色不能为空"
 
-        actor_entity = self.get_actor_entity(self.player_client.actor)
+        actor_entity = self.get_actor_entity(self.player_session.actor)
         assert actor_entity is not None
         if actor_entity is None:
             return False
 
         assert not actor_entity.has(PlayerComponent)
-        actor_entity.replace(PlayerComponent, self.player_client.name)
+        actor_entity.replace(PlayerComponent, self.player_session.name)
         logger.info(
-            f"玩家: {self.player_client.name} 选择控制: {self.player_client.name}"
+            f"玩家: {self.player_session.name} 选择控制: {self.player_session.name}"
         )
         return True
 
@@ -664,7 +489,7 @@ class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext, RPGGamePipelineManage
             self.append_human_message(entity, agent_event.message)
 
         # 最后都要发给客户端。
-        self.player_client.add_agent_event_message(agent_event=agent_event)
+        self.player_session.add_agent_event_message(agent_event=agent_event)
 
     ###############################################################################################################################################
     def _validate_stage_transition_prerequisites(
@@ -799,6 +624,158 @@ class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext, RPGGamePipelineManage
         self._broadcast_arrival_notifications(actors_to_transfer, stage_destination)
 
     #######################################################################################################################################
+    def find_human_messages_by_attribute(
+        self,
+        actor_entity: Entity,
+        attribute_key: str,
+        attribute_value: str,
+        reverse_order: bool = True,
+    ) -> List[HumanMessage]:
+
+        found_messages: List[HumanMessage] = []
+
+        chat_history = self.get_agent_chat_history(actor_entity).chat_history
+
+        # 进行查找。
+        for chat_message in reversed(chat_history) if reverse_order else chat_history:
+
+            if not isinstance(chat_message, HumanMessage):
+                continue
+
+            try:
+                # 直接从 HumanMessage 对象获取属性，而不是从嵌套的 kwargs 中获取
+                if hasattr(chat_message, attribute_key):
+                    if getattr(chat_message, attribute_key) == attribute_value:
+                        found_messages.append(chat_message)
+
+            except Exception as e:
+                logger.error(f"find_recent_human_message_by_attribute error: {e}")
+                continue
+
+        return found_messages
+
+    #######################################################################################################################################
+    def delete_human_messages_by_attribute(
+        self,
+        actor_entity: Entity,
+        human_messages: List[HumanMessage],
+    ) -> int:
+
+        if len(human_messages) == 0:
+            return 0
+
+        chat_history = self.get_agent_chat_history(actor_entity).chat_history
+        original_length = len(chat_history)
+
+        # 删除指定的 HumanMessage 对象
+        chat_history[:] = [msg for msg in chat_history if msg not in human_messages]
+
+        deleted_count = original_length - len(chat_history)
+        if deleted_count > 0:
+            logger.debug(
+                f"Deleted {deleted_count} HumanMessage(s) from {actor_entity.name}'s chat history."
+            )
+        return deleted_count
+
+    #######################################################################################################################################
+    def compress_combat_chat_history(
+        self, entity: Entity, begin_message: HumanMessage, end_message: HumanMessage
+    ) -> None:
+        assert (
+            begin_message != end_message
+        ), "begin_message and end_message should not be the same"
+
+        agent_chat_history = self.get_agent_chat_history(entity)
+        begin_message_index = agent_chat_history.chat_history.index(begin_message)
+        end_message_index = agent_chat_history.chat_history.index(end_message) + 1
+        # 开始移除！！！！。
+        del agent_chat_history.chat_history[begin_message_index:end_message_index]
+        logger.debug(f"compress_combat_chat_history！= {entity.name}")
+        logger.debug(f"begin_message: \n{begin_message.model_dump_json(indent=2)}")
+        logger.debug(f"end_message: \n{end_message.model_dump_json(indent=2)}")
+
+    #######################################################################################################################################
+
+
+class TCGGame(RPGGame):
+
+    def __init__(
+        self,
+        name: str,
+        player_session: PlayerSession,
+        world: World,
+    ) -> None:
+
+        # 必须按着此顺序实现父类
+        RPGGame.__init__(self, name, player_session, world)
+
+        # 常规home 的流程
+        self._npc_home_pipeline: Final[TCGGameProcessPipeline] = (
+            create_npc_home_pipline(self)
+        )
+
+        # 仅处理player的home流程
+        self._player_home_pipeline: Final[TCGGameProcessPipeline] = (
+            create_player_home_pipline(self)
+        )
+
+        # 地下城战斗流程
+        self._dungeon_combat_pipeline: Final[TCGGameProcessPipeline] = (
+            create_dungeon_combat_state_pipeline(self)
+        )
+
+        # 注册所有管道到管道管理器
+        self.register_pipeline(self._npc_home_pipeline)
+        self.register_pipeline(self._player_home_pipeline)
+        self.register_pipeline(self._dungeon_combat_pipeline)
+
+    ###############################################################################################################################################
+    @property
+    def current_dungeon(self) -> Dungeon:
+        return self.world.dungeon
+
+    ###############################################################################################################################################
+    @property
+    def current_engagement(self) -> Engagement:
+        return self.current_dungeon.engagement
+
+    ###############################################################################################################################################
+    @property
+    def npc_home_pipeline(self) -> TCGGameProcessPipeline:
+        return self._npc_home_pipeline
+
+    ###############################################################################################################################################
+    @property
+    def player_home_pipeline(self) -> TCGGameProcessPipeline:
+        return self._player_home_pipeline
+
+    ###############################################################################################################################################
+    @property
+    def dungeon_combat_pipeline(self) -> TCGGameProcessPipeline:
+        return self._dungeon_combat_pipeline
+
+        ###############################################################################################################################################
+
+    @property
+    def is_player_at_home(self) -> bool:
+        player_entity = self.get_player_entity()
+        assert player_entity is not None, "player_entity is None"
+        if player_entity is None:
+            return False
+
+        return self.is_actor_at_home(player_entity)
+
+    ###############################################################################################################################################
+    @property
+    def is_player_in_dungeon(self) -> bool:
+        player_entity = self.get_player_entity()
+        assert player_entity is not None, "player_entity is None"
+        if player_entity is None:
+            return False
+
+        return self.is_actor_in_dungeon(player_entity)
+
+    #######################################################################################################################################
     def create_dungeon_entities(self, dungeon_model: Dungeon) -> None:
 
         # 加一步测试: 不可以存在！如果存在说明没有清空。
@@ -873,75 +850,140 @@ class TCGGame(BaseGame, RPGEntityManager, RPGWorldContext, RPGGamePipelineManage
         logger.info(f"new_round:\n{new_round.model_dump_json(indent=2)}")
         return new_round
 
-    #######################################################################################################################################
-    def find_human_messages_by_attribute(
+
+#################################################################################################################################################
+class SDGame(RPGGame):
+    """
+    Social Deduction Game (狼人杀游戏)
+    专门处理狼人杀相关的游戏逻辑
+    """
+
+    def __init__(
         self,
-        actor_entity: Entity,
-        attribute_key: str,
-        attribute_value: str,
-        reverse_order: bool = True,
-    ) -> List[HumanMessage]:
-
-        found_messages: List[HumanMessage] = []
-
-        chat_history = self.get_agent_chat_history(actor_entity).chat_history
-
-        # 进行查找。
-        for chat_message in reversed(chat_history) if reverse_order else chat_history:
-
-            if not isinstance(chat_message, HumanMessage):
-                continue
-
-            try:
-                # 直接从 HumanMessage 对象获取属性，而不是从嵌套的 kwargs 中获取
-                if hasattr(chat_message, attribute_key):
-                    if getattr(chat_message, attribute_key) == attribute_value:
-                        found_messages.append(chat_message)
-
-            except Exception as e:
-                logger.error(f"find_recent_human_message_by_attribute error: {e}")
-                continue
-
-        return found_messages
-
-    #######################################################################################################################################
-    def delete_human_messages_by_attribute(
-        self,
-        actor_entity: Entity,
-        human_messages: List[HumanMessage],
-    ) -> int:
-
-        if len(human_messages) == 0:
-            return 0
-
-        chat_history = self.get_agent_chat_history(actor_entity).chat_history
-        original_length = len(chat_history)
-
-        # 删除指定的 HumanMessage 对象
-        chat_history[:] = [msg for msg in chat_history if msg not in human_messages]
-
-        deleted_count = original_length - len(chat_history)
-        if deleted_count > 0:
-            logger.debug(
-                f"Deleted {deleted_count} HumanMessage(s) from {actor_entity.name}'s chat history."
-            )
-        return deleted_count
-
-    #######################################################################################################################################
-    def compress_combat_chat_history(
-        self, entity: Entity, begin_message: HumanMessage, end_message: HumanMessage
+        name: str,
+        player_session: PlayerSession,
+        world: World,
     ) -> None:
-        assert (
-            begin_message != end_message
-        ), "begin_message and end_message should not be the same"
+        # 调用父类初始化
+        super().__init__(name, player_session, world)
 
-        agent_chat_history = self.get_agent_chat_history(entity)
-        begin_message_index = agent_chat_history.chat_history.index(begin_message)
-        end_message_index = agent_chat_history.chat_history.index(end_message) + 1
-        # 开始移除！！！！。
-        del agent_chat_history.chat_history[begin_message_index:end_message_index]
-        logger.debug(f"compress_combat_chat_history！= {entity.name}")
-        logger.debug(f"begin_message: \n{begin_message.model_dump_json(indent=2)}")
-        logger.debug(f"end_message: \n{end_message.model_dump_json(indent=2)}")
+        # 狼人杀的流程管道
+        self._werewolf_game_kickoff_pipeline: Final[TCGGameProcessPipeline] = (
+            create_werewolf_game_kickoff_pipline(self)
+        )
 
-    #######################################################################################################################################
+        self._werewolf_game_night_pipeline: Final[TCGGameProcessPipeline] = (
+            create_werewolf_game_night_pipline(self)
+        )
+
+        self._werewolf_game_day_pipeline: Final[TCGGameProcessPipeline] = (
+            create_werewolf_game_day_pipline(self)
+        )
+
+        self._werewolf_game_vote_pipeline: Final[TCGGameProcessPipeline] = (
+            create_werewolf_game_vote_pipline(self)
+        )
+
+        # 注册狼人杀管道到管道管理器
+        self.register_pipeline(self._werewolf_game_kickoff_pipeline)
+        self.register_pipeline(self._werewolf_game_night_pipeline)
+        self.register_pipeline(self._werewolf_game_day_pipeline)
+        self.register_pipeline(self._werewolf_game_vote_pipeline)
+
+        # 狼人杀专用：游戏回合计数器
+        self._werewolf_game_turn_counter: int = 0
+
+    ###############################################################################################################################################
+    @property
+    def werewolf_game_kickoff_pipeline(self) -> TCGGameProcessPipeline:
+        """获取狼人杀启动流程管道"""
+        return self._werewolf_game_kickoff_pipeline
+
+    ###############################################################################################################################################
+    @property
+    def werewolf_game_night_pipeline(self) -> TCGGameProcessPipeline:
+        """获取狼人杀夜晚流程管道"""
+        return self._werewolf_game_night_pipeline
+
+    ###############################################################################################################################################
+    @property
+    def werewolf_game_day_pipeline(self) -> TCGGameProcessPipeline:
+        """获取狼人杀白天流程管道"""
+        return self._werewolf_game_day_pipeline
+
+    ###############################################################################################################################################
+    @property
+    def werewolf_game_vote_pipeline(self) -> TCGGameProcessPipeline:
+        """获取狼人杀投票流程管道"""
+        return self._werewolf_game_vote_pipeline
+
+    ###############################################################################################################################################
+    @override
+    def new_game(self) -> "SDGame":
+        """
+        创建新的狼人杀游戏
+        在父类的基础上增加狼人杀角色分配
+        """
+        # 调用父类的 new_game 方法
+        super().new_game()
+
+        # 第5步，狼人杀专用，分配角色
+        self._assign_werewolf_roles_to_actors(self.world.boot.actors)
+
+        return self
+
+    ###############################################################################################################################################
+    def _assign_werewolf_roles_to_actors(
+        self, actor_models: List[Actor]
+    ) -> List[Entity]:
+        """
+        为角色分配狼人杀专用的角色组件
+
+        Args:
+            actor_models: 角色模型列表
+
+        Returns:
+            List[Entity]: 分配了角色的实体列表
+        """
+        ret: List[Entity] = []
+        for actor_model in actor_models:
+
+            # 创建实体
+            actor_entity = self.get_actor_entity(actor_model.name)
+            assert actor_entity is not None, "actor_entity is not None"
+            assert actor_entity.has(
+                ActorComponent
+            ), "actor_entity should have ActorComponent"
+
+            # 狼人杀专用，根据角色表分配组件
+            match actor_model.character_sheet.name:
+                case SDCharacterSheetName.MODERATOR:
+                    actor_entity.replace(ModeratorComponent, actor_model.name)
+                    logger.info(f"分配角色: {actor_model.name} -> Moderator")
+
+                case SDCharacterSheetName.WEREWOLF:
+                    actor_entity.replace(WerewolfComponent, actor_model.name)
+                    logger.info(f"分配角色: {actor_model.name} -> Werewolf")
+
+                case SDCharacterSheetName.SEER:
+                    actor_entity.replace(SeerComponent, actor_model.name)
+                    logger.info(f"分配角色: {actor_model.name} -> Seer")
+
+                case SDCharacterSheetName.WITCH:
+                    actor_entity.replace(WitchComponent, actor_model.name)
+                    logger.info(f"分配角色: {actor_model.name} -> Witch")
+
+                case SDCharacterSheetName.VILLAGER:
+                    actor_entity.replace(VillagerComponent, actor_model.name)
+                    logger.info(f"分配角色: {actor_model.name} -> Villager")
+
+                case _:
+                    logger.debug(
+                        f"应该不是狼人杀的角色: {actor_model.character_sheet.name}"
+                    )
+            # 添加到返回值
+            ret.append(actor_entity)
+
+        return ret
+
+    ###############################################################################################################################################

@@ -1,7 +1,7 @@
 from typing import final
 from overrides import override
 from ..entitas import ExecuteProcessor, Matcher
-from ..game.tcg_game import TCGGame
+from ..game.tcg_game import SDGame
 from loguru import logger
 from ..models import (
     WitchComponent,
@@ -17,8 +17,8 @@ from ..models import (
 class WerewolfVictoryConditionSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
-    def __init__(self, game_context: TCGGame) -> None:
-        self._game: TCGGame = game_context
+    def __init__(self, game_context: SDGame) -> None:
+        self._game: SDGame = game_context
 
     ###############################################################################################################################################
     @override

@@ -2,7 +2,7 @@ from .actions import *
 from .agent_event import *
 from .api import *
 from .character_sheet import *
-from .client_message import *
+from .session_message import *
 from .components import *
 from .dungeon import *
 from .objects import *

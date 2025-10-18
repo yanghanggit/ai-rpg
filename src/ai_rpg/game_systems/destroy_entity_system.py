@@ -1,15 +1,15 @@
 from typing import final, override
 from loguru import logger
 from ..entitas import ExecuteProcessor, Matcher
-from ..game.tcg_game import TCGGame
+from ..game.tcg_game import RPGGame
 from ..models import DestroyComponent
 
 
 @final
 class DestroyEntitySystem(ExecuteProcessor):
 
-    def __init__(self, game_context: TCGGame) -> None:
-        self._game: TCGGame = game_context
+    def __init__(self, game_context: RPGGame) -> None:
+        self._game: RPGGame = game_context
 
     ####################################################################################################################################
     @override

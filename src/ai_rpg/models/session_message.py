@@ -11,6 +11,6 @@ class MessageType(IntEnum):
 
 
 @final
-class ClientMessage(BaseModel):
+class SessionMessage(BaseModel):
     message_type: int = MessageType.NONE
     data: Dict[str, Any] = {}

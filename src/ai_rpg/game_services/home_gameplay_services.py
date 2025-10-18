@@ -54,14 +54,14 @@ async def _validate_home_game_preconditions(
     # 是否有游戏？！！
     current_room = game_server.get_room(user_name)
     assert current_room is not None
-    if current_room._game is None:
+    if current_room._tcg_game is None:
         logger.error(f"{user_name} has no game, please login first.")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="没有游戏，请先登录",
         )
 
-    web_game = current_room._game
+    web_game = current_room._tcg_game
     assert web_game is not None
     assert isinstance(web_game, TCGGame)
 
@@ -91,12 +91,12 @@ async def _handle_advancing_action(web_game: TCGGame) -> HomeGamePlayResponse:
         HomeGamePlayResponse: 包含客户端消息的响应
     """
     # 推进一次。
-    web_game.player_client.clear_messages()
+    web_game.player_session.clear_messages()
     await web_game.npc_home_pipeline.process()
 
     # 返回消息
     return HomeGamePlayResponse(
-        client_messages=web_game.player_client.client_messages,
+        client_messages=web_game.player_session.session_messages,
     )
 
 
@@ -272,17 +272,17 @@ async def _handle_speak_action(
     # if web_game.speak_action(target=target, content=content):
     if _player_add_speak_action(web_game, target=target, content=content):
         # 清空消息。准备重新开始 + 测试推进一次游戏
-        web_game.player_client.clear_messages()
+        web_game.player_session.clear_messages()
         await web_game.player_home_pipeline.process()
 
         # 返回消息
         return HomeGamePlayResponse(
-            client_messages=web_game.player_client.client_messages,
+            client_messages=web_game.player_session.session_messages,
         )
 
     # 如果说话动作激活失败，返回空消息
     return HomeGamePlayResponse(
-        client_messages=web_game.player_client.client_messages,
+        client_messages=web_game.player_session.session_messages,
     )
 
 

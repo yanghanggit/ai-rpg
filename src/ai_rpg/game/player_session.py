@@ -1,9 +1,9 @@
 from typing import Final, List
-from ..models import AgentEvent, ClientMessage, MessageType
+from ..models import AgentEvent, SessionMessage, MessageType
 
 
 ##########################################################################################################################################################
-class PlayerClient:
+class PlayerSession:
 
     def __init__(
         self,
@@ -13,7 +13,7 @@ class PlayerClient:
 
         self._name: Final[str] = name
         self._actor: Final[str] = actor
-        self._client_messages: List[ClientMessage] = []
+        self._session_messages: List[SessionMessage] = []
 
     # ##########################################################################################################################################################
     @property
@@ -26,23 +26,23 @@ class PlayerClient:
         return self._actor
 
     ##########################################################################################################################################################
+    @property
+    def session_messages(self) -> List[SessionMessage]:
+        return self._session_messages
+
+    ##########################################################################################################################################################
     def add_agent_event_message(self, agent_event: AgentEvent) -> None:
         # logger.debug(
         #     f"[{self.name}:{self.actor}] = add_agent_event_message: {agent_event.model_dump_json()}"
         # )
-        self._client_messages.append(
-            ClientMessage(
+        self._session_messages.append(
+            SessionMessage(
                 message_type=MessageType.AGENT_EVENT, data=agent_event.model_dump()
             )
         )
 
     ##########################################################################################################################################################
     def clear_messages(self) -> None:
-        self._client_messages = []
-
-    ##########################################################################################################################################################
-    @property
-    def client_messages(self) -> List[ClientMessage]:
-        return self._client_messages
+        self._session_messages = []
 
     ##########################################################################################################################################################

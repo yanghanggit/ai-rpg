@@ -18,7 +18,7 @@ from ..models import (
 from ..chat_services.client import ChatClient
 from ..utils import json_format
 from ..utils.md_format import format_dict_as_markdown_list
-from ..game.tcg_game import TCGGame
+from ..game.tcg_game import SDGame
 
 
 ###############################################################################################################################################
@@ -70,9 +70,9 @@ class WerewolfKillDecisionResponse(BaseModel):
 @final
 class NightWerewolfActionSystem(ReactiveProcessor):
 
-    def __init__(self, game_context: TCGGame) -> None:
+    def __init__(self, game_context: SDGame) -> None:
         super().__init__(game_context)
-        self._game: TCGGame = game_context
+        self._game: SDGame = game_context
 
     ####################################################################################################################################
     @override

@@ -14,9 +14,9 @@ from ai_rpg.settings import (
     initialize_server_settings_instance,
 )
 from ai_rpg.game.config import GLOBAL_SD_GAME_NAME, setup_logger
-from ai_rpg.game.player_client import PlayerClient
+from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import (
-    TCGGame,
+    SDGame,
 )
 from ai_rpg.demo.werewolf_game_world import (
     create_demo_sd_game_boot,
@@ -44,9 +44,9 @@ async def _run_game(
     assert world_boot is not None, "WorldBoot 创建失败"
 
     # 创建游戏实例
-    terminal_game = TCGGame(
+    terminal_game = SDGame(
         name=game,
-        player_client=PlayerClient(
+        player_session=PlayerSession(
             name=user,
             actor=actor,
         ),
@@ -96,7 +96,7 @@ async def _run_game(
 
 
 ###############################################################################################################################################
-async def _process_player_input(terminal_game: TCGGame) -> None:
+async def _process_player_input(terminal_game: SDGame) -> None:
 
     player_actor_entity = terminal_game.get_player_entity()
     assert player_actor_entity is not None
@@ -106,7 +106,7 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
 
     # 其他状态下的玩家输入！！！！！！
     usr_input = input(
-        f"[{terminal_game.player_client.name}/{player_stage_entity.name}/{player_actor_entity.name}]:"
+        f"[{terminal_game.player_session.name}/{player_stage_entity.name}/{player_actor_entity.name}]:"
     )
     usr_input = usr_input.strip().lower()
     logger.success(f"玩家输入 = {usr_input}")
@@ -115,7 +115,7 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
     if usr_input == "/q" or usr_input == "/quit":
         # 退出游戏
         logger.debug(
-            f"玩家 主动 退出游戏 = {terminal_game.player_client.name}, {player_stage_entity.name}"
+            f"玩家 主动 退出游戏 = {terminal_game.player_session.name}, {player_stage_entity.name}"
         )
         terminal_game.should_terminate = True
         return

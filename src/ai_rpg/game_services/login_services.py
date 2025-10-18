@@ -63,7 +63,7 @@ async def login(
         logger.info(
             f"login: {request_data.user_name} create room = {new_room._username}"
         )
-        assert new_room._game is None
+        assert new_room._tcg_game is None
 
     # 如果有房间，就获取房间。
     room = game_server.get_room(request_data.user_name)
@@ -98,18 +98,18 @@ async def logout(
         # 删除房间
         pre_room = game_server.get_room(request_data.user_name)
         assert pre_room is not None
-        if pre_room._game is not None:
+        if pre_room._tcg_game is not None:
             # 保存游戏的运行时数据
             logger.info(
-                f"logout: {request_data.user_name} save game = {pre_room._game.name}"
+                f"logout: {request_data.user_name} save game = {pre_room._tcg_game.name}"
             )
-            pre_room._game.save()
+            pre_room._tcg_game.save()
             # 退出游戏
             logger.info(
-                f"logout: {request_data.user_name} exit game = {pre_room._game.name}"
+                f"logout: {request_data.user_name} exit game = {pre_room._tcg_game.name}"
             )
             # 退出游戏
-            pre_room._game.exit()
+            pre_room._tcg_game.exit()
 
         else:
             logger.info(

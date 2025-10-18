@@ -5,7 +5,7 @@ from loguru import logger
 # from ..demo.stage_dungeon4 import (
 #     create_demo_dungeon4,
 # )
-from ..game.player_client import PlayerClient
+from ..game.player_session import PlayerSession
 from ..game.tcg_game import TCGGame
 from ..game.world_data_service import get_user_world_data, get_game_boot_data
 from ..game_services.game_server import GameServerInstance
@@ -44,42 +44,42 @@ async def start(
         room = game_server.get_room(request_data.user_name)
         assert room is not None
 
-        if room._game is None:
+        if room._tcg_game is None:
 
             # 创建玩家客户端
-            room._player_client = PlayerClient(
+            room._player_session = PlayerSession(
                 name=request_data.user_name,
                 actor=request_data.actor_name,
             )
-            assert room._player_client is not None, "房间玩家客户端实例不存在"
+            assert room._player_session is not None, "房间玩家客户端实例不存在"
 
             # 创建游戏
-            room._game = setup_web_game_session(
+            room._tcg_game = setup_web_game_session(
                 user=request_data.user_name,
                 game=request_data.game_name,
                 actor=request_data.actor_name,
-                player_client=room._player_client,
+                player_session=room._player_session,
             )
 
-            assert room._game is not None, "Web game setup failed"
-            if room._game is None:
+            assert room._tcg_game is not None, "Web game setup failed"
+            if room._tcg_game is None:
                 logger.error(f"创建游戏失败 = {request_data.game_name}")
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"start/v1: {request_data.user_name} failed to create game",
                 )
 
-            assert room._game is not None, "房间游戏实例不存在"
-            assert room._player_client is not None, "房间玩家客户端实例不存在"
+            assert room._tcg_game is not None, "房间游戏实例不存在"
+            assert room._player_session is not None, "房间玩家客户端实例不存在"
 
             # 初始化游戏
             logger.info(f"start/v1: {request_data.user_name} init game!")
-            await room._game.initialize()
+            await room._tcg_game.initialize()
 
         else:
             assert False, "游戏已经在进行中，无法重新启动! 尚未实现！"
 
-        assert room._game is not None
+        assert room._tcg_game is not None
         return StartResponse(
             message=f"启动游戏成功！",
         )
@@ -98,7 +98,7 @@ def setup_web_game_session(
     user: str,
     game: str,
     actor: str,
-    player_client: PlayerClient,
+    player_session: PlayerSession,
 ) -> Optional[TCGGame]:
 
     world_exists = get_user_world_data(user, game)
@@ -136,7 +136,7 @@ def setup_web_game_session(
     assert world_exists is not None, "World data must exist to create a game"
     web_game = TCGGame(
         name=game,
-        player_client=player_client,
+        player_session=player_session,
         world=world_exists,
     )
 

@@ -210,7 +210,7 @@ def _validate_dungeon_prerequisites(
     # 是否有游戏？！！
     current_room = game_server.get_room(user_name)
     assert current_room is not None
-    if current_room._game is None:
+    if current_room._tcg_game is None:
         logger.error(f"dungeon operation: {user_name} has no game, please login first.")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -218,7 +218,7 @@ def _validate_dungeon_prerequisites(
         )
 
     # 是否是WebTCGGame？！！
-    web_game = current_room._game
+    web_game = current_room._tcg_game
     assert isinstance(web_game, TCGGame)
     assert web_game is not None
 
@@ -259,11 +259,11 @@ async def _handle_dungeon_combat_kick_off(
         )
 
     # 推进一次游戏, 即可转换ONGOING状态。
-    web_game.player_client.clear_messages()
+    web_game.player_session.clear_messages()
     await web_game.dungeon_combat_pipeline.process()
     # 返回！
     return DungeonGamePlayResponse(
-        client_messages=web_game.player_client.client_messages,
+        client_messages=web_game.player_session.session_messages,
     )
 
 
@@ -282,12 +282,12 @@ async def _handle_draw_cards(web_game: TCGGame) -> DungeonGamePlayResponse:
     # 推进一次游戏, 即可抽牌。
     # web_game.draw_cards_action()
     _combat_actors_draw_cards_action(web_game)
-    web_game.player_client.clear_messages()
+    web_game.player_session.clear_messages()
     await web_game.dungeon_combat_pipeline.process()
 
     # 返回！
     return DungeonGamePlayResponse(
-        client_messages=web_game.player_client.client_messages,
+        client_messages=web_game.player_session.session_messages,
     )
 
 
@@ -310,12 +310,12 @@ async def _handle_play_cards(
     if _combat_actors_random_play_cards_action(web_game):
         # 执行一次！！！！！
         # await _execute_web_game(web_game)
-        web_game.player_client.clear_messages()
+        web_game.player_session.clear_messages()
         await web_game.dungeon_combat_pipeline.process()
 
     # 返回！
     return DungeonGamePlayResponse(
-        client_messages=web_game.player_client.client_messages,
+        client_messages=web_game.player_session.session_messages,
     )
 
 
@@ -354,7 +354,7 @@ async def _handle_x_card(
         )
 
         return DungeonGamePlayResponse(
-            client_messages=web_game.player_client.client_messages,
+            client_messages=web_game.player_session.session_messages,
         )
     else:
         raise HTTPException(

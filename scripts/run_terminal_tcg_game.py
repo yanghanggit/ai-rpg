@@ -18,7 +18,7 @@ from ai_rpg.demo import (
     create_actor_warrior,
     create_demo_dungeon5,
 )
-from ai_rpg.game.player_client import PlayerClient
+from ai_rpg.game.player_session import PlayerSession
 
 # from ai_rpg.game.tcg_game import TCGGameState
 from ai_rpg.game.tcg_game import (
@@ -427,7 +427,7 @@ async def _run_game(
     assert world_exists is not None, "World data must exist to create a game"
     terminal_game = TCGGame(
         name=game,
-        player_client=PlayerClient(
+        player_session=PlayerSession(
             name=user,
             actor=actor,
         ),
@@ -617,7 +617,7 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
 
     # 其他状态下的玩家输入！！！！！！
     usr_input = input(
-        f"[{terminal_game.player_client.name}/{player_stage_entity.name}/{player_actor_entity.name}]:"
+        f"[{terminal_game.player_session.name}/{player_stage_entity.name}/{player_actor_entity.name}]:"
     )
     usr_input = usr_input.strip().lower()
 
@@ -625,7 +625,7 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
     if usr_input == "/q" or usr_input == "/quit":
         # 退出游戏
         logger.debug(
-            f"玩家 主动 退出游戏 = {terminal_game.player_client.name}, {player_stage_entity.name}"
+            f"玩家 主动 退出游戏 = {terminal_game.player_session.name}, {player_stage_entity.name}"
         )
         terminal_game.should_terminate = True
         return

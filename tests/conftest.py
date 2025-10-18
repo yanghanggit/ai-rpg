@@ -10,7 +10,7 @@ try:
     from src.ai_rpg.models.objects import RPGCharacterProfile, Inventory
     from src.ai_rpg.models.world import World, Boot
     from src.ai_rpg.models.dungeon import Dungeon
-    from src.ai_rpg.game.player_client import PlayerClient
+    from src.ai_rpg.game.player_session import PlayerSession
 
     _TCGGame: Optional[Type[TCGGame]] = TCGGame
     _Actor: Optional[Type[Actor]] = Actor
@@ -36,10 +36,10 @@ def sample_game() -> Any:
         dungeon=dungeon,
         boot=boot,
     )
-    player = PlayerClient(name="test_player", actor="test_actor")
+    player = PlayerSession(name="test_player", actor="test_actor")
     return _TCGGame(
         name="test_game",
-        player_client=player,
+        player_session=player,
         world=world,
     )
 

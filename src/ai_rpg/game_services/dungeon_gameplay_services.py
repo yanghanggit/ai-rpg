@@ -409,20 +409,20 @@ async def _handle_advance_next_dungeon(web_game: TCGGame) -> DungeonGamePlayResp
     path="/api/dungeon/gameplay/v1/", response_model=DungeonGamePlayResponse
 )
 async def dungeon_gameplay(
-    request_data: DungeonGamePlayRequest,
+    payload: DungeonGamePlayRequest,
     game_server: GameServerInstance,
 ) -> DungeonGamePlayResponse:
 
-    logger.info(f"/dungeon/gameplay/v1/: {request_data.model_dump_json()}")
+    logger.info(f"/dungeon/gameplay/v1/: {payload.model_dump_json()}")
     try:
         # 验证地下城操作的前置条件
         web_game = _validate_dungeon_prerequisites(
-            user_name=request_data.user_name,
+            user_name=payload.user_name,
             game_server=game_server,
         )
 
         # 处理逻辑
-        match request_data.user_input.tag:
+        match payload.user_input.tag:
             case "dungeon_combat_kick_off":
                 return await _handle_dungeon_combat_kick_off(web_game)
 
@@ -433,21 +433,19 @@ async def dungeon_gameplay(
                 return await _handle_draw_cards(web_game)
 
             case "play_cards":
-                return await _handle_play_cards(web_game, request_data)
+                return await _handle_play_cards(web_game, payload)
 
             case "x_card":
-                return await _handle_x_card(web_game, request_data)
+                return await _handle_x_card(web_game, payload)
 
             case "advance_next_dungeon":
                 return await _handle_advance_next_dungeon(web_game)
 
             case _:
-                logger.error(
-                    f"未知的请求类型 = {request_data.user_input.tag}, 不能处理！"
-                )
+                logger.error(f"未知的请求类型 = {payload.user_input.tag}, 不能处理！")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"未知的请求类型 = {request_data.user_input.tag}, 不能处理！",
+                    detail=f"未知的请求类型 = {payload.user_input.tag}, 不能处理！",
                 )
 
     except Exception as e:
@@ -466,15 +464,15 @@ async def dungeon_gameplay(
     path="/api/dungeon/trans_home/v1/", response_model=DungeonTransHomeResponse
 )
 async def dungeon_trans_home(
-    request_data: DungeonTransHomeRequest,
+    payload: DungeonTransHomeRequest,
     game_server: GameServerInstance,
 ) -> DungeonTransHomeResponse:
 
-    logger.info(f"/dungeon/trans_home/v1/: {request_data.model_dump_json()}")
+    logger.info(f"/dungeon/trans_home/v1/: {payload.model_dump_json()}")
     try:
         # 验证地下城操作的前置条件
         web_game = _validate_dungeon_prerequisites(
-            user_name=request_data.user_name,
+            user_name=payload.user_name,
             game_server=game_server,
         )
 

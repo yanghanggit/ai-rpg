@@ -153,26 +153,26 @@ async def root() -> Dict[str, Any]:
 ##################################################################################################################
 @app.post("/api/generate", response_model=GenerateImagesResponse)
 async def generate_image(
-    request: GenerateImagesRequest, http_request: Request
+    payload: GenerateImagesRequest, http_request: Request
 ) -> GenerateImagesResponse:
     """生成图片的API端点 - 支持单张或批量"""
     try:
         # 验证输入
-        if not request.prompts:
+        if not payload.prompts:
             raise HTTPException(status_code=400, detail="提示词列表不能为空")
 
-        if len(request.prompts) > 10:  # 限制最大批量数量
+        if len(payload.prompts) > 10:  # 限制最大批量数量
             raise HTTPException(status_code=400, detail="单次最多生成10张图片")
 
         # 确保所有参数都有值（处理 Optional 类型）
-        model_name = request.model_name or "sdxl-lightning"
+        model_name = payload.model_name or "sdxl-lightning"
         negative_prompt = (
-            request.negative_prompt or "worst quality, low quality, blurry"
+            payload.negative_prompt or "worst quality, low quality, blurry"
         )
-        width = request.width or 768
-        height = request.height or 768
-        num_inference_steps = request.num_inference_steps or 4
-        guidance_scale = request.guidance_scale or 7.5
+        width = payload.width or 768
+        height = payload.height or 768
+        num_inference_steps = payload.num_inference_steps or 4
+        guidance_scale = payload.guidance_scale or 7.5
 
         # 验证模型是否支持
         if model_name not in MODELS:
@@ -182,13 +182,13 @@ async def generate_image(
                 detail=f"不支持的模型: {model_name}. 可用模型: {available_models}",
             )
 
-        logger.info(f"🎨 收到图片生成请求: {len(request.prompts)} 张图片")
+        logger.info(f"🎨 收到图片生成请求: {len(payload.prompts)} 张图片")
         logger.info(f"📐 参数: {width}x{height}, 模型: {model_name}")
-        logger.info(f"📝 提示词: {request.prompts}")
+        logger.info(f"📝 提示词: {payload.prompts}")
 
         # 使用 generate_multiple_images 统一处理
         saved_paths = await generate_multiple_images(
-            prompts=request.prompts,
+            prompts=payload.prompts,
             model_name=model_name,
             negative_prompt=negative_prompt,
             width=width,
@@ -201,7 +201,7 @@ async def generate_image(
 
         # 构建响应数据
         images_info = []
-        for i, (prompt, saved_path) in enumerate(zip(request.prompts, saved_paths)):
+        for i, (prompt, saved_path) in enumerate(zip(payload.prompts, saved_paths)):
             filename = os.path.basename(saved_path)
             image_url = f"{http_request.base_url}images/{filename}"
 

@@ -195,45 +195,41 @@ def announce_day_phase(sd_game: SDGame) -> None:
     path="/api/werewolf/start/v1/", response_model=WerewolfGameStartResponse
 )
 async def start_werewolf_game(
-    request_data: WerewolfGameStartRequest,
+    payload: WerewolfGameStartRequest,
     game_server: GameServerInstance,
 ) -> WerewolfGameStartResponse:
 
-    logger.info(f"Starting werewolf game: {request_data.model_dump_json()}")
+    logger.info(f"Starting werewolf game: {payload.model_dump_json()}")
 
     # 先检查房间是否存在，存在就删除旧房间
-    if game_server.has_room(request_data.user_name):
+    if game_server.has_room(payload.user_name):
 
-        logger.debug(f"start/v1: {request_data.user_name} room exists, removing it")
+        logger.debug(f"start/v1: {payload.user_name} room exists, removing it")
 
-        pre_room = game_server.get_room(request_data.user_name)
+        pre_room = game_server.get_room(payload.user_name)
         assert pre_room is not None
 
         game_server.remove_room(pre_room)
 
-    assert not game_server.has_room(
-        request_data.user_name
-    ), "Room should have been removed."
+    assert not game_server.has_room(payload.user_name), "Room should have been removed."
 
     # 然后创建一个新的房间
     new_room = game_server.create_room(
-        user_name=request_data.user_name,
+        user_name=payload.user_name,
     )
-    logger.info(
-        f"start/v1: {request_data.user_name} create room = {new_room._username}"
-    )
+    logger.info(f"start/v1: {payload.user_name} create room = {new_room._username}")
     assert new_room._sd_game is None
 
     # 创建boot数据
-    assert GLOBAL_SD_GAME_NAME == request_data.game_name, "目前只支持 SD 游戏"
-    world_boot = create_demo_sd_game_boot(request_data.game_name)
+    assert GLOBAL_SD_GAME_NAME == payload.game_name, "目前只支持 SD 游戏"
+    world_boot = create_demo_sd_game_boot(payload.game_name)
     assert world_boot is not None, "WorldBoot 创建失败"
 
     # 创建游戏实例
     new_room._sd_game = web_game = SDGame(
-        name=request_data.game_name,
+        name=payload.game_name,
         player_session=PlayerSession(
-            name=request_data.user_name, actor="角色.主持人"  # 写死先！
+            name=payload.user_name, actor="角色.主持人"  # 写死先！
         ),
         world=World(boot=world_boot),
     )
@@ -262,33 +258,33 @@ async def start_werewolf_game(
     path="/api/werewolf/gameplay/v1/", response_model=WerewolfGamePlayResponse
 )
 async def play_werewolf_game(
-    request_data: WerewolfGamePlayRequest,
+    payload: WerewolfGamePlayRequest,
     game_server: GameServerInstance,
 ) -> WerewolfGamePlayResponse:
-    logger.info(f"Playing werewolf game: {request_data.model_dump_json()}")
+    logger.info(f"Playing werewolf game: {payload.model_dump_json()}")
 
     try:
 
         # 是否有房间？！！
-        if not game_server.has_room(user_name=request_data.user_name):
-            logger.error(f"{request_data.user_name} has no room, please login first.")
+        if not game_server.has_room(user_name=payload.user_name):
+            logger.error(f"{payload.user_name} has no room, please login first.")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="没有登录，请先登录",
             )
 
         # 是否有游戏？！！
-        current_room = game_server.get_room(user_name=request_data.user_name)
+        current_room = game_server.get_room(user_name=payload.user_name)
         assert current_room is not None
         if current_room._sd_game is None:
-            logger.error(f"{request_data.user_name} has no game, please login first.")
+            logger.error(f"{payload.user_name} has no game, please login first.")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="没有游戏，请先登录",
             )
 
-        user_input = request_data.data.get("user_input", "")
-        logger.info(f"{request_data.user_name} user_input: {user_input}")
+        user_input = payload.data.get("user_input", "")
+        logger.info(f"{payload.user_name} user_input: {user_input}")
 
         # web_game = cast(SDGame, current_room._game)
         web_game = current_room._sd_game
@@ -438,7 +434,7 @@ async def play_werewolf_game(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"home/gameplay/v1: {request_data.user_name} failed, error: {str(e)}",
+            detail=f"home/gameplay/v1: {payload.user_name} failed, error: {str(e)}",
         )
 
 

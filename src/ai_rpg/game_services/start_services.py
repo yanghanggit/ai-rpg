@@ -24,56 +24,56 @@ start_api_router = APIRouter()
 ###################################################################################################################################################################
 @start_api_router.post(path="/api/start/v1/", response_model=StartResponse)
 async def start(
-    request_data: StartRequest,
+    payload: StartRequest,
     game_server: GameServerInstance,
 ) -> StartResponse:
 
-    logger.info(f"/start/v1/: {request_data.model_dump_json()}")
+    logger.info(f"/start/v1/: {payload.model_dump_json()}")
 
     try:
 
         # 如果没有房间，就创建一个
         # room_manager = game_server.room_manager
-        if not game_server.has_room(request_data.user_name):
+        if not game_server.has_room(payload.user_name):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"start/v1: {request_data.user_name} not found, create room",
+                detail=f"start/v1: {payload.user_name} not found, create room",
             )
 
         # 如果有房间，就获取房间。
-        room = game_server.get_room(request_data.user_name)
+        room = game_server.get_room(payload.user_name)
         assert room is not None
 
         if room._tcg_game is None:
 
             # 创建玩家客户端
             room._player_session = PlayerSession(
-                name=request_data.user_name,
-                actor=request_data.actor_name,
+                name=payload.user_name,
+                actor=payload.actor_name,
             )
             assert room._player_session is not None, "房间玩家客户端实例不存在"
 
             # 创建游戏
             room._tcg_game = setup_web_game_session(
-                user=request_data.user_name,
-                game=request_data.game_name,
-                actor=request_data.actor_name,
+                user=payload.user_name,
+                game=payload.game_name,
+                actor=payload.actor_name,
                 player_session=room._player_session,
             )
 
             assert room._tcg_game is not None, "Web game setup failed"
             if room._tcg_game is None:
-                logger.error(f"创建游戏失败 = {request_data.game_name}")
+                logger.error(f"创建游戏失败 = {payload.game_name}")
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"start/v1: {request_data.user_name} failed to create game",
+                    detail=f"start/v1: {payload.user_name} failed to create game",
                 )
 
             assert room._tcg_game is not None, "房间游戏实例不存在"
             assert room._player_session is not None, "房间玩家客户端实例不存在"
 
             # 初始化游戏
-            logger.info(f"start/v1: {request_data.user_name} init game!")
+            logger.info(f"start/v1: {payload.user_name} init game!")
             await room._tcg_game.initialize()
 
         else:
@@ -87,7 +87,7 @@ async def start(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"start/v1: {request_data.user_name} failed, error: {str(e)}",
+            detail=f"start/v1: {payload.user_name} failed, error: {str(e)}",
         )
 
 

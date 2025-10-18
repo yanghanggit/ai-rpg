@@ -293,20 +293,20 @@ async def _handle_speak_action(
     path="/api/home/gameplay/v1/", response_model=HomeGamePlayResponse
 )
 async def home_gameplay(
-    request_data: HomeGamePlayRequest,
+    payload: HomeGamePlayRequest,
     game_server: GameServerInstance,
 ) -> HomeGamePlayResponse:
 
-    logger.info(f"/home/gameplay/v1/: {request_data.model_dump_json()}")
+    logger.info(f"/home/gameplay/v1/: {payload.model_dump_json()}")
     try:
         # 验证前置条件并获取游戏实例
         web_game = await _validate_home_game_preconditions(
-            request_data.user_name,
+            payload.user_name,
             game_server,
         )
 
         # 根据标记处理。
-        match request_data.user_input.tag:
+        match payload.user_input.tag:
 
             case "/advancing":
                 return await _handle_advancing_action(web_game)
@@ -314,23 +314,21 @@ async def home_gameplay(
             case "/speak":
                 return await _handle_speak_action(
                     web_game,
-                    target=request_data.user_input.data.get("target", ""),
-                    content=request_data.user_input.data.get("content", ""),
+                    target=payload.user_input.data.get("target", ""),
+                    content=payload.user_input.data.get("content", ""),
                 )
 
             case _:
-                logger.error(
-                    f"未知的请求类型 = {request_data.user_input.tag}, 不能处理！"
-                )
+                logger.error(f"未知的请求类型 = {payload.user_input.tag}, 不能处理！")
 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"未知的请求类型 = {request_data.user_input.tag}, 不能处理！",
+            detail=f"未知的请求类型 = {payload.user_input.tag}, 不能处理！",
         )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"home/gameplay/v1: {request_data.user_name} failed, error: {str(e)}",
+            detail=f"home/gameplay/v1: {payload.user_name} failed, error: {str(e)}",
         )
 
 
@@ -341,15 +339,15 @@ async def home_gameplay(
     path="/api/home/trans_dungeon/v1/", response_model=HomeTransDungeonResponse
 )
 async def home_trans_dungeon(
-    request_data: HomeTransDungeonRequest,
+    payload: HomeTransDungeonRequest,
     game_server: GameServerInstance,
 ) -> HomeTransDungeonResponse:
 
-    logger.info(f"/home/trans_dungeon/v1/: {request_data.model_dump_json()}")
+    logger.info(f"/home/trans_dungeon/v1/: {payload.model_dump_json()}")
     try:
         # 验证前置条件并获取游戏实例
         web_game = await _validate_home_game_preconditions(
-            request_data.user_name,
+            payload.user_name,
             game_server,
         )
 
@@ -373,12 +371,12 @@ async def home_trans_dungeon(
             )
         #
         return HomeTransDungeonResponse(
-            message=request_data.model_dump_json(),
+            message=payload.model_dump_json(),
         )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"home/trans_dungeon/v1: {request_data.user_name} failed, error: {str(e)}",
+            detail=f"home/trans_dungeon/v1: {payload.user_name} failed, error: {str(e)}",
         )
 
 

@@ -9,8 +9,9 @@ from .character_sheet import ActorCharacterSheet, StageCharacterSheet
 @unique
 class ActorType(StrEnum):
     NONE = "None"
-    HERO = "Hero"
-    MONSTER = "Monster"
+    ALLY = "Ally"  # 我方/盟友/好人阵营
+    ENEMY = "Enemy"  # 敌方/怪物/坏人阵营
+    NEUTRAL = "Neutral"  # 中立角色
 
 
 ###############################################################################################################################################

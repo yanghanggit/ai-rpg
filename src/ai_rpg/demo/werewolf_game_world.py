@@ -92,7 +92,7 @@ def create_actor_moderator() -> Actor:
         character_sheet_name=WerewolfCharacterSheetName.MODERATOR,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
-        type=ActorType.HERO,
+        type=ActorType.NEUTRAL,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是狼人杀游戏的主持人，负责维持游戏秩序和推进游戏流程。
 【角色职责】
@@ -118,7 +118,7 @@ def create_actor_werewolf(name: str) -> Actor:
         character_sheet_name=WerewolfCharacterSheetName.WEREWOLF,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
-        type=ActorType.MONSTER,
+        type=ActorType.ENEMY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是潜伏在村民中的邪恶狼人，目标是消灭所有村民。
 【角色目标】
@@ -152,7 +152,7 @@ def create_actor_seer(name: str) -> Actor:
         character_sheet_name=WerewolfCharacterSheetName.SEER,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
-        type=ActorType.HERO,
+        type=ActorType.ALLY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是拥有神秘预知能力的预言家，每晚可以查验一名玩家的身份。
 【特殊能力】
@@ -185,7 +185,7 @@ def create_actor_witch(name: str) -> Actor:
         character_sheet_name=WerewolfCharacterSheetName.WITCH,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
-        type=ActorType.HERO,
+        type=ActorType.ALLY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是掌握生死药剂的神秘女巫，拥有解药和毒药各一瓶。
 【特殊能力】
@@ -214,7 +214,7 @@ def create_actor_villager(name: str) -> Actor:
         character_sheet_name=WerewolfCharacterSheetName.VILLAGER,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
-        type=ActorType.HERO,
+        type=ActorType.ALLY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是月影村的普通村民，没有特殊技能但拥有投票权。
 【角色目标】
@@ -249,7 +249,7 @@ def create_actor_guard(name: str) -> Actor:
         character_sheet_name=WerewolfCharacterSheetName.GUARD,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
-        type=ActorType.HERO,
+        type=ActorType.ALLY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是月影村的守卫，拥有保护他人的能力。
 【特殊能力】

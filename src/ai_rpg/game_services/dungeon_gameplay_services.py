@@ -14,7 +14,7 @@ from ..models import (
     DrawCardsAction,
     Dungeon,
     HomeComponent,
-    HeroComponent,
+    AllyComponent,
     DeathComponent,
     RPGCharacterProfileComponent,
     ActorComponent,
@@ -47,7 +47,7 @@ def _combat_actors_draw_cards_action(tcg_game: TCGGame) -> None:
 # TODO!!! 临时测试准备传送！！！
 def _all_heros_return_home(tcg_game: TCGGame) -> None:
 
-    heros_entities = tcg_game.get_group(Matcher(all_of=[HeroComponent])).entities
+    heros_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities
     assert len(heros_entities) > 0
     if len(heros_entities) == 0:
         logger.error("没有找到英雄!")
@@ -108,7 +108,7 @@ def _all_heros_return_home(tcg_game: TCGGame) -> None:
 def _all_heros_next_dungeon(tcg_game: TCGGame) -> None:
     # 位置+1
     if tcg_game.current_dungeon.advance_to_next_stage():
-        heros_entities = tcg_game.get_group(Matcher(all_of=[HeroComponent])).entities
+        heros_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities
         # tcg_game._dungeon_advance(tcg_game.current_dungeon, heros_entities)
         _dungeon_advance(tcg_game, tcg_game.current_dungeon, heros_entities)
     else:

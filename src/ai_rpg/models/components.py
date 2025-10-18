@@ -112,7 +112,7 @@ class DungeonComponent(Component):
 # Actor专用，标记该Actor是Hero
 @final
 @register_component_class
-class HeroComponent(Component):
+class AllyComponent(Component):
     name: str
 
 
@@ -120,7 +120,7 @@ class HeroComponent(Component):
 # Actor专用，标记该Actor是Monster
 @final
 @register_component_class
-class MonsterComponent(Component):
+class EnemyComponent(Component):
     name: str
 
 

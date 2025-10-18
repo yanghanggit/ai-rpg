@@ -9,11 +9,11 @@ from ..models import (
     HomeTransDungeonRequest,
     HomeTransDungeonResponse,
     SpeakAction,
-    HeroComponent,
+    AllyComponent,
     Dungeon,
     DungeonComponent,
     KickOffMessageComponent,
-    MonsterComponent,
+    EnemyComponent,
     Combat,
 )
 from ..entitas import Matcher, Entity
@@ -220,7 +220,7 @@ def _dungeon_advance(
     # 设置怪物的kickoff信息
     actors = tcg_game.get_alive_actors_on_stage(stage_entity)
     for actor in actors:
-        if actor.has(MonsterComponent):
+        if actor.has(EnemyComponent):
             monster_kick_off_comp = actor.get(KickOffMessageComponent)
             assert monster_kick_off_comp is not None
             logger.debug(
@@ -239,7 +239,7 @@ def _all_heros_launch_dungeon(tcg_game: TCGGame) -> bool:
     if tcg_game.current_dungeon.current_stage_index < 0:
         tcg_game.current_dungeon.current_stage_index = 0  # 第一次设置，第一个关卡。
         tcg_game.create_dungeon_entities(tcg_game.current_dungeon)
-        heros_entities = tcg_game.get_group(Matcher(all_of=[HeroComponent])).entities
+        heros_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities
         # return tcg_game._dungeon_advance(tcg_game.current_dungeon, heros_entities)
         return _dungeon_advance(tcg_game, tcg_game.current_dungeon, heros_entities)
     else:

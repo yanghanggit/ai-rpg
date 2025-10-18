@@ -5,7 +5,7 @@ from ..entitas import ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
     ActorComponent,
-    HeroComponent,
+    AllyComponent,
     PlayerComponent,
     PlanAction,
     HomeComponent,
@@ -37,7 +37,7 @@ class HomeAutoPlanSystem(ExecuteProcessor):
         # 获取所有需要进行角色规划的角色
         actor_entities = self._game.get_group(
             Matcher(
-                all_of=[ActorComponent, HeroComponent],
+                all_of=[ActorComponent, AllyComponent],
                 none_of=[PlayerComponent],
             )
         ).entities.copy()
@@ -56,7 +56,7 @@ class HomeAutoPlanSystem(ExecuteProcessor):
     def _assert_hero_stage_is_home(self) -> None:
         actor_entities = self._game.get_group(
             Matcher(
-                all_of=[ActorComponent, HeroComponent],
+                all_of=[ActorComponent, AllyComponent],
             )
         ).entities.copy()
         for actor_entity in actor_entities:

@@ -26,10 +26,10 @@ from ..models import (
     AppearanceComponent,
     DungeonComponent,
     EnvironmentComponent,
-    HeroComponent,
+    AllyComponent,
     HomeComponent,
     KickOffMessageComponent,
-    MonsterComponent,
+    EnemyComponent,
     PlayerComponent,
     RPGCharacterProfile,
     RPGCharacterProfileComponent,
@@ -267,10 +267,15 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
 
             # 必要组件：类型标记
             match actor_model.character_sheet.type:
-                case ActorType.HERO:
-                    actor_entity.add(HeroComponent, actor_model.name)
-                case ActorType.MONSTER:
-                    actor_entity.add(MonsterComponent, actor_model.name)
+                case ActorType.ALLY:
+                    actor_entity.add(AllyComponent, actor_model.name)
+                case ActorType.ENEMY:
+                    actor_entity.add(EnemyComponent, actor_model.name)
+                case ActorType.NEUTRAL:
+                    # 中立角色，不添加特殊组件
+                    logger.warning(
+                        f"创建中立角色 Actor: {actor_model.name}, 不添加特殊组件"
+                    )
                 case _:
                     assert (
                         False

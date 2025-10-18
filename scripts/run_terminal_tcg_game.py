@@ -32,7 +32,7 @@ from ai_rpg.game.world_data_service import (
 from ai_rpg.models import (
     CombatResult,
     World,
-    HeroComponent,
+    AllyComponent,
     PlayerComponent,
     PlanAction,
     HomeComponent,
@@ -361,7 +361,7 @@ def _plan_action(terminal_game: TCGGame, actors: List[str]) -> None:
             logger.error(f"角色: {actor_name} 不存在！")
             continue
 
-        if not actor_entity.has(HeroComponent):
+        if not actor_entity.has(AllyComponent):
             logger.error(f"角色: {actor_name} 不是英雄，不能有行动计划！")
             continue
 

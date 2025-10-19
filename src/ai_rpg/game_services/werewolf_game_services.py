@@ -31,9 +31,17 @@ from ..settings import (
 )
 from ..chat_services import ChatClient
 from ..game.config import GLOBAL_SD_GAME_NAME
-from typing import List, Set
+from typing import List, Set, Dict, cast, Any
 from ..entitas import Entity, Matcher
 from ..game_systems.werewolf_day_vote_system import WerewolfDayVoteSystem
+from typing_extensions import TypedDict
+
+
+###################################################################################################################################################################
+class PhaseChangeNotification(TypedDict):
+    phase: str
+    turn_number: int
+
 
 ###################################################################################################################################################################
 werewolf_game_api_router = APIRouter()
@@ -100,6 +108,12 @@ def announce_night_phase(sd_game: SDGGame) -> None:
         # 前一天晚上的击杀标记，进入新的夜晚也要清理掉
         if player.has(NightKillTargetComponent):
             player.remove(NightKillTargetComponent)
+
+    # 通知客户端一个消息，夜晚阶段开始了
+    notification = PhaseChangeNotification(
+        phase="night", turn_number=current_night_number
+    )
+    sd_game.player_session.add_game_message(cast(Dict[str, Any], notification))
 
 
 ###############################################################################################################################################
@@ -188,6 +202,15 @@ def announce_day_phase(sd_game: SDGGame) -> None:
     # 移除所有夜晚计划标记,为新的一天做准备
     for entity_with_plan in entities_with_night_plans:
         entity_with_plan.remove(NightActionReadyComponent)
+
+    # 通知客户端一个消息，白天阶段开始了
+    notification = PhaseChangeNotification(phase="day", turn_number=current_day_number)
+    sd_game.player_session.add_game_message(
+        cast(
+            Dict[str, Any],
+            notification,
+        )
+    )
 
 
 ###################################################################################################################################################################

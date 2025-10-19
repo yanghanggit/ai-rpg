@@ -16,7 +16,7 @@
 相关设计文档: docs/development-logs/消息可靠性传递方案设计.md
 """
 
-from typing import List
+from typing import List, Dict, Any
 from ..models import AgentEvent, SessionMessage, MessageType
 from pydantic import BaseModel
 from loguru import logger
@@ -114,6 +114,21 @@ class PlayerSession(BaseModel):
         )
 
         self._add_session_message(agent_event_message)
+
+    ###############################################################################
+    def add_game_message(self, data: Dict[str, Any]) -> None:
+        """
+        添加一个游戏消息到会话历史中
+        """
+
+        logger.debug(f"[{self.name}:{self.actor}] = add_game_message: {data}")
+
+        game_message = SessionMessage(
+            message_type=MessageType.GAME,
+            data=data,
+        )
+
+        self._add_session_message(game_message)
 
     ###############################################################################
     def _add_session_message(self, message: SessionMessage) -> None:

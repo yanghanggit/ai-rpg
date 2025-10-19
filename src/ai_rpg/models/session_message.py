@@ -8,6 +8,7 @@ from pydantic import BaseModel
 class MessageType(IntEnum):
     NONE = 0
     AGENT_EVENT = 1
+    GAME = 2
 
 
 @final

@@ -32,6 +32,7 @@ class WerewolfVictoryConditionSystem(ExecuteProcessor):
         if check_town_victory or check_werewolves_victory:
 
             # TODO, 临时处理！
+            logger.warning("游戏结束，触发胜利条件，准备终止游戏...")
             self._game.should_terminate = True
 
             ## 随便打印一下！

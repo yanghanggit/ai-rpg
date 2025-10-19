@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 @final
 @unique
-class AgentEventHead(IntEnum):
+class EventHead(IntEnum):
     NONE = 0
     SPEAK_EVENT = 1
     WHISPER_EVENT = 2
@@ -20,7 +20,7 @@ class AgentEventHead(IntEnum):
 
 ####################################################################################################################################
 class AgentEvent(BaseModel):
-    head: int = AgentEventHead.NONE
+    head: int = EventHead.NONE
     message: str
 
 
@@ -28,7 +28,7 @@ class AgentEvent(BaseModel):
 # 说话事件
 @final
 class SpeakEvent(AgentEvent):
-    head: int = AgentEventHead.SPEAK_EVENT
+    head: int = EventHead.SPEAK_EVENT
     actor: str
     target: str
     content: str
@@ -38,7 +38,7 @@ class SpeakEvent(AgentEvent):
 # 耳语事件
 @final
 class WhisperEvent(AgentEvent):
-    head: int = AgentEventHead.WHISPER_EVENT
+    head: int = EventHead.WHISPER_EVENT
     actor: str
     target: str
     content: str
@@ -48,7 +48,7 @@ class WhisperEvent(AgentEvent):
 # 宣布事件
 @final
 class AnnounceEvent(AgentEvent):
-    head: int = AgentEventHead.ANNOUNCE_EVENT
+    head: int = EventHead.ANNOUNCE_EVENT
     actor: str
     stage: str
     content: str
@@ -58,7 +58,7 @@ class AnnounceEvent(AgentEvent):
 # 心灵语音事件
 @final
 class MindEvent(AgentEvent):
-    head: int = AgentEventHead.MIND_EVENT
+    head: int = EventHead.MIND_EVENT
     actor: str
     content: str
 
@@ -66,7 +66,7 @@ class MindEvent(AgentEvent):
 ####################################################################################################################################
 @final
 class TransStageEvent(AgentEvent):
-    head: int = AgentEventHead.TRANS_STAGE_EVENT
+    head: int = EventHead.TRANS_STAGE_EVENT
     actor: str
     from_stage: str
     to_stage: str
@@ -77,7 +77,7 @@ class TransStageEvent(AgentEvent):
 
 @final
 class CombatKickOffEvent(AgentEvent):
-    head: int = AgentEventHead.COMBAT_KICK_OFF_EVENT
+    head: int = EventHead.COMBAT_KICK_OFF_EVENT
     actor: str
     description: str
 
@@ -87,7 +87,7 @@ class CombatKickOffEvent(AgentEvent):
 
 @final
 class CombatCompleteEvent(AgentEvent):
-    head: int = AgentEventHead.COMBAT_COMPLETE_EVENT
+    head: int = EventHead.COMBAT_COMPLETE_EVENT
     actor: str
     summary: str
 
@@ -97,7 +97,7 @@ class CombatCompleteEvent(AgentEvent):
 
 @final
 class DiscussionEvent(AgentEvent):
-    head: int = AgentEventHead.DISCUSSION_EVENT
+    head: int = EventHead.DISCUSSION_EVENT
     actor: str
     stage: str
     content: str

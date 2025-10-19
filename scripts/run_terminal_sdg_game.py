@@ -221,6 +221,34 @@ async def _process_player_input(terminal_game: SDGGame) -> None:
         # 返回！
         return
 
+    if "/msg" in usr_input or "/messages" in usr_input:
+
+        # 形如 /msg 10，请提取出数字10
+        parts = usr_input.split(" ")
+        since_seq = 0
+        if len(parts) == 2:
+
+            if parts[0] not in ["/msg", "/messages"]:
+                logger.error(
+                    "命令格式错误，应为 /msg <since_seq> 或 /messages <since_seq>"
+                )
+                return
+
+            try:
+                since_seq = int(parts[1])
+
+                messages = terminal_game.player_session.get_messages_since(since_seq)
+                logger.info(
+                    f"共计 {len(messages)} 条新消息, 从 sequence_id {since_seq} 开始获取:"
+                )
+                for msg in messages:
+                    logger.info(f"{msg.model_dump_json(indent=2)}")
+
+            except Exception as e:
+                logger.error(f"提取 since_seq 失败: {e}")
+
+        return
+
 
 ###############################################################################################################################################
 if __name__ == "__main__":

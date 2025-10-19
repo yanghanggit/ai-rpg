@@ -24,7 +24,7 @@ class WerewolfGamePlayRequest(BaseModel):
 
 @final
 class WerewolfGamePlayResponse(BaseModel):
-    client_messages: List[SessionMessage]
+    session_messages: List[SessionMessage]
 
 
 @final

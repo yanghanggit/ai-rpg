@@ -304,14 +304,11 @@ async def play_werewolf_game(
 
                 logger.info("游戏开始，准备入场记阶段！！！！！！")
 
-                # 清理之前的消息
-                # web_game.player_session.session_messages.clear()
-
                 # 初始化游戏的开场流程
                 await web_game.werewolf_game_kickoff_pipeline.process()
 
                 # 返回当前的客户端消息
-                return WerewolfGamePlayResponse(client_messages=[])
+                return WerewolfGamePlayResponse(session_messages=[])
 
             else:
                 logger.error(
@@ -341,21 +338,18 @@ async def play_werewolf_game(
                 announce_day_phase(web_game)
 
             # 返回！
-            return WerewolfGamePlayResponse(client_messages=[])
+            return WerewolfGamePlayResponse(session_messages=[])
 
         if user_input == "/n" or user_input == "/night":
 
             # 如果是夜晚
             if web_game._werewolf_game_turn_counter % 2 == 1:
 
-                # 清除之前的消息
-                # web_game.player_session.session_messages.clear()
-
                 # 运行游戏逻辑
                 await web_game.werewolf_game_night_pipeline.process()
 
-                #
-                return WerewolfGamePlayResponse(client_messages=[])
+                # 返回！
+                return WerewolfGamePlayResponse(session_messages=[])
 
             else:
 
@@ -374,12 +368,11 @@ async def play_werewolf_game(
                 web_game._werewolf_game_turn_counter % 2 == 0
                 and web_game._werewolf_game_turn_counter > 0
             ):
-                # 清理之前的消息
-                # web_game.player_session.session_messages.clear()
                 # 运行游戏逻辑
                 await web_game.werewolf_game_day_pipeline.process()
 
-                return WerewolfGamePlayResponse(client_messages=[])
+                # 返回！
+                return WerewolfGamePlayResponse(session_messages=[])
 
             else:
 
@@ -402,13 +395,11 @@ async def play_werewolf_game(
                 # 判断是否讨论完毕
                 if WerewolfDayVoteSystem.is_day_discussion_complete(web_game):
 
-                    # 清理之前的消息
-                    # web_game.player_session.session_messages.clear()
-
                     # 如果讨论完毕，则进入投票环节
                     await web_game.werewolf_game_vote_pipeline.process()
 
-                    return WerewolfGamePlayResponse(client_messages=[])
+                    # 返回！
+                    return WerewolfGamePlayResponse(session_messages=[])
 
                 else:
 
@@ -430,7 +421,7 @@ async def play_werewolf_game(
                 )
 
         logger.error(f"未知命令: {user_input}, 什么都没做")
-        return WerewolfGamePlayResponse(client_messages=[])
+        return WerewolfGamePlayResponse(session_messages=[])
 
     except Exception as e:
         raise HTTPException(

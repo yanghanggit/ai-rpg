@@ -215,16 +215,16 @@ class NightWitchActionSystem(ReactiveProcessor):
                     )
 
             # 最终什么都不做？
-            if response.cure_target == "" and response.poison_target == "":
+            # if response.cure_target == "" and response.poison_target == "":
 
-                self._game.notify_entities(
-                    set({witch_entity}),
-                    MindEvent(
-                        message=f"{witch_entity.name} : {response.mind_voice}",
-                        actor=witch_entity.name,
-                        content=response.mind_voice,
-                    ),
-                )
+            #     self._game.notify_entities(
+            #         set({witch_entity}),
+            #         MindEvent(
+            #             message=f"{witch_entity.name} : 什么都不做。",
+            #             actor=witch_entity.name,
+            #             content=response.mind_voice,
+            #         ),
+            #     )
 
         except Exception as e:
 

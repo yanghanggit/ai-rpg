@@ -14,3 +14,4 @@ class MessageType(IntEnum):
 class SessionMessage(BaseModel):
     message_type: int = MessageType.NONE
     data: Dict[str, Any] = {}
+    sequence_id: int = 0

@@ -209,6 +209,15 @@ async def start_werewolf_game(
         pre_room = game_server.get_room(payload.user_name)
         assert pre_room is not None
 
+        if pre_room._sdg_game is not None:
+            logger.debug(f"start/v1: {payload.user_name} removing old game instance")
+
+            # 保存并退出旧游戏
+            pre_room._sdg_game.save()
+            pre_room._sdg_game.exit()
+
+            pre_room._sdg_game = None  # 先断开引用，等待垃圾回收
+
         game_server.remove_room(pre_room)
 
     assert not game_server.has_room(payload.user_name), "Room should have been removed."
@@ -296,15 +305,13 @@ async def play_werewolf_game(
                 logger.info("游戏开始，准备入场记阶段！！！！！！")
 
                 # 清理之前的消息
-                web_game.player_session.session_messages.clear()
+                # web_game.player_session.session_messages.clear()
 
                 # 初始化游戏的开场流程
                 await web_game.werewolf_game_kickoff_pipeline.process()
 
                 # 返回当前的客户端消息
-                return WerewolfGamePlayResponse(
-                    client_messages=web_game.player_session.session_messages
-                )
+                return WerewolfGamePlayResponse(client_messages=[])
 
             else:
                 logger.error(
@@ -342,15 +349,13 @@ async def play_werewolf_game(
             if web_game._werewolf_game_turn_counter % 2 == 1:
 
                 # 清除之前的消息
-                web_game.player_session.session_messages.clear()
+                # web_game.player_session.session_messages.clear()
 
                 # 运行游戏逻辑
                 await web_game.werewolf_game_night_pipeline.process()
 
                 #
-                return WerewolfGamePlayResponse(
-                    client_messages=web_game.player_session.session_messages
-                )
+                return WerewolfGamePlayResponse(client_messages=[])
 
             else:
 
@@ -370,13 +375,11 @@ async def play_werewolf_game(
                 and web_game._werewolf_game_turn_counter > 0
             ):
                 # 清理之前的消息
-                web_game.player_session.session_messages.clear()
+                # web_game.player_session.session_messages.clear()
                 # 运行游戏逻辑
                 await web_game.werewolf_game_day_pipeline.process()
 
-                return WerewolfGamePlayResponse(
-                    client_messages=web_game.player_session.session_messages
-                )
+                return WerewolfGamePlayResponse(client_messages=[])
 
             else:
 
@@ -400,14 +403,12 @@ async def play_werewolf_game(
                 if WerewolfDayVoteSystem.is_day_discussion_complete(web_game):
 
                     # 清理之前的消息
-                    web_game.player_session.session_messages.clear()
+                    # web_game.player_session.session_messages.clear()
 
                     # 如果讨论完毕，则进入投票环节
                     await web_game.werewolf_game_vote_pipeline.process()
 
-                    return WerewolfGamePlayResponse(
-                        client_messages=web_game.player_session.session_messages
-                    )
+                    return WerewolfGamePlayResponse(client_messages=[])
 
                 else:
 

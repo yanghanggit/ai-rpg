@@ -31,6 +31,7 @@ async def get_url_config(
         timestamp=datetime.now().isoformat(),
         version="0.0.1",
         endpoints={
+            # rpg 专用的
             "login": base_url + "api/login/v1/",
             "logout": base_url + "api/logout/v1/",
             "start": base_url + "api/start/v1/",
@@ -41,9 +42,11 @@ async def get_url_config(
             "home_state": base_url + "api/homes/v1/",
             "dungeon_state": base_url + "api/dungeons/v1/",
             "actor_details": base_url + "api/actors/v1/",
+            # 这个是通用的。
+            "session_messages": base_url + "api/session_messages/v1/",
+            # 狼人杀专用的
             "werewolf_game_start": base_url + "api/werewolf/start/v1/",
-            "werewolf_gameplay": base_url
-            + "api/werewolf/gameplay/v1/",  # "/api/werewolf/gameplay/v1/"
+            "werewolf_gameplay": base_url + "api/werewolf/gameplay/v1/",
             "werewolf_game_state": base_url + "api/werewolf/state/v1/",
             "werewolf_game_actor_details": base_url + "api/werewolf/actors/v1/",
         },

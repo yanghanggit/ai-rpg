@@ -60,6 +60,9 @@ class PlayerSession(BaseModel):
     # 所有事件都会持续累积在此列表中,形成完整的会话记录
     session_messages: List[SessionMessage] = []
 
+    # 全局事件序号,用于标识事件的顺序
+    event_sequence: int = 0
+
     ###############################################################################
     def add_agent_event_message(self, agent_event: AgentEvent) -> None:
         """
@@ -105,11 +108,23 @@ class PlayerSession(BaseModel):
 
         # 将AgentEvent封装为SessionMessage并追加到列表
         # MessageType.AGENT_EVENT 标识这是一个代理事件类型的消息
-        self.session_messages.append(
-            SessionMessage(
-                message_type=MessageType.AGENT_EVENT,  # 消息类型标识
-                data=agent_event.model_dump(),  # 将事件序列化为字典
-            )
+        agent_event_message = SessionMessage(
+            message_type=MessageType.AGENT_EVENT,  # 消息类型标识
+            data=agent_event.model_dump(),  # 将事件序列化为字典
         )
+
+        self._add_session_message(agent_event_message)
+
+    ###############################################################################
+    def _add_session_message(self, message: SessionMessage) -> None:
+        # 为消息分配递增的序列号并添加到列表
+        self.event_sequence += 1
+        message.sequence_id = self.event_sequence
+        self.session_messages.append(message)
+
+    ###############################################################################
+    # 3. 服务器返回增量事件
+    def get_messages_since(self, last_id: int) -> List[SessionMessage]:
+        return [e for e in self.session_messages if e.sequence_id > last_id]
 
     ###############################################################################

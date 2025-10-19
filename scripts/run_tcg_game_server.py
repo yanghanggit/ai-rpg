@@ -30,6 +30,7 @@ from ai_rpg.game_services.get_home_state_services import get_home_state_api_rout
 from ai_rpg.chat_services.client import ChatClient
 from ai_rpg.game.config import setup_logger
 from ai_rpg.game_services.werewolf_game_services import werewolf_game_api_router
+from ai_rpg.game_services.player_session_services import player_session_api_router
 
 _server_setting_path: Final[Path] = Path("server_settings.json")
 assert _server_setting_path.exists(), f"{_server_setting_path} must exist"
@@ -105,6 +106,7 @@ app.include_router(router=get_dungeon_state_api_router)
 app.include_router(router=get_home_state_api_router)
 app.include_router(router=get_actor_details_api_router)
 app.include_router(router=werewolf_game_api_router)
+app.include_router(router=player_session_api_router)
 
 
 def main() -> None:

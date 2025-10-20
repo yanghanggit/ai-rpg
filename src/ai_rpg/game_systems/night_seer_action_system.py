@@ -17,7 +17,7 @@ from ..models import (
 from ..chat_services.client import ChatClient
 from ..utils import json_format
 from ..utils.md_format import format_dict_as_markdown_list
-from ..game.tcg_game import TCGGame
+from ..game.sdg_game import SDGGame
 
 
 ###############################################################################################################################################
@@ -69,9 +69,9 @@ class SeerCheckDecisionResponse(BaseModel):
 @final
 class NightSeerActionSystem(ReactiveProcessor):
 
-    def __init__(self, game_context: TCGGame) -> None:
+    def __init__(self, game_context: SDGGame) -> None:
         super().__init__(game_context)
-        self._game: TCGGame = game_context
+        self._game: SDGGame = game_context
 
     ####################################################################################################################################
     @override

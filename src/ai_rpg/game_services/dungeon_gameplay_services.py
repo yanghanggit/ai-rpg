@@ -14,7 +14,7 @@ from ..models import (
     DrawCardsAction,
     Dungeon,
     HomeComponent,
-    HeroComponent,
+    AllyComponent,
     DeathComponent,
     RPGCharacterProfileComponent,
     ActorComponent,
@@ -47,7 +47,7 @@ def _combat_actors_draw_cards_action(tcg_game: TCGGame) -> None:
 # TODO!!! 临时测试准备传送！！！
 def _all_heros_return_home(tcg_game: TCGGame) -> None:
 
-    heros_entities = tcg_game.get_group(Matcher(all_of=[HeroComponent])).entities
+    heros_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities
     assert len(heros_entities) > 0
     if len(heros_entities) == 0:
         logger.error("没有找到英雄!")
@@ -70,7 +70,7 @@ def _all_heros_return_home(tcg_game: TCGGame) -> None:
     tcg_game.stage_transition(heros_entities, return_home_stage)
 
     # 清空地下城的实体!
-    tcg_game.destroy_dungeon_entities(tcg_game._world.dungeon)
+    tcg_game.destroy_dungeon_entities(tcg_game.world.dungeon)
 
     # 设置空的地下城
     tcg_game._world.dungeon = Dungeon(name="")
@@ -108,7 +108,7 @@ def _all_heros_return_home(tcg_game: TCGGame) -> None:
 def _all_heros_next_dungeon(tcg_game: TCGGame) -> None:
     # 位置+1
     if tcg_game.current_dungeon.advance_to_next_stage():
-        heros_entities = tcg_game.get_group(Matcher(all_of=[HeroComponent])).entities
+        heros_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities
         # tcg_game._dungeon_advance(tcg_game.current_dungeon, heros_entities)
         _dungeon_advance(tcg_game, tcg_game.current_dungeon, heros_entities)
     else:
@@ -210,7 +210,7 @@ def _validate_dungeon_prerequisites(
     # 是否有游戏？！！
     current_room = game_server.get_room(user_name)
     assert current_room is not None
-    if current_room._game is None:
+    if current_room._tcg_game is None:
         logger.error(f"dungeon operation: {user_name} has no game, please login first.")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -218,7 +218,7 @@ def _validate_dungeon_prerequisites(
         )
 
     # 是否是WebTCGGame？！！
-    web_game = current_room._game
+    web_game = current_room._tcg_game
     assert isinstance(web_game, TCGGame)
     assert web_game is not None
 
@@ -259,11 +259,11 @@ async def _handle_dungeon_combat_kick_off(
         )
 
     # 推进一次游戏, 即可转换ONGOING状态。
-    web_game.player_client.clear_messages()
+    web_game.player_session.session_messages.clear()
     await web_game.dungeon_combat_pipeline.process()
     # 返回！
     return DungeonGamePlayResponse(
-        client_messages=web_game.player_client.client_messages,
+        client_messages=web_game.player_session.session_messages,
     )
 
 
@@ -282,12 +282,12 @@ async def _handle_draw_cards(web_game: TCGGame) -> DungeonGamePlayResponse:
     # 推进一次游戏, 即可抽牌。
     # web_game.draw_cards_action()
     _combat_actors_draw_cards_action(web_game)
-    web_game.player_client.clear_messages()
+    web_game.player_session.session_messages.clear()
     await web_game.dungeon_combat_pipeline.process()
 
     # 返回！
     return DungeonGamePlayResponse(
-        client_messages=web_game.player_client.client_messages,
+        client_messages=web_game.player_session.session_messages,
     )
 
 
@@ -309,13 +309,12 @@ async def _handle_play_cards(
     # if web_game.play_cards_action():
     if _combat_actors_random_play_cards_action(web_game):
         # 执行一次！！！！！
-        # await _execute_web_game(web_game)
-        web_game.player_client.clear_messages()
+        web_game.player_session.session_messages.clear()
         await web_game.dungeon_combat_pipeline.process()
 
     # 返回！
     return DungeonGamePlayResponse(
-        client_messages=web_game.player_client.client_messages,
+        client_messages=web_game.player_session.session_messages,
     )
 
 
@@ -354,7 +353,7 @@ async def _handle_x_card(
         )
 
         return DungeonGamePlayResponse(
-            client_messages=web_game.player_client.client_messages,
+            client_messages=web_game.player_session.session_messages,
         )
     else:
         raise HTTPException(
@@ -409,20 +408,20 @@ async def _handle_advance_next_dungeon(web_game: TCGGame) -> DungeonGamePlayResp
     path="/api/dungeon/gameplay/v1/", response_model=DungeonGamePlayResponse
 )
 async def dungeon_gameplay(
-    request_data: DungeonGamePlayRequest,
+    payload: DungeonGamePlayRequest,
     game_server: GameServerInstance,
 ) -> DungeonGamePlayResponse:
 
-    logger.info(f"/dungeon/gameplay/v1/: {request_data.model_dump_json()}")
+    logger.info(f"/dungeon/gameplay/v1/: {payload.model_dump_json()}")
     try:
         # 验证地下城操作的前置条件
         web_game = _validate_dungeon_prerequisites(
-            user_name=request_data.user_name,
+            user_name=payload.user_name,
             game_server=game_server,
         )
 
         # 处理逻辑
-        match request_data.user_input.tag:
+        match payload.user_input.tag:
             case "dungeon_combat_kick_off":
                 return await _handle_dungeon_combat_kick_off(web_game)
 
@@ -433,21 +432,19 @@ async def dungeon_gameplay(
                 return await _handle_draw_cards(web_game)
 
             case "play_cards":
-                return await _handle_play_cards(web_game, request_data)
+                return await _handle_play_cards(web_game, payload)
 
             case "x_card":
-                return await _handle_x_card(web_game, request_data)
+                return await _handle_x_card(web_game, payload)
 
             case "advance_next_dungeon":
                 return await _handle_advance_next_dungeon(web_game)
 
             case _:
-                logger.error(
-                    f"未知的请求类型 = {request_data.user_input.tag}, 不能处理！"
-                )
+                logger.error(f"未知的请求类型 = {payload.user_input.tag}, 不能处理！")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"未知的请求类型 = {request_data.user_input.tag}, 不能处理！",
+                    detail=f"未知的请求类型 = {payload.user_input.tag}, 不能处理！",
                 )
 
     except Exception as e:
@@ -466,15 +463,15 @@ async def dungeon_gameplay(
     path="/api/dungeon/trans_home/v1/", response_model=DungeonTransHomeResponse
 )
 async def dungeon_trans_home(
-    request_data: DungeonTransHomeRequest,
+    payload: DungeonTransHomeRequest,
     game_server: GameServerInstance,
 ) -> DungeonTransHomeResponse:
 
-    logger.info(f"/dungeon/trans_home/v1/: {request_data.model_dump_json()}")
+    logger.info(f"/dungeon/trans_home/v1/: {payload.model_dump_json()}")
     try:
         # 验证地下城操作的前置条件
         web_game = _validate_dungeon_prerequisites(
-            user_name=request_data.user_name,
+            user_name=payload.user_name,
             game_server=game_server,
         )
 

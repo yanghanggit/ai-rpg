@@ -10,13 +10,13 @@ __author__ = "Yang Hang"
 try:
     #    from .chat_services.manager import ChatClientManager
     from .entitas import Context, Entity
-    from .game.base_game import BaseGame
+    from .game.game_session import GameSession
     from .game.tcg_game import TCGGame
     from .models.dungeon import Dungeon
     from .models.objects import Actor, Stage
 
     __all__ = [
-        "BaseGame",
+        "GameSession",
         "TCGGame",
         "Actor",
         "Stage",

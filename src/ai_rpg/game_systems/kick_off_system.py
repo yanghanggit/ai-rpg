@@ -6,7 +6,7 @@ from loguru import logger
 from overrides import override
 from ..chat_services.client import ChatClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
-from ..game.tcg_game import TCGGame
+from ..game.rpg_game import RPGGame
 from ..models import (
     ActorComponent,
     EnvironmentComponent,
@@ -73,8 +73,8 @@ def _generate_world_system_prompt() -> str:
 class KickOffSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
-    def __init__(self, game_context: TCGGame, read_kick_off_cache: bool) -> None:
-        self._game: TCGGame = game_context
+    def __init__(self, game_context: RPGGame, read_kick_off_cache: bool) -> None:
+        self._game: RPGGame = game_context
         self._read_kick_off_cache: bool = read_kick_off_cache
 
     ###############################################################################################################################################

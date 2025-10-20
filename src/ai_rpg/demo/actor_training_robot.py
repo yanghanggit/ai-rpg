@@ -24,7 +24,7 @@ def create_actor_training_robot() -> Actor:
         character_sheet_name="training_robot",
         kick_off_message="",
         rpg_character_profile=RPGCharacterProfile(base_dexterity=1),
-        type=ActorType.MONSTER,
+        type=ActorType.ENEMY,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         actor_profile="""你是一个训练机器人，只会最基本的防御和攻击，你不会生成观察和利用环境的技能。
          【战斗循环】  

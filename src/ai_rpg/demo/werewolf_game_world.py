@@ -7,10 +7,10 @@ from ..models import (
     Actor,
     ActorType,
     RPGCharacterProfile,
-    SDCharacterSheetName,
+    WerewolfCharacterSheetName,
     Item,
     ItemType,
-    SDWitchItemName,
+    WitchItemName,
 )
 from .utils import (
     create_stage,
@@ -33,7 +33,7 @@ def create_demo_werewolf_stage() -> Stage:
         character_sheet_name="werewolf_stage",
         kick_off_message="月影村的夜晚降临了，村民们聚集在村中央的广场上。烛火摇曳，每个人的脸庞都笼罩在阴影中。狼人已经潜伏在你们中间，生死游戏即将开始...",
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
-        type=StageType.HOME,
+        type=StageType.DUNGEON,
         stage_profile="你是月影村的中央广场，这里是村民们聚集讨论和进行投票的主要场所。广场中央有一个古老的石台，四周摆放着木制长椅。夜晚时分，火把和烛火为这里提供微弱的照明，营造出神秘而紧张的氛围。白天时这里是村民们辩论和寻找狼人的地方，夜晚则成为各种神秘力量活动的舞台。你见证着每一次投票的结果，记录着每个人的命运。",
         actors=[],
         global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
@@ -89,10 +89,10 @@ def create_actor_moderator() -> Actor:
     """
     return create_actor(
         name="角色.主持人",
-        character_sheet_name=SDCharacterSheetName.MODERATOR,
+        character_sheet_name=WerewolfCharacterSheetName.MODERATOR,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
-        type=ActorType.HERO,
+        type=ActorType.NEUTRAL,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是狼人杀游戏的主持人，负责维持游戏秩序和推进游戏流程。
 【角色职责】
@@ -115,10 +115,10 @@ def create_actor_werewolf(name: str) -> Actor:
     """
     return create_actor(
         name=f"角色.{name}",
-        character_sheet_name=SDCharacterSheetName.WEREWOLF,
+        character_sheet_name=WerewolfCharacterSheetName.WEREWOLF,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
-        type=ActorType.HERO,
+        type=ActorType.ENEMY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是潜伏在村民中的邪恶狼人，目标是消灭所有村民。
 【角色目标】
@@ -148,10 +148,10 @@ def create_actor_seer(name: str) -> Actor:
     """
     return create_actor(
         name=f"角色.{name}",
-        character_sheet_name=SDCharacterSheetName.SEER,
+        character_sheet_name=WerewolfCharacterSheetName.SEER,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
-        type=ActorType.HERO,
+        type=ActorType.ALLY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是拥有神秘预知能力的预言家，每晚可以查验一名玩家的身份。
 【特殊能力】
@@ -181,10 +181,10 @@ def create_actor_witch(name: str) -> Actor:
     """
     return create_actor(
         name=f"角色.{name}",
-        character_sheet_name=SDCharacterSheetName.WITCH,
+        character_sheet_name=WerewolfCharacterSheetName.WITCH,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
-        type=ActorType.HERO,
+        type=ActorType.ALLY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是掌握生死药剂的神秘女巫，拥有解药和毒药各一瓶。
 【特殊能力】
@@ -210,10 +210,10 @@ def create_actor_villager(name: str) -> Actor:
     """
     return create_actor(
         name=f"角色.{name}",
-        character_sheet_name=SDCharacterSheetName.VILLAGER,
+        character_sheet_name=WerewolfCharacterSheetName.VILLAGER,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
-        type=ActorType.HERO,
+        type=ActorType.ALLY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是月影村的普通村民，没有特殊技能但拥有投票权。
 【角色目标】
@@ -245,10 +245,10 @@ def create_actor_guard(name: str) -> Actor:
     """
     return create_actor(
         name=f"角色.{name}",
-        character_sheet_name=SDCharacterSheetName.GUARD,
+        character_sheet_name=WerewolfCharacterSheetName.GUARD,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
-        type=ActorType.HERO,
+        type=ActorType.ALLY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是月影村的守卫，拥有保护他人的能力。
 【特殊能力】
@@ -299,13 +299,13 @@ def create_demo_sd_game_boot(game_name: str) -> Boot:
     witch.inventory.items.extend(
         [
             Item(
-                name=SDWitchItemName.POISON,
+                name=WitchItemName.POISON,
                 uuid="",
                 type=ItemType.CONSUMABLE,
                 description="此道具让你拥有一瓶毒药! 你可以在夜晚使用它来毒死任意一名玩家，整局游戏只能使用一次。",
             ),
             Item(
-                name=SDWitchItemName.CURE,
+                name=WitchItemName.CURE,
                 uuid="",
                 type=ItemType.CONSUMABLE,
                 description="此道具让你拥有一瓶解药! 你可以在夜晚使用它来救活当晚被狼人杀害的玩家，整局游戏只能使用一次。",

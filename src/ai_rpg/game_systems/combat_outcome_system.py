@@ -6,8 +6,8 @@ from ..models import (
     DeathComponent,
     RPGCharacterProfileComponent,
     CombatResult,
-    HeroComponent,
-    MonsterComponent,
+    AllyComponent,
+    EnemyComponent,
 )
 
 
@@ -68,7 +68,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
 
         for entity in actors_on_stage:
 
-            if not entity.has(MonsterComponent):
+            if not entity.has(EnemyComponent):
                 continue
 
             active_monsters.add(entity)
@@ -92,7 +92,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
 
         for entity in actors_on_stage:
 
-            if not entity.has(HeroComponent):
+            if not entity.has(AllyComponent):
                 continue
 
             active_heroes.add(entity)
@@ -114,7 +114,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
         assert len(actors_on_stage) > 0, f"entities with actions: {actors_on_stage}"
 
         for entity in actors_on_stage:
-            if not entity.has(HeroComponent):
+            if not entity.has(AllyComponent):
                 continue
 
             if result == CombatResult.HERO_WIN:

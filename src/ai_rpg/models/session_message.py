@@ -8,9 +8,11 @@ from pydantic import BaseModel
 class MessageType(IntEnum):
     NONE = 0
     AGENT_EVENT = 1
+    GAME = 2
 
 
 @final
-class ClientMessage(BaseModel):
+class SessionMessage(BaseModel):
     message_type: int = MessageType.NONE
     data: Dict[str, Any] = {}
+    sequence_id: int = 0

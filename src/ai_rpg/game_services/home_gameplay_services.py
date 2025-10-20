@@ -9,11 +9,11 @@ from ..models import (
     HomeTransDungeonRequest,
     HomeTransDungeonResponse,
     SpeakAction,
-    HeroComponent,
+    AllyComponent,
     Dungeon,
     DungeonComponent,
     KickOffMessageComponent,
-    MonsterComponent,
+    EnemyComponent,
     Combat,
 )
 from ..entitas import Matcher, Entity
@@ -54,14 +54,14 @@ async def _validate_home_game_preconditions(
     # 是否有游戏？！！
     current_room = game_server.get_room(user_name)
     assert current_room is not None
-    if current_room._game is None:
+    if current_room._tcg_game is None:
         logger.error(f"{user_name} has no game, please login first.")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="没有游戏，请先登录",
         )
 
-    web_game = current_room._game
+    web_game = current_room._tcg_game
     assert web_game is not None
     assert isinstance(web_game, TCGGame)
 
@@ -91,12 +91,12 @@ async def _handle_advancing_action(web_game: TCGGame) -> HomeGamePlayResponse:
         HomeGamePlayResponse: 包含客户端消息的响应
     """
     # 推进一次。
-    web_game.player_client.clear_messages()
+    web_game.player_session.session_messages.clear()
     await web_game.npc_home_pipeline.process()
 
     # 返回消息
     return HomeGamePlayResponse(
-        client_messages=web_game.player_client.client_messages,
+        client_messages=web_game.player_session.session_messages,
     )
 
 
@@ -220,7 +220,7 @@ def _dungeon_advance(
     # 设置怪物的kickoff信息
     actors = tcg_game.get_alive_actors_on_stage(stage_entity)
     for actor in actors:
-        if actor.has(MonsterComponent):
+        if actor.has(EnemyComponent):
             monster_kick_off_comp = actor.get(KickOffMessageComponent)
             assert monster_kick_off_comp is not None
             logger.debug(
@@ -239,7 +239,7 @@ def _all_heros_launch_dungeon(tcg_game: TCGGame) -> bool:
     if tcg_game.current_dungeon.current_stage_index < 0:
         tcg_game.current_dungeon.current_stage_index = 0  # 第一次设置，第一个关卡。
         tcg_game.create_dungeon_entities(tcg_game.current_dungeon)
-        heros_entities = tcg_game.get_group(Matcher(all_of=[HeroComponent])).entities
+        heros_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities
         # return tcg_game._dungeon_advance(tcg_game.current_dungeon, heros_entities)
         return _dungeon_advance(tcg_game, tcg_game.current_dungeon, heros_entities)
     else:
@@ -272,17 +272,17 @@ async def _handle_speak_action(
     # if web_game.speak_action(target=target, content=content):
     if _player_add_speak_action(web_game, target=target, content=content):
         # 清空消息。准备重新开始 + 测试推进一次游戏
-        web_game.player_client.clear_messages()
+        web_game.player_session.session_messages.clear()
         await web_game.player_home_pipeline.process()
 
         # 返回消息
         return HomeGamePlayResponse(
-            client_messages=web_game.player_client.client_messages,
+            client_messages=web_game.player_session.session_messages,
         )
 
     # 如果说话动作激活失败，返回空消息
     return HomeGamePlayResponse(
-        client_messages=web_game.player_client.client_messages,
+        client_messages=web_game.player_session.session_messages,
     )
 
 
@@ -293,20 +293,20 @@ async def _handle_speak_action(
     path="/api/home/gameplay/v1/", response_model=HomeGamePlayResponse
 )
 async def home_gameplay(
-    request_data: HomeGamePlayRequest,
+    payload: HomeGamePlayRequest,
     game_server: GameServerInstance,
 ) -> HomeGamePlayResponse:
 
-    logger.info(f"/home/gameplay/v1/: {request_data.model_dump_json()}")
+    logger.info(f"/home/gameplay/v1/: {payload.model_dump_json()}")
     try:
         # 验证前置条件并获取游戏实例
         web_game = await _validate_home_game_preconditions(
-            request_data.user_name,
+            payload.user_name,
             game_server,
         )
 
         # 根据标记处理。
-        match request_data.user_input.tag:
+        match payload.user_input.tag:
 
             case "/advancing":
                 return await _handle_advancing_action(web_game)
@@ -314,23 +314,21 @@ async def home_gameplay(
             case "/speak":
                 return await _handle_speak_action(
                     web_game,
-                    target=request_data.user_input.data.get("target", ""),
-                    content=request_data.user_input.data.get("content", ""),
+                    target=payload.user_input.data.get("target", ""),
+                    content=payload.user_input.data.get("content", ""),
                 )
 
             case _:
-                logger.error(
-                    f"未知的请求类型 = {request_data.user_input.tag}, 不能处理！"
-                )
+                logger.error(f"未知的请求类型 = {payload.user_input.tag}, 不能处理！")
 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"未知的请求类型 = {request_data.user_input.tag}, 不能处理！",
+            detail=f"未知的请求类型 = {payload.user_input.tag}, 不能处理！",
         )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"home/gameplay/v1: {request_data.user_name} failed, error: {str(e)}",
+            detail=f"home/gameplay/v1: {payload.user_name} failed, error: {str(e)}",
         )
 
 
@@ -341,15 +339,15 @@ async def home_gameplay(
     path="/api/home/trans_dungeon/v1/", response_model=HomeTransDungeonResponse
 )
 async def home_trans_dungeon(
-    request_data: HomeTransDungeonRequest,
+    payload: HomeTransDungeonRequest,
     game_server: GameServerInstance,
 ) -> HomeTransDungeonResponse:
 
-    logger.info(f"/home/trans_dungeon/v1/: {request_data.model_dump_json()}")
+    logger.info(f"/home/trans_dungeon/v1/: {payload.model_dump_json()}")
     try:
         # 验证前置条件并获取游戏实例
         web_game = await _validate_home_game_preconditions(
-            request_data.user_name,
+            payload.user_name,
             game_server,
         )
 
@@ -373,12 +371,12 @@ async def home_trans_dungeon(
             )
         #
         return HomeTransDungeonResponse(
-            message=request_data.model_dump_json(),
+            message=payload.model_dump_json(),
         )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"home/trans_dungeon/v1: {request_data.user_name} failed, error: {str(e)}",
+            detail=f"home/trans_dungeon/v1: {payload.user_name} failed, error: {str(e)}",
         )
 
 

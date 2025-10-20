@@ -29,7 +29,7 @@ def create_actor_spider() -> Actor:
         character_sheet_name=actor_data.character_sheet_name,
         kick_off_message="",
         rpg_character_profile=RPGCharacterProfile(base_dexterity=1),
-        type=ActorType.MONSTER,
+        type=ActorType.ENEMY,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         actor_profile=actor_data.actor_profile,
         appearance=actor_data.appearance,

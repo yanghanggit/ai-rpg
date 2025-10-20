@@ -9,26 +9,27 @@ from .character_sheet import ActorCharacterSheet, StageCharacterSheet
 @unique
 class ActorType(StrEnum):
     NONE = "None"
-    HERO = "Hero"
-    MONSTER = "Monster"
+    ALLY = "Ally"  # 我方/盟友/好人阵营
+    ENEMY = "Enemy"  # 敌方/怪物/坏人阵营
+    NEUTRAL = "Neutral"  # 中立角色
 
 
 ###############################################################################################################################################
 @final
 @unique
-class SDCharacterSheetName(StrEnum):
-    MODERATOR = "sd.moderator"
-    WEREWOLF = "sd.werewolf"
-    SEER = "sd.seer"
-    WITCH = "sd.witch"
-    VILLAGER = "sd.villager"
-    GUARD = "sd.guard"
+class WerewolfCharacterSheetName(StrEnum):
+    MODERATOR = "ww.moderator"
+    WEREWOLF = "ww.werewolf"
+    SEER = "ww.seer"
+    WITCH = "ww.witch"
+    VILLAGER = "ww.villager"
+    GUARD = "ww.guard"
 
 
 ###############################################################################################################################################
 @final
 @unique
-class SDWitchItemName(StrEnum):
+class WitchItemName(StrEnum):
     CURE = "道具.解药"
     POISON = "道具.毒药"
 

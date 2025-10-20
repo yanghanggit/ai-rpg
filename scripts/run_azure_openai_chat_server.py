@@ -84,7 +84,7 @@ async def health_check() -> Dict[str, Any]:
     path="/api/chat/v1/",
     response_model=ChatResponse,
 )
-async def process_chat_request(request: ChatRequest) -> ChatResponse:
+async def process_chat_request(payload: ChatRequest) -> ChatResponse:
     """
     处理聊天请求
 
@@ -95,7 +95,7 @@ async def process_chat_request(request: ChatRequest) -> ChatResponse:
         ChatResponse: 包含AI回复消息的响应对象
     """
     try:
-        logger.info(f"收到聊天请求: {request.message.content}")
+        logger.info(f"收到聊天请求: {payload.message.content}")
 
         # 为每个请求创建独立的LLM实例
         llm = create_azure_openai_gpt_llm()
@@ -107,12 +107,12 @@ async def process_chat_request(request: ChatRequest) -> ChatResponse:
 
         # 聊天历史（包含LLM实例）
         chat_history_state: State = {
-            "messages": [message for message in request.chat_history],
+            "messages": [message for message in payload.chat_history],
             "llm": llm,
         }
 
         # 用户输入
-        user_input_state: State = {"messages": [request.message], "llm": llm}
+        user_input_state: State = {"messages": [payload.message], "llm": llm}
 
         # 获取回复 - 使用 asyncio.to_thread 将阻塞调用包装为异步
         update_messages = await asyncio.to_thread(

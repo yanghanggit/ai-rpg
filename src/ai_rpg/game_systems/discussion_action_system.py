@@ -3,7 +3,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 
 # from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import DiscussionAction, DiscussionEvent
-from ..game.tcg_game import TCGGame
+from ..game.rpg_game import RPGGame
 
 
 ####################################################################################################################################
@@ -25,9 +25,9 @@ def _generate_prompt(
 @final
 class DiscussionActionSystem(ReactiveProcessor):
 
-    def __init__(self, game_context: TCGGame) -> None:
+    def __init__(self, game_context: RPGGame) -> None:
         super().__init__(game_context)
-        self._game: TCGGame = game_context
+        self._game: RPGGame = game_context
 
     ####################################################################################################################################
     @override

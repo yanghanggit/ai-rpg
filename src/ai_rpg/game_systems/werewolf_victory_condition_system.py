@@ -1,7 +1,7 @@
 from typing import final
 from overrides import override
 from ..entitas import ExecuteProcessor, Matcher
-from ..game.tcg_game import TCGGame
+from ..game.sdg_game import SDGGame
 from loguru import logger
 from ..models import (
     WitchComponent,
@@ -17,8 +17,8 @@ from ..models import (
 class WerewolfVictoryConditionSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
-    def __init__(self, game_context: TCGGame) -> None:
-        self._game: TCGGame = game_context
+    def __init__(self, game_context: SDGGame) -> None:
+        self._game: SDGGame = game_context
 
     ###############################################################################################################################################
     @override
@@ -32,6 +32,7 @@ class WerewolfVictoryConditionSystem(ExecuteProcessor):
         if check_town_victory or check_werewolves_victory:
 
             # TODO, 临时处理！
+            logger.warning("游戏结束，触发胜利条件，准备终止游戏...")
             self._game.should_terminate = True
 
             ## 随便打印一下！

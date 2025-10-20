@@ -43,7 +43,7 @@ async def get_actors_details(
         # 是否有游戏？！！
         current_room = game_server.get_room(user_name)
         assert current_room is not None
-        if current_room._game is None:
+        if current_room._tcg_game is None:
             logger.error(f"view_actor: {user_name} has no game")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -57,7 +57,7 @@ async def get_actors_details(
             )
 
         # 获取游戏
-        web_game = current_room._game
+        web_game = current_room._tcg_game
 
         # 获取所有角色实体
         entities_serialization: List[EntitySerialization] = []

@@ -24,7 +24,7 @@ def create_actor_wizard() -> Actor:
         character_sheet_name="wizard",
         kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）并告诉我你的战斗角色职能。回答简短(<100字)。""",
         rpg_character_profile=RPGCharacterProfile(base_max_hp=1000),
-        type=ActorType.HERO,
+        type=ActorType.ALLY,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         actor_profile=f"""你是精灵，一个西幻和赛博朋克风格结合的RPG游戏里的角色。
 【角色人设】

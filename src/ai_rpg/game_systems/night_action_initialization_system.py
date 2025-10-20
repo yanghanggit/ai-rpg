@@ -1,7 +1,7 @@
 from typing import final
 from overrides import override
 from ..entitas import ExecuteProcessor, Matcher
-from ..game.tcg_game import TCGGame
+from ..game.sdg_game import SDGGame
 from loguru import logger
 from ..models import (
     WerewolfComponent,
@@ -18,8 +18,8 @@ from ..models import (
 class NightActionInitializationSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
-    def __init__(self, game_context: TCGGame) -> None:
-        self._game: TCGGame = game_context
+    def __init__(self, game_context: SDGGame) -> None:
+        self._game: SDGGame = game_context
 
     ###############################################################################################################################################
     @override

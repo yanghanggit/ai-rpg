@@ -3,7 +3,7 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel
 from ..entitas import ExecuteProcessor, Matcher
-from ..game.tcg_game import TCGGame
+from ..game.sdg_game import SDGGame
 from ..models import (
     WerewolfComponent,
     SeerComponent,
@@ -31,8 +31,8 @@ class DayVoteResponse(BaseModel):
 class WerewolfDayVoteSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
-    def __init__(self, game_context: TCGGame) -> None:
-        self._game: TCGGame = game_context
+    def __init__(self, game_context: SDGGame) -> None:
+        self._game: SDGGame = game_context
 
     ###############################################################################################################################################
     @override
@@ -147,7 +147,7 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     @staticmethod
-    def is_day_discussion_complete(game: TCGGame) -> bool:
+    def is_day_discussion_complete(game: SDGGame) -> bool:
         players1 = game.get_group(
             Matcher(
                 all_of=[DayDiscussedComponent],

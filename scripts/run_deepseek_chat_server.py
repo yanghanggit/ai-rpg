@@ -250,7 +250,7 @@ async def health_check() -> Dict[str, Any]:
     path="/api/chat/v1/",
     response_model=ChatResponse,
 )
-async def process_chat_request(request: ChatRequest) -> ChatResponse:
+async def process_chat_request(payload: ChatRequest) -> ChatResponse:
     """
     处理聊天请求
 
@@ -261,7 +261,7 @@ async def process_chat_request(request: ChatRequest) -> ChatResponse:
         ChatResponse: 包含AI回复消息的响应对象
     """
     try:
-        logger.info(f"收到聊天请求: {request.message.content}")
+        logger.info(f"收到聊天请求: {payload.message.content}")
 
         # 为每个请求创建独立的LLM实例
         llm = create_deepseek_llm()
@@ -271,12 +271,12 @@ async def process_chat_request(request: ChatRequest) -> ChatResponse:
 
         # 聊天历史（包含LLM实例）
         chat_history_state: State = {
-            "messages": [message for message in request.chat_history],
+            "messages": [message for message in payload.chat_history],
             "llm": llm,
         }
 
         # 用户输入
-        user_input_state: State = {"messages": [request.message], "llm": llm}
+        user_input_state: State = {"messages": [payload.message], "llm": llm}
 
         # 获取回复 - 使用 asyncio.to_thread 将阻塞调用包装为异步
         update_messages = await asyncio.to_thread(
@@ -309,7 +309,7 @@ async def process_chat_request(request: ChatRequest) -> ChatResponse:
     path="/api/chat/rag/v1/",
     response_model=ChatResponse,
 )
-async def process_chat_rag_request(request: ChatRequest) -> ChatResponse:
+async def process_chat_rag_request(payload: ChatRequest) -> ChatResponse:
     """
     处理RAG聊天请求
 
@@ -320,7 +320,7 @@ async def process_chat_rag_request(request: ChatRequest) -> ChatResponse:
         ChatResponse: 包含AI回复消息的响应对象
     """
     try:
-        logger.info(f"收到RAG聊天请求: {request.message.content}")
+        logger.info(f"收到RAG聊天请求: {payload.message.content}")
 
         # 为每个请求创建独立的LLM实例
         llm = create_deepseek_llm()
@@ -330,12 +330,12 @@ async def process_chat_rag_request(request: ChatRequest) -> ChatResponse:
 
         # 聊天历史（包含LLM实例）
         chat_history_state: State = {
-            "messages": [message for message in request.chat_history],
+            "messages": [message for message in payload.chat_history],
             "llm": llm,
         }
 
         # 用户输入
-        user_input_state: State = {"messages": [request.message], "llm": llm}
+        user_input_state: State = {"messages": [payload.message], "llm": llm}
 
         # 获取RAG回复 - 使用 asyncio.to_thread 将阻塞调用包装为异步
         update_messages = await asyncio.to_thread(
@@ -368,7 +368,7 @@ async def process_chat_rag_request(request: ChatRequest) -> ChatResponse:
     path="/api/chat/undefined/v1/",
     response_model=ChatResponse,
 )
-async def process_chat_undefined_request(request: ChatRequest) -> ChatResponse:
+async def process_chat_undefined_request(payload: ChatRequest) -> ChatResponse:
     """
     处理统一聊天请求（智能路由）
 
@@ -385,7 +385,7 @@ async def process_chat_undefined_request(request: ChatRequest) -> ChatResponse:
         ChatResponse: 包含AI回复消息的响应对象
     """
     try:
-        logger.info(f"收到统一聊天请求: {request.message.content}")
+        logger.info(f"收到统一聊天请求: {payload.message.content}")
 
         # 创建统一聊天图
         unified_graph = create_unified_chat_graph()
@@ -395,11 +395,11 @@ async def process_chat_undefined_request(request: ChatRequest) -> ChatResponse:
 
         # 聊天历史状态（使用字典格式，符合统一图的要求）
         chat_history_state: Dict[str, List[BaseMessage]] = {
-            "messages": [message for message in request.chat_history]
+            "messages": [message for message in payload.chat_history]
         }
 
         # 用户输入状态
-        user_input_state: Dict[str, List[BaseMessage]] = {"messages": [request.message]}
+        user_input_state: Dict[str, List[BaseMessage]] = {"messages": [payload.message]}
 
         # 执行统一聊天流程 - 使用 asyncio.to_thread 将阻塞调用包装为异步
         update_messages = await asyncio.to_thread(
@@ -435,7 +435,7 @@ async def process_chat_undefined_request(request: ChatRequest) -> ChatResponse:
     path="/api/chat/mcp/v1/",
     response_model=ChatResponse,
 )
-async def process_chat_mcp_request(request: ChatRequest) -> ChatResponse:
+async def process_chat_mcp_request(payload: ChatRequest) -> ChatResponse:
     """
     处理MCP聊天请求
 
@@ -452,7 +452,7 @@ async def process_chat_mcp_request(request: ChatRequest) -> ChatResponse:
         ChatResponse: 包含AI回复消息的响应对象
     """
     try:
-        logger.info(f"收到MCP聊天请求: {request.message.content}")
+        logger.info(f"收到MCP聊天请求: {payload.message.content}")
 
         # 获取全局 MCP 客户端和工具
         global _global_mcp_client, _global_available_tools
@@ -475,7 +475,7 @@ async def process_chat_mcp_request(request: ChatRequest) -> ChatResponse:
         assert mcp_client is not None
         chat_history_state: McpState = {
             "messages": [SystemMessage(content=system_prompt)]
-            + [message for message in request.chat_history],
+            + [message for message in payload.chat_history],
             "mcp_client": mcp_client,
             "available_tools": available_tools,
             "tool_outputs": [],
@@ -483,7 +483,7 @@ async def process_chat_mcp_request(request: ChatRequest) -> ChatResponse:
 
         # 用户输入状态
         user_input_state: McpState = {
-            "messages": [request.message],
+            "messages": [payload.message],
             "mcp_client": mcp_client,
             "available_tools": available_tools,
             "tool_outputs": [],

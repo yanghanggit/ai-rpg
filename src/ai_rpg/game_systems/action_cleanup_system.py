@@ -1,7 +1,7 @@
 from typing import Final, FrozenSet, final, override
 from ..entitas import ExecuteProcessor, Matcher
 from ..entitas.components import Component
-from ..game.tcg_game import TCGGame
+from ..game.rpg_game import RPGGame
 from ..models import (
     ACTION_COMPONENTS_REGISTRY,
     COMPONENTS_REGISTRY,
@@ -12,8 +12,8 @@ from ..models import (
 class ActionCleanupSystem(ExecuteProcessor):
 
     ############################################################################################################
-    def __init__(self, game_context: TCGGame) -> None:
-        self._game: TCGGame = game_context
+    def __init__(self, game_context: RPGGame) -> None:
+        self._game: RPGGame = game_context
 
     ############################################################################################################
     @override

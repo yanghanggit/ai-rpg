@@ -2,22 +2,22 @@ from typing import final, override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     WitchPoisonAction,
-    SDWitchItemName,
+    WitchItemName,
     InventoryComponent,
     AgentEvent,
     NightKillTargetComponent,
 )
 from loguru import logger
-from ..game.tcg_game import TCGGame
+from ..game.sdg_game import SDGGame
 
 
 ####################################################################################################################################
 @final
 class WitchPoisonActionSystem(ReactiveProcessor):
 
-    def __init__(self, game_context: TCGGame) -> None:
+    def __init__(self, game_context: SDGGame) -> None:
         super().__init__(game_context)
-        self._game: TCGGame = game_context
+        self._game: SDGGame = game_context
 
     ####################################################################################################################################
     @override
@@ -51,7 +51,7 @@ class WitchPoisonActionSystem(ReactiveProcessor):
         inventory_component = witch_entity.get(InventoryComponent)
         assert inventory_component is not None, "女巫实体没有道具组件"
 
-        poison_item = inventory_component.find_item(SDWitchItemName.POISON)
+        poison_item = inventory_component.find_item(WitchItemName.POISON)
         assert poison_item is not None, "女巫没有毒药，无法使用毒药"
         if poison_item is None:
             logger.warning(f"女巫 {witch_entity.name} 没有毒药，无法使用毒药")

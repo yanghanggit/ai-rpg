@@ -81,7 +81,7 @@ async def get_actors_details(
         # 返回!
         return ActorDetailsResponse(
             actor_entities_serialization=entities_serialization,
-            agent_short_term_memories=[],  # 太长了，先注释掉
+            # agent_short_term_memories=[],  # 太长了，先注释掉
         )
     except Exception as e:
         logger.error(f"view_actor: {user_name} error: {str(e)}")

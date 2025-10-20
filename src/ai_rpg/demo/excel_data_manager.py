@@ -11,7 +11,9 @@ from ..utils.excel import (
 from .excel_data import ActorExcelData, DungeonExcelData, WerewolfAppearanceExcelData
 
 # 定义泛型类型变量
-ExcelDataT = TypeVar("ExcelDataT", DungeonExcelData, ActorExcelData, WerewolfAppearanceExcelData)
+ExcelDataT = TypeVar(
+    "ExcelDataT", DungeonExcelData, ActorExcelData, WerewolfAppearanceExcelData
+)
 
 
 ###################################################################################################
@@ -39,7 +41,9 @@ class ExcelDataManager:
         self._excel_file_path: Final[Path] = excel_file_path
         self._dungeon_sheet_name: Optional[str] = dungeon_sheet_name
         self._actor_sheet_name: Optional[str] = actor_sheet_name
-        self._werewolf_appearance_sheet_name: Optional[str] = werewolf_appearance_sheet_name
+        self._werewolf_appearance_sheet_name: Optional[str] = (
+            werewolf_appearance_sheet_name
+        )
 
         # BaseModel格式数据缓存
         self._dungeon_valid_rows: List[DungeonExcelData] = []
@@ -90,8 +94,8 @@ class ExcelDataManager:
 
         # 只在指定了工作表名称时才加载对应数据
         if self._dungeon_sheet_name:
-            self._dungeon_valid_rows, self._dungeon_valid_rows_dict = self._load_sheet_data(
-                self._dungeon_sheet_name, DungeonExcelData
+            self._dungeon_valid_rows, self._dungeon_valid_rows_dict = (
+                self._load_sheet_data(self._dungeon_sheet_name, DungeonExcelData)
             )
 
         if self._actor_sheet_name:
@@ -131,6 +135,7 @@ class ExcelDataManager:
     def get_all_werewolf_appearance_data(self) -> List[WerewolfAppearanceExcelData]:
         """获取所有狼人杀外观数据"""
         return self._werewolf_appearance_valid_rows
+
 
 ###################################################################################################
 ###################################################################################################

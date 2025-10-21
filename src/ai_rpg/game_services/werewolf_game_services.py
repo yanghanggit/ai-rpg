@@ -20,6 +20,7 @@ from ..models import (
     DeathComponent,
     DayDiscussedComponent,
     NightActionReadyComponent,
+    NightActionCompletedComponent,
     DayVotedComponent,
 )
 from ..demo.werewolf_game_world import create_demo_sd_game_boot
@@ -59,11 +60,10 @@ def announce_night_phase(sd_game: SDGGame) -> None:
     # 回合计数器规则: 0=游戏开始, 1=第一夜, 2=第一白天, 3=第二夜, 4=第二白天...
     # 夜晚阶段的特征: 计数器为奇数(1,3,5...)
     assert (
-        sd_game._werewolf_game_turn_counter % 2 == 1
-        or sd_game._werewolf_game_turn_counter > 0
+        sd_game._turn_counter % 2 == 1 or sd_game._turn_counter > 0
     ), "当前时间标记不是夜晚"
 
-    logger.warning(f"进入夜晚,时间标记 = {sd_game._werewolf_game_turn_counter}")
+    logger.warning(f"进入夜晚,时间标记 = {sd_game._turn_counter}")
 
     # 获取所有角色玩家(狼人、预言家、女巫、村民)
     all_role_players = sd_game.get_group(
@@ -78,7 +78,7 @@ def announce_night_phase(sd_game: SDGGame) -> None:
     ).entities.copy()
 
     # 计算当前是第几个夜晚(从1开始计数)
-    current_night_number = (sd_game._werewolf_game_turn_counter + 1) // 2
+    current_night_number = (sd_game._turn_counter + 1) // 2
 
     # 向所有玩家发送夜晚开始的消息
     for player in all_role_players:
@@ -130,11 +130,10 @@ def announce_day_phase(sd_game: SDGGame) -> None:
     # 回合计数器规则: 0=游戏开始, 1=第一夜, 2=第一白天, 3=第二夜, 4=第二白天...
     # 白天阶段的特征: 计数器为偶数且大于0(2,4,6...)
     assert (
-        sd_game._werewolf_game_turn_counter % 2 == 0
-        and sd_game._werewolf_game_turn_counter > 0
+        sd_game._turn_counter % 2 == 0 and sd_game._turn_counter > 0
     ), "当前时间标记不是白天"
 
-    logger.warning(f"进入白天,时间标记 = {sd_game._werewolf_game_turn_counter}")
+    logger.warning(f"进入白天,时间标记 = {sd_game._turn_counter}")
 
     # 获取所有角色玩家(狼人、预言家、女巫、村民)
     all_role_players = sd_game.get_group(
@@ -149,7 +148,7 @@ def announce_day_phase(sd_game: SDGGame) -> None:
     ).entities.copy()
 
     # 计算当前是第几个白天(从1开始计数)
-    current_day_number = sd_game._werewolf_game_turn_counter // 2
+    current_day_number = sd_game._turn_counter // 2
 
     # 向所有玩家发送白天开始的消息
     for player in all_role_players:
@@ -195,13 +194,20 @@ def announce_day_phase(sd_game: SDGGame) -> None:
     # 获取所有带有夜晚计划标记的实体
     entities_with_night_plans = sd_game.get_group(
         Matcher(
-            all_of=[NightActionReadyComponent],
+            any_of=[NightActionReadyComponent, NightActionCompletedComponent],
         )
     ).entities.copy()
 
     # 移除所有夜晚计划标记,为新的一天做准备
     for entity_with_plan in entities_with_night_plans:
-        entity_with_plan.remove(NightActionReadyComponent)
+
+        # 移除夜晚行动准备标记
+        if entity_with_plan.has(NightActionReadyComponent):
+            entity_with_plan.remove(NightActionReadyComponent)
+
+        # 移除夜晚行动完成标记
+        if entity_with_plan.has(NightActionCompletedComponent):
+            entity_with_plan.remove(NightActionCompletedComponent)
 
     # 通知客户端一个消息，白天阶段开始了
     notification = PhaseChangeNotification(phase="day", turn_number=current_day_number)
@@ -323,19 +329,22 @@ async def play_werewolf_game(
 
         if user_input == "/k" or user_input == "/kickoff":
 
-            if web_game._werewolf_game_turn_counter == 0:
+            if web_game._turn_counter == 0:
 
                 logger.info("游戏开始，准备入场记阶段！！！！！！")
 
                 # 初始化游戏的开场流程
                 await web_game.werewolf_game_kickoff_pipeline.process()
 
+                # 标记游戏已经开始
+                web_game._started = True
+
                 # 返回当前的客户端消息
                 return WerewolfGamePlayResponse(session_messages=[])
 
             else:
                 logger.error(
-                    f"当前时间标记不是0，是{web_game._werewolf_game_turn_counter}，不能执行 /kickoff 命令"
+                    f"当前时间标记不是0，是{web_game._turn_counter}，不能执行 /kickoff 命令"
                 )
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -344,14 +353,19 @@ async def play_werewolf_game(
 
         if user_input == "/t" or user_input == "/time":
 
-            last = web_game._werewolf_game_turn_counter
-            web_game._werewolf_game_turn_counter += 1
-            logger.info(
-                f"时间推进了一步，{last} -> {web_game._werewolf_game_turn_counter}"
-            )
+            if not web_game._started:
+                logger.error("游戏还没有开始，不能执行 /time 命令")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="游戏还没有开始，不能执行 /time 命令",
+                )
+
+            last = web_game._turn_counter
+            web_game._turn_counter += 1
+            logger.info(f"时间推进了一步，{last} -> {web_game._turn_counter}")
 
             # 判断是夜晚还是白天
-            if web_game._werewolf_game_turn_counter % 2 == 1:
+            if web_game._turn_counter % 2 == 1:
 
                 # 进入下一个夜晚
                 announce_night_phase(web_game)
@@ -366,7 +380,7 @@ async def play_werewolf_game(
         if user_input == "/n" or user_input == "/night":
 
             # 如果是夜晚
-            if web_game._werewolf_game_turn_counter % 2 == 1:
+            if web_game._turn_counter % 2 == 1:
 
                 # 运行游戏逻辑
                 await web_game.werewolf_game_night_pipeline.process()
@@ -377,7 +391,7 @@ async def play_werewolf_game(
             else:
 
                 logger.error(
-                    f"当前不是夜晚，是{web_game._werewolf_game_turn_counter}，不能执行 /night 命令"
+                    f"当前不是夜晚，是{web_game._turn_counter}，不能执行 /night 命令"
                 )
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -387,10 +401,7 @@ async def play_werewolf_game(
         if user_input == "/d" or user_input == "/day":
 
             # 如果是白天
-            if (
-                web_game._werewolf_game_turn_counter % 2 == 0
-                and web_game._werewolf_game_turn_counter > 0
-            ):
+            if web_game._turn_counter % 2 == 0 and web_game._turn_counter > 0:
                 # 运行游戏逻辑
                 await web_game.werewolf_game_day_pipeline.process()
 
@@ -400,7 +411,7 @@ async def play_werewolf_game(
             else:
 
                 logger.error(
-                    f"当前不是白天，是{web_game._werewolf_game_turn_counter}，不能执行 /day 命令"
+                    f"当前不是白天，是{web_game._turn_counter}，不能执行 /day 命令"
                 )
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -410,10 +421,7 @@ async def play_werewolf_game(
         if user_input == "/v" or user_input == "/vote":
 
             # 如果是白天
-            if (
-                web_game._werewolf_game_turn_counter % 2 == 0
-                and web_game._werewolf_game_turn_counter > 0
-            ):
+            if web_game._turn_counter % 2 == 0 and web_game._turn_counter > 0:
 
                 # 判断是否讨论完毕
                 if WerewolfDayVoteSystem.is_day_discussion_complete(web_game):
@@ -436,7 +444,7 @@ async def play_werewolf_game(
             else:
 
                 logger.error(
-                    f"当前不是白天，是{web_game._werewolf_game_turn_counter}，不能执行 /vote 命令"
+                    f"当前不是白天，是{web_game._turn_counter}，不能执行 /vote 命令"
                 )
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -493,13 +501,13 @@ async def get_werewolf_game_state(
         # assert sd_game is not None
         mapping_data = sd_game.get_stage_actor_distribution_mapping()
         logger.info(
-            f"view_home: {user_name} mapping_data: {mapping_data}, time={sd_game._werewolf_game_turn_counter}"
+            f"view_home: {user_name} mapping_data: {mapping_data}, time={sd_game._turn_counter}"
         )
 
         # 返回。
         return WerewolfGameStateResponse(
             mapping=mapping_data,
-            game_time=sd_game._werewolf_game_turn_counter,
+            game_time=sd_game._turn_counter,
         )
     except Exception as e:
         raise HTTPException(

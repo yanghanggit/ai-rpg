@@ -13,6 +13,8 @@ from ..models import (
     AppearanceComponent,
     NightActionReadyComponent,
     MindEvent,
+    NightActionCompletedComponent,
+    DeathComponent,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
@@ -81,7 +83,12 @@ class NightSeerActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(NightActionReadyComponent) and entity.has(SeerComponent)
+        return (
+            entity.has(NightActionReadyComponent)
+            and entity.has(SeerComponent)
+            and not entity.has(NightActionCompletedComponent)
+            and not entity.has(DeathComponent)
+        )
 
     ###############################################################################################################################################
     @override
@@ -109,6 +116,11 @@ class NightSeerActionSystem(ReactiveProcessor):
 
         # 执行预言家查看决策和行动
         await self._execute_seer_check_action(seer_entity, alive_player_entities)
+
+        seer_entity.replace(
+            NightActionCompletedComponent,
+            seer_entity.name,
+        )
 
     ###############################################################################################################################################
     async def _execute_seer_check_action(

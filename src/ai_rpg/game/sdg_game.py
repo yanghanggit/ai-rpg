@@ -66,7 +66,10 @@ class SDGGame(RPGGame):
         self.register_pipeline(self._werewolf_game_vote_pipeline)
 
         # 狼人杀专用：游戏回合计数器
-        self._werewolf_game_turn_counter: int = 0
+        self._turn_counter: int = 0
+
+        # 游戏是否启动?
+        self._started: bool = False
 
     ###############################################################################################################################################
     @property

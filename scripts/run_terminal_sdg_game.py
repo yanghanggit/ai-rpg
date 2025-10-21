@@ -125,16 +125,19 @@ async def _process_player_input(terminal_game: SDGGame) -> None:
 
     if usr_input == "/k" or usr_input == "/kickoff":
 
-        if terminal_game._werewolf_game_turn_counter == 0:
+        if terminal_game._turn_counter == 0:
 
             logger.info("游戏开始，准备入场记阶段！！！！！！")
 
             # 初始化！
             await terminal_game.werewolf_game_kickoff_pipeline.process()
 
+            # 标记游戏已经开始
+            terminal_game._started = True
+
         else:
-            logger.warning(
-                f"当前时间标记不是0，是{terminal_game._werewolf_game_turn_counter}，不能执行 /kickoff 命令"
+            logger.error(
+                f"当前时间标记不是0，是{terminal_game._turn_counter}，不能执行 /kickoff 命令"
             )
 
         # 返回！
@@ -142,19 +145,22 @@ async def _process_player_input(terminal_game: SDGGame) -> None:
 
     if usr_input == "/t" or usr_input == "/time":
 
-        last = terminal_game._werewolf_game_turn_counter
-        terminal_game._werewolf_game_turn_counter += 1
-        logger.info(
-            f"时间推进了一步，{last} -> {terminal_game._werewolf_game_turn_counter}"
-        )
+        if not terminal_game._started:
+            logger.error("游戏还没有开始，不能执行 /time 命令")
+            return
+
+        last = terminal_game._turn_counter
+        terminal_game._turn_counter += 1
+        logger.info(f"时间推进了一步，{last} -> {terminal_game._turn_counter}")
 
         # 判断是夜晚还是白天
-        if terminal_game._werewolf_game_turn_counter % 2 == 1:
+        if terminal_game._turn_counter % 2 == 1:
 
             # 进入下一个夜晚
             announce_night_phase(terminal_game)
 
         else:
+
             # 进入下一个白天
             announce_day_phase(terminal_game)
 
@@ -164,14 +170,14 @@ async def _process_player_input(terminal_game: SDGGame) -> None:
     if usr_input == "/n" or usr_input == "/night":
 
         # 如果是夜晚
-        if terminal_game._werewolf_game_turn_counter % 2 == 1:
+        if terminal_game._turn_counter % 2 == 1:
 
             # 运行游戏逻辑
             await terminal_game.werewolf_game_night_pipeline.process()
         else:
 
-            logger.warning(
-                f"当前不是夜晚{terminal_game._werewolf_game_turn_counter}，不能执行 /night 命令"
+            logger.error(
+                f"当前不是夜晚{terminal_game._turn_counter}，不能执行 /night 命令"
             )
 
         # 返回！
@@ -180,16 +186,13 @@ async def _process_player_input(terminal_game: SDGGame) -> None:
     if usr_input == "/d" or usr_input == "/day":
 
         # 如果是白天
-        if (
-            terminal_game._werewolf_game_turn_counter % 2 == 0
-            and terminal_game._werewolf_game_turn_counter > 0
-        ):
+        if terminal_game._turn_counter % 2 == 0 and terminal_game._turn_counter > 0:
             # 运行游戏逻辑
             await terminal_game.werewolf_game_day_pipeline.process()
 
         else:
-            logger.warning(
-                f"当前不是白天{terminal_game._werewolf_game_turn_counter}，不能执行 /day 命令"
+            logger.error(
+                f"当前不是白天{terminal_game._turn_counter}，不能执行 /day 命令"
             )
 
         # 返回！
@@ -198,10 +201,7 @@ async def _process_player_input(terminal_game: SDGGame) -> None:
     if usr_input == "/v" or usr_input == "/vote":
 
         # 如果是白天
-        if (
-            terminal_game._werewolf_game_turn_counter % 2 == 0
-            and terminal_game._werewolf_game_turn_counter > 0
-        ):
+        if terminal_game._turn_counter % 2 == 0 and terminal_game._turn_counter > 0:
 
             # 判断是否讨论完毕
             if WerewolfDayVoteSystem.is_day_discussion_complete(terminal_game):
@@ -210,12 +210,12 @@ async def _process_player_input(terminal_game: SDGGame) -> None:
                 await terminal_game.werewolf_game_vote_pipeline.process()
 
             else:
-                logger.warning(
+                logger.error(
                     "白天讨论环节没有完成，不能进入投票阶段！！！！！！！！！！！！"
                 )
         else:
-            logger.warning(
-                f"当前不是白天{terminal_game._werewolf_game_turn_counter}，不能执行 /vote 命令"
+            logger.error(
+                f"当前不是白天{terminal_game._turn_counter}，不能执行 /vote 命令"
             )
 
         # 返回！

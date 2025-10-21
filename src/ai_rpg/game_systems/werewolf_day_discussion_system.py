@@ -40,7 +40,7 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
 
-        if self._game._werewolf_game_turn_counter == 2:
+        if self._game._turn_counter == 2:
 
             logger.warning("第一个白天讨论")
 

@@ -10,6 +10,7 @@ from ..models import (
     VillagerComponent,
     DeathComponent,
     NightActionReadyComponent,
+    NightActionCompletedComponent,
 )
 
 
@@ -38,7 +39,8 @@ class NightActionInitializationSystem(ExecuteProcessor):
         # 自动为存活的预言家添加夜晚行动
         logger.debug("自动为存活的玩家添加夜晚行动")
 
-        alive_player_entities = self._game.get_group(
+        # 只有如下的角色可以进行夜晚行动
+        eligible_night_action_entities = self._game.get_group(
             Matcher(
                 any_of=[
                     WerewolfComponent,
@@ -46,11 +48,11 @@ class NightActionInitializationSystem(ExecuteProcessor):
                     WitchComponent,
                     VillagerComponent,
                 ],
-                none_of=[DeathComponent],
+                none_of=[DeathComponent, NightActionCompletedComponent],
             )
         ).entities.copy()
 
-        for entity in alive_player_entities:
+        for entity in eligible_night_action_entities:
             entity.replace(NightActionReadyComponent, entity.name)
 
     ###############################################################################################################################################

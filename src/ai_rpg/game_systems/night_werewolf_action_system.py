@@ -14,6 +14,7 @@ from ..models import (
     NightActionReadyComponent,
     NightKillTargetComponent,
     MindEvent,
+    NightActionCompletedComponent,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
@@ -82,7 +83,12 @@ class NightWerewolfActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(NightActionReadyComponent) and entity.has(WerewolfComponent)
+        return (
+            entity.has(NightActionReadyComponent)
+            and entity.has(WerewolfComponent)
+            and not entity.has(NightActionCompletedComponent)
+            and not entity.has(DeathComponent)
+        )
 
     ###############################################################################################################################################
     @override
@@ -176,10 +182,10 @@ class NightWerewolfActionSystem(ReactiveProcessor):
         chosen_response[1].replace(
             NightKillTargetComponent,
             chosen_response[1].name,
-            self._game._werewolf_game_turn_counter,
+            self._game._turn_counter,
         )
         logger.debug(
-            f"狼人杀人{chosen_response[0].name} 行动完成，玩家 {chosen_response[1].name} 被标记为死亡, 击杀时间标记 {self._game._werewolf_game_turn_counter}"
+            f"狼人杀人{chosen_response[0].name} 行动完成，玩家 {chosen_response[1].name} 被标记为死亡, 击杀时间标记 {self._game._turn_counter}"
         )
 
         # 自身的添加上下文。
@@ -190,6 +196,11 @@ class NightWerewolfActionSystem(ReactiveProcessor):
                 actor=chosen_response[0].name,
                 content=f"经过你的思考之后，你决定今晚要击杀 {chosen_response[1].name}，理由是：{chosen_response[2]}",
             ),
+        )
+
+        # 标记夜晚行动完成
+        chosen_response[0].replace(
+            NightActionCompletedComponent, chosen_response[0].name
         )
 
         # 通知所有活着的狼人最终决定
@@ -205,6 +216,11 @@ class NightWerewolfActionSystem(ReactiveProcessor):
                     actor=other_response[0].name,
                     content=f"经过你的思考之后，你决定今晚要击杀 {other_response[1].name}，理由是：{other_response[2]} 经过团队商议，最终采纳了 {chosen_response[0].name} 的建议，决定击杀 {chosen_response[1].name}。",
                 ),
+            )
+
+            # 标记夜晚完成。
+            other_response[0].replace(
+                NightActionCompletedComponent, other_response[0].name
             )
 
     ###############################################################################################################################################

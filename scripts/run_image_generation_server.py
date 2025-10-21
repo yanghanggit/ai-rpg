@@ -48,9 +48,7 @@ from ai_rpg.replicate import (
     load_replicate_config,
     generate_multiple_images,
 )
-from ai_rpg.settings.server_settings import (
-    initialize_server_settings_instance,
-)
+from ai_rpg.configuration import server_configuration
 
 
 ############################################################################################################
@@ -278,23 +276,23 @@ def main() -> None:
         import uvicorn
 
         ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        server_config = initialize_server_settings_instance(
-            Path("server_settings.json")
-        )
+        # server_config = initialize_server_settings_instance(
+        #     Path("server_configuration.json")
+        # )
 
         logger.info("🚀 启动图片生成服务器...")
         logger.info(
-            f"📡 API文档: http://localhost:{server_config.image_generation_server_port}/docs"
+            f"📡 API文档: http://localhost:{server_configuration.image_generation_server_port}/docs"
         )
         logger.info(
-            f"🖼️  静态文件: http://localhost:{server_config.image_generation_server_port}/images/"
+            f"🖼️  静态文件: http://localhost:{server_configuration.image_generation_server_port}/images/"
         )
 
         # 启动服务器
         uvicorn.run(
             app,
             host="localhost",
-            port=server_config.image_generation_server_port,
+            port=server_configuration.image_generation_server_port,
             log_level="debug",
         )
 

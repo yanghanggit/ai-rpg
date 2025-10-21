@@ -51,8 +51,8 @@ from ai_rpg.deepseek import (
     stream_mcp_graph_updates,
 )
 
-from ai_rpg.settings import (
-    initialize_server_settings_instance,
+from ai_rpg.configuration import (
+    server_configuration,
 )
 
 # 导入路由管理器相关模块
@@ -533,7 +533,9 @@ def main() -> None:
     logger.info("🚀 启动DeepSeek聊天服务器...")
 
     # 加载服务器配置
-    server_config = initialize_server_settings_instance(Path("server_settings.json"))
+    # server_config = initialize_server_settings_instance(
+    #     Path("server_configuration.json")
+    # )
 
     try:
         import uvicorn
@@ -542,7 +544,7 @@ def main() -> None:
         uvicorn.run(
             app,
             host="localhost",
-            port=server_config.deepseek_chat_server_port,
+            port=server_configuration.deepseek_chat_server_port,
             log_level="debug",
         )
 

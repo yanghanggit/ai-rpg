@@ -1,4 +1,3 @@
-from pathlib import Path
 from fastapi import APIRouter, HTTPException, Query, status
 from loguru import logger
 from .game_server_depends import GameServerInstance
@@ -26,8 +25,8 @@ from ..models import (
 from ..demo.werewolf_game_world import create_demo_sd_game_boot
 from ..game.player_session import PlayerSession
 from ..game.sdg_game import SDGGame
-from ..settings import (
-    initialize_server_settings_instance,
+from ..configuration import (
+    server_configuration,
 )
 from ..chat_services import ChatClient
 from ..game.config import GLOBAL_SD_GAME_NAME
@@ -465,8 +464,10 @@ async def start_werewolf_game(
     )
 
     # 创建服务器相关的连接信息。
-    server_settings = initialize_server_settings_instance(Path("server_settings.json"))
-    ChatClient.initialize_url_config(server_settings)
+    # server_settings = initialize_server_settings_instance(
+    #     Path("server_configuration.json")
+    # )
+    ChatClient.initialize_url_config(server_configuration)
 
     # 新游戏！
     web_game.new_game().save()

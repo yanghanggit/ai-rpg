@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 import sys
 
 # 将 src 目录添加到模块搜索路径
@@ -10,8 +9,8 @@ sys.path.insert(
 from typing import Dict, List, Set, TypedDict, cast
 from loguru import logger
 from ai_rpg.chat_services.client import ChatClient
-from ai_rpg.settings import (
-    initialize_server_settings_instance,
+from ai_rpg.configuration import (
+    server_configuration,
 )
 from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
@@ -421,7 +420,9 @@ async def _run_game(
         logger.info(f"恢复游戏: {user}, {game}")
 
     ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    server_settings = initialize_server_settings_instance(Path("server_settings.json"))
+    # server_settings = initialize_server_settings_instance(
+    #     Path("server_configuration.json")
+    # )
 
     # 依赖注入，创建新的游戏
     assert world_exists is not None, "World data must exist to create a game"
@@ -434,7 +435,7 @@ async def _run_game(
         world=world_exists,
     )
 
-    ChatClient.initialize_url_config(server_settings)
+    ChatClient.initialize_url_config(server_configuration)
 
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(terminal_game.world.entities_serialization) == 0:

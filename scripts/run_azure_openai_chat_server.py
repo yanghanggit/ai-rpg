@@ -19,7 +19,6 @@ API端点：
 """
 
 import os
-from pathlib import Path
 import sys
 import asyncio
 from typing import Any, Dict
@@ -40,8 +39,8 @@ from ai_rpg.azure_openai_gpt import (
     create_azure_openai_gpt_llm,
 )
 
-from ai_rpg.settings import (
-    initialize_server_settings_instance,
+from ai_rpg.configuration import (
+    server_configuration,
 )
 
 ##################################################################################################################
@@ -153,7 +152,9 @@ def main() -> None:
     logger.info("🚀 启动Azure OpenAI聊天服务器...")
 
     # 加载服务器配置
-    server_config = initialize_server_settings_instance(Path("server_settings.json"))
+    # server_config = initialize_server_settings_instance(
+    #     Path("server_configuration.json")
+    # )
 
     try:
         import uvicorn
@@ -162,7 +163,7 @@ def main() -> None:
         uvicorn.run(
             app,
             host="localhost",
-            port=server_config.azure_openai_chat_server_port,
+            port=server_configuration.azure_openai_chat_server_port,
             log_level="debug",
         )
 

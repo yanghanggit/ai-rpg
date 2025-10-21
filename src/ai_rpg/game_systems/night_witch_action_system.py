@@ -16,6 +16,7 @@ from ..models import (
     NightActionReadyComponent,
     NightKillTargetComponent,
     MindEvent,
+    NightActionCompletedComponent,
 )
 from ..utils.md_format import format_list_as_markdown_list
 from ..chat_services.client import ChatClient
@@ -90,7 +91,12 @@ class NightWitchActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(NightActionReadyComponent) and entity.has(WitchComponent)
+        return (
+            entity.has(NightActionReadyComponent)
+            and entity.has(WitchComponent)
+            and not entity.has(NightActionCompletedComponent)
+            and not entity.has(DeathComponent)
+        )
 
     #######################################################################################################################################
 
@@ -102,6 +108,19 @@ class NightWitchActionSystem(ReactiveProcessor):
 
         # 一个女巫
         witch_entity = entities[0]
+
+        # 女巫的道具信息
+        inventory_component = witch_entity.get(InventoryComponent)
+        assert inventory_component is not None
+        if len(inventory_component.items) == 0:
+            # 如果没有道具，直接跳过女巫行动
+            logger.warning(f"女巫 {witch_entity.name} 没有道具，跳过女巫行动")
+            self._game.append_human_message(
+                witch_entity,
+                f"""# 提示！你没有任何道具，本轮你将跳过女巫行动。""",
+            )
+            witch_entity.replace(NightActionCompletedComponent, witch_entity.name)
+            return
 
         # 本夜晚被狼人杀害的人！
         victims_of_wolf = self._game.get_group(
@@ -129,12 +148,7 @@ class NightWitchActionSystem(ReactiveProcessor):
             victim_survivor_status.append((one.name, "今夜被狼人杀害"))
 
         for one in alive_players:
-            # if one not in victims_of_wolf:
             victim_survivor_status.append((one.name, "存活中"))
-
-        # 女巫的道具信息
-        inventory_component = witch_entity.get(InventoryComponent)
-        assert inventory_component is not None
 
         # 生成 prompt
         prompt = _generate_prompt(
@@ -214,18 +228,6 @@ class NightWitchActionSystem(ReactiveProcessor):
                         f"女巫 {witch_entity.name} 想要毒的玩家 {response.poison_target} 不存在，跳过毒人"
                     )
 
-            # 最终什么都不做？
-            # if response.cure_target == "" and response.poison_target == "":
-
-            #     self._game.notify_entities(
-            #         set({witch_entity}),
-            #         MindEvent(
-            #             message=f"{witch_entity.name} : 什么都不做。",
-            #             actor=witch_entity.name,
-            #             content=response.mind_voice,
-            #         ),
-            #     )
-
         except Exception as e:
 
             logger.error(f"Exception: {e}")
@@ -235,5 +237,8 @@ class NightWitchActionSystem(ReactiveProcessor):
                 witch_entity,
                 f"""# 提示！在解析你的决策时出现错误。本轮你将跳过女巫行动。""",
             )
+
+        # 标记夜晚行动完成
+        witch_entity.replace(NightActionCompletedComponent, witch_entity.name)
 
     ###############################################################################################################################################

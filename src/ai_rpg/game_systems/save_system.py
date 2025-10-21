@@ -7,6 +7,7 @@ from ..models.components import (
     NightKillTargetComponent,
     DayDiscussedComponent,
     NightActionReadyComponent,
+    NightActionCompletedComponent,
     DayVotedComponent,
 )
 from ..entitas import ExecuteProcessor, Entity
@@ -56,10 +57,13 @@ class SaveSystem(ExecuteProcessor):
             tags.append("dead")
 
         if entity.has(NightActionReadyComponent):
-            tags.append("night-planned")
+            tags.append("night-action-ready")
+
+        if entity.has(NightActionCompletedComponent):
+            tags.append("night-action-completed")
 
         if entity.has(NightKillTargetComponent):
-            tags.append("night-killed")
+            tags.append("night-kill-target")
 
         if entity.has(DayDiscussedComponent):
             tags.append("day-discussed")

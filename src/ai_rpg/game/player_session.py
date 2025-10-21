@@ -19,7 +19,6 @@
 from typing import List, Dict, Any
 from ..models import AgentEvent, SessionMessage, MessageType
 from pydantic import BaseModel
-from loguru import logger
 
 
 ###############################################################################
@@ -102,9 +101,9 @@ class PlayerSession(BaseModel):
             >>> # 事件已添加到历史记录中
         """
         # 记录调试日志,方便追踪事件流
-        logger.debug(
-            f"[{self.name}:{self.actor}] = add_agent_event_message: {agent_event.model_dump_json()}"
-        )
+        # logger.debug(
+        #     f"[{self.name}:{self.actor}] = add_agent_event_message: {agent_event.model_dump_json()}"
+        # )
 
         # 将AgentEvent封装为SessionMessage并追加到列表
         # MessageType.AGENT_EVENT 标识这是一个代理事件类型的消息
@@ -121,7 +120,7 @@ class PlayerSession(BaseModel):
         添加一个游戏消息到会话历史中
         """
 
-        logger.debug(f"[{self.name}:{self.actor}] = add_game_message: {data}")
+        # logger.debug(f"[{self.name}:{self.actor}] = add_game_message: {data}")
 
         game_message = SessionMessage(
             message_type=MessageType.GAME,

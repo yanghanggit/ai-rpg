@@ -54,9 +54,6 @@ def create_werewolf_game_night_pipline(game: GameSession) -> "RPGGameProcessPipe
     from ..game_systems.night_witch_action_system import (
         NightWitchActionSystem,
     )
-    from ..game_systems.werewolf_victory_condition_system import (
-        WerewolfVictoryConditionSystem,
-    )
     from ..game_systems.discussion_action_system import DiscussionActionSystem
 
     from ..game_systems.night_action_initialization_system import (
@@ -65,8 +62,6 @@ def create_werewolf_game_night_pipline(game: GameSession) -> "RPGGameProcessPipe
     from ..game_systems.seer_check_action_system import SeerCheckActionSystem
     from ..game_systems.witch_cure_action_system import WitchCureActionSystem
     from ..game_systems.witch_poison_action_system import WitchPoisonActionSystem
-
-    # from ..game_systems.wolf_kill_action_system import WolfKillActionSystem
 
     ##
     tcg_game = cast(SDGGame, game)
@@ -89,9 +84,6 @@ def create_werewolf_game_night_pipline(game: GameSession) -> "RPGGameProcessPipe
     # 清理动作！必须清理。
     processors.add(ActionCleanupSystem(tcg_game))
 
-    # 结算系统。
-    processors.add(WerewolfVictoryConditionSystem(tcg_game))
-
     # 动作处理后，可能清理。
     processors.add(DestroyEntitySystem(tcg_game))
 
@@ -108,9 +100,6 @@ def create_werewolf_game_day_pipline(game: GameSession) -> "RPGGameProcessPipeli
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
     from ..game_systems.action_cleanup_system import ActionCleanupSystem
     from ..game_systems.save_system import SaveSystem
-    from ..game_systems.werewolf_victory_condition_system import (
-        WerewolfVictoryConditionSystem,
-    )
     from ..game_systems.discussion_action_system import DiscussionActionSystem
     from ..game_systems.werewolf_day_discussion_system import (
         WerewolfDayDiscussionSystem,
@@ -122,12 +111,9 @@ def create_werewolf_game_day_pipline(game: GameSession) -> "RPGGameProcessPipeli
 
     processors.add(WerewolfDayDiscussionSystem(tcg_game))
 
-    # # 动作系统。
+    # 动作系统。
     processors.add(DiscussionActionSystem(tcg_game))
     processors.add(ActionCleanupSystem(tcg_game))
-
-    # 结算系统。
-    processors.add(WerewolfVictoryConditionSystem(tcg_game))
 
     # 动作处理后，可能清理。
     processors.add(DestroyEntitySystem(tcg_game))
@@ -145,9 +131,6 @@ def create_werewolf_game_vote_pipline(game: GameSession) -> "RPGGameProcessPipel
     from ..game_systems.destroy_entity_system import DestroyEntitySystem
     from ..game_systems.action_cleanup_system import ActionCleanupSystem
     from ..game_systems.save_system import SaveSystem
-    from ..game_systems.werewolf_victory_condition_system import (
-        WerewolfVictoryConditionSystem,
-    )
     from ..game_systems.discussion_action_system import DiscussionActionSystem
     from ..game_systems.werewolf_day_vote_system import (
         WerewolfDayVoteSystem,
@@ -166,9 +149,6 @@ def create_werewolf_game_vote_pipline(game: GameSession) -> "RPGGameProcessPipel
     processors.add(DiscussionActionSystem(tcg_game))
     processors.add(VoteActionSystem(tcg_game))
     processors.add(ActionCleanupSystem(tcg_game))
-
-    # 结算系统。
-    processors.add(WerewolfVictoryConditionSystem(tcg_game))
 
     # 动作处理后，可能清理。
     processors.add(DestroyEntitySystem(tcg_game))

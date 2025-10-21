@@ -52,9 +52,9 @@ class WitchPoisonActionSystem(ReactiveProcessor):
         assert inventory_component is not None, "女巫实体没有道具组件"
 
         poison_item = inventory_component.find_item(WitchItemName.POISON)
-        assert poison_item is not None, "女巫没有毒药，无法使用毒药"
+        # assert poison_item is not None, "女巫没有毒药，无法使用毒药"
         if poison_item is None:
-            logger.warning(f"女巫 {witch_entity.name} 没有毒药，无法使用毒药")
+            logger.error(f"女巫 {witch_entity.name} 没有毒药，无法使用毒药")
             self._game.notify_entities(
                 set({witch_entity}),
                 AgentEvent(
@@ -79,7 +79,7 @@ class WitchPoisonActionSystem(ReactiveProcessor):
         entity.replace(
             NightKillTargetComponent,
             entity.name,
-            self._game._werewolf_game_turn_counter,
+            self._game._turn_counter,
         )
 
     ####################################################################################################################################

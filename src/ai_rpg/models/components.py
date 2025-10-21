@@ -279,6 +279,12 @@ class NightActionReadyComponent(Component):
 
 @final
 @register_component_class
+class NightActionCompletedComponent(Component):
+    name: str
+
+
+@final
+@register_component_class
 class NightKillTargetComponent(Component):
     name: str
     turn: int

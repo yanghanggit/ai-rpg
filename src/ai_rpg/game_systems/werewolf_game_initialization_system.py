@@ -21,6 +21,50 @@ from ..utils import json_format
 
 
 ###############################################################################################################################################
+def _generate_awareness_prompt(
+    environment_description: str, other_players_mapping: Dict[str, str]
+) -> str:
+    """创建玩家感知提示"""
+    return f"""# 提示！准备开始比赛！你观察了场景与参赛的人员。
+
+## 场景描述: 
+ 
+{environment_description}
+
+## 参赛选手及外貌:
+
+{format_dict_as_markdown_list(other_players_mapping)}"""
+
+
+###############################################################################################################################################
+def _generate_introduction_prompt() -> str:
+    """创建自我介绍提示"""
+    response_sample = PlayerAwarenessResponse(
+        mind_voice="你此时的内心想法，你为什么要如此的发言。如果你是狼人，请你确认谁是你的同伴。如果是不是，请你猜测谁是狼人。",
+        discussion="你要发言的内容。",
+    )
+
+    return f"""# 指令！现在请你做一个自我介绍的发言。
+
+## 内容建议
+
+介绍你是谁，你的外貌，你的性格，你的兴趣爱好，你的特长。不要提到和自己身份相关的信息。
+注意！不要暴露你的身份信息! 你可以编造一些信息来掩盖你的身份。
+
+## 输出格式
+
+### 标准示例
+
+```json
+{response_sample.model_dump_json()}
+```
+
+## 输出要求
+
+请严格按照上述的 JSON 标准示例 格式输出！"""
+
+
+###############################################################################################################################################
 @final
 class PlayerAwarenessResponse(BaseModel):
     mind_voice: str
@@ -41,15 +85,13 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
     ###############################################################################################################################################
     @override
     async def execute(self) -> None:
-        assert (
-            self._game._werewolf_game_turn_counter == 0
-        ), "时间标记必须是0，是夜晚!!!!!!"
-        # if self._game._werewolf_game_turn_counter > 0:
-        #     log
-        #     return
-        logger.warning(
-            "狼人杀游戏初始化系统执行============================================"
-        )
+
+        # logger.debug(
+        #     "狼人杀游戏初始化系统执行============================================"
+        # )
+
+        assert self._game._turn_counter == 0, "时间标记必须是0，是夜晚!!!!!!"
+        logger.debug(f"开始初始化狼人杀游戏...时间标记: {self._game._turn_counter}")
 
         # 给狼人添加上下文来识别同伴
         self._reveal_werewolf_allies()
@@ -114,21 +156,6 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
         return stage_actor_appearances_mapping
 
     ###############################################################################################################################################
-    def _create_awareness_prompt(
-        self, environment_description: str, other_players_mapping: Dict[str, str]
-    ) -> str:
-        """创建玩家感知提示"""
-        return f"""# 提示！准备开始比赛！你观察了场景与参赛的人员。
-
-## 场景描述: 
- 
-{environment_description}
-
-## 参赛选手及外貌:
-
-{format_dict_as_markdown_list(other_players_mapping)}"""
-
-    ###############################################################################################################################################
     # 第一次观察其他的参赛选手
     def _initialize_player_awareness(self) -> None:
         """初始化玩家感知，让每个玩家观察场景和其他玩家"""
@@ -148,7 +175,7 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
             other_players_mapping = self._get_other_players_mapping(
                 stage_actor_appearances_mapping, actor_entity.name
             )
-            prompt = self._create_awareness_prompt(
+            prompt = _generate_awareness_prompt(
                 environment_description, other_players_mapping
             )
             self._game.append_human_message(actor_entity, prompt)
@@ -177,39 +204,12 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
         return other_players_mapping
 
     ###############################################################################################################################################
-    def _create_introduction_prompt(self) -> str:
-        """创建自我介绍提示"""
-        response_sample = PlayerAwarenessResponse(
-            mind_voice="你此时的内心想法，你为什么要如此的发言。如果你是狼人，请你确认谁是你的同伴。如果是不是，请你猜测谁是狼人。",
-            discussion="你要发言的内容。",
-        )
-
-        return f"""# 指令！现在请你做一个自我介绍的发言。
-
-## 内容建议
-
-介绍你是谁，你的外貌，你的性格，你的兴趣爱好，你的特长。不要提到和自己身份相关的信息。
-注意！不要暴露你的身份信息! 你可以编造一些信息来掩盖你的身份。
-
-## 输出格式
-
-### 标准示例
-
-```json
-{response_sample.model_dump_json()}
-```
-
-## 输出要求
-
-请严格按照上述的 JSON 标准示例 格式输出！"""
-
-    ###############################################################################################################################################
     def _create_chat_requests(
         self, all_actor_entities: Set[Entity]
     ) -> List[ChatClient]:
         """为所有玩家创建聊天请求"""
         request_handlers: List[ChatClient] = []
-        prompt = self._create_introduction_prompt()
+        prompt = _generate_introduction_prompt()
 
         for entity in all_actor_entities:
             agent_short_term_memory = self._game.get_agent_chat_history(entity)

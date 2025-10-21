@@ -10,7 +10,6 @@ from ..models import (
     WitchComponent,
     VillagerComponent,
     DeathComponent,
-    DayDiscussedComponent,
     VoteAction,
     DayVotedComponent,
     NightKillTargetComponent,
@@ -38,9 +37,9 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
 
-        if not WerewolfDayVoteSystem.is_day_discussion_complete(self._game):
-            logger.warning("白天讨论还没有完成，不能进行投票")
-            return
+        # if not WerewolfDayVoteSystem.is_day_discussion_complete(self._game):
+        #     logger.warning("白天讨论还没有完成，不能进行投票")
+        #     return
 
         # 获取所有存活的玩家（用于投票）
         alive_players = self._game.get_group(
@@ -56,7 +55,7 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
         ).entities.copy()
 
         if len(alive_players) == 0:
-            logger.warning("没有存活的玩家，无法进行投票。或者所有玩家都已经投过票了")
+            logger.error("没有存活的玩家，无法进行投票。或者所有玩家都已经投过票了")
             return
 
         logger.info(f"开始投票阶段，存活玩家数量: {len(alive_players)}")
@@ -146,36 +145,9 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
                 logger.error(f"Exception: {e}")
 
     ###############################################################################################################################################
-    @staticmethod
-    def is_day_discussion_complete(game: SDGGame) -> bool:
-        players1 = game.get_group(
-            Matcher(
-                all_of=[DayDiscussedComponent],
-                any_of=[
-                    WerewolfComponent,
-                    SeerComponent,
-                    WitchComponent,
-                    VillagerComponent,
-                ],
-            )
-        ).entities.copy()
 
-        players2 = game.get_group(
-            Matcher(
-                any_of=[
-                    WerewolfComponent,
-                    SeerComponent,
-                    WitchComponent,
-                    VillagerComponent,
-                ],
-                none_of=[DeathComponent],
-            )
-        ).entities.copy()
 
-        logger.info(
-            f"讨论完成标记玩家数量: {len(players1)} / 存活玩家数量: {len(players2)}"
-        )
+# @staticmethod
 
-        return len(players1) >= len(players2)
 
-    ###############################################################################################################################################
+###############################################################################################################################################

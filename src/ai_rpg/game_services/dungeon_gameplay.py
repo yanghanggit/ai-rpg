@@ -22,7 +22,7 @@ from ..models import (
     PlayCardsAction,
 )
 from ..entitas import Matcher, Entity
-from .home_gameplay_services import _dungeon_advance
+from .home_gameplay import _dungeon_advance
 
 ###################################################################################################################################################################
 dungeon_gameplay_api_router = APIRouter()

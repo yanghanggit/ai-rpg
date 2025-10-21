@@ -15,21 +15,21 @@ from ai_rpg.settings import (
 )
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from ai_rpg.game_services.dungeon_gameplay_services import (
+from ai_rpg.game_services.dungeon_gameplay import (
     dungeon_gameplay_api_router,
 )
-from ai_rpg.game_services.home_gameplay_services import home_gameplay_api_router
-from ai_rpg.game_services.login_services import login_api_router
-from ai_rpg.game_services.start_services import start_api_router
-from ai_rpg.game_services.get_root_services import get_root_api_router
-from ai_rpg.game_services.get_actor_details_services import (
-    get_actor_details_api_router,
+from ai_rpg.game_services.home_gameplay import home_gameplay_api_router
+from ai_rpg.game_services.login import login_api_router
+from ai_rpg.game_services.start import start_api_router
+from ai_rpg.game_services.root import root_api_router
+from ai_rpg.game_services.actor_details import (
+    actor_details_api_router,
 )
-from ai_rpg.game_services.get_dungeon_state_services import get_dungeon_state_api_router
-from ai_rpg.game_services.get_home_state_services import get_home_state_api_router
+from ai_rpg.game_services.dungeon_state import dungeon_state_api_router
+from ai_rpg.game_services.home_state import home_state_api_router
 from ai_rpg.chat_services.client import ChatClient
 from ai_rpg.game.config import setup_logger
-from ai_rpg.game_services.player_session_services import player_session_api_router
+from ai_rpg.game_services.player_session import player_session_api_router
 
 _server_setting_path: Final[Path] = Path("server_settings.json")
 assert _server_setting_path.exists(), f"{_server_setting_path} must exist"
@@ -96,14 +96,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router=get_root_api_router)
+app.include_router(router=root_api_router)
 app.include_router(router=login_api_router)
 app.include_router(router=start_api_router)
 app.include_router(router=home_gameplay_api_router)
 app.include_router(router=dungeon_gameplay_api_router)
-app.include_router(router=get_dungeon_state_api_router)
-app.include_router(router=get_home_state_api_router)
-app.include_router(router=get_actor_details_api_router)
+app.include_router(router=dungeon_state_api_router)
+app.include_router(router=home_state_api_router)
+app.include_router(router=actor_details_api_router)
 app.include_router(router=player_session_api_router)
 
 

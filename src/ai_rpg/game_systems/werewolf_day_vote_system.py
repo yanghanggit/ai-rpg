@@ -55,7 +55,7 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
         ).entities.copy()
 
         if len(alive_players) == 0:
-            logger.warning("没有存活的玩家，无法进行投票。或者所有玩家都已经投过票了")
+            logger.error("没有存活的玩家，无法进行投票。或者所有玩家都已经投过票了")
             return
 
         logger.info(f"开始投票阶段，存活玩家数量: {len(alive_players)}")

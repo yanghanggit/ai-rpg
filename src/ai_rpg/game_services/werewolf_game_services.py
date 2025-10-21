@@ -49,7 +49,7 @@ werewolf_game_api_router = APIRouter()
 
 
 ###############################################################################################################################################
-def announce_night_phase(sd_game: SDGGame) -> None:
+def announce_night_phase(sdg_game: SDGGame) -> None:
     """
     宣布夜晚阶段开始,并进行夜晚阶段的初始化工作:
     1. 向所有存活玩家宣布进入夜晚
@@ -60,64 +60,31 @@ def announce_night_phase(sd_game: SDGGame) -> None:
     # 回合计数器规则: 0=游戏开始, 1=第一夜, 2=第一白天, 3=第二夜, 4=第二白天...
     # 夜晚阶段的特征: 计数器为奇数(1,3,5...)
     assert (
-        sd_game._turn_counter % 2 == 1 or sd_game._turn_counter > 0
+        sdg_game._turn_counter % 2 == 1 or sdg_game._turn_counter > 0
     ), "当前时间标记不是夜晚"
 
-    logger.warning(f"进入夜晚,时间标记 = {sd_game._turn_counter}")
-
-    # 获取所有角色玩家(狼人、预言家、女巫、村民)
-    all_role_players = sd_game.get_group(
-        Matcher(
-            any_of=[
-                WerewolfComponent,
-                SeerComponent,
-                WitchComponent,
-                VillagerComponent,
-            ],
-        )
-    ).entities.copy()
+    logger.warning(f"进入夜晚,时间标记 = {sdg_game._turn_counter}")
 
     # 计算当前是第几个夜晚(从1开始计数)
-    current_night_number = (sd_game._turn_counter + 1) // 2
+    current_night_number = (sdg_game._turn_counter + 1) // 2
 
-    # 向所有玩家发送夜晚开始的消息
-    for player in all_role_players:
-        sd_game.append_human_message(
-            player, f"# 注意!天黑请闭眼!这是第 {current_night_number} 个夜晚"
-        )
+    # 使用封装的通知方法
+    sdg_game.announce_to_players(
+        f"# 注意!天黑请闭眼!这是第 {current_night_number} 个夜晚"
+    )
 
     # 清理白天阶段的标记组件
-    # 获取所有带有白天讨论或投票标记的玩家
-    players_with_day_markers = sd_game.get_group(
-        Matcher(
-            any_of=[DayDiscussedComponent, DayVotedComponent, NightKillTargetComponent],
-        )
-    ).entities.copy()
-
-    # 移除这些玩家身上的白天阶段标记
-    for player in players_with_day_markers:
-
-        # 前一个白天的讨论标记，进入新的夜晚也要清理掉
-        if player.has(DayDiscussedComponent):
-            player.remove(DayDiscussedComponent)
-
-        # 前一个白天的投票标记，进入新的夜晚也要清理掉
-        if player.has(DayVotedComponent):
-            player.remove(DayVotedComponent)
-
-        # 前一天晚上的击杀标记，进入新的夜晚也要清理掉
-        if player.has(NightKillTargetComponent):
-            player.remove(NightKillTargetComponent)
+    sdg_game.cleanup_game_phase_markers([DayDiscussedComponent, DayVotedComponent])
 
     # 通知客户端一个消息，夜晚阶段开始了
     notification = PhaseChangeNotification(
         phase="night", turn_number=current_night_number
     )
-    sd_game.player_session.add_game_message(cast(Dict[str, Any], notification))
+    sdg_game.player_session.add_game_message(cast(Dict[str, Any], notification))
 
 
 ###############################################################################################################################################
-def announce_day_phase(sd_game: SDGGame) -> None:
+def announce_day_phase(sdg_game: SDGGame) -> None:
     """
     宣布白天阶段开始,并进行白天阶段的初始化工作:
     1. 向所有存活玩家宣布进入白天
@@ -130,88 +97,64 @@ def announce_day_phase(sd_game: SDGGame) -> None:
     # 回合计数器规则: 0=游戏开始, 1=第一夜, 2=第一白天, 3=第二夜, 4=第二白天...
     # 白天阶段的特征: 计数器为偶数且大于0(2,4,6...)
     assert (
-        sd_game._turn_counter % 2 == 0 and sd_game._turn_counter > 0
+        sdg_game._turn_counter % 2 == 0 and sdg_game._turn_counter > 0
     ), "当前时间标记不是白天"
 
-    logger.warning(f"进入白天,时间标记 = {sd_game._turn_counter}")
-
-    # 获取所有角色玩家(狼人、预言家、女巫、村民)
-    all_role_players = sd_game.get_group(
-        Matcher(
-            any_of=[
-                WerewolfComponent,
-                SeerComponent,
-                WitchComponent,
-                VillagerComponent,
-            ],
-        )
-    ).entities.copy()
+    logger.warning(f"进入白天,时间标记 = {sdg_game._turn_counter}")
 
     # 计算当前是第几个白天(从1开始计数)
-    current_day_number = sd_game._turn_counter // 2
+    current_day_number = sdg_game._turn_counter // 2
 
-    # 向所有玩家发送白天开始的消息
-    for player in all_role_players:
-        sd_game.append_human_message(
-            player, f"# 注意!天亮请睁眼!这是第 {current_day_number} 个白天"
-        )
+    # 使用封装的通知方法
+    sdg_game.announce_to_players(
+        f"# 注意!天亮请睁眼!这是第 {current_day_number} 个白天"
+    )
 
     # 获取所有在昨夜被标记为击杀的玩家
-    players_killed_last_night = sd_game.get_group(
+    last_night_kills = sdg_game.get_group(
         Matcher(
             all_of=[NightKillTargetComponent],
         )
     ).entities.copy()
 
     # 公布昨夜死亡信息
-    if players_killed_last_night:
+    if len(last_night_kills) > 0:
+
         # 格式化死亡玩家列表信息
         death_announcement = ", ".join(
-            f"{player.name}(被杀害)" for player in players_killed_last_night
+            f"{player.name}(被杀害)" for player in last_night_kills
         )
         logger.info(f"在夜晚,以下玩家被杀害: {death_announcement}")
 
         # 向所有玩家广播死亡信息
-        for player in all_role_players:
-            sd_game.append_human_message(
-                player, f"# 昨晚被杀害的玩家有: {death_announcement}"
+        sdg_game.announce_to_players(f"# 昨晚被杀害的玩家有: {death_announcement}")
+
+        # 处理被杀玩家的状态转换
+        for killed_player in last_night_kills:
+
+            # 添加正式的死亡状态标记
+            logger.info(
+                f"玩家 {killed_player.name} 在第 {current_day_number} 个白天 被标记为死亡状态, 昨夜因为某种原因被杀害"
             )
+            killed_player.replace(DeathComponent, killed_player.name)
+
     else:
         # 平安夜,无人死亡
         logger.info("在夜晚,没有玩家被杀害")
-        for player in all_role_players:
-            sd_game.append_human_message(player, f"# 昨晚没有玩家被杀害,平安夜")
-
-    # 处理被杀玩家的状态转换
-    for killed_player in players_killed_last_night:
-        # 添加正式的死亡状态标记
-        logger.info(
-            f"玩家 {killed_player.name} 在第 {current_day_number} 个白天 被标记为死亡状态, 昨夜因为某种原因被杀害"
-        )
-        killed_player.replace(DeathComponent, killed_player.name)
+        sdg_game.announce_to_players(f"# 昨晚没有玩家被杀害,平安夜")
 
     # 清理夜晚阶段的计划标记组件
-    # 获取所有带有夜晚计划标记的实体
-    entities_with_night_plans = sd_game.get_group(
-        Matcher(
-            any_of=[NightActionReadyComponent, NightActionCompletedComponent],
-        )
-    ).entities.copy()
-
-    # 移除所有夜晚计划标记,为新的一天做准备
-    for entity_with_plan in entities_with_night_plans:
-
-        # 移除夜晚行动准备标记
-        if entity_with_plan.has(NightActionReadyComponent):
-            entity_with_plan.remove(NightActionReadyComponent)
-
-        # 移除夜晚行动完成标记
-        if entity_with_plan.has(NightActionCompletedComponent):
-            entity_with_plan.remove(NightActionCompletedComponent)
+    sdg_game.cleanup_game_phase_markers(
+        [
+            NightActionReadyComponent,
+            NightActionCompletedComponent,
+            NightKillTargetComponent,
+        ]
+    )
 
     # 通知客户端一个消息，白天阶段开始了
     notification = PhaseChangeNotification(phase="day", turn_number=current_day_number)
-    sd_game.player_session.add_game_message(
+    sdg_game.player_session.add_game_message(
         cast(
             Dict[str, Any],
             notification,
@@ -220,7 +163,7 @@ def announce_day_phase(sd_game: SDGGame) -> None:
 
 
 ###################################################################################################################################################################
-def is_night_phase_completed(sd_game: SDGGame) -> bool:
+def is_night_phase_completed(sdg_game: SDGGame) -> bool:
     """
     检查夜晚阶段是否已经结束
 
@@ -231,10 +174,10 @@ def is_night_phase_completed(sd_game: SDGGame) -> bool:
         bool: 如果夜晚阶段已经结束返回True，否则返回False
     """
 
-    assert sd_game._turn_counter % 2 == 1, "当前时间标记不是夜晚!!!!!"
-    assert sd_game._started, "游戏还没有开始!!!!!"
+    assert sdg_game._turn_counter % 2 == 1, "当前时间标记不是夜晚!!!!!"
+    assert sdg_game._started, "游戏还没有开始!!!!!"
 
-    entities1 = sd_game.get_group(
+    entities1 = sdg_game.get_group(
         Matcher(
             any_of=[
                 WerewolfComponent,
@@ -245,7 +188,7 @@ def is_night_phase_completed(sd_game: SDGGame) -> bool:
         )
     ).entities.copy()
 
-    entities2 = sd_game.get_group(
+    entities2 = sdg_game.get_group(
         Matcher(
             all_of=[NightActionCompletedComponent],
             any_of=[
@@ -257,11 +200,14 @@ def is_night_phase_completed(sd_game: SDGGame) -> bool:
         )
     ).entities.copy()
 
+    logger.debug(
+        f"夜晚行动完成标记玩家数量: {len(entities2)} / 存活玩家数量: {len(entities1)}"
+    )
     return len(entities1) > 0 and len(entities2) >= len(entities1)
 
 
 ###################################################################################################################################################################
-def is_day_phase_completed(sd_game: SDGGame) -> bool:
+def is_day_phase_completed(sdg_game: SDGGame) -> bool:
     """
     检查白天阶段是否已经结束（白天投票完毕就是结束）
 
@@ -273,14 +219,16 @@ def is_day_phase_completed(sd_game: SDGGame) -> bool:
     """
     # TODO: 实现白天结束的判断逻辑（投票完毕即为结束）
     assert (
-        sd_game._turn_counter % 2 == 0 and sd_game._turn_counter > 0
+        sdg_game._turn_counter % 2 == 0 and sdg_game._turn_counter > 0
     ), "当前时间标记不是白天!!!!!"
-    assert sd_game._started, "游戏还没有开始!!!!!"
+    assert sdg_game._started, "游戏还没有开始!!!!!"
 
-    if not is_day_discussion_complete(sd_game):
+    if not is_day_discussion_complete(sdg_game):
+        logger.debug("白天讨论尚未完成")
         return False
 
-    if not is_day_vote_complete(sd_game):
+    if not is_day_vote_complete(sdg_game):
+        logger.debug("白天投票尚未完成")
         return False
 
     return True
@@ -288,20 +236,20 @@ def is_day_phase_completed(sd_game: SDGGame) -> bool:
 
 ###################################################################################################################################################################
 # 判断村民阵营胜利：所有狼人都被淘汰且至少有一个村民存活
-def check_town_victory(sd_game: SDGGame) -> bool:
-    dead_werewolves = sd_game.get_group(
+def check_town_victory(sdg_game: SDGGame) -> bool:
+    dead_werewolves = sdg_game.get_group(
         Matcher(
             all_of=[WerewolfComponent, DeathComponent],
         )
     ).entities.copy()
 
-    total_werewolves = sd_game.get_group(
+    total_werewolves = sdg_game.get_group(
         Matcher(
             all_of=[WerewolfComponent],
         )
     ).entities.copy()
 
-    alive_town = sd_game.get_group(
+    alive_town = sdg_game.get_group(
         Matcher(
             any_of=[
                 VillagerComponent,
@@ -313,14 +261,17 @@ def check_town_victory(sd_game: SDGGame) -> bool:
     ).entities.copy()
 
     # 村民胜利条件：所有狼人都死亡 且 至少有一个村民存活
+    logger.debug(
+        f"存活村民数量: {len(alive_town)} / 死亡狼人数量: {len(dead_werewolves)} / 总狼人数量: {len(total_werewolves)}"
+    )
     return len(alive_town) > 0 and len(dead_werewolves) >= len(total_werewolves)
 
 
 ################################################################################################################################################
 # 判断狼人阵营胜利：狼人数量大于等于村民数量且至少有一个狼人存活
-def check_werewolves_victory(sd_game: SDGGame) -> bool:
+def check_werewolves_victory(sdg_game: SDGGame) -> bool:
 
-    town_entities = sd_game.get_group(
+    town_entities = sdg_game.get_group(
         Matcher(
             any_of=[
                 VillagerComponent,
@@ -331,7 +282,7 @@ def check_werewolves_victory(sd_game: SDGGame) -> bool:
         )
     ).entities.copy()
 
-    wolf_entities = sd_game.get_group(
+    wolf_entities = sdg_game.get_group(
         Matcher(
             all_of=[WerewolfComponent],
             none_of=[DeathComponent],
@@ -339,6 +290,9 @@ def check_werewolves_victory(sd_game: SDGGame) -> bool:
     ).entities.copy()
 
     # 狼人胜利条件：狼人数量 >= 村民数量 且 至少有一个狼人存活
+    logger.debug(
+        f"存活村民数量: {len(town_entities)} / 存活狼人数量: {len(wolf_entities)}"
+    )
     return len(town_entities) <= len(wolf_entities) and len(wolf_entities) > 0
 
 
@@ -352,7 +306,7 @@ class VictoryCondition(IntEnum):
 
 
 ###################################################################################################################################################################
-def check_victory_conditions(sd_game: SDGGame) -> VictoryCondition:
+def check_victory_conditions(sdg_game: SDGGame) -> VictoryCondition:
     """
     检查游戏是否达成胜利条件
 
@@ -362,20 +316,25 @@ def check_victory_conditions(sd_game: SDGGame) -> VictoryCondition:
     Returns:
         bool: 如果达成胜利条件返回True，否则返回False
     """
-    town_victory = check_town_victory(sd_game)
+    town_victory = check_town_victory(sdg_game)
     if town_victory:
+        logger.info("村民阵营胜利")
         return VictoryCondition.TOWN_VICTORY
 
-    werewolves_victory = check_werewolves_victory(sd_game)
+    werewolves_victory = check_werewolves_victory(sdg_game)
     if werewolves_victory:
+        logger.info("狼人阵营胜利")
         return VictoryCondition.WEREWOLVES_VICTORY
 
+    logger.debug("尚未达成任何胜利条件")
     return VictoryCondition.NONE
 
 
 ###################################################################################################################################################################
-def is_day_discussion_complete(game: SDGGame) -> bool:
-    entities1 = game.get_group(
+def is_day_discussion_complete(sdg_game: SDGGame) -> bool:
+
+    # 讨论完的人。
+    entities1 = sdg_game.get_group(
         Matcher(
             all_of=[DayDiscussedComponent],
             any_of=[
@@ -387,17 +346,31 @@ def is_day_discussion_complete(game: SDGGame) -> bool:
         )
     ).entities.copy()
 
-    entities2 = game.get_group(
-        Matcher(
-            any_of=[
-                WerewolfComponent,
-                SeerComponent,
-                WitchComponent,
-                VillagerComponent,
-            ],
-            none_of=[DeathComponent],
-        )
-    ).entities.copy()
+    if sdg_game._turn_counter == 2:
+        logger.info("第一个白天讨论，特殊机制：即使第一晚猝死也可以参与讨论")
+        entities2 = sdg_game.get_group(
+            Matcher(
+                any_of=[
+                    WerewolfComponent,
+                    SeerComponent,
+                    WitchComponent,
+                    VillagerComponent,
+                ],
+            )
+        ).entities.copy()
+    else:
+        logger.info("后续白天讨论，存活玩家考虑死亡状态")
+        entities2 = sdg_game.get_group(
+            Matcher(
+                any_of=[
+                    WerewolfComponent,
+                    SeerComponent,
+                    WitchComponent,
+                    VillagerComponent,
+                ],
+                none_of=[DeathComponent],
+            )
+        ).entities.copy()
 
     logger.info(
         f"讨论完成标记玩家数量: {len(entities1)} / 存活玩家数量: {len(entities2)}"
@@ -407,8 +380,8 @@ def is_day_discussion_complete(game: SDGGame) -> bool:
 
 
 ###################################################################################################################################################################
-def is_day_vote_complete(game: SDGGame) -> bool:
-    entities1 = game.get_group(
+def is_day_vote_complete(sdg_game: SDGGame) -> bool:
+    entities1 = sdg_game.get_group(
         Matcher(
             all_of=[DayVotedComponent],
             any_of=[
@@ -420,7 +393,7 @@ def is_day_vote_complete(game: SDGGame) -> bool:
         )
     ).entities.copy()
 
-    entities2 = game.get_group(
+    entities2 = sdg_game.get_group(
         Matcher(
             any_of=[
                 WerewolfComponent,
@@ -544,12 +517,11 @@ async def play_werewolf_game(
         user_input = payload.data.get("user_input", "")
         logger.info(f"{payload.user_name} user_input: {user_input}")
 
-        # web_game = cast(SDGame, current_room._game)
         web_game = current_room._sdg_game
 
         if user_input == "/k" or user_input == "/kickoff":
 
-            if web_game._turn_counter == 0:
+            if web_game._turn_counter == 0 and not web_game._started:
 
                 logger.info("游戏开始，准备入场记阶段！！！！！！")
 
@@ -564,11 +536,11 @@ async def play_werewolf_game(
 
             else:
                 logger.error(
-                    f"当前时间标记不是0，是{web_game._turn_counter}，不能执行 /kickoff 命令"
+                    f"当前时间标记不是0，或者游戏已经开始，是{web_game._turn_counter}，不能执行 /kickoff 命令"
                 )
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="游戏已经开始，不能重复执行 /kickoff 命令",
+                    detail="当前时间标记不是0，或者游戏已经开始，不能执行 /kickoff 命令",
                 )
 
         if user_input == "/t" or user_input == "/time":
@@ -649,6 +621,13 @@ async def play_werewolf_game(
             # 如果是夜晚
             if web_game._turn_counter % 2 == 1:
 
+                if is_night_phase_completed(web_game):
+                    logger.error("夜晚阶段已经完成，不能重复执行 /night 命令")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="夜晚阶段已经完成，不能重复执行 /night 命令",
+                    )
+
                 # 运行游戏逻辑
                 await web_game.werewolf_game_night_pipeline.process()
 
@@ -669,6 +648,13 @@ async def play_werewolf_game(
 
             # 如果是白天
             if web_game._turn_counter % 2 == 0 and web_game._turn_counter > 0:
+
+                if is_day_discussion_complete(web_game):
+                    logger.error("白天阶段已经完成，不能重复执行 /day 命令")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="白天阶段已经完成，不能重复执行 /day 命令",
+                    )
 
                 # 运行游戏逻辑
                 await web_game.werewolf_game_day_pipeline.process()
@@ -691,30 +677,7 @@ async def play_werewolf_game(
             # 如果是白天
             if web_game._turn_counter % 2 == 0 and web_game._turn_counter > 0:
 
-                # 判断是否讨论完毕
-                if is_day_discussion_complete(web_game):
-
-                    # 如果讨论完毕，则进入投票环节
-                    await web_game.werewolf_game_vote_pipeline.process()
-
-                    # 检查是否达成胜利条件 投票会产生死亡
-                    victory_condition = check_victory_conditions(web_game)
-                    if victory_condition != VictoryCondition.NONE:
-                        logger.warning("游戏结束，触发胜利条件，准备终止游戏...")
-                        if victory_condition == VictoryCondition.TOWN_VICTORY:
-                            logger.warning(
-                                "\n!!!!!!!!!!!!!!!!!村民阵营胜利!!!!!!!!!!!!!!!!!!!\n"
-                            )
-                        elif victory_condition == VictoryCondition.WEREWOLVES_VICTORY:
-                            logger.warning(
-                                "\n!!!!!!!!!!!!!!!!!狼人阵营胜利!!!!!!!!!!!!!!!!!!!\n"
-                            )
-
-                    # 返回！
-                    return WerewolfGamePlayResponse(session_messages=[])
-
-                else:
-
+                if not is_day_discussion_complete(web_game):
                     logger.error(
                         "白天讨论环节没有完成，不能进入投票阶段！！！！！！！！！！！！"
                     )
@@ -722,6 +685,33 @@ async def play_werewolf_game(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="白天讨论环节没有完成，不能进入投票阶段",
                     )
+
+                if is_day_vote_complete(web_game):
+                    logger.error("白天投票环节已经完成，不能重复执行 /vote 命令")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="白天投票环节已经完成，不能重复执行 /vote 命令",
+                    )
+
+                # 如果讨论完毕，则进入投票环节
+                await web_game.werewolf_game_vote_pipeline.process()
+
+                # 检查是否达成胜利条件 投票会产生死亡
+                victory_condition = check_victory_conditions(web_game)
+                if victory_condition != VictoryCondition.NONE:
+                    logger.warning("游戏结束，触发胜利条件，准备终止游戏...")
+                    if victory_condition == VictoryCondition.TOWN_VICTORY:
+                        logger.warning(
+                            "\n!!!!!!!!!!!!!!!!!村民阵营胜利!!!!!!!!!!!!!!!!!!!\n"
+                        )
+                    elif victory_condition == VictoryCondition.WEREWOLVES_VICTORY:
+                        logger.warning(
+                            "\n!!!!!!!!!!!!!!!!!狼人阵营胜利!!!!!!!!!!!!!!!!!!!\n"
+                        )
+
+                # 返回！
+                return WerewolfGamePlayResponse(session_messages=[])
+
             else:
 
                 logger.error(

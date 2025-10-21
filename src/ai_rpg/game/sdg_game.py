@@ -3,7 +3,7 @@
 from typing import Final, List
 from loguru import logger
 from overrides import override
-from ..entitas import Entity
+from ..entitas import Entity, Matcher
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 from .rpg_game import RPGGame
 from .sdg_game_process_pipeline import (
@@ -24,6 +24,7 @@ from ..models import (
     VillagerComponent,
 )
 from .player_session import PlayerSession
+from ..entitas.components import Component
 
 
 #################################################################################################################################################
@@ -163,5 +164,44 @@ class SDGGame(RPGGame):
             ret.append(actor_entity)
 
         return ret
+
+    ###############################################################################################################################################
+    def cleanup_game_phase_markers(self, components: List[type[Component]]) -> None:
+        assert len(components) > 0, "components should not be empty"
+        if len(components) == 0:
+            return
+
+        # 清理夜晚阶段的计划标记组件
+        # 获取所有带有夜晚计划标记的实体
+        entities = self.get_group(
+            Matcher(
+                any_of=components,
+            )
+        ).entities.copy()
+
+        # 移除所有夜晚计划标记,为新的一天做准备
+        for entity in entities:
+            for comp in components:
+                if entity.has(comp):
+                    # logger.debug(f"清理组件: {comp} from entity: {entity._name}")
+                    entity.remove(comp)
+
+    ###############################################################################################################################################
+    def announce_to_players(self, message: str) -> None:
+        # 获取所有角色玩家(狼人、预言家、女巫、村民)
+        all_players = self.get_group(
+            Matcher(
+                any_of=[
+                    WerewolfComponent,
+                    SeerComponent,
+                    WitchComponent,
+                    VillagerComponent,
+                ],
+            )
+        ).entities.copy()
+
+        # 向所有玩家发送白天开始的消息
+        for player in all_players:
+            self.append_human_message(player, message)
 
     ###############################################################################################################################################

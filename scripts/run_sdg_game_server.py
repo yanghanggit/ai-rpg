@@ -15,11 +15,11 @@ from ai_rpg.settings import (
 )
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from ai_rpg.game_services.root import root_api_router
+from ai_rpg.services.root import root_api_router
 from ai_rpg.chat_services.client import ChatClient
 from ai_rpg.game.config import setup_logger
-from ai_rpg.game_services.werewolf_game import werewolf_game_api_router
-from ai_rpg.game_services.player_session import player_session_api_router
+from ai_rpg.services.werewolf_game import werewolf_game_api_router
+from ai_rpg.services.player_session import player_session_api_router
 
 _server_setting_path: Final[Path] = Path("server_settings.json")
 assert _server_setting_path.exists(), f"{_server_setting_path} must exist"

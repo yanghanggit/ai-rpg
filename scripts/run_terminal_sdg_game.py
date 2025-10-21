@@ -22,7 +22,7 @@ from ai_rpg.demo.werewolf_game_world import (
 from ai_rpg.models import (
     World,
 )
-from ai_rpg.game_services.werewolf_game import (
+from ai_rpg.services.werewolf_game import (
     VictoryCondition,
     announce_night_phase,
     announce_day_phase,

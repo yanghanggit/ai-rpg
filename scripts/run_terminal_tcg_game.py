@@ -38,11 +38,11 @@ from ai_rpg.models import (
     HomeComponent,
     TransStageAction,
 )
-from ai_rpg.game_services.home_gameplay import (
+from ai_rpg.services.home_gameplay import (
     _player_add_speak_action,
     _all_heros_launch_dungeon,
 )
-from ai_rpg.game_services.dungeon_gameplay import (
+from ai_rpg.services.dungeon_gameplay import (
     _combat_actors_draw_cards_action,
     _all_heros_return_home,
     _combat_actors_random_play_cards_action,

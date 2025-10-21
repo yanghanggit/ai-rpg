@@ -15,21 +15,21 @@ from ai_rpg.settings import (
 )
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from ai_rpg.game_services.dungeon_gameplay import (
+from ai_rpg.services.dungeon_gameplay import (
     dungeon_gameplay_api_router,
 )
-from ai_rpg.game_services.home_gameplay import home_gameplay_api_router
-from ai_rpg.game_services.login import login_api_router
-from ai_rpg.game_services.start import start_api_router
-from ai_rpg.game_services.root import root_api_router
-from ai_rpg.game_services.actor_details import (
+from ai_rpg.services.home_gameplay import home_gameplay_api_router
+from ai_rpg.services.login import login_api_router
+from ai_rpg.services.start import start_api_router
+from ai_rpg.services.root import root_api_router
+from ai_rpg.services.actor_details import (
     actor_details_api_router,
 )
-from ai_rpg.game_services.dungeon_state import dungeon_state_api_router
-from ai_rpg.game_services.home_state import home_state_api_router
+from ai_rpg.services.dungeon_state import dungeon_state_api_router
+from ai_rpg.services.home_state import home_state_api_router
 from ai_rpg.chat_services.client import ChatClient
 from ai_rpg.game.config import setup_logger
-from ai_rpg.game_services.player_session import player_session_api_router
+from ai_rpg.services.player_session import player_session_api_router
 
 _server_setting_path: Final[Path] = Path("server_settings.json")
 assert _server_setting_path.exists(), f"{_server_setting_path} must exist"

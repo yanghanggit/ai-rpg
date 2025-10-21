@@ -27,7 +27,7 @@ class PostgreSQLConfig(BaseModel):
 
 ##################################################################################################################
 # 默认配置实例
-DEFAULT_POSTGRESQL_CONFIG: Final[PostgreSQLConfig] = PostgreSQLConfig()
+postgresql_config: Final[PostgreSQLConfig] = PostgreSQLConfig()
 
 
 ##################################################################################################################

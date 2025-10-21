@@ -14,7 +14,7 @@ from .base import *
 from .client import *
 from .user import *
 from .vector_document import VectorDocumentDB
-from .config import PostgreSQLConfig, DEFAULT_POSTGRESQL_CONFIG
+from .config import PostgreSQLConfig, postgresql_config
 
 # Import RAG operations from new rag module
 from ..rag import load_knowledge_base_to_vector_db, search_similar_documents
@@ -22,7 +22,7 @@ from ..rag import load_knowledge_base_to_vector_db, search_similar_documents
 __all__: List[str] = [
     # PostgreSQL configuration
     "PostgreSQLConfig",
-    "DEFAULT_POSTGRESQL_CONFIG",
+    "postgresql_config",
     # Vector database models
     "VectorDocumentDB",
     # RAG operations (re-exported for backward compatibility)

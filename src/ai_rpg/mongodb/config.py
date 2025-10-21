@@ -2,8 +2,6 @@ from typing import Final, final
 from pydantic import BaseModel
 
 
-##################################################################################################################
-# MongoDB的配置
 @final
 class MongoDBConfig(BaseModel):
     host: str = "localhost"
@@ -11,11 +9,6 @@ class MongoDBConfig(BaseModel):
     database: str = "ai_rpg"
     username: str = ""
     password: str = ""
-
-    # 集合名称配置 - 使用 ClassVar 标注类变量
-    # worlds_boot_collection: ClassVar[str] = "worlds_boot"
-    # worlds_collection: ClassVar[str] = "worlds"
-    # dungeons_collection: ClassVar[str] = "dungeons"
 
     @property
     def connection_string(self) -> str:
@@ -28,7 +21,7 @@ class MongoDBConfig(BaseModel):
 
 ##################################################################################################################
 # 默认配置实例
-DEFAULT_MONGODB_CONFIG: Final[MongoDBConfig] = MongoDBConfig()
+mongodb_config: Final[MongoDBConfig] = MongoDBConfig()
 
 
 ##################################################################################################################

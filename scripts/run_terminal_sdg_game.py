@@ -23,10 +23,14 @@ from ai_rpg.demo.werewolf_game_world import (
 from ai_rpg.models import (
     World,
 )
-from ai_rpg.game_systems.werewolf_day_vote_system import WerewolfDayVoteSystem
 from ai_rpg.game_services.werewolf_game_services import (
+    VictoryCondition,
     announce_night_phase,
     announce_day_phase,
+    is_night_phase_completed,
+    is_day_phase_completed,
+    check_victory_conditions,
+    is_day_discussion_complete,
 )
 
 
@@ -149,6 +153,30 @@ async def _process_player_input(terminal_game: SDGGame) -> None:
             logger.error("游戏还没有开始，不能执行 /time 命令")
             return
 
+        if terminal_game._turn_counter > 0:
+            # 说明不是第一夜或者第一天
+            if terminal_game._turn_counter % 2 == 1:
+                # 当前是黑夜（奇数），需要检查夜晚阶段是否完成
+                if not is_night_phase_completed(terminal_game):
+                    logger.error(
+                        "当前夜晚阶段还没有完成，不能推进时间，请先完成夜晚阶段的所有操作"
+                    )
+                    return
+
+            elif terminal_game._turn_counter % 2 == 0:
+                # 当前是白天（偶数），需要检查白天阶段是否完成
+                if not is_day_phase_completed(terminal_game):
+                    logger.error(
+                        "当前白天阶段还没有完成，不能推进时间，请先完成白天阶段的所有操作"
+                    )
+                    return
+            else:
+                logger.error(
+                    f"当前时间标记异常{terminal_game._turn_counter}，不能执行 /time 命令"
+                )
+                return
+
+        # 推进时间
         last = terminal_game._turn_counter
         terminal_game._turn_counter += 1
         logger.info(f"时间推进了一步，{last} -> {terminal_game._turn_counter}")
@@ -163,6 +191,21 @@ async def _process_player_input(terminal_game: SDGGame) -> None:
 
             # 进入下一个白天
             announce_day_phase(terminal_game)
+
+            # 检查是否达成胜利条件，夜晚会产生击杀
+            victory_condition = check_victory_conditions(terminal_game)
+            if victory_condition != VictoryCondition.NONE:
+                logger.warning("游戏结束，触发胜利条件，准备终止游戏...")
+                # 终端游戏就终止掉。
+                terminal_game.should_terminate = True
+                if victory_condition == VictoryCondition.TOWN_VICTORY:
+                    logger.warning(
+                        "\n!!!!!!!!!!!!!!!!!村民阵营胜利!!!!!!!!!!!!!!!!!!!\n"
+                    )
+                elif victory_condition == VictoryCondition.WEREWOLVES_VICTORY:
+                    logger.warning(
+                        "\n!!!!!!!!!!!!!!!!!狼人阵营胜利!!!!!!!!!!!!!!!!!!!\n"
+                    )
 
         # 返回！
         return
@@ -187,6 +230,7 @@ async def _process_player_input(terminal_game: SDGGame) -> None:
 
         # 如果是白天
         if terminal_game._turn_counter % 2 == 0 and terminal_game._turn_counter > 0:
+
             # 运行游戏逻辑
             await terminal_game.werewolf_game_day_pipeline.process()
 
@@ -204,10 +248,24 @@ async def _process_player_input(terminal_game: SDGGame) -> None:
         if terminal_game._turn_counter % 2 == 0 and terminal_game._turn_counter > 0:
 
             # 判断是否讨论完毕
-            if WerewolfDayVoteSystem.is_day_discussion_complete(terminal_game):
+            if is_day_discussion_complete(terminal_game):
 
                 # 如果讨论完毕，则进入投票环节
                 await terminal_game.werewolf_game_vote_pipeline.process()
+
+                victory_condition = check_victory_conditions(terminal_game)
+                if victory_condition != VictoryCondition.NONE:
+                    logger.warning("游戏结束，触发胜利条件，准备终止游戏...")
+                    # 终端游戏就终止掉。
+                    terminal_game.should_terminate = True
+                    if victory_condition == VictoryCondition.TOWN_VICTORY:
+                        logger.warning(
+                            "\n!!!!!!!!!!!!!!!!!村民阵营胜利!!!!!!!!!!!!!!!!!!!\n"
+                        )
+                    elif victory_condition == VictoryCondition.WEREWOLVES_VICTORY:
+                        logger.warning(
+                            "\n!!!!!!!!!!!!!!!!!狼人阵营胜利!!!!!!!!!!!!!!!!!!!\n"
+                        )
 
             else:
                 logger.error(

@@ -7,7 +7,7 @@ from ..models import (
     WerewolfComponent,
     SeerComponent,
     WitchComponent,
-    VillagerComponent,
+    # VillagerComponent,
     DeathComponent,
     NightActionReadyComponent,
     NightActionCompletedComponent,
@@ -46,7 +46,7 @@ class NightActionInitializationSystem(ExecuteProcessor):
                     WerewolfComponent,
                     SeerComponent,
                     WitchComponent,
-                    VillagerComponent,
+                    # VillagerComponent,
                 ],
                 none_of=[DeathComponent, NightActionCompletedComponent],
             )

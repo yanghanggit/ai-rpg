@@ -3,7 +3,7 @@ from typing import Set
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
-from ..game_services.game_server import GameServerInstance
+from .game_server_depends import GameServerInstance
 from ..models import (
     DungeonGamePlayRequest,
     DungeonGamePlayResponse,

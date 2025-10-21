@@ -2,7 +2,7 @@ from typing import List, Set
 from fastapi import APIRouter, HTTPException, Query, status
 from loguru import logger
 from ..entitas import Entity
-from .game_server import GameServerInstance
+from .game_server_depends import GameServerInstance
 from ..models import (
     EntitySerialization,
     ActorDetailsResponse,

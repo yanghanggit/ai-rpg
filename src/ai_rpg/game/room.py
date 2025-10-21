@@ -1,7 +1,7 @@
 from typing import Final, Optional
-from ..game.tcg_game import TCGGame
-from ..game.sdg_game import SDGGame
-from ..game.player_session import PlayerSession
+from .tcg_game import TCGGame
+from .sdg_game import SDGGame
+from .player_session import PlayerSession
 
 
 class Room:

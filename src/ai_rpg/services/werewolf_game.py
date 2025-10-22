@@ -75,7 +75,7 @@ def announce_night_phase(sdg_game: SDGGame) -> None:
 
     # 通知客户端一个消息，夜晚阶段开始了
     notification = PhaseChangeNotification(
-        phase="night", turn_number=current_night_number
+        phase="night", turn_number=sdg_game._turn_counter
     )
     sdg_game.player_session.add_game_message(cast(Dict[str, Any], notification))
 
@@ -150,7 +150,7 @@ def announce_day_phase(sdg_game: SDGGame) -> None:
     )
 
     # 通知客户端一个消息，白天阶段开始了
-    notification = PhaseChangeNotification(phase="day", turn_number=current_day_number)
+    notification = PhaseChangeNotification(phase="day", turn_number=sdg_game._turn_counter)
     sdg_game.player_session.add_game_message(
         cast(
             Dict[str, Any],

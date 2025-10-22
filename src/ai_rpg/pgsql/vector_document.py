@@ -6,12 +6,10 @@ PostgreSQL + pgvector 向量操作工具集
 import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
-
 from loguru import logger
 from pgvector.sqlalchemy import Vector  # type: ignore
 from sqlalchemy import DateTime, Index, Integer, String, Text, func, text
 from sqlalchemy.orm import Mapped, mapped_column
-
 from .base import UUIDBase
 from .client import SessionLocal
 

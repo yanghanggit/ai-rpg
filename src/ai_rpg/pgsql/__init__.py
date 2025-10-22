@@ -9,24 +9,22 @@ This module provides:
 """
 
 from typing import List
-
 from .base import *
 from .client import *
 from .user import *
 from .vector_document import VectorDocumentDB
 from .config import PostgreSQLConfig, postgresql_config
 
-# Import RAG operations from new rag module
-from ..rag import load_knowledge_base_to_vector_db, search_similar_documents
 
 __all__: List[str] = [
     # PostgreSQL configuration
     "PostgreSQLConfig",
     "postgresql_config",
+    # Database management functions
+    "pgsql_database_exists",
+    "pgsql_create_database",
+    "pgsql_drop_database",
+    "pgsql_ensure_database_tables",
     # Vector database models
     "VectorDocumentDB",
-    # RAG operations (re-exported for backward compatibility)
-    "load_knowledge_base_to_vector_db",
-    "search_similar_documents",
-    # Database clients and core utilities are exported via star imports
 ]

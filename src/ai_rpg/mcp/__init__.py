@@ -30,7 +30,7 @@ from .response import (
     build_standalone_tool_response,
     synthesize_response_with_tools,
 )
-from .config import McpConfig, load_mcp_config
+from .config import McpConfig, mcp_config
 
 __all__ = [
     # 客户端
@@ -53,5 +53,5 @@ __all__ = [
     "synthesize_response_with_tools",
     # 配置管理
     "McpConfig",
-    "load_mcp_config",
+    "mcp_config",
 ]

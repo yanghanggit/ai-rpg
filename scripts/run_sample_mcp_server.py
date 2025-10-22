@@ -59,7 +59,7 @@ import click
 from loguru import logger
 from mcp.server.fastmcp import FastMCP
 import mcp.types as types
-from ai_rpg.mcp import McpConfig, load_mcp_config
+from ai_rpg.mcp import McpConfig, mcp_config
 from pathlib import Path
 
 # ============================================================================
@@ -498,11 +498,11 @@ def main(config: Path, log_level: str) -> None:
     )
 
     # 加载配置
-    try:
-        mcp_config = load_mcp_config(config)
-    except Exception as e:
-        logger.error(f"❌ 配置文件加载失败: {e}")
-        raise click.ClickException(f"配置文件加载失败: {e}")
+    # try:
+    #     mcp_config = load_mcp_config(config)
+    # except Exception as e:
+    #     logger.error(f"❌ 配置文件加载失败: {e}")
+    #     raise click.ClickException(f"配置文件加载失败: {e}")
 
     logger.info(f"🎯 启动 {mcp_config.server_name} v{mcp_config.server_version}")
     logger.info(f"📡 传输协议: {mcp_config.transport} ({mcp_config.protocol_version})")

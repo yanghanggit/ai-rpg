@@ -8,9 +8,9 @@ MCP (Model Context Protocol) 功能单元测试
 - 工具参数处理和错误处理
 """
 
-from pathlib import Path
+# from pathlib import Path
 import pytest
-from typing import Final, List
+from typing import List
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
@@ -23,12 +23,13 @@ from src.ai_rpg.mcp import (
     McpToolResult,
     initialize_mcp_client,
     execute_mcp_tool,
-    McpConfig,
-    load_mcp_config,
+    # McpConfig,
+    mcp_config,
+    # load_mcp_config,
 )
 
 
-_mcp_config: Final[McpConfig] = load_mcp_config(Path("mcp_config.json"))
+# _mcp_config: Final[McpConfig] = load_mcp_config(Path("mcp_config.json"))
 
 
 class TestMcpClient:
@@ -38,9 +39,9 @@ class TestMcpClient:
     def mock_mcp_client(self) -> McpClient:
         """创建模拟 MCP 客户端的测试夹具"""
         client = McpClient(
-            base_url=_mcp_config.mcp_server_url,
-            protocol_version=_mcp_config.protocol_version,
-            timeout=_mcp_config.mcp_timeout,
+            base_url=mcp_config.mcp_server_url,
+            protocol_version=mcp_config.protocol_version,
+            timeout=mcp_config.mcp_timeout,
         )
         # Mock the http session to avoid actual network calls
         client.http_session = AsyncMock()
@@ -99,16 +100,16 @@ class TestMcpClient:
             mock_client.check_health.return_value = True
 
             client = await initialize_mcp_client(
-                _mcp_config.mcp_server_url,
-                _mcp_config.protocol_version,
-                _mcp_config.mcp_timeout,
+                mcp_config.mcp_server_url,
+                mcp_config.protocol_version,
+                mcp_config.mcp_timeout,
             )
 
             # Verify that the client was created with correct parameters
             mock_client_class.assert_called_once_with(
-                base_url=_mcp_config.mcp_server_url,
-                protocol_version=_mcp_config.protocol_version,
-                timeout=_mcp_config.mcp_timeout,
+                base_url=mcp_config.mcp_server_url,
+                protocol_version=mcp_config.protocol_version,
+                timeout=mcp_config.mcp_timeout,
             )
             mock_client.connect.assert_called_once()
             mock_client.check_health.assert_called_once()
@@ -118,9 +119,9 @@ class TestMcpClient:
     async def test_mcp_client_health_check(self) -> None:
         """测试 MCP 客户端健康检查"""
         client = McpClient(
-            base_url=_mcp_config.mcp_server_url,
-            protocol_version=_mcp_config.protocol_version,
-            timeout=_mcp_config.mcp_timeout,
+            base_url=mcp_config.mcp_server_url,
+            protocol_version=mcp_config.protocol_version,
+            timeout=mcp_config.mcp_timeout,
         )
 
         # Set up the client state
@@ -140,9 +141,9 @@ class TestMcpClient:
     async def test_list_tools(self, sample_tools: List[McpToolInfo]) -> None:
         """测试获取可用工具"""
         client = McpClient(
-            base_url=_mcp_config.mcp_server_url,
-            protocol_version=_mcp_config.protocol_version,
-            timeout=_mcp_config.mcp_timeout,
+            base_url=mcp_config.mcp_server_url,
+            protocol_version=mcp_config.protocol_version,
+            timeout=mcp_config.mcp_timeout,
         )
         client.http_session = AsyncMock()
         client._initialized = True
@@ -178,9 +179,9 @@ class TestMcpClient:
     async def test_call_tool_success(self) -> None:
         """测试成功调用工具"""
         client = McpClient(
-            base_url=_mcp_config.mcp_server_url,
-            protocol_version=_mcp_config.protocol_version,
-            timeout=_mcp_config.mcp_timeout,
+            base_url=mcp_config.mcp_server_url,
+            protocol_version=mcp_config.protocol_version,
+            timeout=mcp_config.mcp_timeout,
         )
         client.http_session = AsyncMock()
         client._initialized = True
@@ -205,9 +206,9 @@ class TestMcpClient:
     async def test_call_tool_failure(self) -> None:
         """测试工具调用失败"""
         client = McpClient(
-            base_url=_mcp_config.mcp_server_url,
-            protocol_version=_mcp_config.protocol_version,
-            timeout=_mcp_config.mcp_timeout,
+            base_url=mcp_config.mcp_server_url,
+            protocol_version=mcp_config.protocol_version,
+            timeout=mcp_config.mcp_timeout,
         )
         client.http_session = AsyncMock()
         client._initialized = True

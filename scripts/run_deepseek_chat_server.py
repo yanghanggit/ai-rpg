@@ -23,7 +23,6 @@ API端点：
 """
 
 import os
-from pathlib import Path
 import sys
 import asyncio
 from typing import Any, Dict
@@ -72,13 +71,11 @@ from ai_rpg.demo.campaign_setting import (
 from ai_rpg.mcp import (
     McpToolInfo,
     initialize_mcp_client,
-    McpConfig,
-    load_mcp_config,
+    mcp_config,
     McpClient,
 )
 from typing import List, Optional, Dict, Any
 from langchain.schema import SystemMessage, BaseMessage
-from ai_rpg.mcp.config import McpConfig
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -90,23 +87,23 @@ _global_available_tools: List[McpToolInfo] = []
 
 ##################################################################################################################
 # MCP 相关配置和初始化函数
-def _load_mcp_config_for_server() -> McpConfig:
-    """为服务器加载 MCP 配置"""
-    try:
-        return load_mcp_config(Path("mcp_config.json"))
-    except Exception as e:
-        logger.error(f"加载 MCP 配置失败: {e}，使用默认配置")
-        return McpConfig(
-            mcp_server_host="127.0.0.1",
-            mcp_server_port=8765,
-            protocol_version="2024-11-05",
-            mcp_timeout=30,
-            server_name="Default MCP Server",
-            server_version="1.0.0",
-            server_description="默认 MCP 服务器配置",
-            transport="streamable-http",
-            allowed_origins=["http://localhost"],
-        )
+# def _load_mcp_config_for_server() -> McpConfig:
+#     """为服务器加载 MCP 配置"""
+#     try:
+#         return load_mcp_config(Path("mcp_config.json"))
+#     except Exception as e:
+#         logger.error(f"加载 MCP 配置失败: {e}，使用默认配置")
+#         return McpConfig(
+#             mcp_server_host="127.0.0.1",
+#             mcp_server_port=8765,
+#             protocol_version="2024-11-05",
+#             mcp_timeout=30,
+#             server_name="Default MCP Server",
+#             server_version="1.0.0",
+#             server_description="默认 MCP 服务器配置",
+#             transport="streamable-http",
+#             allowed_origins=["http://localhost"],
+#         )
 
 
 ##################################################################################################################
@@ -116,7 +113,7 @@ async def _initialize_global_mcp_client() -> None:
 
     try:
         logger.info("🔧 开始初始全局MCP客户端...")
-        mcp_config = _load_mcp_config_for_server()
+        # mcp_config = _load_mcp_config_for_server()
         mcp_client = await initialize_mcp_client(
             mcp_server_url=mcp_config.mcp_server_url,
             mcp_protocol_version=mcp_config.protocol_version,

@@ -28,7 +28,7 @@ DeepSeek + MCP 聊天系统启动脚本
 import os
 import sys
 import traceback
-from typing import Final, List
+from typing import List
 
 
 # 将 src 目录添加到模块搜索路径
@@ -49,14 +49,12 @@ from ai_rpg.deepseek.mcp_client_graph import (
 from ai_rpg.mcp import (
     McpToolInfo,
     initialize_mcp_client,
-    McpConfig,
-    load_mcp_config,
+    mcp_config,
 )
-from pathlib import Path
 
 # ============================================================================
 
-_mcp_config: Final[McpConfig] = load_mcp_config(Path("mcp_config.json"))
+# _mcp_config: Final[McpConfig] = load_mcp_config(Path("mcp_config.json"))
 
 
 def print_welcome_message() -> None:
@@ -89,7 +87,7 @@ def print_available_tools() -> None:
     print("\n🛠️ 可用工具详情：")
     print("-" * 50)
     print("工具信息将在连接到 MCP 服务器后显示")
-    print(f"请确保 MCP 服务器正在运行 ({_mcp_config.mcp_server_url})")
+    print(f"请确保 MCP 服务器正在运行 ({mcp_config.mcp_server_url})")
     print("启动命令: python scripts/run_sample_mcp_server.py")
     print()
 
@@ -153,9 +151,9 @@ async def main() -> None:
 
         try:
             mcp_client = await initialize_mcp_client(
-                mcp_server_url=_mcp_config.mcp_server_url,
-                mcp_protocol_version=_mcp_config.protocol_version,
-                mcp_timeout=_mcp_config.mcp_timeout,
+                mcp_server_url=mcp_config.mcp_server_url,
+                mcp_protocol_version=mcp_config.protocol_version,
+                mcp_timeout=mcp_config.mcp_timeout,
             )
             tools_result = await mcp_client.list_tools()
             available_tools = tools_result if tools_result is not None else []

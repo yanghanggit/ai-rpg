@@ -5,25 +5,25 @@ MCP配置管理模块
 """
 
 from pathlib import Path
-from typing import List
-from pydantic import BaseModel, Field
+from typing import Final, List
+from pydantic import BaseModel
 from loguru import logger
 
 
 class McpConfig(BaseModel):
     """MCP服务器配置模型"""
 
-    mcp_server_host: str = Field(..., description="MCP 服务器主机地址")
-    mcp_server_port: int = Field(..., description="MCP 服务器端口")
-    protocol_version: str = Field(..., description="MCP 协议版本")
-    mcp_timeout: int = Field(..., description="MCP 超时时间")
+    mcp_server_host: str = "127.0.0.1"
+    mcp_server_port: int = 8765
+    protocol_version: str = "2025-06-18"
+    mcp_timeout: int = 30
 
     # 服务器配置
-    server_name: str = Field(..., description="MCP 服务器名称")
-    server_version: str = Field(..., description="MCP 服务器版本")
-    server_description: str = Field(..., description="MCP 服务器描述")
-    transport: str = Field(..., description="MCP 传输协议")
-    allowed_origins: List[str] = Field(..., description="允许的来源列表")
+    server_name: str = "Production MCP Server"
+    server_version: str = "1.0.0"
+    server_description: str = "生产级 MCP 服务器，支持工具调用、资源访问和提示模板"
+    transport: str = "streamable-http"
+    allowed_origins: List[str] = ["http://localhost"]
 
     @property
     def mcp_server_url(self) -> str:
@@ -40,28 +40,20 @@ class McpConfig(BaseModel):
         return origins
 
 
-def load_mcp_config(config_path: Path) -> McpConfig:
-    """
-    加载MCP配置文件
+###########################################################################################
+# 加载默认MCP配置
+mcp_config: Final[McpConfig] = McpConfig()
 
-    Args:
-        config_path: 配置文件路径
-
-    Returns:
-        McpConfig: MCP配置对象
-
-    Raises:
-        RuntimeError: 配置加载失败时抛出
-    """
-    try:
-        assert config_path.exists(), f"{config_path} not found"
-        mcp_config = McpConfig.model_validate_json(
-            config_path.read_text(encoding="utf-8")
+try:
+    MCP_CONFIG_PATH: Path = Path("mcp_config.json")
+    if not MCP_CONFIG_PATH.exists():
+        logger.error(f"MCP 配置文件不存在: {MCP_CONFIG_PATH}")
+        MCP_CONFIG_PATH.write_text(
+            mcp_config.model_dump_json(indent=4, ensure_ascii=False),
+            encoding="utf-8",
         )
+        logger.info(f"已创建默认 MCP 配置文件: {MCP_CONFIG_PATH}")
 
-        logger.info(f"MCP Config loaded from {config_path}: {mcp_config}")
-
-        return mcp_config
-    except Exception as e:
-        logger.error(f"Error loading MCP config: {e}")
-        raise RuntimeError("Failed to load MCP config")
+except Exception as e:
+    logger.error(f"加载 MCP 配置文件失败: {e}")
+###########################################################################################

@@ -43,9 +43,11 @@ from ai_rpg.mongodb import (
     mongodb_find_one,
     mongodb_upsert_one,
 )
-from ai_rpg.pgsql.client import (
+from ai_rpg.pgsql import (
+    pgsql_create_database,
+    pgsql_drop_database,
     pgsql_ensure_database_tables,
-    pgsql_reset_database,
+    postgresql_config,
 )
 from ai_rpg.pgsql.user import has_user, save_user
 from ai_rpg.redis.client import (
@@ -119,13 +121,13 @@ def _mongodb_create_and_store_demo_boot() -> None:
 
         if inserted_id:
             logger.success(f"✅ 演示游戏世界已存储到 MongoDB!")
-            logger.info(f"  - 游戏名称: {game_name}")
-            logger.info(f"  - 集合名称: {collection_name}")
-            logger.info(f"  - 文档ID: {world_boot_document.document_id}")
-            logger.info(f"  - 场景数量: {world_boot_document.stages_count}")
-            logger.info(f"  - 角色数量: {world_boot_document.actors_count}")
-            logger.info(f"  - 世界系统数量: {world_boot_document.world_systems_count}")
-            logger.info(f"  - 战役设置: {world_boot.campaign_setting}")
+            # logger.info(f"  - 游戏名称: {game_name}")
+            # logger.info(f"  - 集合名称: {collection_name}")
+            # logger.info(f"  - 文档ID: {world_boot_document.document_id}")
+            # logger.info(f"  - 场景数量: {world_boot_document.stages_count}")
+            # logger.info(f"  - 角色数量: {world_boot_document.actors_count}")
+            # logger.info(f"  - 世界系统数量: {world_boot_document.world_systems_count}")
+            # logger.info(f"  - 战役设置: {world_boot.campaign_setting}")
 
             # 立即获取验证
             logger.info(f"📖 从 MongoDB 获取演示游戏世界进行验证...")
@@ -139,10 +141,10 @@ def _mongodb_create_and_store_demo_boot() -> None:
                     logger.success(f"✅ 演示游戏世界已从 MongoDB 成功获取!")
 
                     # 使用便捷方法获取摘要信息
-                    summary = stored_document.get_summary()
-                    logger.info(f"  - 文档摘要:")
-                    for key, value in summary.items():
-                        logger.info(f"    {key}: {value}")
+                    # summary = stored_document.get_summary()
+                    # logger.info(f"  - 文档摘要:")
+                    # for key, value in summary.items():
+                    #     logger.info(f"    {key}: {value}")
 
                     # 验证数据完整性
                     if stored_document.validate_integrity():
@@ -214,12 +216,12 @@ def _mongodb_create_and_store_demo_dungeon() -> None:
         inserted_id = mongodb_upsert_one(collection_name, dungeon_document.to_dict())
 
         if inserted_id:
-            logger.success(
-                f"✅ 演示地下城已存储到 MongoDB! = \n{dungeon_document.dungeon_data.model_dump_json(indent=2)}"
-            )
+            # logger.success(
+            #     f"✅ 演示地下城已存储到 MongoDB! = \n{dungeon_document.dungeon_data.model_dump_json(indent=2)}"
+            # )
 
             # 立即获取验证
-            logger.info(f"📖 从 MongoDB 获取演示地下城进行验证...")
+            # logger.info(f"📖 从 MongoDB 获取演示地下城进行验证...")
             stored_dungeon = mongodb_find_one(
                 collection_name, {"dungeon_name": demo_dungeon.name}
             )
@@ -308,24 +310,24 @@ def _setup_chromadb_rag_environment() -> None:
         #     return
 
         # 使用正式知识库数据初始化RAG系统
-        logger.info("📚 加载艾尔法尼亚世界知识库...")
+        # logger.info("📚 加载艾尔法尼亚世界知识库...")
         success = load_knowledge_base_to_vector_db(
             FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, get_default_collection()
         )
 
         if success:
             logger.success("✅ RAG系统初始化成功!")
-            logger.info(f"  - 知识库类别数量: {len(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)}")
+            # logger.info(f"  - 知识库类别数量: {len(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)}")
 
-            # 统计总文档数量
-            total_documents = sum(
-                len(docs) for docs in FANTASY_WORLD_RPG_KNOWLEDGE_BASE.values()
-            )
-            logger.info(f"  - 总文档数量: {total_documents}")
+            # # 统计总文档数量
+            # total_documents = sum(
+            #     len(docs) for docs in FANTASY_WORLD_RPG_KNOWLEDGE_BASE.values()
+            # )
+            # logger.info(f"  - 总文档数量: {total_documents}")
 
             # 显示知识库类别
-            categories = list(FANTASY_WORLD_RPG_KNOWLEDGE_BASE.keys())
-            logger.info(f"  - 知识库类别: {', '.join(categories)}")
+            # categories = list(FANTASY_WORLD_RPG_KNOWLEDGE_BASE.keys())
+            # logger.info(f"  - 知识库类别: {', '.join(categories)}")
 
         else:
             logger.error("❌ RAG系统初始化失败!")
@@ -481,12 +483,18 @@ def main() -> None:
 
     # PostgreSQL 相关操作
     try:
-        logger.info("📋 确保数据库表结构...")
+        logger.info("�️ 删除旧数据库（如果存在）...")
+        pgsql_drop_database(postgresql_config.database)
+
+        logger.info("📦 创建新数据库...")
+        pgsql_create_database(postgresql_config.database)
+
+        logger.info("📋 创建数据库表结构...")
         pgsql_ensure_database_tables()
-        logger.info("� 清空 PostgreSQL 数据库...")
-        pgsql_reset_database()
-        logger.info("🚀 设置PostgreSQL测试用户...")
+
+        logger.info("� 设置PostgreSQL测试用户...")
         _pgsql_setup_test_user()
+
         logger.success("✅ PostgreSQL 初始化完成")
     except Exception as e:
         logger.error(f"❌ PostgreSQL 初始化失败: {e}")

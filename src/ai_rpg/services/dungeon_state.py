@@ -1,18 +1,18 @@
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from .game_server import GameServerInstance
+from .game_server_depends import GameServerInstance
 from ..models import (
     DungeonStateResponse,
 )
 
 ###################################################################################################################################################################
-get_dungeon_state_api_router = APIRouter()
+dungeon_state_api_router = APIRouter()
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-@get_dungeon_state_api_router.get(
+@dungeon_state_api_router.get(
     path="/api/dungeons/v1/{user_name}/{game_name}/state",
     response_model=DungeonStateResponse,
 )

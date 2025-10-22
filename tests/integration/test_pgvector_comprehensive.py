@@ -12,7 +12,7 @@ from loguru import logger
 import hashlib
 
 # 导入配置
-from src.ai_rpg.pgsql import DEFAULT_POSTGRESQL_CONFIG
+from src.ai_rpg.pgsql import postgresql_config
 
 
 # ================================
@@ -103,7 +103,7 @@ def test_basic_vector_operations() -> None:
     logger.info("🧪 开始测试基本向量操作...")
 
     # 创建数据库连接
-    engine = create_engine(DEFAULT_POSTGRESQL_CONFIG.connection_string)
+    engine = create_engine(postgresql_config.connection_string)
 
     try:
         with engine.connect() as conn:
@@ -209,7 +209,7 @@ def test_high_dimension_vectors() -> None:
     """测试高维向量（1536维）- 直接SQL操作"""
     logger.info("🧪 开始测试高维向量操作...")
 
-    engine = create_engine(DEFAULT_POSTGRESQL_CONFIG.connection_string)
+    engine = create_engine(postgresql_config.connection_string)
 
     try:
         with engine.connect() as conn:

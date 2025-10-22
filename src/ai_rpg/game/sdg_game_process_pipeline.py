@@ -6,14 +6,14 @@ from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 def create_werewolf_game_kickoff_pipline(game: GameSession) -> "RPGGameProcessPipeline":
     ### 不这样就循环引用
     from .sdg_game import SDGGame
-    from ..game_systems.destroy_entity_system import DestroyEntitySystem
-    from ..game_systems.action_cleanup_system import ActionCleanupSystem
-    from ..game_systems.save_system import SaveSystem
-    from ..game_systems.werewolf_game_initialization_system import (
+    from ..systems.destroy_entity_system import DestroyEntitySystem
+    from ..systems.action_cleanup_system import ActionCleanupSystem
+    from ..systems.save_system import SaveSystem
+    from ..systems.werewolf_game_initialization_system import (
         WerewolfGameInitializationSystem,
     )
-    from ..game_systems.kick_off_system import KickOffSystem
-    from ..game_systems.discussion_action_system import DiscussionActionSystem
+    from ..systems.kick_off_system import KickOffSystem
+    from ..systems.discussion_action_system import DiscussionActionSystem
 
     ##
     tcg_game = cast(SDGGame, game)
@@ -42,26 +42,26 @@ def create_werewolf_game_kickoff_pipline(game: GameSession) -> "RPGGameProcessPi
 def create_werewolf_game_night_pipline(game: GameSession) -> "RPGGameProcessPipeline":
     ### 不这样就循环引用
     from .sdg_game import SDGGame
-    from ..game_systems.destroy_entity_system import DestroyEntitySystem
-    from ..game_systems.action_cleanup_system import ActionCleanupSystem
-    from ..game_systems.save_system import SaveSystem
-    from ..game_systems.night_werewolf_action_system import (
+    from ..systems.destroy_entity_system import DestroyEntitySystem
+    from ..systems.action_cleanup_system import ActionCleanupSystem
+    from ..systems.save_system import SaveSystem
+    from ..systems.night_werewolf_action_system import (
         NightWerewolfActionSystem,
     )
-    from ..game_systems.night_seer_action_system import (
+    from ..systems.night_seer_action_system import (
         NightSeerActionSystem,
     )
-    from ..game_systems.night_witch_action_system import (
+    from ..systems.night_witch_action_system import (
         NightWitchActionSystem,
     )
-    from ..game_systems.discussion_action_system import DiscussionActionSystem
+    from ..systems.discussion_action_system import DiscussionActionSystem
 
-    from ..game_systems.night_action_initialization_system import (
+    from ..systems.night_action_initialization_system import (
         NightActionInitializationSystem,
     )
-    from ..game_systems.seer_check_action_system import SeerCheckActionSystem
-    from ..game_systems.witch_cure_action_system import WitchCureActionSystem
-    from ..game_systems.witch_poison_action_system import WitchPoisonActionSystem
+    from ..systems.seer_check_action_system import SeerCheckActionSystem
+    from ..systems.witch_cure_action_system import WitchCureActionSystem
+    from ..systems.witch_poison_action_system import WitchPoisonActionSystem
 
     ##
     tcg_game = cast(SDGGame, game)
@@ -97,11 +97,11 @@ def create_werewolf_game_night_pipline(game: GameSession) -> "RPGGameProcessPipe
 def create_werewolf_game_day_pipline(game: GameSession) -> "RPGGameProcessPipeline":
     ### 不这样就循环引用
     from .sdg_game import SDGGame
-    from ..game_systems.destroy_entity_system import DestroyEntitySystem
-    from ..game_systems.action_cleanup_system import ActionCleanupSystem
-    from ..game_systems.save_system import SaveSystem
-    from ..game_systems.discussion_action_system import DiscussionActionSystem
-    from ..game_systems.werewolf_day_discussion_system import (
+    from ..systems.destroy_entity_system import DestroyEntitySystem
+    from ..systems.action_cleanup_system import ActionCleanupSystem
+    from ..systems.save_system import SaveSystem
+    from ..systems.discussion_action_system import DiscussionActionSystem
+    from ..systems.werewolf_day_discussion_system import (
         WerewolfDayDiscussionSystem,
     )
 
@@ -128,15 +128,15 @@ def create_werewolf_game_day_pipline(game: GameSession) -> "RPGGameProcessPipeli
 def create_werewolf_game_vote_pipline(game: GameSession) -> "RPGGameProcessPipeline":
     ### 不这样就循环引用
     from .sdg_game import SDGGame
-    from ..game_systems.destroy_entity_system import DestroyEntitySystem
-    from ..game_systems.action_cleanup_system import ActionCleanupSystem
-    from ..game_systems.save_system import SaveSystem
-    from ..game_systems.discussion_action_system import DiscussionActionSystem
-    from ..game_systems.werewolf_day_vote_system import (
+    from ..systems.destroy_entity_system import DestroyEntitySystem
+    from ..systems.action_cleanup_system import ActionCleanupSystem
+    from ..systems.save_system import SaveSystem
+    from ..systems.discussion_action_system import DiscussionActionSystem
+    from ..systems.werewolf_day_vote_system import (
         WerewolfDayVoteSystem,
     )
 
-    from ..game_systems.vote_action_system import VoteActionSystem
+    from ..systems.vote_action_system import VoteActionSystem
 
     ##
     tcg_game = cast(SDGGame, game)

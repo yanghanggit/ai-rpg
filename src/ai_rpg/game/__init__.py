@@ -5,6 +5,8 @@ from .rpg_game_pipeline_manager import RPGGamePipelineManager, RPGGameProcessPip
 from .rpg_game import RPGGame
 from .tcg_game import TCGGame
 from .sdg_game import SDGGame
+from .game_server import GameServer
+from .room import Room
 
 __all__ = [
     "GameSession",
@@ -13,4 +15,6 @@ __all__ = [
     "RPGGame",
     "TCGGame",
     "SDGGame",
+    "GameServer",
+    "Room",
 ]

@@ -7,24 +7,24 @@ def create_npc_home_pipline(game: GameSession) -> "RPGGameProcessPipeline":
 
     ### 不这样就循环引用
     from ..game.tcg_game import TCGGame
-    from ..game_systems.announce_action_system import AnnounceActionSystem
-    from ..game_systems.destroy_entity_system import DestroyEntitySystem
-    from ..game_systems.home_actor_system import (
+    from ..systems.announce_action_system import AnnounceActionSystem
+    from ..systems.destroy_entity_system import DestroyEntitySystem
+    from ..systems.home_actor_system import (
         HomeActorSystem,
     )
-    from ..game_systems.home_stage_system import (
+    from ..systems.home_stage_system import (
         HomeStageSystem,
     )
-    from ..game_systems.kick_off_system import KickOffSystem
-    from ..game_systems.query_action_system import (
+    from ..systems.kick_off_system import KickOffSystem
+    from ..systems.query_action_system import (
         QueryActionSystem,
     )
-    from ..game_systems.action_cleanup_system import ActionCleanupSystem
-    from ..game_systems.save_system import SaveSystem
-    from ..game_systems.speak_action_system import SpeakActionSystem
-    from ..game_systems.whisper_action_system import WhisperActionSystem
-    from ..game_systems.home_auto_plan_system import HomeAutoPlanSystem
-    from ..game_systems.trans_stage_action_system import (
+    from ..systems.action_cleanup_system import ActionCleanupSystem
+    from ..systems.save_system import SaveSystem
+    from ..systems.speak_action_system import SpeakActionSystem
+    from ..systems.whisper_action_system import WhisperActionSystem
+    from ..systems.home_auto_plan_system import HomeAutoPlanSystem
+    from ..systems.trans_stage_action_system import (
         TransStageActionSystem,
     )
 
@@ -66,14 +66,14 @@ def create_player_home_pipline(game: GameSession) -> "RPGGameProcessPipeline":
 
     ### 不这样就循环引用
     from ..game.tcg_game import TCGGame
-    from ..game_systems.announce_action_system import AnnounceActionSystem
-    from ..game_systems.destroy_entity_system import DestroyEntitySystem
-    from ..game_systems.kick_off_system import KickOffSystem
-    from ..game_systems.action_cleanup_system import ActionCleanupSystem
-    from ..game_systems.save_system import SaveSystem
-    from ..game_systems.speak_action_system import SpeakActionSystem
-    from ..game_systems.whisper_action_system import WhisperActionSystem
-    from ..game_systems.trans_stage_action_system import (
+    from ..systems.announce_action_system import AnnounceActionSystem
+    from ..systems.destroy_entity_system import DestroyEntitySystem
+    from ..systems.kick_off_system import KickOffSystem
+    from ..systems.action_cleanup_system import ActionCleanupSystem
+    from ..systems.save_system import SaveSystem
+    from ..systems.speak_action_system import SpeakActionSystem
+    from ..systems.whisper_action_system import WhisperActionSystem
+    from ..systems.trans_stage_action_system import (
         TransStageActionSystem,
     )
 
@@ -109,24 +109,24 @@ def create_dungeon_combat_state_pipeline(
 
     ### 不这样就循环引用
     from ..game.tcg_game import TCGGame
-    from ..game_systems.combat_outcome_system import CombatOutcomeSystem
-    from ..game_systems.combat_initialization_system import (
+    from ..systems.combat_outcome_system import CombatOutcomeSystem
+    from ..systems.combat_initialization_system import (
         CombatInitializationSystem,
     )
-    from ..game_systems.destroy_entity_system import DestroyEntitySystem
-    from ..game_systems.draw_cards_action_system import (
+    from ..systems.destroy_entity_system import DestroyEntitySystem
+    from ..systems.draw_cards_action_system import (
         DrawCardsActionSystem,
     )
-    from ..game_systems.play_cards_action_system import (
+    from ..systems.play_cards_action_system import (
         PlayCardsActionSystem,
     )
-    from ..game_systems.combat_post_processing_system import (
+    from ..systems.combat_post_processing_system import (
         CombatPostProcessingSystem,
     )
-    from ..game_systems.kick_off_system import KickOffSystem
-    from ..game_systems.action_cleanup_system import ActionCleanupSystem
-    from ..game_systems.save_system import SaveSystem
-    from ..game_systems.arbitration_action_system import ArbitrationActionSystem
+    from ..systems.kick_off_system import KickOffSystem
+    from ..systems.action_cleanup_system import ActionCleanupSystem
+    from ..systems.save_system import SaveSystem
+    from ..systems.arbitration_action_system import ArbitrationActionSystem
 
     ##
     tcg_game = cast(TCGGame, game)

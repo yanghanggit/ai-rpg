@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 import sys
 
 # 将 src 目录添加到模块搜索路径
@@ -9,8 +8,8 @@ sys.path.insert(
 
 from loguru import logger
 from ai_rpg.chat_services.client import ChatClient
-from ai_rpg.settings import (
-    initialize_server_settings_instance,
+from ai_rpg.configuration import (
+    server_configuration,
 )
 from ai_rpg.game.config import GLOBAL_SD_GAME_NAME, setup_logger
 from ai_rpg.game.player_session import PlayerSession
@@ -22,7 +21,7 @@ from ai_rpg.demo.werewolf_game_world import (
 from ai_rpg.models import (
     World,
 )
-from ai_rpg.game_services.werewolf_game_services import (
+from ai_rpg.services.werewolf_game import (
     VictoryCondition,
     announce_night_phase,
     announce_day_phase,
@@ -56,8 +55,10 @@ async def _run_game(
     )
 
     ### 创建服务器相关的连接信息。
-    server_settings = initialize_server_settings_instance(Path("server_settings.json"))
-    ChatClient.initialize_url_config(server_settings)
+    # server_settings = initialize_server_settings_instance(
+    #     Path("server_configuration.json")
+    # )
+    ChatClient.initialize_url_config(server_configuration)
 
     # 启动游戏的判断，是第一次建立还是恢复？
     assert (

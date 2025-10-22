@@ -1,18 +1,18 @@
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from .game_server import GameServerInstance
+from .game_server_depends import GameServerInstance
 from ..models import (
     HomeStateResponse,
 )
 
 ###################################################################################################################################################################
-get_home_state_api_router = APIRouter()
+home_state_api_router = APIRouter()
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-@get_home_state_api_router.get(
+@home_state_api_router.get(
     path="/api/homes/v1/{user_name}/{game_name}/state", response_model=HomeStateResponse
 )
 async def get_home_state(

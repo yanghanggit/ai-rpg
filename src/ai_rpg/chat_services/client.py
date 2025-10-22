@@ -13,7 +13,7 @@ from .protocol import (
     ChatResponse,
 )
 import time
-from ..settings.server_settings import ServerSettings
+from ..configuration.server_configuration import ServerConfiguration
 from dataclasses import dataclass
 
 
@@ -48,7 +48,7 @@ class ChatClient:
     _deepseek_url_config: Optional[DeepSeekUrlConfig] = None
 
     @classmethod
-    def initialize_url_config(cls, server_settings: ServerSettings) -> None:
+    def initialize_url_config(cls, server_settings: ServerConfiguration) -> None:
         """Initialize the URL configurations from ServerSettings."""
 
         cls._azure_openai_url_config = AzureOpenAIUrlConfig(

@@ -2,20 +2,20 @@ from typing import List, Set
 from fastapi import APIRouter, HTTPException, Query, status
 from loguru import logger
 from ..entitas import Entity
-from .game_server import GameServerInstance
+from .game_server_depends import GameServerInstance
 from ..models import (
     EntitySerialization,
     ActorDetailsResponse,
 )
 
 ###################################################################################################################################################################
-get_actor_details_api_router = APIRouter()
+actor_details_api_router = APIRouter()
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-@get_actor_details_api_router.get(
+@actor_details_api_router.get(
     path="/api/actors/v1/{user_name}/{game_name}/details",
     response_model=ActorDetailsResponse,
 )

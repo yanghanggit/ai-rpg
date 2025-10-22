@@ -3,7 +3,7 @@ from typing import Set
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
-from ..game_services.game_server import GameServerInstance
+from .game_server_depends import GameServerInstance
 from ..models import (
     DungeonGamePlayRequest,
     DungeonGamePlayResponse,
@@ -22,7 +22,7 @@ from ..models import (
     PlayCardsAction,
 )
 from ..entitas import Matcher, Entity
-from .home_gameplay_services import _dungeon_advance
+from .home_gameplay import _dungeon_advance
 
 ###################################################################################################################################################################
 dungeon_gameplay_api_router = APIRouter()

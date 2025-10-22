@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.game_data_service import delete_user_world_data
-from ..game_services.game_server import GameServerInstance
+from .game_server_depends import GameServerInstance
 from ..models import (
     LoginRequest,
     LoginResponse,

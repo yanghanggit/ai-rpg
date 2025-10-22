@@ -20,7 +20,7 @@ Date: 2025-07-30
 import os
 from pathlib import Path
 import sys
-from typing import Final, final
+from typing import final
 
 from pydantic import BaseModel
 
@@ -30,8 +30,9 @@ sys.path.insert(
 )
 from loguru import logger
 
-from ai_rpg.settings import (
-    ServerSettings,
+from ai_rpg.configuration import (
+    ServerConfiguration,
+    server_configuration,
 )
 from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, LOGS_DIR
 
@@ -339,7 +340,7 @@ def _setup_chromadb_rag_environment() -> None:
 
 
 def _generate_pm2_ecosystem_config(
-    server_settings: ServerSettings, target_directory: str = "."
+    server_config: ServerConfiguration, target_directory: str = "."
 ) -> None:
     """
     根据 ServerSettings 配置生成 ecosystem.config.js 文件
@@ -360,84 +361,84 @@ def _generate_pm2_ecosystem_config(
     """
     ecosystem_config_content = f"""module.exports = {{
   apps: [
-    // 聊天服务器实例 - 端口 {server_settings.azure_openai_chat_server_port}
+    // 聊天服务器实例 - 端口 {server_config.azure_openai_chat_server_port}
     {{
-      name: 'azure-openai-chat-server-{server_settings.azure_openai_chat_server_port}',
+      name: 'azure-openai-chat-server-{server_config.azure_openai_chat_server_port}',
       script: 'uvicorn',
-      args: 'scripts.run_azure_openai_chat_server:app --host 0.0.0.0 --port {server_settings.azure_openai_chat_server_port}',
+      args: 'scripts.run_azure_openai_chat_server:app --host 0.0.0.0 --port {server_config.azure_openai_chat_server_port}',
       interpreter: 'python',
       cwd: process.cwd(),
       env: {{
         PYTHONPATH: `${{process.cwd()}}`,
-        PORT: '{server_settings.azure_openai_chat_server_port}'
+        PORT: '{server_config.azure_openai_chat_server_port}'
       }},
       instances: 1,
       autorestart: false,
       watch: false,
       max_memory_restart: '2G',
-      log_file: './logs/azure-openai-chat-server-{server_settings.azure_openai_chat_server_port}.log',
-      error_file: './logs/azure-openai-chat-server-{server_settings.azure_openai_chat_server_port}-error.log',
-      out_file: './logs/azure-openai-chat-server-{server_settings.azure_openai_chat_server_port}-out.log',
+      log_file: './logs/azure-openai-chat-server-{server_config.azure_openai_chat_server_port}.log',
+      error_file: './logs/azure-openai-chat-server-{server_config.azure_openai_chat_server_port}-error.log',
+      out_file: './logs/azure-openai-chat-server-{server_config.azure_openai_chat_server_port}-out.log',
       time: true
     }},
-    // 游戏服务器实例 - 端口 {server_settings.game_server_port}
+    // 游戏服务器实例 - 端口 {server_config.game_server_port}
     {{
-      name: 'game-server-{server_settings.game_server_port}',
+      name: 'game-server-{server_config.game_server_port}',
       script: 'uvicorn',
-      args: 'scripts.run_tcg_game_server:app --host 0.0.0.0 --port {server_settings.game_server_port}',
+      args: 'scripts.run_tcg_game_server:app --host 0.0.0.0 --port {server_config.game_server_port}',
       interpreter: 'python',
       cwd: process.cwd(),
       env: {{
         PYTHONPATH: `${{process.cwd()}}`,
-        PORT: '{server_settings.game_server_port}'
+        PORT: '{server_config.game_server_port}'
       }},
       instances: 1,
       autorestart: false,
       watch: false,
       max_memory_restart: '2G',
-      log_file: './logs/game-server-{server_settings.game_server_port}.log',
-      error_file: './logs/game-server-{server_settings.game_server_port}-error.log',
-      out_file: './logs/game-server-{server_settings.game_server_port}-out.log',
+      log_file: './logs/game-server-{server_config.game_server_port}.log',
+      error_file: './logs/game-server-{server_config.game_server_port}-error.log',
+      out_file: './logs/game-server-{server_config.game_server_port}-out.log',
       time: true
     }},
-    // 图片生成服务器实例 - 端口 {server_settings.image_generation_server_port}
+    // 图片生成服务器实例 - 端口 {server_config.image_generation_server_port}
     {{
-      name: 'image-generation-server-{server_settings.image_generation_server_port}',
+      name: 'image-generation-server-{server_config.image_generation_server_port}',
       script: 'uvicorn',
-      args: 'scripts.run_image_generation_server:app --host 0.0.0.0 --port {server_settings.image_generation_server_port}',
+      args: 'scripts.run_image_generation_server:app --host 0.0.0.0 --port {server_config.image_generation_server_port}',
       interpreter: 'python',
       cwd: process.cwd(),
       env: {{
         PYTHONPATH: `${{process.cwd()}}`,
-        PORT: '{server_settings.image_generation_server_port}'
+        PORT: '{server_config.image_generation_server_port}'
       }},
       instances: 1,
       autorestart: false,
       watch: false,
       max_memory_restart: '2G',
-      log_file: './logs/image-generation-server-{server_settings.image_generation_server_port}.log',
-      error_file: './logs/image-generation-server-{server_settings.image_generation_server_port}-error.log',
-      out_file: './logs/image-generation-server-{server_settings.image_generation_server_port}-out.log',
+      log_file: './logs/image-generation-server-{server_config.image_generation_server_port}.log',
+      error_file: './logs/image-generation-server-{server_config.image_generation_server_port}-error.log',
+      out_file: './logs/image-generation-server-{server_config.image_generation_server_port}-out.log',
       time: true
     }},
-    // DeepSeek聊天服务器实例 - 端口 {server_settings.deepseek_chat_server_port}
+    // DeepSeek聊天服务器实例 - 端口 {server_config.deepseek_chat_server_port}
     {{
-      name: 'deepseek-chat-server-{server_settings.deepseek_chat_server_port}',
+      name: 'deepseek-chat-server-{server_config.deepseek_chat_server_port}',
       script: 'uvicorn',
-      args: 'scripts.run_deepseek_chat_server:app --host 0.0.0.0 --port {server_settings.deepseek_chat_server_port}',
+      args: 'scripts.run_deepseek_chat_server:app --host 0.0.0.0 --port {server_config.deepseek_chat_server_port}',
       interpreter: 'python',
       cwd: process.cwd(),
       env: {{
         PYTHONPATH: `${{process.cwd()}}`,
-        PORT: '{server_settings.deepseek_chat_server_port}'
+        PORT: '{server_config.deepseek_chat_server_port}'
       }},
       instances: 1,
       autorestart: false,
       watch: false,
       max_memory_restart: '2G',
-      log_file: './logs/deepseek-chat-server-{server_settings.deepseek_chat_server_port}.log',
-      error_file: './logs/deepseek-chat-server-{server_settings.deepseek_chat_server_port}-error.log',
-      out_file: './logs/deepseek-chat-server-{server_settings.deepseek_chat_server_port}-out.log',
+      log_file: './logs/deepseek-chat-server-{server_config.deepseek_chat_server_port}.log',
+      error_file: './logs/deepseek-chat-server-{server_config.deepseek_chat_server_port}-error.log',
+      out_file: './logs/deepseek-chat-server-{server_config.deepseek_chat_server_port}-out.log',
       time: true
     }}
   ]
@@ -461,13 +462,15 @@ def _setup_server_settings() -> None:
     """
     logger.info("🚀 构建服务器设置配置...")
     # 这里可以添加构建服务器设置配置的逻辑
-    server_config: Final[ServerSettings] = ServerSettings()
-    write_path = Path("server_settings.json")
-    write_path.write_text(server_config.model_dump_json(indent=4), encoding="utf-8")
+    # server_config: Final[ServerConfiguration] = ServerConfiguration()
+    write_path = Path("server_configuration.json")
+    write_path.write_text(
+        server_configuration.model_dump_json(indent=4), encoding="utf-8"
+    )
     logger.success("✅ 服务器设置配置构建完成")
 
     # 生成PM2生态系统配置
-    _generate_pm2_ecosystem_config(server_config)
+    _generate_pm2_ecosystem_config(server_configuration)
 
 
 #######################################################################################################

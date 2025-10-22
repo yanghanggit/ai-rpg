@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException, Query, status
 from loguru import logger
-from ..game_services.game_server import GameServerInstance
+
+# from ..game.game_server import GameServerInstance
 from ..models import (
     SessionMessageResponse,
 )
-from ..game_services.game_server import GameServerInstance
+from .game_server_depends import GameServerInstance
 
 ###################################################################################################################################################################
 player_session_api_router = APIRouter()

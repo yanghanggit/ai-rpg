@@ -35,15 +35,14 @@ from ..entitas import Entity, Matcher
 from typing_extensions import TypedDict
 from enum import IntEnum, unique
 
+###################################################################################################################################################################
+werewolf_game_api_router = APIRouter()
+
 
 ###################################################################################################################################################################
 class PhaseChangeNotification(TypedDict):
     phase: str
     turn_number: int
-
-
-###################################################################################################################################################################
-werewolf_game_api_router = APIRouter()
 
 
 ###############################################################################################################################################
@@ -61,7 +60,7 @@ def announce_night_phase(sdg_game: SDGGame) -> None:
         sdg_game._turn_counter % 2 == 1 or sdg_game._turn_counter > 0
     ), "当前时间标记不是夜晚"
 
-    logger.warning(f"进入夜晚,时间标记 = {sdg_game._turn_counter}")
+    logger.info(f"进入夜晚,时间标记 = {sdg_game._turn_counter}")
 
     # 计算当前是第几个夜晚(从1开始计数)
     current_night_number = (sdg_game._turn_counter + 1) // 2
@@ -98,7 +97,7 @@ def announce_day_phase(sdg_game: SDGGame) -> None:
         sdg_game._turn_counter % 2 == 0 and sdg_game._turn_counter > 0
     ), "当前时间标记不是白天"
 
-    logger.warning(f"进入白天,时间标记 = {sdg_game._turn_counter}")
+    logger.info(f"进入白天,时间标记 = {sdg_game._turn_counter}")
 
     # 计算当前是第几个白天(从1开始计数)
     current_day_number = sdg_game._turn_counter // 2
@@ -233,8 +232,11 @@ def is_day_phase_completed(sdg_game: SDGGame) -> bool:
 
 
 ###################################################################################################################################################################
-# 判断村民阵营胜利：所有狼人都被淘汰且至少有一个村民存活
 def check_town_victory(sdg_game: SDGGame) -> bool:
+    """
+    判断村民阵营胜利：所有狼人都被淘汰且至少有一个村民存活
+    """
+
     dead_werewolves = sdg_game.get_group(
         Matcher(
             all_of=[WerewolfComponent, DeathComponent],
@@ -266,8 +268,12 @@ def check_town_victory(sdg_game: SDGGame) -> bool:
 
 
 ################################################################################################################################################
-# 判断狼人阵营胜利：狼人数量大于等于村民数量且至少有一个狼人存活
+
+
 def check_werewolves_victory(sdg_game: SDGGame) -> bool:
+    """
+    判断狼人阵营胜利：狼人数量大于等于村民数量且至少有一个狼人存活
+    """
 
     town_entities = sdg_game.get_group(
         Matcher(
@@ -330,6 +336,9 @@ def check_victory_conditions(sdg_game: SDGGame) -> VictoryCondition:
 
 ###################################################################################################################################################################
 def is_day_discussion_complete(sdg_game: SDGGame) -> bool:
+    """
+    是否白天的讨论阶段已经完成
+    """
 
     # 讨论完的人。
     entities1 = sdg_game.get_group(
@@ -379,6 +388,10 @@ def is_day_discussion_complete(sdg_game: SDGGame) -> bool:
 
 ###################################################################################################################################################################
 def is_day_vote_complete(sdg_game: SDGGame) -> bool:
+    """
+    是否白天的投票阶段已经完成
+    """
+
     entities1 = sdg_game.get_group(
         Matcher(
             all_of=[DayVotedComponent],
@@ -421,65 +434,83 @@ async def start_werewolf_game(
 
     logger.info(f"Starting werewolf game: {payload.model_dump_json()}")
 
-    # 先检查房间是否存在，存在就删除旧房间
-    if game_server.has_room(payload.user_name):
+    try:
+        # 先检查房间是否存在，存在就删除旧房间
+        if game_server.has_room(payload.user_name):
 
-        logger.debug(f"start/v1: {payload.user_name} room exists, removing it")
+            logger.debug(f"start/v1: {payload.user_name} room exists, removing it")
 
-        pre_room = game_server.get_room(payload.user_name)
-        assert pre_room is not None
+            pre_room = game_server.get_room(payload.user_name)
+            assert pre_room is not None
 
-        if pre_room._sdg_game is not None:
-            logger.debug(f"start/v1: {payload.user_name} removing old game instance")
+            if pre_room._sdg_game is not None:
+                logger.debug(
+                    f"start/v1: {payload.user_name} removing old game instance"
+                )
 
-            # 保存并退出旧游戏
-            pre_room._sdg_game.save()
-            pre_room._sdg_game.exit()
+                # 保存并退出旧游戏
+                pre_room._sdg_game.save()
+                pre_room._sdg_game.exit()
 
-            pre_room._sdg_game = None  # 先断开引用，等待垃圾回收
+                # 先断开引用，等待垃圾回收
+                pre_room._sdg_game = None
 
-        game_server.remove_room(pre_room)
+            game_server.remove_room(pre_room)
 
-    assert not game_server.has_room(payload.user_name), "Room should have been removed."
+        assert not game_server.has_room(
+            payload.user_name
+        ), "Room should have been removed."
 
-    # 然后创建一个新的房间
-    new_room = game_server.create_room(
-        user_name=payload.user_name,
-    )
-    logger.info(f"start/v1: {payload.user_name} create room = {new_room._username}")
-    assert new_room._sdg_game is None
+        # 然后创建一个新的房间
+        new_room = game_server.create_room(
+            user_name=payload.user_name,
+        )
+        logger.info(f"start/v1: {payload.user_name} create room = {new_room._username}")
+        assert new_room._sdg_game is None
 
-    # 创建boot数据
-    assert GLOBAL_SD_GAME_NAME == payload.game_name, "目前只支持 SD 游戏"
-    world_boot = create_demo_sd_game_boot(payload.game_name)
-    assert world_boot is not None, "WorldBoot 创建失败"
+        # 创建boot数据
+        assert GLOBAL_SD_GAME_NAME == payload.game_name, "目前只支持 SD 游戏"
+        world_boot = create_demo_sd_game_boot(payload.game_name)
+        assert world_boot is not None, "WorldBoot 创建失败"
 
-    # 创建游戏实例
-    new_room._sdg_game = web_game = SDGGame(
-        name=payload.game_name,
-        player_session=PlayerSession(
-            name=payload.user_name, actor="角色.主持人"  # 写死先！
-        ),
-        world=World(boot=world_boot),
-    )
+        # 创建游戏实例
+        new_room._sdg_game = web_game = SDGGame(
+            name=payload.game_name,
+            player_session=PlayerSession(
+                name=payload.user_name, actor="角色.主持人"  # 写死先！
+            ),
+            world=World(boot=world_boot),
+        )
 
-    # 创建服务器相关的连接信息。
-    # server_settings = initialize_server_settings_instance(
-    #     Path("server_configuration.json")
-    # )
-    ChatClient.initialize_url_config(server_configuration)
+        # 配置聊天客户端
+        ChatClient.initialize_url_config(server_configuration)
 
-    # 新游戏！
-    web_game.new_game().save()
+        # 新游戏！
+        web_game.new_game().save()
 
-    # 测试一下玩家控制角色，如果没有就是错误。
-    assert web_game.get_player_entity() is not None, "玩家实体不存在"
+        # 测试一下玩家控制角色，如果没有就是错误。
+        assert web_game.get_player_entity() is not None, "玩家实体不存在"
 
-    # 初始化!
-    await web_game.initialize()
+        # 初始化!
+        await web_game.initialize()
 
-    # 在这里添加启动游戏的逻辑
-    return WerewolfGameStartResponse(message=web_game.world.model_dump_json(indent=2))
+        # 在这里添加启动游戏的逻辑
+        return WerewolfGameStartResponse(
+            message=web_game.world.model_dump_json(indent=2)
+        )
+
+    except HTTPException:
+        # 直接向上传播 HTTPException，不要重新包装
+        raise
+    except Exception as e:
+        # 只捕获非预期的异常
+        logger.exception(
+            f"start_werewolf_game unexpected error for {payload.user_name}, error: {str(e)}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"启动游戏失败，请稍后重试",
+        )
 
 
 ###################################################################################################################################################################
@@ -602,14 +633,13 @@ async def play_werewolf_game(
                 # 检查是否达成胜利条件，夜晚会产生击杀
                 victory_condition = check_victory_conditions(web_game)
                 if victory_condition != VictoryCondition.NONE:
-                    logger.warning("游戏结束，触发胜利条件，准备终止游戏...")
-                    # web_game.should_terminate = True
+                    logger.info("游戏结束，触发胜利条件，准备终止游戏...")
                     if victory_condition == VictoryCondition.TOWN_VICTORY:
-                        logger.warning(
+                        logger.info(
                             "\n!!!!!!!!!!!!!!!!!村民阵营胜利!!!!!!!!!!!!!!!!!!!\n"
                         )
                     elif victory_condition == VictoryCondition.WEREWOLVES_VICTORY:
-                        logger.warning(
+                        logger.info(
                             "\n!!!!!!!!!!!!!!!!!狼人阵营胜利!!!!!!!!!!!!!!!!!!!\n"
                         )
 
@@ -699,13 +729,13 @@ async def play_werewolf_game(
                 # 检查是否达成胜利条件 投票会产生死亡
                 victory_condition = check_victory_conditions(web_game)
                 if victory_condition != VictoryCondition.NONE:
-                    logger.warning("游戏结束，触发胜利条件，准备终止游戏...")
+                    logger.info("游戏结束，触发胜利条件，准备终止游戏...")
                     if victory_condition == VictoryCondition.TOWN_VICTORY:
-                        logger.warning(
+                        logger.info(
                             "\n!!!!!!!!!!!!!!!!!村民阵营胜利!!!!!!!!!!!!!!!!!!!\n"
                         )
                     elif victory_condition == VictoryCondition.WEREWOLVES_VICTORY:
-                        logger.warning(
+                        logger.info(
                             "\n!!!!!!!!!!!!!!!!!狼人阵营胜利!!!!!!!!!!!!!!!!!!!\n"
                         )
 
@@ -725,10 +755,17 @@ async def play_werewolf_game(
         logger.error(f"未知命令: {user_input}, 什么都没做")
         return WerewolfGamePlayResponse(session_messages=[])
 
+    except HTTPException:
+        # 直接向上传播 HTTPException，不要重新包装
+        raise
     except Exception as e:
+        # 只捕获非预期的异常
+        logger.exception(
+            f"play_werewolf_game unexpected error for {payload.user_name}, error: {str(e)}"
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"home/gameplay/v1: {payload.user_name} failed, error: {str(e)}",
+            detail=f"游戏操作失败，请稍后重试",
         )
 
 
@@ -759,7 +796,6 @@ async def get_werewolf_game_state(
         current_room = game_server.get_room(user_name)
         assert current_room is not None
         if current_room._sdg_game is None:
-            # logger.error(f"view_home: {user_name} has no game")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="没有游戏",
@@ -777,10 +813,17 @@ async def get_werewolf_game_state(
             mapping=mapping_data,
             game_time=sd_game._turn_counter,
         )
+    except HTTPException:
+        # 直接向上传播 HTTPException，不要重新包装
+        raise
     except Exception as e:
+        # 只捕获非预期的异常
+        logger.exception(
+            f"get_werewolf_game_state unexpected error for {user_name}, error: {str(e)}"
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"服务器错误: {str(e)}",
+            detail=f"获取游戏状态失败，请稍后重试",
         )
 
 
@@ -853,11 +896,17 @@ async def get_werewolf_actors_details(
         return WerewolfGameActorDetailsResponse(
             actor_entities_serialization=entities_serialization,
         )
+    except HTTPException:
+        # 直接向上传播 HTTPException，不要重新包装
+        raise
     except Exception as e:
-        logger.error(f"get_actors_details: {user_name} error: {e}")
+        # 只捕获非预期的异常
+        logger.exception(
+            f"get_werewolf_actors_details unexpected error for {user_name}, error: {str(e)}"
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"服务器错误: {str(e)}",
+            detail=f"获取角色详情失败，请稍后重试",
         )
 
 

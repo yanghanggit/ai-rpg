@@ -1,7 +1,7 @@
 from typing import Dict, List, final
 from pydantic import BaseModel
 from .session_message import SessionMessage
-from ..models import EntitySerialization
+from . import EntitySerialization
 
 
 @final

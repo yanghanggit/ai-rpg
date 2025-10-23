@@ -16,6 +16,7 @@ class EventHead(IntEnum):
     COMBAT_KICK_OFF_EVENT = 7
     COMBAT_COMPLETE_EVENT = 8
     DISCUSSION_EVENT = 9
+    NIGHT_ACTION_EVENT = 10
 
 
 ####################################################################################################################################
@@ -104,3 +105,10 @@ class DiscussionEvent(AgentEvent):
 
 
 ####################################################################################################################################
+
+
+@final
+class NightActionEvent(AgentEvent):
+    head: int = EventHead.NIGHT_ACTION_EVENT
+    actor: str
+    message: str

@@ -3,7 +3,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     SeerCheckAction,
     WerewolfComponent,
-    AgentEvent,
+    NightActionEvent,
 )
 from loguru import logger
 from ..game.sdg_game import SDGGame
@@ -55,7 +55,8 @@ class SeerCheckActionSystem(ReactiveProcessor):
             logger.info(f"预言家查看的玩家 {entity.name} 是 狼人")
             self._game.notify_entities(
                 set({seer_entity}),
-                AgentEvent(
+                NightActionEvent(
+                    actor=seer_entity.name,
                     message=f"# 预言家 {seer_entity.name} 查验结果：玩家 {entity.name} 是 狼人！"
                 ),
             )
@@ -63,7 +64,8 @@ class SeerCheckActionSystem(ReactiveProcessor):
             logger.info(f"预言家查看的玩家 {entity.name} 不是 狼人")
             self._game.notify_entities(
                 set({seer_entity}),
-                AgentEvent(
+                NightActionEvent(
+                    actor=seer_entity.name,
                     message=f"# 预言家 {seer_entity.name} 查验结果：玩家 {entity.name} 不是 狼人。"
                 ),
             )

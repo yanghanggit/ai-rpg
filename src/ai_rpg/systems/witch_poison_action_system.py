@@ -4,7 +4,7 @@ from ..models import (
     WitchPoisonAction,
     WitchItemName,
     InventoryComponent,
-    AgentEvent,
+    NightActionEvent,
     NightKillTargetComponent,
 )
 from loguru import logger
@@ -57,7 +57,8 @@ class WitchPoisonActionSystem(ReactiveProcessor):
             logger.error(f"女巫 {witch_entity.name} 没有毒药，无法使用毒药")
             self._game.notify_entities(
                 set({witch_entity}),
-                AgentEvent(
+                NightActionEvent(
+                    actor=witch_entity.name,
                     message=f"# 提示！你没有毒药，无法对 {entity.name} 使用毒药。",
                 ),
             )
@@ -71,7 +72,8 @@ class WitchPoisonActionSystem(ReactiveProcessor):
         # 通知女巫使用毒药成功
         self._game.notify_entities(
             set({witch_entity}),
-            AgentEvent(
+            NightActionEvent(
+                actor=witch_entity.name,
                 message=f"# 女巫 {witch_entity.name} 使用了毒药，成功毒杀了玩家 {entity.name}, 并且毒药已被使用。",
             ),
         )

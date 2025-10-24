@@ -17,7 +17,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from ai_rpg.services.root import root_api_router
 from ai_rpg.chat_services.client import ChatClient
-from ai_rpg.game.config import setup_logger
 from ai_rpg.services.werewolf_game import werewolf_game_api_router
 from ai_rpg.services.player_session import player_session_api_router
 from ai_rpg.services.actor_details import actor_details_api_router
@@ -25,9 +24,6 @@ from ai_rpg.services.stages_state import stages_state_api_router
 
 _server_setting_path: Final[Path] = Path("server_configuration.json")
 assert _server_setting_path.exists(), f"{_server_setting_path} must exist"
-
-# 初始化日志系统！
-setup_logger()
 
 
 @asynccontextmanager
@@ -41,8 +37,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     # 在这里添加启动时需要执行的初始化操作
     try:
-        # 初始化服务器设置
-        # server_settings = initialize_server_settings_instance(_server_setting_path)
+
         logger.info(
             f"✅ 服务器配置已加载，端口: {server_configuration.game_server_port}"
         )
@@ -90,17 +85,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 公共的
 app.include_router(router=root_api_router)
-app.include_router(router=werewolf_game_api_router)
 app.include_router(router=player_session_api_router)
 app.include_router(router=actor_details_api_router)
 app.include_router(router=stages_state_api_router)
 
+# 狼人杀特有的
+app.include_router(router=werewolf_game_api_router)
+
 
 def main() -> None:
-
-    # 服务器配置在lifespan中已经初始化，这里直接获取
-    # server_settings = initialize_server_settings_instance(_server_setting_path)
 
     logger.info(f"启动游戏服务器，端口: {server_configuration.game_server_port}")
     import uvicorn

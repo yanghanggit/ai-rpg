@@ -803,14 +803,14 @@ async def get_werewolf_game_state(
 
         # 获取当前地图
         sd_game = current_room._sdg_game
-        mapping_data = sd_game.get_stage_actor_distribution_mapping()
-        logger.info(
-            f"view_home: {user_name} mapping_data: {mapping_data}, time={sd_game._turn_counter}"
-        )
+        # mapping_data = sd_game.get_stage_actor_distribution_mapping()
+        # logger.info(
+        #     f"view_home: {user_name} mapping_data: {mapping_data}, time={sd_game._turn_counter}"
+        # )
 
         # 返回。
         return WerewolfGameStateResponse(
-            mapping=mapping_data,
+            # mapping=mapping_data,
             game_time=sd_game._turn_counter,
         )
     except HTTPException:

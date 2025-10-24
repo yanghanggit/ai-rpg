@@ -161,7 +161,7 @@ class DungeonStateResponse(BaseModel):
 
 
 @final
-class HomeStateResponse(BaseModel):
+class StagesStateResponse(BaseModel):
     mapping: Dict[str, List[str]]
 
 
@@ -173,7 +173,6 @@ class HomeStateResponse(BaseModel):
 @final
 class ActorDetailsResponse(BaseModel):
     actor_entities_serialization: List[EntitySerialization]
-    # agent_short_term_memories: List[AgentChatHistory]
 
 
 ################################################################################################################

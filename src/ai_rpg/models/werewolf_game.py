@@ -1,7 +1,8 @@
 from typing import Dict, List, final
 from pydantic import BaseModel
 from .session_message import SessionMessage
-from . import EntitySerialization
+
+# from . import EntitySerialization
 
 
 @final
@@ -29,10 +30,10 @@ class WerewolfGamePlayResponse(BaseModel):
 
 @final
 class WerewolfGameStateResponse(BaseModel):
-    mapping: Dict[str, List[str]]
+    # mapping: Dict[str, List[str]]
     game_time: int
 
 
-@final
-class WerewolfGameActorDetailsResponse(BaseModel):
-    actor_entities_serialization: List[EntitySerialization]
+# @final
+# class WerewolfGameActorDetailsResponse(BaseModel):
+#     actor_entities_serialization: List[EntitySerialization]

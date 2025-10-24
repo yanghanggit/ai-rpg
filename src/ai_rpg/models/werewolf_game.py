@@ -32,7 +32,7 @@ class WerewolfGamePlayResponse(BaseModel):
 class WerewolfGameStateResponse(BaseModel):
     # mapping: Dict[str, List[str]]
     game_time: int
-
+    victory_condition: str
 
 # @final
 # class WerewolfGameActorDetailsResponse(BaseModel):

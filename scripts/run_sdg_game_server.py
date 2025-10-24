@@ -20,6 +20,7 @@ from ai_rpg.chat_services.client import ChatClient
 from ai_rpg.game.config import setup_logger
 from ai_rpg.services.werewolf_game import werewolf_game_api_router
 from ai_rpg.services.player_session import player_session_api_router
+from ai_rpg.services.actor_details import actor_details_api_router
 
 _server_setting_path: Final[Path] = Path("server_configuration.json")
 assert _server_setting_path.exists(), f"{_server_setting_path} must exist"
@@ -91,6 +92,7 @@ app.add_middleware(
 app.include_router(router=root_api_router)
 app.include_router(router=werewolf_game_api_router)
 app.include_router(router=player_session_api_router)
+app.include_router(router=actor_details_api_router)
 
 
 def main() -> None:

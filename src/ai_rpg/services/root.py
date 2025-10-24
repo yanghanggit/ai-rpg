@@ -41,14 +41,14 @@ async def get_url_config(
             "dungeon_trans_home": base_url + "api/dungeon/trans_home/v1/",
             "home_state": base_url + "api/homes/v1/",
             "dungeon_state": base_url + "api/dungeons/v1/",
-            "actor_details": base_url + "api/actors/v1/",
             # 这个是通用的。
             "session_messages": base_url + "api/session_messages/v1/",
+            "actor_details": base_url + "api/actors/v1/",
             # 狼人杀专用的
             "werewolf_game_start": base_url + "api/werewolf/start/v1/",
             "werewolf_gameplay": base_url + "api/werewolf/gameplay/v1/",
             "werewolf_game_state": base_url + "api/werewolf/state/v1/",
-            "werewolf_game_actor_details": base_url + "api/werewolf/actors/v1/",
+            # "werewolf_game_actor_details": base_url + "api/werewolf/actors/v1/",
         },
     )
 

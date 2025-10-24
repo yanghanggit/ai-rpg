@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from .game_server_depends import GameServerInstance
 from ..models import (
@@ -8,8 +8,6 @@ from ..models import (
     WerewolfGamePlayResponse,
     WerewolfGameStateResponse,
     World,
-    WerewolfGameActorDetailsResponse,
-    EntitySerialization,
     World,
     WerewolfComponent,
     SeerComponent,
@@ -30,8 +28,8 @@ from ..configuration import (
 )
 from ..chat_services import ChatClient
 from ..game.config import GLOBAL_SD_GAME_NAME
-from typing import List, Set, Dict, cast, Any, final
-from ..entitas import Entity, Matcher
+from typing import Dict, cast, Any, final
+from ..entitas import Matcher
 from typing_extensions import TypedDict
 from enum import IntEnum, unique
 
@@ -832,84 +830,84 @@ async def get_werewolf_game_state(
 ###################################################################################################################################################################
 
 
-@werewolf_game_api_router.get(
-    path="/api/werewolf/actors/v1/{user_name}/{game_name}/details",
-    response_model=WerewolfGameActorDetailsResponse,
-)
-async def get_werewolf_actors_details(
-    game_server: GameServerInstance,
-    user_name: str,
-    game_name: str,
-    actor_names: List[str] = Query(..., alias="actors"),
-) -> WerewolfGameActorDetailsResponse:
+# @werewolf_game_api_router.get(
+#     path="/api/werewolf/actors/v1/{user_name}/{game_name}/details",
+#     response_model=WerewolfGameActorDetailsResponse,
+# )
+# async def get_werewolf_actors_details(
+#     game_server: GameServerInstance,
+#     user_name: str,
+#     game_name: str,
+#     actor_names: List[str] = Query(..., alias="actors"),
+# ) -> WerewolfGameActorDetailsResponse:
 
-    logger.info(
-        f"/werewolf/actors/v1/{user_name}/{game_name}/details: {user_name}, {game_name}, {actor_names}"
-    )
+#     logger.info(
+#         f"/werewolf/actors/v1/{user_name}/{game_name}/details: {user_name}, {game_name}, {actor_names}"
+#     )
 
-    try:
+#     try:
 
-        # 是否有房间？！！
-        if not game_server.has_room(user_name):
-            logger.error(f"view_actor: {user_name} has no room")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="没有房间",
-            )
+#         # 是否有房间？！！
+#         if not game_server.has_room(user_name):
+#             logger.error(f"view_actor: {user_name} has no room")
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail="没有房间",
+#             )
 
-        # 是否有游戏？！！
-        current_room = game_server.get_room(user_name)
-        assert current_room is not None
-        if current_room._sdg_game is None:
-            logger.error(f"view_actor: {user_name} has no game")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="没有游戏",
-            )
+#         # 是否有游戏？！！
+#         current_room = game_server.get_room(user_name)
+#         assert current_room is not None
+#         if current_room._sdg_game is None:
+#             logger.error(f"view_actor: {user_name} has no game")
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail="没有游戏",
+#             )
 
-        if len(actor_names) == 0 or actor_names[0] == "":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="请提供至少一个角色名称",
-            )
+#         if len(actor_names) == 0 or actor_names[0] == "":
+#             raise HTTPException(
+#                 status_code=status.HTTP_400_BAD_REQUEST,
+#                 detail="请提供至少一个角色名称",
+#             )
 
-        # 获取所有角色实体
-        entities_serialization: List[EntitySerialization] = []
+#         # 获取所有角色实体
+#         entities_serialization: List[EntitySerialization] = []
 
-        # 获取指定角色实体
-        actor_entities: Set[Entity] = set()
+#         # 获取指定角色实体
+#         actor_entities: Set[Entity] = set()
 
-        for actor_name in actor_names:
-            # 获取角色实体
-            actor_entity = current_room._sdg_game.get_entity_by_name(actor_name)
-            if actor_entity is None:
-                logger.error(f"view_actor: {user_name} actor {actor_name} not found.")
-                continue
+#         for actor_name in actor_names:
+#             # 获取角色实体
+#             actor_entity = current_room._sdg_game.get_entity_by_name(actor_name)
+#             if actor_entity is None:
+#                 logger.error(f"view_actor: {user_name} actor {actor_name} not found.")
+#                 continue
 
-            # 添加到集合中
-            actor_entities.add(actor_entity)
+#             # 添加到集合中
+#             actor_entities.add(actor_entity)
 
-        # 序列化角色实体
-        entities_serialization = current_room._sdg_game.serialize_entities(
-            actor_entities
-        )
+#         # 序列化角色实体
+#         entities_serialization = current_room._sdg_game.serialize_entities(
+#             actor_entities
+#         )
 
-        # 返回!
-        return WerewolfGameActorDetailsResponse(
-            actor_entities_serialization=entities_serialization,
-        )
-    except HTTPException:
-        # 直接向上传播 HTTPException，不要重新包装
-        raise
-    except Exception as e:
-        # 只捕获非预期的异常
-        logger.exception(
-            f"get_werewolf_actors_details unexpected error for {user_name}, error: {str(e)}"
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"获取角色详情失败，请稍后重试",
-        )
+#         # 返回!
+#         return WerewolfGameActorDetailsResponse(
+#             actor_entities_serialization=entities_serialization,
+#         )
+#     except HTTPException:
+#         # 直接向上传播 HTTPException，不要重新包装
+#         raise
+#     except Exception as e:
+#         # 只捕获非预期的异常
+#         logger.exception(
+#             f"get_werewolf_actors_details unexpected error for {user_name}, error: {str(e)}"
+#         )
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"获取角色详情失败，请稍后重试",
+#         )
 
 
 ###################################################################################################################################################################

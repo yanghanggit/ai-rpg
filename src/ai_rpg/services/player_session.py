@@ -1,7 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query, status
 from loguru import logger
-
-# from ..game.game_server import GameServerInstance
 from ..models import (
     SessionMessageResponse,
 )

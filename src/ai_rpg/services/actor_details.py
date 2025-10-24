@@ -7,6 +7,7 @@ from ..models import (
     EntitySerialization,
     ActorDetailsResponse,
 )
+from ..game.rpg_game import RPGGame
 
 ###################################################################################################################################################################
 actor_details_api_router = APIRouter()
@@ -31,6 +32,12 @@ async def get_actors_details(
     )
     try:
 
+        if len(actor_names) == 0 or actor_names[0] == "":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="请提供至少一个角色名称",
+            )
+
         # 是否有房间？！！
         # room_manager = game_server.room_manager
         if not game_server.has_room(user_name):
@@ -42,24 +49,37 @@ async def get_actors_details(
 
         # 是否有游戏？！！
         current_room = game_server.get_room(user_name)
-        assert current_room is not None
-        if current_room._tcg_game is None:
-            logger.error(f"view_actor: {user_name} has no game")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="没有游戏",
-            )
+        assert current_room is not None, "Current room should not be None"
 
-        if len(actor_names) == 0 or actor_names[0] == "":
+        # 获取游戏实例
+        web_game: RPGGame | None = None
+
+        # 获取增量消息
+        if (
+            current_room._sdg_game is not None
+            and game_name == current_room._sdg_game.name
+        ):
+            # 获取游戏
+            web_game = current_room._sdg_game
+
+        elif (
+            current_room._tcg_game is not None
+            and game_name == current_room._tcg_game.name
+        ):
+            # 获取游戏
+            web_game = current_room._tcg_game
+
+        else:
+            logger.error(f"get_session_messages: {user_name} game_name mismatch")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="请提供至少一个角色名称",
+                detail="游戏名称不匹配",
             )
 
-        # 获取游戏
-        web_game = current_room._tcg_game
-
         # 获取所有角色实体
+        assert web_game is not None, "WebGame should not be None"
+
+        # 所有角色的实体序列化
         entities_serialization: List[EntitySerialization] = []
 
         # 获取指定角色实体
@@ -81,8 +101,11 @@ async def get_actors_details(
         # 返回!
         return ActorDetailsResponse(
             actor_entities_serialization=entities_serialization,
-            # agent_short_term_memories=[],  # 太长了，先注释掉
         )
+
+    except HTTPException:
+        # 直接向上传播 HTTPException，不要重新包装
+        raise
     except Exception as e:
         logger.error(f"view_actor: {user_name} error: {str(e)}")
         raise HTTPException(

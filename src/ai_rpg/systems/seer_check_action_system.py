@@ -57,7 +57,7 @@ class SeerCheckActionSystem(ReactiveProcessor):
                 set({seer_entity}),
                 NightActionEvent(
                     actor=seer_entity.name,
-                    message=f"# 预言家 {seer_entity.name} 查验结果：玩家 {entity.name} 是 狼人！"
+                    message=f"# 预言家 {seer_entity.name} 查验结果：玩家 {entity.name} 是 狼人！",
                 ),
             )
         else:
@@ -66,7 +66,7 @@ class SeerCheckActionSystem(ReactiveProcessor):
                 set({seer_entity}),
                 NightActionEvent(
                     actor=seer_entity.name,
-                    message=f"# 预言家 {seer_entity.name} 查验结果：玩家 {entity.name} 不是 狼人。"
+                    message=f"# 预言家 {seer_entity.name} 查验结果：玩家 {entity.name} 不是 狼人。",
                 ),
             )
 

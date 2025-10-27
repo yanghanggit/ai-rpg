@@ -33,6 +33,7 @@ class WerewolfGameStateResponse(BaseModel):
     # mapping: Dict[str, List[str]]
     game_time: int
     victory_condition: str
+    is_discussion_complete: bool
 
 # @final
 # class WerewolfGameActorDetailsResponse(BaseModel):

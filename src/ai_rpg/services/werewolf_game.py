@@ -813,6 +813,7 @@ async def get_werewolf_game_state(
             # mapping=mapping_data,
             game_time=sd_game._turn_counter,
             victory_condition=check_victory_conditions(sd_game).name,
+            is_discussion_complete=is_day_discussion_complete(sd_game),
         )
     except HTTPException:
         # 直接向上传播 HTTPException，不要重新包装

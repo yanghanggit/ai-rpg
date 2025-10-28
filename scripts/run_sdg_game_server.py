@@ -3,6 +3,8 @@ from pathlib import Path
 import sys
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Final
+from ai_rpg.game.config import GLOBAL_SD_GAME_NAME, setup_logger
+
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -24,6 +26,7 @@ from ai_rpg.services.stages_state import stages_state_api_router
 
 _server_setting_path: Final[Path] = Path("server_configuration.json")
 assert _server_setting_path.exists(), f"{_server_setting_path} must exist"
+setup_logger()
 
 
 @asynccontextmanager

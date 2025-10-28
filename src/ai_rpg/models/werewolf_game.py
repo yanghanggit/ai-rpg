@@ -35,6 +35,7 @@ class WerewolfGameStateResponse(BaseModel):
     victory_condition: str
     is_discussion_complete: bool
 
+
 # @final
 # class WerewolfGameActorDetailsResponse(BaseModel):
 #     actor_entities_serialization: List[EntitySerialization]

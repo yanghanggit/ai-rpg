@@ -1,4 +1,4 @@
-from typing import Final
+from typing import Final, List
 import random
 from ..models import (
     Boot,
@@ -21,6 +21,7 @@ from .campaign_setting import (
     WEREWOLF_GLOBAL_GAME_MECHANICS,
 )
 from .excel_data_manager import get_excel_data_manager
+from .excel_data import WerewolfAppearanceExcelData
 
 
 #######################################################################################################################
@@ -49,8 +50,22 @@ PUB_KICK_OFF_MESSAGE: Final[str] = (
 )
 
 
+# 全局变量用于洗牌模式
+_shuffled_appearance_data: List[WerewolfAppearanceExcelData] = []
+_current_appearance_index: int = 0
+
+
+def reset_appearance_shuffle() -> None:
+    """重置外观洗牌状态，强制重新洗牌"""
+    global _shuffled_appearance_data, _current_appearance_index
+    _shuffled_appearance_data = []
+    _current_appearance_index = 0
+
+
 def generate_random_appearance() -> str:
-    """从Excel读取mask、body_type、gender并随机组合"""
+    """从Excel读取数据并按洗牌模式分配，确保每个外观组合只使用一次"""
+    global _shuffled_appearance_data, _current_appearance_index
+
     try:
         manager = get_excel_data_manager()
         appearance_data_list = manager.get_all_werewolf_appearance_data()
@@ -58,19 +73,23 @@ def generate_random_appearance() -> str:
         if not appearance_data_list:
             return "戴着默认面具，默认身材的默认性别。"
 
-        # 提取各类别的不重复值
-        masks = list(set(data.mask for data in appearance_data_list if data.mask))
-        body_types = list(
-            set(data.body_type for data in appearance_data_list if data.body_type)
-        )
-        genders = list(set(data.gender for data in appearance_data_list if data.gender))
+        # 如果还没有洗牌或者已经用完了所有数据，重新洗牌
+        if not _shuffled_appearance_data or _current_appearance_index >= len(
+            _shuffled_appearance_data
+        ):
+            _shuffled_appearance_data = appearance_data_list.copy()
+            random.shuffle(_shuffled_appearance_data)
+            _current_appearance_index = 0
 
-        # 随机选择并组合（确保列表不为空）
-        mask = random.choice(masks) if masks else "默认面具"
-        body_type = random.choice(body_types) if body_types else "默认身材"
-        gender = random.choice(genders) if genders else "默认性别"
+        # 获取当前索引的数据
+        current_data = _shuffled_appearance_data[_current_appearance_index]
+        _current_appearance_index += 1
 
-        return f"一位{gender}戴着{mask}看上去{body_type}。"
+        # 构建外观描述，确保字段存在且不为空
+        mask = current_data.mask if current_data.mask else "默认面具"
+        body_type = current_data.body_type if current_data.body_type else "默认身材"
+
+        return f"一位戴着{mask}看上去{body_type}。"
 
     except Exception as e:
         # 记录异常信息以便调试

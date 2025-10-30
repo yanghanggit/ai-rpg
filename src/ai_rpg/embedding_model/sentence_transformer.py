@@ -39,13 +39,3 @@ def get_embedding_model() -> Optional[SentenceTransformer]:
 
 
 ############################################################################################################
-# def clear_embedding_model() -> None:
-#     """
-#     清理全局嵌入模型实例
-#     """
-#     global _sentence_transformer_embedding_model
-#     _sentence_transformer_embedding_model = None
-#     logger.info("🔄 [EMBEDDING] 全局嵌入模型实例已清理")
-
-
-############################################################################################################

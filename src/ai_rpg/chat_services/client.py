@@ -4,8 +4,6 @@ import httpx
 import requests
 import traceback
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-
-# from langchain_core.messages import get_buffer_string
 from loguru import logger
 from .protocol import (
     ChatRequest,
@@ -29,9 +27,6 @@ class AzureOpenAIUrlConfig:
 class DeepSeekUrlConfig:
     base_url: str
     chat_url: str
-    rag_chat_url: str
-    undefined_chat_url: str
-    mcp_chat_url: str
 
 
 ################################################################################################################################################################################
@@ -59,9 +54,6 @@ class ChatClient:
         cls._deepseek_url_config = DeepSeekUrlConfig(
             base_url=f"http://localhost:{server_settings.deepseek_chat_server_port}/",
             chat_url=f"http://localhost:{server_settings.deepseek_chat_server_port}{server_settings.chat_api_endpoint}",
-            rag_chat_url=f"http://localhost:{server_settings.deepseek_chat_server_port}{server_settings.chat_rag_api_endpoint}",
-            undefined_chat_url=f"http://localhost:{server_settings.deepseek_chat_server_port}{server_settings.chat_undefined_api_endpoint}",
-            mcp_chat_url=f"http://localhost:{server_settings.deepseek_chat_server_port}{server_settings.chat_mcp_api_endpoint}",
         )
 
         logger.info(

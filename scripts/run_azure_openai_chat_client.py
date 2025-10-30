@@ -17,6 +17,7 @@ Azure OpenAI GPT-4o聊天系统启动脚本
 import os
 import sys
 import traceback
+import asyncio
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -28,14 +29,14 @@ from langchain.schema import HumanMessage
 from loguru import logger
 
 from ai_rpg.azure_openai_gpt import (
-    State,
-    create_compiled_stage_graph,
-    stream_graph_updates,
+    ChatState,
+    create_chat_workflow,
+    execute_chat_workflow,
     create_azure_openai_gpt_llm,
 )
 
 
-def main() -> None:
+async def main() -> None:
     """
     Azure OpenAI GPT-4o聊天系统主函数
 
@@ -49,15 +50,16 @@ def main() -> None:
 
     try:
         # 为每个会话创建独立的LLM实例
-        llm = create_azure_openai_gpt_llm()
+        # llm = create_azure_openai_gpt_llm()
 
         # 聊天历史（包含LLM实例）
-        chat_history_state: State = {"messages": [], "llm": llm}
+        context_state: ChatState = {
+            "messages": [],
+            "llm": create_azure_openai_gpt_llm(),
+        }
 
         # 生成聊天机器人状态图
-        compiled_stage_graph = create_compiled_stage_graph(
-            "azure_chat_openai_chatbot_node"
-        )
+        # compiled_stage_graph = create_chat_workflow()
 
         logger.success("🤖 Azure OpenAI GPT-4o聊天系统初始化完成，开始对话...")
         logger.info("💡 提示：您可以与Azure OpenAI GPT-4o进行自由对话")
@@ -73,29 +75,29 @@ def main() -> None:
                     break
 
                 # 用户输入
-                user_input_state: State = {
+                request_state: ChatState = {
                     "messages": [HumanMessage(content=user_input)],
-                    "llm": llm,
+                    "llm": create_azure_openai_gpt_llm(),
                 }
 
                 # 获取回复
-                update_messages = stream_graph_updates(
-                    state_compiled_graph=compiled_stage_graph,
-                    chat_history_state=chat_history_state,
-                    user_input_state=user_input_state,
+                chat_response = await execute_chat_workflow(
+                    work_flow=create_chat_workflow(),
+                    context=context_state,
+                    request=request_state,
                 )
 
                 # 测试用：记录上下文。
-                chat_history_state["messages"].extend(user_input_state["messages"])
-                chat_history_state["messages"].extend(update_messages)
+                context_state["messages"].extend(request_state["messages"])
+                context_state["messages"].extend(chat_response)
 
                 # 显示最新的AI回复
-                if update_messages:
-                    latest_response = update_messages[-1]
+                if chat_response:
+                    latest_response = chat_response[-1]
                     print(f"\nAzure-OpenAI-GPT4o: {latest_response.content}")
 
                 logger.debug("*" * 50)
-                for message in chat_history_state["messages"]:
+                for message in context_state["messages"]:
                     if isinstance(message, HumanMessage):
                         logger.info(f"User: {message.content}")
                     else:
@@ -120,4 +122,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    asyncio.run(main())

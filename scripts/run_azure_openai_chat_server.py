@@ -20,7 +20,8 @@ API端点：
 
 import os
 import sys
-import asyncio
+
+# import asyncio
 from typing import Any, Dict
 
 # 将 src 目录添加到模块搜索路径
@@ -33,9 +34,8 @@ from loguru import logger
 
 from ai_rpg.chat_services.protocol import ChatRequest, ChatResponse
 from ai_rpg.azure_openai_gpt import (
-    State,
-    create_compiled_stage_graph,
-    stream_graph_updates,
+    create_chat_workflow,
+    execute_chat_workflow,
     create_azure_openai_gpt_llm,
 )
 
@@ -96,47 +96,31 @@ async def process_chat_request(payload: ChatRequest) -> ChatResponse:
     try:
         logger.info(f"收到聊天请求: {payload.message.content}")
 
-        # 为每个请求创建独立的LLM实例
-        llm = create_azure_openai_gpt_llm()
-
-        # 为每个请求创建独立的状态图实例
-        compiled_state_graph = create_compiled_stage_graph(
-            "azure_chat_openai_chatbot_node"
+        # 获取回复 - 直接 await 异步函数
+        chat_response = await execute_chat_workflow(
+            work_flow=create_chat_workflow(),
+            context={
+                "messages": [message for message in payload.chat_history],
+                "llm": create_azure_openai_gpt_llm(),
+            },
+            request={
+                "messages": [payload.message],
+                "llm": create_azure_openai_gpt_llm(),
+            },
         )
 
-        # 聊天历史（包含LLM实例）
-        chat_history_state: State = {
-            "messages": [message for message in payload.chat_history],
-            "llm": llm,
-        }
-
-        # 用户输入
-        user_input_state: State = {"messages": [payload.message], "llm": llm}
-
-        # 获取回复 - 使用 asyncio.to_thread 将阻塞调用包装为异步
-        update_messages = await asyncio.to_thread(
-            stream_graph_updates,
-            state_compiled_graph=compiled_state_graph,
-            chat_history_state=chat_history_state,
-            user_input_state=user_input_state,
-        )
-
-        logger.success(f"生成回复消息数量: {len(update_messages)}")
+        logger.success(f"生成回复消息数量: {len(chat_response)}")
 
         # 打印所有消息的详细内容
-        for i, message in enumerate(update_messages):
+        for i, message in enumerate(chat_response):
             logger.success(f"消息 {i+1}: {message.model_dump_json(indent=2)}")
 
         # 返回
-        return ChatResponse(messages=update_messages)
+        return ChatResponse(messages=chat_response)
 
     except Exception as e:
         logger.error(f"处理聊天请求时发生错误: {e}")
-        # 返回错误消息
-        from langchain.schema import AIMessage
-
-        error_message = AIMessage(content=f"抱歉，处理您的请求时发生错误: {str(e)}")
-        return ChatResponse(messages=[error_message])
+        return ChatResponse(messages=[])
 
 
 ##################################################################################################################
@@ -150,11 +134,6 @@ def main() -> None:
     3. 提供聊天API服务
     """
     logger.info("🚀 启动Azure OpenAI聊天服务器...")
-
-    # 加载服务器配置
-    # server_config = initialize_server_settings_instance(
-    #     Path("server_configuration.json")
-    # )
 
     try:
         import uvicorn

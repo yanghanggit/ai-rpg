@@ -8,17 +8,13 @@ Azure OpenAI GPT聊天模块
 - 统一聊天图（unified_chat_graph.py）
 """
 
-from .chat_graph import (
-    State,
-    create_compiled_stage_graph,
-    stream_graph_updates,
-)
+from .chat_graph import ChatState, create_chat_workflow, execute_chat_workflow
 from .client import create_azure_openai_gpt_llm
 
 __all__ = [
     # 基础聊天图
-    "State",
-    "create_compiled_stage_graph",
-    "stream_graph_updates",
     "create_azure_openai_gpt_llm",
+    "ChatState",
+    "create_chat_workflow",
+    "execute_chat_workflow",
 ]

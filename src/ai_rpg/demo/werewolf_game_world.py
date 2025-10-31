@@ -294,7 +294,7 @@ def create_actor_guard(name: str) -> Actor:
 
 
 #######################################################################################################################
-def create_demo_sd_game_boot(game_name: str) -> Boot:
+def create_demo_sd_game_boot(game_name: str, random_role_assignment: bool = True) -> Boot:
     # 创建世界
     world_boot = Boot(name=game_name, campaign_setting=WEREWOLF_CAMPAIGN_SETTING)
 
@@ -302,49 +302,60 @@ def create_demo_sd_game_boot(game_name: str) -> Boot:
     # 主持人
     moderator = create_actor_moderator()
 
-    # 狼人阵营 (2人)
-    werewolf1 = create_actor_werewolf("1号玩家")
-    werewolf2 = create_actor_werewolf("2号玩家")
-    werewolf1.kick_off_message += "白天讨论时一定会冒充预言家或者女巫来骗取村民的信任。"
-    werewolf2.kick_off_message += "白天讨论时一定会冒充预言家或者女巫来骗取村民的信任。"
+    # 定义所有角色创建函数和配置
+    role_configs = [
+        (create_actor_werewolf, "白天讨论时一定会冒充预言家或者女巫来骗取村民的信任。"),  # 狼人1
+        (create_actor_werewolf, "白天讨论时一定会冒充预言家或者女巫来骗取村民的信任。"),  # 狼人2
+        (create_actor_seer, None),  # 预言家
+        (create_actor_witch, None),  # 女巫
+        (create_actor_villager, None),  # 平民1
+        (create_actor_villager, None),  # 平民2
+    ]
 
-    # 好人阵营 (3人)
-    seer = create_actor_seer("3号玩家")
-    witch = create_actor_witch("4号玩家")
-    villager1 = create_actor_villager("5号玩家")
-    villager2 = create_actor_villager("6号玩家")
+    # 如果需要随机分配身份，打乱角色配置顺序
+    if random_role_assignment:
+        random.shuffle(role_configs)
+
+    # 创建角色并分配给玩家编号
+    actors = []
+    witch = None
+
+    for i, (create_func, kick_off_extra) in enumerate(role_configs, start=1):
+        actor = create_func(f"{i}号玩家")
+        
+        if kick_off_extra:
+            actor.kick_off_message += kick_off_extra
+        
+        actors.append(actor)
+        
+        # 保存女巫引用以便添加道具
+        if create_func == create_actor_witch:
+            witch = actor
 
     # 给女巫添加道具
-    witch.inventory.items.extend(
-        [
-            Item(
-                name=WitchItemName.POISON,
-                uuid="",
-                type=ItemType.CONSUMABLE,
-                description="此道具让你拥有一瓶毒药! 你可以在夜晚使用它来毒死任意一名玩家，整局游戏只能使用一次。",
-            ),
-            Item(
-                name=WitchItemName.CURE,
-                uuid="",
-                type=ItemType.CONSUMABLE,
-                description="此道具让你拥有一瓶解药! 你可以在夜晚使用它来救活当晚被狼人杀害的玩家，整局游戏只能使用一次。",
-            ),
-        ]
-    )
+    if witch:
+        witch.inventory.items.extend(
+            [
+                Item(
+                    name=WitchItemName.POISON,
+                    uuid="",
+                    type=ItemType.CONSUMABLE,
+                    description="此道具让你拥有一瓶毒药! 你可以在夜晚使用它来毒死任意一名玩家，整局游戏只能使用一次。",
+                ),
+                Item(
+                    name=WitchItemName.CURE,
+                    uuid="",
+                    type=ItemType.CONSUMABLE,
+                    description="此道具让你拥有一瓶解药! 你可以在夜晚使用它来救活当晚被狼人杀害的玩家，整局游戏只能使用一次。",
+                ),
+            ]
+        )
 
     # 创建游戏场地
     stage_werewolf_stage = create_demo_werewolf_stage()
 
     # 设置关系和消息
-    stage_werewolf_stage.actors = [
-        moderator,
-        werewolf1,
-        werewolf2,
-        seer,
-        witch,
-        villager1,
-        villager2,
-    ]
+    stage_werewolf_stage.actors = [moderator] + actors
 
     # 设置英雄营地场景的初始状态
     world_boot.stages = [stage_werewolf_stage]

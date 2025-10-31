@@ -20,22 +20,17 @@ from src.ai_rpg.rag import (
     load_knowledge_base_to_vector_db,
     search_similar_documents,  # 导入重构后的函数
 )
-from src.ai_rpg.embedding_model.sentence_transformer import (
-    get_embedding_model,
-)
+from src.ai_rpg.embedding_model import multilingual_model
 from src.ai_rpg.demo.campaign_setting import (
     FANTASY_WORLD_RPG_KNOWLEDGE_BASE,
 )
 
 
 def _init_rag_system_with_model() -> bool:
-    """辅助函数：使用默认模型初始化RAG系统"""
-    embedding_model = get_embedding_model()
-    if embedding_model is None:
-        return False
+    """辅助函数：使用预加载的多语言模型初始化RAG系统"""
     collection = get_default_collection()
     return load_knowledge_base_to_vector_db(
-        FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, collection
+        FANTASY_WORLD_RPG_KNOWLEDGE_BASE, multilingual_model, collection
     )
 
 
@@ -44,10 +39,7 @@ def _rag_search_with_defaults(
 ) -> tuple[list[str], list[float]]:
     """辅助函数：使用默认实例执行语义搜索"""
     collection = get_default_collection()
-    embedding_model = get_embedding_model()
-    if embedding_model is None:
-        raise RuntimeError("嵌入模型未初始化")
-    return search_similar_documents(query, collection, embedding_model, top_k)
+    return search_similar_documents(query, collection, multilingual_model, top_k)
 
 
 class TestChromaDBRAGIntegration:
@@ -65,12 +57,11 @@ class TestChromaDBRAGIntegration:
         logger.info(f"✅ ChromaDB collection创建成功: {type(collection)}")
 
         # 获取嵌入模型
-        embedding_model = get_embedding_model()
-        assert embedding_model is not None, "嵌入模型初始化失败"
+        assert multilingual_model is not None, "预加载的多语言模型不可用"
 
         # 测试完整初始化
         success = load_knowledge_base_to_vector_db(
-            FANTASY_WORLD_RPG_KNOWLEDGE_BASE, embedding_model, collection
+            FANTASY_WORLD_RPG_KNOWLEDGE_BASE, multilingual_model, collection
         )
         assert success, "ChromaDB RAG系统初始化失败"
         logger.success("🎉 ChromaDB RAG系统初始化测试通过！")
@@ -136,8 +127,7 @@ class TestChromaDBRAGIntegration:
             collection_count = collection.count()
 
         # 验证全局嵌入模型已加载
-        embedding_model = get_embedding_model()
-        assert embedding_model is not None, "嵌入模型应该已加载"
+        assert multilingual_model is not None, "预加载的多语言模型不可用"
 
         # 验证集合中有数据
         assert collection_count > 0, f"集合中应该有数据，当前数量: {collection_count}"
@@ -196,14 +186,11 @@ class TestChromaDBRAGIntegration:
         async def async_search(query: str) -> tuple[str, list[str], list[float]]:
             """异步搜索包装器 - 使用推荐的 asyncio.to_thread 方法"""
             collection = get_default_collection()
-            embedding_model = get_embedding_model()
-            if embedding_model is None:
-                return query, [], []
             docs, scores = await asyncio.to_thread(
                 search_similar_documents,
                 query,
                 collection,
-                embedding_model,
+                multilingual_model,
                 3,
             )
             return query, docs, scores

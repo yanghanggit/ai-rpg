@@ -17,6 +17,7 @@ class EventHead(IntEnum):
     COMBAT_COMPLETE_EVENT = 8
     DISCUSSION_EVENT = 9
     NIGHT_ACTION_EVENT = 10
+    VOTE_EVENT = 11
 
 
 ####################################################################################################################################
@@ -112,3 +113,13 @@ class NightActionEvent(AgentEvent):
     head: int = EventHead.NIGHT_ACTION_EVENT
     actor: str
     message: str
+
+
+#####################################################################################################################################
+
+
+@final
+class VoteEvent(AgentEvent):
+    head: int = EventHead.VOTE_EVENT
+    actor: str
+    target: str

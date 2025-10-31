@@ -14,6 +14,7 @@ from ..models import (
     DayVotedComponent,
     NightKillTargetComponent,
     MindEvent,
+    VoteEvent,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
@@ -140,6 +141,15 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
                     entity2.replace(
                         VoteAction, entity2.name, format_response.target_name
                     )
+                
+                self._game.notify_entities(
+                    set({entity2}),
+                    VoteEvent(
+                        message=f"{entity2.name} 投票给 {format_response.target_name}",
+                        actor=entity2.name,
+                        target=format_response.target_name,
+                    ),
+                )
 
             except Exception as e:
                 logger.error(f"Exception: {e}")

@@ -1,7 +1,7 @@
 import random
 from typing import final, override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..models import VoteAction, DeathComponent, AgentEvent
+from ..models import VoteAction, DeathComponent, AgentEvent, VoteEvent
 from loguru import logger
 from ..game.sdg_game import SDGGame
 
@@ -38,7 +38,15 @@ class VoteActionSystem(ReactiveProcessor):
                 vote_count[target_name] = 0
             vote_count[target_name] += 1
 
-            # logger.debug(f"投票行动: {entity.name} 投票给 {target_name}")
+        # self._game.notify_entities(
+        #     set(entities),
+        #     VoteEvent(
+        #         message=f"{entity.name} 投票给 {target_name}",
+        #         actor=entity.name,
+        #         target=target_name,
+        #     ),
+        # )
+        logger.success(f"投票行动: {entity.name} 投票给 {target_name}")
 
         # 从 vote_count 中找出票数最高的 target_name
         if len(vote_count) == 0:

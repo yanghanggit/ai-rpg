@@ -37,15 +37,16 @@ class VoteActionSystem(ReactiveProcessor):
             if target_name not in vote_count:
                 vote_count[target_name] = 0
             vote_count[target_name] += 1
-
-        # self._game.notify_entities(
-        #     set(entities),
-        #     VoteEvent(
-        #         message=f"{entity.name} 投票给 {target_name}",
-        #         actor=entity.name,
-        #         target=target_name,
-        #     ),
-        # )
+            
+            # 发送投票细节
+            self._game.notify_entities(
+                set({entity}),
+                VoteEvent(
+                    message=f"{entity.name} 投票给 {target_name}",
+                    actor=entity.name,
+                    target=target_name,
+                ),
+            )
         logger.success(f"投票行动: {entity.name} 投票给 {target_name}")
 
         # 从 vote_count 中找出票数最高的 target_name

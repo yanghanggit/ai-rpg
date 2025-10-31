@@ -7,8 +7,8 @@ from ..models import (
 )
 from loguru import logger
 from loguru import logger
-from ..embedding_model.sentence_transformer import (
-    get_embedding_model,
+from ..embedding_model import (
+    multilingual_model,
 )
 from ..chroma import get_default_collection
 from ..rag import search_similar_documents
@@ -85,11 +85,11 @@ class QueryActionSystem(ReactiveProcessor):
             #     return ""
 
             # 1.5. 获取嵌入模型
-            embedding_model = get_embedding_model()
-            assert embedding_model is not None, "嵌入模型未初始化"
-            if embedding_model is None:
-                logger.warning("⚠️ 嵌入模型未初始化，返回空结果")
-                return ""
+            # embedding_model = get_embedding_model()
+            # assert embedding_model is not None, "嵌入模型未初始化"
+            # if embedding_model is None:
+            #     logger.warning("⚠️ 嵌入模型未初始化，返回空结果")
+            #     return ""
 
             # 1.6. 检查collection是否可用
             # if chroma_db.collection is None:
@@ -100,7 +100,7 @@ class QueryActionSystem(ReactiveProcessor):
             retrieved_docs, similarity_scores = search_similar_documents(
                 query=message,
                 collection=get_default_collection(),
-                embedding_model=embedding_model,
+                embedding_model=multilingual_model,
                 top_k=3,
             )
 

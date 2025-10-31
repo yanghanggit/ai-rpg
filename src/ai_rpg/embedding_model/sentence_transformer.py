@@ -7,35 +7,16 @@
 3. 准备知识库数据用于向量化
 """
 
-from typing import Optional
-
+from .config import cache_path
 from loguru import logger
 from sentence_transformers import SentenceTransformer
 
-from .model_loader import load_multilingual_model
+try:
+    multilingual_model: SentenceTransformer = SentenceTransformer(
+        str(cache_path("paraphrase-multilingual-MiniLM-L12-v2"))
+    )
 
-############################################################################################################
-# 全局嵌入模型实例
-_sentence_transformer: Optional[SentenceTransformer] = None
-
-
-############################################################################################################
-def get_embedding_model() -> Optional[SentenceTransformer]:
-    """
-    获取全局嵌入模型实例（单例模式）
-
-    Returns:
-        Optional[SentenceTransformer]: 全局嵌入模型实例，如果加载失败则返回None
-    """
-    global _sentence_transformer
-    if _sentence_transformer is None:
-        logger.info("🔄 [EMBEDDING] 加载多语言语义模型...")
-        _sentence_transformer = load_multilingual_model()
-        if _sentence_transformer is None:
-            logger.error("❌ [EMBEDDING] 多语言模型加载失败")
-        else:
-            logger.success("✅ [EMBEDDING] 多语言语义模型加载成功")
-    return _sentence_transformer
-
-
-############################################################################################################
+    logger.info("✅ [EMBEDDING] 预加载多语言模型成功")
+except Exception as e:
+    logger.error(f"❌ [EMBEDDING] 预加载多语言模型失败: {e}")
+    assert False, "预加载多语言模型失败"

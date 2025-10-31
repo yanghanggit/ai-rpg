@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Final
-from ai_rpg.game.config import GLOBAL_SD_GAME_NAME, setup_logger
+from ai_rpg.game.config import setup_logger
 
 
 # 将 src 目录添加到模块搜索路径

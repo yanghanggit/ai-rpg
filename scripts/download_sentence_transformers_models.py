@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 if TYPE_CHECKING:
-    from sentence_transformers import SentenceTransformer
+    pass
 
 
 from loguru import logger
@@ -124,36 +124,36 @@ class SentenceTransformerModelManager:
                 shutil.rmtree(model_cache_path)
             return False, f"下载失败: {e}"
 
-    def load_model(
-        self, model_name: str, use_cache: bool = True
-    ) -> Optional["SentenceTransformer"]:
-        """
-        加载模型（优先使用本地缓存）
+    # def load_model(
+    #     self, model_name: str, use_cache: bool = True
+    # ) -> Optional["SentenceTransformer"]:
+    #     """
+    #     加载模型（优先使用本地缓存）
 
-        Args:
-            model_name: 模型名称
-            use_cache: 是否使用本地缓存
+    #     Args:
+    #         model_name: 模型名称
+    #         use_cache: 是否使用本地缓存
 
-        Returns:
-            SentenceTransformer 模型实例或 None
-        """
-        try:
-            from sentence_transformers import SentenceTransformer
+    #     Returns:
+    #         SentenceTransformer 模型实例或 None
+    #     """
+    #     try:
+    #         from sentence_transformers import SentenceTransformer
 
-            if use_cache:
-                model_cache_path = self.cache_dir / model_name
-                if model_cache_path.exists():
-                    logger.info(f"🚀 从本地缓存加载模型: {model_cache_path}")
-                    return SentenceTransformer(str(model_cache_path))
-                else:
-                    logger.warning(f"本地缓存不存在，将从网络下载: {model_name}")
+    #         if use_cache:
+    #             model_cache_path = self.cache_dir / model_name
+    #             if model_cache_path.exists():
+    #                 logger.info(f"🚀 从本地缓存加载模型: {model_cache_path}")
+    #                 return SentenceTransformer(str(model_cache_path))
+    #             else:
+    #                 logger.warning(f"本地缓存不存在，将从网络下载: {model_name}")
 
-            logger.info(f"📥 从网络加载模型: {model_name}")
-            return SentenceTransformer(model_name)
+    #         logger.info(f"📥 从网络加载模型: {model_name}")
+    #         return SentenceTransformer(model_name)
 
-        except Exception as e:
-            logger.error(f"❌ 加载模型失败 {model_name}: {e}")
-            return None
+    #     except Exception as e:
+    #         logger.error(f"❌ 加载模型失败 {model_name}: {e}")
+    #         return None
 
     def list_cached_models(self) -> List[Dict[str, Any]]:
         """列出所有已缓存的模型"""

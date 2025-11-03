@@ -255,29 +255,27 @@ def create_actor_villager(name: str) -> Actor:
     )
 
 
-def create_actor_guard(name: str) -> Actor:
+def create_actor_hunter(name: str) -> Actor:
     """
-    创建一个守卫角色实例
+    创建一个猎人角色实例
 
     Returns:
-        Actor: 守卫角色实例
+        Actor: 猎人角色实例
     """
     return create_actor(
         name=f"角色.{name}",
-        character_sheet_name=WerewolfCharacterSheetName.GUARD,
+        character_sheet_name=WerewolfCharacterSheetName.HUNTER,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
         rpg_character_profile=RPGCharacterProfile(),
         type=ActorType.ALLY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
-        actor_profile="""你是月影村的守卫，拥有保护他人的能力。
+        actor_profile="""你是月影村的猎人，拥有保护他人的能力。
 【特殊能力】
-每晚可以选择保护一名玩家，防止其被狼人杀害。
-你无法保护自己。
-你不能连续两晚保护同一名玩家。
+在你死亡时可以选择开枪杀死一名玩家。
 【行为策略】
-合理选择保护目标，优先保护有特殊能力的好人角色。
-需要谨慎行事，避免暴露自己的身份。
-预判狼人可能的攻击目标，进行有效保护。""",
+开枪时需要谨慎选择，以你认为是狼人的玩家为目标。
+如果不确定目标身份，可以选择不带走任何人。
+如果你死亡时场上人数较少，开枪杀死任何人都有可能帮助村民阵营。""",
         appearance=generate_random_appearance(),
         # appearance="一位典型的普通村民，穿着朴素的村民服装。"
         # + (

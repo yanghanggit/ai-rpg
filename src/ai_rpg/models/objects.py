@@ -23,7 +23,7 @@ class WerewolfCharacterSheetName(StrEnum):
     SEER = "ww.seer"
     WITCH = "ww.witch"
     VILLAGER = "ww.villager"
-    GUARD = "ww.guard"
+    HUNTER = "ww.hunter"
 
 
 ###############################################################################################################################################

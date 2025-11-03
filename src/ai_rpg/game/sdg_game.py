@@ -22,6 +22,7 @@ from ..models import (
     SeerComponent,
     WitchComponent,
     VillagerComponent,
+    HunterComponent,
 )
 from .player_session import PlayerSession
 from ..entitas.components import Component
@@ -155,6 +156,10 @@ class SDGGame(RPGGame):
                 case WerewolfCharacterSheetName.VILLAGER:
                     actor_entity.replace(VillagerComponent, actor_model.name)
                     logger.info(f"分配角色: {actor_model.name} -> Villager")
+
+                case WerewolfCharacterSheetName.HUNTER:
+                    actor_entity.replace(HunterComponent, actor_model.name)
+                    logger.info(f"分配角色: {actor_model.name} -> Hunter")
 
                 case _:
                     logger.debug(

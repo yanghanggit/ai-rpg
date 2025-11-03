@@ -273,6 +273,12 @@ class VillagerComponent(Component):
 
 @final
 @register_component_class
+class HunterComponent(Component):
+    name: str
+
+
+@final
+@register_component_class
 class NightActionReadyComponent(Component):
     name: str
 

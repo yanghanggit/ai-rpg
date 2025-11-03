@@ -13,6 +13,7 @@ from ..models import (
     SeerComponent,
     WitchComponent,
     VillagerComponent,
+    HunterComponent,
     NightKillTargetComponent,
     DeathComponent,
     DayDiscussedComponent,
@@ -255,6 +256,7 @@ def check_town_victory(sdg_game: SDGGame) -> bool:
                 VillagerComponent,
                 SeerComponent,
                 WitchComponent,
+                HunterComponent,
             ],
             none_of=[DeathComponent],
         )
@@ -281,6 +283,7 @@ def check_werewolves_victory(sdg_game: SDGGame) -> bool:
                 VillagerComponent,
                 SeerComponent,
                 WitchComponent,
+                HunterComponent,
             ],
             none_of=[DeathComponent],
         )
@@ -349,6 +352,7 @@ def is_day_discussion_complete(sdg_game: SDGGame) -> bool:
                 SeerComponent,
                 WitchComponent,
                 VillagerComponent,
+                HunterComponent,
             ],
         )
     ).entities.copy()
@@ -362,6 +366,7 @@ def is_day_discussion_complete(sdg_game: SDGGame) -> bool:
                     SeerComponent,
                     WitchComponent,
                     VillagerComponent,
+                    HunterComponent,
                 ],
             )
         ).entities.copy()
@@ -374,6 +379,7 @@ def is_day_discussion_complete(sdg_game: SDGGame) -> bool:
                     SeerComponent,
                     WitchComponent,
                     VillagerComponent,
+                    HunterComponent,
                 ],
                 none_of=[DeathComponent],
             )

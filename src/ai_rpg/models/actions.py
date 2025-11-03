@@ -149,3 +149,12 @@ class VoteAction(Component):
 
 
 ############################################################################################################
+@final
+@register_component_class
+@register_action_class
+class HunterShootAction(Component):
+    name: str
+    hunter_name: str
+
+
+############################################################################################################

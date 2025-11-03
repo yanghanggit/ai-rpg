@@ -8,6 +8,7 @@ from ..models import (
     SeerComponent,
     WitchComponent,
     VillagerComponent,
+    HunterComponent,
     DeathComponent,
     SeerCheckAction,
     AppearanceComponent,
@@ -105,6 +106,7 @@ class NightSeerActionSystem(ReactiveProcessor):
                     WerewolfComponent,
                     WitchComponent,
                     VillagerComponent,
+                    HunterComponent,
                 ],
                 none_of=[DeathComponent],
             )

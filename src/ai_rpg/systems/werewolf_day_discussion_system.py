@@ -9,6 +9,7 @@ from ..models import (
     SeerComponent,
     WitchComponent,
     VillagerComponent,
+    HunterComponent,
     DeathComponent,
     DayDiscussedComponent,
     DiscussionAction,
@@ -52,6 +53,7 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
                         SeerComponent,
                         WitchComponent,
                         VillagerComponent,
+                        HunterComponent,
                     ],
                     none_of=[DayDiscussedComponent],
                 )
@@ -69,6 +71,7 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
                         SeerComponent,
                         WitchComponent,
                         VillagerComponent,
+                        HunterComponent,
                     ],
                     none_of=[
                         DayDiscussedComponent,

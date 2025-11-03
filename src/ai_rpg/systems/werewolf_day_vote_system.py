@@ -9,6 +9,7 @@ from ..models import (
     SeerComponent,
     WitchComponent,
     VillagerComponent,
+    HunterComponent,
     DeathComponent,
     VoteAction,
     DayVotedComponent,
@@ -49,6 +50,7 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
                     SeerComponent,
                     WitchComponent,
                     VillagerComponent,
+                    HunterComponent,
                 ],
                 none_of=[DeathComponent, DayVotedComponent, NightKillTargetComponent],
             )

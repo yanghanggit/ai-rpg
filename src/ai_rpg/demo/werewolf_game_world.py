@@ -292,7 +292,7 @@ def create_actor_hunter(name: str) -> Actor:
 
 
 #######################################################################################################################
-def create_demo_sd_game_boot(game_name: str, random_role_assignment: bool = True) -> Boot:
+def create_demo_sd_game_boot(game_name: str, random_role_assignment: bool = False) -> Boot:
     # 创建世界
     world_boot = Boot(name=game_name, campaign_setting=WEREWOLF_CAMPAIGN_SETTING)
 
@@ -306,6 +306,7 @@ def create_demo_sd_game_boot(game_name: str, random_role_assignment: bool = True
         (create_actor_werewolf, "白天讨论时一定会冒充预言家或者女巫来骗取村民的信任。"),  # 狼人2
         (create_actor_seer, None),  # 预言家
         (create_actor_witch, None),  # 女巫
+        (create_actor_hunter, None),  # 猎人
         (create_actor_villager, None),  # 平民1
         (create_actor_villager, None),  # 平民2
     ]

@@ -10,6 +10,7 @@ from ..models import (
     SeerComponent,
     WitchComponent,
     VillagerComponent,
+    HunterComponent,
     AppearanceComponent,
     EnvironmentComponent,
     DiscussionAction,
@@ -137,6 +138,7 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
                     SeerComponent,
                     WitchComponent,
                     VillagerComponent,
+                    HunterComponent,
                 ],
             )
         ).entities.copy()

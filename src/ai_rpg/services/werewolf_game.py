@@ -406,6 +406,7 @@ def is_day_vote_complete(sdg_game: SDGGame) -> bool:
                 SeerComponent,
                 WitchComponent,
                 VillagerComponent,
+                HunterComponent,
             ],
         )
     ).entities.copy()
@@ -417,6 +418,7 @@ def is_day_vote_complete(sdg_game: SDGGame) -> bool:
                 SeerComponent,
                 WitchComponent,
                 VillagerComponent,
+                HunterComponent,
             ],
             none_of=[DeathComponent],
         )

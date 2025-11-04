@@ -76,7 +76,7 @@ class HunterShootDecisionResponse(BaseModel):
 
 ###############################################################################################################################################
 @final
-class HunterDeathShootSystem(ReactiveProcessor):
+class HunterDeathShootActionSystem(ReactiveProcessor):
     """猎人死亡时的开枪系统"""
 
     def __init__(self, game_context: SDGGame) -> None:

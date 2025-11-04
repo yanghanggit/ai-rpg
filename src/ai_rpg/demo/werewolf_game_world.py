@@ -307,8 +307,9 @@ def create_demo_sd_game_boot(game_name: str, random_role_assignment: bool = Fals
         (create_actor_seer, None),  # 预言家
         (create_actor_witch, None),  # 女巫
         (create_actor_hunter, None),  # 猎人
-        (create_actor_villager, None),  # 平民1
-        (create_actor_villager, None),  # 平民2
+        (create_actor_hunter, None),  # 猎人
+        # (create_actor_villager, None),  # 平民1
+        # (create_actor_villager, None),  # 平民2
     ]
 
     # 如果需要随机分配身份，打乱角色配置顺序

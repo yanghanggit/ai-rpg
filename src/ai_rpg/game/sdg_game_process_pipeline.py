@@ -101,7 +101,7 @@ def create_werewolf_game_day_pipline(game: GameSession) -> "RPGGameProcessPipeli
     from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.save_system import SaveSystem
     from ..systems.discussion_action_system import DiscussionActionSystem
-    from ..systems.hunter_death_shoot_system import HunterDeathShootSystem
+    from ..systems.hunter_death_shoot_action_system import HunterDeathShootActionSystem
     from ..systems.werewolf_day_discussion_system import (
         WerewolfDayDiscussionSystem,
     )
@@ -110,7 +110,7 @@ def create_werewolf_game_day_pipline(game: GameSession) -> "RPGGameProcessPipeli
     tcg_game = cast(SDGGame, game)
     processors = RPGGameProcessPipeline("Social Deduction Day Pipeline")
     # 猎人死亡开枪系统（处理死亡触发）
-    processors.add(HunterDeathShootSystem(tcg_game))
+    processors.add(HunterDeathShootActionSystem(tcg_game))
 
     processors.add(WerewolfDayDiscussionSystem(tcg_game))
 
@@ -140,7 +140,7 @@ def create_werewolf_game_vote_pipline(game: GameSession) -> "RPGGameProcessPipel
     )
 
     from ..systems.vote_action_system import VoteActionSystem
-    from ..systems.hunter_death_shoot_system import HunterDeathShootSystem
+    from ..systems.hunter_death_shoot_action_system import HunterDeathShootActionSystem
 
     ##
     tcg_game = cast(SDGGame, game)
@@ -154,7 +154,7 @@ def create_werewolf_game_vote_pipline(game: GameSession) -> "RPGGameProcessPipel
     processors.add(VoteActionSystem(tcg_game))
 
     # 猎人死亡开枪系统（处理死亡触发）
-    processors.add(HunterDeathShootSystem(tcg_game))
+    processors.add(HunterDeathShootActionSystem(tcg_game))
 
     processors.add(ActionCleanupSystem(tcg_game))
 

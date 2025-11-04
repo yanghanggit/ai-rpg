@@ -5,6 +5,7 @@ from ..entitas import Matcher, Entity, GroupEvent, ReactiveProcessor
 from loguru import logger
 from ..models import (
     HunterComponent,
+    HunterShotUsedComponent,
     DeathComponent,
     WerewolfComponent,
     SeerComponent,
@@ -91,8 +92,12 @@ class HunterDeathShootActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        """只处理有猎人组件且刚死亡的实体"""
-        return entity.has(DeathComponent) and entity.has(HunterComponent)
+        """只处理有猎人组件且刚死亡、且尚未开枪的实体"""
+        return (
+            entity.has(DeathComponent) 
+            and entity.has(HunterComponent) 
+            and not entity.has(HunterShotUsedComponent)  # 检查是否已经开枪
+        )
 
     ###############################################################################################################################################
     @override
@@ -127,6 +132,10 @@ class HunterDeathShootActionSystem(ReactiveProcessor):
         self, hunter_entity: Entity, alive_player_entities: set[Entity]
     ) -> None:
         """执行猎人开枪决策和行动（完整流程）"""
+
+        # 标记猎人已经开枪（无论最终是否真的开枪，都标记以防止重复触发）
+        hunter_entity.replace(HunterShotUsedComponent, hunter_entity.name)
+        logger.info(f"猎人 {hunter_entity.name} 进入开枪流程，已标记为使用过")
 
         # 创建可选目标的外貌映射
         target_options_mapping = self._create_target_options_mapping(

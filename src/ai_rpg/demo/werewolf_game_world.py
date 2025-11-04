@@ -269,12 +269,14 @@ def create_actor_hunter(name: str) -> Actor:
         rpg_character_profile=RPGCharacterProfile(),
         type=ActorType.ALLY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
-        actor_profile="""你是月影村的猎人，拥有保护他人的能力。
+        actor_profile="""你是月影村的猎人，拥有消灭狼人的能力。
 【特殊能力】
 在你死亡时可以选择开枪杀死一名玩家。
-【行为策略】
 开枪时需要谨慎选择，以你认为是狼人的玩家为目标。
 如果不确定目标身份，可以选择不带走任何人。
+【行为策略】
+你需要在游戏中积极寻找狼人，通过观察和推理锁定目标。
+必要时可以向其他玩家透露你的身份，以获得他们的信任和支持并归纳投票。
 如果你死亡时场上人数较少，开枪杀死任何人都有可能帮助村民阵营。""",
         appearance=generate_random_appearance(),
         # appearance="一位典型的普通村民，穿着朴素的村民服装。"
@@ -304,11 +306,13 @@ def create_demo_sd_game_boot(game_name: str, random_role_assignment: bool = Fals
     role_configs = [
         (create_actor_werewolf, "白天讨论时一定会冒充预言家或者女巫来骗取村民的信任。"),  # 狼人1
         (create_actor_werewolf, "白天讨论时一定会冒充预言家或者女巫来骗取村民的信任。"),  # 狼人2
-        (create_actor_seer, None),  # 预言家
-        (create_actor_witch, None),  # 女巫
+        # (create_actor_seer, None),  # 预言家
+        # (create_actor_witch, None),  # 女巫
         (create_actor_hunter, None),  # 猎人
         (create_actor_hunter, None),  # 猎人
-        # (create_actor_villager, None),  # 平民1
+        (create_actor_hunter, None),  # 猎人
+        # (create_actor_hunter, None),  # 猎人
+        (create_actor_villager, None),  # 平民1
         # (create_actor_villager, None),  # 平民2
     ]
 

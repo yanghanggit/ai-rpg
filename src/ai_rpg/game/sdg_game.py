@@ -11,6 +11,7 @@ from .sdg_game_process_pipeline import (
     create_werewolf_game_night_pipline,
     create_werewolf_game_day_pipline,
     create_werewolf_game_vote_pipline,
+    create_werewolf_pass_turn_pipeline,
 )
 from ..models import (
     Actor,
@@ -60,13 +61,16 @@ class SDGGame(RPGGame):
         self._werewolf_game_vote_pipeline: Final[RPGGameProcessPipeline] = (
             create_werewolf_game_vote_pipline(self)
         )
+        self._werewolf_game_pass_turn_pipeline: Final[RPGGameProcessPipeline] = (
+            create_werewolf_pass_turn_pipeline(self)
+        )
 
         # 注册狼人杀管道到管道管理器
         self.register_pipeline(self._werewolf_game_kickoff_pipeline)
         self.register_pipeline(self._werewolf_game_night_pipeline)
         self.register_pipeline(self._werewolf_game_day_pipeline)
         self.register_pipeline(self._werewolf_game_vote_pipeline)
-
+        self.register_pipeline(self._werewolf_game_pass_turn_pipeline)
         # 狼人杀专用：游戏回合计数器
         self._turn_counter: int = 0
 
@@ -96,6 +100,12 @@ class SDGGame(RPGGame):
     def werewolf_game_vote_pipeline(self) -> RPGGameProcessPipeline:
         """获取狼人杀投票流程管道"""
         return self._werewolf_game_vote_pipeline
+
+    ###############################################################################################################################################
+    @property
+    def werewolf_game_pass_turn_pipeline(self) -> RPGGameProcessPipeline:
+        """获取狼人杀过渡流程管道"""
+        return self._werewolf_game_pass_turn_pipeline
 
     ###############################################################################################################################################
     @override

@@ -188,25 +188,29 @@ async def _process_player_input(terminal_game: SDGGame) -> None:
             # 进入下一个夜晚
             announce_night_phase(terminal_game)
 
+            await terminal_game.werewolf_game_pass_turn_pipeline.process()
+
         else:
 
             # 进入下一个白天
             announce_day_phase(terminal_game)
 
-            # 检查是否达成胜利条件，夜晚会产生击杀
-            victory_condition = check_victory_conditions(terminal_game)
-            if victory_condition != VictoryCondition.NONE:
-                logger.warning("游戏结束，触发胜利条件，准备终止游戏...")
-                # 终端游戏就终止掉。
-                terminal_game.should_terminate = True
-                if victory_condition == VictoryCondition.TOWN_VICTORY:
-                    logger.warning(
-                        "\n!!!!!!!!!!!!!!!!!村民阵营胜利!!!!!!!!!!!!!!!!!!!\n"
-                    )
-                elif victory_condition == VictoryCondition.WEREWOLVES_VICTORY:
-                    logger.warning(
-                        "\n!!!!!!!!!!!!!!!!!狼人阵营胜利!!!!!!!!!!!!!!!!!!!\n"
-                    )
+            await terminal_game.werewolf_game_pass_turn_pipeline.process()
+
+        # 检查是否达成胜利条件，夜晚会产生击杀
+        victory_condition = check_victory_conditions(terminal_game)
+        if victory_condition != VictoryCondition.NONE:
+            logger.warning("游戏结束，触发胜利条件，准备终止游戏...")
+            # 终端游戏就终止掉。
+            terminal_game.should_terminate = True
+            if victory_condition == VictoryCondition.TOWN_VICTORY:
+                logger.warning(
+                    "\n!!!!!!!!!!!!!!!!!村民阵营胜利!!!!!!!!!!!!!!!!!!!\n"
+                )
+            elif victory_condition == VictoryCondition.WEREWOLVES_VICTORY:
+                logger.warning(
+                    "\n!!!!!!!!!!!!!!!!!狼人阵营胜利!!!!!!!!!!!!!!!!!!!\n"
+                )
 
         # 返回！
         return

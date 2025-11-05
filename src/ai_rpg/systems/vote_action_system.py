@@ -37,7 +37,7 @@ class VoteActionSystem(ReactiveProcessor):
             if target_name not in vote_count:
                 vote_count[target_name] = 0
             vote_count[target_name] += 1
-            
+
             # 发送投票细节
             self._game.notify_entities(
                 set({entity}),

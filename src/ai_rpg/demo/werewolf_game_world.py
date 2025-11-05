@@ -292,7 +292,9 @@ def create_actor_hunter(name: str) -> Actor:
 
 
 #######################################################################################################################
-def create_demo_sd_game_boot(game_name: str, random_role_assignment: bool = True) -> Boot:
+def create_demo_sd_game_boot(
+    game_name: str, random_role_assignment: bool = True
+) -> Boot:
     # 创建世界
     world_boot = Boot(name=game_name, campaign_setting=WEREWOLF_CAMPAIGN_SETTING)
 
@@ -302,8 +304,14 @@ def create_demo_sd_game_boot(game_name: str, random_role_assignment: bool = True
 
     # 定义所有角色创建函数和配置
     role_configs = [
-        (create_actor_werewolf, "白天讨论时一定会冒充预言家或者女巫来骗取村民的信任。"),  # 狼人1
-        (create_actor_werewolf, "白天讨论时一定会冒充预言家或者女巫来骗取村民的信任。"),  # 狼人2
+        (
+            create_actor_werewolf,
+            "白天讨论时一定会冒充预言家或者女巫来骗取村民的信任。",
+        ),  # 狼人1
+        (
+            create_actor_werewolf,
+            "白天讨论时一定会冒充预言家或者女巫来骗取村民的信任。",
+        ),  # 狼人2
         (create_actor_seer, None),  # 预言家
         (create_actor_witch, None),  # 女巫
         (create_actor_villager, None),  # 平民1
@@ -320,12 +328,12 @@ def create_demo_sd_game_boot(game_name: str, random_role_assignment: bool = True
 
     for i, (create_func, kick_off_extra) in enumerate(role_configs, start=1):
         actor = create_func(f"{i}号玩家")
-        
+
         if kick_off_extra:
             actor.kick_off_message += kick_off_extra
-        
+
         actors.append(actor)
-        
+
         # 保存女巫引用以便添加道具
         if create_func == create_actor_witch:
             witch = actor

@@ -6,7 +6,7 @@ load_dotenv()
 
 import traceback
 from typing import Annotated, Any, List
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_openai import AzureChatOpenAI
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
@@ -56,8 +56,9 @@ def create_chat_workflow() -> CompiledStateGraph[ChatState, Any, ChatState, Chat
 ############################################################################################################
 async def execute_chat_workflow(
     work_flow: CompiledStateGraph[ChatState, Any, ChatState, ChatState],
-    context: ChatState,
-    request: ChatState,
+    context: List[BaseMessage],
+    request: HumanMessage,
+    llm: AzureChatOpenAI,
 ) -> List[BaseMessage]:
     """执行聊天工作流并返回所有响应消息
 
@@ -65,9 +66,10 @@ async def execute_chat_workflow(
     收集并返回所有生成的消息。
 
     Args:
-        state_compiled_graph: 已编译的 LangGraph 状态图
-        chat_history_state: 包含历史消息的聊天状态
-        user_input_state: 包含用户当前输入的聊天状态
+        work_flow: 已编译的 LangGraph 状态图
+        context: 聊天历史消息列表
+        request: 用户当前输入的消息
+        llm: AzureChatOpenAI LLM 实例
 
     Returns:
         包含所有生成消息的列表
@@ -75,8 +77,8 @@ async def execute_chat_workflow(
     ret: List[BaseMessage] = []
 
     merged_message_context: ChatState = {
-        "messages": context["messages"] + request["messages"],
-        "llm": context["llm"],  # 使用聊天历史状态中的LLM实例
+        "messages": context + [request],
+        "llm": llm,
     }
 
     async for event in work_flow.astream(merged_message_context):

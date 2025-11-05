@@ -140,7 +140,7 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
                     entity2.replace(
                         VoteAction, entity2.name, format_response.target_name
                     )
-                
+
             except Exception as e:
                 logger.error(f"Exception: {e}")
 

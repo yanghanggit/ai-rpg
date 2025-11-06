@@ -293,7 +293,7 @@ def create_actor_hunter(name: str) -> Actor:
 
 #######################################################################################################################
 def create_demo_sd_game_boot(
-    game_name: str, random_role_assignment: bool = True
+    game_name: str, random_role_assignment: bool = False
 ) -> Boot:
     # 创建世界
     world_boot = Boot(name=game_name, campaign_setting=WEREWOLF_CAMPAIGN_SETTING)

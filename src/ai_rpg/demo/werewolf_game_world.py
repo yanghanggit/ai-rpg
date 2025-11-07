@@ -311,8 +311,8 @@ def create_demo_sd_game_boot(game_name: str, random_role_assignment: bool = Fals
         (create_actor_hunter, None),  # 猎人
         (create_actor_hunter, None),  # 猎人
         (create_actor_hunter, None),  # 猎人
-        # (create_actor_hunter, None),  # 猎人
-        (create_actor_villager, None),  # 平民1
+        (create_actor_hunter, None),  # 猎人
+        # (create_actor_villager, None),  # 平民1
         # (create_actor_villager, None),  # 平民2
     ]
 

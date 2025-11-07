@@ -62,6 +62,8 @@ def create_werewolf_game_night_pipline(game: GameSession) -> "RPGGameProcessPipe
     from ..systems.seer_check_action_system import SeerCheckActionSystem
     from ..systems.witch_cure_action_system import WitchCureActionSystem
     from ..systems.witch_poison_action_system import WitchPoisonActionSystem
+    from ..systems.hunter_death_shoot_action_system import HunterDeathShootActionSystem
+
 
     ##
     tcg_game = cast(SDGGame, game)
@@ -80,6 +82,9 @@ def create_werewolf_game_night_pipline(game: GameSession) -> "RPGGameProcessPipe
     processors.add(SeerCheckActionSystem(tcg_game))
     processors.add(WitchCureActionSystem(tcg_game))
     processors.add(WitchPoisonActionSystem(tcg_game))
+
+    # 猎人死亡开枪系统（处理死亡触发）
+    processors.add(HunterDeathShootActionSystem(tcg_game))
 
     # 清理动作！必须清理。
     processors.add(ActionCleanupSystem(tcg_game))
@@ -101,7 +106,6 @@ def create_werewolf_game_day_pipline(game: GameSession) -> "RPGGameProcessPipeli
     from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.save_system import SaveSystem
     from ..systems.discussion_action_system import DiscussionActionSystem
-    from ..systems.hunter_death_shoot_action_system import HunterDeathShootActionSystem
     from ..systems.werewolf_day_discussion_system import (
         WerewolfDayDiscussionSystem,
     )
@@ -109,8 +113,7 @@ def create_werewolf_game_day_pipline(game: GameSession) -> "RPGGameProcessPipeli
     ##
     tcg_game = cast(SDGGame, game)
     processors = RPGGameProcessPipeline("Social Deduction Day Pipeline")
-    # 猎人死亡开枪系统（处理死亡触发）
-    # processors.add(HunterDeathShootActionSystem(tcg_game))
+
 
     processors.add(WerewolfDayDiscussionSystem(tcg_game))
 
@@ -167,28 +170,28 @@ def create_werewolf_game_vote_pipline(game: GameSession) -> "RPGGameProcessPipel
     return processors
 
 ####################################################################################################################################################################
-def create_werewolf_pass_turn_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
-    ### 不这样就循环引用
-    from .sdg_game import SDGGame
-    from ..systems.destroy_entity_system import DestroyEntitySystem
-    from ..systems.action_cleanup_system import ActionCleanupSystem
-    from ..systems.discussion_action_system import DiscussionActionSystem
-    from ..systems.save_system import SaveSystem
-    from ..systems.hunter_death_shoot_action_system import HunterDeathShootActionSystem
+# def create_werewolf_pass_turn_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
+#     ### 不这样就循环引用
+#     from .sdg_game import SDGGame
+#     from ..systems.destroy_entity_system import DestroyEntitySystem
+#     from ..systems.action_cleanup_system import ActionCleanupSystem
+#     from ..systems.discussion_action_system import DiscussionActionSystem
+#     from ..systems.save_system import SaveSystem
+#     from ..systems.hunter_death_shoot_action_system import HunterDeathShootActionSystem
 
-    ##
-    tcg_game = cast(SDGGame, game)
-    processors = RPGGameProcessPipeline("Social Deduction Pass Turn Pipeline")
+#     ##
+#     tcg_game = cast(SDGGame, game)
+#     processors = RPGGameProcessPipeline("Social Deduction Pass Turn Pipeline")
 
-    # 猎人死亡开枪系统（处理死亡触发）
-    processors.add(HunterDeathShootActionSystem(tcg_game))
-    processors.add(DiscussionActionSystem(tcg_game))
-    processors.add(ActionCleanupSystem(tcg_game))
+#     # 猎人死亡开枪系统（处理死亡触发）
+#     processors.add(HunterDeathShootActionSystem(tcg_game))
+#     processors.add(DiscussionActionSystem(tcg_game))
+#     processors.add(ActionCleanupSystem(tcg_game))
 
-    # 动作处理后，可能清理。
-    processors.add(DestroyEntitySystem(tcg_game))
+#     # 动作处理后，可能清理。
+#     processors.add(DestroyEntitySystem(tcg_game))
 
-    # 存储系统。
-    processors.add(SaveSystem(tcg_game))
+#     # 存储系统。
+#     processors.add(SaveSystem(tcg_game))
 
-    return processors
+#     return processors

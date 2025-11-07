@@ -633,14 +633,12 @@ async def play_werewolf_game(
                 # 进入下一个夜晚
                 announce_night_phase(web_game)
 
-                await web_game.werewolf_game_pass_turn_pipeline.process()
 
             else:
 
                 # 进入下一个白天
                 announce_day_phase(web_game)
 
-                await web_game.werewolf_game_pass_turn_pipeline.process()
 
             # 检查是否达成胜利条件，夜晚会产生击杀
             victory_condition = check_victory_conditions(web_game)

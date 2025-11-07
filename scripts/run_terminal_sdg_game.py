@@ -188,14 +188,14 @@ async def _process_player_input(terminal_game: SDGGame) -> None:
             # 进入下一个夜晚
             announce_night_phase(terminal_game)
 
-            await terminal_game.werewolf_game_pass_turn_pipeline.process()
+            # await terminal_game.werewolf_game_pass_turn_pipeline.process()
 
         else:
 
             # 进入下一个白天
             announce_day_phase(terminal_game)
 
-            await terminal_game.werewolf_game_pass_turn_pipeline.process()
+            # await terminal_game.werewolf_game_pass_turn_pipeline.process()
 
         # 检查是否达成胜利条件，夜晚会产生击杀
         victory_condition = check_victory_conditions(terminal_game)

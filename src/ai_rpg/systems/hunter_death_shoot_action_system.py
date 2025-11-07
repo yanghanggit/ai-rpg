@@ -13,6 +13,7 @@ from ..models import (
     VillagerComponent,
     AppearanceComponent,
     MindEvent,
+    NightKillTargetComponent
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
@@ -94,7 +95,8 @@ class HunterDeathShootActionSystem(ReactiveProcessor):
     def filter(self, entity: Entity) -> bool:
         """只处理有猎人组件且刚死亡、且尚未开枪的实体"""
         return (
-            entity.has(DeathComponent) 
+            entity.has(DeathComponent)
+            and entity.has(NightKillTargetComponent)
             and entity.has(HunterComponent) 
             and not entity.has(HunterShotUsedComponent)  # 检查是否已经开枪
         )

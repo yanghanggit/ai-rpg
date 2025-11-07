@@ -106,7 +106,7 @@ class ChatClient:
             self._deepseek_url_config is not None
         ), "DeepSeek URL config is not initialized"
         self._url: Optional[str] = (
-            url if url is not None else self._azure_openai_url_config.chat_url
+            url if url is not None else self._deepseek_url_config.chat_url
         )
 
         self._timeout: Final[int] = timeout if timeout is not None else 30

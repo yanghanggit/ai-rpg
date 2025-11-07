@@ -326,12 +326,12 @@ def create_demo_sd_game_boot(game_name: str, random_role_assignment: bool = Fals
 
     for i, (create_func, kick_off_extra) in enumerate(role_configs, start=1):
         actor = create_func(f"{i}号玩家")
-        
+
         if kick_off_extra:
             actor.kick_off_message += kick_off_extra
-        
+
         actors.append(actor)
-        
+
         # 保存女巫引用以便添加道具
         if create_func == create_actor_witch:
             witch = actor

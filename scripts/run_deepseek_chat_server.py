@@ -125,11 +125,9 @@ async def process_chat_request(payload: ChatRequest) -> ChatResponse:
 
         chat_response = await execute_chat_workflow(
             work_flow=create_chat_workflow(),
-            context={
-                "messages": [message for message in payload.chat_history],
-                "llm": create_deepseek_llm(),
-            },
-            request={"messages": [payload.message], "llm": create_deepseek_llm()},
+            context=[message for message in payload.chat_history],
+            request=payload.message,
+            llm=create_deepseek_llm(),
         )
 
         logger.success(f"生成回复消息数量: {len(chat_response)}")

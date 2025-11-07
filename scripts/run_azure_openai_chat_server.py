@@ -99,14 +99,9 @@ async def process_chat_request(payload: ChatRequest) -> ChatResponse:
         # 获取回复 - 直接 await 异步函数
         chat_response = await execute_chat_workflow(
             work_flow=create_chat_workflow(),
-            context={
-                "messages": [message for message in payload.chat_history],
-                "llm": create_azure_openai_gpt_llm(),
-            },
-            request={
-                "messages": [payload.message],
-                "llm": create_azure_openai_gpt_llm(),
-            },
+            context=[message for message in payload.chat_history],
+            request=payload.message,
+            llm=create_azure_openai_gpt_llm(),
         )
 
         logger.success(f"生成回复消息数量: {len(chat_response)}")

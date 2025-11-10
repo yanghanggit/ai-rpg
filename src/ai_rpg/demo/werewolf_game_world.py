@@ -67,10 +67,13 @@ def generate_random_appearance() -> str:
     global _shuffled_appearance_data, _current_appearance_index
 
     try:
+        from loguru import logger
+        
         manager = get_excel_data_manager()
         appearance_data_list = manager.get_all_werewolf_appearance_data()
 
         if not appearance_data_list:
+            logger.warning("外观数据列表为空，使用默认外观")
             return "戴着默认面具，默认身材的默认性别。"
 
         # 如果还没有洗牌或者已经用完了所有数据，重新洗牌
@@ -80,6 +83,7 @@ def generate_random_appearance() -> str:
             _shuffled_appearance_data = appearance_data_list.copy()
             random.shuffle(_shuffled_appearance_data)
             _current_appearance_index = 0
+            logger.info(f"外观数据已重新洗牌，共有 {len(_shuffled_appearance_data)} 个外观组合")
 
         # 获取当前索引的数据
         current_data = _shuffled_appearance_data[_current_appearance_index]
@@ -88,8 +92,11 @@ def generate_random_appearance() -> str:
         # 构建外观描述，确保字段存在且不为空
         mask = current_data.mask if current_data.mask else "默认面具"
         body_type = current_data.body_type if current_data.body_type else "默认身材"
+        
+        appearance = f"一位戴着{mask}看上去{body_type}。"
+        logger.debug(f"分配外观 [{_current_appearance_index}/{len(_shuffled_appearance_data)}]: {appearance}")
 
-        return f"一位戴着{mask}看上去{body_type}。"
+        return appearance
 
     except Exception as e:
         # 记录异常信息以便调试
@@ -295,6 +302,9 @@ def create_actor_hunter(name: str) -> Actor:
 
 #######################################################################################################################
 def create_demo_sd_game_boot(game_name: str, random_role_assignment: bool = False) -> Boot:
+    # 重置外观洗牌状态,确保每局游戏都有独立的外观分配
+    reset_appearance_shuffle()
+    
     # 创建世界
     world_boot = Boot(name=game_name, campaign_setting=WEREWOLF_CAMPAIGN_SETTING)
 
@@ -306,14 +316,15 @@ def create_demo_sd_game_boot(game_name: str, random_role_assignment: bool = Fals
     role_configs = [
         (create_actor_werewolf, "白天讨论时一定会冒充预言家或者女巫来骗取村民的信任。"),  # 狼人1
         (create_actor_werewolf, "白天讨论时一定会冒充预言家或者女巫来骗取村民的信任。"),  # 狼人2
+        (create_actor_werewolf, "白天讨论时一定会冒充预言家或者女巫来骗取村民的信任。"),  # 狼人3
         # (create_actor_seer, None),  # 预言家
         # (create_actor_witch, None),  # 女巫
         (create_actor_hunter, None),  # 猎人
         (create_actor_hunter, None),  # 猎人
         (create_actor_hunter, None),  # 猎人
         (create_actor_hunter, None),  # 猎人
-        # (create_actor_villager, None),  # 平民1
-        # (create_actor_villager, None),  # 平民2
+        (create_actor_villager, None),  # 平民1
+        (create_actor_villager, None),  # 平民2
     ]
 
     # 如果需要随机分配身份，打乱角色配置顺序

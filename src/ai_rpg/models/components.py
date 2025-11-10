@@ -313,3 +313,8 @@ class DayDiscussedComponent(Component):
 @register_component_class
 class DayVotedComponent(Component):
     name: str
+
+@final
+@register_component_class
+class DayVoteOutComponent(Component):
+    name: str

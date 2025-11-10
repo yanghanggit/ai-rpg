@@ -1,7 +1,7 @@
 import random
 from typing import final, override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..models import VoteAction, DeathComponent, AgentEvent, VoteEvent
+from ..models import VoteAction, DayVoteOutComponent, AgentEvent, VoteEvent
 from loguru import logger
 from ..game.sdg_game import SDGGame
 
@@ -77,7 +77,7 @@ class VoteActionSystem(ReactiveProcessor):
 
         logger.info(f"玩家 {target_entity.name} 被投票出局了")
         # 给被投票出局的玩家添加死亡标记
-        target_entity.replace(DeathComponent, target_entity.name)
+        target_entity.replace(DayVoteOutComponent, target_entity.name)
 
         # 宣布被投票出局了
         self._game.broadcast_to_stage(

@@ -3,6 +3,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     HunterShootAction,
     DeathComponent,
+    AgentEvent,
 )
 from loguru import logger
 from ..game.sdg_game import SDGGame
@@ -60,8 +61,11 @@ class HunterShootActionSystem(ReactiveProcessor):
         )
 
         # 通知所有玩家猎人的射击结果（公开信息）
-        self._game.announce_to_players(
-            f"# 猎人 {hunter_entity.name} 在死亡时开枪带走了 {entity.name}！"
+        self._game.broadcast_to_stage(
+            entity=entity,
+            agent_event=AgentEvent(
+                message=f"# 猎人 {hunter_entity.name} 在死亡时开枪带走了 {entity.name}！",
+            ),
         )
 
     ####################################################################################################################################

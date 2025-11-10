@@ -162,10 +162,10 @@ def create_werewolf_game_vote_pipline(game: GameSession) -> "RPGGameProcessPipel
     processors.add(VoteActionSystem(tcg_game))
 
     # 猎人死亡推理系统（处理死亡触发的推理）
-    # processors.add(HunterDeathActionSystem(tcg_game))
+    processors.add(HunterDeathActionSystem(tcg_game))
     
     # 猎人射击执行系统（执行射击动作）
-    # processors.add(HunterShootActionSystem(tcg_game))
+    processors.add(HunterShootActionSystem(tcg_game))
 
     processors.add(ActionCleanupSystem(tcg_game))
 

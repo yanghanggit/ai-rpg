@@ -20,6 +20,7 @@ from ..models import (
     NightActionReadyComponent,
     NightActionCompletedComponent,
     DayVotedComponent,
+    DayVoteOutComponent,
 )
 from ..demo.werewolf_game_world import create_demo_sd_game_boot
 from ..game.player_session import PlayerSession
@@ -49,7 +50,8 @@ def announce_night_phase(sdg_game: SDGGame) -> None:
     """
     宣布夜晚阶段开始,并进行夜晚阶段的初始化工作:
     1. 向所有存活玩家宣布进入夜晚
-    2. 清理上一个白天阶段的标记(讨论和投票组件)
+    2. 处理被放逐玩家的状态转换(从白天投票放逐标记转为死亡状态)
+    3. 清理上一个白天阶段的标记(讨论和投票组件)
     """
 
     # 验证当前回合计数器是否处于夜晚阶段
@@ -69,8 +71,19 @@ def announce_night_phase(sdg_game: SDGGame) -> None:
         f"# 注意!天黑请闭眼!这是第 {current_night_number} 个夜晚"
     )
 
+    # 获取所有在白天被标记为投票放逐的玩家
+    last_day_vote_outs = sdg_game.get_group(
+        Matcher(
+            all_of=[DayVoteOutComponent],
+        )
+    ).entities.copy()
+
+    # 处理被放逐玩家的状态转换
+    for voted_out_player in last_day_vote_outs:
+        voted_out_player.replace(DeathComponent, voted_out_player.name)
+
     # 清理白天阶段的标记组件
-    sdg_game.cleanup_game_phase_markers([DayDiscussedComponent, DayVotedComponent])
+    sdg_game.cleanup_game_phase_markers([DayDiscussedComponent, DayVotedComponent, DayVoteOutComponent])
 
     # 通知客户端一个消息，夜晚阶段开始了
     notification = PhaseChangeNotification(
@@ -201,7 +214,7 @@ def is_night_phase_completed(sdg_game: SDGGame) -> bool:
     logger.debug(
         f"夜晚行动完成标记玩家数量: {len(entities2)} / 存活玩家数量: {len(entities1)}"
     )
-    return len(entities1) > 0 and len(entities2) >= len(entities1)
+    return len(entities1) >= 0 and len(entities2) >= len(entities1)
 
 
 ###################################################################################################################################################################

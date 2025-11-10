@@ -9,6 +9,7 @@ from ..models.components import (
     NightActionReadyComponent,
     NightActionCompletedComponent,
     DayVotedComponent,
+    DayVoteOutComponent,
 )
 from ..entitas import ExecuteProcessor, Entity
 from ..game.rpg_game import RPGGame
@@ -70,6 +71,9 @@ class SaveSystem(ExecuteProcessor):
 
         if entity.has(DayVotedComponent):
             tags.append("day-voted")
+
+        if entity.has(DayVoteOutComponent):
+            tags.append("day-vote-out")
 
         if len(tags) == 0:
             return entity.name

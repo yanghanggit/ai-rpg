@@ -65,7 +65,6 @@ def create_werewolf_game_night_pipline(game: GameSession) -> "RPGGameProcessPipe
     from ..systems.hunter_death_action_system import HunterDeathActionSystem
     from ..systems.hunter_shoot_action_system import HunterShootActionSystem
 
-
     ##
     tcg_game = cast(SDGGame, game)
     processors = RPGGameProcessPipeline("Social Deduction Night Pipeline")
@@ -86,7 +85,7 @@ def create_werewolf_game_night_pipline(game: GameSession) -> "RPGGameProcessPipe
 
     # 猎人死亡推理系统（处理死亡触发的推理）
     processors.add(HunterDeathActionSystem(tcg_game))
-    
+
     # 猎人射击执行系统（执行射击动作）
     processors.add(HunterShootActionSystem(tcg_game))
 
@@ -117,7 +116,6 @@ def create_werewolf_game_day_pipline(game: GameSession) -> "RPGGameProcessPipeli
     ##
     tcg_game = cast(SDGGame, game)
     processors = RPGGameProcessPipeline("Social Deduction Day Pipeline")
-
 
     processors.add(WerewolfDayDiscussionSystem(tcg_game))
 
@@ -163,7 +161,7 @@ def create_werewolf_game_vote_pipline(game: GameSession) -> "RPGGameProcessPipel
 
     # 猎人死亡推理系统（处理死亡触发的推理）
     processors.add(HunterDeathActionSystem(tcg_game))
-    
+
     # 猎人射击执行系统（执行射击动作）
     processors.add(HunterShootActionSystem(tcg_game))
 
@@ -176,6 +174,7 @@ def create_werewolf_game_vote_pipline(game: GameSession) -> "RPGGameProcessPipel
     processors.add(SaveSystem(tcg_game))
 
     return processors
+
 
 ####################################################################################################################################################################
 # def create_werewolf_pass_turn_pipeline(game: GameSession) -> "RPGGameProcessPipeline":

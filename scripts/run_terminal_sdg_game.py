@@ -204,13 +204,9 @@ async def _process_player_input(terminal_game: SDGGame) -> None:
             # 终端游戏就终止掉。
             terminal_game.should_terminate = True
             if victory_condition == VictoryCondition.TOWN_VICTORY:
-                logger.warning(
-                    "\n!!!!!!!!!!!!!!!!!村民阵营胜利!!!!!!!!!!!!!!!!!!!\n"
-                )
+                logger.warning("\n!!!!!!!!!!!!!!!!!村民阵营胜利!!!!!!!!!!!!!!!!!!!\n")
             elif victory_condition == VictoryCondition.WEREWOLVES_VICTORY:
-                logger.warning(
-                    "\n!!!!!!!!!!!!!!!!!狼人阵营胜利!!!!!!!!!!!!!!!!!!!\n"
-                )
+                logger.warning("\n!!!!!!!!!!!!!!!!!狼人阵营胜利!!!!!!!!!!!!!!!!!!!\n")
 
         # 返回！
         return

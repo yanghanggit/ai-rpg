@@ -13,7 +13,7 @@ from ..models import (
     VillagerComponent,
     AppearanceComponent,
     MindEvent,
-    NightKillTargetComponent
+    NightKillTargetComponent,
 )
 from ..chat_services.client import ChatClient
 from ..utils import json_format
@@ -97,7 +97,7 @@ class HunterDeathShootActionSystem(ReactiveProcessor):
         return (
             entity.has(DeathComponent)
             and entity.has(NightKillTargetComponent)
-            and entity.has(HunterComponent) 
+            and entity.has(HunterComponent)
             and not entity.has(HunterShotUsedComponent)  # 检查是否已经开枪
         )
 
@@ -255,7 +255,9 @@ class HunterDeathShootActionSystem(ReactiveProcessor):
             return response.target_name
 
         except Exception as e:
-            logger.error(f"处理猎人 {request_handler.name} 的开枪决策响应时出现异常: {e}")
+            logger.error(
+                f"处理猎人 {request_handler.name} 的开枪决策响应时出现异常: {e}"
+            )
             logger.error(f"原始响应内容: {request_handler.response_content}")
             return ""
 

@@ -314,6 +314,7 @@ class DayDiscussedComponent(Component):
 class DayVotedComponent(Component):
     name: str
 
+
 @final
 @register_component_class
 class DayVoteOutComponent(Component):

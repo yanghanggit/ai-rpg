@@ -83,7 +83,9 @@ def announce_night_phase(sdg_game: SDGGame) -> None:
         voted_out_player.replace(DeathComponent, voted_out_player.name)
 
     # 清理白天阶段的标记组件
-    sdg_game.cleanup_game_phase_markers([DayDiscussedComponent, DayVotedComponent, DayVoteOutComponent])
+    sdg_game.cleanup_game_phase_markers(
+        [DayDiscussedComponent, DayVotedComponent, DayVoteOutComponent]
+    )
 
     # 通知客户端一个消息，夜晚阶段开始了
     notification = PhaseChangeNotification(
@@ -646,25 +648,19 @@ async def play_werewolf_game(
                 # 进入下一个夜晚
                 announce_night_phase(web_game)
 
-
             else:
 
                 # 进入下一个白天
                 announce_day_phase(web_game)
-
 
             # 检查是否达成胜利条件，夜晚会产生击杀
             victory_condition = check_victory_conditions(web_game)
             if victory_condition != VictoryCondition.NONE:
                 logger.info("游戏结束，触发胜利条件，准备终止游戏...")
                 if victory_condition == VictoryCondition.TOWN_VICTORY:
-                    logger.info(
-                        "\n!!!!!!!!!!!!!!!!!村民阵营胜利!!!!!!!!!!!!!!!!!!!\n"
-                    )
+                    logger.info("\n!!!!!!!!!!!!!!!!!村民阵营胜利!!!!!!!!!!!!!!!!!!!\n")
                 elif victory_condition == VictoryCondition.WEREWOLVES_VICTORY:
-                    logger.info(
-                        "\n!!!!!!!!!!!!!!!!!狼人阵营胜利!!!!!!!!!!!!!!!!!!!\n"
-                    )
+                    logger.info("\n!!!!!!!!!!!!!!!!!狼人阵营胜利!!!!!!!!!!!!!!!!!!!\n")
 
             # 返回！
             return WerewolfGamePlayResponse(session_messages=[])

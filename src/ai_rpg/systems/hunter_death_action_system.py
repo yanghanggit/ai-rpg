@@ -90,7 +90,11 @@ class HunterDeathActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(any_of=[NightKillTargetComponent, DayVoteOutComponent]): GroupEvent.ADDED}
+        return {
+            Matcher(
+                any_of=[NightKillTargetComponent, DayVoteOutComponent]
+            ): GroupEvent.ADDED
+        }
 
     ####################################################################################################################################
     @override
@@ -117,7 +121,11 @@ class HunterDeathActionSystem(ReactiveProcessor):
                         WitchComponent,
                         VillagerComponent,
                     ],
-                    none_of=[DeathComponent, NightKillTargetComponent, DayVoteOutComponent],
+                    none_of=[
+                        DeathComponent,
+                        NightKillTargetComponent,
+                        DayVoteOutComponent,
+                    ],
                 )
             ).entities.copy()
 
@@ -257,7 +265,9 @@ class HunterDeathActionSystem(ReactiveProcessor):
             return response.target_name
 
         except Exception as e:
-            logger.error(f"处理猎人 {request_handler.name} 的开枪决策响应时出现异常: {e}")
+            logger.error(
+                f"处理猎人 {request_handler.name} 的开枪决策响应时出现异常: {e}"
+            )
             logger.error(f"原始响应内容: {request_handler.response_content}")
             return ""
 

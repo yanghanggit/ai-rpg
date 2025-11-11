@@ -211,7 +211,7 @@ class SDGGame(RPGGame):
                     SeerComponent,
                     WitchComponent,
                     VillagerComponent,
-                    HunterComponent
+                    HunterComponent,
                 ],
             )
         ).entities.copy()

@@ -335,8 +335,6 @@ def create_demo_sd_game_boot(
         (create_actor_seer, None),  # 预言家
         (create_actor_witch, None),  # 女巫
         (create_actor_hunter, None),  # 猎人
-        # (create_actor_hunter, None),  # 猎人
-        # (create_actor_hunter, None),  # 猎人
         (create_actor_villager, None),  # 平民1
         (create_actor_villager, None),  # 平民2
     ]

@@ -147,7 +147,10 @@ class NightWitchActionSystem(ReactiveProcessor):
         # 玩家状态信息
         victim_survivor_status: List[Tuple[str, str]] = []
         for one in victims_of_wolf:
-            victim_survivor_status.append((one.name, "今夜被狼人杀害"))
+            if one == witch_entity:
+                victim_survivor_status.append((one.name, "你今夜被狼人杀害"))
+            else:
+                victim_survivor_status.append((one.name, "今夜被狼人杀害"))
 
         for one in alive_players:
             victim_survivor_status.append((one.name, "存活中"))

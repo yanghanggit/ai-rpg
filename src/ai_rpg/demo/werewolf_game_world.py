@@ -322,18 +322,18 @@ def create_demo_sd_game_boot(
     role_configs = [
         (
             create_actor_werewolf,
-            "你会根据你分配到的随机数来决定你的行动策略，当随机数为0到2时你的行动会非常保守，发言会非常谨慎。当随机数为3到5时，你的行为会有些激进，可能会冒充预言家或者女巫。当随机数为6到8时，你的行为会非常激进，一定会自刀或者和同伴商量后选择击杀一个同伴来骗取女巫的解药。",
+            "你会根据你分配到的随机数来决定你的行动策略。0是最保守的行为，8是最激进的行为。保守行为包括谨慎发言和避免暴露身份或者冒充预言家或女巫，最激进时一定会自刀以骗取女巫解药。根据你随机到的数字来调整你的行为策略。",
         ),  # 狼人1
         (
             create_actor_werewolf,
-            "你会根据你分配到的随机数来决定你的行动策略，当随机数为0到2时你的行动会非常保守，发言会非常谨慎。当随机数为3到5时，你的行为会有些激进，可能会冒充预言家或者女巫。当随机数为6到8时，你的行为会非常激进，一定会自刀或者和同伴商量后选择击杀一个同伴来骗取女巫的解药。",
+            "你会根据你分配到的随机数来决定你的行动策略。0是最保守的行为，8是最激进的行为。保守行为包括谨慎发言和避免暴露身份或者冒充预言家或女巫，最激进时一定会自刀以骗取女巫解药。根据你随机到的数字来调整你的行为策略。",
         ),  # 狼人2
         (
             create_actor_werewolf,
-            "你会根据你分配到的随机数来决定你的行动策略，当随机数为0到2时你的行动会非常保守，发言会非常谨慎。当随机数为3到5时，你的行为会有些激进，可能会冒充预言家或者女巫。当随机数为6到8时，你的行为会非常激进，一定会自刀或者和同伴商量后选择击杀一个同伴来骗取女巫的解药。",
+            "你会根据你分配到的随机数来决定你的行动策略。0是最保守的行为，8是最激进的行为。保守行为包括谨慎发言和避免暴露身份或者冒充预言家或女巫，最激进时一定会自刀以骗取女巫解药。根据你随机到的数字来调整你的行为策略。",
         ),  # 狼人3
         (create_actor_seer, None),  # 预言家
-        (create_actor_witch, "你会根据你分配到的随机数来决定你的行动策略，当随机数为0到2时，你的行动会非常保守，不会轻易使用毒药和解药。当随机数为3到5时，你的行为会有些激进，如果有人死亡，你一定会使用解药。当随机数为6到8时，你的行为会非常激进，第一天夜晚一定会使用毒药来随机杀死一个玩家。"),  # 女巫
+        (create_actor_witch, "你会根据你分配到的随机数来决定你的行动策略。0是最保守的行为，8是最激进的行为。保守行为包括谨慎使用毒药和解药。最激进时第一天夜晚一定会救人。根据你随机到的数字来调整你的行为策略。"),  # 女巫
         (create_actor_hunter, None),  # 猎人
         (create_actor_villager, None),  # 平民1
         (create_actor_villager, None),  # 平民2
@@ -343,9 +343,10 @@ def create_demo_sd_game_boot(
     if random_role_assignment:
         random.shuffle(role_configs)
 
-    # 生成0-10的不重复随机数列表
+    # 生成0-8的不重复随机数列表(用于女巫和狼人)
     random_numbers = list(range(9))  # 生成[0, 1, 2, ..., 8]
     random.shuffle(random_numbers)  # 打乱顺序
+    random_number_index = 0  # 用于追踪随机数分配索引
 
     # 创建角色并分配给玩家编号
     actors = []
@@ -353,21 +354,23 @@ def create_demo_sd_game_boot(
     number_assignments = []  # 用于记录所有分配信息
 
     for i, (create_func, kick_off_extra) in enumerate(role_configs, start=1):
-        # 获取当前角色对应的随机数
-        assigned_number = random_numbers[i - 1]
-        
         actor = create_func(f"{i}号玩家")
 
         if kick_off_extra:
             actor.kick_off_message += kick_off_extra
 
-        # 将分配的随机数添加到角色的kick_off_message中
-        actor.kick_off_message += f"\n你被分配的随机数是: {assigned_number}"
+        # 只为女巫和狼人分配随机数
+        if create_func in [create_actor_witch, create_actor_werewolf]:
+            assigned_number = random_numbers[random_number_index]
+            random_number_index += 1
+            
+            # 将分配的随机数添加到角色的kick_off_message中
+            actor.kick_off_message += f"\n你被分配的随机数是: {8}"
+            
+            # 记录分配信息
+            number_assignments.append(f"{actor.name}: {assigned_number}")
 
         actors.append(actor)
-        
-        # 记录分配信息
-        number_assignments.append(f"{actor.name}: {assigned_number}")
 
         # 保存女巫引用以便添加道具
         if create_func == create_actor_witch:
@@ -375,7 +378,10 @@ def create_demo_sd_game_boot(
     
     # 使用loguru记录所有角色的随机数分配
     from loguru import logger
-    logger.info(f"随机数分配结果:\n" + "\n".join(number_assignments))
+    if number_assignments:
+        logger.info(f"随机数分配结果(仅女巫和狼人):\n" + "\n".join(number_assignments))
+    else:
+        logger.info("未分配随机数")
 
     # 给女巫添加道具
     if witch:

@@ -113,6 +113,7 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
     如果昨晚是平安夜，说明女巫使用了解药。
     如果昨晚死了两个人，说明女巫使用了毒药。
     解药和毒药一定会使用成功。
+5. 如果你已死亡，注意你的发言逻辑。
 
 ## 输出格式
 

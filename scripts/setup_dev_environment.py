@@ -50,9 +50,10 @@ from ai_rpg.pgsql import (
     postgresql_config,
 )
 from ai_rpg.pgsql.user import has_user, save_user
-from ai_rpg.redis.client import (
-    redis_flushall,
-)
+
+# from ai_rpg.redis.client import (
+#     redis_flushall,
+# )
 from ai_rpg.demo.world import create_demo_game_world
 from ai_rpg.demo.stage_dungeon4 import (
     create_demo_dungeon4,
@@ -481,13 +482,13 @@ def main() -> None:
     except Exception as e:
         logger.error(f"❌ PostgreSQL 初始化失败: {e}")
 
-    # Redis 相关操作
-    try:
-        logger.info("🚀 清空 Redis 数据库...")
-        redis_flushall()
-        logger.success("✅ Redis 初始化完成")
-    except Exception as e:
-        logger.error(f"❌ Redis 初始化失败: {e}")
+    # # Redis 相关操作
+    # try:
+    #     logger.info("🚀 清空 Redis 数据库...")
+    #     redis_flushall()
+    #     logger.success("✅ Redis 初始化完成")
+    # except Exception as e:
+    #     logger.error(f"❌ Redis 初始化失败: {e}")
 
     # MongoDB 相关操作
     try:

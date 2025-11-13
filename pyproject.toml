@@ -61,13 +61,12 @@ dependencies = [
     "tiktoken>=0.8.0",
     "faiss-cpu>=1.8.0",
     "sentence-transformers>=4.1.0",
-    # Vector database and graph database
+    # Vector database
     "chromadb>=1.0.15",
     "onnxruntime>=1.22.1",
     "mmh3>=5.2.0",
     "pypika>=0.48.9",
     "posthog>=5.4.0",
-    "neo4j>=5.28.1",
     # Data processing
     "numpy>=1.26.4",
     "pandas>=2.2.3",
@@ -147,7 +146,6 @@ dependencies = [
     "langchain-deepseek>=0.1.4",
     "langgraph-prebuilt>=0.6.2",
     "cfgv>=3.4.0",
-    "redis>=6.4.0",
     "psycopg2-binary>=2.9.10",
     "passlib>=1.7.4",
     "python-jose>=3.5.0",
@@ -181,7 +179,6 @@ dev = [
     "types-python-jose>=3.5.0.20250531",
     "types-pytz>=2024.1.0.20240203",
     "types-pyyaml>=6.0.12.12",
-    "types-redis>=4.6.0.20241004",
     "types-requests>=2.32.0.20240907",
     "types-setuptools>=80.9.0.20250529",
     

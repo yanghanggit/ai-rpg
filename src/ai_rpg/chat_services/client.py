@@ -17,13 +17,6 @@ from dataclasses import dataclass
 
 ################################################################################################################################################################################
 @dataclass
-class AzureOpenAIUrlConfig:
-    base_url: str
-    chat_url: str
-
-
-################################################################################################################################################################################
-@dataclass
 class DeepSeekUrlConfig:
     base_url: str
     chat_url: str
@@ -36,9 +29,6 @@ class ChatClient:
     # Static AsyncClient instance for all ChatClient instances
     _async_client: httpx.AsyncClient = httpx.AsyncClient()
 
-    # Azure OpenAI API URL configuration
-    _azure_openai_url_config: Optional[AzureOpenAIUrlConfig] = None
-
     # DeepSeek API URL configuration
     _deepseek_url_config: Optional[DeepSeekUrlConfig] = None
 
@@ -46,19 +36,11 @@ class ChatClient:
     def initialize_url_config(cls, server_settings: ServerConfiguration) -> None:
         """Initialize the URL configurations from ServerSettings."""
 
-        cls._azure_openai_url_config = AzureOpenAIUrlConfig(
-            base_url=f"http://localhost:{server_settings.azure_openai_chat_server_port}/",
-            chat_url=f"http://localhost:{server_settings.azure_openai_chat_server_port}{server_settings.chat_api_endpoint}",
-        )
-
         cls._deepseek_url_config = DeepSeekUrlConfig(
             base_url=f"http://localhost:{server_settings.deepseek_chat_server_port}/",
             chat_url=f"http://localhost:{server_settings.deepseek_chat_server_port}{server_settings.chat_api_endpoint}",
         )
 
-        logger.info(
-            f"ChatClient initialized with Azure OpenAI URLs: {cls._azure_openai_url_config}"
-        )
         logger.info(
             f"ChatClient initialized with DeepSeek URLs: {cls._deepseek_url_config}"
         )
@@ -99,9 +81,6 @@ class ChatClient:
 
         self._chat_response: ChatResponse = ChatResponse()
 
-        assert (
-            self._azure_openai_url_config is not None
-        ), "Azure OpenAI URL config is not initialized"
         assert (
             self._deepseek_url_config is not None
         ), "DeepSeek URL config is not initialized"
@@ -337,15 +316,11 @@ class ChatClient:
     @staticmethod
     async def health_check() -> None:
         """检查所有客户端的健康状态"""
-        if (
-            ChatClient._azure_openai_url_config is None
-            or ChatClient._deepseek_url_config is None
-        ):
+        if ChatClient._deepseek_url_config is None:
             logger.warning("ChatClient URL configurations are not initialized")
             return
 
         base_urls = [
-            ChatClient._azure_openai_url_config.base_url,
             ChatClient._deepseek_url_config.base_url,
         ]
 

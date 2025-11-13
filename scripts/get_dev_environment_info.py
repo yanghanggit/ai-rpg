@@ -150,10 +150,7 @@ def get_project_config() -> None:
 
     # 检查配置文件
     config_files: Dict[str, str] = {
-        "requirements.txt": "项目依赖",
-        "requirements-dev.txt": "开发依赖",
         "pyproject.toml": "Python项目配置",
-        "environment.yml": "Conda环境配置",
         "Makefile": "构建配置",
         "mypy.ini": "MyPy类型检查配置",
         ".gitignore": "Git忽略规则",
@@ -164,25 +161,8 @@ def get_project_config() -> None:
     for file_name, description in config_files.items():
         file_path = project_root / file_name
         if file_path.exists():
-            if file_name.endswith(".txt"):
-                try:
-                    with open(file_path, "r", encoding="utf-8") as f:
-                        lines = f.readlines()
-                    dependency_count = len(
-                        [
-                            line
-                            for line in lines
-                            if line.strip() and not line.strip().startswith("#")
-                        ]
-                    )
-                    print(
-                        f"  ✅ {file_name}: 存在 ({description}, {dependency_count}个依赖)"
-                    )
-                except Exception:
-                    print(f"  ✅ {file_name}: 存在 ({description})")
-            else:
-                file_size = file_path.stat().st_size
-                print(f"  ✅ {file_name}: 存在 ({description}, {file_size} bytes)")
+            file_size = file_path.stat().st_size
+            print(f"  ✅ {file_name}: 存在 ({description}, {file_size} bytes)")
         else:
             print(f"  ❌ {file_name}: 不存在 ({description})")
 
@@ -693,259 +673,47 @@ def get_dependency_analysis() -> None:
     print("📦 依赖分析")
     print("=" * 50)
 
-    project_root = Path.cwd()
-
-    # 分析conda环境（如果存在）
-    if os.environ.get("CONDA_DEFAULT_ENV"):
-        print(f"📋 Conda环境分析 (环境: {os.environ.get('CONDA_DEFAULT_ENV')})")
-
-        # 检查environment.yml
-        env_file = project_root / "environment.yml"
-        if env_file.exists():
-            try:
-                import yaml
-
-                with open(env_file, "r") as f:
-                    env_config = yaml.safe_load(f)
-
-                conda_deps = [
-                    dep
-                    for dep in env_config.get("dependencies", [])
-                    if isinstance(dep, str)
-                ]
-                pip_deps = []
-                for dep in env_config.get("dependencies", []):
-                    if isinstance(dep, dict) and "pip" in dep:
-                        pip_deps = dep["pip"]
-                        break
-
-                print(f"  Conda包数量: {len(conda_deps)}")
-                print(f"  Pip包数量: {len(pip_deps)}")
-                print(f"  总包数量: {len(conda_deps) + len(pip_deps)}")
-
-                # 检查关键的conda包
-                conda_key_packages = [
-                    "python",
-                    "numpy",
-                    "pandas",
-                    "redis",
-                    "psycopg2",
-                    "mypy",
-                    "black",
-                    "pytest",
-                ]
-                found_conda_packages = []
-                for pkg in conda_key_packages:
-                    if any(pkg in dep.lower() for dep in conda_deps):
-                        found_conda_packages.append(pkg)
-
-                if found_conda_packages:
-                    print(f"  关键conda包: {', '.join(found_conda_packages)}")
-
-            except Exception as e:
-                print(f"  environment.yml分析失败: {e}")
-        else:
-            print("  ⚠️ environment.yml文件不存在")
-
-        print()
-
-    # 分析requirements.txt
-    req_file = project_root / "requirements.txt"
-    if req_file.exists():
-        try:
-            with open(req_file, "r", encoding="utf-8") as f:
-                requirements = f.readlines()
-
-            dependencies: List[str] = []
-            for line in requirements:
-                line = line.strip()
-                if line and not line.startswith("#"):
-                    dependencies.append(line)
-
-            print(f"requirements.txt依赖数量: {len(dependencies)}")
-
-            # 检查核心依赖（包括conda和pip安装的）
-            try:
-                # 获取已安装包列表
-                try:
-                    installed = {
-                        dist.metadata["name"].lower(): dist.version
-                        for dist in distributions()
-                    }
-                except NameError:
-                    installed = {
-                        pkg.project_name.lower(): pkg.version
-                        for pkg in pkg_resources.working_set
-                    }
-
-                core_deps1: List[str] = [
-                    "fastapi",
-                    "aiohttp",
-                    "langchain",
-                    "redis",
-                    "psycopg2",
-                    "pydantic",
-                    "numpy",
-                    "pandas",
-                    "chromadb",
-                ]
-                print("核心依赖检查:")
-                for dep in core_deps1:
-                    # 检查是否在requirements.txt中
-                    found_in_requirements = any(
-                        dep in req_line.lower() for req_line in dependencies
-                    )
-                    # 检查是否已安装
-                    installed_version = None
-                    for pkg_name, version in installed.items():
-                        if dep == pkg_name or dep in pkg_name:
-                            installed_version = version
-                            break
-
-                    if installed_version:
-                        if found_in_requirements:
-                            req_version = next(
-                                (
-                                    req_line
-                                    for req_line in dependencies
-                                    if dep in req_line.lower()
-                                ),
-                                "",
-                            )
-                            print(f"  ✅ {dep}: {req_version} (pip)")
-                        else:
-                            print(f"  ✅ {dep}: {installed_version} (conda)")
-                    else:
-                        print(f"  ❌ {dep}: 未安装")
-
-            except Exception as e:
-                print(f"核心依赖检查失败: {e}")
-                # 回退到原有逻辑
-                core_deps2: List[str] = [
-                    "fastapi",
-                    "aiohttp",
-                    "langchain",
-                    "redis",
-                    "psycopg2",
-                    "chromadb",
-                ]
-                print("核心依赖检查 (仅检查requirements.txt):")
-                for dep in core_deps2:
-                    found = any(dep in req_line.lower() for req_line in dependencies)
-                    if found:
-                        version = next(
-                            (
-                                req_line
-                                for req_line in dependencies
-                                if dep in req_line.lower()
-                            ),
-                            "",
-                        )
-                        print(f"  ✅ {dep}: {version}")
-                    else:
-                        print(f"  ❌ {dep}: 未在requirements.txt中找到")
-
-        except Exception as e:
-            print(f"requirements.txt分析失败: {e}")
-
-    # 检查已安装包与requirements的匹配情况
-    print("\n已安装包验证:")
+    # 检查核心依赖的安装状态
+    print("核心依赖检查:")
     try:
+        # 获取已安装包列表
         try:
-            # 使用现代的 importlib.metadata
             installed = {
                 dist.metadata["name"].lower(): dist.version for dist in distributions()
             }
         except NameError:
-            # 回退到 pkg_resources
             installed = {
                 pkg.project_name.lower(): pkg.version
                 for pkg in pkg_resources.working_set
             }
 
-        if req_file.exists():
-            with open(req_file, "r", encoding="utf-8") as f:
-                requirements = f.readlines()
+        core_deps: List[str] = [
+            "fastapi",
+            "aiohttp",
+            "langchain",
+            "redis",
+            "psycopg2",
+            "pydantic",
+            "numpy",
+            "pandas",
+            "chromadb",
+        ]
 
-            missing_packages: List[str] = []
-            version_mismatches: List[str] = []
+        for dep in core_deps:
+            # 检查是否已安装
+            installed_version = None
+            for pkg_name, version in installed.items():
+                if dep == pkg_name or dep in pkg_name:
+                    installed_version = version
+                    break
 
-            for line in requirements:
-                line = line.strip()
-                if line and not line.startswith("#"):
-                    if "==" in line:
-                        pkg_name = line.split("==")[0].lower()
-                        required_version = line.split("==")[1]
-
-                        # 查找已安装的包（支持不同的包名格式）
-                        installed_version = None
-                        actual_pkg_name = None
-
-                        # 直接匹配
-                        if pkg_name in installed:
-                            installed_version = installed[pkg_name]
-                            actual_pkg_name = pkg_name
-                        else:
-                            # 处理特殊包名映射
-                            alternative_names = []
-                            if pkg_name == "typing-extensions":
-                                alternative_names = ["typing_extensions"]
-                            elif pkg_name == "pydantic-core":
-                                alternative_names = ["pydantic_core"]
-                            else:
-                                # 通用的包名转换
-                                alt_name = pkg_name.replace("-", "_")
-                                if alt_name != pkg_name:
-                                    alternative_names.append(alt_name)
-
-                            # 尝试替代名称
-                            for alt_name in alternative_names:
-                                if alt_name in installed:
-                                    installed_version = installed[alt_name]
-                                    actual_pkg_name = alt_name
-                                    break
-
-                            # 如果还是找不到，进行模糊匹配
-                            if not installed_version:
-                                for inst_name, inst_version in installed.items():
-                                    if (
-                                        pkg_name in inst_name or inst_name in pkg_name
-                                    ) and abs(len(pkg_name) - len(inst_name)) <= 2:
-                                        installed_version = inst_version
-                                        actual_pkg_name = inst_name
-                                        break
-
-                        if installed_version:
-                            if installed_version != required_version:
-                                # 检查是否是conda管理的包（通常版本会有差异）
-                                if actual_pkg_name in [
-                                    "redis",
-                                    "psycopg2",
-                                    "numpy",
-                                    "pandas",
-                                    "packaging",
-                                ]:
-                                    print(
-                                        f"  ℹ️  {pkg_name}: conda版本 {installed_version} (requirements需要{required_version})"
-                                    )
-                                else:
-                                    version_mismatches.append(
-                                        f"{pkg_name} (需要{required_version}, 已安装{installed_version})"
-                                    )
-                        else:
-                            missing_packages.append(pkg_name)
-
-            if version_mismatches:
-                print(f"  ⚠️  版本不匹配的pip包: {', '.join(version_mismatches)}")
-
-            if missing_packages:
-                print(f"  ❌ 缺失包: {', '.join(missing_packages)}")
-
-            if not missing_packages and not version_mismatches:
-                print("  ✅ 所有依赖包都已正确安装或通过conda管理")
+            if installed_version:
+                print(f"  ✅ {dep}: {installed_version}")
+            else:
+                print(f"  ❌ {dep}: 未安装")
 
     except Exception as e:
-        print(f"依赖验证失败: {e}")
+        print(f"核心依赖检查失败: {e}")
 
 
 def get_environment_variables() -> None:

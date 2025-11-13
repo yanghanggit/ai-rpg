@@ -365,26 +365,6 @@ def _generate_pm2_ecosystem_config(
     """
     ecosystem_config_content = f"""module.exports = {{
   apps: [
-    // 聊天服务器实例 - 端口 {server_config.azure_openai_chat_server_port}
-    {{
-      name: 'azure-openai-chat-server-{server_config.azure_openai_chat_server_port}',
-      script: 'uvicorn',
-      args: 'scripts.run_azure_openai_chat_server:app --host 0.0.0.0 --port {server_config.azure_openai_chat_server_port}',
-      interpreter: 'python',
-      cwd: process.cwd(),
-      env: {{
-        PYTHONPATH: `${{process.cwd()}}`,
-        PORT: '{server_config.azure_openai_chat_server_port}'
-      }},
-      instances: 1,
-      autorestart: false,
-      watch: false,
-      max_memory_restart: '2G',
-      log_file: './logs/azure-openai-chat-server-{server_config.azure_openai_chat_server_port}.log',
-      error_file: './logs/azure-openai-chat-server-{server_config.azure_openai_chat_server_port}-error.log',
-      out_file: './logs/azure-openai-chat-server-{server_config.azure_openai_chat_server_port}-out.log',
-      time: true
-    }},
     // 游戏服务器实例 - 端口 {server_config.game_server_port}
     {{
       name: 'game-server-{server_config.game_server_port}',

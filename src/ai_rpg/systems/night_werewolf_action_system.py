@@ -107,7 +107,7 @@ class NightWerewolfActionSystem(ReactiveProcessor):
                     WitchComponent,
                     VillagerComponent,
                     HunterComponent,
-                    WerewolfComponent
+                    WerewolfComponent,
                 ],
                 none_of=[DeathComponent],
             )

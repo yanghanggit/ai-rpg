@@ -150,10 +150,7 @@ def get_project_config() -> None:
 
     # 检查配置文件
     config_files: Dict[str, str] = {
-        "requirements.txt": "项目依赖",
-        "requirements-dev.txt": "开发依赖",
         "pyproject.toml": "Python项目配置",
-        "environment.yml": "Conda环境配置",
         "Makefile": "构建配置",
         "mypy.ini": "MyPy类型检查配置",
         ".gitignore": "Git忽略规则",
@@ -164,25 +161,8 @@ def get_project_config() -> None:
     for file_name, description in config_files.items():
         file_path = project_root / file_name
         if file_path.exists():
-            if file_name.endswith(".txt"):
-                try:
-                    with open(file_path, "r", encoding="utf-8") as f:
-                        lines = f.readlines()
-                    dependency_count = len(
-                        [
-                            line
-                            for line in lines
-                            if line.strip() and not line.strip().startswith("#")
-                        ]
-                    )
-                    print(
-                        f"  ✅ {file_name}: 存在 ({description}, {dependency_count}个依赖)"
-                    )
-                except Exception:
-                    print(f"  ✅ {file_name}: 存在 ({description})")
-            else:
-                file_size = file_path.stat().st_size
-                print(f"  ✅ {file_name}: 存在 ({description}, {file_size} bytes)")
+            file_size = file_path.stat().st_size
+            print(f"  ✅ {file_name}: 存在 ({description}, {file_size} bytes)")
         else:
             print(f"  ❌ {file_name}: 不存在 ({description})")
 
@@ -199,10 +179,7 @@ def get_development_tools() -> None:
         "npm --version": "NPM包管理器",
         "docker --version": "Docker容器",
         "docker-compose --version": "Docker Compose",
-        "redis-cli --version": "Redis CLI",
         "psql --version": "PostgreSQL客户端",
-        "neo4j version": "Neo4j数据库",
-        "cypher-shell --version": "Neo4j Cypher Shell",
         "conda --version": "Conda包管理器",
     }
 
@@ -226,11 +203,8 @@ def get_network_and_services() -> None:
         8000: "Django/FastAPI开发服务器",
         8080: "HTTP备用端口",
         5432: "PostgreSQL数据库",
-        6379: "Redis数据库",
         27017: "MongoDB数据库",
         3306: "MySQL数据库",
-        7687: "Neo4j Bolt协议",
-        7474: "Neo4j HTTP Web界面",
     }
 
     print("端口占用情况:")
@@ -247,18 +221,6 @@ def get_network_and_services() -> None:
 
     # 测试数据库连接
     print("\n数据库连接测试:")
-
-    # Redis连接测试
-    try:
-        import redis
-
-        r = redis.Redis(host="localhost", port=6379, db=0, socket_timeout=2)
-        r.ping()
-        print("  ✅ Redis: 连接成功")
-    except ImportError:
-        print("  ⚠️  Redis: redis库未安装")
-    except Exception as e:
-        print(f"  ❌ Redis: 连接失败 - {e}")
 
     # PostgreSQL连接测试 - 使用项目配置
     try:
@@ -295,205 +257,6 @@ def get_network_and_services() -> None:
         print("  ⚠️  PostgreSQL: psycopg2库未安装")
     except Exception as e:
         print(f"  ❌ PostgreSQL: 连接测试失败 - {e}")
-
-
-def get_neo4j_environment() -> None:
-    """获取Neo4j环境信息"""
-    print("\n" + "=" * 50)
-    print("🔗 Neo4j图数据库环境")
-    print("=" * 50)
-
-    # 检查Neo4j Python驱动安装状态
-    try:
-        import neo4j
-        from neo4j import GraphDatabase
-
-        print(f"  ✅ Neo4j Python驱动: 已安装 (版本 {neo4j.__version__})")
-
-        # 检查关键组件
-        try:
-            from neo4j.exceptions import ServiceUnavailable, AuthError
-
-            print("  ✅ Neo4j异常类: 可用")
-        except ImportError as e:
-            print(f"  ⚠️  Neo4j异常类: 导入失败 - {e}")
-
-        # 检查Neo4j服务状态
-        print("\n  Neo4j服务检查:")
-
-        # 检查端口占用 (Neo4j默认端口)
-        neo4j_ports = {
-            7687: "Bolt协议端口",
-            7474: "HTTP Web界面端口",
-            7473: "HTTPS端口",
-        }
-
-        for port, description in neo4j_ports.items():
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(1)
-            result = sock.connect_ex(("localhost", port))
-            sock.close()
-
-            if result == 0:
-                print(f"    🟢 端口 {port}: 已占用 ({description})")
-            else:
-                print(f"    ⚪ 端口 {port}: 可用 ({description})")
-
-        # Neo4j连接测试
-        print("\n  Neo4j连接测试:")
-        try:
-            # 尝试连接Neo4j数据库
-            driver = GraphDatabase.driver(
-                "bolt://localhost:7687",
-                auth=("neo4j", "password123"),
-                connection_timeout=3,
-            )
-
-            # 测试连接
-            with driver.session() as session:
-                test_result = session.run("RETURN 1 as test")
-                test_record = test_result.single()
-                if test_record:
-                    test_value = test_record["test"]
-                    if test_value == 1:
-                        print("    ✅ Neo4j数据库: 连接成功")
-
-                        # 获取服务器信息
-                        try:
-                            components_result = session.run(
-                                "CALL dbms.components() YIELD name, versions, edition"
-                            )
-                            for record in components_result:
-                                print(
-                                    f"    📊 {record['name']}: {record['versions'][0]} ({record['edition']})"
-                                )
-                        except Exception as info_error:
-                            print(f"    ⚠️  服务器信息获取失败: {info_error}")
-
-                        # 检查数据库状态
-                        try:
-                            databases_result = session.run("SHOW DATABASES")
-                            databases = [record["name"] for record in databases_result]
-                            print(f"    🗄️  可用数据库: {', '.join(databases)}")
-                        except Exception:
-                            # 某些版本可能不支持SHOW DATABASES
-                            print("    🗄️  数据库信息: 无法获取 (可能权限不足)")
-                    else:
-                        print("    ❌ Neo4j连接测试失败")
-                else:
-                    print("    ❌ Neo4j连接测试失败：无返回结果")
-
-            driver.close()
-
-        except AuthError:
-            print("    ❌ Neo4j认证失败 (用户名/密码错误)")
-            print("    💡 建议检查密码或访问 http://localhost:7474 重新设置")
-        except ServiceUnavailable:
-            print("    ❌ Neo4j服务不可用 (服务未启动)")
-            print("    💡 启动建议: brew services start neo4j")
-        except Exception as e:
-            print(f"    ❌ Neo4j连接失败: {e}")
-
-        # 检查Neo4j命令行工具
-        print("\n  Neo4j命令行工具:")
-        neo4j_tools = {
-            "neo4j version": "Neo4j服务器",
-            "cypher-shell --version": "Cypher Shell客户端",
-        }
-
-        for command, description in neo4j_tools.items():
-            stdout, stderr, code = run_command(command)
-            if code == 0:
-                print(f"    ✅ {description}: {stdout}")
-            else:
-                print(f"    ❌ {description}: 未安装或不可用")
-
-        # 检查Neo4j安装方式
-        print("\n  Neo4j安装检查:")
-
-        # 检查Homebrew安装
-        homebrew_neo4j, _, homebrew_code = run_command("brew list neo4j")
-        if homebrew_code == 0:
-            print("    ✅ Neo4j通过Homebrew安装")
-            # 获取安装路径
-            neo4j_path, _, _ = run_command("brew --prefix neo4j")
-            if neo4j_path:
-                print(f"    📁 安装路径: {neo4j_path}")
-        else:
-            print("    ⚪ Neo4j未通过Homebrew安装")
-
-        # 检查Docker安装
-        docker_neo4j, _, docker_code = run_command(
-            "docker ps --filter name=neo4j --format '{{.Names}}'"
-        )
-        if docker_code == 0 and docker_neo4j.strip():
-            print(f"    ✅ Neo4j Docker容器运行中: {docker_neo4j.strip()}")
-        else:
-            print("    ⚪ 无Neo4j Docker容器运行")
-
-        # 检查配置文件
-        print("\n  Neo4j配置文件:")
-        potential_config_paths = [
-            "/opt/homebrew/etc/neo4j/neo4j.conf",
-            "/usr/local/etc/neo4j/neo4j.conf",
-            "~/.neo4j/neo4j.conf",
-            "/etc/neo4j/neo4j.conf",
-        ]
-
-        config_found = False
-        for config_path in potential_config_paths:
-            expanded_path = os.path.expanduser(config_path)
-            if os.path.exists(expanded_path):
-                print(f"    ✅ 配置文件: {config_path}")
-                config_found = True
-                break
-
-        if not config_found:
-            print("    ⚪ 未找到标准位置的配置文件")
-
-        # Java环境检查 (Neo4j需要Java)
-        print("\n  Java环境检查 (Neo4j依赖):")
-        java_version, _, java_code = run_command("java -version")
-        if java_code == 0:
-            # 解析Java版本
-            java_info = java_version.split("\n")[0] if java_version else "未知版本"
-            print(f"    ✅ Java: {java_info}")
-
-            # 检查JAVA_HOME
-            java_home = os.environ.get("JAVA_HOME")
-            if java_home:
-                print(f"    ✅ JAVA_HOME: {java_home}")
-            else:
-                print("    ⚠️  JAVA_HOME: 未设置")
-        else:
-            print("    ❌ Java: 未安装 (Neo4j需要Java运行)")
-
-    except ImportError:
-        print("  ❌ Neo4j Python驱动: 未安装")
-        print("  💡 安装建议:")
-        print("    conda环境: conda install neo4j-python-driver")
-        print("    或者: pip install neo4j")
-
-        # 即使驱动未安装，也检查服务状态
-        print("\n  Neo4j服务状态检查 (无驱动):")
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
-        bolt_result = sock.connect_ex(("localhost", 7687))
-        sock.close()
-
-        sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock2.settimeout(1)
-        http_result = sock2.connect_ex(("localhost", 7474))
-        sock2.close()
-
-        if bolt_result == 0 or http_result == 0:
-            print("    🟢 Neo4j服务似乎正在运行")
-            print("    💡 安装Python驱动后可进行完整测试")
-        else:
-            print("    ⚪ Neo4j服务未检测到")
-
-    except Exception as e:
-        print(f"  ❌ Neo4j环境检查失败: {e}")
 
 
 def get_chromadb_environment() -> None:
@@ -693,259 +456,46 @@ def get_dependency_analysis() -> None:
     print("📦 依赖分析")
     print("=" * 50)
 
-    project_root = Path.cwd()
-
-    # 分析conda环境（如果存在）
-    if os.environ.get("CONDA_DEFAULT_ENV"):
-        print(f"📋 Conda环境分析 (环境: {os.environ.get('CONDA_DEFAULT_ENV')})")
-
-        # 检查environment.yml
-        env_file = project_root / "environment.yml"
-        if env_file.exists():
-            try:
-                import yaml
-
-                with open(env_file, "r") as f:
-                    env_config = yaml.safe_load(f)
-
-                conda_deps = [
-                    dep
-                    for dep in env_config.get("dependencies", [])
-                    if isinstance(dep, str)
-                ]
-                pip_deps = []
-                for dep in env_config.get("dependencies", []):
-                    if isinstance(dep, dict) and "pip" in dep:
-                        pip_deps = dep["pip"]
-                        break
-
-                print(f"  Conda包数量: {len(conda_deps)}")
-                print(f"  Pip包数量: {len(pip_deps)}")
-                print(f"  总包数量: {len(conda_deps) + len(pip_deps)}")
-
-                # 检查关键的conda包
-                conda_key_packages = [
-                    "python",
-                    "numpy",
-                    "pandas",
-                    "redis",
-                    "psycopg2",
-                    "mypy",
-                    "black",
-                    "pytest",
-                ]
-                found_conda_packages = []
-                for pkg in conda_key_packages:
-                    if any(pkg in dep.lower() for dep in conda_deps):
-                        found_conda_packages.append(pkg)
-
-                if found_conda_packages:
-                    print(f"  关键conda包: {', '.join(found_conda_packages)}")
-
-            except Exception as e:
-                print(f"  environment.yml分析失败: {e}")
-        else:
-            print("  ⚠️ environment.yml文件不存在")
-
-        print()
-
-    # 分析requirements.txt
-    req_file = project_root / "requirements.txt"
-    if req_file.exists():
-        try:
-            with open(req_file, "r", encoding="utf-8") as f:
-                requirements = f.readlines()
-
-            dependencies: List[str] = []
-            for line in requirements:
-                line = line.strip()
-                if line and not line.startswith("#"):
-                    dependencies.append(line)
-
-            print(f"requirements.txt依赖数量: {len(dependencies)}")
-
-            # 检查核心依赖（包括conda和pip安装的）
-            try:
-                # 获取已安装包列表
-                try:
-                    installed = {
-                        dist.metadata["name"].lower(): dist.version
-                        for dist in distributions()
-                    }
-                except NameError:
-                    installed = {
-                        pkg.project_name.lower(): pkg.version
-                        for pkg in pkg_resources.working_set
-                    }
-
-                core_deps1: List[str] = [
-                    "fastapi",
-                    "aiohttp",
-                    "langchain",
-                    "redis",
-                    "psycopg2",
-                    "pydantic",
-                    "numpy",
-                    "pandas",
-                    "chromadb",
-                ]
-                print("核心依赖检查:")
-                for dep in core_deps1:
-                    # 检查是否在requirements.txt中
-                    found_in_requirements = any(
-                        dep in req_line.lower() for req_line in dependencies
-                    )
-                    # 检查是否已安装
-                    installed_version = None
-                    for pkg_name, version in installed.items():
-                        if dep == pkg_name or dep in pkg_name:
-                            installed_version = version
-                            break
-
-                    if installed_version:
-                        if found_in_requirements:
-                            req_version = next(
-                                (
-                                    req_line
-                                    for req_line in dependencies
-                                    if dep in req_line.lower()
-                                ),
-                                "",
-                            )
-                            print(f"  ✅ {dep}: {req_version} (pip)")
-                        else:
-                            print(f"  ✅ {dep}: {installed_version} (conda)")
-                    else:
-                        print(f"  ❌ {dep}: 未安装")
-
-            except Exception as e:
-                print(f"核心依赖检查失败: {e}")
-                # 回退到原有逻辑
-                core_deps2: List[str] = [
-                    "fastapi",
-                    "aiohttp",
-                    "langchain",
-                    "redis",
-                    "psycopg2",
-                    "chromadb",
-                ]
-                print("核心依赖检查 (仅检查requirements.txt):")
-                for dep in core_deps2:
-                    found = any(dep in req_line.lower() for req_line in dependencies)
-                    if found:
-                        version = next(
-                            (
-                                req_line
-                                for req_line in dependencies
-                                if dep in req_line.lower()
-                            ),
-                            "",
-                        )
-                        print(f"  ✅ {dep}: {version}")
-                    else:
-                        print(f"  ❌ {dep}: 未在requirements.txt中找到")
-
-        except Exception as e:
-            print(f"requirements.txt分析失败: {e}")
-
-    # 检查已安装包与requirements的匹配情况
-    print("\n已安装包验证:")
+    # 检查核心依赖的安装状态
+    print("核心依赖检查:")
     try:
+        # 获取已安装包列表
         try:
-            # 使用现代的 importlib.metadata
             installed = {
                 dist.metadata["name"].lower(): dist.version for dist in distributions()
             }
         except NameError:
-            # 回退到 pkg_resources
             installed = {
                 pkg.project_name.lower(): pkg.version
                 for pkg in pkg_resources.working_set
             }
 
-        if req_file.exists():
-            with open(req_file, "r", encoding="utf-8") as f:
-                requirements = f.readlines()
+        core_deps: List[str] = [
+            "fastapi",
+            "aiohttp",
+            "langchain",
+            "psycopg2",
+            "pydantic",
+            "numpy",
+            "pandas",
+            "chromadb",
+        ]
 
-            missing_packages: List[str] = []
-            version_mismatches: List[str] = []
+        for dep in core_deps:
+            # 检查是否已安装
+            installed_version = None
+            for pkg_name, version in installed.items():
+                if dep == pkg_name or dep in pkg_name:
+                    installed_version = version
+                    break
 
-            for line in requirements:
-                line = line.strip()
-                if line and not line.startswith("#"):
-                    if "==" in line:
-                        pkg_name = line.split("==")[0].lower()
-                        required_version = line.split("==")[1]
-
-                        # 查找已安装的包（支持不同的包名格式）
-                        installed_version = None
-                        actual_pkg_name = None
-
-                        # 直接匹配
-                        if pkg_name in installed:
-                            installed_version = installed[pkg_name]
-                            actual_pkg_name = pkg_name
-                        else:
-                            # 处理特殊包名映射
-                            alternative_names = []
-                            if pkg_name == "typing-extensions":
-                                alternative_names = ["typing_extensions"]
-                            elif pkg_name == "pydantic-core":
-                                alternative_names = ["pydantic_core"]
-                            else:
-                                # 通用的包名转换
-                                alt_name = pkg_name.replace("-", "_")
-                                if alt_name != pkg_name:
-                                    alternative_names.append(alt_name)
-
-                            # 尝试替代名称
-                            for alt_name in alternative_names:
-                                if alt_name in installed:
-                                    installed_version = installed[alt_name]
-                                    actual_pkg_name = alt_name
-                                    break
-
-                            # 如果还是找不到，进行模糊匹配
-                            if not installed_version:
-                                for inst_name, inst_version in installed.items():
-                                    if (
-                                        pkg_name in inst_name or inst_name in pkg_name
-                                    ) and abs(len(pkg_name) - len(inst_name)) <= 2:
-                                        installed_version = inst_version
-                                        actual_pkg_name = inst_name
-                                        break
-
-                        if installed_version:
-                            if installed_version != required_version:
-                                # 检查是否是conda管理的包（通常版本会有差异）
-                                if actual_pkg_name in [
-                                    "redis",
-                                    "psycopg2",
-                                    "numpy",
-                                    "pandas",
-                                    "packaging",
-                                ]:
-                                    print(
-                                        f"  ℹ️  {pkg_name}: conda版本 {installed_version} (requirements需要{required_version})"
-                                    )
-                                else:
-                                    version_mismatches.append(
-                                        f"{pkg_name} (需要{required_version}, 已安装{installed_version})"
-                                    )
-                        else:
-                            missing_packages.append(pkg_name)
-
-            if version_mismatches:
-                print(f"  ⚠️  版本不匹配的pip包: {', '.join(version_mismatches)}")
-
-            if missing_packages:
-                print(f"  ❌ 缺失包: {', '.join(missing_packages)}")
-
-            if not missing_packages and not version_mismatches:
-                print("  ✅ 所有依赖包都已正确安装或通过conda管理")
+            if installed_version:
+                print(f"  ✅ {dep}: {installed_version}")
+            else:
+                print(f"  ❌ {dep}: 未安装")
 
     except Exception as e:
-        print(f"依赖验证失败: {e}")
+        print(f"核心依赖检查失败: {e}")
 
 
 def get_environment_variables() -> None:
@@ -1008,7 +558,6 @@ def main() -> None:
         get_project_config()
         get_development_tools()
         get_network_and_services()
-        get_neo4j_environment()
         get_chromadb_environment()
         get_dependency_analysis()
         get_environment_variables()

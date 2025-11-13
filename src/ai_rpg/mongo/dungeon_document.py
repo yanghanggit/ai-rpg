@@ -71,7 +71,7 @@ class DungeonDocument(BaseModel):
 
     # 便捷方法
     @classmethod
-    def from_mongodb(cls, mongodb_doc: Dict[str, Any]) -> "DungeonDocument":
+    def from_mongo(cls, mongodb_doc: Dict[str, Any]) -> "DungeonDocument":
         """
         从 MongoDB 文档创建 DungeonDocument 实例
 

@@ -10,7 +10,7 @@ from typing import (
 import pymongo
 from loguru import logger
 from pymongo.errors import PyMongoError
-from .config import MongoDBConfig
+from .config import MongoConfig
 
 # MongoDB文档类型 - 可以是字典或继承自BaseMongoDocument的类型
 MongoDocumentType: TypeAlias = Dict[str, Any]
@@ -33,21 +33,21 @@ else:
     MongoCollectionType: TypeAlias = pymongo.collection.Collection  # type: ignore[type-arg]
 
 
-mongodb_config = MongoDBConfig()
-mongodb_client: MongoClientType = pymongo.MongoClient(mongodb_config.connection_string)
+mongo_config = MongoConfig()
+mongo_client: MongoClientType = pymongo.MongoClient(mongo_config.connection_string)
 
 try:
-    mongodb_client.admin.command("ping")
+    mongo_client.admin.command("ping")
     # logger.debug("MongoDB连接成功")
 except Exception as e:
     logger.error(f"MongoDB连接失败: {e}")
     # raise e
 
-mongodb_database: MongoDatabaseType = mongodb_client[mongodb_config.database]
+mongo_database: MongoDatabaseType = mongo_client[mongo_config.database]
 
 
 ###################################################################################################
-def mongodb_insert_one(
+def mongo_insert_one(
     collection_name: str, document: MongoDocumentType
 ) -> Optional[str]:
     """
@@ -65,7 +65,7 @@ def mongodb_insert_one(
     """
     try:
         # db = mongodb_database
-        collection = mongodb_database[collection_name]
+        collection = mongo_database[collection_name]
         result = collection.insert_one(document)
         logger.debug(
             f"MongoDB插入文档成功，集合: {collection_name}, ID: {result.inserted_id}"
@@ -77,7 +77,7 @@ def mongodb_insert_one(
 
 
 ###################################################################################################
-def mongodb_insert_many(
+def mongo_insert_many(
     collection_name: str, documents: List[MongoDocumentType]
 ) -> List[str]:
     """
@@ -95,7 +95,7 @@ def mongodb_insert_many(
     """
     try:
         # db = get_mongodb_database_instance()
-        collection = mongodb_database[collection_name]
+        collection = mongo_database[collection_name]
         result = collection.insert_many(documents)
         logger.debug(
             f"MongoDB批量插入文档成功，集合: {collection_name}, 数量: {len(result.inserted_ids)}"
@@ -107,7 +107,7 @@ def mongodb_insert_many(
 
 
 ###################################################################################################
-def mongodb_find_one(
+def mongo_find_one(
     collection_name: str, filter_dict: Optional[MongoFilterType] = None
 ) -> Optional[MongoDocumentType]:
     """
@@ -125,7 +125,7 @@ def mongodb_find_one(
     """
     try:
         # db = get_mongodb_database_instance()
-        collection = mongodb_database[collection_name]
+        collection = mongo_database[collection_name]
         result = collection.find_one(filter_dict or {})
         # logger.debug(
         #     f"MongoDB查找文档，集合: {collection_name}, 找到: {result is not None}"
@@ -137,7 +137,7 @@ def mongodb_find_one(
 
 
 ###################################################################################################
-def mongodb_find_many(
+def mongo_find_many(
     collection_name: str,
     filter_dict: Optional[MongoFilterType] = None,
     sort: Optional[MongoSortType] = None,
@@ -162,7 +162,7 @@ def mongodb_find_many(
     """
     try:
         # db = get_mongodb_database_instance()
-        collection = mongodb_database[collection_name]
+        collection = mongo_database[collection_name]
         cursor = collection.find(filter_dict or {})
 
         if sort:
@@ -183,7 +183,7 @@ def mongodb_find_many(
 
 
 ###################################################################################################
-def mongodb_upsert_one(
+def mongo_upsert_one(
     collection_name: str, document: MongoDocumentType, filter_key: str = "_id"
 ) -> Optional[str]:
     """
@@ -214,7 +214,7 @@ def mongodb_upsert_one(
         filter_dict = {filter_key: document[filter_key]}
 
         # 使用 replace_one 实现 upsert（完全覆盖）
-        return mongodb_replace_one(collection_name, filter_dict, document, upsert=True)
+        return mongo_replace_one(collection_name, filter_dict, document, upsert=True)
 
     except PyMongoError as e:
         logger.error(f"MongoDB upsert 操作失败，集合: {collection_name}, 错误: {e}")
@@ -222,7 +222,7 @@ def mongodb_upsert_one(
 
 
 ###################################################################################################
-def mongodb_replace_one(
+def mongo_replace_one(
     collection_name: str,
     filter_dict: MongoFilterType,
     document: MongoDocumentType,
@@ -245,7 +245,7 @@ def mongodb_replace_one(
     """
     try:
         # db = get_mongodb_database_instance()
-        collection = mongodb_database[collection_name]
+        collection = mongo_database[collection_name]
         result = collection.replace_one(filter_dict, document, upsert=upsert)
 
         if result.upserted_id:
@@ -270,7 +270,7 @@ def mongodb_replace_one(
 
 
 ###################################################################################################
-def mongodb_update_one(
+def mongo_update_one(
     collection_name: str,
     filter_dict: MongoFilterType,
     update_dict: MongoUpdateType,
@@ -293,7 +293,7 @@ def mongodb_update_one(
     """
     try:
         # db = get_mongodb_database_instance()
-        collection = mongodb_database[collection_name]
+        collection = mongo_database[collection_name]
         result = collection.update_one(filter_dict, update_dict, upsert=upsert)
         success = result.modified_count > 0 or (
             upsert and result.upserted_id is not None
@@ -308,7 +308,7 @@ def mongodb_update_one(
 
 
 ###################################################################################################
-def mongodb_update_many(
+def mongo_update_many(
     collection_name: str,
     filter_dict: MongoFilterType,
     update_dict: MongoUpdateType,
@@ -331,7 +331,7 @@ def mongodb_update_many(
     """
     try:
         # db = get_mongodb_database_instance()
-        collection = mongodb_database[collection_name]
+        collection = mongo_database[collection_name]
         result = collection.update_many(filter_dict, update_dict, upsert=upsert)
         logger.debug(
             f"MongoDB批量更新文档，集合: {collection_name}, 修改数量: {result.modified_count}"
@@ -343,7 +343,7 @@ def mongodb_update_many(
 
 
 ###################################################################################################
-def mongodb_delete_one(collection_name: str, filter_dict: MongoFilterType) -> bool:
+def mongo_delete_one(collection_name: str, filter_dict: MongoFilterType) -> bool:
     """
     从MongoDB集合中删除一个文档。
 
@@ -359,7 +359,7 @@ def mongodb_delete_one(collection_name: str, filter_dict: MongoFilterType) -> bo
     """
     try:
         # db = get_mongodb_database_instance()
-        collection = mongodb_database[collection_name]
+        collection = mongo_database[collection_name]
         result = collection.delete_one(filter_dict)
         success = result.deleted_count > 0
         logger.debug(f"MongoDB删除文档，集合: {collection_name}, 成功: {success}")
@@ -370,7 +370,7 @@ def mongodb_delete_one(collection_name: str, filter_dict: MongoFilterType) -> bo
 
 
 ###################################################################################################
-def mongodb_delete_many(collection_name: str, filter_dict: MongoFilterType) -> int:
+def mongo_delete_many(collection_name: str, filter_dict: MongoFilterType) -> int:
     """
     从MongoDB集合中删除多个文档。
 
@@ -386,7 +386,7 @@ def mongodb_delete_many(collection_name: str, filter_dict: MongoFilterType) -> i
     """
     try:
         # db = get_mongodb_database_instance()
-        collection = mongodb_database[collection_name]
+        collection = mongo_database[collection_name]
         result = collection.delete_many(filter_dict)
         logger.debug(
             f"MongoDB批量删除文档，集合: {collection_name}, 删除数量: {result.deleted_count}"
@@ -398,7 +398,7 @@ def mongodb_delete_many(collection_name: str, filter_dict: MongoFilterType) -> i
 
 
 ###################################################################################################
-def mongodb_count_documents(
+def mongo_count_documents(
     collection_name: str, filter_dict: Optional[MongoFilterType] = None
 ) -> int:
     """
@@ -416,7 +416,7 @@ def mongodb_count_documents(
     """
     try:
         # db = get_mongodb_database_instance()
-        collection = mongodb_database[collection_name]
+        collection = mongo_database[collection_name]
         count = collection.count_documents(filter_dict or {})
         logger.debug(f"MongoDB统计文档数量，集合: {collection_name}, 数量: {count}")
         return count
@@ -426,7 +426,7 @@ def mongodb_count_documents(
 
 
 ###################################################################################################
-def mongodb_create_index(
+def mongo_create_index(
     collection_name: str, index_keys: List[tuple[str, int]], unique: bool = False
 ) -> str:
     """
@@ -445,7 +445,7 @@ def mongodb_create_index(
     """
     try:
         # db = get_mongodb_database_instance()
-        collection = mongodb_database[collection_name]
+        collection = mongo_database[collection_name]
         index_name = collection.create_index(index_keys, unique=unique)
         logger.info(f"MongoDB创建索引成功，集合: {collection_name}, 索引: {index_name}")
         return index_name
@@ -455,7 +455,7 @@ def mongodb_create_index(
 
 
 ###################################################################################################
-def mongodb_list_collections() -> List[str]:
+def mongo_list_collections() -> List[str]:
     """
     列出MongoDB数据库中的所有集合。
 
@@ -467,7 +467,7 @@ def mongodb_list_collections() -> List[str]:
     """
     try:
         # db = get_mongodb_database_instance()
-        collections = mongodb_database.list_collection_names()
+        collections = mongo_database.list_collection_names()
         logger.debug(f"MongoDB列出集合，数量: {len(collections)}")
         return collections
     except PyMongoError as e:
@@ -476,7 +476,7 @@ def mongodb_list_collections() -> List[str]:
 
 
 ###################################################################################################
-def mongodb_drop_collection(collection_name: str) -> None:
+def mongo_drop_collection(collection_name: str) -> None:
     """
     删除MongoDB集合。
 
@@ -488,7 +488,7 @@ def mongodb_drop_collection(collection_name: str) -> None:
     """
     try:
         # db = get_mongodb_database_instance()
-        mongodb_database.drop_collection(collection_name)
+        mongo_database.drop_collection(collection_name)
         logger.warning(f"MongoDB删除集合: {collection_name}")
     except PyMongoError as e:
         logger.error(f"MongoDB删除集合失败，集合: {collection_name}, 错误: {e}")
@@ -496,7 +496,7 @@ def mongodb_drop_collection(collection_name: str) -> None:
 
 
 ###################################################################################################
-def mongodb_clear_database() -> None:
+def mongo_clear_database() -> None:
     """
     清空MongoDB数据库中的所有集合（危险操作）。
 
@@ -508,11 +508,11 @@ def mongodb_clear_database() -> None:
     """
     try:
         # db = get_mongodb_database_instance()
-        collections = mongodb_database.list_collection_names()
+        collections = mongo_database.list_collection_names()
 
         # 删除所有集合
         for collection_name in collections:
-            mongodb_database.drop_collection(collection_name)
+            mongo_database.drop_collection(collection_name)
             logger.warning(f"已删除集合: {collection_name}")
 
         logger.warning(f"MongoDB数据库清空完成，共删除 {len(collections)} 个集合")
@@ -522,7 +522,7 @@ def mongodb_clear_database() -> None:
 
 
 ###################################################################################################
-def mongodb_clear_collection(collection_name: str) -> int:
+def mongo_clear_collection(collection_name: str) -> int:
     """
     清空MongoDB集合中的所有文档（保留集合结构和索引）。
 
@@ -537,7 +537,7 @@ def mongodb_clear_collection(collection_name: str) -> int:
     """
     try:
         # db = get_mongodb_database_instance()
-        collection = mongodb_database[collection_name]
+        collection = mongo_database[collection_name]
         result = collection.delete_many({})  # 空条件匹配所有文档
         logger.warning(
             f"MongoDB清空集合: {collection_name}, 删除文档数量: {result.deleted_count}"

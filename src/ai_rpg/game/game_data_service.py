@@ -2,12 +2,12 @@ import shutil
 from pathlib import Path
 from typing import Optional
 from loguru import logger
-from ..mongodb import (
+from ..mongo import (
     BootDocument,
     WorldDocument,
-    mongodb_delete_one,
-    mongodb_find_one,
-    mongodb_upsert_one,
+    mongo_delete_one,
+    mongo_find_one,
+    mongo_upsert_one,
 )
 from ..models.world import Boot, World
 from .player_session import PlayerSession
@@ -27,7 +27,7 @@ def get_game_boot_data(game: str) -> Optional[Boot]:
         Boot 对象或 None
     """
     logger.debug(f"📖 从 MongoDB 获取演示游戏世界进行验证...")
-    stored_boot = mongodb_find_one(BootDocument.__name__, {"game_name": game})
+    stored_boot = mongo_find_one(BootDocument.__name__, {"game_name": game})
     if stored_boot is None:
         logger.error("❌ 启动世界的数据存储到 MongoDB 失败!")
         return None
@@ -35,7 +35,7 @@ def get_game_boot_data(game: str) -> Optional[Boot]:
     # 尝试使用便捷方法反序列化为 WorldBootDocument 对象
     try:
 
-        world_boot_doc = BootDocument.from_mongodb(stored_boot)
+        world_boot_doc = BootDocument.from_mongo(stored_boot)
         assert world_boot_doc is not None, "WorldBootDocument 反序列化失败"
         return world_boot_doc.boot_data
 
@@ -58,7 +58,7 @@ def get_user_world_data(user: str, game: str) -> Optional[World]:
         World 对象或 None
     """
     logger.debug(f"📖 从 MongoDB 获取游戏世界进行验证...")
-    stored_world = mongodb_find_one(
+    stored_world = mongo_find_one(
         # DEFAULT_MONGODB_CONFIG.worlds_collection,
         WorldDocument.__name__,
         {"username": user, "game_name": game},
@@ -70,7 +70,7 @@ def get_user_world_data(user: str, game: str) -> Optional[World]:
     # 尝试使用便捷方法反序列化为 World 对象
     try:
 
-        world_doc = WorldDocument.from_mongodb(stored_world)
+        world_doc = WorldDocument.from_mongo(stored_world)
         assert world_doc is not None, "WorldDocument 反序列化失败"
         return world_doc.world_data
 
@@ -92,7 +92,7 @@ def delete_user_world_data(user: str) -> None:
 
     try:
         # 删除 MongoDB 中的世界数据
-        result = mongodb_delete_one(WorldDocument.__name__, {"username": user})
+        result = mongo_delete_one(WorldDocument.__name__, {"username": user})
         if not result:
             logger.warning(f"❌ 用户 {user} 的游戏世界数据删除失败或不存在。")
 
@@ -118,7 +118,7 @@ def persist_world_data(username: str, world: World) -> None:
 
         # 保存 WorldDocument 到 MongoDB
         # logger.debug(f"📝 存储演示游戏世界到 MongoDB 集合: {collection_name}")
-        inserted_id = mongodb_upsert_one(collection_name, world_document.to_dict())
+        inserted_id = mongo_upsert_one(collection_name, world_document.to_dict())
 
         if inserted_id:
             # logger.debug("✅ 演示游戏世界已存储到 MongoDB!")
@@ -126,7 +126,7 @@ def persist_world_data(username: str, world: World) -> None:
             # 验证已保存的 WorldDocument
             # logger.debug("📖 从 MongoDB 获取演示游戏世界进行验证...")
 
-            saved_world_data = mongodb_find_one(
+            saved_world_data = mongo_find_one(
                 collection_name,
                 {
                     "username": username,

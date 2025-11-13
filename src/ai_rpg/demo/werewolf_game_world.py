@@ -333,7 +333,10 @@ def create_demo_sd_game_boot(
             "你会根据你分配到的随机数来决定你的行动策略。0是最保守的行为，8是最激进的行为。保守行为包括谨慎发言和避免暴露身份，稍微激进时会冒充预言家或女巫，最激进时一定会自刀以骗取女巫解药。根据你随机到的数字来调整你的行为策略。",
         ),  # 狼人3
         (create_actor_seer, None),  # 预言家
-        (create_actor_witch, "你会根据你分配到的随机数来决定你的行动策略。0是最保守的行为，8是最激进的行为。保守行为包括谨慎使用毒药和解药。最激进时第一天夜晚一定会救人或者毒人。根据你随机到的数字来调整你的行为策略。"),  # 女巫
+        (
+            create_actor_witch,
+            "你会根据你分配到的随机数来决定你的行动策略。0是最保守的行为，8是最激进的行为。保守行为包括谨慎使用毒药和解药。最激进时第一天夜晚一定会救人。根据你随机到的数字来调整你的行为策略。",
+        ),  # 女巫
         (create_actor_hunter, None),  # 猎人
         (create_actor_villager, None),  # 平民1
         (create_actor_villager, None),  # 平民2
@@ -363,7 +366,7 @@ def create_demo_sd_game_boot(
         if create_func in [create_actor_witch, create_actor_werewolf]:
             assigned_number = random_numbers[random_number_index]
             random_number_index += 1
-            
+
             # 将分配的随机数添加到角色的kick_off_message中
             actor.kick_off_message += f"\n你被分配的随机数是: {assigned_number}"
             
@@ -375,9 +378,10 @@ def create_demo_sd_game_boot(
         # 保存女巫引用以便添加道具
         if create_func == create_actor_witch:
             witch = actor
-    
+
     # 使用loguru记录所有角色的随机数分配
     from loguru import logger
+
     if number_assignments:
         logger.info(f"随机数分配结果(仅女巫和狼人):\n" + "\n".join(number_assignments))
     else:

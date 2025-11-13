@@ -16,17 +16,17 @@ import time
 from datetime import datetime
 from loguru import logger
 
-from src.ai_rpg.mongodb import (
+from src.ai_rpg.mongo import (
     # get_mongodb_database_instance,
-    mongodb_count_documents,
-    mongodb_create_index,
-    mongodb_delete_many,
-    mongodb_find_one,
-    mongodb_insert_one,
-    mongodb_update_one,
-    mongodb_upsert_one,
+    mongo_count_documents,
+    mongo_create_index,
+    mongo_delete_many,
+    mongo_find_one,
+    mongo_insert_one,
+    mongo_update_one,
+    mongo_upsert_one,
     # mongodb_client,
-    mongodb_database,
+    mongo_database,
 )
 
 
@@ -51,7 +51,7 @@ class TestMongoDBConnection:
             try:
                 # db = get_mongodb_database_instance()
                 # 测试连接 - 通过列出集合来验证连接
-                collections = mongodb_database.list_collection_names()
+                collections = mongo_database.list_collection_names()
                 logger.success(
                     f"✅ MongoDB 数据库连接成功! 当前集合数量: {len(collections)}"
                 )
@@ -67,14 +67,14 @@ class TestMongoDBConnection:
 
             # 插入 World 数据
             logger.info(f"📝 插入 World 数据到集合: {collection_name}")
-            inserted_id = mongodb_insert_one(collection_name, world_data)
+            inserted_id = mongo_insert_one(collection_name, world_data)
 
             assert inserted_id, "World 数据插入失败!"
             logger.success(f"✅ World 数据插入成功, ID: {inserted_id}")
 
             # 查询 World 数据
             logger.info(f"📖 查询 World 数据: game_id = {test_game_id}")
-            stored_world = mongodb_find_one(collection_name, {"game_id": test_game_id})
+            stored_world = mongo_find_one(collection_name, {"game_id": test_game_id})
 
             assert stored_world, "World 数据查询失败!"
             logger.success("✅ World 数据查询成功!")
@@ -94,7 +94,7 @@ class TestMongoDBConnection:
             # 3. 测试增量更新
             logger.info("🔄 测试增量更新...")
 
-            update_result = mongodb_update_one(
+            update_result = mongo_update_one(
                 collection_name,
                 {"game_id": test_game_id},
                 {
@@ -116,7 +116,7 @@ class TestMongoDBConnection:
             logger.success("✅ 增量更新成功!")
 
             # 查看更新后的数据
-            updated_world = mongodb_find_one(collection_name, {"game_id": test_game_id})
+            updated_world = mongo_find_one(collection_name, {"game_id": test_game_id})
             if updated_world:
                 logger.info(f"  - 新的运行时索引: {updated_world['runtime_index']}")
                 logger.info(
@@ -128,7 +128,7 @@ class TestMongoDBConnection:
 
             # 创建索引
             try:
-                index_name = mongodb_create_index(
+                index_name = mongo_create_index(
                     collection_name, [("game_id", 1), ("runtime_index", -1)]
                 )
                 logger.success(f"✅ 创建索引成功: {index_name}")
@@ -139,7 +139,7 @@ class TestMongoDBConnection:
             start_time = time.time()
 
             # 查询最新的游戏状态（模拟按索引查询）
-            latest_world = mongodb_find_one(collection_name, {"game_id": test_game_id})
+            latest_world = mongo_find_one(collection_name, {"game_id": test_game_id})
 
             end_time = time.time()
             query_time = (end_time - start_time) * 1000  # 转换为毫秒
@@ -151,7 +151,7 @@ class TestMongoDBConnection:
 
             # 5. 统计文档数量
             logger.info("📊 统计测试文档数量...")
-            doc_count = mongodb_count_documents(
+            doc_count = mongo_count_documents(
                 collection_name, {"game_id": test_game_id}
             )
             logger.info(f"  - 测试文档数量: {doc_count}")
@@ -176,7 +176,7 @@ class TestMongoDBConnection:
         """测试 MongoDB 数据库连接"""
         try:
             # db = get_mongodb_database_instance()
-            collections = mongodb_database.list_collection_names()
+            collections = mongo_database.list_collection_names()
             logger.info(f"✅ MongoDB 连接测试通过，集合数量: {len(collections)}")
         except Exception as e:
             logger.error(f"❌ MongoDB 连接失败: {e}")
@@ -198,18 +198,18 @@ class TestMongoDBConnection:
             }
 
             # 插入文档
-            inserted_id = mongodb_insert_one(collection_name, test_doc)
+            inserted_id = mongo_insert_one(collection_name, test_doc)
             assert inserted_id is not None
 
             # 查询文档
-            found_doc = mongodb_find_one(collection_name, {"game_id": test_game_id})
+            found_doc = mongo_find_one(collection_name, {"game_id": test_game_id})
             assert found_doc is not None
             assert found_doc["game_id"] == test_game_id
             assert found_doc["name"] == "Test Document"
             assert found_doc["value"] == 42
 
             # 更新文档
-            update_result = mongodb_update_one(
+            update_result = mongo_update_one(
                 collection_name,
                 {"game_id": test_game_id},
                 {"$set": {"value": 100, "updated": True}},
@@ -217,13 +217,13 @@ class TestMongoDBConnection:
             assert update_result
 
             # 验证更新
-            updated_doc = mongodb_find_one(collection_name, {"game_id": test_game_id})
+            updated_doc = mongo_find_one(collection_name, {"game_id": test_game_id})
             assert updated_doc is not None
             assert updated_doc["value"] == 100
             assert updated_doc["updated"] is True
 
             # 统计文档数量
-            count = mongodb_count_documents(collection_name, {"game_id": test_game_id})
+            count = mongo_count_documents(collection_name, {"game_id": test_game_id})
             assert count == 1
 
             logger.info("✅ 文档 CRUD 操作测试通过")
@@ -245,7 +245,7 @@ class TestMongoDBConnection:
                 "version": 1,
             }
 
-            result1 = mongodb_upsert_one(collection_name, test_doc)
+            result1 = mongo_upsert_one(collection_name, test_doc)
             assert result1 is not None
 
             # 第二次 upsert（更新）
@@ -255,14 +255,14 @@ class TestMongoDBConnection:
                 "version": 2,
             }
 
-            result2 = mongodb_upsert_one(collection_name, updated_doc)
+            result2 = mongo_upsert_one(collection_name, updated_doc)
             assert result2 is not None
 
             # 验证只有一个文档且版本为2
-            count = mongodb_count_documents(collection_name, {"game_id": test_game_id})
+            count = mongo_count_documents(collection_name, {"game_id": test_game_id})
             assert count == 1
 
-            found_doc = mongodb_find_one(collection_name, {"game_id": test_game_id})
+            found_doc = mongo_find_one(collection_name, {"game_id": test_game_id})
             assert found_doc is not None
             assert found_doc["version"] == 2
 
@@ -332,7 +332,7 @@ class TestMongoDBConnection:
     def _cleanup_test_data(self, collection_name: str, test_game_id: str) -> None:
         """清理测试数据"""
         try:
-            deleted_count = mongodb_delete_many(
+            deleted_count = mongo_delete_many(
                 collection_name, {"game_id": test_game_id}
             )
 
@@ -342,7 +342,7 @@ class TestMongoDBConnection:
                 logger.info("📝 未找到要清理的测试数据")
 
             # 验证清理结果
-            remaining_count = mongodb_count_documents(
+            remaining_count = mongo_count_documents(
                 collection_name, {"game_id": test_game_id}
             )
 

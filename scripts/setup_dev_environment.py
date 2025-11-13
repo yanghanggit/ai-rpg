@@ -36,12 +36,12 @@ from ai_rpg.configuration import (
 )
 from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, LOGS_DIR
 
-from ai_rpg.mongodb import (
+from ai_rpg.mongo import (
     BootDocument,
     DungeonDocument,
-    mongodb_clear_database,
-    mongodb_find_one,
-    mongodb_upsert_one,
+    mongo_clear_database,
+    mongo_find_one,
+    mongo_upsert_one,
 )
 from ai_rpg.pgsql import (
     pgsql_create_database,
@@ -94,7 +94,7 @@ def _pgsql_setup_test_user() -> None:
 
 
 #######################################################################################################
-def _mongodb_create_and_store_demo_boot() -> None:
+def _mongo_create_and_store_demo_boot() -> None:
     """
     创建演示游戏世界并存储到 MongoDB
 
@@ -118,7 +118,7 @@ def _mongodb_create_and_store_demo_boot() -> None:
 
         # 存储到 MongoDB（使用 upsert 语义，如果存在则完全覆盖）
         logger.info(f"📝 存储演示游戏世界到 MongoDB 集合: {collection_name}")
-        inserted_id = mongodb_upsert_one(collection_name, world_boot_document.to_dict())
+        inserted_id = mongo_upsert_one(collection_name, world_boot_document.to_dict())
 
         if inserted_id:
             logger.success(f"✅ 演示游戏世界已存储到 MongoDB!")
@@ -132,12 +132,12 @@ def _mongodb_create_and_store_demo_boot() -> None:
 
             # 立即获取验证
             logger.info(f"📖 从 MongoDB 获取演示游戏世界进行验证...")
-            stored_boot = mongodb_find_one(collection_name, {"game_name": game_name})
+            stored_boot = mongo_find_one(collection_name, {"game_name": game_name})
 
             if stored_boot:
                 try:
                     # 使用便捷方法反序列化为 WorldBootDocument 对象
-                    stored_document = BootDocument.from_mongodb(stored_boot)
+                    stored_document = BootDocument.from_mongo(stored_boot)
 
                     logger.success(f"✅ 演示游戏世界已从 MongoDB 成功获取!")
 
@@ -191,7 +191,7 @@ def _mongodb_create_and_store_demo_boot() -> None:
 
 
 #######################################################################################################
-def _mongodb_create_and_store_demo_dungeon() -> None:
+def _mongo_create_and_store_demo_dungeon() -> None:
     """
     创建演示地下城并存储到 MongoDB
 
@@ -214,7 +214,7 @@ def _mongodb_create_and_store_demo_dungeon() -> None:
 
         # 存储到 MongoDB（使用 upsert 语义，如果存在则完全覆盖）
         logger.info(f"📝 存储演示地下城到 MongoDB 集合: {collection_name}")
-        inserted_id = mongodb_upsert_one(collection_name, dungeon_document.to_dict())
+        inserted_id = mongo_upsert_one(collection_name, dungeon_document.to_dict())
 
         if inserted_id:
             # logger.success(
@@ -223,14 +223,14 @@ def _mongodb_create_and_store_demo_dungeon() -> None:
 
             # 立即获取验证
             # logger.info(f"📖 从 MongoDB 获取演示地下城进行验证...")
-            stored_dungeon = mongodb_find_one(
+            stored_dungeon = mongo_find_one(
                 collection_name, {"dungeon_name": demo_dungeon.name}
             )
 
             if stored_dungeon:
                 try:
                     # 使用便捷方法反序列化为 DungeonDocument 对象
-                    stored_document = DungeonDocument.from_mongodb(stored_dungeon)
+                    stored_document = DungeonDocument.from_mongo(stored_dungeon)
                     assert (
                         stored_document.dungeon_name == demo_dungeon.name
                     ), "地下城名称不匹配!"
@@ -493,11 +493,11 @@ def main() -> None:
     # MongoDB 相关操作
     try:
         logger.info("🚀 清空 MongoDB 数据库...")
-        mongodb_clear_database()
+        mongo_clear_database()
         logger.info("🚀 创建MongoDB演示游戏世界...")
-        _mongodb_create_and_store_demo_boot()
+        _mongo_create_and_store_demo_boot()
         logger.info("🚀 创建MongoDB演示地下城...")
-        _mongodb_create_and_store_demo_dungeon()
+        _mongo_create_and_store_demo_dungeon()
         logger.success("✅ MongoDB 初始化完成")
     except Exception as e:
         logger.error(f"❌ MongoDB 初始化失败: {e}")

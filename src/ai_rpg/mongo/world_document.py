@@ -135,7 +135,7 @@ class WorldDocument(BaseModel):
 
     # 便捷方法
     @classmethod
-    def from_mongodb(cls, mongodb_doc: Dict[str, Any]) -> "WorldDocument":
+    def from_mongo(cls, mongodb_doc: Dict[str, Any]) -> "WorldDocument":
         """
         从 MongoDB 文档创建 WorldDocument 实例
 

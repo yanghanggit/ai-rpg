@@ -5,9 +5,9 @@ from ..game.player_session import PlayerSession
 from ..game.tcg_game import TCGGame
 from ..game.game_data_service import get_user_world_data, get_game_boot_data
 from ..models import StartRequest, StartResponse, World
-from ..mongodb import (
+from ..mongo import (
     DungeonDocument,
-    mongodb_find_one,
+    mongo_find_one,
 )
 from .game_server_depends import GameServerInstance
 
@@ -113,7 +113,7 @@ def setup_web_game_session(
 
         # 读数据库! 测试的写死的地下城名字，本质就是dungeon4!!!!
         fixed_dungeon_name = "哥布林与兽人"
-        stored_dungeon = mongodb_find_one(
+        stored_dungeon = mongo_find_one(
             # DEFAULT_MONGODB_CONFIG.dungeons_collection,
             DungeonDocument.__name__,
             {"dungeon_name": fixed_dungeon_name},
@@ -122,7 +122,7 @@ def setup_web_game_session(
         logger.success(
             f"从数据库加载地下城{fixed_dungeon_name}数据成功！{stored_dungeon}"
         )
-        stored_document = DungeonDocument.from_mongodb(stored_dungeon)
+        stored_document = DungeonDocument.from_mongo(stored_dungeon)
         world_exists.dungeon = stored_document.dungeon_data
 
     else:

@@ -3,13 +3,19 @@ World 相关的 MongoDB 文档模型和存储操作
 """
 
 from datetime import datetime
-from typing import final, List, Dict
+from typing import final
 from uuid import uuid4
 from pydantic import BaseModel, ConfigDict, Field
 from loguru import logger
 from ..models.world import World
 from .agent_document import save_agent_contexts, load_agent_contexts
-from .client import mongo_upsert_one, mongo_find_one
+from .entity_document import save_entity_serializations, load_entity_serializations
+from .client import (
+    mongo_upsert_one,
+    mongo_find_one,
+    mongo_delete_one,
+    mongo_delete_many,
+)
 
 
 ###############################################################################################################################################
@@ -82,8 +88,13 @@ def save_world(username: str, world: World) -> str:
         saved_context_ids = save_agent_contexts(world.agents_context, world_id)
         logger.info(f"存储 {len(saved_context_ids)} 个 AgentContext")
 
+        # 存储 EntitySerializations
+        saved_entity_ids = save_entity_serializations(
+            world.entities_serialization, world_id
+        )
+        logger.info(f"存储 {len(saved_entity_ids)} 个 EntitySerialization")
+
         # TODO: 后续添加
-        # - 存储 entities_serialization
         # - 存储 dungeon
         # - 存储 boot
 
@@ -126,12 +137,15 @@ def load_world(world_id: str) -> World:
         # 加载 AgentContexts
         agents_context = load_agent_contexts(world_id)
 
+        # 加载 EntitySerializations
+        entities_serialization = load_entity_serializations(world_id)
+
         # 创建不完整的 World 对象
         world = World(
             runtime_index=world_doc_dict.get("runtime_index", 1000),  # 加载运行时索引
             agents_context=agents_context,
+            entities_serialization=entities_serialization,  # 加载实体序列化
             # 其他字段使用默认值（后续实现完整加载）
-            # entities_serialization=[],
             # dungeon=Dungeon(name=""),
             # boot=Boot(name=""),
         )
@@ -141,6 +155,75 @@ def load_world(world_id: str) -> World:
 
     except Exception as e:
         logger.error(f"加载 World 失败: {e}")
+        raise
+
+
+###############################################################################################################################################
+def delete_world(world_id: str) -> bool:
+    """
+    从 MongoDB 删除完整的 World 对象及其所有关联数据
+
+    参数:
+        world_id: World 文档的 ID
+
+    返回:
+        bool: 是否成功删除
+
+    说明:
+        - 删除 WorldDocument
+        - 删除所有关联的 AgentContext (agent_contexts 集合)
+        - 删除所有关联的 AgentMessage (agent_messages 集合)
+        - 删除所有关联的 EntitySerialization (entity_serializations 集合)
+        - 删除所有关联的 EntityComponent (entity_components 集合)
+        - 级联删除所有子数据
+    """
+    try:
+        # 检查 World 是否存在
+        world_doc = mongo_find_one("worlds", filter_dict={"_id": world_id})
+        if not world_doc:
+            logger.warning(f"World 不存在: {world_id}")
+            return False
+
+        logger.info(
+            f"开始删除 World: ID={world_id}, game_name={world_doc.get('game_name')}"
+        )
+
+        # 删除 AgentContexts
+        deleted_agent_contexts = mongo_delete_many(
+            "agent_contexts", filter_dict={"world_id": world_id}
+        )
+        logger.info(f"删除 {deleted_agent_contexts} 个 AgentContext")
+
+        # 删除 AgentMessages
+        deleted_agent_messages = mongo_delete_many(
+            "agent_messages", filter_dict={"world_id": world_id}
+        )
+        logger.info(f"删除 {deleted_agent_messages} 个 AgentMessage")
+
+        # 删除 EntitySerializations
+        deleted_entity_serializations = mongo_delete_many(
+            "entity_serializations", filter_dict={"world_id": world_id}
+        )
+        logger.info(f"删除 {deleted_entity_serializations} 个 EntitySerialization")
+
+        # 删除 EntityComponents
+        deleted_entity_components = mongo_delete_many(
+            "entity_components", filter_dict={"world_id": world_id}
+        )
+        logger.info(f"删除 {deleted_entity_components} 个 EntityComponent")
+
+        # 删除 WorldDocument
+        success = mongo_delete_one("worlds", filter_dict={"_id": world_id})
+
+        if success:
+            logger.info(f"World 删除完成: ID={world_id}")
+        else:
+            logger.warning(f"World 删除失败: ID={world_id}")
+
+        return success
+
+    except Exception as e:
+        logger.error(f"删除 World 失败: {e}")
         raise
 
 

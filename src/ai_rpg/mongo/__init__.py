@@ -5,9 +5,6 @@ MongoDB 模块
 """
 
 from .world_document import WorldDocument
-
-# from .boot_document import BootDocument
-# from .dungeon_document import DungeonDocument
 from .client import (
     MongoClientType,
     MongoCollectionType,
@@ -38,8 +35,6 @@ from .client import (
 
 
 __all__ = [
-    # "BootDocument",
-    "DungeonDocument",
     "WorldDocument",
     "MongoClientType",
     "MongoDatabaseType",

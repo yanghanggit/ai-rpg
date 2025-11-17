@@ -77,7 +77,7 @@ class Combat(BaseModel):
 
 
 @final
-class Engagement(BaseModel):
+class CombatSequence(BaseModel):
     combats: List[Combat] = []
 
     ###############################################################################################################################################
@@ -199,7 +199,7 @@ class Engagement(BaseModel):
 class Dungeon(BaseModel):
     name: str
     stages: List[Stage] = []
-    engagement: Engagement = Engagement()
+    combat_sequence: CombatSequence = CombatSequence()
     current_stage_index: int = -1
 
     @property

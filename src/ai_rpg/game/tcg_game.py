@@ -11,7 +11,7 @@ from ..game.tcg_game_process_pipeline import (
 from ..models import (
     Dungeon,
     DungeonComponent,
-    Engagement,
+    CombatSequence,
     EnvironmentComponent,
     World,
     Round,
@@ -60,8 +60,8 @@ class TCGGame(RPGGame):
 
     ###############################################################################################################################################
     @property
-    def current_engagement(self) -> Engagement:
-        return self.current_dungeon.engagement
+    def current_engagement(self) -> CombatSequence:
+        return self.current_dungeon.combat_sequence
 
     ###############################################################################################################################################
     @property

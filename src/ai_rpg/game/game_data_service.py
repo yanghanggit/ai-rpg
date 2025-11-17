@@ -2,12 +2,6 @@ import shutil
 from pathlib import Path
 from typing import Optional
 from loguru import logger
-from ..mongo import (
-    WorldDocument,
-    mongo_delete_one,
-    mongo_find_one,
-    mongo_upsert_one,
-)
 from ..models.world import Boot, World
 from .player_session import PlayerSession
 from ..game.config import WORLD_BOOT_DIR
@@ -65,35 +59,35 @@ def get_game_boot_data(game: str) -> Optional[Boot]:
 
 ###############################################################################################################################################
 def get_user_world_data(user: str, game: str) -> Optional[World]:
-    """
-    全局方法：从 MongoDB 获取指定用户和游戏的世界数据
+    # """
+    # 全局方法：从 MongoDB 获取指定用户和游戏的世界数据
 
-    Args:
-        user: 用户名
-        game: 游戏名称
+    # Args:
+    #     user: 用户名
+    #     game: 游戏名称
 
-    Returns:
-        World 对象或 None
-    """
-    logger.debug(f"📖 从 MongoDB 获取游戏世界进行验证...")
-    stored_world = mongo_find_one(
-        # DEFAULT_MONGODB_CONFIG.worlds_collection,
-        WorldDocument.__name__,
-        {"username": user, "game_name": game},
-    )
-    if stored_world is None:
-        logger.warning(f"没有找到游戏世界数据 = {user}:{game}")
-        return None
+    # Returns:
+    #     World 对象或 None
+    # """
+    # logger.debug(f"📖 从 MongoDB 获取游戏世界进行验证...")
+    # stored_world = mongo_find_one(
+    #     # DEFAULT_MONGODB_CONFIG.worlds_collection,
+    #     WorldDocument.__name__,
+    #     {"username": user, "game_name": game},
+    # )
+    # if stored_world is None:
+    #     logger.warning(f"没有找到游戏世界数据 = {user}:{game}")
+    #     return None
 
-    # 尝试使用便捷方法反序列化为 World 对象
-    try:
+    # # 尝试使用便捷方法反序列化为 World 对象
+    # try:
 
-        world_doc = WorldDocument.from_mongo(stored_world)
-        assert world_doc is not None, "WorldDocument 反序列化失败"
-        return world_doc.world_data
+    #     world_doc = WorldDocument.from_mongo(stored_world)
+    #     assert world_doc is not None, "WorldDocument 反序列化失败"
+    #     return world_doc.world_data
 
-    except Exception as e:
-        logger.error(f"❌ 从 MongoDB 获取游戏世界失败: {str(e)}")
+    # except Exception as e:
+    #     logger.error(f"❌ 从 MongoDB 获取游戏世界失败: {str(e)}")
 
     return None
 
@@ -106,70 +100,72 @@ def delete_user_world_data(user: str) -> None:
     Args:
         user: 用户名
     """
-    logger.warning(f"🗑️ 删除用户 {user} 的游戏世界数据...")
+    pass
+    # logger.warning(f"🗑️ 删除用户 {user} 的游戏世界数据...")
 
-    try:
-        # 删除 MongoDB 中的世界数据
-        result = mongo_delete_one(WorldDocument.__name__, {"username": user})
-        if not result:
-            logger.warning(f"❌ 用户 {user} 的游戏世界数据删除失败或不存在。")
+    # try:
+    #     # 删除 MongoDB 中的世界数据
+    #     result = mongo_delete_one(WorldDocument.__name__, {"username": user})
+    #     if not result:
+    #         logger.warning(f"❌ 用户 {user} 的游戏世界数据删除失败或不存在。")
 
-    except Exception as e:
-        logger.error(f"❌ 删除用户 {user} 的游戏世界数据失败: {str(e)}")
+    # except Exception as e:
+    #     logger.error(f"❌ 删除用户 {user} 的游戏世界数据失败: {str(e)}")
 
 
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
 def persist_world_data(username: str, world: World) -> None:
-    """将游戏世界持久化到 MongoDB"""
+    # """将游戏世界持久化到 MongoDB"""
+    pass
     # logger.debug("📝 创建演示游戏世界并存储到 MongoDB...")
 
     # version = "0.0.1"
-    collection_name = WorldDocument.__name__  # 使用类名作为集合名称
+    # collection_name = WorldDocument.__name__  # 使用类名作为集合名称
 
-    try:
-        # 创建 WorldDocument
-        world_document = WorldDocument.create_from_world(
-            username=username, world=world, version="0.0.1"
-        )
+    # try:
+    #     # 创建 WorldDocument
+    #     world_document = WorldDocument.create_from_world(
+    #         username=username, world=world, version="0.0.1"
+    #     )
 
-        # 保存 WorldDocument 到 MongoDB
-        # logger.debug(f"📝 存储演示游戏世界到 MongoDB 集合: {collection_name}")
-        inserted_id = mongo_upsert_one(collection_name, world_document.to_dict())
+    #     # 保存 WorldDocument 到 MongoDB
+    #     # logger.debug(f"📝 存储演示游戏世界到 MongoDB 集合: {collection_name}")
+    #     inserted_id = mongo_upsert_one(collection_name, world_document.to_dict())
 
-        if inserted_id:
-            # logger.debug("✅ 演示游戏世界已存储到 MongoDB!")
+    #     if inserted_id:
+    #         # logger.debug("✅ 演示游戏世界已存储到 MongoDB!")
 
-            # 验证已保存的 WorldDocument
-            # logger.debug("📖 从 MongoDB 获取演示游戏世界进行验证...")
+    #         # 验证已保存的 WorldDocument
+    #         # logger.debug("📖 从 MongoDB 获取演示游戏世界进行验证...")
 
-            saved_world_data = mongo_find_one(
-                collection_name,
-                {
-                    "username": username,
-                    "game_name": world.boot.name,
-                },
-            )
+    #         saved_world_data = mongo_find_one(
+    #             collection_name,
+    #             {
+    #                 "username": username,
+    #                 "game_name": world.boot.name,
+    #             },
+    #         )
 
-            if not saved_world_data:
-                logger.error("❌ 从 MongoDB 获取演示游戏世界失败!")
-            else:
-                try:
-                    # 使用便捷方法反序列化为 WorldDocument 对象
-                    # _world_document = WorldDocument.from_mongodb(retrieved_world_data)
-                    # logger.success(
-                    #     f"✅ 演示游戏世界已从 MongoDB 成功获取! = {_world_document.model_dump_json()}"
-                    # )
-                    pass
-                except Exception as validation_error:
-                    logger.error(f"❌ WorldDocument 反序列化失败: {validation_error}")
-        else:
-            logger.error("❌ 演示游戏世界存储到 MongoDB 失败!")
+    #         if not saved_world_data:
+    #             logger.error("❌ 从 MongoDB 获取演示游戏世界失败!")
+    #         else:
+    #             try:
+    #                 # 使用便捷方法反序列化为 WorldDocument 对象
+    #                 # _world_document = WorldDocument.from_mongodb(retrieved_world_data)
+    #                 # logger.success(
+    #                 #     f"✅ 演示游戏世界已从 MongoDB 成功获取! = {_world_document.model_dump_json()}"
+    #                 # )
+    #                 pass
+    #             except Exception as validation_error:
+    #                 logger.error(f"❌ WorldDocument 反序列化失败: {validation_error}")
+    #     else:
+    #         logger.error("❌ 演示游戏世界存储到 MongoDB 失败!")
 
-    except Exception as e:
-        logger.error(f"❌ 演示游戏世界 MongoDB 操作失败: {e}")
-        raise
+    # except Exception as e:
+    #     logger.error(f"❌ 演示游戏世界 MongoDB 操作失败: {e}")
+    #     raise
 
 
 ###############################################################################################################################################

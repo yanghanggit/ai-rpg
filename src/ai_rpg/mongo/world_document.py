@@ -11,6 +11,7 @@ from ..models.world import World
 from .agent_document import save_agent_contexts, load_agent_contexts
 from .entity_document import save_entity_serializations, load_entity_serializations
 from .boot_document import save_boot, load_boot
+from .dungeon_document import save_dungeon, load_dungeon
 from .client import (
     mongo_upsert_one,
     mongo_find_one,
@@ -45,6 +46,7 @@ class WorldDocument(BaseModel):
     version: str = Field(default="1.0.0", description="版本号")
     runtime_index: int = Field(default=1000, description="运行时索引计数器")
     boot_id: str = Field(default="", description="关联的 Boot 文档 ID")
+    dungeon_id: str = Field(default="", description="关联的 Dungeon 文档 ID")
 
 
 ###############################################################################################################################################
@@ -105,8 +107,14 @@ def save_world(username: str, world: World) -> str:
             mongo_upsert_one("worlds", doc_dict, filter_key="_id")
             logger.info(f"存储 Boot: ID={boot_id}")
 
-        # TODO: 后续添加
-        # - 存储 dungeon
+        # 存储 Dungeon (每次都保存，因为是运行时数据)
+        dungeon_id = save_dungeon(world.dungeon, world_id)
+        if dungeon_id:
+            # 更新 WorldDocument 的 dungeon_id
+            world_doc.dungeon_id = dungeon_id
+            doc_dict = world_doc.model_dump(by_alias=True)
+            mongo_upsert_one("worlds", doc_dict, filter_key="_id")
+            logger.info(f"存储 Dungeon: ID={dungeon_id}")
 
         logger.info(f"World 存储完成: ID={world_id}")
         return world_id
@@ -153,14 +161,16 @@ def load_world(world_id: str) -> World:
         # 加载 Boot
         boot = load_boot(world_id)
 
+        # 加载 Dungeon
+        dungeon = load_dungeon(world_id)
+
         # 创建 World 对象
         world = World(
             runtime_index=world_doc_dict.get("runtime_index", 1000),  # 加载运行时索引
             agents_context=agents_context,
             entities_serialization=entities_serialization,  # 加载实体序列化
             boot=boot,  # 加载 Boot
-            # 其他字段使用默认值（后续实现完整加载）
-            # dungeon=Dungeon(name=""),
+            dungeon=dungeon,  # 加载 Dungeon
         )
 
         logger.info(f"World 加载完成: ID={world_id}")
@@ -229,6 +239,13 @@ def delete_world(world_id: str) -> bool:
         deleted_boot = mongo_delete_one("boots", filter_dict={"world_id": world_id})
         if deleted_boot:
             logger.info(f"删除 Boot 成功")
+
+        # 删除 Dungeon
+        deleted_dungeon = mongo_delete_one(
+            "dungeons", filter_dict={"world_id": world_id}
+        )
+        if deleted_dungeon:
+            logger.info(f"删除 Dungeon 成功")
 
         # 删除 WorldDocument
         success = mongo_delete_one("worlds", filter_dict={"_id": world_id})

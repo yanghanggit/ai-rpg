@@ -16,8 +16,9 @@ from typing import List, Literal, final, Dict
 from uuid import uuid4
 from pydantic import BaseModel, ConfigDict, Field
 from loguru import logger
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from ..models.world import AgentContext
-from .client import mongo_upsert_one, mongo_find_many
+from .client import mongo_upsert_one, mongo_find_many, mongo_insert_one
 
 
 ###############################################################################################################################################
@@ -98,6 +99,49 @@ class AgentMessageDocument(BaseModel):
 
 
 ###############################################################################################################################################
+def _save_agent_messages(
+    agent_context: AgentContext,
+    agent_context_id: str,
+    world_id: str,
+) -> None:
+    """
+    存储 Agent 的所有消息内容到 MongoDB
+
+    参数:
+        agent_context: AgentContext 对象
+        agent_context_id: AgentContext 文档的 ID
+        world_id: World 文档的 ID
+    """
+    try:
+        for idx, message in enumerate(agent_context.context):
+            # 生成消息 ID
+            message_id = f"msg_{world_id}_{agent_context.name}_{idx}"
+
+            # 创建消息文档（使用 _id 参数）
+            message_doc = AgentMessageDocument(
+                _id=message_id,
+                agent_context_id=agent_context_id,
+                world_id=world_id,
+                agent_name=agent_context.name,
+                type=message.type,
+                index=idx,
+                message_data=message.model_dump_json(),  # 序列化消息内容
+            )
+
+            # 存储到 MongoDB
+            doc_dict = message_doc.model_dump(by_alias=True)
+            mongo_insert_one("agent_messages", doc_dict)
+
+            logger.debug(
+                f"存储消息成功: {agent_context.name}, type={message.type}, index={idx}"
+            )
+
+    except Exception as e:
+        logger.error(f"存储消息失败: {agent_context.name}, 错误: {e}")
+        raise
+
+
+###############################################################################################################################################
 def save_agent_contexts(
     agents_context: Dict[str, AgentContext], world_id: str
 ) -> List[str]:
@@ -145,6 +189,10 @@ def save_agent_contexts(
 
             if result_id:
                 saved_ids.append(result_id)
+
+                # 存储每条消息的完整内容
+                _save_agent_messages(agent_context, context_doc.id, world_id)
+
                 logger.debug(
                     f"存储 AgentContext 成功: {agent_name}, "
                     f"消息数: {len(agent_context.context)}, ID: {result_id}"
@@ -159,6 +207,58 @@ def save_agent_contexts(
 
     except Exception as e:
         logger.error(f"存储 AgentContexts 失败: {e}")
+        raise
+
+
+###############################################################################################################################################
+def _load_agent_messages(
+    agent_context_id: str,
+) -> List[SystemMessage | HumanMessage | AIMessage]:
+    """
+    从 MongoDB 加载 Agent 的所有消息
+
+    参数:
+        agent_context_id: AgentContext 文档的 ID
+
+    返回:
+        List[SystemMessage | HumanMessage | AIMessage]: 消息列表
+    """
+    try:
+        # 查询所有属于该 AgentContext 的消息
+        message_docs = mongo_find_many(
+            "agent_messages",
+            filter_dict={"agent_context_id": agent_context_id},
+            sort=[("index", 1)],  # 按 index 排序
+        )
+
+        messages: List[SystemMessage | HumanMessage | AIMessage] = []
+
+        for doc in message_docs:
+            message_type = doc["type"]
+            message_data = doc["message_data"]
+
+            # 根据类型反序列化消息
+            message: SystemMessage | HumanMessage | AIMessage
+            if message_type == "system":
+                message = SystemMessage.model_validate_json(message_data)
+            elif message_type == "human":
+                message = HumanMessage.model_validate_json(message_data)
+            elif message_type == "ai":
+                message = AIMessage.model_validate_json(message_data)
+            else:
+                logger.warning(f"未知消息类型: {message_type}")
+                continue
+
+            messages.append(message)
+
+            logger.debug(
+                f"加载消息: {doc['agent_name']}, type={message_type}, index={doc['index']}"
+            )
+
+        return messages
+
+    except Exception as e:
+        logger.error(f"加载消息失败: agent_context_id={agent_context_id}, 错误: {e}")
         raise
 
 
@@ -188,10 +288,15 @@ def load_agent_contexts(world_id: str) -> Dict[str, AgentContext]:
 
         for doc in context_docs:
             agent_name = doc["agent_name"]
-            # 创建 AgentContext（暂时不加载消息内容）
+            agent_context_id = doc["_id"]
+
+            # 加载消息内容
+            messages = _load_agent_messages(agent_context_id)
+
+            # 创建 AgentContext
             agent_context = AgentContext(
                 name=agent_name,
-                context=[],  # TODO: 后续从 agent_messages 加载实际消息
+                context=messages,
             )
             agents_context[agent_name] = agent_context
 

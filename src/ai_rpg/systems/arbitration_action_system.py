@@ -235,7 +235,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         request_handler = ChatClient(
             name=stage_entity.name,
             prompt=message,
-            chat_history=self._game.get_agent_chat_history(stage_entity).chat_history,
+            context=self._game.get_agent_context(stage_entity).context,
         )
 
         # 用语言服务系统进行推理。

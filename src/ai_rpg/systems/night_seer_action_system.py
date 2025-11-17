@@ -151,11 +151,11 @@ class NightSeerActionSystem(ReactiveProcessor):
 
         # 创建决策请求
         prompt = _generate_check_decision_prompt(target_options_mapping)
-        agent_short_term_memory = self._game.get_agent_chat_history(seer_entity)
+        agent_context = self._game.get_agent_context(seer_entity)
         request_handler = ChatClient(
             name=seer_entity.name,
             prompt=prompt,
-            chat_history=agent_short_term_memory.chat_history,
+            context=agent_context.context,
         )
 
         # 执行请求

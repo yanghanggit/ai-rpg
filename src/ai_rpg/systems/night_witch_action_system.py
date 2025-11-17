@@ -161,13 +161,13 @@ class NightWitchActionSystem(ReactiveProcessor):
         )
 
         # 获取上下文。
-        witch_agent_memory = self._game.get_agent_chat_history(witch_entity)
+        agent_context = self._game.get_agent_context(witch_entity)
 
         # 构建请求处理器
         request_handler = ChatClient(
             name=witch_entity.name,
             prompt=prompt,
-            chat_history=witch_agent_memory.chat_history,
+            context=agent_context.context,
         )
 
         # 执行请求

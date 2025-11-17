@@ -127,14 +127,14 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
 
 请严格按照上述的 JSON 标准示例 格式输出！"""
 
-        agent_memory = self._game.get_agent_chat_history(selected_entity)
+        agent_context = self._game.get_agent_context(selected_entity)
 
         request_handlers: List[ChatClient] = []
         request_handlers.append(
             ChatClient(
                 name=selected_entity.name,
                 prompt=prompt,
-                chat_history=agent_memory.chat_history,
+                context=agent_context.context,
             )
         )
 

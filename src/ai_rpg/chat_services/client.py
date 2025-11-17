@@ -7,7 +7,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from .protocol import (
     ChatRequest,
-    ChatRequestMessageListType,
+    # ContextMessageType,
     ChatResponse,
 )
 import time
@@ -64,7 +64,7 @@ class ChatClient:
         self,
         name: str,
         prompt: str,
-        chat_history: ChatRequestMessageListType,
+        context: List[SystemMessage | HumanMessage | AIMessage],
         url: Optional[str] = None,
         timeout: Optional[int] = None,
     ) -> None:
@@ -75,8 +75,8 @@ class ChatClient:
         self._prompt: Final[str] = prompt
         assert self._prompt != "", "prompt should not be empty"
 
-        self._chat_history: ChatRequestMessageListType = chat_history
-        if len(self._chat_history) == 0:
+        self._context: List[SystemMessage | HumanMessage | AIMessage] = context
+        if len(self._context) == 0:
             logger.warning(f"{self._name}: chat_history is empty")
 
         self._chat_response: ChatResponse = ChatResponse()
@@ -91,7 +91,7 @@ class ChatClient:
         self._timeout: Final[int] = timeout if timeout is not None else 30
         assert self._timeout > 0, "timeout should be positive"
 
-        for message in self._chat_history:
+        for message in self._context:
             assert isinstance(message, (HumanMessage, AIMessage, SystemMessage))
 
         self._cache_response_ai_messages: Optional[List[AIMessage]] = None
@@ -188,7 +188,7 @@ class ChatClient:
                 url=self.url,
                 json=ChatRequest(
                     message=HumanMessage(content=self._prompt),
-                    chat_history=self._chat_history,
+                    context=self._context,
                 ).model_dump(),
                 timeout=self._timeout,
             )
@@ -234,7 +234,7 @@ class ChatClient:
                 url=self.url,
                 json=ChatRequest(
                     message=HumanMessage(content=self._prompt),
-                    chat_history=self._chat_history,
+                    context=self._context,
                 ).model_dump(),
                 timeout=self._timeout,
             )

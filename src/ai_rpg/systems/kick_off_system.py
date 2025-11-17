@@ -181,19 +181,17 @@ class KickOffSystem(ExecuteProcessor):
         1. 如果聊天历史第一条是system message，则重新构建消息序列
         2. 否则使用常规方式添加消息
         """
-        agent_memory = self._game.get_agent_chat_history(entity)
-        assert len(agent_memory.chat_history) == 1, "仅有一个system message!"
-        assert (
-            agent_memory.chat_history[0].type == "system"
-        ), "第一条必须是system message!"
+        agent_context = self._game.get_agent_context(entity)
+        assert len(agent_context.context) == 1, "仅有一个system message!"
+        assert agent_context.context[0].type == "system", "第一条必须是system message!"
 
         if (
-            len(agent_memory.chat_history) == 1
-            and agent_memory.chat_history[0].type == "system"
+            len(agent_context.context) == 1
+            and agent_context.context[0].type == "system"
         ):
             # 确保类型正确的消息列表
             message_context_list: List[SystemMessage | HumanMessage | AIMessage] = [
-                agent_memory.chat_history[0]  # system message
+                agent_context.context[0]  # system message
             ]
 
             # 添加原有的system message（确保类型匹配）
@@ -211,10 +209,10 @@ class KickOffSystem(ExecuteProcessor):
             message_context_list.extend(ai_messages)  # cache response ai messages
 
             # 移除原有的system message
-            agent_memory.chat_history.pop(0)
+            agent_context.context.pop(0)
 
             # 将新的上下文消息添加到聊天历史的开头
-            agent_memory.chat_history = message_context_list + agent_memory.chat_history
+            agent_context.context = message_context_list + agent_context.context
 
             # 打印调试信息
             logger.warning(f"!cache human message: {entity.name} => \n{prompt}")
@@ -282,12 +280,9 @@ class KickOffSystem(ExecuteProcessor):
         Returns:
             str: 系统消息内容，如果没有则返回空字符串
         """
-        agent_memory = self._game.get_agent_chat_history(entity)
-        if (
-            len(agent_memory.chat_history) > 0
-            and agent_memory.chat_history[0].type == "system"
-        ):
-            return str(agent_memory.chat_history[0].content)
+        agent_context = self._game.get_agent_context(entity)
+        if len(agent_context.context) > 0 and agent_context.context[0].type == "system":
+            return str(agent_context.context[0].content)
         return ""
 
     ###############################################################################################################################################
@@ -321,12 +316,12 @@ class KickOffSystem(ExecuteProcessor):
             gen_prompt = self._generate_prompt(entity1)
             assert gen_prompt != "", "Generated prompt should not be empty"
 
-            agent_short_term_memory = self._game.get_agent_chat_history(entity1)
+            agent_context = self._game.get_agent_context(entity1)
             request_handlers.append(
                 ChatClient(
                     name=entity1.name,
                     prompt=gen_prompt,
-                    chat_history=agent_short_term_memory.chat_history,
+                    context=agent_context.context,
                 )
             )
 

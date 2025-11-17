@@ -218,12 +218,12 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
         prompt = _generate_introduction_prompt()
 
         for entity in all_actor_entities:
-            agent_short_term_memory = self._game.get_agent_chat_history(entity)
+            agent_context = self._game.get_agent_context(entity)
             request_handlers.append(
                 ChatClient(
                     name=entity.name,
                     prompt=prompt,
-                    chat_history=agent_short_term_memory.chat_history,
+                    context=agent_context.context,
                 )
             )
 

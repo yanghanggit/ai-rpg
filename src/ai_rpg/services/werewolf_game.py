@@ -503,7 +503,6 @@ async def start_werewolf_game(
                 name=payload.user_name,
                 actor="角色.主持人",  # 写死先！
                 game=payload.game_name,
-                world_id="",
             ),
             world=World(boot=world_boot),
         )

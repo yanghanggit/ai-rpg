@@ -58,9 +58,6 @@ class PlayerSession(BaseModel):
     # 游戏名字
     game: str
 
-    # 游戏 world_id
-    world_id: str
-
     # 会话的完整消息/事件历史列表
     # 所有事件都会持续累积在此列表中,形成完整的会话记录
     session_messages: List[SessionMessage] = []

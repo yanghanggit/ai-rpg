@@ -46,7 +46,6 @@ async def start(
                 name=payload.user_name,
                 actor=payload.actor_name,
                 game=payload.game_name,
-                world_id="",
             )
             assert room._player_session is not None, "房间玩家客户端实例不存在"
 

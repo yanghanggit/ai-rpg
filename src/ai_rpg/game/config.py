@@ -12,10 +12,16 @@ assert LOGS_DIR.exists(), f"找不到目录: {LOGS_DIR}"
 
 
 ###########################################################################################################################################
-# 生成log的目录
+# 游戏世界数据目录
 WORLD_BOOT_DIR: Path = Path("world_boots")
 WORLD_BOOT_DIR.mkdir(parents=True, exist_ok=True)
 assert WORLD_BOOT_DIR.exists(), f"找不到目录: {WORLD_BOOT_DIR}"
+
+###########################################################################################################################################
+# 运行时游戏世界数据目录
+WORLD_RUNTIME_DIR: Path = Path("world_runtime")
+WORLD_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+assert WORLD_RUNTIME_DIR.exists(), f"找不到目录: {WORLD_RUNTIME_DIR}"
 
 ###########################################################################################################################################
 # 日志配置

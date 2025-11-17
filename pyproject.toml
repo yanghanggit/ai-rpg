@@ -149,7 +149,6 @@ dependencies = [
     "psycopg2-binary>=2.9.10",
     "passlib>=1.7.4",
     "python-jose>=3.5.0",
-    "pymongo>=3.13.0,<4.0",
 ]
 
 [project.optional-dependencies]
@@ -184,7 +183,6 @@ dev = [
     
     # Additional dev tools
     "psutil>=7.1.0",
-    "pymongo-stubs>=0.2.0",
 ]
 
 # 脚本位于项目根目录的 scripts/ 文件夹中

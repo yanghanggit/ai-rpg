@@ -203,7 +203,6 @@ def get_network_and_services() -> None:
         8000: "Django/FastAPI开发服务器",
         8080: "HTTP备用端口",
         5432: "PostgreSQL数据库",
-        27017: "MongoDB数据库",
         3306: "MySQL数据库",
     }
 

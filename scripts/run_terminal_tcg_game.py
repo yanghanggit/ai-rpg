@@ -397,7 +397,7 @@ async def _run_game(
 
     # 注意，如果确定player是固定的，但是希望每次玩新游戏，就调用这句。
     # 或者，换成random_name，随机生成一个player名字。
-    delete_user_world_data(user)
+    delete_user_world_data(user, GLOBAL_TCG_GAME_NAME)
 
     # 先检查一下world_data是否存在
     world_exists = get_user_world_data(user, game)

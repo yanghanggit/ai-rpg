@@ -68,3 +68,4 @@ generated_images/
 # Other Files and Directories to Ignore
 # -----------------------------------------------------------------------------
 world_boots/
+world_runtime/

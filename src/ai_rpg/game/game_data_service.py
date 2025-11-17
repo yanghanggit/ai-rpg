@@ -1,10 +1,11 @@
+import gzip
 import shutil
 from pathlib import Path
 from typing import Optional
 from loguru import logger
 from ..models.world import Boot, World
 from .player_session import PlayerSession
-from ..game.config import WORLD_BOOT_DIR
+from ..game.config import WORLD_BOOT_DIR, WORLD_RUNTIME_DIR
 
 
 ###############################################################################################################################################
@@ -12,7 +13,7 @@ from ..game.config import WORLD_BOOT_DIR
 ###############################################################################################################################################
 def get_game_boot_data(game: str) -> Optional[Boot]:
     """
-    全局方法：从 MongoDB 获取指定游戏的启动世界数据
+    全局方法：从本地文件系统获取指定游戏的启动世界数据
 
     Args:
         game: 游戏名称
@@ -41,19 +42,100 @@ def get_game_boot_data(game: str) -> Optional[Boot]:
 
 ###############################################################################################################################################
 def get_user_world_data(user: str, game: str) -> Optional[World]:
+    """
+    从本地文件系统获取用户的游戏世界运行时数据
+
+    Args:
+        user: 用户名
+        game: 游戏名称
+
+    Returns:
+        World 对象或 None（如果文件不存在或读取失败）
+    """
+    read_path = WORLD_RUNTIME_DIR / user / game / "runtime.json"
+    if not read_path.exists():
+        return None
+
+    try:
+
+        logger.debug(f"📖 从本地文件系统获取用户游戏世界数据...")
+        world_json = read_path.read_text(encoding="utf-8")
+        world_data = World.model_validate_json(world_json)
+        return world_data
+
+    except Exception as e:
+        logger.error(f"❌ 从本地文件系统获取用户游戏世界数据失败: {str(e)}")
+
     return None
 
 
 ###############################################################################################################################################
-def delete_user_world_data(user: str) -> None:
-    pass
+def delete_user_world_data(user: str, game: str) -> bool:
+    """
+    删除用户的游戏世界数据目录
+
+    Args:
+        user: 用户名
+        game: 游戏名称
+    """
+    write_dir = WORLD_RUNTIME_DIR / user / game
+    if write_dir.exists():
+        shutil.rmtree(write_dir)
+        logger.debug(f"🗑️ 已删除用户游戏世界数据目录: {write_dir}")
+        return True
+
+    return False
 
 
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
-def persist_world_data(username: str, world: World) -> None:
-    pass
+def persist_world_data(username: str, world: World, enable_gzip: bool = True) -> bool:
+    """
+    持久化用户的游戏世界数据到本地文件系统
+
+    保存内容包括：
+    - runtime.json: 完整的世界运行时数据
+    - boot.json: 游戏启动配置数据
+    - runtime.json.gz: 压缩版本的世界数据（可选）
+
+    Args:
+        username: 用户名
+        world: 要保存的世界对象
+        use_gzip: 是否同时保存 gzip 压缩版本，默认为 True
+    """
+    game = str(world.boot.name)
+    write_dir = WORLD_RUNTIME_DIR / username / game
+    write_dir.mkdir(parents=True, exist_ok=True)
+    assert write_dir.exists(), f"找不到目录: {write_dir}"
+
+    try:
+        # 序列化世界数据（只调用一次）
+        world_json = world.model_dump_json()
+
+        # 保存 runtime.json
+        write_path = write_dir / "runtime.json"
+        write_path.write_text(world_json, encoding="utf-8")
+        logger.debug(f"💾 已保存用户游戏世界数据到文件: {write_path}")
+
+        # 保存 boot.json
+        write_boot_path = write_dir / "boot.json"
+        write_boot_path.write_text(world.boot.model_dump_json(), encoding="utf-8")
+        logger.debug(f"💾 已保存用户游戏启动数据到文件: {write_boot_path}")
+
+        # 如果需要，保存压缩版本
+        if enable_gzip:
+            gzip_path = write_dir / "runtime.json.gz"
+            with gzip.open(gzip_path, "wt", encoding="utf-8") as gz_file:
+                gz_file.write(world_json)
+            logger.debug(f"💾 已保存用户游戏世界数据到压缩文件: {gzip_path}")
+
+        return True
+
+    except Exception as e:
+        logger.error(f"❌ 保存用户游戏世界数据失败: {str(e)}")
+
+    return False
 
 
 ###############################################################################################################################################

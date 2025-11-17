@@ -31,8 +31,8 @@ from ..models import (
     KickOffMessageComponent,
     EnemyComponent,
     PlayerComponent,
-    RPGCharacterProfile,
-    RPGCharacterProfileComponent,
+    CharacterStats,
+    CombatStatsComponent,
     RuntimeComponent,
     Stage,
     StageComponent,
@@ -254,17 +254,15 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
 
             # 必要组件：基础属性，这里用浅拷贝，不能动原有的。
             actor_entity.add(
-                RPGCharacterProfileComponent,
+                CombatStatsComponent,
                 actor_model.name,
-                copy.copy(actor_model.rpg_character_profile),
+                copy.copy(actor_model.character_stats),
                 [],
             )
 
             # 测试类型。
-            character_profile_component = actor_entity.get(RPGCharacterProfileComponent)
-            assert isinstance(
-                character_profile_component.rpg_character_profile, RPGCharacterProfile
-            )
+            character_profile_component = actor_entity.get(CombatStatsComponent)
+            assert isinstance(character_profile_component.stats, CharacterStats)
 
             # 必要组件：类型标记
             match actor_model.character_sheet.type:

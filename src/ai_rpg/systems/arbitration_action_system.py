@@ -12,7 +12,7 @@ from ..models import (
     ArbitrationAction,
     DungeonComponent,
     PlayCardsAction,
-    RPGCharacterProfileComponent,
+    CombatStatsComponent,
     Skill,
     StageComponent,
     AgentEvent,
@@ -85,7 +85,7 @@ class PromptParameters(NamedTuple):
     actor: str
     target: str
     skill: Skill
-    rpg_character_profile_component: RPGCharacterProfileComponent
+    rpg_character_profile_component: CombatStatsComponent
 
 
 #######################################################################################################################################
@@ -203,7 +203,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         for entity in react_entities:
 
             assert entity.has(ActorComponent)
-            assert entity.has(RPGCharacterProfileComponent)
+            assert entity.has(CombatStatsComponent)
             assert entity.has(PlayCardsAction)
 
             play_cards_action = entity.get(PlayCardsAction)
@@ -214,9 +214,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
                     actor=entity.name,
                     target=play_cards_action.target,
                     skill=play_cards_action.skill,
-                    rpg_character_profile_component=entity.get(
-                        RPGCharacterProfileComponent
-                    ),
+                    rpg_character_profile_component=entity.get(CombatStatsComponent),
                 )
             )
 

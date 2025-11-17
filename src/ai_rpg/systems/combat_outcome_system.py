@@ -4,7 +4,7 @@ from ..entitas import ExecuteProcessor, Matcher, Entity
 from ..game.tcg_game import TCGGame
 from ..models import (
     DeathComponent,
-    RPGCharacterProfileComponent,
+    CombatStatsComponent,
     CombatResult,
     AllyComponent,
     EnemyComponent,
@@ -29,11 +29,11 @@ class CombatOutcomeSystem(ExecuteProcessor):
     def _check_health_status(self) -> None:
         # 更新角色的健康状态
         entities = self._game.get_group(
-            Matcher(all_of=[RPGCharacterProfileComponent], none_of=[DeathComponent])
+            Matcher(all_of=[CombatStatsComponent], none_of=[DeathComponent])
         ).entities.copy()
         for entity in entities:
-            rpg_character_profile_component = entity.get(RPGCharacterProfileComponent)
-            if rpg_character_profile_component.rpg_character_profile.hp <= 0:
+            rpg_character_profile_component = entity.get(CombatStatsComponent)
+            if rpg_character_profile_component.stats.hp <= 0:
                 logger.warning(f"{rpg_character_profile_component.name} is dead")
                 self._game.append_human_message(entity, "# 你已被击败！")
                 entity.replace(DeathComponent, rpg_character_profile_component.name)

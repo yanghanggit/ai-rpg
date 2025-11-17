@@ -12,13 +12,13 @@ def create_demo_dungeon4() -> Dungeon:
     # 创建两个洞窟场景
     stage_cave1 = create_stage_cave1()
     actor_goblin = create_actor_goblin()
-    actor_goblin.rpg_character_profile.hp = 1
+    actor_goblin.character_stats.hp = 1
     actor_goblin.kick_off_message += f"""\n注意:你每次战斗一定会先使用烟雾弹。"""
     stage_cave1.actors = [actor_goblin]
 
     # 创建第二个洞窟场景
     actor_orc = create_actor_orc()
-    actor_orc.rpg_character_profile.hp = 1
+    actor_orc.character_stats.hp = 1
     stage_cave2 = create_stage_cave2()
     stage_cave2.actors = [actor_orc]
 

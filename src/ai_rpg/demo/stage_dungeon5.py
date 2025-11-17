@@ -31,7 +31,7 @@ def create_stage_cave5() -> Stage:
 def create_demo_dungeon5() -> Dungeon:
 
     actor_training_robot = create_actor_training_robot()
-    actor_training_robot.rpg_character_profile.hp = 10
+    actor_training_robot.character_stats.hp = 10
     actor_training_robot.kick_off_message += (
         f"""\n注意：你作为一个训练机器人只会最基本的攻击和防御技能。"""
     )

@@ -295,7 +295,6 @@ def test_vector_document_operations() -> None:
     from src.ai_rpg.pgsql.vector_document import (
         save_vector_document,
         search_similar_documents,
-        get_database_vector_stats,
     )
 
     logger.info("🧪 开始测试向量文档操作...")
@@ -382,13 +381,6 @@ def test_vector_document_operations() -> None:
 
     except Exception as e:
         logger.error(f"❌ 搜索测试失败: {e}")
-
-    # 3. 获取统计信息
-    try:
-        stats = get_database_vector_stats()
-        logger.info(f"📊 数据库统计: {stats}")
-    except Exception as e:
-        logger.error(f"❌ 获取统计失败: {e}")
 
 
 @pytest.mark.integration
@@ -524,13 +516,7 @@ def run_all_vector_tests() -> None:
         test_conversation_vector_operations()  # 现在是占位符函数
         # test_game_knowledge_operations()       # 已移除
 
-        # 获取最终统计
-        from src.ai_rpg.pgsql.vector_document import (
-            get_database_vector_stats,
-        )
-
-        final_stats = get_database_vector_stats()
-        logger.info(f"🏁 测试完成，最终统计: {final_stats}")
+        logger.info("🏁 测试完成")
 
     except Exception as e:
         logger.error(f"❌ 测试运行失败: {e}")
@@ -552,16 +538,6 @@ def run_all_demos() -> None:
         demo_document_rag_system()
         demo_conversation_memory()  # 现在是占位符函数
         demo_game_knowledge_system()  # 现在是占位符函数
-
-        # 显示最终统计
-        from src.ai_rpg.pgsql.vector_document import (
-            get_database_vector_stats,
-        )
-
-        logger.info("\n📊 最终数据库统计:")
-        stats = get_database_vector_stats()
-        for table_name, table_stats in stats.items():
-            logger.info(f"   {table_name}: {table_stats['with_embeddings']} 条向量记录")
 
         logger.info("\n✅ pgvector集成演示完成！")
         logger.info("🎉 您现在可以在项目中使用向量数据库功能了！")
@@ -619,16 +595,6 @@ def test_comprehensive_pgvector_demos(setup_database_tables: Any) -> None:
         demo_document_rag_system()
         demo_conversation_memory()  # 现在是占位符函数
         demo_game_knowledge_system()  # 现在是占位符函数
-
-        # 显示最终统计
-        from src.ai_rpg.pgsql.vector_document import (
-            get_database_vector_stats,
-        )
-
-        logger.info("\n📊 最终数据库统计:")
-        stats = get_database_vector_stats()
-        for table_name, table_stats in stats.items():
-            logger.info(f"   {table_name}: {table_stats['with_embeddings']} 条向量记录")
 
         logger.info("\n✅ pgvector集成演示完成！")
         logger.info("🎉 您现在可以在项目中使用向量数据库功能了！")

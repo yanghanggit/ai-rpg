@@ -45,7 +45,7 @@ class StageType(StrEnum):
 
 ###############################################################################################################################################
 @final
-class RPGCharacterProfile(BaseModel):
+class CharacterStats(BaseModel):
     experience: int = 0
     fixed_level: int = 1
     hp: int = 0
@@ -109,43 +109,43 @@ class RPGCharacterProfile(BaseModel):
 
 
 # 写一个方法，将RPGCharacterProfile的所有属性（包括@property的），生成一个str。
-def generate_character_profile_string(
-    rpg_character_profile: RPGCharacterProfile,
-) -> str:
-    attributes = [
-        "hp",
-        "max_hp",
-        "level",
-        "experience",
-        "strength",
-        "dexterity",
-        "wisdom",
-        "physical_attack",
-        "physical_defense",
-        "magic_attack",
-        "magic_defense",
-        # "base_max_hp",
-        # "base_strength",
-        # "base_dexterity",
-        # "base_wisdom",
-        # "base_physical_attack",
-        # "base_physical_defense",
-        # "base_magic_attack",
-        # "base_magic_defense",
-        # "strength_per_level",
-        # "dexterity_per_level",
-        # "wisdom_per_level",
-        # "fixed_level",
-        # "progression_level",
-        # "strength_per_level",
-        # "dexterity_per_level",
-        # "wisdom_per_level",
-    ]
-    result = []
-    for attr in attributes:
-        value = getattr(rpg_character_profile, attr)
-        result.append(f"{attr}: {value}")
-    return "\n".join(result)
+# def generate_character_profile_string(
+#     rpg_character_profile: CharacterStats,
+# ) -> str:
+#     attributes = [
+#         "hp",
+#         "max_hp",
+#         "level",
+#         "experience",
+#         "strength",
+#         "dexterity",
+#         "wisdom",
+#         "physical_attack",
+#         "physical_defense",
+#         "magic_attack",
+#         "magic_defense",
+#         # "base_max_hp",
+#         # "base_strength",
+#         # "base_dexterity",
+#         # "base_wisdom",
+#         # "base_physical_attack",
+#         # "base_physical_defense",
+#         # "base_magic_attack",
+#         # "base_magic_defense",
+#         # "strength_per_level",
+#         # "dexterity_per_level",
+#         # "wisdom_per_level",
+#         # "fixed_level",
+#         # "progression_level",
+#         # "strength_per_level",
+#         # "dexterity_per_level",
+#         # "wisdom_per_level",
+#     ]
+#     result = []
+#     for attr in attributes:
+#         value = getattr(rpg_character_profile, attr)
+#         result.append(f"{attr}: {value}")
+#     return "\n".join(result)
 
 
 ###############################################################################################################################################
@@ -205,7 +205,7 @@ class Actor(BaseModel):
     character_sheet: ActorCharacterSheet
     system_message: str
     kick_off_message: str
-    rpg_character_profile: RPGCharacterProfile
+    character_stats: CharacterStats
     inventory: Inventory
 
 

@@ -4,7 +4,7 @@ from ..entitas import ExecuteProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     EnvironmentComponent,
-    RPGCharacterProfileComponent,
+    CombatStatsComponent,
 )
 
 
@@ -51,9 +51,7 @@ class CombatInitializationSystem(ExecuteProcessor):
 
         for actor_entity in actor_entities:
 
-            rpg_character_profile_component = actor_entity.get(
-                RPGCharacterProfileComponent
-            )
+            rpg_character_profile_component = actor_entity.get(CombatStatsComponent)
             assert rpg_character_profile_component is not None
 
             # 复制一份角色外观映射，并且去掉自己的外观

@@ -31,7 +31,7 @@ def create_stage_cave2() -> Stage:
 def create_demo_dungeon2() -> Dungeon:
 
     actor_orc = create_actor_orc()
-    actor_orc.rpg_character_profile.hp = 1
+    actor_orc.character_stats.hp = 1
 
     stage_cave2 = create_stage_cave2()
     stage_cave2.actors = [actor_orc]

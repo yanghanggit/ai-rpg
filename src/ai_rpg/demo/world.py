@@ -11,7 +11,7 @@ from .stage_heros_camp import (
 
 
 #######################################################################################################################
-def create_demo_game_world(game_name: str) -> Boot:
+def create_demo_game_world_boot(game_name: str) -> Boot:
     # 创建世界
     world_boot = Boot(
         name=game_name, campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING

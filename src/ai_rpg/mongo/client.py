@@ -1,7 +1,15 @@
+"""
+MongoClient (连接实例)
+    └── Database (数据库)
+        └── Collection (集合)
+            └── Document (文档)
+"""
+
 from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Final,
     List,
     Optional,
     TypeAlias,
@@ -33,7 +41,7 @@ else:
     MongoCollectionType: TypeAlias = pymongo.collection.Collection  # type: ignore[type-arg]
 
 
-mongo_config = MongoConfig()
+mongo_config: Final[MongoConfig] = MongoConfig()
 mongo_client: MongoClientType = pymongo.MongoClient(mongo_config.connection_string)
 
 try:
@@ -64,7 +72,6 @@ def mongo_insert_one(
         PyMongoError: 当MongoDB操作失败时
     """
     try:
-        # db = mongodb_database
         collection = mongo_database[collection_name]
         result = collection.insert_one(document)
         logger.debug(
@@ -94,7 +101,6 @@ def mongo_insert_many(
         PyMongoError: 当MongoDB操作失败时
     """
     try:
-        # db = get_mongodb_database_instance()
         collection = mongo_database[collection_name]
         result = collection.insert_many(documents)
         logger.debug(
@@ -124,12 +130,8 @@ def mongo_find_one(
         PyMongoError: 当MongoDB操作失败时
     """
     try:
-        # db = get_mongodb_database_instance()
         collection = mongo_database[collection_name]
         result = collection.find_one(filter_dict or {})
-        # logger.debug(
-        #     f"MongoDB查找文档，集合: {collection_name}, 找到: {result is not None}"
-        # )
         return result
     except PyMongoError as e:
         logger.error(f"MongoDB查找文档失败，集合: {collection_name}, 错误: {e}")
@@ -161,7 +163,6 @@ def mongo_find_many(
         PyMongoError: 当MongoDB操作失败时
     """
     try:
-        # db = get_mongodb_database_instance()
         collection = mongo_database[collection_name]
         cursor = collection.find(filter_dict or {})
 
@@ -204,8 +205,6 @@ def mongo_upsert_one(
         PyMongoError: 当MongoDB操作失败时
     """
 
-    # global mongodb_database
-
     try:
         if filter_key not in document:
             raise ValueError(f"文档中缺少过滤键: {filter_key}")
@@ -244,7 +243,6 @@ def mongo_replace_one(
         PyMongoError: 当MongoDB操作失败时
     """
     try:
-        # db = get_mongodb_database_instance()
         collection = mongo_database[collection_name]
         result = collection.replace_one(filter_dict, document, upsert=upsert)
 
@@ -292,7 +290,6 @@ def mongo_update_one(
         PyMongoError: 当MongoDB操作失败时
     """
     try:
-        # db = get_mongodb_database_instance()
         collection = mongo_database[collection_name]
         result = collection.update_one(filter_dict, update_dict, upsert=upsert)
         success = result.modified_count > 0 or (
@@ -330,7 +327,6 @@ def mongo_update_many(
         PyMongoError: 当MongoDB操作失败时
     """
     try:
-        # db = get_mongodb_database_instance()
         collection = mongo_database[collection_name]
         result = collection.update_many(filter_dict, update_dict, upsert=upsert)
         logger.debug(
@@ -358,7 +354,6 @@ def mongo_delete_one(collection_name: str, filter_dict: MongoFilterType) -> bool
         PyMongoError: 当MongoDB操作失败时
     """
     try:
-        # db = get_mongodb_database_instance()
         collection = mongo_database[collection_name]
         result = collection.delete_one(filter_dict)
         success = result.deleted_count > 0
@@ -385,7 +380,6 @@ def mongo_delete_many(collection_name: str, filter_dict: MongoFilterType) -> int
         PyMongoError: 当MongoDB操作失败时
     """
     try:
-        # db = get_mongodb_database_instance()
         collection = mongo_database[collection_name]
         result = collection.delete_many(filter_dict)
         logger.debug(
@@ -415,7 +409,6 @@ def mongo_count_documents(
         PyMongoError: 当MongoDB操作失败时
     """
     try:
-        # db = get_mongodb_database_instance()
         collection = mongo_database[collection_name]
         count = collection.count_documents(filter_dict or {})
         logger.debug(f"MongoDB统计文档数量，集合: {collection_name}, 数量: {count}")
@@ -444,7 +437,6 @@ def mongo_create_index(
         PyMongoError: 当MongoDB操作失败时
     """
     try:
-        # db = get_mongodb_database_instance()
         collection = mongo_database[collection_name]
         index_name = collection.create_index(index_keys, unique=unique)
         logger.info(f"MongoDB创建索引成功，集合: {collection_name}, 索引: {index_name}")
@@ -466,7 +458,6 @@ def mongo_list_collections() -> List[str]:
         PyMongoError: 当MongoDB操作失败时
     """
     try:
-        # db = get_mongodb_database_instance()
         collections = mongo_database.list_collection_names()
         logger.debug(f"MongoDB列出集合，数量: {len(collections)}")
         return collections
@@ -487,7 +478,6 @@ def mongo_drop_collection(collection_name: str) -> None:
         PyMongoError: 当MongoDB操作失败时
     """
     try:
-        # db = get_mongodb_database_instance()
         mongo_database.drop_collection(collection_name)
         logger.warning(f"MongoDB删除集合: {collection_name}")
     except PyMongoError as e:
@@ -507,7 +497,7 @@ def mongo_clear_database() -> None:
         PyMongoError: 当MongoDB操作失败时
     """
     try:
-        # db = get_mongodb_database_instance()
+
         collections = mongo_database.list_collection_names()
 
         # 删除所有集合
@@ -536,7 +526,6 @@ def mongo_clear_collection(collection_name: str) -> int:
         PyMongoError: 当MongoDB操作失败时
     """
     try:
-        # db = get_mongodb_database_instance()
         collection = mongo_database[collection_name]
         result = collection.delete_many({})  # 空条件匹配所有文档
         logger.warning(

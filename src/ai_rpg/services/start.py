@@ -106,23 +106,8 @@ def setup_web_game_session(
         # 重新生成world
         world_exists = World(boot=world_boot)
 
-        # 运行时生成地下城系统。
-        # "哥布林与兽人"
+        # 测试：如果是demo游戏，就创建demo地下城
         world_exists.dungeon = create_demo_dungeon4()
-
-        # 读数据库! 测试的写死的地下城名字，本质就是dungeon4!!!!
-        # fixed_dungeon_name = "哥布林与兽人"
-        # stored_dungeon = mongo_find_one(
-        #     # DEFAULT_MONGODB_CONFIG.dungeons_collection,
-        #     DungeonDocument.__name__,
-        #     {"dungeon_name": fixed_dungeon_name},
-        # )
-        # assert stored_dungeon is not None, "数据库中已经存在该地下城数据"
-        # logger.success(
-        #     f"从数据库加载地下城{fixed_dungeon_name}数据成功！{stored_dungeon}"
-        # )
-        # stored_document = DungeonDocument.from_mongo(stored_dungeon)
-        # world_exists.dungeon = stored_document.dungeon_data
 
     else:
         assert False, "尚未实现从数据库加载world的逻辑"

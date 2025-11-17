@@ -39,6 +39,7 @@ class WorldDocument(BaseModel):
     game_name: str = Field(..., description="游戏名称")
     timestamp: datetime = Field(default_factory=datetime.now, description="创建时间戳")
     version: str = Field(default="1.0.0", description="版本号")
+    runtime_index: int = Field(default=1000, description="运行时索引计数器")
 
 
 ###############################################################################################################################################
@@ -176,6 +177,7 @@ def save_world(username: str, world: World) -> str:
         world_doc = WorldDocument(
             username=username,
             game_name=world.boot.name,  # 使用 boot.name 作为游戏名称
+            runtime_index=world.runtime_index,  # 存储运行时索引
         )
 
         # 获取生成的 world_id
@@ -242,9 +244,9 @@ def load_world(world_id: str) -> World:
 
         # 创建不完整的 World 对象
         world = World(
+            runtime_index=world_doc_dict.get("runtime_index", 1000),  # 加载运行时索引
             agents_context=agents_context,
             # 其他字段使用默认值（后续实现完整加载）
-            # runtime_index=1000,
             # entities_serialization=[],
             # dungeon=Dungeon(name=""),
             # boot=Boot(name=""),

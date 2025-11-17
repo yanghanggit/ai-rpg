@@ -426,6 +426,8 @@ async def _run_game(
         player_session=PlayerSession(
             name=user,
             actor=actor,
+            game=game,
+            world_id="",
         ),
         world=world_exists,
     )

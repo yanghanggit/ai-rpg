@@ -47,10 +47,7 @@ async def _run_game(
     # 创建游戏实例
     terminal_game = SDGGame(
         name=game,
-        player_session=PlayerSession(
-            name=user,
-            actor=actor,
-        ),
+        player_session=PlayerSession(name=user, actor=actor, game=game, world_id=""),
         world=World(boot=world_boot),
     )
 

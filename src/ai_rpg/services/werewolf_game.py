@@ -500,7 +500,10 @@ async def start_werewolf_game(
         new_room._sdg_game = web_game = SDGGame(
             name=payload.game_name,
             player_session=PlayerSession(
-                name=payload.user_name, actor="角色.主持人"  # 写死先！
+                name=payload.user_name,
+                actor="角色.主持人",  # 写死先！
+                game=payload.game_name,
+                world_id="",
             ),
             world=World(boot=world_boot),
         )

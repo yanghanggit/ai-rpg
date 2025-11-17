@@ -25,4 +25,4 @@ def test_sample_actor_fixture(sample_actor: Any) -> None:
     assert sample_actor.system_message == "test system message"
     assert hasattr(sample_actor, "kick_off_message")
     assert sample_actor.kick_off_message == "test kick off message"
-    assert hasattr(sample_actor, "rpg_character_profile")
+    assert hasattr(sample_actor, "character_stats")

@@ -11,9 +11,9 @@ from ..models import (
     DrawCardsAction,
     HandComponent,
     Skill,
-    XCardPlayerComponent,
+    # XCardPlayerComponent,
     StatusEffect,
-    RPGCharacterProfileComponent,
+    CombatStatsComponent,
     InventoryComponent,
     ItemType,
 )
@@ -284,9 +284,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
             if entity.has(HandComponent):
                 continue
 
-            character_profile_component = entity.get(RPGCharacterProfileComponent)
+            character_profile_component = entity.get(CombatStatsComponent)
             assert character_profile_component is not None
-            if character_profile_component.rpg_character_profile.hp <= 0:
+            if character_profile_component.stats.hp <= 0:
                 # 如果角色已经死亡，就不需要添加等待技能了。
                 logger.warning(
                     f"entity {entity.name} is dead (hp <= 0), no need to add default skill"
@@ -334,19 +334,19 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 )
 
             # TODO: XCard就是全换掉。
-            if entity2.has(XCardPlayerComponent):
-                # 如果是玩家，则需要更新玩家的手牌
-                xcard_player_comp = entity2.get(XCardPlayerComponent)
-                # 更新技能的target字段
-                xcard_skill = Skill(
-                    name=xcard_player_comp.skill.name,
-                    description=xcard_player_comp.skill.description,
-                    target=xcard_player_comp.skill.target,
-                )
-                skills = [xcard_skill]
+            # if entity2.has(XCardPlayerComponent):
+            #     # 如果是玩家，则需要更新玩家的手牌
+            #     xcard_player_comp = entity2.get(XCardPlayerComponent)
+            #     # 更新技能的target字段
+            #     xcard_skill = Skill(
+            #         name=xcard_player_comp.skill.name,
+            #         description=xcard_player_comp.skill.description,
+            #         target=xcard_player_comp.skill.target,
+            #     )
+            #     skills = [xcard_skill]
 
-                # 只用这一次。
-                entity2.remove(XCardPlayerComponent)
+            #     # 只用这一次。
+            #     entity2.remove(XCardPlayerComponent)
 
             # 更新手牌。
             if len(skills) > 0:
@@ -393,13 +393,13 @@ class DrawCardsActionSystem(ReactiveProcessor):
     #######################################################################################################################################
     def _update_combat_health(self, entity: Entity, update_hp: Optional[float]) -> None:
 
-        character_profile_component = entity.get(RPGCharacterProfileComponent)
+        character_profile_component = entity.get(CombatStatsComponent)
         assert character_profile_component is not None
 
         if update_hp is not None:
-            character_profile_component.rpg_character_profile.hp = int(update_hp)
+            character_profile_component.stats.hp = int(update_hp)
             logger.debug(
-                f"update_combat_health: {entity.name} => hp: {character_profile_component.rpg_character_profile.hp}"
+                f"update_combat_health: {entity.name} => hp: {character_profile_component.stats.hp}"
             )
 
     ###############################################################################################################################################
@@ -408,16 +408,16 @@ class DrawCardsActionSystem(ReactiveProcessor):
     ) -> None:
 
         # 效果更新
-        assert entity.has(RPGCharacterProfileComponent)
-        character_profile_component = entity.get(RPGCharacterProfileComponent)
-        character_profile_component.status_effects.extend(copy.copy(status_effects))
+        assert entity.has(CombatStatsComponent)
+        character_profile_component = entity.get(CombatStatsComponent)
+        character_profile_component.effects.extend(copy.copy(status_effects))
         logger.info(
-            f"update_combat_status_effects: {entity.name} => {'\n'.join([e.model_dump_json() for e in character_profile_component.status_effects])}"
+            f"update_combat_status_effects: {entity.name} => {'\n'.join([e.model_dump_json() for e in character_profile_component.effects])}"
         )
 
         updated_status_effects_message = f"""# 提示！你的状态效果已更新
 ## 当前状态效果
-{'\n'.join([f'- {e.name} (剩余回合: {e.duration}): {e.description}' for e in character_profile_component.status_effects]) if len(character_profile_component.status_effects) > 0 else '无'}"""
+{'\n'.join([f'- {e.name} (剩余回合: {e.duration}): {e.description}' for e in character_profile_component.effects]) if len(character_profile_component.effects) > 0 else '无'}"""
 
         self._game.append_human_message(entity, updated_status_effects_message)
 
@@ -436,14 +436,14 @@ class DrawCardsActionSystem(ReactiveProcessor):
             tuple: (剩余的状态效果列表, 被移除的状态效果列表)
         """
         # 确保实体有RPGCharacterProfileComponent
-        assert entity.has(RPGCharacterProfileComponent)
-        character_profile_component = entity.get(RPGCharacterProfileComponent)
+        assert entity.has(CombatStatsComponent)
+        character_profile_component = entity.get(CombatStatsComponent)
         assert character_profile_component is not None
 
         remaining_effects = []
         removed_effects = []
 
-        for status_effect in character_profile_component.status_effects:
+        for status_effect in character_profile_component.effects:
             # 效果回合数扣除
             status_effect.duration -= 1
             status_effect.duration = max(0, status_effect.duration)
@@ -456,7 +456,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 removed_effects.append(status_effect)
 
         # 更新角色的状态效果列表，只保留剩余的效果
-        character_profile_component.status_effects = remaining_effects
+        character_profile_component.effects = remaining_effects
 
         logger.info(
             f"settle_status_effects: {entity.name} => "

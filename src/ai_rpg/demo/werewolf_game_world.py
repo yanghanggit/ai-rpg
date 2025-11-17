@@ -6,7 +6,7 @@ from ..models import (
     StageType,
     Actor,
     ActorType,
-    RPGCharacterProfile,
+    CharacterStats,
     WerewolfCharacterSheetName,
     Item,
     ItemType,
@@ -121,7 +121,7 @@ def create_actor_moderator() -> Actor:
         name="角色.主持人",
         character_sheet_name=WerewolfCharacterSheetName.MODERATOR,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
-        rpg_character_profile=RPGCharacterProfile(),
+        character_stats=CharacterStats(),
         type=ActorType.NEUTRAL,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是狼人杀游戏的主持人，负责维持游戏秩序和推进游戏流程。
@@ -147,7 +147,7 @@ def create_actor_werewolf(name: str) -> Actor:
         name=f"角色.{name}",
         character_sheet_name=WerewolfCharacterSheetName.WEREWOLF,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
-        rpg_character_profile=RPGCharacterProfile(),
+        character_stats=CharacterStats(),
         type=ActorType.ENEMY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是潜伏在村民中的邪恶狼人，目标是消灭所有村民。
@@ -180,7 +180,7 @@ def create_actor_seer(name: str) -> Actor:
         name=f"角色.{name}",
         character_sheet_name=WerewolfCharacterSheetName.SEER,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
-        rpg_character_profile=RPGCharacterProfile(),
+        character_stats=CharacterStats(),
         type=ActorType.ALLY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是拥有神秘预知能力的预言家，每晚可以查验一名玩家的身份。
@@ -213,7 +213,7 @@ def create_actor_witch(name: str) -> Actor:
         name=f"角色.{name}",
         character_sheet_name=WerewolfCharacterSheetName.WITCH,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
-        rpg_character_profile=RPGCharacterProfile(),
+        character_stats=CharacterStats(),
         type=ActorType.ALLY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是掌握生死药剂的神秘女巫，拥有解药和毒药各一瓶。
@@ -242,7 +242,7 @@ def create_actor_villager(name: str) -> Actor:
         name=f"角色.{name}",
         character_sheet_name=WerewolfCharacterSheetName.VILLAGER,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
-        rpg_character_profile=RPGCharacterProfile(),
+        character_stats=CharacterStats(),
         type=ActorType.ALLY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是月影村的普通村民，没有特殊技能但拥有投票权。
@@ -277,7 +277,7 @@ def create_actor_hunter(name: str) -> Actor:
         name=f"角色.{name}",
         character_sheet_name=WerewolfCharacterSheetName.HUNTER,
         kick_off_message=PUB_KICK_OFF_MESSAGE,
-        rpg_character_profile=RPGCharacterProfile(),
+        character_stats=CharacterStats(),
         type=ActorType.ALLY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         actor_profile="""你是月影村的猎人，拥有消灭狼人的能力。

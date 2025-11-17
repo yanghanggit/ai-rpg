@@ -17,7 +17,7 @@ def create_demo_dungeon3() -> Dungeon:
 
     # 添加蜘蛛角色到地牢场景
     actor_spider = create_actor_spider()
-    actor_spider.rpg_character_profile.hp = 1
+    actor_spider.character_stats.hp = 1
 
     excel_data_manager = get_excel_data_manager()
     dungeon_data = excel_data_manager.get_dungeon_data("场景.洞窟之三")

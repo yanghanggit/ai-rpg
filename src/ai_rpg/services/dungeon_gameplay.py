@@ -9,14 +9,14 @@ from ..models import (
     DungeonGamePlayResponse,
     DungeonTransHomeRequest,
     DungeonTransHomeResponse,
-    Skill,
-    XCardPlayerComponent,
+    # Skill,
+    # XCardPlayerComponent,
     DrawCardsAction,
     Dungeon,
     HomeComponent,
     AllyComponent,
     DeathComponent,
-    RPGCharacterProfileComponent,
+    CombatStatsComponent,
     ActorComponent,
     HandComponent,
     PlayCardsAction,
@@ -84,19 +84,17 @@ def _all_heros_return_home(tcg_game: TCGGame) -> None:
             hero_entity.remove(DeathComponent)
 
         # 不要的组件
-        if hero_entity.has(XCardPlayerComponent):
-            logger.debug(f"remove xcard player component: {hero_entity.name}")
-            hero_entity.remove(XCardPlayerComponent)
+        # if hero_entity.has(XCardPlayerComponent):
+        #     logger.debug(f"remove xcard player component: {hero_entity.name}")
+        #     hero_entity.remove(XCardPlayerComponent)
 
         # 生命全部恢复。
-        assert hero_entity.has(RPGCharacterProfileComponent)
-        rpg_character_profile_comp = hero_entity.get(RPGCharacterProfileComponent)
-        rpg_character_profile_comp.rpg_character_profile.hp = (
-            rpg_character_profile_comp.rpg_character_profile.max_hp
-        )
+        assert hero_entity.has(CombatStatsComponent)
+        rpg_character_profile_comp = hero_entity.get(CombatStatsComponent)
+        rpg_character_profile_comp.stats.hp = rpg_character_profile_comp.stats.max_hp
 
         # 清空状态效果
-        rpg_character_profile_comp.status_effects.clear()
+        rpg_character_profile_comp.effects.clear()
 
 
 ###################################################################################################################################################################
@@ -321,45 +319,46 @@ async def _handle_play_cards(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-async def _handle_x_card(
-    web_game: TCGGame, request_data: DungeonGamePlayRequest
-) -> DungeonGamePlayResponse:
-    """处理X卡操作"""
-    if not web_game.current_engagement.is_ongoing:
-        logger.error(f"not web_game.current_engagement.is_on_going_phase")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="not web_game.current_engagement.is_on_going_phase",
-        )
+# async def _handle_x_card(
+#     web_game: TCGGame, request_data: DungeonGamePlayRequest
+# ) -> DungeonGamePlayResponse:
+#     """处理X卡操作"""
+#     pass
+#     # if not web_game.current_engagement.is_ongoing:
+#     #     logger.error(f"not web_game.current_engagement.is_on_going_phase")
+#     #     raise HTTPException(
+#     #         status_code=status.HTTP_400_BAD_REQUEST,
+#     #         detail="not web_game.current_engagement.is_on_going_phase",
+#     #     )
 
-    # TODO, 先写死默认往上面加。
-    player_entity = web_game.get_player_entity()
-    assert player_entity is not None
-    logger.debug(f"玩家输入 x_card = \n{request_data.user_input.model_dump_json()}")
+#     # # TODO, 先写死默认往上面加。
+#     # player_entity = web_game.get_player_entity()
+#     # assert player_entity is not None
+#     # logger.debug(f"玩家输入 x_card = \n{request_data.user_input.model_dump_json()}")
 
-    skill_name = request_data.user_input.data.get("name", "")
-    skill_description = request_data.user_input.data.get("description", "")
-    # skill_effect = request_data.user_input.data.get("effect", "")
+#     # skill_name = request_data.user_input.data.get("name", "")
+#     # skill_description = request_data.user_input.data.get("description", "")
+#     # # skill_effect = request_data.user_input.data.get("effect", "")
 
-    if skill_name != "" and skill_description != "":
-        player_entity.replace(
-            XCardPlayerComponent,
-            player_entity.name,
-            Skill(
-                name=skill_name,
-                description=skill_description,
-                # effect=skill_effect,
-            ),
-        )
+#     # if skill_name != "" and skill_description != "":
+#     #     player_entity.replace(
+#     #         XCardPlayerComponent,
+#     #         player_entity.name,
+#     #         Skill(
+#     #             name=skill_name,
+#     #             description=skill_description,
+#     #             # effect=skill_effect,
+#     #         ),
+#     #     )
 
-        return DungeonGamePlayResponse(
-            client_messages=web_game.player_session.session_messages,
-        )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"技能名称错误: {player_entity.name}, Response = \n{request_data.user_input.data}",
-        )
+#     #     return DungeonGamePlayResponse(
+#     #         client_messages=web_game.player_session.session_messages,
+#     #     )
+#     # else:
+#     #     raise HTTPException(
+#     #         status_code=status.HTTP_400_BAD_REQUEST,
+#     #         detail=f"技能名称错误: {player_entity.name}, Response = \n{request_data.user_input.data}",
+#     #     )
 
 
 ###################################################################################################################################################################
@@ -434,8 +433,8 @@ async def dungeon_gameplay(
             case "play_cards":
                 return await _handle_play_cards(web_game, payload)
 
-            case "x_card":
-                return await _handle_x_card(web_game, payload)
+            # case "x_card":
+            #     return await _handle_x_card(web_game, payload)
 
             case "advance_next_dungeon":
                 return await _handle_advance_next_dungeon(web_game)

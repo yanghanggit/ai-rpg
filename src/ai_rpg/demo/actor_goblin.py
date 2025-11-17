@@ -1,7 +1,7 @@
 from ..models import (
     Actor,
     ActorType,
-    RPGCharacterProfile,
+    CharacterStats,
 )
 from .campaign_setting import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
@@ -23,7 +23,7 @@ def create_actor_goblin() -> Actor:
         name="角色.怪物.哥布林-拉格",
         character_sheet_name="goblin",
         kick_off_message="",
-        rpg_character_profile=RPGCharacterProfile(base_dexterity=1),
+        character_stats=CharacterStats(base_dexterity=1),
         type=ActorType.ENEMY.value,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         actor_profile="你是哥布林部落中狡黠而略有头脑的成员。与多数哥布林不同，你似乎天生就比其他哥布林聪明许多，懂得很多古老科技的使用方法，也经常做一些稀奇古怪的小玩意来改善部落里的生活。虽然部落里的很多老不死认为古代科技是危险的，不详的，但是你依然不为所动，想要通过科技改变命运",

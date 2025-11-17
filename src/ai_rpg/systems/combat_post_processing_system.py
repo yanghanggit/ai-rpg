@@ -9,7 +9,7 @@ from ..models import (
     CombatCompleteEvent,
     CombatResult,
     AllyComponent,
-    RPGCharacterProfileComponent,
+    CombatStatsComponent,
 )
 
 
@@ -48,7 +48,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
         # 获取所有需要进行角色规划的角色
         actor_entities = self._game.get_group(
             Matcher(
-                all_of=[ActorComponent, AllyComponent, RPGCharacterProfileComponent],
+                all_of=[ActorComponent, AllyComponent, CombatStatsComponent],
             )
         ).entities
 

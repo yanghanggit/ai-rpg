@@ -1,7 +1,7 @@
 from ..models import (
     Actor,
     ActorType,
-    RPGCharacterProfile,
+    CharacterStats,
 )
 from .campaign_setting import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
@@ -23,7 +23,7 @@ def create_actor_warrior() -> Actor:
         name="角色.战士.卡恩",
         character_sheet_name="warrior",
         kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）并告诉我你的战斗角色职能。回答简短(<100字)。""",
-        rpg_character_profile=RPGCharacterProfile(base_max_hp=1000),
+        character_stats=CharacterStats(base_max_hp=1000),
         type=ActorType.ALLY,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         actor_profile=f"""你是一个人类，是西幻和赛博朋克风格结合的RPG游戏里的一个角色，

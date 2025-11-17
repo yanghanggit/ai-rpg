@@ -2,7 +2,7 @@ from typing import List
 from ..models import (
     Actor,
     ActorCharacterSheet,
-    RPGCharacterProfile,
+    CharacterStats,
     Stage,
     StageCharacterSheet,
     WorldSystem,
@@ -78,7 +78,7 @@ def create_actor(
     name: str,
     character_sheet_name: str,
     kick_off_message: str,
-    rpg_character_profile: RPGCharacterProfile,
+    character_stats: CharacterStats,
     type: str,
     campaign_setting: str,
     actor_profile: str,
@@ -98,14 +98,14 @@ def create_actor(
         character_sheet=character_sheet,
         system_message="",
         kick_off_message=kick_off_message,
-        rpg_character_profile=rpg_character_profile,
+        character_stats=character_stats,
         inventory=Inventory(items=[]),
     )
 
     # 血量加满!!!!
-    assert rpg_character_profile.max_hp > 0, "Max HP must be greater than 0."
-    assert ret.rpg_character_profile.hp == 0, "HP must be 0."
-    ret.rpg_character_profile.hp = rpg_character_profile.max_hp
+    assert character_stats.max_hp > 0, "Max HP must be greater than 0."
+    assert ret.character_stats.hp == 0, "HP must be 0."
+    ret.character_stats.hp = character_stats.max_hp
 
     # 初次编译system_message!!!!
     ret.system_message = f"""# {ret.name}

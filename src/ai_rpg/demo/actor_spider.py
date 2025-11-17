@@ -1,7 +1,7 @@
 from ..models import (
     Actor,
     ActorType,
-    RPGCharacterProfile,
+    CharacterStats,
 )
 from .campaign_setting import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
@@ -28,7 +28,7 @@ def create_actor_spider() -> Actor:
         name=actor_data.name,
         character_sheet_name=actor_data.character_sheet_name,
         kick_off_message="",
-        rpg_character_profile=RPGCharacterProfile(base_dexterity=1),
+        character_stats=CharacterStats(base_dexterity=1),
         type=ActorType.ENEMY,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         actor_profile=actor_data.actor_profile,

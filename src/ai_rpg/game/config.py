@@ -32,7 +32,7 @@ LOG_LEVEL: Final[str] = "DEBUG"  # 可以改为 "DEBUG" 来显示详细日志
 GLOBAL_TCG_GAME_NAME: Final[str] = "Game1"
 
 # 全局游戏名称:社交推理游戏-测试的狼人杀
-GLOBAL_SD_GAME_NAME: Final[str] = "Game2"
+GLOBAL_SDG_GAME_NAME: Final[str] = "Game2"
 
 
 ###########################################################################################################################################

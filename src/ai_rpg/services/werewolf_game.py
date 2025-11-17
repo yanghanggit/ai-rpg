@@ -29,7 +29,7 @@ from ..configuration import (
     server_configuration,
 )
 from ..chat_services import ChatClient
-from ..game.config import GLOBAL_SD_GAME_NAME
+from ..game.config import GLOBAL_SDG_GAME_NAME
 from typing import Dict, cast, Any, final
 from ..entitas import Matcher
 from typing_extensions import TypedDict
@@ -492,7 +492,7 @@ async def start_werewolf_game(
         assert new_room._sdg_game is None
 
         # 创建boot数据
-        assert GLOBAL_SD_GAME_NAME == payload.game_name, "目前只支持 SD 游戏"
+        assert GLOBAL_SDG_GAME_NAME == payload.game_name, "目前只支持 SD 游戏"
         world_boot = create_demo_sd_game_boot(payload.game_name)
         assert world_boot is not None, "WorldBoot 创建失败"
 

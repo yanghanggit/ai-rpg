@@ -125,7 +125,7 @@ async def process_chat_request(payload: ChatRequest) -> ChatResponse:
 
         chat_response = await execute_chat_workflow(
             work_flow=create_chat_workflow(),
-            context=[message for message in payload.chat_history],
+            context=[message for message in payload.context],
             request=payload.message,
             llm=create_deepseek_llm(),
         )

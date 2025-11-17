@@ -99,12 +99,12 @@ class WerewolfDayVoteSystem(ExecuteProcessor):
         # 为每个玩家创建投票请求
         request_handlers: List[ChatClient] = []
         for player in alive_players:
-            agent_memory = self._game.get_agent_chat_history(player)
+            agent_context = self._game.get_agent_context(player)
             request_handlers.append(
                 ChatClient(
                     name=player.name,
                     prompt=vote_prompt,
-                    chat_history=agent_memory.chat_history,
+                    context=agent_context.context,
                 )
             )
 

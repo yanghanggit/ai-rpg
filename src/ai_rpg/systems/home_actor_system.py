@@ -235,7 +235,7 @@ class HomeActorSystem(ReactiveProcessor):
                 ChatClient(
                     name=entity.name,
                     prompt=message,
-                    chat_history=self._game.get_agent_chat_history(entity).chat_history,
+                    context=self._game.get_agent_context(entity).context,
                 )
             )
 

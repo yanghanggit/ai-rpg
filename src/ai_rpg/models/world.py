@@ -22,9 +22,9 @@ class Boot(BaseModel):
 
 ###############################################################################################################################################
 @final
-class AgentChatHistory(BaseModel):
+class AgentContext(BaseModel):
     name: str
-    chat_history: List[SystemMessage | HumanMessage | AIMessage] = []
+    context: List[SystemMessage | HumanMessage | AIMessage] = []
 
 
 ###############################################################################################################################################
@@ -33,13 +33,9 @@ class AgentChatHistory(BaseModel):
 class World(BaseModel):
     runtime_index: int = 1000
     entities_serialization: List[EntitySerialization] = []
-    agents_chat_history: Dict[str, AgentChatHistory] = {}
+    agents_context: Dict[str, AgentContext] = {}
     dungeon: Dungeon = Dungeon(name="")
     boot: Boot = Boot(name="")
-
-    def next_runtime_index(self) -> int:
-        self.runtime_index += 1
-        return self.runtime_index
 
 
 ###############################################################################################################################################

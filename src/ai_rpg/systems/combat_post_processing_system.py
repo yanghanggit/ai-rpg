@@ -81,9 +81,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
                 ChatClient(
                     name=entity1.name,
                     prompt=message,
-                    chat_history=self._game.get_agent_chat_history(
-                        entity1
-                    ).chat_history,
+                    context=self._game.get_agent_context(entity1).context,
                 )
             )
 

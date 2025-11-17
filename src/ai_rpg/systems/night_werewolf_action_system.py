@@ -132,12 +132,12 @@ class NightWerewolfActionSystem(ReactiveProcessor):
         # 创建请求处理器
         request_handlers: List[ChatClient] = []
         for entity in entities:
-            agent_memory = self._game.get_agent_chat_history(entity)
+            agent_context = self._game.get_agent_context(entity)
             request_handlers.append(
                 ChatClient(
                     name=entity.name,
                     prompt=prompt,
-                    chat_history=agent_memory.chat_history,
+                    context=agent_context.context,
                 )
             )
 

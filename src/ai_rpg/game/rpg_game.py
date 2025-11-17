@@ -22,7 +22,7 @@ from ..models import (
     ActorComponent,
     ActorType,
     AgentEvent,
-    AgentChatHistory,
+    AgentContext,
     AppearanceComponent,
     DungeonComponent,
     EnvironmentComponent,
@@ -102,9 +102,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
     @override
     def destroy_entity(self, entity: Entity) -> None:
         logger.debug(f"TCGGame destroy entity: {entity.name}")
-        if entity.name in self.world.agents_chat_history:
+        if entity.name in self.world.agents_context:
             logger.debug(f"TCGGame destroy entity: {entity.name} in short term memory")
-            self.world.agents_chat_history.pop(entity.name, None)
+            self.world.agents_context.pop(entity.name, None)
         return super().destroy_entity(entity)
 
     ###############################################################################################################################################
@@ -192,7 +192,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             world_system_entity.add(
                 RuntimeComponent,
                 world_system_model.name,
-                self.world.next_runtime_index(),
+                self._increment_runtime_index(),
                 str(uuid.uuid4()),
             )
             world_system_entity.add(WorldComponent, world_system_model.name)
@@ -229,7 +229,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             actor_entity.add(
                 RuntimeComponent,
                 actor_model.name,
-                self.world.next_runtime_index(),
+                self._increment_runtime_index(),
                 str(uuid.uuid4()),
             )
 
@@ -322,7 +322,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             stage_entity.add(
                 RuntimeComponent,
                 stage_model.name,
-                self.world.next_runtime_index(),
+                self._increment_runtime_index(),
                 str(uuid.uuid4()),
             )
             stage_entity.add(StageComponent, stage_model.name)
@@ -360,23 +360,28 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         return []
 
     ###############################################################################################################################################
+    def _increment_runtime_index(self) -> int:
+        self._world.runtime_index += 1
+        return self._world.runtime_index
+
+    ###############################################################################################################################################
     def get_player_entity(self) -> Optional[Entity]:
         return self.get_entity_by_player_name(self.player_session.name)
 
     ###############################################################################################################################################
-    def get_agent_chat_history(self, entity: Entity) -> AgentChatHistory:
-        return self.world.agents_chat_history.setdefault(
-            entity.name, AgentChatHistory(name=entity.name, chat_history=[])
+    def get_agent_context(self, entity: Entity) -> AgentContext:
+        return self.world.agents_context.setdefault(
+            entity.name, AgentContext(name=entity.name, context=[])
         )
 
     ###############################################################################################################################################
     def append_system_message(self, entity: Entity, chat: str) -> None:
         logger.debug(f"append_system_message: {entity.name} => \n{chat}")
-        agent_chat_history = self.get_agent_chat_history(entity)
+        agent_context = self.get_agent_context(entity)
         assert (
-            len(agent_chat_history.chat_history) == 0
+            len(agent_context.context) == 0
         ), "system message should be the first message"
-        agent_chat_history.chat_history.append(SystemMessage(content=chat))
+        agent_context.context.append(SystemMessage(content=chat))
 
     ###############################################################################################################################################
     def append_human_message(self, entity: Entity, chat: str, **kwargs: Any) -> None:
@@ -386,10 +391,8 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
             logger.debug(f"kwargs: {kwargs}")
 
-        agent_short_term_memory = self.get_agent_chat_history(entity)
-        agent_short_term_memory.chat_history.extend(
-            [HumanMessage(content=chat, **kwargs)]
-        )
+        agent_context = self.get_agent_context(entity)
+        agent_context.context.extend([HumanMessage(content=chat, **kwargs)])
 
     ###############################################################################################################################################
     def append_ai_message(self, entity: Entity, ai_messages: List[AIMessage]) -> None:
@@ -401,8 +404,8 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             logger.debug(f"append_ai_message: {entity.name} => \n{ai_message.content}")
 
         # 添加多条 AIMessage
-        agent_short_term_memory = self.get_agent_chat_history(entity)
-        agent_short_term_memory.chat_history.extend(ai_messages)
+        agent_context = self.get_agent_context(entity)
+        agent_context.context.extend(ai_messages)
 
     ###############################################################################################################################################
     def _assign_player_to_actor(self) -> bool:
@@ -600,10 +603,10 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
 
         found_messages: List[HumanMessage] = []
 
-        chat_history = self.get_agent_chat_history(actor_entity).chat_history
+        context = self.get_agent_context(actor_entity).context
 
         # 进行查找。
-        for chat_message in reversed(chat_history) if reverse_order else chat_history:
+        for chat_message in reversed(context) if reverse_order else context:
 
             if not isinstance(chat_message, HumanMessage):
                 continue
@@ -630,13 +633,13 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         if len(human_messages) == 0:
             return 0
 
-        chat_history = self.get_agent_chat_history(actor_entity).chat_history
-        original_length = len(chat_history)
+        context = self.get_agent_context(actor_entity).context
+        original_length = len(context)
 
         # 删除指定的 HumanMessage 对象
-        chat_history[:] = [msg for msg in chat_history if msg not in human_messages]
+        context[:] = [msg for msg in context if msg not in human_messages]
 
-        deleted_count = original_length - len(chat_history)
+        deleted_count = original_length - len(context)
         if deleted_count > 0:
             logger.debug(
                 f"Deleted {deleted_count} HumanMessage(s) from {actor_entity.name}'s chat history."
@@ -651,11 +654,11 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             begin_message != end_message
         ), "begin_message and end_message should not be the same"
 
-        agent_chat_history = self.get_agent_chat_history(entity)
-        begin_message_index = agent_chat_history.chat_history.index(begin_message)
-        end_message_index = agent_chat_history.chat_history.index(end_message) + 1
+        agent_context = self.get_agent_context(entity)
+        begin_message_index = agent_context.context.index(begin_message)
+        end_message_index = agent_context.context.index(end_message) + 1
         # 开始移除！！！！。
-        del agent_chat_history.chat_history[begin_message_index:end_message_index]
+        del agent_context.context[begin_message_index:end_message_index]
         logger.debug(f"compress_combat_chat_history！= {entity.name}")
         logger.debug(f"begin_message: \n{begin_message.model_dump_json(indent=2)}")
         logger.debug(f"end_message: \n{end_message.model_dump_json(indent=2)}")

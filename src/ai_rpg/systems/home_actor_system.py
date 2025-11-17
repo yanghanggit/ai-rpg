@@ -55,6 +55,7 @@ def _generate_prompt(
         announce_actions="你要说的内容（所有的角色都能听见）",
         mind_voice_actions="你要说的内容。内心独白（只有你自己能听见）",
         query_actions="你要说的内容。判断逻辑：1) 如果在本次对话中有人向你提问，且你在本次的speak_actions中回复了“让我想想”，则这次的query_actions必须是根据上下文和这次的提问来决定如何发问从而深度回忆自己的记忆去获取相关的信息和答案。2）如果没有最新的提问，则根据对话和上下文来决定如何发问以查询记忆中与对话中相关的信息。并以此为参考进行回复。注意：1）如果发问，则只关注角色本次的提问和对话，对于之前的提问，严禁再次思考。2）所有的query_actions必须精准，简短，发问时只包含最关键的问题，不要带有多余的信息。（只有你自己能听见，这个行动会触发记忆查询）",
+        trans_stage_name="你要前往的场景全名。如果不想转换场景就留空。",
     )
 
     return f"""# 请制定你的行动计划！决定你将要做什么，并以 JSON 格式输出。
@@ -90,6 +91,7 @@ def _generate_prompt(
 - speak_actions/whisper_actions/announce_actions 这三种行动只能选其一。
 - query_actions默认不使用。但是，1）如果这次的speak_actions里已经出现了“让我想想”，那么这次的query_actions一定会使用。2）如果这次对话你认为对方是在寻求建议，那么这次也会使用query_actions。3）除了前两种情况，其他情况都不使用query_actions，并且第一次行动一定不会使用。
 - mind_voice_actions可选。
+- trans_stage_name可选。如果你想前往其他场景，填写"由当前场景可去往的场景"列表中的场景全名。留空表示不转换场景。
 - 严格按照‘标准示例’进行输出。"""
 
 

@@ -369,7 +369,7 @@ def create_demo_sd_game_boot(
 
             # 将分配的随机数添加到角色的kick_off_message中
             actor.kick_off_message += f"\n你被分配的随机数是: {assigned_number}"
-            
+
             # 记录分配信息
             number_assignments.append(f"{actor.name}: {assigned_number}")
 

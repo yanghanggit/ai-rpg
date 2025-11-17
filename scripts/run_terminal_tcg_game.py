@@ -419,11 +419,6 @@ async def _run_game(
     else:
         logger.info(f"恢复游戏: {user}, {game}")
 
-    ### 创建一些子系统。!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # server_settings = initialize_server_settings_instance(
-    #     Path("server_configuration.json")
-    # )
-
     # 依赖注入，创建新的游戏
     assert world_exists is not None, "World data must exist to create a game"
     terminal_game = TCGGame(
@@ -435,6 +430,7 @@ async def _run_game(
         world=world_exists,
     )
 
+    # 初始化聊天客户端
     ChatClient.initialize_url_config(server_configuration)
 
     # 启动游戏的判断，是第一次建立还是恢复？
@@ -450,13 +446,14 @@ async def _run_game(
 
     # 测试一下玩家控制角色，如果没有就是错误。
     player_entity = terminal_game.get_player_entity()
-    # assert player_entity is not None
     if player_entity is None:
         logger.error(f"玩家实体不存在 = {user}, {game}, {actor}")
         exit(1)
 
-    # 游戏循环。。。。。。
+    # 初始化！
     await terminal_game.initialize()
+
+    # 主循环
     while True:
 
         await _process_player_input(terminal_game)
@@ -465,8 +462,10 @@ async def _run_game(
 
     # 会保存一下。
     terminal_game.save()
+
     # 退出游戏
     terminal_game.exit()
+
     # 退出
     exit(0)
 

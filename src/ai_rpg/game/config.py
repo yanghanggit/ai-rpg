@@ -10,6 +10,13 @@ LOGS_DIR: Path = Path("logs")
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 assert LOGS_DIR.exists(), f"找不到目录: {LOGS_DIR}"
 
+
+###########################################################################################################################################
+# 生成log的目录
+WORLD_BOOT_DIR: Path = Path("world_boots")
+WORLD_BOOT_DIR.mkdir(parents=True, exist_ok=True)
+assert WORLD_BOOT_DIR.exists(), f"找不到目录: {WORLD_BOOT_DIR}"
+
 ###########################################################################################################################################
 # 日志配置
 LOG_LEVEL: Final[str] = "DEBUG"  # 可以改为 "DEBUG" 来显示详细日志

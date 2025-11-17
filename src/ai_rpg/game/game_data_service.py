@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Optional
 from loguru import logger
 from ..mongo import (
-    BootDocument,
     WorldDocument,
     mongo_delete_one,
     mongo_find_one,
@@ -11,6 +10,7 @@ from ..mongo import (
 )
 from ..models.world import Boot, World
 from .player_session import PlayerSession
+from ..game.config import WORLD_BOOT_DIR
 
 
 ###############################################################################################################################################
@@ -26,23 +26,41 @@ def get_game_boot_data(game: str) -> Optional[Boot]:
     Returns:
         Boot 对象或 None
     """
-    logger.debug(f"📖 从 MongoDB 获取演示游戏世界进行验证...")
-    stored_boot = mongo_find_one(BootDocument.__name__, {"game_name": game})
-    if stored_boot is None:
-        logger.error("❌ 启动世界的数据存储到 MongoDB 失败!")
+
+    read_path = WORLD_BOOT_DIR / f"{game}.json"
+    assert read_path.exists(), f"游戏启动数据文件不存在: {read_path}"
+    if not read_path.exists():
         return None
 
-    # 尝试使用便捷方法反序列化为 WorldBootDocument 对象
     try:
 
-        world_boot_doc = BootDocument.from_mongo(stored_boot)
-        assert world_boot_doc is not None, "WorldBootDocument 反序列化失败"
-        return world_boot_doc.boot_data
+        logger.debug(f"📖 从本地文件系统获取演示游戏世界进行验证...")
+        boot_json = read_path.read_text(encoding="utf-8")
+        boot_data = Boot.model_validate_json(boot_json)
+        return boot_data
 
     except Exception as e:
-        logger.error(f"❌ 从 MongoDB 获取演示游戏世界失败: {str(e)}")
+        logger.error(f"❌ 从本地文件系统获取演示游戏世界失败: {str(e)}")
 
     return None
+
+    # logger.debug(f"📖 从 MongoDB 获取演示游戏世界进行验证...")
+    # stored_boot = mongo_find_one(BootDocument.__name__, {"game_name": game})
+    # if stored_boot is None:
+    #     logger.error("❌ 启动世界的数据存储到 MongoDB 失败!")
+    #     return None
+
+    # # 尝试使用便捷方法反序列化为 WorldBootDocument 对象
+    # try:
+
+    #     world_boot_doc = BootDocument.from_mongo(stored_boot)
+    #     assert world_boot_doc is not None, "WorldBootDocument 反序列化失败"
+    #     return world_boot_doc.boot_data
+
+    # except Exception as e:
+    #     logger.error(f"❌ 从 MongoDB 获取演示游戏世界失败: {str(e)}")
+
+    # return None
 
 
 ###############################################################################################################################################

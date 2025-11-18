@@ -23,11 +23,11 @@
     python scripts/run_image_generation_client.py --test
 """
 
-import argparse
 import asyncio
 import sys
 from typing import Dict, Any, List, Optional
 
+import click
 import httpx
 from loguru import logger
 
@@ -185,70 +185,103 @@ async def run_demo(client: ImageGenerationClient) -> None:
         logger.error("❌ 演示失败")
 
 
-async def main() -> None:
-    """主函数 - 命令行接口"""
+@click.command()
+@click.argument("prompts", nargs=-1, required=False)
+@click.option(
+    "--server",
+    default=None,
+    help=f"服务器地址 (默认: http://localhost:{server_configuration.image_generation_server_port})",
+)
+@click.option(
+    "--model",
+    "-m",
+    default=None,
+    type=click.Choice(list(replicate_config.get_available_models().keys())),
+    help="模型名称",
+)
+@click.option("--width", "-w", default=1024, type=int, help="图片宽度")
+@click.option("--height", default=1024, type=int, help="图片高度")
+@click.option("--steps", "-s", default=4, type=int, help="推理步数")
+@click.option("--guidance", "-g", default=7.5, type=float, help="引导比例")
+@click.option(
+    "--negative",
+    "-n",
+    default="worst quality, low quality, blurry",
+    help="负向提示词",
+)
+@click.option("--demo", is_flag=True, help="运行演示")
+@click.option("--list", "list_images_flag", is_flag=True, help="列出已生成的图片")
+@click.option("--test", is_flag=True, help="测试服务器连接")
+def main(
+    prompts: tuple[str, ...],
+    server: Optional[str],
+    model: Optional[str],
+    width: int,
+    height: int,
+    steps: int,
+    guidance: float,
+    negative: str,
+    demo: bool,
+    list_images_flag: bool,
+    test: bool,
+) -> None:
+    """图片生成服务客户端 - 用于测试和调用图片生成服务"""
+    asyncio.run(
+        _async_main(
+            prompts,
+            server,
+            model,
+            width,
+            height,
+            steps,
+            guidance,
+            negative,
+            demo,
+            list_images_flag,
+            test,
+        )
+    )
 
-    parser = argparse.ArgumentParser(description="图片生成服务客户端")
 
-    parser.add_argument("prompts", nargs="*", help="文本提示词（可以多个）")
-    parser.add_argument(
-        "--server",
-        default=None,
-        help=f"服务器地址 (默认: http://localhost:{server_configuration.image_generation_server_port})",
-    )
-    parser.add_argument(
-        "--model",
-        "-m",
-        default=None,
-        help=f"模型名称 ({', '.join(replicate_config.get_available_models().keys())})",
-    )
-    parser.add_argument(
-        "--width", "-w", type=int, default=1024, help="图片宽度 (默认: 1024)"
-    )
-    parser.add_argument(
-        "--height", type=int, default=1024, help="图片高度 (默认: 1024)"
-    )
-    parser.add_argument("--steps", "-s", type=int, default=4, help="推理步数 (默认: 4)")
-    parser.add_argument(
-        "--guidance", "-g", type=float, default=7.5, help="引导比例 (默认: 7.5)"
-    )
-    parser.add_argument(
-        "--negative",
-        "-n",
-        default="worst quality, low quality, blurry",
-        help="负向提示词",
-    )
-    parser.add_argument("--demo", action="store_true", help="运行演示")
-    parser.add_argument("--list", action="store_true", help="列出已生成的图片")
-    parser.add_argument("--test", action="store_true", help="测试服务器连接")
-
-    args = parser.parse_args()
-
+async def _async_main(
+    prompts: tuple[str, ...],
+    server: Optional[str],
+    model: Optional[str],
+    width: int,
+    height: int,
+    steps: int,
+    guidance: float,
+    negative: str,
+    demo: bool,
+    list_images_flag: bool,
+    test: bool,
+) -> None:
+    """异步主函数"""
     try:
         # 初始化客户端
         base_url = (
-            args.server
+            server
             or f"http://localhost:{server_configuration.image_generation_server_port}"
         )
         client = ImageGenerationClient(base_url=base_url, timeout=300.0)
 
         # 测试连接
-        if args.test:
+        if test:
             await client.test_connection()
             return
 
         # 列出图片
-        if args.list:
+        if list_images_flag:
             await client.list_images()
             return
 
         # 运行演示
-        if args.demo:
+        if demo:
             await run_demo(client)
             return
 
         # 如果没有提供提示词，显示帮助
-        if not args.prompts:
+        if not prompts:
             logger.info("🎨 图片生成客户端")
             logger.info("\n快速开始:")
             logger.info('  python run_image_generation_client.py "a cat"')
@@ -257,24 +290,24 @@ async def main() -> None:
             logger.info("  python run_image_generation_client.py --list")
             logger.info("  python run_image_generation_client.py --test")
             logger.info("\n详细帮助:")
-            logger.info("  python run_image_generation_client.py -h")
+            logger.info("  python run_image_generation_client.py --help")
             return
 
         # 构建配置列表
         configs = []
-        for prompt in args.prompts:
+        for prompt in prompts:
             config = {
                 "prompt": prompt,
-                "negative_prompt": args.negative,
-                "width": args.width,
-                "height": args.height,
-                "num_inference_steps": args.steps,
-                "guidance_scale": args.guidance,
+                "negative_prompt": negative,
+                "width": width,
+                "height": height,
+                "num_inference_steps": steps,
+                "guidance_scale": guidance,
             }
 
             # 可选参数
-            if args.model:
-                config["model"] = args.model
+            if model:
+                config["model"] = model
 
             configs.append(config)
 
@@ -289,4 +322,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

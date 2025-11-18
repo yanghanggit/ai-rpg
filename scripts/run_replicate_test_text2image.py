@@ -14,12 +14,13 @@ python scripts/run_replicate_text2image.py --demo           # 运行演示（并
 python scripts/run_replicate_text2image.py --test           # 测试连接
 """
 
-import argparse
 import asyncio
 import sys
 import uuid
 from pathlib import Path
-from typing import List
+from typing import List, Optional
+
+import click
 
 from ai_rpg.replicate import (
     test_replicate_api_connection,
@@ -68,7 +69,10 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
                 "magic_prompt_option": "Auto",  # ideogram 专用
             }
             # 准备输出路径
-            output_path = str(DEFAULT_OUTPUT_DIR / f"demo_{i:02d}_{uuid.uuid4()}.png")
+            output_path = str(
+                DEFAULT_OUTPUT_DIR
+                / f"{replicate_config.default_image_model}_{i:02d}_{uuid.uuid4()}.png"
+            )
 
             # 创建任务
             tasks.append(
@@ -91,74 +95,93 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
         print(f"❌ 并发演示失败: {e}")
 
 
-async def main() -> None:
-    """主函数 - 命令行接口"""
+@click.command()
+@click.argument("prompt", required=False)
+@click.option(
+    "--model",
+    "-m",
+    type=click.Choice(list(replicate_config.get_available_models().keys())),
+    help=f"选择模型 (默认: {replicate_config.default_image_model})",
+)
+@click.option(
+    "--negative",
+    "-n",
+    default="worst quality, low quality, blurry",
+    help="负向提示词",
+)
+@click.option("--width", "-w", default=1024, type=int, help="图片宽度")
+@click.option("--height", default=1024, type=int, help="图片高度")
+@click.option(
+    "--size",
+    type=click.Choice(["small", "medium", "large", "wide", "tall"]),
+    help="预设尺寸: small(512x512), medium(768x768), large(1024x1024), wide(1024x768), tall(768x1024)",
+)
+@click.option("--steps", "-s", default=4, type=int, help="推理步数")
+@click.option("--guidance", "-g", default=7.5, type=float, help="引导比例")
+@click.option(
+    "--output",
+    "-o",
+    default=str(DEFAULT_OUTPUT_DIR),
+    type=click.Path(),
+    help="输出目录",
+)
+@click.option("--demo", is_flag=True, help="运行演示（并发生成多张图片）")
+@click.option("--test", is_flag=True, help="测试连接")
+def main(
+    prompt: Optional[str],
+    model: Optional[str],
+    negative: str,
+    width: int,
+    height: int,
+    size: Optional[str],
+    steps: int,
+    guidance: float,
+    output: str,
+    demo: bool,
+    test: bool,
+) -> None:
+    """Replicate 文生图工具"""
+    asyncio.run(
+        _async_main(
+            prompt,
+            model,
+            negative,
+            width,
+            height,
+            size,
+            steps,
+            guidance,
+            output,
+            demo,
+            test,
+        )
+    )
 
+
+async def _async_main(
+    prompt: Optional[str],
+    model: Optional[str],
+    negative: str,
+    width: int,
+    height: int,
+    size: Optional[str],
+    steps: int,
+    guidance: float,
+    output: str,
+    demo: bool,
+    test: bool,
+) -> None:
+    """异步主函数"""
     # 检查模型配置是否正确加载
     if not replicate_config.get_available_models():
         print("❌ 错误: 图像模型配置未正确加载")
         sys.exit(1)
 
-    parser = argparse.ArgumentParser(description="Replicate 文生图工具")
-
-    parser.add_argument("prompt", nargs="?", help="文本提示词")
-    parser.add_argument(
-        "--model",
-        "-m",
-        choices=list(replicate_config.get_available_models().keys()),
-        help=f"选择模型 (默认: {replicate_config.default_image_model})",
-    )
-    parser.add_argument(
-        "--negative",
-        "-n",
-        default="worst quality, low quality, blurry",
-        help="负向提示词 (默认: worst quality, low quality, blurry)",
-    )
-    parser.add_argument(
-        "--width",
-        "-w",
-        type=int,
-        default=1024,
-        help="图片宽度 (默认: 1024)",
-    )
-    parser.add_argument(
-        "--height",
-        type=int,
-        default=1024,
-        help="图片高度 (默认: 1024)",
-    )
-    parser.add_argument(
-        "--size",
-        choices=["small", "medium", "large", "wide", "tall"],
-        help="预设尺寸: small(512x512), medium(768x768), large(1024x1024), wide(1024x768), tall(768x1024)",
-    )
-    parser.add_argument(
-        "--steps",
-        "-s",
-        type=int,
-        default=4,
-        help="推理步数 (默认: 4)",
-    )
-    parser.add_argument(
-        "--guidance",
-        "-g",
-        type=float,
-        default=7.5,
-        help="引导比例 (默认: 7.5)",
-    )
-    parser.add_argument("--output", "-o", default=DEFAULT_OUTPUT_DIR, help="输出目录")
-    parser.add_argument(
-        "--demo", action="store_true", help="运行演示（并发生成多张图片）"
-    )
-    parser.add_argument("--test", action="store_true", help="测试连接")
-
-    args = parser.parse_args()
-
     try:
         print("✅ Replicate 客户端初始化完成")
 
         # 处理预设尺寸
-        if args.size:
+        if size:
             size_presets = {
                 "small": (512, 512),
                 "medium": (768, 768),
@@ -166,11 +189,11 @@ async def main() -> None:
                 "wide": (1024, 768),
                 "tall": (768, 1024),
             }
-            args.width, args.height = size_presets[args.size]
-            print(f"📐 使用预设尺寸 '{args.size}': {args.width}x{args.height}")
+            width, height = size_presets[size]
+            print(f"📐 使用预设尺寸 '{size}': {width}x{height}")
 
         # 如果是运行演示
-        if args.demo:
+        if demo:
             await run_concurrent_demo(
                 [
                     "peaceful mountain landscape",
@@ -181,12 +204,12 @@ async def main() -> None:
             return
 
         # 如果是测试连接
-        if args.test:
+        if test:
             test_replicate_api_connection()
             return
 
         # 如果没有提供提示词，显示帮助
-        if not args.prompt:
+        if not prompt:
             print("🎨 Replicate 文生图工具")
             print("\n快速开始:")
             print(
@@ -201,25 +224,25 @@ async def main() -> None:
             print("  --size wide     # 1024x768 (横向)")
             print("  --size tall     # 768x1024 (纵向)")
             print("\n详细帮助:")
-            print("  python run_replicate_text2image.py -h")
+            print("  python run_replicate_text2image.py --help")
             return
 
         # 获取模型版本（支持指定模型）
-        model_name = args.model if args.model else replicate_config.default_image_model
+        model_name = model if model else replicate_config.default_image_model
         model_version = replicate_config.get_model_version(model_name)
 
         # 计算宽高比（用于 ideogram 系列模型）
         aspect_ratio = "1:1"  # 默认
-        if args.width == args.height:
+        if width == height:
             aspect_ratio = "1:1"
-        elif args.width > args.height:
-            ratio = args.width / args.height
+        elif width > height:
+            ratio = width / height
             if abs(ratio - 16 / 9) < 0.1:
                 aspect_ratio = "16:9"
             elif abs(ratio - 4 / 3) < 0.1:
                 aspect_ratio = "4:3"
         else:
-            ratio = args.height / args.width
+            ratio = height / width
             if abs(ratio - 16 / 9) < 0.1:
                 aspect_ratio = "9:16"
             elif abs(ratio - 4 / 3) < 0.1:
@@ -227,25 +250,25 @@ async def main() -> None:
 
         # 构建模型输入参数 (包含所有可能的参数，模型会选择其支持的使用)
         model_input: ReplicateImageInput = {
-            "prompt": args.prompt,
-            "negative_prompt": args.negative,
+            "prompt": prompt,
+            "negative_prompt": negative,
             "aspect_ratio": aspect_ratio,  # ideogram-v3-turbo 使用
-            "width": args.width,  # 某些模型 (如 flux) 使用
-            "height": args.height,  # 某些模型 (如 flux) 使用
+            "width": width,  # 某些模型 (如 flux) 使用
+            "height": height,  # 某些模型 (如 flux) 使用
             "num_outputs": 1,
-            "num_inference_steps": args.steps,
-            "guidance_scale": args.guidance,
+            "num_inference_steps": steps,
+            "guidance_scale": guidance,
             "scheduler": "K_EULER",
             "magic_prompt_option": "Auto",  # ideogram 专用
         }
 
         # 准备输出路径
-        output_path = str(Path(args.output) / f"{model_name}_{uuid.uuid4()}.png")
+        output_path = str(Path(output) / f"{model_name}_{uuid.uuid4()}.png")
 
         # 打印生成信息
         print(f"🎨 使用模型: {model_name}")
-        print(f"📝 提示词: {args.prompt}")
-        print(f"⚙️  参数: {args.width}x{args.height}, {args.steps} 步")
+        print(f"📝 提示词: {prompt}")
+        print(f"⚙️  参数: {width}x{height}, {steps} 步")
 
         # 生成并下载图片
         task = ImageGenerationAndDownloadTask(
@@ -263,4 +286,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

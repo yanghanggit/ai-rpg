@@ -33,8 +33,13 @@ class ImageGenerationSubTask(BaseModel):
                 self.model_version, input=self.model_input
             )
 
-            # 获取图片 URL
-            self.image_url = output[0] if isinstance(output, list) else str(output)
+            # 获取图片 URL（处理 FileOutput 对象和列表）
+            if isinstance(output, list):
+                # 列表情况：取第一个元素并转换为字符串
+                self.image_url = str(output[0])
+            else:
+                # 单个对象：直接转换为字符串
+                self.image_url = str(output)
 
             elapsed_time = time.time() - start_time
             logger.info(f"✅ 图片生成完成! 耗时: {elapsed_time:.2f}秒")

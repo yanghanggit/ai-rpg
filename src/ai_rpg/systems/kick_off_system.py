@@ -194,12 +194,6 @@ class KickOffSystem(ExecuteProcessor):
                 agent_context.context[0]  # system message
             ]
 
-            # 添加原有的system message（确保类型匹配）
-            # first_message = agent_memory.chat_history[0]
-            # assert isinstance(first_message, (SystemMessage))
-            # if isinstance(first_message, (SystemMessage)):
-            #     contextual_message_list.append(first_message)
-
             # 添加human message
             message_context_list.append(
                 HumanMessage(content=prompt, kickoff=entity.name)  # human message

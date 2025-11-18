@@ -156,8 +156,6 @@ class CombatPostProcessingSystem(ExecuteProcessor):
             return
 
         # 压缩战斗消息。
-        self._game.compress_combat_chat_history(
-            entity, begin_messages[0], end_messages[0]
-        )
+        self._game.compress_combat_context(entity, begin_messages[0], end_messages[0])
 
     #######################################################################################################################################

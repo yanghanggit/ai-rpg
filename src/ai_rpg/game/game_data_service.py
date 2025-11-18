@@ -146,21 +146,21 @@ def debug_verbose_world_data(
     verbose_boot_data(verbose_dir, world)
     verbose_world_data(verbose_dir, world)
     verbose_entities_serialization(verbose_dir, world)
-    verbose_chat_history(verbose_dir, world)
+    verbose_context(verbose_dir, world)
     verbose_player_session(verbose_dir, player_session)
     verbose_dungeon_system(verbose_dir, world)
     # logger.debug(f"Verbose debug info saved to: {verbose_dir}")
 
 
 ###############################################################################################################################################
-def verbose_chat_history(verbose_dir: Path, world: World) -> None:
+def verbose_context(verbose_dir: Path, world: World) -> None:
     """保存聊天历史到文件"""
-    chat_history_dir = verbose_dir / "chat_history"
-    chat_history_dir.mkdir(parents=True, exist_ok=True)
+    context_dir = verbose_dir / "context"
+    context_dir.mkdir(parents=True, exist_ok=True)
 
     for agent_name, agent_memory in world.agents_context.items():
-        chat_history_path = chat_history_dir / f"{agent_name}.json"
-        chat_history_path.write_text(agent_memory.model_dump_json(), encoding="utf-8")
+        context_path = context_dir / f"{agent_name}.json"
+        context_path.write_text(agent_memory.model_dump_json(), encoding="utf-8")
 
 
 ###############################################################################################################################################

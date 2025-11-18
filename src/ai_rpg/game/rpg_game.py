@@ -647,7 +647,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         return deleted_count
 
     #######################################################################################################################################
-    def compress_combat_chat_history(
+    def compress_combat_context(
         self, entity: Entity, begin_message: HumanMessage, end_message: HumanMessage
     ) -> None:
         assert (
@@ -659,7 +659,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         end_message_index = agent_context.context.index(end_message) + 1
         # 开始移除！！！！。
         del agent_context.context[begin_message_index:end_message_index]
-        logger.debug(f"compress_combat_chat_history！= {entity.name}")
+        logger.debug(f"compress_combat_context= {entity.name}")
         logger.debug(f"begin_message: \n{begin_message.model_dump_json(indent=2)}")
         logger.debug(f"end_message: \n{end_message.model_dump_json(indent=2)}")
 

@@ -77,7 +77,7 @@ class ChatClient:
 
         self._context: List[SystemMessage | HumanMessage | AIMessage] = context
         if len(self._context) == 0:
-            logger.warning(f"{self._name}: chat_history is empty")
+            logger.warning(f"{self._name}: context is empty")
 
         self._chat_response: ChatResponse = ChatResponse()
 
@@ -255,7 +255,7 @@ class ChatClient:
                     f"a_request-response Error: {response.status_code}, {response.text}"
                 )
 
-            # buffer_str = get_buffer_string(self._chat_history + self.response_ai_messages)
+            # buffer_str = get_buffer_string(self._context + self.response_ai_messages)
             # logger.debug(f"{self._name} full chat buffer:\n{buffer_str}")
 
         except httpx.TimeoutException as e:

@@ -8,6 +8,7 @@ from .api_test import test_replicate_api_connection
 from .config import (
     ReplicateConfig,
     replicate_config,
+    DEFAULT_OUTPUT_DIR,
 )
 from .image_tools import (
     # 异步版本
@@ -27,4 +28,5 @@ __all__ = [
     "generate_and_download",
     "generate_multiple_images",
     "replicate_config",
+    "DEFAULT_OUTPUT_DIR",
 ]

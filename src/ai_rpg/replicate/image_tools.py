@@ -9,27 +9,9 @@ import time
 import uuid
 from pathlib import Path
 from typing import Dict, List, Any
-
 import aiohttp
 import replicate
 from loguru import logger
-
-
-# def get_default_generation_params() -> Dict[str, Any]:
-#     """
-#     获取默认的图片生成参数
-
-#     Returns:
-#         包含默认参数的字典
-#     """
-#     return {
-#         "model_name": "sdxl-lightning",
-#         "negative_prompt": "worst quality, low quality, blurry",
-#         "width": 768,
-#         "height": 768,
-#         "num_inference_steps": 4,
-#         "guidance_scale": 7.5,
-#     }
 
 
 def build_model_input(

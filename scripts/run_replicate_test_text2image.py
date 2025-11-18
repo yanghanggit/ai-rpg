@@ -8,8 +8,7 @@ Replicate 文生图工具
 python scripts/run_replicate_text2image.py "prompt text"
 
 # 演示功能
-python scripts/run_replicate_text2image.py --demo            # 单张演示
-python scripts/run_replicate_text2image.py --concurrent     # 并发演示
+python scripts/run_replicate_text2image.py --demo           # 运行演示（并发生成多张图片）
 
 # 实用功能
 python scripts/run_replicate_text2image.py --test           # 测试连接
@@ -18,25 +17,19 @@ python scripts/run_replicate_text2image.py --list-models    # 查看模型
 
 import argparse
 import asyncio
-import os
 import sys
-from typing import Any, Dict, Final
+from typing import Any, Dict
 
 from ai_rpg.replicate import (
     test_replicate_api_connection,
     replicate_config,
     generate_and_download,
     generate_multiple_images,
+    DEFAULT_OUTPUT_DIR,
 )
 
 # 全局变量
-API_TOKEN: str = os.getenv("REPLICATE_API_TOKEN") or ""
-
-# 获取模型配置
-# replicate_config = ReplicateConfig()
-MODELS: Dict[str, Dict[str, str]] = replicate_config.get_available_models()
-
-DEFAULT_OUTPUT_DIR: Final[str] = "generated_images"
+# API_TOKEN: str = os.getenv("REPLICATE_API_TOKEN") or ""
 
 
 def _get_default_generation_params() -> Dict[str, Any]:
@@ -54,53 +47,6 @@ def _get_default_generation_params() -> Dict[str, Any]:
         "num_inference_steps": 4,
         "guidance_scale": 7.5,
     }
-
-
-async def run_demo() -> None:
-    """运行演示示例"""
-    print("=" * 60)
-    print("🎮 Replicate 文生图演示")
-    print("=" * 60)
-
-    # 1. 测试连接
-    if not test_replicate_api_connection():
-        print("❌ 连接测试失败，请检查网络设置")
-        return
-
-    # 2. 查看可用模型
-    print("\n📋 可用模型:")
-    for name, info in MODELS.items():
-        version = info["version"]
-        print(f"  - {name}")
-        print(f"    版本: {version}")
-
-    # 3. 生成测试图片
-    print("\n🎨 生成测试图片...")
-
-    try:
-        # 快速测试 - 使用成本最低的模型
-        test_prompt = "a beautiful landscape with mountains and a lake"
-
-        # 获取默认参数
-        default_params = _get_default_generation_params()
-
-        saved_path = await generate_and_download(
-            prompt=test_prompt,
-            model_name=default_params["model_name"],
-            negative_prompt=default_params["negative_prompt"],
-            width=default_params["width"],
-            height=default_params["height"],
-            num_inference_steps=default_params["num_inference_steps"],
-            guidance_scale=default_params["guidance_scale"],
-            output_dir=DEFAULT_OUTPUT_DIR,
-            models_config=MODELS,
-        )
-
-        print(f"\n🎉 演示完成! 图片已保存到: {saved_path}")
-        print("💡 您可以查看生成的图片，然后尝试其他提示词")
-
-    except Exception as e:
-        print(f"❌ 演示失败: {e}")
 
 
 async def run_concurrent_demo() -> None:
@@ -139,8 +85,8 @@ async def run_concurrent_demo() -> None:
             height=512,
             num_inference_steps=default_params["num_inference_steps"],
             guidance_scale=default_params["guidance_scale"],
-            output_dir=DEFAULT_OUTPUT_DIR,
-            models_config=MODELS,
+            output_dir=str(DEFAULT_OUTPUT_DIR),
+            models_config=replicate_config.get_available_models(),
         )
 
         print(f"\n🎉 并发生成完成! 生成了 {len(results)} 张图片:")
@@ -156,7 +102,7 @@ async def main() -> None:
     """主函数 - 命令行接口"""
 
     # 检查模型配置是否正确加载
-    if not MODELS:
+    if not replicate_config.get_available_models():
         print("❌ 错误: 图像模型配置未正确加载")
         sys.exit(1)
 
@@ -170,7 +116,7 @@ async def main() -> None:
         "--model",
         "-m",
         default=default_params["model_name"],
-        choices=list(MODELS.keys()),
+        choices=list(replicate_config.get_available_models().keys()),
         help=f"使用的模型 (默认: {default_params['model_name']})",
     )
     parser.add_argument(
@@ -213,8 +159,9 @@ async def main() -> None:
     )
     parser.add_argument("--output", "-o", default=DEFAULT_OUTPUT_DIR, help="输出目录")
     parser.add_argument("--list-models", action="store_true", help="列出可用模型")
-    parser.add_argument("--demo", action="store_true", help="运行演示")
-    parser.add_argument("--concurrent", action="store_true", help="运行并发生成演示")
+    parser.add_argument(
+        "--demo", action="store_true", help="运行演示（并发生成多张图片）"
+    )
     parser.add_argument("--test", action="store_true", help="测试连接")
 
     args = parser.parse_args()
@@ -236,11 +183,6 @@ async def main() -> None:
 
         # 如果是运行演示
         if args.demo:
-            await run_demo()
-            return
-
-        # 如果是运行并发演示
-        if args.concurrent:
             await run_concurrent_demo()
             return
 
@@ -252,7 +194,7 @@ async def main() -> None:
         # 如果只是列出模型
         if args.list_models:
             print("🎨 可用模型:")
-            for name, info in MODELS.items():
+            for name, info in replicate_config.get_available_models().items():
                 version = info["version"]
                 print(f"  - {name}")
                 print(f"    版本: {version}")
@@ -263,10 +205,7 @@ async def main() -> None:
             print("🎨 Replicate 文生图工具")
             print("\n快速开始:")
             print(
-                "  python run_replicate_text2image.py --demo            # 运行单张演示"
-            )
-            print(
-                "  python run_replicate_text2image.py --concurrent      # 运行并发演示"
+                "  python run_replicate_text2image.py --demo            # 运行演示（并发生成多张图片）"
             )
             print("  python run_replicate_text2image.py --test            # 测试连接")
             print(
@@ -293,7 +232,7 @@ async def main() -> None:
             num_inference_steps=args.steps,
             guidance_scale=args.guidance,
             output_dir=args.output,
-            models_config=MODELS,
+            models_config=replicate_config.get_available_models(),
         )
 
         print(f"\n🎉 完成! 图片已保存到: {saved_path}")

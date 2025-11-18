@@ -4,7 +4,12 @@ Replicate 配置管理模块
 统一管理 Replicate API 配置、模型配置和初始化逻辑
 """
 
+from pathlib import Path
 from typing import Dict, Final, Optional
+
+
+# 默认输出目录
+DEFAULT_OUTPUT_DIR: Final[Path] = Path("generated_images")
 
 
 # Replicate 配置类

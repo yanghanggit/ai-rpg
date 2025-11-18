@@ -19,7 +19,7 @@ class ReplicateConfig:
     def __init__(self) -> None:
         """初始化配置"""
         # 默认使用的图像生成模型
-        self.default_image_model: str = "ideogram-v3-turbo"
+        self.default_image_model: str = "flux-schnell"
 
         # 模型版本映射
         self.image_models: Dict[str, Dict[str, str]] = {

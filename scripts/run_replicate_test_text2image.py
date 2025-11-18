@@ -27,6 +27,7 @@ from ai_rpg.replicate import (
     generate_and_download,
     execute_tasks,
     ImageGenerationTask,
+    ReplicateImageInput,
     DEFAULT_OUTPUT_DIR,
 )
 
@@ -55,15 +56,17 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
         tasks = []
         for i, prompt in enumerate(prompts, 1):
             # 构建模型输入参数
-            model_input = {
+            model_input: ReplicateImageInput = {
                 "prompt": prompt,
                 "negative_prompt": "worst quality, low quality, blurry",
-                "width": 512,
-                "height": 512,
+                "aspect_ratio": "1:1",  # ideogram-v3-turbo 使用此参数
+                "width": 512,  # 某些模型可能使用
+                "height": 512,  # 某些模型可能使用
                 "num_outputs": 1,
                 "num_inference_steps": 4,
                 "guidance_scale": 7.5,
                 "scheduler": "K_EULER",
+                "magic_prompt_option": "Auto",  # ideogram 专用
             }
             # 准备输出路径
             output_path = str(DEFAULT_OUTPUT_DIR / f"demo_{i:02d}_{uuid.uuid4()}.png")
@@ -72,7 +75,7 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
             tasks.append(
                 ImageGenerationTask(
                     model_version=model_version,
-                    model_input=model_input,
+                    model_input=dict(model_input),
                     output_path=output_path,
                 )
             )
@@ -199,16 +202,35 @@ async def main() -> None:
         # 获取模型版本
         model_version = replicate_config.get_model_version()
 
-        # 构建模型输入参数
-        model_input = {
+        # 计算宽高比（用于 ideogram 系列模型）
+        aspect_ratio = "1:1"  # 默认
+        if args.width == args.height:
+            aspect_ratio = "1:1"
+        elif args.width > args.height:
+            ratio = args.width / args.height
+            if abs(ratio - 16 / 9) < 0.1:
+                aspect_ratio = "16:9"
+            elif abs(ratio - 4 / 3) < 0.1:
+                aspect_ratio = "4:3"
+        else:
+            ratio = args.height / args.width
+            if abs(ratio - 16 / 9) < 0.1:
+                aspect_ratio = "9:16"
+            elif abs(ratio - 4 / 3) < 0.1:
+                aspect_ratio = "3:4"
+
+        # 构建模型输入参数 (包含所有可能的参数，模型会选择其支持的使用)
+        model_input: ReplicateImageInput = {
             "prompt": args.prompt,
             "negative_prompt": args.negative,
-            "width": args.width,
-            "height": args.height,
+            "aspect_ratio": aspect_ratio,  # ideogram-v3-turbo 使用
+            "width": args.width,  # 某些模型 (如 flux) 使用
+            "height": args.height,  # 某些模型 (如 flux) 使用
             "num_outputs": 1,
             "num_inference_steps": args.steps,
             "guidance_scale": args.guidance,
             "scheduler": "K_EULER",
+            "magic_prompt_option": "Auto",  # ideogram 专用
         }
 
         # 准备输出路径
@@ -225,7 +247,7 @@ async def main() -> None:
         # 生成并下载图片
         saved_path = await generate_and_download(
             model_version=model_version,
-            model_input=model_input,
+            model_input=dict(model_input),
             output_path=output_path,
         )
 

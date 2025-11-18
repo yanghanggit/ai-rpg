@@ -104,6 +104,12 @@ async def main() -> None:
 
     parser.add_argument("prompt", nargs="?", help="文本提示词")
     parser.add_argument(
+        "--model",
+        "-m",
+        choices=list(replicate_config.get_available_models().keys()),
+        help=f"选择模型 (默认: {replicate_config.default_image_model})",
+    )
+    parser.add_argument(
         "--negative",
         "-n",
         default="worst quality, low quality, blurry",
@@ -199,8 +205,9 @@ async def main() -> None:
             print("  python run_replicate_text2image.py -h")
             return
 
-        # 获取模型版本
-        model_version = replicate_config.get_model_version()
+        # 获取模型版本（支持指定模型）
+        model_name = args.model if args.model else replicate_config.default_image_model
+        model_version = replicate_config.get_model_version(model_name)
 
         # 计算宽高比（用于 ideogram 系列模型）
         aspect_ratio = "1:1"  # 默认
@@ -234,13 +241,10 @@ async def main() -> None:
         }
 
         # 准备输出路径
-        output_path = str(
-            Path(args.output)
-            / f"{replicate_config.default_image_model}_{uuid.uuid4()}.png"
-        )
+        output_path = str(Path(args.output) / f"{model_name}_{uuid.uuid4()}.png")
 
         # 打印生成信息
-        print(f"🎨 使用模型: {replicate_config.default_image_model}")
+        print(f"🎨 使用模型: {model_name}")
         print(f"📝 提示词: {args.prompt}")
         print(f"⚙️  参数: {args.width}x{args.height}, {args.steps} 步")
 

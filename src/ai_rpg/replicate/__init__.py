@@ -17,8 +17,8 @@ from .image_tools import (
     generate_and_download,
     execute_tasks,
     ImageGenerationTask,
-    ReplicateImageInput,
 )
+from .types import ReplicateImageInput
 
 __all__ = [
     "ReplicateConfig",

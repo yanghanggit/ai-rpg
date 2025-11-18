@@ -15,7 +15,8 @@ from .image_tools import (
     generate_image,
     download_image,
     generate_and_download,
-    generate_multiple_images,
+    execute_tasks,
+    ImageGenerationTask,
 )
 
 __all__ = [
@@ -26,7 +27,8 @@ __all__ = [
     "generate_image",
     "download_image",
     "generate_and_download",
-    "generate_multiple_images",
+    "execute_tasks",
+    "ImageGenerationTask",
     "replicate_config",
     "DEFAULT_OUTPUT_DIR",
 ]

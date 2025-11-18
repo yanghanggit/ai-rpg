@@ -17,13 +17,16 @@ python scripts/run_replicate_text2image.py --test           # 测试连接
 import argparse
 import asyncio
 import sys
+import uuid
+from pathlib import Path
 from typing import Any, Dict, List
 
 from ai_rpg.replicate import (
     test_replicate_api_connection,
     replicate_config,
     generate_and_download,
-    generate_multiple_images,
+    execute_tasks,
+    ImageGenerationTask,
     DEFAULT_OUTPUT_DIR,
 )
 
@@ -65,21 +68,41 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
         print(f"  {i}. {prompt}")
 
     try:
+        # 获取模型配置
+        model_info = replicate_config.image_models["ideogram-v3-turbo"]
+        model_version = model_info["version"]
+
         # 获取默认参数
         default_params = _get_default_generation_params()
 
+        # 准备任务列表
+        tasks = []
+        for i, prompt in enumerate(prompts, 1):
+            # 构建模型输入参数
+            model_input = {
+                "prompt": prompt,
+                "negative_prompt": default_params["negative_prompt"],
+                "width": 512,
+                "height": 512,
+                "num_outputs": 1,
+                "num_inference_steps": default_params["num_inference_steps"],
+                "guidance_scale": default_params["guidance_scale"],
+                "scheduler": "K_EULER",
+            }
+            # 准备输出路径
+            output_path = str(DEFAULT_OUTPUT_DIR / f"demo_{i:02d}_{uuid.uuid4()}.png")
+
+            # 创建任务
+            tasks.append(
+                ImageGenerationTask(
+                    model_version=model_version,
+                    model_input=model_input,
+                    output_path=output_path,
+                )
+            )
+
         # 并发生成
-        results = await generate_multiple_images(
-            prompts=prompts,
-            model_name="ideogram-v3-turbo",  # 使用相对稳定的模型
-            negative_prompt=default_params["negative_prompt"],
-            width=512,  # 使用较小尺寸加快测试
-            height=512,
-            num_inference_steps=default_params["num_inference_steps"],
-            guidance_scale=default_params["guidance_scale"],
-            output_dir=str(DEFAULT_OUTPUT_DIR),
-            models_config=replicate_config.get_available_models(),
-        )
+        results = await execute_tasks(tasks)
 
         print(f"\n🎉 并发生成完成! 生成了 {len(results)} 张图片:")
         for i, path in enumerate(results, 1):
@@ -165,15 +188,13 @@ async def main() -> None:
             args.width, args.height = size_presets[args.size]
             print(f"📐 使用预设尺寸 '{args.size}': {args.width}x{args.height}")
 
-        # 如果是运行演示
-
         # 2. 多个提示词
         # prompts = [
         #     "peaceful mountain landscape",
         #     "ocean waves on sandy beach",
         #     "forest path in autumn",
         # ]
-
+        # 如果是运行演示
         if args.demo:
             await run_concurrent_demo(
                 [
@@ -208,17 +229,36 @@ async def main() -> None:
             print("  python run_replicate_text2image.py -h")
             return
 
+        # 获取模型配置
+        model_name = default_params["model_name"]
+        model_info = replicate_config.image_models[model_name]
+        model_version = model_info["version"]
+
+        # 构建模型输入参数
+        model_input = {
+            "prompt": args.prompt,
+            "negative_prompt": args.negative,
+            "width": args.width,
+            "height": args.height,
+            "num_outputs": 1,
+            "num_inference_steps": args.steps,
+            "guidance_scale": args.guidance,
+            "scheduler": "K_EULER",
+        }
+
+        # 准备输出路径
+        output_path = str(Path(args.output) / f"{model_name}_{uuid.uuid4()}.png")
+
+        # 打印生成信息
+        print(f"🎨 使用模型: {model_name}")
+        print(f"📝 提示词: {args.prompt}")
+        print(f"⚙️  参数: {args.width}x{args.height}, {args.steps} 步")
+
         # 生成并下载图片
         saved_path = await generate_and_download(
-            prompt=args.prompt,
-            model_name=default_params["model_name"],
-            negative_prompt=args.negative,
-            width=args.width,
-            height=args.height,
-            num_inference_steps=args.steps,
-            guidance_scale=args.guidance,
-            output_dir=args.output,
-            models_config=replicate_config.get_available_models(),
+            model_version=model_version,
+            model_input=model_input,
+            output_path=output_path,
         )
 
         print(f"\n🎉 完成! 图片已保存到: {saved_path}")

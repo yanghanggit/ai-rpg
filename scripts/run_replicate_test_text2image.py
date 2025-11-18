@@ -12,13 +12,12 @@ python scripts/run_replicate_text2image.py --demo           # 运行演示（并
 
 # 实用功能
 python scripts/run_replicate_text2image.py --test           # 测试连接
-python scripts/run_replicate_text2image.py --list-models    # 查看模型
 """
 
 import argparse
 import asyncio
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from ai_rpg.replicate import (
     test_replicate_api_connection,
@@ -49,7 +48,7 @@ def _get_default_generation_params() -> Dict[str, Any]:
     }
 
 
-async def run_concurrent_demo() -> None:
+async def run_concurrent_demo(prompts: List[str]) -> None:
     """运行并发生成演示"""
     print("=" * 60)
     print("🚀 Replicate 并发文生图演示")
@@ -59,13 +58,6 @@ async def run_concurrent_demo() -> None:
     if not test_replicate_api_connection():
         print("❌ 连接测试失败，请检查网络设置")
         return
-
-    # 2. 多个提示词
-    prompts = [
-        "peaceful mountain landscape",
-        "ocean waves on sandy beach",
-        "forest path in autumn",
-    ]
 
     print(f"\n🎨 并发生成 {len(prompts)} 张图片...")
     print("📝 提示词列表:")
@@ -113,13 +105,6 @@ async def main() -> None:
 
     parser.add_argument("prompt", nargs="?", help="文本提示词")
     parser.add_argument(
-        "--model",
-        "-m",
-        default=default_params["model_name"],
-        choices=list(replicate_config.get_available_models().keys()),
-        help=f"使用的模型 (默认: {default_params['model_name']})",
-    )
-    parser.add_argument(
         "--negative",
         "-n",
         default=default_params["negative_prompt"],
@@ -158,7 +143,6 @@ async def main() -> None:
         help="引导比例",
     )
     parser.add_argument("--output", "-o", default=DEFAULT_OUTPUT_DIR, help="输出目录")
-    parser.add_argument("--list-models", action="store_true", help="列出可用模型")
     parser.add_argument(
         "--demo", action="store_true", help="运行演示（并发生成多张图片）"
     )
@@ -182,22 +166,27 @@ async def main() -> None:
             print(f"📐 使用预设尺寸 '{args.size}': {args.width}x{args.height}")
 
         # 如果是运行演示
+
+        # 2. 多个提示词
+        # prompts = [
+        #     "peaceful mountain landscape",
+        #     "ocean waves on sandy beach",
+        #     "forest path in autumn",
+        # ]
+
         if args.demo:
-            await run_concurrent_demo()
+            await run_concurrent_demo(
+                [
+                    "peaceful mountain landscape",
+                    "ocean waves on sandy beach",
+                    "forest path in autumn",
+                ]
+            )
             return
 
         # 如果是测试连接
         if args.test:
             test_replicate_api_connection()
-            return
-
-        # 如果只是列出模型
-        if args.list_models:
-            print("🎨 可用模型:")
-            for name, info in replicate_config.get_available_models().items():
-                version = info["version"]
-                print(f"  - {name}")
-                print(f"    版本: {version}")
             return
 
         # 如果没有提供提示词，显示帮助
@@ -208,9 +197,6 @@ async def main() -> None:
                 "  python run_replicate_text2image.py --demo            # 运行演示（并发生成多张图片）"
             )
             print("  python run_replicate_text2image.py --test            # 测试连接")
-            print(
-                "  python run_replicate_text2image.py --list-models     # 查看内置模型"
-            )
             print('  python run_replicate_text2image.py "生成一只猫"       # 生成图片')
             print("\n尺寸选项:")
             print("  --size small    # 512x512  (最快)")
@@ -225,7 +211,7 @@ async def main() -> None:
         # 生成并下载图片
         saved_path = await generate_and_download(
             prompt=args.prompt,
-            model_name=args.model,
+            model_name=default_params["model_name"],
             negative_prompt=args.negative,
             width=args.width,
             height=args.height,

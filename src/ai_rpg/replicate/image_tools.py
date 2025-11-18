@@ -137,10 +137,8 @@ async def generate_image(
 
     model_info = models_config[model_name]
     model_version = model_info["version"]
-    cost_estimate = model_info["cost_estimate"]
 
     logger.info(f"🎨 使用模型: {model_name}")
-    logger.info(f"💰 预估成本: {cost_estimate}")
     logger.info(f"📝 提示词: {prompt}")
     logger.info(f"⚙️  参数: {width}x{height}, {num_inference_steps} 步")
     logger.info("🔄 异步生成中...")

@@ -20,13 +20,11 @@ import argparse
 import asyncio
 import os
 import sys
-from pathlib import Path
 from typing import Any, Dict, Final
 
 from ai_rpg.replicate import (
     test_replicate_api_connection,
-    load_replicate_config,
-    # get_default_generation_params,
+    replicate_config,
     generate_and_download,
     generate_multiple_images,
 )
@@ -34,11 +32,9 @@ from ai_rpg.replicate import (
 # 全局变量
 API_TOKEN: str = os.getenv("REPLICATE_API_TOKEN") or ""
 
-replicate_config = load_replicate_config(Path("replicate_models.json"))
-
-MODELS: Dict[str, Dict[str, str]] = replicate_config.image_models.model_dump(
-    by_alias=True, exclude_none=True
-)
+# 获取模型配置
+# replicate_config = ReplicateConfig()
+MODELS: Dict[str, Dict[str, str]] = replicate_config.get_available_models()
 
 DEFAULT_OUTPUT_DIR: Final[str] = "generated_images"
 
@@ -51,7 +47,7 @@ def _get_default_generation_params() -> Dict[str, Any]:
         包含默认参数的字典
     """
     return {
-        "model_name": "sdxl-lightning",
+        "model_name": replicate_config.default_image_model,
         "negative_prompt": "worst quality, low quality, blurry",
         "width": 768,
         "height": 768,
@@ -74,10 +70,9 @@ async def run_demo() -> None:
     # 2. 查看可用模型
     print("\n📋 可用模型:")
     for name, info in MODELS.items():
-        cost = info["cost_estimate"]
-        description = info["description"]
-        print(f"  - {name}: {cost}")
-        print(f"    {description}")
+        version = info["version"]
+        print(f"  - {name}")
+        print(f"    版本: {version}")
 
     # 3. 生成测试图片
     print("\n🎨 生成测试图片...")
@@ -163,10 +158,6 @@ async def main() -> None:
     # 检查模型配置是否正确加载
     if not MODELS:
         print("❌ 错误: 图像模型配置未正确加载")
-        print("💡 请检查:")
-        print("   1. replicate_models.json 文件是否存在")
-        print("   2. JSON 文件格式是否正确")
-        print("   3. image_models 部分是否配置正确")
         sys.exit(1)
 
     parser = argparse.ArgumentParser(description="Replicate 文生图工具")
@@ -262,10 +253,9 @@ async def main() -> None:
         if args.list_models:
             print("🎨 可用模型:")
             for name, info in MODELS.items():
-                cost = info["cost_estimate"]
-                description = info["description"]
-                print(f"  - {name}: {cost}")
-                print(f"    {description}")
+                version = info["version"]
+                print(f"  - {name}")
+                print(f"    版本: {version}")
             return
 
         # 如果没有提供提示词，显示帮助

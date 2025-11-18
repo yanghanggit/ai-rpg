@@ -15,6 +15,8 @@ from ..models import (
     KickOffMessageComponent,
     EnemyComponent,
     Combat,
+    TransStageAction,
+    HomeComponent,
 )
 from ..entitas import Matcher, Entity
 
@@ -234,6 +236,42 @@ def _dungeon_advance(
 
 
 #######################################################################################################################################
+# TODO, 场景转换逻辑。
+def _player_add_trans_stage_action(tcg_game: TCGGame, stage_name: str) -> bool:
+    """
+    为玩家添加场景转换动作
+
+    Args:
+        tcg_game: 游戏实例
+        stage_name: 目标场景名称
+
+    Returns:
+        bool: 是否成功添加场景转换动作
+    """
+    if not stage_name:
+        logger.error("目标场景名称不能为空！")
+        return False
+
+    target_stage_entity = tcg_game.get_stage_entity(stage_name)
+    if target_stage_entity is None:
+        logger.error(f"目标场景: {stage_name} 不存在！")
+        return False
+
+    if not target_stage_entity.has(HomeComponent):
+        logger.error(f"目标场景: {stage_name} 不是家园场景！")
+        return False
+
+    player_entity = tcg_game.get_player_entity()
+    if player_entity is None:
+        logger.error("玩家实体不存在！")
+        return False
+
+    logger.debug(f"为玩家添加场景转换动作: {player_entity.name} -> {stage_name}")
+    player_entity.replace(TransStageAction, player_entity.name, stage_name)
+    return True
+
+
+#######################################################################################################################################
 # TODO!!! 进入地下城。
 def _all_heros_launch_dungeon(tcg_game: TCGGame) -> bool:
     if tcg_game.current_dungeon.current_stage_index < 0:
@@ -289,6 +327,39 @@ async def _handle_speak_action(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+async def _handle_trans_stage_action(
+    web_game: TCGGame, stage_name: str
+) -> HomeGamePlayResponse:
+    """
+    处理场景转换动作
+
+    Args:
+        web_game: 游戏实例
+        stage_name: 目标场景名称
+
+    Returns:
+        HomeGamePlayResponse: 包含客户端消息的响应
+    """
+    # player 添加场景转换的动作
+    if _player_add_trans_stage_action(web_game, stage_name=stage_name):
+        # 清空消息。准备重新开始 + 测试推进一次游戏
+        web_game.player_session.session_messages.clear()
+        await web_game.player_home_pipeline.process()
+
+        # 返回消息
+        return HomeGamePlayResponse(
+            client_messages=web_game.player_session.session_messages,
+        )
+
+    # 如果场景转换动作激活失败，返回空消息
+    return HomeGamePlayResponse(
+        client_messages=web_game.player_session.session_messages,
+    )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
 @home_gameplay_api_router.post(
     path="/api/home/gameplay/v1/", response_model=HomeGamePlayResponse
 )
@@ -316,6 +387,12 @@ async def home_gameplay(
                     web_game,
                     target=payload.user_input.data.get("target", ""),
                     content=payload.user_input.data.get("content", ""),
+                )
+
+            case "/trans_home":
+                return await _handle_trans_stage_action(
+                    web_game,
+                    stage_name=payload.user_input.data.get("stage_name", ""),
                 )
 
             case _:

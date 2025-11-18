@@ -19,7 +19,7 @@ import asyncio
 import sys
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import List
 
 from ai_rpg.replicate import (
     test_replicate_api_connection,
@@ -29,26 +29,6 @@ from ai_rpg.replicate import (
     ImageGenerationTask,
     DEFAULT_OUTPUT_DIR,
 )
-
-# 全局变量
-# API_TOKEN: str = os.getenv("REPLICATE_API_TOKEN") or ""
-
-
-def _get_default_generation_params() -> Dict[str, Any]:
-    """
-    获取默认的图片生成参数
-
-    Returns:
-        包含默认参数的字典
-    """
-    return {
-        "model_name": replicate_config.default_image_model,
-        "negative_prompt": "worst quality, low quality, blurry",
-        "width": 768,
-        "height": 768,
-        "num_inference_steps": 4,
-        "guidance_scale": 7.5,
-    }
 
 
 async def run_concurrent_demo(prompts: List[str]) -> None:
@@ -68,12 +48,8 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
         print(f"  {i}. {prompt}")
 
     try:
-        # 获取模型配置
-        model_info = replicate_config.image_models["ideogram-v3-turbo"]
-        model_version = model_info["version"]
-
-        # 获取默认参数
-        default_params = _get_default_generation_params()
+        # 获取模型版本
+        model_version = replicate_config.get_model_version()
 
         # 准备任务列表
         tasks = []
@@ -81,12 +57,12 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
             # 构建模型输入参数
             model_input = {
                 "prompt": prompt,
-                "negative_prompt": default_params["negative_prompt"],
+                "negative_prompt": "worst quality, low quality, blurry",
                 "width": 512,
                 "height": 512,
                 "num_outputs": 1,
-                "num_inference_steps": default_params["num_inference_steps"],
-                "guidance_scale": default_params["guidance_scale"],
+                "num_inference_steps": 4,
+                "guidance_scale": 7.5,
                 "scheduler": "K_EULER",
             }
             # 准备输出路径
@@ -123,28 +99,25 @@ async def main() -> None:
 
     parser = argparse.ArgumentParser(description="Replicate 文生图工具")
 
-    # 获取默认参数
-    default_params = _get_default_generation_params()
-
     parser.add_argument("prompt", nargs="?", help="文本提示词")
     parser.add_argument(
         "--negative",
         "-n",
-        default=default_params["negative_prompt"],
-        help="负向提示词",
+        default="worst quality, low quality, blurry",
+        help="负向提示词 (默认: worst quality, low quality, blurry)",
     )
     parser.add_argument(
         "--width",
         "-w",
         type=int,
-        default=default_params["width"],
-        help=f"图片宽度 (默认: {default_params['width']})",
+        default=1024,
+        help="图片宽度 (默认: 1024)",
     )
     parser.add_argument(
         "--height",
         type=int,
-        default=default_params["height"],
-        help=f"图片高度 (默认: {default_params['height']})",
+        default=1024,
+        help="图片高度 (默认: 1024)",
     )
     parser.add_argument(
         "--size",
@@ -155,15 +128,15 @@ async def main() -> None:
         "--steps",
         "-s",
         type=int,
-        default=default_params["num_inference_steps"],
-        help="推理步数",
+        default=4,
+        help="推理步数 (默认: 4)",
     )
     parser.add_argument(
         "--guidance",
         "-g",
         type=float,
-        default=default_params["guidance_scale"],
-        help="引导比例",
+        default=7.5,
+        help="引导比例 (默认: 7.5)",
     )
     parser.add_argument("--output", "-o", default=DEFAULT_OUTPUT_DIR, help="输出目录")
     parser.add_argument(
@@ -188,12 +161,6 @@ async def main() -> None:
             args.width, args.height = size_presets[args.size]
             print(f"📐 使用预设尺寸 '{args.size}': {args.width}x{args.height}")
 
-        # 2. 多个提示词
-        # prompts = [
-        #     "peaceful mountain landscape",
-        #     "ocean waves on sandy beach",
-        #     "forest path in autumn",
-        # ]
         # 如果是运行演示
         if args.demo:
             await run_concurrent_demo(
@@ -229,10 +196,8 @@ async def main() -> None:
             print("  python run_replicate_text2image.py -h")
             return
 
-        # 获取模型配置
-        model_name = default_params["model_name"]
-        model_info = replicate_config.image_models[model_name]
-        model_version = model_info["version"]
+        # 获取模型版本
+        model_version = replicate_config.get_model_version()
 
         # 构建模型输入参数
         model_input = {
@@ -247,10 +212,13 @@ async def main() -> None:
         }
 
         # 准备输出路径
-        output_path = str(Path(args.output) / f"{model_name}_{uuid.uuid4()}.png")
+        output_path = str(
+            Path(args.output)
+            / f"{replicate_config.default_image_model}_{uuid.uuid4()}.png"
+        )
 
         # 打印生成信息
-        print(f"🎨 使用模型: {model_name}")
+        print(f"🎨 使用模型: {replicate_config.default_image_model}")
         print(f"📝 提示词: {args.prompt}")
         print(f"⚙️  参数: {args.width}x{args.height}, {args.steps} 步")
 

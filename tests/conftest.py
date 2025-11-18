@@ -32,11 +32,13 @@ def sample_game() -> Any:
     world = World(
         runtime_index=1000,
         entities_serialization=[],
-        agents_chat_history={},
+        agents_context={},
         dungeon=dungeon,
         boot=boot,
     )
-    player = PlayerSession(name="test_player", actor="test_actor")
+    player = PlayerSession(
+        name="test_player", actor="test_actor", game="test_game", world_id=""
+    )
     return _TCGGame(
         name="test_game",
         player_session=player,

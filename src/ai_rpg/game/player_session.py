@@ -55,6 +55,9 @@ class PlayerSession(BaseModel):
     # 玩家当前控制的游戏角色名称
     actor: str
 
+    # 游戏名字
+    game: str
+
     # 会话的完整消息/事件历史列表
     # 所有事件都会持续累积在此列表中,形成完整的会话记录
     session_messages: List[SessionMessage] = []

@@ -36,10 +36,10 @@ from ai_rpg.configuration import (
 )
 from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, WORLD_BOOT_DIR
 
-from ai_rpg.mongo import (
-    # BootDocument,
-    mongo_clear_database,
-)
+# from ai_rpg.mongo import (
+#     # BootDocument,
+#     mongo_clear_database,
+# )
 from ai_rpg.pgsql import (
     pgsql_create_database,
     pgsql_drop_database,
@@ -301,13 +301,13 @@ def main() -> None:
     except Exception as e:
         logger.error(f"❌ PostgreSQL 初始化失败: {e}")
 
-    # MongoDB 相关操作
-    try:
-        logger.info("🚀 清空 MongoDB 数据库...")
-        mongo_clear_database()
-        # logger.info("🚀 创建MongoDB演示游戏世界...")
-    except Exception as e:
-        logger.error(f"❌ MongoDB 初始化失败: {e}")
+    # # MongoDB 相关操作
+    # try:
+    #     logger.info("🚀 清空 MongoDB 数据库...")
+    #     mongo_clear_database()
+    #     # logger.info("🚀 创建MongoDB演示游戏世界...")
+    # except Exception as e:
+    #     logger.error(f"❌ MongoDB 初始化失败: {e}")
 
     # RAG 系统相关操作
     try:

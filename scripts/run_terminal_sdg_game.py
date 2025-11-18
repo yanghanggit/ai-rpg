@@ -11,7 +11,7 @@ from ai_rpg.chat_services.client import ChatClient
 from ai_rpg.configuration import (
     server_configuration,
 )
-from ai_rpg.game.config import GLOBAL_SD_GAME_NAME, setup_logger
+from ai_rpg.game.config import GLOBAL_SDG_GAME_NAME, setup_logger
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.sdg_game import SDGGame
 from ai_rpg.demo.werewolf_game_world import (
@@ -47,10 +47,7 @@ async def _run_game(
     # 创建游戏实例
     terminal_game = SDGGame(
         name=game,
-        player_session=PlayerSession(
-            name=user,
-            actor=actor,
-        ),
+        player_session=PlayerSession(name=user, actor=actor, game=game),
         world=World(boot=world_boot),
     )
 
@@ -329,7 +326,7 @@ if __name__ == "__main__":
 
     # 做一些设置
     user = random_name
-    game = GLOBAL_SD_GAME_NAME
+    game = GLOBAL_SDG_GAME_NAME
     actor = "角色.主持人"  # 写死先！
 
     # 运行游戏

@@ -8,6 +8,7 @@ from ..models import (
     LogoutRequest,
     LogoutResponse,
 )
+from ..game.config import GLOBAL_TCG_GAME_NAME
 
 ###################################################################################################################################################################
 login_api_router = APIRouter()
@@ -40,7 +41,7 @@ async def login(
     logger.debug(
         f"这是测试，强制删除旧的游戏数据 = {payload.user_name}, {payload.game_name}"
     )
-    delete_user_world_data(payload.user_name)
+    delete_user_world_data(payload.user_name, GLOBAL_TCG_GAME_NAME)
 
     # TODO, get测试。
     # 指向包含 runtime.json 的目录。

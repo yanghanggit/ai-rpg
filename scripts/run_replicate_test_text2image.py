@@ -24,9 +24,8 @@ from typing import List
 from ai_rpg.replicate import (
     test_replicate_api_connection,
     replicate_config,
-    generate_and_download,
-    execute_tasks,
-    ImageGenerationTask,
+    run_concurrent_tasks,
+    ImageGenerationAndDownloadTask,
     ReplicateImageInput,
     DEFAULT_OUTPUT_DIR,
 )
@@ -73,7 +72,7 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
 
             # 创建任务
             tasks.append(
-                ImageGenerationTask(
+                ImageGenerationAndDownloadTask(
                     model_version=model_version,
                     model_input=dict(model_input),
                     output_path=output_path,
@@ -81,7 +80,7 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
             )
 
         # 并发生成
-        results = await execute_tasks(tasks)
+        results = await run_concurrent_tasks(tasks)
 
         print(f"\n🎉 并发生成完成! 生成了 {len(results)} 张图片:")
         for i, path in enumerate(results, 1):
@@ -249,11 +248,12 @@ async def main() -> None:
         print(f"⚙️  参数: {args.width}x{args.height}, {args.steps} 步")
 
         # 生成并下载图片
-        saved_path = await generate_and_download(
+        task = ImageGenerationAndDownloadTask(
             model_version=model_version,
             model_input=dict(model_input),
             output_path=output_path,
         )
+        saved_path = await task.execute()
 
         print(f"\n🎉 完成! 图片已保存到: {saved_path}")
 

@@ -7,144 +7,136 @@ Replicate 图像生成工具模块
 import asyncio
 import time
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple
+from typing import Any, Dict, List, Optional
 import aiohttp
 import replicate
 from loguru import logger
+from pydantic import BaseModel
 
 
-class ImageGenerationTask(NamedTuple):
-    """图像生成任务"""
+class ImageGenerationSubTask(BaseModel):
+    """图像生成子任务"""
+
+    model_version: str
+    model_input: Dict[str, Any]
+
+    # 输出结果（None 表示未完成）
+    image_url: Optional[str] = None
+
+    async def execute(self) -> str:
+        """执行图像生成"""
+        start_time = time.time()
+
+        try:
+            # 核心调用
+            output = await replicate.async_run(
+                self.model_version, input=self.model_input
+            )
+
+            # 获取图片 URL
+            self.image_url = output[0] if isinstance(output, list) else str(output)
+
+            elapsed_time = time.time() - start_time
+            logger.info(f"✅ 图片生成完成! 耗时: {elapsed_time:.2f}秒")
+            logger.info(f"🔗 图片 URL: {self.image_url}")
+
+            return self.image_url
+
+        except Exception as e:
+            logger.error(f"❌ 图片生成失败: {e}")
+            raise
+
+
+class ImageDownloadSubTask(BaseModel):
+    """图像下载子任务"""
+
+    image_url: str
+    save_path: str
+
+    # 输出结果（None 表示未完成）
+    local_path: Optional[str] = None
+
+    async def execute(self) -> str:
+        """执行图像下载"""
+        # 确保保存目录存在
+        save_dir = Path(self.save_path).parent
+        save_dir.mkdir(parents=True, exist_ok=True)
+
+        try:
+            logger.info(f"📥 异步下载图片到: {self.save_path}")
+
+            # 异步下载图片
+            async with aiohttp.ClientSession() as session:
+                async with session.get(str(self.image_url)) as response:
+                    response.raise_for_status()
+                    content = await response.read()
+
+            # 保存图片
+            with open(self.save_path, "wb") as f:
+                f.write(content)
+
+            file_size = len(content) / 1024  # KB
+            logger.info(f"✅ 异步下载完成! 文件大小: {file_size:.1f} KB")
+
+            self.local_path = self.save_path
+            return self.local_path
+
+        except Exception as e:
+            logger.error(f"❌ 异步下载失败: {e}")
+            raise
+
+
+class ImageGenerationAndDownloadTask(BaseModel):
+    """图像生成和下载任务（包含生成+下载两个子任务）"""
 
     model_version: str
     model_input: Dict[str, Any]
     output_path: str
 
+    # 子任务（None 表示未初始化/未执行）
+    generation_task: Optional[ImageGenerationSubTask] = None
+    download_task: Optional[ImageDownloadSubTask] = None
 
-async def generate_image(model_version: str, model_input: Dict[str, Any]) -> str:
-    """
-    异步生成图片 - 核心函数
+    async def execute(self) -> str:
+        """执行完整任务流程"""
+        # 检查文件是否已存在
+        output_file = Path(self.output_path)
+        if output_file.exists():
+            logger.info(f"⏭️  文件已存在，跳过生成: {self.output_path}")
+            return self.output_path
 
-    Args:
-        model_version: 模型版本字符串
-        model_input: 模型输入参数字典
+        # 步骤1: 生成图像
+        self.generation_task = ImageGenerationSubTask(
+            model_version=self.model_version, model_input=self.model_input
+        )
+        image_url = await self.generation_task.execute()
 
-    Returns:
-        图片 URL
+        # 步骤2: 下载图像
+        self.download_task = ImageDownloadSubTask(
+            image_url=image_url, save_path=self.output_path
+        )
+        local_path = await self.download_task.execute()
 
-    Raises:
-        Exception: 图片生成失败
-    """
-    start_time = time.time()
-
-    try:
-        # 核心调用
-        output = await replicate.async_run(model_version, input=model_input)
-
-        # 获取图片 URL
-        image_url: str = output[0] if isinstance(output, list) else str(output)
-
-        elapsed_time = time.time() - start_time
-        logger.info(f"✅ 图片生成完成! 耗时: {elapsed_time:.2f}秒")
-        logger.info(f"🔗 图片 URL: {image_url}")
-
-        return image_url
-
-    except Exception as e:
-        logger.error(f"❌ 图片生成失败: {e}")
-        raise
+        return local_path
 
 
-async def download_image(image_url: str, save_path: str) -> str:
-    """
-    异步下载图片
-
-    Args:
-        image_url: 图片 URL
-        save_path: 保存路径
-
-    Returns:
-        保存的文件路径
-
-    Raises:
-        Exception: 下载失败
-    """
-    # 确保保存目录存在
-    save_dir = Path(save_path).parent
-    save_dir.mkdir(parents=True, exist_ok=True)
-
-    try:
-        logger.info(f"📥 异步下载图片到: {save_path}")
-
-        # 异步下载图片
-        async with aiohttp.ClientSession() as session:
-            async with session.get(str(image_url)) as response:
-                response.raise_for_status()
-                content = await response.read()
-
-        # 保存图片
-        with open(save_path, "wb") as f:
-            f.write(content)
-
-        file_size = len(content) / 1024  # KB
-        logger.info(f"✅ 异步下载完成! 文件大小: {file_size:.1f} KB")
-
-        return save_path
-
-    except Exception as e:
-        logger.error(f"❌ 异步下载失败: {e}")
-        raise
-
-
-async def generate_and_download(
-    model_version: str,
-    model_input: Dict[str, Any],
-    output_path: str,
-) -> str:
-    """
-    生成并下载图片
-
-    Args:
-        model_version: 模型版本
-        model_input: 模型输入参数字典
-        output_path: 完整输出路径(包括文件名,如 "outputs/cat_001.png")
-
-    Returns:
-        保存的文件路径
-    """
-    # 生成图片
-    image_url = await generate_image(model_version, model_input)
-
-    # 下载图片
-    await download_image(image_url, output_path)
-
-    return output_path
-
-
-async def execute_tasks(
-    tasks: List[ImageGenerationTask],
+async def run_concurrent_tasks(
+    tasks: List[ImageGenerationAndDownloadTask],
 ) -> List[str]:
     """
-    并发生成多张图片
+    并发执行多个图像生成和下载任务
 
     Args:
-        tasks: 任务列表,每个任务是 ImageGenerationTask
+        tasks: 任务列表 (ImageGenerationAndDownloadTask)
 
     Returns:
         保存的文件路径列表
     """
     logger.info(f"🚀 开始并发生成 {len(tasks)} 张图片...")
 
-    # 创建协程列表
-    coroutines = [
-        generate_and_download(task.model_version, task.model_input, task.output_path)
-        for task in tasks
-    ]
-
-    # 并发执行所有任务
     start_time = time.time()
     try:
-        results = await asyncio.gather(*coroutines)
+        results = await asyncio.gather(*[task.execute() for task in tasks])
         elapsed_time = time.time() - start_time
         logger.info(f"🎉 并发生成完成! 总耗时: {elapsed_time:.2f}秒")
         logger.info(f"📊 平均每张图片: {elapsed_time/len(tasks):.2f}秒")

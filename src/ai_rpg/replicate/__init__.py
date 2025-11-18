@@ -11,12 +11,11 @@ from .config import (
     DEFAULT_OUTPUT_DIR,
 )
 from .image_tools import (
-    # 异步版本
-    generate_image,
-    download_image,
-    generate_and_download,
-    execute_tasks,
-    ImageGenerationTask,
+    run_concurrent_tasks,
+    # 任务类
+    ImageGenerationSubTask,
+    ImageDownloadSubTask,
+    ImageGenerationAndDownloadTask,
 )
 from .types import ReplicateImageInput
 
@@ -24,12 +23,11 @@ __all__ = [
     "ReplicateConfig",
     # "load_replicate_config",
     "test_replicate_api_connection",
-    # 异步版本
-    "generate_image",
-    "download_image",
-    "generate_and_download",
-    "execute_tasks",
-    "ImageGenerationTask",
+    "run_concurrent_tasks",
+    # 任务类
+    "ImageGenerationSubTask",
+    "ImageDownloadSubTask",
+    "ImageGenerationAndDownloadTask",
     "ReplicateImageInput",
     "replicate_config",
     "DEFAULT_OUTPUT_DIR",

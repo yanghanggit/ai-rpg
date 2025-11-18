@@ -25,7 +25,10 @@ class ReplicateConfig:
         self.image_models: Dict[str, Dict[str, str]] = {
             "ideogram-v3-turbo": {
                 "version": "ideogram-ai/ideogram-v3-turbo:32a9584617b239dd119c773c8c18298d310068863d26499e6199538e9c29a586",
-            }
+            },
+            "stable-diffusion-3.5-large": {
+                "version": "stability-ai/stable-diffusion-3.5-large:b2fbc94054093eb07cd6022e0d23efcfbe7e63b5d592d77f74d6e55bcd2f5583",
+            },
         }
 
     def get_model_version(self, model_name: Optional[str] = None) -> str:

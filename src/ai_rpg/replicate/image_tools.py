@@ -19,6 +19,7 @@ class ReplicateImageInput(TypedDict, total=False):
 
     不同模型支持不同的参数子集:
     - ideogram-v3-turbo: 使用 aspect_ratio (不支持 width/height)
+    - stable-diffusion-3.5-large: 使用 width/height
     - flux-schnell: 使用 width/height
     - 其他模型: 根据官方文档选择对应参数
 
@@ -35,8 +36,8 @@ class ReplicateImageInput(TypedDict, total=False):
     guidance_scale: float
 
     # 尺寸参数 (不同模型选其一)
-    width: int  # 某些模型使用 (如 flux)
-    height: int  # 某些模型使用 (如 flux)
+    width: int  # SD 3.5, flux 等模型使用
+    height: int  # SD 3.5, flux 等模型使用
     aspect_ratio: str  # ideogram 系列使用 (如 "1:1", "16:9", "9:16")
 
     # 调度器
@@ -44,6 +45,8 @@ class ReplicateImageInput(TypedDict, total=False):
 
     # 其他可选参数
     seed: int  # 随机种子
+    output_format: str  # 输出格式: "webp", "jpg", "png" (SD 3.5 支持)
+    output_quality: int  # 输出质量: 0-100 (SD 3.5 支持)
     magic_prompt_option: str  # ideogram 专用: "Auto", "On", "Off"
 
 

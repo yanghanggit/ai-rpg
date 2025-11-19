@@ -18,7 +18,7 @@ from ..models import (
     DayVoteOutComponent,
 )
 from ..chat_services.client import ChatClient
-from ..utils import json_format
+from ..utils import extract_json_from_code_block
 from ..utils.md_format import format_dict_as_markdown_list
 from ..game.sdg_game import SDGGame
 
@@ -228,7 +228,7 @@ class HunterDeathActionSystem(ReactiveProcessor):
         """处理猎人开枪决策响应，返回目标名称（或空字符串）"""
         try:
             response = HunterShootDecisionResponse.model_validate_json(
-                json_format.strip_json_code_block(request_handler.response_content)
+                extract_json_from_code_block(request_handler.response_content)
             )
 
             # 如果选择不开枪（空字符串）

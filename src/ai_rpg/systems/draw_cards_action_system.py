@@ -17,7 +17,7 @@ from ..models import (
     InventoryComponent,
     ItemType,
 )
-from ..utils import json_format
+from ..utils import extract_json_from_code_block
 
 
 #######################################################################################################################################
@@ -322,9 +322,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         try:
 
-            json_code = json_format.strip_json_code_block(
-                request_handler.response_content
-            )
+            json_code = extract_json_from_code_block(request_handler.response_content)
 
             validated_response = DrawCardsResponse.model_validate_json(json_code)
 

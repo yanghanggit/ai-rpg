@@ -18,7 +18,7 @@ from ..models import (
 )
 from ..utils.md_format import format_dict_as_markdown_list
 from ..chat_services.client import ChatClient
-from ..utils import json_format
+from ..utils import extract_json_from_code_block
 
 
 ###############################################################################################################################################
@@ -237,7 +237,7 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
 
         try:
             response = PlayerAwarenessResponse.model_validate_json(
-                json_format.strip_json_code_block(request_handler.response_content)
+                extract_json_from_code_block(request_handler.response_content)
             )
 
             if response.mind_voice != "":

@@ -18,7 +18,7 @@ from ..models import (
     NightActionCompletedComponent,
 )
 from ..chat_services.client import ChatClient
-from ..utils import json_format
+from ..utils import extract_json_from_code_block
 from ..utils.md_format import format_dict_as_markdown_list
 from ..game.sdg_game import SDGGame
 
@@ -151,7 +151,7 @@ class NightWerewolfActionSystem(ReactiveProcessor):
             try:
 
                 format_response = WerewolfKillDecisionResponse.model_validate_json(
-                    json_format.strip_json_code_block(request_handler.response_content)
+                    extract_json_from_code_block(request_handler.response_content)
                 )
 
                 werewolf_entity = self._game.get_entity_by_name(request_handler.name)

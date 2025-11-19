@@ -415,14 +415,14 @@ class DrawCardsActionSystem(ReactiveProcessor):
         # 效果更新
         assert entity.has(CombatStatsComponent)
         character_profile_component = entity.get(CombatStatsComponent)
-        character_profile_component.effects.extend(copy.copy(status_effects))
+        character_profile_component.status_effects.extend(copy.copy(status_effects))
         logger.info(
-            f"update_combat_status_effects: {entity.name} => {'\n'.join([e.model_dump_json() for e in character_profile_component.effects])}"
+            f"update_combat_status_effects: {entity.name} => {'\n'.join([e.model_dump_json() for e in character_profile_component.status_effects])}"
         )
 
         updated_status_effects_message = f"""# 提示！你的状态效果已更新
 ## 当前状态效果
-{'\n'.join([f'- {e.name} (剩余回合: {e.duration}): {e.description}' for e in character_profile_component.effects]) if len(character_profile_component.effects) > 0 else '无'}"""
+{'\n'.join([f'- {e.name} (剩余回合: {e.duration}): {e.description}' for e in character_profile_component.status_effects]) if len(character_profile_component.status_effects) > 0 else '无'}"""
 
         self._game.append_human_message(entity, updated_status_effects_message)
 
@@ -448,7 +448,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         remaining_effects = []
         removed_effects = []
 
-        for status_effect in character_profile_component.effects:
+        for status_effect in character_profile_component.status_effects:
             # 效果回合数扣除
             status_effect.duration -= 1
             status_effect.duration = max(0, status_effect.duration)
@@ -461,7 +461,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 removed_effects.append(status_effect)
 
         # 更新角色的状态效果列表，只保留剩余的效果
-        character_profile_component.effects = remaining_effects
+        character_profile_component.status_effects = remaining_effects
 
         logger.info(
             f"settle_status_effects: {entity.name} => "

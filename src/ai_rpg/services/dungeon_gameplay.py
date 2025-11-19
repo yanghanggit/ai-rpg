@@ -94,7 +94,7 @@ def _all_heros_return_home(tcg_game: TCGGame) -> None:
         rpg_character_profile_comp.stats.hp = rpg_character_profile_comp.stats.max_hp
 
         # 清空状态效果
-        rpg_character_profile_comp.effects.clear()
+        rpg_character_profile_comp.status_effects.clear()
 
 
 ###################################################################################################################################################################

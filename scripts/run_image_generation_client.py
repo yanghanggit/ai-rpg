@@ -5,27 +5,27 @@
 
 使用示例:
     # 基础使用
-    python scripts/run_image_generation_client.py "a beautiful cat"
+    python scripts/run_image_generation_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} "a beautiful cat"
 
     # 批量生成（多个独立配置）
-    python scripts/run_image_generation_client.py "cat" "dog" "bird"
+    python scripts/run_image_generation_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} "cat" "dog" "bird"
 
     # 指定参数
-    python scripts/run_image_generation_client.py "cat" --width 512 --height 512
+    python scripts/run_image_generation_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} "cat" --width 512 --height 512
 
-    # 不同配置批量生成（使用配置文件）
-    python scripts/run_image_generation_client.py --demo
+    # 运行演示
+    python scripts/run_image_generation_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} --demo
 
     # 列出已生成的图片
-    python scripts/run_image_generation_client.py --list
+    python scripts/run_image_generation_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} --list
 
     # 测试服务器连接
-    python scripts/run_image_generation_client.py --test
+    python scripts/run_image_generation_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} --test
 """
 
 import asyncio
 import sys
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Final, List, Optional
 
 import click
 import httpx
@@ -40,6 +40,9 @@ sys.path.insert(
 
 from ai_rpg.configuration import server_configuration
 from ai_rpg.replicate import replicate_config
+
+# 局域网地址配置（根据实际情况修改）
+LOCAL_NETWORK_IP: Final[str] = "192.168.192.59"
 
 
 class ImageGenerationClient:
@@ -100,21 +103,17 @@ class ImageGenerationClient:
 
                 if response.status_code == 200:
                     data: Dict[str, Any] = response.json()
-                    if data["success"]:
-                        logger.info(f"✅ 生成成功! 耗时: {data['elapsed_time']:.2f}秒")
-                        logger.info(f"📊 总共生成: {data['total']} 张图片")
-                        logger.info(f"🎨 使用模型: {data['model']}")
+                    logger.info(f"✅ 生成成功! 耗时: {data['elapsed_time']:.2f}秒")
+                    logger.info(f"📊 总共生成: {len(data['images'])} 张图片")
 
-                        # 打印每张图片的信息
-                        for i, img in enumerate(data["images"], 1):
-                            logger.info(f"  {i}. {img['filename']}")
-                            logger.info(f"     提示词: {img['prompt']}")
-                            logger.info(f"     URL: {self.base_url}{img['url']}")
+                    # 打印每张图片的信息
+                    for i, img in enumerate(data["images"], 1):
+                        logger.info(f"  {i}. {img['filename']}")
+                        logger.info(f"     提示词: {img['prompt']}")
+                        logger.info(f"     模型: {img['model']}")
+                        logger.info(f"     URL: {self.base_url}{img['url']}")
 
-                        return data
-                    else:
-                        logger.error(f"❌ 生成失败: {data['message']}")
-                        return data
+                    return data
                 else:
                     logger.error(f"❌ 请求失败: {response.status_code}")
                     logger.error(f"错误详情: {response.text}")
@@ -179,8 +178,8 @@ async def run_demo(client: ImageGenerationClient) -> None:
     # 发送请求
     result = await client.generate_images(configs)
 
-    if result and result["success"]:
-        logger.info(f"\n🎉 演示完成! 生成了 {result['total']} 张图片")
+    if result and result.get("images"):
+        logger.info(f"\n🎉 演示完成! 生成了 {len(result['images'])} 张图片")
     else:
         logger.error("❌ 演示失败")
 
@@ -189,8 +188,9 @@ async def run_demo(client: ImageGenerationClient) -> None:
 @click.argument("prompts", nargs=-1, required=False)
 @click.option(
     "--server",
-    default=None,
-    help=f"服务器地址 (默认: http://localhost:{server_configuration.image_generation_server_port})",
+    "-s",
+    required=True,
+    help=f"服务器地址 (例: http://{LOCAL_NETWORK_IP}:{server_configuration.image_generation_server_port})",
 )
 @click.option(
     "--model",
@@ -201,7 +201,7 @@ async def run_demo(client: ImageGenerationClient) -> None:
 )
 @click.option("--width", "-w", default=1024, type=int, help="图片宽度")
 @click.option("--height", default=1024, type=int, help="图片高度")
-@click.option("--steps", "-s", default=4, type=int, help="推理步数")
+@click.option("--steps", default=4, type=int, help="推理步数")
 @click.option("--guidance", "-g", default=7.5, type=float, help="引导比例")
 @click.option(
     "--negative",
@@ -259,11 +259,8 @@ async def _async_main(
     """异步主函数"""
     try:
         # 初始化客户端
-        base_url = (
-            server
-            or f"http://localhost:{server_configuration.image_generation_server_port}"
-        )
-        client = ImageGenerationClient(base_url=base_url, timeout=300.0)
+        assert server is not None, "服务器地址不能为空"
+        client = ImageGenerationClient(base_url=server, timeout=300.0)
 
         # 测试连接
         if test:
@@ -282,13 +279,24 @@ async def _async_main(
 
         # 如果没有提供提示词，显示帮助
         if not prompts:
+            server_example = f"http://{LOCAL_NETWORK_IP}:{server_configuration.image_generation_server_port}"
             logger.info("🎨 图片生成客户端")
             logger.info("\n快速开始:")
-            logger.info('  python run_image_generation_client.py "a cat"')
-            logger.info('  python run_image_generation_client.py "cat" "dog" "bird"')
-            logger.info("  python run_image_generation_client.py --demo")
-            logger.info("  python run_image_generation_client.py --list")
-            logger.info("  python run_image_generation_client.py --test")
+            logger.info(
+                f'  python run_image_generation_client.py -s {server_example} "a cat"'
+            )
+            logger.info(
+                f'  python run_image_generation_client.py -s {server_example} "cat" "dog"'
+            )
+            logger.info(
+                f"  python run_image_generation_client.py -s {server_example} --demo"
+            )
+            logger.info(
+                f"  python run_image_generation_client.py -s {server_example} --list"
+            )
+            logger.info(
+                f"  python run_image_generation_client.py -s {server_example} --test"
+            )
             logger.info("\n详细帮助:")
             logger.info("  python run_image_generation_client.py --help")
             return

@@ -7,7 +7,7 @@ class ServerConfiguration(BaseModel):
     game_server_port: int = 8000
     deepseek_chat_server_port: int = 8200
     image_generation_server_port: int = 8300
-    chat_api_endpoint: str = "/api/chat/v1/"
+    # chat_api_endpoint: str = "/api/chat/v1/"
 
 
 # 给一个默认的！

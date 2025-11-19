@@ -7,11 +7,10 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from .protocol import (
     ChatRequest,
-    # ContextMessageType,
     ChatResponse,
 )
 import time
-from ..configuration.server_configuration import ServerConfiguration
+from ..configuration.server import ServerConfiguration
 from dataclasses import dataclass
 
 
@@ -38,7 +37,7 @@ class ChatClient:
 
         cls._deepseek_url_config = DeepSeekUrlConfig(
             base_url=f"http://localhost:{server_settings.deepseek_chat_server_port}/",
-            chat_url=f"http://localhost:{server_settings.deepseek_chat_server_port}{server_settings.chat_api_endpoint}",
+            chat_url=f"http://localhost:{server_settings.deepseek_chat_server_port}/api/chat/v1/",
         )
 
         logger.info(
@@ -95,12 +94,6 @@ class ChatClient:
             assert isinstance(message, (HumanMessage, AIMessage, SystemMessage))
 
         self._cache_response_ai_messages: Optional[List[AIMessage]] = None
-
-        # mapping = {'场景.中央广场': ['角色.4号玩家', '角色.1号玩家', '角色.5号玩家', '角色.6号玩家', '角色.主持人', '角色.3号玩家', '角色.2号玩家']}
-        # 测试！！！
-        # if self._name in ["角色.1号玩家", "角色.2号玩家"]:
-        #     self._url = self._deepseek_url_config.chat_url
-        #     logger.warning(f"====================={self._name} use DeepSeek chat_url: {self._url}")
 
     ################################################################################################################################################################################
     @property

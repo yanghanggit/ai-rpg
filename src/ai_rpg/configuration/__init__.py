@@ -1,6 +1,6 @@
 """ """
 
-from .server_configuration import (
+from .server import (
     ServerConfiguration,
     server_configuration,
 )

@@ -8,107 +8,31 @@ Replicate 文生图工具
 python scripts/run_replicate_text2image.py "prompt text"
 
 # 演示功能
-python scripts/run_replicate_text2image.py --demo            # 单张演示
-python scripts/run_replicate_text2image.py --concurrent     # 并发演示
+python scripts/run_replicate_text2image.py --demo           # 运行演示（并发生成多张图片）
 
 # 实用功能
 python scripts/run_replicate_text2image.py --test           # 测试连接
-python scripts/run_replicate_text2image.py --list-models    # 查看模型
 """
 
-import argparse
 import asyncio
-import os
 import sys
+import uuid
 from pathlib import Path
-from typing import Any, Dict, Final
+from typing import List, Optional
+
+import click
 
 from ai_rpg.replicate import (
     test_replicate_api_connection,
-    load_replicate_config,
-    # get_default_generation_params,
-    generate_and_download,
-    generate_multiple_images,
+    replicate_config,
+    run_concurrent_tasks,
+    ImageGenerationAndDownloadTask,
+    ReplicateImageInput,
+    DEFAULT_OUTPUT_DIR,
 )
 
-# 全局变量
-API_TOKEN: str = os.getenv("REPLICATE_API_TOKEN") or ""
 
-replicate_config = load_replicate_config(Path("replicate_models.json"))
-
-MODELS: Dict[str, Dict[str, str]] = replicate_config.image_models.model_dump(
-    by_alias=True, exclude_none=True
-)
-
-DEFAULT_OUTPUT_DIR: Final[str] = "generated_images"
-
-
-def _get_default_generation_params() -> Dict[str, Any]:
-    """
-    获取默认的图片生成参数
-
-    Returns:
-        包含默认参数的字典
-    """
-    return {
-        "model_name": "sdxl-lightning",
-        "negative_prompt": "worst quality, low quality, blurry",
-        "width": 768,
-        "height": 768,
-        "num_inference_steps": 4,
-        "guidance_scale": 7.5,
-    }
-
-
-async def run_demo() -> None:
-    """运行演示示例"""
-    print("=" * 60)
-    print("🎮 Replicate 文生图演示")
-    print("=" * 60)
-
-    # 1. 测试连接
-    if not test_replicate_api_connection():
-        print("❌ 连接测试失败，请检查网络设置")
-        return
-
-    # 2. 查看可用模型
-    print("\n📋 可用模型:")
-    for name, info in MODELS.items():
-        cost = info["cost_estimate"]
-        description = info["description"]
-        print(f"  - {name}: {cost}")
-        print(f"    {description}")
-
-    # 3. 生成测试图片
-    print("\n🎨 生成测试图片...")
-
-    try:
-        # 快速测试 - 使用成本最低的模型
-        test_prompt = "a beautiful landscape with mountains and a lake"
-
-        # 获取默认参数
-        default_params = _get_default_generation_params()
-
-        saved_path = await generate_and_download(
-            prompt=test_prompt,
-            model_name=default_params["model_name"],
-            negative_prompt=default_params["negative_prompt"],
-            width=default_params["width"],
-            height=default_params["height"],
-            num_inference_steps=default_params["num_inference_steps"],
-            guidance_scale=default_params["guidance_scale"],
-            output_dir=DEFAULT_OUTPUT_DIR,
-            models_config=MODELS,
-        )
-
-        print(f"\n🎉 演示完成! 图片已保存到: {saved_path}")
-        print("💡 您可以查看生成的图片，然后尝试其他提示词")
-
-    except Exception as e:
-        print(f"❌ 演示失败: {e}")
-
-
-async def run_concurrent_demo() -> None:
+async def run_concurrent_demo(prompts: List[str]) -> None:
     """运行并发生成演示"""
     print("=" * 60)
     print("🚀 Replicate 并发文生图演示")
@@ -119,34 +43,48 @@ async def run_concurrent_demo() -> None:
         print("❌ 连接测试失败，请检查网络设置")
         return
 
-    # 2. 多个提示词
-    prompts = [
-        "peaceful mountain landscape",
-        "ocean waves on sandy beach",
-        "forest path in autumn",
-    ]
-
     print(f"\n🎨 并发生成 {len(prompts)} 张图片...")
     print("📝 提示词列表:")
     for i, prompt in enumerate(prompts, 1):
         print(f"  {i}. {prompt}")
 
     try:
-        # 获取默认参数
-        default_params = _get_default_generation_params()
+        # 获取模型版本
+        model_version = replicate_config.get_model_version()
+
+        # 准备任务列表
+        tasks = []
+        for i, prompt in enumerate(prompts, 1):
+            # 构建模型输入参数
+            model_input: ReplicateImageInput = {
+                "prompt": prompt,
+                "negative_prompt": "worst quality, low quality, blurry",
+                "aspect_ratio": "1:1",  # ideogram-v3-turbo 使用此参数
+                "width": 512,  # 某些模型可能使用
+                "height": 512,  # 某些模型可能使用
+                "num_outputs": 1,
+                "num_inference_steps": 4,
+                "guidance_scale": 7.5,
+                "scheduler": "K_EULER",
+                "magic_prompt_option": "Auto",  # ideogram 专用
+            }
+            # 准备输出路径
+            output_path = str(
+                DEFAULT_OUTPUT_DIR
+                / f"{replicate_config.default_image_model}_{i:02d}_{uuid.uuid4()}.png"
+            )
+
+            # 创建任务
+            tasks.append(
+                ImageGenerationAndDownloadTask(
+                    model_version=model_version,
+                    model_input=dict(model_input),
+                    output_path=output_path,
+                )
+            )
 
         # 并发生成
-        results = await generate_multiple_images(
-            prompts=prompts,
-            model_name="ideogram-v3-turbo",  # 使用相对稳定的模型
-            negative_prompt=default_params["negative_prompt"],
-            width=512,  # 使用较小尺寸加快测试
-            height=512,
-            num_inference_steps=default_params["num_inference_steps"],
-            guidance_scale=default_params["guidance_scale"],
-            output_dir=DEFAULT_OUTPUT_DIR,
-            models_config=MODELS,
-        )
+        results = await run_concurrent_tasks(tasks)
 
         print(f"\n🎉 并发生成完成! 生成了 {len(results)} 张图片:")
         for i, path in enumerate(results, 1):
@@ -157,82 +95,93 @@ async def run_concurrent_demo() -> None:
         print(f"❌ 并发演示失败: {e}")
 
 
-async def main() -> None:
-    """主函数 - 命令行接口"""
+@click.command()
+@click.argument("prompt", required=False)
+@click.option(
+    "--model",
+    "-m",
+    type=click.Choice(list(replicate_config.get_available_models().keys())),
+    help=f"选择模型 (默认: {replicate_config.default_image_model})",
+)
+@click.option(
+    "--negative",
+    "-n",
+    default="worst quality, low quality, blurry",
+    help="负向提示词",
+)
+@click.option("--width", "-w", default=1024, type=int, help="图片宽度")
+@click.option("--height", default=1024, type=int, help="图片高度")
+@click.option(
+    "--size",
+    type=click.Choice(["small", "medium", "large", "wide", "tall"]),
+    help="预设尺寸: small(512x512), medium(768x768), large(1024x1024), wide(1024x768), tall(768x1024)",
+)
+@click.option("--steps", "-s", default=4, type=int, help="推理步数")
+@click.option("--guidance", "-g", default=7.5, type=float, help="引导比例")
+@click.option(
+    "--output",
+    "-o",
+    default=str(DEFAULT_OUTPUT_DIR),
+    type=click.Path(),
+    help="输出目录",
+)
+@click.option("--demo", is_flag=True, help="运行演示（并发生成多张图片）")
+@click.option("--test", is_flag=True, help="测试连接")
+def main(
+    prompt: Optional[str],
+    model: Optional[str],
+    negative: str,
+    width: int,
+    height: int,
+    size: Optional[str],
+    steps: int,
+    guidance: float,
+    output: str,
+    demo: bool,
+    test: bool,
+) -> None:
+    """Replicate 文生图工具"""
+    asyncio.run(
+        _async_main(
+            prompt,
+            model,
+            negative,
+            width,
+            height,
+            size,
+            steps,
+            guidance,
+            output,
+            demo,
+            test,
+        )
+    )
 
+
+async def _async_main(
+    prompt: Optional[str],
+    model: Optional[str],
+    negative: str,
+    width: int,
+    height: int,
+    size: Optional[str],
+    steps: int,
+    guidance: float,
+    output: str,
+    demo: bool,
+    test: bool,
+) -> None:
+    """异步主函数"""
     # 检查模型配置是否正确加载
-    if not MODELS:
+    if not replicate_config.get_available_models():
         print("❌ 错误: 图像模型配置未正确加载")
-        print("💡 请检查:")
-        print("   1. replicate_models.json 文件是否存在")
-        print("   2. JSON 文件格式是否正确")
-        print("   3. image_models 部分是否配置正确")
         sys.exit(1)
-
-    parser = argparse.ArgumentParser(description="Replicate 文生图工具")
-
-    # 获取默认参数
-    default_params = _get_default_generation_params()
-
-    parser.add_argument("prompt", nargs="?", help="文本提示词")
-    parser.add_argument(
-        "--model",
-        "-m",
-        default=default_params["model_name"],
-        choices=list(MODELS.keys()),
-        help=f"使用的模型 (默认: {default_params['model_name']})",
-    )
-    parser.add_argument(
-        "--negative",
-        "-n",
-        default=default_params["negative_prompt"],
-        help="负向提示词",
-    )
-    parser.add_argument(
-        "--width",
-        "-w",
-        type=int,
-        default=default_params["width"],
-        help=f"图片宽度 (默认: {default_params['width']})",
-    )
-    parser.add_argument(
-        "--height",
-        type=int,
-        default=default_params["height"],
-        help=f"图片高度 (默认: {default_params['height']})",
-    )
-    parser.add_argument(
-        "--size",
-        choices=["small", "medium", "large", "wide", "tall"],
-        help="预设尺寸: small(512x512), medium(768x768), large(1024x1024), wide(1024x768), tall(768x1024)",
-    )
-    parser.add_argument(
-        "--steps",
-        "-s",
-        type=int,
-        default=default_params["num_inference_steps"],
-        help="推理步数",
-    )
-    parser.add_argument(
-        "--guidance",
-        "-g",
-        type=float,
-        default=default_params["guidance_scale"],
-        help="引导比例",
-    )
-    parser.add_argument("--output", "-o", default=DEFAULT_OUTPUT_DIR, help="输出目录")
-    parser.add_argument("--list-models", action="store_true", help="列出可用模型")
-    parser.add_argument("--demo", action="store_true", help="运行演示")
-    parser.add_argument("--concurrent", action="store_true", help="运行并发生成演示")
-    parser.add_argument("--test", action="store_true", help="测试连接")
-
-    args = parser.parse_args()
 
     try:
         print("✅ Replicate 客户端初始化完成")
 
         # 处理预设尺寸
-        if args.size:
+        if size:
             size_presets = {
                 "small": (512, 512),
                 "medium": (768, 768),
@@ -240,48 +189,33 @@ async def main() -> None:
                 "wide": (1024, 768),
                 "tall": (768, 1024),
             }
-            args.width, args.height = size_presets[args.size]
-            print(f"📐 使用预设尺寸 '{args.size}': {args.width}x{args.height}")
+            width, height = size_presets[size]
+            print(f"📐 使用预设尺寸 '{size}': {width}x{height}")
 
         # 如果是运行演示
-        if args.demo:
-            await run_demo()
-            return
-
-        # 如果是运行并发演示
-        if args.concurrent:
-            await run_concurrent_demo()
+        if demo:
+            await run_concurrent_demo(
+                [
+                    "peaceful mountain landscape",
+                    "ocean waves on sandy beach",
+                    "forest path in autumn",
+                ]
+            )
             return
 
         # 如果是测试连接
-        if args.test:
+        if test:
             test_replicate_api_connection()
             return
 
-        # 如果只是列出模型
-        if args.list_models:
-            print("🎨 可用模型:")
-            for name, info in MODELS.items():
-                cost = info["cost_estimate"]
-                description = info["description"]
-                print(f"  - {name}: {cost}")
-                print(f"    {description}")
-            return
-
         # 如果没有提供提示词，显示帮助
-        if not args.prompt:
+        if not prompt:
             print("🎨 Replicate 文生图工具")
             print("\n快速开始:")
             print(
-                "  python run_replicate_text2image.py --demo            # 运行单张演示"
-            )
-            print(
-                "  python run_replicate_text2image.py --concurrent      # 运行并发演示"
+                "  python run_replicate_text2image.py --demo            # 运行演示（并发生成多张图片）"
             )
             print("  python run_replicate_text2image.py --test            # 测试连接")
-            print(
-                "  python run_replicate_text2image.py --list-models     # 查看内置模型"
-            )
             print('  python run_replicate_text2image.py "生成一只猫"       # 生成图片')
             print("\n尺寸选项:")
             print("  --size small    # 512x512  (最快)")
@@ -290,21 +224,59 @@ async def main() -> None:
             print("  --size wide     # 1024x768 (横向)")
             print("  --size tall     # 768x1024 (纵向)")
             print("\n详细帮助:")
-            print("  python run_replicate_text2image.py -h")
+            print("  python run_replicate_text2image.py --help")
             return
 
+        # 获取模型版本（支持指定模型）
+        model_name = model if model else replicate_config.default_image_model
+        model_version = replicate_config.get_model_version(model_name)
+
+        # 计算宽高比（用于 ideogram 系列模型）
+        aspect_ratio = "1:1"  # 默认
+        if width == height:
+            aspect_ratio = "1:1"
+        elif width > height:
+            ratio = width / height
+            if abs(ratio - 16 / 9) < 0.1:
+                aspect_ratio = "16:9"
+            elif abs(ratio - 4 / 3) < 0.1:
+                aspect_ratio = "4:3"
+        else:
+            ratio = height / width
+            if abs(ratio - 16 / 9) < 0.1:
+                aspect_ratio = "9:16"
+            elif abs(ratio - 4 / 3) < 0.1:
+                aspect_ratio = "3:4"
+
+        # 构建模型输入参数 (包含所有可能的参数，模型会选择其支持的使用)
+        model_input: ReplicateImageInput = {
+            "prompt": prompt,
+            "negative_prompt": negative,
+            "aspect_ratio": aspect_ratio,  # ideogram-v3-turbo 使用
+            "width": width,  # 某些模型 (如 flux) 使用
+            "height": height,  # 某些模型 (如 flux) 使用
+            "num_outputs": 1,
+            "num_inference_steps": steps,
+            "guidance_scale": guidance,
+            "scheduler": "K_EULER",
+            "magic_prompt_option": "Auto",  # ideogram 专用
+        }
+
+        # 准备输出路径
+        output_path = str(Path(output) / f"{model_name}_{uuid.uuid4()}.png")
+
+        # 打印生成信息
+        print(f"🎨 使用模型: {model_name}")
+        print(f"📝 提示词: {prompt}")
+        print(f"⚙️  参数: {width}x{height}, {steps} 步")
+
         # 生成并下载图片
-        saved_path = await generate_and_download(
-            prompt=args.prompt,
-            model_name=args.model,
-            negative_prompt=args.negative,
-            width=args.width,
-            height=args.height,
-            num_inference_steps=args.steps,
-            guidance_scale=args.guidance,
-            output_dir=args.output,
-            models_config=MODELS,
+        task = ImageGenerationAndDownloadTask(
+            model_version=model_version,
+            model_input=dict(model_input),
+            output_path=output_path,
         )
+        saved_path = await task.execute()
 
         print(f"\n🎉 完成! 图片已保存到: {saved_path}")
 
@@ -314,4 +286,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

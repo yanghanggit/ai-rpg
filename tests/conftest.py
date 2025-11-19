@@ -36,9 +36,7 @@ def sample_game() -> Any:
         dungeon=dungeon,
         boot=boot,
     )
-    player = PlayerSession(
-        name="test_player", actor="test_actor", game="test_game", world_id=""
-    )
+    player = PlayerSession(name="test_player", actor="test_actor", game="test_game")
     return _TCGGame(
         name="test_game",
         player_session=player,

@@ -5,13 +5,10 @@ from pydantic import BaseModel, Field
 from ..chat_services.client import ChatClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
-
-# from ..game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
     DrawCardsAction,
     HandComponent,
     Card,
-    # XCardPlayerComponent,
     StatusEffect,
     CombatStatsComponent,
     InventoryComponent,
@@ -24,7 +21,7 @@ from ..utils import extract_json_from_code_block
 @final
 class DrawCardsResponse(BaseModel):
     update_hp: Optional[float] = Field(None, description="更新后的生命值")
-    cards: List[Card] = Field(..., description="生成的战斗技能列表")
+    cards: List[Card] = Field(..., description="生成的战斗卡牌列表")
     status_effects: List[StatusEffect] = Field(
         ...,
         description="你自身的状态效果列表，注意！场景，角色，设定，kick_off_message，和已发生事件都会对你产生影响并生成状态效果！",
@@ -43,9 +40,9 @@ def _generate_prompt1(
         update_hp=None,
         cards=[
             Card(
-                name="[技能名称]",
-                description="[技能的基本描述和作用方式][技能的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：技能附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制状态描述]",
-                target="[目标角色的完整名称]",
+                name="[卡牌名称]",
+                description="[作用方式与效果]：[具体数值效果]。[附加状态效果]。代价：[使用后的自身限制]",
+                target="[目标角色完整名称]",
             ),
         ],
         status_effects=[
@@ -57,29 +54,29 @@ def _generate_prompt1(
         ],
     )
 
-    return f"""# 指令！请你更新状态，并生成 {card_creation_count} 个技能。
+    return f"""# 指令！请你更新状态，并生成 {card_creation_count} 张卡牌。
 
 ## (场景内角色) 行动顺序(从左到右)
 {round_turns}
 
-## 技能生成规则
-1. **技能对目标的效果**：技能可以对目标造成伤害、提供治疗、添加护盾等，并可选择性地为目标附加状态效果(buff/debuff)
-2. **技能对自身的限制**：每个技能使用后必须对使用者产生一个限制状态，下面是状态示例：  
+## 卡牌生成规则
+1. **卡牌效果**：卡牌可对目标造成伤害、提供治疗、添加护盾等，并可选择性地为目标附加状态效果(buff/debuff)
+2. **使用代价**：每张卡牌使用后必须对使用者产生一个限制状态作为代价，下面是代价示例：  
    - 眩晕：无法行动  
-   - 沉默：无法使用魔法，法术类技能  
+   - 沉默：无法使用魔法、法术类卡牌  
    - 力竭：体力透支，无法防御  
-   - 反噬：技能释放时自己也受到部分伤害或异常状态  
+   - 反噬：使用时自己也受到部分伤害或异常状态  
    - 虚弱：受到的伤害增加  
    - 致盲：命中率降低
    - 缴械：无法攻击
-   - 技能威力越大，自身限制状态越严重，持续时间越长
-3. **技能生成顺序**：按照角色的战斗循环顺序进行生成
+   - 卡牌效果越强，使用代价越严重，持续时间越长
+3. **生成顺序**：按照角色的行动顺序依次生成卡牌
 
 ## 输出要求
 - 涉及数值变化时必须明确具体数值(生命/物理攻击/物理防御/魔法攻击/魔法防御)
-- 技能效果格式：主要效果 + 可选状态效果 + 自身限制状态
-- 技能的description里禁止包含角色名称
-- 第一局一定会有新增的status_effects，根据角色进入战斗时的设定，kick_off_message，环境，内心活动，和其他角色的情况生成，而不是技能里提到的状态
+- 卡牌描述格式：作用方式 + 主要效果 + 附加状态 + 使用代价
+- 卡牌的description里禁止包含角色名称
+- 第一局一定会有新增的status_effects，根据角色进入战斗时的设定，kick_off_message，环境，内心活动，和其他角色的情况生成，而不是卡牌里提到的状态
 - 同一时间可以出现多个status_effects
 - **状态效果去重**: 如果你已经拥有某个长期状态效果(如传奇道具效果)，不需要重复输出，系统会自动维护
 - 使用有趣、意想不到的风格描述效果产生的原因
@@ -107,9 +104,9 @@ def _generate_prompt2(
         update_hp=999.0,  # 占位符：填写你从计算过程中找到的当前HP值
         cards=[
             Card(
-                name="[技能名称]",
-                description="[技能的基本描述和作用方式][技能的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：技能附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制状态描述]",
-                target="[目标角色的完整名称]",
+                name="[卡牌名称]",
+                description="[作用方式与效果]：[具体数值效果]。[附加状态效果]。代价：[使用后的自身限制]",
+                target="[目标角色完整名称]",
             ),
         ],
         status_effects=[
@@ -127,35 +124,35 @@ def _generate_prompt2(
         status_effects=[],
     )
 
-    return f"""# 指令！请你回顾战斗内发生事件及对你的影响，然后更新自身状态，并生成 {card_creation_count} 个技能。
+    return f"""# 指令！请你回顾战斗内发生事件及对你的影响，然后更新自身状态，并生成 {card_creation_count} 张卡牌。
 
 ## (场景内角色) 行动顺序(从左到右)
 {round_turns}
 
-## 技能生成规则
-1. **技能对目标的效果**：技能可以对目标造成伤害、提供治疗、添加护盾等，并可选择性地为目标附加状态效果(buff/debuff)
-2. **技能对自身的限制**：每个技能使用后必须对使用者产生一个限制状态，下面是状态示例：  
+## 卡牌生成规则
+1. **卡牌效果**：卡牌可对目标造成伤害、提供治疗、添加护盾等，并可选择性地为目标附加状态效果(buff/debuff)
+2. **使用代价**：每张卡牌使用后必须对使用者产生一个限制状态作为代价，下面是代价示例：  
    - 眩晕：无法行动  
-   - 沉默：无法使用魔法，法术类技能  
+   - 沉默：无法使用魔法、法术类卡牌  
    - 力竭：体力透支，无法防御  
-   - 反噬：技能释放时自己也受到部分伤害或异常状态  
+   - 反噬：使用时自己也受到部分伤害或异常状态  
    - 虚弱：受到的伤害增加  
    - 致盲：命中率降低
    - 缴械：无法攻击
-   - 技能威力越大，自身限制效果越严重，持续时间越长
-3. **技能生成顺序**：按照角色的战斗循环顺序进行生成
+   - 卡牌效果越强，使用代价越严重，持续时间越长
+3. **生成顺序**：按照角色的行动顺序依次生成卡牌
 
 
 ## 输出要求
 - 涉及数值变化时必须明确具体数值(生命/物理攻击/物理防御/魔法攻击/魔法防御)
-- 技能效果格式：主要效果 + 可选状态效果 + 自身限制状态
+- 卡牌描述格式：作用方式 + 主要效果 + 附加状态 + 使用代价
 - **【重要】update_hp字段必须填写你的最终当前HP值(不是变化量)**:
   - 在最近的[发生事件！战斗回合]的"计算过程"末尾，会明确列出"角色状态"部分，格式为"角色.xxx.当前HP/最大HP"
   - 找到关于**你**的那一条，将"当前HP"的数值填入update_hp字段
   - 例如：如果看到"角色.战士.卡恩.1050/1050(HP保持不变)"，则update_hp应该填1050.0
   - 例如：如果看到"角色.法师.奥露娜.989/1050(受到伤害)"，则update_hp应该填989.0
-- 技能的description里禁止包含角色名称
-- status_effects根据角色上回合结束时受到的其他角色的技能状态效果和自身技能的限制状态生成，而不是这回合生成的技能里提到的状态
+- 卡牌的description里禁止包含角色名称
+- status_effects根据角色上回合结束时受到的其他角色的卡牌效果和自身使用代价生成，而不是这回合生成的卡牌里提到的状态
 - **状态效果去重**: 如果你已经拥有某个长期状态效果(如传奇道具效果)，不需要重复输出，系统会自动维护。只输出本回合**新增**的状态效果。
 - 同一时间可以存在多个status_effects
 - 使用有趣、意想不到的风格描述效果产生的原因
@@ -167,11 +164,11 @@ def _generate_prompt2(
 
 ### 特殊规则
 - 更新你当前身上的状态效果，包括环境影响、之前行动的后果等
-- 如果你已经死亡，即update_hp<=0，则不需要生成技能与状态，返回如下对象:
+- 如果你已经死亡，即update_hp<=0，则不需要生成卡牌与状态，返回如下对象:
 ```json
 {response_empty_sample.model_dump_json(exclude_none=True, indent=2)}
 ```
-- 如果你认为战斗已经结束，也不需要生成技能，返回如下对象:
+- 如果你认为战斗已经结束，也不需要生成卡牌，返回如下对象:
 ```json
 {response_empty_sample.model_dump_json(exclude_none=True, indent=2)}
 ```
@@ -282,7 +279,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         """
         确保所有实体都有手牌组件的兜底机制。
         如果某个实体缺少HandComponent，说明_handle_response出现了错误，
-        可能是LLM返回的内容无法正确解析。此时给角色一个默认的等待技能，避免游戏卡死。
+        可能是LLM返回的内容无法正确解析。此时给角色一个默认的等待，避免游戏卡死。
 
         Args:
             entities: 需要检查的实体列表
@@ -294,7 +291,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             character_profile_component = entity.get(CombatStatsComponent)
             assert character_profile_component is not None
             if character_profile_component.stats.hp <= 0:
-                # 如果角色已经死亡，就不需要添加等待技能了。
+                # 如果角色已经死亡，就不需要添加等待。
                 logger.warning(
                     f"entity {entity.name} is dead (hp <= 0), no need to add default card"
                 )

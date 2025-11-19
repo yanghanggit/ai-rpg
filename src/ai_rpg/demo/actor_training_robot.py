@@ -26,7 +26,7 @@ def create_actor_training_robot() -> Actor:
         character_stats=CharacterStats(base_dexterity=1),
         type=ActorType.ENEMY,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-        actor_profile="""你是一个训练机器人，只会最基本的防御和攻击，你不会生成观察和利用环境的技能。
+        actor_profile="""你是一个训练机器人，只会最基本的防御和攻击，你不会生成观察和利用环境的能力。
          【战斗循环】  
         1. 防御（格挡或减伤，等待敌人出手）。  
         2. 攻击（基础轻攻击或者重击）。

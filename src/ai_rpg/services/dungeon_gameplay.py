@@ -117,7 +117,7 @@ def _all_heros_next_dungeon(tcg_game: TCGGame) -> None:
 # TODO, 临时添加行动, 逻辑。 activate_play_cards_action
 def _combat_actors_random_play_cards_action(tcg_game: TCGGame) -> bool:
     """
-    激活打牌行动，为所有轮次中的角色选择技能并设置执行计划。
+    激活打牌行动，为所有轮次中的角色选择行动并设置执行计划。
 
     Returns:
         bool: 是否成功激活打牌行动
@@ -156,11 +156,11 @@ def _combat_actors_random_play_cards_action(tcg_game: TCGGame) -> bool:
         # 必须没有打牌行动
         assert not actor_entity.has(PlayCardsAction)
         hand_comp = actor_entity.get(HandComponent)
-        assert len(hand_comp.cards) > 0, f"{actor_entity.name} 没有技能可用"
+        assert len(hand_comp.cards) > 0, f"{actor_entity.name} 没有行动可用"
 
-        # 选择技能和目标
+        # 选择一张卡牌随机使用
         selected_card = random.choice(hand_comp.cards)
-        logger.debug(f"为角色 {actor_entity.name} 随机选择技能: {selected_card.name}")
+        logger.debug(f"为角色 {actor_entity.name} 随机选择卡牌: {selected_card.name}")
         final_target = selected_card.target
 
         # 创建打牌行动

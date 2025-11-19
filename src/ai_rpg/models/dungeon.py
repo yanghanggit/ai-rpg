@@ -28,7 +28,7 @@ class CombatResult(IntEnum):
 
 
 ###############################################################################################################################################
-# 技能产生的影响。
+# 状态效果：增益 / 减益，持续伤害 / 持续治疗等
 @final
 class StatusEffect(BaseModel):
     name: str = Field(..., description="效果名称")
@@ -39,9 +39,9 @@ class StatusEffect(BaseModel):
 ###############################################################################################################################################
 @final
 class Card(BaseModel):
-    name: str = Field(..., description="此技能名称")
-    description: str = Field(..., description="此技能描述")
-    target: str = Field(default="", description="技能的目标")
+    name: str = Field(..., description="卡牌名称")
+    description: str = Field(..., description="卡牌效果、作用方式及使用代价")
+    target: str = Field(default="", description="目标对象")
 
 
 ###############################################################################################################################################

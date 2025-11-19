@@ -245,7 +245,7 @@ def create_actor_villager(name: str) -> Actor:
         character_stats=CharacterStats(),
         type=ActorType.ALLY,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
-        actor_profile="""你是月影村的普通村民，没有特殊技能但拥有投票权。
+        actor_profile="""你是月影村的普通村民，没有特殊能力但拥有投票权。
 【角色目标】
 通过观察、分析和讨论，努力找出隐藏在村民中的狼人。
 保护村民阵营，配合有特殊能力的好人角色。

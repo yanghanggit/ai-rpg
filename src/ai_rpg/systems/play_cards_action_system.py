@@ -76,9 +76,9 @@ class PlayCardsActionSystem(ReactiveProcessor):
             assert play_cards_action.card.name != ""
 
             message = f""" # 发生事件！你开始行动
-使用技能 = {play_cards_action.card.name}
+使用卡牌 = {play_cards_action.card.name}
 目标 = {play_cards_action.target}
-技能数据
+卡牌数据
 {play_cards_action.card.model_dump_json()}"""
 
             self._game.append_human_message(actor_entity2, message)

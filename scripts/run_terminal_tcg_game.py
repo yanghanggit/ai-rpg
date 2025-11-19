@@ -498,7 +498,7 @@ async def _process_dungeon_state_input(terminal_game: TCGGame, usr_input: str) -
             f"玩家输入 = {usr_input}, 解析到的卡牌命令: {player_cards_command}"
         )
 
-        # 执行打牌行动（现在使用随机选择技能）
+        # 执行打牌行动（现在使用随机选行动）
         if _combat_actors_random_play_cards_action(terminal_game):
             await terminal_game.dungeon_combat_pipeline.process()
 

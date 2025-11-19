@@ -10,7 +10,7 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     DrawCardsAction,
     HandComponent,
-    Skill,
+    Card,
     # XCardPlayerComponent,
     StatusEffect,
     CombatStatsComponent,
@@ -24,7 +24,7 @@ from ..utils import extract_json_from_code_block
 @final
 class DrawCardsResponse(BaseModel):
     update_hp: Optional[float] = Field(None, description="更新后的生命值")
-    skills: List[Skill] = Field(..., description="生成的战斗技能列表")
+    cards: List[Card] = Field(..., description="生成的战斗技能列表")
     status_effects: List[StatusEffect] = Field(
         ...,
         description="你自身的状态效果列表，注意！场景，角色，设定，kick_off_message，和已发生事件都会对你产生影响并生成状态效果！",
@@ -33,16 +33,16 @@ class DrawCardsResponse(BaseModel):
 
 #######################################################################################################################################
 def _generate_prompt1(
-    skill_creation_count: int,
+    card_creation_count: int,
     round_turns: List[str],
 ) -> str:
-    assert skill_creation_count > 0
+    assert card_creation_count > 0
 
     # 生成抽象化规则示例
     response_sample = DrawCardsResponse(
         update_hp=None,
-        skills=[
-            Skill(
+        cards=[
+            Card(
                 name="[技能名称]",
                 description="[技能的基本描述和作用方式][技能的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：技能附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制状态描述]",
                 target="[目标角色的完整名称]",
@@ -57,7 +57,7 @@ def _generate_prompt1(
         ],
     )
 
-    return f"""# 指令！请你更新状态，并生成 {skill_creation_count} 个技能。
+    return f"""# 指令！请你更新状态，并生成 {card_creation_count} 个技能。
 
 ## (场景内角色) 行动顺序(从左到右)
 {round_turns}
@@ -97,16 +97,16 @@ def _generate_prompt1(
 
 #######################################################################################################################################
 def _generate_prompt2(
-    skill_creation_count: int,
+    card_creation_count: int,
     round_turns: List[str],
 ) -> str:
-    assert skill_creation_count > 0
+    assert card_creation_count > 0
 
     # 生成抽象化规则示例
     response_sample = DrawCardsResponse(
         update_hp=999.0,  # 占位符：填写你从计算过程中找到的当前HP值
-        skills=[
-            Skill(
+        cards=[
+            Card(
                 name="[技能名称]",
                 description="[技能的基本描述和作用方式][技能的主要效果：伤害/治疗/护盾等具体数值和类型]。[可选：技能附加的状态效果]。因为[技能消耗或副作用原因]，使用者[自身限制状态描述]",
                 target="[目标角色的完整名称]",
@@ -122,12 +122,12 @@ def _generate_prompt2(
     )
 
     response_empty_sample = DrawCardsResponse(
-        skills=[],
+        cards=[],
         update_hp=0.0,
         status_effects=[],
     )
 
-    return f"""# 指令！请你回顾战斗内发生事件及对你的影响，然后更新自身状态，并生成 {skill_creation_count} 个技能。
+    return f"""# 指令！请你回顾战斗内发生事件及对你的影响，然后更新自身状态，并生成 {card_creation_count} 个技能。
 
 ## (场景内角色) 行动顺序(从左到右)
 {round_turns}
@@ -191,7 +191,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
         self._game: TCGGame = game_context
-        self._skill_creation_count: Final[int] = 2
+        self._card_creation_count: Final[int] = 2
 
     ####################################################################################################################################
     @override
@@ -231,7 +231,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             logger.debug(f"是第一局，一些数据已经被初始化了！")
             # 处理角色规划请求
             prompt = _generate_prompt1(
-                self._skill_creation_count,
+                self._card_creation_count,
                 last_round.action_order,
             )
         else:
@@ -243,7 +243,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
             # 处理角色规划请求
             prompt = _generate_prompt2(
-                self._skill_creation_count,
+                self._card_creation_count,
                 last_round.action_order,
             )
 
@@ -296,23 +296,23 @@ class DrawCardsActionSystem(ReactiveProcessor):
             if character_profile_component.stats.hp <= 0:
                 # 如果角色已经死亡，就不需要添加等待技能了。
                 logger.warning(
-                    f"entity {entity.name} is dead (hp <= 0), no need to add default skill"
+                    f"entity {entity.name} is dead (hp <= 0), no need to add default card"
                 )
                 continue
 
-            wait_skill = Skill(
+            wait_card = Card(
                 name="等待",
                 description="什么都不做，等待下一回合。",
                 target=entity.name,
             )
 
             logger.warning(
-                f"entity {entity.name} has no HandComponent, add default skill"
+                f"entity {entity.name} has no HandComponent, add default card"
             )
             entity.replace(
                 HandComponent,
                 entity.name,
-                [wait_skill],
+                [wait_card],
             )
 
     #######################################################################################################################################
@@ -327,41 +327,25 @@ class DrawCardsActionSystem(ReactiveProcessor):
             validated_response = DrawCardsResponse.model_validate_json(json_code)
 
             # 生成的结果。
-            skills: List[Skill] = []
-            for skill_response in validated_response.skills:
-                skills.append(
-                    Skill(
-                        name=skill_response.name,
-                        description=skill_response.description,
-                        # effect=skill_response.effect,
-                        target=skill_response.target,
+            cards: List[Card] = []
+            for card_response in validated_response.cards:
+                cards.append(
+                    Card(
+                        name=card_response.name,
+                        description=card_response.description,
+                        target=card_response.target,
                     )
                 )
 
-            # TODO: XCard就是全换掉。
-            # if entity2.has(XCardPlayerComponent):
-            #     # 如果是玩家，则需要更新玩家的手牌
-            #     xcard_player_comp = entity2.get(XCardPlayerComponent)
-            #     # 更新技能的target字段
-            #     xcard_skill = Skill(
-            #         name=xcard_player_comp.skill.name,
-            #         description=xcard_player_comp.skill.description,
-            #         target=xcard_player_comp.skill.target,
-            #     )
-            #     skills = [xcard_skill]
-
-            #     # 只用这一次。
-            #     entity2.remove(XCardPlayerComponent)
-
             # 更新手牌。
-            if len(skills) > 0:
+            if len(cards) > 0:
                 entity2.replace(
                     HandComponent,
                     entity2.name,
-                    skills,
+                    cards,
                 )
             else:
-                logger.debug(f"entity {entity2.name} has no skills from LLM response")
+                logger.debug(f"entity {entity2.name} has no cards from LLM response")
 
             # 更新健康属性。
             if need_update_health:

@@ -1,6 +1,6 @@
 from typing import List, final
 from ..entitas.components import Component, MutableComponent
-from .dungeon import Skill, StatusEffect
+from .dungeon import Card, StatusEffect
 from .objects import CharacterStats, Item
 from .registry import register_component_class
 
@@ -144,7 +144,7 @@ class HandComponent(Component):
     """
 
     name: str
-    skills: List[Skill]
+    cards: List[Card]
 
 
 ############################################################################################################
@@ -183,17 +183,6 @@ class CombatStatsComponent(MutableComponent):
                 ]
             )
         return ret
-
-
-############################################################################################################
-
-
-# 问号牌
-# @final
-# @register_component_class
-# class XCardPlayerComponent(Component):
-#     name: str
-#     skill: Skill
 
 
 ############################################################################################################

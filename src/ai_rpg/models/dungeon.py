@@ -38,7 +38,7 @@ class StatusEffect(BaseModel):
 
 ###############################################################################################################################################
 @final
-class Skill(BaseModel):
+class Card(BaseModel):
     name: str = Field(..., description="此技能名称")
     description: str = Field(..., description="此技能描述")
     target: str = Field(default="", description="技能的目标")

@@ -13,7 +13,7 @@ from ..models import (
     DungeonComponent,
     PlayCardsAction,
     CombatStatsComponent,
-    Skill,
+    Card,
     StageComponent,
     AgentEvent,
     DeathComponent,
@@ -84,22 +84,22 @@ class ArbitrationResponse(BaseModel):
 class PromptParameters(NamedTuple):
     actor: str
     target: str
-    skill: Skill
+    card: Card
     rpg_character_profile_component: CombatStatsComponent
 
 
 #######################################################################################################################################
 def _generate_prompt(prompt_params: List[PromptParameters]) -> str:
-    # 技能效果: {param.skill.effect}
+
     details_prompt: List[str] = []
     for param in prompt_params:
 
-        assert param.skill.name != ""
+        assert param.card.name != ""
 
         detail = f"""### {param.actor}
-技能: {param.skill.name}
+技能: {param.card.name}
 目标: {param.target}
-描述: {param.skill.description}
+描述: {param.card.description}
 属性:
 {param.rpg_character_profile_component.attrs_prompt}
 角色状态:
@@ -207,13 +207,13 @@ class ArbitrationActionSystem(ReactiveProcessor):
             assert entity.has(PlayCardsAction)
 
             play_cards_action = entity.get(PlayCardsAction)
-            assert play_cards_action.skill.name != ""
+            assert play_cards_action.card.name != ""
 
             ret.append(
                 PromptParameters(
                     actor=entity.name,
                     target=play_cards_action.target,
-                    skill=play_cards_action.skill,
+                    card=play_cards_action.card,
                     rpg_character_profile_component=entity.get(CombatStatsComponent),
                 )
             )

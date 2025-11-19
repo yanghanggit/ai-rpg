@@ -73,13 +73,13 @@ class PlayCardsActionSystem(ReactiveProcessor):
             assert actor_entity2.has(HandComponent)
             play_cards_action = actor_entity2.get(PlayCardsAction)
             assert play_cards_action is not None
-            assert play_cards_action.skill.name != ""
+            assert play_cards_action.card.name != ""
 
             message = f""" # 发生事件！你开始行动
-使用技能 = {play_cards_action.skill.name}
+使用技能 = {play_cards_action.card.name}
 目标 = {play_cards_action.target}
 技能数据
-{play_cards_action.skill.model_dump_json()}"""
+{play_cards_action.card.model_dump_json()}"""
 
             self._game.append_human_message(actor_entity2, message)
 

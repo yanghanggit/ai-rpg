@@ -9,8 +9,6 @@ from ..models import (
     DungeonGamePlayResponse,
     DungeonTransHomeRequest,
     DungeonTransHomeResponse,
-    # Skill,
-    # XCardPlayerComponent,
     DrawCardsAction,
     Dungeon,
     HomeComponent,
@@ -158,18 +156,18 @@ def _combat_actors_random_play_cards_action(tcg_game: TCGGame) -> bool:
         # 必须没有打牌行动
         assert not actor_entity.has(PlayCardsAction)
         hand_comp = actor_entity.get(HandComponent)
-        assert len(hand_comp.skills) > 0, f"{actor_entity.name} 没有技能可用"
+        assert len(hand_comp.cards) > 0, f"{actor_entity.name} 没有技能可用"
 
         # 选择技能和目标
-        selected_skill = random.choice(hand_comp.skills)
-        logger.debug(f"为角色 {actor_entity.name} 随机选择技能: {selected_skill.name}")
-        final_target = selected_skill.target
+        selected_card = random.choice(hand_comp.cards)
+        logger.debug(f"为角色 {actor_entity.name} 随机选择技能: {selected_card.name}")
+        final_target = selected_card.target
 
         # 创建打牌行动
         actor_entity.replace(
             PlayCardsAction,
             actor_entity.name,
-            selected_skill,
+            selected_card,
             final_target,
         )
 
@@ -312,51 +310,6 @@ async def _handle_play_cards(
     return DungeonGamePlayResponse(
         client_messages=[],
     )
-
-
-###################################################################################################################################################################
-###################################################################################################################################################################
-###################################################################################################################################################################
-# async def _handle_x_card(
-#     web_game: TCGGame, request_data: DungeonGamePlayRequest
-# ) -> DungeonGamePlayResponse:
-#     """处理X卡操作"""
-#     pass
-#     # if not web_game.current_engagement.is_ongoing:
-#     #     logger.error(f"not web_game.current_engagement.is_on_going_phase")
-#     #     raise HTTPException(
-#     #         status_code=status.HTTP_400_BAD_REQUEST,
-#     #         detail="not web_game.current_engagement.is_on_going_phase",
-#     #     )
-
-#     # # TODO, 先写死默认往上面加。
-#     # player_entity = web_game.get_player_entity()
-#     # assert player_entity is not None
-#     # logger.debug(f"玩家输入 x_card = \n{request_data.user_input.model_dump_json()}")
-
-#     # skill_name = request_data.user_input.data.get("name", "")
-#     # skill_description = request_data.user_input.data.get("description", "")
-#     # # skill_effect = request_data.user_input.data.get("effect", "")
-
-#     # if skill_name != "" and skill_description != "":
-#     #     player_entity.replace(
-#     #         XCardPlayerComponent,
-#     #         player_entity.name,
-#     #         Skill(
-#     #             name=skill_name,
-#     #             description=skill_description,
-#     #             # effect=skill_effect,
-#     #         ),
-#     #     )
-
-#     #     return DungeonGamePlayResponse(
-#     #         client_messages=web_game.player_session.session_messages,
-#     #     )
-#     # else:
-#     #     raise HTTPException(
-#     #         status_code=status.HTTP_400_BAD_REQUEST,
-#     #         detail=f"技能名称错误: {player_entity.name}, Response = \n{request_data.user_input.data}",
-#     #     )
 
 
 ###################################################################################################################################################################

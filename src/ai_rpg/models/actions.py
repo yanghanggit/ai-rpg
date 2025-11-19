@@ -1,6 +1,6 @@
 from typing import Dict, final
 from ..entitas.components import Component
-from .dungeon import Skill
+from .dungeon import Card
 from .registry import register_action_class, register_component_class
 
 
@@ -71,7 +71,7 @@ class DrawCardsAction(Component):
 @register_action_class
 class PlayCardsAction(Component):
     name: str
-    skill: Skill
+    card: Card
     target: str
 
 

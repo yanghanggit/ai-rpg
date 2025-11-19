@@ -16,6 +16,7 @@ from .stage_dungeon4 import create_demo_dungeon4
 from .stage_dungeon5 import create_demo_dungeon5
 from .stage_dungeon6 import create_demo_dungeon6
 from .stage_heros_camp import create_demo_heros_camp
+from .world import create_demo_game_world_boot1, create_demo_game_world_boot2
 
 __all__ = [
     "create_actor_warrior",
@@ -36,4 +37,6 @@ __all__ = [
     "ActorExcelData",
     "ExcelDataManager",
     "get_excel_data_manager",
+    "create_demo_game_world_boot1",
+    "create_demo_game_world_boot2",
 ]

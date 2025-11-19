@@ -21,7 +21,6 @@ import os
 from pathlib import Path
 import sys
 from typing import final
-
 from pydantic import BaseModel
 
 # 将 src 目录添加到模块搜索路径
@@ -35,25 +34,17 @@ from ai_rpg.configuration import (
     server_configuration,
 )
 from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, WORLD_BOOT_DIR
-
-# from ai_rpg.mongo import (
-#     # BootDocument,
-#     mongo_clear_database,
-# )
 from ai_rpg.pgsql import (
     pgsql_create_database,
     pgsql_drop_database,
     pgsql_ensure_database_tables,
     postgresql_config,
 )
-from ai_rpg.pgsql.user import has_user, save_user
-
-# from ai_rpg.redis.client import (
-#     redis_flushall,
-# )
+from ai_rpg.pgsql.user_operations import has_user, save_user
 from ai_rpg.demo.world import create_demo_game_world_boot
 
 
+#######################################################################################################
 @final
 class UserAccount(BaseModel):
     username: str
@@ -61,6 +52,7 @@ class UserAccount(BaseModel):
     display_name: str
 
 
+#######################################################################################################
 FAKE_USER = UserAccount(
     username="yanghangethan@gmail.com",
     hashed_password="$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",  # 明文是 secret
@@ -266,7 +258,6 @@ def _setup_server_settings() -> None:
     """
     logger.info("🚀 构建服务器设置配置...")
     # 这里可以添加构建服务器设置配置的逻辑
-    # server_config: Final[ServerConfiguration] = ServerConfiguration()
     write_path = Path("server_configuration.json")
     write_path.write_text(
         server_configuration.model_dump_json(indent=4), encoding="utf-8"
@@ -278,7 +269,6 @@ def _setup_server_settings() -> None:
 
 
 #######################################################################################################
-# Development Environment Setup Utility
 def main() -> None:
 
     logger.info("🚀 开始初始化开发环境...")
@@ -300,14 +290,6 @@ def main() -> None:
         logger.success("✅ PostgreSQL 初始化完成")
     except Exception as e:
         logger.error(f"❌ PostgreSQL 初始化失败: {e}")
-
-    # # MongoDB 相关操作
-    # try:
-    #     logger.info("🚀 清空 MongoDB 数据库...")
-    #     mongo_clear_database()
-    #     # logger.info("🚀 创建MongoDB演示游戏世界...")
-    # except Exception as e:
-    #     logger.error(f"❌ MongoDB 初始化失败: {e}")
 
     # RAG 系统相关操作
     try:

@@ -33,7 +33,7 @@ def create_npc_home_pipline(game: GameSession) -> "RPGGameProcessPipeline":
     processors = RPGGameProcessPipeline("Home State Pipeline 1")
 
     # 启动agent的提示词。启动阶段
-    processors.add(KickOffSystem(tcg_game, True))
+    processors.add(KickOffSystem(tcg_game, False))
 
     # 规划逻辑
     ######## 在所有规划之前!##############################################################

@@ -11,69 +11,6 @@ from ..models import (
 
 
 #######################################################################################################################################
-def _comple_actor_system_prompt(
-    campaign_setting: str,
-    actor_profile: str,
-    appearance: str,
-    global_game_mechanics: str,
-) -> str:
-
-    return f"""## 当前游戏背景
-
-{campaign_setting}
-
-## 全局规则
-
-{global_game_mechanics}
-
-## 你的角色设定
-
-{actor_profile}
-
-## 你的外观特征
-
-{appearance}"""
-
-
-#######################################################################################################################################
-def _comple_stage_system_prompt(
-    campaign_setting: str, stage_profile: str, global_game_mechanics: str
-) -> str:
-
-    return f"""你将是角色活动的地点也是战斗系统。
-
-## 游戏背景
-
-{campaign_setting}
-
-## 全局规则
-
-{global_game_mechanics}
-
-## 场景设定
-
-{stage_profile}"""
-
-
-#######################################################################################################################################
-def _comple_world_system_system_prompt(
-    campaign_setting: str, world_system_profile: str, global_game_mechanics: str
-) -> str:
-
-    return f"""## 游戏背景
-
-{campaign_setting}
-
-## 全局规则
-
-{global_game_mechanics}
-
-## 你的系统设定
-
-{world_system_profile}"""
-
-
-#######################################################################################################################################
 def create_actor(
     name: str,
     character_sheet_name: str,
@@ -93,7 +30,7 @@ def create_actor(
         appearance=appearance,
     )
 
-    ret = Actor(
+    actor = Actor(
         name=name,
         character_sheet=character_sheet,
         system_message="",
@@ -104,24 +41,31 @@ def create_actor(
 
     # 血量加满!!!!
     assert character_stats.max_hp > 0, "Max HP must be greater than 0."
-    assert ret.character_stats.hp == 0, "HP must be 0."
-    ret.character_stats.hp = character_stats.max_hp
+    assert actor.character_stats.hp == 0, "HP must be 0."
+    actor.character_stats.hp = character_stats.max_hp
 
     # 初次编译system_message!!!!
-    ret.system_message = f"""# {ret.name}
-你扮演这个游戏世界中的一个角色: {ret.name}
-{_comple_actor_system_prompt(
-    campaign_setting=campaign_setting,
-    actor_profile=actor_profile,
-    appearance=appearance,
-    global_game_mechanics=global_game_mechanics,
-)}"""
+    actor.system_message = f"""# {actor.name}
+    
+你扮演角色: {actor.name}
 
-    # logger.debug(
-    #     f"Actor {ret.name}, rpg_character_profile:\n{generate_character_profile_string(ret.rpg_character_profile)}"
-    # )
+## 游戏设定
 
-    return ret
+{campaign_setting}
+
+## 全局规则
+
+{global_game_mechanics}
+
+## 角色设定
+
+{actor_profile}
+
+## 外观设定
+
+{appearance}"""
+
+    return actor
 
 
 #######################################################################################################################################
@@ -153,11 +97,19 @@ def create_stage(
     # 初次编译system_message!!!!
     ret.system_message = f"""# {ret.name}
 你扮演这个游戏世界中的一个场景: {ret.name}
-{_comple_stage_system_prompt(
-    campaign_setting=campaign_setting,
-    stage_profile=stage_profile,
-    global_game_mechanics=global_game_mechanics,
-)}"""
+你将是角色活动的地点也是战斗系统。
+
+## 游戏背景
+
+{campaign_setting}
+
+## 全局规则
+
+{global_game_mechanics}
+
+## 场景设定
+
+{stage_profile}"""
 
     return ret
 
@@ -180,11 +132,17 @@ def create_world_system(
     # 初次编译system_message!!!!
     ret.system_message = f"""# {ret.name}
 你扮演这个游戏世界中的一个全局系统: {ret.name}
-{_comple_world_system_system_prompt(
-    campaign_setting=campaign_setting,
-    world_system_profile=world_system_profile,
-    global_game_mechanics=global_game_mechanics,
-)}"""
+## 游戏背景
+
+{campaign_setting}
+
+## 全局规则
+
+{global_game_mechanics}
+
+## 你的系统设定
+
+{world_system_profile}"""
 
     return ret
 

@@ -22,7 +22,7 @@ def create_actor_warrior() -> Actor:
     return create_actor(
         name="角色.战士.卡恩",
         character_sheet_name="warrior",
-        kick_off_message=f"""你已苏醒，准备开始冒险。告诉我你是谁？（请说出你的全名。）并告诉我你的战斗角色职能。回答简短(<100字)。""",
+        kick_off_message=f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标。回答简短(<100字)。""",
         character_stats=CharacterStats(base_max_hp=1000),
         type=ActorType.ALLY,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,

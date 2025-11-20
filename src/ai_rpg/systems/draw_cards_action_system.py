@@ -380,9 +380,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         combat_stats_comp.status_effects.extend(copy.copy(status_effects))
 
-        updated_status_effects_message = f"""# 通知！你的 状态/效果 已更新
+        updated_status_effects_message = f"""# 通知！你的 状态效果(status_effects) 已更新
 
-{'\n'.join([f'{e.name} (剩余回合: {e.duration}): {e.description}' for e in combat_stats_comp.status_effects]) if len(combat_stats_comp.status_effects) > 0 else '无'}"""
+{'\n'.join([f'- {e.name}({e.duration}轮): {e.description}' for e in combat_stats_comp.status_effects]) if len(combat_stats_comp.status_effects) > 0 else '- 无'}"""
 
         self._game.append_human_message(entity, updated_status_effects_message)
 
@@ -449,9 +449,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 f"remaining: {len(remaining_effects)}, removed: {len(removed_effects)}"
             )
 
-            updated_status_effects_message = f"""# 通知！如下 状态/效果 被移除
+            updated_status_effects_message = f"""# 通知！如下 状态效果(status_effects) 被移除
 
-{'\n'.join([f'{e.name}: {e.description}' for e in removed_effects]) if len(removed_effects) > 0 else '无'}"""
+{'\n'.join([f'- {e.name}: {e.description}' for e in removed_effects]) if len(removed_effects) > 0 else '- 无'}"""
 
             self._game.append_human_message(entity, updated_status_effects_message)
 

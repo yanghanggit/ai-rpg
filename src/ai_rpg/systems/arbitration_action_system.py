@@ -18,55 +18,6 @@ from ..models import (
 )
 from ..utils import extract_json_from_code_block
 
-# COMBAT_MECHANICS_DESCRIPTION: Final[
-#     str
-# ] = f"""伤害流程（A→B）
-# 1. 命中判定 → 未命中：伤害=0
-# 2. 命中时：
-#    物理伤害 = max(1, ⎡A.物理攻击×α - B.物理防御×β)
-#    魔法伤害 = max(1, ⎡A.魔法攻击×α - B.魔法防御×β⎤)
-#    → B.HP -= (物理伤害 + 魔法伤害 + B.持续伤害) - B.持续治疗
-#    → 若 B.HP <= 0 :
-#        → 若有，更新B.HP至Max_HP（说明HP更新的原因）
-#        → 若无，则死亡标记
-#    → A.HP += ⎡A.吸血量(物理伤害 + 魔法伤害) x γ⎤
-
-# 治疗流程（A→B）
-# 1. 必中生效：
-#    治疗量 = ⎡A.魔法攻击×α⎤ （α∈剧情合理值）
-#    → B.HP = min(B.MAX_HP, B.HP + 治疗量) + B.持续治疗
-
-# 【核心机制】
-# 1. 所有数值最终向上取整（⎡x⎤表示）。
-# 2. 动态参数：
-#    - 命中率 ∈ 剧情逻辑。
-#    - α/β/γ ∈ 情境调整系数，并参考A与B的‘增益/减益‘等状态。
-# 3. 边界控制：
-#    - 伤害保底≥1。
-#    - 治疗量不突破MAX_HP最大值。
-# 【环境互动规则】
-# 1. 卡牌必须与环境互动，符合物理和化学常识。
-# 2. 环境物体由场景描述提供，如：干草、断剑、盔甲碎片、火焰、石块、箭矢等。
-# 3. 卡牌必须至少与一个环境物体产生互动，方式包括但不限于：
-#    - 物理反应：击碎、砸落、掷出、推撞。
-#    - 化学反应：引燃、引爆、导电、腐蚀。
-# 4. 环境互动需体现：
-#    - 合理的触发条件
-#    - 额外效果（如额外伤害、状态改变）
-#    - 持续效果（如燃烧、塌方、导电链条）
-# 5. 状态效果：
-#    - 需明确说明 环境互动产生的 buff / debuff 的具体数值和持续时间。
-#    - 环境产生的状态效果可以持续多回合，并在敌人/我方行动时触发。
-# 6. 同一回合内，同一环境物体只能被先出手角色使用。
-# 【合理性要求】
-# 1. 必须符合物理/化学常识（例如：火焰遇到干草会蔓延，金属导电，石块砸落会扬起灰尘）。
-# 2. 必须符合角色职业特点。
-# 3. 战斗结果需逻辑自洽，环境变化能被追踪。
-# 【卡牌使用代价】
-# 1. 每张卡牌生成时都有一个限制角色自身的状态效果作为使用代价
-# 3. 只要角色尝试使用该卡牌，这个状态效果就会生效，就算卡牌没有命中目标也会生效
-# 2. 该效果必须在计算过程中体现出来"""
-
 
 #######################################################################################################################################
 @final
@@ -91,15 +42,11 @@ def _generate_actor_card_details(prompt_params: List[PromptParameters]) -> List[
     for param in prompt_params:
         assert param.card.name != ""
 
-        detail = f"""**{param.actor}**
-卡牌: {param.card.name}
-目标: {param.target}
-描述: {param.card.description}
-
-角色**属性**:
-{param.combat_stats_component.stats_prompt}
-
-角色**状态效果(status_effects)**
+        detail = f"""【{param.actor}】
+卡牌:{param.card.name} → {param.target}
+效果:{param.card.description}
+属性:{param.combat_stats_component.stats_prompt}
+状态效果(status_effects):
 {param.combat_stats_component.status_effects_prompt}"""
 
         details_prompt.append(detail)

@@ -48,18 +48,17 @@ class Card(BaseModel):
 # 表示一个回合
 @final
 class Round(BaseModel):
-    tag: str
-    action_order: List[str]
-    environment: str = ""
-    calculation: str = ""
-    performance: str = ""
+    tag: str  # 回合标签，记录回合序号等信息
+    action_order: List[str]  # 行动顺序，按顺序记录角色名称
+    combat_log: str = ""  # 战斗计算日志
+    narrative: str = ""  # 叙事文本/演出描述
 
     @property
     def has_ended(self) -> bool:
         return (
             len(self.action_order) > 0
-            and self.calculation != ""
-            and self.performance != ""
+            and self.combat_log != ""
+            and self.narrative != ""
         )
 
 

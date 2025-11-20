@@ -18,9 +18,114 @@ from ..models import (
 )
 from ..utils import extract_json_from_code_block
 
-COMBAT_MECHANICS_DESCRIPTION: Final[
-    str
-] = f"""伤害流程（A→B）
+# COMBAT_MECHANICS_DESCRIPTION: Final[
+#     str
+# ] = f"""伤害流程（A→B）
+# 1. 命中判定 → 未命中：伤害=0
+# 2. 命中时：
+#    物理伤害 = max(1, ⎡A.物理攻击×α - B.物理防御×β)
+#    魔法伤害 = max(1, ⎡A.魔法攻击×α - B.魔法防御×β⎤)
+#    → B.HP -= (物理伤害 + 魔法伤害 + B.持续伤害) - B.持续治疗
+#    → 若 B.HP <= 0 :
+#        → 若有，更新B.HP至Max_HP（说明HP更新的原因）
+#        → 若无，则死亡标记
+#    → A.HP += ⎡A.吸血量(物理伤害 + 魔法伤害) x γ⎤
+
+# 治疗流程（A→B）
+# 1. 必中生效：
+#    治疗量 = ⎡A.魔法攻击×α⎤ （α∈剧情合理值）
+#    → B.HP = min(B.MAX_HP, B.HP + 治疗量) + B.持续治疗
+
+# 【核心机制】
+# 1. 所有数值最终向上取整（⎡x⎤表示）。
+# 2. 动态参数：
+#    - 命中率 ∈ 剧情逻辑。
+#    - α/β/γ ∈ 情境调整系数，并参考A与B的‘增益/减益‘等状态。
+# 3. 边界控制：
+#    - 伤害保底≥1。
+#    - 治疗量不突破MAX_HP最大值。
+# 【环境互动规则】
+# 1. 卡牌必须与环境互动，符合物理和化学常识。
+# 2. 环境物体由场景描述提供，如：干草、断剑、盔甲碎片、火焰、石块、箭矢等。
+# 3. 卡牌必须至少与一个环境物体产生互动，方式包括但不限于：
+#    - 物理反应：击碎、砸落、掷出、推撞。
+#    - 化学反应：引燃、引爆、导电、腐蚀。
+# 4. 环境互动需体现：
+#    - 合理的触发条件
+#    - 额外效果（如额外伤害、状态改变）
+#    - 持续效果（如燃烧、塌方、导电链条）
+# 5. 状态效果：
+#    - 需明确说明 环境互动产生的 buff / debuff 的具体数值和持续时间。
+#    - 环境产生的状态效果可以持续多回合，并在敌人/我方行动时触发。
+# 6. 同一回合内，同一环境物体只能被先出手角色使用。
+# 【合理性要求】
+# 1. 必须符合物理/化学常识（例如：火焰遇到干草会蔓延，金属导电，石块砸落会扬起灰尘）。
+# 2. 必须符合角色职业特点。
+# 3. 战斗结果需逻辑自洽，环境变化能被追踪。
+# 【卡牌使用代价】
+# 1. 每张卡牌生成时都有一个限制角色自身的状态效果作为使用代价
+# 3. 只要角色尝试使用该卡牌，这个状态效果就会生效，就算卡牌没有命中目标也会生效
+# 2. 该效果必须在计算过程中体现出来"""
+
+
+#######################################################################################################################################
+@final
+class ArbitrationResponse(BaseModel):
+    combat_log: str
+    narrative: str
+
+
+#######################################################################################################################################
+@final
+class PromptParameters(NamedTuple):
+    actor: str
+    target: str
+    card: Card
+    combat_stats_component: CombatStatsComponent
+
+
+#######################################################################################################################################
+def _generate_actor_card_details(prompt_params: List[PromptParameters]) -> List[str]:
+    """生成每个角色的卡牌和状态详情"""
+    details_prompt: List[str] = []
+    for param in prompt_params:
+        assert param.card.name != ""
+
+        detail = f"""**{param.actor}**
+卡牌: {param.card.name}
+目标: {param.target}
+描述: {param.card.description}
+
+角色**属性**:
+{param.combat_stats_component.stats_prompt}
+
+角色**状态效果(status_effects)**
+{param.combat_stats_component.status_effects_prompt}"""
+
+        details_prompt.append(detail)
+
+    return details_prompt
+
+
+#######################################################################################################################################
+def _generate_prompt(prompt_params: List[PromptParameters]) -> str:
+
+    # 生成角色&卡牌详情
+    details_prompt = _generate_actor_card_details(prompt_params)
+
+    return f"""# 提示！回合行动指令。根据下列信息执行战斗回合：
+
+## 角色行动序列（后续卡牌在前序执行后生效）
+
+{" -> ".join([param.actor for param in prompt_params])}
+
+## 角色&卡牌详情
+
+{"\n\n".join(details_prompt)}
+
+## 战斗结算规则
+
+伤害流程（A→B）
 1. 命中判定 → 未命中：伤害=0
 2. 命中时：
    物理伤害 = max(1, ⎡A.物理攻击×α - B.物理防御×β)
@@ -65,57 +170,10 @@ COMBAT_MECHANICS_DESCRIPTION: Final[
 【卡牌使用代价】
 1. 每张卡牌生成时都有一个限制角色自身的状态效果作为使用代价
 3. 只要角色尝试使用该卡牌，这个状态效果就会生效，就算卡牌没有命中目标也会生效
-2. 该效果必须在计算过程中体现出来"""
+2. 该效果必须在计算过程中体现出来
 
-
-#######################################################################################################################################
-@final
-class ArbitrationResponse(BaseModel):
-    calculation: str
-    performance: str
-
-
-#######################################################################################################################################
-@final
-class PromptParameters(NamedTuple):
-    actor: str
-    target: str
-    card: Card
-    rpg_character_profile_component: CombatStatsComponent
-
-
-#######################################################################################################################################
-def _generate_prompt(prompt_params: List[PromptParameters]) -> str:
-
-    details_prompt: List[str] = []
-    for param in prompt_params:
-
-        assert param.card.name != ""
-
-        detail = f"""### {param.actor}
-卡牌: {param.card.name}
-目标: {param.target}
-描述: {param.card.description}
-属性:
-{param.rpg_character_profile_component.stats_prompt}
-角色状态:
-{param.rpg_character_profile_component.status_effects_prompt}"""
-
-        details_prompt.append(detail)
-
-    # 模版
-    response_sample = ArbitrationResponse(
-        calculation="计算过程", performance="演出过程"
-    )
-
-    return f"""# 提示！回合行动指令。根据下列信息执行战斗回合：
-## 角色行动序列（后续卡牌在前序执行后生效）
-{" -> ".join([param.actor for param in prompt_params])}
-## 角色&卡牌详情
-{"\n".join(details_prompt)}
-## 战斗结算规则
-{COMBAT_MECHANICS_DESCRIPTION}
 ## 输出内容
+
 1. 计算过程：
     - 根据'战斗结算规则'输出详细的计算过程(伤害与治疗的计算过程)。
     - 根据'卡牌与环境反应规则'，描述每张卡牌与环境的互动过程和效果，其中效果描述必须要附上具体细节和数值。
@@ -127,8 +185,13 @@ def _generate_prompt(prompt_params: List[PromptParameters]) -> str:
     - 如果角色HP有变化，说明变化原因；如果HP未变化(如仅使用护盾/增益卡牌)，明确说明"HP保持不变"。
 2. 演出过程（~200字）
     - 文学化描写，禁用数字与计算过程
+
 ## 输出格式规范
-{response_sample.model_dump_json()}
+
+```json
+{{"combat_log":"计算过程","narrative":"演出过程"}}
+```
+
 - 禁用换行/空行
 - 直接输出合规JSON"""
 
@@ -155,16 +218,19 @@ class ArbitrationActionSystem(ReactiveProcessor):
     @override
     async def react(self, entities: list[Entity]) -> None:
 
-        if len(entities) == 0:
-            return
+        # if len(entities) == 0:
+        #     return
 
-        assert self._game.current_combat_sequence.is_ongoing
-        assert len(entities) == 1
+        assert (
+            self._game.current_combat_sequence.is_ongoing
+        ), "当前没有进行中的战斗序列！"
+        assert len(entities) == 1, "当前只能有一个场景实体进行仲裁处理！"
 
         # 排序角色！
         stage_entity = entities[0]
-        assert stage_entity.has(StageComponent)
-        assert stage_entity.has(DungeonComponent)
+        assert stage_entity.has(StageComponent) and stage_entity.has(
+            DungeonComponent
+        ), "场景实体缺少StageComponent或DungeonComponent！"
 
         play_cards_actors = self._game.get_group(
             Matcher(
@@ -212,7 +278,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
                     actor=entity.name,
                     target=play_cards_action.target,
                     card=play_cards_action.card,
-                    rpg_character_profile_component=entity.get(CombatStatsComponent),
+                    combat_stats_component=entity.get(CombatStatsComponent),
                 )
             )
 
@@ -262,16 +328,16 @@ class ArbitrationActionSystem(ReactiveProcessor):
             stage_entity.replace(
                 ArbitrationAction,
                 arbitration_action.name,
-                format_response.calculation,
-                format_response.performance,
+                format_response.combat_log,
+                format_response.narrative,
             )
 
             message_content = f"""# 发生事件！战斗回合:
 ## 演出过程
-{format_response.performance}
+{format_response.narrative}
 
 ## 计算过程
-{format_response.calculation}
+{format_response.combat_log}
 
 请注意**计算过程**中的关于**你**的当前生命值/最大生命值的描述，后续你会依据此进行状态更新。
 """
@@ -285,8 +351,8 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 ),
             )
             # 记录
-            last_round.calculation = format_response.calculation
-            last_round.performance = format_response.performance
+            last_round.combat_log = format_response.combat_log
+            last_round.narrative = format_response.narrative
 
         except Exception as e:
             logger.error(f"Exception: {e}")

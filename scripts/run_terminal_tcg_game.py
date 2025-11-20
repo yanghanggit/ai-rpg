@@ -48,6 +48,8 @@ from ai_rpg.services.dungeon_gameplay import (
     _all_heros_next_dungeon,
 )
 
+import datetime
+
 
 ############################################################################################################
 ############################################################################################################
@@ -498,7 +500,7 @@ async def _process_dungeon_state_input(terminal_game: TCGGame, usr_input: str) -
             f"玩家输入 = {usr_input}, 解析到的卡牌命令: {player_cards_command}"
         )
 
-        # 执行打牌行动（现在使用随机选择技能）
+        # 执行打牌行动（现在使用随机选行动）
         if _combat_actors_random_play_cards_action(terminal_game):
             await terminal_game.dungeon_combat_pipeline.process()
 
@@ -657,17 +659,8 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
 ###############################################################################################################################################
 if __name__ == "__main__":
 
-    # player_cards_command = _parse_play_cards_command_input("/play-cards --params=火球术=敌人.哥布林;治疗术=自己")
-    # hero_command = _parse_hero_command_input(
-    #     "/hero --params=角色.法师.奥露娜;角色.战士.卡恩"
-    # )
-    # logger.info(f"解析到的英雄命令: {hero_command}")
-    # home_trans_stage_command = _parse_home_trans_stage_command_input("/trans_home --params=场景.营地")
-    # logger.info(f"解析到的家园传送命令: {home_trans_stage_command}")
-
     # 初始化日志
     setup_logger()
-    import datetime
 
     random_name = f"player-{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}"
     fixed_name = "player-fixed"

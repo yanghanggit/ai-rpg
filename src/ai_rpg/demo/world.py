@@ -11,7 +11,7 @@ from .stage_heros_camp import (
 
 
 #######################################################################################################################
-def create_demo_game_world_boot(game_name: str) -> Boot:
+def create_demo_game_world_boot1(game_name: str) -> Boot:
     # 创建世界
     world_boot = Boot(
         name=game_name, campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING
@@ -19,15 +19,9 @@ def create_demo_game_world_boot(game_name: str) -> Boot:
 
     # 创建英雄营地场景和角色
     actor_warrior = create_actor_warrior()
-    # actor_warrior.inventory.items.append(
-    #     Item(
-    #         name="消耗品.测试的药水",
-    #         type=ItemType.CONSUMABLE,
-    #         description="这是一瓶测试用的药水，能恢复50%生命值。",
-    #     )
-    # )
-
     actor_wizard = create_actor_wizard()
+
+    # 创建场景
     stage_heros_camp = create_demo_heros_camp()
     stage_heros_restaurant = create_demo_heros_restaurant()
 
@@ -49,3 +43,29 @@ def create_demo_game_world_boot(game_name: str) -> Boot:
 
 
 #######################################################################################################################
+
+
+#######################################################################################################################
+def create_demo_game_world_boot2(game_name: str) -> Boot:
+    # 创建世界
+    world_boot = Boot(
+        name=game_name, campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING
+    )
+
+    # 创建英雄营地场景和角色
+    actor_warrior = create_actor_warrior()
+
+    # 创建场景
+    stage_heros_camp = create_demo_heros_camp()
+
+    # 设置关系和消息
+    stage_heros_camp.actors = [actor_warrior]
+
+    # 设置英雄营地场景的初始状态
+    world_boot.stages = [stage_heros_camp]
+
+    # 添加世界系统
+    world_boot.world_systems = []
+
+    # 返回
+    return world_boot

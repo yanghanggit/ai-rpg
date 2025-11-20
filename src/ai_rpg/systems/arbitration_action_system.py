@@ -5,15 +5,13 @@ from pydantic import BaseModel
 from ..chat_services.client import ChatClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
-
-# from .base_action_reactive_system import BaseActionReactiveSystem
 from ..models import (
     ActorComponent,
     ArbitrationAction,
     DungeonComponent,
     PlayCardsAction,
     CombatStatsComponent,
-    Skill,
+    Card,
     StageComponent,
     AgentEvent,
     DeathComponent,
@@ -47,9 +45,9 @@ COMBAT_MECHANICS_DESCRIPTION: Final[
    - 伤害保底≥1。
    - 治疗量不突破MAX_HP最大值。
 【环境互动规则】
-1. 技能必须与环境互动，符合物理和化学常识。
+1. 卡牌必须与环境互动，符合物理和化学常识。
 2. 环境物体由场景描述提供，如：干草、断剑、盔甲碎片、火焰、石块、箭矢等。
-3. 技能必须至少与一个环境物体产生互动，方式包括但不限于：
+3. 卡牌必须至少与一个环境物体产生互动，方式包括但不限于：
    - 物理反应：击碎、砸落、掷出、推撞。
    - 化学反应：引燃、引爆、导电、腐蚀。
 4. 环境互动需体现：
@@ -64,12 +62,10 @@ COMBAT_MECHANICS_DESCRIPTION: Final[
 1. 必须符合物理/化学常识（例如：火焰遇到干草会蔓延，金属导电，石块砸落会扬起灰尘）。
 2. 必须符合角色职业特点。
 3. 战斗结果需逻辑自洽，环境变化能被追踪。
-【技能限制】
-1. 每个技能生成时都有一个限制角色自身的状态效果
-3. 只要角色尝试使用该技能，这个状态效果就会生效，就算技能没有命中目标也会生效
-2. 该效果必须在计算过程中体现出来
-
-"""
+【卡牌使用代价】
+1. 每张卡牌生成时都有一个限制角色自身的状态效果作为使用代价
+3. 只要角色尝试使用该卡牌，这个状态效果就会生效，就算卡牌没有命中目标也会生效
+2. 该效果必须在计算过程中体现出来"""
 
 
 #######################################################################################################################################
@@ -84,22 +80,22 @@ class ArbitrationResponse(BaseModel):
 class PromptParameters(NamedTuple):
     actor: str
     target: str
-    skill: Skill
+    card: Card
     rpg_character_profile_component: CombatStatsComponent
 
 
 #######################################################################################################################################
 def _generate_prompt(prompt_params: List[PromptParameters]) -> str:
-    # 技能效果: {param.skill.effect}
+
     details_prompt: List[str] = []
     for param in prompt_params:
 
-        assert param.skill.name != ""
+        assert param.card.name != ""
 
         detail = f"""### {param.actor}
-技能: {param.skill.name}
+卡牌: {param.card.name}
 目标: {param.target}
-描述: {param.skill.description}
+描述: {param.card.description}
 属性:
 {param.rpg_character_profile_component.attrs_prompt}
 角色状态:
@@ -113,22 +109,22 @@ def _generate_prompt(prompt_params: List[PromptParameters]) -> str:
     )
 
     return f"""# 提示！回合行动指令。根据下列信息执行战斗回合：
-## 角色行动序列（后续技能在前序执行后生效）
+## 角色行动序列（后续卡牌在前序执行后生效）
 {" -> ".join([param.actor for param in prompt_params])}
-## 角色&技能详情
+## 角色&卡牌详情
 {"\n".join(details_prompt)}
 ## 战斗结算规则
 {COMBAT_MECHANICS_DESCRIPTION}
 ## 输出内容
 1. 计算过程：
     - 根据'战斗结算规则'输出详细的计算过程(伤害与治疗的计算过程)。
-    - 根据'技能与环境反应规则'，描述每个技能与环境的互动过程和效果，其中效果描述必须要附上具体细节和数值。
-    - 具体格式为：技能描述 + 技能效果 → 环境互动 + 互动效果 → 数值结算 + 生命值。
+    - 根据'卡牌与环境反应规则'，描述每张卡牌与环境的互动过程和效果，其中效果描述必须要附上具体细节和数值。
+    - 具体格式为：卡牌描述 + 卡牌效果 → 环境互动 + 互动效果 → 数值结算 + 生命值。
     - 环境状态结算
     - 更新环境对象的可用状态。
-    - 根据'技能限制'更新角色的状态
+    - 根据'卡牌使用代价'更新角色的状态
     - **【必须】结算后，必须明确列出每个角色的最终生命值状态，格式为：角色名.当前HP/最大HP。即使HP未变化也必须列出。**
-    - 如果角色HP有变化，说明变化原因；如果HP未变化(如仅使用护盾/增益技能)，明确说明"HP保持不变"。
+    - 如果角色HP有变化，说明变化原因；如果HP未变化(如仅使用护盾/增益卡牌)，明确说明"HP保持不变"。
 2. 演出过程（~200字）
     - 文学化描写，禁用数字与计算过程
 ## 输出格式规范
@@ -207,13 +203,13 @@ class ArbitrationActionSystem(ReactiveProcessor):
             assert entity.has(PlayCardsAction)
 
             play_cards_action = entity.get(PlayCardsAction)
-            assert play_cards_action.skill.name != ""
+            assert play_cards_action.card.name != ""
 
             ret.append(
                 PromptParameters(
                     actor=entity.name,
                     target=play_cards_action.target,
-                    skill=play_cards_action.skill,
+                    card=play_cards_action.card,
                     rpg_character_profile_component=entity.get(CombatStatsComponent),
                 )
             )

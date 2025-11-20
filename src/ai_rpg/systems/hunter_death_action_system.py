@@ -140,7 +140,7 @@ class HunterDeathActionSystem(ReactiveProcessor):
                 hunter_entity, alive_player_entities
             )
 
-            # 标记猎人已经使用过技能（防止重复触发）
+            # 标记猎人已经使用过开枪（防止重复触发）
             hunter_entity.replace(HunterShotUsedComponent, hunter_entity.name)
 
     ###############################################################################################################################################

@@ -157,7 +157,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
 
         # 生成快照
         self.world.entities_serialization = self.serialize_entities(self._entities)
-        logger.info(f"游戏将要保存，实体数量: {len(self.world.entities_serialization)}")
+        logger.debug(
+            f"游戏将要保存，实体数量: {len(self.world.entities_serialization)}"
+        )
 
         # 保存快照
         persist_world_data(
@@ -297,7 +299,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             inventory_component = actor_entity.get(InventoryComponent)
             assert inventory_component is not None, "inventory_component is None"
             if len(inventory_component.items) > 0:
-                logger.info(
+                logger.debug(
                     f"InventoryComponent 角色 {actor_model.name} 有 {len(inventory_component.items)} 个物品"
                 )
                 for item in inventory_component.items:

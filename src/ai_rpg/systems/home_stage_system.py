@@ -102,7 +102,7 @@ class HomeStageSystem(ExecuteProcessor):
             if environment_component.description != "":
                 # 如果环境描述不为空，跳过
                 logger.debug(
-                    f"跳过场景 {stage_entity.name} 的规划请求，因其环境描述不为空 = \n{environment_component.description}"
+                    f"跳过场景 {stage_entity.name} 的规划请求，因其环境描述不为空"
                 )
                 continue
 

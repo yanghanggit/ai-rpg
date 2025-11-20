@@ -97,7 +97,7 @@ def _generate_prompt(prompt_params: List[PromptParameters]) -> str:
 目标: {param.target}
 描述: {param.card.description}
 属性:
-{param.rpg_character_profile_component.attrs_prompt}
+{param.rpg_character_profile_component.stats_prompt}
 角色状态:
 {param.rpg_character_profile_component.status_effects_prompt}"""
 
@@ -158,7 +158,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         if len(entities) == 0:
             return
 
-        assert self._game.current_engagement.is_ongoing
+        assert self._game.current_combat_sequence.is_ongoing
         assert len(entities) == 1
 
         # 排序角色！
@@ -178,7 +178,9 @@ class ArbitrationActionSystem(ReactiveProcessor):
             return
 
         sort_actors: List[Entity] = []
-        for action_order in self._game.current_engagement.latest_round.action_order:
+        for (
+            action_order
+        ) in self._game.current_combat_sequence.latest_round.action_order:
             for entity in play_cards_actors:
                 assert not entity.has(DeathComponent)
                 if entity.name == action_order:
@@ -275,7 +277,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
 """
 
             # 广播事件
-            last_round = self._game.current_engagement.latest_round
+            last_round = self._game.current_combat_sequence.latest_round
             self._game.broadcast_to_stage(
                 entity=stage_entity,
                 agent_event=AgentEvent(

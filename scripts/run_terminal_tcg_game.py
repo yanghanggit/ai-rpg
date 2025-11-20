@@ -478,18 +478,18 @@ async def _process_dungeon_state_input(terminal_game: TCGGame, usr_input: str) -
 
     if usr_input == "/dc" or usr_input == "/draw-cards":
 
-        if not terminal_game.current_engagement.is_ongoing:
+        if not terminal_game.current_combat_sequence.is_ongoing:
             logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
         _combat_actors_draw_cards_action(terminal_game)
 
-        await terminal_game.dungeon_combat_pipeline.process()
+        await terminal_game.combat_pipeline.process()
 
     elif usr_input == "/pc" or "/play-cards" in usr_input:
 
-        if not terminal_game.current_engagement.is_ongoing:
+        if not terminal_game.current_combat_sequence.is_ongoing:
             logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
             return
 
@@ -501,13 +501,13 @@ async def _process_dungeon_state_input(terminal_game: TCGGame, usr_input: str) -
 
         # 执行打牌行动（现在使用随机选行动）
         if _combat_actors_random_play_cards_action(terminal_game):
-            await terminal_game.dungeon_combat_pipeline.process()
+            await terminal_game.combat_pipeline.process()
 
     elif usr_input == "/rth" or usr_input == "/return-to-home":
 
         if (
-            len(terminal_game.current_engagement.combats) == 0
-            or not terminal_game.current_engagement.is_waiting
+            len(terminal_game.current_combat_sequence.combats) == 0
+            or not terminal_game.current_combat_sequence.is_waiting
         ):
             logger.error(f"{usr_input} 只能在战斗后使用!!!!!")
             return
@@ -518,8 +518,11 @@ async def _process_dungeon_state_input(terminal_game: TCGGame, usr_input: str) -
 
     elif usr_input == "/and" or usr_input == "/advance-next-dungeon":
 
-        if terminal_game.current_engagement.is_waiting:
-            if terminal_game.current_engagement.current_result == CombatResult.HERO_WIN:
+        if terminal_game.current_combat_sequence.is_waiting:
+            if (
+                terminal_game.current_combat_sequence.current_result
+                == CombatResult.HERO_WIN
+            ):
 
                 next_level = terminal_game.current_dungeon.peek_next_stage()
                 if next_level is None:
@@ -530,9 +533,9 @@ async def _process_dungeon_state_input(terminal_game: TCGGame, usr_input: str) -
                     )
                     # terminal_game.next_dungeon()
                     _all_heros_next_dungeon(terminal_game)
-                    await terminal_game.dungeon_combat_pipeline.process()
+                    await terminal_game.combat_pipeline.process()
             elif (
-                terminal_game.current_engagement.current_result
+                terminal_game.current_combat_sequence.current_result
                 == CombatResult.HERO_LOSE
             ):
                 logger.info("英雄失败，应该返回营地！！！！")
@@ -563,11 +566,11 @@ async def _process_home_state_input(terminal_game: TCGGame, usr_input: str) -> N
         if not _all_heros_launch_dungeon(terminal_game):
             assert False, "传送地下城失败！"
 
-        if len(terminal_game.current_engagement.combats) == 0:
+        if len(terminal_game.current_combat_sequence.combats) == 0:
             logger.error(f"{usr_input} 没有战斗可以进行！！！！")
             return
 
-        await terminal_game.dungeon_combat_pipeline.process()
+        await terminal_game.combat_pipeline.process()
 
     elif "/hero" in usr_input or "/ho" in usr_input:
         # "/hero --params=角色.法师.奥露娜;角色.战士.卡恩"

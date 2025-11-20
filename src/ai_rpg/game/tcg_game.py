@@ -44,14 +44,14 @@ class TCGGame(RPGGame):
         )
 
         # 地下城战斗流程
-        self._dungeon_combat_pipeline: Final[RPGGameProcessPipeline] = (
+        self._combat_pipeline: Final[RPGGameProcessPipeline] = (
             create_dungeon_combat_state_pipeline(self)
         )
 
         # 注册所有管道到管道管理器
         self.register_pipeline(self._npc_home_pipeline)
         self.register_pipeline(self._player_home_pipeline)
-        self.register_pipeline(self._dungeon_combat_pipeline)
+        self.register_pipeline(self._combat_pipeline)
 
     ###############################################################################################################################################
     @property
@@ -60,7 +60,7 @@ class TCGGame(RPGGame):
 
     ###############################################################################################################################################
     @property
-    def current_engagement(self) -> CombatSequence:
+    def current_combat_sequence(self) -> CombatSequence:
         return self.current_dungeon.combat_sequence
 
     ###############################################################################################################################################
@@ -75,8 +75,8 @@ class TCGGame(RPGGame):
 
     ###############################################################################################################################################
     @property
-    def dungeon_combat_pipeline(self) -> RPGGameProcessPipeline:
-        return self._dungeon_combat_pipeline
+    def combat_pipeline(self) -> RPGGameProcessPipeline:
+        return self._combat_pipeline
 
         ###############################################################################################################################################
 
@@ -135,13 +135,13 @@ class TCGGame(RPGGame):
     #######################################################################################################################################
     def start_new_round(self) -> Optional[Round]:
 
-        if not self.current_engagement.is_ongoing:
+        if not self.current_combat_sequence.is_ongoing:
             logger.warning("当前没有进行中的战斗，不能设置回合。")
             return None
 
         if (
-            len(self.current_engagement.current_rounds) > 0
-            and not self.current_engagement.latest_round.has_ended
+            len(self.current_combat_sequence.current_rounds) > 0
+            and not self.current_combat_sequence.latest_round.has_ended
         ):
             # 有回合正在进行中，所以不能添加新的回合。
             logger.warning("有回合正在进行中，所以不能添加新的回合。")
@@ -165,7 +165,7 @@ class TCGGame(RPGGame):
         random.shuffle(shuffled_reactive_entities)
 
         # 创建新的回合
-        new_round = self.current_engagement.create_new_round(
+        new_round = self.current_combat_sequence.create_new_round(
             action_order=[entity.name for entity in shuffled_reactive_entities]
         )
 

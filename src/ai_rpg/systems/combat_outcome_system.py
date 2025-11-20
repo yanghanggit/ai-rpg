@@ -42,14 +42,14 @@ class CombatOutcomeSystem(ExecuteProcessor):
     def _evaluate_outcome(self) -> None:
 
         # 检查战斗结果的死亡情况
-        if not self._game.current_engagement.is_ongoing:
+        if not self._game.current_combat_sequence.is_ongoing:
             return  # 不是本阶段就直接返回
 
         if self._are_all_heroes_defeated():
-            self._game.current_engagement.complete_combat(CombatResult.HERO_LOSE)
+            self._game.current_combat_sequence.complete_combat(CombatResult.HERO_LOSE)
             self._notify_combat_result(CombatResult.HERO_LOSE)
         elif self._are_all_monsters_defeated():
-            self._game.current_engagement.complete_combat(CombatResult.HERO_WIN)
+            self._game.current_combat_sequence.complete_combat(CombatResult.HERO_WIN)
             self._notify_combat_result(CombatResult.HERO_WIN)
         else:
             logger.debug("combat continue!!!")

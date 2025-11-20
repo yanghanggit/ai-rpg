@@ -165,20 +165,20 @@ class CombatStatsComponent(MutableComponent):
     status_effects: List[StatusEffect]
 
     @property
-    def attrs_prompt(self) -> str:
-        return f"""- 生命:{self.stats.hp}/{self.stats.max_hp}
-- 物理攻击:{self.stats.physical_attack}
-- 物理防御:{self.stats.physical_defense}
-- 魔法攻击:{self.stats.magic_attack}
-- 魔法防御:{self.stats.magic_defense}"""
+    def stats_prompt(self) -> str:
+        return f"""生命:{self.stats.hp}/{self.stats.max_hp}
+物理攻击:{self.stats.physical_attack}
+物理防御:{self.stats.physical_defense}
+魔法攻击:{self.stats.magic_attack}
+魔法防御:{self.stats.magic_defense}"""
 
     @property
     def status_effects_prompt(self) -> str:
-        ret = "- 无"
+        ret = "无"
         if len(self.status_effects) > 0:
             ret = "\n".join(
                 [
-                    f"- {effect.name}: {effect.description} (剩余{effect.duration}回合)"
+                    f"{effect.name}: {effect.description} (剩余{effect.duration}回合)"
                     for effect in self.status_effects
                 ]
             )

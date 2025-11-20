@@ -1,7 +1,7 @@
 import copy
 from typing import Final, List, Optional, final, override
 from loguru import logger
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from ..chat_services.client import ChatClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
@@ -20,12 +20,9 @@ from ..utils import extract_json_from_code_block
 #######################################################################################################################################
 @final
 class DrawCardsResponse(BaseModel):
-    update_hp: Optional[float] = Field(None, description="更新后的生命值")
-    cards: List[Card] = Field(..., description="生成的战斗卡牌列表")
-    status_effects: List[StatusEffect] = Field(
-        ...,
-        description="你自身的状态效果列表，注意！场景，角色，设定，kick_off_message，和已发生事件都会对你产生影响并生成状态效果！",
-    )
+    update_hp: Optional[float] = None
+    cards: List[Card] = []
+    status_effects: List[StatusEffect] = []
 
 
 #######################################################################################################################################
@@ -35,61 +32,47 @@ def _generate_prompt1(
 ) -> str:
     assert card_creation_count > 0
 
-    # 生成抽象化规则示例
-    response_sample = DrawCardsResponse(
-        update_hp=None,
-        cards=[
-            Card(
-                name="[卡牌名称]",
-                description="[作用方式与效果]：[具体数值效果]。[附加状态效果]。代价：[使用后的自身限制]",
-                target="[目标角色完整名称]",
-            ),
-        ],
-        status_effects=[
-            StatusEffect(
-                name="[状态效果名称]",
-                description="[状态效果生成的原因，具体描述和影响]",
-                duration=1,
-            ),
-        ],
-    )
+    return f"""# 指令！战斗开局，评估当前态势，生成你的初始 {card_creation_count} 张卡牌。
 
-    return f"""# 指令！请你更新状态，并生成 {card_creation_count} 张卡牌。
+## 1. 场景内角色行动顺序(从左到右，先行动者可能影响战局与后续行动)
 
-## (场景内角色) 行动顺序(从左到右)
 {round_turns}
 
-## 卡牌生成规则
-1. **卡牌效果**：卡牌可对目标造成伤害、提供治疗、添加护盾等，并可选择性地为目标附加状态效果(buff/debuff)
-2. **使用代价**：每张卡牌使用后必须对使用者产生一个限制状态作为代价，下面是代价示例：  
-   - 眩晕：无法行动  
-   - 沉默：无法使用魔法、法术类卡牌  
-   - 力竭：体力透支，无法防御  
-   - 反噬：使用时自己也受到部分伤害或异常状态  
-   - 虚弱：受到的伤害增加  
-   - 致盲：命中率降低
-   - 缴械：无法攻击
-   - 卡牌效果越强，使用代价越严重，持续时间越长
-3. **生成顺序**：按照角色的行动顺序依次生成卡牌
+## 2. 生成内容规则
 
-## 输出要求
-- 涉及数值变化时必须明确具体数值(生命/物理攻击/物理防御/魔法攻击/魔法防御)
-- 卡牌描述格式：作用方式 + 主要效果 + 附加状态 + 使用代价
-- 卡牌的description里禁止包含角色名称
-- 第一局一定会有新增的status_effects，根据角色进入战斗时的设定，kick_off_message，环境，内心活动，和其他角色的情况生成，而不是卡牌里提到的状态
-- 同一时间可以出现多个status_effects
-- **状态效果去重**: 如果你已经拥有某个长期状态效果(如传奇道具效果)，不需要重复输出，系统会自动维护
-- 使用有趣、意想不到的风格描述效果产生的原因
+**卡牌(cards)**：你本回合可执行的行动
+- 每张卡牌对目标产生效果：伤害/治疗/护盾/buff/debuff等
+- 每张卡牌使用后对自己产生代价：限制状态，效果越强代价越重
 
-## 输出格式(JSON)要求：
+**状态效果(status_effects)**：你当前回合新增的自身状态
+- 战斗开局产生的初始状态（战斗准备、环境影响、心理状态、装备效果、过往经验等）
+- 可同时存在多个状态效果
+- 不要重复生成已存在的状态效果
+
+## 3. 输出格式(JSON)
+
 ```json
-{response_sample.model_dump_json(exclude_none=True, indent=2)}
+{{
+  "cards": [
+    {{
+      "name": "[卡牌名称]",
+      "description": "[作用方式与意图]。[附加状态效果]。代价：[使用代价描述]",
+      "target": "[目标角色完整名称]"
+    }}
+  ],
+  "status_effects": [
+    {{
+      "name": "[状态名称]",
+      "description": "[状态产生原因的生动有趣描述]，[状态效果的具体影响]",
+      "duration": [持续回合数]
+    }}
+  ]
+}}
 ```
 
-### 注意
-- 禁用换行/空行
-- 请严格按照输出格式来输出合规JSON
-- 输出格式要求response_sample中的任何数字都不是正确的值，请根据‘计算过程’后的状态更新为正确的值"""
+**约束规则**：
+- description中禁止出现角色名称
+- 禁用换行/空行，严格输出合规JSON"""
 
 
 #######################################################################################################################################
@@ -127,9 +110,11 @@ def _generate_prompt2(
     return f"""# 指令！请你回顾战斗内发生事件及对你的影响，然后更新自身状态，并生成 {card_creation_count} 张卡牌。
 
 ## (场景内角色) 行动顺序(从左到右)
+
 {round_turns}
 
 ## 卡牌生成规则
+
 1. **卡牌效果**：卡牌可对目标造成伤害、提供治疗、添加护盾等，并可选择性地为目标附加状态效果(buff/debuff)
 2. **使用代价**：每张卡牌使用后必须对使用者产生一个限制状态作为代价，下面是代价示例：  
    - 眩晕：无法行动  
@@ -144,6 +129,7 @@ def _generate_prompt2(
 
 
 ## 输出要求
+
 - 涉及数值变化时必须明确具体数值(生命/物理攻击/物理防御/魔法攻击/魔法防御)
 - 卡牌描述格式：作用方式 + 主要效果 + 附加状态 + 使用代价
 - **【重要】update_hp字段必须填写你的最终当前HP值(不是变化量)**:
@@ -158,11 +144,12 @@ def _generate_prompt2(
 - 使用有趣、意想不到的风格描述效果产生的原因
 
 ## 输出格式(JSON)要求：
+
 ```json
 {response_sample.model_dump_json(exclude_none=True, indent=2)}
 ```
-
 ### 特殊规则
+
 - 更新你当前身上的状态效果，包括环境影响、之前行动的后果等
 - 如果你已经死亡，即update_hp<=0，则不需要生成卡牌与状态，返回如下对象:
 ```json
@@ -175,6 +162,7 @@ def _generate_prompt2(
 但是血量和状态效果仍然需要更新。
 
 ### 注意
+
 - 禁用换行/空行
 - 请严格按照输出格式来输出合规JSON
 - **update_hp字段必须填写从"计算过程"中提取的你的当前HP数值,不要填0.0除非你真的HP为0**
@@ -207,24 +195,26 @@ class DrawCardsActionSystem(ReactiveProcessor):
         if len(entities) == 0:
             return
 
-        if not self._game.current_engagement.is_ongoing:
+        if not self._game.current_combat_sequence.is_ongoing:
             logger.error(f"not web_game.current_engagement.is_on_going_phase")
             return
 
-        last_round = self._game.current_engagement.latest_round
+        last_round = self._game.current_combat_sequence.latest_round
         if last_round.has_ended:
             logger.success(f"last_round.has_ended, so setup new round")
             self._game.start_new_round()
 
-        logger.debug(f"当前回合数: {len(self._game.current_engagement.current_rounds)}")
+        logger.debug(
+            f"当前回合数: {len(self._game.current_combat_sequence.current_rounds)}"
+        )
 
         # 测试道具的问题
         self._test_unique_item(entities)
 
         assert (
-            len(self._game.current_engagement.current_rounds) > 0
+            len(self._game.current_combat_sequence.current_rounds) > 0
         ), "当前没有进行中的战斗，不能设置回合。"
-        if len(self._game.current_engagement.current_rounds) == 1:
+        if len(self._game.current_combat_sequence.current_rounds) == 1:
             logger.debug(f"是第一局，一些数据已经被初始化了！")
             # 处理角色规划请求
             prompt = _generate_prompt1(
@@ -260,7 +250,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             self._handle_response(
                 entity2,
                 request_handler,
-                len(self._game.current_engagement.current_rounds) > 1,
+                len(self._game.current_combat_sequence.current_rounds) > 1,
             )
 
         # 最后的兜底，遍历所有参与的角色，如果没有手牌，说明_handle_response出现了错误，可能是LLM返回的内容无法正确解析。
@@ -384,9 +374,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         if update_hp is not None:
             character_profile_component.stats.hp = int(update_hp)
-            logger.debug(
-                f"update_combat_health: {entity.name} => hp: {character_profile_component.stats.hp}"
-            )
+            logger.debug(f"{entity.name} => hp: {character_profile_component.stats.hp}")
 
     ###############################################################################################################################################
     def _append_status_effects(
@@ -397,15 +385,13 @@ class DrawCardsActionSystem(ReactiveProcessor):
         assert entity.has(CombatStatsComponent)
         character_profile_component = entity.get(CombatStatsComponent)
         character_profile_component.status_effects.extend(copy.copy(status_effects))
-        logger.info(
-            f"update_combat_status_effects: {entity.name} => {'\n'.join([e.model_dump_json() for e in character_profile_component.status_effects])}"
-        )
+        # logger.info(
+        #     f"{entity.name} => {'\n'.join([e.model_dump_json() for e in character_profile_component.status_effects])}"
+        # )
 
-        updated_status_effects_message = f"""# 提示！你的状态效果已更新
-        
-## 当前状态效果
+        updated_status_effects_message = f"""# 通知！你的 状态/效果 已更新
 
-{'\n'.join([f'- {e.name} (剩余回合: {e.duration}): {e.description}' for e in character_profile_component.status_effects]) if len(character_profile_component.status_effects) > 0 else '无'}"""
+{'\n'.join([f'{e.name} (剩余回合: {e.duration}): {e.description}' for e in character_profile_component.status_effects]) if len(character_profile_component.status_effects) > 0 else '无'}"""
 
         self._game.append_human_message(entity, updated_status_effects_message)
 
@@ -470,11 +456,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 f"remaining: {len(remaining_effects)}, removed: {len(removed_effects)}"
             )
 
-            updated_status_effects_message = f"""# 提示！你的状态效果已更新：
-            
-## 移除的状态效果
+            updated_status_effects_message = f"""# 通知！如下 状态/效果 被移除
 
-{'\n'.join([f'- {e.name}: {e.description}' for e in removed_effects]) if len(removed_effects) > 0 else '无'}"""
+{'\n'.join([f'{e.name}: {e.description}' for e in removed_effects]) if len(removed_effects) > 0 else '无'}"""
 
             self._game.append_human_message(entity, updated_status_effects_message)
 

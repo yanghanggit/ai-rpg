@@ -26,10 +26,23 @@ class DrawCardsResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _generate_prompt1(
+def _generate_first_round_prompt(
     card_creation_count: int,
     round_turns: List[str],
 ) -> str:
+    """
+    生成战斗第一回合的卡牌抽取提示词。
+
+    用于战斗开局时指导AI角色评估战场态势，生成初始行动卡牌和自身状态效果。
+    此提示词不包含update_hp字段，因为第一回合尚未发生伤害计算。
+
+    Args:
+        card_creation_count: 需要生成的卡牌数量
+        round_turns: 角色行动顺序列表，格式为["角色名1", "角色名2", ...]
+
+    Returns:
+        str: 格式化的提示词，包含行动顺序、生成规则和JSON输出格式
+    """
     assert card_creation_count > 0
 
     return f"""# 指令！战斗开局，评估当前态势，生成你的初始 {card_creation_count} 张卡牌。
@@ -217,7 +230,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         if len(self._game.current_combat_sequence.current_rounds) == 1:
             logger.debug(f"是第一局，一些数据已经被初始化了！")
             # 处理角色规划请求
-            prompt = _generate_prompt1(
+            prompt = _generate_first_round_prompt(
                 self._card_creation_count,
                 last_round.action_order,
             )

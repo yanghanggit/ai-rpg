@@ -3,6 +3,7 @@
 负责在战斗触发阶段为每个参战角色生成初始上下文提示词，包含场景叙事、其他角色外观、自身属性和状态效果。
 执行后将战斗状态从 starting 转换为 ongoing，并启动第一回合。
 """
+
 from typing import final, override
 from loguru import logger
 from ..entitas import ExecuteProcessor

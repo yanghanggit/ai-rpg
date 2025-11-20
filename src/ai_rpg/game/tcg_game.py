@@ -171,5 +171,5 @@ class TCGGame(RPGGame):
 
         # 设置回合的环境描写
         new_round.environment = stage_entity.get(EnvironmentComponent).description
-        logger.info(f"new_round:\n{new_round.model_dump_json(indent=2)}")
+        logger.debug(f"new_round:\n{new_round.model_dump_json(indent=2)}")
         return new_round

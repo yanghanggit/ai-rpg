@@ -32,15 +32,17 @@ def create_demo_dungeon5() -> Dungeon:
 
     actor_training_robot = create_actor_training_robot()
     actor_training_robot.character_stats.hp = 10
-    actor_training_robot.kick_off_message += (
-        f"""\n注意：你作为一个训练机器人只会最基本的攻击和防御。"""
-    )
+    actor_training_robot.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标。回答简短(<100字)。你的目标是: 只做最基本的攻击与防御。"""
     actor_training_robot.inventory.items.append(
         Item(
-            name="传奇道具.钢铁之心",
+            name="传奇道具.永恒符文核心",
             uuid="",
             type=ItemType.UNIQUE_ITEM,
-            description="此道具让你拥有无限生命! 即：每个战斗回合在生成行动与更新状态时，都会将生命恢复到你的Max_HP。如果你还没有'钢铁之心'相关的status_effect，则在第一次更新状态时创建一个，标记此道具的存在，duration=999。后续回合系统会自动维护此状态效果，无需重复创建。而且在战斗中如果你的生命值降到0，你不会死掉，而是会周身冒烟并坚挺地站立着，等待下一个回合的开始。",
+            description="""你内部嵌入的魔法符文核心，赋予你不灭的生命力。
+每个战斗回合在生成行动与更新状态时，符文核心会自动将你的生命恢复到Max_HP。
+如果你还没有'永恒符文核心'相关的status_effect，则在第一次更新状态时创建一个，标记此道具的存在，duration=999。
+后续回合系统会自动维护此状态效果，无需重复创建。
+当你的生命值降到0时，符文核心会让你周身冒出微弱的符文光芒并坚挺地站立着，等待下一个回合重新激活。""",
         )
     )
 

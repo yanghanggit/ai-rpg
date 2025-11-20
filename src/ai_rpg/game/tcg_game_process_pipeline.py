@@ -82,7 +82,7 @@ def create_player_home_pipline(game: GameSession) -> "RPGGameProcessPipeline":
     processors = RPGGameProcessPipeline("Home State Pipeline 2")
 
     # 启动agent的提示词。启动阶段
-    processors.add(KickOffSystem(tcg_game, True))
+    processors.add(KickOffSystem(tcg_game, False))
 
     # 动作处理相关的系统 ##################################################################
     ####################################################################################
@@ -133,7 +133,7 @@ def create_dungeon_combat_state_pipeline(
     processors = RPGGameProcessPipeline("Dungeon Combat State Pipeline")
 
     # 启动agent的提示词。启动阶段
-    processors.add(KickOffSystem(tcg_game, True))
+    processors.add(KickOffSystem(tcg_game, False))
     processors.add(CombatInitializationSystem(tcg_game))
 
     # 抽卡。

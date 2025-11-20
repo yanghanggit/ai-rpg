@@ -20,19 +20,15 @@ def create_actor_training_robot() -> Actor:
         Actor: 训练机器人角色实例
     """
     return create_actor(
-        name="角色.怪物.训练机器人",
+        name="角色.怪物.训练稻草人",
         character_sheet_name="training_robot",
         kick_off_message="",
         character_stats=CharacterStats(base_dexterity=1),
         type=ActorType.ENEMY,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-        actor_profile="""你是一个训练机器人，只会最基本的防御和攻击，你不会生成观察和利用环境的能力。
-         【战斗循环】  
-        1. 防御（格挡或减伤，等待敌人出手）。  
-        2. 攻击（基础轻攻击或者重击）。
-        3. 控场（击晕或限制敌人行动，创造输出机会）。
-        4. 攻击（基础轻攻击或者重击）。  
-        → 然后再次回到 1. 防御，循环往复。""",
-        appearance="""长的和稻草人一模一样，但是身上多了一些金属盔甲，你被绑在一根柱子上,手上只握着一根木棍。""",
+        actor_profile=f"""**历史**: 你是训练场的魔法构造体，由稻草人躯体和金属盔甲加固组成，内部嵌有符文核心维持基本战斗功能。
+**性格**: 你遵循简单的战斗本能和基础攻防逻辑。
+**禁忌**: 你惧怕火焰。""",
+        appearance=f"""稻草人形态的魔法构造体，人形体型，局部有金属盔甲加固。稻草填充的躯干外覆旧皮革，胸口和肩部装有简陋的金属护板。圆形稻草头颅，无明显面部特征，头部中央有微弱的符文光芒。手持一根磨损的木制训练棍。整体状态陈旧，稻草外露，金属部分有锈迹。""",
         global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )

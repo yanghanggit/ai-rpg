@@ -187,9 +187,9 @@ def _dungeon_advance(
     # 需要在这里补充设置地下城与怪物的kickoff信息。
     stage_kick_off_comp = stage_entity.get(KickOffMessageComponent)
     assert stage_kick_off_comp is not None
-    logger.debug(
-        f"当前 {stage_entity.name} 的kickoff信息: {stage_kick_off_comp.content}"
-    )
+    # logger.debug(
+    #     f"当前 {stage_entity.name} 的kickoff信息: {stage_kick_off_comp.content}"
+    # )
 
     # 获取场景内角色的外貌信息
     actors_appearances_mapping: Dict[str, str] = tcg_game.get_stage_actor_appearances(
@@ -204,18 +204,19 @@ def _dungeon_advance(
         actors_appearances_info.append("无")
 
     # 生成追加的kickoff信息
-    append_kickoff_message = f"""# 场景内角色
-{"\n".join(actors_appearances_info)}"""
+    append_kickoff_message = f"""**场景内角色**
+    
+{"\n\n".join(actors_appearances_info)}"""
 
     # 设置组件
     stage_entity.replace(
         KickOffMessageComponent,
         stage_kick_off_comp.name,
-        stage_kick_off_comp.content + "\n" + append_kickoff_message,
+        stage_kick_off_comp.content + "\n\n" + append_kickoff_message,
     )
-    logger.debug(
-        f"更新设置{stage_entity.name} 的kickoff信息: {stage_entity.get(KickOffMessageComponent).content}"
-    )
+    # logger.debug(
+    #     f"更新设置{stage_entity.name} 的kickoff信息: {stage_entity.get(KickOffMessageComponent).content}"
+    # )
 
     # 设置怪物的kickoff信息
     actors = tcg_game.get_alive_actors_on_stage(stage_entity)

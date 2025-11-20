@@ -6,13 +6,12 @@ from ..models import (
     EnvironmentComponent,
     CombatStatsComponent,
 )
+from ..utils import format_dict_as_markdown_list
 
 
 ###################################################################################################################################################################
 @final
 class CombatInitializationSystem(ExecuteProcessor):
-
-    # combat_initialization_system.py
 
     def __init__(self, game_context: TCGGame) -> None:
         self._game: TCGGame = game_context
@@ -59,18 +58,23 @@ class CombatInitializationSystem(ExecuteProcessor):
             copy_actors_apperances_mapping.pop(actor_entity.name, None)
 
             # 生成提示词, 就是添加上下文，标记战斗初始化。
-            gen_prompt = f"""# 发生事件！战斗触发！这是本次战斗你的初始化信息。
-## 场景信息
+            gen_prompt = f"""# 通知！战斗触发！如下是当前场景的信息，请基于这些信息，准备好进入战斗！
+            
+## 场景叙事
+
 {current_stage_entity.name} ｜ {current_stage_narrate}
 
-## （场景内）角色信息
-{str(copy_actors_apperances_mapping)}
+## 其余角色
 
-## 你的属性 (仅在战斗中使用)
+{format_dict_as_markdown_list(copy_actors_apperances_mapping)}
+
+## 你的属性
+
 {rpg_character_profile_component.attrs_prompt}
 
-## 你的状态 (仅在战斗中使用)
-{rpg_character_profile_component.status_effects_prompt}。"""
+## 你的状态 
+
+{rpg_character_profile_component.status_effects_prompt}"""
 
             self._game.append_human_message(
                 actor_entity,

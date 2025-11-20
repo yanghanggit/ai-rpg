@@ -33,36 +33,28 @@ from ..game.config import LOGS_DIR
 
 
 ###############################################################################################################################################
-def _generate_stage_prompt(
-    kick_off_message: str,
-) -> str:
-    return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
+# def _generate_stage_prompt(
+#     kick_off_message: str,
+# ) -> str:
+#     return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
 
-## 这是你的启动消息
+# ## 这是你的启动消息
 
-{kick_off_message}
+# {kick_off_message}
 
-## 输出内容-场景描述
+# ## 输出内容-场景描述
 
-- 场景内的环境描述，不要包含任何角色信息。
+# - 场景内的环境描述，不要包含任何角色信息。
 
-## 输出要求
+# ## 输出要求
 
-- 输出场景描述，单段紧凑自述（禁用换行/空行）。
-- 输出必须为第三人称视角。"""
+# - 输出场景描述，单段紧凑自述（禁用换行/空行）。
+# - 输出必须为第三人称视角。"""
 
 
 ###############################################################################################################################################
-def _generate_world_system_prompt() -> str:
-    return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
-
-## 这是你的启动消息
-
-- 请回答你的职能与描述。
-
-## 输出要求
-
-- 确认你的职能，单段紧凑自述（禁用换行/空行）"""
+# def _generate_world_system_prompt() -> str:
+#     return f"""# 游戏启动! 告诉我你是谁？请说出你的全名。并说明你的职能与描述。"""
 
 
 ###############################################################################################################################################
@@ -407,21 +399,28 @@ class KickOffSystem(ExecuteProcessor):
         assert (
             kick_off_message_comp.content != ""
         ), "KickOff message content should not be empty"
+        return kick_off_message_comp.content
 
         # 不同实体生成不同的提示
-        if entity.has(ActorComponent):
-            # 角色的
-            return kick_off_message_comp.content
-        # _generate_actor_prompt(kick_off_message_comp.content)
-        elif entity.has(StageComponent):
-            # 舞台的
-            return _generate_stage_prompt(
-                kick_off_message_comp.content,
-            )
-        elif entity.has(WorldComponent):
-            # 世界系统的
-            return _generate_world_system_prompt()
+        # if entity.has(ActorComponent):
+        #     # 角色的
+        #     return kick_off_message_comp.content
+        # # _generate_actor_prompt(kick_off_message_comp.content)
+        # elif entity.has(StageComponent):
+        #     # 舞台的
+        #     return kick_off_message_comp.content
 
-        return ""
+        # # _generate_stage_prompt(
+        # #         kick_off_message_comp.content,
+        # #     )
+        # elif entity.has(WorldComponent):
+        #     # 世界系统的
+        #     return kick_off_message_comp.content
+
+        # # (
+        # #         f"""# 游戏启动! 告诉我你是谁？请说出你的全名。并说明你的职能与描述。"""
+        # #     )
+
+        # return ""
 
     ###############################################################################################################################################

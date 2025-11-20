@@ -24,7 +24,6 @@ from ai_rpg.game.tcg_game import (
 )
 from ai_rpg.game.game_data_service import (
     get_user_world_data,
-    get_game_boot_data,
     delete_user_world_data,
 )
 from ai_rpg.models import (

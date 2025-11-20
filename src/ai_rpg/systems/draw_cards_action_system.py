@@ -402,7 +402,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
         )
 
         updated_status_effects_message = f"""# 提示！你的状态效果已更新
+        
 ## 当前状态效果
+
 {'\n'.join([f'- {e.name} (剩余回合: {e.duration}): {e.description}' for e in character_profile_component.status_effects]) if len(character_profile_component.status_effects) > 0 else '无'}"""
 
         self._game.append_human_message(entity, updated_status_effects_message)
@@ -469,7 +471,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
             )
 
             updated_status_effects_message = f"""# 提示！你的状态效果已更新：
+            
 ## 移除的状态效果
+
 {'\n'.join([f'- {e.name}: {e.description}' for e in removed_effects]) if len(removed_effects) > 0 else '无'}"""
 
             self._game.append_human_message(entity, updated_status_effects_message)

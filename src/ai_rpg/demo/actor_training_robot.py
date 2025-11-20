@@ -20,7 +20,7 @@ def create_actor_training_robot() -> Actor:
         Actor: 训练机器人角色实例
     """
     return create_actor(
-        name="角色.怪物.训练稻草人",
+        name="角色.怪物.训练稻草人001号",
         character_sheet_name="training_robot",
         kick_off_message="",
         character_stats=CharacterStats(base_dexterity=1),

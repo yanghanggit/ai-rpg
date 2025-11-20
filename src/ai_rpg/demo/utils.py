@@ -86,7 +86,7 @@ def create_stage(
         profile=stage_profile,
     )
 
-    ret = Stage(
+    stage = Stage(
         name=name,
         character_sheet=character_sheet,
         system_message="",
@@ -95,11 +95,11 @@ def create_stage(
     )
 
     # 初次编译system_message!!!!
-    ret.system_message = f"""# {ret.name}
-你扮演这个游戏世界中的一个场景: {ret.name}
-你将是角色活动的地点也是战斗系统。
+    stage.system_message = f"""# {stage.name}
+    
+你扮演场景: {stage.name}
 
-## 游戏背景
+## 游戏设定
 
 {campaign_setting}
 
@@ -111,7 +111,7 @@ def create_stage(
 
 {stage_profile}"""
 
-    return ret
+    return stage
 
 
 #######################################################################################################################################
@@ -123,16 +123,18 @@ def create_world_system(
     global_game_mechanics: str,
 ) -> WorldSystem:
 
-    ret = WorldSystem(
+    world_system = WorldSystem(
         name=name,
         system_message="",
         kick_off_message=kick_off_message,
     )
 
     # 初次编译system_message!!!!
-    ret.system_message = f"""# {ret.name}
-你扮演这个游戏世界中的一个全局系统: {ret.name}
-## 游戏背景
+    world_system.system_message = f"""# {world_system.name}
+    
+你扮演游戏系统: {world_system.name}
+
+## 游戏设定
 
 {campaign_setting}
 
@@ -140,11 +142,11 @@ def create_world_system(
 
 {global_game_mechanics}
 
-## 你的系统设定
+## 系统设定
 
 {world_system_profile}"""
 
-    return ret
+    return world_system
 
 
 #######################################################################################################################################

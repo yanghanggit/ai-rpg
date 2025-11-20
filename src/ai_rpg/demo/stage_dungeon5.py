@@ -19,10 +19,15 @@ def create_stage_cave5() -> Stage:
     return create_stage(
         name="场景.训练场",
         character_sheet_name="training_ground",
-        kick_off_message="",
+        kick_off_message="""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
+        
+使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
+输出为单段紧凑文本，不使用换行或空行。""",
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         type=StageType.DUNGEON,
-        stage_profile="你是一个用来测试战斗策略的训练场，训练场里有干草和木桩，地型被改造成了沼泽，所以训练场里也充满了沼气和水，地上还插着生锈的剑和各种生物的白骨来营造气氛。",
+        stage_profile="""你是位于新奥拉西斯「尘烟裂谷」区深处的一处改造训练场，原本是废弃的遗迹通风井，被冒险者公会改造为实战模拟场所，用于测试战斗策略与磨炼技艺。
+地形被刻意改造成沼泽环境以模拟恶劣战斗条件，场地中散布着干草人偶和木质击打桩作为训练目标，地面积水与沼气混合形成潮湿浑浊的空气，生锈的武器残片和漂白的生物骸骨被插在泥泞中作为环境标记，营造出危险区域的真实氛围。
+注意！你是一个动态响应的场景，角色的物理行为与魔法交互会对环境产生实际影响并改变场景状态，这些变化会反过来影响后续行动的条件。""",
         actors=[],
         global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )

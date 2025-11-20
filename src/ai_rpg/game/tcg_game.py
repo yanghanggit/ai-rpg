@@ -12,7 +12,6 @@ from ..models import (
     Dungeon,
     DungeonComponent,
     CombatSequence,
-    EnvironmentComponent,
     World,
     Round,
 )

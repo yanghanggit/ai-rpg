@@ -83,7 +83,7 @@ def _generate_first_round_prompt(
   "status_effects": [
     {{
       "name": "[状态名称]",
-      "description": "[状态产生原因的生动有趣描述]，[状态效果的具体影响]",
+      "description": "[状态产生原因的生动有趣描述]，[状态效果的具体影响，可包含具体数值]",
       "duration": [持续回合数]
     }}
   ]
@@ -91,6 +91,8 @@ def _generate_first_round_prompt(
 ```
 
 **约束规则**：
+- cards的description禁止出现具体数值，保持抽象描述
+- status_effects的description可以包含具体数值
 - description中禁止出现角色名称
 - 禁用换行/空行，严格输出合规JSON"""
 
@@ -151,7 +153,7 @@ def _generate_subsequent_round_prompt(
   "status_effects": [
     {{
       "name": "[状态名称]",
-      "description": "[状态产生原因的生动有趣描述]，[状态效果的具体影响]",
+      "description": "[状态产生原因的生动有趣描述]，[状态效果的具体影响，可包含具体数值]",
       "duration": [持续回合数]
     }}
   ]
@@ -159,6 +161,8 @@ def _generate_subsequent_round_prompt(
 ```
 
 **约束规则**：
+- cards的description禁止出现具体数值，保持抽象描述
+- status_effects的description可以包含具体数值
 - description中禁止出现角色名称
 - 禁用换行/空行，严格输出合规JSON"""
 

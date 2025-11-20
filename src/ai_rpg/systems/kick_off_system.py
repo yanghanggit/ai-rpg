@@ -20,16 +20,16 @@ from ..game.config import LOGS_DIR
 
 
 ###############################################################################################################################################
-def _generate_actor_prompt(kick_off_message: str) -> str:
-    return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
+# def _generate_actor_prompt(kick_off_message: str) -> str:
+#     return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
 
-## 这是你的启动消息
+# ## 这是你的启动消息
 
-{kick_off_message}
+# {kick_off_message}
 
-## 输出要求
+# ## 输出要求
 
-- 你的内心活动，单段紧凑自述（禁用换行/空行）"""
+# - 你的内心活动，单段紧凑自述（禁用换行/空行）"""
 
 
 ###############################################################################################################################################
@@ -411,7 +411,8 @@ class KickOffSystem(ExecuteProcessor):
         # 不同实体生成不同的提示
         if entity.has(ActorComponent):
             # 角色的
-            return _generate_actor_prompt(kick_off_message_comp.content)
+            return kick_off_message_comp.content
+        # _generate_actor_prompt(kick_off_message_comp.content)
         elif entity.has(StageComponent):
             # 舞台的
             return _generate_stage_prompt(

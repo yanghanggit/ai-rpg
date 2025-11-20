@@ -16,10 +16,9 @@ from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
     create_actor_warrior,
     create_demo_dungeon5,
+    create_demo_game_world_boot2,
 )
 from ai_rpg.game.player_session import PlayerSession
-
-# from ai_rpg.game.tcg_game import TCGGameState
 from ai_rpg.game.tcg_game import (
     TCGGame,
 )
@@ -408,7 +407,8 @@ async def _run_game(
     if world_exists is None:
 
         # 获取world_boot_data
-        world_boot = get_game_boot_data(game)
+        world_boot = create_demo_game_world_boot2(game)  # TODO，临时修改，快速测试！
+        # get_game_boot_data(game)
         assert world_boot is not None, "WorldBootDocument 反序列化失败"
 
         # 如果world不存在，说明是第一次创建游戏

@@ -54,6 +54,7 @@ def create_demo_game_world_boot2(game_name: str) -> Boot:
 
     # 创建英雄营地场景和角色
     actor_warrior = create_actor_warrior()
+    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标。回答简短(<100字)。你的目标是: 以自由卫士身份磨砺武技，追寻圣剑"晨曦之刃"以斩除灾厄。"""
 
     # 创建场景
     stage_heros_camp = create_demo_heros_camp()

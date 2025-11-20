@@ -18,7 +18,7 @@ from ..models import (
     AgentEvent,
     DeathComponent,
 )
-from ..utils import json_format
+from ..utils import extract_json_from_code_block
 
 COMBAT_MECHANICS_DESCRIPTION: Final[
     str
@@ -256,7 +256,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         try:
 
             format_response = ArbitrationResponse.model_validate_json(
-                json_format.strip_json_code_block(request_handler.response_content)
+                extract_json_from_code_block(request_handler.response_content)
             )
 
             # 推理的场景记录下！

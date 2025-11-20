@@ -162,7 +162,7 @@ class DeathComponent(Component):
 class CombatStatsComponent(MutableComponent):
     name: str
     stats: CharacterStats
-    effects: List[StatusEffect]
+    status_effects: List[StatusEffect]
 
     @property
     def attrs_prompt(self) -> str:
@@ -175,11 +175,11 @@ class CombatStatsComponent(MutableComponent):
     @property
     def status_effects_prompt(self) -> str:
         ret = "- 无"
-        if len(self.effects) > 0:
+        if len(self.status_effects) > 0:
             ret = "\n".join(
                 [
                     f"- {effect.name}: {effect.description} (剩余{effect.duration}回合)"
-                    for effect in self.effects
+                    for effect in self.status_effects
                 ]
             )
         return ret

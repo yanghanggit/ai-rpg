@@ -292,7 +292,7 @@ def test_high_dimension_vectors() -> None:
 @pytest.mark.database
 def test_vector_document_operations() -> None:
     """测试向量文档操作 - 使用ORM"""
-    from src.ai_rpg.pgsql.vector_document import (
+    from src.ai_rpg.pgsql.vector_document_operations import (
         save_vector_document,
         search_similar_documents,
     )
@@ -401,7 +401,7 @@ def test_conversation_vector_operations() -> None:
 @pytest.mark.demo
 def demo_document_rag_system() -> None:
     """演示基于文档的RAG系统"""
-    from src.ai_rpg.pgsql.vector_document import (
+    from src.ai_rpg.pgsql.vector_document_operations import (
         save_vector_document,
         search_similar_documents,
     )

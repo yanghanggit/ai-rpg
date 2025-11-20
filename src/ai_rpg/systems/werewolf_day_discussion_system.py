@@ -17,7 +17,7 @@ from ..models import (
 )
 import random
 from ..chat_services.client import ChatClient
-from ..utils import json_format
+from ..utils import extract_json_from_code_block
 
 ###############################################################################################################################################
 
@@ -142,7 +142,7 @@ class WerewolfDayDiscussionSystem(ExecuteProcessor):
 
         try:
             response = DayDiscussionResponse.model_validate_json(
-                json_format.strip_json_code_block(request_handlers[0].response_content)
+                extract_json_from_code_block(request_handlers[0].response_content)
             )
 
             if response.mind_voice != "":

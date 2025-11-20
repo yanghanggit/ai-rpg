@@ -38,7 +38,7 @@ async def get_session_messages(
         # 是否有游戏？！！
         current_room = game_server.get_room(user_name)
         assert current_room is not None
-        if current_room._sdg_game is None:
+        if current_room._sdg_game is None and current_room._tcg_game is None:
             logger.error(f"get_session_messages: {user_name} has no game")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

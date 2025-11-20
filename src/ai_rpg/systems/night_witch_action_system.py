@@ -21,7 +21,7 @@ from ..models import (
 )
 from ..utils.md_format import format_list_as_markdown_list
 from ..chat_services.client import ChatClient
-from ..utils import json_format
+from ..utils import extract_json_from_code_block
 
 
 @final
@@ -177,7 +177,7 @@ class NightWitchActionSystem(ReactiveProcessor):
 
             # 解析女巫的决策
             response = WitchDecisionResponse.model_validate_json(
-                json_format.strip_json_code_block(request_handler.response_content)
+                extract_json_from_code_block(request_handler.response_content)
             )
 
             # 如果有内心独白，则需要添加行动

@@ -23,21 +23,26 @@ from .excel import (
     validate_dataframe,
 )
 from .json_format import (
-    clean_json_string,
-    combine_json_fragments,
-    contains_duplicate_segments,
-    contains_json_code_block,
-    strip_json_code_block,
+    normalize_json_string,
+    merge_json_fragments,
+    has_multiple_json_objects,
+)
+
+from .md_format import (
+    format_dict_as_markdown_list,
+    format_list_as_markdown_list,
+    has_json_code_block,
+    extract_json_from_code_block,
 )
 
 # 公开的API
 __all__ = [
     # JSON格式化工具
-    "clean_json_string",
-    "combine_json_fragments",
-    "contains_duplicate_segments",
-    "contains_json_code_block",
-    "strip_json_code_block",
+    "normalize_json_string",
+    "merge_json_fragments",
+    "has_multiple_json_objects",
+    "has_json_code_block",
+    "extract_json_from_code_block",
     # Excel工具
     "read_excel_file",
     "display_excel_info",
@@ -49,4 +54,9 @@ __all__ = [
     "safe_get_row_number",
     "convert_dict_to_model",
     "list_valid_rows_as_models",
+    # Markdown格式化工具
+    "format_dict_as_markdown_list",
+    "format_list_as_markdown_list",
+    "has_json_code_block",
+    "extract_json_from_code_block",
 ]

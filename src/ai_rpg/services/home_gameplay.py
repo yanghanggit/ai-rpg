@@ -93,13 +93,11 @@ async def _handle_advancing_action(web_game: TCGGame) -> HomeGamePlayResponse:
         HomeGamePlayResponse: 包含客户端消息的响应
     """
     # 推进一次。
-    web_game.player_session.session_messages.clear()
+    # web_game.player_session.session_messages.clear()
     await web_game.npc_home_pipeline.process()
 
     # 返回消息
-    return HomeGamePlayResponse(
-        client_messages=web_game.player_session.session_messages,
-    )
+    return HomeGamePlayResponse(client_messages=[])
 
 
 ###################################################################################################################################################################
@@ -310,18 +308,14 @@ async def _handle_speak_action(
     # if web_game.speak_action(target=target, content=content):
     if _player_add_speak_action(web_game, target=target, content=content):
         # 清空消息。准备重新开始 + 测试推进一次游戏
-        web_game.player_session.session_messages.clear()
+        # web_game.player_session.session_messages.clear()
         await web_game.player_home_pipeline.process()
 
         # 返回消息
-        return HomeGamePlayResponse(
-            client_messages=web_game.player_session.session_messages,
-        )
+        return HomeGamePlayResponse(client_messages=[])
 
     # 如果说话动作激活失败，返回空消息
-    return HomeGamePlayResponse(
-        client_messages=web_game.player_session.session_messages,
-    )
+    return HomeGamePlayResponse(client_messages=[])
 
 
 ###################################################################################################################################################################
@@ -343,18 +337,14 @@ async def _handle_trans_stage_action(
     # player 添加场景转换的动作
     if _player_add_trans_stage_action(web_game, stage_name=stage_name):
         # 清空消息。准备重新开始 + 测试推进一次游戏
-        web_game.player_session.session_messages.clear()
+        # web_game.player_session.session_messages.clear()
         await web_game.player_home_pipeline.process()
 
         # 返回消息
-        return HomeGamePlayResponse(
-            client_messages=web_game.player_session.session_messages,
-        )
+        return HomeGamePlayResponse(client_messages=[])
 
     # 如果场景转换动作激活失败，返回空消息
-    return HomeGamePlayResponse(
-        client_messages=web_game.player_session.session_messages,
-    )
+    return HomeGamePlayResponse(client_messages=[])
 
 
 ###################################################################################################################################################################

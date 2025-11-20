@@ -15,7 +15,7 @@ from ..models import (
     HomeComponent,
     MindEvent,
 )
-from ..utils import json_format
+from ..utils import extract_json_from_code_block
 from ..game.tcg_game import TCGGame
 
 
@@ -150,7 +150,7 @@ class HomeActorSystem(ReactiveProcessor):
         try:
 
             response = ActorResponse.model_validate_json(
-                json_format.strip_json_code_block(request_handler.response_content)
+                extract_json_from_code_block(request_handler.response_content)
             )
 
             self._game.append_human_message(

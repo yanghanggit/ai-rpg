@@ -28,6 +28,9 @@ from ai_rpg.replicate import (
 )
 from ai_rpg.configuration import server_configuration
 
+# 局域网地址配置（根据实际情况修改）
+# LOCAL_NETWORK_IP = "192.168.192.59"
+
 
 # ############################################################################################################
 class SingleImageGenerationConfig(BaseModel):
@@ -87,6 +90,7 @@ class GeneratedImage(BaseModel):
     filename: str = Field(..., description="文件名")
     url: str = Field(..., description="访问 URL (相对路径)")
     prompt: str = Field(..., description="使用的提示词")
+    model: str = Field(..., description="使用的模型")
     local_path: str = Field(..., description="本地存储路径")
 
 
@@ -96,23 +100,20 @@ class GenerateImagesResponse(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    success: bool = Field(..., description="是否成功")
     images: List[GeneratedImage] = Field(
         default_factory=list, description="生成的图片列表"
     )
-    total: int = Field(..., description="总共生成的图片数量")
-    model: str = Field(..., description="使用的模型")
     elapsed_time: float = Field(..., description="总耗时(秒)")
-    message: Optional[str] = Field(None, description="额外信息或错误信息")
 
 
+############################################################################################################
 # 初始化 FastAPI 应用
 app = FastAPI(
     title="图片生成服务",
     description="基于 Replicate API 的图片生成和服务",
     version="1.0.0",
 )
-
+############################################################################################################
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -120,11 +121,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+############################################################################################################
 # 图片目录（直接使用 DEFAULT_OUTPUT_DIR）
 DEFAULT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 logger.info(f"📁 图片目录: {DEFAULT_OUTPUT_DIR}")
-
+############################################################################################################
 # 挂载静态文件服务
 app.mount("/images", StaticFiles(directory=str(DEFAULT_OUTPUT_DIR)), name="images")
 
@@ -157,7 +158,9 @@ async def generate_image(payload: GenerateImagesRequest) -> GenerateImagesRespon
 
         # 准备任务列表
         tasks: List[ImageGenerationAndDownloadTask] = []
-        prompt_task_map: Dict[str, str] = {}  # 文件路径 -> prompt 的映射
+        task_metadata: Dict[str, Dict[str, str]] = (
+            {}
+        )  # 文件路径 -> {prompt, model} 的映射
 
         # 遍历每个独立的生成配置
         for config in payload.configs:
@@ -213,7 +216,10 @@ async def generate_image(payload: GenerateImagesRequest) -> GenerateImagesRespon
             output_path = str(DEFAULT_OUTPUT_DIR / filename)
 
             # 记录映射关系
-            prompt_task_map[output_path] = config.prompt
+            task_metadata[output_path] = {
+                "prompt": config.prompt,
+                "model": model_name,
+            }
 
             # 5. 创建任务（使用 ImageGenerationAndDownloadTask）
             task = ImageGenerationAndDownloadTask(
@@ -232,13 +238,16 @@ async def generate_image(payload: GenerateImagesRequest) -> GenerateImagesRespon
         for local_path in results:
             filename = Path(local_path).name
             url = f"/images/{filename}"
-            prompt = prompt_task_map.get(local_path, "unknown")
+            metadata = task_metadata.get(
+                local_path, {"prompt": "unknown", "model": "unknown"}
+            )
 
             images.append(
                 GeneratedImage(
                     filename=filename,
                     url=url,
-                    prompt=prompt,
+                    prompt=metadata["prompt"],
+                    model=metadata["model"],
                     local_path=local_path,
                 )
             )
@@ -248,45 +257,16 @@ async def generate_image(payload: GenerateImagesRequest) -> GenerateImagesRespon
             f"✅ 图片生成完成! 总耗时: {elapsed_time:.2f}秒, 平均: {elapsed_time/len(images):.2f}秒/张"
         )
 
-        # 统计使用的模型（可能有多个不同模型）
-        used_models = list(
-            set(
-                config.model or replicate_config.default_image_model
-                for config in payload.configs
-            )
-        )
-        model_summary = ", ".join(used_models)
-
         return GenerateImagesResponse(
-            success=True,
             images=images,
-            total=len(images),
-            model=model_summary,
             elapsed_time=elapsed_time,
-            message=f"成功生成 {len(images)} 张图片",
         )
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"❌ 图片生成失败: {e}")
-        elapsed_time = time.time() - start_time
-        # 统计配置中使用的模型
-        used_models = list(
-            set(
-                config.model or replicate_config.default_image_model
-                for config in payload.configs
-            )
-        )
-        model_summary = ", ".join(used_models)
-        return GenerateImagesResponse(
-            success=False,
-            images=[],
-            total=0,
-            model=model_summary,
-            elapsed_time=elapsed_time,
-            message=f"生成失败: {str(e)}",
-        )
+        raise HTTPException(status_code=500, detail=f"图片生成失败: {str(e)}")
 
 
 ##################################################################################################################
@@ -318,11 +298,14 @@ def main() -> None:
         logger.info(
             f"🖼️  静态文件: http://localhost:{server_configuration.image_generation_server_port}/images/"
         )
+        logger.info(
+            f"🌐 局域网访问: http://局域网地址:{server_configuration.image_generation_server_port}"
+        )
 
         # 启动服务器
         uvicorn.run(
             app,
-            host="localhost",
+            host="0.0.0.0",
             port=server_configuration.image_generation_server_port,
             log_level="debug",
         )

@@ -52,9 +52,6 @@ async def _run_game(
     )
 
     ### 创建服务器相关的连接信息。
-    # server_settings = initialize_server_settings_instance(
-    #     Path("server_configuration.json")
-    # )
     ChatClient.initialize_url_config(server_configuration)
 
     # 启动游戏的判断，是第一次建立还是恢复？

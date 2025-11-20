@@ -60,13 +60,13 @@ def _generate_prompt(prompt_params: List[PromptParameters]) -> str:
     # 生成角色&卡牌详情
     details_prompt = _generate_actor_card_details(prompt_params)
 
-    return f"""# 提示！回合行动指令。根据下列信息执行战斗回合：
+    return f"""# 指令！战斗回合仲裁
 
-## 角色行动序列（后续卡牌在前序执行后生效）
+## 行动顺序（从左至右依次执行）
 
-{" -> ".join([param.actor for param in prompt_params])}
+{" → ".join([param.actor for param in prompt_params])}
 
-## 角色&卡牌详情
+## 参战信息
 
 {"\n\n".join(details_prompt)}
 

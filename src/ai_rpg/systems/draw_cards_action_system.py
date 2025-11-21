@@ -6,6 +6,7 @@
 """
 
 import copy
+import random
 from typing import Final, List, Optional, final, override
 from loguru import logger
 from pydantic import BaseModel
@@ -33,7 +34,101 @@ class DrawCardsResponse(BaseModel):
 
 
 #######################################################################################################################################
+@final
+class Skill(BaseModel):
+    name: str  # 技能名称
+    description: str  # 技能描述
+
+
+# 做一个测试！
+test_skills_pool: Final[List[Skill]] = [
+    # 原有技能...
+    Skill(
+        name="时间窃贼",
+        description="偷取目标的时间流，使其动作延迟3回合，但自己会加速衰老，永久损失部分最大生命值。",
+    ),
+    Skill(
+        name="量子分身",
+        description="同时存在于多个平行宇宙，闪避所有攻击并同时攻击所有敌人，结束后有几率迷失在错误的时间线中。",
+    ),
+    Skill(
+        name="情绪感染",
+        description="将自己的强烈情绪传递给敌人，使其陷入相同的精神状态（狂暴/恐惧/混乱），但自己也会情绪失控数回合。",
+    ),
+    Skill(
+        name="维度折叠",
+        description="将战场空间折叠，使所有远程攻击失效，但折叠的空间可能释放出未知的维度生物。",
+    ),
+    Skill(
+        name="记忆掠夺",
+        description="读取并复制目标的技能记忆，暂时获得对方的一个随机技能，但会承受对方的痛苦回忆作为精神伤害。",
+    ),
+    Skill(
+        name="因果逆转",
+        description="先设定结果再触发原因，本次攻击必中且暴击，但接下来3回合内自己的所有行动都会受到因果反噬。",
+    ),
+    Skill(
+        name="血肉傀儡",
+        description="用自己的血肉制造一个分身吸引火力，分身的生命值越高，自己流失的生命越多，且分身可能产生独立意识反叛。",
+    ),
+    Skill(
+        name="梦境入侵",
+        description="将敌人拉入自己编织的噩梦，造成持续精神伤害，但如果对方精神力过强，自己可能被困在共享噩梦中。",
+    ),
+    Skill(
+        name="重力操控",
+        description="瞬间改变局部重力，使敌人被压倒在地无法行动，但过度使用会导致自身骨骼承受巨大压力。",
+    ),
+    Skill(
+        name="元素崩坏",
+        description="打破元素平衡，引发随机元素爆炸，效果惊人但可能引发连锁反应，使战场环境变得极端危险。",
+    ),
+    Skill(
+        name="幸运借贷",
+        description="向未来借取幸运值，大幅提升暴击率和闪避率，但后续战斗会持续遭遇厄运，直到偿还 幸运债务。",
+    ),
+    Skill(
+        name="感官共享",
+        description="与目标共享五感，可以预判其行动并找到弱点，但也会承受对方受到的所有痛苦和负面感受。",
+    ),
+    Skill(
+        name="概念抹除",
+        description="暂时从概念上抹除自己的 存在 ，免疫一切伤害，但重新存在时可能被世界排斥，属性大幅下降。",
+    ),
+    Skill(
+        name="生命共鸣",
+        description="与战场上的所有生命体建立共鸣，每个活着的单位都会为自己提供治疗，但也会分担他们受到的伤害。",
+    ),
+    Skill(
+        name="龙之化身",
+        description="将自身变形为巨龙形态,获得强大的力量和飞行能力,但变身结束后会陷入虚弱状态。",
+    ),
+    Skill(
+        name="物质重组",
+        description="将敌人的装备或武器重组为无用物品，成功则削弱敌人，失败则自己的装备会被随机重组。",
+    ),
+    Skill(
+        name="痛觉转化",
+        description="将受到的伤害转化为攻击力，受伤越重攻击越强，但痛觉会被放大数倍，可能导致精神崩溃。",
+    ),
+    Skill(
+        name="命运赌局",
+        description="与命运之神进行赌局，50%几率秒杀目标，50%几率自己受到致命伤害，无法被复活技能抵消。",
+    ),
+    Skill(
+        name="镜像世界",
+        description="创造现实世界的镜像，所有攻击都会反射给攻击者，但镜像可能破碎，导致空间碎片伤害所有人。",
+    ),
+    Skill(
+        name="空鲸形态",
+        description="变身为游弋在空间裂缝中的虚空鲸,能够穿梭空间、吞噬敌人的空间攻击,但可能迷失在维度间隙中。",
+    ),
+]
+
+
+#######################################################################################################################################
 def _generate_first_round_prompt(
+    actor_name: str,
     card_creation_count: int,
     round_turns: List[str],
 ) -> str:
@@ -53,31 +148,48 @@ def _generate_first_round_prompt(
     assert card_creation_count > 0, "card_creation_count must be greater than 0"
     assert len(round_turns) > 0, "round_turns must not be empty"
 
+    # 从技能池随机抽取 card_creation_count * 2 个技能作为子池
+    skill_pool_size = min(card_creation_count * 2, len(test_skills_pool))
+    selected_skills = random.sample(test_skills_pool, skill_pool_size)
+
+    # 格式化技能列表
+    skills_text = "\n".join(
+        [f"- {skill.name}: {skill.description}" for skill in selected_skills]
+    )
+
     return f"""# 指令！战斗开局，评估当前态势，生成你的初始 {card_creation_count} 张卡牌。
 
 ## 1. 场景内角色行动顺序(从左到右，先行动者可能影响战局与后续行动)
 
 {round_turns}
 
-## 2. 生成内容规则
+## 2. 可用技能池(必须从中选择)
+
+{skills_text}
+
+## 3. 生成内容规则
 
 **卡牌(cards)**：你本回合可执行的行动
-- 每张卡牌对目标产生效果：伤害/治疗/护盾/buff/debuff等
-- 每张卡牌使用后对自己产生代价：限制状态，效果越强代价越重
+- 设计要求：
+  * 优先组合2-3个技能创造复合行动
+  * 技能组合产生协同效果但代价叠加
+  * 单一技能仅用于简单直接行动
+- 卡牌命名：基于技能效果创造新颖行动名称(禁止暴露技能名)
+- 卡牌描述：行动方式、战斗目的、使用代价
 
 **状态效果(status_effects)**：你当前回合新增的自身状态
 - 战斗开局产生的初始状态（战斗准备、环境影响、心理状态、装备效果、过往经验等）
 - 可同时存在多个状态效果
 - 不要重复生成已存在的状态效果
 
-## 3. 输出格式(JSON)
+## 4. 输出格式(JSON)
 
 ```json
 {{
   "cards": [
     {{
-      "name": "[卡牌名称]",
-      "description": "[作用方式与意图]。[附加状态效果]。代价：[使用代价描述]",
+      "name": "[组合技能效果的创意名称]",
+      "description": "[先做什么,然后做什么的连贯动作描述]，[目的]。代价：[多重代价的叠加描述]",
       "target": "[目标角色完整名称]"
     }}
   ],
@@ -92,6 +204,7 @@ def _generate_first_round_prompt(
 ```
 
 **约束规则**：
+- 卡牌数量必须是{card_creation_count}张
 - cards的description禁止出现具体数值，保持抽象描述
 - status_effects的description可以包含具体数值
 - description中禁止出现角色名称
@@ -100,6 +213,7 @@ def _generate_first_round_prompt(
 
 #######################################################################################################################################
 def _generate_subsequent_round_prompt(
+    actor_name: str,
     card_creation_count: int,
     round_turns: List[str],
 ) -> str:
@@ -110,6 +224,7 @@ def _generate_subsequent_round_prompt(
     此提示词包含update_hp字段，要求从"计算过程"中提取当前生命值。
 
     Args:
+        actor_name: 角色名称
         card_creation_count: 需要生成的卡牌数量
         round_turns: 角色行动顺序列表，格式为["角色名1", "角色名2", ...]
 
@@ -119,19 +234,36 @@ def _generate_subsequent_round_prompt(
     assert card_creation_count > 0, "card_creation_count must be greater than 0"
     assert len(round_turns) > 0, "round_turns must not be empty"
 
+    # 从技能池随机抽取 card_creation_count * 2 个技能作为子池
+    skill_pool_size = min(card_creation_count * 2, len(test_skills_pool))
+    selected_skills = random.sample(test_skills_pool, skill_pool_size)
+
+    # 格式化技能列表
+    skills_text = "\n".join(
+        [f"- {skill.name}: {skill.description}" for skill in selected_skills]
+    )
+
     return f"""# 指令！回顾战斗历史，评估当前态势，生成你的 {card_creation_count} 张卡牌。
 
 ## 1. 场景内角色行动顺序(从左到右，先行动者可能影响战局与后续行动)
 
 {round_turns}
 
-## 2. 生成内容规则
+## 2. 可用技能池(必须从中选择)
+
+{skills_text}
+
+## 3. 生成内容规则
 
 **update_hp**：你的当前生命值(从最近"计算过程"的角色状态中提取当前HP数值)
 
 **卡牌(cards)**：你本回合可执行的行动
-- 每张卡牌对目标产生效果：伤害/治疗/护盾/buff/debuff等
-- 每张卡牌使用后对自己产生代价：限制状态，效果越强代价越重
+- 设计要求：
+  * 优先组合2-3个技能创造复合行动
+  * 技能组合产生协同效果但代价叠加
+  * 单一技能仅用于简单直接行动
+- 卡牌命名：基于技能效果创造新颖行动名称(禁止暴露技能名)
+- 卡牌描述：行动方式、战斗目的、使用代价
 
 **状态效果(status_effects)**：你当前回合新增的自身状态
 - 上回合受到的卡牌效果和使用代价产生的状态
@@ -140,15 +272,15 @@ def _generate_subsequent_round_prompt(
 
 **特殊情况**：如果你已死亡(HP≤0)或认为战斗结束，则cards和status_effects填空数组，但update_hp仍需填写
 
-## 3. 输出格式(JSON)
+## 4. 输出格式(JSON)
 
 ```json
 {{
   "update_hp": [当前HP数值],
   "cards": [
     {{
-      "name": "[卡牌名称]",
-      "description": "[作用方式与意图]。[附加状态效果]。代价：[使用代价描述]",
+      "name": "[组合技能效果的创意名称]",
+      "description": "[先做什么,然后做什么的连贯动作描述]，[目的]。代价：[多重代价的叠加描述]",
       "target": "[目标角色完整名称]"
     }}
   ],
@@ -163,6 +295,7 @@ def _generate_subsequent_round_prompt(
 ```
 
 **约束规则**：
+- 卡牌数量必须是{card_creation_count}张
 - cards的description禁止出现具体数值，保持抽象描述
 - status_effects的description可以包含具体数值
 - description中禁止出现角色名称
@@ -495,12 +628,14 @@ class DrawCardsActionSystem(ReactiveProcessor):
             if is_first_round:
                 # 处理战斗第一回合请求
                 prompt = _generate_first_round_prompt(
+                    entity.name,
                     self._card_creation_count,
                     last_round.action_order,
                 )
             else:
                 # 处理战斗后续回合请求
                 prompt = _generate_subsequent_round_prompt(
+                    entity.name,
                     self._card_creation_count,
                     last_round.action_order,
                 )

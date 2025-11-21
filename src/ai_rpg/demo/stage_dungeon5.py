@@ -37,7 +37,9 @@ def create_demo_dungeon5() -> Dungeon:
 
     actor_training_robot = create_actor_training_robot()
     actor_training_robot.character_stats.hp = 10
-    actor_training_robot.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标。回答简短(<100字)。你的目标是: 只做最基本的攻击与防御。"""
+    actor_training_robot.kick_off_message = (
+        f"""# 游戏启动！告诉我你是谁？请说出你的全名。回答简短(<100字)。"""
+    )
     actor_training_robot.inventory.items.append(
         Item(
             name="传奇道具.永恒符文核心",

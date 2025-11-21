@@ -378,7 +378,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
 
     ###############################################################################################################################################
     def append_system_message(self, entity: Entity, chat: str) -> None:
-        logger.debug(f"append_system_message: {entity.name} => \n{chat}")
+        logger.info(f"append_system_message: {entity.name} => \n{chat}")
         agent_context = self.get_agent_context(entity)
         assert (
             len(agent_context.context) == 0
@@ -388,10 +388,10 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
     ###############################################################################################################################################
     def append_human_message(self, entity: Entity, chat: str, **kwargs: Any) -> None:
 
-        logger.debug(f"append_human_message: {entity.name} => \n{chat}")
-        if len(kwargs) > 0:
-            # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
-            logger.debug(f"kwargs: {kwargs}")
+        # logger.debug(f"append_human_message: {entity.name} => \n{chat}")
+        # if len(kwargs) > 0:
+        #     # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
+        #     logger.debug(f"kwargs: {kwargs}")
 
         agent_context = self.get_agent_context(entity)
         agent_context.context.extend([HumanMessage(content=chat, **kwargs)])
@@ -399,11 +399,11 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
     ###############################################################################################################################################
     def append_ai_message(self, entity: Entity, ai_messages: List[AIMessage]) -> None:
 
-        assert len(ai_messages) > 0, "ai_messages should not be empty"
-        for ai_message in ai_messages:
-            assert isinstance(ai_message, AIMessage)
-            assert ai_message.content != "", "ai_message content should not be empty"
-            logger.debug(f"append_ai_message: {entity.name} => \n{ai_message.content}")
+        # assert len(ai_messages) > 0, "ai_messages should not be empty"
+        # for ai_message in ai_messages:
+        #     assert isinstance(ai_message, AIMessage)
+        #     assert ai_message.content != "", "ai_message content should not be empty"
+        #     logger.debug(f"append_ai_message: {entity.name} => \n{ai_message.content}")
 
         # 添加多条 AIMessage
         agent_context = self.get_agent_context(entity)

@@ -54,7 +54,7 @@ class Round(BaseModel):
     narrative: str = ""  # 叙事文本/演出描述
 
     @property
-    def has_ended(self) -> bool:
+    def is_completed(self) -> bool:
         return (
             len(self.action_order) > 0
             and self.combat_log != ""

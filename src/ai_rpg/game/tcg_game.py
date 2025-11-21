@@ -140,7 +140,7 @@ class TCGGame(RPGGame):
 
         if (
             len(self.current_combat_sequence.current_rounds) > 0
-            and not self.current_combat_sequence.latest_round.has_ended
+            and not self.current_combat_sequence.latest_round.is_completed
         ):
             # 有回合正在进行中，所以不能添加新的回合。
             logger.warning("有回合正在进行中，所以不能添加新的回合。")

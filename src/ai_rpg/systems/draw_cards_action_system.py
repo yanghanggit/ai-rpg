@@ -305,7 +305,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             return
 
         last_round = self._game.current_combat_sequence.latest_round
-        if last_round.has_ended:
+        if last_round.is_completed:
             logger.success(f"last_round.has_ended, so setup new round")
             self._game.start_new_round()
 
@@ -321,26 +321,29 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         # 根据当前回合数选择提示词生成方式
         if len(self._game.current_combat_sequence.current_rounds) == 1:
-            prompt = _generate_first_round_prompt(
-                self._card_creation_count,
-                last_round.action_order,
-            )
+            # prompt = _generate_first_round_prompt(
+            #     self._card_creation_count,
+            #     last_round.action_order,
+            # )
+            logger.debug("第一回合卡牌生成")
         else:
+
+            logger.debug("第二回合及以后卡牌生成")
 
             # 注意！因为是第二局及以后，所以状态效果需要结算
             self._process_status_effects_settlement(entities)
 
             # 处理角色规划请求
-            prompt = _generate_subsequent_round_prompt(
-                self._card_creation_count,
-                last_round.action_order,
-            )
+            # prompt = _generate_subsequent_round_prompt(
+            #     self._card_creation_count,
+            #     last_round.action_order,
+            # )
 
         # 先清除
         self._clear_hands()
 
         # 生成请求
-        request_handlers: List[ChatClient] = self._generate_requests(entities, prompt)
+        request_handlers: List[ChatClient] = self._create_chat_clients(entities)
 
         # 语言服务
         await ChatClient.gather_request_post(clients=request_handlers)
@@ -454,14 +457,33 @@ class DrawCardsActionSystem(ReactiveProcessor):
             logger.error(f"Exception: {e}")
 
     #######################################################################################################################################
-    def _generate_requests(
-        self, actor_entities: List[Entity], prompt: str
-    ) -> List[ChatClient]:
+    def _create_chat_clients(self, actor_entities: List[Entity]) -> List[ChatClient]:
 
-        request_handlers: List[ChatClient] = []
+        # 获取当前战斗的最新回合
+        last_round = self._game.current_combat_sequence.latest_round
+        assert not last_round.is_completed, "当前没有进行中的战斗回合，不能生成卡牌。"
+
+        # 创建聊天客户端列表
+        chat_clients: List[ChatClient] = []
+
+        # 为每个实体创建聊天客户端
         for entity in actor_entities:
 
-            request_handlers.append(
+            # 根据当前回合数选择提示词生成方式
+            if len(self._game.current_combat_sequence.current_rounds) == 1:
+                prompt = _generate_first_round_prompt(
+                    self._card_creation_count,
+                    last_round.action_order,
+                )
+            else:
+                # 处理角色规划请求
+                prompt = _generate_subsequent_round_prompt(
+                    self._card_creation_count,
+                    last_round.action_order,
+                )
+
+            # 创建聊天客户端
+            chat_clients.append(
                 ChatClient(
                     name=entity.name,
                     prompt=prompt,
@@ -469,7 +491,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 )
             )
 
-        return request_handlers
+        # 返回聊天客户端列表
+        return chat_clients
 
     #######################################################################################################################################
     def _update_combat_health(self, entity: Entity, update_hp: Optional[float]) -> None:

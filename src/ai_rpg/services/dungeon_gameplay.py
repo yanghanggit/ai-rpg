@@ -132,7 +132,7 @@ def _combat_actors_random_play_cards_action(tcg_game: TCGGame) -> bool:
         logger.error("没有进行中的回合，不能添加行动！")
         return False
 
-    if tcg_game.current_combat_sequence.latest_round.has_ended:
+    if tcg_game.current_combat_sequence.latest_round.is_completed:
         logger.error("回合已经完成，不能添加行动！")
         return False
 

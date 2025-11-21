@@ -21,27 +21,14 @@ from ..models import (
     CombatStatsComponent,
     InventoryComponent,
     ItemType,
+    Skill,
 )
 from ..utils import extract_json_from_code_block
 
 
 #######################################################################################################################################
-@final
-class DrawCardsResponse(BaseModel):
-    update_hp: Optional[float] = None
-    cards: List[Card] = []
-    status_effects: List[StatusEffect] = []
-
-
-#######################################################################################################################################
-@final
-class Skill(BaseModel):
-    name: str  # 技能名称
-    description: str  # 技能描述
-
-
 # 做一个测试！
-test_skills_pool: Final[List[Skill]] = [
+TEST_SKILLS_POOL: Final[List[Skill]] = [
     # 原有技能...
     Skill(
         name="时间窃贼",
@@ -127,10 +114,19 @@ test_skills_pool: Final[List[Skill]] = [
 
 
 #######################################################################################################################################
+@final
+class DrawCardsResponse(BaseModel):
+    update_hp: Optional[float] = None
+    cards: List[Card] = []
+    status_effects: List[StatusEffect] = []
+
+
+#######################################################################################################################################
 def _generate_first_round_prompt(
     actor_name: str,
     card_creation_count: int,
-    round_turns: List[str],
+    action_order: List[str],
+    selected_skills: List[Skill],
 ) -> str:
     """
     生成战斗第一回合的卡牌抽取提示词。
@@ -146,11 +142,7 @@ def _generate_first_round_prompt(
         str: 格式化的提示词，包含行动顺序、生成规则和JSON输出格式
     """
     assert card_creation_count > 0, "card_creation_count must be greater than 0"
-    assert len(round_turns) > 0, "round_turns must not be empty"
-
-    # 从技能池随机抽取 card_creation_count * 2 个技能作为子池
-    skill_pool_size = min(card_creation_count * 2, len(test_skills_pool))
-    selected_skills = random.sample(test_skills_pool, skill_pool_size)
+    assert len(action_order) > 0, "round_turns must not be empty"
 
     # 格式化技能列表
     skills_text = "\n".join(
@@ -161,7 +153,7 @@ def _generate_first_round_prompt(
 
 ## 1. 场景内角色行动顺序(从左到右，先行动者可能影响战局与后续行动)
 
-{round_turns}
+{action_order}
 
 ## 2. 可用技能池(必须从中选择)
 
@@ -215,7 +207,8 @@ def _generate_first_round_prompt(
 def _generate_subsequent_round_prompt(
     actor_name: str,
     card_creation_count: int,
-    round_turns: List[str],
+    action_order: List[str],
+    selected_skills: List[Skill],
 ) -> str:
     """
     生成战斗第二回合及以后的卡牌抽取提示词。
@@ -232,11 +225,7 @@ def _generate_subsequent_round_prompt(
         str: 格式化的提示词，包含行动顺序、生成规则和JSON输出格式
     """
     assert card_creation_count > 0, "card_creation_count must be greater than 0"
-    assert len(round_turns) > 0, "round_turns must not be empty"
-
-    # 从技能池随机抽取 card_creation_count * 2 个技能作为子池
-    skill_pool_size = min(card_creation_count * 2, len(test_skills_pool))
-    selected_skills = random.sample(test_skills_pool, skill_pool_size)
+    assert len(action_order) > 0, "round_turns must not be empty"
 
     # 格式化技能列表
     skills_text = "\n".join(
@@ -247,7 +236,7 @@ def _generate_subsequent_round_prompt(
 
 ## 1. 场景内角色行动顺序(从左到右，先行动者可能影响战局与后续行动)
 
-{round_turns}
+{action_order}
 
 ## 2. 可用技能池(必须从中选择)
 
@@ -624,20 +613,26 @@ class DrawCardsActionSystem(ReactiveProcessor):
         # 为每个实体创建聊天客户端
         for entity in actor_entities:
 
+            # 从技能池随机抽取 card_creation_count * 3 个技能作为子池
+            skill_pool_size = min(self._card_creation_count * 2, len(TEST_SKILLS_POOL))
+            selected_skills = random.sample(TEST_SKILLS_POOL, skill_pool_size)
+
             # 根据当前回合数选择提示词生成方式
             if is_first_round:
                 # 处理战斗第一回合请求
                 prompt = _generate_first_round_prompt(
-                    entity.name,
-                    self._card_creation_count,
-                    last_round.action_order,
+                    actor_name=entity.name,
+                    card_creation_count=self._card_creation_count,
+                    action_order=last_round.action_order,
+                    selected_skills=selected_skills,
                 )
             else:
                 # 处理战斗后续回合请求
                 prompt = _generate_subsequent_round_prompt(
-                    entity.name,
-                    self._card_creation_count,
-                    last_round.action_order,
+                    actor_name=entity.name,
+                    card_creation_count=self._card_creation_count,
+                    action_order=last_round.action_order,
+                    selected_skills=selected_skills,
                 )
 
             # 创建聊天客户端

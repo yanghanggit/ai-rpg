@@ -7,7 +7,7 @@ try:
     from src.ai_rpg.game.tcg_game import TCGGame
     from src.ai_rpg.models.objects import Actor
     from src.ai_rpg.models.character_sheet import ActorCharacterSheet
-    from src.ai_rpg.models.objects import CharacterStats, Inventory
+    from src.ai_rpg.models.objects import CharacterStats
     from src.ai_rpg.models.world import World, Boot
     from src.ai_rpg.models.dungeon import Dungeon
     from src.ai_rpg.game.player_session import PlayerSession
@@ -65,5 +65,5 @@ def sample_actor() -> Any:
         system_message="test system message",
         kick_off_message="test kick off message",
         character_stats=rpg_profile,
-        inventory=Inventory(items=[]),
+        # inventory=Inventory(items=[]),
     )

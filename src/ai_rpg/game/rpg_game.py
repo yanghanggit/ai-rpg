@@ -283,7 +283,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                     ), f"未知的 ActorType: {actor_model.character_sheet.type}"
 
             # 必要组件：背包组件, 必须copy一份, 不要进行直接引用，而且在此处生成uuid
-            copy_items = copy.deepcopy(actor_model.inventory.items)
+            copy_items = copy.deepcopy(actor_model.items)
             for item in copy_items:
                 assert item.uuid == "", "item.uuid should be empty"
                 item.uuid = str(uuid.uuid4())

@@ -1,4 +1,4 @@
-from typing import Final, List
+from typing import Final, List, Optional
 import random
 from ..models import (
     Boot,
@@ -353,11 +353,11 @@ def create_demo_sd_game_boot(
 
     # 创建角色并分配给玩家编号
     actors = []
-    witch = None
+    witch: Optional[Actor] = None
     number_assignments = []  # 用于记录所有分配信息
 
     for i, (create_func, kick_off_extra) in enumerate(role_configs, start=1):
-        actor = create_func(f"{i}号玩家")
+        actor: Actor = create_func(f"{i}号玩家")
 
         if kick_off_extra:
             actor.kick_off_message += kick_off_extra
@@ -389,7 +389,7 @@ def create_demo_sd_game_boot(
 
     # 给女巫添加道具
     if witch:
-        witch.inventory.items.extend(
+        witch.items.extend(
             [
                 Item(
                     name=WitchItemName.POISON,

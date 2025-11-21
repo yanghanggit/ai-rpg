@@ -40,7 +40,7 @@ def create_demo_dungeon5() -> Dungeon:
     actor_training_robot.kick_off_message = (
         f"""# 游戏启动！告诉我你是谁？请说出你的全名。回答简短(<100字)。"""
     )
-    actor_training_robot.inventory.items.append(
+    actor_training_robot.items.append(
         Item(
             name="传奇道具.永恒符文核心",
             uuid="",

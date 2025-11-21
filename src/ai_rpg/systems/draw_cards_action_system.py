@@ -321,53 +321,48 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         # 根据当前回合数选择提示词生成方式
         if len(self._game.current_combat_sequence.current_rounds) == 1:
-            # prompt = _generate_first_round_prompt(
-            #     self._card_creation_count,
-            #     last_round.action_order,
-            # )
             logger.debug("第一回合卡牌生成")
         else:
 
             logger.debug("第二回合及以后卡牌生成")
-
             # 注意！因为是第二局及以后，所以状态效果需要结算
             self._process_status_effects_settlement(entities)
-
-            # 处理角色规划请求
-            # prompt = _generate_subsequent_round_prompt(
-            #     self._card_creation_count,
-            #     last_round.action_order,
-            # )
 
         # 先清除
         self._clear_hands()
 
         # 生成请求
-        request_handlers: List[ChatClient] = self._create_chat_clients(entities)
+        request_handlers: List[ChatClient] = self._create_chat_clients(
+            entities, len(self._game.current_combat_sequence.current_rounds) == 1
+        )
 
         # 语言服务
         await ChatClient.gather_request_post(clients=request_handlers)
 
         # 处理角色规划请求
-        for request_handler in request_handlers:
+        for chat_client in request_handlers:
 
-            entity2 = self._game.get_entity_by_name(request_handler.name)
-            assert (
-                entity2 is not None
-            ), f"Entity {request_handler.name} not found in game."
+            entity = self._game.get_entity_by_name(chat_client.name)
+            assert entity is not None, f"Entity {chat_client.name} not found in game."
 
-            self._handle_response(
-                entity2,
-                request_handler,
+            self._process_draw_cards_response(
+                entity,
+                chat_client,
                 len(self._game.current_combat_sequence.current_rounds) > 1,
             )
 
-        # 最后的兜底，遍历所有参与的角色，如果没有手牌，说明_handle_response出现了错误，可能是LLM返回的内容无法正确解析。
+        # 最后的兜底，遍历所有参与的角色，如果没有手牌，说明_process_draw_cards_response出现了错误，可能是LLM返回的内容无法正确解析。
         # 此时，就需要给角色一个默认的手牌，避免游戏卡死。
         self._ensure_all_entities_have_hands(entities)
 
     #######################################################################################################################################
     def _clear_hands(self) -> None:
+        """
+        清除所有角色实体的手牌组件。
+
+        在新回合开始前调用，移除所有角色的HandComponent，
+        为生成新的手牌做准备。这是每回合卡牌抽取流程的第一步。
+        """
         actor_entities = self._game.get_group(Matcher(HandComponent)).entities.copy()
         for entity in actor_entities:
             logger.debug(f"clear hands: {entity.name}")
@@ -377,7 +372,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
     def _ensure_all_entities_have_hands(self, entities: List[Entity]) -> None:
         """
         确保所有实体都有手牌组件的兜底机制。
-        如果某个实体缺少HandComponent，说明_handle_response出现了错误，
+        如果某个实体缺少HandComponent，说明_process_draw_cards_response出现了错误，
         可能是LLM返回的内容无法正确解析。此时给角色一个默认的等待，避免游戏卡死。
 
         Args:
@@ -411,14 +406,26 @@ class DrawCardsActionSystem(ReactiveProcessor):
             )
 
     #######################################################################################################################################
-    def _handle_response(
-        self, entity2: Entity, request_handler: ChatClient, need_update_health: bool
+    def _process_draw_cards_response(
+        self, entity: Entity, chat_client: ChatClient, need_update_health: bool
     ) -> None:
+        """
+        处理LLM返回的抽卡响应并应用到实体。
+
+        解析ChatClient的JSON响应，提取卡牌、生命值更新和状态效果，
+        然后更新实体的HandComponent、CombatStatsComponent等组件。
+        如果解析失败，会记录错误日志但不会中断游戏流程。
+
+        Args:
+            entity: 目标角色实体
+            chat_client: 包含LLM响应内容的聊天客户端
+            need_update_health: 是否需要更新生命值（第一回合为False，后续回合为True）
+        """
 
         try:
 
             validated_response = DrawCardsResponse.model_validate_json(
-                extract_json_from_code_block(request_handler.response_content)
+                extract_json_from_code_block(chat_client.response_content)
             )
 
             # 生成的结果。
@@ -434,30 +441,45 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
             # 更新手牌。
             if len(cards) > 0:
-                entity2.replace(
+                entity.replace(
                     HandComponent,
-                    entity2.name,
+                    entity.name,
                     cards,
                 )
             else:
-                logger.warning(f"entity {entity2.name} has no cards from LLM response")
+                logger.warning(f"entity {entity.name} has no cards from LLM response")
 
             # 更新健康属性。
             if need_update_health:
                 self._update_combat_health(
-                    entity2,
+                    entity,
                     validated_response.update_hp,
                 )
 
             # 更新状态效果。
-            self._append_status_effects(entity2, validated_response.status_effects)
+            self._append_status_effects(entity, validated_response.status_effects)
 
         except Exception as e:
-            logger.error(f"{request_handler.response_content}")
+            logger.error(f"{chat_client.response_content}")
             logger.error(f"Exception: {e}")
 
     #######################################################################################################################################
-    def _create_chat_clients(self, actor_entities: List[Entity]) -> List[ChatClient]:
+    def _create_chat_clients(
+        self, actor_entities: List[Entity], is_first_round: bool
+    ) -> List[ChatClient]:
+        """
+        为每个角色实体创建聊天客户端以请求LLM生成卡牌。
+
+        根据是否为第一回合选择合适的提示词模板，
+        为每个实体构建包含上下文的ChatClient对象，准备发起LLM请求。
+
+        Args:
+            actor_entities: 需要生成卡牌的角色实体列表
+            is_first_round: 是否为战斗第一回合
+
+        Returns:
+            List[ChatClient]: 准备好的聊天客户端列表
+        """
 
         # 获取当前战斗的最新回合
         last_round = self._game.current_combat_sequence.latest_round
@@ -470,13 +492,14 @@ class DrawCardsActionSystem(ReactiveProcessor):
         for entity in actor_entities:
 
             # 根据当前回合数选择提示词生成方式
-            if len(self._game.current_combat_sequence.current_rounds) == 1:
+            if is_first_round:
+                # 处理战斗第一回合请求
                 prompt = _generate_first_round_prompt(
                     self._card_creation_count,
                     last_round.action_order,
                 )
             else:
-                # 处理角色规划请求
+                # 处理战斗后续回合请求
                 prompt = _generate_subsequent_round_prompt(
                     self._card_creation_count,
                     last_round.action_order,
@@ -496,6 +519,16 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     def _update_combat_health(self, entity: Entity, update_hp: Optional[float]) -> None:
+        """
+        更新实体的战斗生命值。
+
+        从LLM响应中提取的生命值更新到实体的CombatStatsComponent。
+        仅在后续回合调用，第一回合不需要更新生命值。
+
+        Args:
+            entity: 需要更新生命值的实体
+            update_hp: 新的生命值，如果为None则不更新
+        """
 
         combat_stats_comp = entity.get(CombatStatsComponent)
         assert combat_stats_comp is not None, "Entity must have CombatStatsComponent"
@@ -507,6 +540,16 @@ class DrawCardsActionSystem(ReactiveProcessor):
     def _append_status_effects(
         self, entity: Entity, status_effects: List[StatusEffect]
     ) -> None:
+        """
+        添加新的状态效果到实体并发送通知消息。
+
+        将LLM生成的状态效果添加到实体的CombatStatsComponent中，
+        并通过游戏消息系统通知角色其状态效果已更新。
+
+        Args:
+            entity: 目标实体
+            status_effects: 需要添加的状态效果列表
+        """
 
         # 效果更新
         combat_stats_comp = entity.get(CombatStatsComponent)
@@ -535,9 +578,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
             tuple: (剩余的状态效果列表, 被移除的状态效果列表)
         """
         # 确保实体有RPGCharacterProfileComponent
-        assert entity.has(CombatStatsComponent)
+        # assert entity.has(CombatStatsComponent)
         combat_stats_comp = entity.get(CombatStatsComponent)
-        assert combat_stats_comp is not None
+        assert combat_stats_comp is not None, "Entity must have CombatStatsComponent"
 
         remaining_effects = []
         removed_effects = []

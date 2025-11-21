@@ -22,6 +22,7 @@ from ..models import (
     InventoryComponent,
     ItemType,
     Skill,
+    SkillBookComponent,
 )
 from ..utils import extract_json_from_code_block
 
@@ -586,6 +587,25 @@ class DrawCardsActionSystem(ReactiveProcessor):
             logger.error(f"Exception: {e}")
 
     #######################################################################################################################################
+    def _get_available_skills(self, entity: Entity) -> List[Skill]:
+        """获取实体可用的技能列表。
+
+        Args:
+            entity (Entity): 目标实体
+
+        Returns:
+            List[Skill]: 实体可用的技能列表
+        """
+
+        skill_book_comp = entity.get(SkillBookComponent)
+        assert skill_book_comp is not None, "Entity must have SkillBookComponent"
+        if len(skill_book_comp.skills) == 0:
+            logger.warning(f"entity {entity.name} has no skills in SkillBookComponent")
+            return TEST_SKILLS_POOL
+
+        return skill_book_comp.skills.copy()
+
+    #######################################################################################################################################
     def _create_chat_clients(
         self, actor_entities: List[Entity], is_first_round: bool
     ) -> List[ChatClient]:
@@ -614,8 +634,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
         for entity in actor_entities:
 
             # 从技能池随机抽取 card_creation_count * 3 个技能作为子池
-            skill_pool_size = min(self._card_creation_count * 2, len(TEST_SKILLS_POOL))
-            selected_skills = random.sample(TEST_SKILLS_POOL, skill_pool_size)
+            skill_pool = self._get_available_skills(entity)
+            skill_pool_size = min(self._card_creation_count * 2, len(skill_pool))
+            selected_skills = random.sample(skill_pool, skill_pool_size)
 
             # 根据当前回合数选择提示词生成方式
             if is_first_round:
@@ -707,8 +728,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         Returns:
             tuple: (剩余的状态效果列表, 被移除的状态效果列表)
         """
-        # 确保实体有RPGCharacterProfileComponent
-        # assert entity.has(CombatStatsComponent)
+
         combat_stats_comp = entity.get(CombatStatsComponent)
         assert combat_stats_comp is not None, "Entity must have CombatStatsComponent"
 

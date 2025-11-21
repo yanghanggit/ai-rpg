@@ -41,6 +41,7 @@ from ..models import (
     WorldSystem,
     WorldComponent,
     InventoryComponent,
+    SkillBookComponent,
 )
 from .player_session import PlayerSession
 
@@ -304,6 +305,14 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 )
                 for item in inventory_component.items:
                     logger.info(f"物品: {item.model_dump_json(indent=2)}")
+
+            # 注意这个位置，我希望添加技能书的组件
+            copy_skills = copy.deepcopy(actor_model.skills)
+            actor_entity.add(
+                SkillBookComponent,
+                actor_model.name,
+                copy_skills,
+            )
 
             # 添加到返回值
             ret.append(actor_entity)

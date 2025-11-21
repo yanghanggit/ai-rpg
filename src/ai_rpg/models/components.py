@@ -1,7 +1,7 @@
 from typing import List, final
 from ..entitas.components import Component, MutableComponent
 from .dungeon import Card, StatusEffect
-from .objects import CharacterStats, Item
+from .objects import CharacterStats, Item, Skill
 from .registry import register_component_class
 
 
@@ -214,6 +214,34 @@ class InventoryComponent(MutableComponent):
                 f"- {item.name}: {item.description}, 数量: {item.count}"
                 for item in self.items
             ]
+        )
+
+
+############################################################################################################
+@final
+@register_component_class
+class SkillBookComponent(MutableComponent):
+    name: str
+    skills: List[Skill]  # 技能列表
+
+    # 查找技能
+    def find_skill(self, skill_name: str) -> Skill | None:
+        for skill in self.skills:
+            if skill.name == skill_name:
+                return skill
+        return None
+
+    # 获取多个技能
+    def get_skills(self, skill_names: List[str]) -> List[Skill]:
+        return [skill for skill in self.skills if skill.name in skill_names]
+
+    # 生成技能列表提示词
+    @property
+    def list_skills_prompt(self) -> str:
+        if len(self.skills) == 0:
+            return "- 无"
+        return "\n".join(
+            [f"- {skill.name}: {skill.description}" for skill in self.skills]
         )
 
 

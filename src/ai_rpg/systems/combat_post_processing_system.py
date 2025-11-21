@@ -103,6 +103,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
 
             # 压缩后的战斗经历，就是战斗过程做成摘要。
             summary = f"""# 提示！ 你经历了一场战斗！
+            
 战斗所在场景：{stage_entity2.name}
 
 ## 你记录下了这次战斗的经历

@@ -20,47 +20,6 @@ from ..game.config import LOGS_DIR
 
 
 ###############################################################################################################################################
-# def _generate_actor_prompt(kick_off_message: str) -> str:
-#     return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
-
-# ## 这是你的启动消息
-
-# {kick_off_message}
-
-# ## 输出要求
-
-# - 你的内心活动，单段紧凑自述（禁用换行/空行）"""
-
-
-###############################################################################################################################################
-# def _generate_stage_prompt(
-#     kick_off_message: str,
-# ) -> str:
-#     return f"""# 游戏启动! 你将开始你的扮演。你将以此为初始状态，开始你的冒险。
-
-# ## 这是你的启动消息
-
-# {kick_off_message}
-
-# ## 输出内容-场景描述
-
-# - 场景内的环境描述，不要包含任何角色信息。
-
-# ## 输出要求
-
-# - 输出场景描述，单段紧凑自述（禁用换行/空行）。
-# - 输出必须为第三人称视角。"""
-
-
-###############################################################################################################################################
-# def _generate_world_system_prompt() -> str:
-#     return f"""# 游戏启动! 告诉我你是谁？请说出你的全名。并说明你的职能与描述。"""
-
-
-###############################################################################################################################################
-
-
-###############################################################################################################################################
 @final
 class KickOffSystem(ExecuteProcessor):
 
@@ -91,7 +50,7 @@ class KickOffSystem(ExecuteProcessor):
             return
 
         # 处理请求
-        await self._process_request(entities_to_process)
+        await self._execute_kick_off_requests(entities_to_process)
 
     ###############################################################################################################################################
     def _load_cached_responses(self, entities: Set[Entity]) -> Set[Entity]:
@@ -109,9 +68,9 @@ class KickOffSystem(ExecuteProcessor):
         for entity in entities:
             # 获取系统消息和提示内容
             system_content = self._get_system_content(entity)
-            prompt = self._generate_prompt(entity)
+            kickoff_message_content = self._get_kick_off_message_content(entity)
             cache_path = self._get_kick_off_cache_path(
-                entity.name, system_content, prompt
+                entity.name, system_content, kickoff_message_content
             )
 
             if cache_path.exists():
@@ -125,7 +84,9 @@ class KickOffSystem(ExecuteProcessor):
                     ]
 
                     # 使用现有函数整合聊天上下文（prompt已在上面获取）
-                    self._integrate_cache_chat_context(entity, prompt, ai_messages)
+                    self._integrate_cache_chat_context(
+                        entity, kickoff_message_content, ai_messages
+                    )
 
                     # 标记为已完成
                     entity.replace(
@@ -209,9 +170,6 @@ class KickOffSystem(ExecuteProcessor):
 
         else:
             assert False, "不应该走到这里!!!!!"
-            # 常规添加
-            # self._game.append_human_message(entity, prompt, kickoff=entity.name)
-            # self._game.append_ai_message(entity, ai_messages)
 
     ###############################################################################################################################################
     def _cache_kick_off_response(
@@ -227,11 +185,11 @@ class KickOffSystem(ExecuteProcessor):
         try:
             # 获取系统消息和提示内容
             system_content = self._get_system_content(entity)
-            prompt_content = self._generate_prompt(entity)
+            kickoff_message_content = self._get_kick_off_message_content(entity)
 
             # 构建基于内容哈希的文件路径
             path = self._get_kick_off_cache_path(
-                entity.name, system_content, prompt_content
+                entity.name, system_content, kickoff_message_content
             )
 
             # 确保目录存在
@@ -292,50 +250,45 @@ class KickOffSystem(ExecuteProcessor):
         return LOGS_DIR / f"{self._game._name}_kick_off_cache" / f"{hash_name}.json"
 
     ###############################################################################################################################################
-    async def _process_request(self, entities: Set[Entity]) -> None:
+    async def _execute_kick_off_requests(self, entities: Set[Entity]) -> None:
 
         # 添加请求处理器
-        request_handlers: List[ChatClient] = []
+        chat_clients: List[ChatClient] = []
 
         for entity1 in entities:
             # 不同实体生成不同的提示
-            gen_prompt = self._generate_prompt(entity1)
-            assert gen_prompt != "", "Generated prompt should not be empty"
+            kickoff_message_content = self._get_kick_off_message_content(entity1)
+            assert kickoff_message_content != "", "Generated prompt should not be empty"
 
             agent_context = self._game.get_agent_context(entity1)
-            request_handlers.append(
+            chat_clients.append(
                 ChatClient(
                     name=entity1.name,
-                    prompt=gen_prompt,
+                    prompt=kickoff_message_content,
                     context=agent_context.context,
                 )
             )
 
         # 并发
-        await ChatClient.gather_request_post(clients=request_handlers)
+        await ChatClient.gather_request_post(clients=chat_clients)
 
         # 添加上下文。
-        for request_handler in request_handlers:
+        for chat_client in chat_clients:
 
-            entity2 = self._game.get_entity_by_name(request_handler.name)
+            entity2 = self._game.get_entity_by_name(chat_client.name)
             assert entity2 is not None
 
-            # 使用封装的函数整合聊天上下文
-            # self._integrate_chat_context(
-            #     entity2, request_handler.prompt, request_handler.response_ai_messages
-            # )
-
             self._game.append_human_message(
-                entity2, request_handler.prompt, kickoff=entity2.name
+                entity2, chat_client.prompt, kickoff=entity2.name
             )
-            self._game.append_ai_message(entity2, request_handler.response_ai_messages)
+            self._game.append_ai_message(entity2, chat_client.response_ai_messages)
 
             # 缓存启动响应
-            self._cache_kick_off_response(entity2, request_handler.response_ai_messages)
+            self._cache_kick_off_response(entity2, chat_client.response_ai_messages)
 
             # 必须执行
             entity2.replace(
-                KickOffDoneComponent, entity2.name, request_handler.response_content
+                KickOffDoneComponent, entity2.name, chat_client.response_content
             )
 
             # 若是场景，用response替换narrate
@@ -343,7 +296,7 @@ class KickOffSystem(ExecuteProcessor):
                 entity2.replace(
                     EnvironmentComponent,
                     entity2.name,
-                    request_handler.response_content,
+                    chat_client.response_content,
                 )
             elif entity2.has(ActorComponent):
                 pass
@@ -392,7 +345,7 @@ class KickOffSystem(ExecuteProcessor):
         return valid_entities
 
     ###############################################################################################################################################
-    def _generate_prompt(self, entity: Entity) -> str:
+    def _get_kick_off_message_content(self, entity: Entity) -> str:
 
         kick_off_message_comp = entity.get(KickOffMessageComponent)
         assert kick_off_message_comp is not None
@@ -400,27 +353,5 @@ class KickOffSystem(ExecuteProcessor):
             kick_off_message_comp.content != ""
         ), "KickOff message content should not be empty"
         return kick_off_message_comp.content
-
-        # 不同实体生成不同的提示
-        # if entity.has(ActorComponent):
-        #     # 角色的
-        #     return kick_off_message_comp.content
-        # # _generate_actor_prompt(kick_off_message_comp.content)
-        # elif entity.has(StageComponent):
-        #     # 舞台的
-        #     return kick_off_message_comp.content
-
-        # # _generate_stage_prompt(
-        # #         kick_off_message_comp.content,
-        # #     )
-        # elif entity.has(WorldComponent):
-        #     # 世界系统的
-        #     return kick_off_message_comp.content
-
-        # # (
-        # #         f"""# 游戏启动! 告诉我你是谁？请说出你的全名。并说明你的职能与描述。"""
-        # #     )
-
-        # return ""
 
     ###############################################################################################################################################

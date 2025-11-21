@@ -164,7 +164,7 @@ class HomeActorSystem(ReactiveProcessor):
                 self._game.notify_entities(
                     set({entity2}),
                     MindEvent(
-                        message=f"{entity2.name} : {response.mind_voice_actions}",
+                        message=f"# 通知！{entity2.name} 内心活动: {response.mind_voice_actions}",
                         actor=entity2.name,
                         content=response.mind_voice_actions,
                     ),

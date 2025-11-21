@@ -42,6 +42,7 @@ from ..models import (
     WorldComponent,
     InventoryComponent,
     SkillBookComponent,
+    TransStageEvent,
 )
 from .player_session import PlayerSession
 
@@ -386,24 +387,26 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         )
 
     ###############################################################################################################################################
-    def append_system_message(self, entity: Entity, chat: str) -> None:
-        logger.info(f"append_system_message: {entity.name} => \n{chat}")
+    def append_system_message(self, entity: Entity, message_content: str) -> None:
+        logger.info(f"append_system_message: {entity.name} => \n{message_content}")
         agent_context = self.get_agent_context(entity)
         assert (
             len(agent_context.context) == 0
         ), "system message should be the first message"
-        agent_context.context.append(SystemMessage(content=chat))
+        agent_context.context.append(SystemMessage(content=message_content))
 
     ###############################################################################################################################################
-    def append_human_message(self, entity: Entity, chat: str, **kwargs: Any) -> None:
+    def append_human_message(
+        self, entity: Entity, message_content: str, **kwargs: Any
+    ) -> None:
 
-        # logger.debug(f"append_human_message: {entity.name} => \n{chat}")
+        # logger.debug(f"append_human_message: {entity.name} => \n{message_content}")
         # if len(kwargs) > 0:
         #     # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
         #     logger.debug(f"kwargs: {kwargs}")
 
         agent_context = self.get_agent_context(entity)
-        agent_context.context.extend([HumanMessage(content=chat, **kwargs)])
+        agent_context.context.extend([HumanMessage(content=message_content, **kwargs)])
 
     ###############################################################################################################################################
     def append_ai_message(self, entity: Entity, ai_messages: List[AIMessage]) -> None:
@@ -550,8 +553,11 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             # 通知角色自身的传送过程
             self.notify_entities(
                 entities={actor_entity},
-                agent_event=AgentEvent(
-                    message=f"# 发生事件！{actor_entity.name} 从 场景: {current_stage.name} 离开，然后进入了 场景: {stage_destination.name}",
+                agent_event=TransStageEvent(
+                    message=f"# 通知！{actor_entity.name} 从 场景: {current_stage.name} 离开，然后进入了 场景: {stage_destination.name}",
+                    actor=actor_entity.name,
+                    from_stage=current_stage.name,
+                    to_stage=stage_destination.name,
                 ),
             )
 

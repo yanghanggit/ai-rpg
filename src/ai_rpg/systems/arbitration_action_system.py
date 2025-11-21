@@ -43,7 +43,7 @@ class ArbitrationResponse(BaseModel):
 
 #######################################################################################################################################
 @final
-class PromptParameters(NamedTuple):
+class CombatActionInfo(NamedTuple):
     actor: str
     target: str
     card: Card
@@ -51,7 +51,9 @@ class PromptParameters(NamedTuple):
 
 
 #######################################################################################################################################
-def _generate_actor_card_details(prompt_params: List[PromptParameters]) -> List[str]:
+def _generate_actor_card_details(
+    prompt_params: List[CombatActionInfo],
+) -> List[str]:
     """生成每个角色的卡牌和状态详情"""
     details_prompt: List[str] = []
     for param in prompt_params:
@@ -72,19 +74,24 @@ def _generate_actor_card_details(prompt_params: List[PromptParameters]) -> List[
 #######################################################################################################################################
 def _generate_combat_result_broadcast(combat_log: str, narrative: str) -> str:
     """生成战斗结算广播消息"""
+
     return f"""# 通知！战斗回合结算
 
 ## 战斗演出
+
 {narrative}
 
 ## 数据日志
+
 {combat_log}
 
 **注意**: 请根据上述日志中的HP数值更新你的状态。"""
 
 
 #######################################################################################################################################
-def _generate_combat_arbitration_prompt(prompt_params: List[PromptParameters]) -> str:
+def _generate_combat_arbitration_prompt(
+    prompt_params: List[CombatActionInfo],
+) -> str:
 
     # 生成角色&卡牌详情
     details_prompt = _generate_actor_card_details(prompt_params)
@@ -180,7 +187,9 @@ class ArbitrationActionSystem(ReactiveProcessor):
             )
         ).entities
 
+        assert len(play_cards_actors) > 0, "没有检测到任何出牌动作的角色！"
         if len(play_cards_actors) == 0:
+            logger.warning("没有检测到任何出牌动作的角色！")
             return
 
         sort_actors: List[Entity] = []
@@ -196,21 +205,25 @@ class ArbitrationActionSystem(ReactiveProcessor):
         for sort_actor in sort_actors:
             logger.info(f"sort_actor: {sort_actor.name}")
 
-        await self._process_request(stage_entity, sort_actors)
+        await self._request_combat_arbitration(stage_entity, sort_actors)
 
     #######################################################################################################################################
-    def _generate_action_prompt_parameters(
+    def _collect_combat_action_info(
         self, react_entities: List[Entity]
-    ) -> List[PromptParameters]:
+    ) -> List[CombatActionInfo]:
+        """收集所有参战角色的战斗行动信息。
 
-        ret: List[PromptParameters] = []
+        从每个角色实体中提取出牌动作、目标、卡牌和战斗属性，封装为 CombatActionInfo 列表。
+        用于后续生成战斗仲裁提示词。
+        """
+        ret: List[CombatActionInfo] = []
         for entity in react_entities:
 
             play_cards_action = entity.get(PlayCardsAction)
             assert play_cards_action.card.name != "", "出牌动作缺少卡牌信息！"
 
             ret.append(
-                PromptParameters(
+                CombatActionInfo(
                     actor=entity.name,
                     target=play_cards_action.target,
                     card=play_cards_action.card,
@@ -221,42 +234,50 @@ class ArbitrationActionSystem(ReactiveProcessor):
         return ret
 
     #######################################################################################################################################
-    async def _process_request(
+    async def _request_combat_arbitration(
         self, stage_entity: Entity, actor_entities: List[Entity]
     ) -> None:
+        """向 AI 发起战斗仲裁请求并处理结果。
 
+        流程：收集角色战斗信息 → 生成仲裁提示词 → 调用 ChatClient 请求 AI 仲裁 → 应用仲裁结果。
+        使用场景实体的上下文进行推理，确保仲裁符合当前场景的叙事逻辑。
+        """
         # 生成推理参数。
-        params = self._generate_action_prompt_parameters(actor_entities)
+        params = self._collect_combat_action_info(actor_entities)
         assert len(params) > 0
 
         # 生成推理信息。
         message = _generate_combat_arbitration_prompt(params)
 
         # 用场景推理。
-        request_handler = ChatClient(
+        chat_client = ChatClient(
             name=stage_entity.name,
             prompt=message,
             context=self._game.get_agent_context(stage_entity).context,
         )
 
         # 用语言服务系统进行推理。
-        request_handler.request_post()
+        chat_client.request_post()
 
         # 处理返回结果。
-        self._handle_response(stage_entity, request_handler, actor_entities)
+        self._apply_arbitration_result(stage_entity, chat_client, actor_entities)
 
     #######################################################################################################################################
-    def _handle_response(
+    def _apply_arbitration_result(
         self,
         stage_entity: Entity,
-        request_handler: ChatClient,
+        chat_client: ChatClient,
         actor_entities: List[Entity],
     ) -> None:
+        """解析并应用 AI 仲裁结果到游戏状态。
 
+        从 ChatClient 响应中提取 combat_log 和 narrative，更新场景实体的 ArbitrationAction，
+        向所有参战角色广播战斗结果，并记录到当前战斗回合数据中。
+        """
         try:
 
             format_response = ArbitrationResponse.model_validate_json(
-                extract_json_from_code_block(request_handler.response_content)
+                extract_json_from_code_block(chat_client.response_content)
             )
 
             # 推理的场景记录下！

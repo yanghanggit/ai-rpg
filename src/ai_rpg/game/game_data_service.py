@@ -153,14 +153,25 @@ def debug_verbose_world_data(
 
 
 ###############################################################################################################################################
-def verbose_context(verbose_dir: Path, world: World) -> None:
+def verbose_context(
+    verbose_dir: Path, world: World, should_write_buffer_string: bool = True
+) -> None:
     """保存聊天历史到文件"""
     context_dir = verbose_dir / "context"
     context_dir.mkdir(parents=True, exist_ok=True)
 
-    for agent_name, agent_memory in world.agents_context.items():
+    for agent_name, agent_context in world.agents_context.items():
         context_path = context_dir / f"{agent_name}.json"
-        context_path.write_text(agent_memory.model_dump_json(), encoding="utf-8")
+        context_path.write_text(agent_context.model_dump_json(), encoding="utf-8")
+
+        if should_write_buffer_string:
+            from langchain_core.messages import get_buffer_string
+
+            buffer_str = get_buffer_string(
+                agent_context.context, ai_prefix=f"""AI({agent_name})"""
+            )
+            context_path2 = context_dir / f"{agent_name}_buffer.txt"
+            context_path2.write_text(buffer_str, encoding="utf-8")
 
 
 ###############################################################################################################################################

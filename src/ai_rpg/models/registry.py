@@ -42,6 +42,13 @@ ACTION_COMPONENTS_REGISTRY: Final[Dict[str, Type[Component]]] = {}
 # 注册动作类的装饰器，必须同时注册到 COMPONENTS_REGISTRY 中
 def register_action_class(cls: T_COMPONENT) -> T_COMPONENT:
 
+    assert issubclass(
+        cls, Component
+    ), f"{cls.__name__} is not a valid BaseModel/Component class."
+    assert (
+        cls.__name__ in COMPONENTS_REGISTRY
+    ), f"{cls.__name__} must be registered in COMPONENTS_REGISTRY before registering as an action."
+
     # 注册类到全局字典
     class_name = cls.__name__
     if class_name in ACTION_COMPONENTS_REGISTRY:

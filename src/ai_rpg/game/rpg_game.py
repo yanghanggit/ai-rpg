@@ -468,7 +468,6 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
 
         # 正常的添加记忆。
         for entity in entities:
-            # replace_message = replace_name_with_you(agent_event.message, entity.name)
             self.append_human_message(entity, agent_event.message)
 
         # 最后都要发给客户端。

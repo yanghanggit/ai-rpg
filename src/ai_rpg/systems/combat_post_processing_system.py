@@ -1,4 +1,12 @@
-from typing import List, final
+"""战斗后处理系统
+
+负责战斗结束后的清理和归档工作：
+- 生成战斗总结：通过AI为每个角色生成第一人称战斗记录
+- 压缩历史消息：将战斗期间的详细消息压缩成摘要，节省上下文空间
+- 归档记忆：将战斗经历存入角色记忆，并触发战斗完成事件
+"""
+
+from typing import Final, List, final
 from loguru import logger
 from overrides import override
 from ..chat_services.client import ChatClient
@@ -14,118 +22,136 @@ from ..models import (
 
 
 #######################################################################################################################################
+def _generate_combat_summary_prompt(actor_name: str, stage_name: str) -> str:
+    """生成战斗总结提示词"""
+    return f"""# 指令！{actor_name} 在 {stage_name} 经历了一场战斗，现在需要用第一人称记录这次战斗经历。
+
+请简要描述：
+- 战斗场景和对手特征
+- 战斗经过（开始、关键过程、结局）
+- 你的状态与感受
+- 同伴的表现（如有）
+
+要求：单段紧凑叙述，不使用数字序号和多余空行，控制在150字以内。"""
+
+
+#######################################################################################################################################
+def _generate_combat_complete_summary(
+    actor_name: str, stage_name: str, combat_experience: str
+) -> str:
+    """生成战斗完成总结"""
+    return f""" 提示！{actor_name} 在 {stage_name} 的战斗已结束
+
+{combat_experience}
+
+这段经历已记录。"""
+
+
+#######################################################################################################################################
 @final
 class CombatPostProcessingSystem(ExecuteProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
-        self._game: TCGGame = game_context
+        self._game: Final[TCGGame] = game_context
 
     #######################################################################################################################################
     @override
     async def execute(self) -> None:
+        """执行战斗后处理流程：检查战斗是否完成，生成总结并进入后续阶段"""
         if not self._game.current_combat_sequence.is_completed:
-            return  # 不是本阶段就直接返回
+            # 不是本阶段就直接返回, 如果过了，要么胜利，要么失败。
+            return
 
-        if (
+        assert (
             self._game.current_combat_sequence.current_result == CombatResult.HERO_WIN
             or self._game.current_combat_sequence.current_result
             == CombatResult.HERO_LOSE
-        ):
-            # 测试，总结战斗结果。
-            logger.warning(
-                "战斗结束，准备总结战斗结果！！，可以做一些压缩提示词的行为!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-            )
-            await self._process_combat_summary()
+        ), "战斗结果状态异常！"
 
-            # TODO, 进入战斗后准备的状态，离开当前状态。
-            self._game.current_combat_sequence.enter_post_combat_phase()
+        # 压缩总结战斗结果。
+        await self._generate_and_archive_combat_records()
 
-        else:
-            assert False, "不可能出现的情况！"
+        # 进入战斗后准备的状态，离开当前状态。
+        self._game.current_combat_sequence.enter_post_combat_phase()
 
     #######################################################################################################################################
-    # 总结！！！
-    async def _process_combat_summary(self) -> None:
+    def _create_combat_summary_clients(
+        self, combat_actors: List[Entity]
+    ) -> List[ChatClient]:
+        """为所有战斗角色创建战斗总结的聊天客户端"""
+        chat_clients: List[ChatClient] = []
+        for combat_actor in combat_actors:
+
+            combat_stage_entity = self._game.safe_get_stage_entity(combat_actor)
+            assert (
+                combat_stage_entity is not None
+            ), f"无法获取角色 {combat_actor.name} 所在的场景实体！"
+
+            # 生成请求处理器
+            chat_clients.append(
+                ChatClient(
+                    name=combat_actor.name,
+                    prompt=_generate_combat_summary_prompt(
+                        combat_actor.name, combat_stage_entity.name
+                    ),
+                    context=self._game.get_agent_context(combat_actor).context,
+                )
+            )
+
+        return chat_clients
+
+    #######################################################################################################################################
+    def _process_combat_summary_response(self, chat_client: ChatClient) -> None:
+        """处理单个战斗总结响应：压缩历史、生成摘要、通知实体"""
+        processed_actor_entity = self._game.get_entity_by_name(chat_client.name)
+        assert processed_actor_entity is not None
+
+        combat_stage_entity = self._game.safe_get_stage_entity(processed_actor_entity)
+        assert combat_stage_entity is not None
+
+        # 在这里做压缩！！先测试，可以不做。TODO。
+        self._compress_combat_message_history(processed_actor_entity)
+
+        # 压缩后的战斗经历，就是战斗过程做成摘要。
+        combat_summary = _generate_combat_complete_summary(
+            processed_actor_entity.name,
+            combat_stage_entity.name,
+            chat_client.response_content,
+        )
+
+        # 添加记忆，并给客户端。
+        self._game.notify_entities(
+            set({processed_actor_entity}),
+            CombatCompleteEvent(
+                message=combat_summary,
+                actor=processed_actor_entity.name,
+                summary=combat_summary,
+            ),
+        )
+
+    #######################################################################################################################################
+    async def _generate_and_archive_combat_records(self) -> None:
+        """生成并归档战斗记录：为所有参战角色生成AI总结，压缩消息历史，触发完成事件"""
         # 获取所有需要进行角色规划的角色
-        actor_entities = self._game.get_group(
+        combat_actors = self._game.get_group(
             Matcher(
                 all_of=[ActorComponent, AllyComponent, CombatStatsComponent],
             )
         ).entities
 
-        # 处理角色规划请求
-        request_handlers: List[ChatClient] = []
-        for entity1 in actor_entities:
-
-            stage_entity1 = self._game.safe_get_stage_entity(entity1)
-            assert stage_entity1 is not None
-
-            # 生成消息
-            message = f"""# 指令！{stage_entity1.name} 的战斗已经结束，你需要记录下这次战斗的经历。
-            
-## 输出内容:
-
-1. 战斗发生的场景。
-2. 你的对手是谁，他们的特点。
-3. 战斗的开始，过程以及如何结束的。
-4. 你的感受，你的状态。
-5. 你的同伴，他们的表现。
-
-## 输出格式规范:
-
-- 第一人称视角。
-- 要求单段紧凑自述（禁用换行/空行/数字）。
-- 尽量简短。"""
-
-            # 生成请求处理器
-            request_handlers.append(
-                ChatClient(
-                    name=entity1.name,
-                    prompt=message,
-                    context=self._game.get_agent_context(entity1).context,
-                )
-            )
+        # 创建聊天客户端
+        chat_clients = self._create_combat_summary_clients(list(combat_actors))
 
         # 语言服务
-        await ChatClient.gather_request_post(clients=request_handlers)
+        await ChatClient.gather_request_post(clients=chat_clients)
 
-        # 结束的处理。
-        for request_handler in request_handlers:
-
-            entity2 = self._game.get_entity_by_name(request_handler.name)
-            assert entity2 is not None
-
-            stage_entity2 = self._game.safe_get_stage_entity(entity2)
-            assert stage_entity2 is not None
-
-            # 在这里做压缩！！先测试，可以不做。TODO。
-            self._remove_combat_chat_messages(entity2)
-
-            # 压缩后的战斗经历，就是战斗过程做成摘要。
-            summary = f"""# 提示！ 你经历了一场战斗！
-            
-战斗所在场景：{stage_entity2.name}
-
-## 你记录下了这次战斗的经历
-
-{request_handler.response_content}"""
-
-            # 添加记忆，并给客户端。
-            self._game.notify_entities(
-                set({entity2}),
-                CombatCompleteEvent(
-                    message=summary,
-                    actor=entity2.name,
-                    summary=summary,
-                ),
-            )
+        # 处理所有响应
+        for chat_client in chat_clients:
+            self._process_combat_summary_response(chat_client)
 
     #######################################################################################################################################
-    # 压缩战斗历史。
-    def _remove_combat_chat_messages(self, entity: Entity) -> None:
-
-        assert entity.has(ActorComponent), f"实体: {entity.name} 不是角色！"
-
+    def _compress_combat_message_history(self, entity: Entity) -> None:
+        """压缩角色的战斗消息历史：找到战斗开始和结束标记，将期间的详细消息压缩成摘要"""
         # 获取当前的战斗实体。
         stage_entity = self._game.safe_get_stage_entity(entity)
         assert stage_entity is not None

@@ -130,6 +130,9 @@ def create_dungeon_combat_state_pipeline(
     from ..systems.status_effects_settlement_system import (
         StatusEffectsSettlementSystem,
     )
+    from ..systems.unique_item_notification_system import (
+        UniqueItemNotificationSystem,
+    )
 
     ##
     tcg_game = cast(TCGGame, game)
@@ -141,6 +144,9 @@ def create_dungeon_combat_state_pipeline(
 
     # 状态效果结算系统（必须在抽卡之前执行）
     processors.add(StatusEffectsSettlementSystem(tcg_game))
+
+    # 唯一道具通知系统（在状态效果结算之后、抽卡之前执行）
+    processors.add(UniqueItemNotificationSystem(tcg_game))
 
     # 抽卡。
     ######动作开始！！！！！################################################################################################

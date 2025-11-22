@@ -16,7 +16,6 @@ from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
     create_actor_warrior,
     create_demo_dungeon5,
-    create_demo_game_world_boot1,
     create_demo_game_world_boot2,
 )
 from ai_rpg.game.player_session import PlayerSession

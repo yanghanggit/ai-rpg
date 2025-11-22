@@ -154,7 +154,7 @@ class KickOffSystem(ExecuteProcessor):
         agent_context.context = message_context_list + agent_context.context
 
         # 打印调试信息
-        logger.debug(f"Integrate context for entity: {entity.name}")
+        logger.info(f"Integrate context for entity: {entity.name}")
         logger.debug(f"{prompt}")
         for ai_msg in ai_messages:
             logger.debug(f"{str(ai_msg.content)}")

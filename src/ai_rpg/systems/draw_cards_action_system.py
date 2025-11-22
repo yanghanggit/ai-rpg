@@ -19,8 +19,6 @@ from ..models import (
     Card,
     StatusEffect,
     CombatStatsComponent,
-    InventoryComponent,
-    ItemType,
     Skill,
     SkillBookComponent,
 )
@@ -317,71 +315,12 @@ def _format_status_effects_message(status_effects: List[StatusEffect]) -> str:
 
 
 #######################################################################################################################################
-def _test_and_notify_unique_items(game: TCGGame, entities: List[Entity]) -> None:
-    """
-    TODO, 后续会在其他系统做实现，放在这里仅测试。
-    这是一个测试函数,用于验证实体是否正确拥有唯一道具,并确保相关提示词的唯一性。
-    如果实体拥有唯一道具,则会在其对话中添加一条提示消息,说明其拥有该道具。
-    同时,确保不会重复添加相同的提示消息。
-    Args:
-        entities: 需要检查的实体列表
-    """
-
-    for entity in entities:
-
-        if not entity.has(InventoryComponent):
-            continue
-
-        inventory_comp = entity.get(InventoryComponent)
-        assert inventory_comp is not None, "Entity must have InventoryComponent"
-        if len(inventory_comp.items) == 0:
-            continue
-
-        for item in inventory_comp.items:
-            if item.type == ItemType.UNIQUE_ITEM:
-                logger.debug(
-                    f"entity {entity.name} has unique item {item.model_dump_json()}"
-                )
-
-                existing_human_messages = game.find_human_messages_by_attribute(
-                    actor_entity=entity,
-                    attribute_key="test_unique_item",
-                    attribute_value=item.name,
-                )
-
-                if len(existing_human_messages) > 0:
-                    game.delete_human_messages_by_attribute(
-                        actor_entity=entity,
-                        human_messages=existing_human_messages,
-                    )
-
-                duplicate_message_test = game.find_human_messages_by_attribute(
-                    actor_entity=entity,
-                    attribute_key="test_unique_item",
-                    attribute_value=item.name,
-                )
-                assert (
-                    len(duplicate_message_test) == 0
-                ), f"test_unique_item not deleted!"
-
-                game.append_human_message(
-                    entity,
-                    f"""# 提示！你拥有道具: {item.name}。\n{item.model_dump_json()}""",
-                    test_unique_item=item.name,
-                )
-            else:
-                logger.debug(
-                    f"entity {entity.name} has item {item.model_dump_json()}, 暂时不处理！"
-                )
-
-
-#######################################################################################################################################
 @final
 class DrawCardsActionSystem(ReactiveProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
-        self._game: TCGGame = game_context
+        self._game: Final[TCGGame] = game_context
         self._card_creation_count: Final[int] = 2
 
     ####################################################################################################################################
@@ -416,9 +355,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
         assert (
             len(self._game.current_combat_sequence.current_rounds) > 0
         ), "当前没有进行中的战斗，不能设置回合。"
-
-        # 测试道具的问题
-        _test_and_notify_unique_items(self._game, entities)
 
         # 根据当前回合数选择提示词生成方式
         if len(self._game.current_combat_sequence.current_rounds) == 1:

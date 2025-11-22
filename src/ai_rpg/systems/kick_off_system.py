@@ -147,12 +147,10 @@ class KickOffSystem(ExecuteProcessor):
                 agent_context.context[0]  # system message
             ]
 
-            # 添加human message
+            # 添加human message, 需要特殊标记：kickoff_message
             message_context_list.append(
-                HumanMessage(content=prompt, kickoff=entity.name)  # human message
+                HumanMessage(content=prompt, kickoff=entity.name)
             )
-
-            # 添加AI messages
             message_context_list.extend(ai_messages)  # cache response ai messages
 
             # 移除原有的system message
@@ -255,15 +253,19 @@ class KickOffSystem(ExecuteProcessor):
         # 添加请求处理器
         chat_clients: List[ChatClient] = []
 
-        for entity1 in entities:
+        for requesting_entity in entities:
+
             # 不同实体生成不同的提示
-            kickoff_message_content = self._get_kick_off_message_content(entity1)
+            kickoff_message_content = self._get_kick_off_message_content(
+                requesting_entity
+            )
             assert kickoff_message_content != "", "Generated prompt should not be empty"
 
-            agent_context = self._game.get_agent_context(entity1)
+            # 添加chat客户端
+            agent_context = self._game.get_agent_context(requesting_entity)
             chat_clients.append(
                 ChatClient(
-                    name=entity1.name,
+                    name=requesting_entity.name,
                     prompt=kickoff_message_content,
                     context=agent_context.context,
                 )
@@ -275,30 +277,37 @@ class KickOffSystem(ExecuteProcessor):
         # 添加上下文。
         for chat_client in chat_clients:
 
-            entity2 = self._game.get_entity_by_name(chat_client.name)
-            assert entity2 is not None
+            processed_entity = self._game.get_entity_by_name(chat_client.name)
+            assert processed_entity is not None
 
+            # 添加对话上下文
             self._game.append_human_message(
-                entity2, chat_client.prompt, kickoff=entity2.name
+                processed_entity, chat_client.prompt, kickoff=processed_entity.name
             )
-            self._game.append_ai_message(entity2, chat_client.response_ai_messages)
+            self._game.append_ai_message(
+                processed_entity, chat_client.response_ai_messages
+            )
 
             # 缓存启动响应
-            self._cache_kick_off_response(entity2, chat_client.response_ai_messages)
-
-            # 必须执行
-            entity2.replace(
-                KickOffDoneComponent, entity2.name, chat_client.response_content
+            self._cache_kick_off_response(
+                processed_entity, chat_client.response_ai_messages
             )
 
-            # 若是场景，用response替换narrate
-            if entity2.has(StageComponent):
-                entity2.replace(
+            # 必须执行
+            processed_entity.replace(
+                KickOffDoneComponent,
+                processed_entity.name,
+                chat_client.response_content,
+            )
+
+            # 若是场景，用response替换environment描述
+            if processed_entity.has(StageComponent):
+                processed_entity.replace(
                     EnvironmentComponent,
-                    entity2.name,
+                    processed_entity.name,
                     chat_client.response_content,
                 )
-            elif entity2.has(ActorComponent):
+            elif processed_entity.has(ActorComponent):
                 pass
 
     ###############################################################################################################################################
@@ -307,13 +316,14 @@ class KickOffSystem(ExecuteProcessor):
         筛选所有可以参与request处理的有效实体
         筛选条件：
         1. 包含 KickOffMessageComponent 且未包含 KickOffDoneComponent
-        2. KickOffMessageComponent 的内容不为空
-        3. 实体必须是 Actor、Stage 或 WorldSystem 类型之一
+        2. 必须是 Actor、Stage 或 WorldSystem 类型之一 (通过 Matcher.any_of 筛选)
+        3. KickOffMessageComponent 的内容不为空
         """
-        # 第一层筛选：基于组件存在性
+        # 通过 Matcher 筛选：组件存在性 + 实体类型
         candidate_entities = self._game.get_group(
             Matcher(
                 all_of=[KickOffMessageComponent],
+                any_of=[ActorComponent, StageComponent, WorldComponent],
                 none_of=[KickOffDoneComponent],
             )
         ).entities.copy()
@@ -321,22 +331,11 @@ class KickOffSystem(ExecuteProcessor):
         valid_entities: Set[Entity] = set()
 
         for entity in candidate_entities:
-            # 第二层筛选：检查消息内容
+            # 检查消息内容是否有效
             kick_off_message_comp = entity.get(KickOffMessageComponent)
             if kick_off_message_comp is None or kick_off_message_comp.content == "":
                 logger.warning(
                     f"KickOffSystem: {entity.name} kick off message is empty, skipping"
-                )
-                continue
-
-            # 第三层筛选：检查实体类型
-            if not (
-                entity.has(ActorComponent)
-                or entity.has(StageComponent)
-                or entity.has(WorldComponent)
-            ):
-                logger.warning(
-                    f"KickOffSystem: {entity.name} is not a valid entity type (Actor/Stage/WorldSystem), skipping"
                 )
                 continue
 

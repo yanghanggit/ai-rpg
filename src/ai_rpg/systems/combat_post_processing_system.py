@@ -143,7 +143,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
         # 获取最近的战斗消息。
         end_messages = self._game.find_human_messages_by_attribute(
             actor_entity=entity,
-            attribute_key="combat_result_tag",
+            attribute_key="combat_outcome",
             attribute_value=stage_entity.name,
         )
         assert (

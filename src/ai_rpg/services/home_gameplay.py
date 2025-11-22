@@ -13,7 +13,6 @@ from ..models import (
     Dungeon,
     DungeonComponent,
     KickOffMessageComponent,
-    EnemyComponent,
     Combat,
     TransStageAction,
     HomeComponent,
@@ -169,13 +168,9 @@ def _dungeon_advance(
     # 2. 生成并发送传送提示消息
     # 准备提示词
     if dungeon.current_stage_index == 0:
-        trans_message = (
-            f"""# 提示！你将要开始一次冒险，准备进入地下城: {stage_entity.name}"""
-        )
+        trans_message = f"""# 提示！准备进入地下城: {stage_entity.name}"""
     else:
-        trans_message = (
-            f"""# 提示！你准备继续你的冒险，准备进入下一个地下城: {stage_entity.name}"""
-        )
+        trans_message = f"""# 提示！准备进入下一个地下城: {stage_entity.name}"""
 
     for hero_entity in heros_entities:
         tcg_game.append_human_message(hero_entity, trans_message)  # 添加故事
@@ -186,10 +181,9 @@ def _dungeon_advance(
     # 4. 设置KickOff消息
     # 需要在这里补充设置地下城与怪物的kickoff信息。
     stage_kick_off_comp = stage_entity.get(KickOffMessageComponent)
-    assert stage_kick_off_comp is not None
-    # logger.debug(
-    #     f"当前 {stage_entity.name} 的kickoff信息: {stage_kick_off_comp.content}"
-    # )
+    assert (
+        stage_kick_off_comp is not None
+    ), f"{stage_entity.name} 没有KickOffMessageComponent组件！"
 
     # 获取场景内角色的外貌信息
     actors_appearances_mapping: Dict[str, str] = tcg_game.get_stage_actor_appearances(
@@ -214,19 +208,6 @@ def _dungeon_advance(
         stage_kick_off_comp.name,
         stage_kick_off_comp.content + "\n\n" + append_kickoff_message,
     )
-    # logger.debug(
-    #     f"更新设置{stage_entity.name} 的kickoff信息: {stage_entity.get(KickOffMessageComponent).content}"
-    # )
-
-    # 设置怪物的kickoff信息
-    actors = tcg_game.get_alive_actors_on_stage(stage_entity)
-    for actor in actors:
-        if actor.has(EnemyComponent):
-            monster_kick_off_comp = actor.get(KickOffMessageComponent)
-            assert monster_kick_off_comp is not None
-            logger.debug(
-                f"需要设置{actor.name} 的kickoff信息: {monster_kick_off_comp.content}"
-            )
 
     # 5. 初始化战斗状态
     dungeon.combat_sequence.start_combat(Combat(name=stage_entity.name))

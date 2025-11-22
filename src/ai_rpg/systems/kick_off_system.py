@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Set, final
+from typing import Final, List, Set, final
 import json
 import hashlib
 from loguru import logger
@@ -24,9 +24,9 @@ from ..game.config import LOGS_DIR
 class KickOffSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
-    def __init__(self, game_context: RPGGame, read_kick_off_cache: bool) -> None:
+    def __init__(self, game_context: RPGGame, enable_cache: bool) -> None:
         self._game: RPGGame = game_context
-        self._read_kick_off_cache: bool = read_kick_off_cache
+        self._enable_cache: Final[bool] = enable_cache
 
     ###############################################################################################################################################
     @override
@@ -38,7 +38,7 @@ class KickOffSystem(ExecuteProcessor):
             return
 
         # cache pre-process，如果在logs目录下有缓存文件，则直接加载, 并从valid_entities中移除
-        if self._read_kick_off_cache:
+        if self._enable_cache:
             entities_to_process = self._load_cached_responses(valid_entities)
         else:
             entities_to_process = valid_entities
@@ -84,7 +84,7 @@ class KickOffSystem(ExecuteProcessor):
                     ]
 
                     # 使用现有函数整合聊天上下文（prompt已在上面获取）
-                    self._integrate_cache_chat_context(
+                    self._prepend_kickoff_messages(
                         entity, kickoff_message_content, ai_messages
                     )
 
@@ -119,7 +119,7 @@ class KickOffSystem(ExecuteProcessor):
         return entities_to_process
 
     ###############################################################################################################################################
-    def _integrate_cache_chat_context(
+    def _prepend_kickoff_messages(
         self, entity: Entity, prompt: str, ai_messages: List[AIMessage]
     ) -> None:
         """
@@ -135,39 +135,29 @@ class KickOffSystem(ExecuteProcessor):
         2. 否则使用常规方式添加消息
         """
         agent_context = self._game.get_agent_context(entity)
-        assert len(agent_context.context) == 1, "仅有一个system message!"
+        assert len(agent_context.context) >= 1, "聊天上下文不能为空"
         assert agent_context.context[0].type == "system", "第一条必须是system message!"
 
-        if (
-            len(agent_context.context) == 1
-            and agent_context.context[0].type == "system"
-        ):
-            # 确保类型正确的消息列表
-            message_context_list: List[SystemMessage | HumanMessage | AIMessage] = [
-                agent_context.context[0]  # system message
-            ]
+        # 确保类型正确的消息列表
+        message_context_list: List[SystemMessage | HumanMessage | AIMessage] = [
+            agent_context.context[0]  # system message
+        ]
 
-            # 添加human message, 需要特殊标记：kickoff_message
-            message_context_list.append(
-                HumanMessage(content=prompt, kickoff=entity.name)
-            )
-            message_context_list.extend(ai_messages)  # cache response ai messages
+        # 添加human message, 需要特殊标记：kickoff_message
+        message_context_list.append(HumanMessage(content=prompt, kickoff=entity.name))
+        message_context_list.extend(ai_messages)
 
-            # 移除原有的system message
-            agent_context.context.pop(0)
+        # 移除原有的system message
+        agent_context.context.pop(0)
 
-            # 将新的上下文消息添加到聊天历史的开头
-            agent_context.context = message_context_list + agent_context.context
+        # 将新的上下文消息添加到聊天历史的开头
+        agent_context.context = message_context_list + agent_context.context
 
-            # 打印调试信息
-            logger.warning(f"!cache human message: {entity.name} => \n{prompt}")
-            for ai_msg in ai_messages:
-                logger.warning(
-                    f"!cache ai message: {entity.name} => \n{str(ai_msg.content)}"
-                )
-
-        else:
-            assert False, "不应该走到这里!!!!!"
+        # 打印调试信息
+        logger.debug(f"Integrate context for entity: {entity.name}")
+        logger.debug(f"{prompt}")
+        for ai_msg in ai_messages:
+            logger.debug(f"{str(ai_msg.content)}")
 
     ###############################################################################################################################################
     def _cache_kick_off_response(
@@ -280,12 +270,11 @@ class KickOffSystem(ExecuteProcessor):
             processed_entity = self._game.get_entity_by_name(chat_client.name)
             assert processed_entity is not None
 
-            # 添加对话上下文
-            self._game.append_human_message(
-                processed_entity, chat_client.prompt, kickoff=processed_entity.name
-            )
-            self._game.append_ai_message(
-                processed_entity, chat_client.response_ai_messages
+            # 整合聊天上下文
+            self._prepend_kickoff_messages(
+                processed_entity,
+                chat_client.prompt,
+                chat_client.response_ai_messages,
             )
 
             # 缓存启动响应

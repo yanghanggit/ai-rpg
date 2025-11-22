@@ -11,6 +11,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     HandComponent,
     PlayCardsAction,
+    ArbitrationAction,
 )
 from ..game.tcg_game import TCGGame
 
@@ -20,7 +21,7 @@ def _generate_play_card_notification(
     actor_name: str, card_name: str, target_name: str, card_json: str
 ) -> str:
     """生成出牌通知消息。"""
-    return f"""# 通知！{actor_name} 使用卡牌 {card_name}, 目标 {target_name}
+    return f"""# 通知！{actor_name} 使用卡牌 {card_name}, 目标: {target_name}
 
 {card_json}"""
 
@@ -59,6 +60,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
 
             play_cards_action = actor_entity.get(PlayCardsAction)
 
+            # 生成出牌通知消息
             message = _generate_play_card_notification(
                 actor_name=actor_entity.name,
                 card_name=play_cards_action.card.name,
@@ -66,4 +68,16 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 card_json=play_cards_action.card.model_dump_json(),
             )
 
+            # 添加出牌通知到角色对话上下文
             self._game.append_human_message(actor_entity, message)
+
+            # 添加仲裁动作标记
+            current_stage = self._game.safe_get_stage_entity(actor_entity)
+            assert current_stage is not None, "无法获取角色所在场景实体！"
+            if not current_stage.has(ArbitrationAction):
+                current_stage.replace(
+                    ArbitrationAction,
+                    current_stage.name,
+                    "",
+                    "",
+                )

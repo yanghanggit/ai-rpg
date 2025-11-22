@@ -47,7 +47,7 @@ class StageType(StrEnum):
 @final
 class CharacterStats(BaseModel):
     experience: int = 0
-    fixed_level: int = 1
+    initial_level: int = 1
     hp: int = 0
     # 基础属性
     base_max_hp: int = 50
@@ -64,9 +64,6 @@ class CharacterStats(BaseModel):
     dexterity_per_level: int = 1
     wisdom_per_level: int = 1
 
-    def add_experience(self, exp: int) -> None:
-        self.experience += exp
-
     @property
     def max_hp(self) -> int:
         return self.base_max_hp + (self.strength * 10)
@@ -77,7 +74,7 @@ class CharacterStats(BaseModel):
 
     @property
     def level(self) -> int:
-        return self.fixed_level + self.progression_level
+        return self.initial_level + self.progression_level
 
     @property
     def strength(self) -> int:
@@ -106,46 +103,6 @@ class CharacterStats(BaseModel):
     @property
     def magic_defense(self) -> int:
         return self.base_magic_defense + self.wisdom
-
-
-# 写一个方法，将RPGCharacterProfile的所有属性（包括@property的），生成一个str。
-# def generate_character_profile_string(
-#     rpg_character_profile: CharacterStats,
-# ) -> str:
-#     attributes = [
-#         "hp",
-#         "max_hp",
-#         "level",
-#         "experience",
-#         "strength",
-#         "dexterity",
-#         "wisdom",
-#         "physical_attack",
-#         "physical_defense",
-#         "magic_attack",
-#         "magic_defense",
-#         # "base_max_hp",
-#         # "base_strength",
-#         # "base_dexterity",
-#         # "base_wisdom",
-#         # "base_physical_attack",
-#         # "base_physical_defense",
-#         # "base_magic_attack",
-#         # "base_magic_defense",
-#         # "strength_per_level",
-#         # "dexterity_per_level",
-#         # "wisdom_per_level",
-#         # "fixed_level",
-#         # "progression_level",
-#         # "strength_per_level",
-#         # "dexterity_per_level",
-#         # "wisdom_per_level",
-#     ]
-#     result = []
-#     for attr in attributes:
-#         value = getattr(rpg_character_profile, attr)
-#         result.append(f"{attr}: {value}")
-#     return "\n".join(result)
 
 
 ###############################################################################################################################################

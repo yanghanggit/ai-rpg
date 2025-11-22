@@ -33,7 +33,7 @@ class KickOffSystem(ExecuteProcessor):
     async def execute(self) -> None:
 
         # 处理请求
-        valid_entities = self._get_valid_kick_off_entities()
+        valid_entities = self._filter_valid_kick_off_entities()
         if len(valid_entities) == 0:
             return
 
@@ -302,9 +302,9 @@ class KickOffSystem(ExecuteProcessor):
                 pass
 
     ###############################################################################################################################################
-    def _get_valid_kick_off_entities(self) -> Set[Entity]:
+    def _filter_valid_kick_off_entities(self) -> Set[Entity]:
         """
-        获取所有可以参与request处理的有效实体
+        筛选所有可以参与request处理的有效实体
         筛选条件：
         1. 包含 KickOffMessageComponent 且未包含 KickOffDoneComponent
         2. KickOffMessageComponent 的内容不为空

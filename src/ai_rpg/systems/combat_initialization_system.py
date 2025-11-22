@@ -102,7 +102,7 @@ class CombatInitializationSystem(ExecuteProcessor):
             filtered_actor_appearances.pop(actor_entity.name, None)
 
             # 生成提示词
-            gen_prompt = _generate_combat_kickoff_prompt(
+            combat_kickoff_prompt = _generate_combat_kickoff_prompt(
                 stage_name=current_stage_entity.name,
                 stage_description=environment_comp.description,
                 filtered_actor_appearances=filtered_actor_appearances,
@@ -113,8 +113,8 @@ class CombatInitializationSystem(ExecuteProcessor):
             # 追加提示词到角色对话中
             self._game.append_human_message(
                 actor_entity,
-                gen_prompt,
-                combat_kickoff_tag=current_stage_entity.name,
+                combat_kickoff_prompt,
+                combat_kickoff=current_stage_entity.name,
             )
 
         # 设置战斗为进行中
@@ -123,6 +123,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         # 设置第一回合
         if not self._game.start_new_round():
             logger.error(f"not web_game.setup_round()")
+            assert False, "无法启动战斗的第一回合！"
 
 
 ###################################################################################################################################################################

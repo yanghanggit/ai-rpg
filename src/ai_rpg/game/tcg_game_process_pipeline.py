@@ -127,6 +127,9 @@ def create_dungeon_combat_state_pipeline(
     from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.save_system import SaveSystem
     from ..systems.arbitration_action_system import ArbitrationActionSystem
+    from ..systems.status_effects_settlement_system import (
+        StatusEffectsSettlementSystem,
+    )
 
     ##
     tcg_game = cast(TCGGame, game)
@@ -135,6 +138,9 @@ def create_dungeon_combat_state_pipeline(
     # 启动agent的提示词。启动阶段
     processors.add(KickOffSystem(tcg_game, True))
     processors.add(CombatInitializationSystem(tcg_game))
+
+    # 状态效果结算系统（必须在抽卡之前执行）
+    processors.add(StatusEffectsSettlementSystem(tcg_game))
 
     # 抽卡。
     ######动作开始！！！！！################################################################################################

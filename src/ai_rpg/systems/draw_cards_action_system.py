@@ -317,28 +317,6 @@ def _format_status_effects_message(status_effects: List[StatusEffect]) -> str:
 
 
 #######################################################################################################################################
-def _format_removed_status_effects_message(removed_effects: List[StatusEffect]) -> str:
-    """
-    格式化被移除的状态效果列表为通知消息。
-
-    Args:
-        removed_effects: 被移除的状态效果列表
-
-    Returns:
-        str: 格式化的状态效果移除通知消息
-    """
-    effects_text = (
-        "\n".join([f"- {e.name}: {e.description}" for e in removed_effects])
-        if len(removed_effects) > 0
-        else "- 无"
-    )
-
-    return f"""# 通知！如下 状态效果(status_effects) 被移除
-
-{effects_text}"""
-
-
-#######################################################################################################################################
 def _test_and_notify_unique_items(game: TCGGame, entities: List[Entity]) -> None:
     """
     TODO, 后续会在其他系统做实现，放在这里仅测试。
@@ -446,10 +424,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         if len(self._game.current_combat_sequence.current_rounds) == 1:
             logger.debug("第一回合卡牌生成")
         else:
-
             logger.debug("第二回合及以后卡牌生成")
-            # 注意！因为是第二局及以后，所以状态效果需要结算
-            self._process_status_effects_settlement(entities)
 
         # 先清除
         self._clear_hands()
@@ -474,8 +449,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 len(self._game.current_combat_sequence.current_rounds) > 1,
             )
 
-        # 最后的兜底，遍历所有参与的角色，如果没有手牌，说明_process_draw_cards_response出现了错误，可能是LLM返回的内容无法正确解析。
-        # 此时，就需要给角色一个默认的手牌，避免游戏卡死。
+        # 最后的兜底，遍历所有参与的角色，如果没有手牌，说明_process_draw_cards_response出现了错误，可能是LLM返回的内容无法正确解析。此时，就需要给角色一个默认的手牌，避免游戏卡死。
         self._ensure_all_entities_have_hands(entities)
 
     #######################################################################################################################################
@@ -713,73 +687,5 @@ class DrawCardsActionSystem(ReactiveProcessor):
         )
 
         self._game.append_human_message(entity, updated_status_effects_message)
-
-    ###############################################################################################################################################
-    def _settle_status_effects(
-        self, entity: Entity
-    ) -> tuple[List[StatusEffect], List[StatusEffect]]:
-        """
-        结算一次status_effect。
-        所有的status_effect全部round - 1，如果round == 0则删除。
-
-        Args:
-            entity: 需要结算状态效果的实体
-
-        Returns:
-            tuple: (剩余的状态效果列表, 被移除的状态效果列表)
-        """
-
-        combat_stats_comp = entity.get(CombatStatsComponent)
-        assert combat_stats_comp is not None, "Entity must have CombatStatsComponent"
-
-        remaining_effects = []
-        removed_effects = []
-
-        for status_effect in combat_stats_comp.status_effects:
-            # 效果回合数扣除
-            status_effect.duration -= 1
-            status_effect.duration = max(0, status_effect.duration)
-
-            # status_effect持续回合数大于0，继续保留，否则移除
-            if status_effect.duration > 0:
-                # 添加到剩余列表
-                remaining_effects.append(status_effect)
-            else:
-                # 添加到移除列表
-                removed_effects.append(status_effect)
-
-        # 更新角色的状态效果列表，只保留剩余的效果
-        combat_stats_comp.status_effects = remaining_effects
-
-        logger.debug(
-            f"settle_status_effects: {entity.name} => "
-            f"remaining: {len(remaining_effects)}, removed: {len(removed_effects)}"
-        )
-
-        # 外部返回
-        return remaining_effects, removed_effects
-
-    ###############################################################################################################################################
-    def _process_status_effects_settlement(self, entities: List[Entity]) -> None:
-        """
-        处理状态效果结算。
-        为每个实体结算状态效果，并发送更新消息给角色。
-
-        Args:
-            entities: 需要结算状态效果的实体列表
-        """
-        for entity in entities:
-            remaining_effects, removed_effects = self._settle_status_effects(entity)
-
-            logger.debug(
-                f"settle_status_effects: {entity.name} => "
-                f"remaining: {len(remaining_effects)}, removed: {len(removed_effects)}"
-            )
-
-            updated_status_effects_message = _format_removed_status_effects_message(
-                removed_effects
-            )
-
-            self._game.append_human_message(entity, updated_status_effects_message)
 
     #######################################################################################################################################

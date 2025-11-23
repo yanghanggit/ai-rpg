@@ -19,6 +19,12 @@ from ..models import (
     AllyComponent,
     CombatStatsComponent,
 )
+from langchain_core.messages import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage,
+    get_buffer_string,
+)
 
 
 #######################################################################################################################################
@@ -110,13 +116,19 @@ class CombatPostProcessingSystem(ExecuteProcessor):
         assert combat_stage_entity is not None
 
         # 在这里做压缩！！先测试，可以不做。TODO。
-        self._compress_combat_message_history(processed_actor_entity)
+        deleted_messages = self._compress_combat_message_history(processed_actor_entity)
+        assert len(deleted_messages) >= 0, "压缩战斗消息历史时出错！"
 
         # 压缩后的战斗经历，就是战斗过程做成摘要。
         combat_summary = _generate_combat_complete_summary(
             processed_actor_entity.name,
             combat_stage_entity.name,
             chat_client.response_content,
+        )
+
+        # 合成一个字符串缓冲区
+        buffer_string = get_buffer_string(
+            deleted_messages, ai_prefix=f"""AI({processed_actor_entity.name})"""
         )
 
         # 添加记忆，并给客户端。
@@ -127,6 +139,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
                 actor=processed_actor_entity.name,
                 summary=combat_summary,
             ),
+            removed_messages_content=buffer_string,
         )
 
     #######################################################################################################################################
@@ -150,7 +163,9 @@ class CombatPostProcessingSystem(ExecuteProcessor):
             self._process_combat_summary_response(chat_client)
 
     #######################################################################################################################################
-    def _compress_combat_message_history(self, entity: Entity) -> None:
+    def _compress_combat_message_history(
+        self, entity: Entity
+    ) -> List[SystemMessage | HumanMessage | AIMessage]:
         """压缩角色的战斗消息历史：找到战斗开始和结束标记，将期间的详细消息压缩成摘要"""
         # 获取当前的战斗实体。
         stage_entity = self._game.safe_get_stage_entity(entity)
@@ -181,9 +196,11 @@ class CombatPostProcessingSystem(ExecuteProcessor):
             logger.error(
                 f"战斗消息不完整！{entity.name} begin_message: {begin_messages} end_message: {end_messages}"
             )
-            return
+            return []
 
         # 压缩战斗消息。
-        self._game.compress_combat_context(entity, begin_messages[0], end_messages[0])
+        return self._game.remove_message_range(
+            entity, begin_messages[0], end_messages[0]
+        )
 
     #######################################################################################################################################

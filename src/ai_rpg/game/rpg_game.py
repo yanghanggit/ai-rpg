@@ -447,6 +447,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         entity: Entity,
         agent_event: AgentEvent,
         exclude_entities: Set[Entity] = set(),
+        **kwargs: Any,
     ) -> None:
 
         stage_entity = self.safe_get_stage_entity(entity)
@@ -460,18 +461,19 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         if len(exclude_entities) > 0:
             need_broadcast_entities = need_broadcast_entities - exclude_entities
 
-        self.notify_entities(need_broadcast_entities, agent_event)
+        self.notify_entities(need_broadcast_entities, agent_event, **kwargs)
 
     ###############################################################################################################################################
     def notify_entities(
         self,
         entities: Set[Entity],
         agent_event: AgentEvent,
+        **kwargs: Any,
     ) -> None:
 
         # 正常的添加记忆。
         for entity in entities:
-            self.append_human_message(entity, agent_event.message)
+            self.append_human_message(entity, agent_event.message, **kwargs)
 
         # 最后都要发给客户端。
         self.player_session.add_agent_event_message(agent_event=agent_event)
@@ -666,9 +668,20 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         return deleted_count
 
     #######################################################################################################################################
-    def compress_combat_context(
+    def remove_message_range(
         self, entity: Entity, begin_message: HumanMessage, end_message: HumanMessage
-    ) -> None:
+    ) -> List[SystemMessage | HumanMessage | AIMessage]:
+        """
+        从实体的上下文中删除指定范围的消息（从 begin_message 到 end_message，包含两端）
+
+        Args:
+            entity: 要操作的实体
+            begin_message: 范围起始消息
+            end_message: 范围结束消息
+
+        Returns:
+            被删除的消息列表
+        """
         assert (
             begin_message != end_message
         ), "begin_message and end_message should not be the same"
@@ -676,10 +689,16 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         agent_context = self.get_agent_context(entity)
         begin_message_index = agent_context.context.index(begin_message)
         end_message_index = agent_context.context.index(end_message) + 1
+
+        # 保存要删除的消息
+        deleted_messages = agent_context.context[begin_message_index:end_message_index]
+
         # 开始移除！！！！。
         del agent_context.context[begin_message_index:end_message_index]
-        logger.debug(f"compress_combat_context= {entity.name}")
+        logger.debug(f"remove_message_range= {entity.name}")
         logger.debug(f"begin_message: \n{begin_message.model_dump_json(indent=2)}")
         logger.debug(f"end_message: \n{end_message.model_dump_json(indent=2)}")
+
+        return deleted_messages
 
     #######################################################################################################################################

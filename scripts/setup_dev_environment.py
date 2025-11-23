@@ -41,7 +41,7 @@ from ai_rpg.pgsql import (
     postgresql_config,
 )
 from ai_rpg.pgsql.user_operations import has_user, save_user
-from ai_rpg.demo import create_demo_game_world_boot2
+from ai_rpg.demo import create_demo_game_world_boot1
 
 
 #######################################################################################################
@@ -86,7 +86,7 @@ def _save_demo_world_boot() -> None:
 
     try:
         # world_boot = create_demo_game_world_boot1(GLOBAL_TCG_GAME_NAME)
-        world_boot = create_demo_game_world_boot2(GLOBAL_TCG_GAME_NAME)
+        world_boot = create_demo_game_world_boot1(GLOBAL_TCG_GAME_NAME)
         write_boot_path = WORLD_BOOT_DIR / f"{world_boot.name}.json"
         write_boot_path.write_text(
             world_boot.model_dump_json(indent=2),

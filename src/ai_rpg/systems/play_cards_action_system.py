@@ -15,6 +15,7 @@ from ..models import (
     Card,
 )
 from ..game.tcg_game import TCGGame
+from langchain_core.messages import AIMessage
 
 
 #######################################################################################################################################
@@ -22,13 +23,9 @@ def _generate_play_card_notification(
     actor_name: str, card: Card, target_name: str
 ) -> str:
     """生成出牌通知消息。"""
-    message = f"""# 通知！你计划使用卡牌 {card.name}, 目标为: {target_name}
-
-## 卡牌信息
-
-- **名称**: {card.name}
-- **目标**: {card.target}
-- **描述**: {card.description}"""
+    message = f"""使用卡牌: {card.name}
+目标: {target_name}
+描述: {card.description}"""
 
     return message
 
@@ -67,14 +64,23 @@ class PlayCardsActionSystem(ReactiveProcessor):
 
             play_cards_action = actor_entity.get(PlayCardsAction)
 
-            # 添加出牌通知到角色对话上下文
+            # 添加出牌通知到角色对话上下文(模拟的)
             self._game.append_human_message(
+                actor_entity, f"""# 指令！使用卡牌！""", action_type="play_card_command"
+            )
+
+            self._game.append_ai_message(
                 actor_entity,
-                _generate_play_card_notification(
-                    actor_name=actor_entity.name,
-                    card=play_cards_action.card,
-                    target_name=play_cards_action.target,
-                ),
+                [
+                    AIMessage(
+                        content=_generate_play_card_notification(
+                            actor_name=actor_entity.name,
+                            card=play_cards_action.card,
+                            target_name=play_cards_action.target,
+                        ),
+                        action_type="play_card_execution",
+                    )
+                ],
             )
 
             # 添加仲裁动作标记

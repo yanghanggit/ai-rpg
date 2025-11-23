@@ -405,6 +405,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         #     # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
         #     logger.debug(f"kwargs: {kwargs}")
 
+        # 将 message_content 内的 entity.name，replace 成 你
+        # message_content = message_content.replace(entity.name, "**你**")
+
         agent_context = self.get_agent_context(entity)
         agent_context.context.extend([HumanMessage(content=message_content, **kwargs)])
 
@@ -523,7 +526,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             self.broadcast_to_stage(
                 entity=current_stage,
                 agent_event=AgentEvent(
-                    message=f"# 发生事件！{actor_entity.name} 离开了场景: {current_stage.name}",
+                    message=f"# 通知！{actor_entity.name} 离开了场景: {current_stage.name}",
                 ),
                 exclude_entities={actor_entity},
             )
@@ -553,7 +556,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             self.notify_entities(
                 entities={actor_entity},
                 agent_event=TransStageEvent(
-                    message=f"# 通知！{actor_entity.name} 从 场景: {current_stage.name} 离开，然后进入了 场景: {stage_destination.name}",
+                    message=f"# 通知！你从 场景: {current_stage.name} 离开，然后进入了 场景: {stage_destination.name}",
                     actor=actor_entity.name,
                     from_stage=current_stage.name,
                     to_stage=stage_destination.name,
@@ -576,7 +579,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             self.broadcast_to_stage(
                 entity=stage_destination,
                 agent_event=AgentEvent(
-                    message=f"# 发生事件！{actor_entity.name} 进入了 场景: {stage_destination.name}",
+                    message=f"# 通知！{actor_entity.name} 进入了 场景: {stage_destination.name}",
                 ),
                 exclude_entities={actor_entity},
             )

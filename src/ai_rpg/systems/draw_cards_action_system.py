@@ -21,9 +21,11 @@ from ..models import (
     CombatStatsComponent,
     Skill,
     SkillBookComponent,
+    DeathComponent,
 )
 from ..utils import extract_json_from_code_block
 from ..demo.test_skills_pool import TEST_SKILLS_POOL
+from langchain_core.messages import AIMessage
 
 
 #######################################################################################################################################
@@ -205,6 +207,23 @@ def _generate_subsequent_round_prompt(
 
 
 #######################################################################################################################################
+def _generate_compressd_round_prompt(
+    actor_name: str, card_creation_count: int, action_order: List[str]
+) -> str:
+    return f"""# 指令！回顾战斗历史，评估当前态势，生成你的参战信息，并以JSON格式返回。
+
+## 场景内角色行动顺序(从左到右，先行动者可能影响战局与后续行动)
+
+{action_order}
+
+## 参战信息内容
+
+- 生成 {card_creation_count} 张卡牌(cards)
+- 更新 当前生命值(update_hp)
+- 生成 当前回合新增状态效果(status_effects)"""
+
+
+#######################################################################################################################################
 def _format_status_effects_message(status_effects: List[StatusEffect]) -> str:
     """
     格式化状态效果列表为通知消息。
@@ -245,7 +264,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(DrawCardsAction)
+        return entity.has(DrawCardsAction) and not entity.has(DeathComponent)
 
     ######################################################################################################################################
     @override
@@ -280,15 +299,15 @@ class DrawCardsActionSystem(ReactiveProcessor):
         self._clear_hands()
 
         # 生成请求
-        request_handlers: List[ChatClient] = self._create_chat_clients(
+        chat_clients: List[ChatClient] = self._create_chat_clients(
             entities, len(self._game.current_combat_sequence.current_rounds) == 1
         )
 
         # 语言服务
-        await ChatClient.gather_request_post(clients=request_handlers)
+        await ChatClient.gather_request_post(clients=chat_clients)
 
         # 处理角色规划请求
-        for chat_client in request_handlers:
+        for chat_client in chat_clients:
 
             entity = self._game.get_entity_by_name(chat_client.name)
             assert entity is not None, f"Entity {chat_client.name} not found in game."
@@ -330,19 +349,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
             if entity.has(HandComponent):
                 continue
 
-            combat_stats_comp = entity.get(CombatStatsComponent)
-            assert combat_stats_comp is not None
-            if combat_stats_comp.stats.hp <= 0:
-
-                # 如果角色已经死亡，就不需要添加等待。
-                logger.warning(
-                    f"entity {entity.name} is dead (hp <= 0), no need to add default card"
-                )
-                continue
-
             wait_card = Card(
                 name="等待",
-                description="什么都不做，等待下一回合。",
+                description="什么都不做",
                 target=entity.name,
             )
 
@@ -350,6 +359,18 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 HandComponent,
                 entity.name,
                 [wait_card],
+            )
+
+            # 模拟历史上下文！
+            self._game.append_human_message(
+                entity=entity,
+                message_content="# 指令！回顾战斗历史，评估当前态势，生成你的参战信息",
+            )
+
+            # 添加AI消息，包括响应内容。
+            self._game.append_ai_message(
+                entity,
+                [AIMessage(content="未能生成参战信息，默认执行等待动作。")],
             )
 
     #######################################################################################################################################
@@ -374,6 +395,25 @@ class DrawCardsActionSystem(ReactiveProcessor):
             validated_response = DrawCardsResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
             )
+
+            last_round = self._game.current_combat_sequence.latest_round
+            assert (
+                not last_round.is_completed
+            ), "当前没有进行中的战斗回合，不能生成卡牌。"
+
+            # 添加压缩上下文的提示词
+            self._game.append_human_message(
+                entity=entity,
+                message_content=_generate_compressd_round_prompt(
+                    actor_name=entity.name,
+                    card_creation_count=self._card_creation_count,
+                    action_order=last_round.action_order,
+                ),
+                compressed_prompt=chat_client.prompt,
+            )
+
+            # 添加AI消息，包括响应内容。
+            self._game.append_ai_message(entity, chat_client.response_ai_messages)
 
             # 生成的结果。
             cards: List[Card] = []

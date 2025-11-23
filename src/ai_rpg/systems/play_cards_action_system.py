@@ -5,25 +5,32 @@
 仅在战斗进行中(ongoing)阶段执行。
 """
 
-from typing import final
+from typing import Final, final
 from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     HandComponent,
     PlayCardsAction,
     ArbitrationAction,
+    Card,
 )
 from ..game.tcg_game import TCGGame
 
 
 #######################################################################################################################################
 def _generate_play_card_notification(
-    actor_name: str, card_name: str, target_name: str, card_json: str
+    actor_name: str, card: Card, target_name: str
 ) -> str:
     """生成出牌通知消息。"""
-    return f"""# 通知！{actor_name} 使用卡牌 {card_name}, 目标: {target_name}
+    message = f"""# 通知！你计划使用卡牌 {card.name}, 目标为: {target_name}
 
-{card_json}"""
+## 卡牌信息
+
+- **名称**: {card.name}
+- **目标**: {card.target}
+- **描述**: {card.description}"""
+
+    return message
 
 
 #######################################################################################################################################
@@ -32,7 +39,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
-        self._game: TCGGame = game_context
+        self._game: Final[TCGGame] = game_context
 
     ####################################################################################################################################
     @override
@@ -60,16 +67,15 @@ class PlayCardsActionSystem(ReactiveProcessor):
 
             play_cards_action = actor_entity.get(PlayCardsAction)
 
-            # 生成出牌通知消息
-            message = _generate_play_card_notification(
-                actor_name=actor_entity.name,
-                card_name=play_cards_action.card.name,
-                target_name=play_cards_action.target,
-                card_json=play_cards_action.card.model_dump_json(),
-            )
-
             # 添加出牌通知到角色对话上下文
-            self._game.append_human_message(actor_entity, message)
+            self._game.append_human_message(
+                actor_entity,
+                _generate_play_card_notification(
+                    actor_name=actor_entity.name,
+                    card=play_cards_action.card,
+                    target_name=play_cards_action.target,
+                ),
+            )
 
             # 添加仲裁动作标记
             current_stage = self._game.safe_get_stage_entity(actor_entity)

@@ -83,7 +83,7 @@ class VoteActionSystem(ReactiveProcessor):
         self._game.broadcast_to_stage(
             entity=target_entity,
             agent_event=AgentEvent(
-                message=f"# 发生事件！{target_entity.name} 被投票出局了！",
+                message=f"# 通知！{target_entity.name} 被投票出局了！",
             ),
         )
 

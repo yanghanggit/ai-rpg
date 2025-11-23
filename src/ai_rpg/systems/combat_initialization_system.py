@@ -13,6 +13,7 @@ from ..models import (
     CombatStatsComponent,
 )
 from ..utils import format_dict_as_markdown_list
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 
 ###################################################################################################################################################################
@@ -23,7 +24,7 @@ def _generate_combat_kickoff_prompt(
     attrs_prompt: str,
     status_effects_prompt: str,
 ) -> str:
-    return f"""# 通知！战斗触发！如下是当前场景的信息，请基于这些信息，准备好战斗！
+    return f"""# 通知！战斗触发！如下是当前场景的信息，请你基于这些信息，准备好战斗！
             
 ## 场景叙事
 
@@ -115,6 +116,12 @@ class CombatInitializationSystem(ExecuteProcessor):
                 actor_entity,
                 combat_kickoff_prompt,
                 combat_kickoff=current_stage_entity.name,
+            )
+
+            # TODO, 追加 AI 准备好消息, 模拟角色回应，准备战斗, 其实在这里可以模拟塞入战斗风格与策略等内容，从而影响后续战斗决策。
+            self._game.append_ai_message(
+                entity=actor_entity,
+                ai_messages=[AIMessage(content="我准备好了，等待战斗开始！")],
             )
 
         # 设置战斗为进行中

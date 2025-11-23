@@ -168,7 +168,9 @@ def verbose_context(
             from langchain_core.messages import get_buffer_string
 
             buffer_str = get_buffer_string(
-                agent_context.context, ai_prefix=f"""AI({agent_name})"""
+                agent_context.context,
+                human_prefix=f"""\nHuman""",
+                ai_prefix=f"""\nAI({agent_name})""",
             )
             context_path2 = context_dir / f"{agent_name}_buffer.txt"
             context_path2.write_text(buffer_str, encoding="utf-8")

@@ -58,7 +58,7 @@ def _all_heros_return_home(tcg_game: TCGGame) -> None:
         return
 
     return_home_stage = next(iter(home_stage_entities))
-    prompt = f"""# 提示！冒险结束，你将要返回: {return_home_stage.name}"""
+    prompt = f"""# 提示！冒险结束，将要返回: {return_home_stage.name}"""
     for hero_entity in heros_entities:
 
         # 添加故事。

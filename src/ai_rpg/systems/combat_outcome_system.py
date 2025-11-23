@@ -41,9 +41,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
             if combat_stats_comp.stats.hp <= 0:
 
                 logger.warning(f"{combat_stats_comp.name} is dead")
-                self._game.append_human_message(
-                    entity, f"""# 通知！{entity.name} 已被击败！"""
-                )
+                self._game.append_human_message(entity, f"""# 通知！你已被击败！""")
                 entity.replace(DeathComponent, combat_stats_comp.name)
 
     ########################################################################################################################################################################
@@ -138,13 +136,13 @@ class CombatOutcomeSystem(ExecuteProcessor):
             if result == CombatResult.HERO_WIN:
                 self._game.append_human_message(
                     entity,
-                    f"# 通知！{entity.name} 胜利了！",
+                    f"# 通知！你胜利了！",
                     combat_outcome=combat_stage_entity.name,
                 )
             elif result == CombatResult.HERO_LOSE:
                 self._game.append_human_message(
                     entity,
-                    f"# 通知！{entity.name} 失败了！",
+                    f"# 通知！你失败了！",
                     combat_outcome=combat_stage_entity.name,
                 )
 

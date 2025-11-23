@@ -24,7 +24,7 @@ from ..models import (
 #######################################################################################################################################
 def _generate_combat_summary_prompt(actor_name: str, stage_name: str) -> str:
     """生成战斗总结提示词"""
-    return f"""# 指令！{actor_name} 在 {stage_name} 经历了一场战斗，现在需要用第一人称记录这次战斗经历。
+    return f"""# 指令！你在 {stage_name} 经历了一场战斗，现在需要用第一人称记录这次战斗经历。
 
 请简要描述：
 - 战斗场景和对手特征
@@ -40,7 +40,7 @@ def _generate_combat_complete_summary(
     actor_name: str, stage_name: str, combat_experience: str
 ) -> str:
     """生成战斗完成总结"""
-    return f""" 提示！{actor_name} 在 {stage_name} 的战斗已结束
+    return f""" 提示！你在 {stage_name} 的战斗已结束
 
 {combat_experience}
 

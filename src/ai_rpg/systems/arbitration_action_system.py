@@ -60,6 +60,7 @@ def _generate_actor_card_details(
         assert param.card.name != ""
 
         detail = f"""【{param.actor}】
+等级:{param.combat_stats_component.stats.level}
 卡牌:{param.card.name} → {param.target}
 效果:{param.card.description}
 属性:{param.combat_stats_component.stats_prompt}

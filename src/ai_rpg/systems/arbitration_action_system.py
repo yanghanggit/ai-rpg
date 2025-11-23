@@ -52,11 +52,11 @@ class CombatActionInfo(NamedTuple):
 
 #######################################################################################################################################
 def _generate_actor_card_details(
-    prompt_params: List[CombatActionInfo],
+    combat_actions_details: List[CombatActionInfo],
 ) -> List[str]:
     """生成每个角色的卡牌和状态详情"""
     details_prompt: List[str] = []
-    for param in prompt_params:
+    for param in combat_actions_details:
         assert param.card.name != ""
 
         detail = f"""【{param.actor}】
@@ -91,11 +91,11 @@ def _generate_combat_result_broadcast(combat_log: str, narrative: str) -> str:
 
 #######################################################################################################################################
 def _generate_combat_arbitration_prompt(
-    prompt_params: List[CombatActionInfo],
+    combat_actions_details: List[CombatActionInfo],
 ) -> str:
 
     # 生成角色&卡牌详情
-    details_prompt = _generate_actor_card_details(prompt_params)
+    details_prompt = _generate_actor_card_details(combat_actions_details)
 
     return f"""# 指令！战斗回合仲裁
 
@@ -103,7 +103,7 @@ def _generate_combat_arbitration_prompt(
 
 ## 行动顺序（从左至右依次执行）
 
-{" → ".join([param.actor for param in prompt_params])}
+{" → ".join([param.actor for param in combat_actions_details])}
 
 ## 参战信息
 
@@ -244,11 +244,11 @@ class ArbitrationActionSystem(ReactiveProcessor):
         使用场景实体的上下文进行推理，确保仲裁符合当前场景的叙事逻辑。
         """
         # 生成推理参数。
-        params = self._collect_combat_action_info(actor_entities)
-        assert len(params) > 0
+        combat_actions_details = self._collect_combat_action_info(actor_entities)
+        assert len(combat_actions_details) > 0
 
         # 生成推理信息。
-        message = _generate_combat_arbitration_prompt(params)
+        message = _generate_combat_arbitration_prompt(combat_actions_details)
 
         # 用场景推理。
         chat_client = ChatClient(
@@ -261,7 +261,9 @@ class ArbitrationActionSystem(ReactiveProcessor):
         chat_client.request_post()
 
         # 处理返回结果。
-        self._apply_arbitration_result(stage_entity, chat_client, actor_entities)
+        self._apply_arbitration_result(
+            stage_entity, chat_client, actor_entities, combat_actions_details
+        )
 
     #######################################################################################################################################
     def _apply_arbitration_result(
@@ -269,6 +271,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         stage_entity: Entity,
         chat_client: ChatClient,
         actor_entities: List[Entity],
+        combat_actions_details: List[CombatActionInfo],
     ) -> None:
         """解析并应用 AI 仲裁结果到游戏状态。
 
@@ -281,6 +284,18 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 extract_json_from_code_block(chat_client.response_content)
             )
 
+            # 添加上下文
+            self._game.append_human_message(
+                entity=stage_entity,
+                message_content=chat_client.prompt,
+            )
+
+            # 添加AI回复
+            self._game.append_ai_message(
+                entity=stage_entity,
+                ai_messages=chat_client.response_ai_messages,
+            )
+
             # 推理的场景记录下！
             arbitration_action = stage_entity.get(ArbitrationAction)
             stage_entity.replace(
@@ -290,16 +305,15 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 format_response.narrative,
             )
 
-            message_content = _generate_combat_result_broadcast(
-                format_response.combat_log, format_response.narrative
-            )
-
             # 广播事件
             self._game.broadcast_to_stage(
                 entity=stage_entity,
                 agent_event=AgentEvent(
-                    message=message_content,
+                    message=_generate_combat_result_broadcast(
+                        format_response.combat_log, format_response.narrative
+                    ),
                 ),
+                exclude_entities={stage_entity},
             )
 
             # 记录数据！

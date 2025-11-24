@@ -16,6 +16,7 @@ from .dungeon_actions import (
     activate_actor_card_draws,
     activate_random_play_cards,
 )
+from ..game.game_server import GameServer
 
 ###################################################################################################################################################################
 dungeon_gameplay_api_router = APIRouter()
@@ -26,65 +27,70 @@ dungeon_gameplay_api_router = APIRouter()
 ###################################################################################################################################################################
 def _validate_dungeon_prerequisites(
     user_name: str,
-    game_server: GameServerInstance,
+    game_server: GameServer,
 ) -> TCGGame:
     """
-    验证地下城操作的前置条件
+    验证地下城操作的所有前置条件
+    
+    执行一系列验证以确保玩家可以进行地下城操作：
+    1. 验证玩家已登录（房间存在）
+    2. 验证游戏实例存在
+    3. 验证玩家当前在地下城状态
+    4. 验证存在可进行的战斗
 
     Args:
-        user_name: 用户名
+        user_name: 用户名，用于标识玩家
         game_server: 游戏服务器实例
 
     Returns:
-        WebTCGGame: 验证通过的游戏实例
+        TCGGame: 验证通过的游戏实例
 
     Raises:
-        HTTPException: 验证失败时抛出异常
+        HTTPException(404): 玩家未登录、游戏不存在或没有战斗
+        HTTPException(400): 玩家不在地下城状态
+        AssertionError: 服务器内部状态异常
     """
-    # 是否有房间？！！
-    # room_manager = game_server.room_manager
+    
+    # 1. 验证房间存在（玩家已登录）
     if not game_server.has_room(user_name):
-        logger.error(f"dungeon operation: {user_name} has no room, please login first.")
+        logger.error(f"地下城操作失败: 玩家 {user_name} 未登录")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="没有登录，请先登录",
         )
 
-    # 是否有游戏？！！
+    # 2. 验证游戏实例存在
     current_room = game_server.get_room(user_name)
-    assert current_room is not None
+    assert current_room is not None, f"_validate_dungeon_prerequisites: room is None for {user_name}"
+    
     if current_room._tcg_game is None:
-        logger.error(f"dungeon operation: {user_name} has no game, please login first.")
+        logger.error(f"地下城操作失败: 玩家 {user_name} 没有游戏实例")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="没有游戏，请先登录",
+            detail="游戏实例不存在，请重新登录",
         )
 
-    # 是否是WebTCGGame？！！
-    web_game = current_room._tcg_game
-    assert isinstance(web_game, TCGGame)
-    assert web_game is not None
+    # 3. 获取并验证游戏实例类型
+    tcg_game = current_room._tcg_game
+    assert isinstance(tcg_game, TCGGame), f"_validate_dungeon_prerequisites: invalid game type for {user_name}"
 
-    # 判断游戏状态，不是DUNGEON状态不可以推进。
-    # if web_game.current_game_state != TCGGameState.DUNGEON:
-    if not web_game.is_player_in_dungeon:
-        logger.error(
-            f"dungeon operation: {user_name} game state error !!!!! not in dungeon state."
-        )
+    # 4. 验证玩家在地下城状态
+    if not tcg_game.is_player_in_dungeon:
+        logger.error(f"地下城操作失败: 玩家 {user_name} 不在地下城状态")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="只能在地下城状态下使用",
         )
 
-    # 判断是否有战斗
-    if len(web_game.current_combat_sequence.combats) == 0:
-        logger.error(f"len(web_game.current_engagement.combats) == 0")
+    # 5. 验证存在可进行的战斗
+    if len(tcg_game.current_combat_sequence.combats) == 0:
+        logger.error(f"地下城操作失败: 玩家 {user_name} 没有可进行的战斗")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="没有战斗可以进行",
         )
 
-    return web_game
+    return tcg_game
 
 
 ###################################################################################################################################################################

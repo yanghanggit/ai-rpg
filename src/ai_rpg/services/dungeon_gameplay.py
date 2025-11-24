@@ -1,5 +1,3 @@
-import random
-from typing import Set
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
@@ -9,105 +7,18 @@ from ..models import (
     DungeonGamePlayResponse,
     DungeonTransHomeRequest,
     DungeonTransHomeResponse,
-    DrawCardsAction,
-    DeathComponent,
-    ActorComponent,
-    HandComponent,
-    PlayCardsAction,
 )
-from ..entitas import Matcher, Entity
 from .dungeon_stage_transition import (
     advance_to_next_stage,
     complete_dungeon_and_return_home,
 )
+from .dungeon_actions import (
+    activate_actor_card_draws,
+    activate_random_play_cards,
+)
 
 ###################################################################################################################################################################
 dungeon_gameplay_api_router = APIRouter()
-
-
-###############################################################################################################################################
-# TODO, 临时添加行动, 逻辑。
-def _combat_actors_draw_cards_action(tcg_game: TCGGame) -> None:
-
-    player_entity = tcg_game.get_player_entity()
-    assert player_entity is not None
-
-    actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
-    for entity in actor_entities:
-        entity.replace(
-            DrawCardsAction,
-            entity.name,
-        )
-
-
-###############################################################################################################################################
-
-
-###################################################################################################################################################################
-###################################################################################################################################################################
-###################################################################################################################################################################
-###################################################################################################################################################################
-###################################################################################################################################################################
-###################################################################################################################################################################
-# TODO, 临时添加行动, 逻辑。 activate_play_cards_action
-def _combat_actors_random_play_cards_action(tcg_game: TCGGame) -> bool:
-    """
-    激活打牌行动，为所有轮次中的角色选择行动并设置执行计划。
-
-    Returns:
-        bool: 是否成功激活打牌行动
-    """
-
-    # 1. 验证游戏状态
-    if len(tcg_game.current_combat_sequence.current_rounds) == 0:
-        logger.error("没有回合，不能添加行动！")
-        return False
-
-    if not tcg_game.current_combat_sequence.is_ongoing:
-        logger.error("没有进行中的回合，不能添加行动！")
-        return False
-
-    if tcg_game.current_combat_sequence.latest_round.is_completed:
-        logger.error("回合已经完成，不能添加行动！")
-        return False
-
-    # 2. 验证所有角色的手牌状态
-    actor_entities: Set[Entity] = tcg_game.get_group(
-        Matcher(all_of=[ActorComponent, HandComponent], none_of=[DeathComponent])
-    ).entities
-
-    if len(actor_entities) == 0:
-        logger.error("没有存活的并拥有手牌的角色，不能添加行动！")
-        return False
-
-    # 测试一下！
-    for actor_entity in actor_entities:
-
-        # 必须没有打牌行动
-        assert (
-            actor_entity.name
-            in tcg_game.current_combat_sequence.latest_round.action_order
-        ), f"{actor_entity.name} 不在本回合行动队列里"
-
-        # 必须没有打牌行动
-        assert not actor_entity.has(PlayCardsAction)
-        hand_comp = actor_entity.get(HandComponent)
-        assert len(hand_comp.cards) > 0, f"{actor_entity.name} 没有行动可用"
-
-        # 选择一张卡牌随机使用
-        selected_card = random.choice(hand_comp.cards)
-        logger.debug(f"为角色 {actor_entity.name} 随机选择卡牌: {selected_card.name}")
-        final_target = selected_card.target
-
-        # 创建打牌行动
-        actor_entity.replace(
-            PlayCardsAction,
-            actor_entity.name,
-            selected_card,
-            final_target,
-        )
-
-    return True
 
 
 ###################################################################################################################################################################
@@ -211,7 +122,7 @@ async def _handle_draw_cards(web_game: TCGGame) -> DungeonGamePlayResponse:
 
     # 推进一次游戏, 即可抽牌。
     # web_game.draw_cards_action()
-    _combat_actors_draw_cards_action(web_game)
+    activate_actor_card_draws(web_game)
     # web_game.player_session.session_messages.clear()
     await web_game.combat_pipeline.process()
 
@@ -237,7 +148,7 @@ async def _handle_play_cards(
 
     logger.debug(f"玩家输入 = {request_data.user_input.tag}, 准备行动......")
     # if web_game.play_cards_action():
-    if _combat_actors_random_play_cards_action(web_game):
+    if activate_random_play_cards(web_game):
         # 执行一次！！！！！
         # web_game.player_session.session_messages.clear()
         await web_game.combat_pipeline.process()

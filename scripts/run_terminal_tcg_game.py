@@ -38,9 +38,9 @@ from ai_rpg.models import (
 from ai_rpg.services.home_actions import (
     activate_speak_action,
 )
-from ai_rpg.services.dungeon_gameplay import (
-    _combat_actors_draw_cards_action,
-    _combat_actors_random_play_cards_action,
+from ai_rpg.services.dungeon_actions import (
+    activate_actor_card_draws,
+    activate_random_play_cards,
 )
 from ai_rpg.services.dungeon_stage_transition import (
     initialize_dungeon_first_entry,
@@ -485,7 +485,7 @@ async def _process_dungeon_state_input(terminal_game: TCGGame, usr_input: str) -
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
-        _combat_actors_draw_cards_action(terminal_game)
+        activate_actor_card_draws(terminal_game)
 
         await terminal_game.combat_pipeline.process()
 
@@ -502,7 +502,7 @@ async def _process_dungeon_state_input(terminal_game: TCGGame, usr_input: str) -
         )
 
         # 执行打牌行动（现在使用随机选行动）
-        if _combat_actors_random_play_cards_action(terminal_game):
+        if activate_random_play_cards(terminal_game):
             await terminal_game.combat_pipeline.process()
 
     elif usr_input == "/rth" or usr_input == "/return-to-home":

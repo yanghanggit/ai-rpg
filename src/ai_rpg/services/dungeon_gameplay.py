@@ -20,7 +20,7 @@ from ..models import (
     PlayCardsAction,
 )
 from ..entitas import Matcher, Entity
-from .home_gameplay import _dungeon_advance
+from .home_gameplay import enter_dungeon_stage
 
 ###################################################################################################################################################################
 dungeon_gameplay_api_router = APIRouter()
@@ -98,17 +98,36 @@ def _all_heros_return_home(tcg_game: TCGGame) -> None:
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+def advance_to_next_stage(tcg_game: TCGGame) -> bool:
+    """
+    推进到地下城的下一个关卡
 
+    该函数协调地下城关卡推进流程：先将地下城索引推进到下一关，
+    然后让所有盟友实体进入该关卡并初始化战斗环境。
 
-# TODO, 地下城下一关。
-def _all_heros_next_dungeon(tcg_game: TCGGame) -> None:
-    # 位置+1
-    if tcg_game.current_dungeon.advance_to_next_stage():
-        heros_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities
-        # tcg_game._dungeon_advance(tcg_game.current_dungeon, heros_entities)
-        _dungeon_advance(tcg_game, tcg_game.current_dungeon, heros_entities)
-    else:
-        logger.error("没有下一关了，不能前进了！")
+    Args:
+        tcg_game: TCG游戏实例
+
+    Returns:
+        bool: 是否成功推进到下一关卡
+            - True: 成功推进并进入下一关
+            - False: 推进失败（没有更多关卡）
+
+    Note:
+        - 用于战斗胜利后继续推进到下一关卡
+        - 调用者: _handle_advance_next_dungeon
+        - 调用链: advance_to_next_stage → enter_dungeon_stage
+    """
+    # 1. 推进地下城索引到下一关
+    if not tcg_game.current_dungeon.advance_to_next_stage():
+        logger.error("地下城前进失败，没有更多关卡")
+        return False
+
+    # 2. 获取所有盟友实体
+    ally_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities.copy()
+
+    # 3. 进入下一关卡
+    return enter_dungeon_stage(tcg_game, tcg_game.current_dungeon, ally_entities)
 
 
 ###################################################################################################################################################################
@@ -335,7 +354,7 @@ async def _handle_advance_next_dungeon(web_game: TCGGame) -> DungeonGamePlayResp
             )
         else:
             # web_game.next_dungeon()
-            _all_heros_next_dungeon(web_game)
+            advance_to_next_stage(web_game)
             return DungeonGamePlayResponse(
                 client_messages=[],
             )

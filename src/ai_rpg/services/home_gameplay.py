@@ -75,109 +75,127 @@ async def _validate_player_at_home(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 # TODO, 进入地下城！
-def _dungeon_advance(
-    tcg_game: TCGGame, dungeon: Dungeon, heros_entities: Set[Entity]
+def enter_dungeon_stage(
+    tcg_game: TCGGame, dungeon: Dungeon, ally_entities: Set[Entity]
 ) -> bool:
     """
-    地下城关卡推进的主协调函数
+    进入地下城关卡并初始化战斗环境
+
+    协调整个关卡进入流程：验证前置条件、生成叙事消息、执行场景传送、
+    设置战斗环境和启动战斗序列。
 
     Args:
+        tcg_game: TCG游戏实例
         dungeon: 地下城实例
-        heros_entities: 英雄实体集合
+        ally_entities: 参与进入的盟友实体集合
 
     Returns:
-        bool: 是否成功推进到下一关卡
+        bool: 是否成功进入关卡并完成初始化
+
+    Note:
+        - 用于首次进入(index=0)和后续关卡推进(index>0)
+        - 调用者: initialize_dungeon_first_entry, _all_heros_next_dungeon
     """
-    # 1. 验证前置条件
-    # 是否有可以进入的关卡？
-    upcoming_dungeon = dungeon.get_current_stage()
-    if upcoming_dungeon is None:
-        logger.error(
-            f"{tcg_game.current_dungeon.name} 没有下一个地下城！position = {tcg_game.current_dungeon.current_stage_index}"
-        )
+    # 验证盟友队伍非空
+    if len(ally_entities) == 0:
+        logger.error(f"没有英雄不能进入地下城!")
         return False
 
-    # 下一个关卡实体, 没有就是错误的。
-    stage_entity = tcg_game.get_stage_entity(upcoming_dungeon.name)
-    if stage_entity is None or not stage_entity.has(DungeonComponent):
-        logger.error(f"{upcoming_dungeon.name} 没有对应的stage实体！")
-        return False
+    # 1. 验证前置条件 - 获取当前关卡数据
+    next_dungeon_stage_model = dungeon.get_current_stage()
+    assert next_dungeon_stage_model is not None, f"{dungeon.name} 地下城关卡数据异常！"
 
-    # 集体准备传送
-    if len(heros_entities) == 0:
-        logger.error(f"没有英雄不能进入地下城!= {stage_entity.name}")
-        return False
+    # 2. 获取关卡实体
+    dungeon_stage_entity = tcg_game.get_stage_entity(next_dungeon_stage_model.name)
+    assert (
+        dungeon_stage_entity is not None
+    ), f"{next_dungeon_stage_model.name} 没有对应的stage实体！"
+    assert dungeon_stage_entity.has(
+        DungeonComponent
+    ), f"{next_dungeon_stage_model.name} 没有DungeonComponent组件！"
 
     logger.debug(
-        f"{tcg_game.current_dungeon.name} = [{tcg_game.current_dungeon.current_stage_index}]关为：{stage_entity.name}，可以进入！！！！"
+        f"{tcg_game.current_dungeon.name} = [{tcg_game.current_dungeon.current_stage_index}]关为：{dungeon_stage_entity.name}，可以进入"
     )
 
-    # 2. 生成并发送传送提示消息
-    # 准备提示词
+    # 3. 生成并发送传送提示消息
     if dungeon.current_stage_index == 0:
-        trans_message = f"""# 提示！准备进入地下城: {stage_entity.name}"""
+        trans_message = f"""# 提示！准备进入地下城: {dungeon_stage_entity.name}"""
     else:
-        trans_message = f"""# 提示！准备进入下一个地下城: {stage_entity.name}"""
+        trans_message = f"""# 提示！准备进入下一个地下城: {dungeon_stage_entity.name}"""
 
-    for hero_entity in heros_entities:
-        tcg_game.append_human_message(hero_entity, trans_message)  # 添加故事
+    for ally_entity in ally_entities:
+        tcg_game.append_human_message(ally_entity, trans_message)
 
-    # 3. 执行场景传送
-    tcg_game.stage_transition(heros_entities, stage_entity)
+    # 4. 执行场景传送
+    tcg_game.stage_transition(ally_entities, dungeon_stage_entity)
 
-    # 4. 设置KickOff消息
-    # 需要在这里补充设置地下城与怪物的kickoff信息。
-    stage_kick_off_comp = stage_entity.get(KickOffMessageComponent)
+    # 5. 设置KickOff消息并添加场景角色信息
+    stage_kickoff_comp = dungeon_stage_entity.get(KickOffMessageComponent)
     assert (
-        stage_kick_off_comp is not None
-    ), f"{stage_entity.name} 没有KickOffMessageComponent组件！"
+        stage_kickoff_comp is not None
+    ), f"{dungeon_stage_entity.name} 没有KickOffMessageComponent组件！"
 
     # 获取场景内角色的外貌信息
     actors_appearances_mapping: Dict[str, str] = tcg_game.get_stage_actor_appearances(
-        stage_entity
+        dungeon_stage_entity
     )
 
-    # 重新组织一下
+    # 组织角色外貌信息列表
     actors_appearances_info = []
     for actor_name, appearance in actors_appearances_mapping.items():
         actors_appearances_info.append(f"{actor_name}: {appearance}")
     if len(actors_appearances_info) == 0:
         actors_appearances_info.append("无")
 
-    # 生成追加的kickoff信息
-    append_kickoff_message = f"""**场景内角色**
+    # 追加场景角色信息到 KickOff 消息
+    enhanced_kickoff_content = f"""{stage_kickoff_comp.content}
     
+**场景内角色**  
+
 {"\n\n".join(actors_appearances_info)}"""
 
-    # 设置组件
-    stage_entity.replace(
+    dungeon_stage_entity.replace(
         KickOffMessageComponent,
-        stage_kick_off_comp.name,
-        stage_kick_off_comp.content + "\n\n" + append_kickoff_message,
+        stage_kickoff_comp.name,
+        enhanced_kickoff_content,
     )
 
-    # 5. 初始化战斗状态
-    dungeon.combat_sequence.start_combat(Combat(name=stage_entity.name))
+    # 6. 初始化战斗状态
+    dungeon.combat_sequence.start_combat(Combat(name=dungeon_stage_entity.name))
 
     return True
 
 
 #######################################################################################################################################
-# TODO!!! 进入地下城。
-def _all_heros_launch_dungeon(tcg_game: TCGGame) -> bool:
-    if tcg_game.current_dungeon.current_stage_index < 0:
-        tcg_game.current_dungeon.current_stage_index = 0  # 第一次设置，第一个关卡。
-        tcg_game.create_dungeon_entities(tcg_game.current_dungeon)
-        heros_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities
-        # return tcg_game._dungeon_advance(tcg_game.current_dungeon, heros_entities)
-        return _dungeon_advance(tcg_game, tcg_game.current_dungeon, heros_entities)
-    else:
-        # 第一次，必须是<0, 证明一次没来过。
-        logger.error(
-            f"launch_dungeon position = {tcg_game.current_dungeon.current_stage_index}"
-        )
+def initialize_dungeon_first_entry(tcg_game: TCGGame) -> bool:
+    """
+    初始化地下城首次进入，仅在首次进入时调用（current_stage_index < 0）
 
-    return False
+    Args:
+        tcg_game: TCG游戏实例
+
+    Returns:
+        bool: 是否成功初始化并进入第一个关卡
+
+    Note:
+        此函数仅处理首次进入场景，后续关卡推进使用 enter_dungeon_stage
+    """
+    # 验证是否为首次进入（索引必须为-1）
+    if tcg_game.current_dungeon.current_stage_index >= 0:
+        logger.error(
+            f"initialize_dungeon_first_entry: 索引异常 = {tcg_game.current_dungeon.current_stage_index}, "
+            f"期望值为 -1（首次进入标记）"
+        )
+        return False
+
+    # 初始化地下城状态
+    tcg_game.current_dungeon.current_stage_index = 0
+    tcg_game.create_dungeon_entities(tcg_game.current_dungeon)
+
+    # 获取所有盟友实体并推进到第一关
+    ally_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities.copy()
+    return enter_dungeon_stage(tcg_game, tcg_game.current_dungeon, ally_entities)
 
 
 ###################################################################################################################################################################
@@ -270,7 +288,7 @@ async def home_trans_dungeon(
 
         # 传送地下城执行。
         # if not web_game.launch_dungeon():
-        if not _all_heros_launch_dungeon(web_game):
+        if not initialize_dungeon_first_entry(web_game):
             logger.error("第一次地下城传送失败!!!!")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

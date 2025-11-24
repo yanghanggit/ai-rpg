@@ -37,17 +37,16 @@ from ai_rpg.models import (
 )
 from ai_rpg.services.home_gameplay import (
     # _activate_speak_action,
-    _all_heros_launch_dungeon,
+    initialize_dungeon_first_entry,
 )
 from ai_rpg.services.home_actions import (
     activate_speak_action,
-    activate_stage_transition,
 )
 from ai_rpg.services.dungeon_gameplay import (
     _combat_actors_draw_cards_action,
     _all_heros_return_home,
     _combat_actors_random_play_cards_action,
-    _all_heros_next_dungeon,
+    advance_to_next_stage,
 )
 
 import datetime
@@ -536,7 +535,7 @@ async def _process_dungeon_state_input(terminal_game: TCGGame, usr_input: str) -
                         f"玩家输入 = {usr_input}, 进入下一关 = {next_level.name}"
                     )
                     # terminal_game.next_dungeon()
-                    _all_heros_next_dungeon(terminal_game)
+                    advance_to_next_stage(terminal_game)
                     await terminal_game.combat_pipeline.process()
             elif (
                 terminal_game.current_combat_sequence.current_result
@@ -567,7 +566,7 @@ async def _process_home_state_input(terminal_game: TCGGame, usr_input: str) -> N
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备传送地下城")
-        if not _all_heros_launch_dungeon(terminal_game):
+        if not initialize_dungeon_first_entry(terminal_game):
             assert False, "传送地下城失败！"
 
         if len(terminal_game.current_combat_sequence.combats) == 0:

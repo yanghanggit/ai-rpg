@@ -40,12 +40,12 @@ from ai_rpg.services.home_actions import (
 )
 from ai_rpg.services.dungeon_gameplay import (
     _combat_actors_draw_cards_action,
-    _all_heros_return_home,
     _combat_actors_random_play_cards_action,
 )
 from ai_rpg.services.dungeon_stage_transition import (
     initialize_dungeon_first_entry,
     advance_to_next_stage,
+    complete_dungeon_and_return_home,
 )
 
 import datetime
@@ -515,8 +515,7 @@ async def _process_dungeon_state_input(terminal_game: TCGGame, usr_input: str) -
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备传送回家")
-        # terminal_game.return_home()
-        _all_heros_return_home(terminal_game)
+        complete_dungeon_and_return_home(terminal_game)
 
     elif usr_input == "/and" or usr_input == "/advance-next-dungeon":
 

@@ -20,7 +20,10 @@ from ..models import (
     PlayCardsAction,
 )
 from ..entitas import Matcher, Entity
-from .dungeon_stage_transition import advance_to_next_stage
+from .dungeon_stage_transition import (
+    advance_to_next_stage,
+    complete_dungeon_and_return_home,
+)
 
 ###################################################################################################################################################################
 dungeon_gameplay_api_router = APIRouter()
@@ -42,52 +45,6 @@ def _combat_actors_draw_cards_action(tcg_game: TCGGame) -> None:
 
 
 ###############################################################################################################################################
-# TODO!!! 临时测试准备传送！！！
-def _all_heros_return_home(tcg_game: TCGGame) -> None:
-
-    heros_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities
-    assert len(heros_entities) > 0
-    if len(heros_entities) == 0:
-        logger.error("没有找到英雄!")
-        return
-
-    home_stage_entities = tcg_game.get_group(Matcher(all_of=[HomeComponent])).entities
-    assert len(home_stage_entities) > 0
-    if len(home_stage_entities) == 0:
-        logger.error("没有找到家园!")
-        return
-
-    return_home_stage = next(iter(home_stage_entities))
-    prompt = f"""# 提示！冒险结束，将要返回: {return_home_stage.name}"""
-    for hero_entity in heros_entities:
-
-        # 添加故事。
-        tcg_game.append_human_message(hero_entity, prompt)
-
-    # 开始传送。
-    tcg_game.stage_transition(heros_entities, return_home_stage)
-
-    # 清空地下城的实体!
-    tcg_game.destroy_dungeon_entities(tcg_game.world.dungeon)
-
-    # 设置空的地下城
-    tcg_game._world.dungeon = Dungeon(name="")
-
-    # 清除掉所有的战斗状态
-    for hero_entity in heros_entities:
-
-        # 不要的组件。
-        if hero_entity.has(DeathComponent):
-            logger.debug(f"remove death component: {hero_entity.name}")
-            hero_entity.remove(DeathComponent)
-
-        # 生命全部恢复。
-        assert hero_entity.has(CombatStatsComponent)
-        combat_stats_comp = hero_entity.get(CombatStatsComponent)
-        combat_stats_comp.stats.hp = combat_stats_comp.stats.max_hp
-
-        # 清空状态效果
-        combat_stats_comp.status_effects.clear()
 
 
 ###################################################################################################################################################################
@@ -416,8 +373,7 @@ async def dungeon_trans_home(
             )
 
         # 回家
-        # web_game.return_home()
-        _all_heros_return_home(web_game)
+        complete_dungeon_and_return_home(web_game)
         return DungeonTransHomeResponse(
             message="回家了",
         )

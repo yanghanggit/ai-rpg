@@ -1,12 +1,13 @@
 """
 地下城关卡转换和推进模块
 
-该模块负责管理地下城关卡的进入、推进和转换流程，包括：
+该模块负责管理地下城的完整生命周期，包括进入、推进和退出流程：
 - 首次进入地下城（initialize_dungeon_first_entry）
 - 进入指定关卡（enter_dungeon_stage）
 - 推进到下一关卡（advance_to_next_stage）
+- 完成冒险并返回家园（complete_dungeon_and_return_home）
 
-这些函数协调了关卡索引管理、场景传送、战斗初始化等核心流程。
+这些函数协调了关卡索引管理、场景传送、战斗初始化、状态清理等核心流程。
 """
 
 from typing import Dict, Set
@@ -177,6 +178,69 @@ def advance_to_next_stage(tcg_game: TCGGame) -> bool:
 
     # 3. 进入下一关卡
     return enter_dungeon_stage(tcg_game, tcg_game.current_dungeon, ally_entities)
+
+
+###################################################################################################################################################################
+def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
+    """
+    完成地下城冒险并返回家园
+
+    该函数协调地下城结束流程：传送英雄回家、清理地下城数据、
+    恢复英雄战斗状态。用于地下城冒险结束后的收尾工作。
+
+    主要操作：
+    1. 验证并获取英雄和家园实体
+    2. 生成返回提示消息
+    3. 执行场景传送到家园
+    4. 清理地下城实体和数据
+    5. 恢复英雄状态（移除死亡、满血、清空效果）
+
+    Args:
+        tcg_game: TCG游戏实例
+
+    Note:
+        - 用于战斗结束后返回家园
+        - 调用者: dungeon_trans_home API
+        - 会完全重置地下城状态和英雄战斗状态
+    """
+    # 导入必要的模型
+    from ..models import HomeComponent, DeathComponent, CombatStatsComponent
+
+    # 1. 验证并获取盟友实体
+    ally_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities
+    assert len(ally_entities) > 0, "没有找到英雄实体"
+
+    # 2. 验证并获取家园场景实体
+    home_stage_entities = tcg_game.get_group(Matcher(all_of=[HomeComponent])).entities
+    assert len(home_stage_entities) > 0, "没有找到家园场景实体"
+    home_stage = next(iter(home_stage_entities))
+
+    # 3. 生成并发送返回提示消息
+    return_prompt = f"""# 提示！冒险结束，将要返回: {home_stage.name}"""
+    for ally_entity in ally_entities:
+        tcg_game.append_human_message(ally_entity, return_prompt)
+
+    # 4. 执行场景传送到家园
+    tcg_game.stage_transition(ally_entities, home_stage)
+
+    # 5. 清理地下城数据
+    tcg_game.destroy_dungeon_entities(tcg_game.world.dungeon)
+    tcg_game._world.dungeon = Dungeon(name="")
+
+    # 6. 恢复所有英雄的战斗状态
+    for ally_entity in ally_entities:
+        # 移除死亡组件
+        if ally_entity.has(DeathComponent):
+            logger.debug(f"移除死亡组件: {ally_entity.name}")
+            ally_entity.remove(DeathComponent)
+
+        # 恢复生命值至满血
+        assert ally_entity.has(CombatStatsComponent)
+        combat_stats = ally_entity.get(CombatStatsComponent)
+        combat_stats.stats.hp = combat_stats.stats.max_hp
+
+        # 清空所有状态效果
+        combat_stats.status_effects.clear()
 
 
 ###################################################################################################################################################################

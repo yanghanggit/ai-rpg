@@ -36,8 +36,12 @@ from ai_rpg.models import (
     TransStageAction,
 )
 from ai_rpg.services.home_gameplay import (
-    _player_add_speak_action,
+    # _activate_speak_action,
     _all_heros_launch_dungeon,
+)
+from ai_rpg.services.home_actions import (
+    activate_speak_action,
+    activate_stage_transition,
 )
 from ai_rpg.services.dungeon_gameplay import (
     _combat_actors_draw_cards_action,
@@ -585,7 +589,7 @@ async def _process_home_state_input(terminal_game: TCGGame, usr_input: str) -> N
         speak_command = _parse_speak_command_input(usr_input)
 
         # 处理输入
-        if _player_add_speak_action(
+        if activate_speak_action(
             tcg_game=terminal_game,
             target=speak_command["target"],
             content=speak_command["content"],

@@ -28,7 +28,6 @@ from loguru import logger
 from ..entitas import Entity
 from .game_server_depends import GameServerInstance
 from ..models import (
-    EntitySerialization,
     ActorDetailsResponse,
 )
 from ..game.rpg_game import RPGGame
@@ -148,8 +147,3 @@ async def get_actors_details(
     return ActorDetailsResponse(
         actor_entities_serialization=entities_serialization,
     )
-
-
-###################################################################################################################################################################
-###################################################################################################################################################################
-###################################################################################################################################################################

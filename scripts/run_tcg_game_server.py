@@ -22,8 +22,8 @@ from ai_rpg.services.home_gameplay import home_gameplay_api_router
 from ai_rpg.services.login import login_api_router
 from ai_rpg.services.start import start_api_router
 from ai_rpg.services.root import root_api_router
-from ai_rpg.services.actor_details import (
-    actor_details_api_router,
+from ai_rpg.services.entity_details import (
+    entity_details_api_router,
 )
 from ai_rpg.services.dungeon_state import dungeon_state_api_router
 from ai_rpg.services.stages_state import stages_state_api_router
@@ -96,7 +96,7 @@ app.add_middleware(
 # 公共的
 app.include_router(router=root_api_router)
 app.include_router(router=player_session_api_router)
-app.include_router(router=actor_details_api_router)
+app.include_router(router=entity_details_api_router)
 app.include_router(router=stages_state_api_router)
 
 # TCG特有的

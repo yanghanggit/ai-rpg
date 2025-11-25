@@ -8,7 +8,7 @@
 主要端点分类：
 - RPG 游戏相关：登录、登出、开始游戏、主城玩法、副本玩法等
 - 狼人杀游戏相关：游戏开始、游戏玩法、游戏状态等
-- 通用服务：会话消息、角色详情、场景状态等
+- 通用服务：会话消息、实体详情、场景状态等
 
 注意事项：
 - 这是客户端访问 API 服务的第一个接口，用于服务发现
@@ -82,7 +82,7 @@ async def root(
             "werewolf_game_state": base_url + "api/werewolf/state/v1/",
             # 通用的服务。
             "session_messages": base_url + "api/session_messages/v1/",
-            "actor_details": base_url + "api/actors/v1/",
+            "entity_details": base_url + "api/entities/v1/",
             "stages_state": base_url + "api/stages/v1/",
         },
     )

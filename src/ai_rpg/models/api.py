@@ -171,8 +171,8 @@ class StagesStateResponse(BaseModel):
 
 
 @final
-class ActorDetailsResponse(BaseModel):
-    actor_entities_serialization: List[EntitySerialization]
+class EntitiesDetailsResponse(BaseModel):
+    entities_serialization: List[EntitySerialization]
 
 
 ################################################################################################################

@@ -6,6 +6,7 @@ from ..models import (
     Stage,
     StageCharacterSheet,
     WorldSystem,
+    SkillBookComponent,
 )
 
 
@@ -20,6 +21,7 @@ def create_actor(
     actor_profile: str,
     appearance: str,
     global_game_mechanics: str,
+    skills_book: SkillBookComponent,
 ) -> Actor:
 
     character_sheet = ActorCharacterSheet(

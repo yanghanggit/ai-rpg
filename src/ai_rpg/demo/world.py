@@ -29,7 +29,10 @@ def create_demo_game_world_boot1(game_name: str) -> Boot:
     stage_heros_camp.actors = [actor_warrior, actor_wizard]
 
     # 设置角色的初始状态
-    actor_warrior.kick_off_message += f"""\n注意:{actor_wizard.name} 是你的同伴。你战斗时喜欢先用盾牌或者钉头锤击晕敌人再发动攻击，这样可以造成更高的伤害。你也会架起剑势先观察敌人的攻击再进行反击，遇到危险时你的保命手段就是用短剑或者战驽限制敌人的行动然后与其拉开距离。你讨厌火元素的法术，因为你认为它们是邪恶的。如果你遇到使用火元素魔法的人，你会立刻将攻击目标变成这个人，就算这个人是你的同伴你也会毫不犹豫的攻击。"""
+    assert actor_warrior.kick_off_message == "", "战士角色的kick_off_message应为空"
+    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。注意:{actor_wizard.name} 是你的同伴。你的目标是: 以自由卫士身份磨砺武技，追寻圣剑"晨曦之刃"以斩除灾厄。"""
+
+    assert actor_wizard.kick_off_message == "", "法师角色的kick_off_message应为空"
     actor_wizard.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。注意:{actor_warrior.name} 是你的同伴。你的目标是: 通过破解古代遗迹中的符文机械秘密,找到平息魔网紊乱危机的方法,证明你的道路才是拯救新奥拉西斯的关键。"""
 
     # 设置英雄营地场景的初始状态
@@ -54,6 +57,7 @@ def create_demo_game_world_boot2(game_name: str) -> Boot:
 
     # 创建英雄营地场景和角色
     actor_warrior = create_actor_warrior()
+    assert actor_warrior.kick_off_message == "", "战士角色的kick_off_message应为空"
     actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 以自由卫士身份磨砺武技，追寻圣剑"晨曦之刃"以斩除灾厄。"""
 
     # 创建场景

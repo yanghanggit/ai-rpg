@@ -30,7 +30,7 @@ def create_demo_game_world_boot1(game_name: str) -> Boot:
 
     # 设置角色的初始状态
     assert actor_warrior.kick_off_message == "", "战士角色的kick_off_message应为空"
-    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。注意:{actor_wizard.name} 是你的同伴。你的目标是: 以自由卫士身份磨砺武技，追寻圣剑"晨曦之刃"以斩除灾厄。"""
+    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。注意:{actor_wizard.name} 是你的同伴。你的目标是: 以自由卫士身份磨砺武技，探索遗迹寻找压制遗迹变异的方法并为死去的战友复仇。"""
 
     assert actor_wizard.kick_off_message == "", "法师角色的kick_off_message应为空"
     actor_wizard.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。注意:{actor_warrior.name} 是你的同伴。你的目标是: 通过破解古代遗迹中的符文机械秘密,找到平息魔网紊乱危机的方法,证明你的道路才是拯救新奥拉西斯的关键。"""

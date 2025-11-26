@@ -6,7 +6,7 @@ from typing import Type, Optional, Any
 try:
     from src.ai_rpg.game.tcg_game import TCGGame
     from src.ai_rpg.models.objects import Actor
-    from src.ai_rpg.models.character_sheet import ActorCharacterSheet
+    from src.ai_rpg.models import ActorCharacterSheet
     from src.ai_rpg.models.objects import CharacterStats
     from src.ai_rpg.models.world import World, Boot
     from src.ai_rpg.models.dungeon import Dungeon
@@ -50,20 +50,15 @@ def sample_actor() -> Any:
     if _Actor is None:
         pytest.skip("Actor not available")
 
-    character_sheet = ActorCharacterSheet(
-        name="test_character",
-        type="hero",
-        profile="test profile",
-        appearance="test appearance",
-    )
-
-    rpg_profile = CharacterStats()
-
     return _Actor(
         name="test_actor",
-        character_sheet=character_sheet,
+        character_sheet=ActorCharacterSheet(
+            name="test_character",
+            type="hero",
+            profile="test profile",
+            appearance="test appearance",
+        ),
         system_message="test system message",
         kick_off_message="test kick off message",
-        character_stats=rpg_profile,
-        # inventory=Inventory(items=[]),
+        character_stats=CharacterStats(),
     )

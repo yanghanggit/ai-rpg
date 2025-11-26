@@ -22,16 +22,21 @@ def create_actor(
     global_game_mechanics: str,
 ) -> Actor:
 
-    character_sheet = ActorCharacterSheet(
-        name=character_sheet_name,
-        type=type,
-        profile=actor_profile,
-        appearance=appearance,
-    )
+    # character_sheet = ActorCharacterSheet(
+    #     name=character_sheet_name,
+    #     type=type,
+    #     profile=actor_profile,
+    #     appearance=appearance,
+    # )
 
     actor = Actor(
         name=name,
-        character_sheet=character_sheet,
+        character_sheet=ActorCharacterSheet(
+            name=character_sheet_name,
+            type=type,
+            profile=actor_profile,
+            appearance=appearance,
+        ),
         system_message="",
         kick_off_message=kick_off_message,
         character_stats=character_stats,
@@ -78,15 +83,19 @@ def create_stage(
     global_game_mechanics: str,
 ) -> Stage:
 
-    character_sheet = StageCharacterSheet(
-        name=character_sheet_name,
-        type=type,
-        profile=stage_profile,
-    )
+    # character_sheet = StageCharacterSheet(
+    #     name=character_sheet_name,
+    #     type=type,
+    #     profile=stage_profile,
+    # )
 
     stage = Stage(
         name=name,
-        character_sheet=character_sheet,
+        character_sheet=StageCharacterSheet(
+            name=character_sheet_name,
+            type=type,
+            profile=stage_profile,
+        ),
         system_message="",
         kick_off_message=kick_off_message,
         actors=[],

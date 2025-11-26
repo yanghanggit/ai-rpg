@@ -1,4 +1,4 @@
-from ..demo.actor_spider import create_actor_spider
+from ..demo.actor_goblin import create_actor_goblin
 from ..models import (
     Dungeon,
     StageType,
@@ -15,9 +15,9 @@ from .utils import (
 
 def create_demo_dungeon3() -> Dungeon:
 
-    # 添加蜘蛛角色到地牢场景
-    actor_spider = create_actor_spider()
-    actor_spider.character_stats.hp = 1
+    # 添加哥布林角色到地牢场景
+    actor_goblin = create_actor_goblin()
+    actor_goblin.character_stats.hp = 1
 
     excel_data_manager = get_excel_data_manager()
     dungeon_data = excel_data_manager.get_dungeon_data("场景.洞窟之三")
@@ -34,7 +34,7 @@ def create_demo_dungeon3() -> Dungeon:
         actors=[],
         global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )
-    stage_dungeon_cave3.actors = [actor_spider]
+    stage_dungeon_cave3.actors = [actor_goblin]
 
     # 返回地牢对象
     return Dungeon(

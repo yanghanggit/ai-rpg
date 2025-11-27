@@ -1,4 +1,4 @@
-from typing import Dict, final
+from typing import Dict, List, final
 from ..entitas.components import Component
 from .dungeon import Card
 from .registry import register_action_class, register_component_class
@@ -72,7 +72,7 @@ class DrawCardsAction(Component):
 class PlayCardsAction(Component):
     name: str
     card: Card
-    target: str
+    targets: List[str]
 
 
 ############################################################################################################

@@ -97,7 +97,7 @@ def _generate_first_round_prompt(
     {{
       "name": "[组合技能效果的创意名称]",
       "description": "[先做什么,然后做什么的连贯动作描述]，[目的]。代价：[多重代价的叠加描述]",
-      "target": "[目标角色完整名称]"
+      "targets": ["[目标角色1]", "[目标角色2]"]
     }}
   ],
   "status_effects": [
@@ -185,7 +185,7 @@ def _generate_subsequent_round_prompt(
     {{
       "name": "[组合技能效果的创意名称]",
       "description": "[先做什么,然后做什么的连贯动作描述]，[目的]。代价：[多重代价的叠加描述]",
-      "target": "[目标角色完整名称]"
+      "targets": ["[目标角色1]", "[目标角色2]"]
     }}
   ],
   "status_effects": [
@@ -352,7 +352,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             wait_card = Card(
                 name="等待",
                 description="什么都不做",
-                target=entity.name,
+                targets=[entity.name],
             )
 
             entity.replace(
@@ -416,15 +416,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
             self._game.append_ai_message(entity, chat_client.response_ai_messages)
 
             # 生成的结果。
-            cards: List[Card] = []
-            for card_response in validated_response.cards:
-                cards.append(
-                    Card(
-                        name=card_response.name,
-                        description=card_response.description,
-                        target=card_response.target,
-                    )
-                )
+            # validated_response.cards 中的每个 card_response 已经是 Card 类型
+            # 因为 DrawCardsResponse.cards: List[Card] 会自动反序列化
+            cards: List[Card] = validated_response.cards
 
             # 更新手牌。
             if len(cards) > 0:

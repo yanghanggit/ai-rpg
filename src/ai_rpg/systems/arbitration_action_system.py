@@ -45,7 +45,7 @@ class ArbitrationResponse(BaseModel):
 @final
 class CombatActionInfo(NamedTuple):
     actor: str
-    target: str
+    targets: List[str]
     card: Card
     combat_stats_component: CombatStatsComponent
 
@@ -59,9 +59,18 @@ def _generate_actor_card_details(
     for param in combat_actions_details:
         assert param.card.name != ""
 
+        # 格式化目标显示
+        if len(param.targets) == 0:
+            target_display = "无目标"
+            logger.warning(f"{param.actor} 的出牌动作没有目标！")
+        elif len(param.targets) == 1:
+            target_display = param.targets[0]
+        else:
+            target_display = f"[{', '.join(param.targets)}]"
+
         detail = f"""【{param.actor}】
 等级:{param.combat_stats_component.stats.level}
-卡牌:{param.card.name} → {param.target}
+卡牌:{param.card.name} → {target_display}
 效果:{param.card.description}
 属性:{param.combat_stats_component.stats_prompt}
 状态效果(status_effects):
@@ -226,7 +235,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
             ret.append(
                 CombatActionInfo(
                     actor=entity.name,
-                    target=play_cards_action.target,
+                    targets=play_cards_action.targets,
                     card=play_cards_action.card,
                     combat_stats_component=entity.get(CombatStatsComponent),
                 )
@@ -317,9 +326,9 @@ class ArbitrationActionSystem(ReactiveProcessor):
             )
 
             # 记录数据！
-            last_round = self._game.current_combat_sequence.latest_round
-            last_round.combat_log = format_response.combat_log
-            last_round.narrative = format_response.narrative
+            latest_round = self._game.current_combat_sequence.latest_round
+            latest_round.combat_log = format_response.combat_log
+            latest_round.narrative = format_response.narrative
 
         except Exception as e:
             logger.error(f"Exception: {e}")

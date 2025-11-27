@@ -5,7 +5,7 @@
 仅在战斗进行中(ongoing)阶段执行。
 """
 
-from typing import Final, final
+from typing import Final, List, final
 from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
@@ -13,6 +13,7 @@ from ..models import (
     PlayCardsAction,
     ArbitrationAction,
     Card,
+    ActorComponent,
 )
 from ..game.tcg_game import TCGGame
 from langchain_core.messages import AIMessage
@@ -20,14 +21,38 @@ from langchain_core.messages import AIMessage
 
 #######################################################################################################################################
 def _generate_play_card_notification(
-    actor_name: str, card: Card, target_name: str
+    actor_name: str, card: Card, target_names: List[str]
 ) -> str:
     """生成出牌通知消息。"""
-    message = f"""使用卡牌: {card.name}
-目标: {target_name}
+
+    # 格式化目标显示
+    if len(target_names) == 0:
+        actual_target_display = "无目标"
+    elif len(target_names) == 1:
+        actual_target_display = target_names[0]
+    else:
+        actual_target_display = f"[{', '.join(target_names)}]"
+
+    # 格式化原定目标显示
+    if len(card.targets) == 0:
+        original_target_display = "无目标"
+    elif len(card.targets) == 1:
+        original_target_display = card.targets[0]
+    else:
+        original_target_display = f"[{', '.join(card.targets)}]"
+
+    # 比较时忽略顺序，只关心目标集合是否相同
+    if set(target_names) == set(card.targets):
+        # 没有修改，直接显示预期目标
+        return f"""使用卡牌: {card.name}
+目标: {actual_target_display}
 描述: {card.description}"""
 
-    return message
+    # 可能有修改，所以要显示预期目标和实际目标
+    return f"""使用卡牌: {card.name}
+原定目标: {original_target_display}
+实际目标: {actual_target_display}
+描述: {card.description}"""
 
 
 #######################################################################################################################################
@@ -46,7 +71,11 @@ class PlayCardsActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(PlayCardsAction) and entity.has(HandComponent)
+        return (
+            entity.has(PlayCardsAction)
+            and entity.has(HandComponent)
+            and entity.has(ActorComponent)
+        )
 
     #######################################################################################################################################
     @override
@@ -76,7 +105,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
                         content=_generate_play_card_notification(
                             actor_name=actor_entity.name,
                             card=play_cards_action.card,
-                            target_name=play_cards_action.target,
+                            target_names=play_cards_action.targets,
                         ),
                         action_type="play_card_execution",
                     )

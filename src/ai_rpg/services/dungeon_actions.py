@@ -149,7 +149,7 @@ def activate_random_play_cards(tcg_game: TCGGame) -> bool:
             PlayCardsAction,
             actor_entity.name,
             selected_card,
-            selected_card.target,
+            selected_card.targets,  # 后续这里可以换掉 让客户端决定，作为出牌。
         )
 
     return True

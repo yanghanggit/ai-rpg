@@ -42,7 +42,7 @@ class StatusEffect(BaseModel):
 class Card(BaseModel):
     name: str = Field(..., description="卡牌名称")
     description: str = Field(..., description="卡牌效果、作用方式及使用代价")
-    target: str = Field(default="", description="目标对象")
+    targets: List[str] = Field(default_factory=list, description="目标对象列表")
 
 
 ###############################################################################################################################################

@@ -20,14 +20,14 @@ def create_actor_warrior() -> Actor:
     Returns:
         Actor: 战士角色实例
     """
-    actor = create_actor(
+    warrior = create_actor(
         name="角色.战士.卡恩",
         character_sheet_name="warrior",
         kick_off_message="",
         character_stats=CharacterStats(base_max_hp=1000),
         type=ActorType.ALLY,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-        actor_profile=f"""**历史**: 你是曾在砺石角斗场训练的人类精英战士，誓死捍卫新奥拉西斯外环。在“裂隙灾变”中，你率队深入古代遗迹，却遭遇金属瘴气爆发与符文异变，目睹战友被幻觉吞噬、古代魔法机械撕裂防线，从此背离官方体系，成为游离的遗迹冒险者。
+        actor_profile=f"""**历史**: 你是曾在砺石角斗场训练的人类精英战士，誓死捍卫新奥拉西斯外环。在“裂隙灾变”中，你率队深入古代遗迹，却遭遇金属瘴气爆发与符文异变，目睹战友被幻觉、被遗迹里的魔法机械吞噬，凭战友的保护和运气捡回一条命。但是想要为死去的战友申请抚恤金时却屡次被拒之门外，从此背离官方体系，成为游离的遗迹冒险者。
 **性格**: 你性格坚韧，务实且警惕，深受角斗场生存法则熏陶。
 **禁忌**: 你深恶痛绝金属瘴气与失控的古代魔法机械。
 **最爱**: 你最爱大块烤肉和烈性黑麦酒。""",
@@ -35,7 +35,7 @@ def create_actor_warrior() -> Actor:
         global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )
 
-    actor.skills = [
+    warrior.skills = [
         Skill(
             name="快速投掷",
             description="观察场景中的物体，选择一个适合投掷的物体，并将其投掷向指定目标，造成物理伤害。投掷时缺乏防御，受到伤害略微增加。",
@@ -70,4 +70,4 @@ def create_actor_warrior() -> Actor:
         ),
     ]
 
-    return actor
+    return warrior

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from .game_server_depends import GameServerInstance
+from .game_server_dependencies import CurrentGameServer
 from ..models import (
     WerewolfGameStartRequest,
     WerewolfGameStartResponse,
@@ -452,7 +452,7 @@ def is_day_vote_complete(sdg_game: SDGGame) -> bool:
 )
 async def start_werewolf_game(
     payload: WerewolfGameStartRequest,
-    game_server: GameServerInstance,
+    game_server: CurrentGameServer,
 ) -> WerewolfGameStartResponse:
 
     logger.info(f"Starting werewolf game: {payload.model_dump_json()}")
@@ -546,7 +546,7 @@ async def start_werewolf_game(
 )
 async def play_werewolf_game(
     payload: WerewolfGamePlayRequest,
-    game_server: GameServerInstance,
+    game_server: CurrentGameServer,
 ) -> WerewolfGamePlayResponse:
     logger.info(f"Playing werewolf game: {payload.model_dump_json()}")
 
@@ -798,7 +798,7 @@ async def play_werewolf_game(
     response_model=WerewolfGameStateResponse,
 )
 async def get_werewolf_game_state(
-    game_server: GameServerInstance,
+    game_server: CurrentGameServer,
     user_name: str,
     game_name: str,
 ) -> WerewolfGameStateResponse:

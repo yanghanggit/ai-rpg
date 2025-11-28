@@ -32,7 +32,7 @@ API端点:
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
-from .game_server_depends import GameServerInstance
+from .game_server_dependencies import CurrentGameServer
 from ..game.game_server import GameServer
 from .home_actions import activate_speak_action, activate_stage_transition
 from .dungeon_stage_transition import (
@@ -107,7 +107,7 @@ async def _validate_player_at_home(
 )
 async def home_gameplay(
     payload: HomeGamePlayRequest,
-    game_server: GameServerInstance,
+    game_server: CurrentGameServer,
 ) -> HomeGamePlayResponse:
     """
     家园游戏玩法主接口，处理玩家在家园状态下的各种操作请求
@@ -217,7 +217,7 @@ async def home_gameplay(
 )
 async def home_trans_dungeon(
     payload: HomeTransDungeonRequest,
-    game_server: GameServerInstance,
+    game_server: CurrentGameServer,
 ) -> HomeTransDungeonResponse:
     """
     家园传送地下城接口，处理玩家从家园进入地下城的传送请求

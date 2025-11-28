@@ -39,7 +39,7 @@ API端点:
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
-from .game_server_depends import GameServerInstance
+from .game_server_dependencies import CurrentGameServer
 from ..models import (
     DungeonGamePlayRequest,
     DungeonGamePlayResponse,
@@ -143,7 +143,7 @@ def _validate_dungeon_prerequisites(
 )
 async def dungeon_gameplay(
     payload: DungeonGamePlayRequest,
-    game_server: GameServerInstance,
+    game_server: CurrentGameServer,
 ) -> DungeonGamePlayResponse:
     """
     地下城游戏玩法主接口，处理玩家在地下城中的各种战斗操作
@@ -286,7 +286,7 @@ async def dungeon_gameplay(
 )
 async def dungeon_trans_home(
     payload: DungeonTransHomeRequest,
-    game_server: GameServerInstance,
+    game_server: CurrentGameServer,
 ) -> DungeonTransHomeResponse:
     """
     地下城传送回家接口，处理玩家从地下城返回家园的传送请求

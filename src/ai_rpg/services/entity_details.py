@@ -26,7 +26,7 @@ from typing import List, Set
 from fastapi import APIRouter, HTTPException, Query, status
 from loguru import logger
 from ..entitas import Entity
-from .game_server_depends import GameServerInstance
+from .game_server_dependencies import CurrentGameServer
 from ..models import (
     EntitiesDetailsResponse,
 )
@@ -44,7 +44,7 @@ entity_details_api_router = APIRouter()
     response_model=EntitiesDetailsResponse,
 )
 async def get_entities_details(
-    game_server: GameServerInstance,
+    game_server: CurrentGameServer,
     user_name: str,
     game_name: str,
     entity_names: List[str] = Query(..., alias="entities"),

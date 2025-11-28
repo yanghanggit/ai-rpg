@@ -29,7 +29,7 @@ from ..game.player_session import PlayerSession
 from ..game.tcg_game import TCGGame
 from ..game.game_data_service import get_user_world_data, get_game_boot_data
 from ..models import StartRequest, StartResponse, World
-from .game_server_depends import GameServerInstance
+from .game_server_dependencies import CurrentGameServer
 from ..demo.stage_dungeon4 import (
     create_demo_dungeon4,
 )
@@ -44,7 +44,7 @@ start_api_router = APIRouter()
 @start_api_router.post(path="/api/start/v1/", response_model=StartResponse)
 async def start(
     payload: StartRequest,
-    game_server: GameServerInstance,
+    game_server: CurrentGameServer,
 ) -> StartResponse:
     """游戏启动接口
 

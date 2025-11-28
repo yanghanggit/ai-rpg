@@ -57,6 +57,21 @@ def _generate_combat_kickoff_prompt(
     attrs_prompt: str,
     status_effects_prompt: str,
 ) -> str:
+    """生成战斗开始时的提示词
+
+    为角色生成战斗触发时的完整上下文信息，包含场景叙事、其他参战角色、
+    自身属性和状态效果，帮助 AI 角色理解战斗环境并做出决策。
+
+    Args:
+        stage_name: 战斗场景名称
+        stage_description: 战斗场景的环境描述
+        other_actors_info: 其他参战角色的信息列表（包含名称、外观、阵营）
+        attrs_prompt: 当前角色的属性提示词（HP、攻击、防御等）
+        status_effects_prompt: 当前角色的状态效果提示词
+
+    Returns:
+        格式化的战斗开始提示词，包含所有必要的战斗上下文信息
+    """
     return f"""# 通知！战斗触发！如下是当前场景的信息，请你基于这些信息，准备好战斗！
             
 ## 场景叙事

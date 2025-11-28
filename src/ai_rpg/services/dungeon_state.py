@@ -28,7 +28,7 @@
 
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from .game_server_depends import GameServerInstance
+from .game_server_dependencies import CurrentGameServer
 from ..models import (
     DungeonStateResponse,
 )
@@ -45,7 +45,7 @@ dungeon_state_api_router = APIRouter()
     response_model=DungeonStateResponse,
 )
 async def get_dungeon_state(
-    game_server: GameServerInstance,
+    game_server: CurrentGameServer,
     user_name: str,
     game_name: str,
 ) -> DungeonStateResponse:

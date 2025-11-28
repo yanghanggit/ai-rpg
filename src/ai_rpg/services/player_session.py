@@ -24,7 +24,7 @@ from loguru import logger
 from ..models import (
     SessionMessageResponse,
 )
-from .game_server_depends import GameServerInstance
+from .game_server_dependencies import CurrentGameServer
 
 ###################################################################################################################################################################
 player_session_api_router = APIRouter()
@@ -39,7 +39,7 @@ player_session_api_router = APIRouter()
     response_model=SessionMessageResponse,
 )
 async def get_session_messages(
-    game_server: GameServerInstance,
+    game_server: CurrentGameServer,
     user_name: str,
     game_name: str,
     last_sequence_id: int = Query(..., alias="last_sequence_id"),

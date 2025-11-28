@@ -3,16 +3,16 @@ from fastapi import Depends
 from ..game.game_server import GameServer
 
 
-_game_server: Optional[GameServer] = None
+_game_server_instance: Optional[GameServer] = None
 
 
 ###############################################################################################################################################
-def get_game_server_instance() -> GameServer:
-    global _game_server
-    if _game_server is None:
-        _game_server = GameServer()
-    return _game_server
+def get_game_server() -> GameServer:
+    global _game_server_instance
+    if _game_server_instance is None:
+        _game_server_instance = GameServer()
+    return _game_server_instance
 
 
 ###############################################################################################################################################
-GameServerInstance = Annotated[GameServer, Depends(get_game_server_instance)]
+CurrentGameServer = Annotated[GameServer, Depends(get_game_server)]

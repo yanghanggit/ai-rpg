@@ -24,6 +24,67 @@ from ..entitas import Matcher, Entity
 
 
 ###################################################################################################################################################################
+def _generate_dungeon_entry_message(
+    dungeon_stage_name: str, is_first_stage: bool
+) -> str:
+    """生成地下城进入提示消息
+
+    Args:
+        dungeon_stage_name: 地下城关卡名称
+        is_first_stage: 是否为首个关卡（索引为0）
+
+    Returns:
+        格式化的进入提示消息
+    """
+    if is_first_stage:
+        return f"""# 提示！准备进入地下城: {dungeon_stage_name}"""
+    else:
+        return f"""# 提示！准备进入下一个地下城: {dungeon_stage_name}"""
+
+
+###################################################################################################################################################################
+def _format_stage_actors_info(actors_appearances_mapping: Dict[str, str]) -> str:
+    """格式化场景内角色信息为文本
+
+    Args:
+        actors_appearances_mapping: 角色名称到外观描述的映射字典
+
+    Returns:
+        格式化后的角色信息文本，如果没有角色则返回"无"
+    """
+    actors_appearances_info = []
+    for actor_name, appearance in actors_appearances_mapping.items():
+        actors_appearances_info.append(f"{actor_name}: {appearance}")
+
+    if len(actors_appearances_info) == 0:
+        return "无"
+
+    return "\n\n".join(actors_appearances_info)
+
+
+###################################################################################################################################################################
+def _enhance_kickoff_with_actors(
+    original_content: str, actors_appearances_mapping: Dict[str, str]
+) -> str:
+    """增强KickOff消息，添加场景内角色信息
+
+    Args:
+        original_content: 原始KickOff消息内容
+        actors_appearances_mapping: 角色名称到外观描述的映射字典
+
+    Returns:
+        增强后的KickOff消息内容
+    """
+    actors_info = _format_stage_actors_info(actors_appearances_mapping)
+
+    return f"""{original_content}
+    
+**场景内角色**  
+
+{actors_info}"""
+
+
+###################################################################################################################################################################
 def enter_dungeon_stage(
     tcg_game: TCGGame, dungeon: Dungeon, ally_entities: Set[Entity]
 ) -> bool:
@@ -68,10 +129,9 @@ def enter_dungeon_stage(
     )
 
     # 3. 生成并发送传送提示消息
-    if dungeon.current_stage_index == 0:
-        trans_message = f"""# 提示！准备进入地下城: {dungeon_stage_entity.name}"""
-    else:
-        trans_message = f"""# 提示！准备进入下一个地下城: {dungeon_stage_entity.name}"""
+    trans_message = _generate_dungeon_entry_message(
+        dungeon_stage_entity.name, dungeon.current_stage_index == 0
+    )
 
     for ally_entity in ally_entities:
         tcg_game.append_human_message(ally_entity, trans_message)
@@ -85,24 +145,14 @@ def enter_dungeon_stage(
         stage_kickoff_comp is not None
     ), f"{dungeon_stage_entity.name} 没有KickOffMessageComponent组件！"
 
-    # 获取场景内角色的外貌信息
+    # 获取场景内角色的外貌信息并增强KickOff消息
     actors_appearances_mapping: Dict[str, str] = tcg_game.get_stage_actor_appearances(
         dungeon_stage_entity
     )
 
-    # 组织角色外貌信息列表
-    actors_appearances_info = []
-    for actor_name, appearance in actors_appearances_mapping.items():
-        actors_appearances_info.append(f"{actor_name}: {appearance}")
-    if len(actors_appearances_info) == 0:
-        actors_appearances_info.append("无")
-
-    # 追加场景角色信息到 KickOff 消息
-    enhanced_kickoff_content = f"""{stage_kickoff_comp.content}
-    
-**场景内角色**  
-
-{"\n\n".join(actors_appearances_info)}"""
+    enhanced_kickoff_content = _enhance_kickoff_with_actors(
+        stage_kickoff_comp.content, actors_appearances_mapping
+    )
 
     dungeon_stage_entity.replace(
         KickOffMessageComponent,
@@ -231,16 +281,20 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
     for ally_entity in ally_entities:
         # 移除死亡组件
         if ally_entity.has(DeathComponent):
-            logger.debug(f"移除死亡组件: {ally_entity.name}")
+            logger.info(f"移除死亡组件: {ally_entity.name}")
             ally_entity.remove(DeathComponent)
 
         # 恢复生命值至满血
         assert ally_entity.has(CombatStatsComponent)
         combat_stats = ally_entity.get(CombatStatsComponent)
         combat_stats.stats.hp = combat_stats.stats.max_hp
+        logger.info(
+            f"恢复满血: {ally_entity.name} 生命值 = {combat_stats.stats.hp}/{combat_stats.stats.max_hp}"
+        )
 
         # 清空所有状态效果
         combat_stats.status_effects.clear()
+        logger.info(f"清空状态效果: {ally_entity.name}")
 
 
 ###################################################################################################################################################################

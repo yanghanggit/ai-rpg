@@ -13,7 +13,7 @@
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.game_data_service import delete_user_world_data
-from .game_server_depends import GameServerInstance
+from .game_server_dependencies import CurrentGameServer
 from ..models import (
     LoginRequest,
     LoginResponse,
@@ -31,7 +31,7 @@ login_api_router = APIRouter()
 @login_api_router.post(path="/api/login/v1/", response_model=LoginResponse)
 async def login(
     payload: LoginRequest,
-    game_server: GameServerInstance,
+    game_server: CurrentGameServer,
 ) -> LoginResponse:
     """用户登录接口
 
@@ -100,7 +100,7 @@ async def login(
 @login_api_router.post(path="/api/logout/v1/", response_model=LogoutResponse)
 async def logout(
     payload: LogoutRequest,
-    game_server: GameServerInstance,
+    game_server: CurrentGameServer,
 ) -> LogoutResponse:
     """用户登出接口
 

@@ -28,7 +28,7 @@
 
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from .game_server_depends import GameServerInstance
+from .game_server_dependencies import CurrentGameServer
 from ..models import (
     StagesStateResponse,
 )
@@ -46,7 +46,7 @@ stages_state_api_router = APIRouter()
     response_model=StagesStateResponse,
 )
 async def get_stages_state(
-    game_server: GameServerInstance,
+    game_server: CurrentGameServer,
     user_name: str,
     game_name: str,
 ) -> StagesStateResponse:

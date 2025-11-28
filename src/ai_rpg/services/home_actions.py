@@ -95,6 +95,12 @@ def activate_stage_transition(tcg_game: TCGGame, stage_name: str) -> bool:
         logger.error("激活场景转换失败: 玩家实体不存在")
         return False
 
+    player_stage_entity = tcg_game.safe_get_stage_entity(player_entity)
+    assert player_stage_entity is not None, "玩家当前场景实体不存在！"
+    if player_stage_entity.name == stage_name:
+        logger.error(f"激活场景转换失败: 目标场景 {stage_name} 与当前场景相同")
+        return False
+
     logger.debug(f"激活场景转换: {player_entity.name} -> {stage_name}")
     player_entity.replace(TransStageAction, player_entity.name, stage_name)
     return True

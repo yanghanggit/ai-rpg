@@ -13,10 +13,7 @@ def create_demo_heros_safe_house() -> Stage:
     return create_stage(
         name="场景.安全屋",
         character_sheet_name="safe_house",
-        kick_off_message="""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
-        
-使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
-输出为单段紧凑文本，不使用换行或空行。""",
+        kick_off_message=""" """,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         type=StageType.HOME,
         stage_profile="""你是位于新奥拉西斯外环「尘烟裂谷」区深处，隐秘冒险者基地内的一间专属安全屋。
@@ -32,14 +29,7 @@ def create_demo_heros_restaurant() -> Stage:
     return create_stage(
         name="场景.餐馆",
         character_sheet_name="restaurant",
-        kick_off_message="""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
-        
-使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
-输出为单段紧凑文本，不使用换行或空行。
-
-## 环境叙事基调
-餐馆里弥漫着美食的香气，模糊的人影在木桌间交错，嘈杂的交谈声混成低沉的背景音。
-这些人影是环境氛围的一部分，作为整体存在感呈现，不应被描述为具体的个体或互动行为。""",
+        kick_off_message=""" """,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         type=StageType.HOME,
         stage_profile="""你是位于新奥拉西斯外环「尘烟裂谷」区地下冒险者基地内的公共食堂，也是热闹非凡的情报中心。

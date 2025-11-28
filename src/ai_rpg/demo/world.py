@@ -18,8 +18,8 @@ from ..models import (
 from .actor_warrior import create_actor_warrior
 from .actor_wizard import create_actor_wizard
 from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
-from .stage_heros_camp import (
-    create_demo_heros_camp,
+from .stage_heros_basement import (
+    create_demo_heros_safe_house,
     create_demo_heros_restaurant,
 )
 
@@ -57,11 +57,11 @@ def create_demo_game_world_boot1(game_name: str) -> Boot:
     actor_wizard = create_actor_wizard()
 
     # 创建场景
-    stage_heros_camp = create_demo_heros_camp()
+    stage_heros_safe_house = create_demo_heros_safe_house()
     stage_heros_restaurant = create_demo_heros_restaurant()
 
     # 设置关系和消息
-    stage_heros_camp.actors = [actor_warrior, actor_wizard]
+    stage_heros_safe_house.actors = [actor_warrior, actor_wizard]
 
     # 设置角色的初始状态
     assert actor_warrior.kick_off_message == "", "战士角色的kick_off_message应为空"
@@ -71,7 +71,7 @@ def create_demo_game_world_boot1(game_name: str) -> Boot:
     actor_wizard.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 通过破解古代遗迹中的符文机械秘密,找到平息魔网紊乱危机和压制地下遗迹异变的方法。"""
 
     # 设置英雄营地场景的初始状态
-    world_boot.stages = [stage_heros_camp, stage_heros_restaurant]
+    world_boot.stages = [stage_heros_safe_house, stage_heros_restaurant]
 
     # 添加世界系统
     world_boot.world_systems = []
@@ -115,13 +115,13 @@ def create_demo_game_world_boot2(game_name: str) -> Boot:
     actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 以自由卫士身份磨砺武技，追寻圣剑"晨曦之刃"以斩除灾厄。"""
 
     # 创建场景
-    stage_heros_camp = create_demo_heros_camp()
+    stage_heros_safe_house = create_demo_heros_safe_house()
 
     # 设置关系和消息
-    stage_heros_camp.actors = [actor_warrior]
+    stage_heros_safe_house.actors = [actor_warrior]
 
     # 设置英雄营地场景的初始状态
-    world_boot.stages = [stage_heros_camp]
+    world_boot.stages = [stage_heros_safe_house]
 
     # 添加世界系统
     world_boot.world_systems = []

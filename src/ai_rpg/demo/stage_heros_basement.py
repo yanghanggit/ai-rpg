@@ -8,7 +8,7 @@ from .utils import (
 )
 
 
-def create_demo_heros_camp() -> Stage:
+def create_demo_heros_safe_house() -> Stage:
 
     return create_stage(
         name="场景.安全屋",
@@ -19,9 +19,9 @@ def create_demo_heros_camp() -> Stage:
 输出为单段紧凑文本，不使用换行或空行。""",
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         type=StageType.HOME,
-        stage_profile="""你是隐藏于新奥拉西斯外环「尘烟裂谷」区锈蚀棚户下的秘密据点。
-外表破败，内部却是经过改造的冒险者工坊，配备了基本的魔法屏障、用魔法核心改造的营火，以及便于冒险者们休息和交流的空间。
-这里为游走于阴影中的冒险者提供简易的歇脚点，兼具基础生存保障与装备的隐秘存储功能。""",
+        stage_profile="""你是位于新奥拉西斯外环「尘烟裂谷」区深处，隐秘冒险者基地内的一间专属安全屋。
+房间四壁由厚重的回收金属板加固，隔绝了外界的喧嚣与瘴气，角落里设有简易的魔法净化装置和舒适的休息铺位。
+这里是冒险者在深入遗迹前后的私密整备室，提供绝对的安全感与物资补给功能。""",
         actors=[],
         global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )
@@ -42,9 +42,9 @@ def create_demo_heros_restaurant() -> Stage:
 这些人影是环境氛围的一部分，作为整体存在感呈现，不应被描述为具体的个体或互动行为。""",
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         type=StageType.HOME,
-        stage_profile="""你是坐落在新奥拉西斯中环市场区街角的一家酒馆，热闹非凡的冒险者餐厅。
-粗糙的木桌上摆满了大杯冒着泡沫的蜜酒和香气四溢的烤肉，墙上装饰着巨大的魔物头颅标本、泛黄的遗迹地图和看似用魔法驱动的动态美食壁画（实则为全息投影）。
-空气中弥漫着烤肉的焦香、浓郁的香料与一种淡淡的、类似臭氧的魔法气息。""",
+        stage_profile="""你是位于新奥拉西斯外环「尘烟裂谷」区地下冒险者基地内的公共食堂，也是热闹非凡的情报中心。
+巨大的废弃工业空间内摆满了粗糙长桌，桌上堆积着烤肉与蜜酒，墙上挂着魔物标本和实时更新的遗迹悬赏令。
+空气中弥漫着食物的焦香与酒精味，冒险者们在此大声喧哗，交换着关于遗迹深处异变与宝藏的最新情报。""",
         actors=[],
         global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )

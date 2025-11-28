@@ -19,10 +19,7 @@ def create_stage_cave5() -> Stage:
     return create_stage(
         name="场景.训练场",
         character_sheet_name="training_ground",
-        kick_off_message="""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
-        
-使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
-输出为单段紧凑文本，不使用换行或空行。""",
+        kick_off_message=""" """,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         type=StageType.DUNGEON,
         stage_profile="""你是位于新奥拉西斯「尘烟裂谷」区深处的冒险者基地里的一处改造训练场，原本是废弃的遗迹通风井，被冒险者公会改造为实战模拟场所，用于测试战斗策略与磨炼技艺。
@@ -55,6 +52,10 @@ def create_demo_dungeon5() -> Dungeon:
 
     stage_cave5 = create_stage_cave5()
     stage_cave5.actors = [actor_training_robot]
+    stage_cave5.kick_off_message = f"""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
+        
+使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
+输出为单段紧凑文本，不使用换行或空行。"""
 
     return Dungeon(
         name="训练场",

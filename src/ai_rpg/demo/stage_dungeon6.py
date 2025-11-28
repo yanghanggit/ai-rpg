@@ -1,6 +1,6 @@
+from .actor_training_robot import create_actor_training_robot
 from .actor_goblin import create_actor_goblin
-from .actor_orc import create_actor_orc
-from ..models import Dungeon, Stage, StageType
+from ..models import Dungeon, Stage, StageType, Item, ItemType
 from .campaign_setting import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
     FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
@@ -9,23 +9,23 @@ from .utils import (
     create_stage,
 )
 
-# from ai_rpg.demo import actor_goblin
-
 
 def create_stage_cave6() -> Stage:
     """
-    创建一个洞窟场景实例
+    创建一个高级训练场场景实例
 
     Returns:
-        Stage: 洞窟场景实例
+        Stage: 高级训练场场景实例
     """
     return create_stage(
-        name="场景.洞窟之四",
-        character_sheet_name="goblin_and_orc_cave",
-        kick_off_message="",
+        name="场景.高级训练场",
+        character_sheet_name="advanced_training_ground",
+        kick_off_message="""""",
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         type=StageType.DUNGEON,
-        stage_profile="你是一个黑暗干燥的古代科技遗迹，被发现于城市地下的溶洞里，地上都是散落的机械零件，还有许多罐子和从罐子里流出的不明液体，看起来似乎和油一样易燃。墙壁上还有许多暴露出来的电子元件，有的甚至还在冒着电流。遗迹中不时还能看到一些闪烁的光点，那是古代科技遗留下来的老旧机器人，虽然时间久远，但仍然具有威胁。遗迹深处传来说话的声音，似乎有人在争吵。",
+        stage_profile="""你是位于新奥拉西斯「尘烟裂谷」区深处的冒险者基地里的一处改造训练场，原本是废弃的遗迹通风井，被冒险者公会改造为实战模拟场所，用于测试战斗策略与磨炼技艺。
+地形被刻意改造成沼泽环境以模拟恶劣战斗条件，场地中散布着干草人偶和木质击打桩作为训练目标，地面积水与沼气混合形成潮湿浑浊的空气，生锈的武器残片和漂白的生物骸骨被插在泥泞中作为环境标记，营造出危险区域的真实氛围。
+注意！你是一个动态响应的场景，角色的物理行为与魔法交互会对环境产生实际影响并改变场景状态，这些变化会反过来影响后续行动的条件。""",
         actors=[],
         global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )
@@ -33,18 +33,37 @@ def create_stage_cave6() -> Stage:
 
 def create_demo_dungeon6() -> Dungeon:
 
-    actor_goblin = create_actor_goblin()
-    actor_goblin.character_stats.hp = 1
-    # actor_goblin.kick_off_message += f"""\n注意：你非常狡猾，所以身上带了一件哥布林的传家宝项链用来保命，这个项链会让你在死亡时以百分之十的血量复活，并且复活后的第一次攻击会造成双倍伤害。但是这个项链只能让你复活一次。项链属于status_effects，duration=999，战斗开始时就会存在，死亡时会自动触发，触发后消失，不受负面效果影响，不占用行动回合。"""
-
-    actor_orc = create_actor_orc()
-    actor_orc.character_stats.hp = 5
+    robot = create_actor_training_robot()
+    goblin = create_actor_goblin()
+    robot.character_stats.hp = 20
+    robot.kick_off_message = (
+        f"""# 游戏启动！告诉我你是谁？请说出你的全名。回答简短(<100字)。"""
+    )
+    goblin.kick_off_message = (
+        f"""# 游戏启动！告诉我你是谁？请说出你的全名。回答简短(<100字)。"""
+    )
+    robot.items.append(
+        Item(
+            name="传奇道具.永恒符文核心",
+            uuid="",
+            type=ItemType.UNIQUE_ITEM,
+            description="""你内部嵌入的魔法符文核心，赋予你不灭的生命力。
+每个战斗回合在生成行动与更新状态时，符文核心会自动将你的生命恢复到Max_HP。
+如果你还没有'永恒符文核心'相关的status_effect，则在第一次更新状态时创建一个，标记此道具的存在，duration=999。
+后续回合系统会自动维护此状态效果，无需重复创建。
+当你的生命值降到0时，符文核心会让你周身冒出微弱的符文光芒并坚挺地站立着，等待下一个回合重新激活。""",
+        )
+    )
 
     stage_cave6 = create_stage_cave6()
-    stage_cave6.actors = [actor_goblin, actor_orc]
+    stage_cave6.actors = [robot, goblin]
+    stage_cave6.kick_off_message = f"""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
+        
+使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
+输出为单段紧凑文本，不使用换行或空行。"""
 
     return Dungeon(
-        name="哥布林和兽人洞窟",
+        name="高级训练场",
         stages=[
             stage_cave6,
         ],

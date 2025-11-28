@@ -42,7 +42,6 @@ def create_actor_training_robot() -> Actor:
             name="稻草防御",
             description="用身上的护甲进行防御，减少所受物理伤害。防御后需要调整，动作缓慢，降低攻击力。",
         ),
-
     ]
 
     return training_robot

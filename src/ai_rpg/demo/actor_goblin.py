@@ -2,6 +2,7 @@ from ..models import (
     Actor,
     ActorType,
     CharacterStats,
+    Skill,
 )
 from .campaign_setting import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
@@ -19,7 +20,7 @@ def create_actor_goblin() -> Actor:
     Returns:
         Actor: 哥布林角色实例
     """
-    return create_actor(
+    goblin = create_actor(
         name="角色.怪物.哥布林-拉格",
         character_sheet_name="goblin",
         kick_off_message="",
@@ -30,3 +31,15 @@ def create_actor_goblin() -> Actor:
         appearance="""身材比普通哥布林略微高挑，瘦削却敏捷。皮肤呈暗绿色，眼睛闪着黄褐色的光，透出无时无刻的警惕。鼻子小而上翘，双耳显得尖长。身上穿戴着从古代科技遗迹里找到的废弃金属做成的简易护甲，破旧的背包里装着许多自己制造的哥布林飞刀，腰间还挂着一把锈迹斑斑的短剑。整体装束显得杂乱无章，但透露出一股机敏与狡黠的气息。""",
         global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )
+    goblin.skills = [
+        Skill(
+            name="飞刀投掷",
+            description="从背包中掏出一把哥布林飞刀，精准地投掷向敌人，造成物理伤害。但投掷后需要重新装填，降低下一回合的攻击力。",
+        ),
+        Skill(
+            name="简易护甲防御",
+            description="利用身上的简易护甲进行防御，减少所受物理伤害。但护甲材质薄弱，防御后需要调整，降低下一回合的攻击力。",
+        ),
+    ]
+
+    return goblin

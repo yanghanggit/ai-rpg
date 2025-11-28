@@ -4,23 +4,56 @@
 执行后将战斗状态从 starting 转换为 ongoing，并启动第一回合。
 """
 
-from typing import final, override
+from dataclasses import dataclass
+from typing import List, final, override, Set
 from loguru import logger
-from ..entitas import ExecuteProcessor
+from ..entitas import ExecuteProcessor, Entity
 from ..game.tcg_game import TCGGame
 from ..models import (
     EnvironmentComponent,
     CombatStatsComponent,
+    AllyComponent,
+    EnemyComponent,
+    AppearanceComponent,
 )
-from ..utils import format_dict_as_markdown_list
 from langchain_core.messages import AIMessage
+
+
+@dataclass
+class OtherActorInfo:
+    """其他参战角色的信息"""
+
+    actor_name: str  # 当前角色名称
+    other_name: str  # 其他角色名称
+    appearance: str  # 其他角色的外观描述
+    camp: str  # 阵营关系（友方/敌方）
+
+
+###################################################################################################################################################################
+def _format_other_actors_info(other_actors_info: List[OtherActorInfo]) -> str:
+    """格式化其他角色信息为 Markdown 列表
+
+    Args:
+        other_actors_info: 其他角色信息列表
+
+    Returns:
+        格式化后的 Markdown 字符串
+    """
+    if not other_actors_info:
+        return "无"
+
+    lines = []
+    for info in other_actors_info:
+        lines.append(f"- **{info.other_name}**（{info.camp}）: {info.appearance}")
+
+    return "\n".join(lines)
 
 
 ###################################################################################################################################################################
 def _generate_combat_kickoff_prompt(
     stage_name: str,
     stage_description: str,
-    filtered_actor_appearances: dict[str, str],
+    other_actors_info: List[OtherActorInfo],
     attrs_prompt: str,
     status_effects_prompt: str,
 ) -> str:
@@ -32,7 +65,7 @@ def _generate_combat_kickoff_prompt(
 
 ## 其余角色
 
-{format_dict_as_markdown_list(filtered_actor_appearances)}
+{_format_other_actors_info(other_actors_info)}
 
 ## 你的**属性**
 
@@ -75,7 +108,7 @@ class CombatInitializationSystem(ExecuteProcessor):
             len(self._game.current_combat_sequence.current_rounds) == 0
         ), "战斗触发阶段不允许有回合数！"
 
-        # 获取玩家实体
+        # 获取玩家实体, player在的场景就是战斗发生的场景！
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
 
@@ -96,17 +129,16 @@ class CombatInitializationSystem(ExecuteProcessor):
             combat_stats_comp = actor_entity.get(CombatStatsComponent)
             assert combat_stats_comp is not None
 
-            # 获取场景内所有角色的外观，并且去掉自己的外观
-            filtered_actor_appearances = self._game.get_stage_actor_appearances(
-                current_stage_entity
+            # 生成其他角色信息（包含外观和阵营）
+            other_actors_info = _generate_other_actors_info(
+                actor_entity, actor_entities
             )
-            filtered_actor_appearances.pop(actor_entity.name, None)
 
             # 生成提示词
             combat_kickoff_prompt = _generate_combat_kickoff_prompt(
                 stage_name=current_stage_entity.name,
                 stage_description=environment_comp.description,
-                filtered_actor_appearances=filtered_actor_appearances,
+                other_actors_info=other_actors_info,
                 attrs_prompt=combat_stats_comp.stats_prompt,
                 status_effects_prompt=combat_stats_comp.status_effects_prompt,
             )
@@ -131,6 +163,71 @@ class CombatInitializationSystem(ExecuteProcessor):
         if not self._game.start_new_round():
             logger.error(f"not web_game.setup_round()")
             assert False, "无法启动战斗的第一回合！"
+
+
+###################################################################################################################################################################
+def _determine_camp_relationship(actor_entity: Entity, other_entity: Entity) -> str:
+    """判断两个角色之间的阵营关系
+
+    Args:
+        actor_entity: 当前角色实体
+        other_entity: 其他角色实体
+
+    Returns:
+        阵营关系字符串："友方" 或 "敌方"
+
+    规则：
+        - 同是 AllyComponent 或 同是 EnemyComponent 就是友方
+        - 否则是敌方
+    """
+    actor_is_ally = actor_entity.has(AllyComponent)
+    actor_is_enemy = actor_entity.has(EnemyComponent)
+    other_is_ally = other_entity.has(AllyComponent)
+    other_is_enemy = other_entity.has(EnemyComponent)
+
+    # 同是友方或同是敌方
+    if (actor_is_ally and other_is_ally) or (actor_is_enemy and other_is_enemy):
+        return "友方"
+
+    return "敌方"
+
+
+###################################################################################################################################################################
+def _generate_other_actors_info(
+    actor_entity: Entity, actor_entities: Set[Entity]
+) -> List[OtherActorInfo]:
+    """为指定角色生成其他所有参战角色的信息列表
+
+    Args:
+        actor_entity: 当前角色实体
+        actor_entities: 所有参战角色实体集合
+
+    Returns:
+        其他角色的信息列表，包含名称、外观和阵营关系
+    """
+    # copy生成其他参战角色的列表，但是移除自己
+    copy_entities = actor_entities.copy()
+    copy_entities.remove(actor_entity)
+
+    # 生成返回数据列表！
+    other_actors_info_list: List[OtherActorInfo] = []
+
+    # 生成数据列表
+    for other_entity in copy_entities:
+
+        appearance_comp = other_entity.get(AppearanceComponent)
+        assert appearance_comp is not None, "每个参战角色都必须有外观组件！"
+
+        other_actor_info = OtherActorInfo(
+            actor_name=actor_entity.name,
+            other_name=other_entity.name,
+            appearance=appearance_comp.appearance,
+            camp=_determine_camp_relationship(actor_entity, other_entity),
+        )
+
+        other_actors_info_list.append(other_actor_info)
+
+    return other_actors_info_list
 
 
 ###################################################################################################################################################################

@@ -80,13 +80,13 @@ def _pgsql_setup_test_user() -> None:
 
 
 #######################################################################################################
-def _save_demo_world_boot() -> None:
+def _save_demo_world_boot(game_name: str) -> None:
     """ """
     logger.info("🚀 创建演示游戏世界...")
 
     try:
         # world_boot = create_demo_game_world_boot1(GLOBAL_TCG_GAME_NAME)
-        world_boot = create_demo_game_world_boot1(GLOBAL_TCG_GAME_NAME)
+        world_boot = create_demo_game_world_boot1(game_name)
         write_boot_path = WORLD_BOOT_DIR / f"{world_boot.name}.json"
         write_boot_path.write_text(
             world_boot.model_dump_json(indent=2),
@@ -311,7 +311,7 @@ def main() -> None:
     # 创建演示游戏世界
     try:
         logger.info("🚀 创建M演示游戏世界...")
-        _save_demo_world_boot()
+        _save_demo_world_boot(GLOBAL_TCG_GAME_NAME)
     except Exception as e:
         logger.error(f"❌ 创建MongoDB演示游戏世界失败: {e}")
 

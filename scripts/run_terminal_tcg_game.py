@@ -16,7 +16,7 @@ from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
     create_actor_warrior,
     create_demo_dungeon5,
-    create_demo_game_world_boot2,
+    create_demo_game_world_boot1,
 )
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import (
@@ -408,7 +408,7 @@ async def _run_game(
     if world_exists is None:
 
         # 获取world_boot_data
-        world_boot = create_demo_game_world_boot2(game)
+        world_boot = create_demo_game_world_boot1(game)
         # create_demo_game_world_boot1(game)  # TODO，临时修改，快速测试！
         # get_game_boot_data(game)
         assert world_boot is not None, "WorldBootDocument 反序列化失败"
@@ -666,8 +666,10 @@ if __name__ == "__main__":
     # 初始化日志
     setup_logger()
 
-    random_name = f"player-{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}"
-    fixed_name = "player-fixed"
+    random_name = (
+        f"terminal-player-{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}"
+    )
+    fixed_name = "terminal-player-fixed"
 
     # 做一些设置
     user = random_name

@@ -74,7 +74,7 @@ def create_demo_game_world_boot1(game_name: str) -> Boot:
         
 使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
 输出为单段紧凑文本，不使用换行或空行。"""
-    
+
     # 设置英雄餐厅场景的初始状态
     stage_heros_dining_room.kick_off_message = f"""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
         
@@ -84,7 +84,7 @@ def create_demo_game_world_boot1(game_name: str) -> Boot:
 ## 环境叙事基调
 餐馆里弥漫着美食的香气，模糊的人影在木桌间交错，嘈杂的交谈声混成低沉的背景音。
 这些人影是环境氛围的一部分，作为整体存在感呈现，不应被描述为具体的个体或互动行为。"""
-    
+
     # 设置世界场景
     world_boot.stages = [stage_heros_safe_room, stage_heros_dining_room]
 

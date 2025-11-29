@@ -165,7 +165,7 @@ async def home_gameplay(
     logger.info(f"/api/home/gameplay/v1/: {payload.model_dump_json()}")
 
     # 验证前置条件并获取游戏实例
-    web_game = await _validate_player_at_home(
+    rpg_game = await _validate_player_at_home(
         payload.user_name,
         game_server,
     )
@@ -175,30 +175,44 @@ async def home_gameplay(
 
         case "/advancing":
             # 推进游戏流程：执行NPC的home pipeline，自动推进游戏状态
-            await web_game.npc_home_pipeline.process()
+            await rpg_game.npc_home_pipeline.process()
             return HomeGamePlayResponse(client_messages=[])
 
         case "/speak":
             # 激活对话动作：玩家与指定NPC进行对话交互
             # 从data中获取对话目标(target)和对话内容(content)
-            if activate_speak_action(
-                web_game,
+            success, error_detail = activate_speak_action(
+                rpg_game,
                 target=payload.user_input.data.get("target", ""),
                 content=payload.user_input.data.get("content", ""),
-            ):
+            )
+            if success:
                 # 对话动作激活成功后，执行玩家的home pipeline处理
-                await web_game.player_home_pipeline.process()
-            return HomeGamePlayResponse(client_messages=[])
+                await rpg_game.player_home_pipeline.process()
+                return HomeGamePlayResponse(client_messages=[])
+            else:
+                # 对话动作激活失败，抛出包含具体错误信息的异常
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=error_detail,
+                )
 
         case "/trans_home":
             # 激活场景切换动作：在家园内切换到不同的场景
             # 从data中获取目标场景名称(stage_name)
-            if activate_stage_transition(
-                web_game, stage_name=payload.user_input.data.get("stage_name", "")
-            ):
+            success, error_detail = activate_stage_transition(
+                rpg_game, stage_name=payload.user_input.data.get("stage_name", "")
+            )
+            if success:
                 # 场景切换动作激活成功后，执行玩家的home pipeline处理
-                await web_game.player_home_pipeline.process()
-            return HomeGamePlayResponse(client_messages=[])
+                await rpg_game.player_home_pipeline.process()
+                return HomeGamePlayResponse(client_messages=[])
+            else:
+                # 场景切换激活失败，抛出包含具体错误信息的异常
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=error_detail,
+                )
 
         case _:
             # 未知的操作类型，记录错误日志并抛出异常
@@ -261,13 +275,13 @@ async def home_trans_dungeon(
     logger.info(f"/api/home/trans_dungeon/v1/: user={payload.user_name}")
 
     # 验证前置条件并获取游戏实例
-    web_game = await _validate_player_at_home(
+    rpg_game = await _validate_player_at_home(
         payload.user_name,
         game_server,
     )
 
     # 检查地下城是否存在可用的关卡
-    if len(web_game.current_dungeon.stages) == 0:
+    if len(rpg_game.current_dungeon.stages) == 0:
         logger.warning(
             f"玩家 {payload.user_name} 尝试传送地下城失败: 当前地下城没有可用关卡"
         )
@@ -278,7 +292,7 @@ async def home_trans_dungeon(
 
     # 执行地下城首次进入初始化
     # 初始化包括设置玩家状态、加载地下城场景、准备战斗环境等
-    if not initialize_dungeon_first_entry(web_game):
+    if not initialize_dungeon_first_entry(rpg_game):
         logger.error(f"玩家 {payload.user_name} 地下城初始化失败")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

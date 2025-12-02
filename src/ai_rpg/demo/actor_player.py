@@ -14,13 +14,13 @@ from .utils import (
 
 def create_actor_player() -> Actor:
     """
-    创建一个哥布林角色实例
+    创建一个玩家角色实例
 
     Returns:
-        Actor: 哥布林角色实例
+        Actor: 玩家角色实例
     """
     return create_actor(
-        name="角色.耀心.我",
+        name="角色.我.耀心",
         character_sheet_name="player",
         kick_off_message="",
         character_stats=CharacterStats(base_dexterity=1),

@@ -90,7 +90,9 @@ def delete_user_world_data(user: str, game: str) -> bool:
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
-def persist_world_data(username: str, world: World, enable_gzip: bool = True) -> bool:
+def persist_world_data(
+    username: str, world: World, player_session: PlayerSession, enable_gzip: bool = True
+) -> bool:
     """
     持久化用户的游戏世界数据到本地文件系统
 
@@ -102,6 +104,7 @@ def persist_world_data(username: str, world: World, enable_gzip: bool = True) ->
     Args:
         username: 用户名
         world: 要保存的世界对象
+        player_session: 玩家会话对象
         use_gzip: 是否同时保存 gzip 压缩版本，默认为 True
     """
     game = str(world.boot.name)
@@ -122,6 +125,13 @@ def persist_world_data(username: str, world: World, enable_gzip: bool = True) ->
         write_boot_path = write_dir / "boot.json"
         write_boot_path.write_text(world.boot.model_dump_json(), encoding="utf-8")
         logger.debug(f"💾 已保存用户游戏启动数据到文件: {write_boot_path}")
+
+        # 保存 player_session.json
+        write_player_session_path = write_dir / "player_session.json"
+        write_player_session_path.write_text(
+            player_session.model_dump_json(), encoding="utf-8"
+        )
+        logger.debug(f"💾 已保存用户玩家会话数据到文件: {write_player_session_path}")
 
         # 如果需要，保存压缩版本
         if enable_gzip:

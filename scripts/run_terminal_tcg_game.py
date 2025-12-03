@@ -15,7 +15,7 @@ from ai_rpg.configuration import (
 from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
     create_actor_warrior,
-    create_demo_dungeon6,
+    create_demo_dungeon4,
     create_demo_game_world_boot1,
 )
 from ai_rpg.game.player_session import PlayerSession
@@ -417,7 +417,7 @@ async def _run_game(
         world_exists = World(boot=world_boot)
 
         # 运行时生成地下城系统
-        world_exists.dungeon = create_demo_dungeon6()
+        world_exists.dungeon = create_demo_dungeon4()
         # world_exists.dungeon = create_demo_dungeon5()
 
     else:

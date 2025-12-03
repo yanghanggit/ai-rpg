@@ -14,9 +14,10 @@ from .stage_dungeon3 import create_demo_dungeon3
 from .stage_dungeon4 import create_demo_dungeon4
 from .stage_dungeon5 import create_demo_dungeon5
 from .stage_dungeon6 import create_demo_dungeon6
-from .stage_heros_manor import (
-    create_demo_heros_safe_room,
-    create_demo_heros_dining_room,
+from .stage_ally_manor import (
+    create_demo_ally_safe_room,
+    create_demo_ally_dining_room,
+    create_stage_monitoring_house,
 )
 from .world import create_demo_game_world_boot1, create_demo_game_world_boot2
 
@@ -26,8 +27,9 @@ __all__ = [
     "create_actor_goblin",
     "create_actor_orc",
     "create_actor_training_robot",
-    "create_demo_heros_safe_room",
-    "create_demo_heros_dining_room",
+    "create_demo_ally_safe_room",
+    "create_demo_ally_dining_room",
+    "create_stage_monitoring_house",
     "create_demo_dungeon1",
     "create_demo_dungeon2",
     "create_demo_dungeon3",

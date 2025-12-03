@@ -18,9 +18,9 @@ from ..models import (
 from .actor_warrior import create_actor_warrior
 from .actor_wizard import create_actor_wizard
 from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
-from .stage_heros_manor import (
-    create_demo_heros_safe_room,
-    create_demo_heros_dining_room,
+from .stage_ally_manor import (
+    create_demo_ally_safe_room,
+    create_demo_ally_dining_room,
 )
 
 
@@ -44,8 +44,8 @@ def create_demo_game_world_boot1(game_name: str) -> Boot:
             - 预设的战役设定
 
     角色目标:
-        - 战士: 以自由卫士身份磨砺武技，探索遗迹寻找压制遗迹变异的方法并为死去的战友复仇
-        - 法师: 通过破解古代遗迹中的符文机械秘密,找到平息魔网紊乱危机的方法
+        - 战士: 以自由卫士身份磨砺武技，探索遗迹寻找压制时间裂隙的方法并为死去的战友复仇
+        - 法师: 通过破解裂隙遗迹中的符文机械秘密,找到平息魔网紊乱危机的方法
     """
     # 创建世界
     world_boot = Boot(
@@ -57,26 +57,26 @@ def create_demo_game_world_boot1(game_name: str) -> Boot:
     actor_wizard = create_actor_wizard()
 
     # 创建场景
-    stage_heros_safe_room = create_demo_heros_safe_room()
-    stage_heros_dining_room = create_demo_heros_dining_room()
+    stage_ally_safe_room = create_demo_ally_safe_room()
+    stage_ally_dining_room = create_demo_ally_dining_room()
 
     # 设置关系和消息
-    stage_heros_safe_room.actors = [actor_warrior, actor_wizard]
+    stage_ally_safe_room.actors = [actor_warrior, actor_wizard]
     # 设置角色的初始状态
     assert actor_warrior.kick_off_message == "", "战士角色的kick_off_message应为空"
-    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 以自由卫士身份磨砺武技，探索遗迹寻找压制遗迹变异的方法并为死去的战友复仇。"""
+    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。"""
 
     assert actor_wizard.kick_off_message == "", "法师角色的kick_off_message应为空"
-    actor_wizard.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 通过破解古代遗迹中的符文机械秘密,找到平息魔网紊乱危机和压制地下遗迹异变的方法。"""
+    actor_wizard.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 通过破解裂隙遗迹中的符文机械秘密,找到平息魔网紊乱危机和压制时空裂隙出现的方法。"""
 
     # 设置英雄营地场景的初始状态
-    stage_heros_safe_room.kick_off_message = f"""# # 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
+    stage_ally_safe_room.kick_off_message = f"""# # 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
         
 使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
 输出为单段紧凑文本，不使用换行或空行。"""
 
     # 设置英雄餐厅场景的初始状态
-    stage_heros_dining_room.kick_off_message = f"""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
+    stage_ally_dining_room.kick_off_message = f"""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
         
 使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
 输出为单段紧凑文本，不使用换行或空行。
@@ -86,7 +86,7 @@ def create_demo_game_world_boot1(game_name: str) -> Boot:
 这些人影是环境氛围的一部分，作为整体存在感呈现，不应被描述为具体的个体或互动行为。"""
 
     # 设置世界场景
-    world_boot.stages = [stage_heros_safe_room, stage_heros_dining_room]
+    world_boot.stages = [stage_ally_safe_room, stage_ally_dining_room]
 
     # 添加世界系统
     world_boot.world_systems = []
@@ -117,7 +117,7 @@ def create_demo_game_world_boot2(game_name: str) -> Boot:
             - 预设的战役设定
 
     角色目标:
-        - 战士: 以自由卫士身份磨砺武技，追寻圣剑"晨曦之刃"以斩除灾厄
+        - 战士: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。
     """
     # 创建世界
     world_boot = Boot(
@@ -127,16 +127,16 @@ def create_demo_game_world_boot2(game_name: str) -> Boot:
     # 创建英雄营地场景和角色
     actor_warrior = create_actor_warrior()
     assert actor_warrior.kick_off_message == "", "战士角色的kick_off_message应为空"
-    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 以自由卫士身份磨砺武技，追寻圣剑"晨曦之刃"以斩除灾厄。"""
+    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。"""
 
     # 创建场景
-    stage_heros_safe_room = create_demo_heros_safe_room()
+    stage_ally_safe_room = create_demo_ally_safe_room()
 
     # 设置关系和消息
-    stage_heros_safe_room.actors = [actor_warrior]
+    stage_ally_safe_room.actors = [actor_warrior]
 
     # 设置英雄营地场景的初始状态
-    world_boot.stages = [stage_heros_safe_room]
+    world_boot.stages = [stage_ally_safe_room]
 
     # 添加世界系统
     world_boot.world_systems = []

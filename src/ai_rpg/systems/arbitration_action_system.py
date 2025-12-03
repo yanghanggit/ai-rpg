@@ -101,12 +101,13 @@ def _generate_combat_result_broadcast(combat_log: str, narrative: str) -> str:
 #######################################################################################################################################
 def _generate_combat_arbitration_prompt(
     combat_actions_details: List[CombatActionInfo],
+    current_round_number: int,
 ) -> str:
 
     # 生成角色&卡牌详情
     details_prompt = _generate_actor_card_details(combat_actions_details)
 
-    return f"""# 指令！战斗回合仲裁
+    return f"""# 指令！这是第 {current_round_number} 回合，战斗回合仲裁
 
 你是战斗仲裁者，需根据输入信息完成本回合战斗结算与演出。
 
@@ -256,14 +257,20 @@ class ArbitrationActionSystem(ReactiveProcessor):
         combat_actions_details = self._collect_combat_action_info(actor_entities)
         assert len(combat_actions_details) > 0
 
+        # 获取当前回合数
+        current_round_number = len(self._game.current_combat_sequence.current_rounds)
+
         # 生成推理信息。
-        message = _generate_combat_arbitration_prompt(combat_actions_details)
+        message = _generate_combat_arbitration_prompt(
+            combat_actions_details, current_round_number
+        )
 
         # 用场景推理。
         chat_client = ChatClient(
             name=stage_entity.name,
             prompt=message,
             context=self._game.get_agent_context(stage_entity).context,
+            timeout=60,
         )
 
         # 用语言服务系统进行推理。

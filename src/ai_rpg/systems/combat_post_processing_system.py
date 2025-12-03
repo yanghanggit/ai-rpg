@@ -28,9 +28,11 @@ from langchain_core.messages import (
 
 
 #######################################################################################################################################
-def _generate_combat_summary_prompt(actor_name: str, stage_name: str) -> str:
+def _generate_combat_summary_prompt(
+    actor_name: str, stage_name: str, total_rounds: int
+) -> str:
     """生成战斗总结提示词"""
-    return f"""# 指令！你在 {stage_name} 经历了一场战斗，现在需要用第一人称记录这次战斗经历。
+    return f"""# 指令！你在 {stage_name} 经历了一场战斗（共 {total_rounds} 回合），现在需要用第一人称记录这次战斗经历。
 
 请简要描述：
 - 战斗场景和对手特征
@@ -86,6 +88,10 @@ class CombatPostProcessingSystem(ExecuteProcessor):
     ) -> List[ChatClient]:
         """为所有战斗角色创建战斗总结的聊天客户端"""
         chat_clients: List[ChatClient] = []
+
+        # 获取总回合数
+        total_rounds = len(self._game.current_combat_sequence.current_rounds)
+
         for combat_actor in combat_actors:
 
             combat_stage_entity = self._game.safe_get_stage_entity(combat_actor)
@@ -98,7 +104,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
                 ChatClient(
                     name=combat_actor.name,
                     prompt=_generate_combat_summary_prompt(
-                        combat_actor.name, combat_stage_entity.name
+                        combat_actor.name, combat_stage_entity.name, total_rounds
                     ),
                     context=self._game.get_agent_context(combat_actor).context,
                 )

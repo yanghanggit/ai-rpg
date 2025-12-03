@@ -42,6 +42,7 @@ def _generate_first_round_prompt(
     card_creation_count: int,
     action_order: List[str],
     selected_skills: List[Skill],
+    current_round_number: int,
 ) -> str:
     """
     生成战斗第一回合的卡牌抽取提示词。
@@ -52,6 +53,7 @@ def _generate_first_round_prompt(
     Args:
         card_creation_count: 需要生成的卡牌数量
         round_turns: 角色行动顺序列表，格式为["角色名1", "角色名2", ...]
+        current_round_number: 当前回合数
 
     Returns:
         str: 格式化的提示词，包含行动顺序、生成规则和JSON输出格式
@@ -64,7 +66,7 @@ def _generate_first_round_prompt(
         [f"- {skill.name}: {skill.description}" for skill in selected_skills]
     )
 
-    return f"""# 指令！战斗开局，评估当前态势，生成你的初始 {card_creation_count} 张卡牌。
+    return f"""# 指令！这是第 {current_round_number} 回合，战斗开局，评估当前态势，生成你的 {card_creation_count} 张卡牌。
 
 ## 1. 场景内角色行动顺序(从左到右，先行动者可能影响战局与后续行动)
 
@@ -124,6 +126,7 @@ def _generate_subsequent_round_prompt(
     card_creation_count: int,
     action_order: List[str],
     selected_skills: List[Skill],
+    current_round_number: int,
 ) -> str:
     """
     生成战斗第二回合及以后的卡牌抽取提示词。
@@ -135,6 +138,7 @@ def _generate_subsequent_round_prompt(
         actor_name: 角色名称
         card_creation_count: 需要生成的卡牌数量
         round_turns: 角色行动顺序列表，格式为["角色名1", "角色名2", ...]
+        current_round_number: 当前回合数
 
     Returns:
         str: 格式化的提示词，包含行动顺序、生成规则和JSON输出格式
@@ -147,7 +151,7 @@ def _generate_subsequent_round_prompt(
         [f"- {skill.name}: {skill.description}" for skill in selected_skills]
     )
 
-    return f"""# 指令！回顾战斗历史，评估当前态势，生成你的 {card_creation_count} 张卡牌。
+    return f"""# 指令！这是第 {current_round_number} 回合，回顾战斗历史，评估当前态势，生成你的 {card_creation_count} 张卡牌。
 
 ## 1. 场景内角色行动顺序(从左到右，先行动者可能影响战局与后续行动)
 
@@ -208,9 +212,12 @@ def _generate_subsequent_round_prompt(
 
 #######################################################################################################################################
 def _generate_compressd_round_prompt(
-    actor_name: str, card_creation_count: int, action_order: List[str]
+    actor_name: str,
+    card_creation_count: int,
+    action_order: List[str],
+    current_round_number: int,
 ) -> str:
-    return f"""# 指令！回顾战斗历史，评估当前态势，生成你的参战信息，并以JSON格式返回。
+    return f"""# 指令！这是第 {current_round_number} 回合，回顾战斗历史，评估当前态势，生成你的参战信息，并以JSON格式返回。
 
 ## 场景内角色行动顺序(从左到右，先行动者可能影响战局与后续行动)
 
@@ -408,6 +415,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     actor_name=entity.name,
                     card_creation_count=self._card_creation_count,
                     action_order=last_round.action_order,
+                    current_round_number=len(
+                        self._game.current_combat_sequence.current_rounds
+                    ),
                 ),
                 compressed_prompt=chat_client.prompt,
             )
@@ -496,6 +506,11 @@ class DrawCardsActionSystem(ReactiveProcessor):
             skill_pool_size = min(self._card_creation_count * 2, len(skill_pool))
             selected_skills = random.sample(skill_pool, skill_pool_size)
 
+            # 获取当前回合数
+            current_round_number = len(
+                self._game.current_combat_sequence.current_rounds
+            )
+
             # 根据当前回合数选择提示词生成方式
             if is_first_round:
                 # 处理战斗第一回合请求
@@ -504,6 +519,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     card_creation_count=self._card_creation_count,
                     action_order=last_round.action_order,
                     selected_skills=selected_skills,
+                    current_round_number=current_round_number,
                 )
             else:
                 # 处理战斗后续回合请求
@@ -512,6 +528,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     card_creation_count=self._card_creation_count,
                     action_order=last_round.action_order,
                     selected_skills=selected_skills,
+                    current_round_number=current_round_number,
                 )
 
             # 创建聊天客户端

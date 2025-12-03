@@ -64,10 +64,10 @@ def create_demo_game_world_boot1(game_name: str) -> Boot:
     stage_heros_safe_room.actors = [actor_warrior, actor_wizard]
     # 设置角色的初始状态
     assert actor_warrior.kick_off_message == "", "战士角色的kick_off_message应为空"
-    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 以自由卫士身份磨砺武技，探索遗迹寻找压制遗迹变异的方法并为死去的战友复仇。"""
+    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。"""
 
     assert actor_wizard.kick_off_message == "", "法师角色的kick_off_message应为空"
-    actor_wizard.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 通过破解古代遗迹中的符文机械秘密,找到平息魔网紊乱危机和压制地下遗迹异变的方法。"""
+    actor_wizard.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 通过破解裂隙遗迹中的符文机械秘密,找到平息魔网紊乱危机和压制时空裂隙出现的方法。"""
 
     # 设置英雄营地场景的初始状态
     stage_heros_safe_room.kick_off_message = f"""# # 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。

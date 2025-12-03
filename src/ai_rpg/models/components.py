@@ -1,7 +1,13 @@
 from typing import List, final
 from ..entitas.components import Component, MutableComponent
 from .dungeon import Card, StatusEffect
-from .objects import CharacterStats, Item, Skill
+from .objects import (
+    CharacterStats,
+    Item,
+    Skill,
+    ActorCharacterSheet,
+    StageCharacterSheet,
+)
 from .registry import register_component_class
 
 
@@ -50,6 +56,15 @@ class StageComponent(Component):
 
 
 ############################################################################################################
+# 场景卡标记
+@final
+@register_component_class
+class StageCharacterSheetComponent(Component):
+    name: str
+    character_sheet: StageCharacterSheet
+
+
+############################################################################################################
 # 记录场景的描述 #Environment
 @final
 @register_component_class
@@ -65,6 +80,15 @@ class EnvironmentComponent(Component):
 class ActorComponent(Component):
     name: str
     current_stage: str
+
+
+########################################################################################################################
+# 角色卡标记
+@final
+@register_component_class
+class ActorCharacterSheetComponent(Component):
+    name: str
+    character_sheet: ActorCharacterSheet
 
 
 ############################################################################################################

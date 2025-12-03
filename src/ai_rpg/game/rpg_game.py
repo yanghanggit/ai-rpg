@@ -43,6 +43,8 @@ from ..models import (
     InventoryComponent,
     SkillBookComponent,
     TransStageEvent,
+    StageCharacterSheetComponent,
+    ActorCharacterSheetComponent,
 )
 from .player_session import PlayerSession
 
@@ -291,6 +293,13 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 assert item.uuid == "", "item.uuid should be empty"
                 item.uuid = str(uuid.uuid4())
 
+            # 添加ActorCharacterSheetComponent！
+            actor_entity.add(
+                ActorCharacterSheetComponent,
+                actor_model.name,
+                actor_model.character_sheet,
+            )
+
             # 添加InventoryComponent！
             actor_entity.add(
                 InventoryComponent,
@@ -347,6 +356,13 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             # kickoff prompt
             stage_entity.add(
                 KickOffMessageComponent, stage_model.name, stage_model.kick_off_message
+            )
+
+            # 添加 StageCharacterSheetComponent！
+            stage_entity.add(
+                StageCharacterSheetComponent,
+                stage_model.name,
+                stage_model.character_sheet,
             )
 
             # 必要组件：环境描述

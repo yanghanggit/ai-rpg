@@ -44,8 +44,8 @@ def create_demo_game_world_boot1(game_name: str) -> Boot:
             - 预设的战役设定
 
     角色目标:
-        - 战士: 以自由卫士身份磨砺武技，探索遗迹寻找压制遗迹变异的方法并为死去的战友复仇
-        - 法师: 通过破解古代遗迹中的符文机械秘密,找到平息魔网紊乱危机的方法
+        - 战士: 以自由卫士身份磨砺武技，探索遗迹寻找压制时间裂隙的方法并为死去的战友复仇
+        - 法师: 通过破解裂隙遗迹中的符文机械秘密,找到平息魔网紊乱危机的方法
     """
     # 创建世界
     world_boot = Boot(
@@ -117,7 +117,7 @@ def create_demo_game_world_boot2(game_name: str) -> Boot:
             - 预设的战役设定
 
     角色目标:
-        - 战士: 以自由卫士身份磨砺武技，追寻圣剑"晨曦之刃"以斩除灾厄
+        - 战士: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。
     """
     # 创建世界
     world_boot = Boot(
@@ -127,7 +127,7 @@ def create_demo_game_world_boot2(game_name: str) -> Boot:
     # 创建英雄营地场景和角色
     actor_warrior = create_actor_warrior()
     assert actor_warrior.kick_off_message == "", "战士角色的kick_off_message应为空"
-    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 以自由卫士身份磨砺武技，追寻圣剑"晨曦之刃"以斩除灾厄。"""
+    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。"""
 
     # 创建场景
     stage_ally_safe_room = create_demo_ally_safe_room()

@@ -127,13 +127,13 @@ def _generate_combat_arbitration_prompt(
 
 伤害（A→B）：
 - 命中：物伤=max(1,⎡A.物攻×α-B.物防×β⎤)，魔伤=max(1,⎡A.魔攻×α-B.魔防×β⎤)
-  → B.HP -= (物伤+魔伤+B.持续伤害) - B.持续治疗
-  → 若B.HP≤0：有复活机制则恢复至Max_HP并说明原因，否则死亡
-  → A.HP += ⎡(物伤+魔伤)×A.吸血×γ⎤
+  → B.当前HP -= (物伤+魔伤+B.持续伤害) - B.持续治疗
+  → 若B.当前HP≤0：有复活机制则恢复至Max_HP并说明原因，否则死亡
+  → A.当前HP += ⎡(物伤+魔伤)×A.吸血×γ⎤
 - 未命中：伤害=0
 
 治疗（A→B）：
-- 治疗量=⎡A.魔攻×α⎤ → B.HP=min(B.MAX_HP, B.HP+治疗量+B.持续治疗)
+- 治疗量=⎡A.魔攻×α⎤ → B.当前HP=min(B.MAX_HP, B.当前HP+治疗量+B.持续治疗)
 
 参数规则：
 - 所有数值向上取整⎡⎤
@@ -270,7 +270,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
             name=stage_entity.name,
             prompt=message,
             context=self._game.get_agent_context(stage_entity).context,
-            timeout=60,
+            timeout=30,
         )
 
         # 用语言服务系统进行推理。

@@ -89,13 +89,18 @@ class PlayCardsActionSystem(ReactiveProcessor):
             # 必须是 进行中的阶段！
             return
 
+        # 获取当前回合数
+        current_round_number = len(self._game.current_combat_sequence.current_rounds)
+
         for actor_entity in entities:
 
             play_cards_action = actor_entity.get(PlayCardsAction)
 
             # 添加出牌通知到角色对话上下文(模拟的)
             self._game.append_human_message(
-                actor_entity, f"""# 指令！使用卡牌！""", action_type="play_card_command"
+                actor_entity,
+                f"""# 指令！这是第 {current_round_number} 回合，使用卡牌！""",
+                action_type="play_card_command",
             )
 
             self._game.append_ai_message(

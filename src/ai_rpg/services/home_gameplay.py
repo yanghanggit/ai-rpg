@@ -133,7 +133,7 @@ async def home_gameplay(
     支持的操作标记:
         - /advancing: 推进游戏流程，执行NPC的home pipeline处理
         - /speak: 激活对话动作，玩家与指定目标进行对话
-        - /trans_home: 激活场景切换动作，切换到指定的家园场景
+        - /switch_stage: 激活场景切换动作，切换到家园内的不同场景
 
     示例:
         推进游戏:
@@ -197,7 +197,7 @@ async def home_gameplay(
                     detail=error_detail,
                 )
 
-        case "/trans_home":
+        case "/switch_stage":
             # 激活场景切换动作：在家园内切换到不同的场景
             # 从data中获取目标场景名称(stage_name)
             success, error_detail = activate_stage_transition(

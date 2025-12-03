@@ -167,6 +167,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         persist_world_data(
             username=self.player_session.name,
             world=self.world,
+            player_session=self.player_session,
         )
 
         # debug - 调用模块级函数

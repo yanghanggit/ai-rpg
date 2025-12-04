@@ -19,7 +19,7 @@
 """
 
 import random
-from typing import Set
+from typing import Set, Tuple
 from loguru import logger
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -67,7 +67,7 @@ def activate_actor_card_draws(tcg_game: TCGGame) -> None:
 
 
 ###################################################################################################################################################################
-def activate_random_play_cards(tcg_game: TCGGame) -> bool:
+def activate_random_play_cards(tcg_game: TCGGame) -> Tuple[bool, str]:
     """
     为所有存活角色随机选择并激活打牌动作
 
@@ -79,7 +79,7 @@ def activate_random_play_cards(tcg_game: TCGGame) -> bool:
         tcg_game: TCG游戏实例
 
     Returns:
-        bool: 是否成功激活打牌动作
+        tuple[bool, str]: (是否成功激活打牌动作, 错误信息或成功信息)
 
     注意:
         - 仅在回合进行中且未完成时可调用
@@ -96,16 +96,19 @@ def activate_random_play_cards(tcg_game: TCGGame) -> bool:
 
     # 1. 验证战斗回合状态
     if len(tcg_game.current_combat_sequence.current_rounds) == 0:
-        logger.error("激活打牌动作失败: 没有当前回合")
-        return False
+        error_msg = "激活打牌动作失败: 没有当前回合"
+        logger.error(error_msg)
+        return False, error_msg
 
     if not tcg_game.current_combat_sequence.is_ongoing:
-        logger.error("激活打牌动作失败: 回合未在进行中")
-        return False
+        error_msg = "激活打牌动作失败: 回合未在进行中"
+        logger.error(error_msg)
+        return False, error_msg
 
     if tcg_game.current_combat_sequence.latest_round.is_completed:
-        logger.error("激活打牌动作失败: 回合已完成")
-        return False
+        error_msg = "激活打牌动作失败: 回合已完成"
+        logger.error(error_msg)
+        return False, error_msg
 
     # 2. 获取所有存活且拥有手牌的角色
     actor_entities: Set[Entity] = tcg_game.get_group(
@@ -113,29 +116,33 @@ def activate_random_play_cards(tcg_game: TCGGame) -> bool:
     ).entities
 
     if len(actor_entities) == 0:
-        logger.error("激活打牌动作失败: 没有存活的持有手牌的角色")
-        return False
+        error_msg = "激活打牌动作失败: 没有存活的持有手牌的角色"
+        logger.error(error_msg)
+        return False, error_msg
 
     # 3. 预验证所有角色状态（避免部分成功）
     latest_round = tcg_game.current_combat_sequence.latest_round
     for actor_entity in actor_entities:
         # 验证角色在行动队列中
         if actor_entity.name not in latest_round.action_order:
-            logger.error(
+            error_msg = (
                 f"激活打牌动作失败: 角色 {actor_entity.name} 不在本回合行动队列中"
             )
-            return False
+            logger.error(error_msg)
+            return False, error_msg
 
         # 验证角色尚未有打牌动作
         if actor_entity.has(PlayCardsAction):
-            logger.error(f"激活打牌动作失败: 角色 {actor_entity.name} 已有打牌动作")
-            return False
+            error_msg = f"激活打牌动作失败: 角色 {actor_entity.name} 已有打牌动作"
+            logger.error(error_msg)
+            return False, error_msg
 
         # 验证角色有可用手牌
         hand_comp = actor_entity.get(HandComponent)
         if len(hand_comp.cards) == 0:
-            logger.error(f"激活打牌动作失败: 角色 {actor_entity.name} 没有可用手牌")
-            return False
+            error_msg = f"激活打牌动作失败: 角色 {actor_entity.name} 没有可用手牌"
+            logger.error(error_msg)
+            return False, error_msg
 
     # 4. 为所有角色添加随机打牌动作
     for actor_entity in actor_entities:
@@ -149,10 +156,10 @@ def activate_random_play_cards(tcg_game: TCGGame) -> bool:
             PlayCardsAction,
             actor_entity.name,
             selected_card,
-            selected_card.targets,  # 后续这里可以换掉 让客户端决定，作为出牌。
+            selected_card.targets,  # 后续这里可以换掉 让客户端决定,作为出牌。
         )
 
-    return True
+    return True, "成功激活打牌动作"
 
 
 ###################################################################################################################################################################

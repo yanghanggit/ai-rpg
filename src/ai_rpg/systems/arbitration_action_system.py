@@ -28,7 +28,6 @@ from ..models import (
     CombatStatsComponent,
     Card,
     StageComponent,
-    AgentEvent,
     DeathComponent,
     CombatArbitrationEvent,
 )

@@ -502,9 +502,12 @@ async def _process_dungeon_state_input(terminal_game: TCGGame, usr_input: str) -
             f"玩家输入 = {usr_input}, 解析到的卡牌命令: {player_cards_command}"
         )
 
-        # 执行打牌行动（现在使用随机选行动）
-        if activate_random_play_cards(terminal_game):
+        # 执行打牌行动(现在使用随机选行动)
+        success, message = activate_random_play_cards(terminal_game)
+        if success:
             await terminal_game.combat_pipeline.process()
+        else:
+            logger.error(f"打牌失败: {message}")
 
     elif usr_input == "/rth" or usr_input == "/return-to-home":
 

@@ -222,9 +222,15 @@ async def dungeon_gameplay(
                     detail="战斗未在进行中",
                 )
             # 为所有角色随机选择并激活打牌动作
-            if activate_random_play_cards(tcg_game):
-                # 推进战斗流程处理出牌
-                await tcg_game.combat_pipeline.process()
+            success, message = activate_random_play_cards(tcg_game)
+            if not success:
+                logger.error(f"玩家 {payload.user_name} 出牌失败: {message}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=message,
+                )
+            # 推进战斗流程处理出牌
+            await tcg_game.combat_pipeline.process()
             return DungeonGamePlayResponse(session_messages=[])
 
         case "advance_next_dungeon":

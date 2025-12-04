@@ -150,11 +150,72 @@ def _generate_combat_arbitration_prompt(
 ```json
 {{
   "combat_log": "角色使用卡牌 → 环境互动(含数值) → 伤害计算 → 卡牌代价 → 所有角色最终HP → 环境更新",
-  "narrative": "将战斗过程故事化：角色行动→环境响应→影响结果→更新后的环境状态，禁用数字，使用感官描写"
+  "narrative": "将战斗过程故事化：角色行动→环境响应→影响结果→更新后的环境状态，禁用数字，使用感官描写，紧凑文本"
 }}
 ```
 
-**combat_log必填项：** 完整流程(卡牌→环境→计算→代价) → 最终HP(角色.HP=X/Y) → 所有效果明确数值&时长 → 尽量精简 → 禁用换行/空行"""
+**combat_log必填项：** 完整流程(卡牌→环境→计算→代价) → 最终HP(角色.HP=X/Y) → 所有效果明确数值&时长 → 精简紧凑文本 → 禁用换行/空行"""
+
+
+#######################################################################################################################################
+def _generate_combat_arbitration_prompt2(
+    combat_actions_details: List[CombatActionInfo],
+    current_round_number: int,
+) -> str:
+
+    # 生成角色&卡牌详情
+    details_prompt = _generate_actor_card_details(combat_actions_details)
+
+    return f"""# 指令！这是第 {current_round_number} 回合，战斗回合仲裁
+
+你是战斗仲裁者，需根据输入信息完成本回合战斗结算与演出。
+
+## 行动顺序（从左至右依次执行）
+
+{" → ".join([param.actor for param in combat_actions_details])}
+
+## 参战信息
+
+{"\n\n".join(details_prompt)}
+
+## 仲裁任务
+
+### 战斗规则
+
+**战斗公式**
+
+伤害（A→B）：
+- 命中：物伤=max(1,⎡A.物攻×α-B.物防×β⎤)，魔伤=max(1,⎡A.魔攻×α-B.魔防×β⎤)
+  → B.当前HP -= (物伤+魔伤+B.持续伤害) - B.持续治疗
+  → 若B.当前HP≤0：有复活机制则恢复至Max_HP并说明原因，否则死亡
+  → A.当前HP += ⎡(物伤+魔伤)×A.吸血×γ⎤
+- 未命中：伤害=0
+
+治疗（A→B）：
+- 治疗量=⎡A.魔攻×α⎤ → B.当前HP=min(B.MAX_HP, B.当前HP+治疗量+B.持续治疗)
+
+参数规则：
+- 所有数值向上取整⎡⎤
+- α/β/γ由剧情逻辑和角色状态效果决定
+- 命中率依据剧情逻辑
+
+**环境动态与互动**
+- 场景是动态系统：角色行动→环境变化→影响后续战斗
+- 卡牌执行可利用或影响环境物体，遵循世界观逻辑
+- 环境物体使用限制：先出手角色优先
+
+### 输出要求
+
+```json
+{{
+  "combat_log": "角色使用卡牌 → 环境互动(含数值) → 伤害计算 → 卡牌代价 → 所有角色最终HP → 环境更新",
+  "narrative": "将战斗过程故事化简短概括：角色行动→环境响应→影响结果→更新后的环境状态，禁用数字，使用感官描写，精简紧凑文本"
+}}
+```
+
+**combat_log必填项：** 完整流程(卡牌→环境→计算→代价) → 最终HP(角色.HP=X/Y) → 所有效果明确数值&时长 → 精简紧凑文本 → 禁用换行/空行
+**combat_log压缩优化：** 角色名简写(仅保留最后一段) → 删除所有动作描写 → 卡牌仅写所使用的卡牌名 → 环境互动仅写[物体名]+[效果] → 命中判定删除原因 → 计算公式直接写不加标签 → 状态仅使用[状态名(轮数)] → 代价格式与状态统一 → 删除"→"外所有连接词和说明词
+**narrative压缩优化：** 每个角色行动删除细节描写 → 环境响应删除修饰词 → 结果仅写核心效果"""
 
 
 #######################################################################################################################################
@@ -261,7 +322,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         current_round_number = len(self._game.current_combat_sequence.current_rounds)
 
         # 生成推理信息。
-        message = _generate_combat_arbitration_prompt(
+        message = _generate_combat_arbitration_prompt2(
             combat_actions_details, current_round_number
         )
 
@@ -270,7 +331,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
             name=stage_entity.name,
             prompt=message,
             context=self._game.get_agent_context(stage_entity).context,
-            timeout=30,
+            timeout=60,
         )
 
         # 用语言服务系统进行推理。

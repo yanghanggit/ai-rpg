@@ -5,6 +5,7 @@ from .actor_orc import create_actor_orc
 from .actor_training_robot import create_actor_training_robot
 from .actor_warrior import create_actor_warrior
 from .actor_wizard import create_actor_wizard
+from .actor_player import create_actor_player
 from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 from .excel_data import ActorExcelData, DungeonExcelData
 from .excel_data_manager import ExcelDataManager, get_excel_data_manager
@@ -19,9 +20,10 @@ from .stage_ally_manor import (
     create_demo_ally_dining_room,
     create_stage_monitoring_house,
 )
-from .world import create_demo_game_world_boot1, create_demo_game_world_boot2
+from .world import create_demo_game_world_boot1, create_demo_game_world_boot2, create_demo_game_world_boot3
 
 __all__ = [
+    "create_actor_player",
     "create_actor_warrior",
     "create_actor_wizard",
     "create_actor_goblin",
@@ -43,4 +45,5 @@ __all__ = [
     "get_excel_data_manager",
     "create_demo_game_world_boot1",
     "create_demo_game_world_boot2",
+    "create_demo_game_world_boot3",
 ]

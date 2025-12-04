@@ -17,6 +17,7 @@ from ..models import (
 )
 from .actor_warrior import create_actor_warrior
 from .actor_wizard import create_actor_wizard
+from .actor_player import create_actor_player
 from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 from .stage_ally_manor import (
     create_demo_ally_safe_room,
@@ -137,6 +138,54 @@ def create_demo_game_world_boot2(game_name: str) -> Boot:
 
     # 设置英雄营地场景的初始状态
     world_boot.stages = [stage_ally_safe_room]
+
+    # 添加世界系统
+    world_boot.world_systems = []
+
+    # 返回
+    return world_boot
+
+###############################################################################################################################
+def create_demo_game_world_boot3(game_name: str) -> Boot:
+    """
+    创建演示游戏世界Boot实例 - 玩家角色版本。
+
+    该函数创建一个包含玩家角色的完整游戏世界，
+    包含英雄营地和英雄餐厅两个场景。玩家角色具备特殊技能。
+
+    Args:
+        game_name: 游戏世界的名称
+    Returns:
+        Boot: 初始化完成的游戏世界实例，包含:
+            - 1个玩家角色
+            - 1个战士角色
+            - 2个场景(英雄营地和英雄餐厅)
+            - 角色的初始kick_off_message
+            - 预设的战役设定
+    角色目标:
+        - 玩家角色: 利用穿越者身份和特殊技能,探索裂隙遗迹,寻找压制时空裂隙出现的方法,并揭开这个世界的秘密。
+        - 战士: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。
+    """
+    # 创建世界
+    world_boot = Boot(
+        name=game_name, campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING
+    )
+
+    # 创建英雄营地场景和角色
+    actor_warrior = create_actor_warrior()
+    actor_player = create_actor_player()
+    assert actor_warrior.kick_off_message == "", "战士角色的kick_off_message应为空"
+    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。"""
+
+    # 创建场景
+    stage_ally_safe_room = create_demo_ally_safe_room()
+    stage_ally_dining_room = create_demo_ally_dining_room()
+
+    # 设置关系和消息
+    stage_ally_safe_room.actors = [actor_warrior, actor_player]
+
+    # 设置英雄营地场景的初始状态
+    world_boot.stages = [stage_ally_safe_room, stage_ally_dining_room]
 
     # 添加世界系统
     world_boot.world_systems = []

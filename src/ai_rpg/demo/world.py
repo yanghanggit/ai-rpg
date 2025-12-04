@@ -145,6 +145,7 @@ def create_demo_game_world_boot2(game_name: str) -> Boot:
     # 返回
     return world_boot
 
+
 ###############################################################################################################################
 def create_demo_game_world_boot3(game_name: str) -> Boot:
     """

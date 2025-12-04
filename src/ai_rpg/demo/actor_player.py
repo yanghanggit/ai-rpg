@@ -1,9 +1,4 @@
-from ..models import (
-    Actor,
-    ActorType,
-    CharacterStats,
-    Skill
-)
+from ..models import Actor, ActorType, CharacterStats, Skill
 from .campaign_setting import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
     FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
@@ -34,12 +29,9 @@ def create_actor_player() -> Actor:
 
     player.skills = [
         Skill(
-            name="力量法则", 
-            description="你了解并能运用这个世界的力量法则，能够通过特定的方式影响物体和环境，甚至改变某些事物的本质属性。"
+            name="力量法则",
+            description="你了解并能运用这个世界的力量法则，能够通过特定的方式影响物体和环境，甚至改变某些事物的本质属性。",
         ),
-
     ]
 
     return player
-
-    

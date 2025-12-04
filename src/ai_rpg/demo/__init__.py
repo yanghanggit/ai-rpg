@@ -20,7 +20,11 @@ from .stage_ally_manor import (
     create_demo_ally_dining_room,
     create_stage_monitoring_house,
 )
-from .world import create_demo_game_world_boot1, create_demo_game_world_boot2, create_demo_game_world_boot3
+from .world import (
+    create_demo_game_world_boot1,
+    create_demo_game_world_boot2,
+    create_demo_game_world_boot3,
+)
 
 __all__ = [
     "create_actor_player",

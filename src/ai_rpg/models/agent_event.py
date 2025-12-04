@@ -13,7 +13,7 @@ class EventHead(IntEnum):
     MIND_EVENT = 4
     QUERY_EVENT = 5
     TRANS_STAGE_EVENT = 6
-    # COMBAT_KICK_OFF_EVENT = 7
+    COMBAT_ARBITRATION_EVENT = 7
     COMBAT_COMPLETE_EVENT = 8
     DISCUSSION_EVENT = 9
     NIGHT_ACTION_EVENT = 10
@@ -77,11 +77,12 @@ class TransStageEvent(AgentEvent):
 ####################################################################################################################################
 
 
-# @final
-# class CombatKickOffEvent(AgentEvent):
-#     head: int = EventHead.COMBAT_KICK_OFF_EVENT
-#     actor: str
-#     description: str
+@final
+class CombatArbitrationEvent(AgentEvent):
+    head: int = EventHead.COMBAT_ARBITRATION_EVENT
+    stage: str
+    combat_log: str
+    narrative: str
 
 
 ####################################################################################################################################

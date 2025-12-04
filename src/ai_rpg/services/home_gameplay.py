@@ -176,7 +176,7 @@ async def home_gameplay(
         case "/advancing":
             # 推进游戏流程：执行NPC的home pipeline，自动推进游戏状态
             await rpg_game.npc_home_pipeline.process()
-            return HomeGamePlayResponse(client_messages=[])
+            return HomeGamePlayResponse(session_messages=[])
 
         case "/speak":
             # 激活对话动作：玩家与指定NPC进行对话交互
@@ -189,7 +189,7 @@ async def home_gameplay(
             if success:
                 # 对话动作激活成功后，执行玩家的home pipeline处理
                 await rpg_game.player_home_pipeline.process()
-                return HomeGamePlayResponse(client_messages=[])
+                return HomeGamePlayResponse(session_messages=[])
             else:
                 # 对话动作激活失败，抛出包含具体错误信息的异常
                 raise HTTPException(
@@ -206,7 +206,7 @@ async def home_gameplay(
             if success:
                 # 场景切换动作激活成功后，执行玩家的home pipeline处理
                 await rpg_game.player_home_pipeline.process()
-                return HomeGamePlayResponse(client_messages=[])
+                return HomeGamePlayResponse(session_messages=[])
             else:
                 # 场景切换激活失败，抛出包含具体错误信息的异常
                 raise HTTPException(

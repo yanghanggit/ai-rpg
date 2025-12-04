@@ -167,7 +167,7 @@ async def dungeon_gameplay(
         HTTPException(409): 战斗已结束（胜利或失败）
 
     支持的操作标记:
-        - dungeon_combat_kick_off: 开始地下城战斗，转换到战斗进行状态
+        - combat_init: 开始地下城战斗，转换到战斗进行状态
         - draw_cards: 抽卡操作，为所有角色抽取手牌
         - play_cards: 出牌操作，角色使用手牌进行战斗
         - advance_next_dungeon: 前进到下一个地下城关卡
@@ -185,7 +185,7 @@ async def dungeon_gameplay(
 
     # 根据操作类型分发处理
     match payload.user_input.tag:
-        case "dungeon_combat_kick_off":
+        case "combat_init":
             # 处理地下城战斗开始
             if not tcg_game.current_combat_sequence.is_starting:
                 logger.error(
@@ -197,7 +197,7 @@ async def dungeon_gameplay(
                 )
             # 推进战斗流程，转换到 ONGOING 状态
             await tcg_game.combat_pipeline.process()
-            return DungeonGamePlayResponse(client_messages=[])
+            return DungeonGamePlayResponse(session_messages=[])
 
         case "draw_cards":
             # 处理抽卡操作
@@ -211,7 +211,7 @@ async def dungeon_gameplay(
             activate_actor_card_draws(tcg_game)
             # 推进战斗流程处理抽牌
             await tcg_game.combat_pipeline.process()
-            return DungeonGamePlayResponse(client_messages=[])
+            return DungeonGamePlayResponse(session_messages=[])
 
         case "play_cards":
             # 处理出牌操作
@@ -225,7 +225,7 @@ async def dungeon_gameplay(
             if activate_random_play_cards(tcg_game):
                 # 推进战斗流程处理出牌
                 await tcg_game.combat_pipeline.process()
-            return DungeonGamePlayResponse(client_messages=[])
+            return DungeonGamePlayResponse(session_messages=[])
 
         case "advance_next_dungeon":
             # 处理前进下一个地下城关卡
@@ -251,7 +251,7 @@ async def dungeon_gameplay(
                     )
                 # 前进到下一关
                 advance_to_next_stage(tcg_game)
-                return DungeonGamePlayResponse(client_messages=[])
+                return DungeonGamePlayResponse(session_messages=[])
             elif tcg_game.current_combat_sequence.hero_lost:
                 # 玩家失败
                 logger.warning(f"玩家 {payload.user_name} 战斗失败")

@@ -30,6 +30,7 @@ from ..models import (
     StageComponent,
     AgentEvent,
     DeathComponent,
+    CombatArbitrationEvent,
 )
 from ..utils import extract_json_from_code_block
 
@@ -82,7 +83,7 @@ def _generate_actor_card_details(
 
 
 #######################################################################################################################################
-def _generate_combat_result_broadcast(combat_log: str, narrative: str) -> str:
+def _generate_combat_arbitration_broadcast(combat_log: str, narrative: str) -> str:
     """生成战斗结算广播消息"""
 
     return f"""# 通知！战斗回合结算
@@ -324,10 +325,13 @@ class ArbitrationActionSystem(ReactiveProcessor):
             # 广播事件
             self._game.broadcast_to_stage(
                 entity=stage_entity,
-                agent_event=AgentEvent(
-                    message=_generate_combat_result_broadcast(
+                agent_event=CombatArbitrationEvent(
+                    message=_generate_combat_arbitration_broadcast(
                         format_response.combat_log, format_response.narrative
                     ),
+                    stage=stage_entity.name,
+                    combat_log=format_response.combat_log,
+                    narrative=format_response.narrative,
                 ),
                 exclude_entities={stage_entity},
             )

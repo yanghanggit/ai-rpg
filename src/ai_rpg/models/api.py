@@ -118,7 +118,7 @@ class HomeGamePlayRequest(BaseModel):
 
 @final
 class HomeGamePlayResponse(BaseModel):
-    client_messages: List[SessionMessage]
+    session_messages: List[SessionMessage]
 
 
 ################################################################################################################
@@ -141,7 +141,7 @@ class DungeonGamePlayRequest(BaseModel):
 
 @final
 class DungeonGamePlayResponse(BaseModel):
-    client_messages: List[SessionMessage]
+    session_messages: List[SessionMessage]
 
 
 ################################################################################################################

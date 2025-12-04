@@ -24,12 +24,10 @@ from loguru import logger
 from ..game.tcg_game import TCGGame
 from ..models import (
     DrawCardsAction,
-    DeathComponent,
-    ActorComponent,
     HandComponent,
     PlayCardsAction,
 )
-from ..entitas import Matcher, Entity
+from ..entitas import Entity
 
 
 ###################################################################################################################################################################
@@ -37,19 +35,10 @@ def activate_actor_card_draws(tcg_game: TCGGame) -> None:
     """
     为场上所有存活角色激活抽牌动作
 
-    该函数会为当前关卡中玩家所在场景的所有存活角色添加抽牌动作组件。
-    抽牌动作将在后续的 combat_pipeline 处理中被执行。
+    为玩家所在场景的所有存活角色添加抽牌动作组件，由 combat_pipeline 后续处理执行。
 
     Args:
         tcg_game: TCG游戏实例
-
-    Raises:
-        AssertionError: 当玩家实体不存在时
-
-    注意:
-        - 只为存活的角色添加抽牌动作
-        - 具体抽取的卡牌数量由游戏规则和角色状态决定
-        - 该函数不直接执行抽牌，而是添加动作标记供 pipeline 处理
     """
 
     player_entity = tcg_game.get_player_entity()
@@ -71,27 +60,14 @@ def activate_random_play_cards(tcg_game: TCGGame) -> Tuple[bool, str]:
     """
     为所有存活角色随机选择并激活打牌动作
 
-    该函数会为当前回合中的每个存活角色随机选择一张手牌，
-    并将其设置为待执行的打牌动作。这是一个临时的测试/AI功能，
-    用于在没有玩家输入时自动推进战斗。
+    为当前回合中的每个存活角色随机选择一张手牌，并设置为待执行的打牌动作。
+    用于测试或AI自动推进战斗。
 
     Args:
         tcg_game: TCG游戏实例
 
     Returns:
-        tuple[bool, str]: (是否成功激活打牌动作, 错误信息或成功信息)
-
-    注意:
-        - 仅在回合进行中且未完成时可调用
-        - 所有角色必须在当前回合的行动队列中
-        - 所有角色必须有可用的手牌
-        - 使用预验证机制，避免部分成功导致的状态不一致
-
-    处理流程:
-        1. 验证战斗回合状态（存在、进行中、未完成）
-        2. 获取所有存活且持有手牌的角色
-        3. 预验证所有角色状态（在行动队列、无重复动作、有手牌）
-        4. 为所有角色随机选择手牌并添加打牌动作组件
+        tuple[bool, str]: (是否成功, 结果消息)
     """
 
     # 1. 验证战斗回合状态
@@ -110,11 +86,12 @@ def activate_random_play_cards(tcg_game: TCGGame) -> Tuple[bool, str]:
         logger.error(error_msg)
         return False, error_msg
 
-    # 2. 获取所有存活且拥有手牌的角色
-    actor_entities: Set[Entity] = tcg_game.get_group(
-        Matcher(all_of=[ActorComponent, HandComponent], none_of=[DeathComponent])
-    ).entities
+    # 必须有玩家实体在的场景中
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None, "activate_actor_card_draws: player_entity is None"
 
+    # 2. 获取所有存活且拥有手牌的角色
+    actor_entities: Set[Entity] = tcg_game.get_alive_actors_on_stage(player_entity)
     if len(actor_entities) == 0:
         error_msg = "激活打牌动作失败: 没有存活的持有手牌的角色"
         logger.error(error_msg)
@@ -137,8 +114,16 @@ def activate_random_play_cards(tcg_game: TCGGame) -> Tuple[bool, str]:
             logger.error(error_msg)
             return False, error_msg
 
-        # 验证角色有可用手牌
+        # 验证角色有手牌组件且有可用手牌
+        if not actor_entity.has(HandComponent):
+            error_msg = f"激活打牌动作失败: 角色 {actor_entity.name} 没有手牌组件"
+            logger.error(error_msg)
+            return False, error_msg
+
         hand_comp = actor_entity.get(HandComponent)
+        assert (
+            len(hand_comp.cards) > 0
+        ), f"激活打牌动作失败: 角色 {actor_entity.name} 手牌组件异常"
         if len(hand_comp.cards) == 0:
             error_msg = f"激活打牌动作失败: 角色 {actor_entity.name} 没有可用手牌"
             logger.error(error_msg)

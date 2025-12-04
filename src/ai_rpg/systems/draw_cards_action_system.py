@@ -353,7 +353,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         """
         for entity in entities:
 
-            if entity.has(HandComponent):
+            if entity.has(HandComponent) or entity.has(DeathComponent):
                 continue
 
             wait_card = Card(

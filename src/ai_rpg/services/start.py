@@ -30,7 +30,7 @@ from ..game.tcg_game import TCGGame
 from ..game.game_data_service import get_user_world_data, get_game_boot_data
 from ..models import StartRequest, StartResponse, World
 from .game_server_dependencies import CurrentGameServer
-from ..demo.stage_dungeon4 import (
+from ..demo.dungeon4 import (
     create_demo_dungeon4,
 )
 

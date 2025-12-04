@@ -1,4 +1,4 @@
-from ..demo.actor_orc import create_actor_orc
+from .actor_orc import create_actor_orc
 from ..models import Dungeon, Stage, StageType
 from .campaign_setting import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,

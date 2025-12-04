@@ -9,12 +9,12 @@ from .actor_player import create_actor_player
 from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 from .excel_data import ActorExcelData, DungeonExcelData
 from .excel_data_manager import ExcelDataManager, get_excel_data_manager
-from .stage_dungeon1 import create_demo_dungeon1
-from .stage_dungeon2 import create_demo_dungeon2
-from .stage_dungeon3 import create_demo_dungeon3
-from .stage_dungeon4 import create_demo_dungeon4
-from .stage_dungeon5 import create_demo_dungeon5
-from .stage_dungeon6 import create_demo_dungeon6
+from .dungeon1 import create_demo_dungeon1
+from .dungeon2 import create_demo_dungeon2
+from .dungeon3 import create_demo_dungeon3
+from .dungeon4 import create_demo_dungeon4
+from .dungeon5 import create_demo_dungeon5
+from .dungeon6 import create_demo_dungeon6
 from .stage_ally_manor import (
     create_demo_ally_safe_room,
     create_demo_ally_dining_room,

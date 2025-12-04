@@ -3,8 +3,8 @@ from ..models import (
 )
 from .actor_goblin import create_actor_goblin
 from .actor_orc import create_actor_orc
-from .stage_dungeon1 import create_stage_cave1
-from .stage_dungeon2 import create_stage_cave2
+from .dungeon1 import create_stage_cave1
+from .dungeon2 import create_stage_cave2
 
 
 def create_demo_dungeon4() -> Dungeon:

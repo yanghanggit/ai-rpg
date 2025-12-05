@@ -449,10 +449,10 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         self, entity: Entity, message_content: str, **kwargs: Any
     ) -> None:
         """添加用户消息到实体的LLM上下文"""
-        logger.debug(f"add_human_message: {entity.name} => \n{message_content}")
-        if len(kwargs) > 0:
-            # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
-            logger.debug(f"kwargs: {kwargs}")
+        # logger.debug(f"add_human_message: {entity.name} => \n{message_content}")
+        # if len(kwargs) > 0:
+        #     # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
+        #     logger.debug(f"kwargs: {kwargs}")
 
         agent_context = self.get_agent_context(entity)
         agent_context.context.extend([HumanMessage(content=message_content, **kwargs)])
@@ -461,10 +461,10 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
     def add_ai_message(self, entity: Entity, ai_messages: List[AIMessage]) -> None:
         """添加AI响应消息到实体的LLM上下文"""
         assert len(ai_messages) > 0, "ai_messages should not be empty"
-        for ai_message in ai_messages:
-            assert isinstance(ai_message, AIMessage)
-            assert ai_message.content != "", "ai_message content should not be empty"
-            logger.debug(f"add_ai_message: {entity.name} => \n{ai_message.content}")
+        # for ai_message in ai_messages:
+        #     assert isinstance(ai_message, AIMessage)
+        #     assert ai_message.content != "", "ai_message content should not be empty"
+        #     logger.debug(f"add_ai_message: {entity.name} => \n{ai_message.content}")
 
         # 添加多条 AIMessage
         agent_context = self.get_agent_context(entity)

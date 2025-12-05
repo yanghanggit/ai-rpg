@@ -36,6 +36,7 @@ API端点:
     接口会自动验证玩家状态和战斗状态，验证失败会抛出相应的HTTP异常。
 """
 
+from typing import Final
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
@@ -178,16 +179,19 @@ async def dungeon_gameplay(
     )
 
     # 验证地下城操作的前置条件
-    tcg_game = _validate_dungeon_prerequisites(
+    rpg_game = _validate_dungeon_prerequisites(
         user_name=payload.user_name,
         game_server=game_server,
     )
+
+    # 记录当前事件序列号，便于后续获取新增消息
+    last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
 
     # 根据操作类型分发处理
     match payload.user_input.tag:
         case "combat_init":
             # 处理地下城战斗开始
-            if not tcg_game.current_combat_sequence.is_starting:
+            if not rpg_game.current_combat_sequence.is_starting:
                 logger.error(
                     f"玩家 {payload.user_name} 战斗开始失败: 战斗未处于开始阶段"
                 )
@@ -196,33 +200,41 @@ async def dungeon_gameplay(
                     detail="战斗未处于开始阶段",
                 )
             # 推进战斗流程，转换到 ONGOING 状态
-            await tcg_game.combat_pipeline.process()
-            return DungeonGamePlayResponse(session_messages=[])
+            await rpg_game.combat_pipeline.process()
+            return DungeonGamePlayResponse(
+                session_messages=rpg_game.player_session.get_messages_since(
+                    last_event_sequence
+                )
+            )
 
         case "draw_cards":
             # 处理抽卡操作
-            if not tcg_game.current_combat_sequence.is_ongoing:
+            if not rpg_game.current_combat_sequence.is_ongoing:
                 logger.error(f"玩家 {payload.user_name} 抽卡失败: 战斗未在进行中")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="战斗未在进行中",
                 )
             # 为所有角色激活抽牌动作
-            activate_actor_card_draws(tcg_game)
+            activate_actor_card_draws(rpg_game)
             # 推进战斗流程处理抽牌
-            await tcg_game.combat_pipeline.process()
-            return DungeonGamePlayResponse(session_messages=[])
+            await rpg_game.combat_pipeline.process()
+            return DungeonGamePlayResponse(
+                session_messages=rpg_game.player_session.get_messages_since(
+                    last_event_sequence
+                )
+            )
 
         case "play_cards":
             # 处理出牌操作
-            if not tcg_game.current_combat_sequence.is_ongoing:
+            if not rpg_game.current_combat_sequence.is_ongoing:
                 logger.error(f"玩家 {payload.user_name} 出牌失败: 战斗未在进行中")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="战斗未在进行中",
                 )
             # 为所有角色随机选择并激活打牌动作
-            success, message = activate_random_play_cards(tcg_game)
+            success, message = activate_random_play_cards(rpg_game)
             if not success:
                 logger.error(f"玩家 {payload.user_name} 出牌失败: {message}")
                 raise HTTPException(
@@ -230,12 +242,16 @@ async def dungeon_gameplay(
                     detail=message,
                 )
             # 推进战斗流程处理出牌
-            await tcg_game.combat_pipeline.process()
-            return DungeonGamePlayResponse(session_messages=[])
+            await rpg_game.combat_pipeline.process()
+            return DungeonGamePlayResponse(
+                session_messages=rpg_game.player_session.get_messages_since(
+                    last_event_sequence
+                )
+            )
 
         case "advance_next_dungeon":
             # 处理前进下一个地下城关卡
-            if not tcg_game.current_combat_sequence.is_waiting:
+            if not rpg_game.current_combat_sequence.is_waiting:
                 logger.error(
                     f"玩家 {payload.user_name} 前进下一关失败: 战斗未处于等待阶段"
                 )
@@ -245,9 +261,9 @@ async def dungeon_gameplay(
                 )
 
             # 判断战斗结果并处理
-            if tcg_game.current_combat_sequence.hero_won:
+            if rpg_game.current_combat_sequence.hero_won:
                 # 玩家胜利，检查是否有下一关
-                next_stage = tcg_game.current_dungeon.peek_next_stage()
+                next_stage = rpg_game.current_dungeon.peek_next_stage()
                 if next_stage is None:
                     # 没有下一关了，地下城全部通关
                     logger.info(f"玩家 {payload.user_name} 地下城全部通关")
@@ -256,9 +272,13 @@ async def dungeon_gameplay(
                         detail="地下城已全部通关，请返回营地",
                     )
                 # 前进到下一关
-                advance_to_next_stage(tcg_game)
-                return DungeonGamePlayResponse(session_messages=[])
-            elif tcg_game.current_combat_sequence.hero_lost:
+                advance_to_next_stage(rpg_game)
+                return DungeonGamePlayResponse(
+                    session_messages=rpg_game.player_session.get_messages_since(
+                        last_event_sequence
+                    )
+                )
+            elif rpg_game.current_combat_sequence.hero_lost:
                 # 玩家失败
                 logger.warning(f"玩家 {payload.user_name} 战斗失败")
                 raise HTTPException(

@@ -29,6 +29,7 @@ API端点:
     接口会自动验证玩家状态，验证失败会抛出相应的HTTP异常。
 """
 
+from typing import Final
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
@@ -170,13 +171,20 @@ async def home_gameplay(
         game_server,
     )
 
+    # 记录当前事件序列号，便于后续获取新增消息
+    last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
+
     # 根据用户输入的操作标记进行分发处理
     match payload.user_input.tag:
 
         case "/advancing":
             # 推进游戏流程：执行NPC的home pipeline，自动推进游戏状态
             await rpg_game.npc_home_pipeline.process()
-            return HomeGamePlayResponse(session_messages=[])
+            return HomeGamePlayResponse(
+                session_messages=rpg_game.player_session.get_messages_since(
+                    last_event_sequence
+                )
+            )
 
         case "/speak":
             # 激活对话动作：玩家与指定NPC进行对话交互
@@ -189,7 +197,11 @@ async def home_gameplay(
             if success:
                 # 对话动作激活成功后，执行玩家的home pipeline处理
                 await rpg_game.player_home_pipeline.process()
-                return HomeGamePlayResponse(session_messages=[])
+                return HomeGamePlayResponse(
+                    session_messages=rpg_game.player_session.get_messages_since(
+                        last_event_sequence
+                    )
+                )
             else:
                 # 对话动作激活失败，抛出包含具体错误信息的异常
                 raise HTTPException(
@@ -206,7 +218,11 @@ async def home_gameplay(
             if success:
                 # 场景切换动作激活成功后，执行玩家的home pipeline处理
                 await rpg_game.player_home_pipeline.process()
-                return HomeGamePlayResponse(session_messages=[])
+                return HomeGamePlayResponse(
+                    session_messages=rpg_game.player_session.get_messages_since(
+                        last_event_sequence
+                    )
+                )
             else:
                 # 场景切换激活失败，抛出包含具体错误信息的异常
                 raise HTTPException(

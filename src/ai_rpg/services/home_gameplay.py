@@ -308,7 +308,7 @@ async def home_trans_dungeon(
 
     # 执行地下城首次进入初始化
     # 初始化包括设置玩家状态、加载地下城场景、准备战斗环境等
-    if not initialize_dungeon_first_entry(rpg_game):
+    if not initialize_dungeon_first_entry(rpg_game, rpg_game.current_dungeon):
         logger.error(f"玩家 {payload.user_name} 地下城初始化失败")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

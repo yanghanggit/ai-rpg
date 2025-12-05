@@ -126,7 +126,7 @@ def enter_dungeon_stage(
     ), f"{next_dungeon_stage_model.name} 没有DungeonComponent组件！"
 
     logger.debug(
-        f"{tcg_game.current_dungeon.name} = [{tcg_game.current_dungeon.current_stage_index}]关为：{dungeon_stage_entity.name}，可以进入"
+        f"{dungeon.name} = [{dungeon.current_stage_index}]关为：{dungeon_stage_entity.name}，可以进入"
     )
 
     # 3. 生成并发送传送提示消息
@@ -173,12 +173,13 @@ def enter_dungeon_stage(
 
 
 ###################################################################################################################################################################
-def initialize_dungeon_first_entry(tcg_game: TCGGame) -> bool:
+def initialize_dungeon_first_entry(tcg_game: TCGGame, dungeon: Dungeon) -> bool:
     """
     初始化地下城首次进入，仅在首次进入时调用（current_stage_index < 0）
 
     Args:
         tcg_game: TCG游戏实例
+        dungeon: 要初始化的地下城实例
 
     Returns:
         bool: 是否成功初始化并进入第一个关卡
@@ -187,24 +188,24 @@ def initialize_dungeon_first_entry(tcg_game: TCGGame) -> bool:
         此函数仅处理首次进入场景，后续关卡推进使用 advance_to_next_stage
     """
     # 验证是否为首次进入（索引必须为-1）
-    if tcg_game.current_dungeon.current_stage_index >= 0:
+    if dungeon.current_stage_index >= 0:
         logger.error(
-            f"initialize_dungeon_first_entry: 索引异常 = {tcg_game.current_dungeon.current_stage_index}, "
+            f"initialize_dungeon_first_entry: 索引异常 = {dungeon.current_stage_index}, "
             f"期望值为 -1（首次进入标记）"
         )
         return False
 
     # 初始化地下城状态
-    tcg_game.current_dungeon.current_stage_index = 0
-    tcg_game.create_dungeon_entities(tcg_game.current_dungeon)
+    dungeon.current_stage_index = 0
+    tcg_game.create_dungeon_entities(dungeon)
 
     # 获取所有盟友实体并推进到第一关
     ally_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities.copy()
-    return enter_dungeon_stage(tcg_game, tcg_game.current_dungeon, ally_entities)
+    return enter_dungeon_stage(tcg_game, dungeon, ally_entities)
 
 
 ###################################################################################################################################################################
-def advance_to_next_stage(tcg_game: TCGGame) -> bool:
+def advance_to_next_stage(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     """
     推进到地下城的下一个关卡
 
@@ -213,6 +214,7 @@ def advance_to_next_stage(tcg_game: TCGGame) -> bool:
 
     Args:
         tcg_game: TCG游戏实例
+        dungeon: 要推进的地下城实例
 
     Returns:
         bool: 是否成功推进到下一关卡
@@ -225,15 +227,17 @@ def advance_to_next_stage(tcg_game: TCGGame) -> bool:
         - 调用链: advance_to_next_stage → enter_dungeon_stage
     """
     # 1. 推进地下城索引到下一关
-    if not tcg_game.current_dungeon.advance_to_next_stage():
+    if not dungeon.advance_to_next_stage():
         logger.error("地下城前进失败，没有更多关卡")
-        return False
+        assert False, "地下城前进失败，没有更多关卡"  # 不可能发生！
+        return
 
     # 2. 获取所有盟友实体
     ally_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities.copy()
 
     # 3. 进入下一关卡
-    return enter_dungeon_stage(tcg_game, tcg_game.current_dungeon, ally_entities)
+    enter = enter_dungeon_stage(tcg_game, dungeon, ally_entities)
+    assert enter, "进入下一关卡失败！"
 
 
 ###################################################################################################################################################################

@@ -536,7 +536,7 @@ async def _process_dungeon_state_input(terminal_game: TCGGame, usr_input: str) -
                         f"玩家输入 = {usr_input}, 进入下一关 = {next_level.name}"
                     )
                     # terminal_game.next_dungeon()
-                    advance_to_next_stage(terminal_game)
+                    advance_to_next_stage(terminal_game, terminal_game.current_dungeon)
                     await terminal_game.combat_pipeline.process()
             elif (
                 terminal_game.current_combat_sequence.current_result
@@ -567,7 +567,9 @@ async def _process_home_state_input(terminal_game: TCGGame, usr_input: str) -> N
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备传送地下城")
-        if not initialize_dungeon_first_entry(terminal_game):
+        if not initialize_dungeon_first_entry(
+            terminal_game, terminal_game.current_dungeon
+        ):
             assert False, "传送地下城失败！"
 
         if len(terminal_game.current_combat_sequence.combats) == 0:

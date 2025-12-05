@@ -272,7 +272,7 @@ async def dungeon_gameplay(
                         detail="地下城已全部通关，请返回营地",
                     )
                 # 前进到下一关
-                advance_to_next_stage(rpg_game)
+                advance_to_next_stage(rpg_game, rpg_game.current_dungeon)
                 return DungeonGamePlayResponse(
                     session_messages=rpg_game.player_session.get_messages_since(
                         last_event_sequence

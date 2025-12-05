@@ -154,7 +154,7 @@ class StatusEffectsSettlementSystem(ExecuteProcessor):
             updated_status_effects_message = _format_removed_status_effects_message(
                 removed_effects
             )
-            self._game.append_human_message(entity, updated_status_effects_message)
+            self._game.add_human_message(entity, updated_status_effects_message)
 
     ####################################################################################################################################
     def _settle_status_effects(

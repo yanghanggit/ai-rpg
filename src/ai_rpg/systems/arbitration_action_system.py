@@ -368,13 +368,13 @@ class ArbitrationActionSystem(ReactiveProcessor):
             )
 
             # 添加上下文
-            self._game.append_human_message(
+            self._game.add_human_message(
                 entity=stage_entity,
                 message_content=chat_client.prompt,
             )
 
             # 添加AI回复
-            self._game.append_ai_message(
+            self._game.add_ai_message(
                 entity=stage_entity,
                 ai_messages=chat_client.response_ai_messages,
             )

@@ -133,10 +133,10 @@ class HomeStageSystem(ExecuteProcessor):
                 extract_json_from_code_block(request_handler.response_content)
             )
 
-            self._game.append_human_message(
+            self._game.add_human_message(
                 entity2, _compress_prompt(request_handler.prompt)
             )
-            self._game.append_ai_message(entity2, request_handler.response_ai_messages)
+            self._game.add_ai_message(entity2, request_handler.response_ai_messages)
 
             # 更新环境描写
             if format_response.description != "":

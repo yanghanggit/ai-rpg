@@ -11,7 +11,7 @@ from ..models import (
     ActorComponent,
     EnvironmentComponent,
     KickOffDoneComponent,
-    KickOffMessageComponent,
+    KickOffComponent,
     StageComponent,
     WorldComponent,
 )
@@ -311,7 +311,7 @@ class KickOffSystem(ExecuteProcessor):
         # 通过 Matcher 筛选：组件存在性 + 实体类型
         candidate_entities = self._game.get_group(
             Matcher(
-                all_of=[KickOffMessageComponent],
+                all_of=[KickOffComponent],
                 any_of=[ActorComponent, StageComponent, WorldComponent],
                 none_of=[KickOffDoneComponent],
             )
@@ -321,7 +321,7 @@ class KickOffSystem(ExecuteProcessor):
 
         for entity in candidate_entities:
             # 检查消息内容是否有效
-            kick_off_message_comp = entity.get(KickOffMessageComponent)
+            kick_off_message_comp = entity.get(KickOffComponent)
             if kick_off_message_comp is None or kick_off_message_comp.content == "":
                 logger.warning(
                     f"KickOffSystem: {entity.name} kick off message is empty, skipping"
@@ -335,7 +335,7 @@ class KickOffSystem(ExecuteProcessor):
     ###############################################################################################################################################
     def _get_kick_off_message_content(self, entity: Entity) -> str:
 
-        kick_off_message_comp = entity.get(KickOffMessageComponent)
+        kick_off_message_comp = entity.get(KickOffComponent)
         assert kick_off_message_comp is not None
         assert (
             kick_off_message_comp.content != ""

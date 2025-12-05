@@ -311,9 +311,6 @@ def create_demo_sd_game_boot(
     # 重置外观洗牌状态,确保每局游戏都有独立的外观分配
     reset_appearance_shuffle()
 
-    # 创建世界
-    world_boot = Boot(name=game_name, campaign_setting=WEREWOLF_CAMPAIGN_SETTING)
-
     # 创建参与角色
     # 主持人
     moderator = create_actor_moderator()
@@ -411,6 +408,13 @@ def create_demo_sd_game_boot(
 
     # 设置关系和消息
     stage_werewolf_stage.actors = [moderator] + actors
+
+    # 创建世界
+    world_boot = Boot(
+        name=game_name,
+        player_actor=moderator.name,
+        campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
+    )
 
     # 设置英雄营地场景的初始状态
     world_boot.stages = [stage_werewolf_stage]

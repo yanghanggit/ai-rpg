@@ -253,12 +253,12 @@ class HomeActorSystem(ReactiveProcessor):
             )
 
             # 添加上下文！
-            self._game.append_human_message(
+            self._game.add_human_message(
                 actor_entity,
                 _build_compressed_action_prompt(chat_client.prompt),
                 compressed_prompt=chat_client.prompt,
             )
-            self._game.append_ai_message(actor_entity, chat_client.response_ai_messages)
+            self._game.add_ai_message(actor_entity, chat_client.response_ai_messages)
 
             # 添加内心独白: 上下文！，这里做直接添加与通知处理
             if validated_response.mind_voice_actions != "":

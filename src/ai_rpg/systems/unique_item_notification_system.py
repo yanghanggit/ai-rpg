@@ -158,7 +158,7 @@ class UniqueItemNotificationSystem(ReactiveProcessor):
         assert len(duplicate_message_test) == 0, f"test_unique_item not deleted!"
 
         # 添加新的提示消息
-        self._game.append_human_message(
+        self._game.add_human_message(
             entity,
             _format_unique_item_notification(item),
             test_unique_item=item.name,

@@ -28,10 +28,9 @@ from ..models import (
     EnvironmentComponent,
     AllyComponent,
     HomeComponent,
-    KickOffMessageComponent,
+    KickOffComponent,
     EnemyComponent,
     PlayerComponent,
-    CharacterStats,
     CombatStatsComponent,
     RuntimeComponent,
     Stage,
@@ -47,6 +46,26 @@ from ..models import (
     ActorCharacterSheetComponent,
 )
 from .player_session import PlayerSession
+
+
+#################################################################################################################################################
+def _format_stage_departure_message(actor_name: str, stage_name: str) -> str:
+    """生成角色离开场景的通知消息"""
+    return f"# 通知！{actor_name} 离开了场景: {stage_name}"
+
+
+#################################################################################################################################################
+def _format_stage_arrival_message(actor_name: str, stage_name: str) -> str:
+    """生成角色进入场景的通知消息"""
+    return f"# 通知！{actor_name} 进入了 场景: {stage_name}"
+
+
+#################################################################################################################################################
+def _format_stage_transition_message(from_stage_name: str, to_stage_name: str) -> str:
+    """生成角色自身场景转换的通知消息"""
+    return (
+        f"# 通知！你从 场景: {from_stage_name} 离开，然后进入了 场景: {to_stage_name}"
+    )
 
 
 #################################################################################################################################################
@@ -103,6 +122,16 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         return dir
 
     ###############################################################################################################################################
+    def get_player_entity(self) -> Optional[Entity]:
+        return self.get_entity_by_player_name(self.player_session.name)
+
+    ###############################################################################################################################################
+    def get_agent_context(self, entity: Entity) -> AgentContext:
+        return self.world.agents_context.setdefault(
+            entity.name, AgentContext(name=entity.name, context=[])
+        )
+
+    ###############################################################################################################################################
     @override
     def destroy_entity(self, entity: Entity) -> None:
         logger.debug(f"TCGGame destroy entity: {entity.name}")
@@ -139,7 +168,15 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         self._create_actor_entities(self.world.boot.actors)
 
         ## 第3步，分配玩家控制的actor
-        self._assign_player_to_actor()
+        assert self.player_session.name != "", "玩家名字不能为空"
+        assert self.player_session.actor != "", "玩家角色不能为空"
+        actor_entity = self.get_actor_entity(self.player_session.actor)
+        assert actor_entity is not None
+        assert not actor_entity.has(PlayerComponent)
+        actor_entity.replace(PlayerComponent, self.player_session.name)
+        logger.info(
+            f"玩家: {self.player_session.name} 选择控制: {self.player_session.actor}"
+        )
 
         ## 第4步，创建stage
         self._create_stage_entities(self.world.boot.stages)
@@ -186,57 +223,66 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         self,
         world_system_models: List[WorldSystem],
     ) -> List[Entity]:
-
-        ret: List[Entity] = []
+        """创建世界系统实体，包括运行时组件、系统消息和启动消息"""
+        world_entities: List[Entity] = []
 
         for world_system_model in world_system_models:
 
             # 创建实体
             world_system_entity = self.__create_entity__(world_system_model.name)
-            assert world_system_entity is not None
+            assert (
+                world_system_entity is not None
+            ), f"创建world_system_entity失败: {world_system_model.name}"
 
-            # 必要组件
+            # 必要组件：identifier
+            self._world.runtime_index += 1
             world_system_entity.add(
                 RuntimeComponent,
                 world_system_model.name,
-                self._increment_runtime_index(),
+                self._world.runtime_index,
                 str(uuid.uuid4()),
             )
+
+            # 必要组件：身份类型标记-世界系统
             world_system_entity.add(WorldComponent, world_system_model.name)
 
-            # system prompt
-            assert world_system_model.name in world_system_model.system_message
-            self.append_system_message(
+            # 添加系统消息
+            assert (
+                world_system_model.name in world_system_model.system_message
+            ), f"world_system_model.system_message 缺少 {world_system_model.name} 的系统消息"
+            self.add_system_message(
                 world_system_entity, world_system_model.system_message
             )
 
             # kickoff prompt
             world_system_entity.add(
-                KickOffMessageComponent,
+                KickOffComponent,
                 world_system_model.name,
                 world_system_model.kick_off_message,
             )
 
             # 添加到返回值
-            ret.append(world_system_entity)
+            world_entities.append(world_system_entity)
 
-        return ret
+        return world_entities
 
     ###############################################################################################################################################
     def _create_actor_entities(self, actor_models: List[Actor]) -> List[Entity]:
+        """创建角色实体，包括属性、外观、背包、技能等组件"""
+        actor_entities: List[Entity] = []
 
-        ret: List[Entity] = []
         for actor_model in actor_models:
 
             # 创建实体
             actor_entity = self.__create_entity__(actor_model.name)
-            assert actor_entity is not None
+            assert actor_entity is not None, f"创建actor_entity失败: {actor_model.name}"
 
-            # 必要组件：guid
+            # 必要组件：identifier
+            self._world.runtime_index += 1
             actor_entity.add(
                 RuntimeComponent,
                 actor_model.name,
-                self._increment_runtime_index(),
+                self._world.runtime_index,
                 str(uuid.uuid4()),
             )
 
@@ -244,12 +290,14 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             actor_entity.add(ActorComponent, actor_model.name, "")
 
             # 必要组件：系统消息
-            assert actor_model.name in actor_model.system_message
-            self.append_system_message(actor_entity, actor_model.system_message)
+            assert (
+                actor_model.name in actor_model.system_message
+            ), f"actor_model.system_message 缺少 {actor_model.name} 的系统消息"
+            self.add_system_message(actor_entity, actor_model.system_message)
 
             # 必要组件：启动消息
             actor_entity.add(
-                KickOffMessageComponent, actor_model.name, actor_model.kick_off_message
+                KickOffComponent, actor_model.name, actor_model.kick_off_message
             )
 
             # 必要组件：外观
@@ -267,10 +315,6 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 [],
             )
 
-            # 测试类型。
-            character_profile_component = actor_entity.get(CombatStatsComponent)
-            assert isinstance(character_profile_component.stats, CharacterStats)
-
             # 必要组件：类型标记
             match actor_model.character_sheet.type:
                 case ActorType.ALLY:
@@ -287,20 +331,19 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                         False
                     ), f"未知的 ActorType: {actor_model.character_sheet.type}"
 
-            # 必要组件：背包组件, 必须copy一份, 不要进行直接引用，而且在此处生成uuid
-            copy_items = copy.deepcopy(actor_model.items)
-            for item in copy_items:
-                assert item.uuid == "", "item.uuid should be empty"
-                item.uuid = str(uuid.uuid4())
-
-            # 添加ActorCharacterSheetComponent！
+            # 必要组件：角色卡组件
             actor_entity.add(
                 ActorCharacterSheetComponent,
                 actor_model.name,
                 actor_model.character_sheet,
             )
 
-            # 添加InventoryComponent！
+            # 必要组件：背包组件, 必须copy一份, 不要进行直接引用，而且在此处生成uuid
+            copy_items = copy.deepcopy(actor_model.items)
+            for item in copy_items:
+                assert item.uuid == "", "item.uuid should be empty"
+                item.uuid = str(uuid.uuid4())
+
             actor_entity.add(
                 InventoryComponent,
                 actor_model.name,
@@ -317,7 +360,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 for item in inventory_component.items:
                     logger.info(f"物品: {item.model_dump_json(indent=2)}")
 
-            # 注意这个位置，我希望添加技能书的组件
+            # 必要组件：技能书组件, 必须copy一份, 不要进行直接引用
             copy_skills = copy.deepcopy(actor_model.skills)
             actor_entity.add(
                 SkillBookComponent,
@@ -326,43 +369,37 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             )
 
             # 添加到返回值
-            ret.append(actor_entity)
+            actor_entities.append(actor_entity)
 
-        return ret
+        return actor_entities
 
     ###############################################################################################################################################
     def _create_stage_entities(self, stage_models: List[Stage]) -> List[Entity]:
-
-        ret: List[Entity] = []
+        """创建场景实体，包括环境描述、类型标记，并建立与角色的关系"""
+        stage_entities: List[Entity] = []
 
         for stage_model in stage_models:
 
             # 创建实体
             stage_entity = self.__create_entity__(stage_model.name)
 
-            # 必要组件
+            # 必要组件: identifier
+            self._world.runtime_index += 1
             stage_entity.add(
                 RuntimeComponent,
                 stage_model.name,
-                self._increment_runtime_index(),
+                self._world.runtime_index,
                 str(uuid.uuid4()),
             )
             stage_entity.add(StageComponent, stage_model.name)
 
-            # system prompt
+            # 必要组件：系统消息
             assert stage_model.name in stage_model.system_message
-            self.append_system_message(stage_entity, stage_model.system_message)
+            self.add_system_message(stage_entity, stage_model.system_message)
 
-            # kickoff prompt
+            # 必要组件：启动消息
             stage_entity.add(
-                KickOffMessageComponent, stage_model.name, stage_model.kick_off_message
-            )
-
-            # 添加 StageCharacterSheetComponent！
-            stage_entity.add(
-                StageCharacterSheetComponent,
-                stage_model.name,
-                stage_model.character_sheet,
+                KickOffComponent, stage_model.name, stage_model.kick_off_message
             )
 
             # 必要组件：环境描述
@@ -378,34 +415,29 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             elif stage_model.character_sheet.type == StageType.HOME:
                 stage_entity.add(HomeComponent, stage_model.name)
 
+            # 必要组件：角色卡组件
+            stage_entity.add(
+                StageCharacterSheetComponent,
+                stage_model.name,
+                stage_model.character_sheet,
+            )
+
             ## 重新设置Actor和stage的关系
             for actor_model in stage_model.actors:
-                actor_entity: Optional[Entity] = self.get_actor_entity(actor_model.name)
-                assert actor_entity is not None
+                actor_entity = self.get_actor_entity(actor_model.name)
+                assert (
+                    actor_entity is not None
+                ), f"找不到actor_entity: {actor_model.name}"
                 actor_entity.replace(ActorComponent, actor_model.name, stage_model.name)
 
-            ret.append(stage_entity)
+            stage_entities.append(stage_entity)
 
-        return []
-
-    ###############################################################################################################################################
-    def _increment_runtime_index(self) -> int:
-        self._world.runtime_index += 1
-        return self._world.runtime_index
+        return stage_entities
 
     ###############################################################################################################################################
-    def get_player_entity(self) -> Optional[Entity]:
-        return self.get_entity_by_player_name(self.player_session.name)
-
-    ###############################################################################################################################################
-    def get_agent_context(self, entity: Entity) -> AgentContext:
-        return self.world.agents_context.setdefault(
-            entity.name, AgentContext(name=entity.name, context=[])
-        )
-
-    ###############################################################################################################################################
-    def append_system_message(self, entity: Entity, message_content: str) -> None:
-        logger.info(f"append_system_message: {entity.name} => \n{message_content}")
+    def add_system_message(self, entity: Entity, message_content: str) -> None:
+        """添加系统消息到实体的LLM上下文，必须是第一条消息"""
+        logger.info(f"add_system_message: {entity.name} => \n{message_content}")
         agent_context = self.get_agent_context(entity)
         assert (
             len(agent_context.context) == 0
@@ -413,50 +445,30 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         agent_context.context.append(SystemMessage(content=message_content))
 
     ###############################################################################################################################################
-    def append_human_message(
+    def add_human_message(
         self, entity: Entity, message_content: str, **kwargs: Any
     ) -> None:
-
-        # logger.debug(f"append_human_message: {entity.name} => \n{message_content}")
-        # if len(kwargs) > 0:
-        #     # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
-        #     logger.debug(f"kwargs: {kwargs}")
-
-        # 将 message_content 内的 entity.name，replace 成 你
-        # message_content = message_content.replace(entity.name, "**你**")
+        """添加用户消息到实体的LLM上下文"""
+        logger.debug(f"add_human_message: {entity.name} => \n{message_content}")
+        if len(kwargs) > 0:
+            # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
+            logger.debug(f"kwargs: {kwargs}")
 
         agent_context = self.get_agent_context(entity)
         agent_context.context.extend([HumanMessage(content=message_content, **kwargs)])
 
     ###############################################################################################################################################
-    def append_ai_message(self, entity: Entity, ai_messages: List[AIMessage]) -> None:
-
-        # assert len(ai_messages) > 0, "ai_messages should not be empty"
-        # for ai_message in ai_messages:
-        #     assert isinstance(ai_message, AIMessage)
-        #     assert ai_message.content != "", "ai_message content should not be empty"
-        #     logger.debug(f"append_ai_message: {entity.name} => \n{ai_message.content}")
+    def add_ai_message(self, entity: Entity, ai_messages: List[AIMessage]) -> None:
+        """添加AI响应消息到实体的LLM上下文"""
+        assert len(ai_messages) > 0, "ai_messages should not be empty"
+        for ai_message in ai_messages:
+            assert isinstance(ai_message, AIMessage)
+            assert ai_message.content != "", "ai_message content should not be empty"
+            logger.debug(f"add_ai_message: {entity.name} => \n{ai_message.content}")
 
         # 添加多条 AIMessage
         agent_context = self.get_agent_context(entity)
         agent_context.context.extend(ai_messages)
-
-    ###############################################################################################################################################
-    def _assign_player_to_actor(self) -> bool:
-        assert self.player_session.name != "", "玩家名字不能为空"
-        assert self.player_session.actor != "", "玩家角色不能为空"
-
-        actor_entity = self.get_actor_entity(self.player_session.actor)
-        assert actor_entity is not None
-        if actor_entity is None:
-            return False
-
-        assert not actor_entity.has(PlayerComponent)
-        actor_entity.replace(PlayerComponent, self.player_session.name)
-        logger.info(
-            f"玩家: {self.player_session.name} 选择控制: {self.player_session.name}"
-        )
-        return True
 
     ###############################################################################################################################################
     def broadcast_to_stage(
@@ -490,7 +502,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
 
         # 正常的添加记忆。
         for entity in entities:
-            self.append_human_message(entity, agent_event.message, **kwargs)
+            self.add_human_message(entity, agent_event.message, **kwargs)
 
         # 最后都要发给客户端。
         self.player_session.add_agent_event_message(agent_event=agent_event)
@@ -545,7 +557,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             self.broadcast_to_stage(
                 entity=current_stage,
                 agent_event=AgentEvent(
-                    message=f"# 通知！{actor_entity.name} 离开了场景: {current_stage.name}",
+                    message=_format_stage_departure_message(
+                        actor_entity.name, current_stage.name
+                    ),
                 ),
                 exclude_entities={actor_entity},
             )
@@ -575,7 +589,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             self.notify_entities(
                 entities={actor_entity},
                 agent_event=TransStageEvent(
-                    message=f"# 通知！你从 场景: {current_stage.name} 离开，然后进入了 场景: {stage_destination.name}",
+                    message=_format_stage_transition_message(
+                        current_stage.name, stage_destination.name
+                    ),
                     actor=actor_entity.name,
                     from_stage=current_stage.name,
                     to_stage=stage_destination.name,
@@ -598,7 +614,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             self.broadcast_to_stage(
                 entity=stage_destination,
                 agent_event=AgentEvent(
-                    message=f"# 通知！{actor_entity.name} 进入了 场景: {stage_destination.name}",
+                    message=_format_stage_arrival_message(
+                        actor_entity.name, stage_destination.name
+                    ),
                 ),
                 exclude_entities={actor_entity},
             )

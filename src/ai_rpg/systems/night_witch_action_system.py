@@ -116,7 +116,7 @@ class NightWitchActionSystem(ReactiveProcessor):
         if len(inventory_component.items) == 0:
             # 如果没有道具，直接跳过女巫行动
             logger.warning(f"女巫 {witch_entity.name} 没有道具，跳过女巫行动")
-            self._game.append_human_message(
+            self._game.add_human_message(
                 witch_entity,
                 f"""# 提示！你没有任何道具，本轮你将跳过女巫行动。""",
             )
@@ -238,7 +238,7 @@ class NightWitchActionSystem(ReactiveProcessor):
             logger.error(f"Exception: {e}")
 
             # 保底添加上下文，也是跳过女巫行动
-            self._game.append_human_message(
+            self._game.add_human_message(
                 witch_entity,
                 f"""# 提示！在解析你的决策时出现错误。本轮你将跳过女巫行动。""",
             )

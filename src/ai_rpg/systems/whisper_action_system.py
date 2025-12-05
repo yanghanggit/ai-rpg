@@ -98,7 +98,7 @@ class WhisperActionSystem(ReactiveProcessor):
                 if error == InteractionValidationResult.TARGET_NOT_FOUND:
 
                     # 记录在上下文里！
-                    self._game.append_human_message(
+                    self._game.add_human_message(
                         entity=entity,
                         message_content=_format_invalid_target_error(
                             whisper_action.name, target_name

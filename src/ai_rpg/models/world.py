@@ -11,6 +11,7 @@ from .serialization import EntitySerialization
 @final
 class Boot(BaseModel):
     name: str
+    player_actor: str
     campaign_setting: str = ""
     stages: List[Stage] = []
     world_systems: List[WorldSystem] = []
@@ -35,7 +36,7 @@ class World(BaseModel):
     entities_serialization: List[EntitySerialization] = []
     agents_context: Dict[str, AgentContext] = {}
     dungeon: Dungeon = Dungeon(name="")
-    boot: Boot = Boot(name="")
+    boot: Boot = Boot(name="", player_actor="")
 
 
 ###############################################################################################################################################

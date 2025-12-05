@@ -218,6 +218,6 @@ class SDGGame(RPGGame):
 
         # 向所有玩家发送白天开始的消息
         for player in all_players:
-            self.append_human_message(player, message)
+            self.add_human_message(player, message)
 
     ###############################################################################################################################################

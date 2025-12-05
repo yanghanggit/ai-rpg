@@ -14,7 +14,6 @@ from ai_rpg.configuration import (
 )
 from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
-    create_actor_warrior,
     create_demo_dungeon4,
     create_demo_game_world_boot1,
 )
@@ -394,7 +393,7 @@ def _trans_stage_action(terminal_game: TCGGame, stage_name: str) -> bool:
 async def _run_game(
     user: str,
     game: str,
-    actor: str,
+    # actor: str,
 ) -> None:
 
     # 注意，如果确定player是固定的，但是希望每次玩新游戏，就调用这句。
@@ -429,7 +428,7 @@ async def _run_game(
         name=game,
         player_session=PlayerSession(
             name=user,
-            actor=actor,
+            actor=world_exists.boot.player_actor,
             game=game,
         ),
         world=world_exists,
@@ -451,9 +450,9 @@ async def _run_game(
 
     # 测试一下玩家控制角色，如果没有就是错误。
     player_entity = terminal_game.get_player_entity()
-    if player_entity is None:
-        logger.error(f"玩家实体不存在 = {user}, {game}, {actor}")
-        exit(1)
+    assert (
+        player_entity is not None
+    ), f"玩家实体不存在！= {user}, {game}, {terminal_game.world.boot.player_actor}"
 
     # 初始化！
     await terminal_game.initialize()
@@ -677,9 +676,9 @@ if __name__ == "__main__":
     # 做一些设置
     user = random_name
     game = GLOBAL_TCG_GAME_NAME
-    actor = create_actor_warrior().name
+    # actor = create_actor_warrior().name
 
     # 运行游戏
     import asyncio
 
-    asyncio.run(_run_game(user, game, actor))
+    asyncio.run(_run_game(user, game))

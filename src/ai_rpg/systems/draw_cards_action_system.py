@@ -369,13 +369,13 @@ class DrawCardsActionSystem(ReactiveProcessor):
             )
 
             # 模拟历史上下文！
-            self._game.append_human_message(
+            self._game.add_human_message(
                 entity=entity,
                 message_content="# 指令！回顾战斗历史，评估当前态势，生成你的参战信息",
             )
 
             # 添加AI消息，包括响应内容。
-            self._game.append_ai_message(
+            self._game.add_ai_message(
                 entity,
                 [AIMessage(content="未能生成参战信息，默认执行等待动作。")],
             )
@@ -409,7 +409,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             ), "当前没有进行中的战斗回合，不能生成卡牌。"
 
             # 添加压缩上下文的提示词
-            self._game.append_human_message(
+            self._game.add_human_message(
                 entity=entity,
                 message_content=_generate_compressd_round_prompt(
                     actor_name=entity.name,
@@ -423,7 +423,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             )
 
             # 添加AI消息，包括响应内容。
-            self._game.append_ai_message(entity, chat_client.response_ai_messages)
+            self._game.add_ai_message(entity, chat_client.response_ai_messages)
 
             # 生成的结果。
             # validated_response.cards 中的每个 card_response 已经是 Card 类型
@@ -587,6 +587,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
             combat_stats_comp.status_effects
         )
 
-        self._game.append_human_message(entity, updated_status_effects_message)
+        self._game.add_human_message(entity, updated_status_effects_message)
 
     #######################################################################################################################################

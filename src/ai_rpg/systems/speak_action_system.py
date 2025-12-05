@@ -92,7 +92,7 @@ class SpeakActionSystem(ReactiveProcessor):
                 # 目标不存在，添加提示信息
                 if error == InteractionValidationResult.TARGET_NOT_FOUND:
                     # 添加上下文提示!
-                    self._game.append_human_message(
+                    self._game.add_human_message(
                         entity=entity,
                         message_content=_format_invalid_target_error(
                             speak_action.name, target_name

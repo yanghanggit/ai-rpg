@@ -88,7 +88,7 @@ class TransStageActionSystem(ReactiveProcessor):
         if target_stage_entity is None:
 
             # 不存在！
-            self._game.append_human_message(
+            self._game.add_human_message(
                 entity=entity,
                 message_content=f"# 提示！{entity.name} 触发场景转换动作失败, 找不到目标场景 {trans_stage_action.target_stage_name}.",
             )
@@ -103,7 +103,7 @@ class TransStageActionSystem(ReactiveProcessor):
         if target_stage_entity == current_stage_entity:
 
             # 添加提示，让LLM记住错误
-            self._game.append_human_message(
+            self._game.add_human_message(
                 entity=entity,
                 message_content=f"# 提示！{entity.name} 触发场景转换动作失败, 目标场景 {trans_stage_action.target_stage_name} 与当前场景 {current_stage_entity.name} 相同.",
             )

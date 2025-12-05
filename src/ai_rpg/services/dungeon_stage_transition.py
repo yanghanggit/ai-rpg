@@ -16,9 +16,10 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     Dungeon,
     DungeonComponent,
-    KickOffMessageComponent,
+    KickOffComponent,
     Combat,
     AllyComponent,
+    HandComponent,
 )
 from ..entitas import Matcher, Entity
 
@@ -134,13 +135,18 @@ def enter_dungeon_stage(
     )
 
     for ally_entity in ally_entities:
-        tcg_game.append_human_message(ally_entity, trans_message)
+        # 添加上下文！
+        tcg_game.add_human_message(ally_entity, trans_message)
+
+        if ally_entity.has(HandComponent):
+            logger.debug(f"进入地下城时移除手牌组件: {ally_entity.name}")
+            ally_entity.remove(HandComponent)
 
     # 4. 执行场景传送
     tcg_game.stage_transition(ally_entities, dungeon_stage_entity)
 
     # 5. 设置KickOff消息并添加场景角色信息
-    stage_kickoff_comp = dungeon_stage_entity.get(KickOffMessageComponent)
+    stage_kickoff_comp = dungeon_stage_entity.get(KickOffComponent)
     assert (
         stage_kickoff_comp is not None
     ), f"{dungeon_stage_entity.name} 没有KickOffMessageComponent组件！"
@@ -155,7 +161,7 @@ def enter_dungeon_stage(
     )
 
     dungeon_stage_entity.replace(
-        KickOffMessageComponent,
+        KickOffComponent,
         stage_kickoff_comp.name,
         enhanced_kickoff_content,
     )
@@ -268,7 +274,7 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
     # 3. 生成并发送返回提示消息
     return_prompt = f"""# 提示！冒险结束，将要返回: {home_stage.name}"""
     for ally_entity in ally_entities:
-        tcg_game.append_human_message(ally_entity, return_prompt)
+        tcg_game.add_human_message(ally_entity, return_prompt)
 
     # 4. 执行场景传送到家园
     tcg_game.stage_transition(ally_entities, home_stage)

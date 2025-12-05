@@ -127,7 +127,7 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
                 e.get(WerewolfComponent).name for e in copy_entities
             ]
             # logger.info(f"Werewolf {entity.name} 的同伴: {allied_werewolf_names}")
-            self._game.append_human_message(
+            self._game.add_human_message(
                 entity,
                 f"# 提示！你的同伴狼人有: {', '.join(allied_werewolf_names)}",
             )
@@ -184,7 +184,7 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
             prompt = _generate_awareness_prompt(
                 environment_description, other_players_mapping
             )
-            self._game.append_human_message(actor_entity, prompt)
+            self._game.add_human_message(actor_entity, prompt)
 
     ###############################################################################################################################################
     def _get_environment_description(self) -> str:

@@ -25,7 +25,7 @@ class RuntimeComponent(Component):
 # 记录kick off原始信息
 @final
 @register_component_class
-class KickOffMessageComponent(Component):
+class KickOffComponent(Component):
     name: str
     content: str
 

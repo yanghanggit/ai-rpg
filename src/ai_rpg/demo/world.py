@@ -48,10 +48,6 @@ def create_demo_game_world_boot1(game_name: str) -> Boot:
         - 战士: 以自由卫士身份磨砺武技，探索遗迹寻找压制时间裂隙的方法并为死去的战友复仇
         - 法师: 通过破解裂隙遗迹中的符文机械秘密,找到平息魔网紊乱危机的方法
     """
-    # 创建世界
-    world_boot = Boot(
-        name=game_name, campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING
-    )
 
     # 创建英雄营地场景和角色
     actor_warrior = create_actor_warrior()
@@ -85,6 +81,13 @@ def create_demo_game_world_boot1(game_name: str) -> Boot:
 ## 环境叙事基调
 餐馆里弥漫着美食的香气，模糊的人影在木桌间交错，嘈杂的交谈声混成低沉的背景音。
 这些人影是环境氛围的一部分，作为整体存在感呈现，不应被描述为具体的个体或互动行为。"""
+
+    # 创建世界
+    world_boot = Boot(
+        name=game_name,
+        player_actor=actor_warrior.name,  # 玩家角色为战士
+        campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+    )
 
     # 设置世界场景
     world_boot.stages = [stage_ally_safe_room, stage_ally_dining_room]
@@ -120,10 +123,6 @@ def create_demo_game_world_boot2(game_name: str) -> Boot:
     角色目标:
         - 战士: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。
     """
-    # 创建世界
-    world_boot = Boot(
-        name=game_name, campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING
-    )
 
     # 创建英雄营地场景和角色
     actor_warrior = create_actor_warrior()
@@ -135,6 +134,13 @@ def create_demo_game_world_boot2(game_name: str) -> Boot:
 
     # 设置关系和消息
     stage_ally_safe_room.actors = [actor_warrior]
+
+    # 创建世界
+    world_boot = Boot(
+        name=game_name,
+        player_actor=actor_warrior.name,  # 玩家角色为战士
+        campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+    )
 
     # 设置英雄营地场景的初始状态
     world_boot.stages = [stage_ally_safe_room]
@@ -167,10 +173,6 @@ def create_demo_game_world_boot3(game_name: str) -> Boot:
         - 玩家角色: 利用穿越者身份和特殊技能,探索裂隙遗迹,寻找压制时空裂隙出现的方法,并揭开这个世界的秘密。
         - 战士: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。
     """
-    # 创建世界
-    world_boot = Boot(
-        name=game_name, campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING
-    )
 
     # 创建英雄营地场景和角色
     actor_warrior = create_actor_warrior()
@@ -184,6 +186,13 @@ def create_demo_game_world_boot3(game_name: str) -> Boot:
 
     # 设置关系和消息
     stage_ally_safe_room.actors = [actor_warrior, actor_player]
+
+    # 创建世界
+    world_boot = Boot(
+        name=game_name,
+        player_actor=actor_player.name,  # 玩家角色为穿越者
+        campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+    )
 
     # 设置英雄营地场景的初始状态
     world_boot.stages = [stage_ally_safe_room, stage_ally_dining_room]

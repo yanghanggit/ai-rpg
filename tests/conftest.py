@@ -27,7 +27,7 @@ def sample_game() -> Any:
         pytest.skip("TCGGame not available")
 
     # 创建基本的依赖
-    boot = Boot(name="test_boot")
+    boot = Boot(name="test_boot", player_actor="test_player_actor")
     dungeon = Dungeon(name="")
     world = World(
         runtime_index=1000,

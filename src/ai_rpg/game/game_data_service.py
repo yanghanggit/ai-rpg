@@ -3,9 +3,10 @@ import shutil
 from pathlib import Path
 from typing import Optional
 from loguru import logger
-from ..models.world import Boot, World
+from ..models import Boot, World, Dungeon
 from .player_session import PlayerSession
 from ..game.config import WORLD_BOOT_DIR, WORLD_RUNTIME_DIR
+from .config import LOGS_DIR
 
 
 ###############################################################################################################################################
@@ -149,6 +150,17 @@ def persist_world_data(
 
 
 ###############################################################################################################################################
+def verbose_dir(player_session_name: str, game_name: str) -> Path:
+    # 依赖 GameSession 提供的 name 属性
+    dir = LOGS_DIR / f"{player_session_name}" / f"{game_name}"
+    if not dir.exists():
+        dir.mkdir(parents=True, exist_ok=True)
+    assert dir.exists()
+    assert dir.is_dir()
+    return dir
+
+
+###############################################################################################################################################
 def debug_verbose_world_data(
     verbose_dir: Path, world: World, player_session: PlayerSession
 ) -> None:
@@ -158,8 +170,7 @@ def debug_verbose_world_data(
     verbose_entities_serialization(verbose_dir, world)
     verbose_context(verbose_dir, world)
     verbose_player_session(verbose_dir, player_session)
-    verbose_dungeon_system(verbose_dir, world)
-    # logger.debug(f"Verbose debug info saved to: {verbose_dir}")
+    verbose_dungeon(verbose_dir, world.dungeon)
 
 
 ###############################################################################################################################################
@@ -244,15 +255,12 @@ def verbose_entities_serialization(verbose_dir: Path, world: World) -> None:
 
 
 ###############################################################################################################################################
-def verbose_dungeon_system(verbose_dir: Path, world: World) -> None:
+def verbose_dungeon(verbose_dir: Path, dungeon: Dungeon) -> None:
     """保存地下城系统数据到文件"""
-    if world.dungeon.name == "":
-        return
-
     dungeon_system_dir = verbose_dir / "dungeons"
     dungeon_system_dir.mkdir(parents=True, exist_ok=True)
-    dungeon_system_path = dungeon_system_dir / f"{world.dungeon.name}.json"
-    dungeon_system_path.write_text(world.dungeon.model_dump_json(), encoding="utf-8")
+    dungeon_system_path = dungeon_system_dir / f"{dungeon.name}.json"
+    dungeon_system_path.write_text(dungeon.model_dump_json(), encoding="utf-8")
 
 
 ###############################################################################################################################################

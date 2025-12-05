@@ -101,14 +101,14 @@ async def get_dungeon_state(
         )
 
     # 获取 TCG 游戏实例
-    web_game = current_room._tcg_game
+    rpg_game = current_room._tcg_game
 
     # 获取场景与角色的分布映射
-    mapping_data = web_game.get_stage_actor_distribution_mapping()
+    mapping_data = rpg_game.get_stage_actor_distribution_mapping()
     logger.info(f"view_dungeon: {user_name} mapping_data: {mapping_data}")
 
     # 返回副本状态
     return DungeonStateResponse(
         mapping=mapping_data,
-        dungeon=web_game.current_dungeon,
+        dungeon=rpg_game.current_dungeon,
     )

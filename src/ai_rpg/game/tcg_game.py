@@ -163,14 +163,7 @@ class TCGGame(RPGGame):
         shuffled_reactive_entities = list(actors_on_stage)
         random.shuffle(shuffled_reactive_entities)
 
-        # 创建新的回合
-        # new_round = self.current_combat_sequence.create_new_round(
-        #     action_order=[entity.name for entity in shuffled_reactive_entities]
-        # )
-
         # 设置回合的环境描写
-        # new_round.environment = stage_entity.get(EnvironmentComponent).description
-        # logger.debug(f"new_round:\n{new_round.model_dump_json(indent=2)}")
         return self.current_combat_sequence.create_new_round(
             action_order=[entity.name for entity in shuffled_reactive_entities]
         )

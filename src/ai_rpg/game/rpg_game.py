@@ -6,13 +6,11 @@ RPG游戏核心类模块
 
 import copy
 import uuid
-from pathlib import Path
 from typing import Any, Final, List, Optional, Set
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
-from .config import LOGS_DIR
-from .game_data_service import persist_world_data, debug_verbose_world_data
+from .game_data_service import persist_world_data, debug_verbose_world_data, verbose_dir
 from ..entitas import Entity
 from .game_session import GameSession
 from .rpg_entity_manager import RPGEntityManager
@@ -111,17 +109,6 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         return self._world
 
     ###############################################################################################################################################
-    @property
-    def verbose_dir(self) -> Path:
-        # 依赖 GameSession 提供的 name 属性
-        dir = LOGS_DIR / f"{self.player_session.name}" / f"{self.name}"
-        if not dir.exists():
-            dir.mkdir(parents=True, exist_ok=True)
-        assert dir.exists()
-        assert dir.is_dir()
-        return dir
-
-    ###############################################################################################################################################
     def get_player_entity(self) -> Optional[Entity]:
         return self.get_entity_by_player_name(self.player_session.name)
 
@@ -211,7 +198,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
 
         # debug - 调用模块级函数
         debug_verbose_world_data(
-            verbose_dir=self.verbose_dir,
+            verbose_dir=verbose_dir(
+                player_session_name=self.player_session.name, game_name=self.name
+            ),
             world=self.world,
             player_session=self.player_session,
         )

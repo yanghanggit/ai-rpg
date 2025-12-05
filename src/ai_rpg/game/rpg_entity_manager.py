@@ -41,8 +41,6 @@ class InteractionValidationResult(IntEnum):
 ###############################################################################################################################################
 class RPGEntityManager(Context):
 
-    # rpg_entity_manager
-
     ###############################################################################################################################################
     def __init__(
         self,
@@ -60,7 +58,6 @@ class RPGEntityManager(Context):
     ###############################################################################################################################################
     @override
     def destroy_entity(self, entity: Entity) -> None:
-        # logger.debug(f"destroy entity: {entity._name}")
         self._query_entities.pop(entity.name, None)
         return super().destroy_entity(entity)
 
@@ -79,7 +76,7 @@ class RPGEntityManager(Context):
     ###############################################################################################################################################
     def serialize_entities(self, entities: Set[Entity]) -> List[EntitySerialization]:
 
-        ret: List[EntitySerialization] = []
+        entity_serializations: List[EntitySerialization] = []
 
         entities_copy = list(entities)
 
@@ -91,20 +88,16 @@ class RPGEntityManager(Context):
 
         for entity in sort_actors:
             entity_serialization = self._serialize_entity(entity)
-            ret.append(entity_serialization)
+            entity_serializations.append(entity_serialization)
 
-        return ret
+        return entity_serializations
 
     ###############################################################################################################################################
     def deserialize_entities(
         self, entities_serialization: List[EntitySerialization]
     ) -> Set[Entity]:
 
-        ret: Set[Entity] = set()
-
-        # assert len(self._entities) == 0
-        # if len(self._entities) > 0:
-        #     return ret
+        deserialized_entities: Set[Entity] = set()
 
         for entity_serialization in entities_serialization:
 
@@ -113,7 +106,7 @@ class RPGEntityManager(Context):
             ), f"Entity with name already exists: {entity_serialization.name}"
 
             entity = self.__create_entity__(entity_serialization.name)
-            ret.add(entity)  # 添加到返回的集合中
+            deserialized_entities.add(entity)  # 添加到返回的集合中
 
             for comp_serialization in entity_serialization.components:
 
@@ -129,7 +122,7 @@ class RPGEntityManager(Context):
                 )
                 entity.set(comp_class, restore_comp)
 
-        return ret
+        return deserialized_entities
 
     ###############################################################################################################################################
     def get_world_entity(self, world_name: str) -> Optional[Entity]:
@@ -213,7 +206,6 @@ class RPGEntityManager(Context):
         return {actor for actor in ret if not actor.has(DeathComponent)}
 
     ###############################################################################################################################################
-    # 以actor的final_appearance.name为key，final_appearance.final_appearance为value
     def get_stage_actor_appearances(self, entity: Entity) -> Dict[str, str]:
         ret: Dict[str, str] = {}
         for actor in self.get_alive_actors_on_stage(entity):

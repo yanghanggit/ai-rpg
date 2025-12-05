@@ -60,12 +60,13 @@ class LogoutResponse(BaseModel):
 class StartRequest(BaseModel):
     user_name: str
     game_name: str
-    actor_name: str
+    # actor_name: str
 
 
 @final
 class StartResponse(BaseModel):
     message: str
+    player_actor: str
 
 
 ################################################################################################################

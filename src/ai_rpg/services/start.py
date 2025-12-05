@@ -91,6 +91,15 @@ async def start(
     room = game_server.get_room(payload.user_name)
     assert room is not None, "start: room instance is None"
 
+    # 如果没有boot数据，就返回错误, 压根不能玩！
+    world_boot = get_game_boot_data(payload.game_name)
+    assert world_boot is not None, "world_boot is None"
+    if world_boot is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"start/v1: {payload.game_name} boot data not found",
+        )
+
     # 检查游戏是否已经在进行中
     if room._tcg_game is not None:
         raise HTTPException(
@@ -101,7 +110,7 @@ async def start(
     # 创建玩家客户端
     room._player_session = PlayerSession(
         name=payload.user_name,
-        actor=payload.actor_name,
+        actor=world_boot.player_actor,
         game=payload.game_name,
     )
     assert room._player_session is not None, "房间玩家客户端实例不存在"
@@ -109,15 +118,6 @@ async def start(
     # 获取或创建世界数据
     current_world_instance = get_user_world_data(payload.user_name, payload.game_name)
     if current_world_instance is None:
-
-        # 如果没有world数据，就创建一个新的world
-        world_boot = get_game_boot_data(payload.game_name)
-        assert world_boot is not None, "world_boot is None"
-        if world_boot is None:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"start/v1: {payload.game_name} boot data not found",
-            )
 
         # 重新生成world
         current_world_instance = World(boot=world_boot)
@@ -147,15 +147,21 @@ async def start(
         )
         room._tcg_game.new_game().save()
     else:
-        logger.info(
-            f"游戏中有实体 = {payload.game_name}，需要通过数据恢复实体，是游戏的恢复的过程"
-        )
-        room._tcg_game.load_game().save()
+        assert False, "start/v1: 游戏恢复功能尚未实现"
+        # logger.info(
+        #     f"游戏中有实体 = {payload.game_name}，需要通过数据恢复实体，是游戏的恢复的过程"
+        # )
+        # room._tcg_game.load_game().save()
 
     # 验证玩家实体是否创建成功
     player_entity = room._tcg_game.get_player_entity()
     if player_entity is None:
-        logger.error(f"没有找到玩家实体 = {payload.actor_name}")
+
+        # 清理游戏实例, 出了严重的问题！！！
+        room._tcg_game = None
+
+        # 返回错误！
+        logger.error(f"没有找到玩家实体 = {world_boot.player_actor}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"start/v1: {payload.user_name} failed to create player entity",
@@ -166,6 +172,4 @@ async def start(
     await room._tcg_game.initialize()
 
     # 返回成功响应
-    return StartResponse(
-        message=f"启动游戏成功！",
-    )
+    return StartResponse(message=f"启动游戏成功！", player_actor=player_entity.name)

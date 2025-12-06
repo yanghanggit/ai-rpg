@@ -141,7 +141,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
             CombatCompleteEvent(
                 message=combat_summary,
                 actor=processed_actor_entity.name,
-                summary=combat_summary,
+                summary=chat_client.response_content,
             ),
             removed_messages_content=buffer_string,
         )

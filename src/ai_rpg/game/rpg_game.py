@@ -40,8 +40,6 @@ from ..models import (
     InventoryComponent,
     SkillBookComponent,
     TransStageEvent,
-    StageCharacterSheetComponent,
-    ActorCharacterSheetComponent,
 )
 from .player_session import PlayerSession
 
@@ -276,7 +274,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             )
 
             # 必要组件：身份类型标记-角色Actor
-            actor_entity.add(ActorComponent, actor_model.name, "")
+            actor_entity.add(
+                ActorComponent, actor_model.name, actor_model.character_sheet.name, ""
+            )
 
             # 必要组件：系统消息
             assert (
@@ -319,13 +319,6 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                     assert (
                         False
                     ), f"未知的 ActorType: {actor_model.character_sheet.type}"
-
-            # 必要组件：角色卡组件
-            actor_entity.add(
-                ActorCharacterSheetComponent,
-                actor_model.name,
-                actor_model.character_sheet,
-            )
 
             # 必要组件：背包组件, 必须copy一份, 不要进行直接引用，而且在此处生成uuid
             copy_items = copy.deepcopy(actor_model.items)
@@ -380,7 +373,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 self._world.runtime_index,
                 str(uuid.uuid4()),
             )
-            stage_entity.add(StageComponent, stage_model.name)
+            stage_entity.add(
+                StageComponent, stage_model.name, stage_model.character_sheet.name
+            )
 
             # 必要组件：系统消息
             assert stage_model.name in stage_model.system_message
@@ -404,20 +399,18 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             elif stage_model.character_sheet.type == StageType.HOME:
                 stage_entity.add(HomeComponent, stage_model.name)
 
-            # 必要组件：角色卡组件
-            stage_entity.add(
-                StageCharacterSheetComponent,
-                stage_model.name,
-                stage_model.character_sheet,
-            )
-
             ## 重新设置Actor和stage的关系
             for actor_model in stage_model.actors:
                 actor_entity = self.get_actor_entity(actor_model.name)
                 assert (
                     actor_entity is not None
                 ), f"找不到actor_entity: {actor_model.name}"
-                actor_entity.replace(ActorComponent, actor_model.name, stage_model.name)
+                actor_entity.replace(
+                    ActorComponent,
+                    actor_model.name,
+                    actor_model.character_sheet.name,
+                    stage_model.name,
+                )
 
             stage_entities.append(stage_entity)
 
@@ -569,9 +562,15 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             assert current_stage is not None, "角色没有当前场景"
             assert current_stage != stage_destination, "不应该传送到当前场景"
 
+            actor_comp = actor_entity.get(ActorComponent)
+            assert actor_comp is not None, "actor_comp is None"
+
             # 更改所处场景的标识
             actor_entity.replace(
-                ActorComponent, actor_entity.name, stage_destination.name
+                ActorComponent,
+                actor_comp.name,
+                actor_comp.character_sheet_name,
+                stage_destination.name,
             )
 
             # 通知角色自身的传送过程

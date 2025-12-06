@@ -5,8 +5,6 @@ from .objects import (
     CharacterStats,
     Item,
     Skill,
-    ActorCharacterSheet,
-    StageCharacterSheet,
 )
 from .registry import register_component_class
 
@@ -53,15 +51,17 @@ class WorldComponent(Component):
 @register_component_class
 class StageComponent(Component):
     name: str
+    character_sheet_name: str
 
 
 ############################################################################################################
-# 场景卡标记
+# 角色标记
 @final
 @register_component_class
-class StageCharacterSheetComponent(Component):
+class ActorComponent(Component):
     name: str
-    character_sheet: StageCharacterSheet
+    character_sheet_name: str
+    current_stage: str
 
 
 ############################################################################################################
@@ -71,24 +71,6 @@ class StageCharacterSheetComponent(Component):
 class EnvironmentComponent(Component):
     name: str
     description: str
-
-
-############################################################################################################
-# 角色标记
-@final
-@register_component_class
-class ActorComponent(Component):
-    name: str
-    current_stage: str
-
-
-########################################################################################################################
-# 角色卡标记
-@final
-@register_component_class
-class ActorCharacterSheetComponent(Component):
-    name: str
-    character_sheet: ActorCharacterSheet
 
 
 ############################################################################################################

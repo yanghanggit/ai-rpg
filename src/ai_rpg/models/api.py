@@ -17,6 +17,7 @@ class RootResponse(BaseModel):
     status: str
     timestamp: str
     endpoints: Dict[str, str]
+    api_docs: Dict[str, str]
 
 
 ################################################################################################################
@@ -60,7 +61,6 @@ class LogoutResponse(BaseModel):
 class StartRequest(BaseModel):
     user_name: str
     game_name: str
-    # actor_name: str
 
 
 @final

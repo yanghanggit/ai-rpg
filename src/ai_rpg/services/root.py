@@ -85,4 +85,15 @@ async def root(
             "entity_details": base_url + "api/entities/v1/",
             "stages_state": base_url + "api/stages/v1/",
         },
+        api_docs={
+            # 需要路径参数的端点完整路径说明
+            "session_messages": base_url
+            + "api/session_messages/v1/{user_name}/{game_name}/since?last_sequence_id=0",
+            "entity_details": base_url
+            + "api/entities/v1/{user_name}/{game_name}/details?entities=entity1&entities=entity2",
+            "stages_state": base_url + "api/stages/v1/{user_name}/{game_name}/state",
+            "dungeon_state": base_url + "api/dungeons/v1/{user_name}/{game_name}/state",
+            "werewolf_game_state": base_url
+            + "api/werewolf/state/v1/{user_name}/{game_name}/state",
+        },
     )

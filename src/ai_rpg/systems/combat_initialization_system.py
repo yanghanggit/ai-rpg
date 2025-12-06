@@ -115,7 +115,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         6. 启动第一回合
         """
         # 分析阶段
-        if not self._game.current_combat_sequence.is_starting:
+        if not self._game.current_combat_sequence.is_initializing:
             # 非战斗触发阶段，直接返回
             return
 

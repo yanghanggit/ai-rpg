@@ -191,7 +191,7 @@ async def dungeon_gameplay(
     match payload.user_input.tag:
         case "combat_init":
             # 处理地下城战斗开始
-            if not rpg_game.current_combat_sequence.is_starting:
+            if not rpg_game.current_combat_sequence.is_initializing:
                 logger.error(
                     f"玩家 {payload.user_name} 战斗开始失败: 战斗未处于开始阶段"
                 )
@@ -251,7 +251,7 @@ async def dungeon_gameplay(
 
         case "advance_next_dungeon":
             # 处理前进下一个地下城关卡
-            if not rpg_game.current_combat_sequence.is_waiting:
+            if not rpg_game.current_combat_sequence.is_post_combat:
                 logger.error(
                     f"玩家 {payload.user_name} 前进下一关失败: 战斗未处于等待阶段"
                 )
@@ -261,7 +261,7 @@ async def dungeon_gameplay(
                 )
 
             # 判断战斗结果并处理
-            if rpg_game.current_combat_sequence.hero_won:
+            if rpg_game.current_combat_sequence.is_won:
                 # 玩家胜利，检查是否有下一关
                 next_stage = rpg_game.current_dungeon.peek_next_stage()
                 if next_stage is None:
@@ -278,7 +278,7 @@ async def dungeon_gameplay(
                         last_event_sequence
                     )
                 )
-            elif rpg_game.current_combat_sequence.hero_lost:
+            elif rpg_game.current_combat_sequence.is_lost:
                 # 玩家失败
                 logger.warning(f"玩家 {payload.user_name} 战斗失败")
                 raise HTTPException(
@@ -354,7 +354,7 @@ async def dungeon_trans_home(
     )
 
     # 验证战斗是否已结束
-    if not tcg_game.current_combat_sequence.is_waiting:
+    if not tcg_game.current_combat_sequence.is_post_combat:
         logger.error(f"玩家 {payload.user_name} 返回家园失败: 战斗未结束")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -26,7 +26,6 @@ from ai_rpg.game.game_data_service import (
     delete_user_world_data,
 )
 from ai_rpg.models import (
-    CombatResult,
     World,
     AllyComponent,
     PlayerComponent,
@@ -512,7 +511,7 @@ async def _process_dungeon_state_input(terminal_game: TCGGame, usr_input: str) -
 
         if (
             len(terminal_game.current_combat_sequence.combats) == 0
-            or not terminal_game.current_combat_sequence.is_waiting
+            or not terminal_game.current_combat_sequence.is_post_combat
         ):
             logger.error(f"{usr_input} 只能在战斗后使用!!!!!")
             return
@@ -522,12 +521,8 @@ async def _process_dungeon_state_input(terminal_game: TCGGame, usr_input: str) -
 
     elif usr_input == "/and" or usr_input == "/advance-next-dungeon":
 
-        if terminal_game.current_combat_sequence.is_waiting:
-            if (
-                terminal_game.current_combat_sequence.current_result
-                == CombatResult.HERO_WIN
-            ):
-
+        if terminal_game.current_combat_sequence.is_post_combat:
+            if terminal_game.current_combat_sequence.is_won:
                 next_level = terminal_game.current_dungeon.peek_next_stage()
                 if next_level is None:
                     logger.info("没有下一关，你胜利了，应该返回营地！！！！")
@@ -538,10 +533,7 @@ async def _process_dungeon_state_input(terminal_game: TCGGame, usr_input: str) -
                     # terminal_game.next_dungeon()
                     advance_to_next_stage(terminal_game, terminal_game.current_dungeon)
                     await terminal_game.combat_pipeline.process()
-            elif (
-                terminal_game.current_combat_sequence.current_result
-                == CombatResult.HERO_LOSE
-            ):
+            elif terminal_game.current_combat_sequence.is_lost:
                 logger.info("英雄失败，应该返回营地！！！！")
             else:
                 assert False, "不可能出现的情况！"

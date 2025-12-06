@@ -51,11 +51,11 @@ class CombatOutcomeSystem(ExecuteProcessor):
             return  # 不是本阶段就直接返回
 
         if self._is_ally_side_eliminated():
-            self._game.current_combat_sequence.complete_combat(CombatResult.HERO_LOSE)
-            self._broadcast_result_to_allies(CombatResult.HERO_LOSE)
+            self._game.current_combat_sequence.complete_combat(CombatResult.LOSE)
+            self._broadcast_result_to_allies(CombatResult.LOSE)
         elif self._is_enemy_side_eliminated():
-            self._game.current_combat_sequence.complete_combat(CombatResult.HERO_WIN)
-            self._broadcast_result_to_allies(CombatResult.HERO_WIN)
+            self._game.current_combat_sequence.complete_combat(CombatResult.WIN)
+            self._broadcast_result_to_allies(CombatResult.WIN)
         else:
             logger.debug("combat continue!!!")
 
@@ -133,13 +133,13 @@ class CombatOutcomeSystem(ExecuteProcessor):
             if not entity.has(AllyComponent):
                 continue
 
-            if result == CombatResult.HERO_WIN:
+            if result == CombatResult.WIN:
                 self._game.add_human_message(
                     entity,
                     f"# 通知！你胜利了！",
                     combat_outcome=combat_stage_entity.name,
                 )
-            elif result == CombatResult.HERO_LOSE:
+            elif result == CombatResult.LOSE:
                 self._game.add_human_message(
                     entity,
                     f"# 通知！你失败了！",

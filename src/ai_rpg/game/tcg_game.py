@@ -164,6 +164,13 @@ class TCGGame(RPGGame):
         random.shuffle(shuffled_reactive_entities)
 
         # 设置回合的环境描写
-        return self.current_combat_sequence.create_new_round(
-            action_order=[entity.name for entity in shuffled_reactive_entities]
+        action_order = [entity.name for entity in shuffled_reactive_entities]
+        round = Round(
+            tag=f"round_{len(self.current_combat_sequence.current_rounds) + 1}",
+            action_order=action_order,
         )
+        self.current_combat_sequence.current_combat.rounds.append(round)
+        logger.debug(
+            f"新的回合开始 = {len(self.current_combat_sequence.current_rounds)}"
+        )
+        return round

@@ -15,7 +15,6 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     ActorComponent,
     CombatCompleteEvent,
-    CombatResult,
     AllyComponent,
     CombatStatsComponent,
 )
@@ -71,16 +70,15 @@ class CombatPostProcessingSystem(ExecuteProcessor):
             return
 
         assert (
-            self._game.current_combat_sequence.current_result == CombatResult.HERO_WIN
-            or self._game.current_combat_sequence.current_result
-            == CombatResult.HERO_LOSE
+            self._game.current_combat_sequence.is_won
+            or self._game.current_combat_sequence.is_lost
         ), "战斗结果状态异常！"
 
         # 压缩总结战斗结果。
         await self._generate_and_archive_combat_records()
 
         # 进入战斗后准备的状态，离开当前状态。
-        self._game.current_combat_sequence.enter_post_combat_phase()
+        self._game.current_combat_sequence.transition_to_post_combat()
 
     #######################################################################################################################################
     def _create_combat_summary_clients(

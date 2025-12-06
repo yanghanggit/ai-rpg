@@ -287,7 +287,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         last_round = self._game.current_combat_sequence.latest_round
         if last_round.is_completed:
             logger.success(f"last_round.has_ended, so setup new round")
-            self._game.start_new_round()
+            self._game.create_next_round()
 
         logger.debug(
             f"当前回合数: {len(self._game.current_combat_sequence.current_rounds)}"
@@ -302,8 +302,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
         else:
             logger.debug("第二回合及以后卡牌生成")
 
-        # 先清除
-        self._clear_hands()
+        # 清除手牌，准备重新生成
+        self._game.clear_hands()
 
         # 生成请求
         chat_clients: List[ChatClient] = self._create_chat_clients(
@@ -327,19 +327,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         # 最后的兜底，遍历所有参与的角色，如果没有手牌，说明_process_draw_cards_response出现了错误，可能是LLM返回的内容无法正确解析。此时，就需要给角色一个默认的手牌，避免游戏卡死。
         self._ensure_all_entities_have_hands(entities)
-
-    #######################################################################################################################################
-    def _clear_hands(self) -> None:
-        """
-        清除所有角色实体的手牌组件。
-
-        在新回合开始前调用，移除所有角色的HandComponent，
-        为生成新的手牌做准备。这是每回合卡牌抽取流程的第一步。
-        """
-        actor_entities = self._game.get_group(Matcher(HandComponent)).entities.copy()
-        for entity in actor_entities:
-            logger.debug(f"clear hands: {entity.name}")
-            entity.remove(HandComponent)
 
     #######################################################################################################################################
     def _ensure_all_entities_have_hands(self, entities: List[Entity]) -> None:

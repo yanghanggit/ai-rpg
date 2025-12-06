@@ -14,7 +14,7 @@
    - 提示语精简为单句
 """
 
-from typing import List, NamedTuple, final
+from typing import Final, List, NamedTuple, final
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
@@ -230,7 +230,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
-        self._game: TCGGame = game_context
+        self._game: Final[TCGGame] = game_context
 
     ####################################################################################################################################
     @override
@@ -257,6 +257,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
             DungeonComponent
         ), "场景实体缺少StageComponent或DungeonComponent！"
 
+        # 获取所有出牌动作的角色实体
         play_cards_actors = self._game.get_group(
             Matcher(
                 all_of=[
@@ -270,6 +271,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
             logger.warning("没有检测到任何出牌动作的角色！")
             return
 
+        # 依据当前回合的行动顺序排序角色实体
         sort_actors: List[Entity] = []
         for (
             action_order
@@ -280,10 +282,15 @@ class ArbitrationActionSystem(ReactiveProcessor):
                     sort_actors.append(entity)
                     break
 
+        # 日志输出排序结果
         for sort_actor in sort_actors:
             logger.info(f"sort_actor: {sort_actor.name}")
 
+        # 发起仲裁请求
         await self._request_combat_arbitration(stage_entity, sort_actors)
+
+        # 移除出牌动作组件
+        self._game.clear_hands()
 
     #######################################################################################################################################
     def _collect_combat_action_info(

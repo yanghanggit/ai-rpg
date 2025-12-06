@@ -175,7 +175,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         self._game.current_combat_sequence.transition_to_ongoing()
 
         # 设置第一回合
-        if not self._game.start_new_round():
+        if not self._game.create_next_round():
             logger.error(f"not web_game.setup_round()")
             assert False, "无法启动战斗的第一回合！"
 

@@ -14,8 +14,12 @@ from ..models import (
     CombatSequence,
     World,
     Round,
+    HandComponent,
+    StageType,
+    ActorType,
 )
 from .player_session import PlayerSession
+from ..entitas import Matcher
 
 
 #################################################################################################################################################
@@ -105,11 +109,17 @@ class TCGGame(RPGGame):
         for actor in dungeon_model.actors:
             actor_entity = self.get_actor_entity(actor.name)
             assert actor_entity is None, "actor_entity is not None"
+            assert (
+                actor.character_sheet.type == ActorType.ENEMY
+            ), "actor_entity is not enemy type"
 
         # 加一步测试: 不可以存在！如果存在说明没有清空。
         for stage in dungeon_model.stages:
             stage_entity = self.get_stage_entity(stage.name)
             assert stage_entity is None, "stage_entity is not None"
+            assert (
+                stage.character_sheet.type == StageType.DUNGEON
+            ), "stage_entity is not dungeon type"
 
         # 正式创建。。。。。。。。。。
         # 创建地下城的怪物。
@@ -132,8 +142,22 @@ class TCGGame(RPGGame):
                 self.destroy_entity(destroy_stage_entity)
 
     #######################################################################################################################################
-    def start_new_round(self) -> Optional[Round]:
+    def create_next_round(self) -> Optional[Round]:
+        """创建并初始化下一个战斗回合。
 
+        该方法会创建一个新的战斗回合,随机打乱角色行动顺序,并将回合添加到当前战斗序列中。
+        只有在满足以下条件时才会创建新回合:
+        1. 当前存在进行中的战斗
+        2. 没有未完成的回合
+
+        Returns:
+            Optional[Round]: 成功创建的回合对象,如果无法创建则返回 None。
+
+        Note:
+            - 该方法会随机打乱所有存活角色的行动顺序
+            - 回合标签格式为 "round_{回合编号}"
+            - 只能在地下城场景中调用
+        """
         if not self.current_combat_sequence.is_ongoing:
             logger.warning("当前没有进行中的战斗，不能设置回合。")
             return None
@@ -174,3 +198,18 @@ class TCGGame(RPGGame):
             f"新的回合开始 = {len(self.current_combat_sequence.current_rounds)}"
         )
         return round
+
+    ################################################################################################################
+    def clear_hands(self) -> None:
+        """
+        清除所有角色实体的手牌组件。
+
+        在新回合开始前调用，移除所有角色的HandComponent，
+        为生成新的手牌做准备。这是每回合卡牌抽取流程的第一步。
+        """
+        actor_entities = self.get_group(Matcher(HandComponent)).entities.copy()
+        for entity in actor_entities:
+            logger.debug(f"clear hands: {entity.name}")
+            entity.remove(HandComponent)
+
+    ################################################################################################################

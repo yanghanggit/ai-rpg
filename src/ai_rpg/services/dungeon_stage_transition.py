@@ -19,7 +19,6 @@ from ..models import (
     KickOffComponent,
     Combat,
     AllyComponent,
-    HandComponent,
 )
 from ..entitas import Matcher, Entity
 
@@ -113,17 +112,17 @@ def enter_dungeon_stage(
         return False
 
     # 1. 验证前置条件 - 获取当前关卡数据
-    next_dungeon_stage_model = dungeon.get_current_stage()
-    assert next_dungeon_stage_model is not None, f"{dungeon.name} 地下城关卡数据异常！"
+    current_dungeon_stage = dungeon.get_current_stage()
+    assert current_dungeon_stage is not None, f"{dungeon.name} 地下城关卡数据异常！"
 
     # 2. 获取关卡实体
-    dungeon_stage_entity = tcg_game.get_stage_entity(next_dungeon_stage_model.name)
+    dungeon_stage_entity = tcg_game.get_stage_entity(current_dungeon_stage.name)
     assert (
         dungeon_stage_entity is not None
-    ), f"{next_dungeon_stage_model.name} 没有对应的stage实体！"
+    ), f"{current_dungeon_stage.name} 没有对应的stage实体！"
     assert dungeon_stage_entity.has(
         DungeonComponent
-    ), f"{next_dungeon_stage_model.name} 没有DungeonComponent组件！"
+    ), f"{current_dungeon_stage.name} 没有DungeonComponent组件！"
 
     logger.debug(
         f"{dungeon.name} = [{dungeon.current_stage_index}]关为：{dungeon_stage_entity.name}，可以进入"
@@ -137,10 +136,6 @@ def enter_dungeon_stage(
     for ally_entity in ally_entities:
         # 添加上下文！
         tcg_game.add_human_message(ally_entity, trans_message)
-
-        if ally_entity.has(HandComponent):
-            logger.debug(f"进入地下城时移除手牌组件: {ally_entity.name}")
-            ally_entity.remove(HandComponent)
 
     # 4. 执行场景传送
     tcg_game.stage_transition(ally_entities, dungeon_stage_entity)
@@ -169,6 +164,8 @@ def enter_dungeon_stage(
     # 6. 初始化战斗状态
     dungeon.combat_sequence.start_combat(Combat(name=dungeon_stage_entity.name))
 
+    # 7. 清除手牌组件
+    tcg_game.clear_hands()
     return True
 
 

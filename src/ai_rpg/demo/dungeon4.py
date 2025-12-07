@@ -16,9 +16,9 @@ def create_demo_dungeon4() -> Dungeon:
     stage_cave1.actors = [actor_goblin]
 
     # 创建第二个洞窟场景
+    stage_cave2 = create_stage_cave2()
     actor_orc = create_actor_orc()
     actor_orc.character_stats.hp = 1
-    stage_cave2 = create_stage_cave2()
     stage_cave2.actors = [actor_orc]
 
     return Dungeon(

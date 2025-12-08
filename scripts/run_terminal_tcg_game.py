@@ -673,7 +673,7 @@ if __name__ == "__main__":
     user = random_name
     game = GLOBAL_TCG_GAME_NAME
     # actor = create_actor_player().name  # 玩家角色
-    actor = create_actor_warrior().name # 测试用战士角色
+    actor = create_actor_warrior().name  # 测试用战士角色
 
     # 运行游戏
     import asyncio

@@ -235,7 +235,8 @@ class KickOffSystem(ExecuteProcessor):
         content = entity_name + system_content + prompt_content
         hash_name = hashlib.sha256(content.encode("utf-8")).hexdigest()
 
-        return LOGS_DIR / f"{self._game._name}_kick_off_cache" / f"{hash_name}.json"
+        # 改成 .kickoff_cache 目录
+        return Path(".kickoff_cache") / self._game._name / f"{hash_name}.json"
 
     ###############################################################################################################################################
     async def _execute_kick_off_requests(self, entities: Set[Entity]) -> None:

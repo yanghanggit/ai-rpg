@@ -69,3 +69,4 @@ generated_images/
 # -----------------------------------------------------------------------------
 world_boots/
 world_runtime/
+.kickoff_cache/

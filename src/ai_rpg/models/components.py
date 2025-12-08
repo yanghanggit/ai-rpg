@@ -179,10 +179,7 @@ class CombatStatsComponent(MutableComponent):
         if len(self.status_effects) == 0:
             return "- 无"
         return "\n".join(
-            [
-                f"- {effect.name}: {effect.description}"
-                for effect in self.status_effects
-            ]
+            [f"- {effect.name}: {effect.description}" for effect in self.status_effects]
         )
 
 

@@ -34,7 +34,7 @@ def create_actor_goblin() -> Actor:
     goblin.skills = [
         Skill(
             name="飞刀投掷",
-            description="从背包中掏出一把哥布林飞刀，精准地投掷向敌人，造成物理伤害。但投掷后需要重新装填，降低下一回合的攻击力。",
+            description="从背包中掏出一把哥布林飞刀，快速投掷向敌人，造成物理伤害。但投掷后需要重新装填，降低下一回合的攻击力。",
         ),
         Skill(
             name="短剑突刺",

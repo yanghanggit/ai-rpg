@@ -41,7 +41,7 @@ def create_actor_wizard() -> Actor:
     actor.skills = [
         Skill(
             name="魔力感知",
-            description="利用自身对魔力的敏锐感知能力，发现目标的弱点，提升下一次攻击的命中率和伤害。但是，感知过程需要专注，受到的伤害会略微增加。",
+            description="利用自身对魔力的敏锐感知能力，发现目标的弱点，提升下一次攻击的伤害。但是，感知过程需要专注，受到的伤害会略微增加。",
         ),
         Skill(
             name="物体利用",

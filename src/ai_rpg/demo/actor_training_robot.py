@@ -25,7 +25,7 @@ def create_actor_training_robot() -> Actor:
         character_sheet_name="training_robot",
         kick_off_message="",
         character_stats=CharacterStats(base_dexterity=1),
-        type=ActorType.ENEMY,
+        type=ActorType.ENEMY.value,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         actor_profile=f"""**历史**: 你是训练场的魔法构造体，由稻草人躯体和金属盔甲加固组成，内部嵌有符文核心维持基本战斗功能。
 **性格**: 你遵循简单的战斗本能和基础攻防逻辑。

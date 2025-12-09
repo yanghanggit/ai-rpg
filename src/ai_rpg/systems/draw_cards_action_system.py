@@ -92,7 +92,6 @@ def _generate_first_round_prompt(
 - 战斗开局产生的初始状态（战斗准备、环境影响、心理状态、装备效果、过往经验等）
 - 可同时存在多个状态效果
 - 不要重复生成已存在的状态效果
-- **禁止生成与攻击命中或闪避攻击相关的状态效果**
 
 ## 4. 输出格式(JSON)
 
@@ -117,8 +116,9 @@ def _generate_first_round_prompt(
 
 **约束规则**：
 - 卡牌数量必须是{card_creation_count}张
+- 禁止生成与攻击命中，精准度或闪避攻击相关的状态效果，卡牌目的和卡牌代价
 - cards的description禁止出现具体数值，保持抽象描述
-- status_effects的description可以包含具体数值
+- status_effects的description可以包含具体数值，但不能有百分比数值
 - description中禁止出现角色名称
 - 禁用换行/空行，严格输出合规JSON"""
 
@@ -182,7 +182,6 @@ def _generate_subsequent_round_prompt(
 - 上回合受到的卡牌效果和使用代价产生的状态
 - 可同时存在多个状态效果
 - 不要重复生成已存在的状态效果
-- **禁止生成与攻击命中或闪避攻击相关的状态效果**
 
 **特殊情况**：如果你已死亡(HP≤0)或认为战斗结束，则cards和status_effects填空数组，但update_hp仍需填写
 
@@ -210,8 +209,9 @@ def _generate_subsequent_round_prompt(
 
 **约束规则**：
 - 卡牌数量必须是{card_creation_count}张
+- 禁止生成与攻击命中，精准度或闪避攻击相关的状态效果，卡牌目的和卡牌代价
 - cards的description禁止出现具体数值，保持抽象描述
-- status_effects的description可以包含具体数值
+- status_effects的description可以包含具体数值，但不能有百分比数值
 - description中禁止出现角色名称
 - 禁用换行/空行，严格输出合规JSON"""
 

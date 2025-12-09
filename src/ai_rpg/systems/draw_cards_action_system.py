@@ -116,7 +116,7 @@ def _generate_first_round_prompt(
 
 **约束规则**：
 - 卡牌数量必须是{card_creation_count}张
-- 禁止生成与攻击命中，精准度或闪避攻击相关的状态效果，卡牌目的和卡牌代价
+- 禁止生成与命中，精准度或闪避相关的状态效果，卡牌目的和卡牌代价
 - cards的description禁止出现具体数值，保持抽象描述
 - status_effects的description可以包含具体数值，但不能有百分比数值
 - description中禁止出现角色名称
@@ -209,7 +209,7 @@ def _generate_subsequent_round_prompt(
 
 **约束规则**：
 - 卡牌数量必须是{card_creation_count}张
-- 禁止生成与攻击命中，精准度或闪避攻击相关的状态效果，卡牌目的和卡牌代价
+- 禁止生成与命中，精准度或闪避相关的状态效果，卡牌目的和卡牌代价
 - cards的description禁止出现具体数值，保持抽象描述
 - status_effects的description可以包含具体数值，但不能有百分比数值
 - description中禁止出现角色名称

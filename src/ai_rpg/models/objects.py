@@ -86,7 +86,7 @@ class CharacterStats(BaseModel):
     base_physical_attack: int = 8
     base_physical_defense: int = 5
     base_magic_attack: int = 7
-    base_magic_defense: int = 6
+    # base_magic_defense: int = 6
     # 成长系数
     strength_per_level: int = 2
     dexterity_per_level: int = 1
@@ -128,9 +128,9 @@ class CharacterStats(BaseModel):
     def magic_attack(self) -> int:
         return self.base_magic_attack + (self.wisdom * 2)
 
-    @property
-    def magic_defense(self) -> int:
-        return self.base_magic_defense + self.wisdom
+    # @property
+    # def magic_defense(self) -> int:
+    #     return self.base_magic_defense + self.wisdom
 
 
 ###############################################################################################################################################

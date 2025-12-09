@@ -172,7 +172,7 @@ class CombatStatsComponent(MutableComponent):
 
     @property
     def stats_prompt(self) -> str:
-        return f"LV {self.stats.level} | HP 当前{self.stats.hp}/最大{self.stats.max_hp} | 物攻{self.stats.physical_attack} 物防{self.stats.physical_defense} | 魔攻{self.stats.magic_attack} 魔防{self.stats.magic_defense}"
+        return f"LV {self.stats.level} | HP 当前{self.stats.hp}/最大{self.stats.max_hp} | 物攻{self.stats.physical_attack} 物防{self.stats.physical_defense} | 魔攻{self.stats.magic_attack} "
 
     @property
     def status_effects_prompt(self) -> str:

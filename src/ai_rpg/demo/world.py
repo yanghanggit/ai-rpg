@@ -128,6 +128,9 @@ def create_demo_game_world_boot2(game_name: str) -> Boot:
     actor_warrior = create_actor_warrior()
     assert actor_warrior.kick_off_message == "", "战士角色的kick_off_message应为空"
     actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。"""
+    # actor_wizard = create_actor_wizard()
+    # assert actor_wizard.kick_off_message == "", "法师角色的kick_off_message应为空"
+    # actor_wizard.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 通过破解裂隙遗迹中的符文机械秘密,找到平息魔网紊乱危机和压制时空裂隙出现的方法。"""
 
     # 创建场景
     stage_ally_safe_room = create_demo_ally_safe_room()
@@ -139,6 +142,7 @@ def create_demo_game_world_boot2(game_name: str) -> Boot:
     world_boot = Boot(
         name=game_name,
         player_actor=actor_warrior.name,  # 玩家角色为战士
+        # player_actor=actor_wizard.name,  # 玩家角色为法师
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
     )
 

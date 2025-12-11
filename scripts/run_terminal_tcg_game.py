@@ -14,10 +14,10 @@ from ai_rpg.configuration import (
 )
 from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
-    # create_actor_player,
-    create_actor_warrior,
-    create_demo_dungeon4,
-    create_demo_game_world_boot1,
+    create_actor_player,
+    # create_actor_warrior,
+    create_demo_dungeon6,
+    create_demo_game_world_boot3,
 )
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import (
@@ -408,7 +408,7 @@ async def _run_game(
     if world_exists is None:
 
         # 获取world_boot_data
-        world_boot = create_demo_game_world_boot1(game)
+        world_boot = create_demo_game_world_boot3(game)
         # create_demo_game_world_boot1(game)  # TODO，临时修改，快速测试！
         # get_game_boot_data(game)
         assert world_boot is not None, "WorldBootDocument 反序列化失败"
@@ -417,8 +417,8 @@ async def _run_game(
         world_exists = World(boot=world_boot)
 
         # 运行时生成地下城系统
-        # world_exists.dungeon = create_demo_dungeon1()
-        world_exists.dungeon = create_demo_dungeon4()
+        world_exists.dungeon = create_demo_dungeon6()
+        # world_exists.dungeon = create_demo_dungeon5()
 
     else:
         logger.info(f"恢复游戏: {user}, {game}")
@@ -672,8 +672,8 @@ if __name__ == "__main__":
     # 做一些设置
     user = random_name
     game = GLOBAL_TCG_GAME_NAME
-    # actor = create_actor_player().name  # 玩家角色
-    actor = create_actor_warrior().name  # 测试用战士角色
+    actor = create_actor_player().name  # 玩家角色
+    # actor = create_actor_warrior().name  # 测试用战士角色
 
     # 运行游戏
     import asyncio

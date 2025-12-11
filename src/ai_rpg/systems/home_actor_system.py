@@ -33,6 +33,7 @@ from ..models import (
     HomeComponent,
     MindEvent,
     ActorComponent,
+    PlayerComponent,
 )
 from ..utils import extract_json_from_code_block
 from ..game.tcg_game import TCGGame
@@ -354,6 +355,20 @@ class HomeActorSystem(ReactiveProcessor):
             # 找到当前场景可去往的家园场景,这样能节省计算量。
             available_home_stages = home_stage_entities.copy()  # 注意这里必须 copy
             available_home_stages.discard(current_stage)
+            
+            # 如果当前角色不是玩家，过滤掉玩家专属场景
+            if not actor_entity.has(PlayerComponent):
+                # 需要从game中获取Stage模型来检查player_only属性
+                stages_to_remove = set()
+                for stage_entity in available_home_stages:
+                    # 通过world.boot.stages查找对应的Stage模型
+                    stage_model = next(
+                        (s for s in self._game.world.boot.stages if s.name == stage_entity.name),
+                        None
+                    )
+                    if stage_model and stage_model.player_only:
+                        stages_to_remove.add(stage_entity)
+                available_home_stages -= stages_to_remove
 
             # 生成请求处理器
             chat_clients.append(

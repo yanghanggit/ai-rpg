@@ -203,6 +203,7 @@ class Stage(BaseModel):
     system_message: str
     kick_off_message: str
     actors: List[Actor]
+    player_only: bool = False  # 标记是否为玩家专属场景
 
 
 ###############################################################################################################################################

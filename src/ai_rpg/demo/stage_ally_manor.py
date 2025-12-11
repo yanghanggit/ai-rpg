@@ -42,7 +42,7 @@ def create_demo_ally_dining_room() -> Stage:
 
 def create_stage_monitoring_house() -> Stage:
 
-    return create_stage(
+    stage = create_stage(
         name="场景.监视之屋",
         character_sheet_name="monitoring_house",
         kick_off_message="",
@@ -52,3 +52,6 @@ def create_stage_monitoring_house() -> Stage:
         actors=[],
         global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )
+    # 标记为玩家专属场景
+    stage.player_only = True
+    return stage

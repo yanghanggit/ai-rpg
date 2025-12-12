@@ -129,3 +129,68 @@ def activate_stage_transition(tcg_game: TCGGame, stage_name: str) -> Tuple[bool,
 
 
 ###################################################################################################################################################################
+def activate_hero_plan_action(
+    tcg_game: TCGGame, heroes: list[str]
+) -> Tuple[bool, str]:
+    """
+    激活指定角色的行动计划，为角色添加 PlanAction 组件
+
+    该函数为指定的盟友角色添加行动计划标记，使其在下一次游戏推进时执行AI决策。
+    只有符合条件的盟友角色才能被添加 PlanAction：
+    - 角色必须存在于游戏世界中
+    - 角色必须是盟友（具有 AllyComponent）
+    - 角色不能是玩家控制的（不能有 PlayerComponent）
+
+    Args:
+        tcg_game: TCG 游戏实例
+        heroes: 目标角色名称列表
+
+    Returns:
+        tuple[bool, str]: (是否成功, 错误详情)
+            - (True, ""): 成功为所有符合条件的角色设置 PlanAction
+            - (False, detail): 失败时返回具体错误信息
+                - "角色名称列表不能为空"
+                - "未能为任何角色添加 PlanAction"
+
+    Note:
+        - 不存在、不是盟友或是玩家控制的角色会被跳过，并记录警告日志
+        - 至少需要为一个角色成功添加 PlanAction 才算成功
+        - 成功后会在符合条件的角色实体上设置 PlanAction 组件
+        - 行动计划会在后续的 NPC home pipeline 处理中执行
+    """
+    from ..models import AllyComponent, PlayerComponent, PlanAction
+
+    if not heroes or len(heroes) == 0:
+        error_detail = "角色名称列表不能为空"
+        logger.error(f"激活行动计划失败: {error_detail}")
+        return False, error_detail
+
+    success_count = 0
+    for actor_name in heroes:
+        actor_entity = tcg_game.get_actor_entity(actor_name)
+        if actor_entity is None:
+            logger.warning(f"角色 {actor_name} 不存在，跳过")
+            continue
+
+        if not actor_entity.has(AllyComponent):
+            logger.warning(f"角色 {actor_name} 不是盟友，不能添加行动计划，跳过")
+            continue
+
+        if actor_entity.has(PlayerComponent):
+            logger.warning(f"角色 {actor_name} 是玩家控制的，不能添加行动计划，跳过")
+            continue
+
+        logger.debug(f"为角色 {actor_name} 添加 PlanAction")
+        actor_entity.replace(PlanAction, actor_entity.name)
+        success_count += 1
+
+    if success_count == 0:
+        error_detail = "未能为任何角色添加 PlanAction"
+        logger.error(f"激活行动计划失败: {error_detail}")
+        return False, error_detail
+
+    logger.info(f"成功为 {success_count} 个角色添加 PlanAction")
+    return True, ""
+
+
+###################################################################################################################################################################

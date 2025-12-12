@@ -35,7 +35,11 @@ from loguru import logger
 from ..game.tcg_game import TCGGame
 from .game_server_dependencies import CurrentGameServer
 from ..game.game_server import GameServer
-from .home_actions import activate_speak_action, activate_stage_transition
+from .home_actions import (
+    activate_speak_action,
+    activate_stage_transition,
+    activate_hero_plan_action,
+)
 from .dungeon_stage_transition import (
     initialize_dungeon_first_entry,
 )
@@ -225,6 +229,35 @@ async def home_gameplay(
                 )
             else:
                 # 场景切换激活失败，抛出包含具体错误信息的异常
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=error_detail,
+                )
+
+        case "/hero":
+            # 激活行动计划：为指定的盟友角色添加 PlanAction 组件
+            # 从data中获取目标角色名称列表(heroes)
+            heroes_data = payload.user_input.data.get("heroes", [])
+            # 确保 heroes 是列表类型
+            if isinstance(heroes_data, str):
+                heroes = [heroes_data]
+            elif isinstance(heroes_data, list):
+                heroes = heroes_data
+            else:
+                heroes = []
+            success, error_detail = activate_hero_plan_action(rpg_game, heroes)
+            if success:
+                # 行动计划激活成功后，执行NPC的home pipeline处理
+                # 注意：这里使用 npc_home_pipeline 而不是 player_home_pipeline
+                # 因为 PlanAction 是由 NPC pipeline 处理的
+                await rpg_game.npc_home_pipeline.process()
+                return HomeGamePlayResponse(
+                    session_messages=rpg_game.player_session.get_messages_since(
+                        last_event_sequence
+                    )
+                )
+            else:
+                # 行动计划激活失败，抛出包含具体错误信息的异常
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=error_detail,

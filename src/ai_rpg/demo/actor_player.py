@@ -16,7 +16,7 @@ def create_actor_player() -> Actor:
         Actor: 玩家角色实例
     """
     player = create_actor(
-        name="角色.公会执行官.XYZ",
+        name="角色.公会执行官.Ω",
         character_sheet_name="player",
         kick_off_message="",
         character_stats=CharacterStats(base_max_hp=100),

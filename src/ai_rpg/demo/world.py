@@ -22,7 +22,7 @@ from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 from .stage_ally_manor import (
     create_demo_ally_safe_room,
     create_demo_ally_dining_room,
-    create_stage_monitoring_house
+    create_stage_monitoring_house,
 )
 
 
@@ -193,7 +193,7 @@ def create_demo_game_world_boot3(game_name: str) -> Boot:
     stage_ally_dining_room = create_demo_ally_dining_room()
     stage_monitoring_house = create_stage_monitoring_house()
 
-     # 设置英雄营地场景的初始状态
+    # 设置英雄营地场景的初始状态
     stage_ally_safe_room.kick_off_message = f"""# # 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
         
 使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
@@ -221,7 +221,11 @@ def create_demo_game_world_boot3(game_name: str) -> Boot:
     )
 
     # 设置英雄营地场景的初始状态
-    world_boot.stages = [stage_ally_safe_room, stage_ally_dining_room, stage_monitoring_house]
+    world_boot.stages = [
+        stage_ally_safe_room,
+        stage_ally_dining_room,
+        stage_monitoring_house,
+    ]
 
     # 添加世界系统
     world_boot.world_systems = []

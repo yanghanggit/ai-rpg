@@ -141,7 +141,7 @@ def activate_ally_plan_action(tcg_game: TCGGame, allies: list[str]) -> Tuple[boo
 
     Args:
         tcg_game: TCG 游戏实例
-        heroes: 目标角色名称列表
+        allies: 目标角色名称列表
 
     Returns:
         tuple[bool, str]: (是否成功, 错误详情)

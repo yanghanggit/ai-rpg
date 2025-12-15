@@ -92,7 +92,11 @@ def create_demo_game_world_boot1(game_name: str) -> Boot:
     )
 
     # 设置世界场景
-    world_boot.stages = [stage_ally_safe_room, stage_ally_dining_room, stage_monitoring_room]
+    world_boot.stages = [
+        stage_ally_safe_room,
+        stage_ally_dining_room,
+        stage_monitoring_room,
+    ]
 
     # 添加世界系统
     world_boot.world_systems = []

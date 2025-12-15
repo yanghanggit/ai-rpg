@@ -36,6 +36,7 @@ def create_demo_dungeon6() -> Dungeon:
     robot = create_actor_training_robot()
     goblin = create_actor_goblin()
     robot.character_stats.hp = 10
+    goblin.character_stats.hp = 1
     robot.kick_off_message = (
         f"""# 游戏启动！告诉我你是谁？请说出你的全名。回答简短(<100字)。"""
     )
@@ -48,10 +49,10 @@ def create_demo_dungeon6() -> Dungeon:
             uuid="",
             type=ItemType.UNIQUE_ITEM,
             description="""你内部嵌入的魔法符文核心，赋予你不灭的生命力。
-每个战斗回合在生成行动与更新状态时，符文核心只会自动将你的生命恢复到Max_HP。
+每个战斗回合在生成行动，战斗计算与更新状态时，符文核心会自动将你的生命恢复到Max_HP。
 如果你还没有'永恒符文核心'相关的status_effect，则在第一次更新状态时创建一个，标记此道具的存在，duration=999。
 后续回合系统会自动维护此状态效果，无需重复创建。
-当你的生命值降到0时，符文核心会让你周身冒出微弱的符文光芒并坚挺地站立着，等待下一个回合重新激活。
+当你的生命值降到0时，符文核心会让你周身冒出微弱的符文光芒并坚挺地站立着，自身恢复到完美状态。
 **注意**：此道具只会对你生效，不会影响其他角色的生命恢复或复活。""",
         )
     )

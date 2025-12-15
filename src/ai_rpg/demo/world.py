@@ -57,6 +57,7 @@ def create_demo_game_world_boot1(game_name: str) -> Boot:
     # 创建场景
     stage_ally_safe_room = create_demo_ally_safe_room()
     stage_ally_dining_room = create_demo_ally_dining_room()
+    stage_monitoring_room = create_stage_monitoring_house()
 
     # 设置关系和消息
     stage_ally_safe_room.actors = [actor_warrior, actor_wizard]
@@ -91,7 +92,7 @@ def create_demo_game_world_boot1(game_name: str) -> Boot:
     )
 
     # 设置世界场景
-    world_boot.stages = [stage_ally_safe_room, stage_ally_dining_room]
+    world_boot.stages = [stage_ally_safe_room, stage_ally_dining_room, stage_monitoring_room]
 
     # 添加世界系统
     world_boot.world_systems = []

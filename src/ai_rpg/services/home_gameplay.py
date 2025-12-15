@@ -38,7 +38,7 @@ from ..game.game_server import GameServer
 from .home_actions import (
     activate_speak_action,
     activate_stage_transition,
-    activate_hero_plan_action,
+    activate_ally_plan_action,
 )
 from .dungeon_stage_transition import (
     initialize_dungeon_first_entry,
@@ -234,18 +234,18 @@ async def home_gameplay(
                     detail=error_detail,
                 )
 
-        case "/hero":
+        case "/ally_plan":
             # 激活行动计划：为指定的盟友角色添加 PlanAction 组件
-            # 从data中获取目标角色名称列表(heroes)
-            heroes_data = payload.user_input.data.get("heroes", [])
-            # 确保 heroes 是列表类型
-            if isinstance(heroes_data, str):
-                heroes = [heroes_data]
-            elif isinstance(heroes_data, list):
-                heroes = heroes_data
+            # 从data中获取目标角色名称列表(allies)
+            allies_data = payload.user_input.data.get("allies", [])
+            # 确保 allies 是列表类型
+            if isinstance(allies_data, str):
+                allies = [allies_data]
+            elif isinstance(allies_data, list):
+                allies = allies_data
             else:
-                heroes = []
-            success, error_detail = activate_hero_plan_action(rpg_game, heroes)
+                allies = []
+            success, error_detail = activate_ally_plan_action(rpg_game, allies)
             if success:
                 # 行动计划激活成功后，执行NPC的home pipeline处理
                 # 注意：这里使用 npc_home_pipeline 而不是 player_home_pipeline

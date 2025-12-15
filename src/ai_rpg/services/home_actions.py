@@ -129,9 +129,7 @@ def activate_stage_transition(tcg_game: TCGGame, stage_name: str) -> Tuple[bool,
 
 
 ###################################################################################################################################################################
-def activate_hero_plan_action(
-    tcg_game: TCGGame, heroes: list[str]
-) -> Tuple[bool, str]:
+def activate_ally_plan_action(tcg_game: TCGGame, allies: list[str]) -> Tuple[bool, str]:
     """
     激活指定角色的行动计划，为角色添加 PlanAction 组件
 
@@ -160,13 +158,13 @@ def activate_hero_plan_action(
     """
     from ..models import AllyComponent, PlayerComponent, PlanAction
 
-    if not heroes or len(heroes) == 0:
+    if not allies or len(allies) == 0:
         error_detail = "角色名称列表不能为空"
         logger.error(f"激活行动计划失败: {error_detail}")
         return False, error_detail
 
     success_count = 0
-    for actor_name in heroes:
+    for actor_name in allies:
         actor_entity = tcg_game.get_actor_entity(actor_name)
         if actor_entity is None:
             logger.warning(f"角色 {actor_name} 不存在，跳过")

@@ -115,7 +115,7 @@ class DungeonComponent(Component):
 
 
 ############################################################################################################
-# Actor专用，标记该Actor是Hero
+# Actor专用，标记该Actor是盟友
 @final
 @register_component_class
 class AllyComponent(Component):

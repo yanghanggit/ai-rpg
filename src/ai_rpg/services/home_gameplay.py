@@ -29,7 +29,7 @@ API端点:
     接口会自动验证玩家状态，验证失败会抛出相应的HTTP异常。
 """
 
-from typing import Final
+from typing import Any, Final
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
@@ -237,7 +237,7 @@ async def home_gameplay(
         case "/ally_plan":
             # 激活行动计划：为指定的盟友角色添加 PlanAction 组件
             # 从data中获取目标角色名称列表(allies)
-            allies_data = payload.user_input.data.get("allies", [])
+            allies_data: Any = payload.user_input.data.get("allies", [])
             # 确保 allies 是列表类型
             if isinstance(allies_data, str):
                 allies = [allies_data]

@@ -108,7 +108,7 @@ def enter_dungeon_stage(
     """
     # 验证盟友队伍非空
     if len(ally_entities) == 0:
-        logger.error("没有英雄不能进入地下城!")
+        logger.error("没有盟友不能进入地下城!")
         return False
 
     # 1. 验证前置条件 - 获取当前关卡数据
@@ -242,15 +242,15 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
     """
     完成地下城冒险并返回家园
 
-    该函数协调地下城结束流程：传送英雄回家、清理地下城数据、
-    恢复英雄战斗状态。用于地下城冒险结束后的收尾工作。
+    该函数协调地下城结束流程：传送盟友回家、清理地下城数据、
+    恢复盟友战斗状态。用于地下城冒险结束后的收尾工作。
 
     主要操作：
-    1. 验证并获取英雄和家园实体
+    1. 验证并获取盟友和家园实体
     2. 生成返回提示消息
     3. 执行场景传送到家园
     4. 清理地下城实体和数据
-    5. 恢复英雄状态（移除死亡、满血、清空效果）
+    5. 恢复盟友状态（移除死亡、满血、清空效果）
 
     Args:
         tcg_game: TCG游戏实例
@@ -258,14 +258,14 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
     Note:
         - 用于战斗结束后返回家园
         - 调用者: dungeon_trans_home API
-        - 会完全重置地下城状态和英雄战斗状态
+        - 会完全重置地下城状态和盟友战斗状态
     """
     # 导入必要的模型
     from ..models import HomeComponent, DeathComponent, CombatStatsComponent
 
     # 1. 验证并获取盟友实体
     ally_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities
-    assert len(ally_entities) > 0, "没有找到英雄实体"
+    assert len(ally_entities) > 0, "没有找到盟友实体"
 
     # 2. 验证并获取家园场景实体
     home_stage_entities = tcg_game.get_group(Matcher(all_of=[HomeComponent])).entities
@@ -284,7 +284,7 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
     tcg_game.destroy_dungeon_entities(tcg_game.world.dungeon)
     tcg_game._world.dungeon = Dungeon(name="")
 
-    # 6. 恢复所有英雄的战斗状态
+    # 6. 恢复所有盟友的战斗状态
     for ally_entity in ally_entities:
         # 移除死亡组件
         if ally_entity.has(DeathComponent):

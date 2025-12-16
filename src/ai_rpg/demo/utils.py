@@ -19,6 +19,7 @@ from ..models import (
     CharacterStats,
     Stage,
     StageCharacterSheet,
+    StageType,
     WorldSystem,
 )
 
@@ -106,11 +107,12 @@ def create_stage(
     name: str,
     character_sheet_name: str,
     kick_off_message: str,
-    campaign_setting: str,
     type: str,
     stage_profile: str,
     actors: List[Actor],
+    campaign_setting: str,
     global_game_mechanics: str,
+    global_combat_mechanics: str,
 ) -> Stage:
     """
     创建一个游戏场景(Stage)实例。
@@ -127,6 +129,7 @@ def create_stage(
         stage_profile: 场景简介设定
         actors: 场景中的角色列表
         global_game_mechanics: 全局游戏机制规则
+        global_combat_mechanics: 全局战斗机制规则
 
     Returns:
         Stage: 初始化完成的Stage实例
@@ -160,10 +163,15 @@ def create_stage(
 ## 场景设定
 
 {stage_profile}"""
+    
+    if stage.character_sheet.type == StageType.DUNGEON:
+        stage.system_message += f""" 
 
+## 战斗规则
+
+{global_combat_mechanics}"""
+    
     return stage
-
-
 #######################################################################################################################################
 def create_world_system(
     name: str,

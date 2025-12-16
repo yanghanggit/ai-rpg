@@ -7,6 +7,7 @@ from ..models.objects import Stage
 from .campaign_setting import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
     FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+    FANTASY_WORLD_RPG_GAME_COMBAT_MECHANICS,
 )
 from .utils import (
     create_stage,
@@ -19,11 +20,12 @@ def create_stage_cave1() -> Stage:
         name="场景.洞窟之一",
         character_sheet_name="goblin_cave",
         kick_off_message="",
-        campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         type=StageType.DUNGEON,
         stage_profile="你是一个黑暗干燥的洞窟，地上都是易燃的干草，墙上插着各种箭矢，地上还有破损的盔甲和断剑。",
         actors=[],
+        campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+        global_combat_mechanics=FANTASY_WORLD_RPG_GAME_COMBAT_MECHANICS,
     )
 
 

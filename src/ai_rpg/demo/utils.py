@@ -163,15 +163,17 @@ def create_stage(
 ## 场景设定
 
 {stage_profile}"""
-    
+
     if stage.character_sheet.type == StageType.DUNGEON:
         stage.system_message += f""" 
 
 ## 战斗规则
 
 {global_combat_mechanics}"""
-    
+
     return stage
+
+
 #######################################################################################################################################
 def create_world_system(
     name: str,

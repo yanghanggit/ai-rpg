@@ -38,6 +38,7 @@ def create_demo_werewolf_stage() -> Stage:
         actors=[],
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
+        global_combat_mechanics="",
     )
 
 

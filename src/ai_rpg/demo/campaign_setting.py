@@ -31,14 +31,18 @@ FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS: Final[
 FANTASY_WORLD_RPG_GAME_COMBAT_MECHANICS: Final[
     str
 ] = """
-**战斗公式**
+###战斗公式
+
+HP = X/Y
+- X = 当前HP
+- Y = 最大HP
 
 **1. 伤害计算（攻击者A → 目标B）**
 ```
 物理伤害 = max(1, ceil(A.物攻 - B.物防))
 魔法伤害 = max(1, ceil(A.魔攻))
 总伤害 = 物理伤害 + 魔法伤害 + B.持续伤害 - B.持续治疗
-B.当前HP = B.当前HP - 总伤害
+B.HP = (B.X - 总伤害)/Y
 ```
 **2. 治疗计算（施法者A → 目标B）**
 ```

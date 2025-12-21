@@ -2,12 +2,12 @@
 
 本模块提供后台任务的管理接口，主要功能包括：
 - 触发后台任务执行
-- 查询任务执行状态
+- 查询任务执行状态（支持批量查询）
 - 管理任务生命周期
 
 主要端点：
 - POST /api/tasks/v1/trigger: 触发新的后台任务
-- GET /api/tasks/v1/status/{task_id}: 查询指定任务的执行状态
+- GET /api/tasks/v1/status: 批量查询指定任务的执行状态
 
 注意事项：
 - 任务状态仅存储在内存中，服务重启后会丢失
@@ -20,12 +20,13 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum, unique
-from typing import Dict, Optional, final
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from typing import Dict, List, Optional, final
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
 from loguru import logger
 from ..models import (
     TaskTriggerResponse,
-    TaskStatusResponse,
+    TaskStatusDetail,
+    TasksStatusResponse,
 )
 
 ################################################################################################################
@@ -156,42 +157,66 @@ async def trigger_background_task(
 
 
 @background_tasks_api_router.get(
-    path="/api/tasks/v1/status/{task_id}", response_model=TaskStatusResponse
+    path="/api/tasks/v1/status", response_model=TasksStatusResponse
 )
-async def get_task_status(
-    task_id: str,
-) -> TaskStatusResponse:
-    """查询任务状态
+async def get_tasks_status(
+    task_ids: List[str] = Query(..., alias="task_ids"),
+) -> TasksStatusResponse:
+    """批量查询任务状态
 
-    根据任务ID查询指定任务的执行状态和详细信息。
+    根据提供的任务ID列表，批量查询任务的执行状态和详细信息。
+    支持单个查询和批量查询。
 
     Args:
-        task_id: 任务唯一标识符
+        task_ids: 要查询的任务ID列表，通过查询参数 task_ids 传递
 
     Returns:
-        TaskStatusResponse: 包含任务状态、开始时间、结束时间等信息的响应对象
+        TasksStatusResponse: 任务状态响应，包含所有查询到的任务详情列表
 
     Raises:
-        HTTPException: 当任务ID不存在时返回 404 错误
+        HTTPException(400): 未提供任务ID或任务ID列表为空
 
     Note:
         - 任务状态包括: "running", "completed", "failed"
         - 对于已完成的任务，会包含 end_time 字段
         - 对于失败的任务，会包含 error 字段
+        - 如果某个任务ID不存在，会跳过该任务继续查询其他任务
+        - 使用 Query 参数 task_ids 传递任务ID列表，例如：?task_ids=uuid1&task_ids=uuid2
+        - 单个查询例如：?task_ids=uuid1
     """
-    if task_id not in task_store:
-        logger.warning(f"⚠️ 查询的任务不存在: task_id={task_id}")
-        raise HTTPException(status_code=404, detail="任务不存在")
 
-    task_info = task_store[task_id]
-    logger.info(f"🔍 查询任务状态: task_id={task_id}, status={task_info.status}")
+    logger.info(f"🔍 批量查询任务状态: task_ids={task_ids}")
 
-    return TaskStatusResponse(
-        task_id=task_id,
-        status=task_info.status.value,
-        start_time=task_info.start_time.isoformat(),
-        end_time=(
-            task_info.end_time.isoformat() if task_info.end_time is not None else ""
-        ),
-        error=task_info.error if task_info.error is not None else "",
-    )
+    # 验证请求参数
+    if len(task_ids) == 0 or task_ids[0] == "":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="请提供至少一个任务ID",
+        )
+
+    # 批量查询任务
+    tasks_details: List[TaskStatusDetail] = []
+
+    for task_id in task_ids:
+        if task_id not in task_store:
+            logger.warning(f"⚠️ 查询的任务不存在: task_id={task_id}")
+            continue  # 跳过不存在的任务
+
+        task_info = task_store[task_id]
+        logger.info(f"🔍 查询到任务状态: task_id={task_id}, status={task_info.status}")
+
+        tasks_details.append(
+            TaskStatusDetail(
+                task_id=task_id,
+                status=task_info.status.value,
+                start_time=task_info.start_time.isoformat(),
+                end_time=(
+                    task_info.end_time.isoformat()
+                    if task_info.end_time is not None
+                    else ""
+                ),
+                error=task_info.error if task_info.error is not None else "",
+            )
+        )
+
+    return TasksStatusResponse(tasks=tasks_details)

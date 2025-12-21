@@ -199,9 +199,14 @@ class TaskTriggerResponse(BaseModel):
 
 
 @final
-class TaskStatusResponse(BaseModel):
+class TaskStatusDetail(BaseModel):
     task_id: str
     status: str
     start_time: str
     end_time: str
     error: str
+
+
+@final
+class TasksStatusResponse(BaseModel):
+    tasks: List[TaskStatusDetail]

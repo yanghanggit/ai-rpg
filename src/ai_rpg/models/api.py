@@ -184,3 +184,24 @@ class EntitiesDetailsResponse(BaseModel):
 @final
 class SessionMessageResponse(BaseModel):
     session_messages: List[SessionMessage]
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+
+@final
+class TaskTriggerResponse(BaseModel):
+    task_id: str
+    status: str
+    message: str
+
+
+@final
+class TaskStatusResponse(BaseModel):
+    task_id: str
+    status: str
+    start_time: str
+    end_time: str
+    error: str

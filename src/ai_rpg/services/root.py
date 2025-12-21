@@ -84,6 +84,8 @@ async def root(
             "session_messages": base_url + "api/session_messages/v1/",
             "entity_details": base_url + "api/entities/v1/",
             "stages_state": base_url + "api/stages/v1/",
+            "tasks_trigger": base_url + "api/tasks/v1/trigger",
+            "tasks_status": base_url + "api/tasks/v1/status/",
         },
         api_docs={
             # 需要路径参数的端点完整路径说明
@@ -95,5 +97,6 @@ async def root(
             "dungeon_state": base_url + "api/dungeons/v1/{user_name}/{game_name}/state",
             "werewolf_game_state": base_url
             + "api/werewolf/state/v1/{user_name}/{game_name}/state",
+            "tasks_status": base_url + "api/tasks/v1/status/{task_id}",
         },
     )

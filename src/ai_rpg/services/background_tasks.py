@@ -19,7 +19,8 @@ import asyncio
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, Optional
+from enum import StrEnum, unique
+from typing import Dict, Optional, final
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from loguru import logger
 from ..models import (
@@ -31,6 +32,21 @@ from ..models import (
 background_tasks_api_router = APIRouter()
 
 
+###############################################################################################################################################
+@final
+@unique
+class TaskStatus(StrEnum):
+    """任务状态枚举
+
+    定义后台任务的所有可能状态
+    """
+
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+###############################################################################################################################################
 @dataclass
 class TaskInfo:
     """任务信息数据类
@@ -38,13 +54,13 @@ class TaskInfo:
     存储单个后台任务的状态和执行信息
 
     Attributes:
-        status: 任务状态 ("running" | "completed" | "failed")
+        status: 任务状态
         start_time: 任务开始时间
         end_time: 任务结束时间（可选）
         error: 错误信息（可选）
     """
 
-    status: str
+    status: TaskStatus
     start_time: datetime
     end_time: Optional[datetime] = None
     error: Optional[str] = None
@@ -77,13 +93,13 @@ async def simulate_long_task(task_id: str, duration: int = 5) -> None:
         logger.info(f"🚀 后台任务开始: task_id={task_id}, duration={duration}s")
         await asyncio.sleep(duration)
 
-        task_store[task_id].status = "completed"
+        task_store[task_id].status = TaskStatus.COMPLETED
         task_store[task_id].end_time = datetime.now()
 
         logger.info(f"✅ 后台任务完成: task_id={task_id}")
     except Exception as e:
         logger.error(f"❌ 后台任务失败: task_id={task_id}, error={e}")
-        task_store[task_id].status = "failed"
+        task_store[task_id].status = TaskStatus.FAILED
         task_store[task_id].end_time = datetime.now()
         task_store[task_id].error = str(e)
 
@@ -118,7 +134,7 @@ async def trigger_background_task(
     """
     task_id = str(uuid.uuid4())
     task_store[task_id] = TaskInfo(
-        status="running",
+        status=TaskStatus.RUNNING,
         start_time=datetime.now(),
     )
 
@@ -128,7 +144,9 @@ async def trigger_background_task(
     logger.info(f"📝 创建后台任务: task_id={task_id}")
 
     return TaskTriggerResponse(
-        task_id=task_id, status="running", message="后台任务已启动"
+        task_id=task_id,
+        status=task_store[task_id].status.value,
+        message="后台任务已启动",
     )
 
 
@@ -170,7 +188,7 @@ async def get_task_status(
 
     return TaskStatusResponse(
         task_id=task_id,
-        status=task_info.status,
+        status=task_info.status.value,
         start_time=task_info.start_time.isoformat(),
         end_time=(
             task_info.end_time.isoformat() if task_info.end_time is not None else ""

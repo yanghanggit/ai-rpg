@@ -73,6 +73,81 @@ def _prepare_documents_for_vector_storage(
 
 
 ############################################################################################################
+def load_character_private_knowledge(
+    character_name: str,
+    knowledge_list: List[str],
+    embedding_model: SentenceTransformer,
+    collection: Collection,
+) -> bool:
+    """
+    为单个角色加载私有知识（在角色创建时调用）
+
+    这是动态加载方式，在角色初始化时调用，只加载当前角色的知识
+
+    Args:
+        character_name: 角色名称（如 "角色.法师.奥露娜"）
+        knowledge_list: 该角色的私有知识列表
+        embedding_model: SentenceTransformer 嵌入模型实例
+        collection: ChromaDB Collection 实例
+
+    Returns:
+        bool: 加载是否成功
+
+    Example:
+        # 在创建角色实体时调用
+        knowledge = ["我是法师奥露娜", "我在星辉学院学习"]
+        load_character_private_knowledge(
+            "角色.法师.奥露娜", knowledge, model, collection
+        )
+    """
+    try:
+        if not knowledge_list:
+            logger.warning(f"⚠️  [CHAR] 角色 {character_name} 没有私有知识，跳过加载")
+            return True
+
+        logger.info(
+            f"🔐 [CHAR] 为 {character_name} 加载 {len(knowledge_list)} 条私有知识..."
+        )
+
+        # 准备数据
+        documents: List[str] = []
+        metadatas: List[Mapping[str, str | int | float | bool | None]] = []
+        ids: List[str] = []
+
+        for i, knowledge in enumerate(knowledge_list):
+            documents.append(knowledge)
+            metadatas.append(
+                {
+                    "character_name": character_name,  # 角色隔离标记
+                    "type": "private",
+                    "doc_id": i,
+                }
+            )
+            ids.append(f"{character_name}_private_{i}")
+
+        # 计算向量嵌入
+        embeddings = embedding_model.encode(documents)
+        embeddings_list = embeddings.tolist()
+
+        # 添加到 ChromaDB
+        collection.add(
+            embeddings=embeddings_list,
+            documents=documents,
+            metadatas=metadatas,  # type: ignore[arg-type]
+            ids=ids,
+        )
+
+        logger.success(f"✅ [CHAR] {character_name} 私有知识加载完成")
+        return True
+
+    except Exception as e:
+        logger.error(
+            f"❌ [CHAR] {character_name} 私有知识加载失败: {e}\n{traceback.format_exc()}"
+        )
+        return False
+
+
+############################################################################################################
 def load_knowledge_base_to_vector_db(
     knowledge_base: Dict[str, List[str]],
     embedding_model: SentenceTransformer,
@@ -150,6 +225,79 @@ def load_knowledge_base_to_vector_db(
         logger.error(f"❌ [INIT] 初始化过程中发生错误: {e}\n{traceback.format_exc()}")
         logger.warning("⚠️ [INIT] 系统将回退到关键词匹配模式")
         return False
+
+
+############################################################################################################
+def search_private_knowledge(
+    query: str,
+    character_name: str,
+    collection: Collection,
+    embedding_model: SentenceTransformer,
+    top_k: int = 3,
+) -> Tuple[List[str], List[float]]:
+    """
+    查询角色的私有知识（带角色过滤）
+
+    与 search_similar_documents 的区别：
+    - 使用 where 过滤，只返回指定角色的私有知识
+    - 默认 top_k=3（私有知识通常较少）
+
+    Args:
+        query: 查询文本
+        character_name: 角色名称（如 "角色.法师.奥露娜"）
+        collection: ChromaDB Collection 实例（应为 private_knowledge_collection）
+        embedding_model: SentenceTransformer 嵌入模型实例
+        top_k: 返回最相似的文档数量
+
+    Returns:
+        tuple: (检索到的文档列表, 相似度分数列表)
+
+    Example:
+        docs, scores = search_private_knowledge(
+            query="我的研究进展如何",
+            character_name="角色.法师.奥露娜",
+            collection=get_private_knowledge_collection(),
+            embedding_model=multilingual_model,
+        )
+    """
+    try:
+        if not collection:
+            logger.error("❌ [PRIVATE] 集合未初始化")
+            return [], []
+
+        logger.info(f"🔍 [PRIVATE] 查询 {character_name} 的私有知识: '{query}'")
+
+        # 计算查询向量
+        query_embedding = embedding_model.encode([query])
+
+        # 执行向量搜索，使用 where 过滤角色
+        results = collection.query(
+            query_embeddings=query_embedding.tolist(),
+            n_results=top_k,
+            where={"character_name": character_name},  # ← 关键：过滤角色
+            include=["documents", "distances", "metadatas"],
+        )
+
+        # 提取结果
+        documents = results["documents"][0] if results["documents"] else []
+        distances = results["distances"][0] if results["distances"] else []
+
+        # 转换为相似度分数
+        if distances:
+            max_distance = max(distances) if distances else 1.0
+            similarity_scores = [
+                max(0, 1 - (dist / max_distance)) for dist in distances
+            ]
+        else:
+            similarity_scores = []
+
+        logger.info(f"✅ [PRIVATE] 找到 {len(documents)} 条私有知识")
+
+        return documents, similarity_scores
+
+    except Exception as e:
+        logger.error(f"❌ [PRIVATE] 私有知识查询失败: {e}\n{traceback.format_exc()}")
+        return [], []
 
 
 ############################################################################################################

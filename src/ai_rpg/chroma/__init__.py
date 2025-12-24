@@ -8,10 +8,12 @@ from .client import (
     chroma_client,
     reset_client,
     get_default_collection,
+    get_private_knowledge_collection,
 )
 
 __all__ = [
     "chroma_client",
     "reset_client",
     "get_default_collection",
+    "get_private_knowledge_collection",
 ]

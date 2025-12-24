@@ -31,14 +31,14 @@ from ..utils import extract_json_from_code_block
 @final
 class InputFilterResponse(BaseModel):
     """输入过滤响应数据模型。
-    
+
     封装AI返回的输入审核结果。
-    
+
     Attributes:
         is_approved: 输入是否通过审核(True表示通过,False表示拒绝)
         reason: 拒绝原因(如果is_approved为False,需要填写拒绝理由)
     """
-    
+
     is_approved: bool
     reason: str = ""
 
@@ -46,17 +46,19 @@ class InputFilterResponse(BaseModel):
 ####################################################################################################################################
 def _build_filter_prompt(target_messages: dict[str, str]) -> str:
     """构建输入过滤提示词。
-    
+
     生成用于AI审核玩家输入内容的提示词。
-    
+
     Args:
         target_messages: 玩家要发送的消息字典,键为目标角色名,值为消息内容
-        
+
     Returns:
         格式化的提示词字符串
     """
-    messages_text = "\n".join([f"对 {target}: {content}" for target, content in target_messages.items()])
-    
+    messages_text = "\n".join(
+        [f"对 {target}: {content}" for target, content in target_messages.items()]
+    )
+
     return f"""# 内容审核指令！请审核以下即将发送的消息内容
 
 ## 待审核的消息
@@ -82,11 +84,11 @@ def _build_filter_prompt(target_messages: dict[str, str]) -> str:
 ####################################################################################################################################
 def _format_filter_rejection_message(player_name: str, reason: str) -> str:
     """格式化过滤拒绝消息。
-    
+
     Args:
         player_name: 玩家名称
         reason: 拒绝原因
-        
+
     Returns:
         格式化后的拒绝消息字符串
     """
@@ -103,15 +105,15 @@ def _format_filter_rejection_message(player_name: str, reason: str) -> str:
 @final
 class PlayerInputFilterSystem(ReactiveProcessor):
     """玩家输入过滤系统。
-    
+
     该系统在玩家执行对话动作前通过玩家AI进行内容审核,确保输入内容符合规范。
     当检测到不合规内容时,会阻止动作执行并向玩家返回提示信息。
-    
+
     审核机制:
     - 将玩家输入发送给玩家自己的AI进行审核
     - AI根据actor_profile中定义的规则进行判断
     - 只有通过AI审核的内容才会继续执行
-    
+
     Attributes:
         _game: 游戏上下文实例
     """
@@ -124,9 +126,9 @@ class PlayerInputFilterSystem(ReactiveProcessor):
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         """获取系统触发器。
-        
+
         监听SpeakAction组件的添加事件,但只处理玩家实体的动作。
-        
+
         Returns:
             触发器配置字典
         """
@@ -136,13 +138,13 @@ class PlayerInputFilterSystem(ReactiveProcessor):
     @override
     def filter(self, entity: Entity) -> bool:
         """过滤需要处理的实体。
-        
+
         只处理包含SpeakAction和PlayerComponent的实体(即玩家实体)。
         NPC的对话不需要经过此过滤系统。
-        
+
         Args:
             entity: 待检查的实体
-            
+
         Returns:
             如果是玩家实体且包含SpeakAction则返回True,否则返回False
         """
@@ -152,9 +154,9 @@ class PlayerInputFilterSystem(ReactiveProcessor):
     @override
     async def react(self, entities: list[Entity]) -> None:
         """响应实体变化。
-        
+
         对每个玩家的SpeakAction执行AI审核检查。
-        
+
         Args:
             entities: 触发事件的实体列表
         """
@@ -187,15 +189,15 @@ class PlayerInputFilterSystem(ReactiveProcessor):
             - AI的审核规则在actor_profile或kick_off中定义
         """
         speak_action = entity.get(SpeakAction)
-        
+
         # 执行AI审核检查
         is_approved, reason = await self._check_content_with_ai(entity, speak_action)
-        
+
         if not is_approved:
             # 审核不通过,移除SpeakAction组件以阻止后续处理
             logger.warning(f"玩家输入未通过AI审核: {reason}")
             entity.remove(SpeakAction)
-            
+
             # 向玩家发送AI给出的拒绝理由
             self._game.add_human_message(
                 entity=entity,
@@ -211,53 +213,53 @@ class PlayerInputFilterSystem(ReactiveProcessor):
         self, entity: Entity, speak_action: SpeakAction
     ) -> tuple[bool, str]:
         """通过AI检查对话内容是否通过过滤。
-        
+
         调用玩家的AI进行内容审核,AI会根据其角色设定判断内容是否合规。
-        
+
         Args:
             entity: 玩家实体
             speak_action: 要检查的对话动作
-            
+
         Returns:
             元组 (是否通过审核, 拒绝理由)
-            
+
         Note:
             当前测试版本中,AI会拒绝所有输入以测试系统是否正常工作
         """
         try:
             # 构建审核提示词
             prompt = _build_filter_prompt(speak_action.target_messages)
-            
+
             # 获取玩家的AI上下文
             agent_context = self._game.get_agent_context(entity)
-            
+
             # 创建AI审核请求
             chat_client = ChatClient(
                 name=entity.name,
                 prompt=prompt,
                 context=agent_context.context,
             )
-            
+
             # 发送审核请求
             await ChatClient.gather_request_post(clients=[chat_client])
-            
+
             # 解析AI响应
             response_content = chat_client.response_content
             logger.debug(f"AI审核响应: {response_content}")
-            
+
             try:
                 filter_response = InputFilterResponse.model_validate_json(
                     extract_json_from_code_block(response_content)
                 )
-                
+
                 return filter_response.is_approved, filter_response.reason
-                
+
             except Exception as e:
                 logger.error(f"解析AI审核响应失败: {e}")
                 logger.error(f"原始响应: {response_content}")
                 # 解析失败时默认拒绝,保证安全性
                 return False, "AI审核响应格式错误,请重试"
-                
+
         except Exception as e:
             logger.error(f"AI审核过程出错: {e}")
             # 出错时默认拒绝,保证安全性

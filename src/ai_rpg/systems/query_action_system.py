@@ -10,8 +10,8 @@ from loguru import logger
 from ..embedding_model import (
     multilingual_model,
 )
-from ..chroma import get_default_collection
-from ..rag import search_similar_documents
+from ..chroma import get_default_collection, get_private_knowledge_collection
+from ..rag import search_similar_documents, search_private_knowledge
 from ..game.tcg_game import TCGGame
 
 
@@ -44,7 +44,7 @@ class QueryActionSystem(ReactiveProcessor):
         query_action = entity.get(QueryAction)
         assert query_action is not None
 
-        related_info = self._get_related_info(query_action.question)
+        related_info = self._get_related_info(entity, query_action.question)
         logger.success(f"🔎 角色发起查询行动，问题: {query_action.question}")
         logger.success(f"💭 角色记忆查询结果: {related_info}")
 
@@ -60,62 +60,70 @@ class QueryActionSystem(ReactiveProcessor):
             )
 
     ####################################################################################################################################
-    def _get_related_info(self, original_message: str) -> str:
-        """检索相关信息 - 直接进行检索，能找到就返回，找不到就返回空"""
+    def _get_related_info(self, entity: Entity, original_message: str) -> str:
+        """检索相关信息 - 双层查询（公共知识 + 私有知识）"""
         try:
-            logger.success(f"🔍 直接进行RAG检索: {original_message}")
+            logger.success(f"🔍 双层RAG检索: {original_message}")
 
-            # 直接执行RAG检索，不需要路由决策
-            return self._query_with_rag(original_message)
+            # 执行双层RAG检索
+            return self._query_with_rag(entity, original_message)
 
         except Exception as e:
             logger.error(f"❌ 相关信息检索失败: {e}")
             return ""  # 失败时返回空
 
     ####################################################################################################################################
-    def _query_with_rag(self, message: str) -> str:
-        """RAG查询处理 - 仅执行查询并返回结果"""
+    def _query_with_rag(self, entity: Entity, message: str) -> str:
+        """RAG查询处理 - 双层查询（公共知识 + 私有知识）"""
         try:
             logger.debug(f"🔍 RAG查询: {message}...")
 
-            # 1. 检查ChromaDB状态
-            # chroma_db = get_chroma_db()
-            # if not chroma_db.initialized:
-            #     logger.warning("⚠️ ChromaDB未初始化，返回空结果")
-            #     return ""
+            result_parts = []
 
-            # 1.5. 获取嵌入模型
-            # embedding_model = get_embedding_model()
-            # assert embedding_model is not None, "嵌入模型未初始化"
-            # if embedding_model is None:
-            #     logger.warning("⚠️ 嵌入模型未初始化，返回空结果")
-            #     return ""
-
-            # 1.6. 检查collection是否可用
-            # if chroma_db.collection is None:
-            #     logger.warning("⚠️ ChromaDB collection未初始化，返回空结果")
-            #     return ""
-
-            # 2. 执行语义搜索查询
-            retrieved_docs, similarity_scores = search_similar_documents(
+            # 1. 查询公共知识（default_collection）
+            logger.info("📚 查询公共知识库...")
+            public_docs, public_scores = search_similar_documents(
                 query=message,
                 collection=get_default_collection(),
                 embedding_model=multilingual_model,
                 top_k=3,
             )
 
+            if public_docs:
+                result_parts.append("【公共知识】")
+                for i, (doc, score) in enumerate(zip(public_docs, public_scores), 1):
+                    result_parts.append(f"{i}. [相似度: {score:.3f}] {doc}")
+                logger.success(f"✅ 找到 {len(public_docs)} 条公共知识")
+
+            # 2. 查询私有知识（private_knowledge_collection + where 过滤）
+            logger.info(f"🔐 查询 {entity.name} 的私有知识库...")
+            private_docs, private_scores = search_private_knowledge(
+                query=message,
+                character_name=entity.name,  # ← 关键：使用角色名过滤
+                collection=get_private_knowledge_collection(),
+                embedding_model=multilingual_model,
+                top_k=3,
+            )
+
+            if private_docs:
+                if result_parts:  # 如果已有公共知识，添加分隔
+                    result_parts.append("")
+                result_parts.append("【私有知识（你的记忆）】")
+                for i, (doc, score) in enumerate(zip(private_docs, private_scores), 1):
+                    result_parts.append(f"{i}. [相似度: {score:.3f}] {doc}")
+                logger.success(f"✅ 找到 {len(private_docs)} 条私有知识")
+
             # 3. 检查查询结果
-            if not retrieved_docs:
-                logger.warning("⚠️ 未检索到相关文档，返回空结果")
+            if not result_parts:
+                logger.warning("⚠️ 未检索到任何相关文档，返回空结果")
                 return ""
 
-            # 4. 简单格式化查询结果并返回
-            result_parts = []
-            for i, (doc, score) in enumerate(zip(retrieved_docs, similarity_scores), 1):
-                result_parts.append(f"{i}. [相似度: {score:.3f}] {doc}")
-
+            # 4. 格式化并返回结果
             query_result = "\n".join(result_parts)
-            logger.success(f"🔍 RAG查询完成，找到 {len(retrieved_docs)} 个相关文档")
+            total_docs = len(public_docs) + len(private_docs)
+            logger.success(
+                f"🔍 RAG查询完成，共找到 {total_docs} 条相关知识（公共: {len(public_docs)}, 私有: {len(private_docs)}）"
+            )
 
             return query_result
 

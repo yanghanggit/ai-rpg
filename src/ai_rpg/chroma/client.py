@@ -83,3 +83,39 @@ def get_default_collection() -> Collection:
 
 
 ##################################################################################################################
+def get_private_knowledge_collection() -> Collection:
+    """获取或创建角色私有知识库的专用集合
+
+    该函数会返回名为 'private_knowledge_collection' 的集合。
+    如果集合不存在，会自动创建一个新的集合。
+
+    与 default_collection 的区别：
+    - default_collection: 存储公共知识（世界设定、规则等）
+    - private_knowledge_collection: 存储角色私有知识（记忆、秘密等）
+
+    Returns:
+        Collection: ChromaDB 集合对象，专门用于存储角色私有知识
+
+    Note:
+        这是角色私有知识的专用存储空间，通过 metadata 中的 character_name
+        实现不同角色之间的隔离。每个角色只能访问自己的私有知识。
+
+    Example:
+        >>> collection = get_private_knowledge_collection()
+        >>> collection.add(
+        ...     documents=["我是法师奥露娜"],
+        ...     metadatas=[{"character_name": "角色.法师.奥露娜"}],
+        ...     ids=["角色.法师.奥露娜_private_0"]
+        ... )
+        >>> # 查询时使用 where 过滤
+        >>> results = collection.get(where={"character_name": "角色.法师.奥露娜"})
+    """
+    return chroma_client.get_or_create_collection(
+        name="private_knowledge_collection",
+        metadata={
+            "description": "Private knowledge collection for character isolation"
+        },
+    )
+
+
+##################################################################################################################

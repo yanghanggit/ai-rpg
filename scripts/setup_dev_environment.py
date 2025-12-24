@@ -105,6 +105,8 @@ def _setup_chromadb_rag_environment() -> None:
 
     清理现有的ChromaDB数据，然后使用正式的知识库数据重新初始化RAG系统，
     包括向量数据库的设置和知识库数据的加载
+
+    注意：私有知识库现在在角色创建时动态加载，不在此处加载
     """
     logger.info("🚀 初始化RAG系统...")
 

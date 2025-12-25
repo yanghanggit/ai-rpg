@@ -57,7 +57,7 @@ def reset_client() -> None:
 
 ##################################################################################################################
 def get_default_collection() -> Collection:
-    """获取或创建默认的向量集合
+    """获取或创建统一的向量集合
 
     该函数会返回名为 'default_collection' 的集合。
     如果集合不存在，会自动创建一个新的集合。
@@ -66,54 +66,38 @@ def get_default_collection() -> Collection:
         Collection: ChromaDB 集合对象，用于存储和检索向量数据
 
     Note:
-        这是 AI RPG 系统的默认集合，用于存储游戏相关的向量数据，
-        如角色描述、场景信息、对话历史等的向量表示。
+        这是 AI RPG 系统的统一集合，同时存储：
+        1. 公共知识（世界设定、规则等） - metadata: {"type": "public", "category": "..."}
+        2. 私有知识（用户记忆、秘密等） - metadata: {"type": "private", "character_name": "..."}
+
+        通过 metadata 中的 type 和 character_name 实现数据隔离和过滤。
+        character_name 使用 "游戏名.实体名" 格式（如 "魔法学院RPG.角色.法师.奥露娜"）
+        来实现多游戏场景的知识隔离。
 
     Example:
         >>> collection = get_default_collection()
+        >>> # 添加公共知识
         >>> collection.add(
-        ...     documents=["这是一个游戏角色的描述"],
-        ...     ids=["character_001"]
+        ...     documents=["这是世界设定"],
+        ...     metadatas=[{"type": "public", "category": "世界观"}],
+        ...     ids=["世界观_0"]
+        ... )
+        >>> # 添加私有知识（以角色为例，使用游戏名前缀）
+        >>> collection.add(
+        ...     documents=["我是法师奥露娜"],
+        ...     metadatas=[{"type": "private", "character_name": "魔法学院RPG.角色.法师.奥露娜"}],
+        ...     ids=["魔法学院RPG.角色.法师.奥露娜_private_0"]
+        ... )
+        >>> # 查询时使用 where 过滤（查询公共 + 特定游戏特定角色的私有知识）
+        >>> results = collection.query(
+        ...     query_embeddings=[[...]],
+        ...     where={"$or": [{"type": "public"}, {"character_name": "魔法学院RPG.角色.法师.奥露娜"}]}
         ... )
     """
     return chroma_client.get_or_create_collection(
         name="default_collection",
-        metadata={"description": "Default collection for AI RPG system!"},
-    )
-
-
-##################################################################################################################
-def get_private_knowledge_collection() -> Collection:
-    """获取或创建角色私有知识库的专用集合
-
-    该函数会返回名为 'private_knowledge_collection' 的集合。
-    如果集合不存在，会自动创建一个新的集合。
-
-    与 default_collection 的区别：
-    - default_collection: 存储公共知识（世界设定、规则等）
-    - private_knowledge_collection: 存储角色私有知识（记忆、秘密等）
-
-    Returns:
-        Collection: ChromaDB 集合对象，专门用于存储角色私有知识
-
-    Note:
-        这是角色私有知识的专用存储空间，通过 metadata 中的 character_name
-        实现不同角色之间的隔离。每个角色只能访问自己的私有知识。
-
-    Example:
-        >>> collection = get_private_knowledge_collection()
-        >>> collection.add(
-        ...     documents=["我是法师奥露娜"],
-        ...     metadatas=[{"character_name": "角色.法师.奥露娜"}],
-        ...     ids=["角色.法师.奥露娜_private_0"]
-        ... )
-        >>> # 查询时使用 where 过滤
-        >>> results = collection.get(where={"character_name": "角色.法师.奥露娜"})
-    """
-    return chroma_client.get_or_create_collection(
-        name="private_knowledge_collection",
         metadata={
-            "description": "Private knowledge collection for character isolation"
+            "description": "Unified collection for AI RPG system (public + private knowledge)"
         },
     )
 

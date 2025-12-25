@@ -10,8 +10,8 @@ from loguru import logger
 from ..embedding_model import (
     multilingual_model,
 )
-from ..chroma import get_default_collection, get_private_knowledge_collection
-from ..rag import search_similar_documents, search_private_knowledge
+from ..chroma import get_default_collection
+from ..rag import search_similar_documents
 from ..game.tcg_game import TCGGame
 
 
@@ -61,11 +61,11 @@ class QueryActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def _get_related_info(self, entity: Entity, original_message: str) -> str:
-        """检索相关信息 - 双层查询（公共知识 + 私有知识）"""
+        """检索相关信息 - 统一查询（公共知识 + 角色私有知识）"""
         try:
-            logger.success(f"🔍 双层RAG检索: {original_message}")
+            logger.success(f"🔍 RAG检索: {original_message}")
 
-            # 执行双层RAG检索
+            # 执行统一RAG检索
             return self._query_with_rag(entity, original_message)
 
         except Exception as e:
@@ -74,56 +74,34 @@ class QueryActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def _query_with_rag(self, entity: Entity, message: str) -> str:
-        """RAG查询处理 - 双层查询（公共知识 + 私有知识）"""
+        """RAG查询处理 - 统一查询（公共知识 + 角色私有知识）"""
         try:
             logger.debug(f"🔍 RAG查询: {message}...")
 
-            result_parts = []
-
-            # 1. 查询公共知识（default_collection）
-            logger.info("📚 查询公共知识库...")
-            public_docs, public_scores = search_similar_documents(
+            # 查询公共知识 + 该角色的私有知识（通过游戏名前缀隔离）
+            logger.info(
+                f"📚 查询知识库（游戏: {self._game.name}, 公共 + {entity.name} 的私有知识）..."
+            )
+            docs, scores = search_similar_documents(
                 query=message,
                 collection=get_default_collection(),
                 embedding_model=multilingual_model,
-                top_k=3,
+                owner=f"{self._game.name}.{entity.name}",  # ← 关键：使用游戏名前缀实现知识隔离
+                top_k=5,  # 增加 top_k，因为现在是统一查询
             )
 
-            if public_docs:
-                result_parts.append("【公共知识】")
-                for i, (doc, score) in enumerate(zip(public_docs, public_scores), 1):
-                    result_parts.append(f"{i}. [相似度: {score:.3f}] {doc}")
-                logger.success(f"✅ 找到 {len(public_docs)} 条公共知识")
-
-            # 2. 查询私有知识（private_knowledge_collection + where 过滤）
-            logger.info(f"🔐 查询 {entity.name} 的私有知识库...")
-            private_docs, private_scores = search_private_knowledge(
-                query=message,
-                character_name=entity.name,  # ← 关键：使用角色名过滤
-                collection=get_private_knowledge_collection(),
-                embedding_model=multilingual_model,
-                top_k=3,
-            )
-
-            if private_docs:
-                if result_parts:  # 如果已有公共知识，添加分隔
-                    result_parts.append("")
-                result_parts.append("【私有知识（你的记忆）】")
-                for i, (doc, score) in enumerate(zip(private_docs, private_scores), 1):
-                    result_parts.append(f"{i}. [相似度: {score:.3f}] {doc}")
-                logger.success(f"✅ 找到 {len(private_docs)} 条私有知识")
-
-            # 3. 检查查询结果
-            if not result_parts:
+            # 检查查询结果
+            if not docs:
                 logger.warning("⚠️ 未检索到任何相关文档，返回空结果")
                 return ""
 
-            # 4. 格式化并返回结果
+            # 格式化结果
+            result_parts = []
+            for i, (doc, score) in enumerate(zip(docs, scores), 1):
+                result_parts.append(f"{i}. [相似度: {score:.3f}] {doc}")
+
             query_result = "\n".join(result_parts)
-            total_docs = len(public_docs) + len(private_docs)
-            logger.success(
-                f"🔍 RAG查询完成，共找到 {total_docs} 条相关知识（公共: {len(public_docs)}, 私有: {len(private_docs)}）"
-            )
+            logger.success(f"🔍 RAG查询完成，共找到 {len(docs)} 条相关知识")
 
             return query_result
 

@@ -257,13 +257,8 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
     def _create_actor_entities(self, actor_models: List[Actor]) -> List[Entity]:
         """创建角色实体，包括属性、外观、背包、技能等组件
 
-        同时为每个角色加载其私有知识库（如果有）
+        注意：角色私有知识库在环境初始化时已加载（setup_dev_environment.py），此处不再重复加载
         """
-        from ..chroma import get_private_knowledge_collection
-        from ..rag import load_character_private_knowledge
-        from ..embedding_model.sentence_transformer import multilingual_model
-        from ..demo.campaign_setting import FANTASY_WORLD_RPG_PRIVATE_KNOWLEDGE_BASE
-
         actor_entities: List[Entity] = []
 
         for actor_model in actor_models:
@@ -357,21 +352,6 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 actor_model.name,
                 copy_skills,
             )
-
-            # 🔐 动态加载角色私有知识库（使用专用 collection）
-            if actor_model.name in FANTASY_WORLD_RPG_PRIVATE_KNOWLEDGE_BASE:
-                knowledge_list = FANTASY_WORLD_RPG_PRIVATE_KNOWLEDGE_BASE[
-                    actor_model.name
-                ]
-                logger.info(
-                    f"🔐 为 {actor_model.name} 加载 {len(knowledge_list)} 条私有知识"
-                )
-                load_character_private_knowledge(
-                    character_name=actor_model.name,
-                    knowledge_list=knowledge_list,
-                    embedding_model=multilingual_model,
-                    collection=get_private_knowledge_collection(),  # ← 使用专用 collection
-                )
 
             # 添加到返回值
             actor_entities.append(actor_entity)

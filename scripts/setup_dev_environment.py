@@ -332,6 +332,13 @@ def main() -> None:
         logger.success("✅ PostgreSQL 初始化完成")
     except Exception as e:
         logger.error(f"❌ PostgreSQL 初始化失败: {e}")
+    
+    # 创建演示游戏世界
+    try:
+        logger.info("🚀 创建M演示游戏世界...")
+        _save_demo_world_boot(GLOBAL_TCG_GAME_NAME)
+    except Exception as e:
+        logger.error(f"❌ 创建MongoDB演示游戏世界失败: {e}")
 
     # RAG 系统相关操作
     try:
@@ -349,12 +356,6 @@ def main() -> None:
     except Exception as e:
         logger.error(f"❌ 服务器配置设置失败: {e}")
 
-    # 创建演示游戏世界
-    try:
-        logger.info("🚀 创建M演示游戏世界...")
-        _save_demo_world_boot(GLOBAL_TCG_GAME_NAME)
-    except Exception as e:
-        logger.error(f"❌ 创建MongoDB演示游戏世界失败: {e}")
 
     logger.info("🎉 开发环境初始化完成")
 

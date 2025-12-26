@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from .session_message import SessionMessage
 from .dungeon import Dungeon
 from .serialization import EntitySerialization
+from .task import TaskStatus, TaskRecord
 
 ################################################################################################################
 ################################################################################################################
@@ -211,32 +212,10 @@ class SessionMessageResponse(BaseModel):
 
 
 @final
-@unique
-class TaskStatus(StrEnum):
-    """任务状态枚举
-
-    定义后台任务的所有可能状态
-    """
-
-    RUNNING = "running"
-    COMPLETED = "completed"
-    FAILED = "failed"
-
-
-@final
 class TaskTriggerResponse(BaseModel):
     task_id: str
     status: str
     message: str
-
-
-@final
-class TaskRecord(BaseModel):
-    task_id: str
-    status: TaskStatus
-    start_time: str
-    end_time: Optional[str] = None
-    error: Optional[str] = None
 
 
 @final

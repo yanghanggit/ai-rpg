@@ -489,7 +489,6 @@ async def _execute_play_cards_task(
         if task_record is not None:
             task_record.status = TaskStatus.COMPLETED
             task_record.end_time = datetime.now().isoformat()
-            game_server.update_task(task_id, task_record)
 
         logger.info(f"✅ 出牌任务完成: task_id={task_id}, user={user_name}")
 
@@ -500,7 +499,6 @@ async def _execute_play_cards_task(
             task_record.status = TaskStatus.FAILED
             task_record.error = str(e)
             task_record.end_time = datetime.now().isoformat()
-            game_server.update_task(task_id, task_record)
 
 
 ###################################################################################################################################################################

@@ -1,4 +1,5 @@
-from typing import Dict, List, final
+from enum import StrEnum, unique
+from typing import Dict, List, Optional, final
 from pydantic import BaseModel
 from .session_message import SessionMessage
 from .dungeon import Dungeon
@@ -151,6 +152,24 @@ class DungeonGamePlayResponse(BaseModel):
 
 
 @final
+class DungeonCombatPlayCardsRequest(BaseModel):
+    user_name: str
+    game_name: str
+
+
+@final
+class DungeonCombatPlayCardsResponse(BaseModel):
+    task_id: str
+    status: str
+    message: str
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+
+@final
 class DungeonStateResponse(BaseModel):
     mapping: Dict[str, List[str]]
     dungeon: Dungeon
@@ -192,6 +211,19 @@ class SessionMessageResponse(BaseModel):
 
 
 @final
+@unique
+class TaskStatus(StrEnum):
+    """任务状态枚举
+
+    定义后台任务的所有可能状态
+    """
+
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+@final
 class TaskTriggerResponse(BaseModel):
     task_id: str
     status: str
@@ -199,14 +231,14 @@ class TaskTriggerResponse(BaseModel):
 
 
 @final
-class TaskStatusDetail(BaseModel):
+class TaskRecord(BaseModel):
     task_id: str
-    status: str
+    status: TaskStatus
     start_time: str
-    end_time: str
-    error: str
+    end_time: Optional[str] = None
+    error: Optional[str] = None
 
 
 @final
 class TasksStatusResponse(BaseModel):
-    tasks: List[TaskStatusDetail]
+    tasks: List[TaskRecord]

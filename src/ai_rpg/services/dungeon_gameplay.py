@@ -36,8 +36,9 @@ API端点:
     接口会自动验证玩家状态和战斗状态，验证失败会抛出相应的HTTP异常。
 """
 
+from datetime import datetime
 from typing import Final
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
 from .game_server_dependencies import CurrentGameServer
@@ -46,6 +47,9 @@ from ..models import (
     DungeonGamePlayResponse,
     DungeonTransHomeRequest,
     DungeonTransHomeResponse,
+    DungeonCombatPlayCardsRequest,
+    DungeonCombatPlayCardsResponse,
+    TaskStatus,
 )
 from .dungeon_stage_transition import (
     advance_to_next_stage,
@@ -225,30 +229,6 @@ async def dungeon_gameplay(
                 )
             )
 
-        case "play_cards":
-            # 处理出牌操作
-            if not rpg_game.current_combat_sequence.is_ongoing:
-                logger.error(f"玩家 {payload.user_name} 出牌失败: 战斗未在进行中")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="战斗未在进行中",
-                )
-            # 为所有角色随机选择并激活打牌动作
-            success, message = activate_random_play_cards(rpg_game)
-            if not success:
-                logger.error(f"玩家 {payload.user_name} 出牌失败: {message}")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=message,
-                )
-            # 推进战斗流程处理出牌
-            await rpg_game.combat_pipeline.process()
-            return DungeonGamePlayResponse(
-                session_messages=rpg_game.player_session.get_messages_since(
-                    last_event_sequence
-                )
-            )
-
         case "advance_next_dungeon":
             # 处理前进下一个地下城关卡
             if not rpg_game.current_combat_sequence.is_post_combat:
@@ -368,6 +348,159 @@ async def dungeon_trans_home(
     return DungeonTransHomeResponse(
         message="成功返回家园",
     )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@dungeon_gameplay_api_router.post(
+    path="/api/dungeon/combat/play_cards/v1/",
+    response_model=DungeonCombatPlayCardsResponse,
+)
+async def dungeon_combat_play_cards(
+    payload: DungeonCombatPlayCardsRequest,
+    game_server: CurrentGameServer,
+    background_tasks: BackgroundTasks,
+) -> DungeonCombatPlayCardsResponse:
+    """
+    地下城战斗出牌接口（后台任务版），触发玩家在战斗中打出卡牌的后台任务
+
+    该接口负责创建并触发玩家在地下城战斗中的出牌后台任务。出牌操作会在后台异步执行，
+    客户端可以立即得到响应而不必等待耗时的战斗流程处理完成。
+
+    Args:
+        payload: 地下城战斗出牌请求对象
+            - user_name: 用户名，用于标识玩家
+            - game_name: 游戏名称
+        game_server: 游戏服务器实例，由依赖注入提供
+        background_tasks: FastAPI 后台任务管理器
+
+    Returns:
+        DungeonCombatPlayCardsResponse: 地下城战斗出牌响应对象
+            - task_id: 任务唯一标识符，可用于后续查询任务状态
+            - status: 任务初始状态（"running"）
+            - message: 提示信息
+
+    Raises:
+        HTTPException(404): 玩家未登录、游戏实例不存在或没有战斗
+        HTTPException(400): 玩家不在地下城状态或战斗未在进行中
+
+    处理流程:
+        1. 验证玩家是否在地下城状态
+        2. 检查战斗是否在进行中
+        3. 生成任务ID并初始化任务信息
+        4. 将出牌任务添加到后台任务队列
+        5. 立即返回任务信息
+
+    注意事项:
+        - 战斗必须处于 ONGOING 状态才能触发任务
+        - 任务会在后台异步执行，不阻塞客户端
+        - 客户端需要通过其他方式（如轮询会话消息）获取任务结果
+        - 任务信息存储在内存中，服务重启后会丢失
+    """
+
+    logger.info(f"/api/dungeon/combat/play_cards/v1/: user={payload.user_name}")
+
+    # 验证地下城操作的前置条件
+    rpg_game = _validate_dungeon_prerequisites(
+        user_name=payload.user_name,
+        game_server=game_server,
+    )
+
+    # 验证战斗状态
+    if not rpg_game.current_combat_sequence.is_ongoing:
+        logger.error(f"玩家 {payload.user_name} 出牌失败: 战斗未在进行中")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="战斗未在进行中",
+        )
+
+    # 创建出牌后台任务
+    play_cards_task = game_server.create_task()
+
+    # 添加后台任务
+    background_tasks.add_task(
+        _execute_play_cards_task,
+        play_cards_task.task_id,
+        payload.user_name,
+        game_server,
+    )
+
+    logger.info(
+        f"📝 创建出牌后台任务: task_id={play_cards_task.task_id}, user={payload.user_name}"
+    )
+
+    return DungeonCombatPlayCardsResponse(
+        task_id=play_cards_task.task_id,
+        status=TaskStatus.RUNNING.value,
+        message="出牌任务已启动，请通过会话消息查询结果",
+    )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+async def _execute_play_cards_task(
+    task_id: str,
+    user_name: str,
+    game_server: GameServer,
+) -> None:
+    """后台执行出牌任务
+
+    在后台异步执行出牌操作，包括激活打牌动作和推进战斗流程。
+    任务完成后会更新任务存储中的状态和消息。
+
+    Args:
+        task_id: 任务唯一标识符
+        user_name: 用户名，用于获取游戏实例
+        game_server: 游戏服务器实例
+        last_event_sequence: 任务开始前的事件序列号
+
+    Note:
+        - 任务执行期间会记录日志
+        - 任务完成后状态会更新为 "completed"，并保存会话消息
+        - 异常情况下状态会更新为 "failed"，并记录错误信息
+    """
+    try:
+        logger.info(f"🚀 出牌任务开始: task_id={task_id}, user={user_name}")
+
+        # 重新获取游戏实例（确保获取最新状态）
+        current_room = game_server.get_room(user_name)
+        if current_room is None or current_room._tcg_game is None:
+            raise ValueError(f"游戏实例不存在: user={user_name}")
+
+        rpg_game = current_room._tcg_game
+        assert isinstance(rpg_game, TCGGame), "Invalid game type"
+
+        # 验证战斗状态
+        if not rpg_game.current_combat_sequence.is_ongoing:
+            raise ValueError("战斗未在进行中")
+
+        # 为所有角色随机选择并激活打牌动作
+        success, message = activate_random_play_cards(rpg_game)
+        if not success:
+            raise ValueError(f"出牌失败: {message}")
+
+        # 推进战斗流程处理出牌, 注意!!!!!!!!!!!!!!! 这里会堵住当前协程直到处理完成
+        await rpg_game.combat_pipeline.process()
+
+        # 保存结果
+        task_record = game_server.get_task(task_id)
+        if task_record is not None:
+            task_record.status = TaskStatus.COMPLETED
+            task_record.end_time = datetime.now().isoformat()
+            game_server.update_task(task_id, task_record)
+
+        logger.info(f"✅ 出牌任务完成: task_id={task_id}, user={user_name}")
+
+    except Exception as e:
+        logger.error(f"❌ 出牌任务失败: task_id={task_id}, user={user_name}, error={e}")
+        task_record = game_server.get_task(task_id)
+        if task_record is not None:
+            task_record.status = TaskStatus.FAILED
+            task_record.error = str(e)
+            task_record.end_time = datetime.now().isoformat()
+            game_server.update_task(task_id, task_record)
 
 
 ###################################################################################################################################################################

@@ -119,7 +119,6 @@ def _setup_chromadb_rag_environment(game_name: str) -> None:
     )
     from ai_rpg.demo.campaign_setting import (
         FANTASY_WORLD_RPG_KNOWLEDGE_BASE,
-        FANTASY_WORLD_RPG_PRIVATE_KNOWLEDGE_BASE,
     )
     from ai_rpg.models import Boot
 
@@ -164,14 +163,16 @@ def _setup_chromadb_rag_environment(game_name: str) -> None:
 
         # 遍历所有角色，加载私有知识
         for actor in world_boot.actors:
-            if actor.name in FANTASY_WORLD_RPG_PRIVATE_KNOWLEDGE_BASE:
-                knowledge_list = FANTASY_WORLD_RPG_PRIVATE_KNOWLEDGE_BASE[actor.name]
-                logger.info(f"🔐 为 {actor.name} 加载 {len(knowledge_list)} 条私有知识")
+            # 直接从Actor对象的private_knowledge字段读取知识
+            if actor.private_knowledge and len(actor.private_knowledge) > 0:
+                logger.info(
+                    f"🔐 为 {actor.name} 加载 {len(actor.private_knowledge)} 条私有知识"
+                )
 
                 success = add_documents_to_vector_db(
                     collection=get_default_collection(),
                     embedding_model=multilingual_model,
-                    documents=knowledge_list,
+                    documents=actor.private_knowledge,
                     owner=f"{game_name}.{actor.name}",  # 使用游戏名前缀实现知识隔离
                 )
 

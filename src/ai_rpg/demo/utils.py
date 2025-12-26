@@ -52,6 +52,7 @@ def create_actor(
         actor_profile: 角色简介设定
         appearance: 角色外观描述
         global_game_mechanics: 全局游戏机制规则
+        private_knowledge: 角色私有知识列表，用于RAG检索
 
     Returns:
         Actor: 初始化完成的Actor实例，生命值已满

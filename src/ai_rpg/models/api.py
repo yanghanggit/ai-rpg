@@ -151,6 +151,22 @@ class DungeonGamePlayResponse(BaseModel):
 
 
 @final
+class DungeonCombatPlayCardsRequest(BaseModel):
+    user_name: str
+    game_name: str
+
+
+@final
+class DungeonCombatPlayCardsResponse(BaseModel):
+    session_messages: List[SessionMessage]
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+
+@final
 class DungeonStateResponse(BaseModel):
     mapping: Dict[str, List[str]]
     dungeon: Dungeon

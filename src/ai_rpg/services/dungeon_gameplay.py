@@ -46,6 +46,8 @@ from ..models import (
     DungeonGamePlayResponse,
     DungeonTransHomeRequest,
     DungeonTransHomeResponse,
+    DungeonCombatPlayCardsRequest,
+    DungeonCombatPlayCardsResponse,
 )
 from .dungeon_stage_transition import (
     advance_to_next_stage,
@@ -225,29 +227,29 @@ async def dungeon_gameplay(
                 )
             )
 
-        case "play_cards":
-            # 处理出牌操作
-            if not rpg_game.current_combat_sequence.is_ongoing:
-                logger.error(f"玩家 {payload.user_name} 出牌失败: 战斗未在进行中")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="战斗未在进行中",
-                )
-            # 为所有角色随机选择并激活打牌动作
-            success, message = activate_random_play_cards(rpg_game)
-            if not success:
-                logger.error(f"玩家 {payload.user_name} 出牌失败: {message}")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=message,
-                )
-            # 推进战斗流程处理出牌
-            await rpg_game.combat_pipeline.process()
-            return DungeonGamePlayResponse(
-                session_messages=rpg_game.player_session.get_messages_since(
-                    last_event_sequence
-                )
-            )
+        # case "play_cards":
+        #     # 处理出牌操作
+        #     if not rpg_game.current_combat_sequence.is_ongoing:
+        #         logger.error(f"玩家 {payload.user_name} 出牌失败: 战斗未在进行中")
+        #         raise HTTPException(
+        #             status_code=status.HTTP_400_BAD_REQUEST,
+        #             detail="战斗未在进行中",
+        #         )
+        #     # 为所有角色随机选择并激活打牌动作
+        #     success, message = activate_random_play_cards(rpg_game)
+        #     if not success:
+        #         logger.error(f"玩家 {payload.user_name} 出牌失败: {message}")
+        #         raise HTTPException(
+        #             status_code=status.HTTP_400_BAD_REQUEST,
+        #             detail=message,
+        #         )
+        #     # 推进战斗流程处理出牌
+        #     await rpg_game.combat_pipeline.process()
+        #     return DungeonGamePlayResponse(
+        #         session_messages=rpg_game.player_session.get_messages_since(
+        #             last_event_sequence
+        #         )
+        #     )
 
         case "advance_next_dungeon":
             # 处理前进下一个地下城关卡
@@ -374,12 +376,13 @@ async def dungeon_trans_home(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @dungeon_gameplay_api_router.post(
-    path="/api/dungeon/combat/play_cards/v1/", response_model=DungeonGamePlayResponse
+    path="/api/dungeon/combat/play_cards/v1/",
+    response_model=DungeonCombatPlayCardsResponse,
 )
 async def dungeon_combat_play_cards(
-    payload: DungeonGamePlayRequest,
+    payload: DungeonCombatPlayCardsRequest,
     game_server: CurrentGameServer,
-) -> DungeonGamePlayResponse:
+) -> DungeonCombatPlayCardsResponse:
     """
     地下城战斗出牌接口，处理玩家在战斗中打出卡牌的操作
 
@@ -387,13 +390,13 @@ async def dungeon_combat_play_cards(
     然后推进战斗流程处理出牌效果。此接口要求战斗必须处于进行中状态。
 
     Args:
-        payload: 地下城游戏玩法请求对象
+        payload: 地下城战斗出牌请求对象
             - user_name: 用户名，用于标识玩家
-            - user_input: 用户输入对象（本接口不使用 tag 字段）
+            - game_name: 游戏名称
         game_server: 游戏服务器实例，由依赖注入提供
 
     Returns:
-        DungeonGamePlayResponse: 地下城游戏玩法响应对象
+        DungeonCombatPlayCardsResponse: 地下城战斗出牌响应对象
             - session_messages: 返回给客户端的消息列表
 
     Raises:
@@ -444,7 +447,7 @@ async def dungeon_combat_play_cards(
     # 推进战斗流程处理出牌
     await rpg_game.combat_pipeline.process()
 
-    return DungeonGamePlayResponse(
+    return DungeonCombatPlayCardsResponse(
         session_messages=rpg_game.player_session.get_messages_since(last_event_sequence)
     )
 

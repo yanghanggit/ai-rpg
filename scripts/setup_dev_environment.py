@@ -332,7 +332,7 @@ def main() -> None:
         logger.success("✅ PostgreSQL 初始化完成")
     except Exception as e:
         logger.error(f"❌ PostgreSQL 初始化失败: {e}")
-    
+
     # 创建演示游戏世界
     try:
         logger.info("🚀 创建M演示游戏世界...")
@@ -355,7 +355,6 @@ def main() -> None:
         logger.success("✅ 服务器配置设置完成")
     except Exception as e:
         logger.error(f"❌ 服务器配置设置失败: {e}")
-
 
     logger.info("🎉 开发环境初始化完成")
 

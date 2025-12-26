@@ -18,61 +18,6 @@ from sentence_transformers import SentenceTransformer
 
 
 ############################################################################################################
-# 本页的内部函数。
-# def _prepare_documents_for_vector_storage(
-#     knowledge_base: Dict[str, List[str]],
-#     embedding_model: SentenceTransformer,  # SentenceTransformer 实例（非可选）
-# ) -> Tuple[
-#     List[Sequence[float]],
-#     List[str],
-#     List[Mapping[str, str | int | float | bool | None]],
-#     List[str],
-# ]:
-#     """
-#     准备知识库数据用于向量化和存储
-
-#     Args:
-#         knowledge_base: 知识库数据，格式为 {category: [documents]}
-#         embedding_model: SentenceTransformer 嵌入模型实例
-
-#     Returns:
-#         Tuple: (embeddings, documents, metadatas, ids) - collection.add()方法的参数
-#     """
-#     try:
-#         logger.info("🔄 [PREPARE] 开始准备知识库数据...")
-
-#         # 准备文档数据
-#         documents: List[str] = []
-#         metadatas: List[Mapping[str, str | int | float | bool | None]] = []
-#         ids: List[str] = []
-
-#         doc_id = 0
-#         for category, docs in knowledge_base.items():
-#             for doc in docs:
-#                 documents.append(doc)
-#                 metadatas.append({"category": category, "doc_id": doc_id})
-#                 ids.append(f"{category}_{doc_id}")
-#                 doc_id += 1
-
-#         logger.info(f"📊 [PREPARE] 准备向量化 {len(documents)} 个文档...")
-
-#         # 使用SentenceTransformer计算向量嵌入
-#         logger.info("🔄 [PREPARE] 计算文档向量嵌入...")
-#         embeddings = embedding_model.encode(documents)
-
-#         # 转换为列表格式（ChromaDB要求）
-#         embeddings_list = embeddings.tolist()
-
-#         logger.success(f"✅ [PREPARE] 成功准备 {len(documents)} 个文档的嵌入数据")
-
-#         return embeddings_list, documents, metadatas, ids
-
-#     except Exception as e:
-#         logger.error(f"❌ [PREPARE] 准备知识库数据失败: {e}\n{traceback.format_exc()}")
-#         return [], [], [], []
-
-
-############################################################################################################
 def add_documents_to_vector_db(
     collection: Collection,
     embedding_model: SentenceTransformer,

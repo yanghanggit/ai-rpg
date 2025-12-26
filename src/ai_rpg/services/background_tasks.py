@@ -17,16 +17,15 @@
 
 import asyncio
 import uuid
-from dataclasses import dataclass
 from datetime import datetime
-from enum import StrEnum, unique
-from typing import Dict, List, Optional, final
+from typing import Dict, List
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
 from loguru import logger
 from ..models import (
     TaskTriggerResponse,
-    TaskStatusDetail,
+    TaskRecord,
     TasksStatusResponse,
+    TaskStatus,
 )
 
 ################################################################################################################
@@ -34,41 +33,10 @@ background_tasks_api_router = APIRouter()
 
 
 ###############################################################################################################################################
-@final
-@unique
-class TaskStatus(StrEnum):
-    """任务状态枚举
-
-    定义后台任务的所有可能状态
-    """
-
-    RUNNING = "running"
-    COMPLETED = "completed"
-    FAILED = "failed"
-
-
-###############################################################################################################################################
-@dataclass
-class TaskInfo:
-    """任务信息数据类
-
-    存储单个后台任务的状态和执行信息
-
-    Attributes:
-        status: 任务状态
-        start_time: 任务开始时间
-        end_time: 任务结束时间（可选）
-        error: 错误信息（可选）
-    """
-
-    status: TaskStatus
-    start_time: datetime
-    end_time: Optional[datetime] = None
-    error: Optional[str] = None
 
 
 # 内存存储任务状态（简单测试用）
-task_store: Dict[str, TaskInfo] = {}
+_test_task_store: Dict[str, TaskRecord] = {}
 
 ################################################################################################################
 ################################################################################################################
@@ -94,15 +62,15 @@ async def simulate_long_task(task_id: str, duration: int = 5) -> None:
         logger.info(f"🚀 后台任务开始: task_id={task_id}, duration={duration}s")
         await asyncio.sleep(duration)
 
-        task_store[task_id].status = TaskStatus.COMPLETED
-        task_store[task_id].end_time = datetime.now()
+        _test_task_store[task_id].status = TaskStatus.COMPLETED
+        _test_task_store[task_id].end_time = datetime.now().isoformat()
 
         logger.info(f"✅ 后台任务完成: task_id={task_id}")
     except Exception as e:
         logger.error(f"❌ 后台任务失败: task_id={task_id}, error={e}")
-        task_store[task_id].status = TaskStatus.FAILED
-        task_store[task_id].end_time = datetime.now()
-        task_store[task_id].error = str(e)
+        _test_task_store[task_id].status = TaskStatus.FAILED
+        _test_task_store[task_id].end_time = datetime.now().isoformat()
+        _test_task_store[task_id].error = str(e)
 
 
 ################################################################################################################
@@ -134,9 +102,10 @@ async def trigger_background_task(
         - 当前实现的任务会模拟执行 5 秒
     """
     task_id = str(uuid.uuid4())
-    task_store[task_id] = TaskInfo(
+    _test_task_store[task_id] = TaskRecord(
+        task_id=task_id,
         status=TaskStatus.RUNNING,
-        start_time=datetime.now(),
+        start_time=datetime.now().isoformat(),
     )
 
     # 添加模拟任务：等待 5 秒
@@ -146,7 +115,7 @@ async def trigger_background_task(
 
     return TaskTriggerResponse(
         task_id=task_id,
-        status=task_store[task_id].status.value,
+        status=_test_task_store[task_id].status.value,
         message="后台任务已启动",
     )
 
@@ -195,28 +164,18 @@ async def get_tasks_status(
         )
 
     # 批量查询任务
-    tasks_details: List[TaskStatusDetail] = []
+    tasks_details: List[TaskRecord] = []
 
     for task_id in task_ids:
-        if task_id not in task_store:
+        if task_id not in _test_task_store:
             logger.warning(f"⚠️ 查询的任务不存在: task_id={task_id}")
             continue  # 跳过不存在的任务
 
-        task_info = task_store[task_id]
-        logger.info(f"🔍 查询到任务状态: task_id={task_id}, status={task_info.status}")
-
-        tasks_details.append(
-            TaskStatusDetail(
-                task_id=task_id,
-                status=task_info.status.value,
-                start_time=task_info.start_time.isoformat(),
-                end_time=(
-                    task_info.end_time.isoformat()
-                    if task_info.end_time is not None
-                    else ""
-                ),
-                error=task_info.error if task_info.error is not None else "",
-            )
+        task_detail = _test_task_store[task_id]
+        logger.info(
+            f"🔍 查询到任务状态: task_id={task_id}, status={task_detail.status}"
         )
+
+        tasks_details.append(task_detail)
 
     return TasksStatusResponse(tasks=tasks_details)

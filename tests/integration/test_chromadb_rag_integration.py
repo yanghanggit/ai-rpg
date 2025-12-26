@@ -17,7 +17,7 @@ from src.ai_rpg.chroma import (
     get_default_collection,
 )
 from src.ai_rpg.rag import (
-    load_knowledge_base_to_vector_db,
+    add_documents_to_vector_db,
     search_similar_documents,  # 导入重构后的函数
 )
 from src.ai_rpg.embedding_model import multilingual_model
@@ -29,8 +29,11 @@ from src.ai_rpg.demo.campaign_setting import (
 def _init_rag_system_with_model() -> bool:
     """辅助函数：使用预加载的多语言模型初始化RAG系统"""
     collection = get_default_collection()
-    return load_knowledge_base_to_vector_db(
-        FANTASY_WORLD_RPG_KNOWLEDGE_BASE, multilingual_model, collection
+    return add_documents_to_vector_db(
+        collection=collection,
+        embedding_model=multilingual_model,
+        documents=FANTASY_WORLD_RPG_KNOWLEDGE_BASE,
+        skip_if_exists=True,
     )
 
 
@@ -60,8 +63,11 @@ class TestChromaDBRAGIntegration:
         assert multilingual_model is not None, "预加载的多语言模型不可用"
 
         # 测试完整初始化
-        success = load_knowledge_base_to_vector_db(
-            FANTASY_WORLD_RPG_KNOWLEDGE_BASE, multilingual_model, collection
+        success = add_documents_to_vector_db(
+            collection=collection,
+            embedding_model=multilingual_model,
+            documents=FANTASY_WORLD_RPG_KNOWLEDGE_BASE,
+            skip_if_exists=True,
         )
         assert success, "ChromaDB RAG系统初始化失败"
         logger.success("🎉 ChromaDB RAG系统初始化测试通过！")

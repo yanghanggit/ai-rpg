@@ -77,6 +77,8 @@ def create_player_home_pipline(game: GameSession) -> "RPGGameProcessPipeline":
         TransStageActionSystem,
     )
 
+    # from ..systems.player_input_filter_system import PlayerInputFilterSystem
+
     ##
     tcg_game = cast(TCGGame, game)
     processors = RPGGameProcessPipeline("Home State Pipeline 2")
@@ -86,6 +88,7 @@ def create_player_home_pipline(game: GameSession) -> "RPGGameProcessPipeline":
 
     # 动作处理相关的系统 ##################################################################
     ####################################################################################
+    # processors.add(PlayerInputFilterSystem(tcg_game))
     processors.add(SpeakActionSystem(tcg_game))
     processors.add(WhisperActionSystem(tcg_game))
     processors.add(AnnounceActionSystem(tcg_game))

@@ -193,6 +193,7 @@ class Actor(BaseModel):
     character_stats: CharacterStats
     items: List[Item] = []
     skills: List[Skill] = []
+    private_knowledge: List[str] = []
 
 
 ###############################################################################################################################################

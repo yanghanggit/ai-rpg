@@ -20,7 +20,7 @@ def create_actor_warrior() -> Actor:
     Returns:
         Actor: 战士角色实例
     """
-    warrior = create_actor(
+    actor = create_actor(
         name="角色.战士.卡恩",
         character_sheet_name="warrior",
         kick_off_message="",
@@ -35,7 +35,7 @@ def create_actor_warrior() -> Actor:
         global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
     )
 
-    warrior.skills = [
+    actor.skills = [
         Skill(
             name="快速投掷",
             description="观察场景中的物体，选择一个适合投掷的物体，并将其投掷向指定目标，造成物理伤害。投掷时缺乏防御，受到伤害略微增加。",
@@ -62,4 +62,11 @@ def create_actor_warrior() -> Actor:
         ),
     ]
 
-    return warrior
+    actor.private_knowledge = [
+        "「裂隙灾变」发生时,我正带领一支巡逻队在尘烟裂谷区执行任务,我们进入时空裂隙后遭遇了一只巨大的机械魔物,整个队伍只有我幸存下来。",
+        "裂隙医师协会的艾莉娅曾救过我一命,她用一种古老的精灵疗法治愈了我被瘴气毒素侵蚀的伤口,我对她充满感激。",
+        "我对暗影信使没有好感,因为他们的错误信息才导致了我巡逻队的陷落,我发誓要找出并惩罚那个「千面」。",
+        "奥露娜是我在巡逻中结识的法师,她的魔法帮助我击退了从裂隙中逃出的怪物,我们现在经常一起合作执行任务。",
+    ]
+
+    return actor

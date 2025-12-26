@@ -255,7 +255,10 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
 
     ###############################################################################################################################################
     def _create_actor_entities(self, actor_models: List[Actor]) -> List[Entity]:
-        """创建角色实体，包括属性、外观、背包、技能等组件"""
+        """创建角色实体，包括属性、外观、背包、技能等组件
+
+        注意：角色私有知识库在环境初始化时已加载（setup_dev_environment.py），此处不再重复加载
+        """
         actor_entities: List[Entity] = []
 
         for actor_model in actor_models:

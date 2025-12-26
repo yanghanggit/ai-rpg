@@ -44,7 +44,7 @@ class QueryActionSystem(ReactiveProcessor):
         query_action = entity.get(QueryAction)
         assert query_action is not None
 
-        related_info = self._get_related_info(query_action.question)
+        related_info = self._get_related_info(entity, query_action.question)
         logger.success(f"🔎 角色发起查询行动，问题: {query_action.question}")
         logger.success(f"💭 角色记忆查询结果: {related_info}")
 
@@ -60,62 +60,48 @@ class QueryActionSystem(ReactiveProcessor):
             )
 
     ####################################################################################################################################
-    def _get_related_info(self, original_message: str) -> str:
-        """检索相关信息 - 直接进行检索，能找到就返回，找不到就返回空"""
+    def _get_related_info(self, entity: Entity, original_message: str) -> str:
+        """检索相关信息 - 统一查询（公共知识 + 角色私有知识）"""
         try:
-            logger.success(f"🔍 直接进行RAG检索: {original_message}")
+            logger.success(f"🔍 RAG检索: {original_message}")
 
-            # 直接执行RAG检索，不需要路由决策
-            return self._query_with_rag(original_message)
+            # 执行统一RAG检索
+            return self._query_with_rag(entity, original_message)
 
         except Exception as e:
             logger.error(f"❌ 相关信息检索失败: {e}")
             return ""  # 失败时返回空
 
     ####################################################################################################################################
-    def _query_with_rag(self, message: str) -> str:
-        """RAG查询处理 - 仅执行查询并返回结果"""
+    def _query_with_rag(self, entity: Entity, message: str) -> str:
+        """RAG查询处理 - 统一查询（公共知识 + 角色私有知识）"""
         try:
             logger.debug(f"🔍 RAG查询: {message}...")
 
-            # 1. 检查ChromaDB状态
-            # chroma_db = get_chroma_db()
-            # if not chroma_db.initialized:
-            #     logger.warning("⚠️ ChromaDB未初始化，返回空结果")
-            #     return ""
-
-            # 1.5. 获取嵌入模型
-            # embedding_model = get_embedding_model()
-            # assert embedding_model is not None, "嵌入模型未初始化"
-            # if embedding_model is None:
-            #     logger.warning("⚠️ 嵌入模型未初始化，返回空结果")
-            #     return ""
-
-            # 1.6. 检查collection是否可用
-            # if chroma_db.collection is None:
-            #     logger.warning("⚠️ ChromaDB collection未初始化，返回空结果")
-            #     return ""
-
-            # 2. 执行语义搜索查询
-            retrieved_docs, similarity_scores = search_similar_documents(
+            # 查询公共知识 + 该角色的私有知识（通过游戏名前缀隔离）
+            logger.info(
+                f"📚 查询知识库（游戏: {self._game.name}, 公共 + {entity.name} 的私有知识）..."
+            )
+            docs, scores = search_similar_documents(
                 query=message,
                 collection=get_default_collection(),
                 embedding_model=multilingual_model,
-                top_k=3,
+                owner=f"{self._game.name}.{entity.name}",  # ← 关键：使用游戏名前缀实现知识隔离
+                top_k=5,  # 增加 top_k，因为现在是统一查询
             )
 
-            # 3. 检查查询结果
-            if not retrieved_docs:
-                logger.warning("⚠️ 未检索到相关文档，返回空结果")
+            # 检查查询结果
+            if not docs:
+                logger.warning("⚠️ 未检索到任何相关文档，返回空结果")
                 return ""
 
-            # 4. 简单格式化查询结果并返回
+            # 格式化结果
             result_parts = []
-            for i, (doc, score) in enumerate(zip(retrieved_docs, similarity_scores), 1):
+            for i, (doc, score) in enumerate(zip(docs, scores), 1):
                 result_parts.append(f"{i}. [相似度: {score:.3f}] {doc}")
 
             query_result = "\n".join(result_parts)
-            logger.success(f"🔍 RAG查询完成，找到 {len(retrieved_docs)} 个相关文档")
+            logger.success(f"🔍 RAG查询完成，共找到 {len(docs)} 条相关知识")
 
             return query_result
 

@@ -99,54 +99,95 @@ def _save_demo_world_boot(game_name: str) -> None:
 
 
 #######################################################################################################
-def _setup_chromadb_rag_environment() -> None:
+def _setup_chromadb_rag_environment(game_name: str) -> None:
     """
     初始化RAG系统
 
     清理现有的ChromaDB数据，然后使用正式的知识库数据重新初始化RAG系统，
-    包括向量数据库的设置和知识库数据的加载
+    包括向量数据库的设置、公共知识库数据的加载，以及动态加载角色私有知识
+
+    Args:
+        game_name: 游戏名称，用于加载对应的世界配置
     """
     logger.info("🚀 初始化RAG系统...")
 
     # 导入必要的模块
     from ai_rpg.chroma import get_default_collection, reset_client
-    from ai_rpg.rag import load_knowledge_base_to_vector_db
+    from ai_rpg.rag import add_documents_to_vector_db
     from ai_rpg.embedding_model.sentence_transformer import (
         multilingual_model,
     )
-    from ai_rpg.demo.campaign_setting import FANTASY_WORLD_RPG_KNOWLEDGE_BASE
+    from ai_rpg.demo.campaign_setting import (
+        FANTASY_WORLD_RPG_KNOWLEDGE_BASE,
+    )
+    from ai_rpg.models import Boot
 
     try:
 
-        # 新的测试
+        # 清空数据库
         logger.info("🧹 清空ChromaDB数据库...")
         reset_client()
 
-        # 使用正式知识库数据初始化RAG系统
-        # logger.info("📚 加载艾尔法尼亚世界知识库...")
-        success = load_knowledge_base_to_vector_db(
-            FANTASY_WORLD_RPG_KNOWLEDGE_BASE,
-            multilingual_model,
-            get_default_collection(),
+        # 加载公共知识库
+        logger.info("📚 加载公共知识库...")
+        success = add_documents_to_vector_db(
+            collection=get_default_collection(),
+            embedding_model=multilingual_model,
+            documents=FANTASY_WORLD_RPG_KNOWLEDGE_BASE,
+            skip_if_exists=True,
         )
 
-        if success:
-            logger.success("✅ RAG系统初始化成功!")
-            # logger.info(f"  - 知识库类别数量: {len(FANTASY_WORLD_RPG_KNOWLEDGE_BASE)}")
+        if not success:
+            logger.error("❌ 公共知识库加载失败!")
+            raise Exception("公共知识库初始化返回失败状态")
 
-            # # 统计总文档数量
-            # total_documents = sum(
-            #     len(docs) for docs in FANTASY_WORLD_RPG_KNOWLEDGE_BASE.values()
-            # )
-            # logger.info(f"  - 总文档数量: {total_documents}")
+        logger.success("✅ 公共知识库加载成功!")
 
-            # 显示知识库类别
-            # categories = list(FANTASY_WORLD_RPG_KNOWLEDGE_BASE.keys())
-            # logger.info(f"  - 知识库类别: {', '.join(categories)}")
+        # 动态加载角色私有知识库
+        logger.info("🔐 开始加载角色私有知识库...")
+        world_boot_path = WORLD_BOOT_DIR / f"{game_name}.json"
 
-        else:
-            logger.error("❌ RAG系统初始化失败!")
-            raise Exception("RAG系统初始化返回失败状态")
+        if not world_boot_path.exists():
+            logger.warning(f"⚠️ 世界配置文件不存在: {world_boot_path}")
+            logger.warning("⚠️ 跳过私有知识库加载")
+            return
+
+        # 读取世界配置
+        world_boot = Boot.model_validate_json(
+            world_boot_path.read_text(encoding="utf-8")
+        )
+
+        # 统计加载情况
+        loaded_count = 0
+        skipped_count = 0
+
+        # 遍历所有角色，加载私有知识
+        for actor in world_boot.actors:
+            # 直接从Actor对象的private_knowledge字段读取知识
+            if actor.private_knowledge and len(actor.private_knowledge) > 0:
+                logger.info(
+                    f"🔐 为 {actor.name} 加载 {len(actor.private_knowledge)} 条私有知识"
+                )
+
+                success = add_documents_to_vector_db(
+                    collection=get_default_collection(),
+                    embedding_model=multilingual_model,
+                    documents=actor.private_knowledge,
+                    owner=f"{game_name}.{actor.name}",  # 使用游戏名前缀实现知识隔离
+                )
+
+                if success:
+                    loaded_count += 1
+                else:
+                    logger.error(f"❌ {actor.name} 的私有知识加载失败")
+            else:
+                skipped_count += 1
+                logger.debug(f"跳过 {actor.name}（无私有知识）")
+
+        logger.success(
+            f"✅ 私有知识库加载完成! 成功: {loaded_count}, 跳过: {skipped_count}"
+        )
+        logger.success("✅ RAG系统初始化成功!")
 
     except ImportError as e:
         logger.error(f"❌ RAG系统模块导入失败: {e}")
@@ -291,11 +332,18 @@ def main() -> None:
         logger.success("✅ PostgreSQL 初始化完成")
     except Exception as e:
         logger.error(f"❌ PostgreSQL 初始化失败: {e}")
+    
+    # 创建演示游戏世界
+    try:
+        logger.info("🚀 创建M演示游戏世界...")
+        _save_demo_world_boot(GLOBAL_TCG_GAME_NAME)
+    except Exception as e:
+        logger.error(f"❌ 创建MongoDB演示游戏世界失败: {e}")
 
     # RAG 系统相关操作
     try:
         logger.info("🚀 初始化RAG系统...")
-        _setup_chromadb_rag_environment()
+        _setup_chromadb_rag_environment(GLOBAL_TCG_GAME_NAME)
         logger.success("✅ RAG 系统初始化完成")
     except Exception as e:
         logger.error(f"❌ RAG 系统初始化失败: {e}")
@@ -308,12 +356,6 @@ def main() -> None:
     except Exception as e:
         logger.error(f"❌ 服务器配置设置失败: {e}")
 
-    # 创建演示游戏世界
-    try:
-        logger.info("🚀 创建M演示游戏世界...")
-        _save_demo_world_boot(GLOBAL_TCG_GAME_NAME)
-    except Exception as e:
-        logger.error(f"❌ 创建MongoDB演示游戏世界失败: {e}")
 
     logger.info("🎉 开发环境初始化完成")
 

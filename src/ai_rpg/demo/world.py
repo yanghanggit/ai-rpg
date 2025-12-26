@@ -215,8 +215,8 @@ def create_demo_game_world_boot3(game_name: str) -> Boot:
 这些人影是环境氛围的一部分，作为整体存在感呈现，不应被描述为具体的个体或互动行为。"""
 
     # 设置关系和消息
-    stage_ally_safe_room.actors = [actor_warrior, actor_wizard]
-    stage_monitoring_house.actors = [actor_player]
+    stage_ally_safe_room.actors = [actor_warrior, actor_wizard, actor_player]
+    stage_monitoring_house.actors = []
 
     # 创建世界
     world_boot = Boot(

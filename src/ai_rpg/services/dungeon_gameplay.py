@@ -373,3 +373,82 @@ async def dungeon_trans_home(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+@dungeon_gameplay_api_router.post(
+    path="/api/dungeon/combat/play_cards/v1/", response_model=DungeonGamePlayResponse
+)
+async def dungeon_combat_play_cards(
+    payload: DungeonGamePlayRequest,
+    game_server: CurrentGameServer,
+) -> DungeonGamePlayResponse:
+    """
+    地下城战斗出牌接口，处理玩家在战斗中打出卡牌的操作
+
+    该接口负责处理玩家在地下城战斗中的出牌动作。玩家的角色会随机选择并打出手牌，
+    然后推进战斗流程处理出牌效果。此接口要求战斗必须处于进行中状态。
+
+    Args:
+        payload: 地下城游戏玩法请求对象
+            - user_name: 用户名，用于标识玩家
+            - user_input: 用户输入对象（本接口不使用 tag 字段）
+        game_server: 游戏服务器实例，由依赖注入提供
+
+    Returns:
+        DungeonGamePlayResponse: 地下城游戏玩法响应对象
+            - session_messages: 返回给客户端的消息列表
+
+    Raises:
+        HTTPException(404): 玩家未登录、游戏实例不存在或没有战斗
+        HTTPException(400): 玩家不在地下城状态、战斗未在进行中或出牌失败
+
+    处理流程:
+        1. 验证玩家是否在地下城状态
+        2. 检查战斗是否在进行中
+        3. 为所有角色随机选择并激活打牌动作
+        4. 推进战斗流程处理出牌
+        5. 返回新增的消息
+
+    注意事项:
+        - 战斗必须处于 ONGOING 状态
+        - 角色必须有可用的手牌才能出牌
+        - 出牌会触发战斗流程的自动推进
+    """
+
+    logger.info(f"/api/dungeon/combat/play_cards/v1/: user={payload.user_name}")
+
+    # 验证地下城操作的前置条件
+    rpg_game = _validate_dungeon_prerequisites(
+        user_name=payload.user_name,
+        game_server=game_server,
+    )
+
+    # 记录当前事件序列号，便于后续获取新增消息
+    last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
+
+    # 处理出牌操作
+    if not rpg_game.current_combat_sequence.is_ongoing:
+        logger.error(f"玩家 {payload.user_name} 出牌失败: 战斗未在进行中")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="战斗未在进行中",
+        )
+
+    # 为所有角色随机选择并激活打牌动作
+    success, message = activate_random_play_cards(rpg_game)
+    if not success:
+        logger.error(f"玩家 {payload.user_name} 出牌失败: {message}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=message,
+        )
+
+    # 推进战斗流程处理出牌
+    await rpg_game.combat_pipeline.process()
+
+    return DungeonGamePlayResponse(
+        session_messages=rpg_game.player_session.get_messages_since(last_event_sequence)
+    )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################

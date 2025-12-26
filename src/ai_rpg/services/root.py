@@ -74,6 +74,7 @@ async def root(
             "home_gameplay": base_url + "api/home/gameplay/v1/",
             "home_trans_dungeon": base_url + "api/home/trans_dungeon/v1/",
             "dungeon_gameplay": base_url + "api/dungeon/gameplay/v1/",
+            "dungeon_combat_play_cards": base_url + "api/dungeon/combat/play_cards/v1/",
             "dungeon_trans_home": base_url + "api/dungeon/trans_home/v1/",
             "dungeon_state": base_url + "api/dungeons/v1/",
             # 狼人杀专用

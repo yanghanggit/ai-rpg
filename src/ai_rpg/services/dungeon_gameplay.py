@@ -36,9 +36,10 @@ API端点:
     接口会自动验证玩家状态和战斗状态，验证失败会抛出相应的HTTP异常。
 """
 
+import asyncio
 from datetime import datetime
 from typing import Final
-from fastapi import APIRouter, BackgroundTasks, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
 from .game_server_dependencies import CurrentGameServer
@@ -360,20 +361,18 @@ async def dungeon_trans_home(
 async def dungeon_combat_play_cards(
     payload: DungeonCombatPlayCardsRequest,
     game_server: CurrentGameServer,
-    background_tasks: BackgroundTasks,
 ) -> DungeonCombatPlayCardsResponse:
     """
-    地下城战斗出牌接口（后台任务版），触发玩家在战斗中打出卡牌的后台任务
+    地下城战斗出牌接口（真正的后台任务版），触发玩家在战斗中打出卡牌的后台任务
 
-    该接口负责创建并触发玩家在地下城战斗中的出牌后台任务。出牌操作会在后台异步执行，
-    客户端可以立即得到响应而不必等待耗时的战斗流程处理完成。
+    该接口负责创建并触发玩家在地下城战斗中的出牌后台任务。出牌操作会使用 asyncio.create_task
+    在事件循环中异步执行，客户端会立即得到响应而不必等待耗时的战斗流程处理完成。
 
     Args:
         payload: 地下城战斗出牌请求对象
             - user_name: 用户名，用于标识玩家
             - game_name: 游戏名称
         game_server: 游戏服务器实例，由依赖注入提供
-        background_tasks: FastAPI 后台任务管理器
 
     Returns:
         DungeonCombatPlayCardsResponse: 地下城战斗出牌响应对象
@@ -389,12 +388,13 @@ async def dungeon_combat_play_cards(
         1. 验证玩家是否在地下城状态
         2. 检查战斗是否在进行中
         3. 生成任务ID并初始化任务信息
-        4. 将出牌任务添加到后台任务队列
-        5. 立即返回任务信息
+        4. 使用 asyncio.create_task 创建真正的后台协程
+        5. 立即返回任务信息（不等待任务完成）
 
     注意事项:
         - 战斗必须处于 ONGOING 状态才能触发任务
-        - 任务会在后台异步执行，不阻塞客户端
+        - 使用 asyncio.create_task 确保任务真正在后台执行，不阻塞响应
+        - 客户端会立即收到响应，任务在事件循环中异步执行
         - 客户端需要通过其他方式（如轮询会话消息）获取任务结果
         - 任务信息存储在内存中，服务重启后会丢失
     """
@@ -418,12 +418,14 @@ async def dungeon_combat_play_cards(
     # 创建出牌后台任务
     play_cards_task = game_server.create_task()
 
-    # 添加后台任务
-    background_tasks.add_task(
-        _execute_play_cards_task,
-        play_cards_task.task_id,
-        payload.user_name,
-        game_server,
+    # 使用 asyncio.create_task 创建真正的后台协程
+    # 这样任务会立即在事件循环中异步执行，不会阻塞响应
+    asyncio.create_task(
+        _execute_play_cards_task(
+            play_cards_task.task_id,
+            payload.user_name,
+            game_server,
+        )
     )
 
     logger.info(
@@ -481,7 +483,9 @@ async def _execute_play_cards_task(
         if not success:
             raise ValueError(f"出牌失败: {message}")
 
-        # 推进战斗流程处理出牌, 注意!!!!!!!!!!!!!!! 这里会堵住当前协程直到处理完成
+        # 推进战斗流程处理出牌
+        # 注意: 这里会阻塞当前协程直到战斗流程处理完成
+        # 但因为使用了 asyncio.create_task，这个阻塞只影响后台任务，不影响 API 响应
         await rpg_game.combat_pipeline.process()
 
         # 保存结果

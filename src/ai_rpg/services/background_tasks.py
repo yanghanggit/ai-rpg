@@ -16,9 +16,8 @@
 """
 
 import asyncio
-import uuid
 from datetime import datetime
-from typing import Dict, List
+from typing import List
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
 from loguru import logger
 from ..models import (
@@ -27,23 +26,21 @@ from ..models import (
     TasksStatusResponse,
     TaskStatus,
 )
+from ..services.game_server_dependencies import CurrentGameServer
+from ..game.game_server import GameServer
 
 ################################################################################################################
 background_tasks_api_router = APIRouter()
 
 
 ###############################################################################################################################################
-
-
-# 内存存储任务状态（简单测试用）
-_test_task_store: Dict[str, TaskRecord] = {}
-
-################################################################################################################
 ################################################################################################################
 ################################################################################################################
 
 
-async def simulate_long_task(task_id: str, duration: int = 5) -> None:
+async def simulate_long_task(
+    task_id: str, duration: int, game_server: GameServer
+) -> None:
     """模拟耗时任务
 
     在后台执行一个模拟的耗时任务，用于测试后台任务机制。
@@ -51,7 +48,8 @@ async def simulate_long_task(task_id: str, duration: int = 5) -> None:
 
     Args:
         task_id: 任务唯一标识符
-        duration: 任务持续时间（秒），默认 5 秒
+        duration: 任务持续时间（秒）
+        game_server: 游戏服务器实例
 
     Note:
         - 任务执行期间会记录日志
@@ -62,15 +60,19 @@ async def simulate_long_task(task_id: str, duration: int = 5) -> None:
         logger.info(f"🚀 后台任务开始: task_id={task_id}, duration={duration}s")
         await asyncio.sleep(duration)
 
-        _test_task_store[task_id].status = TaskStatus.COMPLETED
-        _test_task_store[task_id].end_time = datetime.now().isoformat()
+        task = game_server.get_task(task_id)
+        if task:
+            task.status = TaskStatus.COMPLETED
+            task.end_time = datetime.now().isoformat()
 
         logger.info(f"✅ 后台任务完成: task_id={task_id}")
     except Exception as e:
         logger.error(f"❌ 后台任务失败: task_id={task_id}, error={e}")
-        _test_task_store[task_id].status = TaskStatus.FAILED
-        _test_task_store[task_id].end_time = datetime.now().isoformat()
-        _test_task_store[task_id].error = str(e)
+        task = game_server.get_task(task_id)
+        if task:
+            task.status = TaskStatus.FAILED
+            task.end_time = datetime.now().isoformat()
+            task.error = str(e)
 
 
 ################################################################################################################
@@ -83,6 +85,7 @@ async def simulate_long_task(task_id: str, duration: int = 5) -> None:
 )
 async def trigger_background_task(
     background_tasks: BackgroundTasks,
+    game_server: CurrentGameServer,
 ) -> TaskTriggerResponse:
     """触发后台任务
 
@@ -91,6 +94,7 @@ async def trigger_background_task(
 
     Args:
         background_tasks: FastAPI 后台任务管理器
+        game_server: 游戏服务器实例（依赖注入）
 
     Returns:
         TaskTriggerResponse: 包含任务ID和状态的响应对象
@@ -101,21 +105,20 @@ async def trigger_background_task(
         - 可以通过返回的 task_id 查询任务执行状态
         - 当前实现的任务会模拟执行 5 秒
     """
-    task_id = str(uuid.uuid4())
-    _test_task_store[task_id] = TaskRecord(
-        task_id=task_id,
-        status=TaskStatus.RUNNING,
-        start_time=datetime.now().isoformat(),
-    )
+    # 使用 GameServer 创建任务记录
+    task_record = game_server.create_task()
 
     # 添加模拟任务：等待 5 秒
-    background_tasks.add_task(simulate_long_task, task_id, 5)
+    logger.warning(
+        "⚠️ 注意：当前后台任务为测试实现，模拟 5 秒耗时任务!!!!!!!!!!!!!!!!!!!"
+    )
+    background_tasks.add_task(simulate_long_task, task_record.task_id, 5, game_server)
 
-    logger.info(f"📝 创建后台任务: task_id={task_id}")
+    logger.info(f"📝 创建后台任务: task_id={task_record.task_id}")
 
     return TaskTriggerResponse(
-        task_id=task_id,
-        status=_test_task_store[task_id].status.value,
+        task_id=task_record.task_id,
+        status=task_record.status.value,
         message="后台任务已启动",
     )
 
@@ -129,6 +132,7 @@ async def trigger_background_task(
     path="/api/tasks/v1/status", response_model=TasksStatusResponse
 )
 async def get_tasks_status(
+    game_server: CurrentGameServer,
     task_ids: List[str] = Query(..., alias="task_ids"),
 ) -> TasksStatusResponse:
     """批量查询任务状态
@@ -138,6 +142,7 @@ async def get_tasks_status(
 
     Args:
         task_ids: 要查询的任务ID列表，通过查询参数 task_ids 传递
+        game_server: 游戏服务器实例（依赖注入）
 
     Returns:
         TasksStatusResponse: 任务状态响应，包含所有查询到的任务详情列表
@@ -167,11 +172,11 @@ async def get_tasks_status(
     tasks_details: List[TaskRecord] = []
 
     for task_id in task_ids:
-        if task_id not in _test_task_store:
+        task_detail = game_server.get_task(task_id)
+        if task_detail is None:
             logger.warning(f"⚠️ 查询的任务不存在: task_id={task_id}")
             continue  # 跳过不存在的任务
 
-        task_detail = _test_task_store[task_id]
         logger.info(
             f"🔍 查询到任务状态: task_id={task_id}, status={task_detail.status}"
         )

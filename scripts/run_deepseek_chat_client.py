@@ -32,7 +32,8 @@ from loguru import logger
 from ai_rpg.deepseek import (
     create_chat_workflow,
     execute_chat_workflow,
-    create_deepseek_llm,
+    # create_deepseek_chat,
+    create_deepseek_reasoner,
 )
 
 
@@ -52,7 +53,7 @@ async def main() -> None:
 
         # 聊天历史（消息列表）
         context_messages: List[BaseMessage] = []
-        llm = create_deepseek_llm()
+        llm = create_deepseek_reasoner()
 
         logger.success("🤖 DeepSeek聊天系统初始化完成，开始对话...")
         logger.info("💡 提示：您可以与DeepSeek AI进行自由对话")

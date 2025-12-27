@@ -38,7 +38,7 @@ from ai_rpg.chat_services.protocol import ChatRequest, ChatResponse
 from ai_rpg.deepseek import (
     create_chat_workflow,
     execute_chat_workflow,
-    create_deepseek_llm,
+    create_deepseek_chat,
 )
 
 from ai_rpg.configuration import (
@@ -127,7 +127,7 @@ async def process_chat_request(payload: ChatRequest) -> ChatResponse:
             work_flow=create_chat_workflow(),
             context=[message for message in payload.context],
             request=payload.message,
-            llm=create_deepseek_llm(),
+            llm=create_deepseek_chat(),
         )
 
         logger.success(f"生成回复消息数量: {len(chat_response)}")

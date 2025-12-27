@@ -1,5 +1,5 @@
 from typing import List
-from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel, ConfigDict
 
 # ContextMessageType: TypeAlias = List[SystemMessage | HumanMessage | AIMessage]

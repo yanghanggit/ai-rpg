@@ -9,12 +9,12 @@ from ..entitas.components import Component, MutableComponent
 
 ############################################################################################################
 COMPONENTS_REGISTRY: Final[Dict[str, Type[Component]]] = {}
-T_COMPONENT = TypeVar("T_COMPONENT", bound=Type[Component])
+T_COMPONENT = TypeVar("T_COMPONENT", bound=Component)
 
 
 ############################################################################################################
 # 注册组件类的装饰器
-def register_component_class(cls: T_COMPONENT) -> T_COMPONENT:
+def register_component_class(cls: Type[T_COMPONENT]) -> Type[T_COMPONENT]:
 
     # 检查：确保类是 BaseModel 的子类（包括我们的 Component 和 MutableComponent）
     if not issubclass(cls, Component):
@@ -40,7 +40,7 @@ ACTION_COMPONENTS_REGISTRY: Final[Dict[str, Type[Component]]] = {}
 
 
 # 注册动作类的装饰器，必须同时注册到 COMPONENTS_REGISTRY 中
-def register_action_class(cls: T_COMPONENT) -> T_COMPONENT:
+def register_action_class(cls: Type[T_COMPONENT]) -> Type[T_COMPONENT]:
 
     assert issubclass(
         cls, Component

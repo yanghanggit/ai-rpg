@@ -26,7 +26,7 @@ sys.path.insert(
 
 # 导入必要的模块
 from typing import List
-from langchain.schema import HumanMessage, BaseMessage
+from langchain_core.messages import HumanMessage, BaseMessage
 from loguru import logger
 
 from ai_rpg.deepseek import (

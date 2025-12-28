@@ -60,54 +60,58 @@ async def main() -> None:
         logger.info("💡 输入 /quit、/exit 或 /q 退出程序")
 
         while True:
-            try:
-                print("\n" + "=" * 60)
-                user_input = input("User: ")
 
-                if user_input.lower() in ["/quit", "/exit", "/q"]:
-                    print("Goodbye!")
-                    break
+            print("\n" + "=" * 60)
+            user_input = input("User: ")
 
-                # 用户输入
-                user_message = HumanMessage(content=user_input)
-
-                # 获取回复
-                chat_response = await execute_chat_workflow(
-                    work_flow=create_chat_workflow(),
-                    context=context_messages,
-                    request=user_message,
-                    llm=llm,
-                )
-
-                # 测试用：记录上下文。
-                context_messages.append(user_message)
-                context_messages.extend(chat_response)
-
-                # 显示最新的AI回复
-                if chat_response:
-                    latest_response = chat_response[-1]
-                    print(f"\nDeepSeek: {latest_response.content}")
-
-                logger.debug("*" * 50)
-                for message in context_messages:
-                    if isinstance(message, HumanMessage):
-                        logger.info(f"User: {message.content}")
-                    else:
-                        logger.success(f"Deepseek: {message.content}")
-
-            except KeyboardInterrupt:
-                logger.info("🛑 [MAIN] 用户中断程序")
+            if user_input.lower() in ["/quit", "/exit", "/q"]:
+                logger.info("👋 Goodbye!")
                 break
-            except Exception as e:
-                logger.error(
-                    f"❌ Error in processing user input = {e}\n"
-                    f"Traceback: {traceback.format_exc()}"
-                )
-                print("抱歉，处理您的请求时发生错误，请重试。")
 
+            # 用户输入
+            user_message = HumanMessage(content=user_input)
+
+            # 获取回复
+            chat_response = await execute_chat_workflow(
+                work_flow=create_chat_workflow(),
+                context=context_messages,
+                request=user_message,
+                llm=llm,
+            )
+
+            # 测试用：记录上下文。
+            context_messages.append(user_message)
+            context_messages.extend(chat_response)
+
+            # 显示最新的AI回复
+            if chat_response:
+
+                # 获取最后一条回复
+                latest_response = chat_response[-1]
+
+                # 🧠 显示思考过程 (reasoning_content 在 additional_kwargs 中)
+                reasoning_content = latest_response.additional_kwargs.get(
+                    "reasoning_content"
+                )
+                if reasoning_content:
+                    logger.info(f"\n💭 思考过程:\n{reasoning_content}\n")
+                    logger.info("=" * 60)
+
+                # 💬 显示最终答案
+                logger.success(f"\n🤖 DeepSeek: {latest_response.content}")
+
+            # 调试用：显示完整上下文
+            # logger.debug("*" * 50)
+            # for message in context_messages:
+            #     if isinstance(message, HumanMessage):
+            #         logger.info(f"User: {message.content}")
+            #     else:
+            #         logger.success(f"Deepseek: {message.content}")
+
+    except KeyboardInterrupt:
+        logger.info("🛑 用户中断程序")
     except Exception as e:
-        logger.error(f"❌ [MAIN] 系统启动失败: {e}")
-        print("系统启动失败，请检查环境配置。")
+        logger.error(f"❌ 系统错误: {e}\nTraceback: {traceback.format_exc()}")
 
     finally:
         logger.info("🔒 [MAIN] 清理系统资源...")

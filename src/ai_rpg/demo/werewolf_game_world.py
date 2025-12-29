@@ -1,7 +1,7 @@
 from typing import Final, List, Optional
 import random
 from ..models import (
-    Boot,
+    Blueprint,
     Stage,
     StageType,
     Actor,
@@ -306,9 +306,9 @@ def create_actor_hunter(name: str) -> Actor:
 
 
 #######################################################################################################################
-def create_demo_sd_game_boot(
+def create_demo_sd_game_blueprint(
     game_name: str, random_role_assignment: bool = False
-) -> Boot:
+) -> Blueprint:
     # 重置外观洗牌状态,确保每局游戏都有独立的外观分配
     reset_appearance_shuffle()
 
@@ -411,20 +411,20 @@ def create_demo_sd_game_boot(
     stage_werewolf_stage.actors = [moderator] + actors
 
     # 创建世界
-    world_boot = Boot(
+    world_blueprint = Blueprint(
         name=game_name,
         player_actor=moderator.name,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
     )
 
     # 设置英雄营地场景的初始状态
-    world_boot.stages = [stage_werewolf_stage]
+    world_blueprint.stages = [stage_werewolf_stage]
 
     # 添加世界系统
-    world_boot.world_systems = []
+    world_blueprint.world_systems = []
 
     # 返回
-    return world_boot
+    return world_blueprint
 
 
 #######################################################################################################################

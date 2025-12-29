@@ -33,7 +33,7 @@ from ai_rpg.configuration import (
     ServerConfiguration,
     server_configuration,
 )
-from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, WORLD_BOOT_DIR
+from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, WORLD_BLUEPRINT_DIR
 from ai_rpg.pgsql import (
     pgsql_create_database,
     pgsql_drop_database,
@@ -41,7 +41,7 @@ from ai_rpg.pgsql import (
     postgresql_config,
 )
 from ai_rpg.pgsql.user_operations import has_user, save_user
-from ai_rpg.demo import create_demo_game_world_boot1
+from ai_rpg.demo import create_demo_game_world_blueprint1
 
 
 #######################################################################################################
@@ -80,16 +80,16 @@ def _pgsql_setup_test_user() -> None:
 
 
 #######################################################################################################
-def _save_demo_world_boot(game_name: str) -> None:
+def _save_demo_world_blueprint(game_name: str) -> None:
     """ """
     logger.info("🚀 创建演示游戏世界...")
 
     try:
-        # world_boot = create_demo_game_world_boot1(GLOBAL_TCG_GAME_NAME)
-        world_boot = create_demo_game_world_boot1(game_name)
-        write_boot_path = WORLD_BOOT_DIR / f"{world_boot.name}.json"
-        write_boot_path.write_text(
-            world_boot.model_dump_json(indent=2),
+
+        world_blueprint = create_demo_game_world_blueprint1(game_name)
+        write_blueprint_path = WORLD_BLUEPRINT_DIR / f"{world_blueprint.name}.json"
+        write_blueprint_path.write_text(
+            world_blueprint.model_dump_json(indent=2),
             encoding="utf-8",
         )
 
@@ -120,7 +120,7 @@ def _setup_chromadb_rag_environment(game_name: str) -> None:
     from ai_rpg.demo.campaign_setting import (
         FANTASY_WORLD_RPG_KNOWLEDGE_BASE,
     )
-    from ai_rpg.models import Boot
+    from ai_rpg.models import Blueprint
 
     try:
 
@@ -145,16 +145,16 @@ def _setup_chromadb_rag_environment(game_name: str) -> None:
 
         # 动态加载角色私有知识库
         logger.info("🔐 开始加载角色私有知识库...")
-        world_boot_path = WORLD_BOOT_DIR / f"{game_name}.json"
+        world_blueprint_path = WORLD_BLUEPRINT_DIR / f"{game_name}.json"
 
-        if not world_boot_path.exists():
-            logger.warning(f"⚠️ 世界配置文件不存在: {world_boot_path}")
+        if not world_blueprint_path.exists():
+            logger.warning(f"⚠️ 世界配置文件不存在: {world_blueprint_path}")
             logger.warning("⚠️ 跳过私有知识库加载")
             return
 
         # 读取世界配置
-        world_boot = Boot.model_validate_json(
-            world_boot_path.read_text(encoding="utf-8")
+        world_blueprint = Blueprint.model_validate_json(
+            world_blueprint_path.read_text(encoding="utf-8")
         )
 
         # 统计加载情况
@@ -162,7 +162,7 @@ def _setup_chromadb_rag_environment(game_name: str) -> None:
         skipped_count = 0
 
         # 遍历所有角色，加载私有知识
-        for actor in world_boot.actors:
+        for actor in world_blueprint.actors:
             # 直接从Actor对象的private_knowledge字段读取知识
             if actor.private_knowledge and len(actor.private_knowledge) > 0:
                 logger.info(
@@ -336,7 +336,7 @@ def main() -> None:
     # 创建演示游戏世界
     try:
         logger.info("🚀 创建M演示游戏世界...")
-        _save_demo_world_boot(GLOBAL_TCG_GAME_NAME)
+        _save_demo_world_blueprint(GLOBAL_TCG_GAME_NAME)
     except Exception as e:
         logger.error(f"❌ 创建MongoDB演示游戏世界失败: {e}")
 

@@ -27,7 +27,7 @@ from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.player_session import PlayerSession
 from ..game.tcg_game import TCGGame
-from ..game.game_data_service import get_user_world_data, get_game_boot_data
+from ..game.game_data_service import get_user_world_data, get_game_blueprint_data
 from ..models import StartRequest, StartResponse, World
 from .game_server_dependencies import CurrentGameServer
 from ..demo.dungeon4 import (
@@ -91,13 +91,13 @@ async def start(
     room = game_server.get_room(payload.user_name)
     assert room is not None, "start: room instance is None"
 
-    # 如果没有boot数据，就返回错误, 压根不能玩！
-    world_boot = get_game_boot_data(payload.game_name)
-    assert world_boot is not None, "world_boot is None"
-    if world_boot is None:
+    # 如果没有blueprint数据，就返回错误, 压根不能玩！
+    world_blueprint = get_game_blueprint_data(payload.game_name)
+    assert world_blueprint is not None, "world_blueprint is None"
+    if world_blueprint is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"start/v1: {payload.game_name} boot data not found",
+            detail=f"start/v1: {payload.game_name} blueprint data not found",
         )
 
     # 检查游戏是否已经在进行中
@@ -110,7 +110,7 @@ async def start(
     # 创建玩家客户端
     room._player_session = PlayerSession(
         name=payload.user_name,
-        actor=world_boot.player_actor,
+        actor=world_blueprint.player_actor,
         game=payload.game_name,
     )
     assert room._player_session is not None, "房间玩家客户端实例不存在"
@@ -120,7 +120,7 @@ async def start(
     if current_world_instance is None:
 
         # 重新生成world
-        current_world_instance = World(boot=world_boot)
+        current_world_instance = World(blueprint=world_blueprint)
 
         # 测试：如果是demo游戏，就创建demo地下城
         current_world_instance.dungeon = create_demo_dungeon4()
@@ -161,7 +161,7 @@ async def start(
         room._tcg_game = None
 
         # 返回错误！
-        logger.error(f"没有找到玩家实体 = {world_boot.player_actor}")
+        logger.error(f"没有找到玩家实体 = {world_blueprint.player_actor}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"start/v1: {payload.user_name} failed to create player entity",

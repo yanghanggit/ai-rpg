@@ -118,7 +118,7 @@ class SDGGame(RPGGame):
         super().new_game()
 
         # 第5步，狼人杀专用，分配角色
-        self._assign_werewolf_roles_to_actors(self.world.boot.actors)
+        self._assign_werewolf_roles_to_actors(self.world.blueprint.actors)
 
         return self
 

@@ -15,7 +15,7 @@ from ai_rpg.game.config import GLOBAL_SDG_GAME_NAME, setup_logger
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.sdg_game import SDGGame
 from ai_rpg.demo.werewolf_game_world import (
-    create_demo_sd_game_boot,
+    create_demo_sd_game_blueprint,
 )
 
 from ai_rpg.models import (
@@ -40,15 +40,15 @@ async def _run_game(
     actor: str,
 ) -> None:
 
-    # 创建boot数据
-    world_boot = create_demo_sd_game_boot(game)
-    assert world_boot is not None, "WorldBoot 创建失败"
+    # 创建blueprint数据
+    world_blueprint = create_demo_sd_game_blueprint(game)
+    assert world_blueprint is not None, "WorldBlueprint 创建失败"
 
     # 创建游戏实例
     terminal_game = SDGGame(
         name=game,
         player_session=PlayerSession(name=user, actor=actor, game=game),
-        world=World(boot=world_boot),
+        world=World(blueprint=world_blueprint),
     )
 
     ### 创建服务器相关的连接信息。

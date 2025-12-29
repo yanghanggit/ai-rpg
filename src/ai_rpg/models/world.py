@@ -9,7 +9,7 @@ from .serialization import EntitySerialization
 ###############################################################################################################################################
 # 生成世界的根文件，就是世界的起点
 @final
-class Boot(BaseModel):
+class Blueprint(BaseModel):
     name: str
     player_actor: str
     campaign_setting: str = ""
@@ -36,7 +36,7 @@ class World(BaseModel):
     entities_serialization: List[EntitySerialization] = []
     agents_context: Dict[str, AgentContext] = {}
     dungeon: Dungeon = Dungeon(name="")
-    boot: Boot = Boot(name="", player_actor="")
+    blueprint: Blueprint = Blueprint(name="", player_actor="")
 
 
 ###############################################################################################################################################

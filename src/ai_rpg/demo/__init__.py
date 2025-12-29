@@ -21,9 +21,9 @@ from .stage_ally_manor import (
     create_stage_monitoring_house,
 )
 from .world import (
-    create_demo_game_world_boot1,
-    create_demo_game_world_boot2,
-    create_demo_game_world_boot3,
+    create_demo_game_world_blueprint1,
+    create_demo_game_world_blueprint2,
+    create_demo_game_world_blueprint3,
 )
 
 __all__ = [
@@ -47,7 +47,7 @@ __all__ = [
     "ActorExcelData",
     "ExcelDataManager",
     "get_excel_data_manager",
-    "create_demo_game_world_boot1",
-    "create_demo_game_world_boot2",
-    "create_demo_game_world_boot3",
+    "create_demo_game_world_blueprint1",
+    "create_demo_game_world_blueprint2",
+    "create_demo_game_world_blueprint3",
 ]

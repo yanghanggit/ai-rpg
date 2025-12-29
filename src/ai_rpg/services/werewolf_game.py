@@ -22,7 +22,7 @@ from ..models import (
     DayVotedComponent,
     DayVoteOutComponent,
 )
-from ..demo.werewolf_game_world import create_demo_sd_game_boot
+from ..demo.werewolf_game_world import create_demo_sd_game_blueprint
 from ..game.player_session import PlayerSession
 from ..game.sdg_game import SDGGame
 from ..configuration import (
@@ -491,10 +491,10 @@ async def start_werewolf_game(
         logger.info(f"start/v1: {payload.user_name} create room = {new_room._username}")
         assert new_room._sdg_game is None
 
-        # 创建boot数据
+        # 创建blueprint数据
         assert GLOBAL_SDG_GAME_NAME == payload.game_name, "目前只支持 SD 游戏"
-        world_boot = create_demo_sd_game_boot(payload.game_name)
-        assert world_boot is not None, "WorldBoot 创建失败"
+        world_blueprint = create_demo_sd_game_blueprint(payload.game_name)
+        assert world_blueprint is not None, "blueprint 创建失败"
 
         # 创建游戏实例
         new_room._sdg_game = web_game = SDGGame(
@@ -504,7 +504,7 @@ async def start_werewolf_game(
                 actor="角色.主持人",  # 写死先！
                 game=payload.game_name,
             ),
-            world=World(boot=world_boot),
+            world=World(blueprint=world_blueprint),
         )
 
         # 配置聊天客户端

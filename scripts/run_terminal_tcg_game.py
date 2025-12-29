@@ -17,7 +17,7 @@ from ai_rpg.demo import (
     create_actor_player,
     # create_actor_warrior,
     create_demo_dungeon6,
-    create_demo_game_world_boot3,
+    create_demo_game_world_blueprint1,
 )
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import (
@@ -407,14 +407,12 @@ async def _run_game(
     #
     if world_exists is None:
 
-        # 获取world_boot_data
-        world_boot = create_demo_game_world_boot3(game)
-        # create_demo_game_world_boot1(game)  # TODO，临时修改，快速测试！
-        # get_game_boot_data(game)
-        assert world_boot is not None, "WorldBootDocument 反序列化失败"
+        # 获取world_blueprint
+        world_blueprint = create_demo_game_world_blueprint1(game)
+        assert world_blueprint is not None, "world blueprint 反序列化失败"
 
         # 如果world不存在，说明是第一次创建游戏
-        world_exists = World(boot=world_boot)
+        world_exists = World(blueprint=world_blueprint)
 
         # 运行时生成地下城系统
         world_exists.dungeon = create_demo_dungeon6()
@@ -429,7 +427,7 @@ async def _run_game(
         name=game,
         player_session=PlayerSession(
             name=user,
-            actor=world_exists.boot.player_actor,
+            actor=world_exists.blueprint.player_actor,
             game=game,
         ),
         world=world_exists,
@@ -453,7 +451,7 @@ async def _run_game(
     player_entity = terminal_game.get_player_entity()
     assert (
         player_entity is not None
-    ), f"玩家实体不存在！= {user}, {game}, {terminal_game.world.boot.player_actor}"
+    ), f"玩家实体不存在！= {user}, {game}, {terminal_game.world.blueprint.player_actor}"
 
     # 初始化！
     await terminal_game.initialize()

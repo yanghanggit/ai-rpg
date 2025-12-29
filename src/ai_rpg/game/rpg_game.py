@@ -147,10 +147,10 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         ), "游戏中有实体，不能创建新的游戏"
 
         ## 第1步，创建world_system
-        self._create_world_entities(self.world.boot.world_systems)
+        self._create_world_entities(self.world.blueprint.world_systems)
 
         ## 第2步，创建actor
-        self._create_actor_entities(self.world.boot.actors)
+        self._create_actor_entities(self.world.blueprint.actors)
 
         ## 第3步，分配玩家控制的actor
         assert self.player_session.name != "", "玩家名字不能为空"
@@ -164,7 +164,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         )
 
         ## 第4步，创建stage
-        self._create_stage_entities(self.world.boot.stages)
+        self._create_stage_entities(self.world.blueprint.stages)
 
         return self
 

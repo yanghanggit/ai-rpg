@@ -67,6 +67,6 @@ generated_images/
 # -----------------------------------------------------------------------------
 # Other Files and Directories to Ignore
 # -----------------------------------------------------------------------------
-world_boots/
+world_blueprints/
 world_runtime/
 .kickoff_cache/

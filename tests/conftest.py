@@ -8,7 +8,7 @@ try:
     from src.ai_rpg.models.objects import Actor
     from src.ai_rpg.models import ActorCharacterSheet
     from src.ai_rpg.models.objects import CharacterStats
-    from src.ai_rpg.models.world import World, Boot
+    from src.ai_rpg.models.world import World, Blueprint
     from src.ai_rpg.models.dungeon import Dungeon
     from src.ai_rpg.game.player_session import PlayerSession
 
@@ -27,14 +27,14 @@ def sample_game() -> Any:
         pytest.skip("TCGGame not available")
 
     # 创建基本的依赖
-    boot = Boot(name="test_boot", player_actor="test_player_actor")
+    blueprint = Blueprint(name="test_blueprint", player_actor="test_player_actor")
     dungeon = Dungeon(name="")
     world = World(
         runtime_index=1000,
         entities_serialization=[],
         agents_context={},
         dungeon=dungeon,
-        boot=boot,
+        blueprint=blueprint,
     )
     player = PlayerSession(name="test_player", actor="test_actor", game="test_game")
     return _TCGGame(

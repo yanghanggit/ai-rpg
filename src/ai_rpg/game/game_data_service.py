@@ -3,16 +3,16 @@ import shutil
 from pathlib import Path
 from typing import Optional
 from loguru import logger
-from ..models import Boot, World, Dungeon
+from ..models import Blueprint, World, Dungeon
 from .player_session import PlayerSession
-from ..game.config import WORLD_BOOT_DIR, WORLD_RUNTIME_DIR
+from ..game.config import WORLD_BLUEPRINT_DIR, WORLD_RUNTIME_DIR
 from .config import LOGS_DIR
 
 
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
-def get_game_boot_data(game: str) -> Optional[Boot]:
+def get_game_blueprint_data(game: str) -> Optional[Blueprint]:
     """
     全局方法：从本地文件系统获取指定游戏的启动世界数据
 
@@ -20,10 +20,10 @@ def get_game_boot_data(game: str) -> Optional[Boot]:
         game: 游戏名称
 
     Returns:
-        Boot 对象或 None
+        Blueprint 对象或 None
     """
 
-    read_path = WORLD_BOOT_DIR / f"{game}.json"
+    read_path = WORLD_BLUEPRINT_DIR / f"{game}.json"
     assert read_path.exists(), f"游戏启动数据文件不存在: {read_path}"
     if not read_path.exists():
         return None
@@ -31,9 +31,9 @@ def get_game_boot_data(game: str) -> Optional[Boot]:
     try:
 
         logger.debug(f"📖 从本地文件系统获取演示游戏世界进行验证...")
-        boot_json = read_path.read_text(encoding="utf-8")
-        boot_data = Boot.model_validate_json(boot_json)
-        return boot_data
+        json_data = read_path.read_text(encoding="utf-8")
+        blueprint_data = Blueprint.model_validate_json(json_data)
+        return blueprint_data
 
     except Exception as e:
         logger.error(f"❌ 从本地文件系统获取演示游戏世界失败: {str(e)}")
@@ -99,7 +99,7 @@ def persist_world_data(
 
     保存内容包括：
     - runtime.json: 完整的世界运行时数据
-    - boot.json: 游戏启动配置数据
+    - blueprint.json: 游戏启动配置数据
     - runtime.json.gz: 压缩版本的世界数据（可选）
 
     Args:
@@ -108,7 +108,7 @@ def persist_world_data(
         player_session: 玩家会话对象
         use_gzip: 是否同时保存 gzip 压缩版本，默认为 True
     """
-    game = str(world.boot.name)
+    game = str(world.blueprint.name)
     write_dir = WORLD_RUNTIME_DIR / username / game
     write_dir.mkdir(parents=True, exist_ok=True)
     assert write_dir.exists(), f"找不到目录: {write_dir}"
@@ -122,10 +122,12 @@ def persist_world_data(
         write_path.write_text(world_json, encoding="utf-8")
         logger.debug(f"💾 已保存用户游戏世界数据到文件: {write_path}")
 
-        # 保存 boot.json
-        write_boot_path = write_dir / "boot.json"
-        write_boot_path.write_text(world.boot.model_dump_json(), encoding="utf-8")
-        logger.debug(f"💾 已保存用户游戏启动数据到文件: {write_boot_path}")
+        # 保存 blueprint.json
+        write_blueprint_path = write_dir / "blueprint.json"
+        write_blueprint_path.write_text(
+            world.blueprint.model_dump_json(), encoding="utf-8"
+        )
+        logger.debug(f"💾 已保存用户游戏启动数据到文件: {write_blueprint_path}")
 
         # 保存 player_session.json
         write_player_session_path = write_dir / "player_session.json"
@@ -165,7 +167,7 @@ def debug_verbose_world_data(
     verbose_dir: Path, world: World, player_session: PlayerSession
 ) -> None:
     """调试方法，保存游戏状态到文件"""
-    verbose_boot_data(verbose_dir, world)
+    verbose_blueprint_data(verbose_dir, world)
     verbose_world_data(verbose_dir, world)
     verbose_entities_serialization(verbose_dir, world)
     verbose_context(verbose_dir, world)
@@ -198,17 +200,17 @@ def verbose_context(
 
 
 ###############################################################################################################################################
-def verbose_boot_data(verbose_dir: Path, world: World) -> None:
+def verbose_blueprint_data(verbose_dir: Path, world: World) -> None:
     """保存启动数据到文件"""
-    boot_data_dir = verbose_dir / "boot_data"
-    boot_data_dir.mkdir(parents=True, exist_ok=True)
+    blueprint_data_dir = verbose_dir / "blueprint_data"
+    blueprint_data_dir.mkdir(parents=True, exist_ok=True)
 
-    boot_file_path = boot_data_dir / f"{world.boot.name}.json"
-    if boot_file_path.exists():
+    blueprint_file_path = blueprint_data_dir / f"{world.blueprint.name}.json"
+    if blueprint_file_path.exists():
         return  # 如果文件已存在，则不覆盖
 
-    # 保存 Boot 数据到文件
-    boot_file_path.write_text(world.boot.model_dump_json(), encoding="utf-8")
+    # 保存 blueprint 数据到文件
+    blueprint_file_path.write_text(world.blueprint.model_dump_json(), encoding="utf-8")
 
 
 ###############################################################################################################################################
@@ -216,7 +218,7 @@ def verbose_world_data(verbose_dir: Path, world: World) -> None:
     """保存世界数据到文件"""
     world_data_dir = verbose_dir / "world_data"
     world_data_dir.mkdir(parents=True, exist_ok=True)
-    world_file_path = world_data_dir / f"{world.boot.name}.json"
+    world_file_path = world_data_dir / f"{world.blueprint.name}.json"
     world_file_path.write_text(
         world.model_dump_json(), encoding="utf-8"
     )  # 保存 World 数据到文件，覆盖

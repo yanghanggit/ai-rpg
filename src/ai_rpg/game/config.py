@@ -13,9 +13,9 @@ assert LOGS_DIR.exists(), f"找不到目录: {LOGS_DIR}"
 
 ###########################################################################################################################################
 # 游戏世界数据目录
-WORLD_BOOT_DIR: Path = Path("world_boots")
-WORLD_BOOT_DIR.mkdir(parents=True, exist_ok=True)
-assert WORLD_BOOT_DIR.exists(), f"找不到目录: {WORLD_BOOT_DIR}"
+WORLD_BLUEPRINT_DIR: Path = Path("world_blueprints")
+WORLD_BLUEPRINT_DIR.mkdir(parents=True, exist_ok=True)
+assert WORLD_BLUEPRINT_DIR.exists(), f"找不到目录: {WORLD_BLUEPRINT_DIR}"
 
 ###########################################################################################################################################
 # 运行时游戏世界数据目录

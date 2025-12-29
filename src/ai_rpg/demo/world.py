@@ -13,7 +13,7 @@ scenarios with different character and stage configurations.
 """
 
 from ..models import (
-    Boot,
+    Blueprint,
 )
 from .actor_warrior import create_actor_warrior
 from .actor_wizard import create_actor_wizard
@@ -27,19 +27,19 @@ from .stage_ally_manor import (
 
 
 #######################################################################################################################
-def create_demo_game_world_boot1(game_name: str) -> Boot:
+def create_demo_game_world_blueprint1(game_name: str) -> Blueprint:
     """
-    创建演示游戏世界Boot实例 - 双角色版本。
+    创建演示游戏世界Blueprint实例 - 双角色版本。
 
     该函数创建一个包含战士和法师两个角色的完整游戏世界，
-    包含英雄营地和英雄餐厅两个场景。两个角色为同伴关系，
+    包含英雄营地和英雄餐厅两个场景。两个角色为同伴关系,
     各自有不同的游戏目标。
 
     Args:
         game_name: 游戏世界的名称
 
     Returns:
-        Boot: 初始化完成的游戏世界实例，包含:
+        Blueprint: 初始化完成的游戏世界实例，包含:
             - 2个角色(战士和法师)
             - 2个场景(英雄营地和英雄餐厅)
             - 角色的初始kick_off_message
@@ -85,33 +85,33 @@ def create_demo_game_world_boot1(game_name: str) -> Boot:
 这些人影是环境氛围的一部分，作为整体存在感呈现，不应被描述为具体的个体或互动行为。"""
 
     # 创建世界
-    world_boot = Boot(
+    world_blueprint = Blueprint(
         name=game_name,
         player_actor=actor_warrior.name,  # 玩家角色为战士
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
     )
 
     # 设置世界场景
-    world_boot.stages = [
+    world_blueprint.stages = [
         stage_ally_safe_room,
         stage_ally_dining_room,
         stage_monitoring_room,
     ]
 
     # 添加世界系统
-    world_boot.world_systems = []
+    world_blueprint.world_systems = []
 
     # 返回
-    return world_boot
+    return world_blueprint
 
 
 #######################################################################################################################
 
 
 #######################################################################################################################
-def create_demo_game_world_boot2(game_name: str) -> Boot:
+def create_demo_game_world_blueprint2(game_name: str) -> Blueprint:
     """
-    创建演示游戏世界Boot实例 - 单角色版本。
+    创建演示游戏世界Blueprint实例 - 单角色版本。
 
     该函数创建一个只包含战士角色的简化游戏世界，
     只有英雄营地一个场景。适合单人游戏或测试场景。
@@ -120,7 +120,7 @@ def create_demo_game_world_boot2(game_name: str) -> Boot:
         game_name: 游戏世界的名称
 
     Returns:
-        Boot: 初始化完成的游戏世界实例，包含:
+        Blueprint: 初始化完成的游戏世界实例，包含:
             - 1个角色(战士)
             - 1个场景(英雄营地)
             - 角色的初始kick_off_message
@@ -145,7 +145,7 @@ def create_demo_game_world_boot2(game_name: str) -> Boot:
     stage_ally_safe_room.actors = [actor_warrior]
 
     # 创建世界
-    world_boot = Boot(
+    world_blueprint = Blueprint(
         name=game_name,
         player_actor=actor_warrior.name,  # 玩家角色为战士
         # player_actor=actor_wizard.name,  # 玩家角色为法师
@@ -153,19 +153,19 @@ def create_demo_game_world_boot2(game_name: str) -> Boot:
     )
 
     # 设置英雄营地场景的初始状态
-    world_boot.stages = [stage_ally_safe_room]
+    world_blueprint.stages = [stage_ally_safe_room]
 
     # 添加世界系统
-    world_boot.world_systems = []
+    world_blueprint.world_systems = []
 
     # 返回
-    return world_boot
+    return world_blueprint
 
 
 ###############################################################################################################################
-def create_demo_game_world_boot3(game_name: str) -> Boot:
+def create_demo_game_world_blueprint3(game_name: str) -> Blueprint:
     """
-    创建演示游戏世界Boot实例 - 玩家角色版本。
+    创建演示游戏世界Blueprint实例 - 玩家角色版本。
 
     该函数创建一个包含玩家角色的完整游戏世界，
     包含英雄营地和英雄餐厅两个场景。玩家角色具备特殊技能。
@@ -173,7 +173,7 @@ def create_demo_game_world_boot3(game_name: str) -> Boot:
     Args:
         game_name: 游戏世界的名称
     Returns:
-        Boot: 初始化完成的游戏世界实例，包含:
+        Blueprint: 初始化完成的游戏世界实例，包含:
             - 1个玩家角色
             - 1个战士角色
             - 1个法师角色
@@ -219,21 +219,21 @@ def create_demo_game_world_boot3(game_name: str) -> Boot:
     stage_monitoring_house.actors = []
 
     # 创建世界
-    world_boot = Boot(
+    world_blueprint = Blueprint(
         name=game_name,
         player_actor=actor_player.name,  # 玩家角色为穿越者
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
     )
 
     # 设置英雄营地场景的初始状态
-    world_boot.stages = [
+    world_blueprint.stages = [
         stage_ally_safe_room,
         stage_ally_dining_room,
         stage_monitoring_house,
     ]
 
     # 添加世界系统
-    world_boot.world_systems = []
+    world_blueprint.world_systems = []
 
     # 返回
-    return world_boot
+    return world_blueprint

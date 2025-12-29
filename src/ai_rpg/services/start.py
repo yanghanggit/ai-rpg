@@ -120,10 +120,16 @@ async def start(
     if current_world_instance is None:
 
         # 重新生成world
-        current_world_instance = World(blueprint=world_blueprint)
+        current_world_instance = World(
+            runtime_index=1000,
+            entities_serialization=[],
+            agents_context={},
+            dungeon=create_demo_dungeon4(),
+            blueprint=world_blueprint,
+        )
 
         # 测试：如果是demo游戏，就创建demo地下城
-        current_world_instance.dungeon = create_demo_dungeon4()
+        # current_world_instance.dungeon = create_demo_dungeon4()
 
     else:
 

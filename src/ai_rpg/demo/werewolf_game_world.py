@@ -415,6 +415,8 @@ def create_demo_sd_game_blueprint(
         name=game_name,
         player_actor=moderator.name,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
+        stages=[],
+        world_systems=[],
     )
 
     # 设置英雄营地场景的初始状态

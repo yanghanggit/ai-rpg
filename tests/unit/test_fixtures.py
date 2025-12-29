@@ -7,7 +7,7 @@ def test_sample_game_fixture(sample_game: Any) -> None:
     """Test that the sample_game fixture creates a valid game instance."""
     assert sample_game is not None
     assert hasattr(sample_game, "name")
-    assert sample_game.name == "test_game"
+    assert sample_game.name == "test_blueprint"
     assert hasattr(sample_game, "player_session")
     assert sample_game.player_session.name == "test_player"
     assert sample_game.player_session.actor == "test_actor"

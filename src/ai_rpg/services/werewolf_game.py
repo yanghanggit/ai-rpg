@@ -8,7 +8,7 @@ from ..models import (
     WerewolfGamePlayResponse,
     WerewolfGameStateResponse,
     World,
-    World,
+    Dungeon,
     WerewolfComponent,
     SeerComponent,
     WitchComponent,
@@ -504,7 +504,13 @@ async def start_werewolf_game(
                 actor="角色.主持人",  # 写死先！
                 game=payload.game_name,
             ),
-            world=World(blueprint=world_blueprint),
+            world=World(
+                runtime_index=1000,
+                entities_serialization=[],
+                agents_context={},
+                dungeon=Dungeon(name="None", stages=[]),
+                blueprint=world_blueprint,
+            ),
         )
 
         # 配置聊天客户端

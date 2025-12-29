@@ -282,7 +282,7 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
 
     # 5. 清理地下城数据
     tcg_game.destroy_dungeon_entities(tcg_game.world.dungeon)
-    tcg_game._world.dungeon = Dungeon(name="")
+    tcg_game._world.dungeon = Dungeon(name="", stages=[])
 
     # 6. 恢复所有盟友的战斗状态
     for ally_entity in ally_entities:

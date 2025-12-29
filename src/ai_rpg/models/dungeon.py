@@ -199,7 +199,7 @@ class CombatSequence(BaseModel):
 @final
 class Dungeon(BaseModel):
     name: str
-    stages: List[Stage] = []
+    stages: List[Stage]
     combat_sequence: CombatSequence = CombatSequence()
     current_stage_index: int = -1
 

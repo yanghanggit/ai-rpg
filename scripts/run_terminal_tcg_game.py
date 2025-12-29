@@ -412,10 +412,16 @@ async def _run_game(
         assert world_blueprint is not None, "world blueprint 反序列化失败"
 
         # 如果world不存在，说明是第一次创建游戏
-        world_exists = World(blueprint=world_blueprint)
+        world_exists = World(
+            runtime_index=1000,
+            entities_serialization=[],
+            agents_context={},
+            dungeon=create_demo_dungeon6(),
+            blueprint=world_blueprint,
+        )
 
         # 运行时生成地下城系统
-        world_exists.dungeon = create_demo_dungeon6()
+        # world_exists.dungeon = create_demo_dungeon6()
         # world_exists.dungeon = create_demo_dungeon5()
 
     else:

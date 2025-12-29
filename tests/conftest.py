@@ -27,8 +27,14 @@ def sample_game() -> Any:
         pytest.skip("TCGGame not available")
 
     # 创建基本的依赖
-    blueprint = Blueprint(name="test_blueprint", player_actor="test_player_actor")
-    dungeon = Dungeon(name="")
+    blueprint = Blueprint(
+        name="test_blueprint",
+        player_actor="test_player_actor",
+        campaign_setting="test_setting",
+        stages=[],
+        world_systems=[],
+    )
+    dungeon = Dungeon(name="", stages=[])
     world = World(
         runtime_index=1000,
         entities_serialization=[],
@@ -36,9 +42,11 @@ def sample_game() -> Any:
         dungeon=dungeon,
         blueprint=blueprint,
     )
-    player = PlayerSession(name="test_player", actor="test_actor", game="test_game")
+    player = PlayerSession(
+        name="test_player", actor="test_actor", game="test_blueprint"
+    )
     return _TCGGame(
-        name="test_game",
+        name="test_blueprint",
         player_session=player,
         world=world,
     )

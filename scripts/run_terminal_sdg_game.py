@@ -20,6 +20,7 @@ from ai_rpg.demo.werewolf_game_world import (
 
 from ai_rpg.models import (
     World,
+    Dungeon,
 )
 from ai_rpg.services.werewolf_game import (
     VictoryCondition,
@@ -48,7 +49,13 @@ async def _run_game(
     terminal_game = SDGGame(
         name=game,
         player_session=PlayerSession(name=user, actor=actor, game=game),
-        world=World(blueprint=world_blueprint),
+        world=World(
+            runtime_index=1000,
+            entities_serialization=[],
+            agents_context={},
+            dungeon=Dungeon(name="None", stages=[]),
+            blueprint=world_blueprint,
+        ),
     )
 
     ### 创建服务器相关的连接信息。

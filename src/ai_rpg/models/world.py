@@ -12,9 +12,9 @@ from .serialization import EntitySerialization
 class Blueprint(BaseModel):
     name: str
     player_actor: str
-    campaign_setting: str = ""
-    stages: List[Stage] = []
-    world_systems: List[WorldSystem] = []
+    campaign_setting: str
+    stages: List[Stage]
+    world_systems: List[WorldSystem]
 
     @property
     def actors(self) -> List[Actor]:
@@ -25,18 +25,18 @@ class Blueprint(BaseModel):
 @final
 class AgentContext(BaseModel):
     name: str
-    context: List[SystemMessage | HumanMessage | AIMessage] = []
+    context: List[SystemMessage | HumanMessage | AIMessage]
 
 
 ###############################################################################################################################################
 # 生成世界的运行时文件，记录世界的状态
 @final
 class World(BaseModel):
-    runtime_index: int = 1000
-    entities_serialization: List[EntitySerialization] = []
-    agents_context: Dict[str, AgentContext] = {}
-    dungeon: Dungeon = Dungeon(name="")
-    blueprint: Blueprint = Blueprint(name="", player_actor="")
+    runtime_index: int
+    entities_serialization: List[EntitySerialization]
+    agents_context: Dict[str, AgentContext]
+    dungeon: Dungeon
+    blueprint: Blueprint
 
 
 ###############################################################################################################################################

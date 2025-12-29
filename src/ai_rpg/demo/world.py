@@ -89,6 +89,8 @@ def create_demo_game_world_blueprint1(game_name: str) -> Blueprint:
         name=game_name,
         player_actor=actor_warrior.name,  # 玩家角色为战士
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+        stages=[],
+        world_systems=[],
     )
 
     # 设置世界场景
@@ -150,6 +152,8 @@ def create_demo_game_world_blueprint2(game_name: str) -> Blueprint:
         player_actor=actor_warrior.name,  # 玩家角色为战士
         # player_actor=actor_wizard.name,  # 玩家角色为法师
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+        stages=[],
+        world_systems=[],
     )
 
     # 设置英雄营地场景的初始状态
@@ -223,6 +227,8 @@ def create_demo_game_world_blueprint3(game_name: str) -> Blueprint:
         name=game_name,
         player_actor=actor_player.name,  # 玩家角色为穿越者
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+        stages=[],
+        world_systems=[],
     )
 
     # 设置英雄营地场景的初始状态

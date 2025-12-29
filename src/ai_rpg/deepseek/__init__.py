@@ -9,11 +9,11 @@ DeepSeek 聊天服务模块
 """
 
 from .chat_graph import create_chat_workflow, execute_chat_workflow, ChatState
-from .client import create_deepseek_llm
+from .client import create_deepseek_chat, create_deepseek_reasoner
 
 __all__ = [
-    # 基础聊天图
-    "create_deepseek_llm",
+    "create_deepseek_chat",
+    "create_deepseek_reasoner",
     "ChatState",
     "create_chat_workflow",
     "execute_chat_workflow",

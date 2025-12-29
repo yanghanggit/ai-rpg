@@ -5,8 +5,45 @@ ChromaDB环境测试
 """
 
 import pytest
+import time
 from typing import List as ListType, cast
 from collections.abc import Sequence
+
+
+def check_huggingface_connectivity(timeout: float = 5.0) -> bool:
+    """
+    检测HuggingFace网络连通性
+
+    Args:
+        timeout: 超时时间（秒）
+
+    Returns:
+        bool: 连接正常返回True，否则返回False
+    """
+    try:
+        import requests
+
+        print(f"🔍 正在检测HuggingFace网络连通性（超时: {timeout}秒）...")
+        response = requests.head(
+            "https://huggingface.co", timeout=timeout, allow_redirects=True
+        )
+
+        if response.status_code < 500:  # 任何非服务器错误都算通
+            print(f"✅ HuggingFace网络连接正常 (状态码: {response.status_code})")
+            return True
+        else:
+            print(f"⚠️  HuggingFace服务器响应异常 (状态码: {response.status_code})")
+            return False
+
+    except requests.Timeout:
+        print(f"⚠️  HuggingFace连接超时（>{timeout}秒）")
+        return False
+    except requests.ConnectionError as e:
+        print(f"⚠️  HuggingFace连接失败: {type(e).__name__}")
+        return False
+    except Exception as e:
+        print(f"⚠️  网络检测异常: {type(e).__name__}: {e}")
+        return False
 
 
 class TestChromaDBEnvironment:
@@ -177,30 +214,122 @@ class TestChromaDBEnvironment:
 
     def test_chromadb_with_sentence_transformers(self) -> None:
         """测试ChromaDB与Sentence Transformers集成"""
+        print("\n" + "=" * 60)
+        print("🔍 [TEST START] test_chromadb_with_sentence_transformers")
+        start_test_time = time.time()
+
+        # 智能网络检测：先尝试在线模式，失败则切换离线模式
+        import os
+        import chromadb
+
+        is_online = check_huggingface_connectivity(timeout=3.0)
+
+        if not is_online:
+            print("⚠️  网络连接异常，使用离线模式（预加载模型）继续测试...")
+            # 在离线模式下，直接使用项目预加载的模型
+            print(f"⏰ [{time.time()-start_test_time:.2f}s] 导入预加载模型...")
+            from src.ai_rpg.embedding_model import multilingual_model
+
+            print(f"✅ [{time.time()-start_test_time:.2f}s] 预加载模型导入完成")
+
+            client = chromadb.Client()
+            test_collection_name = "pytest_sentence_transformer_test"
+
+            # 清理可能存在的测试集合
+            try:
+                client.delete_collection(test_collection_name)
+            except Exception:
+                pass
+
+            try:
+                print(f"⏰ [{time.time()-start_test_time:.2f}s] 创建集合...")
+                collection = client.create_collection(test_collection_name)
+                print(f"✅ [{time.time()-start_test_time:.2f}s] 集合创建完成")
+
+                # 使用预加载模型计算embeddings
+                print(f"⏰ [{time.time()-start_test_time:.2f}s] 计算文档embeddings...")
+                documents = ["这是一个测试文档", "这是另一个测试文档"]
+                embeddings = multilingual_model.encode(documents)
+                print(f"✅ [{time.time()-start_test_time:.2f}s] Embeddings计算完成")
+
+                # 添加文档
+                print(f"⏰ [{time.time()-start_test_time:.2f}s] 添加文档...")
+                collection.add(
+                    embeddings=embeddings.tolist(),
+                    documents=documents,
+                    ids=["doc1", "doc2"],
+                )
+                print(f"✅ [{time.time()-start_test_time:.2f}s] 文档添加完成")
+
+                # 查询相似文档
+                print(f"⏰ [{time.time()-start_test_time:.2f}s] 查询相似文档...")
+                query_text = "测试文档"
+                query_embedding = multilingual_model.encode([query_text])
+                results = collection.query(
+                    query_embeddings=query_embedding.tolist(),
+                    n_results=1,
+                )
+                print(f"✅ [{time.time()-start_test_time:.2f}s] 查询完成")
+
+                assert results is not None
+                assert "documents" in results
+                assert results["documents"] is not None
+                assert len(results["documents"]) > 0
+                assert len(results["documents"][0]) > 0
+                total_time = time.time() - start_test_time
+                print(
+                    f"✅ [{total_time:.2f}s] ChromaDB与Sentence Transformers集成测试成功（离线模式）"
+                )
+                print(f"📊 总耗时: {total_time:.2f}秒")
+                print("=" * 60)
+            finally:
+                try:
+                    client.delete_collection(test_collection_name)
+                except Exception:
+                    pass
+            return
+
+        # 在线模式：使用原有的 SentenceTransformerEmbeddingFunction
+        print("🌐 使用在线模式进行测试")
         try:
-            import chromadb
+            print(f"⏰ [{time.time()-start_test_time:.2f}s] 导入chromadb组件...")
             from chromadb.utils.embedding_functions import (
                 SentenceTransformerEmbeddingFunction,
             )
-
-            # 导入项目的预加载模型和配置
             from src.ai_rpg.embedding_model import multilingual_model, is_model_cached
 
+            print(f"✅ [{time.time()-start_test_time:.2f}s] 组件导入完成")
+
             model_name = "paraphrase-multilingual-MiniLM-L12-v2"
+            print(f"📦 模型名称: {model_name}")
 
             # 检查模型是否已缓存
+            print(f"⏰ [{time.time()-start_test_time:.2f}s] 检查模型缓存状态...")
             if is_model_cached(model_name):
-                print(f"✅ 使用项目预加载的多语言模型: {model_name}")
+                print(
+                    f"✅ [{time.time()-start_test_time:.2f}s] 模型已缓存: {model_name}"
+                )
                 # 使用预加载的模型
                 assert multilingual_model is not None, "预加载模型不可用"
+                print(
+                    f"⏰ [{time.time()-start_test_time:.2f}s] 开始创建embedding函数..."
+                )
                 # 使用预加载模型创建embedding函数
                 ef = SentenceTransformerEmbeddingFunction(model_name=model_name)
+                print(f"✅ [{time.time()-start_test_time:.2f}s] embedding函数创建完成")
             else:
-                print(f"⚠️ 模型未缓存，将从网络下载: {model_name}")
+                print(
+                    f"⚠️ [{time.time()-start_test_time:.2f}s] 模型未缓存，将从网络下载: {model_name}"
+                )
                 # 创建embedding函数（使用轻量级模型进行测试）
                 ef = SentenceTransformerEmbeddingFunction(model_name=model_name)
+                print(
+                    f"✅ [{time.time()-start_test_time:.2f}s] embedding函数创建完成（下载）"
+                )
 
+            print(f"⏰ [{time.time()-start_test_time:.2f}s] 创建ChromaDB客户端...")
             client = chromadb.Client()
+            print(f"✅ [{time.time()-start_test_time:.2f}s] ChromaDB客户端创建完成")
             test_collection_name = "pytest_sentence_transformer_test"
 
             # 清理可能存在的测试集合
@@ -213,26 +342,41 @@ class TestChromaDBEnvironment:
                 # 创建使用sentence transformer的集合
                 from typing import Any
 
+                print(
+                    f"⏰ [{time.time()-start_test_time:.2f}s] 创建集合（带embedding函数）..."
+                )
                 collection = client.create_collection(
                     name=test_collection_name,
                     embedding_function=ef,  # type: ignore[arg-type]
                 )
+                print(f"✅ [{time.time()-start_test_time:.2f}s] 集合创建完成")
 
                 # 添加文档（自动计算embedding）
+                print(
+                    f"⏰ [{time.time()-start_test_time:.2f}s] 开始添加文档（将自动计算embedding）..."
+                )
                 collection.add(
                     documents=["这是一个测试文档", "这是另一个测试文档"],
                     ids=["doc1", "doc2"],
                 )
+                print(f"✅ [{time.time()-start_test_time:.2f}s] 文档添加完成")
 
                 # 查询相似文档
+                print(f"⏰ [{time.time()-start_test_time:.2f}s] 开始查询相似文档...")
                 results = collection.query(query_texts=["测试文档"], n_results=1)
+                print(f"✅ [{time.time()-start_test_time:.2f}s] 查询完成")
 
                 assert results is not None
                 assert "documents" in results
                 assert results["documents"] is not None
                 assert len(results["documents"]) > 0
                 assert len(results["documents"][0]) > 0
-                print("✅ ChromaDB与Sentence Transformers集成测试成功")
+                total_time = time.time() - start_test_time
+                print(
+                    f"✅ [{total_time:.2f}s] ChromaDB与Sentence Transformers集成测试成功"
+                )
+                print(f"📊 总耗时: {total_time:.2f}秒")
+                print("=" * 60)
 
             finally:
                 # 清理测试集合
@@ -248,12 +392,34 @@ class TestChromaDBEnvironment:
 
     def test_project_model_loader_integration(self) -> None:
         """测试项目的预加载模型与ChromaDB集成"""
+        print("\n" + "=" * 60)
+        print("🔍 [TEST START] test_project_model_loader_integration")
+        start_test_time = time.time()
+
+        # 智能网络检测
+        import os
+
+        is_online = check_huggingface_connectivity(timeout=3.0)
+
+        if not is_online:
+            print("⚠️  网络连接异常，切换到离线模式继续测试...")
+            os.environ["TRANSFORMERS_OFFLINE"] = "1"
+            os.environ["HF_HUB_OFFLINE"] = "1"
+            print("📴 已启用离线模式")
+        else:
+            print("🌐 使用在线模式进行测试")
+            os.environ.pop("TRANSFORMERS_OFFLINE", None)
+            os.environ.pop("HF_HUB_OFFLINE", None)
+
         try:
+            print(f"⏰ [{time.time()-start_test_time:.2f}s] 导入模块...")
             import chromadb
             from src.ai_rpg.embedding_model import (
                 multilingual_model,
                 SENTENCE_TRANSFORMERS_CACHE,
             )
+
+            print(f"✅ [{time.time()-start_test_time:.2f}s] 模块导入完成")
 
             # 显示模型缓存目录
             print(f"✅ 模型缓存目录: {SENTENCE_TRANSFORMERS_CACHE}")
@@ -264,8 +430,10 @@ class TestChromaDBEnvironment:
             print(f"✅ 成功使用项目预加载的多语言模型")
 
             # 测试模型编码功能
+            print(f"⏰ [{time.time()-start_test_time:.2f}s] 开始模型编码测试...")
             test_texts = ["这是测试文本", "another test text"]
             embeddings = multilingual_model.encode(test_texts)
+            print(f"✅ [{time.time()-start_test_time:.2f}s] 模型编码完成")
 
             assert embeddings is not None
             assert len(embeddings) == 2

@@ -124,18 +124,3 @@ class GameServer:
         return self._background_task_store.get(task_id, None)
 
     ###############################################################################################################################################
-    def update_task(self, task_id: str, task_record: TaskRecord) -> None:
-        """更新指定的后台任务记录
-
-        Args:
-            task_id: 任务唯一标识符
-            task_record: 更新后的任务记录对象
-
-        Raises:
-            AssertionError: 如果任务不存在
-        """
-        if task_id not in self._background_task_store:
-            assert False, f"task {task_id} does not exist"
-        self._background_task_store[task_id] = task_record
-
-    ###############################################################################################################################################

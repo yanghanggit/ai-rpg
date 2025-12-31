@@ -89,6 +89,7 @@ dependencies = [
     { name = "pybase64" },
     { name = "pydantic" },
     { name = "pydantic-core" },
+    { name = "pypdf" },
     { name = "pypika" },
     { name = "pyproject-hooks" },
     { name = "python-dotenv" },
@@ -230,6 +231,7 @@ requires-dist = [
     { name = "pybase64", specifier = ">=1.4.2" },
     { name = "pydantic", specifier = ">=2.11.7" },
     { name = "pydantic-core", specifier = ">=2.33.2" },
+    { name = "pypdf", specifier = ">=5.1.0" },
     { name = "pypika", specifier = ">=0.48.9" },
     { name = "pyproject-hooks", specifier = ">=1.2.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.4" },
@@ -3127,6 +3129,15 @@ wheels = [
 [package.optional-dependencies]
 crypto = [
     { name = "cryptography" },
+]
+
+[[package]]
+name = "pypdf"
+version = "6.5.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4d/9b/db1056a54eda8cd44f9e5128e87e1142cb328295dad92bbec0d39f251641/pypdf-6.5.0.tar.gz", hash = "sha256:9e78950906380ae4f2ce1d9039e9008098ba6366a4d9c7423c4bdbd6e6683404", size = 5277655, upload-time = "2025-12-21T11:07:19.876Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/de/db/f2e7703791a1f32532618b82789ddddb7173b9e22d97e34cc11950d8e330/pypdf-6.5.0-py3-none-any.whl", hash = "sha256:9cef8002aaedeecf648dfd9ff1ce38f20ae8d88e2534fced6630038906440b25", size = 329560, upload-time = "2025-12-21T11:07:18.173Z" },
 ]
 
 [[package]]

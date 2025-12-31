@@ -39,6 +39,9 @@ class ReplicateImageInput(TypedDict, total=False):
 
     # 其他可选参数
     seed: int  # 随机种子
-    output_format: str  # 输出格式: "webp", "jpg", "png" (SD 3.5 支持)
+    output_format: str  # 输出格式: "webp", "jpg", "png" (SD 3.5, nano-banana 支持)
     output_quality: int  # 输出质量: 0-100 (SD 3.5 支持)
     magic_prompt_option: str  # ideogram 专用: "Auto", "On", "Off"
+    resolution: str  # nano-banana-pro 专用: "1K", "2K", "4K"
+    safety_filter_level: str  # nano-banana-pro 专用: "block_low_and_above", "block_medium_and_above", "block_only_high"
+    image_input: list  # nano-banana 系列: 输入图像列表（用于图像编辑和融合）

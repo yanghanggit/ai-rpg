@@ -32,6 +32,12 @@ class ReplicateConfig:
             "flux-schnell": {
                 "version": "black-forest-labs/flux-schnell",
             },  # 1-4步极速生成，Apache 2.0开源，成本极低($0.003/张)
+            "nano-banana": {
+                "version": "google/nano-banana",
+            },  # Google Gemini 2.5 图像生成和编辑模型，$0.039/张
+            "nano-banana-pro": {
+                "version": "google/nano-banana-pro",
+            },  # Google Gemini 3 Pro 图像生成，支持4K，$0.15-0.30/张
         }
 
     def get_model_version(self, model_name: Optional[str] = None) -> str:

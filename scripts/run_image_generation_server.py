@@ -22,7 +22,7 @@ from loguru import logger
 from ai_rpg.replicate import (
     replicate_config,
     DEFAULT_OUTPUT_DIR,
-    ImageGenerationAndDownloadTask,
+    ReplicateImageTask,
     run_concurrent_tasks,
     ReplicateImageInput,
 )
@@ -157,7 +157,7 @@ async def generate_image(payload: GenerateImagesRequest) -> GenerateImagesRespon
         logger.info(f"🎨 开始生成图片，配置数量: {len(payload.configs)}")
 
         # 准备任务列表
-        tasks: List[ImageGenerationAndDownloadTask] = []
+        tasks: List[ReplicateImageTask] = []
         task_metadata: Dict[str, Dict[str, str]] = (
             {}
         )  # 文件路径 -> {prompt, model} 的映射
@@ -221,8 +221,8 @@ async def generate_image(payload: GenerateImagesRequest) -> GenerateImagesRespon
                 "model": model_name,
             }
 
-            # 5. 创建任务（使用 ImageGenerationAndDownloadTask）
-            task = ImageGenerationAndDownloadTask(
+            # 5. 创建任务（使用 ReplicateImageTask）
+            task = ReplicateImageTask(
                 model_version=model_version,
                 model_input=dict(model_input),  # 转为普通字典
                 output_path=output_path,

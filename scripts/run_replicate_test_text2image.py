@@ -26,7 +26,7 @@ from ai_rpg.replicate import (
     test_replicate_api_connection,
     replicate_config,
     run_concurrent_tasks,
-    ImageGenerationAndDownloadTask,
+    ReplicateImageTask,
     ReplicateImageInput,
     DEFAULT_OUTPUT_DIR,
 )
@@ -76,7 +76,7 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
 
             # 创建任务
             tasks.append(
-                ImageGenerationAndDownloadTask(
+                ReplicateImageTask(
                     model_version=model_version,
                     model_input=dict(model_input),
                     output_path=output_path,
@@ -271,7 +271,7 @@ async def _async_main(
         print(f"⚙️  参数: {width}x{height}, {steps} 步")
 
         # 生成并下载图片
-        task = ImageGenerationAndDownloadTask(
+        task = ReplicateImageTask(
             model_version=model_version,
             model_input=dict(model_input),
             output_path=output_path,

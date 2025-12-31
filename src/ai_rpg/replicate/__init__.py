@@ -15,7 +15,7 @@ from .image_tools import (
     # 任务类
     ImageGenerationSubTask,
     ImageDownloadSubTask,
-    ImageGenerationAndDownloadTask,
+    ReplicateImageTask,
 )
 from .types import ReplicateImageInput
 
@@ -27,7 +27,7 @@ __all__ = [
     # 任务类
     "ImageGenerationSubTask",
     "ImageDownloadSubTask",
-    "ImageGenerationAndDownloadTask",
+    "ReplicateImageTask",
     "ReplicateImageInput",
     "replicate_config",
     "DEFAULT_OUTPUT_DIR",

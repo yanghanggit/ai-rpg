@@ -91,8 +91,17 @@ class ImageDownloadSubTask(BaseModel):
             raise
 
 
-class ImageGenerationAndDownloadTask(BaseModel):
-    """图像生成和下载任务（包含生成+下载两个子任务）"""
+class ReplicateImageTask(BaseModel):
+    """
+    Replicate 图像处理任务
+
+    通用任务类，支持：
+    - 图像生成 (text-to-image)
+    - 图像编辑 (image-to-image)
+    - 其他 Replicate 图像 API
+
+    执行流程：调用 API → 下载结果
+    """
 
     model_version: str
     model_input: Dict[str, Any]
@@ -126,13 +135,13 @@ class ImageGenerationAndDownloadTask(BaseModel):
 
 
 async def run_concurrent_tasks(
-    tasks: List[ImageGenerationAndDownloadTask],
+    tasks: List[ReplicateImageTask],
 ) -> List[str]:
     """
     并发执行多个图像生成和下载任务
 
     Args:
-        tasks: 任务列表 (ImageGenerationAndDownloadTask)
+        tasks: 任务列表 (ReplicateImageTask)
 
     Returns:
         保存的文件路径列表

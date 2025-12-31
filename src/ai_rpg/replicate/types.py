@@ -4,7 +4,7 @@ Replicate 模块类型定义
 包含 Replicate API 相关的类型定义
 """
 
-from typing import TypedDict
+from typing import Any, TypedDict, List
 
 
 class ReplicateImageInput(TypedDict, total=False):
@@ -44,4 +44,4 @@ class ReplicateImageInput(TypedDict, total=False):
     magic_prompt_option: str  # ideogram 专用: "Auto", "On", "Off"
     resolution: str  # nano-banana-pro 专用: "1K", "2K", "4K"
     safety_filter_level: str  # nano-banana-pro 专用: "block_low_and_above", "block_medium_and_above", "block_only_high"
-    image_input: list  # nano-banana 系列: 输入图像列表（用于图像编辑和融合）
+    image_input: List[Any]  # nano-banana 系列: 输入图像列表（用于图像编辑和融合）

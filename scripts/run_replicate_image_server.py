@@ -26,6 +26,7 @@ from ai_rpg.replicate import (
 )
 from ai_rpg.configuration import server_configuration
 from ai_rpg.models.image_api import (
+    ImageRootResponse,
     ImageGenerationRequest,
     GeneratedImage,
     ImageGenerationResponse,
@@ -58,19 +59,19 @@ app.mount("/images", StaticFiles(directory=str(DEFAULT_OUTPUT_DIR)), name="image
 
 ##################################################################################################################
 @app.get("/")
-async def root() -> Dict[str, Any]:
+async def root() -> ImageRootResponse:
     """根路径，返回服务信息"""
-    return {
-        "message": "图片生成服务",
-        "version": "1.0.0",
-        "endpoints": {
+    return ImageRootResponse(
+        message="图片生成服务",
+        version="1.0.0",
+        endpoints={
             "generate": "/api/generate/v1",
             "images_list": "/api/images/list/v1",
             "static_images": "/images/{filename}",
             "docs": "/docs",
         },
-        "available_models": list(replicate_config.get_available_models().keys()),
-    }
+        available_models=list(replicate_config.get_available_models().keys()),
+    )
 
 
 ##################################################################################################################

@@ -33,7 +33,7 @@ from ai_rpg.configuration import server_configuration
 
 
 # ############################################################################################################
-class SingleImageGenerationConfig(BaseModel):
+class ImageGenerationConfig(BaseModel):
     """单张图片生成配置 - 对应一个完整的生成任务"""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -49,9 +49,6 @@ class SingleImageGenerationConfig(BaseModel):
     # 通用参数
     negative_prompt: str = Field(
         default="worst quality, low quality, blurry", description="负向提示词"
-    )
-    num_outputs: int = Field(
-        default=1, ge=1, le=4, description="每个提示词生成的图片数量"
     )
     num_inference_steps: int = Field(default=4, ge=1, le=50, description="推理步数")
     guidance_scale: float = Field(default=7.5, ge=1.0, le=20.0, description="引导比例")
@@ -72,13 +69,13 @@ class SingleImageGenerationConfig(BaseModel):
 
 
 ############################################################################################################
-class GenerateImagesRequest(BaseModel):
+class ImageGenerationRequest(BaseModel):
     """图片生成请求模型 - 支持单张或批量生成（每个配置独立）"""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # 多个独立的生成配置
-    configs: List[SingleImageGenerationConfig] = Field(
+    configs: List[ImageGenerationConfig] = Field(
         ..., description="图片生成配置列表，每个配置独立生成", min_length=1
     )
 
@@ -95,7 +92,7 @@ class GeneratedImage(BaseModel):
 
 
 ############################################################################################################
-class GenerateImagesResponse(BaseModel):
+class ImageGenerationResponse(BaseModel):
     """图片生成响应模型 - 支持单张或批量响应"""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -148,8 +145,8 @@ async def root() -> Dict[str, Any]:
 
 
 ##################################################################################################################
-@app.post("/api/generate/v1", response_model=GenerateImagesResponse)
-async def generate_image(payload: GenerateImagesRequest) -> GenerateImagesResponse:
+@app.post("/api/generate/v1", response_model=ImageGenerationResponse)
+async def generate_image(payload: ImageGenerationRequest) -> ImageGenerationResponse:
     """生成图片的API端点 - 支持单张或批量"""
     start_time = time.time()
 
@@ -257,7 +254,7 @@ async def generate_image(payload: GenerateImagesRequest) -> GenerateImagesRespon
             f"✅ 图片生成完成! 总耗时: {elapsed_time:.2f}秒, 平均: {elapsed_time/len(images):.2f}秒/张"
         )
 
-        return GenerateImagesResponse(
+        return ImageGenerationResponse(
             images=images,
             elapsed_time=elapsed_time,
         )

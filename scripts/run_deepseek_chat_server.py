@@ -96,9 +96,9 @@ async def health_check() -> Dict[str, Any]:
         "version": "1.0.0",
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "available_endpoints": [
-            "GET /",
-            "POST /api/chat/v1/",
+        "endpoints": [
+            "/",
+            "/api/chat/v1/",
         ],
         "description": "基于DeepSeek的聊天服务器正在正常运行",
     }

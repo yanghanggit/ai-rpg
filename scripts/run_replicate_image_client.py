@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
 """
 图片生成服务客户端
-用于测试和调用 run_image_generation_server.py 提供的 FastAPI 服务
+用于测试和调用 run_replicate_image_server.py 提供的 FastAPI 服务
 
 使用示例:
     # 基础使用
-    python scripts/run_image_generation_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} "a beautiful cat"
+    python scripts/run_replicate_image_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} "a beautiful cat"
 
     # 批量生成（多个独立配置）
-    python scripts/run_image_generation_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} "cat" "dog" "bird"
+    python scripts/run_replicate_image_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} "cat" "dog" "bird"
 
     # 指定参数
-    python scripts/run_image_generation_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} "cat" --width 512 --height 512
+    python scripts/run_replicate_image_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} "cat" --width 512 --height 512
 
     # 运行演示
-    python scripts/run_image_generation_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} --demo
+    python scripts/run_replicate_image_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} --demo
 
     # 列出已生成的图片
-    python scripts/run_image_generation_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} --list
+    python scripts/run_replicate_image_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} --list
 
     # 测试服务器连接
-    python scripts/run_image_generation_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} --test
+    python scripts/run_replicate_image_client.py -s http://{LOCAL_NETWORK_IP}:{PORT} --test
 """
 
 import asyncio
@@ -42,10 +42,10 @@ from ai_rpg.configuration import server_configuration
 from ai_rpg.replicate import replicate_config
 
 # 局域网地址配置（根据实际情况修改）
-LOCAL_NETWORK_IP: Final[str] = "192.168.192.59"
+LOCAL_NETWORK_IP: Final[str] = "192.168.2.134"
 
 
-class ImageGenerationClient:
+class ReplicateImageClient:
     """图片生成服务客户端"""
 
     def __init__(self, base_url: str, timeout: float) -> None:
@@ -144,7 +144,7 @@ class ImageGenerationClient:
             return None
 
 
-async def run_demo(client: ImageGenerationClient) -> None:
+async def run_demo(client: ReplicateImageClient) -> None:
     """运行演示 - 测试多个独立配置的批量生成"""
     logger.info("=" * 60)
     logger.info("🚀 图片生成客户端演示")
@@ -161,14 +161,14 @@ async def run_demo(client: ImageGenerationClient) -> None:
         },
         {
             "prompt": "ocean waves crashing on a sandy beach",
-            "model": "flux-schnell",
+            "model": "nano-banana",
             "width": 1024,
             "height": 768,
             "num_inference_steps": 4,
         },
         {
             "prompt": "a mystical forest path in autumn",
-            "model": "flux-schnell",
+            "model": "nano-banana",
             "width": 768,
             "height": 1024,
             "num_inference_steps": 4,
@@ -260,7 +260,7 @@ async def _async_main(
     try:
         # 初始化客户端
         assert server is not None, "服务器地址不能为空"
-        client = ImageGenerationClient(base_url=server, timeout=300.0)
+        client = ReplicateImageClient(base_url=server, timeout=300.0)
 
         # 测试连接
         if test:
@@ -283,22 +283,22 @@ async def _async_main(
             logger.info("🎨 图片生成客户端")
             logger.info("\n快速开始:")
             logger.info(
-                f'  python run_image_generation_client.py -s {server_example} "a cat"'
+                f'  python run_replicate_image_client.py -s {server_example} "a cat"'
             )
             logger.info(
-                f'  python run_image_generation_client.py -s {server_example} "cat" "dog"'
+                f'  python run_replicate_image_client.py -s {server_example} "cat" "dog"'
             )
             logger.info(
-                f"  python run_image_generation_client.py -s {server_example} --demo"
+                f"  python run_replicate_image_client.py -s {server_example} --demo"
             )
             logger.info(
-                f"  python run_image_generation_client.py -s {server_example} --list"
+                f"  python run_replicate_image_client.py -s {server_example} --list"
             )
             logger.info(
-                f"  python run_image_generation_client.py -s {server_example} --test"
+                f"  python run_replicate_image_client.py -s {server_example} --test"
             )
             logger.info("\n详细帮助:")
-            logger.info("  python run_image_generation_client.py --help")
+            logger.info("  python run_replicate_image_client.py --help")
             return
 
         # 构建配置列表

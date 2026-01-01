@@ -243,7 +243,7 @@ def _generate_pm2_ecosystem_config(
     {{
       name: 'image-generation-server-{server_config.image_generation_server_port}',
       script: 'uvicorn',
-      args: 'scripts.run_image_generation_server:app --host 0.0.0.0 --port {server_config.image_generation_server_port}',
+      args: 'scripts.run_replicate_image_server:app --host 0.0.0.0 --port {server_config.image_generation_server_port}',
       interpreter: 'python',
       cwd: process.cwd(),
       env: {{

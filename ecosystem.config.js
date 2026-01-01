@@ -24,7 +24,7 @@ module.exports = {
     {
       name: 'image-generation-server-8300',
       script: 'uvicorn',
-      args: 'scripts.run_image_generation_server:app --host 0.0.0.0 --port 8300',
+      args: 'scripts.run_replicate_image_server:app --host 0.0.0.0 --port 8300',
       interpreter: 'python',
       cwd: process.cwd(),
       env: {

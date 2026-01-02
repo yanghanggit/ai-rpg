@@ -10,3 +10,4 @@ from .serialization import *
 from .task import *
 from .world import *
 from .werewolf_game import *
+from .image_api import *

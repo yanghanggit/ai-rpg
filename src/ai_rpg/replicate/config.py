@@ -10,6 +10,8 @@ from typing import Dict, Final, Optional
 
 # 默认输出目录
 DEFAULT_OUTPUT_DIR: Final[Path] = Path("generated_images")
+DEFAULT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+assert DEFAULT_OUTPUT_DIR.exists(), "无法创建默认输出目录"
 
 
 # Replicate 配置类
@@ -19,7 +21,7 @@ class ReplicateConfig:
     def __init__(self) -> None:
         """初始化配置"""
         # 默认使用的图像生成模型
-        self.default_image_model: str = "flux-schnell"
+        self.default_image_model: str = "nano-banana"
 
         # 模型版本映射
         self.image_models: Dict[str, Dict[str, str]] = {

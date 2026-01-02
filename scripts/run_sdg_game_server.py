@@ -15,9 +15,10 @@ from loguru import logger
 from ai_rpg.configuration import (
     server_configuration,
 )
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from ai_rpg.services.root import root_api_router
+from ai_rpg.models import RootResponse
+from datetime import datetime
 from ai_rpg.chat_services.client import ChatClient
 from ai_rpg.services.werewolf_game import werewolf_game_api_router
 from ai_rpg.services.player_session import player_session_api_router
@@ -80,6 +81,60 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(lifespan=lifespan)
 
+
+@app.get(path="/", response_model=RootResponse)
+async def root(request: Request) -> RootResponse:
+    """API 根路由接口
+
+    提供 API 服务的基本信息和所有可用端点的列表。
+    客户端可以通过此接口发现和访问所有可用的 API 服务。
+
+    Args:
+        request: FastAPI 请求对象，用于日志记录请求来源
+
+    Returns:
+        RootResponse: API 根响应对象，包含以下信息：
+            - service: 服务名称
+            - description: 服务描述
+            - status: 服务健康状态
+            - timestamp: 当前时间戳
+            - version: API 版本号
+            - endpoints: 所有可用的 API 端点（相对路径格式，如 /api/werewolf/start/v1/）
+
+    Note:
+        - 端点以相对路径形式返回，客户端需根据实际服务地址组合完整 URL
+        - 返回的端点列表包括狼人杀游戏和通用服务两大类
+        - 此接口通常用于 API 文档生成和客户端服务发现
+    """
+    base_url = str(request.base_url)
+    logger.info(f"获取API路由 RootResponse: {base_url}")
+
+    return RootResponse(
+        service="AI SDG Game Server",
+        description="AI SDG Game Server API Root Endpoint",
+        status="healthy",
+        timestamp=datetime.now().isoformat(),
+        version="0.0.1",
+        endpoints={
+            # 狼人杀专用
+            "werewolf_game_start": "/api/werewolf/start/v1/",
+            "werewolf_gameplay": "/api/werewolf/gameplay/v1/",
+            "werewolf_game_state": "/api/werewolf/state/v1/",
+            # 通用的服务
+            "session_messages": "/api/session_messages/v1/",
+            "entity_details": "/api/entities/v1/",
+            "stages_state": "/api/stages/v1/",
+        },
+        api_docs={
+            # 需要路径参数的端点完整路径说明
+            "session_messages": "/api/session_messages/v1/{user_name}/{game_name}/since?last_sequence_id=0",
+            "entity_details": "/api/entities/v1/{user_name}/{game_name}/details?entities=entity1&entities=entity2",
+            "stages_state": "/api/stages/v1/{user_name}/{game_name}/state",
+            "werewolf_game_state": "/api/werewolf/state/v1/{user_name}/{game_name}/state",
+        },
+    )
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -89,7 +144,6 @@ app.add_middleware(
 )
 
 # 公共的
-app.include_router(router=root_api_router)
 app.include_router(router=player_session_api_router)
 app.include_router(router=entity_details_api_router)
 app.include_router(router=stages_state_api_router)

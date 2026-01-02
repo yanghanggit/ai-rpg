@@ -13,7 +13,7 @@ from loguru import logger
 from ai_rpg.configuration import (
     server_configuration,
 )
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from ai_rpg.services.dungeon_gameplay import (
     dungeon_gameplay_api_router,
@@ -21,7 +21,8 @@ from ai_rpg.services.dungeon_gameplay import (
 from ai_rpg.services.home_gameplay import home_gameplay_api_router
 from ai_rpg.services.login import login_api_router
 from ai_rpg.services.start import start_api_router
-from ai_rpg.services.root import root_api_router
+from ai_rpg.models import RootResponse
+from datetime import datetime
 from ai_rpg.services.entity_details import (
     entity_details_api_router,
 )
@@ -86,6 +87,69 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(lifespan=lifespan)
 
+
+@app.get(path="/", response_model=RootResponse)
+async def root(request: Request) -> RootResponse:
+    """API 根路由接口
+
+    提供 API 服务的基本信息和所有可用端点的列表。
+    客户端可以通过此接口发现和访问所有可用的 API 服务。
+
+    Args:
+        request: FastAPI 请求对象，用于日志记录请求来源
+
+    Returns:
+        RootResponse: API 根响应对象，包含以下信息：
+            - service: 服务名称
+            - description: 服务描述
+            - status: 服务健康状态
+            - timestamp: 当前时间戳
+            - version: API 版本号
+            - endpoints: 所有可用的 API 端点（相对路径格式，如 /api/login/v1/）
+
+    Note:
+        - 端点以相对路径形式返回，客户端需根据实际服务地址组合完整 URL
+        - 返回的端点列表包括 RPG 游戏、狼人杀游戏和通用服务三大类
+        - 此接口通常用于 API 文档生成和客户端服务发现
+    """
+    base_url = str(request.base_url)
+    logger.info(f"获取API路由 RootResponse: {base_url}")
+
+    return RootResponse(
+        service="AI RPG TCG Game Server",
+        description="AI RPG TCG Game Server API Root Endpoint",
+        status="healthy",
+        timestamp=datetime.now().isoformat(),
+        version="0.0.1",
+        endpoints={
+            # rpg 专用
+            "login": "/api/login/v1/",
+            "logout": "/api/logout/v1/",
+            "start": "/api/start/v1/",
+            "home_gameplay": "/api/home/gameplay/v1/",
+            "home_trans_dungeon": "/api/home/trans_dungeon/v1/",
+            "dungeon_gameplay": "/api/dungeon/gameplay/v1/",
+            "dungeon_combat_play_cards": "/api/dungeon/combat/play_cards/v1/",
+            "dungeon_trans_home": "/api/dungeon/trans_home/v1/",
+            "dungeon_state": "/api/dungeons/v1/",
+            # 通用的服务。
+            "session_messages": "/api/session_messages/v1/",
+            "entity_details": "/api/entities/v1/",
+            "stages_state": "/api/stages/v1/",
+            "tasks_trigger": "/api/tasks/v1/trigger",
+            "tasks_status": "/api/tasks/v1/status",
+        },
+        api_docs={
+            # 需要路径参数的端点完整路径说明
+            "session_messages": "/api/session_messages/v1/{user_name}/{game_name}/since?last_sequence_id=0",
+            "entity_details": "/api/entities/v1/{user_name}/{game_name}/details?entities=entity1&entities=entity2",
+            "stages_state": "/api/stages/v1/{user_name}/{game_name}/state",
+            "dungeon_state": "/api/dungeons/v1/{user_name}/{game_name}/state",
+            "tasks_status": "/api/tasks/v1/status?task_ids=task_id1&task_ids=task_id2",
+        },
+    )
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -95,7 +159,6 @@ app.add_middleware(
 )
 
 # 公共的
-app.include_router(router=root_api_router)
 app.include_router(router=player_session_api_router)
 app.include_router(router=entity_details_api_router)
 app.include_router(router=stages_state_api_router)

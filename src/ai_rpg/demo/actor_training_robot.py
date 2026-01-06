@@ -35,12 +35,8 @@ def create_actor_training_robot() -> Actor:
     )
     training_robot.skills = [
         Skill(
-            name="稻草挥打",
-            description="用身上的武器进行挥打，造成基础物理伤害。攻击后需要复位，动作缓慢，降低防御力。",
-        ),
-        Skill(
-            name="稻草防御",
-            description="用身上的护甲进行防御，减少所受物理伤害。防御后需要调整，动作缓慢，降低攻击力。",
+            name="使用武器",
+            description="使用手中的武器或可触及的装备进行任意用途的行动，如攻击、防御、破坏、支撑、投掷等。使用方式和目标由实际场景决定。代价：如果攻击就会降低防御。",
         ),
     ]
 

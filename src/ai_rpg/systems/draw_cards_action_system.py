@@ -24,7 +24,8 @@ from ..models import (
     DeathComponent,
 )
 from ..utils import extract_json_from_code_block
-from ..demo.test_skills_pool import TEST_SKILLS_POOL
+
+# from ..demo.test_skills_pool import TEST_SKILLS_POOL
 from langchain_core.messages import AIMessage
 
 
@@ -78,22 +79,15 @@ def _generate_first_round_prompt(
 
 ## 3. 生成内容规则
 
-**重要约束：所有攻击必定命中目标，游戏中不存在影响攻击是否命中或被闪避的任何机制，禁止生成与此相关的卡牌代价和状态效果(status_effects)**
-
 **卡牌(cards)**：你本回合可执行的行动
-- 设计要求：
-  * 优先组合2-3个技能创造复合行动
-  * 技能组合产生协同效果但代价叠加
-  * 单一技能仅用于简单直接行动
+- 设计要求：技能池内每个技能最多使用一次，可组合多个技能创造行动（不限制技能个数），每个技能的代价均会叠加
 - 卡牌命名：基于技能效果创造新颖行动名称(禁止暴露技能名)
 - 卡牌描述：行动方式、战斗目的、使用代价
-- 禁止生成与命中，精准度或闪避相关的战斗目的和使用代价
 
 **状态效果(status_effects)**：你当前回合新增的自身状态
 - 战斗开局产生的初始状态（战斗准备、环境影响、心理状态、装备效果、过往经验等）
 - 可同时存在多个状态效果
 - 不要重复生成已存在的状态效果
-- 禁止生成与命中，精准度或闪避相关的状态效果
 
 ## 4. 输出格式(JSON)
 
@@ -166,24 +160,17 @@ def _generate_subsequent_round_prompt(
 
 ## 3. 生成内容规则
 
-**重要约束：所有攻击必定命中目标，游戏中不存在影响攻击是否命中或被闪避的任何机制，禁止生成与此相关的卡牌代价和状态效果(status_effects)**
-
 **update_hp**：你的当前生命值(从最近"计算过程"的角色状态中提取当前HP数值)
 
 **卡牌(cards)**：你本回合可执行的行动
-- 设计要求：
-  * 优先组合2-3个技能创造复合行动
-  * 技能组合产生协同效果但代价叠加
-  * 单一技能仅用于简单直接行动
+- 设计要求：技能池内每个技能最多使用一次，可组合多个技能创造行动（不限制技能个数），每个技能的代价均会叠加
 - 卡牌命名：基于技能效果创造新颖行动名称(禁止暴露技能名)
 - 卡牌描述：行动方式、战斗目的、使用代价
-- 禁止生成与命中，精准度或闪避相关的战斗目的和使用代价
 
 **状态效果(status_effects)**：你当前回合新增的自身状态
 - 上回合受到的卡牌效果和使用代价产生的状态
 - 可同时存在多个状态效果
 - 不要重复生成已存在的状态效果
-- 禁止生成与命中，精准度或闪避相关的状态效果
 
 **特殊情况**：如果你已死亡(HP≤0)或认为战斗结束，则cards和status_effects填空数组，但update_hp仍需填写
 
@@ -462,7 +449,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
         assert skill_book_comp is not None, "Entity must have SkillBookComponent"
         if len(skill_book_comp.skills) == 0:
             logger.warning(f"entity {entity.name} has no skills in SkillBookComponent")
-            return TEST_SKILLS_POOL
+            assert False, "Using test skills pool for entity with no skills."
+            # return TEST_SKILLS_POOL
 
         return skill_book_comp.skills.copy()
 
@@ -495,9 +483,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
         for entity in actor_entities:
 
             # 从技能池随机抽取 card_creation_count * 3 个技能作为子池
-            skill_pool = self._get_available_skills(entity)
-            skill_pool_size = min(self._card_creation_count * 2, len(skill_pool))
-            selected_skills = random.sample(skill_pool, skill_pool_size)
+            available_skills = self._get_available_skills(entity)
+            # skill_pool_size = min(self._card_creation_count * 2, len(skill_pool))
+            # selected_skills = random.sample(skill_pool, skill_pool_size)
 
             # 获取当前回合数
             current_round_number = len(
@@ -511,7 +499,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     actor_name=entity.name,
                     card_creation_count=self._card_creation_count,
                     action_order=last_round.action_order,
-                    selected_skills=selected_skills,
+                    selected_skills=available_skills,
                     current_round_number=current_round_number,
                 )
             else:
@@ -520,7 +508,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     actor_name=entity.name,
                     card_creation_count=self._card_creation_count,
                     action_order=last_round.action_order,
-                    selected_skills=selected_skills,
+                    selected_skills=available_skills,
                     current_round_number=current_round_number,
                 )
 

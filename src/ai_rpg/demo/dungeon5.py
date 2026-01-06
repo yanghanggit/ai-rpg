@@ -35,7 +35,7 @@ def create_stage_cave5() -> Stage:
 def create_demo_dungeon5() -> Dungeon:
 
     actor_training_robot = create_actor_training_robot()
-    actor_training_robot.character_stats.hp = 10
+    actor_training_robot.character_stats.hp = 1
     actor_training_robot.kick_off_message = (
         f"""# 游戏启动！告诉我你是谁？请说出你的全名。回答简短(<100字)。"""
     )

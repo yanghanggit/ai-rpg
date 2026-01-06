@@ -74,63 +74,16 @@ class StageType(StrEnum):
 ###############################################################################################################################################
 @final
 class CharacterStats(BaseModel):
-    experience: int = 0
-    initial_level: int = 1
+    """简化的角色属性统计，只包含核心战斗属性"""
+
+    # 当前生命值
     hp: int = 0
-    # 基础属性
-    base_max_hp: int = 50
-    base_strength: int = 5
-    base_dexterity: int = 6
-    base_wisdom: int = 5
-    # 基础战斗属性
-    base_physical_attack: int = 8
-    base_physical_defense: int = 5
-    base_magic_attack: int = 7
-    # base_magic_defense: int = 6
-    # 成长系数
-    strength_per_level: int = 2
-    dexterity_per_level: int = 1
-    wisdom_per_level: int = 1
-
-    @property
-    def max_hp(self) -> int:
-        return self.base_max_hp + (self.strength * 10)
-
-    @property
-    def progression_level(self) -> int:
-        return self.experience // 1000
-
-    @property
-    def level(self) -> int:
-        return self.initial_level + self.progression_level
-
-    @property
-    def strength(self) -> int:
-        return self.base_strength + (self.strength_per_level * self.progression_level)
-
-    @property
-    def dexterity(self) -> int:
-        return self.base_dexterity + (self.dexterity_per_level * self.progression_level)
-
-    @property
-    def wisdom(self) -> int:
-        return self.base_wisdom + (self.wisdom_per_level * self.progression_level)
-
-    @property
-    def physical_attack(self) -> int:
-        return self.base_physical_attack + (self.strength * 2)
-
-    @property
-    def physical_defense(self) -> int:
-        return self.base_physical_defense + self.strength
-
-    @property
-    def magic_attack(self) -> int:
-        return self.base_magic_attack + (self.wisdom * 2)
-
-    # @property
-    # def magic_defense(self) -> int:
-    #     return self.base_magic_defense + self.wisdom
+    # 最大生命值
+    max_hp: int = 50
+    # 攻击力
+    attack: int = 10
+    # 防御力
+    defense: int = 5
 
 
 ###############################################################################################################################################

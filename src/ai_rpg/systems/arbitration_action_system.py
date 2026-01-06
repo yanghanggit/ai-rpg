@@ -72,7 +72,6 @@ def _generate_actor_card_details(
             target_display = f"[{', '.join(param.targets)}]"
 
         detail = f"""【{param.actor}】
-等级:{param.combat_stats_component.stats.level}
 卡牌:{param.card.name} → {target_display}
 效果:{param.card.description}
 属性:{param.combat_stats_component.stats_prompt}
@@ -99,98 +98,6 @@ def _generate_combat_arbitration_broadcast(combat_log: str, narrative: str) -> s
 {combat_log}
 
 **你的当前HP**: 请从上述日志中提取你的最终HP数值(格式: 角色.HP=X/Y)并记录。"""
-
-
-#######################################################################################################################################
-def _generate_combat_arbitration_prompt(
-    combat_actions_details: List[CombatActionInfo],
-    current_round_number: int,
-) -> str:
-
-    # 生成角色&卡牌详情
-    details_prompt = _generate_actor_card_details(combat_actions_details)
-
-    return f"""# 指令！这是第 {current_round_number} 回合，战斗回合仲裁
-
-你是战斗仲裁者，需根据输入信息完成本回合战斗结算与演出。
-
-## 行动顺序（从左至右依次执行）
-
-{" → ".join([param.actor for param in combat_actions_details])}
-
-## 参战信息
-
-{"\n\n".join(details_prompt)}
-
-## 仲裁任务
-
-**战斗计算**：严格遵循系统提示词中的战斗公式进行所有伤害和治疗计算
-
-**环境动态与互动**
-- 场景是动态系统：角色行动→环境变化→影响后续战斗
-- 卡牌执行可利用或影响环境物体，遵循世界观逻辑
-- 环境物体使用限制：先出手角色优先
-
-### 输出要求
-
-```json
-{{
-  "combat_log": "角色使用卡牌 → 环境互动(含数值) → 伤害计算 → 卡牌代价 → 所有角色最终HP → 环境更新",
-  "narrative": "将战斗过程故事化：角色行动→环境响应→影响结果→更新后的环境状态，禁用数字，使用感官描写，紧凑文本"
-}}
-```
-
-**combat_log必填项：** 完整流程(卡牌→环境→计算→代价) → 最终HP(角色.HP=X/Y) → 所有效果明确数值&时长 → 精简紧凑文本 → 禁用换行/空行
-
-**严格输出合规JSON**
-"""
-
-
-#######################################################################################################################################
-def _generate_combat_arbitration_prompt2(
-    combat_actions_details: List[CombatActionInfo],
-    current_round_number: int,
-) -> str:
-
-    # 生成角色&卡牌详情
-    details_prompt = _generate_actor_card_details(combat_actions_details)
-
-    return f"""# 指令！这是第 {current_round_number} 回合，战斗回合仲裁
-
-你是战斗仲裁者，需根据输入信息完成本回合战斗结算与演出。
-
-## 行动顺序（从左至右依次执行）
-
-{" → ".join([param.actor for param in combat_actions_details])}
-
-## 参战信息
-
-{"\n\n".join(details_prompt)}
-
-## 仲裁任务
-
-**战斗计算**：严格遵循提示词中的战斗公式进行所有伤害和治疗计算
-
-**环境动态与互动**
-- 场景是动态系统：角色行动→环境变化→影响后续战斗
-- 卡牌执行可利用或影响环境物体，遵循世界观逻辑
-- 环境物体使用限制：先出手角色优先
-
-### 输出要求
-
-```json
-{{
-  "combat_log": "角色使用卡牌 → 环境互动(含数值) → 伤害计算 → 卡牌代价 → 所有角色最终HP → 环境更新",
-  "narrative": "将战斗过程故事化简短概括：角色行动→环境响应→影响结果→更新后的环境状态，禁用数字，使用感官描写，精简紧凑文本"
-}}
-```
-
-**combat_log必填项：** 完整流程(卡牌→环境→计算→代价) → 最终HP(角色.HP=X/Y) → 所有效果明确数值&时长 → 精简紧凑文本 → 禁用换行/空行
-**combat_log压缩优化：** 角色名简写(仅保留最后一段) → 删除所有动作描写 → 卡牌仅写所使用的卡牌名 → 环境互动仅写[物体名]+[效果] → 命中判定删除原因 → 计算公式直接写不加标签 → 状态仅使用[状态名+效果(轮数)] → 代价格式与状态统一 → 删除"→"外所有连接词和修饰词
-**narrative压缩优化：** 每个角色行动减少细节描写 → 环境响应减少修饰词 → 结果仅写核心内容
-
-**严格输出合规JSON**
-"""
 
 
 #######################################################################################################################################

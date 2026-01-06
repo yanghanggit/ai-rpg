@@ -19,7 +19,7 @@ def create_actor_player() -> Actor:
         name="角色.公会执行官.D",
         character_sheet_name="player",
         kick_off_message="",
-        character_stats=CharacterStats(base_max_hp=100),
+        character_stats=CharacterStats(),
         type=ActorType.ALLY.value,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         actor_profile="""你是无意间从现实世界的电脑游戏中穿越到这个世界的玩家D，知道这里不是真实的世界，而是一个由AI生成的奇幻冒险环境。

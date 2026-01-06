@@ -23,7 +23,7 @@ def create_actor_orc() -> Actor:
         name="角色.怪物.兽人-库洛斯",
         character_sheet_name="orc",
         kick_off_message="",
-        character_stats=CharacterStats(base_dexterity=1),
+        character_stats=CharacterStats(),
         type=ActorType.ENEMY,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         actor_profile="""你是兽人部族中的一员，出生于荒野之地。你从小就展现出强大的战斗力，长大后夺取了自己的小型战团，带领部下四处征战与掠夺。在追求力量与战利品的道路上，你逐渐形成了狂热的好战性格。但自从进入了新奥拉西斯，你开始接触到其他种族的文化与力量，逐渐意识到单靠蛮力无法在这个复杂的世界中生存下去，因此你学习了魔法和手工艺。""",

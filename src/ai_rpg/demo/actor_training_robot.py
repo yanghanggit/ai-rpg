@@ -24,7 +24,7 @@ def create_actor_training_robot() -> Actor:
         name="角色.怪物.训练稻草人001号",
         character_sheet_name="training_robot",
         kick_off_message="",
-        character_stats=CharacterStats(base_dexterity=1),
+        character_stats=CharacterStats(),
         type=ActorType.ENEMY.value,
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         actor_profile=f"""**历史**: 你是训练场的魔法构造体，由稻草人躯体和金属盔甲加固组成，内部嵌有符文核心维持基本战斗功能。

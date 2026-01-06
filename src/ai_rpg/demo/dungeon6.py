@@ -37,7 +37,7 @@ def create_demo_dungeon6() -> Dungeon:
 
     robot = create_actor_training_robot()
     goblin = create_actor_goblin()
-    robot.character_stats.hp = 10
+    robot.character_stats.hp = 1
     goblin.character_stats.hp = 1
     robot.kick_off_message = (
         f"""# 游戏启动！告诉我你是谁？请说出你的全名。回答简短(<100字)。"""

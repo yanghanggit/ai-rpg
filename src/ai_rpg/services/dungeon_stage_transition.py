@@ -21,6 +21,7 @@ from ..models import (
     AllyComponent,
 )
 from ..entitas import Matcher, Entity
+from ..demo.stage_ally_manor import create_stage_monitoring_house
 
 
 ###################################################################################################################################################################
@@ -268,8 +269,20 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
     assert len(ally_entities) > 0, "没有找到盟友实体"
 
     # 2. 验证并获取家园场景实体
-    home_stage_entities = tcg_game.get_group(Matcher(all_of=[HomeComponent])).entities
+    home_stage_entities = tcg_game.get_group(
+        Matcher(all_of=[HomeComponent])
+    ).entities.copy()
     assert len(home_stage_entities) > 0, "没有找到家园场景实体"
+
+    # TODO 移除监视之屋（玩家专属场景）
+    monitoring_house_name = create_stage_monitoring_house().name
+    stages_to_remove = set()
+    for stage_entity in home_stage_entities:
+        if stage_entity.name == monitoring_house_name:
+            stages_to_remove.add(stage_entity)
+    home_stage_entities -= stages_to_remove
+
+    assert len(home_stage_entities) > 0, "没有找到有效的家园场景实体!"
     home_stage = next(iter(home_stage_entities))
 
     # 3. 生成并发送返回提示消息

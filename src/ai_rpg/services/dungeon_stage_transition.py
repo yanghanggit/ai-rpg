@@ -19,6 +19,7 @@ from ..models import (
     KickOffComponent,
     Combat,
     AllyComponent,
+    PlayerComponent,
 )
 from ..entitas import Matcher, Entity
 from ..demo.stage_ally_manor import create_stage_monitoring_house
@@ -241,25 +242,31 @@ def advance_to_next_stage(tcg_game: TCGGame, dungeon: Dungeon) -> None:
 ###################################################################################################################################################################
 def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
     """
-    完成地下城冒险并返回家园
+    完成地下城冒险并将角色传送回家园
 
-    该函数协调地下城结束流程：传送盟友回家、清理地下城数据、
-    恢复盟友战斗状态。用于地下城冒险结束后的收尾工作。
+    该函数协调地下城结束的完整流程，实现差异化的场景传送策略、
+    彻底清理地下城数据，并重置所有盟友的战斗状态。
 
-    主要操作：
-    1. 验证并获取盟友和家园实体
-    2. 生成返回提示消息
-    3. 执行场景传送到家园
-    4. 清理地下城实体和数据
-    5. 恢复盟友状态（移除死亡、满血、清空效果）
+    主要操作流程：
+    1. 验证并获取盟友实体和家园场景实体
+    2. 分离监视之屋（玩家专属）和普通家园场景
+    3. 差异化传送策略：
+       - 玩家（PlayerComponent）→ 监视之屋
+       - 其他盟友 → 随机选择的普通家园场景
+    4. 清理地下城：销毁所有地下城实体，重置地下城数据为空
+    5. 恢复所有盟友状态：
+       - 移除死亡组件（DeathComponent）
+       - 恢复生命值至满血（max_hp）
+       - 清空所有状态效果（status_effects）
 
     Args:
         tcg_game: TCG游戏实例
 
     Note:
-        - 用于战斗结束后返回家园
+        - 用于地下城冒险结束后的完整收尾工作
         - 调用者: dungeon_trans_home API
-        - 会完全重置地下城状态和盟友战斗状态
+        - 会完全重置地下城状态和所有盟友的战斗状态
+        - 玩家和NPC盟友会被传送到不同的家园场景
     """
     # 导入必要的模型
     from ..models import HomeComponent, DeathComponent, CombatStatsComponent
@@ -274,24 +281,30 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
     ).entities.copy()
     assert len(home_stage_entities) > 0, "没有找到家园场景实体"
 
-    # TODO 移除监视之屋（玩家专属场景）
+    # 3. 拿监视之屋（玩家专属场景）
     monitoring_house_name = create_stage_monitoring_house().name
-    stages_to_remove = set()
-    for stage_entity in home_stage_entities:
-        if stage_entity.name == monitoring_house_name:
-            stages_to_remove.add(stage_entity)
-    home_stage_entities -= stages_to_remove
+    monitoring_house_stage_entity = tcg_game.get_stage_entity(monitoring_house_name)
+    assert monitoring_house_stage_entity is not None, "没有找到监视之屋场景实体"
 
+    home_stage_entities -= {monitoring_house_stage_entity}
     assert len(home_stage_entities) > 0, "没有找到有效的家园场景实体!"
-    home_stage = next(iter(home_stage_entities))
+    random_home_stage = next(iter(home_stage_entities))
 
-    # 3. 生成并发送返回提示消息
-    return_prompt = f"""# 提示！冒险结束，将要返回: {home_stage.name}"""
+    # 4. 生成并发送返回提示消息
     for ally_entity in ally_entities:
-        tcg_game.add_human_message(ally_entity, return_prompt)
 
-    # 4. 执行场景传送到家园
-    tcg_game.stage_transition(ally_entities, home_stage)
+        if ally_entity.has(PlayerComponent):
+            # 执行场景传送到监视之屋, 只有玩家能进入监视之屋
+            tcg_game.add_human_message(
+                ally_entity, f"""# 提示！冒险结束，将要返回: {monitoring_house_name}"""
+            )
+            tcg_game.stage_transition({ally_entity}, monitoring_house_stage_entity)
+        else:
+            # 除了玩家 执行场景传送到家园
+            tcg_game.add_human_message(
+                ally_entity, f"""# 提示！冒险结束，将要返回: {random_home_stage.name}"""
+            )
+            tcg_game.stage_transition({ally_entity}, random_home_stage)
 
     # 5. 清理地下城数据
     tcg_game.destroy_dungeon_entities(tcg_game.world.dungeon)

@@ -42,6 +42,7 @@ from ..models import (
     TransStageEvent,
 )
 from .player_session import PlayerSession
+from ..demo.stage_ally_manor import create_stage_monitoring_house
 
 
 #################################################################################################################################################
@@ -165,6 +166,10 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
 
         ## 第4步，创建stage
         self._create_stage_entities(self.world.blueprint.stages)
+
+        ## 第5步，临时测试, 确认监视之屋场景创建成功，不然后续会出错，先这样。
+        test_name = create_stage_monitoring_house().name
+        assert self.get_stage_entity(test_name) is not None, "test stage_entity is None"
 
         return self
 

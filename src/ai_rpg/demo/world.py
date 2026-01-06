@@ -141,10 +141,10 @@ def create_demo_game_world_blueprint2(game_name: str) -> Blueprint:
     # actor_wizard.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 通过破解裂隙遗迹中的符文机械秘密,找到平息魔网紊乱危机和压制时空裂隙出现的方法。"""
 
     # 创建场景
-    stage_ally_safe_room = create_demo_ally_safe_room()
+    stage_monitoring_house = create_stage_monitoring_house()
 
     # 设置关系和消息
-    stage_ally_safe_room.actors = [actor_warrior]
+    stage_monitoring_house.actors = [actor_warrior]
 
     # 创建世界
     world_blueprint = Blueprint(
@@ -157,7 +157,7 @@ def create_demo_game_world_blueprint2(game_name: str) -> Blueprint:
     )
 
     # 设置英雄营地场景的初始状态
-    world_blueprint.stages = [stage_ally_safe_room]
+    world_blueprint.stages = [stage_monitoring_house]
 
     # 添加世界系统
     world_blueprint.world_systems = []

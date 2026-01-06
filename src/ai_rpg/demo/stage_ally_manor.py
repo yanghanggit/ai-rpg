@@ -43,6 +43,7 @@ def create_demo_ally_dining_room() -> Stage:
     )
 
 
+# TODO: 监视之屋只能玩家进入，其他盟友不能进入
 def create_stage_monitoring_house() -> Stage:
 
     return create_stage(

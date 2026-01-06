@@ -118,8 +118,7 @@ def _generate_first_round_prompt(
 
 **约束规则**：
 - 卡牌数量必须是{card_creation_count}张
-- cards的description禁止出现具体数值，保持抽象描述
-- status_effects的description可以包含具体数值，但不能有百分比数值
+- cards和status_effects的description可以包含具体数值（整数），但都不能有百分率
 - description中禁止出现角色名称
 - 禁用换行/空行，严格输出合规JSON"""
 
@@ -212,8 +211,7 @@ def _generate_subsequent_round_prompt(
 
 **约束规则**：
 - 卡牌数量必须是{card_creation_count}张
-- cards的description禁止出现具体数值，保持抽象描述
-- status_effects的description可以包含具体数值，但不能有百分比数值
+- cards和status_effects的description可以包含具体数值（整数），但都不能有百分率
 - description中禁止出现角色名称
 - 禁用换行/空行，严格输出合规JSON"""
 

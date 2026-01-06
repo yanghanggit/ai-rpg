@@ -152,7 +152,7 @@ def create_demo_game_world_blueprint2(game_name: str) -> Blueprint:
     world_blueprint = Blueprint(
         name=game_name,
         player_actor=actor_warrior.name,  # 玩家角色为战士
-        #player_actor=actor_wizard.name,  # 玩家角色为法师
+        # player_actor=actor_wizard.name,  # 玩家角色为法师
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         stages=[],
         world_systems=[],

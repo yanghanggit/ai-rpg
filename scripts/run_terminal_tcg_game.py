@@ -17,7 +17,9 @@ from ai_rpg.demo import (
     create_actor_player,
     # create_actor_warrior,
     create_demo_dungeon6,
+    create_demo_dungeon5,
     create_demo_game_world_blueprint1,
+    create_demo_game_world_blueprint2,
 )
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import (
@@ -408,7 +410,7 @@ async def _run_game(
     if world_exists is None:
 
         # 获取world_blueprint
-        world_blueprint = create_demo_game_world_blueprint1(game)
+        world_blueprint = create_demo_game_world_blueprint2(game)
         assert world_blueprint is not None, "world blueprint 反序列化失败"
 
         # 如果world不存在，说明是第一次创建游戏
@@ -416,7 +418,7 @@ async def _run_game(
             runtime_index=1000,
             entities_serialization=[],
             agents_context={},
-            dungeon=create_demo_dungeon6(),
+            dungeon=create_demo_dungeon5(),
             blueprint=world_blueprint,
         )
 

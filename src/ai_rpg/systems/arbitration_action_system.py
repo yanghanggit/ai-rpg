@@ -83,10 +83,12 @@ def _generate_actor_card_details(
 
 
 #######################################################################################################################################
-def _generate_combat_arbitration_broadcast(combat_log: str, narrative: str) -> str:
+def _generate_combat_arbitration_broadcast(
+    combat_log: str, narrative: str, current_round_number: int
+) -> str:
     """生成战斗结算广播消息"""
 
-    return f"""# 通知！战斗回合结算
+    return f"""# 通知！第 {current_round_number} 回合结算
 
 ## 战斗演出
 
@@ -122,7 +124,7 @@ def _generate_combat_arbitration_prompt3(
 
 ## 仲裁任务
 
-**战斗计算**：严格遵循游戏机制中的战斗公式进行所有战斗时的计算
+**战斗计算**：严格按照 System 提示词的 **## 战斗机制** 进行计算
 
 **环境动态与互动**
 - 场景是动态系统：角色行动→环境变化→影响后续战斗
@@ -316,12 +318,19 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 format_response.narrative,
             )
 
+            # 获取当前回合数
+            current_round_number = len(
+                self._game.current_combat_sequence.current_rounds
+            )
+
             # 广播事件
             self._game.broadcast_to_stage(
                 entity=stage_entity,
                 agent_event=CombatArbitrationEvent(
                     message=_generate_combat_arbitration_broadcast(
-                        format_response.combat_log, format_response.narrative
+                        format_response.combat_log,
+                        format_response.narrative,
+                        current_round_number,
                     ),
                     stage=stage_entity.name,
                     combat_log=format_response.combat_log,

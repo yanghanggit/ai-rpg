@@ -416,7 +416,7 @@ self._game.add_human_message(
 ```text
 场景.训练场 (stage_entity)
     ├── 角色.战士.卡恩 (actor_entity)
-    └── 角色.怪物.训练稻草人001号 (actor_entity)
+    └── 角色.怪物.稻草人0号 (actor_entity)
 ```
 
 - 场景是"容器"，角色在场景中活动

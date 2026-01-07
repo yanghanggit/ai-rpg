@@ -1,17 +1,12 @@
-"""
-战斗仲裁系统 - 优化版本
+"""战斗仲裁系统
+
+AI驱动的战斗结算系统，生成优化的仲裁提示词并处理AI返回的战斗结果。
 
 核心优化:
-1. _generate_combat_arbitration_prompt: 生成战斗仲裁指令(Token优化~60%)
-   - 紧凑型卡牌详情(7行 vs 原15行)
-   - 压缩战斗公式(150字符 vs 原450字符)
-   - 抽象环境互动规则(3行 vs 原25行)
-   - 精简输出要求(内嵌JSON示例)
-
-2. 广播消息优化(Token优化~30%)
-   - 标题: "通知！战斗回合结算"
-   - 段落: "战斗演出" + "数据日志"
-   - 提示语精简为单句
+- Token压缩60%：紧凑格式 + 精简规则 + 内嵌示例
+- 完整流程：卡牌 → 环境 → 效果 → 代价 → HP → 环境
+- 支持复活：多段HP变化(X→0→Y)自动识别
+- 扩展性强：支持1v1到3v3及更多角色
 """
 
 from typing import Final, List, NamedTuple, final
@@ -57,7 +52,7 @@ class CombatActionInfo(NamedTuple):
 def _generate_actor_card_details(
     combat_actions_details: List[CombatActionInfo],
 ) -> List[str]:
-    """生成每个角色的卡牌和状态详情"""
+    """生成角色卡牌详情：卡牌描述 + 属性 + 状态效果"""
     details_prompt: List[str] = []
     for param in combat_actions_details:
         assert param.card.name != ""
@@ -86,7 +81,7 @@ def _generate_actor_card_details(
 def _generate_combat_arbitration_broadcast(
     combat_log: str, narrative: str, current_round_number: int
 ) -> str:
-    """生成战斗结算广播消息"""
+    """生成战斗广播：演出描述 + 数据日志 + HP提示"""
 
     return f"""# 通知！第 {current_round_number} 回合结算
 
@@ -102,11 +97,11 @@ def _generate_combat_arbitration_broadcast(
 
 
 #######################################################################################################################################
-def _generate_combat_arbitration_prompt3(
+def _generate_combat_arbitration_prompt(
     combat_actions_details: List[CombatActionInfo],
     current_round_number: int,
 ) -> str:
-
+    """生成战斗仲裁提示词：行动顺序 + 角色信息 + 输出格式(含复活示例)"""
     # 生成角色&卡牌详情
     details_prompt = _generate_actor_card_details(combat_actions_details)
 
@@ -136,13 +131,13 @@ def _generate_combat_arbitration_prompt3(
 
 ```json
 {{
-  "combat_log": "[角色A→角色B]伤5 [角色B→角色A]伤3 HP:角色A 45→42/50 角色B 30→25→50→45/50 [环境]碎石",
+  "combat_log": "[角色A|卡牌A→环境A→角色X:伤10 代价:防-2] [角色B|卡牌B→环境B→角色Y:伤50 代价:攻-3] [角色C|卡牌C→角色Z:伤8] HP:角色A=45/50 角色B=30→25/40 角色C=50/50 角色X=40→30/50 角色Y=35→0→50/50 角色Z=42→34/50 [环境]效果1+效果2",
   "narrative": "故事化描述战斗过程（感官描写，禁用数字）"
 }}
 ```
 
 **约束**
-- combat_log：格式 `[行动者→目标]效果` 按顺序记录行动，`HP:角色名 X→Y/Z` 集中记录所有角色HP变化（支持多段如X→Y→Z），`[环境]关键词` 最后记录环境
+- combat_log：格式 `[角色简名|卡牌→环境→目标:效果 代价:X]` 依次记录每个角色的完整行动流程，`HP:角色=X→Y/Z` 集中记录所有角色最终HP（支持多段变化X→Y→Z），`[环境]关键词` 最后记录环境变化。角色名仅保留最后一段
 - narrative：感官描写、禁数字、精简核心
 - 严格按上述JSON格式输出"""
 
@@ -219,11 +214,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
     def _collect_combat_action_info(
         self, react_entities: List[Entity]
     ) -> List[CombatActionInfo]:
-        """收集所有参战角色的战斗行动信息。
-
-        从每个角色实体中提取出牌动作、目标、卡牌和战斗属性，封装为 CombatActionInfo 列表。
-        用于后续生成战斗仲裁提示词。
-        """
+        """收集参战角色的行动信息：卡牌 + 目标 + 战斗属性"""
         ret: List[CombatActionInfo] = []
         for entity in react_entities:
 
@@ -245,11 +236,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
     async def _request_combat_arbitration(
         self, stage_entity: Entity, actor_entities: List[Entity]
     ) -> None:
-        """向 AI 发起战斗仲裁请求并处理结果。
-
-        流程：收集角色战斗信息 → 生成仲裁提示词 → 调用 ChatClient 请求 AI 仲裁 → 应用仲裁结果。
-        使用场景实体的上下文进行推理，确保仲裁符合当前场景的叙事逻辑。
-        """
+        """发起AI战斗仲裁：生成提示词 → 调用ChatClient → 应用结果"""
         # 生成推理参数。
         combat_actions_details = self._collect_combat_action_info(actor_entities)
         assert len(combat_actions_details) > 0
@@ -258,17 +245,15 @@ class ArbitrationActionSystem(ReactiveProcessor):
         current_round_number = len(self._game.current_combat_sequence.current_rounds)
 
         # 生成推理信息。
-        message = _generate_combat_arbitration_prompt3(
+        message = _generate_combat_arbitration_prompt(
             combat_actions_details, current_round_number
         )
 
-        # 用场景推理（使用推理模型）。
-        # assert ChatClient._deepseek_url_config is not None, "DeepSeek URL 配置未设置！"
+        # 用场景推理
         chat_client = ChatClient(
             name=stage_entity.name,
             prompt=message,
             context=self._game.get_agent_context(stage_entity).context,
-            # url=ChatClient._deepseek_url_config.reasoner_url,
             timeout=60 * 2,  # 战斗推理允许更长时间
         )
 
@@ -288,11 +273,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         actor_entities: List[Entity],
         combat_actions_details: List[CombatActionInfo],
     ) -> None:
-        """解析并应用 AI 仲裁结果到游戏状态。
-
-        从 ChatClient 响应中提取 combat_log 和 narrative，更新场景实体的 ArbitrationAction，
-        向所有参战角色广播战斗结果，并记录到当前战斗回合数据中。
-        """
+        """应用AI仲裁结果：解析JSON → 更新场景 → 广播消息 → 记录数据"""
         try:
 
             format_response = ArbitrationResponse.model_validate_json(

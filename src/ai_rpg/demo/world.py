@@ -136,7 +136,7 @@ def create_demo_game_world_blueprint2(game_name: str) -> Blueprint:
     actor_warrior = create_actor_warrior()
     assert actor_warrior.kick_off_message == "", "战士角色的kick_off_message应为空"
     actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。"""
-
+    actor_warrior.character_stats.attack = 100000
     # 测试法师角色
     actor_wizard = create_actor_wizard()
     assert actor_wizard.kick_off_message == "", "法师角色的kick_off_message应为空"

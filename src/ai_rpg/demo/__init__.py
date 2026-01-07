@@ -6,7 +6,7 @@ from .actor_training_robot import create_actor_training_robot
 from .actor_warrior import create_actor_warrior
 from .actor_wizard import create_actor_wizard
 from .actor_player import create_actor_player
-from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
+from .global_settings import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 from .excel_data import ActorExcelData, DungeonExcelData
 from .excel_data_manager import ExcelDataManager, get_excel_data_manager
 from .dungeon1 import create_demo_dungeon1

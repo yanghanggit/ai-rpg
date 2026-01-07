@@ -1,8 +1,8 @@
 from .actor_orc import create_actor_orc
 from ..models import Dungeon, Stage, StageType
-from .campaign_setting import (
+from .global_settings import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-    FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+    FANTASY_WORLD_RPG_SYSTEM_RULES,
     FANTASY_WORLD_RPG_COMBAT_MECHANICS,
 )
 from .utils import (
@@ -25,8 +25,8 @@ def create_stage_cave2() -> Stage:
         stage_profile="你是一个阴暗潮湿的洞窟，四周布满了苔藓和石笋，地上散落着破旧的武器和食物残渣。",
         actors=[],
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
-        global_combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,
+        system_rules=FANTASY_WORLD_RPG_SYSTEM_RULES,
+        combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,
     )
 
 

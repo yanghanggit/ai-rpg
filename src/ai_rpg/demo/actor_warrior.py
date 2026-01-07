@@ -4,9 +4,9 @@ from ..models import (
     CharacterStats,
     Skill,
 )
-from .campaign_setting import (
+from .global_settings import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-    FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+    FANTASY_WORLD_RPG_SYSTEM_RULES,
 )
 from .utils import (
     create_actor,
@@ -32,7 +32,7 @@ def create_actor_warrior() -> Actor:
 **禁忌**: 你深恶痛绝金属瘴气与失控的古代魔法机械。
 **最爱**: 你最爱大块烤肉和烈性黑麦酒。""",
         appearance=f"""接近30岁的人类男性战士，精悍健壮，肌肉线条分明，古铜色肤色。眼神坚毅锐利，下巴有短须，短发略显凌乱。身披厚重符文板甲，镶嵌闪烁的未知金属碎片，胸口佩戴摩挲光滑的金属图腾徽章。背负由遗迹中找到的未知金属打造的长剑，左臂悬挂便携短刃。右臂有能量爪留下的晶体化疤痕格外醒目，装束沉重实用，混合战场实用与遗迹拾荒风格，覆盖锈迹与尘埃。""",
-        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+        global_game_mechanics=FANTASY_WORLD_RPG_SYSTEM_RULES,
     )
 
     actor.skills = [

@@ -16,7 +16,7 @@ from .utils import (
     create_stage,
     create_actor,
 )
-from .campaign_setting import (
+from .global_settings import (
     WEREWOLF_CAMPAIGN_SETTING,
     WEREWOLF_GLOBAL_GAME_MECHANICS,
 )
@@ -37,8 +37,8 @@ def create_demo_werewolf_stage() -> Stage:
         stage_profile="你是月影村的中央广场，这里是村民们聚集讨论和进行投票的主要场所。广场中央有一个古老的石台，四周摆放着木制长椅。夜晚时分，火把和烛火为这里提供微弱的照明，营造出神秘而紧张的氛围。白天时这里是村民们辩论和寻找狼人的地方，夜晚则成为各种神秘力量活动的舞台。你见证着每一次投票的结果，记录着每个人的命运。",
         actors=[],
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
-        global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
-        global_combat_mechanics="",
+        system_rules=WEREWOLF_GLOBAL_GAME_MECHANICS,
+        combat_mechanics="",
     )
 
 

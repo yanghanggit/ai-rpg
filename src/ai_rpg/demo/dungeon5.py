@@ -1,8 +1,8 @@
 from .actor_training_robot import create_actor_training_robot
 from ..models import Dungeon, Stage, StageType, Item, ItemType
-from .campaign_setting import (
+from .global_settings import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-    FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+    FANTASY_WORLD_RPG_SYSTEM_RULES,
     FANTASY_WORLD_RPG_COMBAT_MECHANICS,
 )
 from .utils import (
@@ -27,8 +27,8 @@ def create_stage_cave5() -> Stage:
 注意！你是一个动态响应的场景，角色的物理行为与魔法交互会对环境产生实际影响并改变场景状态，这些变化会反过来影响后续行动的条件。""",
         actors=[],
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
-        global_combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,
+        system_rules=FANTASY_WORLD_RPG_SYSTEM_RULES,
+        combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,
     )
 
 

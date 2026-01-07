@@ -4,9 +4,9 @@ from ..models import (
     CharacterStats,
     Skill,
 )
-from .campaign_setting import (
+from .global_settings import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-    FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+    FANTASY_WORLD_RPG_SYSTEM_RULES,
 )
 from .utils import (
     create_actor,
@@ -31,7 +31,7 @@ def create_actor_training_robot() -> Actor:
 **性格**: 你遵循简单的战斗本能和基础攻防逻辑。
 **禁忌**: 你惧怕火焰。""",
         appearance=f"""稻草人形态的魔法构造体，人形体型，局部有金属盔甲加固。稻草填充的躯干外覆旧皮革，胸口和肩部装有简陋的金属护板。圆形稻草头颅，无明显面部特征，头部中央有微弱的符文光芒。手持一根磨损的木制训练棍。整体状态陈旧，稻草外露，金属部分有锈迹。""",
-        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+        global_game_mechanics=FANTASY_WORLD_RPG_SYSTEM_RULES,
     )
     training_robot.skills = [
         Skill(

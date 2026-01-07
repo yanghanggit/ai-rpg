@@ -18,7 +18,7 @@ from ..models import (
 from .actor_warrior import create_actor_warrior
 from .actor_wizard import create_actor_wizard
 from .actor_player import create_actor_player
-from .campaign_setting import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
+from .global_settings import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
 from .stage_ally_manor import (
     create_demo_ally_safe_room,
     create_demo_ally_dining_room,

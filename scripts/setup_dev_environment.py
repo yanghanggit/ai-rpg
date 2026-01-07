@@ -117,7 +117,7 @@ def _setup_chromadb_rag_environment(game_name: str) -> None:
     from ai_rpg.embedding_model.sentence_transformer import (
         multilingual_model,
     )
-    from ai_rpg.demo.campaign_setting import (
+    from ai_rpg.demo.global_settings import (
         FANTASY_WORLD_RPG_KNOWLEDGE_BASE,
     )
     from ai_rpg.models import Blueprint

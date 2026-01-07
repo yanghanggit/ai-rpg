@@ -21,7 +21,7 @@ from src.ai_rpg.rag import (
     search_similar_documents,  # 导入重构后的函数
 )
 from src.ai_rpg.embedding_model import multilingual_model
-from src.ai_rpg.demo.campaign_setting import (
+from src.ai_rpg.demo.global_settings import (
     FANTASY_WORLD_RPG_KNOWLEDGE_BASE,
 )
 

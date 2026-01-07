@@ -3,9 +3,9 @@ from ..models import (
     ActorType,
     CharacterStats,
 )
-from .campaign_setting import (
+from .global_settings import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-    FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+    FANTASY_WORLD_RPG_SYSTEM_RULES,
 )
 from .utils import (
     create_actor,
@@ -31,5 +31,5 @@ def create_actor_data_ghost() -> Actor:
 **禁忌**：触及神圣符文或纯净月光会令其光纹溃散。
 **最爱**：喜欢吞噬遗迹中残存的符文核心，汲取其中的原始魔力。""",
         appearance="""这幽灵般的生物只出现在裂隙遗迹的最深处，半透明如薄雾，身躯由流动的靛蓝与银白光纹织就，还有未知的魔法符文在虚空中自行编织。光纹时而聚拢成几何轮廓，时而散作星点，边缘如水波般摇曳不定，发出低沉的嗡鸣——那是魔法能量的共鸣。无固定形体，飘忽间闪烁明灭，仿佛随时会消散于空气，又骤然凝聚。 """,
-        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+        global_game_mechanics=FANTASY_WORLD_RPG_SYSTEM_RULES,
     )

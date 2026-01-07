@@ -112,8 +112,8 @@ def create_stage(
     stage_profile: str,
     actors: List[Actor],
     campaign_setting: str,
-    global_game_mechanics: str,
-    global_combat_mechanics: str,
+    system_rules: str,
+    combat_mechanics: str,
 ) -> Stage:
     """
     创建一个游戏场景(Stage)实例。
@@ -159,7 +159,7 @@ def create_stage(
 
 ## 全局规则
 
-{global_game_mechanics}
+{system_rules}
 
 ## 场景设定
 
@@ -170,7 +170,7 @@ def create_stage(
 
 ## 战斗机制
 
-{global_combat_mechanics}"""
+{combat_mechanics}"""
 
     return stage
 

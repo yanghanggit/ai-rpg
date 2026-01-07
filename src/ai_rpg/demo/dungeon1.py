@@ -4,9 +4,9 @@ from ..models import (
     StageType,
 )
 from ..models.objects import Stage
-from .campaign_setting import (
+from .global_settings import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-    FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+    FANTASY_WORLD_RPG_SYSTEM_RULES,
     FANTASY_WORLD_RPG_COMBAT_MECHANICS,
 )
 from .utils import (
@@ -24,8 +24,8 @@ def create_stage_cave1() -> Stage:
         stage_profile="你是一个黑暗干燥的洞窟，地上都是易燃的干草，墙上插着各种箭矢，地上还有破损的盔甲和断剑。",
         actors=[],
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
-        global_combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,
+        system_rules=FANTASY_WORLD_RPG_SYSTEM_RULES,
+        combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,
     )
 
 

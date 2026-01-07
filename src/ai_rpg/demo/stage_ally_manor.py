@@ -1,7 +1,7 @@
 from ..models import Stage, StageType
-from .campaign_setting import (
+from .global_settings import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-    FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
+    FANTASY_WORLD_RPG_SYSTEM_RULES,
     FANTASY_WORLD_RPG_COMBAT_MECHANICS,
 )
 from .utils import (
@@ -21,8 +21,8 @@ def create_demo_ally_safe_room() -> Stage:
 这里是冒险者在深入遗迹前后的私密整备室，提供绝对的安全感与物资补给功能。""",
         actors=[],
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
-        global_combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,
+        system_rules=FANTASY_WORLD_RPG_SYSTEM_RULES,
+        combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,
     )
 
 
@@ -38,8 +38,8 @@ def create_demo_ally_dining_room() -> Stage:
 空气中弥漫着食物的焦香与酒精味，冒险者们在此大声喧哗，交换着关于遗迹深处异变与宝藏的最新情报。""",
         actors=[],
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
-        global_combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,
+        system_rules=FANTASY_WORLD_RPG_SYSTEM_RULES,
+        combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,
     )
 
 
@@ -54,6 +54,6 @@ def create_stage_monitoring_house() -> Stage:
         stage_profile="你是一个监视之屋，房间里漆黑一片，唯独有一块屏幕能看见新奥拉西斯城内外的各个地方。只有玩家能进入这里，并通过屏幕穿梭于各个场景。",
         actors=[],
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-        global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
-        global_combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,
+        system_rules=FANTASY_WORLD_RPG_SYSTEM_RULES,
+        combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,
     )

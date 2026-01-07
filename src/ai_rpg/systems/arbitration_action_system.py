@@ -110,41 +110,41 @@ def _generate_combat_arbitration_prompt3(
     # 生成角色&卡牌详情
     details_prompt = _generate_actor_card_details(combat_actions_details)
 
-    return f"""# 指令！这是第 {current_round_number} 回合，战斗回合仲裁
+    return f"""# 指令！第 {current_round_number} 回合：完成战斗结算与演出，以JSON格式返回。
 
-你是战斗仲裁者，需根据输入信息完成本回合战斗结算与演出。
-
-## 行动顺序（从左至右依次执行）
+## 行动顺序
 
 {" → ".join([param.actor for param in combat_actions_details])}
+
+先手角色行动优先生效，可改变环境与战场状态，影响后续角色的行动结果。
 
 ## 参战信息
 
 {"\n\n".join(details_prompt)}
 
-## 仲裁任务
+## 战斗计算
 
-**战斗计算**：严格按照 System 提示词的 **## 战斗机制** 进行计算
+严格按照 System 提示词的 **## 战斗机制** 进行计算
 
-**环境动态与互动**
-- 场景是动态系统：角色行动→环境变化→影响后续战斗
-- 卡牌执行可利用或影响环境物体，遵循世界观逻辑
-- 环境物体使用限制：先出手角色优先
-- 注意角色拥有的状态效果
+## 仲裁规则
 
-### 输出要求
+- 角色可利用或改变环境物体（先到先得）
+- 环境变化影响后续角色行动
+- 状态效果(status_effects)实时计入战斗计算
+
+## 输出格式
 
 ```json
 {{
-  "combat_log": "【角色使用卡牌 → 环境互动(含数值) → 伤害计算(实时更新状态效果和HP) → 卡牌代价】 → 最后所有角色最终HP(角色.HP=X/Y) → 环境更新。所有效果明确数值 → 精简紧凑文本",
-  "narrative": "将战斗过程故事化简短概括：角色行动→环境响应→影响结果→更新后的环境状态。禁用数字，使用感官描写，只描述核心部分，减少细节描写，精简紧凑文本"
+  "combat_log": "依次记录：角色→卡牌→环境互动→伤害→HP变化→环境更新",
+  "narrative": "故事化描述战斗过程（感官描写，禁用数字）"
 }}
 ```
 
-**约束规则**
-- combat_log压缩优化： 角色名简写(仅保留最后一段) → 卡牌仅写名称 → 环境互动仅写[物体名+效果] → 伤害计算省略中间步骤直接写结果数值 → 状态/代价用简写[名称(效果+数值)] → 删除所有连接词、修饰词、解释性文字 → 仅记录数值变化，不重复完整公式 → 环境更新用简短关键词描述核心变化
-
-**严格输出合规JSON**"""
+**约束**
+- combat_log：角色简写、关键词化、删冗余、明确数值、格式(角色.HP=X/Y)
+- narrative：感官描写、禁数字、精简核心
+- 严格按上述JSON格式输出"""
 
 
 ###########################################################################################################################################
@@ -263,12 +263,12 @@ class ArbitrationActionSystem(ReactiveProcessor):
         )
 
         # 用场景推理（使用推理模型）。
-        assert ChatClient._deepseek_url_config is not None, "DeepSeek URL 配置未设置！"
+        # assert ChatClient._deepseek_url_config is not None, "DeepSeek URL 配置未设置！"
         chat_client = ChatClient(
             name=stage_entity.name,
             prompt=message,
             context=self._game.get_agent_context(stage_entity).context,
-            url=ChatClient._deepseek_url_config.reasoner_url,
+            # url=ChatClient._deepseek_url_config.reasoner_url,
             timeout=60 * 2,  # 战斗推理允许更长时间
         )
 

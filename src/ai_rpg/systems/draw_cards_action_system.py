@@ -23,8 +23,6 @@ from ..models import (
     DeathComponent,
 )
 from ..utils import extract_json_from_code_block
-
-# from ..demo.test_skills_pool import TEST_SKILLS_POOL
 from langchain_core.messages import AIMessage
 
 
@@ -47,17 +45,21 @@ def _generate_first_round_prompt(
     """
     生成战斗第一回合的卡牌抽取提示词。
 
-    用于战斗开局时指导AI角色评估战场态势，生成初始行动卡牌和自身状态效果。
-    此提示词不包含update_hp字段，因为第一回合尚未发生伤害计算。
+    不包含update_hp字段，生成初始卡牌和状态效果。
 
     Args:
+        actor_name: 角色名称（当前未使用）
         card_creation_count: 需要生成的卡牌数量
-        round_turns: 角色行动顺序列表，格式为["角色名1", "角色名2", ...]
-        current_round_number: 当前回合数
+        action_order: 角色行动顺序列表
+        selected_skills: 可用技能列表
+        current_round_number: 当前回合数（应为1）
 
     Returns:
-        str: 格式化的提示词，包含行动顺序、生成规则和JSON输出格式
+        str: 格式化的提示词
     """
+    assert (
+        current_round_number == 1
+    ), "current_round_number must be 1 for first round prompt"
     assert card_creation_count > 0, "card_creation_count must be greater than 0"
     assert len(action_order) > 0, "round_turns must not be empty"
 
@@ -66,27 +68,30 @@ def _generate_first_round_prompt(
         [f"- {skill.name}: {skill.description}" for skill in selected_skills]
     )
 
-    return f"""# 指令！这是第 {current_round_number} 回合，战斗开局，评估当前态势，生成你的 {card_creation_count} 张卡牌。
+    return f"""# 指令！第 {current_round_number} 回合：生成 {card_creation_count} 张卡牌和状态效果，以JSON格式返回。
 
-## 1. 场景内角色行动顺序(从左到右，先行动者可能影响战局与后续行动)
+## 1. 本回合行动顺序
 
 {action_order}
 
-## 2. 可用技能池(必须从中选择)
+先手角色的卡牌会先生效，影响后续角色的战场状态。
+
+## 2. 生成卡牌
+
+### 2.1 可用技能池
 
 {skills_text}
 
-## 3. 生成内容规则
+### 2.2 卡牌生成规则
 
-**卡牌(cards)**：你本回合可执行的行动
-- 设计要求：技能池内每个技能最多使用一次，可组合多个技能创造行动（不限制技能个数），每个技能的代价均会叠加
+- 设计要求：从上述技能池中选择技能进行组合，每个技能最多使用一次，可组合多个技能创造行动（不限制技能个数），每个技能的代价均会叠加
 - 卡牌命名：基于技能效果创造新颖行动名称(禁止暴露技能名)
 - 卡牌描述：行动方式、战斗目的、使用代价
 
-**状态效果(status_effects)**：你当前回合新增的自身状态
-- 战斗开局产生的初始状态（战斗准备、环境影响、心理状态、装备效果、过往经验等）
+## 3. 生成状态效果
+
+生成你的初始状态效果。
 - 可同时存在多个状态效果
-- 不要重复生成已存在的状态效果
 
 ## 4. 输出格式(JSON)
 
@@ -94,26 +99,25 @@ def _generate_first_round_prompt(
 {{
   "cards": [
     {{
-      "name": "[组合技能效果的创意名称]",
-      "description": "[先做什么,然后做什么的连贯动作描述]，[目的]。代价：[多重代价的叠加描述]",
-      "targets": ["[目标角色1]", "[目标角色2]"]
+      "name": "[行动名称]",
+      "description": "[行动描述]",
+      "targets": ["[目标角色名]"]
     }}
   ],
   "status_effects": [
     {{
       "name": "[状态名称]",
-      "description": "[状态产生原因的生动有趣描述]，[状态效果的具体影响，可包含具体数值]",
-      "duration": [持续回合数]
+      "description": "[状态描述]",
+      "duration": [回合数]
     }}
   ]
 }}
 ```
 
 **约束规则**：
-- 卡牌数量必须是{card_creation_count}张
-- cards和status_effects的description可以包含具体数值（整数），但都不能有百分率
-- description中禁止出现角色名称
-- 禁用换行/空行，严格输出合规JSON"""
+- 必须生成{card_creation_count}张卡牌
+- description可含整数但禁止百分率，禁止出现角色名称
+- 严格按上述JSON格式输出"""
 
 
 #######################################################################################################################################
@@ -127,17 +131,17 @@ def _generate_subsequent_round_prompt(
     """
     生成战斗第二回合及以后的卡牌抽取提示词。
 
-    用于指导AI角色回顾战斗历史，更新自身状态，并生成后续行动卡牌。
-    此提示词包含update_hp字段，要求从"计算过程"中提取当前生命值。
+    包含update_hp字段，要求从战斗历史中提取生命值，生成卡牌和状态效果。
 
     Args:
-        actor_name: 角色名称
+        actor_name: 角色名称（当前未使用）
         card_creation_count: 需要生成的卡牌数量
-        round_turns: 角色行动顺序列表，格式为["角色名1", "角色名2", ...]
-        current_round_number: 当前回合数
+        action_order: 角色行动顺序列表
+        selected_skills: 可用技能列表
+        current_round_number: 当前回合数（应>1）
 
     Returns:
-        str: 格式化的提示词，包含行动顺序、生成规则和JSON输出格式
+        str: 格式化的提示词
     """
     assert card_creation_count > 0, "card_creation_count must be greater than 0"
     assert len(action_order) > 0, "round_turns must not be empty"
@@ -147,59 +151,67 @@ def _generate_subsequent_round_prompt(
         [f"- {skill.name}: {skill.description}" for skill in selected_skills]
     )
 
-    return f"""# 指令！这是第 {current_round_number} 回合，回顾战斗历史，评估当前态势，生成你的 {card_creation_count} 张卡牌。
+    return f"""# 指令！第 {current_round_number} 回合：回顾战斗历史，更新生命值，生成 {card_creation_count} 张卡牌和状态效果，以JSON格式返回。
 
-## 1. 场景内角色行动顺序(从左到右，先行动者可能影响战局与后续行动)
+## 1. 本回合行动顺序
 
 {action_order}
 
-## 2. 可用技能池(必须从中选择)
+先手角色的卡牌会先生效，影响后续角色的战场状态。
+
+## 2. 更新生命值
+
+从战斗历史中找到你的最新生命值，填入update_hp字段。
+
+## 3. 生成卡牌
+
+### 3.1 可用技能池
 
 {skills_text}
 
-## 3. 生成内容规则
+### 3.2 卡牌生成规则
 
-**update_hp**：你的当前生命值(从最近"计算过程"的角色状态中提取当前HP数值)
-
-**卡牌(cards)**：你本回合可执行的行动
-- 设计要求：技能池内每个技能最多使用一次，可组合多个技能创造行动（不限制技能个数），每个技能的代价均会叠加
+- 设计要求：从上述技能池中选择技能进行组合，每个技能最多使用一次，可组合多个技能创造行动（不限制技能个数），每个技能的代价均会叠加
 - 卡牌命名：基于技能效果创造新颖行动名称(禁止暴露技能名)
 - 卡牌描述：行动方式、战斗目的、使用代价
 
-**状态效果(status_effects)**：你当前回合新增的自身状态
-- 上回合受到的卡牌效果和使用代价产生的状态
+## 4. 生成状态效果
+
+从战斗历史中回顾战斗过程，识别并生成你新增的状态效果。
 - 可同时存在多个状态效果
 - 不要重复生成已存在的状态效果
 
-**特殊情况**：如果你已死亡(HP≤0)或认为战斗结束，则cards和status_effects填空数组，但update_hp仍需填写
-
-## 4. 输出格式(JSON)
+## 5. 输出格式(JSON)
 
 ```json
 {{
-  "update_hp": [当前HP数值],
+  "update_hp": [HP数值],
   "cards": [
     {{
-      "name": "[组合技能效果的创意名称]",
-      "description": "[先做什么,然后做什么的连贯动作描述]，[目的]。代价：[多重代价的叠加描述]",
-      "targets": ["[目标角色1]", "[目标角色2]"]
+      "name": "[行动名称]",
+      "description": "[行动描述]",
+      "targets": ["[目标角色名]"]
     }}
   ],
   "status_effects": [
     {{
       "name": "[状态名称]",
-      "description": "[状态产生原因的生动有趣描述]，[状态效果的具体影响，可包含具体数值]",
-      "duration": [持续回合数]
+      "description": "[状态描述]",
+      "duration": [回合数]
     }}
   ]
 }}
 ```
 
 **约束规则**：
-- 卡牌数量必须是{card_creation_count}张
-- cards和status_effects的description可以包含具体数值（整数），但都不能有百分率
-- description中禁止出现角色名称
-- 禁用换行/空行，严格输出合规JSON"""
+
+必须遵守：
+- 必须生成{card_creation_count}张卡牌
+- description可含整数但禁止百分率，禁止出现角色名称
+- 严格按上述JSON格式输出
+
+特殊情况：
+- 若已死亡(HP≤0)，cards和status_effects可填空数组，但update_hp必须填写"""
 
 
 #######################################################################################################################################

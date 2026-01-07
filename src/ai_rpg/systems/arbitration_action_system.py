@@ -262,12 +262,14 @@ class ArbitrationActionSystem(ReactiveProcessor):
             combat_actions_details, current_round_number
         )
 
-        # 用场景推理。
+        # 用场景推理（使用推理模型）。
+        assert ChatClient._deepseek_url_config is not None, "DeepSeek URL 配置未设置！"
         chat_client = ChatClient(
             name=stage_entity.name,
             prompt=message,
             context=self._game.get_agent_context(stage_entity).context,
-            timeout=60,
+            url=ChatClient._deepseek_url_config.reasoner_url,
+            timeout=60 * 2,  # 战斗推理允许更长时间
         )
 
         # 用语言服务系统进行推理。

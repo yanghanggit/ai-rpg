@@ -15,11 +15,12 @@ DeepSeek Chat Server启动脚本
     python -m scripts.run_deepseek_chat_server
 
 API端点：
-    GET  /                    - 健康检查
-    POST /api/chat/v1/        - 标准聊天
-    POST /api/chat/rag/v1/    - RAG聊天
+    GET  /                       - 健康检查
+    POST /api/chat/v1/           - 标准聊天（chat模型）
+    POST /api/chat/reasoner/v1/  - 推理聊天（reasoner模型）
+    POST /api/chat/rag/v1/       - RAG聊天
     POST /api/chat/undefined/v1/ - 未定义类型聊天
-    POST /api/chat/mcp/v1/    - MCP聊天
+    POST /api/chat/mcp/v1/       - MCP聊天
 """
 
 import os
@@ -39,6 +40,7 @@ from ai_rpg.deepseek import (
     create_chat_workflow,
     execute_chat_workflow,
     create_deepseek_chat,
+    create_deepseek_reasoner,
 )
 
 from ai_rpg.configuration import (
@@ -99,6 +101,7 @@ async def health_check() -> Dict[str, Any]:
         "endpoints": [
             "/",
             "/api/chat/v1/",
+            "/api/chat/reasoner/v1/",
         ],
         "description": "基于DeepSeek的聊天服务器正在正常运行",
     }
@@ -143,6 +146,52 @@ async def process_chat_request(payload: ChatRequest) -> ChatResponse:
         logger.error(f"处理聊天请求时发生错误: {e}")
 
     return ChatResponse(messages=[])
+
+
+##################################################################################################################
+# 推理模型聊天端点
+@app.post(
+    path="/api/chat/reasoner/v1/",
+    response_model=ChatResponse,
+)
+async def process_chat_reasoner_request(payload: ChatRequest) -> ChatResponse:
+    """
+    处理聊天请求（使用推理模型）
+
+    特性：
+    - 使用 DeepSeek Reasoner 模型（思考模式）
+    - 提供推理思考过程（reasoning_content）
+    - 适合复杂推理任务
+    - 注意：不支持工具调用和结构化输出
+
+    Args:
+        payload: 包含聊天历史和用户消息的请求对象
+
+    Returns:
+        ChatResponse: 包含AI回复消息的响应对象（包含思考过程）
+    """
+    try:
+        logger.info(f"🧠 收到推理模型聊天请求: {payload.message.content}")
+
+        chat_response = await execute_chat_workflow(
+            work_flow=create_chat_workflow(),
+            context=[message for message in payload.context],
+            request=payload.message,
+            llm=create_deepseek_reasoner(),  # 使用推理模型
+        )
+
+        logger.success(f"生成回复消息数量: {len(chat_response)}")
+
+        # 打印所有消息的详细内容
+        for i, message in enumerate(chat_response):
+            logger.success(f"消息 {i+1}: {message.model_dump_json(indent=2)}")
+
+        # 返回
+        return ChatResponse(messages=chat_response)
+
+    except Exception as e:
+        logger.error(f"处理推理模型聊天请求时发生错误: {e}")
+        return ChatResponse(messages=[])
 
 
 ##################################################################################################################

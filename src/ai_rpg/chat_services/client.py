@@ -19,6 +19,7 @@ from dataclasses import dataclass
 class DeepSeekUrlConfig:
     base_url: str
     chat_url: str
+    reasoner_url: str
 
 
 ################################################################################################################################################################################
@@ -38,6 +39,7 @@ class ChatClient:
         cls._deepseek_url_config = DeepSeekUrlConfig(
             base_url=f"http://localhost:{server_settings.deepseek_chat_server_port}/",
             chat_url=f"http://localhost:{server_settings.deepseek_chat_server_port}/api/chat/v1/",
+            reasoner_url=f"http://localhost:{server_settings.deepseek_chat_server_port}/api/chat/reasoner/v1/",
         )
 
         logger.info(
@@ -83,6 +85,7 @@ class ChatClient:
         assert (
             self._deepseek_url_config is not None
         ), "DeepSeek URL config is not initialized"
+
         self._url: Optional[str] = (
             url if url is not None else self._deepseek_url_config.chat_url
         )
@@ -197,6 +200,18 @@ class ChatClient:
                 #     f"{self._name} request-response:\n{self._chat_response.model_dump_json()}"
                 # )
                 logger.info(f"{self._name} response_content:\n{self.response_content}")
+
+                # 🧠 显示思考过程 (reasoning_content 在 additional_kwargs 中)
+                if self.response_ai_messages:
+                    latest_response = self.response_ai_messages[-1]
+                    reasoning_content = latest_response.additional_kwargs.get(
+                        "reasoning_content"
+                    )
+                    if reasoning_content:
+                        logger.info(
+                            f"\n💭 {self._name} 思考过程:\n{reasoning_content}\n"
+                        )
+                        logger.info("=" * 60)
             else:
                 logger.error(
                     f"request-response Error: {response.status_code}, {response.text}"
@@ -243,6 +258,18 @@ class ChatClient:
                 #     f"{self._name} a_request-response:\n{self._chat_response.model_dump_json()}"
                 # )
                 logger.info(f"{self._name} response_content:\n{self.response_content}")
+
+                # 🧠 显示思考过程 (reasoning_content 在 additional_kwargs 中)
+                if self.response_ai_messages:
+                    latest_response = self.response_ai_messages[-1]
+                    reasoning_content = latest_response.additional_kwargs.get(
+                        "reasoning_content"
+                    )
+                    if reasoning_content:
+                        logger.info(
+                            f"\n💭 {self._name} 思考过程:\n{reasoning_content}\n"
+                        )
+                        logger.info("=" * 60)
             else:
                 logger.error(
                     f"a_request-response Error: {response.status_code}, {response.text}"

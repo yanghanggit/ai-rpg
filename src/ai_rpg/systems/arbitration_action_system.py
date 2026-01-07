@@ -72,10 +72,9 @@ def _generate_actor_card_details(
             target_display = f"[{', '.join(param.targets)}]"
 
         detail = f"""【{param.actor}】
-卡牌:{param.card.name} → {target_display}
-效果:{param.card.description}
-属性:{param.combat_stats_component.stats_prompt}
-状态效果(status_effects):
+卡牌: {param.card.name} → {target_display} — {param.card.description}
+角色属性: {param.combat_stats_component.stats_prompt}
+角色当前状态效果(status_effects):
 {param.combat_stats_component.status_effects_prompt}"""
 
         details_prompt.append(detail)
@@ -143,8 +142,7 @@ def _generate_combat_arbitration_prompt3(
 **约束规则**
 - combat_log压缩优化： 角色名简写(仅保留最后一段) → 卡牌仅写名称 → 环境互动仅写[物体名+效果] → 伤害计算省略中间步骤直接写结果数值 → 状态/代价用简写[名称(效果+数值)] → 删除所有连接词、修饰词、解释性文字 → 仅记录数值变化，不重复完整公式 → 环境更新用简短关键词描述核心变化
 
-**严格输出合规JSON**
-"""
+**严格输出合规JSON**"""
 
 
 ###########################################################################################################################################

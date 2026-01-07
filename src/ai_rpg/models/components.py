@@ -172,7 +172,7 @@ class CombatStatsComponent(MutableComponent):
 
     @property
     def stats_prompt(self) -> str:
-        return f"HP 当前{self.stats.hp}/最大{self.stats.max_hp} | 攻击{self.stats.attack} | 防御{self.stats.defense}"
+        return f"HP:{self.stats.hp}/{self.stats.max_hp} | 攻击:{self.stats.attack} | 防御:{self.stats.defense}"
 
     @property
     def status_effects_prompt(self) -> str:

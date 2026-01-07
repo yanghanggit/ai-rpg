@@ -4,7 +4,7 @@ from ..models import Dungeon, Stage, StageType, Item, ItemType
 from .campaign_setting import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
     FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
-    FANTASY_WORLD_RPG_GAME_COMBAT_MECHANICS,
+    FANTASY_WORLD_RPG_COMBAT_MECHANICS,
 )
 from .utils import (
     create_stage,
@@ -29,7 +29,7 @@ def create_stage_cave6() -> Stage:
         actors=[],
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         global_game_mechanics=FANTASY_WORLD_RPG_GLOBAL_GAME_MECHANICS,
-        global_combat_mechanics=FANTASY_WORLD_RPG_GAME_COMBAT_MECHANICS,
+        global_combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,
     )
 
 

@@ -168,7 +168,7 @@ def create_stage(
     if stage.character_sheet.type == StageType.DUNGEON:
         stage.system_message += f""" 
 
-## 战斗规则
+## 战斗机制
 
 {global_combat_mechanics}"""
 

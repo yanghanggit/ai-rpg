@@ -13,6 +13,26 @@ from ..rag import search_similar_documents
 from ..game.tcg_game import TCGGame
 
 
+#############################################################################################################################
+def _build_query_result_message(question: str, related_info: str | None) -> str:
+    """构建数据库查询结果的提示词消息
+
+    Args:
+        question: 查询的问题
+        related_info: 检索到的相关信息，None表示未检索到
+
+    Returns:
+        格式化的提示词消息
+    """
+    if related_info:
+        return (
+            f"关于「{question}」，从外部数据库检索到以下信息：\n{related_info}\n\n"
+            f"这些是数据库中**目前**存储的相关信息，可根据需要参考。避免对同一问题重复查询。"
+        )
+    else:
+        return f"关于「{question}」：外部数据库中**目前**没有相关信息。"
+
+
 #####################################################################################################################################
 @final
 class QueryActionSystem(ReactiveProcessor):
@@ -46,42 +66,24 @@ class QueryActionSystem(ReactiveProcessor):
         logger.success(f"🔎 角色发起查询行动，问题: {query_action.question}")
         logger.success(f"💭 角色记忆查询结果: {related_info}")
 
-        if related_info:
-            self._game.add_human_message(
-                entity,
-                f"经过回忆，这些是你回忆到的信息：\n{related_info}\n\n选择性地将这些信息作为参考。如果最近一次的行动计划里执行了查询行动，下一次的行动计划禁止再次进行查询行动，除非遇到全新未曾查询过的问题。",
-            )
-        else:
-            self._game.add_human_message(
-                entity,
-                "没有找到相关背景信息。在接下来的对话中，如果涉及没有找到的或者不在你的上下文中的内容，请诚实地表示不知道，不要编造.",
-            )
+        # 构建并发送查询结果消息
+        message = _build_query_result_message(
+            query_action.question, related_info if related_info else None
+        )
+        self._game.add_human_message(entity, message)
 
     ####################################################################################################################################
     def _get_related_info(self, entity: Entity, original_message: str) -> str:
-        """检索相关信息 - 统一查询（公共知识 + 角色私有知识）"""
+        """RAG检索相关信息 - 统一查询（公共知识 + 角色私有知识）"""
         try:
             logger.success(f"🔍 RAG检索: {original_message}")
-
-            # 执行统一RAG检索
-            return self._query_with_rag(entity, original_message)
-
-        except Exception as e:
-            logger.error(f"❌ 相关信息检索失败: {e}")
-            return ""  # 失败时返回空
-
-    ####################################################################################################################################
-    def _query_with_rag(self, entity: Entity, message: str) -> str:
-        """RAG查询处理 - 统一查询（公共知识 + 角色私有知识）"""
-        try:
-            logger.debug(f"🔍 RAG查询: {message}...")
 
             # 查询公共知识 + 该角色的私有知识（通过游戏名前缀隔离）
             logger.info(
                 f"📚 查询知识库（游戏: {self._game.name}, 公共 + {entity.name} 的私有知识）..."
             )
             docs, scores = search_similar_documents(
-                query=message,
+                query=original_message,
                 collection=get_default_collection(),
                 embedding_model=multilingual_model,
                 owner=f"{self._game.name}.{entity.name}",  # ← 关键：使用游戏名前缀实现知识隔离

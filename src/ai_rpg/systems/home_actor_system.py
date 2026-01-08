@@ -68,43 +68,38 @@ class ActionPlanResponse(BaseModel):
 def _build_full_action_prompt(
     current_stage: str,
     current_stage_narration: str,
-    actors_appearance_mapping: Dict[str, str],
+    other_actors_appearances: Dict[str, str],
     available_home_stages: List[str],
 ) -> str:
-    """构建完整的角色行动规划提示词。
-
-    生成包含当前场景信息、其他角色信息、可用场景列表和行动规则的完整提示词，
-    用于指导 AI 生成符合游戏规则的角色行动决策。
+    """构建角色行动规划提示词。
 
     Args:
-        current_stage: 当前场景名称
-        current_stage_narration: 当前场景的环境描述
-        actors_appearance_mapping: 场景内其他角色的外观描述字典，键为角色名，值为外观描述
-        available_home_stages: 可以前往的家园场景名称列表
+        current_stage: 场景名称
+        current_stage_narration: 场景环境描述
+        other_actors_appearances: 其他角色的外观描述，键为角色名，值为外观
+        available_home_stages: 可前往的场景列表
 
     Returns:
-        格式化的完整提示词字符串，包含场景信息、角色信息、行动规则和 JSON 输出格式要求
+        包含场景信息、角色信息、行动规则和JSON输出格式的完整提示词
     """
     # 场景内角色外观描述
-    actors_appearances_info = []
-    for actor_name, appearance in actors_appearance_mapping.items():
-        actors_appearances_info.append(f"{actor_name}: {appearance}")
-    if len(actors_appearances_info) == 0:
-        actors_appearances_info.append("无")
+    other_actors_appearance_info = []
+    for actor_name, appearance in other_actors_appearances.items():
+        other_actors_appearance_info.append(f"{actor_name}: {appearance}")
+    if len(other_actors_appearance_info) == 0:
+        other_actors_appearance_info.append("无")
 
     return f"""# 指令! 决定你要做什么，以JSON格式输出。
 
-## 当前场景
+## 场景信息
 
 {current_stage} | {current_stage_narration}
 
-## 场景内角色
+可移动至: {", ".join(available_home_stages) if len(available_home_stages) > 0 else "无"}
 
-{"\n".join(actors_appearances_info)}
+## 其他角色
 
-## 由当前场景可去往的场景
-
-{"\n- ".join(available_home_stages) if len(available_home_stages) > 0 else "无场景可去往"}
+{"\n".join(other_actors_appearance_info)}
 
 ## 核心规则
 
@@ -347,11 +342,11 @@ class HomeActorSystem(ReactiveProcessor):
             assert current_stage is not None
 
             # 找到当前场景内所有角色 & 他们的外观描述
-            actors_apperances_mapping = self._game.get_stage_actor_appearances(
+            other_actors_appearances = self._game.get_stage_actor_appearances(
                 current_stage
             )
             # 移除自己
-            actors_apperances_mapping.pop(actor_entity.name, None)
+            other_actors_appearances.pop(actor_entity.name, None)
 
             # 找到当前场景可去往的家园场景,这样能节省计算量。
             available_home_stages = home_stage_entities.copy()  # 注意这里必须 copy
@@ -374,7 +369,7 @@ class HomeActorSystem(ReactiveProcessor):
                         current_stage_narration=current_stage.get(
                             EnvironmentComponent
                         ).description,
-                        actors_appearance_mapping=actors_apperances_mapping,
+                        other_actors_appearances=other_actors_appearances,
                         available_home_stages=[e.name for e in available_home_stages],
                     ),
                     context=self._game.get_agent_context(actor_entity).context,

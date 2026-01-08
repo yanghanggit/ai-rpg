@@ -198,9 +198,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
 
         # 生成快照
         self.world.entities_serialization = self.serialize_entities(self._entities)
-        logger.debug(
-            f"游戏将要保存，实体数量: {len(self.world.entities_serialization)}"
-        )
+        # logger.debug(
+        #     f"游戏将要保存，实体数量: {len(self.world.entities_serialization)}"
+        # )
 
         # 保存快照
         persist_world_data(

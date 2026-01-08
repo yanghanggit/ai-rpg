@@ -47,7 +47,7 @@ class SaveSystem(ExecuteProcessor):
 
         # 核心调用
         # self._game.save()
-        logger.debug("开始保存游戏...")
+        # logger.debug("开始保存游戏...")
         await asyncio.to_thread(self._game.save)
 
     ############################################################################################################

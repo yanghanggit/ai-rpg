@@ -120,28 +120,28 @@ def persist_world_data(
         # 保存 runtime.json
         write_path = write_dir / "runtime.json"
         write_path.write_text(world_json, encoding="utf-8")
-        logger.debug(f"💾 已保存用户游戏世界数据到文件: {write_path}")
+        # logger.debug(f"💾 已保存用户游戏世界数据到文件: {write_path}")
 
         # 保存 blueprint.json
         write_blueprint_path = write_dir / "blueprint.json"
         write_blueprint_path.write_text(
             world.blueprint.model_dump_json(), encoding="utf-8"
         )
-        logger.debug(f"💾 已保存用户游戏启动数据到文件: {write_blueprint_path}")
+        # logger.debug(f"💾 已保存用户游戏启动数据到文件: {write_blueprint_path}")
 
         # 保存 player_session.json
         write_player_session_path = write_dir / "player_session.json"
         write_player_session_path.write_text(
             player_session.model_dump_json(), encoding="utf-8"
         )
-        logger.debug(f"💾 已保存用户玩家会话数据到文件: {write_player_session_path}")
+        # logger.debug(f"💾 已保存用户玩家会话数据到文件: {write_player_session_path}")
 
         # 如果需要，保存压缩版本
         if enable_gzip:
             gzip_path = write_dir / "runtime.json.gz"
             with gzip.open(gzip_path, "wt", encoding="utf-8") as gz_file:
                 gz_file.write(world_json)
-            logger.debug(f"💾 已保存用户游戏世界数据到压缩文件: {gzip_path}")
+            # logger.debug(f"💾 已保存用户游戏世界数据到压缩文件: {gzip_path}")
 
         return True
 

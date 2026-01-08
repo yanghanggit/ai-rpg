@@ -87,7 +87,7 @@ class QueryActionSystem(ReactiveProcessor):
                 collection=get_default_collection(),
                 embedding_model=multilingual_model,
                 owner=f"{self._game.name}.{entity.name}",  # ← 关键：使用游戏名前缀实现知识隔离
-                top_k=5,  # 增加 top_k，因为现在是统一查询
+                top_k=3,  # 增加 top_k，因为现在是统一查询
             )
 
             # 检查查询结果

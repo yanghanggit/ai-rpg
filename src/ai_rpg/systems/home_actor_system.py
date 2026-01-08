@@ -1,26 +1,14 @@
 """家园角色行动系统模块。
 
-该模块负责处理家园场景中角色的行动规划与执行：
-1. 监听角色的 PlanAction 组件触发
-2. 为角色生成包含场景、角色、可用行动的完整提示词
-3. 调用 AI 服务获取角色的行动决策
-4. 将 AI 响应解析并转化为具体的游戏行动组件
-
-核心流程：
-- 创建聊天客户端 -> 发送 AI 请求 -> 处理响应 -> 执行行动
-
-主要组件：
-- ActorPlanResponse: AI 返回的行动规划响应数据模型
-- HomeActorSystem: 响应式处理器，处理角色行动规划的完整生命周期
-- _build_full_action_prompt: 构建完整的行动规划提示词
-- _build_compressed_action_prompt: 构建压缩版提示词用于历史记录
+响应式处理器，监听角色的 PlanAction 组件，为角色生成行动规划提示词，
+调用 AI 服务获取决策，并将决策转化为具体的游戏行动组件。
 """
 
 from typing import Dict, Final, List, final
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-from ..chat_services.client import ChatClient
+from ..chat_services import ChatClient
 from ..entitas import Entity, Matcher, GroupEvent, ReactiveProcessor
 from ..models import (
     AnnounceAction,
@@ -37,7 +25,7 @@ from ..models import (
     PlayerOnlyStageComponent,
 )
 from ..utils import extract_json_from_code_block
-from ..game.tcg_game import TCGGame
+from ..game import TCGGame
 
 
 #######################################################################################################################################
@@ -45,23 +33,21 @@ from ..game.tcg_game import TCGGame
 class ActionPlanResponse(BaseModel):
     """角色行动规划响应数据模型。
 
-    封装 AI 返回的角色行动决策，包含多种行动类型。
-
     Attributes:
-        mind_voice_actions: 内心独白内容（仅角色自己可见）
-        query_actions: 查询请求内容（用于事实性信息检索）
-        speak_actions: 说话行动，键为目标角色名，值为说话内容
-        whisper_actions: 耳语行动，键为目标角色名，值为耳语内容（其他人听不到）
-        announce_actions: 公开宣布内容（所有人都能听到）
-        trans_stage_name: 要传送到的目标场景名称（留空则不移动）
+        mind: 内心独白
+        query: 数据库检索关键词
+        speak: 说话行动（目标角色名 -> 内容）
+        whisper: 耳语行动（目标角色名 -> 内容）
+        announce: 公开宣布
+        trans_stage: 移动目标场景名
     """
 
-    mind_voice_actions: str = ""
-    query_actions: str = ""
-    speak_actions: Dict[str, str] = {}
-    whisper_actions: Dict[str, str] = {}
-    announce_actions: str = ""
-    trans_stage_name: str = ""
+    mind: str = ""
+    query: str = ""
+    speak: Dict[str, str] = {}
+    whisper: Dict[str, str] = {}
+    announce: str = ""
+    trans_stage: str = ""
 
 
 #######################################################################################################################################
@@ -76,11 +62,11 @@ def _build_full_action_prompt(
     Args:
         current_stage: 场景名称
         current_stage_narration: 场景环境描述
-        other_actors_appearances: 其他角色的外观描述，键为角色名，值为外观
+        other_actors_appearances: 其他角色的外观（角色名 -> 外观）
         available_home_stages: 可前往的场景列表
 
     Returns:
-        包含场景信息、角色信息、行动规则和JSON输出格式的完整提示词
+        完整的行动规划提示词
     """
     # 场景内角色外观描述
     other_actors_appearance_info = []
@@ -103,43 +89,46 @@ def _build_full_action_prompt(
 
 ## 核心规则
 
-1. **第一人称视角**  
+1. **每回合行动结构**
+
+```
+每回合结构：
+├─ mind [必填] - 内心独白/思考
+└─ 主要行动 [三选一，严格互斥]
+   ├─ A. query - 检索思考（向内）
+   ├─ B. 交流行动 - 向外发送信息（三选一）
+   │   ├─ speak
+   │   ├─ whisper
+   │   └─ announce
+   └─ C. trans_stage - 移动场景
+```
+
+2. **第一人称视角**  
    所有行动和思考必须以第一人称进行。
 
-2. **交流方式三选一**  
-   说话/耳语/宣布,不可并用。
+3. **对内检索** (`query`)
+   - System prompt是信息目录，需要详细信息时用query向数据库检索，结果会添加到context
 
-3. **事实性提问必须检索**  
-   - 当有人向你提问事实性信息(地点/人物/物品/事件等)时:
-     * 第一步: 填写检索词语(提取问题中的关键词)
-     * 第二步: 在交流方式字段中只能填写表达正在思考的简短话语(根据角色性格和说话风格填写,不超过10字)
-     * 第三步: 本回合结束,等待检索结果
-   - 收到检索结果后:
-     * 基于检索结果回答问题或者自行决定后续行动
-     * 若检索无结果则说"我不知道"或类似表达
-   
-4. **检索时严格禁止**  
-   - 禁止在填写检索词语的同时在交流方式里给出任何实质性答案
-   - 禁止编造、推测、猜测任何未经检索的信息
-   - 只能说"正在思考"类的过渡话语,不得包含对问题的回答内容
+4. **对外交流** (`speak` / `whisper` / `announce`)
+   - 只能使用context中已有的信息
 
-5. **信息来源限制**  
-   只能使用: ①当前上下文中明确提到的信息 ②检索返回的结果。其他一律视为编造。
+5. **场景移动** (`trans_stage`)
+   - 填写目标场景全名（从"可移动至"列表选择）
 
 ## 输出格式(JSON)
 
 ```json
 {{
-  "mind_voice_actions": "内心独白",
-  "query_actions": "检索关键词",
-  "speak_actions": {{
+  "mind": "内心独白",
+  "query": "检索关键词",
+  "speak": {{
     "角色全名": "说话内容"
   }},
-  "whisper_actions": {{
+  "whisper": {{
     "角色全名": "耳语内容"
   }},
-  "announce_actions": "公开宣布内容",
-  "trans_stage_name": "移动目标场景全名"
+  "announce": "公开宣布内容",
+  "trans_stage": "移动目标场景全名"
 }}
 ```
 
@@ -152,19 +141,16 @@ def _build_full_action_prompt(
 def _build_compressed_action_prompt(
     prompt: str,
 ) -> str:
-    """构建压缩版的行动规划提示词。
-
-    将完整提示词压缩为简短版本，用于保存到对话历史记录中以节省 token 消耗。
-    压缩版本仅保留核心指令，省略详细的场景信息和规则说明。
+    """构建压缩版提示词用于历史记录。
 
     Args:
-        prompt: 原始的完整提示词（用于日志记录）
+        prompt: 原始完整提示词
 
     Returns:
-        压缩后的简短提示词字符串
+        压缩后的简短提示词
     """
     # logger.debug(f"原始 Prompt =>\n{prompt}")
-    return "# 指令！请根据当前场景，角色信息与你的历史制定你的行动计划！决定你将要做什么，并以 JSON 格式输出。"
+    return "# 指令! 决定你要做什么，以JSON格式输出。"
 
 
 #######################################################################################################################################
@@ -172,18 +158,11 @@ def _build_compressed_action_prompt(
 class HomeActorSystem(ReactiveProcessor):
     """家园角色行动系统。
 
-    响应式处理器，监听并处理家园场景中角色的行动规划请求。
-    当角色实体添加 PlanAction 组件时触发，为角色生成行动规划提示词，
-    调用 AI 服务获取决策，并将决策转化为具体的游戏行动组件。
-
-    工作流程：
-    1. 监听 PlanAction 组件的添加事件
-    2. 为每个角色创建聊天客户端，生成包含场景上下文的提示词
-    3. 批量调用 AI 服务获取行动决策
-    4. 解析 AI 响应并添加对应的行动组件（说话、耳语、查询、移动等）
+    响应式处理器，监听 PlanAction 组件触发，生成行动规划提示词，
+    调用 AI 服务获取决策，并转化为游戏行动组件。
 
     Attributes:
-        _game: TCG 游戏实例的引用
+        _game: 游戏实例引用
     """
 
     def __init__(self, game_context: TCGGame) -> None:
@@ -224,23 +203,11 @@ class HomeActorSystem(ReactiveProcessor):
     ) -> None:
         """执行角色的行动决策。
 
-        解析 AI 返回的行动规划响应，将其转化为具体的游戏行动组件并添加到角色实体上。
-        同时将对话内容保存到历史记录中。
-
-        处理的行动类型包括：
-        - 内心独白（MindEvent）
-        - 说话（SpeakAction）
-        - 耳语（WhisperAction）
-        - 宣布（AnnounceAction）
-        - 查询（QueryAction）
-        - 场景传送（TransStageAction）
+        解析 AI 响应并转化为游戏行动组件，保存对话历史。
 
         Args:
-            actor_entity: 执行行动的角色实体
-            chat_client: 包含 AI 响应的聊天客户端
-
-        Note:
-            如果解析响应失败，会记录错误日志但不会中断流程
+            actor_entity: 角色实体
+            chat_client: 聊天客户端（包含 AI 响应）
         """
         try:
 
@@ -258,49 +225,49 @@ class HomeActorSystem(ReactiveProcessor):
             self._game.add_ai_message(actor_entity, chat_client.response_ai_messages)
 
             # 添加内心独白: 上下文！，这里做直接添加与通知处理
-            if validated_response.mind_voice_actions != "":
+            if validated_response.mind != "":
 
                 self._game.notify_entities(
                     set({actor_entity}),
                     MindEvent(
-                        message=f"# 通知！{actor_entity.name} 内心活动: {validated_response.mind_voice_actions}",
+                        message=f"# 通知！{actor_entity.name} 内心活动: {validated_response.mind}",
                         actor=actor_entity.name,
-                        content=validated_response.mind_voice_actions,
+                        content=validated_response.mind,
                     ),
                 )
 
             # 添加说话动作
-            if len(validated_response.speak_actions) > 0:
+            if len(validated_response.speak) > 0:
                 actor_entity.replace(
-                    SpeakAction, actor_entity.name, validated_response.speak_actions
+                    SpeakAction, actor_entity.name, validated_response.speak
                 )
 
             # 添加耳语动作
-            if len(validated_response.whisper_actions) > 0:
+            if len(validated_response.whisper) > 0:
                 actor_entity.replace(
-                    WhisperAction, actor_entity.name, validated_response.whisper_actions
+                    WhisperAction, actor_entity.name, validated_response.whisper
                 )
 
             # 添加宣布动作
-            if validated_response.announce_actions != "":
+            if validated_response.announce != "":
                 actor_entity.replace(
                     AnnounceAction,
                     actor_entity.name,
-                    validated_response.announce_actions,
+                    validated_response.announce,
                 )
 
             # 添加查询动作
-            if validated_response.query_actions != "":
+            if validated_response.query != "":
                 actor_entity.replace(
-                    QueryAction, actor_entity.name, validated_response.query_actions
+                    QueryAction, actor_entity.name, validated_response.query
                 )
 
             # 最后：如果需要可以添加传送场景。
-            if validated_response.trans_stage_name != "":
+            if validated_response.trans_stage != "":
                 actor_entity.replace(
                     TransStageAction,
                     actor_entity.name,
-                    validated_response.trans_stage_name,
+                    validated_response.trans_stage,
                 )
 
         except Exception as e:
@@ -310,21 +277,15 @@ class HomeActorSystem(ReactiveProcessor):
     def _create_actor_chat_clients(
         self, actor_entities: List[Entity]
     ) -> List[ChatClient]:
-        """为角色实体创建聊天客户端。
+        """为角色创建聊天客户端。
 
-        为每个角色生成包含场景上下文的完整提示词，并创建对应的聊天客户端用于 AI 请求。
-
-        为每个角色收集以下信息：
-        - 当前所在场景及其描述
-        - 场景内其他角色的外观信息
-        - 可以前往的家园场景列表
-        - 角色的对话历史上下文
+        收集场景上下文并生成提示词，创建聊天客户端。
 
         Args:
-            actor_entities: 需要生成行动规划的角色实体列表
+            actor_entities: 角色实体列表
 
         Returns:
-            聊天客户端列表，每个客户端对应一个角色的 AI 请求
+            聊天客户端列表
         """
         # 找到所有家园场景实体
         home_stage_entities = self._game.get_group(

@@ -15,7 +15,7 @@ from ..game.tcg_game import TCGGame
 
 #############################################################################################################################
 def _build_query_result_message(question: str, related_info: str | None) -> str:
-    """构建数据库查询结果的提示词消息
+    """构建向量数据库查询结果的提示词消息
 
     Args:
         question: 查询的问题
@@ -26,11 +26,11 @@ def _build_query_result_message(question: str, related_info: str | None) -> str:
     """
     if related_info:
         return (
-            f"关于「{question}」，从外部数据库检索到以下信息：\n{related_info}\n\n"
-            f"这些是数据库中**目前**存储的相关信息，可根据需要参考。避免对同一问题重复查询。"
+            f"关于「{question}」，从向量数据库检索到以下信息：\n{related_info}\n\n"
+            f"这些是向量数据库中**目前**存储的相关信息，可根据需要参考。避免对同一问题重复查询。"
         )
     else:
-        return f"关于「{question}」：外部数据库中**目前**没有相关信息。"
+        return f"关于「{question}」：向量数据库中**目前**没有相关信息。"
 
 
 #####################################################################################################################################

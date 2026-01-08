@@ -92,7 +92,7 @@ def _build_full_action_prompt(
     if len(actors_appearances_info) == 0:
         actors_appearances_info.append("无")
 
-    return f"""# 指令！请根据当前场景，角色信息与你的历史制定你的行动计划！决定你将要做什么，并以 JSON 格式输出。
+    return f"""# 指令! 决定你要做什么，以JSON格式输出。
 
 ## 当前场景
 
@@ -131,26 +131,26 @@ def _build_full_action_prompt(
 5. **信息来源限制**  
    只能使用: ①当前上下文中明确提到的信息 ②检索返回的结果。其他一律视为编造。
 
-## 输出格式
-
-### 标准示例
+## 输出格式(JSON)
 
 ```json
 {{
-  "mind_voice_actions": "内心独白(仅自己可见)",
-  "query_actions": "回答事实性问题前必填(地点/人物/物品/事件等具体信息)",
+  "mind_voice_actions": "内心独白",
+  "query_actions": "检索关键词",
   "speak_actions": {{
     "角色全名": "说话内容"
   }},
   "whisper_actions": {{
-    "角色全名": "耳语内容(其他人听不到)"
+    "角色全名": "耳语内容"
   }},
-  "announce_actions": "公开宣布内容(所有人听到)",
-  "trans_stage_name": "移动目标场景全名(不移动则留空)"
+  "announce_actions": "公开宣布内容",
+  "trans_stage_name": "移动目标场景全名"
 }}
 ```
 
-严格遵循"标准示例"的JSON格式,字段名不可改。"""
+**约束规则**：
+- 严格按上述JSON格式输出你的行动决策
+- 所有字段名不可更改"""
 
 
 #######################################################################################################################################

@@ -275,13 +275,22 @@ def search_similar_documents(
         distances = results["distances"][0] if results["distances"] else []
         metadatas = results["metadatas"][0] if results["metadatas"] else []
 
-        # 6. 将距离转换为相似度分数（距离越小，相似度越高）
-        # 相似度 = 1 - 标准化距离
+        # 6. 将余弦距离转换为相似度分数
+        # ChromaDB 使用余弦距离（cosine distance = 1 - cosine_similarity）
+        # 因此相似度分数 = 1 - cosine_distance
+        # 余弦距离范围是 [0, 2]，转换后相似度范围是 [-1, 1]
+        # 我们将其映射到 [0, 1] 范围：similarity = (1 + cosine_similarity) / 2
         if distances:
-            max_distance = max(distances) if distances else 1.0
+            logger.debug(
+                f"📏 [CHROMADB] 原始余弦距离: {[f'{d:.4f}' for d in distances[:3]]}"
+            )
             similarity_scores = [
-                max(0, 1 - (dist / max_distance)) for dist in distances
+                max(0, min(1, (1 - dist + 1) / 2))
+                for dist in distances  # = (2 - dist) / 2 = 1 - dist/2
             ]
+            logger.debug(
+                f"📊 [CHROMADB] 转换后相似度: {[f'{s:.4f}' for s in similarity_scores[:3]]}"
+            )
         else:
             similarity_scores = []
 

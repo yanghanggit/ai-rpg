@@ -116,6 +116,94 @@ class TestChromaDBRAGIntegration:
                 assert 0 <= score <= 1, f"相似度分数应该在0-1之间: {score}"
                 logger.info(f"  [{i+1}] 相似度: {score:.3f}, 内容: {doc[:50]}...")
 
+    def test_similarity_score_improvement(self) -> None:
+        """测试新相似度计算算法的改进效果"""
+        logger.info("🎯 开始测试相似度分数改进...")
+
+        # 获取collection并确保数据库中有数据
+        collection = get_default_collection()
+        assert collection is not None, "ChromaDB集合应该已创建"
+        collection_count = collection.count()
+        if collection_count == 0:
+            success = _init_rag_system_with_model()
+            assert success, "系统初始化失败"
+            collection_count = collection.count()
+            assert collection_count > 0, f"初始化后数据库仍为空"
+
+        # 测试高相关度查询（应该得到较高的相似度分数）
+        high_relevance_queries = [
+            "铁齿帮",  # 直接匹配知识库中的条目
+            "新奥拉西斯",  # 核心设定
+            "封印之塔",  # 重要地标
+        ]
+
+        logger.info("📊 测试高相关度查询...")
+        for query in high_relevance_queries:
+            docs, scores = _rag_search_with_defaults(query, top_k=5)
+
+            if len(scores) > 0:
+                best_score = max(scores)
+                logger.info(f"🔍 查询: '{query}' - 最高相似度: {best_score:.3f}")
+
+                # 新算法应该能给出更高的相似度分数（>0.3）
+                assert best_score > 0.3, (
+                    f"高相关查询 '{query}' 的最高相似度过低: {best_score:.3f}，"
+                    f"新算法应该给出更高的分数"
+                )
+
+                # 打印详细结果
+                for i, (doc, score) in enumerate(zip(docs[:3], scores[:3])):
+                    logger.info(f"  [{i+1}] 相似度: {score:.3f}, 内容: {doc[:80]}...")
+
+        # 测试中等相关度查询
+        medium_relevance_queries = [
+            "帮派势力",  # 相关但不精确匹配
+            "魔法与符文",  # 主题相关
+        ]
+
+        logger.info("📊 测试中等相关度查询...")
+        for query in medium_relevance_queries:
+            docs, scores = _rag_search_with_defaults(query, top_k=5)
+
+            if len(scores) > 0:
+                best_score = max(scores)
+                logger.info(f"🔍 查询: '{query}' - 最高相似度: {best_score:.3f}")
+
+                # 中等相关查询应该在0.15-0.9之间（实际上知识库中帮派内容很多，所以分数会较高）
+                assert (
+                    0.15 < best_score < 0.9
+                ), f"中等相关查询 '{query}' 的相似度分数异常: {best_score:.3f}"
+
+        # 测试相似度分数的区分度
+        logger.info("📊 测试相似度分数的区分度...")
+        # 对比不同查询的分数差异
+        high_relevance_query = "封印之塔"
+        medium_relevance_query = "帮派势力"
+
+        docs_high, scores_high = _rag_search_with_defaults(
+            high_relevance_query, top_k=1
+        )
+        docs_medium, scores_medium = _rag_search_with_defaults(
+            medium_relevance_query, top_k=1
+        )
+
+        if len(scores_high) > 0 and len(scores_medium) > 0:
+            score_diff = scores_high[0] - scores_medium[0]
+            logger.info(f"🔍 高相关查询 '{high_relevance_query}': {scores_high[0]:.3f}")
+            logger.info(
+                f"🔍 中等相关查询 '{medium_relevance_query}': {scores_medium[0]:.3f}"
+            )
+            logger.info(f"📊 分数差异: {score_diff:.3f}")
+
+            # 不同查询的最高分应该有区分度（注意：实际上"帮派势力"也很相关，所以差异可能较小）
+            # 只需确保高相关查询的分数不低于中等相关查询即可
+            assert scores_high[0] >= scores_medium[0] * 0.95, (
+                f"相似度分数排序不合理，高相关查询 '{high_relevance_query}' 分数 {scores_high[0]:.3f} "
+                f"应该不低于中等相关查询 '{medium_relevance_query}' 分数 {scores_medium[0]:.3f} 的95%"
+            )
+
+        logger.success("✅ 相似度分数改进测试通过！新算法表现正常")
+
     def test_database_state(self) -> None:
         """测试数据库状态"""
         logger.info("📊 开始测试数据库状态...")

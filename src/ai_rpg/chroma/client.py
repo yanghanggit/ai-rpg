@@ -97,7 +97,8 @@ def get_default_collection() -> Collection:
     return chroma_client.get_or_create_collection(
         name="default_collection",
         metadata={
-            "description": "Unified collection for AI RPG system (public + private knowledge)"
+            "description": "Unified collection for AI RPG system (public + private knowledge)",
+            "hnsw:space": "cosine",  # 使用余弦相似度而不是L2距离
         },
     )
 

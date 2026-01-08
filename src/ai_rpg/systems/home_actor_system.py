@@ -34,10 +34,10 @@ from ..models import (
     MindEvent,
     ActorComponent,
     PlayerComponent,
+    PlayerOnlyStageComponent,
 )
 from ..utils import extract_json_from_code_block
 from ..game.tcg_game import TCGGame
-from ..demo.stage_ally_manor import create_stage_monitoring_house
 
 
 #######################################################################################################################################
@@ -357,14 +357,13 @@ class HomeActorSystem(ReactiveProcessor):
             available_home_stages = home_stage_entities.copy()  # 注意这里必须 copy
             available_home_stages.discard(current_stage)
 
-            # 如果当前角色不是玩家，过滤掉监视之屋（玩家专属场景）
+            # 如果当前角色不是玩家，过滤掉仅玩家可进入的场景
             if not actor_entity.has(PlayerComponent):
-                monitoring_house_name = create_stage_monitoring_house().name
-                stages_to_remove = set()
-                for stage_entity in available_home_stages:
-                    if stage_entity.name == monitoring_house_name:
-                        stages_to_remove.add(stage_entity)
-                available_home_stages -= stages_to_remove
+                available_home_stages = {
+                    stage
+                    for stage in available_home_stages
+                    if not stage.has(PlayerOnlyStageComponent)
+                }
 
             # 生成请求处理器
             chat_clients.append(

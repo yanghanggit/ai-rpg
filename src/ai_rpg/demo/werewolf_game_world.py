@@ -414,6 +414,7 @@ def create_demo_sd_game_blueprint(
     world_blueprint = Blueprint(
         name=game_name,
         player_actor=moderator.name,
+        player_only_stage=stage_werewolf_stage.name,
         campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
         stages=[],
         world_systems=[],

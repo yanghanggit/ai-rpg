@@ -20,9 +20,9 @@ from ..models import (
     Combat,
     AllyComponent,
     PlayerComponent,
+    PlayerOnlyStageComponent,
 )
 from ..entitas import Matcher, Entity
-from ..demo.stage_ally_manor import create_stage_monitoring_house
 
 
 ###################################################################################################################################################################
@@ -281,26 +281,31 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
     ).entities.copy()
     assert len(home_stage_entities) > 0, "没有找到家园场景实体"
 
-    # 3. 拿监视之屋（玩家专属场景）
-    monitoring_house_name = create_stage_monitoring_house().name
-    monitoring_house_stage_entity = tcg_game.get_stage_entity(monitoring_house_name)
-    assert monitoring_house_stage_entity is not None, "没有找到监视之屋场景实体"
+    # 3. 分离玩家专属场景和普通家园场景
+    player_only_stage = None
+    for stage in home_stage_entities:
+        if stage.has(PlayerOnlyStageComponent):
+            player_only_stage = stage
+            break
 
-    home_stage_entities -= {monitoring_house_stage_entity}
-    assert len(home_stage_entities) > 0, "没有找到有效的家园场景实体!"
-    random_home_stage = next(iter(home_stage_entities))
+    assert player_only_stage is not None, "必须存在一个PlayerOnlyStage场景"
+
+    # 获取普通家园场景（排除玩家专属场景）
+    regular_home_stages = home_stage_entities - {player_only_stage}
+    assert len(regular_home_stages) > 0, "必须至少有一个普通家园场景"
+    random_home_stage = next(iter(regular_home_stages))
 
     # 4. 生成并发送返回提示消息
     for ally_entity in ally_entities:
 
         if ally_entity.has(PlayerComponent):
-            # 执行场景传送到监视之屋, 只有玩家能进入监视之屋
+            # 玩家传送到专属场景
             tcg_game.add_human_message(
-                ally_entity, f"""# 提示！冒险结束，将要返回: {monitoring_house_name}"""
+                ally_entity, f"""# 提示！冒险结束，将要返回: {player_only_stage.name}"""
             )
-            tcg_game.stage_transition({ally_entity}, monitoring_house_stage_entity)
+            tcg_game.stage_transition({ally_entity}, player_only_stage)
         else:
-            # 除了玩家 执行场景传送到家园
+            # 盟友传送到普通家园
             tcg_game.add_human_message(
                 ally_entity, f"""# 提示！冒险结束，将要返回: {random_home_stage.name}"""
             )

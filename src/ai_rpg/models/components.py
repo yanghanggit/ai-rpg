@@ -82,6 +82,14 @@ class PlayerComponent(Component):
 
 
 ############################################################################################################
+# 玩家标记
+@final
+@register_component_class
+class PlayerOnlyStageComponent(Component):
+    name: str
+
+
+############################################################################################################
 # 摧毁Entity标记
 @final
 @register_component_class

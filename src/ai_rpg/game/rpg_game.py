@@ -40,9 +40,9 @@ from ..models import (
     InventoryComponent,
     SkillBookComponent,
     TransStageEvent,
+    PlayerOnlyStageComponent,
 )
 from .player_session import PlayerSession
-from ..demo.stage_ally_manor import create_stage_monitoring_house
 
 
 #################################################################################################################################################
@@ -167,9 +167,19 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         ## 第4步，创建stage
         self._create_stage_entities(self.world.blueprint.stages)
 
-        ## 第5步，临时测试, 确认监视之屋场景创建成功，不然后续会出错，先这样。
-        test_name = create_stage_monitoring_house().name
-        assert self.get_stage_entity(test_name) is not None, "test stage_entity is None"
+        ## 第5步，标记仅玩家可见的场景
+        assert (
+            self.world.blueprint.player_only_stage != ""
+        ), "player_only_stage 不能为空"
+        player_only_stage_entity = self.get_stage_entity(
+            self.world.blueprint.player_only_stage
+        )
+        assert player_only_stage_entity is not None, "player_only_stage_entity is None"
+        assert not player_only_stage_entity.has(PlayerOnlyStageComponent)
+        player_only_stage_entity.replace(
+            PlayerOnlyStageComponent, player_only_stage_entity.name
+        )
+        logger.info(f"场景: {player_only_stage_entity.name} 已标记为仅玩家可见")
 
         return self
 
@@ -626,6 +636,14 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             actors: 需要传送的角色集合
             stage_destination: 目标场景
         """
+        # 0. 访问控制：PlayerOnlyStage 只允许玩家进入
+        if stage_destination.has(PlayerOnlyStageComponent):
+            for actor in actors:
+                assert actor.has(PlayerComponent), (
+                    f"角色 {actor.name} 试图进入仅玩家场景 {stage_destination.name}，"
+                    "但该角色不是玩家！这是程序逻辑错误。"
+                )
+
         # 1. 验证前置条件并过滤有效角色
         actors_to_transfer = self._validate_stage_transition_prerequisites(
             actors, stage_destination

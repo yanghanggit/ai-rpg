@@ -30,6 +30,7 @@ def sample_game() -> Any:
     blueprint = Blueprint(
         name="test_blueprint",
         player_actor="test_player_actor",
+        player_only_stage="test_player_only_stage",
         campaign_setting="test_setting",
         stages=[],
         world_systems=[],

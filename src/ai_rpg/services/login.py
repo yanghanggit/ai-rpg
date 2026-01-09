@@ -142,7 +142,7 @@ async def logout(
     if pre_room._tcg_game is not None:
 
         # 保存游戏的运行时数据
-        pre_room._tcg_game.save()
+        pre_room._tcg_game.save_game()
         logger.info(
             f"logout: {payload.user_name} save game = {pre_room._tcg_game.name}"
         )

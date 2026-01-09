@@ -137,20 +137,20 @@ class UniqueItemNotificationSystem(ReactiveProcessor):
         logger.debug(f"entity {entity.name} has unique item {item.model_dump_json()}")
 
         # 查找并删除已存在的相同道具提示消息
-        existing_human_messages = self._game.find_human_messages_by_attribute(
+        existing_human_messages = self._game.filter_human_messages_by_attribute(
             actor_entity=entity,
             attribute_key="test_unique_item",
             attribute_value=item.name,
         )
 
         if len(existing_human_messages) > 0:
-            self._game.delete_human_messages_by_attribute(
+            self._game.remove_human_messages(
                 actor_entity=entity,
                 human_messages=existing_human_messages,
             )
 
         # 验证删除成功
-        duplicate_message_test = self._game.find_human_messages_by_attribute(
+        duplicate_message_test = self._game.filter_human_messages_by_attribute(
             actor_entity=entity,
             attribute_key="test_unique_item",
             attribute_value=item.name,

@@ -123,7 +123,7 @@ def _validate_dungeon_prerequisites(
     ), f"_validate_dungeon_prerequisites: invalid game type for {user_name}"
 
     # 4. 验证玩家在地下城状态
-    if not tcg_game.is_player_in_dungeon:
+    if not tcg_game.is_player_in_dungeon_stage:
         logger.error(f"地下城操作失败: 玩家 {user_name} 不在地下城状态")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

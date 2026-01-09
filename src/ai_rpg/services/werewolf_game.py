@@ -472,7 +472,7 @@ async def start_werewolf_game(
                 )
 
                 # 保存并退出旧游戏
-                pre_room._sdg_game.save()
+                pre_room._sdg_game.save_game()
                 pre_room._sdg_game.exit()
 
                 # 先断开引用，等待垃圾回收
@@ -517,7 +517,7 @@ async def start_werewolf_game(
         ChatClient.initialize_url_config(server_configuration)
 
         # 新游戏！
-        web_game.new_game().save()
+        web_game.new_game().save_game()
 
         # 测试一下玩家控制角色，如果没有就是错误。
         assert web_game.get_player_entity() is not None, "玩家实体不存在"

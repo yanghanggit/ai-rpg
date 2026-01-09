@@ -65,7 +65,7 @@ async def _run_game(
     assert (
         len(terminal_game.world.entities_serialization) == 0
     ), "World data 中已经有实体，说明不是第一次创建游戏"
-    terminal_game.new_game().save()
+    terminal_game.new_game().save_game()
 
     # 测试一下玩家控制角色，如果没有就是错误。
     player_entity = terminal_game.get_player_entity()
@@ -90,7 +90,7 @@ async def _run_game(
     logger.warning("！！！！游戏主循环结束====================================")
 
     # 会保存一下。
-    terminal_game.save()
+    terminal_game.save_game()
 
     # 退出游戏
     terminal_game.exit()

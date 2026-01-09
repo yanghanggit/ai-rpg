@@ -446,12 +446,12 @@ async def _run_game(
     if len(terminal_game.world.entities_serialization) == 0:
         logger.info(f"游戏中没有实体 = {game}, 说明是第一次创建游戏")
         # 直接构建ecs
-        terminal_game.new_game().save()
+        terminal_game.new_game().save_game()
 
     else:
         logger.warning(f"游戏中有实体 = {game}，需要通过数据恢复实体，是游戏回复的过程")
         # 测试！回复ecs
-        terminal_game.load_game().save()
+        terminal_game.load_game().save_game()
 
     # 测试一下玩家控制角色，如果没有就是错误。
     player_entity = terminal_game.get_player_entity()
@@ -470,7 +470,7 @@ async def _run_game(
             break
 
     # 会保存一下。
-    terminal_game.save()
+    terminal_game.save_game()
 
     # 退出游戏
     terminal_game.exit()
@@ -652,9 +652,9 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
         return
 
     # 根据游戏状态分发处理逻辑
-    if terminal_game.is_player_in_dungeon:
+    if terminal_game.is_player_in_dungeon_stage:
         await _process_dungeon_state_input(terminal_game, usr_input)
-    elif terminal_game.is_player_at_home:
+    elif terminal_game.is_player_in_home_stage:
         await _process_home_state_input(terminal_game, usr_input)
     else:
         logger.error(

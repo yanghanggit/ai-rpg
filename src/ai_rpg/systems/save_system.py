@@ -48,7 +48,7 @@ class SaveSystem(ExecuteProcessor):
         # 核心调用
         # self._game.save()
         # logger.debug("开始保存游戏...")
-        await asyncio.to_thread(self._game.save)
+        await asyncio.to_thread(self._game.save_game)
 
     ############################################################################################################
     def _format_entity_name_with_status(self, entity: Entity) -> str:

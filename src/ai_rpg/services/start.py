@@ -151,7 +151,7 @@ async def start(
         logger.info(
             f"游戏中没有实体 = {payload.game_name}, 说明是第一次创建游戏, 直接构建ECS!"
         )
-        room._tcg_game.new_game().save()
+        room._tcg_game.new_game().save_game()
     else:
         assert False, "start/v1: 游戏恢复功能尚未实现"
         # logger.info(

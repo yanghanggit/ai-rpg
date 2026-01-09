@@ -196,7 +196,7 @@ def initialize_dungeon_first_entry(tcg_game: TCGGame, dungeon: Dungeon) -> bool:
 
     # 初始化地下城状态
     dungeon.current_stage_index = 0
-    tcg_game.create_dungeon_entities(dungeon)
+    tcg_game.setup_dungeon_entities(dungeon)
 
     # 获取所有盟友实体并推进到第一关
     ally_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities.copy()
@@ -312,7 +312,7 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
             tcg_game.stage_transition({ally_entity}, random_home_stage)
 
     # 5. 清理地下城数据
-    tcg_game.destroy_dungeon_entities(tcg_game.world.dungeon)
+    tcg_game.teardown_dungeon_entities(tcg_game.world.dungeon)
     tcg_game._world.dungeon = Dungeon(name="", stages=[])
 
     # 6. 恢复所有盟友的战斗状态

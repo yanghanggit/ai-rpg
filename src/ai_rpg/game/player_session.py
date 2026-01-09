@@ -1,21 +1,3 @@
-"""
-玩家会话管理模块
-
-本模块定义了玩家会话(PlayerSession)类,用于管理单个玩家在游戏过程中的状态和消息。
-
-主要职责:
-1. 存储玩家的基本信息(名称、控制的角色)
-2. 管理会话期间产生的所有消息/事件
-3. 作为游戏状态与客户端通信的桥梁
-
-设计思路:
-- 采用事件驱动模式,所有游戏事件都通过此类记录
-- 消息列表持续累积,记录完整的会话历史
-- 简单直接的设计,避免过度工程化
-
-相关设计文档: docs/development-logs/消息可靠性传递方案设计.md
-"""
-
 from typing import List, Dict, Any
 from ..models import AgentEvent, SessionMessage, MessageType
 from pydantic import BaseModel
@@ -121,10 +103,19 @@ class PlayerSession(BaseModel):
     def add_game_message(self, data: Dict[str, Any]) -> None:
         """
         添加一个游戏消息到会话历史中
+
+        用于记录游戏系统级别的消息，如游戏状态变更、系统通知等。
+        与 add_agent_event_message 不同，此方法用于非代理事件的游戏消息。
+
+        Args:
+            data: 游戏消息数据字典，包含游戏相关的键值对信息
+
+        Note:
+            - 消息会被标记为 MessageType.GAME 类型
+            - 所有消息会持久化到 session_messages 列表中
         """
 
         # logger.debug(f"[{self.name}:{self.actor}] = add_game_message: {data}")
-
         game_message = SessionMessage(
             message_type=MessageType.GAME,
             data=data,
@@ -134,14 +125,44 @@ class PlayerSession(BaseModel):
 
     ###############################################################################
     def _add_session_message(self, message: SessionMessage) -> None:
-        # 为消息分配递增的序列号并添加到列表
+        """
+        内部方法：添加会话消息并分配序列号
+
+        为消息分配唯一的递增序列号，然后将其添加到会话历史中。
+        这是所有消息添加操作的底层实现方法。
+
+        Args:
+            message: 会话消息对象，将被分配序列号并添加到历史中
+
+        Note:
+            - 这是私有方法，应通过 add_agent_event_message 或 add_game_message 调用
+            - 每次调用会自动递增 event_sequence
+            - 序列号用于消息排序和增量获取
+        """
         self.event_sequence += 1
         message.sequence_id = self.event_sequence
         self.session_messages.append(message)
 
     ###############################################################################
-    # 3. 服务器返回增量事件
     def get_messages_since(self, last_id: int) -> List[SessionMessage]:
+        """
+        获取指定序列号之后的所有消息（增量获取）
+
+        用于客户端轮询机制，只获取上次同步之后新增的消息，避免重复传输。
+
+        Args:
+            last_id: 上次获取到的最后一条消息的序列号
+
+        Returns:
+            List[SessionMessage]: 序列号大于 last_id 的所有消息列表
+
+        使用示例:
+            >>> # 第一次获取所有消息
+            >>> messages = session.get_messages_since(0)
+            >>> last_id = messages[-1].sequence_id if messages else 0
+            >>> # 之后只获取新消息
+            >>> new_messages = session.get_messages_since(last_id)
+        """
         return [e for e in self.session_messages if e.sequence_id > last_id]
 
     ###############################################################################

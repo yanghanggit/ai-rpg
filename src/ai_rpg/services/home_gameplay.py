@@ -94,7 +94,7 @@ async def _validate_player_at_home(
         )
 
     # 判断游戏状态，不是Home状态不可以推进。
-    if not current_room._tcg_game.is_player_at_home:
+    if not current_room._tcg_game.is_player_in_home_stage:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="当前不在家园状态，不能进行家园操作",

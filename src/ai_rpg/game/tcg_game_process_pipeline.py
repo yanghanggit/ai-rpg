@@ -39,8 +39,8 @@ def create_npc_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     from ..systems.home_actor_system import (
         HomeActorSystem,
     )
-    from ..systems.home_stage_system import (
-        HomeStageSystem,
+    from ..systems.home_stage_description_system import (
+        HomeStageDescriptionSystem,
     )
     from ..systems.kick_off_system import KickOffSystem
     from ..systems.query_action_system import (
@@ -65,7 +65,7 @@ def create_npc_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     # 规划逻辑
     ######## 在所有规划之前!##############################################################
     processors.add(HomeAutoPlanSystem(tcg_game))
-    processors.add(HomeStageSystem(tcg_game))
+    processors.add(HomeStageDescriptionSystem(tcg_game))
     processors.add(HomeActorSystem(tcg_game))
     ####### 在所有规划之后! ##############################################################
 

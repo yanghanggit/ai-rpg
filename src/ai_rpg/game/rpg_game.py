@@ -586,9 +586,11 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             )
 
             # 必要组件：外观
+            # TODO: 未来需要从角色表中读取 base_body，目前暂时使用空字符串占位
             actor_entity.add(
                 AppearanceComponent,
                 actor_model.name,
+                "",  # base_body - TODO: 从 character_sheet 中读取基础身体形态
                 actor_model.character_sheet.appearance,
             )
 

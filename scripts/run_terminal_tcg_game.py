@@ -621,7 +621,7 @@ async def _process_player_input(terminal_game: TCGGame) -> None:
     player_actor_entity = terminal_game.get_player_entity()
     assert player_actor_entity is not None
 
-    player_stage_entity = terminal_game.safe_get_stage_entity(player_actor_entity)
+    player_stage_entity = terminal_game.resolve_stage_entity(player_actor_entity)
     assert player_stage_entity is not None
 
     # 其他状态下的玩家输入！！！！！！

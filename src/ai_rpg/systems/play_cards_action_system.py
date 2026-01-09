@@ -118,7 +118,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             )
 
             # 添加仲裁动作标记
-            current_stage = self._game.safe_get_stage_entity(actor_entity)
+            current_stage = self._game.resolve_stage_entity(actor_entity)
             assert current_stage is not None, "无法获取角色所在场景实体！"
             if not current_stage.has(ArbitrationAction):
                 current_stage.replace(

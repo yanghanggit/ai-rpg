@@ -192,7 +192,7 @@ class WerewolfGameInitializationSystem(ExecuteProcessor):
         player_entity = self._game.get_player_entity()
         assert player_entity is not None, "玩家实体不存在"
 
-        stage_entity = self._game.safe_get_stage_entity(player_entity)
+        stage_entity = self._game.resolve_stage_entity(player_entity)
         assert stage_entity is not None, "场景实体不存在"
 
         environment_comp = stage_entity.get(EnvironmentComponent)

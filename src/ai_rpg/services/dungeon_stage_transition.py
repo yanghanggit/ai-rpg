@@ -149,8 +149,8 @@ def enter_dungeon_stage(
     ), f"{dungeon_stage_entity.name} 没有KickOffMessageComponent组件！"
 
     # 获取场景内角色的外貌信息并增强KickOff消息
-    actors_appearances_mapping: Dict[str, str] = tcg_game.get_stage_actor_appearances(
-        dungeon_stage_entity
+    actors_appearances_mapping: Dict[str, str] = (
+        tcg_game.get_actor_appearances_on_stage(dungeon_stage_entity)
     )
 
     enhanced_kickoff_content = _enhance_kickoff_with_actors(

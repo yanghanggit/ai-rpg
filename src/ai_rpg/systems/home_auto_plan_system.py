@@ -71,7 +71,7 @@ class HomeAutoPlanSystem(ExecuteProcessor):
         # 测试：所有的没有plan的actor都执行一次。
         for actor in planning_actors:
 
-            stage_entity = self._game.safe_get_stage_entity(actor)
+            stage_entity = self._game.resolve_stage_entity(actor)
             assert stage_entity is not None, "角色必须在某个场景中！"
             if not stage_entity.has(HomeComponent):
                 # 仅处理在家的角色

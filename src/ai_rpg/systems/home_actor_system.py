@@ -299,11 +299,11 @@ class HomeActorSystem(ReactiveProcessor):
         for actor_entity in actor_entities:
 
             # 找到当前场景
-            current_stage = self._game.safe_get_stage_entity(actor_entity)
+            current_stage = self._game.resolve_stage_entity(actor_entity)
             assert current_stage is not None
 
             # 找到当前场景内所有角色 & 他们的外观描述
-            other_actors_appearances = self._game.get_stage_actor_appearances(
+            other_actors_appearances = self._game.get_actor_appearances_on_stage(
                 current_stage
             )
             # 移除自己

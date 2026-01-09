@@ -116,7 +116,7 @@ def activate_stage_transition(tcg_game: TCGGame, stage_name: str) -> Tuple[bool,
         logger.error(f"激活场景转换失败: {error_detail}")
         return False, error_detail
 
-    player_stage_entity = tcg_game.safe_get_stage_entity(player_entity)
+    player_stage_entity = tcg_game.resolve_stage_entity(player_entity)
     assert player_stage_entity is not None, "玩家当前场景实体不存在！"
     if player_stage_entity.name == stage_name:
         error_detail = f"目标场景 {stage_name} 与当前场景相同"

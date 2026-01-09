@@ -128,7 +128,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         assert player_entity is not None
 
         # 获取当前场景实体
-        current_stage_entity = self._game.safe_get_stage_entity(player_entity)
+        current_stage_entity = self._game.resolve_stage_entity(player_entity)
         assert current_stage_entity is not None
 
         # 获取场景环境组件

@@ -479,7 +479,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         **kwargs: Any,
     ) -> None:
 
-        stage_entity = self.safe_get_stage_entity(entity)
+        stage_entity = self.resolve_stage_entity(entity)
         assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"
         if stage_entity is None:
             return
@@ -528,7 +528,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         # 过滤掉已经在目标场景的角色
         actors_to_transfer = set()
         for actor_entity in actors:
-            current_stage = self.safe_get_stage_entity(actor_entity)
+            current_stage = self.resolve_stage_entity(actor_entity)
             assert current_stage is not None, f"角色 {actor_entity.name} 没有当前场景"
 
             if current_stage == stage_destination:
@@ -550,7 +550,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             actors: 要离开的角色集合
         """
         for actor_entity in actors:
-            current_stage = self.safe_get_stage_entity(actor_entity)
+            current_stage = self.resolve_stage_entity(actor_entity)
             assert current_stage is not None
 
             # 向所在场景及所在场景内除自身外的其他人宣布，这货要离开了
@@ -576,7 +576,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             stage_destination: 目标场景
         """
         for actor_entity in actors:
-            current_stage = self.safe_get_stage_entity(actor_entity)
+            current_stage = self.resolve_stage_entity(actor_entity)
             assert current_stage is not None, "角色没有当前场景"
             assert current_stage != stage_destination, "不应该传送到当前场景"
 

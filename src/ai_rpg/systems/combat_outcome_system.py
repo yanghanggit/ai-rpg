@@ -65,7 +65,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
 
-        actors_on_stage = self._game.get_all_actors_on_stage(player_entity)
+        actors_on_stage = self._game.get_actors_on_stage(player_entity)
         assert len(actors_on_stage) > 0, f"entities with actions: {actors_on_stage}"
 
         active_enemies: Set[Entity] = set()
@@ -93,7 +93,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
         player_entity = self._game.get_player_entity()
         assert player_entity is not None, "Player entity should not be None."
 
-        actors_on_stage = self._game.get_all_actors_on_stage(player_entity)
+        actors_on_stage = self._game.get_actors_on_stage(player_entity)
         assert len(actors_on_stage) > 0, f"entities with actions: {actors_on_stage}"
 
         current_allies: Set[Entity] = set()
@@ -121,12 +121,12 @@ class CombatOutcomeSystem(ExecuteProcessor):
         player_entity = self._game.get_player_entity()
         assert player_entity is not None, "Player entity should not be None."
 
-        combat_stage_entity = self._game.safe_get_stage_entity(player_entity)
+        combat_stage_entity = self._game.resolve_stage_entity(player_entity)
         assert (
             combat_stage_entity is not None
         ), "Player's stage entity should not be None."
 
-        actors_on_stage = self._game.get_all_actors_on_stage(player_entity)
+        actors_on_stage = self._game.get_actors_on_stage(player_entity)
         assert len(actors_on_stage) > 0, f"entities with actions: {actors_on_stage}"
 
         for entity in actors_on_stage:

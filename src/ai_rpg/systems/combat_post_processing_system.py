@@ -92,7 +92,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
 
         for combat_actor in combat_actors:
 
-            combat_stage_entity = self._game.safe_get_stage_entity(combat_actor)
+            combat_stage_entity = self._game.resolve_stage_entity(combat_actor)
             assert (
                 combat_stage_entity is not None
             ), f"无法获取角色 {combat_actor.name} 所在的场景实体！"
@@ -116,7 +116,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
         processed_actor_entity = self._game.get_entity_by_name(chat_client.name)
         assert processed_actor_entity is not None
 
-        combat_stage_entity = self._game.safe_get_stage_entity(processed_actor_entity)
+        combat_stage_entity = self._game.resolve_stage_entity(processed_actor_entity)
         assert combat_stage_entity is not None
 
         # 在这里做压缩！！先测试，可以不做。TODO。
@@ -172,7 +172,7 @@ class CombatPostProcessingSystem(ExecuteProcessor):
     ) -> List[SystemMessage | HumanMessage | AIMessage]:
         """压缩角色的战斗消息历史：找到战斗开始和结束标记，将期间的详细消息压缩成摘要"""
         # 获取当前的战斗实体。
-        stage_entity = self._game.safe_get_stage_entity(entity)
+        stage_entity = self._game.resolve_stage_entity(entity)
         assert stage_entity is not None
 
         # 获取最近的战斗消息。

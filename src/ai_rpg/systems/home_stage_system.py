@@ -108,7 +108,7 @@ class HomeStageSystem(ExecuteProcessor):
 
             # 获取场景内角色的外貌信息
             stage_actor_appearances: Dict[str, str] = (
-                self._game.get_stage_actor_appearances(stage_entity)
+                self._game.get_actor_appearances_on_stage(stage_entity)
             )
 
             # 生成提示信息

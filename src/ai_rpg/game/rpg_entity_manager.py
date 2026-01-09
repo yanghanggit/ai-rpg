@@ -46,19 +46,19 @@ class RPGEntityManager(Context):
         self,
     ) -> None:
         super().__init__()
-        self._query_entities: Dict[str, Entity] = {}  # （方便快速查找用）
+        self._entity_name_index: Dict[str, Entity] = {}  # （方便快速查找用）
 
     ###############################################################################################################################################
     def __create_entity__(self, name: str) -> Entity:
         entity = super().create_entity()
         entity._name = str(name)
-        self._query_entities[name] = entity
+        self._entity_name_index[name] = entity
         return entity
 
     ###############################################################################################################################################
     @override
     def destroy_entity(self, entity: Entity) -> None:
-        self._query_entities.pop(entity.name, None)
+        self._entity_name_index.pop(entity.name, None)
         return super().destroy_entity(entity)
 
     ###############################################################################################################################################
@@ -133,7 +133,7 @@ class RPGEntityManager(Context):
 
     ###############################################################################################################################################
     def get_entity_by_name(self, name: str) -> Optional[Entity]:
-        return self._query_entities.get(name, None)
+        return self._entity_name_index.get(name, None)
 
     ###############################################################################################################################################
     def get_stage_entity(self, stage_name: str) -> Optional[Entity]:
@@ -150,7 +150,22 @@ class RPGEntityManager(Context):
         return None
 
     ###############################################################################################################################################
-    def safe_get_stage_entity(self, entity: Entity) -> Optional[Entity]:
+    def resolve_stage_entity(self, entity: Entity) -> Optional[Entity]:
+        """解析并返回 Stage 实体。
+
+        这是一个类型解析函数，能够智能地从不同类型的实体中获取对应的 Stage 实体：
+        - 如果传入的是 Stage 实体，直接返回该实体本身
+        - 如果传入的是 Actor 实体，返回该 Actor 当前所在的 Stage 实体
+        - 如果传入的实体既不是 Stage 也不是 Actor，返回 None
+
+        这个函数常用于需要获取场景信息的场景，无论调用者持有的是 Stage 还是 Actor 的引用。
+
+        Args:
+            entity: 要解析的实体，可以是 Stage 实体或 Actor 实体
+
+        Returns:
+            Optional[Entity]: 解析出的 Stage 实体，如果无法解析则返回 None
+        """
         if entity.has(StageComponent):
             return entity
         elif entity.has(ActorComponent):
@@ -174,9 +189,19 @@ class RPGEntityManager(Context):
         return None
 
     ###############################################################################################################################################
-    def get_all_actors_on_stage(self, entity: Entity) -> Set[Entity]:
+    def get_actors_on_stage(self, entity: Entity) -> Set[Entity]:
+        """获取指定场景上的所有 Actor 实体。
 
-        stage_entity = self.safe_get_stage_entity(entity)
+        返回与传入实体在同一场景中的所有 Actor（包括活着和死亡的）。
+        传入的实体可以是 Stage 本身，也可以是场景中的某个 Actor。
+
+        Args:
+            entity: Stage 实体或 Actor 实体
+
+        Returns:
+            Set[Entity]: 该场景上的所有 Actor 实体集合（包括已死亡的）
+        """
+        stage_entity = self.resolve_stage_entity(entity)
         assert stage_entity is not None
         if stage_entity is None:
             return set()
@@ -190,7 +215,7 @@ class RPGEntityManager(Context):
 
         # 以stage为key，actor为value
         for actor_entity in actor_entities:
-            actor_stage_entity = self.safe_get_stage_entity(actor_entity)
+            actor_stage_entity = self.resolve_stage_entity(actor_entity)
             assert actor_stage_entity is not None, f"actor_entity = {actor_entity}"
             if actor_stage_entity != stage_entity:
                 # 不同的stage不算在内
@@ -202,11 +227,21 @@ class RPGEntityManager(Context):
 
     ###############################################################################################################################################
     def get_alive_actors_on_stage(self, entity: Entity) -> Set[Entity]:
-        ret = self.get_all_actors_on_stage(entity)
+        """获取指定场景上存活的 Actor 实体。
+
+        过滤掉带有 DeathComponent 的 Actor，只返回活着的 Actor。
+
+        Args:
+            entity: Stage 实体或 Actor 实体
+
+        Returns:
+            Set[Entity]: 该场景上存活的 Actor 实体集合（不包括已死亡的）
+        """
+        ret = self.get_actors_on_stage(entity)
         return {actor for actor in ret if not actor.has(DeathComponent)}
 
     ###############################################################################################################################################
-    def get_stage_actor_appearances(self, entity: Entity) -> Dict[str, str]:
+    def get_actor_appearances_on_stage(self, entity: Entity) -> Dict[str, str]:
         ret: Dict[str, str] = {}
         for actor in self.get_alive_actors_on_stage(entity):
             if actor.has(AppearanceComponent):
@@ -220,7 +255,7 @@ class RPGEntityManager(Context):
         if not actor_entity.has(ActorComponent):
             return False
 
-        stage_entity = self.safe_get_stage_entity(actor_entity)
+        stage_entity = self.resolve_stage_entity(actor_entity)
         assert stage_entity is not None, "stage_entity is None"
         if stage_entity is None:
             return False
@@ -238,7 +273,7 @@ class RPGEntityManager(Context):
         if not actor_entity.has(ActorComponent):
             return False
 
-        stage_entity = self.safe_get_stage_entity(actor_entity)
+        stage_entity = self.resolve_stage_entity(actor_entity)
         assert stage_entity is not None, "stage_entity is None"
         if stage_entity is None:
             return False
@@ -259,11 +294,11 @@ class RPGEntityManager(Context):
         if actor_entity is None:
             return InteractionValidationResult.TARGET_NOT_FOUND
 
-        current_stage_entity = self.safe_get_stage_entity(initiator_entity)
+        current_stage_entity = self.resolve_stage_entity(initiator_entity)
         if current_stage_entity is None:
             return InteractionValidationResult.INITIATOR_NOT_IN_STAGE
 
-        target_stage_entity = self.safe_get_stage_entity(actor_entity)
+        target_stage_entity = self.resolve_stage_entity(actor_entity)
         if target_stage_entity != current_stage_entity:
             return InteractionValidationResult.DIFFERENT_STAGES
 
@@ -283,7 +318,7 @@ class RPGEntityManager(Context):
         # 以stage为key，actor为value
         for actor_entity in actor_entities:
 
-            stage_entity = self.safe_get_stage_entity(actor_entity)
+            stage_entity = self.resolve_stage_entity(actor_entity)
             assert stage_entity is not None, f"actor_entity = {actor_entity}"
             if stage_entity is None:
                 continue

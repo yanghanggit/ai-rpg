@@ -46,7 +46,7 @@ class DiscussionActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     def _prosses_action(self, entity: Entity) -> None:
 
-        current_stage_entity = self._game.safe_get_stage_entity(entity)
+        current_stage_entity = self._game.resolve_stage_entity(entity)
         assert current_stage_entity is not None, "实体必须处于某个场景中"
 
         discussion_action = entity.get(DiscussionAction)

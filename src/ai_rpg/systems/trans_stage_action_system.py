@@ -73,7 +73,7 @@ class TransStageActionSystem(ReactiveProcessor):
             - 转换成功时会调用 stage_transition 执行实际的场景切换
         """
         # 获取当前场景
-        current_stage_entity = self._game.safe_get_stage_entity(entity)
+        current_stage_entity = self._game.resolve_stage_entity(entity)
         assert current_stage_entity is not None, "当前场景不能为空"
 
         # 分析目标场景

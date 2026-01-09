@@ -179,7 +179,7 @@ class TCGGame(RPGGame):
         assert len(actors_on_stage) > 0, "actors_on_stage is empty"
 
         # 当前舞台(必然是地下城！)
-        stage_entity = self.safe_get_stage_entity(player_entity)
+        stage_entity = self.resolve_stage_entity(player_entity)
         assert stage_entity is not None, "stage_entity is None"
         assert stage_entity.has(DungeonComponent), "stage_entity 没有 DungeonComponent"
 

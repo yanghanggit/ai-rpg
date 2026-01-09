@@ -134,7 +134,7 @@ class AnnounceActionSystem(ReactiveProcessor):
             - 这是一个全场景广播机制，与单个场景的 SpeakAction 不同
         """
         # 获取当前场景实体
-        current_stage_entity = self._game.safe_get_stage_entity(entity)
+        current_stage_entity = self._game.resolve_stage_entity(entity)
         assert current_stage_entity is not None
 
         # 获取所有同类型的场景实体

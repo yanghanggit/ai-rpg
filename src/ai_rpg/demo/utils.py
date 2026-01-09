@@ -20,6 +20,7 @@ from ..models import (
     StageCharacterSheet,
     StageType,
 )
+from loguru import logger
 
 
 #######################################################################################################################################
@@ -64,6 +65,14 @@ def create_actor(
     assert actor.character_stats.hp == 0, "HP must be 0."
     actor.character_stats.hp = character_stats.max_hp
 
+    # 选择外观描述
+    appearance = character_sheet.base_body
+    if appearance == "":
+        logger.warning(
+            f"Actor {name} has empty base_body in character_sheet, using appearance instead."
+        )
+        appearance = character_sheet.appearance
+
     # 初次编译system_message!!!!
     actor.system_message = f"""# {actor.name}
     
@@ -83,7 +92,7 @@ def create_actor(
 
 ## 外观设定
 
-{character_sheet.appearance}"""
+{appearance}"""
 
     return actor
 

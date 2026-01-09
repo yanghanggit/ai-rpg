@@ -70,10 +70,9 @@ def create_npc_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
 
     # 规划逻辑
     ######## 在所有规划之前!##############################################################
-    processors.add(HomeAutoPlanSystem(tcg_game))
-    processors.add(HomeStageDescriptionSystem(tcg_game))
-
-    processors.add(HomeActorSystem(tcg_game))
+    # processors.add(HomeAutoPlanSystem(tcg_game))
+    # processors.add(HomeStageDescriptionSystem(tcg_game))
+    # processors.add(HomeActorSystem(tcg_game))
     ####### 在所有规划之后! ##############################################################
 
     # 动作处理相关的系统 ##################################################################

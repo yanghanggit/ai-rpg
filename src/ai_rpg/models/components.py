@@ -101,7 +101,7 @@ class DestroyComponent(Component):
 # 角色外观信息
 @final
 @register_component_type
-class AppearanceComponent(MutableComponent):
+class AppearanceComponent(Component):
     """角色外观描述组件。
 
     用于存储和管理角色的外观信息，为AI系统和游戏交互提供视觉描述上下文。

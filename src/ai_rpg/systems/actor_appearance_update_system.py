@@ -10,7 +10,7 @@ from ..models import (
     AppearanceComponent,
 )
 from ..utils import extract_json_from_code_block
-from ..demo import create_actor_warrior
+from langchain_core.messages import SystemMessage
 
 
 #######################################################################################################################################
@@ -20,95 +20,77 @@ class AppearanceResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _build_appearance_prompt(
-    base_body: str,
-    actor_name: str,
-) -> str:
-    """构建角色外观生成的提示词（简化版）。
-
-    根据角色的基础身体形态生成完整的外观描述提示词。
-    该提示词要求AI基于base_body生成详细的外观描述。
+def _build_appearance_prompt(base_body: str) -> str:
+    """构建角色外观生成的提示词。
 
     Args:
         base_body: 基础身体形态（天生特征）
-        actor_name: 角色名称
 
     Returns:
-        格式化的提示词字符串，包含角色信息和输出格式说明
+        格式化的提示词字符串
     """
 
-    return f"""# 指令！请根据角色的基础身体形态，生成完整的外观描述。
-
-## 角色名称
-
-{actor_name}
+    return f"""# 指令！请根据你的基础身体形态，生成你的完整外观描述，以JSON返回。
 
 ## 基础身体形态
 
 {base_body}
 
 ## 输出格式(JSON)
+
 ```json
 {{
   "appearance": "完整的外观描述"
 }}
 ```
 
-**生成规则**：
-1. 必须包含基础身体形态的所有特征
-2. 可以适当补充穿着的基础服饰（如内衣、简单衣物）
-3. 描述应连贯、具有画面感
-4. 使用第三人称视角
-5. 字数控制在 80-150 字之间
-6. 严格按上述 JSON 格式输出"""
+**约束规则**：
+
+- 严格按上述JSON格式输出你的外观描述
+- 包含基础形态的所有特征
+- 可补充基础服饰（简单衣物）
+- 第三人称视角，不使用角色名字
+- 连贯有画面感，80-150字"""
 
 
 #######################################################################################################################################
-def _compress_prompt_for_history(prompt: str) -> str:
-    """压缩提示词以便保存到对话历史。
-
-    将完整的外观生成提示词压缩成简短版本，减少存储在消息历史中的token消耗。
+def _format_appearance_update_notification(appearance: str) -> str:
+    """格式化外观更新通知消息。
 
     Args:
-        prompt: 原始完整提示词
+        appearance: 完整的外观描述
 
     Returns:
-        压缩后的简短提示词字符串
+        格式化后的通知消息字符串
     """
-    logger.debug(f"准备压缩原始提示词 {prompt[:100]}...")
-    return "# 指令！请根据基础身体形态生成完整的外观描述。"
+    return f"""# 通知！你的外观信息已经更新: 
+
+{appearance}"""
 
 
 #######################################################################################################################################
 @final
 class ActorAppearanceUpdateSystem(ExecuteProcessor):
-    """角色外观更新系统（简化版）。
+    """角色外观更新系统。
 
-    根据角色的基础身体形态（base_body），通过 LLM 动态生成角色的完整外观描述（appearance）。
-    系统会自动筛选出需要生成外观的角色，通过AI并行生成描述内容，并将结果保存到角色实体的外观组件中。
+    根据角色的基础身体形态（base_body）通过 LLM 生成完整的外观描述（appearance）。
+    系统自动筛选需要生成外观的角色，并行生成后更新到角色实体组件中。
 
     工作流程：
         1. 查询所有角色实体（包含 ActorComponent 和 AppearanceComponent）
         2. 筛选出 base_body 不为空且 appearance 为空的角色
-        3. 为每个角色构建包含 base_body 的提示词
-        4. 并行发送请求到AI服务生成外观描述
-        5. 解析响应并更新角色实体的 AppearanceComponent.appearance
-        6. 将压缩后的提示词和AI响应保存到对话历史
-
-    特性：
-        - 智能跳过已有外观或缺少base_body的角色，避免重复生成
-        - 并行请求提升效率
-        - 提示词压缩节省对话历史存储空间
-        - 外观描述基于角色的基础身体形态生成
+        3. 为每个角色构建提示词（仅使用 System Prompt 作为上下文）
+        4. 并行发送请求到 AI 服务生成外观描述
+        5. 解析响应并更新 AppearanceComponent.appearance
+        6. 向角色 Agent 上下文添加外观更新通知
 
     触发条件：
         - base_body 不为空（已定义基础形态）
         - appearance 为空（需要生成）
 
     Note:
-        - 本版本不考虑装备和技能信息
-        - 仅基于 base_body 生成基础外观
-        - 可以在后续版本中扩展支持装备系统
+        本版本仅基于 base_body 生成基础外观，不考虑装备和技能信息。
+        后续可扩展支持装备系统触发的外观重新生成。
 
     Attributes:
         _game: TCG游戏上下文，用于访问实体和游戏状态
@@ -161,9 +143,6 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
 
         for actor_entity in actor_entities:
 
-            if actor_entity.name != "角色.战士.卡恩":
-                continue
-
             appearance_comp = actor_entity.get(AppearanceComponent)
 
             # 筛选条件：base_body 不为空 且 appearance 为空
@@ -175,15 +154,20 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
                 logger.debug(f"跳过角色 {actor_entity.name}，外观已存在")
                 continue
 
+            # 拿agent 上下文！
+            agent_context = self._game.get_agent_context(actor_entity)
+            assert isinstance(
+                agent_context.context[0], SystemMessage
+            ), "角色AI上下文的第一条消息必须是SystemMessage类型"
+
             # 构建请求处理器
             chat_clients.append(
                 ChatClient(
                     name=actor_entity.name,
                     prompt=_build_appearance_prompt(
                         base_body=appearance_comp.base_body,
-                        actor_name=actor_entity.name,
                     ),
-                    context=self._game.get_agent_context(actor_entity).context,
+                    context=[agent_context.context[0]],
                 )
             )
 
@@ -196,12 +180,12 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
     ) -> None:
         """处理外观生成的响应结果。
 
-        解析AI返回的外观描述JSON，将压缩后的提示词和AI响应保存到对话历史，
-        并更新角色实体的 AppearanceComponent.appearance 字段。
+        解析 AI 返回的外观描述 JSON，更新 AppearanceComponent.appearance，
+        并向 Agent 上下文添加外观更新通知。
 
         Args:
             actor_entity: 角色实体
-            chat_client: 包含请求和响应内容的ChatClient处理器
+            chat_client: 包含请求和响应内容的 ChatClient 处理器
 
         Raises:
             Exception: 当响应解析失败时记录错误日志
@@ -211,12 +195,6 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
             format_response = AppearanceResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
             )
-
-            self._game.add_human_message(
-                actor_entity, _compress_prompt_for_history(chat_client.prompt)
-            )
-            self._game.add_ai_message(actor_entity, chat_client.response_ai_messages)
-
             # 更新 AppearanceComponent
             if format_response.appearance != "":
                 appearance_comp = actor_entity.get(AppearanceComponent)
@@ -225,6 +203,12 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
                     appearance_comp.name,
                     appearance_comp.base_body,  # 保持 base_body 不变
                     format_response.appearance,  # 更新 appearance
+                )
+
+                # 通知 Agent 外观已更新
+                self._game.add_human_message(
+                    actor_entity,
+                    _format_appearance_update_notification(format_response.appearance),
                 )
 
                 logger.info(f"✅ 成功更新角色 {actor_entity.name} 的外观描述")

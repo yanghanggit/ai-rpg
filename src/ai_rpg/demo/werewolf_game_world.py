@@ -5,6 +5,7 @@ from ..models import (
     Stage,
     StageType,
     Actor,
+    ActorCharacterSheet,
     ActorType,
     CharacterStats,
     WerewolfCharacterSheetName,
@@ -120,20 +121,22 @@ def create_actor_moderator() -> Actor:
     """
     return create_actor(
         name="角色.主持人",
-        character_sheet_name=WerewolfCharacterSheetName.MODERATOR,
-        kick_off_message=PUB_KICK_OFF_MESSAGE,
-        character_stats=CharacterStats(max_hp=50, attack=10, defense=5),
-        type=ActorType.NEUTRAL,
-        campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
-        actor_profile="""你是狼人杀游戏的主持人，负责维持游戏秩序和推进游戏流程。
+        character_sheet=ActorCharacterSheet(
+            name=WerewolfCharacterSheetName.MODERATOR,
+            type=ActorType.NEUTRAL,
+            profile="""你是狼人杀游戏的主持人，负责维持游戏秩序和推进游戏流程。
 【角色职责】
 你需要公正地主持游戏，宣布游戏阶段转换（白天/黑夜），统计投票结果，宣布死亡信息。
 你了解所有玩家的真实身份，但绝不能泄露任何身份信息。
 【主持风格】
 保持神秘而权威的氛围，用简洁明了的语言引导游戏进程。
 营造紧张刺激的游戏体验，但保持公正中立的立场。""",
-        appearance="身着深色长袍，面容隐藏在兜帽阴影中，手持一本记录着村民命运的古老羊皮卷。眼神深邃。",
-        global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
+            appearance="身着深色长袍，面容隐藏在兜帽阴影中，手持一本记录着村民命运的古老羊皮卷。眼神深邃。",
+        ),
+        # kick_off_message=PUB_KICK_OFF_MESSAGE,
+        character_stats=CharacterStats(max_hp=50, attack=10, defense=5),
+        campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
+        system_rules=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )
 
 
@@ -146,12 +149,10 @@ def create_actor_werewolf(name: str) -> Actor:
     """
     return create_actor(
         name=f"角色.{name}",
-        character_sheet_name=WerewolfCharacterSheetName.WEREWOLF,
-        kick_off_message=PUB_KICK_OFF_MESSAGE,
-        character_stats=CharacterStats(max_hp=50, attack=10, defense=5),
-        type=ActorType.ENEMY,
-        campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
-        actor_profile="""你是潜伏在村民中的邪恶狼人，目标是消灭所有村民。
+        character_sheet=ActorCharacterSheet(
+            name=WerewolfCharacterSheetName.WEREWOLF,
+            type=ActorType.ENEMY,
+            profile="""你是潜伏在村民中的邪恶狼人，目标是消灭所有村民。
 【角色目标】
 白天伪装成无辜村民，通过发言和投票误导其他玩家。
 夜晚与其他狼人商议，选择要杀害的村民。
@@ -159,14 +160,12 @@ def create_actor_werewolf(name: str) -> Actor:
 善于伪装和欺骗，能够巧妙地转移怀疑，挑拨村民之间的关系。
 在投票时会暗中保护狼人同伴，引导村民投票给好人。
 保持冷静，不轻易暴露身份。""",
-        appearance=generate_random_appearance(),
-        # appearance="一位看起来非常普通的村民，穿着朴素的村民服装。"
-        # + (
-        #     "面容清秀的女性，长发及肩"
-        #     if hash(name) % 2 == 0
-        #     else "面容端正的男性，短发干练"
-        # ),
-        global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
+            appearance=generate_random_appearance(),
+        ),
+        # kick_off_message=PUB_KICK_OFF_MESSAGE,
+        character_stats=CharacterStats(max_hp=50, attack=10, defense=5),
+        campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
+        system_rules=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )
 
 
@@ -179,12 +178,10 @@ def create_actor_seer(name: str) -> Actor:
     """
     return create_actor(
         name=f"角色.{name}",
-        character_sheet_name=WerewolfCharacterSheetName.SEER,
-        kick_off_message=PUB_KICK_OFF_MESSAGE,
-        character_stats=CharacterStats(max_hp=50, attack=10, defense=5),
-        type=ActorType.ALLY,
-        campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
-        actor_profile="""你是拥有神秘预知能力的预言家，每晚可以查验一名玩家的身份。
+        character_sheet=ActorCharacterSheet(
+            name=WerewolfCharacterSheetName.SEER,
+            type=ActorType.ALLY,
+            profile="""你是拥有神秘预知能力的预言家，每晚可以查验一名玩家的身份。
 【特殊能力】
 每个夜晚可以选择一名玩家，得知其是好人还是狼人。
 掌握着重要的信息，是村民阵营的关键角色。
@@ -192,14 +189,12 @@ def create_actor_seer(name: str) -> Actor:
 如果你找到了狼人，你一定会暴露自己的身份来告知村民信息。
 通过暗示和推理帮助村民找出狼人，在获得关键信息前保护自己不被狼人发现。
 合理选择查验目标，收集关键信息。""",
-        appearance=generate_random_appearance(),
-        # appearance="一位看起来非常普通的村民，穿着朴素的村民服装。"
-        # + (
-        #     "温柔的女性，梳着简单的发髻"
-        #     if hash(name) % 2 == 0
-        #     else "稳重的男性，胡须修剪整齐"
-        # ),
-        global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
+            appearance=generate_random_appearance(),
+        ),
+        # kick_off_message=PUB_KICK_OFF_MESSAGE,
+        character_stats=CharacterStats(max_hp=50, attack=10, defense=5),
+        campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
+        system_rules=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )
 
 
@@ -212,12 +207,10 @@ def create_actor_witch(name: str) -> Actor:
     """
     return create_actor(
         name=f"角色.{name}",
-        character_sheet_name=WerewolfCharacterSheetName.WITCH,
-        kick_off_message=PUB_KICK_OFF_MESSAGE,
-        character_stats=CharacterStats(max_hp=50, attack=10, defense=5),
-        type=ActorType.ALLY,
-        campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
-        actor_profile="""你是掌握生死药剂的神秘女巫，拥有解药和毒药各一瓶。
+        character_sheet=ActorCharacterSheet(
+            name=WerewolfCharacterSheetName.WITCH,
+            type=ActorType.ALLY,
+            profile="""你是掌握生死药剂的神秘女巫，拥有解药和毒药各一瓶。
 【特殊能力】
 解药：可以救活当晚被狼人杀害的玩家，整局游戏只能使用一次。
 毒药：可以毒死任意一名玩家，整局游戏只能使用一次。
@@ -226,9 +219,12 @@ def create_actor_witch(name: str) -> Actor:
 需要判断何时使用珍贵的药剂才能最大化收益。
 解药的使用时机关系到关键角色的存亡。
 毒药可以在关键时刻消灭可疑的狼人。""",
-        appearance=generate_random_appearance(),
-        # appearance="一位看起来非常普通的村民，穿着朴素的村民服装。温婉的女性，笑容和善亲切。",
-        global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
+            appearance=generate_random_appearance(),
+        ),
+        # kick_off_message=PUB_KICK_OFF_MESSAGE,
+        character_stats=CharacterStats(max_hp=50, attack=10, defense=5),
+        campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
+        system_rules=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )
 
 
@@ -241,12 +237,10 @@ def create_actor_villager(name: str) -> Actor:
     """
     return create_actor(
         name=f"角色.{name}",
-        character_sheet_name=WerewolfCharacterSheetName.VILLAGER,
-        kick_off_message=PUB_KICK_OFF_MESSAGE,
-        character_stats=CharacterStats(max_hp=50, attack=10, defense=5),
-        type=ActorType.ALLY,
-        campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
-        actor_profile="""你是月影村的普通村民，没有特殊能力但拥有投票权。
+        character_sheet=ActorCharacterSheet(
+            name=WerewolfCharacterSheetName.VILLAGER,
+            type=ActorType.ALLY,
+            profile="""你是月影村的普通村民，没有特殊能力但拥有投票权。
 【角色目标】
 通过观察、分析和讨论，努力找出隐藏在村民中的狼人。
 保护村民阵营，配合有特殊能力的好人角色。
@@ -256,14 +250,12 @@ def create_actor_villager(name: str) -> Actor:
 在投票时做出理性判断，不被狼人误导。
 判断谁是真的好人，谁是隐藏的狼人。
 虽然没有特殊能力，但人数是村民阵营的优势。""",
-        appearance=generate_random_appearance(),
-        # appearance="一位典型的普通村民，穿着朴素的村民服装。"
-        # + (
-        #     "勤劳的女性，双手有劳作的痕迹"
-        #     if hash(name) % 2 == 0
-        #     else "憨厚的男性，神情朴实诚恳"
-        # ),
-        global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
+            appearance=generate_random_appearance(),
+        ),
+        # kick_off_message=PUB_KICK_OFF_MESSAGE,
+        character_stats=CharacterStats(max_hp=50, attack=10, defense=5),
+        campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
+        system_rules=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )
 
 
@@ -276,12 +268,10 @@ def create_actor_hunter(name: str) -> Actor:
     """
     return create_actor(
         name=f"角色.{name}",
-        character_sheet_name=WerewolfCharacterSheetName.HUNTER,
-        kick_off_message=PUB_KICK_OFF_MESSAGE,
-        character_stats=CharacterStats(max_hp=50, attack=10, defense=5),
-        type=ActorType.ALLY,
-        campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
-        actor_profile="""你是月影村的猎人，拥有消灭狼人的能力。
+        character_sheet=ActorCharacterSheet(
+            name=WerewolfCharacterSheetName.HUNTER,
+            type=ActorType.ALLY,
+            profile="""你是月影村的猎人，拥有消灭狼人的能力。
 【特殊能力】
 在你死亡时可以选择开枪杀死一名玩家。
 开枪时需要谨慎选择，以你认为是狼人的玩家为目标。
@@ -290,14 +280,12 @@ def create_actor_hunter(name: str) -> Actor:
 你需要在游戏中积极寻找狼人，通过观察和推理锁定目标。
 必要时可以向其他玩家透露你的身份，以获得他们的信任和支持并归纳投票。
 如果你死亡时场上人数较少，开枪杀死任何人都有可能帮助村民阵营。""",
-        appearance=generate_random_appearance(),
-        # appearance="一位典型的普通村民，穿着朴素的村民服装。"
-        # + (
-        #     "勤劳的女性，双手有劳作的痕迹"
-        #     if hash(name) % 2 == 0
-        #     else "憨厚的男性，神情朴实诚恳"
-        # ),
-        global_game_mechanics=WEREWOLF_GLOBAL_GAME_MECHANICS,
+            appearance=generate_random_appearance(),
+        ),
+        # kick_off_message=PUB_KICK_OFF_MESSAGE,
+        character_stats=CharacterStats(max_hp=50, attack=10, defense=5),
+        campaign_setting=WEREWOLF_CAMPAIGN_SETTING,
+        system_rules=WEREWOLF_GLOBAL_GAME_MECHANICS,
     )
 
 

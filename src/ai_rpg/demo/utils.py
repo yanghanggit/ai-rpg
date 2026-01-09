@@ -27,14 +27,10 @@ from ..models import (
 #######################################################################################################################################
 def create_actor(
     name: str,
-    character_sheet_name: str,
-    kick_off_message: str,
+    character_sheet: ActorCharacterSheet,
     character_stats: CharacterStats,
-    type: str,
     campaign_setting: str,
-    actor_profile: str,
-    appearance: str,
-    global_game_mechanics: str,
+    system_rules: str,
 ) -> Actor:
     """
     创建一个游戏角色(Actor)实例。
@@ -44,15 +40,11 @@ def create_actor(
 
     Args:
         name: 角色名称
-        character_sheet_name: 角色表单名称
+        character_sheet: 角色表单(ActorCharacterSheet对象)
         kick_off_message: 开场消息
         character_stats: 角色属性统计(CharacterStats对象)
-        type: 角色类型
         campaign_setting: 战役设定描述
-        actor_profile: 角色简介设定
-        appearance: 角色外观描述
-        global_game_mechanics: 全局游戏机制规则
-        private_knowledge: 角色私有知识列表，用于RAG检索
+        system_rules: 全局游戏机制规则
 
     Returns:
         Actor: 初始化完成的Actor实例，生命值已满
@@ -63,14 +55,9 @@ def create_actor(
 
     actor = Actor(
         name=name,
-        character_sheet=ActorCharacterSheet(
-            name=character_sheet_name,
-            type=type,
-            profile=actor_profile,
-            appearance=appearance,
-        ),
+        character_sheet=character_sheet,
         system_message="",
-        kick_off_message=kick_off_message,
+        kick_off_message="",
         character_stats=character_stats,
     )
 
@@ -90,15 +77,15 @@ def create_actor(
 
 ## 全局规则
 
-{global_game_mechanics}
+{system_rules}
 
 ## 角色设定
 
-{actor_profile}
+{character_sheet.profile}
 
 ## 外观设定
 
-{appearance}"""
+{character_sheet.appearance}"""
 
     return actor
 

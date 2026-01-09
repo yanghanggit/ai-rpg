@@ -1,5 +1,6 @@
 from ..models import (
     Actor,
+    ActorCharacterSheet,
     ActorType,
     CharacterStats,
     Skill,
@@ -22,17 +23,19 @@ def create_actor_warrior() -> Actor:
     """
     actor = create_actor(
         name="角色.战士.卡恩",
-        character_sheet_name="warrior",
-        kick_off_message="",
-        character_stats=CharacterStats(),
-        type=ActorType.ALLY,
-        campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-        actor_profile=f"""**历史**: 你是曾在砺石角斗场训练的人类精英战士，誓死捍卫新奥拉西斯的安全。在“裂隙灾变”中，你率队深入时空裂隙，却遭遇金属瘴气爆发与符文异变，目睹战友被幻觉、被裂隙遗迹里的魔法机械吞噬，凭战友的保护和运气捡回一条命。但是想要为死去的战友申请抚恤金时却屡次被拒之门外，从此背离官方体系，成为游离的遗迹冒险者。
+        character_sheet=ActorCharacterSheet(
+            name="warrior",
+            type=ActorType.ALLY,
+            profile=f"""**历史**: 你是曾在砺石角斗场训练的人类精英战士，誓死捍卫新奥拉西斯的安全。在"裂隙灾变"中，你率队深入时空裂隙，却遭遇金属瘴气爆发与符文异变，目睹战友被幻觉、被裂隙遗迹里的魔法机械吞噬，凭战友的保护和运气捡回一条命。但是想要为死去的战友申请抚恤金时却屡次被拒之门外，从此背离官方体系，成为游离的遗迹冒险者。
 **性格**: 你性格坚韧，务实且警惕，深受角斗场生存法则熏陶。
 **禁忌**: 你深恶痛绝金属瘴气与失控的古代魔法机械。
 **最爱**: 你最爱大块烤肉和烈性黑麦酒。""",
-        appearance=f"""接近30岁的人类男性战士，精悍健壮，肌肉线条分明，古铜色肤色。眼神坚毅锐利，下巴有短须，短发略显凌乱。身披厚重符文板甲，镶嵌闪烁的未知金属碎片，胸口佩戴摩挲光滑的金属图腾徽章。背负由遗迹中找到的未知金属打造的长剑，左臂悬挂便携短刃。右臂有能量爪留下的晶体化疤痕格外醒目，装束沉重实用，混合战场实用与遗迹拾荒风格，覆盖锈迹与尘埃。""",
-        global_game_mechanics=FANTASY_WORLD_RPG_SYSTEM_RULES,
+            appearance=f"""接近30岁的人类男性战士，精悍健壮，肌肉线条分明，古铜色肤色。眼神坚毅锐利，下巴有短须，短发略显凌乱。身披厚重符文板甲，镶嵌闪烁的未知金属碎片，胸口佩戴摩挲光滑的金属图腾徽章。背负由遗迹中找到的未知金属打造的长剑，左臂悬挂便携短刃。右臂有能量爪留下的晶体化疤痕格外醒目，装束沉重实用，混合战场实用与遗迹拾荒风格，覆盖锈迹与尘埃。""",
+        ),
+        # kick_off_message="",
+        character_stats=CharacterStats(),
+        campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+        system_rules=FANTASY_WORLD_RPG_SYSTEM_RULES,
     )
 
     actor.skills = [

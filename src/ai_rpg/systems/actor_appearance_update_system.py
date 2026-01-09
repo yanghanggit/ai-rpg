@@ -8,9 +8,53 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     ActorComponent,
     AppearanceComponent,
+    InventoryComponent,
 )
+from ..models.objects import Item, ItemType
 from ..utils import extract_json_from_code_block
 from langchain_core.messages import SystemMessage
+
+
+#######################################################################################################################################
+# 测试装备数据 - 战士专用装备，用于验证装备对外观描述的影响
+#######################################################################################################################################
+
+# 战士测试武器
+TEST_WARRIOR_WEAPON = Item(
+    name="武器.长剑.晨曦之刃",
+    uuid="test-weapon-warrior-001",
+    type=ItemType.WEAPON,
+    description="传说中的圣剑，剑身泛着淡金色的曙光，剑柄镶嵌着太阳纹章宝石",
+    count=1,
+)
+
+# 战士测试防具
+TEST_WARRIOR_ARMOR = Item(
+    name="防具.战甲.裂隙守护者之铠",
+    uuid="test-armor-warrior-001",
+    type=ItemType.ARMOR,
+    description="厚重的深灰色板甲，肩甲和胸甲上刻有抗魔法符文，散发微弱的蓝色光芒",
+    count=1,
+)
+
+# 战士测试饰品
+TEST_WARRIOR_ACCESSORY = Item(
+    name="饰品.护符.战神之证",
+    uuid="test-accessory-warrior-001",
+    type=ItemType.ACCESSORY,
+    description="黑铁打造的护符，挂在腰间的皮革腰带上，护符中央镶嵌着红色晶石",
+    count=1,
+)
+
+
+#######################################################################################################################################
+def get_warrior_test_equipment() -> List[Item]:
+    """获取战士测试装备集合
+
+    Returns:
+        战士装备物品列表（长剑 + 板甲 + 护符）
+    """
+    return [TEST_WARRIOR_WEAPON, TEST_WARRIOR_ARMOR, TEST_WARRIOR_ACCESSORY]
 
 
 #######################################################################################################################################
@@ -20,22 +64,35 @@ class AppearanceResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _build_appearance_prompt(base_body: str) -> str:
+def _build_appearance_prompt(base_body: str, equipped_items: str = "") -> str:
     """构建角色外观生成的提示词。
 
     Args:
         base_body: 基础身体形态（天生特征）
+        equipped_items: 装备物品描述（可选）
 
     Returns:
         格式化的提示词字符串
     """
 
-    return f"""# 指令！请根据你的基础身体形态，生成你的完整外观描述，以JSON返回。
+    equipment_section = ""
+    if equipped_items:
+        equipment_section = f"""
+## 装备信息
+
+{equipped_items}
+
+**装备整合规则**：
+- 将装备外观特征自然融入完整描述
+- 装备描述应与基础形态协调
+"""
+
+    return f"""# 指令！请根据你的基础身体形态和装备信息，生成你的完整外观描述，以JSON返回。
 
 ## 基础身体形态
 
 {base_body}
-
+{equipment_section}
 ## 输出格式(JSON)
 
 ```json
@@ -48,9 +105,9 @@ def _build_appearance_prompt(base_body: str) -> str:
 
 - 严格按上述JSON格式输出你的外观描述
 - 包含基础形态的所有特征
-- 可补充基础服饰（简单衣物）
+- 自然融入装备的视觉特征
 - 第三人称视角，不使用角色名字
-- 连贯有画面感，80-150字"""
+- 连贯有画面感，100-200字"""
 
 
 #######################################################################################################################################
@@ -160,12 +217,25 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
                 agent_context.context[0], SystemMessage
             ), "角色AI上下文的第一条消息必须是SystemMessage类型"
 
+            # 使用测试装备数据
+            test_equipment = get_warrior_test_equipment()
+            equipped_items_text = "\n".join(
+                [
+                    f"- {item.name}: {item.description}, 数量: {item.count}"
+                    for item in test_equipment
+                ]
+            )
+            logger.debug(
+                f"角色 {actor_entity.name} 使用测试装备 {len(test_equipment)} 件"
+            )
+
             # 构建请求处理器
             chat_clients.append(
                 ChatClient(
                     name=actor_entity.name,
                     prompt=_build_appearance_prompt(
                         base_body=appearance_comp.base_body,
+                        equipped_items=equipped_items_text,
                     ),
                     context=[agent_context.context[0]],
                 )

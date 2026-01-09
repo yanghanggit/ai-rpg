@@ -590,7 +590,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             actor_entity.add(
                 AppearanceComponent,
                 actor_model.name,
-                "",  # base_body - TODO: 从 character_sheet 中读取基础身体形态
+                actor_model.character_sheet.base_body,  # base_body - TODO: 从 character_sheet 中读取基础身体形态
                 actor_model.character_sheet.appearance,
             )
 

@@ -42,6 +42,9 @@ def create_npc_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     from ..systems.home_stage_description_system import (
         HomeStageDescriptionSystem,
     )
+    from ..systems.actor_appearance_update_system import (
+        ActorAppearanceUpdateSystem,
+    )
     from ..systems.kick_off_system import KickOffSystem
     from ..systems.query_action_system import (
         QueryActionSystem,
@@ -62,10 +65,14 @@ def create_npc_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     # 启动agent的提示词。启动阶段
     processors.add(KickOffSystem(tcg_game, True))
 
+    # 角色外观生成系统
+    processors.add(ActorAppearanceUpdateSystem(tcg_game))
+
     # 规划逻辑
     ######## 在所有规划之前!##############################################################
     processors.add(HomeAutoPlanSystem(tcg_game))
     processors.add(HomeStageDescriptionSystem(tcg_game))
+
     processors.add(HomeActorSystem(tcg_game))
     ####### 在所有规划之后! ##############################################################
 
@@ -107,6 +114,9 @@ def create_player_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     from ..game.tcg_game import TCGGame
     from ..systems.announce_action_system import AnnounceActionSystem
     from ..systems.destroy_entity_system import DestroyEntitySystem
+    from ..systems.actor_appearance_update_system import (
+        ActorAppearanceUpdateSystem,
+    )
     from ..systems.kick_off_system import KickOffSystem
     from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.save_system import SaveSystem
@@ -124,6 +134,9 @@ def create_player_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
 
     # 启动agent的提示词。启动阶段
     processors.add(KickOffSystem(tcg_game, True))
+
+    # 角色外观生成系统
+    processors.add(ActorAppearanceUpdateSystem(tcg_game))
 
     # 动作处理相关的系统 ##################################################################
     ####################################################################################
@@ -176,6 +189,9 @@ def create_dungeon_combat_pipeline(
     from ..systems.combat_initialization_system import (
         CombatInitializationSystem,
     )
+    from ..systems.actor_appearance_update_system import (
+        ActorAppearanceUpdateSystem,
+    )
     from ..systems.destroy_entity_system import DestroyEntitySystem
     from ..systems.draw_cards_action_system import (
         DrawCardsActionSystem,
@@ -203,6 +219,10 @@ def create_dungeon_combat_pipeline(
 
     # 启动agent的提示词。启动阶段
     processors.add(KickOffSystem(tcg_game, True))
+
+    # 角色外观生成系统
+    processors.add(ActorAppearanceUpdateSystem(tcg_game))
+
     processors.add(CombatInitializationSystem(tcg_game))
 
     # 状态效果结算系统（必须在抽卡之前执行）

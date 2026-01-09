@@ -17,7 +17,7 @@ def create_werewolf_game_kickoff_pipline(game: GameSession) -> "RPGGameProcessPi
 
     ##
     tcg_game = cast(SDGGame, game)
-    processors = RPGGameProcessPipeline("Social Deduction Kickoff Pipeline")
+    processors = RPGGameProcessPipeline()
 
     # 启动agent的提示词。启动阶段
     processors.add(KickOffSystem(tcg_game, True))
@@ -67,7 +67,7 @@ def create_werewolf_game_night_pipline(game: GameSession) -> "RPGGameProcessPipe
 
     ##
     tcg_game = cast(SDGGame, game)
-    processors = RPGGameProcessPipeline("Social Deduction Night Pipeline")
+    processors = RPGGameProcessPipeline()
 
     # 启动agent的提示词。启动阶段
     processors.add(NightActionInitializationSystem(tcg_game))
@@ -115,7 +115,7 @@ def create_werewolf_game_day_pipline(game: GameSession) -> "RPGGameProcessPipeli
 
     ##
     tcg_game = cast(SDGGame, game)
-    processors = RPGGameProcessPipeline("Social Deduction Day Pipeline")
+    processors = RPGGameProcessPipeline()
 
     processors.add(WerewolfDayDiscussionSystem(tcg_game))
 
@@ -150,7 +150,7 @@ def create_werewolf_game_vote_pipline(game: GameSession) -> "RPGGameProcessPipel
 
     ##
     tcg_game = cast(SDGGame, game)
-    processors = RPGGameProcessPipeline("Social Deduction Day Pipeline")
+    processors = RPGGameProcessPipeline()
 
     # 投票系统。
     processors.add(WerewolfDayVoteSystem(tcg_game))

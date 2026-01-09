@@ -30,7 +30,7 @@ def create_npc_home_pipline(game: GameSession) -> "RPGGameProcessPipeline":
 
     ##
     tcg_game = cast(TCGGame, game)
-    processors = RPGGameProcessPipeline("Home State Pipeline 1")
+    processors = RPGGameProcessPipeline()
 
     # 启动agent的提示词。启动阶段
     processors.add(KickOffSystem(tcg_game, True))
@@ -81,7 +81,7 @@ def create_player_home_pipline(game: GameSession) -> "RPGGameProcessPipeline":
 
     ##
     tcg_game = cast(TCGGame, game)
-    processors = RPGGameProcessPipeline("Home State Pipeline 2")
+    processors = RPGGameProcessPipeline()
 
     # 启动agent的提示词。启动阶段
     processors.add(KickOffSystem(tcg_game, True))
@@ -139,7 +139,7 @@ def create_dungeon_combat_state_pipeline(
 
     ##
     tcg_game = cast(TCGGame, game)
-    processors = RPGGameProcessPipeline("Dungeon Combat State Pipeline")
+    processors = RPGGameProcessPipeline()
 
     # 启动agent的提示词。启动阶段
     processors.add(KickOffSystem(tcg_game, True))

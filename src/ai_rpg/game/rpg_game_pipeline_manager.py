@@ -1,11 +1,6 @@
-"""
-RPG游戏流程管道管理器模块
-
-本模块定义了RPG游戏流程管道的管理器类，负责管理和协调所有游戏流程管道的生命周期。
-"""
-
-from typing import Final, List
+from typing import List
 from ..entitas import Processors
+from loguru import logger
 
 
 ###################################################################################################################################################################
@@ -16,27 +11,28 @@ class RPGGameProcessPipeline(Processors):
     管理游戏流程中的处理器执行和生命周期
     """
 
-    def __init__(self, name: str) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self._name: Final[str] = name
+        logger.info("🎮 RPG 游戏流程管道已创建")
 
     ###################################################################################################################################################################
     async def process(self) -> None:
         """执行管道中的所有处理器"""
-        # 顺序不要动
-        # logger.debug(
-        #     f"================= {self._name} process pipeline process ================="
-        # )
+
+        # 执行处理器
         await self.execute()
+
+        # 清理处理器
         self.cleanup()
 
     ###############################################################################################################################################
     def shutdown(self) -> None:
         """关闭管道并清理资源"""
-        # logger.debug(
-        #     f"================= {self._name} process pipeline shutdown ================="
-        # )
+
+        # 关闭管道
         self.tear_down()
+
+        # 清理反应式处理器
         self.clear_reactive_processors()
 
 
@@ -49,23 +45,34 @@ class RPGGamePipelineManager:
     """
 
     def __init__(self) -> None:
-        self._all_pipelines: List[RPGGameProcessPipeline] = []
+        self._pipelines: List[RPGGameProcessPipeline] = []
 
     ###############################################################################################################################################
     def register_pipeline(self, pipeline: RPGGameProcessPipeline) -> None:
         """注册一个游戏流程管道"""
-        self._all_pipelines.append(pipeline)
+        self._pipelines.append(pipeline)
 
     ###############################################################################################################################################
-    async def initialize_all_pipelines(self) -> None:
+    async def initialize_pipelines(self) -> None:
         """初始化所有已注册的管道"""
-        for processor in self._all_pipelines:
-            processor.activate_reactive_processors()
-            await processor.initialize()
+
+        for pipeline in self._pipelines:
+
+            # 激活反应式处理器
+            pipeline.activate_reactive_processors()
+
+            # 初始化每个管道
+            await pipeline.initialize()
 
     ###############################################################################################################################################
-    def shutdown_all_pipelines(self) -> None:
+    def shutdown_pipelines(self) -> None:
         """关闭所有管道并清空管道列表"""
-        for processor in self._all_pipelines:
-            processor.shutdown()
-        self._all_pipelines.clear()
+
+        for pipeline in self._pipelines:
+            # 关闭每个管道
+            pipeline.shutdown()
+
+        # 清空管道列表
+        self._pipelines = []
+
+    ###############################################################################################################################################

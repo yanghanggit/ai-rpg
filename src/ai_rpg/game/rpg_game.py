@@ -6,7 +6,7 @@ RPG游戏核心类模块
 
 import copy
 import uuid
-from typing import Any, Final, List, Optional, Set
+from typing import Any, Final, List, Set
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
@@ -126,14 +126,14 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
     @override
     def exit(self) -> None:
         # 关闭所有管道
-        self.shutdown_all_pipelines()
+        self.shutdown_pipelines()
         # logger.warning(f"{self.name}, exit!!!!!!!!!!!!!!!!!!!!)")
 
     ###############################################################################################################################################
     @override
     async def initialize(self) -> None:
         # 初始化所有管道
-        await self.initialize_all_pipelines()
+        await self.initialize_pipelines()
         # logger.debug(f"Initialized all pipelines")
 
     ###############################################################################################################################################

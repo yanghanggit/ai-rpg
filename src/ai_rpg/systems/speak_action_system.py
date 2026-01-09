@@ -12,7 +12,7 @@
 
 from typing import final, override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.rpg_entity_manager import InteractionValidationResult
+from ..game.rpg_entity_manager import InteractionError
 from ..models import SpeakAction, SpeakEvent
 from ..game.tcg_game import TCGGame
 
@@ -87,10 +87,10 @@ class SpeakActionSystem(ReactiveProcessor):
         for target_name, speak_content in speak_action.target_messages.items():
 
             # 验证交互合法性
-            error = self._game.validate_interaction(entity, target_name)
-            if error != InteractionValidationResult.SUCCESS:
+            error = self._game.validate_actor_interaction(entity, target_name)
+            if error != InteractionError.NONE:
                 # 目标不存在，添加提示信息
-                if error == InteractionValidationResult.TARGET_NOT_FOUND:
+                if error == InteractionError.TARGET_NOT_FOUND:
                     # 添加上下文提示!
                     self._game.add_human_message(
                         entity=entity,

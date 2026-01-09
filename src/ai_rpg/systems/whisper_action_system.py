@@ -13,7 +13,7 @@
 
 from typing import final, override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.rpg_entity_manager import InteractionValidationResult
+from ..game.rpg_entity_manager import InteractionError
 from ..models import WhisperAction, WhisperEvent
 from ..game.tcg_game import TCGGame
 
@@ -91,11 +91,11 @@ class WhisperActionSystem(ReactiveProcessor):
 
         for target_name, whisper_content in whisper_action.target_messages.items():
             # 判断可交互性
-            error = self._game.validate_interaction(entity, target_name)
-            if error != InteractionValidationResult.SUCCESS:
+            error = self._game.validate_actor_interaction(entity, target_name)
+            if error != InteractionError.NONE:
 
                 # 处理交互错误
-                if error == InteractionValidationResult.TARGET_NOT_FOUND:
+                if error == InteractionError.TARGET_NOT_FOUND:
 
                     # 记录在上下文里！
                     self._game.add_human_message(

@@ -31,11 +31,17 @@ from ..models import (
 ###############################################################################################################################################
 @unique
 @final
-class InteractionValidationResult(IntEnum):
-    SUCCESS = 0
-    TARGET_NOT_FOUND = 1
-    INITIATOR_NOT_IN_STAGE = 2
-    DIFFERENT_STAGES = 3
+class InteractionError(IntEnum):
+    """Actor 交互验证的错误类型枚举。
+
+    用于表示 validate_actor_interaction 函数的验证结果。
+    值为 NONE 表示验证通过，其他值表示具体的错误类型。
+    """
+
+    NONE = 0  # 无错误
+    TARGET_NOT_FOUND = 1  # 目标未找到
+    INITIATOR_NOT_ON_STAGE = 2  # 发起者不在场景中
+    DIFFERENT_STAGES = 3  # 不在同一场景
 
 
 ###############################################################################################################################################
@@ -126,6 +132,16 @@ class RPGEntityManager(Context):
 
     ###############################################################################################################################################
     def get_world_entity(self, world_name: str) -> Optional[Entity]:
+        """通过世界名称获取世界实体。
+
+        查找具有指定名称且包含 WorldComponent 的实体。
+
+        Args:
+            world_name: 世界名称
+
+        Returns:
+            Optional[Entity]: 匹配的世界实体，如果不存在则返回 None
+        """
         entity: Optional[Entity] = self.get_entity_by_name(world_name)
         if entity is not None and entity.has(WorldComponent):
             return entity
@@ -133,10 +149,31 @@ class RPGEntityManager(Context):
 
     ###############################################################################################################################################
     def get_entity_by_name(self, name: str) -> Optional[Entity]:
+        """通过名称获取实体。
+
+        从内部名称索引中查找实体，不区分实体类型。
+        这是最基础的实体查找方法，其他类型特定的查找方法都基于此实现。
+
+        Args:
+            name: 实体名称
+
+        Returns:
+            Optional[Entity]: 匹配的实体，如果不存在则返回 None
+        """
         return self._entity_name_index.get(name, None)
 
     ###############################################################################################################################################
     def get_stage_entity(self, stage_name: str) -> Optional[Entity]:
+        """通过场景名称获取场景实体。
+
+        查找具有指定名称且包含 StageComponent 的实体。
+
+        Args:
+            stage_name: 场景名称
+
+        Returns:
+            Optional[Entity]: 匹配的场景实体，如果不存在则返回 None
+        """
         entity: Optional[Entity] = self.get_entity_by_name(stage_name)
         if entity is not None and entity.has(StageComponent):
             return entity
@@ -144,6 +181,16 @@ class RPGEntityManager(Context):
 
     ###############################################################################################################################################
     def get_actor_entity(self, actor_name: str) -> Optional[Entity]:
+        """通过角色名称获取角色实体。
+
+        查找具有指定名称且包含 ActorComponent 的实体。
+
+        Args:
+            actor_name: 角色名称
+
+        Returns:
+            Optional[Entity]: 匹配的角色实体，如果不存在则返回 None
+        """
         entity: Optional[Entity] = self.get_entity_by_name(actor_name)
         if entity is not None and entity.has(ActorComponent):
             return entity
@@ -174,7 +221,20 @@ class RPGEntityManager(Context):
         return None
 
     ###############################################################################################################################################
-    def get_entity_by_player_name(self, player_name: str) -> Optional[Entity]:
+    def get_player_entity(self, player_name: Optional[str] = None) -> Optional[Entity]:
+        """获取玩家实体。
+
+        通过 PlayerComponent 查找玩家实体。系统中应该最多只有一个玩家实体。
+        如果不指定 player_name，返回系统中唯一的玩家实体（如果存在）。
+        如果指定 player_name，返回匹配该名称的玩家实体。
+
+        Args:
+            player_name: 玩家名称（PlayerComponent.player_name 字段）。
+                        如果为 None，返回系统中唯一的玩家实体。
+
+        Returns:
+            Optional[Entity]: 匹配的玩家实体，如果不存在则返回 None
+        """
         player_entities = self.get_group(
             Matcher(
                 all_of=[PlayerComponent],
@@ -182,6 +242,12 @@ class RPGEntityManager(Context):
         ).entities
 
         assert len(player_entities) <= 1, "There should be at most one player entity."
+
+        # 如果没有指定 player_name，返回唯一的玩家实体
+        if player_name is None:
+            return next(iter(player_entities), None)
+
+        # 如果指定了 player_name，通过名称匹配
         for player_entity in player_entities:
             player_comp = player_entity.get(PlayerComponent)
             if player_comp.player_name == player_name:
@@ -242,6 +308,17 @@ class RPGEntityManager(Context):
 
     ###############################################################################################################################################
     def get_actor_appearances_on_stage(self, entity: Entity) -> Dict[str, str]:
+        """获取场景上存活 Actor 的外观信息映射。
+
+        仅返回存活且具有 AppearanceComponent 的 Actor 的外观信息。
+        常用于生成场景描述或增强消息内容。
+
+        Args:
+            entity: Stage 实体或 Actor 实体
+
+        Returns:
+            Dict[str, str]: 角色名称到外观描述的映射 {角色名: 外观描述}
+        """
         ret: Dict[str, str] = {}
         for actor in self.get_alive_actors_on_stage(entity):
             if actor.has(AppearanceComponent):
@@ -250,7 +327,17 @@ class RPGEntityManager(Context):
         return ret
 
     ###############################################################################################################################################
-    def is_actor_at_home(self, actor_entity: Entity) -> bool:
+    def is_actor_in_home_stage(self, actor_entity: Entity) -> bool:
+        """判断 Actor 是否在家园场景中。
+
+        检查 Actor 所在的 Stage 是否具有 HomeComponent。
+
+        Args:
+            actor_entity: Actor 实体
+
+        Returns:
+            bool: 在家园场景中返回 True，否则返回 False
+        """
         assert actor_entity.has(ActorComponent), "actor_entity must have ActorComponent"
         if not actor_entity.has(ActorComponent):
             return False
@@ -268,7 +355,17 @@ class RPGEntityManager(Context):
         return stage_entity.has(HomeComponent)
 
     ###############################################################################################################################################
-    def is_actor_in_dungeon(self, actor_entity: Entity) -> bool:
+    def is_actor_in_dungeon_stage(self, actor_entity: Entity) -> bool:
+        """判断 Actor 是否在地下城场景中。
+
+        检查 Actor 所在的 Stage 是否具有 DungeonComponent。
+
+        Args:
+            actor_entity: Actor 实体
+
+        Returns:
+            bool: 在地下城场景中返回 True，否则返回 False
+        """
         assert actor_entity.has(ActorComponent), "actor_entity must have ActorComponent"
         if not actor_entity.has(ActorComponent):
             return False
@@ -286,29 +383,49 @@ class RPGEntityManager(Context):
         return stage_entity.has(DungeonComponent)
 
     ###############################################################################################################################################
-    def validate_interaction(
+    def validate_actor_interaction(
         self, initiator_entity: Entity, target_name: str
-    ) -> InteractionValidationResult:
+    ) -> InteractionError:
+        """验证两个 Actor 之间是否可以进行交互。
 
+        检查发起者和目标是否满足交互条件：
+        1. 目标 Actor 必须存在
+        2. 发起者必须在某个场景中
+        3. 发起者和目标必须在同一场景中
+
+        Args:
+            initiator_entity: 发起交互的实体
+            target_name: 目标 Actor 的名称
+
+        Returns:
+            InteractionError: 验证结果，NONE 表示可以交互，其他值表示具体错误
+        """
         actor_entity: Optional[Entity] = self.get_actor_entity(target_name)
         if actor_entity is None:
-            return InteractionValidationResult.TARGET_NOT_FOUND
+            return InteractionError.TARGET_NOT_FOUND
 
         current_stage_entity = self.resolve_stage_entity(initiator_entity)
         if current_stage_entity is None:
-            return InteractionValidationResult.INITIATOR_NOT_IN_STAGE
+            return InteractionError.INITIATOR_NOT_ON_STAGE
 
         target_stage_entity = self.resolve_stage_entity(actor_entity)
         if target_stage_entity != current_stage_entity:
-            return InteractionValidationResult.DIFFERENT_STAGES
+            return InteractionError.DIFFERENT_STAGES
 
-        return InteractionValidationResult.SUCCESS
+        return InteractionError.NONE
 
     ###############################################################################################################################################
-    def get_stage_actor_distribution(
+    def get_actors_by_stage(
         self,
     ) -> Dict[Entity, List[Entity]]:
+        """获取所有场景到 Actor 的分组映射。
 
+        返回以 Stage 实体为键、Actor 实体列表为值的字典。
+        包含所有 Stage，即使某个 Stage 上没有任何 Actor（对应空列表）。
+
+        Returns:
+            Dict[Entity, List[Entity]]: Stage 实体到 Actor 实体列表的映射
+        """
         ret: Dict[Entity, List[Entity]] = {}
 
         actor_entities: Set[Entity] = self.get_group(
@@ -336,12 +453,19 @@ class RPGEntityManager(Context):
         return ret
 
     ###############################################################################################################################################
-    def get_stage_actor_distribution_mapping(
+    def get_actors_by_stage_as_names(
         self,
     ) -> Dict[str, List[str]]:
+        """获取所有场景到 Actor 的分组映射（名称版本）。
 
+        返回以 Stage 名称为键、Actor 名称列表为值的字典。
+        这是 get_actors_by_stage 的字符串版本，用于序列化或 API 响应。
+
+        Returns:
+            Dict[str, List[str]]: Stage 名称到 Actor 名称列表的映射
+        """
         ret: Dict[str, List[str]] = {}
-        mapping = self.get_stage_actor_distribution()
+        mapping = self.get_actors_by_stage()
 
         for stage_entity, actor_entities in mapping.items():
             ret[stage_entity.name] = [

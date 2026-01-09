@@ -28,7 +28,7 @@ class SaveSystem(ExecuteProcessor):
 
         # 保存时，打印当前场景中的所有角色
         actor_distribution: Dict[Entity, List[Entity]] = (
-            self._game.get_stage_actor_distribution()
+            self._game.get_actors_by_stage()
         )
 
         #

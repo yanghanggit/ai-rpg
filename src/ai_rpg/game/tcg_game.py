@@ -90,7 +90,7 @@ class TCGGame(RPGGame):
         if player_entity is None:
             return False
 
-        return self.is_actor_at_home(player_entity)
+        return self.is_actor_in_home_stage(player_entity)
 
     ###############################################################################################################################################
     @property
@@ -100,7 +100,7 @@ class TCGGame(RPGGame):
         if player_entity is None:
             return False
 
-        return self.is_actor_in_dungeon(player_entity)
+        return self.is_actor_in_dungeon_stage(player_entity)
 
     #######################################################################################################################################
     def create_dungeon_entities(self, dungeon_model: Dungeon) -> None:

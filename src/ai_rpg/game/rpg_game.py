@@ -108,10 +108,6 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         return self._world
 
     ###############################################################################################################################################
-    def get_player_entity(self) -> Optional[Entity]:
-        return self.get_entity_by_player_name(self.player_session.name)
-
-    ###############################################################################################################################################
     def get_agent_context(self, entity: Entity) -> AgentContext:
         return self.world.agents_context.setdefault(
             entity.name, AgentContext(name=entity.name, context=[])

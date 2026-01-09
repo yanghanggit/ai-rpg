@@ -1,15 +1,3 @@
-"""对话动作系统模块。
-
-该模块实现了游戏中角色之间的对话交互系统，负责处理和验证对话动作，
-并在对话成功时广播对话事件，在对话失败时提供错误提示。
-
-主要功能：
-- 验证对话目标的有效性（目标是否存在于当前场景）
-- 格式化对话通知消息和错误提示消息
-- 广播对话事件到游戏舞台
-- 处理对话失败的各种情况
-"""
-
 from typing import final, override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.rpg_entity_manager import InteractionError
@@ -36,6 +24,22 @@ def _format_invalid_target_error(speaker_name: str, target_name: str) -> str:
 
 @final
 class SpeakActionSystem(ReactiveProcessor):
+    """角色说话动作系统。
+
+    响应式处理器，监听 SpeakAction 组件触发，验证对话目标的有效性，
+    并将对话事件广播到当前场景内的所有角色。
+
+    功能特点：
+    - 验证对话目标是否存在于当前场景
+    - 目标有效时广播 SpeakEvent 到当前场景所有角色
+    - 目标无效时向发起者添加错误提示消息
+    - 适用于场景内公开对话交流
+
+    广播范围：当前场景内所有角色（公开）
+
+    Attributes:
+        _game: 游戏实例引用
+    """
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)

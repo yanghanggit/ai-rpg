@@ -1,16 +1,3 @@
-"""耳语动作系统模块。
-
-该模块实现了游戏中角色之间的私密耳语交互系统，负责处理和验证耳语动作，
-确保耳语仅在发起者和目标之间传递，其他角色无法得知耳语内容。
-
-主要功能：
-- 验证耳语目标的有效性（目标是否存在于当前场景）
-- 格式化耳语通知消息和错误提示消息
-- 实现私密通信机制（仅通知发起者和目标，其他角色不知道）
-- 处理耳语失败的各种情况并提供反馈
-- 与普通对话(SpeakAction)的区别在于耳语的私密性
-"""
-
 from typing import final, override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.rpg_entity_manager import InteractionError
@@ -37,6 +24,26 @@ def _format_invalid_target_error(speaker_name: str, target_name: str) -> str:
 
 @final
 class WhisperActionSystem(ReactiveProcessor):
+    """角色耳语动作系统。
+
+    响应式处理器，监听 WhisperAction 组件触发，验证耳语目标的有效性，
+    并实现私密通信机制，确保耳语仅在发起者和目标之间传递。
+
+    功能特点：
+    - 验证耳语目标是否存在于当前场景
+    - 目标有效时仅向发起者和目标双方发送 WhisperEvent（私密性）
+    - 目标无效时向发起者添加错误提示消息
+    - 其他角色无法得知耳语内容
+
+    广播范围：仅发起者和目标双方（私密）
+
+    与 SpeakActionSystem 的区别：
+    - Speak: 当前场景所有角色都能听到（公开对话）
+    - Whisper: 只有发起者和目标知道（私密耳语）
+
+    Attributes:
+        _game: 游戏实例引用
+    """
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)

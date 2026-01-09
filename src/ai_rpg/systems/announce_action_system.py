@@ -1,22 +1,3 @@
-"""公告动作系统模块。
-
-该模块实现了游戏中的全场景公告系统，负责处理和广播公告消息到所有同类型的场景。
-公告系统允许角色向所有相同类型的场景（家园或地下城）发布消息，确保消息能够
-传达到所有相关区域的角色。
-
-主要功能：
-- 根据发起者所在场景类型确定公告广播范围
-- 获取所有同类型的场景实体（家园场景或地下城场景）
-- 向所有同类型场景广播公告事件
-- 格式化公告通知消息
-- 确保公告在相同类型的场景间传播，而不跨越不同类型场景
-
-广播规则：
-- 家园场景的公告只广播到所有家园场景
-- 地下城场景的公告只广播到所有地下城场景
-- 不支持跨场景类型的公告广播
-"""
-
 from typing import Set, final, override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import AnnounceAction, AnnounceEvent, HomeComponent, DungeonComponent
@@ -35,6 +16,32 @@ def _format_announce_notification(
 
 @final
 class AnnounceActionSystem(ReactiveProcessor):
+    """角色公告动作系统。
+
+    响应式处理器，监听 AnnounceAction 组件触发，根据发起者所在场景类型
+    将公告消息广播到所有同类型的场景（家园或地下城）。
+
+    功能特点：
+    - 自动识别发起者所在场景类型（HomeComponent 或 DungeonComponent）
+    - 获取所有同类型的场景实体
+    - 向每个同类型场景广播 AnnounceEvent
+    - 确保消息传达到所有相关区域的角色
+
+    广播范围：所有同类型场景内的所有角色（跨场景）
+
+    广播规则：
+    - 家园场景发起 → 广播到所有家园场景
+    - 地下城场景发起 → 广播到所有地下城场景
+    - 不支持跨场景类型的公告广播
+
+    与其他交流系统的区别：
+    - Speak: 当前场景所有角色（单场景公开）
+    - Whisper: 发起者和目标双方（单场景私密）
+    - Announce: 所有同类型场景的所有角色（跨场景公开）
+
+    Attributes:
+        _game: 游戏实例引用
+    """
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)

@@ -1,9 +1,3 @@
-"""家园角色行动系统模块。
-
-响应式处理器，监听角色的 PlanAction 组件，为角色生成行动规划提示词，
-调用 AI 服务获取决策，并将决策转化为具体的游戏行动组件。
-"""
-
 from typing import Dict, Final, List, final
 from loguru import logger
 from overrides import override
@@ -29,9 +23,26 @@ from ..game import TCGGame
 
 
 #######################################################################################################################################
+def _format_mind_notification(actor_name: str, mind_content: str) -> str:
+    """格式化内心活动通知消息。
+
+    Args:
+        actor_name: 角色名称
+        mind_content: 内心活动内容
+
+    Returns:
+        格式化后的通知消息
+    """
+    return f"# 通知！{actor_name} 内心活动: {mind_content}"
+
+
+#######################################################################################################################################
 @final
 class ActionPlanResponse(BaseModel):
     """角色行动规划响应数据模型。
+
+    用于解析和验证 AI 返回的角色行动决策 JSON 数据，
+    确保响应结构符合预期格式并包含所有必要的行动信息。
 
     Attributes:
         mind: 内心独白
@@ -51,7 +62,7 @@ class ActionPlanResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _build_full_action_prompt(
+def _build_action_planning_prompt(
     current_stage: str,
     current_stage_narration: str,
     other_actors_appearances: Dict[str, str],
@@ -109,8 +120,12 @@ def _build_full_action_prompt(
 3. **对内检索** (`query`)
    - System prompt是信息目录，需要详细信息时用query向数据库检索，结果会添加到context
 
-4. **对外交流** (`speak` / `whisper` / `announce`)
-   - 只能使用context中已有的信息
+4. **对外交流** - 三种方式的区别
+   - `speak`：对当前场景内指定角色说话（公开，场景内所有人都能听到）
+   - `whisper`：对指定角色耳语（私密，只有你和对方知道）
+   - `announce`：向所有家园场景发布公告（广播，所有家园场景的角色都能听到）
+   
+   **约束**：只能使用context中已有的信息
 
 5. **场景移动** (`trans_stage`)
    - 填写目标场景全名（从"可移动至"列表选择）
@@ -138,7 +153,7 @@ def _build_full_action_prompt(
 
 
 #######################################################################################################################################
-def _build_compressed_action_prompt(
+def _build_action_prompt_summary(
     prompt: str,
 ) -> str:
     """构建压缩版提示词用于历史记录。
@@ -149,7 +164,7 @@ def _build_compressed_action_prompt(
     Returns:
         压缩后的简短提示词
     """
-    # logger.debug(f"原始 Prompt =>\n{prompt}")
+    logger.debug(f"原始 Prompt =>\n{prompt[:100]}")
     return "# 指令! 决定你要做什么，以JSON格式输出。"
 
 
@@ -219,7 +234,7 @@ class HomeActorSystem(ReactiveProcessor):
             # 添加上下文！
             self._game.add_human_message(
                 actor_entity,
-                _build_compressed_action_prompt(chat_client.prompt),
+                _build_action_prompt_summary(chat_client.prompt),
                 compressed_prompt=chat_client.prompt,
             )
             self._game.add_ai_message(actor_entity, chat_client.response_ai_messages)
@@ -230,7 +245,9 @@ class HomeActorSystem(ReactiveProcessor):
                 self._game.notify_entities(
                     set({actor_entity}),
                     MindEvent(
-                        message=f"# 通知！{actor_entity.name} 内心活动: {validated_response.mind}",
+                        message=_format_mind_notification(
+                            actor_entity.name, validated_response.mind
+                        ),
                         actor=actor_entity.name,
                         content=validated_response.mind,
                     ),
@@ -325,7 +342,7 @@ class HomeActorSystem(ReactiveProcessor):
             chat_clients.append(
                 ChatClient(
                     name=actor_entity.name,
-                    prompt=_build_full_action_prompt(
+                    prompt=_build_action_planning_prompt(
                         current_stage=current_stage.name,
                         current_stage_narration=current_stage.get(
                             EnvironmentComponent

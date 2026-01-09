@@ -227,7 +227,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         for world_system_model in world_system_models:
 
             # 创建实体
-            world_system_entity = self.__create_entity__(world_system_model.name)
+            world_system_entity = self._create_entity(world_system_model.name)
             assert (
                 world_system_entity is not None
             ), f"创建world_system_entity失败: {world_system_model.name}"
@@ -275,7 +275,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         for actor_model in actor_models:
 
             # 创建实体
-            actor_entity = self.__create_entity__(actor_model.name)
+            actor_entity = self._create_entity(actor_model.name)
             assert actor_entity is not None, f"创建actor_entity失败: {actor_model.name}"
 
             # 必要组件：identifier
@@ -377,7 +377,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         for stage_model in stage_models:
 
             # 创建实体
-            stage_entity = self.__create_entity__(stage_model.name)
+            stage_entity = self._create_entity(stage_model.name)
 
             # 必要组件: identifier
             self._world.runtime_index += 1

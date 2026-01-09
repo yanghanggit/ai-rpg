@@ -6,13 +6,13 @@ from .objects import (
     Item,
     Skill,
 )
-from .registry import register_component_class
+from .registry import register_component_type
 
 
 ############################################################################################################
 # 全局唯一标识符 RunTimeIndexComponent
 @final
-@register_component_class
+@register_component_type
 class RuntimeComponent(Component):
     name: str
     runtime_index: int
@@ -22,7 +22,7 @@ class RuntimeComponent(Component):
 ############################################################################################################
 # 记录kick off原始信息
 @final
-@register_component_class
+@register_component_type
 class KickOffComponent(Component):
     name: str
     content: str
@@ -31,7 +31,7 @@ class KickOffComponent(Component):
 ############################################################################################################
 # 标记kick off已经完成
 @final
-@register_component_class
+@register_component_type
 class KickOffDoneComponent(Component):
     name: str
     response: str
@@ -40,7 +40,7 @@ class KickOffDoneComponent(Component):
 ############################################################################################################
 # 例如，世界级的entity就标记这个组件
 @final
-@register_component_class
+@register_component_type
 class WorldComponent(Component):
     name: str
 
@@ -48,7 +48,7 @@ class WorldComponent(Component):
 ############################################################################################################
 # 场景标记
 @final
-@register_component_class
+@register_component_type
 class StageComponent(Component):
     name: str
     character_sheet_name: str
@@ -57,7 +57,7 @@ class StageComponent(Component):
 ############################################################################################################
 # 角色标记
 @final
-@register_component_class
+@register_component_type
 class ActorComponent(Component):
     name: str
     character_sheet_name: str
@@ -67,7 +67,7 @@ class ActorComponent(Component):
 ############################################################################################################
 # 记录场景的描述 #Environment
 @final
-@register_component_class
+@register_component_type
 class EnvironmentComponent(Component):
     name: str
     description: str
@@ -76,7 +76,7 @@ class EnvironmentComponent(Component):
 ############################################################################################################
 # 玩家标记
 @final
-@register_component_class
+@register_component_type
 class PlayerComponent(Component):
     player_name: str
 
@@ -84,7 +84,7 @@ class PlayerComponent(Component):
 ############################################################################################################
 # 玩家标记
 @final
-@register_component_class
+@register_component_type
 class PlayerOnlyStageComponent(Component):
     name: str
 
@@ -92,7 +92,7 @@ class PlayerOnlyStageComponent(Component):
 ############################################################################################################
 # 摧毁Entity标记
 @final
-@register_component_class
+@register_component_type
 class DestroyComponent(Component):
     name: str
 
@@ -100,7 +100,7 @@ class DestroyComponent(Component):
 ############################################################################################################
 # 角色外观信息
 @final
-@register_component_class
+@register_component_type
 class AppearanceComponent(Component):
     name: str
     appearance: str
@@ -109,7 +109,7 @@ class AppearanceComponent(Component):
 ############################################################################################################
 # Stage专用，标记该Stage是Home
 @final
-@register_component_class
+@register_component_type
 class HomeComponent(Component):
     name: str
 
@@ -117,7 +117,7 @@ class HomeComponent(Component):
 ############################################################################################################
 # Stage专用，标记该Stage是Dungeon
 @final
-@register_component_class
+@register_component_type
 class DungeonComponent(Component):
     name: str
 
@@ -125,7 +125,7 @@ class DungeonComponent(Component):
 ############################################################################################################
 # Actor专用，标记该Actor是盟友
 @final
-@register_component_class
+@register_component_type
 class AllyComponent(Component):
     name: str
 
@@ -133,7 +133,7 @@ class AllyComponent(Component):
 ############################################################################################################
 # Actor专用，标记该Actor是Monster
 @final
-@register_component_class
+@register_component_type
 class EnemyComponent(Component):
     name: str
 
@@ -143,7 +143,7 @@ class EnemyComponent(Component):
 
 # 手牌组件。
 @final
-@register_component_class
+@register_component_type
 class HandComponent(Component):
     """
     以下是针对卡牌游戏中 牌组、弃牌堆、抽牌堆、手牌 的类名设计建议，结合常见游戏术语和编程习惯：
@@ -164,7 +164,7 @@ class HandComponent(Component):
 ############################################################################################################
 # 死亡标记
 @final
-@register_component_class
+@register_component_type
 class DeathComponent(Component):
     name: str
 
@@ -172,7 +172,7 @@ class DeathComponent(Component):
 ############################################################################################################
 # 新版本的重构！
 @final
-@register_component_class
+@register_component_type
 class CombatStatsComponent(MutableComponent):
     name: str
     stats: CharacterStats
@@ -195,7 +195,7 @@ class CombatStatsComponent(MutableComponent):
 
 
 @final
-@register_component_class
+@register_component_type
 class InventoryComponent(MutableComponent):
     name: str
     items: List[Item]  # 物品列表，存储物品名称
@@ -230,7 +230,7 @@ class InventoryComponent(MutableComponent):
 
 ############################################################################################################
 @final
-@register_component_class
+@register_component_type
 class SkillBookComponent(MutableComponent):
     name: str
     skills: List[Skill]  # 技能列表
@@ -265,80 +265,80 @@ class SkillBookComponent(MutableComponent):
 
 
 @final
-@register_component_class
+@register_component_type
 class ModeratorComponent(Component):
     name: str
 
 
 @final
-@register_component_class
+@register_component_type
 class WerewolfComponent(Component):
     name: str
 
 
 @final
-@register_component_class
+@register_component_type
 class SeerComponent(Component):
     name: str
 
 
 @final
-@register_component_class
+@register_component_type
 class WitchComponent(Component):
     name: str
 
 
 @final
-@register_component_class
+@register_component_type
 class VillagerComponent(Component):
     name: str
 
 
 @final
-@register_component_class
+@register_component_type
 class HunterComponent(Component):
     name: str
 
 
 @final
-@register_component_class
+@register_component_type
 class HunterShotUsedComponent(Component):
     name: str
 
 
 @final
-@register_component_class
+@register_component_type
 class NightActionReadyComponent(Component):
     name: str
 
 
 @final
-@register_component_class
+@register_component_type
 class NightActionCompletedComponent(Component):
     name: str
 
 
 @final
-@register_component_class
+@register_component_type
 class NightKillTargetComponent(Component):
     name: str
     turn: int
 
 
 @final
-@register_component_class
+@register_component_type
 class DayDiscussedComponent(Component):
     name: str
     message: str
 
 
 @final
-@register_component_class
+@register_component_type
 class DayVotedComponent(Component):
     name: str
 
 
 @final
-@register_component_class
+@register_component_type
 class DayVoteOutComponent(Component):
     name: str

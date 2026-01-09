@@ -25,7 +25,7 @@ from ..entitas import ExecuteProcessor, Matcher
 from ..entitas.components import Component
 from ..game.rpg_game import RPGGame
 from ..models import (
-    ACTION_COMPONENTS_REGISTRY,
+    ACTION_COMPONENT_TYPES,
 )
 
 
@@ -42,7 +42,7 @@ class ActionCleanupSystem(ExecuteProcessor):
 
         # 准备数据！
         registered_actions: Final[FrozenSet[type[Component]]] = frozenset(
-            ACTION_COMPONENTS_REGISTRY.values()
+            ACTION_COMPONENT_TYPES.values()
         )
 
         # 清除行动！

@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Set, final, override
 from loguru import logger
 from ..entitas import Context, Entity, Matcher
 from ..models import (
-    COMPONENTS_REGISTRY,
+    COMPONENT_TYPES,
     ActorComponent,
     AppearanceComponent,
     ComponentSerialization,
@@ -16,16 +16,6 @@ from ..models import (
     HomeComponent,
     DungeonComponent,
 )
-
-"""
-少做事，
-只做合ecs相关的事情，
-这些事情大多数是“检索”，以及不影响状态的调用，例如组织场景与角色的映射。
-有2件比较关键的事，存储与复位。
-"""
-###############################################################################################################################################
-###############################################################################################################################################
-###############################################################################################################################################
 
 
 ###############################################################################################################################################
@@ -46,6 +36,16 @@ class InteractionError(IntEnum):
 
 ###############################################################################################################################################
 class RPGEntityManager(Context):
+    """RPG 游戏的实体管理器，基于 ECS 架构。
+
+    核心职责：
+    1. 实体生命周期管理：创建、销毁、维护名称索引以支持快速查找
+    2. 实体序列化：支持游戏状态的保存与恢复
+    3. 类型化查询：提供 World、Stage、Actor、Player 等类型特定的实体查询方法
+    4. 关系查询：查询场景上的角色分布、角色外观、交互验证等
+
+    设计原则：专注于"检索"和不改变状态的操作，保持职责单一。
+    """
 
     ###############################################################################################################################################
     def __init__(
@@ -55,7 +55,18 @@ class RPGEntityManager(Context):
         self._entity_name_index: Dict[str, Entity] = {}  # （方便快速查找用）
 
     ###############################################################################################################################################
-    def __create_entity__(self, name: str) -> Entity:
+    def _create_entity(self, name: str) -> Entity:
+        """创建并注册一个新实体（内部方法）。
+
+        调用父类的 create_entity 创建实体，并将其注册到内部名称索引中。
+        这确保每个实体都可以通过名称快速查找。
+
+        Args:
+            name: 实体名称，必须唯一
+
+        Returns:
+            Entity: 新创建的实体
+        """
         entity = super().create_entity()
         entity._name = str(name)
         self._entity_name_index[name] = entity
@@ -64,15 +75,35 @@ class RPGEntityManager(Context):
     ###############################################################################################################################################
     @override
     def destroy_entity(self, entity: Entity) -> None:
+        """销毁实体并清理索引。
+
+        重写父类的 destroy_entity 方法，在销毁实体前先从内部名称索引中移除。
+        这确保名称索引与实际存在的实体保持一致。
+
+        Args:
+            entity: 要销毁的实体
+        """
         self._entity_name_index.pop(entity.name, None)
         return super().destroy_entity(entity)
 
     ###############################################################################################################################################
     def _serialize_entity(self, entity: Entity) -> EntitySerialization:
+        """序列化单个实体（内部方法）。
+
+        将单个 Entity 对象转换为 EntitySerialization 数据结构。
+        只序列化在 COMPONENTS_REGISTRY 中注册的组件，忽略未注册的组件。
+        由 serialize_entities 公共方法调用。
+
+        Args:
+            entity: 要序列化的实体
+
+        Returns:
+            EntitySerialization: 序列化后的实体数据
+        """
         entity_serialization = EntitySerialization(name=entity.name, components=[])
 
         for key, value in entity._components.items():
-            if COMPONENTS_REGISTRY.get(key.__name__) is None:
+            if COMPONENT_TYPES.get(key.__name__) is None:
                 continue
             entity_serialization.components.append(
                 ComponentSerialization(name=key.__name__, data=value.model_dump())
@@ -81,7 +112,18 @@ class RPGEntityManager(Context):
 
     ###############################################################################################################################################
     def serialize_entities(self, entities: Set[Entity]) -> List[EntitySerialization]:
+        """将实体集合序列化为可持久化的数据结构。
 
+        将 Entity 对象集合转换为 EntitySerialization 列表，用于保存游戏状态、
+        网络传输或其他持久化需求。序列化过程会按 RuntimeComponent.runtime_index
+        排序，确保输出顺序的一致性。
+
+        Args:
+            entities: 要序列化的实体集合
+
+        Returns:
+            List[EntitySerialization]: 序列化后的实体数据列表，按 runtime_index 排序
+        """
         entity_serializations: List[EntitySerialization] = []
 
         entities_copy = list(entities)
@@ -102,7 +144,22 @@ class RPGEntityManager(Context):
     def deserialize_entities(
         self, entities_serialization: List[EntitySerialization]
     ) -> Set[Entity]:
+        """从序列化数据还原实体集合。
 
+        将 EntitySerialization 列表反序列化为 Entity 对象集合，用于加载游戏状态、
+        接收网络数据或其他数据恢复场景。会自动创建实体并恢复所有组件数据。
+
+        注意：如果实体名称已存在，会触发断言错误，确保不会重复创建同名实体。
+
+        Args:
+            entities_serialization: 序列化的实体数据列表
+
+        Returns:
+            Set[Entity]: 反序列化后的实体集合
+
+        Raises:
+            AssertionError: 当实体名称已存在时
+        """
         deserialized_entities: Set[Entity] = set()
 
         for entity_serialization in entities_serialization:
@@ -111,12 +168,12 @@ class RPGEntityManager(Context):
                 self.get_entity_by_name(entity_serialization.name) is None
             ), f"Entity with name already exists: {entity_serialization.name}"
 
-            entity = self.__create_entity__(entity_serialization.name)
+            entity = self._create_entity(entity_serialization.name)
             deserialized_entities.add(entity)  # 添加到返回的集合中
 
             for comp_serialization in entity_serialization.components:
 
-                comp_class = COMPONENTS_REGISTRY.get(comp_serialization.name)
+                comp_class = COMPONENT_TYPES.get(comp_serialization.name)
                 assert comp_class is not None
 
                 # 使用 Pydantic 的方式直接从字典创建实例

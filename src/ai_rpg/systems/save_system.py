@@ -1,15 +1,9 @@
 import asyncio
 import json
-from typing import Dict, List, final, override
+from typing import Dict, Final, List, final, override
 from loguru import logger
 from ..models.components import (
     DeathComponent,
-    NightKillTargetComponent,
-    DayDiscussedComponent,
-    NightActionReadyComponent,
-    NightActionCompletedComponent,
-    DayVotedComponent,
-    DayVoteOutComponent,
 )
 from ..entitas import ExecuteProcessor, Entity
 from ..game.rpg_game import RPGGame
@@ -20,7 +14,7 @@ class SaveSystem(ExecuteProcessor):
 
     ############################################################################################################
     def __init__(self, game_context: RPGGame) -> None:
-        self._game: RPGGame = game_context
+        self._game: Final[RPGGame] = game_context
 
     ############################################################################################################
     @override
@@ -56,24 +50,6 @@ class SaveSystem(ExecuteProcessor):
 
         if entity.has(DeathComponent):
             tags.append("dead")
-
-        if entity.has(NightActionReadyComponent):
-            tags.append("night-action-ready")
-
-        if entity.has(NightActionCompletedComponent):
-            tags.append("night-action-completed")
-
-        if entity.has(NightKillTargetComponent):
-            tags.append("night-kill-target")
-
-        if entity.has(DayDiscussedComponent):
-            tags.append("day-discussed")
-
-        if entity.has(DayVotedComponent):
-            tags.append("day-voted")
-
-        if entity.has(DayVoteOutComponent):
-            tags.append("day-vote-out")
 
         if len(tags) == 0:
             return entity.name

@@ -89,31 +89,25 @@ async def get_session_messages(
     # 获取房间实例并检查游戏是否存在
     current_room = game_server.get_room(user_name)
     assert current_room is not None, "get_session_messages: room instance is None"
-    if current_room._sdg_game is None and current_room._tcg_game is None:
+
+    # 获取 TCG 游戏实例
+    rpg_game = current_room._tcg_game
+    assert rpg_game is not None, "get_session_messages: TCG game instance is None"
+    if rpg_game is None:
         logger.error(f"get_session_messages: {user_name} has no game")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="没有游戏",
         )
 
-    # 根据游戏类型获取增量消息
-    if current_room._sdg_game is not None and game_name == current_room._sdg_game.name:
-        assert current_room._sdg_game is not None, "SDGGame should not be None"
-        messages = current_room._sdg_game.player_session.get_messages_since(
-            last_sequence_id
-        )
-    elif (
-        current_room._tcg_game is not None and game_name == current_room._tcg_game.name
-    ):
-        assert current_room._tcg_game is not None, "TCGGame should not be None"
-        messages = current_room._tcg_game.player_session.get_messages_since(
-            last_sequence_id
-        )
-    else:
+    # 验证游戏名称匹配
+    if rpg_game.name != game_name:
         logger.error(f"get_session_messages: {user_name} game_name mismatch")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="游戏名称不匹配",
         )
 
+    # 根据游戏类型获取增量消息
+    messages = rpg_game.player_session.get_messages_since(last_sequence_id)
     return SessionMessageResponse(session_messages=messages)

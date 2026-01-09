@@ -30,7 +30,6 @@ from .game_server_dependencies import CurrentGameServer
 from ..models import (
     EntitiesDetailsResponse,
 )
-from ..game.rpg_game import RPGGame
 
 ###################################################################################################################################################################
 entity_details_api_router = APIRouter()
@@ -106,27 +105,22 @@ async def get_entities_details(
     assert current_room is not None, "Current room should not be None"
 
     # 根据游戏类型获取游戏实例
-    rpg_game: RPGGame | None = None
+    rpg_game = current_room._tcg_game
+    assert rpg_game is not None, "RPG game should not be None"
+    if rpg_game is None:
+        logger.error(f"get_session_messages: {user_name} has no RPG game")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有RPG游戏",
+        )
 
-    if current_room._sdg_game is not None and game_name == current_room._sdg_game.name:
-        # 获取 SDG 游戏
-        rpg_game = current_room._sdg_game
-
-    elif (
-        current_room._tcg_game is not None and game_name == current_room._tcg_game.name
-    ):
-        # 获取 TCG 游戏
-        rpg_game = current_room._tcg_game
-
-    else:
-        logger.error(f"get_session_messages: {user_name} game_name mismatch")
+    # 验证游戏名称匹配
+    if rpg_game.name != game_name:
+        logger.error(f"get_entities_details: {user_name} game_name mismatch")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="游戏名称不匹配",
         )
-
-    # 验证游戏实例
-    assert rpg_game is not None, "WebGame should not be None"
 
     # 获取指定实体
     entities: Set[Entity] = set()

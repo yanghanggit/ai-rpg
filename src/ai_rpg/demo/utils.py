@@ -93,10 +93,8 @@ def create_actor(
 #######################################################################################################################################
 def create_stage(
     name: str,
-    character_sheet_name: str,
+    character_sheet: StageCharacterSheet,
     kick_off_message: str,
-    type: str,
-    stage_profile: str,
     actors: List[Actor],
     campaign_setting: str,
     system_rules: str,
@@ -110,14 +108,12 @@ def create_stage(
 
     Args:
         name: 场景名称
-        character_sheet_name: 场景表单名称
+        character_sheet: 场景表单(StageCharacterSheet对象)
         kick_off_message: 开场消息
-        campaign_setting: 战役设定描述
-        type: 场景类型
-        stage_profile: 场景简介设定
         actors: 场景中的角色列表
-        global_game_mechanics: 全局游戏机制规则
-        global_combat_mechanics: 全局战斗机制规则
+        campaign_setting: 战役设定描述
+        system_rules: 全局游戏机制规则
+        combat_mechanics: 全局战斗机制规则
 
     Returns:
         Stage: 初始化完成的Stage实例
@@ -125,11 +121,7 @@ def create_stage(
 
     stage = Stage(
         name=name,
-        character_sheet=StageCharacterSheet(
-            name=character_sheet_name,
-            type=type,
-            profile=stage_profile,
-        ),
+        character_sheet=character_sheet,
         system_message="",
         kick_off_message=kick_off_message,
         actors=[],
@@ -150,7 +142,7 @@ def create_stage(
 
 ## 场景设定
 
-{stage_profile}"""
+{character_sheet.profile}"""
 
     if stage.character_sheet.type == StageType.DUNGEON:
         stage.system_message += f""" 

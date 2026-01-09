@@ -45,26 +45,6 @@ class ActorType(StrEnum):
 ###############################################################################################################################################
 @final
 @unique
-class WerewolfCharacterSheetName(StrEnum):
-    MODERATOR = "ww.moderator"
-    WEREWOLF = "ww.werewolf"
-    SEER = "ww.seer"
-    WITCH = "ww.witch"
-    VILLAGER = "ww.villager"
-    HUNTER = "ww.hunter"
-
-
-###############################################################################################################################################
-@final
-@unique
-class WitchItemName(StrEnum):
-    CURE = "道具.解药"
-    POISON = "道具.毒药"
-
-
-###############################################################################################################################################
-@final
-@unique
 class StageType(StrEnum):
     NONE = "None"
     HOME = "Home"

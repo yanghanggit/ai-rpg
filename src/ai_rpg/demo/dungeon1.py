@@ -1,6 +1,7 @@
 from .actor_goblin import create_actor_goblin
 from ..models import (
     Dungeon,
+    StageCharacterSheet,
     StageType,
 )
 from ..models.objects import Stage
@@ -18,10 +19,12 @@ def create_stage_cave1() -> Stage:
 
     return create_stage(
         name="场景.洞窟之一",
-        character_sheet_name="goblin_cave",
+        character_sheet=StageCharacterSheet(
+            name="goblin_cave",
+            type=StageType.DUNGEON,
+            profile="你是一个黑暗干燥的洞窟，地上都是易燃的干草，墙上插着各种箭矢，地上还有破损的盔甲和断剑。",
+        ),
         kick_off_message="",
-        type=StageType.DUNGEON,
-        stage_profile="你是一个黑暗干燥的洞窟，地上都是易燃的干草，墙上插着各种箭矢，地上还有破损的盔甲和断剑。",
         actors=[],
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         system_rules=FANTASY_WORLD_RPG_SYSTEM_RULES,

@@ -65,6 +65,7 @@ def sample_actor() -> Any:
             name="test_character",
             type="hero",
             profile="test profile",
+            base_body="",
             appearance="test appearance",
         ),
         system_message="test system message",

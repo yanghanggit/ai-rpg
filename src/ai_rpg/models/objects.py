@@ -15,6 +15,7 @@ class ActorCharacterSheet(BaseModel):
     name: str
     type: str
     profile: str
+    base_body: str
     appearance: str
 
 

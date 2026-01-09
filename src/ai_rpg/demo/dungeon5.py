@@ -26,8 +26,8 @@ def create_stage_cave5() -> Stage:
 地形被刻意改造成沼泽环境以模拟恶劣战斗条件，场地中散布着干草人偶和木质击打桩作为训练目标，地面积水与沼气混合形成潮湿浑浊的空气，生锈的武器残片和漂白的生物骸骨被插在泥泞中作为环境标记，营造出危险区域的真实氛围。
 注意！你是一个动态响应的场景，角色的物理行为与魔法交互会对环境产生实际影响并改变场景状态，这些变化会反过来影响后续行动的条件。""",
         ),
-        kick_off_message=""" """,
-        actors=[],
+        # kick_off_message=""" """,
+        # actors=[],
         campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
         system_rules=FANTASY_WORLD_RPG_SYSTEM_RULES,
         combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,

@@ -7,8 +7,6 @@ from .actor_warrior import create_actor_warrior
 from .actor_wizard import create_actor_wizard
 from .actor_player import create_actor_player
 from .global_settings import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
-from .excel_data import ActorExcelData, DungeonExcelData
-from .excel_data_manager import ExcelDataManager, get_excel_data_manager
 from .dungeon1 import create_demo_dungeon1
 from .dungeon2 import create_demo_dungeon2
 
@@ -45,10 +43,6 @@ __all__ = [
     "create_demo_dungeon5",
     # "create_demo_dungeon6",
     "FANTASY_WORLD_RPG_CAMPAIGN_SETTING",
-    "DungeonExcelData",
-    "ActorExcelData",
-    "ExcelDataManager",
-    "get_excel_data_manager",
     "create_demo_game_world_blueprint1",
     "create_demo_game_world_blueprint2",
     "create_demo_game_world_blueprint3",

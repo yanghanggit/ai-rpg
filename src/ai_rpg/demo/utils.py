@@ -12,7 +12,6 @@ configuration including character sheets, system messages, and game mechanics.
 - 初始化系统消息和角色属性
 """
 
-from typing import List
 from ..models import (
     Actor,
     ActorCharacterSheet,
@@ -20,7 +19,6 @@ from ..models import (
     Stage,
     StageCharacterSheet,
     StageType,
-    WorldSystem,
 )
 
 
@@ -94,8 +92,8 @@ def create_actor(
 def create_stage(
     name: str,
     character_sheet: StageCharacterSheet,
-    kick_off_message: str,
-    actors: List[Actor],
+    # kick_off_message: str,
+    # actors: List[Actor],
     campaign_setting: str,
     system_rules: str,
     combat_mechanics: str,
@@ -123,7 +121,7 @@ def create_stage(
         name=name,
         character_sheet=character_sheet,
         system_message="",
-        kick_off_message=kick_off_message,
+        kick_off_message="",
         actors=[],
     )
 
@@ -152,57 +150,6 @@ def create_stage(
 {combat_mechanics}"""
 
     return stage
-
-
-#######################################################################################################################################
-def create_world_system(
-    name: str,
-    kick_off_message: str,
-    campaign_setting: str,
-    world_system_profile: str,
-    global_game_mechanics: str,
-) -> WorldSystem:
-    """
-    创建一个世界系统(WorldSystem)实例。
-
-    该函数初始化一个WorldSystem对象，设置系统消息等。
-    世界系统负责管理游戏的全局规则和机制。
-
-    Args:
-        name: 世界系统名称
-        kick_off_message: 开场消息
-        campaign_setting: 战役设定描述
-        world_system_profile: 世界系统简介设定
-        global_game_mechanics: 全局游戏机制规则
-
-    Returns:
-        WorldSystem: 初始化完成的WorldSystem实例
-    """
-
-    world_system = WorldSystem(
-        name=name,
-        system_message="",
-        kick_off_message=kick_off_message,
-    )
-
-    # 初次编译system_message!!!!
-    world_system.system_message = f"""# {world_system.name}
-    
-你扮演游戏系统: {world_system.name}
-
-## 游戏设定
-
-{campaign_setting}
-
-## 全局规则
-
-{global_game_mechanics}
-
-## 系统设定
-
-{world_system_profile}"""
-
-    return world_system
 
 
 #######################################################################################################################################

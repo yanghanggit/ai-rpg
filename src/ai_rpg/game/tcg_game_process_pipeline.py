@@ -36,12 +36,6 @@ def create_npc_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     from ..game.tcg_game import TCGGame
     from ..systems.announce_action_system import AnnounceActionSystem
     from ..systems.destroy_entity_system import DestroyEntitySystem
-    from ..systems.home_actor_system import (
-        HomeActorSystem,
-    )
-    from ..systems.home_stage_description_system import (
-        HomeStageDescriptionSystem,
-    )
     from ..systems.actor_appearance_update_system import (
         ActorAppearanceUpdateSystem,
     )
@@ -53,7 +47,6 @@ def create_npc_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     from ..systems.save_system import SaveSystem
     from ..systems.speak_action_system import SpeakActionSystem
     from ..systems.whisper_action_system import WhisperActionSystem
-    from ..systems.home_auto_plan_system import HomeAutoPlanSystem
     from ..systems.trans_stage_action_system import (
         TransStageActionSystem,
     )

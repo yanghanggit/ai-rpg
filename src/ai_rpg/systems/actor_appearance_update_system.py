@@ -8,7 +8,6 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     ActorComponent,
     AppearanceComponent,
-    InventoryComponent,
 )
 from ..models.objects import Item, ItemType
 from ..utils import extract_json_from_code_block
@@ -33,7 +32,7 @@ TEST_WARRIOR_ARMOR = Item(
     name="防具.战甲.裂隙守护者之铠",
     uuid="test-armor-warrior-001",
     type=ItemType.ARMOR,
-    description="厚重的深灰色板甲，肩甲和胸甲上刻有抗魔法符文，散发微弱的蓝色光芒",
+    description="厚重的深灰色板甲，肩甲和胸甲上刻有抗魔法符文，散发微弱的蓝色光芒。配有全覆盖的金属面罩（完全封闭整个头部，不露出任何头发、面容、下巴），面罩表面刻有狮首浮雕，额头处镶嵌一颗小型红宝石",
     count=1,
 )
 
@@ -64,50 +63,42 @@ class AppearanceResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _build_appearance_prompt(base_body: str, equipped_items: str = "") -> str:
+def _build_appearance_prompt(base_body: str, equipped_items: str) -> str:
     """构建角色外观生成的提示词。
 
     Args:
         base_body: 基础身体形态（天生特征）
-        equipped_items: 装备物品描述（可选）
+        equipped_items: 装备物品描述
 
     Returns:
         格式化的提示词字符串
     """
-
-    equipment_section = ""
-    if equipped_items:
-        equipment_section = f"""
-## 装备信息
-
-{equipped_items}
-
-**装备整合规则**：
-- 将装备外观特征自然融入完整描述
-- 装备描述应与基础形态协调
-"""
 
     return f"""# 指令！请根据你的基础身体形态和装备信息，生成你的完整外观描述，以JSON返回。
 
 ## 基础身体形态
 
 {base_body}
-{equipment_section}
-## 输出格式(JSON)
+
+## 装备信息
+
+{equipped_items}
+
+## 输出格式
 
 ```json
 {{
-  "appearance": "完整的外观描述"
+  "appearance": "外观描述"
 }}
 ```
 
-**约束规则**：
+## 约束
 
-- 严格按上述JSON格式输出你的外观描述
-- 包含基础形态的所有特征
-- 自然融入装备的视觉特征
-- 第三人称视角，不使用角色名字
-- 连贯有画面感，100-200字"""
+- 严格按JSON格式输出
+- 客观视觉描述可见特征，第三人称，严禁主观词汇和角色名字
+- 严禁提及任何装备或物品的名称
+- 严格遵守物理遮挡逻辑，只描述未被装备覆盖的可见部位，自然融入装备视觉特征
+- 连贯流畅，100-150字"""
 
 
 #######################################################################################################################################
@@ -130,13 +121,13 @@ def _format_appearance_update_notification(appearance: str) -> str:
 class ActorAppearanceUpdateSystem(ExecuteProcessor):
     """角色外观更新系统。
 
-    根据角色的基础身体形态（base_body）通过 LLM 生成完整的外观描述（appearance）。
+    根据角色的基础身体形态（base_body）和装备信息通过 LLM 生成完整的外观描述（appearance）。
     系统自动筛选需要生成外观的角色，并行生成后更新到角色实体组件中。
 
     工作流程：
         1. 查询所有角色实体（包含 ActorComponent 和 AppearanceComponent）
         2. 筛选出 base_body 不为空且 appearance 为空的角色
-        3. 为每个角色构建提示词（仅使用 System Prompt 作为上下文）
+        3. 为每个角色构建包含基础形态和装备信息的提示词（使用 System Prompt 作为上下文）
         4. 并行发送请求到 AI 服务生成外观描述
         5. 解析响应并更新 AppearanceComponent.appearance
         6. 向角色 Agent 上下文添加外观更新通知
@@ -146,8 +137,8 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
         - appearance 为空（需要生成）
 
     Note:
-        本版本仅基于 base_body 生成基础外观，不考虑装备和技能信息。
-        后续可扩展支持装备系统触发的外观重新生成。
+        当前版本使用固定的测试装备数据验证装备对外观生成的影响。
+        测试重点：验证 LLM 对物理遮挡逻辑的推理能力（如全覆盖面罩不应描述被遮挡的面部特征）。
 
     Attributes:
         _game: TCG游戏上下文，用于访问实体和游戏状态
@@ -188,13 +179,16 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
         """准备需要更新外观的角色请求。
 
         遍历所有角色实体，筛选出需要生成外观的角色（base_body不为空且appearance为空），
-        为每个角色构建ChatClient请求处理器。
+        为每个角色构建包含测试装备信息的ChatClient请求处理器。
 
         Args:
             actor_entities: 所有角色实体的集合
 
         Returns:
             ChatClient请求处理器列表，每个处理器对应一个待生成外观的角色
+
+        Note:
+            当前使用 get_warrior_test_equipment() 为所有角色提供固定的测试装备数据。
         """
         chat_clients: List[ChatClient] = []
 

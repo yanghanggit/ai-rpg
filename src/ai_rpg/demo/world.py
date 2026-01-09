@@ -14,6 +14,8 @@ scenarios with different character and stage configurations.
 
 from ..models import (
     Blueprint,
+    Item,
+    ItemType,
 )
 from .actor_warrior import create_actor_warrior
 from .actor_wizard import create_actor_wizard
@@ -137,11 +139,40 @@ def create_demo_game_world_blueprint2(game_name: str) -> Blueprint:
     actor_warrior = create_actor_warrior()
     assert actor_warrior.kick_off_message == "", "战士角色的kick_off_message应为空"
     actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。"""
-    actor_warrior.character_stats.attack = 100000
+    # actor_warrior.character_stats.attack = 100000
     # 测试法师角色
-    actor_wizard = create_actor_wizard()
-    assert actor_wizard.kick_off_message == "", "法师角色的kick_off_message应为空"
-    actor_wizard.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 通过破解裂隙遗迹中的符文机械秘密,找到平息魔网紊乱危机和压制时空裂隙出现的方法。"""
+    # actor_wizard = create_actor_wizard()
+    # assert actor_wizard.kick_off_message == "", "法师角色的kick_off_message应为空"
+    # actor_wizard.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 通过破解裂隙遗迹中的符文机械秘密,找到平息魔网紊乱危机和压制时空裂隙出现的方法。"""
+
+    # 添加战士测试装备
+    actor_warrior.items.extend(
+        [
+            Item(
+                name="武器.长剑.晨曦之刃",
+                uuid="",
+                type=ItemType.WEAPON,
+                description="传说中的圣剑，剑身泛着淡金色的曙光，剑柄镶嵌着太阳纹章宝石",
+                count=1,
+            ),
+            # 战士测试防具
+            Item(
+                name="防具.战甲.裂隙守护者之铠",
+                uuid="",
+                type=ItemType.ARMOR,
+                description="厚重的深灰色板甲，肩甲和胸甲上刻有抗魔法符文，散发微弱的蓝色光芒。配有全覆盖的金属面罩（完全封闭整个头部，不露出任何头发、面容、下巴），面罩表面刻有狮首浮雕，额头处镶嵌一颗小型红宝石",
+                count=1,
+            ),
+            # 战士测试饰品
+            Item(
+                name="饰品.护符.战神之证",
+                uuid="",
+                type=ItemType.ACCESSORY,
+                description="黑铁打造的护符，挂在腰间的皮革腰带上，护符中央镶嵌着红色晶石",
+                count=1,
+            ),
+        ]
+    )
 
     # 创建场景
     stage_monitoring_house = create_stage_monitoring_house()

@@ -337,7 +337,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         player_only_stage_entity.replace(
             PlayerOnlyStageComponent, player_only_stage_entity.name
         )
-        logger.info(f"场景: {player_only_stage_entity.name} 已标记为仅玩家可见")
+        logger.debug(f"场景: {player_only_stage_entity.name} 已标记为仅玩家可见")
 
         return self
 
@@ -638,7 +638,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                     f"InventoryComponent 角色 {actor_model.name} 有 {len(inventory_component.items)} 个物品"
                 )
                 for item in inventory_component.items:
-                    logger.info(f"物品: {item.model_dump_json(indent=2)}")
+                    logger.debug(f"物品: {item.model_dump_json(indent=2)}")
 
             # 必要组件：技能书组件, 必须copy一份, 不要进行直接引用
             copy_skills = copy.deepcopy(actor_model.skills)

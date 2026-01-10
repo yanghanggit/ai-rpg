@@ -89,13 +89,11 @@ class ItemType(StrEnum):
 
     背包：背包通常是一个管理物品的容器，常见的命名有 Inventory（库存）或 Backpack。在代码中，我们通常使用 Inventory 来指代背包系统。"""
 
-    NONE = "None"
     WEAPON = "Weapon"
-    ARMOR = "Armor"
+    Equipment = "Equipment"
     CONSUMABLE = "Consumable"
     MATERIAL = "Material"
-    ACCESSORY = "Accessory"
-    UNIQUE_ITEM = "UniqueItem"
+    UNIQUE = "Unique"
 
 
 ###############################################################################################################################################

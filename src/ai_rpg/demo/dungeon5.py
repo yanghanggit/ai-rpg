@@ -45,7 +45,7 @@ def create_demo_dungeon5() -> Dungeon:
         Item(
             name="传奇道具.永恒符文核心",
             uuid="",
-            type=ItemType.UNIQUE_ITEM,
+            type=ItemType.UNIQUE,
             description="""你内部嵌入的魔法符文核心，赋予你不灭的生命力。第一回合必须生成一个名为"永恒符文核心"的状态效果(duration=99999)，状态效果的描述为：内部符文核心持续运转，赋予不灭的生命力，当生命值降到0时自动恢复到满血状态。""",
         )
     )

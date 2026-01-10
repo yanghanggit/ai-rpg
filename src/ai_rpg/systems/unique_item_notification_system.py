@@ -118,7 +118,7 @@ class UniqueItemNotificationSystem(ReactiveProcessor):
                 continue
 
             for item in inventory_comp.items:
-                if item.type == ItemType.UNIQUE_ITEM:
+                if item.type == ItemType.UNIQUE:
                     self._notify_unique_item(entity, item)
                 else:
                     logger.debug(

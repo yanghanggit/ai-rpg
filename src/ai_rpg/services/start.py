@@ -1,33 +1,21 @@
 """游戏启动服务模块
 
-本模块提供游戏启动的 API 接口，负责游戏会话的初始化和创建。主要功能包括：
-- 验证用户房间状态，确保用户已登录
-- 创建玩家会话（PlayerSession）实例
-- 初始化或加载游戏世界（World）数据
-- 创建游戏实例（TCGGame）并初始化 ECS 系统
-- 验证玩家实体创建成功
+提供游戏启动 API 接口，负责会话初始化和游戏创建。
 
-游戏启动流程：
-1. 验证房间存在且游戏未启动
-2. 创建玩家会话
-3. 加载或创建世界数据（当前仅支持新建，加载功能尚未实现）
-4. 创建游戏实例
-5. 根据世界状态决定是新建游戏还是恢复游戏
-6. 初始化游戏系统
-7. 验证玩家实体创建成功
+主要流程：
+1. 验证用户房间和游戏蓝图配置
+2. 创建玩家会话和游戏实例
+3. 初始化世界数据和 ECS 系统
+4. 验证玩家实体并初始化游戏
 
-注意事项：
-- 必须先调用 login 接口创建房间，否则返回 404 错误
-- 游戏已启动时不能重复启动，返回 400 错误
-- 从存档加载游戏的功能尚未实现，会返回 500 错误
-- 所有异常由 FastAPI 框架统一处理，确保客户端收到正确的 HTTP 状态码
+注意：必须先调用 login 接口创建房间；当前仅支持新建游戏，暂不支持从存档加载。
 """
 
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.player_session import PlayerSession
 from ..game.tcg_game import TCGGame
-from ..game.game_data_service import get_user_world_data, get_game_blueprint_data
+from ..game.world_persistence import get_user_world_data, get_game_blueprint_data
 from ..models import StartRequest, StartResponse, World
 from .game_server_dependencies import CurrentGameServer
 from ..demo.dungeon4 import (
@@ -48,34 +36,22 @@ async def start(
 ) -> StartResponse:
     """游戏启动接口
 
-    处理游戏启动请求，完成游戏会话的初始化流程。
-    该接口会创建玩家会话、初始化游戏世界、构建 ECS 系统，并验证游戏启动成功。
+    创建并初始化游戏会话，包括玩家会话、世界数据、ECS 系统和玩家实体。
 
     Args:
-        payload: 游戏启动请求数据，包含：
-            - user_name: 用户名，用于定位用户房间
-            - game_name: 游戏名称，用于加载游戏配置
-            - actor_name: 玩家角色名称
-        game_server: 游戏服务器实例，管理所有用户房间和游戏会话
+        payload: 启动请求，包含 user_name（用户名）、game_name（游戏名）、actor_name（角色名）
+        game_server: 游戏服务器实例，管理用户房间和会话
 
     Returns:
-        StartResponse: 游戏启动响应，包含启动成功的消息
+        StartResponse: 包含游戏蓝图配置的启动响应
 
     Raises:
-        HTTPException(404): 用户房间不存在，需要先调用 login 接口
-        HTTPException(400): 游戏已经在运行中，不能重复启动
-        HTTPException(500): 以下情况会返回 500 错误：
-            - 游戏启动配置数据不存在
-            - 尝试从存档加载游戏（功能尚未实现）
-            - 玩家实体创建失败
-        AssertionError: 当关键对象状态异常时抛出
+        HTTPException(404): 用户房间不存在，需先调用 login 接口
+        HTTPException(400): 游戏已在运行中，不能重复启动
+        HTTPException(500): 游戏蓝图不存在、存档加载失败（未实现）或玩家实体创建失败
 
     Note:
-        - 必须先调用 /api/login/v1/ 创建用户房间
-        - 当前仅支持创建新游戏，不支持从存档加载
-        - 游戏会自动创建 demo 地下城（测试功能）
-        - 游戏启动后会立即初始化并保存初始状态
-        - 如果世界数据中已有实体，会尝试恢复游戏状态
+        当前仅支持新建游戏。如有存档数据会返回错误，存档加载功能尚未实现。
     """
 
     logger.info(f"/api/start/v1/: {payload.model_dump_json()}")
@@ -154,10 +130,6 @@ async def start(
         room._tcg_game.new_game().save_game()
     else:
         assert False, "start/v1: 游戏恢复功能尚未实现"
-        # logger.info(
-        #     f"游戏中有实体 = {payload.game_name}，需要通过数据恢复实体，是游戏的恢复的过程"
-        # )
-        # room._tcg_game.load_game().save()
 
     # 验证玩家实体是否创建成功
     player_entity = room._tcg_game.get_player_entity()
@@ -178,4 +150,4 @@ async def start(
     await room._tcg_game.initialize()
 
     # 返回成功响应
-    return StartResponse(message=f"启动游戏成功！", player_actor=player_entity.name)
+    return StartResponse(blueprint=world_blueprint)

@@ -4,6 +4,7 @@ from .session_message import SessionMessage
 from .dungeon import Dungeon
 from .serialization import EntitySerialization
 from .task import TaskRecord
+from .world import Blueprint
 
 ################################################################################################################
 ################################################################################################################
@@ -66,8 +67,7 @@ class StartRequest(BaseModel):
 
 @final
 class StartResponse(BaseModel):
-    message: str
-    player_actor: str
+    blueprint: Blueprint
 
 
 ################################################################################################################

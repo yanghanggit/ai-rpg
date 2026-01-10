@@ -4,7 +4,7 @@ from typing import Any, Final, List, Set
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
-from .game_data_service import persist_world_data, debug_verbose_world_data, verbose_dir
+from .world_persistence import persist_world_data, dump_world_snapshot, ensure_debug_dir
 from ..entitas import Entity
 from .game_session import GameSession
 from .rpg_entity_manager import RPGEntityManager
@@ -414,8 +414,8 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         )
 
         # debug - 调用模块级函数
-        debug_verbose_world_data(
-            verbose_dir=verbose_dir(
+        dump_world_snapshot(
+            verbose_dir=ensure_debug_dir(
                 player_session_name=self.player_session.name, game_name=self.name
             ),
             world=self.world,

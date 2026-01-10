@@ -1,3 +1,13 @@
+"""世界持久化模块
+
+提供游戏世界数据的持久化和调试功能，包括蓝图配置、世界运行时数据、玩家会话等的读写操作。
+
+主要功能：
+- 读取游戏蓝图配置（get_game_blueprint_data）
+- 读取/保存/删除用户世界数据（get_user_world_data, persist_world_data, delete_user_world_data）
+- 调试输出：保存详细的游戏状态到日志目录（debug_verbose_world_data 及相关函数）
+"""
+
 import gzip
 import shutil
 from pathlib import Path
@@ -5,7 +15,7 @@ from typing import Optional
 from loguru import logger
 from ..models import Blueprint, World, Dungeon
 from .player_session import PlayerSession
-from ..game.config import WORLD_BLUEPRINT_DIR, WORLD_RUNTIME_DIR
+from .config import WORLD_BLUEPRINT_DIR, WORLD_RUNTIME_DIR
 from .config import LOGS_DIR
 
 
@@ -13,14 +23,17 @@ from .config import LOGS_DIR
 ###############################################################################################################################################
 ###############################################################################################################################################
 def get_game_blueprint_data(game: str) -> Optional[Blueprint]:
-    """
-    全局方法：从本地文件系统获取指定游戏的启动世界数据
+    """从本地文件系统加载游戏蓝图配置
+
+    从 WORLD_BLUEPRINT_DIR 目录读取游戏的蓝图配置文件（{game}.json）。
+    蓝图包含游戏的初始配置，如玩家角色、场景、物品等静态数据。
 
     Args:
-        game: 游戏名称
+        game: 游戏名称，用于定位配置文件
 
     Returns:
-        Blueprint 对象或 None
+        Blueprint: 游戏蓝图对象，包含游戏的完整配置
+        None: 文件不存在或解析失败时返回 None
     """
 
     read_path = WORLD_BLUEPRINT_DIR / f"{game}.json"
@@ -43,15 +56,18 @@ def get_game_blueprint_data(game: str) -> Optional[Blueprint]:
 
 ###############################################################################################################################################
 def get_user_world_data(user: str, game: str) -> Optional[World]:
-    """
-    从本地文件系统获取用户的游戏世界运行时数据
+    """加载用户的游戏世界运行时数据
+
+    从 WORLD_RUNTIME_DIR/{user}/{game}/runtime.json 读取世界状态。
+    运行时数据包含实体状态、代理上下文、地下城等动态游戏数据。
 
     Args:
         user: 用户名
         game: 游戏名称
 
     Returns:
-        World 对象或 None（如果文件不存在或读取失败）
+        World: 世界运行时对象，包含完整的游戏状态
+        None: 文件不存在或读取失败时返回 None
     """
     read_path = WORLD_RUNTIME_DIR / user / game / "runtime.json"
     if not read_path.exists():
@@ -72,12 +88,17 @@ def get_user_world_data(user: str, game: str) -> Optional[World]:
 
 ###############################################################################################################################################
 def delete_user_world_data(user: str, game: str) -> bool:
-    """
-    删除用户的游戏世界数据目录
+    """删除用户的游戏世界数据目录
+
+    删除 WORLD_RUNTIME_DIR/{user}/{game} 目录及其所有内容，
+    包括 runtime.json、blueprint.json 等所有保存的游戏数据。
 
     Args:
         user: 用户名
         game: 游戏名称
+
+    Returns:
+        bool: 删除成功返回 True，目录不存在返回 False
     """
     write_dir = WORLD_RUNTIME_DIR / user / game
     if write_dir.exists():
@@ -94,19 +115,22 @@ def delete_user_world_data(user: str, game: str) -> bool:
 def persist_world_data(
     username: str, world: World, player_session: PlayerSession, enable_gzip: bool = True
 ) -> bool:
-    """
-    持久化用户的游戏世界数据到本地文件系统
+    """持久化游戏世界数据到本地文件系统
 
-    保存内容包括：
-    - runtime.json: 完整的世界运行时数据
-    - blueprint.json: 游戏启动配置数据
-    - runtime.json.gz: 压缩版本的世界数据（可选）
+    保存完整的游戏状态到 WORLD_RUNTIME_DIR/{username}/{game}/ 目录，包括：
+    - runtime.json: 世界运行时数据（实体、代理、地下城等）
+    - blueprint.json: 游戏蓝图配置
+    - player_session.json: 玩家会话数据
+    - runtime.json.gz: 压缩版本的运行时数据（可选）
 
     Args:
         username: 用户名
-        world: 要保存的世界对象
+        world: 世界对象，包含完整的游戏状态
         player_session: 玩家会话对象
-        use_gzip: 是否同时保存 gzip 压缩版本，默认为 True
+        enable_gzip: 是否同时保存 gzip 压缩版本，默认为 True
+
+    Returns:
+        bool: 保存成功返回 True，失败返回 False
     """
     game = str(world.blueprint.name)
     write_dir = WORLD_RUNTIME_DIR / username / game
@@ -152,8 +176,18 @@ def persist_world_data(
 
 
 ###############################################################################################################################################
-def verbose_dir(player_session_name: str, game_name: str) -> Path:
-    # 依赖 GameSession 提供的 name 属性
+def ensure_debug_dir(player_session_name: str, game_name: str) -> Path:
+    """获取或创建调试日志目录
+
+    返回用于保存详细游戏状态的目录路径，如果目录不存在则自动创建。
+
+    Args:
+        player_session_name: 玩家会话名称
+        game_name: 游戏名称
+
+    Returns:
+        Path: 日志目录路径 LOGS_DIR/{player_session_name}/{game_name}
+    """
     dir = LOGS_DIR / f"{player_session_name}" / f"{game_name}"
     if not dir.exists():
         dir.mkdir(parents=True, exist_ok=True)
@@ -163,23 +197,40 @@ def verbose_dir(player_session_name: str, game_name: str) -> Path:
 
 
 ###############################################################################################################################################
-def debug_verbose_world_data(
+def dump_world_snapshot(
     verbose_dir: Path, world: World, player_session: PlayerSession
 ) -> None:
-    """调试方法，保存游戏状态到文件"""
-    verbose_blueprint_data(verbose_dir, world)
-    verbose_world_data(verbose_dir, world)
-    verbose_entities_serialization(verbose_dir, world)
-    verbose_context(verbose_dir, world)
-    verbose_player_session(verbose_dir, player_session)
-    verbose_dungeon(verbose_dir, world.dungeon)
+    """保存完整的游戏状态到调试日志目录
+
+    综合调用所有 verbose 函数，保存游戏的所有详细信息，包括蓝图、世界数据、
+    实体序列化、代理上下文、玩家会话和地下城数据。
+
+    Args:
+        verbose_dir: 日志输出目录
+        world: 世界对象
+        player_session: 玩家会话对象
+    """
+    dump_blueprint(verbose_dir, world)
+    dump_world_state(verbose_dir, world)
+    dump_entities(verbose_dir, world)
+    dump_agent_contexts(verbose_dir, world)
+    dump_player_session(verbose_dir, player_session)
+    dump_dungeon(verbose_dir, world.dungeon)
 
 
 ###############################################################################################################################################
-def verbose_context(
+def dump_agent_contexts(
     verbose_dir: Path, world: World, should_write_buffer_string: bool = True
 ) -> None:
-    """保存聊天历史到文件"""
+    """保存代理对话上下文到调试目录
+
+    为每个代理保存其对话历史，包括 JSON 格式和可读的文本格式。
+
+    Args:
+        verbose_dir: 日志输出目录
+        world: 世界对象，包含所有代理的上下文
+        should_write_buffer_string: 是否同时保存可读的文本格式，默认为 True
+    """
     context_dir = verbose_dir / "context"
     context_dir.mkdir(parents=True, exist_ok=True)
 
@@ -200,8 +251,15 @@ def verbose_context(
 
 
 ###############################################################################################################################################
-def verbose_blueprint_data(verbose_dir: Path, world: World) -> None:
-    """保存启动数据到文件"""
+def dump_blueprint(verbose_dir: Path, world: World) -> None:
+    """保存游戏蓝图配置到调试目录
+
+    保存蓝图到 blueprint_data 子目录。如果文件已存在则跳过，避免覆盖。
+
+    Args:
+        verbose_dir: 日志输出目录
+        world: 世界对象，包含蓝图配置
+    """
     blueprint_data_dir = verbose_dir / "blueprint_data"
     blueprint_data_dir.mkdir(parents=True, exist_ok=True)
 
@@ -214,8 +272,15 @@ def verbose_blueprint_data(verbose_dir: Path, world: World) -> None:
 
 
 ###############################################################################################################################################
-def verbose_world_data(verbose_dir: Path, world: World) -> None:
-    """保存世界数据到文件"""
+def dump_world_state(verbose_dir: Path, world: World) -> None:
+    """保存完整世界数据到调试目录
+
+    保存世界的完整状态到 world_data 子目录，每次调用会覆盖已有文件。
+
+    Args:
+        verbose_dir: 日志输出目录
+        world: 世界对象
+    """
     world_data_dir = verbose_dir / "world_data"
     world_data_dir.mkdir(parents=True, exist_ok=True)
     world_file_path = world_data_dir / f"{world.blueprint.name}.json"
@@ -225,8 +290,15 @@ def verbose_world_data(verbose_dir: Path, world: World) -> None:
 
 
 ###############################################################################################################################################
-def verbose_player_session(verbose_dir: Path, player_session: PlayerSession) -> None:
-    """保存玩家会话数据到文件"""
+def dump_player_session(verbose_dir: Path, player_session: PlayerSession) -> None:
+    """保存玩家会话数据到调试目录
+
+    保存玩家会话信息到 player_session 子目录。
+
+    Args:
+        verbose_dir: 日志输出目录
+        player_session: 玩家会话对象
+    """
     player_session_dir = verbose_dir / "player_session"
     player_session_dir.mkdir(parents=True, exist_ok=True)
 
@@ -237,8 +309,16 @@ def verbose_player_session(verbose_dir: Path, player_session: PlayerSession) -> 
 
 
 ###############################################################################################################################################
-def verbose_entities_serialization(verbose_dir: Path, world: World) -> None:
-    """保存实体快照到文件"""
+def dump_entities(verbose_dir: Path, world: World) -> None:
+    """保存所有实体序列化数据到调试目录
+
+    为每个实体保存独立的 JSON 文件到 entities_serialization 子目录。
+    每次调用会先删除旧目录再创建新目录，确保数据是最新的。
+
+    Args:
+        verbose_dir: 日志输出目录
+        world: 世界对象，包含所有实体的序列化数据
+    """
     entities_serialization_dir = verbose_dir / "entities_serialization"
     # 强制删除一次
     if entities_serialization_dir.exists():
@@ -257,8 +337,15 @@ def verbose_entities_serialization(verbose_dir: Path, world: World) -> None:
 
 
 ###############################################################################################################################################
-def verbose_dungeon(verbose_dir: Path, dungeon: Dungeon) -> None:
-    """保存地下城系统数据到文件"""
+def dump_dungeon(verbose_dir: Path, dungeon: Dungeon) -> None:
+    """保存地下城数据到调试目录
+
+    保存地下城配置和状态到 dungeons 子目录。
+
+    Args:
+        verbose_dir: 日志输出目录
+        dungeon: 地下城对象
+    """
     dungeon_system_dir = verbose_dir / "dungeons"
     dungeon_system_dir.mkdir(parents=True, exist_ok=True)
     dungeon_system_path = dungeon_system_dir / f"{dungeon.name}.json"

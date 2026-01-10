@@ -1,4 +1,4 @@
-from ..models import Stage, StageCharacterSheet, StageType
+from ..models import Stage, StageProfile, StageType
 from .global_settings import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
     FANTASY_WORLD_RPG_SYSTEM_RULES,
@@ -13,7 +13,7 @@ def create_demo_ally_safe_room() -> Stage:
 
     return create_stage(
         name="场景.安全屋",
-        character_sheet=StageCharacterSheet(
+        stage_profile=StageProfile(
             name="safe_room",
             type=StageType.HOME,
             profile="""你是位于新奥拉西斯外环「尘烟裂谷」区深处，隐秘冒险者庄园内的一间专属安全屋。
@@ -32,7 +32,7 @@ def create_demo_ally_dining_room() -> Stage:
 
     return create_stage(
         name="场景.餐厅",
-        character_sheet=StageCharacterSheet(
+        stage_profile=StageProfile(
             name="dining_room",
             type=StageType.HOME,
             profile="""你是位于新奥拉西斯外环「尘烟裂谷」区地下冒险者庄园内的公共食堂，也是热闹非凡的情报中心。
@@ -52,7 +52,7 @@ def create_stage_monitoring_house() -> Stage:
 
     return create_stage(
         name="场景.监视之屋",
-        character_sheet=StageCharacterSheet(
+        stage_profile=StageProfile(
             name="monitoring_house",
             type=StageType.HOME,
             profile="你是一个监视之屋，房间里漆黑一片，唯独有一块屏幕能看见新奥拉西斯城内外的各个地方。只有玩家能进入这里，并通过屏幕穿梭于各个场景。",

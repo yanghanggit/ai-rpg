@@ -5,9 +5,9 @@ from typing import Type, Optional, Any
 
 try:
     from src.ai_rpg.game.tcg_game import TCGGame
-    from src.ai_rpg.models.objects import Actor
-    from src.ai_rpg.models import ActorCharacterSheet
-    from src.ai_rpg.models.objects import CharacterStats
+    from src.ai_rpg.models.entities import Actor
+    from src.ai_rpg.models import CharacterSheet
+    from src.ai_rpg.models.entities import CharacterStats
     from src.ai_rpg.models.world import World, Blueprint
     from src.ai_rpg.models.dungeon import Dungeon
     from src.ai_rpg.game.player_session import PlayerSession
@@ -61,7 +61,7 @@ def sample_actor() -> Any:
 
     return _Actor(
         name="test_actor",
-        character_sheet=ActorCharacterSheet(
+        character_sheet=CharacterSheet(
             name="test_character",
             type="hero",
             profile="test profile",

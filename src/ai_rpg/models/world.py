@@ -2,7 +2,7 @@ from typing import Dict, List, final
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel
 from .dungeon import Dungeon
-from .objects import Actor, Stage, WorldSystem
+from .entities import Actor, Stage, WorldSystem
 from .serialization import EntitySerialization
 
 

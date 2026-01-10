@@ -1,6 +1,6 @@
 from ..models import (
     Actor,
-    ActorCharacterSheet,
+    CharacterSheet,
     ActorType,
     CharacterStats,
     Skill,
@@ -23,7 +23,7 @@ def create_actor_goblin() -> Actor:
     """
     goblin = create_actor(
         name="角色.怪物.哥布林-拉格",
-        character_sheet=ActorCharacterSheet(
+        character_sheet=CharacterSheet(
             name="goblin",
             type=ActorType.ENEMY.value,
             profile="你是哥布林部落中狡黠而略聪明的成员,生活在新奥拉西斯附近的丛林里。一次外出觅食时误入古代遗迹，你捡到发光的金属碎片和嗡鸣的机械造物，当作神赐武器与工具，用来改善部落生活。尽管部落长老警告这些是危险的不祥遗物，你仍坚持使用，梦想改变哥布林卑微的命运。",

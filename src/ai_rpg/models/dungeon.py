@@ -2,7 +2,7 @@ from enum import IntEnum, unique
 from typing import List, Optional, final
 from loguru import logger
 from pydantic import BaseModel, Field
-from .objects import Actor, Stage
+from .entities import Actor, Stage
 
 
 ###############################################################################################################################################

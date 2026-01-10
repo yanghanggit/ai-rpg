@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 ###############################################################################################################################################
 @final
-class ActorCharacterSheet(BaseModel):
+class CharacterSheet(BaseModel):
     """
     角色卡片定义
     包含角色的基本信息，如名称、类型、简介和外观描述等。
@@ -21,7 +21,7 @@ class ActorCharacterSheet(BaseModel):
 
 ###############################################################################################################################################
 @final
-class StageCharacterSheet(BaseModel):
+class StageProfile(BaseModel):
     """
     场景卡片定义
     包含场景的基本信息，如名称、类型和简介等。
@@ -40,7 +40,7 @@ class ActorType(StrEnum):
     NONE = "None"
     ALLY = "Ally"  # 我方/盟友/好人阵营
     ENEMY = "Enemy"  # 敌方/怪物/坏人阵营
-    NEUTRAL = "Neutral"  # 中立角色
+    # NEUTRAL = "Neutral"  # 中立角色
 
 
 ###############################################################################################################################################
@@ -121,7 +121,7 @@ class Skill(BaseModel):
 @final
 class Actor(BaseModel):
     name: str
-    character_sheet: ActorCharacterSheet
+    character_sheet: CharacterSheet
     system_message: str
     kick_off_message: str
     character_stats: CharacterStats
@@ -134,7 +134,7 @@ class Actor(BaseModel):
 @final
 class Stage(BaseModel):
     name: str
-    character_sheet: StageCharacterSheet
+    stage_profile: StageProfile
     system_message: str
     kick_off_message: str
     actors: List[Actor]

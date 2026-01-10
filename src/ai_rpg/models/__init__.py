@@ -4,7 +4,7 @@ from .api import *
 from .session_message import *
 from .components import *
 from .dungeon import *
-from .objects import *
+from .entities import *
 from .registry import *
 from .serialization import *
 from .task import *

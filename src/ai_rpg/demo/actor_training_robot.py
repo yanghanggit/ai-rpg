@@ -1,6 +1,6 @@
 from ..models import (
     Actor,
-    ActorCharacterSheet,
+    CharacterSheet,
     ActorType,
     CharacterStats,
     Skill,
@@ -23,7 +23,7 @@ def create_actor_training_robot() -> Actor:
     """
     training_robot = create_actor(
         name="角色.怪物.稻草人0号",
-        character_sheet=ActorCharacterSheet(
+        character_sheet=CharacterSheet(
             name="training_robot",
             type=ActorType.ENEMY.value,
             profile=f"""**历史**: 你是训练场的魔法构造体，由稻草人躯体和金属盔甲加固组成，内部嵌有符文核心维持基本战斗功能。

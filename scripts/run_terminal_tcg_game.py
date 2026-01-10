@@ -17,7 +17,6 @@ from ai_rpg.demo import (
     create_actor_player,
     # create_actor_warrior,
     create_demo_dungeon5,
-    create_demo_game_world_blueprint1,
     create_demo_game_world_blueprint2,
 )
 from ai_rpg.game.player_session import PlayerSession

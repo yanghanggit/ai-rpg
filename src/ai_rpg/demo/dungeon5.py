@@ -1,5 +1,5 @@
 from .actor_training_robot import create_actor_training_robot
-from ..models import Dungeon, Stage, StageCharacterSheet, StageType, Item, ItemType
+from ..models import Dungeon, Stage, StageProfile, StageType, Item, ItemType
 from .global_settings import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
     FANTASY_WORLD_RPG_SYSTEM_RULES,
@@ -19,7 +19,7 @@ def create_stage_cave5() -> Stage:
     """
     return create_stage(
         name="场景.训练场",
-        character_sheet=StageCharacterSheet(
+        stage_profile=StageProfile(
             name="training_ground",
             type=StageType.DUNGEON,
             profile="""你是位于新奥拉西斯「尘烟裂谷」区深处的冒险者庄园里的一处改造训练场，原本是废弃的遗迹通风井，被冒险者公会改造为实战模拟场所，用于测试战斗策略与磨炼技艺。

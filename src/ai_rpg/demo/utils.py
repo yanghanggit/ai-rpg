@@ -14,10 +14,10 @@ configuration including character sheets, system messages, and game mechanics.
 
 from ..models import (
     Actor,
-    ActorCharacterSheet,
+    CharacterSheet,
     CharacterStats,
     Stage,
-    StageCharacterSheet,
+    StageProfile,
     StageType,
 )
 from loguru import logger
@@ -26,7 +26,7 @@ from loguru import logger
 #######################################################################################################################################
 def create_actor(
     name: str,
-    character_sheet: ActorCharacterSheet,
+    character_sheet: CharacterSheet,
     character_stats: CharacterStats,
     campaign_setting: str,
     system_rules: str,
@@ -100,7 +100,7 @@ def create_actor(
 #######################################################################################################################################
 def create_stage(
     name: str,
-    character_sheet: StageCharacterSheet,
+    stage_profile: StageProfile,
     # kick_off_message: str,
     # actors: List[Actor],
     campaign_setting: str,
@@ -128,7 +128,7 @@ def create_stage(
 
     stage = Stage(
         name=name,
-        character_sheet=character_sheet,
+        stage_profile=stage_profile,
         system_message="",
         kick_off_message="",
         actors=[],
@@ -149,9 +149,9 @@ def create_stage(
 
 ## 场景设定
 
-{character_sheet.profile}"""
+{stage_profile.profile}"""
 
-    if stage.character_sheet.type == StageType.DUNGEON:
+    if stage.stage_profile.type == StageType.DUNGEON:
         stage.system_message += f""" 
 
 ## 战斗机制

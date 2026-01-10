@@ -1,4 +1,4 @@
-from ..models import Actor, ActorCharacterSheet, ActorType, CharacterStats, Skill
+from ..models import Actor, CharacterSheet, ActorType, CharacterStats, Skill
 from .global_settings import (
     FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
     FANTASY_WORLD_RPG_SYSTEM_RULES,
@@ -17,7 +17,7 @@ def create_actor_player() -> Actor:
     """
     player = create_actor(
         name="角色.公会执行官.D",
-        character_sheet=ActorCharacterSheet(
+        character_sheet=CharacterSheet(
             name="player",
             type=ActorType.ALLY.value,
             profile="""你是无意间从现实世界的电脑游戏中穿越到这个世界的玩家D，知道这里不是真实的世界，而是一个由AI生成的奇幻冒险环境。

@@ -608,11 +608,11 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                     actor_entity.add(AllyComponent, actor_model.name)
                 case ActorType.ENEMY:
                     actor_entity.add(EnemyComponent, actor_model.name)
-                case ActorType.NEUTRAL:
-                    # 中立角色，不添加特殊组件
-                    logger.warning(
-                        f"创建中立角色 Actor: {actor_model.name}, 不添加特殊组件"
-                    )
+                # case ActorType.NEUTRAL:
+                #     # 中立角色，不添加特殊组件
+                #     logger.warning(
+                #         f"创建中立角色 Actor: {actor_model.name}, 不添加特殊组件"
+                #     )
                 case _:
                     assert (
                         False
@@ -711,7 +711,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 str(uuid.uuid4()),
             )
             stage_entity.add(
-                StageComponent, stage_model.name, stage_model.character_sheet.name
+                StageComponent, stage_model.name, stage_model.stage_profile.name
             )
 
             # 必要组件：系统消息
@@ -731,9 +731,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             )
 
             # 必要组件：类型
-            if stage_model.character_sheet.type == StageType.DUNGEON:
+            if stage_model.stage_profile.type == StageType.DUNGEON:
                 stage_entity.add(DungeonComponent, stage_model.name)
-            elif stage_model.character_sheet.type == StageType.HOME:
+            elif stage_model.stage_profile.type == StageType.HOME:
                 stage_entity.add(HomeComponent, stage_model.name)
 
             ## 重新设置Actor和stage的关系

@@ -1,6 +1,6 @@
 from ..models import (
     Actor,
-    ActorCharacterSheet,
+    CharacterSheet,
     ActorType,
     CharacterStats,
     Skill,
@@ -23,7 +23,7 @@ def create_actor_wizard() -> Actor:
     """
     actor = create_actor(
         name="角色.法师.奥露娜",
-        character_sheet=ActorCharacterSheet(
+        character_sheet=CharacterSheet(
             name="wizard",
             type=ActorType.ALLY,
             profile=f"""**历史**:你是出生于银叶秘苑的精灵。与专注自然魔法的同族不同,你从小痴迷于封印之塔上那些古老符文与魔法阵的运作原理。十五岁时,你偷偷潜入星辉学院的图书馆,在那里发现了一卷记载"符文机械学"的古籍——那是上古时代精灵与人类工匠共同研究,将魔法符文刻印在齿轮、杠杆等机械装置上以增幅魔力的失传技艺。这一发现改变了你的人生。你开始秘密研究如何将精灵符文与传统机械结合,创造出你的第一件作品:一只能自动追踪魔网波动的符文蝴蝶。

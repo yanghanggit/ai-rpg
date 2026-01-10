@@ -1,6 +1,6 @@
 from ..models import (
     Actor,
-    ActorCharacterSheet,
+    CharacterSheet,
     ActorType,
     CharacterStats,
     Skill,
@@ -23,7 +23,7 @@ def create_actor_warrior() -> Actor:
     """
     actor = create_actor(
         name="角色.战士.卡恩",
-        character_sheet=ActorCharacterSheet(
+        character_sheet=CharacterSheet(
             name="warrior",
             type=ActorType.ALLY,
             profile=f"""**历史**: 你是曾在砺石角斗场训练的人类精英战士，誓死捍卫新奥拉西斯的安全。在"裂隙灾变"中，你率队深入时空裂隙，却遭遇金属瘴气爆发与符文异变，目睹战友被幻觉、被裂隙遗迹里的魔法机械吞噬，凭战友的保护和运气捡回一条命。但是想要为死去的战友申请抚恤金时却屡次被拒之门外，从此背离官方体系，成为游离的遗迹冒险者。

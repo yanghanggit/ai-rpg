@@ -175,7 +175,7 @@ class TCGGame(RPGGame):
             stage_entity = self.get_stage_entity(stage.name)
             assert stage_entity is None, "stage_entity is not None"
             assert (
-                stage.character_sheet.type == StageType.DUNGEON
+                stage.stage_profile.type == StageType.DUNGEON
             ), "stage_entity is not dungeon type"
 
         # 正式创建。。。。。。。。。。

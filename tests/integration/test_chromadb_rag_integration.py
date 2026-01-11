@@ -22,7 +22,7 @@ from src.ai_rpg.rag import (
 )
 from src.ai_rpg.embedding_model import multilingual_model
 from src.ai_rpg.demo.global_settings import (
-    FANTASY_WORLD_RPG_KNOWLEDGE_BASE,
+    RPG_KNOWLEDGE_BASE,
 )
 
 
@@ -32,7 +32,7 @@ def _init_rag_system_with_model() -> bool:
     return add_documents_to_vector_db(
         collection=collection,
         embedding_model=multilingual_model,
-        documents=FANTASY_WORLD_RPG_KNOWLEDGE_BASE,
+        documents=RPG_KNOWLEDGE_BASE,
         skip_if_exists=True,
     )
 
@@ -66,7 +66,7 @@ class TestChromaDBRAGIntegration:
         success = add_documents_to_vector_db(
             collection=collection,
             embedding_model=multilingual_model,
-            documents=FANTASY_WORLD_RPG_KNOWLEDGE_BASE,
+            documents=RPG_KNOWLEDGE_BASE,
             skip_if_exists=True,
         )
         assert success, "ChromaDB RAG系统初始化失败"

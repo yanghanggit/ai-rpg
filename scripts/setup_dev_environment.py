@@ -118,7 +118,7 @@ def _setup_chromadb_rag_environment(game_name: str) -> None:
         multilingual_model,
     )
     from ai_rpg.demo.global_settings import (
-        FANTASY_WORLD_RPG_KNOWLEDGE_BASE,
+        RPG_KNOWLEDGE_BASE,
     )
     from ai_rpg.models import Blueprint
 
@@ -133,7 +133,7 @@ def _setup_chromadb_rag_environment(game_name: str) -> None:
         success = add_documents_to_vector_db(
             collection=get_default_collection(),
             embedding_model=multilingual_model,
-            documents=FANTASY_WORLD_RPG_KNOWLEDGE_BASE,
+            documents=RPG_KNOWLEDGE_BASE,
             skip_if_exists=True,
         )
 

@@ -1,8 +1,8 @@
 from ..models import Stage, StageProfile, StageType
 from .global_settings import (
-    FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-    FANTASY_WORLD_RPG_SYSTEM_RULES,
-    FANTASY_WORLD_RPG_COMBAT_MECHANICS,
+    RPG_CAMPAIGN_SETTING,
+    RPG_SYSTEM_RULES,
+    RPG_COMBAT_MECHANICS,
 )
 from .utils import (
     create_stage,
@@ -22,9 +22,9 @@ def create_demo_ally_safe_room() -> Stage:
         ),
         # kick_off_message=""" """,
         # actors=[],
-        campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-        system_rules=FANTASY_WORLD_RPG_SYSTEM_RULES,
-        combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,
+        campaign_setting=RPG_CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
+        combat_mechanics=RPG_COMBAT_MECHANICS,
     )
 
 
@@ -41,9 +41,9 @@ def create_demo_ally_dining_room() -> Stage:
         ),
         # kick_off_message=""" """,
         # actors=[],
-        campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-        system_rules=FANTASY_WORLD_RPG_SYSTEM_RULES,
-        combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,
+        campaign_setting=RPG_CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
+        combat_mechanics=RPG_COMBAT_MECHANICS,
     )
 
 
@@ -59,7 +59,7 @@ def create_stage_monitoring_house() -> Stage:
         ),
         # kick_off_message="",
         # actors=[],
-        campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-        system_rules=FANTASY_WORLD_RPG_SYSTEM_RULES,
-        combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,
+        campaign_setting=RPG_CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
+        combat_mechanics=RPG_COMBAT_MECHANICS,
     )

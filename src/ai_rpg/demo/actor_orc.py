@@ -5,8 +5,8 @@ from ..models import (
     CharacterStats,
 )
 from .global_settings import (
-    FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-    FANTASY_WORLD_RPG_SYSTEM_RULES,
+    RPG_CAMPAIGN_SETTING,
+    RPG_SYSTEM_RULES,
 )
 from .utils import (
     create_actor,
@@ -31,6 +31,6 @@ def create_actor_orc() -> Actor:
         ),
         # kick_off_message="",
         character_stats=CharacterStats(),
-        campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-        system_rules=FANTASY_WORLD_RPG_SYSTEM_RULES,
+        campaign_setting=RPG_CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
     )

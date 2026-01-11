@@ -20,7 +20,7 @@ from ..models import (
 from .actor_warrior import create_actor_warrior
 from .actor_wizard import create_actor_wizard
 from .actor_player import create_actor_player
-from .global_settings import FANTASY_WORLD_RPG_CAMPAIGN_SETTING
+from .global_settings import RPG_CAMPAIGN_SETTING
 from .stage_ally_manor import (
     create_demo_ally_safe_room,
     create_demo_ally_dining_room,
@@ -91,7 +91,7 @@ def create_demo_game_world_blueprint1(game_name: str) -> Blueprint:
         name=game_name,
         player_actor=actor_warrior.name,  # 玩家角色为战士
         player_only_stage=stage_monitoring_room.name,
-        campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+        campaign_setting=RPG_CAMPAIGN_SETTING,
         stages=[],
         world_systems=[],
     )
@@ -184,7 +184,7 @@ def create_demo_game_world_blueprint2(game_name: str) -> Blueprint:
         player_actor=actor_warrior.name,  # 玩家角色为战士
         # player_actor=actor_wizard.name,  # 玩家角色为法师
         player_only_stage=stage_monitoring_house.name,
-        campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+        campaign_setting=RPG_CAMPAIGN_SETTING,
         stages=[],
         world_systems=[],
     )
@@ -260,7 +260,7 @@ def create_demo_game_world_blueprint3(game_name: str) -> Blueprint:
         name=game_name,
         player_actor=actor_player.name,  # 玩家角色为穿越者
         player_only_stage=stage_monitoring_house.name,
-        campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
+        campaign_setting=RPG_CAMPAIGN_SETTING,
         stages=[],
         world_systems=[],
     )

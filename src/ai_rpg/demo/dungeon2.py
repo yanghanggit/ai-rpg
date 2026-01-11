@@ -1,9 +1,9 @@
 from .actor_orc import create_actor_orc
 from ..models import Dungeon, Stage, StageProfile, StageType
 from .global_settings import (
-    FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-    FANTASY_WORLD_RPG_SYSTEM_RULES,
-    FANTASY_WORLD_RPG_COMBAT_MECHANICS,
+    RPG_CAMPAIGN_SETTING,
+    RPG_SYSTEM_RULES,
+    RPG_COMBAT_MECHANICS,
 )
 from .utils import (
     create_stage,
@@ -26,9 +26,9 @@ def create_stage_cave2() -> Stage:
         ),
         # kick_off_message="",
         # actors=[],
-        campaign_setting=FANTASY_WORLD_RPG_CAMPAIGN_SETTING,
-        system_rules=FANTASY_WORLD_RPG_SYSTEM_RULES,
-        combat_mechanics=FANTASY_WORLD_RPG_COMBAT_MECHANICS,
+        campaign_setting=RPG_CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
+        combat_mechanics=RPG_COMBAT_MECHANICS,
     )
 
 

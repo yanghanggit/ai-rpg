@@ -50,6 +50,11 @@ def create_npc_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     from ..systems.trans_stage_action_system import (
         TransStageActionSystem,
     )
+    from ..systems.home_auto_plan_system import HomeAutoPlanSystem
+    from ..systems.home_stage_description_system import (
+        HomeStageDescriptionSystem,
+    )
+    from ..systems.home_actor_system import HomeActorSystem
 
     ##
     tcg_game = cast(TCGGame, game)
@@ -63,9 +68,9 @@ def create_npc_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
 
     # 规划逻辑
     ######## 在所有规划之前!##############################################################
-    # processors.add(HomeAutoPlanSystem(tcg_game))
-    # processors.add(HomeStageDescriptionSystem(tcg_game))
-    # processors.add(HomeActorSystem(tcg_game))
+    processors.add(HomeAutoPlanSystem(tcg_game))
+    processors.add(HomeStageDescriptionSystem(tcg_game))
+    processors.add(HomeActorSystem(tcg_game))
     ####### 在所有规划之后! ##############################################################
 
     # 动作处理相关的系统 ##################################################################

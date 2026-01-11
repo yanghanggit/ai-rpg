@@ -1,6 +1,6 @@
 from enum import StrEnum, unique
 from typing import List, final
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 ###############################################################################################################################################
@@ -89,11 +89,11 @@ class ItemType(StrEnum):
 
     背包：背包通常是一个管理物品的容器，常见的命名有 Inventory（库存）或 Backpack。在代码中，我们通常使用 Inventory 来指代背包系统。"""
 
-    WEAPON = "Weapon"
-    EQUIPMENT = "Equipment"
-    CONSUMABLE = "Consumable"
-    MATERIAL = "Material"
-    UNIQUE = "Unique"
+    WEAPON_ITEM = "WeaponItem"
+    EQUIPMENT_ITEM = "EquipmentItem"
+    CONSUMABLE_ITEM = "ConsumableItem"
+    MATERIAL_ITEM = "MaterialItem"
+    UNIQUE_ITEM = "UniqueItem"
 
 
 ###############################################################################################################################################
@@ -102,9 +102,44 @@ class Item(BaseModel):
 
     name: str
     uuid: str
-    type: ItemType
     description: str
+    type: ItemType
     count: int = 1  # 物品数量，默认为1
+
+
+#######################################################################################################################################
+class WeaponItem(Item):
+    """武器类，继承自物品基类"""
+
+    type: ItemType = Field(default=ItemType.WEAPON_ITEM, frozen=True)
+
+
+#######################################################################################################################################
+class EquipmentItem(Item):
+    """装备类，继承自物品基类"""
+
+    type: ItemType = Field(default=ItemType.EQUIPMENT_ITEM, frozen=True)
+
+
+#######################################################################################################################################
+class ConsumableItem(Item):
+    """消耗品类，继承自物品基类"""
+
+    type: ItemType = Field(default=ItemType.CONSUMABLE_ITEM, frozen=True)
+
+
+#######################################################################################################################################
+class MaterialItem(Item):
+    """材料类，继承自物品基类"""
+
+    type: ItemType = Field(default=ItemType.MATERIAL_ITEM, frozen=True)
+
+
+#######################################################################################################################################
+class UniqueItem(Item):
+    """珍贵物品类，继承自物品基类"""
+
+    type: ItemType = Field(default=ItemType.UNIQUE_ITEM, frozen=True)
 
 
 #######################################################################################################################################

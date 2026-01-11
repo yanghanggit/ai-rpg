@@ -9,7 +9,7 @@ from typing import Final, List, final, override
 from loguru import logger
 from ..entitas import Entity, ReactiveProcessor, Matcher, GroupEvent
 from ..game.tcg_game import TCGGame
-from ..models import InventoryComponent, ItemType, Item, DrawCardsAction
+from ..models import InventoryComponent, Item, DrawCardsAction, UniqueItem
 
 
 #######################################################################################################################################
@@ -118,7 +118,7 @@ class UniqueItemNotificationSystem(ReactiveProcessor):
                 continue
 
             for item in inventory_comp.items:
-                if item.type == ItemType.UNIQUE:
+                if isinstance(item, UniqueItem):
                     self._notify_unique_item(entity, item)
                 else:
                     logger.debug(

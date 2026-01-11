@@ -263,7 +263,7 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
 
         equipment_type_items: List[Item] = []
         for item in inventory_comp.items:
-            if item.type in {ItemType.WEAPON, ItemType.EQUIPMENT}:
+            if item.type in {ItemType.WEAPON_ITEM, ItemType.EQUIPMENT_ITEM}:
                 equipment_type_items.append(item)
 
         return equipment_type_items

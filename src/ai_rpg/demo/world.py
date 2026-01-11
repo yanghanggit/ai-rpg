@@ -14,8 +14,8 @@ scenarios with different character and stage configurations.
 
 from ..models import (
     Blueprint,
-    Item,
-    ItemType,
+    WeaponItem,
+    EquipmentItem,
 )
 from .actor_warrior import create_actor_warrior
 from .actor_wizard import create_actor_wizard
@@ -148,18 +148,16 @@ def create_demo_game_world_blueprint2(game_name: str) -> Blueprint:
     # 添加战士测试装备
     actor_warrior.items.extend(
         [
-            Item(
+            WeaponItem(
                 name="武器.长剑.晨曦之刃",
                 uuid="",
-                type=ItemType.WEAPON,
                 description="传说中的圣剑，剑身泛着淡金色的曙光，剑柄镶嵌着太阳纹章宝石",
                 count=1,
             ),
             # 战士测试防具
-            Item(
+            EquipmentItem(
                 name="防具.战甲.裂隙守护者之铠",
                 uuid="",
-                type=ItemType.EQUIPMENT,
                 description="厚重的深灰色板甲，肩甲和胸甲上刻有抗魔法符文，散发微弱的蓝色光芒。配有全覆盖的金属面罩（完全封闭整个头部，不露出任何头发、面容、下巴），面罩表面刻有狮首浮雕，额头处镶嵌一颗小型红宝石",
                 count=1,
             ),

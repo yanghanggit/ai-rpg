@@ -18,8 +18,8 @@ from ..game.tcg_game import TCGGame
 from ..game.world_persistence import get_user_world_data, get_game_blueprint_data
 from ..models import StartRequest, StartResponse, World
 from .game_server_dependencies import CurrentGameServer
-from ..demo.dungeon4 import (
-    create_demo_dungeon4,
+from ..demo.dungeon_mountain_beasts import (
+    create_mountain_beasts_dungeon,
 )
 
 ###################################################################################################################################################################
@@ -100,12 +100,9 @@ async def start(
             runtime_index=1000,
             entities_serialization=[],
             agents_context={},
-            dungeon=create_demo_dungeon4(),
+            dungeon=create_mountain_beasts_dungeon(),
             blueprint=world_blueprint,
         )
-
-        # 测试：如果是demo游戏，就创建demo地下城
-        # current_world_instance.dungeon = create_demo_dungeon4()
 
     else:
 

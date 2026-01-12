@@ -17,7 +17,7 @@ from ai_rpg.demo import (
     # ,
     # create_actor_warrior,
     create_training_dungeon,
-    create_demo_single_hunter_blueprint,
+    create_single_hunter_blueprint,
 )
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import (
@@ -407,7 +407,7 @@ async def _run_game(
     if world_exists is None:
 
         # 获取world_blueprint
-        world_blueprint = create_demo_single_hunter_blueprint(game)
+        world_blueprint = create_single_hunter_blueprint(game)
         assert world_blueprint is not None, "world blueprint 反序列化失败"
 
         # 如果world不存在，说明是第一次创建游戏

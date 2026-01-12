@@ -44,6 +44,7 @@ def create_mystic() -> Actor:
         system_rules=RPG_SYSTEM_RULES,
     )
 
+    # 定义术士的技能
     actor.skills = [
         Skill(
             name="灵气感知",

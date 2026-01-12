@@ -28,7 +28,7 @@ from .stage_village import (
 
 
 #######################################################################################################################
-def create_demo_hunter_mystic_blueprint(game_name: str) -> Blueprint:
+def create_hunter_mystic_blueprint(game_name: str) -> Blueprint:
     """
     创建演示游戏世界Blueprint实例 - 猎人与术士双角色版本。
 
@@ -99,7 +99,7 @@ def create_demo_hunter_mystic_blueprint(game_name: str) -> Blueprint:
 
 
 #######################################################################################################################
-def create_demo_single_hunter_blueprint(game_name: str) -> Blueprint:
+def create_single_hunter_blueprint(game_name: str) -> Blueprint:
     """
     创建演示游戏世界Blueprint实例 - 单猎人版本。
 

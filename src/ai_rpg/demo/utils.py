@@ -101,8 +101,6 @@ def create_actor(
 def create_stage(
     name: str,
     stage_profile: StageProfile,
-    # kick_off_message: str,
-    # actors: List[Actor],
     campaign_setting: str,
     system_rules: str,
     combat_mechanics: str,
@@ -115,7 +113,7 @@ def create_stage(
 
     Args:
         name: 场景名称
-        character_sheet: 场景表单(StageCharacterSheet对象)
+        stage_profile: 场景表单(StageProfile对象)
         kick_off_message: 开场消息
         actors: 场景中的角色列表
         campaign_setting: 战役设定描述
@@ -151,6 +149,7 @@ def create_stage(
 
 {stage_profile.profile}"""
 
+    # 仅地下城场景添加战斗机制说明
     if stage.stage_profile.type == StageType.DUNGEON:
         stage.system_message += f""" 
 

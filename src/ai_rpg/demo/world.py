@@ -33,7 +33,7 @@ def create_hunter_mystic_blueprint(game_name: str) -> Blueprint:
     创建演示游戏世界Blueprint实例 - 猎人与术士双角色版本。
 
     该函数创建一个包含猎人和术士两个角色的完整游戏世界，
-    包含猎人备物所、村中议事堂和石氏木屋三个场景。两个角色为同伴关系，
+    包含猎人备物所、村中议事堂和石氏木屋三个场景。两个角色为同伴关系,
     各自有不同的游戏目标。
 
     Args:
@@ -54,7 +54,34 @@ def create_hunter_mystic_blueprint(game_name: str) -> Blueprint:
     """
 
     # 创建英雄营地场景和角色
-    actor_warrior = create_hunter()
+    actor_hunter = create_hunter()
+
+    # 添加猎人测试装备
+    actor_hunter.items.extend(
+        [
+            WeaponItem(
+                name="武器.山魈骨猎刀",
+                uuid="",
+                description="以山魈前臂骨磨制的单刃猎刀，刃长一尺，锋利坚韧。刀柄缠以兽皮，握持稳固。刀身泛着暗黄色的骨质光泽。村中猎人常用的基础装备。",
+                count=1,
+            ),
+            # 猎人测试护具
+            EquipmentItem(
+                name="防具.兽皮短衫",
+                uuid="",
+                description="以窃脂妖兽皮革缝制的轻便短衫，胸口和肩部用硬化兽皮加固，腰间系麻绳束带。适合山林间灵活移动。",
+                count=1,
+            ),
+        ]
+    )
+
+    # 直接使用外观描述，这样就减少一次推理生成。
+    actor_hunter.character_sheet.appearance = "一名年近三十的男子，身形精悍，肌肉线条分明，是常年高强度活动留下的痕迹。他的肤色是经年风吹日晒形成的健康褐色。眼神沉静而警觉，下颌蓄着打理整齐的短须，头发在脑后简单束成一个发髻。他穿着一件轻便的短衫，由某种暗红色带细密纹路的皮革制成，胸口与肩部有颜色略深的加固部分，腰间用麻绳束紧。未被衣物覆盖的左肩处，清晰可见三道平行的、已经愈合的旧疤痕。他的右手虎口位置，皮肤因长期摩擦而显得格外粗糙厚实。"
+
+    # 测试攻击力，打的快一点。
+    actor_hunter.character_stats.attack = 10000
+
+    # 创建术士角色
     actor_mystic = create_mystic()
 
     # 创建场景
@@ -63,12 +90,12 @@ def create_hunter_mystic_blueprint(game_name: str) -> Blueprint:
     stage_shi_family_house = create_shi_family_house()
 
     # 设置关系和消息
-    stage_hunter_storage.actors = [actor_warrior, actor_mystic]
+    stage_hunter_storage.actors = [actor_hunter, actor_mystic]
     # 设置角色的初始状态
-    assert actor_warrior.kick_off_message == "", "战士角色的kick_off_message应为空"
-    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 作为石氏猎人家族传人，磨练狩猎技艺，维护桃花源周边山林的生态平衡，并探索古先民遗迹的秘密。"""
+    assert actor_hunter.kick_off_message == "", "猎人角色的kick_off_message应为空"
+    actor_hunter.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 作为石氏猎人家族传人，磨练狩猎技艺，维护桃花源周边山林的生态平衡，并探索古先民遗迹的秘密。"""
 
-    assert actor_mystic.kick_off_message == "", "法师角色的kick_off_message应为空"
+    assert actor_mystic.kick_off_message == "", "术士角色的kick_off_message应为空"
     actor_mystic.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 通过研究古先民遗迹中的神秘符文，理解古先民引导自然之力的方法，并揭示桃花源隐藏的秘密。"""
 
     # 设置英雄营地场景的初始状态
@@ -86,7 +113,7 @@ def create_hunter_mystic_blueprint(game_name: str) -> Blueprint:
     # 创建世界
     return Blueprint(
         name=game_name,
-        player_actor=actor_warrior.name,  # 玩家角色为战士
+        player_actor=actor_hunter.name,  # 玩家角色为战士
         player_only_stage=stage_shi_family_house.name,
         campaign_setting=RPG_CAMPAIGN_SETTING,
         stages=[

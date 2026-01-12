@@ -114,75 +114,73 @@ def create_demo_game_world_blueprint1(game_name: str) -> Blueprint:
 
 
 #######################################################################################################################
-def create_demo_game_world_blueprint2(game_name: str) -> Blueprint:
+def create_demo_single_hunter_blueprint(game_name: str) -> Blueprint:
     """
-    创建演示游戏世界Blueprint实例 - 单角色版本。
+    创建演示游戏世界Blueprint实例 - 单猎人版本。
 
-    该函数创建一个只包含战士角色的简化游戏世界，
-    只有英雄营地一个场景。适合单人游戏或测试场景。
+    该函数创建一个只包含猎人角色的简化游戏世界，
+    场景为石氏木屋（玩家专属场景）。适合单人游戏或测试场景。
+    猎人配备基础的竹弦狩猎弓和兽皮短衫作为测试装备。
 
     Args:
         game_name: 游戏世界的名称
 
     Returns:
         Blueprint: 初始化完成的游戏世界实例，包含:
-            - 1个角色(战士)
-            - 1个场景(英雄营地)
+            - 1个角色(石氏猎人)
+            - 1个场景(石氏木屋，玩家专属)
             - 角色的初始kick_off_message
+            - 基础猎人装备(竹弦狩猎弓、兽皮短衫)
             - 预设的战役设定
 
     角色目标:
-        - 战士: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。
+        - 猎人: 作为石氏猎人家族传人，磨练狩猎技艺，维护桃花源周边山林的生态平衡，
+          并探索古先民遗迹的秘密。
+
+    测试装备:
+        - 武器: 竹弦狩猎弓（山竹弓臂，山魈筋腱为弦）
+        - 防具: 兽皮短衫（窃脂妖兽皮革，硬化兽皮加固）
     """
 
-    # 测试战士角色
-    actor_warrior = create_hunter()
-    assert actor_warrior.kick_off_message == "", "战士角色的kick_off_message应为空"
-    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。"""
+    # 创建角色: 测试猎人
+    actor_hunter = create_hunter()
+    assert actor_hunter.kick_off_message == "", "猎人角色的kick_off_message应为空"
+    actor_hunter.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 作为石氏猎人家族传人，磨练狩猎技艺，维护桃花源周边山林的生态平衡，并探索古先民遗迹的秘密。"""
 
-    # 添加战士测试装备
-    actor_warrior.items.extend(
+    # 添加猎人测试装备
+    actor_hunter.items.extend(
         [
             WeaponItem(
-                name="武器.长剑.晨曦之刃",
+                name="武器.竹弦狩猎弓",
                 uuid="",
-                description="传说中的圣剑，剑身泛着淡金色的曙光，剑柄镶嵌着太阳纹章宝石",
+                description="以坚韧的山竹为弓臂，山魈筋腱为弦，弓身刻有简单的兽纹。村中猎人常用的基础装备。",
                 count=1,
             ),
-            # 战士测试防具
+            # 猎人测试护具
             EquipmentItem(
-                name="防具.战甲.裂隙守护者之铠",
+                name="防具.兽皮短衫",
                 uuid="",
-                description="厚重的深灰色板甲，肩甲和胸甲上刻有抗魔法符文，散发微弱的蓝色光芒。配有全覆盖的金属面罩（完全封闭整个头部，不露出任何头发、面容、下巴），面罩表面刻有狮首浮雕，额头处镶嵌一颗小型红宝石",
+                description="以窃脂妖兽皮革缝制的轻便短衫，胸口和肩部用硬化兽皮加固，腰间系麻绳束带。适合山林间灵活移动。",
                 count=1,
             ),
         ]
     )
 
     # 创建场景
-    stage_monitoring_house = create_shi_family_house()
+    stage_shi_family_house = create_shi_family_house()
 
     # 设置关系和消息
-    stage_monitoring_house.actors = [actor_warrior]
+    stage_shi_family_house.actors = [actor_hunter]
 
     # 创建世界
-    world_blueprint = Blueprint(
+    return Blueprint(
         name=game_name,
-        player_actor=actor_warrior.name,  # 玩家角色为战士
-        player_only_stage=stage_monitoring_house.name,
+        player_actor=actor_hunter.name,  # 玩家角色为战士
+        player_only_stage=stage_shi_family_house.name,
         campaign_setting=RPG_CAMPAIGN_SETTING,
-        stages=[],
+        stages=[stage_shi_family_house],
         world_systems=[],
     )
-
-    # 设置英雄营地场景的初始状态
-    world_blueprint.stages = [stage_monitoring_house]
-
-    # 添加世界系统
-    world_blueprint.world_systems = []
-
-    # 返回
-    return world_blueprint
 
 
 ###############################################################################################################################

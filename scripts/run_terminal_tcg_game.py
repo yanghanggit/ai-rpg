@@ -16,8 +16,8 @@ from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
     create_actor_player,
     # create_actor_warrior,
-    create_demo_dungeon5,
-    create_demo_game_world_blueprint2,
+    create_training_dungeon,
+    create_demo_single_hunter_blueprint,
 )
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import (
@@ -394,7 +394,6 @@ def _trans_stage_action(terminal_game: TCGGame, stage_name: str) -> bool:
 async def _run_game(
     user: str,
     game: str,
-    # actor: str,
 ) -> None:
 
     # 注意，如果确定player是固定的，但是希望每次玩新游戏，就调用这句。
@@ -408,7 +407,7 @@ async def _run_game(
     if world_exists is None:
 
         # 获取world_blueprint
-        world_blueprint = create_demo_game_world_blueprint2(game)
+        world_blueprint = create_demo_single_hunter_blueprint(game)
         assert world_blueprint is not None, "world blueprint 反序列化失败"
 
         # 如果world不存在，说明是第一次创建游戏
@@ -416,13 +415,9 @@ async def _run_game(
             runtime_index=1000,
             entities_serialization=[],
             agents_context={},
-            dungeon=create_demo_dungeon5(),
+            dungeon=create_training_dungeon(),
             blueprint=world_blueprint,
         )
-
-        # 运行时生成地下城系统
-        # world_exists.dungeon = create_demo_dungeon6()
-        # world_exists.dungeon = create_demo_dungeon5()
 
     else:
         logger.info(f"恢复游戏: {user}, {game}")

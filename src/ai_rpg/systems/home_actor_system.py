@@ -153,6 +153,86 @@ def _build_action_planning_prompt(
 
 
 #######################################################################################################################################
+def _build_action_planning_prompt_test(
+    current_stage: str,
+    current_stage_narration: str,
+    other_actors_appearances: Dict[str, str],
+    available_home_stages: List[str],  # 这个暂时不用，因为关闭了移动！
+) -> str:
+    """构建角色行动规划提示词（测试版本，不含announce和trans_stage）。
+
+    Args:
+        current_stage: 场景名称
+        current_stage_narration: 场景环境描述
+        other_actors_appearances: 其他角色的外观（角色名 -> 外观）
+
+    Returns:
+        完整的行动规划提示词
+    """
+    # 场景内角色外观描述
+    other_actors_appearance_info = []
+    for actor_name, appearance in other_actors_appearances.items():
+        other_actors_appearance_info.append(f"{actor_name}: {appearance}")
+    if len(other_actors_appearance_info) == 0:
+        other_actors_appearance_info.append("无")
+
+    return f"""# 指令! 决定你要做什么，以JSON格式输出。
+
+## 场景信息
+
+{current_stage} | {current_stage_narration}
+
+## 其他角色
+
+{"\n".join(other_actors_appearance_info)}
+
+## 核心规则
+
+1. **每回合行动结构**
+
+```
+每回合结构：
+├─ mind [必填] - 内心独白/思考
+└─ 主要行动 [二选一，严格互斥]
+   ├─ A. query - 检索思考（向内）
+   └─ B. 交流行动 - 向外发送信息（二选一）
+       ├─ speak
+       └─ whisper
+```
+
+2. **第一人称视角**  
+   所有行动和思考必须以第一人称进行。
+
+3. **对内检索** (`query`)
+   - System prompt是信息目录，需要详细信息时用query向数据库检索，结果会添加到context
+
+4. **对外交流** - 两种方式的区别
+   - `speak`：对当前场景内指定角色说话（公开，场景内所有人都能听到）
+   - `whisper`：对指定角色耳语（私密，只有你和对方知道）
+   
+   **约束**：只能使用context中已有的信息
+
+## 输出格式(JSON)
+
+```json
+{{
+  "mind": "内心独白",
+  "query": "检索关键词",
+  "speak": {{
+    "角色全名": "说话内容"
+  }},
+  "whisper": {{
+    "角色全名": "耳语内容"
+  }}
+}}
+```
+
+**约束规则**：
+- 严格按上述JSON格式输出你的行动决策
+- 所有字段名不可更改"""
+
+
+#######################################################################################################################################
 def _build_action_prompt_summary(
     prompt: str,
 ) -> str:
@@ -342,7 +422,7 @@ class HomeActorSystem(ReactiveProcessor):
             chat_clients.append(
                 ChatClient(
                     name=actor_entity.name,
-                    prompt=_build_action_planning_prompt(
+                    prompt=_build_action_planning_prompt_test(
                         current_stage=current_stage.name,
                         current_stage_narration=current_stage.get(
                             EnvironmentComponent

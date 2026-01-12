@@ -8,8 +8,8 @@ from loguru import logger
 from ..embedding_model import (
     multilingual_model,
 )
-from ..chroma import get_default_collection
-from ..rag import search_similar_documents
+from ..chroma import get_custom_collection
+from ..rag import search_documents
 from ..game.tcg_game import TCGGame
 
 
@@ -74,20 +74,17 @@ class QueryActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def _get_related_info(self, entity: Entity, original_message: str) -> str:
-        """RAG检索相关信息 - 统一查询（公共知识 + 角色私有知识）"""
+        """RAG检索相关信息 - 查询公共知识库"""
         try:
             logger.success(f"🔍 RAG检索: {original_message}")
 
-            # 查询公共知识 + 该角色的私有知识（通过游戏名前缀隔离）
-            logger.info(
-                f"📚 查询知识库（游戏: {self._game.name}, 公共 + {entity.name} 的私有知识）..."
-            )
-            docs, scores = search_similar_documents(
+            # 查询公共知识库
+            logger.info(f"📚 查询公共知识库（游戏: {self._game.name}）...")
+            docs, scores = search_documents(
                 query=original_message,
-                collection=get_default_collection(),
+                collection=get_custom_collection(self._game.name),
                 embedding_model=multilingual_model,
-                owner=f"{self._game.name}.{entity.name}",  # ← 关键：使用游戏名前缀实现知识隔离
-                top_k=3,  # 增加 top_k，因为现在是统一查询
+                top_k=3,
             )
 
             # 检查查询结果

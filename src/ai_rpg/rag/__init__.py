@@ -15,11 +15,11 @@ Main components:
 from typing import List
 
 from .knowledge_retrieval import (
-    add_documents_to_vector_db,
-    search_similar_documents,
+    add_documents,
+    search_documents,
 )
 
 __all__: List[str] = [
-    "add_documents_to_vector_db",
-    "search_similar_documents",
+    "add_documents",
+    "search_documents",
 ]

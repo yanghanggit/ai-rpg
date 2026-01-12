@@ -40,11 +40,10 @@ from ai_rpg.pgsql import (
 )
 from ai_rpg.pgsql.user_operations import has_user, save_user
 from ai_rpg.demo import create_demo_game_world_blueprint1
-from ai_rpg.chroma import get_default_collection, reset_client
-from ai_rpg.rag import add_documents_to_vector_db
+from ai_rpg.chroma import reset_client, get_custom_collection
+from ai_rpg.rag import add_documents
 from ai_rpg.embedding_model.sentence_transformer import multilingual_model
 from ai_rpg.demo.global_settings import RPG_KNOWLEDGE_BASE
-from ai_rpg.models import Blueprint
 
 
 #######################################################################################################
@@ -112,11 +111,27 @@ def _setup_chromadb_rag_environment(game_name: str) -> None:
         logger.warning("⚠️ 全局知识库 RPG_KNOWLEDGE_BASE 为空，跳过加载")
     else:
         logger.info("📚 加载公共知识库...")
-        success = add_documents_to_vector_db(
-            collection=get_default_collection(),
+
+        # 准备文档数据：将 Dict[str, List[str]] 展开为 flat lists
+        documents_list: list[str] = []
+        metadatas_list: list[dict[str, str]] = []
+        ids_list: list[str] = []
+
+        doc_index = 0
+        for category, docs in RPG_KNOWLEDGE_BASE.items():
+            for doc in docs:
+                documents_list.append(doc)
+                metadatas_list.append({"category": category})
+                ids_list.append(f"{category}_{doc_index}")
+                doc_index += 1
+
+        # 调用 add_documents
+        success = add_documents(
+            collection=get_custom_collection(game_name),
             embedding_model=multilingual_model,
-            documents=RPG_KNOWLEDGE_BASE,
-            skip_if_exists=True,
+            documents=documents_list,
+            metadatas=metadatas_list,
+            ids=ids_list,
         )
 
         if not success:
@@ -126,48 +141,48 @@ def _setup_chromadb_rag_environment(game_name: str) -> None:
         logger.success("✅ 公共知识库加载成功!")
 
     # 加载角色私有知识库
-    logger.info("🔐 开始加载角色私有知识库...")
-    world_blueprint_path = WORLD_BLUEPRINT_DIR / f"{game_name}.json"
+    # logger.info("🔐 开始加载角色私有知识库...")
+    # world_blueprint_path = WORLD_BLUEPRINT_DIR / f"{game_name}.json"
 
-    if not world_blueprint_path.exists():
-        logger.warning(f"⚠️ 世界配置文件不存在: {world_blueprint_path}")
-        logger.warning("⚠️ 跳过私有知识库加载")
-    else:
-        # 读取世界配置
-        world_blueprint = Blueprint.model_validate_json(
-            world_blueprint_path.read_text(encoding="utf-8")
-        )
+    # if not world_blueprint_path.exists():
+    #     logger.warning(f"⚠️ 世界配置文件不存在: {world_blueprint_path}")
+    #     logger.warning("⚠️ 跳过私有知识库加载")
+    # else:
+    #     # 读取世界配置
+    #     world_blueprint = Blueprint.model_validate_json(
+    #         world_blueprint_path.read_text(encoding="utf-8")
+    #     )
 
-        # 统计加载情况
-        loaded_count = 0
-        skipped_count = 0
+    #     # 统计加载情况
+    #     loaded_count = 0
+    #     skipped_count = 0
 
-        # 遍历所有角色，加载私有知识
-        for actor in world_blueprint.actors:
-            # 直接从Actor对象的private_knowledge字段读取知识
-            if actor.private_knowledge and len(actor.private_knowledge) > 0:
-                logger.info(
-                    f"🔐 为 {actor.name} 加载 {len(actor.private_knowledge)} 条私有知识"
-                )
+    #     # 遍历所有角色，加载私有知识
+    #     for actor in world_blueprint.actors:
+    #         # 直接从Actor对象的private_knowledge字段读取知识
+    #         if actor.private_knowledge and len(actor.private_knowledge) > 0:
+    #             logger.info(
+    #                 f"🔐 为 {actor.name} 加载 {len(actor.private_knowledge)} 条私有知识"
+    #             )
 
-                success = add_documents_to_vector_db(
-                    collection=get_default_collection(),
-                    embedding_model=multilingual_model,
-                    documents=actor.private_knowledge,
-                    owner=f"{game_name}.{actor.name}",  # 使用游戏名前缀实现知识隔离
-                )
+    #             success = add_documents(
+    #                 collection=get_default_collection(),
+    #                 embedding_model=multilingual_model,
+    #                 documents=actor.private_knowledge,
+    #                 owner=f"{game_name}.{actor.name}",  # 使用游戏名前缀实现知识隔离
+    #             )
 
-                if success:
-                    loaded_count += 1
-                else:
-                    logger.error(f"❌ {actor.name} 的私有知识加载失败")
-            else:
-                skipped_count += 1
-                logger.debug(f"跳过 {actor.name}（无私有知识）")
+    #             if success:
+    #                 loaded_count += 1
+    #             else:
+    #                 logger.error(f"❌ {actor.name} 的私有知识加载失败")
+    #         else:
+    #             skipped_count += 1
+    #             logger.debug(f"跳过 {actor.name}（无私有知识）")
 
-        logger.success(
-            f"✅ 私有知识库加载完成! 成功: {loaded_count}, 跳过: {skipped_count}"
-        )
+    #     logger.success(
+    #         f"✅ 私有知识库加载完成! 成功: {loaded_count}, 跳过: {skipped_count}"
+    #     )
 
     logger.success("✅ RAG系统初始化完成!")
 

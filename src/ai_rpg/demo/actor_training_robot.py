@@ -32,7 +32,6 @@ def create_actor_training_robot() -> Actor:
             base_body="",
             appearance=f"""稻草人形态的魔法构造体，人形体型，局部有金属盔甲加固。稻草填充的躯干外覆旧皮革，胸口和肩部装有简陋的金属护板。圆形稻草头颅，无明显面部特征，头部中央有微弱的符文光芒。手持一根磨损的木制训练棍。整体状态陈旧，稻草外露，金属部分有锈迹。""",
         ),
-        # kick_off_message="",
         character_stats=CharacterStats(),
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,

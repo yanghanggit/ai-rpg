@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 """
-Development Environment Setup Script
+开发环境初始化脚本
 
-This script sets up and initializes the development environment for the multi-agents game framework.
+功能：
+1. 初始化 PostgreSQL 数据库和测试用户
+2. 创建演示游戏世界配置
+3. 初始化 RAG 系统（全局知识库和角色私有知识库）
+4. 生成服务器配置文件和 PM2 配置
 
-Main functions:
-1. Test database connections (Redis, PostgreSQL, MongoDB)
-2. Clear and reset all databases
-3. Initialize development environment with test data
-4. Create and store demo game world
-
-Usage:
+使用方式：
     python setup_dev_environment.py
 
 Author: yanghanggit
@@ -42,6 +40,11 @@ from ai_rpg.pgsql import (
 )
 from ai_rpg.pgsql.user_operations import has_user, save_user
 from ai_rpg.demo import create_demo_game_world_blueprint1
+from ai_rpg.chroma import get_default_collection, reset_client
+from ai_rpg.rag import add_documents_to_vector_db
+from ai_rpg.embedding_model.sentence_transformer import multilingual_model
+from ai_rpg.demo.global_settings import RPG_KNOWLEDGE_BASE
+from ai_rpg.models import Blueprint
 
 
 #######################################################################################################
@@ -62,11 +65,7 @@ FAKE_USER = UserAccount(
 
 #######################################################################################################
 def _pgsql_setup_test_user() -> None:
-    """
-    检查并保存测试用户
-
-    如果测试用户不存在，则创建一个用于开发测试的用户账号
-    """
+    """检查并创建测试用户账号"""
     logger.info("🚀 检查并保存测试用户...")
     if not has_user(FAKE_USER.username):
         save_user(
@@ -81,54 +80,37 @@ def _pgsql_setup_test_user() -> None:
 
 #######################################################################################################
 def _save_demo_world_blueprint(game_name: str) -> None:
-    """ """
+    """创建并保存演示游戏世界配置文件"""
     logger.info("🚀 创建演示游戏世界...")
 
-    try:
-
-        world_blueprint = create_demo_game_world_blueprint1(game_name)
-        write_blueprint_path = WORLD_BLUEPRINT_DIR / f"{world_blueprint.name}.json"
-        write_blueprint_path.write_text(
-            world_blueprint.model_dump_json(indent=2),
-            encoding="utf-8",
-        )
-
-    except Exception as e:
-        logger.error(f"❌ 演示游戏世界 MongoDB 操作失败: {e}")
-        raise
+    world_blueprint = create_demo_game_world_blueprint1(game_name)
+    write_blueprint_path = WORLD_BLUEPRINT_DIR / f"{world_blueprint.name}.json"
+    write_blueprint_path.write_text(
+        world_blueprint.model_dump_json(indent=2),
+        encoding="utf-8",
+    )
 
 
 #######################################################################################################
 def _setup_chromadb_rag_environment(game_name: str) -> None:
     """
-    初始化RAG系统
+    初始化 RAG 系统
 
-    清理现有的ChromaDB数据，然后使用正式的知识库数据重新初始化RAG系统，
-    包括向量数据库的设置、公共知识库数据的加载，以及动态加载角色私有知识
+    清空 ChromaDB 数据库，加载全局知识库和角色私有知识库
 
     Args:
-        game_name: 游戏名称，用于加载对应的世界配置
+        game_name: 游戏名称
     """
     logger.info("🚀 初始化RAG系统...")
 
-    # 导入必要的模块
-    from ai_rpg.chroma import get_default_collection, reset_client
-    from ai_rpg.rag import add_documents_to_vector_db
-    from ai_rpg.embedding_model.sentence_transformer import (
-        multilingual_model,
-    )
-    from ai_rpg.demo.global_settings import (
-        RPG_KNOWLEDGE_BASE,
-    )
-    from ai_rpg.models import Blueprint
+    # 清空数据库
+    logger.info("🧹 清空ChromaDB数据库...")
+    reset_client()
 
-    try:
-
-        # 清空数据库
-        logger.info("🧹 清空ChromaDB数据库...")
-        reset_client()
-
-        # 加载公共知识库
+    # 加载全局知识库
+    if not RPG_KNOWLEDGE_BASE or len(RPG_KNOWLEDGE_BASE) == 0:
+        logger.warning("⚠️ 全局知识库 RPG_KNOWLEDGE_BASE 为空，跳过加载")
+    else:
         logger.info("📚 加载公共知识库...")
         success = add_documents_to_vector_db(
             collection=get_default_collection(),
@@ -139,19 +121,18 @@ def _setup_chromadb_rag_environment(game_name: str) -> None:
 
         if not success:
             logger.error("❌ 公共知识库加载失败!")
-            raise Exception("公共知识库初始化返回失败状态")
+            raise Exception("公共知识库加载失败")
 
         logger.success("✅ 公共知识库加载成功!")
 
-        # 动态加载角色私有知识库
-        logger.info("🔐 开始加载角色私有知识库...")
-        world_blueprint_path = WORLD_BLUEPRINT_DIR / f"{game_name}.json"
+    # 加载角色私有知识库
+    logger.info("🔐 开始加载角色私有知识库...")
+    world_blueprint_path = WORLD_BLUEPRINT_DIR / f"{game_name}.json"
 
-        if not world_blueprint_path.exists():
-            logger.warning(f"⚠️ 世界配置文件不存在: {world_blueprint_path}")
-            logger.warning("⚠️ 跳过私有知识库加载")
-            return
-
+    if not world_blueprint_path.exists():
+        logger.warning(f"⚠️ 世界配置文件不存在: {world_blueprint_path}")
+        logger.warning("⚠️ 跳过私有知识库加载")
+    else:
         # 读取世界配置
         world_blueprint = Blueprint.model_validate_json(
             world_blueprint_path.read_text(encoding="utf-8")
@@ -187,35 +168,19 @@ def _setup_chromadb_rag_environment(game_name: str) -> None:
         logger.success(
             f"✅ 私有知识库加载完成! 成功: {loaded_count}, 跳过: {skipped_count}"
         )
-        logger.success("✅ RAG系统初始化成功!")
 
-    except ImportError as e:
-        logger.error(f"❌ RAG系统模块导入失败: {e}")
-        raise
-    except Exception as e:
-        logger.error(f"❌ RAG系统初始化过程中发生错误: {e}")
-        raise
+    logger.success("✅ RAG系统初始化完成!")
 
 
 def _generate_pm2_ecosystem_config(
     server_config: ServerConfiguration, target_directory: str = "."
 ) -> None:
     """
-    根据 ServerSettings 配置生成 ecosystem.config.js 文件
+    生成 PM2 进程管理配置文件
 
     Args:
+        server_config: 服务器配置对象
         target_directory: 目标目录路径，默认为当前目录
-
-    确保在项目根目录
-
-    启动所有服务
-    pm2 start ecosystem.config.js
-
-    查看状态
-    pm2 status
-
-    停止所有服务
-    pm2 delete ecosystem.config.js
     """
     ecosystem_config_content = f"""module.exports = {{
   apps: [
@@ -295,9 +260,7 @@ def _generate_pm2_ecosystem_config(
 
 #######################################################################################################
 def _setup_server_settings() -> None:
-    """
-    构建服务器设置配置
-    """
+    """生成服务器配置文件和 PM2 配置"""
     logger.info("🚀 构建服务器设置配置...")
     # 这里可以添加构建服务器设置配置的逻辑
     write_path = Path("server_configuration.json")
@@ -312,7 +275,7 @@ def _setup_server_settings() -> None:
 
 #######################################################################################################
 def main() -> None:
-
+    """主函数：执行完整的开发环境初始化流程"""
     logger.info("🚀 开始初始化开发环境...")
 
     # PostgreSQL 相关操作

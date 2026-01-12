@@ -24,25 +24,7 @@ def create_stage_cave2() -> Stage:
             type=StageType.DUNGEON,
             profile="你是一个阴暗潮湿的洞窟，四周布满了苔藓和石笋，地上散落着破旧的武器和食物残渣。",
         ),
-        # kick_off_message="",
-        # actors=[],
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
         combat_mechanics=RPG_COMBAT_MECHANICS,
-    )
-
-
-def create_demo_dungeon2() -> Dungeon:
-
-    actor_orc = create_actor_orc()
-    actor_orc.character_stats.hp = 1
-
-    stage_cave2 = create_stage_cave2()
-    stage_cave2.actors = [actor_orc]
-
-    return Dungeon(
-        name="兽人洞窟",
-        stages=[
-            stage_cave2,
-        ],
     )

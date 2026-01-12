@@ -14,7 +14,7 @@ from ai_rpg.configuration import (
 )
 from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
-    create_actor_player,
+    # ,
     # create_actor_warrior,
     create_training_dungeon,
     create_demo_single_hunter_blueprint,
@@ -671,8 +671,6 @@ if __name__ == "__main__":
     # 做一些设置
     user = random_name
     game = GLOBAL_TCG_GAME_NAME
-    actor = create_actor_player().name  # 玩家角色
-    # actor = create_actor_warrior().name  # 测试用战士角色
 
     # 运行游戏
     import asyncio

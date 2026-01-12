@@ -18,8 +18,7 @@ from ..models import (
     EquipmentItem,
 )
 from .actor_hunter import create_hunter
-from .actor_wizard import create_actor_wizard
-from .actor_player import create_actor_player
+from .actor_mystic import create_mystic
 from .global_settings import RPG_CAMPAIGN_SETTING
 from .stage_village import (
     create_hunter_storage,
@@ -29,12 +28,12 @@ from .stage_village import (
 
 
 #######################################################################################################################
-def create_demo_game_world_blueprint1(game_name: str) -> Blueprint:
+def create_demo_hunter_mystic_blueprint(game_name: str) -> Blueprint:
     """
-    创建演示游戏世界Blueprint实例 - 双角色版本。
+    创建演示游戏世界Blueprint实例 - 猎人与术士双角色版本。
 
-    该函数创建一个包含战士和法师两个角色的完整游戏世界，
-    包含英雄营地和英雄餐厅两个场景。两个角色为同伴关系,
+    该函数创建一个包含猎人和术士两个角色的完整游戏世界，
+    包含猎人备物所、村中议事堂和石氏木屋三个场景。两个角色为同伴关系，
     各自有不同的游戏目标。
 
     Args:
@@ -42,75 +41,61 @@ def create_demo_game_world_blueprint1(game_name: str) -> Blueprint:
 
     Returns:
         Blueprint: 初始化完成的游戏世界实例，包含:
-            - 2个角色(战士和法师)
-            - 2个场景(英雄营地和英雄餐厅)
+            - 2个角色(猎人和术士)
+            - 3个场景(猎人备物所、村中议事堂、石氏木屋)
             - 角色的初始kick_off_message
             - 预设的战役设定
 
     角色目标:
-        - 战士: 以自由卫士身份磨砺武技，探索遗迹寻找压制时间裂隙的方法并为死去的战友复仇
-        - 法师: 通过破解裂隙遗迹中的符文机械秘密,找到平息魔网紊乱危机的方法
+        - 猎人: 作为石氏猎人家族传人，磨练狩猎技艺，维护桃花源周边山林的生态平衡，
+          并探索古先民遗迹的秘密
+        - 术士: 通过研究古先民遗迹中的神秘符文，理解古先民引导自然之力的方法，
+          并揭示桃花源隐藏的秘密
     """
 
     # 创建英雄营地场景和角色
     actor_warrior = create_hunter()
-    actor_wizard = create_actor_wizard()
+    actor_mystic = create_mystic()
 
     # 创建场景
-    stage_ally_safe_room = create_hunter_storage()
-    stage_ally_dining_room = create_village_hall()
-    stage_monitoring_room = create_shi_family_house()
+    stage_hunter_storage = create_hunter_storage()
+    stage_village_hall = create_village_hall()
+    stage_shi_family_house = create_shi_family_house()
 
     # 设置关系和消息
-    stage_ally_safe_room.actors = [actor_warrior, actor_wizard]
+    stage_hunter_storage.actors = [actor_warrior, actor_mystic]
     # 设置角色的初始状态
     assert actor_warrior.kick_off_message == "", "战士角色的kick_off_message应为空"
-    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。"""
+    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 作为石氏猎人家族传人，磨练狩猎技艺，维护桃花源周边山林的生态平衡，并探索古先民遗迹的秘密。"""
 
-    assert actor_wizard.kick_off_message == "", "法师角色的kick_off_message应为空"
-    actor_wizard.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 通过破解裂隙遗迹中的符文机械秘密,找到平息魔网紊乱危机和压制时空裂隙出现的方法。"""
+    assert actor_mystic.kick_off_message == "", "法师角色的kick_off_message应为空"
+    actor_mystic.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 通过研究古先民遗迹中的神秘符文，理解古先民引导自然之力的方法，并揭示桃花源隐藏的秘密。"""
 
     # 设置英雄营地场景的初始状态
-    stage_ally_safe_room.kick_off_message = f"""# # 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
+    stage_hunter_storage.kick_off_message = f"""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
         
 使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
 输出为单段紧凑文本，不使用换行或空行。"""
 
     # 设置英雄餐厅场景的初始状态
-    stage_ally_dining_room.kick_off_message = f"""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
+    stage_village_hall.kick_off_message = f"""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
         
 使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
-输出为单段紧凑文本，不使用换行或空行。
-
-## 环境叙事基调
-餐馆里弥漫着美食的香气，模糊的人影在木桌间交错，嘈杂的交谈声混成低沉的背景音。
-这些人影是环境氛围的一部分，作为整体存在感呈现，不应被描述为具体的个体或互动行为。"""
+输出为单段紧凑文本，不使用换行或空行。"""
 
     # 创建世界
-    world_blueprint = Blueprint(
+    return Blueprint(
         name=game_name,
         player_actor=actor_warrior.name,  # 玩家角色为战士
-        player_only_stage=stage_monitoring_room.name,
+        player_only_stage=stage_shi_family_house.name,
         campaign_setting=RPG_CAMPAIGN_SETTING,
-        stages=[],
+        stages=[
+            stage_hunter_storage,
+            stage_village_hall,
+            stage_shi_family_house,
+        ],
         world_systems=[],
     )
-
-    # 设置世界场景
-    world_blueprint.stages = [
-        stage_ally_safe_room,
-        stage_ally_dining_room,
-        stage_monitoring_room,
-    ]
-
-    # 添加世界系统
-    world_blueprint.world_systems = []
-
-    # 返回
-    return world_blueprint
-
-
-#######################################################################################################################
 
 
 #######################################################################################################################
@@ -184,80 +169,3 @@ def create_demo_single_hunter_blueprint(game_name: str) -> Blueprint:
 
 
 ###############################################################################################################################
-def create_demo_game_world_blueprint3(game_name: str) -> Blueprint:
-    """
-    创建演示游戏世界Blueprint实例 - 玩家角色版本。
-
-    该函数创建一个包含玩家角色的完整游戏世界，
-    包含英雄营地和英雄餐厅两个场景。玩家角色具备特殊技能。
-
-    Args:
-        game_name: 游戏世界的名称
-    Returns:
-        Blueprint: 初始化完成的游戏世界实例，包含:
-            - 1个玩家角色
-            - 1个战士角色
-            - 1个法师角色
-            - 3个场景(英雄营地、英雄餐厅和监控室)
-            - 角色的初始kick_off_message
-            - 预设的战役设定
-    角色目标:
-        - 玩家角色: 利用穿越者身份和特殊技能,探索裂隙遗迹,寻找压制时空裂隙出现的方法,并揭开这个世界的秘密。
-        - 战士: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。
-    """
-
-    # 创建角色
-    actor_warrior = create_hunter()
-    actor_player = create_actor_player()
-    actor_wizard = create_actor_wizard()
-    assert actor_warrior.kick_off_message == "", "战士角色的kick_off_message应为空"
-    actor_warrior.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 以自由卫士身份磨砺武技，探索裂隙遗迹寻找压制时空裂隙出现的方法并为死去的战友复仇。"""
-    assert actor_wizard.kick_off_message == "", "玩家角色的kick_off_message应为空"
-    actor_wizard.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 通过破解裂隙遗迹中的符文机械秘密,找到平息魔网紊乱危机和压制时空裂隙出现的方法。"""
-    # 创建场景
-    stage_ally_safe_room = create_hunter_storage()
-    stage_ally_dining_room = create_village_hall()
-    stage_monitoring_house = create_shi_family_house()
-
-    # 设置英雄营地场景的初始状态
-    stage_ally_safe_room.kick_off_message = f"""# # 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
-        
-使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
-输出为单段紧凑文本，不使用换行或空行。"""
-
-    # 设置英雄餐厅场景的初始状态
-    stage_ally_dining_room.kick_off_message = f"""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
-        
-使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
-输出为单段紧凑文本，不使用换行或空行。
-
-## 环境叙事基调
-餐馆里弥漫着美食的香气，模糊的人影在木桌间交错，嘈杂的交谈声混成低沉的背景音。
-这些人影是环境氛围的一部分，作为整体存在感呈现，不应被描述为具体的个体或互动行为。"""
-
-    # 设置关系和消息
-    stage_ally_safe_room.actors = [actor_warrior, actor_wizard, actor_player]
-    stage_monitoring_house.actors = []
-
-    # 创建世界
-    world_blueprint = Blueprint(
-        name=game_name,
-        player_actor=actor_player.name,  # 玩家角色为穿越者
-        player_only_stage=stage_monitoring_house.name,
-        campaign_setting=RPG_CAMPAIGN_SETTING,
-        stages=[],
-        world_systems=[],
-    )
-
-    # 设置英雄营地场景的初始状态
-    world_blueprint.stages = [
-        stage_ally_safe_room,
-        stage_ally_dining_room,
-        stage_monitoring_house,
-    ]
-
-    # 添加世界系统
-    world_blueprint.world_systems = []
-
-    # 返回
-    return world_blueprint

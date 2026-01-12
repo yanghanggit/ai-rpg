@@ -39,7 +39,7 @@ from ai_rpg.pgsql import (
     postgresql_config,
 )
 from ai_rpg.pgsql.user_operations import has_user, save_user
-from ai_rpg.demo import create_demo_game_world_blueprint1
+from ai_rpg.demo import create_demo_hunter_mystic_blueprint
 from ai_rpg.chroma import reset_client, get_custom_collection
 from ai_rpg.rag import add_documents
 from ai_rpg.embedding_model.sentence_transformer import multilingual_model
@@ -82,7 +82,7 @@ def _save_demo_world_blueprint(game_name: str) -> None:
     """创建并保存演示游戏世界配置文件"""
     logger.info("🚀 创建演示游戏世界...")
 
-    world_blueprint = create_demo_game_world_blueprint1(game_name)
+    world_blueprint = create_demo_hunter_mystic_blueprint(game_name)
     write_blueprint_path = WORLD_BLUEPRINT_DIR / f"{world_blueprint.name}.json"
     write_blueprint_path.write_text(
         world_blueprint.model_dump_json(indent=2),

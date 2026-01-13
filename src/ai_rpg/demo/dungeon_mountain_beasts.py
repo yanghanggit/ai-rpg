@@ -38,10 +38,17 @@ def create_mountain_beasts_dungeon() -> Dungeon:
         system_rules=RPG_SYSTEM_RULES,
         combat_mechanics=RPG_COMBAT_MECHANICS,
     )
+    
+    # 添加山魈作为场景中的敌对角色
     actor_monkey = create_actor_mountain_monkey()
+    
+    # 将山魈的生命值设为1，方便测试击杀
     actor_monkey.character_stats.hp = 1
+    
+    # 将山魈添加到场景的角色列表中
     stage_forest_edge.actors = [actor_monkey]
 
+    # 设置场景启动消息，指导游戏如何描写环境
     stage_forest_edge.kick_off_message = f"""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
         
 使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
@@ -59,10 +66,17 @@ def create_mountain_beasts_dungeon() -> Dungeon:
         system_rules=RPG_SYSTEM_RULES,
         combat_mechanics=RPG_COMBAT_MECHANICS,
     )
+    
+    # 添加山中虎作为场景中的敌对角色
     actor_tiger = create_actor_mountain_tiger()
+    
+    # 将山中虎的生命值设为1，方便测试击杀
     actor_tiger.character_stats.hp = 1
+    
+    # 将山中虎添加到场景的角色列表中
     stage_deep_forest.actors = [actor_tiger]
 
+    # 设置场景启动消息，指导游戏如何描写环境
     stage_deep_forest.kick_off_message = f"""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
     
 使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。

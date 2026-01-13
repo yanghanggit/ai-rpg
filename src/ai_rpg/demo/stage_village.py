@@ -25,7 +25,7 @@ def create_hunter_storage() -> Stage:
     """
     创建猎人备物所场景实例。
 
-    这是桃花源村落中猎人们的专属整备空间，位于靠近山林的坚实石屋内。
+    这是桃花源村落中猎人们的专属整备空间，位于靠近山林的坚固木屋内。
     猎人们在此整备由妖兽素材制成的武器装备，补充草药与干粮，
     为深入山林狩猎妖兽做好充分准备。
 
@@ -38,7 +38,7 @@ def create_hunter_storage() -> Stage:
         stage_profile=StageProfile(
             name="hunter_storage",
             type=StageType.HOME,
-            profile="""你是桃花源村落中的猎人备物所，位于村子靠近山林一侧的坚实石屋内。
+            profile="""你是桃花源村落中的猎人备物所，位于村子靠近山林一侧的坚固木屋内。
 屋内墙壁悬挂着各式由妖兽素材制成的弓弩、长矛与短刃，角落整齐码放着兽筋编织的护具、草药包与干粮袋。
 空气中混杂着兽皮的麝香、竹木的清香与草药的苦味。""",
         ),
@@ -98,7 +98,9 @@ def create_shi_family_house() -> Stage:
         stage_profile=StageProfile(
             name="shi_family_house",
             type=StageType.HOME,
-            profile="你是石氏猎人家族的祖宅，一座位于桃花林边缘的古朴木屋。屋内陈设简朴，正中悬挂着历代石氏猎人的木牌位。最特别的是靠墙的一面古旧铜镜，镜面常年笼罩着微光——这是石氏先祖从古先民遗迹中带回的神秘之物，据说能映照出桃花源内外的各处景象。",
+            profile="""你是石氏猎人家族的祖宅，一座位于桃花林边缘的古朴木屋。
+屋内陈设简朴实用，木质桌椅摆放整齐，墙上挂着弓箭与兽皮，角落堆放着狩猎工具与生活用品。
+炉灶旁码放着柴火，木架上晾晒着草药与腌制的猎物。空气中弥漫着木材与烟火的气息。""",
         ),
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
@@ -124,7 +126,8 @@ def create_training_ground() -> Stage:
             name="training_ground",
             type=StageType.DUNGEON,
             profile="""你是桃花源村落中的猎人训练场，位于猎人备物所旁的开阔空地上。
-场地以夯实的黄土为地面，四周立着简易的竹木栅栏。场内散布着多个训练木桩，有的已被打得摇摇欲坠，有的刚刚由村中匠人修缮完毕。场地一侧竖立着数排草编箭靶，靶心处密布箭痕。另一侧摆放着石锁、木桩等力量训练器械。""",
+场地以夯实的黄土为地面，踩踏出浅浅的凹陷与车辙，四周立着简易的竹木栅栏。
+阳光直射在空旷的场地上，空气中弥漫着黄土的干燥气息，偶有微风卷起细小的尘埃。场地边缘生长着稀疏的野草，远处可见村落的木屋轮廓与摇曳的桃花林。""",
         ),
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,

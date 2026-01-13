@@ -25,6 +25,7 @@ from .stage_village import (
     create_village_hall,
     create_shi_family_house,
 )
+from .world_system_player_action_audit import create_player_action_audit
 
 
 #######################################################################################################################
@@ -121,7 +122,7 @@ def create_hunter_mystic_blueprint(game_name: str) -> Blueprint:
             stage_village_hall,
             stage_shi_family_house,
         ],
-        world_systems=[],
+        world_systems=[create_player_action_audit()],
     )
 
 

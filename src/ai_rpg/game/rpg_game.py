@@ -35,6 +35,7 @@ from ..models import (
     SkillBookComponent,
     TransStageEvent,
     PlayerOnlyStageComponent,
+    PlayerActionAuditComponent,
 )
 from .player_session import PlayerSession
 
@@ -493,12 +494,22 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 world_system_entity, world_system_model.system_message
             )
 
-            # kickoff prompt
+            # 启动消息 提示词
             world_system_entity.add(
                 KickOffComponent,
                 world_system_model.name,
                 world_system_model.kick_off_message,
             )
+
+            # 特殊组件，根据不同world_system类型添加
+            if world_system_model.component == PlayerActionAuditComponent.__name__:
+                logger.debug(
+                    f"为 WorldSystem 实体 {world_system_entity.name} 添加 PlayerActionAuditComponent"
+                )
+                world_system_entity.add(
+                    PlayerActionAuditComponent,
+                    world_system_model.name,
+                )
 
             # 添加到返回值
             world_entities.append(world_system_entity)

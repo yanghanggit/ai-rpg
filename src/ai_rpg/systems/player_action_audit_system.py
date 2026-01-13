@@ -2,7 +2,14 @@ from typing import Final, final, override, List
 from loguru import logger
 from pydantic import BaseModel
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..models import PlayerComponent, SpeakAction, WhisperAction, AnnounceAction
+from ..models import (
+    PlayerComponent,
+    SpeakAction,
+    WhisperAction,
+    AnnounceAction,
+    WorldComponent,
+    PlayerActionAuditComponent,
+)
 from ..game.tcg_game import TCGGame
 from ..chat_services.client import ChatClient
 from ..utils import extract_json_from_code_block
@@ -63,13 +70,14 @@ class PlayerActionAuditSystem(ReactiveProcessor):
     """玩家动作审核系统。
 
     反应式处理器，监听玩家的消息动作组件（SpeakAction、WhisperAction、AnnounceAction），
-    通过 AI 进行内容审核。审核不通过时移除所有动作组件，阻止消息发送。
+    通过审计世界系统的 AI 进行内容审核。审核不通过时移除所有动作组件，阻止消息发送。
 
     工作流程：
         1. 监听玩家实体上的消息动作组件添加事件
-        2. 提取所有待审核的动作内容
-        3. 调用 AI 进行内容审核
-        4. 根据审核结果决定是否保留动作组件
+        2. 获取玩家行动审计世界系统实体（包含 PlayerActionAuditComponent）
+        3. 提取所有待审核的动作内容
+        4. 使用审计世界系统的 AI 上下文进行内容审核
+        5. 根据审核结果决定是否保留动作组件
 
     安全策略：
         - 任何异常情况（AI 连接失败、响应解析错误等）都默认拒绝
@@ -78,6 +86,10 @@ class PlayerActionAuditSystem(ReactiveProcessor):
 
     Attributes:
         _game: 游戏实例引用
+
+    Note:
+        - 当前为单机游戏模式，仅支持一个玩家实体
+        - 审核标准来自玩家行动审计世界系统，而非玩家自身的 AI 上下文
     """
 
     def __init__(self, game_context: TCGGame) -> None:
@@ -108,18 +120,35 @@ class PlayerActionAuditSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
-        for entity in entities:
-            await self._filter_player_actions(entity)
+
+        # 获取玩家行动审计系统实体
+        world_system_entities = self._game.get_group(
+            Matcher(all_of=[WorldComponent, PlayerActionAuditComponent])
+        ).entities.copy()
+
+        # 确保存在玩家行动审计系统实体
+        if not world_system_entities:
+            logger.error("未找到玩家行动审计系统实体，无法进行内容审核")
+            return
+
+        # 应该只有一个玩家行动审计系统实体
+        assert len(world_system_entities) == 1, "存在多个玩家行动审计系统实体，数据异常"
+        world_system_entity = next(iter(world_system_entities))
+
+        # 单机游戏，应该只有一个玩家实体
+        assert len(entities) == 1, "单机游戏，玩家实体不应该超过1个"
+        player_entity = entities[0]
+        await self._filter_player_actions(player_entity, world_system_entity)
 
     ####################################################################################################################################
-    def _extract_all_action_contents(self, entity: Entity) -> str:
+    def _extract_all_action_contents(self, player_entity: Entity) -> str:
         """从实体中提取所有需要审核的动作内容。
 
         同时检查 SpeakAction、WhisperAction、AnnounceAction，
         将所有存在的动作内容拼接成一个完整的审核文本。
 
         Args:
-            entity: 玩家实体
+            player_entity: 玩家实体
 
         Returns:
             拼接后的完整审核内容文本，如果没有任何动作则返回空字符串
@@ -127,8 +156,8 @@ class PlayerActionAuditSystem(ReactiveProcessor):
         content_parts: List[str] = []
 
         # 提取 SpeakAction
-        if entity.has(SpeakAction):
-            speak_action = entity.get(SpeakAction)
+        if player_entity.has(SpeakAction):
+            speak_action = player_entity.get(SpeakAction)
             messages = "\n".join(
                 [
                     f"  对 {target}: {msg}"
@@ -138,8 +167,8 @@ class PlayerActionAuditSystem(ReactiveProcessor):
             content_parts.append(f"【说话】\n{messages}")
 
         # 提取 WhisperAction
-        if entity.has(WhisperAction):
-            whisper_action = entity.get(WhisperAction)
+        if player_entity.has(WhisperAction):
+            whisper_action = player_entity.get(WhisperAction)
             messages = "\n".join(
                 [
                     f"  对 {target}: {msg}"
@@ -149,8 +178,8 @@ class PlayerActionAuditSystem(ReactiveProcessor):
             content_parts.append(f"【私聊】\n{messages}")
 
         # 提取 AnnounceAction
-        if entity.has(AnnounceAction):
-            announce_action = entity.get(AnnounceAction)
+        if player_entity.has(AnnounceAction):
+            announce_action = player_entity.get(AnnounceAction)
             content_parts.append(f"【公告】\n  {announce_action.message}")
 
         return "\n\n".join(content_parts)
@@ -172,14 +201,17 @@ class PlayerActionAuditSystem(ReactiveProcessor):
             entity.remove(AnnounceAction)
 
     ####################################################################################################################################
-    async def _filter_player_actions(self, entity: Entity) -> None:
+    async def _filter_player_actions(
+        self, entity: Entity, world_system_entity: Entity
+    ) -> None:
         """审核玩家动作内容。
 
         提取玩家实体上的所有待审核动作（SpeakAction、WhisperAction、AnnounceAction），
-        通过 AI 进行内容审核。审核不通过时移除所有动作组件，阻止消息发送。
+        通过审计世界系统的 AI 进行内容审核。审核不通过时移除所有动作组件，阻止消息发送。
 
         Args:
             entity: 玩家实体
+            world_system_entity: 玩家行动审计系统实体
 
         Note:
             - 任何异常情况（AI 连接失败、响应解析错误等）都默认拒绝，确保安全性
@@ -198,15 +230,15 @@ class PlayerActionAuditSystem(ReactiveProcessor):
             # 构建审核提示词
             prompt = _build_audit_prompt(content)
 
-            # 获取玩家的AI上下文
-            agent_context = self._game.get_agent_context(entity)
+            # 获取审计世界系统的AI上下文
+            agent_context = self._game.get_agent_context(world_system_entity)
             assert isinstance(
                 agent_context.context[0], SystemMessage
-            ), "玩家AI上下文的第一条消息必须是SystemMessage类型"
+            ), "审计世界系统AI上下文的第一条消息必须是SystemMessage类型"
 
-            # 创建AI审核请求（仅使用system prompt，不需要历史对话）
+            # 创建AI审核请求（使用审计世界系统的system prompt）
             chat_client = ChatClient(
-                name=entity.name,
+                name=world_system_entity.name,
                 prompt=prompt,
                 context=[agent_context.context[0]],
             )

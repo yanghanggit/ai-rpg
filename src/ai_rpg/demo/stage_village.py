@@ -16,7 +16,7 @@ from .global_settings import (
     RPG_SYSTEM_RULES,
     RPG_COMBAT_MECHANICS,
 )
-from .utils import (
+from .entity_factory import (
     create_stage,
 )
 

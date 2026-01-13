@@ -33,15 +33,15 @@ def create_training_dungeon() -> Dungeon:
 
     # 创建训练木桩角色
     actor_training_dummy = create_training_dummy()
-    
+
     # 故意测试将生命值设为1，方便训练时快速击败
     actor_training_dummy.character_stats.hp = 1
-    
+
     # 设置游戏启动对话
     actor_training_dummy.kick_off_message = (
         f"""# 游戏启动！告诉我你是谁？请说出你的全名。回答简短(<100字)。"""
     )
-    
+
     # 因为故意将生命值设为1，所以需要添加自动修复道具
     actor_training_dummy.items.append(
         UniqueItem(
@@ -56,7 +56,7 @@ def create_training_dungeon() -> Dungeon:
     assert (
         stage_training_ground.stage_profile.type == StageType.DUNGEON
     ), "猎人训练场的StageType应为DUNGEON"
-    
+
     # 将训练木桩添加到训练场景中
     stage_training_ground.actors = [actor_training_dummy]
 

@@ -179,6 +179,7 @@ class WorldSystem(BaseModel):
     name: str
     system_message: str
     kick_off_message: str
+    component: str
 
 
 ###############################################################################################################################################

@@ -14,10 +14,9 @@ from ai_rpg.configuration import (
 )
 from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
-    # ,
-    # create_actor_warrior,
     create_training_dungeon,
     create_single_hunter_blueprint,
+    create_hunter_mystic_blueprint,
 )
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import (
@@ -407,7 +406,7 @@ async def _run_game(
     if world_exists is None:
 
         # 获取world_blueprint
-        world_blueprint = create_single_hunter_blueprint(game)
+        world_blueprint = create_hunter_mystic_blueprint(game)
         assert world_blueprint is not None, "world blueprint 反序列化失败"
 
         # 如果world不存在，说明是第一次创建游戏
@@ -668,11 +667,7 @@ if __name__ == "__main__":
     )
     fixed_name = "terminal-player-fixed"
 
-    # 做一些设置
-    user = random_name
-    game = GLOBAL_TCG_GAME_NAME
-
     # 运行游戏
     import asyncio
 
-    asyncio.run(_run_game(user, game))
+    asyncio.run(_run_game(random_name, GLOBAL_TCG_GAME_NAME))

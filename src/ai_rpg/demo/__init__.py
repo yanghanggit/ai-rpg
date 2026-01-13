@@ -15,6 +15,7 @@ from .world import (
     create_hunter_mystic_blueprint,
     create_single_hunter_blueprint,
 )
+from .world_system_player_action_audit import create_player_action_audit
 
 __all__ = [
     "create_hunter",
@@ -31,4 +32,5 @@ __all__ = [
     "RPG_KNOWLEDGE_BASE",
     "create_hunter_mystic_blueprint",
     "create_single_hunter_blueprint",
+    "create_player_action_audit",
 ]

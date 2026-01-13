@@ -306,3 +306,26 @@ class SkillBookComponent(MutableComponent):
         return "\n".join(
             [f"- {skill.name}: {skill.description}" for skill in self.skills]
         )
+
+
+############################################################################################################
+@final
+@register_component_type
+class PlayerActionAuditComponent(Component):
+    """玩家行动审计组件。
+
+    标记组件，标识世界系统实体具有玩家行动审计功能。
+
+    审计标准:
+        - 拒绝法律与道德禁止的内容（暴力教唆、违法行为、歧视性内容等）
+        - 拒绝破坏游戏世界观的内容（现实科技、元游戏语言、系统操作等）
+        - 允许符合游戏世界观的角色互动和游戏内合理行为
+
+    Attributes:
+        name: 世界系统名称
+
+    Note:
+        审核不通过时会移除所有动作组件，阻止消息发送。默认采用"安全优先"策略。
+    """
+
+    name: str

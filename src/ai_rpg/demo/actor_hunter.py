@@ -9,7 +9,7 @@ from .global_settings import (
     RPG_CAMPAIGN_SETTING,
     RPG_SYSTEM_RULES,
 )
-from .utils import (
+from .entity_factory import (
     create_actor,
 )
 

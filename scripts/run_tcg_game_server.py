@@ -127,6 +127,7 @@ async def root(request: Request) -> RootResponse:
             "logout": "/api/logout/v1/",
             "start": "/api/start/v1/",
             "home_gameplay": "/api/home/gameplay/v1/",
+            "home_advance": "/api/home/advance/v1/",
             "home_trans_dungeon": "/api/home/trans_dungeon/v1/",
             "dungeon_gameplay": "/api/dungeon/gameplay/v1/",
             "dungeon_combat_play_cards": "/api/dungeon/combat/play_cards/v1/",

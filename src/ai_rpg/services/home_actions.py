@@ -16,7 +16,7 @@
 from loguru import logger
 from ..game.tcg_game import TCGGame
 from ..models import SpeakAction, TransStageAction, HomeComponent
-from typing import Tuple
+from typing import List, Tuple
 
 
 ###################################################################################################################################################################
@@ -129,42 +129,47 @@ def activate_stage_transition(tcg_game: TCGGame, stage_name: str) -> Tuple[bool,
 
 
 ###################################################################################################################################################################
-def activate_ally_plan_action(tcg_game: TCGGame, allies: list[str]) -> Tuple[bool, str]:
+def activate_plan_action(tcg_game: TCGGame, actors: List[str]) -> Tuple[bool, str]:
     """
-    激活指定角色的行动计划，为角色添加 PlanAction 组件
+    为指定角色激活行动计划，使其在下一次游戏推进时执行AI决策
 
-    该函数为指定的盟友角色添加行动计划标记，使其在下一次游戏推进时执行AI决策。
-    只有符合条件的盟友角色才能被添加 PlanAction：
-    - 角色必须存在于游戏世界中
-    - 角色必须是盟友（具有 AllyComponent）
-    - 角色不能是玩家控制的（不能有 PlayerComponent）
+    此函数为符合条件的角色添加 PlanAction 组件标记。被标记的角色会在后续的
+    NPC home pipeline 处理中自动执行AI决策和行动。
+
+    角色筛选条件：
+        - 角色实体必须存在于游戏世界中
+        - 角色必须是盟友（具有 AllyComponent）
+        - 角色不能是玩家控制的（不能有 PlayerComponent）
+
+    不符合条件的角色会被自动跳过并记录警告日志。
 
     Args:
         tcg_game: TCG 游戏实例
-        allies: 目标角色名称列表
+        actors: 目标角色名称列表，可包含多个角色
 
     Returns:
-        tuple[bool, str]: (是否成功, 错误详情)
-            - (True, ""): 成功为所有符合条件的角色设置 PlanAction
-            - (False, detail): 失败时返回具体错误信息
-                - "角色名称列表不能为空"
-                - "未能为任何角色添加 PlanAction"
+        tuple[bool, str]: 包含两个元素的元组
+            - bool: 是否成功（至少为一个角色添加了 PlanAction）
+            - str: 错误详情（成功时为空字符串）
+
+        可能的错误详情：
+            - "角色名称列表不能为空": actors 参数为空列表
+            - "未能为任何角色添加 PlanAction": 所有角色都不符合条件
 
     Note:
-        - 不存在、不是盟友或是玩家控制的角色会被跳过，并记录警告日志
-        - 至少需要为一个角色成功添加 PlanAction 才算成功
-        - 成功后会在符合条件的角色实体上设置 PlanAction 组件
-        - 行动计划会在后续的 NPC home pipeline 处理中执行
+        - 成功的标准是至少为一个角色添加 PlanAction
+        - 部分角色不符合条件不会导致整体失败
+        - PlanAction 组件会在 NPC home pipeline 中被自动处理和移除
     """
     from ..models import AllyComponent, PlayerComponent, PlanAction
 
-    if not allies or len(allies) == 0:
+    if not actors or len(actors) == 0:
         error_detail = "角色名称列表不能为空"
         logger.error(f"激活行动计划失败: {error_detail}")
         return False, error_detail
 
     success_count = 0
-    for actor_name in allies:
+    for actor_name in actors:
         actor_entity = tcg_game.get_actor_entity(actor_name)
         if actor_entity is None:
             logger.warning(f"角色 {actor_name} 不存在，跳过")

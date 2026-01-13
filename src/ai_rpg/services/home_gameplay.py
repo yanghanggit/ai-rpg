@@ -5,23 +5,26 @@
 家园是玩家在游戏中的安全区域，玩家可以在此与NPC互动、切换场景、准备探险等。
 
 主要功能:
-    - 家园玩法处理: 处理玩家在家园内的各种操作请求(对话、移动、推进等)
+    - 家园玩法处理: 处理玩家在家园内的各种操作请求(对话、场景切换等)
+    - 游戏推进: 推进游戏流程并可选地激活指定角色的行动计划
     - 地下城传送: 处理玩家从家园传送到地下城的流程
     - 状态验证: 确保玩家处于合法的家园状态
 
 API端点:
-    - POST /api/home/gameplay/v1/: 家园游戏玩法主接口
+    - POST /api/home/gameplay/v1/: 家园游戏玩法主接口（支持对话、场景切换等操作）
+    - POST /api/home/advance/v1/: 家园推进接口（推进游戏并可选激活角色行动）
     - POST /api/home/trans_dungeon/v1/: 家园传送地下城接口
 
 核心概念:
     - Home Pipeline: 家园状态下的处理流程，分为NPC pipeline和Player pipeline
     - Stage: 家园内的不同场景/区域
     - Dungeon Transition: 从家园到地下城的状态转换
+    - Plan Action: 角色行动计划，用于激活盟友AI决策
 
 依赖关系:
     - GameServer: 游戏服务器实例，管理所有玩家房间
     - TCGGame: 具体的游戏实例，包含玩家状态和游戏逻辑
-    - home_actions: 家园动作激活模块(对话、场景切换等)
+    - home_actions: 家园动作激活模块(对话、场景切换、行动计划等)
     - dungeon_stage_transition: 地下城传送相关逻辑
 
 使用说明:
@@ -29,7 +32,7 @@ API端点:
     接口会自动验证玩家状态，验证失败会抛出相应的HTTP异常。
 """
 
-from typing import Any, Final
+from typing import Final
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
@@ -38,7 +41,7 @@ from ..game.game_server import GameServer
 from .home_actions import (
     activate_speak_action,
     activate_stage_transition,
-    activate_ally_plan_action,
+    activate_plan_action,
 )
 from .dungeon_stage_transition import (
     initialize_dungeon_first_entry,
@@ -46,6 +49,8 @@ from .dungeon_stage_transition import (
 from ..models import (
     HomeGamePlayRequest,
     HomeGamePlayResponse,
+    HomeAdvanceRequest,
+    HomeAdvanceResponse,
     HomeTransDungeonRequest,
     HomeTransDungeonResponse,
 )
@@ -181,15 +186,6 @@ async def home_gameplay(
     # 根据用户输入的操作标记进行分发处理
     match payload.user_input.tag:
 
-        case "/advancing":
-            # 推进游戏流程：执行NPC的home pipeline，自动推进游戏状态
-            await rpg_game.npc_home_pipeline.process()
-            return HomeGamePlayResponse(
-                session_messages=rpg_game.player_session.get_messages_since(
-                    last_event_sequence
-                )
-            )
-
         case "/speak":
             # 激活对话动作：玩家与指定NPC进行对话交互
             # 从data中获取对话目标(target)和对话内容(content)
@@ -234,35 +230,6 @@ async def home_gameplay(
                     detail=error_detail,
                 )
 
-        case "/ally_plan":
-            # 激活行动计划：为指定的盟友角色添加 PlanAction 组件
-            # 从data中获取目标角色名称列表(allies)
-            allies_data: Any = payload.user_input.data.get("allies", [])
-            # 确保 allies 是列表类型
-            if isinstance(allies_data, str):
-                allies = [allies_data]
-            elif isinstance(allies_data, list):
-                allies = allies_data
-            else:
-                allies = []
-            success, error_detail = activate_ally_plan_action(rpg_game, allies)
-            if success:
-                # 行动计划激活成功后，执行NPC的home pipeline处理
-                # 注意：这里使用 npc_home_pipeline 而不是 player_home_pipeline
-                # 因为 PlanAction 是由 NPC pipeline 处理的
-                await rpg_game.npc_home_pipeline.process()
-                return HomeGamePlayResponse(
-                    session_messages=rpg_game.player_session.get_messages_since(
-                        last_event_sequence
-                    )
-                )
-            else:
-                # 行动计划激活失败，抛出包含具体错误信息的异常
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=error_detail,
-                )
-
         case _:
             # 未知的操作类型，记录错误日志并抛出异常
             logger.error(f"未知的请求类型 = {payload.user_input.tag}, 不能处理！")
@@ -270,6 +237,94 @@ async def home_gameplay(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"未知的请求类型 = {payload.user_input.tag}, 不能处理！",
             )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@home_gameplay_api_router.post(
+    path="/api/home/advance/v1/", response_model=HomeAdvanceResponse
+)
+async def home_advance(
+    payload: HomeAdvanceRequest,
+    game_server: CurrentGameServer,
+) -> HomeAdvanceResponse:
+    """
+    家园推进接口，推进游戏流程并可选地激活指定角色的行动计划
+
+    该接口统一处理家园状态下的游戏推进逻辑，支持两种模式：
+    1. 纯粹推进：不指定actors时，直接执行NPC的home pipeline推进游戏
+    2. 角色行动推进：指定actors时，先为这些角色激活行动计划，再推进游戏
+
+    Args:
+        payload: 家园推进请求对象
+            - user_name: 用户名，用于标识玩家
+            - game_name: 游戏名称
+            - actors: 可选的角色名称列表，为这些角色激活行动计划（默认为空列表）
+        game_server: 游戏服务器实例，由依赖注入提供
+
+    Returns:
+        HomeAdvanceResponse: 家园推进响应对象
+            - session_messages: 返回给客户端的消息列表
+
+    Raises:
+        HTTPException(404): 玩家未登录或游戏实例不存在
+        HTTPException(400): 玩家不在家园状态或角色激活失败
+
+    处理流程:
+        1. 验证玩家是否在家园状态
+        2. 如果指定了actors，先调用activate_ally_plan_action激活行动计划
+        3. 执行npc_home_pipeline.process()推进游戏
+        4. 返回自上次事件序列号以来的新增消息
+
+    示例:
+        纯粹推进游戏:
+        ```json
+        {
+            "user_name": "player1",
+            "game_name": "Game1",
+            "actors": []
+        }
+        ```
+
+        为指定角色激活行动计划后推进:
+        ```json
+        {
+            "user_name": "player1",
+            "game_name": "Game1",
+            "actors": ["角色.术士.云音", "角色.猎人.石坚"]
+        }
+        ```
+    """
+
+    logger.info(f"/api/home/advance/v1/: {payload.model_dump_json()}")
+
+    # 验证前置条件并获取游戏实例
+    rpg_game = await _validate_player_at_home(
+        payload.user_name,
+        game_server,
+    )
+
+    # 记录当前事件序列号，便于后续获取新增消息
+    last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
+
+    # 如果指定了actors，先为这些角色激活行动计划
+    if payload.actors:
+        success, error_detail = activate_plan_action(rpg_game, payload.actors)
+        if not success:
+            # 行动计划激活失败，抛出包含具体错误信息的异常
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_detail,
+            )
+
+    # 推进游戏流程：执行NPC的home pipeline，自动推进游戏状态
+    await rpg_game.npc_home_pipeline.process()
+
+    # 返回自上次事件序列号以来的新增消息
+    return HomeAdvanceResponse(
+        session_messages=rpg_game.player_session.get_messages_since(last_event_sequence)
+    )
 
 
 ###################################################################################################################################################################

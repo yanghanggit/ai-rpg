@@ -76,6 +76,23 @@ class StartResponse(BaseModel):
 
 
 @final
+class HomeAdvanceRequest(BaseModel):
+    user_name: str
+    game_name: str
+    actors: List[str] = []
+
+
+@final
+class HomeAdvanceResponse(BaseModel):
+    session_messages: List[SessionMessage]
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+
+@final
 class HomeTransDungeonRequest(BaseModel):
     user_name: str
     game_name: str

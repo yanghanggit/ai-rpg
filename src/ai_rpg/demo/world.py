@@ -12,6 +12,7 @@ scenarios with different character and stage configurations.
 - 配置战役设定和世界系统
 """
 
+from typing import Final
 from ..models import (
     Blueprint,
     WeaponItem,
@@ -26,6 +27,15 @@ from .stage_village import (
     create_shi_family_house,
 )
 from .world_system_player_action_audit import create_player_action_audit
+
+
+# 公共场景启动消息模板
+PUBLIC_STAGE_KICK_OFF_MESSAGE: Final[
+    str
+] = f"""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
+        
+使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
+输出为单段紧凑文本，不使用换行或空行."""
 
 
 #######################################################################################################################
@@ -100,16 +110,13 @@ def create_hunter_mystic_blueprint(game_name: str) -> Blueprint:
     actor_mystic.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 通过研究古先民遗迹中的神秘符文，理解古先民引导自然之力的方法，并揭示桃花源隐藏的秘密。"""
 
     # 设置英雄营地场景的初始状态
-    stage_hunter_storage.kick_off_message = f"""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
-        
-使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
-输出为单段紧凑文本，不使用换行或空行。"""
+    stage_hunter_storage.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
 
     # 设置英雄餐厅场景的初始状态
-    stage_village_hall.kick_off_message = f"""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
-        
-使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
-输出为单段紧凑文本，不使用换行或空行。"""
+    stage_village_hall.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
+
+    # 设置石氏木屋场景的初始状态
+    stage_shi_family_house.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
 
     # 创建世界
     return Blueprint(
@@ -181,6 +188,9 @@ def create_single_hunter_blueprint(game_name: str) -> Blueprint:
 
     # 创建场景
     stage_shi_family_house = create_shi_family_house()
+
+    # 添加 启动消息
+    stage_shi_family_house.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
 
     # 设置关系和消息
     stage_shi_family_house.actors = [actor_hunter]

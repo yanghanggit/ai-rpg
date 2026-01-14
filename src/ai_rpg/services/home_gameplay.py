@@ -40,7 +40,7 @@ from .game_server_dependencies import CurrentGameServer
 from ..game.game_server import GameServer
 from .home_actions import (
     activate_speak_action,
-    activate_stage_transition,
+    activate_switch_stage,
     activate_plan_action,
 )
 from .dungeon_stage_transition import (
@@ -202,7 +202,7 @@ async def home_player_action(
 
         case HomePlayerActionType.SWITCH_STAGE:
             # 激活场景切换动作：在家园内切换到不同的场景
-            success, error_detail = activate_stage_transition(
+            success, error_detail = activate_switch_stage(
                 rpg_game, stage_name=payload.arguments.get("stage_name", "")
             )
 

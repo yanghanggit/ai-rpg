@@ -68,7 +68,7 @@ def activate_speak_action(
 
 
 ###################################################################################################################################################################
-def activate_stage_transition(tcg_game: TCGGame, stage_name: str) -> Tuple[bool, str]:
+def activate_switch_stage(tcg_game: TCGGame, stage_name: str) -> Tuple[bool, str]:
     """
     激活玩家的场景转换动作，在家园场景间进行切换
 

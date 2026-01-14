@@ -21,6 +21,10 @@ from .md_format import (
     extract_json_from_code_block,
 )
 
+from .command_parser import (
+    parse_command_args,
+)
+
 # 公开的API
 __all__ = [
     # JSON格式化工具
@@ -34,4 +38,6 @@ __all__ = [
     "format_list_as_markdown_list",
     "has_json_code_block",
     "extract_json_from_code_block",
+    # 命令解析工具
+    "parse_command_args",
 ]

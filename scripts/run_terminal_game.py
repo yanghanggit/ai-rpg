@@ -15,7 +15,6 @@ from ai_rpg.configuration import (
 from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
     create_training_dungeon,
-    create_single_hunter_blueprint,
     create_hunter_mystic_blueprint,
 )
 from ai_rpg.game.player_session import PlayerSession

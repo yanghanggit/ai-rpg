@@ -1,3 +1,4 @@
+from enum import StrEnum, unique
 from typing import Dict, List, final
 from pydantic import BaseModel
 from .session_message import SessionMessage
@@ -123,20 +124,22 @@ class DungeonTransHomeResponse(BaseModel):
 
 
 @final
-class HomeGamePlayUserInput(BaseModel):
-    tag: str
-    data: Dict[str, str]
+@unique
+class HomePlayerActionType(StrEnum):
+    SPEAK = "/speak"
+    SWITCH_STAGE = "/switch_stage"
 
 
 @final
-class HomeGamePlayRequest(BaseModel):
+class HomePlayerActionRequest(BaseModel):
     user_name: str
     game_name: str
-    user_input: HomeGamePlayUserInput
+    action: HomePlayerActionType
+    arguments: Dict[str, str]
 
 
 @final
-class HomeGamePlayResponse(BaseModel):
+class HomePlayerActionResponse(BaseModel):
     session_messages: List[SessionMessage]
 
 

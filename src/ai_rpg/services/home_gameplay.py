@@ -11,7 +11,7 @@
     - 状态验证: 确保玩家处于合法的家园状态
 
 API端点:
-    - POST /api/home/gameplay/v1/: 家园游戏玩法主接口（支持对话、场景切换等操作）
+    - POST /api/home/player_action/v1/: 家园玩家动作接口（对话、场景切换等玩家主动操作）
     - POST /api/home/advance/v1/: 家园推进接口（推进游戏并可选激活角色行动）
     - POST /api/home/trans_dungeon/v1/: 家园传送地下城接口
 
@@ -47,8 +47,9 @@ from .dungeon_stage_transition import (
     initialize_dungeon_first_entry,
 )
 from ..models import (
-    HomeGamePlayRequest,
-    HomeGamePlayResponse,
+    HomePlayerActionRequest,
+    HomePlayerActionResponse,
+    HomePlayerActionType,
     HomeAdvanceRequest,
     HomeAdvanceResponse,
     HomeTransDungeonRequest,
@@ -113,66 +114,72 @@ async def _validate_player_at_home(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @home_gameplay_api_router.post(
-    path="/api/home/gameplay/v1/", response_model=HomeGamePlayResponse
+    path="/api/home/player_action/v1/", response_model=HomePlayerActionResponse
 )
-async def home_gameplay(
-    payload: HomeGamePlayRequest,
+async def home_player_action(
+    payload: HomePlayerActionRequest,
     game_server: CurrentGameServer,
-) -> HomeGamePlayResponse:
+) -> HomePlayerActionResponse:
     """
-    家园游戏玩法主接口，处理玩家在家园状态下的各种操作请求
+    家园玩家动作接口，处理玩家在家园状态下的主动操作请求
 
-    该接口是家园系统的核心处理入口，根据玩家的不同操作标记(tag)分发到对应的处理逻辑。
-    支持的操作包括：游戏推进、NPC对话、场景切换等。所有操作都需要玩家处于家园状态。
+    该接口统一处理玩家主动发起的动作，包括对话和场景切换。所有动作都会激活相应的
+    Action 组件，然后执行 player_home_pipeline 进行处理。
 
     Args:
-        payload: 家园游戏玩法请求对象，包含用户名和用户输入信息
+        payload: 家园玩家动作请求对象
             - user_name: 用户名，用于标识玩家
-            - user_input: 用户输入对象，包含操作标记(tag)和相关数据(data)
+            - game_name: 游戏名称
+            - action: 动作类型（HomePlayerActionType 枚举），指定要执行的操作
+            - arguments: 动作参数，包含该动作所需的具体参数
         game_server: 游戏服务器实例，由依赖注入提供
 
     Returns:
-        HomeGamePlayResponse: 家园游戏玩法响应对象
-            - client_messages: 返回给客户端的消息列表
+        HomePlayerActionResponse: 家园玩家动作响应对象
+            - session_messages: 返回给客户端的消息列表
 
     Raises:
         HTTPException(404): 玩家未登录或游戏实例不存在
-        HTTPException(400): 玩家不在家园状态或请求类型未知
-        HTTPException(500): 服务器内部错误
+        HTTPException(400): 玩家不在家园状态、动作激活失败或请求类型未知
 
-    支持的操作标记:
-        - /advancing: 推进游戏流程，执行NPC的home pipeline处理
-        - /speak: 激活对话动作，玩家与指定目标进行对话
-        - /switch_stage: 激活场景切换动作，切换到家园内的不同场景
+    支持的动作类型（HomePlayerActionType）:
+        - SPEAK ("/speak"): 激活对话动作，玩家与指定目标进行对话
+        - SWITCH_STAGE ("/switch_stage"): 激活场景切换动作，切换到家园内的不同场景
+
+    处理流程:
+        1. 验证玩家是否在家园状态
+        2. 根据 action 激活相应的 Action 组件
+        3. 执行 player_home_pipeline.process()
+        4. 返回自上次事件序列号以来的新增消息
 
     示例:
-        推进游戏:
-        ```json
-        {
-            "user_name": "player1",
-            "user_input": {
-                "tag": "/advancing",
-                "data": {}
-            }
-        }
-        ```
-
         NPC对话:
         ```json
         {
             "user_name": "player1",
-            "user_input": {
-                "tag": "/speak",
-                "data": {
-                    "target": "npc_name",
-                    "content": "对话内容"
-                }
+            "game_name": "Game1",
+            "action": "/speak",
+            "arguments": {
+                "target": "角色.术士.云音",
+                "content": "你好"
+            }
+        }
+        ```
+
+        场景切换:
+        ```json
+        {
+            "user_name": "player1",
+            "game_name": "Game1",
+            "action": "/switch_stage",
+            "arguments": {
+                "stage_name": "场景.村中议事堂"
             }
         }
         ```
     """
 
-    logger.info(f"/api/home/gameplay/v1/: {payload.model_dump_json()}")
+    logger.info(f"/api/home/player_action/v1/: {payload.model_dump_json()}")
 
     # 验证前置条件并获取游戏实例
     rpg_game = await _validate_player_at_home(
@@ -183,60 +190,44 @@ async def home_gameplay(
     # 记录当前事件序列号，便于后续获取新增消息
     last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
 
-    # 根据用户输入的操作标记进行分发处理
-    match payload.user_input.tag:
-
-        case "/speak":
+    # 根据动作类型激活对应的 Action 组件
+    match payload.action:
+        case HomePlayerActionType.SPEAK:
             # 激活对话动作：玩家与指定NPC进行对话交互
-            # 从data中获取对话目标(target)和对话内容(content)
             success, error_detail = activate_speak_action(
                 rpg_game,
-                target=payload.user_input.data.get("target", ""),
-                content=payload.user_input.data.get("content", ""),
+                target=payload.arguments.get("target", ""),
+                content=payload.arguments.get("content", ""),
             )
-            if success:
-                # 对话动作激活成功后，执行玩家的home pipeline处理
-                await rpg_game.player_home_pipeline.process()
-                return HomeGamePlayResponse(
-                    session_messages=rpg_game.player_session.get_messages_since(
-                        last_event_sequence
-                    )
-                )
-            else:
-                # 对话动作激活失败，抛出包含具体错误信息的异常
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=error_detail,
-                )
 
-        case "/switch_stage":
+        case HomePlayerActionType.SWITCH_STAGE:
             # 激活场景切换动作：在家园内切换到不同的场景
-            # 从data中获取目标场景名称(stage_name)
             success, error_detail = activate_stage_transition(
-                rpg_game, stage_name=payload.user_input.data.get("stage_name", "")
+                rpg_game, stage_name=payload.arguments.get("stage_name", "")
             )
-            if success:
-                # 场景切换动作激活成功后，执行玩家的home pipeline处理
-                await rpg_game.player_home_pipeline.process()
-                return HomeGamePlayResponse(
-                    session_messages=rpg_game.player_session.get_messages_since(
-                        last_event_sequence
-                    )
-                )
-            else:
-                # 场景切换激活失败，抛出包含具体错误信息的异常
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=error_detail,
-                )
 
         case _:
-            # 未知的操作类型，记录错误日志并抛出异常
-            logger.error(f"未知的请求类型 = {payload.user_input.tag}, 不能处理！")
+            # 未知的动作类型
+            logger.error(f"未知的请求类型 = {payload.action}, 不能处理！")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"未知的请求类型 = {payload.user_input.tag}, 不能处理！",
+                detail=f"未知的请求类型 = {payload.action}, 不能处理！",
             )
+
+    # 统一处理动作激活结果
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_detail,
+        )
+
+    # 执行玩家的 home pipeline 处理
+    await rpg_game.player_home_pipeline.process()
+
+    # 返回自上次事件序列号以来的新增消息
+    return HomePlayerActionResponse(
+        session_messages=rpg_game.player_session.get_messages_since(last_event_sequence)
+    )
 
 
 ###################################################################################################################################################################

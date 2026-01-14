@@ -4,7 +4,7 @@ module.exports = {
     {
       name: 'game-server-8000',
       script: 'uvicorn',
-      args: 'scripts.run_tcg_game_server:app --host 0.0.0.0 --port 8000',
+      args: 'scripts.run_game_server:app --host 0.0.0.0 --port 8000',
       interpreter: 'python',
       cwd: process.cwd(),
       env: {

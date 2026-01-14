@@ -202,7 +202,7 @@ def _generate_pm2_ecosystem_config(
     {{
       name: 'game-server-{server_config.game_server_port}',
       script: 'uvicorn',
-      args: 'scripts.run_tcg_game_server:app --host 0.0.0.0 --port {server_config.game_server_port}',
+      args: 'scripts.run_game_server:app --host 0.0.0.0 --port {server_config.game_server_port}',
       interpreter: 'python',
       cwd: process.cwd(),
       env: {{

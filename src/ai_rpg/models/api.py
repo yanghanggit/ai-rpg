@@ -149,20 +149,23 @@ class HomePlayerActionResponse(BaseModel):
 
 
 @final
-class DungeonGamePlayUserInput(BaseModel):
-    tag: str
-    data: Dict[str, str]
+@unique
+class DungeonProgressType(StrEnum):
+    """地下城流程推进操作类型"""
+
+    INIT_COMBAT = "combat_init"  # 初始化战斗（STARTING → ONGOING）
+    ADVANCE_STAGE = "advance_next_dungeon"  # 推进下一关（战斗胜利后）
 
 
 @final
-class DungeonGamePlayRequest(BaseModel):
+class DungeonProgressRequest(BaseModel):
     user_name: str
     game_name: str
-    user_input: DungeonGamePlayUserInput
+    action: DungeonProgressType
 
 
 @final
-class DungeonGamePlayResponse(BaseModel):
+class DungeonProgressResponse(BaseModel):
     session_messages: List[SessionMessage]
 
 

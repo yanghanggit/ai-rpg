@@ -122,19 +122,21 @@ async def root(request: Request) -> RootResponse:
         timestamp=datetime.now().isoformat(),
         version="0.0.1",
         endpoints={
-            # rpg 专用
+            # 游戏流程相关端点
             "login": "/api/login/v1/",
             "logout": "/api/logout/v1/",
             "start": "/api/start/v1/",
+            # 家园内玩法
             "home_player_action": "/api/home/player_action/v1/",
             "home_advance": "/api/home/advance/v1/",
             "home_trans_dungeon": "/api/home/trans_dungeon/v1/",
-            "dungeon_gameplay": "/api/dungeon/gameplay/v1/",
+            # 地下城玩法
+            "dungeon_progress": "/api/dungeon/progress/v1/",
             "dungeon_combat_draw_cards": "/api/dungeon/combat/draw_cards/v1/",
             "dungeon_combat_play_cards": "/api/dungeon/combat/play_cards/v1/",
             "dungeon_trans_home": "/api/dungeon/trans_home/v1/",
             "dungeon_state": "/api/dungeons/v1/",
-            # 通用的服务。
+            # 通用端点
             "session_messages": "/api/session_messages/v1/",
             "entity_details": "/api/entities/v1/",
             "stages_state": "/api/stages/v1/",

@@ -44,8 +44,9 @@ from loguru import logger
 from ..game.tcg_game import TCGGame
 from .game_server_dependencies import CurrentGameServer
 from ..models import (
-    DungeonGamePlayRequest,
-    DungeonGamePlayResponse,
+    DungeonProgressRequest,
+    DungeonProgressResponse,
+    DungeonProgressType,
     DungeonTransHomeRequest,
     DungeonTransHomeResponse,
     DungeonCombatDrawCardsRequest,
@@ -147,42 +148,46 @@ def _validate_dungeon_prerequisites(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @dungeon_gameplay_api_router.post(
-    path="/api/dungeon/gameplay/v1/", response_model=DungeonGamePlayResponse
+    path="/api/dungeon/progress/v1/", response_model=DungeonProgressResponse
 )
-async def dungeon_gameplay(
-    payload: DungeonGamePlayRequest,
+async def dungeon_progress(
+    payload: DungeonProgressRequest,
     game_server: CurrentGameServer,
-) -> DungeonGamePlayResponse:
+) -> DungeonProgressResponse:
     """
-    地下城游戏玩法主接口，处理玩家在地下城中的各种战斗操作
+    地下城流程推进接口，处理地下城关卡推进和战斗状态转换
 
-    该接口是地下城战斗系统的核心处理入口，根据玩家的不同操作标记(tag)分发到对应的处理逻辑。
-    支持的操作包括：战斗开始、抽卡、出牌、前进下一关等。所有操作都需要玩家处于地下城状态。
+    该接口负责地下城的大流程调度，不涉及具体战斗细节（抽卡/出牌已独立为专门端点）。
+    主要处理战斗初始化和关卡推进两个核心流程操作。
 
     Args:
-        payload: 地下城游戏玩法请求对象，包含用户名和用户输入信息
+        payload: 地下城流程推进请求对象
             - user_name: 用户名，用于标识玩家
-            - user_input: 用户输入对象，包含操作标记(tag)和相关数据(data)
+            - game_name: 游戏名称
+            - action: 流程操作类型（DungeonProgressType 枚举）
         game_server: 游戏服务器实例，由依赖注入提供
 
     Returns:
-        DungeonGamePlayResponse: 地下城游戏玩法响应对象
-            - client_messages: 返回给客户端的消息列表
+        DungeonProgressResponse: 地下城流程推进响应对象
+            - session_messages: 返回给客户端的会话消息列表
 
     Raises:
         HTTPException(404): 玩家未登录、游戏实例不存在或没有战斗
-        HTTPException(400): 玩家不在地下城状态、战斗状态不匹配或请求类型未知
+        HTTPException(400): 玩家不在地下城状态或战斗状态不匹配
         HTTPException(409): 战斗已结束（胜利或失败）
 
-    支持的操作标记:
-        - combat_init: 开始地下城战斗，转换到战斗进行状态
-        - draw_cards: 抽卡操作，为所有角色抽取手牌
-        - play_cards: 出牌操作，角色使用手牌进行战斗
-        - advance_next_dungeon: 前进到下一个地下城关卡
+    支持的操作类型:
+        - INIT_COMBAT: 初始化战斗，将战斗从 STARTING 状态转换到 ONGOING 状态
+        - ADVANCE_STAGE: 推进下一关，战斗胜利后进入下一个地下城关卡
+
+    注意事项:
+        - 具体战斗操作（抽卡/出牌）请使用专门的端点：
+          * /api/dungeon/combat/draw_cards/v1/
+          * /api/dungeon/combat/play_cards/v1/
     """
 
     logger.info(
-        f"/api/dungeon/gameplay/v1/: user={payload.user_name}, action={payload.user_input.tag}"
+        f"/api/dungeon/progress/v1/: user={payload.user_name}, action={payload.action.value}"
     )
 
     # 验证地下城操作的前置条件
@@ -195,8 +200,8 @@ async def dungeon_gameplay(
     last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
 
     # 根据操作类型分发处理
-    match payload.user_input.tag:
-        case "combat_init":
+    match payload.action:
+        case DungeonProgressType.INIT_COMBAT:
             # 处理地下城战斗开始
             if not rpg_game.current_combat_sequence.is_initializing:
                 logger.error(
@@ -208,13 +213,13 @@ async def dungeon_gameplay(
                 )
             # 推进战斗流程，转换到 ONGOING 状态
             await rpg_game.combat_pipeline.process()
-            return DungeonGamePlayResponse(
+            return DungeonProgressResponse(
                 session_messages=rpg_game.player_session.get_messages_since(
                     last_event_sequence
                 )
             )
 
-        case "advance_next_dungeon":
+        case DungeonProgressType.ADVANCE_STAGE:
             # 处理前进下一个地下城关卡
             if not rpg_game.current_combat_sequence.is_post_combat:
                 logger.error(
@@ -238,7 +243,7 @@ async def dungeon_gameplay(
                     )
                 # 前进到下一关
                 advance_to_next_stage(rpg_game, rpg_game.current_dungeon)
-                return DungeonGamePlayResponse(
+                return DungeonProgressResponse(
                     session_messages=rpg_game.player_session.get_messages_since(
                         last_event_sequence
                     )
@@ -257,16 +262,6 @@ async def dungeon_gameplay(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="战斗状态异常",
                 )
-
-        case _:
-            # 未知的操作类型
-            logger.error(
-                f"玩家 {payload.user_name} 未知的请求类型: {payload.user_input.tag}"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"未知的请求类型: {payload.user_input.tag}",
-            )
 
 
 ###################################################################################################################################################################

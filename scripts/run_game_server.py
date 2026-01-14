@@ -130,6 +130,7 @@ async def root(request: Request) -> RootResponse:
             "home_advance": "/api/home/advance/v1/",
             "home_trans_dungeon": "/api/home/trans_dungeon/v1/",
             "dungeon_gameplay": "/api/dungeon/gameplay/v1/",
+            "dungeon_combat_draw_cards": "/api/dungeon/combat/draw_cards/v1/",
             "dungeon_combat_play_cards": "/api/dungeon/combat/play_cards/v1/",
             "dungeon_trans_home": "/api/dungeon/trans_home/v1/",
             "dungeon_state": "/api/dungeons/v1/",

@@ -184,6 +184,19 @@ class DungeonCombatPlayCardsResponse(BaseModel):
     message: str
 
 
+@final
+class DungeonCombatDrawCardsRequest(BaseModel):
+    user_name: str
+    game_name: str
+
+
+@final
+class DungeonCombatDrawCardsResponse(BaseModel):
+    task_id: str
+    status: str
+    message: str
+
+
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################

@@ -48,6 +48,8 @@ from ..models import (
     DungeonGamePlayResponse,
     DungeonTransHomeRequest,
     DungeonTransHomeResponse,
+    DungeonCombatDrawCardsRequest,
+    DungeonCombatDrawCardsResponse,
     DungeonCombatPlayCardsRequest,
     DungeonCombatPlayCardsResponse,
     TaskStatus,
@@ -212,24 +214,6 @@ async def dungeon_gameplay(
                 )
             )
 
-        case "draw_cards":
-            # 处理抽卡操作
-            if not rpg_game.current_combat_sequence.is_ongoing:
-                logger.error(f"玩家 {payload.user_name} 抽卡失败: 战斗未在进行中")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="战斗未在进行中",
-                )
-            # 为所有角色激活抽牌动作
-            activate_actor_card_draws(rpg_game)
-            # 推进战斗流程处理抽牌
-            await rpg_game.combat_pipeline.process()
-            return DungeonGamePlayResponse(
-                session_messages=rpg_game.player_session.get_messages_since(
-                    last_event_sequence
-                )
-            )
-
         case "advance_next_dungeon":
             # 处理前进下一个地下城关卡
             if not rpg_game.current_combat_sequence.is_post_combat:
@@ -355,6 +339,94 @@ async def dungeon_trans_home(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @dungeon_gameplay_api_router.post(
+    path="/api/dungeon/combat/draw_cards/v1/",
+    response_model=DungeonCombatDrawCardsResponse,
+)
+async def dungeon_combat_draw_cards(
+    payload: DungeonCombatDrawCardsRequest,
+    game_server: CurrentGameServer,
+) -> DungeonCombatDrawCardsResponse:
+    """
+    地下城战斗抽卡接口（后台任务版），触发玩家在战斗中抽取卡牌的后台任务
+
+    该接口负责创建并触发玩家在地下城战斗中的抽卡后台任务。抽卡操作会使用 asyncio.create_task
+    在事件循环中异步执行，客户端会立即得到响应而不必等待耗时的战斗流程处理完成。
+
+    Args:
+        payload: 地下城战斗抽卡请求对象
+            - user_name: 用户名，用于标识玩家
+            - game_name: 游戏名称
+        game_server: 游戏服务器实例，由依赖注入提供
+
+    Returns:
+        DungeonCombatDrawCardsResponse: 地下城战斗抽卡响应对象
+            - task_id: 任务唯一标识符，可用于后续查询任务状态
+            - status: 任务初始状态（"running"）
+            - message: 提示信息
+
+    Raises:
+        HTTPException(404): 玩家未登录、游戏实例不存在或没有战斗
+        HTTPException(400): 玩家不在地下城状态或战斗未在进行中
+
+    处理流程:
+        1. 验证玩家是否在地下城状态
+        2. 检查战斗是否在进行中
+        3. 生成任务ID并初始化任务信息
+        4. 使用 asyncio.create_task 创建真正的后台协程
+        5. 立即返回任务信息（不等待任务完成）
+
+    注意事项:
+        - 战斗必须处于 ONGOING 状态才能触发任务
+        - 使用 asyncio.create_task 确保任务真正在后台执行，不阻塞响应
+        - 客户端会立即收到响应，任务在事件循环中异步执行
+        - 客户端需要通过其他方式（如轮询会话消息）获取任务结果
+        - 任务信息存储在内存中，服务重启后会丢失
+    """
+
+    logger.info(f"/api/dungeon/combat/draw_cards/v1/: user={payload.user_name}")
+
+    # 验证地下城操作的前置条件
+    rpg_game = _validate_dungeon_prerequisites(
+        user_name=payload.user_name,
+        game_server=game_server,
+    )
+
+    # 验证战斗状态
+    if not rpg_game.current_combat_sequence.is_ongoing:
+        logger.error(f"玩家 {payload.user_name} 抽卡失败: 战斗未在进行中")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="战斗未在进行中",
+        )
+
+    # 创建抽卡后台任务
+    draw_cards_task = game_server.create_task()
+
+    # 使用 asyncio.create_task 创建真正的后台协程
+    # 这样任务会立即在事件循环中异步执行，不会阻塞响应
+    asyncio.create_task(
+        _execute_draw_cards_task(
+            draw_cards_task.task_id,
+            payload.user_name,
+            game_server,
+        )
+    )
+
+    logger.info(
+        f"📝 创建抽卡后台任务: task_id={draw_cards_task.task_id}, user={payload.user_name}"
+    )
+
+    return DungeonCombatDrawCardsResponse(
+        task_id=draw_cards_task.task_id,
+        status=TaskStatus.RUNNING.value,
+        message="抽卡任务已启动，请通过会话消息查询结果",
+    )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@dungeon_gameplay_api_router.post(
     path="/api/dungeon/combat/play_cards/v1/",
     response_model=DungeonCombatPlayCardsResponse,
 )
@@ -442,6 +514,69 @@ async def dungeon_combat_play_cards(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+async def _execute_draw_cards_task(
+    task_id: str,
+    user_name: str,
+    game_server: GameServer,
+) -> None:
+    """后台执行抽卡任务
+
+    在后台异步执行抽卡操作，包括激活抽牌动作和推进战斗流程。
+    任务完成后会更新任务存储中的状态和消息。
+
+    Args:
+        task_id: 任务唯一标识符
+        user_name: 用户名，用于获取游戏实例
+        game_server: 游戏服务器实例
+
+    Note:
+        - 任务执行期间会记录日志
+        - 任务完成后状态会更新为 "completed"，并保存会话消息
+        - 异常情况下状态会更新为 "failed"，并记录错误信息
+    """
+    try:
+        logger.info(f"🚀 抽卡任务开始: task_id={task_id}, user={user_name}")
+
+        # 重新获取游戏实例（确保获取最新状态）
+        current_room = game_server.get_room(user_name)
+        if current_room is None or current_room._tcg_game is None:
+            raise ValueError(f"游戏实例不存在: user={user_name}")
+
+        rpg_game = current_room._tcg_game
+        assert isinstance(rpg_game, TCGGame), "Invalid game type"
+
+        # 验证战斗状态
+        if not rpg_game.current_combat_sequence.is_ongoing:
+            raise ValueError("战斗未在进行中")
+
+        # 为所有角色激活抽牌动作
+        activate_actor_card_draws(rpg_game)
+
+        # 推进战斗流程处理抽牌
+        # 注意: 这里会阻塞当前协程直到战斗流程处理完成
+        # 但因为使用了 asyncio.create_task，这个阻塞只影响后台任务，不影响 API 响应
+        await rpg_game.combat_pipeline.process()
+
+        # 保存结果
+        task_record = game_server.get_task(task_id)
+        if task_record is not None:
+            task_record.status = TaskStatus.COMPLETED
+            task_record.end_time = datetime.now().isoformat()
+
+        logger.info(f"✅ 抽卡任务完成: task_id={task_id}, user={user_name}")
+
+    except Exception as e:
+        logger.error(f"❌ 抽卡任务失败: task_id={task_id}, user={user_name}, error={e}")
+        task_record = game_server.get_task(task_id)
+        if task_record is not None:
+            task_record.status = TaskStatus.FAILED
+            task_record.error = str(e)
+            task_record.end_time = datetime.now().isoformat()
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
 async def _execute_play_cards_task(
     task_id: str,
     user_name: str,
@@ -456,7 +591,6 @@ async def _execute_play_cards_task(
         task_id: 任务唯一标识符
         user_name: 用户名，用于获取游戏实例
         game_server: 游戏服务器实例
-        last_event_sequence: 任务开始前的事件序列号
 
     Note:
         - 任务执行期间会记录日志

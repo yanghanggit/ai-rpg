@@ -33,7 +33,7 @@ class CombatResult(IntEnum):
 class StatusEffect(BaseModel):
     name: str = Field(..., description="效果名称")
     description: str = Field(..., description="效果描述")
-    duration: int = Field(..., description="持续回合数")
+    # duration: int = Field(..., description="持续回合数")
 
 
 ###############################################################################################################################################

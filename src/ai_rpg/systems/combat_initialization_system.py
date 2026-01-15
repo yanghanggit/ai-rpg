@@ -50,7 +50,7 @@ def _format_other_actors_info(other_actors_info: List[OtherActorInfo]) -> str:
 
 
 ###################################################################################################################################################################
-def _generate_combat_kickoff_prompt(
+def _generate_combat_init_prompt(
     stage_name: str,
     stage_description: str,
     other_actors_info: List[OtherActorInfo],
@@ -150,7 +150,7 @@ class CombatInitializationSystem(ExecuteProcessor):
             )
 
             # 生成提示词
-            combat_kickoff_prompt = _generate_combat_kickoff_prompt(
+            combat_init_prompt = _generate_combat_init_prompt(
                 stage_name=current_stage_entity.name,
                 stage_description=environment_comp.description,
                 other_actors_info=other_actors_info,
@@ -161,7 +161,7 @@ class CombatInitializationSystem(ExecuteProcessor):
             # 追加提示词到角色对话中
             self._game.add_human_message(
                 actor_entity,
-                combat_kickoff_prompt,
+                combat_init_prompt,
                 combat_initialization=current_stage_entity.name,
             )
 

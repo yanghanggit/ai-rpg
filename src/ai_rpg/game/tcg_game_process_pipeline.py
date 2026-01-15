@@ -204,12 +204,14 @@ def create_dungeon_combat_pipeline(
     from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.save_system import SaveSystem
     from ..systems.arbitration_action_system import ArbitrationActionSystem
-    from ..systems.status_effects_settlement_system import (
-        StatusEffectsSettlementSystem,
-    )
-    from ..systems.unique_item_notification_system import (
-        UniqueItemNotificationSystem,
-    )
+
+    # from ..systems.status_effects_settlement_system import (
+    #     StatusEffectsSettlementSystem,
+    # )
+
+    # from ..systems.unique_item_notification_system import (
+    #     UniqueItemNotificationSystem,
+    # )
 
     ##
     tcg_game = cast(TCGGame, game)
@@ -224,10 +226,10 @@ def create_dungeon_combat_pipeline(
     processors.add(CombatInitializationSystem(tcg_game))
 
     # 状态效果结算系统（必须在抽卡之前执行）
-    processors.add(StatusEffectsSettlementSystem(tcg_game))
+    # processors.add(StatusEffectsSettlementSystem(tcg_game))
 
     # 唯一道具通知系统（在状态效果结算之后、抽卡之前执行）
-    processors.add(UniqueItemNotificationSystem(tcg_game))
+    # processors.add(UniqueItemNotificationSystem(tcg_game))
 
     # 抽卡。
     ######动作开始！！！！！################################################################################################

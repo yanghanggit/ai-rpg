@@ -10,9 +10,9 @@ from .entities import Actor, Stage
 @final
 @unique
 class CombatState(IntEnum):
-    NONE = (0,)
-    INITIALIZATION = (1,)  # 初始化，需要同步一些数据与状态
-    ONGOING = (2,)  # 运行中，不断进行战斗推理
+    NONE = 0  # 无状态
+    INITIALIZATION = 1  # 初始化，需要同步一些数据与状态
+    ONGOING = 2  # 运行中，不断进行战斗推理
     COMPLETE = 3  # 结束，需要进行结算
     POST_COMBAT = 4  # 战斗等待进入新一轮战斗或者回家
 
@@ -22,9 +22,9 @@ class CombatState(IntEnum):
 @final
 @unique
 class CombatResult(IntEnum):
-    NONE = (0,)
-    WIN = (1,)  # 胜利
-    LOSE = (2,)  # 失败
+    NONE = 0  # 无结果
+    WIN = 1  # 胜利
+    LOSE = 2  # 失败
 
 
 ###############################################################################################################################################

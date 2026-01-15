@@ -148,6 +148,7 @@ def _build_action_planning_prompt(
 ```
 
 **约束规则**：
+
 - 严格按上述JSON格式输出你的行动决策
 - 所有字段名不可更改"""
 
@@ -228,6 +229,7 @@ def _build_action_planning_prompt_test(
 ```
 
 **约束规则**：
+
 - 严格按上述JSON格式输出你的行动决策
 - 所有字段名不可更改"""
 

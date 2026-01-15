@@ -69,7 +69,7 @@ self._create_actor_entities(actors)
 self._game.add_human_message(
     actor_entity,
     "# 通知！战斗触发！...",
-    combat_kickoff="场景.训练场"  # 👈 自定义属性
+    combat_initialization="场景.训练场"  # 👈 自定义属性
 )
 
 # 游戏启动标记
@@ -132,7 +132,7 @@ self._game.add_ai_message(entity, chat_client.response_ai_messages)
 # 查找所有战斗开始消息
 begin_messages = self._game.filter_human_messages_by_attribute(
     actor_entity=entity,
-    attribute_key="combat_kickoff",
+    attribute_key="combat_initialization",
     attribute_value="场景.训练场"
 )
 ```
@@ -190,7 +190,7 @@ self._game.broadcast_to_stage(
 
 ```text
 combat_initialization_system.py
-  └─> add_human_message(actor_entity, combat_kickoff_prompt, combat_kickoff=stage_name)
+  └─> add_human_message(actor_entity, combat_kickoff_prompt, combat_initialization=stage_name)
   └─> add_ai_message(actor_entity, [AIMessage("我准备好了，等待战斗开始！")])
 ```
 
@@ -207,7 +207,7 @@ draw_cards_action_system.py
 
 ```text
 combat_post_processing_system.py
-  └─> filter_human_messages_by_attribute(entity, "combat_kickoff", stage_name)
+  └─> filter_human_messages_by_attribute(entity, "combat_initialization", stage_name)
   └─> filter_human_messages_by_attribute(entity, "combat_outcome", stage_name)
   └─> remove_message_range(entity, begin_msg, end_msg)  # 压缩历史
 ```

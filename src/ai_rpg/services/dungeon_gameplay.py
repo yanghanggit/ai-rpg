@@ -230,6 +230,10 @@ async def dungeon_progress(
                     detail="战斗未处于等待阶段",
                 )
 
+            assert (
+                False
+            ), "这里应该报错，因为没有 is_won 和 is_lost 方法了"  # --- IGNORE ---
+
             # 判断战斗结果并处理
             if rpg_game.current_combat_sequence.is_won:
                 # 玩家胜利，检查是否有下一关
@@ -551,6 +555,13 @@ async def _execute_draw_cards_task(
         # 注意: 这里会阻塞当前协程直到战斗流程处理完成
         # 但因为使用了 asyncio.create_task，这个阻塞只影响后台任务，不影响 API 响应
         await rpg_game.combat_pipeline.process()
+
+        # 验证战斗状态
+        if (
+            rpg_game.current_combat_sequence.is_won
+            or rpg_game.current_combat_sequence.is_lost
+        ):
+            logger.info(f"战斗已结束，这里是端点测试，暂不处理后续逻辑")
 
         # 保存结果
         task_record = game_server.get_task(task_id)

@@ -195,7 +195,7 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
                 )
             )
 
-        logger.info(f"准备为 {len(chat_clients)} 个角色生成外观描述")
+        logger.debug(f"准备为 {len(chat_clients)} 个角色生成外观描述")
         return chat_clients
 
     #######################################################################################################################################

@@ -196,9 +196,10 @@ def create_dungeon_combat_pipeline(
     from ..systems.play_cards_action_system import (
         PlayCardsActionSystem,
     )
-    from ..systems.combat_post_processing_system import (
-        CombatPostProcessingSystem,
-    )
+
+    # from ..systems.combat_post_processing_system import (
+    #     CombatPostProcessingSystem,
+    # )
     from ..systems.kick_off_system import KickOffSystem
     from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.save_system import SaveSystem
@@ -238,7 +239,7 @@ def create_dungeon_combat_pipeline(
 
     # 检查死亡
     processors.add(CombatOutcomeSystem(tcg_game))
-    processors.add(CombatPostProcessingSystem(tcg_game))
+    # processors.add(CombatPostProcessingSystem(tcg_game))
 
     # 核心系统，检查需要删除的实体。
     processors.add(DestroyEntitySystem(tcg_game))

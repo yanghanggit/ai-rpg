@@ -162,7 +162,7 @@ class CombatInitializationSystem(ExecuteProcessor):
             self._game.add_human_message(
                 actor_entity,
                 combat_kickoff_prompt,
-                combat_kickoff=current_stage_entity.name,
+                combat_initialization=current_stage_entity.name,
             )
 
             # TODO, 追加 AI 准备好消息, 模拟角色回应，准备战斗, 其实在这里可以模拟塞入战斗风格与策略等内容，从而影响后续战斗决策。

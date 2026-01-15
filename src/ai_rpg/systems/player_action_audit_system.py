@@ -58,6 +58,7 @@ def _build_audit_prompt(content: str) -> str:
 ```
 
 **约束规则**：
+
 - 严格按上述JSON格式输出审核结果
 - 所有字段名不可更改"""
 

@@ -19,7 +19,6 @@ from ..game.world_persistence import get_user_world_data, get_game_blueprint_dat
 from ..models import StartRequest, StartResponse, World
 from .game_server_dependencies import CurrentGameServer
 from ..demo.dungeon_mountain_beasts import (
-    create_mountain_beasts_dungeon,
     create_tiger_lair_dungeon,
 )
 

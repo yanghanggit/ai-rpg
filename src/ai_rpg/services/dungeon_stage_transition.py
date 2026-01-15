@@ -21,17 +21,21 @@ from ..models import (
     AllyComponent,
     PlayerComponent,
     PlayerOnlyStageComponent,
+    HomeComponent,
+    DeathComponent,
+    CombatStatsComponent,
 )
 from ..entitas import Matcher, Entity
 
 
 ###################################################################################################################################################################
 def _generate_dungeon_entry_message(
-    dungeon_stage_name: str, is_first_stage: bool
+    dungeon_name: str, dungeon_stage_name: str, is_first_stage: bool
 ) -> str:
     """生成地下城进入提示消息
 
     Args:
+        dungeon_name: 地下城名称
         dungeon_stage_name: 地下城关卡名称
         is_first_stage: 是否为首个关卡（索引为0）
 
@@ -39,9 +43,25 @@ def _generate_dungeon_entry_message(
         格式化的进入提示消息
     """
     if is_first_stage:
-        return f"""# 提示！准备进入地下城: {dungeon_stage_name}"""
+        return f"""# 提示！进入地下城：{dungeon_name}，开始关卡：{dungeon_stage_name}"""
     else:
-        return f"""# 提示！准备进入下一个地下城: {dungeon_stage_name}"""
+        return f"""# 提示！地下城：{dungeon_name}，进入下一关卡：{dungeon_stage_name}"""
+
+
+###################################################################################################################################################################
+def _generate_return_home_message(
+    dungeon_name: str, destination_stage_name: str
+) -> str:
+    """生成冒险结束返回家园的提示消息
+
+    Args:
+        dungeon_name: 地下城名称
+        destination_stage_name: 目标场景名称（玩家专属场景或普通家园场景）
+
+    Returns:
+        格式化的返回提示消息
+    """
+    return f"""# 提示！地下城：{dungeon_name} 结束，返回：{destination_stage_name}"""
 
 
 ###################################################################################################################################################################
@@ -132,7 +152,7 @@ def enter_dungeon_stage(
 
     # 3. 生成并发送传送提示消息
     trans_message = _generate_dungeon_entry_message(
-        dungeon_stage_entity.name, dungeon.current_stage_index == 0
+        dungeon.name, dungeon_stage_entity.name, dungeon.current_stage_index == 0
     )
 
     for ally_entity in ally_entities:
@@ -249,12 +269,13 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
 
     主要操作流程：
     1. 验证并获取盟友实体和家园场景实体
-    2. 分离监视之屋（玩家专属）和普通家园场景
+    2. 分离玩家专属场景（PlayerOnlyStage）和普通家园场景
     3. 差异化传送策略：
-       - 玩家（PlayerComponent）→ 监视之屋
-       - 其他盟友 → 随机选择的普通家园场景
-    4. 清理地下城：销毁所有地下城实体，重置地下城数据为空
-    5. 恢复所有盟友状态：
+       - 玩家（PlayerComponent）→ 必定传送到玩家专属场景
+       - 其他盟友 → 如果存在普通家园场景，随机选择一个传送；否则不传送
+    4. 向每个被传送的角色发送返回提示消息（包含地下城名称和目标场景）
+    5. 清理地下城：销毁所有地下城实体，重置地下城数据为空
+    6. 恢复所有盟友状态：
        - 移除死亡组件（DeathComponent）
        - 恢复生命值至满血（max_hp）
        - 清空所有状态效果（status_effects）
@@ -266,10 +287,9 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
         - 用于地下城冒险结束后的完整收尾工作
         - 调用者: dungeon_trans_home API
         - 会完全重置地下城状态和所有盟友的战斗状态
-        - 玩家和NPC盟友会被传送到不同的家园场景
+        - 玩家必定被传送到专属场景，盟友传送取决于是否存在普通家园场景
+        - 即使盟友未被传送，其战斗状态仍会被恢复
     """
-    # 导入必要的模型
-    from ..models import HomeComponent, DeathComponent, CombatStatsComponent
 
     # 1. 验证并获取盟友实体
     ally_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities
@@ -282,34 +302,55 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
     assert len(home_stage_entities) > 0, "没有找到家园场景实体"
 
     # 3. 分离玩家专属场景和普通家园场景
-    player_only_stage = None
+    player_only_stages: Set[Entity] = set()
+    regular_home_stages: Set[Entity] = set()
     for stage in home_stage_entities:
         if stage.has(PlayerOnlyStageComponent):
-            player_only_stage = stage
-            break
+            player_only_stages.add(stage)
+        else:
+            regular_home_stages.add(stage)
 
-    assert player_only_stage is not None, "必须存在一个PlayerOnlyStage场景"
+    # 这个是必须的。
+    assert len(player_only_stages) == 1, "必须存在一个PlayerOnlyStage场景"
 
-    # 获取普通家园场景（排除玩家专属场景）
-    regular_home_stages = home_stage_entities - {player_only_stage}
-    assert len(regular_home_stages) > 0, "必须至少有一个普通家园场景"
-    random_home_stage = next(iter(regular_home_stages))
+    # 提醒一下没有普通家园场景的情况
+    if len(regular_home_stages) == 0:
+        logger.warning("没有普通家园场景，盟友将无法返回家园")
 
     # 4. 生成并发送返回提示消息
+    dungeon_name = tcg_game.world.dungeon.name
     for ally_entity in ally_entities:
 
         if ally_entity.has(PlayerComponent):
-            # 玩家传送到专属场景
+
+            # 唯一的玩家传送到专有场景
+            player_only_stage = next(iter(player_only_stages))
+
+            # 添加返回消息
             tcg_game.add_human_message(
-                ally_entity, f"""# 提示！冒险结束，将要返回: {player_only_stage.name}"""
+                ally_entity,
+                _generate_return_home_message(dungeon_name, player_only_stage.name),
             )
+
+            # 传送玩家到专有场景
             tcg_game.stage_transition({ally_entity}, player_only_stage)
+
         else:
+
             # 盟友传送到普通家园
-            tcg_game.add_human_message(
-                ally_entity, f"""# 提示！冒险结束，将要返回: {random_home_stage.name}"""
-            )
-            tcg_game.stage_transition({ally_entity}, random_home_stage)
+            if len(regular_home_stages) > 0:
+
+                # 随机选择一个普通家园场景
+                random_home_stage = next(iter(regular_home_stages))
+
+                # 添加返回消息并传送
+                tcg_game.add_human_message(
+                    ally_entity,
+                    _generate_return_home_message(dungeon_name, random_home_stage.name),
+                )
+
+                # 传送盟友
+                tcg_game.stage_transition({ally_entity}, random_home_stage)
 
     # 5. 清理地下城数据
     tcg_game.teardown_dungeon_entities(tcg_game.world.dungeon)

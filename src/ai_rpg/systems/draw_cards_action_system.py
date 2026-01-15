@@ -115,6 +115,7 @@ def _generate_first_round_prompt(
 ```
 
 **约束规则**：
+
 - 必须生成{card_creation_count}张卡牌
 - description可含整数但禁止百分率，禁止出现角色名称
 - 严格按上述JSON格式输出"""

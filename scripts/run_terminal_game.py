@@ -36,7 +36,6 @@ from ai_rpg.configuration import (
 from ai_rpg.utils import parse_command_args
 from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
-    create_training_dungeon,
     create_single_hunter_blueprint,
     create_tiger_lair_dungeon,
 )
@@ -66,6 +65,10 @@ from ai_rpg.services.dungeon_stage_transition import (
 )
 
 import datetime
+
+from ai_rpg.systems.combat_archive_system import (
+    CombatArchiveSystem,
+)
 
 
 ###############################################################################################################################################
@@ -186,10 +189,16 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
             return
 
-        logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
+        # logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
         activate_actor_card_draws(terminal_game)
 
         await terminal_game.combat_pipeline.process()
+
+        if (
+            terminal_game.current_combat_sequence.is_won
+            or terminal_game.current_combat_sequence.is_lost
+        ):
+            logger.info(f"战斗已结束，这里是端点测试，暂不处理后续逻辑????")
 
     elif usr_input == "/pc":
 
@@ -204,7 +213,27 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         else:
             logger.error(f"打牌失败: {message}")
 
-    elif usr_input == "/trans_home":
+    elif usr_input == "/cpp":
+
+        # 必须在战斗结束后使用
+        if not terminal_game.current_combat_sequence.is_completed:
+            logger.error(f"{usr_input} 只能在战斗结束后使用is_completed")
+            return
+
+        # 一定是有胜利或者失败的
+        assert (
+            terminal_game.current_combat_sequence.is_won
+            or terminal_game.current_combat_sequence.is_lost
+        )
+
+        # 归档战斗记录
+        combat_archive_system = CombatArchiveSystem(terminal_game)
+        await combat_archive_system.execute()
+
+        # 进入战斗后准备状态
+        terminal_game.current_combat_sequence.transition_to_post_combat()
+
+    elif usr_input == "/th":  # "/trans_home"
 
         if (
             len(terminal_game.current_combat_sequence.combats) == 0
@@ -213,10 +242,10 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             logger.error(f"{usr_input} 只能在战斗后使用!!!!!")
             return
 
-        logger.debug(f"玩家输入 = {usr_input}, 准备传送回家")
+        # logger.debug(f"玩家输入 = {usr_input}, 准备传送回家")
         complete_dungeon_and_return_home(terminal_game)
 
-    elif usr_input == "/advance_next_dungeon":
+    elif usr_input == "/and":  # "/advance_next_dungeon"
 
         if not terminal_game.current_combat_sequence.is_post_combat:
             logger.error(f"{usr_input} 只能在战斗后使用")
@@ -234,7 +263,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             logger.info("没有下一关，你胜利了，应该返回营地！！！！")
             return
 
-        logger.info(f"玩家输入 = {usr_input}, 进入下一关 = {next_level.name}")
+        # logger.info(f"玩家输入 = {usr_input}, 进入下一关 = {next_level.name}")
         advance_to_next_stage(terminal_game, terminal_game.current_dungeon)
         await terminal_game.combat_pipeline.process()
 

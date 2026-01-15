@@ -4,7 +4,10 @@ from .actor_training_dummy import create_training_dummy
 from .actor_hunter import create_hunter
 from .actor_mystic import create_mystic
 from .global_settings import RPG_CAMPAIGN_SETTING, RPG_KNOWLEDGE_BASE
-from .dungeon_mountain_beasts import create_mountain_beasts_dungeon
+from .dungeon_mountain_beasts import (
+    create_mountain_beasts_dungeon,
+    create_tiger_lair_dungeon,
+)
 from .dungeon_training import create_training_dungeon
 from .stage_village import (
     create_hunter_storage,
@@ -27,6 +30,7 @@ __all__ = [
     "create_village_hall",
     "create_shi_family_house",
     "create_mountain_beasts_dungeon",
+    "create_tiger_lair_dungeon",
     "create_training_dungeon",
     "RPG_CAMPAIGN_SETTING",
     "RPG_KNOWLEDGE_BASE",

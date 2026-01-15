@@ -1,10 +1,9 @@
 from typing import Final, final, override, Set
 from loguru import logger
-from ..entitas import ExecuteProcessor, Matcher, Entity
+from ..entitas import ExecuteProcessor, Entity
 from ..game.tcg_game import TCGGame
 from ..models import (
     DeathComponent,
-    CombatStatsComponent,
     CombatResult,
     AllyComponent,
     EnemyComponent,
@@ -43,33 +42,11 @@ class CombatOutcomeSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
 
-        # 处理生命值归零的实体
-        self._process_zero_health_entities()
+        # 注意：HP归零的死亡判定已移至 ArbitrationActionSystem._apply_arbitration_result 中
+        # 在HP更新后立即执行，确保死亡判定的及时性
 
         # 判定战斗胜负
         self._determine_combat_winner()
-
-    ########################################################################################################################################################################
-    def _process_zero_health_entities(self) -> None:
-        """处理生命值归零的实体，为其添加死亡组件。
-
-        遍历所有拥有战斗属性但尚未标记为死亡的实体，
-        检查其生命值是否小于等于0。如果是，则:
-        1. 记录死亡日志
-        2. 向该实体发送被击败通知消息
-        3. 为实体添加死亡组件(DeathComponent)
-        """
-        defeated_entities = self._game.get_group(
-            Matcher(all_of=[CombatStatsComponent], none_of=[DeathComponent])
-        ).entities.copy()
-
-        for entity in defeated_entities:
-            combat_stats_comp = entity.get(CombatStatsComponent)
-            if combat_stats_comp.stats.hp <= 0:
-
-                logger.warning(f"{combat_stats_comp.name} is dead")
-                self._game.add_human_message(entity, f"""# 通知！你已被击败！""")
-                entity.replace(DeathComponent, combat_stats_comp.name)
 
     ########################################################################################################################################################################
     def _determine_combat_winner(self) -> None:

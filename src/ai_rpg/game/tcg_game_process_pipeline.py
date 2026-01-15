@@ -204,6 +204,12 @@ def create_dungeon_combat_pipeline(
     from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.save_system import SaveSystem
     from ..systems.arbitration_action_system import ArbitrationActionSystem
+    from ..systems.status_effects_evaluation_system import (
+        StatusEffectsEvaluationSystem,
+    )
+    from ..systems.status_effects_evaluation_system import (
+        StatusEffectsEvaluationSystem,
+    )
 
     # from ..systems.status_effects_settlement_system import (
     #     StatusEffectsSettlementSystem,
@@ -236,6 +242,7 @@ def create_dungeon_combat_pipeline(
     processors.add(DrawCardsActionSystem(tcg_game))
     processors.add(PlayCardsActionSystem(tcg_game))
     processors.add(ArbitrationActionSystem(tcg_game))
+    processors.add(StatusEffectsEvaluationSystem(tcg_game))
     processors.add(ActionCleanupSystem(tcg_game))
     ###### 动作结束！！！！！################################################################################################
 

@@ -292,6 +292,9 @@ class ArbitrationActionSystem(ReactiveProcessor):
             stage_entity, chat_client, actor_entities, combat_actions_details
         )
 
+        # 处理生命值归零的实体
+        self._process_zero_health_entities()
+
     #######################################################################################################################################
     def _apply_arbitration_result(
         self,
@@ -387,5 +390,27 @@ class ArbitrationActionSystem(ReactiveProcessor):
 
         except Exception as e:
             logger.error(f"Exception: {e}")
+
+    #######################################################################################################################################
+    def _process_zero_health_entities(self) -> None:
+        """处理生命值归零的实体，为其添加死亡组件。
+
+        遍历所有拥有战斗属性但尚未标记为死亡的实体，
+        检查其生命值是否小于等于0。如果是，则:
+        1. 记录死亡日志
+        2. 向该实体发送被击败通知消息
+        3. 为实体添加死亡组件(DeathComponent)
+        """
+        defeated_entities = self._game.get_group(
+            Matcher(all_of=[CombatStatsComponent], none_of=[DeathComponent])
+        ).entities.copy()
+
+        for entity in defeated_entities:
+            combat_stats_comp = entity.get(CombatStatsComponent)
+            if combat_stats_comp.stats.hp <= 0:
+
+                logger.warning(f"{combat_stats_comp.name} is dead")
+                self._game.add_human_message(entity, """# 通知！你已被击败！""")
+                entity.replace(DeathComponent, combat_stats_comp.name)
 
     #######################################################################################################################################

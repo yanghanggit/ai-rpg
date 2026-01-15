@@ -1,7 +1,7 @@
 from enum import IntEnum, unique
 from typing import List, Optional, final
 from loguru import logger
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from .entities import Actor, Stage
 
 
@@ -31,8 +31,8 @@ class CombatResult(IntEnum):
 # 状态效果：增益 / 减益，持续伤害 / 持续治疗等
 @final
 class StatusEffect(BaseModel):
-    name: str = Field(..., description="效果名称")
-    description: str = Field(..., description="效果描述")
+    name: str  # = Field(..., description="效果名称")
+    description: str  # = Field(..., description="效果描述")
     # duration: int = Field(..., description="持续回合数")
 
 
@@ -40,9 +40,9 @@ class StatusEffect(BaseModel):
 # 代表一张卡牌
 @final
 class Card(BaseModel):
-    name: str = Field(..., description="卡牌名称")
-    description: str = Field(..., description="卡牌效果、作用方式及使用代价")
-    targets: List[str] = Field(default_factory=list, description="目标对象列表")
+    name: str  # = Field(..., description="卡牌名称")
+    description: str  # = Field(..., description="卡牌效果、作用方式及使用代价")
+    targets: List[str]  # = Field(default_factory=list, description="目标对象列表")
 
 
 ###############################################################################################################################################

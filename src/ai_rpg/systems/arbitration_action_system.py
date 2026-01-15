@@ -1,15 +1,4 @@
-"""战斗仲裁系统
-
-AI驱动的战斗结算系统，生成优化的仲裁提示词并处理AI返回的战斗结果。
-
-核心优化:
-- Token压缩60%：紧凑格式 + 精简规则 + 内嵌示例
-- 完整流程：卡牌 → 环境 → 效果 → 代价 → HP → 环境
-- 支持复活：多段HP变化(X→0→Y)自动识别
-- 扩展性强：支持1v1到3v3及更多角色
-"""
-
-from typing import Final, List, NamedTuple, final
+from typing import Dict, Final, List, NamedTuple, final
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
@@ -36,6 +25,7 @@ from ..utils import extract_json_from_code_block
 @final
 class ArbitrationResponse(BaseModel):
     combat_log: str
+    final_hp: Dict[str, int]
     narrative: str
 
 
@@ -69,12 +59,30 @@ def _generate_actor_card_details(
         detail = f"""【{param.actor}】
 卡牌: {param.card.name} → {target_display} — {param.card.description}
 角色属性: {param.combat_stats_component.stats_prompt}
-角色当前状态效果(status_effects):
+状态效果(status_effects):
 {param.combat_stats_component.status_effects_prompt}"""
 
         details_prompt.append(detail)
 
     return details_prompt
+
+
+#######################################################################################################################################
+def _generate_hp_update_notification(final_hp: int, max_hp: int, hp_change: int) -> str:
+    """生成HP更新通知消息
+
+    Args:
+        final_hp: 更新后的当前HP
+        max_hp: 最大HP
+        hp_change: HP变化量（正数为增加，负数为减少）
+
+    Returns:
+        str: 格式化的HP更新通知消息
+    """
+    change_symbol = "+" if hp_change > 0 else ""
+    return f"""# 通知！你的生命值已更新
+
+当前HP: {final_hp}/{max_hp} (变化: {change_symbol}{hp_change})"""
 
 
 #######################################################################################################################################
@@ -132,12 +140,21 @@ def _generate_combat_arbitration_prompt(
 ```json
 {{
   "combat_log": "[角色A|卡牌A→环境A→角色X:伤10 代价:防-2] [角色B|卡牌B→环境B→角色Y:伤50 代价:攻-3] [角色C|卡牌C→角色Z:伤8] HP:角色A=45/50 角色B=30→25/40 角色C=50/50 角色X=40→30/50 角色Y=35→0→50/50 角色Z=42→34/50 [环境]效果1+效果2",
+  "final_hp": {{
+    "A角色全名": 45,
+    "B角色全名": 25,
+    "C角色全名": 50,
+    "X角色全名": 30,
+    "Y角色全名": 50,
+    "Z角色全名": 34
+  }},
   "narrative": "战斗过程的故事化描述"
 }}
 ```
 
 **约束**
 - combat_log：格式 `[角色简名|卡牌→环境→目标:效果 代价:X]` 依次记录每个角色的完整行动流程，`HP:角色=X→Y/Z` 集中记录所有角色最终HP（支持多段变化X→Y→Z），`[环境]关键词` 最后记录环境变化。角色名仅保留最后一段
+- final_hp：字典格式，键为**角色全名**，值为该角色的最终HP数值（与combat_log中HP部分的最终值一致）
 - narrative：感官描写、禁数字、简洁扼要
 - 严格按上述JSON格式输出"""
 
@@ -145,6 +162,16 @@ def _generate_combat_arbitration_prompt(
 ###########################################################################################################################################
 @final
 class ArbitrationActionSystem(ReactiveProcessor):
+    """战斗仲裁系统
+
+    AI驱动的战斗结算系统，生成优化的仲裁提示词并处理AI返回的战斗结果。
+
+    核心优化:
+    - Token压缩60%：紧凑格式 + 精简规则 + 内嵌示例
+    - 完整流程：卡牌 → 环境 → 效果 → 代价 → HP → 环境
+    - 支持复活：多段HP变化(X→0→Y)自动识别
+    - 扩展性强：支持1v1到3v3及更多角色
+    """
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
@@ -319,8 +346,39 @@ class ArbitrationActionSystem(ReactiveProcessor):
                     combat_log=format_response.combat_log,
                     narrative=format_response.narrative,
                 ),
-                exclude_entities={stage_entity},
+                exclude_entities={stage_entity},  # 排除场景实体自身
             )
+
+            # 从format_response.final_hp更新角色HP
+            for actor_name, final_hp in format_response.final_hp.items():
+                # 通过全名查找实体
+                entity = self._game.get_entity_by_name(actor_name)
+
+                if entity is None:
+                    logger.warning(f"无法找到角色实体: {actor_name}")
+                    continue
+
+                # 获取战斗属性组件
+                combat_stats = entity.get(CombatStatsComponent)
+                if combat_stats is None:
+                    logger.warning(f"角色 {actor_name} 缺少 CombatStatsComponent")
+                    continue
+
+                # 更新当前HP
+                old_hp = combat_stats.stats.hp
+                combat_stats.stats.hp = final_hp
+                max_hp = combat_stats.stats.max_hp
+
+                logger.info(f"更新 {actor_name} HP: {old_hp} → {final_hp}/{max_hp}")
+
+                # 通知角色HP变化
+                hp_change = final_hp - old_hp
+                self._game.add_human_message(
+                    entity=entity,
+                    message_content=_generate_hp_update_notification(
+                        final_hp, max_hp, hp_change
+                    ),
+                )
 
             # 记录数据！
             latest_round = self._game.current_combat_sequence.latest_round

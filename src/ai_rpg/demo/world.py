@@ -187,7 +187,7 @@ def create_single_hunter_blueprint(game_name: str) -> Blueprint:
     )
 
     # 测试攻击力，打的快一点。
-    actor_hunter.character_stats.attack = 10000
+    actor_hunter.character_stats.attack = 20
 
     # 创建场景
     stage_shi_family_house = create_shi_family_house()

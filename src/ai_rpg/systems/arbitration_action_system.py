@@ -68,28 +68,26 @@ def _generate_actor_card_details(
 
 
 #######################################################################################################################################
-def _generate_hp_update_notification(final_hp: int, max_hp: int, hp_change: int) -> str:
+def _generate_hp_update_notification(final_hp: int, max_hp: int) -> str:
     """生成HP更新通知消息
 
     Args:
         final_hp: 更新后的当前HP
         max_hp: 最大HP
-        hp_change: HP变化量（正数为增加，负数为减少）
 
     Returns:
         str: 格式化的HP更新通知消息
     """
-    change_symbol = "+" if hp_change > 0 else ""
     return f"""# 通知！你的生命值已更新
 
-当前HP: {final_hp}/{max_hp} (变化: {change_symbol}{hp_change})"""
+当前HP: {final_hp}/{max_hp}"""
 
 
 #######################################################################################################################################
 def _generate_combat_arbitration_broadcast(
     combat_log: str, narrative: str, current_round_number: int
 ) -> str:
-    """生成战斗广播：演出描述 + 数据日志 + HP提示"""
+    """生成战斗广播：演出描述 + 数据日志"""
 
     return f"""# 通知！第 {current_round_number} 回合结算
 
@@ -99,9 +97,7 @@ def _generate_combat_arbitration_broadcast(
 
 ## 数据日志
 
-{combat_log}
-
-**你的当前HP**: 在 **数据日志** 中定位你的角色名，提取最终HP数值(格式:角色.HP=X/Y)"""
+{combat_log}"""
 
 
 #######################################################################################################################################
@@ -124,6 +120,8 @@ def _generate_combat_arbitration_prompt(
 ## 参战信息
 
 {"\n\n".join(details_prompt)}
+
+**注意**：HP:X/Y的X是本回合起始HP，combat_log的"HP:角色=X→..."必须使用该值。
 
 ## 战斗计算
 
@@ -153,6 +151,7 @@ def _generate_combat_arbitration_prompt(
 ```
 
 **约束**
+
 - combat_log：格式 `[角色简名|卡牌→环境→目标:效果 代价:X]` 依次记录每个角色的完整行动流程，`HP:角色=X→Y/Z` 集中记录所有角色最终HP（支持多段变化X→Y→Z），`[环境]关键词` 最后记录环境变化。角色名仅保留最后一段
 - final_hp：字典格式，键为**角色全名**，值为该角色的最终HP数值（与combat_log中HP部分的最终值一致）
 - narrative：感官描写、禁数字、简洁扼要
@@ -233,9 +232,6 @@ class ArbitrationActionSystem(ReactiveProcessor):
 
         # 发起仲裁请求
         await self._request_combat_arbitration(stage_entity, sort_actors)
-
-        # 移除出牌动作组件
-        self._game.clear_hands()
 
     #######################################################################################################################################
     def _collect_combat_action_info(
@@ -375,12 +371,9 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 logger.info(f"更新 {actor_name} HP: {old_hp} → {final_hp}/{max_hp}")
 
                 # 通知角色HP变化
-                hp_change = final_hp - old_hp
                 self._game.add_human_message(
                     entity=entity,
-                    message_content=_generate_hp_update_notification(
-                        final_hp, max_hp, hp_change
-                    ),
+                    message_content=_generate_hp_update_notification(final_hp, max_hp),
                 )
 
             # 记录数据！

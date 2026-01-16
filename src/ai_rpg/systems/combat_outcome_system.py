@@ -41,10 +41,6 @@ class CombatOutcomeSystem(ExecuteProcessor):
     ########################################################################################################################################################################
     @override
     async def execute(self) -> None:
-
-        # 注意：HP归零的死亡判定已移至 ArbitrationActionSystem._apply_arbitration_result 中
-        # 在HP更新后立即执行，确保死亡判定的及时性
-
         # 判定战斗胜负
         self._determine_combat_winner()
 
@@ -64,13 +60,15 @@ class CombatOutcomeSystem(ExecuteProcessor):
             return  # 不是本阶段就直接返回
 
         if self._is_ally_side_eliminated():
+            logger.info("ally side eliminated!!!")
             self._game.current_combat_sequence.complete_combat(CombatResult.LOSE)
             self._broadcast_result_to_allies(CombatResult.LOSE)
         elif self._is_enemy_side_eliminated():
+            logger.info("enemy side eliminated!!!")
             self._game.current_combat_sequence.complete_combat(CombatResult.WIN)
             self._broadcast_result_to_allies(CombatResult.WIN)
         else:
-            logger.debug("combat continue!!!")
+            logger.info("combat continue!!!")
 
     ########################################################################################################################################################################
     def _is_enemy_side_eliminated(self) -> bool:

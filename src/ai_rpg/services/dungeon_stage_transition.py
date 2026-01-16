@@ -107,7 +107,7 @@ def _enhance_kickoff_with_actors(
 
 
 ###################################################################################################################################################################
-def enter_dungeon_stage(
+def _enter_dungeon_stage(
     tcg_game: TCGGame, dungeon: Dungeon, ally_entities: Set[Entity]
 ) -> bool:
     """
@@ -220,7 +220,7 @@ def initialize_dungeon_first_entry(tcg_game: TCGGame, dungeon: Dungeon) -> bool:
 
     # 获取所有盟友实体并推进到第一关
     ally_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities.copy()
-    return enter_dungeon_stage(tcg_game, dungeon, ally_entities)
+    return _enter_dungeon_stage(tcg_game, dungeon, ally_entities)
 
 
 ###################################################################################################################################################################
@@ -255,7 +255,7 @@ def advance_to_next_stage(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     ally_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities.copy()
 
     # 3. 进入下一关卡
-    enter = enter_dungeon_stage(tcg_game, dungeon, ally_entities)
+    enter = _enter_dungeon_stage(tcg_game, dungeon, ally_entities)
     assert enter, "进入下一关卡失败！"
 
 

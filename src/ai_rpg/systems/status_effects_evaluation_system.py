@@ -29,149 +29,46 @@ from ..utils import extract_json_from_code_block
 class StatusEffectsEvaluationResponse(BaseModel):
     """状态效果评估响应"""
 
-    status_effects: List[StatusEffect] = []
-    reasoning: str = ""  # AI的评估推理过程（用于调试和日志）
+    remove_effects: List[str] = []  # 要移除的效果名称列表
+    add_effects: List[StatusEffect] = []  # 要添加的新效果列表
 
 
 #######################################################################################################################################
 def _generate_status_effects_evaluation_prompt(
-    actor_name: str,
-    current_hp: int,
-    max_hp: int,
-    hp_change: int,
     current_status_effects: List[StatusEffect],
     current_round_number: int,
 ) -> str:
-    """生成状态效果评估提示词"""
+    """生成状态效果评估提示词（精简版）"""
 
-    # 格式化当前状态效果
+    # 格式化当前状态效果（仅名称）
     if len(current_status_effects) == 0:
-        status_effects_text = "- 无"
+        effects_list = "无"
     else:
-        status_effects_text = "\n".join(
-            [
-                f"- {effect.name}: {effect.description}"
-                for effect in current_status_effects
-            ]
-        )
+        effects_list = ", ".join([effect.name for effect in current_status_effects])
 
-    # 格式化HP变化
-    change_symbol = "+" if hp_change > 0 else ""
-    hp_change_text = f"{change_symbol}{hp_change}"
+    return f"""# 指令！第 {current_round_number} 回合结算完毕，更新状态效果
 
-    return f"""# 指令！第 {current_round_number} 回合结算完毕，评估你的状态效果
+**现有效果**: {effects_list}
 
-根据刚才的战斗结果（战斗演出、伤害日志、HP变化），评估你当前应该具有的状态效果。
+**任务**: 根据上文的**战斗演出**和**数据日志**
 
-## 当前状态
+1. **移除(remove_effects)**: 列出要移除的现有效果名称（战斗中已失效/被治愈/被消除）
+2. **添加(add_effects)**: 列出要添加的新效果（战斗中受伤/获得增益/遭受削弱等）
 
-- 当前HP: {current_hp}/{max_hp}
-- HP变化: {hp_change_text}
-- 现有状态效果:
-{status_effects_text}
+**约束**: 基于战斗演出与数据日志推断
 
-## 评估规则
-
-### 1. 保持现有效果
-- 检查每个现有状态效果是否应该继续生效
-- 考虑战斗结果是否影响了效果的存续
-
-### 2. 移除失效效果
-- 被治疗/驱散的效果
-- 触发条件消失的效果
-- 战斗中明确提到消除的效果
-
-### 3. 添加新效果
-基于战斗结果合理推断新状态效果：
-
-**受伤类**
-- 流血：被利刃划伤，持续失血
-- 骨折：被重击骨骼，降低防御或行动力
-- 中毒：接触毒素，降低攻击力或持续损伤
-- 灼伤：被火焰伤害，持续疼痛
-
-**增益类**
-- 鼓舞：成功攻击或占优势，士气提升
-- 专注：进入战斗节奏，提高命中或伤害
-- 愤怒：受到伤害反而激发战意，攻击力提升
-
-**削弱类**
-- 虚弱：体力大量消耗，降低攻击
-- 疲惫：持续战斗耗尽精力，降低防御
-- 恐惧：被强敌威慑或受重创，降低全属性
-
-## 约束
-
-1. **基于事实推断**：只根据战斗演出中实际发生的事情推断状态效果
-2. **合理性检查**：不要添加不合理或过于夸张的效果
-3. **效果上限**：同时存在的状态效果不应超过5个
-4. **避免重复**：相同类型的效果不要重复添加（如已有"流血"就不要再添加"流血"）
-5. **描述具体**：效果描述要具体说明来源和影响，不要过于抽象
-
-## 输出格式(JSON)
+**输出JSON**:
 
 ```json
 {{
-  "status_effects": [
-    {{
-      "name": "流血",
-      "description": "胸口被利爪划伤，伤口持续渗血，每回合损失少量HP"
-    }},
-    {{
-      "name": "愤怒",
-      "description": "因受伤而激发战意，攻击力暂时提升"
-    }}
-  ],
-  "reasoning": "基于战斗中被山中虎利爪划伤的事实，判断应该有流血状态；同时作为经验丰富的猎人，受伤后会更加专注，因此添加愤怒状态提升攻击"
+  "remove_effects": ["效果名1", "效果名2"],
+  "add_effects": [
+    {{"name": "新效果名", "description": "简述来源与影响"}}
+  ]
 }}
 ```
 
-**注意**：
-- status_effects 为空数组表示无状态效果
-- reasoning 字段用于说明你的评估逻辑
-- 只输出JSON，不要有其他内容"""
-
-
-#######################################################################################################################################
-def _generate_status_effects_change_notification(
-    old_effects: List[StatusEffect], new_effects: List[StatusEffect]
-) -> str:
-    """生成状态效果变化通知"""
-
-    # 提取效果名称集合
-    old_names = {effect.name for effect in old_effects}
-    new_names = {effect.name for effect in new_effects}
-
-    # 计算变化
-    added_names = new_names - old_names
-    removed_names = old_names - new_names
-    kept_names = old_names & new_names
-
-    # 如果没有任何变化
-    if not added_names and not removed_names:
-        if len(new_effects) == 0:
-            return "# 状态效果评估完毕\n\n当前无状态效果"
-        return f"# 状态效果评估完毕\n\n状态效果未发生变化，当前效果数量: {len(new_effects)}"
-
-    # 构建变化消息
-    message_parts = ["# 状态效果已更新\n"]
-
-    if added_names:
-        message_parts.append(f"**新增效果** ({len(added_names)}个):")
-        for effect in new_effects:
-            if effect.name in added_names:
-                message_parts.append(f"+ {effect.name}: {effect.description}")
-
-    if removed_names:
-        message_parts.append(f"\n**移除效果** ({len(removed_names)}个):")
-        for effect in old_effects:
-            if effect.name in removed_names:
-                message_parts.append(f"- {effect.name}")
-
-    if kept_names:
-        message_parts.append(f"\n**保持效果** ({len(kept_names)}个)")
-
-    return "\n".join(message_parts)
+空数组表示无操作，只输出JSON"""
 
 
 #######################################################################################################################################
@@ -210,7 +107,6 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
             entity.has(PlayCardsAction)
             and entity.has(CombatStatsComponent)
             and not entity.has(DeathComponent)
-            # and self._game.current_combat_sequence.is_ongoing
         )
 
     #######################################################################################################################################
@@ -244,10 +140,6 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
 
             # 生成评估提示词
             prompt = _generate_status_effects_evaluation_prompt(
-                actor_name=entity.name,
-                current_hp=combat_stats.stats.hp,
-                max_hp=combat_stats.stats.max_hp,
-                hp_change=0,  # 如果需要可以从上下文中计算
                 current_status_effects=combat_stats.status_effects,
                 current_round_number=current_round_number,
             )
@@ -268,7 +160,7 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
             )
 
         # 并发调用所有 LLM
-        logger.info(f"开始并发评估 {len(chat_clients)} 个角色的状态效果...")
+        logger.debug(f"开始并发评估 {len(chat_clients)} 个角色的状态效果...")
         await ChatClient.gather_request_post(clients=chat_clients)
 
         # 处理每个角色的响应
@@ -294,7 +186,7 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
         try:
             # 获取 LLM 响应
             ai_response = chat_client.response_content
-            logger.debug(f"[{entity.name}] 状态效果评估原始响应: {ai_response}")
+            # logger.debug(f"[{entity.name}] 状态效果评估原始响应: {ai_response}")
 
             # 提取 JSON
             json_content = extract_json_from_code_block(ai_response)
@@ -304,38 +196,48 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
                 json_content
             )
 
-            logger.info(
-                f"[{entity.name}] 状态效果评估成功: {len(format_response.status_effects)} 个效果"
-            )
-            if format_response.reasoning:
-                logger.debug(f"[{entity.name}] 推理: {format_response.reasoning}")
-
-            # 保存旧的状态效果
-            old_effects = combat_stats.status_effects.copy()
-
-            # 更新状态效果
-            combat_stats.status_effects = format_response.status_effects
-
-            # 生成并添加状态变化通知
-            change_notification = _generate_status_effects_change_notification(
-                old_effects, format_response.status_effects
+            logger.debug(
+                f"[{entity.name}] 状态效果评估成功: "
+                f"移除{len(format_response.remove_effects)}个, "
+                f"添加{len(format_response.add_effects)}个"
             )
 
-            self._game.add_human_message(
-                entity=entity,
-                message_content=change_notification,
-            )
+            # 第一步：移除指定的效果（按名称匹配）
+            remaining_effects = [
+                effect
+                for effect in combat_stats.status_effects
+                if effect.name not in format_response.remove_effects
+            ]
 
-            # 记录详细的状态变化
-            old_names = {effect.name for effect in old_effects}
-            new_names = {effect.name for effect in format_response.status_effects}
-            added = new_names - old_names
-            removed = old_names - new_names
+            # 第二步：添加新效果
+            new_effects = remaining_effects + format_response.add_effects
 
-            if added or removed:
-                logger.info(
+            # 第三步：更新到组件
+            combat_stats.status_effects = new_effects
+
+            # 第四步：通报移除的效果
+            if format_response.remove_effects:
+                removed_msg = "# 通知！移除状态效果\n\n" + "\n".join(
+                    [f"- {name}" for name in format_response.remove_effects]
+                )
+                self._game.add_human_message(entity=entity, message_content=removed_msg)
+
+            # 第五步：通报添加的效果
+            if format_response.add_effects:
+                added_msg = "# 通知！新增状态效果\n\n" + "\n".join(
+                    [
+                        f"+ {effect.name}: {effect.description}"
+                        for effect in format_response.add_effects
+                    ]
+                )
+                self._game.add_human_message(entity=entity, message_content=added_msg)
+
+            # 记录日志
+            if format_response.remove_effects or format_response.add_effects:
+                logger.debug(
                     f"[{entity.name}] 状态效果变化: "
-                    f"新增={list(added)}, 移除={list(removed)}"
+                    f"移除={format_response.remove_effects}, "
+                    f"添加={[e.name for e in format_response.add_effects]}"
                 )
 
         except Exception as e:

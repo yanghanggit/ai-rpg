@@ -20,11 +20,9 @@ class EventHead(IntEnum):
         MIND_EVENT: 心灵语音事件，内心独白
         QUERY_EVENT: 查询事件
         TRANS_STAGE_EVENT: 场景转换事件
+        COMBAT_INITIATION_EVENT: 战斗发起事件
         COMBAT_ARBITRATION_EVENT: 战斗裁决事件
         COMBAT_ARCHIVE_EVENT: 战斗归档事件
-        DISCUSSION_EVENT: 讨论事件
-        NIGHT_ACTION_EVENT: 夜间行动事件
-        VOTE_EVENT: 投票事件
     """
 
     NONE = 0
@@ -34,8 +32,9 @@ class EventHead(IntEnum):
     MIND_EVENT = 4
     QUERY_EVENT = 5
     TRANS_STAGE_EVENT = 6
-    COMBAT_ARBITRATION_EVENT = 7
-    COMBAT_ARCHIVE_EVENT = 8
+    COMBAT_INITIATION_EVENT = 7
+    COMBAT_ARBITRATION_EVENT = 8
+    COMBAT_ARCHIVE_EVENT = 9
 
 
 ####################################################################################################################################
@@ -160,6 +159,23 @@ class TransStageEvent(AgentEvent):
     actor: str
     from_stage: str
     to_stage: str
+
+
+####################################################################################################################################
+@final
+class CombatInitiationEvent(AgentEvent):
+    """战斗发起事件。
+
+    表示角色在特定场景中发起战斗的事件。
+    该事件记录了战斗的基本信息，用于触发战斗系统的后续处理。
+
+    Attributes:
+        head: 事件类型，固定为COMBAT_INITIATION_EVENT
+        actor: 发起战斗的角色名称
+    """
+
+    head: int = EventHead.COMBAT_INITIATION_EVENT
+    actor: str
 
 
 ####################################################################################################################################

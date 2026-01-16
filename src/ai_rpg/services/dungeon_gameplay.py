@@ -230,9 +230,9 @@ async def dungeon_progress(
                     detail="战斗未处于等待阶段",
                 )
 
-            assert (
-                False
-            ), "这里应该报错，因为没有 is_won 和 is_lost 方法了"  # --- IGNORE ---
+            # assert (
+            #     False
+            # ), "这里应该报错，因为没有 is_won 和 is_lost 方法了"  # --- IGNORE ---
 
             # 判断战斗结果并处理
             if rpg_game.current_combat_sequence.is_won:

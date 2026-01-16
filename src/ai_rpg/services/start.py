@@ -20,6 +20,7 @@ from ..models import StartRequest, StartResponse, World
 from .game_server_dependencies import CurrentGameServer
 from ..demo.dungeon_mountain_beasts import (
     create_tiger_lair_dungeon,
+    create_mountain_beasts_dungeon,
 )
 
 ###################################################################################################################################################################
@@ -100,7 +101,7 @@ async def start(
             runtime_index=1000,
             entities_serialization=[],
             agents_context={},
-            dungeon=create_tiger_lair_dungeon(),
+            dungeon=create_mountain_beasts_dungeon(),
             blueprint=world_blueprint,
         )
 

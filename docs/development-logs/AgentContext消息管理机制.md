@@ -68,15 +68,22 @@ self._create_actor_entities(actors)
 # 战斗开始标记
 self._game.add_human_message(
     actor_entity,
-    "# 通知！战斗触发！...",
-    combat_initialization="场景.训练场"  # 👈 自定义属性
+    combat_init_prompt,
+    combat_initialization=stage_name  # 👈 战斗初始化标记（场景名称）
+)
+
+# 战斗结束标记
+self._game.add_human_message(
+    entity,
+    combat_result_notification,
+    combat_outcome=combat_stage_entity.name  # 战斗结果标记（场景名称）
 )
 
 # 游戏启动标记
 self._game.add_human_message(
     actor_entity,
-    "# 游戏启动！...",
-    kickoff="角色.战士.卡恩"
+    kickoff_message_content,
+    kickoff=entity.name  # 角色初始化标记（角色名称）
 )
 
 # 压缩提示词标记
@@ -89,9 +96,9 @@ self._game.add_human_message(
 
 **kwargs 用途**：
 
-- 🏷️ 标记特殊消息（战斗开始/结束、场景转换等）
-- 🔍 便于后续检索（`filter_human_messages_by_attribute`）
-- 🗑️ 支持精确删除（消息压缩时使用）
+- 🏷️ **标记特殊消息**：战斗初始化（`combat_initialization`）、战斗结果（`combat_outcome`）、角色启动（`kickoff`）等
+- 🔍 **便于后续检索**：通过 `filter_human_messages_by_attribute` 精确查找特定标记的消息
+- 🗑️ **支持精确删除**：消息压缩时通过标记定位消息范围（如删除战斗开始到结束之间的所有消息）
 
 ---
 
@@ -103,7 +110,7 @@ self._game.add_human_message(
 
 ```python
 AIMessage(
-    content="（将磨刀石放在脚边，缓缓站起）我是角色.战士.卡恩...",
+    content="（角色的第一人称描述和心理活动）...",
     response_metadata={
         "token_usage": {...},
         "model_provider": "deepseek",
@@ -129,11 +136,18 @@ self._game.add_ai_message(entity, chat_client.response_ai_messages)
 ### 检索带标记的消息
 
 ```python
-# 查找所有战斗开始消息
+# 查找战斗开始消息
 begin_messages = self._game.filter_human_messages_by_attribute(
     actor_entity=entity,
     attribute_key="combat_initialization",
-    attribute_value="场景.训练场"
+    attribute_value=stage_entity.name  # 场景实体名称
+)
+
+# 查找战斗结束消息
+end_messages = self._game.filter_human_messages_by_attribute(
+    actor_entity=entity,
+    attribute_key="combat_outcome",
+    attribute_value=stage_entity.name  # 场景实体名称
 )
 ```
 
@@ -190,8 +204,9 @@ self._game.broadcast_to_stage(
 
 ```text
 combat_initialization_system.py
-  └─> add_human_message(actor_entity, combat_kickoff_prompt, combat_initialization=stage_name)
-  └─> add_ai_message(actor_entity, [AIMessage("我准备好了，等待战斗开始！")])
+  └─> add_human_message(actor_entity, combat_init_prompt, combat_initialization=stage_name)
+  └─> ChatClient.gather_request_post()  # 生成角色心理描写
+  └─> add_ai_message(actor_entity, chat_client.response_ai_messages)
 ```
 
 ### 示例 2：卡牌生成
@@ -203,13 +218,15 @@ draw_cards_action_system.py
   └─> add_ai_message(entity, chat_client.response_ai_messages)
 ```
 
-### 示例 3：战斗后处理
+### 示例 3：战斗归档（压缩历史）
 
 ```text
-combat_post_processing_system.py
+combat_archive_system.py
   └─> filter_human_messages_by_attribute(entity, "combat_initialization", stage_name)
   └─> filter_human_messages_by_attribute(entity, "combat_outcome", stage_name)
-  └─> remove_message_range(entity, begin_msg, end_msg)  # 压缩历史
+  └─> remove_message_range(entity, begin_msg, end_msg)  # 删除详细消息
+  └─> ChatClient.gather_request_post()  # 生成战斗总结
+  └─> notify_entities(entity, CombatArchiveEvent(...))  # 触发记忆归档
 ```
 
 ---
@@ -240,11 +257,11 @@ combat_post_processing_system.py
 
 ```json
 {
-  "name": "角色.战士.卡恩",
+  "name": "角色实体名称",
   "context": [
-    {"type": "system", "content": "..."},
-    {"type": "human", "content": "...", "kickoff": "角色.战士.卡恩"},
-    {"type": "ai", "content": "...", "response_metadata": {...}}
+    {"type": "system", "content": "你是一位...（角色设定）"},
+    {"type": "human", "content": "# 游戏启动！...", "kickoff": "角色实体名称"},
+    {"type": "ai", "content": "（第一人称描述）...", "response_metadata": {...}}
   ]
 }
 ```
@@ -252,9 +269,9 @@ combat_post_processing_system.py
 ### Buffer 格式（人类可读）
 
 ```text
-System: # 角色.战士.卡恩 ...
+System: # 角色实体名称的设定...
 H: # 游戏启动！...
-AI(角色.战士.卡恩): 我是角色.战士.卡恩。...
+AI(角色实体名称): （第一人称描述）...
 H: # 通知！外观更新...
 ```
 

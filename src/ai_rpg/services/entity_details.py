@@ -1,25 +1,6 @@
 """实体详情查询服务模块
 
-本模块提供实体详情查询的 API 接口，主要功能包括：
-- 批量查询指定实体的详细信息
-- 支持多种游戏类型（SDG 和 TCG 游戏）的实体查询
-- 返回实体的序列化数据，包含实体的所有属性和状态
-- 验证用户房间和游戏实例的存在性
-
-实体查询流程：
-1. 验证请求参数（至少提供一个实体名称）
-2. 验证用户房间是否存在
-3. 根据游戏类型（SDG 或 TCG）获取对应的游戏实例
-4. 在游戏世界中查找指定的实体
-5. 序列化实体数据并返回
-
-注意事项：
-- 必须先创建房间并启动游戏才能查询实体信息
-- 支持 SDG 游戏和 TCG 游戏两种类型
-- 游戏名称必须与当前运行的游戏匹配
-- 可以一次查询多个实体（包括 World、Stage、Actor 等任何类型），提高查询效率
-- 如果某个实体不存在，会跳过该实体继续查询其他实体
-- 所有异常由 FastAPI 框架统一处理，确保客户端收到正确的 HTTP 状态码
+提供实体详情查询的 API 接口，支持批量查询指定实体的序列化数据。
 """
 
 from typing import List, Set
@@ -50,35 +31,20 @@ async def get_entities_details(
 ) -> EntitiesDetailsResponse:
     """批量查询实体详情接口
 
-    根据提供的实体名称列表，批量查询实体的详细信息。
-    支持 SDG 和 TCG 两种游戏类型，返回实体的完整序列化数据。
-    可以查询任何类型的实体（World、Stage、Actor 等）。
+    根据实体名称列表批量查询实体的序列化数据。
 
     Args:
-        game_server: 游戏服务器实例，管理所有用户房间和游戏会话
-        user_name: 用户名，用于定位用户房间
-        game_name: 游戏名称，用于匹配当前运行的游戏
-        entity_names: 要查询的实体名称列表，通过查询参数 entities 传递
+        game_server: 游戏服务器实例
+        user_name: 用户名
+        game_name: 游戏名称
+        entity_names: 要查询的实体名称列表
 
     Returns:
-        EntitiesDetailsResponse: 实体详情响应，包含所有查询到的实体序列化数据列表
+        EntitiesDetailsResponse: 包含实体序列化数据的响应
 
     Raises:
-        HTTPException(400): 以下情况会返回 400 错误：
-            - 未提供实体名称或实体名称列表为空
-            - 游戏名称与当前运行的游戏不匹配
-        HTTPException(404): 用户房间不存在，需要先调用 login 接口
-        AssertionError: 当关键对象状态异常时抛出
-
-    Note:
-        - 必须先调用 /api/login/v1/ 创建房间
-        - 必须先调用 /api/start/v1/ 或狼人杀启动接口启动游戏
-        - 支持 SDG 游戏（_sdg_game）和 TCG 游戏（_tcg_game）
-        - 可以一次查询多个实体（World、Stage、Actor 等），提高查询效率
-        - 如果某个实体在游戏世界中不存在，会跳过该实体继续查询其他实体
-        - 游戏名称必须与房间中当前运行的游戏名称完全匹配
-        - 返回的实体序列化数据包含实体的所有组件和属性信息
-        - 使用 Query 参数 entities 传递实体名称列表，例如：?entities=world&entities=stage&entities=hero
+        HTTPException(400): 实体名称列表为空或游戏名称不匹配
+        HTTPException(404): 用户房间不存在
     """
 
     logger.info(

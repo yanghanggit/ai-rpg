@@ -1,39 +1,8 @@
 """
 地下城游戏玩法服务模块
 
-本模块提供地下城系统的核心API接口，负责处理玩家在地下城探险中的各种战斗操作。
-地下城是游戏的核心PVE内容，玩家需要在此进行回合制卡牌战斗，击败敌人并推进关卡。
-
-主要功能:
-    - 战斗流程管理: 处理战斗开始、进行、结束的完整流程
-    - 卡牌操作: 处理抽卡和出牌等核心战斗行为
-    - 关卡推进: 处理地下城关卡的前进和通关
-    - 返回家园: 处理从地下城返回家园的传送
-
-API端点:
-    - POST /api/dungeon/gameplay/v1/: 地下城游戏玩法主接口
-    - POST /api/dungeon/trans_home/v1/: 地下城传送回家接口
-
-核心概念:
-    - Combat Sequence: 战斗序列，管理整个战斗的状态和流程
-    - Combat Pipeline: 战斗处理流程，负责执行战斗中的各种动作
-    - Stage: 地下城关卡，玩家需要逐个挑战
-    - Round System: 回合系统，管理战斗中的行动顺序
-
-战斗状态:
-    - STARTING: 战斗准备开始阶段
-    - ONGOING: 战斗进行中
-    - WAITING: 战斗结束，等待下一步操作
-
-依赖关系:
-    - GameServer: 游戏服务器实例，管理所有玩家房间
-    - TCGGame: 具体的游戏实例，包含玩家状态和战斗逻辑
-    - dungeon_actions: 地下城动作激活模块（抽牌、出牌等）
-    - dungeon_stage_transition: 地下城关卡转换相关逻辑
-
-使用说明:
-    所有接口都需要玩家处于已登录状态，且当前位置必须在地下城。
-    接口会自动验证玩家状态和战斗状态，验证失败会抛出相应的HTTP异常。
+提供地下城战斗的核心API接口，处理战斗流程、卡牌操作、关卡推进和返回家园等功能。
+所有接口要求玩家已登录且位于地下城状态。
 """
 
 import asyncio
@@ -78,16 +47,12 @@ def _validate_dungeon_prerequisites(
     game_server: GameServer,
 ) -> TCGGame:
     """
-    验证地下城操作的所有前置条件
+    验证地下城操作的前置条件
 
-    执行一系列验证以确保玩家可以进行地下城操作：
-    1. 验证玩家已登录（房间存在）
-    2. 验证游戏实例存在
-    3. 验证玩家当前在地下城状态
-    4. 验证存在可进行的战斗
+    验证玩家已登录、游戏实例存在、玩家在地下城状态且有可进行的战斗。
 
     Args:
-        user_name: 用户名，用于标识玩家
+        user_name: 用户名
         game_server: 游戏服务器实例
 
     Returns:
@@ -96,7 +61,6 @@ def _validate_dungeon_prerequisites(
     Raises:
         HTTPException(404): 玩家未登录、游戏不存在或没有战斗
         HTTPException(400): 玩家不在地下城状态
-        AssertionError: 服务器内部状态异常
     """
 
     # 1. 验证房间存在（玩家已登录）
@@ -156,35 +120,21 @@ async def dungeon_progress(
     game_server: CurrentGameServer,
 ) -> DungeonProgressResponse:
     """
-    地下城流程推进接口，处理地下城关卡推进和战斗状态转换
+    地下城流程推进接口
 
-    该接口负责地下城的大流程调度，不涉及具体战斗细节（抽卡/出牌已独立为专门端点）。
-    主要处理战斗初始化和关卡推进两个核心流程操作。
+    处理战斗初始化、战斗归档和关卡推进等流程操作。
 
     Args:
         payload: 地下城流程推进请求对象
-            - user_name: 用户名，用于标识玩家
-            - game_name: 游戏名称
-            - action: 流程操作类型（DungeonProgressType 枚举）
-        game_server: 游戏服务器实例，由依赖注入提供
+        game_server: 游戏服务器实例
 
     Returns:
-        DungeonProgressResponse: 地下城流程推进响应对象
-            - session_messages: 返回给客户端的会话消息列表
+        DungeonProgressResponse: 包含会话消息列表的响应对象
 
     Raises:
-        HTTPException(404): 玩家未登录、游戏实例不存在或没有战斗
-        HTTPException(400): 玩家不在地下城状态或战斗状态不匹配
-        HTTPException(409): 战斗已结束（胜利或失败）
-
-    支持的操作类型:
-        - INIT_COMBAT: 初始化战斗，将战斗从 STARTING 状态转换到 ONGOING 状态
-        - ADVANCE_STAGE: 推进下一关，战斗胜利后进入下一个地下城关卡
-
-    注意事项:
-        - 具体战斗操作（抽卡/出牌）请使用专门的端点：
-          * /api/dungeon/combat/draw_cards/v1/
-          * /api/dungeon/combat/play_cards/v1/
+        HTTPException(404): 玩家未登录或游戏不存在
+        HTTPException(400): 战斗状态不匹配
+        HTTPException(409): 战斗已结束或地下城已通关
     """
 
     logger.info(
@@ -319,34 +269,20 @@ async def dungeon_trans_home(
     game_server: CurrentGameServer,
 ) -> DungeonTransHomeResponse:
     """
-    地下城传送回家接口，处理玩家从地下城返回家园的传送请求
+    地下城传送回家接口
 
-    该接口负责将玩家从地下城状态传送回家园。在传送前会验证玩家状态和战斗是否已结束，
-    然后完成地下城并执行返回家园的流程。这是玩家结束地下城探险的出口。
+    处理玩家从地下城返回家园的传送请求。
 
     Args:
         payload: 地下城传送回家请求对象
-            - user_name: 用户名，用于标识玩家
-        game_server: 游戏服务器实例，由依赖注入提供
+        game_server: 游戏服务器实例
 
     Returns:
-        DungeonTransHomeResponse: 地下城传送回家响应对象
-            - message: 包含传送结果的响应消息
+        DungeonTransHomeResponse: 包含传送结果的响应对象
 
     Raises:
-        HTTPException(404): 玩家未登录、游戏实例不存在或没有战斗
-        HTTPException(400): 玩家不在地下城状态或战斗未结束
-
-    处理流程:
-        1. 验证玩家是否在地下城状态
-        2. 检查战斗是否已结束（处于等待阶段）
-        3. 完成地下城并返回家园
-        4. 返回传送成功响应
-
-    注意事项:
-        - 玩家必须处于地下城状态才能返回家园
-        - 必须在战斗结束后才能返回
-        - 返回后玩家状态将切换到家园状态
+        HTTPException(404): 玩家未登录或游戏不存在
+        HTTPException(400): 战斗未结束
     """
 
     logger.info(f"/api/dungeon/trans_home/v1/: user={payload.user_name}")
@@ -386,40 +322,20 @@ async def dungeon_combat_draw_cards(
     game_server: CurrentGameServer,
 ) -> DungeonCombatDrawCardsResponse:
     """
-    地下城战斗抽卡接口（后台任务版），触发玩家在战斗中抽取卡牌的后台任务
+    地下城战斗抽卡接口
 
-    该接口负责创建并触发玩家在地下城战斗中的抽卡后台任务。抽卡操作会使用 asyncio.create_task
-    在事件循环中异步执行，客户端会立即得到响应而不必等待耗时的战斗流程处理完成。
+    触发玩家在战斗中抽取卡牌的后台任务，立即返回任务ID。
 
     Args:
         payload: 地下城战斗抽卡请求对象
-            - user_name: 用户名，用于标识玩家
-            - game_name: 游戏名称
-        game_server: 游戏服务器实例，由依赖注入提供
+        game_server: 游戏服务器实例
 
     Returns:
-        DungeonCombatDrawCardsResponse: 地下城战斗抽卡响应对象
-            - task_id: 任务唯一标识符，可用于后续查询任务状态
-            - status: 任务初始状态（"running"）
-            - message: 提示信息
+        DungeonCombatDrawCardsResponse: 包含任务ID和状态的响应对象
 
     Raises:
-        HTTPException(404): 玩家未登录、游戏实例不存在或没有战斗
-        HTTPException(400): 玩家不在地下城状态或战斗未在进行中
-
-    处理流程:
-        1. 验证玩家是否在地下城状态
-        2. 检查战斗是否在进行中
-        3. 生成任务ID并初始化任务信息
-        4. 使用 asyncio.create_task 创建真正的后台协程
-        5. 立即返回任务信息（不等待任务完成）
-
-    注意事项:
-        - 战斗必须处于 ONGOING 状态才能触发任务
-        - 使用 asyncio.create_task 确保任务真正在后台执行，不阻塞响应
-        - 客户端会立即收到响应，任务在事件循环中异步执行
-        - 客户端需要通过其他方式（如轮询会话消息）获取任务结果
-        - 任务信息存储在内存中，服务重启后会丢失
+        HTTPException(404): 玩家未登录或游戏不存在
+        HTTPException(400): 战斗未在进行中
     """
 
     logger.info(f"/api/dungeon/combat/draw_cards/v1/: user={payload.user_name}")
@@ -474,40 +390,20 @@ async def dungeon_combat_play_cards(
     game_server: CurrentGameServer,
 ) -> DungeonCombatPlayCardsResponse:
     """
-    地下城战斗出牌接口（真正的后台任务版），触发玩家在战斗中打出卡牌的后台任务
+    地下城战斗出牌接口
 
-    该接口负责创建并触发玩家在地下城战斗中的出牌后台任务。出牌操作会使用 asyncio.create_task
-    在事件循环中异步执行，客户端会立即得到响应而不必等待耗时的战斗流程处理完成。
+    触发玩家在战斗中打出卡牌的后台任务，立即返回任务ID。
 
     Args:
         payload: 地下城战斗出牌请求对象
-            - user_name: 用户名，用于标识玩家
-            - game_name: 游戏名称
-        game_server: 游戏服务器实例，由依赖注入提供
+        game_server: 游戏服务器实例
 
     Returns:
-        DungeonCombatPlayCardsResponse: 地下城战斗出牌响应对象
-            - task_id: 任务唯一标识符，可用于后续查询任务状态
-            - status: 任务初始状态（"running"）
-            - message: 提示信息
+        DungeonCombatPlayCardsResponse: 包含任务ID和状态的响应对象
 
     Raises:
-        HTTPException(404): 玩家未登录、游戏实例不存在或没有战斗
-        HTTPException(400): 玩家不在地下城状态或战斗未在进行中
-
-    处理流程:
-        1. 验证玩家是否在地下城状态
-        2. 检查战斗是否在进行中
-        3. 生成任务ID并初始化任务信息
-        4. 使用 asyncio.create_task 创建真正的后台协程
-        5. 立即返回任务信息（不等待任务完成）
-
-    注意事项:
-        - 战斗必须处于 ONGOING 状态才能触发任务
-        - 使用 asyncio.create_task 确保任务真正在后台执行，不阻塞响应
-        - 客户端会立即收到响应，任务在事件循环中异步执行
-        - 客户端需要通过其他方式（如轮询会话消息）获取任务结果
-        - 任务信息存储在内存中，服务重启后会丢失
+        HTTPException(404): 玩家未登录或游戏不存在
+        HTTPException(400): 战斗未在进行中
     """
 
     logger.info(f"/api/dungeon/combat/play_cards/v1/: user={payload.user_name}")
@@ -560,18 +456,12 @@ async def _execute_draw_cards_task(
 ) -> None:
     """后台执行抽卡任务
 
-    在后台异步执行抽卡操作，包括激活抽牌动作和推进战斗流程。
-    任务完成后会更新任务存储中的状态和消息。
+    在后台异步执行抽卡操作并更新任务状态。
 
     Args:
         task_id: 任务唯一标识符
-        user_name: 用户名，用于获取游戏实例
+        user_name: 用户名
         game_server: 游戏服务器实例
-
-    Note:
-        - 任务执行期间会记录日志
-        - 任务完成后状态会更新为 "completed"，并保存会话消息
-        - 异常情况下状态会更新为 "failed"，并记录错误信息
     """
     try:
         logger.info(f"🚀 抽卡任务开始: task_id={task_id}, user={user_name}")
@@ -630,18 +520,12 @@ async def _execute_play_cards_task(
 ) -> None:
     """后台执行出牌任务
 
-    在后台异步执行出牌操作，包括激活打牌动作和推进战斗流程。
-    任务完成后会更新任务存储中的状态和消息。
+    在后台异步执行出牌操作并更新任务状态。
 
     Args:
         task_id: 任务唯一标识符
-        user_name: 用户名，用于获取游戏实例
+        user_name: 用户名
         game_server: 游戏服务器实例
-
-    Note:
-        - 任务执行期间会记录日志
-        - 任务完成后状态会更新为 "completed"，并保存会话消息
-        - 异常情况下状态会更新为 "failed"，并记录错误信息
     """
     try:
         logger.info(f"🚀 出牌任务开始: task_id={task_id}, user={user_name}")

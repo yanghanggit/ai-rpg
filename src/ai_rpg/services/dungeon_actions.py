@@ -1,21 +1,8 @@
 """
 地下城战斗动作模块
 
-本模块提供地下城战斗中的各种动作激活函数，用于在战斗回合中为角色添加和管理动作。
-这些动作包括抽牌、出牌等核心战斗行为，是战斗系统的关键组成部分。
-
-主要功能:
-    - 抽牌动作激活: 为场上所有存活角色添加抽牌动作
-    - 打牌动作激活: 为角色随机选择并激活打牌动作
-
-核心概念:
-    - Action Component: 动作组件，通过ECS系统附加到实体上
-    - Combat Pipeline: 战斗处理流程，负责执行这些动作
-    - Round System: 回合系统，管理战斗的顺序和状态
-
-使用场景:
-    这些函数通常在地下城战斗的特定阶段被调用，用于驱动战斗流程。
-    它们会修改实体的组件状态，然后由 combat_pipeline 处理实际的执行逻辑。
+提供战斗回合中的动作激活函数，包括抽牌和打牌等核心战斗行为。
+这些函数通过添加动作组件来驱动战斗流程，由 combat_pipeline 负责执行。
 """
 
 import random
@@ -34,8 +21,6 @@ from ..entitas import Entity
 def activate_actor_card_draws(tcg_game: TCGGame) -> None:
     """
     为场上所有存活角色激活抽牌动作
-
-    为玩家所在场景的所有存活角色添加抽牌动作组件，由 combat_pipeline 后续处理执行。
 
     Args:
         tcg_game: TCG游戏实例
@@ -60,8 +45,7 @@ def activate_random_play_cards(tcg_game: TCGGame) -> Tuple[bool, str]:
     """
     为所有存活角色随机选择并激活打牌动作
 
-    为当前回合中的每个存活角色随机选择一张手牌，并设置为待执行的打牌动作。
-    用于测试或AI自动推进战斗。
+    为每个存活角色随机选择一张手牌并添加打牌动作组件。
 
     Args:
         tcg_game: TCG游戏实例

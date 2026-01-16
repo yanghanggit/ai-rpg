@@ -1,16 +1,7 @@
 """家园动作辅助函数模块
 
-本模块提供家园场景中玩家动作的激活和设置功能，主要包括：
-- 说话动作：向指定目标角色发起对话
-- 场景转换动作：在家园场景间进行切换
-
-这些函数负责验证前置条件并在玩家实体上设置相应的动作组件，
-实际的动作执行由游戏管道（pipeline）处理。
-
-注意事项：
-- 所有函数都返回 bool 值表示是否成功激活动作
-- 激活失败时会记录错误日志
-- 动作组件会被设置到玩家实体上，等待后续处理
+提供家园场景中玩家动作的激活和设置功能，包括说话动作、场景转换和行动计划。
+这些函数负责验证前置条件并设置相应的动作组件，实际执行由游戏管道处理。
 """
 
 from loguru import logger
@@ -24,7 +15,7 @@ def activate_speak_action(
     tcg_game: TCGGame, target: str, content: str
 ) -> Tuple[bool, str]:
     """
-    激活玩家的说话动作，向指定目标角色发起对话
+    激活玩家的说话动作
 
     Args:
         tcg_game: TCG 游戏实例
@@ -33,17 +24,6 @@ def activate_speak_action(
 
     Returns:
         tuple[bool, str]: (是否成功, 错误详情)
-            - (True, ""): 成功设置说话动作
-            - (False, detail): 失败时返回具体错误信息
-                - "目标角色名称不能为空"
-                - "目标角色 {target} 不存在"
-                - "玩家实体不存在"
-
-    Note:
-        - 目标角色必须存在于游戏世界中
-        - 玩家实体必须存在
-        - 成功后会在玩家实体上设置 SpeakAction 组件
-        - 说话内容会在后续的游戏管道处理中执行
     """
     if not target:
         error_detail = "目标角色名称不能为空"
@@ -70,7 +50,7 @@ def activate_speak_action(
 ###################################################################################################################################################################
 def activate_switch_stage(tcg_game: TCGGame, stage_name: str) -> Tuple[bool, str]:
     """
-    激活玩家的场景转换动作，在家园场景间进行切换
+    激活玩家的场景转换动作
 
     Args:
         tcg_game: TCG 游戏实例
@@ -78,20 +58,6 @@ def activate_switch_stage(tcg_game: TCGGame, stage_name: str) -> Tuple[bool, str
 
     Returns:
         tuple[bool, str]: (是否成功, 错误详情)
-            - (True, ""): 成功设置场景转换动作
-            - (False, detail): 失败时返回具体错误信息
-                - "目标场景名称不能为空"
-                - "目标场景 {stage_name} 不存在"
-                - "{stage_name} 不是家园场景"
-                - "玩家实体不存在"
-                - "目标场景 {stage_name} 与当前场景相同"
-
-    Note:
-        - 目标场景必须存在于游戏世界中
-        - 目标场景必须是家园场景（具有 HomeComponent）
-        - 玩家实体必须存在
-        - 成功后会在玩家实体上设置 TransStageAction 组件
-        - 场景转换会在后续的游戏管道处理中执行
     """
     if not stage_name:
         error_detail = "目标场景名称不能为空"
@@ -131,35 +97,17 @@ def activate_switch_stage(tcg_game: TCGGame, stage_name: str) -> Tuple[bool, str
 ###################################################################################################################################################################
 def activate_plan_action(tcg_game: TCGGame, actors: List[str]) -> Tuple[bool, str]:
     """
-    为指定角色激活行动计划，使其在下一次游戏推进时执行AI决策
+    为指定角色激活行动计划
 
-    此函数为符合条件的角色添加 PlanAction 组件标记。被标记的角色会在后续的
-    NPC home pipeline 处理中自动执行AI决策和行动。
-
-    角色筛选条件：
-        - 角色实体必须存在于游戏世界中
-        - 角色必须是盟友（具有 AllyComponent）
-        - 角色不能是玩家控制的（不能有 PlayerComponent）
-
-    不符合条件的角色会被自动跳过并记录警告日志。
+    为符合条件的角色添加 PlanAction 组件，使其在下一次游戏推进时执行AI决策。
+    角色必须是盟友且非玩家控制。
 
     Args:
         tcg_game: TCG 游戏实例
-        actors: 目标角色名称列表，可包含多个角色
+        actors: 目标角色名称列表
 
     Returns:
-        tuple[bool, str]: 包含两个元素的元组
-            - bool: 是否成功（至少为一个角色添加了 PlanAction）
-            - str: 错误详情（成功时为空字符串）
-
-        可能的错误详情：
-            - "角色名称列表不能为空": actors 参数为空列表
-            - "未能为任何角色添加 PlanAction": 所有角色都不符合条件
-
-    Note:
-        - 成功的标准是至少为一个角色添加 PlanAction
-        - 部分角色不符合条件不会导致整体失败
-        - PlanAction 组件会在 NPC home pipeline 中被自动处理和移除
+        tuple[bool, str]: (是否成功, 错误详情)
     """
     from ..models import AllyComponent, PlayerComponent, PlanAction
 

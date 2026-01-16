@@ -1,14 +1,6 @@
 """游戏启动服务模块
 
-提供游戏启动 API 接口，负责会话初始化和游戏创建。
-
-主要流程：
-1. 验证用户房间和游戏蓝图配置
-2. 创建玩家会话和游戏实例
-3. 初始化世界数据和 ECS 系统
-4. 验证玩家实体并初始化游戏
-
-注意：必须先调用 login 接口创建房间；当前仅支持新建游戏，暂不支持从存档加载。
+提供游戏启动 API 接口，负责创建玩家会话和初始化游戏实例。
 """
 
 from fastapi import APIRouter, HTTPException, status
@@ -19,7 +11,6 @@ from ..game.world_persistence import get_user_world_data, get_game_blueprint_dat
 from ..models import StartRequest, StartResponse, World
 from .game_server_dependencies import CurrentGameServer
 from ..demo.dungeon_mountain_beasts import (
-    create_tiger_lair_dungeon,
     create_mountain_beasts_dungeon,
 )
 
@@ -37,22 +28,19 @@ async def start(
 ) -> StartResponse:
     """游戏启动接口
 
-    创建并初始化游戏会话，包括玩家会话、世界数据、ECS 系统和玩家实体。
+    创建并初始化游戏会话。
 
     Args:
-        payload: 启动请求，包含 user_name（用户名）、game_name（游戏名）、actor_name（角色名）
-        game_server: 游戏服务器实例，管理用户房间和会话
+        payload: 启动请求对象
+        game_server: 游戏服务器实例
 
     Returns:
         StartResponse: 包含游戏蓝图配置的启动响应
 
     Raises:
-        HTTPException(404): 用户房间不存在，需先调用 login 接口
-        HTTPException(400): 游戏已在运行中，不能重复启动
-        HTTPException(500): 游戏蓝图不存在、存档加载失败（未实现）或玩家实体创建失败
-
-    Note:
-        当前仅支持新建游戏。如有存档数据会返回错误，存档加载功能尚未实现。
+        HTTPException(404): 用户房间不存在
+        HTTPException(400): 游戏已在运行中
+        HTTPException(500): 游戏蓝图不存在或玩家实体创建失败
     """
 
     logger.info(f"/api/start/v1/: {payload.model_dump_json()}")

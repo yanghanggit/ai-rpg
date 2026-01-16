@@ -39,9 +39,9 @@ assert _server_setting_path.exists(), f"{_server_setting_path} must exist"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """
-    FastAPI应用生命周期管理
-    处理应用启动和关闭时的初始化和清理操作
+    """FastAPI 应用生命周期管理
+
+    处理应用启动和关闭时的初始化和清理操作。
     """
     # 启动时的初始化操作
     logger.info("🚀 TCG游戏服务器启动中...")
@@ -94,24 +94,12 @@ async def root(request: Request) -> RootResponse:
     """API 根路由接口
 
     提供 API 服务的基本信息和所有可用端点的列表。
-    客户端可以通过此接口发现和访问所有可用的 API 服务。
 
     Args:
-        request: FastAPI 请求对象，用于日志记录请求来源
+        request: FastAPI 请求对象
 
     Returns:
-        RootResponse: API 根响应对象，包含以下信息：
-            - service: 服务名称
-            - description: 服务描述
-            - status: 服务健康状态
-            - timestamp: 当前时间戳
-            - version: API 版本号
-            - endpoints: 所有可用的 API 端点（相对路径格式，如 /api/login/v1/）
-
-    Note:
-        - 端点以相对路径形式返回，客户端需根据实际服务地址组合完整 URL
-        - 返回的端点列表包括 RPG 游戏、狼人杀游戏和通用服务三大类
-        - 此接口通常用于 API 文档生成和客户端服务发现
+        RootResponse: 包含服务信息、状态和可用端点列表的响应对象
     """
     base_url = str(request.base_url)
     logger.info(f"获取API路由 RootResponse: {base_url}")

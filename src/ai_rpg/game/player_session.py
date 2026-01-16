@@ -8,27 +8,14 @@ class PlayerSession(BaseModel):
     """
     玩家会话类
 
-    管理单个玩家在游戏过程中的状态和消息。
-    用于收集游戏流程(Pipeline)执行期间产生的所有事件,
-    并将这些事件持续累积形成完整的会话历史。
+    管理单个玩家在游戏过程中的状态和消息，收集并累积所有游戏事件。
 
-    核心工作流程:
-    1. 游戏初始化时创建PlayerSession实例
-    2. Pipeline执行期间,所有事件通过add_agent_event_message()记录
-    3. session_messages持续累积所有历史事件
-    4. 客户端可随时访问完整的消息历史
-
-    属性:
-        name: 玩家用户名/标识符
-        actor: 玩家当前控制的游戏角色名称
-        session_messages: 累积的所有消息/事件列表(完整历史)
-
-    使用示例:
-        >>> session = PlayerSession(name="player1", actor="角色.主持人")
-        >>> session.add_agent_event_message(event1)
-        >>> session.add_agent_event_message(event2)
-        >>> # session_messages 包含完整的事件历史
-        >>> all_history = session.session_messages
+    Attributes:
+        name: 玩家用户名
+        actor: 玩家当前控制的角色名称
+        game: 游戏名称
+        session_messages: 累积的所有消息/事件列表
+        event_sequence: 全局事件序号
     """
 
     # 玩家的唯一标识符(通常是用户名)
@@ -52,38 +39,8 @@ class PlayerSession(BaseModel):
         """
         添加一个代理事件消息到会话历史中
 
-        当游戏逻辑执行过程中产生事件时,通过此方法记录到会话历史中。
-        事件会被持久化保存在session_messages列表中,形成完整的游戏流程记录。
-
-        工作流程:
-        1. 接收AgentEvent对象(包含事件的详细信息)
-        2. 将其封装为SessionMessage(带有消息类型标识)
-        3. 追加到session_messages历史列表中
-        4. 记录调试日志便于追踪
-
-        参数:
-            agent_event: 代理事件对象,包含:
-                - name: 事件名称
-                - message: 事件消息内容
-                - agent_name: 触发事件的代理名称
-                - 其他相关数据
-
-        返回:
-            无返回值(void)
-
-        注意:
-            - 此方法会在Pipeline执行期间被频繁调用
-            - 所有事件会永久累积在session_messages中
-            - 如需限制内存占用,应在上层实现历史清理机制
-
-        使用示例:
-            >>> event = AgentEvent(
-            ...     name="角色行动",
-            ...     message="狼人选择了击杀目标",
-            ...     agent_name="狼人1"
-            ... )
-            >>> player_session.add_agent_event_message(event)
-            >>> # 事件已添加到历史记录中
+        Args:
+            agent_event: 代理事件对象
         """
         # 记录调试日志,方便追踪事件流
         # logger.debug(
@@ -104,15 +61,8 @@ class PlayerSession(BaseModel):
         """
         添加一个游戏消息到会话历史中
 
-        用于记录游戏系统级别的消息，如游戏状态变更、系统通知等。
-        与 add_agent_event_message 不同，此方法用于非代理事件的游戏消息。
-
         Args:
-            data: 游戏消息数据字典，包含游戏相关的键值对信息
-
-        Note:
-            - 消息会被标记为 MessageType.GAME 类型
-            - 所有消息会持久化到 session_messages 列表中
+            data: 游戏消息数据字典
         """
 
         # logger.debug(f"[{self.name}:{self.actor}] = add_game_message: {data}")
@@ -128,16 +78,8 @@ class PlayerSession(BaseModel):
         """
         内部方法：添加会话消息并分配序列号
 
-        为消息分配唯一的递增序列号，然后将其添加到会话历史中。
-        这是所有消息添加操作的底层实现方法。
-
         Args:
-            message: 会话消息对象，将被分配序列号并添加到历史中
-
-        Note:
-            - 这是私有方法，应通过 add_agent_event_message 或 add_game_message 调用
-            - 每次调用会自动递增 event_sequence
-            - 序列号用于消息排序和增量获取
+            message: 会话消息对象
         """
         self.event_sequence += 1
         message.sequence_id = self.event_sequence
@@ -148,20 +90,11 @@ class PlayerSession(BaseModel):
         """
         获取指定序列号之后的所有消息（增量获取）
 
-        用于客户端轮询机制，只获取上次同步之后新增的消息，避免重复传输。
-
         Args:
             last_id: 上次获取到的最后一条消息的序列号
 
         Returns:
             List[SessionMessage]: 序列号大于 last_id 的所有消息列表
-
-        使用示例:
-            >>> # 第一次获取所有消息
-            >>> messages = session.get_messages_since(0)
-            >>> last_id = messages[-1].sequence_id if messages else 0
-            >>> # 之后只获取新消息
-            >>> new_messages = session.get_messages_since(last_id)
         """
         return [e for e in self.session_messages if e.sequence_id > last_id]
 

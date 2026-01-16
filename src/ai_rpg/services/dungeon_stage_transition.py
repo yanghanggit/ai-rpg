@@ -1,13 +1,8 @@
 """
 地下城关卡转换和推进模块
 
-该模块负责管理地下城的完整生命周期，包括进入、推进和退出流程：
-- 首次进入地下城（initialize_dungeon_first_entry）
-- 进入指定关卡（enter_dungeon_stage）
-- 推进到下一关卡（advance_to_next_stage）
-- 完成冒险并返回家园（complete_dungeon_and_return_home）
-
-这些函数协调了关卡索引管理、场景传送、战斗初始化、状态清理等核心流程。
+管理地下城的完整生命周期，包括进入、推进和退出流程。
+协调关卡索引管理、场景传送、战斗初始化和状态清理等核心流程。
 """
 
 from typing import Dict, Set
@@ -37,10 +32,10 @@ def _generate_dungeon_entry_message(
     Args:
         dungeon_name: 地下城名称
         dungeon_stage_name: 地下城关卡名称
-        is_first_stage: 是否为首个关卡（索引为0）
+        is_first_stage: 是否为首个关卡
 
     Returns:
-        格式化的进入提示消息
+        str: 格式化的进入提示消息
     """
     if is_first_stage:
         return f"""# 提示！进入地下城：{dungeon_name}，开始关卡：{dungeon_stage_name}"""
@@ -52,14 +47,14 @@ def _generate_dungeon_entry_message(
 def _generate_return_home_message(
     dungeon_name: str, destination_stage_name: str
 ) -> str:
-    """生成冒险结束返回家园的提示消息
+    """生成返回家园的提示消息
 
     Args:
         dungeon_name: 地下城名称
-        destination_stage_name: 目标场景名称（玩家专属场景或普通家园场景）
+        destination_stage_name: 目标场景名称
 
     Returns:
-        格式化的返回提示消息
+        str: 格式化的返回提示消息
     """
     return f"""# 提示！地下城：{dungeon_name} 结束，返回：{destination_stage_name}"""
 
@@ -69,10 +64,10 @@ def _format_stage_actors_info(actors_appearances_mapping: Dict[str, str]) -> str
     """格式化场景内角色信息为文本
 
     Args:
-        actors_appearances_mapping: 角色名称到外观描述的映射字典
+        actors_appearances_mapping: 角色名称到外观描述的映射
 
     Returns:
-        格式化后的角色信息文本，如果没有角色则返回"无"
+        str: 格式化后的角色信息文本
     """
     actors_appearances_info = []
     for actor_name, appearance in actors_appearances_mapping.items():
@@ -91,11 +86,11 @@ def _enhance_kickoff_with_actors(
     """增强KickOff消息，添加场景内角色信息
 
     Args:
-        original_content: 原始KickOff消息内容
-        actors_appearances_mapping: 角色名称到外观描述的映射字典
+        original_content: 原KickOff消息内容
+        actors_appearances_mapping: 角色名称到外观描述的映射
 
     Returns:
-        增强后的KickOff消息内容
+        str: 增强后的KickOff消息内容
     """
     actors_info = _format_stage_actors_info(actors_appearances_mapping)
 
@@ -113,20 +108,15 @@ def _enter_dungeon_stage(
     """
     进入地下城关卡并初始化战斗环境
 
-    协调整个关卡进入流程：验证前置条件、生成叙事消息、执行场景传送、
-    设置战斗环境和启动战斗序列。
+    协调关卡进入流程：验证前置条件、生成叙事消息、执行场景传送、设置战斗环境。
 
     Args:
         tcg_game: TCG游戏实例
         dungeon: 地下城实例
-        ally_entities: 参与进入的盟友实体集合
+        ally_entities: 盟友实体集合
 
     Returns:
-        bool: 是否成功进入关卡并完成初始化
-
-    Note:
-        - 用于首次进入(index=0)和后续关卡推进(index>0)
-        - 调用者: initialize_dungeon_first_entry, advance_to_next_stage
+        bool: 是否成功进入关卡
     """
     # 验证盟友队伍非空
     if len(ally_entities) == 0:
@@ -194,17 +184,16 @@ def _enter_dungeon_stage(
 ###################################################################################################################################################################
 def initialize_dungeon_first_entry(tcg_game: TCGGame, dungeon: Dungeon) -> bool:
     """
-    初始化地下城首次进入，仅在首次进入时调用（current_stage_index < 0）
+    初始化地下城首次进入
+
+    仅在首次进入时调用，设置地下城状态并进入第一个关卡。
 
     Args:
         tcg_game: TCG游戏实例
-        dungeon: 要初始化的地下城实例
+        dungeon: 地下城实例
 
     Returns:
         bool: 是否成功初始化并进入第一个关卡
-
-    Note:
-        此函数仅处理首次进入场景，后续关卡推进使用 advance_to_next_stage
     """
     # 验证是否为首次进入（索引必须为-1）
     if dungeon.current_stage_index >= 0:
@@ -228,22 +217,11 @@ def advance_to_next_stage(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     """
     推进到地下城的下一个关卡
 
-    该函数协调地下城关卡推进流程：先将地下城索引推进到下一关，
-    然后让所有盟友实体进入该关卡并初始化战斗环境。
+    将地下城索引推进到下一关，然后让所有盟友实体进入该关卡。
 
     Args:
         tcg_game: TCG游戏实例
-        dungeon: 要推进的地下城实例
-
-    Returns:
-        bool: 是否成功推进到下一关卡
-            - True: 成功推进并进入下一关
-            - False: 推进失败（没有更多关卡）
-
-    Note:
-        - 用于战斗胜利后继续推进到下一关卡
-        - 调用者: _handle_advance_next_dungeon
-        - 调用链: advance_to_next_stage → enter_dungeon_stage
+        dungeon: 地下城实例
     """
     # 1. 推进地下城索引到下一关
     if not dungeon.advance_to_next_stage():
@@ -264,31 +242,11 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
     """
     完成地下城冒险并将角色传送回家园
 
-    该函数协调地下城结束的完整流程，实现差异化的场景传送策略、
-    彻底清理地下城数据，并重置所有盟友的战斗状态。
-
-    主要操作流程：
-    1. 验证并获取盟友实体和家园场景实体
-    2. 分离玩家专属场景（PlayerOnlyStage）和普通家园场景
-    3. 差异化传送策略：
-       - 玩家（PlayerComponent）→ 必定传送到玩家专属场景
-       - 其他盟友 → 如果存在普通家园场景，随机选择一个传送；否则不传送
-    4. 向每个被传送的角色发送返回提示消息（包含地下城名称和目标场景）
-    5. 清理地下城：销毁所有地下城实体，重置地下城数据为空
-    6. 恢复所有盟友状态：
-       - 移除死亡组件（DeathComponent）
-       - 恢复生命值至满血（max_hp）
-       - 清空所有状态效果（status_effects）
+    将角色传送回家园、清理地下城数据并重置所有盟友的战斗状态。
+    玩家传送到专属场景，盟友传送到普通家园场景。
 
     Args:
         tcg_game: TCG游戏实例
-
-    Note:
-        - 用于地下城冒险结束后的完整收尾工作
-        - 调用者: dungeon_trans_home API
-        - 会完全重置地下城状态和所有盟友的战斗状态
-        - 玩家必定被传送到专属场景，盟友传送取决于是否存在普通家园场景
-        - 即使盟友未被传送，其战斗状态仍会被恢复
     """
 
     # 1. 验证并获取盟友实体

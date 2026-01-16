@@ -1,3 +1,8 @@
+"""Replicate 图片生成服务模块
+
+提供基于 Replicate API 的图片生成接口，支持单张或批量生成。
+"""
+
 import os
 import time
 import uuid
@@ -27,7 +32,19 @@ replicate_image_api_router = APIRouter()
     "/api/generate/v1", response_model=ImageGenerationResponse
 )
 async def generate_image(payload: ImageGenerationRequest) -> ImageGenerationResponse:
-    """生成图片的API端点 - 支持单张或批量"""
+    """生成图片的 API 端点
+
+    支持单张或批量生成图片。
+
+    Args:
+        payload: 图片生成请求对象
+
+    Returns:
+        ImageGenerationResponse: 包含生成的图片列表和耗时信息
+
+    Raises:
+        HTTPException(400): 模型名称无效
+    """
     start_time = time.time()
 
     logger.info(f"🎨 开始生成图片，配置数量: {len(payload.configs)}")
@@ -140,7 +157,11 @@ async def generate_image(payload: ImageGenerationRequest) -> ImageGenerationResp
 ###################################################################################################################################################################
 @replicate_image_api_router.get("/api/images/list/v1")
 async def list_generated_images() -> List[str]:
-    """列出已生成的图片文件"""
+    """列出已生成的图片文件
+
+    Returns:
+        List[str]: 图片文件名列表
+    """
     files = os.listdir(DEFAULT_OUTPUT_DIR)
     image_files = [
         f for f in files if f.lower().endswith((".png", ".jpg", ".jpeg", ".gif"))

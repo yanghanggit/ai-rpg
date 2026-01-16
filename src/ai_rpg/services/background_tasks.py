@@ -1,18 +1,7 @@
 """后台任务服务模块
 
-本模块提供后台任务的管理接口，主要功能包括：
-- 触发后台任务执行
-- 查询任务执行状态（支持批量查询）
-- 管理任务生命周期
-
-主要端点：
-- POST /api/tasks/v1/trigger: 触发新的后台任务
-- GET /api/tasks/v1/status: 批量查询指定任务的执行状态
-
-注意事项：
-- 任务状态仅存储在内存中，服务重启后会丢失
-- 当前实现为测试用途，模拟 5 秒的耗时任务
-- 任务记录不会自动清理，需要手动管理
+提供后台任务的触发和状态查询接口，支持批量查询。
+任务状态存储在内存中，服务重启后会丢失。
 """
 
 import asyncio
@@ -43,18 +32,12 @@ async def simulate_long_task(
 ) -> None:
     """模拟耗时任务
 
-    在后台执行一个模拟的耗时任务，用于测试后台任务机制。
-    任务完成后会更新任务存储中的状态。
+    在后台执行模拟任务并更新任务状态。
 
     Args:
         task_id: 任务唯一标识符
         duration: 任务持续时间（秒）
         game_server: 游戏服务器实例
-
-    Note:
-        - 任务执行期间会记录日志
-        - 任务完成后状态会更新为 "completed"
-        - 异常情况下状态会更新为 "failed"
     """
     try:
         logger.info(f"🚀 后台任务开始: task_id={task_id}, duration={duration}s")
@@ -89,21 +72,14 @@ async def trigger_background_task(
 ) -> TaskTriggerResponse:
     """触发后台任务
 
-    创建并启动一个新的后台任务。任务会在后台异步执行，
-    不会阻塞当前请求的响应。
+    创建并启动一个新的后台任务，异步执行不阻塞响应。
 
     Args:
         background_tasks: FastAPI 后台任务管理器
-        game_server: 游戏服务器实例（依赖注入）
+        game_server: 游戏服务器实例
 
     Returns:
         TaskTriggerResponse: 包含任务ID和状态的响应对象
-
-    Note:
-        - 任务ID会自动生成（UUID格式）
-        - 任务状态初始为 "running"
-        - 可以通过返回的 task_id 查询任务执行状态
-        - 当前实现的任务会模拟执行 5 秒
     """
     # 使用 GameServer 创建任务记录
     task_record = game_server.create_task()
@@ -137,26 +113,17 @@ async def get_tasks_status(
 ) -> TasksStatusResponse:
     """批量查询任务状态
 
-    根据提供的任务ID列表，批量查询任务的执行状态和详细信息。
-    支持单个查询和批量查询。
+    根据任务ID列表批量查询任务的执行状态和详细信息。
 
     Args:
-        task_ids: 要查询的任务ID列表，通过查询参数 task_ids 传递
-        game_server: 游戏服务器实例（依赖注入）
+        task_ids: 要查询的任务ID列表
+        game_server: 游戏服务器实例
 
     Returns:
-        TasksStatusResponse: 任务状态响应，包含所有查询到的任务详情列表
+        TasksStatusResponse: 任务状态响应，包含任务详情列表
 
     Raises:
-        HTTPException(400): 未提供任务ID或任务ID列表为空
-
-    Note:
-        - 任务状态包括: "running", "completed", "failed"
-        - 对于已完成的任务，会包含 end_time 字段
-        - 对于失败的任务，会包含 error 字段
-        - 如果某个任务ID不存在，会跳过该任务继续查询其他任务
-        - 使用 Query 参数 task_ids 传递任务ID列表，例如：?task_ids=uuid1&task_ids=uuid2
-        - 单个查询例如：?task_ids=uuid1
+        HTTPException(400): 任务ID列表为空
     """
 
     logger.info(f"🔍 批量查询任务状态: task_ids={task_ids}")

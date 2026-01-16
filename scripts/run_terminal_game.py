@@ -37,7 +37,6 @@ from ai_rpg.utils import parse_command_args
 from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
     create_single_hunter_blueprint,
-    create_hunter_mystic_blueprint,
     create_tiger_lair_dungeon,
 )
 from ai_rpg.game.player_session import PlayerSession

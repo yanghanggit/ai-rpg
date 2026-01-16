@@ -1,3 +1,5 @@
+"""游戏动作组件定义模块"""
+
 from typing import Dict, List, final
 from ..entitas.components import Component
 from .dungeon import Card
@@ -83,60 +85,3 @@ class ArbitrationAction(Component):
     name: str
     calculation: str
     performance: str
-
-
-############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
-class DiscussionAction(Component):
-    name: str
-    message: str
-
-
-############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
-class SeerCheckAction(Component):
-    name: str
-    seer_name: str
-
-
-############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
-class WitchPoisonAction(Component):
-    name: str
-    witch_name: str
-
-
-############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
-class WitchCureAction(Component):
-    name: str
-    witch_name: str
-
-
-############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
-class VoteAction(Component):
-    name: str
-    target_name: str
-
-
-############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
-class HunterShootAction(Component):
-    name: str
-    hunter_name: str
-
-
-############################################################################################################

@@ -1,13 +1,7 @@
 """用户登录登出服务模块
 
-本模块提供用户登录和登出的 API 接口，主要功能包括：
-- 用户登录：创建用户房间实例，为用户分配游戏会话空间
-- 用户登出：保存游戏数据，清理用户房间实例，释放资源
-
-注意事项：
-- 登录时会强制清理已存在的旧房间（开发期行为，后续可能调整）
-- 登出时会检查房间是否存在，不存在则返回 404 错误
-- 所有异常均由 FastAPI 框架统一处理，确保客户端能收到正确的 HTTP 状态码
+提供用户登录和登出的 API 接口。
+登录时创建用户房间，登出时保存游戏数据并清理房间。
 """
 
 from fastapi import APIRouter, HTTPException, status
@@ -36,22 +30,13 @@ async def login(
     """用户登录接口
 
     处理用户登录请求，创建用户专属的游戏房间实例。
-    开发期会强制删除已存在的旧房间和游戏数据，确保每次登录都是全新状态。
 
     Args:
-        payload: 登录请求数据，包含用户名和游戏名
-        game_server: 游戏服务器实例，管理所有用户房间
+        payload: 登录请求数据
+        game_server: 游戏服务器实例
 
     Returns:
         LoginResponse: 登录响应，包含登录成功的消息
-
-    Raises:
-        AssertionError: 当房间创建失败或状态异常时抛出
-
-    Note:
-        - 开发期行为：会强制删除旧房间和游戏数据
-        - 登录成功后会创建空房间，此时尚未加载游戏实例
-        - 后续进入正式开发时，旧房间处理逻辑可能会调整或移除
     """
 
     logger.info(f"/api/login/v1/: {payload.model_dump_json()}")
@@ -105,24 +90,16 @@ async def logout(
     """用户登出接口
 
     处理用户登出请求，保存游戏数据并清理用户房间实例。
-    如果用户有正在进行的游戏，会先保存游戏数据再退出。
 
     Args:
-        payload: 登出请求数据，包含用户名
-        game_server: 游戏服务器实例，管理所有用户房间
+        payload: 登出请求数据
+        game_server: 游戏服务器实例
 
     Returns:
         LogoutResponse: 登出响应，包含登出成功的消息
 
     Raises:
-        HTTPException: 当用户房间不存在时，返回 404 NOT_FOUND
-        AssertionError: 当房间实例状态异常时抛出
-
-    Note:
-        - 会检查房间是否存在，不存在则返回 404 错误
-        - 如果有游戏实例，会先保存数据再退出游戏
-        - 最后会删除房间实例，释放服务器资源
-        - 所有异常由 FastAPI 自动处理，确保客户端收到正确的 HTTP 状态码
+        HTTPException(404): 用户房间不存在
     """
 
     logger.info(f"/api/logout/v1/: {payload.model_dump_json()}")

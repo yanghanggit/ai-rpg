@@ -28,27 +28,29 @@ class CombatResult(IntEnum):
 
 
 ###############################################################################################################################################
-# 状态效果：增益 / 减益，持续伤害 / 持续治疗等
 @final
 class StatusEffect(BaseModel):
-    name: str  # = Field(..., description="效果名称")
-    description: str  # = Field(..., description="效果描述")
-    # duration: int = Field(..., description="持续回合数")
+    """状态效果（增益/减益、持续伤害/治疗等）"""
+
+    name: str
+    description: str
 
 
 ###############################################################################################################################################
-# 代表一张卡牌
 @final
 class Card(BaseModel):
-    name: str  # = Field(..., description="卡牌名称")
-    description: str  # = Field(..., description="卡牌效果、作用方式及使用代价")
-    targets: List[str]  # = Field(default_factory=list, description="目标对象列表")
+    """卡牌模型"""
+
+    name: str
+    description: str
+    targets: List[str]
 
 
 ###############################################################################################################################################
-# 表示一个回合
 @final
 class Round(BaseModel):
+    """战斗回合"""
+
     tag: str  # 回合标签，记录回合序号等信息
     action_order: List[str]  # 行动顺序，按顺序记录角色名称
     combat_log: str = ""  # 战斗计算日志
@@ -64,9 +66,10 @@ class Round(BaseModel):
 
 
 ###############################################################################################################################################
-# 表示一个战斗
 @final
 class Combat(BaseModel):
+    """战斗实例"""
+
     name: str
     state: CombatState = CombatState.NONE
     result: CombatResult = CombatResult.NONE
@@ -78,6 +81,8 @@ class Combat(BaseModel):
 
 @final
 class CombatSequence(BaseModel):
+    """战斗序列管理器"""
+
     combats: List[Combat] = []
 
     ###############################################################################################################################################
@@ -146,14 +151,15 @@ class CombatSequence(BaseModel):
 
     ###############################################################################################################################################
     def get_combat_by_name(self, name: str) -> Optional[Combat]:
+        """根据名称查找战斗"""
         for combat in self.combats:
             if combat.name == name:
                 return combat
         return None
 
     ###############################################################################################################################################
-    # 启动一个战斗！！！ 注意状态转移
     def start_combat(self, combat: Combat) -> None:
+        """启动战斗，设置为初始化状态"""
         assert combat.state == CombatState.NONE
         assert (
             self.get_combat_by_name(combat.name) is None
@@ -167,6 +173,7 @@ class CombatSequence(BaseModel):
 
     ###############################################################################################################################################
     def complete_combat(self, result: CombatResult) -> None:
+        """完成战斗，设置结果"""
         # 设置战斗结束阶段！
         assert self.current_state == CombatState.ONGOING
         assert result == CombatResult.WIN or result == CombatResult.LOSE
@@ -179,12 +186,14 @@ class CombatSequence(BaseModel):
 
     ###############################################################################################################################################
     def transition_to_ongoing(self) -> None:
+        """将战斗状态转换为进行中"""
         assert self.current_state == CombatState.INITIALIZATION
         assert self.current_result == CombatResult.NONE
         self.current_combat.state = CombatState.ONGOING
 
     ###############################################################################################################################################
     def transition_to_post_combat(self) -> None:
+        """将战斗状态转换为战后阶段"""
         assert self.is_won or self.is_lost
         assert self.current_state == CombatState.COMPLETE
 
@@ -195,9 +204,10 @@ class CombatSequence(BaseModel):
 
 
 ###############################################################################################################################################
-# TODO, 临时的，先管理下。
 @final
 class Dungeon(BaseModel):
+    """地下城模型"""
+
     name: str
     stages: List[Stage]
     combat_sequence: CombatSequence = CombatSequence()
@@ -209,6 +219,7 @@ class Dungeon(BaseModel):
 
     ########################################################################################################################
     def get_current_stage(self) -> Optional[Stage]:
+        """获取当前关卡"""
         if len(self.stages) == 0:
             logger.warning("地下城系统为空！")
             return None
@@ -221,6 +232,7 @@ class Dungeon(BaseModel):
 
     ########################################################################################################################
     def peek_next_stage(self) -> Optional[Stage]:
+        """预览下一关卡"""
 
         if len(self.stages) == 0:
             logger.warning("地下城系统为空！")
@@ -238,6 +250,7 @@ class Dungeon(BaseModel):
 
     ########################################################################################################################
     def advance_to_next_stage(self) -> bool:
+        """前进到下一关卡"""
 
         if len(self.stages) == 0:
             logger.warning("地下城系统为空！")

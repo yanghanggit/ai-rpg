@@ -1,15 +1,6 @@
-"""
-Demo world creation module for AI RPG game.
+"""演示世界创建模块
 
-This module provides factory functions for creating complete game world instances
-with pre-configured actors, stages, and world systems. It supports multiple game
-scenarios with different character and stage configurations.
-
-主要功能:
-- 创建包含双角色(战士+法师)的演示世界
-- 创建包含单角色(战士)的演示世界
-- 初始化游戏场景、角色关系和开场消息
-- 配置战役设定和世界系统
+提供工厂函数创建预配置的游戏世界，包括双角色和单角色版本。
 """
 
 from typing import Final

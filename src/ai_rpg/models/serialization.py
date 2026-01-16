@@ -6,9 +6,7 @@ from pydantic import BaseModel
 @final
 class ComponentSerialization(BaseModel):
     name: str
-    data: Dict[
-        str, Any
-    ]  # Dictionary to hold component data, allowing for flexible structure
+    data: Dict[str, Any]
 
 
 ###############################################################################################################################################

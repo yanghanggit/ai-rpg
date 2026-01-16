@@ -102,55 +102,12 @@ class DestroyComponent(Component):
 @final
 @register_component_type
 class AppearanceComponent(Component):
-    """角色外观描述组件。
-
-    用于存储和管理角色的外观信息，为AI系统和游戏交互提供视觉描述上下文。
-    此组件是角色实体的必要组件之一，支持基于基础形态和装备的动态外观生成。
-
-    设计思路:
-        1. base_body: 角色的基础身体形态（如穿内衣时的样子），作为外观生成的基础
-        2. appearance: 最终的外观描述，由 LLM 综合 base_body 和装备信息生成
-        3. 装备信息从 InventoryComponent 中获取（未来扩展）
+    """角色外观描述组件
 
     Attributes:
-        name: 角色名称，用于标识该外观信息所属的角色
-        base_body: 基础身体形态描述（身高、体型、肤色、发色等天生特征）
-        appearance: 最终外观文本描述，包含基础形态、着装、饰品等完整视觉信息
-
-    使用场景:
-        - 场景描述生成：通过 `get_actor_appearances_on_stage()` 获取场景中所有角色的外观
-        - 战斗系统：在战斗初始化时向AI提供其他角色的外观信息，辅助决策
-        - 对话系统：增强AI对话的上下文感知，提升交互真实感
-        - 装备系统：装备变化时，基于 base_body 和新装备重新生成 appearance（未来扩展）
-
-    Example:
-        >>> # 初始化角色外观
-        >>> actor_entity.add(
-        ...     AppearanceComponent,
-        ...     "艾莉亚",
-        ...     "身材修长的年轻精灵，银色长发，翠绿双眸",  # base_body
-        ...     "一位年轻的精灵游侠，银色长发，身穿绿色斗篷"  # appearance
-        ... )
-        >>>
-        >>> # 装备变化时更新外观（未来扩展）
-        >>> appearance = actor_entity.get(AppearanceComponent)
-        >>> new_appearance = await generate_appearance(
-        ...     base_body=appearance.base_body,
-        ...     equipped_items=["钢铁护甲", "精灵长弓"]
-        ... )
-        >>> actor_entity.replace(
-        ...     AppearanceComponent,
-        ...     actor_entity.name,
-        ...     appearance.base_body,
-        ...     new_appearance
-        ... )
-
-    Note:
-        - 使用 `@final` 装饰器防止被继承修改
-        - 使用 MutableComponent 支持外观动态更新
-        - base_body 通常在角色创建后保持不变
-        - appearance 可随装备变化而重新生成
-        - 只有存活且具有此组件的角色才会在场景描述中显示外观
+        name: 角色名称
+        base_body: 基础身体形态描述
+        appearance: 最终外观描述，由LLM基于base_body和装备生成
     """
 
     name: str
@@ -316,16 +273,8 @@ class PlayerActionAuditComponent(Component):
 
     标记组件，标识世界系统实体具有玩家行动审计功能。
 
-    审计标准:
-        - 拒绝法律与道德禁止的内容（暴力教唆、违法行为、歧视性内容等）
-        - 拒绝破坏游戏世界观的内容（现实科技、元游戏语言、系统操作等）
-        - 允许符合游戏世界观的角色互动和游戏内合理行为
-
     Attributes:
         name: 世界系统名称
-
-    Note:
-        审核不通过时会移除所有动作组件，阻止消息发送。默认采用"安全优先"策略。
     """
 
     name: str

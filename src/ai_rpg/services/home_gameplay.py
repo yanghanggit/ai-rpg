@@ -1,35 +1,8 @@
 """
 家园游戏玩法服务模块
 
-本模块提供家园系统的核心API接口，负责处理玩家在家园状态下的各种游戏操作。
-家园是玩家在游戏中的安全区域，玩家可以在此与NPC互动、切换场景、准备探险等。
-
-主要功能:
-    - 家园玩法处理: 处理玩家在家园内的各种操作请求(对话、场景切换等)
-    - 游戏推进: 推进游戏流程并可选地激活指定角色的行动计划
-    - 地下城传送: 处理玩家从家园传送到地下城的流程
-    - 状态验证: 确保玩家处于合法的家园状态
-
-API端点:
-    - POST /api/home/player_action/v1/: 家园玩家动作接口（对话、场景切换等玩家主动操作）
-    - POST /api/home/advance/v1/: 家园推进接口（推进游戏并可选激活角色行动）
-    - POST /api/home/trans_dungeon/v1/: 家园传送地下城接口
-
-核心概念:
-    - Home Pipeline: 家园状态下的处理流程，分为NPC pipeline和Player pipeline
-    - Stage: 家园内的不同场景/区域
-    - Dungeon Transition: 从家园到地下城的状态转换
-    - Plan Action: 角色行动计划，用于激活盟友AI决策
-
-依赖关系:
-    - GameServer: 游戏服务器实例，管理所有玩家房间
-    - TCGGame: 具体的游戏实例，包含玩家状态和游戏逻辑
-    - home_actions: 家园动作激活模块(对话、场景切换、行动计划等)
-    - dungeon_stage_transition: 地下城传送相关逻辑
-
-使用说明:
-    所有接口都需要玩家处于已登录状态，且当前位置必须在家园。
-    接口会自动验证玩家状态，验证失败会抛出相应的HTTP异常。
+提供家园系统的核心API接口，处理玩家在家园状态下的各种游戏操作，
+包括对话、场景切换、游戏推进和地下城传送等功能。
 """
 
 from typing import Final
@@ -68,7 +41,7 @@ async def _validate_player_at_home(
     game_server: GameServer,
 ) -> TCGGame:
     """
-    验证玩家是否在家园状态，包括房间存在性、TCG游戏实例和玩家当前位置检查
+    验证玩家是否在家园状态
 
     Args:
         user_name: 用户名
@@ -78,9 +51,8 @@ async def _validate_player_at_home(
         TCGGame: 验证通过的 TCG 游戏实例
 
     Raises:
-        HTTPException(404): 房间不存在或游戏实例不存在
-        HTTPException(400): 玩家当前不在家园状态
-        AssertionError: 房间实例状态异常
+        HTTPException(404): 房间或游戏实例不存在
+        HTTPException(400): 玩家不在家园状态
     """
 
     # 检查房间是否存在
@@ -121,62 +93,20 @@ async def home_player_action(
     game_server: CurrentGameServer,
 ) -> HomePlayerActionResponse:
     """
-    家园玩家动作接口，处理玩家在家园状态下的主动操作请求
+    家园玩家动作接口
 
-    该接口统一处理玩家主动发起的动作，包括对话和场景切换。所有动作都会激活相应的
-    Action 组件，然后执行 player_home_pipeline 进行处理。
+    处理玩家在家园状态下的主动操作请求，包括对话和场景切换。
 
     Args:
         payload: 家园玩家动作请求对象
-            - user_name: 用户名，用于标识玩家
-            - game_name: 游戏名称
-            - action: 动作类型（HomePlayerActionType 枚举），指定要执行的操作
-            - arguments: 动作参数，包含该动作所需的具体参数
-        game_server: 游戏服务器实例，由依赖注入提供
+        game_server: 游戏服务器实例
 
     Returns:
-        HomePlayerActionResponse: 家园玩家动作响应对象
-            - session_messages: 返回给客户端的消息列表
+        HomePlayerActionResponse: 包含会话消息列表的响应对象
 
     Raises:
         HTTPException(404): 玩家未登录或游戏实例不存在
-        HTTPException(400): 玩家不在家园状态、动作激活失败或请求类型未知
-
-    支持的动作类型（HomePlayerActionType）:
-        - SPEAK ("/speak"): 激活对话动作，玩家与指定目标进行对话
-        - SWITCH_STAGE ("/switch_stage"): 激活场景切换动作，切换到家园内的不同场景
-
-    处理流程:
-        1. 验证玩家是否在家园状态
-        2. 根据 action 激活相应的 Action 组件
-        3. 执行 player_home_pipeline.process()
-        4. 返回自上次事件序列号以来的新增消息
-
-    示例:
-        NPC对话:
-        ```json
-        {
-            "user_name": "player1",
-            "game_name": "Game1",
-            "action": "/speak",
-            "arguments": {
-                "target": "角色.术士.云音",
-                "content": "你好"
-            }
-        }
-        ```
-
-        场景切换:
-        ```json
-        {
-            "user_name": "player1",
-            "game_name": "Game1",
-            "action": "/switch_stage",
-            "arguments": {
-                "stage_name": "场景.村中议事堂"
-            }
-        }
-        ```
+        HTTPException(400): 玩家不在家园状态或动作激活失败
     """
 
     logger.info(f"/api/home/player_action/v1/: {payload.model_dump_json()}")
@@ -241,51 +171,20 @@ async def home_advance(
     game_server: CurrentGameServer,
 ) -> HomeAdvanceResponse:
     """
-    家园推进接口，推进游戏流程并可选地激活指定角色的行动计划
+    家园推进接口
 
-    该接口统一处理家园状态下的游戏推进逻辑，支持两种模式：
-    1. 纯粹推进：不指定actors时，直接执行NPC的home pipeline推进游戏
-    2. 角色行动推进：指定actors时，先为这些角色激活行动计划，再推进游戏
+    推进游戏流程，可选地激活指定角色的行动计划。
 
     Args:
         payload: 家园推进请求对象
-            - user_name: 用户名，用于标识玩家
-            - game_name: 游戏名称
-            - actors: 可选的角色名称列表，为这些角色激活行动计划（默认为空列表）
-        game_server: 游戏服务器实例，由依赖注入提供
+        game_server: 游戏服务器实例
 
     Returns:
-        HomeAdvanceResponse: 家园推进响应对象
-            - session_messages: 返回给客户端的消息列表
+        HomeAdvanceResponse: 包含会话消息列表的响应对象
 
     Raises:
         HTTPException(404): 玩家未登录或游戏实例不存在
         HTTPException(400): 玩家不在家园状态或角色激活失败
-
-    处理流程:
-        1. 验证玩家是否在家园状态
-        2. 如果指定了actors，先调用activate_ally_plan_action激活行动计划
-        3. 执行npc_home_pipeline.process()推进游戏
-        4. 返回自上次事件序列号以来的新增消息
-
-    示例:
-        纯粹推进游戏:
-        ```json
-        {
-            "user_name": "player1",
-            "game_name": "Game1",
-            "actors": []
-        }
-        ```
-
-        为指定角色激活行动计划后推进:
-        ```json
-        {
-            "user_name": "player1",
-            "game_name": "Game1",
-            "actors": ["角色.术士.云音", "角色.猎人.石坚"]
-        }
-        ```
     """
 
     logger.info(f"/api/home/advance/v1/: {payload.model_dump_json()}")
@@ -329,42 +228,21 @@ async def home_trans_dungeon(
     game_server: CurrentGameServer,
 ) -> HomeTransDungeonResponse:
     """
-    家园传送地下城接口，处理玩家从家园进入地下城的传送请求
+    家园传送地下城接口
 
-    该接口负责将玩家从家园状态传送到地下城。在传送前会验证玩家状态和地下城可用性，
-    然后初始化地下城的首次进入流程。这是玩家开始地下城探险的入口。
+    处理玩家从家园进入地下城的传送请求。
 
     Args:
         payload: 家园传送地下城请求对象
-            - user_name: 用户名，用于标识玩家
-        game_server: 游戏服务器实例，由依赖注入提供
+        game_server: 游戏服务器实例
 
     Returns:
-        HomeTransDungeonResponse: 家园传送地下城响应对象
-            - message: 包含请求信息的响应消息
+        HomeTransDungeonResponse: 包含请求信息的响应对象
 
     Raises:
-        HTTPException(404): 玩家未登录、游戏实例不存在或没有可用的地下城
-        HTTPException(400): 玩家当前不在家园状态
-        HTTPException(500): 地下城初始化失败或服务器内部错误
-
-    处理流程:
-        1. 验证玩家是否在家园状态
-        2. 检查当前地下城是否存在可用的关卡(stages)
-        3. 初始化地下城首次进入流程
-        4. 返回传送成功响应
-
-    注意事项:
-        - 玩家必须处于家园状态才能传送到地下城
-        - 地下城必须包含至少一个可用关卡
-        - 传送失败会抛出相应的HTTP异常
-
-    示例:
-        ```json
-        {
-            "user_name": "player1"
-        }
-        ```
+        HTTPException(404): 玩家未登录或没有可用的地下城
+        HTTPException(400): 玩家不在家园状态
+        HTTPException(500): 地下城初始化失败
     """
 
     logger.info(f"/api/home/trans_dungeon/v1/: user={payload.user_name}")

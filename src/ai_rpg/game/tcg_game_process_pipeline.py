@@ -1,17 +1,4 @@
-"""
-TCG游戏流程管道工厂模块
-
-本模块提供不同游戏场景的流程管道创建工厂函数，用于构建和配置各种游戏场景下的系统处理流程。
-
-主要功能：
-- 创建NPC家园场景流程管道：包含NPC自动规划、行为决策和社交互动系统
-- 创建玩家家园场景流程管道：处理玩家的社交互动和场景切换
-- 创建地牢战斗场景流程管道：完整的卡牌战斗流程，包括抽卡、出牌、裁决和战斗结算
-
-使用方式：
-    pipeline = create_npc_home_pipeline(game_session)
-    await pipeline.process()
-"""
+"""TCG游戏流程管道工厂模块，提供不同游戏场景的流程管道创建函数"""
 
 from typing import cast
 from .game_session import GameSession
@@ -19,11 +6,7 @@ from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 
 
 def create_npc_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
-    """
-    创建NPC家园场景的流程管道
-
-    构建NPC在家园场景中的完整游戏流程，包括自动规划、行为决策、
-    动作执行（查询、说话、耳语、公告、场景切换）以及实体清理和存储。
+    """创建NPC家园场景的流程管道
 
     Args:
         game: 游戏会话实例
@@ -94,11 +77,7 @@ def create_npc_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
 
 
 def create_player_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
-    """
-    创建玩家家园场景的流程管道
-
-    构建玩家在家园场景中的游戏流程，处理玩家的社交互动行为
-    （说话、耳语、公告）、场景切换以及实体清理和存储。
+    """创建玩家家园场景的流程管道
 
     Args:
         game: 游戏会话实例
@@ -158,20 +137,7 @@ def create_player_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
 def create_dungeon_combat_pipeline(
     game: GameSession,
 ) -> "RPGGameProcessPipeline":
-    """
-    创建地牢战斗场景的流程管道
-
-    构建地牢战斗的完整流程管道，包括战斗初始化、状态效果结算、
-    唯一道具通知、抽卡出牌、裁决、战斗结果判定以及战后处理。
-
-    执行顺序：
-    1. 战斗初始化
-    2. 状态效果结算（必须在抽卡前）
-    3. 唯一道具通知
-    4. 抽卡和出牌动作
-    5. 战斗裁决
-    6. 战斗结果判定和后处理
-    7. 实体清理和存储
+    """创建地牢战斗场景的流程管道
 
     Args:
         game: 游戏会话实例

@@ -37,6 +37,7 @@ from ai_rpg.utils import parse_command_args
 from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
     create_single_hunter_blueprint,
+    create_hunter_mystic_blueprint,
     create_tiger_lair_dungeon,
 )
 from ai_rpg.game.player_session import PlayerSession
@@ -213,6 +214,9 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         else:
             logger.error(f"打牌失败: {message}")
 
+        if terminal_game.current_combat_sequence.is_completed:
+            logger.debug(f"在本次处理中战斗已结束")
+
     elif usr_input == "/cpp":
 
         # 必须在战斗结束后使用
@@ -229,6 +233,9 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         # 归档战斗记录
         combat_archive_system = CombatArchiveSystem(terminal_game)
         await combat_archive_system.execute()
+
+        # 存储
+        terminal_game.save_game()
 
         # 进入战斗后准备状态
         terminal_game.current_combat_sequence.transition_to_post_combat()

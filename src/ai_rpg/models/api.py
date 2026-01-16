@@ -153,8 +153,9 @@ class HomePlayerActionResponse(BaseModel):
 class DungeonProgressType(StrEnum):
     """地下城流程推进操作类型"""
 
-    INIT_COMBAT = "combat_init"  # 初始化战斗（STARTING → ONGOING）
-    ADVANCE_STAGE = "advance_next_dungeon"  # 推进下一关（战斗胜利后）
+    INIT_COMBAT = "initialization"
+    POST_COMBAT = "post_combat"
+    ADVANCE_STAGE = "advance_stage"
 
 
 @final

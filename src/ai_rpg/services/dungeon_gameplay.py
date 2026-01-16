@@ -64,6 +64,7 @@ from .dungeon_actions import (
     activate_random_play_cards,
 )
 from ..game.game_server import GameServer
+from ..systems.combat_archive_system import CombatArchiveSystem
 
 ###################################################################################################################################################################
 dungeon_gameplay_api_router = APIRouter()
@@ -218,6 +219,42 @@ async def dungeon_progress(
                     last_event_sequence
                 )
             )
+        case DungeonProgressType.POST_COMBAT:
+            # 处理战斗结束后的归档和状态转换
+            if not rpg_game.current_combat_sequence.is_completed:
+                logger.error(f"玩家 {payload.user_name} 归档战斗失败: 战斗未结束")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="战斗未结束，无法归档",
+                )
+
+            # 验证战斗必须有结果（胜利或失败）
+            if not (
+                rpg_game.current_combat_sequence.is_won
+                or rpg_game.current_combat_sequence.is_lost
+            ):
+                logger.error(f"玩家 {payload.user_name} 归档战斗失败: 战斗状态异常")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="战斗状态异常，既未胜利也未失败",
+                )
+
+            # 归档战斗记录
+            combat_archive_system = CombatArchiveSystem(rpg_game)
+            await combat_archive_system.execute()
+
+            # 存储
+            rpg_game.save_game()
+
+            # 进入战斗后准备状态
+            rpg_game.current_combat_sequence.transition_to_post_combat()
+
+            logger.info(f"玩家 {payload.user_name} 战斗归档完成，进入战斗后准备状态")
+            return DungeonProgressResponse(
+                session_messages=rpg_game.player_session.get_messages_since(
+                    last_event_sequence
+                )
+            )
 
         case DungeonProgressType.ADVANCE_STAGE:
             # 处理前进下一个地下城关卡
@@ -229,10 +266,6 @@ async def dungeon_progress(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="战斗未处于等待阶段",
                 )
-
-            # assert (
-            #     False
-            # ), "这里应该报错，因为没有 is_won 和 is_lost 方法了"  # --- IGNORE ---
 
             # 判断战斗结果并处理
             if rpg_game.current_combat_sequence.is_won:
@@ -266,6 +299,13 @@ async def dungeon_progress(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="战斗状态异常",
                 )
+        case _:
+            # 未知的操作类型，理论上不应该到达这里
+            logger.error(f"未知的地下城操作类型: {payload.action}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"未知的操作类型: {payload.action}",
+            )
 
 
 ###################################################################################################################################################################

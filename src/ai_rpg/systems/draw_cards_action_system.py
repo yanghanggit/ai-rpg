@@ -188,7 +188,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         last_round = self._game.current_combat_sequence.latest_round
         if last_round.is_completed:
-            logger.success(f"last_round.has_ended, so setup new round")
+            logger.debug(f"last_round.has_ended, so setup new round")
             self._game.create_next_round()
 
         logger.debug(

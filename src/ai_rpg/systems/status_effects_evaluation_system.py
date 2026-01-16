@@ -144,12 +144,6 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
                 current_round_number=current_round_number,
             )
 
-            # 添加评估指令到角色上下文
-            self._game.add_human_message(
-                entity=entity,
-                message_content=prompt,
-            )
-
             # 创建聊天客户端
             chat_clients.append(
                 ChatClient(
@@ -245,10 +239,10 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
             logger.error(f"原始响应: {chat_client.response_content}")
 
             # 解析失败时保持原有状态效果不变
-            self._game.add_human_message(
-                entity=entity,
-                message_content="# 状态效果评估失败\n\n保持现有状态效果不变",
-            )
+            # self._game.add_human_message(
+            #     entity=entity,
+            #     message_content="# 状态效果评估失败\n\n保持现有状态效果不变",
+            # )
 
 
 #######################################################################################################################################

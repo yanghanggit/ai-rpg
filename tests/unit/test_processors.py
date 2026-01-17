@@ -18,7 +18,7 @@ from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.entitas.matcher import Matcher
 from src.ai_rpg.entitas.group import GroupEvent
-from tests.unit.test_components import Position, Velocity, Health, Name
+from tests.unit.test_components import Position, Velocity
 
 
 # Test implementations of abstract processors

@@ -69,7 +69,7 @@ check:
 	@test -f uv.lock || echo "❌ 警告: uv.lock 文件不存在"
 	@echo "🔍 检查环境状态..."
 	@echo "✅ 使用 uv 管理依赖"
-	uv pip check 2>/dev/null || echo "⚠️  依赖可能有问题，运行: uv sync --extra dev"
+	@uv pip check 2>/dev/null || echo "⚠️  依赖可能有问题，运行: uv sync --extra dev"
 	@echo "✅ 项目结构检查完成"
 
 # 显示所有可用的 make 目标

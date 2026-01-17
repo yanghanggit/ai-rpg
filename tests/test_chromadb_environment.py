@@ -219,7 +219,6 @@ class TestChromaDBEnvironment:
         start_test_time = time.time()
 
         # 智能网络检测：先尝试在线模式，失败则切换离线模式
-        import os
         import chromadb
 
         is_online = check_huggingface_connectivity(timeout=3.0)
@@ -340,7 +339,7 @@ class TestChromaDBEnvironment:
 
             try:
                 # 创建使用sentence transformer的集合
-                from typing import Any
+                # from typing import Any
 
                 print(
                     f"⏰ [{time.time()-start_test_time:.2f}s] 创建集合（带embedding函数）..."

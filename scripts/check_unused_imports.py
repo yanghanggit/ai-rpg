@@ -9,6 +9,7 @@
 
     python scripts/check_unused_imports.py --check --file src/      # 只检查 src/
     python scripts/check_unused_imports.py --check --file scripts/  # 只检查 scripts/
+    python scripts/check_unused_imports.py --check --file tests/    # 只检查 tests/
 
 注意：该脚本专门检查F401未使用导入错误，与pyproject.toml中的ruff配置保持一致。
 """
@@ -78,8 +79,8 @@ def main() -> int:
         target = args.file
         target_display = target
     else:
-        target = ["src/", "scripts/"]
-        target_display = "src/ 和 scripts/"
+        target = ["src/", "scripts/", "tests/"]
+        target_display = "src/、scripts/ 和 tests/"
 
     if args.check:
         print(f"🔍 检查 {target_display} 中的未使用导入...")

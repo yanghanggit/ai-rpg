@@ -1,7 +1,7 @@
 """出牌动作系统模块。
 
-处理战斗中角色的出牌动作，当角色使用卡牌时，向该角色的对话上下文中
-添加出牌通知消息，包含卡牌名称、目标和完整的卡牌数据。
+处理战斗中角色的出牌动作，向角色的对话上下文添加出牌通知，
+包含卡牌名称、目标、描述和卡牌属性（治疗/攻击/防御）。
 仅在战斗进行中(ongoing)阶段执行。
 """
 
@@ -23,41 +23,51 @@ from langchain_core.messages import AIMessage
 def _generate_play_card_notification(
     actor_name: str, card: Card, target_names: List[str]
 ) -> str:
-    """生成出牌通知消息。"""
+    """生成出牌通知消息。
+
+    Args:
+        actor_name: 出牌角色名称（当前未使用）
+        card: 卡牌对象，包含名称、描述、属性和目标
+        target_names: 系统指定的目标名称列表
+
+    Returns:
+        格式化的出牌通知字符串，包含卡牌名、目标、描述和属性
+    """
 
     # 格式化目标显示
     if len(target_names) == 0:
-        actual_target_display = "无目标"
+        target_display = "无目标"
     elif len(target_names) == 1:
-        actual_target_display = target_names[0]
+        target_display = target_names[0]
     else:
-        actual_target_display = f"[{', '.join(target_names)}]"
+        target_display = f"[{', '.join(target_names)}]"
 
-    # 格式化原定目标显示
-    if len(card.targets) == 0:
-        original_target_display = "无目标"
-    elif len(card.targets) == 1:
-        original_target_display = card.targets[0]
-    else:
-        original_target_display = f"[{', '.join(card.targets)}]"
+    # 获取卡牌属性
+    card_stats = card.stats
 
-    # 比较时忽略顺序，只关心目标集合是否相同
-    if set(target_names) == set(card.targets):
-        # 没有修改，直接显示预期目标
-        return f"""使用卡牌: {card.name}
-目标: {actual_target_display}
-描述: {card.description}"""
-
-    # 可能有修改，所以要显示预期目标和实际目标
     return f"""使用卡牌: {card.name}
-原定目标: {original_target_display}
-实际目标: {actual_target_display}
-描述: {card.description}"""
+目标: {target_display}
+描述: {card.description}
+卡牌属性: 治疗:{card_stats.hp} | 攻击:{card_stats.attack} | 防御:{card_stats.defense}"""
 
 
 #######################################################################################################################################
 @final
 class PlayCardsActionSystem(ReactiveProcessor):
+    """出牌动作系统。
+
+    响应 PlayCardsAction 组件的添加事件，向角色发送出牌通知消息。
+    通知包含卡牌的完整信息：名称、目标、描述和属性（治疗/攻击/防御）。
+
+    触发条件：
+    - 实体添加 PlayCardsAction 组件
+    - 战斗序列处于进行中(ongoing)状态
+
+    执行流程：
+    1. 发送出牌指令（第N回合使用卡牌）
+    2. 添加AI出牌执行消息（卡牌详情）
+    3. 为场景实体添加仲裁动作标记
+    """
 
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)

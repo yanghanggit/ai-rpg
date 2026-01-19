@@ -15,7 +15,7 @@
 - _generate_compressd_round_prompt: 生成用于历史记录的压缩提示词
 """
 
-from typing import Dict, Final, List, final, override
+from typing import Final, List, final, override
 from loguru import logger
 from pydantic import BaseModel
 from ..chat_services.client import ChatClient
@@ -344,6 +344,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 description=validated_response.description,
                 stats=card_stats,
                 targets=specified_targets,
+                status_effects=draw_cards_action.status_effects,
             )
 
             # 更新手牌
@@ -432,6 +433,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 description="行动计划出现偏差，暂时采取保守策略观察战局",
                 stats=CharacterStats(hp=0, max_hp=0, attack=0, defense=0),
                 targets=[entity.name],
+                status_effects=[],
             )
 
             entity.replace(

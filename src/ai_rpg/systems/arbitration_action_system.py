@@ -1,3 +1,19 @@
+"""战斗仲裁动作系统模块。
+
+AI驱动的战斗结算系统，负责根据所有参战角色的出牌动作进行战斗仲裁。
+系统生成优化的仲裁提示词，调用AI进行战斗结算，并处理返回的战斗结果。
+
+核心流程：
+1. 收集所有参战角色的卡牌和目标信息
+2. 生成战斗仲裁提示词（行动顺序 + 角色生命 + 卡牌属性）
+3. 调用AI进行战斗计算，生成战斗日志和演出描述
+4. 更新参战角色的HP值，清除已消耗的状态效果
+5. 向所有参战角色广播战斗结果
+6. 处理生命值归零的角色，添加死亡组件
+
+注意：仅在战斗进行中(ongoing)阶段执行。
+"""
+
 from typing import Dict, Final, List, NamedTuple, final
 from loguru import logger
 from overrides import override
@@ -14,22 +30,9 @@ from ..models import (
     StageComponent,
     DeathComponent,
     CombatArbitrationEvent,
+    StatusEffect,
 )
 from ..utils import extract_json_from_code_block
-from ..models.entities import CharacterStats
-
-
-#######################################################################################################################################
-def _format_character_stats_prompt(stats: CharacterStats) -> str:
-    """格式化角色属性为提示词字符串
-
-    Args:
-        stats: 角色属性数据
-
-    Returns:
-        格式化的属性字符串
-    """
-    return f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
 
 
 #######################################################################################################################################
@@ -53,7 +56,17 @@ class CombatActionInfo(NamedTuple):
 def _generate_actor_card_details(
     combat_actions_details: List[CombatActionInfo],
 ) -> List[str]:
-    """生成角色卡牌详情：卡牌描述 + 属性 + 状态效果"""
+    """生成参战角色的卡牌详情列表。
+
+    为每个参战角色生成格式化的战斗信息，包含角色当前生命值和出牌的完整信息
+    （卡牌名称、目标、描述、属性）。卡牌属性已包含状态效果修正后的最终数值。
+
+    Args:
+        combat_actions_details: 战斗行动信息列表，包含角色名、卡牌、目标等
+
+    Returns:
+        格式化的角色卡牌详情字符串列表，每个元素对应一个参战角色
+    """
     details_prompt: List[str] = []
     for param in combat_actions_details:
         assert param.card.name != ""
@@ -67,22 +80,18 @@ def _generate_actor_card_details(
         else:
             target_display = f"[{', '.join(param.targets)}]"
 
-        # 格式化状态效果
-        if len(param.combat_stats_component.status_effects) == 0:
-            status_effects_text = "- 无"
-        else:
-            status_effects_text = "\n".join(
-                [
-                    f"- {effect.name}: {effect.description}"
-                    for effect in param.combat_stats_component.status_effects
-                ]
-            )
+        # 获取角色当前生命值
+        actor_hp = param.combat_stats_component.stats.hp
+        actor_max_hp = param.combat_stats_component.stats.max_hp
+
+        # 获取卡牌属性（已包含状态效果修正）
+        card_stats = param.card.stats
 
         detail = f"""【{param.actor}】
-卡牌: {param.card.name} → {target_display} — {param.card.description}
-角色属性: {_format_character_stats_prompt(param.combat_stats_component.stats)}
-状态效果(status_effects):
-{status_effects_text}"""
+角色生命: HP:{actor_hp}/{actor_max_hp}
+卡牌: {param.card.name} → {target_display}
+描述: {param.card.description}
+属性: 治疗:{card_stats.hp} | 攻击:{card_stats.attack} | 防御:{card_stats.defense}"""
 
         details_prompt.append(detail)
 
@@ -106,10 +115,47 @@ def _generate_hp_update_notification(final_hp: int, max_hp: int) -> str:
 
 
 #######################################################################################################################################
+def _generate_status_effects_consumed_notification(
+    consumed_effects: List[StatusEffect],
+) -> str:
+    """生成状态效果消耗通知消息
+
+    Args:
+        consumed_effects: 已被消耗的状态效果列表
+
+    Returns:
+        str: 格式化的状态效果消耗通知消息
+    """
+    effects_list = "\n".join([f"- {effect.name}" for effect in consumed_effects])
+    return f"""# 通知！以下状态效果已被消耗移除
+
+{effects_list}"""
+
+
+#######################################################################################################################################
+def _generate_defeat_notification() -> str:
+    """生成角色被击败通知消息
+
+    Returns:
+        str: 击败通知消息
+    """
+    return """# 通知！你已被击败！"""
+
+
+#######################################################################################################################################
 def _generate_combat_arbitration_broadcast(
     combat_log: str, narrative: str, current_round_number: int
 ) -> str:
-    """生成战斗广播：演出描述 + 数据日志"""
+    """生成战斗仲裁广播消息。
+
+    Args:
+        combat_log: 战斗数据日志
+        narrative: 战斗演出描述
+        current_round_number: 当前回合数
+
+    Returns:
+        格式化的战斗广播消息，包含演出和数据日志
+    """
 
     return f"""# 通知！第 {current_round_number} 回合结算
 
@@ -127,7 +173,18 @@ def _generate_combat_arbitration_prompt(
     combat_actions_details: List[CombatActionInfo],
     current_round_number: int,
 ) -> str:
-    """生成战斗仲裁提示词：行动顺序 + 角色信息 + 输出格式(含复活示例)"""
+    """生成战斗仲裁提示词。
+
+    生成给AI的完整仲裁指令，包含行动顺序、角色信息、战斗规则和输出JSON格式。
+    支持复活机制（多段HP变化X→0→Y）和环境互动。
+
+    Args:
+        combat_actions_details: 战斗行动信息列表
+        current_round_number: 当前回合数
+
+    Returns:
+        完整的仲裁提示词字符串
+    """
     # 生成角色&卡牌详情
     details_prompt = _generate_actor_card_details(combat_actions_details)
 
@@ -153,7 +210,6 @@ def _generate_combat_arbitration_prompt(
 
 - 角色可利用或改变环境物体（先到先得）
 - 环境变化影响后续角色行动
-- 状态效果(status_effects)实时计入战斗计算
 
 ## 输出格式
 
@@ -259,7 +315,16 @@ class ArbitrationActionSystem(ReactiveProcessor):
     def _collect_combat_action_info(
         self, react_entities: List[Entity]
     ) -> List[CombatActionInfo]:
-        """收集参战角色的行动信息：卡牌 + 目标 + 战斗属性"""
+        """收集参战角色的行动信息。
+
+        从实体列表中提取卡牌、目标和战斗属性，组装成CombatActionInfo列表。
+
+        Args:
+            react_entities: 参战角色实体列表
+
+        Returns:
+            战斗行动信息列表
+        """
         ret: List[CombatActionInfo] = []
         for entity in react_entities:
 
@@ -281,7 +346,15 @@ class ArbitrationActionSystem(ReactiveProcessor):
     async def _request_combat_arbitration(
         self, stage_entity: Entity, actor_entities: List[Entity]
     ) -> None:
-        """发起AI战斗仲裁：生成提示词 → 调用ChatClient → 应用结果"""
+        """发起AI战斗仲裁请求。
+
+        生成仲裁提示词，调用ChatClient进行AI推理，并应用返回的战斗结果。
+        处理流程：生成提示词 → 调用ChatClient → 应用结果 → 清除状态效果 → 处理死亡。
+
+        Args:
+            stage_entity: 场景实体
+            actor_entities: 参战角色实体列表（已按行动顺序排序）
+        """
         # 生成推理参数。
         combat_actions_details = self._collect_combat_action_info(actor_entities)
         assert len(combat_actions_details) > 0
@@ -310,8 +383,62 @@ class ArbitrationActionSystem(ReactiveProcessor):
             stage_entity, chat_client, actor_entities, combat_actions_details
         )
 
+        # 清除已消耗的状态效果（已合入卡牌并打出）
+        self._clear_consumed_status_effects(combat_actions_details)
+
         # 处理生命值归零的实体
         self._process_zero_health_entities()
+
+    #######################################################################################################################################
+    def _clear_consumed_status_effects(
+        self, combat_actions_details: List[CombatActionInfo]
+    ) -> None:
+        """清除已消耗的状态效果。
+
+        状态效果已在DrawCards阶段合入卡牌数值，
+        卡牌打出后这些状态效果应被清除。
+
+        Args:
+            combat_actions_details: 战斗行动信息列表
+        """
+        for action_info in combat_actions_details:
+            # 通过角色名称获取实体
+            entity = self._game.get_entity_by_name(action_info.actor)
+            if entity is None:
+                logger.warning(f"无法找到角色实体: {action_info.actor}")
+                continue
+
+            # 获取战斗属性组件
+            combat_stats = entity.get(CombatStatsComponent)
+            if combat_stats is None:
+                logger.warning(f"角色 {action_info.actor} 缺少 CombatStatsComponent")
+                continue
+
+            # 从卡牌中获取已消耗的状态效果
+            consumed_effects = action_info.card.status_effects
+            if len(consumed_effects) == 0:
+                continue
+
+            # 从角色的状态效果列表中移除已消耗的效果
+            for consumed_effect in consumed_effects:
+                # 通过名称匹配移除
+                combat_stats.status_effects = [
+                    effect
+                    for effect in combat_stats.status_effects
+                    if effect.name != consumed_effect.name
+                ]
+
+            logger.debug(
+                f"清除 {action_info.actor} 的 {len(consumed_effects)} 个已消耗状态效果"
+            )
+
+            # 通知角色状态效果已被消耗
+            self._game.add_human_message(
+                entity=entity,
+                message_content=_generate_status_effects_consumed_notification(
+                    consumed_effects
+                ),
+            )
 
     #######################################################################################################################################
     def _apply_arbitration_result(
@@ -321,7 +448,17 @@ class ArbitrationActionSystem(ReactiveProcessor):
         actor_entities: List[Entity],
         combat_actions_details: List[CombatActionInfo],
     ) -> None:
-        """应用AI仲裁结果：解析JSON → 更新场景 → 广播消息 → 记录数据"""
+        """应用AI仲裁结果。
+
+        解析AI返回的JSON数据，更新场景上下文，广播战斗结果，
+        更新所有参战角色的HP值，并记录战斗数据。
+
+        Args:
+            stage_entity: 场景实体
+            chat_client: ChatClient实例，包含AI返回结果
+            actor_entities: 参战角色实体列表
+            combat_actions_details: 战斗行动信息列表（未使用）
+        """
         try:
 
             format_response = ArbitrationResponse.model_validate_json(
@@ -370,14 +507,16 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 exclude_entities={stage_entity},  # 排除场景实体自身
             )
 
-            # 从format_response.final_hp更新角色HP
-            for actor_name, final_hp in format_response.final_hp.items():
-                # 通过全名查找实体
-                entity = self._game.get_entity_by_name(actor_name)
+            # 更新参战角色的HP
+            for entity in actor_entities:
+                actor_name = entity.name
 
-                if entity is None:
-                    logger.warning(f"无法找到角色实体: {actor_name}")
+                # 从LLM返回的结果中获取该角色的最终HP
+                if actor_name not in format_response.final_hp:
+                    logger.warning(f"LLM返回结果中缺少角色 {actor_name} 的HP数据")
                     continue
+
+                final_hp = format_response.final_hp[actor_name]
 
                 # 获取战斗属性组件
                 combat_stats = entity.get(CombatStatsComponent)
@@ -425,7 +564,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
             if combat_stats_comp.stats.hp <= 0:
 
                 logger.warning(f"{combat_stats_comp.name} is dead")
-                self._game.add_human_message(entity, """# 通知！你已被击败！""")
+                self._game.add_human_message(entity, _generate_defeat_notification())
                 entity.replace(DeathComponent, combat_stats_comp.name)
 
     #######################################################################################################################################

@@ -16,9 +16,20 @@ from ..models import (
     CombatArbitrationEvent,
 )
 from ..utils import extract_json_from_code_block
+from ..models.entities import CharacterStats
 
 
 #######################################################################################################################################
+def _format_character_stats_prompt(stats: CharacterStats) -> str:
+    """格式化角色属性为提示词字符串
+
+    Args:
+        stats: 角色属性数据
+
+    Returns:
+        格式化的属性字符串
+    """
+    return f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
 
 
 #######################################################################################################################################
@@ -56,11 +67,22 @@ def _generate_actor_card_details(
         else:
             target_display = f"[{', '.join(param.targets)}]"
 
+        # 格式化状态效果
+        if len(param.combat_stats_component.status_effects) == 0:
+            status_effects_text = "- 无"
+        else:
+            status_effects_text = "\n".join(
+                [
+                    f"- {effect.name}: {effect.description}"
+                    for effect in param.combat_stats_component.status_effects
+                ]
+            )
+
         detail = f"""【{param.actor}】
 卡牌: {param.card.name} → {target_display} — {param.card.description}
-角色属性: {param.combat_stats_component.stats_prompt}
+角色属性: {_format_character_stats_prompt(param.combat_stats_component.stats)}
 状态效果(status_effects):
-{param.combat_stats_component.status_effects_prompt}"""
+{status_effects_text}"""
 
         details_prompt.append(detail)
 

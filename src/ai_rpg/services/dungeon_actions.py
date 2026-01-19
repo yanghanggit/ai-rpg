@@ -17,6 +17,7 @@ from ..models import (
     SkillBookComponent,
     AllyComponent,
     EnemyComponent,
+    CombatStatsComponent,
 )
 from ..entitas import Entity
 
@@ -139,12 +140,18 @@ def activate_actor_card_draws(tcg_game: TCGGame) -> None:
             f"为角色 {entity.name} 激活抽牌动作，使用技能 【{selected_skill.name}】，目标列表: {targets}"
         )
 
+        # 获取角色当前所有的状态效果
+        combat_stats = entity.get(CombatStatsComponent)
+        current_status_effects = (
+            combat_stats.status_effects.copy() if combat_stats else []
+        )
+
         entity.replace(
             DrawCardsAction,
             entity.name,
             selected_skill,  # skill
             targets,  # targets
-            [],  # status_effects
+            current_status_effects,  # status_effects
         )
 
 

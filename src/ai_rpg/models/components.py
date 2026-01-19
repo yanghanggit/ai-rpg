@@ -187,18 +187,6 @@ class CombatStatsComponent(MutableComponent):
     stats: CharacterStats
     status_effects: List[StatusEffect]
 
-    @property
-    def stats_prompt(self) -> str:
-        return f"HP:{self.stats.hp}/{self.stats.max_hp} | 攻击:{self.stats.attack} | 防御:{self.stats.defense}"
-
-    @property
-    def status_effects_prompt(self) -> str:
-        if len(self.status_effects) == 0:
-            return "- 无"
-        return "\n".join(
-            [f"- {effect.name}: {effect.description}" for effect in self.status_effects]
-        )
-
 
 ############################################################################################################
 
@@ -224,18 +212,6 @@ class InventoryComponent(MutableComponent):
                 found_items.append(item)
         return found_items
 
-    # 打包成提示词型的字符串
-    @property
-    def list_items_prompt(self) -> str:
-        if len(self.items) == 0:
-            return "- 无"
-        return "\n".join(
-            [
-                f"- {item.name}: {item.description}, 数量: {item.count}"
-                for item in self.items
-            ]
-        )
-
 
 ############################################################################################################
 @final
@@ -254,15 +230,6 @@ class SkillBookComponent(MutableComponent):
     # 获取多个技能
     def get_skills(self, skill_names: List[str]) -> List[Skill]:
         return [skill for skill in self.skills if skill.name in skill_names]
-
-    # 生成技能列表提示词
-    @property
-    def list_skills_prompt(self) -> str:
-        if len(self.skills) == 0:
-            return "- 无"
-        return "\n".join(
-            [f"- {skill.name}: {skill.description}" for skill in self.skills]
-        )
 
 
 ############################################################################################################

@@ -19,8 +19,23 @@ from ..models import (
 )
 from ..chat_services.client import ChatClient
 from ..utils import extract_json_from_code_block
+from ..models.entities import CharacterStats
 
 
+###################################################################################################################################################################
+def _format_character_stats_prompt(stats: CharacterStats) -> str:
+    """格式化角色属性为提示词字符串
+
+    Args:
+        stats: 角色属性数据
+
+    Returns:
+        格式化的属性字符串
+    """
+    return f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
+
+
+###################################################################################################################################################################
 @dataclass
 class OtherActorInfo:
     """其他参战角色的信息"""
@@ -234,7 +249,7 @@ class CombatInitializationSystem(ExecuteProcessor):
                 stage_name=stage_name,
                 stage_description=stage_description,
                 other_actors_info=other_actors_info,
-                attrs_prompt=combat_stats_comp.stats_prompt,
+                attrs_prompt=_format_character_stats_prompt(combat_stats_comp.stats),
                 max_effects=2,
             )
 

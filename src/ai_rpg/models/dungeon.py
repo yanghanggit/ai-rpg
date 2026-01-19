@@ -2,7 +2,7 @@ from enum import IntEnum, unique
 from typing import List, Optional, final
 from loguru import logger
 from pydantic import BaseModel
-from .entities import Actor, Stage
+from .entities import Actor, Stage, CharacterStats
 
 
 ###############################################################################################################################################
@@ -43,6 +43,7 @@ class Card(BaseModel):
 
     name: str
     description: str
+    stats: CharacterStats  # 卡牌的描述属性
     targets: List[str] = []  # 目标实体名称列表
 
 

@@ -1,7 +1,7 @@
 """状态效果评估系统模块
 
 在战斗裁决后，让每个参战角色根据上下文（战斗广播、HP变化等）
-自主评估并更新自己的状态效果。
+自主评估并添加新的状态效果。
 
 执行时机：
 - ArbitrationActionSystem 之后（已有战斗结果上下文）
@@ -29,7 +29,6 @@ from ..utils import extract_json_from_code_block
 class StatusEffectsEvaluationResponse(BaseModel):
     """状态效果评估响应"""
 
-    remove_effects: List[str] = []  # 要移除的效果名称列表
     add_effects: List[StatusEffect] = []  # 要添加的新效果列表
 
 
@@ -38,37 +37,43 @@ def _generate_status_effects_evaluation_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
 ) -> str:
-    """生成状态效果评估提示词（精简版）"""
+    """生成状态效果评估提示词
 
-    # 格式化当前状态效果（仅名称）
+    根据战斗结果评估应添加的新状态效果，避免重复添加已有效果。
+    """
+
+    # 格式化当前状态效果（名称和描述）
     if len(current_status_effects) == 0:
         effects_list = "无"
     else:
-        effects_list = ", ".join([effect.name for effect in current_status_effects])
+        effects_list = "\n".join(
+            [
+                f"- {effect.name}: {effect.description}"
+                for effect in current_status_effects
+            ]
+        )
 
-    return f"""# 指令！第 {current_round_number} 回合结算完毕，更新状态效果
+    return f"""# 指令！第 {current_round_number} 回合结算完毕，评估新增状态效果
 
 **现有效果**: {effects_list}
 
-**任务**: 根据上文的**战斗演出**和**数据日志**
+**任务**: 根据上文的**战斗演出**和**数据日志**，判断应添加的新状态效果（战斗中受伤/获得增益/遭受削弱等）。
 
-1. **移除(remove_effects)**: 列出要移除的现有效果名称（战斗中已失效/被治愈/被消除）
-2. **添加(add_effects)**: 列出要添加的新效果（战斗中受伤/获得增益/遭受削弱等）
-
-**约束**: 基于战斗演出与数据日志推断
+**约束**: 
+- 基于战斗演出与数据日志推断
+- 不要重复添加现有效果列表中已存在的状态
 
 **输出JSON**:
 
 ```json
 {{
-  "remove_effects": ["效果名1", "效果名2"],
   "add_effects": [
     {{"name": "新效果名", "description": "简述来源与影响"}}
   ]
 }}
 ```
 
-空数组表示无操作，只输出JSON"""
+无新增状态时输出空数组，只输出JSON"""
 
 
 #######################################################################################################################################
@@ -77,9 +82,9 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
     """
     状态效果评估系统
 
-    在战斗裁决后，让每个参战角色根据战斗结果自主评估状态效果。
+    在战斗裁决后，让每个参战角色根据战斗结果评估并添加新的状态效果。
     角色通过阅读上下文中的战斗广播、HP变化通知等信息，
-    决定应该保持、移除或添加哪些状态效果。
+    判断应该添加哪些新状态效果（如受伤、增益、削弱等）。
 
     执行时机：ArbitrationActionSystem 之后，ActionCleanupSystem 之前
 
@@ -113,13 +118,13 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
     @override
     async def react(self, entities: list[Entity]) -> None:
         """
-        为每个参战角色评估状态效果
+        为每个参战角色评估新增状态效果
 
         流程：
         1. 并发创建所有角色的评估任务
-        2. 调用 LLM 生成状态效果评估
-        3. 解析响应并更新 CombatStatsComponent.status_effects
-        4. 添加状态效果变化通知到角色上下文
+        2. 调用 LLM 生成新状态效果
+        3. 解析响应并追加到 CombatStatsComponent.status_effects
+        4. 添加新增状态效果通知到角色上下文
         """
         if not self._game.current_combat_sequence.is_ongoing:
             return
@@ -170,7 +175,7 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
     def _process_status_effects_response(
         self, entity: Entity, chat_client: ChatClient
     ) -> None:
-        """处理单个角色的状态效果评估响应"""
+        """处理单个角色的状态效果评估响应，追加新状态效果"""
 
         combat_stats = entity.get(CombatStatsComponent)
         if combat_stats is None:
@@ -192,32 +197,14 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
 
             logger.debug(
                 f"[{entity.name}] 状态效果评估成功: "
-                f"移除{len(format_response.remove_effects)}个, "
                 f"添加{len(format_response.add_effects)}个"
             )
 
-            # 第一步：移除指定的效果（按名称匹配）
-            remaining_effects = [
-                effect
-                for effect in combat_stats.status_effects
-                if effect.name not in format_response.remove_effects
-            ]
-
-            # 第二步：添加新效果
-            new_effects = remaining_effects + format_response.add_effects
-
-            # 第三步：更新到组件
-            combat_stats.status_effects = new_effects
-
-            # 第四步：通报移除的效果
-            if format_response.remove_effects:
-                removed_msg = "# 通知！移除状态效果\n\n" + "\n".join(
-                    [f"- {name}" for name in format_response.remove_effects]
-                )
-                self._game.add_human_message(entity=entity, message_content=removed_msg)
-
-            # 第五步：通报添加的效果
+            # 添加新效果到现有列表
             if format_response.add_effects:
+                combat_stats.status_effects.extend(format_response.add_effects)
+
+                # 通知角色新增的效果
                 added_msg = "# 通知！新增状态效果\n\n" + "\n".join(
                     [
                         f"+ {effect.name}: {effect.description}"
@@ -226,23 +213,16 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
                 )
                 self._game.add_human_message(entity=entity, message_content=added_msg)
 
-            # 记录日志
-            if format_response.remove_effects or format_response.add_effects:
+                # 记录日志
                 logger.debug(
-                    f"[{entity.name}] 状态效果变化: "
-                    f"移除={format_response.remove_effects}, "
-                    f"添加={[e.name for e in format_response.add_effects]}"
+                    f"[{entity.name}] 新增状态效果: "
+                    f"{[e.name for e in format_response.add_effects]}"
                 )
+            else:
+                logger.debug(f"[{entity.name}] 本回合无新增状态效果")
 
         except Exception as e:
             logger.error(f"[{entity.name}] 解析状态效果评估失败: {e}")
             logger.error(f"原始响应: {chat_client.response_content}")
-
-            # 解析失败时保持原有状态效果不变
-            # self._game.add_human_message(
-            #     entity=entity,
-            #     message_content="# 状态效果评估失败\n\n保持现有状态效果不变",
-            # )
-
 
 #######################################################################################################################################

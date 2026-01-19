@@ -293,10 +293,10 @@ class CombatInitializationSystem(ExecuteProcessor):
             # 获取 LLM 响应
             ai_response = chat_client.response_content
 
+            # AI 回应需要添加入上下文。
             self._game.add_ai_message(
                 entity=entity,
                 ai_messages=chat_client.response_ai_messages,
-                # combat_initialization="Response for " + entity.name,
             )
 
             # 提取 JSON

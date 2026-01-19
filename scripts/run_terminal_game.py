@@ -179,8 +179,9 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
     支持的命令：
         /dc - 抗牌，只能在战斗中使用
         /pc - 打牌，只能在战斗中使用
-        /trans_home - 返回家园，只能在战斗结束后使用
-        /advance_next_dungeon - 进入下一关，只能在战斗胜利后使用
+        /cpp - 完成战斗处理，只能在战斗结束后使用
+        /th - 返回家园，只能在战斗结束后使用
+        /and - 进入下一关，只能在战斗胜利后使用
     """
 
     if usr_input == "/dc":

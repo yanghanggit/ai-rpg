@@ -6,15 +6,37 @@
 """
 
 import random
-from typing import Set, Tuple
+from typing import List, Set, Tuple
 from loguru import logger
 from ..game.tcg_game import TCGGame
 from ..models import (
     DrawCardsAction,
     HandComponent,
     PlayCardsAction,
+    Skill,
+    SkillBookComponent,
 )
 from ..entitas import Entity
+
+
+###################################################################################################################################################################
+def _get_available_skills(entity: Entity) -> List[Skill]:
+    """获取实体可用的技能列表
+
+    Args:
+        entity: 目标实体
+
+    Returns:
+        实体的所有可用技能列表
+    """
+    skill_book_comp = entity.get(SkillBookComponent)
+    assert skill_book_comp is not None, "Entity must have SkillBookComponent"
+
+    if len(skill_book_comp.skills) == 0:
+        logger.warning(f"entity {entity.name} has no skills in SkillBookComponent")
+        assert False, "Entity has no skills in SkillBookComponent"
+
+    return skill_book_comp.skills.copy()
 
 
 ###################################################################################################################################################################
@@ -34,9 +56,25 @@ def activate_actor_card_draws(tcg_game: TCGGame) -> None:
 
     # 为每个角色添加抽牌动作组件
     for entity in actor_entities:
+        # 获取可用技能列表（最多2个），这里加一条吧，在编辑过程中，就不允许出现无技能的人物。
+        available_skills = _get_available_skills(entity)
+        assert (
+            len(available_skills) > 0
+        ), f"Entity {entity.name} has no available skills"
+
+        # 随机选择一个技能作为初始技能
+        selected_skill = (
+            random.choice(available_skills)
+            if available_skills
+            else Skill(name="", description="")
+        )
+
         entity.replace(
             DrawCardsAction,
             entity.name,
+            selected_skill,  # skill
+            [],  # targets
+            [],  # status_effects
         )
 
 

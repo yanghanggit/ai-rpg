@@ -4,10 +4,10 @@
 该模块实现了战斗回合中的卡牌生成机制，负责将角色技能转化为可执行的行动卡牌。
 
 核心特性：
-- 动态卡牌生成：每回合从角色技能池中随机选择最多2个技能
-- 一对一映射：每个选中的技能对应生成一张独立的行动卡牌
+- 单技能单卡牌：每个 DrawCardsAction 携带一个技能，生成一张对应的行动卡牌
+- 外部决策：技能选择由 activate_actor_card_draws 函数负责，系统仅执行生成
 - LLM驱动：通过语言模型生成富有创意且符合角色特征的卡牌名称和描述
-- 上下文一致性：确保提示词生成和响应处理使用相同的技能数据
+- 数据流清晰：DrawCardsAction.skill → 提示词生成 → 卡牌生成
 
 主要组件：
 - DrawCardsActionSystem: 核心系统类，协调整个卡牌生成流程
@@ -15,7 +15,6 @@
 - _generate_compressd_round_prompt: 生成用于历史记录的压缩提示词
 """
 
-import random
 from typing import Dict, Final, List, final, override
 from loguru import logger
 from pydantic import BaseModel
@@ -27,7 +26,6 @@ from ..models import (
     HandComponent,
     Card,
     Skill,
-    SkillBookComponent,
     DeathComponent,
 )
 from ..utils import extract_json_from_code_block
@@ -51,14 +49,14 @@ def _generate_round_prompt(
     """
     生成战斗回合的卡牌抽取提示词。
 
-    要求LLM为每个技能生成一张对应的卡牌，不进行技能组合。
-    卡牌数量等于提供的技能数量。
+    要求LLM为提供的技能生成对应的卡牌，不进行技能组合。
+    当前版本：每次调用使用单个技能，生成一张卡牌。
 
     Args:
         actor_name: 角色名称（当前未使用）
-        card_creation_count: 需要生成的卡牌数量（等于 selected_skills 的长度）
+        card_creation_count: 需要生成的卡牌数量（固定为1）
         action_order: 角色行动顺序列表
-        selected_skills: 已选择的技能列表（最多2个）
+        selected_skills: 技能列表（当前固定为1个元素）
         current_round_number: 当前回合数
 
     Returns:
@@ -164,6 +162,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
         self._game: Final[TCGGame] = game_context
+        self._card_creation_count: Final[int] = 1
 
     ####################################################################################################################################
     @override
@@ -201,15 +200,21 @@ class DrawCardsActionSystem(ReactiveProcessor):
         # 清除手牌，准备重新生成
         self._game.clear_hands()
 
-        # 提前为每个实体获取技能列表（最多2个，随机选择），确保整个流程使用一致的数据
-        entity_card_count_map: Dict[str, List[Skill]] = {}
+        # 为每个实体提取技能，构建映射表
+        entity_skill_map: Dict[str, Skill] = {}
         for entity in entities:
-            available_skills = self._get_available_skills(entity)
-            entity_card_count_map[entity.name] = available_skills
+            draw_cards_action = entity.get(DrawCardsAction)
+            assert (
+                draw_cards_action is not None
+            ), f"Entity {entity.name} must have DrawCardsAction"
+            assert (
+                draw_cards_action.skill is not None
+            ), f"DrawCardsAction.skill must not be None for {entity.name}"
+            entity_skill_map[entity.name] = draw_cards_action.skill
 
         # 生成请求
         chat_clients: List[ChatClient] = self._create_chat_clients(
-            entities, entity_card_count_map
+            entities, entity_skill_map
         )
 
         # 语言服务
@@ -223,9 +228,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 found_entity is not None
             ), f"Entity {chat_client.name} not found in game."
 
-            # 使用映射表中的技能列表，确保与生成请求时一致
-            card_count = len(entity_card_count_map[found_entity.name])
-            self._process_draw_cards_response(found_entity, chat_client, card_count)
+            # 使用单技能生成单卡牌
+            # card_count = 1
+            self._process_draw_cards_response(found_entity, chat_client)
 
         # 最后的兜底，遍历所有参与的角色，如果没有手牌，说明_process_draw_cards_response出现了错误，可能是LLM返回的内容无法正确解析。此时，就需要给角色一个默认的手牌，避免游戏卡死。
         self._ensure_all_entities_have_hands(entities)
@@ -235,43 +240,56 @@ class DrawCardsActionSystem(ReactiveProcessor):
         """
         确保所有实体都有手牌组件的兜底机制。
         如果某个实体缺少HandComponent，说明_process_draw_cards_response出现了错误，
-        可能是LLM返回的内容无法正确解析。此时给角色一个默认的等待，避免游戏卡死。
+        可能是LLM返回的内容无法正确解析。此时给角色一个应急应对卡牌，避免游戏卡死。
 
         Args:
             entities: 需要检查的实体列表
         """
+        # 获取当前回合信息
+        last_round = self._game.current_combat_sequence.latest_round
+        current_round_number = len(self._game.current_combat_sequence.current_rounds)
+        # card_creation_count = 1
+
         for entity in entities:
 
             if entity.has(HandComponent) or entity.has(DeathComponent):
                 continue
 
-            wait_card = Card(
-                name="等待",
-                description="什么都不做",
+            fallback_card = Card(
+                name="应急应对",
+                description="行动计划出现偏差，暂时采取保守策略观察战局",
                 targets=[entity.name],
             )
 
             entity.replace(
                 HandComponent,
                 entity.name,
-                [wait_card],
+                [fallback_card],
             )
 
-            # 模拟历史上下文！
+            # 模拟历史上下文，使用与正常流程一致的压缩提示词
             self._game.add_human_message(
                 entity=entity,
-                message_content="# 指令！评估当前态势，生成你的参战信息",
+                message_content=_generate_compressd_round_prompt(
+                    actor_name=entity.name,
+                    card_creation_count=self._card_creation_count,
+                    action_order=last_round.action_order,
+                    current_round_number=current_round_number,
+                ),
             )
 
-            # 添加AI消息，包括响应内容。
+            # 模拟AI响应，将fallback_card序列化为JSON格式
+            fallback_response = DrawCardsResponse(cards=[fallback_card])
+            fallback_json = fallback_response.model_dump_json(indent=2)
+
             self._game.add_ai_message(
                 entity,
-                [AIMessage(content="未能生成参战信息，默认执行等待动作。")],
+                [AIMessage(content=f"```json\n{fallback_json}\n```")],
             )
 
     #######################################################################################################################################
     def _process_draw_cards_response(
-        self, entity: Entity, chat_client: ChatClient, card_creation_count: int
+        self, entity: Entity, chat_client: ChatClient
     ) -> None:
         """
         处理LLM返回的抽卡响应并应用到实体。
@@ -302,7 +320,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 entity=entity,
                 message_content=_generate_compressd_round_prompt(
                     actor_name=entity.name,
-                    card_creation_count=card_creation_count,
+                    card_creation_count=self._card_creation_count,
                     action_order=last_round.action_order,
                     current_round_number=len(
                         self._game.current_combat_sequence.current_rounds
@@ -334,38 +352,11 @@ class DrawCardsActionSystem(ReactiveProcessor):
             logger.error(f"Exception: {e}")
 
     #######################################################################################################################################
-    def _get_available_skills(self, entity: Entity) -> List[Skill]:
-        """获取实体可用的技能列表。
-
-        如果技能数量大于2，则随机选择2个技能；
-        如果技能数量小于等于2，则返回所有技能。
-
-        Args:
-            entity (Entity): 目标实体
-
-        Returns:
-            List[Skill]: 实体可用的技能列表（最多2个）
-        """
-
-        skill_book_comp = entity.get(SkillBookComponent)
-        assert skill_book_comp is not None, "Entity must have SkillBookComponent"
-        if len(skill_book_comp.skills) == 0:
-            logger.warning(f"entity {entity.name} has no skills in SkillBookComponent")
-            assert False, "Using test skills pool for entity with no skills."
-
-        all_skills = skill_book_comp.skills.copy()
-
-        # 如果技能数量大于2，随机选择2个；否则返回所有技能
-        if len(all_skills) > 2:
-            return random.sample(all_skills, 2)
-        else:
-            return all_skills
-
     #######################################################################################################################################
     def _create_chat_clients(
         self,
         actor_entities: List[Entity],
-        entity_card_count_map: Dict[str, List[Skill]],
+        entity_skill_map: Dict[str, Skill],
     ) -> List[ChatClient]:
         """
         为每个角色实体创建聊天客户端以请求LLM生成卡牌。
@@ -374,7 +365,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         Args:
             actor_entities: 需要生成卡牌的角色实体列表
-            entity_card_count_map: 实体名称到技能列表的映射表
+            entity_skill_map: 实体名称到单个技能的映射表
 
         Returns:
             List[ChatClient]: 准备好的聊天客户端列表
@@ -393,16 +384,15 @@ class DrawCardsActionSystem(ReactiveProcessor):
         # 为每个实体创建聊天客户端
         for entity in actor_entities:
 
-            # 从映射表中获取技能列表
-            available_skills = entity_card_count_map[entity.name]
-            card_creation_count = len(available_skills)
+            # 从映射表中获取单个技能
+            skill = entity_skill_map[entity.name]
 
             # 生成提示词
             prompt = _generate_round_prompt(
                 actor_name=entity.name,
-                card_creation_count=card_creation_count,
+                card_creation_count=self._card_creation_count,
                 action_order=last_round.action_order,
-                selected_skills=available_skills,
+                selected_skills=[skill],
                 current_round_number=current_round_number,
             )
 

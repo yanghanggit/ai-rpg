@@ -2,8 +2,9 @@
 
 from typing import Dict, List, final
 from ..entitas.components import Component
-from .dungeon import Card
+from .dungeon import Card, StatusEffect
 from .registry import register_action_component_type, register_component_type
+from .entities import Skill
 
 
 ############################################################################################################
@@ -64,7 +65,21 @@ class TransStageAction(Component):
 @register_action_component_type
 @register_component_type
 class DrawCardsAction(Component):
+    """抽牌动作组件
+
+    触发角色在战斗回合中抽取卡牌，由 DrawCardsActionSystem 处理生成具体卡牌。
+
+    Attributes:
+        name: 执行抽牌的角色名称
+        skill: 用于生成卡牌的技能
+        targets: 技能目标列表
+        status_effects: 附加状态效果列表
+    """
+
     name: str
+    skill: Skill
+    targets: List[str]
+    status_effects: List[StatusEffect]
 
 
 ############################################################################################################

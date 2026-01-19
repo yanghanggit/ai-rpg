@@ -53,7 +53,7 @@ def _generate_status_effects_evaluation_prompt(
             ]
         )
 
-    return f"""# 指令！第 {current_round_number} 回合结算完毕，评估新增状态效果
+    return f"""# 指令！第 {current_round_number} 回合结算完毕，评估新增状态效果(status_effects)。
 
 **现有效果**: {effects_list}
 

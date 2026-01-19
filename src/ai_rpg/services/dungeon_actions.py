@@ -15,6 +15,8 @@ from ..models import (
     PlayCardsAction,
     Skill,
     SkillBookComponent,
+    AllyComponent,
+    EnemyComponent,
 )
 from ..entitas import Entity
 
@@ -37,6 +39,58 @@ def _get_available_skills(entity: Entity) -> List[Skill]:
         assert False, "Entity has no skills in SkillBookComponent"
 
     return skill_book_comp.skills.copy()
+
+
+###################################################################################################################################################################
+def get_enemy_targets_for_ally(entity: Entity, tcg_game: TCGGame) -> List[str]:
+    """获取ally阵营角色的敌方目标列表
+
+    站在ally视角，返回场景内所有带EnemyComponent的实体名称列表。
+    用于为ally角色的DrawCardsAction填充targets字段。
+
+    Args:
+        entity: ally阵营的角色实体
+        tcg_game: TCG游戏实例
+
+    Returns:
+        敌方实体名称列表
+    """
+    assert entity.has(AllyComponent), f"Entity {entity.name} must have AllyComponent"
+
+    # 获取entity所在场景的所有存活角色
+    actor_entities = tcg_game.get_alive_actors_on_stage(entity)
+
+    # 筛选所有enemy阵营的实体
+    enemy_targets = [
+        actor.name for actor in actor_entities if actor.has(EnemyComponent)
+    ]
+
+    return enemy_targets
+
+
+###################################################################################################################################################################
+def get_ally_targets_for_enemy(entity: Entity, tcg_game: TCGGame) -> List[str]:
+    """获取enemy阵营角色的敌方目标列表
+
+    站在enemy视角，返回场景内所有带AllyComponent的实体名称列表。
+    用于为enemy角色的DrawCardsAction填充targets字段。
+
+    Args:
+        entity: enemy阵营的角色实体
+        tcg_game: TCG游戏实例
+
+    Returns:
+        敌方实体名称列表
+    """
+    assert entity.has(EnemyComponent), f"Entity {entity.name} must have EnemyComponent"
+
+    # 获取entity所在场景的所有存活角色
+    actor_entities = tcg_game.get_alive_actors_on_stage(entity)
+
+    # 筛选所有ally阵营的实体
+    ally_targets = [actor.name for actor in actor_entities if actor.has(AllyComponent)]
+
+    return ally_targets
 
 
 ###################################################################################################################################################################
@@ -69,11 +123,27 @@ def activate_actor_card_draws(tcg_game: TCGGame) -> None:
             else Skill(name="", description="")
         )
 
+        # 根据阵营获取目标列表
+        if entity.has(AllyComponent):
+            targets = get_enemy_targets_for_ally(entity, tcg_game)
+        elif entity.has(EnemyComponent):
+            targets = get_ally_targets_for_enemy(entity, tcg_game)
+        else:
+            logger.warning(
+                f"Entity {entity.name} has neither AllyComponent nor EnemyComponent"
+            )
+            targets = []
+
+        # 加一些日志用于调试!
+        logger.debug(
+            f"为角色 {entity.name} 激活抽牌动作，使用技能 【{selected_skill.name}】，目标列表: {targets}"
+        )
+
         entity.replace(
             DrawCardsAction,
             entity.name,
             selected_skill,  # skill
-            [],  # targets
+            targets,  # targets
             [],  # status_effects
         )
 

@@ -44,6 +44,7 @@ def _generate_round_prompt(
     card_creation_count: int,
     action_order: List[str],
     selected_skills: List[Skill],
+    specified_targets: List[str],
     current_round_number: int,
 ) -> str:
     """
@@ -51,12 +52,14 @@ def _generate_round_prompt(
 
     要求LLM为提供的技能生成对应的卡牌，不进行技能组合。
     当前版本：每次调用使用单个技能，生成一张卡牌。
+    targets由系统指定，Agent只需生成name和description。
 
     Args:
         actor_name: 角色名称（当前未使用）
         card_creation_count: 需要生成的卡牌数量（固定为1）
         action_order: 角色行动顺序列表
         selected_skills: 技能列表（当前固定为1个元素）
+        specified_targets: 指定的目标列表（供Agent理解战术意图）
         current_round_number: 当前回合数
 
     Returns:
@@ -69,6 +72,9 @@ def _generate_round_prompt(
     skills_text = "\n".join(
         [f"- {skill.name}: {skill.description}" for skill in selected_skills]
     )
+
+    # 格式化目标列表
+    targets_text = "\n".join([f"- {target}" for target in specified_targets])
 
     return f"""# 指令！第 {current_round_number} 回合：生成 {card_creation_count} 张卡牌，以JSON格式返回。
 
@@ -84,11 +90,17 @@ def _generate_round_prompt(
 
 {skills_text}
 
-### 2.2 卡牌生成规则
+### 2.2 指定目标
 
-- 设计要求：每张卡牌对应一个技能，不进行组合。必须为每个技能生成一张对应的卡牌
-- 卡牌命名：基于技能效果创造新颖行动名称(禁止暴露技能名)
-- 卡牌描述：行动方式、战斗目的、使用代价
+本次行动的目标已确定为：
+
+{targets_text}
+
+### 2.3 卡牌生成规则
+
+- 设计要求：为指定技能生成针对上述目标的行动卡牌
+- 卡牌命名：基于技能效果和目标特点创造行动名称(禁止暴露技能名)
+- 卡牌描述：行动方式、战术目的、使用代价
 
 ## 3. 输出格式(JSON)
 
@@ -97,8 +109,7 @@ def _generate_round_prompt(
   "cards": [
     {{
       "name": "[行动名称]",
-      "description": "[行动描述]",
-      "targets": ["[目标角色名]"]
+      "description": "[行动描述]"
     }}
   ]
 }}
@@ -200,8 +211,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
         # 清除手牌，准备重新生成
         self._game.clear_hands()
 
-        # 为每个实体提取技能，构建映射表
+        # 为每个实体提取技能和目标，构建映射表
         entity_skill_map: Dict[str, Skill] = {}
+        entity_targets_map: Dict[str, List[str]] = {}
         for entity in entities:
             draw_cards_action = entity.get(DrawCardsAction)
             assert (
@@ -211,10 +223,11 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 draw_cards_action.skill is not None
             ), f"DrawCardsAction.skill must not be None for {entity.name}"
             entity_skill_map[entity.name] = draw_cards_action.skill
+            entity_targets_map[entity.name] = draw_cards_action.targets
 
         # 生成请求
         chat_clients: List[ChatClient] = self._create_chat_clients(
-            entities, entity_skill_map
+            entities, entity_skill_map, entity_targets_map
         )
 
         # 语言服务
@@ -228,8 +241,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 found_entity is not None
             ), f"Entity {chat_client.name} not found in game."
 
-            # 使用单技能生成单卡牌
-            # card_count = 1
+            # 处理卡牌生成响应
             self._process_draw_cards_response(found_entity, chat_client)
 
         # 最后的兜底，遍历所有参与的角色，如果没有手牌，说明_process_draw_cards_response出现了错误，可能是LLM返回的内容无法正确解析。此时，就需要给角色一个默认的手牌，避免游戏卡死。
@@ -255,6 +267,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             if entity.has(HandComponent) or entity.has(DeathComponent):
                 continue
 
+            # 兜底卡牌的目标固定为自己
             fallback_card = Card(
                 name="应急应对",
                 description="行动计划出现偏差，暂时采取保守策略观察战局",
@@ -332,10 +345,24 @@ class DrawCardsActionSystem(ReactiveProcessor):
             # 添加AI消息，包括响应内容。
             self._game.add_ai_message(entity, chat_client.response_ai_messages)
 
-            # 生成的结果。
-            # validated_response.cards 中的每个 card_response 已经是 Card 类型
-            # 因为 DrawCardsResponse.cards: List[Card] 会自动反序列化
-            cards: List[Card] = validated_response.cards
+            # 从DrawCardsAction获取targets
+            draw_cards_action = entity.get(DrawCardsAction)
+            assert (
+                draw_cards_action is not None
+            ), f"Entity {entity.name} must have DrawCardsAction"
+            specified_targets = draw_cards_action.targets
+
+            # 生成的结果（Agent只生成了name和description）
+            # 需要手动填充targets字段
+            cards: List[Card] = []
+            for card_data in validated_response.cards:
+                # 创建完整的Card对象，使用DrawCardsAction中的targets
+                complete_card = Card(
+                    name=card_data.name,
+                    description=card_data.description,
+                    targets=specified_targets,
+                )
+                cards.append(complete_card)
 
             # 更新手牌。
             if len(cards) > 0:
@@ -357,6 +384,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         self,
         actor_entities: List[Entity],
         entity_skill_map: Dict[str, Skill],
+        entity_targets_map: Dict[str, List[str]],
     ) -> List[ChatClient]:
         """
         为每个角色实体创建聊天客户端以请求LLM生成卡牌。
@@ -366,6 +394,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         Args:
             actor_entities: 需要生成卡牌的角色实体列表
             entity_skill_map: 实体名称到单个技能的映射表
+            entity_targets_map: 实体名称到目标列表的映射表
 
         Returns:
             List[ChatClient]: 准备好的聊天客户端列表
@@ -384,15 +413,17 @@ class DrawCardsActionSystem(ReactiveProcessor):
         # 为每个实体创建聊天客户端
         for entity in actor_entities:
 
-            # 从映射表中获取单个技能
+            # 从映射表中获取单个技能和目标列表
             skill = entity_skill_map[entity.name]
+            targets = entity_targets_map[entity.name]
 
             # 生成提示词
             prompt = _generate_round_prompt(
                 actor_name=entity.name,
-                card_creation_count=self._card_creation_count,
+                card_creation_count=1,
                 action_order=last_round.action_order,
                 selected_skills=[skill],
+                specified_targets=targets,
                 current_round_number=current_round_number,
             )
 

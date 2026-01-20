@@ -118,7 +118,7 @@ def create_tiger_lair_dungeon() -> Dungeon:
     actor_tiger = create_actor_mountain_tiger()
 
     # 将山中虎的生命值设为1，方便测试击杀
-    actor_tiger.character_stats.hp = 1
+    # actor_tiger.character_stats.hp = 1
 
     # 将山中虎添加到场景的角色列表中
     stage_deep_forest.actors = [actor_tiger]

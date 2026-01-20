@@ -12,8 +12,6 @@ from .entity_factory import (
     create_actor,
 )
 from .common_skills import (
-    WEAPON_ATTACK_SKILL,
-    WEAPON_DEFEND_SKILL,
     UNARMED_COMBAT_SKILL,
 )
 
@@ -46,8 +44,8 @@ def create_hunter() -> Actor:
     )
 
     actor.skills = [
-        WEAPON_ATTACK_SKILL.model_copy(),
-        WEAPON_DEFEND_SKILL.model_copy(),
+        # WEAPON_ATTACK_SKILL.model_copy(),
+        # WEAPON_DEFEND_SKILL.model_copy(),
         UNARMED_COMBAT_SKILL.model_copy(),
     ]
 

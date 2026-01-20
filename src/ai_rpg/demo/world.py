@@ -81,7 +81,7 @@ def create_hunter_mystic_blueprint(game_name: str) -> Blueprint:
     actor_hunter.character_sheet.appearance = "一名年近三十的男子，身形精悍，肌肉线条分明，是常年高强度活动留下的痕迹。他的肤色是经年风吹日晒形成的健康褐色。眼神沉静而警觉，下颌蓄着打理整齐的短须，头发在脑后简单束成一个发髻。他穿着一件轻便的短衫，由某种暗红色带细密纹路的皮革制成，胸口与肩部有颜色略深的加固部分，腰间用麻绳束紧。未被衣物覆盖的左肩处，清晰可见三道平行的、已经愈合的旧疤痕。他的右手虎口位置，皮肤因长期摩擦而显得格外粗糙厚实。"
 
     # 测试攻击力，打的快一点。
-    actor_hunter.character_stats.attack = 10000
+    actor_hunter.character_stats.attack = 100000
 
     # 创建术士角色
     actor_mystic = create_mystic()
@@ -178,7 +178,7 @@ def create_single_hunter_blueprint(game_name: str) -> Blueprint:
     )
 
     # 测试攻击力，打的快一点。
-    actor_hunter.character_stats.attack = 10000
+    actor_hunter.character_stats.attack = 10
 
     # 创建场景
     stage_shi_family_house = create_shi_family_house()

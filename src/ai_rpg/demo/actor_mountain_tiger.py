@@ -3,7 +3,6 @@ from ..models import (
     CharacterSheet,
     ActorType,
     CharacterStats,
-    Skill,
 )
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,

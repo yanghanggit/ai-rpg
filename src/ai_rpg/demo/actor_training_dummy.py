@@ -3,7 +3,6 @@ from ..models import (
     CharacterSheet,
     ActorType,
     CharacterStats,
-    Skill,
 )
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
@@ -11,6 +10,10 @@ from .global_settings import (
 )
 from .entity_factory import (
     create_actor,
+)
+from .common_skills import (
+    WEAPON_ATTACK_SKILL,
+    WEAPON_DEFEND_SKILL,
 )
 
 
@@ -42,10 +45,8 @@ def create_training_dummy() -> Actor:
 
     # 定义训练木桩的技能
     actor.skills = [
-        Skill(
-            name="使用武器",
-            description="使用手中的武器或可触及的装备进行任意用途的行动，如攻击、防御、破坏、支撑、投掷等。使用方式和目标由实际场景决定。代价：如果攻击就会降低防御。",
-        ),
+        WEAPON_ATTACK_SKILL.model_copy(),
+        WEAPON_DEFEND_SKILL.model_copy(),
     ]
 
     return actor

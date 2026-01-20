@@ -12,6 +12,11 @@ from .global_settings import (
 from .entity_factory import (
     create_actor,
 )
+from .common_skills import (
+    WEAPON_ATTACK_SKILL,
+    WEAPON_DEFEND_SKILL,
+    PERCEPTION_SKILL,
+)
 
 
 def create_mystic() -> Actor:
@@ -46,14 +51,9 @@ def create_mystic() -> Actor:
 
     # 定义术士的技能
     actor.skills = [
-        Skill(
-            name="灵气感知",
-            description="凭借对古先民遗迹的研究积累，感知目标体内的灵气波动规律，发现其薄弱之处。使下次攻击更易击中要害部位。代价：感知过程需要专注凝神，自身防御会暂时减弱。",
-        ),
-        Skill(
-            name="使用武器",
-            description="使用手中的武器或可触及的装备进行任意用途的行动，如攻击、防御、破坏、支撑、投掷等。使用方式和目标由实际场景决定。代价：如果攻击就会降低防御。",
-        ),
+        WEAPON_ATTACK_SKILL.model_copy(),
+        WEAPON_DEFEND_SKILL.model_copy(),
+        PERCEPTION_SKILL.model_copy(),
     ]
 
     return actor

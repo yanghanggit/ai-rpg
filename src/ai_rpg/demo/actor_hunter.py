@@ -3,7 +3,6 @@ from ..models import (
     CharacterSheet,
     ActorType,
     CharacterStats,
-    Skill,
 )
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
@@ -11,6 +10,11 @@ from .global_settings import (
 )
 from .entity_factory import (
     create_actor,
+)
+from .common_skills import (
+    WEAPON_ATTACK_SKILL,
+    WEAPON_DEFEND_SKILL,
+    UNARMED_COMBAT_SKILL,
 )
 
 
@@ -42,14 +46,9 @@ def create_hunter() -> Actor:
     )
 
     actor.skills = [
-        Skill(
-            name="使用武器",
-            description="使用手中的武器或可触及的装备进行任意用途的行动，如攻击、防御、破坏、支撑、投掷等。使用方式和目标由实际场景决定。代价：如果攻击就会降低防御。",
-        ),
-        Skill(
-            name="肉搏",
-            description="使用身体进行徒手战斗，包括拳击、踢击、擒拿、摔投等格斗技巧。攻击方式和目标由实际场景决定。代价：徒手攻击敌人的坚硬部位或武器时可能会受伤。",
-        ),
+        WEAPON_ATTACK_SKILL.model_copy(),
+        WEAPON_DEFEND_SKILL.model_copy(),
+        UNARMED_COMBAT_SKILL.model_copy(),
     ]
 
     return actor

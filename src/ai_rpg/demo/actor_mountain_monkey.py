@@ -12,6 +12,10 @@ from .global_settings import (
 from .entity_factory import (
     create_actor,
 )
+from .common_skills import (
+    BEAST_ATTACK_SKILL,
+    THROW_SKILL,
+)
 
 
 def create_actor_mountain_monkey() -> Actor:
@@ -41,14 +45,8 @@ def create_actor_mountain_monkey() -> Actor:
 
     # 定义山魈的技能
     mountain_monkey.skills = [
-        Skill(
-            name="利用环境",
-            description="机敏地观察周围环境，捡起可用的物体（石块、树枝、碎木等）进行攻击或防御。使用方式取决于拾取到的物品和当前场景。代价：使用环境物品需承担其特性带来的风险和负担。",
-        ),
-        Skill(
-            name="扑击",
-            description="利用敏捷的身手和对地形的熟悉，快速扑向目标进行撕咬和抓挠。代价：全力攻击会削弱自我保护。",
-        ),
+        THROW_SKILL.model_copy(),
+        BEAST_ATTACK_SKILL.model_copy(),
     ]
 
     return mountain_monkey

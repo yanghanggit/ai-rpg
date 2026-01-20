@@ -12,6 +12,11 @@ from .global_settings import (
 from .entity_factory import (
     create_actor,
 )
+from .common_skills import (
+    BEAST_ATTACK_SKILL,
+    INTIMIDATION_SKILL,
+    # THROW_SKILL,
+)
 
 
 def create_actor_mountain_tiger() -> Actor:
@@ -41,14 +46,8 @@ def create_actor_mountain_tiger() -> Actor:
 
     # 定义山中虎妖的技能
     mountain_tiger.skills = [
-        Skill(
-            name="威压",
-            description="释放作为大妖的强大气息，震慑周围生灵。代价：大范围释放威压会消耗大量体力。",
-        ),
-        Skill(
-            name="撕裂",
-            description="调动全身力量，使用爪牙发动毁灭性攻击。代价：全力出击会产生巨大的体能消耗和动作后的硬直。",
-        ),
+        INTIMIDATION_SKILL.model_copy(),
+        BEAST_ATTACK_SKILL.model_copy(),
     ]
 
     return mountain_tiger

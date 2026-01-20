@@ -88,14 +88,11 @@ def _generate_actor_card_details(
         card_stats = param.card.stats
 
         detail = f"""### {param.actor}
-    
-角色: HP:{actor_hp}/{actor_max_hp} | 防御:{card_stats.defense}
 
-卡牌: {param.card.name}
+HP:{actor_hp}/{actor_max_hp} | 攻击:{card_stats.attack} | 防御:{card_stats.defense}
 
-- 目标: {target_display}
-- 描述: {param.card.description}
-- 数值: 治疗:{card_stats.hp} | 攻击:{card_stats.attack}"""
+{param.card.name} -> {target_display}
+{param.card.description}"""
 
         details_prompt.append(detail)
 

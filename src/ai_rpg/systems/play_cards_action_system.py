@@ -46,9 +46,12 @@ def _generate_play_card_notification(
     card_stats = card.stats
 
     return f"""使用卡牌: {card.name}
-目标: {target_display}
-描述: {card.description}
-卡牌属性: 治疗:{card_stats.hp} | 攻击:{card_stats.attack} | 防御:{card_stats.defense}"""
+
+目标: 
+{target_display}
+
+描述: 
+{card.description}"""
 
 
 #######################################################################################################################################

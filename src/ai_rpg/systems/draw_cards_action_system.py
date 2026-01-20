@@ -55,7 +55,6 @@ class DrawCardsResponse(BaseModel):
 
     name: str
     description: str
-    hp: int = 0  # 治疗量（正数=恢复生命）
     attack: int = 0  # 攻击力
     defense: int = 0  # 防御力
 
@@ -132,13 +131,12 @@ def _generate_round_prompt(
 
 ## 输出(Output)
 
-JSON格式，输出最终数值（hp=治疗量）
+JSON格式，输出最终数值
 
 ```json
 {{
   "name": "[行动名称]",
   "description": "[行动描述]",
-  "hp": 0,
   "attack": 0,
   "defense": 0
 }}
@@ -310,7 +308,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
             # 从响应构建 CharacterStats
             card_stats = CharacterStats(
-                hp=validated_response.hp,
+                # hp=validated_response.hp,
                 max_hp=0,  # max_hp 不由 Agent 生成
                 attack=validated_response.attack,
                 defense=validated_response.defense,
@@ -434,7 +432,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             fallback_response = DrawCardsResponse(
                 name=fallback_card.name,
                 description=fallback_card.description,
-                hp=fallback_card.stats.hp,
+                # hp=fallback_card.stats.hp,
                 attack=fallback_card.stats.attack,
                 defense=fallback_card.stats.defense,
             )

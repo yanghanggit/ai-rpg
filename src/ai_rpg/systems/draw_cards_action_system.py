@@ -62,8 +62,6 @@ class DrawCardsResponse(BaseModel):
 
 #######################################################################################################################################
 def _generate_round_prompt(
-    # actor_name: str,
-    # card_creation_count: int,
     selected_skills: List[Skill],
     specified_targets: List[str],
     actor_stats_prompt: str,
@@ -73,23 +71,19 @@ def _generate_round_prompt(
     """
     生成战斗回合的卡牌抽取提示词。
 
-    要求LLM为提供的技能生成对应的卡牌，不进行技能组合。
-    当前版本：每次调用使用单个技能，生成一张卡牌。
-    targets由系统指定，Agent根据自身状态和技能生成卡牌内容及数值。
+    采用 Input → Transform → Output 结构，要求LLM基于输入的基础属性、状态效果和技能，
+    通过数值计算规则生成战斗卡牌。每次调用生成一张卡牌。
 
     Args:
-        actor_name: 角色名称（未使用，保留用于调试）
-        card_creation_count: 需要生成的卡牌数量（固定为1）
-        selected_skills: 技能列表（固定为1个元素）
+        selected_skills: 使用的技能列表（固定为1个元素）
         specified_targets: 指定的目标列表（由系统确定）
-        actor_stats_prompt: 角色当前属性提示词
+        actor_stats_prompt: 角色当前属性提示词（格式：HP:X/Y | 攻击:A | 防御:D）
         actor_status_effects: 角色当前状态效果列表
         current_round_number: 当前回合数
 
     Returns:
-        str: 格式化的提示词
+        str: 格式化的完整提示词，包含输入数据、转换规则和输出格式
     """
-    # assert card_creation_count > 0, "card_creation_count must be greater than 0"
 
     # 格式化技能列表
     skills_text = "\n".join(
@@ -110,40 +104,35 @@ def _generate_round_prompt(
     else:
         effects_text = "无"
 
-    return f"""# 指令！第 {current_round_number} 回合：生成卡牌，以JSON格式返回。
+    return f"""# 指令！第 {current_round_number} 回合：基于输入生成战斗卡牌
 
-## 1. 你的当前状态
+## 输入(Input)
 
-### 1.1 属性
-
-{actor_stats_prompt}
-
-### 1.2 状态效果(status effects)
-
-{effects_text}
-
-## 2. 生成卡牌
-
-### 2.1 技能
-
-{skills_text}
-
-### 2.2 目标
+**行动目标**: 
 
 {targets_text}
 
-### 2.3 卡牌生成规则
+**基础属性**: {actor_stats_prompt}
 
-**命名**：基于技能效果和目标创造行动名称，禁止暴露技能名
+**状态效果**: 
 
-**描述**：说明行动方式、战术目的、使用代价，体现**技能**与**状态效果**特性
+{effects_text}
 
-**数值**：
+**使用技能**: 
 
-- 公式：基础属性 + 技能特性 + 状态修正
-- 约束：必须体现角色所有基础数值，状态仅作增减
+{skills_text}
 
-## 3. 输出格式(JSON)
+## 转换规则(Transform)
+
+**命名**: 基于技能效果和目标创造行动名称，禁止暴露技能名
+
+**描述**: 说明行动方式、战术目的、使用代价，体现技能与状态效果特性
+
+**数值计算**: 所有基础属性 + 技能特性 + 状态效果修正
+
+## 输出(Output)
+
+JSON格式，输出最终数值（hp=治疗量）
 
 ```json
 {{
@@ -155,25 +144,20 @@ def _generate_round_prompt(
 }}
 ```
 
-输出最终数值（hp=治疗量）
-
 严格按上述JSON格式输出"""
 
 
 #######################################################################################################################################
 def _generate_compressd_round_prompt(
-    # actor_name: str,
-    # card_creation_count: int,
     current_round_number: int,
 ) -> str:
     """
     生成压缩版本的回合提示词，用于保存到上下文历史。
 
-    与完整提示词相比，该版本更简洁，仅包含关键信息。
+    与完整提示词相比，该版本极度简化，仅包含回合数和操作指令，
+    用于减少上下文token消耗。
 
     Args:
-        actor_name: 角色名称（当前未使用）
-        card_creation_count: 卡牌数量
         current_round_number: 当前回合数
 
     Returns:

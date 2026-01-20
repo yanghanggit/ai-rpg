@@ -87,12 +87,15 @@ def _generate_actor_card_details(
         # 获取卡牌属性（已包含状态效果修正）
         card_stats = param.card.stats
 
-        detail = f"""【{param.actor} | HP:{actor_hp}/{actor_max_hp}】
+        detail = f"""### {param.actor}
+    
+角色: HP:{actor_hp}/{actor_max_hp} | 防御:{card_stats.defense}
 
-卡牌名: {param.card.name}
-目标: {target_display}
-描述: {param.card.description}
-属性: 治疗:{card_stats.hp} | 攻击:{card_stats.attack} | 防御:{card_stats.defense}"""
+卡牌: {param.card.name}
+
+- 目标: {target_display}
+- 描述: {param.card.description}
+- 数值: 治疗:{card_stats.hp} | 攻击:{card_stats.attack}"""
 
         details_prompt.append(detail)
 
@@ -206,8 +209,6 @@ def _generate_combat_arbitration_prompt(
 ## 战斗计算
 
 严格按照 System 提示词的 **## 战斗机制** 进行计算
-
-计算中的攻击者(A)、目标(B)均指卡牌本身，使用各自卡牌的属性值进行计算。
 
 ## 仲裁规则
 

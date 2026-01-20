@@ -291,7 +291,7 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
 
     支持的命令：
         /ad - 推进 NPC 行动
-        /ld - 启动地下城
+        /ed - 启动地下城
         /speak --target=<角色> --content=<内容> - 与 NPC 对话
         /switch_stage --stage=<场景名> - 切换场景
     """
@@ -299,7 +299,7 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
     if usr_input == "/ad":
         await terminal_game.npc_home_pipeline.process()
 
-    elif usr_input == "/ld":
+    elif usr_input == "/ed":
 
         if len(terminal_game.current_dungeon.stages) == 0:
             logger.error(

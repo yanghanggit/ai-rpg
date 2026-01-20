@@ -157,6 +157,7 @@ def create_single_hunter_blueprint(game_name: str) -> Blueprint:
     actor_hunter = create_hunter()
     assert actor_hunter.kick_off_message == "", "猎人角色的kick_off_message应为空"
     actor_hunter.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 作为石氏猎人家族传人，磨练狩猎技艺，维护桃花源周边山林的生态平衡，并探索古先民遗迹的秘密。而且你最讨厌虎类的妖兽，因为你对其有刻骨铭心的仇恨，你只要见到就会全力发起攻击！"""
+    # 而且你最讨厌虎类的妖兽，因为你对其有刻骨铭心的仇恨，你只要见到就会全力发起攻击！
 
     # 添加猎人测试装备
     actor_hunter.items.extend(

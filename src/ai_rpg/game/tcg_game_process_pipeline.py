@@ -208,7 +208,7 @@ def create_dungeon_combat_pipeline(
     processors.add(DrawCardsActionSystem(tcg_game))
     processors.add(PlayCardsActionSystem(tcg_game))
     processors.add(ArbitrationActionSystem(tcg_game))
-    processors.add(StatusEffectsEvaluationSystem(tcg_game))
+    # processors.add(StatusEffectsEvaluationSystem(tcg_game))
     processors.add(ActionCleanupSystem(tcg_game))
     ###### 动作结束！！！！！################################################################################################
 

@@ -62,8 +62,8 @@ class DrawCardsResponse(BaseModel):
 
 #######################################################################################################################################
 def _generate_round_prompt(
-    actor_name: str,
-    card_creation_count: int,
+    # actor_name: str,
+    # card_creation_count: int,
     selected_skills: List[Skill],
     specified_targets: List[str],
     actor_stats_prompt: str,
@@ -89,7 +89,7 @@ def _generate_round_prompt(
     Returns:
         str: 格式化的提示词
     """
-    assert card_creation_count > 0, "card_creation_count must be greater than 0"
+    # assert card_creation_count > 0, "card_creation_count must be greater than 0"
 
     # 格式化技能列表
     skills_text = "\n".join(
@@ -110,7 +110,7 @@ def _generate_round_prompt(
     else:
         effects_text = "无"
 
-    return f"""# 指令！第 {current_round_number} 回合：生成 {card_creation_count} 张卡牌，以JSON格式返回。
+    return f"""# 指令！第 {current_round_number} 回合：生成卡牌，以JSON格式返回。
 
 ## 1. 你的当前状态
 
@@ -118,27 +118,30 @@ def _generate_round_prompt(
 
 {actor_stats_prompt}
 
-### 1.2 状态效果
+### 1.2 状态效果(status effects)
 
 {effects_text}
 
 ## 2. 生成卡牌
 
-### 2.1 可用技能池
+### 2.1 技能
 
 {skills_text}
 
-### 2.2 指定目标
-
-本次行动的目标已确定为：
+### 2.2 目标
 
 {targets_text}
 
 ### 2.3 卡牌生成规则
 
-- 设计要求：为指定技能生成针对上述目标的行动卡牌
-- 卡牌命名：基于技能效果和目标特点创造行动名称(禁止暴露技能名)
-- 卡牌描述：说明行动方式、战术目的、使用代价，完整体现**技能**与**状态效果**的核心特性
+**命名**：基于技能效果和目标创造行动名称，禁止暴露技能名
+
+**描述**：说明行动方式、战术目的、使用代价，体现**技能**与**状态效果**特性
+
+**数值**：
+
+- 公式：基础属性 + 技能特性 + 状态修正
+- 约束：必须体现角色所有基础数值，状态仅作增减
 
 ## 3. 输出格式(JSON)
 
@@ -152,24 +155,15 @@ def _generate_round_prompt(
 }}
 ```
 
-**数值设计**：以你的当前属性({actor_stats_prompt})为基础，根据状态效果调整数值
+输出最终数值（hp=治疗量）
 
-- hp: 治疗量（0=无治疗，正数=恢复生命值）
-- attack: 攻击力 = 你的攻击属性 × 状态效果修正
-- defense: 防御力 = 你的防御属性 × 状态效果修正
-
-**约束规则**：
-
-- 必须生成{card_creation_count}张卡牌
-- description可含整数但禁止百分率，禁止出现角色名称
-- 数值应合理反映技能效果强度
-- 严格按上述JSON格式输出"""
+严格按上述JSON格式输出"""
 
 
 #######################################################################################################################################
 def _generate_compressd_round_prompt(
-    actor_name: str,
-    card_creation_count: int,
+    # actor_name: str,
+    # card_creation_count: int,
     current_round_number: int,
 ) -> str:
     """
@@ -185,7 +179,7 @@ def _generate_compressd_round_prompt(
     Returns:
         str: 压缩后的提示词
     """
-    return f"""# 指令！第 {current_round_number} 回合：生成 {card_creation_count} 张卡牌，以JSON格式返回。"""
+    return f"""# 指令！第 {current_round_number} 回合：生成卡牌，以JSON格式返回。"""
 
 
 #######################################################################################################################################
@@ -206,7 +200,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
         self._game: Final[TCGGame] = game_context
-        self._card_creation_count: Final[int] = 1
+        # self._card_creation_count: Final[int] = 1
 
     ####################################################################################################################################
     @override
@@ -311,8 +305,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
             self._game.add_human_message(
                 entity=entity,
                 message_content=_generate_compressd_round_prompt(
-                    actor_name=entity.name,
-                    card_creation_count=self._card_creation_count,
+                    # actor_name=entity.name,
+                    # card_creation_count=self._card_creation_count,
                     current_round_number=len(
                         self._game.current_combat_sequence.current_rounds
                     ),
@@ -393,8 +387,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         # 生成提示词
         prompt = _generate_round_prompt(
-            actor_name=entity.name,
-            card_creation_count=1,
+            # actor_name=entity.name,
+            # card_creation_count=1,
             selected_skills=[skill],
             specified_targets=targets,
             actor_stats_prompt=_format_character_stats_prompt(combat_stats_comp.stats),
@@ -446,8 +440,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
             self._game.add_human_message(
                 entity=entity,
                 message_content=_generate_compressd_round_prompt(
-                    actor_name=entity.name,
-                    card_creation_count=self._card_creation_count,
+                    # actor_name=entity.name,
+                    # card_creation_count=self._card_creation_count,
                     current_round_number=current_round_number,
                 ),
             )

@@ -53,22 +53,23 @@ class CombatActionInfo(NamedTuple):
 
 
 #######################################################################################################################################
-def _generate_actor_card_details(
+def _generate_card_sequence_details(
     combat_actions_details: List[CombatActionInfo],
 ) -> List[str]:
-    """生成参战角色的卡牌详情列表。
+    """生成卡牌结算序列详情列表。
 
-    为每个参战角色生成格式化的战斗信息，包含角色当前生命值和出牌的完整信息
-    （卡牌名称、目标、描述、属性）。卡牌属性已包含状态效果修正后的最终数值。
+    以卡牌为基本单元，按照行动顺序为每张卡牌生成完整信息，包含：
+    使用者信息（名称、HP、攻防属性）、目标、卡牌描述。
+    卡牌属性已包含状态效果修正后的最终数值。
 
     Args:
         combat_actions_details: 战斗行动信息列表，包含角色名、卡牌、目标等
 
     Returns:
-        格式化的角色卡牌详情字符串列表，每个元素对应一个参战角色
+        格式化的卡牌详情字符串列表，每个元素对应一张卡牌
     """
     details_prompt: List[str] = []
-    for param in combat_actions_details:
+    for index, param in enumerate(combat_actions_details, start=1):
         assert param.card.name != ""
 
         # 格式化目标显示
@@ -87,12 +88,11 @@ def _generate_actor_card_details(
         # 获取卡牌属性（已包含状态效果修正）
         card_stats = param.card.stats
 
-        detail = f"""### {param.actor}
+        detail = f"""### {index}. 卡牌：{param.card.name}
 
-HP:{actor_hp}/{actor_max_hp} | 攻击:{card_stats.attack} | 防御:{card_stats.defense}
-
-{param.card.name} -> {target_display}
-{param.card.description}"""
+- **使用者**：{param.actor} | HP:{actor_hp}/{actor_max_hp} | 攻击:{card_stats.attack} | 防御:{card_stats.defense}
+- **目标**：{target_display}
+- **描述**：{param.card.description}"""
 
         details_prompt.append(detail)
 
@@ -176,65 +176,83 @@ def _generate_combat_arbitration_prompt(
 ) -> str:
     """生成战斗仲裁提示词。
 
-    生成给AI的完整仲裁指令，包含行动顺序、角色信息、战斗规则和输出JSON格式。
-    支持复活机制（多段HP变化X→0→Y）和环境互动。
+    生成给AI的完整仲裁指令，以卡牌为基本单元组织信息，包含卡牌结算序列、
+    战斗规则和输出JSON格式。支持复活机制（多段HP变化X→0→Y）和环境互动。
 
     Args:
-        combat_actions_details: 战斗行动信息列表
+        combat_actions_details: 战斗行动信息列表（已按行动顺序排序）
         current_round_number: 当前回合数
 
     Returns:
         完整的仲裁提示词字符串
     """
-    # 生成角色&卡牌详情
-    details_prompt = _generate_actor_card_details(combat_actions_details)
+    # 生成卡牌结算序列详情
+    card_sequence_prompt = _generate_card_sequence_details(combat_actions_details)
 
     return f"""# 指令！第 {current_round_number} 回合：完成战斗结算与演出，以JSON格式返回。
 
-## 行动顺序
+## 卡牌结算序列
 
-{" → ".join([param.actor for param in combat_actions_details])}
+**卡牌**是战斗结算的基本单元，每张卡牌封装了完整的行动信息（使用者、目标、攻防属性、描述）。按照先后顺序依次结算，先手卡牌的效果优先生效，可改变环境与战场状态，影响后续卡牌的结算结果。
 
-先手角色行动优先生效，可改变环境与战场状态，影响后续角色的行动结果。
-
-## 参战信息
-
-{"\n\n".join(details_prompt)}
-
-**注意**：HP:X/Y的X是本回合起始HP，combat_log的"HP:角色=X→..."必须使用该值。
+{"\n\n".join(card_sequence_prompt)}
 
 ## 战斗计算
 
 严格按照 System 提示词的 **## 战斗机制** 进行计算
 
-## 仲裁规则
+## 战斗导演职责
 
-- 角色可利用或改变环境物体（先到先得）
-- 环境变化影响后续角色行动
+你是战斗场景，负责设计环境互动与战斗变数。利用场景特征为战斗注入创意：
+
+- **先手优势**：先手卡牌可利用/改变环境，影响后手卡牌效果
+- **环境回应**：根据行动设计合理的环境反馈
+- **意外效果**（可选）：你可以创造"情理之中、意料之外"的结果，但须符合物理逻辑，并非每次都触发。
+
+在combat_log的[环境]段标记关键变化
 
 ## 输出格式
 
 ```json
 {{
-  "combat_log": "[角色A|卡牌A→环境A→角色X:伤10 代价:防-2] [角色B|卡牌B→环境B→角色Y:伤50 代价:攻-3] [角色C|卡牌C→角色Z:伤8] HP:角色A=45/50 角色B=30→25/40 角色C=50/50 角色X=40→30/50 角色Y=35→0→50/50 角色Z=42→34/50 [环境]效果1+效果2",
-  "final_hp": {{
-    "A角色全名": 45,
-    "B角色全名": 25,
-    "C角色全名": 50,
-    "X角色全名": 30,
-    "Y角色全名": 50,
-    "Z角色全名": 34
-  }},
-  "narrative": "战斗过程的故事化描述"
+  "combat_log": "多行字符串，每行记录一张卡牌执行",
+  "final_hp": {{}},
+  "narrative": "战斗演出描述"
 }}
 ```
 
-**约束**
+### combat_log格式（多行字符串）
 
-- combat_log：格式 `[角色简名|卡牌→环境→目标:效果 代价:X]` 依次记录每个角色的完整行动流程，`HP:角色=X→Y/Z` 集中记录所有角色最终HP（支持多段变化X→Y→Z），`[环境]关键词` 最后记录环境变化。角色名仅保留最后一段
-- final_hp：字典格式，键为**角色全名**，值为该角色的最终HP数值（与combat_log中HP部分的最终值一致）
-- narrative：感官描写、禁数字、简洁扼要
-- 严格按上述JSON格式输出"""
+**结构**：按卡牌顺序逐行记录，每行对应一张卡牌的执行结果
+
+#### 单行格式
+`[简名|卡牌→目标:效果] HP:全部角色当前状态`
+
+**组成规则**：
+- **行动段**：`[简名|卡牌→目标:效果]`，可选环境互动和代价
+- **HP段**：该卡执行后，所有参战角色的HP状态（变化用→，不变直接写）
+- **简名**：角色全名最后一段
+- **扩展性**：支持任意角色数量（2人、4人、6人等）
+
+#### 可选元素
+- 环境互动：`[简名|卡牌→环境物→目标:效果]`
+- 代价标记：`代价:X`
+- 环境总结行：`[环境]关键词1+关键词2`（最后一行，可选）
+
+#### 格式模板
+```
+[简名|卡牌→目标:效果] HP:简名A=X→Y/Z 简名B=Y/Z 简名C=W/W ...
+[简名|卡牌→目标:效果 代价:X] HP:简名A=Y/Z 简名B=Y→Z/W 简名C=W→V/W ...
+[环境]关键词
+```
+
+### final_hp格式
+
+字典，键为**角色全名**（非简名），值为最终HP数值
+
+### narrative格式
+
+80-150字，第三人称，动作连贯，禁用数字和机制术语"""
 
 
 ###########################################################################################################################################

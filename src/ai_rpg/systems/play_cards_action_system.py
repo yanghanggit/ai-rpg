@@ -139,9 +139,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
 
             # 生成出牌指令
             play_card_command = _generate_play_card_command(current_round_number)
-            logger.debug(
-                f"PlayCardsActionSystem: 生成出牌指令: \n{play_card_command}"
-            )
+            logger.debug(f"PlayCardsActionSystem: 生成出牌指令: \n{play_card_command}")
 
             # 添加出牌指令到角色对话上下文
             self._game.add_human_message(
@@ -158,7 +156,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             )
             logger.debug(
                 f"PlayCardsActionSystem: 生成出牌通知: \n{play_card_notification}"
-            )   
+            )
 
             # 添加AI出牌执行消息
             self._game.add_ai_message(

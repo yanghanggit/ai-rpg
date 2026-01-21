@@ -68,7 +68,8 @@ class CombatOutcomeSystem(ExecuteProcessor):
             self._game.current_combat_sequence.complete_combat(CombatResult.WIN)
             self._broadcast_result_to_allies(CombatResult.WIN)
         else:
-            logger.info("combat continue!!!")
+            # logger.info("combat continue!!!")
+            pass
 
     ########################################################################################################################################################################
     def _is_enemy_side_eliminated(self) -> bool:

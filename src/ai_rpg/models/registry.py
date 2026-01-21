@@ -41,9 +41,10 @@ def register_component_type(cls: Type[ComponentT]) -> Type[ComponentT]:
 
     # 检查：如果是 MutableComponent，发出警告
     if issubclass(cls, MutableComponent):
-        logger.warning(
-            f"⚠️ 警告: {cls.__name__} 是一个 MutableComponent，使用可变组件可能会导致 ECS 系统中的状态不一致问题，请谨慎使用。"
-        )
+        # logger.warning(
+        #     f"⚠️ 警告: {cls.__name__} 是一个 MutableComponent，使用可变组件可能会导致 ECS 系统中的状态不一致问题，请谨慎使用。"
+        # )
+        pass
 
     # 注册类到全局字典
     class_name = cls.__name__

@@ -182,7 +182,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
     def __init__(self, game_context: TCGGame) -> None:
         super().__init__(game_context)
         self._game: Final[TCGGame] = game_context
-        # self._card_creation_count: Final[int] = 1
 
     ####################################################################################################################################
     @override
@@ -210,9 +209,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
             logger.debug(f"last_round.has_ended, so setup new round")
             self._game.create_next_round()
 
-        logger.debug(
-            f"当前回合数: {len(self._game.current_combat_sequence.current_rounds)}"
-        )
+        # logger.debug(
+        #     f"当前回合数: {len(self._game.current_combat_sequence.current_rounds)}"
+        # )
         assert (
             len(self._game.current_combat_sequence.current_rounds) > 0
         ), "当前没有进行中的战斗，不能设置回合。"
@@ -287,8 +286,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
             self._game.add_human_message(
                 entity=entity,
                 message_content=_generate_compressd_round_prompt(
-                    # actor_name=entity.name,
-                    # card_creation_count=self._card_creation_count,
                     current_round_number=len(
                         self._game.current_combat_sequence.current_rounds
                     ),
@@ -369,8 +366,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         # 生成提示词
         prompt = _generate_round_prompt(
-            # actor_name=entity.name,
-            # card_creation_count=1,
             selected_skills=[skill],
             specified_targets=targets,
             actor_stats_prompt=_format_character_stats_prompt(combat_stats_comp.stats),
@@ -422,8 +417,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
             self._game.add_human_message(
                 entity=entity,
                 message_content=_generate_compressd_round_prompt(
-                    # actor_name=entity.name,
-                    # card_creation_count=self._card_creation_count,
                     current_round_number=current_round_number,
                 ),
             )
@@ -432,7 +425,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
             fallback_response = DrawCardsResponse(
                 name=fallback_card.name,
                 description=fallback_card.description,
-                # hp=fallback_card.stats.hp,
                 attack=fallback_card.stats.attack,
                 defense=fallback_card.stats.defense,
             )

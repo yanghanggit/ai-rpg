@@ -14,6 +14,7 @@ from ..models import (
     KickOffComponent,
     StageComponent,
     WorldComponent,
+    EnemyComponent,
 )
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
@@ -43,7 +44,7 @@ class KickOffSystem(ExecuteProcessor):
             entities_to_process = valid_entities
 
         if len(entities_to_process) == 0:
-            logger.warning(
+            logger.info(
                 "KickOffSystem: All entities loaded from cache, no new requests needed"
             )
             return
@@ -105,9 +106,9 @@ class KickOffSystem(ExecuteProcessor):
                     # 从待处理集合中移除
                     entities_to_process.discard(entity)
 
-                    logger.debug(
-                        f"KickOffSystem: Loaded cached response for {entity.name}"
-                    )
+                    # logger.debug(
+                    #     f"KickOffSystem: Loaded cached response for {entity.name}"
+                    # )
 
                 except Exception as e:
                     logger.warning(
@@ -153,10 +154,10 @@ class KickOffSystem(ExecuteProcessor):
         agent_context.context = message_context_list + agent_context.context
 
         # 打印调试信息
-        logger.info(f"Integrate context for entity: {entity.name}")
-        logger.debug(f"{prompt}")
+        logger.debug(f"Integrate context for entity: {entity.name}")
+        logger.debug(f"prompt:{prompt}")
         for ai_msg in ai_messages:
-            logger.debug(f"{str(ai_msg.content)}")
+            logger.debug(f"ai response: {str(ai_msg.content)}")
 
     ###############################################################################################################################################
     def _cache_kick_off_response(
@@ -323,9 +324,12 @@ class KickOffSystem(ExecuteProcessor):
             # 检查消息内容是否有效
             kick_off_message_comp = entity.get(KickOffComponent)
             if kick_off_message_comp is None or kick_off_message_comp.content == "":
-                logger.warning(
+                logger.info(
                     f"KickOffSystem: {entity.name} kick off message is empty, skipping"
                 )
+                assert entity.has(
+                    EnemyComponent
+                ), "Only Enemy entities can have empty kick off messages"
                 continue
 
             valid_entities.add(entity)

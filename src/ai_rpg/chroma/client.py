@@ -26,7 +26,7 @@ from loguru import logger
 # 全局 ChromaDB 客户端实例
 # 使用持久化客户端，数据会保存在本地文件系统中
 chroma_client: ClientAPI = chromadb.PersistentClient()
-logger.info(f"ChromaDB Settings: {chroma_client.get_settings().persist_directory}")
+# logger.info(f"ChromaDB Settings: {chroma_client.get_settings().persist_directory}")
 
 
 ##################################################################################################################

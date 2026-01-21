@@ -158,11 +158,11 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
 
             # 筛选条件：base_body 不为空 且 appearance 为空
             if appearance_comp.base_body == "":
-                logger.debug(f"跳过角色 {actor_entity.name}，base_body 为空")
+                # logger.debug(f"跳过角色 {actor_entity.name}，base_body 为空")
                 continue
 
             if appearance_comp.appearance != "":
-                logger.debug(f"跳过角色 {actor_entity.name}，外观已存在")
+                # logger.debug(f"跳过角色 {actor_entity.name}，外观已存在")
                 continue
 
             # 获取 Agent 上下文
@@ -195,7 +195,7 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
                 )
             )
 
-        logger.debug(f"准备为 {len(chat_clients)} 个角色生成外观描述")
+        # logger.debug(f"准备为 {len(chat_clients)} 个角色生成外观描述")
         return chat_clients
 
     #######################################################################################################################################

@@ -203,9 +203,9 @@ class TCGGame(RPGGame):
             action_order=action_order,
         )
         self.current_combat_sequence.current_combat.rounds.append(round)
-        logger.debug(
-            f"新的回合开始 = {len(self.current_combat_sequence.current_rounds)}"
-        )
+        # logger.debug(
+        #     f"新的回合开始 = {len(self.current_combat_sequence.current_rounds)}"
+        # )
         return round
 
     ################################################################################################################

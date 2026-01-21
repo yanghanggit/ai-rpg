@@ -66,9 +66,9 @@ def create_actor(
     # 选择外观描述
     appearance = character_sheet.base_body
     if appearance == "":
-        logger.warning(
-            f"Actor {name} has empty base_body in character_sheet, using appearance instead."
-        )
+        # logger.warning(
+        #     f"Actor {name} has empty base_body in character_sheet, using appearance instead."
+        # )
         appearance = character_sheet.appearance
 
     # 初次编译system_message!!!!

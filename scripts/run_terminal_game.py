@@ -139,7 +139,7 @@ async def _run_game(
 
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(terminal_game.world.entities_serialization) == 0:
-        logger.info(f"游戏中没有实体 = {game}, 说明是第一次创建游戏")
+        # logger.info(f"游戏中没有实体 = {game}, 说明是第一次创建游戏")
         # 直接构建ecs
         terminal_game.new_game().save_game()
 

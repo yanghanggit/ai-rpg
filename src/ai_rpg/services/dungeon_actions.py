@@ -136,9 +136,9 @@ def activate_actor_card_draws(tcg_game: TCGGame) -> None:
             targets = []
 
         # 加一些日志用于调试!
-        logger.debug(
-            f"为角色 {entity.name} 激活抽牌动作，使用技能 【{selected_skill.name}】，目标列表: {targets}"
-        )
+        # logger.debug(
+        #     f"为角色 {entity.name} 激活抽牌动作，使用技能 【{selected_skill.name}】，目标列表: {targets}"
+        # )
 
         # 获取角色当前所有的状态效果
         combat_stats = entity.get(CombatStatsComponent)
@@ -146,12 +146,17 @@ def activate_actor_card_draws(tcg_game: TCGGame) -> None:
             combat_stats.status_effects.copy() if combat_stats else []
         )
 
+        # 测试代码：只传第一个状态效果或空列表
+        test_status_effects = (
+            [current_status_effects[0]] if len(current_status_effects) > 0 else []
+        )
+
         entity.replace(
             DrawCardsAction,
             entity.name,
             selected_skill,  # skill
             targets,  # targets
-            current_status_effects,  # status_effects
+            test_status_effects,  # status_effects (测试：只传第一个或空列表)
         )
 
 

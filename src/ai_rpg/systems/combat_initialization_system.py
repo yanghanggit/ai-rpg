@@ -198,7 +198,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         )
 
         # 第二步：并发调用LLM生成所有角色的初始状态效果
-        logger.debug(f"开始并发生成 {len(chat_clients)} 个角色的初始状态效果...")
+        # logger.debug(f"开始并发生成 {len(chat_clients)} 个角色的初始状态效果...")
         await ChatClient.gather_request_post(clients=chat_clients)
 
         # 第三步：解析并更新每个角色的状态效果
@@ -332,10 +332,10 @@ class CombatInitializationSystem(ExecuteProcessor):
                 )
                 self._game.add_human_message(entity=entity, message_content=added_msg)
 
-                logger.debug(
-                    f"[{entity.name}] 战斗初始化新增 {len(format_response.status_effects)} 个状态效果: "
-                    f"{[e.name for e in format_response.status_effects]}"
-                )
+                # logger.debug(
+                #     f"[{entity.name}] 战斗初始化新增 {len(format_response.status_effects)} 个状态效果: "
+                #     f"{[e.name for e in format_response.status_effects]}"
+                # )
             else:
                 logger.debug(f"[{entity.name}] 战斗初始化无新增状态效果")
 

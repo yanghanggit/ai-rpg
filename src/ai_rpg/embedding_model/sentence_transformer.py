@@ -16,7 +16,7 @@ try:
         str(cache_path("paraphrase-multilingual-MiniLM-L12-v2"))
     )
 
-    logger.info("✅ [EMBEDDING] 预加载多语言模型成功")
+    # logger.info("✅ [EMBEDDING] 预加载多语言模型成功")
 except Exception as e:
     logger.error(f"❌ [EMBEDDING] 预加载多语言模型失败: {e}")
     assert False, "预加载多语言模型失败"

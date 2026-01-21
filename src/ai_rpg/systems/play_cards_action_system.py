@@ -6,6 +6,7 @@
 """
 
 from typing import Final, List, final
+from loguru import logger
 from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
@@ -20,18 +21,38 @@ from langchain_core.messages import AIMessage
 
 
 #######################################################################################################################################
+def _generate_play_card_command(current_round_number: int) -> str:
+    """生成出牌指令消息。
+
+    模拟系统发出的战斗指令，提示角色当前回合需要使用卡牌。
+    此消息作为 Human Message 添加到角色上下文，引导角色进入出牌阶段。
+
+    Args:
+        current_round_number: 当前回合数
+
+    Returns:
+        格式化的出牌指令字符串
+    """
+    return f"""# 指令！第 {current_round_number} 回合：使用卡牌"""
+
+
+#######################################################################################################################################
 def _generate_play_card_notification(
     actor_name: str, card: Card, target_names: List[str]
 ) -> str:
     """生成出牌通知消息。
 
+    模拟角色自主决策后使用卡牌的输出，作为 AI Message 添加到角色上下文。
+    通过第一人称描述强化角色的自主性，让角色认为这是自己的选择。
+    此消息将成为角色对话历史的一部分，影响后续交互的连贯性。
+
     Args:
         actor_name: 出牌角色名称（当前未使用）
-        card: 卡牌对象，包含名称、描述、属性和目标
+        card: 卡牌对象，包含名称、描述和属性
         target_names: 系统指定的目标名称列表
 
     Returns:
-        格式化的出牌通知字符串，包含卡牌名、目标、描述和属性
+        格式化的出牌通知字符串，包含卡牌名、目标和第一人称描述
     """
 
     # 格式化目标显示
@@ -42,15 +63,10 @@ def _generate_play_card_notification(
     else:
         target_display = f"[{', '.join(target_names)}]"
 
-    # 获取卡牌属性
-    card_stats = card.stats
+    return f"""# 使用卡牌：{card.name}
 
-    return f"""使用卡牌: {card.name}
+目标：{target_display}
 
-目标: 
-{target_display}
-
-描述: 
 {card.description}"""
 
 
@@ -100,35 +116,64 @@ class PlayCardsActionSystem(ReactiveProcessor):
         """
         if not self._game.current_combat_sequence.is_ongoing:
             # 必须是 进行中的阶段！
+            logger.debug("PlayCardsActionSystem: 战斗未进行中，跳过出牌处理")
             return
 
         # 获取当前回合数
         current_round_number = len(self._game.current_combat_sequence.current_rounds)
+        logger.debug(
+            f"PlayCardsActionSystem: 处理第 {current_round_number} 回合，共 {len(entities)} 个角色出牌"
+        )
 
         for actor_entity in entities:
 
             play_cards_action = actor_entity.get(PlayCardsAction)
+            assert (
+                play_cards_action is not None
+            ), f"{actor_entity.name} 缺少 PlayCardsAction"
 
-            # 添加出牌通知到角色对话上下文(模拟的)
+            # logger.debug(
+            #     f"PlayCardsActionSystem: {actor_entity.name} 使用卡牌 [{play_cards_action.card.name}] "
+            #     f"目标 {play_cards_action.targets}"
+            # )
+
+            # 生成出牌指令
+            play_card_command = _generate_play_card_command(current_round_number)
+            logger.debug(
+                f"PlayCardsActionSystem: 生成出牌指令: \n{play_card_command}"
+            )
+
+            # 添加出牌指令到角色对话上下文
             self._game.add_human_message(
                 actor_entity,
-                f"""# 指令！这是第 {current_round_number} 回合，使用卡牌！""",
+                play_card_command,
                 action_type="play_card_command",
             )
 
+            # 生成卡牌详情通知
+            play_card_notification = _generate_play_card_notification(
+                actor_name=actor_entity.name,
+                card=play_cards_action.card,
+                target_names=play_cards_action.targets,
+            )
+            logger.debug(
+                f"PlayCardsActionSystem: 生成出牌通知: \n{play_card_notification}"
+            )   
+
+            # 添加AI出牌执行消息
             self._game.add_ai_message(
                 actor_entity,
                 [
                     AIMessage(
-                        content=_generate_play_card_notification(
-                            actor_name=actor_entity.name,
-                            card=play_cards_action.card,
-                            target_names=play_cards_action.targets,
-                        ),
+                        content=play_card_notification,
                         action_type="play_card_execution",
                     )
                 ],
             )
+
+            # logger.debug(
+            #     f"PlayCardsActionSystem: {actor_entity.name} 出牌通知已添加到上下文"
+            # )
 
             # 添加仲裁动作标记
             current_stage = self._game.resolve_stage_entity(actor_entity)
@@ -140,3 +185,6 @@ class PlayCardsActionSystem(ReactiveProcessor):
                     "",
                     "",
                 )
+                # logger.debug(
+                #     f"PlayCardsActionSystem: 为场景 {current_stage.name} 添加仲裁动作标记"
+                # )

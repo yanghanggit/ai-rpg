@@ -128,6 +128,10 @@ def _generate_combat_init_prompt(
 
 根据场景、敌我、自身状况，判断你在战斗开始时应具有的状态效果（环境影响、心理状态、战术准备等）。
 
+**状态效果要求**：
+- name: 简洁的效果名称（<8字）
+- description: 第一人称描述效果的具体表现和氛围感受，简短清晰（1-2句话）
+
 **约束**: 最多生成 {max_effects} 个状态效果
 
 **输出JSON**:
@@ -135,7 +139,7 @@ def _generate_combat_init_prompt(
 ```json
 {{
   "status_effects": [
-    {{"name": "状态效果名", "description": "效果描述及来源"}}
+    {{"name": "状态效果名", "description": "第一人称描述效果的具体表现"}}
   ]
 }}
 ```

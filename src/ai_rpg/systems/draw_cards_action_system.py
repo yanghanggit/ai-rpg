@@ -55,8 +55,8 @@ class DrawCardsResponse(BaseModel):
 
     name: str
     description: str
-    attack: int = 0  # 攻击力
-    defense: int = 0  # 防御力
+    attack: int
+    defense: int
 
 
 #######################################################################################################################################

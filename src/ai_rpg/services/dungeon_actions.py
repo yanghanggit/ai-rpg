@@ -151,12 +151,17 @@ def activate_actor_card_draws(tcg_game: TCGGame) -> None:
             [current_status_effects[0]] if len(current_status_effects) > 0 else []
         )
 
+        # 加一个test数据，随机从全部中选择一个，然后组成[]
+        random_status_effects = []
+        if len(current_status_effects) > 0:
+            random_status_effects = [random.choice(current_status_effects)]
+
         entity.replace(
             DrawCardsAction,
             entity.name,
             selected_skill,  # skill
             targets,  # targets
-            test_status_effects,  # status_effects (测试：只传第一个或空列表)
+            random_status_effects,  # status_effects (测试：只传第一个或空列表)
         )
 
 
@@ -238,7 +243,7 @@ def activate_random_play_cards(tcg_game: TCGGame) -> Tuple[bool, str]:
         hand_comp = actor_entity.get(HandComponent)
         selected_card = random.choice(hand_comp.cards)
 
-        logger.debug(f"为角色 {actor_entity.name} 随机选择卡牌: {selected_card.name}")
+        # logger.debug(f"为角色 {actor_entity.name} 随机选择卡牌: {selected_card.name}")
 
         # 添加打牌动作组件
         actor_entity.replace(

@@ -11,7 +11,6 @@ from typing import (
     Type,
     TypeVar,
 )
-from loguru import logger
 from ..entitas.components import Component, MutableComponent
 
 ############################################################################################################

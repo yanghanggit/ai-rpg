@@ -207,6 +207,7 @@ def _generate_combat_arbitration_prompt(
 
 你是战斗场景，基于 System 提示词的 **## 战斗机制** 进行结算，拥有以下创意权限：
 
+- **机制执行**：卡牌描述中明确的战斗机制规则（如条件触发、状态转换）必须在结算时体现在final_hp和combat_log中
 - **先手优势**：先手卡牌可利用/改变环境，影响后手效果
 - **环境回应**：根据行动设计合理的环境反馈
 - **数值泛化**：可基于情境对基准数值调整，需在combat_log中说明原因
@@ -241,7 +242,9 @@ def _generate_combat_arbitration_prompt(
 
 ### narrative格式
 
-80-150字，第三人称，动作连贯，禁用数字和机制术语"""
+80-150字，第三人称外部观察者视角，动作连贯，禁用数字和机制术语
+
+**客观性约束**：仅描述动作与环境变化，不涉及角色情绪/心理反应"""
 
 
 ###########################################################################################################################################
@@ -438,9 +441,9 @@ class ArbitrationActionSystem(ReactiveProcessor):
                     if effect.name != consumed_effect.name
                 ]
 
-            logger.debug(
-                f"清除 {action_info.actor} 的 {len(consumed_effects)} 个已消耗状态效果"
-            )
+            # logger.debug(
+            #     f"清除 {action_info.actor} 的 {len(consumed_effects)} 个已消耗状态效果"
+            # )
 
             # 通知角色状态效果已被消耗
             self._game.add_human_message(
@@ -573,7 +576,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
             combat_stats_comp = entity.get(CombatStatsComponent)
             if combat_stats_comp.stats.hp <= 0:
 
-                logger.warning(f"{combat_stats_comp.name} is dead")
+                # logger.warning(f"{combat_stats_comp.name} is dead")
                 self._game.add_human_message(entity, _generate_defeat_notification())
                 entity.replace(DeathComponent, combat_stats_comp.name)
 

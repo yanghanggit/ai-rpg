@@ -1,5 +1,4 @@
 from typing import Final, final, override, Set
-from loguru import logger
 from ..entitas import ExecuteProcessor, Entity
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -60,11 +59,11 @@ class CombatOutcomeSystem(ExecuteProcessor):
             return  # 不是本阶段就直接返回
 
         if self._is_ally_side_eliminated():
-            logger.info("ally side eliminated!!!")
+            # logger.info("ally side eliminated!!!")
             self._game.current_combat_sequence.complete_combat(CombatResult.LOSE)
             self._broadcast_result_to_allies(CombatResult.LOSE)
         elif self._is_enemy_side_eliminated():
-            logger.info("enemy side eliminated!!!")
+            # logger.info("enemy side eliminated!!!")
             self._game.current_combat_sequence.complete_combat(CombatResult.WIN)
             self._broadcast_result_to_allies(CombatResult.WIN)
         else:

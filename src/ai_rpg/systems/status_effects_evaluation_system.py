@@ -41,12 +41,12 @@ def _generate_status_effects_evaluation_prompt(
     """生成状态效果评估提示词
 
     根据战斗结果评估应添加的新状态效果，避免重复添加已有效果。
-    
+
     Args:
         current_status_effects: 当前已有的状态效果列表
         current_round_number: 当前回合数
         max_effects: 最多生成的状态效果数量，默认2
-    
+
     Returns:
         格式化的提示词字符串
     """
@@ -179,7 +179,7 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
             )
 
         # 并发调用所有 LLM
-        logger.debug(f"开始并发评估 {len(chat_clients)} 个角色的状态效果...")
+        # logger.debug(f"开始并发评估 {len(chat_clients)} 个角色的状态效果...")
         await ChatClient.gather_request_post(clients=chat_clients)
 
         # 处理每个角色的响应
@@ -215,10 +215,10 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
                 json_content
             )
 
-            logger.debug(
-                f"[{entity.name}] 状态效果评估成功: "
-                f"添加{len(format_response.add_effects)}个"
-            )
+            # logger.debug(
+            #     f"[{entity.name}] 状态效果评估成功: "
+            #     f"添加{len(format_response.add_effects)}个"
+            # )
 
             # 添加新效果到现有列表
             if format_response.add_effects:
@@ -234,10 +234,10 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
                 self._game.add_human_message(entity=entity, message_content=added_msg)
 
                 # 记录日志
-                logger.debug(
-                    f"[{entity.name}] 新增状态效果: "
-                    f"{[e.name for e in format_response.add_effects]}"
-                )
+                # logger.debug(
+                #     f"[{entity.name}] 新增状态效果: "
+                #     f"{[e.name for e in format_response.add_effects]}"
+                # )
             else:
                 logger.debug(f"[{entity.name}] 本回合无新增状态效果")
 

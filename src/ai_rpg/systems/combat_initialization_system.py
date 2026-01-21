@@ -244,7 +244,7 @@ class CombatInitializationSystem(ExecuteProcessor):
                 stage_description=stage_description,
                 other_actors_info=other_actors_info,
                 actor_stats=combat_stats_comp.stats,
-                max_effects=2,
+                max_effects=1,
             )
 
             # 追加提示词到角色对话中

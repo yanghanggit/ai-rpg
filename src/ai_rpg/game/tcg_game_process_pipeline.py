@@ -49,23 +49,18 @@ def create_npc_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     # 角色外观生成系统
     processors.add(ActorAppearanceUpdateSystem(tcg_game))
 
-    # 规划逻辑
-    ######## 在所有规划之前!##############################################################
+    # 规划系统-场景描述系统-角色系统
     processors.add(HomeAutoPlanSystem(tcg_game))
     processors.add(HomeStageDescriptionSystem(tcg_game))
     processors.add(HomeActorSystem(tcg_game))
-    ####### 在所有规划之后! ##############################################################
 
-    # 动作处理相关的系统 ##################################################################
-    ####################################################################################
+    # 动作处理相关的系统：查询-说话-耳语-公告-场景转换-清理
     processors.add(QueryActionSystem(tcg_game))
     processors.add(SpeakActionSystem(tcg_game))
     processors.add(WhisperActionSystem(tcg_game))
     processors.add(AnnounceActionSystem(tcg_game))
     processors.add(TransStageActionSystem(tcg_game))
     processors.add(ActionCleanupSystem(tcg_game))
-    ####################################################################################
-    ####################################################################################
 
     # 动作处理后，可能清理。
     processors.add(DestroyEntitySystem(tcg_game))
@@ -102,8 +97,6 @@ def create_player_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
         TransStageActionSystem,
     )
 
-    # from ..systems.player_action_audit_system import PlayerActionAuditSystem
-
     ##
     tcg_game = cast(TCGGame, game)
     processors = RPGGameProcessPipeline()
@@ -114,16 +107,13 @@ def create_player_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     # 角色外观生成系统
     processors.add(ActorAppearanceUpdateSystem(tcg_game))
 
-    # 动作处理相关的系统 ##################################################################
-    ####################################################################################
+    # 动作处理相关的系统：说话-耳语-公告-场景转换-清理
     # processors.add(PlayerActionAuditSystem(tcg_game))
     processors.add(SpeakActionSystem(tcg_game))
     processors.add(WhisperActionSystem(tcg_game))
     processors.add(AnnounceActionSystem(tcg_game))
     processors.add(TransStageActionSystem(tcg_game))
     processors.add(ActionCleanupSystem(tcg_game))
-    ####################################################################################
-    ####################################################################################
 
     # 动作处理后，可能清理。
     processors.add(DestroyEntitySystem(tcg_game))
@@ -162,31 +152,15 @@ def create_dungeon_combat_pipeline(
     from ..systems.play_cards_action_system import (
         PlayCardsActionSystem,
     )
-
-    # from ..systems.combat_post_processing_system import (
-    #     CombatPostProcessingSystem,
-    # )
     from ..systems.kick_off_system import KickOffSystem
     from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.save_system import SaveSystem
     from ..systems.arbitration_action_system import ArbitrationActionSystem
 
-    # from ..systems.status_effects_evaluation_system import (
-    #     StatusEffectsEvaluationSystem,
-    # )
-    # from ..systems.status_effects_evaluation_system import (
-    #     StatusEffectsEvaluationSystem,
-    # )
+    from ..systems.status_effects_evaluation_system import (
+        StatusEffectsEvaluationSystem,
+    )
 
-    # from ..systems.status_effects_settlement_system import (
-    #     StatusEffectsSettlementSystem,
-    # )
-
-    # from ..systems.unique_item_notification_system import (
-    #     UniqueItemNotificationSystem,
-    # )
-
-    ##
     tcg_game = cast(TCGGame, game)
     processors = RPGGameProcessPipeline()
 
@@ -196,31 +170,23 @@ def create_dungeon_combat_pipeline(
     # 角色外观生成系统
     processors.add(ActorAppearanceUpdateSystem(tcg_game))
 
+    # 战斗初始化系统
     processors.add(CombatInitializationSystem(tcg_game))
 
-    # 状态效果结算系统（必须在抽卡之前执行）
-    # processors.add(StatusEffectsSettlementSystem(tcg_game))
-
-    # 唯一道具通知系统（在状态效果结算之后、抽卡之前执行）
-    # processors.add(UniqueItemNotificationSystem(tcg_game))
-
-    # 抽卡。
-    ######动作开始！！！！！################################################################################################
+    # 动作处理相关的系统：抓牌-出牌-裁决-状态效果评估-清理
     processors.add(DrawCardsActionSystem(tcg_game))
     processors.add(PlayCardsActionSystem(tcg_game))
     processors.add(ArbitrationActionSystem(tcg_game))
-    # processors.add(StatusEffectsEvaluationSystem(tcg_game))
+    processors.add(StatusEffectsEvaluationSystem(tcg_game))
     processors.add(ActionCleanupSystem(tcg_game))
-    ###### 动作结束！！！！！################################################################################################
 
-    # 检查死亡
+    # 检查战斗结果系统
     processors.add(CombatOutcomeSystem(tcg_game))
-    # processors.add(CombatPostProcessingSystem(tcg_game))
 
-    # 核心系统，检查需要删除的实体。
+    # 是否需要销毁实体
     processors.add(DestroyEntitySystem(tcg_game))
 
-    # 核心系统，存储系统。
+    # 存储系统。
     processors.add(SaveSystem(tcg_game))
 
     return processors

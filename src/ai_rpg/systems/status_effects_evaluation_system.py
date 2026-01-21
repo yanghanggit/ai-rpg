@@ -36,45 +36,63 @@ class StatusEffectsEvaluationResponse(BaseModel):
 def _generate_status_effects_evaluation_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
+    max_effects: int = 2,
 ) -> str:
     """生成状态效果评估提示词
 
     根据战斗结果评估应添加的新状态效果，避免重复添加已有效果。
+    
+    Args:
+        current_status_effects: 当前已有的状态效果列表
+        current_round_number: 当前回合数
+        max_effects: 最多生成的状态效果数量，默认2
+    
+    Returns:
+        格式化的提示词字符串
     """
 
-    # 格式化当前状态效果（名称和描述）
+    # 格式化当前状态效果（智能压缩，减少token）
     if len(current_status_effects) == 0:
         effects_list = "无"
-    else:
+    elif len(current_status_effects) <= 3:
+        # 效果少时展示完整信息
         effects_list = "\n".join(
             [
                 f"- {effect.name}: {effect.description}"
                 for effect in current_status_effects
             ]
         )
+    else:
+        # 效果多时只展示名称列表，节省token
+        effects_list = "、".join([effect.name for effect in current_status_effects])
 
-    return f"""# 指令！第 {current_round_number} 回合结算完毕，评估新增状态效果(status_effects)。
+    return f"""# 指令！第 {current_round_number} 回合结算完毕，评估新增状态效果
 
-**现有效果**: {effects_list}
+## 现有状态效果
 
-**任务**: 根据上文的**战斗演出**和**数据日志**，判断应添加的新状态效果（战斗中受伤/获得增益/遭受削弱等）。
+{effects_list}
 
-**约束**: 
+## 任务
 
-- 基于战斗演出与数据日志推断
-- 不要重复添加现有效果列表中已存在的状态
+根据上文的**战斗演出**(narrative)和**数据日志**(combat_log)，判断应添加的新状态效果（战斗受伤、增益削弱、战术效果、环境影响等）。
+
+**状态效果要求**：
+- name: 简洁的效果名称（<8字）
+- description: 第一人称描述效果的具体表现，简短清晰（2-3句话）
+
+**约束**: 不重复现有效果，最多生成 {max_effects} 个
 
 **输出JSON**:
 
 ```json
 {{
   "add_effects": [
-    {{"name": "新效果名", "description": "简述来源与影响"}}
+    {{"name": "状态效果名", "description": "第一人称描述效果的具体表现"}}
   ]
 }}
 ```
 
-无新增状态时输出空数组，只输出JSON"""
+无新增状态时输出空数组，只输出JSON。"""
 
 
 #######################################################################################################################################
@@ -148,6 +166,7 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
             prompt = _generate_status_effects_evaluation_prompt(
                 current_status_effects=combat_stats.status_effects,
                 current_round_number=current_round_number,
+                max_effects=2,
             )
 
             # 创建聊天客户端

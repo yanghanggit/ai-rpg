@@ -36,53 +36,44 @@ from langchain_core.messages import AIMessage
 
 
 #######################################################################################################################################
-def _format_character_stats_prompt(stats: CharacterStats) -> str:
-    """格式化角色属性为提示词字符串
-
-    Args:
-        stats: 角色属性数据
-
-    Returns:
-        格式化的属性字符串
-    """
-    return f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
-
-
-#######################################################################################################################################
 @final
 class DrawCardsResponse(BaseModel):
     """单卡响应模型，每次生成一张卡牌"""
 
     name: str
     description: str
-    attack: int
-    defense: int
+    final_attack: int
+    final_defense: int
 
 
 #######################################################################################################################################
 def _generate_round_prompt(
     selected_skills: List[Skill],
     specified_targets: List[str],
-    actor_stats_prompt: str,
+    actor_stats: CharacterStats,
     actor_status_effects: List[StatusEffect],
     current_round_number: int,
 ) -> str:
     """
     生成战斗回合的卡牌抽取提示词。
 
-    采用 Input → Transform → Output 结构，要求LLM基于输入的基础属性、状态效果和技能，
-    通过数值计算规则生成战斗卡牌。每次调用生成一张卡牌。
+    采用 Input → Transform → Output 结构，明确卡牌作为"战斗结算单元"的概念，
+    要求LLM基于输入的基础属性、状态效果和技能，计算最终攻防数值并生成战斗卡牌。
+    使用第一人称叙事风格，强调输出数值为最终值（非增量）。每次调用生成一张卡牌。
 
     Args:
         selected_skills: 使用的技能列表（固定为1个元素）
         specified_targets: 指定的目标列表（由系统确定）
-        actor_stats_prompt: 角色当前属性提示词（格式：HP:X/Y | 攻击:A | 防御:D）
-        actor_status_effects: 角色当前状态效果列表
+        actor_stats: 角色当前属性数据（包含 hp/max_hp/attack/defense）
+        actor_status_effects: 角色当前状态效果列表（第一人称描述）
         current_round_number: 当前回合数
 
     Returns:
-        str: 格式化的完整提示词，包含输入数据、转换规则和输出格式
+        str: 格式化的完整提示词，包含卡牌概念说明、输入数据、转换规则和输出格式
     """
+
+    # 格式化基础属性
+    actor_stats_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
 
     # 格式化技能列表
     skills_text = "\n".join(
@@ -103,7 +94,9 @@ def _generate_round_prompt(
     else:
         effects_text = "无"
 
-    return f"""# 指令！第 {current_round_number} 回合：基于输入生成战斗卡牌
+    return f"""# 指令！第 {current_round_number} 回合：基于输入生成战斗卡牌并以JSON格式返回
+
+**卡牌**是本回合的战斗结算单元，封装行动的完整信息（名称、描述、攻防数值、目标），将交由场景系统进行战斗结算。
 
 ## 输入(Input)
 
@@ -125,24 +118,22 @@ def _generate_round_prompt(
 
 **命名**: 基于技能效果和目标创造行动名称，禁止暴露技能名
 
-**描述**: 说明行动方式、战术目的、使用代价，体现技能与状态效果特性
+**描述**: 第一人称描述行动方式、战术目的、使用代价，体现技能与状态效果特性
 
-**数值计算**: 所有基础属性 + 技能特性 + 状态效果修正
+**数值计算**: 基于上述**基础属性**，结合技能特性和状态效果修正，计算该行动的**最终攻击力和防御力数值**
 
 ## 输出(Output)
 
-JSON格式，输出最终数值
+JSON格式，**final_attack 和 final_defense 是最终计算后的数值**（不是增量修正值）。严格按以下格式输出：
 
 ```json
 {{
   "name": "[行动名称]",
   "description": "[行动描述]",
-  "attack": 0,
-  "defense": 0
+  "final_attack": 0,
+  "final_defense": 0
 }}
-```
-
-严格按上述JSON格式输出"""
+```"""
 
 
 #######################################################################################################################################
@@ -161,7 +152,9 @@ def _generate_compressd_round_prompt(
     Returns:
         str: 压缩后的提示词
     """
-    return f"""# 指令！第 {current_round_number} 回合：生成卡牌，以JSON格式返回。"""
+    return f"""# 指令！第 {current_round_number} 回合：基于输入生成战斗卡牌并以JSON格式返回
+
+**卡牌**是本回合的战斗结算单元，封装行动的完整信息（名称、描述、攻防数值、目标），将交由场景系统进行战斗结算。"""
 
 
 #######################################################################################################################################
@@ -307,8 +300,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
             card_stats = CharacterStats(
                 # hp=validated_response.hp,
                 max_hp=0,  # max_hp 不由 Agent 生成
-                attack=validated_response.attack,
-                defense=validated_response.defense,
+                attack=validated_response.final_attack,
+                defense=validated_response.final_defense,
             )
 
             # 创建完整的Card对象
@@ -368,7 +361,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         prompt = _generate_round_prompt(
             selected_skills=[skill],
             specified_targets=targets,
-            actor_stats_prompt=_format_character_stats_prompt(combat_stats_comp.stats),
+            actor_stats=combat_stats_comp.stats,
             actor_status_effects=status_effects,
             current_round_number=current_round_number,
         )
@@ -425,8 +418,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
             fallback_response = DrawCardsResponse(
                 name=fallback_card.name,
                 description=fallback_card.description,
-                attack=fallback_card.stats.attack,
-                defense=fallback_card.stats.defense,
+                final_attack=fallback_card.stats.attack,
+                final_defense=fallback_card.stats.defense,
             )
             fallback_json = fallback_response.model_dump_json(indent=2)
 

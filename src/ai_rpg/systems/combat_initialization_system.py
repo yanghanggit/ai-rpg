@@ -23,19 +23,6 @@ from ..models.entities import CharacterStats
 
 
 ###################################################################################################################################################################
-def _format_character_stats_prompt(stats: CharacterStats) -> str:
-    """格式化角色属性为提示词字符串
-
-    Args:
-        stats: 角色属性数据
-
-    Returns:
-        格式化的属性字符串
-    """
-    return f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
-
-
-###################################################################################################################################################################
 @dataclass
 class OtherActorInfo:
     """其他参战角色的信息"""
@@ -92,24 +79,27 @@ def _generate_combat_init_prompt(
     stage_name: str,
     stage_description: str,
     other_actors_info: List[OtherActorInfo],
-    attrs_prompt: str,
+    actor_stats: CharacterStats,
     max_effects: int = 2,
 ) -> str:
     """生成战斗初始化状态效果提示词
 
     为角色生成战斗触发时的上下文信息，要求根据场景、敌我、自身状态
-    自主判断并生成初始战斗状态效果。
+    自主判断并生成初始战斗状态效果。使用第一人称叙事风格。
 
     Args:
         stage_name: 战斗场景名称
         stage_description: 战斗场景的环境描述
         other_actors_info: 其他参战角色的信息列表（包含名称、外观、阵营）
-        attrs_prompt: 当前角色的属性提示词（HP、攻击、防御等）
+        actor_stats: 当前角色的属性数据（包含 hp/max_hp/attack/defense）
         max_effects: 生成状态效果的最大数量，默认为2
 
     Returns:
         要求输出JSON格式状态效果列表的提示词
     """
+    # 格式化角色属性
+    attrs_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
+
     return f"""# 指令！战斗触发！生成初始状态效果
 
 ## 场景叙事
@@ -130,7 +120,7 @@ def _generate_combat_init_prompt(
 
 **状态效果要求**：
 - name: 简洁的效果名称（<8字）
-- description: 第一人称描述效果的具体表现和氛围感受，简短清晰（1-2句话）
+- description: 第一人称描述效果的具体表现和氛围感受，简短清晰（2-3句话）
 
 **约束**: 最多生成 {max_effects} 个状态效果
 
@@ -253,7 +243,7 @@ class CombatInitializationSystem(ExecuteProcessor):
                 stage_name=stage_name,
                 stage_description=stage_description,
                 other_actors_info=other_actors_info,
-                attrs_prompt=_format_character_stats_prompt(combat_stats_comp.stats),
+                actor_stats=combat_stats_comp.stats,
                 max_effects=2,
             )
 

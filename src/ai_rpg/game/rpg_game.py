@@ -489,7 +489,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
     ###############################################################################################################################################
     def add_system_message(self, entity: Entity, message_content: str) -> None:
         """添加系统消息到实体的LLM上下文，必须是第一条消息"""
-        logger.info(f"add_system_message: {entity.name} => \n{message_content}")
+        # logger.info(f"add_system_message: {entity.name} => \n{message_content}")
         agent_context = self.get_agent_context(entity)
         assert (
             len(agent_context.context) == 0

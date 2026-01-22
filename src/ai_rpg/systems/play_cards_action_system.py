@@ -12,7 +12,6 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     HandComponent,
     PlayCardsAction,
-    ArbitrationAction,
     Card,
     ActorComponent,
 )
@@ -132,11 +131,6 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 play_cards_action is not None
             ), f"{actor_entity.name} 缺少 PlayCardsAction"
 
-            # logger.debug(
-            #     f"PlayCardsActionSystem: {actor_entity.name} 使用卡牌 [{play_cards_action.card.name}] "
-            #     f"目标 {play_cards_action.targets}"
-            # )
-
             # 生成出牌指令
             play_card_command = _generate_play_card_command(current_round_number)
             logger.debug(f"PlayCardsActionSystem: 生成出牌指令: \n{play_card_command}")
@@ -168,21 +162,3 @@ class PlayCardsActionSystem(ReactiveProcessor):
                     )
                 ],
             )
-
-            # logger.debug(
-            #     f"PlayCardsActionSystem: {actor_entity.name} 出牌通知已添加到上下文"
-            # )
-
-            # 添加仲裁动作标记
-            current_stage = self._game.resolve_stage_entity(actor_entity)
-            assert current_stage is not None, "无法获取角色所在场景实体！"
-            if not current_stage.has(ArbitrationAction):
-                current_stage.replace(
-                    ArbitrationAction,
-                    current_stage.name,
-                    "",
-                    "",
-                )
-                # logger.debug(
-                #     f"PlayCardsActionSystem: 为场景 {current_stage.name} 添加仲裁动作标记"
-                # )

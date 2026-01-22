@@ -28,7 +28,6 @@ from ..chat_services.client import ChatClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
-    ArbitrationAction,
     DungeonComponent,
     PlayCardsAction,
     CombatStatsComponent,
@@ -275,25 +274,29 @@ class ArbitrationActionSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(ArbitrationAction): GroupEvent.ADDED}
+        return {Matcher(PlayCardsAction): GroupEvent.ADDED}
 
     #######################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(ArbitrationAction) and entity.has(StageComponent)
+        return entity.has(PlayCardsAction)
 
     #######################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
 
+        player_entity = self._game.get_player_entity()
+        assert player_entity is not None, "无法获取玩家实体！"
+
+        combat_stage = self._game.resolve_stage_entity(player_entity)
+        assert combat_stage is not None, "无法获取玩家所在场景实体！"
+
         assert (
             self._game.current_combat_sequence.is_ongoing
         ), "当前没有进行中的战斗序列！"
-        assert len(entities) == 1, "当前只能有一个场景实体进行仲裁处理！"
 
         # 排序角色！
-        stage_entity = entities[0]
-        assert stage_entity.has(StageComponent) and stage_entity.has(
+        assert combat_stage.has(StageComponent) and combat_stage.has(
             DungeonComponent
         ), "场景实体缺少StageComponent或DungeonComponent！"
 
@@ -327,7 +330,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
             logger.info(f"sort_actor: {sort_actor.name}")
 
         # 发起仲裁请求
-        await self._request_combat_arbitration(stage_entity, sort_actors)
+        await self._request_combat_arbitration(combat_stage, sort_actors)
 
     #######################################################################################################################################
     def _collect_combat_action_info(
@@ -494,15 +497,6 @@ class ArbitrationActionSystem(ReactiveProcessor):
             self._game.add_ai_message(
                 entity=stage_entity,
                 ai_messages=chat_client.response_ai_messages,
-            )
-
-            # 推理的场景记录下！
-            arbitration_action = stage_entity.get(ArbitrationAction)
-            stage_entity.replace(
-                ArbitrationAction,
-                arbitration_action.name,
-                format_response.combat_log,
-                format_response.narrative,
             )
 
             # 获取当前回合数

@@ -93,10 +93,3 @@ class PlayCardsAction(Component):
 
 
 ############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
-class ArbitrationAction(Component):
-    name: str
-    calculation: str
-    performance: str

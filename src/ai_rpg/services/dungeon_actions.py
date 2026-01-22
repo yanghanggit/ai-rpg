@@ -161,7 +161,7 @@ def activate_actor_card_draws(tcg_game: TCGGame) -> None:
             entity.name,
             selected_skill,  # skill
             targets,  # targets
-            random_status_effects,  # status_effects (测试：只传第一个或空列表)
+            current_status_effects,  # status_effects (测试：只传第一个或空列表)
         )
 
 

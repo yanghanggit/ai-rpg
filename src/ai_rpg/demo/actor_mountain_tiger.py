@@ -13,7 +13,6 @@ from .entity_factory import (
 )
 from .common_skills import (
     BEAST_ATTACK_SKILL,
-    INTIMIDATION_SKILL,
     # THROW_SKILL,
 )
 

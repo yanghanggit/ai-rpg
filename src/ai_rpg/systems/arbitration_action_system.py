@@ -448,9 +448,10 @@ class ArbitrationActionSystem(ReactiveProcessor):
                     if effect.name != consumed_effect.name
                 ]
 
-            # logger.debug(
-            #     f"清除 {action_info.actor} 的 {len(consumed_effects)} 个已消耗状态效果"
-            # )
+            logger.info(
+                f"清除 {action_info.actor} 的 {len(consumed_effects)} 个已消耗状态效果(在本轮仲裁中，被消耗与清除): "
+                f"{[f'{e.name}: {e.description}' for e in consumed_effects]}"
+            )
 
             # 通知角色状态效果已被消耗
             self._game.add_human_message(

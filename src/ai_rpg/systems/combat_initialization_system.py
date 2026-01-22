@@ -329,6 +329,17 @@ class CombatInitializationSystem(ExecuteProcessor):
                 json_content
             )
 
+            # TODO 做测试 如果是 "角色.大妖.山中虎"，就按正常格式添加一个持续治疗的状态效果
+            if entity.name == "角色.大妖.山中虎":
+                test_effect = StatusEffect(
+                    name="持续恢复",
+                    description="【分类】持续恢复\n【表现】我感受到体内灵气流转，伤口逐渐愈合。\n【效果】本回合将恢复3点HP。",
+                )
+                format_response.status_effects.append(test_effect)
+                logger.debug(
+                    f"[{entity.name}] 测试代码：添加持续恢复状态效果, {test_effect.model_dump_json(indent=2)}"
+                )
+
             # 追加新状态效果到现有列表
             if format_response.status_effects:
                 combat_stats.status_effects.extend(format_response.status_effects)

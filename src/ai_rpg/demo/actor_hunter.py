@@ -12,7 +12,6 @@ from .entity_factory import (
     create_actor,
 )
 from .common_skills import (
-    WEAPON_ATTACK_SKILL,
     UNARMED_COMBAT_SKILL,
 )
 

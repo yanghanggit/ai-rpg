@@ -3,7 +3,6 @@ from ..models import (
     CharacterSheet,
     ActorType,
     CharacterStats,
-    UniqueItem,
 )
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
@@ -13,7 +12,6 @@ from .entity_factory import (
     create_actor,
 )
 from .common_skills import (
-    WEAPON_ATTACK_SKILL,
     WEAPON_DEFEND_SKILL,
 )
 

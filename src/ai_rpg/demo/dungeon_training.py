@@ -1,6 +1,6 @@
 from .actor_training_dummy import create_training_dummy
 from .stage_village import create_training_ground
-from ..models import Dungeon, StageType
+from ..models import Dungeon, StageType, UniqueItem
 
 
 def create_training_dungeon() -> Dungeon:
@@ -16,27 +16,20 @@ def create_training_dungeon() -> Dungeon:
     # 故意测试将生命值设为1，方便训练时快速击败
     actor_training_dummy.character_stats.hp = 1
 
-    # 设置游戏启动对话, 故意加一条规则让木桩具备不死效果
-    actor_training_dummy.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。回答简短(<100字)。
+    # 设置游戏启动对话
+    actor_training_dummy.kick_off_message = (
+        """# 游戏启动！告诉我你是谁？请说出你的全名。回答简短(<100字)。"""
+    )
 
-## 重要规则：青木妖心节（固有特性）
-
-你本体由青木妖心节（建木妖力结晶）构成，因此你必然拥有不死重生的固有能力。
-
-在以下阶段必须生成对应的 status effect：
-
-1. **战斗初始化**：首次报告自身状态时
-2. **状态效果评估阶段**：每回合结算完毕评估状态效果时
-
-**生成内容**：
-
-- **name**: "青木妖心节·不死重生"
-- **description**: "我本体由青木妖心节构成，HP归零时会立即重生，恢复至最大生命值(max_hp)"
-
-**核心规则**：
-
-- 青木妖心节是固有特性，无法被任何手段摧毁或移除
-- 即使被消耗使用，下次评估时必须重新生成此固有特性"""
+    # 添加青木妖心节（固有特性物品）
+    actor_training_dummy.items = [
+        UniqueItem(
+            name="青木妖心节·不死重生",
+            uuid="",
+            description="我本体由青木妖心节（建木妖力结晶）构成，因此必然拥有不死重生的固有能力。HP归零时会立即重生，恢复至最大生命值(max_hp)。此物品是固有特性，无法被任何手段摧毁或移除.",
+            count=1,
+        )
+    ]
 
     # 创建训练场景
     stage_training_ground = create_training_ground()

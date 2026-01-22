@@ -118,7 +118,7 @@ def create_tiger_lair_dungeon() -> Dungeon:
     actor_tiger = create_actor_mountain_tiger()
 
     # 将山中虎的生命值设为1，方便测试击杀
-    #actor_tiger.character_stats.hp = 2
+    # actor_tiger.character_stats.hp = 2
 
     # 准备测试穿透防御的攻击力，所以防御力设高一些
     actor_tiger.character_stats.defense = 100

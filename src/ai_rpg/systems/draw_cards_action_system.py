@@ -30,6 +30,7 @@ from ..models import (
     CharacterStats,
     StatusEffect,
     CombatStatsComponent,
+    InventoryComponent,
 )
 from ..utils import extract_json_from_code_block
 from langchain_core.messages import AIMessage
@@ -312,6 +313,14 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 targets=specified_targets,
                 status_effects=draw_cards_action.status_effects,
             )
+
+            # 从InventoryComponent继承物品词条到卡牌词条
+            inventory_comp = entity.get(InventoryComponent)
+            assert (
+                inventory_comp is not None
+            ), f"Entity {entity.name} must have InventoryComponent"
+            for item in inventory_comp.items:
+                card.affixes.extend(item.affixes)
 
             # 更新手牌
             entity.replace(

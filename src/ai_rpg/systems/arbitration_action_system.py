@@ -65,8 +65,9 @@ def _generate_card_sequence_details(
     """生成卡牌结算序列详情列表。
 
     以卡牌为基本单元，按照行动顺序为每张卡牌生成完整信息，包含：
-    使用者信息（名称、HP、攻防属性）、目标、卡牌描述。
+    使用者信息（名称、HP、攻防属性）、目标、卡牌描述、词条。
     卡牌属性已包含状态效果修正后的最终数值。
+    词条为固有特性，有词条时逐条列出，无词条时显示"无"。
 
     Args:
         combat_actions_details: 战斗行动信息列表，包含角色名、卡牌、目标等
@@ -94,11 +95,19 @@ def _generate_card_sequence_details(
         # 获取卡牌属性（已包含状态效果修正）
         card_stats = param.card.stats
 
+        # 格式化词条列表
+        if param.card.affixes:
+            affixes_text = "\n".join([f"  - {affix}" for affix in param.card.affixes])
+            affixes_display = f"\n{affixes_text}"
+        else:
+            affixes_display = "无"
+
         detail = f"""### {index}. 卡牌：{param.card.name}
 
 - **使用者**：{param.actor} | HP:{actor_hp}/{actor_max_hp} | 攻击:{card_stats.attack} | 防御:{card_stats.defense}
 - **目标**：{target_display}
-- **描述**：{param.card.description}"""
+- **描述**：{param.card.description}
+- **词条**：{affixes_display}"""
 
         details_prompt.append(detail)
 
@@ -207,7 +216,8 @@ def _generate_combat_arbitration_prompt(
 
 你是战斗场景，基于 System 提示词的 **## 战斗机制** 进行结算，拥有以下创意权限：
 
-- **机制执行**：卡牌描述中明确的战斗机制规则（如条件触发、状态转换）必须在结算时体现在final_hp和combat_log中
+- **词条优先**：卡牌的词条（affixes）是固有特性，必须严格执行其规则，词条触发过程必须在combat_log中体现
+- **机制执行**：卡牌描述中明确的战斗机制规则必须在结算时体现在final_hp和combat_log中
 - **先手优势**：先手卡牌可利用/改变环境，影响后手效果
 - **环境回应**：根据行动设计合理的环境反馈
 - **数值泛化**：可基于情境对基准数值调整，需在combat_log中说明原因

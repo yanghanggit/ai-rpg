@@ -214,14 +214,11 @@ def _generate_combat_arbitration_prompt(
 
 ## 战斗导演职责
 
-你是战斗场景，基于 System 提示词的 **## 战斗机制** 进行结算，拥有以下创意权限：
+基于 System 提示词的 **## 战斗机制** 执行结算：
 
-- **词条优先**：卡牌的词条（affixes）是固有特性，必须严格执行其规则，词条触发过程必须在combat_log中体现
-- **机制执行**：卡牌描述中明确的战斗机制规则必须在结算时体现在final_hp和combat_log中
-- **先手优势**：先手卡牌可利用/改变环境，影响后手效果
-- **环境回应**：根据行动设计合理的环境反馈
-- **数值泛化**：可基于情境对基准数值调整，需在combat_log中说明原因
-- **意外效果**（可选）：创造"情理之中、意料之外"的结果
+- **规则执行**：严格执行词条（固有特性）和卡牌描述中的战斗机制，触发过程体现在combat_log和final_hp中
+- **场景互动**：先手可改变环境影响后手，根据行动设计环境反馈
+- **数值调整**：可基于情境调整数值，需在combat_log说明原因
 
 ## 输出格式
 
@@ -549,9 +546,8 @@ class ArbitrationActionSystem(ReactiveProcessor):
 
                 # 更新当前HP
                 old_hp = combat_stats.stats.hp
-                combat_stats.stats.hp = final_hp
                 max_hp = combat_stats.stats.max_hp
-
+                combat_stats.stats.hp = max(0, min(final_hp, max_hp))
                 logger.info(f"更新 {actor_name} HP: {old_hp} → {final_hp}/{max_hp}")
 
                 # 通知角色HP变化

@@ -136,9 +136,9 @@ def _enter_dungeon_stage(
         DungeonComponent
     ), f"{current_dungeon_stage.name} 没有DungeonComponent组件！"
 
-    logger.debug(
-        f"{dungeon.name} = [{dungeon.current_stage_index}]关为：{dungeon_stage_entity.name}，可以进入"
-    )
+    # logger.debug(
+    #     f"{dungeon.name} = [{dungeon.current_stage_index}]关为：{dungeon_stage_entity.name}，可以进入"
+    # )
 
     # 3. 生成并发送传送提示消息
     trans_message = _generate_dungeon_entry_message(

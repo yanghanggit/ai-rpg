@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 import sys
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Dict, Final, List
+from typing import Any, AsyncIterator, Dict, Final
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -21,7 +21,6 @@ from ai_rpg.services.dungeon_gameplay import (
 from ai_rpg.services.home_gameplay import home_gameplay_api_router
 from ai_rpg.services.login import login_api_router
 from ai_rpg.services.start import start_api_router
-from ai_rpg.models import RootResponse
 from datetime import datetime
 from ai_rpg.services.entity_details import (
     entity_details_api_router,
@@ -89,8 +88,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(lifespan=lifespan)
 
 
-@app.get(path="/", response_model=RootResponse)
-async def root(request: Request) -> RootResponse:
+@app.get(path="/")
+async def get_api_info(request: Request) -> Dict[str, Any]:
     """API 根路由接口
 
     提供 API 服务的基本信息和所有可用端点的列表。
@@ -99,48 +98,35 @@ async def root(request: Request) -> RootResponse:
         request: FastAPI 请求对象
 
     Returns:
-        RootResponse: 包含服务信息、状态和可用端点列表的响应对象
+        Dict[str, Any]: 包含服务信息、状态、可用端点列表和已注册路由的响应字典
     """
-    base_url = str(request.base_url)
-    logger.info(f"获取API路由 RootResponse: {base_url}")
+    from fastapi.routing import APIRoute
 
-    return RootResponse(
-        service="AI RPG TCG Game Server",
-        description="AI RPG TCG Game Server API Root Endpoint",
-        status="healthy",
-        timestamp=datetime.now().isoformat(),
-        version="0.0.1",
-        endpoints={
-            # 游戏流程相关端点
-            "login": "/api/login/v1/",
-            "logout": "/api/logout/v1/",
-            "start": "/api/start/v1/",
-            # 家园内玩法
-            "home_player_action": "/api/home/player_action/v1/",
-            "home_advance": "/api/home/advance/v1/",
-            "home_trans_dungeon": "/api/home/trans_dungeon/v1/",
-            # 地下城玩法
-            "dungeon_progress": "/api/dungeon/progress/v1/",
-            "dungeon_combat_draw_cards": "/api/dungeon/combat/draw_cards/v1/",
-            "dungeon_combat_play_cards": "/api/dungeon/combat/play_cards/v1/",
-            "dungeon_trans_home": "/api/dungeon/trans_home/v1/",
-            "dungeon_state": "/api/dungeons/v1/",
-            # 通用端点
-            "session_messages": "/api/session_messages/v1/",
-            "entity_details": "/api/entities/v1/",
-            "stages_state": "/api/stages/v1/",
-            "tasks_trigger": "/api/tasks/v1/trigger",
-            "tasks_status": "/api/tasks/v1/status",
-        },
-        api_docs={
-            # 需要路径参数的端点完整路径说明
-            "session_messages": "/api/session_messages/v1/{user_name}/{game_name}/since?last_sequence_id=0",
-            "entity_details": "/api/entities/v1/{user_name}/{game_name}/details?entities=entity1&entities=entity2",
-            "stages_state": "/api/stages/v1/{user_name}/{game_name}/state",
-            "dungeon_state": "/api/dungeons/v1/{user_name}/{game_name}/state",
-            "tasks_status": "/api/tasks/v1/status?task_ids=task_id1&task_ids=task_id2",
-        },
-    )
+    base_url = str(request.base_url)
+    logger.info(f"获取API路由信息: {base_url}")
+
+    # 收集所有已注册的路由信息
+    routes_info = []
+    for route in app.routes:
+        if isinstance(route, APIRoute):
+            routes_info.append(
+                {
+                    "path": route.path,
+                    "name": route.name,
+                    "methods": list(route.methods),
+                    "tags": route.tags if route.tags else [],
+                }
+            )
+
+    return {
+        "service": "AI RPG TCG Game Server",
+        "base_url": base_url,
+        "description": "AI RPG TCG Game Server API Root Endpoint",
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "version": "0.0.1",
+        "routes": routes_info,
+    }
 
 
 app.add_middleware(
@@ -165,42 +151,11 @@ app.include_router(router=dungeon_gameplay_api_router)
 app.include_router(router=dungeon_state_api_router)
 
 
-def get_all_routes() -> List[Dict[str, Any]]:
-    """获取所有已注册的路由信息
-
-    Returns:
-        list[dict]: 包含路由信息的字典列表，每个字典包含路径、名称、方法和标签
-    """
-    from fastapi.routing import APIRoute
-
-    routes_info = []
-    for route in app.routes:
-        if isinstance(route, APIRoute):
-            routes_info.append(
-                {
-                    "path": route.path,
-                    "name": route.name,
-                    "methods": list(route.methods),
-                    "tags": route.tags if route.tags else [],
-                }
-            )
-    return routes_info
-
-
 def main() -> None:
 
     setup_logger()
 
     logger.info(f"启动游戏服务器，端口: {server_configuration.game_server_port}")
-
-    # 获取并打印所有路由信息
-    routes = get_all_routes()
-    logger.info(f"共注册了 {len(routes)} 个路由端点")
-    for route in routes:
-        logger.info(
-            f"路由: {route['path']} | 方法: {route['methods']} | "
-            f"名称: {route['name']} | 标签: {route['tags']}"
-        )
 
     import uvicorn
 

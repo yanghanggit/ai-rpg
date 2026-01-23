@@ -157,10 +157,6 @@ def create_combat_execution_pipeline(
     from ..systems.save_system import SaveSystem
     from ..systems.arbitration_action_system import ArbitrationActionSystem
 
-    from ..systems.status_effects_evaluation_system import (
-        StatusEffectsEvaluationSystem,
-    )
-
     tcg_game = cast(TCGGame, game)
     processors = RPGGameProcessPipeline()
 
@@ -177,7 +173,7 @@ def create_combat_execution_pipeline(
     processors.add(DrawCardsActionSystem(tcg_game))
     processors.add(PlayCardsActionSystem(tcg_game))
     processors.add(ArbitrationActionSystem(tcg_game))
-    processors.add(StatusEffectsEvaluationSystem(tcg_game))
+
     processors.add(ActionCleanupSystem(tcg_game))
 
     # 检查战斗结果系统
@@ -233,3 +229,46 @@ def create_combat_archive_pipeline(
 
     return processors
 
+
+def create_combat_status_evaluation_pipeline(
+    game: GameSession,
+) -> "RPGGameProcessPipeline":
+    """创建战斗状态效果评估流程管道
+
+    用于战斗回合后的状态效果评估：
+    - 为每个存活角色评估战斗后的状态效果
+    - 根据战斗演出和数据日志生成新的状态效果
+    - 自动添加到角色的状态效果列表
+
+    Args:
+        game: 游戏会话实例
+
+    Returns:
+        配置好的RPG游戏流程管道实例
+
+    Note:
+        此pipeline应在战斗裁决后（ArbitrationActionSystem）手动调用，
+        用于按需触发状态效果评估，而非每回合自动执行
+    """
+
+    ### 不这样就循环引用
+    from ..game.tcg_game import TCGGame
+    from ..systems.status_effects_evaluation_system import (
+        StatusEffectsEvaluationSystem,
+    )
+    from ..systems.save_system import SaveSystem
+    from ..systems.destroy_entity_system import DestroyEntitySystem
+
+    tcg_game = cast(TCGGame, game)
+    processors = RPGGameProcessPipeline()
+
+    # 状态效果评估系统（AI 生成新的状态效果）
+    processors.add(StatusEffectsEvaluationSystem(tcg_game))
+
+    # 是否需要销毁实体
+    processors.add(DestroyEntitySystem(tcg_game))
+
+    # 存储系统。
+    processors.add(SaveSystem(tcg_game))
+
+    return processors

@@ -43,7 +43,7 @@ def create_mountain_beasts_dungeon() -> Dungeon:
     actor_monkey = create_actor_mountain_monkey()
 
     # 将山魈的生命值设为1，方便测试击杀
-    actor_monkey.character_stats.hp = 1
+    # actor_monkey.character_stats.hp = 1
 
     # 将山魈添加到场景的角色列表中
     stage_forest_edge.actors = [actor_monkey]
@@ -71,7 +71,7 @@ def create_mountain_beasts_dungeon() -> Dungeon:
     actor_tiger = create_actor_mountain_tiger()
 
     # 将山中虎的生命值设为1，方便测试击杀
-    #actor_tiger.character_stats.hp = 1
+    # actor_tiger.character_stats.hp = 1
 
     # 将山中虎添加到场景的角色列表中
     stage_deep_forest.actors = [actor_tiger]
@@ -121,7 +121,7 @@ def create_tiger_lair_dungeon() -> Dungeon:
     # actor_tiger.character_stats.hp = 2
 
     # 准备测试穿透防御的攻击力，所以防御力设高一些
-    #actor_tiger.character_stats.defense = 100
+    # actor_tiger.character_stats.defense = 100
 
     # 将山中虎添加到场景的角色列表中
     stage_deep_forest.actors = [actor_tiger]

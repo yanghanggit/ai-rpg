@@ -8,6 +8,7 @@ from ..game.tcg_game_process_pipeline import (
     create_player_home_pipeline,
     create_combat_execution_pipeline,
     create_combat_archive_pipeline,
+    create_combat_status_evaluation_pipeline,
 )
 from ..models import (
     Dungeon,
@@ -31,7 +32,9 @@ class TCGGame(RPGGame):
     Attributes:
         _npc_home_pipeline: NPC家园场景流程管道
         _player_home_pipeline: 玩家家园场景流程管道
-        _combat_pipeline: 地下城战斗流程管道
+        _combat_execution_pipeline: 地下城战斗执行流程管道
+        _combat_archive_pipeline: 地下城战斗归档流程管道
+        _combat_status_evaluation_pipeline: 战斗状态效果评估流程管道
     """
 
     def __init__(
@@ -58,10 +61,15 @@ class TCGGame(RPGGame):
         self._combat_execution_pipeline: Final[RPGGameProcessPipeline] = (
             create_combat_execution_pipeline(self)
         )
-        
+
         # 地下城归档流程管道
         self._combat_archive_pipeline: Final[RPGGameProcessPipeline] = (
             create_combat_archive_pipeline(self)
+        )
+
+        # 战斗状态效果评估流程管道
+        self._combat_status_evaluation_pipeline: Final[RPGGameProcessPipeline] = (
+            create_combat_status_evaluation_pipeline(self)
         )
 
         # 注册所有管道到管道管理器
@@ -69,6 +77,7 @@ class TCGGame(RPGGame):
         self.register_pipeline(self._player_home_pipeline)
         self.register_pipeline(self._combat_execution_pipeline)
         self.register_pipeline(self._combat_archive_pipeline)
+        self.register_pipeline(self._combat_status_evaluation_pipeline)
 
     ###############################################################################################################################################
     @property
@@ -94,11 +103,16 @@ class TCGGame(RPGGame):
     @property
     def combat_execution_pipeline(self) -> RPGGameProcessPipeline:
         return self._combat_execution_pipeline
-    
+
     ###############################################################################################################################################
     @property
     def combat_archive_pipeline(self) -> RPGGameProcessPipeline:
         return self._combat_archive_pipeline
+
+    ###############################################################################################################################################
+    @property
+    def combat_status_evaluation_pipeline(self) -> RPGGameProcessPipeline:
+        return self._combat_status_evaluation_pipeline
 
     ###############################################################################################################################################
 

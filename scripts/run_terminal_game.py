@@ -37,7 +37,6 @@ from ai_rpg.utils import parse_command_args
 from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
     create_single_hunter_blueprint,
-    create_tiger_lair_dungeon,
     create_mountain_beasts_dungeon,
 )
 from ai_rpg.game.player_session import PlayerSession
@@ -176,6 +175,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
     支持的命令：
         /dc - 抗牌，只能在战斗中使用
         /pc - 打牌，只能在战斗中使用
+        /se - 评估状态效果，只能在战斗中使用
         /cpp - 完成战斗处理，只能在战斗结束后使用
         /th - 返回家园，只能在战斗结束后使用
         /and - 进入下一关，只能在战斗胜利后使用
@@ -213,6 +213,14 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
 
         if terminal_game.current_combat_sequence.is_completed:
             logger.debug(f"在本次处理中战斗已结束")
+
+    elif usr_input == "/se":
+        if not terminal_game.current_combat_sequence.is_ongoing:
+            logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
+            return
+
+        # 手动触发状态效果评估（使用 pipeline）
+        await terminal_game.combat_status_evaluation_pipeline.execute()
 
     elif usr_input == "/cpp":
 

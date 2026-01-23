@@ -547,6 +547,9 @@ async def _execute_play_cards_task(
         # 但因为使用了 asyncio.create_task，这个阻塞只影响后台任务，不影响 API 响应
         await rpg_game.combat_execution_pipeline.process()
 
+        # TODO 先做兼容, 因为正式的Unity客户端目前还没有单独的评估处理，所以正式的服务器这边先保持旧流程。
+        await rpg_game.combat_status_evaluation_pipeline.execute()
+
         # 保存结果
         task_record = game_server.get_task(task_id)
         if task_record is not None:

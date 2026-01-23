@@ -4,8 +4,9 @@
 自主评估并添加新的状态效果。
 
 执行时机：
-- ArbitrationActionSystem 之后（已有战斗结果上下文）
-- ActionCleanupSystem 之前（PlayCardsAction 仍存在）
+- 通过 combat_status_evaluation_pipeline 手动调用
+- 建议在战斗裁决后（ArbitrationActionSystem）按需触发
+- 用于战斗过程中的状态效果动态生成
 """
 
 from typing import Final, List, final
@@ -13,13 +14,11 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel
 from ..chat_services.client import ChatClient
-from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
+from ..entitas import Entity, ExecuteProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
-    PlayCardsAction,
     CombatStatsComponent,
     StatusEffect,
-    DeathComponent,
 )
 from ..utils import extract_json_from_code_block
 
@@ -107,7 +106,7 @@ def _generate_status_effects_evaluation_prompt(
 
 #######################################################################################################################################
 @final
-class StatusEffectsEvaluationSystem(ReactiveProcessor):
+class StatusEffectsEvaluationSystem(ExecuteProcessor):
     """
     状态效果评估系统
 
@@ -115,37 +114,23 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
     角色通过阅读上下文中的战斗广播、HP变化通知等信息，
     判断应该添加哪些新状态效果（如受伤、增益、削弱等）。
 
-    执行时机：ArbitrationActionSystem 之后，ActionCleanupSystem 之前
+    执行机制：
+    - 手动调用（ExecuteProcessor），通过 combat_status_evaluation_pipeline 触发
+    - 按需执行，而非每回合自动触发（节省 LLM 调用成本）
+    - 建议在关键战斗节点或需要评估状态变化时调用
 
-    触发条件：
-    - 检测到 PlayCardsAction 组件（标识参战者）
-    - 实体有 CombatStatsComponent（战斗属性）
-    - 实体没有 DeathComponent（存活角色）
-    - 战斗状态为 ONGOING
+    执行条件：
+    - 战斗状态为 ONGOING（is_ongoing=True）
+    - 自动获取当前场景上的所有存活角色
+    - 每个角色需有 CombatStatsComponent（战斗属性）
     """
 
     def __init__(self, game_context: TCGGame) -> None:
-        super().__init__(game_context)
         self._game: Final[TCGGame] = game_context
-
-    ####################################################################################################################################
-    @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(PlayCardsAction): GroupEvent.ADDED}
-
-    ####################################################################################################################################
-    @override
-    def filter(self, entity: Entity) -> bool:
-        """过滤：存活的参战角色"""
-        return (
-            entity.has(PlayCardsAction)
-            and entity.has(CombatStatsComponent)
-            and not entity.has(DeathComponent)
-        )
 
     #######################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def execute(self) -> None:
         """
         为每个参战角色评估新增状态效果
 
@@ -156,15 +141,28 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
         4. 添加新增状态效果通知到角色上下文
         """
         if not self._game.current_combat_sequence.is_ongoing:
+            # 战斗未进行中，跳过，或者已经结束了，也结束。
             return
 
         # 获取当前回合数
         current_round_number = len(self._game.current_combat_sequence.current_rounds)
 
+        # 获取玩家实体, player在的场景就是战斗发生的场景！
+        player_entity = self._game.get_player_entity()
+        assert player_entity is not None
+
+        # 获取当前场景实体
+        current_stage_entity = self._game.resolve_stage_entity(player_entity)
+        assert current_stage_entity is not None
+
+        # 参与战斗的角色实体列表
+        actor_entities = self._game.get_alive_actors_on_stage(player_entity)
+        assert len(actor_entities) > 0, "不可能出现没人参与战斗的情况！"
+
         # 为每个参战角色创建评估任务
         chat_clients: List[ChatClient] = []
 
-        for entity in entities:
+        for entity in actor_entities:
             combat_stats = entity.get(CombatStatsComponent)
             if combat_stats is None:
                 logger.warning(

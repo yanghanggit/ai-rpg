@@ -121,23 +121,15 @@ def _generate_combat_init_prompt(
 **状态效果要求**：
 - name: 简洁的效果名称（<8字）
 - description: 三段式（含标记）：
-  1. **【分类】** 选择一个：增益 | 减益 | 复合 | 持续伤害 | 持续恢复 | 条件触发 | 环境
+  1. **【分类】** 选择一个：增益 | 减益 | 复合 | 条件触发 | 环境
   2. **【表现】** 第一人称描述具体表现（1句话）
-  3. **【效果】** 数值影响（不要 HP上限/时间词）：
-     - 增益/减益/复合/条件/环境："±X点攻击力/防御力"
-     - 持续伤害/恢复："受到/恢复X点伤害/HP"
+  3. **【效果】** 数值影响（不要 HP上限/时间词）："±X点攻击力/防御力"
 
 **示例**：
 ```
 【分类】复合
 【表现】旧伤灼痛，血液沸腾，杀意压过理智。
 【效果】对虎类敌人攻击力提升3点，自身防御力降低2点。
-```
-
-```
-【分类】持续恢复
-【表现】灵气缓缓滋养着身体的旧伤。
-【效果】恢复3点HP。
 ```
 
 **约束**: 最多生成 {max_effects} 个状态效果
@@ -333,17 +325,6 @@ class CombatInitializationSystem(ExecuteProcessor):
             format_response = StatusEffectsInitializationResponse.model_validate_json(
                 json_content
             )
-
-            # TODO 做测试 如果是 "角色.大妖.山中虎"，就按正常格式添加一个持续治疗的状态效果
-            if entity.name == "角色.大妖.山中虎":
-                test_effect = StatusEffect(
-                    name="野性恢复",
-                    description="【分类】持续恢复\n【表现】我感受到体内灵气流转，伤口逐渐愈合。\n【效果】本回合将恢复3点HP。",
-                )
-                format_response.status_effects.append(test_effect)
-                logger.debug(
-                    f"[{entity.name}] 测试代码：添加持续恢复状态效果, {test_effect.model_dump_json(indent=2)}"
-                )
 
             # 追加新状态效果到现有列表
             if format_response.status_effects:

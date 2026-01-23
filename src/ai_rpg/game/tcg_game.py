@@ -6,7 +6,8 @@ from .rpg_game import RPGGame
 from ..game.tcg_game_process_pipeline import (
     create_npc_home_pipeline,
     create_player_home_pipeline,
-    create_dungeon_combat_pipeline,
+    create_combat_execution_pipeline,
+    create_combat_archive_pipeline,
 )
 from ..models import (
     Dungeon,
@@ -54,14 +55,20 @@ class TCGGame(RPGGame):
         )
 
         # 地下城战斗流程
-        self._combat_pipeline: Final[RPGGameProcessPipeline] = (
-            create_dungeon_combat_pipeline(self)
+        self._combat_execution_pipeline: Final[RPGGameProcessPipeline] = (
+            create_combat_execution_pipeline(self)
+        )
+        
+        # 地下城归档流程管道
+        self._combat_archive_pipeline: Final[RPGGameProcessPipeline] = (
+            create_combat_archive_pipeline(self)
         )
 
         # 注册所有管道到管道管理器
         self.register_pipeline(self._npc_home_pipeline)
         self.register_pipeline(self._player_home_pipeline)
-        self.register_pipeline(self._combat_pipeline)
+        self.register_pipeline(self._combat_execution_pipeline)
+        self.register_pipeline(self._combat_archive_pipeline)
 
     ###############################################################################################################################################
     @property
@@ -85,8 +92,13 @@ class TCGGame(RPGGame):
 
     ###############################################################################################################################################
     @property
-    def combat_pipeline(self) -> RPGGameProcessPipeline:
-        return self._combat_pipeline
+    def combat_execution_pipeline(self) -> RPGGameProcessPipeline:
+        return self._combat_execution_pipeline
+    
+    ###############################################################################################################################################
+    @property
+    def combat_archive_pipeline(self) -> RPGGameProcessPipeline:
+        return self._combat_archive_pipeline
 
     ###############################################################################################################################################
 

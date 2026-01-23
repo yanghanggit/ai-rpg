@@ -124,7 +124,7 @@ def create_player_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     return processors
 
 
-def create_dungeon_combat_pipeline(
+def create_combat_execution_pipeline(
     game: GameSession,
 ) -> "RPGGameProcessPipeline":
     """创建地牢战斗场景的流程管道
@@ -190,3 +190,46 @@ def create_dungeon_combat_pipeline(
     processors.add(SaveSystem(tcg_game))
 
     return processors
+
+
+def create_combat_archive_pipeline(
+    game: GameSession,
+) -> "RPGGameProcessPipeline":
+    """创建战斗归档流程管道
+
+    用于战斗结束后的记录归档处理：
+    - 生成战斗总结：通过AI为每个角色生成第一人称战斗记录
+    - 压缩历史消息：提取并删除战斗期间的详细消息，节省上下文空间
+    - 归档记忆：将战斗经历存入知识库
+
+    Args:
+        game: 游戏会话实例
+
+    Returns:
+        配置好的RPG游戏流程管道实例
+
+    Note:
+        此pipeline应在战斗完成后（is_completed=True）调用，
+        且战斗结果必须为胜利或失败状态
+    """
+
+    ### 不这样就循环引用
+    from ..game.tcg_game import TCGGame
+    from ..systems.combat_archive_system import CombatArchiveSystem
+    from ..systems.save_system import SaveSystem
+    from ..systems.destroy_entity_system import DestroyEntitySystem
+
+    tcg_game = cast(TCGGame, game)
+    processors = RPGGameProcessPipeline()
+
+    # 战斗归档系统（生成总结、压缩消息、触发记忆存储）
+    processors.add(CombatArchiveSystem(tcg_game))
+
+    # 是否需要销毁实体
+    processors.add(DestroyEntitySystem(tcg_game))
+
+    # 存储系统。
+    processors.add(SaveSystem(tcg_game))
+
+    return processors
+

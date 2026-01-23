@@ -33,7 +33,6 @@ from .dungeon_actions import (
     activate_random_play_cards,
 )
 from ..game.game_server import GameServer
-from ..systems.combat_archive_system import CombatArchiveSystem
 
 ###################################################################################################################################################################
 dungeon_gameplay_api_router = APIRouter()
@@ -163,7 +162,7 @@ async def dungeon_progress(
                     detail="战斗未处于开始阶段",
                 )
             # 推进战斗流程，转换到 ONGOING 状态
-            await rpg_game.combat_pipeline.process()
+            await rpg_game.combat_execution_pipeline.process()
             return DungeonProgressResponse(
                 session_messages=rpg_game.player_session.get_messages_since(
                     last_event_sequence
@@ -189,12 +188,8 @@ async def dungeon_progress(
                     detail="战斗状态异常，既未胜利也未失败",
                 )
 
-            # 归档战斗记录
-            combat_archive_system = CombatArchiveSystem(rpg_game)
-            await combat_archive_system.execute()
-
-            # 存储
-            rpg_game.save_game()
+            # 归档战斗记录（使用 pipeline）
+            await rpg_game.combat_archive_pipeline.execute()
 
             # 进入战斗后准备状态
             rpg_game.current_combat_sequence.transition_to_post_combat()
@@ -484,7 +479,7 @@ async def _execute_draw_cards_task(
         # 推进战斗流程处理抽牌
         # 注意: 这里会阻塞当前协程直到战斗流程处理完成
         # 但因为使用了 asyncio.create_task，这个阻塞只影响后台任务，不影响 API 响应
-        await rpg_game.combat_pipeline.process()
+        await rpg_game.combat_execution_pipeline.process()
 
         # 验证战斗状态
         if (
@@ -550,7 +545,7 @@ async def _execute_play_cards_task(
         # 推进战斗流程处理出牌
         # 注意: 这里会阻塞当前协程直到战斗流程处理完成
         # 但因为使用了 asyncio.create_task，这个阻塞只影响后台任务，不影响 API 响应
-        await rpg_game.combat_pipeline.process()
+        await rpg_game.combat_execution_pipeline.process()
 
         # 保存结果
         task_record = game_server.get_task(task_id)

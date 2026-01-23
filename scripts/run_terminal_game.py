@@ -38,6 +38,7 @@ from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
     create_single_hunter_blueprint,
     create_tiger_lair_dungeon,
+    create_mountain_beasts_dungeon,
 )
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import (
@@ -65,10 +66,6 @@ from ai_rpg.services.dungeon_stage_transition import (
 )
 
 import datetime
-
-from ai_rpg.systems.combat_archive_system import (
-    CombatArchiveSystem,
-)
 
 
 ###############################################################################################################################################
@@ -115,7 +112,7 @@ async def _run_game(
             runtime_index=1000,
             entities_serialization=[],
             agents_context={},
-            dungeon=create_tiger_lair_dungeon(),
+            dungeon=create_mountain_beasts_dungeon(),
             blueprint=world_blueprint,
         )
 
@@ -193,7 +190,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         # logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
         activate_actor_card_draws(terminal_game)
 
-        await terminal_game.combat_pipeline.process()
+        await terminal_game.combat_execution_pipeline.process()
 
         if (
             terminal_game.current_combat_sequence.is_won
@@ -210,7 +207,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         # 执行打牌行动(现在使用随机选行动)
         success, message = activate_random_play_cards(terminal_game)
         if success:
-            await terminal_game.combat_pipeline.process()
+            await terminal_game.combat_execution_pipeline.process()
         else:
             logger.error(f"打牌失败: {message}")
 
@@ -230,12 +227,8 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             or terminal_game.current_combat_sequence.is_lost
         )
 
-        # 归档战斗记录
-        combat_archive_system = CombatArchiveSystem(terminal_game)
-        await combat_archive_system.execute()
-
-        # 存储
-        terminal_game.save_game()
+        # 归档战斗记录（使用 pipeline）
+        await terminal_game.combat_archive_pipeline.execute()
 
         # 进入战斗后准备状态
         terminal_game.current_combat_sequence.transition_to_post_combat()
@@ -272,7 +265,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
 
         # logger.info(f"玩家输入 = {usr_input}, 进入下一关 = {next_level.name}")
         advance_to_next_stage(terminal_game, terminal_game.current_dungeon)
-        await terminal_game.combat_pipeline.process()
+        await terminal_game.combat_execution_pipeline.process()
 
     else:
         logger.error(
@@ -317,7 +310,7 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
             logger.error(f"{usr_input} 没有战斗可以进行！！！！")
             return
 
-        await terminal_game.combat_pipeline.process()
+        await terminal_game.combat_execution_pipeline.process()
 
     elif usr_input.startswith("/speak"):
 

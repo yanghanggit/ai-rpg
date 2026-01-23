@@ -9,7 +9,9 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
 
-from fastapi import FastAPI
+from typing import Any, Dict
+from datetime import datetime
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
@@ -18,9 +20,6 @@ from ai_rpg.replicate import (
     DEFAULT_OUTPUT_DIR,
 )
 from ai_rpg.configuration import server_configuration
-from ai_rpg.models import (
-    ImageRootResponse,
-)
 from ai_rpg.services.replicate_image import replicate_image_api_router
 
 
@@ -49,19 +48,45 @@ app.include_router(replicate_image_api_router)
 
 ##################################################################################################################
 @app.get("/")
-async def root() -> ImageRootResponse:
-    """根路径，返回服务信息"""
-    return ImageRootResponse(
-        message="图片生成服务",
-        version="1.0.0",
-        endpoints={
-            "generate": "/api/generate/v1",
-            "images_list": "/api/images/list/v1",
-            "static_images": "/images/{filename}",
-            "docs": "/docs",
-        },
-        available_models=list(replicate_config.get_available_models().keys()),
-    )
+async def get_api_info(request: Request) -> Dict[str, Any]:
+    """API 根路由接口
+
+    提供 API 服务的基本信息和所有可用端点的列表。
+
+    Args:
+        request: FastAPI 请求对象
+
+    Returns:
+        Dict[str, Any]: 包含服务信息、状态、可用端点列表和已注册路由的响应字典
+    """
+    from fastapi.routing import APIRoute
+
+    base_url = str(request.base_url)
+    logger.info(f"获取API路由信息: {base_url}")
+
+    # 收集所有已注册的路由信息
+    routes_info = []
+    for route in app.routes:
+        if isinstance(route, APIRoute):
+            routes_info.append(
+                {
+                    "path": route.path,
+                    "name": route.name,
+                    "methods": list(route.methods),
+                    "tags": route.tags if route.tags else [],
+                }
+            )
+
+    return {
+        "service": "Replicate Image Generation Service",
+        "base_url": base_url,
+        "description": "基于 Replicate API 的图片生成和服务",
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "version": "1.0.0",
+        "available_models": list(replicate_config.get_available_models().keys()),
+        "routes": routes_info,
+    }
 
 
 ##################################################################################################################

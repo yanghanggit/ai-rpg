@@ -9,16 +9,18 @@ from ..models import (
 )
 
 
-def _get_combat_result_notification(is_victory: bool) -> str:
+def _get_combat_result_notification(stage_name: str, is_victory: bool) -> str:
     """获取战斗结果通知消息。
 
     Args:
+        stage_name: 战斗场景名称
         is_victory: True表示胜利，False表示失败
 
     Returns:
-        战斗结果通知字符串
+        战斗结果通知字符串，包含场景名称和胜负结果
     """
-    return "# 通知！你胜利了！" if is_victory else "# 通知！你失败了！"
+    result_text = "胜利" if is_victory else "失败"
+    return f"# 通知！{stage_name}的战斗{result_text}！"
 
 
 @final
@@ -171,13 +173,13 @@ class CombatOutcomeSystem(ExecuteProcessor):
             if result == CombatResult.WIN:
                 self._game.add_human_message(
                     entity,
-                    _get_combat_result_notification(True),
+                    _get_combat_result_notification(combat_stage_entity.name, True),
                     combat_outcome=combat_stage_entity.name,
                 )
             elif result == CombatResult.LOSE:
                 self._game.add_human_message(
                     entity,
-                    _get_combat_result_notification(False),
+                    _get_combat_result_notification(combat_stage_entity.name, False),
                     combat_outcome=combat_stage_entity.name,
                 )
 

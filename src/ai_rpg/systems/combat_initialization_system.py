@@ -294,7 +294,7 @@ class CombatInitializationSystem(ExecuteProcessor):
                 stage_description=stage_description,
                 other_actors_info=other_actors_info,
                 actor_stats=combat_stats_comp.stats,
-                max_effects=1,
+                max_effects=2,
             )
 
             # 追加压缩提示词到角色对话中，完整提示词保存为 compressed_prompt

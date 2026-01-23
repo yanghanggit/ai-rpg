@@ -31,18 +31,18 @@ from ..utils import extract_json_from_code_block
 class EnemyDecisionResponse(BaseModel):
     """敌人决策响应模型
 
-    LLM 返回的战术决策结果，包含技能选择、目标选择和状态效果筛选。
+    LLM 返回的战术决策结果，包含技能选择和目标选择。
+    状态效果由系统随机分配，不可选择（防止作弊）。
     """
 
     selected_skill_name: str  # 选择的技能名称
     selected_targets: List[str]  # 选择的目标名称列表（至少1个）
-    selected_effects: List[str]  # 选择的状态效果名称列表（可为空）
     reasoning: str = ""  # 战术理由（可选，用于调试）
 
 
 #######################################################################################################################################
 def _generate_enemy_decision_prompt(
-    actor_name: str,
+    # actor_name: str,
     available_skills: List[Skill],
     available_targets: List[str],
     actor_status_effects: List[StatusEffect],
@@ -54,11 +54,12 @@ def _generate_enemy_decision_prompt(
     敌人通过观察战斗演出、数据日志和历史记忆做决策，而非查看数值面板。
     决策依据来自 Agent context 中的历史消息（战斗演出 + 数据日志）。
 
+    状态效果由系统随机分配（"出题"），敌人必须围绕它选择技能和目标（"解题"）。
+
     Args:
-        actor_name: 敌人角色名称
         available_skills: 可用技能列表
         available_targets: 场景内所有存活角色名称列表（包括自己/队友/敌人）
-        actor_status_effects: 当前状态效果列表（用于选择要应用的效果）
+        actor_status_effects: 系统分配的状态效果列表（不可修改，必须适应）
         current_round: 当前回合数
 
     Returns:
@@ -86,7 +87,7 @@ def _generate_enemy_decision_prompt(
 
     return f"""# 指令！第{current_round}回合战术决策（JSON格式）
 
-你是 **{actor_name}**，基于历史战斗记录推断战况并制定战术。
+基于历史战斗记录推断战况并制定战术。
 
 ## 可用技能
 
@@ -96,7 +97,7 @@ def _generate_enemy_decision_prompt(
 
 {targets_text}
 
-## 当前状态效果
+## 系统分配的效果（必须围绕它制定战术）
 
 {effects_text}
 
@@ -104,10 +105,9 @@ def _generate_enemy_decision_prompt(
 
 ```json
 {{
-  "selected_skill_name": "从可用技能中选一个",
-  "selected_targets": ["从场景角色中选至少1个，可多选"],
-  "selected_effects": ["从当前状态效果中选，可为空"],
-  "reasoning": "战术理由"
+  "selected_skill_name": "选择应对状态效果的技能",
+  "selected_targets": ["选择合适的目标"],
+  "reasoning": "如何应对这个状态效果（字数<100）"
 }}
 ```"""
 
@@ -215,7 +215,7 @@ class EnemyDrawDecisionSystem(ReactiveProcessor):
 
         # 生成提示词（基于感知而非数值）
         prompt = _generate_enemy_decision_prompt(
-            actor_name=entity.name,
+            # actor_name=entity.name,
             available_skills=available_skills,
             available_targets=available_targets,
             actor_status_effects=actor_status_effects,
@@ -264,25 +264,25 @@ class EnemyDrawDecisionSystem(ReactiveProcessor):
                 logger.warning(f"{entity.name}: 目标验证失败，保持原始 DrawCardsAction")
                 return
 
-            # 筛选状态效果
-            filtered_effects = self._filter_effects(
-                entity, validated_response.selected_effects
-            )
+            # 获取原始状态效果（系统分配的，不可修改）
+            draw_cards_action = entity.get(DrawCardsAction)
+            assert draw_cards_action is not None
+            system_effects = draw_cards_action.status_effects
 
             # 记录决策结果（调试用）
             logger.debug(
                 f"{entity.name} 决策: 技能=[{selected_skill.name}] "
-                f"目标={validated_targets} 效果数={len(filtered_effects)} "
+                f"目标={validated_targets} 系统效果数={len(system_effects)} "
                 f"理由: {validated_response.reasoning}"
             )
 
-            # 修改 DrawCardsAction
+            # 修改 DrawCardsAction（保持系统分配的effects）
             entity.replace(
                 DrawCardsAction,
                 entity.name,
                 selected_skill,
                 validated_targets,
-                filtered_effects,
+                system_effects,  # 使用系统分配的effects，不允许修改
             )
 
         except Exception as e:
@@ -380,37 +380,5 @@ class EnemyDrawDecisionSystem(ReactiveProcessor):
             logger.warning(f"{entity.name}: 所有目标都无效 {target_names}")
 
         return validated
-
-    ####################################################################################################################################
-    def _filter_effects(
-        self, entity: Entity, effect_names: List[str]
-    ) -> List[StatusEffect]:
-        """
-        筛选状态效果
-
-        Args:
-            entity: 敌人实体
-            effect_names: LLM 选择的效果名称列表
-
-        Returns:
-            验证通过的状态效果列表（可为空）
-        """
-        if len(effect_names) == 0:
-            return []
-
-        # 获取当前所有状态效果
-        draw_cards_action = entity.get(DrawCardsAction)
-        assert draw_cards_action is not None
-        current_effects = draw_cards_action.status_effects
-
-        # 筛选匹配的效果
-        filtered = [effect for effect in current_effects if effect.name in effect_names]
-
-        if len(filtered) < len(effect_names):
-            logger.debug(
-                f"{entity.name}: 部分效果名称无效，筛选后 {len(filtered)}/{len(effect_names)}"
-            )
-
-        return filtered
 
     ####################################################################################################################################

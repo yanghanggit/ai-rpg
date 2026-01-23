@@ -146,6 +146,9 @@ def create_combat_execution_pipeline(
         ActorAppearanceUpdateSystem,
     )
     from ..systems.destroy_entity_system import DestroyEntitySystem
+    from ..systems.enemy_draw_decision_system import (
+        EnemyDrawDecisionSystem,
+    )
     from ..systems.draw_cards_action_system import (
         DrawCardsActionSystem,
     )
@@ -169,7 +172,8 @@ def create_combat_execution_pipeline(
     # 战斗初始化系统
     processors.add(CombatInitializationSystem(tcg_game))
 
-    # 动作处理相关的系统：抓牌-出牌-裁决-状态效果评估-清理
+    # 动作处理相关的系统：敌人决策-抓牌-出牌-裁决-状态效果评估-清理
+    processors.add(EnemyDrawDecisionSystem(tcg_game))
     processors.add(DrawCardsActionSystem(tcg_game))
     processors.add(PlayCardsActionSystem(tcg_game))
     processors.add(ArbitrationActionSystem(tcg_game))

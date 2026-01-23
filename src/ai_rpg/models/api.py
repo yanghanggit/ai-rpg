@@ -154,6 +154,7 @@ class DungeonProgressType(StrEnum):
     """地下城流程推进操作类型"""
 
     INIT_COMBAT = "initialization"
+    COMBAT_STATUS_EVALUATION = "combat_status_evaluation"
     POST_COMBAT = "post_combat"
     ADVANCE_STAGE = "advance_stage"
 

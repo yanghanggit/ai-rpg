@@ -140,7 +140,10 @@ class StatusEffectsEvaluationSystem(ExecuteProcessor):
         3. 解析响应并追加到 CombatStatsComponent.status_effects
         4. 添加新增状态效果通知到角色上下文
         """
-        if not self._game.current_combat_sequence.is_ongoing:
+        if not (
+            self._game.current_combat_sequence.is_ongoing
+            or self._game.current_combat_sequence.is_completed
+        ):
             # 战斗未进行中，跳过，或者已经结束了，也结束。
             return
 

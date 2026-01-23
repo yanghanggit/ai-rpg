@@ -121,7 +121,7 @@ async def dungeon_progress(
     """
     地下城流程推进接口
 
-    处理战斗初始化、战斗归档和关卡推进等流程操作。
+    处理战斗初始化、战斗状态评估、战斗归档和关卡推进等流程操作。
 
     Args:
         payload: 地下城流程推进请求对象
@@ -168,6 +168,28 @@ async def dungeon_progress(
                     last_event_sequence
                 )
             )
+
+        case DungeonProgressType.COMBAT_STATUS_EVALUATION:
+            if not (
+                rpg_game.current_combat_sequence.is_ongoing
+                or rpg_game.current_combat_sequence.is_completed
+            ):
+                logger.error(
+                    f"玩家 {payload.user_name} 状态评估失败: 战斗未处于进行中或已结束状态"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="战斗未处于进行中或已结束状态",
+                )
+
+            # 评估战斗中角色的状态效果变化
+            await rpg_game.combat_status_evaluation_pipeline.execute()
+            return DungeonProgressResponse(
+                session_messages=rpg_game.player_session.get_messages_since(
+                    last_event_sequence
+                )
+            )
+
         case DungeonProgressType.POST_COMBAT:
             # 处理战斗结束后的归档和状态转换
             if not rpg_game.current_combat_sequence.is_completed:
@@ -548,7 +570,7 @@ async def _execute_play_cards_task(
         await rpg_game.combat_execution_pipeline.process()
 
         # TODO 先做兼容, 因为正式的Unity客户端目前还没有单独的评估处理，所以正式的服务器这边先保持旧流程。
-        await rpg_game.combat_status_evaluation_pipeline.execute()
+        # await rpg_game.combat_status_evaluation_pipeline.execute()
 
         # 保存结果
         task_record = game_server.get_task(task_id)

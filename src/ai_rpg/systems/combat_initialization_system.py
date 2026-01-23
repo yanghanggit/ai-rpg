@@ -100,7 +100,7 @@ def _generate_combat_init_prompt(
     # 格式化角色属性
     attrs_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
 
-    return f"""# 指令！战斗触发！生成初始状态效果
+    return f"""# 指令！战斗触发！生成初始状态效果(JSON)
 
 ## 场景叙事
 
@@ -145,6 +145,46 @@ def _generate_combat_init_prompt(
 ```
 
 无新增状态时输出空数组，只输出JSON。"""
+
+
+###################################################################################################################################################################
+def _generate_compressed_combat_init_prompt(
+    stage_name: str,
+    stage_description: str,
+    other_actors_info: List[OtherActorInfo],
+    actor_stats: CharacterStats,
+) -> str:
+    """生成压缩版本的战斗初始化提示词，用于保存到上下文历史。
+
+    与完整提示词相比，该版本保留完整的输入数据（场景、敌我、属性），
+    仅压缩生成规则说明（任务、要求、示例、约束、输出JSON详解），
+    用于减少上下文token消耗同时保持Agent思路连贯。
+
+    Args:
+        stage_name: 战斗场景名称
+        stage_description: 战斗场景的环境描述
+        other_actors_info: 其他参战角色的信息列表（包含名称、外观、阵营）
+        actor_stats: 当前角色的属性数据（包含 hp/max_hp/attack/defense）
+
+    Returns:
+        压缩后的提示词
+    """
+    # 格式化角色属性
+    attrs_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
+
+    return f"""# 指令！战斗触发！生成初始状态效果(JSON)
+
+## 场景叙事
+
+{stage_name} ｜ {stage_description}
+
+## 其余角色
+
+{_format_other_actors_info(other_actors_info)}
+
+## 你的属性
+
+{attrs_prompt}"""
 
 
 ###################################################################################################################################################################
@@ -257,10 +297,16 @@ class CombatInitializationSystem(ExecuteProcessor):
                 max_effects=1,
             )
 
-            # 追加提示词到角色对话中
+            # 追加压缩提示词到角色对话中，完整提示词保存为 compressed_prompt
             self._game.add_human_message(
                 actor_entity,
-                combat_init_prompt,
+                _generate_compressed_combat_init_prompt(
+                    stage_name,
+                    stage_description,
+                    other_actors_info,
+                    combat_stats_comp.stats,
+                ),
+                compressed_prompt=combat_init_prompt,
                 combat_initialization=stage_name,
             )
 

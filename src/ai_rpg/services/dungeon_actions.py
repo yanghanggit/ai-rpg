@@ -156,12 +156,13 @@ def activate_actor_card_draws(tcg_game: TCGGame) -> None:
         if len(current_status_effects) > 0:
             random_status_effects = [random.choice(current_status_effects)]
 
+        # 目前传随机状态效果列表
         entity.replace(
             DrawCardsAction,
             entity.name,
             selected_skill,  # skill
             targets,  # targets
-            current_status_effects,  # status_effects (测试：只传第一个或空列表)
+            random_status_effects,  # 随机状态效果列表
         )
 
 

@@ -1,26 +1,15 @@
 """
 敌人抽牌决策系统模块
 
-该模块实现了敌人在战斗回合中的智能决策机制，负责在卡牌生成前优化敌人的战术选择。
+为敌人实体提供基于LLM的智能战术决策。敌人通过历史战斗记录和观察推断战况，
+而非直接获取数值面板，模拟真实战士的决策过程。
 
-核心特性：
-- 仅处理敌人：只监听带有 EnemyComponent 的实体
-- LLM 驱动决策：通过语言模型分析战场态势，做出智能决策
-- 修改而非创建：修改已存在的 DrawCardsAction，不创建新组件
-- 插拔式设计：位于 DrawCardsActionSystem 之前，可随时从 pipeline 中移除
-
-决策内容：
-- 技能选择：从可用技能中选择最合适的一个
-- 目标选择：从敌方角色中选择要攻击的目标（可多个）
-- 状态效果筛选：从当前状态效果中选择要应用的效果
-
-数据流：
-activate_actor_card_draws() → DrawCardsAction(默认值)
-  → EnemyDrawDecisionSystem(智能决策) → DrawCardsAction(优化后)
-  → DrawCardsActionSystem(生成卡牌)
+使用方式：
+    在combat_pipeline中注册EnemyDrawDecisionSystem，位于DrawCardsActionSystem之前。
+    系统会自动拦截敌人的DrawCardsAction，调用LLM优化技能和目标选择。
 """
 
-from typing import Any, Final, List, Dict, final, override
+from typing import Final, List, final, override
 from loguru import logger
 from pydantic import BaseModel
 from ..chat_services.client import ChatClient
@@ -29,11 +18,9 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     DrawCardsAction,
     EnemyComponent,
-    AllyComponent,
     DeathComponent,
     Skill,
     StatusEffect,
-    CombatStatsComponent,
     SkillBookComponent,
 )
 from ..utils import extract_json_from_code_block
@@ -57,25 +44,21 @@ class EnemyDecisionResponse(BaseModel):
 def _generate_enemy_decision_prompt(
     actor_name: str,
     available_skills: List[Skill],
-    available_targets: List[Dict[str, Any]],
-    actor_stats: Dict[str, int],
+    available_targets: List[str],
     actor_status_effects: List[StatusEffect],
     current_round: int,
 ) -> str:
     """
-    生成敌人战术决策提示词
+    生成敌人战术决策提示词（基于感知的决策）
 
-    要求 LLM 分析战场态势，从以下维度做出最优决策：
-    - 技能选择：基于技能效果和当前战况选择最合适的技能
-    - 目标选择：选择一个或多个目标，可以集火或分散攻击
-    - 状态效果：选择要应用到本次行动的状态效果
+    敌人通过观察战斗演出、数据日志和历史记忆做决策，而非查看数值面板。
+    决策依据来自 Agent context 中的历史消息（战斗演出 + 数据日志）。
 
     Args:
         actor_name: 敌人角色名称
         available_skills: 可用技能列表
-        available_targets: 可选目标列表，每个目标包含 name/hp/max_hp/attack/defense/effects
-        actor_stats: 敌人当前属性 {hp, max_hp, attack, defense}
-        actor_status_effects: 敌人当前状态效果列表
+        available_targets: 场景内所有存活角色名称列表（包括自己/队友/敌人）
+        actor_status_effects: 当前状态效果列表（用于选择要应用的效果）
         current_round: 当前回合数
 
     Returns:
@@ -87,18 +70,8 @@ def _generate_enemy_decision_prompt(
         [f"- {skill.name}: {skill.description}" for skill in available_skills]
     )
 
-    # 格式化目标列表
-    targets_text = "\n".join(
-        [
-            f"- {t['name']}: HP {t['hp']}/{t['max_hp']} | 攻击 {t['attack']} | 防御 {t['defense']}"
-            + (
-                f" | 状态: {', '.join([e.name for e in t['effects']])}"
-                if t["effects"]
-                else ""
-            )
-            for t in available_targets
-        ]
-    )
+    # 格式化目标列表（简单名称列表）
+    targets_text = "\n".join([f"- {target}" for target in available_targets])
 
     # 格式化状态效果列表
     if actor_status_effects:
@@ -111,72 +84,32 @@ def _generate_enemy_decision_prompt(
     else:
         effects_text = "无"
 
-    return f"""# 战术决策：第 {current_round} 回合
+    return f"""# 指令！第{current_round}回合战术决策（JSON格式）
 
-你是 **{actor_name}**，需要制定本回合的战术方案。
-
-## 自身状态
-- HP: {actor_stats['hp']}/{actor_stats['max_hp']}
-- 攻击: {actor_stats['attack']}
-- 防御: {actor_stats['defense']}
-- 状态效果:
-{effects_text}
+你是 **{actor_name}**，基于历史战斗记录推断战况并制定战术。
 
 ## 可用技能
+
 {skills_text}
 
-## 可选目标
+## 场景角色
+
 {targets_text}
 
-## 决策要求
+## 当前状态效果
 
-1. **技能选择**：从可用技能中选择一个最合适的（必须是技能名称）
-2. **目标选择**：从可选目标中选择至少一个（可以选择多个）
-   - 集火：多个技能效果叠加到一个目标
-   - 分散：覆盖多个目标降低整体威胁
-3. **状态效果**：从自身状态效果中选择要应用的（可全选/部分选/不选）
-   - 选择有利于当前战术的效果
-   - 过滤掉不相关或负面的效果
-
-## 战术考虑
-
-- 优先攻击低血量目标（斩杀）
-- 控制高威胁目标（高攻击）
-- 平衡输出和生存
-- 利用状态效果的协同作用
+{effects_text}
 
 ## 输出格式
 
 ```json
 {{
-  "selected_skill_name": "技能名称",
-  "selected_targets": ["目标名1", "目标名2"],
-  "selected_effects": ["效果名1", "效果名2"],
-  "reasoning": "简短说明战术意图"
+  "selected_skill_name": "从可用技能中选一个",
+  "selected_targets": ["从场景角色中选至少1个，可多选"],
+  "selected_effects": ["从当前状态效果中选，可为空"],
+  "reasoning": "战术理由"
 }}
-```
-
-**重要**：
-- `selected_skill_name` 必须是上面可用技能列表中的名称
-- `selected_targets` 必须是上面可选目标列表中的名称
-- `selected_effects` 必须是上面状态效果列表中的名称（可为空数组）
-"""
-
-
-#######################################################################################################################################
-def _generate_compressed_decision_prompt(current_round: int) -> str:
-    """
-    生成压缩版本的决策提示词，用于保存到上下文历史。
-
-    Args:
-        current_round: 当前回合数
-
-    Returns:
-        str: 压缩后的提示词
-    """
-    return f"""# 战术决策：第 {current_round} 回合
-
-分析战场态势，选择技能、目标和状态效果。"""
+```"""
 
 
 #######################################################################################################################################
@@ -185,22 +118,8 @@ class EnemyDrawDecisionSystem(ReactiveProcessor):
     """
     敌人抽牌决策系统
 
-    在卡牌生成前为敌人实体提供智能决策，优化技能选择、目标选择和状态效果筛选。
-
-    工作流程：
-    1. 监听 DrawCardsAction 添加事件
-    2. 过滤出敌人实体（EnemyComponent）
-    3. 收集战场信息（可用技能、可选目标、自身状态）
-    4. 调用 LLM 做战术决策
-    5. 验证决策结果
-    6. 修改 DrawCardsAction 组件
-
-    触发时机：在 DrawCardsActionSystem 之前执行
-
-    容错机制：
-    - LLM 失败时保持原始 DrawCardsAction 不变
-    - 技能/目标/效果验证失败时使用默认值
-    - 确保至少有一个有效目标
+    拦截敌人的DrawCardsAction，通过LLM基于历史战斗记录做出战术决策，
+    优化技能选择和目标选择。决策失败时保持原始Action不变。
     """
 
     def __init__(self, game_context: TCGGame) -> None:
@@ -284,40 +203,27 @@ class EnemyDrawDecisionSystem(ReactiveProcessor):
         # 获取可用技能
         available_skills = self._get_available_skills(entity)
 
-        # 获取可选目标
+        # 获取场景内所有角色名称（简化信息，不包含数值）
         available_targets = self._get_available_targets(entity)
 
-        # 获取自身属性
-        combat_stats_comp = entity.get(CombatStatsComponent)
-        assert (
-            combat_stats_comp is not None
-        ), f"Entity {entity.name} must have CombatStatsComponent"
-
-        actor_stats = {
-            "hp": combat_stats_comp.stats.hp,
-            "max_hp": combat_stats_comp.stats.max_hp,
-            "attack": combat_stats_comp.stats.attack,
-            "defense": combat_stats_comp.stats.defense,
-        }
-
-        # 获取当前状态效果
+        # 获取当前状态效果（用于选择要应用的效果）
         draw_cards_action = entity.get(DrawCardsAction)
         assert (
             draw_cards_action is not None
         ), f"Entity {entity.name} must have DrawCardsAction"
         actor_status_effects = draw_cards_action.status_effects
 
-        # 生成提示词
+        # 生成提示词（基于感知而非数值）
         prompt = _generate_enemy_decision_prompt(
             actor_name=entity.name,
             available_skills=available_skills,
             available_targets=available_targets,
-            actor_stats=actor_stats,
             actor_status_effects=actor_status_effects,
             current_round=current_round,
         )
 
         # 创建并返回聊天客户端
+        # Agent context 会自动包含历史消息（战斗演出 + 数据日志）
         return ChatClient(
             name=entity.name,
             prompt=prompt,
@@ -341,16 +247,6 @@ class EnemyDrawDecisionSystem(ReactiveProcessor):
             validated_response = EnemyDecisionResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
             )
-
-            # 添加压缩提示词到历史
-            self._game.add_human_message(
-                entity=entity,
-                message_content=_generate_compressed_decision_prompt(current_round),
-                compressed_prompt=chat_client.prompt,
-            )
-
-            # 添加 AI 响应到历史
-            self._game.add_ai_message(entity, chat_client.response_ai_messages)
 
             # 验证并获取选择的技能
             selected_skill = self._validate_skill(
@@ -417,40 +313,24 @@ class EnemyDrawDecisionSystem(ReactiveProcessor):
         return skill_book_comp.skills.copy()
 
     ####################################################################################################################################
-    def _get_available_targets(self, entity: Entity) -> List[Dict[str, Any]]:
+    def _get_available_targets(self, entity: Entity) -> List[str]:
         """
-        获取可选目标的详细信息列表
+        获取场景内所有存活角色的名称列表（包括自己/队友/敌人）
+
+        敌人决策时可以看到场景内所有角色，但看不到他们的数值数据。
+        通过历史消息（战斗演出和数据日志）推断战况。
 
         Args:
             entity: 敌人实体
 
         Returns:
-            目标信息列表，每个元素包含 name/hp/max_hp/attack/defense/effects
+            角色名称列表
         """
         # 获取场景上所有存活的角色
         actor_entities = self._game.get_alive_actors_on_stage(entity)
 
-        # 筛选出友方角色（敌人的目标）
-        ally_entities = [actor for actor in actor_entities if actor.has(AllyComponent)]
-
-        targets = []
-        for ally in ally_entities:
-            combat_stats = ally.get(CombatStatsComponent)
-            if combat_stats is None:
-                continue
-
-            targets.append(
-                {
-                    "name": ally.name,
-                    "hp": combat_stats.stats.hp,
-                    "max_hp": combat_stats.stats.max_hp,
-                    "attack": combat_stats.stats.attack,
-                    "defense": combat_stats.stats.defense,
-                    "effects": combat_stats.status_effects.copy(),
-                }
-            )
-
-        return targets
+        # 返回所有角色名称（包括自己）
+        return [actor.name for actor in actor_entities]
 
     ####################################################################################################################################
     def _validate_skill(self, entity: Entity, skill_name: str) -> Skill | None:
@@ -489,14 +369,12 @@ class EnemyDrawDecisionSystem(ReactiveProcessor):
             logger.warning(f"{entity.name}: 目标列表为空")
             return []
 
-        # 获取场景上所有存活的友方角色
+        # 获取场景上所有存活角色的名称（包括自己/队友/敌人）
         actor_entities = self._game.get_alive_actors_on_stage(entity)
-        valid_ally_names = {
-            actor.name for actor in actor_entities if actor.has(AllyComponent)
-        }
+        valid_names = {actor.name for actor in actor_entities}
 
         # 筛选有效目标
-        validated = [name for name in target_names if name in valid_ally_names]
+        validated = [name for name in target_names if name in valid_names]
 
         if len(validated) == 0:
             logger.warning(f"{entity.name}: 所有目标都无效 {target_names}")

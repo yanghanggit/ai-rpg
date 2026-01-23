@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 import sys
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, Final
+from typing import Any, AsyncIterator, Dict, Final, List
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -165,11 +165,43 @@ app.include_router(router=dungeon_gameplay_api_router)
 app.include_router(router=dungeon_state_api_router)
 
 
+def get_all_routes() -> List[Dict[str, Any]]:
+    """获取所有已注册的路由信息
+
+    Returns:
+        list[dict]: 包含路由信息的字典列表，每个字典包含路径、名称、方法和标签
+    """
+    from fastapi.routing import APIRoute
+
+    routes_info = []
+    for route in app.routes:
+        if isinstance(route, APIRoute):
+            routes_info.append(
+                {
+                    "path": route.path,
+                    "name": route.name,
+                    "methods": list(route.methods),
+                    "tags": route.tags if route.tags else [],
+                }
+            )
+    return routes_info
+
+
 def main() -> None:
 
     setup_logger()
 
     logger.info(f"启动游戏服务器，端口: {server_configuration.game_server_port}")
+
+    # 获取并打印所有路由信息
+    routes = get_all_routes()
+    logger.info(f"共注册了 {len(routes)} 个路由端点")
+    for route in routes:
+        logger.info(
+            f"路由: {route['path']} | 方法: {route['methods']} | "
+            f"名称: {route['name']} | 标签: {route['tags']}"
+        )
+
     import uvicorn
 
     uvicorn.run(

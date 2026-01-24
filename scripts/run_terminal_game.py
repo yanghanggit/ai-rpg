@@ -65,7 +65,7 @@ from ai_rpg.services.dungeon_stage_transition import (
 )
 
 import datetime
-from ai_rpg.replicate.client import ImageClient
+from ai_rpg.image_client.client import ImageClient
 
 
 ###############################################################################################################################################

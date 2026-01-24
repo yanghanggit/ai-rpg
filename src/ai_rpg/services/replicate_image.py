@@ -17,7 +17,7 @@ from ..replicate import (
     run_concurrent_tasks,
     ReplicateImageInput,
 )
-from ..replicate import (
+from ..image_client import (
     ImageGenerationRequest,
     GeneratedImage,
     ImageGenerationResponse,

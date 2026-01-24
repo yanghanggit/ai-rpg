@@ -18,12 +18,7 @@ from .image_tools import (
     ReplicateImageTask,
 )
 from .types import ReplicateImageInput
-from .protocol import (
-    ImageGenerationConfig,
-    ImageGenerationRequest,
-    ImageGenerationResponse,
-    GeneratedImage,
-)
+
 
 __all__ = [
     "ReplicateConfig",
@@ -35,8 +30,4 @@ __all__ = [
     "ReplicateImageInput",
     "replicate_config",
     "DEFAULT_OUTPUT_DIR",
-    "ImageGenerationConfig",
-    "ImageGenerationRequest",
-    "ImageGenerationResponse",
-    "GeneratedImage",
 ]

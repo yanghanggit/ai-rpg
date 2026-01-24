@@ -2,8 +2,6 @@ from typing import List
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel, ConfigDict
 
-# ContextMessageType: TypeAlias = List[SystemMessage | HumanMessage | AIMessage]
-
 
 ############################################################################################################
 class ChatRequest(BaseModel):

@@ -98,20 +98,20 @@ def main() -> None:
 
         logger.info("🚀 启动图片生成服务器...")
         logger.info(
-            f"📡 API文档: http://localhost:{server_configuration.image_generation_server_port}/docs"
+            f"📡 API文档: http://localhost:{server_configuration.replicate_image_generation_server_port}/docs"
         )
         logger.info(
-            f"🖼️  静态文件: http://localhost:{server_configuration.image_generation_server_port}/images/"
+            f"🖼️  静态文件: http://localhost:{server_configuration.replicate_image_generation_server_port}/images/"
         )
         logger.info(
-            f"🌐 局域网访问: http://局域网地址:{server_configuration.image_generation_server_port}"
+            f"🌐 局域网访问: http://局域网地址:{server_configuration.replicate_image_generation_server_port}"
         )
 
         # 启动服务器
         uvicorn.run(
             app,
             host="0.0.0.0",
-            port=server_configuration.image_generation_server_port,
+            port=server_configuration.replicate_image_generation_server_port,
             log_level="debug",
         )
 

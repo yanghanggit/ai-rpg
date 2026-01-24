@@ -6,7 +6,7 @@ from pydantic import BaseModel
 class ServerConfiguration(BaseModel):
     game_server_port: int = 8000
     deepseek_chat_server_port: int = 8100
-    image_generation_server_port: int = 8200
+    replicate_image_generation_server_port: int = 8200
 
 
 # 给一个默认的！

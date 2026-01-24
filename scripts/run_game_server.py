@@ -30,7 +30,12 @@ from ai_rpg.services.stages_state import stages_state_api_router
 from ai_rpg.services.background_tasks import background_tasks_api_router
 from ai_rpg.chat_services.client import ChatClient
 from ai_rpg.services.player_session import player_session_api_router
+from ai_rpg.services.replicate_image import replicate_image_api_router
+from fastapi.staticfiles import StaticFiles
 from ai_rpg.game.config import setup_logger
+from ai_rpg.replicate import (
+    DEFAULT_OUTPUT_DIR,
+)
 
 _server_setting_path: Final[Path] = Path("server_configuration.json")
 assert _server_setting_path.exists(), f"{_server_setting_path} must exist"
@@ -149,6 +154,12 @@ app.include_router(router=start_api_router)
 app.include_router(router=home_gameplay_api_router)
 app.include_router(router=dungeon_gameplay_api_router)
 app.include_router(router=dungeon_state_api_router)
+
+# Replicate图片服务
+app.mount(
+    "/images", StaticFiles(directory=str(DEFAULT_OUTPUT_DIR)), name="images"
+)  # 挂载静态文件服务
+app.include_router(router=replicate_image_api_router)
 
 
 def main() -> None:

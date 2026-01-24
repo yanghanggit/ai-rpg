@@ -3,7 +3,7 @@
 用于 Replicate 图片生成服务的请求和响应模型
 """
 
-from typing import List, Optional, Dict, final
+from typing import List, Optional, final
 from pydantic import BaseModel, ConfigDict, Field
 
 

@@ -218,26 +218,6 @@ def _generate_pm2_ecosystem_config(
       out_file: './logs/game-server-{server_config.game_server_port}-out.log',
       time: true
     }},
-    // 图片生成服务器实例 - 端口 {server_config.image_generation_server_port}
-    {{
-      name: 'image-generation-server-{server_config.image_generation_server_port}',
-      script: 'uvicorn',
-      args: 'scripts.run_replicate_image_server:app --host 0.0.0.0 --port {server_config.image_generation_server_port}',
-      interpreter: 'python',
-      cwd: process.cwd(),
-      env: {{
-        PYTHONPATH: `${{process.cwd()}}`,
-        PORT: '{server_config.image_generation_server_port}'
-      }},
-      instances: 1,
-      autorestart: false,
-      watch: false,
-      max_memory_restart: '2G',
-      log_file: './logs/image-generation-server-{server_config.image_generation_server_port}.log',
-      error_file: './logs/image-generation-server-{server_config.image_generation_server_port}-error.log',
-      out_file: './logs/image-generation-server-{server_config.image_generation_server_port}-out.log',
-      time: true
-    }},
     // DeepSeek聊天服务器实例 - 端口 {server_config.deepseek_chat_server_port}
     {{
       name: 'deepseek-chat-server-{server_config.deepseek_chat_server_port}',
@@ -256,6 +236,26 @@ def _generate_pm2_ecosystem_config(
       log_file: './logs/deepseek-chat-server-{server_config.deepseek_chat_server_port}.log',
       error_file: './logs/deepseek-chat-server-{server_config.deepseek_chat_server_port}-error.log',
       out_file: './logs/deepseek-chat-server-{server_config.deepseek_chat_server_port}-out.log',
+      time: true
+    }},
+    // 图片生成服务器实例 - 端口 {server_config.image_generation_server_port}
+    {{
+      name: 'image-generation-server-{server_config.image_generation_server_port}',
+      script: 'uvicorn',
+      args: 'scripts.run_replicate_image_server:app --host 0.0.0.0 --port {server_config.image_generation_server_port}',
+      interpreter: 'python',
+      cwd: process.cwd(),
+      env: {{
+        PYTHONPATH: `${{process.cwd()}}`,
+        PORT: '{server_config.image_generation_server_port}'
+      }},
+      instances: 1,
+      autorestart: false,
+      watch: false,
+      max_memory_restart: '2G',
+      log_file: './logs/image-generation-server-{server_config.image_generation_server_port}.log',
+      error_file: './logs/image-generation-server-{server_config.image_generation_server_port}-error.log',
+      out_file: './logs/image-generation-server-{server_config.image_generation_server_port}-out.log',
       time: true
     }}
   ]

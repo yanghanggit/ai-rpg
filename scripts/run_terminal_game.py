@@ -65,6 +65,7 @@ from ai_rpg.services.dungeon_stage_transition import (
 )
 
 import datetime
+from ai_rpg.replicate.client import ImageClient
 
 
 ###############################################################################################################################################
@@ -132,6 +133,7 @@ async def _run_game(
 
     # 初始化聊天客户端
     ChatClient.initialize_url_config(server_configuration)
+    ImageClient.initialize_url_config(server_configuration)
 
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(terminal_game.world.entities_serialization) == 0:
@@ -404,7 +406,12 @@ async def _handle_player_turn(terminal_game: TCGGame) -> None:
 
     # 公用：检查内网的llm服务的健康状态
     if usr_input == "/hc":
+
+        # 检查聊天服务
         await ChatClient.health_check()
+
+        # 检查图片服务
+        await ImageClient.health_check()
         return
 
     # 根据游戏状态分发处理逻辑

@@ -17,7 +17,7 @@ from ..replicate import (
     run_concurrent_tasks,
     ReplicateImageInput,
 )
-from ..models import (
+from ..replicate import (
     ImageGenerationRequest,
     GeneratedImage,
     ImageGenerationResponse,

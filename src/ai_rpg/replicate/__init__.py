@@ -18,17 +18,25 @@ from .image_tools import (
     ReplicateImageTask,
 )
 from .types import ReplicateImageInput
+from .protocol import (
+    ImageGenerationConfig,
+    ImageGenerationRequest,
+    ImageGenerationResponse,
+    GeneratedImage,
+)
 
 __all__ = [
     "ReplicateConfig",
-    # "load_replicate_config",
     "test_replicate_api_connection",
     "run_concurrent_tasks",
-    # 任务类
     "ImageGenerationSubTask",
     "ImageDownloadSubTask",
     "ReplicateImageTask",
     "ReplicateImageInput",
     "replicate_config",
     "DEFAULT_OUTPUT_DIR",
+    "ImageGenerationConfig",
+    "ImageGenerationRequest",
+    "ImageGenerationResponse",
+    "GeneratedImage",
 ]

@@ -9,4 +9,3 @@ from .registry import *
 from .serialization import *
 from .task import *
 from .world import *
-from .image_api import *

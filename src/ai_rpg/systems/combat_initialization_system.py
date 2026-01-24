@@ -243,7 +243,7 @@ class CombatInitializationSystem(ExecuteProcessor):
 
         # 第二步：并发调用LLM生成所有角色的初始状态效果
         # logger.debug(f"开始并发生成 {len(chat_clients)} 个角色的初始状态效果...")
-        await ChatClient.gather_request_post(clients=chat_clients)
+        await ChatClient.batch_chat(clients=chat_clients)
 
         # 第三步：解析并更新每个角色的状态效果
         self._record_ai_responses(chat_clients)

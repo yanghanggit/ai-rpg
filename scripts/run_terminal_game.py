@@ -81,7 +81,7 @@ async def _test_image_generation() -> None:
     )
 
     logger.info(f"开始生成图片，提示词: {image_client.prompt}")
-    await image_client.generate()
+    await image_client.async_generate()
 
     # 检查响应并输出结果
     if image_client._response and len(image_client._response.images) > 0:

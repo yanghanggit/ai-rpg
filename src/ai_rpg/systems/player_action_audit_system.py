@@ -245,7 +245,7 @@ class PlayerActionAuditSystem(ReactiveProcessor):
             )
 
             # 发送审核请求
-            await ChatClient.gather_request_post(clients=[chat_client])
+            await ChatClient.batch_chat(clients=[chat_client])
 
             # 解析AI响应
             response_content = chat_client.response_content

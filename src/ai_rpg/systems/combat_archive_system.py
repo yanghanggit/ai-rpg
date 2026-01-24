@@ -266,7 +266,7 @@ class CombatArchiveSystem(ExecuteProcessor):
         chat_clients = self._create_combat_summary_clients(list(combat_actors))
 
         # 语言服务
-        await ChatClient.gather_request_post(clients=chat_clients)
+        await ChatClient.batch_chat(clients=chat_clients)
 
         # 处理所有响应
         for chat_client in chat_clients:

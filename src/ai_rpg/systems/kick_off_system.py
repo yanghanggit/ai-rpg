@@ -263,7 +263,7 @@ class KickOffSystem(ExecuteProcessor):
             )
 
         # 并发
-        await ChatClient.gather_request_post(clients=chat_clients)
+        await ChatClient.batch_chat(clients=chat_clients)
 
         # 添加上下文。
         for chat_client in chat_clients:

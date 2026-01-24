@@ -191,7 +191,7 @@ class StatusEffectsEvaluationSystem(ExecuteProcessor):
 
         # 并发调用所有 LLM
         # logger.debug(f"开始并发评估 {len(chat_clients)} 个角色的状态效果...")
-        await ChatClient.gather_request_post(clients=chat_clients)
+        await ChatClient.batch_chat(clients=chat_clients)
 
         # 处理每个角色的响应
         for chat_client in chat_clients:

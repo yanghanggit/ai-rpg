@@ -139,7 +139,7 @@ class ImageClient:
         return self._url
 
     ################################################################################################################################################################################
-    async def generate(self) -> None:
+    async def async_generate(self) -> None:
         """异步生成图片
 
         发送图片生成请求到 Replicate 服务，结果保存在 _response 属性中。
@@ -217,7 +217,7 @@ class ImageClient:
 
         coros = []
         for client in clients:
-            coros.append(client.generate())
+            coros.append(client.async_generate())
 
         start_time = time.time()
         batch_results = await asyncio.gather(*coros, return_exceptions=True)

@@ -176,7 +176,7 @@ class EnemyDrawDecisionSystem(ReactiveProcessor):
             return
 
         # 批量调用 LLM
-        await ChatClient.gather_request_post(clients=chat_clients)
+        await ChatClient.batch_chat(clients=chat_clients)
 
         # 处理每个决策响应
         for chat_client in chat_clients:

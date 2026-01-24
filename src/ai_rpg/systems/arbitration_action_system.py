@@ -398,7 +398,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         )
 
         # 用语言服务系统进行推理。
-        chat_client.request_post()
+        chat_client.chat()
 
         # 处理返回结果。
         self._apply_arbitration_result(

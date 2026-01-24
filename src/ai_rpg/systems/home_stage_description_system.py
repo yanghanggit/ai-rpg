@@ -122,7 +122,7 @@ class HomeStageDescriptionSystem(ExecuteProcessor):
         )
 
         # 并行发送请求
-        await ChatClient.gather_request_post(clients=chat_clients)
+        await ChatClient.batch_chat(clients=chat_clients)
 
         # 处理响应
         for chat_client in chat_clients:

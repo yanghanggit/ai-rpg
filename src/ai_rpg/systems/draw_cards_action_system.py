@@ -232,7 +232,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             chat_clients.append(chat_client)
 
         # 语言服务
-        await ChatClient.gather_request_post(clients=chat_clients)
+        await ChatClient.batch_chat(clients=chat_clients)
 
         # 处理角色规划请求
         for chat_client in chat_clients:

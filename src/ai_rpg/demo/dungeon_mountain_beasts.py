@@ -1,3 +1,16 @@
+"""
+地下城副本工厂模块
+
+本模块用于创建桃花源世界观下的山林相关地下城副本，包含不同生态层级的怪物挑战。
+
+核心内容：
+- create_mountain_beasts_dungeon: 多场景副本，递进式挑战山魈（精怪）与山中虎（大妖）。
+- create_tiger_lair_dungeon: 单场景副本，仅挑战山中虎（大妖），适合高难度狩猎。
+- create_wild_boar_territory_dungeon: 单场景副本，仅挑战野猪（常物），适合新手练习与基础素材获取。
+
+各副本均采用碎片化环境叙事，突出感官细节，体现东方生态分层与狩猎体验。
+"""
+
 from ..models import (
     Dungeon,
     StageProfile,
@@ -5,6 +18,7 @@ from ..models import (
 )
 from .actor_mountain_monkey import create_actor_mountain_monkey
 from .actor_mountain_tiger import create_actor_mountain_tiger
+from .actor_wild_boar import create_actor_wild_boar
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
     RPG_SYSTEM_RULES,
@@ -136,5 +150,51 @@ def create_tiger_lair_dungeon() -> Dungeon:
         name="地下城.山中虎巢穴",
         stages=[
             stage_deep_forest,
+        ],
+    )
+
+
+def create_wild_boar_territory_dungeon() -> Dungeon:
+    """
+    创建野猪领地副本。
+
+    包含单个场景：
+    - 林间空地：常物级野猪，适合初期狩猎练习的基础猎物
+
+    Returns:
+        Dungeon: 野猪领地副本实例
+    """
+    # 创建野猪领地场景（林间空地）
+    stage_forest_clearing = create_stage(
+        name="场景.林间空地",
+        stage_profile=StageProfile(
+            name="forest_clearing",
+            type=StageType.DUNGEON,
+            profile="山脚下的林间空地，树木稀疏，阳光透过树冠洒落。地面覆盖着橡果和野菜，泥土松软留有蹄印。周围灌木丛茂密，散发着野兽粪便和翻土的气味。适合野猪觅食的天然场所。",
+        ),
+        campaign_setting=RPG_CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
+        combat_mechanics=RPG_COMBAT_MECHANICS,
+    )
+
+    # 添加野猪作为场景中的敌对角色
+    actor_boar = create_actor_wild_boar()
+
+    # 将野猪的生命值设为1，方便测试击杀
+    # actor_boar.character_stats.hp = 1
+
+    # 将野猪添加到场景的角色列表中
+    stage_forest_clearing.actors = [actor_boar]
+
+    # 设置场景启动消息，指导游戏如何描写环境
+    stage_forest_clearing.kick_off_message = f"""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
+    
+使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
+输出为单段紧凑文本，不使用换行或空行。"""
+
+    return Dungeon(
+        name="地下城.野猪领地",
+        stages=[
+            stage_forest_clearing,
         ],
     )

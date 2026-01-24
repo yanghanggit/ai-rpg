@@ -38,6 +38,8 @@ from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
     create_single_hunter_blueprint,
     create_mountain_beasts_dungeon,
+    create_training_dungeon,
+    create_wild_boar_territory_dungeon,
 )
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import (
@@ -141,7 +143,7 @@ async def _run_game(
             runtime_index=1000,
             entities_serialization=[],
             agents_context={},
-            dungeon=create_mountain_beasts_dungeon(),
+            dungeon=create_wild_boar_territory_dungeon(),
             blueprint=world_blueprint,
         )
 

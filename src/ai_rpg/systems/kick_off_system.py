@@ -4,7 +4,7 @@ import json
 import hashlib
 from loguru import logger
 from overrides import override
-from ..chat_services.client import ChatClient
+from ..chat_service.client import ChatClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.rpg_game import RPGGame
 from ..models import (

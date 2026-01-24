@@ -35,7 +35,7 @@ sys.path.insert(
 from typing import Any, Dict
 from fastapi import FastAPI
 from loguru import logger
-from ai_rpg.chat_services.protocol import ChatRequest, ChatResponse
+from ai_rpg.chat_service.protocol import ChatRequest, ChatResponse
 from ai_rpg.deepseek import (
     create_chat_workflow,
     execute_chat_workflow,

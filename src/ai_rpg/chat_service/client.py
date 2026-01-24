@@ -382,10 +382,10 @@ class ChatClient:
         batch_results = await asyncio.gather(*coros, return_exceptions=True)
         end_time = time.time()
         logger.debug(
-            f"ChatClient.gather_request_post: {len(clients)} clients, {end_time - start_time:.2f} seconds"
+            f"ChatClient.batch_chat: {len(clients)} clients, {end_time - start_time:.2f} seconds"
         )
 
-        # 记录失败请求
+        # 统计失败请求
         failed_count = 0
         for i, result in enumerate(batch_results):
             if isinstance(result, Exception):
@@ -397,11 +397,11 @@ class ChatClient:
 
         if failed_count > 0:
             logger.warning(
-                f"ChatClient.gather_request_post: {failed_count}/{len(clients)} requests failed"
+                f"ChatClient.batch_chat: {failed_count}/{len(clients)} requests failed"
             )
         else:
             logger.debug(
-                f"ChatClient.gather_request_post: All {len(clients)} requests completed successfully"
+                f"ChatClient.batch_chat: All {len(clients)} requests completed successfully"
             )
 
     ################################################################################################################################################################################

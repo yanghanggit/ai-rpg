@@ -11,7 +11,7 @@ from ..models import (
     PlayerActionAuditComponent,
 )
 from ..game.tcg_game import TCGGame
-from ..chat_services.client import ChatClient
+from ..chat_service.client import ChatClient
 from ..utils import extract_json_from_code_block
 from langchain_core.messages import SystemMessage
 

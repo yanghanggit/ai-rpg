@@ -2,7 +2,7 @@ from typing import Dict, Final, List, final
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-from ..chat_services import ChatClient
+from ..chat_service import ChatClient
 from ..entitas import Entity, Matcher, GroupEvent, ReactiveProcessor
 from ..models import (
     AnnounceAction,

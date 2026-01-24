@@ -28,7 +28,7 @@ from ai_rpg.services.entity_details import (
 from ai_rpg.services.dungeon_state import dungeon_state_api_router
 from ai_rpg.services.stages_state import stages_state_api_router
 from ai_rpg.services.background_tasks import background_tasks_api_router
-from ai_rpg.chat_services.client import ChatClient
+from ai_rpg.chat_service.client import ChatClient
 from ai_rpg.services.player_session import player_session_api_router
 from ai_rpg.game.config import setup_logger
 

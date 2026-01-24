@@ -2,7 +2,7 @@ from typing import Final, List, Set, final
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-from ..chat_services.client import ChatClient
+from ..chat_service.client import ChatClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (

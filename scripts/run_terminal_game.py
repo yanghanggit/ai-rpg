@@ -29,7 +29,7 @@ sys.path.insert(
 
 from typing import Dict
 from loguru import logger
-from ai_rpg.chat_services.client import ChatClient
+from ai_rpg.chat_service.client import ChatClient
 from ai_rpg.configuration import (
     server_configuration,
 )

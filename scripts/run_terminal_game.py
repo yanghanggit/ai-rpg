@@ -69,6 +69,35 @@ from ai_rpg.replicate.client import ImageClient
 
 
 ###############################################################################################################################################
+async def _test_image_generation() -> None:
+    """测试图片生成功能
+
+    创建测试客户端，发送图片生成请求，并输出结果日志。
+    用于快速验证图片生成服务的可用性。
+    """
+    image_client = ImageClient(
+        name="terminal-image-test",
+        prompt="一致可爱的小猫坐在海滩上～",
+    )
+
+    logger.info(f"开始生成图片，提示词: {image_client.prompt}")
+    await image_client.generate()
+
+    # 检查响应并输出结果
+    if image_client._response and len(image_client._response.images) > 0:
+        logger.info(
+            f"✅ 图片生成成功！耗时: {image_client._response.elapsed_time:.2f}秒"
+        )
+        for img in image_client._response.images:
+            logger.info(f"  - 文件: {img.filename}")
+            logger.info(f"  - URL: {img.url}")
+            logger.info(f"  - 本地路径: {img.local_path}")
+            logger.info(f"  - 使用模型: {img.model}")
+    else:
+        logger.error("❌ 图片生成失败或无响应")
+
+
+###############################################################################################################################################
 async def _run_game(
     user: str,
     game: str,
@@ -412,6 +441,10 @@ async def _handle_player_turn(terminal_game: TCGGame) -> None:
 
         # 检查图片服务
         await ImageClient.health_check()
+        return
+
+    if usr_input == "/ig":
+        await _test_image_generation()
         return
 
     # 根据游戏状态分发处理逻辑

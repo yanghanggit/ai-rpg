@@ -17,7 +17,7 @@ from ..models import (
     AppearanceComponent,
     StatusEffect,
 )
-from ..chat_service.client import ChatClient
+from ..chat_client.client import ChatClient
 from ..utils import extract_json_from_code_block
 from ..models.entities import CharacterStats
 

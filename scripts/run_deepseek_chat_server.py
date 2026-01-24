@@ -3,10 +3,15 @@
 DeepSeek Chat Server启动脚本
 
 功能：
-1. 基于FastAPI构建的DeepSeek聊天服务器
-2. 提供RESTful API接口
-3. 支持聊天历史和上下文记忆
-4. 异步处理聊天请求
+1. 初始化并配置FastAPI应用
+2. 注册DeepSeek聊天服务路由
+3. 提供动态API信息和健康检查
+4. 启动HTTP服务器
+
+架构说明：
+- 本文件负责应用配置和启动（表现层）
+- 具体的聊天端点实现位于 ai_rpg.services.deepseek_chat 模块
+- 采用模块化设计，便于维护和扩展
 
 使用方法：
     python scripts/run_deepseek_chat_server.py
@@ -15,12 +20,9 @@ DeepSeek Chat Server启动脚本
     python -m scripts.run_deepseek_chat_server
 
 API端点：
-    GET  /                       - 健康检查
+    GET  /                       - API信息和健康检查（动态获取所有路由）
     POST /api/chat/v1/           - 标准聊天（chat模型）
     POST /api/chat/reasoner/v1/  - 推理聊天（reasoner模型）
-    POST /api/chat/rag/v1/       - RAG聊天
-    POST /api/chat/undefined/v1/ - 未定义类型聊天
-    POST /api/chat/mcp/v1/       - MCP聊天
 """
 
 import os
@@ -33,19 +35,13 @@ sys.path.insert(
 )
 
 from typing import Any, Dict
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from loguru import logger
-from ai_rpg.chat_service.protocol import ChatRequest, ChatResponse
-from ai_rpg.deepseek import (
-    create_chat_workflow,
-    execute_chat_workflow,
-    create_deepseek_chat,
-    create_deepseek_reasoner,
-)
 
 from ai_rpg.configuration import (
     server_configuration,
 )
+from ai_rpg.services.deepseek_chat import deepseek_chat_api_router
 
 from typing import Dict, Any
 from contextlib import asynccontextmanager
@@ -80,118 +76,52 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+############################################################################################################
+# 注册路由
+app.include_router(deepseek_chat_api_router)
+
 
 ##################################################################################################################
-# 健康检查端点
 @app.get("/")
-async def health_check() -> Dict[str, Any]:
-    """
-    服务器健康检查端点
+async def get_api_info(request: Request) -> Dict[str, Any]:
+    """API 根路由接口
+
+    提供 API 服务的基本信息和所有可用端点的列表。
+
+    Args:
+        request: FastAPI 请求对象
 
     Returns:
-        dict: 包含服务器状态信息的字典
+        Dict[str, Any]: 包含服务信息、状态、可用端点列表和已注册路由的响应字典
     """
     from datetime import datetime
+    from fastapi.routing import APIRoute
+
+    base_url = str(request.base_url)
+    logger.info(f"获取API路由信息: {base_url}")
+
+    # 收集所有已注册的路由信息
+    routes_info = []
+    for route in app.routes:
+        if isinstance(route, APIRoute):
+            routes_info.append(
+                {
+                    "path": route.path,
+                    "name": route.name,
+                    "methods": list(route.methods),
+                    "tags": route.tags if route.tags else [],
+                }
+            )
 
     return {
         "service": "DeepSeek Chat Server",
-        "version": "1.0.0",
+        "base_url": base_url,
+        "description": "基于DeepSeek的聊天服务器",
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "endpoints": [
-            "/",
-            "/api/chat/v1/",
-            "/api/chat/reasoner/v1/",
-        ],
-        "description": "基于DeepSeek的聊天服务器正在正常运行",
+        "version": "1.0.0",
+        "routes": routes_info,
     }
-
-
-##################################################################################################################
-# 定义 POST 请求处理逻辑
-@app.post(
-    path="/api/chat/v1/",
-    response_model=ChatResponse,
-)
-async def process_chat_request(payload: ChatRequest) -> ChatResponse:
-    """
-    处理聊天请求
-
-    Args:
-        request: 包含聊天历史和用户消息的请求对象
-
-    Returns:
-        ChatResponse: 包含AI回复消息的响应对象
-    """
-    try:
-        logger.info(f"收到聊天请求: {payload.message.content}")
-
-        chat_response = await execute_chat_workflow(
-            work_flow=create_chat_workflow(),
-            context=[message for message in payload.context],
-            request=payload.message,
-            llm=create_deepseek_chat(),
-        )
-
-        logger.success(f"生成回复消息数量: {len(chat_response)}")
-
-        # 打印所有消息的详细内容
-        for i, message in enumerate(chat_response):
-            logger.success(f"消息 {i+1}: {message.model_dump_json(indent=2)}")
-
-        # 返回
-        return ChatResponse(messages=chat_response)
-
-    except Exception as e:
-        logger.error(f"处理聊天请求时发生错误: {e}")
-
-    return ChatResponse(messages=[])
-
-
-##################################################################################################################
-# 推理模型聊天端点
-@app.post(
-    path="/api/chat/reasoner/v1/",
-    response_model=ChatResponse,
-)
-async def process_chat_reasoner_request(payload: ChatRequest) -> ChatResponse:
-    """
-    处理聊天请求（使用推理模型）
-
-    特性：
-    - 使用 DeepSeek Reasoner 模型（思考模式）
-    - 提供推理思考过程（reasoning_content）
-    - 适合复杂推理任务
-    - 注意：不支持工具调用和结构化输出
-
-    Args:
-        payload: 包含聊天历史和用户消息的请求对象
-
-    Returns:
-        ChatResponse: 包含AI回复消息的响应对象（包含思考过程）
-    """
-    try:
-        logger.info(f"🧠 收到推理模型聊天请求: {payload.message.content}")
-
-        chat_response = await execute_chat_workflow(
-            work_flow=create_chat_workflow(),
-            context=[message for message in payload.context],
-            request=payload.message,
-            llm=create_deepseek_reasoner(),  # 使用推理模型
-        )
-
-        logger.success(f"生成回复消息数量: {len(chat_response)}")
-
-        # 打印所有消息的详细内容
-        for i, message in enumerate(chat_response):
-            logger.success(f"消息 {i+1}: {message.model_dump_json(indent=2)}")
-
-        # 返回
-        return ChatResponse(messages=chat_response)
-
-    except Exception as e:
-        logger.error(f"处理推理模型聊天请求时发生错误: {e}")
-        return ChatResponse(messages=[])
 
 
 ##################################################################################################################
@@ -200,9 +130,14 @@ def main() -> None:
     DeepSeek聊天服务器主函数
 
     功能：
-    1. 启动FastAPI服务器
-    2. 配置服务器参数
-    3. 提供聊天API服务
+    1. 从配置中读取服务器参数
+    2. 启动Uvicorn服务器
+    3. 监听并处理HTTP请求
+
+    服务器配置：
+    - Host: localhost（仅本地访问）
+    - Port: 从 server_configuration.deepseek_chat_server_port 读取
+    - Log Level: debug（详细日志）
     """
     logger.info("🚀 启动DeepSeek聊天服务器...")
 

@@ -24,7 +24,7 @@ from typing import Dict, Final, List, NamedTuple, final
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-from ..chat_service.client import ChatClient
+from ..chat_client.client import ChatClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (

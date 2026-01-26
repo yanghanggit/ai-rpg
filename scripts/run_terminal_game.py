@@ -37,8 +37,6 @@ from ai_rpg.utils import parse_command_args
 from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
 from ai_rpg.demo import (
     create_single_hunter_blueprint,
-    create_mountain_beasts_dungeon,
-    create_training_dungeon,
     create_wild_boar_territory_dungeon,
 )
 from ai_rpg.game.player_session import PlayerSession
@@ -164,6 +162,8 @@ async def _run_game(
 
     # 初始化聊天客户端
     ChatClient.initialize_url_config(server_configuration)
+
+    # 初始化图片(图片生成服务)客户端
     ImageClient.initialize_url_config(server_configuration)
 
     # 启动游戏的判断，是第一次建立还是恢复？
@@ -269,7 +269,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         )
 
         # 归档战斗记录（使用 pipeline）
-        await terminal_game.combat_archive_pipeline.execute()
+        # await terminal_game.combat_archive_pipeline.execute()
 
         # 进入战斗后准备状态
         terminal_game.current_combat_sequence.transition_to_post_combat()

@@ -129,7 +129,7 @@ def _generate_round_prompt(
 ```json
 {{
   "name": "行动名",
-  "description": "四段式描述",
+  "description": "三段式描述",
   "final_attack": 0,
   "final_defense": 0
 }}

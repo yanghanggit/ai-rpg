@@ -14,7 +14,7 @@ from ..models import Stage, StageProfile, StageType
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
     RPG_SYSTEM_RULES,
-    RPG_COMBAT_MECHANICS,
+    # RPG_COMBAT_MECHANICS,
 )
 from .entity_factory import (
     create_stage,
@@ -44,7 +44,7 @@ def create_hunter_storage() -> Stage:
         ),
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
-        combat_mechanics=RPG_COMBAT_MECHANICS,
+        # combat_mechanics=RPG_COMBAT_MECHANICS,
     )
 
 
@@ -72,7 +72,7 @@ def create_village_hall() -> Stage:
         ),
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
-        combat_mechanics=RPG_COMBAT_MECHANICS,
+        # combat_mechanics=RPG_COMBAT_MECHANICS,
     )
 
 
@@ -104,7 +104,7 @@ def create_shi_family_house() -> Stage:
         ),
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
-        combat_mechanics=RPG_COMBAT_MECHANICS,
+        # combat_mechanics=RPG_COMBAT_MECHANICS,
     )
 
 
@@ -131,5 +131,5 @@ def create_training_ground() -> Stage:
         ),
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
-        combat_mechanics=RPG_COMBAT_MECHANICS,
+        # combat_mechanics=RPG_COMBAT_MECHANICS,
     )

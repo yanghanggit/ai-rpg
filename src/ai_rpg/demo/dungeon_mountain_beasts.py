@@ -22,7 +22,7 @@ from .actor_wild_boar import create_actor_wild_boar
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
     RPG_SYSTEM_RULES,
-    RPG_COMBAT_MECHANICS,
+    # RPG_COMBAT_MECHANICS,
 )
 from .entity_factory import (
     create_stage,
@@ -50,7 +50,7 @@ def create_mountain_beasts_dungeon() -> Dungeon:
         ),
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
-        combat_mechanics=RPG_COMBAT_MECHANICS,
+        # combat_mechanics=RPG_COMBAT_MECHANICS,
     )
 
     # 添加山魈作为场景中的敌对角色
@@ -78,7 +78,7 @@ def create_mountain_beasts_dungeon() -> Dungeon:
         ),
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
-        combat_mechanics=RPG_COMBAT_MECHANICS,
+        # combat_mechanics=RPG_COMBAT_MECHANICS,
     )
 
     # 添加山中虎作为场景中的敌对角色
@@ -125,7 +125,7 @@ def create_tiger_lair_dungeon() -> Dungeon:
         ),
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
-        combat_mechanics=RPG_COMBAT_MECHANICS,
+        # combat_mechanics=RPG_COMBAT_MECHANICS,
     )
 
     # 添加山中虎作为场景中的敌对角色
@@ -174,7 +174,7 @@ def create_wild_boar_territory_dungeon() -> Dungeon:
         ),
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
-        combat_mechanics=RPG_COMBAT_MECHANICS,
+        # combat_mechanics=RPG_COMBAT_MECHANICS,
     )
 
     # 添加野猪作为场景中的敌对角色

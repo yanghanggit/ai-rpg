@@ -16,7 +16,6 @@ from ..models import (
     CharacterStats,
     Stage,
     StageProfile,
-    StageType,
     WorldSystem,
 )
 
@@ -100,7 +99,7 @@ def create_stage(
     stage_profile: StageProfile,
     campaign_setting: str,
     system_rules: str,
-    combat_mechanics: str,
+    # combat_mechanics: str,
 ) -> Stage:
     """
     创建一个游戏场景(Stage)实例。
@@ -145,12 +144,12 @@ def create_stage(
 {stage_profile.profile}"""
 
     # 仅地下城场景添加战斗机制说明
-    if stage.stage_profile.type == StageType.DUNGEON:
-        stage.system_message += f""" 
+    #     if stage.stage_profile.type == StageType.DUNGEON:
+    #         stage.system_message += f"""
 
-## 战斗机制
+    # ## 战斗机制
 
-{combat_mechanics}"""
+    # {combat_mechanics}"""
 
     return stage
 

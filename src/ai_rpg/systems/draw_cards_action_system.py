@@ -43,8 +43,8 @@ class DrawCardsResponse(BaseModel):
 
     name: str
     description: str
-    final_attack: int
-    final_defense: int
+    final_attack: float
+    final_defense: float
 
 
 #######################################################################################################################################
@@ -300,8 +300,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
             card_stats = CharacterStats(
                 # hp=validated_response.hp,
                 max_hp=0,  # max_hp 不由 Agent 生成
-                attack=validated_response.final_attack,
-                defense=validated_response.final_defense,
+                attack=int(validated_response.final_attack),
+                defense=int(validated_response.final_defense),
             )
 
             # 创建完整的Card对象

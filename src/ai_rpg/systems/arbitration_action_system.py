@@ -44,7 +44,7 @@ from ..utils import extract_json_from_code_block
 @final
 class ArbitrationResponse(BaseModel):
     combat_log: str
-    final_hp: Dict[str, int]
+    final_hp: Dict[str, float]
     narrative: str
 
 
@@ -64,7 +64,7 @@ def _generate_card_sequence_details(
     """生成卡牌结算序列详情列表。
 
     以卡牌为基本单元，按照行动顺序为每张卡牌生成完整信息，包含：
-    使用者信息（名称、HP、攻防属性）、目标、卡牌描述、词条。
+    出牌者信息（名称、HP、攻防属性）、目标、卡牌描述、词条。
     卡牌属性已包含状态效果修正后的最终数值。
     词条为固有特性，有词条时逐条列出，无词条时显示"无"。
 
@@ -103,7 +103,7 @@ def _generate_card_sequence_details(
 
         detail = f"""### {index}. 卡牌：{param.card.name}
 
-- **使用者**：{param.actor} | HP:{actor_hp}/{actor_max_hp} | 攻击:{card_stats.attack} | 防御:{card_stats.defense}
+- **出牌者**：{param.actor} | HP:{actor_hp}/{actor_max_hp} | 攻击:{card_stats.attack} | 防御:{card_stats.defense}
 - **目标**：{target_display}
 - **描述**：{param.card.description}
 - **词条**：{affixes_display}"""
@@ -209,7 +209,7 @@ def _generate_combat_arbitration_prompt(
 
 卡牌封装了角色的完整战斗行动信息：
 
-- **使用者**：角色名、当前HP/最大HP、攻击力、防御力
+- **出牌者**：角色名、当前HP/最大HP、攻击力、防御力
 - **目标**：行动目标角色名列表
 - **描述**：行动详情，包含【行动】【机制】【代价】三段
 - **词条**：卡牌固有特性
@@ -221,24 +221,40 @@ def _generate_combat_arbitration_prompt(
 结算每张卡牌时按以下步骤：
 
 1. **确定参数**
-   - 使用者攻击力：从该卡牌"使用者"行获取
-   - 目标防御力：从目标卡牌"使用者"行获取
-   - 阅读【机制】段落，分析并应用对这两个参数的修正
+   - 出牌者攻击力：从该卡牌"出牌者"行获取
+   - 目标防御力：从目标卡牌"出牌者"行获取
+   - 阅读【机制】段落与词条字段，分析并应用对这两个参数的修正
+     （两者均可能包含数值修正或特殊触发条件）
    
 2. **计算伤害**
    - 伤害值 = max(1, 修正后攻击力 - 修正后防御力)
    
-3. **更新HP并约束**
+3. **更新HP**
    - 最终HP = max(0, min(当前HP - 伤害值, 最大HP))
+
+4. **识别附加效果**
+   - 阅读【机制】段落与词条字段，识别除HP/攻击/防御数值变化之外的其他效果
+   - 这类效果通常描述状态改变、行为限制、持续影响等非即时数值变化的规则
+   - 若存在此类效果，提取其核心描述关键词（见第5节格式约束）
 
 ## 3. 战斗导演职责
 
 你的任务：
 
-1. **按序结算**：依照卡牌顺序，对每张卡牌执行上述公式
-2. **先手影响后手**：先执行的卡牌可改变环境，影响后续卡牌
-3. **死亡中断**：角色HP归零后，其对应卡牌立即作废
-4. **记录结算**：在combat_log中显示每张卡牌的完整计算和HP变化，可选地记录环境变化
+1. **按序结算卡牌**
+   依照卡牌顺序逐张处理，每张卡牌结算前检查出牌者当前HP：
+   
+   - **HP > 0**：正常执行上述公式
+   
+   - **HP = 0**：阅读该卡牌的【机制】与**词条**段落，判断其效果设计：
+     - 若效果明确声明"死后仍可触发"（如遗言效果、临死反击、死亡爆发等生命终结时触发的特殊机制），则正常执行上述公式
+     - 若效果为常规战斗行动（如普通攻击、防御、增益等生存状态下的行为），则跳过结算
+
+2. **先手影响后手**
+   先执行的卡牌可改变环境，影响后续卡牌的结算条件
+
+3. **记录完整过程**
+   在combat_log中显示每张卡牌的处理结果（包括正常结算、特殊触发、跳过），可选地记录环境变化
 
 ## 4. 输出格式
 
@@ -250,31 +266,44 @@ def _generate_combat_arbitration_prompt(
 }}
 ```
 
-## 5. 输出约束
+## 5. 输出规范
 
-### combat_log约束
+### combat_log格式
 
-**格式**：每行记录一张卡牌的结算
+每行记录一张卡牌的处理结果。所有角色名使用简名（全名最后一段）。
 
+**正常结算（无附加效果）**：
 ```
 [简名|卡牌→目标:攻击X,防御Y,伤害max(1,X-Y)=Z] HP:角色A X→X-Z，角色B Y/Y
 ```
 
-**关键要求**：
-- 所有角色名使用简名（全名最后一段）
-- 攻击X、防御Y必须是机制修正后的最终值
-- 必须显示完整计算：攻击X,防御Y,伤害max(1,X-Y)=Z
-- HP变化用→表示，格式：当前值→结算后值（结算后值必须满足上述"更新HP并约束"）
+**正常结算（含附加效果）**：
+```
+[简名|卡牌→目标:攻击X,防御Y,伤害max(1,X-Y)=Z,效果:关键词] HP:角色A X→X-Z，角色B Y/Y
+```
+- 效果关键词：直接提取【机制】或词条中描述非数值变化的核心词汇
+- 多个效果用加号连接：`效果:关键词1+关键词2`
+
+**跳过结算**：
+```
+[简名|已阵亡，卡牌无法执行]
+```
+
+**格式补充说明**：
+- 攻击X、防御Y = 【机制】与词条修正后的最终值
+- HP变化格式：当前值→结算后值（必须符合 战斗计算公式-**更新HP** 的约束）
 
 **环境记录（可选）**：
-- 环境互动：行动影响环境物时，在目标后追加 `→环境物→`
-- 环境总结：最后一行可用 `[环境]关键词1+关键词2` 总结本轮环境变化
+- 环境互动：`[简名|卡牌→目标→环境物→...]`
+- 环境总结：`[环境]关键词1+关键词2`
 
-### final_hp约束
+### final_hp格式
 
-字典，键=角色全名（完整名称），值=结算后的HP数值
+字典，键=角色全名，值=结算后HP数值（整数或小数）
 
-### narrative约束
+**约束**：所有HP值必须 ≥0 且 ≤ 对应角色的最大HP
+
+### narrative格式
 
 80-150字，第三人称外部视角，描写动作与环境变化，禁用数字和机制术语，不涉及角色内心"""
 
@@ -568,13 +597,17 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 # 更新当前HP
                 old_hp = combat_stats.stats.hp
                 max_hp = combat_stats.stats.max_hp
-                combat_stats.stats.hp = max(0, min(final_hp, max_hp))
-                logger.info(f"更新 {actor_name} HP: {old_hp} → {final_hp}/{max_hp}")
+                combat_stats.stats.hp = int(max(0, min(final_hp, max_hp)))
+                logger.info(
+                    f"更新 {actor_name} HP: {old_hp} → {int(final_hp)}/{max_hp}"
+                )
 
                 # 通知角色HP变化
                 self._game.add_human_message(
                     entity=entity,
-                    message_content=_generate_hp_update_notification(final_hp, max_hp),
+                    message_content=_generate_hp_update_notification(
+                        int(final_hp), max_hp
+                    ),
                 )
 
             # 记录数据！

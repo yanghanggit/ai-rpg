@@ -1,3 +1,9 @@
+"""KickOff 启动系统模块
+
+负责处理游戏实体的启动初始化，通过 LLM 生成实体的初始响应并整合到上下文中。
+支持角色自我认知确认、场景环境描述生成，并提供基于内容哈希的响应缓存机制。
+"""
+
 from pathlib import Path
 from typing import Final, List, Set, final
 import json
@@ -22,15 +28,41 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 ###############################################################################################################################################
 @final
 class KickOffSystem(ExecuteProcessor):
+    """KickOff 启动系统
+
+    处理游戏实体的启动初始化流程，为角色和场景生成初始响应。
+    角色通过 kickoff 进行自我定位和目标确认，场景生成环境描述。
+    支持响应缓存以提高效率，缓存基于系统消息和提示内容的哈希值。
+
+    处理流程：
+        1. 筛选需要 kickoff 的有效实体
+        2. 尝试从缓存加载已有响应
+        3. 为未缓存实体生成 LLM 响应
+        4. 整合响应到实体的上下文历史
+        5. 缓存新生成的响应
+    """
 
     ###############################################################################################################################################
     def __init__(self, game_context: RPGGame, enable_cache: bool) -> None:
+        """初始化 KickOff 系统
+
+        Args:
+            game_context: 游戏上下文对象
+            enable_cache: 是否启用响应缓存
+        """
         self._game: RPGGame = game_context
         self._enable_cache: Final[bool] = enable_cache
 
     ###############################################################################################################################################
     @override
     async def execute(self) -> None:
+        """执行 KickOff 启动流程
+
+        主要流程：
+            1. 筛选有效的 kickoff 实体
+            2. 加载缓存响应（如启用缓存）
+            3. 处理未缓存的实体，生成 LLM 响应
+        """
 
         # 处理请求
         valid_entities = self._filter_valid_kick_off_entities()
@@ -54,14 +86,16 @@ class KickOffSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     def _load_cached_responses(self, entities: Set[Entity]) -> Set[Entity]:
-        """
-        加载缓存的启动响应，并从待处理实体中移除已有缓存的实体
+        """加载缓存的启动响应
+
+        从文件系统加载已缓存的 kickoff 响应，并将其整合到实体上下文中。
+        缓存基于系统消息和提示内容的哈希值，确保内容一致性。
 
         Args:
             entities: 待处理的实体集合
 
         Returns:
-            Set[Entity]: 需要实际处理的实体集合（移除了有缓存的实体）
+            需要实际处理的实体集合（已排除成功加载缓存的实体）
         """
         entities_to_process = entities.copy()
 
@@ -122,17 +156,15 @@ class KickOffSystem(ExecuteProcessor):
     def _prepend_kickoff_messages(
         self, entity: Entity, prompt: str, ai_messages: List[AIMessage]
     ) -> None:
-        """
-        整合聊天上下文，将请求处理结果添加到实体的聊天历史中
+        """整合 kickoff 对话到实体上下文
+
+        将 kickoff 的人类消息和 AI 响应插入到实体上下文历史的开头，
+        位于 SystemMessage 之后，确保 kickoff 成为实体"记忆"的起点。
 
         Args:
-            entity: 实体对象
-            prompt: 人类消息提示内容
-            ai_messages: AI消息列表
-
-        处理两种情况：
-        1. 如果聊天历史第一条是system message，则重新构建消息序列
-        2. 否则使用常规方式添加消息
+            entity: 目标实体
+            prompt: kickoff 提示内容
+            ai_messages: LLM 生成的响应消息列表
         """
         agent_context = self._game.get_agent_context(entity)
         assert len(agent_context.context) >= 1, "聊天上下文不能为空"
@@ -163,12 +195,14 @@ class KickOffSystem(ExecuteProcessor):
     def _cache_kick_off_response(
         self, entity: Entity, ai_messages: List[AIMessage]
     ) -> None:
-        """
-        缓存启动响应到文件系统
+        """缓存 kickoff 响应到文件系统
+
+        将 LLM 生成的响应序列化为 JSON 并保存到缓存目录。
+        缓存文件名基于实体名称、系统消息和提示内容的哈希值。
 
         Args:
-            entity: 实体对象
-            ai_messages: AI消息列表
+            entity: 目标实体
+            ai_messages: 需要缓存的 AI 响应消息列表
         """
         try:
             # 获取系统消息和提示内容
@@ -203,14 +237,15 @@ class KickOffSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     def _get_system_content(self, entity: Entity) -> str:
-        """
-        获取实体的系统消息内容
+        """获取实体的系统消息内容
+
+        从实体的上下文历史中提取第一条 SystemMessage 的内容。
 
         Args:
-            entity: 实体对象
+            entity: 目标实体
 
         Returns:
-            str: 系统消息内容，如果没有则返回空字符串
+            系统消息内容，若不存在则返回空字符串
         """
         agent_context = self._game.get_agent_context(entity)
         if len(agent_context.context) > 0 and agent_context.context[0].type == "system":
@@ -221,15 +256,18 @@ class KickOffSystem(ExecuteProcessor):
     def _get_kick_off_cache_path(
         self, entity_name: str, system_content: str, prompt_content: str
     ) -> Path:
-        """
-        解析并返回基于内容哈希的kick off缓存文件路径
+        """生成基于内容哈希的缓存文件路径
+
+        组合实体名称、系统消息和提示内容，生成 SHA256 哈希值作为文件名，
+        确保相同内容使用相同缓存，不同内容使用不同缓存。
 
         Args:
+            entity_name: 实体名称
             system_content: 系统消息内容
-            prompt_content: 提示内容
+            prompt_content: kickoff 提示内容
 
         Returns:
-            Path: 基于内容哈希的缓存文件路径
+            缓存文件的完整路径
         """
         # 合并内容并生成哈希
         content = entity_name + system_content + prompt_content
@@ -240,6 +278,14 @@ class KickOffSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     async def _execute_kick_off_requests(self, entities: Set[Entity]) -> None:
+        """执行 kickoff 请求处理
+
+        为所有待处理实体生成 LLM 请求，并发执行后整合响应到实体上下文，
+        同时缓存响应并标记实体为已完成 kickoff。
+
+        Args:
+            entities: 需要处理的实体集合
+        """
 
         # 添加请求处理器
         chat_clients: List[ChatClient] = []
@@ -302,12 +348,15 @@ class KickOffSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     def _filter_valid_kick_off_entities(self) -> Set[Entity]:
-        """
-        筛选所有可以参与request处理的有效实体
-        筛选条件：
-        1. 包含 KickOffMessageComponent 且未包含 KickOffDoneComponent
-        2. 必须是 Actor、Stage 或 WorldSystem 类型之一 (通过 Matcher.any_of 筛选)
-        3. KickOffMessageComponent 的内容不为空
+        """筛选需要执行 kickoff 的有效实体
+
+        筛选规则：
+            1. 包含 KickOffComponent 且未包含 KickOffDoneComponent
+            2. 必须是 Actor、Stage 或 WorldSystem 类型之一
+            3. KickOffComponent 的内容不为空（敌人实体例外）
+
+        Returns:
+            符合条件的实体集合
         """
         # 通过 Matcher 筛选：组件存在性 + 实体类型
         candidate_entities = self._game.get_group(
@@ -338,6 +387,16 @@ class KickOffSystem(ExecuteProcessor):
 
     ###############################################################################################################################################
     def _get_kick_off_message_content(self, entity: Entity) -> str:
+        """获取实体的 kickoff 消息内容
+
+        从实体的 KickOffComponent 中提取消息内容。
+
+        Args:
+            entity: 目标实体
+
+        Returns:
+            kickoff 消息内容
+        """
 
         kick_off_message_comp = entity.get(KickOffComponent)
         assert kick_off_message_comp is not None

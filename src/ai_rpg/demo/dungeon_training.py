@@ -1,4 +1,5 @@
 from .actor_training_dummy import create_training_dummy
+from .prompt_templates import PUBLIC_STAGE_KICK_OFF_MESSAGE
 from .stage_village import create_training_ground
 from ..models import Dungeon, StageType, UniqueItem
 
@@ -15,11 +16,6 @@ def create_training_dungeon() -> Dungeon:
 
     # 故意测试将生命值设为1，方便训练时快速击败
     actor_training_dummy.character_stats.hp = 1
-
-    # 设置游戏启动对话
-    # actor_training_dummy.kick_off_message = (
-    #     """# 游戏启动！告诉我你是谁？请说出你的全名。回答简短(<100字)。"""
-    # )
 
     # 给训练木桩添加特殊物品：青木妖心节·不死重生
     actor_training_dummy.items = [
@@ -44,10 +40,7 @@ def create_training_dungeon() -> Dungeon:
     stage_training_ground.actors = [actor_training_dummy]
 
     # 设置训练场景的游戏启动对话
-    stage_training_ground.kick_off_message = f"""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
-        
-使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
-输出为单段紧凑文本，不使用换行或空行。"""
+    stage_training_ground.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
 
     return Dungeon(
         name="地下城.训猎人训练场",

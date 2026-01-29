@@ -3,7 +3,6 @@
 提供工厂函数创建预配置的游戏世界，包括双角色和单角色版本。
 """
 
-from typing import Final
 from ..models import (
     Blueprint,
     WeaponItem,
@@ -12,21 +11,16 @@ from ..models import (
 from .actor_hunter import create_hunter
 from .actor_mystic import create_mystic
 from .global_settings import RPG_CAMPAIGN_SETTING
+from .prompt_templates import (
+    PUBLIC_STAGE_KICK_OFF_MESSAGE,
+    build_actor_kickoff_message,
+)
 from .stage_village import (
     create_hunter_storage,
     create_village_hall,
     create_shi_family_house,
 )
 from .world_system_player_action_audit import create_player_action_audit
-
-
-# 公共场景启动消息模板
-PUBLIC_STAGE_KICK_OFF_MESSAGE: Final[
-    str
-] = f"""# 游戏启动! 以第三人称视角，直接描写场景内部的可见环境。
-        
-使用纯粹的感官描写：视觉、听觉、嗅觉、触觉等具体细节。
-输出为单段紧凑文本，不使用换行或空行."""
 
 
 #######################################################################################################################
@@ -95,10 +89,14 @@ def create_hunter_mystic_blueprint(game_name: str) -> Blueprint:
     stage_hunter_storage.actors = [actor_hunter, actor_mystic]
     # 设置角色的初始状态
     assert actor_hunter.kick_off_message == "", "猎人角色的kick_off_message应为空"
-    actor_hunter.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 作为石氏猎人家族传人，磨练狩猎技艺，维护桃花源周边山林的生态平衡，并探索古先民遗迹的秘密。"""
+    actor_hunter.kick_off_message = build_actor_kickoff_message(
+        "作为石氏猎人家族传人，磨练狩猎技艺，维护桃花源周边山林的生态平衡，并探索古先民遗迹的秘密。"
+    )
 
     assert actor_mystic.kick_off_message == "", "术士角色的kick_off_message应为空"
-    actor_mystic.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 通过研究古先民遗迹中的神秘符文，理解古先民引导自然之力的方法，并揭示桃花源隐藏的秘密。"""
+    actor_mystic.kick_off_message = build_actor_kickoff_message(
+        "通过研究古先民遗迹中的神秘符文，理解古先民引导自然之力的方法，并揭示桃花源隐藏的秘密。"
+    )
 
     # 设置英雄营地场景的初始状态
     stage_hunter_storage.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
@@ -152,12 +150,12 @@ def create_single_hunter_blueprint(game_name: str) -> Blueprint:
         - 武器: 竹弦狩猎弓（山竹弓臂，山魈筋腱为弦）
         - 防具: 兽皮短衫（窃脂妖兽皮革，硬化兽皮加固）
     """
-
     # 创建角色: 测试猎人
     actor_hunter = create_hunter()
     assert actor_hunter.kick_off_message == "", "猎人角色的kick_off_message应为空"
-    actor_hunter.kick_off_message = f"""# 游戏启动！告诉我你是谁？请说出你的全名。并说出你的目标(回答简短)。你的目标是: 作为石氏猎人家族传人，磨练狩猎技艺，维护桃花源周边山林的生态平衡，并探索古先民遗迹的秘密。而且你最讨厌虎类的妖兽，因为你对其有刻骨铭心的仇恨，你只要见到就会全力发起攻击！"""
-    # 而且你最讨厌虎类的妖兽，因为你对其有刻骨铭心的仇恨，你只要见到就会全力发起攻击！
+    actor_hunter.kick_off_message = build_actor_kickoff_message(
+        "作为石氏猎人家族传人，磨练狩猎技艺，维护桃花源周边山林的生态平衡，并探索古先民遗迹的秘密。而且你最讨厌虎类的妖兽，因为你对其有刻骨铭心的仇恨，你只要见到就会全力发起攻击！"
+    )
 
     # 添加猎人测试装备
     actor_hunter.items.extend(

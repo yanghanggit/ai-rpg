@@ -42,14 +42,14 @@ def _generate_dungeon_entry_message(
         str: 格式化的进入提示消息
     """
     if is_first_stage:
-        return f"""# 提示！进入地下城：{dungeon_name}，开始关卡：{dungeon_stage_name}
+        return f"""# 提示！进入地下城：{dungeon_name}，开始关卡场景：{dungeon_stage_name}
 
 ## 任务说明
 
 {dungeon_description}"""
 
     else:
-        return f"""# 提示！地下城：{dungeon_name}，进入下一关卡：{dungeon_stage_name}"""
+        return f"""# 提示！地下城：{dungeon_name}，进入下一关卡场景：{dungeon_stage_name}"""
 
 
 ###################################################################################################################################################################
@@ -65,7 +65,7 @@ def _generate_return_home_message(
     Returns:
         str: 格式化的返回提示消息
     """
-    return f"""# 提示！地下城：{dungeon_name} 结束，返回：{destination_stage_name}"""
+    return f"""# 提示！地下城：{dungeon_name} 结束，返回家园场景：{destination_stage_name}"""
 
 
 ###################################################################################################################################################################
@@ -159,7 +159,21 @@ def _enter_dungeon_stage(
 
     for ally_entity in ally_entities:
         # 添加上下文！
-        tcg_game.add_human_message(ally_entity, trans_message)
+        # 根据是否为首次进入，设置不同的生命周期标记
+        if dungeon.current_stage_index == 0:
+            # 首次进入：仅地下城名称
+            tcg_game.add_human_message(
+                ally_entity, trans_message, dungeon_lifecycle_entry=dungeon.name
+            )
+
+        else:
+
+            # 关卡推进：地下城名称:关卡名称
+            tcg_game.add_human_message(
+                ally_entity,
+                trans_message,
+                dungeon_lifecycle_stage_advance=f"{dungeon.name}:{dungeon_stage_entity.name}",
+            )
 
     # 4. 执行场景传送
     tcg_game.stage_transition(ally_entities, dungeon_stage_entity)
@@ -300,6 +314,7 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
             tcg_game.add_human_message(
                 ally_entity,
                 _generate_return_home_message(dungeon_name, player_only_stage.name),
+                dungeon_lifecycle_completion=dungeon_name,
             )
 
             # 传送玩家到专有场景
@@ -317,6 +332,7 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
                 tcg_game.add_human_message(
                     ally_entity,
                     _generate_return_home_message(dungeon_name, random_home_stage.name),
+                    dungeon_lifecycle_completion=dungeon_name,
                 )
 
                 # 传送盟友

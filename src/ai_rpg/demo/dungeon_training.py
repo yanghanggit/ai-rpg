@@ -47,4 +47,5 @@ def create_training_dungeon() -> Dungeon:
         stages=[
             stage_training_ground,
         ],
+        description="猎人训练场，用于猎人磨练基本狩猎技能。",
     )

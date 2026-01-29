@@ -126,9 +126,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         Args:
             entity: 要销毁的实体对象
         """
-        logger.debug(f"TCGGame destroy entity: {entity.name}")
+        logger.debug(f"destroy_entity: {entity.name}")
         if entity.name in self.world.agents_context:
-            logger.debug(f"TCGGame destroy entity: {entity.name} in short term memory")
+            logger.debug(f"destroy_entity: {entity.name} in agents_context, pop it")
             self.world.agents_context.pop(entity.name, None)
         return super().destroy_entity(entity)
 

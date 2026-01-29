@@ -25,7 +25,10 @@ from ..entitas import Matcher, Entity
 
 ###################################################################################################################################################################
 def _generate_dungeon_entry_message(
-    dungeon_name: str, dungeon_stage_name: str, is_first_stage: bool
+    dungeon_name: str,
+    dungeon_stage_name: str,
+    is_first_stage: bool,
+    dungeon_description: str,
 ) -> str:
     """生成地下城进入提示消息
 
@@ -33,12 +36,18 @@ def _generate_dungeon_entry_message(
         dungeon_name: 地下城名称
         dungeon_stage_name: 地下城关卡名称
         is_first_stage: 是否为首个关卡
+        dungeon_description: 地下城任务说明
 
     Returns:
         str: 格式化的进入提示消息
     """
     if is_first_stage:
-        return f"""# 提示！进入地下城：{dungeon_name}，开始关卡：{dungeon_stage_name}"""
+        return f"""# 提示！进入地下城：{dungeon_name}，开始关卡：{dungeon_stage_name}
+
+## 任务说明
+
+{dungeon_description}"""
+
     else:
         return f"""# 提示！地下城：{dungeon_name}，进入下一关卡：{dungeon_stage_name}"""
 
@@ -142,7 +151,10 @@ def _enter_dungeon_stage(
 
     # 3. 生成并发送传送提示消息
     trans_message = _generate_dungeon_entry_message(
-        dungeon.name, dungeon_stage_entity.name, dungeon.current_stage_index == 0
+        dungeon.name,
+        dungeon_stage_entity.name,
+        dungeon.current_stage_index == 0,
+        dungeon.description,
     )
 
     for ally_entity in ally_entities:
@@ -312,7 +324,7 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
 
     # 5. 清理地下城数据
     tcg_game.teardown_dungeon_entities(tcg_game.world.dungeon)
-    tcg_game._world.dungeon = Dungeon(name="", stages=[])
+    tcg_game._world.dungeon = Dungeon(name="", stages=[], description="")
 
     # 6. 恢复所有盟友的战斗状态
     for ally_entity in ally_entities:

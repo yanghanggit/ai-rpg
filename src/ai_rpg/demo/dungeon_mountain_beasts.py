@@ -93,6 +93,7 @@ def create_mountain_beasts_dungeon() -> Dungeon:
 
     return Dungeon(
         name="地下城.山林妖兽",
+        description="山林边缘出现精怪山魈，密林深处盘踞大妖山中虎。需递进挑战两个生态层级的妖兽，磨练狩猎技艺。注意山魈擅长利用环境作战，山中虎为生态链顶点的强大存在。",
         stages=[
             stage_forest_edge,
             stage_deep_forest,
@@ -140,6 +141,7 @@ def create_tiger_lair_dungeon() -> Dungeon:
 
     return Dungeon(
         name="地下城.山中虎巢穴",
+        description="密林深处发现大妖级山中虎的巢穴，这是生态链顶点的强大妖兽。高难度狩猎任务，需谨慎应对其恐怖的攻击力与敏捷身法。",
         stages=[
             stage_deep_forest,
         ],
@@ -183,6 +185,7 @@ def create_wild_boar_territory_dungeon() -> Dungeon:
 
     return Dungeon(
         name="地下城.野猪领地",
+        description="林间空地发现常物级野猪的觅食领地。适合初期狩猎练习，可获取基础兽皮、兽肉等素材。野猪虽为常物但獠牙攻击不可轻视。",
         stages=[
             stage_forest_clearing,
         ],

@@ -215,6 +215,7 @@ class Dungeon(BaseModel):
 
     name: str
     stages: List[Stage]
+    description: str
     combat_sequence: CombatSequence = CombatSequence()
     current_stage_index: int = -1
 

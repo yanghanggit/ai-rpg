@@ -57,6 +57,7 @@ from ai_rpg.services.home_actions import (
 from ai_rpg.services.dungeon_actions import (
     activate_actor_card_draws,
     activate_random_play_cards,
+    retreat_from_dungeon_combat,
 )
 from ai_rpg.services.dungeon_stage_transition import (
     initialize_dungeon_first_entry,
@@ -307,6 +308,33 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         # logger.info(f"玩家输入 = {usr_input}, 进入下一关 = {next_level.name}")
         advance_to_next_stage(terminal_game, terminal_game.current_dungeon)
         await terminal_game.combat_execution_pipeline.process()
+
+    elif usr_input == "/rt":  # "/retreat"
+
+        # 检查是否在战斗中
+        if not terminal_game.current_combat_sequence.is_ongoing:
+            logger.error(f"{usr_input} 只能在战斗进行中使用")
+            return
+
+        # 执行撤退
+        success, message = retreat_from_dungeon_combat(terminal_game)
+        if not success:
+            logger.error(f"撤退失败: {message}")
+            return
+
+        logger.info(f"撤退成功: {message}")
+
+        # 调用一次 combat_execution_pipeline 让 CombatOutcomeSystem 正常跑一次
+        await terminal_game.combat_execution_pipeline.execute()
+
+        # 战斗压缩存档
+        # await terminal_game.combat_archive_pipeline.execute()
+
+        # 正常流程结束战斗！
+        terminal_game.current_combat_sequence.transition_to_post_combat()
+
+        # 返回家园
+        complete_dungeon_and_return_home(terminal_game)
 
     else:
         logger.error(

@@ -137,6 +137,7 @@ class DungeonProgressType(StrEnum):
     COMBAT_STATUS_EVALUATION = "combat_status_evaluation"
     POST_COMBAT = "post_combat"
     ADVANCE_STAGE = "advance_stage"
+    RETREAT = "retreat"
 
 
 @final

@@ -18,8 +18,25 @@ from ..models import (
     AllyComponent,
     EnemyComponent,
     CombatStatsComponent,
+    DeathComponent,
 )
 from ..entitas import Entity
+
+
+###################################################################################################################################################################
+def _generate_retreat_message(dungeon_name: str, stage_name: str) -> str:
+    """生成撤退提示消息
+
+    Args:
+        dungeon_name: 地下城名称
+        stage_name: 当前关卡名称
+
+    Returns:
+        str: 格式化的撤退提示消息
+    """
+    return f"""# 提示！战斗撤退：从地下城 {dungeon_name} 的关卡 {stage_name} 撤退
+
+你选择了战斗中撤退。所有同伴视为战斗失败。战斗结束后将返回家园。"""
 
 
 ###################################################################################################################################################################
@@ -255,6 +272,79 @@ def activate_random_play_cards(tcg_game: TCGGame) -> Tuple[bool, str]:
         )
 
     return True, "成功激活打牌动作"
+
+
+###################################################################################################################################################################
+def retreat_from_dungeon_combat(tcg_game: TCGGame) -> Tuple[bool, str]:
+    """
+    战斗中撤退
+
+    允许玩家在战斗进行中主动撤退，所有ally阵营角色视为死亡，
+    触发地下城失败流程并返回家园。
+
+    Args:
+        tcg_game: TCG游戏实例
+
+    Returns:
+        tuple[bool, str]: (是否成功, 结果消息)
+    """
+    # 1. 验证战斗状态
+    if not tcg_game.current_combat_sequence.is_ongoing:
+        error_msg = "撤退失败: 当前没有进行中的战斗"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 2. 验证地下城状态
+    dungeon = tcg_game.world.dungeon
+    if dungeon is None or dungeon.current_stage_index < 0:
+        error_msg = "撤退失败: 当前不在地下城中"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 3. 获取当前地下城场景
+    current_stage = dungeon.get_current_stage()
+    if current_stage is None:
+        error_msg = "撤退失败: 无法获取当前地下城场景"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 4. 获取玩家实体
+    player_entity = tcg_game.get_player_entity()
+    if player_entity is None:
+        error_msg = "撤退失败: 无法找到玩家实体"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 5. 获取场景内所有ally阵营角色
+    actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
+    ally_entities = [entity for entity in actor_entities if entity.has(AllyComponent)]
+
+    if len(ally_entities) == 0:
+        error_msg = "撤退失败: 场景内没有ally阵营角色"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 6. 为所有ally角色添加DeathComponent（标记为死亡）
+    for ally_entity in ally_entities:
+        ally_entity.replace(DeathComponent, ally_entity.name)
+        logger.info(f"撤退: 角色 {ally_entity.name} 标记为死亡")
+
+    # 7. 为所有ally角色添加撤退消息到上下文
+    retreat_message = _generate_retreat_message(dungeon.name, current_stage.name)
+
+    for ally_entity in ally_entities:
+        tcg_game.add_human_message(
+            ally_entity,
+            retreat_message,
+            dungeon_lifecycle_retreat=f"{dungeon.name}:{current_stage.name}",
+        )
+
+    logger.info(
+        f"战斗撤退成功: 地下城={dungeon.name}, 关卡={current_stage.name}, "
+        f"撤退角色数={len(ally_entities)}"
+    )
+
+    return True, f"成功从 {dungeon.name} 的 {current_stage.name} 撤退"
 
 
 ###################################################################################################################################################################

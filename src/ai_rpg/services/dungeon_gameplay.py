@@ -31,6 +31,7 @@ from .dungeon_stage_transition import (
 from .dungeon_actions import (
     activate_actor_card_draws,
     activate_random_play_cards,
+    retreat_from_dungeon_combat,
 )
 from ..game.game_server import GameServer
 
@@ -266,6 +267,43 @@ async def dungeon_progress(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="战斗状态异常",
                 )
+
+        case DungeonProgressType.RETREAT:
+            # 处理战斗中撤退
+            if not rpg_game.current_combat_sequence.is_ongoing:
+                logger.error(f"玩家 {payload.user_name} 撤退失败: 战斗未在进行中")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="只能在战斗进行中撤退",
+                )
+
+            # 执行撤退操作
+            success, message = retreat_from_dungeon_combat(rpg_game)
+            if not success:
+                logger.error(f"玩家 {payload.user_name} 撤退失败: {message}")
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"撤退失败: {message}",
+                )
+
+            logger.info(f"玩家 {payload.user_name} 撤退成功: {message}")
+
+            # 执行战斗流程让 CombatOutcomeSystem 检测到角色死亡
+            await rpg_game.combat_execution_pipeline.execute()
+
+            # 转换到战斗后状态
+            rpg_game.current_combat_sequence.transition_to_post_combat()
+
+            # 返回家园
+            complete_dungeon_and_return_home(rpg_game)
+
+            logger.info(f"玩家 {payload.user_name} 已从地下城撤退并返回家园")
+            return DungeonProgressResponse(
+                session_messages=rpg_game.player_session.get_messages_since(
+                    last_event_sequence
+                )
+            )
+
         case _:
             # 未知的操作类型，理论上不应该到达这里
             logger.error(f"未知的地下城操作类型: {payload.action}")

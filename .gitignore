@@ -71,3 +71,4 @@ generated_images/
 world_blueprints/
 world_runtime/
 .kickoff_cache/
+.claude.json

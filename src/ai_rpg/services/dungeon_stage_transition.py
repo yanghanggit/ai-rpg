@@ -361,5 +361,8 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
         combat_stats.status_effects.clear()
         logger.info(f"清空状态效果: {ally_entity.name}")
 
+    # 7. 清除手牌组件
+    tcg_game.clear_hands()
+
 
 ###################################################################################################################################################################

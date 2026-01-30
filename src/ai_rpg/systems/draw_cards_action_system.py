@@ -275,13 +275,14 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 not last_round.is_completed
             ), "当前没有进行中的战斗回合，不能生成卡牌。"
 
+            # 获取当前回合数
+            current_round_number = len(self._game.current_combat_sequence.current_rounds)
+
             # 添加压缩上下文的提示词
             self._game.add_human_message(
                 entity=entity,
                 message_content=_generate_compressd_round_prompt(
-                    current_round_number=len(
-                        self._game.current_combat_sequence.current_rounds
-                    ),
+                    current_round_number=current_round_number
                 ),
                 compressed_prompt=chat_client.prompt,
             )
@@ -326,6 +327,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 HandComponent,
                 entity.name,
                 [card],
+                current_round_number,
             )
 
         except Exception as e:
@@ -412,6 +414,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 HandComponent,
                 entity.name,
                 [fallback_card],
+                current_round_number,
             )
 
             # 模拟历史上下文，使用与正常流程一致的压缩提示词

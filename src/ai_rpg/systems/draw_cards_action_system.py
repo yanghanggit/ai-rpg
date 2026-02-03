@@ -276,7 +276,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
             ), "当前没有进行中的战斗回合，不能生成卡牌。"
 
             # 获取当前回合数
-            current_round_number = len(self._game.current_combat_sequence.current_rounds)
+            current_round_number = len(
+                self._game.current_combat_sequence.current_rounds
+            )
 
             # 添加压缩上下文的提示词
             self._game.add_human_message(

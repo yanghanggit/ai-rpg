@@ -33,7 +33,8 @@ def create_npc_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     from ..systems.trans_stage_action_system import (
         TransStageActionSystem,
     )
-    from ..systems.home_auto_plan_system import HomeAutoPlanSystem
+
+    # from ..systems.home_auto_plan_system import HomeAutoPlanSystem
     from ..systems.home_stage_description_system import (
         HomeStageDescriptionSystem,
     )
@@ -50,7 +51,7 @@ def create_npc_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     processors.add(ActorAppearanceUpdateSystem(tcg_game))
 
     # 规划系统-场景描述系统-角色系统
-    processors.add(HomeAutoPlanSystem(tcg_game))
+    # processors.add(HomeAutoPlanSystem(tcg_game))
     processors.add(HomeStageDescriptionSystem(tcg_game))
     processors.add(HomeActorSystem(tcg_game))
 

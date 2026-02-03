@@ -6,7 +6,14 @@
 
 from loguru import logger
 from ..game.tcg_game import TCGGame
-from ..models import SpeakAction, TransStageAction, HomeComponent
+from ..models import (
+    SpeakAction,
+    TransStageAction,
+    HomeComponent,
+    AllyComponent,
+    PlayerComponent,
+    PlanAction,
+)
 from typing import List, Tuple
 
 
@@ -109,7 +116,6 @@ def activate_plan_action(tcg_game: TCGGame, actors: List[str]) -> Tuple[bool, st
     Returns:
         tuple[bool, str]: (是否成功, 错误详情)
     """
-    from ..models import AllyComponent, PlayerComponent, PlanAction
 
     if not actors or len(actors) == 0:
         error_detail = "角色名称列表不能为空"

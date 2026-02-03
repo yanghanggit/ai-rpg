@@ -27,7 +27,7 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
 
-from typing import Dict
+from typing import Dict, List
 from loguru import logger
 from ai_rpg.chat_client.client import ChatClient
 from ai_rpg.configuration import (
@@ -35,9 +35,10 @@ from ai_rpg.configuration import (
 )
 from ai_rpg.utils import parse_command_args
 from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
+from ai_rpg.entitas import Matcher
 from ai_rpg.demo import (
-    create_single_hunter_blueprint,
     create_wild_boar_territory_dungeon,
+    create_hunter_mystic_blueprint,
 )
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import (
@@ -49,10 +50,16 @@ from ai_rpg.game.world_persistence import (
 )
 from ai_rpg.models import (
     World,
+    ActorComponent,
+    AllyComponent,
+    KickOffDoneComponent,
+    PlayerComponent,
+    HomeComponent,
 )
 from ai_rpg.services.home_actions import (
     activate_speak_action,
     activate_switch_stage,
+    activate_plan_action,
 )
 from ai_rpg.services.dungeon_actions import (
     activate_actor_card_draws,
@@ -134,7 +141,7 @@ async def _run_game(
     if world_data is None:
 
         # 获取world_blueprint
-        world_blueprint = create_single_hunter_blueprint(game)
+        world_blueprint = create_hunter_mystic_blueprint(game)
         assert world_blueprint is not None, "world blueprint 反序列化失败"
 
         # 如果world不存在，说明是第一次创建游戏
@@ -343,6 +350,41 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
 
 
 ###############################################################################################################################################
+def _get_planning_actor_names(terminal_game: TCGGame) -> List[str]:
+    """
+    获取所有符合条件的可以发起计划的角色名称列表。
+
+    筛选条件（参考 HomeAutoPlanSystem）：
+    - 必须有 ActorComponent, AllyComponent, KickOffDoneComponent
+    - 不能有 PlayerComponent
+    - 必须在带有 HomeComponent 的场景中
+
+    Args:
+        terminal_game: 游戏实例
+
+    Returns:
+        符合条件的角色名称列表
+    """
+    actor_names = []
+
+    # 获取所有需要进行角色规划的角色
+    planning_actors = terminal_game.get_group(
+        Matcher(
+            all_of=[ActorComponent, AllyComponent, KickOffDoneComponent],
+            none_of=[PlayerComponent],
+        )
+    ).entities.copy()
+
+    # 过滤出在家园场景中的角色
+    for actor in planning_actors:
+        stage_entity = terminal_game.resolve_stage_entity(actor)
+        if stage_entity and stage_entity.has(HomeComponent):
+            actor_names.append(actor.name)
+
+    return actor_names
+
+
+###############################################################################################################################################
 async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
     """
     处理家园状态下的玩家输入。
@@ -359,6 +401,16 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
     """
 
     if usr_input == "/ad":
+
+        # 获取所有可以发起计划的角色名称
+        actor_names = _get_planning_actor_names(terminal_game)
+        if len(actor_names) > 0:
+            # 为这些角色激活行动计划
+            success, error_detail = activate_plan_action(terminal_game, actor_names)
+            if not success:
+                logger.debug(f"激活行动计划失败: {error_detail}")
+
+        # 执行NPC家园pipeline
         await terminal_game.npc_home_pipeline.process()
 
     elif usr_input == "/ed":

@@ -35,7 +35,7 @@ def sample_game() -> Any:
         stages=[],
         world_systems=[],
     )
-    dungeon = Dungeon(name="", stages=[])
+    dungeon = Dungeon(name="", stages=[], description="")
     world = World(
         runtime_index=1000,
         entities_serialization=[],

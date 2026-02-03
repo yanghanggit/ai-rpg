@@ -99,14 +99,14 @@ def _generate_card_sequence_details(
             affixes_text = "\n".join([f"  - {affix}" for affix in param.card.affixes])
             affixes_display = f"\n{affixes_text}"
         else:
-            affixes_display = "无"
+            affixes_display = "\n  - 无"
 
         detail = f"""### {index}. 卡牌：{param.card.name}
 
 - **出牌者**：{param.actor} | HP:{actor_hp}/{actor_max_hp} | 攻击:{card_stats.attack} | 防御:{card_stats.defense}
 - **目标**：{target_display}
-- **描述**：{param.card.description}
-- **词条**：{affixes_display}"""
+- **行动**：{param.card.action}
+- **规则**：{affixes_display}"""
 
         details_prompt.append(detail)
 
@@ -188,10 +188,11 @@ def _generate_combat_arbitration_prompt(
     combat_actions_details: List[CombatActionInfo],
     current_round_number: int,
 ) -> str:
-    """生成战斗仲裁提示词。
+    """生成战斗仲裁提示词（简化版）。
 
     提示词结构：卡牌结算序列 → 战斗导演职责 → 输出格式规范。
     输出JSON包含多行combat_log、final_hp字典、narrative演出描述。
+    简化版：将【机制】、【代价】、词条统一为"规则列表"。
 
     Args:
         combat_actions_details: 战斗行动信息列表（已按行动顺序排序）
@@ -211,8 +212,8 @@ def _generate_combat_arbitration_prompt(
 
 - **出牌者**：角色名、当前HP/最大HP、攻击力、防御力
 - **目标**：行动目标角色名列表
-- **描述**：行动详情，包含【行动】【机制】【代价】三段
-- **词条**：卡牌固有特性
+- **行动**：第一人称叙事描述
+- **规则**：所有战斗规则的统一列表（包含战术、代价、装备效果等）
 
 {"\n\n".join(card_sequence_prompt)}
 
@@ -223,7 +224,7 @@ def _generate_combat_arbitration_prompt(
 1. **确定参数**
    - 出牌者攻击力：从该卡牌"出牌者"行获取
    - 目标防御力：从目标卡牌"出牌者"行获取
-   - 阅读【机制】段落与词条字段，分析并应用对这两个参数的修正（两者均可能包含数值修正或特殊触发条件）
+   - 阅读**规则**列表，分析并应用所有数值修正或特殊触发条件
    
 2. **计算伤害**
    - 伤害值 = max(1, 修正后攻击力 - 修正后防御力)
@@ -232,7 +233,7 @@ def _generate_combat_arbitration_prompt(
    - 最终HP = max(0, min(当前HP - 伤害值, 最大HP))
 
 4. **识别附加效果**
-   - 阅读【机制】段落与词条字段，识别除HP/攻击/防御数值变化之外的其他效果
+   - 从**规则**列表中识别除HP/攻击/防御数值变化之外的其他效果
    - 这类效果通常描述状态改变、行为限制、持续影响等非即时数值变化的规则
    - 若存在此类效果，提取其核心描述关键词（见第5节格式约束）
 
@@ -245,7 +246,7 @@ def _generate_combat_arbitration_prompt(
    
    - **HP > 0**：正常执行上述公式
    
-   - **HP = 0**：阅读该卡牌的【机制】与**词条**段落，判断其效果设计：
+   - **HP = 0**：阅读该卡牌的**规则**列表，判断其效果设计：
      - 若效果明确声明"死后仍可触发"（如遗言效果、临死反击、死亡爆发等生命终结时触发的特殊机制），则正常执行上述公式
      - 若效果为常规战斗行动（如普通攻击、防御、增益等生存状态下的行为），则跳过结算
 
@@ -282,8 +283,8 @@ def _generate_combat_arbitration_prompt(
 ```
 
 **补充说明**：
-- 攻击X、防御Y：【机制】/词条修正后的最终值
-- 效果关键词：从【机制】/词条提取非数值影响，多个用+连接（无效果时省略`,效果:关键词`）
+- 攻击X、防御Y：规则列表修正后的最终值
+- 效果关键词：从规则列表提取非数值影响，多个用+连接（无效果时省略`,效果:关键词`）
 - 环境互动（可选）：`[简名|卡牌→目标→环境物]` 或 `[环境]关键词`
 
 ### final_hp格式

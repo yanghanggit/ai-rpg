@@ -42,7 +42,7 @@ class Card(BaseModel):
     """卡牌模型"""
 
     name: str
-    description: str
+    action: str  # 第一人称行动叙事描述
     stats: CharacterStats  # 卡牌的描述属性
     targets: List[str] = []  # 目标实体名称列表
     status_effects: List[StatusEffect] = []  # 附加状态效果列表

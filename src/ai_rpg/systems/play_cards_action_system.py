@@ -39,19 +39,18 @@ def _generate_play_card_command(current_round_number: int) -> str:
 def _generate_play_card_notification(
     actor_name: str, card: Card, target_names: List[str]
 ) -> str:
-    """生成出牌通知消息。
+    """生成出牌通知消息（简化版：分离行动与规则）。
 
     模拟角色自主决策后使用卡牌的输出，作为 AI Message 添加到角色上下文。
     通过第一人称描述强化角色的自主性，让角色认为这是自己的选择。
-    此消息将成为角色对话历史的一部分，影响后续交互的连贯性。
 
     Args:
         actor_name: 出牌角色名称（当前未使用）
-        card: 卡牌对象，包含名称、描述和属性
+        card: 卡牌对象，包含名称、行动描述和规则列表
         target_names: 系统指定的目标名称列表
 
     Returns:
-        格式化的出牌通知字符串，包含卡牌名、目标和第一人称描述
+        格式化的出牌通知字符串，包含卡牌名、目标、行动和规则
     """
 
     # 格式化目标显示
@@ -62,11 +61,22 @@ def _generate_play_card_notification(
     else:
         target_display = f"[{', '.join(target_names)}]"
 
+    # 格式化规则列表
+    if card.affixes:
+        rules_lines = [f"- {affix}" for affix in card.affixes]
+        rules_text = "\n".join(rules_lines)
+    else:
+        rules_text = "- 无"
+
     return f"""# 使用卡牌：{card.name}
 
 目标：{target_display}
 
-{card.description}"""
+【行动】
+{card.action}
+
+【规则】
+{rules_text}"""
 
 
 #######################################################################################################################################

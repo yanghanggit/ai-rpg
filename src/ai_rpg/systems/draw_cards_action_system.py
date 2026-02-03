@@ -42,19 +42,33 @@ class DrawCardsResponse(BaseModel):
     """单卡响应模型，每次生成一张卡牌"""
 
     name: str
-    action: str  # 【行动】第一人称动作与战术意图
-    mechanism: str  # 【机制】声明战斗规则
-    cost: str = ""  # 【代价】风险/消耗（可选）
+    action: str  # 第一人称动作与战术意图
+    mechanism: str  # 战斗规则声明
+    cost: str = ""  # 风险/消耗（可选）
     final_attack: float
     final_defense: float
 
     @property
-    def description(self) -> str:
-        """组合三段式描述，保持向后兼容"""
-        parts = [f"【行动】{self.action}", f"【机制】{self.mechanism}"]
-        if self.cost:
-            parts.append(f"【代价】{self.cost}")
-        return "\n".join(parts)
+    def affixes(self) -> List[str]:
+        """将 mechanism 和 cost 转换为 affixes 格式
+
+        用于统一规则表达：
+        - mechanism → "战术：本次攻击无视目标所有防御"
+        - cost → "代价：徒手攻击可能导致指骨挫伤"
+
+        过滤规则：
+        - 如果字段为空字符串，则不添加到列表
+        - 如果全都没有内容，返回空列表（由显示层处理为"规则 - 无"）
+
+        Returns:
+            规则字符串列表，按 [战术, 代价] 顺序排列
+        """
+        result = []
+        if self.mechanism.strip():
+            result.append(f"战术：{self.mechanism}")
+        if self.cost.strip():
+            result.append(f"代价：{self.cost}")
+        return result
 
 
 #######################################################################################################################################
@@ -130,7 +144,9 @@ def _generate_round_prompt(
 1. **action** - 第一人称动作与战术意图(1-2句)
 2. **mechanism** - 声明战斗规则，禁止"部分""可能"等模糊词
    - 示例: "本次攻击无视目标所有防御" "获得+2攻击"
-3. **cost** - 风险/消耗(可选，无则留空字符串)
+3. **cost** - 风险/消耗(可选)
+   - 有代价时填写具体内容
+   - **无代价时必须输出空字符串""，禁止输出"无""None"等文字**
 
 **数值**: 增益/减益/复合/条件/环境类影响攻防。输出最终值(非增量)
 
@@ -141,7 +157,7 @@ def _generate_round_prompt(
   "name": "行动名",
   "action": "动作与战术意图",
   "mechanism": "战斗规则声明",
-  "cost": "风险或消耗（可选）",
+  "cost": "",
   "final_attack": 0,
   "final_defense": 0
 }}
@@ -322,10 +338,11 @@ class DrawCardsActionSystem(ReactiveProcessor):
             # 创建完整的Card对象
             card = Card(
                 name=validated_response.name,
-                description=validated_response.description,
+                action=validated_response.action,  # 第一人称行动叙事
                 stats=card_stats,
                 targets=specified_targets,
                 status_effects=draw_cards_action.status_effects,
+                affixes=validated_response.affixes.copy(),  # 先填入 mechanism + cost
             )
 
             # 从InventoryComponent继承物品词条到卡牌词条
@@ -334,7 +351,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 inventory_comp is not None
             ), f"Entity {entity.name} must have InventoryComponent"
             for item in inventory_comp.items:
-                card.affixes.extend(item.affixes)
+                card.affixes.extend(item.affixes)  # 追加装备词条
 
             # 更新手牌
             entity.replace(
@@ -418,16 +435,14 @@ class DrawCardsActionSystem(ReactiveProcessor):
             # 兜底卡牌的目标固定为自己
             fallback_action = "行动计划出现偏差，暂时采取保守策略观察战局"
             fallback_mechanism = "本回合不进行任何攻击或防御加成"
-            fallback_description = (
-                f"【行动】{fallback_action}\n【机制】{fallback_mechanism}"
-            )
 
             fallback_card = Card(
                 name="应急应对",
-                description=fallback_description,
+                action=fallback_action,  # 只存储行动叙事
                 stats=CharacterStats(hp=0, max_hp=0, attack=0, defense=0),
                 targets=[entity.name],
                 status_effects=[],
+                affixes=[f"战术：{fallback_mechanism}"],  # 战术规则存入 affixes
             )
 
             entity.replace(

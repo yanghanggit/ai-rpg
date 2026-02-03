@@ -39,6 +39,8 @@ from ai_rpg.entitas import Matcher
 from ai_rpg.demo import (
     create_wild_boar_territory_dungeon,
     create_hunter_mystic_blueprint,
+    create_single_hunter_blueprint,
+    create_training_dungeon,
 )
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import (
@@ -141,7 +143,7 @@ async def _run_game(
     if world_data is None:
 
         # 获取world_blueprint
-        world_blueprint = create_hunter_mystic_blueprint(game)
+        world_blueprint = create_single_hunter_blueprint(game)
         assert world_blueprint is not None, "world blueprint 反序列化失败"
 
         # 如果world不存在，说明是第一次创建游戏
@@ -149,7 +151,7 @@ async def _run_game(
             runtime_index=1000,
             entities_serialization=[],
             agents_context={},
-            dungeon=create_wild_boar_territory_dungeon(),
+            dungeon=create_training_dungeon(),
             blueprint=world_blueprint,
         )
 

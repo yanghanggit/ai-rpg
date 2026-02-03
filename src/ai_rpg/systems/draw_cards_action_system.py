@@ -42,9 +42,19 @@ class DrawCardsResponse(BaseModel):
     """单卡响应模型，每次生成一张卡牌"""
 
     name: str
-    description: str
+    action: str  # 【行动】第一人称动作与战术意图
+    mechanism: str  # 【机制】声明战斗规则
+    cost: str = ""  # 【代价】风险/消耗（可选）
     final_attack: float
     final_defense: float
+
+    @property
+    def description(self) -> str:
+        """组合三段式描述，保持向后兼容"""
+        parts = [f"【行动】{self.action}", f"【机制】{self.mechanism}"]
+        if self.cost:
+            parts.append(f"【代价】{self.cost}")
+        return "\n".join(parts)
 
 
 #######################################################################################################################################
@@ -116,11 +126,11 @@ def _generate_round_prompt(
 
 **命名**: 基于技能效果创造名称，禁止暴露技能名
 
-**描述**(必须包含段落标记)：
-1. **【行动】** 第一人称动作与战术意图(1-2句)
-2. **【机制】** 声明战斗规则，禁止"部分""可能"等模糊词
+**描述**(拆分为三个字段)：
+1. **action** - 第一人称动作与战术意图(1-2句)
+2. **mechanism** - 声明战斗规则，禁止"部分""可能"等模糊词
    - 示例: "本次攻击无视目标所有防御" "获得+2攻击"
-3. **【代价】** 风险/消耗(可选)
+3. **cost** - 风险/消耗(可选，无则留空字符串)
 
 **数值**: 增益/减益/复合/条件/环境类影响攻防。输出最终值(非增量)
 
@@ -129,7 +139,9 @@ def _generate_round_prompt(
 ```json
 {{
   "name": "行动名",
-  "description": "三段式描述",
+  "action": "动作与战术意图",
+  "mechanism": "战斗规则声明",
+  "cost": "风险或消耗（可选）",
   "final_attack": 0,
   "final_defense": 0
 }}
@@ -404,9 +416,15 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 continue
 
             # 兜底卡牌的目标固定为自己
+            fallback_action = "行动计划出现偏差，暂时采取保守策略观察战局"
+            fallback_mechanism = "本回合不进行任何攻击或防御加成"
+            fallback_description = (
+                f"【行动】{fallback_action}\n【机制】{fallback_mechanism}"
+            )
+
             fallback_card = Card(
                 name="应急应对",
-                description="行动计划出现偏差，暂时采取保守策略观察战局",
+                description=fallback_description,
                 stats=CharacterStats(hp=0, max_hp=0, attack=0, defense=0),
                 targets=[entity.name],
                 status_effects=[],
@@ -430,7 +448,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
             # 模拟AI响应，将fallback_card序列化为JSON格式
             fallback_response = DrawCardsResponse(
                 name=fallback_card.name,
-                description=fallback_card.description,
+                action=fallback_action,
+                mechanism=fallback_mechanism,
+                cost="",
                 final_attack=fallback_card.stats.attack,
                 final_defense=fallback_card.stats.defense,
             )

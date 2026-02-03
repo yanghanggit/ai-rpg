@@ -3,6 +3,7 @@
 提供工厂函数创建预配置的游戏世界，包括双角色和单角色版本。
 """
 
+from typing import Final
 from ..models import (
     Blueprint,
     WeaponItem,
@@ -21,6 +22,34 @@ from .stage_village import (
     create_shi_family_house,
 )
 from .world_system_player_action_audit import create_player_action_audit
+
+
+#######################################################################################################################
+# 全局装备常量定义
+#######################################################################################################################
+
+# 武器装备
+WEAPON_BONE_HUNTING_KNIFE: Final[WeaponItem] = WeaponItem(
+    name="武器.兽骨猎刀",
+    uuid="",
+    description="以兽类前臂骨磨制的单刃猎刀，刃长一尺，锋利坚韧。刀柄缠以兽皮，握持稳固。刀身泛着暗黄色的骨质光泽。村中猎人常用的基础装备。",
+    count=1,
+)
+
+WEAPON_BAMBOO_HUNTING_BOW: Final[WeaponItem] = WeaponItem(
+    name="武器.竹弦狩猎弓",
+    uuid="",
+    description="以坚韧的山竹为弓臂，兽筋为弦，弓身刻有简单的兽纹。村中猎人常用的基础装备。",
+    count=1,
+)
+
+# 防具装备
+ARMOR_BEAST_LEATHER_SHIRT: Final[EquipmentItem] = EquipmentItem(
+    name="防具.兽皮短衫",
+    uuid="",
+    description="以窃脂妖兽皮革缝制的轻便短衫，胸口和肩部用硬化兽皮加固，腰间系麻绳束带。适合山林间灵活移动。",
+    count=1,
+)
 
 
 #######################################################################################################################
@@ -55,19 +84,8 @@ def create_hunter_mystic_blueprint(game_name: str) -> Blueprint:
     # 添加猎人测试装备
     actor_hunter.items.extend(
         [
-            WeaponItem(
-                name="武器.山魈骨猎刀",
-                uuid="",
-                description="以山魈前臂骨磨制的单刃猎刀，刃长一尺，锋利坚韧。刀柄缠以兽皮，握持稳固。刀身泛着暗黄色的骨质光泽。村中猎人常用的基础装备。",
-                count=1,
-            ),
-            # 猎人测试护具
-            EquipmentItem(
-                name="防具.兽皮短衫",
-                uuid="",
-                description="以窃脂妖兽皮革缝制的轻便短衫，胸口和肩部用硬化兽皮加固，腰间系麻绳束带。适合山林间灵活移动。",
-                count=1,
-            ),
+            WEAPON_BONE_HUNTING_KNIFE.model_copy(),
+            ARMOR_BEAST_LEATHER_SHIRT.model_copy(),
         ]
     )
 
@@ -147,7 +165,7 @@ def create_single_hunter_blueprint(game_name: str) -> Blueprint:
           并探索古先民遗迹的秘密。
 
     测试装备:
-        - 武器: 竹弦狩猎弓（山竹弓臂，山魈筋腱为弦）
+        - 武器: 竹弦狩猎弓（山竹弓臂，兽筋为弦）
         - 防具: 兽皮短衫（窃脂妖兽皮革，硬化兽皮加固）
     """
     # 创建角色: 测试猎人
@@ -160,19 +178,8 @@ def create_single_hunter_blueprint(game_name: str) -> Blueprint:
     # 添加猎人测试装备
     actor_hunter.items.extend(
         [
-            WeaponItem(
-                name="武器.竹弦狩猎弓",
-                uuid="",
-                description="以坚韧的山竹为弓臂，山魈筋腱为弦，弓身刻有简单的兽纹。村中猎人常用的基础装备。",
-                count=1,
-            ),
-            # 猎人测试护具
-            EquipmentItem(
-                name="防具.兽皮短衫",
-                uuid="",
-                description="以窃脂妖兽皮革缝制的轻便短衫，胸口和肩部用硬化兽皮加固，腰间系麻绳束带。适合山林间灵活移动。",
-                count=1,
-            ),
+            WEAPON_BAMBOO_HUNTING_BOW.model_copy(),
+            ARMOR_BEAST_LEATHER_SHIRT.model_copy(),
         ]
     )
 

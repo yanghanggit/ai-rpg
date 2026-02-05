@@ -78,7 +78,7 @@ def _generate_enemy_decision_prompt(
     if actor_status_effects:
         effects_text = "\n".join(
             [
-                f"- {effect.name}: {effect.description}"
+                f"- {effect.name}: {effect.formatted_description}"
                 for effect in actor_status_effects
             ]
         )

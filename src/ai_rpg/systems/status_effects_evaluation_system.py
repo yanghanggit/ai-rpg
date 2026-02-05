@@ -57,7 +57,7 @@ def _generate_status_effects_evaluation_prompt(
         # 效果少时展示完整信息
         effects_list = "\n".join(
             [
-                f"- {effect.name}: {effect.description}"
+                f"- {effect.name}: {effect.formatted_description}"
                 for effect in current_status_effects
             ]
         )
@@ -77,16 +77,18 @@ def _generate_status_effects_evaluation_prompt(
 
 **状态效果要求**：
 - name: 简洁的效果名称（<8字）
-- description: 三段式（含标记）：
-  1. **【分类】** 选择一个：增益 | 减益 | 复合 | 条件触发 | 环境
-  2. **【表现】** 第一人称描述具体表现（1句话）
-  3. **【效果】** 数值影响（不要 HP上限/时间词）："±X点攻击力/防御力"
+- category: 选择一个：增益 | 减益 | 复合 | 条件触发 | 环境
+- manifestation: 第一人称描述具体表现（1句话）
+- effect: 数值影响（不要 HP上限/时间词）："±X点攻击力/防御力"
 
 **示例**：
-```
-【分类】减益
-【表现】肩背皮开肉绽，鲜血浸透衣物，每次移动都牵扯伤口。
-【效果】防御力降低2点。
+```json
+{{
+  "name": "裂伤",
+  "category": "减益",
+  "manifestation": "肩背皮开肉绽，鲜血浸透衣物，每次移动都牵扯伤口。",
+  "effect": "防御力降低2点。"
+}}
 ```
 
 **约束**: 不重复现有效果，最多生成 {max_effects} 个
@@ -96,7 +98,12 @@ def _generate_status_effects_evaluation_prompt(
 ```json
 {{
   "add_effects": [
-    {{"name": "状态效果名", "description": "【分类】类型\n【表现】具体表现\n【效果】战斗影响"}}
+    {{
+      "name": "状态效果名",
+      "category": "分类",
+      "manifestation": "具体表现",
+      "effect": "战斗影响"
+    }}
   ]
 }}
 ```
@@ -238,7 +245,7 @@ class StatusEffectsEvaluationSystem(ExecuteProcessor):
                 # 通知角色新增的效果
                 added_msg = "# 通知！新增状态效果\n\n" + "\n".join(
                     [
-                        f"+ {effect.name}: {effect.description}"
+                        f"+ {effect.name}: {effect.formatted_description}"
                         for effect in format_response.add_effects
                     ]
                 )

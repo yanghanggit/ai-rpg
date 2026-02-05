@@ -74,7 +74,6 @@ class Card(BaseModel):
 class Round(BaseModel):
     """战斗回合"""
 
-    tag: str  # 回合标签，记录回合序号等信息
     action_order: List[str]  # 行动顺序，按顺序记录角色名称
     combat_log: str = ""  # 战斗计算日志
     narrative: str = ""  # 叙事文本/演出描述
@@ -127,7 +126,7 @@ class CombatSequence(BaseModel):
     def latest_round(self) -> Round:
         assert len(self.current_rounds) > 0
         if len(self.current_rounds) == 0:
-            return Round(tag="", action_order=[])
+            return Round(action_order=[])
 
         return self.current_rounds[-1]
 

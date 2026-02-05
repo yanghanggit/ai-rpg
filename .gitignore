@@ -68,7 +68,7 @@ generated_images/
 # -----------------------------------------------------------------------------
 # Other Files and Directories to Ignore
 # -----------------------------------------------------------------------------
-world_blueprints/
-world_runtime/
+.blueprints/
+.worlds/
 .kickoff_cache/
 .claude.json

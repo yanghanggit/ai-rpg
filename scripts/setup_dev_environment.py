@@ -31,7 +31,7 @@ from ai_rpg.configuration import (
     ServerConfiguration,
     server_configuration,
 )
-from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, WORLD_BLUEPRINT_DIR
+from ai_rpg.game.config import GAME_1, BLUEPRINTS_DIR
 from ai_rpg.pgsql import (
     pgsql_create_database,
     pgsql_drop_database,
@@ -82,7 +82,7 @@ def _save_demo_world_blueprint(game_name: str) -> None:
     logger.info("🚀 创建演示游戏世界...")
 
     world_blueprint = create_hunter_mystic_blueprint(game_name)
-    write_blueprint_path = WORLD_BLUEPRINT_DIR / f"{world_blueprint.name}.json"
+    write_blueprint_path = BLUEPRINTS_DIR / f"{world_blueprint.name}.json"
     write_blueprint_path.write_text(
         world_blueprint.model_dump_json(indent=2),
         encoding="utf-8",
@@ -313,14 +313,14 @@ def main() -> None:
     # 创建演示游戏世界
     try:
         logger.info("🚀 创建M演示游戏世界...")
-        _save_demo_world_blueprint(GLOBAL_TCG_GAME_NAME)
+        _save_demo_world_blueprint(GAME_1)
     except Exception as e:
         logger.error(f"❌ 创建MongoDB演示游戏世界失败: {e}")
 
     # RAG 系统相关操作
     try:
         logger.info("🚀 初始化RAG系统...")
-        _setup_chromadb_rag_environment(GLOBAL_TCG_GAME_NAME)
+        _setup_chromadb_rag_environment(GAME_1)
         logger.success("✅ RAG 系统初始化完成")
     except Exception as e:
         logger.error(f"❌ RAG 系统初始化失败: {e}")

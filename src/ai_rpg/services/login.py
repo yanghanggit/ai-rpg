@@ -7,6 +7,7 @@
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.world_persistence import delete_user_world_data
+from ..game.config import WORLDS_DIR
 from .game_server_dependencies import CurrentGameServer
 from ..models import (
     LoginRequest,
@@ -55,7 +56,7 @@ async def login(
         )
 
         # 直接删除运行中的游戏数据存档！
-        delete_user_world_data(payload.user_name, payload.game_name)
+        delete_user_world_data(WORLDS_DIR, payload.user_name, payload.game_name)
         logger.info(
             f"这是测试，强制删除旧的游戏数据 = {payload.user_name}, {payload.game_name}"
         )

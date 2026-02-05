@@ -8,6 +8,7 @@ from loguru import logger
 from ..game.player_session import PlayerSession
 from ..game.tcg_game import TCGGame
 from ..game.world_persistence import get_user_world_data, get_game_blueprint_data
+from ..game.config import BLUEPRINTS_DIR, WORLDS_DIR
 from ..models import StartRequest, StartResponse, World
 from .game_server_dependencies import CurrentGameServer
 from ..demo.dungeon_mountain_beasts import (
@@ -57,7 +58,7 @@ async def start(
     assert room is not None, "start: room instance is None"
 
     # 如果没有blueprint数据，就返回错误, 压根不能玩！
-    world_blueprint = get_game_blueprint_data(payload.game_name)
+    world_blueprint = get_game_blueprint_data(BLUEPRINTS_DIR, payload.game_name)
     assert world_blueprint is not None, "world_blueprint is None"
     if world_blueprint is None:
         raise HTTPException(
@@ -81,7 +82,9 @@ async def start(
     assert room._player_session is not None, "房间玩家客户端实例不存在"
 
     # 获取或创建世界数据
-    current_world_instance = get_user_world_data(payload.user_name, payload.game_name)
+    current_world_instance = get_user_world_data(
+        WORLDS_DIR, payload.user_name, payload.game_name
+    )
     if current_world_instance is None:
 
         # 重新生成world

@@ -6,6 +6,13 @@ from .rpg_game import RPGGame
 from .tcg_game import TCGGame
 from .game_server import GameServer
 from .room import Room
+from .world_debug import (
+    ensure_debug_dir,
+    dump_world_snapshot,
+    dump_agent_contexts,
+    dump_entities,
+    dump_dungeon,
+)
 
 __all__ = [
     "GameSession",
@@ -15,4 +22,9 @@ __all__ = [
     "TCGGame",
     "GameServer",
     "Room",
+    "ensure_debug_dir",
+    "dump_world_snapshot",
+    "dump_agent_contexts",
+    "dump_entities",
+    "dump_dungeon",
 ]

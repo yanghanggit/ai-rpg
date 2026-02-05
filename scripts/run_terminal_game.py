@@ -34,11 +34,9 @@ from ai_rpg.configuration import (
     server_configuration,
 )
 from ai_rpg.utils import parse_command_args
-from ai_rpg.game.config import GLOBAL_TCG_GAME_NAME, setup_logger
+from ai_rpg.game.config import GAME_1, WORLDS_DIR, setup_logger
 from ai_rpg.entitas import Matcher
 from ai_rpg.demo import (
-    create_wild_boar_territory_dungeon,
-    create_hunter_mystic_blueprint,
     create_single_hunter_blueprint,
     create_training_dungeon,
 )
@@ -134,10 +132,10 @@ async def _run_game(
 
     # 注意，如果确定player是固定的，但是希望每次玩新游戏，就调用这句。
     # 或者，换成random_name，随机生成一个player名字。
-    delete_user_world_data(user, GLOBAL_TCG_GAME_NAME)
+    delete_user_world_data(WORLDS_DIR, user, GAME_1)
 
     # 先检查一下world_data是否存在
-    world_data = get_user_world_data(user, game)
+    world_data = get_user_world_data(WORLDS_DIR, user, game)
 
     # 判断是否存在world数据
     if world_data is None:
@@ -604,4 +602,4 @@ if __name__ == "__main__":
     # 运行游戏
     import asyncio
 
-    asyncio.run(_run_game(random_user_name, GLOBAL_TCG_GAME_NAME))
+    asyncio.run(_run_game(random_user_name, GAME_1))

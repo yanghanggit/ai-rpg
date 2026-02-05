@@ -230,8 +230,15 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             return
 
         # 为所有角色激活抽牌动作，全部随机选择
-        activate_random_ally_card_draws(terminal_game)
-        activate_random_enemy_card_draws(terminal_game)
+        success, message = activate_random_ally_card_draws(terminal_game)
+        if not success:
+            logger.error(f"激活Ally抽牌失败: {message}")
+            return
+
+        success, message = activate_random_enemy_card_draws(terminal_game)
+        if not success:
+            logger.error(f"激活Enemy抽牌失败: {message}")
+            return
 
         await terminal_game.combat_execution_pipeline.process()
 

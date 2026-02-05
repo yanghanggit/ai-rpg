@@ -112,22 +112,35 @@ def get_ally_targets_for_enemy(entity: Entity, tcg_game: TCGGame) -> List[str]:
 
 
 ###################################################################################################################################################################
-def activate_random_ally_card_draws(tcg_game: TCGGame) -> None:
+def activate_random_ally_card_draws(tcg_game: TCGGame) -> Tuple[bool, str]:
     """
     为场上所有存活的Ally阵营角色激活抽牌动作（随机选择技能和状态效果）
 
     Args:
         tcg_game: TCG游戏实例
+
+    Returns:
+        tuple[bool, str]: (是否成功, 结果消息)
     """
 
     player_entity = tcg_game.get_player_entity()
-    assert player_entity is not None, "activate_ally_card_draws: player_entity is None"
+    if player_entity is None:
+        error_msg = "激活Ally抽牌失败: 玩家实体不存在"
+        logger.error(error_msg)
+        return False, error_msg
 
     # 获取场上所有存活的角色
     actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
 
     # 筛选Ally阵营的角色
     ally_entities = [entity for entity in actor_entities if entity.has(AllyComponent)]
+
+    if len(ally_entities) == 0:
+        error_msg = "激活Ally抽牌失败: 没有存活的Ally角色"
+        logger.error(error_msg)
+        return False, error_msg
+
+    activated_count = 0
 
     # 为每个Ally角色添加抽牌动作组件
     for entity in ally_entities:
@@ -139,18 +152,15 @@ def activate_random_ally_card_draws(tcg_game: TCGGame) -> None:
             )
             continue
 
-        # 获取可用技能列表（最多2个），这里加一条吧，在编辑过程中，就不允许出现无技能的人物。
+        # 获取可用技能列表
         available_skills = _get_available_skills(entity)
-        assert (
-            len(available_skills) > 0
-        ), f"Entity {entity.name} has no available skills"
+        if len(available_skills) == 0:
+            error_msg = f"激活Ally抽牌失败: 角色 {entity.name} 没有可用技能"
+            logger.error(error_msg)
+            return False, error_msg
 
         # 随机选择一个技能作为初始技能
-        selected_skill = (
-            random.choice(available_skills)
-            if available_skills
-            else Skill(name="", description="")
-        )
+        selected_skill = random.choice(available_skills)
 
         # 获取敌方目标列表
         targets = get_enemy_targets_for_ally(entity, tcg_game)
@@ -175,27 +185,155 @@ def activate_random_ally_card_draws(tcg_game: TCGGame) -> None:
             targets,  # targets
             status_effects,  # 随机状态效果列表
         )
+        activated_count += 1
+
+    return True, f"成功为{activated_count}个Ally角色激活抽牌动作"
 
 
 ###################################################################################################################################################################
-def activate_random_enemy_card_draws(tcg_game: TCGGame) -> None:
+def activate_specified_ally_card_draws(
+    entity_name: str,
+    tcg_game: TCGGame,
+    skill_name: str,
+    target_names: List[str],
+    status_effect_names: List[str],
+) -> Tuple[bool, str]:
+    """
+    为指定的Ally阵营角色激活抽牌动作（使用指定的技能、目标和状态效果）
+
+    Args:
+        entity_name: 出牌者实体名称
+        tcg_game: TCG游戏实例
+        skill_name: 指定的技能名称
+        target_names: 指定的目标名称列表
+        status_effect_names: 指定的状态效果名称列表
+
+    Returns:
+        tuple[bool, str]: (是否成功, 结果消息)
+    """
+
+    player_entity = tcg_game.get_player_entity()
+    if player_entity is None:
+        error_msg = "激活指定Ally抽牌失败: 玩家实体不存在"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 获取场上所有存活的角色
+    actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
+
+    # 查找指定名称的实体
+    entity = None
+    for actor in actor_entities:
+        if actor.name == entity_name:
+            entity = actor
+            break
+
+    # 验证实体存在
+    if entity is None:
+        error_msg = f"激活指定Ally抽牌失败: 角色 '{entity_name}' 不在存活角色中: {[actor.name for actor in actor_entities]}"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 验证实体是Ally阵营
+    if not entity.has(AllyComponent):
+        error_msg = f"激活指定Ally抽牌失败: 角色 '{entity_name}' 不是Ally阵营"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 检查是否已经有抽牌动作
+    if entity.has(DrawCardsAction):
+        logger.warning(
+            f"Entity {entity.name} already has DrawCardsAction, skipping activation"
+        )
+        return True, f"角色 {entity.name} 已有抽牌动作，跳过"
+
+    # 构建场上所有存活角色的名称集合（用于验证目标）
+    alive_actor_names = {actor.name for actor in actor_entities}
+
+    # 1. 验证并获取指定的技能
+    available_skills = _get_available_skills(entity)
+    selected_skill = None
+    for skill in available_skills:
+        if skill.name == skill_name:
+            selected_skill = skill
+            break
+
+    if selected_skill is None:
+        error_msg = f"激活指定Ally抽牌失败: 角色 {entity.name} 没有技能 '{skill_name}'，可用技能: {[s.name for s in available_skills]}"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 2. 验证目标名称是否都在场上存活角色中
+    invalid_targets = [
+        target for target in target_names if target not in alive_actor_names
+    ]
+    if invalid_targets:
+        error_msg = f"激活指定Ally抽牌失败: 无效的目标 {invalid_targets}，存活角色: {alive_actor_names}"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 3. 验证状态效果名称是否都在实体的当前状态效果中
+    combat_stats = entity.get(CombatStatsComponent)
+    current_status_effects = combat_stats.status_effects.copy() if combat_stats else []
+    current_status_effect_names = {se.name for se in current_status_effects}
+
+    invalid_status_effects = [
+        se_name
+        for se_name in status_effect_names
+        if se_name not in current_status_effect_names
+    ]
+    if invalid_status_effects:
+        error_msg = f"激活指定Ally抽牌失败: 无效的状态效果 {invalid_status_effects}，当前状态效果: {current_status_effect_names}"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 4. 根据状态效果名称筛选出对应的状态效果对象
+    selected_status_effects = [
+        se for se in current_status_effects if se.name in status_effect_names
+    ]
+
+    # 5. 创建 DrawCardsAction 组件
+    entity.replace(
+        DrawCardsAction,
+        entity.name,
+        selected_skill,  # skill
+        target_names,  # targets
+        selected_status_effects,  # 指定的状态效果列表
+    )
+
+    return True, f"成功为角色 {entity.name} 激活抽牌动作"
+
+
+###################################################################################################################################################################
+def activate_random_enemy_card_draws(tcg_game: TCGGame) -> Tuple[bool, str]:
     """
     为场上所有存活的Enemy阵营角色激活抽牌动作（随机选择技能和状态效果）
 
     Args:
         tcg_game: TCG游戏实例
+
+    Returns:
+        tuple[bool, str]: (是否成功, 结果消息)
     """
 
     player_entity = tcg_game.get_player_entity()
-    assert (
-        player_entity is not None
-    ), "activate_random_enemy_card_draws: player_entity is None"
+    if player_entity is None:
+        error_msg = "激活Enemy抽牌失败: 玩家实体不存在"
+        logger.error(error_msg)
+        return False, error_msg
 
     # 获取场上所有存活的角色
     actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
 
     # 筛选Enemy阵营的角色
     enemy_entities = [entity for entity in actor_entities if entity.has(EnemyComponent)]
+
+    if len(enemy_entities) == 0:
+        error_msg = "激活Enemy抽牌失败: 没有存活的Enemy角色"
+        logger.error(error_msg)
+        return False, error_msg
+
+    activated_count = 0
 
     # 为每个Enemy角色添加抽牌动作组件
     for entity in enemy_entities:
@@ -207,18 +345,15 @@ def activate_random_enemy_card_draws(tcg_game: TCGGame) -> None:
             )
             continue
 
-        # 获取可用技能列表（最多2个），这里加一条吧，在编辑过程中，就不允许出现无技能的人物。
+        # 获取可用技能列表
         available_skills = _get_available_skills(entity)
-        assert (
-            len(available_skills) > 0
-        ), f"Entity {entity.name} has no available skills"
+        if len(available_skills) == 0:
+            error_msg = f"激活Enemy抽牌失败: 角色 {entity.name} 没有可用技能"
+            logger.error(error_msg)
+            return False, error_msg
 
         # 随机选择一个技能作为初始技能
-        selected_skill = (
-            random.choice(available_skills)
-            if available_skills
-            else Skill(name="", description="")
-        )
+        selected_skill = random.choice(available_skills)
 
         # 获取敌方目标列表
         targets = get_ally_targets_for_enemy(entity, tcg_game)
@@ -232,7 +367,6 @@ def activate_random_enemy_card_draws(tcg_game: TCGGame) -> None:
         status_effects = combat_stats.status_effects.copy() if combat_stats else []
 
         # 随机从全部中选择一个，然后组成[]
-        status_effects = []
         if len(status_effects) > 0:
             status_effects = [random.choice(status_effects)]
 
@@ -244,6 +378,9 @@ def activate_random_enemy_card_draws(tcg_game: TCGGame) -> None:
             targets,  # targets
             status_effects,  # 随机状态效果列表
         )
+        activated_count += 1
+
+    return True, f"成功为{activated_count}个Enemy角色激活抽牌动作"
 
 
 ###################################################################################################################################################################

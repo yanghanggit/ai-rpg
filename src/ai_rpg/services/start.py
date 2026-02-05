@@ -58,9 +58,9 @@ async def start(
     assert room is not None, "start: room instance is None"
 
     # 如果没有blueprint数据，就返回错误, 压根不能玩！
-    world_blueprint = get_game_blueprint_data(BLUEPRINTS_DIR, payload.game_name)
-    assert world_blueprint is not None, "world_blueprint is None"
-    if world_blueprint is None:
+    blueprint_data = get_game_blueprint_data(BLUEPRINTS_DIR, payload.game_name)
+    assert blueprint_data is not None, "world_blueprint is None"
+    if blueprint_data is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"start/v1: {payload.game_name} blueprint data not found",
@@ -76,24 +76,22 @@ async def start(
     # 创建玩家客户端
     room._player_session = PlayerSession(
         name=payload.user_name,
-        actor=world_blueprint.player_actor,
+        actor=blueprint_data.player_actor,
         game=payload.game_name,
     )
     assert room._player_session is not None, "房间玩家客户端实例不存在"
 
     # 获取或创建世界数据
-    current_world_instance = get_user_world_data(
-        WORLDS_DIR, payload.user_name, payload.game_name
-    )
-    if current_world_instance is None:
+    world_data = get_user_world_data(WORLDS_DIR, payload.user_name, payload.game_name)
+    if world_data is None:
 
         # 重新生成world
-        current_world_instance = World(
+        world_data = World(
             runtime_index=1000,
             entities_serialization=[],
             agents_context={},
             dungeon=create_mountain_beasts_dungeon(),
-            blueprint=world_blueprint,
+            blueprint=blueprint_data,
         )
 
     else:
@@ -104,11 +102,11 @@ async def start(
         )
 
     # 依赖注入，创建新的游戏
-    assert current_world_instance is not None, "World data must exist to create a game"
+    assert world_data is not None, "World data must exist to create a game"
     room._tcg_game = TCGGame(
         name=payload.game_name,
         player_session=room._player_session,
-        world=current_world_instance,
+        world=world_data,
     )
 
     # 启动游戏的判断，是第一次建立还是恢复？
@@ -128,7 +126,7 @@ async def start(
         room._tcg_game = None
 
         # 返回错误！
-        logger.error(f"没有找到玩家实体 = {world_blueprint.player_actor}")
+        logger.error(f"没有找到玩家实体 = {blueprint_data.player_actor}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"start/v1: {payload.user_name} failed to create player entity",
@@ -139,4 +137,4 @@ async def start(
     await room._tcg_game.initialize()
 
     # 返回成功响应
-    return StartResponse(blueprint=world_blueprint)
+    return StartResponse(blueprint=blueprint_data)

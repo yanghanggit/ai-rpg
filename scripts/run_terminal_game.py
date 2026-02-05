@@ -62,7 +62,8 @@ from ai_rpg.services.home_actions import (
     activate_plan_action,
 )
 from ai_rpg.services.dungeon_actions import (
-    activate_actor_card_draws,
+    activate_random_ally_card_draws,
+    activate_random_enemy_card_draws,
     activate_random_play_cards,
     retreat_from_dungeon_combat,
 )
@@ -228,8 +229,9 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
             return
 
-        # logger.debug(f"玩家输入 = {usr_input}, 准备抽卡")
-        activate_actor_card_draws(terminal_game)
+        # 为所有角色激活抽牌动作，全部随机选择
+        activate_random_ally_card_draws(terminal_game)
+        activate_random_enemy_card_draws(terminal_game)
 
         await terminal_game.combat_execution_pipeline.process()
 

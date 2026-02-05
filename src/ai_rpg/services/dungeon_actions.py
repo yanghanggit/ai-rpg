@@ -112,22 +112,33 @@ def get_ally_targets_for_enemy(entity: Entity, tcg_game: TCGGame) -> List[str]:
 
 
 ###################################################################################################################################################################
-def activate_actor_card_draws(tcg_game: TCGGame) -> None:
+def activate_random_ally_card_draws(tcg_game: TCGGame) -> None:
     """
-    为场上所有存活角色激活抽牌动作
+    为场上所有存活的Ally阵营角色激活抽牌动作（随机选择技能和状态效果）
 
     Args:
         tcg_game: TCG游戏实例
     """
 
     player_entity = tcg_game.get_player_entity()
-    assert player_entity is not None, "activate_actor_card_draws: player_entity is None"
+    assert player_entity is not None, "activate_ally_card_draws: player_entity is None"
 
     # 获取场上所有存活的角色
     actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
 
-    # 为每个角色添加抽牌动作组件
-    for entity in actor_entities:
+    # 筛选Ally阵营的角色
+    ally_entities = [entity for entity in actor_entities if entity.has(AllyComponent)]
+
+    # 为每个Ally角色添加抽牌动作组件
+    for entity in ally_entities:
+
+        # 跳过已经有抽牌动作的角色
+        if entity.has(DrawCardsAction):
+            logger.warning(
+                f"Entity {entity.name} already has DrawCardsAction, skipping activation"
+            )
+            continue
+
         # 获取可用技能列表（最多2个），这里加一条吧，在编辑过程中，就不允许出现无技能的人物。
         available_skills = _get_available_skills(entity)
         assert (
@@ -141,37 +152,20 @@ def activate_actor_card_draws(tcg_game: TCGGame) -> None:
             else Skill(name="", description="")
         )
 
-        # 根据阵营获取目标列表
-        if entity.has(AllyComponent):
-            targets = get_enemy_targets_for_ally(entity, tcg_game)
-        elif entity.has(EnemyComponent):
-            targets = get_ally_targets_for_enemy(entity, tcg_game)
-        else:
-            logger.warning(
-                f"Entity {entity.name} has neither AllyComponent nor EnemyComponent"
-            )
-            targets = []
+        # 获取敌方目标列表
+        targets = get_enemy_targets_for_ally(entity, tcg_game)
 
-        # 加一些日志用于调试!
-        # logger.debug(
-        #     f"为角色 {entity.name} 激活抽牌动作，使用技能 【{selected_skill.name}】，目标列表: {targets}"
-        # )
+        # 随机一个target,然后组成[]
+        if len(targets) > 0:
+            targets = [random.choice(targets)]
 
         # 获取角色当前所有的状态效果
         combat_stats = entity.get(CombatStatsComponent)
-        current_status_effects = (
-            combat_stats.status_effects.copy() if combat_stats else []
-        )
+        status_effects = combat_stats.status_effects.copy() if combat_stats else []
 
-        # 测试代码：只传第一个状态效果或空列表
-        test_status_effects = (
-            [current_status_effects[0]] if len(current_status_effects) > 0 else []
-        )
-
-        # 加一个test数据，随机从全部中选择一个，然后组成[]
-        random_status_effects = []
-        if len(current_status_effects) > 0:
-            random_status_effects = [random.choice(current_status_effects)]
+        # 随机从全部中选择一个，然后组成[]
+        if len(status_effects) > 0:
+            status_effects = [random.choice(status_effects)]
 
         # 目前传随机状态效果列表
         entity.replace(
@@ -179,7 +173,76 @@ def activate_actor_card_draws(tcg_game: TCGGame) -> None:
             entity.name,
             selected_skill,  # skill
             targets,  # targets
-            random_status_effects,  # 随机状态效果列表
+            status_effects,  # 随机状态效果列表
+        )
+
+
+###################################################################################################################################################################
+def activate_random_enemy_card_draws(tcg_game: TCGGame) -> None:
+    """
+    为场上所有存活的Enemy阵营角色激活抽牌动作（随机选择技能和状态效果）
+
+    Args:
+        tcg_game: TCG游戏实例
+    """
+
+    player_entity = tcg_game.get_player_entity()
+    assert (
+        player_entity is not None
+    ), "activate_random_enemy_card_draws: player_entity is None"
+
+    # 获取场上所有存活的角色
+    actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
+
+    # 筛选Enemy阵营的角色
+    enemy_entities = [entity for entity in actor_entities if entity.has(EnemyComponent)]
+
+    # 为每个Enemy角色添加抽牌动作组件
+    for entity in enemy_entities:
+
+        # 跳过已经有抽牌动作的角色
+        if entity.has(DrawCardsAction):
+            logger.warning(
+                f"Entity {entity.name} already has DrawCardsAction, skipping activation"
+            )
+            continue
+
+        # 获取可用技能列表（最多2个），这里加一条吧，在编辑过程中，就不允许出现无技能的人物。
+        available_skills = _get_available_skills(entity)
+        assert (
+            len(available_skills) > 0
+        ), f"Entity {entity.name} has no available skills"
+
+        # 随机选择一个技能作为初始技能
+        selected_skill = (
+            random.choice(available_skills)
+            if available_skills
+            else Skill(name="", description="")
+        )
+
+        # 获取敌方目标列表
+        targets = get_ally_targets_for_enemy(entity, tcg_game)
+
+        # 随机一个target,然后组成[]
+        if len(targets) > 0:
+            targets = [random.choice(targets)]
+
+        # 获取角色当前所有的状态效果
+        combat_stats = entity.get(CombatStatsComponent)
+        status_effects = combat_stats.status_effects.copy() if combat_stats else []
+
+        # 随机从全部中选择一个，然后组成[]
+        status_effects = []
+        if len(status_effects) > 0:
+            status_effects = [random.choice(status_effects)]
+
+        # 目前传随机状态效果列表
+        entity.replace(
+            DrawCardsAction,
+            entity.name,
+            selected_skill,  # skill
+            targets,  # targets
+            status_effects,  # 随机状态效果列表
         )
 
 

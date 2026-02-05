@@ -29,7 +29,8 @@ from .dungeon_stage_transition import (
     complete_dungeon_and_return_home,
 )
 from .dungeon_actions import (
-    activate_actor_card_draws,
+    activate_random_ally_card_draws,
+    activate_random_enemy_card_draws,
     activate_random_play_cards,
     retreat_from_dungeon_combat,
 )
@@ -412,6 +413,10 @@ async def dungeon_combat_draw_cards(
     # 创建抽卡后台任务
     draw_cards_task = game_server.create_task()
 
+    # 为所有角色激活抽牌动作, 这2个函数内部不会进行LLM调用, 只是设置状态
+    activate_random_ally_card_draws(rpg_game)
+    activate_random_enemy_card_draws(rpg_game)
+
     # 使用 asyncio.create_task 创建真正的后台协程
     # 这样任务会立即在事件循环中异步执行，不会阻塞响应
     asyncio.create_task(
@@ -533,20 +538,10 @@ async def _execute_draw_cards_task(
         if not rpg_game.current_combat_sequence.is_ongoing:
             raise ValueError("战斗未在进行中")
 
-        # 为所有角色激活抽牌动作
-        activate_actor_card_draws(rpg_game)
-
         # 推进战斗流程处理抽牌
         # 注意: 这里会阻塞当前协程直到战斗流程处理完成
         # 但因为使用了 asyncio.create_task，这个阻塞只影响后台任务，不影响 API 响应
         await rpg_game.combat_execution_pipeline.process()
-
-        # 验证战斗状态
-        if (
-            rpg_game.current_combat_sequence.is_won
-            or rpg_game.current_combat_sequence.is_lost
-        ):
-            logger.info(f"战斗已结束，这里是端点测试，暂不处理后续逻辑")
 
         # 保存结果
         task_record = game_server.get_task(task_id)
@@ -606,9 +601,6 @@ async def _execute_play_cards_task(
         # 注意: 这里会阻塞当前协程直到战斗流程处理完成
         # 但因为使用了 asyncio.create_task，这个阻塞只影响后台任务，不影响 API 响应
         await rpg_game.combat_execution_pipeline.process()
-
-        # TODO 先做兼容, 因为正式的Unity客户端目前还没有单独的评估处理，所以正式的服务器这边先保持旧流程。
-        # await rpg_game.combat_status_evaluation_pipeline.execute()
 
         # 保存结果
         task_record = game_server.get_task(task_id)

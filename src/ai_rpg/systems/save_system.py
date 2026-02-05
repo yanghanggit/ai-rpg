@@ -33,28 +33,29 @@ class SaveSystem(ExecuteProcessor):
     ############################################################################################################
     @override
     async def execute(self) -> None:
+        # 记录当前场景中的所有角色分布
+        self._log_actor_distribution()
 
-        # 保存时，打印当前场景中的所有角色
-        actor_distribution: Dict[Entity, List[Entity]] = (
-            self._game.get_actors_by_stage()
-        )
+        # 保存游戏状态
+        self._game.save_game()
 
-        #
+    ############################################################################################################
+    def _log_actor_distribution(self) -> None:
+        """记录当前各场景中的角色分布情况
+
+        获取所有场景及其中的角色，格式化为 JSON 并记录到日志。
+        """
+        actor_distribution = self._game.get_actors_by_stage()
+
         actor_distribution_info: Dict[str, List[str]] = {}
         for stage, actors in actor_distribution.items():
-            actor_distribution_info[stage.name] = []
-            for actor in actors:
-                actor_distribution_info[stage.name].append(
-                    # f"{actor.name}{'(Dead)' if actor.has(DeathComponent) or actor.has(NightKillFlagComponent) else ''}"
-                    self._format_entity_name_with_status(actor)
-                )
+            actor_distribution_info[stage.name] = [
+                self._format_entity_name_with_status(actor) for actor in actors
+            ]
 
         logger.warning(
             f"mapping = {json.dumps(actor_distribution_info, indent=2, ensure_ascii=False)}"
         )
-
-        # 核心调用
-        self._game.save_game()
 
     ############################################################################################################
     def _format_entity_name_with_status(self, entity: Entity) -> str:

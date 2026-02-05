@@ -15,7 +15,7 @@ from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.rpg_game import RPGGame
 from ..models import (
     ActorComponent,
-    EnvironmentComponent,
+    StageDescriptionComponent,
     KickOffDoneComponent,
     KickOffComponent,
     StageComponent,
@@ -132,7 +132,7 @@ class KickOffSystem(ExecuteProcessor):
                     # 若是场景，用response替换narrate
                     if entity.has(StageComponent):
                         entity.replace(
-                            EnvironmentComponent,
+                            StageDescriptionComponent,
                             entity.name,
                             ai_messages[0].content if ai_messages else "",
                         )
@@ -339,7 +339,7 @@ class KickOffSystem(ExecuteProcessor):
             # 若是场景，用response替换environment描述
             if processed_entity.has(StageComponent):
                 processed_entity.replace(
-                    EnvironmentComponent,
+                    StageDescriptionComponent,
                     processed_entity.name,
                     chat_client.response_content,
                 )

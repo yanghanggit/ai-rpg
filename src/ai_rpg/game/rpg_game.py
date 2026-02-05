@@ -19,7 +19,7 @@ from ..models import (
     AgentContext,
     AppearanceComponent,
     DungeonComponent,
-    EnvironmentComponent,
+    StageDescriptionComponent,
     AllyComponent,
     HomeComponent,
     KickOffComponent,
@@ -378,11 +378,6 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                     actor_entity.add(AllyComponent, actor_model.name)
                 case ActorType.ENEMY:
                     actor_entity.add(EnemyComponent, actor_model.name)
-                # case ActorType.NEUTRAL:
-                #     # 中立角色，不添加特殊组件
-                #     logger.warning(
-                #         f"创建中立角色 Actor: {actor_model.name}, 不添加特殊组件"
-                #     )
                 case _:
                     assert (
                         False
@@ -463,7 +458,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
 
             # 必要组件：环境描述
             stage_entity.add(
-                EnvironmentComponent,
+                StageDescriptionComponent,
                 stage_model.name,
                 "",
             )

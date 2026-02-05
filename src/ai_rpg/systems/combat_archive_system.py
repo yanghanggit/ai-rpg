@@ -6,7 +6,7 @@ from ..entitas import Entity, ExecuteProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     CombatArchiveEvent,
-    AllyComponent,
+    ExpeditionMemberComponent,
 )
 from langchain_core.messages import (
     AIMessage,
@@ -79,7 +79,7 @@ def _get_combat_ally_actors(game: TCGGame) -> List[Entity]:
     1. 获取玩家实体（玩家所在场景即为战斗场景）
     2. 获取玩家所在的场景实体
     3. 获取该场景上的所有角色（使用get_actors_on_stage）
-    4. 过滤出带有AllyComponent的角色
+    4. 过滤出带有ExpeditionMemberComponent的角色
 
     Args:
         game: TCGGame游戏实例
@@ -101,8 +101,10 @@ def _get_combat_ally_actors(game: TCGGame) -> List[Entity]:
     # 获取场景上的所有角色（包括存活和死亡的）
     actors_on_stage = game.get_actors_on_stage(player_entity)
 
-    # 过滤出盟友角色
-    ally_actors = [actor for actor in actors_on_stage if actor.has(AllyComponent)]
+    # 过滤出远征队成员
+    ally_actors = [
+        actor for actor in actors_on_stage if actor.has(ExpeditionMemberComponent)
+    ]
 
     return ally_actors
 

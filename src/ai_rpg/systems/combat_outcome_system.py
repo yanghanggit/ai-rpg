@@ -4,7 +4,7 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     DeathComponent,
     CombatResult,
-    AllyComponent,
+    ExpeditionMemberComponent,
     EnemyComponent,
 )
 
@@ -110,11 +110,11 @@ class CombatOutcomeSystem(ExecuteProcessor):
     def _is_ally_side_eliminated(self) -> bool:
         """检查友方阵营是否已全员阵亡。
 
-        遍历当前场景中的所有角色，统计友方单位(带AllyComponent)的总数
-        和已阵亡友方单位(带DeathComponent)的数量。
+        遍历当前场景中的所有角色，统计远征队成员(带ExpeditionMemberComponent)的总数
+        和已阵亡远征队成员(带DeathComponent)的数量。
 
         Returns:
-            bool: 当存在友方单位且所有友方单位都已阵亡时返回True，否则返回False
+            bool: 当存在远征队成员且所有远征队成员都已阵亡时返回True，否则返回False
         """
 
         player_entity = self._game.get_player_entity()
@@ -128,7 +128,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
 
         for entity in actors_on_stage:
 
-            if not entity.has(AllyComponent):
+            if not entity.has(ExpeditionMemberComponent):
                 continue
 
             # 当前存活的友方单位
@@ -143,9 +143,9 @@ class CombatOutcomeSystem(ExecuteProcessor):
 
     ########################################################################################################################################################################
     def _broadcast_result_to_allies(self, result: CombatResult) -> None:
-        """向当前场景中的所有友方单位广播战斗结果消息。
+        """向当前场景中的所有远征队成员广播战斗结果消息。
 
-        遍历场景中的所有角色，向每个友方单位(带AllyComponent)发送:
+        遍历场景中的所有角色，向每个远征队成员(带ExpeditionMemberComponent)发送:
         - 胜利消息: 当result为CombatResult.WIN时
         - 失败消息: 当result为CombatResult.LOSE时
 
@@ -167,7 +167,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
         assert len(actors_on_stage) > 0, f"entities with actions: {actors_on_stage}"
 
         for entity in actors_on_stage:
-            if not entity.has(AllyComponent):
+            if not entity.has(ExpeditionMemberComponent):
                 continue
 
             if result == CombatResult.WIN:

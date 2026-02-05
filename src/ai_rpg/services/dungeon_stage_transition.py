@@ -5,6 +5,7 @@
 协调关卡索引管理、场景传送、战斗初始化和状态清理等核心流程。
 """
 
+import random
 from typing import Dict, Set
 from loguru import logger
 from ..game.tcg_game import TCGGame
@@ -14,6 +15,7 @@ from ..models import (
     KickOffComponent,
     Combat,
     AllyComponent,
+    ExpeditionMemberComponent,
     PlayerComponent,
     PlayerOnlyStageComponent,
     HomeComponent,
@@ -108,6 +110,50 @@ def _enhance_kickoff_with_actors(
 **场景内角色**  
 
 {actors_info}"""
+
+
+###################################################################################################################################################################
+def _select_expedition_members(tcg_game: TCGGame) -> Set[Entity]:
+    """选择参与地下城远征的队伍成员
+
+    从所有盟友中选择远征队成员，规则：
+    1. 必须包含玩家角色（PlayerComponent）
+    2. 从剩余盟友中随机选择1个同伴
+    3. 远征队最少1人（玩家），最多2人（玩家+1个同伴）
+
+    Args:
+        tcg_game: TCG游戏实例
+
+    Returns:
+        远征队成员实体集合，包含玩家和最多1个随机选择的盟友
+    """
+    # 获取所有盟友
+    all_allies = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities.copy()
+
+    # 1. 找到玩家实体（必须）并分离其他盟友
+    player_entity = None
+    other_allies = []
+
+    for ally in all_allies:
+        if ally.has(PlayerComponent):
+            player_entity = ally
+        else:
+            other_allies.append(ally)
+
+    assert player_entity is not None, "必须存在一个玩家实体"
+
+    # 2. 从其他盟友中随机选择1个
+    expedition_members = {player_entity}
+    logger.info(f"玩家 {player_entity.name} 将参与远征")
+
+    if len(other_allies) > 0:
+        selected_ally = random.choice(other_allies)
+        expedition_members.add(selected_ally)
+        logger.info(f"随机选择 {selected_ally.name} 加入远征队")
+    else:
+        logger.warning("没有其他盟友可以加入远征队，玩家将独自冒险")
+
+    return expedition_members
 
 
 ###################################################################################################################################################################
@@ -213,6 +259,7 @@ def initialize_dungeon_first_entry(tcg_game: TCGGame, dungeon: Dungeon) -> bool:
     初始化地下城首次进入
 
     仅在首次进入时调用，设置地下城状态并进入第一个关卡。
+    会将所有盟友添加到远征队（ExpeditionMemberComponent）。
 
     Args:
         tcg_game: TCG游戏实例
@@ -229,12 +276,32 @@ def initialize_dungeon_first_entry(tcg_game: TCGGame, dungeon: Dungeon) -> bool:
         )
         return False
 
+    # 确保全局不存在远征队成员（无人正在参与远征）
+    expedition_members = tcg_game.get_group(
+        Matcher(all_of=[ExpeditionMemberComponent])
+    ).entities
+    assert len(expedition_members) == 0, (
+        f"初始化地下城前必须确保无远征队成员，"
+        f"当前存在 {len(expedition_members)} 个远征队成员"
+    )
+
     # 初始化地下城状态
     dungeon.current_stage_index = 0
     tcg_game.setup_dungeon_entities(dungeon)
 
-    # 获取所有盟友实体并推进到第一关
-    ally_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities.copy()
+    # 选择远征队成员（玩家 + 最多1个随机盟友）
+    ally_entities = _select_expedition_members(tcg_game)
+
+    # 将选中的成员添加到远征队
+    for ally_entity in ally_entities:
+        ally_entity.replace(
+            ExpeditionMemberComponent,
+            ally_entity.name,
+            dungeon.name,
+        )
+        logger.debug(f"将 {ally_entity.name} 加入远征队，目标地下城：{dungeon.name}")
+
+    # 推进到第一关
     return _enter_dungeon_stage(tcg_game, dungeon, ally_entities)
 
 
@@ -243,7 +310,7 @@ def advance_to_next_stage(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     """
     推进到地下城的下一个关卡
 
-    将地下城索引推进到下一关，然后让所有盟友实体进入该关卡。
+    将地下城索引推进到下一关，然后让所有远征队成员进入该关卡。
 
     Args:
         tcg_game: TCG游戏实例
@@ -255,11 +322,14 @@ def advance_to_next_stage(tcg_game: TCGGame, dungeon: Dungeon) -> None:
         assert False, "地下城前进失败，没有更多关卡"  # 不可能发生！
         return
 
-    # 2. 获取所有盟友实体
-    ally_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities.copy()
+    # 2. 获取所有远征队成员
+    expedition_entities = tcg_game.get_group(
+        Matcher(all_of=[ExpeditionMemberComponent])
+    ).entities.copy()
+    assert len(expedition_entities) > 0, "没有找到远征队成员"
 
     # 3. 进入下一关卡
-    enter = _enter_dungeon_stage(tcg_game, dungeon, ally_entities)
+    enter = _enter_dungeon_stage(tcg_game, dungeon, expedition_entities)
     assert enter, "进入下一关卡失败！"
 
 
@@ -268,16 +338,18 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
     """
     完成地下城冒险并将角色传送回家园
 
-    将角色传送回家园、清理地下城数据并重置所有盟友的战斗状态。
+    将远征队成员传送回家园、清理地下城数据、重置战斗状态并解散远征队。
     玩家传送到专属场景，盟友传送到普通家园场景。
 
     Args:
         tcg_game: TCG游戏实例
     """
 
-    # 1. 验证并获取盟友实体
-    ally_entities = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities
-    assert len(ally_entities) > 0, "没有找到盟友实体"
+    # 1. 验证并获取远征队成员
+    expedition_entities = tcg_game.get_group(
+        Matcher(all_of=[ExpeditionMemberComponent])
+    ).entities.copy()
+    assert len(expedition_entities) > 0, "没有找到远征队成员"
 
     # 2. 验证并获取家园场景实体
     home_stage_entities = tcg_game.get_group(
@@ -303,22 +375,22 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
 
     # 4. 生成并发送返回提示消息
     dungeon_name = tcg_game.world.dungeon.name
-    for ally_entity in ally_entities:
+    for expedition_entity in expedition_entities:
 
-        if ally_entity.has(PlayerComponent):
+        if expedition_entity.has(PlayerComponent):
 
             # 唯一的玩家传送到专有场景
             player_only_stage = next(iter(player_only_stages))
 
             # 添加返回消息
             tcg_game.add_human_message(
-                ally_entity,
+                expedition_entity,
                 _generate_return_home_message(dungeon_name, player_only_stage.name),
                 dungeon_lifecycle_completion=dungeon_name,
             )
 
             # 传送玩家到专有场景
-            tcg_game.stage_transition({ally_entity}, player_only_stage)
+            tcg_game.stage_transition({expedition_entity}, player_only_stage)
 
         else:
 
@@ -330,38 +402,43 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
 
                 # 添加返回消息并传送
                 tcg_game.add_human_message(
-                    ally_entity,
+                    expedition_entity,
                     _generate_return_home_message(dungeon_name, random_home_stage.name),
                     dungeon_lifecycle_completion=dungeon_name,
                 )
 
                 # 传送盟友
-                tcg_game.stage_transition({ally_entity}, random_home_stage)
+                tcg_game.stage_transition({expedition_entity}, random_home_stage)
 
     # 5. 清理地下城数据
     tcg_game.teardown_dungeon_entities(tcg_game.world.dungeon)
     tcg_game._world.dungeon = Dungeon(name="", stages=[], description="")
 
-    # 6. 恢复所有盟友的战斗状态
-    for ally_entity in ally_entities:
+    # 6. 恢复所有远征队成员的战斗状态
+    for expedition_entity in expedition_entities:
         # 移除死亡组件
-        if ally_entity.has(DeathComponent):
-            logger.info(f"移除死亡组件: {ally_entity.name}")
-            ally_entity.remove(DeathComponent)
+        if expedition_entity.has(DeathComponent):
+            logger.info(f"移除死亡组件: {expedition_entity.name}")
+            expedition_entity.remove(DeathComponent)
 
         # 恢复生命值至满血
-        assert ally_entity.has(CombatStatsComponent)
-        combat_stats = ally_entity.get(CombatStatsComponent)
+        assert expedition_entity.has(CombatStatsComponent)
+        combat_stats = expedition_entity.get(CombatStatsComponent)
         combat_stats.stats.hp = combat_stats.stats.max_hp
         logger.info(
-            f"恢复满血: {ally_entity.name} 生命值 = {combat_stats.stats.hp}/{combat_stats.stats.max_hp}"
+            f"恢复满血: {expedition_entity.name} 生命值 = {combat_stats.stats.hp}/{combat_stats.stats.max_hp}"
         )
 
         # 清空所有状态效果
         combat_stats.status_effects.clear()
-        logger.info(f"清空状态效果: {ally_entity.name}")
+        logger.info(f"清空状态效果: {expedition_entity.name}")
 
-    # 7. 清除手牌组件
+    # 7. 解散远征队（移除 ExpeditionMemberComponent）
+    for expedition_entity in expedition_entities:
+        expedition_entity.remove(ExpeditionMemberComponent)
+        logger.info(f"从远征队移除: {expedition_entity.name}")
+
+    # 8. 清除手牌组件
     tcg_game.clear_hands()
 
 

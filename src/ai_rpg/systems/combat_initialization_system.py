@@ -10,9 +10,9 @@ from pydantic import BaseModel
 from ..entitas import ExecuteProcessor, Entity
 from ..game.tcg_game import TCGGame
 from ..models import (
-    EnvironmentComponent,
+    StageDescriptionComponent,
     CombatStatsComponent,
-    AllyComponent,
+    ExpeditionMemberComponent,
     EnemyComponent,
     AppearanceComponent,
     StatusEffect,
@@ -227,7 +227,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         assert current_stage_entity is not None
 
         # 获取场景环境组件
-        environment_comp = current_stage_entity.get(EnvironmentComponent)
+        environment_comp = current_stage_entity.get(StageDescriptionComponent)
         assert environment_comp is not None
 
         # 参与战斗的角色实体列表
@@ -238,7 +238,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         chat_clients = self._generate_chat_clients_for_all_actors(
             actor_entities=actor_entities,
             stage_name=current_stage_entity.name,
-            stage_description=environment_comp.description,
+            stage_description=environment_comp.narrative,
         )
 
         # 第二步：并发调用LLM生成所有角色的初始状态效果
@@ -406,9 +406,9 @@ class CombatInitializationSystem(ExecuteProcessor):
         Returns:
             阵营关系字符串："友方" 或 "敌方"
         """
-        actor_is_ally = actor_entity.has(AllyComponent)
+        actor_is_ally = actor_entity.has(ExpeditionMemberComponent)
         actor_is_enemy = actor_entity.has(EnemyComponent)
-        other_is_ally = other_entity.has(AllyComponent)
+        other_is_ally = other_entity.has(ExpeditionMemberComponent)
         other_is_enemy = other_entity.has(EnemyComponent)
 
         # 同是友方或同是敌方

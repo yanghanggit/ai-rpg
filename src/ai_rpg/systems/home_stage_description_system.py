@@ -6,7 +6,7 @@ from ..chat_client.client import ChatClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
-    EnvironmentComponent,
+    StageDescriptionComponent,
     HomeComponent,
     StageComponent,
 )
@@ -151,8 +151,8 @@ class HomeStageDescriptionSystem(ExecuteProcessor):
 
         for stage_entity in stage_entities:
 
-            environment_comp = stage_entity.get(EnvironmentComponent)
-            if environment_comp.description != "":
+            environment_comp = stage_entity.get(StageDescriptionComponent)
+            if environment_comp.narrative != "":
                 # 如果环境描述不为空，跳过
                 logger.debug(
                     f"跳过场景 {stage_entity.name} 的规划请求，因其环境描述不为空"
@@ -204,7 +204,7 @@ class HomeStageDescriptionSystem(ExecuteProcessor):
             # 更新环境描写
             if format_response.description != "":
                 stage_entity.replace(
-                    EnvironmentComponent,
+                    StageDescriptionComponent,
                     stage_entity.name,
                     format_response.description,
                 )

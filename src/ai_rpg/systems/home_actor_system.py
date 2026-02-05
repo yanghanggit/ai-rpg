@@ -6,7 +6,7 @@ from ..chat_client import ChatClient
 from ..entitas import Entity, Matcher, GroupEvent, ReactiveProcessor
 from ..models import (
     AnnounceAction,
-    EnvironmentComponent,
+    StageDescriptionComponent,
     QueryAction,
     SpeakAction,
     WhisperAction,
@@ -427,8 +427,8 @@ class HomeActorSystem(ReactiveProcessor):
                     prompt=_build_action_planning_prompt_test(
                         current_stage=current_stage.name,
                         current_stage_narration=current_stage.get(
-                            EnvironmentComponent
-                        ).description,
+                            StageDescriptionComponent
+                        ).narrative,
                         other_actors_appearances=other_actors_appearances,
                         available_home_stages=[e.name for e in available_home_stages],
                     ),

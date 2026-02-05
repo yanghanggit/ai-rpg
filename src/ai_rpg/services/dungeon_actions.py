@@ -15,7 +15,7 @@ from ..models import (
     PlayCardsAction,
     Skill,
     SkillBookComponent,
-    AllyComponent,
+    ExpeditionMemberComponent,
     EnemyComponent,
     CombatStatsComponent,
     DeathComponent,
@@ -73,7 +73,9 @@ def get_enemy_targets_for_ally(entity: Entity, tcg_game: TCGGame) -> List[str]:
     Returns:
         敌方实体名称列表
     """
-    assert entity.has(AllyComponent), f"Entity {entity.name} must have AllyComponent"
+    assert entity.has(
+        ExpeditionMemberComponent
+    ), f"Entity {entity.name} must have ExpeditionMemberComponent"
 
     # 获取entity所在场景的所有存活角色
     actor_entities = tcg_game.get_alive_actors_on_stage(entity)
@@ -90,8 +92,8 @@ def get_enemy_targets_for_ally(entity: Entity, tcg_game: TCGGame) -> List[str]:
 def get_ally_targets_for_enemy(entity: Entity, tcg_game: TCGGame) -> List[str]:
     """获取enemy阵营角色的敌方目标列表
 
-    站在enemy视角，返回场景内所有带AllyComponent的实体名称列表。
-    用于为enemy角色的DrawCardsAction填充targets字段。
+    站在enemy视角，返回场景内所有带ExpeditionMemberComponent的实体名称列表。
+    用于enemy角色的DrawCardsAction填充targets字段。
 
     Args:
         entity: enemy阵营的角色实体
@@ -106,7 +108,9 @@ def get_ally_targets_for_enemy(entity: Entity, tcg_game: TCGGame) -> List[str]:
     actor_entities = tcg_game.get_alive_actors_on_stage(entity)
 
     # 筛选所有ally阵营的实体
-    ally_targets = [actor.name for actor in actor_entities if actor.has(AllyComponent)]
+    ally_targets = [
+        actor.name for actor in actor_entities if actor.has(ExpeditionMemberComponent)
+    ]
 
     return ally_targets
 
@@ -132,8 +136,10 @@ def activate_random_ally_card_draws(tcg_game: TCGGame) -> Tuple[bool, str]:
     # 获取场上所有存活的角色
     actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
 
-    # 筛选Ally阵营的角色
-    ally_entities = [entity for entity in actor_entities if entity.has(AllyComponent)]
+    # 筛选远征队成员
+    ally_entities = [
+        entity for entity in actor_entities if entity.has(ExpeditionMemberComponent)
+    ]
 
     if len(ally_entities) == 0:
         error_msg = "激活Ally抽牌失败: 没有存活的Ally角色"
@@ -234,9 +240,9 @@ def activate_specified_ally_card_draws(
         logger.error(error_msg)
         return False, error_msg
 
-    # 验证实体是Ally阵营
-    if not entity.has(AllyComponent):
-        error_msg = f"激活指定Ally抽牌失败: 角色 '{entity_name}' 不是Ally阵营"
+    # 验证实体是远征队成员
+    if not entity.has(ExpeditionMemberComponent):
+        error_msg = f"激活指定Ally抽牌失败: 角色 '{entity_name}' 不是远征队成员"
         logger.error(error_msg)
         return False, error_msg
 
@@ -515,9 +521,11 @@ def retreat_from_dungeon_combat(tcg_game: TCGGame) -> Tuple[bool, str]:
         logger.error(error_msg)
         return False, error_msg
 
-    # 5. 获取场景内所有ally阵营角色
+    # 5. 获取场景内所有远征队成员
     actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
-    ally_entities = [entity for entity in actor_entities if entity.has(AllyComponent)]
+    ally_entities = [
+        entity for entity in actor_entities if entity.has(ExpeditionMemberComponent)
+    ]
 
     if len(ally_entities) == 0:
         error_msg = "撤退失败: 场景内没有ally阵营角色"

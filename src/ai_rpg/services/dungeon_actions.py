@@ -19,8 +19,12 @@ from ..models import (
     EnemyComponent,
     CombatStatsComponent,
     DeathComponent,
+    Card,
+    CharacterStats,
+    InventoryComponent,
 )
 from ..entitas import Entity
+from langchain_core.messages import AIMessage
 
 
 ###################################################################################################################################################################
@@ -553,6 +557,133 @@ def retreat_from_dungeon_combat(tcg_game: TCGGame) -> Tuple[bool, str]:
     )
 
     return True, f"成功从 {dungeon.name} 的 {current_stage.name} 撤退"
+
+
+###################################################################################################################################################################
+def ensure_all_actors_have_fallback_cards(tcg_game: TCGGame) -> Tuple[bool, str]:
+    """
+    为所有缺少手牌的存活角色提供兜底卡牌。
+
+    这是一个保障机制，通常在抽牌阶段结束时调用，确保所有参战角色都有可用手牌。
+    如果某个角色缺少HandComponent（可能因为LLM响应解析失败、网络问题等原因），
+    将为其生成一张"应急应对"卡牌，避免战斗流程中断。
+
+    兜底卡牌特性：
+    - 名称：应急应对
+    - 行动：暂时采取保守策略观察战局
+    - 战术：本回合不进行任何攻击或防御加成
+    - 数值：攻击0、防御0
+    - 目标：自己
+
+    Args:
+        tcg_game: TCG游戏实例
+
+    Returns:
+        tuple[bool, str]: (是否成功, 结果消息)
+    """
+    # 1. 验证战斗状态
+    if not tcg_game.current_combat_sequence.is_ongoing:
+        error_msg = "兜底手牌失败: 当前没有进行中的战斗"
+        logger.error(error_msg)
+        return False, error_msg
+
+    if len(tcg_game.current_combat_sequence.current_rounds) == 0:
+        error_msg = "兜底手牌失败: 没有当前回合"
+        logger.error(error_msg)
+        return False, error_msg
+
+    last_round = tcg_game.current_combat_sequence.latest_round
+    if last_round.is_completed:
+        error_msg = "兜底手牌失败: 回合已完成"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 2. 获取玩家实体
+    player_entity = tcg_game.get_player_entity()
+    if player_entity is None:
+        error_msg = "兜底手牌失败: 玩家实体不存在"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 3. 获取场上所有存活的角色
+    actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
+    if len(actor_entities) == 0:
+        error_msg = "兜底手牌失败: 没有存活的角色"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 4. 获取当前回合数
+    current_round_number = len(tcg_game.current_combat_sequence.current_rounds)
+
+    # 5. 为缺少手牌的角色添加兜底卡牌
+    fallback_count = 0
+    for entity in actor_entities:
+        # 跳过已有手牌或已死亡的角色
+        if entity.has(HandComponent) or entity.has(DeathComponent):
+            continue
+
+        # 兜底卡牌的目标固定为自己
+        fallback_action = "暂时采取保守策略观察战局"
+        fallback_mechanism = "本回合不进行任何攻击或防御加成"
+
+        # 创建兜底卡牌
+        fallback_card = Card(
+            name="应急应对",
+            action=fallback_action,
+            stats=CharacterStats(hp=0, max_hp=0, attack=0, defense=0),
+            targets=[entity.name],
+            status_effects=[],
+            affixes=[f"战术：{fallback_mechanism}"],
+        )
+
+        # 从InventoryComponent继承物品词条到卡牌词条
+        inventory_comp = entity.get(InventoryComponent)
+        assert (
+            inventory_comp is not None
+        ), f"Entity {entity.name} must have InventoryComponent"
+        for item in inventory_comp.items:
+            fallback_card.affixes.extend(item.affixes)  # 追加装备词条
+
+        # 添加手牌组件
+        entity.replace(
+            HandComponent,
+            entity.name,
+            [fallback_card],
+            current_round_number,
+        )
+
+        # 添加压缩提示词到上下文
+        compressed_prompt = f"""# 指令！第 {current_round_number} 回合：生成战斗卡牌(JSON)
+
+**卡牌**封装行动信息，由战斗系统结算。"""
+        tcg_game.add_human_message(
+            entity=entity,
+            message_content=compressed_prompt,
+        )
+
+        # 直接构造 JSON 字符串并添加 AI 消息
+        fallback_json = f"""```json
+{{
+  "name": "应急应对",
+  "action": "{fallback_action}",
+  "mechanism": "{fallback_mechanism}",
+  "cost": "",
+  "final_attack": 0,
+  "final_defense": 0
+}}
+```"""
+        tcg_game.add_ai_message(
+            entity,
+            [AIMessage(content=fallback_json)],
+        )
+
+        fallback_count += 1
+        logger.info(f"为角色 {entity.name} 添加兜底卡牌")
+
+    if fallback_count == 0:
+        return True, "所有角色都已有手牌，无需兜底"
+
+    return True, f"成功为 {fallback_count} 个角色添加兜底卡牌"
 
 
 ###################################################################################################################################################################

@@ -34,6 +34,7 @@ from .dungeon_actions import (
     activate_specified_ally_card_draws,
     activate_random_play_cards,
     retreat_from_dungeon_combat,
+    ensure_all_actors_have_fallback_cards,
 )
 from ..game.game_server import GameServer
 
@@ -626,6 +627,10 @@ async def _execute_play_cards_task(
         # 验证战斗状态
         if not rpg_game.current_combat_sequence.is_ongoing:
             raise ValueError("战斗未在进行中")
+
+        success, message = ensure_all_actors_have_fallback_cards(rpg_game)
+        if not success:
+            raise ValueError(f"确保所有角色都有后备牌失败: {message}")
 
         # 为所有角色随机选择并激活打牌动作
         success, message = activate_random_play_cards(rpg_game)

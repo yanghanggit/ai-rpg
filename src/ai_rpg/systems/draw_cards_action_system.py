@@ -33,7 +33,6 @@ from ..models import (
     InventoryComponent,
 )
 from ..utils import extract_json_from_code_block
-from langchain_core.messages import AIMessage
 
 
 #######################################################################################################################################
@@ -237,8 +236,10 @@ class DrawCardsActionSystem(ReactiveProcessor):
             len(self._game.current_combat_sequence.current_rounds) > 0
         ), "当前没有进行中的战斗，不能设置回合。"
 
-        # 清除手牌，准备重新生成
-        self._game.clear_hands()
+        # 清除所有参与角色的旧手牌，准备重新生成新手牌
+        for entity in entities:
+            if entity.has(HandComponent):
+                entity.remove(HandComponent)
 
         # 为每个实体创建聊天客户端
         chat_clients: List[ChatClient] = []
@@ -272,9 +273,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
             # 处理卡牌生成响应
             self._process_draw_cards_response(found_entity, chat_client)
-
-        # 最后的兜底，遍历所有参与的角色，如果没有手牌，说明_process_draw_cards_response出现了错误，可能是LLM返回的内容无法正确解析。此时，就需要给角色一个默认的手牌，避免游戏卡死。
-        self._ensure_all_entities_have_hands(entities)
 
     #######################################################################################################################################
     def _process_draw_cards_response(
@@ -315,6 +313,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     current_round_number=current_round_number
                 ),
                 compressed_prompt=chat_client.prompt,
+                draw_cards_round_number=current_round_number,
             )
 
             # 添加AI消息，包括响应内容。
@@ -413,67 +412,5 @@ class DrawCardsActionSystem(ReactiveProcessor):
             prompt=prompt,
             context=self._game.get_agent_context(entity).context,
         )
-
-    #######################################################################################################################################
-    def _ensure_all_entities_have_hands(self, entities: List[Entity]) -> None:
-        """
-        确保所有实体都有手牌组件的兜底机制。
-        如果某个实体缺少HandComponent，说明_process_draw_cards_response出现了错误，
-        可能是LLM返回的内容无法正确解析。此时给角色一个应急应对卡牌，避免游戏卡死。
-
-        Args:
-            entities: 需要检查的实体列表
-        """
-        # 获取当前回合信息
-        current_round_number = len(self._game.current_combat_sequence.current_rounds)
-
-        for entity in entities:
-
-            if entity.has(HandComponent) or entity.has(DeathComponent):
-                continue
-
-            # 兜底卡牌的目标固定为自己
-            fallback_action = "行动计划出现偏差，暂时采取保守策略观察战局"
-            fallback_mechanism = "本回合不进行任何攻击或防御加成"
-
-            fallback_card = Card(
-                name="应急应对",
-                action=fallback_action,  # 只存储行动叙事
-                stats=CharacterStats(hp=0, max_hp=0, attack=0, defense=0),
-                targets=[entity.name],
-                status_effects=[],
-                affixes=[f"战术：{fallback_mechanism}"],  # 战术规则存入 affixes
-            )
-
-            entity.replace(
-                HandComponent,
-                entity.name,
-                [fallback_card],
-                current_round_number,
-            )
-
-            # 模拟历史上下文，使用与正常流程一致的压缩提示词
-            self._game.add_human_message(
-                entity=entity,
-                message_content=_generate_compressd_round_prompt(
-                    current_round_number=current_round_number,
-                ),
-            )
-
-            # 模拟AI响应，将fallback_card序列化为JSON格式
-            fallback_response = DrawCardsResponse(
-                name=fallback_card.name,
-                action=fallback_action,
-                mechanism=fallback_mechanism,
-                cost="",
-                final_attack=fallback_card.stats.attack,
-                final_defense=fallback_card.stats.defense,
-            )
-            fallback_json = fallback_response.model_dump_json(indent=2)
-
-            self._game.add_ai_message(
-                entity,
-                [AIMessage(content=f"```json\n{fallback_json}\n```")],
-            )
 
     #######################################################################################################################################

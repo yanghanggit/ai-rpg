@@ -63,9 +63,10 @@ from ai_rpg.services.home_actions import (
 )
 from ai_rpg.services.dungeon_actions import (
     activate_random_ally_card_draws,
-    activate_random_enemy_card_draws,
     activate_random_play_cards,
     retreat_from_dungeon_combat,
+    ensure_all_actors_have_fallback_cards,
+    activate_random_enemy_card_draws,
 )
 from ai_rpg.services.dungeon_stage_transition import (
     initialize_dungeon_first_entry,
@@ -252,6 +253,11 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
 
         if not terminal_game.current_combat_sequence.is_ongoing:
             logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
+            return
+
+        success, message = ensure_all_actors_have_fallback_cards(terminal_game)
+        if not success:
+            logger.error(f"确保所有角色都有后备牌失败: {message}")
             return
 
         # 执行打牌行动(现在使用随机选行动)

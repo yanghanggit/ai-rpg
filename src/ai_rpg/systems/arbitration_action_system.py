@@ -457,6 +457,9 @@ class ArbitrationActionSystem(ReactiveProcessor):
         # 处理生命值归零的实体
         self._process_zero_health_entities()
 
+        # 清除手牌
+        self._game.clear_hands()
+
     #######################################################################################################################################
     def _clear_consumed_status_effects(
         self, combat_actions_details: List[CombatActionInfo]

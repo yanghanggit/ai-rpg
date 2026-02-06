@@ -29,7 +29,6 @@ from .dungeon_stage_transition import (
     complete_dungeon_and_return_home,
 )
 from .dungeon_actions import (
-    activate_random_ally_card_draws,
     activate_random_enemy_card_draws,
     activate_specified_ally_card_draws,
     activate_random_play_cards,
@@ -416,29 +415,17 @@ async def dungeon_combat_draw_cards(
     draw_cards_task = game_server.create_task()
 
     # 为所有角色激活抽牌动作, 这2个函数内部不会进行LLM调用, 只是设置状态
-
-    # 处理 Ally 阵营的抽牌
-    if len(payload.specified_actions) > 0:
-        # 指定抽取：遍历每个指定动作
-        for action in payload.specified_actions:
-            success, message = activate_specified_ally_card_draws(
-                entity_name=action.entity_name,
-                tcg_game=rpg_game,
-                skill_name=action.skill_name,
-                target_names=action.target_names,
-                status_effect_names=action.status_effect_names,
-            )
-            if not success:
-                logger.error(f"指定抽牌失败: {message}")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"激活抽牌动作失败: {message}",
-                )
-    else:
-        # 纯随机抽取：使用原有逻辑
-        success, message = activate_random_ally_card_draws(rpg_game)
+    # 处理 Ally 阵营的抽牌 指定抽取：遍历每个指定动作
+    for action in payload.specified_actions:
+        success, message = activate_specified_ally_card_draws(
+            entity_name=action.entity_name,
+            tcg_game=rpg_game,
+            skill_name=action.skill_name,
+            target_names=action.target_names,
+            status_effect_names=action.status_effect_names,
+        )
         if not success:
-            logger.error(f"随机抽牌失败: {message}")
+            logger.error(f"指定抽牌失败: {message}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"激活抽牌动作失败: {message}",

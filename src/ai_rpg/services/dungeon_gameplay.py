@@ -411,9 +411,6 @@ async def dungeon_combat_draw_cards(
             detail="战斗未在进行中",
         )
 
-    # 创建抽卡后台任务
-    draw_cards_task = game_server.create_task()
-
     # 为所有角色激活抽牌动作, 这2个函数内部不会进行LLM调用, 只是设置状态
     # 处理 Ally 阵营的抽牌 指定抽取：遍历每个指定动作
     for action in payload.specified_actions:
@@ -431,14 +428,18 @@ async def dungeon_combat_draw_cards(
                 detail=f"激活抽牌动作失败: {message}",
             )
 
-    # 敌人的就用随机
-    success, message = activate_random_enemy_card_draws(rpg_game)
-    if not success:
-        logger.error(f"Enemy抽牌失败: {message}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"激活Enemy抽牌动作失败: {message}",
-        )
+    # 敌人的就用随机（根据标记控制是否执行）
+    if payload.enable_enemy_draw:
+        success, message = activate_random_enemy_card_draws(rpg_game)
+        if not success:
+            logger.error(f"Enemy抽牌失败: {message}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"激活Enemy抽牌动作失败: {message}",
+            )
+
+    # 创建抽卡后台任务
+    draw_cards_task = game_server.create_task()
 
     # 使用 asyncio.create_task 创建真正的后台协程
     # 这样任务会立即在事件循环中异步执行，不会阻塞响应

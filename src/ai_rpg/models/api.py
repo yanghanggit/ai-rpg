@@ -185,6 +185,7 @@ class DungeonCombatDrawCardsRequest(BaseModel):
     user_name: str
     game_name: str
     specified_actions: List[AllyDrawCardAction]
+    enable_enemy_draw: bool
 
 
 @final

@@ -1,7 +1,7 @@
 import copy
 import uuid
-from typing import Any, Final, List, Set
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from typing import Any, Dict, Final, List, Sequence, Set
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
 from .world_persistence import persist_world_data
@@ -727,80 +727,90 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         self._broadcast_arrival_notifications(actors_to_transfer, stage_destination)
 
     #######################################################################################################################################
-    def filter_human_messages_by_attribute(
+    def filter_messages_by_attributes(
         self,
-        actor_entity: Entity,
-        attribute_key: str,
-        attribute_value: str,
+        entity: Entity,
+        attributes: Dict[str, Any],
         reverse_order: bool = True,
-    ) -> List[HumanMessage]:
-        """根据属性键值对过滤实体上下文中的HumanMessage
+    ) -> List[SystemMessage | HumanMessage | AIMessage]:
+        """根据属性字典过滤实体上下文中的消息
 
         Args:
-            actor_entity: 要查询的实体
-            attribute_key: 要匹配的属性键名
-            attribute_value: 要匹配的属性值
+            entity: 要查询的实体
+            attributes: 要匹配的属性字典，所有键值对必须完全匹配（空字典匹配所有消息）
             reverse_order: 是否逆序遍历，默认True
 
         Returns:
-            匹配的HumanMessage列表
+            匹配的消息列表
         """
-        found_messages: List[HumanMessage] = []
+        found_messages: List[SystemMessage | HumanMessage | AIMessage] = []
+        context = self.get_agent_context(entity).context
 
-        context = self.get_agent_context(actor_entity).context
+        # 空字典不匹配任何消息
+        if not attributes:
+            return []
 
-        # 进行查找。
+        # 进行查找
         for chat_message in reversed(context) if reverse_order else context:
-
-            if not isinstance(chat_message, HumanMessage):
-                continue
-
             try:
-                # 直接从 HumanMessage 对象获取属性，而不是从嵌套的 kwargs 中获取
-                if hasattr(chat_message, attribute_key):
-                    if getattr(chat_message, attribute_key) == attribute_value:
-                        found_messages.append(chat_message)
+                # 严格匹配：消息必须有所有指定的属性，且值必须匹配
+                all_matched = True
+                for attr_key, attr_value in attributes.items():
+                    if not hasattr(chat_message, attr_key):
+                        all_matched = False
+                        break
+                    if getattr(chat_message, attr_key) != attr_value:
+                        all_matched = False
+                        break
+
+                if all_matched:
+                    found_messages.append(chat_message)
 
             except Exception as e:
-                logger.error(f"find_recent_human_message_by_attribute error: {e}")
+                logger.error(
+                    f"filter_messages_by_attributes error for {entity.name}: {e}"
+                )
                 continue
 
         return found_messages
 
     #######################################################################################################################################
-    def remove_human_messages(
+    def remove_messages(
         self,
-        actor_entity: Entity,
-        human_messages: List[HumanMessage],
+        entity: Entity,
+        messages: Sequence[BaseMessage],
     ) -> int:
-        """从实体上下文中删除指定的HumanMessage对象
+        """从实体上下文中删除指定的消息对象
 
         Args:
-            actor_entity: 要操作的实体
-            human_messages: 要删除的HumanMessage对象列表
+            entity: 要操作的实体
+            messages: 要删除的消息对象列表
 
         Returns:
             实际删除的消息数量
         """
-        if len(human_messages) == 0:
+        if len(messages) == 0:
             return 0
 
-        context = self.get_agent_context(actor_entity).context
+        context = self.get_agent_context(entity).context
         original_length = len(context)
 
-        # 删除指定的 HumanMessage 对象
-        context[:] = [msg for msg in context if msg not in human_messages]
+        # 删除指定的消息对象
+        context[:] = [msg for msg in context if msg not in messages]
 
         deleted_count = original_length - len(context)
         if deleted_count > 0:
             logger.debug(
-                f"Deleted {deleted_count} HumanMessage(s) from {actor_entity.name}'s chat history."
+                f"Deleted {deleted_count} message(s) from {entity.name}'s chat history."
             )
         return deleted_count
 
     #######################################################################################################################################
     def remove_message_range(
-        self, entity: Entity, begin_message: HumanMessage, end_message: HumanMessage
+        self,
+        entity: Entity,
+        begin_message: SystemMessage | HumanMessage | AIMessage,
+        end_message: SystemMessage | HumanMessage | AIMessage,
     ) -> List[SystemMessage | HumanMessage | AIMessage]:
         """从实体上下文中删除指定范围的消息（包含两端）
 

@@ -275,6 +275,27 @@ class DrawCardsActionSystem(ReactiveProcessor):
             self._process_draw_cards_response(found_entity, chat_client)
 
     #######################################################################################################################################
+    def _cleanup_old_draw_cards_messages(
+        self, entity: Entity, round_number: int
+    ) -> None:
+        """清理指定回合的旧抽卡消息
+
+        Args:
+            entity: 要清理消息的实体
+            round_number: 要清理的回合数
+        """
+        old_messages = self._game.filter_messages_by_attributes(
+            entity=entity,
+            attributes={"draw_cards_round_number": round_number},
+        )
+
+        if old_messages:
+            self._game.remove_messages(entity=entity, messages=old_messages)
+            logger.debug(
+                f"Removed {len(old_messages)} old draw_cards messages for {entity.name} round {round_number}"
+            )
+
+    #######################################################################################################################################
     def _process_draw_cards_response(
         self, entity: Entity, chat_client: ChatClient
     ) -> None:
@@ -317,6 +338,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
             )
 
             # 添加AI消息，包括响应内容。
+            for ai_message in chat_client.response_ai_messages:
+                setattr(ai_message, "draw_cards_round_number", current_round_number)
+
             self._game.add_ai_message(entity, chat_client.response_ai_messages)
 
             # 从DrawCardsAction获取targets
@@ -390,6 +414,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         # 获取当前回合数
         current_round_number = len(self._game.current_combat_sequence.current_rounds)
+
+        # 清理旧的抽卡消息
+        self._cleanup_old_draw_cards_messages(entity, current_round_number)
 
         # 获取角色属性信息
         combat_stats_comp = entity.get(CombatStatsComponent)

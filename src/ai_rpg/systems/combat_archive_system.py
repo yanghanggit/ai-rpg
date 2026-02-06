@@ -306,20 +306,18 @@ class CombatArchiveSystem(ExecuteProcessor):
         assert stage_entity is not None
 
         # 获取最近的战斗消息。
-        begin_messages = self._game.filter_human_messages_by_attribute(
-            actor_entity=entity,
-            attribute_key="combat_initialization",
-            attribute_value=stage_entity.name,
+        begin_messages = self._game.filter_messages_by_attributes(
+            entity=entity,
+            attributes={"combat_initialization": stage_entity.name},
         )
         assert (
             len(begin_messages) == 1
         ), f"没有找到战斗开始消息！entity: {entity.name}, stage_entity: {stage_entity.name}"
 
         # 获取最近的战斗消息。
-        end_messages = self._game.filter_human_messages_by_attribute(
-            actor_entity=entity,
-            attribute_key="combat_outcome",
-            attribute_value=stage_entity.name,
+        end_messages = self._game.filter_messages_by_attributes(
+            entity=entity,
+            attributes={"combat_outcome": stage_entity.name},
         )
         assert (
             len(end_messages) == 1

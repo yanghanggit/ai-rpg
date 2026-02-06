@@ -659,6 +659,7 @@ def ensure_all_actors_have_fallback_cards(tcg_game: TCGGame) -> Tuple[bool, str]
         tcg_game.add_human_message(
             entity=entity,
             message_content=compressed_prompt,
+            draw_cards_round_number=current_round_number,
         )
 
         # 直接构造 JSON 字符串并添加 AI 消息
@@ -674,7 +675,11 @@ def ensure_all_actors_have_fallback_cards(tcg_game: TCGGame) -> Tuple[bool, str]
 ```"""
         tcg_game.add_ai_message(
             entity,
-            [AIMessage(content=fallback_json)],
+            [
+                AIMessage(
+                    content=fallback_json, draw_cards_round_number=current_round_number
+                )
+            ],
         )
 
         fallback_count += 1

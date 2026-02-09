@@ -236,7 +236,7 @@ def _enter_dungeon_stage(
     )
 
     enhanced_kickoff_content = _enhance_kickoff_with_actors(
-        stage_kickoff_comp.content, actors_appearances_mapping
+        stage_kickoff_comp.prompt, actors_appearances_mapping
     )
 
     dungeon_stage_entity.replace(

@@ -87,7 +87,7 @@ async def start(
 
         # 重新生成world
         world_data = World(
-            runtime_index=1000,
+            entity_counter=1000,
             entities_serialization=[],
             agents_context={},
             dungeon=create_mountain_beasts_dungeon(),

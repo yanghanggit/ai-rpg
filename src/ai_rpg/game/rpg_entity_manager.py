@@ -10,7 +10,7 @@ from ..models import (
     DeathComponent,
     EntitySerialization,
     PlayerComponent,
-    RuntimeComponent,
+    IdentityComponent,
     StageComponent,
     WorldComponent,
     HomeComponent,
@@ -115,14 +115,14 @@ class RPGEntityManager(Context):
         """将实体集合序列化为可持久化的数据结构。
 
         将 Entity 对象集合转换为 EntitySerialization 列表，用于保存游戏状态、
-        网络传输或其他持久化需求。序列化过程会按 RuntimeComponent.runtime_index
+        网络传输或其他持久化需求。序列化过程会按 IdentityComponent.creation_order
         排序，确保输出顺序的一致性。
 
         Args:
             entities: 要序列化的实体集合
 
         Returns:
-            List[EntitySerialization]: 序列化后的实体数据列表，按 runtime_index 排序
+            List[EntitySerialization]: 序列化后的实体数据列表，按 creation_order 排序
         """
         entity_serializations: List[EntitySerialization] = []
 
@@ -131,7 +131,7 @@ class RPGEntityManager(Context):
         # 保证有顺序。防止set引起的顺序不一致。
         sort_actors = sorted(
             entities_copy,
-            key=lambda entity: entity.get(RuntimeComponent).runtime_index,
+            key=lambda entity: entity.get(IdentityComponent).creation_order,
         )
 
         for entity in sort_actors:

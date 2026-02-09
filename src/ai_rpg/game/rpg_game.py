@@ -26,7 +26,7 @@ from ..models import (
     EnemyComponent,
     PlayerComponent,
     CombatStatsComponent,
-    RuntimeComponent,
+    IdentityComponent,
     Stage,
     StageComponent,
     StageType,
@@ -267,11 +267,11 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             ), f"创建world_system_entity失败: {world_system_model.name}"
 
             # 必要组件：identifier
-            self._world.runtime_index += 1
+            self._world.entity_counter += 1
             world_system_entity.add(
-                RuntimeComponent,
+                IdentityComponent,
                 world_system_model.name,
-                self._world.runtime_index,
+                self._world.entity_counter,
                 str(uuid.uuid4()),
             )
 
@@ -327,11 +327,11 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             assert actor_entity is not None, f"创建actor_entity失败: {actor_model.name}"
 
             # 必要组件：identifier
-            self._world.runtime_index += 1
+            self._world.entity_counter += 1
             actor_entity.add(
-                RuntimeComponent,
+                IdentityComponent,
                 actor_model.name,
-                self._world.runtime_index,
+                self._world.entity_counter,
                 str(uuid.uuid4()),
             )
 
@@ -436,11 +436,11 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             stage_entity = self._create_entity(stage_model.name)
 
             # 必要组件: identifier
-            self._world.runtime_index += 1
+            self._world.entity_counter += 1
             stage_entity.add(
-                RuntimeComponent,
+                IdentityComponent,
                 stage_model.name,
-                self._world.runtime_index,
+                self._world.entity_counter,
                 str(uuid.uuid4()),
             )
             stage_entity.add(

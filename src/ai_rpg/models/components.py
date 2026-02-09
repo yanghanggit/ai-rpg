@@ -1,3 +1,12 @@
+"""ECS 组件定义模块
+
+定义游戏中所有实体的组件类型，包括：
+- 实体标识和生命周期管理
+- 类型标记（世界系统、场景、角色）
+- 游戏状态（战斗属性、背包、技能）
+- 阵营和行为控制
+"""
+
 from typing import List, final
 from ..entitas.components import Component, MutableComponent
 from .dungeon import Card, StatusEffect
@@ -12,52 +21,107 @@ from .registry import register_component_type
 ############################################################################################################
 @final
 @register_component_type
-class RuntimeComponent(Component):
+class IdentityComponent(Component):
+    """实体身份标识组件
+
+    为每个实体提供唯一标识和创建顺序信息，用于实体检索、序列化排序等基础功能。
+
+    Attributes:
+        name: 实体名称（游戏内可读标识）
+        creation_order: 实体创建顺序索引（用于序列化时保证顺序一致性）
+        entity_id: 实体全局唯一标识符（UUID格式）
+    """
+
     name: str
-    runtime_index: int
-    uuid: str
+    creation_order: int
+    entity_id: str
 
 
 ############################################################################################################
-# 记录kick off原始信息
 @final
 @register_component_type
 class KickOffComponent(Component):
+    """实体启动提示组件
+
+    存储实体启动时发送给 LLM 的初始化提示消息。用于生成角色的自我认知、
+    场景的环境描述或世界系统的初始状态。
+
+    Attributes:
+        name: 实体名称（实体标识）
+        prompt: 启动提示内容（发送给 LLM 的提示词）
+    """
+
     name: str
-    content: str
+    prompt: str
 
 
 ############################################################################################################
-# 标记kick off已经完成
 @final
 @register_component_type
-class KickOffDoneComponent(Component):
+class KickOffCompleteComponent(Component):
+    """实体启动完成标记组件
+
+    标记实体已完成启动初始化流程。用于筛选时排除已初始化的实体，
+    避免重复执行启动流程。同时保存 LLM 生成的初始化响应供后续使用。
+
+    Attributes:
+        name: 实体名称（实体标识）
+        initialization_result: LLM 生成的初始化响应内容
+            - 角色实体：自我认知和目标确认的文本
+            - 场景实体：环境描述的叙述文本
+            - 世界系统：系统初始状态说明
+    """
+
     name: str
-    response: str
+    initialization_result: str
 
 
 ############################################################################################################
-# 例如，世界级的entity就标记这个组件
 @final
 @register_component_type
 class WorldComponent(Component):
+    """世界系统标记组件
+
+    标记实体为世界系统类型，用于全局功能和系统级行为（如玩家行动审计）。
+
+    Attributes:
+        name: 世界系统名称
+    """
+
     name: str
 
 
 ############################################################################################################
-# 场景标记
 @final
 @register_component_type
 class StageComponent(Component):
+    """场景标记组件
+
+    标记实体为场景类型，记录场景的基础配置信息。
+
+    Attributes:
+        name: 场景名称
+        character_sheet_name: 场景配置表名称
+    """
+
     name: str
     character_sheet_name: str
 
 
 ############################################################################################################
-# 角色标记
 @final
 @register_component_type
 class ActorComponent(Component):
+    """角色标记组件
+
+    标记实体为角色类型，记录角色的基础信息和当前位置。
+
+    Attributes:
+        name: 角色名称
+        character_sheet_name: 角色配置表名称
+        current_stage: 当前所在场景名称
+    """
+
     name: str
     character_sheet_name: str
     current_stage: str
@@ -105,18 +169,32 @@ class PlayerComponent(Component):
 
 
 ############################################################################################################
-# 玩家标记
 @final
 @register_component_type
 class PlayerOnlyStageComponent(Component):
+    """玩家专属场景标记组件
+
+    标记场景为玩家专属，用于地下城结束或特殊情况下的玩家传送目标。
+
+    Attributes:
+        name: 场景名称
+    """
+
     name: str
 
 
 ############################################################################################################
-# 摧毁Entity标记
 @final
 @register_component_type
 class DestroyComponent(Component):
+    """实体销毁标记组件
+
+    标记实体需要被销毁，系统将在下一帧自动移除带有此组件的实体。
+
+    Attributes:
+        name: 实体名称
+    """
+
     name: str
 
 
@@ -139,18 +217,32 @@ class AppearanceComponent(Component):
 
 
 ############################################################################################################
-# Stage专用，标记该Stage是Home
 @final
 @register_component_type
 class HomeComponent(Component):
+    """家园场景标记组件
+
+    标记场景为家园类型，用于区分家园场景和地下城场景。
+
+    Attributes:
+        name: 场景名称
+    """
+
     name: str
 
 
 ############################################################################################################
-# Stage专用，标记该Stage是Dungeon
 @final
 @register_component_type
 class DungeonComponent(Component):
+    """地下城场景标记组件
+
+    标记场景为地下城类型，用于区分地下城场景和家园场景。
+
+    Attributes:
+        name: 场景名称
+    """
+
     name: str
 
 
@@ -232,19 +324,23 @@ class EnemyComponent(Component):
 
 
 ############################################################################################################
-
-
 @final
 @register_component_type
 class HandComponent(Component):
-    """
-    以下是针对卡牌游戏中 牌组、弃牌堆、抽牌堆、手牌 的类名设计建议，结合常见游戏术语和编程习惯：
-    方案 4：极简统一型
-    组件	类名	说明
-    牌组	Deck	直接命名为 Deck，表示通用牌组。
-    抽牌堆	DrawDeck	与 Deck 统一，通过前缀区分功能。
-    弃牌堆	DiscardDeck	同上，保持命名一致性。
-    手牌	Hand	简洁无冗余。
+    """手牌组件
+
+    存储角色当前手牌和回合信息。
+
+    备注：卡牌游戏命名规则
+        - 牌组：Deck
+        - 抽牌堆：DrawDeck
+        - 弃牌堆：DiscardDeck
+        - 手牌：Hand
+
+    Attributes:
+        name: 角色名称
+        cards: 手牌列表
+        round: 当前回合数
     """
 
     name: str
@@ -253,31 +349,54 @@ class HandComponent(Component):
 
 
 ############################################################################################################
-# 死亡标记
 @final
 @register_component_type
 class DeathComponent(Component):
+    """死亡标记组件
+
+    标记角色实体已死亡，用于战斗系统中排除死亡角色。
+
+    Attributes:
+        name: 角色名称
+    """
+
     name: str
 
 
 ############################################################################################################
-# 新版本的重构！
 @final
 @register_component_type
 class CombatStatsComponent(MutableComponent):
+    """战斗属性组件
+
+    存储角色的战斗属性和状态效果，用于战斗系统计算。
+
+    Attributes:
+        name: 角色名称
+        stats: 角色属性（生命值、攻击力、防御力等）
+        status_effects: 状态效果列表
+    """
+
     name: str
     stats: CharacterStats
     status_effects: List[StatusEffect]
 
 
 ############################################################################################################
-
-
 @final
 @register_component_type
 class InventoryComponent(MutableComponent):
+    """背包组件
+
+    存储角色的物品列表，提供物品查询功能。
+
+    Attributes:
+        name: 角色名称
+        items: 物品列表
+    """
+
     name: str
-    items: List[Item]  # 物品列表，存储物品名称
+    items: List[Item]
 
     # 获取物品
     def find_item(self, item_name: str) -> Item | None:
@@ -299,8 +418,17 @@ class InventoryComponent(MutableComponent):
 @final
 @register_component_type
 class SkillBookComponent(MutableComponent):
+    """技能书组件
+
+    存储角色的技能列表，提供技能查询功能。
+
+    Attributes:
+        name: 角色名称
+        skills: 技能列表
+    """
+
     name: str
-    skills: List[Skill]  # 技能列表
+    skills: List[Skill]
 
     # 查找技能
     def find_skill(self, skill_name: str) -> Skill | None:

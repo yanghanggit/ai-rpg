@@ -52,7 +52,7 @@ from ai_rpg.models import (
     World,
     ActorComponent,
     AllyComponent,
-    KickOffDoneComponent,
+    KickOffCompleteComponent,
     PlayerComponent,
     HomeComponent,
 )
@@ -148,7 +148,7 @@ async def _run_game(
 
         # 如果world不存在，说明是第一次创建游戏
         world_data = World(
-            runtime_index=1000,
+            entity_counter=1000,
             entities_serialization=[],
             agents_context={},
             dungeon=create_training_dungeon(),
@@ -370,7 +370,7 @@ def _get_planning_actor_names(terminal_game: TCGGame) -> List[str]:
     获取所有符合条件的可以发起计划的角色名称列表。
 
     筛选条件（参考 HomeAutoPlanSystem）：
-    - 必须有 ActorComponent, AllyComponent, KickOffDoneComponent
+    - 必须有 ActorComponent, AllyComponent, KickOffCompleteComponent
     - 不能有 PlayerComponent
     - 必须在带有 HomeComponent 的场景中
 
@@ -385,7 +385,7 @@ def _get_planning_actor_names(terminal_game: TCGGame) -> List[str]:
     # 获取所有需要进行角色规划的角色
     planning_actors = terminal_game.get_group(
         Matcher(
-            all_of=[ActorComponent, AllyComponent, KickOffDoneComponent],
+            all_of=[ActorComponent, AllyComponent, KickOffCompleteComponent],
             none_of=[PlayerComponent],
         )
     ).entities.copy()

@@ -16,7 +16,7 @@ from ..game.rpg_game import RPGGame
 from ..models import (
     ActorComponent,
     StageDescriptionComponent,
-    KickOffDoneComponent,
+    KickOffCompleteComponent,
     KickOffComponent,
     StageComponent,
     WorldComponent,
@@ -124,7 +124,7 @@ class KickOffSystem(ExecuteProcessor):
 
                     # 标记为已完成
                     entity.replace(
-                        KickOffDoneComponent,
+                        KickOffCompleteComponent,
                         entity.name,
                         ai_messages[0].content if ai_messages else "",
                     )
@@ -331,7 +331,7 @@ class KickOffSystem(ExecuteProcessor):
 
             # 必须执行
             processed_entity.replace(
-                KickOffDoneComponent,
+                KickOffCompleteComponent,
                 processed_entity.name,
                 chat_client.response_content,
             )
@@ -351,7 +351,7 @@ class KickOffSystem(ExecuteProcessor):
         """筛选需要执行 kickoff 的有效实体
 
         筛选规则：
-            1. 包含 KickOffComponent 且未包含 KickOffDoneComponent
+            1. 包含 KickOffComponent 且未包含 KickOffCompleteComponent
             2. 必须是 Actor、Stage 或 WorldSystem 类型之一
             3. KickOffComponent 的内容不为空（敌人实体例外）
 
@@ -363,7 +363,7 @@ class KickOffSystem(ExecuteProcessor):
             Matcher(
                 all_of=[KickOffComponent],
                 any_of=[ActorComponent, StageComponent, WorldComponent],
-                none_of=[KickOffDoneComponent],
+                none_of=[KickOffCompleteComponent],
             )
         ).entities.copy()
 
@@ -372,7 +372,7 @@ class KickOffSystem(ExecuteProcessor):
         for entity in candidate_entities:
             # 检查消息内容是否有效
             kick_off_message_comp = entity.get(KickOffComponent)
-            if kick_off_message_comp is None or kick_off_message_comp.content == "":
+            if kick_off_message_comp is None or kick_off_message_comp.prompt == "":
                 logger.info(
                     f"KickOffSystem: {entity.name} kick off message is empty, skipping"
                 )
@@ -401,8 +401,8 @@ class KickOffSystem(ExecuteProcessor):
         kick_off_message_comp = entity.get(KickOffComponent)
         assert kick_off_message_comp is not None
         assert (
-            kick_off_message_comp.content != ""
+            kick_off_message_comp.prompt != ""
         ), "KickOff message content should not be empty"
-        return kick_off_message_comp.content
+        return kick_off_message_comp.prompt
 
     ###############################################################################################################################################

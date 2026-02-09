@@ -33,7 +33,7 @@ class AgentContext(BaseModel):
 # 生成世界的运行时文件，记录世界的状态
 @final
 class World(BaseModel):
-    runtime_index: int
+    entity_counter: int
     entities_serialization: List[EntitySerialization]
     agents_context: Dict[str, AgentContext]
     dungeon: Dungeon

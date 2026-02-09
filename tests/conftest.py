@@ -37,7 +37,7 @@ def sample_game() -> Any:
     )
     dungeon = Dungeon(name="", stages=[], description="")
     world = World(
-        runtime_index=1000,
+        entity_counter=1000,
         entities_serialization=[],
         agents_context={},
         dungeon=dungeon,

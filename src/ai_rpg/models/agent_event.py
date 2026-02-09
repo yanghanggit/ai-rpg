@@ -1,3 +1,13 @@
+"""游戏事件定义模块
+
+定义游戏中 AI Agent 的所有事件类型，包括：
+- 通信事件（说话、耳语、公告、心灵语音）
+- 场景事件（场景转换）
+- 战斗事件（战斗发起、裁决、归档）
+
+事件用于记录和传递角色行为信息，支持游戏叙事和历史追溯。
+"""
+
 from enum import IntEnum, unique
 from overrides import final
 from pydantic import BaseModel

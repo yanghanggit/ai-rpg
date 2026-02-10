@@ -1,5 +1,10 @@
-import random
-from typing import Final, Optional
+"""
+TCG 游戏核心实现
+
+融合交易卡牌战斗机制的 RPG 游戏，包含地下城探险、战斗系统和流程管道管理。
+"""
+
+from typing import Final
 from loguru import logger
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 from .rpg_game import RPGGame
@@ -12,10 +17,8 @@ from ..game.tcg_game_process_pipeline import (
 )
 from ..models import (
     Dungeon,
-    DungeonComponent,
     CombatSequence,
     World,
-    Round,
     HandComponent,
     StageType,
     ActorType,
@@ -185,53 +188,6 @@ class TCGGame(RPGGame):
             destroy_stage_entity = self.get_stage_entity(stage.name)
             if destroy_stage_entity is not None:
                 self.destroy_entity(destroy_stage_entity)
-
-    #######################################################################################################################################
-    def create_next_round(self) -> Optional[Round]:
-        """创建并初始化下一个战斗回合
-
-        Returns:
-            成功创建的回合对象，如果无法创建则返回None
-        """
-        if not self.current_combat_sequence.is_ongoing:
-            logger.warning("当前没有进行中的战斗，不能设置回合。")
-            return None
-
-        if (
-            len(self.current_combat_sequence.current_rounds) > 0
-            and not self.current_combat_sequence.latest_round.is_completed
-        ):
-            # 有回合正在进行中，所以不能添加新的回合。
-            logger.warning("有回合正在进行中，所以不能添加新的回合。")
-            return None
-
-        # 玩家角色
-        player_entity = self.get_player_entity()
-        assert player_entity is not None, "player_entity is None"
-
-        # 所有角色
-        actors_on_stage = self.get_alive_actors_on_stage(player_entity)
-        assert len(actors_on_stage) > 0, "actors_on_stage is empty"
-
-        # 当前舞台(必然是地下城！)
-        stage_entity = self.resolve_stage_entity(player_entity)
-        assert stage_entity is not None, "stage_entity is None"
-        assert stage_entity.has(DungeonComponent), "stage_entity 没有 DungeonComponent"
-
-        # TODO 随机打乱角色行动顺序
-        shuffled_reactive_entities = list(actors_on_stage)
-        random.shuffle(shuffled_reactive_entities)
-
-        # 设置回合的环境描写
-        action_order = [entity.name for entity in shuffled_reactive_entities]
-        round = Round(
-            action_order=action_order,
-        )
-        self.current_combat_sequence.current_combat.rounds.append(round)
-        # logger.debug(
-        #     f"新的回合开始 = {len(self.current_combat_sequence.current_rounds)}"
-        # )
-        return round
 
     ################################################################################################################
     def clear_hands(self) -> None:

@@ -224,17 +224,10 @@ class DrawCardsActionSystem(ReactiveProcessor):
             # 阶段不对，直接返回
             return
 
-        last_round = self._game.current_combat_sequence.latest_round
-        if last_round.is_completed:
-            logger.debug(f"last_round.has_ended, so setup new round")
-            self._game.create_next_round()
-
-        # logger.debug(
-        #     f"当前回合数: {len(self._game.current_combat_sequence.current_rounds)}"
-        # )
+        # 验证回合已创建（回合创建已在 CombatRoundCreationSystem 中完成）
         assert (
             len(self._game.current_combat_sequence.current_rounds) > 0
-        ), "当前没有进行中的战斗，不能设置回合。"
+        ), "当前回合未创建，检查 CombatRoundCreationSystem 是否正常执行"
 
         # 清除所有参与角色的旧手牌，准备重新生成新手牌
         for entity in entities:

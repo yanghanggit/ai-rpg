@@ -258,13 +258,8 @@ class CombatInitializationSystem(ExecuteProcessor):
         # 第三步：解析并更新每个角色的状态效果
         self._record_ai_responses(chat_clients)
 
-        # 设置战斗为进行中
+        # 设置战斗为进行中（第一回合将由 CombatRoundCreationSystem 创建）
         self._game.current_combat_sequence.transition_to_ongoing()
-
-        # 设置第一回合
-        if not self._game.create_next_round():
-            logger.error(f"not web_game.setup_round()")
-            assert False, "无法启动战斗的第一回合！"
 
     ###################################################################################################################################################################
     def _generate_chat_clients_for_all_actors(

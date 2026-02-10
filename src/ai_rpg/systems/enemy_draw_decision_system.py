@@ -42,11 +42,11 @@ class EnemyDecisionResponse(BaseModel):
 
 #######################################################################################################################################
 def _generate_enemy_decision_prompt(
-    # actor_name: str,
     available_skills: List[Skill],
     available_targets: List[str],
     actor_status_effects: List[StatusEffect],
     current_round: int,
+    action_order: List[str],
 ) -> str:
     """
     生成敌人战术决策提示词（基于感知的决策）
@@ -61,6 +61,7 @@ def _generate_enemy_decision_prompt(
         available_targets: 场景内所有存活角色名称列表（包括自己/队友/敌人）
         actor_status_effects: 系统分配的状态效果列表（不可修改，必须适应）
         current_round: 当前回合数
+        action_order: 本回合的行动顺序
 
     Returns:
         str: 格式化的完整提示词
@@ -85,6 +86,13 @@ def _generate_enemy_decision_prompt(
     else:
         effects_text = "无"
 
+    # 格式化行动顺序
+    if action_order:
+        order_items = [f"{i}. {name}" for i, name in enumerate(action_order, 1)]
+        action_order_text = "\n".join(order_items)
+    else:
+        action_order_text = "未知（回合尚未开始）"
+
     return f"""# 指令！第{current_round}回合战术决策（JSON格式）
 
 基于历史战斗记录推断战况并制定战术。
@@ -101,13 +109,19 @@ def _generate_enemy_decision_prompt(
 
 {effects_text}
 
+## 本回合行动顺序
+
+{action_order_text}
+
+**执行机制**：按此顺序依次行动，先手行动可能影响后手（如造成死亡打断后续行动）。
+
 ## 输出格式
 
 ```json
 {{
   "selected_skill_name": "选择应对状态效果的技能",
   "selected_targets": ["选择合适的目标"],
-  "reasoning": "如何应对这个状态效果（字数<100）"
+  "reasoning": "战术理由（考虑状态效果，字数<100）"
 }}
 ```"""
 
@@ -213,13 +227,19 @@ class EnemyDrawDecisionSystem(ReactiveProcessor):
         ), f"Entity {entity.name} must have DrawCardsAction"
         actor_status_effects = draw_cards_action.status_effects
 
+        # 获取行动顺序（pipeline 顺序保证了 CombatRoundCreationSystem 已创建回合）
+        assert (
+            len(self._game.current_combat_sequence.current_rounds) > 0
+        ), "CombatRoundCreationSystem 应在 EnemyDrawDecisionSystem 之前创建回合"
+        action_order = self._game.current_combat_sequence.latest_round.action_order
+
         # 生成提示词（基于感知而非数值）
         prompt = _generate_enemy_decision_prompt(
-            # actor_name=entity.name,
             available_skills=available_skills,
             available_targets=available_targets,
             actor_status_effects=actor_status_effects,
             current_round=current_round,
+            action_order=action_order,
         )
 
         # 创建并返回聊天客户端

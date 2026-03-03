@@ -202,7 +202,7 @@ class DungeonCombatDrawCardsResponse(BaseModel):
 
 @final
 class DungeonStateResponse(BaseModel):
-    mapping: Dict[str, List[str]]
+    # mapping: Dict[str, List[str]]
     dungeon: Dungeon
 
 

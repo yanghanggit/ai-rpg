@@ -9,6 +9,8 @@ from loguru import logger
 from .game_server_dependencies import CurrentGameServer
 from ..models import (
     DungeonStateResponse,
+    DungeonCombatResponse,
+    Combat,
 )
 
 ###################################################################################################################################################################
@@ -66,12 +68,72 @@ async def get_dungeon_state(
     # 获取 TCG 游戏实例
     rpg_game = current_room._tcg_game
 
-    # 获取场景与角色的分布映射
-    # mapping_data = rpg_game.get_actors_by_stage_as_names()
-    # logger.info(f"view_dungeon: {user_name} mapping_data: {mapping_data}")
-
     # 返回副本状态
     return DungeonStateResponse(
-        # mapping=mapping_data,
         dungeon=rpg_game.current_dungeon,
+        # combat=Combat(name=""),
     )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@dungeon_state_api_router.get(
+    path="/api/dungeons/v1/{user_name}/{game_name}/combat",
+    response_model=DungeonCombatResponse,
+)
+async def get_dungeon_combat(
+    game_server: CurrentGameServer,
+    user_name: str,
+    game_name: str,
+) -> DungeonCombatResponse:
+    """查询副本战斗状态接口
+
+    查询 TCG 游戏中当前副本的战斗状态信息，包括当前战斗对象。
+
+    Args:
+        game_server: 游戏服务器实例
+        user_name: 用户名
+        game_name: 游戏名称
+
+    Returns:
+        DungeonCombatResponse: 包含当前战斗对象的响应
+
+    Raises:
+        HTTPException(404): 用户房间或游戏实例不存在
+    """
+
+    logger.info(
+        f"/dungeons/v1/{user_name}/{game_name}/combat: {user_name}, {game_name}"
+    )
+
+    # 检查房间是否存在
+    if not game_server.has_room(user_name):
+        logger.error(f"get_dungeon_combat: {user_name} has no room")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有房间",
+        )
+
+    # 获取房间实例并检查 TCG 游戏是否存在
+    current_room = game_server.get_room(user_name)
+    assert current_room is not None, "get_dungeon_combat: room instance is None"
+    if current_room._tcg_game is None:
+        logger.error(f"get_dungeon_combat: {user_name} has no game")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有游戏",
+        )
+
+    # 获取 TCG 游戏实例
+    rpg_game = current_room._tcg_game
+
+    # 获取当前战斗；若战斗序列为空则返回空 Combat
+    combat_sequence = rpg_game.current_combat_sequence
+    current_combat = (
+        combat_sequence.current_combat
+        if len(combat_sequence.combats) > 0
+        else Combat(name="")
+    )
+
+    return DungeonCombatResponse(combat=current_combat)

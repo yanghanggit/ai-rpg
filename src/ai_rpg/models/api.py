@@ -2,7 +2,7 @@ from enum import StrEnum, unique
 from typing import Dict, List, final
 from pydantic import BaseModel
 from .session_message import SessionMessage
-from .dungeon import Dungeon
+from .dungeon import Dungeon, Combat
 from .serialization import EntitySerialization
 from .task import TaskRecord
 from .world import Blueprint
@@ -202,8 +202,17 @@ class DungeonCombatDrawCardsResponse(BaseModel):
 
 @final
 class DungeonStateResponse(BaseModel):
-    # mapping: Dict[str, List[str]]
     dungeon: Dungeon
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+
+@final
+class DungeonCombatResponse(BaseModel):
+    combat: Combat
 
 
 ################################################################################################################

@@ -422,6 +422,14 @@ async def dungeon_combat_draw_cards(
             detail="战斗未在进行中",
         )
 
+    # 如果既没有指定抽牌动作，也没有启用敌人抽牌，则返回错误
+    if len(payload.specified_actions) == 0 and not payload.enable_enemy_draw:
+        logger.error(f"抽牌失败: 没有指定任何抽牌动作且未启用敌人抽牌")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"抽牌失败: 没有指定任何抽牌动作且未启用敌人抽牌",
+        )
+
     # 为所有角色激活抽牌动作, 这2个函数内部不会进行LLM调用, 只是设置状态
     # 处理 Ally 阵营的抽牌 指定抽取：遍历每个指定动作
     for expedition_member_action in payload.specified_actions:
@@ -482,16 +490,29 @@ async def dungeon_combat_draw_cards(
                 detail=f"激活抽牌动作失败: {message}",
             )
 
-    # 敌人的就用随机（根据标记控制是否执行）
+    # 敌人的就用随机（根据标记控制是否执行）, 所有的敌人都加。
     if payload.enable_enemy_draw:
+
         player_entity = rpg_game.get_player_entity()
         assert (
             player_entity is not None
         ), "activate_random_enemy_card_draws: player_entity is None"
+
+        # 获取当前场景中所有存活的敌人和远征队成员，确保至少有一个目标可以抽牌
         enemies = get_alive_enemies_on_stage(player_entity, rpg_game)
         expedition_members = get_alive_expedition_members_on_stage(
             player_entity, rpg_game
         )
+
+        # 如果当前场景中没有敌人和远征队成员，则无法执行抽牌，返回错误
+        if len(enemies) + len(expedition_members) == 0:
+            logger.error(f"Enemy抽牌失败: 当前场景没有敌人和远征队成员")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"激活Enemy抽牌动作失败: 当前场景没有敌人和远征队成员",
+            )
+
+        # 激活敌人抽牌动作，内部会为每个敌人随机选择一个技能并随机选择目标
         success, message = activate_random_enemy_card_draws(enemies, expedition_members)
         if not success:
             logger.error(f"Enemy抽牌失败: {message}")
@@ -553,20 +574,6 @@ async def dungeon_combat_play_cards(
     """
 
     logger.info(f"/api/dungeon/combat/play_cards/v1/: user={payload.user_name}")
-
-    # 验证地下城操作的前置条件
-    # rpg_game = _validate_dungeon_prerequisites(
-    #     user_name=payload.user_name,
-    #     game_server=game_server,
-    # )
-
-    # 验证战斗状态
-    # if not rpg_game.current_combat_sequence.is_ongoing:
-    #     logger.error(f"玩家 {payload.user_name} 出牌失败: 战斗未在进行中")
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail="战斗未在进行中",
-    #     )
 
     # 创建出牌后台任务
     play_cards_task = game_server.create_task()

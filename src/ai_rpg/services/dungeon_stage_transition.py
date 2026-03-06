@@ -221,6 +221,22 @@ def _enter_dungeon_stage(
                 dungeon_lifecycle_stage_advance=f"{dungeon.name}:{dungeon_stage_entity.name}",
             )
 
+        if ally_entity.has(DeathComponent):
+
+            # 移除死亡组件, 关卡穿越不应该带着死亡状态进入新的关卡
+            if ally_entity.has(DeathComponent):
+
+                logger.info(f"移除死亡组件: {ally_entity.name}")
+                ally_entity.remove(DeathComponent)
+
+                # 恢复生命值至满血
+                assert ally_entity.has(CombatStatsComponent)
+                combat_stats = ally_entity.get(CombatStatsComponent)
+                combat_stats.stats.hp = 1
+                logger.info(
+                    f"恢复生命值: {ally_entity.name} 生命值 = {combat_stats.stats.hp}/{combat_stats.stats.max_hp}"
+                )
+
     # 4. 执行场景传送
     tcg_game.stage_transition(ally_entities, dungeon_stage_entity)
 
@@ -290,19 +306,21 @@ def initialize_dungeon_first_entry(tcg_game: TCGGame, dungeon: Dungeon) -> bool:
     tcg_game.setup_dungeon_entities(dungeon)
 
     # 选择远征队成员（玩家 + 最多1个随机盟友）
-    ally_entities = _select_expedition_members(tcg_game)
+    expedition_member_entities = _select_expedition_members(tcg_game)
 
     # 将选中的成员添加到远征队
-    for ally_entity in ally_entities:
-        ally_entity.replace(
+    for expedition_ally in expedition_member_entities:
+        expedition_ally.replace(
             ExpeditionMemberComponent,
-            ally_entity.name,
+            expedition_ally.name,
             dungeon.name,
         )
-        logger.debug(f"将 {ally_entity.name} 加入远征队，目标地下城：{dungeon.name}")
+        logger.debug(
+            f"将 {expedition_ally.name} 加入远征队，目标地下城：{dungeon.name}"
+        )
 
     # 推进到第一关
-    return _enter_dungeon_stage(tcg_game, dungeon, ally_entities)
+    return _enter_dungeon_stage(tcg_game, dungeon, expedition_member_entities)
 
 
 ###################################################################################################################################################################
@@ -433,8 +451,8 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
         combat_stats.status_effects.clear()
         logger.info(f"清空状态效果: {expedition_entity.name}")
 
-    # 7. 解散远征队（移除 ExpeditionMemberComponent）
-    for expedition_entity in expedition_entities:
+        # 解散远征队，移除ExpeditionMemberComponent组件
+        assert expedition_entity.has(ExpeditionMemberComponent)
         expedition_entity.remove(ExpeditionMemberComponent)
         logger.info(f"从远征队移除: {expedition_entity.name}")
 

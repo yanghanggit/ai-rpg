@@ -37,8 +37,8 @@ from ai_rpg.utils import parse_command_args
 from ai_rpg.game.config import GAME_1, WORLDS_DIR, setup_logger
 from ai_rpg.entitas import Matcher
 from ai_rpg.demo import (
-    create_single_hunter_blueprint,
-    create_training_dungeon,
+    create_hunter_mystic_blueprint,
+    create_mountain_beasts_dungeon,
 )
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import (
@@ -62,7 +62,8 @@ from ai_rpg.services.home_actions import (
     activate_plan_action,
 )
 from ai_rpg.services.dungeon_actions import (
-    activate_random_ally_card_draws,
+    get_alive_expedition_members_on_stage,
+    activate_random_expedition_member_card_draws,
     activate_random_play_cards,
     retreat_from_dungeon_combat,
     ensure_all_actors_have_fallback_cards,
@@ -143,7 +144,7 @@ async def _run_game(
     if world_data is None:
 
         # 获取world_blueprint
-        world_blueprint = create_single_hunter_blueprint(game)
+        world_blueprint = create_hunter_mystic_blueprint(game)
         assert world_blueprint is not None, "world blueprint 反序列化失败"
 
         # 如果world不存在，说明是第一次创建游戏
@@ -151,7 +152,7 @@ async def _run_game(
             entity_counter=1000,
             entities_serialization=[],
             agents_context={},
-            dungeon=create_training_dungeon(),
+            dungeon=create_mountain_beasts_dungeon(),
             blueprint=world_blueprint,
         )
 
@@ -231,7 +232,14 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             return
 
         # 为所有角色激活抽牌动作，全部随机选择
-        success, message = activate_random_ally_card_draws(terminal_game)
+        player_entity = terminal_game.get_player_entity()
+        assert player_entity is not None, "/dc: player_entity is None"
+        expedition_members = get_alive_expedition_members_on_stage(
+            player_entity, terminal_game
+        )
+        success, message = activate_random_expedition_member_card_draws(
+            expedition_members, terminal_game
+        )
         if not success:
             logger.error(f"激活Ally抽牌失败: {message}")
             return
@@ -292,7 +300,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         )
 
         # 归档战斗记录（使用 pipeline）
-        # await terminal_game.combat_archive_pipeline.execute()
+        await terminal_game.combat_archive_pipeline.execute()
 
         # 进入战斗后准备状态
         terminal_game.current_combat_sequence.transition_to_post_combat()
@@ -350,7 +358,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         await terminal_game.combat_execution_pipeline.execute()
 
         # 战斗压缩存档
-        # await terminal_game.combat_archive_pipeline.execute()
+        await terminal_game.combat_archive_pipeline.execute()
 
         # 正常流程结束战斗！
         terminal_game.current_combat_sequence.transition_to_post_combat()

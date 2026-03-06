@@ -30,7 +30,7 @@ from .dungeon_stage_transition import (
 )
 from .dungeon_actions import (
     activate_random_enemy_card_draws,
-    activate_specified_ally_card_draws,
+    activate_specified_expedition_member_card_draws,
     activate_random_play_cards,
     retreat_from_dungeon_combat,
     ensure_all_actors_have_fallback_cards,
@@ -414,7 +414,7 @@ async def dungeon_combat_draw_cards(
     # 为所有角色激活抽牌动作, 这2个函数内部不会进行LLM调用, 只是设置状态
     # 处理 Ally 阵营的抽牌 指定抽取：遍历每个指定动作
     for action in payload.specified_actions:
-        success, message = activate_specified_ally_card_draws(
+        success, message = activate_specified_expedition_member_card_draws(
             entity_name=action.entity_name,
             tcg_game=rpg_game,
             skill_name=action.skill_name,

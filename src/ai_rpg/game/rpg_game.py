@@ -543,7 +543,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         if stage_entity is None:
             return
 
-        need_broadcast_entities = self.get_alive_actors_on_stage(stage_entity)
+        need_broadcast_entities = self.get_actors_on_stage(stage_entity)
         need_broadcast_entities.add(stage_entity)
 
         if len(exclude_entities) > 0:

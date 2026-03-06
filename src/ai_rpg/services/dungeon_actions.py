@@ -13,7 +13,6 @@ from ..models import (
     DrawCardsAction,
     HandComponent,
     PlayCardsAction,
-    Skill,
     SkillBookComponent,
     ExpeditionMemberComponent,
     EnemyComponent,
@@ -44,150 +43,94 @@ def _generate_retreat_message(dungeon_name: str, stage_name: str) -> str:
 
 
 ###################################################################################################################################################################
-def _get_available_skills(entity: Entity) -> List[Skill]:
-    """获取实体可用的技能列表
+def get_alive_expedition_members_on_stage(
+    anchor_entity: Entity, tcg_game: TCGGame
+) -> List[Entity]:
+    """获取锹点实体所在场景中所有存活的远征队成员
+
+    以 anchor_entity 定位其所在场景，然后在该场景中筛选所有带
+    ExpeditionMemberComponent 的存活实体。玩家实体是常用的锹点，
+    但任意处于场景中的实体均可作为 anchor。
 
     Args:
-        entity: 目标实体
-
-    Returns:
-        实体的所有可用技能列表
-    """
-    skill_book_comp = entity.get(SkillBookComponent)
-    assert skill_book_comp is not None, "Entity must have SkillBookComponent"
-
-    if len(skill_book_comp.skills) == 0:
-        logger.warning(f"entity {entity.name} has no skills in SkillBookComponent")
-        assert False, "Entity has no skills in SkillBookComponent"
-
-    return skill_book_comp.skills.copy()
-
-
-###################################################################################################################################################################
-def get_enemy_targets_for_ally(entity: Entity, tcg_game: TCGGame) -> List[str]:
-    """获取ally阵营角色的敌方目标列表
-
-    站在ally视角，返回场景内所有带EnemyComponent的实体名称列表。
-    用于为ally角色的DrawCardsAction填充targets字段。
-
-    Args:
-        entity: ally阵营的角色实体
+        anchor_entity: 用于定位场景的锹点实体
         tcg_game: TCG游戏实例
 
     Returns:
-        敌方实体名称列表
+        存活的远征队成员实体列表
     """
-    assert entity.has(
-        ExpeditionMemberComponent
-    ), f"Entity {entity.name} must have ExpeditionMemberComponent"
-
-    # 获取entity所在场景的所有存活角色
-    actor_entities = tcg_game.get_alive_actors_on_stage(entity)
-
-    # 筛选所有enemy阵营的实体
-    enemy_targets = [
-        actor.name for actor in actor_entities if actor.has(EnemyComponent)
+    actor_entities = tcg_game.get_alive_actors_on_stage(anchor_entity)
+    return [
+        entity for entity in actor_entities if entity.has(ExpeditionMemberComponent)
     ]
-
-    return enemy_targets
 
 
 ###################################################################################################################################################################
-def get_ally_targets_for_enemy(entity: Entity, tcg_game: TCGGame) -> List[str]:
-    """获取enemy阵营角色的敌方目标列表
-
-    站在enemy视角，返回场景内所有带ExpeditionMemberComponent的实体名称列表。
-    用于enemy角色的DrawCardsAction填充targets字段。
+def activate_random_expedition_member_card_draws(
+    expedition_member_entities: List[Entity], tcg_game: TCGGame
+) -> Tuple[bool, str]:
+    """
+    为指定的远征队成员列表激活抽牌动作（随机选择技能和状态效果）
 
     Args:
-        entity: enemy阵营的角色实体
-        tcg_game: TCG游戏实例
-
-    Returns:
-        敌方实体名称列表
-    """
-    assert entity.has(EnemyComponent), f"Entity {entity.name} must have EnemyComponent"
-
-    # 获取entity所在场景的所有存活角色
-    actor_entities = tcg_game.get_alive_actors_on_stage(entity)
-
-    # 筛选所有ally阵营的实体
-    ally_targets = [
-        actor.name for actor in actor_entities if actor.has(ExpeditionMemberComponent)
-    ]
-
-    return ally_targets
-
-
-###################################################################################################################################################################
-def activate_random_ally_card_draws(tcg_game: TCGGame) -> Tuple[bool, str]:
-    """
-    为场上所有存活的Ally阵营角色激活抽牌动作（随机选择技能和状态效果）
-
-    Args:
+        expedition_member_entities: 需要激活抽牌的远征队成员实体列表
         tcg_game: TCG游戏实例
 
     Returns:
         tuple[bool, str]: (是否成功, 结果消息)
     """
 
-    player_entity = tcg_game.get_player_entity()
-    if player_entity is None:
-        error_msg = "激活Ally抽牌失败: 玩家实体不存在"
+    if len(expedition_member_entities) == 0:
+        error_msg = "激活远征队成员抽牌失败: 没有存活的远征队成员"
         logger.error(error_msg)
         return False, error_msg
 
-    # 获取场上所有存活的角色
-    actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
-
-    # 筛选远征队成员
-    ally_entities = [
-        entity for entity in actor_entities if entity.has(ExpeditionMemberComponent)
-    ]
-
-    if len(ally_entities) == 0:
-        error_msg = "激活Ally抽牌失败: 没有存活的Ally角色"
-        logger.error(error_msg)
-        return False, error_msg
+    # 获取场上所有存活角色（用于计算敌方目标）
+    actor_entities = tcg_game.get_alive_actors_on_stage(expedition_member_entities[0])
 
     activated_count = 0
 
-    # 为每个Ally角色添加抽牌动作组件
-    for entity in ally_entities:
+    # 为每个远征队成员添加抽牌动作组件
+    for entity in expedition_member_entities:
 
         # 跳过已经有抽牌动作的角色
         if entity.has(DrawCardsAction):
             logger.warning(
-                f"Entity {entity.name} already has DrawCardsAction, skipping activation"
+                f"Entity {entity.name} already has DrawCardsAction, so will be overwritten by new DrawCardsAction"
             )
-            continue
 
         # 获取可用技能列表
-        available_skills = _get_available_skills(entity)
-        if len(available_skills) == 0:
-            error_msg = f"激活Ally抽牌失败: 角色 {entity.name} 没有可用技能"
-            logger.error(error_msg)
-            return False, error_msg
+        assert entity.has(
+            SkillBookComponent
+        ), f"Entity {entity.name} must have SkillBookComponent"
+        skill_book_comp = entity.get(SkillBookComponent)
+        assert (
+            len(skill_book_comp.skills) > 0
+        ), f"Entity {entity.name} has no skills in SkillBookComponent"
+        available_skills = skill_book_comp.skills.copy()
 
         # 随机选择一个技能作为初始技能
         selected_skill = random.choice(available_skills)
 
         # 获取敌方目标列表
-        targets = get_enemy_targets_for_ally(entity, tcg_game)
+        targets = [actor.name for actor in actor_entities if actor.has(EnemyComponent)]
 
         # 随机一个target,然后组成[]
         if len(targets) > 0:
             targets = [random.choice(targets)]
 
         # 获取角色当前所有的状态效果
+        assert entity.has(
+            CombatStatsComponent
+        ), f"Entity {entity.name} must have CombatStatsComponent"
         combat_stats = entity.get(CombatStatsComponent)
-        status_effects = combat_stats.status_effects.copy() if combat_stats else []
+        status_effects = combat_stats.status_effects.copy()
 
         # 随机从全部中选择一个，然后组成[]
         if len(status_effects) > 0:
             status_effects = [random.choice(status_effects)]
 
-        # 目前传随机状态效果列表
+        # 以上 DrawCardsAction 所需的数据全部准备完成，下面添加组件。
         entity.replace(
             DrawCardsAction,
             entity.name,
@@ -197,11 +140,11 @@ def activate_random_ally_card_draws(tcg_game: TCGGame) -> Tuple[bool, str]:
         )
         activated_count += 1
 
-    return True, f"成功为{activated_count}个Ally角色激活抽牌动作"
+    return True, f"成功为{activated_count}个远征队成员激活抽牌动作"
 
 
 ###################################################################################################################################################################
-def activate_specified_ally_card_draws(
+def activate_specified_expedition_member_card_draws(
     entity_name: str,
     tcg_game: TCGGame,
     skill_name: str,
@@ -261,7 +204,13 @@ def activate_specified_ally_card_draws(
     alive_actor_names = {actor.name for actor in actor_entities}
 
     # 1. 验证并获取指定的技能
-    available_skills = _get_available_skills(entity)
+    skill_book_comp = entity.get(SkillBookComponent)
+    assert skill_book_comp is not None, "Entity must have SkillBookComponent"
+    if len(skill_book_comp.skills) == 0:
+        logger.warning(f"entity {entity.name} has no skills in SkillBookComponent")
+        assert False, "Entity has no skills in SkillBookComponent"
+
+    available_skills = skill_book_comp.skills.copy()
     selected_skill = None
     for skill in available_skills:
         if skill.name == skill_name:
@@ -356,7 +305,13 @@ def activate_random_enemy_card_draws(tcg_game: TCGGame) -> Tuple[bool, str]:
             continue
 
         # 获取可用技能列表
-        available_skills = _get_available_skills(entity)
+        skill_book_comp = entity.get(SkillBookComponent)
+        assert skill_book_comp is not None, "Entity must have SkillBookComponent"
+        if len(skill_book_comp.skills) == 0:
+            logger.warning(f"entity {entity.name} has no skills in SkillBookComponent")
+            assert False, "Entity has no skills in SkillBookComponent"
+
+        available_skills = skill_book_comp.skills.copy()
         if len(available_skills) == 0:
             error_msg = f"激活Enemy抽牌失败: 角色 {entity.name} 没有可用技能"
             logger.error(error_msg)
@@ -366,7 +321,11 @@ def activate_random_enemy_card_draws(tcg_game: TCGGame) -> Tuple[bool, str]:
         selected_skill = random.choice(available_skills)
 
         # 获取敌方目标列表
-        targets = get_ally_targets_for_enemy(entity, tcg_game)
+        targets = [
+            actor.name
+            for actor in actor_entities
+            if actor.has(ExpeditionMemberComponent)
+        ]
 
         # 随机一个target,然后组成[]
         if len(targets) > 0:
@@ -527,33 +486,33 @@ def retreat_from_dungeon_combat(tcg_game: TCGGame) -> Tuple[bool, str]:
 
     # 5. 获取场景内所有远征队成员
     actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
-    ally_entities = [
+    expedition_member_entities = [
         entity for entity in actor_entities if entity.has(ExpeditionMemberComponent)
     ]
 
-    if len(ally_entities) == 0:
+    if len(expedition_member_entities) == 0:
         error_msg = "撤退失败: 场景内没有ally阵营角色"
         logger.error(error_msg)
         return False, error_msg
 
-    # 6. 为所有ally角色添加DeathComponent（标记为死亡）
-    for ally_entity in ally_entities:
-        ally_entity.replace(DeathComponent, ally_entity.name)
-        logger.info(f"撤退: 角色 {ally_entity.name} 标记为死亡")
+    # 6. 为所有远征队成员添加DeathComponent（标记为死亡）
+    for expedition_member_entity in expedition_member_entities:
+        expedition_member_entity.replace(DeathComponent, expedition_member_entity.name)
+        logger.info(f"撤退: 角色 {expedition_member_entity.name} 标记为死亡")
 
-    # 7. 为所有ally角色添加撤退消息到上下文
+    # 7. 为所有远征队成员添加撤退消息到上下文
     retreat_message = _generate_retreat_message(dungeon.name, current_stage.name)
 
-    for ally_entity in ally_entities:
+    for expedition_member_entity in expedition_member_entities:
         tcg_game.add_human_message(
-            ally_entity,
+            expedition_member_entity,
             retreat_message,
             dungeon_lifecycle_retreat=f"{dungeon.name}:{current_stage.name}",
         )
 
     logger.info(
         f"战斗撤退成功: 地下城={dungeon.name}, 关卡={current_stage.name}, "
-        f"撤退角色数={len(ally_entities)}"
+        f"撤退角色数={len(expedition_member_entities)}"
     )
 
     return True, f"成功从 {dungeon.name} 的 {current_stage.name} 撤退"
@@ -606,8 +565,8 @@ def ensure_all_actors_have_fallback_cards(tcg_game: TCGGame) -> Tuple[bool, str]
         return False, error_msg
 
     # 3. 获取场上所有存活的角色
-    actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
-    if len(actor_entities) == 0:
+    alive_combat_actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
+    if len(alive_combat_actor_entities) == 0:
         error_msg = "兜底手牌失败: 没有存活的角色"
         logger.error(error_msg)
         return False, error_msg
@@ -617,7 +576,7 @@ def ensure_all_actors_have_fallback_cards(tcg_game: TCGGame) -> Tuple[bool, str]
 
     # 5. 为缺少手牌的角色添加兜底卡牌
     fallback_count = 0
-    for entity in actor_entities:
+    for entity in alive_combat_actor_entities:
         # 跳过已有手牌或已死亡的角色
         if entity.has(HandComponent) or entity.has(DeathComponent):
             continue

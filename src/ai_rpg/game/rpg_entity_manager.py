@@ -377,7 +377,7 @@ class RPGEntityManager(Context):
             Dict[str, str]: 角色名称到外观描述的映射 {角色名: 外观描述}
         """
         ret: Dict[str, str] = {}
-        for actor in self.get_alive_actors_on_stage(entity):
+        for actor in self.get_actors_on_stage(entity):
             if actor.has(AppearanceComponent):
                 final_appearance = actor.get(AppearanceComponent)
                 ret.setdefault(final_appearance.name, final_appearance.appearance)

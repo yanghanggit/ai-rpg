@@ -253,12 +253,18 @@ def activate_specified_expedition_member_card_draws(
             return False, error_msg
 
     # 3. 创建 DrawCardsAction 组件
+    # 将状态效果名称列表转换为 StatusEffect 对象列表
+    selected_status_effects = [
+        combat_stats.find_status_effect(name)
+        for name in status_effect_names
+        if combat_stats.find_status_effect(name) is not None
+    ]
     expedition_member_entity.replace(
         DrawCardsAction,
         expedition_member_entity.name,
         selected_skill,  # skill
         [e.name for e in target_entities],  # targets
-        status_effect_names,  # 指定的状态效果列表
+        selected_status_effects,  # 指定的状态效果对象列表
     )
 
     return True, f"成功为角色 {expedition_member_entity.name} 激活抽牌动作"

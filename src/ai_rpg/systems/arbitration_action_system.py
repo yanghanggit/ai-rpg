@@ -363,9 +363,9 @@ class ArbitrationActionSystem(ReactiveProcessor):
 
         # 依据当前回合的行动顺序排序角色实体
         sort_actors: List[Entity] = []
-        for (
-            action_order
-        ) in self._game.current_combat_sequence.latest_round.action_order:
+        _latest_round = self._game.current_combat_sequence.latest_round
+        assert _latest_round is not None
+        for action_order in _latest_round.action_order:
             for entity in play_cards_actors:
                 assert not entity.has(DeathComponent)
                 if entity.name == action_order:
@@ -605,6 +605,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
 
             # 记录数据！
             latest_round = self._game.current_combat_sequence.latest_round
+            assert latest_round is not None
             latest_round.combat_log = format_response.combat_log
             latest_round.narrative = format_response.narrative
 

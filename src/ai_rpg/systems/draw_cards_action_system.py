@@ -311,6 +311,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             )
 
             last_round = self._game.current_combat_sequence.latest_round
+            assert last_round is not None
             assert (
                 not last_round.is_round_completed
             ), "当前没有进行中的战斗回合，不能生成卡牌。"
@@ -403,6 +404,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         """
         # 获取当前战斗的最新回合
         last_round = self._game.current_combat_sequence.latest_round
+        assert last_round is not None
         assert (
             not last_round.is_round_completed
         ), "当前没有进行中的战斗回合，不能生成卡牌。"

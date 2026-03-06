@@ -94,6 +94,7 @@ class CombatRoundCreationSystem(ExecuteProcessor):
 
         # 检查上一回合是否完成
         last_round = self._game.current_combat_sequence.latest_round
+        assert last_round is not None
         if last_round.is_round_completed:
             logger.debug(f"上一回合已完成，创建新回合")
             new_round = self._create_next_round()
@@ -115,9 +116,9 @@ class CombatRoundCreationSystem(ExecuteProcessor):
         """
         # 前置条件断言
         assert self._game.current_combat_sequence.is_ongoing, "战斗未进行中"
-        assert (
-            len(self._game.current_combat_sequence.current_rounds) == 0
-            or self._game.current_combat_sequence.latest_round.is_round_completed
+        _last_round = self._game.current_combat_sequence.latest_round
+        assert len(self._game.current_combat_sequence.current_rounds) == 0 or (
+            _last_round is not None and _last_round.is_round_completed
         ), "上一回合未完成"
 
         # 玩家角色

@@ -374,7 +374,9 @@ def activate_random_play_cards(tcg_game: TCGGame) -> Tuple[bool, str]:
         logger.error(error_msg)
         return False, error_msg
 
-    if tcg_game.current_combat_sequence.latest_round.is_round_completed:
+    _current_round = tcg_game.current_combat_sequence.latest_round
+    assert _current_round is not None
+    if _current_round.is_round_completed:
         error_msg = "激活打牌动作失败: 回合已完成"
         logger.error(error_msg)
         return False, error_msg
@@ -392,6 +394,7 @@ def activate_random_play_cards(tcg_game: TCGGame) -> Tuple[bool, str]:
 
     # 3. 预验证所有角色状态（避免部分成功）
     latest_round = tcg_game.current_combat_sequence.latest_round
+    assert latest_round is not None
     for actor_entity in actor_entities:
         # 验证角色在行动队列中
         if actor_entity.name not in latest_round.action_order:
@@ -549,6 +552,7 @@ def ensure_all_actors_have_fallback_cards(tcg_game: TCGGame) -> Tuple[bool, str]
         return False, error_msg
 
     last_round = tcg_game.current_combat_sequence.latest_round
+    assert last_round is not None
     if last_round.is_round_completed:
         error_msg = "兜底手牌失败: 回合已完成"
         logger.error(error_msg)

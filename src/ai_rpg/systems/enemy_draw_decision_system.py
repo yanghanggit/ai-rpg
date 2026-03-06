@@ -231,7 +231,9 @@ class EnemyDrawDecisionSystem(ReactiveProcessor):
         assert (
             len(self._game.current_combat_sequence.current_rounds) > 0
         ), "CombatRoundCreationSystem 应在 EnemyDrawDecisionSystem 之前创建回合"
-        action_order = self._game.current_combat_sequence.latest_round.action_order
+        _latest_round = self._game.current_combat_sequence.latest_round
+        assert _latest_round is not None
+        action_order = _latest_round.action_order
 
         # 生成提示词（基于感知而非数值）
         prompt = _generate_enemy_decision_prompt(

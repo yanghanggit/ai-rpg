@@ -110,10 +110,7 @@ class CombatSequence(BaseModel):
     ###############################################################################################################################################
     @property
     def current_combat(self) -> Combat:
-        assert len(self.combats) > 0
-        if len(self.combats) == 0:
-            return Combat(name="")
-
+        assert len(self.combats) > 0, "当前没有进行中的战斗"
         return self.combats[-1]
 
     ###############################################################################################################################################
@@ -123,10 +120,9 @@ class CombatSequence(BaseModel):
 
     ###############################################################################################################################################
     @property
-    def latest_round(self) -> Round:
-        assert len(self.current_rounds) > 0
-        # if len(self.current_rounds) == 0:
-        #     return Round(action_order=[])
+    def latest_round(self) -> Optional[Round]:
+        if len(self.current_combat.rounds) == 0:
+            return None
 
         return self.current_rounds[-1]
 

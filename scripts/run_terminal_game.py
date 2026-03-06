@@ -63,6 +63,7 @@ from ai_rpg.services.home_actions import (
 )
 from ai_rpg.services.dungeon_actions import (
     get_alive_expedition_members_on_stage,
+    get_alive_enemies_on_stage,
     activate_random_expedition_member_card_draws,
     activate_random_play_cards,
     retreat_from_dungeon_combat,
@@ -237,8 +238,9 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         expedition_members = get_alive_expedition_members_on_stage(
             player_entity, terminal_game
         )
+        enemies = get_alive_enemies_on_stage(player_entity, terminal_game)
         success, message = activate_random_expedition_member_card_draws(
-            expedition_members, terminal_game
+            expedition_members, enemies
         )
         if not success:
             logger.error(f"激活Ally抽牌失败: {message}")

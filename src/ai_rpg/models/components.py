@@ -381,6 +381,13 @@ class CombatStatsComponent(MutableComponent):
     stats: CharacterStats
     status_effects: List[StatusEffect]
 
+    # 加一个函数，根据名字查阅 StatusEffect
+    def find_status_effect(self, effect_name: str) -> StatusEffect | None:
+        for effect in self.status_effects:
+            if effect.name == effect_name:
+                return effect
+        return None
+
 
 ############################################################################################################
 @final

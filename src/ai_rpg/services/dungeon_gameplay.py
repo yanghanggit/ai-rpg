@@ -679,8 +679,19 @@ async def _execute_play_cards_task(
             raise ValueError("当前没有未完成的回合可供打牌")
 
         # 确保所有角色都有后备牌（如果没有玩家指定的牌了，系统会自动提供一张后备牌，保证流程继续）
+        player_entity = rpg_game.get_player_entity()
+        assert player_entity is not None, "player_entity is None"
+
+        # 获取当前场景中所有存活的战斗角色（远征队成员和敌人）
+        alive_combat_actor_entities = get_alive_expedition_members_on_stage(
+            player_entity, rpg_game
+        ) + get_alive_enemies_on_stage(player_entity, rpg_game)
+
+        # 确保所有角色都有后备牌（如果没有玩家指定的牌了，系统会自动提供一张后备牌，保证流程继续）
         success, message = ensure_all_actors_have_fallback_cards(
-            rpg_game, len(rpg_game.current_combat_sequence.current_rounds), last_round
+            alive_combat_actor_entities,
+            len(rpg_game.current_combat_sequence.current_rounds),
+            rpg_game,
         )
         if not success:
             raise ValueError(f"确保所有角色都有后备牌失败: {message}")

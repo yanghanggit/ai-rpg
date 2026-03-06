@@ -214,6 +214,10 @@ def activate_specified_expedition_member_card_draws(
         tuple[bool, str]: (是否成功, 结果消息)
     """
 
+    assert not expedition_member_entity.has(
+        DeathComponent
+    ), f"Entity {expedition_member_entity.name} is dead and cannot draw cards"
+
     # 检查是否已经有抽牌动作（将被覆盖）
     assert expedition_member_entity.has(
         ExpeditionMemberComponent
@@ -505,7 +509,9 @@ def mark_expedition_retreat(tcg_game: TCGGame) -> Tuple[bool, str]:
 
 ###################################################################################################################################################################
 def ensure_all_actors_have_fallback_cards(
-    tcg_game: TCGGame, current_round_number: int, combat_round: Round
+    alive_combat_actor_entities: List[Entity],
+    current_round_number: int,
+    tcg_game: TCGGame,
 ) -> Tuple[bool, str]:
     """
     为所有缺少手牌的存活角色提供兜底卡牌。
@@ -522,41 +528,28 @@ def ensure_all_actors_have_fallback_cards(
     - 目标：自己
 
     Args:
-        tcg_game: TCG游戏实例
+        alive_combat_actor_entities: 所有存活的战斗参与者实体列表（远征队成员 + 敌方）
         current_round_number: 当前回合编号（用于手牌组件与消息标记）
-        combat_round: 当前回合对象（由调用方保证未完成）
+        tcg_game: TCG游戏实例
 
     Returns:
         tuple[bool, str]: (是否成功, 结果消息)
     """
 
     assert current_round_number >= 0, "current_round_number must be non-negative"
-    assert not combat_round.is_round_completed, "当前回合已完成，无需兜底手牌"
-
-    if len(combat_round.action_order) == 0:
-        logger.warning("当前回合行动队列为空，无需添加兜底卡牌")
-        return True, "当前回合行动队列为空，无需添加兜底卡牌"
-
     fallback_count = 0
-    for combat_actor_entity_name in combat_round.action_order:
-
-        combat_actor_entity = tcg_game.get_entity_by_name(combat_actor_entity_name)
-        assert (
-            combat_actor_entity is not None
-        ), f"无法找到角色实体: {combat_actor_entity_name}"
-        if combat_actor_entity is None:
-            logger.error(
-                f"无法找到角色实体: {combat_actor_entity_name}, 跳过兜底卡牌添加"
-            )
-            continue
+    for combat_actor_entity in alive_combat_actor_entities:
 
         # 跳过已有手牌或已死亡的角色
         if combat_actor_entity.has(HandComponent):
-            logger.debug(f"角色 {combat_actor_entity_name} 已有手牌，跳过兜底卡牌添加")
+            logger.debug(f"角色 {combat_actor_entity.name} 已有手牌，跳过兜底卡牌添加")
             continue
 
+        assert not combat_actor_entity.has(
+            DeathComponent
+        ), f"角色 {combat_actor_entity.name} 已死亡，无法添加兜底卡牌"
         if combat_actor_entity.has(DeathComponent):
-            logger.debug(f"角色 {combat_actor_entity_name} 已死亡，跳过兜底卡牌添加")
+            logger.debug(f"角色 {combat_actor_entity.name} 已死亡，跳过兜底卡牌添加")
             continue
 
         # 兜底卡牌的目标固定为自己

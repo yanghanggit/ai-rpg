@@ -226,6 +226,9 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         /and - 进入下一关，只能在战斗胜利后使用
     """
 
+    player_entity = terminal_game.get_player_entity()
+    assert player_entity is not None, "/dc: player_entity is None"
+
     if usr_input == "/dc":
 
         if not terminal_game.current_combat_sequence.is_ongoing:
@@ -233,8 +236,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             return
 
         # 为所有角色激活抽牌动作，全部随机选择
-        player_entity = terminal_game.get_player_entity()
-        assert player_entity is not None, "/dc: player_entity is None"
+
         expedition_members = get_alive_expedition_members_on_stage(
             player_entity, terminal_game
         )
@@ -272,11 +274,16 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             logger.error(f"{usr_input} 当前没有未完成的回合可供打牌")
             return
 
+        expedition_members = get_alive_expedition_members_on_stage(
+            player_entity, terminal_game
+        )
+        enemies = get_alive_enemies_on_stage(player_entity, terminal_game)
+
         # 确保所有角色都有后备牌（如果没有玩家指定的牌了，系统会自动提供一张后备牌，保证流程继续）
         success, message = ensure_all_actors_have_fallback_cards(
-            terminal_game,
+            expedition_members + enemies,
             len(terminal_game.current_combat_sequence.current_rounds),
-            last_round,
+            terminal_game,
         )
         if not success:
             logger.error(f"确保所有角色都有后备牌失败: {message}")

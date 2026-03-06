@@ -198,7 +198,7 @@ async def home_advance(
     # 记录当前事件序列号，便于后续获取新增消息
     last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
 
-    # 如果指定了actors，先为这些角色激活行动计划
+    # 如果指定了actors标志，为玩家当前场景内所有角色激活行动计划
     if payload.actors:
         success, error_detail = activate_stage_plan(rpg_game)
         if not success:

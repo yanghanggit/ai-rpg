@@ -6,7 +6,7 @@
 """
 
 import random
-from typing import Dict, Set
+from typing import Dict, List, Set
 from loguru import logger
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -132,7 +132,7 @@ def _select_expedition_members(tcg_game: TCGGame) -> Set[Entity]:
 
     # 1. 找到玩家实体（必须）并分离其他盟友
     player_entity = None
-    other_allies = []
+    other_allies: List[Entity] = []
 
     for ally in all_allies:
         if ally.has(PlayerComponent):

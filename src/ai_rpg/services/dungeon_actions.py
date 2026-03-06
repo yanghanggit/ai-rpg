@@ -6,7 +6,7 @@
 """
 
 import random
-from typing import List, Set, Tuple
+from typing import List, Tuple
 from loguru import logger
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -21,7 +21,6 @@ from ..models import (
     Card,
     CharacterStats,
     InventoryComponent,
-    Round,
 )
 from ..entitas import Entity, Matcher
 from langchain_core.messages import AIMessage
@@ -355,73 +354,37 @@ def activate_random_enemy_card_draws(
 
 
 ###################################################################################################################################################################
-def activate_random_play_cards(tcg_game: TCGGame) -> Tuple[bool, str]:
+def activate_play_cards(
+    alive_combat_actor_entities: List[Entity],
+) -> Tuple[bool, str]:
     """
-    为所有存活角色随机选择并激活打牌动作
+    为所有存活角色激活打牌动作（取手牌列表第一张）
 
-    为每个存活角色随机选择一张手牌并添加打牌动作组件。
+    对每个存活战斗角色取 HandComponent 中的第一张手牌并添加打牌动作组件。
+    调用方应在调用前通过 ensure_all_actors_have_fallback_cards 确保所有角色均有手牌。
 
     Args:
-        tcg_game: TCG游戏实例
+        alive_combat_actor_entities: 所有存活的战斗参与者实体列表（远征队成员 + 敌方）
 
     Returns:
         tuple[bool, str]: (是否成功, 结果消息)
     """
 
-    # 1. 验证战斗回合状态
-    if len(tcg_game.current_combat_sequence.current_rounds) == 0:
-        error_msg = "激活打牌动作失败: 没有当前回合"
-        logger.error(error_msg)
-        return False, error_msg
-
-    if not tcg_game.current_combat_sequence.is_ongoing:
-        error_msg = "激活打牌动作失败: 回合未在进行中"
-        logger.error(error_msg)
-        return False, error_msg
-
-    _current_round = tcg_game.current_combat_sequence.latest_round
-    assert _current_round is not None
-    if _current_round.is_round_completed:
-        error_msg = "激活打牌动作失败: 回合已完成"
-        logger.error(error_msg)
-        return False, error_msg
-
-    # 必须有玩家实体在的场景中
-    player_entity = tcg_game.get_player_entity()
-    assert player_entity is not None, "activate_actor_card_draws: player_entity is None"
-
-    # 2. 获取所有存活且拥有手牌的角色
-    actor_entities: Set[Entity] = tcg_game.get_alive_actors_on_stage(player_entity)
-    if len(actor_entities) == 0:
-        error_msg = "激活打牌动作失败: 没有存活的持有手牌的角色"
-        logger.error(error_msg)
-        return False, error_msg
-
-    # 3. 预验证所有角色状态（避免部分成功）
-    latest_round = tcg_game.current_combat_sequence.latest_round
-    assert latest_round is not None
-    for actor_entity in actor_entities:
-        # 验证角色在行动队列中
-        if actor_entity.name not in latest_round.action_order:
-            error_msg = (
-                f"激活打牌动作失败: 角色 {actor_entity.name} 不在本回合行动队列中"
-            )
-            logger.error(error_msg)
-            return False, error_msg
-
-        # 验证角色尚未有打牌动作
-        if actor_entity.has(PlayCardsAction):
-            error_msg = f"激活打牌动作失败: 角色 {actor_entity.name} 已有打牌动作"
-            logger.error(error_msg)
-            return False, error_msg
+    # 一个个验证，提前发现问题避免部分成功的尴尬
+    for actor_entity in alive_combat_actor_entities:
 
         # 验证角色有手牌组件且有可用手牌
+        assert actor_entity.has(
+            HandComponent
+        ), f"Entity {actor_entity.name} must have HandComponent"
         if not actor_entity.has(HandComponent):
             error_msg = f"激活打牌动作失败: 角色 {actor_entity.name} 没有手牌组件"
             logger.error(error_msg)
             return False, error_msg
 
         hand_comp = actor_entity.get(HandComponent)
+
+        # 验证手牌组件中有可用的手牌
         assert (
             len(hand_comp.cards) > 0
         ), f"激活打牌动作失败: 角色 {actor_entity.name} 手牌组件异常"
@@ -430,14 +393,11 @@ def activate_random_play_cards(tcg_game: TCGGame) -> Tuple[bool, str]:
             logger.error(error_msg)
             return False, error_msg
 
-    # 4. 为所有角色添加随机打牌动作
-    for actor_entity in actor_entities:
+    # 为所有角色添加打牌动作（取第一张手牌）
+    for actor_entity in alive_combat_actor_entities:
+
         hand_comp = actor_entity.get(HandComponent)
-        selected_card = random.choice(hand_comp.cards)
-
-        # logger.debug(f"为角色 {actor_entity.name} 随机选择卡牌: {selected_card.name}")
-
-        # 添加打牌动作组件
+        selected_card = hand_comp.cards[0]
         actor_entity.replace(
             PlayCardsAction,
             actor_entity.name,

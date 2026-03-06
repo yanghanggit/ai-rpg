@@ -65,7 +65,7 @@ from ai_rpg.services.dungeon_actions import (
     get_alive_expedition_members_on_stage,
     get_alive_enemies_on_stage,
     activate_random_expedition_member_card_draws,
-    activate_random_play_cards,
+    activate_play_cards,
     mark_expedition_retreat,
     ensure_all_actors_have_fallback_cards,
     activate_random_enemy_card_draws,
@@ -290,7 +290,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             return
 
         # 执行打牌行动(现在使用随机选行动)
-        success, message = activate_random_play_cards(terminal_game)
+        success, message = activate_play_cards(expedition_members + enemies)
         if success:
             await terminal_game.combat_execution_pipeline.process()
         else:

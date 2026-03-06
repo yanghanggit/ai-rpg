@@ -34,7 +34,7 @@ from .dungeon_actions import (
     activate_random_enemy_card_draws,
     activate_specified_expedition_member_card_draws,
     filter_valid_targets,
-    activate_random_play_cards,
+    activate_play_cards,
     mark_expedition_retreat,
     ensure_all_actors_have_fallback_cards,
     get_alive_enemies_on_stage,
@@ -656,14 +656,6 @@ async def _execute_play_cards_task(
     try:
         logger.info(f"🚀 出牌任务开始: task_id={task_id}, user={user_name}")
 
-        # 重新获取游戏实例（确保获取最新状态）
-        # current_room = game_server.get_room(user_name)
-        # if current_room is None or current_room._tcg_game is None:
-        #     raise ValueError(f"游戏实例不存在: user={user_name}")
-
-        # rpg_game = current_room._tcg_game
-        # assert isinstance(rpg_game, TCGGame), "Invalid game type"
-
         rpg_game = _validate_dungeon_prerequisites(
             user_name=user_name,
             game_server=game_server,
@@ -697,7 +689,7 @@ async def _execute_play_cards_task(
             raise ValueError(f"确保所有角色都有后备牌失败: {message}")
 
         # 为所有角色随机选择并激活打牌动作
-        success, message = activate_random_play_cards(rpg_game)
+        success, message = activate_play_cards(alive_combat_actor_entities)
         if not success:
             raise ValueError(f"出牌失败: {message}")
 

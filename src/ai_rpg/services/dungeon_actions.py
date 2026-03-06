@@ -23,7 +23,7 @@ from ..models import (
     InventoryComponent,
     Round,
 )
-from ..entitas import Entity
+from ..entitas import Entity, Matcher
 from langchain_core.messages import AIMessage
 
 
@@ -445,78 +445,62 @@ def activate_random_play_cards(tcg_game: TCGGame) -> Tuple[bool, str]:
 
 
 ###################################################################################################################################################################
-def retreat_from_dungeon_combat(tcg_game: TCGGame) -> Tuple[bool, str]:
+def mark_expedition_retreat(tcg_game: TCGGame) -> Tuple[bool, str]:
     """
-    战斗中撤退
+    标记所有远征队成员撤退：为每人添加死亡标记并写入撤退叙事消息。
 
-    允许玩家在战斗进行中主动撤退，所有ally阵营角色视为死亡，
-    触发地下城失败流程并返回家园。
+    本函数只做状态标记与消息写入，不依赖战斗状态。
+    调用方在此之后需推进 combat_execution_pipeline，
+    由 CombatOutcomeSystem 检测死亡并触发后续失败流程。
 
     Args:
         tcg_game: TCG游戏实例
 
     Returns:
-        tuple[bool, str]: (是否成功, 结果消息)
+        tuple[bool, str]: (True, 结果消息)
     """
-    # 1. 验证战斗状态
-    if not tcg_game.current_combat_sequence.is_ongoing:
-        error_msg = "撤退失败: 当前没有进行中的战斗"
-        logger.error(error_msg)
-        return False, error_msg
-
-    # 2. 验证地下城状态
     dungeon = tcg_game.world.dungeon
-    if dungeon is None or dungeon.current_stage_index < 0:
-        error_msg = "撤退失败: 当前不在地下城中"
-        logger.error(error_msg)
-        return False, error_msg
+    assert dungeon is not None, "mark_expedition_retreat: dungeon is None"
 
-    # 3. 获取当前地下城场景
-    current_stage = dungeon.get_current_stage()
-    if current_stage is None:
-        error_msg = "撤退失败: 无法获取当前地下城场景"
-        logger.error(error_msg)
-        return False, error_msg
+    expedition_member_entities = tcg_game.get_group(
+        Matcher(all_of=[ExpeditionMemberComponent])
+    ).entities
+    assert (
+        len(expedition_member_entities) > 0
+    ), "mark_expedition_retreat: no expedition members found"
 
-    # 4. 获取玩家实体
-    player_entity = tcg_game.get_player_entity()
-    if player_entity is None:
-        error_msg = "撤退失败: 无法找到玩家实体"
-        logger.error(error_msg)
-        return False, error_msg
-
-    # 5. 获取场景内所有远征队成员
-    actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
-    expedition_member_entities = [
-        entity for entity in actor_entities if entity.has(ExpeditionMemberComponent)
-    ]
-
-    if len(expedition_member_entities) == 0:
-        error_msg = "撤退失败: 场景内没有ally阵营角色"
-        logger.error(error_msg)
-        return False, error_msg
-
-    # 6. 为所有远征队成员添加DeathComponent（标记为死亡）
     for expedition_member_entity in expedition_member_entities:
+
+        assert expedition_member_entity.has(
+            ExpeditionMemberComponent
+        ), f"Entity {expedition_member_entity.name} must have ExpeditionMemberComponent"
+
+        # 标记为死亡，后续 CombatOutcomeSystem 会检测并触发战斗失败流程
         expedition_member_entity.replace(DeathComponent, expedition_member_entity.name)
         logger.info(f"撤退: 角色 {expedition_member_entity.name} 标记为死亡")
 
-    # 7. 为所有远征队成员添加撤退消息到上下文
-    retreat_message = _generate_retreat_message(dungeon.name, current_stage.name)
+        # 解析所在场景，生成撤退叙事消息并写入上下文
+        stage_entity = tcg_game.resolve_stage_entity(expedition_member_entity)
+        assert (
+            stage_entity is not None
+        ), f"无法找到角色 {expedition_member_entity.name} 所在的场景实体"
 
-    for expedition_member_entity in expedition_member_entities:
+        retreat_message = _generate_retreat_message(dungeon.name, stage_entity.name)
         tcg_game.add_human_message(
             expedition_member_entity,
             retreat_message,
-            dungeon_lifecycle_retreat=f"{dungeon.name}:{current_stage.name}",
+            dungeon_lifecycle_retreat=f"{dungeon.name}:{stage_entity.name}",
         )
 
-    logger.info(
-        f"战斗撤退成功: 地下城={dungeon.name}, 关卡={current_stage.name}, "
-        f"撤退角色数={len(expedition_member_entities)}"
-    )
+        logger.info(
+            f"战斗撤退成功: 地下城={dungeon.name}, 关卡={stage_entity.name}, "
+            f"撤退角色数={len(expedition_member_entities)}"
+        )
 
-    return True, f"成功从 {dungeon.name} 的 {current_stage.name} 撤退"
+    return (
+        True,
+        f"已标记 {len(expedition_member_entities)} 个远征队成员撤退，地下城={dungeon.name}",
+    )
 
 
 ###################################################################################################################################################################

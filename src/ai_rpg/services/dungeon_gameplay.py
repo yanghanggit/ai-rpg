@@ -35,7 +35,7 @@ from .dungeon_actions import (
     activate_specified_expedition_member_card_draws,
     filter_valid_targets,
     activate_random_play_cards,
-    retreat_from_dungeon_combat,
+    mark_expedition_retreat,
     ensure_all_actors_have_fallback_cards,
     get_alive_enemies_on_stage,
     get_alive_expedition_members_on_stage,
@@ -178,17 +178,6 @@ async def dungeon_progress(
             )
 
         case DungeonProgressType.COMBAT_STATUS_EVALUATION:
-            # if not (
-            #     rpg_game.current_combat_sequence.is_ongoing
-            #     or rpg_game.current_combat_sequence.is_completed
-            # ):
-            #     logger.error(
-            #         f"玩家 {payload.user_name} 状态评估失败: 战斗未处于进行中或已结束状态"
-            #     )
-            #     raise HTTPException(
-            #         status_code=status.HTTP_400_BAD_REQUEST,
-            #         detail="战斗未处于进行中或已结束状态",
-            #     )
 
             # 检查可以执行状态评估的战斗状态
             is_valid_combat_state = (
@@ -302,7 +291,7 @@ async def dungeon_progress(
                 )
 
             # 执行撤退操作
-            success, message = retreat_from_dungeon_combat(rpg_game)
+            success, message = mark_expedition_retreat(rpg_game)
             if not success:
                 logger.error(f"玩家 {payload.user_name} 撤退失败: {message}")
                 raise HTTPException(

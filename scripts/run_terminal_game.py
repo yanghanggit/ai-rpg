@@ -66,7 +66,7 @@ from ai_rpg.services.dungeon_actions import (
     get_alive_enemies_on_stage,
     activate_random_expedition_member_card_draws,
     activate_random_play_cards,
-    retreat_from_dungeon_combat,
+    mark_expedition_retreat,
     ensure_all_actors_have_fallback_cards,
     activate_random_enemy_card_draws,
 )
@@ -361,7 +361,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             return
 
         # 执行撤退
-        success, message = retreat_from_dungeon_combat(terminal_game)
+        success, message = mark_expedition_retreat(terminal_game)
         if not success:
             logger.error(f"撤退失败: {message}")
             return

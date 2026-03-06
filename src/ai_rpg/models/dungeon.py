@@ -268,19 +268,19 @@ class Dungeon(BaseModel):
         )
 
     ########################################################################################################################
-    def advance_to_next_stage(self) -> bool:
+    def advance_to_next_stage(self) -> Optional[Stage]:
         """前进到下一关卡"""
 
         if len(self.stages) == 0:
             logger.warning("地下城系统为空！")
-            return False
+            return None
 
         if not self._is_valid_stage_index(self.current_stage_index):
             logger.warning("当前地下城关卡已经完成！或者尚未开始！")
-            return False
+            return None
 
         self.current_stage_index += 1
-        return True
+        return self.get_current_stage()
 
     ########################################################################################################################
     def _is_valid_stage_index(self, position: int) -> bool:

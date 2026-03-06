@@ -113,7 +113,7 @@ def _enhance_kickoff_with_actors(
 
 
 ###################################################################################################################################################################
-def _select_expedition_members(tcg_game: TCGGame) -> Set[Entity]:
+def _select_expedition_members(tcg_game: TCGGame, dungeon: Dungeon) -> Set[Entity]:
     """选择参与地下城远征的队伍成员
 
     从所有盟友中选择远征队成员，规则：
@@ -153,12 +153,22 @@ def _select_expedition_members(tcg_game: TCGGame) -> Set[Entity]:
     else:
         logger.warning("没有其他盟友可以加入远征队，玩家将独自冒险")
 
+    for expedition_ally in expedition_members:
+        expedition_ally.replace(
+            ExpeditionMemberComponent,
+            expedition_ally.name,
+            dungeon.name,
+        )
+        logger.debug(
+            f"将 {expedition_ally.name} 加入远征队，目标地下城：{dungeon.name}"
+        )
+
     return expedition_members
 
 
 ###################################################################################################################################################################
 def _enter_dungeon_stage(
-    tcg_game: TCGGame, dungeon: Dungeon, ally_entities: Set[Entity]
+    tcg_game: TCGGame, dungeon: Dungeon, expedition_entities: Set[Entity]
 ) -> bool:
     """
     进入地下城关卡并初始化战斗环境
@@ -168,101 +178,96 @@ def _enter_dungeon_stage(
     Args:
         tcg_game: TCG游戏实例
         dungeon: 地下城实例
-        ally_entities: 盟友实体集合
+        expedition_entities: 远征队成员实体集合
 
     Returns:
         bool: 是否成功进入关卡
     """
-    # 验证盟友队伍非空
-    if len(ally_entities) == 0:
-        logger.error("没有盟友不能进入地下城!")
+    # 验证远征队非空
+    if len(expedition_entities) == 0:
+        logger.error("没有远征队成员不能进入地下城!")
         return False
 
     # 1. 验证前置条件 - 获取当前关卡数据
-    current_dungeon_stage = dungeon.get_current_stage()
-    assert current_dungeon_stage is not None, f"{dungeon.name} 地下城关卡数据异常！"
+    stage_model = dungeon.get_current_stage()
+    assert stage_model is not None, f"{dungeon.name} 地下城关卡数据异常！"
 
     # 2. 获取关卡实体
-    dungeon_stage_entity = tcg_game.get_stage_entity(current_dungeon_stage.name)
-    assert (
-        dungeon_stage_entity is not None
-    ), f"{current_dungeon_stage.name} 没有对应的stage实体！"
-    assert dungeon_stage_entity.has(
-        DungeonComponent
-    ), f"{current_dungeon_stage.name} 没有DungeonComponent组件！"
+    stage_entity = tcg_game.get_stage_entity(stage_model.name)
+    assert stage_entity is not None, f"{stage_model.name} 没有对应的stage实体！"
+    if stage_entity is None:
+        logger.error(f"{stage_model.name} 没有对应的stage实体！")
+        return False
 
-    # logger.debug(
-    #     f"{dungeon.name} = [{dungeon.current_stage_index}]关为：{dungeon_stage_entity.name}，可以进入"
-    # )
+    assert stage_entity.has(
+        DungeonComponent
+    ), f"{stage_model.name} 没有DungeonComponent组件！"
 
     # 3. 生成并发送传送提示消息
     trans_message = _generate_dungeon_entry_message(
         dungeon.name,
-        dungeon_stage_entity.name,
+        stage_entity.name,
         dungeon.current_stage_index == 0,
         dungeon.description,
     )
 
-    for ally_entity in ally_entities:
+    for expedition_member in expedition_entities:
         # 添加上下文！
         # 根据是否为首次进入，设置不同的生命周期标记
         if dungeon.current_stage_index == 0:
             # 首次进入：仅地下城名称
             tcg_game.add_human_message(
-                ally_entity, trans_message, dungeon_lifecycle_entry=dungeon.name
+                expedition_member, trans_message, dungeon_lifecycle_entry=dungeon.name
             )
 
         else:
 
             # 关卡推进：地下城名称:关卡名称
             tcg_game.add_human_message(
-                ally_entity,
+                expedition_member,
                 trans_message,
-                dungeon_lifecycle_stage_advance=f"{dungeon.name}:{dungeon_stage_entity.name}",
+                dungeon_lifecycle_stage_advance=f"{dungeon.name}:{stage_entity.name}",
             )
 
-        if ally_entity.has(DeathComponent):
+        if expedition_member.has(DeathComponent):
 
-            # 移除死亡组件, 关卡穿越不应该带着死亡状态进入新的关卡
-            if ally_entity.has(DeathComponent):
+            logger.info(f"移除死亡组件: {expedition_member.name}")
+            expedition_member.remove(DeathComponent)
 
-                logger.info(f"移除死亡组件: {ally_entity.name}")
-                ally_entity.remove(DeathComponent)
-
-                # 恢复生命值至满血
-                assert ally_entity.has(CombatStatsComponent)
-                combat_stats = ally_entity.get(CombatStatsComponent)
-                combat_stats.stats.hp = 1
-                logger.info(
-                    f"恢复生命值: {ally_entity.name} 生命值 = {combat_stats.stats.hp}/{combat_stats.stats.max_hp}"
-                )
+            # 恢复生命值1
+            assert expedition_member.has(CombatStatsComponent)
+            combat_stats = expedition_member.get(CombatStatsComponent)
+            combat_stats.stats.hp = 1
+            logger.info(
+                f"恢复生命值: {expedition_member.name} 生命值 = {combat_stats.stats.hp}/{combat_stats.stats.max_hp}"
+            )
 
     # 4. 执行场景传送
-    tcg_game.stage_transition(ally_entities, dungeon_stage_entity)
+    tcg_game.stage_transition(expedition_entities, stage_entity)
 
     # 5. 设置KickOff消息并添加场景角色信息
-    stage_kickoff_comp = dungeon_stage_entity.get(KickOffComponent)
+    stage_kickoff_comp = stage_entity.get(KickOffComponent)
     assert (
         stage_kickoff_comp is not None
-    ), f"{dungeon_stage_entity.name} 没有KickOffMessageComponent组件！"
+    ), f"{stage_entity.name} 没有KickOffMessageComponent组件！"
 
     # 获取场景内角色的外貌信息并增强KickOff消息
     actors_appearances_mapping: Dict[str, str] = (
-        tcg_game.get_actor_appearances_on_stage(dungeon_stage_entity)
+        tcg_game.get_actor_appearances_on_stage(stage_entity)
     )
 
     enhanced_kickoff_content = _enhance_kickoff_with_actors(
         stage_kickoff_comp.prompt, actors_appearances_mapping
     )
 
-    dungeon_stage_entity.replace(
+    stage_entity.replace(
         KickOffComponent,
         stage_kickoff_comp.name,
         enhanced_kickoff_content,
     )
 
     # 6. 初始化战斗状态
-    dungeon.combat_sequence.start_combat(Combat(name=dungeon_stage_entity.name))
+    dungeon.combat_sequence.start_combat(Combat(name=stage_entity.name))
 
     # 7. 清除手牌组件
     tcg_game.clear_hands()
@@ -303,21 +308,12 @@ def initialize_dungeon_first_entry(tcg_game: TCGGame, dungeon: Dungeon) -> bool:
 
     # 初始化地下城状态
     dungeon.current_stage_index = 0
+
+    # 构建地下城实体和关卡实体
     tcg_game.setup_dungeon_entities(dungeon)
 
     # 选择远征队成员（玩家 + 最多1个随机盟友）
-    expedition_member_entities = _select_expedition_members(tcg_game)
-
-    # 将选中的成员添加到远征队
-    for expedition_ally in expedition_member_entities:
-        expedition_ally.replace(
-            ExpeditionMemberComponent,
-            expedition_ally.name,
-            dungeon.name,
-        )
-        logger.debug(
-            f"将 {expedition_ally.name} 加入远征队，目标地下城：{dungeon.name}"
-        )
+    expedition_member_entities = _select_expedition_members(tcg_game, dungeon)
 
     # 推进到第一关
     return _enter_dungeon_stage(tcg_game, dungeon, expedition_member_entities)
@@ -335,9 +331,10 @@ def advance_to_next_stage(tcg_game: TCGGame, dungeon: Dungeon) -> None:
         dungeon: 地下城实例
     """
     # 1. 推进地下城索引到下一关
-    if not dungeon.advance_to_next_stage():
+    next_stage = dungeon.advance_to_next_stage()
+    if next_stage is None:
         logger.error("地下城前进失败，没有更多关卡")
-        assert False, "地下城前进失败，没有更多关卡"  # 不可能发生！
+        # assert False, "地下城前进失败，没有更多关卡"  # 不可能发生！
         return
 
     # 2. 获取所有远征队成员
@@ -352,7 +349,7 @@ def advance_to_next_stage(tcg_game: TCGGame, dungeon: Dungeon) -> None:
 
 
 ###################################################################################################################################################################
-def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
+def complete_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     """
     完成地下城冒险并将角色传送回家园
 
@@ -361,6 +358,7 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
 
     Args:
         tcg_game: TCG游戏实例
+        dungeon: 地下城实例
     """
 
     # 1. 验证并获取远征队成员
@@ -369,67 +367,43 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
     ).entities.copy()
     assert len(expedition_entities) > 0, "没有找到远征队成员"
 
-    # 2. 验证并获取家园场景实体
-    home_stage_entities = tcg_game.get_group(
-        Matcher(all_of=[HomeComponent])
+    # 2-3. 获取并分类家园场景实体
+    player_only_stages: Set[Entity] = tcg_game.get_group(
+        Matcher(all_of=[HomeComponent, PlayerOnlyStageComponent])
     ).entities.copy()
-    assert len(home_stage_entities) > 0, "没有找到家园场景实体"
+    assert len(player_only_stages) == 1, "必须存在且仅存在一个玩家专属家园场景！"
 
-    # 3. 分离玩家专属场景和普通家园场景
-    player_only_stages: Set[Entity] = set()
-    regular_home_stages: Set[Entity] = set()
-    for stage in home_stage_entities:
-        if stage.has(PlayerOnlyStageComponent):
-            player_only_stages.add(stage)
-        else:
-            regular_home_stages.add(stage)
+    regular_home_stages: Set[Entity] = tcg_game.get_group(
+        Matcher(all_of=[HomeComponent], none_of=[PlayerOnlyStageComponent])
+    ).entities.copy()
 
-    # 这个是必须的。
-    assert len(player_only_stages) == 1, "必须存在一个PlayerOnlyStage场景"
+    # 4. 生成并发送返回提示消息，传送远征队成员回家
+    player_only_stage = next(iter(player_only_stages))
+    regular_home_stage = (
+        next(iter(regular_home_stages)) if regular_home_stages else None
+    )
 
-    # 提醒一下没有普通家园场景的情况
-    if len(regular_home_stages) == 0:
-        logger.warning("没有普通家园场景，盟友将无法返回家园")
-
-    # 4. 生成并发送返回提示消息
-    dungeon_name = tcg_game.world.dungeon.name
     for expedition_entity in expedition_entities:
-
-        if expedition_entity.has(PlayerComponent):
-
-            # 唯一的玩家传送到专有场景
-            player_only_stage = next(iter(player_only_stages))
-
-            # 添加返回消息
-            tcg_game.add_human_message(
-                expedition_entity,
-                _generate_return_home_message(dungeon_name, player_only_stage.name),
-                dungeon_lifecycle_completion=dungeon_name,
+        dest_stage = (
+            player_only_stage
+            if expedition_entity.has(PlayerComponent)
+            else regular_home_stage
+        )
+        if dest_stage is None:
+            logger.warning(
+                f"盟友 {expedition_entity.name} 无普通家园场景可返回，跳过传送"
             )
+            continue
 
-            # 传送玩家到专有场景
-            tcg_game.stage_transition({expedition_entity}, player_only_stage)
-
-        else:
-
-            # 盟友传送到普通家园
-            if len(regular_home_stages) > 0:
-
-                # 随机选择一个普通家园场景
-                random_home_stage = next(iter(regular_home_stages))
-
-                # 添加返回消息并传送
-                tcg_game.add_human_message(
-                    expedition_entity,
-                    _generate_return_home_message(dungeon_name, random_home_stage.name),
-                    dungeon_lifecycle_completion=dungeon_name,
-                )
-
-                # 传送盟友
-                tcg_game.stage_transition({expedition_entity}, random_home_stage)
+        tcg_game.add_human_message(
+            expedition_entity,
+            _generate_return_home_message(dungeon.name, dest_stage.name),
+            dungeon_lifecycle_completion=dungeon.name,
+        )
+        tcg_game.stage_transition({expedition_entity}, dest_stage)
 
     # 5. 清理地下城数据
-    tcg_game.teardown_dungeon_entities(tcg_game.world.dungeon)
+    tcg_game.teardown_dungeon_entities(dungeon)
     tcg_game._world.dungeon = Dungeon(name="", stages=[], description="")
 
     # 6. 恢复所有远征队成员的战斗状态
@@ -456,7 +430,7 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame) -> None:
         expedition_entity.remove(ExpeditionMemberComponent)
         logger.info(f"从远征队移除: {expedition_entity.name}")
 
-    # 8. 清除手牌组件
+    # 7. 清除手牌组件
     tcg_game.clear_hands()
 
 

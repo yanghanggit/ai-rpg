@@ -336,7 +336,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             return
 
         # logger.debug(f"玩家输入 = {usr_input}, 准备传送回家")
-        complete_dungeon_and_return_home(terminal_game)
+        complete_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
 
     elif usr_input == "/and":  # "/advance_next_dungeon"
 
@@ -385,7 +385,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         terminal_game.current_combat_sequence.transition_to_post_combat()
 
         # 返回家园
-        complete_dungeon_and_return_home(terminal_game)
+        complete_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
 
     else:
         logger.error(

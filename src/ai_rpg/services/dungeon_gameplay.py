@@ -308,7 +308,7 @@ async def dungeon_progress(
             rpg_game.current_combat_sequence.transition_to_post_combat()
 
             # 返回家园
-            complete_dungeon_and_return_home(rpg_game)
+            complete_dungeon_and_return_home(rpg_game, rpg_game.current_dungeon)
 
             logger.info(f"玩家 {payload.user_name} 已从地下城撤退并返回家园")
             return DungeonProgressResponse(
@@ -370,7 +370,7 @@ async def dungeon_trans_home(
         )
 
     # 完成地下城并返回家园
-    complete_dungeon_and_return_home(tcg_game)
+    complete_dungeon_and_return_home(tcg_game, tcg_game.world.dungeon)
     logger.info(f"玩家 {payload.user_name} 成功返回家园")
 
     return DungeonTransHomeResponse(
@@ -424,46 +424,56 @@ async def dungeon_combat_draw_cards(
 
     # 为所有角色激活抽牌动作, 这2个函数内部不会进行LLM调用, 只是设置状态
     # 处理 Ally 阵营的抽牌 指定抽取：遍历每个指定动作
-    for action in payload.specified_actions:
+    for expedition_member_action in payload.specified_actions:
 
-        expedition_member_entity = rpg_game.get_entity_by_name(action.entity_name)
+        expedition_member_entity = rpg_game.get_entity_by_name(
+            expedition_member_action.entity_name
+        )
         if expedition_member_entity is None:
-            logger.error(f"指定抽牌失败: 无法找到角色 {action.entity_name}")
+            logger.error(
+                f"指定抽牌失败: 无法找到角色 {expedition_member_action.entity_name}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"激活抽牌动作失败: 无法找到角色 {action.entity_name}",
+                detail=f"激活抽牌动作失败: 无法找到角色 {expedition_member_action.entity_name}",
             )
 
         if not expedition_member_entity.has(ExpeditionMemberComponent):
-            logger.error(f"指定抽牌失败: 角色 {action.entity_name} 不是远征队成员")
+            logger.error(
+                f"指定抽牌失败: 角色 {expedition_member_action.entity_name} 不是远征队成员"
+            )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"激活抽牌动作失败: 角色 {action.entity_name} 不是远征队成员",
+                detail=f"激活抽牌动作失败: 角色 {expedition_member_action.entity_name} 不是远征队成员",
             )
 
         if expedition_member_entity.has(DeathComponent):
-            logger.error(f"指定抽牌失败: 角色 {action.entity_name} 已死亡")
+            logger.error(
+                f"指定抽牌失败: 角色 {expedition_member_action.entity_name} 已死亡"
+            )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"激活抽牌动作失败: 角色 {action.entity_name} 已死亡",
+                detail=f"激活抽牌动作失败: 角色 {expedition_member_action.entity_name} 已死亡",
             )
 
         valid_targets = filter_valid_targets(
-            expedition_member_entity, rpg_game, action.target_names
+            expedition_member_entity, rpg_game, expedition_member_action.target_names
         )
 
         if len(valid_targets) == 0:
-            logger.error(f"指定抽牌失败: 角色 {action.entity_name} 没有合法的目标")
+            logger.error(
+                f"指定抽牌失败: 角色 {expedition_member_action.entity_name} 没有合法的目标"
+            )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"激活抽牌动作失败: 角色 {action.entity_name} 没有合法的目标",
+                detail=f"激活抽牌动作失败: 角色 {expedition_member_action.entity_name} 没有合法的目标",
             )
 
         success, message = activate_specified_expedition_member_card_draws(
             expedition_member_entity=expedition_member_entity,
-            skill_name=action.skill_name,
+            skill_name=expedition_member_action.skill_name,
             target_entities=valid_targets,
-            status_effect_names=action.status_effect_names,
+            status_effect_names=expedition_member_action.status_effect_names,
         )
         if not success:
             logger.error(f"指定抽牌失败: {message}")

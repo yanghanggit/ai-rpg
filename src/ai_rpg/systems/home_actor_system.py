@@ -62,7 +62,7 @@ class ActionPlanResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _build_action_planning_prompt(
+def _build_action_planning_prompt1(
     current_stage: str,
     current_stage_narration: str,
     other_actors_appearances: Dict[str, str],
@@ -88,13 +88,13 @@ def _build_action_planning_prompt(
 
     return f"""# 指令! 决定你要做什么，以JSON格式输出。
 
-## 场景信息
+## 你所在场景信息
 
 {current_stage} | {current_stage_narration}
 
 可移动至: {", ".join(available_home_stages) if len(available_home_stages) > 0 else "无"}
 
-## 其他角色
+## 本场景内其他角色
 
 {"\n".join(other_actors_appearance_info)}
 
@@ -127,7 +127,9 @@ def _build_action_planning_prompt(
    
    **约束**：只能使用context中已有的信息
 
-5. **场景移动** (`trans_stage`)
+5. **严格禁止虚构**：`mind`/`speak`/`whisper` 均只能基于 context 中已有的信息。禁止在任何字段中捏造其他角色的动作、反应或对话，禁止虚构 context 中未记录的事件。`mind` 只写你自己的思考，不得描述他人行为。
+
+6. **场景移动** (`trans_stage`)
    - 填写目标场景全名（从"可移动至"列表选择）
 
 ## 输出格式(JSON)
@@ -154,7 +156,7 @@ def _build_action_planning_prompt(
 
 
 #######################################################################################################################################
-def _build_action_planning_prompt_test(
+def _build_action_planning_prompt2(
     current_stage: str,
     current_stage_narration: str,
     other_actors_appearances: Dict[str, str],
@@ -179,11 +181,11 @@ def _build_action_planning_prompt_test(
 
     return f"""# 指令! 决定你要做什么，以JSON格式输出。
 
-## 场景信息
+## 你所在场景信息
 
 {current_stage} | {current_stage_narration}
 
-## 其他角色
+## 本场景内其他角色
 
 {"\n".join(other_actors_appearance_info)}
 
@@ -212,6 +214,8 @@ def _build_action_planning_prompt_test(
    - `whisper`：对指定角色耳语（私密，只有你和对方知道）
    
    **约束**：只能使用context中已有的信息
+   
+5. **严格禁止虚构**：`mind`/`speak`/`whisper` 均只能基于 context 中已有的信息。禁止在任何字段中捏造其他角色的动作、反应或对话，禁止虚构 context 中未记录的事件。`mind` 只写你自己的思考，不得描述他人行为。
 
 ## 输出格式(JSON)
 
@@ -232,23 +236,6 @@ def _build_action_planning_prompt_test(
 
 - 严格按上述JSON格式输出你的行动决策
 - 所有字段名不可更改"""
-
-
-#######################################################################################################################################
-def _build_action_prompt_summary(
-    prompt: str,
-) -> str:
-    """构建压缩版提示词用于历史记录。
-
-    Args:
-        prompt: 原始完整提示词
-
-    Returns:
-        压缩后的简短提示词
-    """
-    logger.debug(f"原始 Prompt =>\n{prompt[:100]}")
-    return "# 指令! 决定你要做什么，以JSON格式输出。"
-
 
 #######################################################################################################################################
 @final
@@ -316,7 +303,7 @@ class HomeActorSystem(ReactiveProcessor):
             # 添加上下文！
             self._game.add_human_message(
                 actor_entity,
-                _build_action_prompt_summary(chat_client.prompt),
+                chat_client.prompt,
                 compressed_prompt=chat_client.prompt,
             )
             self._game.add_ai_message(actor_entity, chat_client.response_ai_messages)
@@ -424,7 +411,7 @@ class HomeActorSystem(ReactiveProcessor):
             chat_clients.append(
                 ChatClient(
                     name=actor_entity.name,
-                    prompt=_build_action_planning_prompt_test(
+                    prompt=_build_action_planning_prompt2(
                         current_stage=current_stage.name,
                         current_stage_narration=current_stage.get(
                             StageDescriptionComponent

@@ -26,7 +26,7 @@ def _build_query_result_message(question: str, related_info: str | None) -> str:
     """
     if related_info:
         return (
-            f"关于「{question}」，从向量数据库检索到以下信息：\n{related_info}\n\n"
+            f"关于「{question}」，你从向量数据库检索到以下信息：\n{related_info}\n\n"
             f"这些是向量数据库中**目前**存储的相关信息，可根据需要参考。避免对同一问题重复查询。"
         )
     else:

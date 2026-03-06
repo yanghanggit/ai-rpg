@@ -398,7 +398,6 @@ def _get_planning_actor_names(terminal_game: TCGGame) -> List[str]:
     """
     获取所有符合条件的可以发起计划的角色名称列表。
 
-    筛选条件（参考 HomeAutoPlanSystem）：
     - 必须有 ActorComponent, AllyComponent, KickOffCompleteComponent
     - 不能有 PlayerComponent
     - 必须在带有 HomeComponent 的场景中
@@ -455,7 +454,7 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
                 logger.debug(f"激活行动计划失败: {error_detail}")
 
         # 执行NPC家园pipeline
-        await terminal_game.npc_home_pipeline.process()
+        await terminal_game.home_pipeline.process()
 
     elif usr_input == "/ed":
 
@@ -491,7 +490,7 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
 
         if success:
             # player 执行一次, 这次基本是忽略推理标记的，所有NPC不推理。
-            await terminal_game.player_home_pipeline.process()
+            await terminal_game.home_pipeline.process()
 
     elif usr_input.startswith("/switch_stage"):
         # 分析输入
@@ -504,7 +503,7 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
         )
         if success:
             # player 执行一次, 这次基本是忽略推理标记的，所有NPC不推理。
-            await terminal_game.player_home_pipeline.process()
+            await terminal_game.home_pipeline.process()
 
     else:
         logger.error(

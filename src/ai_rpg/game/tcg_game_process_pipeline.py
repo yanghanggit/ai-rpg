@@ -5,8 +5,8 @@ from .game_session import GameSession
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 
 
-def create_npc_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
-    """创建NPC家园场景的流程管道
+def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
+    """创建家园场景的流程管道（NPC 与玩家共用）
 
     Args:
         game: 游戏会话实例
@@ -33,8 +33,7 @@ def create_npc_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     from ..systems.trans_stage_action_system import (
         TransStageActionSystem,
     )
-
-    # from ..systems.home_auto_plan_system import HomeAutoPlanSystem
+    from ..systems.player_action_audit_system import PlayerActionAuditSystem
     from ..systems.home_stage_description_system import (
         HomeStageDescriptionSystem,
     )
@@ -51,65 +50,12 @@ def create_npc_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     processors.add(ActorAppearanceUpdateSystem(tcg_game))
 
     # 规划系统-场景描述系统-角色系统
-    # processors.add(HomeAutoPlanSystem(tcg_game))
     processors.add(HomeStageDescriptionSystem(tcg_game))
     processors.add(HomeActorSystem(tcg_game))
 
-    # 动作处理相关的系统：查询-说话-耳语-公告-场景转换-清理
+    # 动作处理相关的系统：查询-审核-说话-耳语-公告-场景转换-清理
     processors.add(QueryActionSystem(tcg_game))
-    processors.add(SpeakActionSystem(tcg_game))
-    processors.add(WhisperActionSystem(tcg_game))
-    processors.add(AnnounceActionSystem(tcg_game))
-    processors.add(TransStageActionSystem(tcg_game))
-    processors.add(ActionCleanupSystem(tcg_game))
-
-    # 动作处理后，可能清理。
-    processors.add(DestroyEntitySystem(tcg_game))
-
-    # 存储系统。
-    processors.add(SaveSystem(tcg_game))
-
-    return processors
-
-
-def create_player_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
-    """创建玩家家园场景的流程管道
-
-    Args:
-        game: 游戏会话实例
-
-    Returns:
-        配置好的RPG游戏流程管道实例
-    """
-
-    ### 不这样就循环引用
-    from ..game.tcg_game import TCGGame
-    from ..systems.announce_action_system import AnnounceActionSystem
-    from ..systems.destroy_entity_system import DestroyEntitySystem
-    from ..systems.actor_appearance_update_system import (
-        ActorAppearanceUpdateSystem,
-    )
-    from ..systems.kick_off_system import KickOffSystem
-    from ..systems.action_cleanup_system import ActionCleanupSystem
-    from ..systems.save_system import SaveSystem
-    from ..systems.speak_action_system import SpeakActionSystem
-    from ..systems.whisper_action_system import WhisperActionSystem
-    from ..systems.trans_stage_action_system import (
-        TransStageActionSystem,
-    )
-
-    ##
-    tcg_game = cast(TCGGame, game)
-    processors = RPGGameProcessPipeline()
-
-    # 启动agent的提示词。启动阶段
-    processors.add(KickOffSystem(tcg_game, True))
-
-    # 角色外观生成系统
-    processors.add(ActorAppearanceUpdateSystem(tcg_game))
-
-    # 动作处理相关的系统：说话-耳语-公告-场景转换-清理
-    # processors.add(PlayerActionAuditSystem(tcg_game))
+    processors.add(PlayerActionAuditSystem(tcg_game))
     processors.add(SpeakActionSystem(tcg_game))
     processors.add(WhisperActionSystem(tcg_game))
     processors.add(AnnounceActionSystem(tcg_game))

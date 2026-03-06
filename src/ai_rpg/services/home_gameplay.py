@@ -152,7 +152,7 @@ async def home_player_action(
         )
 
     # 执行玩家的 home pipeline 处理
-    await rpg_game.player_home_pipeline.process()
+    await rpg_game.home_pipeline.process()
 
     # 返回自上次事件序列号以来的新增消息
     return HomePlayerActionResponse(
@@ -209,7 +209,7 @@ async def home_advance(
             )
 
     # 推进游戏流程：执行NPC的home pipeline，自动推进游戏状态
-    await rpg_game.npc_home_pipeline.process()
+    await rpg_game.home_pipeline.process()
 
     # 返回自上次事件序列号以来的新增消息
     return HomeAdvanceResponse(

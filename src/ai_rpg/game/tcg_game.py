@@ -9,8 +9,7 @@ from loguru import logger
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 from .rpg_game import RPGGame
 from ..game.tcg_game_process_pipeline import (
-    create_npc_home_pipeline,
-    create_player_home_pipeline,
+    create_home_pipeline,
     create_combat_execution_pipeline,
     create_combat_archive_pipeline,
     create_combat_status_evaluation_pipeline,
@@ -33,8 +32,7 @@ class TCGGame(RPGGame):
     交易卡牌游戏，融合卡牌战斗机制的RPG游戏实现
 
     Attributes:
-        _npc_home_pipeline: NPC家园场景流程管道
-        _player_home_pipeline: 玩家家园场景流程管道
+        _home_pipeline: 家园场景流程管道（NPC 与玩家共用）
         _combat_execution_pipeline: 地下城战斗执行流程管道
         _combat_archive_pipeline: 地下城战斗归档流程管道
         _combat_status_evaluation_pipeline: 战斗状态效果评估流程管道
@@ -50,15 +48,8 @@ class TCGGame(RPGGame):
         # 必须按着此顺序实现父类
         RPGGame.__init__(self, name, player_session, world)
 
-        # 常规home 的流程
-        self._npc_home_pipeline: Final[RPGGameProcessPipeline] = (
-            create_npc_home_pipeline(self)
-        )
-
-        # 仅处理player的home流程
-        self._player_home_pipeline: Final[RPGGameProcessPipeline] = (
-            create_player_home_pipeline(self)
-        )
+        # 家园流程（NPC 与玩家共用）
+        self._home_pipeline: Final[RPGGameProcessPipeline] = create_home_pipeline(self)
 
         # 地下城战斗流程
         self._combat_execution_pipeline: Final[RPGGameProcessPipeline] = (
@@ -76,8 +67,7 @@ class TCGGame(RPGGame):
         )
 
         # 注册所有管道到管道管理器
-        self.register_pipeline(self._npc_home_pipeline)
-        self.register_pipeline(self._player_home_pipeline)
+        self.register_pipeline(self._home_pipeline)
         self.register_pipeline(self._combat_execution_pipeline)
         self.register_pipeline(self._combat_archive_pipeline)
         self.register_pipeline(self._combat_status_evaluation_pipeline)
@@ -94,13 +84,8 @@ class TCGGame(RPGGame):
 
     ###############################################################################################################################################
     @property
-    def npc_home_pipeline(self) -> RPGGameProcessPipeline:
-        return self._npc_home_pipeline
-
-    ###############################################################################################################################################
-    @property
-    def player_home_pipeline(self) -> RPGGameProcessPipeline:
-        return self._player_home_pipeline
+    def home_pipeline(self) -> RPGGameProcessPipeline:
+        return self._home_pipeline
 
     ###############################################################################################################################################
     @property

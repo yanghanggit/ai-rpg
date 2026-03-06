@@ -14,7 +14,7 @@ from ..game.game_server import GameServer
 from .home_actions import (
     activate_speak_action,
     activate_switch_stage,
-    activate_plan_action,
+    activate_stage_plan,
 )
 from .dungeon_stage_transition import (
     initialize_dungeon_first_entry,
@@ -200,7 +200,7 @@ async def home_advance(
 
     # 如果指定了actors，先为这些角色激活行动计划
     if payload.actors:
-        success, error_detail = activate_plan_action(rpg_game, payload.actors)
+        success, error_detail = activate_stage_plan(rpg_game)
         if not success:
             # 行动计划激活失败，抛出包含具体错误信息的异常
             raise HTTPException(

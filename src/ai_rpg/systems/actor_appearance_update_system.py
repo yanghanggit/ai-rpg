@@ -8,7 +8,6 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     ActorComponent,
     AppearanceComponent,
-    PlayerComponent,
     Item,
     ItemType,
     InventoryComponent,
@@ -116,7 +115,7 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
 
         # 获取所有角色实体
         actor_entities = self._game.get_group(
-            Matcher(all_of=[ActorComponent, PlayerComponent, AppearanceComponent])
+            Matcher(all_of=[ActorComponent, AppearanceComponent])
         ).entities.copy()
 
         # 准备外观更新请求

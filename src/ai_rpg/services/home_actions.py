@@ -14,7 +14,7 @@ from ..models import (
     # PlayerComponent,
     PlanAction,
 )
-from typing import List, Tuple
+from typing import Tuple
 
 
 ###################################################################################################################################################################
@@ -22,56 +22,54 @@ def activate_speak_action(
     tcg_game: TCGGame, target: str, content: str
 ) -> Tuple[bool, str]:
     """
-    激活玩家的说话动作
+    激活玩家的说话动作，并触发当前场景所有角色的行动计划。
 
     Args:
         tcg_game: TCG 游戏实例
-        target: 目标角色名称
+        target: 说话目标的角色全名
         content: 说话内容
 
     Returns:
-        tuple[bool, str]: (是否成功, 错误详情)
+        tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
     if not target:
         error_detail = "目标角色名称不能为空"
         logger.error(f"激活说话动作失败: {error_detail}")
         return False, error_detail
 
-    target_entity = tcg_game.get_actor_entity(target)
-    if target_entity is None:
+    # 验证目标角色存在
+    if tcg_game.get_actor_entity(target) is None:
         error_detail = f"目标角色 {target} 不存在"
         logger.error(f"激活说话动作失败: {error_detail}")
         return False, error_detail
 
     player_entity = tcg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
-    if player_entity is None:
-        error_detail = "玩家实体不存在"
-        logger.error(f"激活说话动作失败: {error_detail}")
-        return False, error_detail
 
+    logger.debug(f"激活说话动作: {player_entity.name} -> {target}: {content}")
     player_entity.replace(SpeakAction, player_entity.name, {target: content})
-    player_entity.replace(PlanAction, player_entity.name)
+    activate_stage_plan(tcg_game)
     return True, ""
 
 
 ###################################################################################################################################################################
 def activate_switch_stage(tcg_game: TCGGame, stage_name: str) -> Tuple[bool, str]:
     """
-    激活玩家的场景转换动作
+    激活玩家的场景转换动作，并触发当前场景所有角色的行动计划。
 
     Args:
         tcg_game: TCG 游戏实例
-        stage_name: 目标场景名称
+        stage_name: 目标场景全名
 
     Returns:
-        tuple[bool, str]: (是否成功, 错误详情)
+        tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
     if not stage_name:
         error_detail = "目标场景名称不能为空"
         logger.error(f"激活场景转换失败: {error_detail}")
         return False, error_detail
 
+    # 验证目标场景存在且为家园场景
     target_stage_entity = tcg_game.get_stage_entity(stage_name)
     if target_stage_entity is None:
         error_detail = f"目标场景 {stage_name} 不存在"
@@ -85,71 +83,63 @@ def activate_switch_stage(tcg_game: TCGGame, stage_name: str) -> Tuple[bool, str
 
     player_entity = tcg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
-    if player_entity is None:
-        error_detail = "玩家实体不存在"
-        logger.error(f"激活场景转换失败: {error_detail}")
-        return False, error_detail
 
-    player_stage_entity = tcg_game.resolve_stage_entity(player_entity)
-    assert player_stage_entity is not None, "玩家当前场景实体不存在！"
-    if player_stage_entity.name == stage_name:
+    # 验证目标场景与当前场景不同
+    current_stage_entity = tcg_game.resolve_stage_entity(player_entity)
+    assert current_stage_entity is not None, "玩家当前场景实体不存在！"
+    if current_stage_entity.name == stage_name:
         error_detail = f"目标场景 {stage_name} 与当前场景相同"
         logger.error(f"激活场景转换失败: {error_detail}")
         return False, error_detail
 
     logger.debug(f"激活场景转换: {player_entity.name} -> {stage_name}")
     player_entity.replace(TransStageAction, player_entity.name, stage_name)
-    player_entity.replace(PlanAction, player_entity.name)
+    activate_stage_plan(tcg_game)
     return True, ""
 
 
 ###################################################################################################################################################################
-def activate_plan_action(tcg_game: TCGGame, actors: List[str]) -> Tuple[bool, str]:
+def activate_stage_plan(tcg_game: TCGGame) -> Tuple[bool, str]:
     """
-    为指定角色激活行动计划
+    为玩家当前场景内所有盟友 NPC 激活行动计划
 
-    为符合条件的角色添加 PlanAction 组件，使其在下一次游戏推进时执行AI决策。
-    角色必须是盟友且非玩家控制。
+    获取玩家所在的家园场景，为场景内所有盟友角色添加 PlanAction 组件，
+    使其在下一次游戏推进时执行 AI 决策。
 
     Args:
         tcg_game: TCG 游戏实例
-        actors: 目标角色名称列表
 
     Returns:
         tuple[bool, str]: (是否成功, 错误详情)
     """
 
-    if not actors or len(actors) == 0:
-        error_detail = "角色名称列表不能为空"
+    # 获取玩家实体和当前场景实体，验证场景为家园
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None, "玩家实体不存在！"
+
+    # 获取玩家当前场景实体，验证为家园场景
+    stage_entity = tcg_game.resolve_stage_entity(player_entity)
+    assert stage_entity is not None, "玩家当前场景实体不存在！"
+    if not stage_entity.has(HomeComponent):
+        error_detail = "当前场景不是家园，无法激活行动计划"
         logger.error(f"激活行动计划失败: {error_detail}")
         return False, error_detail
 
-    success_count = 0
-    for actor_name in actors:
-        actor_entity = tcg_game.get_actor_entity(actor_name)
-        if actor_entity is None:
-            logger.warning(f"角色 {actor_name} 不存在，跳过")
-            continue
+    # 获取当前场景中的所有角色实体，验证至少有一个角色存在
+    actors_on_stage = tcg_game.get_actors_on_stage(player_entity)
+    assert len(actors_on_stage) > 0, f"当前场景没有角色，无法激活行动计划！"
 
-        if not actor_entity.has(AllyComponent):
-            logger.warning(f"角色 {actor_name} 不是盟友，不能添加行动计划，跳过")
-            continue
+    #
+    for actor_entity in actors_on_stage:
 
-        # if actor_entity.has(PlayerComponent):
-        #     logger.warning(f"角色 {actor_name} 是玩家控制的，不能添加行动计划，跳过")
-        #     continue
+        assert actor_entity.has(
+            AllyComponent
+        ), f"角色 {actor_entity.name} 不是盟友，无法激活行动计划！"
 
-        logger.debug(f"为角色 {actor_name} 添加 PlanAction")
+        logger.debug(f"为角色 {actor_entity.name} 添加 PlanAction")
         actor_entity.replace(PlanAction, actor_entity.name)
-        success_count += 1
 
-    if success_count == 0:
-        error_detail = "未能为任何角色添加 PlanAction"
-        logger.error(f"激活行动计划失败: {error_detail}")
-        return False, error_detail
-
-    logger.info(f"成功为 {success_count} 个角色添加 PlanAction")
-    return True, ""
+    return True, f"成功为 {len(actors_on_stage)} 个角色添加 PlanAction"
 
 
 ###################################################################################################################################################################

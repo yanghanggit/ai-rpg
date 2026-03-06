@@ -18,6 +18,7 @@ from ..models import (
     ActorComponent,
     PlayerComponent,
     PlayerOnlyStageComponent,
+    KickOffCompleteComponent,
 )
 from ..utils import extract_json_from_code_block
 from ..game import TCGGame
@@ -263,7 +264,11 @@ class HomeActorSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(PlanAction) and entity.has(ActorComponent)
+        return (
+            entity.has(PlanAction)
+            and entity.has(ActorComponent)
+            and entity.has(KickOffCompleteComponent)
+        )
 
     #######################################################################################################################################
     @override
@@ -319,19 +324,43 @@ class HomeActorSystem(ReactiveProcessor):
             compressed_prompt=prompt,
         )
 
-        mock_response = self._build_player_action_response(player_entity)
+        # 判断玩家本轮是否有主动动作
+        has_action = player_entity.has(SpeakAction) or player_entity.has(
+            TransStageAction
+        )
+        passive_mind = (
+            "" if has_action else f"身处{current_stage.name}，静观周遭，等待时机。"
+        )
+
+        mock_response = self._build_player_action_response(player_entity, passive_mind)
         self._game.add_ai_message(
             player_entity, [AIMessage(content=mock_response.model_dump_json(indent=2))]
         )
 
+        # 被动观察轮：模拟 mind 通知，与 NPC 路径对齐
+        if mock_response.mind != "":
+            self._game.notify_entities(
+                {player_entity},
+                MindEvent(
+                    message=_format_mind_notification(
+                        player_entity.name, mock_response.mind
+                    ),
+                    actor=player_entity.name,
+                    content=mock_response.mind,
+                ),
+            )
+
     #######################################################################################################################################
     def _build_player_action_response(
-        self, player_entity: Entity
+        self, player_entity: Entity, passive_mind: str = ""
     ) -> ActionPlanResponse:
         """根据玩家当前动作组件构建等效的 ActionPlanResponse。
 
+        有主动动作时 mind 为空；无任何动作（被动观察轮）时用 passive_mind 填入。
+
         Args:
             player_entity: 玩家实体
+            passive_mind: 被动观察轮时使用的 mind 文本
 
         Returns:
             模拟的 ActionPlanResponse
@@ -343,6 +372,9 @@ class HomeActorSystem(ReactiveProcessor):
 
         if player_entity.has(TransStageAction):
             response.trans_stage = player_entity.get(TransStageAction).target_stage_name
+
+        if not response.speak and not response.trans_stage:
+            response.mind = passive_mind
 
         return response
 

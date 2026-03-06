@@ -59,7 +59,7 @@ from ai_rpg.models import (
 from ai_rpg.services.home_actions import (
     activate_speak_action,
     activate_switch_stage,
-    activate_plan_action,
+    activate_stage_plan,
 )
 from ai_rpg.services.dungeon_actions import (
     get_alive_expedition_members_on_stage,
@@ -446,12 +446,12 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
     if usr_input == "/ad":
 
         # 获取所有可以发起计划的角色名称
-        actor_names = _get_planning_actor_names(terminal_game)
-        if len(actor_names) > 0:
-            # 为这些角色激活行动计划
-            success, error_detail = activate_plan_action(terminal_game, actor_names)
-            if not success:
-                logger.debug(f"激活行动计划失败: {error_detail}")
+        # actor_names = _get_planning_actor_names(terminal_game)
+        # if len(actor_names) > 0:
+        # 为这些角色激活行动计划
+        success, error_detail = activate_stage_plan(terminal_game)
+        if not success:
+            logger.debug(f"激活行动计划失败: {error_detail}")
 
         # 执行NPC家园pipeline
         await terminal_game.home_pipeline.process()

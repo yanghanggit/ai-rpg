@@ -1,4 +1,5 @@
 from typing import Dict, Final, List, final
+from langchain_core.messages import AIMessage
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
@@ -268,19 +269,82 @@ class HomeActorSystem(ReactiveProcessor):
     @override
     async def react(self, entities: list[Entity]) -> None:
 
-        # 处理角色规划请求
-        chat_clients: List[ChatClient] = self._create_actor_chat_clients(entities)
+        player_entities = [e for e in entities if e.has(PlayerComponent)]
+        npc_entities = [e for e in entities if not e.has(PlayerComponent)]
 
-        # 语言服务
+        # 玩家：注入场景观察上下文，不调用 LLM
+        for player_entity in player_entities:
+            self._inject_player_scene_context(player_entity)
+
+        # NPC：调用 LLM 进行行动规划
+        chat_clients: List[ChatClient] = self._create_actor_chat_clients(npc_entities)
         await ChatClient.batch_chat(clients=chat_clients)
 
-        # 处理角色规划请求
         for chat_client in chat_clients:
             response_entity = self._game.get_entity_by_name(chat_client.name)
             assert (
                 response_entity is not None
             ), f"Cannot find entity by name: {chat_client.name}"
             self._execute_actor_actions(response_entity, chat_client)
+
+    #######################################################################################################################################
+    def _inject_player_scene_context(self, player_entity: Entity) -> None:
+        """向玩家实体注入当前场景观察信息（不调用 LLM）。
+
+        Args:
+            player_entity: 玩家实体
+        """
+        current_stage = self._game.resolve_stage_entity(player_entity)
+        assert current_stage is not None
+
+        other_actors_appearances = self._get_other_actors_appearances(
+            player_entity, current_stage
+        )
+        available_home_stages = self._get_available_home_stages(
+            player_entity, current_stage
+        )
+
+        prompt = _build_action_planning_prompt2(
+            current_stage=current_stage.name,
+            current_stage_narration=current_stage.get(
+                StageDescriptionComponent
+            ).narrative,
+            other_actors_appearances=other_actors_appearances,
+            available_home_stages=[e.name for e in available_home_stages],
+        )
+
+        self._game.add_human_message(
+            player_entity,
+            prompt,
+            compressed_prompt=prompt,
+        )
+
+        mock_response = self._build_player_action_response(player_entity)
+        self._game.add_ai_message(
+            player_entity, [AIMessage(content=mock_response.model_dump_json(indent=2))]
+        )
+
+    #######################################################################################################################################
+    def _build_player_action_response(
+        self, player_entity: Entity
+    ) -> ActionPlanResponse:
+        """根据玩家当前动作组件构建等效的 ActionPlanResponse。
+
+        Args:
+            player_entity: 玩家实体
+
+        Returns:
+            模拟的 ActionPlanResponse
+        """
+        response = ActionPlanResponse()
+
+        if player_entity.has(SpeakAction):
+            response.speak = player_entity.get(SpeakAction).target_messages
+
+        if player_entity.has(TransStageAction):
+            response.trans_stage = player_entity.get(TransStageAction).target_stage_name
+
+        return response
 
     #######################################################################################################################################
     def _execute_actor_actions(
@@ -361,6 +425,53 @@ class HomeActorSystem(ReactiveProcessor):
             logger.error(f"Exception: {e}")
 
     #######################################################################################################################################
+    def _get_other_actors_appearances(
+        self, actor_entity: Entity, current_stage: Entity
+    ) -> Dict[str, str]:
+        """获取当前场景内除自身以外的所有角色外观描述。
+
+        Args:
+            actor_entity: 当前角色实体（将被排除）
+            current_stage: 当前所在场景实体
+
+        Returns:
+            其他角色的外观描述（角色名 -> 外观）
+        """
+        appearances = self._game.get_actor_appearances_on_stage(current_stage)
+        appearances.pop(actor_entity.name, None)
+        return appearances
+
+    #######################################################################################################################################
+    def _get_available_home_stages(
+        self, actor_entity: Entity, current_stage: Entity
+    ) -> set[Entity]:
+        """获取角色可前往的家园场景集合。
+
+        玩家可前往所有家园场景；非玩家只能前往不含 PlayerOnlyStageComponent 的场景。
+        均排除当前所在场景。
+
+        Args:
+            actor_entity: 角色实体
+            current_stage: 当前所在场景实体
+
+        Returns:
+            可前往的家园场景实体集合
+        """
+        home_stage_entities = self._game.get_group(
+            Matcher(all_of=[HomeComponent])
+        ).entities.copy()
+        home_stage_entities.discard(current_stage)
+
+        if actor_entity.has(PlayerComponent):
+            return home_stage_entities
+
+        return {
+            stage
+            for stage in home_stage_entities
+            if not stage.has(PlayerOnlyStageComponent)
+        }
+
+    #######################################################################################################################################
     def _create_actor_chat_clients(
         self, actor_entities: List[Entity]
     ) -> List[ChatClient]:
@@ -374,13 +485,6 @@ class HomeActorSystem(ReactiveProcessor):
         Returns:
             聊天客户端列表
         """
-        # 找到所有家园场景实体
-        home_stage_entities = self._game.get_group(
-            Matcher(
-                all_of=[HomeComponent],
-            )
-        ).entities.copy()
-
         chat_clients: List[ChatClient] = []
 
         for actor_entity in actor_entities:
@@ -389,24 +493,15 @@ class HomeActorSystem(ReactiveProcessor):
             current_stage = self._game.resolve_stage_entity(actor_entity)
             assert current_stage is not None
 
-            # 找到当前场景内所有角色 & 他们的外观描述
-            other_actors_appearances = self._game.get_actor_appearances_on_stage(
-                current_stage
+            # 找到当前场景内所有角色 & 他们的外观描述（不含自己）
+            other_actors_appearances = self._get_other_actors_appearances(
+                actor_entity, current_stage
             )
-            # 移除自己
-            other_actors_appearances.pop(actor_entity.name, None)
 
-            # 找到当前场景可去往的家园场景,这样能节省计算量。
-            available_home_stages = home_stage_entities.copy()  # 注意这里必须 copy
-            available_home_stages.discard(current_stage)
-
-            # 如果当前角色不是玩家，过滤掉仅玩家可进入的场景
-            if not actor_entity.has(PlayerComponent):
-                available_home_stages = {
-                    stage
-                    for stage in available_home_stages
-                    if not stage.has(PlayerOnlyStageComponent)
-                }
+            # 找到当前场景可去往的家园场景
+            available_home_stages = self._get_available_home_stages(
+                actor_entity, current_stage
+            )
 
             # 生成请求处理器
             chat_clients.append(

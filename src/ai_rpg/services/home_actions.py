@@ -11,7 +11,7 @@ from ..models import (
     TransStageAction,
     HomeComponent,
     AllyComponent,
-    PlayerComponent,
+    # PlayerComponent,
     PlanAction,
 )
 from typing import List, Tuple
@@ -51,6 +51,7 @@ def activate_speak_action(
         return False, error_detail
 
     player_entity.replace(SpeakAction, player_entity.name, {target: content})
+    player_entity.replace(PlanAction, player_entity.name)
     return True, ""
 
 
@@ -98,6 +99,7 @@ def activate_switch_stage(tcg_game: TCGGame, stage_name: str) -> Tuple[bool, str
 
     logger.debug(f"激活场景转换: {player_entity.name} -> {stage_name}")
     player_entity.replace(TransStageAction, player_entity.name, stage_name)
+    player_entity.replace(PlanAction, player_entity.name)
     return True, ""
 
 
@@ -133,9 +135,9 @@ def activate_plan_action(tcg_game: TCGGame, actors: List[str]) -> Tuple[bool, st
             logger.warning(f"角色 {actor_name} 不是盟友，不能添加行动计划，跳过")
             continue
 
-        if actor_entity.has(PlayerComponent):
-            logger.warning(f"角色 {actor_name} 是玩家控制的，不能添加行动计划，跳过")
-            continue
+        # if actor_entity.has(PlayerComponent):
+        #     logger.warning(f"角色 {actor_name} 是玩家控制的，不能添加行动计划，跳过")
+        #     continue
 
         logger.debug(f"为角色 {actor_name} 添加 PlanAction")
         actor_entity.replace(PlanAction, actor_entity.name)

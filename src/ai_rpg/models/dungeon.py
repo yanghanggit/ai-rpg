@@ -79,7 +79,7 @@ class Round(BaseModel):
     narrative: str = ""  # 叙事文本/演出描述
 
     @property
-    def is_completed(self) -> bool:
+    def is_round_completed(self) -> bool:
         return (
             len(self.action_order) > 0
             and self.combat_log != ""
@@ -125,8 +125,8 @@ class CombatSequence(BaseModel):
     @property
     def latest_round(self) -> Round:
         assert len(self.current_rounds) > 0
-        if len(self.current_rounds) == 0:
-            return Round(action_order=[])
+        # if len(self.current_rounds) == 0:
+        #     return Round(action_order=[])
 
         return self.current_rounds[-1]
 
@@ -148,7 +148,7 @@ class CombatSequence(BaseModel):
 
     ###############################################################################################################################################
     @property
-    def is_completed(self) -> bool:
+    def is_combat_completed(self) -> bool:
         return self.current_state == CombatState.COMPLETE
 
     ###############################################################################################################################################

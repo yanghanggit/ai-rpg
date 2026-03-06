@@ -277,7 +277,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         else:
             logger.error(f"打牌失败: {message}")
 
-        if terminal_game.current_combat_sequence.is_completed:
+        if terminal_game.current_combat_sequence.is_combat_completed:
             logger.debug(f"在本次处理中战斗已结束")
 
     elif usr_input == "/se":
@@ -291,7 +291,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
     elif usr_input == "/cpp":
 
         # 必须在战斗结束后使用
-        if not terminal_game.current_combat_sequence.is_completed:
+        if not terminal_game.current_combat_sequence.is_combat_completed:
             logger.error(f"{usr_input} 只能在战斗结束后使用is_completed")
             return
 

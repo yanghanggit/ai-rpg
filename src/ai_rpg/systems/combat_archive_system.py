@@ -136,7 +136,7 @@ class CombatArchiveSystem(ExecuteProcessor):
             - 如果战斗未完成，直接返回不做任何处理
             - 战斗完成后会触发AI总结生成、消息压缩和记忆归档
         """
-        if not self._game.current_combat_sequence.is_completed:
+        if not self._game.current_combat_sequence.is_combat_completed:
             # 不是本阶段就直接返回, 如果过了，要么胜利，要么失败。
             return
 

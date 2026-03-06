@@ -178,10 +178,24 @@ async def dungeon_progress(
             )
 
         case DungeonProgressType.COMBAT_STATUS_EVALUATION:
-            if not (
+            # if not (
+            #     rpg_game.current_combat_sequence.is_ongoing
+            #     or rpg_game.current_combat_sequence.is_completed
+            # ):
+            #     logger.error(
+            #         f"玩家 {payload.user_name} 状态评估失败: 战斗未处于进行中或已结束状态"
+            #     )
+            #     raise HTTPException(
+            #         status_code=status.HTTP_400_BAD_REQUEST,
+            #         detail="战斗未处于进行中或已结束状态",
+            #     )
+
+            # 检查可以执行状态评估的战斗状态
+            is_valid_combat_state = (
                 rpg_game.current_combat_sequence.is_ongoing
-                or rpg_game.current_combat_sequence.is_completed
-            ):
+                or rpg_game.current_combat_sequence.is_combat_completed
+            )
+            if not is_valid_combat_state:
                 logger.error(
                     f"玩家 {payload.user_name} 状态评估失败: 战斗未处于进行中或已结束状态"
                 )
@@ -190,8 +204,10 @@ async def dungeon_progress(
                     detail="战斗未处于进行中或已结束状态",
                 )
 
-            # 评估战斗中角色的状态效果变化
+            # 执行状态评估系统，为每个角色评估新增状态效果
             await rpg_game.combat_status_evaluation_pipeline.execute()
+
+            # 返回评估结果相关的会话消息
             return DungeonProgressResponse(
                 session_messages=rpg_game.player_session.get_messages_since(
                     last_event_sequence
@@ -200,7 +216,7 @@ async def dungeon_progress(
 
         case DungeonProgressType.POST_COMBAT:
             # 处理战斗结束后的归档和状态转换
-            if not rpg_game.current_combat_sequence.is_completed:
+            if not rpg_game.current_combat_sequence.is_combat_completed:
                 logger.error(f"玩家 {payload.user_name} 归档战斗失败: 战斗未结束")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -276,6 +292,7 @@ async def dungeon_progress(
                 )
 
         case DungeonProgressType.RETREAT:
+
             # 处理战斗中撤退
             if not rpg_game.current_combat_sequence.is_ongoing:
                 logger.error(f"玩家 {payload.user_name} 撤退失败: 战斗未在进行中")
@@ -539,18 +556,18 @@ async def dungeon_combat_play_cards(
     logger.info(f"/api/dungeon/combat/play_cards/v1/: user={payload.user_name}")
 
     # 验证地下城操作的前置条件
-    rpg_game = _validate_dungeon_prerequisites(
-        user_name=payload.user_name,
-        game_server=game_server,
-    )
+    # rpg_game = _validate_dungeon_prerequisites(
+    #     user_name=payload.user_name,
+    #     game_server=game_server,
+    # )
 
     # 验证战斗状态
-    if not rpg_game.current_combat_sequence.is_ongoing:
-        logger.error(f"玩家 {payload.user_name} 出牌失败: 战斗未在进行中")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="战斗未在进行中",
-        )
+    # if not rpg_game.current_combat_sequence.is_ongoing:
+    #     logger.error(f"玩家 {payload.user_name} 出牌失败: 战斗未在进行中")
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail="战斗未在进行中",
+    #     )
 
     # 创建出牌后台任务
     play_cards_task = game_server.create_task()
@@ -605,8 +622,8 @@ async def _execute_draw_cards_task(
         assert isinstance(rpg_game, TCGGame), "Invalid game type"
 
         # 验证战斗状态
-        if not rpg_game.current_combat_sequence.is_ongoing:
-            raise ValueError("战斗未在进行中")
+        # if not rpg_game.current_combat_sequence.is_ongoing:
+        #     raise ValueError("战斗未在进行中")
 
         # 推进战斗流程处理抽牌
         # 注意: 这里会阻塞当前协程直到战斗流程处理完成
@@ -651,17 +668,23 @@ async def _execute_play_cards_task(
         logger.info(f"🚀 出牌任务开始: task_id={task_id}, user={user_name}")
 
         # 重新获取游戏实例（确保获取最新状态）
-        current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._tcg_game is None:
-            raise ValueError(f"游戏实例不存在: user={user_name}")
+        # current_room = game_server.get_room(user_name)
+        # if current_room is None or current_room._tcg_game is None:
+        #     raise ValueError(f"游戏实例不存在: user={user_name}")
 
-        rpg_game = current_room._tcg_game
-        assert isinstance(rpg_game, TCGGame), "Invalid game type"
+        # rpg_game = current_room._tcg_game
+        # assert isinstance(rpg_game, TCGGame), "Invalid game type"
+
+        rpg_game = _validate_dungeon_prerequisites(
+            user_name=user_name,
+            game_server=game_server,
+        )
 
         # 验证战斗状态
         if not rpg_game.current_combat_sequence.is_ongoing:
             raise ValueError("战斗未在进行中")
 
+        # 确保所有角色都有后备牌（如果没有玩家指定的牌了，系统会自动提供一张后备牌，保证流程继续）
         success, message = ensure_all_actors_have_fallback_cards(rpg_game)
         if not success:
             raise ValueError(f"确保所有角色都有后备牌失败: {message}")
@@ -685,6 +708,7 @@ async def _execute_play_cards_task(
         logger.info(f"✅ 出牌任务完成: task_id={task_id}, user={user_name}")
 
     except Exception as e:
+
         logger.error(f"❌ 出牌任务失败: task_id={task_id}, user={user_name}, error={e}")
         task_record = game_server.get_task(task_id)
         if task_record is not None:

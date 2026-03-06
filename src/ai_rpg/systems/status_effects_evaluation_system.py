@@ -149,7 +149,7 @@ class StatusEffectsEvaluationSystem(ExecuteProcessor):
         """
         if not (
             self._game.current_combat_sequence.is_ongoing
-            or self._game.current_combat_sequence.is_completed
+            or self._game.current_combat_sequence.is_combat_completed
         ):
             # 战斗未进行中，跳过，或者已经结束了，也结束。
             return

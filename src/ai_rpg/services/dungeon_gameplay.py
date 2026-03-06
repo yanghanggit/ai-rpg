@@ -684,8 +684,15 @@ async def _execute_play_cards_task(
         if not rpg_game.current_combat_sequence.is_ongoing:
             raise ValueError("战斗未在进行中")
 
+        # 判断当前是否有未完成的回合
+        last_round = rpg_game.current_combat_sequence.latest_round
+        if last_round is None or last_round.is_round_completed:
+            raise ValueError("当前没有未完成的回合可供打牌")
+
         # 确保所有角色都有后备牌（如果没有玩家指定的牌了，系统会自动提供一张后备牌，保证流程继续）
-        success, message = ensure_all_actors_have_fallback_cards(rpg_game)
+        success, message = ensure_all_actors_have_fallback_cards(
+            rpg_game, len(rpg_game.current_combat_sequence.current_rounds), last_round
+        )
         if not success:
             raise ValueError(f"确保所有角色都有后备牌失败: {message}")
 

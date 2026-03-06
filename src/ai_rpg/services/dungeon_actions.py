@@ -21,6 +21,7 @@ from ..models import (
     Card,
     CharacterStats,
     InventoryComponent,
+    Round,
 )
 from ..entitas import Entity
 from langchain_core.messages import AIMessage
@@ -519,7 +520,9 @@ def retreat_from_dungeon_combat(tcg_game: TCGGame) -> Tuple[bool, str]:
 
 
 ###################################################################################################################################################################
-def ensure_all_actors_have_fallback_cards(tcg_game: TCGGame) -> Tuple[bool, str]:
+def ensure_all_actors_have_fallback_cards(
+    tcg_game: TCGGame, current_round_number: int, combat_round: Round
+) -> Tuple[bool, str]:
     """
     为所有缺少手牌的存活角色提供兜底卡牌。
 
@@ -536,50 +539,40 @@ def ensure_all_actors_have_fallback_cards(tcg_game: TCGGame) -> Tuple[bool, str]
 
     Args:
         tcg_game: TCG游戏实例
+        current_round_number: 当前回合编号（用于手牌组件与消息标记）
+        combat_round: 当前回合对象（由调用方保证未完成）
 
     Returns:
         tuple[bool, str]: (是否成功, 结果消息)
     """
-    # 1. 验证战斗状态
-    if not tcg_game.current_combat_sequence.is_ongoing:
-        error_msg = "兜底手牌失败: 当前没有进行中的战斗"
-        logger.error(error_msg)
-        return False, error_msg
 
-    if len(tcg_game.current_combat_sequence.current_rounds) == 0:
-        error_msg = "兜底手牌失败: 没有当前回合"
-        logger.error(error_msg)
-        return False, error_msg
+    assert current_round_number >= 0, "current_round_number must be non-negative"
+    assert not combat_round.is_round_completed, "当前回合已完成，无需兜底手牌"
 
-    last_round = tcg_game.current_combat_sequence.latest_round
-    assert last_round is not None
-    if last_round.is_round_completed:
-        error_msg = "兜底手牌失败: 回合已完成"
-        logger.error(error_msg)
-        return False, error_msg
+    if len(combat_round.action_order) == 0:
+        logger.warning("当前回合行动队列为空，无需添加兜底卡牌")
+        return True, "当前回合行动队列为空，无需添加兜底卡牌"
 
-    # 2. 获取玩家实体
-    player_entity = tcg_game.get_player_entity()
-    if player_entity is None:
-        error_msg = "兜底手牌失败: 玩家实体不存在"
-        logger.error(error_msg)
-        return False, error_msg
-
-    # 3. 获取场上所有存活的角色
-    alive_combat_actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
-    if len(alive_combat_actor_entities) == 0:
-        error_msg = "兜底手牌失败: 没有存活的角色"
-        logger.error(error_msg)
-        return False, error_msg
-
-    # 4. 获取当前回合数
-    current_round_number = len(tcg_game.current_combat_sequence.current_rounds)
-
-    # 5. 为缺少手牌的角色添加兜底卡牌
     fallback_count = 0
-    for entity in alive_combat_actor_entities:
+    for combat_actor_entity_name in combat_round.action_order:
+
+        combat_actor_entity = tcg_game.get_entity_by_name(combat_actor_entity_name)
+        assert (
+            combat_actor_entity is not None
+        ), f"无法找到角色实体: {combat_actor_entity_name}"
+        if combat_actor_entity is None:
+            logger.error(
+                f"无法找到角色实体: {combat_actor_entity_name}, 跳过兜底卡牌添加"
+            )
+            continue
+
         # 跳过已有手牌或已死亡的角色
-        if entity.has(HandComponent) or entity.has(DeathComponent):
+        if combat_actor_entity.has(HandComponent):
+            logger.debug(f"角色 {combat_actor_entity_name} 已有手牌，跳过兜底卡牌添加")
+            continue
+
+        if combat_actor_entity.has(DeathComponent):
+            logger.debug(f"角色 {combat_actor_entity_name} 已死亡，跳过兜底卡牌添加")
             continue
 
         # 兜底卡牌的目标固定为自己
@@ -591,23 +584,23 @@ def ensure_all_actors_have_fallback_cards(tcg_game: TCGGame) -> Tuple[bool, str]
             name="应急应对",
             action=fallback_action,
             stats=CharacterStats(hp=0, max_hp=0, attack=0, defense=0),
-            targets=[entity.name],
+            targets=[combat_actor_entity.name],
             status_effects=[],
             affixes=[f"战术：{fallback_mechanism}"],
         )
 
         # 从InventoryComponent继承物品词条到卡牌词条
-        inventory_comp = entity.get(InventoryComponent)
+        inventory_comp = combat_actor_entity.get(InventoryComponent)
         assert (
             inventory_comp is not None
-        ), f"Entity {entity.name} must have InventoryComponent"
+        ), f"Entity {combat_actor_entity.name} must have InventoryComponent"
         for item in inventory_comp.items:
             fallback_card.affixes.extend(item.affixes)  # 追加装备词条
 
         # 添加手牌组件
-        entity.replace(
+        combat_actor_entity.replace(
             HandComponent,
-            entity.name,
+            combat_actor_entity.name,
             [fallback_card],
             current_round_number,
         )
@@ -617,7 +610,7 @@ def ensure_all_actors_have_fallback_cards(tcg_game: TCGGame) -> Tuple[bool, str]
 
 **卡牌**封装行动信息，由战斗系统结算。"""
         tcg_game.add_human_message(
-            entity=entity,
+            entity=combat_actor_entity,
             message_content=compressed_prompt,
             draw_cards_round_number=current_round_number,
         )
@@ -634,7 +627,7 @@ def ensure_all_actors_have_fallback_cards(tcg_game: TCGGame) -> Tuple[bool, str]
 }}
 ```"""
         tcg_game.add_ai_message(
-            entity,
+            combat_actor_entity,
             [
                 AIMessage(
                     content=fallback_json, draw_cards_round_number=current_round_number
@@ -643,7 +636,7 @@ def ensure_all_actors_have_fallback_cards(tcg_game: TCGGame) -> Tuple[bool, str]
         )
 
         fallback_count += 1
-        logger.info(f"为角色 {entity.name} 添加兜底卡牌")
+        logger.info(f"为角色 {combat_actor_entity.name} 添加兜底卡牌")
 
     if fallback_count == 0:
         return True, "所有角色都已有手牌，无需兜底"

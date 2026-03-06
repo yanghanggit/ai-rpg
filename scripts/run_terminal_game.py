@@ -261,11 +261,23 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
 
     elif usr_input == "/pc":
 
+        # 打牌需要在战斗中，并且必须有未完成的回合
         if not terminal_game.current_combat_sequence.is_ongoing:
             logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
             return
 
-        success, message = ensure_all_actors_have_fallback_cards(terminal_game)
+        # 判断当前是否有未完成的回合
+        last_round = terminal_game.current_combat_sequence.latest_round
+        if last_round is None or last_round.is_round_completed:
+            logger.error(f"{usr_input} 当前没有未完成的回合可供打牌")
+            return
+
+        # 确保所有角色都有后备牌（如果没有玩家指定的牌了，系统会自动提供一张后备牌，保证流程继续）
+        success, message = ensure_all_actors_have_fallback_cards(
+            terminal_game,
+            len(terminal_game.current_combat_sequence.current_rounds),
+            last_round,
+        )
         if not success:
             logger.error(f"确保所有角色都有后备牌失败: {message}")
             return

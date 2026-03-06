@@ -37,6 +37,8 @@ from .dungeon_actions import (
     activate_random_play_cards,
     retreat_from_dungeon_combat,
     ensure_all_actors_have_fallback_cards,
+    get_alive_enemies_on_stage,
+    get_alive_expedition_members_on_stage,
 )
 from ..game.game_server import GameServer
 
@@ -466,7 +468,15 @@ async def dungeon_combat_draw_cards(
 
     # 敌人的就用随机（根据标记控制是否执行）
     if payload.enable_enemy_draw:
-        success, message = activate_random_enemy_card_draws(rpg_game)
+        player_entity = rpg_game.get_player_entity()
+        assert (
+            player_entity is not None
+        ), "activate_random_enemy_card_draws: player_entity is None"
+        enemies = get_alive_enemies_on_stage(player_entity, rpg_game)
+        expedition_members = get_alive_expedition_members_on_stage(
+            player_entity, rpg_game
+        )
+        success, message = activate_random_enemy_card_draws(enemies, expedition_members)
         if not success:
             logger.error(f"Enemy抽牌失败: {message}")
             raise HTTPException(

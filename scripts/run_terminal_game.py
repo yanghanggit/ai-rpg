@@ -246,7 +246,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             logger.error(f"激活Ally抽牌失败: {message}")
             return
 
-        success, message = activate_random_enemy_card_draws(terminal_game)
+        success, message = activate_random_enemy_card_draws(enemies, expedition_members)
         if not success:
             logger.error(f"激活Enemy抽牌失败: {message}")
             return

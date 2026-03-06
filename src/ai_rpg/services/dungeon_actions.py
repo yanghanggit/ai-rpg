@@ -261,35 +261,41 @@ def activate_specified_expedition_member_card_draws(
 
 
 ###################################################################################################################################################################
-def activate_random_enemy_card_draws(tcg_game: TCGGame) -> Tuple[bool, str]:
+def activate_random_enemy_card_draws(
+    enemy_entities: List[Entity],
+    expedition_member_entities: List[Entity],
+) -> Tuple[bool, str]:
     """
-    为场上所有存活的Enemy阵营角色激活抽牌动作（随机选择技能和状态效果）
+    为指定的敌方列表激活抽牌动作（随机选择技能和状态效果）
 
     Args:
-        tcg_game: TCG游戏实例
+        enemy_entities: 场上存活的敌方实体列表
+        expedition_member_entities: 场上存活的远征队成员实体列表，用于随机选择目标
 
     Returns:
         tuple[bool, str]: (是否成功, 结果消息)
     """
 
-    player_entity = tcg_game.get_player_entity()
-    if player_entity is None:
-        error_msg = "激活Enemy抽牌失败: 玩家实体不存在"
-        logger.error(error_msg)
-        return False, error_msg
-
-    # 获取场上所有存活的角色
-    actor_entities = tcg_game.get_alive_actors_on_stage(player_entity)
-
-    # 筛选Enemy阵营的角色
-    enemy_entities = [entity for entity in actor_entities if entity.has(EnemyComponent)]
-
+    assert (
+        len(enemy_entities) > 0
+    ), "activate_random_enemy_card_draws: enemy_entities is empty"
     if len(enemy_entities) == 0:
         error_msg = "激活Enemy抽牌失败: 没有存活的Enemy角色"
         logger.error(error_msg)
         return False, error_msg
 
-    activated_count = 0
+    assert (
+        len(expedition_member_entities) > 0
+    ), "activate_random_enemy_card_draws: expedition_member_entities is empty"
+    if len(expedition_member_entities) == 0:
+        error_msg = "激活Enemy抽牌失败: 没有存活的远征队成员"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 预先构建远征队成员目标名称列表（循环内不变）
+    expedition_member_target_names = [
+        entity.name for entity in expedition_member_entities
+    ]
 
     # 为每个Enemy角色添加抽牌动作组件
     for entity in enemy_entities:
@@ -297,46 +303,41 @@ def activate_random_enemy_card_draws(tcg_game: TCGGame) -> Tuple[bool, str]:
         # 跳过已经有抽牌动作的角色
         if entity.has(DrawCardsAction):
             logger.warning(
-                f"Entity {entity.name} already has DrawCardsAction, skipping activation"
+                f"Entity {entity.name} already has DrawCardsAction, so will be overwritten by new DrawCardsAction"
             )
-            continue
 
         # 获取可用技能列表
+        assert entity.has(
+            SkillBookComponent
+        ), f"Entity {entity.name} must have SkillBookComponent"
         skill_book_comp = entity.get(SkillBookComponent)
-        assert skill_book_comp is not None, "Entity must have SkillBookComponent"
-        if len(skill_book_comp.skills) == 0:
-            logger.warning(f"entity {entity.name} has no skills in SkillBookComponent")
-            assert False, "Entity has no skills in SkillBookComponent"
-
+        assert (
+            len(skill_book_comp.skills) > 0
+        ), f"Entity {entity.name} has no skills in SkillBookComponent"
         available_skills = skill_book_comp.skills.copy()
-        if len(available_skills) == 0:
-            error_msg = f"激活Enemy抽牌失败: 角色 {entity.name} 没有可用技能"
-            logger.error(error_msg)
-            return False, error_msg
 
         # 随机选择一个技能作为初始技能
         selected_skill = random.choice(available_skills)
 
-        # 获取敌方目标列表
-        targets = [
-            actor.name
-            for actor in actor_entities
-            if actor.has(ExpeditionMemberComponent)
-        ]
-
-        # 随机一个target,然后组成[]
-        if len(targets) > 0:
-            targets = [random.choice(targets)]
+        # 随机选择一个远征队成员目标
+        targets = (
+            [random.choice(expedition_member_target_names)]
+            if expedition_member_target_names
+            else []
+        )
 
         # 获取角色当前所有的状态效果
+        assert entity.has(
+            CombatStatsComponent
+        ), f"Entity {entity.name} must have CombatStatsComponent"
         combat_stats = entity.get(CombatStatsComponent)
-        status_effects = combat_stats.status_effects.copy() if combat_stats else []
+        status_effects = combat_stats.status_effects.copy()
 
         # 随机从全部中选择一个，然后组成[]
         if len(status_effects) > 0:
             status_effects = [random.choice(status_effects)]
 
-        # 目前传随机状态效果列表
+        # 以上 DrawCardsAction 所需的数据全部准备完成，添加组件。
         entity.replace(
             DrawCardsAction,
             entity.name,
@@ -344,9 +345,8 @@ def activate_random_enemy_card_draws(tcg_game: TCGGame) -> Tuple[bool, str]:
             targets,  # targets
             status_effects,  # 随机状态效果列表
         )
-        activated_count += 1
 
-    return True, f"成功为{activated_count}个Enemy角色激活抽牌动作"
+    return True, f"成功为 {len(enemy_entities)} 个Enemy角色激活抽牌动作"
 
 
 ###################################################################################################################################################################

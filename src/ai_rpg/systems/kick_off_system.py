@@ -315,7 +315,13 @@ class KickOffSystem(ExecuteProcessor):
         for chat_client in chat_clients:
 
             processed_entity = self._game.get_entity_by_name(chat_client.name)
-            assert processed_entity is not None
+            assert (
+                processed_entity is not None
+            ), f"Entity with name {chat_client.name} should exist in the game context"
+
+            # 为所有 ai_message 添加 kickoff_response 顶层属性，与 HumanMessage(kickoff=...) 同理
+            for ai_message in chat_client.response_ai_messages:
+                setattr(ai_message, "kickoff_response", processed_entity.name)
 
             # 整合聊天上下文
             self._prepend_kickoff_messages(
@@ -344,7 +350,13 @@ class KickOffSystem(ExecuteProcessor):
                     chat_client.response_content,
                 )
             elif processed_entity.has(ActorComponent):
-                pass
+                logger.debug(
+                    f"KickOffSystem: Completed kick off for actor {processed_entity.name}"
+                )
+            else:
+                logger.warning(
+                    f"KickOffSystem: Entity {processed_entity.name} is neither Actor nor Stage, which is unexpected"
+                )
 
     ###############################################################################################################################################
     def _filter_valid_kick_off_entities(self) -> Set[Entity]:

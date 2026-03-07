@@ -493,27 +493,8 @@ async def dungeon_combat_draw_cards(
     # 敌人的就用随机（根据标记控制是否执行）, 所有的敌人都加。
     if payload.enable_enemy_draw:
 
-        player_entity = rpg_game.get_player_entity()
-        assert (
-            player_entity is not None
-        ), "activate_random_enemy_card_draws: player_entity is None"
-
-        # 获取当前场景中所有存活的敌人和远征队成员，确保至少有一个目标可以抽牌
-        enemies = get_alive_enemies_on_stage(player_entity, rpg_game)
-        expedition_members = get_alive_expedition_members_on_stage(
-            player_entity, rpg_game
-        )
-
-        # 如果当前场景中没有敌人和远征队成员，则无法执行抽牌，返回错误
-        if len(enemies) + len(expedition_members) == 0:
-            logger.error(f"Enemy抽牌失败: 当前场景没有敌人和远征队成员")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"激活Enemy抽牌动作失败: 当前场景没有敌人和远征队成员",
-            )
-
         # 激活敌人抽牌动作，内部会为每个敌人随机选择一个技能并随机选择目标
-        success, message = activate_random_enemy_card_draws(enemies, expedition_members)
+        success, message = activate_random_enemy_card_draws(rpg_game)
         if not success:
             logger.error(f"Enemy抽牌失败: {message}")
             raise HTTPException(

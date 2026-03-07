@@ -230,30 +230,19 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             return
 
         # 为所有角色激活抽牌动作，全部随机选择
-
-        expedition_members = get_alive_expedition_members_on_stage(
-            player_entity, terminal_game
-        )
-        enemies = get_alive_enemies_on_stage(player_entity, terminal_game)
-        success, message = activate_random_expedition_member_card_draws(
-            expedition_members, enemies
-        )
+        success, message = activate_random_expedition_member_card_draws(terminal_game)
         if not success:
             logger.error(f"激活Ally抽牌失败: {message}")
             return
 
-        success, message = activate_random_enemy_card_draws(enemies, expedition_members)
+        # 为所有敌人角色激活抽牌动作，全部随机选择
+        success, message = activate_random_enemy_card_draws(terminal_game)
         if not success:
             logger.error(f"激活Enemy抽牌失败: {message}")
             return
 
+        # 调用一次 战斗执行 pipeline 开始进行推理，从而抽牌。
         await terminal_game.combat_execution_pipeline.process()
-
-        if (
-            terminal_game.current_combat_sequence.is_won
-            or terminal_game.current_combat_sequence.is_lost
-        ):
-            logger.info(f"战斗已结束，这里是端点测试，暂不处理后续逻辑????")
 
     elif usr_input == "/pc":
 

@@ -109,31 +109,36 @@ def filter_valid_targets(
 
 ###################################################################################################################################################################
 def activate_random_expedition_member_card_draws(
-    expedition_member_entities: List[Entity],
-    enemy_entities: List[Entity],
+    tcg_game: TCGGame,
 ) -> Tuple[bool, str]:
     """
-    为指定的远征队成员列表激活抽牌动作（随机选择技能和状态效果）
+    为当前场景中所有存活的远征队成员激活抽牌动作（随机选择技能和状态效果）
 
     Args:
-        expedition_member_entities: 需要激活抽牌的远征队成员实体列表
-        enemy_entities: 场上存活的敌方实体列表，用于随机选择目标
+        tcg_game: TCG游戏实例，内部自行获取玩家实体及场景内的队员与敌方列表
 
     Returns:
         tuple[bool, str]: (是否成功, 结果消息)
     """
 
+    if not tcg_game.current_combat_sequence.is_ongoing:
+        return False, "只能在战斗中使用is_ongoing"
+
+    player_entity = tcg_game.get_player_entity()
     assert (
-        len(expedition_member_entities) > 0
-    ), "activate_random_expedition_member_card_draws: expedition_member_entities is empty"
+        player_entity is not None
+    ), "activate_random_expedition_member_card_draws: player_entity is None"
+
+    expedition_member_entities = get_alive_expedition_members_on_stage(
+        player_entity, tcg_game
+    )
+    enemy_entities = get_alive_enemies_on_stage(player_entity, tcg_game)
+
     if len(expedition_member_entities) == 0:
         error_msg = "激活远征队成员抽牌失败: 没有存活的远征队成员"
         logger.error(error_msg)
         return False, error_msg
 
-    assert (
-        len(enemy_entities) > 0
-    ), "activate_random_expedition_member_card_draws: enemy_entities is empty"
     if len(enemy_entities) == 0:
         error_msg = "激活远征队成员抽牌失败: 没有存活的敌方角色"
         logger.error(error_msg)
@@ -272,31 +277,36 @@ def activate_specified_expedition_member_card_draws(
 
 ###################################################################################################################################################################
 def activate_random_enemy_card_draws(
-    enemy_entities: List[Entity],
-    expedition_member_entities: List[Entity],
+    tcg_game: TCGGame,
 ) -> Tuple[bool, str]:
     """
-    为指定的敌方列表激活抽牌动作（随机选择技能和状态效果）
+    为当前场景中所有存活的敌方激活抽牌动作（随机选择技能和状态效果）
 
     Args:
-        enemy_entities: 场上存活的敌方实体列表
-        expedition_member_entities: 场上存活的远征队成员实体列表，用于随机选择目标
+        tcg_game: TCG游戏实例，内部自行获取玩家实体及场景内的敌方与队员列表
 
     Returns:
         tuple[bool, str]: (是否成功, 结果消息)
     """
 
+    if not tcg_game.current_combat_sequence.is_ongoing:
+        return False, "只能在战斗中使用is_ongoing"
+
+    player_entity = tcg_game.get_player_entity()
     assert (
-        len(enemy_entities) > 0
-    ), "activate_random_enemy_card_draws: enemy_entities is empty"
+        player_entity is not None
+    ), "activate_random_enemy_card_draws: player_entity is None"
+
+    enemy_entities = get_alive_enemies_on_stage(player_entity, tcg_game)
+    expedition_member_entities = get_alive_expedition_members_on_stage(
+        player_entity, tcg_game
+    )
+
     if len(enemy_entities) == 0:
         error_msg = "激活Enemy抽牌失败: 没有存活的Enemy角色"
         logger.error(error_msg)
         return False, error_msg
 
-    assert (
-        len(expedition_member_entities) > 0
-    ), "activate_random_enemy_card_draws: expedition_member_entities is empty"
     if len(expedition_member_entities) == 0:
         error_msg = "激活Enemy抽牌失败: 没有存活的远征队成员"
         logger.error(error_msg)

@@ -194,7 +194,7 @@ async def dungeon_progress(
                 )
 
             # 执行状态评估系统，为每个角色评估新增状态效果
-            await rpg_game.combat_status_evaluation_pipeline.execute()
+            await rpg_game.combat_execution_pipeline.execute()
 
             # 返回评估结果相关的会话消息
             return DungeonProgressResponse(
@@ -224,10 +224,10 @@ async def dungeon_progress(
                 )
 
             # 归档战斗记录（使用 pipeline）
-            await rpg_game.combat_archive_pipeline.execute()
+            await rpg_game.combat_execution_pipeline.execute()
 
             # 进入战斗后准备状态
-            rpg_game.current_combat_sequence.transition_to_post_combat()
+            # rpg_game.current_combat_sequence.transition_to_post_combat()
 
             logger.info(f"玩家 {payload.user_name} 战斗归档完成，进入战斗后准备状态")
             return DungeonProgressResponse(
@@ -305,7 +305,7 @@ async def dungeon_progress(
             await rpg_game.combat_execution_pipeline.execute()
 
             # 转换到战斗后状态
-            rpg_game.current_combat_sequence.transition_to_post_combat()
+            # rpg_game.current_combat_sequence.transition_to_post_combat()
 
             # 返回家园
             complete_dungeon_and_return_home(rpg_game, rpg_game.current_dungeon)

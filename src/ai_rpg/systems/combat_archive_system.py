@@ -148,6 +148,8 @@ class CombatArchiveSystem(ExecuteProcessor):
         # 压缩总结战斗结果。
         await self._archive_all_combat_records()
 
+        self._game.current_combat_sequence.transition_to_post_combat()
+
     #######################################################################################################################################
     def _create_combat_summary_clients(
         self, combat_actors: List[Entity]

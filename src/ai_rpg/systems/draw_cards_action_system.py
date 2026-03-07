@@ -327,7 +327,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 message_content=_generate_compressd_round_prompt(
                     current_round_number=current_round_number
                 ),
-                compressed_prompt=chat_client.prompt,
                 draw_cards_round_number=current_round_number,
             )
 

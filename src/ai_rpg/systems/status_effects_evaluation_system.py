@@ -4,8 +4,8 @@
 自主评估并添加新的状态效果。
 
 执行时机：
-- 通过 combat_status_evaluation_pipeline 手动调用
-- 建议在战斗裁决后（ArbitrationActionSystem）按需触发
+- 监听 PlayCardsAction.ADDED（ReactiveProcessor）
+- 在 ArbitrationActionSystem 之后执行（由管线顺序保证）
 - 用于战斗过程中的状态效果动态生成
 """
 
@@ -14,10 +14,11 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel
 from ..chat_client.client import ChatClient
-from ..entitas import Entity, ExecuteProcessor
+from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     CombatStatsComponent,
+    PlayCardsAction,
     StatusEffect,
 )
 from ..utils import extract_json_from_code_block
@@ -113,7 +114,7 @@ def _generate_status_effects_evaluation_prompt(
 
 #######################################################################################################################################
 @final
-class StatusEffectsEvaluationSystem(ExecuteProcessor):
+class StatusEffectsEvaluationSystem(ReactiveProcessor):
     """
     状态效果评估系统
 
@@ -122,9 +123,9 @@ class StatusEffectsEvaluationSystem(ExecuteProcessor):
     判断应该添加哪些新状态效果（如受伤、增益、削弱等）。
 
     执行机制：
-    - 手动调用（ExecuteProcessor），通过 combat_status_evaluation_pipeline 触发
-    - 按需执行，而非每回合自动触发（节省 LLM 调用成本）
-    - 建议在关键战斗节点或需要评估状态变化时调用
+    - 监听 PlayCardsAction.ADDED（ReactiveProcessor）
+    - 在 ArbitrationActionSystem 之后执行（由管线顺序保证）
+    - 仅在战斗进行中时触发
 
     执行条件：
     - 战斗状态为 ONGOING（is_ongoing=True）
@@ -133,11 +134,22 @@ class StatusEffectsEvaluationSystem(ExecuteProcessor):
     """
 
     def __init__(self, game_context: TCGGame) -> None:
+        super().__init__(game_context)
         self._game: Final[TCGGame] = game_context
 
     #######################################################################################################################################
     @override
-    async def execute(self) -> None:
+    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+        return {Matcher(PlayCardsAction): GroupEvent.ADDED}
+
+    #######################################################################################################################################
+    @override
+    def filter(self, entity: Entity) -> bool:
+        return entity.has(PlayCardsAction)
+
+    #######################################################################################################################################
+    @override
+    async def react(self, entities: list[Entity]) -> None:
         """
         为每个参战角色评估新增状态效果
 
@@ -147,11 +159,7 @@ class StatusEffectsEvaluationSystem(ExecuteProcessor):
         3. 解析响应并追加到 CombatStatsComponent.status_effects
         4. 添加新增状态效果通知到角色上下文
         """
-        if not (
-            self._game.current_combat_sequence.is_ongoing
-            or self._game.current_combat_sequence.is_combat_completed
-        ):
-            # 战斗未进行中，跳过，或者已经结束了，也结束。
+        if not self._game.current_combat_sequence.is_ongoing:
             return
 
         # 获取当前回合数

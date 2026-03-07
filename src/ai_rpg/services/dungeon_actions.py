@@ -549,12 +549,14 @@ def ensure_all_actors_have_fallback_cards(
         )
 
         # 添加压缩提示词到上下文
-        compressed_prompt = f"""# 指令！第 {current_round_number} 回合：生成战斗卡牌(JSON)
+        fallback_prompt = f"""# 指令！第 {current_round_number} 回合：生成战斗卡牌(JSON)
 
 **卡牌**封装行动信息，由战斗系统结算。"""
+
+        # 添加上下文。
         tcg_game.add_human_message(
             entity=combat_actor_entity,
-            message_content=compressed_prompt,
+            message_content=fallback_prompt,
             draw_cards_round_number=current_round_number,
         )
 

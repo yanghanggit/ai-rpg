@@ -32,6 +32,12 @@ def activate_speak_action(
     Returns:
         tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
+
+    if not tcg_game.is_player_in_home_stage:
+        error_detail = "玩家不在家园场景中，无法执行说话动作"
+        logger.error(f"激活说话动作失败: {error_detail}")
+        return False, error_detail
+
     if not target:
         error_detail = "目标角色名称不能为空"
         logger.error(f"激活说话动作失败: {error_detail}")
@@ -64,6 +70,12 @@ def activate_switch_stage(tcg_game: TCGGame, stage_name: str) -> Tuple[bool, str
     Returns:
         tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
+
+    if not tcg_game.is_player_in_home_stage:
+        error_detail = "玩家不在家园场景中，无法执行说话动作"
+        logger.error(f"激活场景转换失败: {error_detail}")
+        return False, error_detail
+
     if not stage_name:
         error_detail = "目标场景名称不能为空"
         logger.error(f"激活场景转换失败: {error_detail}")
@@ -112,6 +124,11 @@ def activate_stage_plan(tcg_game: TCGGame) -> Tuple[bool, str]:
     Returns:
         tuple[bool, str]: (是否成功, 错误详情)
     """
+
+    if not tcg_game.is_player_in_home_stage:
+        error_detail = "玩家不在家园场景中，无法执行说话动作"
+        logger.error(f"激活行动计划失败: {error_detail}")
+        return False, error_detail
 
     # 获取玩家实体和当前场景实体，验证场景为家园
     player_entity = tcg_game.get_player_entity()

@@ -195,9 +195,6 @@ def _enter_dungeon_stage(
     # 2. 获取关卡实体
     stage_entity = tcg_game.get_stage_entity(stage_model.name)
     assert stage_entity is not None, f"{stage_model.name} 没有对应的stage实体！"
-    if stage_entity is None:
-        logger.error(f"{stage_model.name} 没有对应的stage实体！")
-        return False
 
     assert stage_entity.has(
         DungeonComponent
@@ -289,6 +286,11 @@ def initialize_dungeon_first_entry(tcg_game: TCGGame, dungeon: Dungeon) -> bool:
     Returns:
         bool: 是否成功初始化并进入第一个关卡
     """
+
+    if len(dungeon.stages) == 0:
+        logger.error("地下城没有关卡数据，无法进入！")
+        return False
+
     # 验证是否为首次进入（索引必须为-1）
     if dungeon.current_stage_index >= 0:
         logger.error(
@@ -330,6 +332,18 @@ def advance_to_next_stage(tcg_game: TCGGame, dungeon: Dungeon) -> None:
         tcg_game: TCG游戏实例
         dungeon: 地下城实例
     """
+
+    if not tcg_game.current_combat_sequence.is_post_combat:
+        logger.error("当前不处于战斗后状态，无法推进地下城关卡")
+        return
+
+    if tcg_game.current_combat_sequence.is_lost:
+        logger.info("英雄失败，应该返回营地！！！！")
+        return
+
+    if not tcg_game.current_combat_sequence.is_won:
+        assert False, "不可能出现的情况！"
+
     # 1. 推进地下城索引到下一关
     next_stage = dungeon.advance_to_next_stage()
     if next_stage is None:
@@ -360,6 +374,11 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> Non
         tcg_game: TCG游戏实例
         dungeon: 地下城实例
     """
+
+    assert (
+        tcg_game.current_combat_sequence.is_ongoing
+        or tcg_game.current_combat_sequence.is_post_combat
+    ), "当前不处于战斗进行中或战斗后状态，无法完成地下城并返回家园！"
 
     # 1. 验证并获取远征队成员
     expedition_entities = tcg_game.get_group(

@@ -23,8 +23,6 @@ from ..models import (
     DungeonCombatPlayCardsRequest,
     DungeonCombatPlayCardsResponse,
     TaskStatus,
-    ExpeditionMemberComponent,
-    DeathComponent,
 )
 from .dungeon_stage_transition import (
     advance_to_next_stage,
@@ -33,12 +31,9 @@ from .dungeon_stage_transition import (
 from .dungeon_actions import (
     activate_random_enemy_card_draws,
     activate_specified_expedition_member_card_draws,
-    filter_valid_targets,
     activate_play_cards,
     mark_expedition_retreat,
     ensure_all_actors_have_fallback_cards,
-    get_alive_enemies_on_stage,
-    get_alive_expedition_members_on_stage,
 )
 from ..game.game_server import GameServer
 
@@ -177,64 +172,67 @@ async def dungeon_progress(
                 )
             )
 
-        case DungeonProgressType.COMBAT_STATUS_EVALUATION:
+        # case DungeonProgressType.COMBAT_STATUS_EVALUATION:
+        # 检查可以执行状态评估的战斗状态
+        # is_valid_combat_state = (
+        #     rpg_game.current_combat_sequence.is_ongoing
+        #     or rpg_game.current_combat_sequence.is_combat_completed
+        # )
+        # if not is_valid_combat_state:
+        #     logger.error(
+        #         f"玩家 {payload.user_name} 状态评估失败: 战斗未处于进行中或已结束状态"
+        #     )
+        #     raise HTTPException(
+        #         status_code=status.HTTP_400_BAD_REQUEST,
+        #         detail="战斗未处于进行中或已结束状态",
+        #     )
 
-            # 检查可以执行状态评估的战斗状态
-            is_valid_combat_state = (
-                rpg_game.current_combat_sequence.is_ongoing
-                or rpg_game.current_combat_sequence.is_combat_completed
-            )
-            if not is_valid_combat_state:
-                logger.error(
-                    f"玩家 {payload.user_name} 状态评估失败: 战斗未处于进行中或已结束状态"
-                )
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="战斗未处于进行中或已结束状态",
-                )
+        # # 执行状态评估系统，为每个角色评估新增状态效果
+        # await rpg_game.combat_execution_pipeline.execute()
 
-            # 执行状态评估系统，为每个角色评估新增状态效果
-            await rpg_game.combat_execution_pipeline.execute()
-
-            # 返回评估结果相关的会话消息
-            return DungeonProgressResponse(
-                session_messages=rpg_game.player_session.get_messages_since(
-                    last_event_sequence
-                )
-            )
+        # # 返回评估结果相关的会话消息
+        # return DungeonProgressResponse(
+        #     session_messages=rpg_game.player_session.get_messages_since(
+        #         last_event_sequence
+        #     )
+        # )
 
         case DungeonProgressType.POST_COMBAT:
-            # 处理战斗结束后的归档和状态转换
-            if not rpg_game.current_combat_sequence.is_combat_completed:
-                logger.error(f"玩家 {payload.user_name} 归档战斗失败: 战斗未结束")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="战斗未结束，无法归档",
-                )
-
-            # 验证战斗必须有结果（胜利或失败）
-            if not (
-                rpg_game.current_combat_sequence.is_won
-                or rpg_game.current_combat_sequence.is_lost
-            ):
-                logger.error(f"玩家 {payload.user_name} 归档战斗失败: 战斗状态异常")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="战斗状态异常，既未胜利也未失败",
-                )
-
-            # 归档战斗记录（使用 pipeline）
-            await rpg_game.combat_execution_pipeline.execute()
-
-            # 进入战斗后准备状态
-            # rpg_game.current_combat_sequence.transition_to_post_combat()
-
-            logger.info(f"玩家 {payload.user_name} 战斗归档完成，进入战斗后准备状态")
-            return DungeonProgressResponse(
-                session_messages=rpg_game.player_session.get_messages_since(
-                    last_event_sequence
-                )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="战斗归档接口已废弃，战斗结束后会自动处理归档和状态转换",
             )
+            # 处理战斗结束后的归档和状态转换
+            # if not rpg_game.current_combat_sequence.is_combat_completed:
+            #     logger.error(f"玩家 {payload.user_name} 归档战斗失败: 战斗未结束")
+            #     raise HTTPException(
+            #         status_code=status.HTTP_400_BAD_REQUEST,
+            #         detail="战斗未结束，无法归档",
+            #     )
+
+            # # 验证战斗必须有结果（胜利或失败）
+            # if not (
+            #     rpg_game.current_combat_sequence.is_won
+            #     or rpg_game.current_combat_sequence.is_lost
+            # ):
+            #     logger.error(f"玩家 {payload.user_name} 归档战斗失败: 战斗状态异常")
+            #     raise HTTPException(
+            #         status_code=status.HTTP_400_BAD_REQUEST,
+            #         detail="战斗状态异常，既未胜利也未失败",
+            #     )
+
+            # # 归档战斗记录（使用 pipeline）
+            # await rpg_game.combat_execution_pipeline.execute()
+
+            # # 进入战斗后准备状态
+            # # rpg_game.current_combat_sequence.transition_to_post_combat()
+
+            # logger.info(f"玩家 {payload.user_name} 战斗归档完成，进入战斗后准备状态")
+            # return DungeonProgressResponse(
+            #     session_messages=rpg_game.player_session.get_messages_since(
+            #         last_event_sequence
+            #     )
+            # )
 
         case DungeonProgressType.ADVANCE_STAGE:
             # 处理前进下一个地下城关卡
@@ -303,9 +301,6 @@ async def dungeon_progress(
 
             # 执行战斗流程让 CombatOutcomeSystem 检测到角色死亡
             await rpg_game.combat_execution_pipeline.execute()
-
-            # 转换到战斗后状态
-            # rpg_game.current_combat_sequence.transition_to_post_combat()
 
             # 返回家园
             complete_dungeon_and_return_home(rpg_game, rpg_game.current_dungeon)
@@ -415,6 +410,7 @@ async def dungeon_combat_draw_cards(
     )
 
     # 验证战斗状态
+    assert rpg_game is not None, "rpg_game is None"
     if not rpg_game.current_combat_sequence.is_ongoing:
         logger.error(f"玩家 {payload.user_name} 抽卡失败: 战斗未在进行中")
         raise HTTPException(
@@ -430,57 +426,14 @@ async def dungeon_combat_draw_cards(
             detail=f"抽牌失败: 没有指定任何抽牌动作且未启用敌人抽牌",
         )
 
-    # 为所有角色激活抽牌动作, 这2个函数内部不会进行LLM调用, 只是设置状态
-    # 处理 Ally 阵营的抽牌 指定抽取：遍历每个指定动作
+    # 处理指定的抽牌动作，逐个激活
     for expedition_member_action in payload.specified_actions:
 
-        expedition_member_entity = rpg_game.get_entity_by_name(
-            expedition_member_action.entity_name
-        )
-        if expedition_member_entity is None:
-            logger.error(
-                f"指定抽牌失败: 无法找到角色 {expedition_member_action.entity_name}"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"激活抽牌动作失败: 无法找到角色 {expedition_member_action.entity_name}",
-            )
-
-        if not expedition_member_entity.has(ExpeditionMemberComponent):
-            logger.error(
-                f"指定抽牌失败: 角色 {expedition_member_action.entity_name} 不是远征队成员"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"激活抽牌动作失败: 角色 {expedition_member_action.entity_name} 不是远征队成员",
-            )
-
-        if expedition_member_entity.has(DeathComponent):
-            logger.error(
-                f"指定抽牌失败: 角色 {expedition_member_action.entity_name} 已死亡"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"激活抽牌动作失败: 角色 {expedition_member_action.entity_name} 已死亡",
-            )
-
-        valid_targets = filter_valid_targets(
-            expedition_member_entity, rpg_game, expedition_member_action.target_names
-        )
-
-        if len(valid_targets) == 0:
-            logger.error(
-                f"指定抽牌失败: 角色 {expedition_member_action.entity_name} 没有合法的目标"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"激活抽牌动作失败: 角色 {expedition_member_action.entity_name} 没有合法的目标",
-            )
-
         success, message = activate_specified_expedition_member_card_draws(
-            expedition_member_entity=expedition_member_entity,
+            tcg_game=rpg_game,
+            expedition_member_name=expedition_member_action.entity_name,
+            target_names=expedition_member_action.target_names,
             skill_name=expedition_member_action.skill_name,
-            target_entities=valid_targets,
             status_effect_names=expedition_member_action.status_effect_names,
         )
         if not success:
@@ -609,8 +562,8 @@ async def _execute_draw_cards_task(
         assert isinstance(rpg_game, TCGGame), "Invalid game type"
 
         # 验证战斗状态
-        # if not rpg_game.current_combat_sequence.is_ongoing:
-        #     raise ValueError("战斗未在进行中")
+        if not rpg_game.current_combat_sequence.is_ongoing:
+            raise ValueError("战斗未在进行中")
 
         # 推进战斗流程处理抽牌
         # 注意: 这里会阻塞当前协程直到战斗流程处理完成
@@ -658,6 +611,7 @@ async def _execute_play_cards_task(
             user_name=user_name,
             game_server=game_server,
         )
+        assert rpg_game is not None, "rpg_game is None"
 
         # 验证战斗状态
         if not rpg_game.current_combat_sequence.is_ongoing:
@@ -669,25 +623,12 @@ async def _execute_play_cards_task(
             raise ValueError("当前没有未完成的回合可供打牌")
 
         # 确保所有角色都有后备牌（如果没有玩家指定的牌了，系统会自动提供一张后备牌，保证流程继续）
-        player_entity = rpg_game.get_player_entity()
-        assert player_entity is not None, "player_entity is None"
-
-        # 获取当前场景中所有存活的战斗角色（远征队成员和敌人）
-        alive_combat_actor_entities = get_alive_expedition_members_on_stage(
-            player_entity, rpg_game
-        ) + get_alive_enemies_on_stage(player_entity, rpg_game)
-
-        # 确保所有角色都有后备牌（如果没有玩家指定的牌了，系统会自动提供一张后备牌，保证流程继续）
-        success, message = ensure_all_actors_have_fallback_cards(
-            alive_combat_actor_entities,
-            len(rpg_game.current_combat_sequence.current_rounds),
-            rpg_game,
-        )
+        success, message = ensure_all_actors_have_fallback_cards(rpg_game)
         if not success:
             raise ValueError(f"确保所有角色都有后备牌失败: {message}")
 
         # 为所有角色随机选择并激活打牌动作
-        success, message = activate_play_cards(alive_combat_actor_entities)
+        success, message = activate_play_cards(rpg_game)
         if not success:
             raise ValueError(f"出牌失败: {message}")
 

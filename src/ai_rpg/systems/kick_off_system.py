@@ -170,6 +170,10 @@ class KickOffSystem(ExecuteProcessor):
         assert len(agent_context.context) >= 1, "聊天上下文不能为空"
         assert agent_context.context[0].type == "system", "第一条必须是system message!"
 
+        # 为所有 ai_message 添加 kickoff_response 顶层属性，与 HumanMessage(kickoff=...) 同理
+        for ai_message in ai_messages:
+            setattr(ai_message, "kickoff_response", entity.name)
+
         # 确保类型正确的消息列表
         message_context_list: List[SystemMessage | HumanMessage | AIMessage] = [
             agent_context.context[0]  # system message
@@ -318,10 +322,6 @@ class KickOffSystem(ExecuteProcessor):
             assert (
                 processed_entity is not None
             ), f"Entity with name {chat_client.name} should exist in the game context"
-
-            # 为所有 ai_message 添加 kickoff_response 顶层属性，与 HumanMessage(kickoff=...) 同理
-            for ai_message in chat_client.response_ai_messages:
-                setattr(ai_message, "kickoff_response", processed_entity.name)
 
             # 整合聊天上下文
             self._prepend_kickoff_messages(

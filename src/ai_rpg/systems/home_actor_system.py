@@ -64,7 +64,7 @@ class ActionPlanResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _build_action_planning_prompt1(
+def _build_action_planning_prompt_v1(
     current_stage: str,
     current_stage_narration: str,
     other_actors_appearances: Dict[str, str],
@@ -158,7 +158,7 @@ def _build_action_planning_prompt1(
 
 
 #######################################################################################################################################
-def _build_action_planning_prompt2(
+def _build_action_planning_prompt_v2(
     current_stage: str,
     current_stage_narration: str,
     other_actors_appearances: Dict[str, str],
@@ -241,6 +241,35 @@ def _build_action_planning_prompt2(
 
 
 #######################################################################################################################################
+def _build_action_planning_prompt(
+    current_stage: str,
+    current_stage_narration: str,
+    other_actors_appearances: Dict[str, str],
+    available_home_stages: List[str],
+) -> str:
+    """构建角色行动规划提示词（统一入口）。
+
+    作为 v1 与 v2 的调度入口，当前临时使用 v2（不含 announce 和 trans_stage）。
+
+    Args:
+        current_stage: 场景名称
+        current_stage_narration: 场景环境描述
+        other_actors_appearances: 其他角色的外观（角色名 -> 外观）
+        available_home_stages: 可前往的场景列表（v2 中暂不使用）
+
+    Returns:
+        完整的行动规划提示词
+    """
+    # 临时使用 2
+    return _build_action_planning_prompt_v2(
+        current_stage=current_stage,
+        current_stage_narration=current_stage_narration,
+        other_actors_appearances=other_actors_appearances,
+        available_home_stages=available_home_stages,
+    )
+
+
+#######################################################################################################################################
 @final
 class HomeActorSystem(ReactiveProcessor):
     """家园角色行动系统。
@@ -252,9 +281,9 @@ class HomeActorSystem(ReactiveProcessor):
         _game: 游戏实例引用
     """
 
-    def __init__(self, game_context: TCGGame) -> None:
-        super().__init__(game_context)
-        self._game: Final[TCGGame] = game_context
+    def __init__(self, game: TCGGame) -> None:
+        super().__init__(game)
+        self._game: Final[TCGGame] = game
 
     ####################################################################################################################################
     @override
@@ -309,7 +338,7 @@ class HomeActorSystem(ReactiveProcessor):
             player_entity, current_stage
         )
 
-        prompt = _build_action_planning_prompt2(
+        prompt = _build_action_planning_prompt(
             current_stage=current_stage.name,
             current_stage_narration=current_stage.get(
                 StageDescriptionComponent
@@ -321,7 +350,7 @@ class HomeActorSystem(ReactiveProcessor):
         self._game.add_human_message(
             player_entity,
             prompt,
-            compressed_prompt=prompt,
+            home_actor_planning=player_entity.name,
         )
 
         # 判断玩家本轮是否有主动动作
@@ -401,7 +430,7 @@ class HomeActorSystem(ReactiveProcessor):
             self._game.add_human_message(
                 actor_entity,
                 chat_client.prompt,
-                compressed_prompt=chat_client.prompt,
+                home_actor_planning=actor_entity.name,
             )
             self._game.add_ai_message(actor_entity, chat_client.response_ai_messages)
 
@@ -539,7 +568,7 @@ class HomeActorSystem(ReactiveProcessor):
             chat_clients.append(
                 ChatClient(
                     name=actor_entity.name,
-                    prompt=_build_action_planning_prompt2(
+                    prompt=_build_action_planning_prompt(
                         current_stage=current_stage.name,
                         current_stage_narration=current_stage.get(
                             StageDescriptionComponent

@@ -167,7 +167,7 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
 
         # 获取玩家实体, player在的场景就是战斗发生的场景！
         player_entity = self._game.get_player_entity()
-        assert player_entity is not None
+        assert player_entity is not None, "无法找到玩家实体！"
 
         # 获取当前场景实体
         current_stage_entity = self._game.resolve_stage_entity(player_entity)

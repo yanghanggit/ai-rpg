@@ -72,7 +72,7 @@ def _format_appearance_update_notification(appearance: str) -> str:
     Returns:
         格式化后的通知消息字符串
     """
-    return f"""# 通知！你的外观信息已经更新: 
+    return f"""# 你的外观信息已经更新: 
 
 {appearance}"""
 

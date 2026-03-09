@@ -251,7 +251,7 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
                 combat_stats.status_effects.extend(format_response.add_effects)
 
                 # 通知角色新增的效果
-                added_msg = "# 通知！新增状态效果\n\n" + "\n".join(
+                added_msg = "# 新增状态效果\n\n" + "\n".join(
                     [
                         f"+ {effect.name}: {effect.formatted_description}"
                         for effect in format_response.add_effects

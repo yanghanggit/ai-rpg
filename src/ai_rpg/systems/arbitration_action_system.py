@@ -124,7 +124,7 @@ def _generate_hp_update_notification(final_hp: int, max_hp: int) -> str:
     Returns:
         str: 格式化的HP更新通知消息
     """
-    return f"""# 通知！你的生命值已更新
+    return f"""# 你的生命值已更新
 
 当前HP: {final_hp}/{max_hp}"""
 
@@ -142,7 +142,7 @@ def _generate_status_effects_consumed_notification(
         str: 格式化的状态效果消耗通知消息
     """
     effects_list = "\n".join([f"- {effect.name}" for effect in consumed_effects])
-    return f"""# 通知！以下状态效果已被消耗移除
+    return f"""# 以下状态效果已被消耗移除
 
 {effects_list}"""
 
@@ -154,7 +154,7 @@ def _generate_defeat_notification() -> str:
     Returns:
         str: 击败通知消息
     """
-    return """# 通知！你的HP已归零，失去战斗能力！"""
+    return """# 你的HP已归零，失去战斗能力！"""
 
 
 #######################################################################################################################################
@@ -172,7 +172,7 @@ def _generate_combat_arbitration_broadcast(
         格式化的战斗广播消息，包含演出和数据日志
     """
 
-    return f"""# 通知！第 {current_round_number} 回合结算
+    return f"""# 第 {current_round_number} 回合结算
 
 ## 战斗演出
 

@@ -9,7 +9,7 @@ from ..game.tcg_game import TCGGame
 def _format_whisper_notification(
     speaker_name: str, target_name: str, content: str
 ) -> str:
-    return f"# 通知！{speaker_name} 对 {target_name} 耳语道: {content}"
+    return f"# {speaker_name} 对 {target_name} 耳语道: {content}"
 
 
 ####################################################################################################################################

@@ -20,7 +20,7 @@ def _get_combat_result_notification(stage_name: str, is_victory: bool) -> str:
         战斗结果通知字符串，包含场景名称和胜负结果
     """
     result_text = "胜利" if is_victory else "失败"
-    return f"# 通知！{stage_name}的战斗{result_text}！"
+    return f"# {stage_name}的战斗{result_text}！"
 
 
 @final

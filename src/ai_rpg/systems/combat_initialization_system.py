@@ -69,7 +69,7 @@ def _format_status_effects_notification(status_effects: List[StatusEffect]) -> s
     Returns:
         格式化的通知消息字符串
     """
-    return "# 通知！战斗初始化新增状态效果\n\n" + "\n".join(
+    return "# 战斗初始化新增状态效果\n\n" + "\n".join(
         [
             f"+ {effect.name}: {effect.formatted_description}"
             for effect in status_effects

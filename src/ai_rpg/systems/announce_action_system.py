@@ -8,7 +8,7 @@ from ..game.tcg_game import TCGGame
 def _format_announce_notification(
     announcer_name: str, announcement_message: str
 ) -> str:
-    return f"""# 通知！{announcer_name} 发布公告: {announcement_message}"""
+    return f"""# {announcer_name} 发布公告: {announcement_message}"""
 
 
 ####################################################################################################################################

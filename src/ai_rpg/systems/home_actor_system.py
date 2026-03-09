@@ -35,7 +35,7 @@ def _format_mind_notification(actor_name: str, mind_content: str) -> str:
     Returns:
         格式化后的通知消息
     """
-    return f"# 通知！{actor_name} 内心活动: {mind_content}"
+    return f"# {actor_name} 内心活动: {mind_content}"
 
 
 #######################################################################################################################################

@@ -22,7 +22,8 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     from ..systems.actor_appearance_update_system import (
         ActorAppearanceUpdateSystem,
     )
-    from ..systems.kick_off_system import KickOffSystem
+
+    # from ..systems.kick_off_system import KickOffSystem
     from ..systems.query_action_system import (
         QueryActionSystem,
     )
@@ -34,8 +35,8 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
         TransStageActionSystem,
     )
     from ..systems.player_action_audit_system import PlayerActionAuditSystem
-    from ..systems.home_stage_description_system import (
-        HomeStageDescriptionSystem,
+    from ..systems.stage_description_system import (
+        StageDescriptionSystem,
     )
     from ..systems.home_actor_system import HomeActorSystem
 
@@ -44,13 +45,13 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     processors = RPGGameProcessPipeline()
 
     # 启动agent的提示词。启动阶段
-    processors.add(KickOffSystem(tcg_game, True))
+    # processors.add(KickOffSystem(tcg_game, True))
 
     # 角色外观生成系统
     processors.add(ActorAppearanceUpdateSystem(tcg_game))
 
     # 规划系统-场景描述系统-角色系统
-    processors.add(HomeStageDescriptionSystem(tcg_game))
+    processors.add(StageDescriptionSystem(tcg_game))
     processors.add(HomeActorSystem(tcg_game))
 
     # 动作处理相关的系统：查询-审核-说话-耳语-公告-场景转换-清理
@@ -105,7 +106,8 @@ def create_combat_execution_pipeline(
     from ..systems.play_cards_action_system import (
         PlayCardsActionSystem,
     )
-    from ..systems.kick_off_system import KickOffSystem
+
+    # from ..systems.kick_off_system import KickOffSystem
     from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.save_system import SaveSystem
     from ..systems.arbitration_action_system import ArbitrationActionSystem
@@ -113,15 +115,21 @@ def create_combat_execution_pipeline(
         StatusEffectsEvaluationSystem,
     )
     from ..systems.combat_archive_system import CombatArchiveSystem
+    from ..systems.stage_description_system import (
+        StageDescriptionSystem,
+    )
 
     tcg_game = cast(TCGGame, game)
     processors = RPGGameProcessPipeline()
 
     # 启动agent的提示词。启动阶段
-    processors.add(KickOffSystem(tcg_game, True))
+    # processors.add(KickOffSystem(tcg_game, True))
 
     # 角色外观生成系统
     processors.add(ActorAppearanceUpdateSystem(tcg_game))
+
+    # 战斗场景描述系统（与家园共用，内部有状态守卫，只有在战斗开始时才会触发）
+    processors.add(StageDescriptionSystem(tcg_game))
 
     # 战斗初始化系统（创建第一回合）
     processors.add(CombatInitializationSystem(tcg_game))

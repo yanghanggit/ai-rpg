@@ -18,7 +18,7 @@ from ..models import (
     ActorComponent,
     PlayerComponent,
     PlayerOnlyStageComponent,
-    KickOffCompleteComponent,
+    # KickOffCompleteComponent,
 )
 from ..utils import extract_json_from_code_block
 from ..game import TCGGame
@@ -296,7 +296,7 @@ class HomeActorSystem(ReactiveProcessor):
         return (
             entity.has(PlanAction)
             and entity.has(ActorComponent)
-            and entity.has(KickOffCompleteComponent)
+            # and entity.has(KickOffCompleteComponent)
         )
 
     #######################################################################################################################################

@@ -70,5 +70,4 @@ generated_images/
 # -----------------------------------------------------------------------------
 .blueprints/
 .worlds/
-.kickoff_cache/
 .claude.json

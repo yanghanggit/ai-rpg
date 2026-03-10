@@ -69,6 +69,6 @@ def sample_actor() -> Any:
             appearance="test appearance",
         ),
         system_message="test system message",
-        kick_off_message="test kick off message",
+        # kick_off_message="test kick off message",
         character_stats=CharacterStats(max_hp=50, attack=10, defense=5),
     )

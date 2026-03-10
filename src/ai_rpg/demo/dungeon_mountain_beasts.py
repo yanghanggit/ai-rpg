@@ -27,7 +27,8 @@ from .global_settings import (
 from .entity_factory import (
     create_stage,
 )
-from .prompt_templates import PUBLIC_STAGE_KICK_OFF_MESSAGE
+
+# from .prompt_templates import PUBLIC_STAGE_KICK_OFF_MESSAGE
 
 
 def create_mountain_beasts_dungeon() -> Dungeon:
@@ -64,7 +65,7 @@ def create_mountain_beasts_dungeon() -> Dungeon:
     stage_forest_edge.actors = [actor_monkey]
 
     # 设置场景启动消息，指导游戏如何描写环境
-    stage_forest_edge.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
+    # stage_forest_edge.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
 
     # 创建山中虎领地场景（密林深处）
     stage_deep_forest = create_stage(
@@ -89,7 +90,7 @@ def create_mountain_beasts_dungeon() -> Dungeon:
     stage_deep_forest.actors = [actor_tiger]
 
     # 设置场景启动消息，指导游戏如何描写环境
-    stage_deep_forest.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
+    # stage_deep_forest.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
 
     return Dungeon(
         name="地下城.山林妖兽",
@@ -137,7 +138,7 @@ def create_tiger_lair_dungeon() -> Dungeon:
     stage_deep_forest.actors = [actor_tiger]
 
     # 设置场景启动消息，指导游戏如何描写环境
-    stage_deep_forest.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
+    # stage_deep_forest.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
 
     return Dungeon(
         name="地下城.山中虎巢穴",
@@ -181,7 +182,7 @@ def create_wild_boar_territory_dungeon() -> Dungeon:
     stage_forest_clearing.actors = [actor_boar]
 
     # 设置场景启动消息，指导游戏如何描写环境
-    stage_forest_clearing.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
+    # stage_forest_clearing.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
 
     return Dungeon(
         name="地下城.野猪领地",

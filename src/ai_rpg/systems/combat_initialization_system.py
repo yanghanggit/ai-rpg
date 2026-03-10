@@ -56,7 +56,7 @@ def _format_other_actors_info(other_actors_info: List[OtherActorInfo]) -> str:
     for info in other_actors_info:
         lines.append(f"- **{info.other_name}**（{info.camp}）: {info.appearance}")
 
-    return "\n".join(lines)
+    return "\n\n".join(lines)
 
 
 ###################################################################################################################################################################

@@ -22,7 +22,7 @@ from ..models import (
     StageDescriptionComponent,
     AllyComponent,
     HomeComponent,
-    KickOffComponent,
+    # KickOffComponent,
     EnemyComponent,
     PlayerComponent,
     CombatStatsComponent,
@@ -345,9 +345,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             self.add_system_message(actor_entity, actor_model.system_message)
 
             # 必要组件：启动消息
-            actor_entity.add(
-                KickOffComponent, actor_model.name, actor_model.kick_off_message
-            )
+            # actor_entity.add(
+            #     KickOffComponent, actor_model.name, actor_model.kick_off_message
+            # )
 
             # 必要组件：外观
             # TODO: 未来需要从角色表中读取 base_body，目前暂时使用空字符串占位
@@ -450,9 +450,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             self.add_system_message(stage_entity, stage_model.system_message)
 
             # 必要组件：启动消息
-            stage_entity.add(
-                KickOffComponent, stage_model.name, stage_model.kick_off_message
-            )
+            # stage_entity.add(
+            #     KickOffComponent, stage_model.name, stage_model.kick_off_message
+            # )
 
             # 必要组件：环境描述
             stage_entity.add(

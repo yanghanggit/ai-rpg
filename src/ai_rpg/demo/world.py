@@ -12,10 +12,11 @@ from ..models import (
 from .actor_hunter import create_hunter
 from .actor_mystic import create_mystic
 from .global_settings import RPG_CAMPAIGN_SETTING
-from .prompt_templates import (
-    PUBLIC_STAGE_KICK_OFF_MESSAGE,
-    build_actor_kickoff_message,
-)
+
+# from .prompt_templates import (
+#     # PUBLIC_STAGE_KICK_OFF_MESSAGE,
+#     #build_actor_kickoff_message,
+# )
 from .stage_village import (
     create_hunter_storage,
     create_village_hall,
@@ -106,24 +107,24 @@ def create_hunter_mystic_blueprint(game_name: str) -> Blueprint:
     # 设置关系和消息
     stage_hunter_storage.actors = [actor_hunter, actor_mystic]
     # 设置角色的初始状态
-    assert actor_hunter.kick_off_message == "", "猎人角色的kick_off_message应为空"
-    actor_hunter.kick_off_message = build_actor_kickoff_message(
-        "作为石氏猎人家族传人，磨练狩猎技艺，维护桃花源周边山林的生态平衡，并探索古先民遗迹的秘密。"
-    )
+    # assert actor_hunter.kick_off_message == "", "猎人角色的kick_off_message应为空"
+    # actor_hunter.kick_off_message = build_actor_kickoff_message(
+    #     "作为石氏猎人家族传人，磨练狩猎技艺，维护桃花源周边山林的生态平衡，并探索古先民遗迹的秘密。"
+    # )
 
-    assert actor_mystic.kick_off_message == "", "术士角色的kick_off_message应为空"
-    actor_mystic.kick_off_message = build_actor_kickoff_message(
-        "通过研究古先民遗迹中的神秘符文，理解古先民引导自然之力的方法，并揭示桃花源隐藏的秘密。"
-    )
+    # assert actor_mystic.kick_off_message == "", "术士角色的kick_off_message应为空"
+    # actor_mystic.kick_off_message = build_actor_kickoff_message(
+    #     "通过研究古先民遗迹中的神秘符文，理解古先民引导自然之力的方法，并揭示桃花源隐藏的秘密。"
+    # )
 
     # 设置英雄营地场景的初始状态
-    stage_hunter_storage.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
+    # stage_hunter_storage.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
 
-    # 设置英雄餐厅场景的初始状态
-    stage_village_hall.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
+    # # 设置英雄餐厅场景的初始状态
+    # stage_village_hall.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
 
-    # 设置石氏木屋场景的初始状态
-    stage_shi_family_house.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
+    # # 设置石氏木屋场景的初始状态
+    # stage_shi_family_house.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
 
     # 创建世界
     return Blueprint(
@@ -170,10 +171,10 @@ def create_single_hunter_blueprint(game_name: str) -> Blueprint:
     """
     # 创建角色: 测试猎人
     actor_hunter = create_hunter()
-    assert actor_hunter.kick_off_message == "", "猎人角色的kick_off_message应为空"
-    actor_hunter.kick_off_message = build_actor_kickoff_message(
-        "作为石氏猎人家族传人，磨练狩猎技艺，维护桃花源周边山林的生态平衡，并探索古先民遗迹的秘密。而且你最讨厌虎类的妖兽，因为你对其有刻骨铭心的仇恨，你只要见到就会全力发起攻击！"
-    )
+    # assert actor_hunter.kick_off_message == "", "猎人角色的kick_off_message应为空"
+    # actor_hunter.kick_off_message = build_actor_kickoff_message(
+    #     "作为石氏猎人家族传人，磨练狩猎技艺，维护桃花源周边山林的生态平衡，并探索古先民遗迹的秘密。而且你最讨厌虎类的妖兽，因为你对其有刻骨铭心的仇恨，你只要见到就会全力发起攻击！"
+    # )
 
     # 添加猎人测试装备
     actor_hunter.items.extend(
@@ -190,7 +191,7 @@ def create_single_hunter_blueprint(game_name: str) -> Blueprint:
     stage_shi_family_house = create_shi_family_house()
 
     # 添加 启动消息
-    stage_shi_family_house.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
+    # stage_shi_family_house.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
 
     # 直接给 外观描述，减少一次推理生成。
     actor_hunter.character_sheet.appearance = """一名年近三十的男子，身形精悍灵活，肌肉线条结实分明，是常年山林活动留下的痕迹。肤色呈健康的褐色，是风吹日晒的结果。他蓄着短须，头发简单束成发髻。眼神沉静而警觉。上身穿着轻便的短衫，由某种带有细密鳞纹的暗褐色皮革缝制，胸口和肩部有颜色略深的硬化皮革加固，腰间用麻绳束带系紧。左肩从短衫领口边缘露出三道平行的、已愈合的淡白色疤痕。右手虎口处有明显的厚茧。他背负着一把以山竹为材、刻有简单兽纹的长弓，弓弦紧绷。"""

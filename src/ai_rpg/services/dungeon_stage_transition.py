@@ -12,7 +12,7 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     Dungeon,
     DungeonComponent,
-    KickOffComponent,
+    # KickOffComponent,
     Combat,
     AllyComponent,
     ExpeditionMemberComponent,
@@ -243,25 +243,25 @@ def _enter_dungeon_stage(
     tcg_game.stage_transition(expedition_entities, stage_entity)
 
     # 5. 设置KickOff消息并添加场景角色信息
-    stage_kickoff_comp = stage_entity.get(KickOffComponent)
-    assert (
-        stage_kickoff_comp is not None
-    ), f"{stage_entity.name} 没有KickOffMessageComponent组件！"
+    # stage_kickoff_comp = stage_entity.get(KickOffComponent)
+    # assert (
+    #     stage_kickoff_comp is not None
+    # ), f"{stage_entity.name} 没有KickOffMessageComponent组件！"
 
     # 获取场景内角色的外貌信息并增强KickOff消息
-    actors_appearances_mapping: Dict[str, str] = (
-        tcg_game.get_actor_appearances_on_stage(stage_entity)
-    )
+    # actors_appearances_mapping: Dict[str, str] = (
+    #     tcg_game.get_actor_appearances_on_stage(stage_entity)
+    # )
 
-    enhanced_kickoff_content = _enhance_kickoff_with_actors(
-        stage_kickoff_comp.prompt, actors_appearances_mapping
-    )
+    # enhanced_kickoff_content = _enhance_kickoff_with_actors(
+    #     stage_kickoff_comp.prompt, actors_appearances_mapping
+    # )
 
-    stage_entity.replace(
-        KickOffComponent,
-        stage_kickoff_comp.name,
-        enhanced_kickoff_content,
-    )
+    # stage_entity.replace(
+    #     KickOffComponent,
+    #     stage_kickoff_comp.name,
+    #     enhanced_kickoff_content,
+    # )
 
     # 6. 初始化战斗状态
     dungeon.combat_sequence.start_combat(Combat(name=stage_entity.name))

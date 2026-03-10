@@ -52,7 +52,7 @@ def create_actor(
         name=name,
         character_sheet=character_sheet,
         system_message="",
-        kick_off_message="",
+        # kick_off_message="",
         character_stats=character_stats,
     )
 
@@ -122,7 +122,7 @@ def create_stage(
         name=name,
         stage_profile=stage_profile,
         system_message="",
-        kick_off_message="",
+        # kick_off_message="",
         actors=[],
     )
 

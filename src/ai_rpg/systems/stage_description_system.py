@@ -7,7 +7,7 @@ from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
     StageDescriptionComponent,
-    HomeComponent,
+    # HomeComponent,
     StageComponent,
 )
 from ..utils import extract_json_from_code_block
@@ -44,7 +44,7 @@ def _build_stage_description_prompt(
 
 ## 场景内角色
 
-{"\n".join(actor_appearances_on_stage_info)}
+{"\n\n".join(actor_appearances_on_stage_info)}
 
 ## 输出格式(JSON)
 
@@ -62,25 +62,25 @@ def _build_stage_description_prompt(
 
 
 #######################################################################################################################################
-def _compress_prompt_for_history(prompt: str) -> str:
-    """压缩提示词以便保存到对话历史。
+# def _compress_prompt_for_history(prompt: str) -> str:
+#     """压缩提示词以便保存到对话历史。
 
-    将完整的场景描述提示词压缩成简短版本，减少存储在消息历史中的token消耗。
-    原始提示词可能包含数百字符，压缩后仅保留核心指令。
+#     将完整的场景描述提示词压缩成简短版本，减少存储在消息历史中的token消耗。
+#     原始提示词可能包含数百字符，压缩后仅保留核心指令。
 
-    Args:
-        prompt: 原始完整提示词
+#     Args:
+#         prompt: 原始完整提示词
 
-    Returns:
-        压缩后的简短提示词字符串
-    """
-    logger.debug(f"准备压缩原始提示词 {prompt[:100]}...")
-    return "# 指令！请你输出你的场景描述。并以 JSON 格式输出。"
+#     Returns:
+#         压缩后的简短提示词字符串
+#     """
+#     logger.debug(f"准备压缩原始提示词 {prompt[:100]}...")
+#     return "# 指令！请你输出你的场景描述。并以 JSON 格式输出。"
 
 
 #######################################################################################################################################
 @final
-class HomeStageDescriptionSystem(ExecuteProcessor):
+class StageDescriptionSystem(ExecuteProcessor):
     """家园场景描述生成系统。
 
     负责为家园场景实体生成环境描述文本。系统会自动筛选出尚未生成环境描述的场景，
@@ -113,7 +113,7 @@ class HomeStageDescriptionSystem(ExecuteProcessor):
 
         # 获取所有可以进行场景规划的场景实体
         stage_entities = self._game.get_group(
-            Matcher(all_of=[StageComponent, HomeComponent])
+            Matcher(all_of=[StageComponent])
         ).entities.copy()
 
         # 准备场景描述请求
@@ -196,9 +196,7 @@ class HomeStageDescriptionSystem(ExecuteProcessor):
                 extract_json_from_code_block(chat_client.response_content)
             )
 
-            self._game.add_human_message(
-                stage_entity, _compress_prompt_for_history(chat_client.prompt)
-            )
+            self._game.add_human_message(stage_entity, chat_client.prompt)
             self._game.add_ai_message(stage_entity, chat_client.response_ai_messages)
 
             # 更新环境描写

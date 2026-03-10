@@ -7,7 +7,6 @@
 
 import asyncio
 from datetime import datetime
-from typing import Final
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
@@ -159,7 +158,7 @@ async def dungeon_progress(
         )
 
         # 记录当前事件序列号，便于后续获取新增消息
-        last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
+        # last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
 
         # 根据操作类型分发处理
         match payload.action:
@@ -176,9 +175,9 @@ async def dungeon_progress(
                 # 推进战斗流程，转换到 ONGOING 状态
                 await rpg_game.combat_pipeline.process()
                 return DungeonProgressResponse(
-                    session_messages=rpg_game.player_session.get_messages_since(
-                        last_event_sequence
-                    )
+                    # session_messages=rpg_game.player_session.get_messages_since(
+                    #     last_event_sequence
+                    # )
                 )
 
             # case DungeonProgressType.COMBAT_STATUS_EVALUATION:
@@ -268,9 +267,9 @@ async def dungeon_progress(
                     # 前进到下一关
                     advance_to_next_stage(rpg_game, rpg_game.current_dungeon)
                     return DungeonProgressResponse(
-                        session_messages=rpg_game.player_session.get_messages_since(
-                            last_event_sequence
-                        )
+                        # session_messages=rpg_game.player_session.get_messages_since(
+                        #     last_event_sequence
+                        # )
                     )
                 elif rpg_game.current_combat_sequence.is_lost:
                     # 玩家失败
@@ -318,9 +317,9 @@ async def dungeon_progress(
 
                 logger.info(f"玩家 {payload.user_name} 已从地下城撤退并返回家园")
                 return DungeonProgressResponse(
-                    session_messages=rpg_game.player_session.get_messages_since(
-                        last_event_sequence
-                    )
+                    # session_messages=rpg_game.player_session.get_messages_since(
+                    #     last_event_sequence
+                    # )
                 )
 
             case _:

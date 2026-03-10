@@ -151,7 +151,8 @@ class DungeonProgressRequest(BaseModel):
 
 @final
 class DungeonProgressResponse(BaseModel):
-    session_messages: List[SessionMessage]
+    pass
+    # session_messages: List[SessionMessage]
 
 
 ################################################################################################################

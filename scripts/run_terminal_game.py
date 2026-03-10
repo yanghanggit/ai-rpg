@@ -240,7 +240,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             return
 
         # 调用一次 战斗执行 pipeline 开始进行推理，从而抽牌。
-        await terminal_game.combat_execution_pipeline.process()
+        await terminal_game.combat_pipeline.process()
 
     elif usr_input == "/pc":
 
@@ -264,7 +264,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         # 执行打牌行动(现在使用随机选行动)
         success, message = activate_play_cards(terminal_game)
         if success:
-            await terminal_game.combat_execution_pipeline.process()
+            await terminal_game.combat_pipeline.process()
         else:
             logger.error(f"打牌失败: {message}")
 
@@ -330,7 +330,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
 
         # logger.info(f"玩家输入 = {usr_input}, 进入下一关 = {next_level.name}")
         advance_to_next_stage(terminal_game, terminal_game.current_dungeon)
-        await terminal_game.combat_execution_pipeline.process()
+        await terminal_game.combat_pipeline.process()
 
     elif usr_input == "/rtt":  # "/retreat"
 
@@ -348,7 +348,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         logger.info(f"撤退成功: {message}")
 
         # 调用一次 combat_execution_pipeline 让 CombatOutcomeSystem 正常跑一次
-        await terminal_game.combat_execution_pipeline.execute()
+        await terminal_game.combat_pipeline.execute()
 
         # 正常流程结束战斗！
         # terminal_game.current_combat_sequence.transition_to_post_combat()
@@ -406,7 +406,7 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
             logger.error(f"{usr_input} 没有战斗可以进行！！！！")
             return
 
-        await terminal_game.combat_execution_pipeline.process()
+        await terminal_game.combat_pipeline.process()
 
     elif usr_input.startswith("/speak"):
 

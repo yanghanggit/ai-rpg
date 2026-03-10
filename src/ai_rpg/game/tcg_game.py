@@ -48,13 +48,13 @@ class TCGGame(RPGGame):
         self._home_pipeline: Final[RPGGameProcessPipeline] = create_home_pipeline(self)
 
         # 地下城战斗流程
-        self._combat_execution_pipeline: Final[RPGGameProcessPipeline] = (
-            create_combat_pipeline(self)
+        self._combat_pipeline: Final[RPGGameProcessPipeline] = create_combat_pipeline(
+            self
         )
 
         # 注册所有管道到管道管理器
         self.register_pipeline(self._home_pipeline)
-        self.register_pipeline(self._combat_execution_pipeline)
+        self.register_pipeline(self._combat_pipeline)
 
     ###############################################################################################################################################
     @property
@@ -73,8 +73,8 @@ class TCGGame(RPGGame):
 
     ###############################################################################################################################################
     @property
-    def combat_execution_pipeline(self) -> RPGGameProcessPipeline:
-        return self._combat_execution_pipeline
+    def combat_pipeline(self) -> RPGGameProcessPipeline:
+        return self._combat_pipeline
 
     ###############################################################################################################################################
 

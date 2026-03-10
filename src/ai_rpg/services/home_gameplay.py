@@ -199,14 +199,14 @@ async def home_advance(
     last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
 
     # 如果指定了actors标志，为玩家当前场景内所有角色激活行动计划
-    if payload.actors:
-        success, error_detail = activate_stage_plan(rpg_game)
-        if not success:
-            # 行动计划激活失败，抛出包含具体错误信息的异常
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_detail,
-            )
+    # if payload.actors:
+    success, error_detail = activate_stage_plan(rpg_game)
+    if not success:
+        # 行动计划激活失败，抛出包含具体错误信息的异常
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_detail,
+        )
 
     # 推进游戏流程：执行NPC的home pipeline，自动推进游戏状态
     await rpg_game.home_pipeline.process()

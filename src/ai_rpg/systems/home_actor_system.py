@@ -357,9 +357,7 @@ class HomeActorSystem(ReactiveProcessor):
         has_action = player_entity.has(SpeakAction) or player_entity.has(
             TransStageAction
         )
-        passive_mind = (
-            "" if has_action else f"身处{current_stage.name}，静观周遭，等待时机。"
-        )
+        passive_mind = "" if has_action else f"身处{current_stage.name}。"
 
         mock_response = self._build_player_action_response(player_entity, passive_mind)
         self._game.add_ai_message(

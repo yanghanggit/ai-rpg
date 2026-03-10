@@ -285,11 +285,11 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             )
 
             # 启动消息 提示词
-            world_system_entity.add(
-                KickOffComponent,
-                world_system_model.name,
-                world_system_model.kick_off_message,
-            )
+            # world_system_entity.add(
+            #     KickOffComponent,
+            #     world_system_model.name,
+            #     world_system_model.kick_off_message,
+            # )
 
             # 特殊组件，根据不同world_system类型添加
             if world_system_model.component == PlayerActionAuditComponent.__name__:

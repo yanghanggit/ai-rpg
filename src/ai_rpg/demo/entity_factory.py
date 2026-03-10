@@ -180,7 +180,7 @@ def create_world_system(
     world_system = WorldSystem(
         name=name,
         system_message="",
-        kick_off_message="",
+        # kick_off_message="",
         component="",
     )
 

@@ -15,11 +15,11 @@ from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.rpg_game import RPGGame
 from ..models import (
     ActorComponent,
-    StageDescriptionComponent,
+    # StageDescriptionComponent,
     KickOffCompleteComponent,
     KickOffComponent,
-    StageComponent,
-    WorldComponent,
+    # StageComponent,
+    # WorldComponent,
     EnemyComponent,
 )
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
@@ -130,12 +130,12 @@ class KickOffSystem(ExecuteProcessor):
                     )
 
                     # 若是场景，用response替换narrate
-                    if entity.has(StageComponent):
-                        entity.replace(
-                            StageDescriptionComponent,
-                            entity.name,
-                            ai_messages[0].content if ai_messages else "",
-                        )
+                    # if entity.has(StageComponent):
+                    #     entity.replace(
+                    #         StageDescriptionComponent,
+                    #         entity.name,
+                    #         ai_messages[0].content if ai_messages else "",
+                    #     )
 
                     # 从待处理集合中移除
                     entities_to_process.discard(entity)
@@ -343,20 +343,20 @@ class KickOffSystem(ExecuteProcessor):
             )
 
             # 若是场景，用response替换environment描述
-            if processed_entity.has(StageComponent):
-                processed_entity.replace(
-                    StageDescriptionComponent,
-                    processed_entity.name,
-                    chat_client.response_content,
-                )
-            elif processed_entity.has(ActorComponent):
-                logger.debug(
-                    f"KickOffSystem: Completed kick off for actor {processed_entity.name}"
-                )
-            else:
-                logger.warning(
-                    f"KickOffSystem: Entity {processed_entity.name} is neither Actor nor Stage, which is unexpected"
-                )
+            # if processed_entity.has(StageComponent):
+            #     processed_entity.replace(
+            #         StageDescriptionComponent,
+            #         processed_entity.name,
+            #         chat_client.response_content,
+            #     )
+            # elif processed_entity.has(ActorComponent):
+            #     logger.debug(
+            #         f"KickOffSystem: Completed kick off for actor {processed_entity.name}"
+            #     )
+            # else:
+            #     logger.warning(
+            #         f"KickOffSystem: Entity {processed_entity.name} is neither Actor nor Stage, which is unexpected"
+            #     )
 
     ###############################################################################################################################################
     def _filter_valid_kick_off_entities(self) -> Set[Entity]:
@@ -374,7 +374,7 @@ class KickOffSystem(ExecuteProcessor):
         candidate_entities = self._game.get_group(
             Matcher(
                 all_of=[KickOffComponent],
-                any_of=[ActorComponent, StageComponent, WorldComponent],
+                any_of=[ActorComponent],
                 none_of=[KickOffCompleteComponent],
             )
         ).entities.copy()

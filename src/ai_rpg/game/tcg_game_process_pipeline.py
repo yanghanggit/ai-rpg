@@ -72,7 +72,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     return processors
 
 
-def create_combat_execution_pipeline(
+def create_combat_pipeline(
     game: GameSession,
 ) -> "RPGGameProcessPipeline":
     """创建地牢战斗场景的流程管道

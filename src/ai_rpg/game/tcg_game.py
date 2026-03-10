@@ -10,7 +10,7 @@ from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 from .rpg_game import RPGGame
 from ..game.tcg_game_process_pipeline import (
     create_home_pipeline,
-    create_combat_execution_pipeline,
+    create_combat_pipeline,
 )
 from ..models import (
     Dungeon,
@@ -49,7 +49,7 @@ class TCGGame(RPGGame):
 
         # 地下城战斗流程
         self._combat_execution_pipeline: Final[RPGGameProcessPipeline] = (
-            create_combat_execution_pipeline(self)
+            create_combat_pipeline(self)
         )
 
         # 注册所有管道到管道管理器

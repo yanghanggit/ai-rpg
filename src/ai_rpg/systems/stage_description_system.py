@@ -7,7 +7,6 @@ from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
     StageDescriptionComponent,
-    # HomeComponent,
     StageComponent,
 )
 from ..utils import extract_json_from_code_block
@@ -62,50 +61,19 @@ def _build_stage_description_prompt(
 
 
 #######################################################################################################################################
-# def _compress_prompt_for_history(prompt: str) -> str:
-#     """压缩提示词以便保存到对话历史。
-
-#     将完整的场景描述提示词压缩成简短版本，减少存储在消息历史中的token消耗。
-#     原始提示词可能包含数百字符，压缩后仅保留核心指令。
-
-#     Args:
-#         prompt: 原始完整提示词
-
-#     Returns:
-#         压缩后的简短提示词字符串
-#     """
-#     logger.debug(f"准备压缩原始提示词 {prompt[:100]}...")
-#     return "# 指令！请你输出你的场景描述。并以 JSON 格式输出。"
-
-
-#######################################################################################################################################
 @final
 class StageDescriptionSystem(ExecuteProcessor):
-    """家园场景描述生成系统。
+    """场景描述生成系统。
 
-    负责为家园场景实体生成环境描述文本。系统会自动筛选出尚未生成环境描述的场景，
-    通过AI并行生成描述内容，并将结果保存到场景实体的环境描述组件中。
-
-    工作流程：
-        1. 查询所有家园场景实体（包含 StageComponent 和 HomeComponent）
-        2. 筛选出环境描述为空的场景
-        3. 为每个场景构建包含场景内角色信息的提示词
-        4. 并行发送请求到AI服务生成场景描述
-        5. 解析响应并更新场景实体的 EnvironmentComponent
-        6. 将压缩后的提示词和AI响应保存到对话历史
-
-    特性：
-        - 智能跳过已有描述的场景，避免重复生成
-        - 并行请求提升效率
-        - 提示词压缩节省对话历史存储空间
-        - 场景描述仅包含环境信息，不包含角色行为
+    为 StageComponent 实体生成环境描述文本，结果写入 StageDescriptionComponent。
+    跳过已有描述的场景，对待处理场景并行发起 AI 请求。
 
     Attributes:
-        _game: TCG游戏上下文，用于访问实体和游戏状态
+        _game: TCG游戏上下文
     """
 
-    def __init__(self, game_context: TCGGame) -> None:
-        self._game: Final[TCGGame] = game_context
+    def __init__(self, game: TCGGame) -> None:
+        self._game: Final[TCGGame] = game
 
     #######################################################################################################################################
     @override
@@ -128,7 +96,7 @@ class StageDescriptionSystem(ExecuteProcessor):
         for chat_client in chat_clients:
 
             stage_entity = self._game.get_entity_by_name(chat_client.name)
-            assert stage_entity is not None
+            assert stage_entity is not None, f"未找到名称为 {chat_client.name} 的实体"
 
             self._process_stage_description_response(stage_entity, chat_client)
 
@@ -136,17 +104,7 @@ class StageDescriptionSystem(ExecuteProcessor):
     def _prepare_stage_description_requests(
         self, stage_entities: Set[Entity]
     ) -> List[ChatClient]:
-        """为需要生成环境描述的场景准备请求。
-
-        遍历所有家园场景实体，筛选出尚未生成环境描述的场景，
-        为每个场景构建ChatClient请求处理器。已有环境描述的场景会被跳过。
-
-        Args:
-            stage_entities: 所有家园场景实体的集合
-
-        Returns:
-            ChatClient请求处理器列表，每个处理器对应一个待生成描述的场景
-        """
+        """为 StageDescriptionComponent.narrative 为空的场景构建 ChatClient 请求列表。"""
         chat_clients: List[ChatClient] = []
 
         for stage_entity in stage_entities:
@@ -178,18 +136,7 @@ class StageDescriptionSystem(ExecuteProcessor):
     def _process_stage_description_response(
         self, stage_entity: Entity, chat_client: ChatClient
     ) -> None:
-        """处理场景描述生成的响应结果。
-
-        解析AI返回的场景描述JSON，将压缩后的提示词和AI响应保存到对话历史，
-        并更新场景实体的环境描述组件。
-
-        Args:
-            stage_entity: 场景实体
-            chat_client: 包含请求和响应内容的ChatClient处理器
-
-        Raises:
-            Exception: 当响应解析失败时记录错误日志
-        """
+        """解析 AI 响应，更新场景实体的 StageDescriptionComponent 并存入对话历史。"""
         try:
 
             format_response = StageDescriptionResponse.model_validate_json(

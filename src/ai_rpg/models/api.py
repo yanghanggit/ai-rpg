@@ -65,7 +65,8 @@ class HomeAdvanceRequest(BaseModel):
 
 @final
 class HomeAdvanceResponse(BaseModel):
-    session_messages: List[SessionMessage]
+    pass
+    # session_messages: List[SessionMessage]
 
 
 ################################################################################################################
@@ -120,7 +121,8 @@ class HomePlayerActionRequest(BaseModel):
 
 @final
 class HomePlayerActionResponse(BaseModel):
-    session_messages: List[SessionMessage]
+    pass
+    # session_messages: List[SessionMessage]
 
 
 ################################################################################################################

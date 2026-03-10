@@ -5,7 +5,6 @@
 包括对话、场景切换、游戏推进和地下城传送等功能。
 """
 
-from typing import Final
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
@@ -127,7 +126,7 @@ async def home_player_action(
         )
 
         # 记录当前事件序列号，便于后续获取新增消息
-        last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
+        # last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
 
         # 根据动作类型激活对应的 Action 组件
         match payload.action:
@@ -165,9 +164,9 @@ async def home_player_action(
 
         # 返回自上次事件序列号以来的新增消息
         return HomePlayerActionResponse(
-            session_messages=rpg_game.player_session.get_messages_since(
-                last_event_sequence
-            )
+            # session_messages=rpg_game.player_session.get_messages_since(
+            #     last_event_sequence
+            # )
         )
 
 
@@ -216,7 +215,7 @@ async def home_advance(
         )
 
         # 记录当前事件序列号，便于后续获取新增消息
-        last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
+        # last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
 
         # 如果指定了actors标志，为玩家当前场景内所有角色激活行动计划
         # if payload.actors:
@@ -233,9 +232,9 @@ async def home_advance(
 
         # 返回自上次事件序列号以来的新增消息
         return HomeAdvanceResponse(
-            session_messages=rpg_game.player_session.get_messages_since(
-                last_event_sequence
-            )
+            # #session_messages=rpg_game.player_session.get_messages_since(
+            #     # last_event_sequence
+            # )
         )
 
 

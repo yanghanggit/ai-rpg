@@ -214,6 +214,21 @@ def activate_specified_expedition_member_card_draws(
         ExpeditionMemberComponent
     ), f"Entity {expedition_member_entity.name} must have ExpeditionMemberComponent"
 
+    # 必须是玩家所在场景中的角色才能被激活抽牌动作，避免跨场景操作导致的逻辑混乱
+    player_entity = tcg_game.get_player_entity()
+    assert (
+        player_entity is not None
+    ), "activate_specified_expedition_member_card_draws: player_entity is None"
+
+    if tcg_game.resolve_stage_entity(
+        expedition_member_entity
+    ) != tcg_game.resolve_stage_entity(player_entity):
+        error_msg = (
+            f"激活指定抽牌失败: 角色 '{expedition_member_name}' 不在玩家所在的场景中"
+        )
+        logger.error(error_msg)
+        return False, error_msg
+
     # 过滤合法目标（场上存活）
     valid_target_entities = [
         entity

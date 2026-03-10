@@ -5,6 +5,8 @@
 包括对话、场景切换、游戏推进和地下城传送等功能。
 """
 
+import asyncio
+from datetime import datetime
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
@@ -26,6 +28,7 @@ from ..models import (
     HomeAdvanceResponse,
     HomeTransDungeonRequest,
     HomeTransDungeonResponse,
+    TaskStatus,
 )
 
 ###################################################################################################################################################################
@@ -119,14 +122,12 @@ async def home_player_action(
         )
 
     async with current_room.lock:
+
         # 验证前置条件并获取游戏实例
         rpg_game = await _validate_player_at_home(
             payload.user_name,
             game_server,
         )
-
-        # 记录当前事件序列号，便于后续获取新增消息
-        # last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
 
         # 根据动作类型激活对应的 Action 组件
         match payload.action:
@@ -159,15 +160,26 @@ async def home_player_action(
                 detail=error_detail,
             )
 
-        # 执行玩家的 home pipeline 处理
-        await rpg_game.home_pipeline.process()
+    # 创建 home pipeline 后台任务（在锁外创建，让任务在后台独立持锁执行）
+    home_action_task = game_server.create_task()
 
-        # 返回自上次事件序列号以来的新增消息
-        return HomePlayerActionResponse(
-            # session_messages=rpg_game.player_session.get_messages_since(
-            #     last_event_sequence
-            # )
+    asyncio.create_task(
+        _execute_home_pipeline_task(
+            home_action_task.task_id,
+            payload.user_name,
+            game_server,
         )
+    )
+
+    logger.info(
+        f"📝 创建 home pipeline 任务: task_id={home_action_task.task_id}, user={payload.user_name}"
+    )
+
+    return HomePlayerActionResponse(
+        task_id=home_action_task.task_id,
+        status=TaskStatus.RUNNING.value,
+        message="home pipeline 任务已启动，请通过会话消息查询结果",
+    )
 
 
 ###################################################################################################################################################################
@@ -214,11 +226,7 @@ async def home_advance(
             game_server,
         )
 
-        # 记录当前事件序列号，便于后续获取新增消息
-        # last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
-
-        # 如果指定了actors标志，为玩家当前场景内所有角色激活行动计划
-        # if payload.actors:
+        # 根据请求参数选择性激活指定角色的行动计划
         success, error_detail = activate_stage_plan(rpg_game)
         if not success:
             # 行动计划激活失败，抛出包含具体错误信息的异常
@@ -227,15 +235,22 @@ async def home_advance(
                 detail=error_detail,
             )
 
-        # 推进游戏流程：执行NPC的home pipeline，自动推进游戏状态
-        await rpg_game.home_pipeline.process()
+    # 创建 home pipeline 后台任务（在锁外创建，让任务在后台独立持锁执行）
+    home_advance_task = game_server.create_task()
 
-        # 返回自上次事件序列号以来的新增消息
-        return HomeAdvanceResponse(
-            # #session_messages=rpg_game.player_session.get_messages_since(
-            #     # last_event_sequence
-            # )
+    asyncio.create_task(
+        _execute_home_pipeline_task(
+            home_advance_task.task_id,
+            payload.user_name,
+            game_server,
         )
+    )
+
+    return HomeAdvanceResponse(
+        task_id=home_advance_task.task_id,
+        status=TaskStatus.RUNNING.value,
+        message="home pipeline 任务已启动，请通过会话消息查询结果",
+    )
 
 
 ###################################################################################################################################################################
@@ -306,6 +321,53 @@ async def home_trans_dungeon(
         return HomeTransDungeonResponse(
             message=payload.model_dump_json(),
         )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+async def _execute_home_pipeline_task(
+    task_id: str,
+    user_name: str,
+    game_server: GameServer,
+) -> None:
+    """后台执行 home pipeline 任务
+
+    在后台异步执行 home pipeline 并更新任务状态。
+    使用房间锁保证同一玩家不会并发执行。
+
+    Args:
+        task_id: 任务唯一标识符
+        user_name: 用户名
+        game_server: 游戏服务器实例
+    """
+    try:
+        logger.info(f"🚀 home pipeline 任务开始: task_id={task_id}, user={user_name}")
+
+        current_room = game_server.get_room(user_name)
+        if current_room is None:
+            raise ValueError(f"游戏实例不存在: user={user_name}")
+
+        async with current_room.lock:
+            rpg_game = await _validate_player_at_home(user_name, game_server)
+            await rpg_game.home_pipeline.process()
+
+        task_record = game_server.get_task(task_id)
+        if task_record is not None:
+            task_record.status = TaskStatus.COMPLETED
+            task_record.end_time = datetime.now().isoformat()
+
+        logger.info(f"✅ home pipeline 任务完成: task_id={task_id}, user={user_name}")
+
+    except Exception as e:
+        logger.error(
+            f"❌ home pipeline 任务失败: task_id={task_id}, user={user_name}, error={e}"
+        )
+        task_record = game_server.get_task(task_id)
+        if task_record is not None:
+            task_record.status = TaskStatus.FAILED
+            task_record.error = str(e)
+            task_record.end_time = datetime.now().isoformat()
 
 
 ###################################################################################################################################################################

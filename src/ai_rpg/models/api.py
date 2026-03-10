@@ -65,8 +65,9 @@ class HomeAdvanceRequest(BaseModel):
 
 @final
 class HomeAdvanceResponse(BaseModel):
-    pass
-    # session_messages: List[SessionMessage]
+    task_id: str
+    status: str
+    message: str
 
 
 ################################################################################################################
@@ -121,8 +122,9 @@ class HomePlayerActionRequest(BaseModel):
 
 @final
 class HomePlayerActionResponse(BaseModel):
-    pass
-    # session_messages: List[SessionMessage]
+    task_id: str
+    status: str
+    message: str
 
 
 ################################################################################################################

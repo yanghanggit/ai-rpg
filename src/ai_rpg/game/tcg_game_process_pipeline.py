@@ -22,8 +22,6 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     from ..systems.actor_appearance_update_system import (
         ActorAppearanceUpdateSystem,
     )
-
-    # from ..systems.kick_off_system import KickOffSystem
     from ..systems.query_action_system import (
         QueryActionSystem,
     )
@@ -43,9 +41,6 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     ##
     tcg_game = cast(TCGGame, game)
     processors = RPGGameProcessPipeline()
-
-    # 启动agent的提示词。启动阶段
-    # processors.add(KickOffSystem(tcg_game, True))
 
     # 角色外观生成系统
     processors.add(ActorAppearanceUpdateSystem(tcg_game))
@@ -106,8 +101,6 @@ def create_combat_pipeline(
     from ..systems.play_cards_action_system import (
         PlayCardsActionSystem,
     )
-
-    # from ..systems.kick_off_system import KickOffSystem
     from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.save_system import SaveSystem
     from ..systems.arbitration_action_system import ArbitrationActionSystem
@@ -121,9 +114,6 @@ def create_combat_pipeline(
 
     tcg_game = cast(TCGGame, game)
     processors = RPGGameProcessPipeline()
-
-    # 启动agent的提示词。启动阶段
-    # processors.add(KickOffSystem(tcg_game, True))
 
     # 角色外观生成系统
     processors.add(ActorAppearanceUpdateSystem(tcg_game))

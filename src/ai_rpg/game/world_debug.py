@@ -71,8 +71,8 @@ def dump_agent_contexts(
 
             buffer_str = get_buffer_string(
                 agent_context.context,
-                human_prefix=f"""\nHuman""",
-                ai_prefix=f"""\nAI({agent_name})""",
+                human_prefix=f"""\n--------------------------------------------------------------------------------------\nHuman""",
+                ai_prefix=f"""\n--------------------------------------------------------------------------------------\nAI({agent_name})""",
             )
             context_path2 = context_dir / f"{agent_name}_buffer.txt"
             context_path2.write_text(buffer_str, encoding="utf-8")

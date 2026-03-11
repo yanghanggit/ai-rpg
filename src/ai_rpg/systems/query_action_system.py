@@ -14,10 +14,13 @@ from ..game.tcg_game import TCGGame
 
 
 #############################################################################################################################
-def _build_query_result_message(question: str, related_info: str | None) -> str:
+def _build_query_result_message(
+    actor: str, question: str, related_info: str | None
+) -> str:
     """构建向量数据库查询结果的提示词消息
 
     Args:
+        actor: 发起查询的角色名称
         question: 查询的问题
         related_info: 检索到的相关信息，None表示未检索到
 
@@ -25,12 +28,24 @@ def _build_query_result_message(question: str, related_info: str | None) -> str:
         格式化的提示词消息
     """
     if related_info:
-        return (
-            f"关于「{question}」，你从向量数据库检索到以下信息：\n{related_info}\n\n"
-            f"这些是向量数据库中**目前**存储的相关信息，可根据需要参考。避免对同一问题重复查询。"
-        )
+
+        return f"""# {actor} 发起检索行动，问题: 「{question}」
+    
+## 查询结果
+
+{related_info}
+
+## 提示
+
+- 这些是向量数据库中**目前**存储的相关信息，可根据需要参考。避免对同一问题重复查询。"""
+
     else:
-        return f"关于「{question}」：向量数据库中**目前**没有相关信息。"
+
+        return f"""# {actor} 发起检索行动，问题: 「{question}」
+    
+## 查询结果
+
+向量数据库中**目前**没有相关信息。"""
 
 
 #####################################################################################################################################
@@ -68,7 +83,9 @@ class QueryActionSystem(ReactiveProcessor):
 
         # 构建并发送查询结果消息
         message = _build_query_result_message(
-            query_action.question, related_info if related_info else None
+            actor=entity.name,
+            question=query_action.question,
+            related_info=related_info if related_info else None,
         )
         self._game.add_human_message(entity, message)
 

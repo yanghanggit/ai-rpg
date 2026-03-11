@@ -271,33 +271,6 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         if terminal_game.current_combat_sequence.is_post_combat:
             logger.debug(f"在本次处理中战斗已结束, 进入后处理阶段")
 
-    # elif usr_input == "/se":
-    #     if not terminal_game.current_combat_sequence.is_ongoing:
-    #         logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
-    #         return
-
-    #     # 手动触发状态效果评估（使用 pipeline）
-    #     await terminal_game.combat_execution_pipeline.execute()
-
-    # elif usr_input == "/cpp":
-
-    #     # 必须在战斗结束后使用
-    #     if not terminal_game.current_combat_sequence.is_combat_completed:
-    #         logger.error(f"{usr_input} 只能在战斗结束后使用is_completed")
-    #         return
-
-    #     # 一定是有胜利或者失败的
-    #     # assert (
-    #     #     terminal_game.current_combat_sequence.is_won
-    #     #     or terminal_game.current_combat_sequence.is_lost
-    #     # )
-
-    #     # # 归档战斗记录（使用 pipeline）
-    #     # await terminal_game.combat_execution_pipeline.execute()
-
-    #     # 进入战斗后准备状态
-    #     terminal_game.current_combat_sequence.transition_to_post_combat()
-
     elif usr_input == "/th":  # "/trans_home"
 
         if (
@@ -349,9 +322,6 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
 
         # 调用一次 combat_execution_pipeline 让 CombatOutcomeSystem 正常跑一次
         await terminal_game.combat_pipeline.execute()
-
-        # 正常流程结束战斗！
-        # terminal_game.current_combat_sequence.transition_to_post_combat()
 
         # 返回家园
         complete_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)

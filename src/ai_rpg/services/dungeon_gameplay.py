@@ -15,6 +15,8 @@ from ..models import (
     DungeonProgressRequest,
     DungeonProgressResponse,
     DungeonProgressType,
+    DungeonAdvanceStageRequest,
+    DungeonAdvanceStageResponse,
     DungeonTransHomeRequest,
     DungeonTransHomeResponse,
     DungeonCombatInitRequest,
@@ -164,95 +166,8 @@ async def dungeon_progress(
         # 记录当前事件序列号，便于后续获取新增消息
         # last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
 
-        # 根据操作类型分发处理
-        # ADVANCE_STAGE / POST_COMBAT 是纯同步操作，直接在锁内返回/抛出
         # RETREAT 需要启动后台 task，仅在锁内做前置校验和同步标记，然后 fall-through 到锁外
         match payload.action:
-            case DungeonProgressType.POST_COMBAT:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="战斗归档接口已废弃，战斗结束后会自动处理归档和状态转换",
-                )
-                # 处理战斗结束后的归档和状态转换
-                # if not rpg_game.current_combat_sequence.is_combat_completed:
-                #     logger.error(f"玩家 {payload.user_name} 归档战斗失败: 战斗未结束")
-                #     raise HTTPException(
-                #         status_code=status.HTTP_400_BAD_REQUEST,
-                #         detail="战斗未结束，无法归档",
-                #     )
-
-                # # 验证战斗必须有结果（胜利或失败）
-                # if not (
-                #     rpg_game.current_combat_sequence.is_won
-                #     or rpg_game.current_combat_sequence.is_lost
-                # ):
-                #     logger.error(f"玩家 {payload.user_name} 归档战斗失败: 战斗状态异常")
-                #     raise HTTPException(
-                #         status_code=status.HTTP_400_BAD_REQUEST,
-                #         detail="战斗状态异常，既未胜利也未失败",
-                #     )
-
-                # # 归档战斗记录（使用 pipeline）
-                # await rpg_game.combat_execution_pipeline.execute()
-
-                # # 进入战斗后准备状态
-                # # rpg_game.current_combat_sequence.transition_to_post_combat()
-
-                # logger.info(f"玩家 {payload.user_name} 战斗归档完成，进入战斗后准备状态")
-                # return DungeonProgressResponse(
-                #     session_messages=rpg_game.player_session.get_messages_since(
-                #         last_event_sequence
-                #     )
-                # )
-
-            case DungeonProgressType.ADVANCE_STAGE:
-                # 处理前进下一个地下城关卡
-                if not rpg_game.current_combat_sequence.is_post_combat:
-                    logger.error(
-                        f"玩家 {payload.user_name} 前进下一关失败: 战斗未处于等待阶段"
-                    )
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="战斗未处于等待阶段",
-                    )
-
-                # 判断战斗结果并处理
-                if rpg_game.current_combat_sequence.is_won:
-                    # 玩家胜利，检查是否有下一关
-                    next_stage = rpg_game.current_dungeon.peek_next_stage()
-                    if next_stage is None:
-                        # 没有下一关了，地下城全部通关
-                        logger.info(f"玩家 {payload.user_name} 地下城全部通关")
-                        raise HTTPException(
-                            status_code=status.HTTP_409_CONFLICT,
-                            detail="地下城已全部通关，请返回营地",
-                        )
-                    # 前进到下一关
-                    advance_to_next_stage(rpg_game, rpg_game.current_dungeon)
-
-                    # 返回前进结果相关的会话消息
-                    return DungeonProgressResponse(
-                        task_id="",
-                        status="",
-                        message="已前进到下一关",
-                    )
-                elif rpg_game.current_combat_sequence.is_lost:
-                    # 玩家失败
-                    logger.warning(f"玩家 {payload.user_name} 战斗失败")
-                    raise HTTPException(
-                        status_code=status.HTTP_409_CONFLICT,
-                        detail="战斗失败，无法继续",
-                    )
-                else:
-                    # 战斗状态异常（既没胜利也没失败）
-                    logger.error(
-                        f"玩家 {payload.user_name} 战斗状态异常: 既未胜利也未失败"
-                    )
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="战斗状态异常",
-                    )
-
             case DungeonProgressType.RETREAT:
                 # 处理战斗中撤退：校验状态 + 同步标记，task 在锁外创建
                 if not rpg_game.current_combat_sequence.is_ongoing:
@@ -298,6 +213,81 @@ async def dungeon_progress(
         status=TaskStatus.RUNNING.value,
         message="撤退任务已启动，请通过会话消息查询结果",
     )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@dungeon_gameplay_api_router.post(
+    path="/api/dungeon/progress/advance_stage/v1/",
+    response_model=DungeonAdvanceStageResponse,
+)
+async def dungeon_advance_stage(
+    payload: DungeonAdvanceStageRequest,
+    game_server: CurrentGameServer,
+) -> DungeonAdvanceStageResponse:
+    """
+    地下城关卡推进接口
+
+    在战斗结束（post_combat 状态）后推进到下一关卡。
+
+    Args:
+        payload: 关卡推进请求对象
+        game_server: 游戏服务器实例
+
+    Returns:
+        DungeonAdvanceStageResponse: 推进结果消息
+
+    Raises:
+        HTTPException(404): 玩家未登录或游戏不存在
+        HTTPException(400): 战斗未处于 post_combat 状态或状态异常
+        HTTPException(409): 地下城已全部通关或战斗失败
+    """
+
+    logger.info(f"/api/dungeon/progress/advance_stage/v1/: user={payload.user_name}")
+
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有登录，请先登录",
+        )
+
+    async with current_room.lock:
+        rpg_game = _validate_dungeon_prerequisites(
+            user_name=payload.user_name,
+            game_server=game_server,
+        )
+
+        if not rpg_game.current_combat_sequence.is_post_combat:
+            logger.error(f"玩家 {payload.user_name} 前进下一关失败: 战斗未处于等待阶段")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="战斗未处于等待阶段",
+            )
+
+        if rpg_game.current_combat_sequence.is_won:
+            next_stage = rpg_game.current_dungeon.peek_next_stage()
+            if next_stage is None:
+                logger.info(f"玩家 {payload.user_name} 地下城全部通关")
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="地下城已全部通关，请返回营地",
+                )
+            advance_to_next_stage(rpg_game, rpg_game.current_dungeon)
+            return DungeonAdvanceStageResponse(message="已前进到下一关")
+        elif rpg_game.current_combat_sequence.is_lost:
+            logger.warning(f"玩家 {payload.user_name} 战斗失败")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="战斗失败，无法继续",
+            )
+        else:
+            logger.error(f"玩家 {payload.user_name} 战斗状态异常: 既未胜利也未失败")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="战斗状态异常",
+            )
 
 
 ###################################################################################################################################################################

@@ -137,8 +137,6 @@ class HomePlayerActionResponse(BaseModel):
 class DungeonProgressType(StrEnum):
     """地下城流程推进操作类型"""
 
-    POST_COMBAT = "post_combat"
-    ADVANCE_STAGE = "advance_stage"
     RETREAT = "retreat"
 
 
@@ -153,6 +151,22 @@ class DungeonProgressRequest(BaseModel):
 class DungeonProgressResponse(BaseModel):
     task_id: str
     status: str
+    message: str
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+
+@final
+class DungeonAdvanceStageRequest(BaseModel):
+    user_name: str
+    game_name: str
+
+
+@final
+class DungeonAdvanceStageResponse(BaseModel):
     message: str
 
 

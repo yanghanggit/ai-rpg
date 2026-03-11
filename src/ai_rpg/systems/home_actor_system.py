@@ -18,10 +18,19 @@ from ..models import (
     ActorComponent,
     PlayerComponent,
     PlayerOnlyStageComponent,
-    # KickOffCompleteComponent,
 )
 from ..utils import extract_json_from_code_block
 from ..game import TCGGame
+
+# 玩家「主动行动」对应的 Action 组件类型集合。
+# 当任一玩家持有其中任意类型时，视为本轮「有主动行动」，NPC 将进入待命模式。
+# 新增/删除行动类型时只在此处修改，其余判断逻辑均引用此常量。
+_PLAYER_ACTIVE_ACTION_TYPES: Final = (
+    SpeakAction,
+    WhisperAction,
+    AnnounceAction,
+    TransStageAction,
+)
 
 
 #######################################################################################################################################
@@ -293,11 +302,7 @@ class HomeActorSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return (
-            entity.has(PlanAction)
-            and entity.has(ActorComponent)
-            # and entity.has(KickOffCompleteComponent)
-        )
+        return entity.has(PlanAction) and entity.has(ActorComponent)
 
     #######################################################################################################################################
     @override
@@ -310,6 +315,12 @@ class HomeActorSystem(ReactiveProcessor):
         for player_entity in player_entities:
             self._inject_player_scene_context(player_entity)
 
+        # 若玩家本轮有主动行动，NPC 进入待命模式（跳过 LLM 推理）
+        if self._is_player_active(player_entities):
+            for npc_entity in npc_entities:
+                self._inject_npc_standby_context(npc_entity)
+            return
+
         # NPC：调用 LLM 进行行动规划
         chat_clients: List[ChatClient] = self._create_actor_chat_clients(npc_entities)
         await ChatClient.batch_chat(clients=chat_clients)
@@ -320,6 +331,72 @@ class HomeActorSystem(ReactiveProcessor):
                 response_entity is not None
             ), f"Cannot find entity by name: {chat_client.name}"
             self._execute_actor_actions(response_entity, chat_client)
+
+    #######################################################################################################################################
+    def _is_player_active(self, player_entities: List[Entity]) -> bool:
+        """判断本轮是否有玩家具有主动行动。
+
+        Args:
+            player_entities: 玩家实体列表
+
+        Returns:
+            若任一玩家持有 _PLAYER_ACTIVE_ACTION_TYPES 中任意类型则返回 True
+        """
+        return any(
+            e.has(action_type)
+            for e in player_entities
+            for action_type in _PLAYER_ACTIVE_ACTION_TYPES
+        )
+
+    #######################################################################################################################################
+    def _inject_npc_standby_context(self, npc_entity: Entity) -> None:
+        """向 NPC 实体注入待命状态（跳过 LLM 推理）。
+
+        玩家本轮有主动行动时，NPC 不进行推理，直接注入 passive_mind 并保持对话历史连贯。
+
+        Args:
+            npc_entity: NPC 实体
+        """
+        current_stage = self._game.resolve_stage_entity(npc_entity)
+        assert current_stage is not None
+
+        other_actors_appearances = self._get_other_actors_appearances(
+            npc_entity, current_stage
+        )
+        available_home_stages = self._get_available_home_stages(
+            npc_entity, current_stage
+        )
+
+        prompt = _build_action_planning_prompt(
+            current_stage=current_stage.name,
+            current_stage_narration=current_stage.get(
+                StageDescriptionComponent
+            ).narrative,
+            other_actors_appearances=other_actors_appearances,
+            available_home_stages=[e.name for e in available_home_stages],
+        )
+
+        self._game.add_human_message(
+            npc_entity,
+            prompt,
+            home_actor_planning=npc_entity.name,
+        )
+
+        passive_mind = f"身处{current_stage.name}，待命。"
+        standby_response = ActionPlanResponse(mind=passive_mind)
+        self._game.add_ai_message(
+            npc_entity,
+            [AIMessage(content=standby_response.model_dump_json(indent=2))],
+        )
+
+        self._game.notify_entities(
+            {npc_entity},
+            MindEvent(
+                message=_format_mind_notification(npc_entity.name, passive_mind),
+                actor=npc_entity.name,
+                content=passive_mind,
+            ),
+        )
 
     #######################################################################################################################################
     def _inject_player_scene_context(self, player_entity: Entity) -> None:
@@ -354,10 +431,11 @@ class HomeActorSystem(ReactiveProcessor):
         )
 
         # 判断玩家本轮是否有主动动作
-        has_action = player_entity.has(SpeakAction) or player_entity.has(
-            TransStageAction
+        has_action = any(
+            player_entity.has(action_type)
+            for action_type in _PLAYER_ACTIVE_ACTION_TYPES
         )
-        passive_mind = "" if has_action else f"身处{current_stage.name}。"
+        passive_mind = "" if has_action else f"身处{current_stage.name}，待命。"
 
         mock_response = self._build_player_action_response(player_entity, passive_mind)
         self._game.add_ai_message(
@@ -397,10 +475,18 @@ class HomeActorSystem(ReactiveProcessor):
         if player_entity.has(SpeakAction):
             response.speak = player_entity.get(SpeakAction).target_messages
 
+        if player_entity.has(WhisperAction):
+            response.whisper = player_entity.get(WhisperAction).target_messages
+
+        if player_entity.has(AnnounceAction):
+            response.announce = player_entity.get(AnnounceAction).message
+
         if player_entity.has(TransStageAction):
             response.trans_stage = player_entity.get(TransStageAction).target_stage_name
 
-        if not response.speak and not response.trans_stage:
+        if not any(
+            [response.speak, response.whisper, response.announce, response.trans_stage]
+        ):
             response.mind = passive_mind
 
         return response

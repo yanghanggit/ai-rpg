@@ -138,7 +138,6 @@ class DungeonProgressType(StrEnum):
     """地下城流程推进操作类型"""
 
     INIT_COMBAT = "initialization"
-    # COMBAT_STATUS_EVALUATION = "combat_status_evaluation"
     POST_COMBAT = "post_combat"
     ADVANCE_STAGE = "advance_stage"
     RETREAT = "retreat"
@@ -153,8 +152,9 @@ class DungeonProgressRequest(BaseModel):
 
 @final
 class DungeonProgressResponse(BaseModel):
-    pass
-    # session_messages: List[SessionMessage]
+    task_id: str
+    status: str
+    message: str
 
 
 ################################################################################################################

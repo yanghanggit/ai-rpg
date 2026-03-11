@@ -161,9 +161,11 @@ async def dungeon_progress(
         # last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
 
         # 根据操作类型分发处理
+        # ADVANCE_STAGE / POST_COMBAT 是纯同步操作，直接在锁内返回/抛出
+        # INIT_COMBAT / RETREAT 需要启动后台 task，仅在锁内做前置校验和同步标记，然后 fall-through 到锁外
         match payload.action:
             case DungeonProgressType.INIT_COMBAT:
-                # 处理地下城战斗开始
+                # 处理地下城战斗开始：校验状态，task 在锁外创建
                 if not rpg_game.current_combat_sequence.is_initializing:
                     logger.error(
                         f"玩家 {payload.user_name} 战斗开始失败: 战斗未处于开始阶段"
@@ -172,13 +174,6 @@ async def dungeon_progress(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="战斗未处于开始阶段",
                     )
-                # 推进战斗流程，转换到 ONGOING 状态
-                await rpg_game.combat_pipeline.process()
-                return DungeonProgressResponse(
-                    # session_messages=rpg_game.player_session.get_messages_since(
-                    #     last_event_sequence
-                    # )
-                )
 
             # case DungeonProgressType.COMBAT_STATUS_EVALUATION:
             # 检查可以执行状态评估的战斗状态
@@ -266,10 +261,12 @@ async def dungeon_progress(
                         )
                     # 前进到下一关
                     advance_to_next_stage(rpg_game, rpg_game.current_dungeon)
+
+                    # 返回前进结果相关的会话消息
                     return DungeonProgressResponse(
-                        # session_messages=rpg_game.player_session.get_messages_since(
-                        #     last_event_sequence
-                        # )
+                        task_id="",
+                        status="",
+                        message="已前进到下一关",
                     )
                 elif rpg_game.current_combat_sequence.is_lost:
                     # 玩家失败
@@ -289,8 +286,7 @@ async def dungeon_progress(
                     )
 
             case DungeonProgressType.RETREAT:
-
-                # 处理战斗中撤退
+                # 处理战斗中撤退：校验状态 + 同步标记，task 在锁外创建
                 if not rpg_game.current_combat_sequence.is_ongoing:
                     logger.error(f"玩家 {payload.user_name} 撤退失败: 战斗未在进行中")
                     raise HTTPException(
@@ -298,7 +294,7 @@ async def dungeon_progress(
                         detail="只能在战斗进行中撤退",
                     )
 
-                # 执行撤退操作
+                # 同步标记撤退（必须在 pipeline 执行前完成）
                 success, message = mark_expedition_retreat(rpg_game)
                 if not success:
                     logger.error(f"玩家 {payload.user_name} 撤退失败: {message}")
@@ -307,20 +303,7 @@ async def dungeon_progress(
                         detail=f"撤退失败: {message}",
                     )
 
-                logger.info(f"玩家 {payload.user_name} 撤退成功: {message}")
-
-                # 执行战斗流程让 CombatOutcomeSystem 检测到角色死亡
-                await rpg_game.combat_pipeline.execute()
-
-                # 返回家园
-                complete_dungeon_and_return_home(rpg_game, rpg_game.current_dungeon)
-
-                logger.info(f"玩家 {payload.user_name} 已从地下城撤退并返回家园")
-                return DungeonProgressResponse(
-                    # session_messages=rpg_game.player_session.get_messages_since(
-                    #     last_event_sequence
-                    # )
-                )
+                logger.info(f"玩家 {payload.user_name} 撤退标记成功: {message}")
 
             case _:
                 # 未知的操作类型，理论上不应该到达这里
@@ -329,6 +312,50 @@ async def dungeon_progress(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"未知的操作类型: {payload.action}",
                 )
+
+    # 到达此处说明是 INIT_COMBAT 或 RETREAT，需要创建后台 task（在锁外创建，让任务在后台独立持锁执行）
+    match payload.action:
+        case DungeonProgressType.INIT_COMBAT:
+            init_combat_task = game_server.create_task()
+            asyncio.create_task(
+                _execute_init_combat_task(
+                    init_combat_task.task_id,
+                    payload.user_name,
+                    game_server,
+                )
+            )
+            logger.info(
+                f"📝 创建战斗初始化任务: task_id={init_combat_task.task_id}, user={payload.user_name}"
+            )
+            return DungeonProgressResponse(
+                task_id=init_combat_task.task_id,
+                status=TaskStatus.RUNNING.value,
+                message="战斗初始化任务已启动，请通过会话消息查询结果",
+            )
+
+        case DungeonProgressType.RETREAT:
+            retreat_task = game_server.create_task()
+            asyncio.create_task(
+                _execute_retreat_task(
+                    retreat_task.task_id,
+                    payload.user_name,
+                    game_server,
+                )
+            )
+            logger.info(
+                f"📝 创建撤退任务: task_id={retreat_task.task_id}, user={payload.user_name}"
+            )
+            return DungeonProgressResponse(
+                task_id=retreat_task.task_id,
+                status=TaskStatus.RUNNING.value,
+                message="撤退任务已启动，请通过会话消息查询结果",
+            )
+
+        case _:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="内部状态错误",
+            )
 
 
 ###################################################################################################################################################################
@@ -559,6 +586,109 @@ async def dungeon_combat_play_cards(
         status=TaskStatus.RUNNING.value,
         message="出牌任务已启动，请通过会话消息查询结果",
     )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+async def _execute_init_combat_task(
+    task_id: str,
+    user_name: str,
+    game_server: GameServer,
+) -> None:
+    """后台执行战斗初始化任务
+
+    在后台异步执行战斗初始化并更新任务状态。
+    推进 combat_pipeline 将战斗从 INITIALIZING 转换到 ONGOING 状态。
+
+    Args:
+        task_id: 任务唯一标识符
+        user_name: 用户名
+        game_server: 游戏服务器实例
+    """
+    try:
+        logger.info(f"🚀 战斗初始化任务开始: task_id={task_id}, user={user_name}")
+
+        current_room = game_server.get_room(user_name)
+        if current_room is None or current_room._tcg_game is None:
+            raise ValueError(f"游戏实例不存在: user={user_name}")
+
+        async with current_room.lock:
+            rpg_game = current_room._tcg_game
+            assert isinstance(rpg_game, TCGGame), "Invalid game type"
+
+            if not rpg_game.current_combat_sequence.is_initializing:
+                raise ValueError("战斗未处于开始阶段")
+
+            await rpg_game.combat_pipeline.process()
+
+        task_record = game_server.get_task(task_id)
+        if task_record is not None:
+            task_record.status = TaskStatus.COMPLETED
+            task_record.end_time = datetime.now().isoformat()
+
+        logger.info(f"✅ 战斗初始化任务完成: task_id={task_id}, user={user_name}")
+
+    except Exception as e:
+        logger.error(
+            f"❌ 战斗初始化任务失败: task_id={task_id}, user={user_name}, error={e}"
+        )
+        task_record = game_server.get_task(task_id)
+        if task_record is not None:
+            task_record.status = TaskStatus.FAILED
+            task_record.error = str(e)
+            task_record.end_time = datetime.now().isoformat()
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+async def _execute_retreat_task(
+    task_id: str,
+    user_name: str,
+    game_server: GameServer,
+) -> None:
+    """后台执行撤退任务
+
+    在后台异步执行撤退战斗流程（CombatOutcomeSystem 检测死亡）并返回家园，更新任务状态。
+    注意：mark_expedition_retreat 已在 HTTP handler 锁内执行完毕，此处只负责 pipeline 及后续处理。
+
+    Args:
+        task_id: 任务唯一标识符
+        user_name: 用户名
+        game_server: 游戏服务器实例
+    """
+    try:
+        logger.info(f"🚀 撤退任务开始: task_id={task_id}, user={user_name}")
+
+        current_room = game_server.get_room(user_name)
+        if current_room is None or current_room._tcg_game is None:
+            raise ValueError(f"游戏实例不存在: user={user_name}")
+
+        async with current_room.lock:
+            rpg_game = current_room._tcg_game
+            assert isinstance(rpg_game, TCGGame), "Invalid game type"
+
+            # 执行战斗流程让 CombatOutcomeSystem 检测到角色死亡
+            await rpg_game.combat_pipeline.execute()
+
+            # 返回家园
+            complete_dungeon_and_return_home(rpg_game, rpg_game.current_dungeon)
+
+        task_record = game_server.get_task(task_id)
+        if task_record is not None:
+            task_record.status = TaskStatus.COMPLETED
+            task_record.end_time = datetime.now().isoformat()
+
+        logger.info(f"✅ 撤退任务完成: task_id={task_id}, user={user_name}")
+
+    except Exception as e:
+        logger.error(f"❌ 撤退任务失败: task_id={task_id}, user={user_name}, error={e}")
+        task_record = game_server.get_task(task_id)
+        if task_record is not None:
+            task_record.status = TaskStatus.FAILED
+            task_record.error = str(e)
+            task_record.end_time = datetime.now().isoformat()
 
 
 ###################################################################################################################################################################

@@ -17,6 +17,8 @@ from ..models import (
     DungeonProgressType,
     DungeonTransHomeRequest,
     DungeonTransHomeResponse,
+    DungeonCombatInitRequest,
+    DungeonCombatInitResponse,
     DungeonCombatDrawCardsRequest,
     DungeonCombatDrawCardsResponse,
     DungeonCombatPlayCardsRequest,
@@ -162,44 +164,8 @@ async def dungeon_progress(
 
         # 根据操作类型分发处理
         # ADVANCE_STAGE / POST_COMBAT 是纯同步操作，直接在锁内返回/抛出
-        # INIT_COMBAT / RETREAT 需要启动后台 task，仅在锁内做前置校验和同步标记，然后 fall-through 到锁外
+        # RETREAT 需要启动后台 task，仅在锁内做前置校验和同步标记，然后 fall-through 到锁外
         match payload.action:
-            case DungeonProgressType.INIT_COMBAT:
-                # 处理地下城战斗开始：校验状态，task 在锁外创建
-                if not rpg_game.current_combat_sequence.is_initializing:
-                    logger.error(
-                        f"玩家 {payload.user_name} 战斗开始失败: 战斗未处于开始阶段"
-                    )
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="战斗未处于开始阶段",
-                    )
-
-            # case DungeonProgressType.COMBAT_STATUS_EVALUATION:
-            # 检查可以执行状态评估的战斗状态
-            # is_valid_combat_state = (
-            #     rpg_game.current_combat_sequence.is_ongoing
-            #     or rpg_game.current_combat_sequence.is_combat_completed
-            # )
-            # if not is_valid_combat_state:
-            #     logger.error(
-            #         f"玩家 {payload.user_name} 状态评估失败: 战斗未处于进行中或已结束状态"
-            #     )
-            #     raise HTTPException(
-            #         status_code=status.HTTP_400_BAD_REQUEST,
-            #         detail="战斗未处于进行中或已结束状态",
-            #     )
-
-            # # 执行状态评估系统，为每个角色评估新增状态效果
-            # await rpg_game.combat_execution_pipeline.execute()
-
-            # # 返回评估结果相关的会话消息
-            # return DungeonProgressResponse(
-            #     session_messages=rpg_game.player_session.get_messages_since(
-            #         last_event_sequence
-            #     )
-            # )
-
             case DungeonProgressType.POST_COMBAT:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -313,49 +279,94 @@ async def dungeon_progress(
                     detail=f"未知的操作类型: {payload.action}",
                 )
 
-    # 到达此处说明是 INIT_COMBAT 或 RETREAT，需要创建后台 task（在锁外创建，让任务在后台独立持锁执行）
-    match payload.action:
-        case DungeonProgressType.INIT_COMBAT:
-            init_combat_task = game_server.create_task()
-            asyncio.create_task(
-                _execute_init_combat_task(
-                    init_combat_task.task_id,
-                    payload.user_name,
-                    game_server,
-                )
-            )
-            logger.info(
-                f"📝 创建战斗初始化任务: task_id={init_combat_task.task_id}, user={payload.user_name}"
-            )
-            return DungeonProgressResponse(
-                task_id=init_combat_task.task_id,
-                status=TaskStatus.RUNNING.value,
-                message="战斗初始化任务已启动，请通过会话消息查询结果",
-            )
+    # 到达此处说明是 RETREAT，需要创建后台 task（在锁外创建，让任务在后台独立持锁执行）
+    retreat_task = game_server.create_task()
+    asyncio.create_task(
+        _execute_retreat_task(
+            retreat_task.task_id,
+            payload.user_name,
+            game_server,
+        )
+    )
+    logger.info(
+        f"📝 创建撤退任务: task_id={retreat_task.task_id}, user={payload.user_name}"
+    )
+    return DungeonProgressResponse(
+        task_id=retreat_task.task_id,
+        status=TaskStatus.RUNNING.value,
+        message="撤退任务已启动，请通过会话消息查询结果",
+    )
 
-        case DungeonProgressType.RETREAT:
-            retreat_task = game_server.create_task()
-            asyncio.create_task(
-                _execute_retreat_task(
-                    retreat_task.task_id,
-                    payload.user_name,
-                    game_server,
-                )
-            )
-            logger.info(
-                f"📝 创建撤退任务: task_id={retreat_task.task_id}, user={payload.user_name}"
-            )
-            return DungeonProgressResponse(
-                task_id=retreat_task.task_id,
-                status=TaskStatus.RUNNING.value,
-                message="撤退任务已启动，请通过会话消息查询结果",
-            )
 
-        case _:
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@dungeon_gameplay_api_router.post(
+    path="/api/dungeon/combat/init/v1/", response_model=DungeonCombatInitResponse
+)
+async def dungeon_combat_init(
+    payload: DungeonCombatInitRequest,
+    game_server: CurrentGameServer,
+) -> DungeonCombatInitResponse:
+    """
+    地下城战斗初始化接口
+
+    触发战斗初始化后台任务，推进战斗从 INITIALIZING 转换到 ONGOING 状态，立即返回任务ID。
+
+    Args:
+        payload: 地下城战斗初始化请求对象
+        game_server: 游戏服务器实例
+
+    Returns:
+        DungeonCombatInitResponse: 包含任务ID和状态的响应对象
+
+    Raises:
+        HTTPException(404): 玩家未登录或游戏不存在
+        HTTPException(400): 战斗未处于开始阶段
+    """
+
+    logger.info(f"/api/dungeon/combat/init/v1/: user={payload.user_name}")
+
+    # 获取房间并用每玩家锁避免并发状态竞争
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有登录，请先登录",
+        )
+
+    async with current_room.lock:
+        # 验证地下城操作的前置条件
+        rpg_game = _validate_dungeon_prerequisites(
+            user_name=payload.user_name,
+            game_server=game_server,
+        )
+
+        # 校验战斗处于初始化阶段
+        if not rpg_game.current_combat_sequence.is_initializing:
+            logger.error(f"玩家 {payload.user_name} 战斗初始化失败: 战斗未处于开始阶段")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="内部状态错误",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="战斗未处于开始阶段",
             )
+
+    # 创建战斗初始化后台任务（在锁外创建，让任务在后台独立持锁执行）
+    init_combat_task = game_server.create_task()
+    asyncio.create_task(
+        _execute_init_combat_task(
+            init_combat_task.task_id,
+            payload.user_name,
+            game_server,
+        )
+    )
+    logger.info(
+        f"📝 创建战斗初始化任务: task_id={init_combat_task.task_id}, user={payload.user_name}"
+    )
+    return DungeonCombatInitResponse(
+        task_id=init_combat_task.task_id,
+        status=TaskStatus.RUNNING.value,
+        message="战斗初始化任务已启动，请通过会话消息查询结果",
+    )
 
 
 ###################################################################################################################################################################

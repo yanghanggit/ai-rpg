@@ -192,6 +192,11 @@ class DungeonCombatPlayCardsResponse(BaseModel):
     message: str
 
 
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+
 @final
 class AllyDrawCardAction(BaseModel):
     """单个Ally角色的抽牌动作指定"""
@@ -203,15 +208,32 @@ class AllyDrawCardAction(BaseModel):
 
 
 @final
-class DungeonCombatDrawCardsRequest(BaseModel):
+class DungeonCombatDrawAllyCardsRequest(BaseModel):
     user_name: str
     game_name: str
     specified_actions: List[AllyDrawCardAction]
-    enable_enemy_draw: bool
 
 
 @final
-class DungeonCombatDrawCardsResponse(BaseModel):
+class DungeonCombatDrawAllyCardsResponse(BaseModel):
+    task_id: str
+    status: str
+    message: str
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+
+@final
+class DungeonCombatDrawEnemyCardsRequest(BaseModel):
+    user_name: str
+    game_name: str
+
+
+@final
+class DungeonCombatDrawEnemyCardsResponse(BaseModel):
     task_id: str
     status: str
     message: str

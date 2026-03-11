@@ -19,8 +19,10 @@ from ..models import (
     DungeonTransHomeResponse,
     DungeonCombatInitRequest,
     DungeonCombatInitResponse,
-    DungeonCombatDrawCardsRequest,
-    DungeonCombatDrawCardsResponse,
+    DungeonCombatDrawAllyCardsRequest,
+    DungeonCombatDrawAllyCardsResponse,
+    DungeonCombatDrawEnemyCardsRequest,
+    DungeonCombatDrawEnemyCardsResponse,
     DungeonCombatPlayCardsRequest,
     DungeonCombatPlayCardsResponse,
     TaskStatus,
@@ -434,33 +436,32 @@ async def dungeon_trans_home(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @dungeon_gameplay_api_router.post(
-    path="/api/dungeon/combat/draw_cards/v1/",
-    response_model=DungeonCombatDrawCardsResponse,
+    path="/api/dungeon/combat/draw_cards/ally/v1/",
+    response_model=DungeonCombatDrawAllyCardsResponse,
 )
-async def dungeon_combat_draw_cards(
-    payload: DungeonCombatDrawCardsRequest,
+async def dungeon_combat_draw_ally_cards(
+    payload: DungeonCombatDrawAllyCardsRequest,
     game_server: CurrentGameServer,
-) -> DungeonCombatDrawCardsResponse:
+) -> DungeonCombatDrawAllyCardsResponse:
     """
-    地下城战斗抽卡接口
+    地下城战斗 Ally 抽卡接口
 
-    触发玩家在战斗中抽取卡牌的后台任务，立即返回任务ID。
+    激活指定远征队成员的抽牌动作并触发后台任务执行 combat_pipeline，立即返回任务ID。
 
     Args:
-        payload: 地下城战斗抽卡请求对象
+        payload: Ally 抽卡请求对象，包含每个成员的技能和目标指定
         game_server: 游戏服务器实例
 
     Returns:
-        DungeonCombatDrawCardsResponse: 包含任务ID和状态的响应对象
+        DungeonCombatDrawAllyCardsResponse: 包含任务ID和状态的响应对象
 
     Raises:
         HTTPException(404): 玩家未登录或游戏不存在
-        HTTPException(400): 战斗未在进行中
+        HTTPException(400): 战斗未在进行中或抽牌动作为空
     """
 
-    logger.info(f"/api/dungeon/combat/draw_cards/v1/: user={payload.user_name}")
+    logger.info(f"/api/dungeon/combat/draw_cards/ally/v1/: user={payload.user_name}")
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -469,32 +470,25 @@ async def dungeon_combat_draw_cards(
         )
 
     async with current_room.lock:
-        # 验证地下城操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
             game_server=game_server,
         )
 
-        # 验证战斗状态
-        assert rpg_game is not None, "rpg_game is None"
         if not rpg_game.current_combat_sequence.is_ongoing:
-            logger.error(f"玩家 {payload.user_name} 抽卡失败: 战斗未在进行中")
+            logger.error(f"玩家 {payload.user_name} Ally抽卡失败: 战斗未在进行中")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="战斗未在进行中",
             )
 
-        # 如果既没有指定抽牌动作，也没有启用敌人抽牌，则返回错误
-        if len(payload.specified_actions) == 0 and not payload.enable_enemy_draw:
-            logger.error(f"抽牌失败: 没有指定任何抽牌动作且未启用敌人抽牌")
+        if len(payload.specified_actions) == 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"抽牌失败: 没有指定任何抽牌动作且未启用敌人抽牌",
+                detail="Ally抽牌失败: 没有指定任何抽牌动作",
             )
 
-        # 处理指定的抽牌动作，逐个激活
         for expedition_member_action in payload.specified_actions:
-
             success, message = activate_specified_expedition_member_card_draws(
                 tcg_game=rpg_game,
                 expedition_member_name=expedition_member_action.entity_name,
@@ -503,45 +497,105 @@ async def dungeon_combat_draw_cards(
                 status_effect_names=expedition_member_action.status_effect_names,
             )
             if not success:
-                logger.error(f"指定抽牌失败: {message}")
+                logger.error(f"Ally指定抽牌失败: {message}")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"激活抽牌动作失败: {message}",
+                    detail=f"激活Ally抽牌动作失败: {message}",
                 )
 
-        # 敌人的就用随机（根据标记控制是否执行）, 所有的敌人都加。
-        if payload.enable_enemy_draw:
-
-            # 激活敌人抽牌动作，内部会为每个敌人随机选择一个技能并随机选择目标
-            success, message = activate_random_enemy_card_draws(rpg_game)
-            if not success:
-                logger.error(f"Enemy抽牌失败: {message}")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"激活Enemy抽牌动作失败: {message}",
-                )
-
-    # 创建抽卡后台任务（在锁外创建，让任务在后台独立持锁执行）
-    draw_cards_task = game_server.create_task()
-
-    # 使用 asyncio.create_task 创建真正的后台协程
-    # 这样任务会立即在事件循环中异步执行，不会阻塞响应
+    # 创建后台任务（在锁外创建，让任务在后台独立持锁执行）
+    ally_draw_task = game_server.create_task()
     asyncio.create_task(
         _execute_draw_cards_task(
-            draw_cards_task.task_id,
+            ally_draw_task.task_id,
             payload.user_name,
             game_server,
         )
     )
-
     logger.info(
-        f"📝 创建抽卡后台任务: task_id={draw_cards_task.task_id}, user={payload.user_name}"
+        f"📝 创建Ally抽卡任务: task_id={ally_draw_task.task_id}, user={payload.user_name}"
+    )
+    return DungeonCombatDrawAllyCardsResponse(
+        task_id=ally_draw_task.task_id,
+        status=TaskStatus.RUNNING.value,
+        message="Ally抽卡任务已启动，请通过会话消息查询结果",
     )
 
-    return DungeonCombatDrawCardsResponse(
-        task_id=draw_cards_task.task_id,
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@dungeon_gameplay_api_router.post(
+    path="/api/dungeon/combat/draw_cards/enemy/v1/",
+    response_model=DungeonCombatDrawEnemyCardsResponse,
+)
+async def dungeon_combat_draw_enemy_cards(
+    payload: DungeonCombatDrawEnemyCardsRequest,
+    game_server: CurrentGameServer,
+) -> DungeonCombatDrawEnemyCardsResponse:
+    """
+    地下城战斗 Enemy 抽卡接口
+
+    为所有敌人随机激活抽牌动作并触发后台任务执行 combat_pipeline，立即返回任务ID。
+
+    Args:
+        payload: Enemy 抽卡请求对象
+        game_server: 游戏服务器实例
+
+    Returns:
+        DungeonCombatDrawEnemyCardsResponse: 包含任务ID和状态的响应对象
+
+    Raises:
+        HTTPException(404): 玩家未登录或游戏不存在
+        HTTPException(400): 战斗未在进行中或敌人抽牌激活失败
+    """
+
+    logger.info(f"/api/dungeon/combat/draw_cards/enemy/v1/: user={payload.user_name}")
+
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有登录，请先登录",
+        )
+
+    async with current_room.lock:
+        rpg_game = _validate_dungeon_prerequisites(
+            user_name=payload.user_name,
+            game_server=game_server,
+        )
+
+        if not rpg_game.current_combat_sequence.is_ongoing:
+            logger.error(f"玩家 {payload.user_name} Enemy抽卡失败: 战斗未在进行中")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="战斗未在进行中",
+            )
+
+        success, message = activate_random_enemy_card_draws(rpg_game)
+        if not success:
+            logger.error(f"Enemy抽牌失败: {message}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"激活Enemy抽牌动作失败: {message}",
+            )
+
+    # 创建后台任务（在锁外创建，让任务在后台独立持锁执行）
+    enemy_draw_task = game_server.create_task()
+    asyncio.create_task(
+        _execute_draw_cards_task(
+            enemy_draw_task.task_id,
+            payload.user_name,
+            game_server,
+        )
+    )
+    logger.info(
+        f"📝 创建Enemy抽卡任务: task_id={enemy_draw_task.task_id}, user={payload.user_name}"
+    )
+    return DungeonCombatDrawEnemyCardsResponse(
+        task_id=enemy_draw_task.task_id,
         status=TaskStatus.RUNNING.value,
-        message="抽卡任务已启动，请通过会话消息查询结果",
+        message="Enemy抽卡任务已启动，请通过会话消息查询结果",
     )
 
 

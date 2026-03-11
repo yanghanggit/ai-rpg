@@ -133,22 +133,13 @@ class HomePlayerActionResponse(BaseModel):
 
 
 @final
-@unique
-class DungeonProgressType(StrEnum):
-    """地下城流程推进操作类型"""
-
-    RETREAT = "retreat"
-
-
-@final
-class DungeonProgressRequest(BaseModel):
+class DungeonCombatRetreatRequest(BaseModel):
     user_name: str
     game_name: str
-    action: DungeonProgressType
 
 
 @final
-class DungeonProgressResponse(BaseModel):
+class DungeonCombatRetreatResponse(BaseModel):
     task_id: str
     status: str
     message: str

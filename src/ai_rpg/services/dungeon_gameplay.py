@@ -12,9 +12,8 @@ from loguru import logger
 from ..game.tcg_game import TCGGame
 from .game_server_dependencies import CurrentGameServer
 from ..models import (
-    DungeonProgressRequest,
-    DungeonProgressResponse,
-    DungeonProgressType,
+    DungeonCombatRetreatRequest,
+    DungeonCombatRetreatResponse,
     DungeonAdvanceStageRequest,
     DungeonAdvanceStageResponse,
     DungeonTransHomeRequest,
@@ -120,35 +119,32 @@ def _validate_dungeon_prerequisites(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @dungeon_gameplay_api_router.post(
-    path="/api/dungeon/progress/v1/", response_model=DungeonProgressResponse
+    path="/api/dungeon/combat/retreat/v1/", response_model=DungeonCombatRetreatResponse
 )
-async def dungeon_progress(
-    payload: DungeonProgressRequest,
+async def dungeon_combat_retreat(
+    payload: DungeonCombatRetreatRequest,
     game_server: CurrentGameServer,
-) -> DungeonProgressResponse:
+) -> DungeonCombatRetreatResponse:
     """
-    地下城流程推进接口
+    地下城战斗撤退接口
 
-    处理战斗初始化、战斗状态评估、战斗归档和关卡推进等流程操作。
+    在战斗进行中触发撤退，同步标记撤退状态后启动后台任务执行 combat_pipeline，立即返回任务ID。
 
     Args:
-        payload: 地下城流程推进请求对象
+        payload: 撤退请求对象
         game_server: 游戏服务器实例
 
     Returns:
-        DungeonProgressResponse: 包含会话消息列表的响应对象
+        DungeonCombatRetreatResponse: 包含任务ID和状态的响应对象
 
     Raises:
         HTTPException(404): 玩家未登录或游戏不存在
-        HTTPException(400): 战斗状态不匹配
-        HTTPException(409): 战斗已结束或地下城已通关
+        HTTPException(400): 战斗未在进行中
+        HTTPException(409): 撤退标记失败
     """
 
-    logger.info(
-        f"/api/dungeon/progress/v1/: user={payload.user_name}, action={payload.action.value}"
-    )
+    logger.info(f"/api/dungeon/combat/retreat/v1/: user={payload.user_name}")
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -157,46 +153,30 @@ async def dungeon_progress(
         )
 
     async with current_room.lock:
-        # 验证地下城操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
             game_server=game_server,
         )
 
-        # 记录当前事件序列号，便于后续获取新增消息
-        # last_event_sequence: Final[int] = rpg_game.player_session.event_sequence
+        if not rpg_game.current_combat_sequence.is_ongoing:
+            logger.error(f"玩家 {payload.user_name} 撤退失败: 战斗未在进行中")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="只能在战斗进行中撤退",
+            )
 
-        # RETREAT 需要启动后台 task，仅在锁内做前置校验和同步标记，然后 fall-through 到锁外
-        match payload.action:
-            case DungeonProgressType.RETREAT:
-                # 处理战斗中撤退：校验状态 + 同步标记，task 在锁外创建
-                if not rpg_game.current_combat_sequence.is_ongoing:
-                    logger.error(f"玩家 {payload.user_name} 撤退失败: 战斗未在进行中")
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="只能在战斗进行中撤退",
-                    )
+        # 同步标记撤退（必须在 pipeline 执行前完成）
+        success, message = mark_expedition_retreat(rpg_game)
+        if not success:
+            logger.error(f"玩家 {payload.user_name} 撤退失败: {message}")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"撤退失败: {message}",
+            )
 
-                # 同步标记撤退（必须在 pipeline 执行前完成）
-                success, message = mark_expedition_retreat(rpg_game)
-                if not success:
-                    logger.error(f"玩家 {payload.user_name} 撤退失败: {message}")
-                    raise HTTPException(
-                        status_code=status.HTTP_409_CONFLICT,
-                        detail=f"撤退失败: {message}",
-                    )
+        logger.info(f"玩家 {payload.user_name} 撤退标记成功: {message}")
 
-                logger.info(f"玩家 {payload.user_name} 撤退标记成功: {message}")
-
-            case _:
-                # 未知的操作类型，理论上不应该到达这里
-                logger.error(f"未知的地下城操作类型: {payload.action}")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"未知的操作类型: {payload.action}",
-                )
-
-    # 到达此处说明是 RETREAT，需要创建后台 task（在锁外创建，让任务在后台独立持锁执行）
+    # 在锁外创建后台 task，让任务在后台独立持锁执行
     retreat_task = game_server.create_task()
     asyncio.create_task(
         _execute_retreat_task(
@@ -208,7 +188,7 @@ async def dungeon_progress(
     logger.info(
         f"📝 创建撤退任务: task_id={retreat_task.task_id}, user={payload.user_name}"
     )
-    return DungeonProgressResponse(
+    return DungeonCombatRetreatResponse(
         task_id=retreat_task.task_id,
         status=TaskStatus.RUNNING.value,
         message="撤退任务已启动，请通过会话消息查询结果",
@@ -619,11 +599,36 @@ async def dungeon_combat_play_cards(
 
     logger.info(f"/api/dungeon/combat/play_cards/v1/: user={payload.user_name}")
 
-    # 创建出牌后台任务
-    play_cards_task = game_server.create_task()
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有登录，请先登录",
+        )
 
-    # 使用 asyncio.create_task 创建真正的后台协程
-    # 这样任务会立即在事件循环中异步执行，不会阻塞响应
+    async with current_room.lock:
+        rpg_game = _validate_dungeon_prerequisites(
+            user_name=payload.user_name,
+            game_server=game_server,
+        )
+
+        if not rpg_game.current_combat_sequence.is_ongoing:
+            logger.error(f"玩家 {payload.user_name} 出牌失败: 战斗未在进行中")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="战斗未在进行中",
+            )
+
+        last_round = rpg_game.current_combat_sequence.latest_round
+        if last_round is None or last_round.is_round_completed:
+            logger.error(f"玩家 {payload.user_name} 出牌失败: 当前没有未完成的回合")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="当前没有未完成的回合可供打牌",
+            )
+
+    # 在锁外创建后台 task，让任务在后台独立持锁执行
+    play_cards_task = game_server.create_task()
     asyncio.create_task(
         _execute_play_cards_task(
             play_cards_task.task_id,
@@ -823,24 +828,16 @@ async def _execute_play_cards_task(
 
         # 获取房间并用每玩家锁避免并发状态竞争
         current_room = game_server.get_room(user_name)
-        if current_room is None:
+        if current_room is None or current_room._tcg_game is None:
             raise ValueError(f"游戏实例不存在: user={user_name}")
 
         async with current_room.lock:
-            rpg_game = _validate_dungeon_prerequisites(
-                user_name=user_name,
-                game_server=game_server,
-            )
-            assert rpg_game is not None, "rpg_game is None"
+            rpg_game = current_room._tcg_game
+            assert isinstance(rpg_game, TCGGame), "Invalid game type"
 
             # 验证战斗状态
             if not rpg_game.current_combat_sequence.is_ongoing:
                 raise ValueError("战斗未在进行中")
-
-            # 判断当前是否有未完成的回合
-            last_round = rpg_game.current_combat_sequence.latest_round
-            if last_round is None or last_round.is_round_completed:
-                raise ValueError("当前没有未完成的回合可供打牌")
 
             # 确保所有角色都有后备牌（如果没有玩家指定的牌了，系统会自动提供一张后备牌，保证流程继续）
             success, message = ensure_all_actors_have_fallback_cards(rpg_game)
@@ -853,8 +850,6 @@ async def _execute_play_cards_task(
                 raise ValueError(f"出牌失败: {message}")
 
             # 推进战斗流程处理出牌
-            # 注意: 这里会阻塞当前协程直到战斗流程处理完成
-            # 但因为使用了 asyncio.create_task，这个阻塞只影响后台任务，不影响 API 响应
             await rpg_game.combat_pipeline.process()
 
         # 保存结果

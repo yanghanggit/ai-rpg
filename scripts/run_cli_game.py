@@ -19,7 +19,7 @@ import click
 from loguru import logger
 from ai_rpg.chat_client.client import ChatClient
 from ai_rpg.configuration import server_configuration
-from ai_rpg.game.config import GAME_1, LOGS_DIR, setup_logger
+from ai_rpg.game.config import GAME_1, LOGS_DIR, WORLDS_DIR, setup_logger
 from ai_rpg.demo import (
     create_hunter_mystic_blueprint,
     create_mountain_beasts_dungeon,
@@ -29,10 +29,11 @@ from ai_rpg.game.tcg_game import TCGGame
 from ai_rpg.image_client.client import ImageClient
 from ai_rpg.models import World
 from ai_rpg.game import archive_world
+from pathlib import Path
 
 
 ###############################################################################################################################################
-async def _create_and_initialize_game(user: str, game: str) -> TCGGame:
+async def _create_and_initialize_game(user: str, game: str, save_dir: Path) -> TCGGame:
     """创建并初始化一个新游戏实例。
 
     Args:
@@ -87,6 +88,7 @@ async def _create_and_initialize_game(user: str, game: str) -> TCGGame:
     archive_world(
         terminal_game.world,
         terminal_game.player_session,
+        save_dir=save_dir,
         enable_gzip=True,
     )
     return terminal_game
@@ -111,12 +113,15 @@ def cli(user: str, game: str) -> None:
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
     setup_logger(_log_file)
-    logger.info(f"本次运行日志文件：{_log_file}")
 
     if user is None:
-        user = f"cli-player-{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+        user = f"cli-player-{_timestamp}"
 
-    asyncio.run(_create_and_initialize_game(user, game))
+    _save_dir = WORLDS_DIR / user / game / _timestamp
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(_create_and_initialize_game(user, game, _save_dir))
 
 
 ###############################################################################################################################################

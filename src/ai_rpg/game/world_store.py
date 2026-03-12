@@ -39,12 +39,13 @@ def archive_world(
     world: World,
     player_session: PlayerSession,
     worlds_dir: Path = WORLDS_DIR,
+    save_dir: Path | None = None,
     enable_gzip: bool = False,
 ) -> bool:
-    """持久化游戏世界数据到带时间戳的存档目录。
+    """持久化游戏世界数据到存档目录。
 
     存档目录结构：
-        {worlds_dir}/{username}/{game}/{timestamp}/
+        {save_dir}/
             ├── world.json
             ├── player_session.json
             ├── entities/{entity}.json ...
@@ -55,17 +56,20 @@ def archive_world(
     Args:
         world: 世界对象（含蓝图）
         player_session: 玩家会话对象
-        worlds_dir: 存档根目录，默认 WORLDS_DIR
+        worlds_dir: 存档根目录，默认 WORLDS_DIR。仅 save_dir 为 None 时使用。
+        save_dir: 显式指定存档目录。若为 None，则自动生成
+                  {worlds_dir}/{username}/{game}/{timestamp}/
         enable_gzip: 为 True 时额外生成 snapshot/snapshot.zip，
                      内含 world.json + player_session.json
 
     Returns:
         保存成功返回 True，失败返回 False
     """
-    username = player_session.name
-    game = str(world.blueprint.name)
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    save_dir = worlds_dir / username / game / timestamp
+    if save_dir is None:
+        username = player_session.name
+        game = str(world.blueprint.name)
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        save_dir = worlds_dir / username / game / timestamp
     save_dir.mkdir(parents=True, exist_ok=True)
 
     try:

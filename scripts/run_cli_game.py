@@ -34,7 +34,18 @@ from ai_rpg.services.home_actions import (
     activate_speak_action,
     activate_switch_stage,
 )
-from ai_rpg.services.dungeon_stage_transition import initialize_dungeon_first_entry
+from ai_rpg.services.dungeon_actions import (
+    activate_random_expedition_member_card_draws,
+    activate_random_enemy_card_draws,
+    ensure_all_actors_have_fallback_cards,
+    activate_play_cards,
+    mark_expedition_retreat,
+)
+from ai_rpg.services.dungeon_stage_transition import (
+    initialize_dungeon_first_entry,
+    advance_to_next_stage,
+    complete_dungeon_and_return_home,
+)
 from pathlib import Path
 
 
@@ -237,6 +248,178 @@ async def _enter_dungeon_game(
 
 
 ###############################################################################################################################################
+async def _draw_cards_game(
+    world: World,
+    player_session: PlayerSession,
+    save_dir: Path,
+) -> TCGGame:
+    """从存档复位，为所有角色抽牌（dc），并归档新状态。"""
+    terminal_game = await _restore_game(world, player_session)
+
+    if not terminal_game.current_combat_sequence.is_ongoing:
+        logger.error("draw-cards 只能在战斗进行中使用")
+        return terminal_game
+
+    success, message = activate_random_expedition_member_card_draws(terminal_game)
+    if not success:
+        logger.error(f"激活Ally抽牌失败: {message}")
+        return terminal_game
+
+    success, message = activate_random_enemy_card_draws(terminal_game)
+    if not success:
+        logger.error(f"激活Enemy抽牌失败: {message}")
+        return terminal_game
+
+    await terminal_game.combat_pipeline.process()
+
+    archive_world(
+        terminal_game.world,
+        terminal_game.player_session,
+        save_dir=save_dir,
+        enable_gzip=True,
+    )
+    return terminal_game
+
+
+###############################################################################################################################################
+async def _play_cards_game(
+    world: World,
+    player_session: PlayerSession,
+    save_dir: Path,
+) -> TCGGame:
+    """从存档复位，执行打牌（pc），并归档新状态。"""
+    terminal_game = await _restore_game(world, player_session)
+
+    if not terminal_game.current_combat_sequence.is_ongoing:
+        logger.error("play-cards 只能在战斗进行中使用")
+        return terminal_game
+
+    last_round = terminal_game.current_combat_sequence.latest_round
+    if last_round is None or last_round.is_round_completed:
+        logger.error("play-cards 当前没有未完成的回合可供打牌")
+        return terminal_game
+
+    success, message = ensure_all_actors_have_fallback_cards(terminal_game)
+    if not success:
+        logger.error(f"确保所有角色都有后备牌失败: {message}")
+        return terminal_game
+
+    success, message = activate_play_cards(terminal_game)
+    if not success:
+        logger.error(f"打牌失败: {message}")
+        return terminal_game
+
+    await terminal_game.combat_pipeline.process()
+
+    if terminal_game.current_combat_sequence.is_post_combat:
+        logger.debug("在本次处理中战斗已结束，进入后处理阶段")
+
+    archive_world(
+        terminal_game.world,
+        terminal_game.player_session,
+        save_dir=save_dir,
+        enable_gzip=True,
+    )
+    return terminal_game
+
+
+###############################################################################################################################################
+async def _trans_home_game(
+    world: World,
+    player_session: PlayerSession,
+    save_dir: Path,
+) -> TCGGame:
+    """从存档复位，返回家园（th），并归档新状态。"""
+    terminal_game = await _restore_game(world, player_session)
+
+    if (
+        len(terminal_game.current_combat_sequence.combats) == 0
+        or not terminal_game.current_combat_sequence.is_post_combat
+    ):
+        logger.error("trans-home 只能在战斗结束后使用")
+        return terminal_game
+
+    complete_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
+
+    archive_world(
+        terminal_game.world,
+        terminal_game.player_session,
+        save_dir=save_dir,
+        enable_gzip=True,
+    )
+    return terminal_game
+
+
+###############################################################################################################################################
+async def _next_dungeon_game(
+    world: World,
+    player_session: PlayerSession,
+    save_dir: Path,
+) -> TCGGame:
+    """从存档复位，进入下一关（and），并归档新状态。"""
+    terminal_game = await _restore_game(world, player_session)
+
+    if not terminal_game.current_combat_sequence.is_post_combat:
+        logger.error("next-dungeon 只能在战斗结束后使用")
+        return terminal_game
+
+    if terminal_game.current_combat_sequence.is_lost:
+        logger.info("英雄失败，应该返回营地")
+        return terminal_game
+
+    if not terminal_game.current_combat_sequence.is_won:
+        assert False, "不可能出现的情况！"
+
+    next_level = terminal_game.current_dungeon.peek_next_stage()
+    if next_level is None:
+        logger.info("没有下一关，你胜利了，应该返回营地")
+        return terminal_game
+
+    advance_to_next_stage(terminal_game, terminal_game.current_dungeon)
+    await terminal_game.combat_pipeline.process()
+
+    archive_world(
+        terminal_game.world,
+        terminal_game.player_session,
+        save_dir=save_dir,
+        enable_gzip=True,
+    )
+    return terminal_game
+
+
+###############################################################################################################################################
+async def _retreat_game(
+    world: World,
+    player_session: PlayerSession,
+    save_dir: Path,
+) -> TCGGame:
+    """从存档复位，执行撤退（rtt），并归档新状态。"""
+    terminal_game = await _restore_game(world, player_session)
+
+    if not terminal_game.current_combat_sequence.is_ongoing:
+        logger.error("retreat 只能在战斗进行中使用")
+        return terminal_game
+
+    success, message = mark_expedition_retreat(terminal_game)
+    if not success:
+        logger.error(f"撤退失败: {message}")
+        return terminal_game
+
+    logger.info(f"撤退成功: {message}")
+
+    await terminal_game.combat_pipeline.execute()
+    complete_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
+
+    archive_world(
+        terminal_game.world,
+        terminal_game.player_session,
+        save_dir=save_dir,
+        enable_gzip=True,
+    )
+    return terminal_game
+
+
+###############################################################################################################################################
 @click.group()
 def main() -> None:
     pass
@@ -284,14 +467,18 @@ def advance(snapshot: str) -> None:
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
-        raise click.BadParameter(f"存档目录不存在：{snapshot_path}", param_hint="--snapshot")
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
     setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
-    _save_dir = WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
 
     logger.info(f"本次运行日志文件：{_log_file}")
     logger.info(f"读取存档：{snapshot_path}")
@@ -322,14 +509,18 @@ def speak(snapshot: str, target: str, content: str) -> None:
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
-        raise click.BadParameter(f"存档目录不存在：{snapshot_path}", param_hint="--snapshot")
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
     setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
-    _save_dir = WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
 
     logger.info(f"本次运行日志文件：{_log_file}")
     logger.info(f"读取存档：{snapshot_path}")
@@ -355,14 +546,18 @@ def switch_stage(snapshot: str, stage: str) -> None:
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
-        raise click.BadParameter(f"存档目录不存在：{snapshot_path}", param_hint="--snapshot")
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
     setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
-    _save_dir = WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
 
     logger.info(f"本次运行日志文件：{_log_file}")
     logger.info(f"读取存档：{snapshot_path}")
@@ -383,20 +578,184 @@ def enter_dungeon(snapshot: str) -> None:
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
-        raise click.BadParameter(f"存档目录不存在：{snapshot_path}", param_hint="--snapshot")
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
     setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
-    _save_dir = WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
 
     logger.info(f"本次运行日志文件：{_log_file}")
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(_enter_dungeon_game(world, player_session, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("draw-cards")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+def draw_cards(snapshot: str) -> None:
+    """从存档复位，为所有角色随机抽牌（dc），并写入新存档。"""
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(_draw_cards_game(world, player_session, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("play-cards")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+def play_cards(snapshot: str) -> None:
+    """从存档复位，执行打牌（pc），并写入新存档。"""
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(_play_cards_game(world, player_session, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("trans-home")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+def trans_home(snapshot: str) -> None:
+    """从存档复位，返回家园（th），并写入新存档。"""
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(_trans_home_game(world, player_session, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("next-dungeon")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+def next_dungeon(snapshot: str) -> None:
+    """从存档复位，进入下一关（and），并写入新存档。"""
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(_next_dungeon_game(world, player_session, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("retreat")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+def retreat(snapshot: str) -> None:
+    """从存档复位，执行撤退（rtt），并写入新存档。"""
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(_retreat_game(world, player_session, _save_dir))
 
 
 ###############################################################################################################################################

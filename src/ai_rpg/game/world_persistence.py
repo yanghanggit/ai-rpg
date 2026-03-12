@@ -49,53 +49,53 @@ def get_game_blueprint_data(blueprints_dir: Path, game: str) -> Optional[Bluepri
 
 
 ###############################################################################################################################################
-def get_user_world_data(worlds_dir: Path, user: str, game: str) -> Optional[World]:
-    """加载用户游戏世界运行时数据
+# def get_user_world_data(worlds_dir: Path, user: str, game: str) -> Optional[World]:
+#     """加载用户游戏世界运行时数据
 
-    Args:
-        worlds_dir: 运行时数据目录
-        user: 用户名
-        game: 游戏名称
+#     Args:
+#         worlds_dir: 运行时数据目录
+#         user: 用户名
+#         game: 游戏名称
 
-    Returns:
-        World: 世界运行时对象，失败返回 None
-    """
-    read_path = worlds_dir / user / game / "runtime.json"
-    if not read_path.exists():
-        return None
+#     Returns:
+#         World: 世界运行时对象，失败返回 None
+#     """
+#     read_path = worlds_dir / user / game / "runtime.json"
+#     if not read_path.exists():
+#         return None
 
-    try:
+#     try:
 
-        logger.debug(f"📖 从本地文件系统获取用户游戏世界数据...")
-        world_json = read_path.read_text(encoding="utf-8")
-        world_data = World.model_validate_json(world_json)
-        return world_data
+#         logger.debug(f"📖 从本地文件系统获取用户游戏世界数据...")
+#         world_json = read_path.read_text(encoding="utf-8")
+#         world_data = World.model_validate_json(world_json)
+#         return world_data
 
-    except Exception as e:
-        logger.error(f"❌ 从本地文件系统获取用户游戏世界数据失败: {str(e)}")
+#     except Exception as e:
+#         logger.error(f"❌ 从本地文件系统获取用户游戏世界数据失败: {str(e)}")
 
-    return None
+#     return None
 
 
-###############################################################################################################################################
-def delete_user_world_data(worlds_dir: Path, user: str, game: str) -> bool:
-    """删除用户游戏世界数据
+# ###############################################################################################################################################
+# def delete_user_world_data(worlds_dir: Path, user: str, game: str) -> bool:
+#     """删除用户游戏世界数据
 
-    Args:
-        worlds_dir: 运行时数据目录
-        user: 用户名
-        game: 游戏名称
+#     Args:
+#         worlds_dir: 运行时数据目录
+#         user: 用户名
+#         game: 游戏名称
 
-    Returns:
-        bool: 删除成功返回 True，目录不存在返回 False
-    """
-    write_dir = worlds_dir / user / game
-    if write_dir.exists():
-        shutil.rmtree(write_dir)
-        logger.debug(f"🗑️ 已删除用户游戏世界数据目录: {write_dir}")
-        return True
+#     Returns:
+#         bool: 删除成功返回 True，目录不存在返回 False
+#     """
+#     write_dir = worlds_dir / user / game
+#     if write_dir.exists():
+#         shutil.rmtree(write_dir)
+#         logger.debug(f"🗑️ 已删除用户游戏世界数据目录: {write_dir}")
+#         return True
 
-    return False
+#     return False
 
 
 ###############################################################################################################################################

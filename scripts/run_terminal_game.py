@@ -43,10 +43,11 @@ from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import (
     TCGGame,
 )
-from ai_rpg.game.world_persistence import (
-    get_user_world_data,
-    delete_user_world_data,
-)
+
+# from ai_rpg.game.world_persistence import (
+#     get_user_world_data,
+#     delete_user_world_data,
+# )
 from ai_rpg.models import (
     World,
 )
@@ -128,29 +129,29 @@ async def _run_game(
 
     # 注意，如果确定player是固定的，但是希望每次玩新游戏，就调用这句。
     # 或者，换成random_name，随机生成一个player名字。
-    delete_user_world_data(WORLDS_DIR, user, GAME_1)
+    # delete_user_world_data(WORLDS_DIR, user, GAME_1)
 
-    # 先检查一下world_data是否存在
-    world_data = get_user_world_data(WORLDS_DIR, user, game)
+    # # 先检查一下world_data是否存在
+    # world_data = get_user_world_data(WORLDS_DIR, user, game)
 
-    # 判断是否存在world数据
-    if world_data is None:
+    # # 判断是否存在world数据
+    # if world_data is None:
 
-        # 获取world_blueprint
-        world_blueprint = create_hunter_mystic_blueprint(game)
-        assert world_blueprint is not None, "world blueprint 反序列化失败"
+    # 获取world_blueprint
+    world_blueprint = create_hunter_mystic_blueprint(game)
+    assert world_blueprint is not None, "world blueprint 反序列化失败"
 
-        # 如果world不存在，说明是第一次创建游戏
-        world_data = World(
-            entity_counter=1000,
-            entities_serialization=[],
-            agents_context={},
-            dungeon=create_mountain_beasts_dungeon(),
-            blueprint=world_blueprint,
-        )
+    # 如果world不存在，说明是第一次创建游戏
+    world_data = World(
+        entity_counter=1000,
+        entities_serialization=[],
+        agents_context={},
+        dungeon=create_mountain_beasts_dungeon(),
+        blueprint=world_blueprint,
+    )
 
-    else:
-        assert False, "测试阶段，不允许加载存档的游戏数据！"
+    # else:
+    #     assert False, "测试阶段，不允许加载存档的游戏数据！"
 
     # 依赖注入，创建新的游戏
     assert world_data is not None, "World data must exist to create a game"

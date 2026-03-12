@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.player_session import PlayerSession
 from ..game.tcg_game import TCGGame
-from ..game.world_persistence import get_user_world_data, get_game_blueprint_data
+from ..game.world_persistence import get_game_blueprint_data
 from ..game.config import BLUEPRINTS_DIR, WORLDS_DIR
 from ..models import StartRequest, StartResponse, World
 from .game_server_dependencies import CurrentGameServer
@@ -82,24 +82,24 @@ async def start(
     assert room._player_session is not None, "房间玩家客户端实例不存在"
 
     # 获取或创建世界数据
-    world_data = get_user_world_data(WORLDS_DIR, payload.user_name, payload.game_name)
-    if world_data is None:
+    # world_data = get_user_world_data(WORLDS_DIR, payload.user_name, payload.game_name)
+    # if world_data is None:
 
-        # 重新生成world
-        world_data = World(
-            entity_counter=1000,
-            entities_serialization=[],
-            agents_context={},
-            dungeon=create_mountain_beasts_dungeon(),
-            blueprint=blueprint_data,
-        )
+    # 重新生成world
+    world_data = World(
+        entity_counter=1000,
+        entities_serialization=[],
+        agents_context={},
+        dungeon=create_mountain_beasts_dungeon(),
+        blueprint=blueprint_data,
+    )
 
-    else:
+    # else:
 
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"start/v1: {payload.user_name} load world data not implemented",
-        )
+    #     raise HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         detail=f"start/v1: {payload.user_name} load world data not implemented",
+    #     )
 
     # 依赖注入，创建新的游戏
     assert world_data is not None, "World data must exist to create a game"

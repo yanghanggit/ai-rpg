@@ -44,8 +44,6 @@ def create_hunter() -> Actor:
     )
 
     actor.skills = [
-        # WEAPON_ATTACK_SKILL.model_copy(),
-        # WEAPON_DEFEND_SKILL.model_copy(),
         UNARMED_COMBAT_SKILL.model_copy(),
     ]
 

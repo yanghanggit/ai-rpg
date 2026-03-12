@@ -52,7 +52,6 @@ def create_actor(
         name=name,
         character_sheet=character_sheet,
         system_message="",
-        # kick_off_message="",
         character_stats=character_stats,
     )
 
@@ -64,9 +63,7 @@ def create_actor(
     # 选择外观描述
     appearance = character_sheet.base_body
     if appearance == "":
-        # logger.warning(
-        #     f"Actor {name} has empty base_body in character_sheet, using appearance instead."
-        # )
+
         appearance = character_sheet.appearance
 
     # 初次编译system_message!!!!
@@ -99,7 +96,6 @@ def create_stage(
     stage_profile: StageProfile,
     campaign_setting: str,
     system_rules: str,
-    # combat_mechanics: str,
 ) -> Stage:
     """
     创建一个游戏场景(Stage)实例。
@@ -122,7 +118,6 @@ def create_stage(
         name=name,
         stage_profile=stage_profile,
         system_message="",
-        # kick_off_message="",
         actors=[],
     )
 
@@ -142,14 +137,6 @@ def create_stage(
 ## 场景设定
 
 {stage_profile.profile}"""
-
-    # 仅地下城场景添加战斗机制说明
-    #     if stage.stage_profile.type == StageType.DUNGEON:
-    #         stage.system_message += f"""
-
-    # ## 战斗机制
-
-    # {combat_mechanics}"""
 
     return stage
 
@@ -180,7 +167,6 @@ def create_world_system(
     world_system = WorldSystem(
         name=name,
         system_message="",
-        # kick_off_message="",
         component="",
     )
 

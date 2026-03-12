@@ -44,7 +44,6 @@ def create_actor_mountain_tiger() -> Actor:
 
     # 定义山中虎妖的技能
     mountain_tiger.skills = [
-        # INTIMIDATION_SKILL.model_copy(),
         BEAST_ATTACK_SKILL.model_copy(),
     ]
 

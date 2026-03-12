@@ -22,13 +22,10 @@ from .actor_wild_boar import create_actor_wild_boar
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
     RPG_SYSTEM_RULES,
-    # RPG_COMBAT_MECHANICS,
 )
 from .entity_factory import (
     create_stage,
 )
-
-# from .prompt_templates import PUBLIC_STAGE_KICK_OFF_MESSAGE
 
 
 def create_mountain_beasts_dungeon() -> Dungeon:
@@ -64,9 +61,6 @@ def create_mountain_beasts_dungeon() -> Dungeon:
     # 将山魈添加到场景的角色列表中
     stage_forest_edge.actors = [actor_monkey]
 
-    # 设置场景启动消息，指导游戏如何描写环境
-    # stage_forest_edge.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
-
     # 创建山中虎领地场景（密林深处）
     stage_deep_forest = create_stage(
         name="场景.密林深处",
@@ -77,7 +71,6 @@ def create_mountain_beasts_dungeon() -> Dungeon:
         ),
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
-        # combat_mechanics=RPG_COMBAT_MECHANICS,
     )
 
     # 添加山中虎作为场景中的敌对角色
@@ -88,9 +81,6 @@ def create_mountain_beasts_dungeon() -> Dungeon:
 
     # 将山中虎添加到场景的角色列表中
     stage_deep_forest.actors = [actor_tiger]
-
-    # 设置场景启动消息，指导游戏如何描写环境
-    # stage_deep_forest.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
 
     return Dungeon(
         name="地下城.山林妖兽",
@@ -122,7 +112,6 @@ def create_tiger_lair_dungeon() -> Dungeon:
         ),
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
-        # combat_mechanics=RPG_COMBAT_MECHANICS,
     )
 
     # 添加山中虎作为场景中的敌对角色
@@ -136,9 +125,6 @@ def create_tiger_lair_dungeon() -> Dungeon:
 
     # 将山中虎添加到场景的角色列表中
     stage_deep_forest.actors = [actor_tiger]
-
-    # 设置场景启动消息，指导游戏如何描写环境
-    # stage_deep_forest.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
 
     return Dungeon(
         name="地下城.山中虎巢穴",
@@ -169,7 +155,6 @@ def create_wild_boar_territory_dungeon() -> Dungeon:
         ),
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
-        # combat_mechanics=RPG_COMBAT_MECHANICS,
     )
 
     # 添加野猪作为场景中的敌对角色
@@ -180,9 +165,6 @@ def create_wild_boar_territory_dungeon() -> Dungeon:
 
     # 将野猪添加到场景的角色列表中
     stage_forest_clearing.actors = [actor_boar]
-
-    # 设置场景启动消息，指导游戏如何描写环境
-    # stage_forest_clearing.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
 
     return Dungeon(
         name="地下城.野猪领地",

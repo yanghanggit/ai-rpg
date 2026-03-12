@@ -1,6 +1,4 @@
 from .actor_training_dummy import create_training_dummy
-
-# from .prompt_templates import PUBLIC_STAGE_KICK_OFF_MESSAGE
 from .stage_village import create_training_ground
 from ..models import Dungeon, StageType, UniqueItem
 
@@ -39,9 +37,6 @@ def create_training_dungeon() -> Dungeon:
 
     # 将训练木桩添加到训练场景中
     stage_training_ground.actors = [actor_training_dummy]
-
-    # 设置训练场景的游戏启动对话
-    # stage_training_ground.kick_off_message = PUBLIC_STAGE_KICK_OFF_MESSAGE
 
     return Dungeon(
         name="地下城.训猎人训练场",

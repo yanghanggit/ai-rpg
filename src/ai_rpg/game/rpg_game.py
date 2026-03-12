@@ -229,15 +229,15 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         #     f"游戏将要保存，实体数量: {len(self.world.entities_serialization)}"
         # )
 
-        # 保存快照
+        # 持久化存档
+        # from .world_store import persist_world_data
         # persist_world_data(
-        #     worlds_dir=WORLDS_DIR,
-        #     username=self.player_session.name,
         #     world=self.world,
         #     player_session=self.player_session,
         # )
 
-        # # debug - 调用模块级函数
+        # debug - 输出完整快照
+        # from .world_store import dump_world_snapshot, ensure_debug_dir
         # dump_world_snapshot(
         #     debug_dir=ensure_debug_dir(
         #         base_dir=LOGS_DIR,
@@ -245,7 +245,6 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         #         game_name=self.name,
         #     ),
         #     world=self.world,
-        #     # player_session=self.player_session,
         # )
 
         return self

@@ -28,7 +28,7 @@ from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import TCGGame
 from ai_rpg.image_client.client import ImageClient
 from ai_rpg.models import World
-
+from ai_rpg.game import archive_world
 
 ###############################################################################################################################################
 async def _create_and_initialize_game(user: str, game: str) -> TCGGame:
@@ -75,6 +75,13 @@ async def _create_and_initialize_game(user: str, game: str) -> TCGGame:
     await terminal_game.initialize()
 
     logger.info(f"游戏创建并初始化完成：user={user}, game={game}")
+    
+    # 持久化游戏世界数据到存档目录，并启用 gzip 快照功能
+    archive_world(
+        terminal_game.world,
+        terminal_game.player_session,
+        enable_gzip=True,
+    )
     return terminal_game
 
 

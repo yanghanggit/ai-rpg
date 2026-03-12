@@ -28,7 +28,8 @@ from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import TCGGame
 from ai_rpg.image_client.client import ImageClient
 from ai_rpg.models import World
-from ai_rpg.game import archive_world
+from ai_rpg.game import archive_world, restore_world
+from ai_rpg.services.home_actions import activate_stage_plan
 from pathlib import Path
 
 
@@ -95,7 +96,50 @@ async def _create_and_initialize_game(user: str, game: str, save_dir: Path) -> T
 
 
 ###############################################################################################################################################
-@click.command()
+async def _advance_game(
+    world: World,
+    player_session: PlayerSession,
+    save_dir: Path,
+) -> TCGGame:
+    """从已还原的 World/PlayerSession 出发，执行一轮家园推进并归档新状态。"""
+    game = str(world.blueprint.name)
+    terminal_game = TCGGame(
+        name=game,
+        player_session=player_session,
+        world=world,
+    )
+
+    ChatClient.initialize_url_config(server_configuration)
+    ImageClient.initialize_url_config(server_configuration)
+
+    terminal_game.restore_from_snapshot()
+    await terminal_game.initialize()
+
+    logger.info(f"游戏已从存档恢复：user={player_session.name}, game={game}")
+
+    success, error_detail = activate_stage_plan(terminal_game)
+    if not success:
+        logger.debug(f"激活行动计划失败: {error_detail}")
+
+    await terminal_game.home_pipeline.process()
+
+    archive_world(
+        terminal_game.world,
+        terminal_game.player_session,
+        save_dir=save_dir,
+        enable_gzip=True,
+    )
+    return terminal_game
+
+
+###############################################################################################################################################
+@click.group()
+def main() -> None:
+    pass
+
+
+###############################################################################################################################################
+@main.command("new")
 @click.option(
     "--user",
     default=None,
@@ -107,7 +151,7 @@ async def _create_and_initialize_game(user: str, game: str, save_dir: Path) -> T
     show_default=True,
     help="游戏名称。",
 )
-def cli(user: str, game: str) -> None:
+def new_game(user: str, game: str) -> None:
     """创建并初始化一个新的游戏实例。"""
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -125,5 +169,37 @@ def cli(user: str, game: str) -> None:
 
 
 ###############################################################################################################################################
+@main.command("advance")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径（如 .worlds/玩家名/Game1/2026-03-12_12-53-25）",
+)
+def advance(snapshot: str) -> None:
+    """从存档复位游戏，执行一轮家园推进，并写入新存档。"""
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    username = player_session.name
+    game = str(world.blueprint.name)
+    _save_dir = WORLDS_DIR / username / game / _timestamp
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(_advance_game(world, player_session, _save_dir))
+
+
+###############################################################################################################################################
 if __name__ == "__main__":
-    cli()
+    main()

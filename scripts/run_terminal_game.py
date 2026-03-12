@@ -171,19 +171,10 @@ async def _run_game(
     # 初始化图片(图片生成服务)客户端
     ImageClient.initialize_url_config(server_configuration)
 
-    # 启动游戏的判断，是第一次建立还是恢复？
-    # if len(terminal_game.world.entities_serialization) == 0:
-    # logger.info(f"游戏中没有实体 = {game}, 说明是第一次创建游戏")
-    # 直接构建ecs
     assert (
         len(terminal_game.world.entities_serialization) == 0
     ), "测试阶段，游戏中不应该有实体数据！"
     terminal_game.build_from_blueprint().flush_entities()
-
-    # else:
-    #     logger.warning(f"游戏中有实体 = {game}，需要通过数据恢复实体，是游戏回复的过程")
-    #     # 测试！回复ecs
-    #     terminal_game.load_game().save_game()
 
     # 初始化！
     await terminal_game.initialize()

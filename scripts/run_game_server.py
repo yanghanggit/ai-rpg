@@ -30,7 +30,7 @@ from ai_rpg.services.stages_state import stages_state_api_router
 from ai_rpg.services.background_tasks import background_tasks_api_router
 from ai_rpg.chat_client.client import ChatClient
 from ai_rpg.services.player_session import player_session_api_router
-from ai_rpg.game.config import setup_logger
+from ai_rpg.game.config import LOGS_DIR, setup_logger
 
 # 服务器配置文件路径
 _server_setting_path: Final[Path] = Path("server_configuration.json")
@@ -154,7 +154,10 @@ app.include_router(router=dungeon_state_api_router)
 
 def main() -> None:
 
-    setup_logger()
+    import datetime
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    setup_logger(LOGS_DIR / f"run_game_server_{_timestamp}.log")
 
     logger.info(f"启动游戏服务器，端口: {server_configuration.game_server_port}")
 

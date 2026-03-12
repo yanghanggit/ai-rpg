@@ -34,7 +34,7 @@ from ai_rpg.configuration import (
     server_configuration,
 )
 from ai_rpg.utils import parse_command_args
-from ai_rpg.game.config import GAME_1, setup_logger
+from ai_rpg.game.config import GAME_1, LOGS_DIR, setup_logger
 from ai_rpg.demo import (
     create_hunter_mystic_blueprint,
     create_mountain_beasts_dungeon,
@@ -172,15 +172,18 @@ async def _run_game(
     ImageClient.initialize_url_config(server_configuration)
 
     # 启动游戏的判断，是第一次建立还是恢复？
-    if len(terminal_game.world.entities_serialization) == 0:
-        # logger.info(f"游戏中没有实体 = {game}, 说明是第一次创建游戏")
-        # 直接构建ecs
-        terminal_game.new_game().save_game()
+    # if len(terminal_game.world.entities_serialization) == 0:
+    # logger.info(f"游戏中没有实体 = {game}, 说明是第一次创建游戏")
+    # 直接构建ecs
+    assert (
+        len(terminal_game.world.entities_serialization) == 0
+    ), "测试阶段，游戏中不应该有实体数据！"
+    terminal_game.new_game().save_game()
 
-    else:
-        logger.warning(f"游戏中有实体 = {game}，需要通过数据恢复实体，是游戏回复的过程")
-        # 测试！回复ecs
-        terminal_game.load_game().save_game()
+    # else:
+    #     logger.warning(f"游戏中有实体 = {game}，需要通过数据恢复实体，是游戏回复的过程")
+    #     # 测试！回复ecs
+    #     terminal_game.load_game().save_game()
 
     # 初始化！
     await terminal_game.initialize()
@@ -540,7 +543,8 @@ def _parse_switch_stage(usr_input: str) -> Dict[str, str]:
 if __name__ == "__main__":
 
     # 初始化日志
-    setup_logger()
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    setup_logger(LOGS_DIR / f"run_terminal_game_{_timestamp}.log")
 
     # 随机用户名，这样每次运行都是新的存档
     random_user_name = (

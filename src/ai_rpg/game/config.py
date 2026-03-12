@@ -10,7 +10,6 @@
 - GAME_1: 默认游戏名称
 """
 
-import datetime
 import sys
 from pathlib import Path
 from typing import Final
@@ -45,17 +44,19 @@ GAME_1: Final[str] = "Game1"
 
 
 ###########################################################################################################################################
-def setup_logger(logs_dir: Path = LOGS_DIR, log_level: str = LOG_LEVEL) -> None:
+def setup_logger(
+    log_file_path: Path,
+    log_level: str = LOG_LEVEL,
+) -> None:
     """配置并初始化日志系统
 
-    设置控制台和文件两个日志输出处理器，日志文件以时间戳命名。
+    设置控制台和文件两个日志输出处理器。日志文件路径由调用方在外部组装后传入，
+    使调用方能明确知道本次日志写往何处。
 
     Args:
-        logs_dir: 日志文件存储目录，默认为 LOGS_DIR
+        log_file_path: 日志文件的完整路径，由调用方负责构造
         log_level: 日志级别（DEBUG/INFO/WARNING/ERROR），默认为 LOG_LEVEL
     """
-    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
     # 移除默认处理器
     logger.remove()
 
@@ -67,7 +68,6 @@ def setup_logger(logs_dir: Path = LOGS_DIR, log_level: str = LOG_LEVEL) -> None:
     )
 
     # 添加文件处理器
-    log_file_path = logs_dir / f"{log_start_time}.log"
     logger.add(log_file_path, level=log_level)
 
     logger.info(f"日志配置: 级别={log_level}, 文件路径={log_file_path}")

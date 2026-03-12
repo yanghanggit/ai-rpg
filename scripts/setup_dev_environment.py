@@ -31,7 +31,7 @@ from ai_rpg.configuration import (
     ServerConfiguration,
     server_configuration,
 )
-from ai_rpg.game.config import GAME_1, BLUEPRINTS_DIR
+from ai_rpg.game.config import GAME_1
 from ai_rpg.pgsql import (
     pgsql_create_database,
     pgsql_drop_database,
@@ -39,7 +39,7 @@ from ai_rpg.pgsql import (
     postgresql_config,
 )
 from ai_rpg.pgsql.user_operations import has_user, save_user
-from ai_rpg.demo import create_hunter_mystic_blueprint, RPG_KNOWLEDGE_BASE
+from ai_rpg.demo import RPG_KNOWLEDGE_BASE
 from ai_rpg.chroma import reset_client, get_custom_collection
 from ai_rpg.rag import add_documents
 from ai_rpg.embedding_model.sentence_transformer import multilingual_model
@@ -77,16 +77,16 @@ def _pgsql_setup_test_user() -> None:
 
 
 #######################################################################################################
-def _save_demo_world_blueprint(game_name: str) -> None:
-    """创建并保存演示游戏世界配置文件"""
-    logger.info("🚀 创建演示游戏世界...")
+# def _save_demo_world_blueprint(game_name: str) -> None:
+#     """创建并保存演示游戏世界配置文件"""
+#     logger.info("🚀 创建演示游戏世界...")
 
-    world_blueprint = create_hunter_mystic_blueprint(game_name)
-    write_blueprint_path = BLUEPRINTS_DIR / f"{world_blueprint.name}.json"
-    write_blueprint_path.write_text(
-        world_blueprint.model_dump_json(indent=2),
-        encoding="utf-8",
-    )
+#     world_blueprint = create_hunter_mystic_blueprint(game_name)
+#     write_blueprint_path = BLUEPRINTS_DIR / f"{world_blueprint.name}.json"
+#     write_blueprint_path.write_text(
+#         world_blueprint.model_dump_json(indent=2),
+#         encoding="utf-8",
+#     )
 
 
 #######################################################################################################
@@ -311,11 +311,11 @@ def main() -> None:
         logger.error(f"❌ PostgreSQL 初始化失败: {e}")
 
     # 创建演示游戏世界
-    try:
-        logger.info("🚀 创建M演示游戏世界...")
-        _save_demo_world_blueprint(GAME_1)
-    except Exception as e:
-        logger.error(f"❌ 创建MongoDB演示游戏世界失败: {e}")
+    # try:
+    #     logger.info("🚀 创建M演示游戏世界...")
+    #     _save_demo_world_blueprint(GAME_1)
+    # except Exception as e:
+    #     logger.error(f"❌ 创建MongoDB演示游戏世界失败: {e}")
 
     # RAG 系统相关操作
     try:

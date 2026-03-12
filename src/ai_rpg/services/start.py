@@ -7,17 +7,9 @@ from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.player_session import PlayerSession
 from ..game.tcg_game import TCGGame
-
-# from ..game.world_persistence import get_game_blueprint_data
-# from ..game.config import BLUEPRINTS_DIR
 from ..models import StartRequest, StartResponse, World
 from .game_server_dependencies import CurrentGameServer
 from ..demo import create_mountain_beasts_dungeon, create_hunter_mystic_blueprint
-
-# from ai_rpg.demo import (
-#     create_hunter_mystic_blueprint,
-#     create_mountain_beasts_dungeon,
-# )
 
 ###################################################################################################################################################################
 start_api_router = APIRouter()
@@ -85,10 +77,6 @@ async def start(
     )
     assert room._player_session is not None, "房间玩家客户端实例不存在"
 
-    # 获取或创建世界数据
-    # world_data = get_user_world_data(WORLDS_DIR, payload.user_name, payload.game_name)
-    # if world_data is None:
-
     # 重新生成world
     world_data = World(
         entity_counter=1000,
@@ -98,13 +86,6 @@ async def start(
         blueprint=blueprint_data,
     )
 
-    # else:
-
-    #     raise HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         detail=f"start/v1: {payload.user_name} load world data not implemented",
-    #     )
-
     # 依赖注入，创建新的游戏
     assert world_data is not None, "World data must exist to create a game"
     room._tcg_game = TCGGame(
@@ -112,15 +93,6 @@ async def start(
         player_session=room._player_session,
         world=world_data,
     )
-
-    # 启动游戏的判断，是第一次建立还是恢复？
-    # if len(room._tcg_game.world.entities_serialization) == 0:
-    #     # logger.info(
-    #     #     f"游戏中没有实体 = {payload.game_name}, 说明是第一次创建游戏, 直接构建ECS!"
-    #     # )
-    #     room._tcg_game.new_game().save_game()
-    # else:
-    #     assert False, "start/v1: 游戏恢复功能尚未实现"
 
     assert (
         len(room._tcg_game.world.entities_serialization) == 0

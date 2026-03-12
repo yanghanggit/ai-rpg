@@ -171,7 +171,6 @@ async def _run_game(
             break
 
     # 保存游戏并退出
-    # terminal_game.save_game()
     terminal_game.exit()
 
 

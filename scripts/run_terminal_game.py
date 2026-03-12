@@ -26,8 +26,6 @@ import sys
 sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
-
-from typing import Dict
 from loguru import logger
 from ai_rpg.chat_client.client import ChatClient
 from ai_rpg.configuration import (
@@ -43,11 +41,6 @@ from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import (
     TCGGame,
 )
-
-# from ai_rpg.game.world_persistence import (
-#     get_user_world_data,
-#     delete_user_world_data,
-# )
 from ai_rpg.models import (
     World,
 )
@@ -127,16 +120,6 @@ async def _run_game(
         当前为测试模式，不允许加载已有存档
     """
 
-    # 注意，如果确定player是固定的，但是希望每次玩新游戏，就调用这句。
-    # 或者，换成random_name，随机生成一个player名字。
-    # delete_user_world_data(WORLDS_DIR, user, GAME_1)
-
-    # # 先检查一下world_data是否存在
-    # world_data = get_user_world_data(WORLDS_DIR, user, game)
-
-    # # 判断是否存在world数据
-    # if world_data is None:
-
     # 获取world_blueprint
     world_blueprint = create_hunter_mystic_blueprint(game)
     assert world_blueprint is not None, "world blueprint 反序列化失败"
@@ -149,9 +132,6 @@ async def _run_game(
         dungeon=create_mountain_beasts_dungeon(),
         blueprint=world_blueprint,
     )
-
-    # else:
-    #     assert False, "测试阶段，不允许加载存档的游戏数据！"
 
     # 依赖注入，创建新的游戏
     assert world_data is not None, "World data must exist to create a game"
@@ -375,14 +355,15 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
 
     elif usr_input.startswith("/speak"):
 
-        # 分析输入
-        parsed_speak_command = _parse_speak(usr_input)
-
         # 添加说话行动
         success, _ = activate_speak_action(
             tcg_game=terminal_game,
-            target=parsed_speak_command.get("target", ""),
-            content=parsed_speak_command.get("content", ""),
+            target=parse_command_args(usr_input, {"target", "content"}).get(
+                "target", ""
+            ),
+            content=parse_command_args(usr_input, {"target", "content"}).get(
+                "content", ""
+            ),
         )
 
         if success:
@@ -391,13 +372,10 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
 
     elif usr_input.startswith("/switch_stage"):
 
-        # 分析输入
-        parsed_switch_stage_command = _parse_switch_stage(usr_input)
-
         # 添加场景转换行动
         success, _ = activate_switch_stage(
             tcg_game=terminal_game,
-            stage_name=parsed_switch_stage_command.get("stage", ""),
+            stage_name=parse_command_args(usr_input, {"stage"}).get("stage", ""),
         )
 
         if success:
@@ -480,54 +458,6 @@ async def _handle_player_turn(terminal_game: TCGGame) -> None:
         logger.error(
             f"玩家输入 = {usr_input}, 目前不做任何处理，不在处理范围内！！！！！"
         )
-
-
-############################################################################################################
-def _parse_speak(usr_input: str) -> Dict[str, str]:
-    """
-    解析用户输入的说话命令，提取目标角色和说话内容。
-
-    Args:
-        usr_input: 用户输入的命令字符串
-
-    Returns:
-        包含 target 和 content 字段的字典，如果不是 /speak 命令则返回空字典
-
-    Examples:
-        >>> _parse_speak("/speak --target=角色.法师.奥露娜 --content=我还是需要准备一下")
-        {'target': '角色.法师.奥露娜', 'content': '我还是需要准备一下'}
-
-        >>> _parse_speak("/speak --target=玩家 --content=你好")
-        {'target': '玩家', 'content': '你好'}
-    """
-    if not usr_input.startswith("/speak"):
-        return {}
-
-    return parse_command_args(usr_input, {"target", "content"})
-
-
-############################################################################################################
-def _parse_switch_stage(usr_input: str) -> Dict[str, str]:
-    """
-    解析用户输入的场景切换命令，提取目标场景名称。
-
-    Args:
-        usr_input: 用户输入的命令字符串
-
-    Returns:
-        包含 stage 字段的字典，如果不是 /switch_stage 命令则返回空字典
-
-    Examples:
-        >>> _parse_switch_stage("/switch_stage --stage=场景.营地")
-        {'stage': '场景.营地'}
-
-        >>> _parse_switch_stage("/switch_stage --stage=场景.训练场")
-        {'stage': '场景.训练场'}
-    """
-    if not usr_input.startswith("/switch_stage"):
-        return {}
-
-    return parse_command_args(usr_input, {"stage"})
 
 
 ###############################################################################################################################################

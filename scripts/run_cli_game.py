@@ -130,15 +130,17 @@ import click
 from loguru import logger
 from ai_rpg.chat_client.client import ChatClient
 from ai_rpg.configuration import server_configuration
-from ai_rpg.game.config import GAME_1, LOGS_DIR, WORLDS_DIR
-from ai_rpg.demo import (
-    create_hunter_mystic_blueprint,
-    create_mountain_beasts_dungeon,
+from ai_rpg.game.config import (
+    BLUEPRINTS_DIR,
+    DUNGEONS_DIR,
+    GAME_1,
+    LOGS_DIR,
+    WORLDS_DIR,
 )
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import TCGGame
 from ai_rpg.image_client.client import ImageClient
-from ai_rpg.models import World
+from ai_rpg.models import Blueprint, Dungeon, World
 from ai_rpg.game import archive_world, restore_world
 from ai_rpg.services.home_actions import (
     activate_stage_plan,
@@ -164,6 +166,10 @@ from pathlib import Path
 # 日志级别配置
 LOG_LEVEL: Final[str] = "DEBUG"
 
+###########################################################################################################################################
+# 默认地下城名称
+DUNGEON_1: Final[str] = "Dungeon1"
+
 
 ###############################################################################################################################################
 def _setup_logger(log_file_path: Path) -> None:
@@ -178,25 +184,41 @@ def _setup_logger(log_file_path: Path) -> None:
 
 
 ###############################################################################################################################################
-async def _create_and_initialize_game(user: str, game: str, save_dir: Path) -> TCGGame:
+async def _create_and_initialize_game(
+    user: str, game: str, dungeon_name: str, save_dir: Path
+) -> TCGGame:
     """创建并初始化一个新游戏实例。
+
+    从 BLUEPRINTS_DIR/{game}.json 加载蓝图，从 DUNGEONS_DIR/{dungeon_name}.json 加载地下城。
 
     Args:
         user: 玩家用户名
-        game: 游戏名称
+        game: 游戏名称（对应 BLUEPRINTS_DIR 下的文件名）
+        dungeon_name: 地下城名称（对应 DUNGEONS_DIR 下的文件名）
+        save_dir: 存档目录
 
     Returns:
         已初始化完成的 TCGGame 实例
     """
-
-    world_blueprint = create_hunter_mystic_blueprint(game)
+    # 从 JSON 文件加载蓝图
+    blueprint_path = BLUEPRINTS_DIR / f"{game}.json"
+    assert blueprint_path.exists(), f"蓝图文件不存在: {blueprint_path}"
+    world_blueprint = Blueprint.model_validate_json(
+        blueprint_path.read_text(encoding="utf-8")
+    )
     assert world_blueprint is not None, "world blueprint 反序列化失败"
+
+    # 从 JSON 文件加载地下城
+    dungeon_path = DUNGEONS_DIR / f"{dungeon_name}.json"
+    assert dungeon_path.exists(), f"地下城文件不存在: {dungeon_path}"
+    dungeon = Dungeon.model_validate_json(dungeon_path.read_text(encoding="utf-8"))
+    assert dungeon is not None, "dungeon 反序列化失败"
 
     world_data = World(
         entity_counter=1000,
         entities_serialization=[],
         agents_context={},
-        dungeon=create_mountain_beasts_dungeon(),
+        dungeon=dungeon,
         blueprint=world_blueprint,
     )
 
@@ -221,7 +243,9 @@ async def _create_and_initialize_game(user: str, game: str, save_dir: Path) -> T
 
     await terminal_game.initialize()
 
-    logger.info(f"游戏创建并初始化完成：user={user}, game={game}")
+    logger.info(
+        f"游戏创建并初始化完成：user={user}, game={game}, dungeon={dungeon_name}"
+    )
 
     # 检查聊天服务
     await ChatClient.health_check()
@@ -814,12 +838,18 @@ def main() -> None:
     "--game",
     default=GAME_1,
     show_default=True,
-    help="游戏名称。",
+    help="游戏名称（对应 BLUEPRINTS_DIR 下的文件名，如 Game1）。",
 )
-def new_game(user: str, game: str) -> None:
+@click.option(
+    "--dungeon",
+    default=DUNGEON_1,
+    show_default=True,
+    help="地下城名称（对应 DUNGEONS_DIR 下的文件名，如 Dungeon1）。",
+)
+def new_game(user: str, game: str, dungeon: str) -> None:
     """创建并初始化一个新的游戏实例，写出初始存档。
 
-    从 create_hunter_mystic_blueprint + create_mountain_beasts_dungeon 构建初始世界，
+    从 BLUEPRINTS_DIR/{game}.json 加载世界蓝图，从 DUNGEONS_DIR/{dungeon}.json 加载地下城，
     完成 build_from_blueprint / initialize，并将初始状态归档。
     归档路径：.worlds/{user}/{game}/{timestamp}/
 
@@ -837,7 +867,7 @@ def new_game(user: str, game: str) -> None:
     logger.info(f"本次运行日志文件：{_log_file}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(_create_and_initialize_game(user, game, _save_dir))
+    asyncio.run(_create_and_initialize_game(user, game, dungeon, _save_dir))
 
 
 ###############################################################################################################################################

@@ -1,8 +1,8 @@
-"""游戏保存系统模块。
+"""Pipeline 收尾系统模块。
 
-本模块实现了游戏的保存功能，负责在游戏运行时保存游戏状态。
-系统会收集当前场景中所有角色的分布信息，并记录它们的状态（如死亡状态），
-然后触发游戏上下文的保存操作。
+本模块实现了 Pipeline 末端的收尾逻辑，负责记录当前场景中所有角色的分布信息，
+并将运行时实体状态同步回 world 数据模型。
+未来也可在此处扩展调试检查、状态校验等收尾操作。
 """
 
 import json
@@ -16,11 +16,11 @@ from ..game.rpg_game import RPGGame
 
 
 @final
-class SaveSystem(ExecuteProcessor):
-    """游戏保存系统。
+class EpilogueSystem(ExecuteProcessor):
+    """Pipeline 收尾系统。
 
-    该系统负责执行游戏的保存操作，在保存时会记录当前所有场景中
-    角色的分布情况及其状态信息，然后调用游戏上下文的保存方法。
+    位于每条 Pipeline 的最末端，负责记录角色分布日志并将运行时实体状态
+    同步回 world 数据模型。未来可在此扩展调试检查或其他收尾操作。
 
     Attributes:
         _game: 游戏上下文实例，包含游戏的核心状态和数据。
@@ -37,7 +37,7 @@ class SaveSystem(ExecuteProcessor):
         self._log_actor_distribution()
 
         # 保存游戏状态
-        self._game.save_game()
+        self._game.flush_entities()
 
     ############################################################################################################
     def _log_actor_distribution(self) -> None:

@@ -26,7 +26,8 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
         QueryActionSystem,
     )
     from ..systems.action_cleanup_system import ActionCleanupSystem
-    from ..systems.save_system import SaveSystem
+    from ..systems.epilogue_system import EpilogueSystem
+    from ..systems.prologue_system import PrologueSystem
     from ..systems.speak_action_system import SpeakActionSystem
     from ..systems.whisper_action_system import WhisperActionSystem
     from ..systems.trans_stage_action_system import (
@@ -41,6 +42,9 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     ##
     tcg_game = cast(TCGGame, game)
     processors = RPGGameProcessPipeline()
+
+    # 起始系统。
+    processors.add(PrologueSystem(tcg_game))
 
     # 角色外观生成系统
     processors.add(ActorAppearanceUpdateSystem(tcg_game))
@@ -61,8 +65,8 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     processors.add(ActionCleanupSystem(tcg_game))
     # 动作处理后，可能清理。
     processors.add(DestroyEntitySystem(tcg_game))
-    # 存储系统。
-    processors.add(SaveSystem(tcg_game))
+    # 收尾系统。
+    processors.add(EpilogueSystem(tcg_game))
 
     return processors
 
@@ -102,7 +106,8 @@ def create_combat_pipeline(
         PlayCardsActionSystem,
     )
     from ..systems.action_cleanup_system import ActionCleanupSystem
-    from ..systems.save_system import SaveSystem
+    from ..systems.epilogue_system import EpilogueSystem
+    from ..systems.prologue_system import PrologueSystem
     from ..systems.arbitration_action_system import ArbitrationActionSystem
     from ..systems.status_effects_evaluation_system import (
         StatusEffectsEvaluationSystem,
@@ -114,6 +119,9 @@ def create_combat_pipeline(
 
     tcg_game = cast(TCGGame, game)
     processors = RPGGameProcessPipeline()
+
+    # 起始系统。
+    processors.add(PrologueSystem(tcg_game))
 
     # 角色外观生成系统
     processors.add(ActorAppearanceUpdateSystem(tcg_game))
@@ -150,7 +158,7 @@ def create_combat_pipeline(
     # 是否需要销毁实体
     processors.add(DestroyEntitySystem(tcg_game))
 
-    # 存储系统。
-    processors.add(SaveSystem(tcg_game))
+    # 收尾系统。
+    processors.add(EpilogueSystem(tcg_game))
 
     return processors

@@ -178,7 +178,7 @@ async def _run_game(
     assert (
         len(terminal_game.world.entities_serialization) == 0
     ), "测试阶段，游戏中不应该有实体数据！"
-    terminal_game.new_game().save_game()
+    terminal_game.build_from_blueprint().flush_entities()
 
     # else:
     #     logger.warning(f"游戏中有实体 = {game}，需要通过数据恢复实体，是游戏回复的过程")
@@ -200,7 +200,7 @@ async def _run_game(
             break
 
     # 保存游戏并退出
-    terminal_game.save_game()
+    # terminal_game.save_game()
     terminal_game.exit()
 
 

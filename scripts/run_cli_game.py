@@ -70,7 +70,7 @@ async def _create_and_initialize_game(user: str, game: str) -> TCGGame:
     assert (
         len(terminal_game.world.entities_serialization) == 0
     ), "测试阶段，游戏中不应该有实体数据！"
-    terminal_game.new_game().save_game()
+    terminal_game.build_from_blueprint().flush_entities()
 
     await terminal_game.initialize()
 

@@ -114,13 +114,17 @@ async def start(
     )
 
     # 启动游戏的判断，是第一次建立还是恢复？
-    if len(room._tcg_game.world.entities_serialization) == 0:
-        # logger.info(
-        #     f"游戏中没有实体 = {payload.game_name}, 说明是第一次创建游戏, 直接构建ECS!"
-        # )
-        room._tcg_game.new_game().save_game()
-    else:
-        assert False, "start/v1: 游戏恢复功能尚未实现"
+    # if len(room._tcg_game.world.entities_serialization) == 0:
+    #     # logger.info(
+    #     #     f"游戏中没有实体 = {payload.game_name}, 说明是第一次创建游戏, 直接构建ECS!"
+    #     # )
+    #     room._tcg_game.new_game().save_game()
+    # else:
+    #     assert False, "start/v1: 游戏恢复功能尚未实现"
+
+    assert (
+        len(room._tcg_game.world.entities_serialization) == 0
+    ), "测试阶段，游戏中不应该有实体数据！"
 
     # 验证玩家实体是否创建成功
     player_entity = room._tcg_game.get_player_entity()

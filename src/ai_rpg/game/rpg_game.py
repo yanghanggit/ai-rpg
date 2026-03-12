@@ -4,9 +4,6 @@ from typing import Any, Dict, Final, List, Sequence, Set
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
-from .world_persistence import persist_world_data
-from .world_debug import dump_world_snapshot, ensure_debug_dir
-from .config import LOGS_DIR, WORLDS_DIR
 from ..entitas import Entity
 from .game_session import GameSession
 from .rpg_entity_manager import RPGEntityManager
@@ -147,7 +144,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         # logger.debug(f"Initialized all pipelines")
 
     ###############################################################################################################################################
-    def new_game(self) -> "RPGGame":
+    def build_from_blueprint(self) -> "RPGGame":
         """创建并初始化新游戏世界，包括世界系统、角色和场景
 
         Returns:
@@ -156,6 +153,11 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         assert (
             len(self.world.entities_serialization) == 0
         ), "游戏中有实体，不能创建新的游戏"
+        if len(self.world.entities_serialization) > 0:
+            logger.warning(
+                f"游戏中有实体，不能创建新的游戏，entities_serialization = {self.world.entities_serialization}"
+            )
+            return self
 
         ## 第1步，创建world_system
         self._create_world_entities(self.world.blueprint.world_systems)
@@ -194,7 +196,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         return self
 
     ###############################################################################################################################################
-    def load_game(self) -> "RPGGame":
+    def restore_from_snapshot(self) -> "RPGGame":
         """从序列化数据中恢复游戏世界状态
 
         Returns:
@@ -204,11 +206,18 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             len(self.world.entities_serialization) > 0
         ), "游戏中没有实体，不能恢复游戏"
         assert len(self._entities) == 0, "游戏中有实体，不能恢复游戏"
+        if (len(self.world.entities_serialization) == 0) or (len(self._entities) > 0):
+            logger.warning(
+                f"游戏中没有实体，不能恢复游戏，entities_serialization = {self.world.entities_serialization}, entities = {self._entities}"
+            )
+            return self
+
+        # 从序列化数据中恢复实体状态
         self.deserialize_entities(self.world.entities_serialization)
         return self
 
     ###############################################################################################################################################
-    def save_game(self) -> "RPGGame":
+    def flush_entities(self) -> "RPGGame":
         """保存当前游戏世界状态到持久化存储，并生成调试快照
 
         Returns:
@@ -221,23 +230,23 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         # )
 
         # 保存快照
-        persist_world_data(
-            worlds_dir=WORLDS_DIR,
-            username=self.player_session.name,
-            world=self.world,
-            player_session=self.player_session,
-        )
+        # persist_world_data(
+        #     worlds_dir=WORLDS_DIR,
+        #     username=self.player_session.name,
+        #     world=self.world,
+        #     player_session=self.player_session,
+        # )
 
-        # debug - 调用模块级函数
-        dump_world_snapshot(
-            debug_dir=ensure_debug_dir(
-                base_dir=LOGS_DIR,
-                player_session_name=self.player_session.name,
-                game_name=self.name,
-            ),
-            world=self.world,
-            # player_session=self.player_session,
-        )
+        # # debug - 调用模块级函数
+        # dump_world_snapshot(
+        #     debug_dir=ensure_debug_dir(
+        #         base_dir=LOGS_DIR,
+        #         player_session_name=self.player_session.name,
+        #         game_name=self.name,
+        #     ),
+        #     world=self.world,
+        #     # player_session=self.player_session,
+        # )
 
         return self
 

@@ -10,6 +10,7 @@ from ..game.tcg_game import TCGGame
 from ..models import StartRequest, StartResponse, World
 from .game_server_dependencies import CurrentGameServer
 from ..demo import create_mountain_beasts_dungeon, create_hunter_mystic_blueprint
+from ..game.config import GAME_1
 
 ###################################################################################################################################################################
 start_api_router = APIRouter()
@@ -54,6 +55,7 @@ async def start(
     assert room is not None, "start: room instance is None"
 
     # 如果没有blueprint数据，就返回错误, 压根不能玩！
+    assert payload.game_name == GAME_1, f"目前仅支持 {GAME_1} 这个游戏蓝图"
     blueprint_data = create_hunter_mystic_blueprint(payload.game_name)
     assert blueprint_data is not None, "world_blueprint is None"
     if blueprint_data is None:

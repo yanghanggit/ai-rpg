@@ -77,19 +77,6 @@ def _pgsql_setup_test_user() -> None:
 
 
 #######################################################################################################
-# def _save_demo_world_blueprint(game_name: str) -> None:
-#     """创建并保存演示游戏世界配置文件"""
-#     logger.info("🚀 创建演示游戏世界...")
-
-#     world_blueprint = create_hunter_mystic_blueprint(game_name)
-#     write_blueprint_path = BLUEPRINTS_DIR / f"{world_blueprint.name}.json"
-#     write_blueprint_path.write_text(
-#         world_blueprint.model_dump_json(indent=2),
-#         encoding="utf-8",
-#     )
-
-
-#######################################################################################################
 def _setup_chromadb_rag_environment(game_name: str) -> None:
     """
     初始化 RAG 系统

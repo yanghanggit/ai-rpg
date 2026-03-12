@@ -57,6 +57,7 @@
 
 import os
 import sys
+from typing import Final
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -69,7 +70,7 @@ import click
 from loguru import logger
 from ai_rpg.chat_client.client import ChatClient
 from ai_rpg.configuration import server_configuration
-from ai_rpg.game.config import GAME_1, LOG_LEVEL, LOGS_DIR, WORLDS_DIR
+from ai_rpg.game.config import GAME_1, LOGS_DIR, WORLDS_DIR
 from ai_rpg.demo import (
     create_hunter_mystic_blueprint,
     create_mountain_beasts_dungeon,
@@ -98,6 +99,10 @@ from ai_rpg.services.dungeon_stage_transition import (
     complete_dungeon_and_return_home,
 )
 from pathlib import Path
+
+###########################################################################################################################################
+# 日志级别配置
+LOG_LEVEL: Final[str] = "DEBUG"
 
 
 ###############################################################################################################################################

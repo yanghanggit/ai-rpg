@@ -374,27 +374,45 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> Non
         tcg_game: TCG游戏实例
         dungeon: 地下城实例
     """
+    cs = tcg_game.current_combat_sequence
+    logger.debug(
+        f"[return_home] 入参 dungeon={dungeon.name!r}, "
+        f"world.dungeon={tcg_game.world.dungeon.name!r}, "
+        f"is_ongoing={cs.is_ongoing}, is_post_combat={cs.is_post_combat}, "
+        f"is_won={cs.is_won}, is_lost={cs.is_lost}"
+    )
 
     assert (
-        tcg_game.current_combat_sequence.is_ongoing
-        or tcg_game.current_combat_sequence.is_post_combat
+        cs.is_ongoing or cs.is_post_combat
     ), "当前不处于战斗进行中或战斗后状态，无法完成地下城并返回家园！"
 
     # 1. 验证并获取远征队成员
     expedition_entities = tcg_game.get_group(
         Matcher(all_of=[ExpeditionMemberComponent])
     ).entities.copy()
+    logger.debug(
+        f"[return_home] 远征队成员({len(expedition_entities)}): "
+        f"{[e.name for e in expedition_entities]}"
+    )
     assert len(expedition_entities) > 0, "没有找到远征队成员"
 
     # 2-3. 获取并分类家园场景实体
     player_only_stages: Set[Entity] = tcg_game.get_group(
         Matcher(all_of=[HomeComponent, PlayerOnlyStageComponent])
     ).entities.copy()
+    logger.debug(
+        f"[return_home] 玩家专属家园场景({len(player_only_stages)}): "
+        f"{[e.name for e in player_only_stages]}"
+    )
     assert len(player_only_stages) == 1, "必须存在且仅存在一个玩家专属家园场景！"
 
     regular_home_stages: Set[Entity] = tcg_game.get_group(
         Matcher(all_of=[HomeComponent], none_of=[PlayerOnlyStageComponent])
     ).entities.copy()
+    logger.debug(
+        f"[return_home] 普通家园场景({len(regular_home_stages)}): "
+        f"{[e.name for e in regular_home_stages]}"
+    )
 
     # 4. 生成并发送返回提示消息，传送远征队成员回家
     player_only_stage = next(iter(player_only_stages))
@@ -403,10 +421,15 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> Non
     )
 
     for expedition_entity in expedition_entities:
-        dest_stage = (
-            player_only_stage
-            if expedition_entity.has(PlayerComponent)
-            else regular_home_stage
+        is_player = expedition_entity.has(PlayerComponent)
+        dest_stage = player_only_stage if is_player else regular_home_stage
+        current_stage_entity = tcg_game.resolve_stage_entity(expedition_entity)
+        current_stage_name = (
+            current_stage_entity.name if current_stage_entity else "None"
+        )
+        logger.debug(
+            f"[return_home] 传送 {expedition_entity.name} | is_player={is_player} | "
+            f"当前场景={current_stage_name!r} → 目标场景={dest_stage.name if dest_stage else 'None'!r}"
         )
         if dest_stage is None:
             logger.warning(
@@ -421,9 +444,19 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> Non
         )
         tcg_game.stage_transition({expedition_entity}, dest_stage)
 
+        after_stage_entity = tcg_game.resolve_stage_entity(expedition_entity)
+        after_stage_name = after_stage_entity.name if after_stage_entity else "None"
+        logger.debug(
+            f"[return_home] 传送后 {expedition_entity.name} 当前场景={after_stage_name!r}"
+        )
+
     # 5. 清理地下城数据
+    logger.debug(
+        f"[return_home] 开始 teardown_dungeon_entities: dungeon={dungeon.name!r}"
+    )
     tcg_game.teardown_dungeon_entities(dungeon)
     tcg_game._world.dungeon = Dungeon(name="", stages=[], description="")
+    logger.debug("[return_home] teardown_dungeon_entities 完成，dungeon 已重置")
 
     # 6. 恢复所有远征队成员的战斗状态
     for expedition_entity in expedition_entities:
@@ -449,8 +482,18 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> Non
         expedition_entity.remove(ExpeditionMemberComponent)
         logger.info(f"从远征队移除: {expedition_entity.name}")
 
+    # 7. 最终场景确认
+    for expedition_entity in expedition_entities:
+        final_stage = tcg_game.resolve_stage_entity(expedition_entity)
+        logger.debug(
+            f"[return_home] 最终确认 {expedition_entity.name} 场景={final_stage.name if final_stage else 'None'!r}"
+        )
+
     # 7. 清除手牌组件
     tcg_game.clear_hands()
+
+    # 8. 将运行时实体状态同步回序列化字段（stage_transition 只更新内存，必须显式 flush）
+    tcg_game.flush_entities()
 
 
 ###################################################################################################################################################################

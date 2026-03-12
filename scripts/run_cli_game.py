@@ -53,6 +53,66 @@
     python scripts/run_cli_game.py retreat      --snapshot PATH
 
 日志文件：logs/run_cli_game_{timestamp}.log（与新存档时间戳相同）
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AI 操作经验总结（供后续 AI 实例参考，勿删）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+【陷阱 1】speak 之后 NPC 不会立即回应
+    speak 命令只是"登记"玩家的发言意图，NPC 的回应在下一次 advance 中才生成。
+    正确流程：
+        speak --snapshot A --target 角色.术士.云音 --content "..."  → 存档 B
+        advance --snapshot B                                         → 存档 C（云音在此回话）
+    读取 NPC 回应内容：
+        grep -A 20 "response_content" logs/run_cli_game_{C的时间戳}.log
+
+【陷阱 2】选错存档导致命令静默失败或行为异常（高频陷阱！）
+    每条命令对前置状态有严格要求，使用错误的存档会导致命令静默失败、不产生新存档，
+    但日志中只会打印一行 ERROR，没有异常抛出——极易误判为"命令卡住"或"bug"。
+    实际案例：打算从 BOSS 战存档撤退，却误传入了上一次已结算的存档，
+              retreat 直接返回未归档实例，花费大量时间排查"场景未更新"的假 bug。
+
+    操作前务必先确认存档状态（参见陷阱 4 的快速检查方法），再选择对应命令：
+        家园模式存档  → advance / speak / switch-stage / enter-dungeon
+        is_ongoing    → draw-cards / play-cards / retreat
+        is_post_combat + is_won  → next-dungeon / trans-home
+        is_post_combat + is_lost → trans-home
+
+    快速确认最新存档：
+        find .worlds -mindepth 3 -maxdepth 3 -type d | sort | tail -5
+
+【陷阱 3】next-dungeon 无下一关时静默返回，不产生新存档
+    若当前关卡已是最后一关（peek_next_stage() 返回 None），next-dungeon 不会报错，
+    但也不会写出新存档——存档目录时间戳不会更新。
+    判断是否有下一关：先尝试 next-dungeon；无新存档出现则说明已是末关，应用 trans-home。
+
+【陷阱 4】识别当前存档的游戏状态
+    通过 world.json 中各实体的 current_stage 字段判断状态：
+    - 玩家/NPC 在家园场景（如 场景.石氏木屋、场景.猎人备物所）→ 家园模式
+    - 玩家/NPC 在地下城场景（如 场景.山林边缘、场景.密林深处）→ 地下城模式
+    快速查找玩家当前场景：
+        python -c "import json; d=json.load(open('.worlds/USER/Game1/TIMESTAMP/world.json')); \
+        [print(e['name'], e.get('ActorComponent',{}).get('current_stage','')) for e in d['entities_serialization']]"
+
+【陷阱 5】trans-home / retreat 后场景未更新（已修复）
+    EpilogueSystem 在 pipeline 末端调用 flush_entities()，此时角色仍在地下城场景。
+    随后 complete_dungeon_and_return_home() 仅更新内存，若不再次 flush_entities()，
+    archive_world() 会写出旧的场景数据。
+    修复：flush_entities() 已内置为 complete_dungeon_and_return_home() 的最后一步
+    （见 dungeon_stage_transition.py），调用方无需额外处理。
+
+【最佳操作流程 - 完整测试一局】
+    1. new --user ai-copilot
+    2. advance（NPC 主动行动，推进家园叙事）
+    3. speak --target ... --content ...  → advance（读取 NPC 回应）
+    4. switch-stage --stage 场景.X（可选，移动玩家位置）
+    5. enter-dungeon
+    6. draw-cards → play-cards（循环直到 is_post_combat）
+    7a. 胜利且有下一关 → next-dungeon → 回到步骤 6
+    7b. 胜利且无下一关 → trans-home
+    7c. 失败             → trans-home
+    7d. 主动撤退（需 is_ongoing 存档）→ retreat
+    8. advance（回家后推进家园叙事，NPC 对冒险有反应）
 """
 
 import os
@@ -699,12 +759,16 @@ async def _retreat_game(
     Returns:
         执行完毕后的 TCGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
     """
+
+    # 复位游戏状态
     terminal_game = await _restore_game(world, player_session)
 
+    # 状态守卫：只能在战斗进行中撤退
     if not terminal_game.current_combat_sequence.is_ongoing:
         logger.error("retreat 只能在战斗进行中使用")
         return terminal_game
 
+    # 标记撤退意图并正常走一遍战斗流程，让 CombatOutcomeSystem 处理后续结算（失败）
     success, message = mark_expedition_retreat(terminal_game)
     if not success:
         logger.error(f"撤退失败: {message}")
@@ -713,14 +777,19 @@ async def _retreat_game(
     logger.info(f"撤退成功: {message}")
 
     await terminal_game.combat_pipeline.execute()
+
+    # 战斗结束后返回家园
     complete_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
 
+    # 最后归档
     archive_world(
         terminal_game.world,
         terminal_game.player_session,
         save_dir=save_dir,
         enable_gzip=True,
     )
+
+    # 返回
     return terminal_game
 
 

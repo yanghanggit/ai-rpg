@@ -34,7 +34,7 @@ from ai_rpg.configuration import (
     server_configuration,
 )
 from ai_rpg.utils import parse_command_args
-from ai_rpg.game.config import GAME_1, WORLDS_DIR, setup_logger
+from ai_rpg.game.config import GAME_1, setup_logger
 from ai_rpg.demo import (
     create_hunter_mystic_blueprint,
     create_mountain_beasts_dungeon,

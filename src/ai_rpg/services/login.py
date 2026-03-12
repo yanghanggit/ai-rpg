@@ -8,7 +8,6 @@ from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 
 # from ..game.world_persistence import delete_user_world_data
-from ..game.config import WORLDS_DIR
 from .game_server_dependencies import CurrentGameServer
 from ..models import (
     LoginRequest,

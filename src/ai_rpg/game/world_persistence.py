@@ -8,44 +8,42 @@
 """
 
 import gzip
-import shutil
 from pathlib import Path
-from typing import Optional
 from loguru import logger
-from ..models import Blueprint, World
+from ..models import World
 from .player_session import PlayerSession
 
 
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
-def get_game_blueprint_data(blueprints_dir: Path, game: str) -> Optional[Blueprint]:
-    """加载游戏蓝图配置
+# def get_game_blueprint_data(blueprints_dir: Path, game: str) -> Optional[Blueprint]:
+#     """加载游戏蓝图配置
 
-    Args:
-        blueprints_dir: 蓝图配置目录
-        game: 游戏名称
+#     Args:
+#         blueprints_dir: 蓝图配置目录
+#         game: 游戏名称
 
-    Returns:
-        Blueprint: 游戏蓝图对象，失败返回 None
-    """
+#     Returns:
+#         Blueprint: 游戏蓝图对象，失败返回 None
+#     """
 
-    read_path = blueprints_dir / f"{game}.json"
-    assert read_path.exists(), f"游戏启动数据文件不存在: {read_path}"
-    if not read_path.exists():
-        return None
+#     read_path = blueprints_dir / f"{game}.json"
+#     assert read_path.exists(), f"游戏启动数据文件不存在: {read_path}"
+#     if not read_path.exists():
+#         return None
 
-    try:
+#     try:
 
-        logger.debug(f"📖 从本地文件系统获取演示游戏世界进行验证...")
-        json_data = read_path.read_text(encoding="utf-8")
-        blueprint_data = Blueprint.model_validate_json(json_data)
-        return blueprint_data
+#         logger.debug(f"📖 从本地文件系统获取演示游戏世界进行验证...")
+#         json_data = read_path.read_text(encoding="utf-8")
+#         blueprint_data = Blueprint.model_validate_json(json_data)
+#         return blueprint_data
 
-    except Exception as e:
-        logger.error(f"❌ 从本地文件系统获取演示游戏世界失败: {str(e)}")
+#     except Exception as e:
+#         logger.error(f"❌ 从本地文件系统获取演示游戏世界失败: {str(e)}")
 
-    return None
+#     return None
 
 
 ###############################################################################################################################################

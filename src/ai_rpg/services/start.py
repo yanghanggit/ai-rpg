@@ -7,13 +7,17 @@ from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.player_session import PlayerSession
 from ..game.tcg_game import TCGGame
-from ..game.world_persistence import get_game_blueprint_data
-from ..game.config import BLUEPRINTS_DIR, WORLDS_DIR
+
+# from ..game.world_persistence import get_game_blueprint_data
+# from ..game.config import BLUEPRINTS_DIR
 from ..models import StartRequest, StartResponse, World
 from .game_server_dependencies import CurrentGameServer
-from ..demo.dungeon_mountain_beasts import (
-    create_mountain_beasts_dungeon,
-)
+from ..demo import create_mountain_beasts_dungeon, create_hunter_mystic_blueprint
+
+# from ai_rpg.demo import (
+#     create_hunter_mystic_blueprint,
+#     create_mountain_beasts_dungeon,
+# )
 
 ###################################################################################################################################################################
 start_api_router = APIRouter()
@@ -58,7 +62,7 @@ async def start(
     assert room is not None, "start: room instance is None"
 
     # 如果没有blueprint数据，就返回错误, 压根不能玩！
-    blueprint_data = get_game_blueprint_data(BLUEPRINTS_DIR, payload.game_name)
+    blueprint_data = create_hunter_mystic_blueprint(payload.game_name)
     assert blueprint_data is not None, "world_blueprint is None"
     if blueprint_data is None:
         raise HTTPException(

@@ -10,10 +10,8 @@
 - GAME_1: 默认游戏名称
 """
 
-import sys
 from pathlib import Path
 from typing import Final
-from loguru import logger
 
 ###########################################################################################################################################
 # 日志文件目录
@@ -41,36 +39,3 @@ LOG_LEVEL: Final[str] = "DEBUG"
 ###########################################################################################################################################
 # 默认游戏名称
 GAME_1: Final[str] = "Game1"
-
-
-###########################################################################################################################################
-def setup_logger(
-    log_file_path: Path,
-    log_level: str = LOG_LEVEL,
-) -> None:
-    """配置并初始化日志系统
-
-    设置控制台和文件两个日志输出处理器。日志文件路径由调用方在外部组装后传入，
-    使调用方能明确知道本次日志写往何处。
-
-    Args:
-        log_file_path: 日志文件的完整路径，由调用方负责构造
-        log_level: 日志级别（DEBUG/INFO/WARNING/ERROR），默认为 LOG_LEVEL
-    """
-    # 移除默认处理器
-    logger.remove()
-
-    # 添加控制台处理器
-    logger.add(
-        sys.stderr,
-        level=log_level,
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-    )
-
-    # 添加文件处理器
-    logger.add(log_file_path, level=log_level)
-
-    logger.info(f"日志配置: 级别={log_level}, 文件路径={log_file_path}")
-
-
-###########################################################################################################################################

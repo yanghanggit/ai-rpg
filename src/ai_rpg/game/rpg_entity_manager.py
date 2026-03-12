@@ -1,6 +1,5 @@
 from enum import IntEnum, unique
 from typing import Dict, List, Optional, Set, final, override
-from loguru import logger
 from ..entitas import Context, Entity, Matcher
 from ..models import (
     COMPONENT_TYPES,
@@ -180,9 +179,9 @@ class RPGEntityManager(Context):
                 restore_comp = comp_class(**comp_serialization.data)
                 assert restore_comp is not None
 
-                logger.debug(
-                    f"comp_class = {comp_class.__name__}, comp = {restore_comp}"
-                )
+                # logger.debug(
+                #     f"comp_class = {comp_class.__name__}, comp = {restore_comp}"
+                # )
                 entity.set(comp_class, restore_comp)
 
         return deserialized_entities

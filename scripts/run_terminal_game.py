@@ -32,7 +32,7 @@ from ai_rpg.configuration import (
     server_configuration,
 )
 from ai_rpg.utils import parse_command_args
-from ai_rpg.game.config import GAME_1, LOGS_DIR, setup_logger
+from ai_rpg.game.config import GAME_1, LOGS_DIR
 from ai_rpg.demo import (
     create_hunter_mystic_blueprint,
     create_mountain_beasts_dungeon,
@@ -464,7 +464,15 @@ if __name__ == "__main__":
 
     # 初始化日志
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    setup_logger(LOGS_DIR / f"run_terminal_game_{_timestamp}.log")
+    _log_file = LOGS_DIR / f"run_terminal_game_{_timestamp}.log"
+    logger.remove()
+    logger.add(
+        sys.stderr,
+        level="DEBUG",
+        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+    )
+    logger.add(_log_file, level="DEBUG")
+    logger.info(f"日志配置: 级别=DEBUG, 文件路径={_log_file}")
 
     # 随机用户名，这样每次运行都是新的存档
     random_user_name = (

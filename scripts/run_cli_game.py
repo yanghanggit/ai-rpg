@@ -69,7 +69,7 @@ import click
 from loguru import logger
 from ai_rpg.chat_client.client import ChatClient
 from ai_rpg.configuration import server_configuration
-from ai_rpg.game.config import GAME_1, LOGS_DIR, WORLDS_DIR, setup_logger
+from ai_rpg.game.config import GAME_1, LOG_LEVEL, LOGS_DIR, WORLDS_DIR
 from ai_rpg.demo import (
     create_hunter_mystic_blueprint,
     create_mountain_beasts_dungeon,
@@ -86,6 +86,7 @@ from ai_rpg.services.home_actions import (
 )
 from ai_rpg.services.dungeon_actions import (
     activate_random_expedition_member_card_draws,
+    activate_specified_expedition_member_card_draws,
     activate_random_enemy_card_draws,
     ensure_all_actors_have_fallback_cards,
     activate_play_cards,
@@ -97,6 +98,18 @@ from ai_rpg.services.dungeon_stage_transition import (
     complete_dungeon_and_return_home,
 )
 from pathlib import Path
+
+
+###############################################################################################################################################
+def _setup_logger(log_file_path: Path) -> None:
+    logger.remove()
+    logger.add(
+        sys.stderr,
+        level=LOG_LEVEL,
+        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+    )
+    logger.add(log_file_path, level=LOG_LEVEL)
+    logger.info(f"日志配置: 级别={LOG_LEVEL}, 文件路径={log_file_path}")
 
 
 ###############################################################################################################################################
@@ -423,6 +436,82 @@ async def _draw_cards_game(
 
 
 ###############################################################################################################################################
+async def _draw_cards_specified_game(
+    world: World,
+    player_session: PlayerSession,
+    member: str,
+    targets: list[str],
+    skill: str,
+    status_effects: list[str],
+    save_dir: Path,
+) -> TCGGame:
+    """从存档复位，为指定远征队成员设置精确抽牌，其余成员与敌方随机抽牌，并归档新状态。
+
+    流程：
+        1. activate_random_expedition_member_card_draws → 为所有己方随机抽牌（作为基础）
+        2. activate_specified_expedition_member_card_draws → 覆盖指定成员的抽牌（精确技能/目标/状态）
+        3. activate_random_enemy_card_draws → 为所有敌方随机抽牌
+        4. combat_pipeline.process() → 完成抽牌推理（各角色输出决策依据）
+
+    等同于终端先 /dc（全员随机抽）再由系统覆盖玩家手牌选择。
+    下一步应使用 play-cards。
+
+    前置条件：combat_sequence.is_ongoing 为 True（战斗进行中）。
+
+    Args:
+        world: 由 restore_world() 反序列化的世界数据。
+        player_session: 由 restore_world() 反序列化的玩家会话。
+        member: 要精确抽牌的远征队成员全名（如 "角色.猎人.石坚"）。
+        targets: 指定的目标名称列表（如 ["角色.精怪.山魈"]）。
+        skill: 指定的技能名称（须为该成员 SkillBookComponent 中已有的技能）。
+        status_effects: 指定使用的状态效果名称列表，可为空（须为当前已有的状态效果）。
+        save_dir: 新存档写入目录。
+
+    Returns:
+        执行完毕后的 TCGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
+    """
+    terminal_game = await _restore_game(world, player_session)
+
+    if not terminal_game.current_combat_sequence.is_ongoing:
+        logger.error("draw-cards-specified 只能在战斗进行中使用")
+        return terminal_game
+
+    # Step 1: 先为所有己方随机抽牌（确保非指定成员都有牌）
+    success, message = activate_random_expedition_member_card_draws(terminal_game)
+    if not success:
+        logger.error(f"激活Ally随机抽牌失败: {message}")
+        return terminal_game
+
+    # Step 2: 覆盖指定成员的抽牌（精确技能/目标）
+    success, message = activate_specified_expedition_member_card_draws(
+        tcg_game=terminal_game,
+        expedition_member_name=member,
+        target_names=targets,
+        skill_name=skill,
+        status_effect_names=status_effects,
+    )
+    if not success:
+        logger.error(f"激活指定抽牌失败: {message}")
+        return terminal_game
+
+    # Step 3: 敌方随机抽牌
+    success, message = activate_random_enemy_card_draws(terminal_game)
+    if not success:
+        logger.error(f"激活Enemy抽牌失败: {message}")
+        return terminal_game
+
+    await terminal_game.combat_pipeline.process()
+
+    archive_world(
+        terminal_game.world,
+        terminal_game.player_session,
+        save_dir=save_dir,
+        enable_gzip=True,
+    )
+    return terminal_game
+
+
+###############################################################################################################################################
 async def _play_cards_game(
     world: World,
     player_session: PlayerSession,
@@ -665,7 +754,7 @@ def new_game(user: str, game: str) -> None:
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
-    setup_logger(_log_file)
+    _setup_logger(_log_file)
 
     if user is None:
         user = f"cli-player-{_timestamp}"
@@ -699,7 +788,7 @@ def advance(snapshot: str) -> None:
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
-    setup_logger(_log_file)
+    _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
     _save_dir = (
@@ -746,7 +835,7 @@ def speak(snapshot: str, target: str, content: str) -> None:
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
-    setup_logger(_log_file)
+    _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
     _save_dir = (
@@ -787,7 +876,7 @@ def switch_stage(snapshot: str, stage: str) -> None:
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
-    setup_logger(_log_file)
+    _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
     _save_dir = (
@@ -824,7 +913,7 @@ def enter_dungeon(snapshot: str) -> None:
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
-    setup_logger(_log_file)
+    _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
     _save_dir = (
@@ -861,7 +950,7 @@ def draw_cards(snapshot: str) -> None:
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
-    setup_logger(_log_file)
+    _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
     _save_dir = (
@@ -873,6 +962,81 @@ def draw_cards(snapshot: str) -> None:
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(_draw_cards_game(world, player_session, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("draw-cards-specified")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+@click.option(
+    "--member",
+    required=True,
+    help="要精确抽牌的远征队成员全名（如 角色.猎人.石坚）",
+)
+@click.option(
+    "--targets",
+    required=True,
+    multiple=True,
+    help="目标角色全名，可多次指定（如 --targets 角色.精怪.山魈）",
+)
+@click.option(
+    "--skill",
+    required=True,
+    help="使用的技能名称（须为该成员已有的技能）",
+)
+@click.option(
+    "--status-effects",
+    multiple=True,
+    default=[],
+    help="使用的状态效果名称，可多次指定，可为空",
+)
+def draw_cards_specified(
+    snapshot: str,
+    member: str,
+    targets: tuple[str, ...],
+    skill: str,
+    status_effects: tuple[str, ...],
+) -> None:
+    """从存档复位，为指定成员精确抽牌，其余成员与敌方随机抽牌，并写入新存档。
+
+    等同于人类在终端执行 /dc，但允许 AI 精确控制指定成员本回合使用的技能与目标。
+    适用于【地下城模式】战斗进行中（is_ongoing）。
+    下一步应使用 play-cards。
+    """
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(
+        _draw_cards_specified_game(
+            world,
+            player_session,
+            member,
+            list(targets),
+            skill,
+            list(status_effects),
+            _save_dir,
+        )
+    )
 
 
 ###############################################################################################################################################
@@ -899,7 +1063,7 @@ def play_cards(snapshot: str) -> None:
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
-    setup_logger(_log_file)
+    _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
     _save_dir = (
@@ -936,7 +1100,7 @@ def trans_home(snapshot: str) -> None:
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
-    setup_logger(_log_file)
+    _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
     _save_dir = (
@@ -974,7 +1138,7 @@ def next_dungeon(snapshot: str) -> None:
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
-    setup_logger(_log_file)
+    _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
     _save_dir = (
@@ -1011,7 +1175,7 @@ def retreat(snapshot: str) -> None:
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
-    setup_logger(_log_file)
+    _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
     _save_dir = (

@@ -81,13 +81,13 @@ def archive_world(
         )
 
         # entities/
-        _write_entities(save_dir, world)
+        dump_entities(save_dir, world)
 
         # contexts/
-        _write_agent_contexts(save_dir, world)
+        dump_agent_contexts(save_dir, world)
 
         # dungeon/
-        _write_dungeon(save_dir, world.dungeon)
+        dump_dungeon(save_dir, world.dungeon)
 
         # snapshot/snapshot.zip (optional)
         if enable_gzip:
@@ -107,8 +107,38 @@ def archive_world(
 
 
 ###############################################################################################################################################
-def _write_entities(save_dir: Path, world: World) -> None:
-    entities_dir = save_dir / "entities"
+def dump_world_snapshot(debug_dir: Path, world: World) -> None:
+    dump_entities(debug_dir, world)
+    dump_agent_contexts(debug_dir, world)
+    dump_dungeon(debug_dir, world.dungeon)
+
+
+###############################################################################################################################################
+def dump_agent_contexts(
+    debug_dir: Path, world: World, should_write_buffer_string: bool = True
+) -> None:
+    context_dir = debug_dir / "contexts"
+    context_dir.mkdir(parents=True, exist_ok=True)
+
+    for agent_name, agent_context in world.agents_context.items():
+        (context_dir / f"{agent_name}.json").write_text(
+            agent_context.model_dump_json(), encoding="utf-8"
+        )
+
+        if should_write_buffer_string:
+            buffer_str = get_buffer_string(
+                agent_context.context,
+                human_prefix="\n" + "-" * 86 + "\nHuman",
+                ai_prefix="\n" + "-" * 86 + f"\nAI({agent_name})",
+            )
+            (context_dir / f"{agent_name}_buffer.txt").write_text(
+                buffer_str, encoding="utf-8"
+            )
+
+
+###############################################################################################################################################
+def dump_entities(debug_dir: Path, world: World) -> None:
+    entities_dir = debug_dir / "entities"
     if entities_dir.exists():
         shutil.rmtree(entities_dir)
     entities_dir.mkdir(parents=True, exist_ok=True)
@@ -119,31 +149,8 @@ def _write_entities(save_dir: Path, world: World) -> None:
 
 
 ###############################################################################################################################################
-def _write_agent_contexts(
-    save_dir: Path, world: World, write_buffer_string: bool = True
-) -> None:
-    context_dir = save_dir / "contexts"
-    context_dir.mkdir(parents=True, exist_ok=True)
-
-    for agent_name, agent_context in world.agents_context.items():
-        (context_dir / f"{agent_name}.json").write_text(
-            agent_context.model_dump_json(), encoding="utf-8"
-        )
-
-        if write_buffer_string:
-            buffer_str = get_buffer_string(
-                agent_context.context,
-                human_prefix="\n" + "-" * 86 + "\nHuman",
-                ai_prefix=f"\n" + "-" * 86 + f"\nAI({agent_name})",
-            )
-            (context_dir / f"{agent_name}_buffer.txt").write_text(
-                buffer_str, encoding="utf-8"
-            )
-
-
-###############################################################################################################################################
-def _write_dungeon(save_dir: Path, dungeon: Dungeon) -> None:
-    dungeon_dir = save_dir / "dungeon"
+def dump_dungeon(debug_dir: Path, dungeon: Dungeon) -> None:
+    dungeon_dir = debug_dir / "dungeon"
     dungeon_dir.mkdir(parents=True, exist_ok=True)
     (dungeon_dir / f"{dungeon.name}.json").write_text(
         dungeon.model_dump_json(), encoding="utf-8"
@@ -151,72 +158,33 @@ def _write_dungeon(save_dir: Path, dungeon: Dungeon) -> None:
 
 
 ###############################################################################################################################################
-def dump_world_snapshot(debug_dir: Path, world: World) -> None:
-    """输出完整的游戏状态快照到调试目录。
+def restore_world(snapshot_dir: Path) -> tuple[World, PlayerSession]:
+    """从存档目录中读取并还原 World 与 PlayerSession。
 
     Args:
-        debug_dir: 调试目录路径
-        world: 世界对象
-    """
-    dump_entities(debug_dir, world)
-    dump_agent_contexts(debug_dir, world)
-    dump_dungeon(debug_dir, world.dungeon)
-
-
-###############################################################################################################################################
-def dump_agent_contexts(
-    debug_dir: Path, world: World, should_write_buffer_string: bool = True
-) -> None:
-    """输出 Agent 对话上下文到调试目录。
-
-    Args:
-        debug_dir: 调试目录路径
-        world: 世界对象
-        should_write_buffer_string: 是否同时输出可读文本格式
-    """
-    _write_agent_contexts(
-        debug_dir, world, write_buffer_string=should_write_buffer_string
-    )
-
-
-###############################################################################################################################################
-def dump_entities(debug_dir: Path, world: World) -> None:
-    """输出所有 ECS 实体序列化数据到调试目录。
-
-    Args:
-        debug_dir: 调试目录路径
-        world: 世界对象
-    """
-    _write_entities(debug_dir, world)
-
-
-###############################################################################################################################################
-def dump_dungeon(debug_dir: Path, dungeon: Dungeon) -> None:
-    """输出地下城数据到调试目录。
-
-    Args:
-        debug_dir: 调试目录路径
-        dungeon: 地下城对象
-    """
-    _write_dungeon(debug_dir, dungeon)
-
-
-###############################################################################################################################################
-def ensure_debug_dir(base_dir: Path, player_session_name: str, game_name: str) -> Path:
-    """创建并返回调试日志目录。
-
-    Args:
-        base_dir: 基础目录
-        player_session_name: 玩家会话名称
-        game_name: 游戏名称
+        snapshot_dir: 存档目录路径，即含有 world.json 与 player_session.json 的目录
+                      （例如 .worlds/{username}/{game}/{timestamp}/）
 
     Returns:
-        调试目录路径
+        (world, player_session) 元组
+
+    Raises:
+        FileNotFoundError: 若 world.json 或 player_session.json 不存在
     """
-    dir = base_dir / player_session_name / game_name
-    dir.mkdir(parents=True, exist_ok=True)
-    assert dir.exists() and dir.is_dir()
-    return dir
+    world_path = snapshot_dir / "world.json"
+    session_path = snapshot_dir / "player_session.json"
+
+    if not world_path.exists():
+        raise FileNotFoundError(f"找不到 world.json: {world_path}")
+    if not session_path.exists():
+        raise FileNotFoundError(f"找不到 player_session.json: {session_path}")
+
+    world = World.model_validate_json(world_path.read_text(encoding="utf-8"))
+    player_session = PlayerSession.model_validate_json(
+        session_path.read_text(encoding="utf-8")
+    )
+    logger.debug(f"世界已还原: {snapshot_dir}")
+    return world, player_session
 
 
 ###############################################################################################################################################

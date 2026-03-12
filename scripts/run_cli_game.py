@@ -30,6 +30,7 @@ from ai_rpg.image_client.client import ImageClient
 from ai_rpg.models import World
 from ai_rpg.game import archive_world
 
+
 ###############################################################################################################################################
 async def _create_and_initialize_game(user: str, game: str) -> TCGGame:
     """创建并初始化一个新游戏实例。
@@ -75,7 +76,13 @@ async def _create_and_initialize_game(user: str, game: str) -> TCGGame:
     await terminal_game.initialize()
 
     logger.info(f"游戏创建并初始化完成：user={user}, game={game}")
-    
+
+    # 检查聊天服务
+    await ChatClient.health_check()
+
+    # 检查图片服务
+    await ImageClient.health_check()
+
     # 持久化游戏世界数据到存档目录，并启用 gzip 快照功能
     archive_world(
         terminal_game.world,

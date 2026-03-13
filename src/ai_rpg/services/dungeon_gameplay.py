@@ -37,7 +37,6 @@ from .dungeon_actions import (
     activate_specified_expedition_member_card_draws,
     activate_play_cards,
     mark_expedition_retreat,
-    ensure_all_actors_have_fallback_cards,
 )
 from ..game.game_server import GameServer
 
@@ -839,12 +838,7 @@ async def _execute_play_cards_task(
             if not rpg_game.current_combat_sequence.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
-            # 确保所有角色都有后备牌（如果没有玩家指定的牌了，系统会自动提供一张后备牌，保证流程继续）
-            success, message = ensure_all_actors_have_fallback_cards(rpg_game)
-            if not success:
-                raise ValueError(f"确保所有角色都有后备牌失败: {message}")
-
-            # 为所有角色随机选择并激活打牌动作
+            # 为所有角色随机选择并激活打牌动作（内部会自动确保所有角色都有后备牌）
             success, message = activate_play_cards(rpg_game)
             if not success:
                 raise ValueError(f"出牌失败: {message}")

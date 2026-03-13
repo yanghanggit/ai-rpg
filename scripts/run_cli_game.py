@@ -151,7 +151,6 @@ from ai_rpg.services.dungeon_actions import (
     activate_random_expedition_member_card_draws,
     activate_specified_expedition_member_card_draws,
     activate_random_enemy_card_draws,
-    ensure_all_actors_have_fallback_cards,
     activate_play_cards,
     mark_expedition_retreat,
 )
@@ -639,11 +638,7 @@ async def _play_cards_game(
         logger.error("play-cards 当前没有未完成的回合可供打牌")
         return terminal_game
 
-    success, message = ensure_all_actors_have_fallback_cards(terminal_game)
-    if not success:
-        logger.error(f"确保所有角色都有后备牌失败: {message}")
-        return terminal_game
-
+    # 执行打牌行动（内部会自动确保所有角色都有后备牌）
     success, message = activate_play_cards(terminal_game)
     if not success:
         logger.error(f"打牌失败: {message}")

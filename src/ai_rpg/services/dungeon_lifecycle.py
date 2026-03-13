@@ -363,12 +363,15 @@ def advance_to_next_stage(tcg_game: TCGGame, dungeon: Dungeon) -> None:
 
 
 ###################################################################################################################################################################
-def complete_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
+def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     """
-    完成地下城冒险并将角色传送回家园
+    退出地下城并将角色传送回家园
 
     将远征队成员传送回家园、清理地下城数据、重置战斗状态并解散远征队。
     玩家传送到专属场景，盟友传送到普通家园场景。
+
+    本函数用于所有地下城结束场景：战斗胜利、战斗失败、主动撤退等。
+    函数是中性的，不区分成功或失败，只负责清理和返回流程。
 
     Args:
         tcg_game: TCG游戏实例
@@ -385,6 +388,10 @@ def complete_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> Non
     assert (
         cs.is_ongoing or cs.is_post_combat
     ), "当前不处于战斗进行中或战斗后状态，无法完成地下城并返回家园！"
+    valid_state = cs.is_ongoing or cs.is_post_combat
+    if not valid_state:
+        logger.error(f"当前不处于战斗进行中或战斗后状态，无法完成地下城并返回家园！")
+        return
 
     # 1. 验证并获取远征队成员
     expedition_entities = tcg_game.get_group(

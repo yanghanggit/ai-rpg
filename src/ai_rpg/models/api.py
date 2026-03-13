@@ -90,13 +90,13 @@ class HomeTransDungeonResponse(BaseModel):
 ################################################################################################################
 ################################################################################################################
 @final
-class DungeonTransHomeRequest(BaseModel):
+class DungeonExitRequest(BaseModel):
     user_name: str
     game_name: str
 
 
 @final
-class DungeonTransHomeResponse(BaseModel):
+class DungeonExitResponse(BaseModel):
     message: str
 
 

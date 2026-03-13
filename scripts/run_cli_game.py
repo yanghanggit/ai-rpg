@@ -96,10 +96,10 @@ AI 操作经验总结（供后续 AI 实例参考，勿删）
 
 【陷阱 5】trans-home / retreat 后场景未更新（已修复）
     EpilogueSystem 在 pipeline 末端调用 flush_entities()，此时角色仍在地下城场景。
-    随后 complete_dungeon_and_return_home() 仅更新内存，若不再次 flush_entities()，
+    随后 exit_dungeon_and_return_home() 仅更新内存，若不再次 flush_entities()，
     archive_world() 会写出旧的场景数据。
-    修复：flush_entities() 已内置为 complete_dungeon_and_return_home() 的最后一步
-    （见 dungeon_stage_transition.py），调用方无需额外处理。
+    修复：flush_entities() 已内置为 exit_dungeon_and_return_home() 的最后一步
+    （见 dungeon_lifecycle.py），调用方无需额外处理。
 
 【最佳操作流程 - 完整测试一局】
     1. new --user ai-copilot
@@ -152,12 +152,12 @@ from ai_rpg.services.dungeon_actions import (
     activate_specified_expedition_member_card_draws,
     activate_random_enemy_card_draws,
     activate_play_cards,
-    mark_expedition_retreat,
+    activate_expedition_retreat,
 )
-from ai_rpg.services.dungeon_stage_transition import (
+from ai_rpg.services.dungeon_lifecycle import (
     initialize_dungeon_first_entry,
     advance_to_next_stage,
-    complete_dungeon_and_return_home,
+    exit_dungeon_and_return_home,
 )
 from pathlib import Path
 
@@ -659,14 +659,14 @@ async def _play_cards_game(
 
 
 ###############################################################################################################################################
-async def _trans_home_game(
+async def _exit_dungeon_and_return_home_game(
     world: World,
     player_session: PlayerSession,
     save_dir: Path,
 ) -> TCGGame:
     """从存档复位，结束地下城并返回家园（等同于终端命令 /th），并归档新状态。
 
-    调用 complete_dungeon_and_return_home：恢复远征成员满血、清空状态效果、
+    调用 exit_dungeon_and_return_home：恢复远征成员满血、清空状态效果、
     将角色从远征队移除、将玩家传送回起始家园场景，完成本次地下城流程。
     执行后游戏回到【家园模式】。
 
@@ -689,7 +689,7 @@ async def _trans_home_game(
         logger.error("trans-home 只能在战斗结束后使用")
         return terminal_game
 
-    complete_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
+    exit_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
 
     archive_world(
         terminal_game.world,
@@ -763,9 +763,9 @@ async def _retreat_game(
 ) -> TCGGame:
     """从存档复位，主动撤退（等同于终端命令 /rtt），并归档新状态。
 
-    调用 mark_expedition_retreat 标记撤退意图，驱动 combat_pipeline.execute()
-    让 CombatOutcomeSystem 正常走一遍（标记战斗失败），
-    再调用 complete_dungeon_and_return_home 返回家园。
+    调用 activate_expedition_retreat 激活撤退动作，驱动 combat_pipeline.execute()
+    让 RetreatActionSystem 和 CombatOutcomeSystem 正常走一遍（标记死亡和战斗失败），
+    再调用 exit_dungeon_and_return_home 返回家园。
     撤退后游戏回到【家园模式】，视为失败结算。
 
     前置条件：combat_sequence.is_ongoing 必须为 True（只能在战斗进行中撤退）。
@@ -787,18 +787,18 @@ async def _retreat_game(
         logger.error("retreat 只能在战斗进行中使用")
         return terminal_game
 
-    # 标记撤退意图并正常走一遍战斗流程，让 CombatOutcomeSystem 处理后续结算（失败）
-    success, message = mark_expedition_retreat(terminal_game)
+    # 标记撤退意图并正常走一遍战斗流程，让 RetreatActionSystem 和 CombatOutcomeSystem 处理后续结算（失败）
+    success, message = activate_expedition_retreat(terminal_game)
     if not success:
         logger.error(f"撤退失败: {message}")
         return terminal_game
 
-    logger.info(f"撤退成功: {message}")
+    logger.info(f"撤退动作激活成功: {message}")
 
     await terminal_game.combat_pipeline.execute()
 
     # 战斗结束后返回家园
-    complete_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
+    exit_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
 
     # 最后归档
     archive_world(
@@ -1210,7 +1210,7 @@ def trans_home(snapshot: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(_trans_home_game(world, player_session, _save_dir))
+    asyncio.run(_exit_dungeon_and_return_home_game(world, player_session, _save_dir))
 
 
 ###############################################################################################################################################

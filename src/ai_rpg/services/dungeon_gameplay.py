@@ -16,8 +16,8 @@ from ..models import (
     DungeonCombatRetreatResponse,
     DungeonAdvanceStageRequest,
     DungeonAdvanceStageResponse,
-    DungeonTransHomeRequest,
-    DungeonTransHomeResponse,
+    DungeonExitRequest,
+    DungeonExitResponse,
     DungeonCombatInitRequest,
     DungeonCombatInitResponse,
     DungeonCombatDrawAllyCardsRequest,
@@ -28,15 +28,15 @@ from ..models import (
     DungeonCombatPlayCardsResponse,
     TaskStatus,
 )
-from .dungeon_stage_transition import (
+from .dungeon_lifecycle import (
     advance_to_next_stage,
-    complete_dungeon_and_return_home,
+    exit_dungeon_and_return_home,
 )
 from .dungeon_actions import (
     activate_random_enemy_card_draws,
     activate_specified_expedition_member_card_draws,
     activate_play_cards,
-    mark_expedition_retreat,
+    activate_expedition_retreat,
 )
 from ..game.game_server import GameServer
 
@@ -164,8 +164,8 @@ async def dungeon_combat_retreat(
                 detail="只能在战斗进行中撤退",
             )
 
-        # 同步标记撤退（必须在 pipeline 执行前完成）
-        success, message = mark_expedition_retreat(rpg_game)
+        # 同步激活撤退动作（必须在 pipeline 执行前完成）
+        success, message = activate_expedition_retreat(rpg_game)
         if not success:
             logger.error(f"玩家 {payload.user_name} 撤退失败: {message}")
             raise HTTPException(
@@ -173,7 +173,7 @@ async def dungeon_combat_retreat(
                 detail=f"撤退失败: {message}",
             )
 
-        logger.info(f"玩家 {payload.user_name} 撤退标记成功: {message}")
+        logger.info(f"玩家 {payload.user_name} 撤退动作激活成功: {message}")
 
     # 在锁外创建后台 task，让任务在后台独立持锁执行
     retreat_task = game_server.create_task()
@@ -344,23 +344,24 @@ async def dungeon_combat_init(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @dungeon_gameplay_api_router.post(
-    path="/api/dungeon/exit/v1/", response_model=DungeonTransHomeResponse
+    path="/api/dungeon/exit/v1/", response_model=DungeonExitResponse
 )
-async def dungeon_trans_home(
-    payload: DungeonTransHomeRequest,
+async def dungeon_exit(
+    payload: DungeonExitRequest,
     game_server: CurrentGameServer,
-) -> DungeonTransHomeResponse:
+) -> DungeonExitResponse:
     """
-    地下城传送回家接口
+    地下城退出接口
 
-    处理玩家从地下城返回家园的传送请求。
+    处理玩家从地下城返回家园的退出请求。
+    适用于所有结束场景：战斗胜利、战斗失败、主动撤退等。
 
     Args:
-        payload: 地下城传送回家请求对象
+        payload: 地下城退出请求对象
         game_server: 游戏服务器实例
 
     Returns:
-        DungeonTransHomeResponse: 包含传送结果的响应对象
+        DungeonExitResponse: 包含退出结果的响应对象
 
     Raises:
         HTTPException(404): 玩家未登录或游戏不存在
@@ -392,11 +393,11 @@ async def dungeon_trans_home(
                 detail="只能在战斗结束后回家",
             )
 
-        # 完成地下城并返回家园
-        complete_dungeon_and_return_home(tcg_game, tcg_game.world.dungeon)
+        # 退出地下城并返回家园
+        exit_dungeon_and_return_home(tcg_game, tcg_game.world.dungeon)
         logger.info(f"玩家 {payload.user_name} 成功返回家园")
 
-        return DungeonTransHomeResponse(
+        return DungeonExitResponse(
             message="成功返回家园",
         )
 
@@ -709,8 +710,8 @@ async def _execute_retreat_task(
 ) -> None:
     """后台执行撤退任务
 
-    在后台异步执行撤退战斗流程（CombatOutcomeSystem 检测死亡）并返回家园，更新任务状态。
-    注意：mark_expedition_retreat 已在 HTTP handler 锁内执行完毕，此处只负责 pipeline 及后续处理。
+    在后台异步执行撤退战斗流程（RetreatActionSystem 标记死亡，CombatOutcomeSystem 检测死亡）并返回家园，更新任务状态。
+    注意：activate_expedition_retreat 已在 HTTP handler 锁内执行完毕，此处只负责 pipeline 及后续处理。
 
     Args:
         task_id: 任务唯一标识符
@@ -732,7 +733,7 @@ async def _execute_retreat_task(
             await rpg_game.combat_pipeline.execute()
 
             # 返回家园
-            complete_dungeon_and_return_home(rpg_game, rpg_game.current_dungeon)
+            exit_dungeon_and_return_home(rpg_game, rpg_game.current_dungeon)
 
         task_record = game_server.get_task(task_id)
         if task_record is not None:

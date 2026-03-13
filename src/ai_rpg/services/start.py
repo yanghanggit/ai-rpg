@@ -94,8 +94,8 @@ async def start(
         len(room._tcg_game.world.entities_serialization) == 0
     ), "测试阶段，游戏中不应该有实体数据！"
     room._tcg_game.build_from_blueprint().flush_entities()
-   
-    # 执行游戏初始化逻辑，确保游戏状态正确设置，准备好接受玩家的操作 
+
+    # 执行游戏初始化逻辑，确保游戏状态正确设置，准备好接受玩家的操作
     await room._tcg_game.initialize()
 
     # 返回成功响应

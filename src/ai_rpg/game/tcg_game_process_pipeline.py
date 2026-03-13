@@ -105,6 +105,7 @@ def create_combat_pipeline(
     from ..systems.play_cards_action_system import (
         PlayCardsActionSystem,
     )
+    from ..systems.retreat_action_system import RetreatActionSystem
     from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.epilogue_system import EpilogueSystem
     from ..systems.prologue_system import PrologueSystem
@@ -135,10 +136,11 @@ def create_combat_pipeline(
     # 战斗回合创建系统（创建后续回合）
     processors.add(CombatRoundCreationSystem(tcg_game))
 
-    # 动作处理相关的系统：敌人决策-抓牌-出牌-裁决-清理
+    # 动作处理相关的系统：敌人决策-抓牌-出牌-撤退-裁决-清理
     processors.add(EnemyDrawDecisionSystem(tcg_game))
     processors.add(DrawCardsActionSystem(tcg_game))
     processors.add(PlayCardsActionSystem(tcg_game))
+    processors.add(RetreatActionSystem(tcg_game))
     processors.add(ArbitrationActionSystem(tcg_game))
 
     # 状态效果评估系统（AI 生成新的状态效果，内部有状态守卫）

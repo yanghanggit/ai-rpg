@@ -164,3 +164,14 @@ class PlayCardsAction(Component):
 
 
 ############################################################################################################
+
+
+@final
+@register_action_component_type
+@register_component_type
+class RetreatAction(Component):
+    """
+    战斗中角色撤退动作组件
+    """
+
+    name: str

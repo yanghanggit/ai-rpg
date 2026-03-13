@@ -52,13 +52,13 @@ from ai_rpg.services.home_actions import (
 from ai_rpg.services.dungeon_actions import (
     activate_random_expedition_member_card_draws,
     activate_play_cards,
-    mark_expedition_retreat,
+    activate_expedition_retreat,
     activate_random_enemy_card_draws,
 )
-from ai_rpg.services.dungeon_stage_transition import (
+from ai_rpg.services.dungeon_lifecycle import (
     initialize_dungeon_first_entry,
     advance_to_next_stage,
-    complete_dungeon_and_return_home,
+    exit_dungeon_and_return_home,
 )
 
 import datetime
@@ -238,7 +238,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         if terminal_game.current_combat_sequence.is_post_combat:
             logger.debug(f"在本次处理中战斗已结束, 进入后处理阶段")
 
-    elif usr_input == "/th":  # "/trans_home"
+    elif usr_input == "/rh":  # "/return_home"
 
         if (
             len(terminal_game.current_combat_sequence.combats) == 0
@@ -248,7 +248,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             return
 
         # logger.debug(f"玩家输入 = {usr_input}, 准备传送回家")
-        complete_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
+        exit_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
 
     elif usr_input == "/and":  # "/advance_next_dungeon"
 
@@ -280,18 +280,18 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             return
 
         # 执行撤退
-        success, message = mark_expedition_retreat(terminal_game)
+        success, message = activate_expedition_retreat(terminal_game)
         if not success:
             logger.error(f"撤退失败: {message}")
             return
 
-        logger.info(f"撤退成功: {message}")
+        logger.info(f"撤退动作激活成功: {message}")
 
-        # 调用一次 combat_execution_pipeline 让 CombatOutcomeSystem 正常跑一次
+        # 调用一次 combat_execution_pipeline 让 RetreatActionSystem 和 CombatOutcomeSystem 正常跑一次
         await terminal_game.combat_pipeline.execute()
 
         # 返回家园
-        complete_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
+        exit_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
 
     else:
         logger.error(

@@ -17,7 +17,7 @@ from .home_actions import (
     activate_switch_stage,
     activate_stage_plan,
 )
-from .dungeon_stage_transition import (
+from .dungeon_lifecycle import (
     initialize_dungeon_first_entry,
 )
 from ..models import (

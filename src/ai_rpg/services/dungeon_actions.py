@@ -21,6 +21,7 @@ from ..models import (
     Card,
     CharacterStats,
     InventoryComponent,
+    RetreatAction,
 )
 from ..entitas import Entity, Matcher
 from langchain_core.messages import AIMessage
@@ -461,66 +462,57 @@ def activate_play_cards(
 
 
 ###################################################################################################################################################################
-def mark_expedition_retreat(tcg_game: TCGGame) -> Tuple[bool, str]:
+def activate_expedition_retreat(
+    tcg_game: TCGGame,
+) -> Tuple[bool, str]:
     """
-    标记所有远征队成员撤退：为每人添加死亡标记并写入撤退叙事消息。
+    为所有远征队成员激活撤退动作。
 
+    为每个远征队成员添加 RetreatAction 组件，由 RetreatActionSystem 响应处理。
     要求当前处于战斗进行中（is_ongoing）状态。
-    本函数只做状态标记与消息写入；调用方在此之后需推进 combat_execution_pipeline，
-    由 CombatOutcomeSystem 检测死亡并触发后续失败流程。
+
+    这是符合 ECS 响应式架构的新实现方式，替代直接操作的 mark_expedition_retreat。
+    撤退处理流程：
+    1. 本函数添加 RetreatAction 组件
+    2. RetreatActionSystem 响应并标记死亡、添加叙事消息
+    3. CombatOutcomeSystem 检测死亡并触发战斗失败流程
 
     Args:
         tcg_game: TCG游戏实例
 
     Returns:
-        tuple[bool, str]: (True, 结果消息)
+        tuple[bool, str]: (是否成功, 结果消息)
     """
 
     if not tcg_game.current_combat_sequence.is_ongoing:
-        logger.warning("mark_expedition_retreat: 战斗未在进行中，但仍将执行撤退标记")
-        return False, "mark_expedition_retreat: 战斗未在进行中，但仍将执行撤退标记"
-
-    dungeon = tcg_game.world.dungeon
-    assert dungeon is not None, "mark_expedition_retreat: dungeon is None"
+        error_msg = "激活撤退动作失败: 只能在战斗进行中使用"
+        logger.error(error_msg)
+        return False, error_msg
 
     expedition_member_entities = tcg_game.get_group(
         Matcher(all_of=[ExpeditionMemberComponent])
     ).entities
-    assert (
-        len(expedition_member_entities) > 0
-    ), "mark_expedition_retreat: no expedition members found"
 
+    if len(expedition_member_entities) == 0:
+        error_msg = "激活撤退动作失败: 没有找到远征队成员"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 为每个远征队成员添加撤退动作组件
     for expedition_member_entity in expedition_member_entities:
-
         assert expedition_member_entity.has(
             ExpeditionMemberComponent
         ), f"Entity {expedition_member_entity.name} must have ExpeditionMemberComponent"
 
-        # 标记为死亡，后续 CombatOutcomeSystem 会检测并触发战斗失败流程
-        expedition_member_entity.replace(DeathComponent, expedition_member_entity.name)
-        logger.info(f"撤退: 角色 {expedition_member_entity.name} 标记为死亡")
-
-        # 解析所在场景，生成撤退叙事消息并写入上下文
-        stage_entity = tcg_game.resolve_stage_entity(expedition_member_entity)
-        assert (
-            stage_entity is not None
-        ), f"无法找到角色 {expedition_member_entity.name} 所在的场景实体"
-
-        retreat_message = _generate_retreat_message(dungeon.name, stage_entity.name)
-        tcg_game.add_human_message(
-            expedition_member_entity,
-            retreat_message,
-            dungeon_lifecycle_retreat=f"{dungeon.name}:{stage_entity.name}",
+        expedition_member_entity.replace(
+            RetreatAction,
+            expedition_member_entity.name,
         )
-
-        logger.info(
-            f"战斗撤退成功: 地下城={dungeon.name}, 关卡={stage_entity.name}, "
-            f"撤退角色数={len(expedition_member_entities)}"
-        )
+        logger.debug(f"为角色 {expedition_member_entity.name} 添加撤退动作组件")
 
     return (
         True,
-        f"已标记 {len(expedition_member_entities)} 个远征队成员撤退，地下城={dungeon.name}",
+        f"成功为 {len(expedition_member_entities)} 个远征队成员激活撤退动作",
     )
 
 

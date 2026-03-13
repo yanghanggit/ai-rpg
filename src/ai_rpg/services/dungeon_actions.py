@@ -388,7 +388,7 @@ def activate_play_cards(
     为所有存活角色激活打牌动作（取手牌列表第一张）
 
     对每个存活战斗角色取 HandComponent 中的第一张手牌并添加打牌动作组件。
-    调用方应在调用前通过 ensure_all_actors_have_fallback_cards 确保所有角色均有手牌。
+    如果发现有角色缺少手牌，会自动为其添加兜底卡牌，确保战斗流程连续性。
 
     Args:
         tcg_game: TCG游戏实例，内部自行获取存活战斗角色列表
@@ -409,6 +409,11 @@ def activate_play_cards(
         error_msg = "激活打牌动作失败: 当前没有未完成的回合可供打牌"
         logger.error(error_msg)
         return False, error_msg
+
+    # 确保所有角色都有后备牌（如果没有玩家指定的牌了，系统会自动提供一张后备牌，保证流程继续）
+    success, message = _ensure_all_actors_have_fallback_cards(tcg_game)
+    if not success:
+        return False, f"激活打牌动作失败: {message}"
 
     player_entity = tcg_game.get_player_entity()
     assert player_entity is not None, "activate_play_cards: player_entity is None"
@@ -520,7 +525,7 @@ def mark_expedition_retreat(tcg_game: TCGGame) -> Tuple[bool, str]:
 
 
 ###################################################################################################################################################################
-def ensure_all_actors_have_fallback_cards(
+def _ensure_all_actors_have_fallback_cards(
     tcg_game: TCGGame,
 ) -> Tuple[bool, str]:
     """
@@ -544,9 +549,9 @@ def ensure_all_actors_have_fallback_cards(
         tuple[bool, str]: (是否成功, 结果消息)
     """
 
-    # 验证战斗状态
+    # 验证战斗状态（由调用方 activate_play_cards 已验证，此处保留防御性检查）
     if not tcg_game.current_combat_sequence.is_ongoing:
-        error_msg = "ensure_all_actors_have_fallback_cards 只能在战斗中使用is_ongoing"
+        error_msg = "_ensure_all_actors_have_fallback_cards 只能在战斗中使用is_ongoing"
         logger.error(error_msg)
         return False, error_msg
 
@@ -560,7 +565,7 @@ def ensure_all_actors_have_fallback_cards(
     player_entity = tcg_game.get_player_entity()
     assert (
         player_entity is not None
-    ), "ensure_all_actors_have_fallback_cards: player_entity is None"
+    ), "_ensure_all_actors_have_fallback_cards: player_entity is None"
 
     alive_combat_actor_entities = _get_alive_expedition_members_on_stage(
         player_entity, tcg_game

@@ -290,8 +290,9 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         # 调用一次 combat_execution_pipeline 让 RetreatActionSystem 和 CombatOutcomeSystem 正常跑一次
         await terminal_game.combat_pipeline.execute()
 
-        # 返回家园
-        exit_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
+        # 注意：撤退后需要手动执行 /th 命令退出地下城
+        # 设计理念：撤退只负责标记失败并进入 post_combat，退出地下城统一由 /th 处理
+        logger.info("撤退完成，战斗已标记为失败。请使用 /th 命令返回家园。")
 
     else:
         logger.error(

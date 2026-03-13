@@ -23,7 +23,7 @@
     【家园模式 Home】玩家在某个 HomeComponent 场景中
         可用命令：new / advance / speak / switch-stage / enter-dungeon
     【地下城模式 Dungeon】玩家在某个地下城场景中
-        可用命令：draw-cards / play-cards / trans-home / next-dungeon / retreat
+        可用命令：draw-cards / play-cards / exit-dungeon / next-dungeon / retreat
 
 典型家园流程：
     new  →  advance（循环推进 NPC）
@@ -36,8 +36,8 @@
     若战斗未结束（is_ongoing）：继续 draw-cards → play-cards
     战斗结束后（is_post_combat）：
         is_won + 有下一关 → next-dungeon → 继续战斗
-        is_won + 无下一关 → trans-home
-        is_lost           → trans-home
+        is_won + 无下一关 → exit-dungeon
+        is_lost           → exit-dungeon
         主动撤退（战斗中）→ retreat
 
 命令速查表：
@@ -48,7 +48,7 @@
     python scripts/run_cli_game.py enter-dungeon --snapshot PATH
     python scripts/run_cli_game.py draw-cards   --snapshot PATH
     python scripts/run_cli_game.py play-cards   --snapshot PATH
-    python scripts/run_cli_game.py trans-home   --snapshot PATH
+    python scripts/run_cli_game.py exit-dungeon   --snapshot PATH
     python scripts/run_cli_game.py next-dungeon --snapshot PATH
     python scripts/run_cli_game.py retreat      --snapshot PATH
 
@@ -75,8 +75,8 @@ AI 操作经验总结（供后续 AI 实例参考，勿删）
     操作前务必先确认存档状态（参见陷阱 4 的快速检查方法），再选择对应命令：
         家园模式存档  → advance / speak / switch-stage / enter-dungeon
         is_ongoing    → draw-cards / play-cards / retreat
-        is_post_combat + is_won  → next-dungeon / trans-home
-        is_post_combat + is_lost → trans-home
+        is_post_combat + is_won  → next-dungeon / exit-dungeon
+        is_post_combat + is_lost → exit-dungeon
 
     快速确认最新存档：
         find .worlds -mindepth 3 -maxdepth 3 -type d | sort | tail -5
@@ -84,7 +84,7 @@ AI 操作经验总结（供后续 AI 实例参考，勿删）
 【陷阱 3】next-dungeon 无下一关时静默返回，不产生新存档
     若当前关卡已是最后一关（peek_next_stage() 返回 None），next-dungeon 不会报错，
     但也不会写出新存档——存档目录时间戳不会更新。
-    判断是否有下一关：先尝试 next-dungeon；无新存档出现则说明已是末关，应用 trans-home。
+    判断是否有下一关：先尝试 next-dungeon；无新存档出现则说明已是末关，应用 exit-dungeon。
 
 【陷阱 4】识别当前存档的游戏状态
     通过 world.json 中各实体的 current_stage 字段判断状态：
@@ -94,7 +94,7 @@ AI 操作经验总结（供后续 AI 实例参考，勿删）
         python -c "import json; d=json.load(open('.worlds/USER/Game1/TIMESTAMP/world.json')); \
         [print(e['name'], e.get('ActorComponent',{}).get('current_stage','')) for e in d['entities_serialization']]"
 
-【陷阱 5】trans-home / retreat 后场景未更新（已修复）
+【陷阱 5】exit-dungeon / retreat 后场景未更新（已修复）
     EpilogueSystem 在 pipeline 末端调用 flush_entities()，此时角色仍在地下城场景。
     随后 exit_dungeon_and_return_home() 仅更新内存，若不再次 flush_entities()，
     archive_world() 会写出旧的场景数据。
@@ -109,8 +109,8 @@ AI 操作经验总结（供后续 AI 实例参考，勿删）
     5. enter-dungeon
     6. draw-cards → play-cards（循环直到 is_post_combat）
     7a. 胜利且有下一关 → next-dungeon → 回到步骤 6
-    7b. 胜利且无下一关 → trans-home
-    7c. 失败             → trans-home
+    7b. 胜利且无下一关 → exit-dungeon
+    7c. 失败             → exit-dungeon
     7d. 主动撤退（需 is_ongoing 存档）→ retreat
     8. advance（回家后推进家园叙事，NPC 对冒险有反应）
 """
@@ -612,7 +612,7 @@ async def _play_cards_game(
     记忆归档，并判断战斗是否结束。
 
     若战斗在本轮结算中结束（is_post_combat），会在日志中输出提示。
-    战斗结束后，后续可调用 trans-home 或 next-dungeon。
+    战斗结束后，后续可调用 exit-dungeon 或 next-dungeon。
     若战斗未结束（is_ongoing），可继续执行新一轮 draw-cards → play-cards。
 
     前置条件：
@@ -682,21 +682,26 @@ async def _exit_dungeon_and_return_home_game(
     """
     terminal_game = await _restore_game(world, player_session)
 
+    # 状态守卫：只能在战斗结束后使用
     if (
         len(terminal_game.current_combat_sequence.combats) == 0
         or not terminal_game.current_combat_sequence.is_post_combat
     ):
-        logger.error("trans-home 只能在战斗结束后使用")
+        logger.error("exit-dungeon 只能在战斗结束后使用")
         return terminal_game
 
+    # 执行退出地下城流程，返回家园
     exit_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
 
+    # 最后归档
     archive_world(
         terminal_game.world,
         terminal_game.player_session,
         save_dir=save_dir,
         enable_gzip=True,
     )
+
+    # 返回
     return terminal_game
 
 
@@ -714,7 +719,7 @@ async def _next_dungeon_game(
 
     前置条件：
         - combat_sequence.is_post_combat 为 True（上一关战斗已结束）
-        - combat_sequence.is_won 为 True（必须胜利，失败只能 trans-home）
+        - combat_sequence.is_won 为 True（必须胜利，失败只能 exit-dungeon）
         - current_dungeon.peek_next_stage() 不为 None（存在下一关）
 
     Args:
@@ -798,7 +803,7 @@ async def _retreat_game(
     await terminal_game.combat_pipeline.execute()
 
     # 战斗结束后返回家园
-    exit_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
+    # exit_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
 
     # 最后归档
     archive_world(
@@ -1150,7 +1155,7 @@ def play_cards(snapshot: str) -> None:
 
     等同于人类在终端输入 /pc。适用于【地下城模式】战斗进行中（is_ongoing）。
     完成伤害结算、叙事生成、状态效果评估、战斗记忆归档。
-    若战斗在本轮结束（is_post_combat），可继续使用 trans-home 或 next-dungeon。
+    若战斗在本轮结束（is_post_combat），可继续使用 exit-dungeon 或 next-dungeon。
     若战斗未结束（is_ongoing），继续 draw-cards → play-cards。
     """
 
@@ -1177,13 +1182,13 @@ def play_cards(snapshot: str) -> None:
 
 
 ###############################################################################################################################################
-@main.command("trans-home")
+@main.command("exit-dungeon")
 @click.option(
     "--snapshot",
     required=True,
     help="存档目录路径",
 )
-def trans_home(snapshot: str) -> None:
+def exit_dungeon(snapshot: str) -> None:
     """从存档复位，结束地下城并返回家园，并写入新存档。
 
     等同于人类在终端输入 /th。适用于【地下城模式】战斗结束后（is_post_combat）。
@@ -1226,7 +1231,7 @@ def next_dungeon(snapshot: str) -> None:
     等同于人类在终端输入 /and。适用于【地下城模式】胜利结算后（is_post_combat + is_won）。
     且地下城存在下一关（peek_next_stage() 不为 None）。
     执行后新关卡战斗初始化完成，下一步继续 draw-cards。
-    若已是最后一关（peek_next_stage() 为 None），应使用 trans-home。
+    若已是最后一关（peek_next_stage() 为 None），应使用 exit-dungeon。
     """
 
     snapshot_path = Path(snapshot)

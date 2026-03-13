@@ -397,6 +397,7 @@ async def dungeon_exit(
         exit_dungeon_and_return_home(tcg_game, tcg_game.world.dungeon)
         logger.info(f"玩家 {payload.user_name} 成功返回家园")
 
+        # 返回
         return DungeonExitResponse(
             message="成功返回家园",
         )
@@ -710,8 +711,10 @@ async def _execute_retreat_task(
 ) -> None:
     """后台执行撤退任务
 
-    在后台异步执行撤退战斗流程（RetreatActionSystem 标记死亡，CombatOutcomeSystem 检测死亡）并返回家园，更新任务状态。
-    注意：activate_expedition_retreat 已在 HTTP handler 锁内执行完毕，此处只负责 pipeline 及后续处理。
+    在后台异步执行撤退战斗流程，让 RetreatActionSystem 标记死亡，CombatOutcomeSystem 判定失败，
+    最终进入 post_combat 状态。退出地下城统一由 /api/dungeon/exit/v1/ 接口处理。
+
+    注意：activate_expedition_retreat 已在 HTTP handler 锁内执行完毕，此处只负责 pipeline 执行。
 
     Args:
         task_id: 任务唯一标识符
@@ -729,18 +732,24 @@ async def _execute_retreat_task(
             rpg_game = current_room._tcg_game
             assert isinstance(rpg_game, TCGGame), "Invalid game type"
 
-            # 执行战斗流程让 CombatOutcomeSystem 检测到角色死亡
+            # 执行战斗流程让 CombatOutcomeSystem 检测到角色死亡并判定失败
             await rpg_game.combat_pipeline.execute()
 
-            # 返回家园
-            exit_dungeon_and_return_home(rpg_game, rpg_game.current_dungeon)
+            # 确认已进入 post_combat 状态
+            if not rpg_game.current_combat_sequence.is_post_combat:
+                raise RuntimeError(
+                    "战斗管线执行后未进入 post_combat 状态，撤退流程异常"
+                )
 
         task_record = game_server.get_task(task_id)
         if task_record is not None:
             task_record.status = TaskStatus.COMPLETED
             task_record.end_time = datetime.now().isoformat()
 
-        logger.info(f"✅ 撤退任务完成: task_id={task_id}, user={user_name}")
+        logger.info(
+            f"✅ 撤退任务完成: task_id={task_id}, user={user_name}, "
+            f"战斗已标记为失败。请调用 /api/dungeon/exit/v1/ 返回家园。"
+        )
 
     except Exception as e:
         logger.error(f"❌ 撤退任务失败: task_id={task_id}, user={user_name}, error={e}")

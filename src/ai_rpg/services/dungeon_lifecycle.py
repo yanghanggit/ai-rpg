@@ -385,12 +385,12 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
         f"is_won={cs.is_won}, is_lost={cs.is_lost}"
     )
 
-    assert (
-        cs.is_ongoing or cs.is_post_combat
-    ), "当前不处于战斗进行中或战斗后状态，无法完成地下城并返回家园！"
-    valid_state = cs.is_ongoing or cs.is_post_combat
-    if not valid_state:
-        logger.error(f"当前不处于战斗进行中或战斗后状态，无法完成地下城并返回家园！")
+    # 严格要求：只能在战斗后状态退出（无论胜负）
+    if not cs.is_post_combat:
+        logger.error(
+            f"当前不处于战斗后状态，无法退出地下城！"
+            f"必须先完成战斗进入 post_combat 状态。"
+        )
         return
 
     # 1. 验证并获取远征队成员

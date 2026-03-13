@@ -64,13 +64,6 @@ async def start(
             detail=f"start/v1: {payload.game_name} blueprint data not found",
         )
 
-    # 检查游戏是否已经在进行中
-    if room._tcg_game is not None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"start/v1: {payload.user_name} game is already running",
-        )
-
     # 创建玩家客户端
     room._player_session = PlayerSession(
         name=payload.user_name,
@@ -96,26 +89,13 @@ async def start(
         world=world_data,
     )
 
+    # 根据蓝图构建游戏实例，并刷新实体数据到world中
     assert (
         len(room._tcg_game.world.entities_serialization) == 0
     ), "测试阶段，游戏中不应该有实体数据！"
-
-    # 验证玩家实体是否创建成功
-    player_entity = room._tcg_game.get_player_entity()
-    if player_entity is None:
-
-        # 清理游戏实例, 出了严重的问题！！！
-        room._tcg_game = None
-
-        # 返回错误！
-        logger.error(f"没有找到玩家实体 = {blueprint_data.player_actor}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"start/v1: {payload.user_name} failed to create player entity",
-        )
-
-    # 必须初始化游戏！
-    logger.info(f"start/v1: {payload.user_name} init game!")
+    room._tcg_game.build_from_blueprint().flush_entities()
+   
+    # 执行游戏初始化逻辑，确保游戏状态正确设置，准备好接受玩家的操作 
     await room._tcg_game.initialize()
 
     # 返回成功响应

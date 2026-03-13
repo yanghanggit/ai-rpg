@@ -345,7 +345,7 @@ async def dungeon_combat_init(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @dungeon_gameplay_api_router.post(
-    path="/api/dungeon/trans_home/v1/", response_model=DungeonTransHomeResponse
+    path="/api/dungeon/exit/v1/", response_model=DungeonTransHomeResponse
 )
 async def dungeon_trans_home(
     payload: DungeonTransHomeRequest,
@@ -368,7 +368,7 @@ async def dungeon_trans_home(
         HTTPException(400): 战斗未结束
     """
 
-    logger.info(f"/api/dungeon/trans_home/v1/: user={payload.user_name}")
+    logger.info(f"/api/dungeon/exit/v1/: user={payload.user_name}")
 
     # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)

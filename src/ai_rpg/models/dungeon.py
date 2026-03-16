@@ -96,6 +96,7 @@ class Combat(BaseModel):
     state: CombatState = CombatState.NONE
     result: CombatResult = CombatResult.NONE
     rounds: List[Round] = []
+    retreated: bool = False  # 是否通过撤退结束本次战斗
 
 
 ###############################################################################################################################################

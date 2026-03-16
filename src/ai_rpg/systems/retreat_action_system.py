@@ -85,17 +85,24 @@ class RetreatActionSystem(ReactiveProcessor):
         Args:
             entities: 包含 RetreatAction 的实体列表
         """
+
+        # 状态守卫：仅在战斗进行中执行撤退处理
         if not self._game.current_combat_sequence.is_ongoing:
             logger.debug("RetreatActionSystem: 战斗未进行中，跳过撤退处理")
             return
 
-        dungeon = self._game.world.dungeon
-        if dungeon is None:
-            logger.error("RetreatActionSystem: dungeon is None")
-            return
+        # 获取当前地下城信息，生成撤退消息需要使用地下城和关卡名称
+        assert (
+            self._game.current_dungeon is not None
+        ), "RetreatActionSystem: current_dungeon is None"
+        dungeon = self._game.current_dungeon
 
+        # 处理每个撤退实体，执行撤退逻辑
         for entity in entities:
             self._process_retreat_action(entity, dungeon.name)
+
+        # 标记当前战斗为撤退状态
+        dungeon.combat_sequence.combats[-1].retreated = True
 
     ####################################################################################################################################
     def _process_retreat_action(self, entity: Entity, dungeon_name: str) -> None:

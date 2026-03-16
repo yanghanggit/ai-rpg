@@ -50,7 +50,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     processors.add(ActorAppearanceUpdateSystem(tcg_game))
 
     # 规划系统-场景描述系统-角色系统
-    processors.add(StageDescriptionSystem(tcg_game))
+    processors.add(StageDescriptionSystem(game=tcg_game, enable_debug_cache=True))
     processors.add(HomeActorSystem(tcg_game))
 
     # 动作处理相关的系统：查询-审核-说话-耳语-公告-场景转换-清理
@@ -128,7 +128,7 @@ def create_combat_pipeline(
     processors.add(ActorAppearanceUpdateSystem(tcg_game))
 
     # 战斗场景描述系统（与家园共用，内部有状态守卫，只有在战斗开始时才会触发）
-    processors.add(StageDescriptionSystem(tcg_game))
+    processors.add(StageDescriptionSystem(game=tcg_game, enable_debug_cache=True))
 
     # 战斗初始化系统（创建第一回合）
     processors.add(CombatInitializationSystem(tcg_game))

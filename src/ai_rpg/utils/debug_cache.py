@@ -20,21 +20,23 @@ from ..game.config import DEBUG_CACHE_DIR
 def compute_cache_key(
     context: List[AIMessage | HumanMessage | SystemMessage],
     prompt: str,
+    entity_name: str,
 ) -> str:
-    """计算 context + prompt 的 SHA-256 hash，作为缓存文件名。
+    """计算 entity_name + context + prompt 的 SHA-256 hash，作为缓存文件名。
 
-    将 context 与本次 prompt（包装为 HumanMessage）拼接后序列化为字符串，
-    确保输入相同则 key 相同。
+    将实体名称、context 与本次 prompt 一同编码进 key，确保不同实体的相同
+    context/prompt 不会产生 key 碰撞。
 
     Args:
-        context: 当前实体的对话历史（SystemMessage/HumanMessage/AIMessage 列表）
-        prompt: 本次发送给 AI 的提示词
+        context: 当前实体的对话历史（SystemMessage/HumanMessage/AIMessage 列表）。
+        prompt: 本次发送给 AI 的提示词。
+        entity_name: 实体名称，用于提高 key 唯一性。
 
     Returns:
-        64 位十六进制 SHA-256 hash 字符串
+        64 位十六进制 SHA-256 hash 字符串。
     """
     combined = context + [HumanMessage(content=prompt)]
-    raw = get_buffer_string(combined)
+    raw = entity_name + "|" + get_buffer_string(combined)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 

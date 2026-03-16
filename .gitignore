@@ -71,6 +71,7 @@ generated_images/
 .blueprints/
 .worlds/
 .dungeons/
+.debug_cache/
 
 # Local AI Agent Configurations (e.g., Claude, Gemini, etc.)
 .claude.json

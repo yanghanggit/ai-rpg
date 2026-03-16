@@ -26,8 +26,8 @@ from ..models import (
     HomePlayerActionType,
     HomeAdvanceRequest,
     HomeAdvanceResponse,
-    HomeTransDungeonRequest,
-    HomeTransDungeonResponse,
+    HomeEnterDungeonRequest,
+    HomeEnterDungeonResponse,
     TaskStatus,
 )
 
@@ -257,12 +257,12 @@ async def home_advance(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @home_gameplay_api_router.post(
-    path="/api/home/trans_dungeon/v1/", response_model=HomeTransDungeonResponse
+    path="/api/home/enter_dungeon/v1/", response_model=HomeEnterDungeonResponse
 )
-async def home_trans_dungeon(
-    payload: HomeTransDungeonRequest,
+async def home_enter_dungeon(
+    payload: HomeEnterDungeonRequest,
     game_server: CurrentGameServer,
-) -> HomeTransDungeonResponse:
+) -> HomeEnterDungeonResponse:
     """
     家园传送地下城接口
 
@@ -273,7 +273,7 @@ async def home_trans_dungeon(
         game_server: 游戏服务器实例
 
     Returns:
-        HomeTransDungeonResponse: 包含请求信息的响应对象
+        HomeEnterDungeonResponse: 包含请求信息的响应对象
 
     Raises:
         HTTPException(404): 玩家未登录或没有可用的地下城
@@ -281,7 +281,7 @@ async def home_trans_dungeon(
         HTTPException(500): 地下城初始化失败
     """
 
-    logger.info(f"/api/home/trans_dungeon/v1/: user={payload.user_name}")
+    logger.info(f"/api/home/enter_dungeon/v1/: user={payload.user_name}")
 
     # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
@@ -318,7 +318,7 @@ async def home_trans_dungeon(
             )
 
         # 返回传送成功响应
-        return HomeTransDungeonResponse(
+        return HomeEnterDungeonResponse(
             message=payload.model_dump_json(),
         )
 

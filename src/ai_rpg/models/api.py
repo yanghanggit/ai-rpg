@@ -76,13 +76,13 @@ class HomeAdvanceResponse(BaseModel):
 
 
 @final
-class HomeTransDungeonRequest(BaseModel):
+class HomeEnterDungeonRequest(BaseModel):
     user_name: str
     game_name: str
 
 
 @final
-class HomeTransDungeonResponse(BaseModel):
+class HomeEnterDungeonResponse(BaseModel):
     message: str
 
 

@@ -37,45 +37,6 @@ class IdentityComponent(Component):
     entity_id: str
 
 
-# ############################################################################################################
-# @final
-# @register_component_type
-# class KickOffComponent(Component):
-#     """实体启动提示组件
-
-#     存储实体启动时发送给 LLM 的初始化提示消息。用于生成角色的自我认知、
-#     场景的环境描述或世界系统的初始状态。
-
-#     Attributes:
-#         name: 实体名称（实体标识）
-#         prompt: 启动提示内容（发送给 LLM 的提示词）
-#     """
-
-#     name: str
-#     prompt: str
-
-
-# ############################################################################################################
-# @final
-# @register_component_type
-# class KickOffCompleteComponent(Component):
-#     """实体启动完成标记组件
-
-#     标记实体已完成启动初始化流程。用于筛选时排除已初始化的实体，
-#     避免重复执行启动流程。同时保存 LLM 生成的初始化响应供后续使用。
-
-#     Attributes:
-#         name: 实体名称（实体标识）
-#         initialization_result: LLM 生成的初始化响应内容
-#             - 角色实体：自我认知和目标确认的文本
-#             - 场景实体：环境描述的叙述文本
-#             - 世界系统：系统初始状态说明
-#     """
-
-#     name: str
-#     initialization_result: str
-
-
 ############################################################################################################
 @final
 @register_component_type

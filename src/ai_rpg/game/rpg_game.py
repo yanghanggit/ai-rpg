@@ -19,7 +19,6 @@ from ..models import (
     StageDescriptionComponent,
     AllyComponent,
     HomeComponent,
-    # KickOffComponent,
     EnemyComponent,
     PlayerComponent,
     CombatStatsComponent,
@@ -270,13 +269,6 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 world_system_entity, world_system_model.system_message
             )
 
-            # 启动消息 提示词
-            # world_system_entity.add(
-            #     KickOffComponent,
-            #     world_system_model.name,
-            #     world_system_model.kick_off_message,
-            # )
-
             # 特殊组件，根据不同world_system类型添加
             if world_system_model.component == PlayerActionAuditComponent.__name__:
                 logger.debug(
@@ -329,11 +321,6 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 actor_model.name in actor_model.system_message
             ), f"actor_model.system_message 缺少 {actor_model.name} 的系统消息"
             self.add_system_message(actor_entity, actor_model.system_message)
-
-            # 必要组件：启动消息
-            # actor_entity.add(
-            #     KickOffComponent, actor_model.name, actor_model.kick_off_message
-            # )
 
             # 必要组件：外观
             # TODO: 未来需要从角色表中读取 base_body，目前暂时使用空字符串占位
@@ -434,11 +421,6 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             # 必要组件：系统消息
             assert stage_model.name in stage_model.system_message
             self.add_system_message(stage_entity, stage_model.system_message)
-
-            # 必要组件：启动消息
-            # stage_entity.add(
-            #     KickOffComponent, stage_model.name, stage_model.kick_off_message
-            # )
 
             # 必要组件：环境描述
             stage_entity.add(

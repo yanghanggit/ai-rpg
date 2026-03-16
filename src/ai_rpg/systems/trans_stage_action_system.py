@@ -21,9 +21,9 @@ from ..game.tcg_game import TCGGame
 @final
 class TransStageActionSystem(ReactiveProcessor):
 
-    def __init__(self, game_context: TCGGame) -> None:
-        super().__init__(game_context)
-        self._game: TCGGame = game_context
+    def __init__(self, game: TCGGame) -> None:
+        super().__init__(game)
+        self._game: TCGGame = game
 
     ####################################################################################################################################
     @override

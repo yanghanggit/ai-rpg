@@ -60,9 +60,9 @@ class RetreatActionSystem(ReactiveProcessor):
         - exit_dungeon_and_return_home 执行场景传送和状态重置
     """
 
-    def __init__(self, game_context: TCGGame) -> None:
-        super().__init__(game_context)
-        self._game: TCGGame = game_context
+    def __init__(self, game: TCGGame) -> None:
+        super().__init__(game)
+        self._game: TCGGame = game
 
     ####################################################################################################################################
     @override
@@ -102,6 +102,9 @@ class RetreatActionSystem(ReactiveProcessor):
             self._process_retreat_action(entity, dungeon.name)
 
         # 标记当前战斗为撤退状态
+        assert (
+            len(dungeon.combat_sequence.combats) > 0
+        ), "RetreatActionSystem: 当前战斗序列没有战斗记录"
         dungeon.combat_sequence.combats[-1].retreated = True
 
     ####################################################################################################################################

@@ -22,8 +22,8 @@ class PrologueSystem(ExecuteProcessor):
     """
 
     ############################################################################################################
-    def __init__(self, game_context: RPGGame) -> None:
-        self._game: Final[RPGGame] = game_context
+    def __init__(self, game: RPGGame) -> None:
+        self._game: Final[RPGGame] = game
 
     ############################################################################################################
     @override

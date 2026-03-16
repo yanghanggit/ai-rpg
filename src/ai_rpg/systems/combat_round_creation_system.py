@@ -62,10 +62,10 @@ class CombatRoundCreationSystem(ExecuteProcessor):
     ############################################################################################################
     def __init__(
         self,
-        game_context: TCGGame,
+        game: TCGGame,
         strategy: ActionOrderStrategy = ActionOrderStrategy.RANDOM,
     ) -> None:
-        self._game: Final[TCGGame] = game_context
+        self._game: Final[TCGGame] = game
         self._strategy: Final[ActionOrderStrategy] = strategy
 
     ############################################################################################################

@@ -106,8 +106,8 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
         _game: TCG游戏上下文，用于访问实体和游戏状态
     """
 
-    def __init__(self, game_context: TCGGame) -> None:
-        self._game: Final[TCGGame] = game_context
+    def __init__(self, game: TCGGame) -> None:
+        self._game: Final[TCGGame] = game
 
     #######################################################################################################################################
     @override

@@ -314,9 +314,9 @@ class ArbitrationActionSystem(ReactiveProcessor):
     - 扩展性强：支持任意角色数量（2人、4人、6人等）
     """
 
-    def __init__(self, game_context: TCGGame) -> None:
-        super().__init__(game_context)
-        self._game: Final[TCGGame] = game_context
+    def __init__(self, game: TCGGame) -> None:
+        super().__init__(game)
+        self._game: Final[TCGGame] = game
 
     #######################################################################################################################################
     @override

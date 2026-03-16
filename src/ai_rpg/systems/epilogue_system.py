@@ -27,12 +27,13 @@ class EpilogueSystem(ExecuteProcessor):
     """
 
     ############################################################################################################
-    def __init__(self, game_context: RPGGame) -> None:
-        self._game: Final[RPGGame] = game_context
+    def __init__(self, game: RPGGame) -> None:
+        self._game: Final[RPGGame] = game
 
     ############################################################################################################
     @override
     async def execute(self) -> None:
+
         # 记录当前场景中的所有角色分布
         self._log_actor_distribution()
 

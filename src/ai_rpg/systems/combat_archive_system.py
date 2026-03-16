@@ -120,8 +120,8 @@ class CombatArchiveSystem(ExecuteProcessor):
     - 归档记忆：将战斗经历触发CombatArchiveEvent，由记忆系统存入知识库
     """
 
-    def __init__(self, game_context: TCGGame) -> None:
-        self._game: Final[TCGGame] = game_context
+    def __init__(self, game: TCGGame) -> None:
+        self._game: Final[TCGGame] = game
 
     #######################################################################################################################################
     @override

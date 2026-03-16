@@ -136,9 +136,9 @@ class EnemyDrawDecisionSystem(ReactiveProcessor):
     优化技能选择和目标选择。决策失败时保持原始Action不变。
     """
 
-    def __init__(self, game_context: TCGGame) -> None:
-        super().__init__(game_context)
-        self._game: Final[TCGGame] = game_context
+    def __init__(self, game: TCGGame) -> None:
+        super().__init__(game)
+        self._game: Final[TCGGame] = game
 
     ####################################################################################################################################
     @override

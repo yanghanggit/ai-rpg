@@ -36,8 +36,8 @@ class CombatOutcomeSystem(ExecuteProcessor):
     - 确定战斗胜负并通知所有友方单位
     """
 
-    def __init__(self, game_context: TCGGame) -> None:
-        self._game: Final[TCGGame] = game_context
+    def __init__(self, game: TCGGame) -> None:
+        self._game: Final[TCGGame] = game
 
     ########################################################################################################################################################################
     @override

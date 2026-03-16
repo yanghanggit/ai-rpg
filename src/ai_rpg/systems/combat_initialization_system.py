@@ -169,8 +169,8 @@ class CombatInitializationSystem(ExecuteProcessor):
         战斗序列状态为 initializing 时执行，在战斗触发后、第一回合开始前。
     """
 
-    def __init__(self, game_context: TCGGame) -> None:
-        self._game: Final[TCGGame] = game_context
+    def __init__(self, game: TCGGame) -> None:
+        self._game: Final[TCGGame] = game
 
     ###################################################################################################################################################################
     @override

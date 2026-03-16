@@ -199,9 +199,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
     - 每个DrawCardsAction生成一张卡牌
     """
 
-    def __init__(self, game_context: TCGGame) -> None:
-        super().__init__(game_context)
-        self._game: Final[TCGGame] = game_context
+    def __init__(self, game: TCGGame) -> None:
+        super().__init__(game)
+        self._game: Final[TCGGame] = game
 
     ####################################################################################################################################
     @override

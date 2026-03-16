@@ -136,19 +136,18 @@ class CombatArchiveSystem(ExecuteProcessor):
             - 如果战斗未完成，直接返回不做任何处理
             - 战斗完成后会触发AI总结生成、消息压缩和记忆归档
         """
-        if not self._game.current_combat_sequence.is_combat_completed:
+        if not self._game.current_dungeon.is_combat_completed:
             # 不是本阶段就直接返回, 如果过了，要么胜利，要么失败。
             return
 
         assert (
-            self._game.current_combat_sequence.is_won
-            or self._game.current_combat_sequence.is_lost
+            self._game.current_dungeon.is_won or self._game.current_dungeon.is_lost
         ), "战斗结果状态异常！"
 
         # 压缩总结战斗结果。
         await self._archive_all_combat_records()
 
-        self._game.current_combat_sequence.transition_to_post_combat()
+        self._game.current_dungeon.transition_to_post_combat()
 
     #######################################################################################################################################
     def _create_combat_summary_clients(
@@ -170,7 +169,7 @@ class CombatArchiveSystem(ExecuteProcessor):
         chat_clients: List[ChatClient] = []
 
         # 获取总回合数
-        total_rounds = len(self._game.current_combat_sequence.current_rounds)
+        total_rounds = len(self._game.current_dungeon.current_rounds or [])
 
         for combat_actor in combat_actors:
 

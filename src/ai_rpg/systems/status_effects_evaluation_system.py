@@ -159,11 +159,11 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
         3. 解析响应并追加到 CombatStatsComponent.status_effects
         4. 添加新增状态效果通知到角色上下文
         """
-        if not self._game.current_combat_sequence.is_ongoing:
+        if not self._game.current_dungeon.is_ongoing:
             return
 
         # 获取当前回合数
-        current_round_number = len(self._game.current_combat_sequence.current_rounds)
+        current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
         # 获取玩家实体, player在的场景就是战斗发生的场景！
         player_entity = self._game.get_player_entity()

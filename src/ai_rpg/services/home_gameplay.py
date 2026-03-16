@@ -299,7 +299,7 @@ async def home_enter_dungeon(
         )
 
         # 检查地下城是否存在可用的关卡
-        if len(rpg_game.current_dungeon.stages) == 0:
+        if len(rpg_game.current_dungeon.rooms) == 0:
             logger.warning(
                 f"玩家 {payload.user_name} 尝试传送地下城失败: 当前地下城没有可用关卡"
             )

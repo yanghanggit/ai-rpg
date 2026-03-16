@@ -180,12 +180,12 @@ class CombatInitializationSystem(ExecuteProcessor):
         为参战角色生成战斗上下文，并发调用LLM生成初始状态效果，转换战斗状态为进行中并启动第一回合。
         """
         # 分析阶段
-        if not self._game.current_combat_sequence.is_initializing:
+        if not self._game.current_dungeon.is_initializing:
             # 非战斗触发阶段，直接返回
             return
 
         assert (
-            len(self._game.current_combat_sequence.current_rounds) == 0
+            len(self._game.current_dungeon.current_rounds or []) == 0
         ), "战斗触发阶段不允许有回合数！"
 
         # 获取玩家实体, player在的场景就是战斗发生的场景！
@@ -219,7 +219,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         self._record_ai_responses(chat_clients)
 
         # 设置战斗为进行中（第一回合将由 CombatRoundCreationSystem 创建）
-        self._game.current_combat_sequence.transition_to_ongoing()
+        self._game.current_dungeon.transition_to_ongoing()
 
     ###################################################################################################################################################################
     def _generate_chat_clients_for_all_actors(

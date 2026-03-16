@@ -168,12 +168,12 @@ class EnemyDrawDecisionSystem(ReactiveProcessor):
             return
 
         # 验证战斗状态
-        if not self._game.current_combat_sequence.is_ongoing:
+        if not self._game.current_dungeon.is_ongoing:
             logger.debug("EnemyDrawDecisionSystem: 战斗未进行中，跳过决策")
             return
 
         # 获取当前回合数
-        current_round_number = len(self._game.current_combat_sequence.current_rounds)
+        current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
         # 为每个敌人实体创建聊天客户端
         chat_clients: List[ChatClient] = []
@@ -229,9 +229,9 @@ class EnemyDrawDecisionSystem(ReactiveProcessor):
 
         # 获取行动顺序（pipeline 顺序保证了 CombatRoundCreationSystem 已创建回合）
         assert (
-            len(self._game.current_combat_sequence.current_rounds) > 0
+            len(self._game.current_dungeon.current_rounds or []) > 0
         ), "CombatRoundCreationSystem 应在 EnemyDrawDecisionSystem 之前创建回合"
-        _latest_round = self._game.current_combat_sequence.latest_round
+        _latest_round = self._game.current_dungeon.latest_round
         assert _latest_round is not None
         action_order = _latest_round.action_order
 

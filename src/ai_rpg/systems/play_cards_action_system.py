@@ -123,13 +123,13 @@ class PlayCardsActionSystem(ReactiveProcessor):
         检查战斗是否进行中，如是则为每个出牌的角色生成通知消息并添加到其对话上下文。
         通知包含角色名、卡牌名、目标和卡牌完整数据(JSON)。
         """
-        if not self._game.current_combat_sequence.is_ongoing:
+        if not self._game.current_dungeon.is_ongoing:
             # 必须是 进行中的阶段！
             logger.debug("PlayCardsActionSystem: 战斗未进行中，跳过出牌处理")
             return
 
         # 获取当前回合数
-        current_round_number = len(self._game.current_combat_sequence.current_rounds)
+        current_round_number = len(self._game.current_dungeon.current_rounds or [])
         logger.debug(
             f"PlayCardsActionSystem: 处理第 {current_round_number} 回合，共 {len(entities)} 个角色出牌"
         )

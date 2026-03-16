@@ -14,7 +14,6 @@ from ..game.tcg_game_process_pipeline import (
 )
 from ..models import (
     Dungeon,
-    CombatSequence,
     World,
     HandComponent,
     StageType,
@@ -60,11 +59,6 @@ class TCGGame(RPGGame):
     @property
     def current_dungeon(self) -> Dungeon:
         return self.world.dungeon
-
-    ###############################################################################################################################################
-    @property
-    def current_combat_sequence(self) -> CombatSequence:
-        return self.current_dungeon.combat_sequence
 
     ###############################################################################################################################################
     @property
@@ -116,18 +110,18 @@ class TCGGame(RPGGame):
             ), "actor_entity is not enemy type"
 
         # 加一步测试: 不可以存在！如果存在说明没有清空。
-        for stage in dungeon_model.stages:
-            stage_entity = self.get_stage_entity(stage.name)
+        for room in dungeon_model.rooms:
+            stage_entity = self.get_stage_entity(room.stage.name)
             assert stage_entity is None, "stage_entity is not None"
             assert (
-                stage.stage_profile.type == StageType.DUNGEON
+                room.stage.stage_profile.type == StageType.DUNGEON
             ), "stage_entity is not dungeon type"
 
-        # 正式创建。。。。。。。。。。
+        # 正式创建。。。。。。。。。
         # 创建地下城的怪物。
         self._create_actor_entities(dungeon_model.actors)
         ## 创建地下城的场景
-        self._create_stage_entities(dungeon_model.stages)
+        self._create_stage_entities([room.stage for room in dungeon_model.rooms])
 
     #######################################################################################################################################
     def teardown_dungeon_entities(self, dungeon_model: Dungeon) -> None:
@@ -143,8 +137,8 @@ class TCGGame(RPGGame):
                 self.destroy_entity(destroy_actor_entity)
 
         # 清空地下城的场景
-        for stage in dungeon_model.stages:
-            destroy_stage_entity = self.get_stage_entity(stage.name)
+        for room in dungeon_model.rooms:
+            destroy_stage_entity = self.get_stage_entity(room.stage.name)
             if destroy_stage_entity is not None:
                 self.destroy_entity(destroy_stage_entity)
 

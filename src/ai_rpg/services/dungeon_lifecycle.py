@@ -203,14 +203,14 @@ def _enter_dungeon_stage(
     trans_message = _generate_dungeon_entry_message(
         dungeon.name,
         stage_entity.name,
-        dungeon.current_stage_index == 0,
+        dungeon.current_room_index == 0,
         dungeon.description,
     )
 
     for expedition_member in expedition_entities:
         # 添加上下文！
         # 根据是否为首次进入，设置不同的生命周期标记
-        if dungeon.current_stage_index == 0:
+        if dungeon.current_room_index == 0:
             # 首次进入：仅地下城名称
             tcg_game.add_human_message(
                 expedition_member, trans_message, dungeon_lifecycle_entry=dungeon.name
@@ -242,7 +242,7 @@ def _enter_dungeon_stage(
     tcg_game.stage_transition(expedition_entities, stage_entity)
 
     # 6. 初始化战斗状态
-    dungeon.combat_sequence.start_combat(Combat(name=stage_entity.name))
+    dungeon.start_combat(Combat(name=stage_entity.name))
 
     # 7. 清除手牌组件
     tcg_game.clear_hands()
@@ -265,14 +265,14 @@ def initialize_dungeon_first_entry(tcg_game: TCGGame, dungeon: Dungeon) -> bool:
         bool: 是否成功初始化并进入第一个关卡
     """
 
-    if len(dungeon.stages) == 0:
+    if len(dungeon.rooms) == 0:
         logger.error("地下城没有关卡数据，无法进入！")
         return False
 
     # 验证是否为首次进入（索引必须为-1）
-    if dungeon.current_stage_index >= 0:
+    if dungeon.current_room_index >= 0:
         logger.error(
-            f"initialize_dungeon_first_entry: 索引异常 = {dungeon.current_stage_index}, "
+            f"initialize_dungeon_first_entry: 索引异常 = {dungeon.current_room_index}, "
             f"期望值为 -1（首次进入标记）"
         )
         return False
@@ -287,7 +287,7 @@ def initialize_dungeon_first_entry(tcg_game: TCGGame, dungeon: Dungeon) -> bool:
     )
 
     # 初始化地下城状态
-    dungeon.current_stage_index = 0
+    dungeon.current_room_index = 0
 
     # 构建地下城实体和关卡实体
     tcg_game.setup_dungeon_entities(dungeon)
@@ -311,15 +311,15 @@ def advance_to_next_stage(tcg_game: TCGGame, dungeon: Dungeon) -> None:
         dungeon: 地下城实例
     """
 
-    if not tcg_game.current_combat_sequence.is_post_combat:
+    if not tcg_game.current_dungeon.is_post_combat:
         logger.error("当前不处于战斗后状态，无法推进地下城关卡")
         return
 
-    if tcg_game.current_combat_sequence.is_lost:
+    if tcg_game.current_dungeon.is_lost:
         logger.info("英雄失败，应该返回营地！！！！")
         return
 
-    if not tcg_game.current_combat_sequence.is_won:
+    if not tcg_game.current_dungeon.is_won:
         assert False, "不可能出现的情况！"
 
     # 1. 推进地下城索引到下一关
@@ -355,7 +355,7 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
         tcg_game: TCG游戏实例
         dungeon: 地下城实例
     """
-    cs = tcg_game.current_combat_sequence
+    cs = tcg_game.current_dungeon
     logger.debug(
         f"[return_home] 入参 dungeon={dungeon.name!r}, "
         f"world.dungeon={tcg_game.world.dungeon.name!r}, "
@@ -440,7 +440,7 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
         f"[return_home] 开始 teardown_dungeon_entities: dungeon={dungeon.name!r}"
     )
     tcg_game.teardown_dungeon_entities(dungeon)
-    tcg_game._world.dungeon = Dungeon(name="", stages=[], description="")
+    tcg_game._world.dungeon = Dungeon(name="", rooms=[], description="")
     logger.debug("[return_home] teardown_dungeon_entities 完成，dungeon 已重置")
 
     # 6. 恢复所有远征队成员的战斗状态

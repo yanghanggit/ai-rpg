@@ -1,6 +1,6 @@
 from .actor_training_dummy import create_training_dummy
 from .stage_village import create_training_ground
-from ..models import Dungeon, StageType, UniqueItem
+from ..models import Dungeon, DungeonRoom, StageType, UniqueItem
 
 
 def create_training_dungeon() -> Dungeon:
@@ -40,8 +40,8 @@ def create_training_dungeon() -> Dungeon:
 
     return Dungeon(
         name="地下城.训猎人训练场",
-        stages=[
-            stage_training_ground,
+        rooms=[
+            DungeonRoom(stage=stage_training_ground),
         ],
         description="猎人训练场，用于猎人磨练基本狩猎技能。",
     )

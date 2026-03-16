@@ -100,7 +100,7 @@ def activate_random_expedition_member_card_draws(
         tuple[bool, str]: (是否成功, 结果消息)
     """
 
-    if not tcg_game.current_combat_sequence.is_ongoing:
+    if not tcg_game.current_dungeon.is_ongoing:
         return False, "只能在战斗中使用is_ongoing"
 
     player_entity = tcg_game.get_player_entity()
@@ -196,7 +196,7 @@ def activate_specified_expedition_member_card_draws(
         tuple[bool, str]: (是否成功, 结果消息)
     """
 
-    if not tcg_game.current_combat_sequence.is_ongoing:
+    if not tcg_game.current_dungeon.is_ongoing:
         logger.error(f"玩家 {expedition_member_name} 抽卡失败: 战斗未在进行中")
         return False, "只能在战斗中使用is_ongoing"
 
@@ -301,7 +301,7 @@ def activate_random_enemy_card_draws(
         tuple[bool, str]: (是否成功, 结果消息)
     """
 
-    if not tcg_game.current_combat_sequence.is_ongoing:
+    if not tcg_game.current_dungeon.is_ongoing:
         return False, "只能在战斗中使用is_ongoing"
 
     player_entity = tcg_game.get_player_entity()
@@ -399,13 +399,13 @@ def activate_play_cards(
     """
 
     # 打牌需要在战斗中，并且必须有未完成的回合
-    if not tcg_game.current_combat_sequence.is_ongoing:
+    if not tcg_game.current_dungeon.is_ongoing:
         error_msg = "激活打牌动作失败: 只能在战斗中使用is_ongoing"
         logger.error(error_msg)
         return False, error_msg
 
     # 判断当前是否有未完成的回合
-    last_round = tcg_game.current_combat_sequence.latest_round
+    last_round = tcg_game.current_dungeon.latest_round
     if last_round is None or last_round.is_round_completed:
         error_msg = "激活打牌动作失败: 当前没有未完成的回合可供打牌"
         logger.error(error_msg)
@@ -484,7 +484,7 @@ def activate_expedition_retreat(
         tuple[bool, str]: (是否成功, 结果消息)
     """
 
-    if not tcg_game.current_combat_sequence.is_ongoing:
+    if not tcg_game.current_dungeon.is_ongoing:
         error_msg = "激活撤退动作失败: 只能在战斗进行中使用"
         logger.error(error_msg)
         return False, error_msg
@@ -542,13 +542,13 @@ def _ensure_all_actors_have_fallback_cards(
     """
 
     # 验证战斗状态（由调用方 activate_play_cards 已验证，此处保留防御性检查）
-    if not tcg_game.current_combat_sequence.is_ongoing:
+    if not tcg_game.current_dungeon.is_ongoing:
         error_msg = "_ensure_all_actors_have_fallback_cards 只能在战斗中使用is_ongoing"
         logger.error(error_msg)
         return False, error_msg
 
     # 判断当前是否有未完成的回合
-    last_round = tcg_game.current_combat_sequence.latest_round
+    last_round = tcg_game.current_dungeon.latest_round
     if last_round is None or last_round.is_round_completed:
         error_msg = "当前没有未完成的回合可供打牌"
         logger.error(error_msg)
@@ -562,7 +562,7 @@ def _ensure_all_actors_have_fallback_cards(
     alive_combat_actor_entities = _get_alive_expedition_members_on_stage(
         player_entity, tcg_game
     ) + _get_alive_enemies_on_stage(player_entity, tcg_game)
-    current_round_number = len(tcg_game.current_combat_sequence.current_rounds)
+    current_round_number = len(tcg_game.current_dungeon.current_rounds or [])
 
     assert current_round_number >= 0, "current_round_number must be non-negative"
     fallback_count = 0

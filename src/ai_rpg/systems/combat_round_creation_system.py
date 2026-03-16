@@ -81,25 +81,25 @@ class CombatRoundCreationSystem(ExecuteProcessor):
         4. 创建新回合并生成 action_order
         """
         # 检查战斗状态
-        if not self._game.current_combat_sequence.is_ongoing:
+        if not self._game.current_dungeon.is_ongoing:
             # 战斗未进行中，跳过回合创建
             return
 
         # 检查是否有回合存在（第一回合创建）
-        if len(self._game.current_combat_sequence.current_rounds) == 0:
+        if len(self._game.current_dungeon.current_rounds or []) == 0:
             logger.info("战斗开始，创建第一回合")
             new_round = self._create_next_round()
             logger.info(f"创建第 1 回合，行动顺序: {new_round.action_order}")
             return
 
         # 检查上一回合是否完成
-        last_round = self._game.current_combat_sequence.latest_round
+        last_round = self._game.current_dungeon.latest_round
         assert last_round is not None
         if last_round.is_round_completed:
             logger.debug(f"上一回合已完成，创建新回合")
             new_round = self._create_next_round()
             logger.info(
-                f"创建第 {len(self._game.current_combat_sequence.current_rounds)} 回合，"
+                f"创建第 {len(self._game.current_dungeon.current_rounds or [])} 回合，"
                 f"行动顺序: {new_round.action_order}"
             )
 
@@ -115,9 +115,9 @@ class CombatRoundCreationSystem(ExecuteProcessor):
             创建的回合对象
         """
         # 前置条件断言
-        assert self._game.current_combat_sequence.is_ongoing, "战斗未进行中"
-        _last_round = self._game.current_combat_sequence.latest_round
-        assert len(self._game.current_combat_sequence.current_rounds) == 0 or (
+        assert self._game.current_dungeon.is_ongoing, "战斗未进行中"
+        _last_round = self._game.current_dungeon.latest_round
+        assert len(self._game.current_dungeon.current_rounds or []) == 0 or (
             _last_round is not None and _last_round.is_round_completed
         ), "上一回合未完成"
 
@@ -148,7 +148,7 @@ class CombatRoundCreationSystem(ExecuteProcessor):
         round = Round(
             action_order=action_order,
         )
-        self._game.current_combat_sequence.current_combat.rounds.append(round)
+        self._game.current_dungeon.current_combat.rounds.append(round)  # type: ignore[union-attr]
         return round
 
     ############################################################################################################

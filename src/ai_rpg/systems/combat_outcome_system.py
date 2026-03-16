@@ -54,19 +54,19 @@ class CombatOutcomeSystem(ExecuteProcessor):
         2. 若敌方全灭，标记战斗胜利并广播胜利消息
         3. 若双方均有存活单位，战斗继续
 
-        战斗结果会通过current_combat_sequence记录，
+        战斗结果会通过current_dungeon记录，
         并向所有友方单位广播相应的胜负消息。
         """
-        if not self._game.current_combat_sequence.is_ongoing:
+        if not self._game.current_dungeon.is_ongoing:
             return  # 不是本阶段就直接返回
 
         if self._is_ally_side_eliminated():
             # logger.info("ally side eliminated!!!")
-            self._game.current_combat_sequence.complete_combat(CombatResult.LOSE)
+            self._game.current_dungeon.complete_combat(CombatResult.LOSE)
             self._broadcast_result_to_allies(CombatResult.LOSE)
         elif self._is_enemy_side_eliminated():
             # logger.info("enemy side eliminated!!!")
-            self._game.current_combat_sequence.complete_combat(CombatResult.WIN)
+            self._game.current_dungeon.complete_combat(CombatResult.WIN)
             self._broadcast_result_to_allies(CombatResult.WIN)
         else:
             # logger.info("combat continue!!!")

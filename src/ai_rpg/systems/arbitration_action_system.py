@@ -338,9 +338,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         combat_stage = self._game.resolve_stage_entity(player_entity)
         assert combat_stage is not None, "无法获取玩家所在场景实体！"
 
-        assert (
-            self._game.current_combat_sequence.is_ongoing
-        ), "当前没有进行中的战斗序列！"
+        assert self._game.current_dungeon.is_ongoing, "当前没有进行中的战斗序列！"
 
         # 排序角色！
         assert combat_stage.has(StageComponent) and combat_stage.has(
@@ -363,7 +361,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
 
         # 依据当前回合的行动顺序排序角色实体
         sort_actors: List[Entity] = []
-        _latest_round = self._game.current_combat_sequence.latest_round
+        _latest_round = self._game.current_dungeon.latest_round
         assert _latest_round is not None
         for action_order in _latest_round.action_order:
             for entity in play_cards_actors:
@@ -428,7 +426,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         assert len(combat_actions_details) > 0
 
         # 获取当前回合数
-        current_round_number = len(self._game.current_combat_sequence.current_rounds)
+        current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
         # 生成推理信息。
         message = _generate_combat_arbitration_prompt(
@@ -550,9 +548,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
             )
 
             # 获取当前回合数
-            current_round_number = len(
-                self._game.current_combat_sequence.current_rounds
-            )
+            current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
             # 广播事件
             self._game.broadcast_to_stage(
@@ -604,7 +600,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 )
 
             # 记录数据！
-            latest_round = self._game.current_combat_sequence.latest_round
+            latest_round = self._game.current_dungeon.latest_round
             assert latest_round is not None
             latest_round.combat_log = format_response.combat_log
             latest_round.narrative = format_response.narrative

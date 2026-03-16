@@ -42,6 +42,7 @@ from ai_rpg.game.tcg_game import (
     TCGGame,
 )
 from ai_rpg.models import (
+    CombatState,
     World,
 )
 from ai_rpg.services.home_actions import (
@@ -196,7 +197,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
 
     if usr_input == "/dc":
 
-        if not terminal_game.current_combat_sequence.is_ongoing:
+        if not terminal_game.current_dungeon.is_ongoing:
             logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
             return
 
@@ -218,12 +219,12 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
     elif usr_input == "/pc":
 
         # 打牌需要在战斗中，并且必须有未完成的回合
-        if not terminal_game.current_combat_sequence.is_ongoing:
+        if not terminal_game.current_dungeon.is_ongoing:
             logger.error(f"{usr_input} 只能在战斗中使用is_on_going_phase")
             return
 
         # 判断当前是否有未完成的回合
-        last_round = terminal_game.current_combat_sequence.latest_round
+        last_round = terminal_game.current_dungeon.latest_round
         if last_round is None or last_round.is_round_completed:
             logger.error(f"{usr_input} 当前没有未完成的回合可供打牌")
             return
@@ -235,15 +236,12 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         else:
             logger.error(f"打牌失败: {message}")
 
-        if terminal_game.current_combat_sequence.is_post_combat:
+        if terminal_game.current_dungeon.is_post_combat:
             logger.debug(f"在本次处理中战斗已结束, 进入后处理阶段")
 
     elif usr_input == "/rh":  # "/return_home"
 
-        if (
-            len(terminal_game.current_combat_sequence.combats) == 0
-            or not terminal_game.current_combat_sequence.is_post_combat
-        ):
+        if not terminal_game.current_dungeon.is_post_combat:
             logger.error(f"{usr_input} 只能在战斗后使用!!!!!")
             return
 
@@ -252,15 +250,15 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
 
     elif usr_input == "/and":  # "/advance_next_dungeon"
 
-        if not terminal_game.current_combat_sequence.is_post_combat:
+        if not terminal_game.current_dungeon.is_post_combat:
             logger.error(f"{usr_input} 只能在战斗后使用")
             return
 
-        if terminal_game.current_combat_sequence.is_lost:
+        if terminal_game.current_dungeon.is_lost:
             logger.info("英雄失败，应该返回营地！！！！")
             return
 
-        if not terminal_game.current_combat_sequence.is_won:
+        if not terminal_game.current_dungeon.is_won:
             assert False, "不可能出现的情况！"
 
         next_level = terminal_game.current_dungeon.peek_next_stage()
@@ -275,7 +273,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
     elif usr_input == "/rtt":  # "/retreat"
 
         # 检查是否在战斗中
-        if not terminal_game.current_combat_sequence.is_ongoing:
+        if not terminal_game.current_dungeon.is_ongoing:
             logger.error(f"{usr_input} 只能在战斗进行中使用")
             return
 
@@ -328,7 +326,7 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
 
     elif usr_input == "/ed":
 
-        if len(terminal_game.current_dungeon.stages) == 0:
+        if len(terminal_game.current_dungeon.rooms) == 0:
             logger.error(
                 f"全部地下城已经结束。！！！！已经全部被清空！！！！或者不存在！！！！"
             )
@@ -340,10 +338,12 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
         ):
             assert False, "传送地下城失败！"
 
-        if len(terminal_game.current_combat_sequence.combats) == 0:
-            logger.error(f"{usr_input} 没有战斗可以进行！！！！")
-            return
-
+        assert (
+            terminal_game.current_dungeon.current_room is not None
+        ), f"{usr_input} 当前尚未进入任何房间"
+        assert (
+            terminal_game.current_dungeon.current_room.combat.state != CombatState.NONE
+        ), f"{usr_input} 没有战斗可以进行！！！！"
         await terminal_game.combat_pipeline.process()
 
     elif usr_input.startswith("/speak"):

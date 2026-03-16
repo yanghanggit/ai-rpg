@@ -10,7 +10,6 @@ from .game_server_dependencies import CurrentGameServer
 from ..models import (
     DungeonStateResponse,
     DungeonCombatResponse,
-    Combat,
 )
 
 ###################################################################################################################################################################
@@ -128,12 +127,8 @@ async def get_dungeon_combat(
     # 获取 TCG 游戏实例
     rpg_game = current_room._tcg_game
 
-    # 获取当前战斗；若战斗序列为空则返回空 Combat
-    combat_sequence = rpg_game.current_combat_sequence
-    current_combat = (
-        combat_sequence.current_combat
-        if len(combat_sequence.combats) > 0
-        else Combat(name="")
-    )
+    # 获取当前战斗
+    current_combat = rpg_game.current_dungeon.current_combat
+    assert current_combat is not None, "当前地下城没有进行中的战斗"
 
     return DungeonCombatResponse(combat=current_combat)

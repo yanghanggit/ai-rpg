@@ -140,7 +140,7 @@ from ai_rpg.game.config import (
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import TCGGame
 from ai_rpg.image_client.client import ImageClient
-from ai_rpg.models import Blueprint, Dungeon, World
+from ai_rpg.models import Blueprint, CombatState, Dungeon, World
 from ai_rpg.game import archive_world, restore_world
 from ai_rpg.services.home_actions import (
     activate_stage_plan,
@@ -449,7 +449,7 @@ async def _enter_dungeon_game(
     """
     terminal_game = await _restore_game(world, player_session)
 
-    if len(terminal_game.current_dungeon.stages) == 0:
+    if len(terminal_game.current_dungeon.rooms) == 0:
         logger.error("地下城全部已结束，没有可进入的地下城")
         return terminal_game
 
@@ -457,10 +457,12 @@ async def _enter_dungeon_game(
         logger.error("传送地下城失败")
         return terminal_game
 
-    if len(terminal_game.current_combat_sequence.combats) == 0:
-        logger.error("没有战斗可以进行")
-        return terminal_game
-
+    assert (
+        terminal_game.current_dungeon.current_room is not None
+    ), "当前尚未进入任何房间"
+    assert (
+        terminal_game.current_dungeon.current_room.combat.state != CombatState.NONE
+    ), "没有战斗可以进行"
     await terminal_game.combat_pipeline.process()
 
     archive_world(
@@ -498,7 +500,7 @@ async def _draw_cards_game(
     """
     terminal_game = await _restore_game(world, player_session)
 
-    if not terminal_game.current_combat_sequence.is_ongoing:
+    if not terminal_game.current_dungeon.is_ongoing:
         logger.error("draw-cards 只能在战斗进行中使用")
         return terminal_game
 
@@ -560,7 +562,7 @@ async def _draw_cards_specified_game(
     """
     terminal_game = await _restore_game(world, player_session)
 
-    if not terminal_game.current_combat_sequence.is_ongoing:
+    if not terminal_game.current_dungeon.is_ongoing:
         logger.error("draw-cards-specified 只能在战斗进行中使用")
         return terminal_game
 
@@ -629,11 +631,11 @@ async def _play_cards_game(
     """
     terminal_game = await _restore_game(world, player_session)
 
-    if not terminal_game.current_combat_sequence.is_ongoing:
+    if not terminal_game.current_dungeon.is_ongoing:
         logger.error("play-cards 只能在战斗进行中使用")
         return terminal_game
 
-    last_round = terminal_game.current_combat_sequence.latest_round
+    last_round = terminal_game.current_dungeon.latest_round
     if last_round is None or last_round.is_round_completed:
         logger.error("play-cards 当前没有未完成的回合可供打牌")
         return terminal_game
@@ -646,7 +648,7 @@ async def _play_cards_game(
 
     await terminal_game.combat_pipeline.process()
 
-    if terminal_game.current_combat_sequence.is_post_combat:
+    if terminal_game.current_dungeon.is_post_combat:
         logger.debug("在本次处理中战斗已结束，进入后处理阶段")
 
     archive_world(
@@ -683,10 +685,7 @@ async def _exit_dungeon_and_return_home_game(
     terminal_game = await _restore_game(world, player_session)
 
     # 状态守卫：只能在战斗结束后使用
-    if (
-        len(terminal_game.current_combat_sequence.combats) == 0
-        or not terminal_game.current_combat_sequence.is_post_combat
-    ):
+    if not terminal_game.current_dungeon.is_post_combat:
         logger.error("exit-dungeon 只能在战斗结束后使用")
         return terminal_game
 
@@ -732,15 +731,15 @@ async def _next_dungeon_game(
     """
     terminal_game = await _restore_game(world, player_session)
 
-    if not terminal_game.current_combat_sequence.is_post_combat:
+    if not terminal_game.current_dungeon.is_post_combat:
         logger.error("next-dungeon 只能在战斗结束后使用")
         return terminal_game
 
-    if terminal_game.current_combat_sequence.is_lost:
+    if terminal_game.current_dungeon.is_lost:
         logger.info("英雄失败，应该返回营地")
         return terminal_game
 
-    if not terminal_game.current_combat_sequence.is_won:
+    if not terminal_game.current_dungeon.is_won:
         assert False, "不可能出现的情况！"
 
     next_level = terminal_game.current_dungeon.peek_next_stage()
@@ -788,7 +787,7 @@ async def _retreat_game(
     terminal_game = await _restore_game(world, player_session)
 
     # 状态守卫：只能在战斗进行中撤退
-    if not terminal_game.current_combat_sequence.is_ongoing:
+    if not terminal_game.current_dungeon.is_ongoing:
         logger.error("retreat 只能在战斗进行中使用")
         return terminal_game
 

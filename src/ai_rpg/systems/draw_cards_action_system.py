@@ -220,13 +220,13 @@ class DrawCardsActionSystem(ReactiveProcessor):
             len(entities) > 0
         ), "DrawCardsActionSystem react called with empty entities list"
 
-        if not self._game.current_combat_sequence.is_ongoing:
+        if not self._game.current_dungeon.is_ongoing:
             # 阶段不对，直接返回
             return
 
         # 验证回合已创建（回合创建已在 CombatRoundCreationSystem 中完成）
         assert (
-            len(self._game.current_combat_sequence.current_rounds) > 0
+            len(self._game.current_dungeon.current_rounds or []) > 0
         ), "当前回合未创建，检查 CombatRoundCreationSystem 是否正常执行"
 
         # 清除所有参与角色的旧手牌，准备重新生成新手牌
@@ -310,16 +310,14 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 extract_json_from_code_block(chat_client.response_content)
             )
 
-            last_round = self._game.current_combat_sequence.latest_round
+            last_round = self._game.current_dungeon.latest_round
             assert last_round is not None
             assert (
                 not last_round.is_round_completed
             ), "当前没有进行中的战斗回合，不能生成卡牌。"
 
             # 获取当前回合数
-            current_round_number = len(
-                self._game.current_combat_sequence.current_rounds
-            )
+            current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
             # 添加压缩上下文的提示词
             self._game.add_human_message(
@@ -402,14 +400,14 @@ class DrawCardsActionSystem(ReactiveProcessor):
             ChatClient: 准备好的聊天客户端
         """
         # 获取当前战斗的最新回合
-        last_round = self._game.current_combat_sequence.latest_round
+        last_round = self._game.current_dungeon.latest_round
         assert last_round is not None
         assert (
             not last_round.is_round_completed
         ), "当前没有进行中的战斗回合，不能生成卡牌。"
 
         # 获取当前回合数
-        current_round_number = len(self._game.current_combat_sequence.current_rounds)
+        current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
         # 清理旧的抽卡消息
         self._cleanup_old_draw_cards_messages(entity, current_round_number)

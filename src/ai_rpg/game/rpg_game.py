@@ -34,6 +34,7 @@ from ..models import (
     TransStageEvent,
     PlayerOnlyStageComponent,
     PlayerActionAuditComponent,
+    DungeonGenerationComponent,
 )
 from .player_session import PlayerSession
 
@@ -276,6 +277,15 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 )
                 world_system_entity.add(
                     PlayerActionAuditComponent,
+                    world_system_model.name,
+                )
+
+            elif world_system_model.component == DungeonGenerationComponent.__name__:
+                logger.debug(
+                    f"为 WorldSystem 实体 {world_system_entity.name} 添加 DungeonGenerationComponent"
+                )
+                world_system_entity.add(
+                    DungeonGenerationComponent,
                     world_system_model.name,
                 )
 

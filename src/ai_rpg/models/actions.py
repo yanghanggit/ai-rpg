@@ -175,3 +175,21 @@ class RetreatAction(Component):
     """
 
     name: str
+
+
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
+class SetupDungeonAction(Component):
+    """地下城创建动作组件。
+
+    在家园状态下主动添加到玩家实体，触发 DungeonGenerationSystem 执行
+    地下城的完整创建流程（包含文生图、数据初始化等多个子任务）。
+    动作组件由 ActionCleanupSystem 自动清除，无需手动移除。
+
+    Attributes:
+        name: 发起创建请求的实体名称
+    """
+
+    name: str

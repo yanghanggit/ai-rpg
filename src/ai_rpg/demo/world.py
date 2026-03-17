@@ -18,6 +18,7 @@ from .stage_village import (
     create_shi_family_house,
 )
 from .world_system_player_action_audit import create_player_action_audit
+from .world_system_dungeon_generation import create_dungeon_generation
 
 
 #######################################################################################################################
@@ -113,7 +114,7 @@ def create_hunter_mystic_blueprint(game_name: str) -> Blueprint:
             stage_village_hall,
             stage_shi_family_house,
         ],
-        world_systems=[create_player_action_audit()],
+        world_systems=[create_player_action_audit(), create_dungeon_generation()],
     )
 
 

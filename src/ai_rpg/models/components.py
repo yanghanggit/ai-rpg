@@ -423,3 +423,18 @@ class PlayerActionAuditComponent(Component):
     """
 
     name: str
+
+
+############################################################################################################
+@final
+@register_component_type
+class DungeonGenerationComponent(Component):
+    """地下城生成组件。
+
+    标记组件，标识世界系统实体具有地下城图片生成职责（文生图）。
+
+    Attributes:
+        name: 世界系统名称
+    """
+
+    name: str

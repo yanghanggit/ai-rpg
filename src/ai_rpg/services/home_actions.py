@@ -12,6 +12,7 @@ from ..models import (
     HomeComponent,
     AllyComponent,
     PlanAction,
+    SetupDungeonAction,
 )
 from typing import Tuple
 
@@ -156,6 +157,39 @@ def activate_stage_plan(tcg_game: TCGGame) -> Tuple[bool, str]:
         actor_entity.replace(PlanAction, actor_entity.name)
 
     return True, f"成功为 {len(actors_in_stage)} 个角色添加 PlanAction"
+
+
+###################################################################################################################################################################
+def activate_setup_dungeon(tcg_game: TCGGame) -> Tuple[bool, str]:
+    """
+    在家园状态下激活地下城创建动作。
+
+    添加 SetupDungeonAction 到玩家实体，触发 DungeonGenerationSystem 在
+    dungeon_setup_pipeline 的下一次推进时执行完整的地下城创建流程
+    （包含文生图、数据初始化等子任务）。动作组件由 ActionCleanupSystem 自动清除。
+
+    Args:
+        tcg_game: TCG 游戏实例
+
+    Returns:
+        Tuple[bool, str]: (是否成功, 失败时的错误详情)
+    """
+    if not tcg_game.is_player_in_home_stage:
+        error_detail = "玩家不在家园场景中，无法创建地下城"
+        logger.error(f"激活地下城创建失败: {error_detail}")
+        return False, error_detail
+
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None, "玩家实体不存在！"
+
+    if player_entity.has(SetupDungeonAction):
+        error_detail = "地下城创建动作已存在，请勿重复激活"
+        logger.warning(f"激活地下城创建失败: {error_detail}")
+        return False, error_detail
+
+    logger.debug(f"激活地下城创建: {player_entity.name}")
+    player_entity.replace(SetupDungeonAction, player_entity.name)
+    return True, ""
 
 
 ###################################################################################################################################################################

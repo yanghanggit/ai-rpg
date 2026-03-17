@@ -63,8 +63,10 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
 
     # 清除动作相关的临时状态、标记等，准备下一轮输入
     processors.add(ActionCleanupSystem(tcg_game))
+
     # 动作处理后，可能清理。
     processors.add(DestroyEntitySystem(tcg_game))
+
     # 收尾系统。
     processors.add(EpilogueSystem(tcg_game))
 
@@ -162,6 +164,49 @@ def create_combat_pipeline(
     processors.add(DestroyEntitySystem(tcg_game))
 
     # 收尾系统。
+    processors.add(EpilogueSystem(tcg_game))
+
+    return processors
+
+
+def create_dungeon_setup_pipeline(
+    game: GameSession,
+) -> "RPGGameProcessPipeline":
+    """创建地下城准备流程管道（文生图等预生成任务）
+
+    在进入地下城前触发，负责为地下城及其房间生成图片等预处理工作。
+
+    Args:
+        game: 游戏会话实例
+
+    Returns:
+        配置好的RPG游戏流程管道实例
+    """
+
+    ### 不这样就循环引用
+    from ..game.tcg_game import TCGGame
+    from ..systems.dungeon_generation_system import DungeonGenerationSystem
+    from ..systems.epilogue_system import EpilogueSystem
+    from ..systems.prologue_system import PrologueSystem
+    from ..systems.action_cleanup_system import ActionCleanupSystem
+    from ..systems.destroy_entity_system import DestroyEntitySystem
+
+    tcg_game = cast(TCGGame, game)
+    processors = RPGGameProcessPipeline()
+
+    # 起始系统
+    processors.add(PrologueSystem(tcg_game))
+
+    # 地下城图片生成系统（监听 GenerateDungeonImageAction 触发文生图）
+    processors.add(DungeonGenerationSystem(tcg_game))
+
+    # 清除动作相关的临时状态、标记等，准备下一轮输入
+    processors.add(ActionCleanupSystem(tcg_game))
+
+    # 动作处理后，可能清理。
+    processors.add(DestroyEntitySystem(tcg_game))
+
+    # 收尾系统
     processors.add(EpilogueSystem(tcg_game))
 
     return processors

@@ -6,7 +6,7 @@
 """
 
 import random
-from typing import Dict, List, Set
+from typing import List, Set
 from loguru import logger
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -67,48 +67,6 @@ def _generate_return_home_message(
         str: 格式化的返回提示消息
     """
     return f"""# 提示！地下城：{dungeon_name} 结束，返回家园场景：{destination_stage_name}"""
-
-
-###################################################################################################################################################################
-def _format_stage_actors_info(actors_appearances_mapping: Dict[str, str]) -> str:
-    """格式化场景内角色信息为文本
-
-    Args:
-        actors_appearances_mapping: 角色名称到外观描述的映射
-
-    Returns:
-        str: 格式化后的角色信息文本
-    """
-    actors_appearances_info = []
-    for actor_name, appearance in actors_appearances_mapping.items():
-        actors_appearances_info.append(f"{actor_name}: {appearance}")
-
-    if len(actors_appearances_info) == 0:
-        return "无"
-
-    return "\n\n".join(actors_appearances_info)
-
-
-###################################################################################################################################################################
-def _enhance_kickoff_with_actors(
-    original_content: str, actors_appearances_mapping: Dict[str, str]
-) -> str:
-    """增强KickOff消息，添加场景内角色信息
-
-    Args:
-        original_content: 原KickOff消息内容
-        actors_appearances_mapping: 角色名称到外观描述的映射
-
-    Returns:
-        str: 增强后的KickOff消息内容
-    """
-    actors_info = _format_stage_actors_info(actors_appearances_mapping)
-
-    return f"""{original_content}
-    
-**场景内角色**  
-
-{actors_info}"""
 
 
 ###################################################################################################################################################################
@@ -250,53 +208,98 @@ def _enter_dungeon_stage(
 
 
 ###################################################################################################################################################################
-def initialize_dungeon_first_entry(tcg_game: TCGGame, dungeon: Dungeon) -> bool:
-    """
-    初始化地下城首次进入
+def setup_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> tuple[bool, str]:
+    """创建地下城的全部游戏实体（敌人和场景）并初始化索引。（幂等）
 
-    仅在首次进入时调用，设置地下城状态并进入第一个关卡。
-    会将所有盟友添加到远征队（ExpeditionMemberComponent）。
+    若实体已创建（dungeon.setup_entities == True），直接返回成功，不重复操作。
+    仅在 dungeon.current_room_index == -1（尚未进入）或 0（已 setup 未进入）时允许调用。
+    地下城进行中（current_room_index > 0）视为真正的错误。
 
     Args:
         tcg_game: TCG游戏实例
         dungeon: 地下城实例
 
     Returns:
-        bool: 是否成功初始化并进入第一个关卡
+        tuple[bool, str]: (是否成功, 结果消息)
     """
-
     if len(dungeon.rooms) == 0:
-        logger.error("地下城没有关卡数据，无法进入！")
-        return False
+        error_msg = f"setup_dungeon 失败: {dungeon.name} 没有关卡数据"
+        logger.error(error_msg)
+        return False, error_msg
 
-    # 验证是否为首次进入（索引必须为-1）
+    # 索引 >= 0 表示地下城已进入，不允许重新 setup
     if dungeon.current_room_index >= 0:
-        logger.error(
-            f"initialize_dungeon_first_entry: 索引异常 = {dungeon.current_room_index}, "
-            f"期望值为 -1（首次进入标记）"
+        error_msg = (
+            f"setup_dungeon 失败: {dungeon.name} 地下城已进入 "
+            f"(current_room_index={dungeon.current_room_index})"
         )
-        return False
+        logger.error(error_msg)
+        return False, error_msg
+    
+    assert not tcg_game.is_player_in_dungeon_stage, "setup_dungeon 失败: 玩家已在地下城场景中！"
+
+    # 幂等：实体已创建则跳过
+    if dungeon.setup_entities:
+        logger.debug(f"setup_dungeon: {dungeon.name} 实体已创建，跳过")
+        return True, f"地下城实体已存在，跳过创建: {dungeon.name}"
+
+    # 创建地下城实体（内部将 setup_entities 置 True），索引保持 -1
+    tcg_game.setup_dungeon_entities(dungeon)
+
+    logger.info(f"setup_dungeon 完成: {dungeon.name}")
+    return True, f"地下城实体创建完成: {dungeon.name}"
+
+
+###################################################################################################################################################################
+def enter_dungeon_first_stage(tcg_game: TCGGame, dungeon: Dungeon) -> tuple[bool, str]:
+    """组建远征队并传送至地下城第一关，启动首个战斗序列。
+
+    必须在 setup_dungeon 成功后调用（依赖 dungeon.setup_entities == True）。
+    负责选择远征队成员（玩家 + 最多1个随机盟友）、执行场景传送、初始化战斗状态。
+
+    Args:
+        tcg_game: TCG游戏实例
+        dungeon: 地下城实例（须已完成 setup_dungeon）
+
+    Returns:
+        tuple[bool, str]: (是否成功, 结果消息)
+    """
+    if not dungeon.setup_entities:
+        error_msg = f"enter_dungeon_first_stage 失败: {dungeon.name} 实体尚未创建，请先调用 setup_dungeon"
+        logger.error(error_msg)
+        return False, error_msg
+
+    if dungeon.current_room_index != -1:
+        error_msg = (
+            f"enter_dungeon_first_stage 失败: {dungeon.name} "
+            f"current_room_index={dungeon.current_room_index}，期望值为 -1（已 setup 未进入）"
+        )
+        logger.error(error_msg)
+        return False, error_msg
 
     # 确保全局不存在远征队成员（无人正在参与远征）
     expedition_members = tcg_game.get_group(
         Matcher(all_of=[ExpeditionMemberComponent])
     ).entities
     assert len(expedition_members) == 0, (
-        f"初始化地下城前必须确保无远征队成员，"
-        f"当前存在 {len(expedition_members)} 个远征队成员"
+        f"enter_dungeon_first_stage: 进入前必须无远征队成员，"
+        f"当前存在 {len(expedition_members)} 个"
     )
 
-    # 初始化地下城状态
+    # 推进索引（-1 → 0），_enter_dungeon_stage 依赖此值判断首次进入消息
     dungeon.current_room_index = 0
-
-    # 构建地下城实体和关卡实体
-    tcg_game.setup_dungeon_entities(dungeon)
 
     # 选择远征队成员（玩家 + 最多1个随机盟友）
     expedition_member_entities = _select_expedition_members(tcg_game, dungeon)
 
-    # 推进到第一关
-    return _enter_dungeon_stage(tcg_game, dungeon, expedition_member_entities)
+    # 传送并初始化战斗
+    if not _enter_dungeon_stage(tcg_game, dungeon, expedition_member_entities):
+        error_msg = f"enter_dungeon_first_stage 失败: 无法进入第一关 {dungeon.name}"
+        logger.error(error_msg)
+        return False, error_msg
+
+    logger.info(f"enter_dungeon_first_stage 完成: {dungeon.name}")
+    return True, f"成功进入地下城: {dungeon.name}"
 
 
 ###################################################################################################################################################################

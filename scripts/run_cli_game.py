@@ -155,7 +155,8 @@ from ai_rpg.services.dungeon_actions import (
     activate_expedition_retreat,
 )
 from ai_rpg.services.dungeon_lifecycle import (
-    initialize_dungeon_first_entry,
+    setup_dungeon,
+    enter_dungeon_first_stage,
     advance_to_next_stage,
     exit_dungeon_and_return_home,
 )
@@ -257,7 +258,6 @@ async def _create_and_initialize_game(
         terminal_game.world,
         terminal_game.player_session,
         save_dir=save_dir,
-        enable_gzip=True,
     )
     return terminal_game
 
@@ -327,7 +327,6 @@ async def _advance_game(
         terminal_game.world,
         terminal_game.player_session,
         save_dir=save_dir,
-        enable_gzip=True,
     )
     return terminal_game
 
@@ -374,7 +373,6 @@ async def _speak_game(
         terminal_game.world,
         terminal_game.player_session,
         save_dir=save_dir,
-        enable_gzip=True,
     )
     return terminal_game
 
@@ -418,7 +416,6 @@ async def _switch_stage_game(
         terminal_game.world,
         terminal_game.player_session,
         save_dir=save_dir,
-        enable_gzip=True,
     )
     return terminal_game
 
@@ -431,7 +428,7 @@ async def _enter_dungeon_game(
 ) -> TCGGame:
     """从存档复位，启动地下城第一关（等同于终端命令 /ed），并归档新状态。
 
-    调用 initialize_dungeon_first_entry 将玩家和队友传送至地下城第一关场景，
+    调用 setup_dungeon 创建地下城实体，再调用 enter_dungeon_first_stage 将玩家和队友传送至第一关场景，
     创建首个 CombatSequence，然后驱动 combat_pipeline.process() 完成战斗初始化
     （场景描述生成、各角色初始状态效果生成、创建第一回合及行动顺序）。
 
@@ -453,8 +450,16 @@ async def _enter_dungeon_game(
         logger.error("地下城全部已结束，没有可进入的地下城")
         return terminal_game
 
-    if not initialize_dungeon_first_entry(terminal_game, terminal_game.current_dungeon):
-        logger.error("传送地下城失败")
+    success, error_detail = setup_dungeon(terminal_game, terminal_game.current_dungeon)
+    if not success:
+        logger.error(f"地下城实体创建失败: {error_detail}")
+        return terminal_game
+
+    success, error_detail = enter_dungeon_first_stage(
+        terminal_game, terminal_game.current_dungeon
+    )
+    if not success:
+        logger.error(f"进入地下城第一关失败: {error_detail}")
         return terminal_game
 
     assert (
@@ -469,7 +474,6 @@ async def _enter_dungeon_game(
         terminal_game.world,
         terminal_game.player_session,
         save_dir=save_dir,
-        enable_gzip=True,
     )
     return terminal_game
 
@@ -520,7 +524,6 @@ async def _draw_cards_game(
         terminal_game.world,
         terminal_game.player_session,
         save_dir=save_dir,
-        enable_gzip=True,
     )
     return terminal_game
 
@@ -596,7 +599,6 @@ async def _draw_cards_specified_game(
         terminal_game.world,
         terminal_game.player_session,
         save_dir=save_dir,
-        enable_gzip=True,
     )
     return terminal_game
 
@@ -655,7 +657,6 @@ async def _play_cards_game(
         terminal_game.world,
         terminal_game.player_session,
         save_dir=save_dir,
-        enable_gzip=True,
     )
     return terminal_game
 
@@ -697,7 +698,6 @@ async def _exit_dungeon_and_return_home_game(
         terminal_game.world,
         terminal_game.player_session,
         save_dir=save_dir,
-        enable_gzip=True,
     )
 
     # 返回
@@ -754,7 +754,6 @@ async def _next_dungeon_game(
         terminal_game.world,
         terminal_game.player_session,
         save_dir=save_dir,
-        enable_gzip=True,
     )
     return terminal_game
 
@@ -801,15 +800,11 @@ async def _retreat_game(
 
     await terminal_game.combat_pipeline.execute()
 
-    # 战斗结束后返回家园
-    # exit_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
-
     # 最后归档
     archive_world(
         terminal_game.world,
         terminal_game.player_session,
         save_dir=save_dir,
-        enable_gzip=True,
     )
 
     # 返回

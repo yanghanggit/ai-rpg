@@ -57,7 +57,8 @@ from ai_rpg.services.dungeon_actions import (
     activate_random_enemy_card_draws,
 )
 from ai_rpg.services.dungeon_lifecycle import (
-    initialize_dungeon_first_entry,
+    setup_dungeon,
+    enter_dungeon_first_stage,
     advance_to_next_stage,
     exit_dungeon_and_return_home,
 )
@@ -333,10 +334,15 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
             return
 
         logger.debug(f"玩家输入 = {usr_input}, 准备传送地下城")
-        if not initialize_dungeon_first_entry(
+        success, error_detail = setup_dungeon(
             terminal_game, terminal_game.current_dungeon
-        ):
-            assert False, "传送地下城失败！"
+        )
+        assert success, f"地下城实体创建失败！{error_detail}"
+
+        success, error_detail = enter_dungeon_first_stage(
+            terminal_game, terminal_game.current_dungeon
+        )
+        assert success, f"进入地下城第一关失败！{error_detail}"
 
         assert (
             terminal_game.current_dungeon.current_room is not None

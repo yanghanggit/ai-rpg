@@ -116,7 +116,10 @@ class Dungeon(BaseModel):
     name: str
     rooms: List[DungeonRoom]
     description: str
-    current_room_index: int = -1
+    current_room_index: int = -1  # 当前所在房间索引，初始为 -1，表示尚未进入任何房间
+    setup_entities: bool = (
+        False  # 是否已经根据模型创建了实体（敌人和场景），默认 False，创建后置 True
+    )
 
     ########################################################################################################################
     @property

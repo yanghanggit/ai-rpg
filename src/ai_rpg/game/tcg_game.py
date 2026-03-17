@@ -101,6 +101,10 @@ class TCGGame(RPGGame):
             dungeon_model: 地下城数据模型
         """
 
+        if dungeon_model.setup_entities:
+            logger.warning(f"地下城实体已设置，跳过创建: {dungeon_model.name}")
+            return
+
         # 加一步测试: 不可以存在！如果存在说明没有清空。
         for actor in dungeon_model.actors:
             actor_entity = self.get_actor_entity(actor.name)
@@ -117,11 +121,16 @@ class TCGGame(RPGGame):
                 room.stage.stage_profile.type == StageType.DUNGEON
             ), "stage_entity is not dungeon type"
 
-        # 正式创建。。。。。。。。。
+        logger.debug(f"正在根据地下城模型创建实体: {dungeon_model.name}")
+
         # 创建地下城的怪物。
         self._create_actor_entities(dungeon_model.actors)
-        ## 创建地下城的场景
+
+        # 创建地下城的场景
         self._create_stage_entities([room.stage for room in dungeon_model.rooms])
+
+        # 设置标记，避免重复创建。
+        dungeon_model.setup_entities = True
 
     #######################################################################################################################################
     def teardown_dungeon_entities(self, dungeon_model: Dungeon) -> None:

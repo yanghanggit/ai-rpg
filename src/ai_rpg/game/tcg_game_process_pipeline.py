@@ -143,10 +143,11 @@ def create_combat_pipeline(
     processors.add(RetreatActionSystem(tcg_game))
     processors.add(ArbitrationActionSystem(tcg_game))
 
-    # 状态效果评估系统（AI 生成新的状态效果，内部有状态守卫）
-    processors.add(StatusEffectsEvaluationSystem(tcg_game))
     # 检查战斗结果系统
     processors.add(CombatOutcomeSystem(tcg_game))
+
+    # 状态效果评估系统（AI 生成新的状态效果，内部有状态守卫）
+    processors.add(StatusEffectsEvaluationSystem(tcg_game))
 
     # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫）
     processors.add(CombatArchiveSystem(tcg_game))

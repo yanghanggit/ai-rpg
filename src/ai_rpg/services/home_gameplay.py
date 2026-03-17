@@ -18,7 +18,8 @@ from .home_actions import (
     activate_stage_plan,
 )
 from .dungeon_lifecycle import (
-    initialize_dungeon_first_entry,
+    setup_dungeon,
+    enter_dungeon_first_stage,
 )
 from ..models import (
     HomePlayerActionRequest,
@@ -299,22 +300,33 @@ async def home_enter_dungeon(
         )
 
         # 检查地下城是否存在可用的关卡
-        if len(rpg_game.current_dungeon.rooms) == 0:
-            logger.warning(
-                f"玩家 {payload.user_name} 尝试传送地下城失败: 当前地下城没有可用关卡"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="当前没有可用的地下城关卡",
-            )
+        # if len(rpg_game.current_dungeon.rooms) == 0:
+        #     logger.warning(
+        #         f"玩家 {payload.user_name} 尝试传送地下城失败: 当前地下城没有可用关卡"
+        #     )
+        #     raise HTTPException(
+        #         status_code=status.HTTP_404_NOT_FOUND,
+        #         detail="当前没有可用的地下城关卡",
+        #     )
 
-        # 执行地下城首次进入初始化
-        # 初始化包括设置玩家状态、加载地下城场景、准备战斗环境等
-        if not initialize_dungeon_first_entry(rpg_game, rpg_game.current_dungeon):
-            logger.error(f"玩家 {payload.user_name} 地下城初始化失败")
+        # 第一步：创建地下城实体（幂等）
+        success, error_detail = setup_dungeon(rpg_game, rpg_game.current_dungeon)
+        if not success:
+            logger.error(f"玩家 {payload.user_name} 地下城实体创建失败: {error_detail}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="地下城初始化失败",
+                detail="地下城实体创建失败",
+            )
+
+        # 第二步：组建远征队并进入第一关
+        success, error_detail = enter_dungeon_first_stage(
+            rpg_game, rpg_game.current_dungeon
+        )
+        if not success:
+            logger.error(f"玩家 {payload.user_name} 进入地下城失败: {error_detail}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="进入地下城失败",
             )
 
         # 返回传送成功响应

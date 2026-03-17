@@ -159,6 +159,8 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
         3. 解析响应并追加到 CombatStatsComponent.status_effects
         4. 添加新增状态效果通知到角色上下文
         """
+
+        # 仅在战斗进行中时触发
         if not self._game.current_dungeon.is_ongoing:
             return
 
@@ -205,7 +207,7 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
             )
 
         # 并发调用所有 LLM
-        # logger.debug(f"开始并发评估 {len(chat_clients)} 个角色的状态效果...")
+        logger.debug(f"开始并发评估 {len(chat_clients)} 个角色的状态效果...")
         await ChatClient.batch_chat(clients=chat_clients)
 
         # 处理每个角色的响应
@@ -231,7 +233,6 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
         try:
             # 获取 LLM 响应
             ai_response = chat_client.response_content
-            # logger.debug(f"[{entity.name}] 状态效果评估原始响应: {ai_response}")
 
             # 提取 JSON
             json_content = extract_json_from_code_block(ai_response)
@@ -240,11 +241,6 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
             format_response = StatusEffectsEvaluationResponse.model_validate_json(
                 json_content
             )
-
-            # logger.debug(
-            #     f"[{entity.name}] 状态效果评估成功: "
-            #     f"添加{len(format_response.add_effects)}个"
-            # )
 
             # 添加新效果到现有列表
             if format_response.add_effects:
@@ -259,11 +255,6 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
                 )
                 self._game.add_human_message(entity=entity, message_content=added_msg)
 
-                # 记录日志
-                # logger.debug(
-                #     f"[{entity.name}] 新增状态效果: "
-                #     f"{[e.name for e in format_response.add_effects]}"
-                # )
             else:
                 logger.debug(f"[{entity.name}] 本回合无新增状态效果")
 

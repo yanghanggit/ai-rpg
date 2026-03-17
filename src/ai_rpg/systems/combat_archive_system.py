@@ -78,7 +78,7 @@ def _get_combat_ally_actors(game: TCGGame) -> List[Entity]:
     处理流程：
     1. 获取玩家实体（玩家所在场景即为战斗场景）
     2. 获取玩家所在的场景实体
-    3. 获取该场景上的所有角色（使用get_actors_on_stage）
+    3. 获取该场景上的所有角色（使用get_actors_in_stage）
     4. 过滤出带有ExpeditionMemberComponent的角色
 
     Args:
@@ -99,11 +99,11 @@ def _get_combat_ally_actors(game: TCGGame) -> List[Entity]:
     assert current_stage_entity is not None, "无法获取当前场景实体！"
 
     # 获取场景上的所有角色（包括存活和死亡的）
-    actors_on_stage = game.get_actors_on_stage(player_entity)
+    actors_in_stage = game.get_actors_in_stage(player_entity)
 
     # 过滤出远征队成员
     ally_actors = [
-        actor for actor in actors_on_stage if actor.has(ExpeditionMemberComponent)
+        actor for actor in actors_in_stage if actor.has(ExpeditionMemberComponent)
     ]
 
     return ally_actors

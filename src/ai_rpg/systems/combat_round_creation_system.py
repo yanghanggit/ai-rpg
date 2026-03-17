@@ -126,8 +126,8 @@ class CombatRoundCreationSystem(ExecuteProcessor):
         assert player_entity is not None, "player_entity is None"
 
         # 所有角色
-        actors_on_stage = self._game.get_alive_actors_on_stage(player_entity)
-        assert len(actors_on_stage) > 0, "actors_on_stage is empty"
+        actors_in_stage = self._game.get_alive_actors_in_stage(player_entity)
+        assert len(actors_in_stage) > 0, "actors_in_stage is empty"
 
         # 当前舞台(必然是地下城！)
         stage_entity = self._game.resolve_stage_entity(player_entity)
@@ -136,12 +136,12 @@ class CombatRoundCreationSystem(ExecuteProcessor):
 
         # 根据配置的策略排序角色行动顺序
         if self._strategy == ActionOrderStrategy.RANDOM:
-            sorted_actors = self._sort_actors_random(actors_on_stage)
+            sorted_actors = self._sort_actors_random(actors_in_stage)
         elif self._strategy == ActionOrderStrategy.CREATION_ORDER:
-            sorted_actors = self._sort_actors_by_creation_order(actors_on_stage)
+            sorted_actors = self._sort_actors_by_creation_order(actors_in_stage)
         else:
             logger.warning(f"未知的行动顺序策略: {self._strategy}，使用随机策略")
-            sorted_actors = self._sort_actors_random(actors_on_stage)
+            sorted_actors = self._sort_actors_random(actors_in_stage)
 
         # 设置回合的环境描写
         action_order = [entity.name for entity in sorted_actors]

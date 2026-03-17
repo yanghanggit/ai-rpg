@@ -362,7 +362,7 @@ async def _execute_home_pipeline_task(
 
         async with current_room._lock:
             rpg_game = await _validate_player_at_home(user_name, game_server)
-            await rpg_game.home_pipeline.process()
+            await rpg_game._home_pipeline.process()
 
         task_record = game_server.get_task(task_id)
         if task_record is not None:

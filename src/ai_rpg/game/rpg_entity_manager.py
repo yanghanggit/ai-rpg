@@ -29,7 +29,7 @@ class InteractionError(IntEnum):
 
     NONE = 0  # 无错误
     TARGET_NOT_FOUND = 1  # 目标未找到
-    INITIATOR_NOT_ON_STAGE = 2  # 发起者不在场景中
+    INITIATOR_NOT_IN_STAGE = 2  # 发起者不在场景中
     DIFFERENT_STAGES = 3  # 不在同一场景
 
 
@@ -311,7 +311,7 @@ class RPGEntityManager(Context):
         return None
 
     ###############################################################################################################################################
-    def get_actors_on_stage(self, entity: Entity) -> Set[Entity]:
+    def get_actors_in_stage(self, entity: Entity) -> Set[Entity]:
         """获取指定场景上的所有 Actor 实体。
 
         返回与传入实体在同一场景中的所有 Actor（包括活着和死亡的）。
@@ -348,7 +348,7 @@ class RPGEntityManager(Context):
         return ret
 
     ###############################################################################################################################################
-    def get_alive_actors_on_stage(self, entity: Entity) -> Set[Entity]:
+    def get_alive_actors_in_stage(self, entity: Entity) -> Set[Entity]:
         """获取指定场景上存活的 Actor 实体。
 
         过滤掉带有 DeathComponent 的 Actor，只返回活着的 Actor。
@@ -359,11 +359,11 @@ class RPGEntityManager(Context):
         Returns:
             Set[Entity]: 该场景上存活的 Actor 实体集合（不包括已死亡的）
         """
-        ret = self.get_actors_on_stage(entity)
+        ret = self.get_actors_in_stage(entity)
         return {actor for actor in ret if not actor.has(DeathComponent)}
 
     ###############################################################################################################################################
-    def get_actor_appearances_on_stage(self, entity: Entity) -> Dict[str, str]:
+    def get_actor_appearances_in_stage(self, entity: Entity) -> Dict[str, str]:
         """获取场景上存活 Actor 的外观信息映射。
 
         仅返回存活且具有 AppearanceComponent 的 Actor 的外观信息。
@@ -376,7 +376,7 @@ class RPGEntityManager(Context):
             Dict[str, str]: 角色名称到外观描述的映射 {角色名: 外观描述}
         """
         ret: Dict[str, str] = {}
-        for actor in self.get_actors_on_stage(entity):
+        for actor in self.get_actors_in_stage(entity):
             if actor.has(AppearanceComponent):
                 final_appearance = actor.get(AppearanceComponent)
                 ret.setdefault(final_appearance.name, final_appearance.appearance)
@@ -462,7 +462,7 @@ class RPGEntityManager(Context):
 
         current_stage_entity = self.resolve_stage_entity(initiator_entity)
         if current_stage_entity is None:
-            return InteractionError.INITIATOR_NOT_ON_STAGE
+            return InteractionError.INITIATOR_NOT_IN_STAGE
 
         target_stage_entity = self.resolve_stage_entity(actor_entity)
         if target_stage_entity != current_stage_entity:

@@ -176,7 +176,7 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
         assert current_stage_entity is not None
 
         # 参与战斗的角色实体列表
-        actor_entities = self._game.get_alive_actors_on_stage(player_entity)
+        actor_entities = self._game.get_alive_actors_in_stage(player_entity)
         assert len(actor_entities) > 0, "不可能出现没人参与战斗的情况！"
 
         # 为每个参战角色创建评估任务

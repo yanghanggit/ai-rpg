@@ -58,17 +58,17 @@ class TCGGame(RPGGame):
     ###############################################################################################################################################
     @property
     def current_dungeon(self) -> Dungeon:
-        return self.world.dungeon
+        return self._world.dungeon
 
     ###############################################################################################################################################
-    @property
-    def home_pipeline(self) -> RPGGameProcessPipeline:
-        return self._home_pipeline
+    # @property
+    # def home_pipeline(self) -> RPGGameProcessPipeline:
+    #     return self._home_pipeline
 
     ###############################################################################################################################################
-    @property
-    def combat_pipeline(self) -> RPGGameProcessPipeline:
-        return self._combat_pipeline
+    # @property
+    # def combat_pipeline(self) -> RPGGameProcessPipeline:
+    #     return self._combat_pipeline
 
     ###############################################################################################################################################
 

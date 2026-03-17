@@ -81,5 +81,5 @@ async def get_session_messages(
         )
 
     # 根据游戏类型获取增量消息
-    messages = rpg_game.player_session.get_messages_since(last_sequence_id)
+    messages = rpg_game._player_session.get_messages_since(last_sequence_id)
     return SessionMessageResponse(session_messages=messages)

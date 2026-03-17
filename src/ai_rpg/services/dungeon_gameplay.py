@@ -395,7 +395,7 @@ async def dungeon_exit(
             )
 
         # 退出地下城并返回家园
-        exit_dungeon_and_return_home(tcg_game, tcg_game.world.dungeon)
+        exit_dungeon_and_return_home(tcg_game, tcg_game._world.dungeon)
         logger.info(f"玩家 {payload.user_name} 成功返回家园")
 
         # 返回
@@ -682,7 +682,7 @@ async def _execute_init_combat_task(
             if not rpg_game.current_dungeon.is_initializing:
                 raise ValueError("战斗未处于开始阶段")
 
-            await rpg_game.combat_pipeline.process()
+            await rpg_game._combat_pipeline.process()
 
         task_record = game_server.get_task(task_id)
         if task_record is not None:
@@ -734,7 +734,7 @@ async def _execute_retreat_task(
             assert isinstance(rpg_game, TCGGame), "Invalid game type"
 
             # 执行战斗流程让 CombatOutcomeSystem 检测到角色死亡并判定失败
-            await rpg_game.combat_pipeline.execute()
+            await rpg_game._combat_pipeline.execute()
 
             # 确认已进入 post_combat 状态
             if not rpg_game.current_dungeon.is_post_combat:
@@ -797,7 +797,7 @@ async def _execute_draw_cards_task(
             # 推进战斗流程处理抽牌
             # 注意: 这里会阻塞当前协程直到战斗流程处理完成
             # 但因为使用了 asyncio.create_task，这个阻塞只影响后台任务，不影响 API 响应
-            await rpg_game.combat_pipeline.process()
+            await rpg_game._combat_pipeline.process()
 
         # 保存结果
         task_record = game_server.get_task(task_id)
@@ -855,7 +855,7 @@ async def _execute_play_cards_task(
                 raise ValueError(f"出牌失败: {message}")
 
             # 推进战斗流程处理出牌
-            await rpg_game.combat_pipeline.process()
+            await rpg_game._combat_pipeline.process()
 
         # 保存结果
         task_record = game_server.get_task(task_id)

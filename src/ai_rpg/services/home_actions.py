@@ -142,11 +142,11 @@ def activate_stage_plan(tcg_game: TCGGame) -> Tuple[bool, str]:
         return False, error_detail
 
     # 获取当前场景中的所有角色实体，验证至少有一个角色存在
-    actors_on_stage = tcg_game.get_actors_on_stage(player_entity)
-    assert len(actors_on_stage) > 0, f"当前场景没有角色，无法激活行动计划！"
+    actors_in_stage = tcg_game.get_actors_in_stage(player_entity)
+    assert len(actors_in_stage) > 0, f"当前场景没有角色，无法激活行动计划！"
 
     #
-    for actor_entity in actors_on_stage:
+    for actor_entity in actors_in_stage:
 
         assert actor_entity.has(
             AllyComponent
@@ -155,7 +155,7 @@ def activate_stage_plan(tcg_game: TCGGame) -> Tuple[bool, str]:
         logger.debug(f"为角色 {actor_entity.name} 添加 PlanAction")
         actor_entity.replace(PlanAction, actor_entity.name)
 
-    return True, f"成功为 {len(actors_on_stage)} 个角色添加 PlanAction"
+    return True, f"成功为 {len(actors_in_stage)} 个角色添加 PlanAction"
 
 
 ###################################################################################################################################################################

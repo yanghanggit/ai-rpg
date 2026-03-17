@@ -28,29 +28,29 @@ class StageDescriptionResponse(BaseModel):
 
 #######################################################################################################################################
 def _build_stage_description_prompt(
-    actor_appearances_on_stage: Dict[str, str],
+    actor_appearances_in_stage: Dict[str, str],
 ) -> str:
     """为场景描述请求构建 prompt。
 
     指示 AI 仅描述场景环境，不得包含角色信息。
 
     Args:
-        actor_appearances_on_stage: 角色名称 → 外貌描述的映射。
+        actor_appearances_in_stage: 角色名称 → 外貌描述的映射。
 
     Returns:
         包含角色列表与 JSON 输出格式要求的 prompt 字符串。
     """
-    actor_appearances_on_stage_info = []
-    for actor_name, appearance in actor_appearances_on_stage.items():
-        actor_appearances_on_stage_info.append(f"{actor_name}: {appearance}")
-    if len(actor_appearances_on_stage_info) == 0:
-        actor_appearances_on_stage_info.append("无")
+    actor_appearances_in_stage_info = []
+    for actor_name, appearance in actor_appearances_in_stage.items():
+        actor_appearances_in_stage_info.append(f"{actor_name}: {appearance}")
+    if len(actor_appearances_in_stage_info) == 0:
+        actor_appearances_in_stage_info.append("无")
 
     return f"""# 指令！请你输出你的场景描述。并以 JSON 格式输出。
 
 ## 场景内角色
 
-{"\n\n".join(actor_appearances_on_stage_info)}
+{"\n\n".join(actor_appearances_in_stage_info)}
 
 ## 输出格式(JSON)
 
@@ -121,10 +121,10 @@ class StageDescriptionSystem(ExecuteProcessor):
                 )
                 continue
 
-            actor_appearances_on_stage: Dict[str, str] = (
-                self._game.get_actor_appearances_on_stage(stage_entity)
+            actor_appearances_in_stage: Dict[str, str] = (
+                self._game.get_actor_appearances_in_stage(stage_entity)
             )
-            prompt = _build_stage_description_prompt(actor_appearances_on_stage)
+            prompt = _build_stage_description_prompt(actor_appearances_in_stage)
             pending.append((stage_entity, prompt))
 
         return pending

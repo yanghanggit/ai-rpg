@@ -153,7 +153,7 @@ async def _run_game(
     ImageClient.initialize_url_config(server_configuration)
 
     assert (
-        len(terminal_game.world.entities_serialization) == 0
+        len(terminal_game._world.entities_serialization) == 0
     ), "测试阶段，游戏中不应该有实体数据！"
     terminal_game.build_from_blueprint().flush_entities()
 
@@ -215,7 +215,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             return
 
         # 调用一次 战斗执行 pipeline 开始进行推理，从而抽牌。
-        await terminal_game.combat_pipeline.process()
+        await terminal_game._combat_pipeline.process()
 
     elif usr_input == "/pc":
 
@@ -233,7 +233,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         # 执行打牌行动（内部会自动确保所有角色都有后备牌）
         success, message = activate_play_cards(terminal_game)
         if success:
-            await terminal_game.combat_pipeline.process()
+            await terminal_game._combat_pipeline.process()
         else:
             logger.error(f"打牌失败: {message}")
 
@@ -247,7 +247,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
             return
 
         # logger.debug(f"玩家输入 = {usr_input}, 准备传送回家")
-        exit_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
+        exit_dungeon_and_return_home(terminal_game, terminal_game._world.dungeon)
 
     elif usr_input == "/and":  # "/advance_next_dungeon"
 
@@ -269,7 +269,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
 
         # logger.info(f"玩家输入 = {usr_input}, 进入下一关 = {next_level.name}")
         advance_to_next_stage(terminal_game, terminal_game.current_dungeon)
-        await terminal_game.combat_pipeline.process()
+        await terminal_game._combat_pipeline.process()
 
     elif usr_input == "/rtt":  # "/retreat"
 
@@ -287,7 +287,7 @@ async def _process_dungeon(terminal_game: TCGGame, usr_input: str) -> None:
         logger.info(f"撤退动作激活成功: {message}")
 
         # 调用一次 combat_execution_pipeline 让 RetreatActionSystem 和 CombatOutcomeSystem 正常跑一次
-        await terminal_game.combat_pipeline.execute()
+        await terminal_game._combat_pipeline.execute()
 
         # 注意：撤退后需要手动执行 /th 命令退出地下城
         # 设计理念：撤退只负责标记失败并进入 post_combat，退出地下城统一由 /th 处理
@@ -323,7 +323,7 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
             logger.debug(f"激活行动计划失败: {error_detail}")
 
         # 执行NPC家园pipeline
-        await terminal_game.home_pipeline.process()
+        await terminal_game._home_pipeline.process()
 
     elif usr_input == "/ed":
 
@@ -350,7 +350,7 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
         assert (
             terminal_game.current_dungeon.current_room.combat.state != CombatState.NONE
         ), f"{usr_input} 没有战斗可以进行！！！！"
-        await terminal_game.combat_pipeline.process()
+        await terminal_game._combat_pipeline.process()
 
     elif usr_input.startswith("/speak"):
 
@@ -367,7 +367,7 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
 
         if success:
             # player 执行一次, 这次基本是忽略推理标记的，所有NPC不推理。
-            await terminal_game.home_pipeline.process()
+            await terminal_game._home_pipeline.process()
 
     elif usr_input.startswith("/switch_stage"):
 
@@ -379,7 +379,7 @@ async def _process_home(terminal_game: TCGGame, usr_input: str) -> None:
 
         if success:
             # player 执行一次, 这次基本是忽略推理标记的，所有NPC不推理。
-            await terminal_game.home_pipeline.process()
+            await terminal_game._home_pipeline.process()
 
     else:
         logger.error(
@@ -414,7 +414,7 @@ async def _handle_player_turn(terminal_game: TCGGame) -> None:
 
     # 其他状态下的玩家输入！！！！！！
     usr_input = input(
-        f"[{terminal_game.player_session.name}/{player_stage_entity.name}/{player_actor_entity.name}]:"
+        f"[{terminal_game._player_session.name}/{player_stage_entity.name}/{player_actor_entity.name}]:"
     )
     usr_input = usr_input.strip().lower()
 
@@ -422,7 +422,7 @@ async def _handle_player_turn(terminal_game: TCGGame) -> None:
     if usr_input == "/q":
         # 退出游戏
         logger.debug(
-            f"玩家 主动 退出游戏 = {terminal_game.player_session.name}, {player_stage_entity.name}"
+            f"玩家 主动 退出游戏 = {terminal_game._player_session.name}, {player_stage_entity.name}"
         )
         terminal_game.should_terminate = True
         return

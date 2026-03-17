@@ -201,7 +201,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         assert environment_comp is not None
 
         # 参与战斗的角色实体列表
-        actor_entities = self._game.get_alive_actors_on_stage(player_entity)
+        actor_entities = self._game.get_alive_actors_in_stage(player_entity)
         assert len(actor_entities) > 0, "不可能出现没人参与战斗的情况！"
 
         # 第一步：为每个角色生成战斗初始化提示词并创建ChatClient

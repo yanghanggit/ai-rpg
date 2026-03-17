@@ -349,7 +349,7 @@ class EnemyDrawDecisionSystem(ReactiveProcessor):
             角色名称列表
         """
         # 获取场景上所有存活的角色
-        actor_entities = self._game.get_alive_actors_on_stage(entity)
+        actor_entities = self._game.get_alive_actors_in_stage(entity)
 
         # 返回所有角色名称（包括自己）
         return [actor.name for actor in actor_entities]
@@ -392,7 +392,7 @@ class EnemyDrawDecisionSystem(ReactiveProcessor):
             return []
 
         # 获取场景上所有存活角色的名称（包括自己/队友/敌人）
-        actor_entities = self._game.get_alive_actors_on_stage(entity)
+        actor_entities = self._game.get_alive_actors_in_stage(entity)
         valid_names = {actor.name for actor in actor_entities}
 
         # 筛选有效目标

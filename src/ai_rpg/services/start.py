@@ -91,7 +91,7 @@ async def start(
 
     # 根据蓝图构建游戏实例，并刷新实体数据到world中
     assert (
-        len(room._tcg_game.world.entities_serialization) == 0
+        len(room._tcg_game._world.entities_serialization) == 0
     ), "测试阶段，游戏中不应该有实体数据！"
     room._tcg_game.build_from_blueprint().flush_entities()
 

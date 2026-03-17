@@ -582,7 +582,7 @@ class HomeActorSystem(ReactiveProcessor):
         Returns:
             其他角色的外观描述（角色名 -> 外观）
         """
-        appearances = self._game.get_actor_appearances_on_stage(current_stage)
+        appearances = self._game.get_actor_appearances_in_stage(current_stage)
         appearances.pop(actor_entity.name, None)
         return appearances
 

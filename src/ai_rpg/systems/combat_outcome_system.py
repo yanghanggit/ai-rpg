@@ -85,13 +85,13 @@ class CombatOutcomeSystem(ExecuteProcessor):
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
 
-        actors_on_stage = self._game.get_actors_on_stage(player_entity)
-        assert len(actors_on_stage) > 0, f"entities with actions: {actors_on_stage}"
+        actors_in_stage = self._game.get_actors_in_stage(player_entity)
+        assert len(actors_in_stage) > 0, f"entities with actions: {actors_in_stage}"
 
         active_enemies: Set[Entity] = set()
         defeated_enemies: Set[Entity] = set()
 
-        for entity in actors_on_stage:
+        for entity in actors_in_stage:
 
             if not entity.has(EnemyComponent):
                 continue
@@ -120,13 +120,13 @@ class CombatOutcomeSystem(ExecuteProcessor):
         player_entity = self._game.get_player_entity()
         assert player_entity is not None, "Player entity should not be None."
 
-        actors_on_stage = self._game.get_actors_on_stage(player_entity)
-        assert len(actors_on_stage) > 0, f"entities with actions: {actors_on_stage}"
+        actors_in_stage = self._game.get_actors_in_stage(player_entity)
+        assert len(actors_in_stage) > 0, f"entities with actions: {actors_in_stage}"
 
         current_allies: Set[Entity] = set()
         defeated_allies: Set[Entity] = set()
 
-        for entity in actors_on_stage:
+        for entity in actors_in_stage:
 
             if not entity.has(ExpeditionMemberComponent):
                 continue
@@ -163,10 +163,10 @@ class CombatOutcomeSystem(ExecuteProcessor):
             combat_stage_entity is not None
         ), "Player's stage entity should not be None."
 
-        actors_on_stage = self._game.get_actors_on_stage(player_entity)
-        assert len(actors_on_stage) > 0, f"entities with actions: {actors_on_stage}"
+        actors_in_stage = self._game.get_actors_in_stage(player_entity)
+        assert len(actors_in_stage) > 0, f"entities with actions: {actors_in_stage}"
 
-        for entity in actors_on_stage:
+        for entity in actors_in_stage:
             if not entity.has(ExpeditionMemberComponent):
                 continue
 

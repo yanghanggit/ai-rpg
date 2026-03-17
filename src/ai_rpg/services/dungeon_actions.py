@@ -28,7 +28,7 @@ from langchain_core.messages import AIMessage
 
 
 ###################################################################################################################################################################
-def _get_alive_expedition_members_on_stage(
+def _get_alive_expedition_members_in_stage(
     anchor_entity: Entity, tcg_game: TCGGame
 ) -> List[Entity]:
     """获取锚点实体所在场景中所有存活的远征队成员
@@ -44,14 +44,14 @@ def _get_alive_expedition_members_on_stage(
     Returns:
         存活的远征队成员实体列表
     """
-    actor_entities = tcg_game.get_alive_actors_on_stage(anchor_entity)
+    actor_entities = tcg_game.get_alive_actors_in_stage(anchor_entity)
     return [
         entity for entity in actor_entities if entity.has(ExpeditionMemberComponent)
     ]
 
 
 ###################################################################################################################################################################
-def _get_alive_enemies_on_stage(
+def _get_alive_enemies_in_stage(
     anchor_entity: Entity, tcg_game: TCGGame
 ) -> List[Entity]:
     """获取锚点实体所在场景中所有存活的敌方
@@ -66,7 +66,7 @@ def _get_alive_enemies_on_stage(
     Returns:
         存活的敌方实体列表
     """
-    actor_entities = tcg_game.get_alive_actors_on_stage(anchor_entity)
+    actor_entities = tcg_game.get_alive_actors_in_stage(anchor_entity)
     return [entity for entity in actor_entities if entity.has(EnemyComponent)]
 
 
@@ -92,10 +92,10 @@ def activate_random_expedition_member_card_draws(
         player_entity is not None
     ), "activate_random_expedition_member_card_draws: player_entity is None"
 
-    expedition_member_entities = _get_alive_expedition_members_on_stage(
+    expedition_member_entities = _get_alive_expedition_members_in_stage(
         player_entity, tcg_game
     )
-    enemy_entities = _get_alive_enemies_on_stage(player_entity, tcg_game)
+    enemy_entities = _get_alive_enemies_in_stage(player_entity, tcg_game)
 
     if len(expedition_member_entities) == 0:
         error_msg = "激活远征队成员抽牌失败: 没有存活的远征队成员"
@@ -217,7 +217,7 @@ def activate_specified_expedition_member_card_draws(
     # 过滤合法目标（场上存活）
     valid_target_entities = [
         entity
-        for entity in tcg_game.get_alive_actors_on_stage(expedition_member_entity)
+        for entity in tcg_game.get_alive_actors_in_stage(expedition_member_entity)
         if entity.name in set(target_names)
     ]
     if len(valid_target_entities) == 0:
@@ -293,8 +293,8 @@ def activate_random_enemy_card_draws(
         player_entity is not None
     ), "activate_random_enemy_card_draws: player_entity is None"
 
-    enemy_entities = _get_alive_enemies_on_stage(player_entity, tcg_game)
-    expedition_member_entities = _get_alive_expedition_members_on_stage(
+    enemy_entities = _get_alive_enemies_in_stage(player_entity, tcg_game)
+    expedition_member_entities = _get_alive_expedition_members_in_stage(
         player_entity, tcg_game
     )
 
@@ -403,9 +403,9 @@ def activate_play_cards(
     player_entity = tcg_game.get_player_entity()
     assert player_entity is not None, "activate_play_cards: player_entity is None"
 
-    alive_combat_actor_entities = _get_alive_expedition_members_on_stage(
+    alive_combat_actor_entities = _get_alive_expedition_members_in_stage(
         player_entity, tcg_game
-    ) + _get_alive_enemies_on_stage(player_entity, tcg_game)
+    ) + _get_alive_enemies_in_stage(player_entity, tcg_game)
 
     # 一个个验证，提前发现问题避免部分成功的尴尬
     for actor_entity in alive_combat_actor_entities:
@@ -543,9 +543,9 @@ def _ensure_all_actors_have_fallback_cards(
         player_entity is not None
     ), "_ensure_all_actors_have_fallback_cards: player_entity is None"
 
-    alive_combat_actor_entities = _get_alive_expedition_members_on_stage(
+    alive_combat_actor_entities = _get_alive_expedition_members_in_stage(
         player_entity, tcg_game
-    ) + _get_alive_enemies_on_stage(player_entity, tcg_game)
+    ) + _get_alive_enemies_in_stage(player_entity, tcg_game)
     current_round_number = len(tcg_game.current_dungeon.current_rounds or [])
 
     assert current_round_number >= 0, "current_round_number must be non-negative"

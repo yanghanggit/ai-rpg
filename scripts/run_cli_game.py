@@ -237,7 +237,7 @@ async def _create_and_initialize_game(
     ImageClient.initialize_url_config(server_configuration)
 
     assert (
-        len(terminal_game.world.entities_serialization) == 0
+        len(terminal_game._world.entities_serialization) == 0
     ), "测试阶段，游戏中不应该有实体数据！"
     terminal_game.build_from_blueprint().flush_entities()
 
@@ -255,8 +255,8 @@ async def _create_and_initialize_game(
 
     # 持久化游戏世界数据到存档目录，并启用 gzip 快照功能
     archive_world(
-        terminal_game.world,
-        terminal_game.player_session,
+        terminal_game._world,
+        terminal_game._player_session,
         save_dir=save_dir,
     )
     return terminal_game
@@ -321,11 +321,11 @@ async def _advance_game(
     if not success:
         logger.debug(f"激活行动计划失败: {error_detail}")
 
-    await terminal_game.home_pipeline.process()
+    await terminal_game._home_pipeline.process()
 
     archive_world(
-        terminal_game.world,
-        terminal_game.player_session,
+        terminal_game._world,
+        terminal_game._player_session,
         save_dir=save_dir,
     )
     return terminal_game
@@ -367,11 +367,11 @@ async def _speak_game(
         logger.error(f"激活对话行动失败: target={target}")
         return terminal_game
 
-    await terminal_game.home_pipeline.process()
+    await terminal_game._home_pipeline.process()
 
     archive_world(
-        terminal_game.world,
-        terminal_game.player_session,
+        terminal_game._world,
+        terminal_game._player_session,
         save_dir=save_dir,
     )
     return terminal_game
@@ -410,11 +410,11 @@ async def _switch_stage_game(
         logger.error(f"激活场景切换失败: stage={stage_name}")
         return terminal_game
 
-    await terminal_game.home_pipeline.process()
+    await terminal_game._home_pipeline.process()
 
     archive_world(
-        terminal_game.world,
-        terminal_game.player_session,
+        terminal_game._world,
+        terminal_game._player_session,
         save_dir=save_dir,
     )
     return terminal_game
@@ -468,11 +468,11 @@ async def _enter_dungeon_game(
     assert (
         terminal_game.current_dungeon.current_room.combat.state != CombatState.NONE
     ), "没有战斗可以进行"
-    await terminal_game.combat_pipeline.process()
+    await terminal_game._combat_pipeline.process()
 
     archive_world(
-        terminal_game.world,
-        terminal_game.player_session,
+        terminal_game._world,
+        terminal_game._player_session,
         save_dir=save_dir,
     )
     return terminal_game
@@ -518,11 +518,11 @@ async def _draw_cards_game(
         logger.error(f"激活Enemy抽牌失败: {message}")
         return terminal_game
 
-    await terminal_game.combat_pipeline.process()
+    await terminal_game._combat_pipeline.process()
 
     archive_world(
-        terminal_game.world,
-        terminal_game.player_session,
+        terminal_game._world,
+        terminal_game._player_session,
         save_dir=save_dir,
     )
     return terminal_game
@@ -593,11 +593,11 @@ async def _draw_cards_specified_game(
         logger.error(f"激活Enemy抽牌失败: {message}")
         return terminal_game
 
-    await terminal_game.combat_pipeline.process()
+    await terminal_game._combat_pipeline.process()
 
     archive_world(
-        terminal_game.world,
-        terminal_game.player_session,
+        terminal_game._world,
+        terminal_game._player_session,
         save_dir=save_dir,
     )
     return terminal_game
@@ -648,14 +648,14 @@ async def _play_cards_game(
         logger.error(f"打牌失败: {message}")
         return terminal_game
 
-    await terminal_game.combat_pipeline.process()
+    await terminal_game._combat_pipeline.process()
 
     if terminal_game.current_dungeon.is_post_combat:
         logger.debug("在本次处理中战斗已结束，进入后处理阶段")
 
     archive_world(
-        terminal_game.world,
-        terminal_game.player_session,
+        terminal_game._world,
+        terminal_game._player_session,
         save_dir=save_dir,
     )
     return terminal_game
@@ -691,12 +691,12 @@ async def _exit_dungeon_and_return_home_game(
         return terminal_game
 
     # 执行退出地下城流程，返回家园
-    exit_dungeon_and_return_home(terminal_game, terminal_game.world.dungeon)
+    exit_dungeon_and_return_home(terminal_game, terminal_game._world.dungeon)
 
     # 最后归档
     archive_world(
-        terminal_game.world,
-        terminal_game.player_session,
+        terminal_game._world,
+        terminal_game._player_session,
         save_dir=save_dir,
     )
 
@@ -748,11 +748,11 @@ async def _next_dungeon_game(
         return terminal_game
 
     advance_to_next_stage(terminal_game, terminal_game.current_dungeon)
-    await terminal_game.combat_pipeline.process()
+    await terminal_game._combat_pipeline.process()
 
     archive_world(
-        terminal_game.world,
-        terminal_game.player_session,
+        terminal_game._world,
+        terminal_game._player_session,
         save_dir=save_dir,
     )
     return terminal_game
@@ -798,12 +798,12 @@ async def _retreat_game(
 
     logger.info(f"撤退动作激活成功: {message}")
 
-    await terminal_game.combat_pipeline.execute()
+    await terminal_game._combat_pipeline.execute()
 
     # 最后归档
     archive_world(
-        terminal_game.world,
-        terminal_game.player_session,
+        terminal_game._world,
+        terminal_game._player_session,
         save_dir=save_dir,
     )
 

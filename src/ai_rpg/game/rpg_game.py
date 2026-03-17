@@ -86,18 +86,18 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         # logger.info(
         #     f"TCGGame init player: {self.player_session.name}: {self.player_session.actor}"
         # )
-        assert self.player_session.name != "", "玩家名字不能为空"
-        assert self.player_session.actor != "", "玩家角色不能为空"
+        assert self._player_session.name != "", "玩家名字不能为空"
+        assert self._player_session.actor != "", "玩家角色不能为空"
 
     ###############################################################################################################################################
-    @property
-    def player_session(self) -> PlayerSession:
-        return self._player_session
+    # @property
+    # def player_session(self) -> PlayerSession:
+    #     return self._player_session
 
     ###############################################################################################################################################
-    @property
-    def world(self) -> World:
-        return self._world
+    # @property
+    # def world(self) -> World:
+    #     return self._world
 
     ###############################################################################################################################################
     def get_agent_context(self, entity: Entity) -> AgentContext:
@@ -110,7 +110,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         Returns:
             实体的上下文对象，若不存在则自动创建
         """
-        return self.world.agents_context.setdefault(
+        return self._world.agents_context.setdefault(
             entity.name, AgentContext(name=entity.name, context=[])
         )
 
@@ -123,9 +123,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             entity: 要销毁的实体对象
         """
         logger.debug(f"destroy_entity: {entity.name}")
-        if entity.name in self.world.agents_context:
+        if entity.name in self._world.agents_context:
             logger.debug(f"destroy_entity: {entity.name} in agents_context, pop it")
-            self.world.agents_context.pop(entity.name, None)
+            self._world.agents_context.pop(entity.name, None)
         return super().destroy_entity(entity)
 
     ###############################################################################################################################################
@@ -150,40 +150,40 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             返回自身实例，支持链式调用
         """
         assert (
-            len(self.world.entities_serialization) == 0
+            len(self._world.entities_serialization) == 0
         ), "游戏中有实体，不能创建新的游戏"
-        if len(self.world.entities_serialization) > 0:
+        if len(self._world.entities_serialization) > 0:
             logger.warning(
-                f"游戏中有实体，不能创建新的游戏，entities_serialization = {self.world.entities_serialization}"
+                f"游戏中有实体，不能创建新的游戏，entities_serialization = {self._world.entities_serialization}"
             )
             return self
 
         ## 第1步，创建world_system
-        self._create_world_entities(self.world.blueprint.world_systems)
+        self._create_world_entities(self._world.blueprint.world_systems)
 
         ## 第2步，创建actor
-        self._create_actor_entities(self.world.blueprint.actors)
+        self._create_actor_entities(self._world.blueprint.actors)
 
         ## 第3步，分配玩家控制的actor
-        assert self.player_session.name != "", "玩家名字不能为空"
-        assert self.player_session.actor != "", "玩家角色不能为空"
-        actor_entity = self.get_actor_entity(self.player_session.actor)
+        assert self._player_session.name != "", "玩家名字不能为空"
+        assert self._player_session.actor != "", "玩家角色不能为空"
+        actor_entity = self.get_actor_entity(self._player_session.actor)
         assert actor_entity is not None
         assert not actor_entity.has(PlayerComponent)
-        actor_entity.replace(PlayerComponent, self.player_session.name)
+        actor_entity.replace(PlayerComponent, self._player_session.name)
         logger.info(
-            f"玩家: {self.player_session.name} 选择控制: {self.player_session.actor}"
+            f"玩家: {self._player_session.name} 选择控制: {self._player_session.actor}"
         )
 
         ## 第4步，创建stage
-        self._create_stage_entities(self.world.blueprint.stages)
+        self._create_stage_entities(self._world.blueprint.stages)
 
         ## 第5步，标记仅玩家可见的场景
         assert (
-            self.world.blueprint.player_only_stage != ""
+            self._world.blueprint.player_only_stage != ""
         ), "player_only_stage 不能为空"
         player_only_stage_entity = self.get_stage_entity(
-            self.world.blueprint.player_only_stage
+            self._world.blueprint.player_only_stage
         )
         assert player_only_stage_entity is not None, "player_only_stage_entity is None"
         assert not player_only_stage_entity.has(PlayerOnlyStageComponent)
@@ -202,17 +202,17 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             返回自身实例，支持链式调用
         """
         assert (
-            len(self.world.entities_serialization) > 0
+            len(self._world.entities_serialization) > 0
         ), "游戏中没有实体，不能恢复游戏"
         assert len(self._entities) == 0, "游戏中有实体，不能恢复游戏"
-        if (len(self.world.entities_serialization) == 0) or (len(self._entities) > 0):
+        if (len(self._world.entities_serialization) == 0) or (len(self._entities) > 0):
             logger.warning(
-                f"游戏中没有实体，不能恢复游戏，entities_serialization = {self.world.entities_serialization}, entities = {self._entities}"
+                f"游戏中没有实体，不能恢复游戏，entities_serialization = {self._world.entities_serialization}, entities = {self._entities}"
             )
             return self
 
         # 从序列化数据中恢复实体状态
-        self.deserialize_entities(self.world.entities_serialization)
+        self.deserialize_entities(self._world.entities_serialization)
         return self
 
     ###############################################################################################################################################
@@ -223,7 +223,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             返回自身实例，支持链式调用
         """
         # 生成快照
-        self.world.entities_serialization = self.serialize_entities(self._entities)
+        self._world.entities_serialization = self.serialize_entities(self._entities)
         return self
 
     ###############################################################################################################################################
@@ -509,7 +509,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         if stage_entity is None:
             return
 
-        need_broadcast_entities = self.get_actors_on_stage(stage_entity)
+        need_broadcast_entities = self.get_actors_in_stage(stage_entity)
         need_broadcast_entities.add(stage_entity)
 
         if len(exclude_entities) > 0:
@@ -536,7 +536,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             self.add_human_message(entity, agent_event.message, **kwargs)
 
         # 最后都要发给客户端。
-        self.player_session.add_agent_event_message(agent_event=agent_event)
+        self._player_session.add_agent_event_message(agent_event=agent_event)
 
     ###############################################################################################################################################
     def _validate_stage_transition_prerequisites(

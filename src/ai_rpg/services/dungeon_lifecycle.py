@@ -235,8 +235,10 @@ def setup_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> tuple[bool, str]:
         )
         logger.error(error_msg)
         return False, error_msg
-    
-    assert not tcg_game.is_player_in_dungeon_stage, "setup_dungeon 失败: 玩家已在地下城场景中！"
+
+    assert (
+        not tcg_game.is_player_in_dungeon_stage
+    ), "setup_dungeon 失败: 玩家已在地下城场景中！"
 
     # 幂等：实体已创建则跳过
     if dungeon.setup_entities:
@@ -361,7 +363,7 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     cs = tcg_game.current_dungeon
     logger.debug(
         f"[return_home] 入参 dungeon={dungeon.name!r}, "
-        f"world.dungeon={tcg_game.world.dungeon.name!r}, "
+        f"world.dungeon={tcg_game._world.dungeon.name!r}, "
         f"is_ongoing={cs.is_ongoing}, is_post_combat={cs.is_post_combat}, "
         f"is_won={cs.is_won}, is_lost={cs.is_lost}"
     )

@@ -3,6 +3,7 @@ from typing import List, Optional, final
 from loguru import logger
 from pydantic import BaseModel
 from .entities import Actor, Stage, CharacterStats
+from .image import GeneratedImage
 
 
 ###############################################################################################################################################
@@ -106,6 +107,7 @@ class DungeonRoom(BaseModel):
 
     stage: Stage  # 必须，对应关卡场景
     combat: Combat = Combat(name="")  # 当前房间的战斗数据，默认为空战斗（state=NONE）
+    image: GeneratedImage = GeneratedImage()  # 当前房间的文生图数据，默认为空
 
 
 ###############################################################################################################################################
@@ -120,6 +122,7 @@ class Dungeon(BaseModel):
     setup_entities: bool = (
         False  # 是否已经根据模型创建了实体（敌人和场景），默认 False，创建后置 True
     )
+    image: GeneratedImage = GeneratedImage()  # 地下城封面文生图数据，默认为空
 
     ########################################################################################################################
     @property

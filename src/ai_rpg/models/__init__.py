@@ -1,5 +1,6 @@
 from .actions import *
 from .agent_event import *
+from .image import *
 from .api import *
 from .session_message import *
 from .components import *

@@ -5,6 +5,9 @@
 
 from typing import List, Optional, final
 from pydantic import BaseModel, ConfigDict, Field
+from ..models.image import GeneratedImage
+
+__all__ = ["GeneratedImage"]
 
 
 ################################################################################################################
@@ -67,15 +70,6 @@ class ImageGenerationRequest(BaseModel):
 ################################################################################################################
 
 
-@final
-class GeneratedImage(BaseModel):
-    """单张生成图片信息"""
-
-    filename: str = Field(..., description="文件名")
-    url: str = Field(..., description="访问 URL (相对路径)")
-    prompt: str = Field(..., description="使用的提示词")
-    model: str = Field(..., description="使用的模型")
-    local_path: str = Field(..., description="本地存储路径")
 
 
 ################################################################################################################

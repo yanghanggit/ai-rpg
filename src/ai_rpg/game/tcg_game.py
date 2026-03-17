@@ -68,16 +68,6 @@ class TCGGame(RPGGame):
         return self._world.dungeon
 
     ###############################################################################################################################################
-    # @property
-    # def home_pipeline(self) -> RPGGameProcessPipeline:
-    #     return self._home_pipeline
-
-    ###############################################################################################################################################
-    # @property
-    # def combat_pipeline(self) -> RPGGameProcessPipeline:
-    #     return self._combat_pipeline
-
-    ###############################################################################################################################################
 
     @property
     def is_player_in_home_stage(self) -> bool:

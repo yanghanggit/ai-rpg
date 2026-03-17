@@ -146,6 +146,7 @@ from ai_rpg.services.home_actions import (
     activate_stage_plan,
     activate_speak_action,
     activate_switch_stage,
+    activate_setup_dungeon,
 )
 from ai_rpg.services.dungeon_actions import (
     activate_random_expedition_member_card_draws,
@@ -812,6 +813,46 @@ async def _retreat_game(
 
 
 ###############################################################################################################################################
+async def _setup_dungeon_game(
+    world: World,
+    player_session: PlayerSession,
+    save_dir: Path,
+) -> TCGGame:
+    """从存档复位，激活地下城创建动作并执行 dungeon_setup_pipeline，并归档新状态。
+
+    调用 activate_setup_dungeon 为玩家实体添加 SetupDungeonAction，
+    然后驱动 _dungeon_setup_pipeline.process() 触发 DungeonGenerationSystem
+    执行完整的地下城创建流程（文生图、数据初始化等子任务）。
+    动作组件由 ActionCleanupSystem 在 pipeline 末端自动清除。
+
+    前置条件：玩家必须处于家园模式（is_player_in_home_stage）。
+
+    Args:
+        world: 由 restore_world() 反序列化的世界数据。
+        player_session: 由 restore_world() 反序列化的玩家会话。
+        save_dir: 新存档写入目录。
+
+    Returns:
+        执行完毕后的 TCGGame 实例（已归档）；激活失败时提前返回未归档实例。
+    """
+    terminal_game = await _restore_game(world, player_session)
+
+    success, error_detail = activate_setup_dungeon(terminal_game)
+    if not success:
+        logger.error(f"激活地下城创建失败: {error_detail}")
+        return terminal_game
+
+    await terminal_game._dungeon_setup_pipeline.process()
+
+    archive_world(
+        terminal_game._world,
+        terminal_game._player_session,
+        save_dir=save_dir,
+    )
+    return terminal_game
+
+
+###############################################################################################################################################
 @click.group()
 def main() -> None:
     """AI 操作工具：基于快照驱动游戏推进。
@@ -1248,6 +1289,43 @@ def next_dungeon(snapshot: str) -> None:
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(_next_dungeon_game(world, player_session, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("setup-dungeon")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+def setup_dungeon_cmd(snapshot: str) -> None:
+    """从存档复位，激活地下城创建流程并写入新存档。
+
+    在家园模式下为玩家实体添加 SetupDungeonAction，驱动 dungeon_setup_pipeline
+    执行 DungeonGenerationSystem（文生图、数据初始化等子任务）。
+    适用于【家园模式】，执行结束后仍处于家园模式。
+    """
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(_setup_dungeon_game(world, player_session, _save_dir))
 
 
 ###############################################################################################################################################

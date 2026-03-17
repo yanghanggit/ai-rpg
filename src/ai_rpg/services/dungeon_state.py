@@ -1,6 +1,6 @@
 """副本状态查询服务模块
 
-提供副本状态查询的 API 接口，返回副本中场景与角色的分布情况和副本详细数据。
+提供副本状态查询的 API 接口，返回副本状态、当前战斗及当前房间等详细数据。
 专门为 TCG 游戏类型设计。
 """
 
@@ -10,6 +10,7 @@ from .game_server_dependencies import CurrentGameServer
 from ..models import (
     DungeonStateResponse,
     DungeonCombatResponse,
+    DungeonRoomResponse,
 )
 
 ###################################################################################################################################################################
@@ -38,7 +39,7 @@ async def get_dungeon_state(
         game_name: 游戏名称
 
     Returns:
-        DungeonStateResponse: 包含场景映射和副本对象的响应
+        DungeonStateResponse: 包含副本对象的响应
 
     Raises:
         HTTPException(404): 用户房间或游戏实例不存在
@@ -67,7 +68,6 @@ async def get_dungeon_state(
     # 返回副本状态
     return DungeonStateResponse(
         dungeon=current_room._tcg_game.current_dungeon,
-        # combat=Combat(name=""),
     )
 
 
@@ -133,3 +133,69 @@ async def get_dungeon_combat(
 
     # 返回当前战斗状态
     return DungeonCombatResponse(combat=current_combat)
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@dungeon_state_api_router.get(
+    path="/api/dungeons/v1/{user_name}/{game_name}/room",
+    response_model=DungeonRoomResponse,
+)
+async def get_dungeon_room(
+    game_server: CurrentGameServer,
+    user_name: str,
+    game_name: str,
+) -> DungeonRoomResponse:
+    """查询当前地下城房间接口
+
+    查询 TCG 游戏中当前地下城所在的房间信息，包括关卡场景与战斗数据。
+
+    Args:
+        game_server: 游戏服务器实例
+        user_name: 用户名
+        game_name: 游戏名称
+
+    Returns:
+        DungeonRoomResponse: 包含当前房间对象（stage + combat）的响应
+
+    Raises:
+        HTTPException(404): 用户房间或游戏实例不存在，或地下城尚未进入任何房间
+    """
+
+    logger.info(f"/dungeons/v1/{user_name}/{game_name}/room: {user_name}, {game_name}")
+
+    # 检查房间是否存在
+    if not game_server.has_room(user_name):
+        logger.error(f"get_dungeon_room: {user_name} has no room")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有房间",
+        )
+
+    # 获取房间实例并检查 TCG 游戏是否存在
+    current_room = game_server.get_room(user_name)
+    assert current_room is not None, "get_dungeon_room: room instance is None"
+    if current_room._tcg_game is None:
+        logger.error(f"get_dungeon_room: {user_name} has no game")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有游戏",
+        )
+
+    # 获取当前地下城房间，current_room_index == -1 或超出范围时返回 None
+    current_dungeon_room = current_room._tcg_game.current_dungeon.current_room
+    if current_dungeon_room is None:
+        logger.error(f"get_dungeon_room: {user_name} has no current dungeon room")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="当前地下城没有进行中的房间",
+        )
+
+    # 返回当前房间
+    return DungeonRoomResponse(room=current_dungeon_room)
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################

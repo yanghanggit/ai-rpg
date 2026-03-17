@@ -85,7 +85,7 @@ def create_mountain_beasts_dungeon() -> Dungeon:
 
     return Dungeon(
         name="地下城.山林妖兽",
-        description="山林边缘出现精怪山魈，密林深处盘踞大妖山中虎。需递进挑战两个生态层级的妖兽，磨练狩猎技艺。注意山魈擅长利用环境作战，山中虎为生态链顶点的强大存在。",
+        ecology="山脉中段至深处的混合林地带，植被层次分明，地表腐殖层厚实。攀爬痕迹遍布岩石与树干，散落石块与折断枝条显示此地有大型灵智生物活动。深处古木参天、腐叶积厚，树干上留有深且规律的爪痕，兽骨残骸周围弥漫着强烈的领地气息标记。",
         rooms=[
             DungeonRoom(stage=stage_forest_edge),
             DungeonRoom(stage=stage_deep_forest),
@@ -129,7 +129,7 @@ def create_tiger_lair_dungeon() -> Dungeon:
 
     return Dungeon(
         name="地下城.山中虎巢穴",
-        description="密林深处发现大妖级山中虎的巢穴，这是生态链顶点的强大妖兽。高难度狩猎任务，需谨慎应对其恐怖的攻击力与敏捷身法。",
+        ecology="山脉深处原始密林，古木遮天蔽日，腐叶层厚逾尺，空气沉闷潮湿。树干上的爪痕深入木质，抓痕间距宽大均匀；周围散布体型巨大的兽骨，部分骨骼被压碎成粉。强烈的兽类腺体气味标记领地边界，地面留有远超寻常猛兽的巨型蹄爪印记。",
         rooms=[
             DungeonRoom(stage=stage_deep_forest),
         ],
@@ -169,7 +169,7 @@ def create_wild_boar_territory_dungeon() -> Dungeon:
 
     return Dungeon(
         name="地下城.野猪领地",
-        description="林间空地发现常物级野猪的觅食领地。适合初期狩猎练习，可获取基础兽皮、兽肉等素材。野猪虽为常物但獠牙攻击不可轻视。",
+        ecology="山脚林缘的开阔空地，阳光能透过稀疏树冠照射地面。橡果与根茎覆盖地表，泥土被翻拱出大量坑洼，蹄印密集且新鲜。灌木丛基部有明显的拱土痕迹，树皮齐腰高处留有獠牙磨蹭的刮痕，散发着浓烈的野兽粪便与泥土混合气味。",
         rooms=[
             DungeonRoom(stage=stage_forest_clearing),
         ],

@@ -29,7 +29,6 @@ def _generate_dungeon_entry_message(
     dungeon_name: str,
     dungeon_stage_name: str,
     is_first_stage: bool,
-    dungeon_description: str,
 ) -> str:
     """生成地下城进入提示消息
 
@@ -37,20 +36,15 @@ def _generate_dungeon_entry_message(
         dungeon_name: 地下城名称
         dungeon_stage_name: 地下城关卡名称
         is_first_stage: 是否为首个关卡
-        dungeon_description: 地下城任务说明
 
     Returns:
         str: 格式化的进入提示消息
     """
     if is_first_stage:
-        return f"""# 提示！进入地下城：{dungeon_name}，开始关卡场景：{dungeon_stage_name}
+        return f"""# 进入地下城：{dungeon_name}，开始关卡场景：{dungeon_stage_name}"""
 
-## 任务说明
-
-{dungeon_description}"""
-
-    else:
-        return f"""# 提示！地下城：{dungeon_name}，进入下一关卡场景：{dungeon_stage_name}"""
+    # 关卡推进消息包含当前关卡名称，帮助玩家感知进度和环境变化
+    return f"""# 地下城：{dungeon_name}，进入下一关卡场景：{dungeon_stage_name}"""
 
 
 ###################################################################################################################################################################
@@ -162,7 +156,6 @@ def _enter_dungeon_stage(
         dungeon.name,
         stage_entity.name,
         dungeon.current_room_index == 0,
-        dungeon.description,
     )
 
     for expedition_member in expedition_entities:
@@ -445,7 +438,7 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
         f"[return_home] 开始 teardown_dungeon_entities: dungeon={dungeon.name!r}"
     )
     tcg_game.teardown_dungeon_entities(dungeon)
-    tcg_game._world.dungeon = Dungeon(name="", rooms=[], description="")
+    tcg_game._world.dungeon = Dungeon(name="", rooms=[], ecology="")
     logger.debug("[return_home] teardown_dungeon_entities 完成，dungeon 已重置")
 
     # 6. 恢复所有远征队成员的战斗状态

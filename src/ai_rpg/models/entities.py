@@ -156,7 +156,6 @@ class Actor(BaseModel):
     name: str
     character_sheet: CharacterSheet
     system_message: str
-    # kick_off_message: str
     character_stats: CharacterStats
     items: List[Item] = []
     skills: List[Skill] = []
@@ -168,7 +167,6 @@ class Stage(BaseModel):
     name: str
     stage_profile: StageProfile
     system_message: str
-    # kick_off_message: str
     actors: List[Actor]
 
 
@@ -177,7 +175,6 @@ class Stage(BaseModel):
 class WorldSystem(BaseModel):
     name: str
     system_message: str
-    # kick_off_message: str
     component: str
 
 

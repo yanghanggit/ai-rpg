@@ -91,6 +91,45 @@ def create_actor(
 
 
 #######################################################################################################################################
+def build_stage_system_message(
+    stage_name: str,
+    campaign_setting: str,
+    system_rules: str,
+    profile: str,
+) -> str:
+    """
+    组装场景 system_message。
+
+    与 create_stage 内部模板保持一致，供需要在运行时动态拼接 system_message
+    的外部模块（如 DungeonGenerationSystem）复用。
+
+    Args:
+        stage_name: 场景全名
+        campaign_setting: 战役设定描述
+        system_rules: 全局游戏机制规则
+        profile: 场景感官环境描写
+
+    Returns:
+        拼接完成的 system_message 字符串
+    """
+    return f"""# {stage_name}
+    
+你扮演场景: {stage_name}
+
+## 游戏设定
+
+{campaign_setting}
+
+## 全局规则
+
+{system_rules}
+
+## 场景设定
+
+{profile}"""
+
+
+#######################################################################################################################################
 def create_stage(
     name: str,
     stage_profile: StageProfile,
@@ -122,21 +161,12 @@ def create_stage(
     )
 
     # 初次编译system_message!!!!
-    stage.system_message = f"""# {stage.name}
-    
-你扮演场景: {stage.name}
-
-## 游戏设定
-
-{campaign_setting}
-
-## 全局规则
-
-{system_rules}
-
-## 场景设定
-
-{stage_profile.profile}"""
+    stage.system_message = build_stage_system_message(
+        stage_name=stage.name,
+        campaign_setting=campaign_setting,
+        system_rules=system_rules,
+        profile=stage_profile.profile,
+    )
 
     return stage
 

@@ -5,7 +5,7 @@ from .rpg_game_pipeline_manager import RPGGamePipelineManager, RPGGameProcessPip
 from .rpg_game import RPGGame
 from .tcg_game import TCGGame
 from .game_server import GameServer
-from .room import Room
+from .player_room import PlayerRoom
 from .world_store import (
     # ensure_debug_dir,
     dump_world_snapshot,
@@ -23,7 +23,7 @@ __all__ = [
     "RPGGame",
     "TCGGame",
     "GameServer",
-    "Room",
+    "PlayerRoom",
     # "ensure_debug_dir",
     "dump_world_snapshot",
     "dump_agent_contexts",

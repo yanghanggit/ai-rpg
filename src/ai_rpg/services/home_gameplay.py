@@ -121,7 +121,7 @@ async def home_player_action(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.lock:
+    async with current_room._lock:
 
         # 验证前置条件并获取游戏实例
         rpg_game = await _validate_player_at_home(
@@ -219,7 +219,7 @@ async def home_advance(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.lock:
+    async with current_room._lock:
         # 验证前置条件并获取游戏实例
         rpg_game = await _validate_player_at_home(
             payload.user_name,
@@ -291,7 +291,7 @@ async def home_enter_dungeon(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.lock:
+    async with current_room._lock:
         # 验证前置条件并获取游戏实例
         rpg_game = await _validate_player_at_home(
             payload.user_name,
@@ -348,7 +348,7 @@ async def _execute_home_pipeline_task(
         if current_room is None:
             raise ValueError(f"游戏实例不存在: user={user_name}")
 
-        async with current_room.lock:
+        async with current_room._lock:
             rpg_game = await _validate_player_at_home(user_name, game_server)
             await rpg_game.home_pipeline.process()
 

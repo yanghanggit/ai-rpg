@@ -152,7 +152,7 @@ async def dungeon_combat_retreat(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.lock:
+    async with current_room._lock:
         rpg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
             game_server=game_server,
@@ -233,7 +233,7 @@ async def dungeon_advance_stage(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.lock:
+    async with current_room._lock:
         rpg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
             game_server=game_server,
@@ -307,7 +307,7 @@ async def dungeon_combat_init(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.lock:
+    async with current_room._lock:
         # 验证地下城操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
@@ -379,7 +379,7 @@ async def dungeon_exit(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.lock:
+    async with current_room._lock:
         # 验证地下城操作的前置条件
         tcg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
@@ -441,7 +441,7 @@ async def dungeon_combat_draw_ally_cards(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.lock:
+    async with current_room._lock:
         rpg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
             game_server=game_server,
@@ -531,7 +531,7 @@ async def dungeon_combat_draw_enemy_cards(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.lock:
+    async with current_room._lock:
         rpg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
             game_server=game_server,
@@ -608,7 +608,7 @@ async def dungeon_combat_play_cards(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.lock:
+    async with current_room._lock:
         rpg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
             game_server=game_server,
@@ -675,7 +675,7 @@ async def _execute_init_combat_task(
         if current_room is None or current_room._tcg_game is None:
             raise ValueError(f"游戏实例不存在: user={user_name}")
 
-        async with current_room.lock:
+        async with current_room._lock:
             rpg_game = current_room._tcg_game
             assert isinstance(rpg_game, TCGGame), "Invalid game type"
 
@@ -729,7 +729,7 @@ async def _execute_retreat_task(
         if current_room is None or current_room._tcg_game is None:
             raise ValueError(f"游戏实例不存在: user={user_name}")
 
-        async with current_room.lock:
+        async with current_room._lock:
             rpg_game = current_room._tcg_game
             assert isinstance(rpg_game, TCGGame), "Invalid game type"
 
@@ -786,7 +786,7 @@ async def _execute_draw_cards_task(
         if current_room is None or current_room._tcg_game is None:
             raise ValueError(f"游戏实例不存在: user={user_name}")
 
-        async with current_room.lock:
+        async with current_room._lock:
             rpg_game = current_room._tcg_game
             assert isinstance(rpg_game, TCGGame), "Invalid game type"
 
@@ -841,7 +841,7 @@ async def _execute_play_cards_task(
         if current_room is None or current_room._tcg_game is None:
             raise ValueError(f"游戏实例不存在: user={user_name}")
 
-        async with current_room.lock:
+        async with current_room._lock:
             rpg_game = current_room._tcg_game
             assert isinstance(rpg_game, TCGGame), "Invalid game type"
 

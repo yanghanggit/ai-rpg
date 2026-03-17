@@ -9,7 +9,7 @@ GameServer 作为单例存在，通过依赖注入在整个应用中共享。
 """
 
 from typing import Dict, Optional
-from .room import Room
+from .player_room import PlayerRoom
 from ..models import TaskRecord, TaskStatus
 import uuid
 from datetime import datetime
@@ -30,7 +30,7 @@ class GameServer:
 
         创建空的房间字典和后台任务存储。
         """
-        self._rooms: Dict[str, Room] = {}
+        self._rooms: Dict[str, PlayerRoom] = {}
         self._background_task_store: Dict[str, TaskRecord] = {}
 
     ###############################################################################################################################################
@@ -46,7 +46,7 @@ class GameServer:
         return user_name in self._rooms
 
     ###############################################################################################################################################
-    def get_room(self, user_name: str) -> Optional[Room]:
+    def get_room(self, user_name: str) -> Optional[PlayerRoom]:
         """获取指定玩家的房间
 
         Args:
@@ -58,7 +58,7 @@ class GameServer:
         return self._rooms.get(user_name, None)
 
     ###############################################################################################################################################
-    def create_room(self, user_name: str) -> Room:
+    def create_room(self, user_name: str) -> PlayerRoom:
         """为指定玩家创建新房间
 
         Args:
@@ -72,12 +72,12 @@ class GameServer:
         """
         if self.has_room(user_name):
             assert False, f"room {user_name} already exists"
-        room = Room(user_name)
+        room = PlayerRoom(user_name)
         self._rooms[user_name] = room
         return room
 
     ###############################################################################################################################################
-    def remove_room(self, room: Room) -> None:
+    def remove_room(self, room: PlayerRoom) -> None:
         """移除指定的房间
 
         Args:

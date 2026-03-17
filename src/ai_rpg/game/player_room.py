@@ -4,7 +4,7 @@ from .tcg_game import TCGGame
 from .player_session import PlayerSession
 
 
-class Room:
+class PlayerRoom:
     """
     游戏房间类
 
@@ -22,9 +22,3 @@ class Room:
         self._tcg_game: Optional[TCGGame] = None  # TCGGame 游戏实例
         self._player_session: Optional[PlayerSession] = None
         self._lock: asyncio.Lock = asyncio.Lock()  # 每玩家锁，防止并发状态竞争
-
-    #################################################################################
-    @property
-    def lock(self) -> asyncio.Lock:
-        """获取房间锁对象"""
-        return self._lock

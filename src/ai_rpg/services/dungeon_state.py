@@ -64,12 +64,9 @@ async def get_dungeon_state(
             detail="没有游戏",
         )
 
-    # 获取 TCG 游戏实例
-    rpg_game = current_room._tcg_game
-
     # 返回副本状态
     return DungeonStateResponse(
-        dungeon=rpg_game.current_dungeon,
+        dungeon=current_room._tcg_game.current_dungeon,
         # combat=Combat(name=""),
     )
 
@@ -124,11 +121,15 @@ async def get_dungeon_combat(
             detail="没有游戏",
         )
 
-    # 获取 TCG 游戏实例
-    rpg_game = current_room._tcg_game
-
-    # 获取当前战斗
-    current_combat = rpg_game.current_dungeon.current_combat
+    # 获取当前战斗，不应该出现没有战斗的情况，因为只有在战斗阶段才会调用这个接口，但为了安全起见，还是加个检查
+    current_combat = current_room._tcg_game.current_dungeon.current_combat
     assert current_combat is not None, "当前地下城没有进行中的战斗"
+    if current_combat is None:
+        logger.error(f"get_dungeon_combat: {user_name} has no current combat")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有进行中的战斗",
+        )
 
+    # 返回当前战斗状态
     return DungeonCombatResponse(combat=current_combat)

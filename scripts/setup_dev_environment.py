@@ -79,16 +79,16 @@ def _save_demo_dungeons() -> None:
     logger.info("🚀 保存演示地下城...")
 
     dungeons = [
-        ("Dungeon1", create_mountain_beasts_dungeon()),  # 山林妖兽狩猎副本
-        ("Dungeon2", create_tiger_lair_dungeon()),  # 山中虎巢穴副本
-        ("Dungeon3", create_wild_boar_territory_dungeon()),  # 野猪领地副本
-        ("Dungeon4", create_training_dungeon()),  # 猜人训练场副本
+        create_mountain_beasts_dungeon(),  # 山林妖兽狩猎副本
+        create_tiger_lair_dungeon(),  # 山中虎巢穴副本
+        create_wild_boar_territory_dungeon(),  # 野猪领地副本
+        create_training_dungeon(),  # 猎人训练场副本
     ]
 
-    for name, dungeon in dungeons:
-        path = DUNGEONS_DIR / f"{name}.json"
+    for dungeon in dungeons:
+        path = DUNGEONS_DIR / f"{dungeon.name}.json"
         path.write_text(dungeon.model_dump_json(indent=4), encoding="utf-8")
-        logger.success(f"✅ {name}.json 已保存至 {path.absolute()}")
+        logger.success(f"✅ {dungeon.name}.json 已保存至 {path.absolute()}")
 
 
 ########################################################################################################

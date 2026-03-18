@@ -1,4 +1,5 @@
-from typing import Final, List, Tuple, final, override
+from typing import Final, List, final, override
+from pathlib import Path
 from loguru import logger
 from pydantic import BaseModel
 from ..chat_client.client import ChatClient
@@ -9,9 +10,8 @@ from ..models import (
     SetupDungeonAction,
 )
 from ..game.tcg_game import TCGGame
+from ..game.config import BLUEPRINTS_DIR
 from ..utils import extract_json_from_code_block
-from ..demo.global_settings import RPG_CAMPAIGN_SETTING, RPG_SYSTEM_RULES
-from ..demo.entity_factory import build_actor_system_message, build_stage_system_message
 
 
 ####################################################################################################################################
@@ -94,6 +94,63 @@ class DungeonStagesResponse(BaseModel):
     """
 
     stages: List[DungeonStageResponse] = []
+
+
+####################################################################################################################################
+@final
+class DungeonActorBlueprint(BaseModel):
+    """地下城怪物实体创建所需的原始字段（无 system_message，供下一阶段组装）。
+
+    Attributes:
+        actor_name: 角色全名，格式为「角色.常物/精怪/大妖.XXXX」
+        character_sheet_name: 角色英文标识（snake_case）
+        profile: 第一人称 AI 扮演描述（性格、行为习惯）
+        base_body: 第三人称外观描述
+    """
+
+    actor_name: str = ""
+    character_sheet_name: str = ""
+    profile: str = ""
+    base_body: str = ""
+
+
+####################################################################################################################################
+@final
+class DungeonStageBlueprint(BaseModel):
+    """地下城单个场景实体创建所需的原始字段（包含配对的怪物蓝图）。
+
+    actor 非 Optional：Step 3 actor 生成失败的场景直接不进入 DungeonBlueprint。
+
+    Attributes:
+        stage_name: 场景全名，格式为「场景.XXXX」
+        profile_name: 场景英文标识（snake_case）
+        profile: 场景感官环境描写
+        actor: 与该场景配对的怪物蓝图
+    """
+
+    stage_name: str = ""
+    profile_name: str = ""
+    profile: str = ""
+    actor: DungeonActorBlueprint = DungeonActorBlueprint()
+
+
+####################################################################################################################################
+@final
+class DungeonBlueprint(BaseModel):
+    """地下城完整蓝图收集器，承载3步 LLM 流程的全部产出。
+
+    由 Step 1 创建骨架，Step 3 向 stages 逐项填充后达到完整状态，
+    可直接传入后续实体创建流程。
+
+    Attributes:
+        dungeon_name: 地下城全名，格式为「地下城.XXXX」
+        ecology: 地下城整体生态环境描述
+        stages: 已完整配对（场景+怪物）的场景蓝图列表
+    """
+
+    dungeon_name: str = ""
+    ecology: str = ""
+    stages: List[DungeonStageBlueprint] = []
 
 
 ####################################################################################################################################
@@ -290,34 +347,50 @@ class DungeonGenerationSystem(ReactiveProcessor):
             f"[DungeonGenerationSystem] 开始地下城创建流程: entity={entity.name}"
         )
 
-        # Step 1: 生成地下城生态环境概念
-        ecology_response = await self._step1_generate_ecology(world_system_entity)
-        if ecology_response is None:
+        # Step 1: 生成地下城生态环境概念，创建 blueprint 骨架
+        blueprint = await self._step1_generate_ecology(world_system_entity)
+        if blueprint is None:
             return
 
         # Step 2: 批量生成地下城 Stage 设定数据
-        stage_results = await self._step2_generate_stages(
-            world_system_entity, ecology_response, stage_count=2
+        stage_responses = await self._step2_generate_stages(
+            world_system_entity, blueprint, stage_count=2
         )
 
-        # Step 3: 为每个 Stage 并发生成一个怪物设定
+        # Step 3: 为每个 Stage 并发生成怪物，配对成功后写入 blueprint.stages
         await self._step3_generate_actors(
             world_system_entity,
-            ecology_response,
-            [stage for stage, _ in stage_results],
+            blueprint,
+            stage_responses,
         )
+
+        logger.info(
+            f"[DungeonGenerationSystem] Blueprint 收集完成:\n"
+            f"  dungeon_name: {blueprint.dungeon_name}\n"
+            f"  ecology:      {blueprint.ecology}\n"
+            f"  stages ({len(blueprint.stages)}):\n"
+            + "\n".join(
+                f"    [{i}] stage={s.stage_name}  actor={s.actor.actor_name}"
+                for i, s in enumerate(blueprint.stages, start=1)
+            )
+        )
+
+        # 将完整 DungeonBlueprint 序列化为 JSON 存入 BLUEPRINTS_DIR
+        save_path: Path = BLUEPRINTS_DIR / f"{blueprint.dungeon_name}.json"
+        save_path.write_text(blueprint.model_dump_json(indent=4), encoding="utf-8")
+        logger.info(f"[DungeonGenerationSystem] DungeonBlueprint 已保存: {save_path}")
 
     ####################################################################################################################################
     async def _step1_generate_ecology(
         self, world_system_entity: Entity
-    ) -> DungeonEcologyResponse | None:
-        """Step 1：调用 LLM 生成地下城生态环境概念（name + ecology）。
+    ) -> DungeonBlueprint | None:
+        """Step 1：调用 LLM 生成地下城生态环境概念，创建并返回 DungeonBlueprint 骨架。
 
         Args:
             world_system_entity: 地下城生成世界系统实体
 
         Returns:
-            解析成功的 DungeonEcologyResponse；解析失败时返回 None
+            含 dungeon_name/ecology、stages 为空列表的 DungeonBlueprint；失败返回 None
         """
         chat_client = ChatClient(
             name=world_system_entity.name,
@@ -337,39 +410,42 @@ class DungeonGenerationSystem(ReactiveProcessor):
             )
             return None
 
+        blueprint = DungeonBlueprint(
+            dungeon_name=ecology_response.name,
+            ecology=ecology_response.ecology,
+        )
         logger.info(
             f"[DungeonGenerationSystem][Step 1] 地下城生态环境生成完成:\n"
-            f"  name: {ecology_response.name}\n"
-            f"  ecology: {ecology_response.ecology}"
+            f"  dungeon_name: {blueprint.dungeon_name}\n"
+            f"  ecology:      {blueprint.ecology}"
         )
-        return ecology_response
+        return blueprint
 
     ####################################################################################################################################
     async def _step2_generate_stages(
         self,
         world_system_entity: Entity,
-        ecology_response: DungeonEcologyResponse,
+        blueprint: DungeonBlueprint,
         stage_count: int,
-    ) -> List[Tuple[DungeonStageResponse, str]]:
+    ) -> List[DungeonStageResponse]:
         """Step 2：单次调用 LLM 批量生成所有 Stage 设定数据。
 
         一次性返回 stage_count 个场景（stages 数组），减少 API 调用次数。
-        每个场景同时组装 system_message 并记录日志。
-        本步骤仅生成并记录日志，不创建实体。
+        本步骤仅生成并记录日志，不创建实体，不写入 blueprint（由 Step 3 配对后写入）。
 
         Args:
             world_system_entity: 地下城生成世界系统实体
-            ecology_response: Step 1 生成的地下城生态环境数据
+            blueprint: Step 1 创建的 DungeonBlueprint 骨架（提供 dungeon_name/ecology）
             stage_count: 需要生成的场景数量
 
         Returns:
-            (DungeonStageResponse, system_message) 元组列表；解析失败时返回空列表
+            DungeonStageResponse 列表；解析失败时返回空列表
         """
         chat_client = ChatClient(
             name=world_system_entity.name,
             prompt=_build_dungeon_stages_prompt(
-                dungeon_name=ecology_response.name,
-                ecology=ecology_response.ecology,
+                dungeon_name=blueprint.dungeon_name,
+                ecology=blueprint.ecology,
                 total_stages=stage_count,
             ),
             context=self._game.get_agent_context(world_system_entity).context,
@@ -387,40 +463,31 @@ class DungeonGenerationSystem(ReactiveProcessor):
             )
             return []
 
-        results: List[Tuple[DungeonStageResponse, str]] = []
         for i, stage in enumerate(stages_response.stages, start=1):
-            system_message = build_stage_system_message(
-                stage_name=stage.stage_name,
-                campaign_setting=RPG_CAMPAIGN_SETTING,
-                system_rules=RPG_SYSTEM_RULES,
-                profile=stage.profile,
-            )
             logger.info(
                 f"[DungeonGenerationSystem][Step 2] Stage {i}/{len(stages_response.stages)} 生成完成:\n"
                 f"  stage_name:   {stage.stage_name}\n"
                 f"  profile_name: {stage.profile_name}\n"
-                f"  profile:      {stage.profile}\n"
-                f"  system_message:\n{system_message}"
+                f"  profile:      {stage.profile}"
             )
-            results.append((stage, system_message))
-        return results
+        return stages_response.stages
 
     ####################################################################################################################################
     async def _step3_generate_actors(
         self,
         world_system_entity: Entity,
-        ecology_response: DungeonEcologyResponse,
+        blueprint: DungeonBlueprint,
         stage_responses: List[DungeonStageResponse],
     ) -> None:
-        """Step 3：为每个 Stage 并发生成一个栖居怪物设定。
+        """Step 3：为每个 Stage 并发生成怪物设定，配对成功后写入 blueprint.stages。
 
-        为每个 Stage 创建独立的 ChatClient，通过 batch_chat 并发请求 LLM，
-        依次解析响应并组装 actor system_message。
-        本步骤仅生成并记录日志，不创建实体。
+        为每个 Stage 创建独立的 ChatClient，通过 batch_chat 并发请求 LLM。
+        解析成功的 (stage, actor) 对构造 DungeonStageBlueprint 写入 blueprint.stages；
+        解析失败的 Stage 整体跳过，不进入 blueprint。
 
         Args:
             world_system_entity: 地下城生成世界系统实体
-            ecology_response: Step 1 生成的地下城生态环境数据
+            blueprint: Step 1 创建的 DungeonBlueprint（本步骤向其 stages 写入数据）
             stage_responses: Step 2 生成的场景设定列表
         """
         if not stage_responses:
@@ -431,8 +498,8 @@ class DungeonGenerationSystem(ReactiveProcessor):
             ChatClient(
                 name=stage.stage_name,
                 prompt=_build_dungeon_actor_prompt(
-                    dungeon_name=ecology_response.name,
-                    ecology=ecology_response.ecology,
+                    dungeon_name=blueprint.dungeon_name,
+                    ecology=blueprint.ecology,
                     stage_name=stage.stage_name,
                     stage_profile=stage.profile,
                 ),
@@ -450,25 +517,29 @@ class DungeonGenerationSystem(ReactiveProcessor):
                 )
             except Exception as e:
                 logger.error(
-                    f"[DungeonGenerationSystem][Step 3] Stage '{stage.stage_name}' 解析怪物设定失败: {e}\n"
+                    f"[DungeonGenerationSystem][Step 3] Stage '{stage.stage_name}' 解析怪物设定失败，该场景不纳入 blueprint: {e}\n"
                     f"原始内容:\n{client.response_content}"
                 )
                 continue
 
-            system_message = build_actor_system_message(
-                actor_name=actor_response.actor_name,
-                campaign_setting=RPG_CAMPAIGN_SETTING,
-                system_rules=RPG_SYSTEM_RULES,
-                character_profile=actor_response.profile,
-                appearance=actor_response.base_body,
+            stage_blueprint = DungeonStageBlueprint(
+                stage_name=stage.stage_name,
+                profile_name=stage.profile_name,
+                profile=stage.profile,
+                actor=DungeonActorBlueprint(
+                    actor_name=actor_response.actor_name,
+                    character_sheet_name=actor_response.character_sheet_name,
+                    profile=actor_response.profile,
+                    base_body=actor_response.base_body,
+                ),
             )
+            blueprint.stages.append(stage_blueprint)
             logger.info(
-                f"[DungeonGenerationSystem][Step 3] Actor {i}/{len(stage_responses)} 生成完成 (stage: {stage.stage_name}):\n"
-                f"  actor_name:           {actor_response.actor_name}\n"
-                f"  character_sheet_name: {actor_response.character_sheet_name}\n"
-                f"  profile:              {actor_response.profile}\n"
-                f"  base_body:            {actor_response.base_body}\n"
-                f"  system_message:\n{system_message}"
+                f"[DungeonGenerationSystem][Step 3] Stage+Actor {i}/{len(stage_responses)} 写入 blueprint:\n"
+                f"  stage_name:           {stage_blueprint.stage_name}\n"
+                f"  profile_name:         {stage_blueprint.profile_name}\n"
+                f"  actor_name:           {stage_blueprint.actor.actor_name}\n"
+                f"  character_sheet_name: {stage_blueprint.actor.character_sheet_name}"
             )
 
     ####################################################################################################################################

@@ -7,9 +7,8 @@ from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.player_session import PlayerSession
 from ..game.tcg_game import TCGGame
-from ..models import NewGameRequest, NewGameResponse, World, Blueprint
+from ..models import NewGameRequest, NewGameResponse, World, Blueprint, Dungeon
 from .game_server_dependencies import CurrentGameServer
-from ..demo import create_mountain_beasts_dungeon
 from ..game.config import BLUEPRINTS_DIR
 
 ###################################################################################################################################################################
@@ -76,7 +75,7 @@ async def new_game(
         entity_counter=1000,
         entities_serialization=[],
         agents_context={},
-        dungeon=create_mountain_beasts_dungeon(),
+        dungeon=Dungeon(name="", rooms=[], ecology=""),
         blueprint=blueprint_data,
     )
 

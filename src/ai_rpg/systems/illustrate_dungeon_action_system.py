@@ -221,11 +221,9 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
         all_clients: List[ImageClient] = [cover_client] + room_clients
         await ImageClient.batch_generate(all_clients)
 
-        # 写入封面 GeneratedImage
+        # 写入封面 GeneratedImage（直接赋值 response 对象，保留全部字段）
         if cover_client.response.images:
-            dungeon.image.local_path = cover_client.response.images[0].local_path
-            dungeon.image.prompt = cover_prompt
-            dungeon.image.model = _IMAGE_MODEL
+            dungeon.image = cover_client.response.images[0]
             logger.info(
                 f"[IllustrateDungeonActionSystem][Step 5] 封面图片生成完成: {dungeon.image.local_path}"
             )
@@ -234,12 +232,10 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
                 f"[IllustrateDungeonActionSystem][Step 5] 封面图片生成失败: {dungeon.name}"
             )
 
-        # 写入各房间 GeneratedImage
-        for room, client, prompt in zip(dungeon.rooms, room_clients, room_prompts):
+        # 写入各房间 GeneratedImage（直接赋值 response 对象，保留全部字段）
+        for room, client in zip(dungeon.rooms, room_clients):
             if client.response.images:
-                room.image.local_path = client.response.images[0].local_path
-                room.image.prompt = prompt
-                room.image.model = _IMAGE_MODEL
+                room.image = client.response.images[0]
                 logger.info(
                     f"[IllustrateDungeonActionSystem][Step 5] 房间插图生成完成: "
                     f"{room.stage.name} -> {room.image.local_path}"

@@ -18,6 +18,7 @@ from ..models import (
 )
 from ..game.tcg_game import TCGGame
 from ..game.config import BLUEPRINTS_DIR, DUNGEONS_DIR
+from ..image_client.client import ImageClient
 from ..utils import extract_json_from_code_block
 from ..demo.global_settings import RPG_CAMPAIGN_SETTING, RPG_SYSTEM_RULES
 from ..demo.entity_factory import create_actor, create_stage
@@ -142,6 +143,7 @@ class DungeonStageBlueprint(BaseModel):
     profile_name: str = ""
     profile: str = ""
     actor: DungeonActorBlueprint = DungeonActorBlueprint()
+    image_url: str = ""
 
 
 ####################################################################################################################################
@@ -161,6 +163,7 @@ class DungeonBlueprint(BaseModel):
     dungeon_name: str = ""
     ecology: str = ""
     stages: List[DungeonStageBlueprint] = []
+    image_url: str = ""
 
 
 ####################################################################################################################################
@@ -291,6 +294,102 @@ def _build_dungeon_actor_prompt(
 
 
 ####################################################################################################################################
+# 图片生成规格常量
+_IMAGE_WIDTH: Final[int] = 768
+_IMAGE_HEIGHT: Final[int] = 1344
+_IMAGE_MODEL: Final[str] = "nano-banana"
+
+# 通用负面提示词（封面与 Stage 共用基础部分）
+_IMAGE_NEGATIVE_BASE: Final[str] = (
+    "人脸，人脸特写，3D渲染，照片写实，高清，抗锯齿，平滑，模糊，渐变，油画，水彩，"
+    "文字，汉字，英文字母，UI界面，框架，边框，天空，蓝天，云朵，户外，外部景色，现代元素，"
+    "bird's eye view，overhead view，top-down view，isometric view，aerial perspective，"
+    "俯瞰视角，鸟瞰图，等轴测视角，留白过多"
+)
+
+# Stage 插图额外负面提示词（排除多余角色）
+_IMAGE_NEGATIVE_STAGE: Final[str] = (
+    _IMAGE_NEGATIVE_BASE
+    + "，多个角色，多个人物，玩家角色，猎人角色，额外人物，crowds，multiple characters"
+)
+
+
+####################################################################################################################################
+def _detect_scene_type(profile: str) -> str:
+    """根据场景描述推断场景类型（室内/室外）。
+
+    通过关键词匹配判断是否为封闭洞穴类场景。
+
+    Args:
+        profile: 场景感官环境描写文本
+
+    Returns:
+        'indoor' 表示封闭洞穴场景，'outdoor' 表示开阔场景
+    """
+    indoor_keywords = ["顶", "窟", "洞", "廊", "穴", "岩", "壁", "石", "缝", "隙", "巢"]
+    for keyword in indoor_keywords:
+        if keyword in profile:
+            return "indoor"
+    return "outdoor"
+
+
+####################################################################################################################################
+def _build_dungeon_cover_image_prompt(dungeon_name: str, ecology: str) -> str:
+    """构建地下城封面图片生成提示词（7+1段式，无怪物）。
+
+    Args:
+        dungeon_name: 地下城全名
+        ecology: 地下城整体生态描述
+
+    Returns:
+        适合像素艺术风格洞穴场景的封面提示词
+    """
+    return (
+        "pixel art style，side view，2D game scene illustration，"
+        "dark cave dungeon entrance，"
+        f"{ecology}，"
+        "atmospheric depth，layered rock formations，"
+        "bioluminescent minerals glowing faintly，"
+        "damp stone floor with scattered debris，"
+        "dramatic shadow and dim light contrast，"
+        "mysterious and foreboding atmosphere，"
+        "no characters，no figures，environment only，"
+        f"dungeon named {dungeon_name}"
+    )
+
+
+####################################################################################################################################
+def _build_stage_image_prompt(
+    dungeon_name: str, ecology: str, stage_bp: "DungeonStageBlueprint"
+) -> str:
+    """构建地下城 Stage 战斗插图生成提示词（7+1段式，第5段插入怪物外观）。
+
+    Args:
+        dungeon_name: 地下城全名
+        ecology: 地下城整体生态描述
+        stage_bp: 已填充 actor 数据的场景蓝图
+
+    Returns:
+        包含场景环境与怪物形象的战斗插图提示词
+    """
+    scene_type = _detect_scene_type(stage_bp.profile)
+    cave_tag = "enclosed cave tunnel" if scene_type == "indoor" else "open cave chamber"
+
+    return (
+        "pixel art style，side view，2D game battle scene illustration，"
+        f"{cave_tag}，"
+        f"{stage_bp.profile}，"
+        f"{ecology}，"
+        "dramatic shadow and dim light contrast，"
+        "atmospheric depth，layered rock formations，"
+        f"{stage_bp.actor.base_body}，"
+        "single creature in mid-ground，facing left，combat ready pose，"
+        "mysterious and dangerous atmosphere，"
+        f"dungeon stage {stage_bp.stage_name} in {dungeon_name}"
+    )
+
+
+####################################################################################################################################
 @final
 class DungeonGenerationSystem(ReactiveProcessor):
     """地下城生成系统。
@@ -385,11 +484,6 @@ class DungeonGenerationSystem(ReactiveProcessor):
             )
         )
 
-        # 将完整 DungeonBlueprint 序列化为 JSON 存入 BLUEPRINTS_DIR
-        save_path: Path = BLUEPRINTS_DIR / f"{blueprint.dungeon_name}.json"
-        save_path.write_text(blueprint.model_dump_json(indent=4), encoding="utf-8")
-        logger.info(f"[DungeonGenerationSystem] DungeonBlueprint 已保存: {save_path}")
-
         # Step 4: 将 DungeonBlueprint 组装为完整 Dungeon 实体树，写入 DUNGEONS_DIR
         dungeon = await self._step4_build_dungeon(blueprint)
         if dungeon is None:
@@ -406,76 +500,13 @@ class DungeonGenerationSystem(ReactiveProcessor):
             )
         )
 
-    ####################################################################################################################################
-    async def _step4_build_dungeon(
-        self, blueprint: DungeonBlueprint
-    ) -> Dungeon | None:
-        """Step 4：将 DungeonBlueprint 组装为完整的 Dungeon 实体树。
+        # Step 5: 并发生成地下城封面与各 Stage 插图，结果写回 blueprint.image_url
+        await self._step5_generate_images(blueprint)
 
-        无 LLM 调用，纯数据组装。对 blueprint.stages 中每个 DungeonStageBlueprint：
-        - 用 create_stage 构建 Stage 实体
-        - 用 create_actor 构建 Actor 实体，挂载 BEAST_ATTACK_SKILL
-        - 拼成 DungeonRoom 列表，最终封装为 Dungeon
-
-        Args:
-            blueprint: Step 3 填充完整的 DungeonBlueprint
-
-        Returns:
-            完整的 Dungeon 实体；若 blueprint.stages 为空则返回 None
-        """
-        if not blueprint.stages:
-            logger.error(
-                "[DungeonGenerationSystem][Step 4] blueprint.stages 为空，无法构建 Dungeon"
-            )
-            return None
-
-        rooms: List[DungeonRoom] = []
-        for i, stage_bp in enumerate(blueprint.stages, start=1):
-            stage = create_stage(
-                name=stage_bp.stage_name,
-                stage_profile=StageProfile(
-                    name=stage_bp.profile_name,
-                    type=StageType.DUNGEON,
-                    profile=stage_bp.profile,
-                ),
-                campaign_setting=RPG_CAMPAIGN_SETTING,
-                system_rules=RPG_SYSTEM_RULES,
-            )
-
-            actor_bp = stage_bp.actor
-            actor = create_actor(
-                name=actor_bp.actor_name,
-                character_sheet=CharacterSheet(
-                    name=actor_bp.character_sheet_name,
-                    type=ActorType.ENEMY.value,
-                    profile=actor_bp.profile,
-                    base_body=actor_bp.base_body,
-                    appearance="",
-                ),
-                character_stats=CharacterStats(),
-                campaign_setting=RPG_CAMPAIGN_SETTING,
-                system_rules=RPG_SYSTEM_RULES,
-            )
-            actor.skills = [BEAST_ATTACK_SKILL.model_copy()]
-
-            stage.actors = [actor]
-            rooms.append(DungeonRoom(stage=stage))
-            logger.info(
-                f"[DungeonGenerationSystem][Step 4] Room {i}/{len(blueprint.stages)} 构建完成:\n"
-                f"  stage: {stage.name}\n"
-                f"  actor: {actor.name}"
-            )
-
-        dungeon = Dungeon(
-            name=blueprint.dungeon_name,
-            ecology=blueprint.ecology,
-            rooms=rooms,
-        )
-        logger.info(
-            f"[DungeonGenerationSystem][Step 4] Dungeon 构建完成: {dungeon.name} "
-            f"({len(dungeon.rooms)} rooms)"
-        )
-        return dungeon
+        # 将完整 DungeonBlueprint（含 image_url）序列化为 JSON 存入 BLUEPRINTS_DIR
+        save_path: Path = BLUEPRINTS_DIR / f"{blueprint.dungeon_name}.json"
+        save_path.write_text(blueprint.model_dump_json(indent=4), encoding="utf-8")
+        logger.info(f"[DungeonGenerationSystem] DungeonBlueprint 已保存: {save_path}")
 
     ####################################################################################################################################
     async def _step1_generate_ecology(
@@ -638,5 +669,142 @@ class DungeonGenerationSystem(ReactiveProcessor):
                 f"  actor_name:           {stage_blueprint.actor.actor_name}\n"
                 f"  character_sheet_name: {stage_blueprint.actor.character_sheet_name}"
             )
+
+        ####################################################################################################################################
+
+    async def _step4_build_dungeon(self, blueprint: DungeonBlueprint) -> Dungeon | None:
+        """Step 4：将 DungeonBlueprint 组装为完整的 Dungeon 实体树。
+
+        无 LLM 调用，纯数据组装。对 blueprint.stages 中每个 DungeonStageBlueprint：
+        - 用 create_stage 构建 Stage 实体
+        - 用 create_actor 构建 Actor 实体，挂载 BEAST_ATTACK_SKILL
+        - 拼成 DungeonRoom 列表，最终封装为 Dungeon
+
+        Args:
+            blueprint: Step 3 填充完整的 DungeonBlueprint
+
+        Returns:
+            完整的 Dungeon 实体；若 blueprint.stages 为空则返回 None
+        """
+        if not blueprint.stages:
+            logger.error(
+                "[DungeonGenerationSystem][Step 4] blueprint.stages 为空，无法构建 Dungeon"
+            )
+            return None
+
+        rooms: List[DungeonRoom] = []
+        for i, stage_bp in enumerate(blueprint.stages, start=1):
+            stage = create_stage(
+                name=stage_bp.stage_name,
+                stage_profile=StageProfile(
+                    name=stage_bp.profile_name,
+                    type=StageType.DUNGEON,
+                    profile=stage_bp.profile,
+                ),
+                campaign_setting=RPG_CAMPAIGN_SETTING,
+                system_rules=RPG_SYSTEM_RULES,
+            )
+
+            actor_bp = stage_bp.actor
+            actor = create_actor(
+                name=actor_bp.actor_name,
+                character_sheet=CharacterSheet(
+                    name=actor_bp.character_sheet_name,
+                    type=ActorType.ENEMY.value,
+                    profile=actor_bp.profile,
+                    base_body=actor_bp.base_body,
+                    appearance="",
+                ),
+                character_stats=CharacterStats(),
+                campaign_setting=RPG_CAMPAIGN_SETTING,
+                system_rules=RPG_SYSTEM_RULES,
+            )
+            actor.skills = [BEAST_ATTACK_SKILL.model_copy()]
+
+            stage.actors = [actor]
+            rooms.append(DungeonRoom(stage=stage))
+            logger.info(
+                f"[DungeonGenerationSystem][Step 4] Room {i}/{len(blueprint.stages)} 构建完成:\n"
+                f"  stage: {stage.name}\n"
+                f"  actor: {actor.name}"
+            )
+
+        dungeon = Dungeon(
+            name=blueprint.dungeon_name,
+            ecology=blueprint.ecology,
+            rooms=rooms,
+        )
+        logger.info(
+            f"[DungeonGenerationSystem][Step 4] Dungeon 构建完成: {dungeon.name} "
+            f"({len(dungeon.rooms)} rooms)"
+        )
+        return dungeon
+
+    ####################################################################################################################################
+    async def _step5_generate_images(self, blueprint: DungeonBlueprint) -> None:
+        """Step 5：并发为地下城封面和每个 Stage 生成插图，结果写回 blueprint.image_url。
+
+        构建 1 + N 个 ImageClient（1 个封面 + N 个 Stage），并发请求图片服务。
+        成功时将 local_path 写入对应的 image_url 字段；失败时静默跳过，不中断流程。
+
+        Args:
+            blueprint: Step 3 填充完整的 DungeonBlueprint
+        """
+        # 封面客户端（index 0）
+        cover_client = ImageClient(
+            name=f"{blueprint.dungeon_name}.cover",
+            prompt=_build_dungeon_cover_image_prompt(
+                dungeon_name=blueprint.dungeon_name,
+                ecology=blueprint.ecology,
+            ),
+            negative_prompt=_IMAGE_NEGATIVE_BASE,
+            width=_IMAGE_WIDTH,
+            height=_IMAGE_HEIGHT,
+            model=_IMAGE_MODEL,
+        )
+
+        # 每个 Stage 各一个客户端（index 1..N）
+        stage_clients: List[ImageClient] = [
+            ImageClient(
+                name=f"{stage_bp.stage_name}.illustration",
+                prompt=_build_stage_image_prompt(
+                    dungeon_name=blueprint.dungeon_name,
+                    ecology=blueprint.ecology,
+                    stage_bp=stage_bp,
+                ),
+                negative_prompt=_IMAGE_NEGATIVE_STAGE,
+                width=_IMAGE_WIDTH,
+                height=_IMAGE_HEIGHT,
+                model=_IMAGE_MODEL,
+            )
+            for stage_bp in blueprint.stages
+        ]
+
+        all_clients: List[ImageClient] = [cover_client] + stage_clients
+        await ImageClient.batch_generate(all_clients)
+
+        # 写回封面 image_url
+        if cover_client.response.images:
+            blueprint.image_url = cover_client.response.images[0].local_path
+            logger.info(
+                f"[DungeonGenerationSystem][Step 5] 封面图片生成完成: {blueprint.image_url}"
+            )
+        else:
+            logger.warning(
+                f"[DungeonGenerationSystem][Step 5] 封面图片生成失败: {blueprint.dungeon_name}"
+            )
+
+        # 写回各 Stage image_url
+        for stage_bp, client in zip(blueprint.stages, stage_clients):
+            if client.response.images:
+                stage_bp.image_url = client.response.images[0].local_path
+                logger.info(
+                    f"[DungeonGenerationSystem][Step 5] Stage 插图生成完成: "
+                    f"{stage_bp.stage_name} -> {stage_bp.image_url}"
+                )
+            else:
+                logger.warning(
+                    f"[DungeonGenerationSystem][Step 5] Stage 插图生成失败: {stage_bp.stage_name}"
+                )
 
     ####################################################################################################################################

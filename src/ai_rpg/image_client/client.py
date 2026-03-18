@@ -88,6 +88,10 @@ class ImageClient:
         prompt: str,
         url: Optional[str] = None,
         timeout: Optional[int] = None,
+        negative_prompt: str = "worst quality, low quality, blurry",
+        width: int = 1024,
+        height: int = 1024,
+        model: str = "nano-banana",
     ) -> None:
         """初始化图片生成客户端
 
@@ -96,12 +100,21 @@ class ImageClient:
             prompt: 图片生成提示词
             url: 自定义服务 URL，默认使用配置的 URL
             timeout: 请求超时时间（秒），默认 30 秒
+            negative_prompt: 负面提示词
+            width: 图片宽度（像素）
+            height: 图片高度（像素）
+            model: 图片生成模型名称
         """
         self._name = name
         assert self._name != "", "client name should not be empty"
 
         self._prompt: Final[str] = prompt
         assert self._prompt != "", "prompt should not be empty"
+
+        self._negative_prompt: Final[str] = negative_prompt
+        self._width: Final[int] = width
+        self._height: Final[int] = height
+        self._model: Final[str] = model
 
         self._response: ImageGenerationResponse = ImageGenerationResponse(
             images=[], elapsed_time=0.0
@@ -139,6 +152,12 @@ class ImageClient:
         return self._url
 
     ################################################################################################################################################################################
+    @property
+    def response(self) -> "ImageGenerationResponse":
+        """获取图片生成响应结果"""
+        return self._response
+
+    ################################################################################################################################################################################
     async def async_generate(self) -> None:
         """异步生成图片
 
@@ -155,7 +174,10 @@ class ImageClient:
             # 构建请求配置
             config = ImageGenerationConfig(
                 prompt=self._prompt,
-                model="nano-banana",
+                model=self._model,
+                negative_prompt=self._negative_prompt,
+                width=self._width,
+                height=self._height,
                 aspect_ratio=None,
                 seed=None,
             )

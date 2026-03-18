@@ -146,7 +146,7 @@ from ai_rpg.services.home_actions import (
     activate_stage_plan,
     activate_speak_action,
     activate_switch_stage,
-    activate_setup_dungeon,
+    activate_generate_dungeon,
 )
 from ai_rpg.services.dungeon_actions import (
     activate_random_expedition_member_card_draws,
@@ -820,7 +820,7 @@ async def _setup_dungeon_game(
 ) -> TCGGame:
     """从存档复位，激活地下城创建动作并执行 dungeon_setup_pipeline，并归档新状态。
 
-    调用 activate_setup_dungeon 为玩家实体添加 GenerateDungeonAction，
+    调用 activate_generate_dungeon 为玩家实体添加 GenerateDungeonAction，
     然后驱动 _dungeon_setup_pipeline.process() 触发 GenerateDungeonActionSystem
     执行地下城文本数据创建流程（Steps 1-4），成功后自动触发 IllustrateDungeonActionSystem。
     动作组件由 ActionCleanupSystem 在 pipeline 末端自动清除。
@@ -837,7 +837,7 @@ async def _setup_dungeon_game(
     """
     terminal_game = await _restore_game(world, player_session)
 
-    success, error_detail = activate_setup_dungeon(terminal_game)
+    success, error_detail = activate_generate_dungeon(terminal_game)
     if not success:
         logger.error(f"激活地下城创建失败: {error_detail}")
         return terminal_game

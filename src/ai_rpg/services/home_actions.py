@@ -160,7 +160,7 @@ def activate_stage_plan(tcg_game: TCGGame) -> Tuple[bool, str]:
 
 
 ###################################################################################################################################################################
-def activate_setup_dungeon(tcg_game: TCGGame) -> Tuple[bool, str]:
+def activate_generate_dungeon(tcg_game: TCGGame) -> Tuple[bool, str]:
     """
     在家园状态下激活地下城创建动作。
 

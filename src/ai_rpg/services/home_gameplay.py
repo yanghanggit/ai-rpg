@@ -16,6 +16,7 @@ from .home_actions import (
     activate_speak_action,
     activate_switch_stage,
     activate_stage_plan,
+    activate_generate_dungeon,
 )
 from .dungeon_lifecycle import (
     setup_dungeon,
@@ -29,6 +30,8 @@ from ..models import (
     HomeAdvanceResponse,
     HomeEnterDungeonRequest,
     HomeEnterDungeonResponse,
+    HomeGenerateDungeonRequest,
+    HomeGenerateDungeonResponse,
     TaskStatus,
 )
 
@@ -333,6 +336,132 @@ async def home_enter_dungeon(
         return HomeEnterDungeonResponse(
             message=payload.model_dump_json(),
         )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@home_gameplay_api_router.post(
+    path="/api/home/generate_dungeon/v1/", response_model=HomeGenerateDungeonResponse
+)
+async def home_generate_dungeon(
+    payload: HomeGenerateDungeonRequest,
+    game_server: CurrentGameServer,
+) -> HomeGenerateDungeonResponse:
+    """
+    家园生成地下城接口
+
+    在家园状态下触发地下城文本与图片的生成流程（dungeon_setup_pipeline）。
+    添加 GenerateDungeonAction 到玩家实体，后台异步执行 Steps 1-4 文本生成及图片生成。
+
+    Args:
+        payload: 家园生成地下城请求对象
+        game_server: 游戏服务器实例
+
+    Returns:
+        HomeGenerateDungeonResponse: 包含后台任务 ID 的响应对象
+
+    Raises:
+        HTTPException(404): 玩家未登录或游戏实例不存在
+        HTTPException(400): 玩家不在家园状态或动作激活失败
+    """
+
+    logger.info(f"/api/home/generate_dungeon/v1/: user={payload.user_name}")
+
+    # 获取房间并用每玩家锁避免并发状态竞争
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有登录，请先登录",
+        )
+
+    async with current_room._lock:
+        # 验证前置条件并获取游戏实例
+        rpg_game = await _validate_player_at_home(
+            payload.user_name,
+            game_server,
+        )
+
+        # 激活地下城生成动作
+        success, error_detail = activate_generate_dungeon(rpg_game)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_detail,
+            )
+
+    # 创建 dungeon setup pipeline 后台任务（在锁外创建，让任务在后台独立持锁执行）
+    generate_dungeon_task = game_server.create_task()
+
+    asyncio.create_task(
+        _execute_dungeon_setup_pipeline_task(
+            generate_dungeon_task.task_id,
+            payload.user_name,
+            game_server,
+        )
+    )
+
+    logger.info(
+        f"📝 创建 dungeon setup pipeline 任务: task_id={generate_dungeon_task.task_id}, user={payload.user_name}"
+    )
+
+    return HomeGenerateDungeonResponse(
+        task_id=generate_dungeon_task.task_id,
+        status=TaskStatus.RUNNING.value,
+        message="dungeon setup pipeline 任务已启动，请通过会话消息查询结果",
+    )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+async def _execute_dungeon_setup_pipeline_task(
+    task_id: str,
+    user_name: str,
+    game_server: GameServer,
+) -> None:
+    """后台执行 dungeon setup pipeline 任务
+
+    在后台异步执行 dungeon_setup_pipeline 并更新任务状态。
+    使用房间锁保证同一玩家不会并发执行。
+
+    Args:
+        task_id: 任务唯一标识符
+        user_name: 用户名
+        game_server: 游戏服务器实例
+    """
+    try:
+        logger.info(
+            f"🚀 dungeon setup pipeline 任务开始: task_id={task_id}, user={user_name}"
+        )
+
+        current_room = game_server.get_room(user_name)
+        if current_room is None:
+            raise ValueError(f"游戏实例不存在: user={user_name}")
+
+        async with current_room._lock:
+            rpg_game = await _validate_player_at_home(user_name, game_server)
+            await rpg_game._dungeon_setup_pipeline.process()
+
+        task_record = game_server.get_task(task_id)
+        if task_record is not None:
+            task_record.status = TaskStatus.COMPLETED
+            task_record.end_time = datetime.now().isoformat()
+
+        logger.info(
+            f"✅ dungeon setup pipeline 任务完成: task_id={task_id}, user={user_name}"
+        )
+
+    except Exception as e:
+        logger.error(
+            f"❌ dungeon setup pipeline 任务失败: task_id={task_id}, user={user_name}, error={e}"
+        )
+        task_record = game_server.get_task(task_id)
+        if task_record is not None:
+            task_record.status = TaskStatus.FAILED
+            task_record.error = str(e)
+            task_record.end_time = datetime.now().isoformat()
 
 
 ###################################################################################################################################################################

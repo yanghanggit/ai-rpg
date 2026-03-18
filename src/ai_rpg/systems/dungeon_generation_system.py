@@ -11,7 +11,7 @@ from ..models import (
 from ..game.tcg_game import TCGGame
 from ..utils import extract_json_from_code_block
 from ..demo.global_settings import RPG_CAMPAIGN_SETTING, RPG_SYSTEM_RULES
-from ..demo.entity_factory import build_stage_system_message
+from ..demo.entity_factory import build_actor_system_message, build_stage_system_message
 
 
 ####################################################################################################################################
@@ -157,6 +157,74 @@ def _build_dungeon_stages_prompt(
 
 ####################################################################################################################################
 @final
+class DungeonActorResponse(BaseModel):
+    """地下城怪物设定数据响应模型（概念/文字，无数值/技能）。
+
+    Attributes:
+        actor_name: 角色全名，格式为「角色.常物/精怪/大妖.XXXX」
+        character_sheet_name: 角色英文标识（snake_case）
+        profile: 第一人称 AI 扮演描述（性格、行为习惯）
+        base_body: 第三人称外观描述
+    """
+
+    actor_name: str = ""
+    character_sheet_name: str = ""
+    profile: str = ""
+    base_body: str = ""
+
+
+####################################################################################################################################
+def _build_dungeon_actor_prompt(
+    dungeon_name: str, ecology: str, stage_name: str, stage_profile: str
+) -> str:
+    """构建为单个 Stage 生成怪物设定数据的提示词。
+
+    Args:
+        dungeon_name: 地下城全名
+        ecology: 地下城整体生态描述
+        stage_name: 当前场景全名
+        stage_profile: 当前场景感官环境描写
+
+    Returns:
+        要求 LLM 创作一个栖居于该场景的怪物设定的提示词
+    """
+    return f"""# 任务：为场景创作一个栖居怪物的设定
+
+## 所在地下城
+
+- **地下城名称**：{dungeon_name}
+- **整体生态**：{ecology}
+
+## 当前场景
+
+- **场景名称**：{stage_name}
+- **场景环境**：{stage_profile}
+
+## 要求
+
+- **actor_name**：角色全名，采用「角色.常物/精怪/大妖.XXXX」格式，XXXX 体现该生物的特征
+- **character_sheet_name**：角色英文标识，snake_case 格式（如 `bone_crawler`、`mist_spirit`）
+- **profile**：第一人称 AI 扮演描述，50-100字，描述该生物的性格、行为倾向、与环境的关系
+  - 禁忌：不出现战斗数值、技能名称、等级等游戏机制词汇
+- **base_body**：第三人称外观描述，30-60字，描述该生物的形态、材质、动态特征
+  - 禁忌：不出现战斗数值、技能名称、等级等游戏机制词汇
+
+## 输出格式
+
+```json
+{{
+  "actor_name": "角色.精怪.XXX",
+  "character_sheet_name": "snake_case_name",
+  "profile": "...",
+  "base_body": "..."
+}}
+```
+
+严格按 JSON 格式输出，不要添加其他内容。"""
+
+
+####################################################################################################################################
+@final
 class DungeonGenerationSystem(ReactiveProcessor):
     """地下城生成系统。
 
@@ -228,8 +296,15 @@ class DungeonGenerationSystem(ReactiveProcessor):
             return
 
         # Step 2: 批量生成地下城 Stage 设定数据
-        await self._step2_generate_stages(
+        stage_results = await self._step2_generate_stages(
             world_system_entity, ecology_response, stage_count=2
+        )
+
+        # Step 3: 为每个 Stage 并发生成一个怪物设定
+        await self._step3_generate_actors(
+            world_system_entity,
+            ecology_response,
+            [stage for stage, _ in stage_results],
         )
 
     ####################################################################################################################################
@@ -325,9 +400,75 @@ class DungeonGenerationSystem(ReactiveProcessor):
                 f"  stage_name:   {stage.stage_name}\n"
                 f"  profile_name: {stage.profile_name}\n"
                 f"  profile:      {stage.profile}\n"
-                f"  system_message (前80字): {system_message[:80]}..."
+                f"  system_message:\n{system_message}"
             )
             results.append((stage, system_message))
         return results
+
+    ####################################################################################################################################
+    async def _step3_generate_actors(
+        self,
+        world_system_entity: Entity,
+        ecology_response: DungeonEcologyResponse,
+        stage_responses: List[DungeonStageResponse],
+    ) -> None:
+        """Step 3：为每个 Stage 并发生成一个栖居怪物设定。
+
+        为每个 Stage 创建独立的 ChatClient，通过 batch_chat 并发请求 LLM，
+        依次解析响应并组装 actor system_message。
+        本步骤仅生成并记录日志，不创建实体。
+
+        Args:
+            world_system_entity: 地下城生成世界系统实体
+            ecology_response: Step 1 生成的地下城生态环境数据
+            stage_responses: Step 2 生成的场景设定列表
+        """
+        if not stage_responses:
+            return
+
+        context = self._game.get_agent_context(world_system_entity).context
+        clients: List[ChatClient] = [
+            ChatClient(
+                name=stage.stage_name,
+                prompt=_build_dungeon_actor_prompt(
+                    dungeon_name=ecology_response.name,
+                    ecology=ecology_response.ecology,
+                    stage_name=stage.stage_name,
+                    stage_profile=stage.profile,
+                ),
+                context=context,
+            )
+            for stage in stage_responses
+        ]
+
+        await ChatClient.batch_chat(clients)
+
+        for i, (client, stage) in enumerate(zip(clients, stage_responses), start=1):
+            try:
+                actor_response = DungeonActorResponse.model_validate_json(
+                    extract_json_from_code_block(client.response_content)
+                )
+            except Exception as e:
+                logger.error(
+                    f"[DungeonGenerationSystem][Step 3] Stage '{stage.stage_name}' 解析怪物设定失败: {e}\n"
+                    f"原始内容:\n{client.response_content}"
+                )
+                continue
+
+            system_message = build_actor_system_message(
+                actor_name=actor_response.actor_name,
+                campaign_setting=RPG_CAMPAIGN_SETTING,
+                system_rules=RPG_SYSTEM_RULES,
+                character_profile=actor_response.profile,
+                appearance=actor_response.base_body,
+            )
+            logger.info(
+                f"[DungeonGenerationSystem][Step 3] Actor {i}/{len(stage_responses)} 生成完成 (stage: {stage.stage_name}):\n"
+                f"  actor_name:           {actor_response.actor_name}\n"
+                f"  character_sheet_name: {actor_response.character_sheet_name}\n"
+                f"  profile:              {actor_response.profile}\n"
+                f"  base_body:            {actor_response.base_body}\n"
+                f"  system_message:\n{system_message}"
+            )
 
     ####################################################################################################################################

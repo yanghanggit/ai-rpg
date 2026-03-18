@@ -91,30 +91,32 @@ def create_actor(
 
 
 #######################################################################################################################################
-def build_stage_system_message(
-    stage_name: str,
+def build_actor_system_message(
+    actor_name: str,
     campaign_setting: str,
     system_rules: str,
-    profile: str,
+    character_profile: str,
+    appearance: str,
 ) -> str:
     """
-    组装场景 system_message。
+    组装角色 system_message。
 
-    与 create_stage 内部模板保持一致，供需要在运行时动态拼接 system_message
-    的外部模块（如 DungeonGenerationSystem）复用。
+    与 create_actor 内部模板保持一致，供需要在运行时动态拼接 system_message
+    的外部模块复用。
 
     Args:
-        stage_name: 场景全名
+        actor_name: 角色名称
         campaign_setting: 战役设定描述
         system_rules: 全局游戏机制规则
-        profile: 场景感官环境描写
+        character_profile: 角色背景和特征描述
+        appearance: 角色外观描述
 
     Returns:
         拼接完成的 system_message 字符串
     """
-    return f"""# {stage_name}
+    return f"""# {actor_name}
     
-你扮演场景: {stage_name}
+你扮演角色: {actor_name}
 
 ## 游戏设定
 
@@ -124,9 +126,13 @@ def build_stage_system_message(
 
 {system_rules}
 
-## 场景设定
+## 角色设定
 
-{profile}"""
+{character_profile}
+
+## 外观设定
+
+{appearance}"""
 
 
 #######################################################################################################################################
@@ -169,6 +175,45 @@ def create_stage(
     )
 
     return stage
+
+
+#######################################################################################################################################
+def build_stage_system_message(
+    stage_name: str,
+    campaign_setting: str,
+    system_rules: str,
+    profile: str,
+) -> str:
+    """
+    组装场景 system_message。
+
+    与 create_stage 内部模板保持一致，供需要在运行时动态拼接 system_message
+    的外部模块（如 DungeonGenerationSystem）复用。
+
+    Args:
+        stage_name: 场景全名
+        campaign_setting: 战役设定描述
+        system_rules: 全局游戏机制规则
+        profile: 场景感官环境描写
+
+    Returns:
+        拼接完成的 system_message 字符串
+    """
+    return f"""# {stage_name}
+    
+你扮演场景: {stage_name}
+
+## 游戏设定
+
+{campaign_setting}
+
+## 全局规则
+
+{system_rules}
+
+## 场景设定
+
+{profile}"""
 
 
 #######################################################################################################################################

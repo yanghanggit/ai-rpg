@@ -181,11 +181,12 @@ class RetreatAction(Component):
 @final
 @register_action_component_type
 @register_component_type
-class SetupDungeonAction(Component):
-    """地下城创建动作组件。
+class GenerateDungeonAction(Component):
+    """地下城生成动作组件。
 
-    在家园状态下主动添加到玩家实体，触发 DungeonGenerationSystem 执行
-    地下城的完整创建流程（包含文生图、数据初始化等多个子任务）。
+    在家园状态下主动添加到玩家实体，触发 GenerateDungeonActionSystem 执行
+    地下城文本数据的完整创建流程（Steps 1-4：生态→场景→怪物→组装）。
+    流程成功后自动添加 IllustrateDungeonAction 以触发图片生成系统。
     动作组件由 ActionCleanupSystem 自动清除，无需手动移除。
 
     Attributes:
@@ -193,3 +194,23 @@ class SetupDungeonAction(Component):
     """
 
     name: str
+
+
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
+class IllustrateDungeonAction(Component):
+    """地下城图片生成动作组件。
+
+    由 GenerateDungeonActionSystem 在文本数据生成成功后自动添加到玩家实体，
+    触发 IllustrateDungeonActionSystem 执行地下城封面与 Stage 插图的并发生成。
+    动作组件由 ActionCleanupSystem 自动清除，无需手动移除。
+
+    Attributes:
+        name: 发起创建请求的实体名称
+        dungeon_name: 地下城全名（用于定位磁盘上的 DungeonBlueprint JSON）
+    """
+
+    name: str
+    dungeon_name: str

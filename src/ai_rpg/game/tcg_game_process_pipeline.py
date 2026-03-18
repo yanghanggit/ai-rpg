@@ -185,7 +185,8 @@ def create_dungeon_setup_pipeline(
 
     ### 不这样就循环引用
     from ..game.tcg_game import TCGGame
-    from ..systems.dungeon_generation_system import DungeonGenerationSystem
+    from ..systems.generate_dungeon_action_system import GenerateDungeonActionSystem
+    from ..systems.illustrate_dungeon_action_system import IllustrateDungeonActionSystem
     from ..systems.epilogue_system import EpilogueSystem
     from ..systems.prologue_system import PrologueSystem
     from ..systems.action_cleanup_system import ActionCleanupSystem
@@ -197,8 +198,11 @@ def create_dungeon_setup_pipeline(
     # 起始系统
     processors.add(PrologueSystem(tcg_game))
 
-    # 地下城图片生成系统（监听 GenerateDungeonImageAction 触发文生图）
-    processors.add(DungeonGenerationSystem(tcg_game))
+    # 地下城文本数据生成系统（Steps 1-4）
+    processors.add(GenerateDungeonActionSystem(tcg_game))
+
+    # 地下城图片生成系统（Step 5）
+    processors.add(IllustrateDungeonActionSystem(tcg_game))
 
     # 清除动作相关的临时状态、标记等，准备下一轮输入
     processors.add(ActionCleanupSystem(tcg_game))

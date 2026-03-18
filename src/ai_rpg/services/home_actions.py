@@ -12,7 +12,7 @@ from ..models import (
     HomeComponent,
     AllyComponent,
     PlanAction,
-    SetupDungeonAction,
+    GenerateDungeonAction,
 )
 from typing import Tuple
 
@@ -164,9 +164,9 @@ def activate_setup_dungeon(tcg_game: TCGGame) -> Tuple[bool, str]:
     """
     在家园状态下激活地下城创建动作。
 
-    添加 SetupDungeonAction 到玩家实体，触发 DungeonGenerationSystem 在
-    dungeon_setup_pipeline 的下一次推进时执行完整的地下城创建流程
-    （包含文生图、数据初始化等子任务）。动作组件由 ActionCleanupSystem 自动清除。
+    添加 GenerateDungeonAction 到玩家实体，触发 GenerateDungeonActionSystem 在
+    dungeon_setup_pipeline 的下一次推进时执行地下城文本数据创建（Steps 1-4）。
+    成功后自动添加 IllustrateDungeonAction 触发图片生成。动作组件由 ActionCleanupSystem 自动清除。
 
     Args:
         tcg_game: TCG 游戏实例
@@ -182,13 +182,13 @@ def activate_setup_dungeon(tcg_game: TCGGame) -> Tuple[bool, str]:
     player_entity = tcg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
 
-    if player_entity.has(SetupDungeonAction):
+    if player_entity.has(GenerateDungeonAction):
         error_detail = "地下城创建动作已存在，请勿重复激活"
         logger.warning(f"激活地下城创建失败: {error_detail}")
         return False, error_detail
 
     logger.debug(f"激活地下城创建: {player_entity.name}")
-    player_entity.replace(SetupDungeonAction, player_entity.name)
+    player_entity.replace(GenerateDungeonAction, player_entity.name)
     return True, ""
 
 

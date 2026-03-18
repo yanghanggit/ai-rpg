@@ -7,7 +7,8 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     WorldComponent,
     DungeonGenerationComponent,
-    SetupDungeonAction,
+    GenerateDungeonAction,
+    IllustrateDungeonAction,
     Dungeon,
     DungeonRoom,
     StageProfile,
@@ -18,7 +19,6 @@ from ..models import (
 )
 from ..game.tcg_game import TCGGame
 from ..game.config import BLUEPRINTS_DIR, DUNGEONS_DIR
-from ..image_client.client import ImageClient
 from ..utils import extract_json_from_code_block
 from ..demo.global_settings import RPG_CAMPAIGN_SETTING, RPG_SYSTEM_RULES
 from ..demo.entity_factory import create_actor, create_stage
@@ -294,120 +294,27 @@ def _build_dungeon_actor_prompt(
 
 
 ####################################################################################################################################
-# 图片生成规格常量
-_IMAGE_WIDTH: Final[int] = 768
-_IMAGE_HEIGHT: Final[int] = 1344
-_IMAGE_MODEL: Final[str] = "nano-banana"
-
-# 通用负面提示词（封面与 Stage 共用基础部分）
-_IMAGE_NEGATIVE_BASE: Final[str] = (
-    "人脸，人脸特写，3D渲染，照片写实，高清，抗锯齿，平滑，模糊，渐变，油画，水彩，"
-    "文字，汉字，英文字母，UI界面，框架，边框，天空，蓝天，云朵，户外，外部景色，现代元素，"
-    "bird's eye view，overhead view，top-down view，isometric view，aerial perspective，"
-    "俯瞰视角，鸟瞰图，等轴测视角，留白过多"
-)
-
-# Stage 插图额外负面提示词（排除多余角色）
-_IMAGE_NEGATIVE_STAGE: Final[str] = (
-    _IMAGE_NEGATIVE_BASE
-    + "，多个角色，多个人物，玩家角色，猎人角色，额外人物，crowds，multiple characters"
-)
-
-
-####################################################################################################################################
-def _detect_scene_type(profile: str) -> str:
-    """根据场景描述推断场景类型（室内/室外）。
-
-    通过关键词匹配判断是否为封闭洞穴类场景。
-
-    Args:
-        profile: 场景感官环境描写文本
-
-    Returns:
-        'indoor' 表示封闭洞穴场景，'outdoor' 表示开阔场景
-    """
-    indoor_keywords = ["顶", "窟", "洞", "廊", "穴", "岩", "壁", "石", "缝", "隙", "巢"]
-    for keyword in indoor_keywords:
-        if keyword in profile:
-            return "indoor"
-    return "outdoor"
-
-
-####################################################################################################################################
-def _build_dungeon_cover_image_prompt(dungeon_name: str, ecology: str) -> str:
-    """构建地下城封面图片生成提示词（7+1段式，无怪物）。
-
-    Args:
-        dungeon_name: 地下城全名
-        ecology: 地下城整体生态描述
-
-    Returns:
-        适合像素艺术风格洞穴场景的封面提示词
-    """
-    return (
-        "pixel art style，side view，2D game scene illustration，"
-        "dark cave dungeon entrance，"
-        f"{ecology}，"
-        "atmospheric depth，layered rock formations，"
-        "bioluminescent minerals glowing faintly，"
-        "damp stone floor with scattered debris，"
-        "dramatic shadow and dim light contrast，"
-        "mysterious and foreboding atmosphere，"
-        "no characters，no figures，environment only，"
-        f"dungeon named {dungeon_name}"
-    )
-
-
-####################################################################################################################################
-def _build_stage_image_prompt(
-    dungeon_name: str, ecology: str, stage_bp: "DungeonStageBlueprint"
-) -> str:
-    """构建地下城 Stage 战斗插图生成提示词（7+1段式，第5段插入怪物外观）。
-
-    Args:
-        dungeon_name: 地下城全名
-        ecology: 地下城整体生态描述
-        stage_bp: 已填充 actor 数据的场景蓝图
-
-    Returns:
-        包含场景环境与怪物形象的战斗插图提示词
-    """
-    scene_type = _detect_scene_type(stage_bp.profile)
-    cave_tag = "enclosed cave tunnel" if scene_type == "indoor" else "open cave chamber"
-
-    return (
-        "pixel art style，side view，2D game battle scene illustration，"
-        f"{cave_tag}，"
-        f"{stage_bp.profile}，"
-        f"{ecology}，"
-        "dramatic shadow and dim light contrast，"
-        "atmospheric depth，layered rock formations，"
-        f"{stage_bp.actor.base_body}，"
-        "single creature in mid-ground，facing left，combat ready pose，"
-        "mysterious and dangerous atmosphere，"
-        f"dungeon stage {stage_bp.stage_name} in {dungeon_name}"
-    )
-
-
-####################################################################################################################################
 @final
-class DungeonGenerationSystem(ReactiveProcessor):
-    """地下城生成系统。
+class GenerateDungeonActionSystem(ReactiveProcessor):
+    """地下城文本数据生成系统（Steps 1-4）。
 
-    反应式处理器，监听实体上 SetupDungeonAction 的添加事件，
-    执行地下城的完整创建流程。
+    反应式处理器，监听 GenerateDungeonAction 的添加事件，执行地下城
+    生态→场景→怪物→组装 四步文本数据创建流程。
+    成功后添加 IllustrateDungeonAction 触发图片生成系统；失败时不添加，
+    图片生成系统自然不执行。
 
     工作流程：
-        1. 监听实体上 SetupDungeonAction 动作组件的添加事件
+        1. 监听 GenerateDungeonAction 添加事件
         2. 获取地下城生成世界系统实体（包含 DungeonGenerationComponent）
-        3. 依次执行地下城创建子任务
-        4. 由 ActionCleanupSystem 自动清除 SetupDungeonAction
+        3. 执行 Steps 1-4 文本创建子任务
+        4. 成功后保存 blueprint，添加 IllustrateDungeonAction
+        5. 动作由 ActionCleanupSystem 自动清除
 
     Attributes:
         _game: 游戏实例引用
 
     Note:
-        - SetupDungeonAction 由 home_actions.activate_setup_dungeon() 在家园状态下添加
+        - GenerateDungeonAction 由 home_actions.activate_generate_dungeon() 在家园状态下添加
     """
 
     def __init__(self, game: TCGGame) -> None:
@@ -418,13 +325,13 @@ class DungeonGenerationSystem(ReactiveProcessor):
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {
-            Matcher(SetupDungeonAction): GroupEvent.ADDED,
+            Matcher(GenerateDungeonAction): GroupEvent.ADDED,
         }
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(SetupDungeonAction)
+        return entity.has(GenerateDungeonAction)
 
     ####################################################################################################################################
     @override
@@ -449,11 +356,11 @@ class DungeonGenerationSystem(ReactiveProcessor):
         """执行地下城完整创建流程。
 
         Args:
-            entity: 携带 SetupDungeonAction 的实体（玩家实体）
+            entity: 携带 GenerateDungeonAction 的实体（玩家实体）
             world_system_entity: 地下城生成世界系统实体（其 SystemMessage 已含世界观）
         """
         logger.info(
-            f"[DungeonGenerationSystem] 开始地下城创建流程: entity={entity.name}"
+            f"[GenerateDungeonActionSystem] 开始地下城文本数据创建流程: entity={entity.name}"
         )
 
         # Step 1: 生成地下城生态环境概念，创建 blueprint 骨架
@@ -474,7 +381,7 @@ class DungeonGenerationSystem(ReactiveProcessor):
         )
 
         logger.info(
-            f"[DungeonGenerationSystem] Blueprint 收集完成:\n"
+            f"[GenerateDungeonActionSystem] Blueprint 收集完成:\n"
             f"  dungeon_name: {blueprint.dungeon_name}\n"
             f"  ecology:      {blueprint.ecology}\n"
             f"  stages ({len(blueprint.stages)}):\n"
@@ -492,7 +399,7 @@ class DungeonGenerationSystem(ReactiveProcessor):
         dungeon_path: Path = DUNGEONS_DIR / f"{dungeon.name}.json"
         dungeon_path.write_text(dungeon.model_dump_json(indent=4), encoding="utf-8")
         logger.info(
-            f"[DungeonGenerationSystem] Dungeon 已保存: {dungeon_path}\n"
+            f"[GenerateDungeonActionSystem] Dungeon 已保存: {dungeon_path}\n"
             f"  rooms ({len(dungeon.rooms)}): "
             + ", ".join(
                 f"{room.stage.name}({room.stage.actors[0].name if room.stage.actors else 'no actor'})"
@@ -500,13 +407,19 @@ class DungeonGenerationSystem(ReactiveProcessor):
             )
         )
 
-        # Step 5: 并发生成地下城封面与各 Stage 插图，结果写回 blueprint.image_url
-        await self._step5_generate_images(blueprint)
-
-        # 将完整 DungeonBlueprint（含 image_url）序列化为 JSON 存入 BLUEPRINTS_DIR
+        # 保存 DungeonBlueprint JSON（image_url 字段暂为空，待 IllustrateDungeonActionSystem 填充）
         save_path: Path = BLUEPRINTS_DIR / f"{blueprint.dungeon_name}.json"
         save_path.write_text(blueprint.model_dump_json(indent=4), encoding="utf-8")
-        logger.info(f"[DungeonGenerationSystem] DungeonBlueprint 已保存: {save_path}")
+        logger.info(
+            f"[GenerateDungeonActionSystem] DungeonBlueprint 已保存: {save_path}"
+        )
+
+        # 添加 IllustrateDungeonAction，触发图片生成系统
+        entity.replace(IllustrateDungeonAction, entity.name, blueprint.dungeon_name)
+        logger.info(
+            f"[GenerateDungeonActionSystem] 添加 IllustrateDungeonAction: "
+            f"dungeon={blueprint.dungeon_name}"
+        )
 
     ####################################################################################################################################
     async def _step1_generate_ecology(
@@ -533,7 +446,7 @@ class DungeonGenerationSystem(ReactiveProcessor):
             )
         except Exception as e:
             logger.error(
-                f"[DungeonGenerationSystem][Step 1] 解析地下城生态环境失败: {e}\n"
+                f"[GenerateDungeonActionSystem][Step 1] 解析地下城生态环境失败: {e}\n"
                 f"原始内容:\n{chat_client.response_content}"
             )
             return None
@@ -543,7 +456,7 @@ class DungeonGenerationSystem(ReactiveProcessor):
             ecology=ecology_response.ecology,
         )
         logger.info(
-            f"[DungeonGenerationSystem][Step 1] 地下城生态环境生成完成:\n"
+            f"[GenerateDungeonActionSystem][Step 1] 地下城生态环境生成完成:\n"
             f"  dungeon_name: {blueprint.dungeon_name}\n"
             f"  ecology:      {blueprint.ecology}"
         )
@@ -586,14 +499,14 @@ class DungeonGenerationSystem(ReactiveProcessor):
             )
         except Exception as e:
             logger.error(
-                f"[DungeonGenerationSystem][Step 2] 批量解析 Stage 设定数据失败: {e}\n"
+                f"[GenerateDungeonActionSystem][Step 2] 批量解析 Stage 设定数据失败: {e}\n"
                 f"原始内容:\n{chat_client.response_content}"
             )
             return []
 
         for i, stage in enumerate(stages_response.stages, start=1):
             logger.info(
-                f"[DungeonGenerationSystem][Step 2] Stage {i}/{len(stages_response.stages)} 生成完成:\n"
+                f"[GenerateDungeonActionSystem][Step 2] Stage {i}/{len(stages_response.stages)} 生成完成:\n"
                 f"  stage_name:   {stage.stage_name}\n"
                 f"  profile_name: {stage.profile_name}\n"
                 f"  profile:      {stage.profile}"
@@ -645,7 +558,7 @@ class DungeonGenerationSystem(ReactiveProcessor):
                 )
             except Exception as e:
                 logger.error(
-                    f"[DungeonGenerationSystem][Step 3] Stage '{stage.stage_name}' 解析怪物设定失败，该场景不纳入 blueprint: {e}\n"
+                    f"[GenerateDungeonActionSystem][Step 3] Stage '{stage.stage_name}' 解析怪物设定失败，该场景不纳入 blueprint: {e}\n"
                     f"原始内容:\n{client.response_content}"
                 )
                 continue
@@ -663,14 +576,14 @@ class DungeonGenerationSystem(ReactiveProcessor):
             )
             blueprint.stages.append(stage_blueprint)
             logger.info(
-                f"[DungeonGenerationSystem][Step 3] Stage+Actor {i}/{len(stage_responses)} 写入 blueprint:\n"
+                f"[GenerateDungeonActionSystem][Step 3] Stage+Actor {i}/{len(stage_responses)} 写入 blueprint:\n"
                 f"  stage_name:           {stage_blueprint.stage_name}\n"
                 f"  profile_name:         {stage_blueprint.profile_name}\n"
                 f"  actor_name:           {stage_blueprint.actor.actor_name}\n"
                 f"  character_sheet_name: {stage_blueprint.actor.character_sheet_name}"
             )
 
-        ####################################################################################################################################
+    ####################################################################################################################################
 
     async def _step4_build_dungeon(self, blueprint: DungeonBlueprint) -> Dungeon | None:
         """Step 4：将 DungeonBlueprint 组装为完整的 Dungeon 实体树。
@@ -688,7 +601,7 @@ class DungeonGenerationSystem(ReactiveProcessor):
         """
         if not blueprint.stages:
             logger.error(
-                "[DungeonGenerationSystem][Step 4] blueprint.stages 为空，无法构建 Dungeon"
+                "[GenerateDungeonActionSystem][Step 4] blueprint.stages 为空，无法构建 Dungeon"
             )
             return None
 
@@ -724,7 +637,7 @@ class DungeonGenerationSystem(ReactiveProcessor):
             stage.actors = [actor]
             rooms.append(DungeonRoom(stage=stage))
             logger.info(
-                f"[DungeonGenerationSystem][Step 4] Room {i}/{len(blueprint.stages)} 构建完成:\n"
+                f"[GenerateDungeonActionSystem][Step 4] Room {i}/{len(blueprint.stages)} 构建完成:\n"
                 f"  stage: {stage.name}\n"
                 f"  actor: {actor.name}"
             )
@@ -735,76 +648,9 @@ class DungeonGenerationSystem(ReactiveProcessor):
             rooms=rooms,
         )
         logger.info(
-            f"[DungeonGenerationSystem][Step 4] Dungeon 构建完成: {dungeon.name} "
+            f"[GenerateDungeonActionSystem][Step 4] Dungeon 构建完成: {dungeon.name} "
             f"({len(dungeon.rooms)} rooms)"
         )
         return dungeon
-
-    ####################################################################################################################################
-    async def _step5_generate_images(self, blueprint: DungeonBlueprint) -> None:
-        """Step 5：并发为地下城封面和每个 Stage 生成插图，结果写回 blueprint.image_url。
-
-        构建 1 + N 个 ImageClient（1 个封面 + N 个 Stage），并发请求图片服务。
-        成功时将 local_path 写入对应的 image_url 字段；失败时静默跳过，不中断流程。
-
-        Args:
-            blueprint: Step 3 填充完整的 DungeonBlueprint
-        """
-        # 封面客户端（index 0）
-        cover_client = ImageClient(
-            name=f"{blueprint.dungeon_name}.cover",
-            prompt=_build_dungeon_cover_image_prompt(
-                dungeon_name=blueprint.dungeon_name,
-                ecology=blueprint.ecology,
-            ),
-            negative_prompt=_IMAGE_NEGATIVE_BASE,
-            width=_IMAGE_WIDTH,
-            height=_IMAGE_HEIGHT,
-            model=_IMAGE_MODEL,
-        )
-
-        # 每个 Stage 各一个客户端（index 1..N）
-        stage_clients: List[ImageClient] = [
-            ImageClient(
-                name=f"{stage_bp.stage_name}.illustration",
-                prompt=_build_stage_image_prompt(
-                    dungeon_name=blueprint.dungeon_name,
-                    ecology=blueprint.ecology,
-                    stage_bp=stage_bp,
-                ),
-                negative_prompt=_IMAGE_NEGATIVE_STAGE,
-                width=_IMAGE_WIDTH,
-                height=_IMAGE_HEIGHT,
-                model=_IMAGE_MODEL,
-            )
-            for stage_bp in blueprint.stages
-        ]
-
-        all_clients: List[ImageClient] = [cover_client] + stage_clients
-        await ImageClient.batch_generate(all_clients)
-
-        # 写回封面 image_url
-        if cover_client.response.images:
-            blueprint.image_url = cover_client.response.images[0].local_path
-            logger.info(
-                f"[DungeonGenerationSystem][Step 5] 封面图片生成完成: {blueprint.image_url}"
-            )
-        else:
-            logger.warning(
-                f"[DungeonGenerationSystem][Step 5] 封面图片生成失败: {blueprint.dungeon_name}"
-            )
-
-        # 写回各 Stage image_url
-        for stage_bp, client in zip(blueprint.stages, stage_clients):
-            if client.response.images:
-                stage_bp.image_url = client.response.images[0].local_path
-                logger.info(
-                    f"[DungeonGenerationSystem][Step 5] Stage 插图生成完成: "
-                    f"{stage_bp.stage_name} -> {stage_bp.image_url}"
-                )
-            else:
-                logger.warning(
-                    f"[DungeonGenerationSystem][Step 5] Stage 插图生成失败: {stage_bp.stage_name}"
-                )
 
     ####################################################################################################################################

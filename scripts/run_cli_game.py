@@ -820,9 +820,9 @@ async def _setup_dungeon_game(
 ) -> TCGGame:
     """从存档复位，激活地下城创建动作并执行 dungeon_setup_pipeline，并归档新状态。
 
-    调用 activate_setup_dungeon 为玩家实体添加 SetupDungeonAction，
-    然后驱动 _dungeon_setup_pipeline.process() 触发 DungeonGenerationSystem
-    执行完整的地下城创建流程（文生图、数据初始化等子任务）。
+    调用 activate_setup_dungeon 为玩家实体添加 GenerateDungeonAction，
+    然后驱动 _dungeon_setup_pipeline.process() 触发 GenerateDungeonActionSystem
+    执行地下城文本数据创建流程（Steps 1-4），成功后自动触发 IllustrateDungeonActionSystem。
     动作组件由 ActionCleanupSystem 在 pipeline 末端自动清除。
 
     前置条件：玩家必须处于家园模式（is_player_in_home_stage）。
@@ -1301,8 +1301,8 @@ def next_dungeon(snapshot: str) -> None:
 def setup_dungeon_cmd(snapshot: str) -> None:
     """从存档复位，激活地下城创建流程并写入新存档。
 
-    在家园模式下为玩家实体添加 SetupDungeonAction，驱动 dungeon_setup_pipeline
-    执行 DungeonGenerationSystem（文生图、数据初始化等子任务）。
+    在家园模式下为玩家实体添加 GenerateDungeonAction，驱动 dungeon_setup_pipeline
+    执行 GenerateDungeonActionSystem（Steps 1-4 文本数据）成功后自动触发 IllustrateDungeonActionSystem。
     适用于【家园模式】，执行结束后仍处于家园模式。
     """
 

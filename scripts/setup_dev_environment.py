@@ -143,9 +143,9 @@ def _setup_chromadb_rag_environment() -> None:
     reset_client()
 
     # 列出 BLUEPRINTS_DIR 下所有文件
-    blueprint_files = list(BLUEPRINTS_DIR.iterdir())
-    game_names = [f.stem for f in blueprint_files if f.is_file()]
-    logger.info(f"📂 发现蓝图文件: {[f.name for f in blueprint_files if f.is_file()]}")
+    # blueprint_files = list(BLUEPRINTS_DIR.iterdir())
+    game_names = [GAME_1, GAME_2]
+    logger.info(f"📂 发现蓝图文件: {game_names}")
 
     if not game_names:
         logger.warning("⚠️ BLUEPRINTS_DIR 下没有蓝图文件，跳过RAG加载")

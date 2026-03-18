@@ -1,68 +1,67 @@
-"""游戏启动服务模块
+"""新游戏启动服务模块
 
-提供游戏启动 API 接口，负责创建玩家会话和初始化游戏实例。
+提供新游戏启动 API 接口，负责创建玩家会话和初始化游戏实例。
 """
 
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.player_session import PlayerSession
 from ..game.tcg_game import TCGGame
-from ..models import StartRequest, StartResponse, World
+from ..models import NewGameRequest, NewGameResponse, World, Blueprint
 from .game_server_dependencies import CurrentGameServer
-from ..demo import create_mountain_beasts_dungeon, create_hunter_mystic_blueprint
-from ..game.config import GAME_1
+from ..demo import create_mountain_beasts_dungeon
+from ..game.config import BLUEPRINTS_DIR
 
 ###################################################################################################################################################################
-start_api_router = APIRouter()
+new_game_api_router = APIRouter()
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-@start_api_router.post(path="/api/start/v1/", response_model=StartResponse)
-async def start(
-    payload: StartRequest,
+@new_game_api_router.post(path="/api/game/new/v1/", response_model=NewGameResponse)
+async def new_game(
+    payload: NewGameRequest,
     game_server: CurrentGameServer,
-) -> StartResponse:
-    """游戏启动接口
+) -> NewGameResponse:
+    """新游戏启动接口
 
     创建并初始化游戏会话。
 
     Args:
-        payload: 启动请求对象
+        payload: 新游戏请求对象
         game_server: 游戏服务器实例
 
     Returns:
-        StartResponse: 包含游戏蓝图配置的启动响应
+        NewGameResponse: 包含游戏蓝图配置的启动响应
 
     Raises:
-        HTTPException(404): 用户房间不存在
-        HTTPException(400): 游戏已在运行中
-        HTTPException(500): 游戏蓝图不存在或玩家实体创建失败
+        HTTPException(404): 用户房间不存在，或请求的游戏蓝图文件不存在
     """
 
-    logger.info(f"/api/start/v1/: {payload.model_dump_json()}")
+    logger.info(f"/api/game/new/v1/: {payload.model_dump_json()}")
 
     # 检查房间是否存在
     if not game_server.has_room(payload.user_name):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"start/v1: {payload.user_name} not found, create room",
+            detail=f"game/new/v1: {payload.user_name} not found, create room",
         )
 
     # 获取房间实例
     room = game_server.get_room(payload.user_name)
-    assert room is not None, "start: room instance is None"
+    assert room is not None, "new_game: room instance is None"
 
-    # 如果没有blueprint数据，就返回错误, 压根不能玩！
-    assert payload.game_name == GAME_1, f"目前仅支持 {GAME_1} 这个游戏蓝图"
-    blueprint_data = create_hunter_mystic_blueprint(payload.game_name)
-    assert blueprint_data is not None, "world_blueprint is None"
-    if blueprint_data is None:
+    # 从 BLUEPRINTS_DIR 加载蓝图 JSON 文件
+    blueprint_path = BLUEPRINTS_DIR / f"{payload.game_name}.json"
+    if not blueprint_path.exists():
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"start/v1: {payload.game_name} blueprint data not found",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"game/new/v1: blueprint file not found for game '{payload.game_name}'",
         )
+    blueprint_data = Blueprint.model_validate_json(
+        blueprint_path.read_text(encoding="utf-8")
+    )
 
     # 创建玩家客户端
     room._player_session = PlayerSession(
@@ -99,4 +98,4 @@ async def start(
     await room._tcg_game.initialize()
 
     # 返回成功响应
-    return StartResponse(blueprint=blueprint_data)
+    return NewGameResponse(blueprint=blueprint_data)

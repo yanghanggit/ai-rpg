@@ -41,13 +41,13 @@ class LogoutResponse(BaseModel):
 
 
 @final
-class StartRequest(BaseModel):
+class NewGameRequest(BaseModel):
     user_name: str
     game_name: str
 
 
 @final
-class StartResponse(BaseModel):
+class NewGameResponse(BaseModel):
     blueprint: Blueprint
 
 

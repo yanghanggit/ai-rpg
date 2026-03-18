@@ -1,4 +1,4 @@
-from typing import Final, List, final, override
+from typing import Final, List, Tuple, final, override
 from loguru import logger
 from pydantic import BaseModel
 from ..chat_client.client import ChatClient
@@ -69,9 +69,7 @@ class DungeonEcologyResponse(BaseModel):
 ####################################################################################################################################
 @final
 class DungeonStageResponse(BaseModel):
-    """地下城 Stage 设定数据响应模型。
-
-    用于解析和验证 AI 返回的地下城场景设定 JSON 数据。
+    """地下城单个 Stage 设定数据响应模型。
 
     Attributes:
         stage_name: 场景全名，格式为「场景.XXXX」
@@ -85,59 +83,54 @@ class DungeonStageResponse(BaseModel):
 
 
 ####################################################################################################################################
-def _build_dungeon_stage_prompt(
-    dungeon_name: str,
-    ecology: str,
-    stage_index: int,
-    total_stages: int,
-    existing_stages: List["DungeonStageResponse"],
-) -> str:
-    """构建地下城 Stage 设定数据生成提示词。
+@final
+class DungeonStagesResponse(BaseModel):
+    """地下城批量 Stage 设定数据响应模型。
 
-    以地下城生态描述为种子，结合位置序号与已生成场景列表，
-    引导 LLM 差异化创作具有递进感的场景。
+    单次 LLM 调用返回指定数量的场景设定，以 stages 数组承载。
+
+    Attributes:
+        stages: 场景设定列表，顺序对应从入口到深处的递进
+    """
+
+    stages: List[DungeonStageResponse] = []
+
+
+####################################################################################################################################
+def _build_dungeon_stages_prompt(
+    dungeon_name: str, ecology: str, total_stages: int
+) -> str:
+    """构建批量生成地下城 Stage 设定数据的提示词。
+
+    单次调用要求 LLM 一次性返回 total_stages 个场景，以 JSON 数组输出。
+    场景顺序从入口到最深处，具有递进感，各场景名称与标识不重复。
 
     Args:
         dungeon_name: 地下城全名
         ecology: 地下城整体生态描述
-        stage_index: 当前场景序号（1-based）
-        total_stages: 场景总数
-        existing_stages: 已生成的场景响应列表，用于避免重复
+        total_stages: 需要生成的场景数量
 
     Returns:
-        完整的 Stage 设定生成提示词
+        完整的批量 Stage 设定生成提示词
     """
-    existing_info = ""
-    if existing_stages:
-        lines = []
-        for i, s in enumerate(existing_stages, start=1):
-            lines.append(f"  {i}. {s.stage_name}：{s.profile}")
-        existing_info = (
-            "## 已生成的场景（禁止重复，内容须有差异）\n\n" + "\n".join(lines) + "\n\n"
-        )
-
-    depth_hint = {
-        1: "入口区域，相对开阔，生物活动痕迹疏散",
-        total_stages: "最深处，空间压迫，生物活动痕迹密集且强烈",
-    }.get(stage_index, f"中段区域（第 {stage_index} / 共 {total_stages} 个场景），深度与复杂度介于入口与深处之间")
-
-    return f"""# 任务：为地下城创作第 {stage_index} / 共 {total_stages} 个战斗场景
+    return f"""# 任务：为地下城一次性创作 {total_stages} 个战斗场景
 
 ## 地下城信息
 
 - **地下城名称**：{dungeon_name}
 - **整体生态**：{ecology}
 
-## 当前场景的位置定位
+## 场景顺序说明
 
-{depth_hint}
+按从入口到最深处的顺序排列，共 {total_stages} 个场景：
+- 第 1 个：入口区域，相对开阔，生物活动痕迹疏散
+- 第 {total_stages} 个：最深处，空间压迫，生物活动痕迹密集且强烈
+- 中间场景：深度与复杂度介于入口与深处之间，逐步递进
 
-{existing_info}## 要求
+## 每个场景的要求
 
-根据上述信息，创作本场景：
-
-- **stage_name**：场景全名，采用「场景.XXXX」命名格式，体现该局部区域的地貌特征，与已有场景名称不重复
-- **profile_name**：场景英文标识，snake_case 格式（如 `forest_edge`、`deep_pool`），简洁且有辨识度，与已有标识不重复
+- **stage_name**：场景全名，采用「场景.XXXX」命名格式，体现该局部区域的地貌特征，所有场景名称不重复
+- **profile_name**：场景英文标识，snake_case 格式（如 `forest_edge`、`deep_pool`），所有标识不重复
 - **profile**：该场景的感官环境描写，50-100字，只描述「这里有什么」：
   - 地形结构、光照、温湿度等直观感受
   - 地面材质、植被或水体等自然要素
@@ -149,13 +142,17 @@ def _build_dungeon_stage_prompt(
 
 ```json
 {{
-  "stage_name": "场景.XXX",
-  "profile_name": "snake_case_name",
-  "profile": "..."
+  "stages": [
+    {{
+      "stage_name": "场景.XXX",
+      "profile_name": "snake_case_name",
+      "profile": "..."
+    }}
+  ]
 }}
 ```
 
-严格按 JSON 格式输出，不要添加其他内容。"""
+严格按 JSON 格式输出，stages 数组中包含恰好 {total_stages} 个元素，不要添加其他内容。"""
 
 
 ####################################################################################################################################
@@ -230,19 +227,10 @@ class DungeonGenerationSystem(ReactiveProcessor):
         if ecology_response is None:
             return
 
-        # Step 2: 循环生成地下城 Stage 设定数据
-        stage_count = 2
-        existing_stages: List[DungeonStageResponse] = []
-        for i in range(1, stage_count + 1):
-            stage_response = await self._step2_generate_stage(
-                world_system_entity, ecology_response, i, stage_count, existing_stages
-            )
-            if stage_response is not None:
-                existing_stages.append(stage_response)
-            else:
-                logger.warning(
-                    f"[DungeonGenerationSystem] Stage {i}/{stage_count} 生成失败，跳过"
-                )
+        # Step 2: 批量生成地下城 Stage 设定数据
+        await self._step2_generate_stages(
+            world_system_entity, ecology_response, stage_count=2
+        )
 
     ####################################################################################################################################
     async def _step1_generate_ecology(
@@ -282,69 +270,64 @@ class DungeonGenerationSystem(ReactiveProcessor):
         return ecology_response
 
     ####################################################################################################################################
-    async def _step2_generate_stage(
+    async def _step2_generate_stages(
         self,
         world_system_entity: Entity,
         ecology_response: DungeonEcologyResponse,
-        stage_index: int,
-        total_stages: int,
-        existing_stages: List[DungeonStageResponse],
-    ) -> DungeonStageResponse | None:
-        """Step 2：调用 LLM 生成一个 Stage 的设定数据。
+        stage_count: int,
+    ) -> List[Tuple[DungeonStageResponse, str]]:
+        """Step 2：单次调用 LLM 批量生成所有 Stage 设定数据。
 
-        生成 stage_name、profile_name、profile 三个字段，并在本地组装出
-        system_message（格式与 entity_factory.create_stage 保持一致）。
+        一次性返回 stage_count 个场景（stages 数组），减少 API 调用次数。
+        每个场景同时组装 system_message 并记录日志。
         本步骤仅生成并记录日志，不创建实体。
 
         Args:
             world_system_entity: 地下城生成世界系统实体
             ecology_response: Step 1 生成的地下城生态环境数据
-            stage_index: 当前场景序号（1-based）
-            total_stages: 场景总数
-            existing_stages: 已生成的场景列表，用于避免重复
+            stage_count: 需要生成的场景数量
 
         Returns:
-            解析成功的 DungeonStageResponse；失败时返回 None
+            (DungeonStageResponse, system_message) 元组列表；解析失败时返回空列表
         """
         chat_client = ChatClient(
             name=world_system_entity.name,
-            prompt=_build_dungeon_stage_prompt(
+            prompt=_build_dungeon_stages_prompt(
                 dungeon_name=ecology_response.name,
                 ecology=ecology_response.ecology,
-                stage_index=stage_index,
-                total_stages=total_stages,
-                existing_stages=existing_stages,
+                total_stages=stage_count,
             ),
             context=self._game.get_agent_context(world_system_entity).context,
         )
         await chat_client.async_chat()
 
         try:
-            stage_response = DungeonStageResponse.model_validate_json(
+            stages_response = DungeonStagesResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
             )
         except Exception as e:
             logger.error(
-                f"[DungeonGenerationSystem][Step 2] Stage {stage_index}/{total_stages} 解析失败: {e}\n"
+                f"[DungeonGenerationSystem][Step 2] 批量解析 Stage 设定数据失败: {e}\n"
                 f"原始内容:\n{chat_client.response_content}"
             )
-            return None
+            return []
 
-        # 按 entity_factory.create_stage 的模板组装 system_message
-        system_message = build_stage_system_message(
-            stage_name=stage_response.stage_name,
-            campaign_setting=RPG_CAMPAIGN_SETTING,
-            system_rules=RPG_SYSTEM_RULES,
-            profile=stage_response.profile,
-        )
-
-        logger.info(
-            f"[DungeonGenerationSystem][Step 2] Stage {stage_index}/{total_stages} 生成完成:\n"
-            f"  stage_name:   {stage_response.stage_name}\n"
-            f"  profile_name: {stage_response.profile_name}\n"
-            f"  profile:      {stage_response.profile}\n"
-            f"  system_message (前80字): {system_message[:80]}..."
-        )
-        return stage_response
+        results: List[Tuple[DungeonStageResponse, str]] = []
+        for i, stage in enumerate(stages_response.stages, start=1):
+            system_message = build_stage_system_message(
+                stage_name=stage.stage_name,
+                campaign_setting=RPG_CAMPAIGN_SETTING,
+                system_rules=RPG_SYSTEM_RULES,
+                profile=stage.profile,
+            )
+            logger.info(
+                f"[DungeonGenerationSystem][Step 2] Stage {i}/{len(stages_response.stages)} 生成完成:\n"
+                f"  stage_name:   {stage.stage_name}\n"
+                f"  profile_name: {stage.profile_name}\n"
+                f"  profile:      {stage.profile}\n"
+                f"  system_message (前80字): {system_message[:80]}..."
+            )
+            results.append((stage, system_message))
+        return results
 
     ####################################################################################################################################

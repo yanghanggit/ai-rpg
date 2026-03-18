@@ -8,10 +8,20 @@ from ..models import (
     WorldComponent,
     DungeonGenerationComponent,
     SetupDungeonAction,
+    Dungeon,
+    DungeonRoom,
+    StageProfile,
+    StageType,
+    CharacterSheet,
+    ActorType,
+    CharacterStats,
 )
 from ..game.tcg_game import TCGGame
-from ..game.config import BLUEPRINTS_DIR
+from ..game.config import BLUEPRINTS_DIR, DUNGEONS_DIR
 from ..utils import extract_json_from_code_block
+from ..demo.global_settings import RPG_CAMPAIGN_SETTING, RPG_SYSTEM_RULES
+from ..demo.entity_factory import create_actor, create_stage
+from ..demo.common_skills import BEAST_ATTACK_SKILL
 
 
 ####################################################################################################################################
@@ -379,6 +389,93 @@ class DungeonGenerationSystem(ReactiveProcessor):
         save_path: Path = BLUEPRINTS_DIR / f"{blueprint.dungeon_name}.json"
         save_path.write_text(blueprint.model_dump_json(indent=4), encoding="utf-8")
         logger.info(f"[DungeonGenerationSystem] DungeonBlueprint 已保存: {save_path}")
+
+        # Step 4: 将 DungeonBlueprint 组装为完整 Dungeon 实体树，写入 DUNGEONS_DIR
+        dungeon = await self._step4_build_dungeon(blueprint)
+        if dungeon is None:
+            return
+
+        dungeon_path: Path = DUNGEONS_DIR / f"{dungeon.name}.json"
+        dungeon_path.write_text(dungeon.model_dump_json(indent=4), encoding="utf-8")
+        logger.info(
+            f"[DungeonGenerationSystem] Dungeon 已保存: {dungeon_path}\n"
+            f"  rooms ({len(dungeon.rooms)}): "
+            + ", ".join(
+                f"{room.stage.name}({room.stage.actors[0].name if room.stage.actors else 'no actor'})"
+                for room in dungeon.rooms
+            )
+        )
+
+    ####################################################################################################################################
+    async def _step4_build_dungeon(
+        self, blueprint: DungeonBlueprint
+    ) -> Dungeon | None:
+        """Step 4：将 DungeonBlueprint 组装为完整的 Dungeon 实体树。
+
+        无 LLM 调用，纯数据组装。对 blueprint.stages 中每个 DungeonStageBlueprint：
+        - 用 create_stage 构建 Stage 实体
+        - 用 create_actor 构建 Actor 实体，挂载 BEAST_ATTACK_SKILL
+        - 拼成 DungeonRoom 列表，最终封装为 Dungeon
+
+        Args:
+            blueprint: Step 3 填充完整的 DungeonBlueprint
+
+        Returns:
+            完整的 Dungeon 实体；若 blueprint.stages 为空则返回 None
+        """
+        if not blueprint.stages:
+            logger.error(
+                "[DungeonGenerationSystem][Step 4] blueprint.stages 为空，无法构建 Dungeon"
+            )
+            return None
+
+        rooms: List[DungeonRoom] = []
+        for i, stage_bp in enumerate(blueprint.stages, start=1):
+            stage = create_stage(
+                name=stage_bp.stage_name,
+                stage_profile=StageProfile(
+                    name=stage_bp.profile_name,
+                    type=StageType.DUNGEON,
+                    profile=stage_bp.profile,
+                ),
+                campaign_setting=RPG_CAMPAIGN_SETTING,
+                system_rules=RPG_SYSTEM_RULES,
+            )
+
+            actor_bp = stage_bp.actor
+            actor = create_actor(
+                name=actor_bp.actor_name,
+                character_sheet=CharacterSheet(
+                    name=actor_bp.character_sheet_name,
+                    type=ActorType.ENEMY.value,
+                    profile=actor_bp.profile,
+                    base_body=actor_bp.base_body,
+                    appearance="",
+                ),
+                character_stats=CharacterStats(),
+                campaign_setting=RPG_CAMPAIGN_SETTING,
+                system_rules=RPG_SYSTEM_RULES,
+            )
+            actor.skills = [BEAST_ATTACK_SKILL.model_copy()]
+
+            stage.actors = [actor]
+            rooms.append(DungeonRoom(stage=stage))
+            logger.info(
+                f"[DungeonGenerationSystem][Step 4] Room {i}/{len(blueprint.stages)} 构建完成:\n"
+                f"  stage: {stage.name}\n"
+                f"  actor: {actor.name}"
+            )
+
+        dungeon = Dungeon(
+            name=blueprint.dungeon_name,
+            ecology=blueprint.ecology,
+            rooms=rooms,
+        )
+        logger.info(
+            f"[DungeonGenerationSystem][Step 4] Dungeon 构建完成: {dungeon.name} "
+            f"({len(dungeon.rooms)} rooms)"
+        )
+        return dungeon
 
     ####################################################################################################################################
     async def _step1_generate_ecology(

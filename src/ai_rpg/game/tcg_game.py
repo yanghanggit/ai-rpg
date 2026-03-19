@@ -11,7 +11,7 @@ from .rpg_game import RPGGame
 from ..game.tcg_game_process_pipeline import (
     create_home_pipeline,
     create_combat_pipeline,
-    create_dungeon_setup_pipeline,
+    create_dungeon_generate_pipeline,
 )
 from ..models import (
     Dungeon,
@@ -52,15 +52,15 @@ class TCGGame(RPGGame):
             self
         )
 
-        # 地下城准备流程（文生图等预生成任务）
-        self._dungeon_setup_pipeline: Final[RPGGameProcessPipeline] = (
-            create_dungeon_setup_pipeline(self)
+        # 地下城生成流程（LLM 文本生成 + 图片生成）
+        self._dungeon_generate_pipeline: Final[RPGGameProcessPipeline] = (
+            create_dungeon_generate_pipeline(self)
         )
 
         # 注册所有管道到管道管理器
         self.register_pipeline(self._home_pipeline)
         self.register_pipeline(self._combat_pipeline)
-        self.register_pipeline(self._dungeon_setup_pipeline)
+        self.register_pipeline(self._dungeon_generate_pipeline)
 
     ###############################################################################################################################################
     @property

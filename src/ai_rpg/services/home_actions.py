@@ -165,7 +165,7 @@ def activate_generate_dungeon(tcg_game: TCGGame) -> Tuple[bool, str]:
     在家园状态下激活地下城创建动作。
 
     添加 GenerateDungeonAction 到玩家实体，触发 GenerateDungeonActionSystem 在
-    dungeon_setup_pipeline 的下一次推进时执行地下城文本数据创建（Steps 1-4）。
+    dungeon_generate_pipeline 的下一次推进时执行地下城文本数据创建（Steps 1-4）。
     成功后自动添加 IllustrateDungeonAction 触发图片生成。动作组件由 ActionCleanupSystem 自动清除。
 
     Args:

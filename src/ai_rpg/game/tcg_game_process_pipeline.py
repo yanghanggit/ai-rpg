@@ -169,12 +169,14 @@ def create_combat_pipeline(
     return processors
 
 
-def create_dungeon_setup_pipeline(
+def create_dungeon_generate_pipeline(
     game: GameSession,
 ) -> "RPGGameProcessPipeline":
-    """创建地下城准备流程管道（文生图等预生成任务）
+    """创建地下城生成流程管道（LLM 文本生成 + 图片生成）
 
-    在进入地下城前触发，负责为地下城及其房间生成图片等预处理工作。
+    由 GenerateDungeonAction / IllustrateDungeonAction 驱动，负责调用 LLM 生成
+    地下城文本数据（Steps 1-4）并生成对应图片（Step 5），输出结果为 JSON/图片文件。
+    不涉及运行时 Entity 实例化（那是 setup_dungeon 的职责）。
 
     Args:
         game: 游戏会话实例

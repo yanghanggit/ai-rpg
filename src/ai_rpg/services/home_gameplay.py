@@ -305,16 +305,6 @@ async def home_enter_dungeon(
             game_server,
         )
 
-        # 检查地下城是否存在可用的关卡
-        # if len(rpg_game.current_dungeon.rooms) == 0:
-        #     logger.warning(
-        #         f"玩家 {payload.user_name} 尝试传送地下城失败: 当前地下城没有可用关卡"
-        #     )
-        #     raise HTTPException(
-        #         status_code=status.HTTP_404_NOT_FOUND,
-        #         detail="当前没有可用的地下城关卡",
-        #     )
-
         # 第一步：创建地下城实体（幂等）
         success, error_detail = setup_dungeon(rpg_game, rpg_game.current_dungeon)
         if not success:
@@ -354,7 +344,7 @@ async def home_generate_dungeon(
     """
     家园生成地下城接口
 
-    在家园状态下触发地下城文本与图片的生成流程（dungeon_setup_pipeline）。
+    在家园状态下触发地下城文本与图片的生成流程（dungeon_generate_pipeline）。
     添加 GenerateDungeonAction 到玩家实体，后台异步执行 Steps 1-4 文本生成及图片生成。
 
     Args:
@@ -394,11 +384,11 @@ async def home_generate_dungeon(
                 detail=error_detail,
             )
 
-    # 创建 dungeon setup pipeline 后台任务（在锁外创建，让任务在后台独立持锁执行）
+    # 创建 dungeon generate pipeline 后台任务（在锁外创建，让任务在后台独立持锁执行）
     generate_dungeon_task = game_server.create_task()
 
     asyncio.create_task(
-        _execute_dungeon_setup_pipeline_task(
+        _execute_dungeon_generate_pipeline_task(
             generate_dungeon_task.task_id,
             payload.user_name,
             game_server,
@@ -406,27 +396,27 @@ async def home_generate_dungeon(
     )
 
     logger.info(
-        f"📝 创建 dungeon setup pipeline 任务: task_id={generate_dungeon_task.task_id}, user={payload.user_name}"
+        f"📝 创建 dungeon generate pipeline 任务: task_id={generate_dungeon_task.task_id}, user={payload.user_name}"
     )
 
     return HomeGenerateDungeonResponse(
         task_id=generate_dungeon_task.task_id,
         status=TaskStatus.RUNNING.value,
-        message="dungeon setup pipeline 任务已启动，请通过会话消息查询结果",
+        message="dungeon generate pipeline 任务已启动，请通过会话消息查询结果",
     )
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-async def _execute_dungeon_setup_pipeline_task(
+async def _execute_dungeon_generate_pipeline_task(
     task_id: str,
     user_name: str,
     game_server: GameServer,
 ) -> None:
-    """后台执行 dungeon setup pipeline 任务
+    """后台执行 dungeon generate pipeline 任务
 
-    在后台异步执行 dungeon_setup_pipeline 并更新任务状态。
+    在后台异步执行 dungeon_generate_pipeline 并更新任务状态。
     使用房间锁保证同一玩家不会并发执行。
 
     Args:
@@ -436,7 +426,7 @@ async def _execute_dungeon_setup_pipeline_task(
     """
     try:
         logger.info(
-            f"🚀 dungeon setup pipeline 任务开始: task_id={task_id}, user={user_name}"
+            f"🚀 dungeon generate pipeline 任务开始: task_id={task_id}, user={user_name}"
         )
 
         current_room = game_server.get_room(user_name)
@@ -445,7 +435,7 @@ async def _execute_dungeon_setup_pipeline_task(
 
         async with current_room._lock:
             rpg_game = await _validate_player_at_home(user_name, game_server)
-            await rpg_game._dungeon_setup_pipeline.process()
+            await rpg_game._dungeon_generate_pipeline.process()
 
         task_record = game_server.get_task(task_id)
         if task_record is not None:
@@ -453,12 +443,12 @@ async def _execute_dungeon_setup_pipeline_task(
             task_record.end_time = datetime.now().isoformat()
 
         logger.info(
-            f"✅ dungeon setup pipeline 任务完成: task_id={task_id}, user={user_name}"
+            f"✅ dungeon generate pipeline 任务完成: task_id={task_id}, user={user_name}"
         )
 
     except Exception as e:
         logger.error(
-            f"❌ dungeon setup pipeline 任务失败: task_id={task_id}, user={user_name}, error={e}"
+            f"❌ dungeon generate pipeline 任务失败: task_id={task_id}, user={user_name}, error={e}"
         )
         task_record = game_server.get_task(task_id)
         if task_record is not None:

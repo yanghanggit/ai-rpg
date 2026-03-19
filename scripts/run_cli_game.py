@@ -813,16 +813,16 @@ async def _retreat_game(
 
 
 ###############################################################################################################################################
-async def _setup_dungeon_game(
+async def _generate_dungeon_game(
     world: World,
     player_session: PlayerSession,
     save_dir: Path,
 ) -> TCGGame:
-    """从存档复位，激活地下城创建动作并执行 dungeon_setup_pipeline，并归档新状态。
+    """从存档复位，激活地下城生成动作并执行 dungeon_generate_pipeline，并归档新状态。
 
     调用 activate_generate_dungeon 为玩家实体添加 GenerateDungeonAction，
-    然后驱动 _dungeon_setup_pipeline.process() 触发 GenerateDungeonActionSystem
-    执行地下城文本数据创建流程（Steps 1-4），成功后自动触发 IllustrateDungeonActionSystem。
+    然后驱动 _dungeon_generate_pipeline.process() 触发 GenerateDungeonActionSystem
+    执行地下城文本数据生成流程（Steps 1-4），成功后自动触发 IllustrateDungeonActionSystem。
     动作组件由 ActionCleanupSystem 在 pipeline 末端自动清除。
 
     前置条件：玩家必须处于家园模式（is_player_in_home_stage）。
@@ -842,7 +842,7 @@ async def _setup_dungeon_game(
         logger.error(f"激活地下城创建失败: {error_detail}")
         return terminal_game
 
-    await terminal_game._dungeon_setup_pipeline.process()
+    await terminal_game._dungeon_generate_pipeline.process()
 
     archive_world(
         terminal_game._world,
@@ -1292,16 +1292,16 @@ def next_dungeon(snapshot: str) -> None:
 
 
 ###############################################################################################################################################
-@main.command("setup-dungeon")
+@main.command("generate-dungeon")
 @click.option(
     "--snapshot",
     required=True,
     help="存档目录路径",
 )
-def setup_dungeon_cmd(snapshot: str) -> None:
-    """从存档复位，激活地下城创建流程并写入新存档。
+def generate_dungeon_cmd(snapshot: str) -> None:
+    """从存档复位，调用 LLM 生成地下城文件并写入新存档。
 
-    在家园模式下为玩家实体添加 GenerateDungeonAction，驱动 dungeon_setup_pipeline
+    在家园模式下为玩家实体添加 GenerateDungeonAction，驱动 dungeon_generate_pipeline
     执行 GenerateDungeonActionSystem（Steps 1-4 文本数据）成功后自动触发 IllustrateDungeonActionSystem。
     适用于【家园模式】，执行结束后仍处于家园模式。
     """
@@ -1325,7 +1325,7 @@ def setup_dungeon_cmd(snapshot: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(_setup_dungeon_game(world, player_session, _save_dir))
+    asyncio.run(_generate_dungeon_game(world, player_session, _save_dir))
 
 
 ###############################################################################################################################################

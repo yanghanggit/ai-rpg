@@ -349,11 +349,13 @@ class GenerateDungeonActionSystem(ReactiveProcessor):
         world_system_entity = next(iter(world_system_entities))
 
         for entity in entities:
-            await self._setup_dungeon(entity, world_system_entity)
+            await self._generate_dungeon(entity, world_system_entity)
 
     ####################################################################################################################################
-    async def _setup_dungeon(self, entity: Entity, world_system_entity: Entity) -> None:
-        """执行地下城完整创建流程。
+    async def _generate_dungeon(
+        self, entity: Entity, world_system_entity: Entity
+    ) -> None:
+        """调用 LLM 执行地下城完整生成流程，输出 JSON/图片文件。
 
         Args:
             entity: 携带 GenerateDungeonAction 的实体（玩家实体）

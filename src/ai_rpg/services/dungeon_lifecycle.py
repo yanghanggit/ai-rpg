@@ -8,6 +8,7 @@
 import random
 from typing import List, Set
 from loguru import logger
+from ..game.config import DUNGEONS_DIR
 from ..game.tcg_game import TCGGame
 from ..models import (
     Dungeon,
@@ -201,30 +202,45 @@ def _enter_dungeon_stage(
 
 
 ###################################################################################################################################################################
-def setup_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> tuple[bool, str]:
-    """创建地下城的全部游戏实体（敌人和场景）并初始化索引。（幂等）
+def setup_dungeon(tcg_game: TCGGame, dungeon_name: str) -> tuple[bool, str]:
+    """从文件加载地下城数据、赋值到游戏世界，并创建全部游戏实体（敌人和场景）。（幂等）
 
-    若实体已创建（dungeon.setup_entities == True），直接返回成功，不重复操作。
-    仅在 dungeon.current_room_index == -1（尚未进入）或 0（已 setup 未进入）时允许调用。
-    地下城进行中（current_room_index > 0）视为真正的错误。
+    从 DUNGEONS_DIR/{dungeon_name}.json 读取并实例化 Dungeon，赋值给 tcg_game._world.dungeon，
+    再创建对应的运行时 Entity（敌人和关卡场景）。
+    若实体已创建（dungeon.setup_entities == True），跳过实体创建直接返回成功。
+    仅在 current_room_index == -1（尚未进入）时允许调用。
 
     Args:
         tcg_game: TCG游戏实例
-        dungeon: 地下城实例
+        dungeon_name: 地下城名称（对应 DUNGEONS_DIR 下的 JSON 文件名，不含扩展名）
 
     Returns:
         tuple[bool, str]: (是否成功, 结果消息)
     """
+    # 1. 校验名称并加载文件
+    if not dungeon_name:
+        error_msg = "setup_dungeon 失败: dungeon_name 为空"
+        logger.error(error_msg)
+        return False, error_msg
+
+    dungeon_path = DUNGEONS_DIR / f"{dungeon_name}.json"
+    if not dungeon_path.exists():
+        error_msg = f"setup_dungeon 失败: 地下城文件不存在 {dungeon_path}"
+        logger.error(error_msg)
+        return False, error_msg
+
+    dungeon = Dungeon.model_validate_json(dungeon_path.read_text(encoding="utf-8"))
+
     if len(dungeon.rooms) == 0:
         error_msg = f"setup_dungeon 失败: {dungeon.name} 没有关卡数据"
         logger.error(error_msg)
         return False, error_msg
 
-    # 索引 >= 0 表示地下城已进入，不允许重新 setup
-    if dungeon.current_room_index >= 0:
+    # 守护：当前游戏世界中已有地下城正在进行，不允许重新 setup
+    if tcg_game._world.dungeon.current_room_index >= 0:
         error_msg = (
-            f"setup_dungeon 失败: {dungeon.name} 地下城已进入 "
-            f"(current_room_index={dungeon.current_room_index})"
+            f"setup_dungeon 失败: 当前地下城 {tcg_game._world.dungeon.name!r} 正在进行中 "
+            f"(current_room_index={tcg_game._world.dungeon.current_room_index})，请先退出"
         )
         logger.error(error_msg)
         return False, error_msg
@@ -233,12 +249,16 @@ def setup_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> tuple[bool, str]:
         not tcg_game.is_player_in_dungeon_stage
     ), "setup_dungeon 失败: 玩家已在地下城场景中！"
 
-    # 幂等：实体已创建则跳过
+    # 2. 赋值到游戏世界（此后 tcg_game.current_dungeon 指向新加载的实例）
+    tcg_game._world.dungeon = dungeon
+    logger.debug(f"setup_dungeon: 已将 {dungeon.name} 赋值到 world.dungeon")
+
+    # 3. 幂等：实体已创建则跳过
     if dungeon.setup_entities:
         logger.debug(f"setup_dungeon: {dungeon.name} 实体已创建，跳过")
         return True, f"地下城实体已存在，跳过创建: {dungeon.name}"
 
-    # 创建地下城实体（内部将 setup_entities 置 True），索引保持 -1
+    # 4. 创建地下城实体（内部将 setup_entities 置 True），索引保持 -1
     tcg_game.setup_dungeon_entities(dungeon)
 
     logger.info(f"setup_dungeon 完成: {dungeon.name}")
@@ -264,7 +284,7 @@ def enter_dungeon_first_stage(tcg_game: TCGGame, dungeon: Dungeon) -> tuple[bool
         logger.error(error_msg)
         return False, error_msg
 
-    if dungeon.current_room_index != -1:
+    if dungeon.current_room_index >= 0:
         error_msg = (
             f"enter_dungeon_first_stage 失败: {dungeon.name} "
             f"current_room_index={dungeon.current_room_index}，期望值为 -1（已 setup 未进入）"

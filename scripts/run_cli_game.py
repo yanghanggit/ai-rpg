@@ -209,11 +209,15 @@ async def _create_and_initialize_game(
     )
     assert world_blueprint is not None, "world blueprint 反序列化失败"
 
-    # 从 JSON 文件加载地下城
+    # 从 JSON 文件加载地下城；名称为空或文件不存在时使用空地下城占位
     dungeon_path = DUNGEONS_DIR / f"{dungeon_name}.json"
-    assert dungeon_path.exists(), f"地下城文件不存在: {dungeon_path}"
-    dungeon = Dungeon.model_validate_json(dungeon_path.read_text(encoding="utf-8"))
-    assert dungeon is not None, "dungeon 反序列化失败"
+    if dungeon_name and dungeon_path.exists():
+        dungeon = Dungeon.model_validate_json(dungeon_path.read_text(encoding="utf-8"))
+    else:
+        logger.warning(
+            f"地下城文件未找到（dungeon_name={dungeon_name!r}），使用空地下城占位"
+        )
+        dungeon = Dungeon(name="", rooms=[], ecology="")
 
     world_data = World(
         entity_counter=1000,
@@ -425,21 +429,23 @@ async def _switch_stage_game(
 async def _enter_dungeon_game(
     world: World,
     player_session: PlayerSession,
+    dungeon_name: str,
     save_dir: Path,
 ) -> TCGGame:
     """从存档复位，启动地下城第一关（等同于终端命令 /ed），并归档新状态。
 
-    调用 setup_dungeon 创建地下城实体，再调用 enter_dungeon_first_stage 将玩家和队友传送至第一关场景，
+    调用 setup_dungeon 从文件加载地下城、赋值并创建地下城实体，再调用 enter_dungeon_first_stage 将玩家和队友传送至第一关场景，
     创建首个 CombatSequence，然后驱动 combat_pipeline.process() 完成战斗初始化
     （场景描述生成、各角色初始状态效果生成、创建第一回合及行动顺序）。
 
     执行后游戏进入【地下城模式】，后续应使用 draw-cards → play-cards 流程。
 
-    前置条件：玩家必须处于家园模式，且地下城尚有未清理的关卡（stages 非空）。
+    前置条件：玩家必须处于家园模式。
 
     Args:
         world: 由 restore_world() 反序列化的世界数据。
         player_session: 由 restore_world() 反序列化的玩家会话。
+        dungeon_name: 地下城名称（对应 DUNGEONS_DIR 下的 JSON 文件名）。
         save_dir: 新存档写入目录。
 
     Returns:
@@ -447,11 +453,7 @@ async def _enter_dungeon_game(
     """
     terminal_game = await _restore_game(world, player_session)
 
-    if len(terminal_game.current_dungeon.rooms) == 0:
-        logger.error("地下城全部已结束，没有可进入的地下城")
-        return terminal_game
-
-    success, error_detail = setup_dungeon(terminal_game, terminal_game.current_dungeon)
+    success, error_detail = setup_dungeon(terminal_game, dungeon_name)
     if not success:
         logger.error(f"地下城实体创建失败: {error_detail}")
         return terminal_game
@@ -1036,7 +1038,12 @@ def switch_stage(snapshot: str, stage: str) -> None:
     required=True,
     help="存档目录路径",
 )
-def enter_dungeon(snapshot: str) -> None:
+@click.option(
+    "--dungeon",
+    required=True,
+    help="地下城名称（对应 DUNGEONS_DIR 下的 JSON 文件名，如 Dungeon1）",
+)
+def enter_dungeon(snapshot: str, dungeon: str) -> None:
     """从存档复位，启动地下城第一关，并写入新存档。
 
     等同于人类在终端输入 /ed。适用于【家园模式】。
@@ -1063,7 +1070,7 @@ def enter_dungeon(snapshot: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(_enter_dungeon_game(world, player_session, _save_dir))
+    asyncio.run(_enter_dungeon_game(world, player_session, dungeon, _save_dir))
 
 
 ###############################################################################################################################################

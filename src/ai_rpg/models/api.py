@@ -79,6 +79,7 @@ class HomeAdvanceResponse(BaseModel):
 class HomeEnterDungeonRequest(BaseModel):
     user_name: str
     game_name: str
+    dungeon_name: str
 
 
 @final

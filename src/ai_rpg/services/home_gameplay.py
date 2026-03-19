@@ -305,8 +305,8 @@ async def home_enter_dungeon(
             game_server,
         )
 
-        # 第一步：创建地下城实体（幂等）
-        success, error_detail = setup_dungeon(rpg_game, rpg_game.current_dungeon)
+        # 第一步：从文件加载地下城并创建实体（幂等）
+        success, error_detail = setup_dungeon(rpg_game, payload.dungeon_name)
         if not success:
             logger.error(f"玩家 {payload.user_name} 地下城实体创建失败: {error_detail}")
             raise HTTPException(

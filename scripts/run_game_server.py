@@ -31,6 +31,7 @@ from ai_rpg.services.background_tasks import background_tasks_api_router
 from ai_rpg.chat_client.client import ChatClient
 from ai_rpg.services.player_session import player_session_api_router
 from ai_rpg.game.config import LOGS_DIR
+from ai_rpg.image_client.client import ImageClient
 
 # 服务器配置文件路径
 _server_setting_path: Final[Path] = Path("server_configuration.json")
@@ -61,6 +62,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
         logger.info("✅ TCG游戏服务器初始化完成")
         ChatClient.initialize_url_config(server_configuration)
+        ImageClient.initialize_url_config(server_configuration)
         logger.info("✅ ChatClient URL配置已初始化")
 
     except Exception as e:

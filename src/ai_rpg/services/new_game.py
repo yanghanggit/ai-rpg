@@ -13,7 +13,7 @@ from ..models import (
     World,
     Blueprint,
     Dungeon,
-    BlueprintsResponse,
+    BlueprintListResponse,
 )
 from .game_server_dependencies import CurrentGameServer
 from ..game.config import BLUEPRINTS_DIR
@@ -26,21 +26,21 @@ new_game_api_router = APIRouter()
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @new_game_api_router.get(
-    path="/api/game/blueprints/v1/", response_model=BlueprintsResponse
+    path="/api/game/blueprint-list/v1/", response_model=BlueprintListResponse
 )
-async def get_blueprints() -> BlueprintsResponse:
-    """获取所有蓝图接口
+async def list_blueprints() -> BlueprintListResponse:
+    """获取可用蓝图列表接口
 
-    遍历 BLUEPRINTS_DIR 目录下的所有 JSON 文件，读取并返回其内容。
+    遍历 BLUEPRINTS_DIR 目录下的所有 JSON 文件，读取并返回其内容，供客户端预览选择。
 
     Returns:
-        BlueprintsResponse: 包含所有蓝图配置的响应
+        BlueprintListResponse: 包含所有蓝图配置的列表响应
     """
     blueprints = [
         Blueprint.model_validate_json(p.read_text(encoding="utf-8"))
         for p in sorted(BLUEPRINTS_DIR.glob("*.json"))
     ]
-    return BlueprintsResponse(blueprints=blueprints)
+    return BlueprintListResponse(blueprints=blueprints)
 
 
 ###################################################################################################################################################################

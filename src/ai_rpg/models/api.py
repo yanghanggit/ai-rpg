@@ -343,5 +343,15 @@ class TasksStatusResponse(BaseModel):
 
 
 @final
-class BlueprintsResponse(BaseModel):
+class BlueprintListResponse(BaseModel):
     blueprints: List[Blueprint]
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+
+@final
+class DungeonListResponse(BaseModel):
+    dungeons: List[Dungeon]

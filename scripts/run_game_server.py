@@ -9,6 +9,7 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
 
+from fastapi.staticfiles import StaticFiles
 from loguru import logger
 from ai_rpg.configuration import (
     server_configuration,
@@ -32,6 +33,10 @@ from ai_rpg.chat_client.client import ChatClient
 from ai_rpg.services.player_session import player_session_api_router
 from ai_rpg.game.config import LOGS_DIR
 from ai_rpg.image_client.client import ImageClient
+from ai_rpg.replicate import (
+    # replicate_config,
+    DEFAULT_OUTPUT_DIR,
+)
 
 # 服务器配置文件路径
 _server_setting_path: Final[Path] = Path("server_configuration.json")
@@ -139,6 +144,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+############################################################################################################
+# 挂载静态文件服务
+app.mount("/images", StaticFiles(directory=str(DEFAULT_OUTPUT_DIR)), name="images")
 
 # 公共的
 app.include_router(router=player_session_api_router)

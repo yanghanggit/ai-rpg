@@ -18,7 +18,7 @@ from ..models import (
     CharacterStats,
 )
 from ..game.tcg_game import TCGGame
-from ..game.config import BLUEPRINTS_DIR, DUNGEONS_DIR
+from ..game.config import DEBUG_CACHE_DIR, DUNGEONS_DIR
 from ..utils import extract_json_from_code_block
 from ..demo.global_settings import RPG_CAMPAIGN_SETTING, RPG_SYSTEM_RULES
 from ..demo.entity_factory import create_actor, create_stage
@@ -408,7 +408,7 @@ class GenerateDungeonActionSystem(ReactiveProcessor):
         )
 
         # 保存 DungeonBlueprint JSON（image_url 字段暂为空，待 IllustrateDungeonActionSystem 填充）
-        save_path: Path = BLUEPRINTS_DIR / f"{blueprint.dungeon_name}.json"
+        save_path: Path = DEBUG_CACHE_DIR / f"{blueprint.dungeon_name}.json"
         save_path.write_text(blueprint.model_dump_json(indent=4), encoding="utf-8")
         logger.info(
             f"[GenerateDungeonActionSystem] DungeonBlueprint 已保存: {save_path}"

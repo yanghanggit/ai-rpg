@@ -7,12 +7,40 @@ from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.player_session import PlayerSession
 from ..game.tcg_game import TCGGame
-from ..models import NewGameRequest, NewGameResponse, World, Blueprint, Dungeon
+from ..models import (
+    NewGameRequest,
+    NewGameResponse,
+    World,
+    Blueprint,
+    Dungeon,
+    BlueprintsResponse,
+)
 from .game_server_dependencies import CurrentGameServer
 from ..game.config import BLUEPRINTS_DIR
 
 ###################################################################################################################################################################
 new_game_api_router = APIRouter()
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@new_game_api_router.get(
+    path="/api/game/blueprints/v1/", response_model=BlueprintsResponse
+)
+async def get_blueprints() -> BlueprintsResponse:
+    """获取所有蓝图接口
+
+    遍历 BLUEPRINTS_DIR 目录下的所有 JSON 文件，读取并返回其内容。
+
+    Returns:
+        BlueprintsResponse: 包含所有蓝图配置的响应
+    """
+    blueprints = [
+        Blueprint.model_validate_json(p.read_text(encoding="utf-8"))
+        for p in sorted(BLUEPRINTS_DIR.glob("*.json"))
+    ]
+    return BlueprintsResponse(blueprints=blueprints)
 
 
 ###################################################################################################################################################################

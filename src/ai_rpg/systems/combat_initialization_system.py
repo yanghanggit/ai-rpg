@@ -90,6 +90,13 @@ def _generate_combat_init_prompt(
     为角色生成战斗触发时的上下文信息，要求根据场景、敌我、自身状态
     自主判断并生成初始战斗状态效果。使用第一人称叙事风格。
 
+    本函数在 prompt 中向 Agent 说明了战斗的核心循环流程（抓牌→出牌→状态效果评估），
+    以确保 Agent 在战斗开始前就理解自己在整个系统中的角色定位。
+    该流程描述须与后续三个系统的 prompt 思路保持统一：
+    - DrawCardsActionSystem：抓牌阶段，基于技能生成卡牌
+    - PlayCardsActionSystem：出牌阶段，提交执行单元并由仲裁系统推演
+    - StatusEffectsEvaluationSystem：评估阶段，根据本轮事件新增状态效果
+
     Args:
         stage_name: 战斗场景名称
         stage_description: 战斗场景的环境描述
@@ -104,6 +111,17 @@ def _generate_combat_init_prompt(
     attrs_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
 
     return f"""# 指令！战斗触发！生成初始状态效果(JSON)
+
+## 战斗规则
+
+本战斗为**卡牌回合制（TCG）**，每轮核心流程如下：
+
+1. **创建回合** — 你感知当前战场环境与参战角色，结合初始化信息形成对本轮战斗的初步判断
+2. **抓牌** — 创建卡牌（战斗执行的基础单元）
+3. **出牌** — 选择并打出手牌，将执行单元提交给仲裁系统，由其推演实际战斗效果
+4. **状态效果评估** — 推演结束后，根据本轮发生的事件，判断并新增应有的状态效果
+
+> 你当前处于**战斗触发阶段**（第一回合尚未开始）。你现在生成的初始状态效果，将作为第一回合的起点，并在此后每轮的状态效果评估中持续演变。
 
 ## 场景叙事
 
@@ -341,10 +359,10 @@ class CombatInitializationSystem(ExecuteProcessor):
                 )
                 self._game.add_human_message(entity=entity, message_content=added_msg)
 
-                # logger.debug(
-                #     f"[{entity.name}] 战斗初始化新增 {len(format_response.status_effects)} 个状态效果: "
-                #     f"{[e.name for e in format_response.status_effects]}"
-                # )
+                logger.debug(
+                    f"[{entity.name}] 战斗初始化新增 {len(format_response.status_effects)} 个状态效果: "
+                    f"{[e.name for e in format_response.status_effects]}"
+                )
             else:
                 logger.debug(f"[{entity.name}] 战斗初始化无新增状态效果")
 

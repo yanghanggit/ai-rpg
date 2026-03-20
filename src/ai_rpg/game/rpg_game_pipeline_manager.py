@@ -8,7 +8,6 @@ class RPGGameProcessPipeline(Processors):
 
     def __init__(self) -> None:
         super().__init__()
-        # logger.info("🎮 RPG 游戏流程管道已创建")
 
     ###################################################################################################################################################################
     async def process(self) -> None:

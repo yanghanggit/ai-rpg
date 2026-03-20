@@ -15,6 +15,7 @@ from ..models import (
     HomeComponent,
     DungeonComponent,
 )
+from loguru import logger
 
 
 ###############################################################################################################################################
@@ -173,15 +174,19 @@ class RPGEntityManager(Context):
             for comp_serialization in entity_serialization.components:
 
                 comp_class = COMPONENT_TYPES.get(comp_serialization.name)
-                assert comp_class is not None
+                assert (
+                    comp_class is not None
+                ), f"Component class not found for {comp_serialization.name}"
 
                 # 使用 Pydantic 的方式直接从字典创建实例
                 restore_comp = comp_class(**comp_serialization.data)
-                assert restore_comp is not None
+                assert (
+                    restore_comp is not None
+                ), f"Failed to restore component {comp_class.__name__} for entity {entity_serialization.name}"
 
-                # logger.debug(
-                #     f"comp_class = {comp_class.__name__}, comp = {restore_comp}"
-                # )
+                logger.debug(
+                    f"comp_class = {comp_class.__name__}, comp = {restore_comp}"
+                )
                 entity.set(comp_class, restore_comp)
 
         return deserialized_entities

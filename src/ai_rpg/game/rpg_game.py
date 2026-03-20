@@ -84,21 +84,8 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         self._world: Final[World] = world
 
         # 验证玩家信息
-        # logger.info(
-        #     f"TCGGame init player: {self.player_session.name}: {self.player_session.actor}"
-        # )
         assert self._player_session.name != "", "玩家名字不能为空"
         assert self._player_session.actor != "", "玩家角色不能为空"
-
-    ###############################################################################################################################################
-    # @property
-    # def player_session(self) -> PlayerSession:
-    #     return self._player_session
-
-    ###############################################################################################################################################
-    # @property
-    # def world(self) -> World:
-    #     return self._world
 
     ###############################################################################################################################################
     def get_agent_context(self, entity: Entity) -> AgentContext:
@@ -127,6 +114,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         if entity.name in self._world.agents_context:
             logger.debug(f"destroy_entity: {entity.name} in agents_context, pop it")
             self._world.agents_context.pop(entity.name, None)
+
         return super().destroy_entity(entity)
 
     ###############################################################################################################################################
@@ -134,14 +122,12 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
     def exit(self) -> None:
         # 关闭所有管道
         self.shutdown_pipelines()
-        # logger.warning(f"{self.name}, exit!!!!!!!!!!!!!!!!!!!!)")
 
     ###############################################################################################################################################
     @override
     async def initialize(self) -> None:
         # 初始化所有管道
         await self.initialize_pipelines()
-        # logger.debug(f"Initialized all pipelines")
 
     ###############################################################################################################################################
     def build_from_blueprint(self) -> "RPGGame":
@@ -191,7 +177,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         player_only_stage_entity.replace(
             PlayerOnlyStageComponent, player_only_stage_entity.name
         )
-        # logger.debug(f"场景: {player_only_stage_entity.name} 已标记为仅玩家可见")
+        logger.debug(f"场景: {player_only_stage_entity.name} 已标记为仅玩家可见")
 
         return self
 
@@ -376,16 +362,6 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 copy_items,
             )
 
-            # 测试一下 道具！
-            inventory_component = actor_entity.get(InventoryComponent)
-            assert inventory_component is not None, "inventory_component is None"
-            # if len(inventory_component.items) > 0:
-            #     logger.debug(
-            #         f"InventoryComponent 角色 {actor_model.name} 有 {len(inventory_component.items)} 个物品"
-            #     )
-            #     for item in inventory_component.items:
-            #         logger.debug(f"物品: {item.model_dump_json(indent=2)}")
-
             # 必要组件：技能书组件, 必须copy一份, 不要进行直接引用
             copy_skills = copy.deepcopy(actor_model.skills)
             actor_entity.add(
@@ -465,7 +441,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
     ###############################################################################################################################################
     def add_system_message(self, entity: Entity, message_content: str) -> None:
         """添加系统消息到实体的LLM上下文，必须是第一条消息"""
-        # logger.info(f"add_system_message: {entity.name} => \n{message_content}")
+        logger.info(f"add_system_message: {entity.name} => \n{message_content}")
         agent_context = self.get_agent_context(entity)
         assert (
             len(agent_context.context) == 0
@@ -477,10 +453,10 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         self, entity: Entity, message_content: str, **kwargs: Any
     ) -> None:
         """添加用户消息到实体的LLM上下文"""
-        # logger.debug(f"add_human_message: {entity.name} => \n{message_content}")
-        # if len(kwargs) > 0:
-        #     # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
-        #     logger.debug(f"kwargs: {kwargs}")
+        logger.debug(f"add_human_message: {entity.name} => \n{message_content}")
+        if len(kwargs) > 0:
+            # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
+            logger.debug(f"kwargs: {kwargs}")
 
         agent_context = self.get_agent_context(entity)
         agent_context.context.extend([HumanMessage(content=message_content, **kwargs)])
@@ -489,10 +465,10 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
     def add_ai_message(self, entity: Entity, ai_messages: List[AIMessage]) -> None:
         """添加AI响应消息到实体的LLM上下文"""
         assert len(ai_messages) > 0, "ai_messages should not be empty"
-        # for ai_message in ai_messages:
-        #     assert isinstance(ai_message, AIMessage)
-        #     assert ai_message.content != "", "ai_message content should not be empty"
-        #     logger.debug(f"add_ai_message: {entity.name} => \n{ai_message.content}")
+        for ai_message in ai_messages:
+            assert isinstance(ai_message, AIMessage)
+            assert ai_message.content != "", "ai_message content should not be empty"
+            logger.debug(f"add_ai_message: {entity.name} => \n{ai_message.content}")
 
         # 添加多条 AIMessage
         agent_context = self.get_agent_context(entity)
@@ -811,9 +787,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
 
         # 开始移除！！！！。
         del agent_context.context[begin_message_index:end_message_index]
-        # logger.debug(f"remove_message_range= {entity.name}")
-        # logger.debug(f"begin_message: \n{begin_message.model_dump_json(indent=2)}")
-        # logger.debug(f"end_message: \n{end_message.model_dump_json(indent=2)}")
+        logger.debug(f"remove_message_range= {entity.name}")
+        logger.debug(f"begin_message: \n{begin_message.model_dump_json(indent=2)}")
+        logger.debug(f"end_message: \n{end_message.model_dump_json(indent=2)}")
 
         return deleted_messages
 

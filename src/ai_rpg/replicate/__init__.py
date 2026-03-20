@@ -8,7 +8,7 @@ from .api_test import test_replicate_api_connection
 from .config import (
     ReplicateConfig,
     replicate_config,
-    DEFAULT_OUTPUT_DIR,
+    GENERATED_IMAGES_OUTPUT_DIR,
 )
 from .image_tools import (
     run_concurrent_tasks,
@@ -29,5 +29,5 @@ __all__ = [
     "ReplicateImageTask",
     "ReplicateImageInput",
     "replicate_config",
-    "DEFAULT_OUTPUT_DIR",
+    "GENERATED_IMAGES_OUTPUT_DIR",
 ]

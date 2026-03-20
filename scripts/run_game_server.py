@@ -35,7 +35,7 @@ from ai_rpg.game.config import LOGS_DIR
 from ai_rpg.image_client.client import ImageClient
 from ai_rpg.replicate import (
     # replicate_config,
-    DEFAULT_OUTPUT_DIR,
+    GENERATED_IMAGES_OUTPUT_DIR,
 )
 
 # 服务器配置文件路径
@@ -147,7 +147,9 @@ app.add_middleware(
 
 ############################################################################################################
 # 挂载静态文件服务
-app.mount("/images", StaticFiles(directory=str(DEFAULT_OUTPUT_DIR)), name="images")
+app.mount(
+    "/images", StaticFiles(directory=str(GENERATED_IMAGES_OUTPUT_DIR)), name="images"
+)
 
 # 公共的
 app.include_router(router=player_session_api_router)

@@ -39,7 +39,7 @@ from ai_rpg.replicate import (
     ReplicateImageInput,
     replicate_config,
     test_replicate_api_connection,
-    DEFAULT_OUTPUT_DIR,
+    GENERATED_IMAGES_OUTPUT_DIR,
 )
 
 
@@ -85,7 +85,7 @@ DEMO_SCENARIOS = {
 
 
 def find_test_images(
-    directory: Path = DEFAULT_OUTPUT_DIR, limit: int = 3
+    directory: Path = GENERATED_IMAGES_OUTPUT_DIR, limit: int = 3
 ) -> List[Path]:
     """查找测试用图片"""
     if not directory.exists():
@@ -165,7 +165,7 @@ async def run_image_edit(
 
     # 准备输出路径
     output_path = str(
-        DEFAULT_OUTPUT_DIR / f"{model}_edit_{uuid.uuid4()}.{output_format}"
+        GENERATED_IMAGES_OUTPUT_DIR / f"{model}_edit_{uuid.uuid4()}.{output_format}"
     )
 
     print(f"\n⏳ 开始执行编辑任务...")
@@ -220,7 +220,7 @@ async def run_demo_scenario(scenario_key: str, model: str = "nano-banana") -> No
         # 单图编辑只需要1张
         test_images = find_test_images(limit=1)
         if not test_images:
-            print(f"\n❌ 错误: 在 {DEFAULT_OUTPUT_DIR} 目录下未找到测试图片")
+            print(f"\n❌ 错误: 在 {GENERATED_IMAGES_OUTPUT_DIR} 目录下未找到测试图片")
             print(f"💡 请先运行 run_replicate_test_text2image.py 生成一些图片")
             return
 

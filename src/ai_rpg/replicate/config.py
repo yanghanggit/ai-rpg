@@ -9,9 +9,9 @@ from typing import Dict, Final, Optional
 
 
 # 默认输出目录
-DEFAULT_OUTPUT_DIR: Final[Path] = Path("generated_images")
-DEFAULT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-assert DEFAULT_OUTPUT_DIR.exists(), "无法创建默认输出目录"
+GENERATED_IMAGES_OUTPUT_DIR: Final[Path] = Path("generated_images")
+GENERATED_IMAGES_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+assert GENERATED_IMAGES_OUTPUT_DIR.exists(), "无法创建默认输出目录"
 
 
 # Replicate 配置类

@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from loguru import logger
 from ai_rpg.replicate import (
     replicate_config,
-    DEFAULT_OUTPUT_DIR,
+    GENERATED_IMAGES_OUTPUT_DIR,
 )
 from ai_rpg.configuration import server_configuration
 from ai_rpg.services.replicate_image import replicate_image_api_router
@@ -40,7 +40,9 @@ app.add_middleware(
 )
 ############################################################################################################
 # 挂载静态文件服务
-app.mount("/images", StaticFiles(directory=str(DEFAULT_OUTPUT_DIR)), name="images")
+app.mount(
+    "/images", StaticFiles(directory=str(GENERATED_IMAGES_OUTPUT_DIR)), name="images"
+)
 ############################################################################################################
 # 注册路由
 app.include_router(replicate_image_api_router)

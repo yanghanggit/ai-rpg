@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException
 from loguru import logger
 from ..replicate import (
     replicate_config,
-    DEFAULT_OUTPUT_DIR,
+    GENERATED_IMAGES_OUTPUT_DIR,
     ReplicateImageTask,
     run_concurrent_tasks,
     ReplicateImageInput,
@@ -104,7 +104,7 @@ async def generate_image(payload: ImageGenerationRequest) -> ImageGenerationResp
 
         # 4. 生成输出文件名
         filename = f"{model_name}_{uuid.uuid4()}.png"
-        output_path = str(DEFAULT_OUTPUT_DIR / filename)
+        output_path = str(GENERATED_IMAGES_OUTPUT_DIR / filename)
 
         # 记录映射关系
         task_metadata[output_path] = {
@@ -162,7 +162,7 @@ async def list_generated_images() -> List[str]:
     Returns:
         List[str]: 图片文件名列表
     """
-    files = os.listdir(DEFAULT_OUTPUT_DIR)
+    files = os.listdir(GENERATED_IMAGES_OUTPUT_DIR)
     image_files = [
         f for f in files if f.lower().endswith((".png", ".jpg", ".jpeg", ".gif"))
     ]

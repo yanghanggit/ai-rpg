@@ -28,7 +28,7 @@ from ai_rpg.replicate import (
     run_concurrent_tasks,
     ReplicateImageTask,
     ReplicateImageInput,
-    DEFAULT_OUTPUT_DIR,
+    GENERATED_IMAGES_OUTPUT_DIR,
 )
 
 
@@ -70,7 +70,7 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
             }
             # 准备输出路径
             output_path = str(
-                DEFAULT_OUTPUT_DIR
+                GENERATED_IMAGES_OUTPUT_DIR
                 / f"{replicate_config.default_image_model}_{i:02d}_{uuid.uuid4()}.png"
             )
 
@@ -121,7 +121,7 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
 @click.option(
     "--output",
     "-o",
-    default=str(DEFAULT_OUTPUT_DIR),
+    default=str(GENERATED_IMAGES_OUTPUT_DIR),
     type=click.Path(),
     help="输出目录",
 )

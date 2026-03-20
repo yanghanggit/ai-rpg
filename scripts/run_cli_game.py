@@ -123,6 +123,8 @@ from typing import Final
 sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
+# 将 scripts 目录添加到模块搜索路径
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import asyncio
 import datetime
@@ -134,9 +136,9 @@ from ai_rpg.game.config import (
     BLUEPRINTS_DIR,
     DUNGEONS_DIR,
     GAME_1,
-    LOGS_DIR,
     WORLDS_DIR,
 )
+from config import LOGS_DIR
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import TCGGame
 from ai_rpg.image_client.client import ImageClient

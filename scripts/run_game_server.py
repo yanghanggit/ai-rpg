@@ -8,6 +8,8 @@ from typing import Any, AsyncIterator, Dict, Final
 sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
+# 将 scripts 目录添加到模块搜索路径
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
@@ -31,8 +33,8 @@ from ai_rpg.services.stages_state import stages_state_api_router
 from ai_rpg.services.background_tasks import background_tasks_api_router
 from ai_rpg.chat_client.client import ChatClient
 from ai_rpg.services.player_session import player_session_api_router
-from ai_rpg.game.config import LOGS_DIR
 from ai_rpg.image_client.client import ImageClient
+from config import LOGS_DIR
 from ai_rpg.replicate import (
     # replicate_config,
     GENERATED_IMAGES_OUTPUT_DIR,

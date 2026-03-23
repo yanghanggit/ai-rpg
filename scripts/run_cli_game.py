@@ -254,11 +254,8 @@ async def _create_and_initialize_game(
         f"游戏创建并初始化完成：user={user}, game={game}, dungeon={dungeon_name}"
     )
 
-    # 检查聊天服务
-    await ChatClient.health_check()
-
-    # 检查图片服务
-    await ImageClient.health_check()
+    # 并发检查聊天服务和图片服务
+    await asyncio.gather(ChatClient.health_check(), ImageClient.health_check())
 
     # 持久化游戏世界数据到存档目录，并启用 gzip 快照功能
     archive_world(

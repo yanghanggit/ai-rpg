@@ -22,6 +22,10 @@ import sys
 import os
 
 import click
+
+# PyInstaller frozen bundle 检测
+# 打包后 sys.frozen = True，sys._MEIPASS 为临时解压目录
+_IS_FROZEN: bool = getattr(sys, "frozen", False)
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Static, Input, RichLog
 from textual.containers import Vertical, Horizontal
@@ -154,6 +158,14 @@ class GameClient(App[None]):
 )
 def main(web: bool, port: int, host: str, public_url: str | None) -> None:
     if web:
+        # frozen bundle 不含 textual-serve，拒绝 --web 模式
+        if _IS_FROZEN:
+            click.echo(
+                "[错误] --web 模式在打包版本中不可用。\n"
+                "请直接运行，TUI 将在当前终端窗口显示。"
+            )
+            sys.exit(1)
+
         from textual_serve.server import Server
 
         command = f"{sys.executable} {os.path.abspath(__file__)}"

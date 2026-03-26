@@ -1,4 +1,4 @@
-.PHONY: install test lint format clean dev-install uv-install check-imports fix-imports show-structure check help
+.PHONY: install test lint format clean dev-install uv-install check-imports fix-imports show-structure check client-build client-clean help
 
 # 默认目标：显示帮助信息
 .DEFAULT_GOAL := help
@@ -56,6 +56,16 @@ clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete
 
+# 构建 macOS 客户端 .app（同事发行版，双击启动 TUI）
+client-build:
+	@echo "🏗️  构建 AI RPG Client macOS App..."
+	bash packaging/build_macos.sh
+
+# 清理客户端构建产物
+client-clean:
+	rm -rf dist/client/ build/client/
+	@echo "✅ 客户端构建产物已清理"
+
 # 显示项目结构
 show-structure:
 	tree -I '__pycache__|*.pyc|*.pyo|*.pyd|*.so|.git|.pytest_cache|.mypy_cache' --dirsfirst
@@ -93,6 +103,10 @@ help:
 	@echo "  check          - ✅ 检查项目和环境状态"
 	@echo "  clean          - 🧹 清理构建文件"
 	@echo "  help           - ❓ 显示此帮助信息"
+	@echo ""
+	@echo "📦 客户端打包（macOS）:"
+	@echo "  client-build   - 🖥️  构建 AI-RPG-Client.app（发给同事）"
+	@echo "  client-clean   - 🧹 清理客户端构建产物"
 	@echo ""
 	@echo "💡 推荐工作流:"
 	@echo "  1. make install      # 安装所有依赖"

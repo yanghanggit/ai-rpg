@@ -1,0 +1,11 @@
+[project]
+name = "ai-rpg-client"
+version = "0.1.0"
+description = "AI RPG TUI Game Client - standalone packaging environment"
+requires-python = ">=3.12"
+dependencies = [
+    "textual>=8.1.1",
+    "click>=8.1.7",
+    "httpx>=0.28.1",
+    "pyinstaller>=6.0.0",
+]

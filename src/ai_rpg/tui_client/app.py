@@ -1,9 +1,13 @@
 """AI RPG 游戏客户端主应用（Textual TUI）"""
 
+import json
+
+from textual import on, work
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Static, Input, RichLog
 from textual.containers import Vertical, Horizontal
-from textual import on
+
+from .server_client import GAME_SERVER_BASE_URL, fetch_server_info
 
 
 WELCOME_TEXT = """\
@@ -75,6 +79,20 @@ class GameClient(App[None]):
         log.write(WELCOME_TEXT)
         log.write(f"[dim]Textual 版本: {self._get_textual_version()}[/]")
         self.query_one(Input).focus()
+        self.connect_to_server()
+
+    @work
+    async def connect_to_server(self) -> None:
+        log = self.query_one(RichLog)
+        log.write(f"[dim]正在连接服务器 {GAME_SERVER_BASE_URL} ...[/]")
+        try:
+            data = await fetch_server_info()
+            formatted = json.dumps(data, ensure_ascii=False, indent=2)
+            log.write(f"[bold green]✅ 服务器已连接[/]")
+            log.write(formatted)
+        except Exception as e:
+            log.write(f"[bold red]❌ 连接失败: {e}[/]")
+        log.scroll_end(animate=False)
 
     def _get_textual_version(self) -> str:
         try:

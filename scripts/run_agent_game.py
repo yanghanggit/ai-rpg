@@ -41,18 +41,18 @@
         主动撤退（战斗中）→ retreat
 
 命令速查表：
-    python scripts/run_cli_game.py new [--user NAME] [--game GAME]
-    python scripts/run_cli_game.py advance      --snapshot PATH
-    python scripts/run_cli_game.py speak        --snapshot PATH --target ACTOR --content TEXT
-    python scripts/run_cli_game.py switch-stage --snapshot PATH --stage STAGE_NAME
-    python scripts/run_cli_game.py enter-dungeon --snapshot PATH
-    python scripts/run_cli_game.py draw-cards   --snapshot PATH
-    python scripts/run_cli_game.py play-cards   --snapshot PATH
-    python scripts/run_cli_game.py exit-dungeon   --snapshot PATH
-    python scripts/run_cli_game.py next-dungeon --snapshot PATH
-    python scripts/run_cli_game.py retreat      --snapshot PATH
+    python scripts/run_agent_game.py new [--user NAME] [--game GAME]
+    python scripts/run_agent_game.py advance      --snapshot PATH
+    python scripts/run_agent_game.py speak        --snapshot PATH --target ACTOR --content TEXT
+    python scripts/run_agent_game.py switch-stage --snapshot PATH --stage STAGE_NAME
+    python scripts/run_agent_game.py enter-dungeon --snapshot PATH
+    python scripts/run_agent_game.py draw-cards   --snapshot PATH
+    python scripts/run_agent_game.py play-cards   --snapshot PATH
+    python scripts/run_agent_game.py exit-dungeon   --snapshot PATH
+    python scripts/run_agent_game.py next-dungeon --snapshot PATH
+    python scripts/run_agent_game.py retreat      --snapshot PATH
 
-日志文件：logs/run_cli_game_{timestamp}.log（与新存档时间戳相同）
+日志文件：logs/run_agent_game_{timestamp}.log（与新存档时间戳相同）
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 AI 操作经验总结（供后续 AI 实例参考，勿删）
@@ -64,7 +64,7 @@ AI 操作经验总结（供后续 AI 实例参考，勿删）
         speak --snapshot A --target 角色.术士.云音 --content "..."  → 存档 B
         advance --snapshot B                                         → 存档 C（云音在此回话）
     读取 NPC 回应内容：
-        grep -A 20 "response_content" logs/run_cli_game_{C的时间戳}.log
+        grep -A 20 "response_content" logs/run_agent_game_{C的时间戳}.log
 
 【陷阱 2】选错存档导致命令静默失败或行为异常（高频陷阱！）
     每条命令对前置状态有严格要求，使用错误的存档会导致命令静默失败、不产生新存档，
@@ -893,7 +893,7 @@ def new_game(user: str, game: str, dungeon: str) -> None:
     """
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
     _setup_logger(_log_file)
 
     if user is None:
@@ -927,7 +927,7 @@ def advance(snapshot: str) -> None:
         )
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
     _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
@@ -974,7 +974,7 @@ def speak(snapshot: str, target: str, content: str) -> None:
         )
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
     _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
@@ -1015,7 +1015,7 @@ def switch_stage(snapshot: str, stage: str) -> None:
         )
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
     _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
@@ -1057,7 +1057,7 @@ def enter_dungeon(snapshot: str, dungeon: str) -> None:
         )
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
     _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
@@ -1094,7 +1094,7 @@ def draw_cards(snapshot: str) -> None:
         )
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
     _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
@@ -1159,7 +1159,7 @@ def draw_cards_specified(
         )
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
     _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
@@ -1207,7 +1207,7 @@ def play_cards(snapshot: str) -> None:
         )
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
     _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
@@ -1244,7 +1244,7 @@ def exit_dungeon(snapshot: str) -> None:
         )
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
     _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
@@ -1282,7 +1282,7 @@ def next_dungeon(snapshot: str) -> None:
         )
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
     _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
@@ -1319,7 +1319,7 @@ def generate_dungeon_cmd(snapshot: str) -> None:
         )
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
     _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)
@@ -1356,7 +1356,7 @@ def retreat(snapshot: str) -> None:
         )
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    _log_file = LOGS_DIR / f"run_cli_game_{_timestamp}.log"
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
     _setup_logger(_log_file)
 
     world, player_session = restore_world(snapshot_path)

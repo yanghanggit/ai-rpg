@@ -6,6 +6,7 @@ import httpx
 
 from ..models import (
     BlueprintListResponse,
+    DungeonListResponse,
     EntitiesDetailsResponse,
     LoginRequest,
     LoginResponse,
@@ -105,3 +106,13 @@ async def fetch_entities_details(
         )
         response.raise_for_status()
         return EntitiesDetailsResponse.model_validate(response.json())
+
+
+async def fetch_dungeon_list() -> DungeonListResponse:
+    """获取可用地下城列表。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.get(
+            GAME_SERVER_BASE_URL + "/api/home/dungeon-list/v1/",
+        )
+        response.raise_for_status()
+        return DungeonListResponse.model_validate(response.json())

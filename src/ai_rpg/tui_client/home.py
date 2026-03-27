@@ -28,11 +28,12 @@ HOME_HEADER = """\
 HELP_TEXT = """\
 [bold yellow]可用命令：[/]
 
-  [bold green]/help   [/]  显示此帮助信息
-  [bold green]/status [/]  显示玩家状态、世界设定及玩家角色详情
-  [bold green]/stages [/]  查询全部场景与角色分布
-  [bold green]/entities[/]  打开实体浏览器（列出全部场景与角色）
-  [bold green]/logout [/]  登出并返回主菜单
+  [bold green]/help            [/]  显示此帮助信息
+  [bold green]/status          [/]  显示玩家状态、世界设定及玩家角色详情
+  [bold green]/stages          [/]  查询全部场景与角色分布
+  [bold green]/entities        [/]  打开实体浏览器（列出全部场景与角色）
+  [bold green]/dungeon_overview [/]  打开地下城总览（列出全部副本预览）
+  [bold green]/logout          [/]  登出并返回主菜单
 
 """
 
@@ -128,6 +129,14 @@ class HomeScreen(Screen[None]):
 
             self.app.push_screen(
                 EntityBrowserScreen(
+                    user_name=self._user_name, game_name=self._game_name
+                )
+            )
+        elif cmd == "/dungeon_overview":
+            from .dungeon_overview import DungeonOverviewScreen
+
+            self.app.push_screen(
+                DungeonOverviewScreen(
                     user_name=self._user_name, game_name=self._game_name
                 )
             )

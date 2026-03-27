@@ -10,6 +10,9 @@ from ..models import (
     EntitiesDetailsResponse,
     HomeAdvanceRequest,
     HomeAdvanceResponse,
+    HomePlayerActionRequest,
+    HomePlayerActionResponse,
+    HomePlayerActionType,
     LoginRequest,
     LoginResponse,
     LogoutRequest,
@@ -145,3 +148,24 @@ async def home_advance(user_name: str, game_name: str) -> HomeAdvanceResponse:
         )
         response.raise_for_status()
         return HomeAdvanceResponse.model_validate(response.json())
+
+
+async def home_player_action(
+    user_name: str,
+    game_name: str,
+    action: HomePlayerActionType,
+    arguments: Dict[str, str],
+) -> HomePlayerActionResponse:
+    """触发家园玩家动作（对话、场景切换等），返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(
+            GAME_SERVER_BASE_URL + "/api/home/player_action/v1/",
+            json=HomePlayerActionRequest(
+                user_name=user_name,
+                game_name=game_name,
+                action=action,
+                arguments=arguments,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return HomePlayerActionResponse.model_validate(response.json())

@@ -38,6 +38,8 @@ HELP_TEXT = """\
   [bold green]/entities        [/]  打开实体浏览器（列出全部场景与角色）
   [bold green]/dungeon_overview [/]  打开地下城总览（列出全部副本预览）
   [bold green]/advance         [/]  推进家园流程（执行一轮 home pipeline）
+  [bold green]/speak           [/]  与当前场景 NPC 对话
+  [bold green]/switch_stage    [/]  切换到其他场景
   [bold green]/logout          [/]  登出并返回主菜单
 
 """
@@ -233,6 +235,18 @@ class HomeScreen(Screen[None]):
             self._do_logout()
         elif cmd == "/advance":
             self._do_advance()
+        elif cmd == "/speak":
+            from .speak import SpeakScreen
+
+            self.app.push_screen(
+                SpeakScreen(user_name=self._user_name, game_name=self._game_name)
+            )
+        elif cmd == "/switch_stage":
+            from .switch_stage import SwitchStageScreen
+
+            self.app.push_screen(
+                SwitchStageScreen(user_name=self._user_name, game_name=self._game_name)
+            )
         else:
             log.write(f"[red]未知命令：{cmd}，输入 /help 查看可用命令。[/]")
 

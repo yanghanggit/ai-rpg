@@ -12,6 +12,7 @@ from loguru import logger
 import json
 
 from .server_client import (
+    fetch_entities_details,
     fetch_session_messages,
     fetch_stages_state,
     logout as server_logout,
@@ -31,6 +32,7 @@ HELP_TEXT = """\
   [bold green]/status [/]  显示当前玩家与游戏状态
   [bold green]/stages [/]  查询全部场景与角色分布
   [bold green]/campaign_setting[/]  显示游戏世界设定（campaign_setting）
+  [bold green]/entity <名称>[/]  查询指定实体的组件详情
   [bold green]/logout [/]  登出并返回主菜单
 
 """
@@ -146,10 +148,47 @@ class HomeScreen(Screen[None]):
                 )
             else:
                 log.write("[dim]暂无世界设定数据。[/]")
+        elif cmd.startswith("/entity"):
+            parts = event.value.strip().split(maxsplit=1)
+            if len(parts) < 2 or not parts[1].strip():
+                log.write("[yellow]用法：/entity <实体名称>[/]")
+            else:
+                self._fetch_entity(parts[1].strip())
         elif cmd == "/logout":
             self._do_logout()
         else:
             log.write(f"[red]未知命令：{cmd}，输入 /help 查看可用命令。[/]")
+
+    @work
+    async def _fetch_entity(self, entity_name: str) -> None:
+        log = self.query_one(RichLog)
+        log.write(f"[dim]正在查询实体：{entity_name} ...[/]")
+        logger.info(
+            f"_fetch_entity: 查询 entity_name={entity_name} user_name={self._user_name} game_name={self._game_name}"
+        )
+        try:
+            resp = await fetch_entities_details(
+                self._user_name, self._game_name, [entity_name]
+            )
+            if not resp.entities_serialization:
+                log.write(f"[yellow]未找到实体：{entity_name}[/]")
+                logger.warning(f"_fetch_entity: 未找到实体 entity_name={entity_name}")
+                return
+            for entity in resp.entities_serialization:
+                log.write(
+                    f"[bold yellow]── 实体：{entity.name} ──────────────────────────────────────[/]"
+                )
+                for comp in entity.components:
+                    data_str = json.dumps(comp.data, ensure_ascii=False, indent=2)
+                    log.write(f"  [bold cyan][组件][/] [green]{comp.name}[/]")
+                    log.write(f"[dim]{data_str}[/]")
+                log.write("")
+            logger.info(
+                f"_fetch_entity: 查询成功 entity_name={entity_name} components={[c.name for e in resp.entities_serialization for c in e.components]}"
+            )
+        except Exception as e:
+            logger.error(f"_fetch_entity: 查询失败 entity_name={entity_name} error={e}")
+            log.write(f"[bold red]❌ 查询失败: {e}[/]")
 
     @work
     async def _fetch_stages(self) -> None:

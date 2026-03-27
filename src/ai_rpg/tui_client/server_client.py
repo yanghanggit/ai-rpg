@@ -1,11 +1,12 @@
 """游戏服务器 HTTP 客户端（TUI 客户端专用）"""
 
-from typing import Any, Dict, cast
+from typing import Any, Dict, List, cast
 
 import httpx
 
 from ..models import (
     BlueprintListResponse,
+    EntitiesDetailsResponse,
     LoginRequest,
     LoginResponse,
     LogoutRequest,
@@ -91,3 +92,17 @@ async def fetch_session_messages(
         )
         response.raise_for_status()
         return SessionMessageResponse.model_validate(response.json())
+
+
+async def fetch_entities_details(
+    user_name: str, game_name: str, entity_names: List[str]
+) -> EntitiesDetailsResponse:
+    """批量查询实体详情。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.get(
+            GAME_SERVER_BASE_URL
+            + f"/api/entities/v1/{user_name}/{game_name}/details",
+            params={"entities": entity_names},
+        )
+        response.raise_for_status()
+        return EntitiesDetailsResponse.model_validate(response.json())

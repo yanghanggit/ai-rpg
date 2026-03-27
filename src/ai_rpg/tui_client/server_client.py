@@ -6,10 +6,17 @@ import httpx
 
 from ..models import (
     BlueprintListResponse,
+    DungeonCombatResponse,
+    DungeonExitRequest,
+    DungeonExitResponse,
     DungeonListResponse,
+    DungeonRoomResponse,
+    DungeonStateResponse,
     EntitiesDetailsResponse,
     HomeAdvanceRequest,
     HomeAdvanceResponse,
+    HomeEnterDungeonRequest,
+    HomeEnterDungeonResponse,
     HomeGenerateDungeonRequest,
     HomeGenerateDungeonResponse,
     HomePlayerActionRequest,
@@ -150,6 +157,67 @@ async def home_advance(user_name: str, game_name: str) -> HomeAdvanceResponse:
         )
         response.raise_for_status()
         return HomeAdvanceResponse.model_validate(response.json())
+
+
+async def home_enter_dungeon(
+    user_name: str, game_name: str, dungeon_name: str
+) -> HomeEnterDungeonResponse:
+    """传送玩家进入指定地下城（同步，无后台任务）。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            GAME_SERVER_BASE_URL + "/api/home/enter_dungeon/v1/",
+            json=HomeEnterDungeonRequest(
+                user_name=user_name,
+                game_name=game_name,
+                dungeon_name=dungeon_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return HomeEnterDungeonResponse.model_validate(response.json())
+
+
+async def fetch_dungeon_state(user_name: str, game_name: str) -> DungeonStateResponse:
+    """查询当前地下城完整状态。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.get(
+            GAME_SERVER_BASE_URL + f"/api/dungeons/v1/{user_name}/{game_name}/state",
+        )
+        response.raise_for_status()
+        return DungeonStateResponse.model_validate(response.json())
+
+
+async def fetch_dungeon_room(user_name: str, game_name: str) -> DungeonRoomResponse:
+    """查询当前地下城房间（含 stage + combat）。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.get(
+            GAME_SERVER_BASE_URL + f"/api/dungeons/v1/{user_name}/{game_name}/room",
+        )
+        response.raise_for_status()
+        return DungeonRoomResponse.model_validate(response.json())
+
+
+async def fetch_dungeon_combat(user_name: str, game_name: str) -> DungeonCombatResponse:
+    """查询当前地下城战斗状态。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.get(
+            GAME_SERVER_BASE_URL + f"/api/dungeons/v1/{user_name}/{game_name}/combat",
+        )
+        response.raise_for_status()
+        return DungeonCombatResponse.model_validate(response.json())
+
+
+async def dungeon_exit(user_name: str, game_name: str) -> DungeonExitResponse:
+    """退出地下城，返回家园。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            GAME_SERVER_BASE_URL + "/api/dungeon/exit/v1/",
+            json=DungeonExitRequest(
+                user_name=user_name,
+                game_name=game_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return DungeonExitResponse.model_validate(response.json())
 
 
 async def home_generate_dungeon(

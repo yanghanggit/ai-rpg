@@ -1,7 +1,7 @@
 """地下城总览 Screen"""
 
 import asyncio
-from typing import List
+from typing import List, Optional
 
 from loguru import logger
 from textual import on, work
@@ -12,13 +12,17 @@ from textual.widgets import Footer, Input, RichLog, Static
 
 from ..models import Dungeon
 from ..models.task import TaskStatus
-from .server_client import fetch_dungeon_list, fetch_tasks_status
+from .server_client import (
+    fetch_dungeon_list,
+    fetch_tasks_status,
+    home_enter_dungeon as server_home_enter_dungeon,
+)
 from .server_client import home_generate_dungeon as server_home_generate_dungeon
 
 OVERVIEW_HEADER = """\
 [bold cyan]── 地下城总览 ──────────────────────────────────────[/]
 
-输入编号查看副本详情，[bold]/list[/] 返回列表，[bold]/generate[/] 生成新地下城，[bold]Escape[/] 返回。
+输入编号查看副本详情，[bold]/list[/] 返回列表，[bold]/generate[/] 生成新地下城，[bold]/enter[/] 进入选中副本，[bold]Escape[/] 返回。
 """
 
 
@@ -62,6 +66,7 @@ class DungeonOverviewScreen(Screen[None]):
         self._user_name = user_name
         self._game_name = game_name
         self._dungeons: List[Dungeon] = []
+        self._selected_dungeon: Optional[str] = None
 
     def compose(self) -> ComposeResult:
         yield RichLog(id="dungeon-log", highlight=True, markup=True, wrap=True)
@@ -98,6 +103,13 @@ class DungeonOverviewScreen(Screen[None]):
             self._do_generate_dungeon()
             return
 
+        if raw.lower() == "/enter":
+            if self._selected_dungeon is None:
+                log.write("[yellow]请先输入编号选择一个地下城副本。[/]")
+            else:
+                self._do_enter_dungeon(self._selected_dungeon)
+            return
+
         if not self._dungeons:
             log.write("[yellow]地下城列表尚未加载，请稍候...[/]")
             return
@@ -114,8 +126,10 @@ class DungeonOverviewScreen(Screen[None]):
             return
 
         dungeon = self._dungeons[idx]
+        self._selected_dungeon = dungeon.name
         log.write(f"[dim]> 查看副本：{dungeon.name}[/]")
         self._show_dungeon(dungeon, log)
+        log.write(f"[dim]输入 /enter 进入此副本：[bold cyan]{dungeon.name}[/][/]")
 
     def _render_list(self, log: RichLog) -> None:
         """将已缓存的地下城列表渲染到 log。"""
@@ -156,6 +170,33 @@ class DungeonOverviewScreen(Screen[None]):
             else:
                 log.write("    [dim]（无敌人）[/]")
         log.write("")
+
+    @work
+    async def _do_enter_dungeon(self, dungeon_name: str) -> None:
+        """调用 home_enter_dungeon，成功后 push DungeonRoomScreen。"""
+        log = self.query_one(RichLog)
+        inp = self.query_one(Input)
+        inp.disabled = True
+
+        log.write(f"[dim]▶ 正在进入地下城：{dungeon_name}...[/]")
+        logger.info(f"DungeonOverviewScreen._do_enter_dungeon: dungeon={dungeon_name}")
+
+        try:
+            await server_home_enter_dungeon(
+                self._user_name, self._game_name, dungeon_name
+            )
+            log.write(f"[bold green]✅ 已进入地下城：{dungeon_name}[/]")
+            logger.info(
+                f"DungeonOverviewScreen._do_enter_dungeon: 进入成功 dungeon={dungeon_name}"
+            )
+            from .dungeon_room import DungeonRoomScreen
+
+            self.app.push_screen(DungeonRoomScreen(self._user_name, self._game_name))
+        except Exception as e:
+            logger.error(f"DungeonOverviewScreen._do_enter_dungeon: 进入失败 error={e}")
+            log.write(f"[bold red]❌ 进入地下城失败: {e}[/]")
+            inp.disabled = False
+            inp.focus()
 
     @work
     async def _do_generate_dungeon(self) -> None:

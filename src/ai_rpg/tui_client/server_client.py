@@ -10,6 +10,8 @@ from ..models import (
     EntitiesDetailsResponse,
     HomeAdvanceRequest,
     HomeAdvanceResponse,
+    HomeGenerateDungeonRequest,
+    HomeGenerateDungeonResponse,
     HomePlayerActionRequest,
     HomePlayerActionResponse,
     HomePlayerActionType,
@@ -148,6 +150,22 @@ async def home_advance(user_name: str, game_name: str) -> HomeAdvanceResponse:
         )
         response.raise_for_status()
         return HomeAdvanceResponse.model_validate(response.json())
+
+
+async def home_generate_dungeon(
+    user_name: str, game_name: str
+) -> HomeGenerateDungeonResponse:
+    """触发地下城生成流程，返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(
+            GAME_SERVER_BASE_URL + "/api/home/generate_dungeon/v1/",
+            json=HomeGenerateDungeonRequest(
+                user_name=user_name,
+                game_name=game_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return HomeGenerateDungeonResponse.model_validate(response.json())
 
 
 async def home_player_action(

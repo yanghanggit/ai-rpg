@@ -82,6 +82,8 @@ a = Analysis(
         "httpcore",
         "anyio",
         "anyio._backends._asyncio",
+        # ai_rpg 内部模块（相对导入无法被 PyInstaller 静态分析，需显式声明）
+        "ai_rpg.models",
         # 标准库可能被 PyInstaller 漏掉的
         "asyncio",
         "signal",

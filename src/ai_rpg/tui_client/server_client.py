@@ -5,6 +5,7 @@ from typing import Any, Dict, cast
 import httpx
 
 from ..models import (
+    BlueprintListResponse,
     LoginRequest,
     LoginResponse,
     LogoutRequest,
@@ -65,3 +66,13 @@ async def logout(user_name: str, game_name: str) -> str:
         )
         response.raise_for_status()
         return LogoutResponse.model_validate(response.json()).message
+
+
+async def fetch_blueprint_list() -> BlueprintListResponse:
+    """获取可用蓝图列表。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.get(
+            GAME_SERVER_BASE_URL + "/api/game/blueprint-list/v1/",
+        )
+        response.raise_for_status()
+        return BlueprintListResponse.model_validate(response.json())

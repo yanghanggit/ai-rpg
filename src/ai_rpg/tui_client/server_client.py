@@ -4,7 +4,13 @@ from typing import Any, Dict, cast
 
 import httpx
 
-from ..models import LoginRequest, LoginResponse, NewGameRequest, NewGameResponse
+from ..models import (
+    LoginRequest,
+    LoginResponse,
+    NewGameRequest,
+    NewGameResponse,
+    StagesStateResponse,
+)
 from .config import GAME_SERVER_BASE_URL
 
 
@@ -36,3 +42,13 @@ async def new_game(user_name: str, game_name: str) -> NewGameResponse:
         )
         response.raise_for_status()
         return NewGameResponse.model_validate(response.json())
+
+
+async def fetch_stages_state(user_name: str, game_name: str) -> StagesStateResponse:
+    """查询场景状态，返回场景与角色的分布映射。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.get(
+            GAME_SERVER_BASE_URL + f"/api/stages/v1/{user_name}/{game_name}/state",
+        )
+        response.raise_for_status()
+        return StagesStateResponse.model_validate(response.json())

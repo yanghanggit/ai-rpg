@@ -1,10 +1,12 @@
 """游戏主场景 Screen（Home 状态）"""
 
-from textual import on
+from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Input, RichLog, Static
+
+from .server_client import fetch_stages_state
 
 HOME_HEADER = """\
 [bold cyan]╔══════════════════════════════════════════════════╗[/]
@@ -17,6 +19,7 @@ HELP_TEXT = """\
 
   [bold green]/help  [/]   显示此帮助信息
   [bold green]/status[/]   显示当前玩家与游戏状态
+  [bold green]/stages[/]   查询全部场景与角色分布
 
 """
 
@@ -97,5 +100,24 @@ class HomeScreen(Screen[None]):
                 f"  玩家：[bold]{self._user_name}[/]\n"
                 f"  游戏：[bold]{self._game_name}[/]\n"
             )
+        elif cmd == "/stages":
+            self._fetch_stages()
         else:
             log.write(f"[red]未知命令：{cmd}，输入 /help 查看可用命令。[/]")
+
+    @work
+    async def _fetch_stages(self) -> None:
+        log = self.query_one(RichLog)
+        log.write("[dim]正在查询场景状态...[/]")
+        try:
+            resp = await fetch_stages_state(self._user_name, self._game_name)
+            log.write("[bold yellow]── 场景与角色分布 ────────────────────────────────[/]")
+            if not resp.mapping:
+                log.write("  [dim]（暂无场景数据）[/]")
+            else:
+                for stage, actors in resp.mapping.items():
+                    actors_str = "、".join(actors) if actors else "[dim]（空）[/]"
+                    log.write(f"  [bold cyan]{stage}[/] → {actors_str}")
+            log.write("")
+        except Exception as e:
+            log.write(f"[bold red]❌ 查询失败: {e}[/]")

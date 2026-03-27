@@ -11,7 +11,10 @@ from ..models import (
     DungeonStateResponse,
     DungeonCombatResponse,
     DungeonRoomResponse,
+    DungeonListResponse,
+    Dungeon,
 )
+from ..game.config import DUNGEONS_DIR
 
 ###################################################################################################################################################################
 dungeon_state_api_router = APIRouter()
@@ -194,6 +197,27 @@ async def get_dungeon_room(
 
     # 返回当前房间
     return DungeonRoomResponse(room=current_dungeon_room)
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@dungeon_state_api_router.get(
+    path="/api/home/dungeon-list/v1/", response_model=DungeonListResponse
+)
+async def list_dungeons() -> DungeonListResponse:
+    """获取可用地下城列表接口
+
+    遍历 DUNGEONS_DIR 目录下的所有 JSON 文件，读取并返回其内容，供客户端预览选择。
+
+    Returns:
+        DungeonListResponse: 包含所有地下城配置的列表响应
+    """
+    dungeons = [
+        Dungeon.model_validate_json(p.read_text(encoding="utf-8"))
+        for p in sorted(DUNGEONS_DIR.glob("*.json"))
+    ]
+    return DungeonListResponse(dungeons=dungeons)
 
 
 ###################################################################################################################################################################

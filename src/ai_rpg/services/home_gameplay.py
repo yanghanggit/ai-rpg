@@ -12,7 +12,6 @@ from loguru import logger
 from ..game.tcg_game import TCGGame
 from .game_server_dependencies import CurrentGameServer
 from ..game.game_server import GameServer
-from ..game.config import DUNGEONS_DIR
 from .home_actions import (
     activate_speak_action,
     activate_switch_stage,
@@ -34,8 +33,6 @@ from ..models import (
     HomeGenerateDungeonRequest,
     HomeGenerateDungeonResponse,
     TaskStatus,
-    Dungeon,
-    DungeonListResponse,
 )
 
 ###################################################################################################################################################################
@@ -502,27 +499,6 @@ async def _execute_home_pipeline_task(
             task_record.status = TaskStatus.FAILED
             task_record.error = str(e)
             task_record.end_time = datetime.now().isoformat()
-
-
-###################################################################################################################################################################
-###################################################################################################################################################################
-###################################################################################################################################################################
-@home_gameplay_api_router.get(
-    path="/api/home/dungeon-list/v1/", response_model=DungeonListResponse
-)
-async def list_dungeons() -> DungeonListResponse:
-    """获取可用地下城列表接口
-
-    遍历 DUNGEONS_DIR 目录下的所有 JSON 文件，读取并返回其内容，供客户端预览选择。
-
-    Returns:
-        DungeonListResponse: 包含所有地下城配置的列表响应
-    """
-    dungeons = [
-        Dungeon.model_validate_json(p.read_text(encoding="utf-8"))
-        for p in sorted(DUNGEONS_DIR.glob("*.json"))
-    ]
-    return DungeonListResponse(dungeons=dungeons)
 
 
 ###################################################################################################################################################################

@@ -157,6 +157,7 @@ app.mount(
 app.include_router(router=player_session_api_router)
 app.include_router(router=entity_details_api_router)
 app.include_router(router=stages_state_api_router)
+app.include_router(router=dungeon_state_api_router)
 app.include_router(router=background_tasks_api_router)
 
 # TCG特有的
@@ -164,7 +165,6 @@ app.include_router(router=login_api_router)
 app.include_router(router=new_game_api_router)
 app.include_router(router=home_gameplay_api_router)
 app.include_router(router=dungeon_gameplay_api_router)
-app.include_router(router=dungeon_state_api_router)
 
 
 def main() -> None:

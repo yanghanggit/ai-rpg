@@ -150,8 +150,11 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
-        for entity in entities:
-            await self._generate_images(entity)
+        logger.debug(
+            f"[IllustrateDungeonActionSystem] react: 收到 IllustrateDungeonAction 事件，准备生成图片，entities count={len(entities)}"
+        )
+        # for entity in entities:
+        #     await self._generate_images(entity)
 
     ####################################################################################################################################
     async def _generate_images(self, entity: Entity) -> None:

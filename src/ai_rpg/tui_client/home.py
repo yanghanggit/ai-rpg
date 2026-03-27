@@ -15,9 +15,12 @@ from .server_client import (
     fetch_entities_details,
     fetch_session_messages,
     fetch_stages_state,
+    fetch_tasks_status,
+    home_advance as server_home_advance,
     logout as server_logout,
 )
 from ..models.session_message import MessageType
+from ..models.task import TaskStatus
 
 HOME_HEADER = """\
 [bold cyan]╔══════════════════════════════════════════════════╗[/]
@@ -33,6 +36,7 @@ HELP_TEXT = """\
   [bold green]/stages          [/]  查询全部场景与角色分布
   [bold green]/entities        [/]  打开实体浏览器（列出全部场景与角色）
   [bold green]/dungeon_overview [/]  打开地下城总览（列出全部副本预览）
+  [bold green]/advance         [/]  推进家园流程（执行一轮 home pipeline）
   [bold green]/logout          [/]  登出并返回主菜单
 
 """
@@ -91,9 +95,6 @@ class HomeScreen(Screen[None]):
     def on_mount(self) -> None:
         log = self.query_one(RichLog)
         log.write(HOME_HEADER)
-        log.write(
-            f"[bold green]✅ 欢迎，{self._user_name}！游戏 [{self._game_name}] 已就绪。[/]"
-        )
         log.write(HELP_TEXT)
         logger.info(
             f"HomeScreen: 进入主场景 user_name={self._user_name} game_name={self._game_name}"
@@ -101,10 +102,43 @@ class HomeScreen(Screen[None]):
         self.query_one(Input).focus()
         self._polling_active = True
         self._poll_messages()
+        self._show_player_status()
 
     def on_unmount(self) -> None:
         self._polling_active = False
         logger.info(f"HomeScreen: on_unmount，停止轮询 user_name={self._user_name}")
+
+    @work
+    async def _show_player_status(self) -> None:
+        """进入主场景时，显示玩家角色及其当前所在场景。"""
+        log = self.query_one(RichLog)
+        from .app import GameClient
+
+        app: GameClient = self.app  # type: ignore[assignment]
+        bp = app.session_blueprint
+        player_actor = bp.player_actor if bp else None
+
+        if not player_actor:
+            log.write("[dim]玩家角色信息暂不可用。[/]")
+            return
+
+        current_stage = "[dim]（查询中...）[/]"
+        try:
+            resp = await fetch_stages_state(self._user_name, self._game_name)
+            for stage, actors in resp.mapping.items():
+                if player_actor in actors:
+                    current_stage = stage
+                    break
+            else:
+                current_stage = "[dim]（未知场景）[/]"
+        except Exception as e:
+            logger.warning(f"_show_player_status: 查询场景失败 error={e}")
+            current_stage = "[dim]（查询失败）[/]"
+
+        log.write(
+            f"[bold green]▶ 玩家角色：[bold cyan]{player_actor}[/][bold green]"
+            f"  当前场景：[bold yellow]{current_stage}[/]"
+        )
 
     @on(Input.Submitted, "#home-input")
     def handle_command(self, event: Input.Submitted) -> None:
@@ -142,8 +176,69 @@ class HomeScreen(Screen[None]):
             )
         elif cmd == "/logout":
             self._do_logout()
+        elif cmd == "/advance":
+            self._do_advance()
         else:
             log.write(f"[red]未知命令：{cmd}，输入 /help 查看可用命令。[/]")
+
+    @work
+    async def _do_advance(self) -> None:
+        """执行一轮家园推进（home pipeline），推进期间禁用输入框并轮询任务状态。"""
+        log = self.query_one(RichLog)
+        inp = self.query_one(Input)
+        inp.disabled = True
+        log.write("[bold yellow]── 推进家园 ──────────────────────────────────────[/]")
+        log.write("[dim]▶ 正在推进...[/]")
+        logger.info(
+            f"_do_advance: 开始推进 user_name={self._user_name} game_name={self._game_name}"
+        )
+
+        task_id: str = ""
+        success = False
+        try:
+            resp = await server_home_advance(self._user_name, self._game_name)
+            task_id = resp.task_id
+            log.write(f"[dim]任务已创建：{task_id}[/]")
+            logger.info(f"_do_advance: 任务已创建 task_id={task_id}")
+        except Exception as e:
+            logger.error(f"_do_advance: 触发推进失败 error={e}")
+            log.write(f"[bold red]❌ 推进请求失败: {e}[/]")
+            inp.disabled = False
+            inp.focus()
+            return
+
+        # 轮询任务状态（最多 120 秒）
+        _POLL_INTERVAL = 1.0
+        _MAX_POLLS = 120
+        for _ in range(_MAX_POLLS):
+            await asyncio.sleep(_POLL_INTERVAL)
+            try:
+                status_resp = await fetch_tasks_status([task_id])
+                if not status_resp.tasks:
+                    continue
+                task_record = status_resp.tasks[0]
+                if task_record.status == TaskStatus.COMPLETED:
+                    log.write("[bold green]✅ 推进完成[/]")
+                    logger.info(f"_do_advance: 任务完成 task_id={task_id}")
+                    success = True
+                    break
+                elif task_record.status == TaskStatus.FAILED:
+                    error_msg = task_record.error or "未知错误"
+                    log.write(f"[bold red]❌ 推进失败: {error_msg}[/]")
+                    logger.error(
+                        f"_do_advance: 任务失败 task_id={task_id} error={error_msg}"
+                    )
+                    break
+            except Exception as e:
+                logger.warning(f"_do_advance: 轮询任务状态失败 error={e}")
+        else:
+            log.write("[bold yellow]⚠️ 推进超时，请检查服务器状态[/]")
+            logger.warning(f"_do_advance: 任务轮询超时 task_id={task_id}")
+
+        inp.disabled = False
+        inp.focus()
+        if success:
+            self._show_player_status()
 
     @work
     async def _fetch_status(self) -> None:

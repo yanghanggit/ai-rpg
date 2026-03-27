@@ -8,6 +8,8 @@ from ..models import (
     BlueprintListResponse,
     DungeonListResponse,
     EntitiesDetailsResponse,
+    HomeAdvanceRequest,
+    HomeAdvanceResponse,
     LoginRequest,
     LoginResponse,
     LogoutRequest,
@@ -16,6 +18,7 @@ from ..models import (
     NewGameResponse,
     SessionMessageResponse,
     StagesStateResponse,
+    TasksStatusResponse,
 )
 from .config import GAME_SERVER_BASE_URL
 
@@ -116,3 +119,29 @@ async def fetch_dungeon_list() -> DungeonListResponse:
         )
         response.raise_for_status()
         return DungeonListResponse.model_validate(response.json())
+
+
+async def fetch_tasks_status(task_ids: List[str]) -> TasksStatusResponse:
+    """批量查询后台任务状态。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.get(
+            GAME_SERVER_BASE_URL + "/api/tasks/v1/status",
+            params={"task_ids": task_ids},
+        )
+        response.raise_for_status()
+        return TasksStatusResponse.model_validate(response.json())
+
+
+async def home_advance(user_name: str, game_name: str) -> HomeAdvanceResponse:
+    """触发家园推进流程，返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            GAME_SERVER_BASE_URL + "/api/home/advance/v1/",
+            json=HomeAdvanceRequest(
+                user_name=user_name,
+                game_name=game_name,
+                actors=[],
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return HomeAdvanceResponse.model_validate(response.json())

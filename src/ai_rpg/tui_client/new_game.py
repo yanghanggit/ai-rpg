@@ -105,5 +105,8 @@ class NewGameScreen(Screen[None]):
             log.write(
                 f"[bold green]✅ 游戏已创建！user_name={user_name}，game_name={game_name}[/]"
             )
+            from .home import HomeScreen
+
+            self.app.switch_screen(HomeScreen(user_name=user_name, game_name=game_name))
         except Exception as e:
             log.write(f"[bold red]❌ 创建游戏失败: {e}[/]")

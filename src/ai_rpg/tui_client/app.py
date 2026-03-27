@@ -15,6 +15,6 @@ class GameClient(App[None]):
         yield from []
 
     def on_mount(self) -> None:
-        from .screens.connecting import ConnectingScreen
+        from .connecting import ConnectingScreen
 
         self.push_screen(ConnectingScreen())

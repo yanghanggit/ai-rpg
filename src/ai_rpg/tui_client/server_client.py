@@ -4,7 +4,8 @@ from typing import Any, Dict, cast
 
 import httpx
 
-GAME_SERVER_BASE_URL = "http://192.168.192.102:8000"
+from ..models import LoginRequest, LoginResponse, NewGameRequest, NewGameResponse
+from .config import GAME_SERVER_BASE_URL
 
 
 async def fetch_server_info() -> Dict[str, Any]:
@@ -20,19 +21,18 @@ async def login(user_name: str, game_name: str) -> str:
     async with httpx.AsyncClient(timeout=5) as client:
         response = await client.post(
             GAME_SERVER_BASE_URL + "/api/login/v1/",
-            json={"user_name": user_name, "game_name": game_name},
+            json=LoginRequest(user_name=user_name, game_name=game_name).model_dump(),
         )
         response.raise_for_status()
-        data = cast(Dict[str, Any], response.json())
-        return str(data.get("message", "登录成功"))
+        return LoginResponse.model_validate(response.json()).message
 
 
-async def new_game(user_name: str, game_name: str) -> Dict[str, Any]:
-    """创建新游戏，返回服务器响应 JSON。"""
+async def new_game(user_name: str, game_name: str) -> NewGameResponse:
+    """创建新游戏，返回服务器响应。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             GAME_SERVER_BASE_URL + "/api/game/new/v1/",
-            json={"user_name": user_name, "game_name": game_name},
+            json=NewGameRequest(user_name=user_name, game_name=game_name).model_dump(),
         )
         response.raise_for_status()
-        return cast(Dict[str, Any], response.json())
+        return NewGameResponse.model_validate(response.json())

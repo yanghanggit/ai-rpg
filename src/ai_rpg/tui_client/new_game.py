@@ -7,7 +7,7 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Footer, Input, Label, RichLog
 
-from ..server_client import login, new_game
+from .server_client import login, new_game
 
 FORM_HEADER = """\
 [bold cyan]── 开始新游戏 ──────────────────────────────────────[/]

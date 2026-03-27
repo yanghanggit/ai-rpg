@@ -5,7 +5,8 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Footer, Header, RichLog
 
-from ..server_client import GAME_SERVER_BASE_URL, fetch_server_info
+from .config import GAME_SERVER_BASE_URL
+from .server_client import fetch_server_info
 
 CONNECTING_TEXT = """\
 [bold cyan]╔══════════════════════════════════════════════════╗[/]

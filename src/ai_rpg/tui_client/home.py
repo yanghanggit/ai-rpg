@@ -9,7 +9,14 @@ from textual.widgets import Footer, Header, Input, RichLog, Static
 import asyncio
 
 from loguru import logger
-from .server_client import fetch_stages_state, logout as server_logout
+import json
+
+from .server_client import (
+    fetch_session_messages,
+    fetch_stages_state,
+    logout as server_logout,
+)
+from ..models.session_message import MessageType
 
 HOME_HEADER = """\
 [bold cyan]╔══════════════════════════════════════════════════╗[/]
@@ -68,6 +75,8 @@ class HomeScreen(Screen[None]):
         super().__init__()
         self._user_name = user_name
         self._game_name = game_name
+        self._last_sequence_id: int = 0
+        self._polling_active: bool = False
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -88,6 +97,14 @@ class HomeScreen(Screen[None]):
             f"HomeScreen: 进入主场景 user_name={self._user_name} game_name={self._game_name}"
         )
         self.query_one(Input).focus()
+        self._polling_active = True
+        self._poll_messages()
+
+    def on_unmount(self) -> None:
+        self._polling_active = False
+        logger.info(
+            f"HomeScreen: on_unmount，停止轮询 user_name={self._user_name}"
+        )
 
     @on(Input.Submitted, "#home-input")
     def handle_command(self, event: Input.Submitted) -> None:
@@ -169,6 +186,42 @@ class HomeScreen(Screen[None]):
             log.write(f"[bold red]❌ 查询失败: {e}[/]")
 
     @work
+    async def _poll_messages(self) -> None:
+        logger.info(
+            f"_poll_messages: 启动轮询 user_name={self._user_name} game_name={self._game_name}"
+        )
+        while self._polling_active:
+            await asyncio.sleep(2)
+            if not self._polling_active:
+                break
+            try:
+                resp = await fetch_session_messages(
+                    self._user_name, self._game_name, self._last_sequence_id
+                )
+                for msg in resp.session_messages:
+                    if msg.message_type == MessageType.NONE:
+                        continue
+                    if msg.sequence_id > self._last_sequence_id:
+                        self._last_sequence_id = msg.sequence_id
+                    data_str = json.dumps(msg.data, ensure_ascii=False)
+                    if msg.message_type == MessageType.GAME:
+                        self.query_one(RichLog).write(
+                            f"[bold white]{data_str}[/]"
+                        )
+                    else:  # AGENT_EVENT
+                        self.query_one(RichLog).write(
+                            f"[dim cyan]{data_str}[/]"
+                        )
+                    logger.debug(
+                        f"_poll_messages: 收到消息 seq={msg.sequence_id} type={msg.message_type} data={data_str}"
+                    )
+            except Exception as e:
+                logger.warning(f"_poll_messages: 轮询失败 error={e}")
+        logger.info(
+            f"_poll_messages: 轮询已停止 user_name={self._user_name}"
+        )
+
+    @work
     async def _do_logout(self) -> None:
         log = self.query_one(RichLog)
         log.write("[dim]正在登出...[/]")
@@ -181,6 +234,7 @@ class HomeScreen(Screen[None]):
             logger.info(
                 f"_do_logout: 登出成功 user_name={self._user_name} msg={msg} → 清空会话状态 + pop_screen"
             )
+            self._polling_active = False
             from .app import GameClient
 
             app: GameClient = self.app  # type: ignore[assignment]

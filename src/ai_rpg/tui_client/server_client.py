@@ -12,6 +12,7 @@ from ..models import (
     LogoutResponse,
     NewGameRequest,
     NewGameResponse,
+    SessionMessageResponse,
     StagesStateResponse,
 )
 from .config import GAME_SERVER_BASE_URL
@@ -76,3 +77,17 @@ async def fetch_blueprint_list() -> BlueprintListResponse:
         )
         response.raise_for_status()
         return BlueprintListResponse.model_validate(response.json())
+
+
+async def fetch_session_messages(
+    user_name: str, game_name: str, last_sequence_id: int
+) -> SessionMessageResponse:
+    """增量获取玩家会话消息。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.get(
+            GAME_SERVER_BASE_URL
+            + f"/api/session_messages/v1/{user_name}/{game_name}/since",
+            params={"last_sequence_id": last_sequence_id},
+        )
+        response.raise_for_status()
+        return SessionMessageResponse.model_validate(response.json())

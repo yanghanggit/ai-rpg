@@ -29,9 +29,8 @@ HELP_TEXT = """\
 [bold yellow]可用命令：[/]
 
   [bold green]/help   [/]  显示此帮助信息
-  [bold green]/status [/]  显示当前玩家与游戏状态
+  [bold green]/status [/]  显示玩家状态、世界设定及玩家角色详情
   [bold green]/stages [/]  查询全部场景与角色分布
-  [bold green]/campaign_setting[/]  显示游戏世界设定（campaign_setting）
   [bold green]/entity <名称>[/]  查询指定实体的组件详情
   [bold green]/logout [/]  登出并返回主菜单
 
@@ -123,31 +122,9 @@ class HomeScreen(Screen[None]):
         if cmd == "/help":
             log.write(HELP_TEXT)
         elif cmd == "/status":
-            from .app import GameClient
-
-            app: GameClient = self.app  # type: ignore[assignment]
-            bp = app.session_blueprint
-            player_actor = bp.player_actor if bp else "[dim]（未知）[/]"
-            log.write(
-                f"[bold yellow]── 当前状态 ──────────────────────────────────────[/]\n"
-                f"  玩家：[bold]{self._user_name}[/]\n"
-                f"  游戏：[bold]{self._game_name}[/]\n"
-                f"  玩家角色：[bold cyan]{player_actor}[/]\n"
-            )
+            self._fetch_status()
         elif cmd == "/stages":
             self._fetch_stages()
-        elif cmd == "/campaign_setting":
-            from .app import GameClient
-
-            app2: GameClient = self.app  # type: ignore[assignment]
-            bp2 = app2.session_blueprint
-            if bp2:
-                log.write(
-                    f"[bold yellow]── 游戏世界设定 ──────────────────────────────────────[/]\n"
-                    f"{bp2.campaign_setting}\n"
-                )
-            else:
-                log.write("[dim]暂无世界设定数据。[/]")
         elif cmd.startswith("/entity"):
             parts = event.value.strip().split(maxsplit=1)
             if len(parts) < 2 or not parts[1].strip():
@@ -158,6 +135,65 @@ class HomeScreen(Screen[None]):
             self._do_logout()
         else:
             log.write(f"[red]未知命令：{cmd}，输入 /help 查看可用命令。[/]")
+
+    @work
+    async def _fetch_status(self) -> None:
+        log = self.query_one(RichLog)
+        from .app import GameClient
+
+        app: GameClient = self.app  # type: ignore[assignment]
+        bp = app.session_blueprint
+        player_actor = bp.player_actor if bp else None
+
+        # 基础信息
+        log.write(
+            f"[bold yellow]── 当前状态 ──────────────────────────────────────[/]\n"
+            f"  玩家：[bold]{self._user_name}[/]\n"
+            f"  游戏：[bold]{self._game_name}[/]\n"
+            f"  玩家角色：[bold cyan]{player_actor or '（未知）'}[/]\n"
+        )
+
+        # 世界设定
+        if bp:
+            log.write(
+                f"[bold yellow]── 游戏世界设定 ──────────────────────────────────────[/]\n"
+                f"{bp.campaign_setting}\n"
+            )
+
+        # 玩家角色实体详情
+        if player_actor:
+            log.write(f"[dim]正在查询玩家角色实体：{player_actor} ...[/]")
+            logger.info(
+                f"_fetch_status: 查询玩家角色实体 player_actor={player_actor}"
+            )
+            try:
+                resp = await fetch_entities_details(
+                    self._user_name, self._game_name, [player_actor]
+                )
+                if not resp.entities_serialization:
+                    log.write(f"[yellow]未找到玩家角色实体：{player_actor}[/]")
+                else:
+                    for entity in resp.entities_serialization:
+                        log.write(
+                            f"[bold yellow]── 玩家角色实体：{entity.name} ──────────────────────────────────────[/]"
+                        )
+                        for comp in entity.components:
+                            data_str = json.dumps(
+                                comp.data, ensure_ascii=False, indent=2
+                            )
+                            log.write(
+                                f"  [bold cyan][组件][/] [green]{comp.name}[/]"
+                            )
+                            log.write(f"[dim]{data_str}[/]")
+                        log.write("")
+                logger.info(
+                    f"_fetch_status: 玩家角色实体查询成功 player_actor={player_actor}"
+                )
+            except Exception as e:
+                logger.error(
+                    f"_fetch_status: 玩家角色实体查询失败 player_actor={player_actor} error={e}"
+                )
+                log.write(f"[bold red]❌ 玩家角色实体查询失败: {e}[/]")
 
     @work
     async def _fetch_entity(self, entity_name: str) -> None:

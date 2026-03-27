@@ -1,5 +1,6 @@
 """服务器连接 Screen"""
 
+from loguru import logger
 from textual import work
 from textual.app import ComposeResult
 from textual.screen import Screen
@@ -33,15 +34,20 @@ class ConnectingScreen(Screen[None]):
     async def connect_to_server(self) -> None:
         log = self.query_one(RichLog)
         log.write(f"[dim]正在连接服务器 {GAME_SERVER_BASE_URL} ...[/]")
+        logger.info(f"connect_to_server: 尝试连接 url={GAME_SERVER_BASE_URL}")
         try:
             await fetch_server_info()
             info_msg = (
                 f"[bold green]✅ 服务器已连接，base_url: {GAME_SERVER_BASE_URL}[/]"
             )
+            logger.info(f"connect_to_server: 连接成功 url={GAME_SERVER_BASE_URL}")
             from .main_menu import MainMenuScreen
 
             self.app.switch_screen(MainMenuScreen(server_info_msg=info_msg))
         except Exception as e:
+            logger.error(
+                f"connect_to_server: 连接失败 url={GAME_SERVER_BASE_URL} error={e}"
+            )
             log.write(f"[bold red]❌ 连接失败: {e}[/]")
             log.write("[dim]请确认游戏服务器已启动，然后重新运行客户端。[/]")
 

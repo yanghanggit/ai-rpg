@@ -6,7 +6,10 @@ from textual.containers import Horizontal
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Input, RichLog, Static
 
-from .server_client import fetch_stages_state
+import asyncio
+
+from loguru import logger
+from .server_client import fetch_stages_state, logout as server_logout
 
 HOME_HEADER = """\
 [bold cyan]╔══════════════════════════════════════════════════╗[/]
@@ -20,6 +23,7 @@ HELP_TEXT = """\
   [bold green]/help  [/]   显示此帮助信息
   [bold green]/status[/]   显示当前玩家与游戏状态
   [bold green]/stages[/]   查询全部场景与角色分布
+  [bold green]/logout[/]   登出并返回主菜单
 
 """
 
@@ -79,6 +83,9 @@ class HomeScreen(Screen[None]):
             f"[bold green]✅ 欢迎，{self._user_name}！游戏 [{self._game_name}] 已就绪。[/]"
         )
         log.write(HELP_TEXT)
+        logger.info(
+            f"HomeScreen: 进入主场景 user_name={self._user_name} game_name={self._game_name}"
+        )
         self.query_one(Input).focus()
 
     @on(Input.Submitted, "#home-input")
@@ -91,6 +98,7 @@ class HomeScreen(Screen[None]):
             return
 
         log.write(f"[dim]> {cmd}[/]")
+        logger.debug(f"HomeScreen: 收到命令 user_name={self._user_name} cmd={cmd}")
 
         if cmd == "/help":
             log.write(HELP_TEXT)
@@ -102,6 +110,8 @@ class HomeScreen(Screen[None]):
             )
         elif cmd == "/stages":
             self._fetch_stages()
+        elif cmd == "/logout":
+            self._do_logout()
         else:
             log.write(f"[red]未知命令：{cmd}，输入 /help 查看可用命令。[/]")
 
@@ -109,9 +119,15 @@ class HomeScreen(Screen[None]):
     async def _fetch_stages(self) -> None:
         log = self.query_one(RichLog)
         log.write("[dim]正在查询场景状态...[/]")
+        logger.info(
+            f"_fetch_stages: 开始查询 user_name={self._user_name} game_name={self._game_name}"
+        )
         try:
             resp = await fetch_stages_state(self._user_name, self._game_name)
-            log.write("[bold yellow]── 场景与角色分布 ────────────────────────────────[/]")
+            logger.info(f"_fetch_stages: 查询成功 mapping={resp.mapping}")
+            log.write(
+                "[bold yellow]── 场景与角色分布 ──────────────────────────────────────[/]"
+            )
             if not resp.mapping:
                 log.write("  [dim]（暂无场景数据）[/]")
             else:
@@ -120,4 +136,24 @@ class HomeScreen(Screen[None]):
                     log.write(f"  [bold cyan]{stage}[/] → {actors_str}")
             log.write("")
         except Exception as e:
+            logger.error(f"_fetch_stages: 查询失败 error={e}")
             log.write(f"[bold red]❌ 查询失败: {e}[/]")
+
+    @work
+    async def _do_logout(self) -> None:
+        log = self.query_one(RichLog)
+        log.write("[dim]正在登出...[/]")
+        logger.info(
+            f"_do_logout: 开始登出 user_name={self._user_name} game_name={self._game_name}"
+        )
+        try:
+            msg = await server_logout(self._user_name, self._game_name)
+            log.write(f"[bold green]✅ {msg}[/]")
+            logger.info(
+                f"_do_logout: 登出成功 user_name={self._user_name} msg={msg} → pop_screen"
+            )
+            await asyncio.sleep(0.5)
+            self.app.pop_screen()
+        except Exception as e:
+            logger.error(f"_do_logout: 登出失败 user_name={self._user_name} error={e}")
+            log.write(f"[bold red]❌ 登出失败: {e}[/]")

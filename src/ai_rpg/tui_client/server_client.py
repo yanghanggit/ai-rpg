@@ -7,6 +7,8 @@ import httpx
 from ..models import (
     LoginRequest,
     LoginResponse,
+    LogoutRequest,
+    LogoutResponse,
     NewGameRequest,
     NewGameResponse,
     StagesStateResponse,
@@ -52,3 +54,14 @@ async def fetch_stages_state(user_name: str, game_name: str) -> StagesStateRespo
         )
         response.raise_for_status()
         return StagesStateResponse.model_validate(response.json())
+
+
+async def logout(user_name: str, game_name: str) -> str:
+    """登出游戏服务器，返回服务器响应消息。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            GAME_SERVER_BASE_URL + "/api/logout/v1/",
+            json=LogoutRequest(user_name=user_name, game_name=game_name).model_dump(),
+        )
+        response.raise_for_status()
+        return LogoutResponse.model_validate(response.json()).message

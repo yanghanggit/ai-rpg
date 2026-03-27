@@ -2,6 +2,7 @@
 
 import time
 
+from loguru import logger
 from textual import on, work
 from textual.app import ComposeResult
 from textual.screen import Screen
@@ -92,21 +93,35 @@ class NewGameScreen(Screen[None]):
     async def _start_new_game(self, user_name: str, game_name: str) -> None:
         log = self.query_one(RichLog)
         log.write(f"[dim]正在登录，user_name={user_name} ...[/]")
+        logger.info(
+            f"_start_new_game: 开始登录 user_name={user_name} game_name={game_name}"
+        )
         try:
             login_msg = await login(user_name, game_name)
             log.write(f"[green]✅ 登录成功：{login_msg}[/]")
+            logger.info(
+                f"_start_new_game: 登录成功 user_name={user_name} msg={login_msg}"
+            )
         except Exception as e:
+            logger.error(f"_start_new_game: 登录失败 user_name={user_name} error={e}")
             log.write(f"[bold red]❌ 登录失败: {e}[/]")
             return
 
         log.write(f"[dim]正在创建游戏，game_name={game_name} ...[/]")
+        logger.info(f"_start_new_game: 开始创建游戏 game_name={game_name}")
         try:
             await new_game(user_name, game_name)
             log.write(
                 f"[bold green]✅ 游戏已创建！user_name={user_name}，game_name={game_name}[/]"
             )
+            logger.info(
+                f"_start_new_game: 游戏创建成功 user_name={user_name} game_name={game_name} → 进入 HomeScreen"
+            )
             from .home import HomeScreen
 
             self.app.switch_screen(HomeScreen(user_name=user_name, game_name=game_name))
         except Exception as e:
+            logger.error(
+                f"_start_new_game: 创建游戏失败 game_name={game_name} error={e}"
+            )
             log.write(f"[bold red]❌ 创建游戏失败: {e}[/]")

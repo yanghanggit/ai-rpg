@@ -18,13 +18,26 @@
 
 import sys
 import os
+from datetime import datetime
 
 import click
+from loguru import logger
 
+from config import LOGS_DIR
 from ai_rpg.tui_client import GameClient
 
 # PyInstaller frozen bundle 检测：打包后 sys.frozen = True
 _IS_FROZEN: bool = getattr(sys, "frozen", False)
+
+# ── loguru 配置：移除默认 stderr sink，改为文件输出（TUI 渲染期间不能写终端）──
+logger.remove()
+logger.add(
+    LOGS_DIR / f"tui_client_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log",
+    rotation="10 MB",
+    # retention=3,
+    level="DEBUG",
+    encoding="utf-8",
+)
 
 
 @click.command()

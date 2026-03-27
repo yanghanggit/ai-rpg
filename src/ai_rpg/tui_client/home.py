@@ -31,7 +31,7 @@ HELP_TEXT = """\
   [bold green]/help   [/]  显示此帮助信息
   [bold green]/status [/]  显示玩家状态、世界设定及玩家角色详情
   [bold green]/stages [/]  查询全部场景与角色分布
-  [bold green]/entity <名称>[/]  查询指定实体的组件详情
+  [bold green]/entities[/]  打开实体浏览器（列出全部场景与角色）
   [bold green]/logout [/]  登出并返回主菜单
 
 """
@@ -103,9 +103,7 @@ class HomeScreen(Screen[None]):
 
     def on_unmount(self) -> None:
         self._polling_active = False
-        logger.info(
-            f"HomeScreen: on_unmount，停止轮询 user_name={self._user_name}"
-        )
+        logger.info(f"HomeScreen: on_unmount，停止轮询 user_name={self._user_name}")
 
     @on(Input.Submitted, "#home-input")
     def handle_command(self, event: Input.Submitted) -> None:
@@ -125,12 +123,14 @@ class HomeScreen(Screen[None]):
             self._fetch_status()
         elif cmd == "/stages":
             self._fetch_stages()
-        elif cmd.startswith("/entity"):
-            parts = event.value.strip().split(maxsplit=1)
-            if len(parts) < 2 or not parts[1].strip():
-                log.write("[yellow]用法：/entity <实体名称>[/]")
-            else:
-                self._fetch_entity(parts[1].strip())
+        elif cmd == "/entities":
+            from .entity_browser import EntityBrowserScreen
+
+            self.app.push_screen(
+                EntityBrowserScreen(
+                    user_name=self._user_name, game_name=self._game_name
+                )
+            )
         elif cmd == "/logout":
             self._do_logout()
         else:
@@ -163,9 +163,7 @@ class HomeScreen(Screen[None]):
         # 玩家角色实体详情
         if player_actor:
             log.write(f"[dim]正在查询玩家角色实体：{player_actor} ...[/]")
-            logger.info(
-                f"_fetch_status: 查询玩家角色实体 player_actor={player_actor}"
-            )
+            logger.info(f"_fetch_status: 查询玩家角色实体 player_actor={player_actor}")
             try:
                 resp = await fetch_entities_details(
                     self._user_name, self._game_name, [player_actor]
@@ -181,9 +179,7 @@ class HomeScreen(Screen[None]):
                             data_str = json.dumps(
                                 comp.data, ensure_ascii=False, indent=2
                             )
-                            log.write(
-                                f"  [bold cyan][组件][/] [green]{comp.name}[/]"
-                            )
+                            log.write(f"  [bold cyan][组件][/] [green]{comp.name}[/]")
                             log.write(f"[dim]{data_str}[/]")
                         log.write("")
                 logger.info(
@@ -194,37 +190,6 @@ class HomeScreen(Screen[None]):
                     f"_fetch_status: 玩家角色实体查询失败 player_actor={player_actor} error={e}"
                 )
                 log.write(f"[bold red]❌ 玩家角色实体查询失败: {e}[/]")
-
-    @work
-    async def _fetch_entity(self, entity_name: str) -> None:
-        log = self.query_one(RichLog)
-        log.write(f"[dim]正在查询实体：{entity_name} ...[/]")
-        logger.info(
-            f"_fetch_entity: 查询 entity_name={entity_name} user_name={self._user_name} game_name={self._game_name}"
-        )
-        try:
-            resp = await fetch_entities_details(
-                self._user_name, self._game_name, [entity_name]
-            )
-            if not resp.entities_serialization:
-                log.write(f"[yellow]未找到实体：{entity_name}[/]")
-                logger.warning(f"_fetch_entity: 未找到实体 entity_name={entity_name}")
-                return
-            for entity in resp.entities_serialization:
-                log.write(
-                    f"[bold yellow]── 实体：{entity.name} ──────────────────────────────────────[/]"
-                )
-                for comp in entity.components:
-                    data_str = json.dumps(comp.data, ensure_ascii=False, indent=2)
-                    log.write(f"  [bold cyan][组件][/] [green]{comp.name}[/]")
-                    log.write(f"[dim]{data_str}[/]")
-                log.write("")
-            logger.info(
-                f"_fetch_entity: 查询成功 entity_name={entity_name} components={[c.name for e in resp.entities_serialization for c in e.components]}"
-            )
-        except Exception as e:
-            logger.error(f"_fetch_entity: 查询失败 entity_name={entity_name} error={e}")
-            log.write(f"[bold red]❌ 查询失败: {e}[/]")
 
     @work
     async def _fetch_stages(self) -> None:
@@ -280,21 +245,15 @@ class HomeScreen(Screen[None]):
                         self._last_sequence_id = msg.sequence_id
                     data_str = json.dumps(msg.data, ensure_ascii=False)
                     if msg.message_type == MessageType.GAME:
-                        self.query_one(RichLog).write(
-                            f"[bold white]{data_str}[/]"
-                        )
+                        self.query_one(RichLog).write(f"[bold white]{data_str}[/]")
                     else:  # AGENT_EVENT
-                        self.query_one(RichLog).write(
-                            f"[dim cyan]{data_str}[/]"
-                        )
+                        self.query_one(RichLog).write(f"[dim cyan]{data_str}[/]")
                     logger.debug(
                         f"_poll_messages: 收到消息 seq={msg.sequence_id} type={msg.message_type} data={data_str}"
                     )
             except Exception as e:
                 logger.warning(f"_poll_messages: 轮询失败 error={e}")
-        logger.info(
-            f"_poll_messages: 轮询已停止 user_name={self._user_name}"
-        )
+        logger.info(f"_poll_messages: 轮询已停止 user_name={self._user_name}")
 
     @work
     async def _do_logout(self) -> None:

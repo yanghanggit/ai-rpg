@@ -100,8 +100,7 @@ async def fetch_entities_details(
     """批量查询实体详情。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.get(
-            GAME_SERVER_BASE_URL
-            + f"/api/entities/v1/{user_name}/{game_name}/details",
+            GAME_SERVER_BASE_URL + f"/api/entities/v1/{user_name}/{game_name}/details",
             params={"entities": entity_names},
         )
         response.raise_for_status()

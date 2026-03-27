@@ -110,16 +110,21 @@ class NewGameScreen(Screen[None]):
         log.write(f"[dim]正在创建游戏，game_name={game_name} ...[/]")
         logger.info(f"_start_new_game: 开始创建游戏 game_name={game_name}")
         try:
-            await new_game(user_name, game_name)
+            resp = await new_game(user_name, game_name)
             log.write(
                 f"[bold green]✅ 游戏已创建！user_name={user_name}，game_name={game_name}[/]"
             )
             logger.info(
-                f"_start_new_game: 游戏创建成功 user_name={user_name} game_name={game_name} → 进入 HomeScreen"
+                f"_start_new_game: 游戏创建成功 user_name={user_name} game_name={game_name} blueprint={resp.blueprint!r} → 进入 HomeScreen"
             )
+            from .app import GameClient
             from .home import HomeScreen
 
-            self.app.switch_screen(HomeScreen(user_name=user_name, game_name=game_name))
+            app: GameClient = self.app  # type: ignore[assignment]
+            app.session_user_name = user_name
+            app.session_game_name = game_name
+            app.session_blueprint = resp.blueprint
+            app.switch_screen(HomeScreen(user_name=user_name, game_name=game_name))
         except Exception as e:
             logger.error(
                 f"_start_new_game: 创建游戏失败 game_name={game_name} error={e}"

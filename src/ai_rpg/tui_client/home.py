@@ -20,10 +20,11 @@ HOME_HEADER = """\
 HELP_TEXT = """\
 [bold yellow]可用命令：[/]
 
-  [bold green]/help  [/]   显示此帮助信息
-  [bold green]/status[/]   显示当前玩家与游戏状态
-  [bold green]/stages[/]   查询全部场景与角色分布
-  [bold green]/logout[/]   登出并返回主菜单
+  [bold green]/help   [/]  显示此帮助信息
+  [bold green]/status [/]  显示当前玩家与游戏状态
+  [bold green]/stages [/]  查询全部场景与角色分布
+  [bold green]/campaign_setting[/]  显示游戏世界设定（campaign_setting）
+  [bold green]/logout [/]  登出并返回主菜单
 
 """
 
@@ -103,13 +104,31 @@ class HomeScreen(Screen[None]):
         if cmd == "/help":
             log.write(HELP_TEXT)
         elif cmd == "/status":
+            from .app import GameClient
+
+            app: GameClient = self.app  # type: ignore[assignment]
+            bp = app.session_blueprint
+            player_actor = bp.player_actor if bp else "[dim]（未知）[/]"
             log.write(
                 f"[bold yellow]── 当前状态 ──────────────────────────────────────[/]\n"
                 f"  玩家：[bold]{self._user_name}[/]\n"
                 f"  游戏：[bold]{self._game_name}[/]\n"
+                f"  玩家角色：[bold cyan]{player_actor}[/]\n"
             )
         elif cmd == "/stages":
             self._fetch_stages()
+        elif cmd == "/campaign_setting":
+            from .app import GameClient
+
+            app2: GameClient = self.app  # type: ignore[assignment]
+            bp2 = app2.session_blueprint
+            if bp2:
+                log.write(
+                    f"[bold yellow]── 游戏世界设定 ──────────────────────────────────────[/]\n"
+                    f"{bp2.campaign_setting}\n"
+                )
+            else:
+                log.write("[dim]暂无世界设定数据。[/]")
         elif cmd == "/logout":
             self._do_logout()
         else:
@@ -122,6 +141,11 @@ class HomeScreen(Screen[None]):
         logger.info(
             f"_fetch_stages: 开始查询 user_name={self._user_name} game_name={self._game_name}"
         )
+        from .app import GameClient
+
+        app: GameClient = self.app  # type: ignore[assignment]
+        bp = app.session_blueprint
+        player_only_stage = bp.player_only_stage if bp else None
         try:
             resp = await fetch_stages_state(self._user_name, self._game_name)
             logger.info(f"_fetch_stages: 查询成功 mapping={resp.mapping}")
@@ -133,7 +157,12 @@ class HomeScreen(Screen[None]):
             else:
                 for stage, actors in resp.mapping.items():
                     actors_str = "、".join(actors) if actors else "[dim]（空）[/]"
-                    log.write(f"  [bold cyan]{stage}[/] → {actors_str}")
+                    if stage == player_only_stage:
+                        log.write(
+                            f"  [bold magenta]{stage} ★玩家专属场景[/] → {actors_str}"
+                        )
+                    else:
+                        log.write(f"  [bold cyan]{stage}[/] → {actors_str}")
             log.write("")
         except Exception as e:
             logger.error(f"_fetch_stages: 查询失败 error={e}")
@@ -150,8 +179,12 @@ class HomeScreen(Screen[None]):
             msg = await server_logout(self._user_name, self._game_name)
             log.write(f"[bold green]✅ {msg}[/]")
             logger.info(
-                f"_do_logout: 登出成功 user_name={self._user_name} msg={msg} → pop_screen"
+                f"_do_logout: 登出成功 user_name={self._user_name} msg={msg} → 清空会话状态 + pop_screen"
             )
+            from .app import GameClient
+
+            app: GameClient = self.app  # type: ignore[assignment]
+            app.clear_session()
             await asyncio.sleep(0.5)
             self.app.pop_screen()
         except Exception as e:

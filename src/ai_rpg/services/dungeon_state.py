@@ -213,10 +213,13 @@ async def list_dungeons() -> DungeonListResponse:
     Returns:
         DungeonListResponse: 包含所有地下城配置的列表响应
     """
-    dungeons = [
-        Dungeon.model_validate_json(p.read_text(encoding="utf-8"))
-        for p in sorted(DUNGEONS_DIR.glob("*.json"))
-    ]
+    dungeons = sorted(
+        (
+            Dungeon.model_validate_json(p.read_text(encoding="utf-8"))
+            for p in DUNGEONS_DIR.glob("*.json")
+        ),
+        key=lambda d: d.created_at,
+    )
     return DungeonListResponse(dungeons=dungeons)
 
 

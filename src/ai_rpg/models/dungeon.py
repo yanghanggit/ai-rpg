@@ -1,7 +1,8 @@
+from datetime import datetime, timezone
 from enum import IntEnum, unique
 from typing import List, Optional, final
 from loguru import logger
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from .entities import Actor, Stage, CharacterStats
 from .image import GeneratedImage
 
@@ -118,6 +119,9 @@ class Dungeon(BaseModel):
     name: str
     rooms: List[DungeonRoom]
     ecology: str
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )  # 创建时间戳（UTC）
     current_room_index: int = -1  # 当前所在房间索引，初始为 -1，表示尚未进入任何房间
     setup_entities: bool = (
         False  # 是否已经根据模型创建了实体（敌人和场景），默认 False，创建后置 True

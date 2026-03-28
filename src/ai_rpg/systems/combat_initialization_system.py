@@ -1,8 +1,9 @@
 """战斗初始化系统
 
-在战斗触发阶段为参战角色添加战场上下文，转换战斗状态并启动第一回合。
+在战斗触发阶段为参战角色注入战场上下文，转换战斗状态为进行中。
 不进行 LLM 推理，仅通过 add_human_message 注入战斗上下文，
 并以模拟 AI 回应保证 agent 对话连续性。
+初始化末尾为所有参战角色添加 AddStatusEffectsAction，触发第一回合初始状态效果评估。
 """
 
 from dataclasses import dataclass
@@ -96,8 +97,10 @@ def _generate_combat_init_prompt(
 class CombatInitializationSystem(ExecuteProcessor):
     """战斗初始化系统
 
-    在战斗触发阶段为参战角色注入战场上下文，转换战斗状态为进行中并启动第一回合。
+    在战斗触发阶段为参战角色注入战场上下文，转换战斗状态为进行中。
     不进行 LLM 推理，仅 add_human_message + 模拟 AI 回应以维护 agent 对话连续性。
+    初始化末尾为所有参战角色添加 AddStatusEffectsAction，
+    触发 AddStatusEffectsActionSystem 完成第一回合初始状态效果评估。
 
     执行时机：
         战斗序列状态为 initializing 时执行，在战斗触发后、第一回合开始前。
@@ -112,7 +115,8 @@ class CombatInitializationSystem(ExecuteProcessor):
         """执行战斗初始化
 
         为参战角色注入战场上下文（human message + 模拟 AI 回应），
-        转换战斗状态为进行中并启动第一回合。不进行 LLM 推理。
+        转换战斗状态为进行中，并为所有参战角色添加 AddStatusEffectsAction
+        以触发第一回合初始状态效果评估。不进行 LLM 推理。
         """
         if not self._game.current_dungeon.is_initializing:
             return

@@ -1,12 +1,12 @@
 """战斗状态效果追加系统模块
 
-在回合结算后，让每个参战角色根据上下文（战斗广播、HP变化等）
+监听 AddStatusEffectsAction.ADDED，让每个参战角色根据上下文（战斗广播、HP变化等）
 评估并追加新的状态效果。
 
 执行时机：
 - 监听 AddStatusEffectsAction.ADDED（ReactiveProcessor）
-- 由战斗裁决流程在回合结算后向玩家实体添加 AddStatusEffectsAction 来触发
-- 用于战斗过程中的状态效果动态追加
+- 目前由 CombatInitializationSystem 在初始化末尾为所有参战角色添加 AddStatusEffectsAction 触发
+- 后续裁决系统完成后，也将在回合结算后触发
 """
 
 from typing import Final, List, final
@@ -26,36 +26,35 @@ from ..utils import extract_json_from_code_block
 
 #######################################################################################################################################
 @final
-class StatusEffectsEvaluationResponse(BaseModel):
-    """状态效果评估响应"""
+class AddStatusEffectsResponse(BaseModel):
+    """追加状态效果响应"""
 
-    add_effects: List[StatusEffect] = []  # 要添加的新效果列表
+    add_effects: List[StatusEffect] = []  # 本次追加的新效果列表
 
 
 #######################################################################################################################################
-def _generate_status_effects_evaluation_prompt(
+def _generate_add_status_effects_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
     max_effects: int = 2,
 ) -> str:
-    """生成状态效果评估提示词
+    """生成追加状态效果提示词
 
-    根据战斗结果评估应添加的新状态效果，避免重复添加已有效果。
+    要求 agent 回顾上下文历史并结合当前已有状态，追加本回合应有的新状态效果。
 
     Args:
         current_status_effects: 当前已有的状态效果列表
         current_round_number: 当前回合数
-        max_effects: 最多生成的状态效果数量，默认2
+        max_effects: 最多追加的状态效果数量，默认2
 
     Returns:
         格式化的提示词字符串
     """
 
-    # 格式化当前状态效果（智能压缩，减少token）
+    # 效果少时展示完整描述；过多时仅列名称以节省 token
     if len(current_status_effects) == 0:
         effects_list = "无"
     elif len(current_status_effects) <= 3:
-        # 效果少时展示完整信息
         effects_list = "\n".join(
             [
                 f"- {effect.name}: {effect.formatted_description}"
@@ -63,47 +62,26 @@ def _generate_status_effects_evaluation_prompt(
             ]
         )
     else:
-        # 效果多时只展示名称列表，节省token
         effects_list = "、".join([effect.name for effect in current_status_effects])
 
-    return f"""# 指令！第 {current_round_number} 回合结算完毕，评估新增状态效果
+    return f"""# 第 {current_round_number} 回合 — 追加状态效果
 
-## 现有状态效果
+回顾上下文历史，结合当前已有状态效果，追加本回合应有的新状态效果。
+
+## 当前状态效果
 
 {effects_list}
 
-## 任务
-
-根据上文的**战斗演出**(narrative)和**数据日志**(combat_log)，判断应添加的新状态效果（战斗受伤、增益削弱、战术效果、环境影响等）。
-
-**状态效果要求**：
-- name: 简洁的效果名称（<8字）
-- category: 选择一个：增益 | 减益 | 复合 | 条件触发 | 环境
-- manifestation: 第一人称描述具体表现（1句话）
-- effect: 数值影响（不要 HP上限/时间词）："±X点攻击力/防御力"
-
-**示例**：
-```json
-{{
-  "name": "裂伤",
-  "category": "减益",
-  "manifestation": "肩背皮开肉绽，鲜血浸透衣物，每次移动都牵扯伤口。",
-  "effect": "防御力降低2点。"
-}}
-```
-
-**约束**: 不重复现有效果，最多生成 {max_effects} 个
-
-**输出JSON**:
+**要求**：不重复现有效果，最多追加 {max_effects} 个；无新增时输出空数组。
 
 ```json
 {{
   "add_effects": [
     {{
-      "name": "状态效果名",
-      "category": "分类",
-      "manifestation": "具体表现",
-      "effect": "战斗影响"
+      "name": "效果名（<8字）",
+      "category": "增益 | 减益 | 复合 | 条件触发 | 环境",
+      "manifestation": "第一人称，1句话",
+      "effect": "±X点攻击力/防御力"
     }}
   ]
 }}
@@ -117,12 +95,12 @@ def _generate_status_effects_evaluation_prompt(
 class AddStatusEffectsActionSystem(ReactiveProcessor):
     """战斗状态效果追加系统
 
-    在回合结算后，让每个参战角色根据战斗结果（战斗广播、HP变化等上下文）
-    评估并追加新的状态效果（受伤、增益、削弱等）。
+    监听 AddStatusEffectsAction.ADDED，让每个参战角色根据上下文
+    （战斗广播、HP变化等）评估并追加新的状态效果（受伤、增益、削弱等）。
 
     执行机制：
     - 监听 AddStatusEffectsAction.ADDED（ReactiveProcessor）
-    - 由战斗裁决流程在回合结算后添加 AddStatusEffectsAction 触发
+    - 目前由 CombatInitializationSystem 在初始化末尾触发，覆盖第一回合初始状态
     - 仅在战斗进行中时触发（is_ongoing 守卫）
 
     执行条件：
@@ -190,8 +168,8 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
                 )
                 continue
 
-            # 生成评估提示词
-            prompt = _generate_status_effects_evaluation_prompt(
+            # 生成追加状态效果提示词
+            prompt = _generate_add_status_effects_prompt(
                 current_status_effects=combat_status_effects.status_effects,
                 current_round_number=current_round_number,
                 max_effects=2,
@@ -238,9 +216,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
             json_content = extract_json_from_code_block(ai_response)
 
             # 解析为 Pydantic 模型
-            format_response = StatusEffectsEvaluationResponse.model_validate_json(
-                json_content
-            )
+            format_response = AddStatusEffectsResponse.model_validate_json(json_content)
 
             # 添加新效果到现有列表
             if format_response.add_effects:

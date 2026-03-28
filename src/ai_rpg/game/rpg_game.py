@@ -22,6 +22,7 @@ from ..models import (
     EnemyComponent,
     PlayerComponent,
     CombatStatsComponent,
+    CombatStatusEffectsComponent,
     IdentityComponent,
     Stage,
     StageComponent,
@@ -336,6 +337,12 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 CombatStatsComponent,
                 actor_model.name,
                 copy.copy(actor_model.character_stats),
+            )
+
+            # 必要组件：状态效果列表。
+            actor_entity.add(
+                CombatStatusEffectsComponent,
+                actor_model.name,
                 [],
             )
 

@@ -21,6 +21,7 @@ from ..models import (
     HomeComponent,
     DeathComponent,
     CombatStatsComponent,
+    CombatStatusEffectsComponent,
 )
 from ..entitas import Matcher, Entity
 
@@ -477,7 +478,9 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
         )
 
         # 清空所有状态效果
-        combat_stats.status_effects.clear()
+        assert expedition_entity.has(CombatStatusEffectsComponent)
+        combat_status_effects = expedition_entity.get(CombatStatusEffectsComponent)
+        combat_status_effects.status_effects.clear()
         logger.info(f"清空状态效果: {expedition_entity.name}")
 
         # 解散远征队，移除ExpeditionMemberComponent组件

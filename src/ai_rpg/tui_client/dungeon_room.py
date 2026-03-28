@@ -178,13 +178,25 @@ class DungeonRoomScreen(Screen[None]):
                         ),
                         None,
                     )
+                    status_effects_comp = next(
+                        (
+                            c
+                            for c in entity.components
+                            if c.name == "CombatStatusEffectsComponent"
+                        ),
+                        None,
+                    )
                     if stats_comp is not None:
                         stats = stats_comp.data.get("stats", {})
                         hp = stats.get("hp", "?")
                         max_hp = stats.get("max_hp", "?")
                         attack = stats.get("attack", "?")
                         defense = stats.get("defense", "?")
-                        status_effects = stats_comp.data.get("status_effects", [])
+                        status_effects = (
+                            status_effects_comp.data.get("status_effects", [])
+                            if status_effects_comp is not None
+                            else []
+                        )
                         log.write(
                             f"  · {faction} [bold]{entity.name}[/]"
                             f"  HP:[yellow]{hp}/{max_hp}[/]"

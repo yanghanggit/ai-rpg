@@ -31,6 +31,7 @@ from ..models import (
     DungeonComponent,
     PlayCardsAction,
     CombatStatsComponent,
+    CombatStatusEffectsComponent,
     Card,
     StageComponent,
     DeathComponent,
@@ -477,10 +478,12 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 logger.warning(f"无法找到角色实体: {action_info.actor}")
                 continue
 
-            # 获取战斗属性组件
-            combat_stats = entity.get(CombatStatsComponent)
-            if combat_stats is None:
-                logger.warning(f"角色 {action_info.actor} 缺少 CombatStatsComponent")
+            # 获取战斗状态效果组件
+            combat_status_effects = entity.get(CombatStatusEffectsComponent)
+            if combat_status_effects is None:
+                logger.warning(
+                    f"角色 {action_info.actor} 缺少 CombatStatusEffectsComponent"
+                )
                 continue
 
             # 从卡牌中获取已消耗的状态效果
@@ -491,9 +494,9 @@ class ArbitrationActionSystem(ReactiveProcessor):
             # 从角色的状态效果列表中移除已消耗的效果
             for consumed_effect in consumed_effects:
                 # 通过名称匹配移除
-                combat_stats.status_effects = [
+                combat_status_effects.status_effects = [
                     effect
-                    for effect in combat_stats.status_effects
+                    for effect in combat_status_effects.status_effects
                     if effect.name != consumed_effect.name
                 ]
 

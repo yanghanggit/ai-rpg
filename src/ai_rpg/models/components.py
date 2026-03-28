@@ -330,19 +330,36 @@ class DeathComponent(Component):
 class CombatStatsComponent(MutableComponent):
     """战斗属性组件
 
-    存储角色的战斗属性和状态效果，用于战斗系统计算。
+    存储角色的战斗属性，用于战斗系统计算。
+    状态效果已迁移至 CombatStatusEffectsComponent。
 
     Attributes:
         name: 角色名称
         stats: 角色属性（生命值、攻击力、防御力等）
-        status_effects: 状态效果列表
     """
 
     name: str
     stats: CharacterStats
+
+
+############################################################################################################
+
+
+@final
+@register_component_type
+class CombatStatusEffectsComponent(MutableComponent):
+    """战斗状态效果组件
+
+    存储角色的状态效果列表，用于战斗系统计算。
+
+    Attributes:
+        name: 角色名称
+        status_effects: 状态效果列表
+    """
+
+    name: str
     status_effects: List[StatusEffect]
 
-    # 加一个函数，根据名字查阅 StatusEffect
     def find_status_effect(self, effect_name: str) -> StatusEffect | None:
         for effect in self.status_effects:
             if effect.name == effect_name:

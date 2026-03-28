@@ -16,7 +16,7 @@ from ..models import (
     SkillBookComponent,
     ExpeditionMemberComponent,
     EnemyComponent,
-    CombatStatsComponent,
+    CombatStatusEffectsComponent,
     DeathComponent,
     Card,
     CharacterStats,
@@ -137,10 +137,10 @@ def activate_random_expedition_member_card_draws(
 
         # 获取角色当前所有的状态效果
         assert entity.has(
-            CombatStatsComponent
-        ), f"Entity {entity.name} must have CombatStatsComponent"
-        combat_stats = entity.get(CombatStatsComponent)
-        status_effects = combat_stats.status_effects.copy()
+            CombatStatusEffectsComponent
+        ), f"Entity {entity.name} must have CombatStatusEffectsComponent"
+        combat_status_effects = entity.get(CombatStatusEffectsComponent)
+        status_effects = combat_status_effects.status_effects.copy()
 
         # 随机从全部中选择一个，然后组成[]
         if len(status_effects) > 0:
@@ -245,20 +245,20 @@ def activate_specified_expedition_member_card_draws(
 
     # 2. 验证状态效果名称是否都在实体的当前状态效果中
     assert expedition_member_entity.has(
-        CombatStatsComponent
-    ), f"Entity {expedition_member_entity.name} must have CombatStatsComponent"
-    combat_stats = expedition_member_entity.get(CombatStatsComponent)
+        CombatStatusEffectsComponent
+    ), f"Entity {expedition_member_entity.name} must have CombatStatusEffectsComponent"
+    combat_status_effects = expedition_member_entity.get(CombatStatusEffectsComponent)
     for effect_name in status_effect_names:
-        if combat_stats.find_status_effect(effect_name) is None:
-            error_msg = f"激活指定抽牌失败: 角色 {expedition_member_entity.name} 没有状态效果 '{effect_name}'，当前状态效果: {[e.name for e in combat_stats.status_effects]}"
+        if combat_status_effects.find_status_effect(effect_name) is None:
+            error_msg = f"激活指定抒牌失败: 角色 {expedition_member_entity.name} 没有状态效果 '{effect_name}'，当前状态效果: {[e.name for e in combat_status_effects.status_effects]}"
             logger.error(error_msg)
             return False, error_msg
 
     # 3. 创建 DrawCardsAction 组件
     selected_status_effects = [
-        combat_stats.find_status_effect(name)
+        combat_status_effects.find_status_effect(name)
         for name in status_effect_names
-        if combat_stats.find_status_effect(name) is not None
+        if combat_status_effects.find_status_effect(name) is not None
     ]
     expedition_member_entity.replace(
         DrawCardsAction,
@@ -344,10 +344,10 @@ def activate_random_enemy_card_draws(
 
         # 获取角色当前所有的状态效果
         assert entity.has(
-            CombatStatsComponent
-        ), f"Entity {entity.name} must have CombatStatsComponent"
-        combat_stats = entity.get(CombatStatsComponent)
-        status_effects = combat_stats.status_effects.copy()
+            CombatStatusEffectsComponent
+        ), f"Entity {entity.name} must have CombatStatusEffectsComponent"
+        combat_status_effects = entity.get(CombatStatusEffectsComponent)
+        status_effects = combat_status_effects.status_effects.copy()
 
         # 随机从全部中选择一个，然后组成[]
         if len(status_effects) > 0:

@@ -12,6 +12,7 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     StageDescriptionComponent,
     CombatStatsComponent,
+    CombatStatusEffectsComponent,
     ExpeditionMemberComponent,
     EnemyComponent,
     AppearanceComponent,
@@ -326,9 +327,9 @@ class CombatInitializationSystem(ExecuteProcessor):
             entity: 角色实体
             chat_client: 包含AI响应的ChatClient
         """
-        combat_stats = entity.get(CombatStatsComponent)
-        if combat_stats is None:
-            logger.warning(f"角色 {entity.name} 缺少 CombatStatsComponent")
+        combat_status_effects = entity.get(CombatStatusEffectsComponent)
+        if combat_status_effects is None:
+            logger.warning(f"角色 {entity.name} 缺少 CombatStatusEffectsComponent")
             return
 
         try:
@@ -351,7 +352,9 @@ class CombatInitializationSystem(ExecuteProcessor):
 
             # 追加新状态效果到现有列表
             if format_response.status_effects:
-                combat_stats.status_effects.extend(format_response.status_effects)
+                combat_status_effects.status_effects.extend(
+                    format_response.status_effects
+                )
 
                 # 通知角色新增的状态效果
                 added_msg = _format_status_effects_notification(

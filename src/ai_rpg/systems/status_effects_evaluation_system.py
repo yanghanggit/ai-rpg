@@ -17,7 +17,7 @@ from ..chat_client.client import ChatClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
-    CombatStatsComponent,
+    CombatStatusEffectsComponent,
     PlayCardsAction,
     StatusEffect,
 )
@@ -183,16 +183,16 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
         chat_clients: List[ChatClient] = []
 
         for entity in actor_entities:
-            combat_stats = entity.get(CombatStatsComponent)
-            if combat_stats is None:
+            combat_status_effects = entity.get(CombatStatusEffectsComponent)
+            if combat_status_effects is None:
                 logger.warning(
-                    f"角色 {entity.name} 缺少 CombatStatsComponent，跳过状态评估"
+                    f"角色 {entity.name} 缺少 CombatStatusEffectsComponent，跳过状态评估"
                 )
                 continue
 
             # 生成评估提示词
             prompt = _generate_status_effects_evaluation_prompt(
-                current_status_effects=combat_stats.status_effects,
+                current_status_effects=combat_status_effects.status_effects,
                 current_round_number=current_round_number,
                 max_effects=2,
             )
@@ -225,9 +225,9 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
     ) -> None:
         """处理单个角色的状态效果评估响应，追加新状态效果"""
 
-        combat_stats = entity.get(CombatStatsComponent)
-        if combat_stats is None:
-            logger.warning(f"角色 {entity.name} 缺少 CombatStatsComponent")
+        combat_status_effects = entity.get(CombatStatusEffectsComponent)
+        if combat_status_effects is None:
+            logger.warning(f"角色 {entity.name} 缺少 CombatStatusEffectsComponent")
             return
 
         try:
@@ -244,7 +244,7 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
 
             # 添加新效果到现有列表
             if format_response.add_effects:
-                combat_stats.status_effects.extend(format_response.add_effects)
+                combat_status_effects.status_effects.extend(format_response.add_effects)
 
                 # 通知角色新增的效果
                 added_msg = "# 新增状态效果\n\n" + "\n".join(

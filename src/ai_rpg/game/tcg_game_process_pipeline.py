@@ -114,8 +114,8 @@ def create_combat_pipeline(
     from ..systems.prologue_system import PrologueSystem
 
     # from ..systems.arbitration_action_system import ArbitrationActionSystem
-    from ..systems.status_effects_evaluation_system import (
-        StatusEffectsEvaluationSystem,
+    from ..systems.add_status_effects_action_system import (
+        AddStatusEffectsActionSystem,
     )
     from ..systems.combat_archive_system import CombatArchiveSystem
     from ..systems.stage_description_system import (
@@ -150,8 +150,8 @@ def create_combat_pipeline(
     # 检查战斗结果系统
     processors.add(CombatOutcomeSystem(tcg_game))
 
-    # 状态效果评估系统（AI 生成新的状态效果，内部有状态守卫）
-    processors.add(StatusEffectsEvaluationSystem(tcg_game))
+    # 状态效果追加系统（AI 根据回合结算结果追加新状态效果，内部有状态守卫）
+    processors.add(AddStatusEffectsActionSystem(tcg_game))
 
     # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫）
     processors.add(CombatArchiveSystem(tcg_game))

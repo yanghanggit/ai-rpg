@@ -1,12 +1,12 @@
-"""状态效果评估系统模块
+"""战斗状态效果追加系统模块
 
-在战斗裁决后，让每个参战角色根据上下文（战斗广播、HP变化等）
-自主评估并添加新的状态效果。
+在回合结算后，让每个参战角色根据上下文（战斗广播、HP变化等）
+评估并追加新的状态效果。
 
 执行时机：
-- 监听 PlayCardsAction.ADDED（ReactiveProcessor）
-- 在 ArbitrationActionSystem 之后执行（由管线顺序保证）
-- 用于战斗过程中的状态效果动态生成
+- 监听 AddStatusEffectsAction.ADDED（ReactiveProcessor）
+- 由战斗裁决流程在回合结算后向玩家实体添加 AddStatusEffectsAction 来触发
+- 用于战斗过程中的状态效果动态追加
 """
 
 from typing import Final, List, final
@@ -17,8 +17,8 @@ from ..chat_client.client import ChatClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
+    AddStatusEffectsAction,
     CombatStatusEffectsComponent,
-    PlayCardsAction,
     StatusEffect,
 )
 from ..utils import extract_json_from_code_block
@@ -114,23 +114,21 @@ def _generate_status_effects_evaluation_prompt(
 
 #######################################################################################################################################
 @final
-class StatusEffectsEvaluationSystem(ReactiveProcessor):
-    """
-    状态效果评估系统
+class AddStatusEffectsActionSystem(ReactiveProcessor):
+    """战斗状态效果追加系统
 
-    在战斗裁决后，让每个参战角色根据战斗结果评估并添加新的状态效果。
-    角色通过阅读上下文中的战斗广播、HP变化通知等信息，
-    判断应该添加哪些新状态效果（如受伤、增益、削弱等）。
+    在回合结算后，让每个参战角色根据战斗结果（战斗广播、HP变化等上下文）
+    评估并追加新的状态效果（受伤、增益、削弱等）。
 
     执行机制：
-    - 监听 PlayCardsAction.ADDED（ReactiveProcessor）
-    - 在 ArbitrationActionSystem 之后执行（由管线顺序保证）
-    - 仅在战斗进行中时触发
+    - 监听 AddStatusEffectsAction.ADDED（ReactiveProcessor）
+    - 由战斗裁决流程在回合结算后添加 AddStatusEffectsAction 触发
+    - 仅在战斗进行中时触发（is_ongoing 守卫）
 
     执行条件：
     - 战斗状态为 ONGOING（is_ongoing=True）
     - 自动获取当前场景上的所有存活角色
-    - 每个角色需有 CombatStatsComponent（战斗属性）
+    - 每个角色需有 CombatStatusEffectsComponent
     """
 
     def __init__(self, game: TCGGame) -> None:
@@ -140,29 +138,31 @@ class StatusEffectsEvaluationSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(PlayCardsAction): GroupEvent.ADDED}
+        return {Matcher(AddStatusEffectsAction): GroupEvent.ADDED}
 
     #######################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(PlayCardsAction)
+        return entity.has(AddStatusEffectsAction)
 
     #######################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
         """
-        为每个参战角色评估新增状态效果
+        为每个参战角色追加状态效果
 
         流程：
-        1. 并发创建所有角色的评估任务
+        1. 为所有参战角色并发创建 LLM 评估任务
         2. 调用 LLM 生成新状态效果
-        3. 解析响应并追加到 CombatStatsComponent.status_effects
-        4. 添加新增状态效果通知到角色上下文
+        3. 解析响应并追加到 CombatStatusEffectsComponent.status_effects
+        4. 将新增状态效果通知写入角色上下文
         """
 
         # 仅在战斗进行中时触发
         if not self._game.current_dungeon.is_ongoing:
             return
+
+        logger.debug(f"触发 AddStatusEffectsActionSystem，处理 {len(entities)} 个实体")
 
         # 获取当前回合数
         current_round_number = len(self._game.current_dungeon.current_rounds or [])

@@ -12,6 +12,7 @@ from loguru import logger
 from ..entitas import ExecuteProcessor, Entity
 from ..game.tcg_game import TCGGame
 from ..models import (
+    AddStatusEffectsAction,
     StageDescriptionComponent,
     CombatStatsComponent,
     ExpeditionMemberComponent,
@@ -145,6 +146,10 @@ class CombatInitializationSystem(ExecuteProcessor):
 
         # 设置战斗为进行中（第一回合将由 CombatRoundCreationSystem 创建）
         self._game.current_dungeon.transition_to_ongoing()
+
+        # 为所有参战角色添加 AddStatusEffectsAction，触发初始状态效果生成
+        for actor_entity in actor_entities:
+            actor_entity.add(AddStatusEffectsAction, actor_entity.name)
 
     ###################################################################################################################################################################
     def _add_context_for_all_actors(

@@ -169,6 +169,22 @@ class PlayCardsAction(Component):
 @final
 @register_action_component_type
 @register_component_type
+class AddStatusEffectsAction(Component):
+    """添加状态效果动作组件
+
+    触发 AddCombatStatusEffectsSystem 对当前场景所有参战角色进行状态效果评估。
+    应由战斗裁决流程（或外部 CLI）在回合结算后添加到玩家实体。
+
+    Attributes:
+        name: 发起评估的实体名称
+    """
+
+    name: str
+
+
+@final
+@register_action_component_type
+@register_component_type
 class RetreatAction(Component):
     """
     战斗中角色撤退动作组件

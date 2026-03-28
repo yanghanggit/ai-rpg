@@ -1,25 +1,23 @@
 """战斗初始化系统
 
-在战斗触发阶段为参战角色生成初始状态效果，转换战斗状态并启动第一回合。
+在战斗触发阶段为参战角色添加战场上下文，转换战斗状态并启动第一回合。
+不进行 LLM 推理，仅通过 add_human_message 注入战斗上下文，
+并以模拟 AI 回应保证 agent 对话连续性。
 """
 
 from dataclasses import dataclass
 from typing import Final, List, final, override, Set
+from langchain_core.messages import AIMessage
 from loguru import logger
-from pydantic import BaseModel
 from ..entitas import ExecuteProcessor, Entity
 from ..game.tcg_game import TCGGame
 from ..models import (
     StageDescriptionComponent,
     CombatStatsComponent,
-    CombatStatusEffectsComponent,
     ExpeditionMemberComponent,
     EnemyComponent,
     AppearanceComponent,
-    StatusEffect,
 )
-from ..chat_client.client import ChatClient
-from ..utils import extract_json_from_code_block
 from ..models.entities import CharacterStats
 
 
@@ -32,12 +30,6 @@ class OtherActorInfo:
     other_name: str  # 其他角色名称
     appearance: str  # 其他角色的外观描述
     camp: str  # 阵营关系（友方/敌方）
-
-
-class StatusEffectsInitializationResponse(BaseModel):
-    """战斗初始化状态效果响应"""
-
-    status_effects: List[StatusEffect] = []  # 新增的状态效果列表
 
 
 ###################################################################################################################################################################
@@ -61,68 +53,29 @@ def _format_other_actors_info(other_actors_info: List[OtherActorInfo]) -> str:
 
 
 ###################################################################################################################################################################
-def _format_status_effects_notification(status_effects: List[StatusEffect]) -> str:
-    """格式化状态效果通知消息
-
-    Args:
-        status_effects: 状态效果列表
-
-    Returns:
-        格式化的通知消息字符串
-    """
-    return "# 战斗初始化新增状态效果\n\n" + "\n".join(
-        [
-            f"+ {effect.name}: {effect.formatted_description}"
-            for effect in status_effects
-        ]
-    )
-
-
-###################################################################################################################################################################
 def _generate_combat_init_prompt(
     stage_name: str,
     stage_description: str,
     other_actors_info: List[OtherActorInfo],
     actor_stats: CharacterStats,
-    max_effects: int = 2,
 ) -> str:
-    """生成战斗初始化状态效果提示词
+    """生成战斗初始化上下文通知
 
-    为角色生成战斗触发时的上下文信息，要求根据场景、敌我、自身状态
-    自主判断并生成初始战斗状态效果。使用第一人称叙事风格。
-
-    本函数在 prompt 中向 Agent 说明了战斗的核心循环流程（抓牌→出牌→状态效果评估），
-    以确保 Agent 在战斗开始前就理解自己在整个系统中的角色定位。
-    该流程描述须与后续三个系统的 prompt 思路保持统一：
-    - DrawCardsActionSystem：抓牌阶段，基于技能生成卡牌
-    - PlayCardsActionSystem：出牌阶段，提交执行单元并由仲裁系统推演
-    - StatusEffectsEvaluationSystem：评估阶段，根据本轮事件新增状态效果
+    为角色生成战斗触发时的战场情境通知，同步场景、敌我、自身属性信息。
+    不要求任何输出，仅作为上下文注入使用。
 
     Args:
         stage_name: 战斗场景名称
         stage_description: 战斗场景的环境描述
         other_actors_info: 其他参战角色的信息列表（包含名称、外观、阵营）
         actor_stats: 当前角色的属性数据（包含 hp/max_hp/attack/defense）
-        max_effects: 生成状态效果的最大数量，默认为2
 
     Returns:
-        要求输出JSON格式状态效果列表的提示词
+        战场情境通知文本
     """
-    # 格式化角色属性
     attrs_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
 
-    return f"""# 指令！战斗触发！生成初始状态效果(JSON)
-
-## 战斗规则
-
-本战斗为**卡牌回合制（TCG）**，每轮核心流程如下：
-
-1. **创建回合** — 你感知当前战场环境与参战角色，结合初始化信息形成对本轮战斗的初步判断
-2. **抓牌** — 创建卡牌（战斗执行的基础单元）
-3. **出牌** — 选择并打出手牌，将执行单元提交给仲裁系统，由其推演实际战斗效果
-4. **状态效果评估** — 推演结束后，根据本轮发生的事件，判断并新增应有的状态效果
-
-> 你当前处于**战斗触发阶段**（第一回合尚未开始）。你现在生成的初始状态效果，将作为第一回合的起点，并在此后每轮的状态效果评估中持续演变。
+    return f"""# 战斗触发通知
 
 ## 场景叙事
 
@@ -134,46 +87,7 @@ def _generate_combat_init_prompt(
 
 ## 你的属性
 
-{attrs_prompt}
-
-## 任务
-
-根据场景、敌我、自身状况，判断你在战斗开始时应具有的状态效果（环境影响、心理状态、战术准备等）。
-
-**状态效果要求**：
-- name: 简洁的效果名称（<8字）
-- category: 选择一个：增益 | 减益 | 复合 | 条件触发 | 环境
-- manifestation: 第一人称描述具体表现（1句话）
-- effect: 数值影响（不要 HP上限/时间词）："±X点攻击力/防御力"
-
-**示例**：
-```json
-{{
-  "name": "复仇之志",
-  "category": "复合",
-  "manifestation": "旧伤灼痛，血液沸腾，杀意压过理智。",
-  "effect": "对虎类敌人攻击力提升3点，自身防御力降低2点。"
-}}
-```
-
-**约束**: 最多生成 {max_effects} 个状态效果
-
-**输出JSON**:
-
-```json
-{{
-  "status_effects": [
-    {{
-      "name": "状态效果名",
-      "category": "分类",
-      "manifestation": "具体表现",
-      "effect": "战斗影响"
-    }}
-  ]
-}}
-```
-
-无新增状态时输出空数组，只输出JSON。"""
+{attrs_prompt}"""
 
 
 ###################################################################################################################################################################
@@ -181,8 +95,8 @@ def _generate_combat_init_prompt(
 class CombatInitializationSystem(ExecuteProcessor):
     """战斗初始化系统
 
-    在战斗触发阶段为参战角色生成战斗上下文，并发调用LLM生成初始状态效果，
-    转换战斗状态为进行中并启动第一回合。
+    在战斗触发阶段为参战角色注入战场上下文，转换战斗状态为进行中并启动第一回合。
+    不进行 LLM 推理，仅 add_human_message + 模拟 AI 回应以维护 agent 对话连续性。
 
     执行时机：
         战斗序列状态为 initializing 时执行，在战斗触发后、第一回合开始前。
@@ -196,18 +110,17 @@ class CombatInitializationSystem(ExecuteProcessor):
     async def execute(self) -> None:
         """执行战斗初始化
 
-        为参战角色生成战斗上下文，并发调用LLM生成初始状态效果，转换战斗状态为进行中并启动第一回合。
+        为参战角色注入战场上下文（human message + 模拟 AI 回应），
+        转换战斗状态为进行中并启动第一回合。不进行 LLM 推理。
         """
-        # 分析阶段
         if not self._game.current_dungeon.is_initializing:
-            # 非战斗触发阶段，直接返回
             return
 
         assert (
             len(self._game.current_dungeon.current_rounds or []) == 0
         ), "战斗触发阶段不允许有回合数！"
 
-        # 获取玩家实体, player在的场景就是战斗发生的场景！
+        # 获取玩家实体，player 所在场景即战斗场景
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
 
@@ -223,45 +136,34 @@ class CombatInitializationSystem(ExecuteProcessor):
         actor_entities = self._game.get_alive_actors_in_stage(player_entity)
         assert len(actor_entities) > 0, "不可能出现没人参与战斗的情况！"
 
-        # 第一步：为每个角色生成战斗初始化提示词并创建ChatClient
-        chat_clients = self._generate_chat_clients_for_all_actors(
+        # 为每个角色注入战场上下文（无 LLM 调用）
+        self._add_context_for_all_actors(
             actor_entities=actor_entities,
             stage_name=current_stage_entity.name,
             stage_description=environment_comp.narrative,
         )
 
-        # 第二步：并发调用LLM生成所有角色的初始状态效果
-        # logger.debug(f"开始并发生成 {len(chat_clients)} 个角色的初始状态效果...")
-        await ChatClient.batch_chat(clients=chat_clients)
-
-        # 第三步：解析并更新每个角色的状态效果
-        self._record_ai_responses(chat_clients)
-
         # 设置战斗为进行中（第一回合将由 CombatRoundCreationSystem 创建）
         self._game.current_dungeon.transition_to_ongoing()
 
     ###################################################################################################################################################################
-    def _generate_chat_clients_for_all_actors(
+    def _add_context_for_all_actors(
         self,
         actor_entities: Set[Entity],
         stage_name: str,
         stage_description: str,
-    ) -> List[ChatClient]:
-        """为所有参战角色生成战斗初始化提示词并创建ChatClient列表
+    ) -> None:
+        """为所有参战角色注入战场上下文
 
-        为每个角色生成包含场景信息、其他角色信息、自身属性和状态效果的完整战斗提示词，
-        并将提示词添加到各角色的对话上下文中，同时创建用于生成初始状态效果的ChatClient。
+        为每个角色生成战斗初始化提示词并添加到对话上下文（human message），
+        随后注入一条模拟 AI 回应以维护 Human↔AI 交替的 agent 对话结构。
+        不进行任何 LLM 调用。
 
         Args:
             actor_entities: 所有参战角色实体集合
             stage_name: 战斗场景名称
             stage_description: 战斗场景的环境描述
-
-        Returns:
-            ChatClient列表，用于并发请求LLM生成初始状态效果
         """
-        chat_clients: List[ChatClient] = []
-
         for actor_entity in actor_entities:
             # 获取角色属性组件
             combat_stats_comp = actor_entity.get(CombatStatsComponent)
@@ -272,106 +174,28 @@ class CombatInitializationSystem(ExecuteProcessor):
                 actor_entity, actor_entities
             )
 
-            # 生成提示词
+            # 生成战场上下文提示词
             combat_init_prompt = _generate_combat_init_prompt(
                 stage_name=stage_name,
                 stage_description=stage_description,
                 other_actors_info=other_actors_info,
                 actor_stats=combat_stats_comp.stats,
-                max_effects=2,
             )
 
-            # 追加压缩提示词到角色对话中
+            # 注入战场上下文
             self._game.add_human_message(
                 entity=actor_entity,
                 message_content=combat_init_prompt,
                 combat_initialization=stage_name,
             )
 
-            # 创建ChatClient用于生成初始状态效果
-            chat_clients.append(
-                ChatClient(
-                    name=actor_entity.name,
-                    prompt=combat_init_prompt,
-                    context=self._game.get_agent_context(actor_entity).context,
-                )
-            )
-
-        return chat_clients
-
-    ###################################################################################################################################################################
-    def _record_ai_responses(self, chat_clients: List[ChatClient]) -> None:
-        """解析AI响应并更新角色的初始状态效果
-
-        解析LLM生成的状态效果JSON，追加到各角色的CombatStatsComponent.status_effects中。
-        如果解析失败或找不到角色实体，记录日志并跳过。
-
-        Args:
-            chat_clients: 包含AI响应的ChatClient列表
-        """
-        for chat_client in chat_clients:
-            actor_entity = self._game.get_entity_by_name(chat_client.name)
-            if actor_entity is None:
-                logger.warning(f"无法找到角色实体: {chat_client.name}")
-                continue
-
-            self._process_status_effects_response(actor_entity, chat_client)
-
-    ###################################################################################################################################################################
-    def _process_status_effects_response(
-        self, entity: Entity, chat_client: ChatClient
-    ) -> None:
-        """处理单个角色的状态效果初始化响应
-
-        Args:
-            entity: 角色实体
-            chat_client: 包含AI响应的ChatClient
-        """
-        combat_status_effects = entity.get(CombatStatusEffectsComponent)
-        if combat_status_effects is None:
-            logger.warning(f"角色 {entity.name} 缺少 CombatStatusEffectsComponent")
-            return
-
-        try:
-            # 获取 LLM 响应
-            ai_response = chat_client.response_content
-
-            # AI 回应需要添加入上下文。
+            # 注入模拟 AI 回应，维护 Human↔AI 交替结构
             self._game.add_ai_message(
-                entity=entity,
-                ai_messages=chat_client.response_ai_messages,
+                entity=actor_entity,
+                ai_messages=[AIMessage(content="已感知战场环境，进入战斗准备状态。")],
             )
 
-            # 提取 JSON
-            json_content = extract_json_from_code_block(ai_response)
-
-            # 解析为 Pydantic 模型
-            format_response = StatusEffectsInitializationResponse.model_validate_json(
-                json_content
-            )
-
-            # 追加新状态效果到现有列表
-            if format_response.status_effects:
-                combat_status_effects.status_effects.extend(
-                    format_response.status_effects
-                )
-
-                # 通知角色新增的状态效果
-                added_msg = _format_status_effects_notification(
-                    format_response.status_effects
-                )
-                self._game.add_human_message(entity=entity, message_content=added_msg)
-
-                logger.debug(
-                    f"[{entity.name}] 战斗初始化新增 {len(format_response.status_effects)} 个状态效果: "
-                    f"{[e.name for e in format_response.status_effects]}"
-                )
-            else:
-                logger.debug(f"[{entity.name}] 战斗初始化无新增状态效果")
-
-        except Exception as e:
-            logger.error(f"[{entity.name}] 解析状态效果初始化失败: {e}")
-            logger.error(f"原始响应: {chat_client.response_content}")
+            logger.debug(f"[{actor_entity.name}] 战斗上下文注入完成（无 LLM 推理）")
 
     ###################################################################################################################################################################
     def _determine_camp_relationship(

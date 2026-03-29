@@ -191,9 +191,10 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
         # 处理每个角色的响应
         for chat_client in chat_clients:
             found_entity = self._game.get_entity_by_name(chat_client.name)
-            if found_entity is None:
-                logger.warning(f"无法找到角色实体: {chat_client.name}")
-                continue
+            assert found_entity is not None, f"无法找到角色实体: {chat_client.name}"
+            # if found_entity is None:
+            #     logger.warning(f"无法找到角色实体: {chat_client.name}")
+            #     continue
 
             self._process_status_effects_response(found_entity, chat_client)
 
@@ -201,36 +202,39 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
     def _process_status_effects_response(
         self, entity: Entity, chat_client: ChatClient
     ) -> None:
-        """处理单个角色的状态效果评估响应，追加新状态效果"""
+        """处理单个角色的状态效果评估响应，完成本轮对话并追加新状态效果
 
-        combat_status_effects = entity.get(CombatStatusEffectsComponent)
-        if combat_status_effects is None:
-            logger.warning(f"角色 {entity.name} 缺少 CombatStatusEffectsComponent")
-            return
+        将本轮 prompt 以 add_human_message 写入角色上下文，
+        将 LLM 回复以 add_ai_message 写入角色上下文，
+        从而在 entity context 中形成完整的一轮 Human↔AI 对话。
+        """
 
+        assert entity.has(
+            CombatStatusEffectsComponent
+        ), f"Entity {entity.name} must have CombatStatusEffectsComponent"
+
+        # 解析 LLM 响应，追加状态效果
         try:
-            # 获取 LLM 响应
-            ai_response = chat_client.response_content
-
-            # 提取 JSON
-            json_content = extract_json_from_code_block(ai_response)
-
-            # 解析为 Pydantic 模型
+            json_content = extract_json_from_code_block(chat_client.response_content)
             format_response = AddStatusEffectsResponse.model_validate_json(json_content)
+
+            # 将本轮 prompt 写入角色上下文（Human 端）
+            self._game.add_human_message(
+                entity=entity, message_content=chat_client.prompt
+            )
+
+            # 将 LLM 回复写入角色上下文（AI 端），完成本轮对话
+            self._game.add_ai_message(
+                entity=entity, ai_messages=chat_client.response_ai_messages
+            )
 
             # 添加新效果到现有列表
             if format_response.add_effects:
+                combat_status_effects = entity.get(CombatStatusEffectsComponent)
                 combat_status_effects.status_effects.extend(format_response.add_effects)
-
-                # 通知角色新增的效果
-                added_msg = "# 新增状态效果\n\n" + "\n".join(
-                    [
-                        f"+ {effect.name}: {effect.formatted_description}"
-                        for effect in format_response.add_effects
-                    ]
+                logger.debug(
+                    f"[{entity.name}] 新增 {len(format_response.add_effects)} 个状态效果"
                 )
-                self._game.add_human_message(entity=entity, message_content=added_msg)
-
             else:
                 logger.debug(f"[{entity.name}] 本回合无新增状态效果")
 

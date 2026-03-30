@@ -89,7 +89,7 @@ class Card2(BaseModel):
     action: str  # 第一人称行动叙事描述
     damage: int = 0  # 伤害
     block: int = 0  # 格挡
-    targets: List[str] = []  # 目标实体名称列表
+    # targets: List[str] = []  # 目标实体名称列表
 
 
 ###############################################################################################################################################
@@ -99,8 +99,8 @@ class Round(BaseModel):
 
     action_order: List[str]  # 行动顺序，按顺序记录角色名称
     completed_actors: List[str] = []  # 已完成出牌的角色名称（按出手顺序追加）
-    combat_log: str = ""  # 战斗计算日志
-    narrative: str = ""  # 叙事文本/演出描述
+    combat_log: List[str] = []  # 战斗计算日志，每次出手追加一条
+    narrative: List[str] = []  # 叙事文本/演出描述，每次出手追加一条
 
     @property
     def is_round_completed(self) -> bool:

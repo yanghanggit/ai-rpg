@@ -111,11 +111,11 @@ def create_combat_pipeline(
     from ..systems.epilogue_system import EpilogueSystem
     from ..systems.prologue_system import PrologueSystem
 
-    # from ..systems.arbitration_action_system import ArbitrationActionSystem
+    from ..systems.arbitration_action_system import ArbitrationActionSystem
     from ..systems.add_status_effects_action_system import (
         AddStatusEffectsActionSystem,
     )
-    from ..systems.combat_archive_system import CombatArchiveSystem
+    #from ..systems.combat_archive_system import CombatArchiveSystem
     from ..systems.stage_description_system import (
         StageDescriptionSystem,
     )
@@ -144,7 +144,7 @@ def create_combat_pipeline(
     processors.add(DrawCardsActionSystem(tcg_game, 3))
     processors.add(PlayCardsActionSystem(tcg_game))
     processors.add(RetreatActionSystem(tcg_game))
-    # processors.add(ArbitrationActionSystem(tcg_game))
+    processors.add(ArbitrationActionSystem(tcg_game))
 
     # 检查战斗结果系统
     processors.add(CombatOutcomeSystem(tcg_game))
@@ -153,7 +153,7 @@ def create_combat_pipeline(
     processors.add(AddStatusEffectsActionSystem(tcg_game))
 
     # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫）
-    processors.add(CombatArchiveSystem(tcg_game))
+    # processors.add(CombatArchiveSystem(tcg_game))
 
     # 战斗回合创建系统（可能在战斗结果检查后创建新回合，或者在归档后准备下一轮输入）
     # processors.add(CombatRoundCreationSystem(tcg_game))

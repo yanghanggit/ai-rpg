@@ -119,6 +119,7 @@ def create_combat_pipeline(
     from ..systems.stage_description_system import (
         StageDescriptionSystem,
     )
+    from ..systems.combat_round_creation_system import CombatRoundCreationSystem
 
     tcg_game = cast(TCGGame, game)
     processors = RPGGameProcessPipeline()
@@ -136,7 +137,7 @@ def create_combat_pipeline(
     processors.add(CombatInitializationSystem(tcg_game))
 
     # 战斗回合创建系统（创建后续回合）
-    # processors.add(CombatRoundCreationSystem(tcg_game))
+    processors.add(CombatRoundCreationSystem(tcg_game))
 
     # 动作处理相关的系统：敌人决策-抓牌-出牌-撤退-裁决-清理
     # processors.add(EnemyDrawDecisionSystem(tcg_game))

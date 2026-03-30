@@ -22,6 +22,7 @@ from ..chat_client.client import ChatClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
+    ActorComponent,
     DrawCardsAction,
     HandComponent,
     Card,
@@ -211,61 +212,69 @@ class DrawCardsActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(DrawCardsAction) and not entity.has(DeathComponent)
+        return (
+            entity.has(DrawCardsAction)
+            and entity.has(ActorComponent)
+            and not entity.has(DeathComponent)
+        )
 
     ######################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
-        assert (
-            len(entities) > 0
-        ), "DrawCardsActionSystem react called with empty entities list"
 
         if not self._game.current_dungeon.is_ongoing:
             # 阶段不对，直接返回
+            logger.debug("当前战斗状态非 ONGOING，DrawCardsActionSystem 不执行")
             return
 
         # 验证回合已创建（回合创建已在 CombatRoundCreationSystem 中完成）
+        # assert (
+        #     len(self._game.current_dungeon.current_rounds or []) > 0
+        # ), "当前回合未创建，检查 CombatRoundCreationSystem 是否正常执行"
+
+        current_rounds = self._game.current_dungeon.current_rounds
         assert (
-            len(self._game.current_dungeon.current_rounds or []) > 0
+            current_rounds is not None and len(current_rounds) > 0
         ), "当前回合未创建，检查 CombatRoundCreationSystem 是否正常执行"
+        logger.debug(f"当前回合数: {len(current_rounds)}")
 
-        # 清除所有参与角色的旧手牌，准备重新生成新手牌
-        for entity in entities:
-            if entity.has(HandComponent):
-                entity.remove(HandComponent)
+        # # 清除所有参与角色的旧手牌，准备重新生成新手牌
+        # for entity in entities:
+        #     if entity.has(HandComponent):
+        #         entity.remove(HandComponent)
 
-        # 为每个实体创建聊天客户端
-        chat_clients: List[ChatClient] = []
-        for entity in entities:
-            draw_cards_action = entity.get(DrawCardsAction)
-            assert (
-                draw_cards_action is not None
-            ), f"Entity {entity.name} must have DrawCardsAction"
-            assert (
-                draw_cards_action.skill is not None
-            ), f"DrawCardsAction.skill must not be None for {entity.name}"
+        # # 为每个实体创建聊天客户端
+        # chat_clients: List[ChatClient] = []
+        # for entity in entities:
+        #     draw_cards_action = entity.get(DrawCardsAction)
+        #     assert (
+        #         draw_cards_action is not None
+        #     ), f"Entity {entity.name} must have DrawCardsAction"
+        #     assert (
+        #         draw_cards_action.skill is not None
+        #     ), f"DrawCardsAction.skill must not be None for {entity.name}"
 
-            chat_client = self._create_chat_client(
-                entity,
-                draw_cards_action.skill,
-                draw_cards_action.targets,
-                draw_cards_action.status_effects,
-            )
-            chat_clients.append(chat_client)
+        #     chat_client = self._create_chat_client(
+        #         entity,
+        #         draw_cards_action.skill,
+        #         draw_cards_action.targets,
+        #         draw_cards_action.status_effects,
+        #     )
+        #     chat_clients.append(chat_client)
 
-        # 语言服务
-        await ChatClient.batch_chat(clients=chat_clients)
+        # # 语言服务
+        # await ChatClient.batch_chat(clients=chat_clients)
 
-        # 处理角色规划请求
-        for chat_client in chat_clients:
+        # # 处理角色规划请求
+        # for chat_client in chat_clients:
 
-            found_entity = self._game.get_entity_by_name(chat_client.name)
-            assert (
-                found_entity is not None
-            ), f"Entity {chat_client.name} not found in game."
+        #     found_entity = self._game.get_entity_by_name(chat_client.name)
+        #     assert (
+        #         found_entity is not None
+        #     ), f"Entity {chat_client.name} not found in game."
 
-            # 处理卡牌生成响应
-            self._process_draw_cards_response(found_entity, chat_client)
+        #     # 处理卡牌生成响应
+        #     self._process_draw_cards_response(found_entity, chat_client)
 
     #######################################################################################################################################
     def _cleanup_old_draw_cards_messages(

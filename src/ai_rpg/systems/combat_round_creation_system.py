@@ -83,7 +83,10 @@ class CombatRoundCreationSystem(ExecuteProcessor):
         # 检查战斗状态
         if not self._game.current_dungeon.is_ongoing:
             # 战斗未进行中，跳过回合创建
+            logger.debug("当前战斗状态非 ONGOING，跳过回合创建")
             return
+
+        logger.debug("检查战斗回合状态，判断是否需要创建新回合...")
 
         # 检查是否有回合存在（第一回合创建）
         if len(self._game.current_dungeon.current_rounds or []) == 0:

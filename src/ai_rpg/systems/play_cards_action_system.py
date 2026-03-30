@@ -82,3 +82,12 @@ class PlayCardsActionSystem(ReactiveProcessor):
         logger.debug(
             f"PlayCardsActionSystem: 当前回合数 {len(current_rounds)}，最新回合状态: {'已完成' if last_round.is_round_completed else '未完成'}"
         )
+
+        for entity in entities:
+            action = entity.get(PlayCardsAction)
+            logger.debug(
+                f"  [{action.name}] 出牌 → 卡牌: {action.card.name}"
+                f" | damage={action.card.damage} block={action.card.block}"
+                f" | 目标: {action.targets}"
+                f" | 行动叙事: {action.card.action}"
+            )

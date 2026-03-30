@@ -35,7 +35,7 @@ from .dungeon_lifecycle import (
 )
 from .dungeon_actions import (
     activate_all_card_draws,
-    activate_all_play_cards,
+    # activate_all_play_cards,
     activate_expedition_retreat,
 )
 from ..game.game_server import GameServer
@@ -842,9 +842,12 @@ async def _execute_play_cards_task(
                 raise ValueError("战斗未在进行中")
 
             # 为所有角色随机选择并激活打牌动作（内部会自动确保所有角色都有后备牌）
-            success, message = activate_all_play_cards(rpg_game)
-            if not success:
-                raise ValueError(f"出牌失败: {message}")
+            # success, message = activate_all_play_cards(rpg_game)
+            # if not success:
+            #     raise ValueError(f"出牌失败: {message}")
+            assert (
+                False
+            ), "activate_all_play_cards is currently disabled for testing. Please enable it after confirming the implementation."
 
             # 推进战斗流程处理出牌
             await rpg_game._combat_pipeline.process()

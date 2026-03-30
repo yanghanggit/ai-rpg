@@ -152,7 +152,7 @@ from ai_rpg.services.home_actions import (
 )
 from ai_rpg.services.dungeon_actions import (
     activate_all_card_draws,
-    activate_all_play_cards,
+    activate_play_cards_specified,
     activate_expedition_retreat,
 )
 from ai_rpg.services.dungeon_lifecycle import (
@@ -523,74 +523,18 @@ async def _draw_cards_game(
 
 
 ###############################################################################################################################################
-async def _draw_cards_specified_game(
+async def _play_cards_specified_game(
     world: World,
     player_session: PlayerSession,
-    member: str,
+    actor: str,
+    card: str,
     targets: list[str],
-    skill: str,
-    status_effects: list[str],
     save_dir: Path,
 ) -> TCGGame:
-    """从存档复位，为指定远征队成员设置精确抽牌，其余成员与敌方随机抽牌，并归档新状态。
+    """从存档复位，让指定角色打出指定手牌，并归档新状态。
 
-    流程：
-        调用 activate_all_card_draws 为所有战斗角色激活抽牌动作。
-        4. combat_pipeline.process() → 完成抽牌推理（各角色输出决策依据）
-
-    等同于终端先 /dc（全员随机抽）再由系统覆盖玩家手牌选择。
-    下一步应使用 play-cards。
-
-    前置条件：combat_sequence.is_ongoing 为 True（战斗进行中）。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-        member: 要精确抽牌的远征队成员全名（如 "角色.猎人.石坚"）。
-        targets: 指定的目标名称列表（如 ["角色.精怪.山魈"]）。
-        skill: 指定的技能名称（须为该成员 SkillBookComponent 中已有的技能）。
-        status_effects: 指定使用的状态效果名称列表，可为空（须为当前已有的状态效果）。
-        save_dir: 新存档写入目录。
-
-    Returns:
-        执行完毕后的 TCGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
-    """
-    terminal_game = await _restore_game(world, player_session)
-
-    if not terminal_game.current_dungeon.is_ongoing:
-        logger.error("draw-cards-specified 只能在战斗进行中使用")
-        return terminal_game
-
-    success, message = activate_all_card_draws(terminal_game)
-    if not success:
-        logger.error(f"激活全员抽牌失败: {message}")
-        return terminal_game
-
-    await terminal_game._combat_pipeline.process()
-
-    archive_world(
-        terminal_game._world,
-        terminal_game._player_session,
-        save_dir=save_dir,
-    )
-    return terminal_game
-
-
-###############################################################################################################################################
-async def _play_cards_game(
-    world: World,
-    player_session: PlayerSession,
-    save_dir: Path,
-) -> TCGGame:
-    """从存档复位，执行打牌结算（等同于终端命令 /pc），并归档新状态。
-
-    确保所有角色有后备牌后，调用 activate_play_cards 随机打出手中的牌，
-    然后驱动 combat_pipeline.process() 完成伤害结算、叙事生成、状态效果评估、
-    记忆归档，并判断战斗是否结束。
-
-    若战斗在本轮结算中结束（is_post_combat），会在日志中输出提示。
-    战斗结束后，后续可调用 exit-dungeon 或 next-dungeon。
-    若战斗未结束（is_ongoing），可继续执行新一轮 draw-cards → play-cards。
+    只有指定角色触发 PlayCardsAction；其他角色本次 pipeline 不出牌。
+    若角色名或卡牌名不合法，提前返回不归档。
 
     前置条件：
         - combat_sequence.is_ongoing 为 True（战斗进行中）
@@ -599,6 +543,9 @@ async def _play_cards_game(
     Args:
         world: 由 restore_world() 反序列化的世界数据。
         player_session: 由 restore_world() 反序列化的玩家会话。
+        actor: 出牌角色全名（如 角色.猎人.石坚）。
+        card: 要打出的卡牌名称（须存在于该角色手牌中）。
+        targets: 目标名称列表，可为空。
         save_dir: 新存档写入目录。
 
     Returns:
@@ -607,18 +554,19 @@ async def _play_cards_game(
     terminal_game = await _restore_game(world, player_session)
 
     if not terminal_game.current_dungeon.is_ongoing:
-        logger.error("play-cards 只能在战斗进行中使用")
+        logger.error("play-cards-specified 只能在战斗进行中使用")
         return terminal_game
 
     last_round = terminal_game.current_dungeon.latest_round
     if last_round is None or last_round.is_round_completed:
-        logger.error("play-cards 当前没有未完成的回合可供打牌")
+        logger.error("play-cards-specified 当前没有未完成的回合可供打牌")
         return terminal_game
 
-    # 执行打牌行动（内部会自动确保所有角色都有后备牌）
-    success, message = activate_all_play_cards(terminal_game)
+    success, message = activate_play_cards_specified(
+        terminal_game, actor, card, list(targets)
+    )
     if not success:
-        logger.error(f"打牌失败: {message}")
+        logger.error(f"play-cards-specified 失败: {message}")
         return terminal_game
 
     await terminal_game._combat_pipeline.process()
@@ -1081,46 +1029,36 @@ def draw_cards(snapshot: str) -> None:
 
 
 ###############################################################################################################################################
-@main.command("draw-cards-specified")
+@main.command("play-cards-specified")
 @click.option(
     "--snapshot",
     required=True,
     help="存档目录路径",
 )
 @click.option(
-    "--member",
+    "--actor",
     required=True,
-    help="要精确抽牌的远征队成员全名（如 角色.猎人.石坚）",
+    help="出牌角色全名（如 角色.猎人.石坚）",
+)
+@click.option(
+    "--card",
+    required=True,
+    help="要打出的卡牌名称（须存在于该角色手牌中）",
 )
 @click.option(
     "--targets",
-    required=True,
     multiple=True,
-    help="目标角色全名，可多次指定（如 --targets 角色.精怪.山魈）",
+    default=(),
+    help="目标角色名，可重复使用（如 --targets 角色.常物.野猪）",
 )
-@click.option(
-    "--skill",
-    required=True,
-    help="使用的技能名称（须为该成员已有的技能）",
-)
-@click.option(
-    "--status-effects",
-    multiple=True,
-    default=[],
-    help="使用的状态效果名称，可多次指定，可为空",
-)
-def draw_cards_specified(
-    snapshot: str,
-    member: str,
-    targets: tuple[str, ...],
-    skill: str,
-    status_effects: tuple[str, ...],
+def play_cards_specified(
+    snapshot: str, actor: str, card: str, targets: tuple[str, ...]
 ) -> None:
-    """从存档复位，为指定成员精确抽牌，其余成员与敌方随机抽牌，并写入新存档。
+    """从存档复位，让指定角色打出指定手牌，并写入新存档。
 
-    等同于人类在终端执行 /dc，但允许 AI 精确控制指定成员本回合使用的技能与目标。
-    适用于【地下城模式】战斗进行中（is_ongoing）。
-    下一步应使用 play-cards。
+    适用于【地下城模式】战斗进行中（is_ongoing），draw-cards 之后调用。
+    只有指定角色触发出牌结算，其他角色本次 pipeline 不出牌。
+    --card 须与手牌中卡牌名称完全一致，否则报错不归档。
     """
 
     snapshot_path = Path(snapshot)
@@ -1143,54 +1081,10 @@ def draw_cards_specified(
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(
-        _draw_cards_specified_game(
-            world,
-            player_session,
-            member,
-            list(targets),
-            skill,
-            list(status_effects),
-            _save_dir,
+        _play_cards_specified_game(
+            world, player_session, actor, card, list(targets), _save_dir
         )
     )
-
-
-###############################################################################################################################################
-@main.command("play-cards")
-@click.option(
-    "--snapshot",
-    required=True,
-    help="存档目录路径",
-)
-def play_cards(snapshot: str) -> None:
-    """从存档复位，结算本回合所有角色的战斗行动，并写入新存档。
-
-    等同于人类在终端输入 /pc。适用于【地下城模式】战斗进行中（is_ongoing）。
-    完成伤害结算、叙事生成、状态效果评估、战斗记忆归档。
-    若战斗在本轮结束（is_post_combat），可继续使用 exit-dungeon 或 next-dungeon。
-    若战斗未结束（is_ongoing），继续 draw-cards → play-cards。
-    """
-
-    snapshot_path = Path(snapshot)
-    if not snapshot_path.exists():
-        raise click.BadParameter(
-            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
-        )
-
-    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
-    _setup_logger(_log_file)
-
-    world, player_session = restore_world(snapshot_path)
-    _save_dir = (
-        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
-    )
-
-    logger.info(f"本次运行日志文件：{_log_file}")
-    logger.info(f"读取存档：{snapshot_path}")
-    logger.info(f"本次存档目录：{_save_dir}")
-
-    asyncio.run(_play_cards_game(world, player_session, _save_dir))
 
 
 ###############################################################################################################################################

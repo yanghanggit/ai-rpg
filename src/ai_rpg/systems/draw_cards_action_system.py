@@ -5,7 +5,6 @@
 
 核心特性：
 - 批量多卡生成：每个 DrawCardsAction 触发一次 LLM 请求，生成 num_cards 张风格各异的卡牌
-- 自动目标选取：系统将当前场景内所有存活参战角色传入提示词，由 LLM 为每张卡牌自主选择 targets
 - LLM 驱动：通过语言模型生成富有创意且符合角色属性的卡牌名称、行动描述和攻防数值
 - 批量推理：所有角色的 LLM 请求并行发出（ChatClient.batch_chat），结果逐一解析写入 HandComponent
 
@@ -42,7 +41,6 @@ class CardEntry(BaseModel):
     action: str
     damage: int
     block: int
-    targets: List[str] = []
 
 
 #######################################################################################################################################
@@ -55,7 +53,6 @@ class DrawCardsResponse(BaseModel):
 
 #######################################################################################################################################
 def _generate_draw_prompt(
-    combat_actors: List[str],
     actor_stats: CharacterStats,
     current_round_number: int,
     num_cards: int,
@@ -63,7 +60,6 @@ def _generate_draw_prompt(
     """生成"一次生成 num_cards 张 Card2"的提示词。
 
     Args:
-        combat_actors: 参战的其他角色名称列表（不含自己）
         actor_stats: 角色当前属性（hp/max_hp/attack/defense）
         current_round_number: 当前回合数
         num_cards: 要求生成的卡牌数量
@@ -72,11 +68,8 @@ def _generate_draw_prompt(
         格式化的完整提示词
     """
     actor_stats_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
-    actors_text = (
-        "\n".join([f"- {a}" for a in combat_actors]) if combat_actors else "- 无"
-    )
     cards_example = "\n    ".join(
-        f'{{"name": "卡牌名{i + 1}", "action": "第一人称行动描述", "damage": 0, "block": 0, "targets": ["角色名"]}}'
+        f'{{"name": "卡牌名{i + 1}", "action": "第一人称行动描述", "damage": 0, "block": 0}}'
         for i in range(num_cards)
     )
 
@@ -85,9 +78,6 @@ def _generate_draw_prompt(
 根据角色当前状态，发挥创意生成{num_cards}张风格各异的战斗卡牌。每张卡牌代表一种可执行的战斗选择。
 
 ## 输入
-
-**参战角色**（为每张卡牌从以下角色中自选 targets，不选自己）:
-{actors_text}
 
 **属性**: {actor_stats_prompt}
 
@@ -99,7 +89,6 @@ def _generate_draw_prompt(
 - **action** - 第一人称行动描述（1-2句，生动具体）
 - **damage** - 本张卡牌造成的伤害值（基于攻击力合理推算，整数）
 - **block** - 本张卡牌提供的格挡值（基于防御力合理推算，整数）
-- **targets** - 本张卡牌的目标角色名列表（从参战角色中选取）
 
 **设计原则**: {num_cards}张卡牌应有差异化——可以是高伤低防、高防低伤、均衡型等不同侧重
 
@@ -126,7 +115,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
     1. 接收 DrawCardsAction 触发（每个存活角色各一个）
     2. 清除各实体旧有的 HandComponent
     3. 为每个角色调用 _create_draw_chat_client，向 LLM 请求生成 num_cards 张差异化卡牌：
-       - 传入当前场景所有存活参战角色（排除自身）供 LLM 自选 targets
        - 传入角色当前 CombatStatsComponent 属性（HP/攻击/防御）
     4. 所有请求并行执行（ChatClient.batch_chat）
     5. 逐一调用 _process_draw_response 解析 LLM 响应，写入 HandComponent
@@ -227,11 +215,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             combat_stats_comp is not None
         ), f"Entity {entity.name} must have CombatStatsComponent"
 
-        all_actors = self._game.get_alive_actors_in_stage(entity)
-        combat_actors = [a.name for a in all_actors if a.name != entity.name]
-
         prompt = _generate_draw_prompt(
-            combat_actors=combat_actors,
             actor_stats=combat_stats_comp.stats,
             current_round_number=current_round_number,
             num_cards=num_cards,
@@ -290,7 +274,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     action=entry.action,
                     damage=entry.damage,
                     block=entry.block,
-                    targets=entry.targets,
                 )
                 for entry in response.cards
             ]

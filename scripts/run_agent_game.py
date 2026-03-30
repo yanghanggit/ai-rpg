@@ -151,9 +151,7 @@ from ai_rpg.services.home_actions import (
     activate_generate_dungeon,
 )
 from ai_rpg.services.dungeon_actions import (
-    activate_random_expedition_member_card_draws,
-    activate_specified_expedition_member_card_draws,
-    activate_random_enemy_card_draws,
+    activate_all_card_draws,
     activate_play_cards,
     activate_expedition_retreat,
 )
@@ -488,8 +486,7 @@ async def _draw_cards_game(
 ) -> TCGGame:
     """从存档复位，为所有角色随机抽牌（等同于终端命令 /dc），并归档新状态。
 
-    分别调用 activate_random_expedition_member_card_draws（己方）和
-    activate_random_enemy_card_draws（敌方）为所有战斗角色随机选定本回合行动牌，
+    调用 activate_all_card_draws 为所有战斗角色（己方 + 敌方）激活抽牌动作，
     然后驱动 combat_pipeline.process() 完成抽牌推理（各角色输出决策依据）。
 
     抽牌完成后，存档处于「已抽牌、待打牌」状态，下一步应调用 play-cards。
@@ -510,14 +507,9 @@ async def _draw_cards_game(
         logger.error("draw-cards 只能在战斗进行中使用")
         return terminal_game
 
-    success, message = activate_random_expedition_member_card_draws(terminal_game)
+    success, message = activate_all_card_draws(terminal_game)
     if not success:
-        logger.error(f"激活Ally抽牌失败: {message}")
-        return terminal_game
-
-    success, message = activate_random_enemy_card_draws(terminal_game)
-    if not success:
-        logger.error(f"激活Enemy抽牌失败: {message}")
+        logger.error(f"激活全员抽牌失败: {message}")
         return terminal_game
 
     await terminal_game._combat_pipeline.process()
@@ -543,9 +535,7 @@ async def _draw_cards_specified_game(
     """从存档复位，为指定远征队成员设置精确抽牌，其余成员与敌方随机抽牌，并归档新状态。
 
     流程：
-        1. activate_random_expedition_member_card_draws → 为所有己方随机抽牌（作为基础）
-        2. activate_specified_expedition_member_card_draws → 覆盖指定成员的抽牌（精确技能/目标/状态）
-        3. activate_random_enemy_card_draws → 为所有敌方随机抽牌
+        调用 activate_all_card_draws 为所有战斗角色激活抽牌动作。
         4. combat_pipeline.process() → 完成抽牌推理（各角色输出决策依据）
 
     等同于终端先 /dc（全员随机抽）再由系统覆盖玩家手牌选择。
@@ -571,28 +561,9 @@ async def _draw_cards_specified_game(
         logger.error("draw-cards-specified 只能在战斗进行中使用")
         return terminal_game
 
-    # Step 1: 先为所有己方随机抽牌（确保非指定成员都有牌）
-    success, message = activate_random_expedition_member_card_draws(terminal_game)
+    success, message = activate_all_card_draws(terminal_game)
     if not success:
-        logger.error(f"激活Ally随机抽牌失败: {message}")
-        return terminal_game
-
-    # Step 2: 覆盖指定成员的抽牌（精确技能/目标）
-    success, message = activate_specified_expedition_member_card_draws(
-        tcg_game=terminal_game,
-        expedition_member_name=member,
-        target_names=targets,
-        skill_name=skill,
-        status_effect_names=status_effects,
-    )
-    if not success:
-        logger.error(f"激活指定抽牌失败: {message}")
-        return terminal_game
-
-    # Step 3: 敌方随机抽牌
-    success, message = activate_random_enemy_card_draws(terminal_game)
-    if not success:
-        logger.error(f"激活Enemy抽牌失败: {message}")
+        logger.error(f"激活全员抽牌失败: {message}")
         return terminal_game
 
     await terminal_game._combat_pipeline.process()

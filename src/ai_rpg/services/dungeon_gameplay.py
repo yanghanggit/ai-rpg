@@ -34,8 +34,7 @@ from .dungeon_lifecycle import (
     exit_dungeon_and_return_home,
 )
 from .dungeon_actions import (
-    activate_random_enemy_card_draws,
-    activate_specified_expedition_member_card_draws,
+    activate_all_card_draws,
     activate_play_cards,
     activate_expedition_retreat,
 )
@@ -460,20 +459,13 @@ async def dungeon_combat_draw_ally_cards(
                 detail="Ally抽牌失败: 没有指定任何抽牌动作",
             )
 
-        for expedition_member_action in payload.specified_actions:
-            success, message = activate_specified_expedition_member_card_draws(
-                tcg_game=rpg_game,
-                expedition_member_name=expedition_member_action.entity_name,
-                target_names=expedition_member_action.target_names,
-                skill_name=expedition_member_action.skill_name,
-                status_effect_names=expedition_member_action.status_effect_names,
+        success, message = activate_all_card_draws(rpg_game)
+        if not success:
+            logger.error(f"全员抽牌失败: {message}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"激活全员抽牌动作失败: {message}",
             )
-            if not success:
-                logger.error(f"Ally指定抽牌失败: {message}")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"激活Ally抽牌动作失败: {message}",
-                )
 
     # 创建后台任务（在锁外创建，让任务在后台独立持锁执行）
     ally_draw_task = game_server.create_task()
@@ -544,12 +536,12 @@ async def dungeon_combat_draw_enemy_cards(
                 detail="战斗未在进行中",
             )
 
-        success, message = activate_random_enemy_card_draws(rpg_game)
+        success, message = activate_all_card_draws(rpg_game)
         if not success:
-            logger.error(f"Enemy抽牌失败: {message}")
+            logger.error(f"全员抽牌失败: {message}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"激活Enemy抽牌动作失败: {message}",
+                detail=f"激活全员抽牌动作失败: {message}",
             )
 
     # 创建后台任务（在锁外创建，让任务在后台独立持锁执行）

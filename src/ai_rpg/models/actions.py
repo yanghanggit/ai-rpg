@@ -10,7 +10,7 @@
 
 from typing import Dict, List, final
 from ..entitas.components import Component
-from .dungeon import Card, StatusEffect
+from .combat import Card, StatusEffect
 from .registry import register_action_component_type, register_component_type
 from .entities import Skill
 

@@ -1,0 +1,106 @@
+"""战斗相关模型定义
+
+包含战斗状态、战斗结果、状态效果、卡牌、战斗回合与战斗实例等核心模型。
+"""
+
+from enum import IntEnum, unique
+from typing import List, final
+from pydantic import BaseModel
+from .entities import CharacterStats
+
+
+###############################################################################################################################################
+# 战斗状态枚举
+@final
+@unique
+class CombatState(IntEnum):
+    NONE = 0  # 无状态
+    INITIALIZATION = 1  # 初始化，需要同步一些数据与状态
+    ONGOING = 2  # 运行中，不断进行战斗推理
+    COMPLETE = 3  # 结束，需要进行结算
+    POST_COMBAT = 4  # 战斗等待进入新一轮战斗或者回家
+
+
+###############################################################################################################################################
+# 表示战斗的状态
+@final
+@unique
+class CombatResult(IntEnum):
+    NONE = 0  # 无结果
+    WIN = 1  # 胜利
+    LOSE = 2  # 失败
+
+
+###############################################################################################################################################
+@final
+class StatusEffect(BaseModel):
+    """状态效果（增益/减益）
+
+    字段说明：
+    - name: 状态效果名称
+    - category: 分类（增益/减益/复合/条件触发/环境）
+    - manifestation: 表现（第一人称描述具体表现）
+    - effect: 效果（数值影响）
+    """
+
+    name: str
+    category: str  # 分类：增益 | 减益 | 复合 | 条件触发 | 环境
+    manifestation: str  # 表现：第一人称描述具体表现
+    effect: str  # 效果：数值影响（±X点攻击力/防御力）
+
+    @property
+    def formatted_description(self) -> str:
+        """自动合成三段式 description（用于向后兼容）
+
+        Returns:
+            格式化的三段式描述字符串
+        """
+        return f"【{self.category}】\n{self.manifestation}\n{self.effect}"
+
+
+###############################################################################################################################################
+@final
+class Card(BaseModel):
+    """卡牌模型"""
+
+    name: str
+    action: str  # 第一人称行动叙事描述
+    stats: CharacterStats  # 卡牌的描述属性
+    targets: List[str] = []  # 目标实体名称列表
+    status_effects: List[StatusEffect] = []  # 附加状态效果列表
+    affixes: List[str] = (
+        []
+    )  # 词条列表（类似暗黑破坏神的装备词条）, 词条的规则会完整越过draw cards的泛化，而直接进入仲裁，并强制仲裁执行。
+
+
+###############################################################################################################################################
+@final
+class Round(BaseModel):
+    """战斗回合"""
+
+    action_order: List[str]  # 行动顺序，按顺序记录角色名称
+    combat_log: str = ""  # 战斗计算日志
+    narrative: str = ""  # 叙事文本/演出描述
+
+    @property
+    def is_round_completed(self) -> bool:
+        return (
+            len(self.action_order) > 0
+            and self.combat_log != ""
+            and self.narrative != ""
+        )
+
+
+###############################################################################################################################################
+@final
+class Combat(BaseModel):
+    """战斗实例"""
+
+    name: str
+    state: CombatState = CombatState.NONE
+    result: CombatResult = CombatResult.NONE
+    rounds: List[Round] = []
+    retreated: bool = False  # 是否通过撤退结束本次战斗
+
+
+###############################################################################################################################################

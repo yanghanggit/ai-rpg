@@ -121,7 +121,9 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(AddStatusEffectsAction)
+        return entity.has(AddStatusEffectsAction) and (
+            entity.has(CombatStatusEffectsComponent)
+        )
 
     #######################################################################################################################################
     @override
@@ -162,11 +164,14 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
 
         for entity in actor_entities:
             combat_status_effects = entity.get(CombatStatusEffectsComponent)
-            if combat_status_effects is None:
-                logger.warning(
-                    f"角色 {entity.name} 缺少 CombatStatusEffectsComponent，跳过状态评估"
-                )
-                continue
+            assert (
+                combat_status_effects is not None
+            ), f"角色 {entity.name} 缺少 CombatStatusEffectsComponent！"
+            # if combat_status_effects is None:
+            #     logger.warning(
+            #         f"角色 {entity.name} 缺少 CombatStatusEffectsComponent，跳过状态评估"
+            #     )
+            #     continue
 
             # 生成追加状态效果提示词
             prompt = _generate_add_status_effects_prompt(

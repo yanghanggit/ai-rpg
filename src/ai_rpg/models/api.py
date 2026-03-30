@@ -2,7 +2,8 @@ from enum import StrEnum, unique
 from typing import Dict, List, final
 from pydantic import BaseModel
 from .session_message import SessionMessage
-from .dungeon import Dungeon, Combat, DungeonRoom
+from .combat import Combat
+from .dungeon import Dungeon, DungeonRoom
 from .serialization import EntitySerialization
 from .task import TaskRecord
 from .world import Blueprint

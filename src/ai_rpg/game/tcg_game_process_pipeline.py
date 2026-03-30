@@ -95,16 +95,14 @@ def create_combat_pipeline(
         ActorAppearanceUpdateSystem,
     )
     from ..systems.destroy_entity_system import DestroyEntitySystem
-    from ..systems.combat_round_creation_system import (
-        CombatRoundCreationSystem,
-    )
 
     # from ..systems.enemy_draw_decision_system import (
     #     EnemyDrawDecisionSystem,
     # )
-    # from ..systems.draw_cards_action_system import (
-    #     DrawCardsActionSystem,
-    # )
+    from ..systems.draw_cards_action_system import (
+        DrawCardsActionSystem,
+    )
+
     # from ..systems.play_cards_action_system import (
     #     PlayCardsActionSystem,
     # )
@@ -138,11 +136,11 @@ def create_combat_pipeline(
     processors.add(CombatInitializationSystem(tcg_game))
 
     # 战斗回合创建系统（创建后续回合）
-    processors.add(CombatRoundCreationSystem(tcg_game))
+    # processors.add(CombatRoundCreationSystem(tcg_game))
 
     # 动作处理相关的系统：敌人决策-抓牌-出牌-撤退-裁决-清理
     # processors.add(EnemyDrawDecisionSystem(tcg_game))
-    # processors.add(DrawCardsActionSystem(tcg_game))
+    processors.add(DrawCardsActionSystem(tcg_game))
     # processors.add(PlayCardsActionSystem(tcg_game))
     processors.add(RetreatActionSystem(tcg_game))
     # processors.add(ArbitrationActionSystem(tcg_game))
@@ -157,7 +155,7 @@ def create_combat_pipeline(
     processors.add(CombatArchiveSystem(tcg_game))
 
     # 战斗回合创建系统（可能在战斗结果检查后创建新回合，或者在归档后准备下一轮输入）
-    processors.add(CombatRoundCreationSystem(tcg_game))
+    # processors.add(CombatRoundCreationSystem(tcg_game))
 
     # 清除动作相关的临时状态、标记等，准备下一轮输入
     processors.add(ActionCleanupSystem(tcg_game))

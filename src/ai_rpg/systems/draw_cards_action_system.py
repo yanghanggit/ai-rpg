@@ -149,6 +149,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             entity.has(DrawCardsAction)
             and entity.has(ActorComponent)
             and not entity.has(DeathComponent)
+            and not entity.has(HandComponent)  # 确保没有旧的 HandComponent
         )
 
     ######################################################################################################################################
@@ -173,9 +174,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
         assert last_round is not None, "无法获取当前回合信息！"
 
         # 清除旧手牌
-        for entity in entities:
-            if entity.has(HandComponent):
-                entity.remove(HandComponent)
+        # for entity in entities:
+        #     if entity.has(HandComponent):
+        #         entity.remove(HandComponent)
 
         # 为每个 entity 创建 draw3 聊天客户端
         chat_clients: List[ChatClient] = []

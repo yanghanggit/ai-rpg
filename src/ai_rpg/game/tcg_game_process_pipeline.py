@@ -103,9 +103,9 @@ def create_combat_pipeline(
         DrawCardsActionSystem,
     )
 
-    # from ..systems.play_cards_action_system import (
-    #     PlayCardsActionSystem,
-    # )
+    from ..systems.play_cards_action_system import (
+        PlayCardsActionSystem,
+    )
     from ..systems.retreat_action_system import RetreatActionSystem
     from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.epilogue_system import EpilogueSystem
@@ -142,7 +142,7 @@ def create_combat_pipeline(
     # 动作处理相关的系统：敌人决策-抓牌-出牌-撤退-裁决-清理
     # processors.add(EnemyDrawDecisionSystem(tcg_game))
     processors.add(DrawCardsActionSystem(tcg_game, 3))
-    # processors.add(PlayCardsActionSystem(tcg_game))
+    processors.add(PlayCardsActionSystem(tcg_game))
     processors.add(RetreatActionSystem(tcg_game))
     # processors.add(ArbitrationActionSystem(tcg_game))
 

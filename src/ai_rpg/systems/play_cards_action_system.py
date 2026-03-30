@@ -5,74 +5,16 @@
 仅在战斗进行中(ongoing)阶段执行。
 """
 
-from typing import Final, List, final
+from typing import Final, final
 from loguru import logger
 from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     HandComponent,
     PlayCardsAction,
-    Card2,
     ActorComponent,
 )
 from ..game.tcg_game import TCGGame
-from langchain_core.messages import AIMessage
-
-
-#######################################################################################################################################
-def _generate_play_card_command(current_round_number: int) -> str:
-    """生成出牌指令消息。
-
-    模拟系统发出的战斗指令，提示角色当前回合需要使用卡牌。
-    此消息作为 Human Message 添加到角色上下文，引导角色进入出牌阶段。
-
-    Args:
-        current_round_number: 当前回合数
-
-    Returns:
-        格式化的出牌指令字符串
-    """
-    return f"""# 指令！第 {current_round_number} 回合：使用卡牌"""
-
-
-#######################################################################################################################################
-def _generate_play_card_notification(
-    actor_name: str, card: Card2, target_names: List[str]
-) -> str:
-    """生成出牌通知消息（简化版：分离行动与规则）。
-
-    模拟角色自主决策后使用卡牌的输出，作为 AI Message 添加到角色上下文。
-    通过第一人称描述强化角色的自主性，让角色认为这是自己的选择。
-
-    Args:
-        actor_name: 出牌角色名称（当前未使用）
-        card: 卡牌对象，包含名称、行动描述和规则列表
-        target_names: 系统指定的目标名称列表
-
-    Returns:
-        格式化的出牌通知字符串，包含卡牌名、目标、行动和规则
-    """
-
-    # 格式化目标显示
-    if len(target_names) == 0:
-        target_display = "无目标"
-    elif len(target_names) == 1:
-        target_display = target_names[0]
-    else:
-        target_display = f"[{', '.join(target_names)}]"
-
-    # 格式化规则列表
-    rules_text = "- 无"
-
-    return f"""# 使用卡牌：{card.name}
-
-目标：{target_display}
-
-【行动】
-{card.action}
-
-【规则】
-{rules_text}"""
 
 
 #######################################################################################################################################
@@ -124,47 +66,19 @@ class PlayCardsActionSystem(ReactiveProcessor):
             logger.debug("PlayCardsActionSystem: 战斗未进行中，跳过出牌处理")
             return
 
-        # 获取当前回合数
-        current_round_number = len(self._game.current_dungeon.current_rounds or [])
         logger.debug(
-            f"PlayCardsActionSystem: 处理第 {current_round_number} 回合，共 {len(entities)} 个角色出牌"
+            f"PlayCardsActionSystem: 触发出牌处理，找到 {len(entities)} 个出牌实体"
         )
 
-        for actor_entity in entities:
+        # 获取当前回合数
+        current_rounds = self._game.current_dungeon.current_rounds
+        assert (
+            current_rounds is not None
+        ), "PlayCardsActionSystem: current_rounds is None"
 
-            play_cards_action = actor_entity.get(PlayCardsAction)
-            assert (
-                play_cards_action is not None
-            ), f"{actor_entity.name} 缺少 PlayCardsAction"
+        last_round = self._game.current_dungeon.latest_round
+        assert last_round is not None, "PlayCardsActionSystem: latest_round is None"
 
-            # 生成出牌指令
-            play_card_command = _generate_play_card_command(current_round_number)
-            logger.debug(f"PlayCardsActionSystem: 生成出牌指令: \n{play_card_command}")
-
-            # 添加出牌指令到角色对话上下文
-            self._game.add_human_message(
-                actor_entity,
-                play_card_command,
-                action_type="play_card_command",
-            )
-
-            # 生成卡牌详情通知
-            play_card_notification = _generate_play_card_notification(
-                actor_name=actor_entity.name,
-                card=play_cards_action.card,
-                target_names=play_cards_action.targets,
-            )
-            logger.debug(
-                f"PlayCardsActionSystem: 生成出牌通知: \n{play_card_notification}"
-            )
-
-            # 添加AI出牌执行消息
-            self._game.add_ai_message(
-                actor_entity,
-                [
-                    AIMessage(
-                        content=play_card_notification,
-                        action_type="play_card_execution",
-                    )
-                ],
-            )
+        logger.debug(
+            f"PlayCardsActionSystem: 当前回合数 {len(current_rounds)}，最新回合状态: {'已完成' if last_round.is_round_completed else '未完成'}"
+        )

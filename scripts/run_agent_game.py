@@ -152,7 +152,7 @@ from ai_rpg.services.home_actions import (
 )
 from ai_rpg.services.dungeon_actions import (
     activate_all_card_draws,
-    activate_play_cards,
+    activate_all_play_cards,
     activate_expedition_retreat,
 )
 from ai_rpg.services.dungeon_lifecycle import (
@@ -616,7 +616,7 @@ async def _play_cards_game(
         return terminal_game
 
     # 执行打牌行动（内部会自动确保所有角色都有后备牌）
-    success, message = activate_play_cards(terminal_game)
+    success, message = activate_all_play_cards(terminal_game)
     if not success:
         logger.error(f"打牌失败: {message}")
         return terminal_game

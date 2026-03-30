@@ -161,11 +161,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
         last_round = self._game.current_dungeon.latest_round
         assert last_round is not None, "无法获取当前回合信息！"
 
-        # 清除旧手牌
-        # for entity in entities:
-        #     if entity.has(HandComponent):
-        #         entity.remove(HandComponent)
-
         # 为每个 entity 创建 draw3 聊天客户端
         chat_clients: List[ChatClient] = []
         for entity in entities:

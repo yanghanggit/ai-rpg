@@ -98,15 +98,15 @@ class Round(BaseModel):
     """战斗回合"""
 
     action_order: List[str]  # 行动顺序，按顺序记录角色名称
+    completed_actors: List[str] = []  # 已完成出牌的角色名称（按出手顺序追加）
     combat_log: str = ""  # 战斗计算日志
     narrative: str = ""  # 叙事文本/演出描述
 
     @property
     def is_round_completed(self) -> bool:
-        return (
-            len(self.action_order) > 0
-            and self.combat_log != ""
-            and self.narrative != ""
+        """当 completed_actors 包含所有 action_order 中的角色时，回合视为完成。"""
+        return len(self.action_order) > 0 and set(self.completed_actors) == set(
+            self.action_order
         )
 
 

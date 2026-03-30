@@ -91,3 +91,9 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 f" | 目标: {action.targets}"
                 f" | 行动叙事: {action.card.action}"
             )
+            # 将出牌角色写入本回合 completed_actors
+            if action.name not in last_round.completed_actors:
+                last_round.completed_actors.append(action.name)
+                logger.debug(
+                    f"  completed_actors: {last_round.completed_actors} / {last_round.action_order}"
+                )

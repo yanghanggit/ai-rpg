@@ -41,16 +41,16 @@
         主动撤退（战斗中）→ retreat
 
 命令速查表：
-    python scripts/run_agent_game.py new [--user NAME] [--game GAME]
-    python scripts/run_agent_game.py advance      --snapshot PATH
-    python scripts/run_agent_game.py speak        --snapshot PATH --target ACTOR --content TEXT
-    python scripts/run_agent_game.py switch-stage --snapshot PATH --stage STAGE_NAME
-    python scripts/run_agent_game.py enter-dungeon --snapshot PATH
-    python scripts/run_agent_game.py draw-cards   --snapshot PATH
-    python scripts/run_agent_game.py play-cards   --snapshot PATH
-    python scripts/run_agent_game.py exit-dungeon   --snapshot PATH
-    python scripts/run_agent_game.py next-dungeon --snapshot PATH
-    python scripts/run_agent_game.py retreat      --snapshot PATH
+    python scripts/run_agent_game.py new [--user NAME] [--game GAME] [--dungeon DUNGEON]
+    python scripts/run_agent_game.py advance           --snapshot PATH
+    python scripts/run_agent_game.py speak             --snapshot PATH --target ACTOR --content TEXT
+    python scripts/run_agent_game.py switch-stage      --snapshot PATH --stage STAGE_NAME
+    python scripts/run_agent_game.py enter-dungeon     --snapshot PATH --dungeon DUNGEON_NAME
+    python scripts/run_agent_game.py draw-cards        --snapshot PATH
+    python scripts/run_agent_game.py play-cards-specified --snapshot PATH --actor ACTOR --card CARD [--targets TARGET...]
+    python scripts/run_agent_game.py exit-dungeon      --snapshot PATH
+    python scripts/run_agent_game.py next-dungeon      --snapshot PATH
+    python scripts/run_agent_game.py retreat           --snapshot PATH
 
 日志文件：logs/run_agent_game_{timestamp}.log（与新存档时间戳相同）
 
@@ -87,12 +87,16 @@ AI 操作经验总结（供后续 AI 实例参考，勿删）
     判断是否有下一关：先尝试 next-dungeon；无新存档出现则说明已是末关，应用 exit-dungeon。
 
 【陷阱 4】识别当前存档的游戏状态
-    通过 world.json 中各实体的 current_stage 字段判断状态：
-    - 玩家/NPC 在家园场景（如 场景.石氏木屋、场景.猎人备物所）→ 家园模式
-    - 玩家/NPC 在地下城场景（如 场景.山林边缘、场景.密林深处）→ 地下城模式
-    快速查找玩家当前场景：
-        python -c "import json; d=json.load(open('.worlds/USER/Game1/TIMESTAMP/world.json')); \
-        [print(e['name'], e.get('ActorComponent',{}).get('current_stage','')) for e in d['entities_serialization']]"
+    读取 world.json：实体结构为 {name, components:[{name, data}]}，不是平铺字段。
+    快速查战斗状态（dungeon.rooms[0].combat.state）：
+        0=NONE 1=INITIALIZATION 2=ONGOING 3=COMPLETE 4=POST_COMBAT
+        python3 -c "import json; d=json.load(open('PATH/world.json')); \
+        r=d['dungeon']['rooms'][0]['combat'] if d['dungeon']['rooms'] else {}; \
+        print('state:', r.get('state'), 'result:', r.get('result'))"
+    快速查玩家当前场景（components 数组方式）：
+        python3 -c "import json; d=json.load(open('PATH/world.json')); \
+        [print(e['name'], next((c['data'] for c in e['components'] if c['name']=='ActorComponent'),{}).get('current_stage','?')) \
+        for e in d['entities_serialization'] if any(c['name']=='PlayerComponent' for c in e['components'])]"
 
 【陷阱 5】exit-dungeon / retreat 后场景未更新（已修复）
     EpilogueSystem 在 pipeline 末端调用 flush_entities()，此时角色仍在地下城场景。
@@ -101,13 +105,23 @@ AI 操作经验总结（供后续 AI 实例参考，勿删）
     修复：flush_entities() 已内置为 exit_dungeon_and_return_home() 的最后一步
     （见 dungeon_lifecycle.py），调用方无需额外处理。
 
+【陷阱 6】play-cards-specified 每次只出一张牌
+    每次调用仅让一个角色出牌并跑完整个 pipeline。
+    一个回合内若有多个己方角色需要出牌，需依次调用，每次传入上一步产生的新存档。
+    敌方 AI 出牌同理（需手动为每个敌方角色各调用一次）。
+
+【陷阱 7】play-cards-specified 在战斗结束时需额外等待（CombatArchiveSystem）
+    当最后一张牌打出导致战斗结束时，pipeline 内 CombatArchiveSystem 会为每个
+    远征队成员调用 LLM 生成战斗总结并归档（COMPLETE→POST_COMBAT），耗时明显更长。
+    归档完成后存档状态即为 is_post_combat，可直接使用 next-dungeon / exit-dungeon。
+
 【最佳操作流程 - 完整测试一局】
-    1. new --user ai-copilot
+    1. new --user ai-copilot --game Game1 --dungeon 地下城.XXX
     2. advance（NPC 主动行动，推进家园叙事）
     3. speak --target ... --content ...  → advance（读取 NPC 回应）
     4. switch-stage --stage 场景.X（可选，移动玩家位置）
-    5. enter-dungeon
-    6. draw-cards → play-cards（循环直到 is_post_combat）
+    5. enter-dungeon --dungeon 地下城.XXX
+    6. draw-cards → play-cards-specified（每个角色各一次，循环直到 is_post_combat）
     7a. 胜利且有下一关 → next-dungeon → 回到步骤 6
     7b. 胜利且无下一关 → exit-dungeon
     7c. 失败             → exit-dungeon

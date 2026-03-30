@@ -159,6 +159,33 @@ def activate_play_cards_specified(
     Returns:
         tuple[bool, str]: (是否成功, 结果消息)
     """
+    # 首位规则：必须在本回合 action_order 内，且当前轮到自己出牌
+    latest_round = tcg_game.current_dungeon.latest_round
+    if latest_round is None:
+        error_msg = "activate_play_cards_specified: 当前没有进行中的回合"
+        logger.error(error_msg)
+        return False, error_msg
+
+    if actor_name not in latest_round.action_order:
+        error_msg = (
+            f"角色 {actor_name} 不在本回合行动顺序中: {latest_round.action_order}"
+        )
+        logger.error(error_msg)
+        return False, error_msg
+
+    next_actor = next(
+        (
+            a
+            for a in latest_round.action_order
+            if a not in latest_round.completed_actors
+        ),
+        None,
+    )
+    if next_actor != actor_name:
+        error_msg = f"现在不是 {actor_name} 的回合，当前应由 {next_actor} 出牌"
+        logger.error(error_msg)
+        return False, error_msg
+
     entity = tcg_game.get_actor_entity(actor_name)
     if entity is None:
         error_msg = f"activate_play_cards_specified: 找不到角色 {actor_name}"

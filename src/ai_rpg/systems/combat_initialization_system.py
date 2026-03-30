@@ -119,23 +119,29 @@ class CombatInitializationSystem(ExecuteProcessor):
         以触发第一回合初始状态效果评估。不进行 LLM 推理。
         """
         if not self._game.current_dungeon.is_initializing:
+            logger.debug("当前战斗状态非 initializing，跳过战斗初始化")
             return
 
+        logger.info("战斗初始化开始，正在为参战角色注入战场上下文并转换战斗状态...")
+
+        assert self._game.is_player_in_dungeon_stage, "战斗初始化阶段玩家必须在场景中！"
         assert (
             len(self._game.current_dungeon.current_rounds or []) == 0
         ), "战斗触发阶段不允许有回合数！"
 
         # 获取玩家实体，player 所在场景即战斗场景
         player_entity = self._game.get_player_entity()
-        assert player_entity is not None
+        assert player_entity is not None, "无法找到玩家实体！"
 
         # 获取当前场景实体
         current_stage_entity = self._game.resolve_stage_entity(player_entity)
-        assert current_stage_entity is not None
+        assert current_stage_entity is not None, "无法找到当前场景实体！"
+        assert current_stage_entity.has(
+            StageDescriptionComponent
+        ), "当前场景实体缺少 StageDescriptionComponent 组件！"
 
         # 获取场景环境组件
-        environment_comp = current_stage_entity.get(StageDescriptionComponent)
-        assert environment_comp is not None
+        stage_description_comp = current_stage_entity.get(StageDescriptionComponent)
 
         # 参与战斗的角色实体列表
         actor_entities = self._game.get_alive_actors_in_stage(player_entity)
@@ -145,7 +151,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         self._add_context_for_all_actors(
             actor_entities=actor_entities,
             stage_name=current_stage_entity.name,
-            stage_description=environment_comp.narrative,
+            stage_description=stage_description_comp.narrative,
         )
 
         # 设置战斗为进行中（第一回合将由 CombatRoundCreationSystem 创建）
@@ -153,7 +159,11 @@ class CombatInitializationSystem(ExecuteProcessor):
 
         # 为所有参战角色添加 AddStatusEffectsAction，触发初始状态效果生成
         for actor_entity in actor_entities:
-            actor_entity.add(AddStatusEffectsAction, actor_entity.name)
+            actor_entity.replace(
+                AddStatusEffectsAction,
+                actor_entity.name,
+                "当前处于战斗初始化阶段，请根据战场环境、角色身份与当前处境，生成符合初始战场状态的状态效果。",
+            )
 
     ###################################################################################################################################################################
     def _add_context_for_all_actors(
@@ -174,9 +184,12 @@ class CombatInitializationSystem(ExecuteProcessor):
             stage_description: 战斗场景的环境描述
         """
         for actor_entity in actor_entities:
+
             # 获取角色属性组件
+            assert actor_entity.has(
+                CombatStatsComponent
+            ), f"角色 {actor_entity.name} 缺少 CombatStatsComponent 组件！"
             combat_stats_comp = actor_entity.get(CombatStatsComponent)
-            assert combat_stats_comp is not None
 
             # 生成其他角色信息（包含外观和阵营）
             other_actors_info = self._generate_other_actors_info(

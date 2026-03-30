@@ -17,6 +17,7 @@ from ..chat_client.client import ChatClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
+    ActorComponent,
     AddStatusEffectsAction,
     CombatStatusEffectsComponent,
     StatusEffect,
@@ -36,6 +37,7 @@ class AddStatusEffectsResponse(BaseModel):
 def _generate_add_status_effects_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
+    task_hint: str,
     max_effects: int = 2,
 ) -> str:
     """生成追加状态效果提示词
@@ -45,6 +47,7 @@ def _generate_add_status_effects_prompt(
     Args:
         current_status_effects: 当前已有的状态效果列表
         current_round_number: 当前回合数
+        task_hint: 任务说明，补充本次评估的背景与意图
         max_effects: 最多追加的状态效果数量，默认2
 
     Returns:
@@ -67,6 +70,8 @@ def _generate_add_status_effects_prompt(
     return f"""# 第 {current_round_number} 回合 — 追加状态效果
 
 回顾上下文历史，结合当前已有状态效果，追加本回合应有的新状态效果。
+
+> {task_hint}
 
 ## 当前状态效果
 
@@ -121,8 +126,10 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(AddStatusEffectsAction) and (
-            entity.has(CombatStatusEffectsComponent)
+        return (
+            entity.has(AddStatusEffectsAction)
+            and entity.has(CombatStatusEffectsComponent)
+            and entity.has(ActorComponent)
         )
 
     #######################################################################################################################################
@@ -153,7 +160,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
 
         # 获取当前场景实体
         current_stage_entity = self._game.resolve_stage_entity(player_entity)
-        assert current_stage_entity is not None
+        assert current_stage_entity is not None, "无法找到当前场景实体！"
 
         # 参与战斗的角色实体列表
         actor_entities = self._game.get_alive_actors_in_stage(player_entity)
@@ -163,20 +170,21 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
         chat_clients: List[ChatClient] = []
 
         for entity in actor_entities:
+
             combat_status_effects = entity.get(CombatStatusEffectsComponent)
             assert (
                 combat_status_effects is not None
             ), f"角色 {entity.name} 缺少 CombatStatusEffectsComponent！"
-            # if combat_status_effects is None:
-            #     logger.warning(
-            #         f"角色 {entity.name} 缺少 CombatStatusEffectsComponent，跳过状态评估"
-            #     )
-            #     continue
+
+            # 从 action 组件读取任务说明
+            add_status_effects_action = entity.get(AddStatusEffectsAction)
+            assert add_status_effects_action is not None
 
             # 生成追加状态效果提示词
             prompt = _generate_add_status_effects_prompt(
                 current_status_effects=combat_status_effects.status_effects,
                 current_round_number=current_round_number,
+                task_hint=add_status_effects_action.task_hint,
                 max_effects=2,
             )
 
@@ -197,10 +205,6 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
         for chat_client in chat_clients:
             found_entity = self._game.get_entity_by_name(chat_client.name)
             assert found_entity is not None, f"无法找到角色实体: {chat_client.name}"
-            # if found_entity is None:
-            #     logger.warning(f"无法找到角色实体: {chat_client.name}")
-            #     continue
-
             self._process_status_effects_response(found_entity, chat_client)
 
     #######################################################################################################################################

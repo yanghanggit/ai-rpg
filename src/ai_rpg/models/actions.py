@@ -172,14 +172,15 @@ class PlayCardsAction(Component):
 class AddStatusEffectsAction(Component):
     """添加状态效果动作组件
 
-    触发 AddCombatStatusEffectsSystem 对当前场景所有参战角色进行状态效果评估。
-    应由战斗裁决流程（或外部 CLI）在回合结算后添加到玩家实体。
+    触发 AddStatusEffectsActionSystem 对当前场景所有参战角色进行状态效果评估。
 
     Attributes:
         name: 发起评估的实体名称
+        task_hint: 任务说明，注入到提示词中以补充当前回合的评估背景与意图
     """
 
     name: str
+    task_hint: str
 
 
 @final

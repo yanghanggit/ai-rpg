@@ -148,9 +148,9 @@ def activate_random_expedition_member_card_draws(
         entity.replace(
             DrawCardsAction,
             entity.name,
-            selected_skill,  # skill
-            targets,  # targets
-            status_effects,  # 随机状态效果列表
+            # selected_skill,  # skill
+            # targets,  # targets
+            # status_effects,  # 随机状态效果列表
         )
 
     return True, f"成功为 {len(expedition_member_entities)} 个远征队成员激活抽牌动作"
@@ -261,9 +261,9 @@ def activate_specified_expedition_member_card_draws(
     expedition_member_entity.replace(
         DrawCardsAction,
         expedition_member_entity.name,
-        selected_skill,  # skill
-        [e.name for e in valid_target_entities],  # targets
-        selected_status_effects,  # 指定的状态效果对象列表
+        # selected_skill,  # skill
+        # [e.name for e in valid_target_entities],  # targets
+        # selected_status_effects,  # 指定的状态效果对象列表
     )
 
     return True, f"成功为角色 {expedition_member_entity.name} 激活抽牌动作"
@@ -355,9 +355,9 @@ def activate_random_enemy_card_draws(
         entity.replace(
             DrawCardsAction,
             entity.name,
-            selected_skill,  # skill
-            targets,  # targets
-            status_effects,  # 随机状态效果列表
+            # selected_skill,  # skill
+            # targets,  # targets
+            # status_effects,  # 随机状态效果列表
         )
 
     return True, f"成功为 {len(enemy_entities)} 个Enemy角色激活抽牌动作"

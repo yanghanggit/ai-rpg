@@ -10,9 +10,8 @@
 
 from typing import Dict, List, final
 from ..entitas.components import Component
-from .combat import Card2, StatusEffect
+from .combat import Card2
 from .registry import register_action_component_type, register_component_type
-from .entities import Skill
 
 
 ############################################################################################################
@@ -132,15 +131,12 @@ class DrawCardsAction(Component):
 
     Attributes:
         name: 执行抽牌的角色名称
-        skill: 用于生成卡牌的技能
-        targets: 技能目标列表
-        status_effects: 附加状态效果列表
     """
 
     name: str
-    skill: Skill
-    targets: List[str]
-    status_effects: List[StatusEffect]
+    # skill: Skill
+    # targets: List[str]
+    # status_effects: List[StatusEffect]
 
 
 ############################################################################################################
@@ -183,6 +179,7 @@ class AddStatusEffectsAction(Component):
     task_hint: str
 
 
+############################################################################################################
 @final
 @register_action_component_type
 @register_component_type

@@ -135,7 +135,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
     def __init__(self, game: TCGGame, num_cards: int) -> None:
         super().__init__(game)
         self._game: Final[TCGGame] = game
-        self._num_cards: Final[int] = num_cards # 每次抽取的卡牌数量
+        self._num_cards: Final[int] = num_cards  # 每次抽取的卡牌数量
 
     ####################################################################################################################################
     @override

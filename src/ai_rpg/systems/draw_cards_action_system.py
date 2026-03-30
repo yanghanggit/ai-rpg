@@ -1,18 +1,18 @@
 """
 卡牌抽取系统模块
 
-该模块实现了战斗回合中的卡牌生成机制，负责将角色技能转化为可执行的行动卡牌。
+该模块实现了战斗回合中的卡牌生成机制，通过 LLM 一次性为每个角色生成多张行动卡牌。
 
 核心特性：
-- 单技能单卡牌：每个 DrawCardsAction 携带一个技能，生成一张对应的行动卡牌
-- 外部决策：技能选择由 activate_actor_card_draws 函数负责，系统仅执行生成
-- LLM驱动：通过语言模型生成富有创意且符合角色特征的卡牌名称和描述
-- 数据流清晰：DrawCardsAction.skill → 提示词生成 → 卡牌生成
+- 批量多卡生成：每个 DrawCardsAction 触发一次 LLM 请求，生成 num_cards 张风格各异的卡牌
+- 自动目标选取：系统将当前场景内所有存活参战角色传入提示词，由 LLM 为每张卡牌自主选择 targets
+- LLM 驱动：通过语言模型生成富有创意且符合角色属性的卡牌名称、行动描述和攻防数值
+- 批量推理：所有角色的 LLM 请求并行发出（ChatClient.batch_chat），结果逐一解析写入 HandComponent
 
 主要组件：
 - DrawCardsActionSystem: 核心系统类，协调整个卡牌生成流程
-- _generate_round_prompt: 生成完整的LLM请求提示词
-- _generate_compressd_round_prompt: 生成用于历史记录的压缩提示词
+- _generate_draw3_prompt: 生成"一次抽 num_cards 张卡"的 LLM 提示词
+- CardEntry / Draw3CardsResponse: LLM 响应的 Pydantic 解析模型
 """
 
 from typing import Final, List, final, override
@@ -25,164 +25,93 @@ from ..models import (
     ActorComponent,
     DrawCardsAction,
     HandComponent,
-    Card,
-    Skill,
+    Card2,
     DeathComponent,
     CharacterStats,
-    StatusEffect,
     CombatStatsComponent,
-    InventoryComponent,
 )
 from ..utils import extract_json_from_code_block
 
 
 #######################################################################################################################################
 @final
-class DrawCardsResponse(BaseModel):
-    """单卡响应模型，每次生成一张卡牌"""
+class CardEntry(BaseModel):
+    """单张卡牌条目（用于 DrawCardsResponse 解析）"""
 
     name: str
-    action: str  # 第一人称动作与战术意图
-    mechanism: str  # 战斗规则声明
-    cost: str = ""  # 风险/消耗（可选）
-    final_attack: float
-    final_defense: float
-
-    @property
-    def affixes(self) -> List[str]:
-        """将 mechanism 和 cost 转换为 affixes 格式
-
-        用于统一规则表达：
-        - mechanism → "战术：本次攻击无视目标所有防御"
-        - cost → "代价：徒手攻击可能导致指骨挫伤"
-
-        过滤规则：
-        - 如果字段为空字符串，则不添加到列表
-        - 如果全都没有内容，返回空列表（由显示层处理为"规则 - 无"）
-
-        Returns:
-            规则字符串列表，按 [战术, 代价] 顺序排列
-        """
-        result = []
-        if self.mechanism.strip():
-            result.append(f"战术：{self.mechanism}")
-        if self.cost.strip():
-            result.append(f"代价：{self.cost}")
-        return result
+    action: str
+    damage: int
+    block: int
+    targets: List[str] = []
 
 
 #######################################################################################################################################
-def _generate_round_prompt(
-    selected_skills: List[Skill],
-    specified_targets: List[str],
-    actor_stats: CharacterStats,
-    actor_status_effects: List[StatusEffect],
-    current_round_number: int,
-) -> str:
-    """
-    生成战斗回合的卡牌抽取提示词。
+@final
+class DrawCardsResponse(BaseModel):
+    """LLM 一次抽取 num_cards 张卡牌的响应模型"""
 
-    采用 Input → Transform → Output 结构，明确卡牌作为"战斗结算单元"的概念，
-    要求LLM基于输入的基础属性、状态效果和技能，计算最终攻防数值并生成战斗卡牌。
-    使用第一人称叙事风格，强调输出数值为最终值（非增量）。每次调用生成一张卡牌。
+    cards: List[CardEntry]
+
+
+#######################################################################################################################################
+def _generate_draw_prompt(
+    combat_actors: List[str],
+    actor_stats: CharacterStats,
+    current_round_number: int,
+    num_cards: int,
+) -> str:
+    """生成"一次生成 num_cards 张 Card2"的提示词。
 
     Args:
-        selected_skills: 使用的技能列表（固定为1个元素）
-        specified_targets: 指定的目标列表（由系统确定）
-        actor_stats: 角色当前属性数据（包含 hp/max_hp/attack/defense）
-        actor_status_effects: 角色当前状态效果列表（第一人称描述）
+        combat_actors: 参战的其他角色名称列表（不含自己）
+        actor_stats: 角色当前属性（hp/max_hp/attack/defense）
         current_round_number: 当前回合数
+        num_cards: 要求生成的卡牌数量
 
     Returns:
-        str: 格式化的完整提示词，包含卡牌概念说明、输入数据、转换规则和输出格式
+        格式化的完整提示词
     """
-
-    # 格式化基础属性
     actor_stats_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
-
-    # 格式化技能列表
-    skills_text = "\n".join(
-        [f"- {skill.name}: {skill.description}" for skill in selected_skills]
+    actors_text = (
+        "\n".join([f"- {a}" for a in combat_actors]) if combat_actors else "- 无"
+    )
+    cards_example = "\n    ".join(
+        f'{{"name": "卡牌名{i + 1}", "action": "第一人称行动描述", "damage": 0, "block": 0, "targets": ["角色名"]}}'
+        for i in range(num_cards)
     )
 
-    # 格式化目标列表
-    targets_text = "\n".join([f"- {target}" for target in specified_targets])
+    return f"""# 指令！第 {current_round_number} 回合：生成{num_cards}张战斗卡牌(JSON)
 
-    # 格式化状态效果列表
-    if actor_status_effects:
-        effects_text = "\n".join(
-            [
-                f"- {effect.name}: {effect.formatted_description}"
-                for effect in actor_status_effects
-            ]
-        )
-    else:
-        effects_text = "无"
-
-    return f"""# 指令！第 {current_round_number} 回合：生成战斗卡牌(JSON)
-
-**卡牌**封装本回合行动信息（名称、描述、攻防、目标），由战斗系统结算。
+根据角色当前状态，发挥创意生成{num_cards}张风格各异的战斗卡牌。每张卡牌代表一种可执行的战斗选择。
 
 ## 输入
 
-**目标**: 
-{targets_text}
+**参战角色**（为每张卡牌从以下角色中自选 targets，不选自己）:
+{actors_text}
 
 **属性**: {actor_stats_prompt}
 
-**状态**: 
-{effects_text}
-
-**技能**: 
-{skills_text}
-
 ## 格式要求
 
-**命名**: 基于技能效果创造名称，禁止暴露技能名
+**命名**: 富有想象力的卡牌名称，体现行动意图
 
-**描述**(拆分为三个字段)：
-1. **action** - 第一人称动作与战术意图(1-2句)
-2. **mechanism** - 声明战斗规则，禁止"部分""可能"等模糊词
-   - 示例: "本次攻击无视目标所有防御" "获得+2攻击"
-3. **cost** - 风险/消耗(可选)
-   - 有代价时填写具体内容
-   - **无代价时必须输出空字符串""，禁止输出"无""None"等文字**
+**字段说明**:
+- **action** - 第一人称行动描述（1-2句，生动具体）
+- **damage** - 本张卡牌造成的伤害值（基于攻击力合理推算，整数）
+- **block** - 本张卡牌提供的格挡值（基于防御力合理推算，整数）
+- **targets** - 本张卡牌的目标角色名列表（从参战角色中选取）
 
-**数值**: 增益/减益/复合/条件/环境类影响攻防。输出最终值(非增量)
+**设计原则**: {num_cards}张卡牌应有差异化——可以是高伤低防、高防低伤、均衡型等不同侧重
 
 ## 输出JSON
 
 ```json
 {{
-  "name": "行动名",
-  "action": "动作与战术意图",
-  "mechanism": "战斗规则声明",
-  "cost": "",
-  "final_attack": 0,
-  "final_defense": 0
+  "cards": [
+    {cards_example}
+  ]
 }}
 ```"""
-
-
-#######################################################################################################################################
-def _generate_compressd_round_prompt(
-    current_round_number: int,
-) -> str:
-    """
-    生成压缩版本的回合提示词，用于保存到上下文历史。
-
-    与完整提示词相比，该版本极度简化，仅包含回合数和操作指令，
-    用于减少上下文token消耗。
-
-    Args:
-        current_round_number: 当前回合数
-
-    Returns:
-        str: 压缩后的提示词
-    """
-    return f"""# 指令！第 {current_round_number} 回合：生成战斗卡牌(JSON)
-
-**卡牌**封装行动信息，由战斗系统结算。"""
 
 
 #######################################################################################################################################
@@ -191,18 +120,22 @@ class DrawCardsActionSystem(ReactiveProcessor):
     """
     卡牌抽取系统
 
-    负责在战斗回合中为每个角色生成行动卡牌。
+    负责在战斗回合中为每个参战角色批量生成行动卡牌（Hand）。
 
     工作流程：
-    - 接收 DrawCardsAction（包含技能、目标、状态效果）
-    - 为每个角色创建LLM请求，生成卡牌名称、描述和数值
-    - 数值设计：基础属性 × 状态效果修正
-    - 每个DrawCardsAction生成一张卡牌
+    1. 接收 DrawCardsAction 触发（每个存活角色各一个）
+    2. 清除各实体旧有的 HandComponent
+    3. 为每个角色调用 _create_draw_chat_client，向 LLM 请求生成 num_cards 张差异化卡牌：
+       - 传入当前场景所有存活参战角色（排除自身）供 LLM 自选 targets
+       - 传入角色当前 CombatStatsComponent 属性（HP/攻击/防御）
+    4. 所有请求并行执行（ChatClient.batch_chat）
+    5. 逐一调用 _process_draw_response 解析 LLM 响应，写入 HandComponent
     """
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: TCGGame, num_cards: int) -> None:
         super().__init__(game)
         self._game: Final[TCGGame] = game
+        self._num_cards: Final[int] = num_cards # 每次抽取的卡牌数量
 
     ####################################################################################################################################
     @override
@@ -223,14 +156,12 @@ class DrawCardsActionSystem(ReactiveProcessor):
     async def react(self, entities: list[Entity]) -> None:
 
         if not self._game.current_dungeon.is_ongoing:
-            # 阶段不对，直接返回
             logger.debug("当前战斗状态非 ONGOING，DrawCardsActionSystem 不执行")
             return
 
-        # 验证回合已创建（回合创建已在 CombatRoundCreationSystem 中完成）
-        # assert (
-        #     len(self._game.current_dungeon.current_rounds or []) > 0
-        # ), "当前回合未创建，检查 CombatRoundCreationSystem 是否正常执行"
+        logger.debug(
+            f"DrawCardsActionSystem: 处理 {len(entities)} 个实体的 DrawCardsAction"
+        )
 
         current_rounds = self._game.current_dungeon.current_rounds
         assert (
@@ -238,209 +169,138 @@ class DrawCardsActionSystem(ReactiveProcessor):
         ), "当前回合未创建，检查 CombatRoundCreationSystem 是否正常执行"
         logger.debug(f"当前回合数: {len(current_rounds)}")
 
-        # # 清除所有参与角色的旧手牌，准备重新生成新手牌
-        # for entity in entities:
-        #     if entity.has(HandComponent):
-        #         entity.remove(HandComponent)
+        last_round = self._game.current_dungeon.latest_round
+        assert last_round is not None, "无法获取当前回合信息！"
 
-        # # 为每个实体创建聊天客户端
-        # chat_clients: List[ChatClient] = []
-        # for entity in entities:
-        #     draw_cards_action = entity.get(DrawCardsAction)
-        #     assert (
-        #         draw_cards_action is not None
-        #     ), f"Entity {entity.name} must have DrawCardsAction"
-        #     assert (
-        #         draw_cards_action.skill is not None
-        #     ), f"DrawCardsAction.skill must not be None for {entity.name}"
+        # 清除旧手牌
+        for entity in entities:
+            if entity.has(HandComponent):
+                entity.remove(HandComponent)
 
-        #     chat_client = self._create_chat_client(
-        #         entity,
-        #         draw_cards_action.skill,
-        #         draw_cards_action.targets,
-        #         draw_cards_action.status_effects,
-        #     )
-        #     chat_clients.append(chat_client)
+        # 为每个 entity 创建 draw3 聊天客户端
+        chat_clients: List[ChatClient] = []
+        for entity in entities:
+            chat_client = self._create_draw_chat_client(
+                entity=entity, num_cards=self._num_cards
+            )
+            chat_clients.append(chat_client)
 
-        # # 语言服务
-        # await ChatClient.batch_chat(clients=chat_clients)
+        # 批量 LLM 推理
+        await ChatClient.batch_chat(clients=chat_clients)
 
-        # # 处理角色规划请求
-        # for chat_client in chat_clients:
-
-        #     found_entity = self._game.get_entity_by_name(chat_client.name)
-        #     assert (
-        #         found_entity is not None
-        #     ), f"Entity {chat_client.name} not found in game."
-
-        #     # 处理卡牌生成响应
-        #     self._process_draw_cards_response(found_entity, chat_client)
-
-    #######################################################################################################################################
-    def _cleanup_old_draw_cards_messages(
-        self, entity: Entity, round_number: int
-    ) -> None:
-        """清理指定回合的旧抽卡消息
-
-        Args:
-            entity: 要清理消息的实体
-            round_number: 要清理的回合数
-        """
-        old_messages = self._game.filter_messages_by_attributes(
-            entity=entity,
-            attributes={"draw_cards_round_number": round_number},
-        )
-
-        if old_messages:
-            self._game.remove_messages(entity=entity, messages=old_messages)
-            logger.debug(
-                f"Removed {len(old_messages)} old draw_cards messages for {entity.name} round {round_number}"
+        # 处理响应，写入 HandComponent
+        for chat_client in chat_clients:
+            found_entity = self._game.get_entity_by_name(chat_client.name)
+            assert (
+                found_entity is not None
+            ), f"Entity {chat_client.name} not found in game."
+            self._process_draw_response(
+                found_entity, chat_client, num_cards=self._num_cards
             )
 
     #######################################################################################################################################
-    def _process_draw_cards_response(
-        self, entity: Entity, chat_client: ChatClient
-    ) -> None:
-        """
-        处理LLM返回的抽卡响应并应用到实体。
-
-        解析ChatClient的JSON响应，提取卡牌名称、描述和数值，
-        然后更新实体的HandComponent。
-        如果解析失败，会记录错误日志但不会中断游戏流程。
-
-        Args:
-            entity: 目标角色实体
-            chat_client: 包含LLM响应内容的聊天客户端
-        """
-
-        try:
-
-            validated_response = DrawCardsResponse.model_validate_json(
-                extract_json_from_code_block(chat_client.response_content)
-            )
-
-            last_round = self._game.current_dungeon.latest_round
-            assert last_round is not None
-            assert (
-                not last_round.is_round_completed
-            ), "当前没有进行中的战斗回合，不能生成卡牌。"
-
-            # 获取当前回合数
-            current_round_number = len(self._game.current_dungeon.current_rounds or [])
-
-            # 添加压缩上下文的提示词
-            self._game.add_human_message(
-                entity=entity,
-                message_content=_generate_compressd_round_prompt(
-                    current_round_number=current_round_number
-                ),
-                draw_cards_round_number=current_round_number,
-            )
-
-            # 添加AI消息，包括响应内容。
-            for ai_message in chat_client.response_ai_messages:
-                setattr(ai_message, "draw_cards_round_number", current_round_number)
-
-            self._game.add_ai_message(entity, chat_client.response_ai_messages)
-
-            # 从DrawCardsAction获取targets
-            draw_cards_action = entity.get(DrawCardsAction)
-            assert (
-                draw_cards_action is not None
-            ), f"Entity {entity.name} must have DrawCardsAction"
-            specified_targets = draw_cards_action.targets
-
-            # 从响应构建 CharacterStats
-            card_stats = CharacterStats(
-                # hp=validated_response.hp,
-                max_hp=0,  # max_hp 不由 Agent 生成
-                attack=int(validated_response.final_attack),
-                defense=int(validated_response.final_defense),
-            )
-
-            # 创建完整的Card对象
-            card = Card(
-                name=validated_response.name,
-                action=validated_response.action,  # 第一人称行动叙事
-                stats=card_stats,
-                targets=specified_targets,
-                status_effects=draw_cards_action.status_effects,
-                affixes=validated_response.affixes.copy(),  # 先填入 mechanism + cost
-            )
-
-            # 从InventoryComponent继承物品词条到卡牌词条
-            inventory_comp = entity.get(InventoryComponent)
-            assert (
-                inventory_comp is not None
-            ), f"Entity {entity.name} must have InventoryComponent"
-            for item in inventory_comp.items:
-                card.affixes.extend(item.affixes)  # 追加装备词条
-
-            # 更新手牌
-            entity.replace(
-                HandComponent,
-                entity.name,
-                [card],
-                current_round_number,
-            )
-
-        except Exception as e:
-            logger.error(f"{chat_client.response_content}")
-            logger.error(f"Exception: {e}")
-
-    #######################################################################################################################################
-    def _create_chat_client(
+    def _create_draw_chat_client(
         self,
         entity: Entity,
-        skill: Skill,
-        targets: List[str],
-        status_effects: List[StatusEffect],
+        num_cards: int,
     ) -> ChatClient:
-        """
-        为单个角色实体创建聊天客户端以请求LLM生成卡牌。
+        """为单个角色创建"生成 num_cards 张 Card2"的聊天客户端。
 
         Args:
             entity: 角色实体
-            skill: 使用的技能
-            targets: 目标列表
-            status_effects: 状态效果列表
+            num_cards: 要求生成的卡牌数量
 
         Returns:
-            ChatClient: 准备好的聊天客户端
+            ChatClient: 已填充提示词的聊天客户端
         """
-        # 获取当前战斗的最新回合
         last_round = self._game.current_dungeon.latest_round
         assert last_round is not None
         assert (
             not last_round.is_round_completed
         ), "当前没有进行中的战斗回合，不能生成卡牌。"
 
-        # 获取当前回合数
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
-        # 清理旧的抽卡消息
-        self._cleanup_old_draw_cards_messages(entity, current_round_number)
-
-        # 获取角色属性信息
         combat_stats_comp = entity.get(CombatStatsComponent)
         assert (
             combat_stats_comp is not None
         ), f"Entity {entity.name} must have CombatStatsComponent"
 
-        # 生成提示词
-        prompt = _generate_round_prompt(
-            selected_skills=[skill],
-            specified_targets=targets,
+        all_actors = self._game.get_alive_actors_in_stage(entity)
+        combat_actors = [a.name for a in all_actors if a.name != entity.name]
+
+        prompt = _generate_draw_prompt(
+            combat_actors=combat_actors,
             actor_stats=combat_stats_comp.stats,
-            actor_status_effects=status_effects,
             current_round_number=current_round_number,
+            num_cards=num_cards,
         )
 
-        # 创建并返回聊天客户端
         return ChatClient(
             name=entity.name,
             prompt=prompt,
             context=self._game.get_agent_context(entity).context,
         )
+
+    #######################################################################################################################################
+    def _process_draw_response(
+        self,
+        entity: Entity,
+        chat_client: ChatClient,
+        num_cards: int,
+    ) -> None:
+        """解析 LLM 返回的卡牌，写入 HandComponent。
+
+        Args:
+            entity: 目标角色实体
+            chat_client: 包含 LLM 响应的聊天客户端
+            num_cards: 预期的卡牌数量
+        """
+        try:
+            response = DrawCardsResponse.model_validate_json(
+                extract_json_from_code_block(chat_client.response_content)
+            )
+            assert (
+                len(response.cards) == num_cards
+            ), f"LLM 返回的卡牌数量不符：期望 {num_cards}，实际 {len(response.cards)}"
+
+            last_round = self._game.current_dungeon.latest_round
+            assert last_round is not None
+            assert (
+                not last_round.is_round_completed
+            ), "当前没有进行中的战斗回合，不能写入卡牌。"
+
+            current_round_number = len(self._game.current_dungeon.current_rounds or [])
+
+            # 写入对话历史（原始 prompt + AI 原文）
+            self._game.add_human_message(
+                entity=entity,
+                message_content=chat_client.prompt,
+                draw_cards_round_number=current_round_number,
+            )
+            for ai_message in chat_client.response_ai_messages:
+                setattr(ai_message, "draw_cards_round_number", current_round_number)
+            self._game.add_ai_message(entity, chat_client.response_ai_messages)
+
+            # 构建 Card2 列表
+            cards: List[Card2] = [
+                Card2(
+                    name=entry.name,
+                    action=entry.action,
+                    damage=entry.damage,
+                    block=entry.block,
+                    targets=entry.targets,
+                )
+                for entry in response.cards
+            ]
+
+            entity.replace(HandComponent, entity.name, cards, current_round_number)
+            logger.debug(
+                f"[{entity.name}] 生成 {len(cards)} 张 Card2：{[c.name for c in cards]}"
+            )
+
+        except Exception as e:
+            logger.error(f"{chat_client.response_content}")
+            logger.error(f"Exception: {e}")
 
     #######################################################################################################################################

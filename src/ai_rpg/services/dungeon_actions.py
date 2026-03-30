@@ -18,9 +18,7 @@ from ..models import (
     EnemyComponent,
     CombatStatusEffectsComponent,
     DeathComponent,
-    Card,
-    CharacterStats,
-    InventoryComponent,
+    Card2,
     RetreatAction,
 )
 from ..entitas import Entity, Matcher
@@ -569,22 +567,13 @@ def _ensure_all_actors_have_fallback_cards(
         fallback_mechanism = "本回合不进行任何攻击或防御加成"
 
         # 创建兜底卡牌
-        fallback_card = Card(
+        fallback_card = Card2(
             name="应急应对",
             action=fallback_action,
-            stats=CharacterStats(hp=0, max_hp=0, attack=0, defense=0),
+            damage=0,
+            block=0,
             targets=[combat_actor_entity.name],
-            status_effects=[],
-            affixes=[f"战术：{fallback_mechanism}"],
         )
-
-        # 从InventoryComponent继承物品词条到卡牌词条
-        inventory_comp = combat_actor_entity.get(InventoryComponent)
-        assert (
-            inventory_comp is not None
-        ), f"Entity {combat_actor_entity.name} must have InventoryComponent"
-        for item in inventory_comp.items:
-            fallback_card.affixes.extend(item.affixes)  # 追加装备词条
 
         # 添加手牌组件
         combat_actor_entity.replace(

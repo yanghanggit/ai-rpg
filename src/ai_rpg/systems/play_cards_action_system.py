@@ -12,7 +12,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     HandComponent,
     PlayCardsAction,
-    Card,
+    Card2,
     ActorComponent,
 )
 from ..game.tcg_game import TCGGame
@@ -37,7 +37,7 @@ def _generate_play_card_command(current_round_number: int) -> str:
 
 #######################################################################################################################################
 def _generate_play_card_notification(
-    actor_name: str, card: Card, target_names: List[str]
+    actor_name: str, card: Card2, target_names: List[str]
 ) -> str:
     """生成出牌通知消息（简化版：分离行动与规则）。
 
@@ -62,11 +62,7 @@ def _generate_play_card_notification(
         target_display = f"[{', '.join(target_names)}]"
 
     # 格式化规则列表
-    if card.affixes:
-        rules_lines = [f"- {affix}" for affix in card.affixes]
-        rules_text = "\n".join(rules_lines)
-    else:
-        rules_text = "- 无"
+    rules_text = "- 无"
 
     return f"""# 使用卡牌：{card.name}
 

@@ -9,7 +9,7 @@
 
 from typing import List, final
 from ..entitas.components import Component, MutableComponent
-from .combat import Card, StatusEffect
+from .combat import Card2, StatusEffect
 from .entities import (
     CharacterStats,
     Item,
@@ -305,7 +305,7 @@ class HandComponent(Component):
     """
 
     name: str
-    cards: List[Card]
+    cards: List[Card2]
     round: int
 
 

@@ -32,7 +32,7 @@ from ..models import (
     PlayCardsAction,
     CombatStatsComponent,
     CombatStatusEffectsComponent,
-    Card,
+    Card2,
     StageComponent,
     DeathComponent,
     CombatArbitrationEvent,
@@ -54,7 +54,7 @@ class ArbitrationResponse(BaseModel):
 class CombatActionInfo(NamedTuple):
     actor: str
     targets: List[str]
-    card: Card
+    card: Card2
     combat_stats_component: CombatStatsComponent
 
 
@@ -93,18 +93,15 @@ def _generate_card_sequence_details(
         actor_max_hp = param.combat_stats_component.stats.max_hp
 
         # 获取卡牌属性（已包含状态效果修正）
-        card_stats = param.card.stats
+        card_damage = param.card.damage
+        card_block = param.card.block
 
-        # 格式化词条列表
-        if param.card.affixes:
-            affixes_text = "\n".join([f"  - {affix}" for affix in param.card.affixes])
-            affixes_display = f"\n{affixes_text}"
-        else:
-            affixes_display = "\n  - 无"
+        # 词条：Card2 无 affixes 字段
+        affixes_display = "\n  - 无"
 
         detail = f"""### {index}. 卡牌：{param.card.name}
 
-- **出牌者**：{param.actor} | HP:{actor_hp}/{actor_max_hp} | 攻击:{card_stats.attack} | 防御:{card_stats.defense}
+- **出牌者**：{param.actor} | HP:{actor_hp}/{actor_max_hp} | 伤害:{card_damage} | 格挡:{card_block}
 - **目标**：{target_display}
 - **行动**：{param.card.action}
 - **规则**：{affixes_display}"""
@@ -486,8 +483,8 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 )
                 continue
 
-            # 从卡牌中获取已消耗的状态效果
-            consumed_effects = action_info.card.status_effects
+            # Card2 不再携带 status_effects，跳过消耗逻辑
+            consumed_effects: List[StatusEffect] = []
             if len(consumed_effects) == 0:
                 continue
 

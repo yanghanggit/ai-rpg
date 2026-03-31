@@ -4,7 +4,7 @@ from textual import on
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.screen import Screen
-from textual.widgets import Footer, Input, RichLog, Static
+from textual.widgets import Input, RichLog, Static
 
 MENU_TEXT = """\
 [bold cyan]╔══════════════════════════════════════════════════╗[/]
@@ -65,7 +65,6 @@ class MainMenuScreen(Screen[None]):
         with Horizontal(id="menu-input-row"):
             yield Static("> ", id="menu-prompt")
             yield Input(placeholder="输入选项编号...", id="menu-input")
-        yield Footer()
 
     def on_mount(self) -> None:
         log = self.query_one(RichLog)

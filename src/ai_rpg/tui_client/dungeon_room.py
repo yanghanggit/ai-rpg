@@ -5,23 +5,46 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.screen import Screen
-from textual.widgets import Footer, Input, RichLog, Static
+from textual.widgets import Input, RichLog, Static
 
+import asyncio
+
+from .server_client import dungeon_combat_init as server_dungeon_combat_init
+from .server_client import dungeon_combat_retreat as server_dungeon_combat_retreat
 from .server_client import dungeon_exit as server_dungeon_exit
 from .server_client import fetch_dungeon_room, fetch_dungeon_state
-from .server_client import fetch_entities_details, fetch_stages_state
+from .server_client import (
+    fetch_entities_details,
+    fetch_stages_state,
+    fetch_tasks_status,
+)
+from ..models import (
+    TaskStatus,
+    CharacterStatsComponent,
+    StatusEffectsComponent,
+    AllyComponent,
+    EnemyComponent,
+)
 
 DUNGEON_ROOM_HEADER = """\
 [bold cyan]── 地下城 ──────────────────────────────────────────[/]
 
-[bold]/status[/] 查看当前房间状态，[bold]/exit[/] 退出地下城。
+  [bold]/status[/]   查看当前房间状态
+  [bold]/combat[/]   初始化战斗
+  [bold]/retreat[/]  撤退
+  [bold]/exit[/]     退出地下城
+  [bold]/clear[/]    清除日志
+  [bold]/help[/]     显示帮助
 """
 
 HELP_TEXT = """\
 [bold cyan]── 帮助 ──────────────────────────────────────────[/]
 
 [bold]/status[/]    显示当前房间信息及所有角色属性
+[bold]/combat[/]    初始化当前房间战斗（INITIALIZING → ONGOING）
+[bold]/retreat[/]   在战斗进行中撤退
 [bold]/exit[/]      退出地下城，返回地下城总览
+[bold]/clear[/]     清除日志，仅保留命令列表
 """
 
 
@@ -70,7 +93,6 @@ class DungeonRoomScreen(Screen[None]):
         with Horizontal(id="room-input-row"):
             yield Static("> ", id="room-prompt")
             yield Input(placeholder="输入命令...", id="room-input")
-        yield Footer()
 
     def on_mount(self) -> None:
         log = self.query_one(RichLog)
@@ -96,6 +118,16 @@ class DungeonRoomScreen(Screen[None]):
 
         elif cmd == "/status":
             self._fetch_status()
+
+        elif cmd == "/combat":
+            self._do_combat_init()
+
+        elif cmd == "/retreat":
+            self._do_combat_retreat()
+
+        elif cmd == "/clear":
+            log.clear()
+            log.write(DUNGEON_ROOM_HEADER)
 
         elif cmd == "/exit":
             self._do_exit()
@@ -162,10 +194,10 @@ class DungeonRoomScreen(Screen[None]):
                     # 阵营检测
                     faction = "[dim]未知[/]"
                     for comp in entity.components:
-                        if comp.name == "AllyComponent":
+                        if comp.name == AllyComponent.__name__:
                             faction = "[bold green]友方[/]"
                             break
-                        elif comp.name == "EnemyComponent":
+                        elif comp.name == EnemyComponent.__name__:
                             faction = "[bold red]敌方[/]"
                             break
 
@@ -174,7 +206,7 @@ class DungeonRoomScreen(Screen[None]):
                         (
                             c
                             for c in entity.components
-                            if c.name == "CombatStatsComponent"
+                            if c.name == CharacterStatsComponent.__name__
                         ),
                         None,
                     )
@@ -182,7 +214,7 @@ class DungeonRoomScreen(Screen[None]):
                         (
                             c
                             for c in entity.components
-                            if c.name == "CombatStatusEffectsComponent"
+                            if c.name == StatusEffectsComponent.__name__
                         ),
                         None,
                     )
@@ -232,6 +264,116 @@ class DungeonRoomScreen(Screen[None]):
                 f"DungeonRoomScreen._fetch_status: 房间查询失败（可能尚未进入房间）error={e}"
             )
             log.write("[dim]（当前地下城暂无进行中的房间）[/]")
+
+    @work
+    async def _do_combat_init(self) -> None:
+        """触发战斗初始化（INITIALIZING → ONGOING），轮询任务完成后刷新状态。"""
+        log = self.query_one(RichLog)
+        inp = self.query_one(Input)
+        inp.disabled = True
+
+        log.write("[dim]▶ 正在初始化战斗...[/]")
+        logger.info(
+            f"DungeonRoomScreen._do_combat_init: user={self._user_name} game={self._game_name}"
+        )
+
+        task_id = ""
+        try:
+            resp = await server_dungeon_combat_init(self._user_name, self._game_name)
+            task_id = resp.task_id
+            log.write(f"[dim]任务已创建：{task_id}[/]")
+            logger.info(f"_do_combat_init: 任务已创建 task_id={task_id}")
+        except Exception as e:
+            logger.error(f"_do_combat_init: 请求失败 error={e}")
+            log.write(f"[bold red]❌ 战斗初始化请求失败: {e}[/]")
+            inp.disabled = False
+            inp.focus()
+            return
+
+        _POLL_INTERVAL = 1.0
+        _MAX_POLLS = 60
+        for _ in range(_MAX_POLLS):
+            await asyncio.sleep(_POLL_INTERVAL)
+            try:
+                status_resp = await fetch_tasks_status([task_id])
+                if not status_resp.tasks:
+                    continue
+                record = status_resp.tasks[0]
+                if record.status == TaskStatus.COMPLETED:
+                    log.write("[bold green]✅ 战斗初始化完成[/]")
+                    logger.info(f"_do_combat_init: 任务完成 task_id={task_id}")
+                    break
+                elif record.status == TaskStatus.FAILED:
+                    error_msg = record.error or "未知错误"
+                    log.write(f"[bold red]❌ 战斗初始化失败: {error_msg}[/]")
+                    logger.error(
+                        f"_do_combat_init: 任务失败 task_id={task_id} error={error_msg}"
+                    )
+                    break
+            except Exception as e:
+                logger.warning(f"_do_combat_init: 轮询失败 error={e}")
+        else:
+            log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
+            logger.warning(f"_do_combat_init: 轮询超时 task_id={task_id}")
+
+        inp.disabled = False
+        inp.focus()
+        self._fetch_status()
+
+    @work
+    async def _do_combat_retreat(self) -> None:
+        """触发战斗撤退，轮询任务完成后刷新状态。"""
+        log = self.query_one(RichLog)
+        inp = self.query_one(Input)
+        inp.disabled = True
+
+        log.write("[dim]▶ 正在触发撤退...[/]")
+        logger.info(
+            f"DungeonRoomScreen._do_combat_retreat: user={self._user_name} game={self._game_name}"
+        )
+
+        task_id = ""
+        try:
+            resp = await server_dungeon_combat_retreat(self._user_name, self._game_name)
+            task_id = resp.task_id
+            log.write(f"[dim]任务已创建：{task_id}[/]")
+            logger.info(f"_do_combat_retreat: 任务已创建 task_id={task_id}")
+        except Exception as e:
+            logger.error(f"_do_combat_retreat: 请求失败 error={e}")
+            log.write(f"[bold red]❌ 撤退请求失败: {e}[/]")
+            inp.disabled = False
+            inp.focus()
+            return
+
+        _POLL_INTERVAL = 1.0
+        _MAX_POLLS = 60
+        for _ in range(_MAX_POLLS):
+            await asyncio.sleep(_POLL_INTERVAL)
+            try:
+                status_resp = await fetch_tasks_status([task_id])
+                if not status_resp.tasks:
+                    continue
+                record = status_resp.tasks[0]
+                if record.status == TaskStatus.COMPLETED:
+                    log.write("[bold green]✅ 撤退成功[/]")
+                    logger.info(f"_do_combat_retreat: 任务完成 task_id={task_id}")
+                    break
+                elif record.status == TaskStatus.FAILED:
+                    error_msg = record.error or "未知错误"
+                    log.write(f"[bold red]❌ 撤退失败: {error_msg}[/]")
+                    logger.error(
+                        f"_do_combat_retreat: 任务失败 task_id={task_id} error={error_msg}"
+                    )
+                    break
+            except Exception as e:
+                logger.warning(f"_do_combat_retreat: 轮询失败 error={e}")
+        else:
+            log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
+            logger.warning(f"_do_combat_retreat: 轮询超时 task_id={task_id}")
+
+        inp.disabled = False
+        inp.focus()
+        self._fetch_status()
 
     @work
     async def _do_exit(self) -> None:

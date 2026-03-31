@@ -6,7 +6,11 @@ import httpx
 
 from ..models import (
     BlueprintListResponse,
+    DungeonCombatInitRequest,
+    DungeonCombatInitResponse,
     DungeonCombatResponse,
+    DungeonCombatRetreatRequest,
+    DungeonCombatRetreatResponse,
     DungeonExitRequest,
     DungeonExitResponse,
     DungeonListResponse,
@@ -218,6 +222,38 @@ async def dungeon_exit(user_name: str, game_name: str) -> DungeonExitResponse:
         )
         response.raise_for_status()
         return DungeonExitResponse.model_validate(response.json())
+
+
+async def dungeon_combat_init(
+    user_name: str, game_name: str
+) -> DungeonCombatInitResponse:
+    """触发战斗初始化，返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            GAME_SERVER_BASE_URL + "/api/dungeon/combat/init/v1/",
+            json=DungeonCombatInitRequest(
+                user_name=user_name,
+                game_name=game_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return DungeonCombatInitResponse.model_validate(response.json())
+
+
+async def dungeon_combat_retreat(
+    user_name: str, game_name: str
+) -> DungeonCombatRetreatResponse:
+    """触发战斗撤退，返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            GAME_SERVER_BASE_URL + "/api/dungeon/combat/retreat/v1/",
+            json=DungeonCombatRetreatRequest(
+                user_name=user_name,
+                game_name=game_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return DungeonCombatRetreatResponse.model_validate(response.json())
 
 
 async def home_generate_dungeon(

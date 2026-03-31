@@ -8,7 +8,7 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.screen import Screen
-from textual.widgets import Footer, Input, RichLog, Static
+from textual.widgets import Input, RichLog, Static
 
 from ..models import Dungeon
 from ..models.task import TaskStatus
@@ -73,7 +73,6 @@ class DungeonOverviewScreen(Screen[None]):
         with Horizontal(id="dungeon-input-row"):
             yield Static("> ", id="dungeon-prompt")
             yield Input(placeholder="输入编号查看副本详情...", id="dungeon-input")
-        yield Footer()
 
     def on_mount(self) -> None:
         log = self.query_one(RichLog)

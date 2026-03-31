@@ -8,7 +8,7 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.screen import Screen
-from textual.widgets import Footer, Input, RichLog, Static
+from textual.widgets import Input, RichLog, Static
 
 from .server_client import (
     fetch_entities_details,
@@ -72,7 +72,6 @@ class SwitchStageScreen(Screen[None]):
         with Horizontal(id="switch-input-row"):
             yield Static("> ", id="switch-prompt")
             yield Input(placeholder="输入编号切换场景...", id="switch-input")
-        yield Footer()
 
     def on_mount(self) -> None:
         log = self.query_one(RichLog)

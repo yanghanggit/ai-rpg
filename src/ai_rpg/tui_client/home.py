@@ -4,7 +4,7 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.screen import Screen
-from textual.widgets import Footer, Header, Input, RichLog, Static
+from textual.widgets import Header, Input, RichLog, Static
 
 import asyncio
 
@@ -148,7 +148,6 @@ class HomeScreen(Screen[None]):
         with Horizontal(id="home-input-row"):
             yield Static("> ", id="home-prompt")
             yield Input(placeholder="输入命令...", id="home-input")
-        yield Footer()
 
     def on_mount(self) -> None:
         log = self.query_one(RichLog)

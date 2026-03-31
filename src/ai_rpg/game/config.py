@@ -41,4 +41,4 @@ DEBUG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 GAME_1: Final[str] = (
     "Game1"  # unity 客户端目前是一定会链接到这个游戏的，所以这个名字暂时不能改。
 )
-GAME_2: Final[str] = "Game2"  # 开发测试用的第二个游戏。
+# GAME_2: Final[str] = "Game2"  # 开发测试用的第二个游戏。

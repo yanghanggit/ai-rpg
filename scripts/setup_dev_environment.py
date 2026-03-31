@@ -33,11 +33,11 @@ from ai_rpg.configuration import (
 )
 from ai_rpg.game.config import BLUEPRINTS_DIR, DUNGEONS_DIR, GAME_1
 from ai_rpg.demo import (
-    create_hunter_mystic_blueprint,
+    create_ruins_blueprint,
     # create_single_hunter_blueprint,
     # create_mountain_beasts_dungeon,
     # create_tiger_lair_dungeon,
-    create_wild_boar_territory_dungeon,
+    create_sand_wolf_ruins_dungeon,
     # create_training_dungeon,
 )
 from ai_rpg.pgsql import (
@@ -81,7 +81,7 @@ def _save_demo_dungeons() -> None:
     dungeons = [
         # create_mountain_beasts_dungeon(),  # 山林妖兽狩猎副本
         # create_tiger_lair_dungeon(),  # 山中虎巢穴副本
-        create_wild_boar_territory_dungeon(),  # 野猪领地副本
+        create_sand_wolf_ruins_dungeon(),  # 沙狼遗迹副本
         # create_training_dungeon(),  # 猎人训练场副本
     ]
 
@@ -98,7 +98,7 @@ def _save_demo_blueprints() -> None:
     """将演示游戏世界蓝图序列化为 JSON 文件，存入 BLUEPRINTS_DIR"""
     logger.info("🚀 保存演示游戏蓝图...")
 
-    blueprint_game1 = create_hunter_mystic_blueprint(GAME_1)
+    blueprint_game1 = create_ruins_blueprint(GAME_1)
     path_game1 = BLUEPRINTS_DIR / f"{GAME_1}.json"
     path_game1.write_text(blueprint_game1.model_dump_json(indent=4), encoding="utf-8")
     logger.success(f"✅ {GAME_1}.json 已保存至 {path_game1.absolute()}")

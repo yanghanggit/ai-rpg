@@ -58,7 +58,7 @@ class SwitchStageScreen(Screen[None]):
     """
 
     BINDINGS = [
-        ("escape", "go_back", "取消返回"),
+        ("escape", "go_back", "Cancel"),
     ]
 
     def __init__(self, user_name: str, game_name: str) -> None:

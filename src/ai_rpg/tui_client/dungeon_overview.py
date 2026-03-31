@@ -58,7 +58,7 @@ class DungeonOverviewScreen(Screen[None]):
     """
 
     BINDINGS = [
-        ("escape", "go_back", "返回"),
+        ("escape", "go_back", "Back"),
     ]
 
     def __init__(self, user_name: str, game_name: str) -> None:

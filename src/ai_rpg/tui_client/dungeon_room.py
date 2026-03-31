@@ -57,7 +57,7 @@ class DungeonRoomScreen(Screen[None]):
     """
 
     BINDINGS = [
-        ("escape", "suggest_exit", "使用 /exit 退出"),
+        ("escape", "suggest_exit", "use /exit to quit"),
     ]
 
     def __init__(self, user_name: str, game_name: str) -> None:

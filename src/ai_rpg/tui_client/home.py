@@ -35,6 +35,7 @@ HELP_TEXT = """\
   [bold green]/help            [/]  显示此帮助信息
   [bold green]/status          [/]  显示玩家状态、世界设定及玩家角色详情
   [bold green]/stages          [/]  查询全部场景与角色分布
+  [bold green]/stage_desc      [/]  显示玩家当前所在场景的描述
   [bold green]/entities        [/]  打开实体浏览器（列出全部场景与角色）
   [bold green]/dungeon_overview [/]  打开地下城总览（列出全部副本预览）
   [bold green]/advance         [/]  推进家园流程（执行一轮 home pipeline）
@@ -131,7 +132,7 @@ class HomeScreen(Screen[None]):
     """
 
     BINDINGS = [
-        ("ctrl+c", "app.quit", "退出"),
+        ("ctrl+c", "app.quit", "Quit"),
     ]
 
     def __init__(self, user_name: str, game_name: str) -> None:
@@ -215,6 +216,8 @@ class HomeScreen(Screen[None]):
             self._fetch_status()
         elif cmd == "/stages":
             self._fetch_stages()
+        elif cmd == "/stage_desc":
+            self._fetch_stage_desc()
         elif cmd == "/entities":
             from .entity_browser import EntityBrowserScreen
 
@@ -363,6 +366,70 @@ class HomeScreen(Screen[None]):
                     f"_fetch_status: 玩家角色实体查询失败 player_actor={player_actor} error={e}"
                 )
                 log.write(f"[bold red]❌ 玩家角色实体查询失败: {e}[/]")
+
+    @work
+    async def _fetch_stage_desc(self) -> None:
+        log = self.query_one(RichLog)
+        from .app import GameClient
+
+        app: GameClient = self.app  # type: ignore[assignment]
+        bp = app.session_blueprint
+        player_actor = bp.player_actor if bp else None
+
+        if not player_actor:
+            log.write("[red]❌ 无法取得玩家角色信息[/]")
+            return
+
+        log.write("[dim]正在定位玩家所在场景...[/]")
+        logger.info(
+            f"_fetch_stage_desc: 开始查询 user_name={self._user_name} game_name={self._game_name}"
+        )
+        try:
+            stages_resp = await fetch_stages_state(self._user_name, self._game_name)
+        except Exception as e:
+            logger.error(f"_fetch_stage_desc: fetch_stages_state 失败 error={e}")
+            log.write(f"[bold red]❌ 场景状态查询失败: {e}[/]")
+            return
+
+        current_stage: str = ""
+        for stage, actors in stages_resp.mapping.items():
+            if player_actor in actors:
+                current_stage = stage
+                break
+
+        if not current_stage:
+            log.write(f"[yellow]⚠ 未能找到玩家角色 {player_actor} 所在场景[/]")
+            return
+
+        log.write(f"[dim]玩家当前场景：{current_stage}，正在获取场景描述...[/]")
+        logger.info(f"_fetch_stage_desc: 玩家所在场景 current_stage={current_stage}")
+        try:
+            entities_resp = await fetch_entities_details(
+                self._user_name, self._game_name, [current_stage]
+            )
+        except Exception as e:
+            logger.error(f"_fetch_stage_desc: fetch_entities_details 失败 error={e}")
+            log.write(f"[bold red]❌ 场景实体查询失败: {e}[/]")
+            return
+
+        narrative = ""
+        for entity in entities_resp.entities_serialization:
+            for comp in entity.components:
+                if comp.name == "StageDescriptionComponent":
+                    narrative = comp.data.get("narrative", "")
+                    break
+
+        log.write(
+            f"[bold yellow]── 场景描述：{current_stage} ──────────────────────────────────────[/]"
+        )
+        if narrative:
+            log.write(narrative)
+        else:
+            log.write("[dim]（场景描述尚未生成）[/]")
+        log.write("")
+        logger.info(
+            f"_fetch_stage_desc: 完成 current_stage={current_stage} narrative_len={len(narrative)}"
+        )
 
     @work
     async def _fetch_stages(self) -> None:

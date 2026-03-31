@@ -11,7 +11,7 @@ class GameClient(App[None]):
     """游戏客户端主应用。启动后推入 ConnectingScreen，由各 Screen 承载具体 UI。"""
 
     BINDINGS = [
-        ("ctrl+c", "quit", "退出"),
+        ("ctrl+c", "quit", "Quit"),
     ]
 
     # ── 会话状态：登录后写入，登出后清空 ──

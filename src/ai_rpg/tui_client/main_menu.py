@@ -53,7 +53,7 @@ class MainMenuScreen(Screen[None]):
     """
 
     BINDINGS = [
-        ("escape", "app.quit", "退出"),
+        ("escape", "app.quit", "Quit"),
     ]
 
     def __init__(self, server_info_msg: str = "") -> None:

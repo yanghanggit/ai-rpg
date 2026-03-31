@@ -6,14 +6,18 @@ from ..models import (
 )
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
+    # RPG_SYSTEM_RULES,
+)
+from .rpg_system_rules import (
     RPG_SYSTEM_RULES,
 )
 from .entity_factory import (
     create_actor,
 )
-from .common_skills import (
-    BEAST_ATTACK_SKILL,
-)
+
+# from .common_skills import (
+#     BEAST_ATTACK_SKILL,
+# )
 
 
 def create_actor_wild_boar() -> Actor:
@@ -43,8 +47,8 @@ def create_actor_wild_boar() -> Actor:
     )
 
     # 定义野猪的技能
-    wild_boar.skills = [
-        BEAST_ATTACK_SKILL.model_copy(),
-    ]
+    # wild_boar.skills = [
+    #     BEAST_ATTACK_SKILL.model_copy(),
+    # ]
 
     return wild_boar

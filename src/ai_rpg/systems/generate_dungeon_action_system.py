@@ -20,9 +20,13 @@ from ..models import (
 from ..game.tcg_game import TCGGame
 from ..game.config import DEBUG_CACHE_DIR, DUNGEONS_DIR
 from ..utils import extract_json_from_code_block
-from ..demo.global_settings import RPG_CAMPAIGN_SETTING, RPG_SYSTEM_RULES
+from ..demo.global_settings import RPG_CAMPAIGN_SETTING
 from ..demo.entity_factory import create_actor, create_stage
-from ..demo.common_skills import BEAST_ATTACK_SKILL
+
+# from ..demo.common_skills import BEAST_ATTACK_SKILL
+from ..demo.rpg_system_rules import (
+    RPG_SYSTEM_RULES,
+)
 
 
 ####################################################################################################################################
@@ -634,7 +638,7 @@ class GenerateDungeonActionSystem(ReactiveProcessor):
                 campaign_setting=RPG_CAMPAIGN_SETTING,
                 system_rules=RPG_SYSTEM_RULES,
             )
-            actor.skills = [BEAST_ATTACK_SKILL.model_copy()]
+            # actor.skills = [BEAST_ATTACK_SKILL.model_copy()]
 
             stage.actors = [actor]
             rooms.append(DungeonRoom(stage=stage))

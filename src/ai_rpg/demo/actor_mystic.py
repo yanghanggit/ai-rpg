@@ -6,16 +6,20 @@ from ..models import (
 )
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
+    # RPG_SYSTEM_RULES,
+)
+from .rpg_system_rules import (
     RPG_SYSTEM_RULES,
 )
 from .entity_factory import (
     create_actor,
 )
-from .common_skills import (
-    WEAPON_ATTACK_SKILL,
-    WEAPON_DEFEND_SKILL,
-    PERCEPTION_SKILL,
-)
+
+# from .common_skills import (
+#     WEAPON_ATTACK_SKILL,
+#     WEAPON_DEFEND_SKILL,
+#     PERCEPTION_SKILL,
+# )
 
 
 def create_mystic() -> Actor:
@@ -49,10 +53,10 @@ def create_mystic() -> Actor:
     )
 
     # 定义术士的技能
-    actor.skills = [
-        WEAPON_ATTACK_SKILL.model_copy(),
-        WEAPON_DEFEND_SKILL.model_copy(),
-        PERCEPTION_SKILL.model_copy(),
-    ]
+    # actor.skills = [
+    #     WEAPON_ATTACK_SKILL.model_copy(),
+    #     WEAPON_DEFEND_SKILL.model_copy(),
+    #     PERCEPTION_SKILL.model_copy(),
+    # ]
 
     return actor

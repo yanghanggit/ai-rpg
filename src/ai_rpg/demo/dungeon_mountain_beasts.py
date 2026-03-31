@@ -22,10 +22,13 @@ from .actor_mountain_tiger import create_actor_mountain_tiger
 from .actor_wild_boar import create_actor_wild_boar
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
-    RPG_SYSTEM_RULES,
+    # RPG_SYSTEM_RULES,
 )
 from .entity_factory import (
     create_stage,
+)
+from .rpg_system_rules import (
+    RPG_SYSTEM_RULES,
 )
 
 

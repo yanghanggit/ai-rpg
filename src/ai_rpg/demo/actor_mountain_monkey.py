@@ -6,14 +6,18 @@ from ..models import (
 )
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
-    RPG_SYSTEM_RULES,
+    # RPG_SYSTEM_RULES,
 )
 from .entity_factory import (
     create_actor,
 )
-from .common_skills import (
-    BEAST_ATTACK_SKILL,
-    THROW_SKILL,
+
+# from .common_skills import (
+#     BEAST_ATTACK_SKILL,
+#     THROW_SKILL,
+# )
+from .rpg_system_rules import (
+    RPG_SYSTEM_RULES,
 )
 
 
@@ -43,9 +47,9 @@ def create_actor_mountain_monkey() -> Actor:
     )
 
     # 定义山魈的技能
-    mountain_monkey.skills = [
-        THROW_SKILL.model_copy(),
-        BEAST_ATTACK_SKILL.model_copy(),
-    ]
+    # mountain_monkey.skills = [
+    #     THROW_SKILL.model_copy(),
+    #     BEAST_ATTACK_SKILL.model_copy(),
+    # ]
 
     return mountain_monkey

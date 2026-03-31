@@ -4,6 +4,9 @@ from ..models import (
 )
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
+    # RPG_SYSTEM_RULES,
+)
+from .rpg_system_rules import (
     RPG_SYSTEM_RULES,
 )
 from .entity_factory import (

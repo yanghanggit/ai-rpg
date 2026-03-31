@@ -6,13 +6,17 @@ from ..models import (
 )
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
-    RPG_SYSTEM_RULES,
+    # RPG_SYSTEM_RULES,
 )
 from .entity_factory import (
     create_actor,
 )
-from .common_skills import (
-    UNARMED_COMBAT_SKILL,
+
+# from .common_skills import (
+#     UNARMED_COMBAT_SKILL,
+# )
+from .rpg_system_rules import (
+    RPG_SYSTEM_RULES,
 )
 
 
@@ -43,8 +47,8 @@ def create_hunter() -> Actor:
         system_rules=RPG_SYSTEM_RULES,
     )
 
-    actor.skills = [
-        UNARMED_COMBAT_SKILL.model_copy(),
-    ]
+    # actor.skills = [
+    #     UNARMED_COMBAT_SKILL.model_copy(),
+    # ]
 
     return actor

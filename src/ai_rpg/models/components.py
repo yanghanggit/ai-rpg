@@ -9,11 +9,11 @@
 
 from typing import List, final
 from ..entitas.components import Component, MutableComponent
-from .combat import Card2, StatusEffect
+from .combat import Card, StatusEffect
 from .entities import (
     CharacterStats,
     Item,
-    Skill,
+    # Skill,
 )
 from .registry import register_component_type
 
@@ -305,7 +305,7 @@ class HandComponent(Component):
     """
 
     name: str
-    cards: List[Card2]
+    cards: List[Card]
     round: int
 
 
@@ -400,31 +400,31 @@ class InventoryComponent(MutableComponent):
 
 
 ############################################################################################################
-@final
-@register_component_type
-class SkillBookComponent(MutableComponent):
-    """技能书组件
+# @final
+# @register_component_type
+# class SkillBookComponent(MutableComponent):
+#     """技能书组件
 
-    存储角色的技能列表，提供技能查询功能。
+#     存储角色的技能列表，提供技能查询功能。
 
-    Attributes:
-        name: 角色名称
-        skills: 技能列表
-    """
+#     Attributes:
+#         name: 角色名称
+#         skills: 技能列表
+#     """
 
-    name: str
-    skills: List[Skill]
+#     name: str
+#     skills: List[Skill]
 
-    # 查找技能
-    def find_skill(self, skill_name: str) -> Skill | None:
-        for skill in self.skills:
-            if skill.name == skill_name:
-                return skill
-        return None
+#     # 查找技能
+#     def find_skill(self, skill_name: str) -> Skill | None:
+#         for skill in self.skills:
+#             if skill.name == skill_name:
+#                 return skill
+#         return None
 
-    # 获取多个技能
-    def get_skills(self, skill_names: List[str]) -> List[Skill]:
-        return [skill for skill in self.skills if skill.name in skill_names]
+#     # 获取多个技能
+#     def get_skills(self, skill_names: List[str]) -> List[Skill]:
+#         return [skill for skill in self.skills if skill.name in skill_names]
 
 
 ############################################################################################################

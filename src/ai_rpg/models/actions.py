@@ -10,7 +10,7 @@
 
 from typing import Dict, List, final
 from ..entitas.components import Component
-from .combat import Card2
+from .combat import Card
 from .registry import register_action_component_type, register_component_type
 
 
@@ -155,7 +155,7 @@ class PlayCardsAction(Component):
     """
 
     name: str
-    card: Card2
+    card: Card
     targets: List[str]
 
 

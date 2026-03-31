@@ -13,6 +13,7 @@ import httpx
 
 from .actor_detail import ActorDetailScreen
 from .round_detail import RoundDetailScreen
+from .server_client import dungeon_combat_draw_cards as server_dungeon_combat_draw_cards
 from .server_client import dungeon_combat_init as server_dungeon_combat_init
 from .server_client import dungeon_combat_retreat as server_dungeon_combat_retreat
 from .server_client import dungeon_exit as server_dungeon_exit
@@ -48,6 +49,7 @@ DUNGEON_ROOM_HEADER = """\
   [bold]/detail[/]   查看角色完整属性与状态效果
   [bold]/round[/]    查看战斗回合详情
   [bold]/combat[/]   初始化战斗
+  [bold]/draw[/]     全员抽牌
   [bold]/retreat[/]  撤退
   [bold]/exit[/]     退出地下城
   [bold]/clear[/]    清除日志
@@ -61,6 +63,7 @@ HELP_TEXT = """\
 [bold]/detail[/]    查看当前房间所有角色的完整属性与状态效果
 [bold]/round[/]     查看战斗所有回合详情（行动顺序、出手记录、叙事）
 [bold]/combat[/]    初始化当前房间战斗（INITIALIZING → ONGOING）
+[bold]/draw[/]      为所有战斗角色（友方+敌方）激活抽牌动作
 [bold]/retreat[/]   在战斗进行中撤退
 [bold]/exit[/]      退出地下城，返回地下城总览
 [bold]/clear[/]     清除日志，仅保留命令列表
@@ -146,6 +149,9 @@ class DungeonRoomScreen(Screen[None]):
 
         elif cmd == "/combat":
             self._do_combat_init()
+
+        elif cmd == "/draw":
+            self._do_draw_cards()
 
         elif cmd == "/retreat":
             self._do_combat_retreat()
@@ -281,7 +287,7 @@ class DungeonRoomScreen(Screen[None]):
             if combat.rounds:
                 cur = combat.rounds[-1]
                 order_str = (
-                    "  ".join(cur.action_order)
+                    " => ".join(cur.action_order)
                     if cur.action_order
                     else "[dim]（无）[/]"
                 )
@@ -353,6 +359,63 @@ class DungeonRoomScreen(Screen[None]):
         else:
             log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
             logger.warning(f"_do_combat_init: 轮询超时 task_id={task_id}")
+
+        inp.disabled = False
+        inp.focus()
+        self._fetch_status()
+
+    @work
+    async def _do_draw_cards(self) -> None:
+        """为全体战斗角色激活抽牌动作，轮询任务完成后刷新状态。"""
+        log = self.query_one(RichLog)
+        inp = self.query_one(Input)
+        inp.disabled = True
+
+        log.write("[dim]▶ 正在激活全员抽牌...[/]")
+        logger.info(
+            f"DungeonRoomScreen._do_draw_cards: user={self._user_name} game={self._game_name}"
+        )
+
+        task_id = ""
+        try:
+            resp = await server_dungeon_combat_draw_cards(
+                self._user_name, self._game_name
+            )
+            task_id = resp.task_id
+            log.write(f"[dim]任务已创建：{task_id}[/]")
+            logger.info(f"_do_draw_cards: 任务已创建 task_id={task_id}")
+        except Exception as e:
+            logger.error(f"_do_draw_cards: 请求失败 error={e}")
+            log.write(f"[bold red]❌ 全员抽牌请求失败: {_format_http_error(e)}[/]")
+            inp.disabled = False
+            inp.focus()
+            return
+
+        _POLL_INTERVAL = 1.0
+        _MAX_POLLS = 60
+        for _ in range(_MAX_POLLS):
+            await asyncio.sleep(_POLL_INTERVAL)
+            try:
+                status_resp = await fetch_tasks_status([task_id])
+                if not status_resp.tasks:
+                    continue
+                record = status_resp.tasks[0]
+                if record.status == TaskStatus.COMPLETED:
+                    log.write("[bold green]✅ 全员抽牌完成[/]")
+                    logger.info(f"_do_draw_cards: 任务完成 task_id={task_id}")
+                    break
+                elif record.status == TaskStatus.FAILED:
+                    error_msg = record.error or "未知错误"
+                    log.write(f"[bold red]❌ 全员抽牌失败: {error_msg}[/]")
+                    logger.error(
+                        f"_do_draw_cards: 任务失败 task_id={task_id} error={error_msg}"
+                    )
+                    break
+            except Exception as e:
+                logger.warning(f"_do_draw_cards: 轮询失败 error={e}")
+        else:
+            log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
+            logger.warning(f"_do_draw_cards: 轮询超时 task_id={task_id}")
 
         inp.disabled = False
         inp.focus()

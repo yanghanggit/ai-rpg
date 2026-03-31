@@ -4,7 +4,7 @@ from loguru import logger
 from textual import work
 from textual.app import ComposeResult
 from textual.screen import Screen
-from textual.widgets import Footer, RichLog
+from textual.widgets import RichLog
 
 from .server_client import (
     fetch_dungeon_room,
@@ -15,6 +15,7 @@ from ..models import (
     AllyComponent,
     CharacterStatsComponent,
     EnemyComponent,
+    HandComponent,
     PlayerComponent,
     StatusEffectsComponent,
 )
@@ -52,7 +53,6 @@ class ActorDetailScreen(Screen[None]):
 
     def compose(self) -> ComposeResult:
         yield RichLog(id="detail-log", highlight=True, markup=True, wrap=True)
-        yield Footer()
 
     def on_mount(self) -> None:
         log = self.query_one(RichLog)
@@ -157,6 +157,33 @@ class ActorDetailScreen(Screen[None]):
                         log.write("  [dim](无状态效果)[/]")
                 else:
                     log.write("  [dim](无状态效果)[/]")
+
+                # 手牌
+                hand_comp = next(
+                    (c for c in entity.components if c.name == HandComponent.__name__),
+                    None,
+                )
+                if hand_comp is not None:
+                    cards = hand_comp.data.get("cards", [])
+                    round_num = hand_comp.data.get("round", "?")
+                    log.write(
+                        f"  [bold]手牌（回合 {round_num}，共 {len(cards)} 张）：[/]"
+                    )
+                    if cards:
+                        for card in cards:
+                            if isinstance(card, dict):
+                                cname = card.get("name", "?")
+                                dmg = card.get("damage", 0)
+                                blk = card.get("block", 0)
+                                action = card.get("action", "")
+                                log.write(
+                                    f"    └ [bold]{cname}[/]"
+                                    f"  伤害:[red]{dmg}[/]"
+                                    f"  格挡:[blue]{blk}[/]"
+                                    + (f"  [dim]{action}[/]" if action else "")
+                                )
+                    else:
+                        log.write("    [dim](手牌为空)[/]")
 
                 log.write("")
 

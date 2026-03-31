@@ -6,6 +6,8 @@ import httpx
 
 from ..models import (
     BlueprintListResponse,
+    DungeonCombatDrawCardsRequest,
+    DungeonCombatDrawCardsResponse,
     DungeonCombatInitRequest,
     DungeonCombatInitResponse,
     DungeonCombatResponse,
@@ -254,6 +256,22 @@ async def dungeon_combat_retreat(
         )
         response.raise_for_status()
         return DungeonCombatRetreatResponse.model_validate(response.json())
+
+
+async def dungeon_combat_draw_cards(
+    user_name: str, game_name: str
+) -> DungeonCombatDrawCardsResponse:
+    """为全体战斗角色激活抽牌动作，返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            GAME_SERVER_BASE_URL + "/api/dungeon/combat/draw_cards/v1/",
+            json=DungeonCombatDrawCardsRequest(
+                user_name=user_name,
+                game_name=game_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return DungeonCombatDrawCardsResponse.model_validate(response.json())
 
 
 async def home_generate_dungeon(

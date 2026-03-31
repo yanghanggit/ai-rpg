@@ -24,7 +24,7 @@ from ..models import (
     ActorComponent,
     DrawCardsAction,
     HandComponent,
-    Card2,
+    Card,
     DeathComponent,
     CharacterStats,
     CharacterStatsComponent,
@@ -271,8 +271,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
             self._game.add_ai_message(entity, chat_client.response_ai_messages)
 
             # 构建 Card2 列表
-            cards: List[Card2] = [
-                Card2(
+            cards: List[Card] = [
+                Card(
                     name=entry.name,
                     action=entry.action,
                     damage=entry.damage,

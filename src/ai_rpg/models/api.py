@@ -220,43 +220,24 @@ class DungeonCombatPlayCardsResponse(BaseModel):
 ################################################################################################################
 
 
-@final
-class AllyDrawCardAction(BaseModel):
-    """单个Ally角色的抽牌动作指定"""
+# @final
+# class AllyDrawCardAction(BaseModel):
+#     """单个Ally角色的抽牌动作指定"""
 
-    entity_name: str  # 出牌者实体名称
-    skill_name: str  # 指定的技能名称
-    target_names: List[str]  # 目标名称列表
-    status_effect_names: List[str]  # 状态效果名称列表
-
-
-@final
-class DungeonCombatDrawAllyCardsRequest(BaseModel):
-    user_name: str
-    game_name: str
-    specified_actions: List[AllyDrawCardAction]
+#     entity_name: str  # 出牌者实体名称
+#     skill_name: str  # 指定的技能名称
+#     target_names: List[str]  # 目标名称列表
+#     status_effect_names: List[str]  # 状态效果名称列表
 
 
 @final
-class DungeonCombatDrawAllyCardsResponse(BaseModel):
-    task_id: str
-    status: str
-    message: str
-
-
-################################################################################################################
-################################################################################################################
-################################################################################################################
-
-
-@final
-class DungeonCombatDrawEnemyCardsRequest(BaseModel):
+class DungeonCombatDrawCardsRequest(BaseModel):
     user_name: str
     game_name: str
 
 
 @final
-class DungeonCombatDrawEnemyCardsResponse(BaseModel):
+class DungeonCombatDrawCardsResponse(BaseModel):
     task_id: str
     status: str
     message: str

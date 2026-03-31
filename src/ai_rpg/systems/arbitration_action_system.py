@@ -192,7 +192,13 @@ class ArbitrationActionSystem(ReactiveProcessor):
         self, stage_entity: Entity, actor_entity: Entity
     ) -> None:
         action = actor_entity.get(PlayCardsAction)
-        assert action.card.name != "", "出牌动作缺少卡牌信息！"
+        if action.card.name == "":
+            # 空卡表示 EnemyPlayDecisionSystem 推理失败，记录放弃行动结果
+            logger.warning(
+                f"ArbitrationActionSystem: [{actor_entity.name}] 出牌为空卡，执行放弃行动"
+            )
+            self._apply_forfeit_result(stage_entity, actor_entity)
+            return
 
         # 解析目标实体的当前 HP
         target_stats: Dict[str, CharacterStatsComponent] = {}
@@ -223,12 +229,37 @@ class ArbitrationActionSystem(ReactiveProcessor):
         self._apply_arbitration_result(stage_entity, chat_client)
         self._process_zero_health_entities()
 
-        # 将出牌角色写入本回合 completed_actors
-        # if actor_entity.name not in last_round.completed_actors:
-        #     last_round.completed_actors.append(action.name)
-        #     logger.debug(
-        #         f"  completed_actors: {last_round.completed_actors} / {last_round.action_order}"
-        #     )
+    #######################################################################################################################################
+    def _apply_forfeit_result(self, stage_entity: Entity, actor_entity: Entity) -> None:
+        """处理空卡（放弃行动）的默认结算结果。
+
+        当 EnemyPlayDecisionSystem 推理失败保留空卡时，以"放弃行动"作为本次出牌结果，
+        补全 combat_log 和 narrative，并广播到场景。
+        """
+        short_name = actor_entity.name.split(".")[-1]
+        combat_log = f"[{short_name}|放弃行动]"
+        narrative = f"{short_name}迟疑片刻，最终放弃了这回合的行动。"
+
+        current_round_number = len(self._game.current_dungeon.current_rounds or [])
+        self._game.broadcast_to_stage(
+            entity=stage_entity,
+            agent_event=CombatArbitrationEvent(
+                message=_generate_combat_arbitration_broadcast(
+                    combat_log,
+                    narrative,
+                    current_round_number,
+                ),
+                stage=stage_entity.name,
+                combat_log=combat_log,
+                narrative=narrative,
+            ),
+            exclude_entities={stage_entity},
+        )
+
+        latest_round = self._game.current_dungeon.latest_round
+        assert latest_round is not None
+        latest_round.combat_log.append(combat_log)
+        latest_round.narrative.append(narrative)
 
     #######################################################################################################################################
     def _apply_arbitration_result(

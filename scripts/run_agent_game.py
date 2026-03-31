@@ -142,6 +142,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import asyncio
 import datetime
+import sys
 import click
 from loguru import logger
 from ai_rpg.game.config import (
@@ -151,8 +152,23 @@ from ai_rpg.game.config import (
 from config import LOGS_DIR
 from ai_rpg.game import restore_world
 from pathlib import Path
+from typing import Final as _Final
+
+LOG_LEVEL: _Final[str] = "DEBUG"
+
+
+def _setup_logger(log_file_path: Path) -> None:
+    logger.remove()
+    logger.add(
+        sys.stderr,
+        level=LOG_LEVEL,
+        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+    )
+    logger.add(log_file_path, level=LOG_LEVEL)
+    logger.info(f"日志配置: 级别={LOG_LEVEL}, 文件路径={log_file_path}")
+
+
 from agent_game_actions import (
-    _setup_logger,
     _create_and_initialize_game,
     _advance_game,
     _speak_game,

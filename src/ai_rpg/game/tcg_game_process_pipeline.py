@@ -95,10 +95,6 @@ def create_combat_pipeline(
         ActorAppearanceUpdateSystem,
     )
     from ..systems.destroy_entity_system import DestroyEntitySystem
-
-    # from ..systems.enemy_draw_decision_system import (
-    #     EnemyDrawDecisionSystem,
-    # )
     from ..systems.draw_cards_action_system import (
         DrawCardsActionSystem,
     )
@@ -120,6 +116,7 @@ def create_combat_pipeline(
         StageDescriptionSystem,
     )
     from ..systems.combat_round_creation_system import CombatRoundCreationSystem
+    from ..systems.enemy_play_decision_system import EnemyPlayDecisionSystem
 
     tcg_game = cast(TCGGame, game)
     processors = RPGGameProcessPipeline()
@@ -140,8 +137,8 @@ def create_combat_pipeline(
     processors.add(CombatRoundCreationSystem(tcg_game))
 
     # 动作处理相关的系统：敌人决策-抓牌-出牌-撤退-裁决-清理
-    # processors.add(EnemyDrawDecisionSystem(tcg_game))
     processors.add(DrawCardsActionSystem(tcg_game, 3))
+    processors.add(EnemyPlayDecisionSystem(tcg_game))
     processors.add(PlayCardsActionSystem(tcg_game))
     processors.add(RetreatActionSystem(tcg_game))
     processors.add(ArbitrationActionSystem(tcg_game))

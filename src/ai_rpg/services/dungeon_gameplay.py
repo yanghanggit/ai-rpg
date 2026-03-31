@@ -7,6 +7,7 @@
 
 import asyncio
 from datetime import datetime
+from typing import List
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
@@ -33,7 +34,7 @@ from .dungeon_lifecycle import (
 )
 from .dungeon_actions import (
     activate_all_card_draws,
-    # activate_all_play_cards,
+    activate_play_cards_specified,
     activate_expedition_retreat,
 )
 from ..game.game_server import GameServer
@@ -543,6 +544,9 @@ async def dungeon_combat_play_cards(
         _execute_play_cards_task(
             play_cards_task.task_id,
             payload.user_name,
+            payload.actor_name,
+            payload.card_name,
+            payload.targets,
             game_server,
         )
     )
@@ -730,6 +734,9 @@ async def _execute_draw_cards_task(
 async def _execute_play_cards_task(
     task_id: str,
     user_name: str,
+    actor_name: str,
+    card_name: str,
+    targets: List[str],
     game_server: GameServer,
 ) -> None:
     """后台执行出牌任务
@@ -739,6 +746,9 @@ async def _execute_play_cards_task(
     Args:
         task_id: 任务唯一标识符
         user_name: 用户名
+        actor_name: 出牌角色全名
+        card_name: 要打出的卡牌名称
+        targets: 目标名称列表
         game_server: 游戏服务器实例
     """
     try:
@@ -757,13 +767,11 @@ async def _execute_play_cards_task(
             if not rpg_game.current_dungeon.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
-            # 为所有角色随机选择并激活打牌动作（内部会自动确保所有角色都有后备牌）
-            # success, message = activate_all_play_cards(rpg_game)
-            # if not success:
-            #     raise ValueError(f"出牌失败: {message}")
-            assert (
-                False
-            ), "activate_all_play_cards is currently disabled for testing. Please enable it after confirming the implementation."
+            success, message = activate_play_cards_specified(
+                rpg_game, actor_name, card_name, targets
+            )
+            if not success:
+                raise ValueError(f"出牌失败: {message}")
 
             # 推进战斗流程处理出牌
             await rpg_game._combat_pipeline.process()

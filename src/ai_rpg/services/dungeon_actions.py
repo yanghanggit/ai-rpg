@@ -16,6 +16,7 @@ from ..models import (
     EnemyComponent,
     DeathComponent,
     RetreatAction,
+    Card,
 )
 from ..entitas import Entity, Matcher
 
@@ -104,59 +105,6 @@ def activate_all_card_draws(
 
 
 ###################################################################################################################################################################
-# def activate_play_cards(
-#     # tcg_game: TCGGame,
-#     entity: Entity,
-#     targets: List[str],
-# ) -> Tuple[bool, str]:
-#     """
-#     为指定角色激活出牌动作（取手牌 cards[0]）。
-
-#     Args:
-#         tcg_game: TCG游戏实例
-#         entity: 出牌的战斗角色实体（expedition_member 或 enemy）
-#         targets: 目标名称列表，外部传入，可为 []
-
-#     Returns:
-#         tuple[bool, str]: (是否成功, 结果消息)
-#     """
-
-#     assert entity.has(ExpeditionMemberComponent) or entity.has(
-#         EnemyComponent
-#     ), f"Entity {entity.name} must be ExpeditionMemberComponent or EnemyComponent"
-#     if not (entity.has(ExpeditionMemberComponent) or entity.has(EnemyComponent)):
-#         error_msg = f"角色 {entity.name} 不是战斗角色（非 ExpeditionMember 或 Enemy）"
-#         logger.error(error_msg)
-#         return False, error_msg
-
-#     assert not entity.has(
-#         DeathComponent
-#     ), f"Entity {entity.name} is dead and cannot play cards"
-#     if entity.has(DeathComponent):
-#         error_msg = f"角色 {entity.name} 已死亡，无法出牌"
-#         logger.error(error_msg)
-#         return False, error_msg
-
-#     assert entity.has(HandComponent), f"Entity {entity.name} must have HandComponent"
-#     if not entity.has(HandComponent):
-#         error_msg = f"角色 {entity.name} 没有 HandComponent"
-#         logger.error(error_msg)
-#         return False, error_msg
-
-#     hand_comp = entity.get(HandComponent)
-#     assert len(hand_comp.cards) > 0, f"Entity {entity.name} has no cards in hand"
-#     if len(hand_comp.cards) == 0:
-#         error_msg = f"角色 {entity.name} 手牌为空，无法出牌"
-#         logger.error(error_msg)
-#         return False, error_msg
-
-#     selected_card = hand_comp.cards[0]
-#     entity.replace(PlayCardsAction, entity.name, selected_card, targets)
-
-#     return True, f"成功为角色 {entity.name} 激活出牌动作"
-
-
-###################################################################################################################################################################
 def activate_play_cards_specified(
     tcg_game: TCGGame,
     actor_name: str,
@@ -223,14 +171,32 @@ def activate_play_cards_specified(
         logger.error(error_msg)
         return False, error_msg
 
-    hand_comp = entity.get(HandComponent)
-    selected_card = next((c for c in hand_comp.cards if c.name == card_name), None)
-    if selected_card is None:
-        error_msg = f"角色 {actor_name} 手牌中找不到卡牌 '{card_name}'，当前手牌: {[c.name for c in hand_comp.cards]}"
-        logger.error(error_msg)
-        return False, error_msg
+    if entity.has(ExpeditionMemberComponent):
 
-    entity.replace(PlayCardsAction, entity.name, selected_card, targets)
+        hand_comp = entity.get(HandComponent)
+        selected_card = next((c for c in hand_comp.cards if c.name == card_name), None)
+        if selected_card is None:
+            error_msg = f"角色 {actor_name} 手牌中找不到卡牌 '{card_name}'，当前手牌: {[c.name for c in hand_comp.cards]}"
+            logger.error(error_msg)
+            return False, error_msg
+
+        logger.debug(
+            f"为角色 {actor_name} 激活出牌动作，卡牌: {selected_card.name} 目标: {targets}"
+        )
+        entity.replace(PlayCardsAction, entity.name, selected_card, targets)
+
+    else:
+
+        # 敌人就故意给一个空的
+        assert entity.has(
+            EnemyComponent
+        ), f"角色 {actor_name} 既不是远征队成员也不是敌人，无法出牌"
+
+        logger.debug(
+            f"为敌人 {actor_name} 激活出牌动作，（敌人默认空卡），会由系统自动选择卡牌和目标"
+        )
+        entity.replace(PlayCardsAction, entity.name, Card(name="", action=""), [])
+
     return True, f"成功为角色 {actor_name} 激活出牌动作（卡牌: {card_name}）"
 
 

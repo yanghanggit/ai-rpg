@@ -206,6 +206,9 @@ class DungeonCombatInitResponse(BaseModel):
 class DungeonCombatPlayCardsRequest(BaseModel):
     user_name: str
     game_name: str
+    actor_name: str
+    card_name: str
+    targets: List[str] = []
 
 
 @final

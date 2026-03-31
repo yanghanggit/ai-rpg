@@ -15,6 +15,7 @@ from ..models import (
     AllyComponent,
     CharacterStatsComponent,
     EnemyComponent,
+    PlayerComponent,
     StatusEffectsComponent,
 )
 
@@ -86,8 +87,11 @@ class ActorDetailScreen(Screen[None]):
             )
 
             for entity in details_resp.entities_serialization:
-                # 阵营检测
+                # 阵营检测 + 玩家标记
                 faction = "[dim]未知[/]"
+                is_player = any(
+                    c.name == PlayerComponent.__name__ for c in entity.components
+                )
                 for comp in entity.components:
                     if comp.name == AllyComponent.__name__:
                         faction = "[bold green]友方[/]"
@@ -96,7 +100,10 @@ class ActorDetailScreen(Screen[None]):
                         faction = "[bold red]敌方[/]"
                         break
 
-                log.write(f"[bold cyan]── {faction} [bold]{entity.name}[/] ──[/]")
+                player_tag = "  [bold yellow]\[玩家][/]" if is_player else ""
+                log.write(
+                    f"[bold cyan]── {faction} [bold]{entity.name}[/]{player_tag} ──[/]"
+                )
 
                 # 战斗属性
                 stats_comp = next(

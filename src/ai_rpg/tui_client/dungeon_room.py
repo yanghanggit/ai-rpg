@@ -12,6 +12,7 @@ import asyncio
 import httpx
 
 from .actor_detail import ActorDetailScreen
+from .round_detail import RoundDetailScreen
 from .server_client import dungeon_combat_init as server_dungeon_combat_init
 from .server_client import dungeon_combat_retreat as server_dungeon_combat_retreat
 from .server_client import dungeon_exit as server_dungeon_exit
@@ -45,6 +46,7 @@ DUNGEON_ROOM_HEADER = """\
 
   [bold]/status[/]   查看当前房间状态
   [bold]/detail[/]   查看角色完整属性与状态效果
+  [bold]/round[/]    查看战斗回合详情
   [bold]/combat[/]   初始化战斗
   [bold]/retreat[/]  撤退
   [bold]/exit[/]     退出地下城
@@ -57,6 +59,7 @@ HELP_TEXT = """\
 
 [bold]/status[/]    显示当前房间信息及所有角色属性
 [bold]/detail[/]    查看当前房间所有角色的完整属性与状态效果
+[bold]/round[/]     查看战斗所有回合详情（行动顺序、出手记录、叙事）
 [bold]/combat[/]    初始化当前房间战斗（INITIALIZING → ONGOING）
 [bold]/retreat[/]   在战斗进行中撤退
 [bold]/exit[/]      退出地下城，返回地下城总览
@@ -137,6 +140,9 @@ class DungeonRoomScreen(Screen[None]):
 
         elif cmd == "/detail":
             self.app.push_screen(ActorDetailScreen(self._user_name, self._game_name))
+
+        elif cmd == "/round":
+            self.app.push_screen(RoundDetailScreen(self._user_name, self._game_name))
 
         elif cmd == "/combat":
             self._do_combat_init()
@@ -272,6 +278,20 @@ class DungeonRoomScreen(Screen[None]):
                 f"[bold]战斗结果：[/] {combat.result.name}  "
                 f"[bold]当前局数：[/] {len(combat.rounds)}"
             )
+            if combat.rounds:
+                cur = combat.rounds[-1]
+                order_str = (
+                    "  ".join(cur.action_order)
+                    if cur.action_order
+                    else "[dim]（无）[/]"
+                )
+                done_str = (
+                    "  ".join(cur.completed_actors)
+                    if cur.completed_actors
+                    else "[dim]（无）[/]"
+                )
+                log.write(f"  [bold]行动顺序：[/] {order_str}")
+                log.write(f"  [bold]已出手：[/]   {done_str}")
             log.write("")
 
             logger.info(

@@ -9,6 +9,9 @@ from textual.widgets import Input, RichLog, Static
 
 import asyncio
 
+import httpx
+
+from .actor_detail import ActorDetailScreen
 from .server_client import dungeon_combat_init as server_dungeon_combat_init
 from .server_client import dungeon_combat_retreat as server_dungeon_combat_retreat
 from .server_client import dungeon_exit as server_dungeon_exit
@@ -26,10 +29,22 @@ from ..models import (
     EnemyComponent,
 )
 
+
+def _format_http_error(e: Exception) -> str:
+    """从 httpx.HTTPStatusError 响应体提取 detail，否则返回 str(e)。"""
+    if isinstance(e, httpx.HTTPStatusError):
+        try:
+            return str(e.response.json().get("detail", str(e)))
+        except Exception:
+            pass
+    return str(e)
+
+
 DUNGEON_ROOM_HEADER = """\
 [bold cyan]── 地下城 ──────────────────────────────────────────[/]
 
   [bold]/status[/]   查看当前房间状态
+  [bold]/detail[/]   查看角色完整属性与状态效果
   [bold]/combat[/]   初始化战斗
   [bold]/retreat[/]  撤退
   [bold]/exit[/]     退出地下城
@@ -41,6 +56,7 @@ HELP_TEXT = """\
 [bold cyan]── 帮助 ──────────────────────────────────────────[/]
 
 [bold]/status[/]    显示当前房间信息及所有角色属性
+[bold]/detail[/]    查看当前房间所有角色的完整属性与状态效果
 [bold]/combat[/]    初始化当前房间战斗（INITIALIZING → ONGOING）
 [bold]/retreat[/]   在战斗进行中撤退
 [bold]/exit[/]      退出地下城，返回地下城总览
@@ -118,6 +134,9 @@ class DungeonRoomScreen(Screen[None]):
 
         elif cmd == "/status":
             self._fetch_status()
+
+        elif cmd == "/detail":
+            self.app.push_screen(ActorDetailScreen(self._user_name, self._game_name))
 
         elif cmd == "/combat":
             self._do_combat_init()
@@ -229,19 +248,17 @@ class DungeonRoomScreen(Screen[None]):
                             if status_effects_comp is not None
                             else []
                         )
+                        effects_str = (
+                            f"  状态效果:[magenta]{len(status_effects)}[/]"
+                            if status_effects
+                            else ""
+                        )
                         log.write(
                             f"  · {faction} [bold]{entity.name}[/]"
                             f"  HP:[yellow]{hp}/{max_hp}[/]"
                             f"  ATK:[red]{attack}[/]"
-                            f"  DEF:[blue]{defense}[/]"
+                            f"  DEF:[blue]{defense}[/]" + effects_str
                         )
-                        for effect in status_effects:
-                            effect_name = (
-                                effect.get("name", "?")
-                                if isinstance(effect, dict)
-                                else str(effect)
-                            )
-                            log.write(f"    └ 状态：{effect_name}")
                     else:
                         log.write(
                             f"  · {faction} [bold]{entity.name}[/]  [dim](无战斗属性)[/]"
@@ -252,7 +269,8 @@ class DungeonRoomScreen(Screen[None]):
 
             log.write(
                 f"  [bold]战斗状态：[/] {combat.state.name}  "
-                f"[bold]战斗结果：[/] {combat.result.name}"
+                f"[bold]战斗结果：[/] {combat.result.name}  "
+                f"[bold]当前局数：[/] {len(combat.rounds)}"
             )
             log.write("")
 
@@ -285,7 +303,7 @@ class DungeonRoomScreen(Screen[None]):
             logger.info(f"_do_combat_init: 任务已创建 task_id={task_id}")
         except Exception as e:
             logger.error(f"_do_combat_init: 请求失败 error={e}")
-            log.write(f"[bold red]❌ 战斗初始化请求失败: {e}[/]")
+            log.write(f"[bold red]❌ 战斗初始化请求失败: {_format_http_error(e)}[/]")
             inp.disabled = False
             inp.focus()
             return
@@ -340,7 +358,7 @@ class DungeonRoomScreen(Screen[None]):
             logger.info(f"_do_combat_retreat: 任务已创建 task_id={task_id}")
         except Exception as e:
             logger.error(f"_do_combat_retreat: 请求失败 error={e}")
-            log.write(f"[bold red]❌ 撤退请求失败: {e}[/]")
+            log.write(f"[bold red]❌ 撤退请求失败: {_format_http_error(e)}[/]")
             inp.disabled = False
             inp.focus()
             return
@@ -394,6 +412,6 @@ class DungeonRoomScreen(Screen[None]):
             self.app.pop_screen()
         except Exception as e:
             logger.error(f"DungeonRoomScreen._do_exit: 退出失败 error={e}")
-            log.write(f"[bold red]❌ 退出地下城失败: {e}[/]")
+            log.write(f"[bold red]❌ 退出地下城失败: {_format_http_error(e)}[/]")
             inp.disabled = False
             inp.focus()

@@ -173,8 +173,8 @@ class ActorDetailScreen(Screen[None]):
                         for card in cards:
                             if isinstance(card, dict):
                                 cname = card.get("name", "?")
-                                dmg = card.get("damage", 0)
-                                blk = card.get("block", 0)
+                                dmg = card.get("damage_dealt", 0)
+                                blk = card.get("block_gain", 0)
                                 action = card.get("action", "")
                                 log.write(
                                     f"    └ [bold]{cname}[/]"

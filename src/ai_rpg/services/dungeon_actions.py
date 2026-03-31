@@ -104,40 +104,56 @@ def activate_all_card_draws(
 
 
 ###################################################################################################################################################################
-def activate_play_cards(
-    # tcg_game: TCGGame,
-    entity: Entity,
-    targets: List[str],
-) -> Tuple[bool, str]:
-    """
-    为指定角色激活出牌动作（取手牌 cards[0]）。
+# def activate_play_cards(
+#     # tcg_game: TCGGame,
+#     entity: Entity,
+#     targets: List[str],
+# ) -> Tuple[bool, str]:
+#     """
+#     为指定角色激活出牌动作（取手牌 cards[0]）。
 
-    Args:
-        tcg_game: TCG游戏实例
-        entity: 出牌的战斗角色实体（expedition_member 或 enemy）
-        targets: 目标名称列表，外部传入，可为 []
+#     Args:
+#         tcg_game: TCG游戏实例
+#         entity: 出牌的战斗角色实体（expedition_member 或 enemy）
+#         targets: 目标名称列表，外部传入，可为 []
 
-    Returns:
-        tuple[bool, str]: (是否成功, 结果消息)
-    """
+#     Returns:
+#         tuple[bool, str]: (是否成功, 结果消息)
+#     """
 
-    assert entity.has(ExpeditionMemberComponent) or entity.has(
-        EnemyComponent
-    ), f"Entity {entity.name} must be ExpeditionMemberComponent or EnemyComponent"
+#     assert entity.has(ExpeditionMemberComponent) or entity.has(
+#         EnemyComponent
+#     ), f"Entity {entity.name} must be ExpeditionMemberComponent or EnemyComponent"
+#     if not (entity.has(ExpeditionMemberComponent) or entity.has(EnemyComponent)):
+#         error_msg = f"角色 {entity.name} 不是战斗角色（非 ExpeditionMember 或 Enemy）"
+#         logger.error(error_msg)
+#         return False, error_msg
 
-    assert not entity.has(
-        DeathComponent
-    ), f"Entity {entity.name} is dead and cannot play cards"
+#     assert not entity.has(
+#         DeathComponent
+#     ), f"Entity {entity.name} is dead and cannot play cards"
+#     if entity.has(DeathComponent):
+#         error_msg = f"角色 {entity.name} 已死亡，无法出牌"
+#         logger.error(error_msg)
+#         return False, error_msg
 
-    assert entity.has(HandComponent), f"Entity {entity.name} must have HandComponent"
+#     assert entity.has(HandComponent), f"Entity {entity.name} must have HandComponent"
+#     if not entity.has(HandComponent):
+#         error_msg = f"角色 {entity.name} 没有 HandComponent"
+#         logger.error(error_msg)
+#         return False, error_msg
 
-    hand_comp = entity.get(HandComponent)
-    assert len(hand_comp.cards) > 0, f"Entity {entity.name} has no cards in hand"
+#     hand_comp = entity.get(HandComponent)
+#     assert len(hand_comp.cards) > 0, f"Entity {entity.name} has no cards in hand"
+#     if len(hand_comp.cards) == 0:
+#         error_msg = f"角色 {entity.name} 手牌为空，无法出牌"
+#         logger.error(error_msg)
+#         return False, error_msg
 
-    selected_card = hand_comp.cards[0]
-    entity.replace(PlayCardsAction, entity.name, selected_card, targets)
+#     selected_card = hand_comp.cards[0]
+#     entity.replace(PlayCardsAction, entity.name, selected_card, targets)
 
-    return True, f"成功为角色 {entity.name} 激活出牌动作"
+#     return True, f"成功为角色 {entity.name} 激活出牌动作"
 
 
 ###################################################################################################################################################################
@@ -216,48 +232,6 @@ def activate_play_cards_specified(
 
     entity.replace(PlayCardsAction, entity.name, selected_card, targets)
     return True, f"成功为角色 {actor_name} 激活出牌动作（卡牌: {card_name}）"
-
-
-###################################################################################################################################################################
-# def activate_all_play_cards(
-#     tcg_game: TCGGame,
-# ) -> Tuple[bool, str]:
-#     """
-#     为当前场景中所有存活的战斗角色（远征队成员 + 敌方）激活出牌动作。
-
-#     先确保所有角色都有兜底卡牌，再对每个角色调用 activate_play_cards。
-
-#     Args:
-#         tcg_game: TCG游戏实例
-
-#     Returns:
-#         tuple[bool, str]: (是否成功, 结果消息)
-#     """
-
-#     if not tcg_game.current_dungeon.is_ongoing:
-#         error_msg = "激活出牌动作失败: 只能在战斗中使用is_ongoing"
-#         logger.error(error_msg)
-#         return False, error_msg
-
-#     last_round = tcg_game.current_dungeon.latest_round
-#     if last_round is None or last_round.is_round_completed:
-#         error_msg = "激活出牌动作失败: 当前没有未完成的回合可供打牌"
-#         logger.error(error_msg)
-#         return False, error_msg
-
-#     player_entity = tcg_game.get_player_entity()
-#     assert player_entity is not None, "activate_all_play_cards: player_entity is None"
-
-#     all_entities = _get_alive_expedition_members_in_stage(
-#         player_entity, tcg_game
-#     ) + _get_alive_enemies_in_stage(player_entity, tcg_game)
-
-#     for entity in all_entities:
-#         success, message = activate_play_cards(entity, [])
-#         if not success:
-#             return False, message
-
-#     return True, f"成功为 {len(all_entities)} 个战斗角色激活出牌动作"
 
 
 ###################################################################################################################################################################

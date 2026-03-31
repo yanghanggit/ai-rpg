@@ -312,6 +312,24 @@ class HandComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
+class BlockComponent(MutableComponent):
+    """格挡值组件
+
+    存储角色当前回合的格挡值（来自出牌时 Card.block 的累加）。
+    格挡值在伤害结算时优先抵消伤害，回合结束后清零。
+
+    Attributes:
+        name: 角色名称
+        block: 当前格挡值
+    """
+
+    name: str
+    block: int
+
+
+############################################################################################################
+@final
+@register_component_type
 class DeathComponent(Component):
     """死亡标记组件
 

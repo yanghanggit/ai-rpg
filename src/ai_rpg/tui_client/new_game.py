@@ -6,7 +6,7 @@ from loguru import logger
 from textual import work
 from textual.app import ComposeResult
 from textual.screen import Screen
-from textual.widgets import Footer, RichLog
+from textual.widgets import RichLog
 from ..models import Blueprint
 from .server_client import fetch_blueprint_list, login, new_game
 
@@ -39,7 +39,8 @@ class NewGameScreen(Screen[None]):
 
     def compose(self) -> ComposeResult:
         yield RichLog(id="form-log", highlight=True, markup=True, wrap=True)
-        yield Footer()
+
+    # yield Footer()
 
     def on_mount(self) -> None:
         log = self.query_one(RichLog)

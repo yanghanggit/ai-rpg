@@ -199,6 +199,9 @@ def _enter_dungeon_stage(
 
     # 7. 清除手牌组件
     tcg_game.clear_hands()
+
+    # 8. 清除格挡组件
+    tcg_game.clear_blocks()
     return True
 
 
@@ -498,10 +501,13 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     # 7. 清除手牌组件
     tcg_game.clear_hands()
 
-    # 8. 清除状态效果组件
+    # 8. 清除格挡组件
+    tcg_game.clear_blocks()
+
+    # 9. 清除状态效果组件
     tcg_game.clear_status_effects()
 
-    # 9. 将运行时实体状态同步回序列化字段（stage_transition 只更新内存，必须显式 flush）
+    # 10. 将运行时实体状态同步回序列化字段（stage_transition 只更新内存，必须显式 flush）
     tcg_game.flush_entities()
 
 

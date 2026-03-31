@@ -113,8 +113,8 @@ def _generate_combat_arbitration_prompt(
 ## 出牌
 
 - 卡牌：{action.card.name}
-- damage：{action.card.damage}
-- block：{action.card.block}
+- damage_dealt：{action.card.damage_dealt}
+- block_gain：{action.card.block_gain}
 - 行动：{action.card.action}
 
 ## 目标
@@ -123,7 +123,7 @@ def _generate_combat_arbitration_prompt(
 
 ## 计算规则
 
-伤害值 = max(1, damage − 目标 block)
+伤害值 = max(1, damage_dealt − 目标 block_gain)
 目标 HP = max(0, min(当前 HP − 伤害值, 最大 HP))
 若出牌者 HP 已为 0，跳过结算
 

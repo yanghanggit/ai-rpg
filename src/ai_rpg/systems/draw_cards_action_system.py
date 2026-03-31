@@ -39,8 +39,8 @@ class CardEntry(BaseModel):
 
     name: str
     action: str
-    damage: int
-    block: int
+    damage_dealt: int
+    block_gain: int
 
 
 #######################################################################################################################################
@@ -69,7 +69,7 @@ def _generate_draw_prompt(
     """
     actor_stats_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
     cards_example = "\n    ".join(
-        f'{{"name": "卡牌名{i + 1}", "action": "第一人称行动描述", "damage": 0, "block": 0}}'
+        f'{{"name": "卡牌名{i + 1}", "action": "第一人称行动描述", "damage_dealt": 0, "block_gain": 0}}'
         for i in range(num_cards)
     )
 
@@ -87,8 +87,8 @@ def _generate_draw_prompt(
 
 **字段说明**:
 - **action** - 第一人称行动描述（1-2句，生动具体）
-- **damage** - 本张卡牌造成的伤害值（基于攻击力合理推算，整数）
-- **block** - 本张卡牌提供的格挡值（基于防御力合理推算，整数）
+- **damage_dealt** - 本张卡牌造成的伤害值（基于攻击力合理推算，整数）
+- **block_gain** - 本张卡牌提供的格挡增量（基于防御力合理推算，整数）
 
 **设计原则**: {num_cards}张卡牌应有差异化——可以是高伤低防、高防低伤、均衡型等不同侧重
 
@@ -163,11 +163,14 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         # 清除手牌（如果有）以避免旧数据干扰
         for entity in entities:
-            if entity.has(HandComponent):
-                logger.debug(
-                    f"实体 {entity.name} 已有 HandComponent，可能是上回合遗留，先行移除"
-                )
-                entity.remove(HandComponent)
+            assert not entity.has(
+                HandComponent
+            ), f"实体 {entity.name} 已有 HandComponent，可能是上回合遗留，先行移除"
+            # if entity.has(HandComponent):
+            #     logger.debug(
+            #         f"实体 {entity.name} 已有 HandComponent，可能是上回合遗留，先行移除"
+            #     )
+            #     entity.remove(HandComponent)
 
         # 为每个 entity 创建 draw3 聊天客户端
         chat_clients: List[ChatClient] = []
@@ -275,8 +278,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 Card(
                     name=entry.name,
                     action=entry.action,
-                    damage=entry.damage,
-                    block=entry.block,
+                    damage_dealt=entry.damage_dealt,
+                    block_gain=entry.block_gain,
                 )
                 for entry in response.cards
             ]

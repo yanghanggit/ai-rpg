@@ -7,8 +7,10 @@ from ..models import (
     ExpeditionMemberComponent,
     EnemyComponent,
 )
+from loguru import logger
 
 
+########################################################################################################################################################################
 def _get_combat_result_notification(stage_name: str, is_victory: bool) -> str:
     """获取战斗结果通知消息。
 
@@ -21,6 +23,9 @@ def _get_combat_result_notification(stage_name: str, is_victory: bool) -> str:
     """
     result_text = "胜利" if is_victory else "失败"
     return f"# {stage_name}的战斗{result_text}！"
+
+
+########################################################################################################################################################################
 
 
 @final
@@ -42,8 +47,34 @@ class CombatOutcomeSystem(ExecuteProcessor):
     ########################################################################################################################################################################
     @override
     async def execute(self) -> None:
-        # 判定战斗胜负
+
+        # step1: 判定战斗胜负
         self._determine_combat_winner()
+
+        # step2: 若最新回合已完成，执行回合结束清理
+        self._on_round_completed()
+
+    ########################################################################################################################################################################
+    def _on_round_completed(self) -> None:
+        """当最新回合已完成时，执行回合结束清理。
+
+        检测 latest_round.is_round_completed，若回合已结束则：
+        - 清除所有角色的 HandComponent（手牌将在下一回合抽牌时重新生成）
+        """
+
+        if not self._game.current_dungeon.is_ongoing:
+            logger.debug("当前不在战斗阶段，无需执行回合结束清理")
+            return  # 不是本阶段就直接返回
+
+        logger.debug("检查回合完成状态")
+
+        latest_round = self._game.current_dungeon.latest_round
+        if latest_round is None or not latest_round.is_round_completed:
+            return
+
+        logger.debug("回合已完成，执行回合结束清理")
+        self._game.clear_hands()
+        self._game.clear_blocks()
 
     ########################################################################################################################################################################
     def _determine_combat_winner(self) -> None:
@@ -58,21 +89,23 @@ class CombatOutcomeSystem(ExecuteProcessor):
         并向所有友方单位广播相应的胜负消息。
         """
         if not self._game.current_dungeon.is_ongoing:
+            logger.debug("当前不在战斗阶段，无需判定战斗胜负")
             return  # 不是本阶段就直接返回
 
+        logger.debug("判定战斗胜负：检查双方阵营存活情况")
+
         if self._is_ally_side_eliminated():
-            # logger.info("ally side eliminated!!!")
+            logger.info("ally side eliminated!!!")
             self._flush_incomplete_round()
             self._game.current_dungeon.complete_combat(CombatResult.LOSE)
             self._broadcast_result_to_allies(CombatResult.LOSE)
         elif self._is_enemy_side_eliminated():
-            # logger.info("enemy side eliminated!!!")
+            logger.info("enemy side eliminated!!!")
             self._flush_incomplete_round()
             self._game.current_dungeon.complete_combat(CombatResult.WIN)
             self._broadcast_result_to_allies(CombatResult.WIN)
         else:
-            # logger.info("combat continue!!!")
-            pass
+            logger.debug("双方均未全灭，战斗继续进行")
 
     ########################################################################################################################################################################
     def _flush_incomplete_round(self) -> None:

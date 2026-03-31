@@ -12,10 +12,10 @@ from ..models import (
 from .actor_hunter import create_hunter
 from .actor_mystic import create_mystic
 from .global_settings import RPG_CAMPAIGN_SETTING
-from .stage_village import (
-    create_hunter_storage,
-    create_village_hall,
-    create_shi_family_house,
+from .stage_ruins import (
+    create_broken_wall_enclosure,
+    create_stone_platform,
+    # create_shi_family_house,
 )
 from .world_system_player_action_audit import create_player_action_audit
 from .world_system_dungeon_generation import create_dungeon_generation
@@ -96,23 +96,21 @@ def create_hunter_mystic_blueprint(game_name: str) -> Blueprint:
     actor_mystic = create_mystic()
 
     # 创建场景
-    stage_hunter_storage = create_hunter_storage()
-    stage_village_hall = create_village_hall()
-    stage_shi_family_house = create_shi_family_house()
+    stage_broken_wall_enclosure = create_broken_wall_enclosure()
+    stage_stone_platform = create_stone_platform()
 
-    # 设置关系和消息
-    stage_hunter_storage.actors = [actor_hunter, actor_mystic]
+    # 设置关系和消息，先都在这里设置好，后续如果需要调整也方便。
+    stage_stone_platform.actors = [actor_hunter, actor_mystic]
 
     # 创建世界
     return Blueprint(
         name=game_name,
         player_actor=actor_hunter.name,  # 玩家角色为战士
-        player_only_stage=stage_shi_family_house.name,
+        player_only_stage=stage_broken_wall_enclosure.name,
         campaign_setting=RPG_CAMPAIGN_SETTING,
         stages=[
-            stage_hunter_storage,
-            stage_village_hall,
-            stage_shi_family_house,
+            stage_broken_wall_enclosure,
+            stage_stone_platform,
         ],
         world_systems=[create_player_action_audit(), create_dungeon_generation()],
     )

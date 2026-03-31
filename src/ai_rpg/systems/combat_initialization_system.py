@@ -15,10 +15,11 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     AddStatusEffectsAction,
     StageDescriptionComponent,
-    CombatStatsComponent,
+    CharacterStatsComponent,
     ExpeditionMemberComponent,
     EnemyComponent,
     AppearanceComponent,
+    StatusEffectsComponent,
 )
 from ..models.entities import CharacterStats
 
@@ -159,6 +160,16 @@ class CombatInitializationSystem(ExecuteProcessor):
 
         # 为所有参战角色添加 AddStatusEffectsAction，触发初始状态效果生成
         for actor_entity in actor_entities:
+
+            # 如果没有状态效果组件则先添加一个空的，以保证 AddStatusEffectsActionSystem 能正常工作
+            if not actor_entity.has(StatusEffectsComponent):
+                actor_entity.replace(
+                    StatusEffectsComponent,
+                    actor_entity.name,
+                    [],
+                )
+
+            # 添加 AddStatusEffectsAction，触发 AddStatusEffectsActionSystem 评估初始状态效果
             actor_entity.replace(
                 AddStatusEffectsAction,
                 actor_entity.name,
@@ -187,9 +198,9 @@ class CombatInitializationSystem(ExecuteProcessor):
 
             # 获取角色属性组件
             assert actor_entity.has(
-                CombatStatsComponent
+                CharacterStatsComponent
             ), f"角色 {actor_entity.name} 缺少 CombatStatsComponent 组件！"
-            combat_stats_comp = actor_entity.get(CombatStatsComponent)
+            combat_stats_comp = actor_entity.get(CharacterStatsComponent)
 
             # 生成其他角色信息（包含外观和阵营）
             other_actors_info = self._generate_other_actors_info(

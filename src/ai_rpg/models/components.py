@@ -327,7 +327,7 @@ class DeathComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class CombatStatsComponent(MutableComponent):
+class CharacterStatsComponent(MutableComponent):
     """战斗属性组件
 
     存储角色的战斗属性，用于战斗系统计算。
@@ -347,7 +347,7 @@ class CombatStatsComponent(MutableComponent):
 
 @final
 @register_component_type
-class CombatStatusEffectsComponent(MutableComponent):
+class StatusEffectsComponent(MutableComponent):
     """战斗状态效果组件
 
     存储角色的状态效果列表，用于战斗系统计算。
@@ -360,11 +360,11 @@ class CombatStatusEffectsComponent(MutableComponent):
     name: str
     status_effects: List[StatusEffect]
 
-    def find_status_effect(self, effect_name: str) -> StatusEffect | None:
-        for effect in self.status_effects:
-            if effect.name == effect_name:
-                return effect
-        return None
+    # def find_status_effect(self, effect_name: str) -> StatusEffect | None:
+    #     for effect in self.status_effects:
+    #         if effect.name == effect_name:
+    #             return effect
+    #     return None
 
 
 ############################################################################################################

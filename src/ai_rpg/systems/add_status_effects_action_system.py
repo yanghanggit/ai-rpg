@@ -19,7 +19,7 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     ActorComponent,
     AddStatusEffectsAction,
-    CombatStatusEffectsComponent,
+    StatusEffectsComponent,
     StatusEffect,
 )
 from ..utils import extract_json_from_code_block
@@ -128,7 +128,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
     def filter(self, entity: Entity) -> bool:
         return (
             entity.has(AddStatusEffectsAction)
-            and entity.has(CombatStatusEffectsComponent)
+            and entity.has(StatusEffectsComponent)
             and entity.has(ActorComponent)
         )
 
@@ -171,7 +171,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
 
         for entity in actor_entities:
 
-            combat_status_effects = entity.get(CombatStatusEffectsComponent)
+            combat_status_effects = entity.get(StatusEffectsComponent)
             assert (
                 combat_status_effects is not None
             ), f"角色 {entity.name} 缺少 CombatStatusEffectsComponent！"
@@ -219,7 +219,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
         """
 
         assert entity.has(
-            CombatStatusEffectsComponent
+            StatusEffectsComponent
         ), f"Entity {entity.name} must have CombatStatusEffectsComponent"
 
         # 解析 LLM 响应，追加状态效果
@@ -239,7 +239,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
 
             # 添加新效果到现有列表
             if format_response.add_effects:
-                combat_status_effects = entity.get(CombatStatusEffectsComponent)
+                combat_status_effects = entity.get(StatusEffectsComponent)
                 combat_status_effects.status_effects.extend(format_response.add_effects)
                 logger.debug(
                     f"[{entity.name}] 新增 {len(format_response.add_effects)} 个状态效果"

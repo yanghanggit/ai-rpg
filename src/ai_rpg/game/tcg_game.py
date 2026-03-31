@@ -19,6 +19,7 @@ from ..models import (
     HandComponent,
     StageType,
     ActorType,
+    StatusEffectsComponent,
 )
 from .player_session import PlayerSession
 from ..entitas import Matcher
@@ -155,5 +156,13 @@ class TCGGame(RPGGame):
         for entity in actor_entities:
             logger.debug(f"clear hands: {entity.name}")
             entity.remove(HandComponent)
+
+    ################################################################################################################
+    def clear_status_effects(self) -> None:
+        """清除所有角色实体的状态效果组件"""
+        actor_entities = self.get_group(Matcher(StatusEffectsComponent)).entities.copy()
+        for entity in actor_entities:
+            logger.debug(f"clear status effects: {entity.name}")
+            entity.remove(StatusEffectsComponent)
 
     ################################################################################################################

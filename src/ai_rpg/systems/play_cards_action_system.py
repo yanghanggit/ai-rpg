@@ -66,6 +66,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             logger.debug("PlayCardsActionSystem: 战斗未进行中，跳过出牌处理")
             return
 
+        assert len(entities) == 1, "PlayCardsActionSystem: 一次只能处理一个出牌动作实体"
         logger.debug(
             f"PlayCardsActionSystem: 触发出牌处理，找到 {len(entities)} 个出牌实体"
         )
@@ -91,6 +92,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 f" | 目标: {action.targets}"
                 f" | 行动叙事: {action.card.action}"
             )
+
             # 将出牌角色写入本回合 completed_actors
             if action.name not in last_round.completed_actors:
                 last_round.completed_actors.append(action.name)

@@ -27,7 +27,7 @@ from ..models import (
     Card2,
     DeathComponent,
     CharacterStats,
-    CombatStatsComponent,
+    CharacterStatsComponent,
 )
 from ..utils import extract_json_from_code_block
 
@@ -213,7 +213,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
-        combat_stats_comp = entity.get(CombatStatsComponent)
+        combat_stats_comp = entity.get(CharacterStatsComponent)
         assert (
             combat_stats_comp is not None
         ), f"Entity {entity.name} must have CombatStatsComponent"

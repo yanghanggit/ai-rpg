@@ -21,8 +21,7 @@ from ..models import (
     HomeComponent,
     EnemyComponent,
     PlayerComponent,
-    CombatStatsComponent,
-    CombatStatusEffectsComponent,
+    CharacterStatsComponent,
     IdentityComponent,
     Stage,
     StageComponent,
@@ -334,17 +333,17 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
 
             # 必要组件：基础属性，这里用浅拷贝，不能动原有的。
             actor_entity.add(
-                CombatStatsComponent,
+                CharacterStatsComponent,
                 actor_model.name,
                 copy.copy(actor_model.character_stats),
             )
 
             # 必要组件：状态效果列表。
-            actor_entity.add(
-                CombatStatusEffectsComponent,
-                actor_model.name,
-                [],
-            )
+            # actor_entity.add(
+            #     StatusEffectsComponent,
+            #     actor_model.name,
+            #     [],
+            # )
 
             # 必要组件：类型标记
             match actor_model.character_sheet.type:

@@ -20,7 +20,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     PlayCardsAction,
-    CombatStatsComponent,
+    CharacterStatsComponent,
     DeathComponent,
     CombatArbitrationEvent,
 )
@@ -90,9 +90,9 @@ def _generate_combat_arbitration_broadcast(
 #######################################################################################################################################
 def _generate_combat_arbitration_prompt(
     actor_name: str,
-    actor_stats: CombatStatsComponent,
+    actor_stats: CharacterStatsComponent,
     action: PlayCardsAction,
-    target_stats: Dict[str, CombatStatsComponent],
+    target_stats: Dict[str, CharacterStatsComponent],
     current_round_number: int,
 ) -> str:
     target_lines = (
@@ -195,18 +195,18 @@ class ArbitrationActionSystem(ReactiveProcessor):
         assert action.card.name != "", "出牌动作缺少卡牌信息！"
 
         # 解析目标实体的当前 HP
-        target_stats: Dict[str, CombatStatsComponent] = {}
+        target_stats: Dict[str, CharacterStatsComponent] = {}
         for target_name in action.targets:
             target_entity = self._game.get_entity_by_name(target_name)
             if target_entity is not None:
-                target_stats[target_name] = target_entity.get(CombatStatsComponent)
+                target_stats[target_name] = target_entity.get(CharacterStatsComponent)
             else:
                 logger.warning(f"无法找到目标实体: {target_name}")
 
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
         message = _generate_combat_arbitration_prompt(
             actor_entity.name,
-            actor_entity.get(CombatStatsComponent),
+            actor_entity.get(CharacterStatsComponent),
             action,
             target_stats,
             current_round_number,
@@ -222,6 +222,13 @@ class ArbitrationActionSystem(ReactiveProcessor):
 
         self._apply_arbitration_result(stage_entity, chat_client)
         self._process_zero_health_entities()
+
+        # 将出牌角色写入本回合 completed_actors
+        # if actor_entity.name not in last_round.completed_actors:
+        #     last_round.completed_actors.append(action.name)
+        #     logger.debug(
+        #         f"  completed_actors: {last_round.completed_actors} / {last_round.action_order}"
+        #     )
 
     #######################################################################################################################################
     def _apply_arbitration_result(
@@ -266,7 +273,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
                     logger.warning(f"final_hp 中找不到实体: {entity_name}")
                     continue
 
-                combat_stats = entity.get(CombatStatsComponent)
+                combat_stats = entity.get(CharacterStatsComponent)
                 if combat_stats is None:
                     logger.warning(f"角色 {entity_name} 缺少 CombatStatsComponent")
                     continue
@@ -304,11 +311,11 @@ class ArbitrationActionSystem(ReactiveProcessor):
         3. 为实体添加死亡组件(DeathComponent)
         """
         defeated_entities = self._game.get_group(
-            Matcher(all_of=[CombatStatsComponent], none_of=[DeathComponent])
+            Matcher(all_of=[CharacterStatsComponent], none_of=[DeathComponent])
         ).entities.copy()
 
         for entity in defeated_entities:
-            combat_stats_comp = entity.get(CombatStatsComponent)
+            combat_stats_comp = entity.get(CharacterStatsComponent)
             if combat_stats_comp.stats.hp <= 0:
 
                 # logger.warning(f"{combat_stats_comp.name} is dead")

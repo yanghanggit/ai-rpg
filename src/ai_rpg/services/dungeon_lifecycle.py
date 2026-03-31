@@ -20,8 +20,8 @@ from ..models import (
     PlayerOnlyStageComponent,
     HomeComponent,
     DeathComponent,
-    CombatStatsComponent,
-    CombatStatusEffectsComponent,
+    CharacterStatsComponent,
+    StatusEffectsComponent,
 )
 from ..entitas import Matcher, Entity
 
@@ -184,8 +184,8 @@ def _enter_dungeon_stage(
             expedition_member.remove(DeathComponent)
 
             # 恢复生命值1
-            assert expedition_member.has(CombatStatsComponent)
-            combat_stats = expedition_member.get(CombatStatsComponent)
+            assert expedition_member.has(CharacterStatsComponent)
+            combat_stats = expedition_member.get(CharacterStatsComponent)
             combat_stats.stats.hp = 1
             logger.info(
                 f"恢复生命值: {expedition_member.name} 生命值 = {combat_stats.stats.hp}/{combat_stats.stats.max_hp}"
@@ -470,16 +470,16 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
             expedition_entity.remove(DeathComponent)
 
         # 恢复生命值至满血
-        assert expedition_entity.has(CombatStatsComponent)
-        combat_stats = expedition_entity.get(CombatStatsComponent)
+        assert expedition_entity.has(CharacterStatsComponent)
+        combat_stats = expedition_entity.get(CharacterStatsComponent)
         combat_stats.stats.hp = combat_stats.stats.max_hp
         logger.info(
             f"恢复满血: {expedition_entity.name} 生命值 = {combat_stats.stats.hp}/{combat_stats.stats.max_hp}"
         )
 
         # 清空所有状态效果
-        assert expedition_entity.has(CombatStatusEffectsComponent)
-        combat_status_effects = expedition_entity.get(CombatStatusEffectsComponent)
+        assert expedition_entity.has(StatusEffectsComponent)
+        combat_status_effects = expedition_entity.get(StatusEffectsComponent)
         combat_status_effects.status_effects.clear()
         logger.info(f"清空状态效果: {expedition_entity.name}")
 
@@ -498,7 +498,10 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     # 7. 清除手牌组件
     tcg_game.clear_hands()
 
-    # 8. 将运行时实体状态同步回序列化字段（stage_transition 只更新内存，必须显式 flush）
+    # 8. 清除状态效果组件
+    tcg_game.clear_status_effects()
+
+    # 9. 将运行时实体状态同步回序列化字段（stage_transition 只更新内存，必须显式 flush）
     tcg_game.flush_entities()
 
 

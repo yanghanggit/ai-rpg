@@ -28,6 +28,10 @@ from ..models import (
     HomePlayerActionRequest,
     HomePlayerActionResponse,
     HomePlayerActionType,
+    HomeRosterAddRequest,
+    HomeRosterAddResponse,
+    HomeRosterRemoveRequest,
+    HomeRosterRemoveResponse,
     LoginRequest,
     LoginResponse,
     LogoutRequest,
@@ -309,3 +313,37 @@ async def home_player_action(
         )
         response.raise_for_status()
         return HomePlayerActionResponse.model_validate(response.json())
+
+
+async def home_roster_add(
+    user_name: str, game_name: str, member_name: str
+) -> HomeRosterAddResponse:
+    """将成员加入远征队。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            GAME_SERVER_BASE_URL + "/api/home/roster/add/v1/",
+            json=HomeRosterAddRequest(
+                user_name=user_name,
+                game_name=game_name,
+                member_name=member_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return HomeRosterAddResponse.model_validate(response.json())
+
+
+async def home_roster_remove(
+    user_name: str, game_name: str, member_name: str
+) -> HomeRosterRemoveResponse:
+    """将成员从远征队移除。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            GAME_SERVER_BASE_URL + "/api/home/roster/remove/v1/",
+            json=HomeRosterRemoveRequest(
+                user_name=user_name,
+                game_name=game_name,
+                member_name=member_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return HomeRosterRemoveResponse.model_validate(response.json())

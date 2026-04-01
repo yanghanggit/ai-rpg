@@ -265,9 +265,13 @@ def get_expedition_roster(tcg_game: TCGGame) -> List[str]:
         远征队同伴名称列表；玩家实体或组件不存在时返回空列表
     """
     player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None, "玩家实体不存在！"
     if player_entity is None:
         return []
 
+    assert player_entity.has(
+        ExpeditionRosterComponent
+    ), "玩家实体缺少 ExpeditionRosterComponent"
     if not player_entity.has(ExpeditionRosterComponent):
         return []
 

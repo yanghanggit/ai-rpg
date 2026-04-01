@@ -37,10 +37,11 @@ HELP_TEXT = """\
   [bold green]/stages          [/]  查询全部场景与角色分布
   [bold green]/stage_desc      [/]  显示玩家当前所在场景的描述
   [bold green]/entities        [/]  打开实体浏览器（列出全部场景与角色）
-  [bold green]/dungeon_overview [/]  打开地下城总览（列出全部副本预览）
+  [bold green]/dungeon         [/]  打开地下城总览（列出全部副本预览）
   [bold green]/advance         [/]  推进家园流程（执行一轮 home pipeline）
   [bold green]/speak           [/]  与当前场景 NPC 对话
   [bold green]/switch_stage    [/]  切换到其他场景
+  [bold green]/roster          [/]  管理远征队成员（加入/移除）
   [bold green]/logout          [/]  登出并返回主菜单
 
 """
@@ -225,7 +226,7 @@ class HomeScreen(Screen[None]):
                     user_name=self._user_name, game_name=self._game_name
                 )
             )
-        elif cmd == "/dungeon_overview":
+        elif cmd == "/dungeon":
             from .dungeon_overview import DungeonOverviewScreen
 
             self.app.push_screen(
@@ -248,6 +249,12 @@ class HomeScreen(Screen[None]):
 
             self.app.push_screen(
                 SwitchStageScreen(user_name=self._user_name, game_name=self._game_name)
+            )
+        elif cmd == "/roster":
+            from .roster import RosterScreen
+
+            self.app.push_screen(
+                RosterScreen(user_name=self._user_name, game_name=self._game_name)
             )
         else:
             log.write(f"[red]未知命令：{cmd}，输入 /help 查看可用命令。[/]")

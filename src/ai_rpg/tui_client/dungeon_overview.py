@@ -14,6 +14,7 @@ from ..models import Dungeon
 from ..models.task import TaskStatus
 from .server_client import (
     fetch_dungeon_list,
+    fetch_entities_details,
     fetch_tasks_status,
     home_enter_dungeon as server_home_enter_dungeon,
 )
@@ -269,9 +270,39 @@ class DungeonOverviewScreen(Screen[None]):
     async def _load_dungeons(self) -> None:
         log = self.query_one(RichLog)
         logger.info("_load_dungeons: 正在获取地下城列表...")
+
+        # 显示远征队名单
+        from .app import GameClient
+
+        app: GameClient = self.app  # type: ignore[assignment]
+        bp = app.session_blueprint
+        player_actor = bp.player_actor if bp else None
+        if player_actor:
+            try:
+                resp = await fetch_entities_details(
+                    self._user_name, self._game_name, [player_actor]
+                )
+                members: list[str] = []
+                for entity in resp.entities_serialization:
+                    for comp in entity.components:
+                        if comp.name == "ExpeditionRosterComponent":
+                            members = list(comp.data.get("members", []))
+                            break
+                roster = [player_actor] + members
+                log.write(
+                    "[bold yellow]── 当前远征队 ──────────────────────────────────────[/]"
+                )
+                for member in roster:
+                    tag = "  [bold magenta][玩家][/]" if member == player_actor else ""
+                    log.write(f"  · [bold cyan]{member}[/]{tag}")
+                log.write("")
+                logger.info(f"_load_dungeons: 远征队 roster={roster}")
+            except Exception as e:
+                logger.warning(f"_load_dungeons: 读取远征队失败 error={e}")
+
         try:
-            resp = await fetch_dungeon_list()
-            self._dungeons = resp.dungeons
+            resp2 = await fetch_dungeon_list()
+            self._dungeons = resp2.dungeons
             if self._dungeons:
                 self._render_list(log)
             else:

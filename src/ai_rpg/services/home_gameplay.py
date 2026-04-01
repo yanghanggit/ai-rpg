@@ -17,6 +17,8 @@ from .home_actions import (
     activate_switch_stage,
     activate_stage_plan,
     activate_generate_dungeon,
+    add_expedition_member,
+    remove_expedition_member,
 )
 from .dungeon_lifecycle import (
     setup_dungeon,
@@ -32,6 +34,10 @@ from ..models import (
     HomeEnterDungeonResponse,
     HomeGenerateDungeonRequest,
     HomeGenerateDungeonResponse,
+    HomeRosterAddRequest,
+    HomeRosterAddResponse,
+    HomeRosterRemoveRequest,
+    HomeRosterRemoveResponse,
     TaskStatus,
 )
 
@@ -401,6 +407,60 @@ async def home_generate_dungeon(
         status=TaskStatus.RUNNING.value,
         message="dungeon generate pipeline 任务已启动，请通过会话消息查询结果",
     )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@home_gameplay_api_router.post(
+    path="/api/home/roster/add/v1/", response_model=HomeRosterAddResponse
+)
+async def add_expedition_member_endpoint(
+    payload: HomeRosterAddRequest,
+    game_server: CurrentGameServer,
+) -> HomeRosterAddResponse:
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"找不到游戏房间: user={payload.user_name}",
+        )
+    async with current_room._lock:
+        tcg_game = await _validate_player_at_home(payload.user_name, game_server)
+        success, error_detail = add_expedition_member(tcg_game, payload.member_name)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_detail,
+            )
+    return HomeRosterAddResponse(message=f"已将 {payload.member_name} 加入远征队")
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@home_gameplay_api_router.post(
+    path="/api/home/roster/remove/v1/", response_model=HomeRosterRemoveResponse
+)
+async def remove_expedition_member_endpoint(
+    payload: HomeRosterRemoveRequest,
+    game_server: CurrentGameServer,
+) -> HomeRosterRemoveResponse:
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"找不到游戏房间: user={payload.user_name}",
+        )
+    async with current_room._lock:
+        tcg_game = await _validate_player_at_home(payload.user_name, game_server)
+        success, error_detail = remove_expedition_member(tcg_game, payload.member_name)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_detail,
+            )
+    return HomeRosterRemoveResponse(message=f"已将 {payload.member_name} 从远征队移除")
 
 
 ###################################################################################################################################################################

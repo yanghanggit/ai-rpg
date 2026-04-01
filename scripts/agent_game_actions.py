@@ -40,7 +40,7 @@ from ai_rpg.game.config import (
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import TCGGame
 from ai_rpg.image_client.client import ImageClient
-from ai_rpg.models import Blueprint, CombatState, Dungeon, World
+from ai_rpg.models import Blueprint, CombatState, Dungeon, World, EnemyComponent
 from ai_rpg.game import archive_world
 from ai_rpg.services.home_actions import (
     activate_stage_plan,
@@ -54,6 +54,7 @@ from ai_rpg.services.home_actions import (
 from ai_rpg.services.dungeon_actions import (
     activate_all_card_draws,
     activate_play_cards_specified,
+    activate_enemy_play_trigger,
     activate_expedition_retreat,
 )
 from ai_rpg.services.dungeon_lifecycle import (
@@ -443,9 +444,13 @@ async def _play_cards_specified_game(
         logger.error("play-cards-specified 当前没有未完成的回合可供打牌")
         return terminal_game
 
-    success, message = activate_play_cards_specified(
-        terminal_game, actor, card, list(targets)
-    )
+    actor_entity = terminal_game.get_actor_entity(actor)
+    if actor_entity is not None and actor_entity.has(EnemyComponent):
+        success, message = activate_enemy_play_trigger(terminal_game, actor)
+    else:
+        success, message = activate_play_cards_specified(
+            terminal_game, actor, card, list(targets)
+        )
     if not success:
         logger.error(f"play-cards-specified 失败: {message}")
         return terminal_game

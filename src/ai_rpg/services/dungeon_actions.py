@@ -105,6 +105,51 @@ def activate_all_card_draws(
 
 
 ###################################################################################################################################################################
+def _validate_play_turn(
+    tcg_game: TCGGame,
+    actor_name: str,
+) -> Tuple["Entity | None", str]:
+    """校验当前是否轮到指定角色出牌，并返回其实体。
+
+    Returns:
+        (entity, "") 校验通过；(None, error_msg) 校验失败。
+    """
+    latest_round = tcg_game.current_dungeon.latest_round
+    if latest_round is None:
+        return None, "当前没有进行中的回合"
+
+    if actor_name not in latest_round.action_order:
+        return (
+            None,
+            f"角色 {actor_name} 不在本回合行动顺序中: {latest_round.action_order}",
+        )
+
+    completed_count = len(latest_round.completed_actors)
+    next_actor = (
+        latest_round.action_order[completed_count]
+        if completed_count < len(latest_round.action_order)
+        else None
+    )
+    if next_actor != actor_name:
+        return None, f"现在不是 {actor_name} 的回合，当前应由 {next_actor} 出牌"
+
+    entity = tcg_game.get_actor_entity(actor_name)
+    if entity is None:
+        return None, f"找不到角色 {actor_name}"
+
+    if not (entity.has(ExpeditionMemberComponent) or entity.has(EnemyComponent)):
+        return None, f"角色 {actor_name} 不是战斗角色（非 ExpeditionMember 或 Enemy）"
+
+    if entity.has(DeathComponent):
+        return None, f"角色 {actor_name} 已死亡，无法出牌"
+
+    if not entity.has(HandComponent):
+        return None, f"角色 {actor_name} 没有 HandComponent"
+
+    return entity, ""
+
+
+###################################################################################################################################################################
 def activate_play_cards_specified(
     tcg_game: TCGGame,
     actor_name: str,
@@ -112,7 +157,8 @@ def activate_play_cards_specified(
     targets: List[str],
 ) -> Tuple[bool, str]:
     """
-    让指定角色打出指定名称的手牌。
+    让指定远征队员打出指定名称的手牌。仅适用于 ExpeditionMemberComponent 角色。
+    敌人出牌请使用 activate_enemy_play_trigger。
 
     Args:
         tcg_game: TCG游戏实例
@@ -123,79 +169,64 @@ def activate_play_cards_specified(
     Returns:
         tuple[bool, str]: (是否成功, 结果消息)
     """
-    # 首位规则：必须在本回合 action_order 内，且当前轮到自己出牌
-    latest_round = tcg_game.current_dungeon.latest_round
-    if latest_round is None:
-        error_msg = "activate_play_cards_specified: 当前没有进行中的回合"
-        logger.error(error_msg)
-        return False, error_msg
-
-    if actor_name not in latest_round.action_order:
-        error_msg = (
-            f"角色 {actor_name} 不在本回合行动顺序中: {latest_round.action_order}"
-        )
-        logger.error(error_msg)
-        return False, error_msg
-
-    completed_count = len(latest_round.completed_actors)
-    next_actor = (
-        latest_round.action_order[completed_count]
-        if completed_count < len(latest_round.action_order)
-        else None
-    )
-    if next_actor != actor_name:
-        error_msg = f"现在不是 {actor_name} 的回合，当前应由 {next_actor} 出牌"
-        logger.error(error_msg)
-        return False, error_msg
-
-    entity = tcg_game.get_actor_entity(actor_name)
+    entity, error_msg = _validate_play_turn(tcg_game, actor_name)
     if entity is None:
-        error_msg = f"activate_play_cards_specified: 找不到角色 {actor_name}"
-        logger.error(error_msg)
+        logger.error(f"activate_play_cards_specified: {error_msg}")
         return False, error_msg
 
-    if not (entity.has(ExpeditionMemberComponent) or entity.has(EnemyComponent)):
-        error_msg = f"角色 {actor_name} 不是战斗角色（非 ExpeditionMember 或 Enemy）"
-        logger.error(error_msg)
-        return False, error_msg
+    if not entity.has(ExpeditionMemberComponent):
+        msg = f"角色 {actor_name} 不是远征队员，敌人出牌请使用 activate_enemy_play_trigger"
+        logger.error(msg)
+        return False, msg
 
-    if entity.has(DeathComponent):
-        error_msg = f"角色 {actor_name} 已死亡，无法出牌"
-        logger.error(error_msg)
-        return False, error_msg
+    hand_comp = entity.get(HandComponent)
+    selected_card = next((c for c in hand_comp.cards if c.name == card_name), None)
+    if selected_card is None:
+        msg = f"角色 {actor_name} 手牌中找不到卡牌 '{card_name}'，当前手牌: {[c.name for c in hand_comp.cards]}"
+        logger.error(msg)
+        return False, msg
 
-    if not entity.has(HandComponent):
-        error_msg = f"角色 {actor_name} 没有 HandComponent"
-        logger.error(error_msg)
-        return False, error_msg
-
-    if entity.has(ExpeditionMemberComponent):
-
-        hand_comp = entity.get(HandComponent)
-        selected_card = next((c for c in hand_comp.cards if c.name == card_name), None)
-        if selected_card is None:
-            error_msg = f"角色 {actor_name} 手牌中找不到卡牌 '{card_name}'，当前手牌: {[c.name for c in hand_comp.cards]}"
-            logger.error(error_msg)
-            return False, error_msg
-
-        logger.debug(
-            f"为角色 {actor_name} 激活出牌动作，卡牌: {selected_card.name} 目标: {targets}"
-        )
-        entity.replace(PlayCardsAction, entity.name, selected_card, targets)
-
-    else:
-
-        # 敌人就故意给一个空的
-        assert entity.has(
-            EnemyComponent
-        ), f"角色 {actor_name} 既不是远征队成员也不是敌人，无法出牌"
-
-        logger.debug(
-            f"为敌人 {actor_name} 激活出牌动作，（敌人默认空卡），会由系统自动选择卡牌和目标"
-        )
-        entity.replace(PlayCardsAction, entity.name, Card(name="", action=""), [])
-
+    logger.debug(
+        f"为角色 {actor_name} 激活出牌动作，卡牌: {selected_card.name} 目标: {targets}"
+    )
+    entity.replace(PlayCardsAction, entity.name, selected_card, targets)
     return True, f"成功为角色 {actor_name} 激活出牌动作（卡牌: {card_name}）"
+
+
+###################################################################################################################################################################
+def activate_enemy_play_trigger(
+    tcg_game: TCGGame,
+    actor_name: str,
+) -> Tuple[bool, str]:
+    """
+    触发指定敌人的出牌决策流程。仅适用于 EnemyComponent 角色。
+    玩家出牌请使用 activate_play_cards_specified。
+
+    装入空卡占位触发 PlayCardsAction，EnemyPlayDecisionSystem 在 pipeline 中
+    自动选牌并将其替换为真实卡牌与目标。
+
+    Args:
+        tcg_game: TCG游戏实例
+        actor_name: 敌人角色的全名
+
+    Returns:
+        tuple[bool, str]: (是否成功, 结果消息)
+    """
+    entity, error_msg = _validate_play_turn(tcg_game, actor_name)
+    if entity is None:
+        logger.error(f"activate_enemy_play_trigger: {error_msg}")
+        return False, error_msg
+
+    if not entity.has(EnemyComponent):
+        msg = f"角色 {actor_name} 不是敌人，远征队员出牌请使用 activate_play_cards_specified"
+        logger.error(msg)
+        return False, msg
+
+    logger.debug(
+        f"为敌人 {actor_name} 触发出牌决策，由 EnemyPlayDecisionSystem 自动选牌"
+    )
+    entity.replace(PlayCardsAction, entity.name, Card(name="", action=""), [])
+    return True, f"成功为敌人 {actor_name} 触发出牌决策"
 
 
 ###################################################################################################################################################################

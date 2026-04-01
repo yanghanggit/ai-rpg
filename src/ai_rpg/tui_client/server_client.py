@@ -10,6 +10,8 @@ from ..models import (
     DungeonCombatDrawCardsResponse,
     DungeonCombatInitRequest,
     DungeonCombatInitResponse,
+    DungeonCombatPlayCardsRequest,
+    DungeonCombatPlayCardsResponse,
     DungeonCombatResponse,
     DungeonCombatRetreatRequest,
     DungeonCombatRetreatResponse,
@@ -276,6 +278,29 @@ async def dungeon_combat_draw_cards(
         )
         response.raise_for_status()
         return DungeonCombatDrawCardsResponse.model_validate(response.json())
+
+
+async def dungeon_combat_play_cards(
+    user_name: str,
+    game_name: str,
+    actor_name: str,
+    card_name: str,
+    targets: list[str],
+) -> DungeonCombatPlayCardsResponse:
+    """让指定角色打出指定卡牌，返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            GAME_SERVER_BASE_URL + "/api/dungeon/combat/play_cards/v1/",
+            json=DungeonCombatPlayCardsRequest(
+                user_name=user_name,
+                game_name=game_name,
+                actor_name=actor_name,
+                card_name=card_name,
+                targets=targets,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return DungeonCombatPlayCardsResponse.model_validate(response.json())
 
 
 async def home_generate_dungeon(

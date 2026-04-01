@@ -100,7 +100,7 @@ class ActorDetailScreen(Screen[None]):
                         faction = "[bold red]敌方[/]"
                         break
 
-                player_tag = "  [bold yellow]\[玩家][/]" if is_player else ""
+                player_tag = r"  [bold yellow]\[玩家][/]" if is_player else ""
                 log.write(
                     f"[bold cyan]── {faction} [bold]{entity.name}[/]{player_tag} ──[/]"
                 )

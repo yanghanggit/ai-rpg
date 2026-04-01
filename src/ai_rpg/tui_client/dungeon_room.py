@@ -13,6 +13,7 @@ import httpx
 
 from .actor_detail import ActorDetailScreen
 from .round_detail import RoundDetailScreen
+from .play_cards_screen import PlayCardsScreen
 from .server_client import dungeon_combat_draw_cards as server_dungeon_combat_draw_cards
 from .server_client import dungeon_combat_init as server_dungeon_combat_init
 from .server_client import dungeon_combat_retreat as server_dungeon_combat_retreat
@@ -50,6 +51,7 @@ DUNGEON_ROOM_HEADER = """\
   [bold]/round[/]    查看战斗回合详情
   [bold]/combat[/]   初始化战斗
   [bold]/draw[/]     全员抽牌
+  [bold]/play[/]     进入出牌界面（完成当前回合出牌）
   [bold]/retreat[/]  撤退
   [bold]/exit[/]     退出地下城
   [bold]/clear[/]    清除日志
@@ -64,6 +66,7 @@ HELP_TEXT = """\
 [bold]/round[/]     查看战斗所有回合详情（行动顺序、出手记录、叙事）
 [bold]/combat[/]    初始化当前房间战斗（INITIALIZING → ONGOING）
 [bold]/draw[/]      为所有战斗角色（友方+敌方）激活抽牌动作
+[bold]/play[/]      进入出牌界面，按行动顺序逐一完成本回合出牌
 [bold]/retreat[/]   在战斗进行中撤退
 [bold]/exit[/]      退出地下城，返回地下城总览
 [bold]/clear[/]     清除日志，仅保留命令列表
@@ -152,6 +155,9 @@ class DungeonRoomScreen(Screen[None]):
 
         elif cmd == "/draw":
             self._do_draw_cards()
+
+        elif cmd == "/play":
+            self.app.push_screen(PlayCardsScreen(self._user_name, self._game_name))
 
         elif cmd == "/retreat":
             self._do_combat_retreat()

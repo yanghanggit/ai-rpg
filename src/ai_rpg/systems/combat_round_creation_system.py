@@ -30,6 +30,14 @@ class ActionOrderStrategy(StrEnum):
 
     RANDOM = "random"  # 随机打乱（默认）
     CREATION_ORDER = "creation_order"  # 按实体创建顺序（creation_order 小的靠前）
+    # ⚠️ 测试用：每人出牌 2 次（后续移除）
+    # 已知问题：Round.is_round_completed 用 set() 比较，第一轮结束后即判定完成；
+    # play_cards_action_system 有 `if name not in completed_actors` 去重保护，第二次出牌不被记录；
+    # dungeon_actions.activate_play_cards_specified 的 next_actor 查找也用 set 语义跳过已完成者。
+    # 结论：当前 Round/系统 模型 **无法直接支持** 重复名称的 action_order，需配套修改才能生效。
+    DOUBLE_ACTION = (
+        "double_action"  # 【测试】每人行动 2 次（action_order 中每个名称重复）
+    )
 
 
 @final
@@ -142,12 +150,19 @@ class CombatRoundCreationSystem(ExecuteProcessor):
             sorted_actors = self._sort_actors_random(actors_in_stage)
         elif self._strategy == ActionOrderStrategy.CREATION_ORDER:
             sorted_actors = self._sort_actors_by_creation_order(actors_in_stage)
+        elif self._strategy == ActionOrderStrategy.DOUBLE_ACTION:
+            sorted_actors = self._sort_actors_random(actors_in_stage)
         else:
             logger.warning(f"未知的行动顺序策略: {self._strategy}，使用随机策略")
             sorted_actors = self._sort_actors_random(actors_in_stage)
 
-        # 设置回合的环境描写
-        action_order = [entity.name for entity in sorted_actors]
+        # 设置回合的行动顺序
+        if self._strategy == ActionOrderStrategy.DOUBLE_ACTION:
+            # ⚠️ 测试用：每人出现 2 次，暴露当前系统对重复名称的处理缺陷
+            single_pass = [entity.name for entity in sorted_actors]
+            action_order = single_pass + single_pass
+        else:
+            action_order = [entity.name for entity in sorted_actors]
         round = Round(
             action_order=action_order,
         )

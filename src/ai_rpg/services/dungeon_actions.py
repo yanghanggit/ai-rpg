@@ -137,13 +137,11 @@ def activate_play_cards_specified(
         logger.error(error_msg)
         return False, error_msg
 
-    next_actor = next(
-        (
-            a
-            for a in latest_round.action_order
-            if a not in latest_round.completed_actors
-        ),
-        None,
+    completed_count = len(latest_round.completed_actors)
+    next_actor = (
+        latest_round.action_order[completed_count]
+        if completed_count < len(latest_round.action_order)
+        else None
     )
     if next_actor != actor_name:
         error_msg = f"现在不是 {actor_name} 的回合，当前应由 {next_actor} 出牌"

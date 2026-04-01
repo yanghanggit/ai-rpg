@@ -115,7 +115,10 @@ def create_combat_pipeline(
     from ..systems.stage_description_system import (
         StageDescriptionSystem,
     )
-    from ..systems.combat_round_creation_system import CombatRoundCreationSystem
+    from ..systems.combat_round_creation_system import (
+        CombatRoundCreationSystem,
+        ActionOrderStrategy,
+    )
     from ..systems.enemy_play_decision_system import EnemyPlayDecisionSystem
 
     tcg_game = cast(TCGGame, game)
@@ -133,8 +136,10 @@ def create_combat_pipeline(
     # 战斗初始化系统（创建第一回合）
     processors.add(CombatInitializationSystem(tcg_game))
 
-    # 战斗回合创建系统（创建后续回合）
-    processors.add(CombatRoundCreationSystem(tcg_game))
+    # 战斗回合创建系统（创建后续回合）⚠️ 测试用DOUBLE_ACTION策略，后续改回默认
+    processors.add(
+        CombatRoundCreationSystem(tcg_game, strategy=ActionOrderStrategy.DOUBLE_ACTION)
+    )
 
     # 动作处理相关的系统：敌人决策-抓牌-出牌-撤退-裁决-清理
     processors.add(DrawCardsActionSystem(tcg_game, 3))

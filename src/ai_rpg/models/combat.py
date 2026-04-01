@@ -87,8 +87,8 @@ class Round(BaseModel):
 
     @property
     def is_round_completed(self) -> bool:
-        """当 completed_actors 包含所有 action_order 中的角色时，回合视为完成。"""
-        return len(self.action_order) > 0 and set(self.completed_actors) == set(
+        """当 completed_actors 的长度等于 action_order 时，回合视为完成。"""
+        return len(self.action_order) > 0 and len(self.completed_actors) >= len(
             self.action_order
         )
 

@@ -120,10 +120,8 @@ class CombatOutcomeSystem(ExecuteProcessor):
         if latest_round is None or latest_round.is_round_completed:
             return
 
-        remaining: List[str] = [
-            actor
-            for actor in latest_round.action_order
-            if actor not in latest_round.completed_actors
+        remaining: List[str] = latest_round.action_order[
+            len(latest_round.completed_actors) :
         ]
         for actor in remaining:
             latest_round.completed_actors.append(actor)

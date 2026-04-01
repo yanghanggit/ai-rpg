@@ -47,6 +47,9 @@ from ai_rpg.services.home_actions import (
     activate_speak_action,
     activate_switch_stage,
     activate_generate_dungeon,
+    add_expedition_member,
+    remove_expedition_member,
+    get_expedition_roster,
 )
 from ai_rpg.services.dungeon_actions import (
     activate_all_card_draws,
@@ -648,3 +651,95 @@ async def _generate_dungeon_game(
         save_dir=save_dir,
     )
     return terminal_game
+
+
+###############################################################################
+async def _add_expedition_member_game(
+    world: World,
+    player_session: PlayerSession,
+    member_name: str,
+    save_dir: Path,
+) -> TCGGame:
+    """从存档复位，将指定盟友加入远征队名单，并归档新状态。
+
+    前置条件：玩家必须处于家园模式（is_player_in_home_stage）。
+
+    Args:
+        world: 由 restore_world() 反序列化的世界数据。
+        player_session: 由 restore_world() 反序列化的玩家会话。
+        member_name: 要加入名单的盟友角色名称。
+        save_dir: 新存档写入目录。
+
+    Returns:
+        执行完毕后的 TCGGame 实例；操作失败时提前返回未归档实例。
+    """
+    terminal_game = await _restore_game(world, player_session)
+
+    success, error_detail = add_expedition_member(terminal_game, member_name)
+    if not success:
+        logger.error(f"添加远征队成员失败: {error_detail}")
+        return terminal_game
+
+    terminal_game.flush_entities()
+    archive_world(
+        terminal_game._world,
+        terminal_game._player_session,
+        save_dir=save_dir,
+    )
+    logger.info(f"已将 {member_name} 加入远征队名单，存档: {save_dir}")
+    return terminal_game
+
+
+###############################################################################
+async def _remove_expedition_member_game(
+    world: World,
+    player_session: PlayerSession,
+    member_name: str,
+    save_dir: Path,
+) -> TCGGame:
+    """从存档复位，将指定盟友从远征队名单移除，并归档新状态。
+
+    前置条件：玩家必须处于家园模式（is_player_in_home_stage）。
+
+    Args:
+        world: 由 restore_world() 反序列化的世界数据。
+        player_session: 由 restore_world() 反序列化的玩家会话。
+        member_name: 要移除的盟友角色名称。
+        save_dir: 新存档写入目录。
+
+    Returns:
+        执行完毕后的 TCGGame 实例；操作失败时提前返回未归档实例。
+    """
+    terminal_game = await _restore_game(world, player_session)
+
+    success, error_detail = remove_expedition_member(terminal_game, member_name)
+    if not success:
+        logger.error(f"移除远征队成员失败: {error_detail}")
+        return terminal_game
+
+    terminal_game.flush_entities()
+    archive_world(
+        terminal_game._world,
+        terminal_game._player_session,
+        save_dir=save_dir,
+    )
+    logger.info(f"已将 {member_name} 从远征队名单移除，存档: {save_dir}")
+    return terminal_game
+
+
+###############################################################################
+async def _get_expedition_roster_game(
+    world: World,
+    player_session: PlayerSession,
+) -> list[str]:
+    """从存档复位，返回当前远征队名单（只读，不写新存档）。
+
+    Args:
+        world: 由 restore_world() 反序列化的世界数据。
+        player_session: 由 restore_world() 反序列化的玩家会话。
+
+    Returns:
+        远征队同伴名称列表（不含玩家自身）。
+    """
+    terminal_game = await _restore_game(world, player_session)
+    return get_expedition_roster(terminal_game)

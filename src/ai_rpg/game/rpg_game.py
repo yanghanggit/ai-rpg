@@ -35,6 +35,7 @@ from ..models import (
     PlayerOnlyStageComponent,
     PlayerActionAuditComponent,
     DungeonGenerationComponent,
+    ExpeditionRosterComponent,
 )
 from .player_session import PlayerSession
 
@@ -151,19 +152,23 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         ## 第2步，创建actor
         self._create_actor_entities(self._world.blueprint.actors)
 
-        ## 第3步，分配玩家控制的actor
+        ## 第3步，创建stage
+        self._create_stage_entities(self._world.blueprint.stages)
+
+        ## 第4步，分配玩家控制的actor
         assert self._player_session.name != "", "玩家名字不能为空"
         assert self._player_session.actor != "", "玩家角色不能为空"
-        actor_entity = self.get_actor_entity(self._player_session.actor)
-        assert actor_entity is not None
-        assert not actor_entity.has(PlayerComponent)
-        actor_entity.replace(PlayerComponent, self._player_session.name)
+        player_actor_entity = self.get_actor_entity(self._player_session.actor)
+        assert (
+            player_actor_entity is not None
+        ), f"找不到玩家角色实体: {self._player_session.actor}"
+
+        # 玩家角色实体必须没有 PlayerComponent，确保之前没有被分配过玩家控制
+        assert not player_actor_entity.has(PlayerComponent)
+        player_actor_entity.replace(PlayerComponent, self._player_session.name)
         logger.info(
             f"玩家: {self._player_session.name} 选择控制: {self._player_session.actor}"
         )
-
-        ## 第4步，创建stage
-        self._create_stage_entities(self._world.blueprint.stages)
 
         ## 第5步，标记仅玩家可见的场景
         assert (
@@ -174,10 +179,25 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         )
         assert player_only_stage_entity is not None, "player_only_stage_entity is None"
         assert not player_only_stage_entity.has(PlayerOnlyStageComponent)
+
+        # 添加 PlayerOnlyStageComponent 组件，并设置 name 属性为场景实体的名字，方便后续识别和访问控制
         player_only_stage_entity.replace(
             PlayerOnlyStageComponent, player_only_stage_entity.name
         )
         logger.debug(f"场景: {player_only_stage_entity.name} 已标记为仅玩家可见")
+
+        ## 第6步，添加 ExpeditionRosterComponent 到玩家角色实体
+        assert not player_actor_entity.has(
+            ExpeditionRosterComponent
+        ), "玩家角色实体不应该已经有 ExpeditionRosterComponent"
+
+        # 添加 ExpeditionRosterComponent 组件，并设置 name 属性为角色实体的名字，方便后续识别和管理玩家的远征队伍
+        player_actor_entity.replace(
+            ExpeditionRosterComponent, player_actor_entity.name, []
+        )
+        logger.debug(
+            f"为玩家角色实体 {player_actor_entity.name} 添加 ExpeditionRosterComponent"
+        )
 
         return self
 
@@ -337,13 +357,6 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 actor_model.name,
                 copy.copy(actor_model.character_stats),
             )
-
-            # 必要组件：状态效果列表。
-            # actor_entity.add(
-            #     StatusEffectsComponent,
-            #     actor_model.name,
-            #     [],
-            # )
 
             # 必要组件：类型标记
             match actor_model.character_sheet.type:

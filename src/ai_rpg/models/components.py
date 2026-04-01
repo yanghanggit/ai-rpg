@@ -265,6 +265,29 @@ class ExpeditionMemberComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
+class ExpeditionRosterComponent(Component):
+    """远征队名单组件
+
+    挂载在玩家实体上，记录玩家为本次地下城远征预先选定的同伴名单。
+    _select_expedition_members 依据此名单决定哪些盟友获得 ExpeditionMemberComponent。
+
+    规则：
+        - 玩家自身无条件参与远征，name 字段存玩家名称
+        - members 中的名字为其他同伴（非玩家）的角色名称
+        - members 为空或组件不存在时，玩家独自冒险
+
+    Attributes:
+        name: 玩家角色名称
+        members: 其他远征队员的名称列表（不含玩家自身）
+    """
+
+    name: str
+    members: List[str]
+
+
+############################################################################################################
+@final
+@register_component_type
 class EnemyComponent(Component):
     """敌方阵营标记组件
 

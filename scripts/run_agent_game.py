@@ -180,6 +180,9 @@ from agent_game_actions import (
     _next_dungeon_game,
     _retreat_game,
     _generate_dungeon_game,
+    _add_expedition_member_game,
+    _remove_expedition_member_game,
+    _get_expedition_roster_game,
 )
 
 ###########################################################################################################################################
@@ -612,6 +615,127 @@ def generate_dungeon_cmd(snapshot: str) -> None:
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(_generate_dungeon_game(world, player_session, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("roster-add")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+@click.option(
+    "--member",
+    required=True,
+    help="要加入远征队的盟友角色名称",
+)
+def roster_add(snapshot: str, member: str) -> None:
+    """从存档复位，将指定盟友加入远征队名单，并写入新存档。
+
+    适用于【家园模式】。--member 必须为已存在的盟友（AllyComponent）角色名称且不能为玩家自身。
+    添加后可继续使用 enter-dungeon 进入地下城。
+    """
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(_add_expedition_member_game(world, player_session, member, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("roster-remove")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+@click.option(
+    "--member",
+    required=True,
+    help="要移除的盟友角色名称",
+)
+def roster_remove(snapshot: str, member: str) -> None:
+    """从存档复位，将指定盟友从远征队名单移除，并写入新存档。
+
+    适用于【家园模式】。--member 必须已在远征队名单中。
+    """
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(
+        _remove_expedition_member_game(world, player_session, member, _save_dir)
+    )
+
+
+###############################################################################################################################################
+@main.command("roster")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+def roster(snapshot: str) -> None:
+    """从存档复位，打印当前远征队名单（只读，不写新存档）。
+
+    输出格式：每行一个同伴名称。名单为空时输出"（名单为空，玩家将独自冒险）"。
+    适用于任意模式。
+    """
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+
+    members = asyncio.run(_get_expedition_roster_game(world, player_session))
+    if members:
+        click.echo("\n远征队当前名单：")
+        for m in members:
+            click.echo(f"  - {m}")
+    else:
+        click.echo("（名单为空，玩家将独自冒险）")
 
 
 ###############################################################################################################################################

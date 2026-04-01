@@ -5,8 +5,7 @@
 协调关卡索引管理、场景传送、战斗初始化和状态清理等核心流程。
 """
 
-import random
-from typing import List, Set
+from typing import Set
 from loguru import logger
 from ..game.config import DUNGEONS_DIR
 from ..game.tcg_game import TCGGame
@@ -14,8 +13,8 @@ from ..models import (
     Dungeon,
     DungeonComponent,
     Combat,
-    AllyComponent,
     ExpeditionMemberComponent,
+    ExpeditionRosterComponent,
     PlayerComponent,
     PlayerOnlyStageComponent,
     HomeComponent,
@@ -69,43 +68,45 @@ def _generate_return_home_message(
 def _select_expedition_members(tcg_game: TCGGame, dungeon: Dungeon) -> Set[Entity]:
     """选择参与地下城远征的队伍成员
 
-    从所有盟友中选择远征队成员，规则：
-    1. 必须包含玩家角色（PlayerComponent）
-    2. 从剩余盟友中随机选择1个同伴
-    3. 远征队最少1人（玩家），最多2人（玩家+1个同伴）
+    依据玩家实体上的 ExpeditionRosterComponent 决定队伍构成，规则：
+    1. 玩家角色（PlayerComponent）无条件参与
+    2. 若玩家实体有 ExpeditionRosterComponent 且 members 非空，则按名单查找对应盟友加入
+    3. 名单为空或组件不存在时，玩家独自冒险
 
     Args:
         tcg_game: TCG游戏实例
+        dungeon: 地下城实例
 
     Returns:
-        远征队成员实体集合，包含玩家和最多1个随机选择的盟友
+        远征队成员实体集合
     """
-    # 获取所有盟友
-    all_allies = tcg_game.get_group(Matcher(all_of=[AllyComponent])).entities.copy()
 
-    # 1. 找到玩家实体（必须）并分离其他盟友
-    player_entity = None
-    other_allies: List[Entity] = []
+    # 1. 获取玩家实体并验证组件
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None, "玩家实体不存在！"
+    assert player_entity.has(
+        ExpeditionRosterComponent
+    ), "玩家实体缺少 ExpeditionRosterComponent 组件！"
+    expedition_roster_comp = player_entity.get(ExpeditionRosterComponent)
+    assert (
+        expedition_roster_comp is not None
+    ), "玩家实体缺少 ExpeditionRosterComponent 组件！"
 
-    for ally in all_allies:
-        if ally.has(PlayerComponent):
-            player_entity = ally
-        else:
-            other_allies.append(ally)
-
-    assert player_entity is not None, "必须存在一个玩家实体"
-
-    # 2. 从其他盟友中随机选择1个
-    expedition_members = {player_entity}
+    # 2. 根据名单选择远征队成员，默认仅玩家自己参与
+    expedition_members: Set[Entity] = {player_entity}
     logger.info(f"玩家 {player_entity.name} 将参与远征")
+    for member_name in expedition_roster_comp.members:
+        member_entity = tcg_game.get_actor_entity(member_name)
+        assert member_entity is not None, f"远征队名单中的成员 {member_name!r} 不存在！"
+        expedition_members.add(member_entity)
+        logger.info(f"按名单将 {member_name} 加入远征队")
 
-    if len(other_allies) > 0:
-        selected_ally = random.choice(other_allies)
-        expedition_members.add(selected_ally)
-        logger.info(f"随机选择 {selected_ally.name} 加入远征队")
-    else:
-        logger.warning("没有其他盟友可以加入远征队，玩家将独自冒险")
+    # 打印最终选定的远征队成员名单
+    logger.info(
+        f"最终远征队成员 ({len(expedition_members)}): {[e.name for e in expedition_members]}"
+    )
 
+    # 3. 为所有选中成员挂载 ExpeditionMemberComponent
     for expedition_ally in expedition_members:
         expedition_ally.replace(
             ExpeditionMemberComponent,

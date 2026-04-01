@@ -11,10 +11,12 @@ from ..models import (
     TransStageAction,
     HomeComponent,
     AllyComponent,
+    PlayerComponent,
+    ExpeditionRosterComponent,
     PlanAction,
     GenerateDungeonAction,
 )
-from typing import Tuple
+from typing import List, Tuple
 
 
 ###################################################################################################################################################################
@@ -157,6 +159,119 @@ def activate_stage_plan(tcg_game: TCGGame) -> Tuple[bool, str]:
         actor_entity.replace(PlanAction, actor_entity.name)
 
     return True, f"成功为 {len(actors_in_stage)} 个角色添加 PlanAction"
+
+
+###################################################################################################################################################################
+def add_expedition_member(tcg_game: TCGGame, member_name: str) -> Tuple[bool, str]:
+    """
+    将盟友加入远征队名单。
+
+    Args:
+        tcg_game: TCG 游戏实例
+        member_name: 要加入名单的盟友角色名称
+
+    Returns:
+        tuple[bool, str]: (是否成功, 失败时的错误详情)
+    """
+    if not tcg_game.is_player_in_home_stage:
+        error_detail = "玩家不在家园场景中，无法修改远征队名单"
+        logger.error(f"添加远征队成员失败: {error_detail}")
+        return False, error_detail
+
+    member_entity = tcg_game.get_actor_entity(member_name)
+    if member_entity is None:
+        error_detail = f"角色 {member_name} 不存在"
+        logger.error(f"添加远征队成员失败: {error_detail}")
+        return False, error_detail
+
+    if not member_entity.has(AllyComponent):
+        error_detail = f"角色 {member_name} 不是盟友，无法加入远征队"
+        logger.error(f"添加远征队成员失败: {error_detail}")
+        return False, error_detail
+
+    if member_entity.has(PlayerComponent):
+        error_detail = "不能将玩家自身加入远征队名单"
+        logger.error(f"添加远征队成员失败: {error_detail}")
+        return False, error_detail
+
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None, "玩家实体不存在！"
+    assert player_entity.has(
+        ExpeditionRosterComponent
+    ), "玩家实体缺少 ExpeditionRosterComponent"
+
+    roster = player_entity.get(ExpeditionRosterComponent)
+    if member_name in roster.members:
+        error_detail = f"{member_name} 已在远征队名单中"
+        logger.warning(f"添加远征队成员失败: {error_detail}")
+        return False, error_detail
+
+    player_entity.replace(
+        ExpeditionRosterComponent,
+        player_entity.name,
+        list(roster.members) + [member_name],
+    )
+    logger.debug(f"将 {member_name} 加入远征队名单")
+    return True, ""
+
+
+###################################################################################################################################################################
+def remove_expedition_member(tcg_game: TCGGame, member_name: str) -> Tuple[bool, str]:
+    """
+    将盟友从远征队名单中移除。
+
+    Args:
+        tcg_game: TCG 游戏实例
+        member_name: 要移除的盟友角色名称
+
+    Returns:
+        tuple[bool, str]: (是否成功, 失败时的错误详情)
+    """
+    if not tcg_game.is_player_in_home_stage:
+        error_detail = "玩家不在家园场景中，无法修改远征队名单"
+        logger.error(f"移除远征队成员失败: {error_detail}")
+        return False, error_detail
+
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None, "玩家实体不存在！"
+    assert player_entity.has(
+        ExpeditionRosterComponent
+    ), "玩家实体缺少 ExpeditionRosterComponent"
+
+    roster = player_entity.get(ExpeditionRosterComponent)
+    if member_name not in roster.members:
+        error_detail = f"{member_name} 不在远征队名单中"
+        logger.warning(f"移除远征队成员失败: {error_detail}")
+        return False, error_detail
+
+    player_entity.replace(
+        ExpeditionRosterComponent,
+        player_entity.name,
+        [m for m in roster.members if m != member_name],
+    )
+    logger.debug(f"将 {member_name} 从远征队名单移除")
+    return True, ""
+
+
+###################################################################################################################################################################
+def get_expedition_roster(tcg_game: TCGGame) -> List[str]:
+    """
+    查阅当前远征队名单（不含玩家自身）。
+
+    Args:
+        tcg_game: TCG 游戏实例
+
+    Returns:
+        远征队同伴名称列表；玩家实体或组件不存在时返回空列表
+    """
+    player_entity = tcg_game.get_player_entity()
+    if player_entity is None:
+        return []
+
+    if not player_entity.has(ExpeditionRosterComponent):
+        return []
+
+    return list(player_entity.get(ExpeditionRosterComponent).members)
 
 
 ###################################################################################################################################################################

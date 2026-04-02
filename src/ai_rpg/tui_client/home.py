@@ -12,7 +12,6 @@ from loguru import logger
 import json
 
 from .server_client import (
-    fetch_entities_details,
     fetch_session_messages,
     fetch_stages_state,
     fetch_tasks_status,
@@ -29,20 +28,24 @@ HOME_HEADER = """\
 [bold cyan]╚══════════════════════════════════════════════════╝[/]
 """
 
-HELP_TEXT = """\
-[bold yellow]可用命令：[/]
+MENU_TEXT = """\
+[bold yellow]可用操作（输入编号执行）：[/]
 
-  [bold green]/help            [/]  显示此帮助信息
-  [bold green]/status          [/]  显示玩家状态、世界设定及玩家角色详情
-  [bold green]/stages          [/]  查询全部场景与角色分布
-  [bold green]/stage_desc      [/]  显示玩家当前所在场景的描述
-  [bold green]/entities        [/]  打开实体浏览器（列出全部场景与角色）
-  [bold green]/dungeon         [/]  打开地下城总览（列出全部副本预览）
-  [bold green]/advance         [/]  推进家园流程（执行一轮 home pipeline）
-  [bold green]/speak           [/]  与当前场景 NPC 对话
-  [bold green]/switch_stage    [/]  切换到其他场景
-  [bold green]/roster          [/]  管理远征队成员（加入/移除）
-  [bold green]/logout          [/]  登出并返回主菜单
+[bold cyan]── 查看 ──────────────────────────────────────[/]
+  [bold green]1[/]  当前状态      玩家/世界设定/角色详情
+  [bold green]2[/]  场景总览      场景分布与当前场景描述
+  [bold green]3[/]  实体浏览器    列出全部场景与角色
+  [bold green]4[/]  地下城总览    列出全部副本预览
+
+[bold cyan]── 行动 ──────────────────────────────────────[/]
+  [bold green]5[/]  推进家园      执行一轮 home pipeline
+  [bold green]6[/]  与NPC对话     与当前场景 NPC 对话
+  [bold green]7[/]  切换场景      移动到其他场景
+  [bold green]8[/]  管理远征队    加入/移除远征队成员
+
+[bold cyan]── 系统 ──────────────────────────────────────[/]
+  [bold green]0[/]  显示此菜单
+  [bold dim]Escape[/]  登出并返回主菜单
 
 """
 
@@ -134,6 +137,7 @@ class HomeScreen(Screen[None]):
 
     BINDINGS = [
         ("ctrl+c", "app.quit", "Quit"),
+        ("escape", "logout", "登出"),
     ]
 
     def __init__(self, user_name: str, game_name: str) -> None:
@@ -148,23 +152,34 @@ class HomeScreen(Screen[None]):
         yield RichLog(id="home-log", highlight=True, markup=True, wrap=True)
         with Horizontal(id="home-input-row"):
             yield Static("> ", id="home-prompt")
-            yield Input(placeholder="输入命令...", id="home-input")
+            yield Input(placeholder="输入编号执行操作...", id="home-input")
 
     def on_mount(self) -> None:
         log = self.query_one(RichLog)
         log.write(HOME_HEADER)
-        log.write(HELP_TEXT)
+        log.write(MENU_TEXT)
         logger.info(
             f"HomeScreen: 进入主场景 user_name={self._user_name} game_name={self._game_name}"
         )
         self.query_one(Input).focus()
         self._polling_active = True
         self._poll_messages()
-        self._show_player_status()
 
     def on_unmount(self) -> None:
         self._polling_active = False
         logger.info(f"HomeScreen: on_unmount，停止轮询 user_name={self._user_name}")
+
+    def on_screen_resume(self) -> None:
+        """从子 Screen 返回时刷新玩家状态。"""
+        logger.info(
+            f"HomeScreen: on_screen_resume，刷新数据 user_name={self._user_name}"
+        )
+        self._show_player_status()
+        self.query_one(Input).focus()
+
+    def action_logout(self) -> None:
+        """ESC 触发登出。"""
+        self._do_logout()
 
     @work
     async def _show_player_status(self) -> None:
@@ -200,7 +215,7 @@ class HomeScreen(Screen[None]):
 
     @on(Input.Submitted, "#home-input")
     def handle_command(self, event: Input.Submitted) -> None:
-        cmd = event.value.strip().lower()
+        cmd = event.value.strip()
         event.input.clear()
         log = self.query_one(RichLog)
 
@@ -210,15 +225,21 @@ class HomeScreen(Screen[None]):
         log.write(f"[dim]> {cmd}[/]")
         logger.debug(f"HomeScreen: 收到命令 user_name={self._user_name} cmd={cmd}")
 
-        if cmd == "/help":
-            log.write(HELP_TEXT)
-        elif cmd == "/status":
-            self._fetch_status()
-        elif cmd == "/stages":
-            self._fetch_stages()
-        elif cmd == "/stage_desc":
-            self._fetch_stage_desc()
-        elif cmd == "/entities":
+        if cmd == "0":
+            log.write(MENU_TEXT)
+        elif cmd == "1":
+            from .player_status import PlayerStatusScreen
+
+            self.app.push_screen(
+                PlayerStatusScreen(user_name=self._user_name, game_name=self._game_name)
+            )
+        elif cmd == "2":
+            from .stages import StagesScreen
+
+            self.app.push_screen(
+                StagesScreen(user_name=self._user_name, game_name=self._game_name)
+            )
+        elif cmd == "3":
             from .entity_browser import EntityBrowserScreen
 
             self.app.push_screen(
@@ -226,7 +247,7 @@ class HomeScreen(Screen[None]):
                     user_name=self._user_name, game_name=self._game_name
                 )
             )
-        elif cmd == "/dungeon":
+        elif cmd == "4":
             from .dungeon_overview import DungeonOverviewScreen
 
             self.app.push_screen(
@@ -234,30 +255,28 @@ class HomeScreen(Screen[None]):
                     user_name=self._user_name, game_name=self._game_name
                 )
             )
-        elif cmd == "/logout":
-            self._do_logout()
-        elif cmd == "/advance":
+        elif cmd == "5":
             self._do_advance()
-        elif cmd == "/speak":
+        elif cmd == "6":
             from .speak import SpeakScreen
 
             self.app.push_screen(
                 SpeakScreen(user_name=self._user_name, game_name=self._game_name)
             )
-        elif cmd == "/switch_stage":
+        elif cmd == "7":
             from .switch_stage import SwitchStageScreen
 
             self.app.push_screen(
                 SwitchStageScreen(user_name=self._user_name, game_name=self._game_name)
             )
-        elif cmd == "/roster":
+        elif cmd == "8":
             from .roster import RosterScreen
 
             self.app.push_screen(
                 RosterScreen(user_name=self._user_name, game_name=self._game_name)
             )
         else:
-            log.write(f"[red]未知命令：{cmd}，输入 /help 查看可用命令。[/]")
+            log.write(f"[red]未知输入：{cmd}，输入 0 查看操作菜单。[/]")
 
     @work
     async def _do_advance(self) -> None:
@@ -317,159 +336,6 @@ class HomeScreen(Screen[None]):
         inp.focus()
         if success:
             self._show_player_status()
-
-    @work
-    async def _fetch_status(self) -> None:
-        log = self.query_one(RichLog)
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
-        bp = app.session_blueprint
-        player_actor = bp.player_actor if bp else None
-
-        # 基础信息
-        log.write(
-            f"[bold yellow]── 当前状态 ──────────────────────────────────────[/]\n"
-            f"  玩家：[bold]{self._user_name}[/]\n"
-            f"  游戏：[bold]{self._game_name}[/]\n"
-            f"  玩家角色：[bold cyan]{player_actor or '（未知）'}[/]\n"
-        )
-
-        # 世界设定
-        if bp:
-            log.write(
-                f"[bold yellow]── 游戏世界设定 ──────────────────────────────────────[/]\n"
-                f"{bp.campaign_setting}\n"
-            )
-
-        # 玩家角色实体详情
-        if player_actor:
-            log.write(f"[dim]正在查询玩家角色实体：{player_actor} ...[/]")
-            logger.info(f"_fetch_status: 查询玩家角色实体 player_actor={player_actor}")
-            try:
-                resp = await fetch_entities_details(
-                    self._user_name, self._game_name, [player_actor]
-                )
-                if not resp.entities_serialization:
-                    log.write(f"[yellow]未找到玩家角色实体：{player_actor}[/]")
-                else:
-                    for entity in resp.entities_serialization:
-                        log.write(
-                            f"[bold yellow]── 玩家角色实体：{entity.name} ──────────────────────────────────────[/]"
-                        )
-                        for comp in entity.components:
-                            data_str = json.dumps(
-                                comp.data, ensure_ascii=False, indent=2
-                            )
-                            log.write(f"  [bold cyan][组件][/] [green]{comp.name}[/]")
-                            log.write(f"[dim]{data_str}[/]")
-                        log.write("")
-                logger.info(
-                    f"_fetch_status: 玩家角色实体查询成功 player_actor={player_actor}"
-                )
-            except Exception as e:
-                logger.error(
-                    f"_fetch_status: 玩家角色实体查询失败 player_actor={player_actor} error={e}"
-                )
-                log.write(f"[bold red]❌ 玩家角色实体查询失败: {e}[/]")
-
-    @work
-    async def _fetch_stage_desc(self) -> None:
-        log = self.query_one(RichLog)
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
-        bp = app.session_blueprint
-        player_actor = bp.player_actor if bp else None
-
-        if not player_actor:
-            log.write("[red]❌ 无法取得玩家角色信息[/]")
-            return
-
-        log.write("[dim]正在定位玩家所在场景...[/]")
-        logger.info(
-            f"_fetch_stage_desc: 开始查询 user_name={self._user_name} game_name={self._game_name}"
-        )
-        try:
-            stages_resp = await fetch_stages_state(self._user_name, self._game_name)
-        except Exception as e:
-            logger.error(f"_fetch_stage_desc: fetch_stages_state 失败 error={e}")
-            log.write(f"[bold red]❌ 场景状态查询失败: {e}[/]")
-            return
-
-        current_stage: str = ""
-        for stage, actors in stages_resp.mapping.items():
-            if player_actor in actors:
-                current_stage = stage
-                break
-
-        if not current_stage:
-            log.write(f"[yellow]⚠ 未能找到玩家角色 {player_actor} 所在场景[/]")
-            return
-
-        log.write(f"[dim]玩家当前场景：{current_stage}，正在获取场景描述...[/]")
-        logger.info(f"_fetch_stage_desc: 玩家所在场景 current_stage={current_stage}")
-        try:
-            entities_resp = await fetch_entities_details(
-                self._user_name, self._game_name, [current_stage]
-            )
-        except Exception as e:
-            logger.error(f"_fetch_stage_desc: fetch_entities_details 失败 error={e}")
-            log.write(f"[bold red]❌ 场景实体查询失败: {e}[/]")
-            return
-
-        narrative = ""
-        for entity in entities_resp.entities_serialization:
-            for comp in entity.components:
-                if comp.name == "StageDescriptionComponent":
-                    narrative = comp.data.get("narrative", "")
-                    break
-
-        log.write(
-            f"[bold yellow]── 场景描述：{current_stage} ──────────────────────────────────────[/]"
-        )
-        if narrative:
-            log.write(narrative)
-        else:
-            log.write("[dim]（场景描述尚未生成）[/]")
-        log.write("")
-        logger.info(
-            f"_fetch_stage_desc: 完成 current_stage={current_stage} narrative_len={len(narrative)}"
-        )
-
-    @work
-    async def _fetch_stages(self) -> None:
-        log = self.query_one(RichLog)
-        log.write("[dim]正在查询场景状态...[/]")
-        logger.info(
-            f"_fetch_stages: 开始查询 user_name={self._user_name} game_name={self._game_name}"
-        )
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
-        bp = app.session_blueprint
-        player_only_stage = bp.player_only_stage if bp else None
-        try:
-            resp = await fetch_stages_state(self._user_name, self._game_name)
-            logger.info(f"_fetch_stages: 查询成功 mapping={resp.mapping}")
-            log.write(
-                "[bold yellow]── 场景与角色分布 ──────────────────────────────────────[/]"
-            )
-            if not resp.mapping:
-                log.write("  [dim]（暂无场景数据）[/]")
-            else:
-                for stage, actors in resp.mapping.items():
-                    actors_str = "、".join(actors) if actors else "[dim]（空）[/]"
-                    if stage == player_only_stage:
-                        log.write(
-                            f"  [bold magenta]{stage} ★玩家专属场景[/] → {actors_str}"
-                        )
-                    else:
-                        log.write(f"  [bold cyan]{stage}[/] → {actors_str}")
-            log.write("")
-        except Exception as e:
-            logger.error(f"_fetch_stages: 查询失败 error={e}")
-            log.write(f"[bold red]❌ 查询失败: {e}[/]")
 
     @work
     async def _poll_messages(self) -> None:

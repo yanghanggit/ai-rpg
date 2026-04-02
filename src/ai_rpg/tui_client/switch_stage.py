@@ -121,12 +121,11 @@ class SwitchStageScreen(Screen[None]):
         app: GameClient = self.app  # type: ignore[assignment]
         bp = app.session_blueprint
         player_actor = bp.player_actor if bp else None
-        player_only_stage = bp.player_only_stage if bp else None
 
         try:
             resp = await fetch_stages_state(self._user_name, self._game_name)
 
-            # 找到 player_actor 当前所在 stage
+            # 找到玩家当前所在场景
             current_stage: str | None = None
             if player_actor:
                 for stage, actors in resp.mapping.items():
@@ -134,33 +133,28 @@ class SwitchStageScreen(Screen[None]):
                         current_stage = stage
                         break
 
-            # 排除当前场景和玩家专属场景
-            candidates = [
-                stage
-                for stage in resp.mapping
-                if stage != current_stage and stage != player_only_stage
-            ]
+            # 取全部场景，查询 HomeComponent，排除当前场景
+            all_stages = list(resp.mapping.keys())
+            try:
+                details_resp = await fetch_entities_details(
+                    self._user_name, self._game_name, all_stages
+                )
+                home_stages = {
+                    entity.name
+                    for entity in details_resp.entities_serialization
+                    if any(comp.name == "HomeComponent" for comp in entity.components)
+                }
+            except Exception as e:
+                logger.warning(
+                    f"SwitchStageScreen._load_stages: 获取 HomeComponent 失败，回退到全部场景 error={e}"
+                )
+                home_stages = set(all_stages)
 
-            # 用 fetch_entities_details 筛选：仅保留拥有 HomeComponent 的场景
-            available: list[str] = []
-            if candidates:
-                try:
-                    details_resp = await fetch_entities_details(
-                        self._user_name, self._game_name, candidates
-                    )
-                    home_stages = {
-                        entity.name
-                        for entity in details_resp.entities_serialization
-                        if any(
-                            comp.name == "HomeComponent" for comp in entity.components
-                        )
-                    }
-                    available = [s for s in candidates if s in home_stages]
-                except Exception as e:
-                    logger.warning(
-                        f"SwitchStageScreen._load_stages: 过滤 HomeComponent 失败，回退到全部候选 error={e}"
-                    )
-                    available = candidates
+            available = [
+                stage
+                for stage in all_stages
+                if stage in home_stages and stage != current_stage
+            ]
 
             self._stage_list = available
 

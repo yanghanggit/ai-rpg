@@ -16,7 +16,8 @@ MENU_OPTIONS = """\
 [bold yellow]请选择操作：[/]
 
   [bold green]1[/]  开始新游戏
-  [bold red]q[/]  退出
+
+[dim]  Escape  退出游戏[/]
 
 """
 
@@ -83,8 +84,6 @@ class MainMenuScreen(Screen[None]):
             from .new_game import NewGameScreen
 
             self.app.push_screen(NewGameScreen())
-        elif choice in ("q", "quit", "exit", "退出"):
-            self.app.exit()
         else:
             log = self.query_one(RichLog)
-            log.write(f"[dim]未知选项：{choice}，请输入 1 或 q[/]")
+            log.write(f"[dim]未知选项：{choice}，请输入 1[/]")

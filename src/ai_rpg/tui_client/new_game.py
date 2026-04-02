@@ -87,14 +87,20 @@ class NewGameScreen(Screen[None]):
                 )
                 for stage in bp.stages:
                     actor_names = [a.name for a in stage.actors]
+                    is_player_only = stage.name == bp.player_only_stage
                     if actor_names:
                         actors_str = "、".join(
                             f"[{'bold magenta' if a == bp.player_actor else 'green'}]{a}[/]"
                             for a in actor_names
                         )
-                        log.write(f"  [bold cyan]{stage.name}[/] → {actors_str}")
                     else:
-                        log.write(f"  [bold cyan]{stage.name}[/] → [dim]（空）[/]")
+                        actors_str = "[dim]（空）[/]"
+                    if is_player_only:
+                        log.write(
+                            f"  [bold magenta]{stage.name} ★玩家专属[/] → {actors_str}"
+                        )
+                    else:
+                        log.write(f"  [bold cyan]{stage.name}[/] → {actors_str}")
                 log.write("")
                 log.write(
                     "[dim]按 [bold]Enter[/] 进入游戏，[bold]Escape[/] 返回主菜单。[/]"

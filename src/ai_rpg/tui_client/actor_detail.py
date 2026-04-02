@@ -11,6 +11,7 @@ from .server_client import (
     fetch_entities_details,
     fetch_stages_state,
 )
+from .utils import display_name
 from ..models import (
     AllyComponent,
     CharacterStatsComponent,
@@ -102,7 +103,7 @@ class ActorDetailScreen(Screen[None]):
 
                 player_tag = r"  [bold yellow]\[玩家][/]" if is_player else ""
                 log.write(
-                    f"[bold cyan]── {faction} [bold]{entity.name}[/]{player_tag} ──[/]"
+                    f"[bold cyan]── {faction} [bold]{display_name(entity.name)}[/]{player_tag} ──[/]"
                 )
 
                 # 战斗属性

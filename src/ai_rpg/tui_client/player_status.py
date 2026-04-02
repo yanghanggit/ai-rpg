@@ -9,6 +9,7 @@ from textual.screen import Screen
 from textual.widgets import RichLog
 
 from .server_client import fetch_entities_details
+from .utils import display_name
 
 
 def _render_component(name: str, data: Dict[str, Any]) -> str:
@@ -140,7 +141,7 @@ class PlayerStatusScreen(Screen[None]):
             f"[bold yellow]── 基本信息 ──────────────────────────────────────[/]\n"
             f"  玩家：[bold]{self._user_name}[/]\n"
             f"  游戏：[bold]{self._game_name}[/]\n"
-            f"  玩家角色：[bold cyan]{player_actor or '（未知）'}[/]\n"
+            f"  玩家角色：[bold cyan]{display_name(player_actor) if player_actor else '（未知）'}[/]\n"
         )
 
         # 世界设定
@@ -165,7 +166,7 @@ class PlayerStatusScreen(Screen[None]):
             else:
                 for entity in resp.entities_serialization:
                     log.write(
-                        f"[bold yellow]── {entity.name} ──────────────────────────────────────[/]"
+                        f"[bold yellow]── {display_name(entity.name)} ──────────────────────────────────────[/]"
                     )
                     for comp in entity.components:
                         rendered = _render_component(comp.name, comp.data)

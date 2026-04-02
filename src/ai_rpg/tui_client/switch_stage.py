@@ -16,6 +16,7 @@ from .server_client import (
     fetch_tasks_status,
     home_player_action as server_home_player_action,
 )
+from .utils import display_name
 from ..models.api import HomePlayerActionType
 from ..models.task import TaskStatus
 
@@ -169,7 +170,7 @@ class SwitchStageScreen(Screen[None]):
 
             if current_stage:
                 log.write(
-                    f"[bold yellow]当前场景：[bold cyan]{current_stage}[/][bold yellow][/]\n"
+                    f"[bold yellow]当前场景：[bold cyan]{display_name(current_stage)}[/][bold yellow][/]\n"
                 )
 
             if not self._stage_list:
@@ -179,13 +180,19 @@ class SwitchStageScreen(Screen[None]):
             log.write("[bold yellow]可前往的场景：[/]")
             for i, stage in enumerate(self._stage_list, 1):
                 actors = resp.mapping.get(stage, [])
-                actors_str = "、".join(actors) if actors else "[dim]（空）[/]"
+                actors_str = (
+                    "、".join(display_name(a) for a in actors)
+                    if actors
+                    else "[dim]（空）[/]"
+                )
                 if stage in player_only_stages:
                     log.write(
-                        f"  [bold green]{i}.[/] [bold magenta]{stage} ★玩家专属[/]  → {actors_str}"
+                        f"  [bold green]{i}.[/] [bold magenta]{display_name(stage)} ★玩家专属[/]  → {actors_str}"
                     )
                 else:
-                    log.write(f"  [bold green]{i}.[/] [cyan]{stage}[/]  → {actors_str}")
+                    log.write(
+                        f"  [bold green]{i}.[/] [cyan]{display_name(stage)}[/]  → {actors_str}"
+                    )
             log.write("")
             log.write("[dim]输入编号切换场景：[/]")
             logger.info(
@@ -202,7 +209,7 @@ class SwitchStageScreen(Screen[None]):
         inp = self.query_one(Input)
         inp.disabled = True
 
-        log.write(f"[dim]▶ 正在切换到场景：{target_stage}...[/]")
+        log.write(f"[dim]▶ 正在切换到场景：{display_name(target_stage)}...[/]")
         logger.info(f"SwitchStageScreen._do_switch_stage: target_stage={target_stage}")
 
         task_id: str = ""

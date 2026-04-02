@@ -13,6 +13,7 @@ import httpx
 
 from .actor_detail import ActorDetailScreen
 from .round_detail import RoundDetailScreen
+from .utils import display_name
 from .play_cards_screen import PlayCardsScreen
 from .server_client import dungeon_combat_draw_cards as server_dungeon_combat_draw_cards
 from .server_client import dungeon_combat_init as server_dungeon_combat_init
@@ -187,7 +188,7 @@ class DungeonRoomScreen(Screen[None]):
             dungeon = state_resp.dungeon
 
             log.write(
-                f"[bold yellow]── 地下城：{dungeon.name} ──────────────────────────────────────[/]"
+                f"[bold yellow]── 地下城：{display_name(dungeon.name)} ──────────────────────────────────────[/]"
             )
             log.write(f"  [bold]生态环境：[/] {dungeon.ecology}")
             log.write(
@@ -215,7 +216,7 @@ class DungeonRoomScreen(Screen[None]):
             combat = room.combat
 
             log.write(
-                f"[bold cyan]── 当前房间：{stage.name} ──────────────────────────────────────[/]"
+                f"[bold cyan]── 当前房间：{display_name(stage.name)} ──────────────────────────────────────[/]"
             )
 
             # Step B：从 stages state 取该场景的运行时 actor 名单
@@ -272,14 +273,14 @@ class DungeonRoomScreen(Screen[None]):
                             else ""
                         )
                         log.write(
-                            f"  · {faction} [bold]{entity.name}[/]"
+                            f"  · {faction} [bold]{display_name(entity.name)}[/]"
                             f"  HP:[yellow]{hp}/{max_hp}[/]"
                             f"  ATK:[red]{attack}[/]"
                             f"  DEF:[blue]{defense}[/]" + effects_str
                         )
                     else:
                         log.write(
-                            f"  · {faction} [bold]{entity.name}[/]  [dim](无战斗属性)[/]"
+                            f"  · {faction} [bold]{display_name(entity.name)}[/]  [dim](无战斗属性)[/]"
                         )
             else:
                 log.write("  [dim]（房间内无角色）[/]")
@@ -293,12 +294,12 @@ class DungeonRoomScreen(Screen[None]):
             if combat.rounds:
                 cur = combat.rounds[-1]
                 order_str = (
-                    " => ".join(cur.action_order)
+                    " => ".join(display_name(a) for a in cur.action_order)
                     if cur.action_order
                     else "[dim]（无）[/]"
                 )
                 done_str = (
-                    "  ".join(cur.completed_actors)
+                    "  ".join(display_name(a) for a in cur.completed_actors)
                     if cur.completed_actors
                     else "[dim]（无）[/]"
                 )

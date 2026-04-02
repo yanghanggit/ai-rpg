@@ -11,6 +11,7 @@ from textual.screen import Screen
 from textual.widgets import Footer, Input, RichLog, Static
 
 from .server_client import fetch_entities_details, fetch_stages_state
+from .utils import display_name
 
 BROWSER_HEADER = """\
 [bold cyan]── 实体浏览器 ──────────────────────────────────────[/]
@@ -67,7 +68,7 @@ class EntityBrowserScreen(Screen[None]):
         with Horizontal(id="browser-input-row"):
             yield Static("> ", id="browser-prompt")
             yield Input(placeholder="输入编号查看详情...", id="browser-input")
-        yield Footer()
+        #yield Footer()
 
     def on_mount(self) -> None:
         log = self.query_one(RichLog)
@@ -123,14 +124,20 @@ class EntityBrowserScreen(Screen[None]):
         for i, (name, etype) in enumerate(self._entity_list, start=1):
             if etype == "场景":
                 actors_in = self._stage_mapping.get(name, [])
-                actors_str = "、".join(actors_in) if actors_in else "[dim]（空）[/]"
-                log.write(f"  [bold]{i}.[/] [bold cyan]{name}[/]  → {actors_str}")
+                actors_str = (
+                    "、".join(display_name(a) for a in actors_in)
+                    if actors_in
+                    else "[dim]（空）[/]"
+                )
+                log.write(
+                    f"  [bold]{i}.[/] [bold cyan]{display_name(name)}[/]  → {actors_str}"
+                )
         log.write(
             "[bold yellow]── 角色 ─────────────────────────────────────────────[/]"
         )
         for i, (name, etype) in enumerate(self._entity_list, start=1):
             if etype == "角色":
-                log.write(f"  [bold]{i}.[/] [green]{name}[/]")
+                log.write(f"  [bold]{i}.[/] [green]{display_name(name)}[/]")
         log.write("")
 
     @work
@@ -185,7 +192,7 @@ class EntityBrowserScreen(Screen[None]):
                 return
             for entity in resp.entities_serialization:
                 log.write(
-                    f"[bold yellow]── 实体：{entity.name} ──────────────────────────────────────[/]"
+                    f"[bold yellow]── 实体：{display_name(entity.name)} ──────────────────────────────────────[/]"
                 )
                 for comp in entity.components:
                     data_str = json.dumps(comp.data, ensure_ascii=False, indent=2)

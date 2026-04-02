@@ -9,6 +9,7 @@ from textual.screen import Screen
 from textual.widgets import RichLog
 from ..models import Blueprint
 from .server_client import fetch_blueprint_list, login, new_game
+from .utils import display_name
 
 
 class NewGameScreen(Screen[None]):
@@ -80,7 +81,7 @@ class NewGameScreen(Screen[None]):
                 log.write(
                     "[bold cyan]── 玩家角色 ──────────────────────────────────[/]"
                 )
-                log.write(f"  [bold magenta]{bp.player_actor}[/]\n")
+                log.write(f"  [bold magenta]{display_name(bp.player_actor)}[/]\n")
 
                 log.write(
                     "[bold cyan]── 场景与角色 ────────────────────────────────[/]"
@@ -90,17 +91,19 @@ class NewGameScreen(Screen[None]):
                     is_player_only = stage.name == bp.player_only_stage
                     if actor_names:
                         actors_str = "、".join(
-                            f"[{'bold magenta' if a == bp.player_actor else 'green'}]{a}[/]"
+                            f"[{'bold magenta' if a == bp.player_actor else 'green'}]{display_name(a)}[/]"
                             for a in actor_names
                         )
                     else:
                         actors_str = "[dim]（空）[/]"
                     if is_player_only:
                         log.write(
-                            f"  [bold magenta]{stage.name} ★玩家专属[/] → {actors_str}"
+                            f"  [bold magenta]{display_name(stage.name)} ★玩家专属[/] → {actors_str}"
                         )
                     else:
-                        log.write(f"  [bold cyan]{stage.name}[/] → {actors_str}")
+                        log.write(
+                            f"  [bold cyan]{display_name(stage.name)}[/] → {actors_str}"
+                        )
                 log.write("")
                 log.write(
                     "[dim]按 [bold]Enter[/] 进入游戏，[bold]Escape[/] 返回主菜单。[/]"

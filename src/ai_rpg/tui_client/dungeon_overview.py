@@ -19,6 +19,7 @@ from .server_client import (
     home_enter_dungeon as server_home_enter_dungeon,
 )
 from .server_client import home_generate_dungeon as server_home_generate_dungeon
+from .utils import display_name
 
 MENU_TEXT = """\
 [bold cyan]── 地下城总览 ──────────────────────────────────────[/]
@@ -137,7 +138,9 @@ class DungeonOverviewScreen(Screen[None]):
             dungeon = self._dungeons[idx]
             self._selected_dungeon = dungeon.name
             self._show_dungeon(dungeon, log)
-            log.write(f"[dim]输入 /enter 进入此副本：[bold cyan]{dungeon.name}[/][/]")
+            log.write(
+                f"[dim]输入 /enter 进入此副本：[bold cyan]{display_name(dungeon.name)}[/][/]"
+            )
 
     def _render_list(self, log: RichLog) -> None:
         """将已缓存的地下城列表渲染到 log。"""
@@ -149,7 +152,7 @@ class DungeonOverviewScreen(Screen[None]):
             preview = dungeon.ecology[:40].replace("\n", " ")
             room_count = len(dungeon.rooms)
             log.write(
-                f"  [bold]{i}.[/] [bold cyan]{dungeon.name}[/]"
+                f"  [bold]{i}.[/] [bold cyan]{display_name(dungeon.name)}[/]"
                 f"  [dim]{preview}…  ({room_count} 个房间)[/]"
             )
         log.write(
@@ -160,7 +163,7 @@ class DungeonOverviewScreen(Screen[None]):
     def _show_dungeon(self, dungeon: Dungeon, log: RichLog) -> None:
         """内联渲染地下城详情（纯同步，数据已在内存中）。"""
         log.write(
-            f"[bold yellow]── 副本：{dungeon.name} ──────────────────────────────────────[/]"
+            f"[bold yellow]── 副本：{display_name(dungeon.name)} ──────────────────────────────────────[/]"
         )
         log.write(f"  [bold]生态环境：[/] {dungeon.ecology}")
         log.write(f"  [bold]房间数：[/]   {len(dungeon.rooms)}")
@@ -172,13 +175,15 @@ class DungeonOverviewScreen(Screen[None]):
                 actor.character_sheet.type == "Enemy" for actor in stage.actors
             )
             room_tag = "[bold red]⚔ 战斗[/]" if is_combat else "[dim cyan]○ 探索[/]"
-            log.write(f"  [bold cyan]房间 {i}：[/][green]{stage.name}[/]  {room_tag}")
+            log.write(
+                f"  [bold cyan]房间 {i}：[/][green]{display_name(stage.name)}[/]  {room_tag}"
+            )
             if is_combat:
                 for actor in stage.actors:
                     if actor.character_sheet.type == "Enemy":
                         stats = actor.character_stats
                         log.write(
-                            f"    · [bold]{actor.name}[/]"
+                            f"    · [bold]{display_name(actor.name)}[/]"
                             f"  HP:[yellow]{stats.max_hp}[/]"
                             f"  ATK:[red]{stats.attack}[/]"
                             f"  DEF:[blue]{stats.defense}[/]"
@@ -310,7 +315,7 @@ class DungeonOverviewScreen(Screen[None]):
                 )
                 for member in roster:
                     tag = "  [bold magenta][玩家][/]" if member == player_actor else ""
-                    log.write(f"  · [bold cyan]{member}[/]{tag}")
+                    log.write(f"  · [bold cyan]{display_name(member)}[/]{tag}")
                 log.write("")
                 logger.info(f"_load_dungeons: 远征队 roster={roster}")
             except Exception as e:

@@ -7,6 +7,7 @@ from textual.screen import Screen
 from textual.widgets import RichLog
 
 from .server_client import fetch_entities_details, fetch_stages_state
+from .utils import display_name
 
 STAGES_HEADER = """\
 [bold cyan]╔══════════════════════════════════════════════════╗[/]
@@ -104,13 +105,17 @@ class StagesScreen(Screen[None]):
             log.write("  [dim]（暂无场景数据）[/]")
         else:
             for stage, actors in stages_resp.mapping.items():
-                actors_str = "、".join(actors) if actors else "[dim]（空）[/]"
+                actors_str = (
+                    "、".join(display_name(a) for a in actors)
+                    if actors
+                    else "[dim]（空）[/]"
+                )
                 if stage in player_only_stages:
                     log.write(
-                        f"  [bold magenta]{stage} ★玩家专属场景[/] → {actors_str}"
+                        f"  [bold magenta]{display_name(stage)} ★玩家专属场景[/] → {actors_str}"
                     )
                 else:
-                    log.write(f"  [bold cyan]{stage}[/] → {actors_str}")
+                    log.write(f"  [bold cyan]{display_name(stage)}[/] → {actors_str}")
                 # 定位玩家当前场景
                 if player_actor and player_actor in actors:
                     current_stage = stage
@@ -122,11 +127,13 @@ class StagesScreen(Screen[None]):
             return
 
         if not current_stage:
-            log.write(f"[yellow]⚠ 未能找到玩家角色 {player_actor} 所在场景[/]")
+            log.write(
+                f"[yellow]⚠ 未能找到玩家角色 {display_name(player_actor)} 所在场景[/]"
+            )
             return
 
         log.write(
-            f"[bold yellow]── 场景描述：{current_stage} ──────────────────────────────────────[/]"
+            f"[bold yellow]── 场景描述：{display_name(current_stage)} ──────────────────────────────────────[/]"
         )
         narrative = stage_narratives.get(current_stage, "")
         if narrative:

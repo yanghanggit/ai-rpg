@@ -15,6 +15,7 @@ from .server_client import (
     fetch_tasks_status,
     home_player_action as server_home_player_action,
 )
+from .utils import display_name
 from ..models.api import HomePlayerActionType
 from ..models.task import TaskStatus
 
@@ -109,7 +110,7 @@ class SpeakScreen(Screen[None]):
             self._selected_target = self._actor_list[idx]
             self._state = "input"
             log.write(
-                f"[bold green]已选目标：[bold cyan]{self._selected_target}[/][bold green]"
+                f"[bold green]已选目标：[bold cyan]{display_name(self._selected_target)}[/][bold green]"
                 f"[/]\n[dim]请输入说话内容，按 Enter 发送：[/]"
             )
             inp = self.query_one(Input)
@@ -159,7 +160,7 @@ class SpeakScreen(Screen[None]):
                 stage_actors = resp.mapping.get(current_stage, [])
                 self._actor_list = [a for a in stage_actors if a != player_actor]
                 log.write(
-                    f"[bold yellow]── 当前场景：[bold cyan]{current_stage}[/][bold yellow] ──[/]"
+                    f"[bold yellow]── 当前场景：[bold cyan]{display_name(current_stage)}[/][bold yellow] ──[/]"
                 )
 
             if not self._actor_list:
@@ -168,7 +169,7 @@ class SpeakScreen(Screen[None]):
 
             log.write("[bold yellow]可对话的 NPC：[/]")
             for i, actor in enumerate(self._actor_list, 1):
-                log.write(f"  [bold green]{i}.[/] {actor}")
+                log.write(f"  [bold green]{i}.[/] {display_name(actor)}")
             log.write("")
             log.write("[dim]输入编号选择对话目标：[/]")
             logger.info(
@@ -185,7 +186,9 @@ class SpeakScreen(Screen[None]):
         inp = self.query_one(Input)
         inp.disabled = True
 
-        log.write(f"[dim]▶ 发送对话：{self._selected_target} ← 「{content}」...[/]")
+        log.write(
+            f"[dim]▶ 发送对话：{display_name(self._selected_target)} ← 「{content}」...[/]"
+        )
         logger.info(
             f"SpeakScreen._do_speak: target={self._selected_target} content={content}"
         )

@@ -21,6 +21,7 @@ from .server_client import (
 from ..models.session_message import MessageType
 from ..models.task import TaskStatus
 from ..models.agent_event import EventHead
+from .utils import display_name
 
 MENU_TEXT = """\
 [bold yellow]可用操作（输入编号执行）：[/]
@@ -217,7 +218,7 @@ class HomeScreen(Screen[None]):
             logger.warning(f"_show_player_status: 查询场景失败 error={e}")
             self.query_one("#home-status", Static).update(
                 "[bold cyan]AI RPG TCG  游戏主场景[/]\n"
-                f"[bold green]▶ 玩家角色：[bold cyan]{player_actor}[/][bold green][/]  "
+                f"[bold green]▶ 玩家角色：[bold cyan]{display_name(player_actor)}[/][bold green][/]  "
                 f"[dim]当前场景：（查询失败）[/]"
             )
             return
@@ -225,14 +226,14 @@ class HomeScreen(Screen[None]):
         player_only_stage = bp.player_only_stage if bp else ""
         if current_stage:
             if current_stage == player_only_stage:
-                stage_text = f"[bold yellow]{current_stage}[/] [dim cyan]（专属）[/]"
+                stage_text = f"[bold yellow]{display_name(current_stage)}[/] [dim cyan]（专属）[/]"
             else:
-                stage_text = f"[bold yellow]{current_stage}[/]"
+                stage_text = f"[bold yellow]{display_name(current_stage)}[/]"
         else:
             stage_text = "[dim]（未知）[/]"
         self.query_one("#home-status", Static).update(
             "[bold cyan]AI RPG TCG  游戏主场景[/]\n"
-            f"[bold green]▶ 玩家角色：[bold cyan]{player_actor}[/][bold green][/]  "
+            f"[bold green]▶ 玩家角色：[bold cyan]{display_name(player_actor)}[/][bold green][/]  "
             f"当前场景：{stage_text}"
         )
         logger.info(

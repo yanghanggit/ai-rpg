@@ -14,6 +14,7 @@ from .server_client import (
     home_roster_add,
     home_roster_remove,
 )
+from .utils import display_name
 
 ROSTER_HEADER = """\
 [bold cyan]── 远征队管理 ──────────────────────────────────────[/]
@@ -88,7 +89,7 @@ class RosterScreen(Screen[None]):
         for i, ally in enumerate(self._ally_list, 1):
             in_roster = ally in self._current_roster
             marker = "[bold green][✓][/]" if in_roster else "[ ]"
-            log.write(f"  [bold green]{i}.[/] {marker} [cyan]{ally}[/]")
+            log.write(f"  [bold green]{i}.[/] {marker} [cyan]{display_name(ally)}[/]")
         log.write("")
         log.write("[dim]输入编号切换成员状态：[/]")
 
@@ -172,12 +173,12 @@ class RosterScreen(Screen[None]):
         log = self.query_one(RichLog)
         inp = self.query_one(Input)
         inp.disabled = True
-        log.write(f"[dim]▶ 正在将 {ally_name} 加入远征队...[/]")
+        log.write(f"[dim]▶ 正在将 {display_name(ally_name)} 加入远征队...[/]")
         logger.info(f"RosterScreen._do_add: ally_name={ally_name}")
         try:
             await home_roster_add(self._user_name, self._game_name, ally_name)
             self._current_roster.add(ally_name)
-            log.write(f"[bold green]✅ {ally_name} 已加入远征队[/]")
+            log.write(f"[bold green]✅ {display_name(ally_name)} 已加入远征队[/]")
             logger.info(f"RosterScreen._do_add: 成功 ally_name={ally_name}")
         except Exception as e:
             logger.error(f"RosterScreen._do_add: 失败 ally_name={ally_name} error={e}")
@@ -192,12 +193,12 @@ class RosterScreen(Screen[None]):
         log = self.query_one(RichLog)
         inp = self.query_one(Input)
         inp.disabled = True
-        log.write(f"[dim]▶ 正在将 {ally_name} 从远征队移除...[/]")
+        log.write(f"[dim]▶ 正在将 {display_name(ally_name)} 从远征队移除...[/]")
         logger.info(f"RosterScreen._do_remove: ally_name={ally_name}")
         try:
             await home_roster_remove(self._user_name, self._game_name, ally_name)
             self._current_roster.discard(ally_name)
-            log.write(f"[bold green]✅ {ally_name} 已从远征队移除[/]")
+            log.write(f"[bold green]✅ {display_name(ally_name)} 已从远征队移除[/]")
             logger.info(f"RosterScreen._do_remove: 成功 ally_name={ally_name}")
         except Exception as e:
             logger.error(

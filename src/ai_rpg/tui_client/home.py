@@ -22,12 +22,6 @@ from ..models.session_message import MessageType
 from ..models.task import TaskStatus
 from ..models.agent_event import EventHead
 
-HOME_HEADER = """\
-[bold cyan]╔══════════════════════════════════════════════════╗[/]
-[bold cyan]║        AI RPG TCG  游戏主场景                   ║[/]
-[bold cyan]╚══════════════════════════════════════════════════╝[/]
-"""
-
 MENU_TEXT = """\
 [bold yellow]可用操作（输入编号执行）：[/]
 
@@ -119,11 +113,12 @@ class HomeScreen(Screen[None]):
     }
 
     #home-status {
-        height: 1;
+        height: 4;
         padding: 0 1;
         background: $panel;
-        border-bottom: solid $primary;
+        border: solid $primary;
         color: $text;
+        content-align: center middle;
     }
 
     #home-input-row {
@@ -163,7 +158,6 @@ class HomeScreen(Screen[None]):
 
     def on_mount(self) -> None:
         log = self.query_one(RichLog)
-        log.write(HOME_HEADER)
         log.write(MENU_TEXT)
         logger.info(
             f"HomeScreen: 进入主场景 user_name={self._user_name} game_name={self._game_name}"
@@ -191,7 +185,9 @@ class HomeScreen(Screen[None]):
 
     def _refresh_status_bar(self) -> None:
         """重置状态栏为“查询中”并启动异步刷新。"""
-        self.query_one("#home-status", Static).update("[dim]查询玩家状态中...[/]")
+        self.query_one("#home-status", Static).update(
+            "[bold cyan]AI RPG TCG  游戏主场景[/]\n" "[dim]查询玩家状态中...[/]"
+        )
         self._show_player_status()
 
     @work
@@ -205,6 +201,7 @@ class HomeScreen(Screen[None]):
 
         if not player_actor:
             self.query_one("#home-status", Static).update(
+                "[bold cyan]AI RPG TCG  游戏主场景[/]\n"
                 "[dim]玩家角色信息暂不可用。[/]"
             )
             return
@@ -219,15 +216,22 @@ class HomeScreen(Screen[None]):
         except Exception as e:
             logger.warning(f"_show_player_status: 查询场景失败 error={e}")
             self.query_one("#home-status", Static).update(
+                "[bold cyan]AI RPG TCG  游戏主场景[/]\n"
                 f"[bold green]▶ 玩家角色：[bold cyan]{player_actor}[/][bold green][/]  "
                 f"[dim]当前场景：（查询失败）[/]"
             )
             return
 
-        stage_text = (
-            f"[bold yellow]{current_stage}[/]" if current_stage else "[dim]（未知）[/]"
-        )
+        player_only_stage = bp.player_only_stage if bp else ""
+        if current_stage:
+            if current_stage == player_only_stage:
+                stage_text = f"[bold yellow]{current_stage}[/] [dim cyan]（专属）[/]"
+            else:
+                stage_text = f"[bold yellow]{current_stage}[/]"
+        else:
+            stage_text = "[dim]（未知）[/]"
         self.query_one("#home-status", Static).update(
+            "[bold cyan]AI RPG TCG  游戏主场景[/]\n"
             f"[bold green]▶ 玩家角色：[bold cyan]{player_actor}[/][bold green][/]  "
             f"当前场景：{stage_text}"
         )

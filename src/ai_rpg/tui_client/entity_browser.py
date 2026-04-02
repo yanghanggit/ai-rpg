@@ -8,7 +8,7 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.screen import Screen
-from textual.widgets import Footer, Input, RichLog, Static
+from textual.widgets import Input, RichLog, Static
 
 from .server_client import fetch_entities_details, fetch_stages_state
 from .utils import display_name
@@ -68,7 +68,7 @@ class EntityBrowserScreen(Screen[None]):
         with Horizontal(id="browser-input-row"):
             yield Static("> ", id="browser-prompt")
             yield Input(placeholder="输入编号查看详情...", id="browser-input")
-        #yield Footer()
+        # yield Footer()
 
     def on_mount(self) -> None:
         log = self.query_one(RichLog)

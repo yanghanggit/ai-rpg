@@ -1,4 +1,4 @@
-"""地下城房间 Screen"""
+"""战斗房间 Screen（CombatRoom）"""
 
 from loguru import logger
 from textual import on, work
@@ -29,6 +29,7 @@ from ..models import (
     TaskStatus,
     CharacterStatsComponent,
     StatusEffectsComponent,
+    HandComponent,
     AllyComponent,
     EnemyComponent,
 )
@@ -44,42 +45,40 @@ def _format_http_error(e: Exception) -> str:
     return str(e)
 
 
-DUNGEON_ROOM_HEADER = """\
-[bold cyan]── 地下城 ──────────────────────────────────────────[/]
+COMBAT_ROOM_MENU = """\
+[bold yellow]可用操作（输入编号执行）：[/]
 
-  [bold]/status[/]   查看当前房间状态
-  [bold]/detail[/]   查看角色完整属性与状态效果
-  [bold]/round[/]    查看战斗回合详情
-  [bold]/combat[/]   初始化战斗
-  [bold]/draw[/]     全员抽牌
-  [bold]/play[/]     进入出牌界面（完成当前回合出牌）
-  [bold]/retreat[/]  撤退
-  [bold]/exit[/]     退出地下城
-  [bold]/clear[/]    清除日志
-  [bold]/help[/]     显示帮助
-"""
+[bold cyan]── 查看 ──────────────────────────────────────[/]
+  [bold green]1[/]  当前战斗状态    房间信息与角色属性
+  [bold green]2[/]  角色详情        完整属性与状态效果
+  [bold green]3[/]  回合详情        行动顺序与出手记录
 
-HELP_TEXT = """\
-[bold cyan]── 帮助 ──────────────────────────────────────────[/]
+[bold cyan]── 战斗 ──────────────────────────────────────[/]
+  [bold green]4[/]  初始化战斗      INITIALIZING → ONGOING
+  [bold green]5[/]  全员抽牌        为所有战斗角色激活抽牌
+  [bold green]6[/]  出牌            进入出牌界面完成本回合
+  [bold green]7[/]  撤退            在战斗进行中撤退
 
-[bold]/status[/]    显示当前房间信息及所有角色属性
-[bold]/detail[/]    查看当前房间所有角色的完整属性与状态效果
-[bold]/round[/]     查看战斗所有回合详情（行动顺序、出手记录、叙事）
-[bold]/combat[/]    初始化当前房间战斗（INITIALIZING → ONGOING）
-[bold]/draw[/]      为所有战斗角色（友方+敌方）激活抽牌动作
-[bold]/play[/]      进入出牌界面，按行动顺序逐一完成本回合出牌
-[bold]/retreat[/]   在战斗进行中撤退
-[bold]/exit[/]      退出地下城，返回地下城总览
-[bold]/clear[/]     清除日志，仅保留命令列表
+[bold cyan]── 系统 ──────────────────────────────────────[/]
+  [bold green]0[/]  显示此菜单
+  [bold green]8[/]  退出战斗        返回游戏主场景
+  [bold dim]Escape[/]  提示退出方式
+
 """
 
 
-class DungeonRoomScreen(Screen[None]):
-    """地下城房间 Screen：进入地下城后的主界面，支持状态查询和退出。"""
+class CombatRoomScreen(Screen[None]):
+    """战斗房间 Screen：进入地下城战斗房间后的主界面，支持战斗操作与状态查询。"""
 
     CSS = """
-    DungeonRoomScreen {
-        align: center middle;
+    #combat-status {
+        dock: top;
+        height: 3;
+        padding: 0 1;
+        background: $panel;
+        border: solid $primary;
+        color: $text;
+        content-align: center middle;
     }
 
     #room-log {
@@ -106,7 +105,7 @@ class DungeonRoomScreen(Screen[None]):
     """
 
     BINDINGS = [
-        ("escape", "suggest_exit", "use /exit to quit"),
+        ("escape", "suggest_exit", "use 8 to quit"),
     ]
 
     def __init__(self, user_name: str, game_name: str) -> None:
@@ -115,71 +114,73 @@ class DungeonRoomScreen(Screen[None]):
         self._game_name = game_name
 
     def compose(self) -> ComposeResult:
+        yield Static("", id="combat-status", markup=True)
         yield RichLog(id="room-log", highlight=True, markup=True, wrap=True)
         with Horizontal(id="room-input-row"):
             yield Static("> ", id="room-prompt")
             yield Input(placeholder="输入命令...", id="room-input")
 
     def on_mount(self) -> None:
+        self.query_one("#combat-status", Static).update(
+            "[bold cyan]战斗房间[/]  [dim]查询中...[/]"
+        )
         log = self.query_one(RichLog)
-        log.write(DUNGEON_ROOM_HEADER)
+        log.write(COMBAT_ROOM_MENU)
         self._fetch_status()
         self.query_one(Input).focus()
 
     def action_suggest_exit(self) -> None:
         log = self.query_one(RichLog)
-        log.write("[yellow]请使用 /exit 命令退出地下城。[/]")
+        log.write("[yellow]请输入 8 退出战斗房间。[/]")
 
     @on(Input.Submitted, "#room-input")
     def handle_command(self, event: Input.Submitted) -> None:
-        cmd = event.value.strip().lower()
+        cmd = event.value.strip()
         event.input.clear()
         log = self.query_one(RichLog)
 
         if not cmd:
             return
 
-        if cmd == "/help":
-            log.write(HELP_TEXT)
+        log.write(f"[dim]> {cmd}[/]")
 
-        elif cmd == "/status":
+        if cmd == "0":
+            log.write(COMBAT_ROOM_MENU)
+
+        elif cmd == "1":
             self._fetch_status()
 
-        elif cmd == "/detail":
+        elif cmd == "2":
             self.app.push_screen(ActorDetailScreen(self._user_name, self._game_name))
 
-        elif cmd == "/round":
+        elif cmd == "3":
             self.app.push_screen(RoundDetailScreen(self._user_name, self._game_name))
 
-        elif cmd == "/combat":
+        elif cmd == "4":
             self._do_combat_init()
 
-        elif cmd == "/draw":
+        elif cmd == "5":
             self._do_draw_cards()
 
-        elif cmd == "/play":
+        elif cmd == "6":
             self.app.push_screen(PlayCardsScreen(self._user_name, self._game_name))
 
-        elif cmd == "/retreat":
+        elif cmd == "7":
             self._do_combat_retreat()
 
-        elif cmd == "/clear":
-            log.clear()
-            log.write(DUNGEON_ROOM_HEADER)
-
-        elif cmd == "/exit":
+        elif cmd == "8":
             self._do_exit()
 
         else:
-            log.write(f"[red]未知命令：{cmd}。输入 /help 查看帮助。[/]")
+            log.write(f"[red]未知输入：{cmd}，输入 0 查看操作菜单。[/]")
 
     @work
     async def _fetch_status(self) -> None:
         """查询地下城状态并渲染当前房间及角色信息。"""
         log = self.query_one(RichLog)
-        log.write("[dim]正在查询地下城状态...[/]")
+        log.write("[dim]正在查询战斗状态...[/]")
         logger.info(
-            f"DungeonRoomScreen._fetch_status: user={self._user_name} game={self._game_name}"
+            f"CombatRoomScreen._fetch_status: user={self._user_name} game={self._game_name}"
         )
 
         try:
@@ -187,21 +188,16 @@ class DungeonRoomScreen(Screen[None]):
             state_resp = await fetch_dungeon_state(self._user_name, self._game_name)
             dungeon = state_resp.dungeon
 
-            log.write(
-                f"[bold yellow]── 地下城：{display_name(dungeon.name)} ──────────────────────────────────────[/]"
+            self.query_one("#combat-status", Static).update(
+                f"[bold cyan]战斗房间[/]  [bold yellow]{display_name(dungeon.name)}[/]  [dim]房间 {dungeon.current_room_index + 1}/{len(dungeon.rooms)}[/]"
             )
-            log.write(f"  [bold]生态环境：[/] {dungeon.ecology}")
-            log.write(
-                f"  [bold]当前房间：[/] {dungeon.current_room_index + 1} / {len(dungeon.rooms)}"
-            )
-            log.write("")
 
             logger.info(
-                f"DungeonRoomScreen._fetch_status: 地下城状态查询成功 dungeon={dungeon.name}"
+                f"CombatRoomScreen._fetch_status: 地下城状态查询成功 dungeon={dungeon.name}"
             )
         except Exception as e:
             logger.error(
-                f"DungeonRoomScreen._fetch_status: 地下城状态查询失败 error={e}"
+                f"CombatRoomScreen._fetch_status: 地下城状态查询失败 error={e}"
             )
             log.write(f"[bold red]❌ 查询地下城状态失败: {e}[/]")
             return
@@ -215,8 +211,12 @@ class DungeonRoomScreen(Screen[None]):
             stage = room.stage
             combat = room.combat
 
+            self.query_one("#combat-status", Static).update(
+                f"[bold cyan]战斗房间[/]  [bold yellow]{display_name(dungeon.name)}[/]  [bold white]▶[/]  [bold green]{display_name(stage.name)}[/]  [dim]{dungeon.current_room_index + 1}/{len(dungeon.rooms)}[/]"
+            )
+
             log.write(
-                f"[bold cyan]── 当前房间：{display_name(stage.name)} ──────────────────────────────────────[/]"
+                "[bold cyan]── 参战角色 ──────────────────────────────────────[/]"
             )
 
             # Step B：从 stages state 取该场景的运行时 actor 名单
@@ -239,6 +239,38 @@ class DungeonRoomScreen(Screen[None]):
                             faction = "[bold red]敌方[/]"
                             break
 
+                    # 状态效果（独立于战斗属性）
+                    status_effects_comp = next(
+                        (
+                            c
+                            for c in entity.components
+                            if c.name == StatusEffectsComponent.__name__
+                        ),
+                        None,
+                    )
+                    status_effects = (
+                        status_effects_comp.data.get("status_effects", [])
+                        if status_effects_comp is not None
+                        else []
+                    )
+                    effects_str = f"  状态效果:[magenta]{len(status_effects)}[/]"
+
+                    # 手牌
+                    hand_comp = next(
+                        (
+                            c
+                            for c in entity.components
+                            if c.name == HandComponent.__name__
+                        ),
+                        None,
+                    )
+                    hand_count = (
+                        len(hand_comp.data.get("cards", []))
+                        if hand_comp is not None
+                        else 0
+                    )
+                    hand_str = f"  手牌:[cyan]{hand_count}[/]"
+
                     # 战斗属性
                     stats_comp = next(
                         (
@@ -248,39 +280,23 @@ class DungeonRoomScreen(Screen[None]):
                         ),
                         None,
                     )
-                    status_effects_comp = next(
-                        (
-                            c
-                            for c in entity.components
-                            if c.name == StatusEffectsComponent.__name__
-                        ),
-                        None,
-                    )
                     if stats_comp is not None:
                         stats = stats_comp.data.get("stats", {})
                         hp = stats.get("hp", "?")
                         max_hp = stats.get("max_hp", "?")
                         attack = stats.get("attack", "?")
                         defense = stats.get("defense", "?")
-                        status_effects = (
-                            status_effects_comp.data.get("status_effects", [])
-                            if status_effects_comp is not None
-                            else []
-                        )
-                        effects_str = (
-                            f"  状态效果:[magenta]{len(status_effects)}[/]"
-                            if status_effects
-                            else ""
-                        )
                         log.write(
                             f"  · {faction} [bold]{display_name(entity.name)}[/]"
                             f"  HP:[yellow]{hp}/{max_hp}[/]"
                             f"  ATK:[red]{attack}[/]"
-                            f"  DEF:[blue]{defense}[/]" + effects_str
+                            f"  DEF:[blue]{defense}[/]" + effects_str + hand_str
                         )
                     else:
                         log.write(
                             f"  · {faction} [bold]{display_name(entity.name)}[/]  [dim](无战斗属性)[/]"
+                            + effects_str
+                            + hand_str
                         )
             else:
                 log.write("  [dim]（房间内无角色）[/]")
@@ -308,11 +324,11 @@ class DungeonRoomScreen(Screen[None]):
             log.write("")
 
             logger.info(
-                f"DungeonRoomScreen._fetch_status: 房间查询成功 room={stage.name}"
+                f"CombatRoomScreen._fetch_status: 房间查询成功 room={stage.name}"
             )
         except Exception as e:
             logger.warning(
-                f"DungeonRoomScreen._fetch_status: 房间查询失败（可能尚未进入房间）error={e}"
+                f"CombatRoomScreen._fetch_status: 房间查询失败（可能尚未进入房间）error={e}"
             )
             log.write("[dim]（当前地下城暂无进行中的房间）[/]")
 
@@ -325,7 +341,7 @@ class DungeonRoomScreen(Screen[None]):
 
         log.write("[dim]▶ 正在初始化战斗...[/]")
         logger.info(
-            f"DungeonRoomScreen._do_combat_init: user={self._user_name} game={self._game_name}"
+            f"CombatRoomScreen._do_combat_init: user={self._user_name} game={self._game_name}"
         )
 
         task_id = ""
@@ -380,7 +396,7 @@ class DungeonRoomScreen(Screen[None]):
 
         log.write("[dim]▶ 正在激活全员抽牌...[/]")
         logger.info(
-            f"DungeonRoomScreen._do_draw_cards: user={self._user_name} game={self._game_name}"
+            f"CombatRoomScreen._do_draw_cards: user={self._user_name} game={self._game_name}"
         )
 
         task_id = ""
@@ -437,7 +453,7 @@ class DungeonRoomScreen(Screen[None]):
 
         log.write("[dim]▶ 正在触发撤退...[/]")
         logger.info(
-            f"DungeonRoomScreen._do_combat_retreat: user={self._user_name} game={self._game_name}"
+            f"CombatRoomScreen._do_combat_retreat: user={self._user_name} game={self._game_name}"
         )
 
         task_id = ""
@@ -492,16 +508,17 @@ class DungeonRoomScreen(Screen[None]):
 
         log.write("[dim]▶ 正在退出地下城...[/]")
         logger.info(
-            f"DungeonRoomScreen._do_exit: user={self._user_name} game={self._game_name}"
+            f"CombatRoomScreen._do_exit: user={self._user_name} game={self._game_name}"
         )
 
         try:
             await server_dungeon_exit(self._user_name, self._game_name)
             log.write("[bold green]✅ 已退出地下城，正在返回...[/]")
-            logger.info("DungeonRoomScreen._do_exit: 退出成功")
-            self.app.pop_screen()
+            logger.info("CombatRoomScreen._do_exit: 退出成功")
+            self.app.pop_screen()  # 弹出 CombatRoomScreen
+            self.app.pop_screen()  # 弹出 DungeonOverviewScreen，回到 HomeScreen
         except Exception as e:
-            logger.error(f"DungeonRoomScreen._do_exit: 退出失败 error={e}")
+            logger.error(f"CombatRoomScreen._do_exit: 退出失败 error={e}")
             log.write(f"[bold red]❌ 退出地下城失败: {_format_http_error(e)}[/]")
             inp.disabled = False
             inp.focus()

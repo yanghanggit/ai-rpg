@@ -155,9 +155,7 @@ class DungeonOverviewScreen(Screen[None]):
                 f"  [bold]{i}.[/] [bold cyan]{display_name(dungeon.name)}[/]"
                 f"  [dim]{preview}…  ({room_count} 个房间)[/]"
             )
-        log.write(
-            "[dim]── 输入编号查看详情，输入 3 进入选中副本，输入 0 显示菜单 ──[/]"
-        )
+        log.write("[dim]── 输入编号查看详情，输入 0 显示菜单 ──[/]")
         log.write("")
 
     def _show_dungeon(self, dungeon: Dungeon, log: RichLog) -> None:
@@ -210,9 +208,9 @@ class DungeonOverviewScreen(Screen[None]):
             logger.info(
                 f"DungeonOverviewScreen._do_enter_dungeon: 进入成功 dungeon={dungeon_name}"
             )
-            from .dungeon_room import DungeonRoomScreen
+            from .combat_room import CombatRoomScreen
 
-            self.app.push_screen(DungeonRoomScreen(self._user_name, self._game_name))
+            self.app.push_screen(CombatRoomScreen(self._user_name, self._game_name))
         except Exception as e:
             logger.error(f"DungeonOverviewScreen._do_enter_dungeon: 进入失败 error={e}")
             log.write(f"[bold red]❌ 进入地下城失败: {e}[/]")

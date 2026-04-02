@@ -141,7 +141,7 @@ def _generate_combat_arbitration_prompt(
   "narrative": "战斗演出"
 }}
 ```
-make 
+
 ### combat_log（简名 = 全名最后一段）
 
 正常：`[出牌者简名|卡牌→目标:damage Xx击_count次,伤害Z] HP:目标简名 旧→新`

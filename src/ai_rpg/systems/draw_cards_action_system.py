@@ -70,7 +70,7 @@ def _generate_draw_prompt(
     """
     actor_stats_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
     cards_example = "\n    ".join(
-        f'{"name": "卡牌名{i + 1}", "action": "第一人称行动描述", "damage_dealt": 0, "block_gain": 0, "hit_count": 1}'
+        f'{{"name": "卡牌名{i + 1}", "action": "第一人称行动描述", "damage_dealt": 0, "block_gain": 0, "hit_count": 1}}'
         for i in range(num_cards)
     )
 

@@ -38,23 +38,12 @@ class StatusEffect(BaseModel):
     字段说明：
     - name: 状态效果名称
     - category: 分类（增益/减益/复合/条件触发/环境）
-    - manifestation: 表现（第一人称描述具体表现）
-    - effect: 效果（数值影响）
+    - description: 效果描述（含表现与数值影响，如"我感到手臂刺痛，攻击力−2"）
     """
 
     name: str
     category: str  # 分类：增益 | 减益 | 复合 | 条件触发 | 环境
-    manifestation: str  # 表现：第一人称描述具体表现
-    effect: str  # 效果：数值影响（±X点攻击力/防御力）
-
-    @property
-    def formatted_description(self) -> str:
-        """自动合成三段式 description（用于向后兼容）
-
-        Returns:
-            格式化的三段式描述字符串
-        """
-        return f"【{self.category}】\n{self.manifestation}\n{self.effect}"
+    description: str  # 效果描述（含表现与数值影响）
 
 
 ###############################################################################################################################################

@@ -145,11 +145,10 @@ class ActorDetailScreen(Screen[None]):
                             if isinstance(effect, dict):
                                 name = effect.get("name", "?")
                                 category = effect.get("category", "?")
-                                manifestation = effect.get("manifestation", "?")
-                                effect_val = effect.get("effect", "?")
+                                description = effect.get("description", "?")
                                 log.write(
                                     f"    └ [magenta]{name}[/]  [{category}]"
-                                    f"  {manifestation}  {effect_val}"
+                                    f"  {description}"
                                 )
                             else:
                                 log.write(f"    └ [magenta]{str(effect)}[/]")

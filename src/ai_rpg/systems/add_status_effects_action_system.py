@@ -60,7 +60,7 @@ def _generate_add_status_effects_prompt(
     elif len(current_status_effects) <= 3:
         effects_list = "\n".join(
             [
-                f"- {effect.name}: {effect.formatted_description}"
+                f"- {effect.name}: {effect.description}"
                 for effect in current_status_effects
             ]
         )
@@ -85,8 +85,7 @@ def _generate_add_status_effects_prompt(
     {{
       "name": "效果名（<8字）",
       "category": "增益 | 减益 | 复合 | 条件触发 | 环境",
-      "manifestation": "第一人称，1句话",
-      "effect": "±X点攻击力/防御力"
+      "description": "第一人称，含表现与数值影响，1句话（如：我感到手臂刺痛，攻击力−2）"
     }}
   ]
 }}

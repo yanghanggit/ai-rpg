@@ -136,28 +136,28 @@ def create_combat_pipeline(
     # 战斗初始化系统（创建第一回合）
     processors.add(CombatInitializationSystem(tcg_game))
 
-    # 战斗回合创建系统（创建后续回合）⚠️ 测试用DOUBLE_ACTION策略，后续改回默认
-    processors.add(
-        CombatRoundCreationSystem(tcg_game, strategy=ActionOrderStrategy.DOUBLE_ACTION)
-    )
-
-    # 动作处理相关的系统：敌人决策-抓牌-出牌-撤退-裁决-清理
+    # 战斗核心动作处理相关的系统：抽牌-敌人决策-出牌-撤退-裁决-状态效果追加-战斗结果判定-战斗归档-回合创建
     processors.add(DrawCardsActionSystem(tcg_game, 3))
     processors.add(EnemyPlayDecisionSystem(tcg_game))
     processors.add(PlayCardsActionSystem(tcg_game))
     processors.add(RetreatActionSystem(tcg_game))
     processors.add(ArbitrationActionSystem(tcg_game))
+    processors.add(
+        AddStatusEffectsActionSystem(tcg_game)
+    )  # 状态效果追加系统（AI 根据回合结算结果追加新状态效果，内部有状态守卫）
 
     # 检查战斗结果系统
     processors.add(CombatOutcomeSystem(tcg_game))
 
-    # 状态效果追加系统（AI 根据回合结算结果追加新状态效果，内部有状态守卫）
-    processors.add(AddStatusEffectsActionSystem(tcg_game))
-
     # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫）
     processors.add(CombatArchiveSystem(tcg_game))
 
-    # 清除动作相关的临时状态、标记等，准备下一轮输入
+    # 战斗回合创建系统（创建后续回合）
+    processors.add(
+        CombatRoundCreationSystem(tcg_game, strategy=ActionOrderStrategy.RANDOM)
+    )
+
+    # 通用性的系统，用于后处理部分：清除动作相关的临时状态、标记等，准备下一轮输入
     processors.add(ActionCleanupSystem(tcg_game))
 
     # 是否需要销毁实体

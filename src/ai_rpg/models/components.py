@@ -401,12 +401,6 @@ class StatusEffectsComponent(MutableComponent):
     name: str
     status_effects: List[StatusEffect]
 
-    # def find_status_effect(self, effect_name: str) -> StatusEffect | None:
-    #     for effect in self.status_effects:
-    #         if effect.name == effect_name:
-    #             return effect
-    #     return None
-
 
 ############################################################################################################
 @final

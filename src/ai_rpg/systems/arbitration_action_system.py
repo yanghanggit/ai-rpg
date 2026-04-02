@@ -113,7 +113,8 @@ def _generate_combat_arbitration_prompt(
 ## 出牌
 
 - 卡牌：{action.card.name}
-- damage_dealt：{action.card.damage_dealt}
+- damage_dealt：{action.card.damage_dealt}（单次伤害）
+- hit_count：{action.card.hit_count}（攻击次数）
 - block_gain：{action.card.block_gain}
 - 行动：{action.card.action}
 
@@ -123,8 +124,12 @@ def _generate_combat_arbitration_prompt(
 
 ## 计算规则
 
-伤害值 = max(1, damage_dealt − 目标 block_gain)
-目标 HP = max(0, min(当前 HP − 伤害值, 最大 HP))
+多段攻击逐段结算（hit_count 次）：
+  每段实际伤害 = max(1, damage_dealt − 目标当前剩余 block)
+  每段命中后，目标 block 减去本段消耗量（block 不低于 0）
+  总伤害 = 各段实际伤害之和
+目标 HP = max(0, min(当前 HP − 总伤害, 最大 HP))
+若 hit_count = 1，按单段正常结算即可
 若出牌者 HP 已为 0，跳过结算
 
 ## 输出格式
@@ -136,10 +141,11 @@ def _generate_combat_arbitration_prompt(
   "narrative": "战斗演出"
 }}
 ```
-
+make 
 ### combat_log（简名 = 全名最后一段）
 
-正常：`[出牌者简名|卡牌→目标:damage X,伤害Z] HP:目标简名 旧→新`
+正常：`[出牌者简名|卡牌→目标:damage Xx击_count次,伤害Z] HP:目标简名 旧→新`
+多段示例：`[英雄|回旋镖→石缝蜥:3x3次,伤害7] HP:石缝蜥 15→8`
 阵亡跳过：`[出牌者简名|已阵亡，卡牌无法执行]`
 
 ### final_hp

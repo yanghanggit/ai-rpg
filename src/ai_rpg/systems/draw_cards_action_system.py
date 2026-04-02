@@ -41,6 +41,7 @@ class CardEntry(BaseModel):
     action: str
     damage_dealt: int
     block_gain: int
+    hit_count: int = 1
 
 
 #######################################################################################################################################
@@ -69,7 +70,7 @@ def _generate_draw_prompt(
     """
     actor_stats_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
     cards_example = "\n    ".join(
-        f'{{"name": "卡牌名{i + 1}", "action": "第一人称行动描述", "damage_dealt": 0, "block_gain": 0}}'
+        f'{"name": "卡牌名{i + 1}", "action": "第一人称行动描述", "damage_dealt": 0, "block_gain": 0, "hit_count": 1}'
         for i in range(num_cards)
     )
 
@@ -87,8 +88,9 @@ def _generate_draw_prompt(
 
 **字段说明**:
 - **action** - 第一人称行动描述（1-2句，生动具体）
-- **damage_dealt** - 本张卡牌造成的伤害值（基于攻击力合理推算，整数）
+- **damage_dealt** - 单次攻击造成的伤害值（基于攻击力合理推算，整数）
 - **block_gain** - 本张卡牌提供的格挡增量（基于防御力合理推算，整数）
+- **hit_count** - 攻击次数（默认 1；多段攻击如回旋镖可设为 2~4，每段独立抵挡目标格挡）
 
 **设计原则**: {num_cards}张卡牌应有差异化——可以是高伤低防、高防低伤、均衡型等不同侧重
 
@@ -280,6 +282,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     action=entry.action,
                     damage_dealt=entry.damage_dealt,
                     block_gain=entry.block_gain,
+                    hit_count=entry.hit_count,
                 )
                 for entry in response.cards
             ]

@@ -4,7 +4,7 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.screen import Screen
-from textual.widgets import Header, Input, RichLog, Static
+from textual.widgets import Input, RichLog, Static
 
 import asyncio
 

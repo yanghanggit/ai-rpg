@@ -175,10 +175,12 @@ class ActorDetailScreen(Screen[None]):
                                 cname = card.get("name", "?")
                                 dmg = card.get("damage_dealt", 0)
                                 blk = card.get("block_gain", 0)
+                                hit = card.get("hit_count", 1)
                                 action = card.get("action", "")
+                                hit_str = f"x[yellow]{hit}[/]" if hit > 1 else ""
                                 log.write(
                                     f"    └ [bold]{cname}[/]"
-                                    f"  伤害:[red]{dmg}[/]"
+                                    f"  伤害:[red]{dmg}[/]{hit_str}"
                                     f"  格挡:[blue]{blk}[/]"
                                     + (f"  [dim]{action}[/]" if action else "")
                                 )

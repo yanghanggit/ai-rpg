@@ -279,6 +279,7 @@ class PlayCardsScreen(Screen[None]):
                             "name": c.name,
                             "damage_dealt": c.damage_dealt,
                             "block_gain": c.block_gain,
+                            "hit_count": c.hit_count,
                         }
                         for c in actor.hand_cards
                     ]
@@ -319,8 +320,10 @@ class PlayCardsScreen(Screen[None]):
             name = card["name"]
             dmg = card["damage_dealt"]
             blk = card["block_gain"]
+            hit = card.get("hit_count", 1)
+            hit_str = f"x[yellow]{hit}[/]" if hit > 1 else ""
             log.write(
-                f"    [bold cyan]{i}.[/] {name}  伤害:[red]{dmg}[/]  格挡:[blue]{blk}[/]"
+                f"    [bold cyan]{i}.[/] {name}  伤害:[red]{dmg}[/]{hit_str}  格挡:[blue]{blk}[/]"
             )
 
         self._phase = _Phase.SELECT_CARD

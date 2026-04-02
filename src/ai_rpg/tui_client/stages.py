@@ -66,7 +66,6 @@ class StagesScreen(Screen[None]):
         app: GameClient = self.app  # type: ignore[assignment]
         bp = app.session_blueprint
         player_actor = bp.player_actor if bp else None
-        player_only_stage = bp.player_only_stage if bp else None
 
         # ── 1. 场景分布 ────────────────────────────────
         try:
@@ -75,6 +74,27 @@ class StagesScreen(Screen[None]):
             logger.error(f"StagesScreen: fetch_stages_state 失败 error={e}")
             log.write(f"[bold red]❌ 场景状态查询失败: {e}[/]")
             return
+
+        all_stage_names = list(stages_resp.mapping.keys())
+
+        # ── 2. 一次性获取全部场景实体详情（PlayerOnlyStageComponent + 场景描述） ──
+        player_only_stages: set[str] = set()
+        stage_narratives: dict[str, str] = {}
+        if all_stage_names:
+            try:
+                entities_resp = await fetch_entities_details(
+                    self._user_name, self._game_name, all_stage_names
+                )
+                for entity in entities_resp.entities_serialization:
+                    for comp in entity.components:
+                        if comp.name == "PlayerOnlyStageComponent":
+                            player_only_stages.add(entity.name)
+                        elif comp.name == "StageDescriptionComponent":
+                            narrative = comp.data.get("narrative", "")
+                            if narrative:
+                                stage_narratives[entity.name] = narrative
+            except Exception as e:
+                logger.warning(f"StagesScreen: fetch_entities_details 失败 error={e}")
 
         log.write(
             "[bold yellow]── 场景与角色分布 ──────────────────────────────────────[/]"
@@ -85,7 +105,7 @@ class StagesScreen(Screen[None]):
         else:
             for stage, actors in stages_resp.mapping.items():
                 actors_str = "、".join(actors) if actors else "[dim]（空）[/]"
-                if stage == player_only_stage:
+                if stage in player_only_stages:
                     log.write(
                         f"  [bold magenta]{stage} ★玩家专属场景[/] → {actors_str}"
                     )
@@ -96,7 +116,7 @@ class StagesScreen(Screen[None]):
                     current_stage = stage
         log.write("")
 
-        # ── 2. 当前场景描述 ────────────────────────────────
+        # ── 3. 当前场景描述 ────────────────────────────────
         if not player_actor:
             log.write("[dim]玩家角色信息不可用，无法展示场景描述。[/]")
             return
@@ -105,27 +125,10 @@ class StagesScreen(Screen[None]):
             log.write(f"[yellow]⚠ 未能找到玩家角色 {player_actor} 所在场景[/]")
             return
 
-        log.write(f"[dim]正在获取场景描述：{current_stage} ...[/]")
-        logger.info(f"StagesScreen: 玩家所在场景 current_stage={current_stage}")
-        try:
-            entities_resp = await fetch_entities_details(
-                self._user_name, self._game_name, [current_stage]
-            )
-        except Exception as e:
-            logger.error(f"StagesScreen: fetch_entities_details 失败 error={e}")
-            log.write(f"[bold red]❌ 场景实体查询失败: {e}[/]")
-            return
-
-        narrative = ""
-        for entity in entities_resp.entities_serialization:
-            for comp in entity.components:
-                if comp.name == "StageDescriptionComponent":
-                    narrative = comp.data.get("narrative", "")
-                    break
-
         log.write(
             f"[bold yellow]── 场景描述：{current_stage} ──────────────────────────────────────[/]"
         )
+        narrative = stage_narratives.get(current_stage, "")
         if narrative:
             log.write(narrative)
         else:

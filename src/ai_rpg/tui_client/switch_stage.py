@@ -109,7 +109,7 @@ class SwitchStageScreen(Screen[None]):
 
     @work
     async def _load_stages(self) -> None:
-        """加载可前往的场景列表（排除玩家当前场景和玩家专属场景）。"""
+        """加载可前往的场景列表（含 HomeComponent，排除当前场景）。"""
         log = self.query_one(RichLog)
         log.write("[dim]正在加载场景列表...[/]")
         logger.info(
@@ -144,11 +144,20 @@ class SwitchStageScreen(Screen[None]):
                     for entity in details_resp.entities_serialization
                     if any(comp.name == "HomeComponent" for comp in entity.components)
                 }
+                player_only_stages = {
+                    entity.name
+                    for entity in details_resp.entities_serialization
+                    if any(
+                        comp.name == "PlayerOnlyStageComponent"
+                        for comp in entity.components
+                    )
+                }
             except Exception as e:
                 logger.warning(
                     f"SwitchStageScreen._load_stages: 获取 HomeComponent 失败，回退到全部场景 error={e}"
                 )
                 home_stages = set(all_stages)
+                player_only_stages = set()
 
             available = [
                 stage
@@ -171,7 +180,12 @@ class SwitchStageScreen(Screen[None]):
             for i, stage in enumerate(self._stage_list, 1):
                 actors = resp.mapping.get(stage, [])
                 actors_str = "、".join(actors) if actors else "[dim]（空）[/]"
-                log.write(f"  [bold green]{i}.[/] [cyan]{stage}[/]  → {actors_str}")
+                if stage in player_only_stages:
+                    log.write(
+                        f"  [bold green]{i}.[/] [bold magenta]{stage} ★玩家专属[/]  → {actors_str}"
+                    )
+                else:
+                    log.write(f"  [bold green]{i}.[/] [cyan]{stage}[/]  → {actors_str}")
             log.write("")
             log.write("[dim]输入编号切换场景：[/]")
             logger.info(

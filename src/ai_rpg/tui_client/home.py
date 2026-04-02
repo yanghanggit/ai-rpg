@@ -118,9 +118,16 @@ class HomeScreen(Screen[None]):
         height: 1fr;
     }
 
+    #home-status {
+        height: 1;
+        padding: 0 1;
+        background: $panel;
+        border-bottom: solid $primary;
+        color: $text;
+    }
+
     #home-input-row {
         height: 3;
-        dock: bottom;
     }
 
     #home-prompt {
@@ -148,7 +155,7 @@ class HomeScreen(Screen[None]):
         self._polling_active: bool = False
 
     def compose(self) -> ComposeResult:
-        yield Header(show_clock=True)
+        yield Static("", id="home-status", markup=True)
         yield RichLog(id="home-log", highlight=True, markup=True, wrap=True)
         with Horizontal(id="home-input-row"):
             yield Static("> ", id="home-prompt")
@@ -164,6 +171,7 @@ class HomeScreen(Screen[None]):
         self.query_one(Input).focus()
         self._polling_active = True
         self._poll_messages()
+        self._refresh_status_bar()
 
     def on_unmount(self) -> None:
         self._polling_active = False
@@ -174,17 +182,21 @@ class HomeScreen(Screen[None]):
         logger.info(
             f"HomeScreen: on_screen_resume，刷新数据 user_name={self._user_name}"
         )
-        self._show_player_status()
+        self._refresh_status_bar()
         self.query_one(Input).focus()
 
     def action_logout(self) -> None:
         """ESC 触发登出。"""
         self._do_logout()
 
+    def _refresh_status_bar(self) -> None:
+        """重置状态栏为“查询中”并启动异步刷新。"""
+        self.query_one("#home-status", Static).update("[dim]查询玩家状态中...[/]")
+        self._show_player_status()
+
     @work
     async def _show_player_status(self) -> None:
-        """进入主场景时，显示玩家角色及其当前所在场景。"""
-        log = self.query_one(RichLog)
+        """异步查询并更新状态栏。"""
         from .app import GameClient
 
         app: GameClient = self.app  # type: ignore[assignment]
@@ -192,25 +204,35 @@ class HomeScreen(Screen[None]):
         player_actor = bp.player_actor if bp else None
 
         if not player_actor:
-            log.write("[dim]玩家角色信息暂不可用。[/]")
+            self.query_one("#home-status", Static).update(
+                "[dim]玩家角色信息暂不可用。[/]"
+            )
             return
 
-        current_stage = "[dim]（查询中...）[/]"
+        current_stage = ""
         try:
             resp = await fetch_stages_state(self._user_name, self._game_name)
             for stage, actors in resp.mapping.items():
                 if player_actor in actors:
                     current_stage = stage
                     break
-            else:
-                current_stage = "[dim]（未知场景）[/]"
         except Exception as e:
             logger.warning(f"_show_player_status: 查询场景失败 error={e}")
-            current_stage = "[dim]（查询失败）[/]"
+            self.query_one("#home-status", Static).update(
+                f"[bold green]▶ 玩家角色：[bold cyan]{player_actor}[/][bold green][/]  "
+                f"[dim]当前场景：（查询失败）[/]"
+            )
+            return
 
-        log.write(
-            f"[bold green]▶ 玩家角色：[bold cyan]{player_actor}[/][bold green]"
-            f"  当前场景：[bold yellow]{current_stage}[/]"
+        stage_text = (
+            f"[bold yellow]{current_stage}[/]" if current_stage else "[dim]（未知）[/]"
+        )
+        self.query_one("#home-status", Static).update(
+            f"[bold green]▶ 玩家角色：[bold cyan]{player_actor}[/][bold green][/]  "
+            f"当前场景：{stage_text}"
+        )
+        logger.info(
+            f"_show_player_status: 更新状态栏 player_actor={player_actor} current_stage={current_stage}"
         )
 
     @on(Input.Submitted, "#home-input")

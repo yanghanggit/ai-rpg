@@ -20,10 +20,16 @@ from .server_client import (
 )
 from .server_client import home_generate_dungeon as server_home_generate_dungeon
 
-OVERVIEW_HEADER = """\
+MENU_TEXT = """\
 [bold cyan]── 地下城总览 ──────────────────────────────────────[/]
 
-输入编号查看副本详情，[bold]/list[/] 返回列表，[bold]/generate[/] 生成新地下城，[bold]/enter[/] 进入选中副本，[bold]Escape[/] 返回。
+[bold cyan]── 操作（输入编号执行）──────────────────────────────[/]
+  [bold green]1[/]  副本列表      列出全部地下城副本
+  [bold green]2[/]  生成新地下城  触发地下城生成流程
+
+  [bold green]0[/]  显示此菜单
+  [bold dim]Escape[/]  返回
+
 """
 
 
@@ -68,17 +74,17 @@ class DungeonOverviewScreen(Screen[None]):
         self._game_name = game_name
         self._dungeons: List[Dungeon] = []
         self._selected_dungeon: Optional[str] = None
+        self._mode: str = "menu"  # 'menu' | 'list'
 
     def compose(self) -> ComposeResult:
         yield RichLog(id="dungeon-log", highlight=True, markup=True, wrap=True)
         with Horizontal(id="dungeon-input-row"):
             yield Static("> ", id="dungeon-prompt")
-            yield Input(placeholder="输入编号查看副本详情...", id="dungeon-input")
+            yield Input(placeholder="输入编号执行操作...", id="dungeon-input")
 
     def on_mount(self) -> None:
         log = self.query_one(RichLog)
-        log.write(OVERVIEW_HEADER)
-        self._load_dungeons()
+        log.write(MENU_TEXT)
         self.query_one(Input).focus()
 
     def action_go_back(self) -> None:
@@ -93,43 +99,45 @@ class DungeonOverviewScreen(Screen[None]):
         if not raw:
             return
 
-        if raw.lower() == "/list":
-            log.clear()
-            log.write(OVERVIEW_HEADER)
-            self._render_list(log)
+        log.write(f"[dim]> {raw}[/]")
+
+        if raw == "0":
+            log.write(MENU_TEXT)
+            self._mode = "menu"
             return
 
-        if raw.lower() == "/generate":
-            self._do_generate_dungeon()
-            return
-
-        if raw.lower() == "/enter":
-            if self._selected_dungeon is None:
-                log.write("[yellow]请先输入编号选择一个地下城副本。[/]")
+        if self._mode == "menu":
+            if raw == "1":
+                self._mode = "list"
+                self._load_dungeons()
+            elif raw == "2":
+                self._do_generate_dungeon()
             else:
-                self._do_enter_dungeon(self._selected_dungeon)
-            return
+                log.write(f"[red]未知输入：{raw}，输入 0 查看操作菜单。[/]")
 
-        if not self._dungeons:
-            log.write("[yellow]地下城列表尚未加载，请稍候...[/]")
-            return
-
-        if not raw.isdigit():
-            log.write("[red]请输入有效编号（数字）或 /list 返回列表[/]")
-            return
-
-        idx = int(raw) - 1
-        if idx < 0 or idx >= len(self._dungeons):
-            log.write(
-                f"[red]编号超出范围，请输入 1–{len(self._dungeons)} 之间的数字[/]"
-            )
-            return
-
-        dungeon = self._dungeons[idx]
-        self._selected_dungeon = dungeon.name
-        log.write(f"[dim]> 查看副本：{dungeon.name}[/]")
-        self._show_dungeon(dungeon, log)
-        log.write(f"[dim]输入 /enter 进入此副本：[bold cyan]{dungeon.name}[/][/]")
+        elif self._mode == "list":
+            if raw.lower() == "/enter":
+                if self._selected_dungeon is None:
+                    log.write("[yellow]请先输入编号选择一个副本。[/]")
+                else:
+                    self._do_enter_dungeon(self._selected_dungeon)
+                return
+            if not self._dungeons:
+                log.write("[yellow]地下城列表尚未加载，请稍候...[/]")
+                return
+            if not raw.isdigit():
+                log.write("[red]请输入有效编号或 0 显示菜单[/]")
+                return
+            idx = int(raw) - 1
+            if idx < 0 or idx >= len(self._dungeons):
+                log.write(
+                    f"[red]编号超出范围，请输入 1–{len(self._dungeons)} 之间的数字[/]"
+                )
+                return
+            dungeon = self._dungeons[idx]
+            self._selected_dungeon = dungeon.name
+            self._show_dungeon(dungeon, log)
+            log.write(f"[dim]输入 /enter 进入此副本：[bold cyan]{dungeon.name}[/][/]")
 
     def _render_list(self, log: RichLog) -> None:
         """将已缓存的地下城列表渲染到 log。"""
@@ -144,6 +152,9 @@ class DungeonOverviewScreen(Screen[None]):
                 f"  [bold]{i}.[/] [bold cyan]{dungeon.name}[/]"
                 f"  [dim]{preview}…  ({room_count} 个房间)[/]"
             )
+        log.write(
+            "[dim]── 输入编号查看详情，输入 3 进入选中副本，输入 0 显示菜单 ──[/]"
+        )
         log.write("")
 
     def _show_dungeon(self, dungeon: Dungeon, log: RichLog) -> None:
@@ -157,16 +168,21 @@ class DungeonOverviewScreen(Screen[None]):
 
         for i, room in enumerate(dungeon.rooms, start=1):
             stage = room.stage
-            log.write(f"  [bold cyan]房间 {i}：[/][green]{stage.name}[/]")
-            if stage.actors:
+            is_combat = any(
+                actor.character_sheet.type == "Enemy" for actor in stage.actors
+            )
+            room_tag = "[bold red]⚔ 战斗[/]" if is_combat else "[dim cyan]○ 探索[/]"
+            log.write(f"  [bold cyan]房间 {i}：[/][green]{stage.name}[/]  {room_tag}")
+            if is_combat:
                 for actor in stage.actors:
-                    stats = actor.character_stats
-                    log.write(
-                        f"    · [bold]{actor.name}[/]"
-                        f"  HP:[yellow]{stats.max_hp}[/]"
-                        f"  ATK:[red]{stats.attack}[/]"
-                        f"  DEF:[blue]{stats.defense}[/]"
-                    )
+                    if actor.character_sheet.type == "Enemy":
+                        stats = actor.character_stats
+                        log.write(
+                            f"    · [bold]{actor.name}[/]"
+                            f"  HP:[yellow]{stats.max_hp}[/]"
+                            f"  ATK:[red]{stats.attack}[/]"
+                            f"  DEF:[blue]{stats.defense}[/]"
+                        )
             else:
                 log.write("    [dim]（无敌人）[/]")
         log.write("")

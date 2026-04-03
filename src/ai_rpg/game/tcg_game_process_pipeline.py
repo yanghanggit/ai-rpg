@@ -149,13 +149,13 @@ def create_combat_pipeline(
     # 检查战斗结果系统
     processors.add(CombatOutcomeSystem(tcg_game))
 
-    # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫）
-    processors.add(CombatArchiveSystem(tcg_game))
-
     # 战斗回合创建系统（创建后续回合）
     processors.add(
         CombatRoundCreationSystem(tcg_game, strategy=ActionOrderStrategy.RANDOM)
     )
+
+    # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫）
+    processors.add(CombatArchiveSystem(tcg_game))
 
     # 通用性的系统，用于后处理部分：清除动作相关的临时状态、标记等，准备下一轮输入
     processors.add(ActionCleanupSystem(tcg_game))

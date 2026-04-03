@@ -156,6 +156,10 @@ class CombatRoundCreationSystem(ExecuteProcessor):
             logger.warning(f"未知的行动顺序策略: {self._strategy}，使用随机策略")
             sorted_actors = self._sort_actors_random(actors_in_stage)
 
+        # 若存在上一回合（非首回合），清除旧回合的手牌与格挡状态
+        if _last_round is not None:
+            self._game.clear_round_state()
+
         # 设置回合的行动顺序
         if self._strategy == ActionOrderStrategy.DOUBLE_ACTION:
             # ⚠️ 测试用：每人出现 2 次，暴露当前系统对重复名称的处理缺陷

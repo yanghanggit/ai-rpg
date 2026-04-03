@@ -51,30 +51,6 @@ class CombatOutcomeSystem(ExecuteProcessor):
         # step1: 判定战斗胜负
         self._determine_combat_winner()
 
-        # step2: 若最新回合已完成，执行回合结束清理
-        self._on_round_completed()
-
-    ########################################################################################################################################################################
-    def _on_round_completed(self) -> None:
-        """当最新回合已完成时，执行回合结束清理。
-
-        检测 latest_round.is_round_completed，若回合已结束则：
-        - 清除所有角色的 HandComponent（手牌将在下一回合抽牌时重新生成）
-        """
-
-        if not self._game.current_dungeon.is_ongoing:
-            logger.debug("当前不在战斗阶段，无需执行回合结束清理")
-            return  # 不是本阶段就直接返回
-
-        logger.debug("检查回合完成状态")
-
-        latest_round = self._game.current_dungeon.latest_round
-        if latest_round is None or not latest_round.is_round_completed:
-            return
-
-        logger.debug("回合已完成，执行回合结束清理")
-        self._game.clear_round_state()
-
     ########################################################################################################################################################################
     def _determine_combat_winner(self) -> None:
         """根据双方阵营的存活情况判定战斗胜负。

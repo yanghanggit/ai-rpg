@@ -17,6 +17,7 @@ from ..models import (
     DeathComponent,
     RetreatAction,
     Card,
+    CardTargetType,
 )
 from ..entitas import Entity, Matcher
 
@@ -105,6 +106,54 @@ def activate_all_card_draws(
 
 
 ###################################################################################################################################################################
+def _resolve_targets(
+    card: Card,
+    actor_entity: Entity,
+    passed_targets: List[str],
+    tcg_game: TCGGame,
+) -> Tuple[List[str], str]:
+    """根据 card.target_type 解析并验证出牌目标。
+
+    actor_entity 是 ExpeditionMemberComponent 时，“敌方”为 EnemyComponent，“我方”为 ExpeditionMemberComponent。
+    actor_entity 是 EnemyComponent 时，“敌方”为 ExpeditionMemberComponent，“我方”为 EnemyComponent。
+
+    Returns:
+        (resolved_targets, error_msg): error_msg 为空字符串表示成功。
+    """
+    is_actor_ally = actor_entity.has(ExpeditionMemberComponent)
+
+    if card.target_type == CardTargetType.ENEMY_SINGLE:
+        enemies = (
+            _get_alive_enemies_in_stage(actor_entity, tcg_game)
+            if is_actor_ally
+            else _get_alive_expedition_members_in_stage(actor_entity, tcg_game)
+        )
+        enemy_names = {e.name for e in enemies}
+        if len(passed_targets) != 1:
+            return (
+                [],
+                f"ENEMY_SINGLE 目标数量必须为 1，实际收到 {len(passed_targets)} 个",
+            )
+        if passed_targets[0] not in enemy_names:
+            return (
+                [],
+                f"目标 '{passed_targets[0]}' 不在存活敌方列表中: {sorted(enemy_names)}",
+            )
+        return list(passed_targets), ""
+
+    elif card.target_type == CardTargetType.ENEMY_ALL:
+        enemies = (
+            _get_alive_enemies_in_stage(actor_entity, tcg_game)
+            if is_actor_ally
+            else _get_alive_expedition_members_in_stage(actor_entity, tcg_game)
+        )
+        return [e.name for e in enemies], ""
+
+    else:  # ALLY_SINGLE / ALLY_ALL — 不限制目标
+        return list(passed_targets), ""
+
+
+###################################################################################################################################################################
 def _validate_play_turn(
     tcg_game: TCGGame,
     actor_name: str,
@@ -181,10 +230,17 @@ def activate_play_cards_specified(
         logger.error(msg)
         return False, msg
 
-    logger.debug(
-        f"为角色 {actor_name} 激活出牌动作，卡牌: {selected_card.name} 目标: {targets}"
+    resolved_targets, resolve_err = _resolve_targets(
+        selected_card, entity, targets, tcg_game
     )
-    entity.replace(PlayCardsAction, entity.name, selected_card, targets)
+    if resolve_err:
+        logger.error(f"activate_play_cards_specified: {resolve_err}")
+        return False, resolve_err
+
+    logger.debug(
+        f"为角色 {actor_name} 激活出牌动作，卡牌: {selected_card.name} 目标: {resolved_targets}"
+    )
+    entity.replace(PlayCardsAction, entity.name, selected_card, resolved_targets)
     return True, f"成功为角色 {actor_name} 激活出牌动作（卡牌: {card_name}）"
 
 

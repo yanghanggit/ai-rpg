@@ -25,6 +25,7 @@ from ..models import (
     DrawCardsAction,
     HandComponent,
     Card,
+    CardTargetType,
     DeathComponent,
     CharacterStats,
     CharacterStatsComponent,
@@ -42,6 +43,7 @@ class CardEntry(BaseModel):
     damage_dealt: int
     block_gain: int
     hit_count: int = 1
+    target_type: str = CardTargetType.ENEMY_SINGLE  # 接受原始字符串，由系统逐卡校验
 
 
 #######################################################################################################################################
@@ -70,7 +72,7 @@ def _generate_draw_prompt(
     """
     actor_stats_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
     cards_example = "\n    ".join(
-        f'{{"name": "卡牌名{i + 1}", "action": "第一人称行动描述", "damage_dealt": 0, "block_gain": 0, "hit_count": 1}}'
+        f'{{"name": "卡牌名{i + 1}", "action": "第一人称行动描述", "damage_dealt": 0, "block_gain": 0, "hit_count": 1, "target_type": "enemy_single"}}'
         for i in range(num_cards)
     )
 
@@ -91,6 +93,7 @@ def _generate_draw_prompt(
 - **damage_dealt** - 单次攻击造成的伤害值（基于攻击力合理推算，整数）
 - **block_gain** - 本张卡牌提供的格挡增量（基于防御力合理推算，整数）
 - **hit_count** - 攻击次数（默认 1；多段攻击如回旋镖可设为 2~4，每段独立抵挡目标格挡）
+- **target_type** - 出牌目标类型：攻击/伤害类卡牌通常选 `enemy_single` 或 `enemy_all`；治疗/格挡类卡牌通常选 `ally_single` 或 `ally_all`
 
 **设计原则**: {num_cards}张卡牌应有差异化——可以是高伤低防、高防低伤、均衡型等不同侧重
 
@@ -253,9 +256,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
             response = DrawCardsResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
             )
-            assert (
-                len(response.cards) == num_cards
-            ), f"LLM 返回的卡牌数量不符：期望 {num_cards}，实际 {len(response.cards)}"
 
             last_round = self._game.current_dungeon.latest_round
             assert last_round is not None
@@ -275,17 +275,39 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 setattr(ai_message, "draw_cards_round_number", current_round_number)
             self._game.add_ai_message(entity, chat_client.response_ai_messages)
 
-            # 构建 Card2 列表
-            cards: List[Card] = [
-                Card(
-                    name=entry.name,
-                    action=entry.action,
-                    damage_dealt=entry.damage_dealt,
-                    block_gain=entry.block_gain,
-                    hit_count=entry.hit_count,
+            # 构建 Card 列表：逐卡校验 target_type，非法值废弃并写入 agent 警告
+            valid_target_types = {e.value for e in CardTargetType}
+            cards: List[Card] = []
+            for entry in response.cards:
+                if entry.target_type not in valid_target_types:
+                    warn_msg = (
+                        f"[系统警告] 你刚才生成的卡牌「{entry.name}」的 target_type 字段值为"
+                        f"「{entry.target_type}」，不属于有效值（{sorted(valid_target_types)}），"
+                        f"该卡已被系统废弃。请在后续生成中确保 target_type 只使用以下值之一：{sorted(valid_target_types)}"
+                    )
+                    logger.warning(
+                        f"[{entity.name}] 卡牌「{entry.name}」target_type 无效，已废弃：{entry.target_type!r}"
+                    )
+                    self._game.add_human_message(
+                        entity=entity, message_content=warn_msg
+                    )
+                    continue
+                cards.append(
+                    Card(
+                        name=entry.name,
+                        action=entry.action,
+                        damage_dealt=entry.damage_dealt,
+                        block_gain=entry.block_gain,
+                        hit_count=entry.hit_count,
+                        target_type=CardTargetType(entry.target_type),
+                    )
                 )
-                for entry in response.cards
-            ]
+
+            if len(cards) != num_cards:
+                logger.warning(
+                    f"[{entity.name}] 过滤后卡牌数量（{len(cards)}）与预期（{num_cards}）不符，"
+                    "可能有部分卡牌因无效 target_type 被废弃"
+                )
 
             entity.replace(HandComponent, entity.name, cards, current_round_number)
             logger.debug(

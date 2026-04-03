@@ -3,7 +3,7 @@
 包含战斗状态、战斗结果、状态效果、卡牌、战斗回合与战斗实例等核心模型。
 """
 
-from enum import IntEnum, unique
+from enum import IntEnum, StrEnum, unique
 from typing import List, Optional, final
 from pydantic import BaseModel
 
@@ -48,6 +48,26 @@ class StatusEffect(BaseModel):
 
 ###############################################################################################################################################
 @final
+@unique
+class CardTargetType(StrEnum):
+    """卡牌目标类型
+
+    声明一张卡牌的打击范围，由 LLM 在抽卡时输出，出牌阶段系统据此做目标验证或自动填充。
+
+    当前约束策略：
+    - enemy_single：targets 必须恰好包含 1 名存活敌方角色名
+    - enemy_all：targets 由系统自动替换为场上全部存活敌方，调用方传入值被忽略
+    - ally_single / ally_all：暂不约束，targets 由调用方自由传入（占位，后续扩展）
+    """
+
+    ENEMY_SINGLE = "enemy_single"
+    ENEMY_ALL = "enemy_all"
+    ALLY_SINGLE = "ally_single"
+    ALLY_ALL = "ally_all"
+
+
+###############################################################################################################################################
+@final
 class Card(BaseModel):
     """卡牌模型（重构版）
 
@@ -65,6 +85,9 @@ class Card(BaseModel):
     hit_count: int = (
         1  # 攻击次数（默认 1；>1 时为多段攻击，每段各自抵挡格挡后依次结算）
     )
+    target_type: CardTargetType = (
+        CardTargetType.ENEMY_SINGLE
+    )  # 出牌目标类型，决定目标约束策略
 
 
 ###############################################################################################################################################

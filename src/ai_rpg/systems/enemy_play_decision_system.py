@@ -12,6 +12,7 @@ from ..models import (
     CharacterStatsComponent,
     ExpeditionMemberComponent,
     Card,
+    CardTargetType,
 )
 from ..utils import extract_json_from_code_block
 
@@ -55,7 +56,7 @@ def _generate_enemy_decision_prompt(
     )
 
     cards_lines = "\n".join(
-        f"- 【{c.name}】行动：{c.action}  damage_dealt:{c.damage_dealt}  hit_count:{c.hit_count}  block_gain:{c.block_gain}"
+        f"- 【{c.name}】行动：{c.action}  damage_dealt:{c.damage_dealt}  hit_count:{c.hit_count}  block_gain:{c.block_gain}  target_type:{c.target_type}"
         for c in hand_cards
     )
 
@@ -259,15 +260,23 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
                 )
                 return
 
-            # 过滤掉不存在的目标名（防止 ArbitrationActionSystem 出现 warning）
+            # 根据 target_type 解析出牌目标
             alive_actors = self._game.get_alive_actors_in_stage(entity)
             alive_names = {a.name for a in alive_actors}
-            valid_targets = [t for t in decision.targets if t in alive_names]
-            if len(valid_targets) != len(decision.targets):
-                logger.warning(
-                    f"EnemyPlayDecisionSystem: [{entity.name}] 过滤无效目标 "
-                    f"{set(decision.targets) - alive_names}"
-                )
+
+            if selected_card.target_type == CardTargetType.ENEMY_ALL:
+                # 自动填充所有存活的远征队成员（对 Enemy 来说"敌方"= ExpeditionMember）
+                valid_targets = [
+                    a.name for a in alive_actors if a.has(ExpeditionMemberComponent)
+                ]
+            else:
+                # ENEMY_SINGLE / ALLY_* — 过滤掉不存在的目标名
+                valid_targets = [t for t in decision.targets if t in alive_names]
+                if len(valid_targets) != len(decision.targets):
+                    logger.warning(
+                        f"EnemyPlayDecisionSystem: [{entity.name}] 过滤无效目标 "
+                        f"{set(decision.targets) - alive_names}"
+                    )
 
             # 写对话历史
             current_round_number = len(self._game.current_dungeon.current_rounds or [])

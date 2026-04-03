@@ -478,11 +478,11 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
             f"恢复满血: {expedition_entity.name} 生命值 = {combat_stats.stats.hp}/{combat_stats.stats.max_hp}"
         )
 
-        # 清空所有状态效果
-        assert expedition_entity.has(StatusEffectsComponent)
-        combat_status_effects = expedition_entity.get(StatusEffectsComponent)
-        combat_status_effects.status_effects.clear()
-        logger.info(f"清空状态效果: {expedition_entity.name}")
+        # 清空所有状态效果（若存在）
+        if expedition_entity.has(StatusEffectsComponent):
+            combat_status_effects = expedition_entity.get(StatusEffectsComponent)
+            combat_status_effects.status_effects.clear()
+            logger.info(f"清空状态效果: {expedition_entity.name}")
 
         # 解散远征队，移除ExpeditionMemberComponent组件
         assert expedition_entity.has(ExpeditionMemberComponent)

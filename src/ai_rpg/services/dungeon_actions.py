@@ -124,12 +124,7 @@ def _validate_play_turn(
             f"角色 {actor_name} 不在本回合行动顺序中: {latest_round.action_order}",
         )
 
-    completed_count = len(latest_round.completed_actors)
-    next_actor = (
-        latest_round.action_order[completed_count]
-        if completed_count < len(latest_round.action_order)
-        else None
-    )
+    next_actor = latest_round.current_actor
     if next_actor != actor_name:
         return None, f"现在不是 {actor_name} 的回合，当前应由 {next_actor} 出牌"
 

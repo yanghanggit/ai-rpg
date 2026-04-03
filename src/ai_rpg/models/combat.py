@@ -4,7 +4,7 @@
 """
 
 from enum import IntEnum, unique
-from typing import List, final
+from typing import List, Optional, final
 from pydantic import BaseModel
 
 
@@ -76,6 +76,14 @@ class Round(BaseModel):
     completed_actors: List[str] = []  # 已完成出牌的角色名称（按出手顺序追加）
     combat_log: List[str] = []  # 战斗计算日志，每次出手追加一条
     narrative: List[str] = []  # 叙事文本/演出描述，每次出手追加一条
+
+    @property
+    def current_actor(self) -> Optional[str]:
+        """返回当前应行动的角色名称；回合已结束或无行动顺序时返回 None。"""
+        completed_count = len(self.completed_actors)
+        if completed_count < len(self.action_order):
+            return self.action_order[completed_count]
+        return None
 
     @property
     def is_round_completed(self) -> bool:

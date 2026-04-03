@@ -63,7 +63,7 @@ def _generate_defeat_notification() -> str:
 
 #######################################################################################################################################
 def _generate_combat_arbitration_broadcast(
-    combat_log: str, narrative: str, current_round_number: int
+    combat_log: str, narrative: str, current_round_number: int, actor_name: str
 ) -> str:
     """生成战斗仲裁广播消息。
 
@@ -71,12 +71,13 @@ def _generate_combat_arbitration_broadcast(
         combat_log: 战斗数据日志
         narrative: 战斗演出描述
         current_round_number: 当前回合数
+        actor_name: 出牌角色全名
 
     Returns:
         格式化的战斗广播消息，包含演出和数据日志
     """
-
-    return f"""# 第 {current_round_number} 回合结算
+    actor_short_name = actor_name.split(".")[-1]
+    return f"""# 第 {current_round_number} 回合 · {actor_short_name} 出牌仲裁
 
 ## 战斗演出
 
@@ -232,7 +233,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         )
         chat_client.chat()
 
-        self._apply_arbitration_result(stage_entity, chat_client)
+        self._apply_arbitration_result(stage_entity, chat_client, actor_entity.name)
         self._process_zero_health_entities()
 
     #######################################################################################################################################
@@ -254,6 +255,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
                     combat_log,
                     narrative,
                     current_round_number,
+                    actor_entity.name,
                 ),
                 stage=stage_entity.name,
                 combat_log=combat_log,
@@ -272,6 +274,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         self,
         stage_entity: Entity,
         chat_client: ChatClient,
+        actor_name: str,
     ) -> None:
         try:
             format_response = ArbitrationResponse.model_validate_json(
@@ -295,6 +298,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
                         format_response.combat_log,
                         format_response.narrative,
                         current_round_number,
+                        actor_name,
                     ),
                     stage=stage_entity.name,
                     combat_log=format_response.combat_log,

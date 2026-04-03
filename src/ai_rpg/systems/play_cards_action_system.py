@@ -13,8 +13,41 @@ from ..models import (
     HandComponent,
     PlayCardsAction,
     ActorComponent,
+    AgentEvent,
 )
 from ..game.tcg_game import TCGGame
+
+
+#######################################################################################################################################
+def _generate_play_card_context_prompt(
+    action: PlayCardsAction,
+    round_number: int,
+) -> str:
+    """生成出牌上下文消息，注入角色的对话历史，帮助 LLM 感知本回合出牌情况。"""
+    card = action.card
+    targets_str = "、".join(action.targets) if action.targets else "无目标"
+    lines = [
+        f"【第 {round_number} 回合 · 出牌】",
+        f"你使用了卡牌「{card.name}」。",
+        f"行动叙述：{card.action}",
+        f"目标：{targets_str}",
+    ]
+    stats_parts = []
+    if card.damage_dealt > 0:
+        hit_info = f"（{card.hit_count} 段）" if card.hit_count > 1 else ""
+        stats_parts.append(f"造成伤害 {card.damage_dealt}{hit_info}")
+    if card.block_gain > 0:
+        stats_parts.append(f"获得格挡 {card.block_gain}")
+    if stats_parts:
+        lines.append(f"卡牌效果：{'，'.join(stats_parts)}。")
+    return "\n".join(lines)
+
+
+#######################################################################################################################################
+def _generate_action_notice_for_others(actor_name: str, round_number: int) -> str:
+    """生成出牌行动预告，广播给场景内其他角色，维护观察者视角的上下文连贯性。"""
+    actor_short_name = actor_name.split(".")[-1]
+    return f"【第 {round_number} 回合】{actor_short_name} 正在出牌。"
 
 
 #######################################################################################################################################
@@ -85,6 +118,8 @@ class PlayCardsActionSystem(ReactiveProcessor):
         )
 
         for entity in entities:
+
+            # 输出出牌信息日志，包含角色名、卡牌名、卡牌属性（治疗/攻击/防御）和目标
             action = entity.get(PlayCardsAction)
             logger.debug(
                 f"  [{action.name}] 出牌 → 卡牌: {action.card.name}"
@@ -93,8 +128,39 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 f" | 行动叙事: {action.card.action}"
             )
 
+            # 写一个assert 要求 entity.name 必须在 last_round.action_order 中，确保出牌角色在当前回合的行动顺序中
+            assert entity.name in last_round.action_order, (
+                f"PlayCardsActionSystem: 出牌角色 {entity.name} 不在当前回合的行动顺序中！"
+                f" action_order={last_round.action_order}"
+            )
+
             # 将出牌角色写入本回合 completed_actors（允许同一角色多次出现）
             last_round.completed_actors.append(action.name)
             logger.debug(
                 f"  completed_actors: {last_round.completed_actors} / {last_round.action_order}"
+            )
+
+            # 为出牌角色注入本回合出牌上下文，作为其对话历史的一部分
+            self._game.add_human_message(
+                entity=entity,
+                message_content=_generate_play_card_context_prompt(
+                    action=action,
+                    round_number=len(current_rounds),
+                ),
+                play_card_context=action.card.model_dump_json(),
+            )
+
+            # 向场景内其他角色（排除出牌者自身与场景仲裁实体）广播简短的行动预告，
+            # 使观察者上下文在收到仲裁结算之前已感知到出牌事件
+            stage_entity = self._game.resolve_stage_entity(entity)
+            assert stage_entity is not None
+            self._game.broadcast_to_stage(
+                entity=entity,
+                agent_event=AgentEvent(
+                    message=_generate_action_notice_for_others(
+                        actor_name=action.name,
+                        round_number=len(current_rounds),
+                    )
+                ),
+                exclude_entities={entity, stage_entity},
             )

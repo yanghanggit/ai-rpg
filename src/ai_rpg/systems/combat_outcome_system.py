@@ -73,8 +73,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
             return
 
         logger.debug("回合已完成，执行回合结束清理")
-        self._game.clear_hands()
-        self._game.clear_blocks()
+        self._game.clear_round_state()
 
     ########################################################################################################################################################################
     def _determine_combat_winner(self) -> None:

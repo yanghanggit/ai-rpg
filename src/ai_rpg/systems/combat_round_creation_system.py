@@ -18,7 +18,7 @@ from typing import Final, List, Set, final, override
 from loguru import logger
 from ..entitas import Entity, ExecuteProcessor
 from ..game.tcg_game import TCGGame
-from ..models import DungeonComponent, IdentityComponent, Round
+from ..models import BlockComponent, DungeonComponent, IdentityComponent, Round
 
 
 ###############################################################################################################################################
@@ -167,6 +167,11 @@ class CombatRoundCreationSystem(ExecuteProcessor):
             action_order=action_order,
         )
         self._game.current_dungeon.current_combat.rounds.append(round)  # type: ignore[union-attr]
+
+        # 每回合开始时为所有参战角色初始化 BlockComponent 为 0（杀戮尖塔模式：每轮格挡清零）
+        for actor in sorted_actors:
+            actor.replace(BlockComponent, actor.name, 0)
+
         return round
 
     ############################################################################################################

@@ -17,10 +17,10 @@ from ..models import (
     Dungeon,
     World,
     HandComponent,
+    BlockComponent,
     StageType,
     ActorType,
     StatusEffectsComponent,
-    BlockComponent,
 )
 from .player_session import PlayerSession
 from ..entitas import Matcher
@@ -151,12 +151,14 @@ class TCGGame(RPGGame):
                 self.destroy_entity(destroy_stage_entity)
 
     ################################################################################################################
-    def clear_hands(self) -> None:
-        """清除所有角色实体的手牌组件"""
-        actor_entities = self.get_group(Matcher(HandComponent)).entities.copy()
-        for entity in actor_entities:
+    def clear_round_state(self) -> None:
+        """清除所有角色实体的每回合可变状态（手牌与格挡）"""
+        for entity in self.get_group(Matcher(HandComponent)).entities.copy():
             logger.debug(f"clear hands: {entity.name}")
             entity.remove(HandComponent)
+        for entity in self.get_group(Matcher(BlockComponent)).entities.copy():
+            logger.debug(f"clear blocks: {entity.name}")
+            entity.remove(BlockComponent)
 
     ################################################################################################################
     def clear_status_effects(self) -> None:
@@ -165,14 +167,5 @@ class TCGGame(RPGGame):
         for entity in actor_entities:
             logger.debug(f"clear status effects: {entity.name}")
             entity.remove(StatusEffectsComponent)
-
-    ################################################################################################################
-    # BlockComponent
-    def clear_blocks(self) -> None:
-        """清除所有角色实体的格挡组件"""
-        actor_entities = self.get_group(Matcher(BlockComponent)).entities.copy()
-        for entity in actor_entities:
-            logger.debug(f"clear blocks: {entity.name}")
-            entity.remove(BlockComponent)
 
     ################################################################################################################

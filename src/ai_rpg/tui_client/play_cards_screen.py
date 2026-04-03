@@ -2,8 +2,13 @@
 
 在此 Screen 内完整走完当前回合的出牌流程：
 - 敌人回合：按 Enter 触发 AI 决策并轮询结果
-- 玩家回合：输入卡牌编号选牌，再输入目标编号（或 Enter 跳过）完成出牌
+- 玩家回合：输入卡牌编号选牌，根据 target_type 决定目标选择方式
 - 回合全部出完后，提示 Escape 返回
+
+设计原则：
+  不在 Screen 内缓存服务器状态（action_order / completed_actors 等），
+  每次需要时通过 API 按需拉取最新数据。
+  仅保留当前用户交互阶段的临时 pending 字段（_pending_*）。
 """
 
 import asyncio
@@ -16,11 +21,13 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.screen import Screen
-from textual.widgets import Footer, Input, RichLog, Static
+from textual.widgets import Input, RichLog, Static
 
 from .server_client import (
     dungeon_combat_play_cards as server_play_cards,
     fetch_dungeon_room,
+    fetch_entities_details,
+    fetch_stages_state,
     fetch_tasks_status,
 )
 from ..models import TaskStatus
@@ -93,19 +100,14 @@ class PlayCardsScreen(Screen[None]):
         self._user_name = user_name
         self._game_name = game_name
 
-        # 当前回合状态（在 _load_round 中填充）
-        self._action_order: List[str] = []
-        self._completed_actors: List[str] = []
-        self._hand_cards: List[Dict[str, Any]] = (
-            []
-        )  # [{name, damage_dealt, block_gain}]
-        self._alive_enemy_names: List[str] = []  # 场上存活敌人
-        self._alive_ally_names: List[str] = []  # 场上存活友方
-
-        # 选牌流程的临时存储
-        self._pending_card_name: Optional[str] = None
-
+        # 出牌交互临时状态（仅在单次出牌流程内有效，不跨回合缓存服务器数据）
         self._phase = _Phase.LOADING
+        self._pending_actor_name: Optional[str] = None  # 当前出牌角色
+        self._pending_card_name: Optional[str] = None  # 已选卡牌名
+        self._pending_hand_cards: List[Dict[str, Any]] = []  # 当前手牌（供编号解析）
+        self._pending_alive_enemies: List[str] = []  # 本次出牌时拉取的存活敌方
+        self._pending_alive_allies: List[str] = []  # 本次出牌时拉取的存活友方
+        self._pending_target_candidates: List[str] = []  # SELECT_TARGET 阶段的候选列表
 
     # ──────────────────────────────────────────────
     # Textual 生命周期
@@ -116,7 +118,7 @@ class PlayCardsScreen(Screen[None]):
         with Horizontal(id="play-input-row"):
             yield Static("> ", id="play-prompt")
             yield Input(placeholder="", id="play-input")
-        yield Footer()
+        # yield Footer()
 
     def on_mount(self) -> None:
         log = self.query_one(RichLog)
@@ -153,10 +155,11 @@ class PlayCardsScreen(Screen[None]):
             log.write("[dim]回合已结束，请按 Escape 返回。[/]")
 
     # ──────────────────────────────────────────────
-    # 加载回合信息
+    # 加载回合信息（按需拉取，不缓存）
     # ──────────────────────────────────────────────
     @work
     async def _load_round(self) -> None:
+        """从服务器拉取最新回合数据，渲染状态，推进状态机。"""
         log = self.query_one(RichLog)
         log.write("[dim]正在加载回合信息...[/]")
         try:
@@ -171,28 +174,21 @@ class PlayCardsScreen(Screen[None]):
                 return
 
             cur = rounds[-1]
-            self._action_order = list(cur.action_order)
-            self._completed_actors = list(cur.completed_actors)
+            action_order = list(cur.action_order)
+            completed_actors = list(cur.completed_actors)
+            stage_name = room_resp.room.stage.name
 
-            # 拿场上存活角色（通过 room 内 actors 列表）
-            self._alive_enemy_names = [
-                a.name
-                for a in room_resp.room.stage.actors
-                if any(
-                    c.component_name == "EnemyComponent"
-                    for c in (a.components if hasattr(a, "components") else [])
-                )
-            ]
+            # 以 EnemyComponent 组件判断敌方，替代名称硬判断
+            enemy_names = await self._fetch_enemy_names(stage_name)
 
             log.write(
                 f"[bold yellow]回合 {len(rounds)}[/]  "
-                f"行动序列：{' → '.join(self._action_order)}\n"
-                f"已出手：{', '.join(self._completed_actors) if self._completed_actors else '（无）'}\n"
+                f"行动序列：{' → '.join(action_order)}\n"
+                f"已出手：{', '.join(completed_actors) if completed_actors else '（无）'}\n"
             )
-
             logger.info(
-                f"PlayCardsScreen._load_round: action_order={self._action_order} "
-                f"completed={self._completed_actors}"
+                f"PlayCardsScreen._load_round: action_order={action_order} "
+                f"completed={completed_actors} enemies={enemy_names}"
             )
         except Exception as e:
             logger.error(f"PlayCardsScreen._load_round: 加载失败 error={e}")
@@ -201,30 +197,27 @@ class PlayCardsScreen(Screen[None]):
             self._update_status_bar("加载失败")
             return
 
-        self._advance_to_next_actor()
+        self._advance_to_next_actor(action_order, completed_actors, enemy_names)
 
     # ──────────────────────────────────────────────
     # 状态机推进
     # ──────────────────────────────────────────────
-    def _advance_to_next_actor(self) -> None:
-        """根据 action_order / completed_actors 决定下一步操作。"""
-        completed_count = len(self._completed_actors)
-        if completed_count >= len(self._action_order):
+    def _advance_to_next_actor(
+        self,
+        action_order: List[str],
+        completed_actors: List[str],
+        enemy_names: List[str],
+    ) -> None:
+        """根据最新 action_order / completed_actors 决定下一步。所有参数均来自新鲜 API 数据。"""
+        if len(completed_actors) >= len(action_order):
             self._enter_round_done()
             return
 
-        next_actor = self._action_order[completed_count]
-        # 判断是否是玩家角色（包含在 action_order 中且不是纯敌人回合由用户控制的角色）
-        # 简单规则：名称中含 "怪物" 或 "敌" 认定为敌人，其余为玩家
-        if self._is_enemy(next_actor):
+        next_actor = action_order[len(completed_actors)]
+        if next_actor in enemy_names:
             self._enter_enemy_turn(next_actor)
         else:
             self._enter_select_card(next_actor)
-
-    def _is_enemy(self, actor_name: str) -> bool:
-        """简单判断：名称段中含 '怪物' 视为敌人。"""
-        parts = actor_name.split(".")
-        return any("怪物" in p for p in parts)
 
     def _enter_enemy_turn(self, actor_name: str) -> None:
         log = self.query_one(RichLog)
@@ -233,10 +226,10 @@ class PlayCardsScreen(Screen[None]):
             f"[bold red]── 敌人回合：{short} ──────────────────────────────────[/]"
         )
         log.write("  按 [bold]Enter[/] 触发 AI 决策...")
+        self._pending_actor_name = actor_name
         self._phase = _Phase.ENEMY_TURN
         self._update_status_bar(f"敌人 [{short}] 的回合 — 按 Enter 触发 AI 出牌")
         self._set_input_disabled(False)
-        self._pending_card_name = None
 
     def _enter_select_card(self, actor_name: str) -> None:
         log = self.query_one(RichLog)
@@ -244,6 +237,7 @@ class PlayCardsScreen(Screen[None]):
         log.write(
             f"[bold green]── 你的回合：{short} ────────────────────────────────[/]"
         )
+        self._pending_actor_name = actor_name
         self._fetch_hand_and_show(actor_name)
 
     def _enter_round_done(self) -> None:
@@ -255,82 +249,111 @@ class PlayCardsScreen(Screen[None]):
         self._set_input_disabled(True)
 
     # ──────────────────────────────────────────────
+    # 辅助：通过 EnemyComponent 拉取场景存活敌方名单
+    # ──────────────────────────────────────────────
+    async def _fetch_enemy_names(self, stage_name: str) -> List[str]:
+        stages_resp = await fetch_stages_state(self._user_name, self._game_name)
+        actor_names = stages_resp.mapping.get(stage_name, [])
+        if not actor_names:
+            return []
+        details = await fetch_entities_details(
+            self._user_name, self._game_name, actor_names
+        )
+        return [
+            e.name
+            for e in details.entities_serialization
+            if any(c.name == "EnemyComponent" for c in e.components)
+        ]
+
+    # ──────────────────────────────────────────────
     # 手牌加载与显示
     # ──────────────────────────────────────────────
     @work
     async def _fetch_hand_and_show(self, actor_name: str) -> None:
+        """按需拉取当前角色手牌及场景角色分类，渲染后进入 SELECT_CARD 阶段。"""
         log = self.query_one(RichLog)
         log.write("[dim]正在加载手牌...[/]")
         try:
+            # 1. 拿场景名 + 最新 action_order/completed_actors
             room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
+            stage_name = room_resp.room.stage.name
             combat = room_resp.room.combat
-            rounds = combat.rounds
-            if rounds:
-                self._completed_actors = list(rounds[-1].completed_actors)
+            if combat.rounds:
+                action_order = list(combat.rounds[-1].action_order)
+                completed_actors = list(combat.rounds[-1].completed_actors)
+            else:
+                action_order = []
+                completed_actors = []
 
-            # 从 room_resp 中找该 actor 的手牌
-            # room_resp.room.stage.actors 有各角色信息
-            self._hand_cards = []
-            self._alive_enemy_names = []
-            for actor in room_resp.room.stage.actors:
-                if actor.name == actor_name and hasattr(actor, "hand_cards"):
-                    self._hand_cards = [
-                        {
-                            "name": c.name,
-                            "damage_dealt": c.damage_dealt,
-                            "block_gain": c.block_gain,
-                            "hit_count": c.hit_count,
-                        }
-                        for c in actor.hand_cards
-                    ]
-                # 同时收集存活敌人
-                if self._is_enemy(actor.name):
-                    self._alive_enemy_names.append(actor.name)
+            # 2. 拿场景中所有角色名称（含当前 actor）
+            stages_resp = await fetch_stages_state(self._user_name, self._game_name)
+            stage_actor_names: List[str] = list(stages_resp.mapping.get(stage_name, []))
+            if actor_name not in stage_actor_names:
+                stage_actor_names.append(actor_name)
 
-            # 若 actor 没有 hand_cards 字段，尝试从 HandComponent 中取
-            if not self._hand_cards:
-                from .server_client import fetch_entities_details
+            # 3. 一次性拉取所有角色组件细节
+            all_details = await fetch_entities_details(
+                self._user_name, self._game_name, stage_actor_names
+            )
 
-                details = await fetch_entities_details(
-                    self._user_name, self._game_name, [actor_name]
-                )
-                for entity in details.entities_serialization:
-                    if entity.name == actor_name:
-                        for comp in entity.components:
-                            if comp.name == "HandComponent":
-                                self._hand_cards = comp.data.get("cards", [])
-                        break
+            # 4. 分类敌友；提取 actor 的手牌
+            hand_cards: List[Dict[str, Any]] = []
+            alive_enemies: List[str] = []
+            alive_allies: List[str] = []
+            for entity in all_details.entities_serialization:
+                comp_names = {c.name for c in entity.components}
+                if "EnemyComponent" in comp_names:
+                    alive_enemies.append(entity.name)
+                elif "ExpeditionMemberComponent" in comp_names:
+                    alive_allies.append(entity.name)
+                if entity.name == actor_name:
+                    for comp in entity.components:
+                        if comp.name == "HandComponent":
+                            raw_cards = comp.data.get("cards", [])
+                            hand_cards = [
+                                c if isinstance(c, dict) else dict(c) for c in raw_cards
+                            ]
 
         except Exception as e:
-            logger.error(
-                f"PlayCardsScreen._fetch_hand_and_show: 加载手牌失败 error={e}"
-            )
+            logger.error(f"PlayCardsScreen._fetch_hand_and_show: 加载失败 error={e}")
             log.write(f"[bold red]❌ 加载手牌失败: {e}[/]")
             self._phase = _Phase.ROUND_DONE
             self._update_status_bar("加载失败")
             return
 
-        if not self._hand_cards:
+        if not hand_cards:
             log.write("[yellow]⚠ 该角色没有手牌，跳过出牌。[/]")
-            self._advance_to_next_actor()
+            self._advance_to_next_actor(action_order, completed_actors, alive_enemies)
             return
 
+        # 更新 pending 交互字段
+        self._pending_hand_cards = hand_cards
+        self._pending_alive_enemies = alive_enemies
+        self._pending_alive_allies = alive_allies
+
+        _TARGET_LABEL: Dict[str, str] = {
+            "enemy_single": "[red]敌方单体[/]",
+            "enemy_all": "[red]敌方全体[/]",
+            "ally_single": "[green]友方单体[/]",
+            "ally_all": "[green]友方全体[/]",
+        }
         log.write("  [bold]手牌：[/]")
-        for i, card in enumerate(self._hand_cards, 1):
-            name = card["name"]
-            dmg = card["damage_dealt"]
-            blk = card["block_gain"]
+        for i, card in enumerate(hand_cards, 1):
+            name = card.get("name", "?")
+            dmg = card.get("damage_dealt", 0)
+            blk = card.get("block_gain", 0)
             hit = card.get("hit_count", 1)
+            tt = card.get("target_type", "enemy_single")
             hit_str = f"x[yellow]{hit}[/]" if hit > 1 else ""
+            tt_str = _TARGET_LABEL.get(str(tt), f"[dim]{tt}[/]")
             log.write(
-                f"    [bold cyan]{i}.[/] {name}  伤害:[red]{dmg}[/]{hit_str}  格挡:[blue]{blk}[/]"
+                f"    [bold cyan]{i}.[/] {name}  "
+                f"伤害:[red]{dmg}[/]{hit_str}  格挡:[blue]{blk}[/]  目标:{tt_str}"
             )
 
         self._phase = _Phase.SELECT_CARD
         short = actor_name.split(".")[-1]
-        self._update_status_bar(
-            f"[{short}] 输入卡牌编号（1-{len(self._hand_cards)}）选牌"
-        )
+        self._update_status_bar(f"[{short}] 输入卡牌编号（1-{len(hand_cards)}）选牌")
         self._set_input_disabled(False)
 
     # ──────────────────────────────────────────────
@@ -338,45 +361,69 @@ class PlayCardsScreen(Screen[None]):
     # ──────────────────────────────────────────────
     def _handle_card_selection(self, raw: str) -> None:
         log = self.query_one(RichLog)
-        if not self._hand_cards:
+        if not self._pending_hand_cards:
             log.write("[red]没有可用手牌。[/]")
             return
 
-        card = None
+        card: Optional[Dict[str, Any]] = None
         if raw.isdigit():
             idx = int(raw) - 1
-            if 0 <= idx < len(self._hand_cards):
-                card = self._hand_cards[idx]
+            if 0 <= idx < len(self._pending_hand_cards):
+                card = self._pending_hand_cards[idx]
         else:
-            # 支持输入名称
-            for c in self._hand_cards:
-                name = c["name"]
-                if name == raw:
+            for c in self._pending_hand_cards:
+                if c.get("name") == raw:
                     card = c
                     break
 
         if card is None:
             log.write(
-                f"[red]无效输入 '{raw}'，请输入 1-{len(self._hand_cards)} 的数字或卡牌名称。[/]"
+                f"[red]无效输入 '{raw}'，请输入 1-{len(self._pending_hand_cards)} 的数字或卡牌名称。[/]"
             )
             return
 
-        self._pending_card_name = card["name"]
+        self._pending_card_name = card.get("name", "")
+        target_type = str(card.get("target_type", "enemy_single"))
         log.write(f"  已选：[bold cyan]{self._pending_card_name}[/]")
 
-        # 展示可攻击目标
-        if self._alive_enemy_names:
-            log.write("  [bold]可用目标：[/]")
-            for i, name in enumerate(self._alive_enemy_names, 1):
-                log.write(f"    [bold cyan]{i}.[/] {name.split('.')[-1]}  ({name})")
-            self._phase = _Phase.SELECT_TARGET
-            self._update_status_bar(
-                f"输入目标编号（1-{len(self._alive_enemy_names)}），或直接 Enter 跳过"
-            )
-        else:
-            # 无目标，直接出牌
-            self._phase = _Phase.SELECT_TARGET
+        # 根据 target_type 决定目标选择流程
+        if target_type == "enemy_all":
+            log.write("  [dim]此卡自动命中所有存活敌方[/]")
+            self._submit_play_card(targets=[])  # 服务端 _resolve_targets 自动填充
+
+        elif target_type == "ally_all":
+            log.write("  [dim]此卡自动命中所有存活友方[/]")
             self._submit_play_card(targets=[])
+
+        elif target_type == "ally_single":
+            candidates = self._pending_alive_allies
+            if candidates:
+                log.write("  [bold]可选友方目标：[/]")
+                for i, name in enumerate(candidates, 1):
+                    log.write(f"    [bold cyan]{i}.[/] {name.split('.')[-1]}  ({name})")
+                self._pending_target_candidates = list(candidates)
+                self._phase = _Phase.SELECT_TARGET
+                self._update_status_bar(
+                    f"输入目标编号（1-{len(candidates)}），或直接 Enter 跳过"
+                )
+            else:
+                log.write("  [dim]无存活友方，直接出牌[/]")
+                self._submit_play_card(targets=[])
+
+        else:  # enemy_single（默认）
+            candidates = self._pending_alive_enemies
+            if candidates:
+                log.write("  [bold]可用目标：[/]")
+                for i, name in enumerate(candidates, 1):
+                    log.write(f"    [bold cyan]{i}.[/] {name.split('.')[-1]}  ({name})")
+                self._pending_target_candidates = list(candidates)
+                self._phase = _Phase.SELECT_TARGET
+                self._update_status_bar(
+                    f"输入目标编号（1-{len(candidates)}），或直接 Enter 跳过"
+                )
+            else:
+                log.write("  [dim]无存活敌人，直接出牌[/]")
+                self._submit_play_card(targets=[])
 
     # ──────────────────────────────────────────────
     # 目标选择
@@ -386,25 +433,20 @@ class PlayCardsScreen(Screen[None]):
         targets: list[str] = []
 
         if raw == "":
-            # 直接 Enter 跳过，targets=[]
             log.write("  [dim]无目标[/]")
         else:
+            candidates = self._pending_target_candidates
             if raw.isdigit():
                 idx = int(raw) - 1
-                if 0 <= idx < len(self._alive_enemy_names):
-                    targets = [self._alive_enemy_names[idx]]
+                if 0 <= idx < len(candidates):
+                    targets = [candidates[idx]]
                 else:
                     log.write(
-                        f"[red]无效目标编号 '{raw}'，请输入 1-{len(self._alive_enemy_names)} 或直接 Enter 跳过。[/]"
+                        f"[red]无效目标编号 '{raw}'，请输入 1-{len(candidates)} 或直接 Enter 跳过。[/]"
                     )
                     return
             else:
-                # 支持输入名称
-                matched = [
-                    n
-                    for n in self._alive_enemy_names
-                    if n == raw or n.split(".")[-1] == raw
-                ]
+                matched = [n for n in candidates if n == raw or n.split(".")[-1] == raw]
                 if matched:
                     targets = [matched[0]]
                 else:
@@ -417,20 +459,22 @@ class PlayCardsScreen(Screen[None]):
     # 出牌提交（玩家）
     # ──────────────────────────────────────────────
     def _submit_play_card(self, targets: list[str]) -> None:
+        assert self._pending_actor_name is not None
         assert self._pending_card_name is not None
-        completed_count = len(self._completed_actors)
-        actor_name = self._action_order[completed_count]
-        self._do_play_card(actor_name, self._pending_card_name, targets)
+        self._do_play_card(self._pending_actor_name, self._pending_card_name, targets)
+        # 清空选牌交互状态
         self._pending_card_name = None
+        self._pending_hand_cards = []
+        self._pending_alive_enemies = []
+        self._pending_alive_allies = []
+        self._pending_target_candidates = []
 
     # ──────────────────────────────────────────────
     # 敌人出牌触发
     # ──────────────────────────────────────────────
     def _trigger_enemy_turn(self) -> None:
-        completed_count = len(self._completed_actors)
-        actor_name = self._action_order[completed_count]
-        # 敌人传空卡名，服务端会用 activate_enemy_play_trigger
-        self._do_play_card(actor_name, "", [])
+        assert self._pending_actor_name is not None
+        self._do_play_card(self._pending_actor_name, "", [])
 
     # ──────────────────────────────────────────────
     # 后台出牌任务（玩家 & 敌人共用）
@@ -446,7 +490,8 @@ class PlayCardsScreen(Screen[None]):
         short = actor_name.split(".")[-1]
         display_card = card_name if card_name else "（AI 自选）"
         log.write(
-            f"  [dim]▶ {short} 出牌中：{display_card}  目标：{[t.split('.')[-1] for t in targets] or '无'}[/]"
+            f"  [dim]▶ {short} 出牌中：{display_card}  "
+            f"目标：{[t.split('.')[-1] for t in targets] or '无'}[/]"
         )
         logger.info(
             f"PlayCardsScreen._do_play_card: actor={actor_name} card={card_name} targets={targets}"
@@ -466,14 +511,12 @@ class PlayCardsScreen(Screen[None]):
                 detail = str(e)
             log.write(f"[bold red]❌ 出牌请求失败: {detail}[/]")
             logger.error(f"_do_play_card: 请求失败 error={e}")
-            self._advance_to_next_actor()
-            self._set_input_disabled(False)
+            await self._reload_and_advance()
             return
         except Exception as e:
             log.write(f"[bold red]❌ 出牌请求失败: {e}[/]")
             logger.error(f"_do_play_card: 请求失败 error={e}")
-            self._advance_to_next_actor()
-            self._set_input_disabled(False)
+            await self._reload_and_advance()
             return
 
         # 轮询任务结果
@@ -502,23 +545,38 @@ class PlayCardsScreen(Screen[None]):
             log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
             logger.warning(f"_do_play_card: 轮询超时 task_id={task_id}")
 
-        # 重新拉取回合状态，更新 completed_actors
+        await self._reload_and_advance()
+
+    # ──────────────────────────────────────────────
+    # 出牌后：重新拉取状态并推进状态机
+    # ──────────────────────────────────────────────
+    async def _reload_and_advance(self) -> None:
+        """出牌完成后，从服务器拉取最新回合状态，推进到下一个 actor。"""
+        log = self.query_one(RichLog)
         try:
             room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
             combat = room_resp.room.combat
             if combat.rounds:
                 cur = combat.rounds[-1]
-                self._completed_actors = list(cur.completed_actors)
-                self._action_order = list(cur.action_order)
-                # 追加叙事与战斗日志（若有新内容）
+                action_order = list(cur.action_order)
+                completed_actors = list(cur.completed_actors)
                 if cur.narrative:
                     log.write(f"  [italic]{cur.narrative[-1]}[/]")
                 if cur.combat_log:
                     log.write(f"  [dim]{cur.combat_log[-1]}[/]")
-        except Exception as e:
-            logger.warning(f"_do_play_card: 刷新回合状态失败 error={e}")
+            else:
+                action_order = []
+                completed_actors = []
 
-        self._advance_to_next_actor()
+            stage_name = room_resp.room.stage.name
+            enemy_names = await self._fetch_enemy_names(stage_name)
+
+        except Exception as e:
+            logger.warning(f"_reload_and_advance: 刷新回合状态失败 error={e}")
+            self._enter_round_done()
+            return
+
+        self._advance_to_next_actor(action_order, completed_actors, enemy_names)
 
     # ──────────────────────────────────────────────
     # 辅助

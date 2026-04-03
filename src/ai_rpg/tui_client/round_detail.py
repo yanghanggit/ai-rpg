@@ -4,7 +4,7 @@ from loguru import logger
 from textual import work
 from textual.app import ComposeResult
 from textual.screen import Screen
-from textual.widgets import Footer, RichLog
+from textual.widgets import RichLog
 
 from .server_client import fetch_dungeon_room
 
@@ -41,7 +41,7 @@ class RoundDetailScreen(Screen[None]):
 
     def compose(self) -> ComposeResult:
         yield RichLog(id="round-log", highlight=True, markup=True, wrap=True)
-        yield Footer()
+        # yield Footer()
 
     def on_mount(self) -> None:
         log = self.query_one(RichLog)

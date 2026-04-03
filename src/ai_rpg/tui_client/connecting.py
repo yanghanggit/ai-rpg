@@ -4,7 +4,7 @@ from loguru import logger
 from textual import work
 from textual.app import ComposeResult
 from textual.screen import Screen
-from textual.widgets import Footer, Header, RichLog
+from textual.widgets import Header, RichLog
 
 from .config import GAME_SERVER_BASE_URL
 from .server_client import fetch_server_info
@@ -22,7 +22,7 @@ class ConnectingScreen(Screen[None]):
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         yield RichLog(id="startup-log", highlight=True, markup=True, wrap=True)
-        yield Footer()
+        # yield Footer()
 
     def on_mount(self) -> None:
         log = self.query_one(RichLog)

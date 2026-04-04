@@ -1,4 +1,7 @@
-"""角色详情 Screen"""
+"""战斗角色详情 Screen
+
+展示当前战斗房间内所有角色的完整属性、手牌（含目标类型）与状态效果，只读。
+"""
 
 from loguru import logger
 from textual import work
@@ -22,17 +25,24 @@ from ..models import (
 )
 
 DETAIL_HEADER = """\
-[bold cyan]── 角色详情 ──────────────────────────────────────[/]
+[bold cyan]── 战斗角色详情 ──────────────────────────────────[/]
 
-显示当前房间所有角色的完整属性与状态效果。[bold]Escape[/] 返回。
+显示当前战斗房间所有角色的属性、手牌与状态效果。[bold]Escape[/] 返回。
 """
 
+_TARGET_LABEL: dict[str, str] = {
+    "enemy_single": "[red]敌方单体[/]",
+    "enemy_all": "[red]敌方全体[/]",
+    "ally_single": "[green]友方单体[/]",
+    "ally_all": "[green]友方全体[/]",
+}
 
-class ActorDetailScreen(Screen[None]):
-    """角色详情 Screen：显示当前房间所有角色的完整 ECS 组件信息（只读）。"""
+
+class CombatActorDetailScreen(Screen[None]):
+    """战斗角色详情 Screen：显示当前战斗房间所有角色的完整 ECS 组件信息（只读）。"""
 
     CSS = """
-    ActorDetailScreen {
+    CombatActorDetailScreen {
         align: center middle;
     }
 
@@ -65,11 +75,11 @@ class ActorDetailScreen(Screen[None]):
 
     @work
     async def _fetch_detail(self) -> None:
-        """获取当前房间所有角色的完整 ECS 组件信息。"""
+        """获取当前战斗房间所有角色的完整 ECS 组件信息。"""
         log = self.query_one(RichLog)
-        log.write("[dim]正在加载角色详情...[/]")
+        log.write("[dim]正在加载战斗角色详情...[/]")
         logger.info(
-            f"ActorDetailScreen._fetch_detail: user={self._user_name} game={self._game_name}"
+            f"CombatActorDetailScreen._fetch_detail: user={self._user_name} game={self._game_name}"
         )
 
         try:
@@ -177,11 +187,14 @@ class ActorDetailScreen(Screen[None]):
                                 blk = card.get("block_gain", 0)
                                 hit = card.get("hit_count", 1)
                                 action = card.get("action", "")
+                                tt = str(card.get("target_type", "enemy_single"))
                                 hit_str = f"x[yellow]{hit}[/]" if hit > 1 else ""
+                                tt_str = _TARGET_LABEL.get(tt, f"[dim]{tt}[/]")
                                 log.write(
                                     f"    └ [bold]{cname}[/]"
                                     f"  伤害:[red]{dmg}[/]{hit_str}"
                                     f"  格挡:[blue]{blk}[/]"
+                                    f"  目标:{tt_str}"
                                     + (f"  [dim]{action}[/]" if action else "")
                                 )
                     else:
@@ -189,7 +202,7 @@ class ActorDetailScreen(Screen[None]):
 
                 log.write("")
 
-            logger.info("ActorDetailScreen._fetch_detail: 加载完成")
+            logger.info("CombatActorDetailScreen._fetch_detail: 加载完成")
         except Exception as e:
-            logger.error(f"ActorDetailScreen._fetch_detail: 加载失败 error={e}")
-            log.write(f"[bold red]❌ 加载角色详情失败: {e}[/]")
+            logger.error(f"CombatActorDetailScreen._fetch_detail: 加载失败 error={e}")
+            log.write(f"[bold red]❌ 加载战斗角色详情失败: {e}[/]")

@@ -11,7 +11,7 @@ import asyncio
 
 import httpx
 
-from .actor_detail import ActorDetailScreen
+from .combat_actor_detail import CombatActorDetailScreen
 from .round_detail import RoundDetailScreen
 from .utils import display_name
 from .play_cards_screen import PlayCardsScreen
@@ -151,7 +151,9 @@ class CombatRoomScreen(Screen[None]):
             self._fetch_status()
 
         elif cmd == "2":
-            self.app.push_screen(ActorDetailScreen(self._user_name, self._game_name))
+            self.app.push_screen(
+                CombatActorDetailScreen(self._user_name, self._game_name)
+            )
 
         elif cmd == "3":
             self.app.push_screen(RoundDetailScreen(self._user_name, self._game_name))

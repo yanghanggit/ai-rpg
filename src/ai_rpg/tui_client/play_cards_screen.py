@@ -197,27 +197,25 @@ class PlayCardsScreen(Screen[None]):
             self._update_status_bar("加载失败")
             return
 
-        self._advance_to_next_actor(action_order, completed_actors, enemy_names)
+        self._advance_to_next_actor(cur.current_actor, enemy_names)
 
     # ──────────────────────────────────────────────
     # 状态机推进
     # ──────────────────────────────────────────────
     def _advance_to_next_actor(
         self,
-        action_order: List[str],
-        completed_actors: List[str],
+        current_actor: Optional[str],
         enemy_names: List[str],
     ) -> None:
-        """根据最新 action_order / completed_actors 决定下一步。所有参数均来自新鲜 API 数据。"""
-        if len(completed_actors) >= len(action_order):
+        """根据 Round.current_actor 决定下一步。current_actor 为 None 表示回合已结束。"""
+        if current_actor is None:
             self._enter_round_done()
             return
 
-        next_actor = action_order[len(completed_actors)]
-        if next_actor in enemy_names:
-            self._enter_enemy_turn(next_actor)
+        if current_actor in enemy_names:
+            self._enter_enemy_turn(current_actor)
         else:
-            self._enter_select_card(next_actor)
+            self._enter_select_card(current_actor)
 
     def _enter_enemy_turn(self, actor_name: str) -> None:
         log = self.query_one(RichLog)
@@ -274,16 +272,11 @@ class PlayCardsScreen(Screen[None]):
         log = self.query_one(RichLog)
         log.write("[dim]正在加载手牌...[/]")
         try:
-            # 1. 拿场景名 + 最新 action_order/completed_actors
+            # 1. 拿场景名 + 最新当前行动者（直接用 Round.current_actor）
             room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
             stage_name = room_resp.room.stage.name
             combat = room_resp.room.combat
-            if combat.rounds:
-                action_order = list(combat.rounds[-1].action_order)
-                completed_actors = list(combat.rounds[-1].completed_actors)
-            else:
-                action_order = []
-                completed_actors = []
+            cur_round = combat.rounds[-1] if combat.rounds else None
 
             # 2. 拿场景中所有角色名称（含当前 actor）
             stages_resp = await fetch_stages_state(self._user_name, self._game_name)
@@ -323,7 +316,9 @@ class PlayCardsScreen(Screen[None]):
 
         if not hand_cards:
             log.write("[yellow]⚠ 该角色没有手牌，跳过出牌。[/]")
-            self._advance_to_next_actor(action_order, completed_actors, alive_enemies)
+            self._advance_to_next_actor(
+                cur_round.current_actor if cur_round else None, alive_enemies
+            )
             return
 
         # 更新 pending 交互字段
@@ -607,13 +602,7 @@ class PlayCardsScreen(Screen[None]):
         try:
             room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
             combat = room_resp.room.combat
-            if combat.rounds:
-                cur = combat.rounds[-1]
-                action_order = list(cur.action_order)
-                completed_actors = list(cur.completed_actors)
-            else:
-                action_order = []
-                completed_actors = []
+            cur = combat.rounds[-1] if combat.rounds else None
 
             stage_name = room_resp.room.stage.name
             enemy_names = await self._fetch_enemy_names(stage_name)
@@ -623,7 +612,7 @@ class PlayCardsScreen(Screen[None]):
             self._enter_round_done()
             return
 
-        self._advance_to_next_actor(action_order, completed_actors, enemy_names)
+        self._advance_to_next_actor(cur.current_actor if cur else None, enemy_names)
 
     # ──────────────────────────────────────────────
     # 辅助

@@ -502,6 +502,18 @@ class PlayCardsScreen(Screen[None]):
             f"PlayCardsScreen._do_play_card: actor={actor_name} card={card_name} targets={targets}"
         )
 
+        # 出牌前记录当前回合快照，以便出牌后精准定位新增日志
+        prev_round_idx = -1
+        prev_completed_count = 0
+        try:
+            pre_room = await fetch_dungeon_room(self._user_name, self._game_name)
+            pre_rounds = pre_room.room.combat.rounds
+            if pre_rounds:
+                prev_round_idx = len(pre_rounds) - 1
+                prev_completed_count = len(pre_rounds[-1].completed_actors)
+        except Exception as e:
+            logger.warning(f"_do_play_card: 出牌前快照失败 error={e}")
+
         task_id = ""
         try:
             resp = await server_play_cards(
@@ -550,14 +562,48 @@ class PlayCardsScreen(Screen[None]):
             log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
             logger.warning(f"_do_play_card: 轮询超时 task_id={task_id}")
 
+        # 先显示战斗日志，再推进状态机
+        await self._show_play_results(prev_round_idx, prev_completed_count)
         await self._reload_and_advance()
+
+    # ──────────────────────────────────────────────
+    # 显示本次出牌的战斗演绎与计算日志
+    # ──────────────────────────────────────────────
+    async def _show_play_results(
+        self, prev_round_idx: int, prev_completed_count: int
+    ) -> None:
+        """通过出牌前快照的回合索引与出手计数，精准取出本次出手新增的日志条目。
+
+        即使出牌后服务端已创建新回合（rounds[-1] 变为新空回合），
+        仍能通过绝对索引 prev_round_idx 定位到正确的历史回合。
+        """
+        if prev_round_idx < 0:
+            return
+        log = self.query_one(RichLog)
+        try:
+            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
+            rounds = room_resp.room.combat.rounds
+            if prev_round_idx >= len(rounds):
+                return
+            cur = rounds[prev_round_idx]
+            # 取本次出手新增的 narrative 条目
+            new_narratives = cur.narrative[prev_completed_count:]
+            for text in new_narratives:
+                if text:
+                    log.write(f"  [italic]{text}[/]")
+            # 取本次出手新增的 combat_log 条目
+            new_logs = cur.combat_log[prev_completed_count:]
+            for text in new_logs:
+                if text:
+                    log.write(f"  [dim cyan]{text}[/]")
+        except Exception as e:
+            logger.warning(f"_show_play_results: 加载日志失败 error={e}")
 
     # ──────────────────────────────────────────────
     # 出牌后：重新拉取状态并推进状态机
     # ──────────────────────────────────────────────
     async def _reload_and_advance(self) -> None:
         """出牌完成后，从服务器拉取最新回合状态，推进到下一个 actor。"""
-        log = self.query_one(RichLog)
         try:
             room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
             combat = room_resp.room.combat
@@ -565,10 +611,6 @@ class PlayCardsScreen(Screen[None]):
                 cur = combat.rounds[-1]
                 action_order = list(cur.action_order)
                 completed_actors = list(cur.completed_actors)
-                if cur.narrative:
-                    log.write(f"  [italic]{cur.narrative[-1]}[/]")
-                if cur.combat_log:
-                    log.write(f"  [dim]{cur.combat_log[-1]}[/]")
             else:
                 action_order = []
                 completed_actors = []

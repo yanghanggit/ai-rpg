@@ -269,6 +269,9 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
                 valid_targets = [
                     a.name for a in alive_actors if a.has(ExpeditionMemberComponent)
                 ]
+            elif selected_card.target_type == CardTargetType.SELF_ONLY:
+                # 仅作用于施法者自身
+                valid_targets = [entity.name]
             else:
                 # ENEMY_SINGLE / ALLY_* — 过滤掉不存在的目标名
                 valid_targets = [t for t in decision.targets if t in alive_names]

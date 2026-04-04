@@ -149,6 +149,9 @@ def _resolve_targets(
         )
         return [e.name for e in enemies], ""
 
+    elif card.target_type == CardTargetType.SELF_ONLY:
+        return [actor_entity.name], ""
+
     else:  # ALLY_SINGLE / ALLY_ALL — 不限制目标
         return list(passed_targets), ""
 

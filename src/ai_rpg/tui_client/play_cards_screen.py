@@ -336,6 +336,7 @@ class PlayCardsScreen(Screen[None]):
             "enemy_all": "[red]敌方全体[/]",
             "ally_single": "[green]友方单体[/]",
             "ally_all": "[green]友方全体[/]",
+            "self_only": "[cyan]仅自己[/]",
         }
         log.write("  [bold]手牌：[/]")
         for i, card in enumerate(hand_cards, 1):
@@ -394,6 +395,10 @@ class PlayCardsScreen(Screen[None]):
         elif target_type == "ally_all":
             log.write("  [dim]此卡自动命中所有存活友方[/]")
             self._submit_play_card(targets=[])
+
+        elif target_type == "self_only":
+            log.write("  [dim]此卡仅作用于自身[/]")
+            self._submit_play_card(targets=[])  # 服务端自动填入施法者自身
 
         elif target_type == "ally_single":
             candidates = self._pending_alive_allies

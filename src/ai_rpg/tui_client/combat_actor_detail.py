@@ -35,6 +35,7 @@ _TARGET_LABEL: dict[str, str] = {
     "enemy_all": "[red]敌方全体[/]",
     "ally_single": "[green]友方单体[/]",
     "ally_all": "[green]友方全体[/]",
+    "self_only": "[cyan]仅自己[/]",
 }
 
 

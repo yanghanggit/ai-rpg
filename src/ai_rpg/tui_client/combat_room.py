@@ -35,6 +35,7 @@ from ..models import (
     HandComponent,
     AllyComponent,
     EnemyComponent,
+    ExpeditionMemberComponent,
     PlayerComponent,
 )
 
@@ -746,15 +747,7 @@ class CombatRoomScreen(Screen[None]):
             self._enter_round_done()
             return
 
-        # ── 敌方回合 ──
-        if current_actor in enemy_names:
-            self._current_actor = current_actor
-            self._enter_enemy_turn(
-                current_actor, stage_name, round_num, action_order, completed_actors
-            )
-            return
-
-        # ── 玩家回合：实时拉取手牌 ──
+        # ── 拉取场上实体（敌/友方共用）──
         try:
             stages_resp = await fetch_stages_state(self._user_name, self._game_name)
             stage_actor_names: List[str] = list(stages_resp.mapping.get(stage_name, []))
@@ -764,8 +757,8 @@ class CombatRoomScreen(Screen[None]):
                 self._user_name, self._game_name, stage_actor_names
             )
         except Exception as e:
-            logger.error(f"_advance: 加载手牌失败 error={e}")
-            log.write(f"[bold red]❌ 加载手牌失败: {e}[/]")
+            logger.error(f"_advance: 加载实体详情失败 error={e}")
+            log.write(f"[bold red]❌ 加载战场数据失败: {e}[/]")
             self._phase = None
             inp = self.query_one(Input)
             inp.placeholder = "输入命令..."
@@ -773,6 +766,7 @@ class CombatRoomScreen(Screen[None]):
             inp.focus()
             return
 
+        # ── 提取 current_actor 的手牌（敌人同样有 HandComponent，统一处理）──
         hand_cards: List[Card] = []
         for entity in all_details.entities_serialization:
             if entity.name == current_actor:
@@ -781,22 +775,30 @@ class CombatRoomScreen(Screen[None]):
                         hand_cards = HandComponent(**comp.data).cards
                 break
 
+        # ── 无手牌时的统一守卫 ──
         if not hand_cards:
-            # 新回合刚被创建（completed_actors 为空），说明 CombatRoundCreationSystem
-            # 已清除所有手牌，需要先抽牌。提示用户并回主菜单，不提交空出牌。
             if not cur.completed_actors:
+                # 新回合，CombatRoundCreationSystem 已清除所有手牌，需要先抽牌
                 log.write("[yellow]⚠ 新回合已开始，请输入 [bold]1[/] 抽牌后再出牌。[/]")
                 self._phase = None
                 inp = self.query_one(Input)
                 inp.placeholder = "输入命令..."
                 inp.disabled = False
                 inp.focus()
-                return
-            # 回合进行中但此角色确实无手牌（罕见边缘情况）：提交空出牌让服务器推进。
-            log.write(
-                f"[yellow]⚠ {display_name(current_actor)} 没有手牌，跳过出牌。[/]"
+            else:
+                # 回合进行中但此角色无手牌（罕见边缘情况）：提交空出牌让服务器推进
+                log.write(
+                    f"[yellow]⚠ {display_name(current_actor)} 没有手牌，跳过出牌。[/]"
+                )
+                self._do_play_card(current_actor, "", [])
+            return
+
+        # ── 敌方回合（手牌已确认非空）──
+        if current_actor in enemy_names:
+            self._current_actor = current_actor
+            self._enter_enemy_turn(
+                current_actor, stage_name, round_num, action_order, completed_actors
             )
-            self._do_play_card(current_actor, "", [])
             return
 
         # ── 进入选牌 ──
@@ -923,7 +925,7 @@ class CombatRoomScreen(Screen[None]):
         return [
             e.name
             for e in details.entities_serialization
-            if any(c.name == "EnemyComponent" for c in e.components)
+            if any(c.name == EnemyComponent.__name__ for c in e.components)
         ]
 
     # ──────────────────────────────────────────────
@@ -966,9 +968,9 @@ class CombatRoomScreen(Screen[None]):
         alive_allies: List[str] = []
         for entity in all_details.entities_serialization:
             comp_names = {c.name for c in entity.components}
-            if "EnemyComponent" in comp_names:
+            if EnemyComponent.__name__ in comp_names:
                 alive_enemies.append(entity.name)
-            elif "ExpeditionMemberComponent" in comp_names:
+            elif ExpeditionMemberComponent.__name__ in comp_names:
                 alive_allies.append(entity.name)
             if entity.name == actor_name:
                 for comp in entity.components:
@@ -1267,9 +1269,9 @@ class CombatRoomScreen(Screen[None]):
         log.write("  [bold]战场态势：[/]")
         for entity in entities:
             comp_names = {c.name for c in entity.components}
-            if "EnemyComponent" in comp_names:
+            if EnemyComponent.__name__ in comp_names:
                 flabel = "[red]敌[/]"
-            elif "ExpeditionMemberComponent" in comp_names:
+            elif ExpeditionMemberComponent.__name__ in comp_names:
                 flabel = "[green]友[/]"
             else:
                 flabel = "[dim]?[/]"

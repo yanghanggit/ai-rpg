@@ -25,6 +25,7 @@ from .server_client import (
 )
 from ..models import (
     Card,
+    CombatState,
     TaskStatus,
     CharacterStatsComponent,
     StatusEffectsComponent,
@@ -75,19 +76,20 @@ COMBAT_ROOM_MENU: Final[
 ] = """\
 [bold yellow]可用操作（输入编号执行）：[/]
 
-[bold cyan]── 查看 ──────────────────────────────────────[/]
-  [bold green]1[/]  当前战斗状态    房间信息与角色属性
-  [bold green]3[/]  回合详情        行动顺序与出手记录
-
 [bold cyan]── 战斗 ──────────────────────────────────────[/]
-  [bold green]4[/]  初始化战斗      INITIALIZING → ONGOING
-  [bold green]5[/]  全员抽牌        为所有战斗角色激活抽牌
-  [bold green]6[/]  出牌            进入出牌界面完成本回合
-  [bold green]7[/]  撤退            在战斗进行中撤退
+  [bold green]1[/]  推进战斗        按需初始化，再为全员抽牌
+  [bold green]2[/]  出牌            进入出牌界面完成本回合
+
+[bold cyan]── 查看 ──────────────────────────────────────[/]
+  [bold green]3[/]  当前战斗状态    房间信息与角色属性
+  [bold green]4[/]  回合详情        行动顺序与出手记录
+
+[bold cyan]── 离场 ──────────────────────────────────────[/]
+  [bold green]5[/]  撤退            在战斗进行中撤退
+  [bold green]6[/]  退出战斗        战斗结束后返回游戏主场景
 
 [bold cyan]── 系统 ──────────────────────────────────────[/]
   [bold green]0[/]  显示此菜单
-  [bold green]8[/]  退出战斗        返回游戏主场景
   [bold dim]Escape[/]  提示退出方式
 
 """
@@ -168,7 +170,7 @@ class CombatRoomScreen(Screen[None]):
 
     def action_suggest_exit(self) -> None:
         log = self.query_one(RichLog)
-        log.write("[yellow]请输入 8 退出战斗房间。[/]")
+        log.write("[yellow]请输入 6 退出战斗（战斗结束后），或 5 撤退（战斗中）。[/]")
 
     @on(Input.Submitted, "#room-input")
     def handle_command(self, event: Input.Submitted) -> None:
@@ -201,24 +203,21 @@ class CombatRoomScreen(Screen[None]):
             pass  # 仅显示菜单，已经显示
 
         elif cmd == "1":
-            self._fetch_status()
+            self._do_advance_combat()
 
-        elif cmd == "3":
-            self.app.push_screen(RoundDetailScreen(self._user_name, self._game_name))
-
-        elif cmd == "4":
-            self._do_combat_init()
-
-        elif cmd == "5":
-            self._do_draw_cards()
-
-        elif cmd == "6":
+        elif cmd == "2":
             self._start_play_cards()
 
-        elif cmd == "7":
+        elif cmd == "3":
+            self._fetch_status()
+
+        elif cmd == "4":
+            self.app.push_screen(RoundDetailScreen(self._user_name, self._game_name))
+
+        elif cmd == "5":
             self._do_combat_retreat()
 
-        elif cmd == "8":
+        elif cmd == "6":
             self._do_exit()
 
         else:
@@ -421,34 +420,75 @@ class CombatRoomScreen(Screen[None]):
             log.write("[dim]（当前地下城暂无进行中的房间）[/]")
 
     @work
-    async def _do_combat_init(self) -> None:
-        """触发战斗初始化（INITIALIZING → ONGOING），轮询任务完成后刷新状态。"""
+    async def _do_advance_combat(self) -> None:
+        """推进战斗：按需初始化（INITIALIZATION → ONGOING），再为全员抽牌。"""
         log = self.query_one(RichLog)
         inp = self.query_one(Input)
         inp.disabled = True
 
-        log.write("[dim]▶ 正在初始化战斗...[/]")
         logger.info(
-            f"CombatRoomScreen._do_combat_init: user={self._user_name} game={self._game_name}"
+            f"CombatRoomScreen._do_advance_combat: user={self._user_name} game={self._game_name}"
         )
 
+        # ── 先读取当前战斗状态 ──
+        try:
+            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
+            state = room_resp.room.combat.state
+        except Exception as e:
+            logger.error(f"_do_advance_combat: 读取房间状态失败 error={e}")
+            log.write(f"[bold red]❌ 读取战斗状态失败: {_format_http_error(e)}[/]")
+            inp.disabled = False
+            inp.focus()
+            return
+
+        if state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
+            log.write("[yellow]⚠ 战斗已结束，无法推进。[/]")
+            inp.disabled = False
+            inp.focus()
+            return
+
+        if state == CombatState.NONE:
+            log.write("[yellow]⚠ 战斗尚未创建，请先进入战斗房间。[/]")
+            inp.disabled = False
+            inp.focus()
+            return
+
+        # ── 若处于初始化阶段，先完成初始化 ──
+        if state == CombatState.INITIALIZATION:
+            log.write("[dim]▶ 正在初始化战斗...[/]")
+            ok = await self._run_combat_init()
+            if not ok:
+                inp.disabled = False
+                inp.focus()
+                return
+
+        # ── 全员抽牌 ──
+        log.write("[dim]▶ 正在激活全员抽牌...[/]")
+        await self._run_draw_cards()
+
+        inp.disabled = False
+        inp.focus()
+        self._fetch_status()
+
+    async def _run_combat_init(self) -> bool:
+        """执行战斗初始化任务，返回 True 表示成功。"""
+        log = self.query_one(RichLog)
+        logger.info(
+            f"CombatRoomScreen._run_combat_init: user={self._user_name} game={self._game_name}"
+        )
         task_id = ""
         try:
             resp = await server_dungeon_combat_init(self._user_name, self._game_name)
             task_id = resp.task_id
             log.write(f"[dim]任务已创建：{task_id}[/]")
-            logger.info(f"_do_combat_init: 任务已创建 task_id={task_id}")
+            logger.info(f"_run_combat_init: 任务已创建 task_id={task_id}")
         except Exception as e:
-            logger.error(f"_do_combat_init: 请求失败 error={e}")
+            logger.error(f"_run_combat_init: 请求失败 error={e}")
             log.write(f"[bold red]❌ 战斗初始化请求失败: {_format_http_error(e)}[/]")
-            inp.disabled = False
-            inp.focus()
-            return
+            return False
 
-        _POLL_INTERVAL = 1.0
-        _MAX_POLLS = 60
-        for _ in range(_MAX_POLLS):
-            await asyncio.sleep(_POLL_INTERVAL)
+        for _ in range(60):
+            await asyncio.sleep(1.0)
             try:
                 status_resp = await fetch_tasks_status([task_id])
                 if not status_resp.tasks:
@@ -456,37 +496,27 @@ class CombatRoomScreen(Screen[None]):
                 record = status_resp.tasks[0]
                 if record.status == TaskStatus.COMPLETED:
                     log.write("[bold green]✅ 战斗初始化完成[/]")
-                    logger.info(f"_do_combat_init: 任务完成 task_id={task_id}")
-                    break
+                    logger.info(f"_run_combat_init: 任务完成 task_id={task_id}")
+                    return True
                 elif record.status == TaskStatus.FAILED:
                     error_msg = record.error or "未知错误"
                     log.write(f"[bold red]❌ 战斗初始化失败: {error_msg}[/]")
                     logger.error(
-                        f"_do_combat_init: 任务失败 task_id={task_id} error={error_msg}"
+                        f"_run_combat_init: 任务失败 task_id={task_id} error={error_msg}"
                     )
-                    break
+                    return False
             except Exception as e:
-                logger.warning(f"_do_combat_init: 轮询失败 error={e}")
-        else:
-            log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
-            logger.warning(f"_do_combat_init: 轮询超时 task_id={task_id}")
+                logger.warning(f"_run_combat_init: 轮询失败 error={e}")
+        log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
+        logger.warning(f"_run_combat_init: 轮询超时 task_id={task_id}")
+        return False
 
-        inp.disabled = False
-        inp.focus()
-        self._fetch_status()
-
-    @work
-    async def _do_draw_cards(self) -> None:
-        """为全体战斗角色激活抽牌动作，轮询任务完成后刷新状态。"""
+    async def _run_draw_cards(self) -> bool:
+        """执行全员抽牌任务，返回 True 表示成功。"""
         log = self.query_one(RichLog)
-        inp = self.query_one(Input)
-        inp.disabled = True
-
-        log.write("[dim]▶ 正在激活全员抽牌...[/]")
         logger.info(
-            f"CombatRoomScreen._do_draw_cards: user={self._user_name} game={self._game_name}"
+            f"CombatRoomScreen._run_draw_cards: user={self._user_name} game={self._game_name}"
         )
-
         task_id = ""
         try:
             resp = await server_dungeon_combat_draw_cards(
@@ -494,18 +524,14 @@ class CombatRoomScreen(Screen[None]):
             )
             task_id = resp.task_id
             log.write(f"[dim]任务已创建：{task_id}[/]")
-            logger.info(f"_do_draw_cards: 任务已创建 task_id={task_id}")
+            logger.info(f"_run_draw_cards: 任务已创建 task_id={task_id}")
         except Exception as e:
-            logger.error(f"_do_draw_cards: 请求失败 error={e}")
+            logger.error(f"_run_draw_cards: 请求失败 error={e}")
             log.write(f"[bold red]❌ 全员抽牌请求失败: {_format_http_error(e)}[/]")
-            inp.disabled = False
-            inp.focus()
-            return
+            return False
 
-        _POLL_INTERVAL = 1.0
-        _MAX_POLLS = 60
-        for _ in range(_MAX_POLLS):
-            await asyncio.sleep(_POLL_INTERVAL)
+        for _ in range(60):
+            await asyncio.sleep(1.0)
             try:
                 status_resp = await fetch_tasks_status([task_id])
                 if not status_resp.tasks:
@@ -513,24 +539,20 @@ class CombatRoomScreen(Screen[None]):
                 record = status_resp.tasks[0]
                 if record.status == TaskStatus.COMPLETED:
                     log.write("[bold green]✅ 全员抽牌完成[/]")
-                    logger.info(f"_do_draw_cards: 任务完成 task_id={task_id}")
-                    break
+                    logger.info(f"_run_draw_cards: 任务完成 task_id={task_id}")
+                    return True
                 elif record.status == TaskStatus.FAILED:
                     error_msg = record.error or "未知错误"
                     log.write(f"[bold red]❌ 全员抽牌失败: {error_msg}[/]")
                     logger.error(
-                        f"_do_draw_cards: 任务失败 task_id={task_id} error={error_msg}"
+                        f"_run_draw_cards: 任务失败 task_id={task_id} error={error_msg}"
                     )
-                    break
+                    return False
             except Exception as e:
-                logger.warning(f"_do_draw_cards: 轮询失败 error={e}")
-        else:
-            log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
-            logger.warning(f"_do_draw_cards: 轮询超时 task_id={task_id}")
-
-        inp.disabled = False
-        inp.focus()
-        self._fetch_status()
+                logger.warning(f"_run_draw_cards: 轮询失败 error={e}")
+        log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
+        logger.warning(f"_run_draw_cards: 轮询超时 task_id={task_id}")
+        return False
 
     @work
     async def _do_combat_retreat(self) -> None:

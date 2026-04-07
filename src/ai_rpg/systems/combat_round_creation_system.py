@@ -80,72 +80,81 @@ class CombatRoundCreationSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
         """
-        检查并创建新回合
-
-        执行逻辑：
-        1. 检查战斗是否进行中
-        2. 检查是否有回合存在（第一回合由本系统创建）
-        3. 检查上一回合是否完成
-        4. 创建新回合并生成 action_order
+        编排骨架：依次调用「清除旧回合状态」与「创建新回合」。
+        两个子函数各自持有完整的状态守护，execute 无需额外判断。
         """
-        # 检查战斗状态
+        self._clear_previous_round_state()
+        self._create_next_round()
+
+    ############################################################################################################
+    def _clear_previous_round_state(self) -> None:
+        """清除上一回合的手牌与格挡状态。
+
+        内部状态守护（不满足则静默返回）：
+        - 状态为 NONE / INITIALIZATION → 战斗尚未进入有效阶段，无需清除
+        - 尚无任何回合 → 不存在「上一回合」，无状态可清
+        - 最新回合未完成 → 状态仍在使用中，不清除
+        """
+        valid_state = (
+            self._game.current_dungeon.is_ongoing
+            or self._game.current_dungeon.is_combat_completed
+            or self._game.current_dungeon.is_post_combat
+        )
+
+        if not valid_state:
+            logger.debug(
+                "当前战斗状态非 ONGOING/COMPLETE/POST_COMBAT，跳过旧回合状态清除"
+            )
+            return
+
+        current_rounds = self._game.current_dungeon.current_rounds or []
+        if len(current_rounds) == 0:
+            return
+
+        last_round = self._game.current_dungeon.latest_round
+        assert last_round is not None, "latest_round is None"
+        if not last_round.is_round_completed:
+            return
+
+        logger.debug("清除旧回合手牌与格挡状态")
+        self._game.clear_round_state()
+
+    ############################################################################################################
+    def _create_next_round(self) -> None:
+        """创建并初始化下一个战斗回合。
+
+        内部状态守护（不满足则静默返回）：
+        - 战斗未进行中 → 跳过
+        - 已有回合且最新回合未完成 → 等待，跳过
+        """
         if not self._game.current_dungeon.is_ongoing:
-            # 战斗未进行中，跳过回合创建
             logger.debug("当前战斗状态非 ONGOING，跳过回合创建")
             return
 
         logger.debug("检查战斗回合状态，判断是否需要创建新回合...")
 
-        # 检查是否有回合存在（第一回合创建）
-        if len(self._game.current_dungeon.current_rounds or []) == 0:
-            logger.info("战斗开始，创建第一回合")
-            new_round = self._create_next_round()
-            logger.info(f"创建第 1 回合，行动顺序: {new_round.action_order}")
-            return
+        current_rounds = self._game.current_dungeon.current_rounds or []
 
-        # 检查上一回合是否完成
-        last_round = self._game.current_dungeon.latest_round
-        assert last_round is not None
-        if last_round.is_round_completed:
-            logger.debug(f"上一回合已完成，创建新回合")
-            new_round = self._create_next_round()
-            logger.info(
-                f"创建第 {len(self._game.current_dungeon.current_rounds or [])} 回合，"
-                f"行动顺序: {new_round.action_order}"
-            )
-
-    ############################################################################################################
-    def _create_next_round(self) -> Round:
-        """创建并初始化下一个战斗回合
-
-        前置条件（由 execute 方法保证）：
-        - 战斗必须处于 ONGOING 状态
-        - 如果已有回合，上一回合必须已完成
-
-        Returns:
-            创建的回合对象
-        """
-        # 前置条件断言
-        assert self._game.current_dungeon.is_ongoing, "战斗未进行中"
-        _last_round = self._game.current_dungeon.latest_round
-        assert len(self._game.current_dungeon.current_rounds or []) == 0 or (
-            _last_round is not None and _last_round.is_round_completed
-        ), "上一回合未完成"
+        if len(current_rounds) > 0:
+            last_round = self._game.current_dungeon.latest_round
+            assert last_round is not None
+            if not last_round.is_round_completed:
+                return
 
         # 玩家角色
         player_entity = self._game.get_player_entity()
         assert player_entity is not None, "player_entity is None"
 
-        # 所有角色
+        # 所有存活角色
         actors_in_stage = self._game.get_alive_actors_in_stage(player_entity)
         assert len(actors_in_stage) > 0, "actors_in_stage is empty"
 
-        # 当前舞台(必然是地下城！)
+        # 当前舞台（必须是地下城）
         stage_entity = self._game.resolve_stage_entity(player_entity)
         assert stage_entity is not None, "stage_entity is None"
         assert stage_entity.has(DungeonComponent), "stage_entity 没有 DungeonComponent"
 
-        # 根据配置的策略排序角色行动顺序
+        # 根据策略排序角色行动顺序
         if self._strategy == ActionOrderStrategy.RANDOM:
             sorted_actors = self._sort_actors_random(actors_in_stage)
         elif self._strategy == ActionOrderStrategy.CREATION_ORDER:
@@ -156,27 +165,23 @@ class CombatRoundCreationSystem(ExecuteProcessor):
             logger.warning(f"未知的行动顺序策略: {self._strategy}，使用随机策略")
             sorted_actors = self._sort_actors_random(actors_in_stage)
 
-        # 若存在上一回合（非首回合），清除旧回合的手牌与格挡状态
-        if _last_round is not None:
-            self._game.clear_round_state()
-
-        # 设置回合的行动顺序
+        # 构造 action_order
         if self._strategy == ActionOrderStrategy.DOUBLE_ACTION:
             # ⚠️ 测试用：每人出现 2 次，暴露当前系统对重复名称的处理缺陷
             single_pass = [entity.name for entity in sorted_actors]
             action_order = single_pass + single_pass
         else:
             action_order = [entity.name for entity in sorted_actors]
-        round = Round(
-            action_order=action_order,
-        )
-        self._game.current_dungeon.current_combat.rounds.append(round)  # type: ignore[union-attr]
 
-        # 每回合开始时为所有参战角色初始化 BlockComponent 为 0（杀戮尖塔模式：每轮格挡清零）
+        round_number = len(current_rounds) + 1
+        new_round = Round(action_order=action_order)
+        self._game.current_dungeon.current_combat.rounds.append(new_round)  # type: ignore[union-attr]
+
+        # 每回合开始时重置所有参战角色的 BlockComponent（杀戮尖塔模式：每轮格挡清零）
         for actor in sorted_actors:
             actor.replace(BlockComponent, actor.name, 0)
 
-        return round
+        logger.info(f"创建第 {round_number} 回合，行动顺序: {new_round.action_order}")
 
     ############################################################################################################
     def _sort_actors_random(self, actors: Set[Entity]) -> List[Entity]:

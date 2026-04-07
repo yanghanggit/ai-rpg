@@ -947,6 +947,18 @@ class CombatRoomScreen(Screen[None]):
             return
 
         if not hand_cards:
+            # 回合尚未开始（completed_actors 为空）说明还没有抽牌，
+            # 推进下一个 actor 会永远指向同一个 actor 造成死循环。
+            # 直接回主菜单并提示玩家先抽牌。
+            if cur_round is None or not cur_round.completed_actors:
+                log.write("[yellow]⚠ 尚未抽牌，请先输入 [bold]1[/] 抽牌。[/]")
+                self._phase = None
+                inp = self.query_one(Input)
+                inp.placeholder = "输入命令..."
+                inp.disabled = False
+                inp.focus()
+                return
+            # 回合进行中但此角色确实无手牌（罕见边缘情况），跳过并推进。
             log.write("[yellow]⚠ 该角色没有手牌，跳过出牌。[/]")
             self._advance_to_next_actor(
                 cur_round.current_actor if cur_round else None,

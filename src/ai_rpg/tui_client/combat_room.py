@@ -2,7 +2,7 @@
 
 import asyncio
 from enum import auto, Enum
-from typing import Dict, Final, List, Optional, final
+from typing import Dict, Final, List, Optional, Tuple, final
 import httpx
 from loguru import logger
 from textual import on, work
@@ -25,7 +25,9 @@ from .server_client import (
 )
 from ..models import (
     Card,
+    BlockComponent,
     CombatState,
+    EntitySerialization,
     TaskStatus,
     CharacterStatsComponent,
     StatusEffectsComponent,
@@ -676,11 +678,6 @@ class CombatRoomScreen(Screen[None]):
 
             enemy_names = await self._fetch_play_enemy_names(stage_name)
 
-            log.write(
-                f"[bold yellow]回合 {len(rounds)}[/]  "
-                f"行动序列：{' → '.join(action_order)}\n"
-                f"已出手：{', '.join(completed_actors) if completed_actors else '（无）'}\n"
-            )
             logger.info(
                 f"CombatRoomScreen._load_round: action_order={action_order} "
                 f"completed={completed_actors} enemies={enemy_names}"
@@ -694,7 +691,14 @@ class CombatRoomScreen(Screen[None]):
             self.query_one(Input).focus()
             return
 
-        self._advance_to_next_actor(cur.current_actor, enemy_names)
+        self._advance_to_next_actor(
+            cur.current_actor,
+            enemy_names,
+            stage_name,
+            len(rounds),
+            action_order,
+            completed_actors,
+        )
 
     # ──────────────────────────────────────────────
     # 状态机推进
@@ -703,21 +707,52 @@ class CombatRoomScreen(Screen[None]):
         self,
         current_actor: Optional[str],
         enemy_names: List[str],
+        stage_name: str,
+        round_num: int = 0,
+        action_order: Optional[List[str]] = None,
+        completed_actors: Optional[List[str]] = None,
     ) -> None:
         if current_actor is None:
             self._enter_round_done()
             return
         if current_actor in enemy_names:
-            self._enter_enemy_turn(current_actor)
+            self._enter_enemy_turn(
+                current_actor, stage_name, round_num, action_order, completed_actors
+            )
         else:
-            self._enter_select_card(current_actor)
+            self._enter_select_card(
+                current_actor, round_num, action_order, completed_actors
+            )
 
-    def _enter_enemy_turn(self, actor_name: str) -> None:
+    @work
+    async def _enter_enemy_turn(
+        self,
+        actor_name: str,
+        stage_name: str,
+        round_num: int = 0,
+        action_order: Optional[List[str]] = None,
+        completed_actors: Optional[List[str]] = None,
+    ) -> None:
         log = self.query_one(RichLog)
         short = actor_name.split(".")[-1]
         log.write(
             f"[bold red]── 敌人回合：{short} ──────────────────────────────────[/]"
         )
+        try:
+            stages_resp = await fetch_stages_state(self._user_name, self._game_name)
+            actor_names: List[str] = list(stages_resp.mapping.get(stage_name, []))
+            details = await fetch_entities_details(
+                self._user_name, self._game_name, actor_names
+            )
+            self._write_battlefield_block(
+                details.entities_serialization,
+                round_num,
+                action_order,
+                completed_actors,
+            )
+        except Exception as e:
+            logger.warning(f"_enter_enemy_turn: 战场态势加载失败 error={e}")
+            log.write("[dim](战场态势加载失败)[/]\n")
         log.write("  按 [bold]Enter[/] 触发 AI 决策...")
         self._pending_actor_name = actor_name
         self._phase = _Phase.ENEMY_TURN
@@ -726,14 +761,20 @@ class CombatRoomScreen(Screen[None]):
         inp.disabled = False
         inp.focus()
 
-    def _enter_select_card(self, actor_name: str) -> None:
+    def _enter_select_card(
+        self,
+        actor_name: str,
+        round_num: int = 0,
+        action_order: Optional[List[str]] = None,
+        completed_actors: Optional[List[str]] = None,
+    ) -> None:
         log = self.query_one(RichLog)
         short = actor_name.split(".")[-1]
         log.write(
             f"[bold green]── 你的回合：{short} ────────────────────────────────[/]"
         )
         self._pending_actor_name = actor_name
-        self._fetch_hand_and_show(actor_name)
+        self._fetch_hand_and_show(actor_name, round_num, action_order, completed_actors)
 
     def _enter_round_done(self) -> None:
         log = self.query_one(RichLog)
@@ -768,7 +809,13 @@ class CombatRoomScreen(Screen[None]):
     # 手牌加载与显示
     # ──────────────────────────────────────────────
     @work
-    async def _fetch_hand_and_show(self, actor_name: str) -> None:
+    async def _fetch_hand_and_show(
+        self,
+        actor_name: str,
+        round_num: int = 0,
+        action_order: Optional[List[str]] = None,
+        completed_actors: Optional[List[str]] = None,
+    ) -> None:
         log = self.query_one(RichLog)
         log.write("[dim]正在加载手牌...[/]")
         try:
@@ -789,12 +836,29 @@ class CombatRoomScreen(Screen[None]):
             hand_cards: List[Card] = []
             alive_enemies: List[str] = []
             alive_allies: List[str] = []
+            # (entity_name, faction_label, hp_str, block)
+            battlefield: List[Tuple[str, str, str, int]] = []
             for entity in all_details.entities_serialization:
                 comp_names = {c.name for c in entity.components}
                 if "EnemyComponent" in comp_names:
                     alive_enemies.append(entity.name)
+                    faction_label = "[red]敌[/]"
                 elif "ExpeditionMemberComponent" in comp_names:
                     alive_allies.append(entity.name)
+                    faction_label = "[green]友[/]"
+                else:
+                    faction_label = "[dim]?[/]"
+
+                hp_str = "?/?"
+                block_val = 0
+                for comp in entity.components:
+                    if comp.name == CharacterStatsComponent.__name__:
+                        s = CharacterStatsComponent(**comp.data).stats
+                        hp_str = f"{s.hp}/{s.max_hp}"
+                    elif comp.name == BlockComponent.__name__:
+                        block_val = BlockComponent(**comp.data).block
+                battlefield.append((entity.name, faction_label, hp_str, block_val))
+
                 if entity.name == actor_name:
                     for comp in entity.components:
                         if comp.name == "HandComponent":
@@ -812,13 +876,22 @@ class CombatRoomScreen(Screen[None]):
         if not hand_cards:
             log.write("[yellow]⚠ 该角色没有手牌，跳过出牌。[/]")
             self._advance_to_next_actor(
-                cur_round.current_actor if cur_round else None, alive_enemies
+                cur_round.current_actor if cur_round else None,
+                alive_enemies,
+                stage_name,
             )
             return
 
         self._pending_hand_cards = hand_cards
         self._pending_alive_enemies = alive_enemies
         self._pending_alive_allies = alive_allies
+
+        self._write_battlefield_block(
+            all_details.entities_serialization,
+            round_num,
+            action_order,
+            completed_actors,
+        )
 
         log.write("  [bold]手牌：[/]")
         for i, card in enumerate(hand_cards, 1):
@@ -1081,7 +1154,9 @@ class CombatRoomScreen(Screen[None]):
             logger.warning(f"_reload_and_advance: 刷新回合状态失败 error={e}")
             self._enter_round_done()
             return
-        self._advance_to_next_actor(cur.current_actor if cur else None, enemy_names)
+        self._advance_to_next_actor(
+            cur.current_actor if cur else None, enemy_names, stage_name
+        )
 
     # ──────────────────────────────────────────────
     # 出牌阶段提示（写入 log，不修改顶部状态栏）
@@ -1090,3 +1165,51 @@ class CombatRoomScreen(Screen[None]):
         if text:
             log = self.query_one(RichLog)
             log.write(f"[dim]{text}[/]")
+
+    # ──────────────────────────────────────────────
+    # 战场态势渲染（通用辅助）
+    # ──────────────────────────────────────────────
+    def _write_battlefield_block(
+        self,
+        entities: List[EntitySerialization],
+        round_num: int = 0,
+        action_order: Optional[List[str]] = None,
+        completed_actors: Optional[List[str]] = None,
+    ) -> None:
+        """从 ECS 实体列表渲染战场态势一览（回合信息 / HP / 格挡）。"""
+        log = self.query_one(RichLog)
+        if round_num > 0:
+            ao_str = " → ".join(display_name(a) for a in (action_order or []))
+            done_list = completed_actors or []
+            done_str = (
+                "  ".join(display_name(a) for a in done_list) if done_list else "（无）"
+            )
+            log.write(
+                f"  [bold yellow]回合 {round_num}[/]  行动序列：{ao_str}  已出手：{done_str}"
+            )
+        log.write("  [bold]战场态势：[/]")
+        for entity in entities:
+            comp_names = {c.name for c in entity.components}
+            if "EnemyComponent" in comp_names:
+                flabel = "[red]敌[/]"
+            elif "ExpeditionMemberComponent" in comp_names:
+                flabel = "[green]友[/]"
+            else:
+                flabel = "[dim]?[/]"
+            hp_str = "?/?"
+            block_val = 0
+            for comp in entity.components:
+                if comp.name == CharacterStatsComponent.__name__:
+                    hp_str = (
+                        f"{CharacterStatsComponent(**comp.data).stats.hp}"
+                        f"/{CharacterStatsComponent(**comp.data).stats.max_hp}"
+                    )
+                elif comp.name == BlockComponent.__name__:
+                    block_val = BlockComponent(**comp.data).block
+            short = entity.name.split(".")[-1]
+            log.write(
+                f"    {flabel} [bold]{short}[/]"
+                f"  HP:[yellow]{hp_str}[/]"
+                f"  格挡:[blue]{block_val}[/]"
+            )
+        log.write("")

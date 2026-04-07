@@ -24,13 +24,6 @@ from .utils import display_name
 MENU_TEXT = """\
 [bold cyan]── 地下城总览 ──────────────────────────────────────[/]
 
-[bold cyan]── 操作（输入编号执行）──────────────────────────────[/]
-  [bold green]1[/]  副本列表      列出全部地下城副本
-  [bold green]2[/]  生成新地下城  触发地下城生成流程
-
-  [bold green]0[/]  显示此菜单
-  [bold dim]Escape[/]  返回
-
 """
 
 
@@ -75,7 +68,6 @@ class DungeonOverviewScreen(Screen[None]):
         self._game_name = game_name
         self._dungeons: List[Dungeon] = []
         self._selected_dungeon: Optional[str] = None
-        self._mode: str = "menu"  # 'menu' | 'list'
 
     def compose(self) -> ComposeResult:
         yield RichLog(id="dungeon-log", highlight=True, markup=True, wrap=True)
@@ -87,6 +79,7 @@ class DungeonOverviewScreen(Screen[None]):
         log = self.query_one(RichLog)
         log.write(MENU_TEXT)
         self.query_one(Input).focus()
+        self._load_dungeons()
 
     def action_go_back(self) -> None:
         self.app.pop_screen()
@@ -103,59 +96,62 @@ class DungeonOverviewScreen(Screen[None]):
         log.write(f"[dim]> {raw}[/]")
 
         if raw == "0":
+            log.clear()
             log.write(MENU_TEXT)
-            self._mode = "menu"
+            self._load_dungeons()
             return
 
-        if self._mode == "menu":
-            if raw == "1":
-                self._mode = "list"
-                self._load_dungeons()
-            elif raw == "2":
-                self._do_generate_dungeon()
+        if raw.lower() == "/enter":
+            if self._selected_dungeon is None:
+                log.write("[yellow]请先输入编号选择一个副本。[/]")
             else:
-                log.write(f"[red]未知输入：{raw}，输入 0 查看操作菜单。[/]")
+                self._do_enter_dungeon(self._selected_dungeon)
+            return
 
-        elif self._mode == "list":
-            if raw.lower() == "/enter":
-                if self._selected_dungeon is None:
-                    log.write("[yellow]请先输入编号选择一个副本。[/]")
-                else:
-                    self._do_enter_dungeon(self._selected_dungeon)
-                return
-            if not self._dungeons:
-                log.write("[yellow]地下城列表尚未加载，请稍候...[/]")
-                return
-            if not raw.isdigit():
-                log.write("[red]请输入有效编号或 0 显示菜单[/]")
-                return
-            idx = int(raw) - 1
-            if idx < 0 or idx >= len(self._dungeons):
-                log.write(
-                    f"[red]编号超出范围，请输入 1–{len(self._dungeons)} 之间的数字[/]"
-                )
-                return
+        if not raw.isdigit():
+            log.write("[red]请输入有效编号或 0 刷新页面[/]")
+            return
+
+        idx = int(raw) - 1
+        generate_idx = len(self._dungeons)  # 0-based index of the generate command
+
+        if idx == generate_idx:
+            self._do_generate_dungeon()
+        elif 0 <= idx < len(self._dungeons):
             dungeon = self._dungeons[idx]
             self._selected_dungeon = dungeon.name
             self._show_dungeon(dungeon, log)
             log.write(
                 f"[dim]输入 /enter 进入此副本：[bold cyan]{display_name(dungeon.name)}[/][/]"
             )
+        else:
+            n = len(self._dungeons)
+            hint = f"1–{n} 查看副本，{n + 1} 生成新地下城" if n else "1 生成新地下城"
+            log.write(f"[red]编号超出范围，可用：{hint}，0 刷新页面[/]")
 
     def _render_list(self, log: RichLog) -> None:
-        """将已缓存的地下城列表渲染到 log。"""
+        """将已缓存的地下城列表渲染到 log，并追加动态操作提示。"""
+        generate_no = len(self._dungeons) + 1
         if not self._dungeons:
-            log.write("[yellow]地下城列表尚未加载，请稍候...[/]")
-            return
-        log.write("[bold yellow]── 可用副本 ──────────────────────────────────────[/]")
-        for i, dungeon in enumerate(self._dungeons, start=1):
-            preview = dungeon.ecology[:40].replace("\n", " ")
-            room_count = len(dungeon.rooms)
+            log.write("[yellow]暂无可用副本。[/]")
+        else:
             log.write(
-                f"  [bold]{i}.[/] [bold cyan]{display_name(dungeon.name)}[/]"
-                f"  [dim]{preview}…  ({room_count} 个房间)[/]"
+                "[bold yellow]── 可用副本 ──────────────────────────────────────[/]"
             )
-        log.write("[dim]── 输入编号查看详情，输入 0 显示菜单 ──[/]")
+            for i, dungeon in enumerate(self._dungeons, start=1):
+                preview = dungeon.ecology[:40].replace("\n", " ")
+                room_count = len(dungeon.rooms)
+                log.write(
+                    f"  [bold]{i}.[/] [bold cyan]{display_name(dungeon.name)}[/]"
+                    f"  [dim]{preview}…  ({room_count} 个房间)[/]"
+                )
+            log.write("")
+        log.write(f"[bold cyan]── 操作 ──────────────────────────────────────────[/]")
+        if self._dungeons:
+            log.write(f"  [bold green]1–{len(self._dungeons)}[/]  查看副本详情")
+        log.write(f"  [bold green]{generate_no}[/]  生成新地下城")
+        log.write(f"  [bold green]0[/]  刷新此页面")
+        log.write(f"  [bold dim]Escape[/]  返回")
         log.write("")
 
     def _show_dungeon(self, dungeon: Dungeon, log: RichLog) -> None:
@@ -322,10 +318,7 @@ class DungeonOverviewScreen(Screen[None]):
         try:
             resp2 = await fetch_dungeon_list()
             self._dungeons = resp2.dungeons
-            if self._dungeons:
-                self._render_list(log)
-            else:
-                log.write("[yellow]服务器暂无可用地下城。[/]")
+            self._render_list(log)
             logger.info(f"_load_dungeons: 获取成功，共 {len(self._dungeons)} 个地下城")
         except Exception as e:
             logger.error(f"_load_dungeons: 获取失败 error={e}")

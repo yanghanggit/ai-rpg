@@ -172,11 +172,20 @@ class HomeScreen(Screen[None]):
         self._polling_active = False
         logger.info(f"HomeScreen: on_unmount，停止轮询 user_name={self._user_name}")
 
-    def on_screen_resume(self) -> None:
-        """从子 Screen 返回时刷新玩家状态。"""
+    def on_screen_suspend(self) -> None:
+        """推入子 Screen 时暂停轮询。"""
+        self._polling_active = False
         logger.info(
-            f"HomeScreen: on_screen_resume，刷新数据 user_name={self._user_name}"
+            f"HomeScreen: on_screen_suspend，暂停轮询 user_name={self._user_name}"
         )
+
+    def on_screen_resume(self) -> None:
+        """从子 Screen 返回时恢复轮询并刷新玩家状态。"""
+        logger.info(
+            f"HomeScreen: on_screen_resume，恢复轮询 user_name={self._user_name}"
+        )
+        self._polling_active = True
+        self._poll_messages()
         self._refresh_status_bar()
         self.query_one(Input).focus()
 

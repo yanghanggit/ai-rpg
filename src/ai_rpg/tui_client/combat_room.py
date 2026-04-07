@@ -189,7 +189,7 @@ class CombatRoomScreen(Screen[None]):
             elif self._phase == _Phase.SELECT_TARGET:
                 self._handle_target_selection(raw)
             elif self._phase == _Phase.ROUND_DONE:
-                log.write("[dim]回合已结束，请等待...[/]")
+                self._confirm_round_done()
             return
 
         # ── 普通命令模式 ──
@@ -777,16 +777,28 @@ class CombatRoomScreen(Screen[None]):
         self._fetch_hand_and_show(actor_name, round_num, action_order, completed_actors)
 
     def _enter_round_done(self) -> None:
+        """回合结束：保留 log（narrative/combat_log 仍可见），等待用户按 Enter 回到主菜单。"""
+        log = self.query_one(RichLog)
+        self._phase = _Phase.ROUND_DONE
+        log.write(
+            "\n[bold green]✅ 本回合所有角色已出手，回合结束。[/]"
+            "  按 [bold]Enter[/] 回到主菜单。\n"
+        )
+        inp = self.query_one(Input)
+        inp.placeholder = "按 Enter 回到主菜单..."
+        inp.disabled = False
+        inp.focus()
+
+    def _confirm_round_done(self) -> None:
+        """用户确认后真正跳回主菜单（清 log、重印菜单）。"""
         log = self.query_one(RichLog)
         self._phase = None
         inp = self.query_one(Input)
         inp.placeholder = "输入命令..."
         inp.disabled = False
         inp.focus()
-        # 回合结束后清空 log，重显菜单并附加结束提示
         log.clear()
         log.write(COMBAT_ROOM_MENU)
-        log.write("[bold green]✅ 本回合所有角色已出手，回合结束。[/]\n")
 
     # ──────────────────────────────────────────────
     # 敌方名单辅助（通过 EnemyComponent）
@@ -1154,6 +1166,19 @@ class CombatRoomScreen(Screen[None]):
             logger.warning(f"_reload_and_advance: 刷新回合状态失败 error={e}")
             self._enter_round_done()
             return
+
+        # 战斗已结束（COMPLETE / POST_COMBAT）→ 直接跳回菜单等待退出
+        if combat.state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
+            self._confirm_round_done()
+            return
+
+        # 当前回合尚无任何出手记录 → 说明 CombatRoundCreationSystem 已经创建了新回合，
+        # 手牌已被 clear_round_state() 清除，需要先抽牌才能继续出牌。
+        # 回到菜单等待玩家按 "1" 推进战斗（抽牌）。
+        if cur is None or not cur.completed_actors:
+            self._enter_round_done()
+            return
+
         self._advance_to_next_actor(
             cur.current_actor if cur else None, enemy_names, stage_name
         )

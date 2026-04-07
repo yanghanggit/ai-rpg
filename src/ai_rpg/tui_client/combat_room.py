@@ -2,7 +2,7 @@
 
 import asyncio
 from enum import auto, Enum
-from typing import Dict, Final, List, Optional
+from typing import Dict, Final, List, Optional, final
 import httpx
 from loguru import logger
 from textual import on, work
@@ -10,7 +10,6 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.screen import Screen
 from textual.widgets import Input, RichLog, Static
-from .combat_actor_detail import CombatActorDetailScreen
 from .round_detail import RoundDetailScreen
 from .utils import display_name
 from .server_client import dungeon_combat_draw_cards as server_dungeon_combat_draw_cards
@@ -32,6 +31,7 @@ from ..models import (
     HandComponent,
     AllyComponent,
     EnemyComponent,
+    PlayerComponent,
 )
 
 
@@ -61,12 +61,22 @@ def _format_http_error(e: Exception) -> str:
     return str(e)
 
 
-COMBAT_ROOM_MENU = """\
+_TARGET_LABEL: Final[Dict[str, str]] = {
+    "enemy_single": "[red]敌方单体[/]",
+    "enemy_all": "[red]敌方全体[/]",
+    "ally_single": "[green]友方单体[/]",
+    "ally_all": "[green]友方全体[/]",
+    "self_only": "[cyan]仅自己[/]",
+}
+
+
+COMBAT_ROOM_MENU: Final[
+    str
+] = """\
 [bold yellow]可用操作（输入编号执行）：[/]
 
 [bold cyan]── 查看 ──────────────────────────────────────[/]
   [bold green]1[/]  当前战斗状态    房间信息与角色属性
-  [bold green]2[/]  角色详情        完整属性与状态效果
   [bold green]3[/]  回合详情        行动顺序与出手记录
 
 [bold cyan]── 战斗 ──────────────────────────────────────[/]
@@ -83,6 +93,7 @@ COMBAT_ROOM_MENU = """\
 """
 
 
+@final
 class CombatRoomScreen(Screen[None]):
     """战斗房间 Screen：进入地下城战斗房间后的主界面，支持战斗操作与状态查询。"""
 
@@ -126,8 +137,8 @@ class CombatRoomScreen(Screen[None]):
 
     def __init__(self, user_name: str, game_name: str) -> None:
         super().__init__()
-        self._user_name = user_name
-        self._game_name = game_name
+        self._user_name: Final[str] = user_name
+        self._game_name: Final[str] = game_name
 
         # 顶部状态栏文本缓存（由 _fetch_status 写入，其他地方只读不写）
         self._status_bar_text: str = "[bold cyan]战斗房间[/]  [dim]查询中...[/]"
@@ -191,11 +202,6 @@ class CombatRoomScreen(Screen[None]):
 
         elif cmd == "1":
             self._fetch_status()
-
-        elif cmd == "2":
-            self.app.push_screen(
-                CombatActorDetailScreen(self._user_name, self._game_name)
-            )
 
         elif cmd == "3":
             self.app.push_screen(RoundDetailScreen(self._user_name, self._game_name))
@@ -278,8 +284,11 @@ class CombatRoomScreen(Screen[None]):
                     self._user_name, self._game_name, actor_names
                 )
                 for entity in details_resp.entities_serialization:
-                    # 阵营检测
+                    # 阵营检测 + 玩家标记
                     faction = "[dim]未知[/]"
+                    is_player = any(
+                        c.name == PlayerComponent.__name__ for c in entity.components
+                    )
                     for comp in entity.components:
                         if comp.name == AllyComponent.__name__:
                             faction = "[bold green]友方[/]"
@@ -288,39 +297,10 @@ class CombatRoomScreen(Screen[None]):
                             faction = "[bold red]敌方[/]"
                             break
 
-                    # 状态效果（独立于战斗属性）
-                    status_effects_comp = next(
-                        (
-                            c
-                            for c in entity.components
-                            if c.name == StatusEffectsComponent.__name__
-                        ),
-                        None,
+                    player_tag = r"  [bold yellow]\[玩家][/]" if is_player else ""
+                    log.write(
+                        f"[bold cyan]── {faction} [bold]{display_name(entity.name)}[/]{player_tag} ──[/]"
                     )
-                    status_effects = (
-                        StatusEffectsComponent(
-                            **status_effects_comp.data
-                        ).status_effects
-                        if status_effects_comp is not None
-                        else []
-                    )
-                    effects_str = f"  状态效果:[magenta]{len(status_effects)}[/]"
-
-                    # 手牌
-                    hand_comp = next(
-                        (
-                            c
-                            for c in entity.components
-                            if c.name == HandComponent.__name__
-                        ),
-                        None,
-                    )
-                    hand_count = (
-                        len(HandComponent(**hand_comp.data).cards)
-                        if hand_comp is not None
-                        else 0
-                    )
-                    hand_str = f"  手牌:[cyan]{hand_count}[/]"
 
                     # 战斗属性
                     stats_comp = next(
@@ -333,22 +313,79 @@ class CombatRoomScreen(Screen[None]):
                     )
                     if stats_comp is not None:
                         stats = CharacterStatsComponent(**stats_comp.data).stats
-                        hp = stats.hp
-                        max_hp = stats.max_hp
-                        attack = stats.attack
-                        defense = stats.defense
                         log.write(
-                            f"  · {faction} [bold]{display_name(entity.name)}[/]"
-                            f"  HP:[yellow]{hp}/{max_hp}[/]"
-                            f"  ATK:[red]{attack}[/]"
-                            f"  DEF:[blue]{defense}[/]" + effects_str + hand_str
+                            f"  HP:[yellow]{stats.hp}/{stats.max_hp}[/]"
+                            f"  ATK:[red]{stats.attack}[/]"
+                            f"  DEF:[blue]{stats.defense}[/]"
                         )
                     else:
+                        log.write("  [dim](无战斗属性)[/]")
+
+                    # 状态效果
+                    status_effects_comp = next(
+                        (
+                            c
+                            for c in entity.components
+                            if c.name == StatusEffectsComponent.__name__
+                        ),
+                        None,
+                    )
+                    if status_effects_comp is not None:
+                        effects = StatusEffectsComponent(
+                            **status_effects_comp.data
+                        ).status_effects
+                        if effects:
+                            log.write(f"  [bold]状态效果（{len(effects)}）：[/]")
+                            for effect in effects:
+                                log.write(
+                                    f"    └ [magenta]{effect.name}[/]"
+                                    f"  [{effect.category}]  {effect.description}"
+                                )
+                        else:
+                            log.write("  [dim](无状态效果)[/]")
+                    else:
+                        log.write("  [dim](无状态效果)[/]")
+
+                    # 手牌
+                    hand_comp = next(
+                        (
+                            c
+                            for c in entity.components
+                            if c.name == HandComponent.__name__
+                        ),
+                        None,
+                    )
+                    if hand_comp is not None:
+                        hand = HandComponent(**hand_comp.data)
                         log.write(
-                            f"  · {faction} [bold]{display_name(entity.name)}[/]  [dim](无战斗属性)[/]"
-                            + effects_str
-                            + hand_str
+                            f"  [bold]手牌（回合 {hand.round}，共 {len(hand.cards)} 张）：[/]"
                         )
+                        if hand.cards:
+                            for card in hand.cards:
+                                hit_str = (
+                                    f"x[yellow]{card.hit_count}[/]"
+                                    if card.hit_count > 1
+                                    else ""
+                                )
+                                tt_str = _TARGET_LABEL.get(
+                                    card.target_type,
+                                    f"[dim]{card.target_type}[/]",
+                                )
+                                log.write(
+                                    f"    └ [bold]{card.name}[/]"
+                                    f"  伤害:[red]{card.damage_dealt}[/]{hit_str}"
+                                    f"  格挡:[blue]{card.block_gain}[/]"
+                                    f"  目标:{tt_str}"
+                                    + (
+                                        f"  [dim]{card.action}[/]"
+                                        if card.action
+                                        else ""
+                                    )
+                                )
+                        else:
+                            log.write("    [dim](手牌为空)[/]")
+
+                    log.write("")
             else:
                 log.write("  [dim]（房间内无角色）[/]")
             log.write("")
@@ -761,13 +798,6 @@ class CombatRoomScreen(Screen[None]):
         self._pending_alive_enemies = alive_enemies
         self._pending_alive_allies = alive_allies
 
-        _TARGET_LABEL: Dict[str, str] = {
-            "enemy_single": "[red]敌方单体[/]",
-            "enemy_all": "[red]敌方全体[/]",
-            "ally_single": "[green]友方单体[/]",
-            "ally_all": "[green]友方全体[/]",
-            "self_only": "[cyan]仅自己[/]",
-        }
         log.write("  [bold]手牌：[/]")
         for i, card in enumerate(hand_cards, 1):
             hit_str = f"x[yellow]{card.hit_count}[/]" if card.hit_count > 1 else ""

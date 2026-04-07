@@ -26,6 +26,7 @@ from .server_client import (
 from ..models import (
     Card,
     BlockComponent,
+    CombatResult,
     CombatState,
     EntitySerialization,
     TaskStatus,
@@ -1119,12 +1120,14 @@ class CombatRoomScreen(Screen[None]):
 
         prev_round_idx = -1
         prev_completed_count = 0
+        prev_action_count = 0
         try:
             pre_room = await fetch_dungeon_room(self._user_name, self._game_name)
             pre_rounds = pre_room.room.combat.rounds
             if pre_rounds:
                 prev_round_idx = len(pre_rounds) - 1
                 prev_completed_count = len(pre_rounds[-1].completed_actors)
+                prev_action_count = len(pre_rounds[-1].action_order)
         except Exception as e:
             logger.warning(f"_do_play_card: 出牌前快照失败 error={e}")
 
@@ -1176,6 +1179,36 @@ class CombatRoomScreen(Screen[None]):
             logger.warning(f"_do_play_card: 轮询超时 task_id={task_id}")
 
         await self._show_play_results(prev_round_idx, prev_completed_count)
+
+        # ── 出牌后状态检查：若战斗已结束或本回合已完成，暂停并提示 ──
+        if prev_action_count > 0 and prev_round_idx >= 0:
+            try:
+                post_room = await fetch_dungeon_room(self._user_name, self._game_name)
+                post_combat = post_room.room.combat
+                post_rounds = post_combat.rounds
+                log = self.query_one(RichLog)
+
+                if post_combat.state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
+                    result = post_combat.result
+                    if result == CombatResult.WIN:
+                        log.write("\n[bold green]✅ 战斗胜利！所有敌人已被击败。[/]")
+                    elif result == CombatResult.LOSE:
+                        log.write("\n[bold red]💀 战斗失败，队伍全员阵亡。[/]")
+                    else:
+                        log.write("\n[bold yellow]⚔ 战斗已结束。[/]")
+                    self._enter_round_done()
+                    return
+
+                if (
+                    prev_round_idx < len(post_rounds)
+                    and len(post_rounds[prev_round_idx].completed_actors)
+                    >= prev_action_count
+                ):
+                    self._enter_round_done()
+                    return
+            except Exception as e:
+                logger.warning(f"_do_play_card: 出牌后状态检查失败 error={e}")
+
         self._advance()  # 启动新 @work 推进状态机；当前 coroutine 到此结束
 
     # ──────────────────────────────────────────────

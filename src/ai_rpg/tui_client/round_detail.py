@@ -1,5 +1,7 @@
 """战斗回合详情 Screen"""
 
+from itertools import zip_longest
+
 from loguru import logger
 from textual import work
 from textual.app import ComposeResult
@@ -7,6 +9,7 @@ from textual.screen import Screen
 from textual.widgets import RichLog
 
 from .server_client import fetch_dungeon_room
+from .utils import display_name
 
 ROUND_HEADER = """\
 [bold cyan]── 战斗回合详情 ──────────────────────────────────────[/]
@@ -100,16 +103,27 @@ class RoundDetailScreen(Screen[None]):
                 )
                 log.write(f"    行动顺序：{order_str}")
                 log.write(f"    已出手：  {done_str}")
+                if rnd.current_actor is not None:
+                    log.write(
+                        f"    [bold]当前行动：[/] [bold yellow]{display_name(rnd.current_actor)}[/]"
+                    )
 
-                if rnd.combat_log:
-                    log.write("    [bold]战斗日志：[/]")
-                    for entry in rnd.combat_log:
-                        log.write(f"      · {entry}")
-
-                if rnd.narrative:
-                    log.write("    [bold]叙事：[/]")
-                    for line in rnd.narrative:
-                        log.write(f"      {line}")
+                if rnd.combat_log or rnd.narrative:
+                    log.write("    [bold]出手记录：[/]")
+                    for i, (cl, nv) in enumerate(
+                        zip_longest(rnd.combat_log, rnd.narrative, fillvalue=None),
+                        start=1,
+                    ):
+                        log.write(
+                            f"      [{i}] [dim]战斗：[/] {cl}"
+                            if cl
+                            else f"      [{i}] [dim]战斗：[/] [dim]（无）[/]"
+                        )
+                        log.write(
+                            f"          [dim]叙事：[/] {nv}"
+                            if nv
+                            else f"          [dim]叙事：[/] [dim]（无）[/]"
+                        )
 
                 log.write("")
 

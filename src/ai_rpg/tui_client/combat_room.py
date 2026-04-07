@@ -79,7 +79,7 @@ COMBAT_ROOM_MENU: Final[
 [bold yellow]可用操作（输入编号执行）：[/]
 
 [bold cyan]── 战斗 ──────────────────────────────────────[/]
-  [bold green]1[/]  推进战斗        按需初始化，再为全员抽牌
+  [bold green]1[/]  抽牌            按需初始化，再为全员抽牌
   [bold green]2[/]  出牌            进入出牌界面完成本回合
 
 [bold cyan]── 查看 ──────────────────────────────────────[/]
@@ -182,6 +182,18 @@ class CombatRoomScreen(Screen[None]):
 
         # ── 出牌模式：路由至状态机处理器 ──
         if self._phase is not None:
+            # q / 退出 → 随时中断并回到主菜单（LOADING/WAITING 除外）
+            if raw.lower() in ("q", "退出"):
+                if self._phase in (
+                    _Phase.ENEMY_TURN,
+                    _Phase.SELECT_CARD,
+                    _Phase.SELECT_TARGET,
+                    _Phase.ROUND_DONE,
+                ):
+                    self._abort_play_cards()
+                else:
+                    log.write("[yellow]正在处理中，请稍候...[/]")
+                return
             if self._phase == _Phase.ENEMY_TURN:
                 self._trigger_enemy_turn()
             elif self._phase == _Phase.SELECT_CARD:
@@ -314,10 +326,28 @@ class CombatRoomScreen(Screen[None]):
                     )
                     if stats_comp is not None:
                         stats = CharacterStatsComponent(**stats_comp.data).stats
+                        block_comp_inline = next(
+                            (
+                                c
+                                for c in entity.components
+                                if c.name == BlockComponent.__name__
+                            ),
+                            None,
+                        )
+                        block_inline = (
+                            BlockComponent(**block_comp_inline.data).block
+                            if block_comp_inline is not None
+                            else None
+                        )
+                        block_str = (
+                            f"  格挡:[blue]{block_inline}[/]"
+                            if block_inline is not None
+                            else ""
+                        )
                         log.write(
                             f"  HP:[yellow]{stats.hp}/{stats.max_hp}[/]"
                             f"  ATK:[red]{stats.attack}[/]"
-                            f"  DEF:[blue]{stats.defense}[/]"
+                            f"  DEF:[blue]{stats.defense}[/]" + block_str
                         )
                     else:
                         log.write("  [dim](无战斗属性)[/]")
@@ -385,6 +415,8 @@ class CombatRoomScreen(Screen[None]):
                                 )
                         else:
                             log.write("    [dim](手牌为空)[/]")
+                    else:
+                        log.write("  [dim](无手牌)[/]")
 
                     log.write("")
             else:
@@ -408,8 +440,14 @@ class CombatRoomScreen(Screen[None]):
                     if cur.completed_actors
                     else "[dim]（无）[/]"
                 )
+                current_actor_str = (
+                    f"[bold yellow]{display_name(cur.current_actor)}[/]"
+                    if cur.current_actor
+                    else "[dim]（回合已结束）[/]"
+                )
                 log.write(f"  [bold]行动顺序：[/] {order_str}")
                 log.write(f"  [bold]已出手：[/]   {done_str}")
+                log.write(f"  [bold]当前行动：[/] {current_actor_str}")
             log.write("")
 
             logger.info(
@@ -734,7 +772,7 @@ class CombatRoomScreen(Screen[None]):
         completed_actors: Optional[List[str]] = None,
     ) -> None:
         log = self.query_one(RichLog)
-        short = actor_name.split(".")[-1]
+        short = display_name(actor_name)
         log.write(
             f"[bold red]── 敌人回合：{short} ──────────────────────────────────[/]"
         )
@@ -753,11 +791,16 @@ class CombatRoomScreen(Screen[None]):
         except Exception as e:
             logger.warning(f"_enter_enemy_turn: 战场态势加载失败 error={e}")
             log.write("[dim](战场态势加载失败)[/]\n")
-        log.write("  按 [bold]Enter[/] 触发 AI 决策...")
+        log.write(
+            "  按 [bold]Enter[/] 触发 AI 决策  [dim]（输入 q 返回主菜单，下次可继续）[/]"
+        )
         self._pending_actor_name = actor_name
         self._phase = _Phase.ENEMY_TURN
-        self._update_play_status(f"敌人 [{short}] 的回合 — 按 Enter 触发 AI 出牌")
+        self._update_play_status(
+            f"敌人 [{short}] 的回合 — 按 Enter 触发 AI 出牌  |  q 返回主菜单"
+        )
         inp = self.query_one(Input)
+        inp.placeholder = "Enter 触发 AI / q 返回主菜单"
         inp.disabled = False
         inp.focus()
 
@@ -769,7 +812,7 @@ class CombatRoomScreen(Screen[None]):
         completed_actors: Optional[List[str]] = None,
     ) -> None:
         log = self.query_one(RichLog)
-        short = actor_name.split(".")[-1]
+        short = display_name(actor_name)
         log.write(
             f"[bold green]── 你的回合：{short} ────────────────────────────────[/]"
         )
@@ -788,6 +831,24 @@ class CombatRoomScreen(Screen[None]):
         inp.placeholder = "按 Enter 回到主菜单..."
         inp.disabled = False
         inp.focus()
+
+    def _abort_play_cards(self) -> None:
+        """中断出牌流程，清空 pending 状态，回到主菜单命令模式。"""
+        self._phase = None
+        self._pending_actor_name = None
+        self._pending_card_name = None
+        self._pending_hand_cards = []
+        self._pending_alive_enemies = []
+        self._pending_alive_allies = []
+        self._pending_target_candidates = []
+        log = self.query_one(RichLog)
+        inp = self.query_one(Input)
+        inp.placeholder = "输入命令..."
+        inp.disabled = False
+        inp.focus()
+        log.clear()
+        log.write(COMBAT_ROOM_MENU)
+        log.write("[dim]已中断出牌。输入 [bold]2[/] 可随时继续本回合。[/]\n")
 
     def _confirm_round_done(self) -> None:
         """用户确认后真正跳回主菜单（清 log、重印菜单）。"""
@@ -915,10 +976,13 @@ class CombatRoomScreen(Screen[None]):
             )
 
         self._phase = _Phase.SELECT_CARD
-        short = actor_name.split(".")[-1]
-        self._update_play_status(f"[{short}] 输入卡牌编号（1-{len(hand_cards)}）选牌")
+        short = display_name(actor_name)
+        self._update_play_status(
+            f"[{short}] 输入卡牌编号（1-{len(hand_cards)}）选牌  |  q 返回主菜单"
+        )
+        log.write("  [dim]（输入 q 可返回主菜单，下次输入 2 可继续出牌）[/]")
         inp = self.query_one(Input)
-        inp.placeholder = f"1-{len(hand_cards)} 或卡牌名"
+        inp.placeholder = f"1-{len(hand_cards)} 或卡牌名 / q 返回"
         inp.disabled = False
         inp.focus()
 
@@ -1017,7 +1081,7 @@ class CombatRoomScreen(Screen[None]):
                     )
                     return
             else:
-                matched = [n for n in candidates if n == raw or n.split(".")[-1] == raw]
+                matched = [n for n in candidates if n == raw or display_name(n) == raw]
                 if matched:
                     targets = [matched[0]]
                 else:
@@ -1057,7 +1121,7 @@ class CombatRoomScreen(Screen[None]):
         self._phase = _Phase.WAITING
         self.query_one(Input).disabled = True
 
-        short = actor_name.split(".")[-1]
+        short = display_name(actor_name)
         display_card = card_name if card_name else "（AI 自选）"
         log.write(
             f"  [dim]▶ {short} 出牌中：{display_card}  "
@@ -1231,7 +1295,7 @@ class CombatRoomScreen(Screen[None]):
                     )
                 elif comp.name == BlockComponent.__name__:
                     block_val = BlockComponent(**comp.data).block
-            short = entity.name.split(".")[-1]
+            short = display_name(entity.name)
             log.write(
                 f"    {flabel} [bold]{short}[/]"
                 f"  HP:[yellow]{hp_str}[/]"

@@ -2,8 +2,7 @@
 
 import asyncio
 from enum import auto, Enum
-from typing import Any, Dict, List, Optional
-
+from typing import Dict, Final, List, Optional
 import httpx
 from loguru import logger
 from textual import on, work
@@ -11,7 +10,6 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.screen import Screen
 from textual.widgets import Input, RichLog, Static
-
 from .combat_actor_detail import CombatActorDetailScreen
 from .round_detail import RoundDetailScreen
 from .utils import display_name
@@ -27,6 +25,7 @@ from .server_client import (
     fetch_tasks_status,
 )
 from ..models import (
+    Card,
     TaskStatus,
     CharacterStatsComponent,
     StatusEffectsComponent,
@@ -48,8 +47,8 @@ class _Phase(Enum):
     ROUND_DONE = auto()  # 回合已全部完成
 
 
-_PLAY_POLL_INTERVAL = 1.0
-_PLAY_MAX_POLLS = 90
+_PLAY_POLL_INTERVAL: Final[float] = 1.0
+_PLAY_MAX_POLLS: Final[int] = 90
 
 
 def _format_http_error(e: Exception) -> str:
@@ -130,11 +129,14 @@ class CombatRoomScreen(Screen[None]):
         self._user_name = user_name
         self._game_name = game_name
 
+        # 顶部状态栏文本缓存（由 _fetch_status 写入，其他地方只读不写）
+        self._status_bar_text: str = "[bold cyan]战斗房间[/]  [dim]查询中...[/]"
+
         # 出牌阶段状态机字段（None = 普通命令模式）
         self._phase: Optional[_Phase] = None
         self._pending_actor_name: Optional[str] = None
         self._pending_card_name: Optional[str] = None
-        self._pending_hand_cards: List[Dict[str, Any]] = []
+        self._pending_hand_cards: List[Card] = []
         self._pending_alive_enemies: List[str] = []
         self._pending_alive_allies: List[str] = []
         self._pending_target_candidates: List[str] = []
@@ -147,9 +149,7 @@ class CombatRoomScreen(Screen[None]):
             yield Input(placeholder="输入命令...", id="room-input")
 
     def on_mount(self) -> None:
-        self.query_one("#combat-status", Static).update(
-            "[bold cyan]战斗房间[/]  [dim]查询中...[/]"
-        )
+        self.query_one("#combat-status", Static).update(self._status_bar_text)
         log = self.query_one(RichLog)
         log.write(COMBAT_ROOM_MENU)
         self._fetch_status()
@@ -182,10 +182,12 @@ class CombatRoomScreen(Screen[None]):
         if not cmd:
             return
 
-        log.write(f"[dim]> {cmd}[/]")
+        # 每次执行任意命令前先清空 Log 并重印菜单
+        log.clear()
+        log.write(COMBAT_ROOM_MENU)
 
         if cmd == "0":
-            log.write(COMBAT_ROOM_MENU)
+            pass  # 仅显示菜单，已经显示
 
         elif cmd == "1":
             self._fetch_status()
@@ -230,9 +232,11 @@ class CombatRoomScreen(Screen[None]):
             state_resp = await fetch_dungeon_state(self._user_name, self._game_name)
             dungeon = state_resp.dungeon
 
-            self.query_one("#combat-status", Static).update(
-                f"[bold cyan]战斗房间[/]  [bold yellow]{display_name(dungeon.name)}[/]  [dim]房间 {dungeon.current_room_index + 1}/{len(dungeon.rooms)}[/]"
+            self._status_bar_text = (
+                f"[bold cyan]战斗房间[/]  [bold yellow]{display_name(dungeon.name)}[/]  "
+                f"[dim]房间 {dungeon.current_room_index + 1}/{len(dungeon.rooms)}[/]"
             )
+            self.query_one("#combat-status", Static).update(self._status_bar_text)
 
             logger.info(
                 f"CombatRoomScreen._fetch_status: 地下城状态查询成功 dungeon={dungeon.name}"
@@ -253,9 +257,12 @@ class CombatRoomScreen(Screen[None]):
             stage = room.stage
             combat = room.combat
 
-            self.query_one("#combat-status", Static).update(
-                f"[bold cyan]战斗房间[/]  [bold yellow]{display_name(dungeon.name)}[/]  [bold white]▶[/]  [bold green]{display_name(stage.name)}[/]  [dim]{dungeon.current_room_index + 1}/{len(dungeon.rooms)}[/]"
+            self._status_bar_text = (
+                f"[bold cyan]战斗房间[/]  [bold yellow]{display_name(dungeon.name)}[/]  "
+                f"[bold white]▶[/]  [bold green]{display_name(stage.name)}[/]  "
+                f"[dim]{dungeon.current_room_index + 1}/{len(dungeon.rooms)}[/]"
             )
+            self.query_one("#combat-status", Static).update(self._status_bar_text)
 
             log.write(
                 "[bold cyan]── 参战角色 ──────────────────────────────────────[/]"
@@ -291,7 +298,9 @@ class CombatRoomScreen(Screen[None]):
                         None,
                     )
                     status_effects = (
-                        status_effects_comp.data.get("status_effects", [])
+                        StatusEffectsComponent(
+                            **status_effects_comp.data
+                        ).status_effects
                         if status_effects_comp is not None
                         else []
                     )
@@ -307,7 +316,7 @@ class CombatRoomScreen(Screen[None]):
                         None,
                     )
                     hand_count = (
-                        len(hand_comp.data.get("cards", []))
+                        len(HandComponent(**hand_comp.data).cards)
                         if hand_comp is not None
                         else 0
                     )
@@ -323,11 +332,11 @@ class CombatRoomScreen(Screen[None]):
                         None,
                     )
                     if stats_comp is not None:
-                        stats = stats_comp.data.get("stats", {})
-                        hp = stats.get("hp", "?")
-                        max_hp = stats.get("max_hp", "?")
-                        attack = stats.get("attack", "?")
-                        defense = stats.get("defense", "?")
+                        stats = CharacterStatsComponent(**stats_comp.data).stats
+                        hp = stats.hp
+                        max_hp = stats.max_hp
+                        attack = stats.attack
+                        defense = stats.defense
                         log.write(
                             f"  · {faction} [bold]{display_name(entity.name)}[/]"
                             f"  HP:[yellow]{hp}/{max_hp}[/]"
@@ -669,13 +678,15 @@ class CombatRoomScreen(Screen[None]):
 
     def _enter_round_done(self) -> None:
         log = self.query_one(RichLog)
-        log.write("\n[bold green]✅ 本回合所有角色已出手，回合结束。[/]\n")
         self._phase = None
-        self._update_play_status("")
         inp = self.query_one(Input)
         inp.placeholder = "输入命令..."
         inp.disabled = False
         inp.focus()
+        # 回合结束后清空 log，重显菜单并附加结束提示
+        log.clear()
+        log.write(COMBAT_ROOM_MENU)
+        log.write("[bold green]✅ 本回合所有角色已出手，回合结束。[/]\n")
 
     # ──────────────────────────────────────────────
     # 敌方名单辅助（通过 EnemyComponent）
@@ -716,7 +727,7 @@ class CombatRoomScreen(Screen[None]):
                 self._user_name, self._game_name, stage_actor_names
             )
 
-            hand_cards: List[Dict[str, Any]] = []
+            hand_cards: List[Card] = []
             alive_enemies: List[str] = []
             alive_allies: List[str] = []
             for entity in all_details.entities_serialization:
@@ -728,10 +739,7 @@ class CombatRoomScreen(Screen[None]):
                 if entity.name == actor_name:
                     for comp in entity.components:
                         if comp.name == "HandComponent":
-                            raw_cards = comp.data.get("cards", [])
-                            hand_cards = [
-                                c if isinstance(c, dict) else dict(c) for c in raw_cards
-                            ]
+                            hand_cards = HandComponent(**comp.data).cards
 
         except Exception as e:
             logger.error(f"CombatRoomScreen._fetch_hand_and_show: 加载失败 error={e}")
@@ -762,16 +770,11 @@ class CombatRoomScreen(Screen[None]):
         }
         log.write("  [bold]手牌：[/]")
         for i, card in enumerate(hand_cards, 1):
-            name = card.get("name", "?")
-            dmg = card.get("damage_dealt", 0)
-            blk = card.get("block_gain", 0)
-            hit = card.get("hit_count", 1)
-            tt = card.get("target_type", "enemy_single")
-            hit_str = f"x[yellow]{hit}[/]" if hit > 1 else ""
-            tt_str = _TARGET_LABEL.get(str(tt), f"[dim]{tt}[/]")
+            hit_str = f"x[yellow]{card.hit_count}[/]" if card.hit_count > 1 else ""
+            tt_str = _TARGET_LABEL.get(card.target_type, f"[dim]{card.target_type}[/]")
             log.write(
-                f"    [bold cyan]{i}.[/] {name}  "
-                f"伤害:[red]{dmg}[/]{hit_str}  格挡:[blue]{blk}[/]  目标:{tt_str}"
+                f"    [bold cyan]{i}.[/] {card.name}  "
+                f"伤害:[red]{card.damage_dealt}[/]{hit_str}  格挡:[blue]{card.block_gain}[/]  目标:{tt_str}"
             )
 
         self._phase = _Phase.SELECT_CARD
@@ -791,14 +794,14 @@ class CombatRoomScreen(Screen[None]):
             log.write("[red]没有可用手牌。[/]")
             return
 
-        card: Optional[Dict[str, Any]] = None
+        card: Optional[Card] = None
         if raw.isdigit():
             idx = int(raw) - 1
             if 0 <= idx < len(self._pending_hand_cards):
                 card = self._pending_hand_cards[idx]
         else:
             for c in self._pending_hand_cards:
-                if c.get("name") == raw:
+                if c.name == raw:
                     card = c
                     break
 
@@ -808,8 +811,8 @@ class CombatRoomScreen(Screen[None]):
             )
             return
 
-        self._pending_card_name = card.get("name", "")
-        target_type = str(card.get("target_type", "enemy_single"))
+        self._pending_card_name = card.name
+        target_type = card.target_type
         log.write(f"  已选：[bold cyan]{self._pending_card_name}[/]")
 
         if target_type == "enemy_all":
@@ -1029,11 +1032,9 @@ class CombatRoomScreen(Screen[None]):
         self._advance_to_next_actor(cur.current_actor if cur else None, enemy_names)
 
     # ──────────────────────────────────────────────
-    # 出牌状态栏辅助
+    # 出牌阶段提示（写入 log，不修改顶部状态栏）
     # ──────────────────────────────────────────────
     def _update_play_status(self, text: str) -> None:
-        bar = self.query_one("#combat-status", Static)
         if text:
-            bar.update(f"[bold cyan]出牌[/]  {text}")
-        else:
-            bar.update("[bold cyan]战斗房间[/]")
+            log = self.query_one(RichLog)
+            log.write(f"[dim]{text}[/]")

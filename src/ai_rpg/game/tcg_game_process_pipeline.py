@@ -138,7 +138,7 @@ def create_combat_pipeline(
 
     # 战斗核心动作处理相关的系统：状态效果追加 → 抽牌 → 敌人决策 → 出牌 → 退却 → 仲裁
     processors.add(AddStatusEffectsActionSystem(tcg_game, max_effects=2))
-    processors.add(DrawCardsActionSystem(tcg_game, 3))
+    processors.add(DrawCardsActionSystem(tcg_game, max_num_cards=3))
     processors.add(EnemyPlayDecisionSystem(tcg_game))
     processors.add(PlayCardsActionSystem(tcg_game))
     processors.add(RetreatActionSystem(tcg_game))

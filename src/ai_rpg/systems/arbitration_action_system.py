@@ -139,8 +139,9 @@ def _generate_combat_arbitration_prompt(
 
 **格挡优先消耗**：出牌者先获得 block_gain 格挡（出牌者结算后格挡 = 当前格挡 + block_gain）。
 多段攻击逐段结算（hit_count 次）：
-  每段实际伤害 = max(1, damage_dealt − 目标当前剩余 block)
-  每段命中后，目标 block 减去本段消耗量（block 不低于 0）
+  每段实际伤害 = max(0, damage_dealt − 目标当前剩余 block)
+  本段 block 消耗量 = min(damage_dealt, 目标当前剩余 block)
+  每段命中后，目标 block -= 本段 block 消耗量（block 不低于 0）
   总伤害 = 各段实际伤害之和
 目标 HP = max(0, min(当前 HP − 总伤害, 最大 HP))
 若 hit_count = 1，按单段正常结算即可

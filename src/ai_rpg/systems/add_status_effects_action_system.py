@@ -21,6 +21,7 @@ from ..models import (
     AddStatusEffectsAction,
     StatusEffectsComponent,
     StatusEffect,
+    StatusEffectPhase,
 )
 from ..utils import extract_json_from_code_block
 
@@ -75,6 +76,24 @@ def _generate_add_status_effects_prompt(
             ]
         )
 
+    phase_desc = f"""
+## 生效阶段（phase）说明
+
+每个状态效果必须指定 `phase` 字段，决定它在战斗流程的哪个阶段起效：
+
+| phase | 对应阶段 | 可影响的属性 | 典型效果举例 |
+|---|---|---|---|
+| `{StatusEffectPhase.DRAW}` | 抽牌阶段 | attack、defense（换算为卡牌的 damage_dealt / block_gain / hit_count） | 「虚弱」攻击力−2，本回合生成卡牌的 damage_dealt 偏低；「沉重」防御力−1，生成卡牌的 block_gain 偏低 |
+| `{StatusEffectPhase.PLAY}` | 出牌阶段 | damage_dealt、block_gain、hit_count（附加到本回合出的牌上） | 「淬毒」为本回合打出的牌附加 damage_dealt+2；「护盾祝福」为本回合出的牌附加 block_gain+2 |
+| `{StatusEffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt、block_gain | 「燃烧」本回合结算时扣 hp 3；「坚甲」格挡+3；「中毒」造成伤害+2 |
+
+**属性约束（所有阶段均适用）**：
+- 禁止修改 max_hp（最大生命值不可通过状态效果改变）
+- `{StatusEffectPhase.DRAW}` 阶段使用 attack / defense 描述，不直接写 damage_dealt / block_gain
+- `{StatusEffectPhase.ARBITRATION}` 阶段直接使用 hp / damage_dealt / block_gain，不使用 attack / defense
+
+绝大多数伤害/防御类效果选 `{StatusEffectPhase.ARBITRATION}`。"""
+
     return f"""# 第 {current_round_number} 回合 — 追加状态效果
 
 回顾上下文历史，结合当前已有状态效果，追加本回合应有的新状态效果。
@@ -84,6 +103,7 @@ def _generate_add_status_effects_prompt(
 ## 当前状态效果
 
 {effects_list}
+{phase_desc}
 
 **要求**：不重复现有效果，最多追加 {max_effects} 个；无新增时输出空数组。
 
@@ -93,13 +113,14 @@ def _generate_add_status_effects_prompt(
     {{
       "name": "效果名（<8字）",
       "description": "第一人称，含表现与数值影响，1句话（如：我感到手臂刺痛，攻击力−2）",
-      "duration": 持续回合数（-1=永久，正整数=剩余回合，默认3）
+      "duration": 持续回合数（-1=永久，正整数=剩余回合，默认3）,
+      "phase": "{StatusEffectPhase.ARBITRATION}"
     }}
   ]
 }}
 ```
 
-无新增状态时输出空数组，只输出JSON。"""
+无新增状态时输出空数组，只输出JSON."""
 
 
 #######################################################################################################################################

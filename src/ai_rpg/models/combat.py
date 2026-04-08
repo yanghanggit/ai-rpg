@@ -32,6 +32,24 @@ class CombatResult(IntEnum):
 
 ###############################################################################################################################################
 @final
+@unique
+class StatusEffectPhase(StrEnum):
+    """状态效果生效阶段
+
+    标记一个状态效果应在战斗流程的哪个阶段起效。
+
+    - draw        : 抽牌阶段（DrawCardsActionSystem）——影响本回合卡牌生成，如"混乱"使牌质下降
+    - play        : 出牌阶段（PlayCardsActionSystem）——影响出牌行为，如"束缚"禁止出攻击牌
+    - arbitration : 仲裁阶段（ArbitrationActionSystem）——影响伤害/格挡结算，如"虚弱"伤害−2、"坚甲"格挡+3
+    """
+
+    DRAW = "draw"
+    PLAY = "play"
+    ARBITRATION = "arbitration"
+
+
+###############################################################################################################################################
+@final
 class StatusEffect(BaseModel):
     """状态效果（增益/减益）
 
@@ -39,11 +57,13 @@ class StatusEffect(BaseModel):
     - name: 状态效果名称
     - description: 效果描述（含表现与数值影响，如"我感到手臂刺痛，攻击力−2"）
     - duration: 持续回合数；-1 = 永久不过期，>0 = 剩余回合，每回合结束后 -=1，降至 <=0 时移除
+    - phase: 生效阶段；决定本效果在哪个战斗阶段被系统读取并应用
     """
 
     name: str
     description: str  # 效果描述（含表现与数值影响）
     duration: int = 3  # 持续回合数；-1=永久，>0=剩余回合
+    phase: StatusEffectPhase = StatusEffectPhase.ARBITRATION  # 生效阶段，默认仲裁阶段
 
 
 ###############################################################################################################################################

@@ -58,10 +58,8 @@ class RosterScreen(Screen[None]):
         ("escape", "go_back", "Back"),
     ]
 
-    def __init__(self, user_name: str, game_name: str) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self._user_name = user_name
-        self._game_name = game_name
         self._ally_list: List[str] = []
         self._current_roster: Set[str] = set()
 
@@ -130,11 +128,12 @@ class RosterScreen(Screen[None]):
         from .app import GameClient
 
         app: GameClient = self.app  # type: ignore[assignment]
-        bp = app.session_blueprint
-        if bp is None:
-            log.write("[red]❌ 无法取得蓝图信息。[/]")
+        if app.session is None:
+            log.write("[red]⚠ 无法取得会话信息。[/]")
             return
-
+        user_name = app.session.user_name
+        game_name = app.session.game_name
+        bp = app.session.blueprint
         player_actor = bp.player_actor
         self._ally_list = [
             actor.name for actor in bp.actors if actor.name != player_actor
@@ -146,9 +145,7 @@ class RosterScreen(Screen[None]):
 
         # 从服务器读取 player entity，取得 ExpeditionRosterComponent
         try:
-            resp = await fetch_entities_details(
-                self._user_name, self._game_name, [player_actor]
-            )
+            resp = await fetch_entities_details(user_name, game_name, [player_actor])
             for entity in resp.entities_serialization:
                 for comp in entity.components:
                     if comp.name == "ExpeditionRosterComponent":
@@ -175,8 +172,15 @@ class RosterScreen(Screen[None]):
         inp.disabled = True
         log.write(f"[dim]▶ 正在将 {display_name(ally_name)} 加入远征队...[/]")
         logger.info(f"RosterScreen._do_add: ally_name={ally_name}")
+        from .app import GameClient
+
+        app: GameClient = self.app  # type: ignore[assignment]
+        if app.session is None:
+            return
         try:
-            await home_roster_add(self._user_name, self._game_name, ally_name)
+            await home_roster_add(
+                app.session.user_name, app.session.game_name, ally_name
+            )
             self._current_roster.add(ally_name)
             log.write(f"[bold green]✅ {display_name(ally_name)} 已加入远征队[/]")
             logger.info(f"RosterScreen._do_add: 成功 ally_name={ally_name}")
@@ -195,8 +199,15 @@ class RosterScreen(Screen[None]):
         inp.disabled = True
         log.write(f"[dim]▶ 正在将 {display_name(ally_name)} 从远征队移除...[/]")
         logger.info(f"RosterScreen._do_remove: ally_name={ally_name}")
+        from .app import GameClient
+
+        app: GameClient = self.app  # type: ignore[assignment]
+        if app.session is None:
+            return
         try:
-            await home_roster_remove(self._user_name, self._game_name, ally_name)
+            await home_roster_remove(
+                app.session.user_name, app.session.game_name, ally_name
+            )
             self._current_roster.discard(ally_name)
             log.write(f"[bold green]✅ {display_name(ally_name)} 已从远征队移除[/]")
             logger.info(f"RosterScreen._do_remove: 成功 ally_name={ally_name}")

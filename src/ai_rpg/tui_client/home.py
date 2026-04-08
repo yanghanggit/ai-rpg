@@ -143,11 +143,8 @@ class HomeScreen(Screen[None]):
         ("escape", "logout", "登出"),
     ]
 
-    def __init__(self, user_name: str, game_name: str) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self._user_name = user_name
-        self._game_name = game_name
-        self._last_sequence_id: int = 0
         self._polling_active: bool = False
 
     def compose(self) -> ComposeResult:
@@ -158,11 +155,16 @@ class HomeScreen(Screen[None]):
             yield Input(placeholder="输入编号执行操作...", id="home-input")
 
     def on_mount(self) -> None:
+        from .app import GameClient
+
+        _app: GameClient = self.app  # type: ignore[assignment]
         log = self.query_one(RichLog)
         log.write(MENU_TEXT)
-        logger.info(
-            f"HomeScreen: 进入主场景 user_name={self._user_name} game_name={self._game_name}"
-        )
+        if _app.session:
+            logger.info(
+                f"HomeScreen: 进入主场景 user_name={_app.session.user_name}"
+                f" game_name={_app.session.game_name}"
+            )
         self.query_one(Input).focus()
         self._polling_active = True
         self._poll_messages()
@@ -170,20 +172,16 @@ class HomeScreen(Screen[None]):
 
     def on_unmount(self) -> None:
         self._polling_active = False
-        logger.info(f"HomeScreen: on_unmount，停止轮询 user_name={self._user_name}")
+        logger.info("HomeScreen: on_unmount，停止轮询")
 
     def on_screen_suspend(self) -> None:
         """推入子 Screen 时暂停轮询。"""
         self._polling_active = False
-        logger.info(
-            f"HomeScreen: on_screen_suspend，暂停轮询 user_name={self._user_name}"
-        )
+        logger.info("HomeScreen: on_screen_suspend，暂停轮询")
 
     def on_screen_resume(self) -> None:
         """从子 Screen 返回时恢复轮询并刷新玩家状态。"""
-        logger.info(
-            f"HomeScreen: on_screen_resume，恢复轮询 user_name={self._user_name}"
-        )
+        logger.info("HomeScreen: on_screen_resume，恢复轮询")
         self._polling_active = True
         self._poll_messages()
         self._refresh_status_bar()
@@ -206,8 +204,10 @@ class HomeScreen(Screen[None]):
         from .app import GameClient
 
         app: GameClient = self.app  # type: ignore[assignment]
-        bp = app.session_blueprint
-        player_actor = bp.player_actor if bp else None
+        if app.session is None:
+            return
+        bp = app.session.blueprint
+        player_actor = bp.player_actor
 
         if not player_actor:
             self.query_one("#home-status", Static).update(
@@ -218,7 +218,9 @@ class HomeScreen(Screen[None]):
 
         current_stage = ""
         try:
-            resp = await fetch_stages_state(self._user_name, self._game_name)
+            resp = await fetch_stages_state(
+                app.session.user_name, app.session.game_name
+            )
             for stage, actors in resp.mapping.items():
                 if player_actor in actors:
                     current_stage = stage
@@ -232,7 +234,7 @@ class HomeScreen(Screen[None]):
             )
             return
 
-        player_only_stage = bp.player_only_stage if bp else ""
+        player_only_stage = bp.player_only_stage
         if current_stage:
             if current_stage == player_only_stage:
                 stage_text = f"[bold yellow]{display_name(current_stage)}[/] [dim cyan]（专属）[/]"
@@ -259,77 +261,67 @@ class HomeScreen(Screen[None]):
             return
 
         log.write(f"[dim]> {cmd}[/]")
-        logger.debug(f"HomeScreen: 收到命令 user_name={self._user_name} cmd={cmd}")
+        logger.debug(f"HomeScreen: 收到命令 cmd={cmd}")
 
         if cmd == "0":
             log.write(MENU_TEXT)
         elif cmd == "1":
             from .player_status import PlayerStatusScreen
 
-            self.app.push_screen(
-                PlayerStatusScreen(user_name=self._user_name, game_name=self._game_name)
-            )
+            self.app.push_screen(PlayerStatusScreen())
         elif cmd == "2":
             from .stages import StagesScreen
 
-            self.app.push_screen(
-                StagesScreen(user_name=self._user_name, game_name=self._game_name)
-            )
+            self.app.push_screen(StagesScreen())
         elif cmd == "3":
             from .entity_browser import EntityBrowserScreen
 
-            self.app.push_screen(
-                EntityBrowserScreen(
-                    user_name=self._user_name, game_name=self._game_name
-                )
-            )
+            self.app.push_screen(EntityBrowserScreen())
         elif cmd == "4":
             from .dungeon_overview import DungeonOverviewScreen
 
-            self.app.push_screen(
-                DungeonOverviewScreen(
-                    user_name=self._user_name, game_name=self._game_name
-                )
-            )
+            self.app.push_screen(DungeonOverviewScreen())
         elif cmd == "5":
             self._do_advance()
         elif cmd == "6":
             from .speak import SpeakScreen
 
-            self.app.push_screen(
-                SpeakScreen(user_name=self._user_name, game_name=self._game_name)
-            )
+            self.app.push_screen(SpeakScreen())
         elif cmd == "7":
             from .switch_stage import SwitchStageScreen
 
-            self.app.push_screen(
-                SwitchStageScreen(user_name=self._user_name, game_name=self._game_name)
-            )
+            self.app.push_screen(SwitchStageScreen())
         elif cmd == "8":
             from .roster import RosterScreen
 
-            self.app.push_screen(
-                RosterScreen(user_name=self._user_name, game_name=self._game_name)
-            )
+            self.app.push_screen(RosterScreen())
         else:
             log.write(f"[red]未知输入：{cmd}，输入 0 查看操作菜单。[/]")
 
     @work
     async def _do_advance(self) -> None:
         """执行一轮家园推进（home pipeline），推进期间禁用输入框并轮询任务状态。"""
+        from .app import GameClient
+
+        app: GameClient = self.app  # type: ignore[assignment]
+        if app.session is None:
+            return
+        user_name = app.session.user_name
+        game_name = app.session.game_name
+
         log = self.query_one(RichLog)
         inp = self.query_one(Input)
         inp.disabled = True
         log.write("[bold yellow]── 推进家园 ──────────────────────────────────────[/]")
         log.write("[dim]▶ 正在推进...[/]")
         logger.info(
-            f"_do_advance: 开始推进 user_name={self._user_name} game_name={self._game_name}"
+            f"_do_advance: 开始推进 user_name={user_name} game_name={game_name}"
         )
 
         task_id: str = ""
         success = False
         try:
-            resp = await server_home_advance(self._user_name, self._game_name)
+            resp = await server_home_advance(user_name, game_name)
             task_id = resp.task_id
             log.write(f"[dim]任务已创建：{task_id}[/]")
             logger.info(f"_do_advance: 任务已创建 task_id={task_id}")
@@ -375,57 +367,71 @@ class HomeScreen(Screen[None]):
 
     @work
     async def _poll_messages(self) -> None:
+        from .app import GameClient
+
+        app: GameClient = self.app  # type: ignore[assignment]
+        if app.session is None:
+            return
         logger.info(
-            f"_poll_messages: 启动轮询 user_name={self._user_name} game_name={self._game_name}"
+            f"_poll_messages: 启动轮询 user_name={app.session.user_name} game_name={app.session.game_name}"
         )
         while self._polling_active:
             await asyncio.sleep(2)
             if not self._polling_active:
                 break
+            if app.session is None:
+                break
             try:
                 resp = await fetch_session_messages(
-                    self._user_name, self._game_name, self._last_sequence_id
+                    app.session.user_name,
+                    app.session.game_name,
+                    app.session.last_sequence_id,
                 )
                 for msg in resp.session_messages:
                     if msg.message_type == MessageType.NONE:
                         continue
-                    if msg.sequence_id > self._last_sequence_id:
-                        self._last_sequence_id = msg.sequence_id
+                    if msg.sequence_id > app.session.last_sequence_id:
+                        app.session.last_sequence_id = msg.sequence_id
                     log = self.query_one(RichLog)
-                    if msg.message_type == MessageType.GAME:
+                    if msg.message_type == MessageType.AGENT_EVENT:
                         message_text = msg.data.get(
                             "message", json.dumps(msg.data, ensure_ascii=False)
                         )
                         log.write(f"[bold white]{message_text}[/]")
-                    else:  # AGENT_EVENT
+                    else:
                         log.write(_format_agent_event(msg.data))
                     logger.debug(
                         f"_poll_messages: 收到消息 seq={msg.sequence_id} type={msg.message_type}"
                     )
             except Exception as e:
                 logger.warning(f"_poll_messages: 轮询失败 error={e}")
-        logger.info(f"_poll_messages: 轮询已停止 user_name={self._user_name}")
+        logger.info(
+            f"_poll_messages: 轮询已停止 user_name={app.session.user_name if app.session else '?'}"
+        )
 
     @work
     async def _do_logout(self) -> None:
+        from .app import GameClient
+
+        app: GameClient = self.app  # type: ignore[assignment]
+        if app.session is None:
+            return
+        user_name = app.session.user_name
+        game_name = app.session.game_name
+
         log = self.query_one(RichLog)
         log.write("[dim]正在登出...[/]")
-        logger.info(
-            f"_do_logout: 开始登出 user_name={self._user_name} game_name={self._game_name}"
-        )
+        logger.info(f"_do_logout: 开始登出 user_name={user_name} game_name={game_name}")
         try:
-            msg = await server_logout(self._user_name, self._game_name)
+            msg = await server_logout(user_name, game_name)
             log.write(f"[bold green]✅ {msg}[/]")
             logger.info(
-                f"_do_logout: 登出成功 user_name={self._user_name} msg={msg} → 清空会话状态 + pop_screen"
+                f"_do_logout: 登出成功 user_name={user_name} msg={msg} → 清空会话状态 + pop_screen"
             )
             self._polling_active = False
-            from .app import GameClient
-
-            app: GameClient = self.app  # type: ignore[assignment]
             app.clear_session()
             await asyncio.sleep(0.5)
             self.app.pop_screen()
         except Exception as e:
-            logger.error(f"_do_logout: 登出失败 user_name={self._user_name} error={e}")
+            logger.error(f"_do_logout: 登出失败 user_name={user_name} error={e}")
             log.write(f"[bold red]❌ 登出失败: {e}[/]")

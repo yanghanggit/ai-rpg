@@ -111,10 +111,8 @@ class PlayerStatusScreen(Screen[None]):
         ("escape", "go_back", "返回"),
     ]
 
-    def __init__(self, user_name: str, game_name: str) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self._user_name = user_name
-        self._game_name = game_name
 
     def compose(self) -> ComposeResult:
         yield RichLog(id="status-log", highlight=True, markup=True, wrap=True)
@@ -133,14 +131,18 @@ class PlayerStatusScreen(Screen[None]):
         from .app import GameClient
 
         app: GameClient = self.app  # type: ignore[assignment]
-        bp = app.session_blueprint
-        player_actor = bp.player_actor if bp else None
+        if app.session is None:
+            return
+        user_name = app.session.user_name
+        game_name = app.session.game_name
+        bp = app.session.blueprint
+        player_actor = bp.player_actor
 
         # 基础信息
         log.write(
             f"[bold yellow]── 基本信息 ──────────────────────────────────────[/]\n"
-            f"  玩家：[bold]{self._user_name}[/]\n"
-            f"  游戏：[bold]{self._game_name}[/]\n"
+            f"  玩家：[bold]{user_name}[/]\n"
+            f"  游戏：[bold]{game_name}[/]\n"
             f"  玩家角色：[bold cyan]{display_name(player_actor) if player_actor else '（未知）'}[/]\n"
         )
 
@@ -158,9 +160,7 @@ class PlayerStatusScreen(Screen[None]):
         log.write(f"[dim]正在查询玩家角色实体：{player_actor} ...[/]")
         logger.info(f"PlayerStatusScreen: 查询玩家角色实体 player_actor={player_actor}")
         try:
-            resp = await fetch_entities_details(
-                self._user_name, self._game_name, [player_actor]
-            )
+            resp = await fetch_entities_details(user_name, game_name, [player_actor])
             if not resp.entities_serialization:
                 log.write(f"[yellow]未找到玩家角色实体：{player_actor}[/]")
             else:

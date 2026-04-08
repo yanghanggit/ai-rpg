@@ -55,10 +55,8 @@ class EntityBrowserScreen(Screen[None]):
         ("escape", "go_back", "Back"),
     ]
 
-    def __init__(self, user_name: str, game_name: str) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self._user_name = user_name
-        self._game_name = game_name
         # (entity_name, entity_type) — type is "场景" or "角色"
         self._entity_list: List[Tuple[str, str]] = []
         self._stage_mapping: Dict[str, List[str]] = {}
@@ -143,11 +141,16 @@ class EntityBrowserScreen(Screen[None]):
     @work
     async def _load_entities(self) -> None:
         log = self.query_one(RichLog)
-        logger.info(
-            f"_load_entities: 加载实体列表 user_name={self._user_name} game_name={self._game_name}"
-        )
+        logger.info(f"_load_entities: 加载实体列表")
         try:
-            resp = await fetch_stages_state(self._user_name, self._game_name)
+            from .app import GameClient
+
+            app: GameClient = self.app  # type: ignore[assignment]
+            if app.session is None:
+                return
+            user_name = app.session.user_name
+            game_name = app.session.game_name
+            resp = await fetch_stages_state(user_name, game_name)
             self._entity_list.clear()
             self._stage_mapping = dict(resp.mapping)
 
@@ -180,12 +183,15 @@ class EntityBrowserScreen(Screen[None]):
     async def _show_entity(self, entity_name: str) -> None:
         log = self.query_one(RichLog)
         log.write(f"[dim]正在查询实体：{entity_name} ...[/]")
-        logger.info(
-            f"_show_entity: 查询 entity_name={entity_name} user_name={self._user_name}"
-        )
+        logger.info(f"_show_entity: 查询 entity_name={entity_name}")
         try:
+            from .app import GameClient
+
+            app: GameClient = self.app  # type: ignore[assignment]
+            if app.session is None:
+                return
             resp = await fetch_entities_details(
-                self._user_name, self._game_name, [entity_name]
+                app.session.user_name, app.session.game_name, [entity_name]
             )
             if not resp.entities_serialization:
                 log.write(f"[yellow]未找到实体：{entity_name}[/]")

@@ -35,7 +35,7 @@ class NewGameScreen(Screen[None]):
     def __init__(self) -> None:
         super().__init__()
         self._blueprints: List[Blueprint] = []
-        self._player_id = f"player_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        self._auto_player_id = f"player_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         self._starting = False
 
     def compose(self) -> ComposeResult:
@@ -48,7 +48,7 @@ class NewGameScreen(Screen[None]):
         log.write(
             "[bold cyan]── 开始新游戏 ──────────────────────────────────────[/]\n"
         )
-        log.write(f"玩家 ID：[bold green]{self._player_id}[/]\n")
+        log.write(f"玩家 ID：[bold green]{self._auto_player_id}[/]\n")
         self._load_blueprints()
 
     def action_go_back(self) -> None:
@@ -61,7 +61,7 @@ class NewGameScreen(Screen[None]):
             self.query_one(RichLog).write("[yellow]⚠ 蓝图尚未加载完成，请稍候...[/]")
             return
         self._starting = True
-        self._start_new_game(self._player_id, self._blueprints[0].name)
+        self._start_new_game(self._auto_player_id, self._blueprints[0].name)
 
     @work
     async def _load_blueprints(self) -> None:
@@ -146,12 +146,15 @@ class NewGameScreen(Screen[None]):
             )
             from .app import GameClient
             from .home import HomeScreen
+            from .session import GameSession
 
             app: GameClient = self.app  # type: ignore[assignment]
-            app.session_user_name = user_name
-            app.session_game_name = game_name
-            app.session_blueprint = resp.blueprint
-            app.switch_screen(HomeScreen(user_name=user_name, game_name=game_name))
+            app.session = GameSession(
+                user_name=user_name,
+                game_name=game_name,
+                blueprint=resp.blueprint,
+            )
+            app.switch_screen(HomeScreen())
         except Exception as e:
             logger.error(
                 f"_start_new_game: 创建游戏失败 game_name={game_name} error={e}"

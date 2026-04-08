@@ -62,10 +62,8 @@ class DungeonOverviewScreen(Screen[None]):
         ("escape", "go_back", "Back"),
     ]
 
-    def __init__(self, user_name: str, game_name: str) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self._user_name = user_name
-        self._game_name = game_name
         self._dungeons: List[Dungeon] = []
         self._selected_dungeon: Optional[str] = None
 
@@ -196,17 +194,23 @@ class DungeonOverviewScreen(Screen[None]):
         log.write(f"[dim]▶ 正在进入地下城：{dungeon_name}...[/]")
         logger.info(f"DungeonOverviewScreen._do_enter_dungeon: dungeon={dungeon_name}")
 
+        from .app import GameClient
+
+        app: GameClient = self.app  # type: ignore[assignment]
+        if app.session is None:
+            return
+        user_name = app.session.user_name
+        game_name = app.session.game_name
+
         try:
-            await server_home_enter_dungeon(
-                self._user_name, self._game_name, dungeon_name
-            )
+            await server_home_enter_dungeon(user_name, game_name, dungeon_name)
             log.write(f"[bold green]✅ 已进入地下城：{dungeon_name}[/]")
             logger.info(
                 f"DungeonOverviewScreen._do_enter_dungeon: 进入成功 dungeon={dungeon_name}"
             )
             from .combat_room import CombatRoomScreen
 
-            self.app.push_screen(CombatRoomScreen(self._user_name, self._game_name))
+            self.app.push_screen(CombatRoomScreen())
         except Exception as e:
             logger.error(f"DungeonOverviewScreen._do_enter_dungeon: 进入失败 error={e}")
             log.write(f"[bold red]❌ 进入地下城失败: {e}[/]")
@@ -221,14 +225,22 @@ class DungeonOverviewScreen(Screen[None]):
         inp.disabled = True
 
         log.write("[dim]▶ 正在触发地下城生成流程...[/]")
-        logger.info(
-            f"DungeonOverviewScreen._do_generate_dungeon: user={self._user_name} game={self._game_name}"
-        )
+        logger.info(f"DungeonOverviewScreen._do_generate_dungeon")
+
+        from .app import GameClient
+
+        app: GameClient = self.app  # type: ignore[assignment]
+        if app.session is None:
+            inp.disabled = False
+            inp.focus()
+            return
+        user_name = app.session.user_name
+        game_name = app.session.game_name
 
         task_id: str = ""
         success = False
         try:
-            resp = await server_home_generate_dungeon(self._user_name, self._game_name)
+            resp = await server_home_generate_dungeon(user_name, game_name)
             task_id = resp.task_id
             log.write(f"[dim]任务已创建：{task_id}[/]")
             logger.info(
@@ -290,12 +302,16 @@ class DungeonOverviewScreen(Screen[None]):
         from .app import GameClient
 
         app: GameClient = self.app  # type: ignore[assignment]
-        bp = app.session_blueprint
-        player_actor = bp.player_actor if bp else None
+        if app.session is None:
+            return
+        user_name = app.session.user_name
+        game_name = app.session.game_name
+        bp = app.session.blueprint
+        player_actor = bp.player_actor
         if player_actor:
             try:
                 resp = await fetch_entities_details(
-                    self._user_name, self._game_name, [player_actor]
+                    user_name, game_name, [player_actor]
                 )
                 members: list[str] = []
                 for entity in resp.entities_serialization:

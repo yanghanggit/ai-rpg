@@ -37,10 +37,8 @@ class RoundDetailScreen(Screen[None]):
         ("escape", "go_back", "Back"),
     ]
 
-    def __init__(self, user_name: str, game_name: str) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self._user_name = user_name
-        self._game_name = game_name
 
     def compose(self) -> ComposeResult:
         yield RichLog(id="round-log", highlight=True, markup=True, wrap=True)
@@ -59,12 +57,17 @@ class RoundDetailScreen(Screen[None]):
         """获取并渲染所有战斗回合信息。"""
         log = self.query_one(RichLog)
         log.write("[dim]正在加载回合信息...[/]")
-        logger.info(
-            f"RoundDetailScreen._fetch_rounds: user={self._user_name} game={self._game_name}"
-        )
+        logger.info(f"RoundDetailScreen._fetch_rounds")
 
         try:
-            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
+            from .app import GameClient
+
+            app: GameClient = self.app  # type: ignore[assignment]
+            if app.session is None:
+                return
+            room_resp = await fetch_dungeon_room(
+                app.session.user_name, app.session.game_name
+            )
             combat = room_resp.room.combat
             rounds = combat.rounds
 

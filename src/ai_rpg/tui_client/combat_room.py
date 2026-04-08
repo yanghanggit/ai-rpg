@@ -141,10 +141,8 @@ class CombatRoomScreen(Screen[None]):
         ("escape", "suggest_exit", "use 8 to quit"),
     ]
 
-    def __init__(self, user_name: str, game_name: str) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self._user_name: Final[str] = user_name
-        self._game_name: Final[str] = game_name
 
         # 顶部状态栏文本缓存（由 _fetch_status 写入，其他地方只读不写）
         self._status_bar_text: str = "[bold cyan]战斗房间[/]  [dim]查询中...[/]"
@@ -160,6 +158,22 @@ class CombatRoomScreen(Screen[None]):
         self._target_candidates: List[str] = (
             []
         )  # 可选目标名列表（SELECT_TARGET 内有效，用完即清）
+
+    @property
+    def _user_name(self) -> str:
+        from .app import GameClient
+
+        app: GameClient = self.app  # type: ignore[assignment]
+        assert app.session is not None
+        return app.session.user_name
+
+    @property
+    def _game_name(self) -> str:
+        from .app import GameClient
+
+        app: GameClient = self.app  # type: ignore[assignment]
+        assert app.session is not None
+        return app.session.game_name
 
     def compose(self) -> ComposeResult:
         yield Static("", id="combat-status", markup=True)
@@ -237,7 +251,7 @@ class CombatRoomScreen(Screen[None]):
             self._fetch_status()
 
         elif cmd == "4":
-            self.app.push_screen(RoundDetailScreen(self._user_name, self._game_name))
+            self.app.push_screen(RoundDetailScreen())
 
         elif cmd == "5":
             self._do_combat_retreat()

@@ -61,10 +61,8 @@ class SpeakScreen(Screen[None]):
         ("escape", "go_back", "Cancel"),
     ]
 
-    def __init__(self, user_name: str, game_name: str) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self._user_name = user_name
-        self._game_name = game_name
         self._actor_list: List[str] = []
         self._selected_target: str = ""
         self._state: Literal["select", "input"] = "select"
@@ -126,18 +124,20 @@ class SpeakScreen(Screen[None]):
         """加载当前场景中可交谈的 NPC 列表（过滤 player_actor 自身）。"""
         log = self.query_one(RichLog)
         log.write("[dim]正在加载当前场景 NPC...[/]")
-        logger.info(
-            f"SpeakScreen._load_targets: user_name={self._user_name} game_name={self._game_name}"
-        )
+        logger.info(f"SpeakScreen._load_targets")
 
         from .app import GameClient
 
         app: GameClient = self.app  # type: ignore[assignment]
-        bp = app.session_blueprint
-        player_actor = bp.player_actor if bp else None
+        if app.session is None:
+            return
+        user_name = app.session.user_name
+        game_name = app.session.game_name
+        bp = app.session.blueprint
+        player_actor = bp.player_actor
 
         try:
-            resp = await fetch_stages_state(self._user_name, self._game_name)
+            resp = await fetch_stages_state(user_name, game_name)
 
             # 找到 player_actor 所在 stage
             current_stage: str | None = None
@@ -196,9 +196,16 @@ class SpeakScreen(Screen[None]):
         task_id: str = ""
         success = False
         try:
+            from .app import GameClient
+
+            app: GameClient = self.app  # type: ignore[assignment]
+            if app.session is None:
+                inp.disabled = False
+                inp.focus()
+                return
             resp = await server_home_player_action(
-                self._user_name,
-                self._game_name,
+                app.session.user_name,
+                app.session.game_name,
                 HomePlayerActionType.SPEAK,
                 {"target": self._selected_target, "content": content},
             )

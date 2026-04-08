@@ -37,10 +37,8 @@ class StagesScreen(Screen[None]):
         ("escape", "go_back", "返回"),
     ]
 
-    def __init__(self, user_name: str, game_name: str) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self._user_name = user_name
-        self._game_name = game_name
 
     def compose(self) -> ComposeResult:
         yield RichLog(id="stages-log", highlight=True, markup=True, wrap=True)
@@ -58,19 +56,24 @@ class StagesScreen(Screen[None]):
         """加载场景分布，并显示玩家当前场景的描述。"""
         log = self.query_one(RichLog)
         log.write("[dim]正在加载场景数据...[/]")
-        logger.info(
-            f"StagesScreen._load_stages_and_desc: user_name={self._user_name} game_name={self._game_name}"
-        )
 
         from .app import GameClient
 
         app: GameClient = self.app  # type: ignore[assignment]
-        bp = app.session_blueprint
-        player_actor = bp.player_actor if bp else None
+        if app.session is None:
+            return
+        user_name = app.session.user_name
+        game_name = app.session.game_name
+        bp = app.session.blueprint
+        player_actor = bp.player_actor
+
+        logger.info(
+            f"StagesScreen._load_stages_and_desc: user_name={user_name} game_name={game_name}"
+        )
 
         # ── 1. 场景分布 ────────────────────────────────
         try:
-            stages_resp = await fetch_stages_state(self._user_name, self._game_name)
+            stages_resp = await fetch_stages_state(user_name, game_name)
         except Exception as e:
             logger.error(f"StagesScreen: fetch_stages_state 失败 error={e}")
             log.write(f"[bold red]❌ 场景状态查询失败: {e}[/]")
@@ -84,7 +87,7 @@ class StagesScreen(Screen[None]):
         if all_stage_names:
             try:
                 entities_resp = await fetch_entities_details(
-                    self._user_name, self._game_name, all_stage_names
+                    user_name, game_name, all_stage_names
                 )
                 for entity in entities_resp.entities_serialization:
                     for comp in entity.components:

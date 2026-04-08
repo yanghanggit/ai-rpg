@@ -62,10 +62,8 @@ class SwitchStageScreen(Screen[None]):
         ("escape", "go_back", "Cancel"),
     ]
 
-    def __init__(self, user_name: str, game_name: str) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self._user_name = user_name
-        self._game_name = game_name
         self._stage_list: List[str] = []
 
     def compose(self) -> ComposeResult:
@@ -113,18 +111,20 @@ class SwitchStageScreen(Screen[None]):
         """加载可前往的场景列表（含 HomeComponent，排除当前场景）。"""
         log = self.query_one(RichLog)
         log.write("[dim]正在加载场景列表...[/]")
-        logger.info(
-            f"SwitchStageScreen._load_stages: user_name={self._user_name} game_name={self._game_name}"
-        )
+        logger.info(f"SwitchStageScreen._load_stages")
 
         from .app import GameClient
 
         app: GameClient = self.app  # type: ignore[assignment]
-        bp = app.session_blueprint
-        player_actor = bp.player_actor if bp else None
+        if app.session is None:
+            return
+        user_name = app.session.user_name
+        game_name = app.session.game_name
+        bp = app.session.blueprint
+        player_actor = bp.player_actor
 
         try:
-            resp = await fetch_stages_state(self._user_name, self._game_name)
+            resp = await fetch_stages_state(user_name, game_name)
 
             # 找到玩家当前所在场景
             current_stage: str | None = None
@@ -138,7 +138,7 @@ class SwitchStageScreen(Screen[None]):
             all_stages = list(resp.mapping.keys())
             try:
                 details_resp = await fetch_entities_details(
-                    self._user_name, self._game_name, all_stages
+                    user_name, game_name, all_stages
                 )
                 home_stages = {
                     entity.name
@@ -212,12 +212,22 @@ class SwitchStageScreen(Screen[None]):
         log.write(f"[dim]▶ 正在切换到场景：{display_name(target_stage)}...[/]")
         logger.info(f"SwitchStageScreen._do_switch_stage: target_stage={target_stage}")
 
+        from .app import GameClient
+
+        app: GameClient = self.app  # type: ignore[assignment]
+        if app.session is None:
+            inp.disabled = False
+            inp.focus()
+            return
+        user_name = app.session.user_name
+        game_name = app.session.game_name
+
         task_id: str = ""
         success = False
         try:
             resp = await server_home_player_action(
-                self._user_name,
-                self._game_name,
+                user_name,
+                game_name,
                 HomePlayerActionType.SWITCH_STAGE,
                 {"stage_name": target_stage},
             )

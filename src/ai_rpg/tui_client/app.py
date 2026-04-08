@@ -4,7 +4,7 @@ from typing import Optional
 
 from textual.app import App, ComposeResult
 
-from ..models import Blueprint
+from .session import GameSession
 
 
 class GameClient(App[None]):
@@ -15,9 +15,7 @@ class GameClient(App[None]):
     ]
 
     # ── 会话状态：登录后写入，登出后清空 ──
-    session_user_name: Optional[str] = None
-    session_game_name: Optional[str] = None
-    session_blueprint: Optional[Blueprint] = None
+    session: Optional[GameSession] = None
 
     def compose(self) -> ComposeResult:
         # 保留 App 默认空 Screen 作为栈底，防止 switch_screen 时栈清空
@@ -30,6 +28,4 @@ class GameClient(App[None]):
 
     def clear_session(self) -> None:
         """登出时清空会话状态。"""
-        self.session_user_name = None
-        self.session_game_name = None
-        self.session_blueprint = None
+        self.session = None

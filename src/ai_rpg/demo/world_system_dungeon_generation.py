@@ -1,6 +1,7 @@
 from ..models import (
     WorldSystem,
     DungeonGenerationComponent,
+    ComponentSerialization,
 )
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
@@ -31,7 +32,12 @@ def create_dungeon_generation() -> WorldSystem:
     )
 
     # 配置组件
-    world_system.component = DungeonGenerationComponent.__name__
+    world_system.components = [
+        ComponentSerialization(
+            name=DungeonGenerationComponent.__name__,
+            data=DungeonGenerationComponent(name=world_system.name).model_dump(),
+        )
+    ]
 
     # 返回配置完成的世界系统
     return world_system

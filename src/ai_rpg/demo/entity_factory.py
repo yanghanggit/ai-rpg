@@ -242,7 +242,7 @@ def create_world_system(
     world_system = WorldSystem(
         name=name,
         system_message="",
-        component="",
+        components=[],
     )
 
     # 初次编译system_message!!!!

@@ -1,6 +1,7 @@
 from ..models import (
     WorldSystem,
     PlayerActionAuditComponent,
+    ComponentSerialization,
 )
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
@@ -33,7 +34,12 @@ def create_player_action_audit() -> WorldSystem:
     )
 
     # 配置组件
-    world_system.component = PlayerActionAuditComponent.__name__
+    world_system.components = [
+        ComponentSerialization(
+            name=PlayerActionAuditComponent.__name__,
+            data=PlayerActionAuditComponent(name=world_system.name).model_dump(),
+        )
+    ]
 
     # 返回配置完成的世界系统
     return world_system

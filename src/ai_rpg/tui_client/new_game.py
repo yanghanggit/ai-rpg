@@ -106,6 +106,19 @@ class NewGameScreen(Screen[None]):
                         )
                 log.write("")
                 log.write(
+                    "[bold cyan]── 世界系统 ──────────────────────────────────[/]"
+                )
+                for ws in bp.world_systems:
+                    comp_names = (
+                        "、".join(c.name for c in ws.components)
+                        if ws.components
+                        else "[dim]（无特殊组件）[/]"
+                    )
+                    log.write(
+                        f"  [bold yellow]{display_name(ws.name)}[/] → [dim]{comp_names}[/]"
+                    )
+                log.write("")
+                log.write(
                     "[dim]按 [bold]Enter[/] 进入游戏，[bold]Escape[/] 返回主菜单。[/]"
                 )
             else:

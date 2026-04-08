@@ -15,6 +15,7 @@ from ..models import (
     AgentEvent,
     AgentContext,
     AppearanceComponent,
+    COMPONENT_TYPES,
     DungeonComponent,
     StageDescriptionComponent,
     AllyComponent,
@@ -33,8 +34,6 @@ from ..models import (
     # SkillBookComponent,
     TransStageEvent,
     PlayerOnlyStageComponent,
-    PlayerActionAuditComponent,
-    DungeonGenerationComponent,
     ExpeditionRosterComponent,
 )
 from .player_session import PlayerSession
@@ -276,24 +275,17 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 world_system_entity, world_system_model.system_message
             )
 
-            # 特殊组件，根据不同world_system类型添加
-            if world_system_model.component == PlayerActionAuditComponent.__name__:
+            # 特殊组件，根据 world_system_model.components 数据驱动动态添加
+            for comp_serialization in world_system_model.components:
+                comp_class = COMPONENT_TYPES.get(comp_serialization.name)
+                assert (
+                    comp_class is not None
+                ), f"未知组件类型: {comp_serialization.name}"
+                restore_comp = comp_class(**comp_serialization.data)
                 logger.debug(
-                    f"为 WorldSystem 实体 {world_system_entity.name} 添加 PlayerActionAuditComponent"
+                    f"为 WorldSystem 实体 {world_system_entity.name} 添加 {comp_serialization.name}"
                 )
-                world_system_entity.add(
-                    PlayerActionAuditComponent,
-                    world_system_model.name,
-                )
-
-            elif world_system_model.component == DungeonGenerationComponent.__name__:
-                logger.debug(
-                    f"为 WorldSystem 实体 {world_system_entity.name} 添加 DungeonGenerationComponent"
-                )
-                world_system_entity.add(
-                    DungeonGenerationComponent,
-                    world_system_model.name,
-                )
+                world_system_entity.set(comp_class, restore_comp)
 
             # 添加到返回值
             world_entities.append(world_system_entity)

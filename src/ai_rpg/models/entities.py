@@ -1,6 +1,7 @@
 from enum import StrEnum, unique
 from typing import List, final
 from pydantic import BaseModel, Field
+from .serialization import ComponentSerialization
 
 
 ###############################################################################################################################################
@@ -175,7 +176,7 @@ class Stage(BaseModel):
 class WorldSystem(BaseModel):
     name: str
     system_message: str
-    component: str
+    components: List[ComponentSerialization] = []
 
 
 ###############################################################################################################################################

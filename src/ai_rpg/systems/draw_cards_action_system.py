@@ -29,6 +29,9 @@ from ..models import (
     DeathComponent,
     CharacterStats,
     CharacterStatsComponent,
+    StatusEffectsComponent,
+    StatusEffect,
+    StatusEffectPhase,
 )
 from ..utils import extract_json_from_code_block
 
@@ -59,6 +62,7 @@ def _generate_draw_prompt(
     actor_stats: CharacterStats,
     current_round_number: int,
     num_cards: int,
+    draw_status_effects: List[StatusEffect],
 ) -> str:
     """生成"一次生成 num_cards 张 Card2"的提示词。
 
@@ -66,11 +70,25 @@ def _generate_draw_prompt(
         actor_stats: 角色当前属性（hp/max_hp/attack/defense）
         current_round_number: 当前回合数
         num_cards: 要求生成的卡牌数量
+        draw_status_effects: 当前 draw 阶段的状态效果列表，影响卡牌数值生成
 
     Returns:
         格式化的完整提示词
     """
     actor_stats_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
+
+    def _fmt_duration(d: int) -> str:
+        return "永久" if d == -1 else f"剩余{d}回合"
+
+    if draw_status_effects:
+        effects_lines = "\n".join(
+            f"- {e.name}（{_fmt_duration(e.duration)}）: {e.description}"
+            for e in draw_status_effects
+        )
+        draw_effects_prompt = f"**抽牌状态效果**（请据此调整卡牌数值，attack 影响 damage_dealt，defense 影响 block_gain）:\n{effects_lines}"
+    else:
+        draw_effects_prompt = "**抽牌状态效果**: 无"
+
     cards_example = "\n    ".join(
         f'{{"name": "卡牌名{i + 1}", "action": "第一人称行动描述", "damage_dealt": 0, "block_gain": 0, "hit_count": 1, "target_type": "enemy_single"}}'
         for i in range(num_cards)
@@ -83,6 +101,8 @@ def _generate_draw_prompt(
 ## 输入
 
 **属性**: {actor_stats_prompt}
+
+{draw_effects_prompt}
 
 ## 格式要求
 
@@ -125,10 +145,10 @@ class DrawCardsActionSystem(ReactiveProcessor):
     5. 逐一调用 _process_draw_response 解析 LLM 响应，写入 HandComponent
     """
 
-    def __init__(self, game: TCGGame, num_cards: int) -> None:
+    def __init__(self, game: TCGGame, max_num_cards: int) -> None:
         super().__init__(game)
         self._game: Final[TCGGame] = game
-        self._num_cards: Final[int] = num_cards  # 每次抽取的卡牌数量
+        self._max_num_cards: Final[int] = max_num_cards  # 每次抽取的卡牌数量
 
     ####################################################################################################################################
     @override
@@ -181,7 +201,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         chat_clients: List[ChatClient] = []
         for entity in entities:
             chat_client = self._create_draw_chat_client(
-                entity=entity, num_cards=self._num_cards
+                entity=entity, num_cards=self._max_num_cards
             )
             chat_clients.append(chat_client)
 
@@ -195,7 +215,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 found_entity is not None
             ), f"Entity {chat_client.name} not found in game."
             self._process_draw_response(
-                found_entity, chat_client, num_cards=self._num_cards
+                found_entity, chat_client, num_cards=self._max_num_cards
             )
 
     #######################################################################################################################################
@@ -226,10 +246,22 @@ class DrawCardsActionSystem(ReactiveProcessor):
             combat_stats_comp is not None
         ), f"Entity {entity.name} must have CombatStatsComponent"
 
+        status_effects_comp = entity.get(StatusEffectsComponent)
+        draw_effects = [
+            e
+            for e in (
+                status_effects_comp.status_effects
+                if status_effects_comp is not None
+                else []
+            )
+            if e.phase == StatusEffectPhase.DRAW
+        ]
+
         prompt = _generate_draw_prompt(
             actor_stats=combat_stats_comp.stats,
             current_round_number=current_round_number,
             num_cards=num_cards,
+            draw_status_effects=draw_effects,
         )
 
         return ChatClient(

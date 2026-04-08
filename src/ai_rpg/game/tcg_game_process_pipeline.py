@@ -143,7 +143,7 @@ def create_combat_pipeline(
     processors.add(RetreatActionSystem(tcg_game))
     processors.add(ArbitrationActionSystem(tcg_game))
     processors.add(
-        AddStatusEffectsActionSystem(tcg_game)
+        AddStatusEffectsActionSystem(tcg_game, max_effects=2)
     )  # 状态效果追加系统（AI 根据回合结算结果追加新状态效果，内部有状态守卫）
 
     # 检查战斗结果系统
@@ -151,7 +151,9 @@ def create_combat_pipeline(
 
     # 战斗回合过渡系统（清理旧回合状态 + 递减状态效果 + 创建新回合）
     processors.add(
-        CombatRoundTransitionSystem(tcg_game, strategy=ActionOrderStrategy.RANDOM)
+        CombatRoundTransitionSystem(
+            tcg_game, strategy=ActionOrderStrategy.CREATION_ORDER
+        )
     )
 
     # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫）

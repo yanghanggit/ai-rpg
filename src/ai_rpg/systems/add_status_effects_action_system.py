@@ -38,7 +38,7 @@ def _generate_add_status_effects_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
     task_hint: str,
-    max_effects: int = 2,
+    max_effects: int,
 ) -> str:
     """生成追加状态效果提示词
 
@@ -122,9 +122,11 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
     - 每个角色需有 CombatStatusEffectsComponent
     """
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: TCGGame, max_effects: int = 2) -> None:
         super().__init__(game)
+        assert max_effects > 0, "max_effects 必须为正整数"
         self._game: Final[TCGGame] = game
+        self._max_effects: Final[int] = max_effects
 
     #######################################################################################################################################
     @override
@@ -193,7 +195,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
                 current_status_effects=combat_status_effects.status_effects,
                 current_round_number=current_round_number,
                 task_hint=add_status_effects_action.task_hint,
-                max_effects=2,
+                max_effects=self._max_effects,
             )
 
             # 创建聊天客户端

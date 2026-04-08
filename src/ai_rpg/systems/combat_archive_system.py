@@ -147,6 +147,7 @@ class CombatArchiveSystem(ExecuteProcessor):
         # 压缩总结战斗结果。
         await self._archive_all_combat_records()
 
+        # 标记战斗已归档，触发后续流程（如记忆存储、场景过渡等）
         self._game.current_dungeon.transition_to_post_combat()
 
     #######################################################################################################################################

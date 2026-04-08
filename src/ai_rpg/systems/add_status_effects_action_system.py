@@ -55,17 +55,25 @@ def _generate_add_status_effects_prompt(
     """
 
     # 效果少时展示完整描述；过多时仅列名称以节省 token
+    def _fmt_duration(d: int) -> str:
+        return "永久" if d == -1 else f"剩余{d}回合"
+
     if len(current_status_effects) == 0:
         effects_list = "无"
     elif len(current_status_effects) <= 3:
         effects_list = "\n".join(
             [
-                f"- {effect.name}: {effect.description}"
+                f"- {effect.name}（{_fmt_duration(effect.duration)}）: {effect.description}"
                 for effect in current_status_effects
             ]
         )
     else:
-        effects_list = "、".join([effect.name for effect in current_status_effects])
+        effects_list = "、".join(
+            [
+                f"{effect.name}（{_fmt_duration(effect.duration)}）"
+                for effect in current_status_effects
+            ]
+        )
 
     return f"""# 第 {current_round_number} 回合 — 追加状态效果
 
@@ -85,7 +93,8 @@ def _generate_add_status_effects_prompt(
     {{
       "name": "效果名（<8字）",
       "category": "增益 | 减益 | 复合 | 条件触发 | 环境",
-      "description": "第一人称，含表现与数值影响，1句话（如：我感到手臂刺痛，攻击力−2）"
+      "description": "第一人称，含表现与数值影响，1句话（如：我感到手臂刺痛，攻击力−2）",
+      "duration": 持续回合数（-1=永久，正整数=剩余回合，默认3）
     }}
   ]
 }}

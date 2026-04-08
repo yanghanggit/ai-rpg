@@ -160,7 +160,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         current_rounds = self._game.current_dungeon.current_rounds
         assert (
             current_rounds is not None and len(current_rounds) > 0
-        ), "当前回合未创建，检查 CombatRoundCreationSystem 是否正常执行"
+        ), "当前回合未创建，检查 CombatRoundTransitionSystem 是否正常执行"
         logger.debug(f"当前回合数: {len(current_rounds)}")
 
         last_round = self._game.current_dungeon.latest_round

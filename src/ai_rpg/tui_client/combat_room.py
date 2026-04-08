@@ -670,7 +670,7 @@ class CombatRoomScreen(Screen[None]):
         # ── 无手牌时的统一守卫 ──
         if not hand_cards:
             if not cur.completed_actors:
-                # 新回合，CombatRoundCreationSystem 已清除所有手牌，需要先抽牌
+                # 新回合，CombatRoundTransitionSystem 已清除所有手牌，需要先抽牌
                 log.write("[yellow]⚠ 新回合已开始，请输入 [bold]1[/] 抽牌后再出牌。[/]")
                 self._phase = None
                 inp = self.query_one(Input)
@@ -1274,9 +1274,14 @@ class CombatRoomScreen(Screen[None]):
                 if effects:
                     log.write(f"  [bold]状态效果（{len(effects)}）：[/]")
                     for effect in effects:
+                        duration_str = (
+                            "[永久]"
+                            if effect.duration == -1
+                            else f"[剩余{effect.duration}回合]"
+                        )
                         log.write(
                             f"    └ [magenta]{effect.name}[/]"
-                            f"  [{effect.category}]  {effect.description}"
+                            f"  [{effect.category}]  {duration_str}  {effect.description}"
                         )
                 else:
                     log.write("  [dim](无状态效果)[/]")

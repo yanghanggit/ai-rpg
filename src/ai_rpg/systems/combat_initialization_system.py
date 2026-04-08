@@ -155,7 +155,7 @@ class CombatInitializationSystem(ExecuteProcessor):
             stage_description=stage_description_comp.narrative,
         )
 
-        # 设置战斗为进行中（第一回合将由 CombatRoundCreationSystem 创建）
+        # 设置战斗为进行中（第一回合将由 CombatRoundTransitionSystem 创建）
         self._game.current_dungeon.transition_to_ongoing()
 
         # 为所有参战角色添加 AddStatusEffectsAction，触发初始状态效果生成

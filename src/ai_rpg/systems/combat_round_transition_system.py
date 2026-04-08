@@ -1,13 +1,13 @@
 """
-战斗回合创建系统
+战斗回合过渡系统
 
 职责：
-- 检查战斗状态
-- 判断是否需要创建新回合
-- 生成并初始化回合的 action_order
+- 清除上一回合的手牌、格挡状态
+- 递减状态效果持续时间，移除已过期效果
+- 判断是否需要创建新回合并生成 action_order
 
 设计特点：
-- 使用 ExecuteProcessor，每次 pipeline 执行时主动检查
+- 使用 ExecuteProcessor，每次 pipeline 执行时主动检查（位于 pipeline 末端）
 - 避免重复创建（第一回合已在 CombatInitializationSystem 中创建）
 - 为后续系统（EnemyDrawDecisionSystem）提供 action_order 上下文
 """
@@ -41,12 +41,13 @@ class ActionOrderStrategy(StrEnum):
 
 
 @final
-class CombatRoundCreationSystem(ExecuteProcessor):
+class CombatRoundTransitionSystem(ExecuteProcessor):
     """
-    战斗回合创建系统
+    战斗回合过渡系统
 
-    在每次 pipeline 执行时检查是否需要创建新回合。
-    确保 EnemyDrawDecisionSystem 等后续系统可以访问最新的 action_order。
+    在每次 pipeline 执行时处理回合间的过渡逻辑：
+    清理旧回合状态 → 递减/移除状态效果 → 创建新回合。
+    位于 combat pipeline 末端，确保下一次 pipeline 执行时新回合已就绪。
 
     执行时机：
     - 在 CombatInitializationSystem 之后（第一回合已创建）
@@ -58,10 +59,10 @@ class CombatRoundCreationSystem(ExecuteProcessor):
 
     使用示例：
         # 使用随机策略（默认）
-        system = CombatRoundCreationSystem(game)
+        system = CombatRoundTransitionSystem(game)
 
         # 使用创建顺序策略
-        system = CombatRoundCreationSystem(
+        system = CombatRoundTransitionSystem(
             game,
             strategy=ActionOrderStrategy.CREATION_ORDER
         )
@@ -118,6 +119,7 @@ class CombatRoundCreationSystem(ExecuteProcessor):
 
         logger.debug("清除旧回合手牌与格挡状态")
         self._game.clear_round_state()
+        self._game.tick_status_effects_duration()
 
     ############################################################################################################
     def _create_next_round(self) -> None:

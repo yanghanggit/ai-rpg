@@ -115,8 +115,8 @@ def create_combat_pipeline(
     from ..systems.stage_description_system import (
         StageDescriptionSystem,
     )
-    from ..systems.combat_round_creation_system import (
-        CombatRoundCreationSystem,
+    from ..systems.combat_round_transition_system import (
+        CombatRoundTransitionSystem,
         ActionOrderStrategy,
     )
     from ..systems.enemy_play_decision_system import EnemyPlayDecisionSystem
@@ -149,9 +149,9 @@ def create_combat_pipeline(
     # 检查战斗结果系统
     processors.add(CombatOutcomeSystem(tcg_game))
 
-    # 战斗回合创建系统（创建后续回合）
+    # 战斗回合过渡系统（清理旧回合状态 + 递减状态效果 + 创建新回合）
     processors.add(
-        CombatRoundCreationSystem(tcg_game, strategy=ActionOrderStrategy.RANDOM)
+        CombatRoundTransitionSystem(tcg_game, strategy=ActionOrderStrategy.RANDOM)
     )
 
     # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫）

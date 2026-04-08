@@ -1279,9 +1279,16 @@ class CombatRoomScreen(Screen[None]):
                             if effect.duration == -1
                             else f"[剩余{effect.duration}回合]"
                         )
+                        phase_colors = {
+                            "draw": "cyan",
+                            "play": "yellow",
+                            "arbitration": "red",
+                        }
+                        phase_color = phase_colors.get(effect.phase, "white")
+                        phase_tag = f"[{phase_color}]\\[{effect.phase}][/{phase_color}]"
                         log.write(
                             f"    └ [magenta]{effect.name}[/]"
-                            f"  {duration_str}  {effect.description}"
+                            f"  {duration_str}  {phase_tag}  {effect.description}"
                         )
                 else:
                     log.write("  [dim](无状态效果)[/]")

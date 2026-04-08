@@ -11,7 +11,7 @@
 5. 处理生命值归零的角色，添加死亡组件
 """
 
-from typing import Dict, Final, final
+from typing import Dict, Final, List, final
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
@@ -24,6 +24,9 @@ from ..models import (
     CharacterStatsComponent,
     DeathComponent,
     CombatArbitrationEvent,
+    StatusEffectsComponent,
+    StatusEffect,
+    StatusEffectPhase,
 )
 from ..utils import extract_json_from_code_block
 
@@ -107,6 +110,8 @@ def _generate_combat_arbitration_prompt(
     target_stats: Dict[str, CharacterStatsComponent],
     target_blocks: Dict[str, int],
     current_round_number: int,
+    actor_arbitration_effects: List[StatusEffect],
+    target_arbitration_effects: Dict[str, List[StatusEffect]],
 ) -> str:
     target_lines = (
         "\n".join(
@@ -116,6 +121,25 @@ def _generate_combat_arbitration_prompt(
         if target_stats
         else "- 无目标"
     )
+
+    def _fmt_duration(duration: int) -> str:
+        return "永久" if duration == -1 else f"剩余{duration}回合"
+
+    def _fmt_effects(effects: List[StatusEffect]) -> str:
+        if not effects:
+            return "  无"
+        return "\n".join(
+            f"  - {e.name}（{_fmt_duration(e.duration)}）: {e.description}"
+            for e in effects
+        )
+
+    arbitration_effects_lines = (
+        f"**出牌者 —— {actor_name}**:\n{_fmt_effects(actor_arbitration_effects)}"
+    )
+    for t_name, t_effects in target_arbitration_effects.items():
+        arbitration_effects_lines += (
+            f"\n\n**目标 —— {t_name}**:\n{_fmt_effects(t_effects)}"
+        )
 
     return f"""# 第 {current_round_number} 回合：战斗结算（以 JSON 格式返回）
 
@@ -135,6 +159,10 @@ def _generate_combat_arbitration_prompt(
 
 {target_lines}
 
+## 仲裁状态效果
+
+{arbitration_effects_lines}
+
 ## 计算规则
 
 **格挡优先消耗**：出牌者先获得 block_gain 格挡（出牌者结算后格挡 = 当前格挡 + block_gain）。
@@ -146,6 +174,7 @@ def _generate_combat_arbitration_prompt(
 目标 HP = max(0, min(当前 HP − 总伤害, 最大 HP))
 若 hit_count = 1，按单段正常结算即可
 若出牌者 HP 已为 0，跳过结算
+仲裁状态效果中的数值修正（额外 hp 扣除、block 加成、伤害加成等）**叠加**到上述计算规则之上，体现在 final_stats 中。
 
 ## 输出格式
 
@@ -203,10 +232,13 @@ class ArbitrationActionSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
+
+        # 仅在战斗进行中时触发（is_ongoing 守卫）
         if not self._game.current_dungeon.is_ongoing:
             logger.debug("ArbitrationActionSystem: 战斗未进行中，跳过仲裁")
             return
 
+        # 开始处理仲裁。
         for entity in entities:
             stage_entity = self._game.resolve_stage_entity(entity)
             assert stage_entity is not None, f"无法获取 {entity.name} 所在场景实体！"
@@ -256,6 +288,34 @@ class ArbitrationActionSystem(ReactiveProcessor):
         actor_block = actor_entity.get(BlockComponent).block
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
+        # 读取出牌者的 arbitration 相位状态效果
+        actor_status_comp = actor_entity.get(StatusEffectsComponent)
+        actor_arbitration_effects: List[StatusEffect] = [
+            e
+            for e in (
+                actor_status_comp.status_effects
+                if actor_status_comp is not None
+                else []
+            )
+            if e.phase == StatusEffectPhase.ARBITRATION
+        ]
+
+        # 读取所有目标的 arbitration 相位状态效果
+        target_arbitration_effects: Dict[str, List[StatusEffect]] = {}
+        for target_name in action.targets:
+            t_entity = self._game.get_entity_by_name(target_name)
+            assert t_entity is not None, f"无法找到目标实体: {target_name}"
+            # if t_entity is None:
+            #     continue
+            t_status_comp = t_entity.get(StatusEffectsComponent)
+            target_arbitration_effects[target_name] = [
+                e
+                for e in (
+                    t_status_comp.status_effects if t_status_comp is not None else []
+                )
+                if e.phase == StatusEffectPhase.ARBITRATION
+            ]
+
         # 构建仲裁提示词
         message = _generate_combat_arbitration_prompt(
             actor_entity.name,
@@ -265,6 +325,8 @@ class ArbitrationActionSystem(ReactiveProcessor):
             target_stats,
             target_blocks,
             current_round_number,
+            actor_arbitration_effects,
+            target_arbitration_effects,
         )
 
         # 输出仲裁提示词日志，包含出牌者、卡牌信息、目标信息和当前回合数
@@ -311,7 +373,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         )
 
         latest_round = self._game.current_dungeon.latest_round
-        assert latest_round is not None
+        assert latest_round is not None, "current_rounds 不应为 None"
         latest_round.combat_log.append(combat_log)
         latest_round.narrative.append(narrative)
 
@@ -353,17 +415,20 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 exclude_entities={stage_entity},
             )
 
-            # 遍历 final_stats，更新所有受影响角色（出牌者与目标）的 HP 与格挡
+            # 遍历 final_stats，更新所有受影响角色（出牌者与目标）的 HP 与格挡, LLM 生成的 final_stats 中必须包含出牌者与所有目标，有可能会有错误！
             for entity_name, entity_stats in format_response.final_stats.items():
                 entity = self._game.get_entity_by_name(entity_name)
+                assert (
+                    entity is not None
+                ), f"无法找到 final_stats 中的实体: {entity_name}"
                 if entity is None:
                     logger.warning(f"final_stats 中找不到实体: {entity_name}")
                     continue
 
+                assert entity.has(
+                    CharacterStatsComponent
+                ), f"实体 {entity_name} 缺少 CharacterStatsComponent！"
                 combat_stats = entity.get(CharacterStatsComponent)
-                if combat_stats is None:
-                    logger.warning(f"角色 {entity_name} 缺少 CharacterStatsComponent")
-                    continue
 
                 old_hp = combat_stats.stats.hp
                 max_hp = combat_stats.stats.max_hp
@@ -407,8 +472,9 @@ class ArbitrationActionSystem(ReactiveProcessor):
 
         for entity in defeated_entities:
             combat_stats_comp = entity.get(CharacterStatsComponent)
-            if combat_stats_comp.stats.hp <= 0:
 
+            # 只有当 HP 小于等于 0 时才处理死亡
+            if combat_stats_comp.stats.hp <= 0:
                 logger.info(f"{entity.name} 已被击败，HP={combat_stats_comp.stats.hp}")
                 self._game.add_human_message(entity, _generate_defeat_notification())
                 entity.replace(DeathComponent, combat_stats_comp.name)

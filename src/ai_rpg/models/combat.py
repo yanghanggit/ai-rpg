@@ -37,13 +37,11 @@ class StatusEffect(BaseModel):
 
     字段说明：
     - name: 状态效果名称
-    - category: 分类（增益/减益/复合/条件触发/环境）
     - description: 效果描述（含表现与数值影响，如"我感到手臂刺痛，攻击力−2"）
     - duration: 持续回合数；-1 = 永久不过期，>0 = 剩余回合，每回合结束后 -=1，降至 <=0 时移除
     """
 
     name: str
-    category: str  # 分类：增益 | 减益 | 复合 | 条件触发 | 环境
     description: str  # 效果描述（含表现与数值影响）
     duration: int = 3  # 持续回合数；-1=永久，>0=剩余回合
 

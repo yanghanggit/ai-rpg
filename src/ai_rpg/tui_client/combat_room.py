@@ -1281,7 +1281,7 @@ class CombatRoomScreen(Screen[None]):
                         )
                         log.write(
                             f"    └ [magenta]{effect.name}[/]"
-                            f"  [{effect.category}]  {duration_str}  {effect.description}"
+                            f"  {duration_str}  {effect.description}"
                         )
                 else:
                     log.write("  [dim](无状态效果)[/]")

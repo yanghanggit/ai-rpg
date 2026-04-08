@@ -159,7 +159,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         self._game.current_dungeon.transition_to_ongoing()
 
         # 为所有参战角色添加 AddStatusEffectsAction，触发初始状态效果生成
-        # self._add_status_effects_actions_for_all_actors(actor_entities)
+        self._add_status_effects_actions_for_all_actors(actor_entities)
 
     ###################################################################################################################################################################
     def _add_status_effects_actions_for_all_actors(
@@ -181,6 +181,10 @@ class CombatInitializationSystem(ExecuteProcessor):
                     actor_entity.name,
                     [],
                 )
+
+            logger.debug(
+                f"为角色 {actor_entity.name} 添加 AddStatusEffectsAction 以触发初始状态效果评估"
+            )
 
             # 添加 AddStatusEffectsAction，触发 AddStatusEffectsActionSystem 评估初始状态效果
             actor_entity.replace(

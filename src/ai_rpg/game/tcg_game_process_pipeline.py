@@ -136,15 +136,13 @@ def create_combat_pipeline(
     # 战斗初始化系统（创建第一回合）
     processors.add(CombatInitializationSystem(tcg_game))
 
-    # 战斗核心动作处理相关的系统：抽牌-敌人决策-出牌-撤退-裁决-状态效果追加-战斗结果判定-战斗归档-回合创建
+    # 战斗核心动作处理相关的系统：状态效果追加 → 抽牌 → 敌人决策 → 出牌 → 退却 → 仲裁
+    processors.add(AddStatusEffectsActionSystem(tcg_game, max_effects=2))
     processors.add(DrawCardsActionSystem(tcg_game, 3))
     processors.add(EnemyPlayDecisionSystem(tcg_game))
     processors.add(PlayCardsActionSystem(tcg_game))
     processors.add(RetreatActionSystem(tcg_game))
     processors.add(ArbitrationActionSystem(tcg_game))
-    processors.add(
-        AddStatusEffectsActionSystem(tcg_game, max_effects=2)
-    )  # 状态效果追加系统（AI 根据回合结算结果追加新状态效果，内部有状态守卫）
 
     # 检查战斗结果系统
     processors.add(CombatOutcomeSystem(tcg_game))

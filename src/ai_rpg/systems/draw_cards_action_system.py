@@ -149,6 +149,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
     def __init__(self, game: TCGGame, max_num_cards: int) -> None:
         super().__init__(game)
         self._game: Final[TCGGame] = game
+        assert (
+            max_num_cards >= 1
+        ), "max_num_cards 必须至少为 1，保证每回合至少生成 1 张新牌"
         self._max_num_cards: Final[int] = max_num_cards  # 每次抽取的卡牌数量
 
     ####################################################################################################################################

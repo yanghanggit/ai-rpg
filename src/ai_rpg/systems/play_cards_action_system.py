@@ -11,6 +11,7 @@ from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     HandComponent,
+    DeckComponent,
     PlayCardsAction,
     ActorComponent,
     AgentEvent,
@@ -87,6 +88,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             entity.has(PlayCardsAction)
             and entity.has(HandComponent)
             and entity.has(ActorComponent)
+            and entity.has(DeckComponent)
         )
 
     #######################################################################################################################################
@@ -143,6 +145,27 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 f"  completed_actors: {last_round.completed_actors} / {last_round.action_order}"
             )
 
+            # 从 HandComponent 移除已出的卡牌，并将其归入 DeckComponent
+            hand_comp = entity.get(HandComponent)
+            assert hand_comp is not None, f"{entity.name} 缺少 HandComponent"
+            assert entity.has(DeckComponent), f"{entity.name} 缺少 DeckComponent"
+            # 这里通过对象身份（is）而非等值比较（==）来确保正确移除特定的卡牌实例，避免同名卡牌导致的误删问题
+            played_card = play_cards_action.card
+            new_hand_cards = [c for c in hand_comp.cards if c is not played_card]
+
+            # 使用 replace 而非 remove 来更新 HandComponent，确保组件更新被正确检测到并触发相关系统
+            entity.replace(HandComponent, entity.name, new_hand_cards, hand_comp.round)
+
+            # 将已出的卡牌归还到牌组
+            deck_comp = entity.get(DeckComponent)
+            assert deck_comp is not None, f"{entity.name} 缺少 DeckComponent"
+
+            deck_comp.cards.append(played_card)
+            logger.debug(
+                f"  [{entity.name}] 手牌 {len(hand_comp.cards)} → {len(new_hand_cards)}，"
+                f"牌组累计 {len(deck_comp.cards)} 张"
+            )
+
             # 为出牌角色注入本回合出牌上下文，作为其对话历史的一部分
             self._game.add_human_message(
                 entity=entity,
@@ -156,7 +179,9 @@ class PlayCardsActionSystem(ReactiveProcessor):
             # 向场景内其他角色（排除出牌者自身与场景仲裁实体）广播简短的行动预告，
             # 使观察者上下文在收到仲裁结算之前已感知到出牌事件
             stage_entity = self._game.resolve_stage_entity(entity)
-            assert stage_entity is not None
+            assert (
+                stage_entity is not None
+            ), f"PlayCardsActionSystem: 无法找到 {entity.name} 所在的场景实体"
             self._game.broadcast_to_stage(
                 entity=entity,
                 agent_event=AgentEvent(

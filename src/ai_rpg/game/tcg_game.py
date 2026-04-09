@@ -17,6 +17,7 @@ from ..models import (
     Dungeon,
     World,
     HandComponent,
+    DeckComponent,
     BlockComponent,
     StageType,
     ActorType,
@@ -157,7 +158,18 @@ class TCGGame(RPGGame):
     def clear_round_state(self) -> None:
         """清除所有角色实体的每回合可变状态（手牌与格挡）"""
         for entity in self.get_group(Matcher(HandComponent)).entities.copy():
-            logger.debug(f"clear hands: {entity.name}")
+            hand_comp = entity.get(HandComponent)
+            assert hand_comp is not None
+            # 将剩余手牌全部归还牌组，再移除手牌组件
+            if hand_comp.cards:
+                deck_comp = entity.get(DeckComponent)
+                assert deck_comp is not None, f"{entity.name} 缺少 DeckComponent"
+                deck_comp.cards.extend(hand_comp.cards)
+                logger.debug(
+                    f"clear hands: {entity.name} 归还 {len(hand_comp.cards)} 张剩余手牌到牌组，牌组累计 {len(deck_comp.cards)} 张"
+                )
+            else:
+                logger.debug(f"clear hands: {entity.name}")
             entity.remove(HandComponent)
         for entity in self.get_group(Matcher(BlockComponent)).entities.copy():
             logger.debug(f"clear blocks: {entity.name}")

@@ -490,3 +490,25 @@ class DungeonGenerationComponent(Component):
     """
 
     name: str
+
+
+############################################################################################################
+@final
+@register_component_type
+class DeckComponent(MutableComponent):
+    """牌组组件
+
+    记录角色在地下城通关过程中所有经手的卡牌（已出的牌 + 每回合结束未打出的剩余牌）。
+    在 actor 创建时以空列表初始化，跨战斗持续累积，随实体销毁自然消失。
+
+    累积规则：
+        - 每次出牌后，被打出的 Card 从 HandComponent 移除并 append 到此组件
+        - 每回合结束清除 HandComponent 时，剩余手牌 extend 到此组件
+
+    Attributes:
+        name: 角色名称
+        cards: 经手卡牌列表（按时间顺序追加）
+    """
+
+    name: str
+    cards: List[Card]

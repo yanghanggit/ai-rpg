@@ -31,7 +31,6 @@ from ..models import (
     WorldSystem,
     WorldComponent,
     InventoryComponent,
-    DeckComponent,
     # SkillBookComponent,
     TransStageEvent,
     PlayerOnlyStageComponent,
@@ -373,9 +372,6 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 actor_model.name,
                 copy_items,
             )
-
-            # 必要组件：牌组组件，以空列表初始化，跨战斗持续累积
-            actor_entity.add(DeckComponent, actor_model.name, [])
 
             # 必要组件：技能书组件, 必须copy一份, 不要进行直接引用
             # copy_skills = copy.deepcopy(actor_model.skills)

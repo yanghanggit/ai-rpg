@@ -6,6 +6,7 @@ TCG 游戏核心实现
 
 from typing import Final
 from loguru import logger
+from overrides import override
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 from .rpg_game import RPGGame
 from ..game.tcg_game_process_pipeline import (
@@ -16,6 +17,7 @@ from ..game.tcg_game_process_pipeline import (
 from ..models import (
     Dungeon,
     World,
+    ActorComponent,
     HandComponent,
     DeckComponent,
     BlockComponent,
@@ -96,6 +98,18 @@ class TCGGame(RPGGame):
 
         return self.is_actor_in_dungeon_stage(player_entity)
 
+    ###############################################################################################################################################
+    @override
+    def build_from_blueprint(self) -> "TCGGame":
+        """创建并初始化新游戏世界
+
+        Returns:
+            返回自身实例，支持链式调用
+        """
+        super().build_from_blueprint()
+        self._ensure_actor_deck_components()
+        return self
+
     #######################################################################################################################################
     def setup_dungeon_entities(self, dungeon_model: Dungeon) -> None:
         """根据地下城模型初始化并创建相关游戏实体（敌人和场景）
@@ -128,6 +142,9 @@ class TCGGame(RPGGame):
 
         # 创建地下城的怪物。
         self._create_actor_entities(dungeon_model.actors)
+
+        # 为新创建的怪物实体补充 DeckComponent
+        self._ensure_actor_deck_components()
 
         # 创建地下城的场景
         self._create_stage_entities([room.stage for room in dungeon_model.rooms])
@@ -182,5 +199,13 @@ class TCGGame(RPGGame):
         for entity in actor_entities:
             logger.debug(f"clear status effects: {entity.name}")
             entity.remove(StatusEffectsComponent)
+
+    #######################################################################################################################################
+    def _ensure_actor_deck_components(self) -> None:
+        """为所有缺少 DeckComponent 的 Actor 实体添加空牌组"""
+        for entity in self.get_group(Matcher(ActorComponent)).entities:
+            if not entity.has(DeckComponent):
+                entity.add(DeckComponent, entity.name, [])
+                logger.debug(f"为 Actor 实体 {entity.name} 添加空 DeckComponent")
 
     ################################################################################################################

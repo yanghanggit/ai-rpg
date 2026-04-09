@@ -35,7 +35,7 @@ from ..utils import extract_json_from_code_block
 @final
 class EntityFinalStats(BaseModel):
     hp: float
-    block: int
+    block: float
 
 
 #######################################################################################################################################
@@ -444,7 +444,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
                     f"更新 {entity_name} HP: {old_hp} → {new_hp}/{max_hp}, block: {entity_stats.block}"
                 )
 
-                new_block = max(0, entity_stats.block)
+                new_block = int(max(0, entity_stats.block))
                 entity.replace(BlockComponent, entity_name, new_block)
 
                 self._game.add_human_message(

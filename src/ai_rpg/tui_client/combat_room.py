@@ -10,6 +10,7 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.screen import Screen
 from textual.widgets import Input, RichLog, Static
+from .deck_detail import DeckDetailScreen
 from .round_detail import RoundDetailScreen
 from .utils import display_name
 from .server_client import dungeon_combat_draw_cards as server_dungeon_combat_draw_cards
@@ -87,10 +88,11 @@ COMBAT_ROOM_MENU: Final[
 [bold cyan]── 查看 ──────────────────────────────────────[/]
   [bold green]3[/]  当前战斗状态    房间信息与角色属性
   [bold green]4[/]  回合详情        行动顺序与出手记录
+  [bold green]5[/]  查阅牌组        本次地下城各角色历史牌组
 
 [bold cyan]── 离场 ──────────────────────────────────────[/]
-  [bold green]5[/]  撤退            在战斗进行中撤退
-  [bold green]6[/]  退出战斗        战斗结束后返回游戏主场景
+  [bold green]6[/]  撤退            在战斗进行中撤退
+  [bold green]7[/]  退出战斗        战斗结束后返回游戏主场景
 
 [bold cyan]── 系统 ──────────────────────────────────────[/]
   [bold green]0[/]  显示此菜单
@@ -254,9 +256,12 @@ class CombatRoomScreen(Screen[None]):
             self.app.push_screen(RoundDetailScreen())
 
         elif cmd == "5":
-            self._do_combat_retreat()
+            self.app.push_screen(DeckDetailScreen())
 
         elif cmd == "6":
+            self._do_combat_retreat()
+
+        elif cmd == "7":
             self._do_exit()
 
         else:

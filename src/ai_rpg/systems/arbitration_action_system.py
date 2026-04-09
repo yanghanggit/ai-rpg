@@ -106,7 +106,7 @@ def _generate_combat_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStatsComponent,
     actor_block: int,
-    action: PlayCardsAction,
+    play_cards_action: PlayCardsAction,
     target_stats: Dict[str, CharacterStatsComponent],
     target_blocks: Dict[str, int],
     current_round_number: int,
@@ -149,11 +149,11 @@ def _generate_combat_arbitration_prompt(
 
 ## 出牌
 
-- 卡牌：{action.card.name}
-- damage_dealt：{action.card.damage_dealt}（单次伤害）
-- hit_count：{action.card.hit_count}（攻击次数）
-- block_gain：{action.card.block_gain}
-- 行动：{action.card.action}
+- 卡牌：{play_cards_action.card.name}
+- damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
+- hit_count：{play_cards_action.card.hit_count}（攻击次数）
+- block_gain：{play_cards_action.card.block_gain}
+- 行动：{play_cards_action.action}
 
 ## 目标
 

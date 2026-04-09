@@ -243,7 +243,13 @@ def activate_play_cards_specified(
     logger.debug(
         f"为角色 {actor_name} 激活出牌动作，卡牌: {selected_card.name} 目标: {resolved_targets}"
     )
-    entity.replace(PlayCardsAction, entity.name, selected_card, resolved_targets)
+    entity.replace(
+        PlayCardsAction,
+        entity.name,
+        selected_card,
+        resolved_targets,
+        selected_card.action,
+    )
     return True, f"成功为角色 {actor_name} 激活出牌动作（卡牌: {card_name}）"
 
 
@@ -280,7 +286,7 @@ def activate_enemy_play_trigger(
         f"为敌人 {actor_name} 触发出牌决策，由 EnemyPlayDecisionSystem 自动选牌"
     )
     entity.replace(
-        PlayCardsAction, entity.name, Card(name="", action="", description=""), []
+        PlayCardsAction, entity.name, Card(name="", action="", description=""), [], ""
     )
     return True, f"成功为敌人 {actor_name} 触发出牌决策"
 

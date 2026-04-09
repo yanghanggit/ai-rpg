@@ -24,6 +24,7 @@ class EnemyDecisionResponse(BaseModel):
 
     card_name: str
     targets: List[str]
+    action: str
 
 
 #######################################################################################################################################
@@ -116,7 +117,8 @@ def _generate_enemy_decision_prompt(
 ```json
 {{
   "card_name": "从手牌中选择一张卡牌的名称（必须是以下之一：{card_names_json}）",
-  "targets": ["目标全名列表，可为 []"]
+  "targets": ["目标全名列表，可为 []"],
+  "action": "第一人称出牌叙事（1-2句，结合当前战场情景，生动具体）"
 }}
 ```"""
 
@@ -292,7 +294,13 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
             self._game.add_ai_message(entity, client.response_ai_messages)
 
             # 替换 PlayCardsAction，填入真实卡牌和目标
-            entity.replace(PlayCardsAction, entity.name, selected_card, valid_targets)
+            entity.replace(
+                PlayCardsAction,
+                entity.name,
+                selected_card,
+                valid_targets,
+                decision.action,
+            )
             logger.debug(
                 f"EnemyPlayDecisionSystem: [{entity.name}] 决策出牌 '{selected_card.name}'，目标：{valid_targets}"
             )

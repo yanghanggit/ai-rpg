@@ -134,9 +134,6 @@ class DrawCardsAction(Component):
     """
 
     name: str
-    # skill: Skill
-    # targets: List[str]
-    # status_effects: List[StatusEffect]
 
 
 ############################################################################################################
@@ -152,11 +149,15 @@ class PlayCardsAction(Component):
         name: 出牌的角色名称
         card: 使用的卡牌
         targets: 技能目标列表
+        action: 出牌时的情景化第一人称叙事（与具体战场绑定）；
+                ally 路径直接复制自 card.action，enemy 路径由 LLM 在出牌决策时生成；
+                空卡占位时传入空字符串
     """
 
     name: str
     card: Card
     targets: List[str]
+    action: str
 
 
 ############################################################################################################

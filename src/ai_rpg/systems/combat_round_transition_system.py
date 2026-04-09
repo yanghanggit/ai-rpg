@@ -16,9 +16,38 @@ from enum import StrEnum, unique
 import random
 from typing import Final, List, Set, final, override
 from loguru import logger
-from ..entitas import Entity, ExecuteProcessor
+from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
-from ..models import BlockComponent, DungeonComponent, IdentityComponent, Round
+from ..models import (
+    BlockComponent,
+    DungeonComponent,
+    IdentityComponent,
+    Round,
+    StatusEffect,
+    StatusEffectsComponent,
+    ActorComponent,
+)
+
+
+def _make_status_effects_tick_message(
+    ticked: List[StatusEffect],
+    expired: List[StatusEffect],
+) -> str:
+    """生成回合结束时状态效果更新的 LLM 通知文本。
+
+    Args:
+        ticked: 持续时间已递减但尚未过期的效果列表
+        expired: 本回合耗尽（已移除）的效果列表
+
+    Returns:
+        写入 agent 上下文的 human message 文本
+    """
+    lines = ["# 回合结束 — 状态效果更新"]
+    for e in ticked:
+        lines.append(f"- {e.name}（剩余{e.duration}回合）")
+    for e in expired:
+        lines.append(f"- {e.name} → 已过期，已从状态列表移除")
+    return "\n".join(lines)
 
 
 ###############################################################################################################################################
@@ -119,7 +148,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
 
         logger.debug("清除旧回合手牌与格挡状态")
         self._game.clear_round_state()
-        self._game.tick_status_effects_duration()
+        self.tick_status_effects_duration()
 
     ############################################################################################################
     def _create_next_round(self) -> None:
@@ -215,3 +244,50 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         )
 
     ############################################################################################################
+    def tick_status_effects_duration(self) -> None:
+        """回合结束时递减所有角色的状态效果持续时间，移除已过期的效果。
+
+        - duration == -1：永久效果，跳过递减
+        - duration > 0：-=1；降至 0 时从列表中移除
+
+        对每个有变化的 actor 实体写入 human message，保持 agent 对话上下文连续性。
+        """
+        for entity in self._game.get_group(
+            Matcher(StatusEffectsComponent)
+        ).entities.copy():
+            assert entity.has(
+                ActorComponent
+            ), f"Entity {entity.name} has StatusEffectsComponent but is not an Actor"
+            comp = entity.get(StatusEffectsComponent)
+
+            # 递减持续时间并移除过期效果
+            updated = []
+            ticked = []
+            expired = []
+            for effect in comp.status_effects:
+                if effect.duration == -1:
+                    updated.append(effect)
+                    continue
+                effect.duration -= 1
+                if effect.duration > 0:
+                    updated.append(effect)
+                    ticked.append(effect)
+                else:
+                    expired.append(effect)
+                    logger.debug(
+                        f"[{entity.name}] 状态效果「{effect.name}」持续时间耗尽，已移除"
+                    )
+
+            # 更新组件状态效果列表
+            comp.status_effects = updated
+
+            # 没有任何变化则跳过写入上下文
+            if not ticked and not expired:
+                continue
+
+            # 将更新结果写入角色上下文，保持对话连续性
+            self._game.add_human_message(
+                entity, _make_status_effects_tick_message(ticked, expired)
+            )
+
+    ################################################################################################################

@@ -56,7 +56,7 @@ def _generate_enemy_decision_prompt(
     )
 
     cards_lines = "\n".join(
-        f"- 【{c.name}】行动：{c.action}  damage_dealt:{c.damage_dealt}  hit_count:{c.hit_count}  block_gain:{c.block_gain}  target_type:{c.target_type}"
+        f"- 【{c.name}】描述：{c.description}  damage_dealt:{c.damage_dealt}  hit_count:{c.hit_count}  block_gain:{c.block_gain}  target_type:{c.target_type}"
         for c in hand_cards
     )
 

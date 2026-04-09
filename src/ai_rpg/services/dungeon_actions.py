@@ -279,7 +279,9 @@ def activate_enemy_play_trigger(
     logger.debug(
         f"为敌人 {actor_name} 触发出牌决策，由 EnemyPlayDecisionSystem 自动选牌"
     )
-    entity.replace(PlayCardsAction, entity.name, Card(name="", action=""), [])
+    entity.replace(
+        PlayCardsAction, entity.name, Card(name="", action="", description=""), []
+    )
     return True, f"成功为敌人 {actor_name} 触发出牌决策"
 
 

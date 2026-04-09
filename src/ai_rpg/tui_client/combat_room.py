@@ -719,7 +719,9 @@ class CombatRoomScreen(Screen[None]):
         for i, card in enumerate(hand_cards, 1):
             hit_str = f"x[yellow]{card.hit_count}[/]" if card.hit_count > 1 else ""
             tt_str = _TARGET_LABEL.get(card.target_type, f"[dim]{card.target_type}[/]")
-            action_str = f"\n        [dim]{card.action}[/]" if card.action else ""
+            action_str = (
+                f"\n        [dim]{card.description}[/]" if card.description else ""
+            )
             log.write(
                 f"    [bold cyan]{i}.[/] [bold]{card.name}[/]  "
                 f"伤害:[red]{card.damage_dealt}[/]{hit_str}  格挡:[blue]{card.block_gain}[/]  目标:{tt_str}"
@@ -1321,7 +1323,11 @@ class CombatRoomScreen(Screen[None]):
                                 f"  伤害:[red]{card.damage_dealt}[/]{hit_str}"
                                 f"  格挡:[blue]{card.block_gain}[/]"
                                 f"  目标:{tt_str}"
-                                + (f"  [dim]{card.action}[/]" if card.action else "")
+                                + (
+                                    f"  [dim]{card.description}[/]"
+                                    if card.description
+                                    else ""
+                                )
                             )
                     else:
                         log.write("    [dim](手牌为空)[/]")

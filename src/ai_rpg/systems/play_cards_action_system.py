@@ -20,18 +20,21 @@ from ..game.tcg_game import TCGGame
 
 #######################################################################################################################################
 def _generate_play_card_context_prompt(
-    action: PlayCardsAction,
+    play_cards_action: PlayCardsAction,
     round_number: int,
 ) -> str:
     """生成出牌上下文消息，注入角色的对话历史，帮助 LLM 感知本回合出牌情况。"""
-    card = action.card
-    targets_str = "、".join(action.targets) if action.targets else "无目标"
+    card = play_cards_action.card
+    targets_str = (
+        "、".join(play_cards_action.targets) if play_cards_action.targets else "无目标"
+    )
     lines = [
         f"【第 {round_number} 回合 · 出牌】",
         f"你使用了卡牌「{card.name}」。",
-        f"行动叙述：{card.action}",
         f"目标：{targets_str}",
     ]
+    if play_cards_action.action:
+        lines.insert(2, f"行动叙述：{play_cards_action.action}")
     stats_parts = []
     if card.damage_dealt > 0:
         hit_info = f"（{card.hit_count} 段）" if card.hit_count > 1 else ""
@@ -120,12 +123,12 @@ class PlayCardsActionSystem(ReactiveProcessor):
         for entity in entities:
 
             # 输出出牌信息日志，包含角色名、卡牌名、卡牌属性（治疗/攻击/防御）和目标
-            action = entity.get(PlayCardsAction)
+            play_cards_action = entity.get(PlayCardsAction)
             logger.debug(
-                f"  [{action.name}] 出牌 → 卡牌: {action.card.name}"
-                f" | damage_dealt={action.card.damage_dealt} block_gain={action.card.block_gain}"
-                f" | 目标: {action.targets}"
-                f" | 行动叙事: {action.card.action}"
+                f"  [{play_cards_action.name}] 出牌 → 卡牌: {play_cards_action.card.name}"
+                f" | damage_dealt={play_cards_action.card.damage_dealt} block_gain={play_cards_action.card.block_gain}"
+                f" | 目标: {play_cards_action.targets}"
+                f" | 行动叙事: {play_cards_action.action}"
             )
 
             # 写一个assert 要求 entity.name 必须在 last_round.action_order 中，确保出牌角色在当前回合的行动顺序中
@@ -135,7 +138,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             )
 
             # 将出牌角色写入本回合 completed_actors（允许同一角色多次出现）
-            last_round.completed_actors.append(action.name)
+            last_round.completed_actors.append(play_cards_action.name)
             logger.debug(
                 f"  completed_actors: {last_round.completed_actors} / {last_round.action_order}"
             )
@@ -144,10 +147,10 @@ class PlayCardsActionSystem(ReactiveProcessor):
             self._game.add_human_message(
                 entity=entity,
                 message_content=_generate_play_card_context_prompt(
-                    action=action,
+                    play_cards_action=play_cards_action,
                     round_number=len(current_rounds),
                 ),
-                play_card_context=action.card.model_dump_json(),
+                play_card_context=play_cards_action.card.model_dump_json(),
             )
 
             # 向场景内其他角色（排除出牌者自身与场景仲裁实体）广播简短的行动预告，
@@ -158,7 +161,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 entity=entity,
                 agent_event=AgentEvent(
                     message=_generate_action_notice_for_others(
-                        actor_name=action.name,
+                        actor_name=play_cards_action.name,
                         round_number=len(current_rounds),
                     )
                 ),

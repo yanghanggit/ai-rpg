@@ -202,6 +202,7 @@ def activate_play_cards_specified(
     actor_name: str,
     card_name: str,
     targets: List[str],
+    action: str = "",
 ) -> Tuple[bool, str]:
     """
     让指定远征队员打出指定名称的手牌。仅适用于 ExpeditionMemberComponent 角色。
@@ -212,6 +213,7 @@ def activate_play_cards_specified(
         actor_name: 出牌角色的全名（如 角色.猎人.石坚）
         card_name: 要打出的卡牌名称（须存在于该角色手牌中）
         targets: 目标名称列表，可为 []
+        action: 出牌时的第一人称叙事；默认为空字符串，仲裁 agent 将自行演绎
 
     Returns:
         tuple[bool, str]: (是否成功, 结果消息)
@@ -248,7 +250,7 @@ def activate_play_cards_specified(
         entity.name,
         selected_card,
         resolved_targets,
-        selected_card.action,
+        action,
     )
     return True, f"成功为角色 {actor_name} 激活出牌动作（卡牌: {card_name}）"
 
@@ -285,9 +287,7 @@ def activate_enemy_play_trigger(
     logger.debug(
         f"为敌人 {actor_name} 触发出牌决策，由 EnemyPlayDecisionSystem 自动选牌"
     )
-    entity.replace(
-        PlayCardsAction, entity.name, Card(name="", action="", description=""), [], ""
-    )
+    entity.replace(PlayCardsAction, entity.name, Card(name="", description=""), [], "")
     return True, f"成功为敌人 {actor_name} 触发出牌决策"
 
 

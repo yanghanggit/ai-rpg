@@ -141,6 +141,12 @@ def _generate_combat_arbitration_prompt(
             f"\n\n**目标 —— {t_name}**:\n{_fmt_effects(t_effects)}"
         )
 
+    action_line = (
+        f"- 行动：{play_cards_action.action}"
+        if play_cards_action.action
+        else "- 行动：（未提供，请根据卡牌描述与战场情境自行演绎）"
+    )
+
     return f"""# 第 {current_round_number} 回合：战斗结算（以 JSON 格式返回）
 
 ## 出牌者
@@ -153,7 +159,7 @@ def _generate_combat_arbitration_prompt(
 - damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
 - hit_count：{play_cards_action.card.hit_count}（攻击次数）
 - block_gain：{play_cards_action.card.block_gain}
-- 行动：{play_cards_action.action}
+{action_line}
 
 ## 目标
 

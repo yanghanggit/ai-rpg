@@ -150,7 +150,8 @@ class PlayCardsAction(Component):
         card: 使用的卡牌
         targets: 技能目标列表
         action: 出牌时的情景化第一人称叙事（与具体战场绑定）；
-                ally 路径直接复制自 card.action，enemy 路径由 LLM 在出牌决策时生成；
+                ally 路径默认为空字符串，enemy 路径由 LLM 在出牌决策时生成；
+                为空时仲裁 agent 将自行根据卡牌描述与战场情境演绎；
                 空卡占位时传入空字符串
     """
 

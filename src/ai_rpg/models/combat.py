@@ -103,7 +103,6 @@ class Card(BaseModel):
     """
 
     name: str
-    action: str  # 第一人称行动叙事描述（情景化，与出牌时的场景绑定）
     description: (
         str  # 通用、客观的第三人称卡牌描述（与出牌场景无关，说明这张牌能做什么）
     )

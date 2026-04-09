@@ -44,7 +44,7 @@ def _build_audit_prompt(content: str) -> str:
     Returns:
         格式化的审核提示词
     """
-    return f"""# 指令！内容审核，以JSON格式返回结果
+    return f"""# 内容审核，以JSON格式返回结果
 
 {content}
 

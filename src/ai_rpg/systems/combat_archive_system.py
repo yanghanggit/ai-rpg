@@ -34,7 +34,7 @@ def _generate_combat_summary_prompt(
     Returns:
         格式化的AI提示词字符串
     """
-    return f"""# 指令！战斗已结束，记忆归档，并以纯文本方式输出。
+    return f"""# 战斗已结束，记忆归档，并以纯文本方式输出。
 
 你在 {stage_name} 经历了 {total_rounds} 回合战斗，现在将整场战斗压缩为简要回忆录。
 

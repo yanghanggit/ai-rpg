@@ -34,7 +34,6 @@ from ..models import (
     CharacterStatsComponent,
     StatusEffectsComponent,
     HandComponent,
-    AllyComponent,
     EnemyComponent,
     ExpeditionMemberComponent,
     PlayerComponent,
@@ -1222,7 +1221,7 @@ class CombatRoomScreen(Screen[None]):
                 c.name == PlayerComponent.__name__ for c in entity.components
             )
             for comp in entity.components:
-                if comp.name == AllyComponent.__name__:
+                if comp.name == ExpeditionMemberComponent.__name__:
                     faction = "[bold green]友方[/]"
                     break
                 elif comp.name == EnemyComponent.__name__:

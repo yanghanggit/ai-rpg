@@ -97,7 +97,7 @@ def _build_action_planning_prompt_v1(
     if len(other_actors_appearance_info) == 0:
         other_actors_appearance_info.append("无")
 
-    return f"""# 指令! 决定你要做什么，以JSON格式输出。
+    return f"""# 决定你要做什么，以JSON格式输出。
 
 ## 你所在场景信息
 
@@ -190,7 +190,7 @@ def _build_action_planning_prompt_v2(
     if len(other_actors_appearance_info) == 0:
         other_actors_appearance_info.append("无")
 
-    return f"""# 指令! 决定你要做什么，以JSON格式输出。
+    return f"""# 决定你要做什么，以JSON格式输出。
 
 ## 你所在场景信息
 

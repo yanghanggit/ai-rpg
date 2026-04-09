@@ -35,7 +35,7 @@ def _build_appearance_prompt(base_body: str, equipped_items: str) -> str:
     """
     equipped_items_display = equipped_items if equipped_items else "无"
 
-    return f"""# 指令！请根据你的基础身体形态和装备信息，生成你的完整外观描述，以JSON返回。
+    return f"""# 请根据你的基础身体形态和装备信息，生成你的完整外观描述，以JSON返回。
 
 ## 基础身体形态
 

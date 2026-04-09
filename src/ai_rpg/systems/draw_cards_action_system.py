@@ -1,20 +1,21 @@
 """
 卡牌抽取系统模块
 
-该模块实现了战斗回合中的卡牌生成机制，通过 LLM 一次性为每个角色生成多张行动卡牌。
+该模块实现了战斗回合中的卡牌生成机制，结合历史牌组复用与 LLM 实时生成，为每个角色填充手牌。
 
 核心特性：
-- 批量多卡生成：每个 DrawCardsAction 触发一次 LLM 请求，生成 num_cards 张风格各异的卡牌
-- LLM 驱动：通过语言模型生成富有创意且符合角色属性的卡牌名称、行动描述和攻防数值
+- 历史牌优先：优先从 DeckComponent 取最多 max_num_cards - 1 张历史牌（FIFO 消耗语义）
+- 保证新鲜度：无论 Deck 是否充裕，每回合至少 1 张由 LLM 实时生成
 - 批量推理：所有角色的 LLM 请求并行发出（ChatClient.batch_chat），结果逐一解析写入 HandComponent
+- 合并写入：Deck 历史牌（前）+ LLM 新生成牌（后）合并为最终手牌
 
 主要组件：
-- DrawCardsActionSystem: 核心系统类，协调整个卡牌生成流程
-- _generate_draw3_prompt: 生成"一次抽 num_cards 张卡"的 LLM 提示词
-- CardEntry / Draw3CardsResponse: LLM 响应的 Pydantic 解析模型
+- DrawCardsActionSystem: 核心系统类，协调 Deck 消耗与 LLM 生成流程
+- _generate_draw_prompt: 生成"一次生成 num_cards 张卡"的 LLM 提示词
+- CardEntry / DrawCardsResponse: LLM 响应的 Pydantic 解析模型
 """
 
-from typing import Final, List, final, override
+from typing import Dict, Final, List, final, override
 from loguru import logger
 from pydantic import BaseModel
 from ..chat_client.client import ChatClient
@@ -22,6 +23,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     ActorComponent,
+    DeckComponent,
     DrawCardsAction,
     HandComponent,
     Card,
@@ -94,7 +96,7 @@ def _generate_draw_prompt(
         for i in range(num_cards)
     )
 
-    return f"""# 指令！第 {current_round_number} 回合：生成{num_cards}张战斗卡牌(JSON)
+    return f"""# 第 {current_round_number} 回合：生成{num_cards}张战斗卡牌(JSON)
 
 根据角色当前状态，发挥创意生成{num_cards}张风格各异的战斗卡牌。每张卡牌代表一种可执行的战斗选择。
 
@@ -134,15 +136,14 @@ class DrawCardsActionSystem(ReactiveProcessor):
     """
     卡牌抽取系统
 
-    负责在战斗回合中为每个参战角色批量生成行动卡牌（Hand）。
+    负责在战斗回合中为每个参战角色填充手牌（Hand）。
 
     工作流程：
     1. 接收 DrawCardsAction 触发（每个存活角色各一个）
-    2. 清除各实体旧有的 HandComponent
-    3. 为每个角色调用 _create_draw_chat_client，向 LLM 请求生成 num_cards 张差异化卡牌：
-       - 传入角色当前 CombatStatsComponent 属性（HP/攻击/防御）
+    2. 预处理：从每个实体的 DeckComponent FIFO 消耗最多 max_num_cards - 1 张历史牌
+    3. 为每个角色调用 _create_draw_chat_client，向 LLM 请求生成剩余张数（≥1）的新卡牌
     4. 所有请求并行执行（ChatClient.batch_chat）
-    5. 逐一调用 _process_draw_response 解析 LLM 响应，写入 HandComponent
+    5. 逐一调用 _process_draw_response，合并 Deck 历史牌 + LLM 新牌，写入 HandComponent
     """
 
     def __init__(self, game: TCGGame, max_num_cards: int) -> None:
@@ -191,17 +192,15 @@ class DrawCardsActionSystem(ReactiveProcessor):
             assert not entity.has(
                 HandComponent
             ), f"实体 {entity.name} 已有 HandComponent，可能是上回合遗留，先行移除"
-            # if entity.has(HandComponent):
-            #     logger.debug(
-            #         f"实体 {entity.name} 已有 HandComponent，可能是上回合遗留，先行移除"
-            #     )
-            #     entity.remove(HandComponent)
 
-        # 为每个 entity 创建 draw3 聊天客户端
+        # 预处理：从每个实体的 DeckComponent FIFO 消耗历史牌
+        entity_deck_cards, entity_generate_counts = self._consume_deck_cards(entities)
+
+        # 为每个 entity 创建 draw 聊天客户端
         chat_clients: List[ChatClient] = []
         for entity in entities:
             chat_client = self._create_draw_chat_client(
-                entity=entity, num_cards=self._max_num_cards
+                entity=entity, num_cards=entity_generate_counts[entity.name]
             )
             chat_clients.append(chat_client)
 
@@ -215,8 +214,42 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 found_entity is not None
             ), f"Entity {chat_client.name} not found in game."
             self._process_draw_response(
-                found_entity, chat_client, num_cards=self._max_num_cards
+                found_entity,
+                chat_client,
+                num_cards=entity_generate_counts[found_entity.name],
+                deck_cards=entity_deck_cards[found_entity.name],
             )
+
+    #######################################################################################################################################
+    def _consume_deck_cards(
+        self, entities: list[Entity]
+    ) -> tuple[Dict[str, List[Card]], Dict[str, int]]:
+        """从每个实体的 DeckComponent FIFO 消耗历史牌，计算本回合各实体需 LLM 生成的张数。
+
+        最多消耗 max_num_cards - 1 张，保证至少 1 张由 LLM 新生成。
+
+        Args:
+            entities: 本回合需要抽牌的实体列表
+
+        Returns:
+            entity_deck_cards: entity.name -> 已消耗的历史牌列表
+            entity_generate_counts: entity.name -> 本回合需 LLM 生成的张数
+        """
+        entity_deck_cards: Dict[str, List[Card]] = {}
+        entity_generate_counts: Dict[str, int] = {}
+        for entity in entities:
+            deck_comp = entity.get(DeckComponent)
+            assert deck_comp is not None, f"实体 {entity.name} 缺少 DeckComponent"
+            n_from_deck = min(len(deck_comp.cards), self._max_num_cards - 1)
+            deck_cards = list(deck_comp.cards[:n_from_deck])
+            del deck_comp.cards[:n_from_deck]
+            entity_deck_cards[entity.name] = deck_cards
+            entity_generate_counts[entity.name] = self._max_num_cards - n_from_deck
+            logger.debug(
+                f"[{entity.name}] 从 Deck 取 {n_from_deck} 张历史牌，"
+                f"需 LLM 生成 {entity_generate_counts[entity.name]} 张"
+            )
+        return entity_deck_cards, entity_generate_counts
 
     #######################################################################################################################################
     def _create_draw_chat_client(
@@ -276,13 +309,15 @@ class DrawCardsActionSystem(ReactiveProcessor):
         entity: Entity,
         chat_client: ChatClient,
         num_cards: int,
+        deck_cards: List[Card],
     ) -> None:
-        """解析 LLM 返回的卡牌，写入 HandComponent。
+        """解析 LLM 返回的卡牌，与 Deck 历史牌合并后写入 HandComponent。
 
         Args:
             entity: 目标角色实体
             chat_client: 包含 LLM 响应的聊天客户端
-            num_cards: 预期的卡牌数量
+            num_cards: 预期由 LLM 生成的卡牌数量
+            deck_cards: 本回合从 DeckComponent 消耗的历史牌（已在 react() 中移除）
         """
         try:
             response = DrawCardsResponse.model_validate_json(
@@ -337,13 +372,17 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
             if len(cards) != num_cards:
                 logger.warning(
-                    f"[{entity.name}] 过滤后卡牌数量（{len(cards)}）与预期（{num_cards}）不符，"
+                    f"[{entity.name}] LLM 生成卡牌数量（{len(cards)}）与预期（{num_cards}）不符，"
                     "可能有部分卡牌因无效 target_type 被废弃"
                 )
 
-            entity.replace(HandComponent, entity.name, cards, current_round_number)
+            # 合并：Deck 历史牌（前）+ LLM 新生成牌（后）
+            all_cards = deck_cards + cards
+            entity.replace(HandComponent, entity.name, all_cards, current_round_number)
             logger.debug(
-                f"[{entity.name}] 生成 {len(cards)} 张 Card2：{[c.name for c in cards]}"
+                f"[{entity.name}] 手牌共 {len(all_cards)} 张 "
+                f"= Deck {len(deck_cards)} 张 + 新生成 {len(cards)} 张："
+                f"{[c.name for c in all_cards]}"
             )
 
         except Exception as e:

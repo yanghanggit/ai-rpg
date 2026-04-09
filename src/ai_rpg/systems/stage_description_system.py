@@ -46,7 +46,7 @@ def _build_stage_description_prompt(
     if len(actor_appearances_in_stage_info) == 0:
         actor_appearances_in_stage_info.append("无")
 
-    return f"""# 指令！请你输出你的场景描述。并以 JSON 格式输出。
+    return f"""# 请你输出你的场景描述。并以 JSON 格式输出。
 
 ## 场景内角色
 

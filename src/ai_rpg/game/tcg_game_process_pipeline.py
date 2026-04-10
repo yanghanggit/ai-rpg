@@ -108,8 +108,8 @@ def create_combat_pipeline(
     from ..systems.prologue_system import PrologueSystem
 
     from ..systems.arbitration_action_system import ArbitrationActionSystem
-    from ..systems.add_status_effects_action_system import (
-        AddStatusEffectsActionSystem,
+    from ..systems.add_actor_status_effects_action_system import (
+        AddActorStatusEffectsActionSystem,
     )
     from ..systems.stage_post_arbitration_action_system import (
         StagePostArbitrationActionSystem,
@@ -143,7 +143,7 @@ def create_combat_pipeline(
     processors.add(CombatInitializationSystem(tcg_game))
 
     # 战斗核心动作处理相关的系统：状态效果追加 → 抽牌 → 敌人决策 → 叙事润色 → 出牌 → 退却 → 仲裁
-    processors.add(AddStatusEffectsActionSystem(tcg_game, max_effects=2))
+    processors.add(AddActorStatusEffectsActionSystem(tcg_game, max_effects=2))
     processors.add(DrawCardsActionSystem(tcg_game, max_num_cards=3))
     processors.add(EnemyPlayDecisionSystem(tcg_game))
     processors.add(PlayActionNarrationSystem(tcg_game))

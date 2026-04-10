@@ -125,10 +125,10 @@ def _generate_add_status_effects_prompt(
 
 #######################################################################################################################################
 @final
-class AddStatusEffectsActionSystem(ReactiveProcessor):
-    """战斗状态效果追加系统
+class AddActorStatusEffectsActionSystem(ReactiveProcessor):
+    """角色战斗状态效果追加系统
 
-    监听 AddStatusEffectsAction.ADDED，让每个参战角色根据上下文
+    监听 AddStatusEffectsAction.ADDED，让每个参战 Actor 根据上下文
     （战斗广播、HP变化等）评估并追加新的状态效果（受伤、增益、削弱等）。
 
     执行机制：
@@ -138,8 +138,8 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
 
     执行条件：
     - 战斗状态为 ONGOING（is_ongoing=True）
-    - 自动获取当前场景上的所有存活角色
-    - 每个角色需有 CombatStatusEffectsComponent
+    - 自动获取当前场景上的所有存活 Actor
+    - 每个 Actor 需同时具有 ActorComponent 与 StatusEffectsComponent
     """
 
     def __init__(self, game: TCGGame, max_effects: int = 2) -> None:
@@ -169,9 +169,9 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
         为每个参战角色追加状态效果
 
         流程：
-        1. 为所有参战角色并发创建 LLM 评估任务
+        1. 为所有参战 Actor 并发创建 LLM 评估任务
         2. 调用 LLM 生成新状态效果
-        3. 解析响应并追加到 CombatStatusEffectsComponent.status_effects
+        3. 解析响应并追加到 StatusEffectsComponent.status_effects
         4. 将新增状态效果通知写入角色上下文
         """
 
@@ -179,7 +179,9 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
         if not self._game.current_dungeon.is_ongoing:
             return
 
-        logger.debug(f"触发 AddStatusEffectsActionSystem，处理 {len(entities)} 个实体")
+        logger.debug(
+            f"触发 AddActorStatusEffectsActionSystem，处理 {len(entities)} 个实体"
+        )
 
         # 获取当前回合数
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
@@ -204,7 +206,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
             combat_status_effects = entity.get(StatusEffectsComponent)
             assert (
                 combat_status_effects is not None
-            ), f"角色 {entity.name} 缺少 CombatStatusEffectsComponent！"
+            ), f"角色 {entity.name} 缺少 StatusEffectsComponent！"
 
             # 从 action 组件读取任务说明
             add_status_effects_action = entity.get(AddStatusEffectsAction)
@@ -250,7 +252,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
 
         assert entity.has(
             StatusEffectsComponent
-        ), f"Entity {entity.name} must have CombatStatusEffectsComponent"
+        ), f"Entity {entity.name} must have StatusEffectsComponent"
 
         # 解析 LLM 响应，追加状态效果
         try:

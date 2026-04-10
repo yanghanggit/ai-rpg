@@ -64,6 +64,7 @@ class StatusEffect(BaseModel):
     description: str  # 效果描述（含表现与数值影响）
     duration: int = 3  # 持续回合数；-1=永久，>0=剩余回合
     phase: StatusEffectPhase = StatusEffectPhase.ARBITRATION  # 生效阶段，默认仲裁阶段
+    source: str = ""  # 效果施加者名称；空字符串表示来源未知
 
 
 ###############################################################################################################################################

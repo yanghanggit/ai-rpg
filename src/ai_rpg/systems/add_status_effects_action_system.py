@@ -269,11 +269,18 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
 
             # 添加新效果到现有列表
             if format_response.add_effects:
+
+                # 将新增效果的 source 字段设置为角色名称，便于后续追踪来源
+                for effect in format_response.add_effects:
+                    effect.source = entity.name
+
+                # 追加新效果到 CombatStatusEffectsComponent
                 combat_status_effects = entity.get(StatusEffectsComponent)
                 combat_status_effects.status_effects.extend(format_response.add_effects)
                 logger.debug(
                     f"[{entity.name}] 新增 {len(format_response.add_effects)} 个状态效果"
                 )
+
             else:
                 logger.debug(f"[{entity.name}] 本回合无新增状态效果")
 

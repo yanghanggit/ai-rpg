@@ -1292,9 +1292,13 @@ class CombatRoomScreen(Screen[None]):
                         }
                         phase_color = phase_colors.get(effect.phase, "white")
                         phase_tag = f"[{phase_color}]\\[{effect.phase}][/{phase_color}]"
+                        source_tag = (
+                            f"  [dim]来源:{effect.source}[/]" if effect.source else ""
+                        )
                         log.write(
                             f"    └ [magenta]{effect.name}[/]"
                             f"  {duration_str}  {phase_tag}  {effect.description}"
+                            f"{source_tag}"
                         )
                 else:
                     log.write("  [dim](无状态效果)[/]")

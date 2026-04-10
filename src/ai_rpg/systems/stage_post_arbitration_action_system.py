@@ -147,7 +147,8 @@ def _generate_stage_post_arbitration_prompt(
 | 字段 | 说明 |
 |---|---|
 | name | 卡牌名称（<8字），体现效果意图 |
-| description | 第三人称，描述角色借助**上下文中已存在的**场景具体物件的客观动作（1句，如"抓起地面的断柱碎块掷向对方"）；不可凭空引入非场景物件 |
+| description | 第三人称，描述角色借助**上下文中已存在的**场景具体物件的即时客观动作（1句，如"抓起地面的断柱碎块掷向对方"）；不可凭空引入非场景物件 |
+| status_effect_hint | 可选。若该牌可能引发持续性状态效果，填一句说明（如"碎石粉尘可能引起视线模糊"）；若仅为即时效果则留空字符串""，系统将跳过后续状态效果 LLM 推理 |
 | damage_dealt | 单次命中造成的伤害（整数；攻击类取合理正值，无伤害取 0） |
 | block_gain | 本张牌提供的格挡（整数；防御类取合理正值，无格挡取 0） |
 | hit_count | 攻击次数（默认 1；多段攻击可设 2~4，每段独立抵挡目标格挡） |
@@ -209,6 +210,7 @@ def _generate_stage_post_arbitration_prompt(
         {{
           "name": "碎柱投掷",
           "description": "抓起地面的断柱碎块用力掷向对方，造成钝击伤害",
+          "status_effect_hint": "",
           "damage_dealt": 2,
           "block_gain": 0,
           "hit_count": 1,

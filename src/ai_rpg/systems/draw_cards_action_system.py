@@ -45,6 +45,9 @@ class CardEntry(BaseModel):
 
     name: str
     description: str
+    status_effect_hint: str = (
+        ""  # 可能触发的持续性状态效果暗示；为空时仲裁后不触发 AddStatusEffectsAction LLM 推理
+    )
     damage_dealt: int
     block_gain: int
     hit_count: int = 1
@@ -92,7 +95,7 @@ def _generate_draw_prompt(
         draw_effects_prompt = "**抽牌状态效果**: 无"
 
     cards_example = "\n    ".join(
-        f'{{"name": "卡牌名{i + 1}", "description": "第三人称通用描述", "damage_dealt": 0, "block_gain": 0, "hit_count": 1, "target_type": "enemy_single"}}'
+        f'{{"name": "卡牌名{i + 1}", "description": "第三人称通用描述", "status_effect_hint": "", "damage_dealt": 0, "block_gain": 0, "hit_count": 1, "target_type": "enemy_single"}}'
         for i in range(num_cards)
     )
 
@@ -111,7 +114,8 @@ def _generate_draw_prompt(
 **命名**: 富有想象力的卡牌名称，体现行动意图
 
 **字段说明**:
-- **description** - 第三人称通用描述（1句，客观说明这张牌能做什么，不绑定具体场景，如"投掷附近碎石对单一目标造成中等伤害"）
+- **description** - 第三人称通用描述（1句，客观说明这张牌的即时战斗行为，不绑定具体场景，如"投掷附近碎石对单一目标造成中等伤害"）
+- **status_effect_hint** - 可能触发的持续性状态效果暗示（1句，如"可能引发燃烧、中毒、虚弱等持续加深效果"）；若该卡仅为即时伤害/格挡无副作用，则留空字符串""（为空时系统不触发后续 LLM 推理，节省开销）
 - **damage_dealt** - 单次攻击造成的伤害值（基于攻击力合理推算，整数）
 - **block_gain** - 本张卡牌提供的格挡增量（基于防御力合理推算，整数）
 - **hit_count** - 攻击次数（默认 1；多段攻击如回旋镖可设为 2~4，每段独立抵挡目标格挡）
@@ -366,6 +370,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     Card(
                         name=entry.name,
                         description=entry.description,
+                        status_effect_hint=entry.status_effect_hint,
                         damage_dealt=entry.damage_dealt,
                         block_gain=entry.block_gain,
                         hit_count=entry.hit_count,

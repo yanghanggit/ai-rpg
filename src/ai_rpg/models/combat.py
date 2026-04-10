@@ -97,8 +97,9 @@ class Card(BaseModel):
     """战斗卡牌"""
 
     name: str
-    description: (
-        str  # 通用、客观的第三人称卡牌描述（与出牌场景无关，说明这张牌能做什么）
+    description: str  # 直接战斗行为描述（第三人称客观描述，说明这张牌造成的即时效果，如伤害/格挡；与出牌场景无关）
+    status_effect_hint: str = (
+        ""  # 可能触发的持续性状态效果暗示（如"可能引发燃烧、中毒等持续效果"）；为空时仲裁后不触发 AddStatusEffectsAction LLM 推理
     )
     damage_dealt: int = 0  # 造成的伤害值（单次）
     block_gain: int = 0  # 提供的格挡增量

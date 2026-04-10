@@ -9,6 +9,8 @@
 - 仅在战斗进行中时触发（is_ongoing 守卫）
 """
 
+from enum import StrEnum, unique
+import random
 from typing import Final, List, Set, final
 from loguru import logger
 from overrides import override
@@ -30,6 +32,17 @@ from ..models import (
     StatusEffectsComponent,
 )
 from ..utils import extract_json_from_code_block
+
+
+###############################################################################################################################################
+# 塞牌位置策略枚举
+@final
+@unique
+class CardInjectStrategy(StrEnum):
+    """仲裁后塞牌位置策略"""
+
+    APPEND = "append"  # 追加到手牌尾部（默认）
+    RANDOM_INSERT = "random_insert"  # 随机插入到原有手牌队列中
 
 
 #######################################################################################################################################
@@ -218,11 +231,20 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
     执行条件：
     - 战斗状态为 ONGOING（is_ongoing=True）
     - stage entity 具有 StageComponent + DungeonComponent
+
+    塞牌策略：
+    - APPEND（默认）：注入卡牌追加到手牌尾部
+    - RANDOM_INSERT：每张注入卡牌随机插入到原有手牌队列中
     """
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(
+        self,
+        game: TCGGame,
+        strategy: CardInjectStrategy = CardInjectStrategy.APPEND,
+    ) -> None:
         super().__init__(game)
         self._game: Final[TCGGame] = game
+        self._strategy: Final[CardInjectStrategy] = strategy
 
     #######################################################################################################################################
     @override
@@ -343,8 +365,15 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
                         for card in directive.inject_cards:
                             card.source = stage_entity.name
 
-                        # 将注入卡牌追加到目标当前手牌中
-                        new_cards = list(hand_comp.cards) + directive.inject_cards
+                        # 根据策略决定注入卡牌的插入位置
+                        if self._strategy == CardInjectStrategy.RANDOM_INSERT:
+                            base = list(hand_comp.cards)
+                            for card in directive.inject_cards:
+                                insert_pos = random.randint(0, len(base))
+                                base.insert(insert_pos, card)
+                            new_cards = base
+                        else:  # APPEND
+                            new_cards = list(hand_comp.cards) + directive.inject_cards
                         target_entity.replace(
                             HandComponent,
                             target_entity.name,

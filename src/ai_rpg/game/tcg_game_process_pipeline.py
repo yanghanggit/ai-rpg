@@ -111,6 +111,9 @@ def create_combat_pipeline(
     from ..systems.add_status_effects_action_system import (
         AddStatusEffectsActionSystem,
     )
+    from ..systems.stage_post_arbitration_action_system import (
+        StagePostArbitrationActionSystem,
+    )
     from ..systems.combat_archive_system import CombatArchiveSystem
     from ..systems.stage_description_system import (
         StageDescriptionSystem,
@@ -145,6 +148,9 @@ def create_combat_pipeline(
     processors.add(PlayCardsActionSystem(tcg_game))
     processors.add(RetreatActionSystem(tcg_game))
     processors.add(ArbitrationActionSystem(tcg_game))
+
+    # 仲裁结算后，由 stage agent（地牢主视角）决定是否对场内角色追加状态效果或塞牌
+    processors.add(StagePostArbitrationActionSystem(tcg_game))
 
     # 检查战斗结果系统
     processors.add(CombatOutcomeSystem(tcg_game))

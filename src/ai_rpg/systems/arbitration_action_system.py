@@ -27,6 +27,7 @@ from ..models import (
     StatusEffectsComponent,
     StatusEffect,
     StatusEffectPhase,
+    StagePostArbitrationAction,
 )
 from ..utils import extract_json_from_code_block
 
@@ -458,6 +459,11 @@ class ArbitrationActionSystem(ReactiveProcessor):
             assert latest_round is not None, "current_rounds 不应为 None"
             latest_round.combat_log.append(format_response.combat_log)
             latest_round.narrative.append(format_response.narrative)
+
+            # 仲裁结算成功后，触发 StagePostArbitrationActionSystem
+            stage_entity.replace(
+                StagePostArbitrationAction, stage_entity.name, actor_name
+            )
 
         except Exception as e:
             logger.error(f"Exception: {e}")

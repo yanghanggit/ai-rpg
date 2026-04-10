@@ -1268,7 +1268,7 @@ class CombatRoomScreen(Screen[None]):
                     f"  [red]ATK:{stats.attack}[/red]"
                     f"  [blue]DEF:{stats.defense}[/blue]"
                     f"  [cyan]SPD:{stats.speed}[/cyan]"
-                    f"  行动:{stats.actions_per_round}次/回合" + block_str
+                    f"  行动:{stats.action_count}次/回合" + block_str
                 )
             else:
                 log.write("  [dim](无战斗属性)[/]")

@@ -124,6 +124,11 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
             logger.warning(f"未知的行动顺序策略: {self._strategy}，使用随机策略")
             action_order = self._build_action_order_random(actors_in_stage)
 
+        # 全员 action_count <= 0 时 action_order 为空，跳过本次创建避免死锁
+        if not action_order:
+            logger.warning("所有参战角色 action_count <= 0，本次跳过回合创建")
+            return
+
         round_number = len(current_rounds) + 1
         new_round = Round(action_order=action_order)
         self._game.current_dungeon.current_combat.rounds.append(new_round)  # type: ignore[union-attr]
@@ -141,8 +146,9 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         # 注意：同一角色的多次行动会相邻出现（A→A→B→B→C→C），但角色间顺序随机打乱
         order: List[str] = []
         for entity in actors:
-            count = entity.get(CharacterStatsComponent).stats.actions_per_round
-            order.extend([entity.name] * count)
+            count = entity.get(CharacterStatsComponent).stats.action_count
+            if count > 0:
+                order.extend([entity.name] * count)
         random.shuffle(order)
         return order
 
@@ -158,8 +164,9 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         )
         order: List[str] = []
         for entity in sorted_actors:
-            count = entity.get(CharacterStatsComponent).stats.actions_per_round
-            order.extend([entity.name] * count)
+            count = entity.get(CharacterStatsComponent).stats.action_count
+            if count > 0:
+                order.extend([entity.name] * count)
         return order
 
     ############################################################################################################
@@ -173,8 +180,9 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         # 注意：creation_order 由小到大，意味着先创建的角色优先出手
         order: List[str] = []
         for entity in sorted_actors:
-            count = entity.get(CharacterStatsComponent).stats.actions_per_round
-            order.extend([entity.name] * count)
+            count = entity.get(CharacterStatsComponent).stats.action_count
+            if count > 0:
+                order.extend([entity.name] * count)
         return order
 
     ################################################################################################################

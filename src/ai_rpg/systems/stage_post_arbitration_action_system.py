@@ -135,7 +135,7 @@ def _generate_stage_post_arbitration_prompt(
 - 禁止修改 max_hp
 - `{StatusEffectPhase.DRAW}` 阶段用 attack / defense 描述，不直接写 damage_dealt / block_gain
 - `{StatusEffectPhase.ARBITRATION}` 阶段直接用 hp / damage_dealt / block_gain，不用 attack / defense
-- description 使用**第三人称客观描述**（地牢主视角），如"被黑暗诅咒笼罩，每回合结算时额外受到3点暗能伤害"
+- description 须引用上下文中实际存在的场景要素，第三人称描述环境如何作用于角色身体，如"战斗搅起的沙尘钻入眼中，视线模糊，造成伤害减少"
 
 绝大多数惩罚/增益效果选 `{StatusEffectPhase.ARBITRATION}`。"""
 
@@ -147,7 +147,7 @@ def _generate_stage_post_arbitration_prompt(
 | 字段 | 说明 |
 |---|---|
 | name | 卡牌名称（<8字），体现效果意图 |
-| description | 第三人称通用描述，客观说明这张牌的作用（1句，不绑定具体场景） |
+| description | 第三人称，描述角色借助**上下文中已存在的**场景具体物件的客观动作（1句，如"抓起地面的断柱碎块掷向对方"）；不可凭空引入非场景物件 |
 | damage_dealt | 单次命中造成的伤害（整数；攻击类取合理正值，无伤害取 0） |
 | block_gain | 本张牌提供的格挡（整数；防御类取合理正值，无格挡取 0） |
 | hit_count | 攻击次数（默认 1；多段攻击可设 2~4，每段独立抵挡目标格挡） |
@@ -171,16 +171,24 @@ def _generate_stage_post_arbitration_prompt(
 
 {actors_summary}
 
-## 你的职责（地牢主视角）
+## 你的本质与职责
 
-作为地牢主，你可在此时机对场内任意角色施加新的状态效果，或将特殊卡牌直接塞入其手牌，增加战斗的不确定性与戏剧张力。
+你是这片场景本身，没有意志，没有偏好，只有物理现实在运作。
+你能做的，是将**上下文中已出现、已存在于this场景里的环境要素**，转化为对角色身体的客观影响，或为角色提供可借用的场景物件。
 
 **干预原则**：
-- 不滥用：每次仲裁后并非必须干预，无干预需求时输出空数组
-- 干预应有叙事依据，与当前战斗局势或地牢氛围契合
-- 状态效果与卡牌均可同时施加于同一目标
+- ✅ 允许：上下文叙事中已描述的环境要素引发的物理后果（沙尘入眼、热浪灼烧、松软地面失稳、碎石可用、断柱可借力等）
+- ✅ 塞牌须有据：只有上下文中描述了该物件存在于场景中，才能将其作为卡牌塞给角色使用
+- ❌ 禁止：勇气、恐惧、神圣、复仇、祝福、诅咒等角色内在情绪或来源不明的魔法效果
+- ❌ 禁止：凭空塞入武器或装备（除非场景叙事中明确描述了该物件）
+- 不滥用：若上下文中无明显可利用的环境要素，**必须输出空数组**
+- 状态效果与卡牌可同时施加于同一目标
 {phase_desc}
 {card_field_desc}
+
+**description 规范**：
+- 状态效果 description：第三人称，描述环境要素如何作用于角色身体（如："沙尘被战斗扰动卷入眼中，视线受阻，造成伤害减少"）
+- 塞牌 description：第三人称，描述角色借助场景具体物件的客观动作（如："抓起地面裸露的岩板碎片朝对方投出"），不绑定具体场景名词，使描述通用可复用
 
 **注意**：`source` 字段由系统自动设置，无需在 JSON 中填写。
 
@@ -191,20 +199,20 @@ def _generate_stage_post_arbitration_prompt(
       "target": "角色名称",
       "add_effects": [
         {{
-          "name": "黑暗腐蚀",
-          "description": "被地牢寒气侵入，每回合结算时受到3点暗能伤害",
-          "duration": 3,
+          "name": "沙尘入眼",
+          "description": "战斗搅起的沙尘钻入眼中，视线模糊，造成伤害减少",
+          "duration": 2,
           "phase": "{StatusEffectPhase.ARBITRATION}"
         }}
       ],
       "inject_cards": [
         {{
-          "name": "诅咒碎片",
-          "description": "被地牢力量扭曲的灵能碎片，出牌时对自身造成2点伤害",
+          "name": "碎柱投掷",
+          "description": "抓起地面的断柱碎块用力掷向对方，造成钝击伤害",
           "damage_dealt": 2,
           "block_gain": 0,
           "hit_count": 1,
-          "target_type": "{CardTargetType.SELF_ONLY}"
+          "target_type": "{CardTargetType.ENEMY_SINGLE}"
         }}
       ]
     }}

@@ -2,52 +2,27 @@
 战斗回合过渡系统
 
 职责：
-- 清除上一回合的手牌、格挡状态
-- 递减状态效果持续时间，移除已过期效果
 - 判断是否需要创建新回合并生成 action_order
 
 设计特点：
 - 使用 ExecuteProcessor，每次 pipeline 执行时主动检查（位于 pipeline 末端）
 - 避免重复创建（第一回合已在 CombatInitializationSystem 中创建）
 - 为后续系统（EnemyDrawDecisionSystem）提供 action_order 上下文
+- 旧回合清理由 CombatRoundCleanupSystem 负责（位于本系统之前）
 """
 
 from enum import StrEnum, unique
 import random
 from typing import Final, List, Set, final, override
 from loguru import logger
-from ..entitas import Entity, ExecuteProcessor, Matcher
+from ..entitas import Entity, ExecuteProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     BlockComponent,
     DungeonComponent,
     IdentityComponent,
     Round,
-    StatusEffect,
-    StatusEffectsComponent,
-    ActorComponent,
 )
-
-
-def _make_status_effects_tick_message(
-    ticked: List[StatusEffect],
-    expired: List[StatusEffect],
-) -> str:
-    """生成回合结束时状态效果更新的 LLM 通知文本。
-
-    Args:
-        ticked: 持续时间已递减但尚未过期的效果列表
-        expired: 本回合耗尽（已移除）的效果列表
-
-    Returns:
-        写入 agent 上下文的 human message 文本
-    """
-    lines = ["# 回合结束 — 状态效果更新"]
-    for e in ticked:
-        lines.append(f"- {e.name}（剩余{e.duration}回合）")
-    for e in expired:
-        lines.append(f"- {e.name} → 已过期，已从状态列表移除")
-    return "\n".join(lines)
 
 
 ###############################################################################################################################################
@@ -74,12 +49,12 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
     """
     战斗回合过渡系统
 
-    在每次 pipeline 执行时处理回合间的过渡逻辑：
-    清理旧回合状态 → 递减/移除状态效果 → 创建新回合。
+    在每次 pipeline 执行时创建新的战斗回合。
+    旧回合清理由 CombatRoundCleanupSystem 负责（位于本系统之前）。
     位于 combat pipeline 末端，确保下一次 pipeline 执行时新回合已就绪。
 
     执行时机：
-    - 在 CombatInitializationSystem 之后（第一回合已创建）
+    - 在 CombatRoundCleanupSystem 之后（旧回合已清理）
     - 在 EnemyDrawDecisionSystem 之前（决策需要 action_order）
 
     行动顺序策略：
@@ -109,55 +84,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
     ############################################################################################################
     @override
     async def execute(self) -> None:
-        """
-        编排骨架：依次调用「清除旧回合状态」与「创建新回合」。
-        两个子函数各自持有完整的状态守护，execute 无需额外判断。
-        """
-        self._clear_previous_round_state()
-        self._create_next_round()
-
-    ############################################################################################################
-    def _clear_previous_round_state(self) -> None:
-        """清除上一回合的手牌与格挡状态。
-
-        内部状态守护（不满足则静默返回）：
-        - 状态为 NONE / INITIALIZATION → 战斗尚未进入有效阶段，无需清除
-        - 尚无任何回合 → 不存在「上一回合」，无状态可清
-        - 最新回合未完成 → 状态仍在使用中，不清除
-        """
-        valid_state = (
-            self._game.current_dungeon.is_ongoing
-            or self._game.current_dungeon.is_combat_completed
-            or self._game.current_dungeon.is_post_combat
-        )
-
-        if not valid_state:
-            logger.debug(
-                "当前战斗状态非 ONGOING/COMPLETE/POST_COMBAT，跳过旧回合状态清除"
-            )
-            return
-
-        current_rounds = self._game.current_dungeon.current_rounds or []
-        if len(current_rounds) == 0:
-            return
-
-        last_round = self._game.current_dungeon.latest_round
-        assert last_round is not None, "latest_round is None"
-        if not last_round.is_round_completed:
-            return
-
-        logger.debug("清除旧回合手牌与格挡状态")
-        self._game.clear_round_state()
-        self.tick_status_effects_duration()
-
-    ############################################################################################################
-    def _create_next_round(self) -> None:
-        """创建并初始化下一个战斗回合。
-
-        内部状态守护（不满足则静默返回）：
-        - 战斗未进行中 → 跳过
-        - 已有回合且最新回合未完成 → 等待，跳过
-        """
+        # 状态守护：战斗未进行中 / 最新回合未完成 → 静默跳过
         if not self._game.current_dungeon.is_ongoing:
             logger.debug("当前战斗状态非 ONGOING，跳过回合创建")
             return
@@ -242,52 +169,5 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
             actors,
             key=lambda entity: entity.get(IdentityComponent).creation_order,
         )
-
-    ############################################################################################################
-    def tick_status_effects_duration(self) -> None:
-        """回合结束时递减所有角色的状态效果持续时间，移除已过期的效果。
-
-        - duration == -1：永久效果，跳过递减
-        - duration > 0：-=1；降至 0 时从列表中移除
-
-        对每个有变化的 actor 实体写入 human message，保持 agent 对话上下文连续性。
-        """
-        for entity in self._game.get_group(
-            Matcher(StatusEffectsComponent)
-        ).entities.copy():
-            assert entity.has(
-                ActorComponent
-            ), f"Entity {entity.name} has StatusEffectsComponent but is not an Actor"
-            comp = entity.get(StatusEffectsComponent)
-
-            # 递减持续时间并移除过期效果
-            updated = []
-            ticked = []
-            expired = []
-            for effect in comp.status_effects:
-                if effect.duration == -1:
-                    updated.append(effect)
-                    continue
-                effect.duration -= 1
-                if effect.duration > 0:
-                    updated.append(effect)
-                    ticked.append(effect)
-                else:
-                    expired.append(effect)
-                    logger.debug(
-                        f"[{entity.name}] 状态效果「{effect.name}」持续时间耗尽，已移除"
-                    )
-
-            # 更新组件状态效果列表
-            comp.status_effects = updated
-
-            # 没有任何变化则跳过写入上下文
-            if not ticked and not expired:
-                continue
-
-            # 将更新结果写入角色上下文，保持对话连续性
-            self._game.add_human_message(
-                entity, _make_status_effects_tick_message(ticked, expired)
-            )
 
     ################################################################################################################

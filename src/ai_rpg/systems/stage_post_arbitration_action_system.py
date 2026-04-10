@@ -242,6 +242,7 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
     @override
     async def react(self, entities: list[Entity]) -> None:
         if not self._game.current_dungeon.is_ongoing:
+            logger.debug("StagePostArbitrationActionSystem: 战斗未进行中，跳过")
             return
 
         for stage_entity in entities:
@@ -252,10 +253,14 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
         """为单个 stage entity 执行仲裁后场景干预逻辑"""
 
         action = stage_entity.get(StagePostArbitrationAction)
-        assert action is not None
+        assert (
+            action is not None
+        ), "StagePostArbitrationActionSystem: 无法获取 StagePostArbitrationAction 组件！"
 
         player_entity = self._game.get_player_entity()
-        assert player_entity is not None, "无法找到玩家实体！"
+        assert (
+            player_entity is not None
+        ), "StagePostArbitrationActionSystem: 无法找到玩家实体！"
 
         actor_entities = self._game.get_alive_actors_in_stage(player_entity)
         if not actor_entities:
@@ -332,7 +337,13 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
                 # 塞牌（仅当目标当前持有手牌时生效）
                 if directive.inject_cards:
                     if target_entity.has(HandComponent):
+
                         hand_comp = target_entity.get(HandComponent)
+                        # 将注入卡牌的 source 字段设置为 stage entity 名称
+                        for card in directive.inject_cards:
+                            card.source = stage_entity.name
+
+                        # 将注入卡牌追加到目标当前手牌中
                         new_cards = list(hand_comp.cards) + directive.inject_cards
                         target_entity.replace(
                             HandComponent,

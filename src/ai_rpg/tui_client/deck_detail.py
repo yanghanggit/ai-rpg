@@ -130,10 +130,16 @@ class DeckDetailScreen(Screen[None]):
                             if card.description
                             else ""
                         )
+                        source_str = (
+                            f"  [dim]来源:{display_name(card.source)}[/]"
+                            if card.source and card.source != entity.name
+                            else ""
+                        )
                         log.write(
                             f"  [bold green]{i:>2}[/]  [bold]{card.name}[/]  "
                             f"伤害:[red]{card.damage_dealt}[/]{hit_str}  "
                             f"格挡:[blue]{card.block_gain}[/]  目标:{tt_str}"
+                            + source_str
                             + action_str
                         )
 

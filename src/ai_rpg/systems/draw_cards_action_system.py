@@ -370,6 +370,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                         block_gain=entry.block_gain,
                         hit_count=entry.hit_count,
                         target_type=CardTargetType(entry.target_type),
+                        source=entity.name,
                     )
                 )
 

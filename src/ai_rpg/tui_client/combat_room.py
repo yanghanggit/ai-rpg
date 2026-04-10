@@ -723,12 +723,18 @@ class CombatRoomScreen(Screen[None]):
         for i, card in enumerate(hand_cards, 1):
             hit_str = f"x[yellow]{card.hit_count}[/]" if card.hit_count > 1 else ""
             tt_str = _TARGET_LABEL.get(card.target_type, f"[dim]{card.target_type}[/]")
+            source_str = (
+                f"  [dim]来源:{display_name(card.source)}[/]"
+                if card.source and card.source != current_actor
+                else ""
+            )
             action_str = (
                 f"\n        [dim]{card.description}[/]" if card.description else ""
             )
             log.write(
                 f"    [bold cyan]{i}.[/] [bold]{card.name}[/]  "
                 f"伤害:[red]{card.damage_dealt}[/]{hit_str}  格挡:[blue]{card.block_gain}[/]  目标:{tt_str}"
+                + source_str
                 + action_str
             )
         self._current_actor = current_actor
@@ -1294,7 +1300,7 @@ class CombatRoomScreen(Screen[None]):
                         phase_tag = f"[{phase_color}]\\[{effect.phase}][/{phase_color}]"
                         source_tag = (
                             f"  [dim]来源:{display_name(effect.source)}[/]"
-                            if effect.source
+                            if effect.source and effect.source != entity.name
                             else ""
                         )
                         log.write(
@@ -1328,11 +1334,17 @@ class CombatRoomScreen(Screen[None]):
                                 card.target_type,
                                 f"[dim]{card.target_type}[/]",
                             )
+                            source_str = (
+                                f"  [dim]来源:{display_name(card.source)}[/]"
+                                if card.source and card.source != entity.name
+                                else ""
+                            )
                             log.write(
                                 f"    └ [bold]{card.name}[/]"
                                 f"  伤害:[red]{card.damage_dealt}[/]{hit_str}"
                                 f"  格挡:[blue]{card.block_gain}[/]"
                                 f"  目标:{tt_str}"
+                                + source_str
                                 + (
                                     f"  [dim]{card.description}[/]"
                                     if card.description

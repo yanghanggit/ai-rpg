@@ -1259,14 +1259,16 @@ class CombatRoomScreen(Screen[None]):
                     else None
                 )
                 block_str = (
-                    f"  格挡:[blue]{block_inline}[/]"
+                    f"  [blue]格挡:{block_inline}[/blue]"
                     if block_inline is not None
                     else ""
                 )
                 log.write(
-                    f"  HP:[yellow]{stats.hp}/{stats.max_hp}[/]"
-                    f"  ATK:[red]{stats.attack}[/]"
-                    f"  DEF:[blue]{stats.defense}[/]" + block_str
+                    f"  [yellow]HP:{stats.hp}/{stats.max_hp}[/yellow]"
+                    f"  [red]ATK:{stats.attack}[/red]"
+                    f"  [blue]DEF:{stats.defense}[/blue]"
+                    f"  [cyan]SPD:{stats.speed}[/cyan]"
+                    f"  行动:{stats.actions_per_round}次/回合" + block_str
                 )
             else:
                 log.write("  [dim](无战斗属性)[/]")

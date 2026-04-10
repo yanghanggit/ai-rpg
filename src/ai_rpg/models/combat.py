@@ -94,14 +94,7 @@ class CardTargetType(StrEnum):
 ###############################################################################################################################################
 @final
 class Card(BaseModel):
-    """卡牌模型（重构版）
-
-    相较于 Card，字段设计更贴合卡牌战斗语境：
-    - 用 damage / block 替代 attack / defense，强调对战斗结果的直接影响
-    - 去掉 CharacterStats 包装（Card 中 max_hp 恒为 0，无实际意义）
-    - 去掉 status_effects / affixes，职责更单一
-    当前仅作重构过渡占位，不影响任何现有逻辑。
-    """
+    """战斗卡牌"""
 
     name: str
     description: (

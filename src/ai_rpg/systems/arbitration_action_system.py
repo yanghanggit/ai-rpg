@@ -28,6 +28,7 @@ from ..models import (
     StatusEffect,
     StatusEffectPhase,
     StagePostArbitrationAction,
+    AddStatusEffectsAction,
 )
 from ..utils import extract_json_from_code_block
 
@@ -73,6 +74,52 @@ def _generate_defeat_notification() -> str:
         str: 击败通知消息
     """
     return """# 你的HP已归零，失去战斗能力！"""
+
+
+#######################################################################################################################################
+def _generate_post_arbitration_task_hint(
+    actor_name: str,
+    action: PlayCardsAction,
+    entity_name: str,
+) -> str:
+    """生成仲裁结算后的 AddStatusEffectsAction task_hint
+
+    将本次出牌的完整卡牌数据格式化为结构化文本，作为后续状态效果评估的可靠依据，
+    避免依赖仲裁 LLM 的压缩输出（combat_log/narrative）导致信息失真。
+
+    Args:
+        actor_name: 出牌者实体全名
+        action: 本次出牌的 PlayCardsAction 组件（包含完整卡牌与目标信息）
+        entity_name: 当前需要评估状态效果的实体全名
+
+    Returns:
+        结构化的 task_hint 字符串，区分出牌者视角与目标视角
+    """
+    card = action.card
+    actor_short_name = actor_name.split(".")[-1]
+    targets_str = "、".join(t.split(".")[-1] for t in action.targets) or "无"
+    action_desc = action.action if action.action else "（未提供）"
+
+    card_info = (
+        f"- 卡牌：{card.name}（{card.description}）\n"
+        f"- 单次伤害：{card.damage_dealt}，攻击次数：{card.hit_count}，格挡增量：{card.block_gain}\n"
+        f"- 行动描述：{action_desc}"
+    )
+
+    if entity_name == actor_name:
+        return (
+            f"仲裁结算完成。你本回合的出牌信息如下：\n"
+            f"{card_info}\n"
+            f"- 攻击目标：{targets_str}\n"
+            f"请根据以上出牌结果，结合战斗上下文，评估是否追加状态效果。"
+        )
+    else:
+        return (
+            f"仲裁结算完成。你本回合被命中的信息如下：\n"
+            f"- 出牌者：{actor_short_name}\n"
+            f"{card_info}\n"
+            f"请根据以上受击情况，结合战斗上下文，评估是否追加状态效果。"
+        )
 
 
 #######################################################################################################################################
@@ -312,8 +359,6 @@ class ArbitrationActionSystem(ReactiveProcessor):
         for target_name in action.targets:
             t_entity = self._game.get_entity_by_name(target_name)
             assert t_entity is not None, f"无法找到目标实体: {target_name}"
-            # if t_entity is None:
-            #     continue
             t_status_comp = t_entity.get(StatusEffectsComponent)
             target_arbitration_effects[target_name] = [
                 e
@@ -346,7 +391,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         chat_client.chat()
 
         # 应用仲裁结果
-        self._apply_arbitration_result(stage_entity, chat_client, actor_entity.name)
+        self._apply_arbitration_result(stage_entity, chat_client, actor_entity, action)
 
         # 处理生命值归零的实体，添加死亡组件
         self._process_zero_health_entities()
@@ -389,7 +434,8 @@ class ArbitrationActionSystem(ReactiveProcessor):
         self,
         stage_entity: Entity,
         chat_client: ChatClient,
-        actor_name: str,
+        actor_entity: Entity,
+        action: PlayCardsAction,
     ) -> None:
         try:
             format_response = ArbitrationResponse.model_validate_json(
@@ -413,7 +459,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
                         format_response.combat_log,
                         format_response.narrative,
                         current_round_number,
-                        actor_name,
+                        actor_entity.name,
                     ),
                     stage=stage_entity.name,
                     combat_log=format_response.combat_log,
@@ -424,6 +470,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
 
             # 遍历 final_stats，更新所有受影响角色（出牌者与目标）的 HP 与格挡, LLM 生成的 final_stats 中必须包含出牌者与所有目标，有可能会有错误！
             for entity_name, entity_stats in format_response.final_stats.items():
+
                 entity = self._game.get_entity_by_name(entity_name)
                 assert (
                     entity is not None
@@ -437,6 +484,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 ), f"实体 {entity_name} 缺少 CharacterStatsComponent！"
                 combat_stats = entity.get(CharacterStatsComponent)
 
+                # 更新 HP，确保不超过最大 HP 且不低于 0
                 old_hp = combat_stats.stats.hp
                 max_hp = combat_stats.stats.max_hp
                 new_hp = int(max(0, min(entity_stats.hp, max_hp)))
@@ -445,9 +493,11 @@ class ArbitrationActionSystem(ReactiveProcessor):
                     f"更新 {entity_name} HP: {old_hp} → {new_hp}/{max_hp}, block: {entity_stats.block}"
                 )
 
+                # 更新格挡组件
                 new_block = int(max(0, entity_stats.block))
                 entity.replace(BlockComponent, entity_name, new_block)
 
+                # 将属性更新通知写入角色上下文
                 self._game.add_human_message(
                     entity=entity,
                     message_content=_generate_stats_update_notification(
@@ -455,6 +505,15 @@ class ArbitrationActionSystem(ReactiveProcessor):
                     ),
                 )
 
+            # 仲裁结算完成后，为出牌者与所有目标添加 AddStatusEffectsAction
+            # task_hint 包含本次出牌完整结构化数据，供 AddActorStatusEffectsActionSystem 使用
+            self._add_status_effects_actions_after_arbitration(
+                actor_entity=actor_entity,
+                action=action,
+                affected_entity_names=list(format_response.final_stats.keys()),
+            )
+
+            # 将仲裁结果日志与演出追加到当前回合的 combat_log 和 narrative 中
             latest_round = self._game.current_dungeon.latest_round
             assert latest_round is not None, "current_rounds 不应为 None"
             latest_round.combat_log.append(format_response.combat_log)
@@ -462,7 +521,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
 
             # 仲裁结算成功后，触发 StagePostArbitrationActionSystem
             stage_entity.replace(
-                StagePostArbitrationAction, stage_entity.name, actor_name
+                StagePostArbitrationAction, stage_entity.name, actor_entity.name
             )
 
         except Exception as e:
@@ -490,5 +549,46 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 logger.info(f"{entity.name} 已被击败，HP={combat_stats_comp.stats.hp}")
                 self._game.add_human_message(entity, _generate_defeat_notification())
                 entity.replace(DeathComponent, combat_stats_comp.name)
+
+    #######################################################################################################################################
+    def _add_status_effects_actions_after_arbitration(
+        self,
+        actor_entity: Entity,
+        action: PlayCardsAction,
+        affected_entity_names: List[str],
+    ) -> None:
+        """仲裁结算后，为出牌者与所有目标添加 AddStatusEffectsAction。
+
+        task_hint 包含本次出牌的完整结构化数据（卡牌名称、数值、行动描述、目标），
+        避免依赖仲裁 LLM 的压缩输出（combat_log/narrative）导致信息失真。
+        出牌者与目标的 task_hint 视角不同，便于 LLM 区分身份做出准确判断。
+
+        若实体缺少 StatusEffectsComponent，先注入空组件以保证
+        AddActorStatusEffectsActionSystem 的 filter 能正常通过。
+
+        Args:
+            actor_entity: 出牌者实体
+            action: 本次出牌的 PlayCardsAction 组件
+            affected_entity_names: final_stats 中所有受影响实体的全名列表（出牌者 + 目标）
+        """
+        for entity_name in affected_entity_names:
+            entity = self._game.get_entity_by_name(entity_name)
+            if entity is None:
+                logger.warning(
+                    f"_add_status_effects_actions_after_arbitration: 找不到实体 {entity_name}，跳过"
+                )
+                continue
+
+            if not entity.has(StatusEffectsComponent):
+                entity.replace(StatusEffectsComponent, entity_name, [])
+
+            task_hint = _generate_post_arbitration_task_hint(
+                actor_name=actor_entity.name,
+                action=action,
+                entity_name=entity_name,
+            )
+
+            entity.replace(AddStatusEffectsAction, entity_name, task_hint)
+            logger.debug(f"[{entity_name}] 仲裁后添加 AddStatusEffectsAction")
 
     #######################################################################################################################################

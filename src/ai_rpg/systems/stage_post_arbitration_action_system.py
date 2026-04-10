@@ -341,9 +341,12 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
 
                 # 追加状态效果
                 if directive.add_effects:
+
+                    # 将新增效果的 source 字段设置为 stage entity 名称，便于后续追踪来源
                     for effect in directive.add_effects:
                         effect.source = stage_entity.name
 
+                    # 追加状态效果到目标实体的 StatusEffectsComponent
                     if target_entity.has(StatusEffectsComponent):
                         effects_comp = target_entity.get(StatusEffectsComponent)
                         effects_comp.status_effects.extend(directive.add_effects)
@@ -367,19 +370,12 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
 
                         # 根据策略决定注入卡牌的插入位置
                         if self._strategy == CardInjectStrategy.RANDOM_INSERT:
-                            base = list(hand_comp.cards)
                             for card in directive.inject_cards:
-                                insert_pos = random.randint(0, len(base))
-                                base.insert(insert_pos, card)
-                            new_cards = base
+                                insert_pos = random.randint(0, len(hand_comp.cards))
+                                hand_comp.cards.insert(insert_pos, card)
                         else:  # APPEND
-                            new_cards = list(hand_comp.cards) + directive.inject_cards
-                        target_entity.replace(
-                            HandComponent,
-                            target_entity.name,
-                            new_cards,
-                            hand_comp.round,
-                        )
+                            hand_comp.cards = hand_comp.cards + directive.inject_cards
+
                         logger.debug(
                             f"[{stage_entity.name}] → [{directive.target}] "
                             f"塞入 {len(directive.inject_cards)} 张卡牌"

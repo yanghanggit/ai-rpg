@@ -310,7 +310,7 @@ class EnemyComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class HandComponent(Component):
+class HandComponent(MutableComponent):
     """手牌组件
 
     存储角色当前手牌和回合信息。

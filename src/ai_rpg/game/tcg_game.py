@@ -205,7 +205,7 @@ class TCGGame(RPGGame):
         """为所有缺少 DeckComponent 的 Actor 实体添加空牌组"""
         for entity in self.get_group(Matcher(ActorComponent)).entities:
             if not entity.has(DeckComponent):
-                entity.add(DeckComponent, entity.name, [])
+                entity.replace(DeckComponent, entity.name, [])
                 logger.debug(f"为 Actor 实体 {entity.name} 添加空 DeckComponent")
 
     ################################################################################################################

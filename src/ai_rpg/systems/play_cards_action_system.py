@@ -153,8 +153,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             played_card = play_cards_action.card
             new_hand_cards = [c for c in hand_comp.cards if c is not played_card]
 
-            # 使用 replace 而非 remove 来更新 HandComponent，确保组件更新被正确检测到并触发相关系统
-            entity.replace(HandComponent, entity.name, new_hand_cards, hand_comp.round)
+            hand_comp.cards = new_hand_cards
 
             # 将已出的卡牌归还到牌组
             deck_comp = entity.get(DeckComponent)

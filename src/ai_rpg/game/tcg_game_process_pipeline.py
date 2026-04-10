@@ -113,6 +113,7 @@ def create_combat_pipeline(
     )
     from ..systems.stage_post_arbitration_action_system import (
         StagePostArbitrationActionSystem,
+        CardInjectStrategy,
     )
     from ..systems.combat_archive_system import CombatArchiveSystem
     from ..systems.stage_description_system import (
@@ -150,7 +151,11 @@ def create_combat_pipeline(
     processors.add(ArbitrationActionSystem(tcg_game))
 
     # 仲裁结算后，由 stage agent（地牢主视角）决定是否对场内角色追加状态效果或塞牌
-    processors.add(StagePostArbitrationActionSystem(tcg_game))
+    processors.add(
+        StagePostArbitrationActionSystem(
+            tcg_game, strategy=CardInjectStrategy.RANDOM_INSERT
+        )
+    )
 
     # 检查战斗结果系统
     processors.add(CombatOutcomeSystem(tcg_game))

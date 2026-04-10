@@ -130,6 +130,11 @@ class DeckDetailScreen(Screen[None]):
                             if card.description
                             else ""
                         )
+                        hint_str = (
+                            f"\n        [yellow]副作用暗示：{card.status_effect_hint}[/]"
+                            if card.status_effect_hint
+                            else ""
+                        )
                         source_str = (
                             f"  [dim]来源:{display_name(card.source)}[/]"
                             if card.source and card.source != entity.name
@@ -141,6 +146,7 @@ class DeckDetailScreen(Screen[None]):
                             f"格挡:[blue]{card.block_gain}[/]  目标:{tt_str}"
                             + source_str
                             + action_str
+                            + hint_str
                         )
 
                 log.write("")

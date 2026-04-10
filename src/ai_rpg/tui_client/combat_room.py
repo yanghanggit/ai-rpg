@@ -1352,6 +1352,11 @@ class CombatRoomScreen(Screen[None]):
                                     if card.description
                                     else ""
                                 )
+                                + (
+                                    f"  [yellow]副作用暗示：{card.status_effect_hint}[/]"
+                                    if card.status_effect_hint
+                                    else ""
+                                )
                             )
                     else:
                         log.write("    [dim](手牌为空)[/]")

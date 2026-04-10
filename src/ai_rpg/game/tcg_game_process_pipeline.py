@@ -166,9 +166,7 @@ def create_combat_pipeline(
 
     # 战斗回合过渡系统（创建新回合 + 生成 action_order）
     processors.add(
-        CombatRoundTransitionSystem(
-            tcg_game, strategy=ActionOrderStrategy.CREATION_ORDER
-        )
+        CombatRoundTransitionSystem(tcg_game, strategy=ActionOrderStrategy.SPEED_ORDER)
     )
 
     # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫）

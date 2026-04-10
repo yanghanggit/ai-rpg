@@ -35,6 +35,7 @@ class ActionOrderStrategy(StrEnum):
 
     RANDOM = "random"  # 随机打乱（默认）
     CREATION_ORDER = "creation_order"  # 按实体创建顺序（creation_order 小的靠前）
+    SPEED_ORDER = "speed_order"  # 按速度降序（speed 大的靠前），体现角色敏捷/迟缓个性
 
 
 @final
@@ -99,6 +100,13 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         # 所有存活角色
         actors_in_stage = self._game.get_alive_actors_in_stage(player_entity)
         assert len(actors_in_stage) > 0, "actors_in_stage is empty"
+        for actor in actors_in_stage:
+            assert actor.has(
+                CharacterStatsComponent
+            ), f"actor {actor.name} 缺少 CharacterStatsComponent"
+            assert actor.has(
+                IdentityComponent
+            ), f"actor {actor.name} 缺少 IdentityComponent"
 
         # 当前舞台（必须是地下城）
         stage_entity = self._game.resolve_stage_entity(player_entity)
@@ -110,6 +118,8 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
             action_order = self._build_action_order_random(actors_in_stage)
         elif self._strategy == ActionOrderStrategy.CREATION_ORDER:
             action_order = self._build_action_order_by_creation_order(actors_in_stage)
+        elif self._strategy == ActionOrderStrategy.SPEED_ORDER:
+            action_order = self._build_action_order_by_speed(actors_in_stage)
         else:
             logger.warning(f"未知的行动顺序策略: {self._strategy}，使用随机策略")
             action_order = self._build_action_order_random(actors_in_stage)
@@ -127,11 +137,29 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
     ############################################################################################################
     def _build_action_order_random(self, actors: Set[Entity]) -> List[str]:
         """随机出手队列：将所有角色按 actions_per_round 展开后整体随机打乱"""
+
+        # 注意：同一角色的多次行动会相邻出现（A→A→B→B→C→C），但角色间顺序随机打乱
         order: List[str] = []
         for entity in actors:
             count = entity.get(CharacterStatsComponent).stats.actions_per_round
             order.extend([entity.name] * count)
         random.shuffle(order)
+        return order
+
+    ############################################################################################################
+    def _build_action_order_by_speed(self, actors: Set[Entity]) -> List[str]:
+        """速度出手队列：主键 speed 降序，同速时以 creation_order 升序决胜，每人连续出现 actions_per_round 次"""
+        sorted_actors = sorted(
+            actors,
+            key=lambda entity: (
+                -entity.get(CharacterStatsComponent).stats.speed,
+                entity.get(IdentityComponent).creation_order,
+            ),
+        )
+        order: List[str] = []
+        for entity in sorted_actors:
+            count = entity.get(CharacterStatsComponent).stats.actions_per_round
+            order.extend([entity.name] * count)
         return order
 
     ############################################################################################################
@@ -141,6 +169,8 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
             actors,
             key=lambda entity: entity.get(IdentityComponent).creation_order,
         )
+
+        # 注意：creation_order 由小到大，意味着先创建的角色优先出手
         order: List[str] = []
         for entity in sorted_actors:
             count = entity.get(CharacterStatsComponent).stats.actions_per_round

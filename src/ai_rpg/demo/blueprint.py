@@ -37,6 +37,9 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     # 直接使用外观描述，这样就减少一次推理生成。
     actor_wanderer.character_sheet.appearance = actor_wanderer.character_sheet.base_body
 
+    # 调整旅行者的速度属性，增加其在 SPEED_ORDER 策略下的出手优先级
+    actor_wanderer.character_stats.speed = 20
+
     # 创建学者角色
     actor_mystic = create_scholar()
 

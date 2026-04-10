@@ -22,6 +22,7 @@ from ..models import (
     StatusEffectsComponent,
     StatusEffect,
     StatusEffectPhase,
+    DeathComponent,
 )
 from ..utils import extract_json_from_code_block
 
@@ -160,6 +161,7 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
             entity.has(AddStatusEffectsAction)
             and entity.has(StatusEffectsComponent)
             and entity.has(ActorComponent)
+            and not entity.has(DeathComponent)
         )
 
     #######################################################################################################################################
@@ -186,22 +188,11 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
         # 获取当前回合数
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
-        # 获取玩家实体, player在的场景就是战斗发生的场景！
-        player_entity = self._game.get_player_entity()
-        assert player_entity is not None, "无法找到玩家实体！"
-
-        # 获取当前场景实体
-        current_stage_entity = self._game.resolve_stage_entity(player_entity)
-        assert current_stage_entity is not None, "无法找到当前场景实体！"
-
-        # 参与战斗的角色实体列表
-        actor_entities = self._game.get_alive_actors_in_stage(player_entity)
-        assert len(actor_entities) > 0, "不可能出现没人参与战斗的情况！"
-
+        # 直接使用 filter() 已过滤的实体列表，避免重新查询导致对未添加 AddStatusEffectsAction 的角色 assert 失败
         # 为每个参战角色创建评估任务
         chat_clients: List[ChatClient] = []
 
-        for entity in actor_entities:
+        for entity in entities:
 
             combat_status_effects = entity.get(StatusEffectsComponent)
             assert (
@@ -210,7 +201,9 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
 
             # 从 action 组件读取任务说明
             add_status_effects_action = entity.get(AddStatusEffectsAction)
-            assert add_status_effects_action is not None
+            assert (
+                add_status_effects_action is not None
+            ), f"角色 {entity.name} 缺少 AddStatusEffectsAction 组件！"
 
             # 生成追加状态效果提示词
             prompt = _generate_add_status_effects_prompt(

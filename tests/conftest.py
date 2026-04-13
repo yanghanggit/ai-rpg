@@ -38,6 +38,7 @@ def sample_game() -> Any:
     dungeon = Dungeon(name="", rooms=[], ecology="")
     world = World(
         entity_counter=1000,
+        home_planning_turn_index=0,
         entities_serialization=[],
         agents_context={},
         dungeon=dungeon,

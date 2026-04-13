@@ -328,6 +328,23 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
             json_content = extract_json_from_code_block(chat_client.response_content)
             response = StagePostArbitrationResponse.model_validate_json(json_content)
 
+            # 预验证所有目标角色是否存在，避免部分指令生效导致的状态不一致
+            for directive in response.per_actor:
+                target_entity = self._game.get_entity_by_name(directive.target)
+                if target_entity is None:
+                    logger.warning(
+                        f"[{stage_entity.name}] 找不到目标角色: {directive.target}，跳过"
+                    )
+                    raise ValueError(f"找不到目标角色: {directive.target}")
+
+                assert target_entity.has(
+                    StatusEffectsComponent
+                ), f"目标角色 {directive.target} 缺少 StatusEffectsComponent"
+                assert target_entity.has(
+                    HandComponent
+                ), f"目标角色 {directive.target} 缺少 HandComponent"
+
+            # 添加上下文消息到 stage entity 的对话历史，便于后续回顾与调试
             self._game.add_human_message(
                 entity=stage_entity,
                 message_content=chat_client.prompt,
@@ -337,65 +354,117 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
                 ai_messages=chat_client.response_ai_messages,
             )
 
+            # 解析每个角色的指令，应用状态效果与塞牌
             if not response.per_actor:
                 logger.debug(f"[{stage_entity.name}] 仲裁后无干预指令")
                 return
 
             for directive in response.per_actor:
                 target_entity = self._game.get_entity_by_name(directive.target)
-                if target_entity is None:
-                    logger.warning(
-                        f"[{stage_entity.name}] 找不到目标角色: {directive.target}，跳过"
-                    )
-                    continue
+                assert (
+                    target_entity is not None
+                ), f"预验证阶段未发现目标角色: {directive.target}"
+                # if target_entity is None:
+                #     logger.warning(
+                #         f"[{stage_entity.name}] 找不到目标角色: {directive.target}，跳过"
+                #     )
+                #     continue
 
-                # 追加状态效果
                 if directive.add_effects:
+                    self._apply_status_effects(stage_entity, target_entity, directive)
 
-                    # 将新增效果的 source 字段设置为 stage entity 名称，便于后续追踪来源
-                    for effect in directive.add_effects:
-                        effect.source = stage_entity.name
-
-                    # 追加状态效果到目标实体的 StatusEffectsComponent
-                    if target_entity.has(StatusEffectsComponent):
-                        effects_comp = target_entity.get(StatusEffectsComponent)
-                        effects_comp.status_effects.extend(directive.add_effects)
-                        logger.debug(
-                            f"[{stage_entity.name}] → [{directive.target}] "
-                            f"追加 {len(directive.add_effects)} 个状态效果"
-                        )
-                    else:
-                        logger.warning(
-                            f"[{directive.target}] 缺少 StatusEffectsComponent，跳过状态效果追加"
-                        )
-
-                # 塞牌（仅当目标当前持有手牌时生效）
                 if directive.inject_cards:
-                    if target_entity.has(HandComponent):
-
-                        hand_comp = target_entity.get(HandComponent)
-                        # 将注入卡牌的 source 字段设置为 stage entity 名称
-                        for card in directive.inject_cards:
-                            card.source = stage_entity.name
-
-                        # 根据策略决定注入卡牌的插入位置
-                        if self._strategy == CardInjectStrategy.RANDOM_INSERT:
-                            for card in directive.inject_cards:
-                                insert_pos = random.randint(0, len(hand_comp.cards))
-                                hand_comp.cards.insert(insert_pos, card)
-                        else:  # APPEND
-                            hand_comp.cards = hand_comp.cards + directive.inject_cards
-
-                        logger.debug(
-                            f"[{stage_entity.name}] → [{directive.target}] "
-                            f"塞入 {len(directive.inject_cards)} 张卡牌"
-                        )
-                    else:
-                        logger.debug(f"[{directive.target}] 当前无手牌，跳过塞牌")
+                    self._inject_cards(stage_entity, target_entity, directive)
 
         except Exception as e:
             logger.error(f"[{stage_entity.name}] 解析仲裁后干预响应失败: {e}")
             logger.error(f"原始响应: {chat_client.response_content}")
+
+    #######################################################################################################################################
+    def _apply_status_effects(
+        self,
+        stage_entity: Entity,
+        target_entity: Entity,
+        directive: ActorPostArbitrationDirective,
+    ) -> None:
+        """追加状态效果到目标实体，跳过已存在同名效果"""
+
+        for effect in directive.add_effects:
+            effect.source = stage_entity.name
+
+        assert target_entity.has(
+            StatusEffectsComponent
+        ), f"目标角色 {directive.target} 缺少 StatusEffectsComponent"
+        # if not target_entity.has(StatusEffectsComponent):
+        #     logger.warning(
+        #         f"[{directive.target}] 缺少 StatusEffectsComponent，跳过状态效果追加"
+        #     )
+        #     return
+
+        effects_comp = target_entity.get(StatusEffectsComponent)
+        existing_effect_names = {e.name for e in effects_comp.status_effects}
+        new_effects = []
+        for effect in directive.add_effects:
+            if effect.name in existing_effect_names:
+                logger.debug(
+                    f"[{stage_entity.name}] → [{directive.target}] "
+                    f'状态效果 "{effect.name}" 已存在，放弃追加'
+                )
+            else:
+                new_effects.append(effect)
+
+        if new_effects:
+            effects_comp.status_effects.extend(new_effects)
+            logger.debug(
+                f"[{stage_entity.name}] → [{directive.target}] "
+                f"追加 {len(new_effects)} 个状态效果"
+            )
+
+    #######################################################################################################################################
+    def _inject_cards(
+        self,
+        stage_entity: Entity,
+        target_entity: Entity,
+        directive: ActorPostArbitrationDirective,
+    ) -> None:
+        """向目标实体手牌注入卡牌，跳过已存在同名卡牌"""
+
+        assert target_entity.has(
+            HandComponent
+        ), f"目标角色 {directive.target} 缺少 HandComponent"
+        # if not target_entity.has(HandComponent):
+        #     logger.debug(f"[{directive.target}] 当前无手牌，跳过塞牌")
+        #     return
+
+        hand_comp = target_entity.get(HandComponent)
+        for card in directive.inject_cards:
+            card.source = stage_entity.name
+
+        existing_card_names = {c.name for c in hand_comp.cards}
+        new_cards = []
+        for card in directive.inject_cards:
+            if card.name in existing_card_names:
+                logger.debug(
+                    f"[{stage_entity.name}] → [{directive.target}] "
+                    f'卡牌 "{card.name}" 已在手牌中，放弃塞入'
+                )
+            else:
+                new_cards.append(card)
+
+        if not new_cards:
+            return
+
+        if self._strategy == CardInjectStrategy.RANDOM_INSERT:
+            for card in new_cards:
+                insert_pos = random.randint(0, len(hand_comp.cards))
+                hand_comp.cards.insert(insert_pos, card)
+        else:  # APPEND
+            hand_comp.cards = hand_comp.cards + new_cards
+
+        logger.debug(
+            f"[{stage_entity.name}] → [{directive.target}] "
+            f"塞入 {len(new_cards)} 张卡牌"
+        )
 
 
 #######################################################################################################################################

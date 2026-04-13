@@ -103,6 +103,7 @@ async def _create_and_initialize_game(
 
     world_data = World(
         entity_counter=1000,
+        home_planning_turn_index=0,
         entities_serialization=[],
         agents_context={},
         dungeon=dungeon,

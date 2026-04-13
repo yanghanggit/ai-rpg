@@ -460,6 +460,12 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         agent_context.context.append(SystemMessage(content=message_content))
 
     ###############################################################################################################################################
+    def increment_planning_turn(self) -> int:
+        """自增家园规划回合计数器并返回新值。"""
+        self._world.home_planning_turn_index += 1
+        return self._world.home_planning_turn_index
+
+    ###############################################################################################################################################
     def add_human_message(
         self, entity: Entity, message_content: str, **kwargs: Any
     ) -> None:

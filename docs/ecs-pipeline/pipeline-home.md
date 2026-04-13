@@ -53,6 +53,8 @@ announce    公开宣布内容 → 触发 AnnounceAction
 trans_stage 移动目标场景名 → 触发 TransStageAction
 ```
 
+**规划回合计数**：每次 `react()` 执行时，先自增 `World.home_planning_turn_index`，并将当前值作为 `planning_turn_index` 注入所有角色的规划提示词（`## 当前回合: N`）。该计数器持久化在 `World` 中，存档后续读也能从正确编号续接，为 AI 提供明确的时间维度感知。
+
 **玩家主动行动守卫**：若本帧玩家已持有 `SpeakAction` / `WhisperAction` / `AnnounceAction` / `TransStageAction` 中的任意一种，NPC 进入待命模式，不触发 AI 规划，避免玩家与 NPC 同帧竞争。
 
 参见 [[design-patterns#4. 并行 LLM 推理]]

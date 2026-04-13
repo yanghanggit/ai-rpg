@@ -78,6 +78,7 @@ def _build_action_planning_prompt_v1(
     current_stage_narration: str,
     other_actors_appearances: Dict[str, str],
     available_home_stages: List[str],
+    planning_turn_index: int,
 ) -> str:
     """构建角色行动规划提示词。
 
@@ -86,6 +87,7 @@ def _build_action_planning_prompt_v1(
         current_stage_narration: 场景环境描述
         other_actors_appearances: 其他角色的外观（角色名 -> 外观）
         available_home_stages: 可前往的场景列表
+        planning_turn_index: 全局家园规划回合编号
 
     Returns:
         完整的行动规划提示词
@@ -98,6 +100,8 @@ def _build_action_planning_prompt_v1(
         other_actors_appearance_info.append("无")
 
     return f"""# 决定你要做什么，以JSON格式输出。
+
+## 当前回合: {planning_turn_index}
 
 ## 你所在场景信息
 
@@ -172,6 +176,7 @@ def _build_action_planning_prompt_v2(
     current_stage_narration: str,
     other_actors_appearances: Dict[str, str],
     available_home_stages: List[str],  # 这个暂时不用，因为关闭了移动！
+    planning_turn_index: int,
 ) -> str:
     """构建角色行动规划提示词（测试版本，不含announce和trans_stage）。
 
@@ -179,6 +184,7 @@ def _build_action_planning_prompt_v2(
         current_stage: 场景名称
         current_stage_narration: 场景环境描述
         other_actors_appearances: 其他角色的外观（角色名 -> 外观）
+        planning_turn_index: 全局家园规划回合编号
 
     Returns:
         完整的行动规划提示词
@@ -191,6 +197,8 @@ def _build_action_planning_prompt_v2(
         other_actors_appearance_info.append("无")
 
     return f"""# 决定你要做什么，以JSON格式输出。
+
+## 当前回合: {planning_turn_index}
 
 ## 你所在场景信息
 
@@ -255,6 +263,7 @@ def _build_action_planning_prompt(
     current_stage_narration: str,
     other_actors_appearances: Dict[str, str],
     available_home_stages: List[str],
+    planning_turn_index: int,
 ) -> str:
     """构建角色行动规划提示词（统一入口）。
 
@@ -265,6 +274,7 @@ def _build_action_planning_prompt(
         current_stage_narration: 场景环境描述
         other_actors_appearances: 其他角色的外观（角色名 -> 外观）
         available_home_stages: 可前往的场景列表（v2 中暂不使用）
+        planning_turn_index: 全局家园规划回合编号
 
     Returns:
         完整的行动规划提示词
@@ -275,6 +285,7 @@ def _build_action_planning_prompt(
         current_stage_narration=current_stage_narration,
         other_actors_appearances=other_actors_appearances,
         available_home_stages=available_home_stages,
+        planning_turn_index=planning_turn_index,
     )
 
 
@@ -308,21 +319,25 @@ class HomeActorSystem(ReactiveProcessor):
     @override
     async def react(self, entities: list[Entity]) -> None:
 
+        planning_turn = self._game.increment_planning_turn()
+
         player_entities = [e for e in entities if e.has(PlayerComponent)]
         npc_entities = [e for e in entities if not e.has(PlayerComponent)]
 
         # 玩家：注入场景观察上下文，不调用 LLM
         for player_entity in player_entities:
-            self._inject_player_scene_context(player_entity)
+            self._inject_player_scene_context(player_entity, planning_turn)
 
         # 若玩家本轮有主动行动，NPC 进入待命模式（跳过 LLM 推理）
         if self._is_player_active(player_entities):
             for npc_entity in npc_entities:
-                self._inject_npc_standby_context(npc_entity)
+                self._inject_npc_standby_context(npc_entity, planning_turn)
             return
 
         # NPC：调用 LLM 进行行动规划
-        chat_clients: List[ChatClient] = self._create_actor_chat_clients(npc_entities)
+        chat_clients: List[ChatClient] = self._create_actor_chat_clients(
+            npc_entities, planning_turn
+        )
         await ChatClient.batch_chat(clients=chat_clients)
 
         for chat_client in chat_clients:
@@ -349,13 +364,16 @@ class HomeActorSystem(ReactiveProcessor):
         )
 
     #######################################################################################################################################
-    def _inject_npc_standby_context(self, npc_entity: Entity) -> None:
+    def _inject_npc_standby_context(
+        self, npc_entity: Entity, planning_turn_index: int
+    ) -> None:
         """向 NPC 实体注入待命状态（跳过 LLM 推理）。
 
         玩家本轮有主动行动时，NPC 不进行推理，直接注入 passive_mind 并保持对话历史连贯。
 
         Args:
             npc_entity: NPC 实体
+            planning_turn_index: 全局家园规划回合编号
         """
         current_stage = self._game.resolve_stage_entity(npc_entity)
         assert current_stage is not None
@@ -374,6 +392,7 @@ class HomeActorSystem(ReactiveProcessor):
             ).narrative,
             other_actors_appearances=other_actors_appearances,
             available_home_stages=[e.name for e in available_home_stages],
+            planning_turn_index=planning_turn_index,
         )
 
         self._game.add_human_message(
@@ -399,11 +418,14 @@ class HomeActorSystem(ReactiveProcessor):
         )
 
     #######################################################################################################################################
-    def _inject_player_scene_context(self, player_entity: Entity) -> None:
+    def _inject_player_scene_context(
+        self, player_entity: Entity, planning_turn_index: int
+    ) -> None:
         """向玩家实体注入当前场景观察信息（不调用 LLM）。
 
         Args:
             player_entity: 玩家实体
+            planning_turn_index: 全局家园规划回合编号
         """
         current_stage = self._game.resolve_stage_entity(player_entity)
         assert current_stage is not None
@@ -422,6 +444,7 @@ class HomeActorSystem(ReactiveProcessor):
             ).narrative,
             other_actors_appearances=other_actors_appearances,
             available_home_stages=[e.name for e in available_home_stages],
+            planning_turn_index=planning_turn_index,
         )
 
         self._game.add_human_message(
@@ -618,7 +641,7 @@ class HomeActorSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     def _create_actor_chat_clients(
-        self, actor_entities: List[Entity]
+        self, actor_entities: List[Entity], planning_turn_index: int
     ) -> List[ChatClient]:
         """为角色创建聊天客户端。
 
@@ -626,6 +649,7 @@ class HomeActorSystem(ReactiveProcessor):
 
         Args:
             actor_entities: 角色实体列表
+            planning_turn_index: 全局家园规划回合编号
 
         Returns:
             聊天客户端列表
@@ -659,6 +683,7 @@ class HomeActorSystem(ReactiveProcessor):
                         ).narrative,
                         other_actors_appearances=other_actors_appearances,
                         available_home_stages=[e.name for e in available_home_stages],
+                        planning_turn_index=planning_turn_index,
                     ),
                     context=self._game.get_agent_context(actor_entity).context,
                 )

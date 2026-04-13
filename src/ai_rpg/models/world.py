@@ -34,6 +34,7 @@ class AgentContext(BaseModel):
 @final
 class World(BaseModel):
     entity_counter: int
+    home_planning_turn_index: int
     entities_serialization: List[EntitySerialization]
     agents_context: Dict[str, AgentContext]
     dungeon: Dungeon

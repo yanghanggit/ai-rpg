@@ -169,20 +169,20 @@ def _setup_logger(log_file_path: Path) -> None:
 
 
 from agent_game_actions import (
-    _create_and_initialize_game,
-    _advance_game,
-    _speak_game,
-    _switch_stage_game,
-    _enter_dungeon_game,
-    _draw_cards_game,
-    _play_cards_specified_game,
-    _exit_dungeon_and_return_home_game,
-    _next_dungeon_game,
-    _retreat_game,
-    _generate_dungeon_game,
-    _add_expedition_member_game,
-    _remove_expedition_member_game,
-    _get_expedition_roster_game,
+    create_and_initialize_game,
+    advance_game,
+    speak_game,
+    switch_stage_game,
+    enter_dungeon_game,
+    draw_cards_game,
+    play_cards_specified_game,
+    exit_dungeon_and_return_home_game,
+    next_dungeon_game,
+    retreat_game,
+    generate_dungeon_game,
+    add_expedition_member_game,
+    remove_expedition_member_game,
+    get_expedition_roster_game,
 )
 
 ###########################################################################################################################################
@@ -240,7 +240,7 @@ def new_game(user: str, game: str, dungeon: str) -> None:
     logger.info(f"本次运行日志文件：{_log_file}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(_create_and_initialize_game(user, game, dungeon, _save_dir))
+    asyncio.run(create_and_initialize_game(user, game, dungeon, _save_dir))
 
 
 ###############################################################################################################################################
@@ -276,7 +276,7 @@ def advance(snapshot: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(_advance_game(world, player_session, _save_dir))
+    asyncio.run(advance_game(world, player_session, _save_dir))
 
 
 ###############################################################################################################################################
@@ -323,7 +323,7 @@ def speak(snapshot: str, target: str, content: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(_speak_game(world, player_session, target, content, _save_dir))
+    asyncio.run(speak_game(world, player_session, target, content, _save_dir))
 
 
 ###############################################################################################################################################
@@ -364,7 +364,7 @@ def switch_stage(snapshot: str, stage: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(_switch_stage_game(world, player_session, stage, _save_dir))
+    asyncio.run(switch_stage_game(world, player_session, stage, _save_dir))
 
 
 ###############################################################################################################################################
@@ -406,7 +406,7 @@ def enter_dungeon(snapshot: str, dungeon: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(_enter_dungeon_game(world, player_session, dungeon, _save_dir))
+    asyncio.run(enter_dungeon_game(world, player_session, dungeon, _save_dir))
 
 
 ###############################################################################################################################################
@@ -443,7 +443,7 @@ def draw_cards(snapshot: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(_draw_cards_game(world, player_session, _save_dir))
+    asyncio.run(draw_cards_game(world, player_session, _save_dir))
 
 
 ###############################################################################################################################################
@@ -499,7 +499,7 @@ def play_cards_specified(
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(
-        _play_cards_specified_game(
+        play_cards_specified_game(
             world, player_session, actor, card, list(targets), _save_dir
         )
     )
@@ -539,7 +539,7 @@ def exit_dungeon(snapshot: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(_exit_dungeon_and_return_home_game(world, player_session, _save_dir))
+    asyncio.run(exit_dungeon_and_return_home_game(world, player_session, _save_dir))
 
 
 ###############################################################################################################################################
@@ -577,7 +577,7 @@ def next_dungeon(snapshot: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(_next_dungeon_game(world, player_session, _save_dir))
+    asyncio.run(next_dungeon_game(world, player_session, _save_dir))
 
 
 ###############################################################################################################################################
@@ -614,7 +614,7 @@ def generate_dungeon_cmd(snapshot: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(_generate_dungeon_game(world, player_session, _save_dir))
+    asyncio.run(generate_dungeon_game(world, player_session, _save_dir))
 
 
 ###############################################################################################################################################
@@ -655,7 +655,7 @@ def roster_add(snapshot: str, member: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(_add_expedition_member_game(world, player_session, member, _save_dir))
+    asyncio.run(add_expedition_member_game(world, player_session, member, _save_dir))
 
 
 ###############################################################################################################################################
@@ -695,9 +695,7 @@ def roster_remove(snapshot: str, member: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(
-        _remove_expedition_member_game(world, player_session, member, _save_dir)
-    )
+    asyncio.run(remove_expedition_member_game(world, player_session, member, _save_dir))
 
 
 ###############################################################################################################################################
@@ -729,7 +727,7 @@ def roster(snapshot: str) -> None:
     logger.info(f"本次运行日志文件：{_log_file}")
     logger.info(f"读取存档：{snapshot_path}")
 
-    members = asyncio.run(_get_expedition_roster_game(world, player_session))
+    members = asyncio.run(get_expedition_roster_game(world, player_session))
     if members:
         click.echo("\n远征队当前名单：")
         for m in members:
@@ -772,7 +770,7 @@ def retreat(snapshot: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(_retreat_game(world, player_session, _save_dir))
+    asyncio.run(retreat_game(world, player_session, _save_dir))
 
 
 ###############################################################################################################################################

@@ -17,7 +17,6 @@ from ..models import (
     AppearanceComponent,
     COMPONENT_TYPES,
     DungeonComponent,
-    StageDescriptionComponent,
     AllyComponent,
     HomeComponent,
     EnemyComponent,
@@ -402,6 +401,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
 
             # 创建实体
             stage_entity = self._create_entity(stage_model.name)
+            assert stage_entity is not None, f"创建stage_entity失败: {stage_model.name}"
 
             # 必要组件: identifier
             self._world.entity_counter += 1
@@ -411,6 +411,8 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 self._world.entity_counter,
                 str(uuid.uuid4()),
             )
+
+            # 必要组件: StageComponent，包含场景名称和场景配置文件名称（stage_profile.name），方便后续访问和识别
             stage_entity.add(
                 StageComponent, stage_model.name, stage_model.stage_profile.name
             )
@@ -419,18 +421,14 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             assert stage_model.name in stage_model.system_message
             self.add_system_message(stage_entity, stage_model.system_message)
 
-            # 必要组件：环境描述
-            stage_entity.add(
-                StageDescriptionComponent,
-                stage_model.name,
-                "",
-            )
-
             # 必要组件：类型
-            if stage_model.stage_profile.type == StageType.DUNGEON:
-                stage_entity.add(DungeonComponent, stage_model.name)
-            elif stage_model.stage_profile.type == StageType.HOME:
-                stage_entity.add(HomeComponent, stage_model.name)
+            match stage_model.stage_profile.type:
+                case StageType.DUNGEON:
+                    stage_entity.add(DungeonComponent, stage_model.name)
+                case StageType.HOME:
+                    stage_entity.add(HomeComponent, stage_model.name)
+                case _:
+                    assert False, f"未知的 StageType: {stage_model.stage_profile.type}"
 
             ## 重新设置Actor和stage的关系
             for actor_model in stage_model.actors:

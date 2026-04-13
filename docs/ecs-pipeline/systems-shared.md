@@ -59,14 +59,17 @@
 **出现管线**：家园管线、战斗管线  
 **源码**：`src/ai_rpg/systems/stage_description_system.py`
 
-**触发条件**（状态守卫）：`StageDescriptionComponent.narrative` 为空（尚未生成本场景描述）。
+**触发条件**（状态守卫）：实体拥有 `StageComponent` 但**尚未持有** `StageDescriptionComponent`（懒加载模式）。
+
+> stage 实体创建时不再默认添加 `StageDescriptionComponent`；本系统在首次 pipeline 执行时检测缺失并完成写入。  
+> **强制刷新**：外部移除实体的 `StageDescriptionComponent` → 下一轮 pipeline 自动重新触发推理。
 
 **执行流程**：
 
-1. 收集需要生成描述的场景实体
+1. 收集有 `StageComponent` 且无 `StageDescriptionComponent` 的场景实体
 2. 命中 debug 磁盘缓存（`enable_debug_cache=True` 时）则直接复用，跳过 LLM
 3. 其余场景并行调用 LLM 生成环境描述（纯环境，不含角色信息）
-4. 写入 `StageDescriptionComponent.narrative`
+4. `replace` 写入 `StageDescriptionComponent.narrative`
 
 `enable_debug_cache` 参数在开发期避免重复调用 LLM，生产环境应关闭。
 

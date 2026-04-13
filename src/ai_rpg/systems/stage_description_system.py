@@ -103,7 +103,10 @@ class StageDescriptionSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     def _collect_pending_stage_entities(self) -> List[Tuple[Entity, str]]:
-        """收集 narrative 为空的场景实体，并为每个实体预构建 prompt。
+        """收集尚未生成描述的场景实体（有 StageComponent 但无 StageDescriptionComponent），并为每个实体预构建 prompt。
+
+        触发条件：实体拥有 StageComponent 且尚未持有 StageDescriptionComponent。
+        强制刷新方式：外部移除 StageDescriptionComponent，下次执行将重新触发推理。
 
         Returns:
             待处理列表，每项为 (实体, prompt)。
@@ -111,16 +114,10 @@ class StageDescriptionSystem(ExecuteProcessor):
         pending: List[Tuple[Entity, str]] = []
 
         stage_entities = self._game.get_group(
-            Matcher(all_of=[StageComponent])
+            Matcher(all_of=[StageComponent], none_of=[StageDescriptionComponent])
         ).entities.copy()
 
         for stage_entity in stage_entities:
-            if stage_entity.get(StageDescriptionComponent).narrative != "":
-                logger.debug(
-                    f"跳过场景 {stage_entity.name} 的规划请求，因其环境描述不为空"
-                )
-                continue
-
             actor_appearances_in_stage: Dict[str, str] = (
                 self._game.get_actor_appearances_in_stage(stage_entity)
             )
@@ -144,6 +141,8 @@ class StageDescriptionSystem(ExecuteProcessor):
         remaining: List[Tuple[Entity, str, str]] = []
 
         for stage_entity, prompt in pending:
+
+            # 计算缓存键并尝试加载
             context = self._game.get_agent_context(stage_entity).context
             cache_key = compute_cache_key(context, prompt, stage_entity.name)
             cached = load_debug_cache(cache_key)
@@ -211,24 +210,32 @@ class StageDescriptionSystem(ExecuteProcessor):
             ai_messages: 缓存的 AIMessage 列表。
         """
         try:
+
+            # 从缓存的 AIMessage 列表中提取内容并解析
             response_content = ""
             if ai_messages:
                 content = ai_messages[-1].content
                 response_content = content if isinstance(content, str) else str(content)
 
+            # 解析响应并更新环境描写
             format_response = StageDescriptionResponse.model_validate_json(
                 extract_json_from_code_block(response_content)
             )
 
+            if format_response.description == "":
+                logger.warning(f"缓存的环境描写为空，stage_entity={stage_entity.name}")
+                raise ValueError("缓存的环境描写为空")
+
+            # 仅更新对话历史和环境描写，不触发网络请求
             self._game.add_human_message(stage_entity, prompt)
             self._game.add_ai_message(stage_entity, ai_messages)
 
-            if format_response.description != "":
-                stage_entity.replace(
-                    StageDescriptionComponent,
-                    stage_entity.name,
-                    format_response.description,
-                )
+            # if format_response.description != "":
+            stage_entity.replace(
+                StageDescriptionComponent,
+                stage_entity.name,
+                format_response.description,
+            )
 
         except Exception as e:
             logger.error(f"Exception: {e}")
@@ -253,16 +260,22 @@ class StageDescriptionSystem(ExecuteProcessor):
                 extract_json_from_code_block(chat_client.response_content)
             )
 
+            if format_response.description == "":
+                logger.warning(
+                    f"AI返回的环境描写为空，stage_entity={stage_entity.name}, response_content={chat_client.response_content}"
+                )
+                raise ValueError("AI返回的环境描写为空")
+
             self._game.add_human_message(stage_entity, chat_client.prompt)
             self._game.add_ai_message(stage_entity, chat_client.response_ai_messages)
 
             # 更新环境描写
-            if format_response.description != "":
-                stage_entity.replace(
-                    StageDescriptionComponent,
-                    stage_entity.name,
-                    format_response.description,
-                )
+            # if format_response.description != "":
+            stage_entity.replace(
+                StageDescriptionComponent,
+                stage_entity.name,
+                format_response.description,
+            )
 
             # 写入缓存
             if self._enable_debug_cache and cache_key is not None:

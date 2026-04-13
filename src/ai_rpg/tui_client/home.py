@@ -365,7 +365,7 @@ class HomeScreen(Screen[None]):
         if success:
             self._show_player_status()
 
-    @work
+    @work(exclusive=True)
     async def _poll_messages(self) -> None:
         from .app import GameClient
 

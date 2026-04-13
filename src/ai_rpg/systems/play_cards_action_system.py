@@ -138,6 +138,10 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 f"PlayCardsActionSystem: 出牌角色 {entity.name} 不在当前回合的行动顺序中！"
                 f" action_order={last_round.action_order}"
             )
+            assert entity.name == last_round.current_actor, (
+                f"PlayCardsActionSystem: 出牌角色 {entity.name} 不是当前回合的行动者！"
+                f" current_actor={last_round.current_actor}"
+            )
 
             # 将出牌角色写入本回合 completed_actors（允许同一角色多次出现）
             last_round.completed_actors.append(play_cards_action.name)

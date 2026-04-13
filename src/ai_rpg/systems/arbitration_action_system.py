@@ -105,6 +105,7 @@ def _generate_post_arbitration_task_hint(
         if card.status_effect_hint
         else ""
     )
+
     card_info = (
         f"- 卡牌：{card.name}（{card.description}）\n"
         f"- 单次伤害：{card.damage_dealt}，攻击次数：{card.hit_count}，格挡增量：{card.block_gain}\n"
@@ -300,8 +301,10 @@ class ArbitrationActionSystem(ReactiveProcessor):
 
         # 开始处理仲裁。
         for entity in entities:
+
             stage_entity = self._game.resolve_stage_entity(entity)
             assert stage_entity is not None, f"无法获取 {entity.name} 所在场景实体！"
+
             logger.debug(f"ArbitrationActionSystem: [{entity.name}] 触发仲裁")
             await self._request_combat_arbitration(stage_entity, entity)
 
@@ -444,10 +447,21 @@ class ArbitrationActionSystem(ReactiveProcessor):
         action: PlayCardsAction,
     ) -> None:
         try:
+
             format_response = ArbitrationResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
             )
 
+            # 验证 final_stats 中的实体名称是否存在于游戏中，避免后续更新时找不到实体导致错误
+            for entity_name, entity_stats in format_response.final_stats.items():
+                if self._game.get_entity_by_name(entity_name) is None:
+                    raise ValueError(
+                        f"final_stats 中的实体不存在于游戏中: {entity_name}"
+                    )
+
+            # 上述能过才能继续执行后续逻辑，确保数据正确性
+
+            # 将仲裁提示词、LLM 原始响应与格式化后的仲裁结果写入角色上下文，供后续查询与调试
             self._game.add_human_message(
                 entity=stage_entity,
                 message_content=chat_client.prompt,
@@ -457,6 +471,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 ai_messages=chat_client.response_ai_messages,
             )
 
+            # 广播仲裁结果（包含战斗日志与演出描述）到场景
             current_round_number = len(self._game.current_dungeon.current_rounds or [])
             self._game.broadcast_to_stage(
                 entity=stage_entity,
@@ -481,9 +496,9 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 assert (
                     entity is not None
                 ), f"无法找到 final_stats 中的实体: {entity_name}"
-                if entity is None:
-                    logger.warning(f"final_stats 中找不到实体: {entity_name}")
-                    continue
+                # if entity is None:
+                #     logger.warning(f"final_stats 中找不到实体: {entity_name}")
+                #     continue
 
                 assert entity.has(
                     CharacterStatsComponent
@@ -589,11 +604,12 @@ class ArbitrationActionSystem(ReactiveProcessor):
 
         for entity_name in affected_entity_names:
             entity = self._game.get_entity_by_name(entity_name)
-            if entity is None:
-                logger.warning(
-                    f"_add_status_effects_actions_after_arbitration: 找不到实体 {entity_name}，跳过"
-                )
-                continue
+            assert entity is not None, f"无法找到实体: {entity_name}"
+            # if entity is None:
+            #     logger.warning(
+            #         f"_add_status_effects_actions_after_arbitration: 找不到实体 {entity_name}，跳过"
+            #     )
+            #     continue
 
             if not entity.has(StatusEffectsComponent):
                 entity.replace(StatusEffectsComponent, entity_name, [])

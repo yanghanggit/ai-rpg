@@ -35,9 +35,17 @@ from ..utils import extract_json_from_code_block
 
 #######################################################################################################################################
 @final
+class StatusEffectPatch(BaseModel):
+    name: str
+    description: str
+
+
+#######################################################################################################################################
+@final
 class EntityFinalStats(BaseModel):
     hp: float
     block: float
+    status_effect_patches: List[StatusEffectPatch] = []
 
 
 #######################################################################################################################################
@@ -257,10 +265,15 @@ def _generate_combat_arbitration_prompt(
 
 必须包含**出牌者与所有目标**，格式：
 ```json
-{{"角色全名": {{"hp": 数值, "block": 数值}}}}
+{{"角色全名": {{"hp": 数值, "block": 数值, "status_effect_patches": []}}}}
 ```
 - hp：0 ≤ hp ≤ 最大 HP
 - block：结算后剩余格挡（出牌者 = 当前格挡 + block_gain；目标 = 当前格挡 − 消耗量，不低于 0）
+- status_effect_patches：仅在本次仲裁**消耗了**某状态效果的 cur 计数时填写，格式：
+  `{{"name": "效果名", "description": "更新后的完整描述（含新 cur 值，如 cur=1/max=3）"}}`
+  - name 必须与"仲裁状态效果"中列出的名称完全一致
+  - 未被消耗的效果不输出；cur 耗尽时填 cur=0/max=N（不移除效果，duration 由系统另行维护）
+  - 若本次出牌未触发任何 cur 消耗，保持空数组 []
 
 ### narrative
 
@@ -517,6 +530,25 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 # 更新格挡组件
                 new_block = int(max(0, entity_stats.block))
                 entity.replace(BlockComponent, entity_name, new_block)
+
+                # 回写仲裁阶段状态效果的 description（用于更新 cur 等动态变量）
+                if entity_stats.status_effect_patches:
+                    status_comp = entity.get(StatusEffectsComponent)
+                    if status_comp is not None:
+                        effect_map = {e.name: e for e in status_comp.status_effects}
+                        for patch in entity_stats.status_effect_patches:
+                            if patch.name in effect_map:
+                                old_desc = effect_map[patch.name].description
+                                effect_map[patch.name].description = patch.description
+                                logger.info(
+                                    f"更新 {entity_name} 状态效果「{patch.name}」description: "
+                                    f"{old_desc!r} → {patch.description!r}"
+                                )
+                            else:
+                                logger.warning(
+                                    f"status_effect_patches 中的效果「{patch.name}」"
+                                    f"在 {entity_name} 的 StatusEffectsComponent 中不存在，跳过"
+                                )
 
                 # 将属性更新通知写入角色上下文
                 self._game.add_human_message(

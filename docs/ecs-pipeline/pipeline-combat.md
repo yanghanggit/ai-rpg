@@ -103,10 +103,17 @@
 **流程**：
 
 1. 从 `PlayCardsAction` 提取卡牌信息（伤害 / 格挡 / 目标类型）
-2. 解析目标实体当前 HP 与格挡，构建仲裁 Prompt
+2. 读取出牌者与目标当前 HP / 格挡，以及 `ARBITRATION` 相位的状态效果，构建仲裁 Prompt
 3. 调用 LLM 计算最终伤害，生成战斗日志与演出叙事（`ArbitrationResponse`）
 4. 遍历 `final_stats` 更新所有受影响角色的 HP / 格挡
-5. HP 归零的角色添加 `DeathComponent`
+5. 若 `final_stats` 中包含 `status_effect_patches`，原地回写对应状态效果的 `description`（用于更新 `cur` 等动态变量，如"前 N 次被攻击伤害变为 1"的剩余次数）
+6. HP 归零的角色添加 `DeathComponent`
+
+**状态效果动态变量机制**：
+
+`StatusEffect.description` 同时承担规则说明与动态状态存储，例如：`"被攻击前3次伤害变为1，cur=2/max=3"`。  
+仲裁 LLM 读取 `cur` 后应用规则，并通过 `status_effect_patches` 将消耗后的新 `description`（含更新的 `cur`）写回组件。  
+`cur` 与 `duration` 两套机制独立并行：`duration` 由 `CombatRoundCleanupSystem` 按回合递减，`cur` 由仲裁 LLM 按命中次数递减。
 
 ---
 

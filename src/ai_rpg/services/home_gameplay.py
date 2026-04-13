@@ -10,6 +10,7 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
+from ..game.world_store import archive_world
 from .game_server_dependencies import CurrentGameServer
 from ..game.game_server import GameServer
 from .home_actions import (
@@ -491,8 +492,14 @@ async def _execute_dungeon_generate_pipeline_task(
             raise ValueError(f"游戏实例不存在: user={user_name}")
 
         async with current_room._lock:
+
             rpg_game = await _validate_player_at_home(user_name, game_server)
+
+            # 执行地下城生成流程（包含文本生成和图片生成），该流程可能比较耗时
             await rpg_game._dungeon_generate_pipeline.process()
+
+            # 存档当前世界状态，便于调试和回放
+            archive_world(rpg_game._world, rpg_game._player_session)
 
         task_record = game_server.get_task(task_id)
         if task_record is not None:
@@ -540,8 +547,14 @@ async def _execute_home_pipeline_task(
             raise ValueError(f"游戏实例不存在: user={user_name}")
 
         async with current_room._lock:
+
             rpg_game = await _validate_player_at_home(user_name, game_server)
+
+            # 执行 home pipeline，包含行动计划执行、状态更新、会话消息生成等逻辑，可能比较耗时
             await rpg_game._home_pipeline.process()
+
+            # 存档当前世界状态，便于调试和回放
+            archive_world(rpg_game._world, rpg_game._player_session)
 
         task_record = game_server.get_task(task_id)
         if task_record is not None:

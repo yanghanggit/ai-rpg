@@ -17,6 +17,7 @@ from ..models import (
 )
 from .game_server_dependencies import CurrentGameServer
 from ..game.config import BLUEPRINTS_DIR
+from ..game.world_store import archive_world
 
 ###################################################################################################################################################################
 new_game_api_router = APIRouter()
@@ -124,6 +125,9 @@ async def new_game(
 
     # 执行游戏初始化逻辑，确保游戏状态正确设置，准备好接受玩家的操作
     await room._tcg_game.initialize()
+
+    # 存档初始世界状态，便于调试和回放
+    archive_world(room._tcg_game._world, room._tcg_game._player_session)
 
     # 返回成功响应
     return NewGameResponse(blueprint=blueprint_data)

@@ -11,6 +11,7 @@ from typing import List
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.tcg_game import TCGGame
+from ..game.world_store import archive_world
 from .game_server_dependencies import CurrentGameServer
 from ..models import (
     CombatState,
@@ -598,6 +599,9 @@ async def _execute_init_combat_task(
 
             await rpg_game._combat_pipeline.process()
 
+            # 存储战斗初始化后的世界状态，便于调试和回放
+            archive_world(rpg_game._world, rpg_game._player_session)
+
         task_record = game_server.get_task(task_id)
         if task_record is not None:
             task_record.status = TaskStatus.COMPLETED
@@ -656,6 +660,9 @@ async def _execute_retreat_task(
                     "战斗管线执行后未进入 post_combat 状态，撤退流程异常"
                 )
 
+            # 存储撤退后进入 post_combat 状态的世界状态，便于调试和回放
+            archive_world(rpg_game._world, rpg_game._player_session)
+
         task_record = game_server.get_task(task_id)
         if task_record is not None:
             task_record.status = TaskStatus.COMPLETED
@@ -712,6 +719,9 @@ async def _execute_draw_cards_task(
             # 注意: 这里会阻塞当前协程直到战斗流程处理完成
             # 但因为使用了 asyncio.create_task，这个阻塞只影响后台任务，不影响 API 响应
             await rpg_game._combat_pipeline.process()
+
+            # 存储抽牌后的世界状态，便于调试和回放
+            archive_world(rpg_game._world, rpg_game._player_session)
 
         # 保存结果
         task_record = game_server.get_task(task_id)
@@ -781,6 +791,9 @@ async def _execute_play_cards_task(
 
             # 推进战斗流程处理出牌
             await rpg_game._combat_pipeline.process()
+
+            # 存储出牌后的世界状态，便于调试和回放
+            archive_world(rpg_game._world, rpg_game._player_session)
 
         # 保存结果
         task_record = game_server.get_task(task_id)

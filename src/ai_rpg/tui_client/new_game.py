@@ -35,7 +35,7 @@ class NewGameScreen(Screen[None]):
     def __init__(self) -> None:
         super().__init__()
         self._blueprints: List[Blueprint] = []
-        self._auto_player_id = f"player_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        self._auto_player_id = f"tui_player_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         self._starting = False
 
     def compose(self) -> ComposeResult:

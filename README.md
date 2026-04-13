@@ -51,6 +51,11 @@ pm2 start ecosystem.config.js
 
 > **Windows 用户**: 需要安装 [Git Bash](https://git-scm.com/) 和 Make（`winget install ezwinports.make`）。
 
+## 📚 知识库
+
+架构文档位于 `docs/`，以 [docs/README.md](docs/README.md) 为根节点。  
+从根节点出发可导航至所有领域文档，适合在 Obsidian 中浏览（支持 Wiki 链接跳转）。
+
 ## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！

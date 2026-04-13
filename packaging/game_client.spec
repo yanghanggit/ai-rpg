@@ -20,7 +20,7 @@ block_cipher = None
 
 a = Analysis(
     [SCRIPT],
-    pathex=[str(PROJECT_ROOT / "scripts")],
+    pathex=[str(PROJECT_ROOT / "scripts"), str(PROJECT_ROOT / "src")],
     binaries=[],
     datas=[],
     hiddenimports=[
@@ -83,6 +83,16 @@ a = Analysis(
         "httpcore",
         "anyio",
         "anyio._backends._asyncio",
+        # loguru (日志库)
+        "loguru",
+        # pydantic (models 依赖)
+        "pydantic",
+        "pydantic.v1",
+        # overrides (entitas/models 依赖)
+        "overrides",
+        # langchain_core (models 依赖)
+        "langchain_core",
+        "langchain_core.messages",
         # ai_rpg 内部模块（collect_submodules 递归收集，新增 Screen 无需手动维护）
         *collect_submodules("ai_rpg.tui_client"),
         *collect_submodules("ai_rpg.models"),

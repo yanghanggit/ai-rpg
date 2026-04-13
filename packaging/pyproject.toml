@@ -7,5 +7,9 @@ dependencies = [
     "textual>=8.1.1",
     "click>=8.1.7",
     "httpx>=0.28.1",
+    "loguru>=0.7.0",
+    "pydantic>=2.0.0",
+    "overrides>=7.0.0",
+    "langchain-core>=0.3.0",
     "pyinstaller>=6.0.0",
 ]

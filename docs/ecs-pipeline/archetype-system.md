@@ -25,6 +25,8 @@ Archetype 机制在此基础上引入**一组自然语言约束规则**，限定
 
 `archetypes` 是静态蓝图数据，在角色设计时声明，运行时不变。
 
+`DiceValue` 是 `IntEnum`，定义骰值的范围常量：`MIN = 0`、`MAX = 100`。骰值是纯运行时随机数，不属于静态蓝图，无需持久化，仅在 `_create_draw_chat_client()` 内按需生成。
+
 ---
 
 ## ECS 组件层（components.py）
@@ -60,14 +62,16 @@ Archetype 机制在此基础上引入**一组自然语言约束规则**，限定
 
 ### Prompt 注入
 
-`_build_design_principle_prompt()` 根据是否有采样结果生成不同内容：
+`_build_design_principle_prompt()` 根据是否有采样结果及是否传入骰值，生成不同内容：
 
-- **有约束时**：在 prompt 中生成逐张约束列表，LLM 按位置一一对应
-- **无约束时**：沿用原通用差异化指引（向后兼容，行为与引入 Archetype 前完全一致）
+- **有约束时**：在 prompt 中生成逐张约束列表，LLM 按位置一一对应；若同时传入骰值（长度与 archetypes 相同），则在每行末尾附加 `（骰值：N）`，并在段落 header 中注明"骰值仅在约束中明确说明用法时生效，否则忽略"
+- **无约束时**：沿用原通用差异化指引，不附骰值（向后兼容，行为与引入 Archetype 前完全一致）
+
+骰值的语义完全由各角色自己的 `Archetype.description` 决定。若 description 未提及骰值用法，LLM 依兜底说明忽略该数字，骨值对生成结果无副作用。这赋予了 Archetype 设计者通过 description 文本声明骰值映射规则（如"骰值 < 30 时生成防御牌，≥ 30 时生成攻击牌"）的能力，而无需修改系统代码。
 
 ### 完整调用链
 
-`react()` → `_create_draw_chat_client()` 读取实体的 `ArchetypeComponent`，调用 `_sample_archetypes()` 采样，再将结果传入 `_generate_draw_prompt()` → `_build_design_principle_prompt()` 注入约束段落 → `ChatClient.batch_chat()` 并行 LLM 推理 → `_process_draw_response()` 解析 JSON 写入 `HandComponent`。
+`react()` → `_create_draw_chat_client()` 读取实体的 `ArchetypeComponent`，调用 `_sample_archetypes()` 采样，生成 `dice_rolls`（每张牌一个 `DiceValue.MIN`～`DiceValue.MAX` 随机整数），再将两者传入 `_generate_draw_prompt()` → `_build_design_principle_prompt()` 注入约束段落（含骰值） → `ChatClient.batch_chat()` 并行 LLM 推理 → `_process_draw_response()` 解析 JSON 写入 `HandComponent`。
 
 ---
 
@@ -86,3 +90,5 @@ Archetype 机制在此基础上引入**一组自然语言约束规则**，限定
 - 每个角色可携带**多个 Archetype**，`_sample_archetypes` 的 `random.sample` 策略天然支持混合风格
 - 未来可在 `Archetype` 模型中增加权重字段（`weight: float = 1.0`），实现加权随机采样
 - Archetype 也可以在战斗中动态追加（如装备赋能），只需 `replace(ArchetypeComponent, ...)` 即可
+- `Archetype.description` 可声明骰值的具体映射语义（如"骰值 < 30→防御型；≥ 30→攻击型"），系统无需任何代码改动即可支持基于骰值的条件分支风格约束
+- `DiceValue.MIN / MAX` 当前为 0 / 100；如需支持其他范围（如模拟 D6：1-6），只需修改常量即可，生成逻辑不用改

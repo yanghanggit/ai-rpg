@@ -81,28 +81,23 @@
 **源码**：`src/ai_rpg/systems/draw_cards_action_system.py`  
 **监听**：`DrawCardsAction`（`max_num_cards=3`）
 
-**抽牌策略**（历史牌优先 + 保证新鲜度 + Archetype 约束）：
+**抽牌策略**（历史牌优先 + 保证新鲜度 + Archetype 约束 + 骰值注入）：
 
 - 从 `DrawDeckComponent`（可重抽历史牌池）取最多 `max_num_cards - 1` 张（FIFO 消耗）
 - 出牌时，已打出的卡牌归入 `DiscardDeckComponent`（只增不减，用于统计与展示）
 - 至少 1 张由 LLM 实时生成，结合角色当前属性（HP/攻击/防御）和状态效果
 - 从 `ArchetypeComponent` 随机采样 `num_cards` 个原型约束，逐张注入 prompt（详见下方）
+- 每回合为每张牌生成一个 `DiceValue.MIN`～`DiceValue.MAX`（0-100）的随机整数（骰值），逐张附加在约束行末尾
 - 两部分合并为最终手牌写入 `HandComponent`
 
 每张牌包含：`name` / `description` / `damage_dealt` / `block_gain` / `hit_count` / `target_type` / `status_effect_hint`
 
-**Archetype 原型约束**：
+**Archetype 原型约束 + 骰值机制**：
 
 每个角色携带 `ArchetypeComponent`（来自蓝图数据 `Actor.archetypes`），定义若干自然语言约束规则。  
-抽牌时系统随机采样 `num_cards` 个原型（池够时无放回，不够时有放回），在 prompt 中按位置逐张声明：
+抽牌时系统随机采样 `num_cards` 个原型（池够时无放回，不够时有放回），并同步生成等数量的骰值，在 prompt 中按位置逐张声明。骰值以 `（骰值：N）` 形式附于各卡约束行末，同时 prompt header 中包含兜底说明：若 `Archetype.description` 未说明骰值用法，LLM 应忽略该数字。
 
-```text
-**每张卡牌的原型约束**（按顺序一一对应，严格遵循各自约束生成）:
-  - 卡牌1：多段连击型：每张卡牌优先生成多次攻击（hit_count ≥ 2）...
-  - 卡牌2：...
-```
-
-当 `archetypes` 为空时，退回通用"差异化设计原则"提示，与改动前行为一致（向后兼容）。
+当 `archetypes` 为空时，退回通用"差异化设计原则"提示（不附骰值），与改动前行为一致（向后兼容）。
 
 详细设计：[[archetype-system]]
 

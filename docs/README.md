@@ -31,5 +31,6 @@
 
 | 日期 | 变更 |
 | ------ | ------ |
+| 2026-04-14 | 新增 `DiceValue(IntEnum)`（`MIN=0`/`MAX=100`）；`DrawCardsActionSystem` 每回合按 `DiceValue` 范围生成骰值，逐张注入 prompt；`_build_design_principle_prompt` 支持骰值附加与兜底说明；更新 `archetype-system.md`、`pipeline-combat.md` |
 | 2026-04-14 | 新增 `Archetype`/`ArchetypeComponent` 原型约束系统；`DrawCardsActionSystem` 集成 Archetype 采样与 Prompt 注入；`_ensure_` 函数重命名为 `_mount_`；新增 `archetype-system.md`；更新 `overview.md`、`pipeline-combat.md` |
 | 2026-04-13 | 初始化知识库；新增 `ecs-pipeline/` 系列文档（7 篇） |

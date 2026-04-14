@@ -177,6 +177,8 @@ class TCGGame(RPGGame):
     ################################################################################################################
     def clear_round_state(self) -> None:
         """清除所有角色实体的每回合可变状态（手牌与格挡）"""
+
+        # 清除所有角色实体的手牌组件，并将剩余手牌归还牌组
         for entity in self.get_group(Matcher(HandComponent)).entities.copy():
             hand_comp = entity.get(HandComponent)
             assert hand_comp is not None
@@ -190,7 +192,11 @@ class TCGGame(RPGGame):
                 )
             else:
                 logger.debug(f"clear hands: {entity.name}")
+
+            # 移除 HandComponent
             entity.remove(HandComponent)
+
+        # 清除所有角色实体的格挡组件
         for entity in self.get_group(Matcher(BlockComponent)).entities.copy():
             logger.debug(f"clear blocks: {entity.name}")
             entity.remove(BlockComponent)
@@ -198,6 +204,7 @@ class TCGGame(RPGGame):
     ################################################################################################################
     def clear_status_effects(self) -> None:
         """清除所有角色实体的状态效果组件"""
+
         actor_entities = self.get_group(Matcher(StatusEffectsComponent)).entities.copy()
         for entity in actor_entities:
             logger.debug(f"clear status effects: {entity.name}")
@@ -206,10 +213,8 @@ class TCGGame(RPGGame):
     #######################################################################################################################################
     def _mount_actor_deck_components(self) -> None:
         """为所有缺少 DeckComponent 的 Actor 实体添加空牌组"""
+
         for entity in self.get_group(Matcher(ActorComponent)).entities:
-            assert not entity.has(
-                DeckComponent
-            ), f"{entity.name} 已经有 DeckComponent 了，不应该再添加了"
             if not entity.has(DeckComponent):
                 entity.replace(DeckComponent, entity.name, [])
                 logger.debug(f"为 Actor 实体 {entity.name} 添加空 DeckComponent")
@@ -217,26 +222,19 @@ class TCGGame(RPGGame):
     #######################################################################################################################################
     def _mount_actor_archetype_components(self) -> None:
         """为所有缺少 ArchetypeComponent 的 Actor 实体挂载原型约束"""
+
         all_actor_models = {
             a.name: a for a in self._world.blueprint.actors + self._world.dungeon.actors
         }
-        for entity in self.get_group(Matcher(ActorComponent)).entities:
 
-            # 断言检查，确保没有重复添加
-            assert not entity.has(
-                ArchetypeComponent
-            ), f"{entity.name} 已经有 ArchetypeComponent 了，不应该再添加了"
+        # 为每个 Actor 实体挂载 ArchetypeComponent，内容来自 Actor 模型的 archetypes 字段
+        for entity in self.get_group(Matcher(ActorComponent)).entities:
             if entity.has(ArchetypeComponent):
                 continue
 
             # 从蓝图中找到对应的 Actor 模型，获取其 archetypes 数据
             actor_model = all_actor_models.get(entity.name)
             assert actor_model is not None, f"找不到 Actor model: {entity.name}"
-            if actor_model is None:
-                logger.warning(
-                    f"_ensure_actor_archetype_components: 找不到 Actor model: {entity.name}"
-                )
-                continue
 
             # 添加 ArchetypeComponent，内容来自 Actor 模型的 archetypes 字段
             entity.replace(ArchetypeComponent, entity.name, actor_model.archetypes)

@@ -81,13 +81,29 @@
 **源码**：`src/ai_rpg/systems/draw_cards_action_system.py`  
 **监听**：`DrawCardsAction`（`max_num_cards=3`）
 
-**抽牌策略**（历史牌优先 + 保证新鲜度）：
+**抽牌策略**（历史牌优先 + 保证新鲜度 + Archetype 约束）：
 
 - 从 `DeckComponent`（历史牌组）取最多 `max_num_cards - 1` 张（FIFO 消耗）
 - 至少 1 张由 LLM 实时生成，结合角色当前属性（HP/攻击/防御）和状态效果
+- 从 `ArchetypeComponent` 随机采样 `num_cards` 个原型约束，逐张注入 prompt（详见下方）
 - 两部分合并为最终手牌写入 `HandComponent`
 
 每张牌包含：`name` / `description` / `damage_dealt` / `block_gain` / `hit_count` / `target_type` / `status_effect_hint`
+
+**Archetype 原型约束**：
+
+每个角色携带 `ArchetypeComponent`（来自蓝图数据 `Actor.archetypes`），定义若干自然语言约束规则。  
+抽牌时系统随机采样 `num_cards` 个原型（池够时无放回，不够时有放回），在 prompt 中按位置逐张声明：
+
+```text
+**每张卡牌的原型约束**（按顺序一一对应，严格遵循各自约束生成）:
+  - 卡牌1：多段连击型：每张卡牌优先生成多次攻击（hit_count ≥ 2）...
+  - 卡牌2：...
+```
+
+当 `archetypes` 为空时，退回通用"差异化设计原则"提示，与改动前行为一致（向后兼容）。
+
+详细设计：[[archetype-system]]
 
 参见 [[design-patterns#4. 并行 LLM 推理]]
 

@@ -2,6 +2,10 @@
 
 > 这是 `docs/` 目录的唯一入口。每次新增文档领域时，请在此处更新索引。
 > Agent 从此处出发，可定位到任何知识。
+> **写作约束（AI 编写文档时必须遵守）**
+    > - `docs/` 记录的是**相对稳定的设计知识**，不是代码快照。
+    > - 禁止在文档中出现代码块（` ``` `）。类名、函数名等符号用行内代码（`` ` `` ）提及即可。
+    > - 设计意图、架构决策、调用时序等文字描述 > 任何形式的代码示意。
 
 ---
 
@@ -19,6 +23,7 @@
 | 领域 | 内容摘要 | 入口文档 |
 | ------ | ---------- | ---------- |
 | **ECS 管线设计** | 三条游戏流程管线（家园/战斗/地牢生成）的架构、系统执行顺序与设计模式 | [ecs-pipeline/overview.md](ecs-pipeline/overview.md) |
+| **Archetype 卡牌原型约束系统** | 角色卡牌生成风格约束的数据模型、ECS 组件、采样策略与 Prompt 注入机制 | [ecs-pipeline/archetype-system.md](ecs-pipeline/archetype-system.md) |
 
 ---
 
@@ -26,4 +31,5 @@
 
 | 日期 | 变更 |
 | ------ | ------ |
+| 2026-04-14 | 新增 `Archetype`/`ArchetypeComponent` 原型约束系统；`DrawCardsActionSystem` 集成 Archetype 采样与 Prompt 注入；`_ensure_` 函数重命名为 `_mount_`；新增 `archetype-system.md`；更新 `overview.md`、`pipeline-combat.md` |
 | 2026-04-13 | 初始化知识库；新增 `ecs-pipeline/` 系列文档（7 篇） |

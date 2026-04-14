@@ -31,6 +31,24 @@ pipeline.process()
 
 ---
 
+## TCGGame 实体初始化
+
+管线之外，`TCGGame` 在两个关键时机执行**一次性组件挂载**，将蓝图数据注入 ECS 实体：
+
+| 调用点 | 挂载的实体 | 挂载的组件 |
+| -------- | ---------- | ---------- |
+| `build_from_blueprint()` | 家园角色（玩家 + 盟友） | `DeckComponent` / `ArchetypeComponent` |
+| `setup_dungeon_entities()` | 地下城怪物（新创建后） | `DeckComponent` / `ArchetypeComponent` |
+
+函数命名规范：前缀 `_mount_`（非 `_ensure_`），明确表达"与实体创建流程强绑定、不允许重复调用"的一次性语义。
+
+- `_mount_actor_deck_components()` — 为所有尚无 `DeckComponent` 的 Actor 实体挂载空牌组
+- `_mount_actor_archetype_components()` — 从蓝图 `Actor.archetypes` 读取约束，挂载 `ArchetypeComponent`
+
+`ArchetypeComponent` 详细设计见：[[archetype-system]]
+
+---
+
 ## System 基类类型
 
 | 基类 | 执行时机 | 典型用途 |

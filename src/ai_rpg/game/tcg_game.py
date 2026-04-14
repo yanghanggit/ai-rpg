@@ -19,7 +19,8 @@ from ..models import (
     World,
     ActorComponent,
     HandComponent,
-    DeckComponent,
+    DrawDeckComponent,
+    DiscardDeckComponent,
     BlockComponent,
     StageType,
     ActorType,
@@ -145,7 +146,7 @@ class TCGGame(RPGGame):
         # 创建地下城的怪物。
         self._create_actor_entities(dungeon_model.actors)
 
-        # 为新创建的怪物实体补充 DeckComponent
+        # 为新创建的怪物实体补充 DrawDeckComponent / DiscardDeckComponent
         self._mount_actor_deck_components()
         self._mount_actor_archetype_components()
 
@@ -184,11 +185,13 @@ class TCGGame(RPGGame):
             assert hand_comp is not None
             # 将剩余手牌全部归还牌组，再移除手牌组件
             if hand_comp.cards:
-                deck_comp = entity.get(DeckComponent)
-                assert deck_comp is not None, f"{entity.name} 缺少 DeckComponent"
-                deck_comp.cards.extend(hand_comp.cards)
+                draw_deck_comp = entity.get(DrawDeckComponent)
+                assert (
+                    draw_deck_comp is not None
+                ), f"{entity.name} 缺少 DrawDeckComponent"
+                draw_deck_comp.cards.extend(hand_comp.cards)
                 logger.debug(
-                    f"clear hands: {entity.name} 归还 {len(hand_comp.cards)} 张剩余手牌到牌组，牌组累计 {len(deck_comp.cards)} 张"
+                    f"clear hands: {entity.name} 归还 {len(hand_comp.cards)} 张剩余手牌到 DrawDeck，DrawDeck 累计 {len(draw_deck_comp.cards)} 张"
                 )
             else:
                 logger.debug(f"clear hands: {entity.name}")
@@ -212,12 +215,15 @@ class TCGGame(RPGGame):
 
     #######################################################################################################################################
     def _mount_actor_deck_components(self) -> None:
-        """为所有缺少 DeckComponent 的 Actor 实体添加空牌组"""
+        """为所有缺少 DrawDeckComponent / DiscardDeckComponent 的 Actor 实体挂载空牌组"""
 
         for entity in self.get_group(Matcher(ActorComponent)).entities:
-            if not entity.has(DeckComponent):
-                entity.replace(DeckComponent, entity.name, [])
-                logger.debug(f"为 Actor 实体 {entity.name} 添加空 DeckComponent")
+            if not entity.has(DrawDeckComponent):
+                entity.replace(DrawDeckComponent, entity.name, [])
+                logger.debug(f"为 Actor 实体 {entity.name} 添加空 DrawDeckComponent")
+            if not entity.has(DiscardDeckComponent):
+                entity.replace(DiscardDeckComponent, entity.name, [])
+                logger.debug(f"为 Actor 实体 {entity.name} 添加空 DiscardDeckComponent")
 
     #######################################################################################################################################
     def _mount_actor_archetype_components(self) -> None:

@@ -467,19 +467,40 @@ class DungeonGenerationComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class DeckComponent(MutableComponent):
-    """牌组组件
+class DrawDeckComponent(MutableComponent):
+    """可重抽历史牌池组件
 
-    记录角色在地下城通关过程中所有经手的卡牌（已出的牌 + 每回合结束未打出的剩余牌）。
+    存储角色下一回合可重复抽取的历史卡牌。
+    在 actor 创建时以空列表初始化，跨战斗持续累积，随实体销毁自然消失。
+
+    累积规则：
+        - Draw 阶段 FIFO 从队首消耗（最多 max_num_cards - 1 张）作为历史牌直接进入手牌
+        - 每回合结束清除 HandComponent 时，剩余手牌 extend 到此组件队尾
+
+    Attributes:
+        name: 角色名称
+        cards: 可重抽卡牌列表（FIFO 消耗，回合结束归还）
+    """
+
+    name: str
+    cards: List[Card]
+
+
+############################################################################################################
+@final
+@register_component_type
+class DiscardDeckComponent(MutableComponent):
+    """已打出卡牌归档组件
+
+    存储角色在地下城过程中所有已打出的卡牌，仅用于统计与展示，不参与抽牌逻辑。
     在 actor 创建时以空列表初始化，跨战斗持续累积，随实体销毁自然消失。
 
     累积规则：
         - 每次出牌后，被打出的 Card 从 HandComponent 移除并 append 到此组件
-        - 每回合结束清除 HandComponent 时，剩余手牌 extend 到此组件
 
     Attributes:
         name: 角色名称
-        cards: 经手卡牌列表（按时间顺序追加）
+        cards: 已打出卡牌列表（按时间顺序追加，只增不减）
     """
 
     name: str

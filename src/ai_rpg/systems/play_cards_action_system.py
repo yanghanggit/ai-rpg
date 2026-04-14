@@ -11,7 +11,7 @@ from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     HandComponent,
-    DeckComponent,
+    DiscardDeckComponent,
     PlayCardsAction,
     ActorComponent,
     AgentEvent,
@@ -88,7 +88,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             entity.has(PlayCardsAction)
             and entity.has(HandComponent)
             and entity.has(ActorComponent)
-            and entity.has(DeckComponent)
+            and entity.has(DiscardDeckComponent)
         )
 
     #######################################################################################################################################
@@ -149,24 +149,26 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 f"  completed_actors: {last_round.completed_actors} / {last_round.action_order}"
             )
 
-            # 从 HandComponent 移除已出的卡牌，并将其归入 DeckComponent
+            # 从 HandComponent 移除已出的卡牌，并将其归入 DiscardDeckComponent
             hand_comp = entity.get(HandComponent)
             assert hand_comp is not None, f"{entity.name} 缺少 HandComponent"
-            assert entity.has(DeckComponent), f"{entity.name} 缺少 DeckComponent"
-            # 这里通过对象身份（is）而非等值比较（==）来确保正确移除特定的卡牌实例，避免同名卡牌导致的误删问题
+            assert entity.has(
+                DiscardDeckComponent
+            ), f"{entity.name} 缺少 DiscardDeckComponent"
+            # 这里通过对象身份（is）而非等値比较（==）来确保正确移除特定的卡牌实例，避免同名卡牌导致的误删问题
             played_card = play_cards_action.card
             new_hand_cards = [c for c in hand_comp.cards if c is not played_card]
 
             hand_comp.cards = new_hand_cards
 
-            # 将已出的卡牌归还到牌组
-            deck_comp = entity.get(DeckComponent)
-            assert deck_comp is not None, f"{entity.name} 缺少 DeckComponent"
+            # 将已出的卡牌归入 DiscardDeckComponent
+            discard_comp = entity.get(DiscardDeckComponent)
+            assert discard_comp is not None, f"{entity.name} 缺少 DiscardDeckComponent"
 
-            deck_comp.cards.append(played_card)
+            discard_comp.cards.append(played_card)
             logger.debug(
                 f"  [{entity.name}] 手牌 {len(hand_comp.cards)} → {len(new_hand_cards)}，"
-                f"牌组累计 {len(deck_comp.cards)} 张"
+                f"DiscardDeck 累计 {len(discard_comp.cards)} 张"
             )
 
             # 为出牌角色注入本回合出牌上下文，作为其对话历史的一部分

@@ -4,7 +4,7 @@
 该模块实现了战斗回合中的卡牌生成机制，结合历史牌组复用与 LLM 实时生成，为每个角色填充手牌。
 
 核心特性：
-- 历史牌优先：优先从 DeckComponent 取最多 max_num_cards - 1 张历史牌（FIFO 消耗语义）
+- 历史牌优先：优先从 DrawDeckComponent 取最多 max_num_cards - 1 张历史牌（FIFO 消耗语义）
 - 保证新鲜度：无论 Deck 是否充裕，每回合至少 1 张由 LLM 实时生成
 - 批量推理：所有角色的 LLM 请求并行发出（ChatClient.batch_chat），结果逐一解析写入 HandComponent
 - 合并写入：Deck 历史牌（前）+ LLM 新生成牌（后）合并为最终手牌
@@ -26,7 +26,7 @@ from ..models import (
     ActorComponent,
     Archetype,
     ArchetypeComponent,
-    DeckComponent,
+    DrawDeckComponent,
     DrawCardsAction,
     HandComponent,
     Card,
@@ -154,7 +154,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
     工作流程：
     1. 接收 DrawCardsAction 触发（每个存活角色各一个）
-    2. 预处理：从每个实体的 DeckComponent FIFO 消耗最多 max_num_cards - 1 张历史牌
+    2. 预处理：从每个实体的 DrawDeckComponent FIFO 消耗最多 max_num_cards - 1 张历史牌
     3. 为每个角色调用 _create_draw_chat_client，向 LLM 请求生成剩余张数（≥1）的新卡牌
     4. 所有请求并行执行（ChatClient.batch_chat）
     5. 逐一调用 _process_draw_response，合并 Deck 历史牌 + LLM 新牌，写入 HandComponent
@@ -180,7 +180,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             entity.has(DrawCardsAction)
             and entity.has(ActorComponent)
             and entity.has(ArchetypeComponent)
-            and entity.has(DeckComponent)
+            and entity.has(DrawDeckComponent)
             and entity.has(CharacterStatsComponent)
             and not entity.has(DeathComponent)
             and not entity.has(HandComponent)  # 确保没有旧的 HandComponent
@@ -213,7 +213,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 HandComponent
             ), f"实体 {entity.name} 已有 HandComponent，可能是上回合遗留，先行移除"
 
-        # 预处理：从每个实体的 DeckComponent FIFO 消耗历史牌
+        # 预处理：从每个实体的 DrawDeckComponent FIFO 消耗历史牌
         entity_deck_cards, entity_generate_counts = self._consume_deck_cards(entities)
 
         # 为每个 entity 创建 draw 聊天客户端
@@ -244,7 +244,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
     def _consume_deck_cards(
         self, entities: list[Entity]
     ) -> tuple[Dict[str, List[Card]], Dict[str, int]]:
-        """从每个实体的 DeckComponent FIFO 消耗历史牌，计算本回合各实体需 LLM 生成的张数。
+        """从每个实体的 DrawDeckComponent FIFO 消耗历史牌，计算本回合各实体需 LLM 生成的张数。
 
         最多消耗 max_num_cards - 1 张，保证至少 1 张由 LLM 新生成。
 
@@ -258,15 +258,17 @@ class DrawCardsActionSystem(ReactiveProcessor):
         entity_deck_cards: Dict[str, List[Card]] = {}
         entity_generate_counts: Dict[str, int] = {}
         for entity in entities:
-            deck_comp = entity.get(DeckComponent)
-            assert deck_comp is not None, f"实体 {entity.name} 缺少 DeckComponent"
-            n_from_deck = min(len(deck_comp.cards), self._max_num_cards - 1)
-            deck_cards = list(deck_comp.cards[:n_from_deck])
-            del deck_comp.cards[:n_from_deck]
+            draw_deck_comp = entity.get(DrawDeckComponent)
+            assert (
+                draw_deck_comp is not None
+            ), f"实体 {entity.name} 缺少 DrawDeckComponent"
+            n_from_deck = min(len(draw_deck_comp.cards), self._max_num_cards - 1)
+            deck_cards = list(draw_deck_comp.cards[:n_from_deck])
+            del draw_deck_comp.cards[:n_from_deck]
             entity_deck_cards[entity.name] = deck_cards
             entity_generate_counts[entity.name] = self._max_num_cards - n_from_deck
             logger.debug(
-                f"[{entity.name}] 从 Deck 取 {n_from_deck} 张历史牌，"
+                f"[{entity.name}] 从 DrawDeck 取 {n_from_deck} 张历史牌，"
                 f"需 LLM 生成 {entity_generate_counts[entity.name]} 张"
             )
         return entity_deck_cards, entity_generate_counts
@@ -354,7 +356,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             entity: 目标角色实体
             chat_client: 包含 LLM 响应的聊天客户端
             num_cards: 预期由 LLM 生成的卡牌数量
-            deck_cards: 本回合从 DeckComponent 消耗的历史牌（已在 react() 中移除）
+            deck_cards: 本回合从 DrawDeckComponent 消耗的历史牌（已在 react() 中移除）
         """
         try:
             response = DrawCardsResponse.model_validate_json(

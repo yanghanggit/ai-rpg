@@ -83,7 +83,8 @@
 
 **抽牌策略**（历史牌优先 + 保证新鲜度 + Archetype 约束）：
 
-- 从 `DeckComponent`（历史牌组）取最多 `max_num_cards - 1` 张（FIFO 消耗）
+- 从 `DrawDeckComponent`（可重抽历史牌池）取最多 `max_num_cards - 1` 张（FIFO 消耗）
+- 出牌时，已打出的卡牌归入 `DiscardDeckComponent`（只增不减，用于统计与展示）
 - 至少 1 张由 LLM 实时生成，结合角色当前属性（HP/攻击/防御）和状态效果
 - 从 `ArchetypeComponent` 随机采样 `num_cards` 个原型约束，逐张注入 prompt（详见下方）
 - 两部分合并为最终手牌写入 `HandComponent`

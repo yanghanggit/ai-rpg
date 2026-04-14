@@ -12,7 +12,7 @@ from .server_client import (
     fetch_stages_state,
 )
 from .utils import display_name
-from ..models import ArchetypeComponent, DeckComponent
+from ..models import ArchetypeComponent, DrawDeckComponent, DiscardDeckComponent
 
 _TARGET_LABEL = {
     "enemy_single": "[red]敌方单体[/]",
@@ -25,12 +25,12 @@ _TARGET_LABEL = {
 DECK_HEADER = """\
 [bold cyan]── 牌组详情 ──────────────────────────────────────[/]
 
-显示本次地下城各角色历史牌组（出牌 + 回合结束归还）。[bold]Escape[/] 返回。
+显示本次地下城各角色牌组（已打出 / 可重抽）。[bold]Escape[/] 返回。
 """
 
 
 class DeckDetailScreen(Screen[None]):
-    """牌组详情 Screen：显示各角色 DeckComponent.cards 完整列表（只读）。"""
+    """牌组详情 Screen：分节展示各角色 DiscardDeckComponent（已打出）和 DrawDeckComponent（可重抽）。"""
 
     CSS = """
     DeckDetailScreen {
@@ -100,24 +100,34 @@ class DeckDetailScreen(Screen[None]):
             log.write("")
 
             for entity in details_resp.entities_serialization:
-                deck_raw = next(
-                    (c for c in entity.components if c.name == "DeckComponent"), None
+                discard_raw = next(
+                    (c for c in entity.components if c.name == "DiscardDeckComponent"),
+                    None,
                 )
-                if deck_raw is None:
+                draw_raw = next(
+                    (c for c in entity.components if c.name == "DrawDeckComponent"),
+                    None,
+                )
+                if discard_raw is None and draw_raw is None:
                     continue
 
-                deck = DeckComponent(**deck_raw.data)
-                card_count = len(deck.cards)
+                discard_comp = (
+                    DiscardDeckComponent(**discard_raw.data) if discard_raw else None
+                )
+                draw_comp = DrawDeckComponent(**draw_raw.data) if draw_raw else None
+                discard_count = len(discard_comp.cards) if discard_comp else 0
+                draw_count = len(draw_comp.cards) if draw_comp else 0
+
                 log.write(
                     f"[bold cyan]{display_name(entity.name)}[/]  "
-                    f"[dim]牌组共 {card_count} 张[/]"
+                    f"[dim]已打出 {discard_count} 张 | 可重抽 {draw_count} 张[/]"
                 )
 
-                # 1) 卡牌列表
-                if card_count == 0:
-                    log.write("  [dim]（尚无记录）[/]")
-                else:
-                    for i, card in enumerate(deck.cards, start=1):
+                def _render_cards(cards: list, log: object) -> None:  # type: ignore[type-arg]
+                    from textual.widgets import RichLog as _RichLog
+
+                    assert isinstance(log, _RichLog)
+                    for i, card in enumerate(cards, start=1):
                         hit_str = (
                             f"x[yellow]{card.hit_count}[/]"
                             if card.hit_count > 1
@@ -150,7 +160,21 @@ class DeckDetailScreen(Screen[None]):
                             + hint_str
                         )
 
-                # 2) Archetype 原型约束（卡牌列表之后）
+                # 1) 已打出卡牌（DiscardDeck）
+                log.write("  [bold red]▸ 已打出（DiscardDeck）[/]")
+                if discard_comp and discard_comp.cards:
+                    _render_cards(discard_comp.cards, log)
+                else:
+                    log.write("    [dim]（尚无记录）[/]")
+
+                # 2) 可重抽卡牌（DrawDeck）
+                log.write("  [bold yellow]▸ 可重抽（DrawDeck）[/]")
+                if draw_comp and draw_comp.cards:
+                    _render_cards(draw_comp.cards, log)
+                else:
+                    log.write("    [dim]（尚无记录）[/]")
+
+                # 3) Archetype 原型约束
                 archetype_raw = next(
                     (c for c in entity.components if c.name == "ArchetypeComponent"),
                     None,

@@ -1,4 +1,4 @@
-from enum import StrEnum, unique
+from enum import IntEnum, StrEnum, unique
 from typing import List, final
 from pydantic import BaseModel, Field
 from .serialization import ComponentSerialization
@@ -145,6 +145,16 @@ class UniqueItem(Item):
     """珍贵物品类，继承自物品基类"""
 
     type: ItemType = Field(default=ItemType.UNIQUE_ITEM, frozen=True)
+
+
+###############################################################################################################################################
+@final
+@unique
+class DiceValue(IntEnum):
+    """骰值范围常量（0-100 均匀随机整数）"""
+
+    MIN = 0
+    MAX = 100
 
 
 ###############################################################################################################################################

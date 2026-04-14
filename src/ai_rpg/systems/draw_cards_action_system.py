@@ -26,6 +26,7 @@ from ..models import (
     ActorComponent,
     Archetype,
     ArchetypeComponent,
+    DiceValue,
     DrawDeckComponent,
     DrawCardsAction,
     HandComponent,
@@ -76,19 +77,33 @@ def _sample_archetypes(archetypes: List[Archetype], k: int) -> List[Archetype]:
 
 
 #######################################################################################################################################
-def _build_design_principle_prompt(num_cards: int, archetypes: List[Archetype]) -> str:
-    """生成原型约束段落：去重后输出，无约束时输出差异化指引。"""
+def _build_design_principle_prompt(
+    num_cards: int,
+    archetypes: List[Archetype],
+    dice_rolls: List[int] = [],
+) -> str:
+    """生成原型约束段落：去重后输出，无约束时输出差异化指引。
+
+    当 dice_rolls 非空时，在每张牌的约束行末尾附加骰值。
+    骰值的实际含义由各 Archetype.description 自行声明；若 description 未提及骰值用法，
+    则 LLM 应忽略该数字，段落 header 中会注明这一兜底规则。
+    """
     if not archetypes:
         return (
             f"原型约束：无（{num_cards}张卡牌应有差异化，如高伤低防/高防低伤/均衡型）"
         )
-    unique_descriptions = list(dict.fromkeys(a.description for a in archetypes))
-    if len(unique_descriptions) == 1:
-        return f"原型约束（所有{num_cards}张均遵循）：{unique_descriptions[0]}"
-    lines = "\n".join(
-        f"  - 卡牌{i + 1}：{archetypes[i].description}" for i in range(len(archetypes))
+    use_dice = len(dice_rolls) == len(archetypes)
+    header = (
+        "原型约束（按顺序对应；骰值仅在约束中明确说明用法时生效，否则忽略）："
+        if use_dice
+        else "原型约束（按顺序对应）："
     )
-    return f"原型约束（按顺序对应）：\n{lines}"
+    lines = "\n".join(
+        f"  - 卡牌{i + 1}：{archetypes[i].description}"
+        + (f"（骰值：{dice_rolls[i]}）" if use_dice else "")
+        for i in range(len(archetypes))
+    )
+    return f"{header}\n{lines}"
 
 
 #######################################################################################################################################
@@ -98,6 +113,7 @@ def _generate_draw_prompt(
     num_cards: int,
     draw_status_effects: List[StatusEffect],
     archetypes: List[Archetype] = [],
+    dice_rolls: List[int] = [],
 ) -> str:
     """生成"一次生成 num_cards 张 Card"的提示词。
 
@@ -107,6 +123,8 @@ def _generate_draw_prompt(
         num_cards: 要求生成的卡牌数量
         draw_status_effects: 当前 draw 阶段的状态效果列表，影响卡牌数值生成
         archetypes: 与 num_cards 等长的原型约束列表，每个元素对应一张卡的生成约束；为空则无约束
+        dice_rolls: 与 num_cards 等长的骰值列表（0-100 随机整数），每个元素对应一张牌的骰值；
+                    仅当 Archetype.description 明确说明用法时生效，否则 LLM 忽略
 
     Returns:
         格式化的完整提示词
@@ -127,15 +145,23 @@ def _generate_draw_prompt(
         draw_effects_prompt = ""
 
     stats_line = f"属性：HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
-    archetype_line = _build_design_principle_prompt(num_cards, archetypes)
+    archetype_line = _build_design_principle_prompt(num_cards, archetypes, dice_rolls)
     fields_line = '字段：name（富有想象力，体现行动意图） | description（第三人称1句） | status_effect_hint（无副作用留""） | damage_dealt | block_gain | hit_count（默认1，多段2-4） | target_type（enemy_single/enemy_all/ally_single/ally_all/self_only）'
     example_line = '{"name":"...","description":"...","status_effect_hint":"","damage_dealt":0,"block_gain":0,"hit_count":1,"target_type":"enemy_single"}'
 
     sections = [stats_line]
+
+    # 当有 draw 阶段状态效果时输出，否则不占位
     if draw_effects_prompt:
         sections.append(draw_effects_prompt)
+
+    # 原型约束段落无论是否有内容都输出，以明确格式与位置；当 archetypes 为空时会输出差异化指引
     sections.append(archetype_line)
+
+    # 字段说明与示例始终输出，明确格式要求
     sections.append(fields_line)
+
+    # 示例行也始终输出，确保 LLM 理解 JSON 格式要求
     sections.append(f"输出 JSON，cards 数组共 {num_cards} 张：\n{example_line}")
 
     return (
@@ -328,12 +354,18 @@ class DrawCardsActionSystem(ReactiveProcessor):
             f"[{entity.name}] 采样原型: {[a.description[:20] for a in sampled_archetypes]}"
         )
 
+        dice_rolls = [
+            random.randint(DiceValue.MIN, DiceValue.MAX) for _ in range(num_cards)
+        ]
+        logger.debug(f"[{entity.name}] 骰值: {dice_rolls}")
+
         prompt = _generate_draw_prompt(
             actor_stats=combat_stats_comp.stats,
             current_round_number=current_round_number,
             num_cards=num_cards,
             draw_status_effects=draw_effects,
             archetypes=sampled_archetypes,
+            dice_rolls=dice_rolls,
         )
 
         return ChatClient(
@@ -385,6 +417,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
             valid_target_types = {e.value for e in CardTargetType}
             cards: List[Card] = []
             for entry in response.cards:
+
+                # 校验 target_type 字段是否合法，非法则废弃该卡并记录警告
                 if entry.target_type not in valid_target_types:
                     warn_msg = (
                         f"[系统警告] 你刚才生成的卡牌「{entry.name}」的 target_type 字段值为"
@@ -398,6 +432,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
                         entity=entity, message_content=warn_msg
                     )
                     continue
+
+                # 目标类型合法，构建 Card 对象并加入列表
                 cards.append(
                     Card(
                         name=entry.name,

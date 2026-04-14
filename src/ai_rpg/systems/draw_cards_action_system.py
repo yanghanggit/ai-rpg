@@ -15,6 +15,7 @@
 - CardEntry / DrawCardsResponse: LLM 响应的 Pydantic 解析模型
 """
 
+import random
 from typing import Dict, Final, List, final, override
 from loguru import logger
 from pydantic import BaseModel
@@ -23,6 +24,8 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     ActorComponent,
+    Archetype,
+    ArchetypeComponent,
     DeckComponent,
     DrawCardsAction,
     HandComponent,
@@ -63,19 +66,45 @@ class DrawCardsResponse(BaseModel):
 
 
 #######################################################################################################################################
+def _sample_archetypes(archetypes: List[Archetype], k: int) -> List[Archetype]:
+    """从原型池中采样 k 个原型，优先不重复，池不足时降级为有放回采样。"""
+    if not archetypes:
+        return []
+    if len(archetypes) >= k:
+        return random.sample(archetypes, k=k)
+    return random.choices(archetypes, k=k)
+
+
+#######################################################################################################################################
+def _build_design_principle_prompt(num_cards: int, archetypes: List[Archetype]) -> str:
+    """生成设计原则段落：有原型约束时按位置列出，无约束时保留通用差异化指引。"""
+    if archetypes:
+        lines = "\n".join(
+            f"  - 卡牌{i + 1}：{archetypes[i].description}"
+            for i in range(len(archetypes))
+        )
+        return (
+            f"**每张卡牌的原型约束**（按顺序一一对应，严格遵循各自约束生成）:\n{lines}"
+        )
+    return f"**设计原则**: {num_cards}张卡牌应有差异化——可以是高伤低防、高防低伤、均衡型等不同侧重"
+
+
+#######################################################################################################################################
 def _generate_draw_prompt(
     actor_stats: CharacterStats,
     current_round_number: int,
     num_cards: int,
     draw_status_effects: List[StatusEffect],
+    archetypes: List[Archetype] = [],
 ) -> str:
-    """生成"一次生成 num_cards 张 Card2"的提示词。
+    """生成"一次生成 num_cards 张 Card"的提示词。
 
     Args:
         actor_stats: 角色当前属性（hp/max_hp/attack/defense）
         current_round_number: 当前回合数
         num_cards: 要求生成的卡牌数量
         draw_status_effects: 当前 draw 阶段的状态效果列表，影响卡牌数值生成
+        archetypes: 与 num_cards 等长的原型约束列表，每个元素对应一张卡的生成约束；为空则无约束
 
     Returns:
         格式化的完整提示词
@@ -121,7 +150,7 @@ def _generate_draw_prompt(
 - **hit_count** - 攻击次数（默认 1；多段攻击如回旋镖可设为 2~4，每段独立抵挡目标格挡）
 - **target_type** - 出牌目标类型：攻击/伤害类卡牌通常选 `enemy_single` 或 `enemy_all`；治疗/强化友方类卡牌通常选 `ally_single` 或 `ally_all`；纯粹的自我防御、呼吸调息等仅作用于自身的卡牌选 `self_only`
 
-**设计原则**: {num_cards}张卡牌应有差异化——可以是高伤低防、高防低伤、均衡型等不同侧重
+{_build_design_principle_prompt(num_cards, archetypes)}
 
 ## 输出JSON
 
@@ -169,6 +198,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
         return (
             entity.has(DrawCardsAction)
             and entity.has(ActorComponent)
+            and entity.has(ArchetypeComponent)
+            and entity.has(DeckComponent)
+            and entity.has(CharacterStatsComponent)
             and not entity.has(DeathComponent)
             and not entity.has(HandComponent)  # 确保没有旧的 HandComponent
         )
@@ -264,7 +296,10 @@ class DrawCardsActionSystem(ReactiveProcessor):
         entity: Entity,
         num_cards: int,
     ) -> ChatClient:
-        """为单个角色创建"生成 num_cards 张 Card2"的聊天客户端。
+        """为单个角色创建"生成 num_cards 张 Card"的聊天客户端。
+
+        从实体的 ArchetypeComponent 随机采样 num_cards 个原型（优先不重复），
+        注入 prompt 以约束每张卡牌的生成风格。
 
         Args:
             entity: 角色实体
@@ -297,11 +332,25 @@ class DrawCardsActionSystem(ReactiveProcessor):
             if e.phase == StatusEffectPhase.DRAW
         ]
 
+        # 从 ArchetypeComponent 随机采样，每张牌对应一个原型约束
+        assert entity.has(
+            ArchetypeComponent
+        ), f"实体 {entity.name} 缺少 ArchetypeComponent"
+        archetype_comp = entity.get(ArchetypeComponent)
+        sampled_archetypes = _sample_archetypes(
+            archetype_comp.archetypes if archetype_comp is not None else [],
+            k=num_cards,
+        )
+        logger.debug(
+            f"[{entity.name}] 采样原型: {[a.description[:20] for a in sampled_archetypes]}"
+        )
+
         prompt = _generate_draw_prompt(
             actor_stats=combat_stats_comp.stats,
             current_round_number=current_round_number,
             num_cards=num_cards,
             draw_status_effects=draw_effects,
+            archetypes=sampled_archetypes,
         )
 
         return ChatClient(

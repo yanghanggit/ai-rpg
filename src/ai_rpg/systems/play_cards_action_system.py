@@ -165,11 +165,17 @@ class PlayCardsActionSystem(ReactiveProcessor):
             discard_comp = entity.get(DiscardDeckComponent)
             assert discard_comp is not None, f"{entity.name} 缺少 DiscardDeckComponent"
 
-            discard_comp.cards.append(played_card)
-            logger.debug(
-                f"  [{entity.name}] 手牌 {len(hand_comp.cards)} → {len(new_hand_cards)}，"
-                f"DiscardDeck 累计 {len(discard_comp.cards)} 张"
-            )
+            # 仅归档来源为本角色的卡牌；外来塞入牌（source != actor_name）直接丢弃
+            if played_card.source == entity.name:
+                discard_comp.cards.append(played_card)
+                logger.debug(
+                    f"  [{entity.name}] 手牌 {len(hand_comp.cards)} → {len(new_hand_cards)}，"
+                    f"DiscardDeck 累计 {len(discard_comp.cards)} 张"
+                )
+            else:
+                logger.debug(
+                    f"  [{entity.name}] 外来牌 [{played_card.name}](source={played_card.source!r}) 已打出，source 不匹配，丢弃不归档"
+                )
 
             # 为出牌角色注入本回合出牌上下文，作为其对话历史的一部分
             self._game.add_human_message(

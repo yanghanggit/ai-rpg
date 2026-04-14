@@ -189,10 +189,17 @@ class TCGGame(RPGGame):
                 assert (
                     draw_deck_comp is not None
                 ), f"{entity.name} 缺少 DrawDeckComponent"
-                draw_deck_comp.cards.extend(hand_comp.cards)
+                # 仅归还来源为本角色的卡牌；外来塞入牌（source != actor_name）直接丢弃
+                own_cards = [c for c in hand_comp.cards if c.source == entity.name]
+                foreign_cards = [c for c in hand_comp.cards if c.source != entity.name]
+                draw_deck_comp.cards.extend(own_cards)
                 logger.debug(
-                    f"clear hands: {entity.name} 归还 {len(hand_comp.cards)} 张剩余手牌到 DrawDeck，DrawDeck 累计 {len(draw_deck_comp.cards)} 张"
+                    f"clear hands: {entity.name} 归还 {len(own_cards)} 张自有手牌到 DrawDeck，DrawDeck 累计 {len(draw_deck_comp.cards)} 张"
                 )
+                for fc in foreign_cards:
+                    logger.debug(
+                        f"clear hands: [{entity.name}] 外来牌 [{fc.name}](source={fc.source!r}) 回合结束，source 不匹配，丢弃不归还"
+                    )
             else:
                 logger.debug(f"clear hands: {entity.name}")
 

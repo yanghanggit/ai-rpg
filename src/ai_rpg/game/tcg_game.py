@@ -24,6 +24,7 @@ from ..models import (
     StageType,
     ActorType,
     StatusEffectsComponent,
+    ArchetypeComponent,
 )
 from .player_session import PlayerSession
 from ..entitas import Matcher
@@ -107,7 +108,8 @@ class TCGGame(RPGGame):
             返回自身实例，支持链式调用
         """
         super().build_from_blueprint()
-        self._ensure_actor_deck_components()
+        self._mount_actor_deck_components()
+        self._mount_actor_archetype_components()
         return self
 
     #######################################################################################################################################
@@ -144,7 +146,8 @@ class TCGGame(RPGGame):
         self._create_actor_entities(dungeon_model.actors)
 
         # 为新创建的怪物实体补充 DeckComponent
-        self._ensure_actor_deck_components()
+        self._mount_actor_deck_components()
+        self._mount_actor_archetype_components()
 
         # 创建地下城的场景
         self._create_stage_entities([room.stage for room in dungeon_model.rooms])
@@ -201,11 +204,44 @@ class TCGGame(RPGGame):
             entity.remove(StatusEffectsComponent)
 
     #######################################################################################################################################
-    def _ensure_actor_deck_components(self) -> None:
+    def _mount_actor_deck_components(self) -> None:
         """为所有缺少 DeckComponent 的 Actor 实体添加空牌组"""
         for entity in self.get_group(Matcher(ActorComponent)).entities:
+            assert not entity.has(
+                DeckComponent
+            ), f"{entity.name} 已经有 DeckComponent 了，不应该再添加了"
             if not entity.has(DeckComponent):
                 entity.replace(DeckComponent, entity.name, [])
                 logger.debug(f"为 Actor 实体 {entity.name} 添加空 DeckComponent")
+
+    #######################################################################################################################################
+    def _mount_actor_archetype_components(self) -> None:
+        """为所有缺少 ArchetypeComponent 的 Actor 实体挂载原型约束"""
+        all_actor_models = {
+            a.name: a for a in self._world.blueprint.actors + self._world.dungeon.actors
+        }
+        for entity in self.get_group(Matcher(ActorComponent)).entities:
+
+            # 断言检查，确保没有重复添加
+            assert not entity.has(
+                ArchetypeComponent
+            ), f"{entity.name} 已经有 ArchetypeComponent 了，不应该再添加了"
+            if entity.has(ArchetypeComponent):
+                continue
+
+            # 从蓝图中找到对应的 Actor 模型，获取其 archetypes 数据
+            actor_model = all_actor_models.get(entity.name)
+            assert actor_model is not None, f"找不到 Actor model: {entity.name}"
+            if actor_model is None:
+                logger.warning(
+                    f"_ensure_actor_archetype_components: 找不到 Actor model: {entity.name}"
+                )
+                continue
+
+            # 添加 ArchetypeComponent，内容来自 Actor 模型的 archetypes 字段
+            entity.replace(ArchetypeComponent, entity.name, actor_model.archetypes)
+            logger.debug(
+                f"为 Actor 实体 {entity.name} 挂载 ArchetypeComponent ({len(actor_model.archetypes)} 条原型)"
+            )
 
     ################################################################################################################

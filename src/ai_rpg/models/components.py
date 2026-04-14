@@ -11,9 +11,9 @@ from typing import List, final
 from ..entitas.components import Component, MutableComponent
 from .combat import Card, StatusEffect
 from .entities import (
+    Archetype,
     CharacterStats,
     Item,
-    # Skill,
 )
 from .registry import register_component_type
 
@@ -484,3 +484,21 @@ class DeckComponent(MutableComponent):
 
     name: str
     cards: List[Card]
+
+
+############################################################################################################
+@final
+@register_component_type
+class ArchetypeComponent(Component):
+    """卡牌原型约束组件
+
+    存储角色的卡牌生成原型约束，在战斗中指导 LLM 按特定风格生成手牌。
+    数据来源于 Actor.archetypes，在实体创建时挂载，运行时不可变。
+
+    Attributes:
+        name: 角色名称
+        archetypes: 原型约束列表
+    """
+
+    name: str
+    archetypes: List[Archetype]

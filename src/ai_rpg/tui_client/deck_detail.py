@@ -12,7 +12,7 @@ from .server_client import (
     fetch_stages_state,
 )
 from .utils import display_name
-from ..models import DeckComponent
+from ..models import ArchetypeComponent, DeckComponent
 
 _TARGET_LABEL = {
     "enemy_single": "[red]敌方单体[/]",
@@ -113,6 +113,7 @@ class DeckDetailScreen(Screen[None]):
                     f"[dim]牌组共 {card_count} 张[/]"
                 )
 
+                # 1) 卡牌列表
                 if card_count == 0:
                     log.write("  [dim]（尚无记录）[/]")
                 else:
@@ -148,6 +149,20 @@ class DeckDetailScreen(Screen[None]):
                             + action_str
                             + hint_str
                         )
+
+                # 2) Archetype 原型约束（卡牌列表之后）
+                archetype_raw = next(
+                    (c for c in entity.components if c.name == "ArchetypeComponent"),
+                    None,
+                )
+                if archetype_raw is not None:
+                    archetype_comp = ArchetypeComponent(**archetype_raw.data)
+                    if archetype_comp.archetypes:
+                        log.write("")
+                        for j, arch in enumerate(archetype_comp.archetypes, start=1):
+                            log.write(
+                                f"  [bold magenta]原型 {j}：[/][dim]{arch.description}[/]"
+                            )
 
                 log.write("")
 

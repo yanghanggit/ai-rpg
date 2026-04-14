@@ -146,7 +146,19 @@ def _generate_draw_prompt(
 
     stats_line = f"属性：HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
     archetype_line = _build_design_principle_prompt(num_cards, archetypes, dice_rolls)
-    fields_line = '字段：name（富有想象力，体现行动意图） | description（第三人称1句） | status_effect_hint（无副作用留""） | damage_dealt | block_gain | hit_count（默认1，多段2-4） | target_type（enemy_single/enemy_all/ally_single/ally_all/self_only）'
+    fields_line = (
+        "字段说明：\n"
+        "- name：富有想象力，体现行动意图\n"
+        "- description：第三人称通用描述（1句，客观说明这张牌的即时战斗行为，禁止叙事润色）。\n"
+        "  【重要】禁止提及任何当前场景的地物（如断柱、沙地、余晖、岩板等）、地名或即时情境细节。\n"
+        "  ❌ 错误示例：「借助断柱的支撑旋身，踢击敌人」「从落日余晖中冲出扑向目标」\n"
+        "  ✓ 正确示例：「旋身借力，以连续踢击攻击单一敌人」「快速突进，向单一目标发起猛扑」\n"
+        '- status_effect_hint：可能触发的持续性状态效果暗示（1句，如"可能引发燃烧、中毒、虚弱等持续加深效果"）；若该卡仅为即时伤害/格挡无副作用，则留空字符串""\n'
+        "- damage_dealt：单次攻击造成的伤害值（基于攻击力合理推算，整数）\n"
+        "- block_gain：本张卡牌提供的格挡增量（基于防御力合理推算，整数）\n"
+        "- hit_count：攻击次数（默认 1；多段攻击如回旋镖可设为 2~4，每段独立抵挡目标格挡）\n"
+        "- target_type：出牌目标类型：攻击/伤害类卡牌通常选 enemy_single 或 enemy_all；治疗/强化友方类卡牌通常选 ally_single 或 ally_all；纯粹的自我防御、呼吸调息等仅作用于自身的卡牌选 self_only"
+    )
     example_line = '{"name":"...","description":"...","status_effect_hint":"","damage_dealt":0,"block_gain":0,"hit_count":1,"target_type":"enemy_single"}'
 
     sections = [stats_line]

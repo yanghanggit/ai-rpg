@@ -17,12 +17,10 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
 
-from ai_rpg.configuration import ServerConfiguration, server_configuration
+from ai_rpg.services import server_configuration
 
 
-def main(
-    server_config: ServerConfiguration, target_directory: str = "."
-) -> None:
+def main(target_directory: str = ".") -> None:
     """
     生成 PM2 进程管理配置文件
 
@@ -32,64 +30,64 @@ def main(
     """
     ecosystem_config_content = f"""module.exports = {{
   apps: [
-    // 游戏服务器实例 - 端口 {server_config.game_server_port}
+    // 游戏服务器实例 - 端口 {server_configuration.game_server_port}
     {{
-      name: 'game-server-{server_config.game_server_port}',
+      name: 'game-server-{server_configuration.game_server_port}',
       script: 'uvicorn',
-      args: 'scripts.run_game_server:app --host 0.0.0.0 --port {server_config.game_server_port}',
+      args: 'scripts.run_game_server:app --host 0.0.0.0 --port {server_configuration.game_server_port}',
       interpreter: 'python',
       cwd: process.cwd(),
       env: {{
         PYTHONPATH: `${{process.cwd()}}`,
-        PORT: '{server_config.game_server_port}'
+        PORT: '{server_configuration.game_server_port}'
       }},
       instances: 1,
       autorestart: false,
       watch: false,
       max_memory_restart: '2G',
-      log_file: './logs/game-server-{server_config.game_server_port}.log',
-      error_file: './logs/game-server-{server_config.game_server_port}-error.log',
-      out_file: './logs/game-server-{server_config.game_server_port}-out.log',
+      log_file: './logs/game-server-{server_configuration.game_server_port}.log',
+      error_file: './logs/game-server-{server_configuration.game_server_port}-error.log',
+      out_file: './logs/game-server-{server_configuration.game_server_port}-out.log',
       time: true
     }},
-    // DeepSeek聊天服务器实例 - 端口 {server_config.deepseek_chat_server_port}
+    // DeepSeek聊天服务器实例 - 端口 {server_configuration.deepseek_chat_server_port}
     {{
-      name: 'deepseek-chat-server-{server_config.deepseek_chat_server_port}',
+      name: 'deepseek-chat-server-{server_configuration.deepseek_chat_server_port}',
       script: 'uvicorn',
-      args: 'scripts.run_deepseek_chat_server:app --host 0.0.0.0 --port {server_config.deepseek_chat_server_port}',
+      args: 'scripts.run_deepseek_chat_server:app --host 0.0.0.0 --port {server_configuration.deepseek_chat_server_port}',
       interpreter: 'python',
       cwd: process.cwd(),
       env: {{
         PYTHONPATH: `${{process.cwd()}}`,
-        PORT: '{server_config.deepseek_chat_server_port}'
+        PORT: '{server_configuration.deepseek_chat_server_port}'
       }},
       instances: 1,
       autorestart: false,
       watch: false,
       max_memory_restart: '2G',
-      log_file: './logs/deepseek-chat-server-{server_config.deepseek_chat_server_port}.log',
-      error_file: './logs/deepseek-chat-server-{server_config.deepseek_chat_server_port}-error.log',
-      out_file: './logs/deepseek-chat-server-{server_config.deepseek_chat_server_port}-out.log',
+      log_file: './logs/deepseek-chat-server-{server_configuration.deepseek_chat_server_port}.log',
+      error_file: './logs/deepseek-chat-server-{server_configuration.deepseek_chat_server_port}-error.log',
+      out_file: './logs/deepseek-chat-server-{server_configuration.deepseek_chat_server_port}-out.log',
       time: true
     }},
-    // 图片生成服务器实例 - 端口 {server_config.replicate_image_generation_server_port}
+    // 图片生成服务器实例 - 端口 {server_configuration.replicate_image_generation_server_port}
     {{
-      name: 'image-generation-server-{server_config.replicate_image_generation_server_port}',
+      name: 'image-generation-server-{server_configuration.replicate_image_generation_server_port}',
       script: 'uvicorn',
-      args: 'scripts.run_replicate_image_server:app --host 0.0.0.0 --port {server_config.replicate_image_generation_server_port}',
+      args: 'scripts.run_replicate_image_server:app --host 0.0.0.0 --port {server_configuration.replicate_image_generation_server_port}',
       interpreter: 'python',
       cwd: process.cwd(),
       env: {{
         PYTHONPATH: `${{process.cwd()}}`,
-        PORT: '{server_config.replicate_image_generation_server_port}'
+        PORT: '{server_configuration.replicate_image_generation_server_port}'
       }},
       instances: 1,
       autorestart: false,
       watch: false,
       max_memory_restart: '2G',
-      log_file: './logs/image-generation-server-{server_config.replicate_image_generation_server_port}.log',
-      error_file: './logs/image-generation-server-{server_config.replicate_image_generation_server_port}-error.log',
-      out_file: './logs/image-generation-server-{server_config.replicate_image_generation_server_port}-out.log',
+      log_file: './logs/image-generation-server-{server_configuration.replicate_image_generation_server_port}.log',
+      error_file: './logs/image-generation-server-{server_configuration.replicate_image_generation_server_port}-error.log',
+      out_file: './logs/image-generation-server-{server_configuration.replicate_image_generation_server_port}-out.log',
       time: true
     }}
   ]
@@ -105,4 +103,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main(server_configuration)
+    main()

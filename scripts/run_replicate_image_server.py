@@ -19,7 +19,7 @@ from ai_rpg.replicate import (
     replicate_config,
     GENERATED_IMAGES_OUTPUT_DIR,
 )
-from ai_rpg.configuration import server_configuration
+from ai_rpg.services import server_configuration
 from ai_rpg.services.replicate_image import replicate_image_api_router
 
 

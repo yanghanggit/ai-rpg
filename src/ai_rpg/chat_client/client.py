@@ -19,7 +19,6 @@ from .protocol import (
     ChatResponse,
 )
 import time
-from ..configuration.server import ServerConfiguration
 from dataclasses import dataclass
 
 
@@ -52,25 +51,23 @@ class ChatClient:
     _async_client: httpx.AsyncClient = httpx.AsyncClient()
 
     # DeepSeek API URL configuration
-    _deepseek_url_config: Optional[DeepSeekUrlConfig] = None
+    _url_config: Optional[DeepSeekUrlConfig] = None
 
     @classmethod
-    def initialize_url_config(cls, server_settings: ServerConfiguration) -> None:
+    def setup(cls, port: int) -> None:
         """初始化 DeepSeek 服务 URL 配置
 
         Args:
-            server_settings: 服务器配置对象
+            port: DeepSeek 聊天服务端口号
         """
 
-        cls._deepseek_url_config = DeepSeekUrlConfig(
-            base_url=f"http://localhost:{server_settings.deepseek_chat_server_port}/",
-            chat_url=f"http://localhost:{server_settings.deepseek_chat_server_port}/api/chat/v1/",
-            reasoner_url=f"http://localhost:{server_settings.deepseek_chat_server_port}/api/chat/reasoner/v1/",
+        cls._url_config = DeepSeekUrlConfig(
+            base_url=f"http://localhost:{port}/",
+            chat_url=f"http://localhost:{port}/api/chat/v1/",
+            reasoner_url=f"http://localhost:{port}/api/chat/reasoner/v1/",
         )
 
-        logger.info(
-            f"ChatClient initialized with DeepSeek URLs: {cls._deepseek_url_config}"
-        )
+        logger.info(f"ChatClient initialized with DeepSeek URLs: {cls._url_config}")
 
     ################################################################################################################################################################################
     @classmethod
@@ -117,13 +114,9 @@ class ChatClient:
 
         self._chat_response: ChatResponse = ChatResponse()
 
-        assert (
-            self._deepseek_url_config is not None
-        ), "DeepSeek URL config is not initialized"
+        assert self._url_config is not None, "DeepSeek URL config is not initialized"
 
-        self._url: Optional[str] = (
-            url if url is not None else self._deepseek_url_config.chat_url
-        )
+        self._url: Optional[str] = url if url is not None else self._url_config.chat_url
 
         self._timeout: Final[int] = timeout if timeout is not None else 30
         assert self._timeout > 0, "timeout should be positive"
@@ -412,12 +405,12 @@ class ChatClient:
 
         检查 DeepSeek 服务的可用性，结果记录到日志。
         """
-        if ChatClient._deepseek_url_config is None:
+        if ChatClient._url_config is None:
             logger.warning("ChatClient URL configurations are not initialized")
             return
 
         base_urls = [
-            ChatClient._deepseek_url_config.base_url,
+            ChatClient._url_config.base_url,
         ]
 
         for base_url in base_urls:

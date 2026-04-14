@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import asyncio
 from loguru import logger
 from ai_rpg.chat_client.client import ChatClient
-from ai_rpg.configuration import server_configuration
+from ai_rpg.services import server_configuration
 from ai_rpg.game.config import (
     BLUEPRINTS_DIR,
     DUNGEONS_DIR,
@@ -121,8 +121,8 @@ async def create_and_initialize_game(
         world=world_data,
     )
 
-    ChatClient.initialize_url_config(server_configuration)
-    ImageClient.initialize_url_config(server_configuration)
+    ChatClient.setup(server_configuration.deepseek_chat_server_port)
+    ImageClient.setup(server_configuration.replicate_image_generation_server_port)
 
     assert (
         len(terminal_game._world.entities_serialization) == 0
@@ -171,8 +171,8 @@ async def _restore_game(
         player_session=player_session,
         world=world,
     )
-    ChatClient.initialize_url_config(server_configuration)
-    ImageClient.initialize_url_config(server_configuration)
+    ChatClient.setup(server_configuration.deepseek_chat_server_port)
+    ImageClient.setup(server_configuration.replicate_image_generation_server_port)
     terminal_game.restore_from_snapshot()
     await terminal_game.initialize()
     logger.info(f"游戏已从存档恢复：user={player_session.name}, game={game}")

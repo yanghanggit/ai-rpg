@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
-from ai_rpg.configuration import (
+from ai_rpg.services import (
     server_configuration,
 )
 from fastapi import FastAPI, Request
@@ -67,8 +67,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         # - 游戏数据预加载
 
         logger.info("✅ TCG游戏服务器初始化完成")
-        ChatClient.initialize_url_config(server_configuration)
-        ImageClient.initialize_url_config(server_configuration)
+        ChatClient.setup(server_configuration.deepseek_chat_server_port)
+        ImageClient.setup(server_configuration.replicate_image_generation_server_port)
         logger.info("✅ ChatClient URL配置已初始化")
 
     except Exception as e:

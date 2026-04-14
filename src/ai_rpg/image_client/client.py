@@ -18,7 +18,6 @@ from .protocol import (
     ImageGenerationConfig,
 )
 import time
-from ..configuration.server import ServerConfiguration
 from dataclasses import dataclass
 
 
@@ -49,22 +48,22 @@ class ImageClient:
     _async_client: httpx.AsyncClient = httpx.AsyncClient()
 
     # 类级别的 URL 配置
-    _replicate_image_url_config: Optional[ReplicateImageUrlConfig] = None
+    _url_config: Optional[ReplicateImageUrlConfig] = None
 
     @classmethod
-    def initialize_url_config(cls, server_settings: ServerConfiguration) -> None:
+    def setup(cls, port: int) -> None:
         """初始化服务 URL 配置
 
         Args:
-            server_settings: 服务器配置对象
+            port: 图片生成服务端口号
         """
-        cls._replicate_image_url_config = ReplicateImageUrlConfig(
-            base_url=f"http://localhost:{server_settings.replicate_image_generation_server_port}/",
-            generate_url=f"http://localhost:{server_settings.replicate_image_generation_server_port}/api/generate/v1",
+        cls._url_config = ReplicateImageUrlConfig(
+            base_url=f"http://localhost:{port}/",
+            generate_url=f"http://localhost:{port}/api/generate/v1",
         )
 
         logger.info(
-            f"ImageClient initialized with Image Service URLs: {cls._replicate_image_url_config}"
+            f"ImageClient initialized with Image Service URLs: {cls._url_config}"
         )
 
     ################################################################################################################################################################################
@@ -121,11 +120,11 @@ class ImageClient:
         )
 
         assert (
-            self._replicate_image_url_config is not None
+            self._url_config is not None
         ), "Image service URL config is not initialized"
 
         self._url: Optional[str] = (
-            url if url is not None else self._replicate_image_url_config.generate_url
+            url if url is not None else self._url_config.generate_url
         )
 
         self._timeout: Final[int] = timeout if timeout is not None else 60
@@ -275,12 +274,12 @@ class ImageClient:
 
         检查图片生成服务的可用性，记录检查结果到日志。
         """
-        if ImageClient._replicate_image_url_config is None:
+        if ImageClient._url_config is None:
             logger.warning("ImageClient URL configurations are not initialized")
             return
 
         base_urls = [
-            ImageClient._replicate_image_url_config.base_url,
+            ImageClient._url_config.base_url,
         ]
 
         for base_url in base_urls:

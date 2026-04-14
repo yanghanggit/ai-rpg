@@ -38,7 +38,7 @@ from typing import Any, Dict
 from fastapi import FastAPI, Request
 from loguru import logger
 
-from ai_rpg.configuration import (
+from ai_rpg.services import (
     server_configuration,
 )
 from ai_rpg.services.deepseek_chat import deepseek_chat_api_router

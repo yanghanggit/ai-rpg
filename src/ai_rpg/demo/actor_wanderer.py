@@ -1,5 +1,6 @@
 from ..models import (
     Actor,
+    Archetype,
     CharacterSheet,
     ActorType,
     CharacterStats,
@@ -40,7 +41,9 @@ def create_wanderer() -> Actor:
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
         archetypes=[
-            "多段连击型：每张卡牌优先生成多次攻击（hit_count ≥ 2），每段伤害较低但累积可观；格挡收益次要，damage_dealt 不为 0。"
+            Archetype(
+                description="多段连击型：每张卡牌优先生成多次攻击（hit_count ≥ 2），每段伤害较低但累积可观；格挡收益次要，damage_dealt 不为 0。"
+            )
         ],
     )
 

@@ -149,13 +149,28 @@ class UniqueItem(Item):
 
 ###############################################################################################################################################
 @final
+class Archetype(BaseModel):
+    """卡牌原型，定义角色生成卡牌时遵循的风格与功能约束。
+
+    通过自然语言描述约束规则，LLM 在生成卡牌时据此限制生成边界。
+    空列表表示无约束，角色可自由生成任意风格的卡牌。
+
+    Attributes:
+        description: 约束规则的自然语言描述
+    """
+
+    description: str
+
+
+###############################################################################################################################################
+@final
 class Actor(BaseModel):
     name: str
     character_sheet: CharacterSheet
     system_message: str
     character_stats: CharacterStats
     items: List[Item] = []
-    archetypes: List[str] = (
+    archetypes: List[Archetype] = (
         []
     )  # 卡牌原型约束列表，用于限制 LLM 生成卡牌的风格与功能边界
 

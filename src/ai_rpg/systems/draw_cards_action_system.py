@@ -77,16 +77,18 @@ def _sample_archetypes(archetypes: List[Archetype], k: int) -> List[Archetype]:
 
 #######################################################################################################################################
 def _build_design_principle_prompt(num_cards: int, archetypes: List[Archetype]) -> str:
-    """生成设计原则段落：有原型约束时按位置列出，无约束时保留通用差异化指引。"""
-    if archetypes:
-        lines = "\n".join(
-            f"  - 卡牌{i + 1}：{archetypes[i].description}"
-            for i in range(len(archetypes))
-        )
+    """生成原型约束段落：去重后输出，无约束时输出差异化指引。"""
+    if not archetypes:
         return (
-            f"**每张卡牌的原型约束**（按顺序一一对应，严格遵循各自约束生成）:\n{lines}"
+            f"原型约束：无（{num_cards}张卡牌应有差异化，如高伤低防/高防低伤/均衡型）"
         )
-    return f"**设计原则**: {num_cards}张卡牌应有差异化——可以是高伤低防、高防低伤、均衡型等不同侧重"
+    unique_descriptions = list(dict.fromkeys(a.description for a in archetypes))
+    if len(unique_descriptions) == 1:
+        return f"原型约束（所有{num_cards}张均遵循）：{unique_descriptions[0]}"
+    lines = "\n".join(
+        f"  - 卡牌{i + 1}：{archetypes[i].description}" for i in range(len(archetypes))
+    )
+    return f"原型约束（按顺序对应）：\n{lines}"
 
 
 #######################################################################################################################################
@@ -109,7 +111,6 @@ def _generate_draw_prompt(
     Returns:
         格式化的完整提示词
     """
-    actor_stats_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
 
     def _fmt_duration(d: int) -> str:
         return "永久" if d == -1 else f"剩余{d}回合"
@@ -119,48 +120,28 @@ def _generate_draw_prompt(
             f"- {e.name}（{_fmt_duration(e.duration)}）: {e.description}"
             for e in draw_status_effects
         )
-        draw_effects_prompt = f"**抽牌状态效果**（请据此调整卡牌数值，attack 影响 damage_dealt，defense 影响 block_gain）:\n{effects_lines}"
+        draw_effects_prompt = (
+            f"状态效果（attack→damage_dealt，defense→block_gain）:\n{effects_lines}"
+        )
     else:
-        draw_effects_prompt = "**抽牌状态效果**: 无"
+        draw_effects_prompt = ""
 
-    cards_example = "\n    ".join(
-        f'{{"name": "卡牌名{i + 1}", "description": "第三人称通用描述", "status_effect_hint": "", "damage_dealt": 0, "block_gain": 0, "hit_count": 1, "target_type": "enemy_single"}}'
-        for i in range(num_cards)
+    stats_line = f"属性：HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
+    archetype_line = _build_design_principle_prompt(num_cards, archetypes)
+    fields_line = '字段：name（富有想象力，体现行动意图） | description（第三人称1句） | status_effect_hint（无副作用留""） | damage_dealt | block_gain | hit_count（默认1，多段2-4） | target_type（enemy_single/enemy_all/ally_single/ally_all/self_only）'
+    example_line = '{"name":"...","description":"...","status_effect_hint":"","damage_dealt":0,"block_gain":0,"hit_count":1,"target_type":"enemy_single"}'
+
+    sections = [stats_line]
+    if draw_effects_prompt:
+        sections.append(draw_effects_prompt)
+    sections.append(archetype_line)
+    sections.append(fields_line)
+    sections.append(f"输出 JSON，cards 数组共 {num_cards} 张：\n{example_line}")
+
+    return (
+        f"# 第 {current_round_number} 回合：生成 {num_cards} 张手牌\n\n"
+        + "\n\n".join(sections)
     )
-
-    return f"""# 第 {current_round_number} 回合：生成{num_cards}张战斗卡牌(JSON)
-
-根据角色当前状态，发挥创意生成{num_cards}张风格各异的战斗卡牌。每张卡牌代表一种可执行的战斗选择。
-
-## 输入
-
-**属性**: {actor_stats_prompt}
-
-{draw_effects_prompt}
-
-## 格式要求
-
-**命名**: 富有想象力的卡牌名称，体现行动意图
-
-**字段说明**:
-- **description** - 第三人称通用描述（1句，客观说明这张牌的即时战斗行为，不绑定具体场景，如"投掷附近碎石对单一目标造成中等伤害"）
-- **status_effect_hint** - 可能触发的持续性状态效果暗示（1句，如"可能引发燃烧、中毒、虚弱等持续加深效果"）；若该卡仅为即时伤害/格挡无副作用，则留空字符串""（为空时系统不触发后续 LLM 推理，节省开销）
-- **damage_dealt** - 单次攻击造成的伤害值（基于攻击力合理推算，整数）
-- **block_gain** - 本张卡牌提供的格挡增量（基于防御力合理推算，整数）
-- **hit_count** - 攻击次数（默认 1；多段攻击如回旋镖可设为 2~4，每段独立抵挡目标格挡）
-- **target_type** - 出牌目标类型：攻击/伤害类卡牌通常选 `enemy_single` 或 `enemy_all`；治疗/强化友方类卡牌通常选 `ally_single` 或 `ally_all`；纯粹的自我防御、呼吸调息等仅作用于自身的卡牌选 `self_only`
-
-{_build_design_principle_prompt(num_cards, archetypes)}
-
-## 输出JSON
-
-```json
-{{
-  "cards": [
-    {cards_example}
-  ]
-}}
-```"""
 
 
 #######################################################################################################################################

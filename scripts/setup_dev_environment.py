@@ -16,7 +16,6 @@ Date: 2025-07-30
 """
 
 import os
-from pathlib import Path
 import sys
 from typing import final
 from pydantic import BaseModel
@@ -27,10 +26,6 @@ sys.path.insert(
 )
 from loguru import logger
 
-from ai_rpg.configuration import (
-    ServerConfiguration,
-    server_configuration,
-)
 from ai_rpg.game.config import BLUEPRINTS_DIR, DUNGEONS_DIR, GAME_1
 from ai_rpg.demo import (
     create_ruins_blueprint,
@@ -193,107 +188,15 @@ def _setup_chromadb_rag_environment() -> None:
 ########################################################################################################
 ########################################################################################################
 ########################################################################################################
-def _generate_pm2_ecosystem_config(
-    server_config: ServerConfiguration, target_directory: str = "."
-) -> None:
-    """
-    生成 PM2 进程管理配置文件
-
-    Args:
-        server_config: 服务器配置对象
-        target_directory: 目标目录路径，默认为当前目录
-    """
-    ecosystem_config_content = f"""module.exports = {{
-  apps: [
-    // 游戏服务器实例 - 端口 {server_config.game_server_port}
-    {{
-      name: 'game-server-{server_config.game_server_port}',
-      script: 'uvicorn',
-      args: 'scripts.run_game_server:app --host 0.0.0.0 --port {server_config.game_server_port}',
-      interpreter: 'python',
-      cwd: process.cwd(),
-      env: {{
-        PYTHONPATH: `${{process.cwd()}}`,
-        PORT: '{server_config.game_server_port}'
-      }},
-      instances: 1,
-      autorestart: false,
-      watch: false,
-      max_memory_restart: '2G',
-      log_file: './logs/game-server-{server_config.game_server_port}.log',
-      error_file: './logs/game-server-{server_config.game_server_port}-error.log',
-      out_file: './logs/game-server-{server_config.game_server_port}-out.log',
-      time: true
-    }},
-    // DeepSeek聊天服务器实例 - 端口 {server_config.deepseek_chat_server_port}
-    {{
-      name: 'deepseek-chat-server-{server_config.deepseek_chat_server_port}',
-      script: 'uvicorn',
-      args: 'scripts.run_deepseek_chat_server:app --host 0.0.0.0 --port {server_config.deepseek_chat_server_port}',
-      interpreter: 'python',
-      cwd: process.cwd(),
-      env: {{
-        PYTHONPATH: `${{process.cwd()}}`,
-        PORT: '{server_config.deepseek_chat_server_port}'
-      }},
-      instances: 1,
-      autorestart: false,
-      watch: false,
-      max_memory_restart: '2G',
-      log_file: './logs/deepseek-chat-server-{server_config.deepseek_chat_server_port}.log',
-      error_file: './logs/deepseek-chat-server-{server_config.deepseek_chat_server_port}-error.log',
-      out_file: './logs/deepseek-chat-server-{server_config.deepseek_chat_server_port}-out.log',
-      time: true
-    }},
-    // 图片生成服务器实例 - 端口 {server_config.replicate_image_generation_server_port}
-    {{
-      name: 'image-generation-server-{server_config.replicate_image_generation_server_port}',
-      script: 'uvicorn',
-      args: 'scripts.run_replicate_image_server:app --host 0.0.0.0 --port {server_config.replicate_image_generation_server_port}',
-      interpreter: 'python',
-      cwd: process.cwd(),
-      env: {{
-        PYTHONPATH: `${{process.cwd()}}`,
-        PORT: '{server_config.replicate_image_generation_server_port}'
-      }},
-      instances: 1,
-      autorestart: false,
-      watch: false,
-      max_memory_restart: '2G',
-      log_file: './logs/image-generation-server-{server_config.replicate_image_generation_server_port}.log',
-      error_file: './logs/image-generation-server-{server_config.replicate_image_generation_server_port}-error.log',
-      out_file: './logs/image-generation-server-{server_config.replicate_image_generation_server_port}-out.log',
-      time: true
-    }}
-  ]
-}};
-"""
-    # 确保目标目录存在
-    target_path = Path(target_directory)
-    target_path.mkdir(parents=True, exist_ok=True)
-
-    # 写入文件
-    config_file_path = target_path / "ecosystem.config.js"
-    config_file_path.write_text(ecosystem_config_content, encoding="utf-8")
-
-    print(f"已生成 ecosystem.config.js 文件到: {config_file_path.absolute()}")
-
-
-########################################################################################################
-########################################################################################################
-########################################################################################################
-def _setup_server_settings() -> None:
-    """生成服务器配置文件和 PM2 配置"""
-    logger.info("🚀 构建服务器设置配置...")
-    # 这里可以添加构建服务器设置配置的逻辑
-    write_path = Path("server_configuration.json")
-    write_path.write_text(
-        server_configuration.model_dump_json(indent=4), encoding="utf-8"
-    )
-    logger.success("✅ 服务器设置配置构建完成")
-
-    # 生成PM2生态系统配置
-    _generate_pm2_ecosystem_config(server_configuration)
+# def _setup_server_settings() -> None:
+#     """生成服务器配置文件和 PM2 配置"""
+#     logger.info("🚀 构建服务器设置配置...")
+#     # 这里可以添加构建服务器设置配置的逻辑
+#     write_path = Path("server_configuration.json")
+#     write_path.write_text(
+#         server_configuration.model_dump_json(indent=4), encoding="utf-8"
+#     )
+#     logger.success("✅ 服务器设置配置构建完成")
 
 
 ########################################################################################################
@@ -342,12 +245,12 @@ def main() -> None:
         logger.error(f"❌ RAG 系统初始化失败: {e}")
 
     # 服务器设置相关操作
-    try:
-        logger.info("🚀 设置服务器配置...")
-        _setup_server_settings()
-        logger.success("✅ 服务器配置设置完成")
-    except Exception as e:
-        logger.error(f"❌ 服务器配置设置失败: {e}")
+    # try:
+    #     logger.info("🚀 设置服务器配置...")
+    #     _setup_server_settings()
+    #     logger.success("✅ 服务器配置设置完成")
+    # except Exception as e:
+    #     logger.error(f"❌ 服务器配置设置失败: {e}")
 
     logger.info("🎉 开发环境初始化完成")
 

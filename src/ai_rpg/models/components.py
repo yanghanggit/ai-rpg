@@ -435,34 +435,6 @@ class InventoryComponent(MutableComponent):
 
 
 ############################################################################################################
-# @final
-# @register_component_type
-# class SkillBookComponent(MutableComponent):
-#     """技能书组件
-
-#     存储角色的技能列表，提供技能查询功能。
-
-#     Attributes:
-#         name: 角色名称
-#         skills: 技能列表
-#     """
-
-#     name: str
-#     skills: List[Skill]
-
-#     # 查找技能
-#     def find_skill(self, skill_name: str) -> Skill | None:
-#         for skill in self.skills:
-#             if skill.name == skill_name:
-#                 return skill
-#         return None
-
-#     # 获取多个技能
-#     def get_skills(self, skill_names: List[str]) -> List[Skill]:
-#         return [skill for skill in self.skills if skill.name in skill_names]
-
-
-############################################################################################################
 @final
 @register_component_type
 class PlayerActionAuditComponent(Component):

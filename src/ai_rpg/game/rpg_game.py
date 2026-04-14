@@ -30,7 +30,6 @@ from ..models import (
     WorldSystem,
     WorldComponent,
     InventoryComponent,
-    # SkillBookComponent,
     TransStageEvent,
     PlayerOnlyStageComponent,
     ExpeditionRosterComponent,
@@ -371,14 +370,6 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 actor_model.name,
                 copy_items,
             )
-
-            # 必要组件：技能书组件, 必须copy一份, 不要进行直接引用
-            # copy_skills = copy.deepcopy(actor_model.skills)
-            # actor_entity.add(
-            #     SkillBookComponent,
-            #     actor_model.name,
-            #     copy_skills,
-            # )
 
             # 添加到返回值
             actor_entities.append(actor_entity)

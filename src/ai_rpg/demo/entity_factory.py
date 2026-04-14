@@ -10,6 +10,8 @@
 - 创建世界系统(WorldSystem)实例，设置全局叙事和规则管理
 """
 
+from typing import List
+
 from ..models import (
     Actor,
     CharacterSheet,
@@ -27,6 +29,7 @@ def create_actor(
     character_stats: CharacterStats,
     campaign_setting: str,
     system_rules: str,
+    archetypes: List[str] = [],
 ) -> Actor:
     """
     创建一个游戏角色(Actor)实例。
@@ -40,6 +43,7 @@ def create_actor(
         character_stats: 角色属性统计(CharacterStats对象)
         campaign_setting: 战役设定描述
         system_rules: 全局游戏机制规则
+        archetypes: 卡牌原型约束列表，限制 LLM 生成卡牌的风格与功能边界，默认无约束
 
     Returns:
         Actor: 初始化完成的Actor实例，生命值已满
@@ -53,6 +57,7 @@ def create_actor(
         character_sheet=character_sheet,
         system_message="",
         character_stats=character_stats,
+        archetypes=archetypes,
     )
 
     # 血量加满!!!!

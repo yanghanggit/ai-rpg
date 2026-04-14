@@ -37,6 +37,9 @@ def create_actor_sand_wolf() -> Actor:
         character_stats=CharacterStats(),
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
+        archetypes=[
+            "纯攻击型：所有卡牌以最大化 damage_dealt 为目标，block_gain 始终为 0，status_effect_hint 留空；target_type 仅使用 enemy_single。"
+        ],
     )
 
     return sand_wolf

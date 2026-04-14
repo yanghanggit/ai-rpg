@@ -147,14 +147,6 @@ class UniqueItem(Item):
     type: ItemType = Field(default=ItemType.UNIQUE_ITEM, frozen=True)
 
 
-#######################################################################################################################################
-# # 技能定义
-# @final
-# class Skill(BaseModel):
-#     name: str  # 技能名称
-#     description: str  # 技能描述
-
-
 ###############################################################################################################################################
 @final
 class Actor(BaseModel):
@@ -163,7 +155,9 @@ class Actor(BaseModel):
     system_message: str
     character_stats: CharacterStats
     items: List[Item] = []
-    # skills: List[Skill] = []
+    archetypes: List[str] = (
+        []
+    )  # 卡牌原型约束列表，用于限制 LLM 生成卡牌的风格与功能边界
 
 
 ###############################################################################################################################################

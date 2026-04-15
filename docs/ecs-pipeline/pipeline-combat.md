@@ -105,6 +105,33 @@
 
 ---
 
+### 卡牌目标类型（CardTargetType）
+
+`CardTargetType` 是每张卡牌的目标范围声明，由 `DrawCardsActionSystem` 在生成阶段由 LLM 写入 `target_type` 字段，再分别由玩家出牌路径（`dungeon_actions._resolve_targets`）和敌方 AI 路径（`EnemyPlayDecisionSystem._process_enemy_decision`）消费为实际 `targets` 列表，最终由 `ArbitrationActionSystem` 按列表逐目标结算伤害与格挡。
+
+**六种目标类型**：
+
+| 枚举值 | 目标范围 | `targets` 填写策略 |
+|---|---|---|
+| `enemy_single` | 单个敌方 | 调用方指定，列表长度 = 1 |
+| `enemy_all` | 全体存活敌方 | 系统自动填所有存活敌人 |
+| `enemy_random_multi` | 多段随机命中敌方 | 系统按 `hit_count` 随机采样，允许重复 |
+| `ally_single` | 单个友方成员 | 调用方指定，列表长度 = 1 |
+| `ally_all` | 全体友方成员 | 系统自动填所有友方成员 |
+| `self_only` | 仅出牌者自身 | 系统自动填出牌者名称 |
+
+**"宽进严出"验证策略**：
+
+`DrawCardsActionSystem` 生成的 `CardEntry` 将 LLM 的裸字符串原样保留；消费方在将其转换为 `CardTargetType` 枚举时，若字符串不匹配任何已知值，则直接丢弃该卡并记录 agent warning，不抛出异常。这保证 LLM 的自由输出不会崩溃后续管线，同时在管线边界处维持严格的类型约束。
+
+**随机多段命中（`enemy_random_multi`）的设计要点**：
+
+随机性由 Python 在出牌阶段提前决定，而非委托给仲裁 LLM。这保证目标分配可重现、可日志记录，避免 LLM 在仲裁阶段产生幻觉目标。`PlayCardsAction.targets` 中可包含重复的敌人名称（例如三段命中中有两段落在同一个敌人身上），仲裁系统以 `dict.fromkeys` 去重后构建伤害统计字典，再按该目标在 `targets` 列表中出现的次数累加伤害，最终生成每个独立目标的结算结果。
+
+`ALLY_*` 系列枚举值已定义但暂为占位：当前版本不存在以友方为目标的伤害结算路径，`ally_single` / `ally_all` 目前仅用于治疗类或增益类卡牌的语义标注。
+
+---
+
 ### ArbitrationActionSystem（步骤 10）
 
 **源码**：`src/ai_rpg/systems/arbitration_action_system.py`  

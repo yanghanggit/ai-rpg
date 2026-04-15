@@ -426,7 +426,7 @@ async def play_cards_specified_game(
     Args:
         world: 由 restore_world() 反序列化的世界数据。
         player_session: 由 restore_world() 反序列化的玩家会话。
-        actor: 出牌角色全名（如 角色.猎人.石坚）。
+        actor: 出牌角色全名（如 角色.旅行者.无名氏）。
         card: 要打出的卡牌名称（须存在于该角色手牌中）。
         targets: 目标名称列表，可为空。
         save_dir: 新存档写入目录。

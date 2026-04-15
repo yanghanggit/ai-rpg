@@ -157,7 +157,7 @@ def _generate_draw_prompt(
         "- damage_dealt：单次攻击造成的伤害值（基于攻击力合理推算，整数）\n"
         "- block_gain：本张卡牌提供的格挡增量（基于防御力合理推算，整数）\n"
         "- hit_count：攻击次数（默认 1；多段攻击如回旋镖可设为 2~4，每段独立抵挡目标格挡）\n"
-        "- target_type：出牌目标类型：攻击/伤害类卡牌通常选 enemy_single 或 enemy_all；治疗/强化友方类卡牌通常选 ally_single 或 ally_all；纯粹的自我防御、呼吸调息等仅作用于自身的卡牌选 self_only"
+        "- target_type：出牌目标类型：攻击/伤害类卡牌通常选 enemy_single 或 enemy_all；每段独立随机命中一名敌方（多段随机，搭配较高 hit_count）选 enemy_random_multi；治疗/强化友方类卡牌通常选 ally_single 或 ally_all；纯粹的自我防御、呼吸调息等仅作用于自身的卡牌选 self_only"
     )
     example_line = '{"name":"...","description":"...","status_effect_hint":"","damage_dealt":0,"block_gain":0,"hit_count":1,"target_type":"enemy_single"}'
 

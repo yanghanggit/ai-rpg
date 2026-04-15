@@ -5,6 +5,7 @@
 这些函数通过添加动作组件来驱动战斗流程，由 combat_pipeline 负责执行。
 """
 
+import random
 from typing import List, Tuple
 from loguru import logger
 from ..game.tcg_game import TCGGame
@@ -122,38 +123,42 @@ def _resolve_targets(
     """
     is_actor_ally = actor_entity.has(ExpeditionMemberComponent)
 
-    if card.target_type == CardTargetType.ENEMY_SINGLE:
-        enemies = (
+    def _get_enemies() -> List[Entity]:
+        return (
             _get_alive_enemies_in_stage(actor_entity, tcg_game)
             if is_actor_ally
             else _get_alive_expedition_members_in_stage(actor_entity, tcg_game)
         )
-        enemy_names = {e.name for e in enemies}
-        if len(passed_targets) != 1:
-            return (
-                [],
-                f"ENEMY_SINGLE 目标数量必须为 1，实际收到 {len(passed_targets)} 个",
-            )
-        if passed_targets[0] not in enemy_names:
-            return (
-                [],
-                f"目标 '{passed_targets[0]}' 不在存活敌方列表中: {sorted(enemy_names)}",
-            )
-        return list(passed_targets), ""
 
-    elif card.target_type == CardTargetType.ENEMY_ALL:
-        enemies = (
-            _get_alive_enemies_in_stage(actor_entity, tcg_game)
-            if is_actor_ally
-            else _get_alive_expedition_members_in_stage(actor_entity, tcg_game)
-        )
-        return [e.name for e in enemies], ""
+    match card.target_type:
+        case CardTargetType.ENEMY_SINGLE:
+            enemy_names = {e.name for e in _get_enemies()}
+            if len(passed_targets) != 1:
+                return (
+                    [],
+                    f"ENEMY_SINGLE 目标数量必须为 1，实际收到 {len(passed_targets)} 个",
+                )
+            if passed_targets[0] not in enemy_names:
+                return (
+                    [],
+                    f"目标 '{passed_targets[0]}' 不在存活敌方列表中: {sorted(enemy_names)}",
+                )
+            return list(passed_targets), ""
 
-    elif card.target_type == CardTargetType.SELF_ONLY:
-        return [actor_entity.name], ""
+        case CardTargetType.ENEMY_ALL:
+            return [e.name for e in _get_enemies()], ""
 
-    else:  # ALLY_SINGLE / ALLY_ALL — 不限制目标
-        return list(passed_targets), ""
+        case CardTargetType.ENEMY_RANDOM_MULTI:
+            enemies = _get_enemies()
+            if not enemies:
+                return [], "ENEMY_RANDOM_MULTI：场上无存活敌方"
+            return [e.name for e in random.choices(enemies, k=card.hit_count)], ""
+
+        case CardTargetType.SELF_ONLY:
+            return [actor_entity.name], ""
+
+        case _:  # ALLY_SINGLE / ALLY_ALL — 不限制目标
+            return list(passed_targets), ""
 
 
 ###################################################################################################################################################################
@@ -210,7 +215,7 @@ def activate_play_cards_specified(
 
     Args:
         tcg_game: TCG游戏实例
-        actor_name: 出牌角色的全名（如 角色.猎人.石坚）
+        actor_name: 出牌角色的全名（如 角色.旅行者.无名氏）
         card_name: 要打出的卡牌名称（须存在于该角色手牌中）
         targets: 目标名称列表，可为 []
         action: 出牌时的第一人称叙事；默认为空字符串，仲裁 agent 将自行演绎

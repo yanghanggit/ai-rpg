@@ -456,7 +456,7 @@ def draw_cards(snapshot: str) -> None:
 @click.option(
     "--actor",
     required=True,
-    help="出牌角色全名（如 角色.猎人.石坚）",
+    help="出牌角色全名（如 角色.旅行者.无名氏）",
 )
 @click.option(
     "--card",

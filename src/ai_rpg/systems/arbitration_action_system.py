@@ -21,6 +21,7 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     PlayCardsAction,
     BlockComponent,
+    CardTargetType,
     CharacterStatsComponent,
     DeathComponent,
     CombatArbitrationEvent,
@@ -165,6 +166,61 @@ def _generate_combat_arbitration_broadcast(
 
 
 #######################################################################################################################################
+def _fmt_duration(duration: int) -> str:
+    return "永久" if duration == -1 else f"剩余{duration}回合"
+
+
+#######################################################################################################################################
+def _fmt_effects(effects: List[StatusEffect]) -> str:
+    if not effects:
+        return "  无"
+    return "\n".join(
+        f"  - {e.name}（{_fmt_duration(e.duration)}）: {e.description}" for e in effects
+    )
+
+
+#######################################################################################################################################
+class _RandomMultiSections:
+    """ENEMY_RANDOM_MULTI 专属 prompt 片段"""
+
+    hit_assignment: str
+    rules: str
+    log_example: str
+
+    def __init__(self, hit_assignment: str, rules: str, log_example: str) -> None:
+        self.hit_assignment = hit_assignment
+        self.rules = rules
+        self.log_example = log_example
+
+
+def _build_random_multi_sections(
+    play_cards_action: PlayCardsAction,
+) -> _RandomMultiSections:
+    """为 ENEMY_RANDOM_MULTI 卡牌构建仲裁 prompt 中的专属片段。
+
+    当 target_type 不是 ENEMY_RANDOM_MULTI 时，所有字段均为空字符串。
+    """
+    if play_cards_action.card.target_type != CardTargetType.ENEMY_RANDOM_MULTI:
+        return _RandomMultiSections("", "", "")
+
+    hit_lines = "\n".join(
+        f"  第{i + 1}击 → {t.split('.')[-1]}"
+        for i, t in enumerate(play_cards_action.targets)
+    )
+    hit_assignment = (
+        f"\n## 命中分配（系统预先随机确定，共 {play_cards_action.card.hit_count} 击）\n\n"
+        f"{hit_lines}"
+    )
+    rules = (
+        "enemy_random_multi 特殊规则：按「命中分配」逐段结算，每段命中对应目标，"
+        "各目标独立维护剩余格挡；同一目标连续被命中时格挡跨段累计扣减。"
+        "final_stats 须包含出牌者及**所有被命中过的不重复目标**。"
+    )
+    log_example = "\nrandom_multi 示例：`[英雄|回旋镖→随机:3×3段,敌A×2伤害5,敌B×1伤害3] HP:敌A 15→10 敌B 12→9`"
+    return _RandomMultiSections(hit_assignment, rules, log_example)
+
+
+#######################################################################################################################################
 def _generate_combat_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStatsComponent,
@@ -185,17 +241,6 @@ def _generate_combat_arbitration_prompt(
         else "- 无目标"
     )
 
-    def _fmt_duration(duration: int) -> str:
-        return "永久" if duration == -1 else f"剩余{duration}回合"
-
-    def _fmt_effects(effects: List[StatusEffect]) -> str:
-        if not effects:
-            return "  无"
-        return "\n".join(
-            f"  - {e.name}（{_fmt_duration(e.duration)}）: {e.description}"
-            for e in effects
-        )
-
     arbitration_effects_lines = (
         f"**出牌者 —— {actor_name}**:\n{_fmt_effects(actor_arbitration_effects)}"
     )
@@ -210,6 +255,8 @@ def _generate_combat_arbitration_prompt(
         else "- 行动：（未提供，请根据卡牌描述与战场情境自行演绎）"
     )
 
+    rm = _build_random_multi_sections(play_cards_action)
+
     return f"""# 第 {current_round_number} 回合：战斗结算（以 JSON 格式返回）
 
 ## 出牌者
@@ -222,7 +269,7 @@ def _generate_combat_arbitration_prompt(
 - damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
 - hit_count：{play_cards_action.card.hit_count}（攻击次数）
 - block_gain：{play_cards_action.card.block_gain}
-{action_line}
+{action_line}{rm.hit_assignment}
 
 ## 目标
 
@@ -244,7 +291,7 @@ def _generate_combat_arbitration_prompt(
 若 hit_count = 1，按单段正常结算即可
 若出牌者 HP 已为 0，跳过结算
 仲裁状态效果中的数值修正（额外 hp 扣除、block 加成、伤害加成等）**叠加**到上述计算规则之上，体现在 final_stats 中。
-
+{rm.rules}
 ## 输出格式
 
 ```json
@@ -258,7 +305,7 @@ def _generate_combat_arbitration_prompt(
 ### combat_log（简名 = 全名最后一段）
 
 正常：`[出牌者简名|卡牌→目标:damage Xx击_count次,伤害Z] HP:目标简名 旧→新`
-多段示例：`[英雄|回旋镖→石缝蜥:3x3次,伤害7] HP:石缝蜥 15→8`
+多段示例：`[英雄|回旋镖→石缝蜥:3x3次,伤害7] HP:石缝蜥 15→8`{rm.log_example}
 阵亡跳过：`[出牌者简名|已阵亡，卡牌无法执行]`
 
 ### final_stats
@@ -340,7 +387,8 @@ class ArbitrationActionSystem(ReactiveProcessor):
         target_stats: Dict[str, CharacterStatsComponent] = {}
         target_blocks: Dict[str, int] = {}
 
-        for target_name in action.targets:
+        # dict.fromkeys 去重并保序（ENEMY_RANDOM_MULTI 的 targets 长度=hit_count，可能含重复名）
+        for target_name in dict.fromkeys(action.targets):
 
             target_entity = self._game.get_entity_by_name(target_name)
             assert target_entity is not None, f"无法找到目标实体: {target_name}"
@@ -379,7 +427,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
 
         # 读取所有目标的 arbitration 相位状态效果
         target_arbitration_effects: Dict[str, List[StatusEffect]] = {}
-        for target_name in action.targets:
+        for target_name in dict.fromkeys(action.targets):
             t_entity = self._game.get_entity_by_name(target_name)
             assert t_entity is not None, f"无法找到目标实体: {target_name}"
             t_status_comp = t_entity.get(StatusEffectsComponent)

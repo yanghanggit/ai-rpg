@@ -145,7 +145,7 @@ def _generate_stage_post_arbitration_prompt(
 塞入的卡牌会被加入目标的当前手牌；数值应与场内角色血量及战斗烈度相匹配。
 
 | 字段 | 说明 |
-|---|---|
+| --- | --- |
 | name | 卡牌名称（<8字），体现效果意图 |
 | description | 第三人称，描述角色借助**上下文中已存在的**场景具体物件的即时客观动作（1句，如"抓起地面的断柱碎块掷向对方"）；不可凭空引入非场景物件 |
 | status_effect_hint | 可选。若该牌可能引发持续性状态效果，填一句说明（如"碎石粉尘可能引起视线模糊"）；若仅为即时效果则留空字符串""，系统将跳过后续状态效果 LLM 推理 |
@@ -158,6 +158,7 @@ def _generate_stage_post_arbitration_prompt(
 |---|---|
 | `{CardTargetType.ENEMY_SINGLE}` | 攻击单体敌方（默认） |
 | `{CardTargetType.ENEMY_ALL}` | 攻击全体敌方 |
+| `{CardTargetType.ENEMY_RANDOM_MULTI}` | 每段独立随机命中一名敌方（需配合较高 hit_count） |
 | `{CardTargetType.ALLY_SINGLE}` | 治疗/增益单体友方 |
 | `{CardTargetType.ALLY_ALL}` | 治疗/增益全体友方 |
 | `{CardTargetType.SELF_ONLY}` | 仅作用于自身（防御、自损诅咒等） |

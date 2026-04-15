@@ -1,3 +1,4 @@
+import random
 from typing import Final, List, final, override
 from loguru import logger
 from pydantic import BaseModel
@@ -269,22 +270,38 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
             alive_actors = self._game.get_alive_actors_in_stage(entity)
             alive_names = {a.name for a in alive_actors}
 
-            if selected_card.target_type == CardTargetType.ENEMY_ALL:
-                # 自动填充所有存活的远征队成员（对 Enemy 来说"敌方"= ExpeditionMember）
-                valid_targets = [
-                    a.name for a in alive_actors if a.has(ExpeditionMemberComponent)
-                ]
-            elif selected_card.target_type == CardTargetType.SELF_ONLY:
-                # 仅作用于施法者自身
-                valid_targets = [entity.name]
-            else:
-                # ENEMY_SINGLE / ALLY_* — 过滤掉不存在的目标名
-                valid_targets = [t for t in decision.targets if t in alive_names]
-                if len(valid_targets) != len(decision.targets):
-                    logger.warning(
-                        f"EnemyPlayDecisionSystem: [{entity.name}] 过滤无效目标 "
-                        f"{set(decision.targets) - alive_names}"
+            match selected_card.target_type:
+                case CardTargetType.ENEMY_ALL:
+                    # 自动填充所有存活的远征队成员（对 Enemy 来说"敌方"= ExpeditionMember）
+                    valid_targets = [
+                        a.name for a in alive_actors if a.has(ExpeditionMemberComponent)
+                    ]
+                case CardTargetType.ENEMY_RANDOM_MULTI:
+                    # 每段独立随机命中一名存活远征队成员（对 Enemy 来说"敌方"= ExpeditionMember）
+                    expedition_members = [
+                        a for a in alive_actors if a.has(ExpeditionMemberComponent)
+                    ]
+                    valid_targets = (
+                        [
+                            e.name
+                            for e in random.choices(
+                                expedition_members, k=selected_card.hit_count
+                            )
+                        ]
+                        if expedition_members
+                        else []
                     )
+                case CardTargetType.SELF_ONLY:
+                    # 仅作用于施法者自身
+                    valid_targets = [entity.name]
+                case _:
+                    # ENEMY_SINGLE / ALLY_* — 过滤掉不存在的目标名
+                    valid_targets = [t for t in decision.targets if t in alive_names]
+                    if len(valid_targets) != len(decision.targets):
+                        logger.warning(
+                            f"EnemyPlayDecisionSystem: [{entity.name}] 过滤无效目标 "
+                            f"{set(decision.targets) - alive_names}"
+                        )
 
             # 写对话历史
             current_round_number = len(self._game.current_dungeon.current_rounds or [])

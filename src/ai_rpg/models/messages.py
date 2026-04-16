@@ -7,14 +7,16 @@
 - AIMessage
 """
 
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Literal, Sequence
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 ############################################################################################################
 class BaseMessage(BaseModel):
     """消息基类"""
+
+    model_config = ConfigDict(extra="allow")
 
     type: str
     content: str = ""
@@ -25,21 +27,21 @@ class BaseMessage(BaseModel):
 class SystemMessage(BaseMessage):
     """系统提示消息"""
 
-    type: str = "system"
+    type: Literal["system"] = "system"
 
 
 ############################################################################################################
 class HumanMessage(BaseMessage):
     """用户消息"""
 
-    type: str = "human"
+    type: Literal["human"] = "human"
 
 
 ############################################################################################################
 class AIMessage(BaseMessage):
     """AI 回复消息"""
 
-    type: str = "ai"
+    type: Literal["ai"] = "ai"
 
 
 ############################################################################################################

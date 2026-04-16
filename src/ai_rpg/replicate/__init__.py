@@ -18,6 +18,13 @@ from .image_tools import (
     ReplicateImageTask,
 )
 from .types import ReplicateImageInput
+from .protocol import (
+    ImageGenerationConfig,
+    ImageGenerationRequest,
+    ImageGenerationResponse,
+)
+from .client import ReplicateImageClient
+from ..models.image import GeneratedImage
 
 
 __all__ = [
@@ -30,4 +37,9 @@ __all__ = [
     "ReplicateImageInput",
     "replicate_config",
     "GENERATED_IMAGES_OUTPUT_DIR",
+    "ImageGenerationConfig",
+    "ImageGenerationRequest",
+    "ImageGenerationResponse",
+    "GeneratedImage",
+    "ReplicateImageClient",
 ]

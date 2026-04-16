@@ -5,7 +5,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import IllustrateDungeonAction, Dungeon, DungeonRoom
 from ..game.tcg_game import TCGGame
 from ..game.config import DUNGEONS_DIR
-from ..image_client.client import ImageClient
+from ..replicate import ReplicateImageClient
 
 
 ####################################################################################################################################
@@ -153,8 +153,8 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
         logger.debug(
             f"[IllustrateDungeonActionSystem] react: 收到 IllustrateDungeonAction 事件，准备生成图片，entities count={len(entities)}"
         )
-        # for entity in entities:
-        #     await self._generate_images(entity)
+        for entity in entities:
+            await self._generate_images(entity)
 
     ####################################################################################################################################
     async def _generate_images(self, entity: Entity) -> None:
@@ -191,7 +191,7 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
             dungeon_name=dungeon.name,
             ecology=dungeon.ecology,
         )
-        cover_client = ImageClient(
+        cover_client = ReplicateImageClient(
             name=f"{dungeon.name}.cover",
             prompt=cover_prompt,
             negative_prompt=_IMAGE_NEGATIVE_BASE,
@@ -209,8 +209,8 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
             )
             for room in dungeon.rooms
         ]
-        room_clients: List[ImageClient] = [
-            ImageClient(
+        room_clients: List[ReplicateImageClient] = [
+            ReplicateImageClient(
                 name=f"{room.stage.name}.illustration",
                 prompt=prompt,
                 negative_prompt=_IMAGE_NEGATIVE_STAGE,
@@ -221,8 +221,8 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
             for room, prompt in zip(dungeon.rooms, room_prompts)
         ]
 
-        all_clients: List[ImageClient] = [cover_client] + room_clients
-        await ImageClient.batch_generate(all_clients)
+        all_clients: List[ReplicateImageClient] = [cover_client] + room_clients
+        await ReplicateImageClient.batch_generate(all_clients)
 
         # 写入封面 GeneratedImage（直接赋值 response 对象，保留全部字段）
         if cover_client.response.images:

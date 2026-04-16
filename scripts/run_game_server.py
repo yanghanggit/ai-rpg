@@ -32,7 +32,7 @@ from ai_rpg.services.stages_state import stages_state_api_router
 from ai_rpg.services.background_tasks import background_tasks_api_router
 from ai_rpg.chat_client import DeepSeekClient
 from ai_rpg.services.player_session import player_session_api_router
-from ai_rpg.image_client.client import ImageClient
+from ai_rpg.services.replicate_image import replicate_image_api_router
 from config import LOGS_DIR
 from ai_rpg.replicate import (
     # replicate_config,
@@ -68,7 +68,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
         logger.info("✅ TCG游戏服务器初始化完成")
         DeepSeekClient.setup()
-        ImageClient.setup(server_configuration.replicate_image_generation_server_port)
         logger.info("✅ DeepSeekClient 已初始化")
 
     except Exception as e:
@@ -158,6 +157,9 @@ app.include_router(router=entity_details_api_router)
 app.include_router(router=stages_state_api_router)
 app.include_router(router=dungeon_state_api_router)
 app.include_router(router=background_tasks_api_router)
+
+# 图片生成
+app.include_router(router=replicate_image_api_router)
 
 # TCG特有的
 app.include_router(router=login_api_router)

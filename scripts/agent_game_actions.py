@@ -31,14 +31,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from loguru import logger
 from ai_rpg.chat_client import DeepSeekClient
-from ai_rpg.services import server_configuration
 from ai_rpg.game.config import (
     BLUEPRINTS_DIR,
     DUNGEONS_DIR,
 )
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import TCGGame
-from ai_rpg.image_client.client import ImageClient
+
+# from ai_rpg.image_client.client import ImageClient
 from ai_rpg.models import Blueprint, CombatState, Dungeon, World, EnemyComponent
 from ai_rpg.game import archive_world
 from ai_rpg.services.home_actions import (
@@ -121,7 +121,7 @@ async def create_and_initialize_game(
     )
 
     DeepSeekClient.setup()
-    ImageClient.setup(server_configuration.replicate_image_generation_server_port)
+    # ImageClient.setup(server_configuration.replicate_image_generation_server_port)
 
     assert (
         len(terminal_game._world.entities_serialization) == 0
@@ -135,7 +135,7 @@ async def create_and_initialize_game(
     )
 
     # 并发检查图片服务
-    await ImageClient.health_check()
+    # await ImageClient.health_check()
 
     # 持久化游戏世界数据到存档目录，并启用 gzip 快照功能
     archive_world(
@@ -171,7 +171,7 @@ async def _restore_game(
         world=world,
     )
     DeepSeekClient.setup()
-    ImageClient.setup(server_configuration.replicate_image_generation_server_port)
+    # ImageClient.setup(server_configuration.replicate_image_generation_server_port)
     terminal_game.restore_from_snapshot()
     await terminal_game.initialize()
     logger.info(f"游戏已从存档恢复：user={player_session.name}, game={game}")

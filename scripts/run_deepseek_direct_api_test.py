@@ -1,70 +1,62 @@
 """
-直接调用 DeepSeek API 测试脚本（不依赖 langchain/langgraph）
+直接调用 DeepSeek API 测试脚本（使用 DeepSeekClient，不依赖 langchain/langgraph）
 """
 
+import asyncio
 import os
-import json
-import requests
-from dotenv import load_dotenv
+import sys
 
-load_dotenv()
+sys.path.insert(
+    0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
+)
+
+from ai_rpg.chat_client import DeepSeekClient
+from ai_rpg.chat_client.messages import SystemMessage
+
+_SYSTEM = SystemMessage(content="你是一个有帮助的助手，请用中文回答。")
+
+
+def test_chat() -> None:
+    """测试同步单次请求"""
+    print("\n=== 测试 chat() ===")
+    client = DeepSeekClient(
+        name="test_chat",
+        prompt="请简单介绍一下你自己。",
+        context=[_SYSTEM],
+    )
+    client.chat()
+    print("📝 回复:")
+    print(client.response_content)
+
+
+async def test_batch_chat() -> None:
+    """测试并发批量请求"""
+    print("\n=== 测试 batch_chat() ===")
+    questions = [
+        "1+1等于几？",
+        "天空为什么是蓝色的？",
+        "请用一句话描述Python语言。",
+    ]
+    clients = [
+        DeepSeekClient(
+            name=f"batch_{i}",
+            prompt=q,
+            context=[_SYSTEM],
+        )
+        for i, q in enumerate(questions)
+    ]
+
+    await DeepSeekClient.batch_chat(clients)
+
+    for client in clients:
+        print(f"\n❓ {client.prompt}")
+        print(f"💬 {client.response_content}")
 
 
 def main() -> None:
-    api_key = os.getenv("DEEPSEEK_API_KEY")
-    if not api_key:
-        raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
-
-    url = "https://api.deepseek.com/chat/completions"
-
-    payload = {
-        "messages": [
-            {
-                "content": "You are a helpful assistant",
-                "role": "system",
-            },
-            {
-                "content": "Hi, please introduce yourself briefly.",
-                "role": "user",
-            },
-        ],
-        "model": "deepseek-chat",
-        "thinking": {
-            "type": "disabled",
-        },
-        "frequency_penalty": 0,
-        "max_tokens": 4096,
-        "presence_penalty": 0,
-        "response_format": {
-            "type": "text",
-        },
-        "stop": None,
-        "stream": False,
-        "stream_options": None,
-        "temperature": 1,
-        "top_p": 1,
-        "tools": None,
-        "tool_choice": "none",
-        "logprobs": False,
-        "top_logprobs": None,
-    }
-
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer {api_key}",
-    }
-
-    print("📡 正在调用 DeepSeek API...")
-    response = requests.post(url, headers=headers, data=json.dumps(payload), timeout=60)
-    response.raise_for_status()
-
-    result = response.json()
-    print("✅ 响应状态码:", response.status_code)
-    print("📝 模型回复:")
-    print(result["choices"][0]["message"]["content"])
-    print("\n📊 Token 使用情况:")
-    print(json.dumps(result.get("usage", {}), indent=2, ensure_ascii=False))
+    DeepSeekClient.setup()
+    test_chat()
+    asyncio.run(test_batch_chat())
 
 
 if __name__ == "__main__":

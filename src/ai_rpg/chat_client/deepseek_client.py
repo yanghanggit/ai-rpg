@@ -4,14 +4,11 @@
 公共接口与 ChatClient 保持一致，context 类型改用本模块的自定义消息类型。
 """
 
-from __future__ import annotations
-
 import asyncio
 import os
 import time
 import traceback
 from typing import Any, Dict, Final, List, Optional, final
-
 import httpx
 import requests
 from dotenv import load_dotenv
@@ -127,11 +124,9 @@ class DeepSeekClient:
 
     ################################################################################################################################################################################
     @property
-    def response_ai_messages(self) -> List[AIMessage]:
-        """获取 AI 回复消息列表（最多一条）"""
-        if self._response_ai_message is None:
-            return []
-        return [self._response_ai_message]
+    def response_ai_message(self) -> Optional[AIMessage]:
+        """获取 AI 回复消息"""
+        return self._response_ai_message
 
     ################################################################################################################################################################################
     @property
@@ -332,11 +327,3 @@ class DeepSeekClient:
             )
 
     ################################################################################################################################################################################
-    @staticmethod
-    async def health_check() -> None:
-        """检查 DeepSeek API Key 是否可读取"""
-        try:
-            DeepSeekClient._get_api_key()
-            logger.debug("DeepSeekClient health check passed: API key is configured")
-        except ValueError as e:
-            logger.warning(f"DeepSeekClient health check failed: {e}")

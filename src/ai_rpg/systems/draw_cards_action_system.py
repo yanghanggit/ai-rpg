@@ -6,7 +6,7 @@
 核心特性：
 - 历史牌优先：优先从 DrawDeckComponent 取最多 max_num_cards - 1 张历史牌（FIFO 消耗语义）
 - 保证新鲜度：无论 Deck 是否充裕，每回合至少 1 张由 LLM 实时生成
-- 批量推理：所有角色的 LLM 请求并行发出（ChatClient.batch_chat），结果逐一解析写入 HandComponent
+- 批量推理：所有角色的 LLM 请求并行发出（DeepSeekClient.batch_chat），结果逐一解析写入 HandComponent
 - 合并写入：Deck 历史牌（前）+ LLM 新生成牌（后）合并为最终手牌
 
 主要组件：
@@ -19,7 +19,7 @@ import random
 from typing import Dict, Final, List, final, override
 from loguru import logger
 from pydantic import BaseModel
-from ..chat_client.client import ChatClient
+from ..chat_client import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -194,7 +194,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
     1. 接收 DrawCardsAction 触发（每个存活角色各一个）
     2. 预处理：从每个实体的 DrawDeckComponent FIFO 消耗最多 max_num_cards - 1 张历史牌
     3. 为每个角色调用 _create_draw_chat_client，向 LLM 请求生成剩余张数（≥1）的新卡牌
-    4. 所有请求并行执行（ChatClient.batch_chat）
+    4. 所有请求并行执行（DeepSeekClient.batch_chat）
     5. 逐一调用 _process_draw_response，合并 Deck 历史牌 + LLM 新牌，写入 HandComponent
     """
 
@@ -255,7 +255,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         entity_deck_cards, entity_generate_counts = self._consume_deck_cards(entities)
 
         # 为每个 entity 创建 draw 聊天客户端
-        chat_clients: List[ChatClient] = []
+        chat_clients: List[DeepSeekClient] = []
         for entity in entities:
             chat_client = self._create_draw_chat_client(
                 entity=entity, num_cards=entity_generate_counts[entity.name]
@@ -263,7 +263,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             chat_clients.append(chat_client)
 
         # 批量 LLM 推理
-        await ChatClient.batch_chat(clients=chat_clients)
+        await DeepSeekClient.batch_chat(clients=chat_clients)
 
         # 处理响应，写入 HandComponent
         for chat_client in chat_clients:
@@ -316,7 +316,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         self,
         entity: Entity,
         num_cards: int,
-    ) -> ChatClient:
+    ) -> DeepSeekClient:
         """为单个角色创建"生成 num_cards 张 Card"的聊天客户端。
 
         从实体的 ArchetypeComponent 随机采样 num_cards 个原型（优先不重复），
@@ -327,7 +327,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             num_cards: 要求生成的卡牌数量
 
         Returns:
-            ChatClient: 已填充提示词的聊天客户端
+            DeepSeekClient: 已填充提示词的聊天客户端
         """
         last_round = self._game.current_dungeon.latest_round
         assert last_round is not None
@@ -380,7 +380,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             dice_rolls=dice_rolls,
         )
 
-        return ChatClient(
+        return DeepSeekClient(
             name=entity.name,
             prompt=prompt,
             context=self._game.get_agent_context(entity).context,
@@ -390,7 +390,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
     def _process_draw_response(
         self,
         entity: Entity,
-        chat_client: ChatClient,
+        chat_client: DeepSeekClient,
         num_cards: int,
         deck_cards: List[Card],
     ) -> None:

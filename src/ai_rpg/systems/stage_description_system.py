@@ -1,9 +1,9 @@
 from typing import Dict, Final, List, Optional, Tuple, final
-from langchain_core.messages import AIMessage
+from ..models.messages import AIMessage
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-from ..chat_client.client import ChatClient
+from ..chat_client import DeepSeekClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -169,15 +169,15 @@ class StageDescriptionSystem(ExecuteProcessor):
         if not pending_with_key:
             return
 
-        chat_clients: List[ChatClient] = [
-            ChatClient(
+        chat_clients: List[DeepSeekClient] = [
+            DeepSeekClient(
                 name=stage_entity.name,
                 prompt=prompt,
                 context=self._game.get_agent_context(stage_entity).context,
             )
             for stage_entity, prompt, _ in pending_with_key
         ]
-        await ChatClient.batch_chat(clients=chat_clients)
+        await DeepSeekClient.batch_chat(clients=chat_clients)
 
         key_map: Dict[str, str] = {
             stage_entity.name: cache_key
@@ -244,14 +244,14 @@ class StageDescriptionSystem(ExecuteProcessor):
     def _process_stage_description_response(
         self,
         stage_entity: Entity,
-        chat_client: ChatClient,
+        chat_client: DeepSeekClient,
         cache_key: Optional[str] = None,
     ) -> None:
         """解析 AI 响应，更新 StageDescriptionComponent 并存入对话历史。
 
         Args:
             stage_entity: 目标场景实体。
-            chat_client: 已完成请求的 ChatClient。
+            chat_client: 已完成请求的 DeepSeekClient。
             cache_key: 不为 None 时将响应写入磁盘缓存。
         """
         try:

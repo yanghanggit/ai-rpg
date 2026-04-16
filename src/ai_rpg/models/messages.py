@@ -27,9 +27,6 @@ class SystemMessage(BaseMessage):
 
     type: str = "system"
 
-    def __init__(self, content: str = "", **kwargs: Any) -> None:
-        super().__init__(type="system", content=content, **kwargs)
-
 
 ############################################################################################################
 class HumanMessage(BaseMessage):
@@ -37,18 +34,12 @@ class HumanMessage(BaseMessage):
 
     type: str = "human"
 
-    def __init__(self, content: str = "", **kwargs: Any) -> None:
-        super().__init__(type="human", content=content, **kwargs)
-
 
 ############################################################################################################
 class AIMessage(BaseMessage):
     """AI 回复消息"""
 
     type: str = "ai"
-
-    def __init__(self, content: str = "", **kwargs: Any) -> None:
-        super().__init__(type="ai", content=content, **kwargs)
 
 
 ############################################################################################################

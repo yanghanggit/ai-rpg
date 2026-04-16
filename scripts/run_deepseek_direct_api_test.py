@@ -11,7 +11,7 @@ sys.path.insert(
 )
 
 from ai_rpg.chat_client import DeepSeekClient
-from ai_rpg.chat_client.messages import (
+from ai_rpg.models.messages import (
     AIMessage,
     HumanMessage,
     SystemMessage,

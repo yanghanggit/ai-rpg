@@ -7,7 +7,7 @@
 import hashlib
 import json
 from typing import List, Optional
-from langchain_core.messages import (
+from ..models.messages import (
     AIMessage,
     HumanMessage,
     SystemMessage,

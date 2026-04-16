@@ -8,7 +8,7 @@
 
 from dataclasses import dataclass
 from typing import Final, List, final, override, Set
-from langchain_core.messages import AIMessage
+from ..models.messages import AIMessage
 from loguru import logger
 from ..entitas import ExecuteProcessor, Entity
 from ..game.tcg_game import TCGGame

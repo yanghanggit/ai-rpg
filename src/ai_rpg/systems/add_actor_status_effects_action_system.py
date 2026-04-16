@@ -13,7 +13,7 @@ from typing import Final, List, final
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-from ..chat_client.client import ChatClient
+from ..chat_client import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -190,7 +190,7 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
 
         # 直接使用 filter() 已过滤的实体列表，避免重新查询导致对未添加 AddStatusEffectsAction 的角色 assert 失败
         # 为每个参战角色创建评估任务
-        chat_clients: List[ChatClient] = []
+        chat_clients: List[DeepSeekClient] = []
 
         for entity in entities:
 
@@ -215,7 +215,7 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
 
             # 创建聊天客户端
             chat_clients.append(
-                ChatClient(
+                DeepSeekClient(
                     name=entity.name,
                     prompt=prompt,
                     context=self._game.get_agent_context(entity).context,
@@ -224,7 +224,7 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
 
         # 并发调用所有 LLM
         logger.debug(f"开始并发评估 {len(chat_clients)} 个角色的状态效果...")
-        await ChatClient.batch_chat(clients=chat_clients)
+        await DeepSeekClient.batch_chat(clients=chat_clients)
 
         # 处理每个角色的响应
         for chat_client in chat_clients:
@@ -234,7 +234,7 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     def _process_status_effects_response(
-        self, entity: Entity, chat_client: ChatClient
+        self, entity: Entity, chat_client: DeepSeekClient
     ) -> None:
         """处理单个角色的状态效果评估响应，完成本轮对话并追加新状态效果
 

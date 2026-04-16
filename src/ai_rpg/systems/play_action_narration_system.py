@@ -11,7 +11,7 @@ from typing import Final, List, final
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-from ..chat_client.client import ChatClient
+from ..chat_client import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -92,8 +92,8 @@ class PlayActionNarrationSystem(ReactiveProcessor):
 
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
-        # 只为 action 为空且卡牌非空的实体创建 ChatClient
-        chat_clients: List[ChatClient] = []
+        # 只为 action 为空且卡牌非空的实体创建 DeepSeekClient
+        chat_clients: List[DeepSeekClient] = []
         for entity in entities:
             action = entity.get(PlayCardsAction)
             if action.action != "" or action.card.name == "":
@@ -106,7 +106,7 @@ class PlayActionNarrationSystem(ReactiveProcessor):
                 current_round_number=current_round_number,
             )
             chat_clients.append(
-                ChatClient(
+                DeepSeekClient(
                     name=entity.name,
                     prompt=prompt,
                     context=self._game.get_agent_context(entity).context,
@@ -121,7 +121,7 @@ class PlayActionNarrationSystem(ReactiveProcessor):
             f"PlayActionNarrationSystem: 为 {len(chat_clients)} 个出牌生成叙事"
         )
 
-        await ChatClient.batch_chat(clients=chat_clients)
+        await DeepSeekClient.batch_chat(clients=chat_clients)
 
         for client in chat_clients:
             found = self._game.get_entity_by_name(client.name)
@@ -134,7 +134,7 @@ class PlayActionNarrationSystem(ReactiveProcessor):
             self._apply_narration(found, client)
 
     #######################################################################################################################################
-    def _apply_narration(self, entity: Entity, client: ChatClient) -> None:
+    def _apply_narration(self, entity: Entity, client: DeepSeekClient) -> None:
         """解析 LLM 响应并回写至 PlayCardsAction.action。失败时记录错误日志，保持原有空字符串不变，由仲裁系统兜底。"""
         try:
             response = ActionNarrationResponse.model_validate_json(

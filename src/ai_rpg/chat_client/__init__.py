@@ -7,7 +7,13 @@ Please use: from ai_rpg.rag.routing import RouteDecisionManager
 from .protocol import ChatRequest, ChatResponse
 from .client import ChatClient
 from .deepseek_client import DeepSeekClient
-from .messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from ..models.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    get_buffer_string,
+)
 
 __all__ = [
     "ChatRequest",
@@ -18,4 +24,5 @@ __all__ = [
     "SystemMessage",
     "HumanMessage",
     "AIMessage",
+    "get_buffer_string",
 ]

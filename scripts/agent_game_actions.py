@@ -29,9 +29,8 @@ sys.path.insert(
 # 将 scripts 目录添加到模块搜索路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import asyncio
 from loguru import logger
-from ai_rpg.chat_client.client import ChatClient
+from ai_rpg.chat_client import DeepSeekClient
 from ai_rpg.services import server_configuration
 from ai_rpg.game.config import (
     BLUEPRINTS_DIR,
@@ -121,7 +120,7 @@ async def create_and_initialize_game(
         world=world_data,
     )
 
-    ChatClient.setup(server_configuration.deepseek_chat_server_port)
+    DeepSeekClient.setup()
     ImageClient.setup(server_configuration.replicate_image_generation_server_port)
 
     assert (
@@ -135,8 +134,8 @@ async def create_and_initialize_game(
         f"游戏创建并初始化完成：user={user}, game={game}, dungeon={dungeon_name}"
     )
 
-    # 并发检查聊天服务和图片服务
-    await asyncio.gather(ChatClient.health_check(), ImageClient.health_check())
+    # 并发检查图片服务
+    await ImageClient.health_check()
 
     # 持久化游戏世界数据到存档目录，并启用 gzip 快照功能
     archive_world(
@@ -171,7 +170,7 @@ async def _restore_game(
         player_session=player_session,
         world=world,
     )
-    ChatClient.setup(server_configuration.deepseek_chat_server_port)
+    DeepSeekClient.setup()
     ImageClient.setup(server_configuration.replicate_image_generation_server_port)
     terminal_game.restore_from_snapshot()
     await terminal_game.initialize()

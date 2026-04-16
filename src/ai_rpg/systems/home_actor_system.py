@@ -1,9 +1,9 @@
 from typing import Dict, Final, List, final
-from langchain_core.messages import AIMessage
+from ..models.messages import AIMessage
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-from ..chat_client import ChatClient
+from ..chat_client import DeepSeekClient
 from ..entitas import Entity, Matcher, GroupEvent, ReactiveProcessor
 from ..models import (
     AnnounceAction,
@@ -335,10 +335,10 @@ class HomeActorSystem(ReactiveProcessor):
             return
 
         # NPC：调用 LLM 进行行动规划
-        chat_clients: List[ChatClient] = self._create_actor_chat_clients(
+        chat_clients: List[DeepSeekClient] = self._create_actor_chat_clients(
             npc_entities, planning_turn
         )
-        await ChatClient.batch_chat(clients=chat_clients)
+        await DeepSeekClient.batch_chat(clients=chat_clients)
 
         for chat_client in chat_clients:
             response_entity = self._game.get_entity_by_name(chat_client.name)
@@ -516,7 +516,7 @@ class HomeActorSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     def _execute_actor_actions(
-        self, actor_entity: Entity, chat_client: ChatClient
+        self, actor_entity: Entity, chat_client: DeepSeekClient
     ) -> None:
         """执行角色的行动决策。
 
@@ -642,7 +642,7 @@ class HomeActorSystem(ReactiveProcessor):
     #######################################################################################################################################
     def _create_actor_chat_clients(
         self, actor_entities: List[Entity], planning_turn_index: int
-    ) -> List[ChatClient]:
+    ) -> List[DeepSeekClient]:
         """为角色创建聊天客户端。
 
         收集场景上下文并生成提示词，创建聊天客户端。
@@ -654,7 +654,7 @@ class HomeActorSystem(ReactiveProcessor):
         Returns:
             聊天客户端列表
         """
-        chat_clients: List[ChatClient] = []
+        chat_clients: List[DeepSeekClient] = []
 
         for actor_entity in actor_entities:
 
@@ -674,7 +674,7 @@ class HomeActorSystem(ReactiveProcessor):
 
             # 生成请求处理器
             chat_clients.append(
-                ChatClient(
+                DeepSeekClient(
                     name=actor_entity.name,
                     prompt=_build_action_planning_prompt(
                         current_stage=current_stage.name,

@@ -15,7 +15,7 @@ from typing import Dict, Final, List, final
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-from ..chat_client.client import ChatClient
+from ..chat_client import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -453,7 +453,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         )
 
         # 输出仲裁提示词日志，包含出牌者、卡牌信息、目标信息和当前回合数
-        chat_client = ChatClient(
+        chat_client = DeepSeekClient(
             name=stage_entity.name,
             prompt=message,
             context=self._game.get_agent_context(stage_entity).context,
@@ -504,7 +504,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
     def _apply_arbitration_result(
         self,
         stage_entity: Entity,
-        chat_client: ChatClient,
+        chat_client: DeepSeekClient,
         actor_entity: Entity,
         action: PlayCardsAction,
     ) -> None:

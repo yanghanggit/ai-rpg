@@ -2,7 +2,7 @@ from typing import Final, List, Set, final
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-from ..chat_client.client import ChatClient
+from ..chat_client import DeepSeekClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -13,7 +13,7 @@ from ..models import (
     InventoryComponent,
 )
 from ..utils import extract_json_from_code_block
-from langchain_core.messages import SystemMessage
+from ..models.messages import SystemMessage
 
 
 #######################################################################################################################################
@@ -119,12 +119,12 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
         ).entities.copy()
 
         # 准备外观更新请求
-        chat_clients: List[ChatClient] = self._prepare_appearance_requests(
+        chat_clients: List[DeepSeekClient] = self._prepare_appearance_requests(
             actor_entities
         )
 
         # 并行发送请求
-        await ChatClient.batch_chat(clients=chat_clients)
+        await DeepSeekClient.batch_chat(clients=chat_clients)
 
         # 处理响应
         for chat_client in chat_clients:
@@ -137,19 +137,19 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
     #######################################################################################################################################
     def _prepare_appearance_requests(
         self, actor_entities: Set[Entity]
-    ) -> List[ChatClient]:
+    ) -> List[DeepSeekClient]:
         """准备需要更新外观的角色请求。
 
         遍历所有角色实体，筛选出需要生成外观的角色（base_body不为空且appearance为空），
-        从 InventoryComponent 读取装备信息，为每个角色构建 ChatClient 请求处理器。
+        从 InventoryComponent 读取装备信息，为每个角色构建 DeepSeekClient 请求处理器。
 
         Args:
             actor_entities: 所有角色实体的集合
 
         Returns:
-            ChatClient请求处理器列表，每个处理器对应一个待生成外观的角色
+            DeepSeekClient请求处理器列表，每个处理器对应一个待生成外观的角色
         """
-        chat_clients: List[ChatClient] = []
+        chat_clients: List[DeepSeekClient] = []
 
         for actor_entity in actor_entities:
 
@@ -184,7 +184,7 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
 
             # 构建请求处理器
             chat_clients.append(
-                ChatClient(
+                DeepSeekClient(
                     name=actor_entity.name,
                     prompt=_build_appearance_prompt(
                         base_body=appearance_comp.base_body,
@@ -199,7 +199,7 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     def _process_appearance_response(
-        self, actor_entity: Entity, chat_client: ChatClient
+        self, actor_entity: Entity, chat_client: DeepSeekClient
     ) -> None:
         """处理外观生成的响应结果。
 
@@ -208,7 +208,7 @@ class ActorAppearanceUpdateSystem(ExecuteProcessor):
 
         Args:
             actor_entity: 角色实体
-            chat_client: 包含请求和响应内容的 ChatClient 处理器
+            chat_client: 包含请求和响应内容的 DeepSeekClient 处理器
 
         Raises:
             Exception: 当响应解析失败时记录错误日志

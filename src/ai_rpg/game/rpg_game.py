@@ -1,7 +1,7 @@
 import copy
 import uuid
 from typing import Any, Dict, Final, List, Sequence, Set
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from ..models.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from loguru import logger
 from overrides import override
 from ..entitas import Entity

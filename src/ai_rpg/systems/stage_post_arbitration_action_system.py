@@ -15,7 +15,7 @@ from typing import Final, List, Set, final
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-from ..chat_client.client import ChatClient
+from ..chat_client import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -310,7 +310,7 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
             current_round_number=current_round_number,
         )
 
-        chat_client = ChatClient(
+        chat_client = DeepSeekClient(
             name=stage_entity.name,
             prompt=prompt,
             context=self._game.get_agent_context(stage_entity).context,
@@ -319,12 +319,14 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
         logger.debug(
             f"StagePostArbitrationActionSystem: [{stage_entity.name}] 进行仲裁后干预评估"
         )
-        await ChatClient.batch_chat(clients=[chat_client])
+        await DeepSeekClient.batch_chat(clients=[chat_client])
 
         self._apply_response(stage_entity, chat_client)
 
     #######################################################################################################################################
-    def _apply_response(self, stage_entity: Entity, chat_client: ChatClient) -> None:
+    def _apply_response(
+        self, stage_entity: Entity, chat_client: DeepSeekClient
+    ) -> None:
         """解析 LLM 响应并应用状态效果与塞牌"""
 
         try:

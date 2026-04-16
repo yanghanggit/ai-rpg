@@ -7,6 +7,7 @@ from .combat import *
 from .components import *
 from .dungeon import *
 from .entities import *
+from .messages import *
 from .registry import *
 from .serialization import *
 from .task import *

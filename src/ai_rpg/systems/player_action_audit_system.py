@@ -11,9 +11,9 @@ from ..models import (
     PlayerActionAuditComponent,
 )
 from ..game.tcg_game import TCGGame
-from ..chat_client.client import ChatClient
+from ..chat_client import DeepSeekClient
 from ..utils import extract_json_from_code_block
-from langchain_core.messages import SystemMessage
+from ..models.messages import SystemMessage
 
 
 ####################################################################################################################################
@@ -238,14 +238,14 @@ class PlayerActionAuditSystem(ReactiveProcessor):
             ), "审计世界系统AI上下文的第一条消息必须是SystemMessage类型"
 
             # 创建AI审核请求（使用审计世界系统的system prompt）
-            chat_client = ChatClient(
+            chat_client = DeepSeekClient(
                 name=world_system_entity.name,
                 prompt=prompt,
                 context=[agent_context.context[0]],
             )
 
             # 发送审核请求
-            await ChatClient.batch_chat(clients=[chat_client])
+            await DeepSeekClient.batch_chat(clients=[chat_client])
 
             # 解析AI响应
             response_content = chat_client.response_content

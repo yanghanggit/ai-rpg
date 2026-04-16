@@ -8,13 +8,13 @@ import asyncio
 import os
 import time
 import traceback
-from typing import Any, Dict, Final, List, Optional, final
+from typing import Any, Dict, Final, List, Optional, Sequence, final
 import httpx
 import requests
 from dotenv import load_dotenv
 from loguru import logger
 
-from .messages import AIMessage, HumanMessage, SystemMessage
+from ..models.messages import AIMessage, BaseMessage
 
 load_dotenv()
 
@@ -83,7 +83,7 @@ class DeepSeekClient:
         self,
         name: str,
         prompt: str,
-        context: List[SystemMessage | HumanMessage | AIMessage],
+        context: Sequence[BaseMessage],
         use_reasoner: bool = False,
         timeout: Optional[int] = None,
     ) -> None:
@@ -101,7 +101,7 @@ class DeepSeekClient:
 
         self._name: Final[str] = name
         self._prompt: Final[str] = prompt
-        self._context: List[SystemMessage | HumanMessage | AIMessage] = context
+        self._context: Sequence[BaseMessage] = context
         self._use_reasoner: Final[bool] = use_reasoner
         self._timeout: Final[int] = timeout if timeout is not None else 30
 
@@ -127,6 +127,14 @@ class DeepSeekClient:
     def response_ai_message(self) -> Optional[AIMessage]:
         """获取 AI 回复消息"""
         return self._response_ai_message
+
+    ################################################################################################################################################################################
+    @property
+    def response_ai_messages(self) -> List[AIMessage]:
+        """获取 AI 回复消息列表（兼容 ChatClient 接口，最多含一条消息）"""
+        if self._response_ai_message is None:
+            return []
+        return [self._response_ai_message]
 
     ################################################################################################################################################################################
     @property

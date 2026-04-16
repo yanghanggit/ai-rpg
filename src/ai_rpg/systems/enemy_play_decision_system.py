@@ -2,7 +2,7 @@ import random
 from typing import Final, List, final, override
 from loguru import logger
 from pydantic import BaseModel
-from ..chat_client.client import ChatClient
+from ..chat_client import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -162,8 +162,8 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
             f"EnemyPlayDecisionSystem: 为 {len(entities)} 个敌人进行出牌决策推理"
         )
 
-        # 为每个敌人创建推理 ChatClient
-        chat_clients: List[ChatClient] = []
+        # 为每个敌人创建推理 DeepSeekClient
+        chat_clients: List[DeepSeekClient] = []
         for entity in entities:
             client = self._create_enemy_decision_client(entity)
             if client is not None:
@@ -174,7 +174,7 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
             return
 
         # 并行 LLM 推理
-        await ChatClient.batch_chat(clients=chat_clients)
+        await DeepSeekClient.batch_chat(clients=chat_clients)
 
         # 解析并替换 PlayCardsAction
         for client in chat_clients:
@@ -185,14 +185,14 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
             self._process_enemy_decision(found_entity, client)
 
     ####################################################################################################################################
-    def _create_enemy_decision_client(self, entity: Entity) -> ChatClient | None:
-        """为单个敌人实体创建出牌决策的 ChatClient。
+    def _create_enemy_decision_client(self, entity: Entity) -> DeepSeekClient | None:
+        """为单个敌人实体创建出牌决策的 DeepSeekClient。
 
         Args:
             entity: 敌人实体
 
         Returns:
-            ChatClient，若缺少必要组件则返回 None
+            DeepSeekClient，若缺少必要组件则返回 None
         """
         hand_comp = entity.get(HandComponent)
         if hand_comp is None or len(hand_comp.cards) == 0:
@@ -233,19 +233,19 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
             current_round_number=current_round_number,
         )
 
-        return ChatClient(
+        return DeepSeekClient(
             name=entity.name,
             prompt=prompt,
             context=self._game.get_agent_context(entity).context,
         )
 
     ####################################################################################################################################
-    def _process_enemy_decision(self, entity: Entity, client: ChatClient) -> None:
+    def _process_enemy_decision(self, entity: Entity, client: DeepSeekClient) -> None:
         """解析 LLM 决策响应，替换敌人的 PlayCardsAction。
 
         Args:
             entity: 敌人实体
-            client: 包含 LLM 响应的 ChatClient
+            client: 包含 LLM 响应的 DeepSeekClient
         """
         try:
             decision = EnemyDecisionResponse.model_validate_json(

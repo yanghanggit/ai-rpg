@@ -26,7 +26,7 @@ import shutil
 import zipfile
 from pathlib import Path
 
-from langchain_core.messages import get_buffer_string
+from ..models.messages import get_buffer_string
 from loguru import logger
 
 from .config import WORLDS_DIR

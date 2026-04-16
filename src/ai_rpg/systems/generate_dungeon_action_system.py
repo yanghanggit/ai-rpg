@@ -2,7 +2,7 @@ from typing import Final, List, final, override
 from pathlib import Path
 from loguru import logger
 from pydantic import BaseModel
-from ..chat_client.client import ChatClient
+from ..chat_client import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     WorldComponent,
@@ -439,7 +439,7 @@ class GenerateDungeonActionSystem(ReactiveProcessor):
         Returns:
             含 dungeon_name/ecology、stages 为空列表的 DungeonBlueprint；失败返回 None
         """
-        chat_client = ChatClient(
+        chat_client = DeepSeekClient(
             name=world_system_entity.name,
             prompt=_build_dungeon_ecology_prompt(),
             context=self._game.get_agent_context(world_system_entity).context,
@@ -488,7 +488,7 @@ class GenerateDungeonActionSystem(ReactiveProcessor):
         Returns:
             DungeonStageResponse 列表；解析失败时返回空列表
         """
-        chat_client = ChatClient(
+        chat_client = DeepSeekClient(
             name=world_system_entity.name,
             prompt=_build_dungeon_stages_prompt(
                 dungeon_name=blueprint.dungeon_name,
@@ -528,7 +528,7 @@ class GenerateDungeonActionSystem(ReactiveProcessor):
     ) -> None:
         """Step 3：为每个 Stage 并发生成怪物设定，配对成功后写入 blueprint.stages。
 
-        为每个 Stage 创建独立的 ChatClient，通过 batch_chat 并发请求 LLM。
+        为每个 Stage 创建独立的 DeepSeekClient，通过 batch_chat 并发请求 LLM。
         解析成功的 (stage, actor) 对构造 DungeonStageBlueprint 写入 blueprint.stages；
         解析失败的 Stage 整体跳过，不进入 blueprint。
 
@@ -541,8 +541,8 @@ class GenerateDungeonActionSystem(ReactiveProcessor):
             return
 
         context = self._game.get_agent_context(world_system_entity).context
-        clients: List[ChatClient] = [
-            ChatClient(
+        clients: List[DeepSeekClient] = [
+            DeepSeekClient(
                 name=stage.stage_name,
                 prompt=_build_dungeon_actor_prompt(
                     dungeon_name=blueprint.dungeon_name,
@@ -555,7 +555,7 @@ class GenerateDungeonActionSystem(ReactiveProcessor):
             for stage in stage_responses
         ]
 
-        await ChatClient.batch_chat(clients)
+        await DeepSeekClient.batch_chat(clients)
 
         for i, (client, stage) in enumerate(zip(clients, stage_responses), start=1):
             try:

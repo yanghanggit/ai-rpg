@@ -1,19 +1,14 @@
 from typing import Final, List, final
 from loguru import logger
 from overrides import override
-from ..chat_client.client import ChatClient
+from ..chat_client import DeepSeekClient
 from ..entitas import Entity, ExecuteProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     CombatArchiveEvent,
     ExpeditionMemberComponent,
 )
-from langchain_core.messages import (
-    AIMessage,
-    HumanMessage,
-    SystemMessage,
-    get_buffer_string,
-)
+from ..models.messages import AIMessage, HumanMessage, SystemMessage, get_buffer_string
 
 
 #######################################################################################################################################
@@ -153,10 +148,10 @@ class CombatArchiveSystem(ExecuteProcessor):
     #######################################################################################################################################
     def _create_combat_summary_clients(
         self, combat_actors: List[Entity]
-    ) -> List[ChatClient]:
+    ) -> List[DeepSeekClient]:
         """为所有战斗角色创建用于生成战斗总结的聊天客户端。
 
-        为每个参战角色创建ChatClient实例，配置包含：
+        为每个参战角色创建DeepSeekClient实例，配置包含：
         - 角色名称
         - AI提示词（基于场景名称和战斗回合数）
         - 角色的当前上下文（包含战斗历史消息）
@@ -165,9 +160,9 @@ class CombatArchiveSystem(ExecuteProcessor):
             combat_actors: 参与战斗的角色实体列表
 
         Returns:
-            ChatClient列表，每个客户端对应一个角色
+            DeepSeekClient列表，每个客户端对应一个角色
         """
-        chat_clients: List[ChatClient] = []
+        chat_clients: List[DeepSeekClient] = []
 
         # 获取总回合数
         total_rounds = len(self._game.current_dungeon.current_rounds or [])
@@ -181,7 +176,7 @@ class CombatArchiveSystem(ExecuteProcessor):
 
             # 生成请求处理器
             chat_clients.append(
-                ChatClient(
+                DeepSeekClient(
                     name=combat_actor.name,
                     prompt=_generate_combat_summary_prompt(
                         combat_actor.name, combat_stage_entity.name, total_rounds
@@ -193,7 +188,7 @@ class CombatArchiveSystem(ExecuteProcessor):
         return chat_clients
 
     #######################################################################################################################################
-    def _archive_actor_combat_record(self, chat_client: ChatClient) -> None:
+    def _archive_actor_combat_record(self, chat_client: DeepSeekClient) -> None:
         """归档单个角色的战斗记录。
 
         处理流程：
@@ -253,12 +248,12 @@ class CombatArchiveSystem(ExecuteProcessor):
 
         执行完整的批量归档流程：
         1. 获取当前战斗场景中的所有盟友角色（通过玩家定位场景）
-        2. 为每个角色创建ChatClient（包含总结prompt和上下文）
+        2. 为每个角色创建DeepSeekClient（包含总结prompt和上下文）
         3. 并行调用AI服务生成所有角色的战斗总结
         4. 遍历每个响应，调用_archive_actor_combat_record处理单个角色的归档
 
         Note:
-            - 使用ChatClient.gather_request_post实现并行AI请求，提高效率
+            - 使用DeepSeekClient.gather_request_post实现并行AI请求，提高效率
             - 仅处理当前战斗场景中的盟友角色，不包括敌人和其他场景的角色
             - 包括已死亡的盟友，因为他们也参与了战斗并需要记录经历
             - 每个角色的处理是独立的，互不影响
@@ -270,7 +265,7 @@ class CombatArchiveSystem(ExecuteProcessor):
         chat_clients = self._create_combat_summary_clients(list(combat_actors))
 
         # 语言服务
-        await ChatClient.batch_chat(clients=chat_clients)
+        await DeepSeekClient.batch_chat(clients=chat_clients)
 
         # 处理所有响应
         for chat_client in chat_clients:

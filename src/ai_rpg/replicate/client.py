@@ -16,7 +16,6 @@ from .config import replicate_config, GENERATED_IMAGES_OUTPUT_DIR
 from .image_tools import ReplicateImageTask
 from .types import ReplicateImageInput
 from ..models.image import GeneratedImage
-from .protocol import ImageGenerationResponse
 
 
 ################################################################################################################################################################################
@@ -47,9 +46,7 @@ class ReplicateImageClient:
         self._height: Final[int] = height
         self._model: Final[str] = model
 
-        self._response: ImageGenerationResponse = ImageGenerationResponse(
-            images=[], elapsed_time=0.0
-        )
+        self._images: List[GeneratedImage] = []
 
     ################################################################################################################################################################################
     @property
@@ -63,8 +60,8 @@ class ReplicateImageClient:
 
     ################################################################################################################################################################################
     @property
-    def response(self) -> "ImageGenerationResponse":
-        return self._response
+    def images(self) -> List[GeneratedImage]:
+        return self._images
 
     ################################################################################################################################################################################
     def _compute_aspect_ratio(self) -> str:
@@ -121,18 +118,15 @@ class ReplicateImageClient:
             local_path = await task.execute()
 
             elapsed_time = time.time() - start_time
-            self._response = ImageGenerationResponse(
-                images=[
-                    GeneratedImage(
-                        filename=Path(local_path).name,
-                        url=f"/images/{Path(local_path).name}",
-                        prompt=self._prompt,
-                        model=self._model,
-                        local_path=local_path,
-                    )
-                ],
-                elapsed_time=elapsed_time,
-            )
+            self._images = [
+                GeneratedImage(
+                    filename=Path(local_path).name,
+                    url=f"/images/{Path(local_path).name}",
+                    prompt=self._prompt,
+                    model=self._model,
+                    local_path=local_path,
+                )
+            ]
             logger.info(f"{self._name} successfully generated image: {local_path}")
 
         except ValueError as e:

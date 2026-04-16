@@ -13,7 +13,7 @@ from typing import Final, List, final
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-from ..chat_client import DeepSeekClient
+from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (

@@ -3,7 +3,7 @@ from ..models.messages import AIMessage
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-from ..chat_client import DeepSeekClient
+from ..deepseek import DeepSeekClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (

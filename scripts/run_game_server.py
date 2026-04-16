@@ -30,7 +30,7 @@ from ai_rpg.services.entity_details import (
 from ai_rpg.services.dungeon_state import dungeon_state_api_router
 from ai_rpg.services.stages_state import stages_state_api_router
 from ai_rpg.services.background_tasks import background_tasks_api_router
-from ai_rpg.chat_client import DeepSeekClient
+from ai_rpg.deepseek import DeepSeekClient
 from ai_rpg.services.player_session import player_session_api_router
 from config import LOGS_DIR
 from ai_rpg.replicate import (

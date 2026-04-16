@@ -1,6 +1,6 @@
 """Chat services module for handling AI chat functionality."""
 
-from .deepseek_client import DeepSeekClient
+from .client import DeepSeekClient
 from ..models.messages import (
     AIMessage,
     BaseMessage,

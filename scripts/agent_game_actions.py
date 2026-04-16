@@ -30,7 +30,7 @@ sys.path.insert(
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from loguru import logger
-from ai_rpg.chat_client import DeepSeekClient
+from ai_rpg.deepseek import DeepSeekClient
 from ai_rpg.game.config import (
     BLUEPRINTS_DIR,
     DUNGEONS_DIR,

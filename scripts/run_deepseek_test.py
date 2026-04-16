@@ -10,7 +10,7 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
 
-from ai_rpg.chat_client import DeepSeekClient
+from ai_rpg.deepseek import DeepSeekClient
 from ai_rpg.models.messages import (
     AIMessage,
     HumanMessage,

@@ -2,7 +2,7 @@ from typing import Final, List, final, override
 from pathlib import Path
 from loguru import logger
 from pydantic import BaseModel
-from ..chat_client import DeepSeekClient
+from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     WorldComponent,

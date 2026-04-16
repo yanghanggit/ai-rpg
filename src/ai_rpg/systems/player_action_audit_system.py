@@ -11,7 +11,7 @@ from ..models import (
     PlayerActionAuditComponent,
 )
 from ..game.tcg_game import TCGGame
-from ..chat_client import DeepSeekClient
+from ..deepseek import DeepSeekClient
 from ..utils import extract_json_from_code_block
 from ..models.messages import SystemMessage
 

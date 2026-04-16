@@ -1,7 +1,7 @@
 from typing import Final, List, final
 from loguru import logger
 from overrides import override
-from ..chat_client import DeepSeekClient
+from ..deepseek import DeepSeekClient
 from ..entitas import Entity, ExecuteProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (

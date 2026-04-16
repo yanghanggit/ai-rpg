@@ -3,7 +3,7 @@ from ..models.messages import AIMessage
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-from ..chat_client import DeepSeekClient
+from ..deepseek import DeepSeekClient
 from ..entitas import Entity, Matcher, GroupEvent, ReactiveProcessor
 from ..models import (
     AnnounceAction,

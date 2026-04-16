@@ -19,7 +19,7 @@ import random
 from typing import Dict, Final, List, final, override
 from loguru import logger
 from pydantic import BaseModel
-from ..chat_client import DeepSeekClient
+from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (

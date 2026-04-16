@@ -11,7 +11,12 @@ sys.path.insert(
 )
 
 from ai_rpg.chat_client import DeepSeekClient
-from ai_rpg.chat_client.messages import SystemMessage
+from ai_rpg.chat_client.messages import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage,
+    get_buffer_string,
+)
 
 _SYSTEM = SystemMessage(content="你是一个有帮助的助手，请用中文回答。")
 
@@ -53,8 +58,22 @@ async def test_batch_chat() -> None:
         print(f"💬 {client.response_content}")
 
 
+def test_get_buffer_string() -> None:
+    """测试 get_buffer_string 函数"""
+    print("\n=== 测试 get_buffer_string() ===")
+    messages = [
+        SystemMessage(content="你是一个有帮助的助手。"),
+        HumanMessage(content="你好，请介绍一下自己。"),
+        AIMessage(content="你好！我是 DeepSeek，一个 AI 助手。"),
+        HumanMessage(content="你能做什么？"),
+    ]
+    result = get_buffer_string(messages)
+    print(result)
+
+
 def main() -> None:
     DeepSeekClient.setup()
+    test_get_buffer_string()
     test_chat()
     asyncio.run(test_batch_chat())
 

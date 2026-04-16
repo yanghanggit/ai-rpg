@@ -7,7 +7,6 @@ from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.player_session import PlayerSession
 from ..game.tcg_game import TCGGame
-from ..replicate import GENERATED_IMAGES_OUTPUT_DIR
 from ..models import (
     NewGameRequest,
     NewGameResponse,
@@ -116,7 +115,6 @@ async def new_game(
         name=payload.game_name,
         player_session=room._player_session,
         world=world_data,
-        generated_images_dir=GENERATED_IMAGES_OUTPUT_DIR,
     )
 
     # 根据蓝图构建游戏实例，并刷新实体数据到world中

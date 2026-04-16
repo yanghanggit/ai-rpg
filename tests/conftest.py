@@ -11,7 +11,6 @@ try:
     from src.ai_rpg.models.world import World, Blueprint
     from src.ai_rpg.models.dungeon import Dungeon
     from src.ai_rpg.game.player_session import PlayerSession
-    from src.ai_rpg.replicate import GENERATED_IMAGES_OUTPUT_DIR
 
     _TCGGame: Optional[Type[TCGGame]] = TCGGame
     _Actor: Optional[Type[Actor]] = Actor
@@ -52,7 +51,6 @@ def sample_game() -> Any:
         name="test_blueprint",
         player_session=player,
         world=world,
-        generated_images_dir=GENERATED_IMAGES_OUTPUT_DIR,
     )
 
 

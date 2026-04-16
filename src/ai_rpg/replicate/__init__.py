@@ -9,6 +9,7 @@ from .config import (
     ReplicateConfig,
     replicate_config,
     GENERATED_IMAGES_OUTPUT_DIR,
+    GENERATED_IMAGES_URL_PREFIX,
 )
 from .image_tools import (
     run_concurrent_tasks,
@@ -31,5 +32,6 @@ __all__ = [
     "ReplicateImageInput",
     "replicate_config",
     "GENERATED_IMAGES_OUTPUT_DIR",
+    "GENERATED_IMAGES_URL_PREFIX",
     "ReplicateImageClient",
 ]

@@ -194,7 +194,6 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
         cover_client = ReplicateImageClient(
             name=f"{dungeon.name}.cover",
             prompt=cover_prompt,
-            output_dir=self._game.generated_images_dir,
             negative_prompt=_IMAGE_NEGATIVE_BASE,
             width=_IMAGE_WIDTH,
             height=_IMAGE_HEIGHT,
@@ -214,7 +213,6 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
             ReplicateImageClient(
                 name=f"{room.stage.name}.illustration",
                 prompt=prompt,
-                output_dir=self._game.generated_images_dir,
                 negative_prompt=_IMAGE_NEGATIVE_STAGE,
                 width=_IMAGE_WIDTH,
                 height=_IMAGE_HEIGHT,

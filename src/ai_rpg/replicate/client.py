@@ -12,7 +12,11 @@ import time
 from pathlib import Path
 from typing import Final, List, final
 from loguru import logger
-from .config import replicate_config
+from .config import (
+    replicate_config,
+    GENERATED_IMAGES_OUTPUT_DIR,
+    GENERATED_IMAGES_URL_PREFIX,
+)
 from .image_tools import ReplicateImageTask
 from .types import ReplicateImageInput
 from ..models.image import GeneratedImage
@@ -30,7 +34,6 @@ class ReplicateImageClient:
         self,
         name: str,
         prompt: str,
-        output_dir: Path,
         negative_prompt: str = "worst quality, low quality, blurry",
         width: int = 1024,
         height: int = 1024,
@@ -42,7 +45,6 @@ class ReplicateImageClient:
         self._prompt: Final[str] = prompt
         assert self._prompt != "", "prompt should not be empty"
 
-        self._output_dir: Final[Path] = output_dir
         self._negative_prompt: Final[str] = negative_prompt
         self._width: Final[int] = width
         self._height: Final[int] = height
@@ -110,7 +112,7 @@ class ReplicateImageClient:
             }
 
             filename = f"{self._model}_{uuid.uuid4()}.png"
-            output_path = str(self._output_dir / filename)
+            output_path = str(GENERATED_IMAGES_OUTPUT_DIR / filename)
 
             task = ReplicateImageTask(
                 model_version=model_version,
@@ -126,7 +128,7 @@ class ReplicateImageClient:
             self._images = [
                 GeneratedImage(
                     filename=Path(local_path).name,
-                    url=f"/images/{Path(local_path).name}",
+                    url=f"{GENERATED_IMAGES_URL_PREFIX}/{Path(local_path).name}",
                     prompt=self._prompt,
                     model=self._model,
                     local_path=local_path,

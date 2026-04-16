@@ -13,6 +13,10 @@ GENERATED_IMAGES_OUTPUT_DIR: Final[Path] = Path("generated_images")
 GENERATED_IMAGES_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 assert GENERATED_IMAGES_OUTPUT_DIR.exists(), "无法创建默认输出目录"
 
+# 静态文件服务的 HTTP URL 前缀（与 run_game_server.py 的 app.mount 保持一致）
+GENERATED_IMAGES_URL_PREFIX: Final[str] = "/images"
+assert GENERATED_IMAGES_URL_PREFIX.startswith("/"), "URL 前缀必须以 / 开头"
+
 """
 ## 📋 Nano-Banana 模型支持的所有尺寸
 

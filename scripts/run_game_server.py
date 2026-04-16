@@ -12,10 +12,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
-
-# from ai_rpg.services import (
-#     server_configuration,
-# )
 from config import GAME_SERVER_PORT
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,13 +32,9 @@ from ai_rpg.deepseek import DeepSeekClient
 from ai_rpg.services.player_session import player_session_api_router
 from config import LOGS_DIR
 from ai_rpg.replicate import (
-    # replicate_config,
     GENERATED_IMAGES_OUTPUT_DIR,
+    GENERATED_IMAGES_URL_PREFIX,
 )
-
-# 服务器配置文件路径
-# _server_setting_path: Final[Path] = Path("server_configuration.json")
-# assert _server_setting_path.exists(), f"{_server_setting_path} must exist"
 
 
 @asynccontextmanager
@@ -147,7 +139,9 @@ app.add_middleware(
 ############################################################################################################
 # 挂载静态文件服务
 app.mount(
-    "/images", StaticFiles(directory=str(GENERATED_IMAGES_OUTPUT_DIR)), name="images"
+    GENERATED_IMAGES_URL_PREFIX,
+    StaticFiles(directory=str(GENERATED_IMAGES_OUTPUT_DIR)),
+    name=GENERATED_IMAGES_URL_PREFIX.lstrip("/"),
 )
 
 # 公共的

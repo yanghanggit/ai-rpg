@@ -35,7 +35,6 @@ from ai_rpg.game.config import (
     BLUEPRINTS_DIR,
     DUNGEONS_DIR,
 )
-from ai_rpg.replicate import GENERATED_IMAGES_OUTPUT_DIR
 from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import TCGGame
 
@@ -119,7 +118,6 @@ async def create_and_initialize_game(
             game=game,
         ),
         world=world_data,
-        generated_images_dir=GENERATED_IMAGES_OUTPUT_DIR,
     )
 
     DeepSeekClient.setup()
@@ -171,7 +169,6 @@ async def _restore_game(
         name=game,
         player_session=player_session,
         world=world,
-        generated_images_dir=GENERATED_IMAGES_OUTPUT_DIR,
     )
     DeepSeekClient.setup()
     # ImageClient.setup(server_configuration.replicate_image_generation_server_port)

@@ -528,9 +528,10 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 entity=stage_entity,
                 message_content=chat_client.prompt,
             )
+            assert chat_client.response_ai_message is not None
             self._game.add_ai_message(
                 entity=stage_entity,
-                ai_messages=chat_client.response_ai_messages,
+                ai_message=chat_client.response_ai_message,
             )
 
             # 广播仲裁结果（包含战斗日志与演出描述）到场景

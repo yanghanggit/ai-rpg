@@ -405,7 +405,7 @@ class HomeActorSystem(ReactiveProcessor):
         standby_response = ActionPlanResponse(mind=passive_mind)
         self._game.add_ai_message(
             npc_entity,
-            [AIMessage(content=standby_response.model_dump_json(indent=2))],
+            AIMessage(content=standby_response.model_dump_json(indent=2)),
         )
 
         self._game.notify_entities(
@@ -462,7 +462,7 @@ class HomeActorSystem(ReactiveProcessor):
 
         mock_response = self._build_player_action_response(player_entity, passive_mind)
         self._game.add_ai_message(
-            player_entity, [AIMessage(content=mock_response.model_dump_json(indent=2))]
+            player_entity, AIMessage(content=mock_response.model_dump_json(indent=2))
         )
 
         # 被动观察轮：模拟 mind 通知，与 NPC 路径对齐
@@ -539,7 +539,8 @@ class HomeActorSystem(ReactiveProcessor):
                 chat_client.prompt,
                 home_actor_planning=actor_entity.name,
             )
-            self._game.add_ai_message(actor_entity, chat_client.response_ai_messages)
+            assert chat_client.response_ai_message is not None
+            self._game.add_ai_message(actor_entity, chat_client.response_ai_message)
 
             # 添加内心独白: 上下文！，这里做直接添加与通知处理
             if validated_response.mind != "":

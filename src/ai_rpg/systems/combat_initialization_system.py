@@ -251,7 +251,7 @@ class CombatInitializationSystem(ExecuteProcessor):
             # 注入模拟 AI 回应，维护 Human↔AI 交替结构
             self._game.add_ai_message(
                 entity=actor_entity,
-                ai_messages=[AIMessage(content="已感知战场环境，进入战斗准备状态。")],
+                ai_message=AIMessage(content="已感知战场环境，进入战斗准备状态。"),
             )
 
             logger.debug(f"[{actor_entity.name}] 战斗上下文注入完成（无 LLM 推理）")

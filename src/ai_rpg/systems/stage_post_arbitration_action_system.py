@@ -354,9 +354,10 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
                 entity=stage_entity,
                 message_content=chat_client.prompt,
             )
+            assert chat_client.response_ai_message is not None
             self._game.add_ai_message(
                 entity=stage_entity,
-                ai_messages=chat_client.response_ai_messages,
+                ai_message=chat_client.response_ai_message,
             )
 
             # 解析每个角色的指令，应用状态效果与塞牌

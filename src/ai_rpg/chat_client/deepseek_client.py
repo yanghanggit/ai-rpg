@@ -130,14 +130,6 @@ class DeepSeekClient:
 
     ################################################################################################################################################################################
     @property
-    def response_ai_messages(self) -> List[AIMessage]:
-        """获取 AI 回复消息列表（兼容 ChatClient 接口，最多含一条消息）"""
-        if self._response_ai_message is None:
-            return []
-        return [self._response_ai_message]
-
-    ################################################################################################################################################################################
-    @property
     def response_content(self) -> str:
         """获取 AI 回复的文本内容"""
         if self._response_ai_message is None:

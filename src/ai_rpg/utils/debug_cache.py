@@ -41,14 +41,14 @@ def compute_cache_key(
 
 
 ###########################################################################################################################################
-def load_debug_cache(cache_key: str) -> Optional[List[AIMessage]]:
+def load_debug_cache(cache_key: str) -> Optional[AIMessage]:
     """从磁盘加载缓存的 AI 响应。
 
     Args:
         cache_key: 由 compute_cache_key 生成的 hash 字符串
 
     Returns:
-        缓存的 AIMessage 列表；若缓存不存在或读取失败则返回 None
+        缓存的 AIMessage；若缓存不存在或读取失败则返回 None
     """
     cache_file = DEBUG_CACHE_DIR / f"{cache_key}.json"
     if not cache_file.exists():
@@ -56,22 +56,25 @@ def load_debug_cache(cache_key: str) -> Optional[List[AIMessage]]:
 
     try:
         data = json.loads(cache_file.read_text(encoding="utf-8"))
-        return [AIMessage.model_validate(msg) for msg in data["ai_messages"]]
+        messages = data["ai_messages"]
+        if not messages:
+            return None
+        return AIMessage.model_validate(messages[0])
     except Exception:
         return None
 
 
 ###########################################################################################################################################
-def save_debug_cache(cache_key: str, ai_messages: List[AIMessage]) -> None:
+def save_debug_cache(cache_key: str, ai_message: AIMessage) -> None:
     """将 AI 响应序列化后写入磁盘缓存。
 
     Args:
         cache_key: 由 compute_cache_key 生成的 hash 字符串
-        ai_messages: 需要缓存的 AIMessage 列表
+        ai_message: 需要缓存的 AIMessage
     """
     DEBUG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cache_file = DEBUG_CACHE_DIR / f"{cache_key}.json"
-    payload = {"ai_messages": [msg.model_dump() for msg in ai_messages]}
+    payload = {"ai_messages": [ai_message.model_dump()]}
     cache_file.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
     )

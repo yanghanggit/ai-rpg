@@ -421,9 +421,12 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 message_content=chat_client.prompt,
                 draw_cards_round_number=current_round_number,
             )
-            for ai_message in chat_client.response_ai_messages:
-                setattr(ai_message, "draw_cards_round_number", current_round_number)
-            self._game.add_ai_message(entity, chat_client.response_ai_messages)
+            assert chat_client.response_ai_message is not None
+            self._game.add_ai_message(
+                entity,
+                chat_client.response_ai_message,
+                draw_cards_round_number=current_round_number,
+            )
 
             # 构建 Card 列表：逐卡校验 target_type，非法值废弃并写入 agent 警告
             valid_target_types = {e.value for e in CardTargetType}

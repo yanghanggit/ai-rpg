@@ -258,8 +258,9 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
             )
 
             # 将 LLM 回复写入角色上下文（AI 端），完成本轮对话
+            assert chat_client.response_ai_message is not None
             self._game.add_ai_message(
-                entity=entity, ai_messages=chat_client.response_ai_messages
+                entity=entity, ai_message=chat_client.response_ai_message
             )
 
             # 添加新效果到现有列表

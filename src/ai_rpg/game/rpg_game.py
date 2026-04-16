@@ -472,19 +472,20 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         agent_context.context.extend([HumanMessage(content=message_content, **kwargs)])
 
     ###############################################################################################################################################
-    def add_ai_message(self, entity: Entity, ai_messages: List[AIMessage]) -> None:
+    def add_ai_message(
+        self, entity: Entity, ai_message: AIMessage, **kwargs: Any
+    ) -> None:
         """添加AI响应消息到实体的LLM上下文"""
-        assert len(ai_messages) > 0, "ai_messages should not be empty"
-        for ai_message in ai_messages:
-            assert isinstance(ai_message, AIMessage)
-            assert ai_message.content != "", "ai_message content should not be empty"
-            logger.debug(
-                f"add_ai_message: {entity.name} 添加LLM context:\n{ai_message.content}"
-            )
-
-        # 添加多条 AIMessage
+        assert isinstance(ai_message, AIMessage)
+        assert ai_message.content != "", "ai_message content should not be empty"
+        if kwargs:
+            for key, value in kwargs.items():
+                setattr(ai_message, key, value)
+        logger.debug(
+            f"add_ai_message: {entity.name} 添加LLM context:\n{ai_message.content}"
+        )
         agent_context = self.get_agent_context(entity)
-        agent_context.context.extend(ai_messages)
+        agent_context.context.append(ai_message)
 
     ###############################################################################################################################################
     def broadcast_to_stage(

@@ -200,26 +200,20 @@ class StageDescriptionSystem(ExecuteProcessor):
         self,
         stage_entity: Entity,
         prompt: str,
-        ai_messages: List[AIMessage],
+        ai_message: AIMessage,
     ) -> None:
         """用磁盘缓存的 AI 响应 replay 场景描述更新，不触发网络请求。
 
         Args:
             stage_entity: 目标场景实体。
             prompt: 本次请求的 prompt（写入对话历史）。
-            ai_messages: 缓存的 AIMessage 列表。
+            ai_message: 缓存的 AIMessage。
         """
         try:
 
-            # 从缓存的 AIMessage 列表中提取内容并解析
-            response_content = ""
-            if ai_messages:
-                content = ai_messages[-1].content
-                response_content = content if isinstance(content, str) else str(content)
-
             # 解析响应并更新环境描写
             format_response = StageDescriptionResponse.model_validate_json(
-                extract_json_from_code_block(response_content)
+                extract_json_from_code_block(ai_message.content)
             )
 
             if format_response.description == "":
@@ -228,7 +222,7 @@ class StageDescriptionSystem(ExecuteProcessor):
 
             # 仅更新对话历史和环境描写，不触发网络请求
             self._game.add_human_message(stage_entity, prompt)
-            self._game.add_ai_message(stage_entity, ai_messages)
+            self._game.add_ai_message(stage_entity, ai_message)
 
             # if format_response.description != "":
             stage_entity.replace(
@@ -267,7 +261,8 @@ class StageDescriptionSystem(ExecuteProcessor):
                 raise ValueError("AI返回的环境描写为空")
 
             self._game.add_human_message(stage_entity, chat_client.prompt)
-            self._game.add_ai_message(stage_entity, chat_client.response_ai_messages)
+            assert chat_client.response_ai_message is not None
+            self._game.add_ai_message(stage_entity, chat_client.response_ai_message)
 
             # 更新环境描写
             # if format_response.description != "":
@@ -279,7 +274,8 @@ class StageDescriptionSystem(ExecuteProcessor):
 
             # 写入缓存
             if self._enable_debug_cache and cache_key is not None:
-                save_debug_cache(cache_key, chat_client.response_ai_messages)
+                assert chat_client.response_ai_message is not None
+                save_debug_cache(cache_key, chat_client.response_ai_message)
 
         except Exception as e:
             logger.error(f"Exception: {e}")

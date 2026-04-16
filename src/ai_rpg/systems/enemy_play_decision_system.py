@@ -310,7 +310,8 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
                 message_content=client.prompt,
                 draw_cards_round_number=current_round_number,
             )
-            self._game.add_ai_message(entity, client.response_ai_messages)
+            assert client.response_ai_message is not None
+            self._game.add_ai_message(entity, client.response_ai_message)
 
             # 替换 PlayCardsAction，填入真实卡牌和目标
             entity.replace(

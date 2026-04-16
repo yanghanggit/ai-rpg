@@ -4,6 +4,7 @@ TCG 游戏核心实现
 融合交易卡牌战斗机制的 RPG 游戏，包含地下城探险、战斗系统和流程管道管理。
 """
 
+from pathlib import Path
 from typing import Final
 from loguru import logger
 from overrides import override
@@ -49,10 +50,13 @@ class TCGGame(RPGGame):
         name: str,
         player_session: PlayerSession,
         world: World,
+        generated_images_dir: Path,
     ) -> None:
 
         # 必须按着此顺序实现父类
         RPGGame.__init__(self, name, player_session, world)
+
+        self._generated_images_dir: Final[Path] = generated_images_dir
 
         # 家园流程（NPC 与玩家共用）
         self._home_pipeline: Final[RPGGameProcessPipeline] = create_home_pipeline(self)
@@ -71,6 +75,11 @@ class TCGGame(RPGGame):
         self.register_pipeline(self._home_pipeline)
         self.register_pipeline(self._combat_pipeline)
         self.register_pipeline(self._dungeon_generate_pipeline)
+
+    ###############################################################################################################################################
+    @property
+    def generated_images_dir(self) -> Path:
+        return self._generated_images_dir
 
     ###############################################################################################################################################
     @property

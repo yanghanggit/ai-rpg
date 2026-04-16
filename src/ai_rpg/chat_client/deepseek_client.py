@@ -2,6 +2,15 @@
 
 直接调用 DeepSeek 平台 REST API，不经过本地 deepseek_chat_server。
 公共接口与 ChatClient 保持一致，context 类型改用本模块的自定义消息类型。
+
+temperature 参数默认为 1.0。
+我们建议您根据如下表格，按使用场景设置 temperature。
+场景	温度
+代码生成/数学解题 0.0
+数据抽取/分析	1.0
+通用对话	1.3
+翻译	1.3
+创意类写作/诗歌创作	1.5
 """
 
 import asyncio

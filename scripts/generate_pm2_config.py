@@ -50,26 +50,6 @@ def main(target_directory: str = ".") -> None:
       out_file: './logs/game-server-{server_configuration.game_server_port}-out.log',
       time: true
     }},
-    // DeepSeek聊天服务器实例 - 端口 {server_configuration.deepseek_chat_server_port}
-    {{
-      name: 'deepseek-chat-server-{server_configuration.deepseek_chat_server_port}',
-      script: 'uvicorn',
-      args: 'scripts.run_deepseek_chat_server:app --host 0.0.0.0 --port {server_configuration.deepseek_chat_server_port}',
-      interpreter: 'python',
-      cwd: process.cwd(),
-      env: {{
-        PYTHONPATH: `${{process.cwd()}}`,
-        PORT: '{server_configuration.deepseek_chat_server_port}'
-      }},
-      instances: 1,
-      autorestart: false,
-      watch: false,
-      max_memory_restart: '2G',
-      log_file: './logs/deepseek-chat-server-{server_configuration.deepseek_chat_server_port}.log',
-      error_file: './logs/deepseek-chat-server-{server_configuration.deepseek_chat_server_port}-error.log',
-      out_file: './logs/deepseek-chat-server-{server_configuration.deepseek_chat_server_port}-out.log',
-      time: true
-    }},
     // 图片生成服务器实例 - 端口 {server_configuration.replicate_image_generation_server_port}
     {{
       name: 'image-generation-server-{server_configuration.replicate_image_generation_server_port}',

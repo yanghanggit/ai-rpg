@@ -41,17 +41,6 @@ dependencies = [
     "idna>=3.6",
     "grpcio>=1.74.0",
     "requests-oauthlib>=2.0.0",
-    # LangChain ecosystem
-    "langchain>=1.2.0",
-    "langchain-community>=0.4.1",
-    "langchain-core>=1.2.5",
-    "langchain-openai>=0.3.28",
-    "langchain-text-splitters>=0.3.9",
-    "langgraph>=1.0.5",
-    "langgraph-checkpoint>=2.1.0,<3.0.0",
-    "langgraph-sdk>=0.2.0",
-    "langserve>=0.3.1",
-    "langsmith>=0.4.9",
     # Model Context Protocol (MCP)
     "mcp>=1.13.0",
     # Text-to-image generation
@@ -144,8 +133,6 @@ dependencies = [
     "pytz>=2024.1",
     "tzdata>=2024.1",
     "regex>=2023.12.25",
-    "langchain-deepseek>=0.1.4",
-    "langgraph-prebuilt>=1.0.0",
     "cfgv>=3.4.0",
     "psycopg2-binary>=2.9.10",
     "passlib>=1.7.4",

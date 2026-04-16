@@ -12,9 +12,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
-from ai_rpg.services import (
-    server_configuration,
-)
+
+# from ai_rpg.services import (
+#     server_configuration,
+# )
+from config import GAME_SERVER_PORT
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from ai_rpg.services.dungeon_gameplay import (
@@ -55,9 +57,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # 在这里添加启动时需要执行的初始化操作
     try:
 
-        logger.info(
-            f"✅ 服务器配置已加载，端口: {server_configuration.game_server_port}"
-        )
+        logger.info(f"✅ 服务器配置已加载，端口: {GAME_SERVER_PORT}")
 
         # 可以在这里添加其他初始化操作，比如：
         # - 数据库连接初始化
@@ -179,14 +179,14 @@ def main() -> None:
     logger.add(_log_file, level="DEBUG")
     logger.info(f"日志配置: 级别=DEBUG, 文件路径={_log_file}")
 
-    logger.info(f"启动游戏服务器，端口: {server_configuration.game_server_port}")
+    logger.info(f"启动游戏服务器，端口: {GAME_SERVER_PORT}")
 
     import uvicorn
 
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=server_configuration.game_server_port,
+        port=GAME_SERVER_PORT,
     )
 
 

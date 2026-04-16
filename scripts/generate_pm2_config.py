@@ -17,7 +17,8 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
 
-from ai_rpg.services import server_configuration
+# from ai_rpg.services import server_configuration
+from config import GAME_SERVER_PORT
 
 
 def main(target_directory: str = ".") -> None:
@@ -30,24 +31,24 @@ def main(target_directory: str = ".") -> None:
     """
     ecosystem_config_content = f"""module.exports = {{
   apps: [
-    // 游戏服务器实例 - 端口 {server_configuration.game_server_port}
+    // 游戏服务器实例 - 端口 {GAME_SERVER_PORT}
     {{
-      name: 'game-server-{server_configuration.game_server_port}',
+      name: 'game-server-{GAME_SERVER_PORT}',
       script: 'uvicorn',
-      args: 'scripts.run_game_server:app --host 0.0.0.0 --port {server_configuration.game_server_port}',
+      args: 'scripts.run_game_server:app --host 0.0.0.0 --port {GAME_SERVER_PORT}',
       interpreter: 'python',
       cwd: process.cwd(),
       env: {{
         PYTHONPATH: `${{process.cwd()}}`,
-        PORT: '{server_configuration.game_server_port}'
+        PORT: '{GAME_SERVER_PORT}'
       }},
       instances: 1,
       autorestart: false,
       watch: false,
       max_memory_restart: '2G',
-      log_file: './logs/game-server-{server_configuration.game_server_port}.log',
-      error_file: './logs/game-server-{server_configuration.game_server_port}-error.log',
-      out_file: './logs/game-server-{server_configuration.game_server_port}-out.log',
+      log_file: './logs/game-server-{GAME_SERVER_PORT}.log',
+      error_file: './logs/game-server-{GAME_SERVER_PORT}-error.log',
+      out_file: './logs/game-server-{GAME_SERVER_PORT}-out.log',
       time: true
     }}
   ]

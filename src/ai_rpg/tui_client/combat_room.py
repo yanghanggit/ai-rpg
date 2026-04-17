@@ -731,11 +731,17 @@ class CombatRoomScreen(Screen[None]):
             action_str = (
                 f"\n        [dim]{card.description}[/]" if card.description else ""
             )
+            affixes_str = (
+                f"\n        [yellow]词缀：{'、'.join(card.affixes)}[/]"
+                if card.affixes
+                else ""
+            )
             log.write(
                 f"    [bold cyan]{i}.[/] [bold]{card.name}[/]  "
                 f"伤害:[red]{card.damage_dealt}[/]{hit_str}  格挡:[blue]{card.block_gain}[/]  目标:{tt_str}"
                 + source_str
                 + action_str
+                + affixes_str
             )
         self._current_actor = current_actor
         self._phase = _Phase.SELECT_CARD
@@ -1353,8 +1359,8 @@ class CombatRoomScreen(Screen[None]):
                                     else ""
                                 )
                                 + (
-                                    f"  [yellow]副作用暗示：{card.status_effect_hint}[/]"
-                                    if card.status_effect_hint
+                                    f"  [yellow]词缀：{'、'.join(card.affixes)}[/]"
+                                    if card.affixes
                                     else ""
                                 )
                             )

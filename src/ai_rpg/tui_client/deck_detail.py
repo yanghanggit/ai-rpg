@@ -142,8 +142,8 @@ class DeckDetailScreen(Screen[None]):
                             else ""
                         )
                         hint_str = (
-                            f"\n        [yellow]副作用暗示：{card.status_effect_hint}[/]"
-                            if card.status_effect_hint
+                            f"\n        [yellow]词缀：{'、'.join(card.affixes)}[/]"
+                            if card.affixes
                             else ""
                         )
                         source_str = (

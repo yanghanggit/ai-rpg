@@ -101,9 +101,9 @@ class Card(BaseModel):
 
     name: str
     description: str  # 直接战斗行为描述（第三人称客观描述，说明这张牌造成的即时效果，如伤害/格挡；与出牌场景无关）
-    status_effect_hint: str = (
-        ""  # 可能触发的持续性状态效果暗示（如"可能引发燃烧、中毒等持续效果"）；为空时仲裁后不触发 AddStatusEffectsAction LLM 推理
-    )
+    affixes: List[str] = (
+        []
+    )  # 词缀列表，每项为"[名称]:短句描述"格式（如"[燃烧]:可能引发持续火焰伤害"）；为空时仲裁后不触发 AddStatusEffectsAction LLM 推理
     damage_dealt: int = 0  # 造成的伤害值（单次）
     block_gain: int = 0  # 提供的格挡增量
     hit_count: int = (

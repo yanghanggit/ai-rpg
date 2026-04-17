@@ -49,9 +49,9 @@ class CardEntry(BaseModel):
 
     name: str
     description: str
-    status_effect_hint: str = (
-        ""  # 可能触发的持续性状态效果暗示；为空时仲裁后不触发 AddStatusEffectsAction LLM 推理
-    )
+    affixes: List[str] = (
+        []
+    )  # 词缀列表，每项为"[名称]:短句描述"格式；为空时仲裁后不触发 AddStatusEffectsAction LLM 推理
     damage_dealt: int
     block_gain: int
     hit_count: int = 1
@@ -153,13 +153,13 @@ def _generate_draw_prompt(
         "  【重要】禁止提及任何当前场景的地物（如断柱、沙地、余晖、岩板等）、地名或即时情境细节。\n"
         "  ❌ 错误示例：「借助断柱的支撑旋身，踢击敌人」「从落日余晖中冲出扑向目标」\n"
         "  ✓ 正确示例：「旋身借力，以连续踢击攻击单一敌人」「快速突进，向单一目标发起猛扑」\n"
-        '- status_effect_hint：可能触发的持续性状态效果暗示（1句，如"可能引发燃烧、中毒、虚弱等持续加深效果"）；若该卡仅为即时伤害/格挡无副作用，则留空字符串""\n'
+        '- affixes：词缀列表，每项格式为"[名称]:短句描述"（如"[燃烧]:可能引发持续火焰伤害"、"[中毒]:持续造成毒素伤害"）；若该卡仅为即时伤害/格挡无副作用，则输出空数组 []\n'
         "- damage_dealt：单次攻击造成的伤害值（基于攻击力合理推算，整数）\n"
         "- block_gain：本张卡牌提供的格挡增量（基于防御力合理推算，整数）\n"
         "- hit_count：攻击次数（默认 1；多段攻击如回旋镖可设为 2~4，每段独立抵挡目标格挡）\n"
         "- target_type：出牌目标类型：攻击/伤害类卡牌通常选 enemy_single 或 enemy_all；每段独立随机命中一名敌方（多段随机，搭配较高 hit_count）选 enemy_random_multi；治疗/强化友方类卡牌通常选 ally_single 或 ally_all；纯粹的自我防御、呼吸调息等仅作用于自身的卡牌选 self_only"
     )
-    example_line = '{"name":"...","description":"...","status_effect_hint":"","damage_dealt":0,"block_gain":0,"hit_count":1,"target_type":"enemy_single"}'
+    example_line = '{"name":"...","description":"...","affixes":[],"damage_dealt":0,"block_gain":0,"hit_count":1,"target_type":"enemy_single"}'
 
     sections = [stats_line]
 
@@ -453,7 +453,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     Card(
                         name=entry.name,
                         description=entry.description,
-                        status_effect_hint=entry.status_effect_hint,
+                        affixes=entry.affixes,
                         damage_dealt=entry.damage_dealt,
                         block_gain=entry.block_gain,
                         hit_count=entry.hit_count,

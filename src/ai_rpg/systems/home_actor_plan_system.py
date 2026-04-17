@@ -13,6 +13,7 @@ from ..models import (
     WhisperAction,
     PlanAction,
     TransStageAction,
+    InspectSelfAction,
     HomeComponent,
     MindEvent,
     ActorComponent,
@@ -58,6 +59,7 @@ class ActionPlanResponse(BaseModel):
     Attributes:
         mind: 内心独白
         query: 数据库检索关键词
+        inspect_self: 查阅自身背包与属性（true 时触发 InspectSelfActionSystem）
         speak: 说话行动（目标角色名 -> 内容）
         whisper: 耳语行动（目标角色名 -> 内容）
         announce: 公开宣布
@@ -66,6 +68,7 @@ class ActionPlanResponse(BaseModel):
 
     mind: str = ""
     query: str = ""
+    inspect_self: bool = False
     speak: Dict[str, str] = {}
     whisper: Dict[str, str] = {}
     announce: str = ""
@@ -215,26 +218,35 @@ def _build_action_planning_prompt_v2(
 ```
 每回合结构：
 ├─ mind [必填] - 内心独白/思考
-└─ 主要行动 [二选一，严格互斥]
-   ├─ A. query - 检索思考（向内）
-   └─ B. 交流行动 - 向外发送信息（二选一）
-       ├─ speak
-       └─ whisper
+├─ 向内查询 [可叠加，互不干扰]
+│   ├─ query        - 检索外部知识库（可选）
+│   └─ inspect_self - 查阅自身背包与属性（可选）
+└─ 对外交流 [二选一，与向内查询互斥]
+    ├─ speak
+    └─ whisper
 ```
+
+> `query` 与 `inspect_self` 可同时使用，也可各自单独使用，检索来源不同互不干扰。
+> 向内查询与对外交流**不能同轮并用**：若本轮决定说话/耳语，则不填 query 与 inspect_self。
 
 2. **第一人称视角**  
    所有行动和思考必须以第一人称进行。
 
-3. **对内检索** (`query`)
-   - System prompt是信息目录，需要详细信息时用query向数据库检索，结果会添加到context
+3. **知识库检索** (`query`)
+   - System prompt 是信息目录，需要详细信息时用 query 向外部数据库检索，结果会添加到下一轮 context
 
-4. **对外交流** - 两种方式的区别
+4. **自我审视** (`inspect_self`)
+   - 设为 `true` 时，系统将把你的背包物品与当前战斗属性注入到下一轮 context
+   - 适合在不确定自身装备或状态时使用；不需要填写任何额外参数
+   - 可与 `query` 同时使用
+
+5. **对外交流** - 两种方式的区别
    - `speak`：对当前场景内指定角色说话（公开，场景内所有人都能听到）
    - `whisper`：对指定角色耳语（私密，只有你和对方知道）
    
-   **约束**：只能使用context中已有的信息
+   **约束**：只能使用 context 中已有的信息；本轮使用对外交流时，query 与 inspect_self 留空
    
-5. **严格禁止虚构**：`mind`/`speak`/`whisper` 均只能基于 context 中已有的信息。禁止在任何字段中捏造其他角色的动作、反应或对话，禁止虚构 context 中未记录的事件。`mind` 只写你自己的思考，不得描述他人行为。
+6. **严格禁止虚构**：`mind`/`speak`/`whisper` 均只能基于 context 中已有的信息。禁止在任何字段中捏造其他角色的动作、反应或对话，禁止虚构 context 中未记录的事件。`mind` 只写你自己的思考，不得描述他人行为。
 
 ## 输出格式(JSON)
 
@@ -242,6 +254,7 @@ def _build_action_planning_prompt_v2(
 {{
   "mind": "内心独白",
   "query": "检索关键词",
+  "inspect_self": false,
   "speak": {{
     "角色全名": "说话内容"
   }},
@@ -581,6 +594,10 @@ class HomeActorPlanSystem(ReactiveProcessor):
                 actor_entity.replace(
                     QueryAction, actor_entity.name, validated_response.query
                 )
+
+            # 添加自我审视动作
+            if validated_response.inspect_self:
+                actor_entity.replace(InspectSelfAction, actor_entity.name)
 
             # 最后：如果需要可以添加传送场景。
             if validated_response.trans_stage != "":

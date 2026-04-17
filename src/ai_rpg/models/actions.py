@@ -106,6 +106,23 @@ class QueryAction(Component):
 @final
 @register_action_component_type
 @register_component_type
+class InspectSelfAction(Component):
+    """自我审视动作组件
+
+    触发角色查阅自身背包（InventoryComponent）与战斗属性（CharacterStatsComponent），
+    由 InspectSelfActionSystem 将格式化后的信息注入 LLM context。
+
+    Attributes:
+        name: 发起查阅的角色名称
+    """
+
+    name: str
+
+
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
 class TransStageAction(Component):
     """场景转换动作组件
 

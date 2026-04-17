@@ -38,6 +38,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
         StageDescriptionSystem,
     )
     from ..systems.home_actor_plan_system import HomeActorPlanSystem
+    from ..systems.inspect_self_action_system import InspectSelfActionSystem
 
     ##
     tcg_game = cast(TCGGame, game)
@@ -53,8 +54,9 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     processors.add(StageDescriptionSystem(game=tcg_game, enable_debug_cache=True))
     processors.add(HomeActorPlanSystem(tcg_game))
 
-    # 动作处理相关的系统：查询-审核-说话-耳语-公告-场景转换-清理
+    # 动作处理相关的系统：查询-自我审视-审核-说话-耳语-公告-场景转换-清理
     processors.add(QueryActionSystem(tcg_game))
+    processors.add(InspectSelfActionSystem(tcg_game))
     processors.add(PlayerActionAuditSystem(tcg_game))
     processors.add(SpeakActionSystem(tcg_game))
     processors.add(WhisperActionSystem(tcg_game))

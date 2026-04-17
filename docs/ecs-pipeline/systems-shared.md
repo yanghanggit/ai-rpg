@@ -66,10 +66,15 @@
 
 **执行流程**：
 
-1. 收集有 `StageComponent` 且无 `StageDescriptionComponent` 的场景实体
+1. 收集有 `StageComponent` 且无 `StageDescriptionComponent` 的场景实体，并通过 `get_actor_appearances_in_stage()` 读取场景内所有角色的外观描述
 2. 命中 debug 磁盘缓存（`enable_debug_cache=True` 时）则直接复用，跳过 LLM
-3. 其余场景并行调用 LLM 生成环境描述（纯环境，不含角色信息）
-4. `replace` 写入 `StageDescriptionComponent.narrative`
+3. 其余场景并行调用 LLM 生成环境描述，写入 `StageDescriptionComponent.narrative`
+
+**Prompt 设计要点**：
+
+- 角色外观作为「环境影响推断依据」传入（而非纯粹的角色信息），LLM 须分析其对场景环境的间接影响（如：持火把者 → 黑暗空间被照亮；发光生物 → 洞壁映出光晕）
+- 若角色外观对场景环境有直接影响，该**环境效果**须体现在描述中
+- 最终描述中不得出现任何角色名称、形态或行为，只输出纯粹的第三人称环境叙述
 
 `enable_debug_cache` 参数在开发期避免重复调用 LLM，生产环境应关闭。
 

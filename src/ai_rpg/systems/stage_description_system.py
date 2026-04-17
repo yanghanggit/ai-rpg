@@ -32,23 +32,30 @@ def _build_stage_description_prompt(
 ) -> str:
     """为场景描述请求构建 prompt。
 
-    指示 AI 仅描述场景环境，不得包含角色信息。
+    指示 AI 根据场景内角色外观推断其对环境的间接影响，并将影响效果融入场景描述，
+    但最终输出不得提及任何角色本身。
 
     Args:
         actor_appearances_in_stage: 角色名称 → 外貌描述的映射。
 
     Returns:
-        包含角色列表与 JSON 输出格式要求的 prompt 字符串。
+        包含角色外观列表与 JSON 输出格式要求的 prompt 字符串。
     """
+
+    # 构建角色外观信息列表，若无角色则注明“无”以避免 AI 误以为输入遗漏导致解析错误
     actor_appearances_in_stage_info = []
     for actor_name, appearance in actor_appearances_in_stage.items():
         actor_appearances_in_stage_info.append(f"{actor_name}: {appearance}")
+
+    # 若场景内无角色，则明确告知 AI 以避免其误以为是输入遗漏导致的解析错误
     if len(actor_appearances_in_stage_info) == 0:
         actor_appearances_in_stage_info.append("无")
 
     return f"""# 请你输出你的场景描述。并以 JSON 格式输出。
 
-## 场景内角色
+## 场景内角色外观（用于推断环境影响）
+
+以下角色的外观可能对场景环境产生间接影响，请据此推断当前环境状态。
 
 {"\n\n".join(actor_appearances_in_stage_info)}
 
@@ -62,7 +69,8 @@ def _build_stage_description_prompt(
 
 **约束规则**：
 
-- 场景内的环境描述，不要包含任何角色信息
+- 若角色外观会对环境产生直接影响（例如：持火把者照亮黑暗空间、发光生物映亮洞壁），须将该**环境影响效果**纳入场景描述
+- 无论角色是否对环境产生影响，最终描述中均**不得提及**任何角色本身（不得出现角色名称、角色形态或角色行为）
 - 所有输出必须为第三人称视角
 - 严格按上述JSON格式输出"""
 

@@ -88,7 +88,7 @@ def _generate_defeat_notification() -> str:
 #######################################################################################################################################
 def _generate_post_arbitration_task_hint(
     actor_name: str,
-    action: PlayCardsAction,
+    play_cards_action: PlayCardsAction,
     entity_name: str,
 ) -> str:
     """生成仲裁结算后的 AddStatusEffectsAction task_hint
@@ -98,16 +98,16 @@ def _generate_post_arbitration_task_hint(
 
     Args:
         actor_name: 出牌者实体全名
-        action: 本次出牌的 PlayCardsAction 组件（包含完整卡牌与目标信息）
+        play_cards_action: 本次出牌的 PlayCardsAction 组件（包含完整卡牌与目标信息）
         entity_name: 当前需要评估状态效果的实体全名
 
     Returns:
         结构化的 task_hint 字符串，区分出牌者视角与目标视角
     """
-    card = action.card
+    card = play_cards_action.card
     actor_short_name = actor_name.split(".")[-1]
-    targets_str = "、".join(t.split(".")[-1] for t in action.targets) or "无"
-    action_desc = action.action if action.action else "（未提供）"
+    targets_str = "、".join(t.split(".")[-1] for t in play_cards_action.targets) or "无"
+    action_desc = play_cards_action.action if play_cards_action.action else "（未提供）"
 
     status_hint_line = (
         f"- 潜在词缀：{chr(10).join(card.affixes)}" if card.affixes else ""
@@ -191,6 +191,7 @@ class _RandomMultiSections:
         self.log_example = log_example
 
 
+#######################################################################################################################################
 def _build_random_multi_sections(
     play_cards_action: PlayCardsAction,
 ) -> _RandomMultiSections:
@@ -371,9 +372,16 @@ class ArbitrationActionSystem(ReactiveProcessor):
     async def _request_combat_arbitration(
         self, stage_entity: Entity, actor_entity: Entity
     ) -> None:
+        """驱动单次出牌的完整仲裁流程。
 
-        action = actor_entity.get(PlayCardsAction)
-        if action.card.name == "":
+        读取 PlayCardsAction，空卡时走放弃行动分支；否则收集出牌者与目标的
+        当前 HP/格挡/仲裁状态效果，构建提示词，调用 AI 结算，最后应用结果并清理死亡实体。
+        """
+        assert actor_entity.has(
+            PlayCardsAction
+        ), f"实体 {actor_entity.name} 缺少 PlayCardsAction 组件！"
+        play_cards_action = actor_entity.get(PlayCardsAction)
+        if play_cards_action.card.name == "":
             # 空卡表示 EnemyPlayDecisionSystem 推理失败，记录放弃行动结果
             logger.warning(
                 f"ArbitrationActionSystem: [{actor_entity.name}] 出牌为空卡，执行放弃行动"
@@ -386,7 +394,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         target_blocks: Dict[str, int] = {}
 
         # dict.fromkeys 去重并保序（ENEMY_RANDOM_MULTI 的 targets 长度=hit_count，可能含重复名）
-        for target_name in dict.fromkeys(action.targets):
+        for target_name in dict.fromkeys(play_cards_action.targets):
 
             target_entity = self._game.get_entity_by_name(target_name)
             assert target_entity is not None, f"无法找到目标实体: {target_name}"
@@ -425,7 +433,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
 
         # 读取所有目标的 arbitration 相位状态效果
         target_arbitration_effects: Dict[str, List[StatusEffect]] = {}
-        for target_name in dict.fromkeys(action.targets):
+        for target_name in dict.fromkeys(play_cards_action.targets):
             t_entity = self._game.get_entity_by_name(target_name)
             assert t_entity is not None, f"无法找到目标实体: {target_name}"
             t_status_comp = t_entity.get(StatusEffectsComponent)
@@ -442,7 +450,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
             actor_entity.name,
             actor_entity.get(CharacterStatsComponent),
             actor_block,
-            action,
+            play_cards_action,
             target_stats,
             target_blocks,
             current_round_number,
@@ -460,7 +468,9 @@ class ArbitrationActionSystem(ReactiveProcessor):
         chat_client.chat()
 
         # 应用仲裁结果
-        self._apply_arbitration_result(stage_entity, chat_client, actor_entity, action)
+        self._apply_arbitration_result(
+            stage_entity, chat_client, actor_entity, play_cards_action
+        )
 
         # 处理生命值归零的实体，添加死亡组件
         self._process_zero_health_entities()
@@ -506,6 +516,13 @@ class ArbitrationActionSystem(ReactiveProcessor):
         actor_entity: Entity,
         action: PlayCardsAction,
     ) -> None:
+        """解析 AI 仲裁响应并将结果写入游戏状态。
+
+        解析 combat_log / final_stats / narrative；更新所有受影响实体的 HP、格挡与
+        状态效果 description；广播仲裁事件；触发 AddStatusEffectsAction 与
+        StagePostArbitrationAction；将日志追加到当前回合记录。
+        解析或校验失败时仅记录 error 日志，不抛出异常。
+        """
         try:
 
             format_response = ArbitrationResponse.model_validate_json(
@@ -557,9 +574,6 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 assert (
                     entity is not None
                 ), f"无法找到 final_stats 中的实体: {entity_name}"
-                # if entity is None:
-                #     logger.warning(f"final_stats 中找不到实体: {entity_name}")
-                #     continue
 
                 assert entity.has(
                     CharacterStatsComponent
@@ -610,7 +624,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
             # task_hint 包含本次出牌完整结构化数据，供 AddActorStatusEffectsActionSystem 使用
             self._add_status_effects_actions_after_arbitration(
                 actor_entity=actor_entity,
-                action=action,
+                play_cards_action=action,
                 affected_entity_names=list(format_response.final_stats.keys()),
             )
 
@@ -655,7 +669,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
     def _add_status_effects_actions_after_arbitration(
         self,
         actor_entity: Entity,
-        action: PlayCardsAction,
+        play_cards_action: PlayCardsAction,
         affected_entity_names: List[str],
     ) -> None:
         """仲裁结算后，为出牌者与所有目标添加 AddStatusEffectsAction。
@@ -676,7 +690,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
             affected_entity_names: final_stats 中所有受影响实体的全名列表（出牌者 + 目标）
         """
         # 卡牌无词缀时跳过，不触发后续 LLM 推理
-        if not action.card.affixes:
+        if not play_cards_action.card.affixes:
             logger.debug(
                 f"[{actor_entity.name}] 出牌卡牌 affixes 为空，跳过 AddStatusEffectsAction"
             )
@@ -685,21 +699,19 @@ class ArbitrationActionSystem(ReactiveProcessor):
         for entity_name in affected_entity_names:
             entity = self._game.get_entity_by_name(entity_name)
             assert entity is not None, f"无法找到实体: {entity_name}"
-            # if entity is None:
-            #     logger.warning(
-            #         f"_add_status_effects_actions_after_arbitration: 找不到实体 {entity_name}，跳过"
-            #     )
-            #     continue
 
+            # 确保实体具有 StatusEffectsComponent，若无则注入空组件
             if not entity.has(StatusEffectsComponent):
                 entity.replace(StatusEffectsComponent, entity_name, [])
 
+            # 生成 task_hint，包含本次出牌的完整结构化数据，供 AddActorStatusEffectsActionSystem 使用
             task_hint = _generate_post_arbitration_task_hint(
                 actor_name=actor_entity.name,
-                action=action,
+                play_cards_action=play_cards_action,
                 entity_name=entity_name,
             )
 
+            # 为实体添加 AddStatusEffectsAction，task_hint 包含本次出牌的完整结构化数据，供 AddActorStatusEffectsActionSystem 使用
             entity.replace(AddStatusEffectsAction, entity_name, task_hint)
             logger.debug(f"[{entity_name}] 仲裁后添加 AddStatusEffectsAction")
 

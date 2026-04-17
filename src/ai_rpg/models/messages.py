@@ -7,7 +7,7 @@
 - AIMessage
 """
 
-from typing import Any, Dict, List, Literal, Sequence
+from typing import Annotated, Any, Dict, List, Literal, Sequence, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -45,11 +45,13 @@ class AIMessage(BaseMessage):
 
 
 ############################################################################################################
-_ROLE_PREFIX: Dict[str, str] = {
-    "system": "System",
-    "human": "Human",
-    "ai": "AI",
-}
+# 显式判别联合：反序列化时强制以 type 字段区分子类，未知 type 值会立即报错
+ContextMessage = Annotated[
+    Union[SystemMessage, HumanMessage, AIMessage],
+    Field(discriminator="type"),
+]
+
+############################################################################################################
 
 
 def get_buffer_string(

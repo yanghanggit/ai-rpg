@@ -1,5 +1,5 @@
 from typing import Dict, List, final
-from .messages import AIMessage, HumanMessage, SystemMessage
+from .messages import AIMessage, ContextMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel
 from .dungeon import Dungeon
 from .entities import Actor, Stage, WorldSystem
@@ -26,7 +26,7 @@ class Blueprint(BaseModel):
 @final
 class AgentContext(BaseModel):
     name: str
-    context: List[SystemMessage | HumanMessage | AIMessage]
+    context: List[ContextMessage]
 
 
 ###############################################################################################################################################

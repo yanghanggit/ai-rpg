@@ -20,7 +20,6 @@ from ..models import (
     ActorComponent,
     PlayerComponent,
     PlayerOnlyStageComponent,
-    AllyComponent,
 )
 from ..utils import extract_json_from_code_block
 from ..game import TCGGame
@@ -137,17 +136,18 @@ def _build_action_planning_prompt(
 ├─ 向内查询 [可叠加，互不干扰]
 │   ├─ query        - 检索外部知识库（可选）
 │   └─ inspect_self - 查阅自身背包与属性（可选）
-└─ 主要行动 [多选一，与向内查询互斥]
-   ├─ A. 对外交流
+└─ 主要行动 [每轮至多选一类，与向内查询互斥]
+   ├─ A. 对外交流（三选一）
    │   ├─ speak
    │   ├─ whisper
-   │   ├─ announce
+   │   └─ announce
+   ├─ B. 装备操作（三槽可同轮并用）
    │   └─ equip_weapon / equip_armor / equip_accessory
-   └─ B. trans_stage - 移动场景
+   └─ C. trans_stage - 移动场景
 ```
 
 > `query` / `inspect_self` 可同时使用，来源不同互不干扰。
-> 向内查询与主要行动**不能同轮并用**：若本轮决定对外交流或移动场景，则不填 query / inspect_self。
+> 向内查询与主要行动**不能同轮并用**：若本轮执行主要行动（A/B/C 任意一类），则不填 query / inspect_self。
 
 2. **第一人称视角**  
    所有行动和思考必须以第一人称进行。
@@ -160,18 +160,23 @@ def _build_action_planning_prompt(
    - 适合在不确定自身装备或状态时使用；不需要填写任何额外参数
    - 可与 `query` 同时使用
 
-5. **对外交流** - 四种方式的区别
+5. **对外交流** (`speak` / `whisper` / `announce`) - 三种方式的区别
    - `speak`：对当前场景内指定角色说话（公开，场景内所有人都能听到）
    - `whisper`：对指定角色耳语（私密，只有你和对方知道）
    - `announce`：向所有家园场景发布公告（广播，所有家园场景的角色都能听到）
-   - `equip_weapon` / `equip_armor` / `equip_accessory`：分别对应武器/套装/饰品槽；填入背包中物品的精确全名装备该槽；填写 "" 表示脱掉该槽；**不需要操作的槽位留 null**。**装备前请先使用 `inspect_self` 查阅背包，确认物品全名拼写无误。**
 
-   **约束**：只能使用 context 中已有的信息；本轮使用对外交流时，query / inspect_self 留空；以上四种只选其一
+   **约束**：三种方式每轮只选其一；只能使用 context 中已有的信息；本轮使用对外交流时，query / inspect_self 留空。
 
-6. **严格禁止虚构**：`mind`/`speak`/`whisper` 均只能基于 context 中已有的信息。禁止在任何字段中捏造其他角色的动作、反应或对话，禁止虚构 context 中未记录的事件。`mind` 只写你自己的思考，不得描述他人行为。
+6. **装备操作** (`equip_weapon` / `equip_armor` / `equip_accessory`)
+   - 三个装备槽**可在同一轮并用**，不操作的槽位填 `null`
+   - 填入背包物品精确全名 → 装备该槽；填写 `""` → 脱掉该槽；填 `null` → 不更换
+   - **装备分两轮完成**：第一轮用 `inspect_self` 查阅背包确认物品全名，第二轮再执行 `equip_*`；不可在同一轮同时使用 `inspect_self` 和 `equip_*`
+   - 本轮使用装备操作时，query / inspect_self 留空
 
 7. **场景移动** (`trans_stage`)
    - 填写目标场景全名（从"可移动至"列表选择）
+
+8. **严格禁止虚构**：`mind`/`speak`/`whisper` 均只能基于 context 中已有的信息。禁止在任何字段中捏造其他角色的动作、反应或对话，禁止虚构 context 中未记录的事件。`mind` 只写你自己的思考，不得描述他人行为。
 
 ## 输出格式(JSON)
 
@@ -641,30 +646,30 @@ class HomeActorPlanSystem(ReactiveProcessor):
             )
 
             # mock 强制发起某个action的例子。
-            if actor_entity.has(AllyComponent) and not actor_entity.has(
-                PlayerComponent
-            ):
-                logger.debug(
-                    f"这里清醒mock一个message 添加给学者的上下文，要求在后续的计划行动中不可以使用trans_stage 来移动场景！"
-                )
-                self._game.add_human_message(
-                    actor_entity,
-                    "这是一个测试消息，要求你在后续的计划行动中不可以使用trans_stage 来移动场景！",
-                )
-                logger.debug(
-                    f"这里清醒mock一个message 添加给学者的上下文，要求本轮使用 inspect_self 查看自身背包与装备状态！"
-                )
-                self._game.add_human_message(
-                    actor_entity,
-                    "这是一个测试消息，要求你在本轮计划行动中必须使用 inspect_self 查看自身背包与装备状态！",
-                )
-                logger.debug(
-                    f'这里清醒mock一个message 添加给学者的上下文，要求在下一轮使用 equip_accessory: "" 脱掉饰品槽！'
-                )
-                self._game.add_human_message(
-                    actor_entity,
-                    '这是一个测试消息，要求你在查看完自身状态后的下一轮，使用 equip_accessory: "" 脱掉饰品槽！',
-                )
+            # if actor_entity.has(AllyComponent) and not actor_entity.has(
+            #     PlayerComponent
+            # ):
+            #     logger.debug(
+            #         f"这里清醒mock一个message 添加给学者的上下文，要求在后续的计划行动中不可以使用trans_stage 来移动场景！"
+            #     )
+            #     self._game.add_human_message(
+            #         actor_entity,
+            #         "这是一个测试消息，要求你在后续的计划行动中不可以使用trans_stage 来移动场景！",
+            #     )
+            #     logger.debug(
+            #         f"这里清醒mock一个message 添加给学者的上下文，要求本轮使用 inspect_self 查看自身背包与装备状态！"
+            #     )
+            #     self._game.add_human_message(
+            #         actor_entity,
+            #         "这是一个测试消息，要求你在本轮计划行动中必须使用 inspect_self 查看自身背包与装备状态！",
+            #     )
+            #     logger.debug(
+            #         f'这里清醒mock一个message 添加给学者的上下文，要求在下一轮使用 equip_accessory: "" 脱掉饰品槽！'
+            #     )
+            #     self._game.add_human_message(
+            #         actor_entity,
+            #         '这是一个测试消息，要求你在查看完自身状态后的下一轮，使用 equip_accessory: "" 脱掉饰品槽！',
+            #     )
 
         return chat_clients
 

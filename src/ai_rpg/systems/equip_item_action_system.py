@@ -143,9 +143,7 @@ class EquipItemActionSystem(ReactiveProcessor):
                 f"⚔️ {entity.name} 武器槽: {equip_comp.weapon!r} → {new_weapon!r}"
             )
         if new_armor != equip_comp.armor:
-            logger.info(
-                f"🛡️ {entity.name} 套装槽: {equip_comp.armor!r} → {new_armor!r}"
-            )
+            logger.info(f"🛡️ {entity.name} 套装槽: {equip_comp.armor!r} → {new_armor!r}")
         if new_accessory != equip_comp.accessory:
             logger.info(
                 f"💍 {entity.name} 饰品槽: {equip_comp.accessory!r} → {new_accessory!r}"

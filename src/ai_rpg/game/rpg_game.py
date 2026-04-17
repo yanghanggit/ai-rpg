@@ -33,6 +33,10 @@ from ..models import (
     TransStageEvent,
     PlayerOnlyStageComponent,
     ExpeditionRosterComponent,
+    EquipmentComponent,
+    EquipmentItem,
+    EquipmentType,
+    WeaponItem,
 )
 from .player_session import PlayerSession
 
@@ -370,6 +374,30 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 InventoryComponent,
                 actor_model.name,
                 copy_items,
+            )
+
+            # 必要组件：装备组件，从背包中取各槽位第一个匹配物品作为初始装备
+            init_weapons = [
+                item.name for item in copy_items if isinstance(item, WeaponItem)
+            ][:1]
+            init_armor = [
+                item.name
+                for item in copy_items
+                if isinstance(item, EquipmentItem)
+                and item.equipment_type == EquipmentType.ARMOR
+            ][:1]
+            init_accessory = [
+                item.name
+                for item in copy_items
+                if isinstance(item, EquipmentItem)
+                and item.equipment_type == EquipmentType.ACCESSORY
+            ][:1]
+            actor_entity.add(
+                EquipmentComponent,
+                actor_model.name,
+                init_weapons,
+                init_armor,
+                init_accessory,
             )
 
             # 添加到返回值

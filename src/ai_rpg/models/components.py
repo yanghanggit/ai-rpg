@@ -418,20 +418,34 @@ class InventoryComponent(MutableComponent):
     name: str
     items: List[Item]
 
-    # 获取物品
-    def find_item(self, item_name: str) -> Item | None:
-        list_items = self.get_items([item_name])
-        if len(list_items) > 0:
-            return list_items[0]
-        return None
 
-    # 获取多个物品
-    def get_items(self, item_names: List[str]) -> List[Item]:
-        found_items = []
-        for item in self.items:
-            if item.name in item_names:
-                found_items.append(item)
-        return found_items
+############################################################################################################
+@final
+@register_component_type
+class EquipmentComponent(MutableComponent):
+    """当前装备状态组件
+
+    以名称引用的方式记录角色当前穿戴的装备，InventoryComponent 是数据唯一来源，
+    本组件仅持有名称字符串，不复制物品数据。
+
+    设计约定（业务层强制，组件层不做长度校验）：
+        weapons   — 双武器槽，正常情况最多存 2 个名称
+        armor     — 单套装槽，正常情况最多存 1 个名称
+        accessory — 单饰品槽，正常情况最多存 1 个名称
+
+    使用 List[str] 而非固定字段，便于将来在业务层扩展槽位数量而无需修改组件结构。
+
+    Attributes:
+        name: 角色名称
+        weapons: 当前装备的武器名称列表（引用 InventoryComponent 中的 Item.name）
+        armor: 当前装备的套装名称列表（引用 InventoryComponent 中的 Item.name）
+        accessory: 当前装备的饰品名称列表（引用 InventoryComponent 中的 Item.name）
+    """
+
+    name: str
+    weapons: List[str] = []
+    armor: List[str] = []
+    accessory: List[str] = []
 
 
 ############################################################################################################

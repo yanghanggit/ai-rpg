@@ -632,7 +632,6 @@ class GenerateDungeonActionSystem(ReactiveProcessor):
                     type=ActorType.ENEMY.value,
                     profile=actor_bp.profile,
                     base_body=actor_bp.base_body,
-                    appearance="",
                 ),
                 character_stats=CharacterStats(),
                 campaign_setting=RPG_CAMPAIGN_SETTING,

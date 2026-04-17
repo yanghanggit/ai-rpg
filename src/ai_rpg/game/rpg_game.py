@@ -329,16 +329,14 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             self.add_system_message(actor_entity, actor_model.system_message)
 
             # 必要组件：外观
-            # TODO: 未来需要从角色表中读取 base_body，目前暂时使用空字符串占位
             assert (
                 actor_model.character_sheet.base_body != ""
-                or actor_model.character_sheet.appearance != ""
-            ), f"actor_model.character_sheet 外观信息不能为空: {actor_model.name}"
+            ), f"actor_model.character_sheet.base_body 不能为空: {actor_model.name}"
             actor_entity.add(
                 AppearanceComponent,
                 actor_model.name,
-                actor_model.character_sheet.base_body,  # base_body - TODO: 从 character_sheet 中读取基础身体形态
-                actor_model.character_sheet.appearance,
+                actor_model.character_sheet.base_body,
+                "",  # appearance 初始为空，由 ActorAppearanceUpdateSystem 填充
             )
 
             # 必要组件：基础属性，这里用浅拷贝，不能动原有的。
@@ -364,6 +362,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             for item in copy_items:
                 assert item.uuid == "", "item.uuid should be empty"
                 item.uuid = str(uuid.uuid4())
+                logger.debug(
+                    f"为角色 {actor_model.name} 的物品 {item.name} 生成 uuid: {item.uuid}"
+                )
 
             actor_entity.add(
                 InventoryComponent,

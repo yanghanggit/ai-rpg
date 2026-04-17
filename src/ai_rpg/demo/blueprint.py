@@ -5,6 +5,8 @@
 
 from ..models import (
     Blueprint,
+    EquipmentItem,
+    EquipmentType,
 )
 from .actor_wanderer import create_wanderer
 from .actor_scholar import create_scholar
@@ -34,14 +36,43 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     # 创建英雄营地场景和角色
     actor_wanderer = create_wanderer()
 
-    # 直接使用外观描述，这样就减少一次推理生成。
-    actor_wanderer.character_sheet.appearance = actor_wanderer.character_sheet.base_body
-
     # 调整旅行者的速度属性，增加其在 SPEED_ORDER 策略下的出手优先级
     actor_wanderer.character_stats.speed = 20
 
+    # 为旅行者分配初始装备：轻甲套装 + 沙漠护身符
+    actor_wanderer.items = [
+        EquipmentItem(
+            name="沙漠旅行者轻甲",
+            uuid="",
+            description="一套轻便的皮质护甲，由多块经过硬化处理的皮革拼接而成，覆盖躯干、肩部与小腿。设计简洁，不妨碍快速移动，表面留有风沙打磨的痕迹，像是在沙漠中经历过漫长跋涉。",
+            equipment_type=EquipmentType.ARMOR,
+        ),
+        EquipmentItem(
+            name="裂纹护身符",
+            uuid="",
+            description="一枚形状不规则的石质护符，中央有一道细小的裂缝，边缘被磨得光滑。来历不明，但旅行者醒来时它就挂在颈间，像是某种提醒，或某种残留。",
+            equipment_type=EquipmentType.ACCESSORY,
+        ),
+    ]
+
     # 创建学者角色
     actor_mystic = create_scholar()
+
+    # 为学者分配初始装备：学者长袍套装 + 记忆碎片项链
+    actor_mystic.items = [
+        EquipmentItem(
+            name="学者灰袍",
+            uuid="",
+            description="一件质地粗糙的浅灰色长袍，款式简朴而宽松，带有宽袖与深兜帽。袖口与下摆因拖曳留有沙土的痕迹，腰间以窄皮带束紧。整体设计偏向学术而非战斗，但厚实的布料能提供基本的防护。",
+            equipment_type=EquipmentType.ARMOR,
+        ),
+        EquipmentItem(
+            name="记忆碎片项链",
+            uuid="",
+            description="一条由细银链串起的项链，坠子是一块半透明的矿石碎片，内部隐约有细纹如文字蜿蜒。维拉在翻阅残破笔记时发现它夹在最后一页——上面用相同的笔迹写着：'不要摘下它。'",
+            equipment_type=EquipmentType.ACCESSORY,
+        ),
+    ]
 
     # 创建场景
     stage_broken_wall_enclosure = create_broken_wall_enclosure()

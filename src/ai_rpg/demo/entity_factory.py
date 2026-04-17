@@ -66,12 +66,6 @@ def create_actor(
     assert actor.character_stats.hp == 0, "HP must be 0."
     actor.character_stats.hp = character_stats.max_hp
 
-    # 选择外观描述
-    appearance = character_sheet.base_body
-    if appearance == "":
-
-        appearance = character_sheet.appearance
-
     # 初次编译system_message!!!!
     actor.system_message = f"""# {actor.name}
     
@@ -91,7 +85,7 @@ def create_actor(
 
 ## 外观设定
 
-{appearance}"""
+{character_sheet.base_body}"""
 
     return actor
 

@@ -19,8 +19,8 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     from ..game.tcg_game import TCGGame
     from ..systems.announce_action_system import AnnounceActionSystem
     from ..systems.destroy_entity_system import DestroyEntitySystem
-    from ..systems.actor_appearance_update_system import (
-        ActorAppearanceUpdateSystem,
+    from ..systems.actor_appearance_init_system import (
+        ActorAppearanceInitSystem,
     )
     from ..systems.query_action_system import (
         QueryActionSystem,
@@ -47,7 +47,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     processors.add(PrologueSystem(tcg_game))
 
     # 角色外观生成系统
-    processors.add(ActorAppearanceUpdateSystem(tcg_game))
+    processors.add(ActorAppearanceInitSystem(tcg_game))
 
     # 规划系统-场景描述系统-角色系统
     processors.add(StageDescriptionSystem(game=tcg_game, enable_debug_cache=True))
@@ -91,8 +91,8 @@ def create_combat_pipeline(
     from ..systems.combat_initialization_system import (
         CombatInitializationSystem,
     )
-    from ..systems.actor_appearance_update_system import (
-        ActorAppearanceUpdateSystem,
+    from ..systems.actor_appearance_init_system import (
+        ActorAppearanceInitSystem,
     )
     from ..systems.destroy_entity_system import DestroyEntitySystem
     from ..systems.draw_cards_action_system import (
@@ -134,7 +134,7 @@ def create_combat_pipeline(
     processors.add(PrologueSystem(tcg_game))
 
     # 角色外观生成系统
-    processors.add(ActorAppearanceUpdateSystem(tcg_game))
+    processors.add(ActorAppearanceInitSystem(tcg_game))
 
     # 战斗场景描述系统（与家园共用，内部有状态守卫，只有在战斗开始时才会触发）
     processors.add(StageDescriptionSystem(game=tcg_game, enable_debug_cache=True))

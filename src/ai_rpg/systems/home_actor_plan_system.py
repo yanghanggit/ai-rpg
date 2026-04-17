@@ -707,6 +707,16 @@ class HomeActorPlanSystem(ReactiveProcessor):
                 )
             )
 
+            # mock 强制发起某个action的例子。
+            # if actor_entity.name == "角色.学者.维拉":
+            #     logger.debug(
+            #         f"这里清醒mock一个message 添加给学者的上下文，要求在后续的计划行动中强制使用 inspect_self 来查看自己的状态！"
+            #     )
+            #     self._game.add_human_message(
+            #         actor_entity,
+            #         "这是一个测试消息，要求你在后续的计划行动中强制使用 inspect_self 来查看自己的状态！",
+            #     )
+
         return chat_clients
 
     #######################################################################################################################################

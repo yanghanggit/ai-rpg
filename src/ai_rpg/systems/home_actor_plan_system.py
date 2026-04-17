@@ -291,7 +291,7 @@ def _build_action_planning_prompt(
 
 #######################################################################################################################################
 @final
-class HomeActorSystem(ReactiveProcessor):
+class HomeActorPlanSystem(ReactiveProcessor):
     """家园角色行动系统。
 
     响应式处理器，监听 PlanAction 组件触发，生成行动规划提示词，

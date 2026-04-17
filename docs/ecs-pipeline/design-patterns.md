@@ -72,6 +72,6 @@ for entity, response in zip(entities, responses):
     entity.replace(SomeComponent, parse(response))
 ```
 
-涉及此模式的 System：`ActorAppearanceUpdateSystem`、`StageDescriptionSystem`、`HomeActorSystem`、`DrawCardsActionSystem`。
+涉及此模式的 System：`ActorAppearanceUpdateSystem`、`StageDescriptionSystem`、`HomeActorPlanSystem`、`DrawCardsActionSystem`。
 
 **意义**：避免 N 个角色串行等待 LLM，将延迟从 O(N) 降至近似 O(1)。

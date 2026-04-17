@@ -20,7 +20,7 @@
 | 1 | `PrologueSystem` | Execute | 管线入口 → [[systems-shared#PrologueSystem]] |
 | 2 | `ActorAppearanceUpdateSystem` | Execute | 生成角色外观描述 → [[systems-shared#ActorAppearanceUpdateSystem]] |
 | 3 | `StageDescriptionSystem` | Execute | 生成场景环境描述 → [[systems-shared#StageDescriptionSystem]] |
-| 4 | `HomeActorSystem` | Execute | **核心**：NPC/Actor AI 规划行动 |
+| 4 | `HomeActorPlanSystem` | Execute | **核心**：NPC/Actor AI 规划行动 |
 | 5 | `QueryActionSystem` | Reactive | 执行 RAG 向量检索 |
 | 6 | `PlayerActionAuditSystem` | Reactive | 审核玩家行动合法性 |
 | 7 | `SpeakActionSystem` | Reactive | 处理说话行动 |
@@ -35,9 +35,9 @@
 
 ## 核心系统详解
 
-### HomeActorSystem（步骤 4）
+### HomeActorPlanSystem（步骤 4）
 
-**源码**：`src/ai_rpg/systems/home_actor_system.py`  
+**源码**：`src/ai_rpg/systems/home_actor_plan_system.py`  
 **类型**：`ReactiveProcessor`（监听 `MindEvent` 等触发条件）
 
 这是家园管线的"大脑"，负责驱动所有 NPC 和响应玩家意图。

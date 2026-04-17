@@ -20,6 +20,7 @@ from ..models import (
     ActorComponent,
     PlayerComponent,
     PlayerOnlyStageComponent,
+    AllyComponent,
 )
 from ..utils import extract_json_from_code_block
 from ..game import TCGGame
@@ -32,6 +33,7 @@ _PLAYER_ACTIVE_ACTION_TYPES: Final = (
     WhisperAction,
     AnnounceAction,
     TransStageAction,
+    EquipItemAction,
 )
 
 
@@ -79,7 +81,7 @@ class ActionPlanResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _build_action_planning_prompt_v1(
+def _build_action_planning_prompt(
     current_stage: str,
     current_stage_narration: str,
     other_actors_appearances: Dict[str, str],
@@ -191,141 +193,6 @@ def _build_action_planning_prompt_v1(
 
 - 严格按上述JSON格式输出你的行动决策
 - 所有字段名不可更改"""
-
-
-#######################################################################################################################################
-def _build_action_planning_prompt_v2(
-    current_stage: str,
-    current_stage_narration: str,
-    other_actors_appearances: Dict[str, str],
-    available_home_stages: List[str],  # 这个暂时不用，因为关闭了移动！
-    planning_turn_index: int,
-) -> str:
-    """构建角色行动规划提示词（v1 精简版，去掉 announce 和 trans_stage）。
-
-    与 v1 的差异：无 announce、无 trans_stage；equip_item 归属对外行动组。
-
-    Args:
-        current_stage: 场景名称
-        current_stage_narration: 场景环境描述
-        other_actors_appearances: 其他角色的外观（角色名 -> 外观）
-        available_home_stages: 保留参数，当前暂不使用（移动功能已关闭）
-        planning_turn_index: 全局家园规划回合编号
-
-    Returns:
-        完整的行动规划提示词
-    """
-    # 场景内角色外观描述
-    other_actors_appearance_info = []
-    for actor_name, appearance in other_actors_appearances.items():
-        other_actors_appearance_info.append(f"{actor_name}: {appearance}")
-    if len(other_actors_appearance_info) == 0:
-        other_actors_appearance_info.append("无")
-
-    return f"""# 决定你要做什么，以JSON格式输出。
-
-## 当前回合: {planning_turn_index}
-
-## 你所在场景信息
-
-{current_stage} | {current_stage_narration}
-
-## 本场景内其他角色
-
-{"\n".join(other_actors_appearance_info)}
-
-## 核心规则
-
-1. **每回合行动结构**
-
-```
-每回合结构：
-├─ mind [必填] - 内心独白/思考
-├─ 向内查询 [可叠加，互不干扰]
-│   ├─ query        - 检索外部知识库（可选）
-│   └─ inspect_self - 查阅自身背包与属性（可选）
-└─ 对外行动 [三选一，与向内查询互斥]
-    ├─ speak
-    ├─ whisper
-    └─ equip_item
-```
-
-> `query` / `inspect_self` 可同时使用，来源不同互不干扰。
-> 向内查询与对外行动**不能同轮并用**：若本轮决定对外行动，则不填 query / inspect_self。
-
-2. **第一人称视角**  
-   所有行动和思考必须以第一人称进行。
-
-3. **知识库检索** (`query`)
-   - System prompt 是信息目录，需要详细信息时用 query 向外部数据库检索，结果会添加到下一轮 context
-
-4. **自我审视** (`inspect_self`)
-   - 设为 `true` 时，系统将把你的背包物品与当前战斗属性注入到下一轮 context
-   - 适合在不确定自身装备或状态时使用；不需要填写任何额外参数
-   - 可与 `query` 同时使用
-
-5. **对外行动** - 三种方式的区别
-   - `speak`：对当前场景内指定角色说话（公开，场景内所有人都能听到）
-   - `whisper`：对指定角色耳语（私密，只有你和对方知道）
-   - `equip_item`：填入背包中物品的全名，系统自动判断槽位并更新装备，装备后重新合成外观
-   
-   **约束**：只能使用 context 中已有的信息；本轮使用对外行动时，query / inspect_self 留空；以上三种只选其一
-   
-6. **严格禁止虚构**：`mind`/`speak`/`whisper` 均只能基于 context 中已有的信息。禁止在任何字段中捏造其他角色的动作、反应或对话，禁止虚构 context 中未记录的事件。`mind` 只写你自己的思考，不得描述他人行为。
-
-## 输出格式(JSON)
-
-```json
-{{
-  "mind": "内心独白",
-  "query": "检索关键词",
-  "inspect_self": false,
-  "equip_item": "",
-  "speak": {{
-    "角色全名": "说话内容"
-  }},
-  "whisper": {{
-    "角色全名": "耳语内容"
-  }}
-}}
-```
-
-**约束规则**：
-
-- 严格按上述JSON格式输出你的行动决策
-- 所有字段名不可更改"""
-
-
-#######################################################################################################################################
-def _build_action_planning_prompt(
-    current_stage: str,
-    current_stage_narration: str,
-    other_actors_appearances: Dict[str, str],
-    available_home_stages: List[str],
-    planning_turn_index: int,
-) -> str:
-    """构建角色行动规划提示词（统一入口）。
-
-    作为 v1 与 v2 的调度入口，当前临时使用 v2（不含 announce 和 trans_stage）。
-
-    Args:
-        current_stage: 场景名称
-        current_stage_narration: 场景环境描述
-        other_actors_appearances: 其他角色的外观（角色名 -> 外观）
-        available_home_stages: 可前往的场景列表（v2 中暂不使用）
-        planning_turn_index: 全局家园规划回合编号
-
-    Returns:
-        完整的行动规划提示词
-    """
-    # 临时使用 2
-    return _build_action_planning_prompt_v2(
-        current_stage=current_stage,
-        current_stage_narration=current_stage_narration,
-        other_actors_appearances=other_actors_appearances,
-        available_home_stages=available_home_stages,
-        planning_turn_index=planning_turn_index,
-    )
 
 
 #######################################################################################################################################
@@ -546,8 +413,17 @@ class HomeActorPlanSystem(ReactiveProcessor):
         if player_entity.has(TransStageAction):
             response.trans_stage = player_entity.get(TransStageAction).target_stage_name
 
+        if player_entity.has(EquipItemAction):
+            response.equip_item = player_entity.get(EquipItemAction).item_name
+
         if not any(
-            [response.speak, response.whisper, response.announce, response.trans_stage]
+            [
+                response.speak,
+                response.whisper,
+                response.announce,
+                response.trans_stage,
+                response.equip_item,
+            ]
         ):
             response.mind = passive_mind
 
@@ -742,14 +618,23 @@ class HomeActorPlanSystem(ReactiveProcessor):
             )
 
             # mock 强制发起某个action的例子。
-            # if actor_entity.name == "角色.学者.维拉":
-            #     logger.debug(
-            #         f"这里清醒mock一个message 添加给学者的上下文，要求在后续的计划行动中强制使用 inspect_self 来查看自己的状态！"
-            #     )
-            #     self._game.add_human_message(
-            #         actor_entity,
-            #         "这是一个测试消息，要求你在后续的计划行动中强制使用 inspect_self 来查看自己的状态！",
-            #     )
+            if actor_entity.has(AllyComponent) and not actor_entity.has(
+                PlayerComponent
+            ):
+                # logger.debug(
+                #     f"这里清醒mock一个message 添加给学者的上下文，要求在后续的计划行动中强制使用 inspect_self 来查看自己的状态！"
+                # )
+                # self._game.add_human_message(
+                #     actor_entity,
+                #     "这是一个测试消息，要求你在后续的计划行动中强制使用 inspect_self 来查看自己的状态！",
+                # )
+                logger.debug(
+                    f"这里清醒mock一个message 添加给学者的上下文，要求在后续的计划行动中不可以使用trans_stage 来移动场景！"
+                )
+                self._game.add_human_message(
+                    actor_entity,
+                    "这是一个测试消息，要求你在后续的计划行动中不可以使用trans_stage 来移动场景！",
+                )
 
         return chat_clients
 

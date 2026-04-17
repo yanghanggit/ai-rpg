@@ -123,6 +123,25 @@ class InspectSelfAction(Component):
 @final
 @register_action_component_type
 @register_component_type
+class EquipItemAction(Component):
+    """装备物品动作组件
+
+    触发角色将背包中指定物品装备到对应槽位，并由 EquipItemActionSystem
+    更新 EquipmentComponent 并重新合成 AppearanceComponent。
+
+    Attributes:
+        name: 发起装备操作的角色名称
+        item_name: 目标物品的全名（需与 InventoryComponent 中的 Item.name 一致）
+    """
+
+    name: str
+    item_name: str
+
+
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
 class TransStageAction(Component):
     """场景转换动作组件
 

@@ -14,6 +14,7 @@ from ..models import (
     PlanAction,
     TransStageAction,
     InspectSelfAction,
+    EquipItemAction,
     HomeComponent,
     MindEvent,
     ActorComponent,
@@ -60,6 +61,7 @@ class ActionPlanResponse(BaseModel):
         mind: 内心独白
         query: 数据库检索关键词
         inspect_self: 查阅自身背包与属性（true 时触发 InspectSelfActionSystem）
+        equip_item: 装备目标物品全名（非空时触发 EquipItemActionSystem）
         speak: 说话行动（目标角色名 -> 内容）
         whisper: 耳语行动（目标角色名 -> 内容）
         announce: 公开宣布
@@ -69,6 +71,7 @@ class ActionPlanResponse(BaseModel):
     mind: str = ""
     query: str = ""
     inspect_self: bool = False
+    equip_item: str = ""
     speak: Dict[str, str] = {}
     whisper: Dict[str, str] = {}
     announce: str = ""
@@ -83,7 +86,10 @@ def _build_action_planning_prompt_v1(
     available_home_stages: List[str],
     planning_turn_index: int,
 ) -> str:
-    """构建角色行动规划提示词。
+    """构建角色行动规划提示词（完整版，含所有行动类型）。
+
+    包含：query、inspect_self、speak、whisper、announce、equip_item、trans_stage。
+    v2 为本函数去掉 announce 和 trans_stage 的精简版本。
 
     Args:
         current_stage: 场景名称
@@ -123,31 +129,43 @@ def _build_action_planning_prompt_v1(
 ```
 每回合结构：
 ├─ mind [必填] - 内心独白/思考
-└─ 主要行动 [三选一，严格互斥]
-   ├─ A. query - 检索思考（向内）
-   ├─ B. 交流行动 - 向外发送信息（三选一）
+├─ 向内查询 [可叠加，互不干扰]
+│   ├─ query        - 检索外部知识库（可选）
+│   └─ inspect_self - 查阅自身背包与属性（可选）
+└─ 主要行动 [多选一，与向内查询互斥]
+   ├─ A. 对外交流
    │   ├─ speak
    │   ├─ whisper
-   │   └─ announce
-   └─ C. trans_stage - 移动场景
+   │   ├─ announce
+   │   └─ equip_item
+   └─ B. trans_stage - 移动场景
 ```
+
+> `query` / `inspect_self` 可同时使用，来源不同互不干扰。
+> 向内查询与主要行动**不能同轮并用**：若本轮决定对外交流或移动场景，则不填 query / inspect_self。
 
 2. **第一人称视角**  
    所有行动和思考必须以第一人称进行。
 
-3. **对内检索** (`query`)
-   - System prompt是信息目录，需要详细信息时用query向数据库检索，结果会添加到context
+3. **知识库检索** (`query`)
+   - System prompt 是信息目录，需要详细信息时用 query 向外部数据库检索，结果会添加到下一轮 context
 
-4. **对外交流** - 三种方式的区别
+4. **自我审视** (`inspect_self`)
+   - 设为 `true` 时，系统将把你的背包物品与当前战斗属性注入到下一轮 context
+   - 适合在不确定自身装备或状态时使用；不需要填写任何额外参数
+   - 可与 `query` 同时使用
+
+5. **对外交流** - 四种方式的区别
    - `speak`：对当前场景内指定角色说话（公开，场景内所有人都能听到）
    - `whisper`：对指定角色耳语（私密，只有你和对方知道）
    - `announce`：向所有家园场景发布公告（广播，所有家园场景的角色都能听到）
+   - `equip_item`：填入背包中物品的全名，系统自动判断槽位并更新装备，装备后重新合成外观
    
-   **约束**：只能使用context中已有的信息
+   **约束**：只能使用 context 中已有的信息；本轮使用对外交流时，query / inspect_self 留空；以上四种只选其一
 
-5. **严格禁止虚构**：`mind`/`speak`/`whisper` 均只能基于 context 中已有的信息。禁止在任何字段中捏造其他角色的动作、反应或对话，禁止虚构 context 中未记录的事件。`mind` 只写你自己的思考，不得描述他人行为。
+6. **严格禁止虚构**：`mind`/`speak`/`whisper` 均只能基于 context 中已有的信息。禁止在任何字段中捏造其他角色的动作、反应或对话，禁止虚构 context 中未记录的事件。`mind` 只写你自己的思考，不得描述他人行为。
 
-6. **场景移动** (`trans_stage`)
+7. **场景移动** (`trans_stage`)
    - 填写目标场景全名（从"可移动至"列表选择）
 
 ## 输出格式(JSON)
@@ -156,6 +174,8 @@ def _build_action_planning_prompt_v1(
 {{
   "mind": "内心独白",
   "query": "检索关键词",
+  "inspect_self": false,
+  "equip_item": "",
   "speak": {{
     "角色全名": "说话内容"
   }},
@@ -181,12 +201,15 @@ def _build_action_planning_prompt_v2(
     available_home_stages: List[str],  # 这个暂时不用，因为关闭了移动！
     planning_turn_index: int,
 ) -> str:
-    """构建角色行动规划提示词（测试版本，不含announce和trans_stage）。
+    """构建角色行动规划提示词（v1 精简版，去掉 announce 和 trans_stage）。
+
+    与 v1 的差异：无 announce、无 trans_stage；equip_item 归属对外行动组。
 
     Args:
         current_stage: 场景名称
         current_stage_narration: 场景环境描述
         other_actors_appearances: 其他角色的外观（角色名 -> 外观）
+        available_home_stages: 保留参数，当前暂不使用（移动功能已关闭）
         planning_turn_index: 全局家园规划回合编号
 
     Returns:
@@ -221,13 +244,14 @@ def _build_action_planning_prompt_v2(
 ├─ 向内查询 [可叠加，互不干扰]
 │   ├─ query        - 检索外部知识库（可选）
 │   └─ inspect_self - 查阅自身背包与属性（可选）
-└─ 对外交流 [二选一，与向内查询互斥]
+└─ 对外行动 [三选一，与向内查询互斥]
     ├─ speak
-    └─ whisper
+    ├─ whisper
+    └─ equip_item
 ```
 
-> `query` 与 `inspect_self` 可同时使用，也可各自单独使用，检索来源不同互不干扰。
-> 向内查询与对外交流**不能同轮并用**：若本轮决定说话/耳语，则不填 query 与 inspect_self。
+> `query` / `inspect_self` 可同时使用，来源不同互不干扰。
+> 向内查询与对外行动**不能同轮并用**：若本轮决定对外行动，则不填 query / inspect_self。
 
 2. **第一人称视角**  
    所有行动和思考必须以第一人称进行。
@@ -240,11 +264,12 @@ def _build_action_planning_prompt_v2(
    - 适合在不确定自身装备或状态时使用；不需要填写任何额外参数
    - 可与 `query` 同时使用
 
-5. **对外交流** - 两种方式的区别
+5. **对外行动** - 三种方式的区别
    - `speak`：对当前场景内指定角色说话（公开，场景内所有人都能听到）
    - `whisper`：对指定角色耳语（私密，只有你和对方知道）
+   - `equip_item`：填入背包中物品的全名，系统自动判断槽位并更新装备，装备后重新合成外观
    
-   **约束**：只能使用 context 中已有的信息；本轮使用对外交流时，query 与 inspect_self 留空
+   **约束**：只能使用 context 中已有的信息；本轮使用对外行动时，query / inspect_self 留空；以上三种只选其一
    
 6. **严格禁止虚构**：`mind`/`speak`/`whisper` 均只能基于 context 中已有的信息。禁止在任何字段中捏造其他角色的动作、反应或对话，禁止虚构 context 中未记录的事件。`mind` 只写你自己的思考，不得描述他人行为。
 
@@ -255,6 +280,7 @@ def _build_action_planning_prompt_v2(
   "mind": "内心独白",
   "query": "检索关键词",
   "inspect_self": false,
+  "equip_item": "",
   "speak": {{
     "角色全名": "说话内容"
   }},
@@ -598,6 +624,14 @@ class HomeActorPlanSystem(ReactiveProcessor):
             # 添加自我审视动作
             if validated_response.inspect_self:
                 actor_entity.replace(InspectSelfAction, actor_entity.name)
+
+            # 添加装备物品动作
+            if validated_response.equip_item != "":
+                actor_entity.replace(
+                    EquipItemAction,
+                    actor_entity.name,
+                    validated_response.equip_item,
+                )
 
             # 最后：如果需要可以添加传送场景。
             if validated_response.trans_stage != "":

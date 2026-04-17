@@ -377,25 +377,31 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             )
 
             # 必要组件：装备组件，从背包中取各槽位第一个匹配物品作为初始装备
-            init_weapons = [
-                item.name for item in copy_items if isinstance(item, WeaponItem)
-            ][:1]
-            init_armor = [
-                item.name
-                for item in copy_items
-                if isinstance(item, EquipmentItem)
-                and item.equipment_type == EquipmentType.ARMOR
-            ][:1]
-            init_accessory = [
-                item.name
-                for item in copy_items
-                if isinstance(item, EquipmentItem)
-                and item.equipment_type == EquipmentType.ACCESSORY
-            ][:1]
+            init_weapon = next(
+                (item.name for item in copy_items if isinstance(item, WeaponItem)), ""
+            )
+            init_armor = next(
+                (
+                    item.name
+                    for item in copy_items
+                    if isinstance(item, EquipmentItem)
+                    and item.equipment_type == EquipmentType.ARMOR
+                ),
+                "",
+            )
+            init_accessory = next(
+                (
+                    item.name
+                    for item in copy_items
+                    if isinstance(item, EquipmentItem)
+                    and item.equipment_type == EquipmentType.ACCESSORY
+                ),
+                "",
+            )
             actor_entity.add(
                 EquipmentComponent,
                 actor_model.name,
-                init_weapons,
+                init_weapon,
                 init_armor,
                 init_accessory,
             )

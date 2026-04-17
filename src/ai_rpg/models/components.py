@@ -428,24 +428,19 @@ class EquipmentComponent(MutableComponent):
     以名称引用的方式记录角色当前穿戴的装备，InventoryComponent 是数据唯一来源，
     本组件仅持有名称字符串，不复制物品数据。
 
-    设计约定（业务层强制，组件层不做长度校验）：
-        weapons   — 双武器槽，正常情况最多存 2 个名称
-        armor     — 单套装槽，正常情况最多存 1 个名称
-        accessory — 单饰品槽，正常情况最多存 1 个名称
-
-    使用 List[str] 而非固定字段，便于将来在业务层扩展槽位数量而无需修改组件结构。
+    每个槽位存储单个物品名称（空字符串表示该槽未装备）。
 
     Attributes:
         name: 角色名称
-        weapons: 当前装备的武器名称列表（引用 InventoryComponent 中的 Item.name）
-        armor: 当前装备的套装名称列表（引用 InventoryComponent 中的 Item.name）
-        accessory: 当前装备的饰品名称列表（引用 InventoryComponent 中的 Item.name）
+        weapon: 当前装备的武器名称（引用 InventoryComponent 中的 Item.name，空字符串表示未装备）
+        armor: 当前装备的套装名称（引用 InventoryComponent 中的 Item.name，空字符串表示未装备）
+        accessory: 当前装备的饰品名称（引用 InventoryComponent 中的 Item.name，空字符串表示未装备）
     """
 
     name: str
-    weapons: List[str] = []
-    armor: List[str] = []
-    accessory: List[str] = []
+    weapon: str = ""
+    armor: str = ""
+    accessory: str = ""
 
 
 ############################################################################################################

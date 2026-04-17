@@ -5,8 +5,22 @@ from ..models import (
     InspectSelfAction,
     InventoryComponent,
     CharacterStatsComponent,
+    EquipmentComponent,
 )
 from ..game.tcg_game import TCGGame
+
+
+#############################################################################################################################
+def _format_equipment(entity: Entity) -> str:
+    """格式化角色当前装备槽位信息为可读文本。"""
+    if not entity.has(EquipmentComponent):
+        return "（无装备数据）"
+
+    equip = entity.get(EquipmentComponent)
+    weapon_line = equip.weapon if equip.weapon else "（未装备）"
+    armor_line = equip.armor if equip.armor else "（未装备）"
+    accessory_line = equip.accessory if equip.accessory else "（未装备）"
+    return f"武器：{weapon_line}\n套装：{armor_line}\n饰品：{accessory_line}"
 
 
 #############################################################################################################################
@@ -41,10 +55,14 @@ def _format_stats(entity: Entity) -> str:
 
 #############################################################################################################################
 def _build_inspect_self_message(
-    actor: str, inventory_text: str, stats_text: str
+    actor: str, inventory_text: str, stats_text: str, equipment_text: str
 ) -> str:
     """构建自我审视结果的提示词消息。"""
     return f"""# {actor} 自我审视
+
+## 当前已装备
+
+{equipment_text}
 
 ## 当前背包
 
@@ -92,6 +110,7 @@ class InspectSelfActionSystem(ReactiveProcessor):
     def _process_action(self, entity: Entity) -> None:
         inventory_text = _format_inventory(entity)
         stats_text = _format_stats(entity)
+        equipment_text = _format_equipment(entity)
 
         logger.success(
             f"🔍 {entity.name} 发起自我审视 | 背包物品数: "
@@ -102,6 +121,7 @@ class InspectSelfActionSystem(ReactiveProcessor):
             actor=entity.name,
             inventory_text=inventory_text,
             stats_text=stats_text,
+            equipment_text=equipment_text,
         )
         self._game.add_human_message(entity, message)
 

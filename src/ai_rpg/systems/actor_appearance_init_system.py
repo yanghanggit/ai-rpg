@@ -82,6 +82,25 @@ def _build_appearance_generation_prompt(
 
 
 #######################################################################################################################################
+def _collect_desc(slot_name: str, inventory_comp: InventoryComponent) -> str:
+    """从背包中查找指定槽位物品的视觉描述。
+
+    Args:
+        slot_name: 槽位当前装备的物品名称
+        inventory_comp: 角色背包组件（物品来源）
+
+    Returns:
+        匹配物品的 description，无匹配时返回空字符串
+    """
+    if not slot_name:
+        return ""
+    for item in inventory_comp.items:
+        if item.name == slot_name and item.description:
+            return item.description
+    return ""
+
+
+#######################################################################################################################################
 @final
 class ActorAppearanceInitSystem(ExecuteProcessor):
     """角色外观初始化系统（Init 语义）。
@@ -182,28 +201,17 @@ class ActorAppearanceInitSystem(ExecuteProcessor):
                 continue
 
             # 无任何装备则跳过（base_body 即完整外观）
-            has_equipment = (
-                len(equip_comp.weapons) > 0
-                or len(equip_comp.armor) > 0
-                or len(equip_comp.accessory) > 0
+            has_equipment = bool(
+                equip_comp.weapon or equip_comp.armor or equip_comp.accessory
             )
             if not has_equipment:
                 continue
 
             inventory_comp = actor_entity.get(InventoryComponent)
 
-            def _collect_desc(slot_names: List[str]) -> str:
-                parts = [
-                    item.description
-                    for name in slot_names
-                    for item in inventory_comp.items
-                    if item.name == name and item.description
-                ]
-                return "；".join(parts)
-
-            weapons_desc = _collect_desc(equip_comp.weapons)
-            armor_desc = _collect_desc(equip_comp.armor)
-            accessory_desc = _collect_desc(equip_comp.accessory)
+            weapons_desc = _collect_desc(equip_comp.weapon, inventory_comp)
+            armor_desc = _collect_desc(equip_comp.armor, inventory_comp)
+            accessory_desc = _collect_desc(equip_comp.accessory, inventory_comp)
 
             prompt = _build_appearance_generation_prompt(
                 base_body=appearance_comp.base_body,

@@ -8,9 +8,6 @@ from ..models import (
     InventoryComponent,
     EquipmentComponent,
     AppearanceComponent,
-    WeaponItem,
-    EquipmentItem,
-    EquipmentType,
 )
 from ..game.tcg_game import TCGGame
 from .actor_appearance_init_system import (
@@ -20,23 +17,22 @@ from .actor_appearance_init_system import (
 
 
 #######################################################################################################################################
-def _collect_desc(slot_names: List[str], inventory_comp: InventoryComponent) -> str:
-    """从背包中收集指定槽位名称对应物品的视觉描述。
+def _collect_desc(slot_name: str, inventory_comp: InventoryComponent) -> str:
+    """从背包中查找指定槽位物品的视觉描述。
 
     Args:
-        slot_names: 槽位中已装备物品的名称列表
+        slot_name: 槽位中当前装备的物品名称
         inventory_comp: 角色背包组件（物品来源）
 
     Returns:
-        物品描述用「；」连接的字符串，无匹配时返回空字符串
+        匹配物品的 description，无匹配时返回空字符串
     """
-    parts = [
-        item.description
-        for name in slot_names
-        for item in inventory_comp.items
-        if item.name == name and item.description
-    ]
-    return "；".join(parts)
+    if not slot_name:
+        return ""
+    for item in inventory_comp.items:
+        if item.name == slot_name and item.description:
+            return item.description
+    return ""
 
 
 #######################################################################################################################################
@@ -118,67 +114,44 @@ class EquipItemActionSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     def _equip_item(self, entity: Entity) -> bool:
-        """根据 EquipItemAction 将物品装备到对应槽位。
+        """根据 EquipItemAction 更新装备槽位。
+
+        每个字段：None 表示不更换该槽；"" 表示脱掉该槽；非空字符串表示装备该物品。
 
         Returns:
-            True 表示装备成功，False 表示跳过（物品不存在或类型不支持）。
+            始终返回 True（装备组件已更新）
         """
         action = entity.get(EquipItemAction)
-        item_name = action.item_name
-
-        inventory_comp = entity.get(InventoryComponent)
-        target_item = next(
-            (item for item in inventory_comp.items if item.name == item_name),
-            None,
-        )
-
-        if target_item is None:
-            logger.warning(f"⚠️ {entity.name} 尝试装备不在背包中的物品: {item_name}")
-            return False
-
         equip_comp = entity.get(EquipmentComponent)
 
-        if isinstance(target_item, WeaponItem):
-            weapons = list(equip_comp.weapons)
-            if len(weapons) < 2:
-                weapons.append(item_name)
-            else:
-                weapons[0] = item_name
-            entity.replace(
-                EquipmentComponent,
-                equip_comp.name,
-                weapons,
-                list(equip_comp.armor),
-                list(equip_comp.accessory),
+        new_weapon = action.weapon if action.weapon is not None else equip_comp.weapon
+        new_armor = action.armor if action.armor is not None else equip_comp.armor
+        new_accessory = (
+            action.accessory if action.accessory is not None else equip_comp.accessory
+        )
+
+        entity.replace(
+            EquipmentComponent,
+            equip_comp.name,
+            new_weapon,
+            new_armor,
+            new_accessory,
+        )
+
+        if new_weapon != equip_comp.weapon:
+            logger.info(
+                f"⚔️ {entity.name} 武器槽: {equip_comp.weapon!r} → {new_weapon!r}"
             )
-            logger.info(f"⚔️ {entity.name} 装备武器: {item_name}")
-            return True
+        if new_armor != equip_comp.armor:
+            logger.info(
+                f"🛡️ {entity.name} 套装槽: {equip_comp.armor!r} → {new_armor!r}"
+            )
+        if new_accessory != equip_comp.accessory:
+            logger.info(
+                f"💍 {entity.name} 饰品槽: {equip_comp.accessory!r} → {new_accessory!r}"
+            )
 
-        if isinstance(target_item, EquipmentItem):
-            if target_item.equipment_type == EquipmentType.ARMOR:
-                entity.replace(
-                    EquipmentComponent,
-                    equip_comp.name,
-                    list(equip_comp.weapons),
-                    [item_name],
-                    list(equip_comp.accessory),
-                )
-                logger.info(f"🛡️ {entity.name} 装备套装: {item_name}")
-                return True
-
-            if target_item.equipment_type == EquipmentType.ACCESSORY:
-                entity.replace(
-                    EquipmentComponent,
-                    equip_comp.name,
-                    list(equip_comp.weapons),
-                    list(equip_comp.armor),
-                    [item_name],
-                )
-                logger.info(f"💍 {entity.name} 装备饰品: {item_name}")
-                return True
-
-        logger.warning(f"⚠️ {entity.name} 物品 {item_name} 类型不支持装备，跳过")
-        return False
+        return True
 
     #######################################################################################################################################
     def _build_appearance_client(self, entity: Entity) -> DeepSeekClient:
@@ -189,7 +162,7 @@ class EquipItemActionSystem(ReactiveProcessor):
 
         prompt = _build_appearance_generation_prompt(
             base_body=appearance_comp.base_body,
-            weapons_desc=_collect_desc(equip_comp.weapons, inventory_comp),
+            weapons_desc=_collect_desc(equip_comp.weapon, inventory_comp),
             armor_desc=_collect_desc(equip_comp.armor, inventory_comp),
             accessory_desc=_collect_desc(equip_comp.accessory, inventory_comp),
         )

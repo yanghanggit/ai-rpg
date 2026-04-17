@@ -8,7 +8,7 @@
 动作组件采用 ECS 响应式架构，添加到实体后由对应系统处理执行。
 """
 
-from typing import Dict, List, final
+from typing import Dict, List, Optional, final
 from ..entitas.components import Component
 from .combat import Card
 from .registry import register_action_component_type, register_component_type
@@ -129,13 +129,21 @@ class EquipItemAction(Component):
     触发角色将背包中指定物品装备到对应槽位，并由 EquipItemActionSystem
     更新 EquipmentComponent 并重新合成 AppearanceComponent。
 
+    每个字段对应一个装备槽：None 表示不更换该槽；"" 表示脱掉该槽；
+    非空字符串表示装备该物品。
+    建议在装备前先用 InspectSelfAction 查阅背包中物品的精确全名。
+
     Attributes:
         name: 发起装备操作的角色名称
-        item_name: 目标物品的全名（需与 InventoryComponent 中的 Item.name 一致）
+        weapon: 目标武器物品全名（None 不更换；"" 脱掉）
+        armor: 目标套装物品全名（None 不更换；"" 脱掉）
+        accessory: 目标饰品物品全名（None 不更换；"" 脱掉）
     """
 
     name: str
-    item_name: str
+    weapon: Optional[str] = None
+    armor: Optional[str] = None
+    accessory: Optional[str] = None
 
 
 ############################################################################################################

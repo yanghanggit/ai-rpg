@@ -1,4 +1,4 @@
-from typing import Dict, Final, List, final
+from typing import Dict, Final, List, Optional, final
 from ..models.messages import AIMessage
 from loguru import logger
 from overrides import override
@@ -63,7 +63,9 @@ class ActionPlanResponse(BaseModel):
         mind: 内心独白
         query: 数据库检索关键词
         inspect_self: 查阅自身背包与属性（true 时触发 InspectSelfActionSystem）
-        equip_item: 装备目标物品全名（非空时触发 EquipItemActionSystem）
+        equip_weapon: 装备武器槽的物品全名（None 不更换；"" 脱掉）
+        equip_armor: 装备套装槽的物品全名（None 不更换；"" 脱掉）
+        equip_accessory: 装备饰品槽的物品全名（None 不更换；"" 脱掉）
         speak: 说话行动（目标角色名 -> 内容）
         whisper: 耳语行动（目标角色名 -> 内容）
         announce: 公开宣布
@@ -73,7 +75,9 @@ class ActionPlanResponse(BaseModel):
     mind: str = ""
     query: str = ""
     inspect_self: bool = False
-    equip_item: str = ""
+    equip_weapon: Optional[str] = None
+    equip_armor: Optional[str] = None
+    equip_accessory: Optional[str] = None
     speak: Dict[str, str] = {}
     whisper: Dict[str, str] = {}
     announce: str = ""
@@ -90,8 +94,7 @@ def _build_action_planning_prompt(
 ) -> str:
     """构建角色行动规划提示词（完整版，含所有行动类型）。
 
-    包含：query、inspect_self、speak、whisper、announce、equip_item、trans_stage。
-    v2 为本函数去掉 announce 和 trans_stage 的精简版本。
+    包含：query、inspect_self、speak、whisper、announce、equip_weapon/equip_armor/equip_accessory、trans_stage。
 
     Args:
         current_stage: 场景名称
@@ -139,7 +142,7 @@ def _build_action_planning_prompt(
    │   ├─ speak
    │   ├─ whisper
    │   ├─ announce
-   │   └─ equip_item
+   │   └─ equip_weapon / equip_armor / equip_accessory
    └─ B. trans_stage - 移动场景
 ```
 
@@ -161,8 +164,8 @@ def _build_action_planning_prompt(
    - `speak`：对当前场景内指定角色说话（公开，场景内所有人都能听到）
    - `whisper`：对指定角色耳语（私密，只有你和对方知道）
    - `announce`：向所有家园场景发布公告（广播，所有家园场景的角色都能听到）
-   - `equip_item`：填入背包中物品的全名，系统自动判断槽位并更新装备，装备后重新合成外观
-   
+   - `equip_weapon` / `equip_armor` / `equip_accessory`：分别对应武器/套装/饰品槽；填入背包中物品的精确全名装备该槽；填写 "" 表示脱掉该槽；**不需要操作的槽位留 null**。**装备前请先使用 `inspect_self` 查阅背包，确认物品全名拼写无误。**
+
    **约束**：只能使用 context 中已有的信息；本轮使用对外交流时，query / inspect_self 留空；以上四种只选其一
 
 6. **严格禁止虚构**：`mind`/`speak`/`whisper` 均只能基于 context 中已有的信息。禁止在任何字段中捏造其他角色的动作、反应或对话，禁止虚构 context 中未记录的事件。`mind` 只写你自己的思考，不得描述他人行为。
@@ -177,7 +180,9 @@ def _build_action_planning_prompt(
   "mind": "内心独白",
   "query": "检索关键词",
   "inspect_self": false,
-  "equip_item": "",
+  "equip_weapon": null,
+  "equip_armor": null,
+  "equip_accessory": null,
   "speak": {{
     "角色全名": "说话内容"
   }},
@@ -414,7 +419,10 @@ class HomeActorPlanSystem(ReactiveProcessor):
             response.trans_stage = player_entity.get(TransStageAction).target_stage_name
 
         if player_entity.has(EquipItemAction):
-            response.equip_item = player_entity.get(EquipItemAction).item_name
+            equip_action = player_entity.get(EquipItemAction)
+            response.equip_weapon = equip_action.weapon
+            response.equip_armor = equip_action.armor
+            response.equip_accessory = equip_action.accessory
 
         if not any(
             [
@@ -422,7 +430,13 @@ class HomeActorPlanSystem(ReactiveProcessor):
                 response.whisper,
                 response.announce,
                 response.trans_stage,
-                response.equip_item,
+            ]
+        ) and not any(
+            x is not None
+            for x in [
+                response.equip_weapon,
+                response.equip_armor,
+                response.equip_accessory,
             ]
         ):
             response.mind = passive_mind
@@ -501,12 +515,21 @@ class HomeActorPlanSystem(ReactiveProcessor):
             if validated_response.inspect_self:
                 actor_entity.replace(InspectSelfAction, actor_entity.name)
 
-            # 添加装备物品动作
-            if validated_response.equip_item != "":
+            # 添加装备物品动作（任一槽位不为 None 即触发）
+            if any(
+                x is not None
+                for x in [
+                    validated_response.equip_weapon,
+                    validated_response.equip_armor,
+                    validated_response.equip_accessory,
+                ]
+            ):
                 actor_entity.replace(
                     EquipItemAction,
                     actor_entity.name,
-                    validated_response.equip_item,
+                    validated_response.equip_weapon,
+                    validated_response.equip_armor,
+                    validated_response.equip_accessory,
                 )
 
             # 最后：如果需要可以添加传送场景。
@@ -621,19 +644,26 @@ class HomeActorPlanSystem(ReactiveProcessor):
             if actor_entity.has(AllyComponent) and not actor_entity.has(
                 PlayerComponent
             ):
-                # logger.debug(
-                #     f"这里清醒mock一个message 添加给学者的上下文，要求在后续的计划行动中强制使用 inspect_self 来查看自己的状态！"
-                # )
-                # self._game.add_human_message(
-                #     actor_entity,
-                #     "这是一个测试消息，要求你在后续的计划行动中强制使用 inspect_self 来查看自己的状态！",
-                # )
                 logger.debug(
                     f"这里清醒mock一个message 添加给学者的上下文，要求在后续的计划行动中不可以使用trans_stage 来移动场景！"
                 )
                 self._game.add_human_message(
                     actor_entity,
                     "这是一个测试消息，要求你在后续的计划行动中不可以使用trans_stage 来移动场景！",
+                )
+                logger.debug(
+                    f"这里清醒mock一个message 添加给学者的上下文，要求本轮使用 inspect_self 查看自身背包与装备状态！"
+                )
+                self._game.add_human_message(
+                    actor_entity,
+                    "这是一个测试消息，要求你在本轮计划行动中必须使用 inspect_self 查看自身背包与装备状态！",
+                )
+                logger.debug(
+                    f'这里清醒mock一个message 添加给学者的上下文，要求在下一轮使用 equip_accessory: "" 脱掉饰品槽！'
+                )
+                self._game.add_human_message(
+                    actor_entity,
+                    '这是一个测试消息，要求你在查看完自身状态后的下一轮，使用 equip_accessory: "" 脱掉饰品槽！',
                 )
 
         return chat_clients

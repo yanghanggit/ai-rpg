@@ -95,6 +95,7 @@ class DeepSeekClient:
         context: Sequence[BaseMessage],
         use_reasoner: bool = False,
         timeout: Optional[int] = None,
+        temperature: Optional[float] = None,
     ) -> None:
         """初始化 DeepSeek 直连客户端
 
@@ -120,6 +121,9 @@ class DeepSeekClient:
             logger.warning(f"{self._name}: context is empty")
 
         self._response_ai_message: Optional[AIMessage] = None
+        self._temperature: Final[float] = (
+            temperature if temperature is not None else 1.0
+        )
 
     ################################################################################################################################################################################
     @property
@@ -178,7 +182,7 @@ class DeepSeekClient:
             "stop": None,
             "stream": False,
             "stream_options": None,
-            "temperature": 1,
+            "temperature": self._temperature,
             "top_p": 1,
             "tools": None,
             "tool_choice": "none",

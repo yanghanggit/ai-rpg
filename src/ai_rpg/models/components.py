@@ -11,9 +11,9 @@ from typing import List, final
 from ..entitas.components import Component, MutableComponent
 from .combat import Card, StatusEffect
 from .entities import (
+    AnyItem,
     Archetype,
     CharacterStats,
-    Item,
 )
 from .registry import register_component_type
 
@@ -416,7 +416,7 @@ class InventoryComponent(MutableComponent):
     """
 
     name: str
-    items: List[Item]
+    items: List[AnyItem]
 
 
 ############################################################################################################

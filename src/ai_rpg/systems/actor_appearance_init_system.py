@@ -29,6 +29,21 @@ def _format_appearance_init_notification(appearance: str) -> str:
 
 
 #######################################################################################################################################
+def _format_appearance_llm_notification(appearance: str) -> str:
+    """格式化 LLM 合成外观通知消息。
+
+    Args:
+        appearance: LLM 合成后的完整外观描述
+
+    Returns:
+        格式化后的通知消息字符串
+    """
+    return f"""# 你的外观信息已经更新: 
+
+{appearance}"""
+
+
+#######################################################################################################################################
 def _build_appearance_generation_prompt(
     base_body: str,
     weapons_desc: str,
@@ -202,6 +217,7 @@ class ActorAppearanceInitSystem(ExecuteProcessor):
                     name=actor_entity.name,
                     prompt=prompt,
                     context=self._game.get_agent_context(actor_entity).context,
+                    temperature=1.5,
                 )
             )
             pending_entities.append(actor_entity)
@@ -227,9 +243,10 @@ class ActorAppearanceInitSystem(ExecuteProcessor):
                 new_appearance,
             )
 
-            self._game.add_human_message(actor_entity, chat_client.prompt)
-            if chat_client.response_ai_message is not None:
-                self._game.add_ai_message(actor_entity, chat_client.response_ai_message)
+            self._game.add_human_message(
+                actor_entity,
+                _format_appearance_llm_notification(new_appearance),
+            )
 
             logger.info(
                 f"✅ 角色 {actor_entity.name} 外观已 LLM 合成（base_body + 装备 → appearance）"

@@ -1,5 +1,5 @@
 from enum import IntEnum, StrEnum, unique
-from typing import List, final
+from typing import Annotated, List, Literal, Union, final
 from pydantic import BaseModel, Field
 from .serialization import ComponentSerialization
 
@@ -114,7 +114,9 @@ class Item(BaseModel):
 class WeaponItem(Item):
     """武器类，继承自物品基类"""
 
-    type: ItemType = Field(default=ItemType.WEAPON_ITEM, frozen=True)
+    type: Literal[ItemType.WEAPON_ITEM] = Field(
+        default=ItemType.WEAPON_ITEM, frozen=True
+    )
 
 
 ###############################################################################################################################################
@@ -132,7 +134,9 @@ class EquipmentType(StrEnum):
 class EquipmentItem(Item):
     """装备类，继承自物品基类"""
 
-    type: ItemType = Field(default=ItemType.EQUIPMENT_ITEM, frozen=True)
+    type: Literal[ItemType.EQUIPMENT_ITEM] = Field(
+        default=ItemType.EQUIPMENT_ITEM, frozen=True
+    )
     equipment_type: EquipmentType = EquipmentType.NONE  # 装备子类型
 
 
@@ -140,21 +144,34 @@ class EquipmentItem(Item):
 class ConsumableItem(Item):
     """消耗品类，继承自物品基类"""
 
-    type: ItemType = Field(default=ItemType.CONSUMABLE_ITEM, frozen=True)
+    type: Literal[ItemType.CONSUMABLE_ITEM] = Field(
+        default=ItemType.CONSUMABLE_ITEM, frozen=True
+    )
 
 
 #######################################################################################################################################
 class MaterialItem(Item):
     """材料类，继承自物品基类"""
 
-    type: ItemType = Field(default=ItemType.MATERIAL_ITEM, frozen=True)
+    type: Literal[ItemType.MATERIAL_ITEM] = Field(
+        default=ItemType.MATERIAL_ITEM, frozen=True
+    )
 
 
 #######################################################################################################################################
 class UniqueItem(Item):
     """珍贵物品类，继承自物品基类"""
 
-    type: ItemType = Field(default=ItemType.UNIQUE_ITEM, frozen=True)
+    type: Literal[ItemType.UNIQUE_ITEM] = Field(
+        default=ItemType.UNIQUE_ITEM, frozen=True
+    )
+
+
+###############################################################################################################################################
+AnyItem = Annotated[
+    Union[WeaponItem, EquipmentItem, ConsumableItem, MaterialItem, UniqueItem],
+    Field(discriminator="type"),
+]
 
 
 ###############################################################################################################################################
@@ -189,7 +206,7 @@ class Actor(BaseModel):
     character_sheet: CharacterSheet
     system_message: str
     character_stats: CharacterStats
-    items: List[Item] = []
+    items: List[AnyItem] = []
     archetypes: List[Archetype] = (
         []
     )  # 卡牌原型约束列表，用于限制 LLM 生成卡牌的风格与功能边界

@@ -67,25 +67,13 @@ def create_actor(
     actor.character_stats.hp = character_stats.max_hp
 
     # 初次编译system_message!!!!
-    actor.system_message = f"""# {actor.name}
-    
-你扮演角色: {actor.name}
-
-## 游戏设定
-
-{campaign_setting}
-
-## 全局规则
-
-{system_rules}
-
-## 角色设定
-
-{character_sheet.profile}
-
-## 外观设定
-
-{character_sheet.base_body}"""
+    actor.system_message = build_actor_system_message(
+        actor_name=actor.name,
+        campaign_setting=campaign_setting,
+        system_rules=system_rules,
+        character_profile=character_sheet.profile,
+        # appearance=character_sheet.base_body,
+    )
 
     return actor
 
@@ -96,7 +84,7 @@ def build_actor_system_message(
     campaign_setting: str,
     system_rules: str,
     character_profile: str,
-    appearance: str,
+    # appearance: str,
 ) -> str:
     """
     组装角色 system_message。
@@ -128,11 +116,7 @@ def build_actor_system_message(
 
 ## 角色设定
 
-{character_profile}
-
-## 外观设定
-
-{appearance}"""
+{character_profile}"""
 
 
 #######################################################################################################################################

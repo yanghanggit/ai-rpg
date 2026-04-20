@@ -3,6 +3,16 @@
 from typing import Any, Dict
 
 from loguru import logger
+from ..models import (
+    IdentityComponent,
+    AllyComponent,
+    AppearanceComponent,
+    ActorComponent,
+    CharacterStatsComponent,
+    InventoryComponent,
+    PlayerComponent,
+    ExpeditionRosterComponent,
+)
 from textual import work
 from textual.app import ComposeResult
 from textual.screen import Screen
@@ -15,12 +25,12 @@ from .utils import display_name
 def _render_component(name: str, data: Dict[str, Any]) -> str:
     """将组件 data 渲染为可读的 Rich markup 字符串。返回空字符串表示跳过此组件。"""
     # 过滤掉纯冗余组件
-    if name in ("IdentityComponent", "AllyComponent"):
+    if name in (IdentityComponent.__name__, AllyComponent.__name__):
         return ""
 
     lines: list[str] = [f"  [bold cyan]◆ {name}[/]"]
 
-    if name == "ActorComponent":
+    if name == ActorComponent.__name__:
         sheet = data.get("character_sheet_name", "")
         stage = data.get("current_stage", "")
         if sheet:
@@ -28,17 +38,19 @@ def _render_component(name: str, data: Dict[str, Any]) -> str:
         if stage:
             lines.append(f"    当前场景：[yellow]{stage}[/]")
 
-    elif name == "AppearanceComponent":
+    elif name == AppearanceComponent.__name__:
         base_body = data.get("base_body", "")
         appearance = data.get("appearance", "")
-        # 两者内容通常相近，优先显示 appearance；若为空则 base_body
-        text = appearance or base_body
-        if text:
-            lines.append(f"    [dim]{text}[/]")
-        else:
+        if base_body:
+            lines.append(f"    [bold]基础体型：[/]")
+            lines.append(f"    [dim]{base_body}[/]")
+        if appearance:
+            lines.append(f"    [bold]当前外观：[/]")
+            lines.append(f"    [dim]{appearance}[/]")
+        if not base_body and not appearance:
             lines.append("    [dim]（暂无描述）[/]")
 
-    elif name == "CharacterStatsComponent":
+    elif name == CharacterStatsComponent.__name__:
         stats = data.get("stats", {})
         hp = stats.get("hp", "?")
         max_hp = stats.get("max_hp", "?")
@@ -50,7 +62,7 @@ def _render_component(name: str, data: Dict[str, Any]) -> str:
             f"   防御 [bold blue]{defense}[/]"
         )
 
-    elif name == "InventoryComponent":
+    elif name == InventoryComponent.__name__:
         items = data.get("items", [])
         if not items:
             lines.append("    物品栏：[dim]（空）[/]")
@@ -59,12 +71,12 @@ def _render_component(name: str, data: Dict[str, Any]) -> str:
             for item in items:
                 lines.append(f"      [yellow]• {item}[/]")
 
-    elif name == "PlayerComponent":
+    elif name == PlayerComponent.__name__:
         player_name = data.get("player_name", "")
         if player_name:
             lines.append(f"    玩家账号：[dim]{player_name}[/]")
 
-    elif name == "ExpeditionRosterComponent":
+    elif name == ExpeditionRosterComponent.__name__:
         members = data.get("members", [])
         if not members:
             lines.append("    远征队：[dim]（空）[/]")

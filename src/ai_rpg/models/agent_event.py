@@ -241,15 +241,18 @@ class AppearanceUpdateEvent(AgentEvent):
     """外观更新事件。
 
     角色装备变更后，LLM 重新合成外观时广播给场景内其他角色的事件。
+    命名惯例与 SpeakEvent 对齐：actor 为收到通知的观察者，target 为外观发生变化的角色。
 
     Attributes:
         head: 事件类型，固定为 APPEARANCE_UPDATE_EVENT
-        actor: 发生外观变化的角色名称
+        actor: 收到此事件的角色名称（观察者）；广播时为空字符串
+        target: 外观发生变化的角色名称
         appearance: LLM 合成后的完整外观描述
     """
 
     head: int = EventHead.APPEARANCE_UPDATE_EVENT
     actor: str
+    target: str
     appearance: str
 
 

@@ -154,7 +154,8 @@ class EquipItemActionSystem(ReactiveProcessor):
                     message=_format_appearance_llm_notification_for_others(
                         entity.name, new_appearance
                     ),
-                    actor=entity.name,
+                    actor="",
+                    target=entity.name,
                     appearance=new_appearance,
                 ),
                 exclude_entities={entity},

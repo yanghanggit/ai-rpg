@@ -97,9 +97,11 @@ def _format_agent_event(data: dict) -> str:  # type: ignore[type-arg]
             summary = data.get("summary", "")
             return f"[dim]{actor} 战斗归档：{summary}[/]"
         case EventHead.APPEARANCE_UPDATE_EVENT:
-            actor = data.get("actor", "?")
+            target = data.get("target", "?")
             appearance = data.get("appearance", "")
-            return f"[bold green]✨ {actor} 外观已更新：[/]\n" f"  [dim]{appearance}[/]"
+            return (
+                f"[bold green]✨ {target} 外观已更新：[/]\n" f"  [dim]{appearance}[/]"
+            )
         case _:
             return f"[dim cyan]{data.get('message', '')}[/]"
 

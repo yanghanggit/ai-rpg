@@ -13,6 +13,7 @@ from ..models import (
     DungeonRoomResponse,
     DungeonListResponse,
     Dungeon,
+    CombatRoom,
 )
 from ..game.config import DUNGEONS_DIR
 
@@ -196,6 +197,12 @@ async def get_dungeon_room(
         )
 
     # 返回当前房间
+    if not isinstance(current_dungeon_room, CombatRoom):
+        logger.error(f"get_dungeon_room: {user_name} current room is not a CombatRoom")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="当前房间不是战斗房间",
+        )
     return DungeonRoomResponse(room=current_dungeon_room)
 
 

@@ -11,6 +11,7 @@ from ..models import (
     IllustrateDungeonAction,
     Dungeon,
     DungeonRoom,
+    CombatRoom,
     StageProfile,
     StageType,
     CharacterSheet,
@@ -640,7 +641,7 @@ class GenerateDungeonActionSystem(ReactiveProcessor):
             # actor.skills = [BEAST_ATTACK_SKILL.model_copy()]
 
             stage.actors = [actor]
-            rooms.append(DungeonRoom(stage=stage))
+            rooms.append(CombatRoom(stage=stage))
             logger.info(
                 f"[GenerateDungeonActionSystem][Step 4] Room {i}/{len(blueprint.stages)} 构建完成:\n"
                 f"  stage: {stage.name}\n"

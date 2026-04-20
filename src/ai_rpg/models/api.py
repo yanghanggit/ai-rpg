@@ -3,7 +3,7 @@ from typing import Dict, List, final
 from pydantic import BaseModel
 from .session_message import SessionMessage
 from .combat import Combat
-from .dungeon import Dungeon, DungeonRoom
+from .dungeon import Dungeon, CombatRoom
 from .serialization import EntitySerialization
 from .task import TaskRecord
 from .world import Blueprint
@@ -304,7 +304,7 @@ class DungeonCombatResponse(BaseModel):
 
 @final
 class DungeonRoomResponse(BaseModel):
-    room: DungeonRoom
+    room: CombatRoom
 
 
 ################################################################################################################

@@ -107,10 +107,10 @@ def _validate_dungeon_prerequisites(
 
     # 5. 验证存在可进行的战斗
     assert (
-        tcg_game.current_dungeon.current_room is not None
-    ), f"地下城操作失败: 玩家 {user_name} 当前尚未进入任何房间"
+        tcg_game.current_dungeon.current_combat_room is not None
+    ), f"地下城操作失败: 玩家 {user_name} 当前尚未进入任何战斗房间"
     assert (
-        tcg_game.current_dungeon.current_room.combat.state != CombatState.NONE
+        tcg_game.current_dungeon.current_combat_room.combat.state != CombatState.NONE
     ), f"地下城操作失败: 玩家 {user_name} 没有可进行的战斗"
 
     return tcg_game

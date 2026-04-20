@@ -45,6 +45,7 @@ class EventHead(IntEnum):
     COMBAT_INITIATION_EVENT = 7
     COMBAT_ARBITRATION_EVENT = 8
     COMBAT_ARCHIVE_EVENT = 9
+    APPEARANCE_UPDATE_EVENT = 10
 
 
 ####################################################################################################################################
@@ -232,6 +233,24 @@ class CombatArchiveEvent(AgentEvent):
     head: int = EventHead.COMBAT_ARCHIVE_EVENT
     actor: str
     summary: str
+
+
+####################################################################################################################################
+@final
+class AppearanceUpdateEvent(AgentEvent):
+    """外观更新事件。
+
+    角色装备变更后，LLM 重新合成外观时广播给场景内其他角色的事件。
+
+    Attributes:
+        head: 事件类型，固定为 APPEARANCE_UPDATE_EVENT
+        actor: 发生外观变化的角色名称
+        appearance: LLM 合成后的完整外观描述
+    """
+
+    head: int = EventHead.APPEARANCE_UPDATE_EVENT
+    actor: str
+    appearance: str
 
 
 ####################################################################################################################################

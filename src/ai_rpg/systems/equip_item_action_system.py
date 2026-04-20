@@ -3,7 +3,7 @@ from loguru import logger
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
-    AgentEvent,
+    AppearanceUpdateEvent,
     EquipItemAction,
     InventoryComponent,
     EquipmentComponent,
@@ -150,10 +150,12 @@ class EquipItemActionSystem(ReactiveProcessor):
             # 对场景内其他实体：第三人称广播
             self._game.broadcast_to_stage(
                 entity,
-                AgentEvent(
+                AppearanceUpdateEvent(
                     message=_format_appearance_llm_notification_for_others(
                         entity.name, new_appearance
-                    )
+                    ),
+                    actor=entity.name,
+                    appearance=new_appearance,
                 ),
                 exclude_entities={entity},
             )

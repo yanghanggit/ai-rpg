@@ -36,7 +36,8 @@ MENU_TEXT = """\
   [bold green]5[/]  推进家园      执行一轮 home pipeline
   [bold green]6[/]  与NPC对话     与当前场景 NPC 对话
   [bold green]7[/]  切换场景      移动到其他场景
-  [bold green]8[/]  管理远征队    加入/移除远征队成员
+  [bold green]8[/]  装备管理      更换/卸下当前装备
+  [bold green]9[/]  管理远征队    加入/移除远征队成员
 
 [bold cyan]── 系统 ──────────────────────────────────────[/]
   [bold green]0[/]  显示此菜单
@@ -95,6 +96,10 @@ def _format_agent_event(data: dict) -> str:  # type: ignore[type-arg]
             actor = data.get("actor", "?")
             summary = data.get("summary", "")
             return f"[dim]{actor} 战斗归档：{summary}[/]"
+        case EventHead.APPEARANCE_UPDATE_EVENT:
+            actor = data.get("actor", "?")
+            appearance = data.get("appearance", "")
+            return f"[bold green]✨ {actor} 外观已更新：[/]\n" f"  [dim]{appearance}[/]"
         case _:
             return f"[dim cyan]{data.get('message', '')}[/]"
 
@@ -292,6 +297,10 @@ class HomeScreen(Screen[None]):
 
             self.app.push_screen(SwitchStageScreen())
         elif cmd == "8":
+            from .equip_item import EquipItemScreen
+
+            self.app.push_screen(EquipItemScreen())
+        elif cmd == "9":
             from .roster import RosterScreen
 
             self.app.push_screen(RosterScreen())

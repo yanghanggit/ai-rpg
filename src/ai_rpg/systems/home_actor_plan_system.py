@@ -1,8 +1,8 @@
-from typing import Dict, Final, List, Optional, final
+from typing import Any, Dict, Final, List, Optional, final
 from ..models.messages import AIMessage
 from loguru import logger
 from overrides import override
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, Matcher, GroupEvent, ReactiveProcessor
 from ..models import (
@@ -81,6 +81,16 @@ class ActionPlanResponse(BaseModel):
     whisper: Dict[str, str] = {}
     announce: str = ""
     trans_stage: str = ""
+
+    @field_validator("speak", "whisper", mode="before")
+    @classmethod
+    def _coerce_dict_none(cls, v: Any) -> Any:
+        return v if v is not None else {}
+
+    @field_validator("announce", "trans_stage", mode="before")
+    @classmethod
+    def _coerce_str_none(cls, v: Any) -> Any:
+        return v if v is not None else ""
 
 
 #######################################################################################################################################
@@ -202,7 +212,8 @@ def _build_action_planning_prompt(
 **约束规则**：
 
 - 严格按上述JSON格式输出你的行动决策
-- 所有字段名不可更改"""
+- 所有字段名不可更改
+- `speak` / `whisper` 不使用时填 `{{}}`（空对象），`announce` / `trans_stage` 不使用时填 `""`（空字符串）；**这四个字段禁止填 `null`**"""
 
 
 #######################################################################################################################################

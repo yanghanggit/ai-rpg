@@ -13,6 +13,7 @@ from ..models import (
     ActorComponent,
     ActorType,
     AgentEvent,
+    AgentEventUnion,
     AgentContext,
     AppearanceComponent,
     COMPONENT_TYPES,
@@ -526,7 +527,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
     def broadcast_to_stage(
         self,
         entity: Entity,
-        agent_event: AgentEvent,
+        agent_event: AgentEventUnion,
         exclude_entities: Set[Entity] = set(),
         **kwargs: Any,
     ) -> None:
@@ -555,7 +556,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
     def notify_entities(
         self,
         entities: Set[Entity],
-        agent_event: AgentEvent,
+        agent_event: AgentEventUnion,
         **kwargs: Any,
     ) -> None:
         """向指定实体集合发送通知，并同步到玩家客户端

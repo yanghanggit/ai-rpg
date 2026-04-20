@@ -9,8 +9,9 @@
 """
 
 from enum import IntEnum, unique
+from typing import Annotated, Literal, Union
 from overrides import final
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 @final
@@ -80,7 +81,7 @@ class SpeakEvent(AgentEvent):
         content: 发言的具体内容
     """
 
-    head: int = EventHead.SPEAK_EVENT
+    head: Literal[EventHead.SPEAK_EVENT] = EventHead.SPEAK_EVENT
     actor: str
     target: str
     content: str
@@ -102,7 +103,7 @@ class WhisperEvent(AgentEvent):
         content: 耳语的具体内容
     """
 
-    head: int = EventHead.WHISPER_EVENT
+    head: Literal[EventHead.WHISPER_EVENT] = EventHead.WHISPER_EVENT
     actor: str
     target: str
     content: str
@@ -124,7 +125,7 @@ class AnnounceEvent(AgentEvent):
         content: 宣布的具体内容
     """
 
-    head: int = EventHead.ANNOUNCE_EVENT
+    head: Literal[EventHead.ANNOUNCE_EVENT] = EventHead.ANNOUNCE_EVENT
     actor: str
     stage: str
     content: str
@@ -146,7 +147,7 @@ class MindEvent(AgentEvent):
         content: 内心独登的具体内容
     """
 
-    head: int = EventHead.MIND_EVENT
+    head: Literal[EventHead.MIND_EVENT] = EventHead.MIND_EVENT
     actor: str
     content: str
 
@@ -166,7 +167,7 @@ class TransStageEvent(AgentEvent):
         to_stage: 进入的场景名称
     """
 
-    head: int = EventHead.TRANS_STAGE_EVENT
+    head: Literal[EventHead.TRANS_STAGE_EVENT] = EventHead.TRANS_STAGE_EVENT
     actor: str
     from_stage: str
     to_stage: str
@@ -185,7 +186,7 @@ class CombatInitiationEvent(AgentEvent):
         actor: 发起战斗的角色名称
     """
 
-    head: int = EventHead.COMBAT_INITIATION_EVENT
+    head: Literal[EventHead.COMBAT_INITIATION_EVENT] = EventHead.COMBAT_INITIATION_EVENT
     actor: str
 
 
@@ -207,7 +208,9 @@ class CombatArbitrationEvent(AgentEvent):
         narrative: AI生成的战斗叙事文本
     """
 
-    head: int = EventHead.COMBAT_ARBITRATION_EVENT
+    head: Literal[EventHead.COMBAT_ARBITRATION_EVENT] = (
+        EventHead.COMBAT_ARBITRATION_EVENT
+    )
     stage: str
     combat_log: str
     narrative: str
@@ -230,7 +233,7 @@ class CombatArchiveEvent(AgentEvent):
         summary: AI生成的战斗经历总结
     """
 
-    head: int = EventHead.COMBAT_ARCHIVE_EVENT
+    head: Literal[EventHead.COMBAT_ARCHIVE_EVENT] = EventHead.COMBAT_ARCHIVE_EVENT
     actor: str
     summary: str
 
@@ -250,10 +253,27 @@ class AppearanceUpdateEvent(AgentEvent):
         appearance: LLM 合成后的完整外观描述
     """
 
-    head: int = EventHead.APPEARANCE_UPDATE_EVENT
+    head: Literal[EventHead.APPEARANCE_UPDATE_EVENT] = EventHead.APPEARANCE_UPDATE_EVENT
     actor: str
     target: str
     appearance: str
 
 
+####################################################################################################################################
+# 判别联合类型：可基于 head 字段进行精确的反序列化
+AgentEventUnion = Annotated[
+    Union[
+        AgentEvent,
+        SpeakEvent,
+        WhisperEvent,
+        AnnounceEvent,
+        MindEvent,
+        TransStageEvent,
+        CombatInitiationEvent,
+        CombatArbitrationEvent,
+        CombatArchiveEvent,
+        AppearanceUpdateEvent,
+    ],
+    Field(discriminator="head"),
+]
 ####################################################################################################################################

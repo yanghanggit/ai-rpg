@@ -4,7 +4,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     InspectSelfAction,
     InventoryComponent,
-    CharacterStatsComponent,
+    CharacterStats,
     EquipmentComponent,
 )
 from ..game.tcg_game import TCGGame
@@ -40,12 +40,8 @@ def _format_inventory(entity: Entity) -> str:
 
 
 #############################################################################################################################
-def _format_stats(entity: Entity) -> str:
+def _format_stats(stats: CharacterStats) -> str:
     """格式化角色战斗属性为可读文本。"""
-    if not entity.has(CharacterStatsComponent):
-        return "（无属性数据）"
-
-    stats = entity.get(CharacterStatsComponent).stats
     return (
         f"HP: {stats.hp}/{stats.max_hp} | "
         f"攻击: {stats.attack} | 防御: {stats.defense} | "
@@ -109,7 +105,7 @@ class InspectSelfActionSystem(ReactiveProcessor):
     #############################################################################################################################
     def _process_action(self, entity: Entity) -> None:
         inventory_text = _format_inventory(entity)
-        stats_text = _format_stats(entity)
+        stats_text = _format_stats(self._game.compute_character_stats(entity))
         equipment_text = _format_equipment(entity)
 
         logger.success(

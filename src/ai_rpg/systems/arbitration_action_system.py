@@ -22,6 +22,7 @@ from ..models import (
     PlayCardsAction,
     BlockComponent,
     CardTargetType,
+    CharacterStats,
     CharacterStatsComponent,
     DeathComponent,
     CombatArbitrationEvent,
@@ -222,10 +223,10 @@ def _build_random_multi_sections(
 #######################################################################################################################################
 def _generate_combat_arbitration_prompt(
     actor_name: str,
-    actor_stats: CharacterStatsComponent,
+    actor_stats: CharacterStats,
     actor_block: int,
     play_cards_action: PlayCardsAction,
-    target_stats: Dict[str, CharacterStatsComponent],
+    target_stats: Dict[str, CharacterStats],
     target_blocks: Dict[str, int],
     current_round_number: int,
     actor_arbitration_effects: List[StatusEffect],
@@ -233,7 +234,7 @@ def _generate_combat_arbitration_prompt(
 ) -> str:
     target_lines = (
         "\n".join(
-            f"- {name}（HP {stats.stats.hp}/{stats.stats.max_hp}，当前格挡 {target_blocks.get(name, 0)}）"
+            f"- {name}（HP {stats.hp}/{stats.max_hp}，当前格挡 {target_blocks.get(name, 0)}）"
             for name, stats in target_stats.items()
         )
         if target_stats
@@ -260,7 +261,7 @@ def _generate_combat_arbitration_prompt(
 
 ## 出牌者
 
-{actor_name}（HP {actor_stats.stats.hp}/{actor_stats.stats.max_hp}，当前格挡 {actor_block}）
+{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp}，当前格挡 {actor_block}）
 
 ## 出牌
 
@@ -390,7 +391,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
             return
 
         # 解析目标实体的当前 HP 与格挡
-        target_stats: Dict[str, CharacterStatsComponent] = {}
+        target_stats: Dict[str, CharacterStats] = {}
         target_blocks: Dict[str, int] = {}
 
         # dict.fromkeys 去重并保序（ENEMY_RANDOM_MULTI 的 targets 长度=hit_count，可能含重复名）
@@ -399,10 +400,9 @@ class ArbitrationActionSystem(ReactiveProcessor):
             target_entity = self._game.get_entity_by_name(target_name)
             assert target_entity is not None, f"无法找到目标实体: {target_name}"
 
-            assert target_entity.has(
-                CharacterStatsComponent
-            ), f"目标实体 {target_name} 缺少 CharacterStatsComponent！"
-            target_stats[target_name] = target_entity.get(CharacterStatsComponent)
+            target_stats[target_name] = self._game.compute_character_stats(
+                target_entity
+            )
 
             assert target_entity.has(
                 BlockComponent
@@ -410,9 +410,6 @@ class ArbitrationActionSystem(ReactiveProcessor):
             target_blocks[target_name] = target_entity.get(BlockComponent).block
 
         # 解析出牌者的当前 HP 与格挡
-        assert actor_entity.has(
-            CharacterStatsComponent
-        ), f"出牌实体 {actor_entity.name} 缺少 CharacterStatsComponent！"
         assert actor_entity.has(
             BlockComponent
         ), f"出牌实体 {actor_entity.name} 缺少 BlockComponent！"
@@ -448,7 +445,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         # 构建仲裁提示词
         message = _generate_combat_arbitration_prompt(
             actor_entity.name,
-            actor_entity.get(CharacterStatsComponent),
+            self._game.compute_character_stats(actor_entity),
             actor_block,
             play_cards_action,
             target_stats,

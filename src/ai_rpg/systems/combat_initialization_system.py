@@ -15,7 +15,6 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     AddStatusEffectsAction,
     StageDescriptionComponent,
-    CharacterStatsComponent,
     ExpeditionMemberComponent,
     EnemyComponent,
     AppearanceComponent,
@@ -222,11 +221,8 @@ class CombatInitializationSystem(ExecuteProcessor):
         """
         for actor_entity in actor_entities:
 
-            # 获取角色属性组件
-            assert actor_entity.has(
-                CharacterStatsComponent
-            ), f"角色 {actor_entity.name} 缺少 CombatStatsComponent 组件！"
-            combat_stats_comp = actor_entity.get(CharacterStatsComponent)
+            # 计算角色有效属性（含装备加成）
+            actor_stats = self._game.compute_character_stats(actor_entity)
 
             # 生成其他角色信息（包含外观和阵营）
             other_actors_info = self._generate_other_actors_info(
@@ -238,7 +234,7 @@ class CombatInitializationSystem(ExecuteProcessor):
                 stage_name=stage_name,
                 stage_description=stage_description,
                 other_actors_info=other_actors_info,
-                actor_stats=combat_stats_comp.stats,
+                actor_stats=actor_stats,
             )
 
             # 注入战场上下文

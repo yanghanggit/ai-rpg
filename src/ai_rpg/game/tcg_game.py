@@ -307,6 +307,9 @@ class TCGGame(RPGGame):
                         continue
                     if isinstance(item, (WeaponItem, EquipmentItem)):
                         b = item.stat_bonuses
+                        assert (
+                            b.hp == 0 and b.max_hp == 0
+                        ), "当前设计中装备加成不应包含 HP 相关属性!"
                         bonus_hp += b.hp
                         bonus_max_hp += b.max_hp
                         bonus_attack += b.attack

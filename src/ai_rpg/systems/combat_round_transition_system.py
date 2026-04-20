@@ -146,7 +146,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         # 注意：同一角色的多次行动会相邻出现（A→A→B→B→C→C），但角色间顺序随机打乱
         order: List[str] = []
         for entity in actors:
-            count = entity.get(CharacterStatsComponent).stats.action_count
+            count = self._game.compute_character_stats(entity).action_count
             if count > 0:
                 order.extend([entity.name] * count)
         random.shuffle(order)
@@ -158,13 +158,13 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         sorted_actors = sorted(
             actors,
             key=lambda entity: (
-                -entity.get(CharacterStatsComponent).stats.speed,
+                -self._game.compute_character_stats(entity).speed,
                 entity.get(IdentityComponent).creation_order,
             ),
         )
         order: List[str] = []
         for entity in sorted_actors:
-            count = entity.get(CharacterStatsComponent).stats.action_count
+            count = self._game.compute_character_stats(entity).action_count
             if count > 0:
                 order.extend([entity.name] * count)
         return order
@@ -180,7 +180,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         # 注意：creation_order 由小到大，意味着先创建的角色优先出手
         order: List[str] = []
         for entity in sorted_actors:
-            count = entity.get(CharacterStatsComponent).stats.action_count
+            count = self._game.compute_character_stats(entity).action_count
             if count > 0:
                 order.extend([entity.name] * count)
         return order

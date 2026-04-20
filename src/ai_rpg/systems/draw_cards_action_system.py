@@ -337,10 +337,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
-        combat_stats_comp = entity.get(CharacterStatsComponent)
-        assert (
-            combat_stats_comp is not None
-        ), f"Entity {entity.name} must have CombatStatsComponent"
+        combat_stats = self._game.compute_character_stats(entity)
 
         status_effects_comp = entity.get(StatusEffectsComponent)
         draw_effects = [
@@ -372,7 +369,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         logger.debug(f"[{entity.name}] 骰值: {dice_rolls}")
 
         prompt = _generate_draw_prompt(
-            actor_stats=combat_stats_comp.stats,
+            actor_stats=combat_stats,
             current_round_number=current_round_number,
             num_cards=num_cards,
             draw_status_effects=draw_effects,

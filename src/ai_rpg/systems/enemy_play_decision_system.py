@@ -10,7 +10,7 @@ from ..models import (
     EnemyComponent,
     DeathComponent,
     HandComponent,
-    CharacterStatsComponent,
+    CharacterStats,
     ExpeditionMemberComponent,
     Card,
     CardTargetType,
@@ -31,7 +31,7 @@ class EnemyDecisionResponse(BaseModel):
 #######################################################################################################################################
 def _generate_enemy_decision_prompt(
     enemy_name: str,
-    enemy_stats: CharacterStatsComponent,
+    enemy_stats: CharacterStats,
     hand_cards: List[Card],
     opponent_names: List[str],
     action_order: List[str],
@@ -52,7 +52,7 @@ def _generate_enemy_decision_prompt(
     Returns:
         格式化的完整提示词
     """
-    stats = enemy_stats.stats
+    stats = enemy_stats
     self_info = (
         f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
     )
@@ -201,12 +201,7 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
             )
             return None
 
-        stats_comp = entity.get(CharacterStatsComponent)
-        if stats_comp is None:
-            logger.error(
-                f"EnemyPlayDecisionSystem: 敌人 {entity.name} 缺少 CharacterStatsComponent"
-            )
-            return None
+        enemy_stats = self._game.compute_character_stats(entity)
 
         # 获取场上存活的远征队成员名称（对手，不传入血量）
         alive_actors = self._game.get_alive_actors_in_stage(entity)
@@ -225,7 +220,7 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
 
         prompt = _generate_enemy_decision_prompt(
             enemy_name=entity.name,
-            enemy_stats=stats_comp,
+            enemy_stats=enemy_stats,
             hand_cards=hand_comp.cards,
             opponent_names=opponent_names,
             action_order=action_order,

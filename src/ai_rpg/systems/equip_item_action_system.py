@@ -36,6 +36,24 @@ def _collect_desc(slot_name: str, inventory_comp: InventoryComponent) -> str:
 
 
 #######################################################################################################################################
+def _format_item_not_found_notification(actor_name: str, item_name: str) -> str:
+    """格式化装备不存在时的提示消息。
+
+    Args:
+        actor_name: 角色名称
+        item_name: 未找到的物品名称
+
+    Returns:
+        格式化后的提示消息，引导 Agent 下一轮使用 inspect_self 确认背包内容
+    """
+    return (
+        f"# 提示\n\n"
+        f"{actor_name} 背包中不存在名为「{item_name}」的装备，装备操作已取消。\n"
+        f"如需确认背包中的物品全名，请下一轮使用 `inspect_self` 查阅背包与属性。"
+    )
+
+
+#######################################################################################################################################
 @final
 class EquipItemActionSystem(ReactiveProcessor):
     """装备物品动作处理系统。
@@ -119,9 +137,25 @@ class EquipItemActionSystem(ReactiveProcessor):
         每个字段：None 表示不更换该槽；"" 表示脱掉该槽；非空字符串表示装备该物品。
 
         Returns:
-            始终返回 True（装备组件已更新）
+            True 表示装备成功；False 表示有槽位物品不在背包中，已截断并注入提示
         """
         action = entity.get(EquipItemAction)
+        inventory_comp = entity.get(InventoryComponent)
+
+        # 验证所有非空槽位的物品是否存在于背包
+        for slot_name in (action.weapon, action.armor, action.accessory):
+            if not slot_name:  # None（不更换）或 ""（脱掉）均跳过
+                continue
+            if not any(item.name == slot_name for item in inventory_comp.items):
+                self._game.add_human_message(
+                    entity,
+                    _format_item_not_found_notification(entity.name, slot_name),
+                )
+                logger.warning(
+                    f"⚠️ {entity.name} 尝试装备「{slot_name}」，但背包中不存在该物品，操作已截断"
+                )
+                return False
+
         equip_comp = entity.get(EquipmentComponent)
 
         new_weapon = action.weapon if action.weapon is not None else equip_comp.weapon

@@ -16,6 +16,7 @@ from ..game.game_server import GameServer
 from .home_actions import (
     activate_speak_action,
     activate_switch_stage,
+    activate_equip_item,
     activate_stage_plan,
     activate_generate_dungeon,
     add_expedition_member,
@@ -154,6 +155,16 @@ async def home_player_action(
                 # 激活场景切换动作：在家园内切换到不同的场景
                 success, error_detail = activate_switch_stage(
                     rpg_game, stage_name=payload.arguments.get("stage_name", "")
+                )
+
+            case HomePlayerActionType.EQUIP_ITEM:
+                # 激活装备动作：将背包中指定物品装备到对应槽位
+                # 键缺失 → None（不更换）；值为 "" → ""（脱掉）；非空字符串 → 装备该物品
+                success, error_detail = activate_equip_item(
+                    rpg_game,
+                    weapon=payload.arguments.get("weapon"),
+                    armor=payload.arguments.get("armor"),
+                    accessory=payload.arguments.get("accessory"),
                 )
 
             case _:

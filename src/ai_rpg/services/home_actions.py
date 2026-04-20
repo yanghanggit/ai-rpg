@@ -4,11 +4,13 @@
 这些函数负责验证前置条件并设置相应的动作组件，实际执行由游戏管道处理。
 """
 
+from typing import List, Optional, Tuple
 from loguru import logger
 from ..game.tcg_game import TCGGame
 from ..models import (
     SpeakAction,
     TransStageAction,
+    EquipItemAction,
     HomeComponent,
     AllyComponent,
     PlayerComponent,
@@ -16,7 +18,6 @@ from ..models import (
     PlanAction,
     GenerateDungeonAction,
 )
-from typing import List, Tuple
 
 
 ###################################################################################################################################################################
@@ -108,6 +109,46 @@ def activate_switch_stage(tcg_game: TCGGame, stage_name: str) -> Tuple[bool, str
 
     logger.debug(f"激活场景转换: {player_entity.name} -> {stage_name}")
     player_entity.replace(TransStageAction, player_entity.name, stage_name)
+    activate_stage_plan(tcg_game)
+    return True, ""
+
+
+###################################################################################################################################################################
+def activate_equip_item(
+    tcg_game: TCGGame,
+    weapon: Optional[str],
+    armor: Optional[str],
+    accessory: Optional[str],
+) -> Tuple[bool, str]:
+    """
+    激活玩家的装备物品动作，并触发当前场景所有角色的行动计划。
+
+    Args:
+        tcg_game: TCG 游戏实例
+        weapon: 目标武器物品全名（None 不更换；"" 脱掉；非空字符串装备该物品）
+        armor: 目标套装物品全名（None 不更换；"" 脱掉；非空字符串装备该物品）
+        accessory: 目标饰品物品全名（None 不更换；"" 脱掉；非空字符串装备该物品）
+
+    Returns:
+        tuple[bool, str]: (是否成功, 失败时的错误详情)
+    """
+    if not tcg_game.is_player_in_home_stage:
+        error_detail = "玩家不在家园场景中，无法执行装备动作"
+        logger.error(f"激活装备动作失败: {error_detail}")
+        return False, error_detail
+
+    if weapon is None and armor is None and accessory is None:
+        error_detail = "未指定任何装备槽位，操作无效"
+        logger.error(f"激活装备动作失败: {error_detail}")
+        return False, error_detail
+
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None, "玩家实体不存在！"
+
+    logger.debug(
+        f"激活装备动作: {player_entity.name} | 武器={weapon!r} 套装={armor!r} 饰品={accessory!r}"
+    )
+    player_entity.replace(EquipItemAction, player_entity.name, weapon, armor, accessory)
     activate_stage_plan(tcg_game)
     return True, ""
 

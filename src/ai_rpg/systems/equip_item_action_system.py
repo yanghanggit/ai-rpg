@@ -54,6 +54,24 @@ def _format_item_not_found_notification(actor_name: str, item_name: str) -> str:
 
 
 #######################################################################################################################################
+def _format_appearance_llm_notification_for_others(
+    actor_name: str, appearance: str
+) -> str:
+    """格式化 LLM 合成外观通知消息（广播给场景内其他实体）。
+
+    Args:
+        actor_name: 发生外观变化的角色名称
+        appearance: LLM 合成后的完整外观描述
+
+    Returns:
+        格式化后的通知消息字符串
+    """
+    return f"""# {actor_name} 外观信息已经更新: 
+
+{appearance}"""
+
+
+#######################################################################################################################################
 @final
 class EquipItemActionSystem(ReactiveProcessor):
     """装备物品动作处理系统。
@@ -123,9 +141,21 @@ class EquipItemActionSystem(ReactiveProcessor):
                 new_appearance,
             )
 
+            # 对自身：「你的外观已更新」
+            self._game.add_human_message(
+                entity,
+                _format_appearance_llm_notification(new_appearance),
+            )
+
+            # 对场景内其他实体：第三人称广播
             self._game.broadcast_to_stage(
                 entity,
-                AgentEvent(message=_format_appearance_llm_notification(new_appearance)),
+                AgentEvent(
+                    message=_format_appearance_llm_notification_for_others(
+                        entity.name, new_appearance
+                    )
+                ),
+                exclude_entities={entity},
             )
 
             logger.info(f"✅ {entity.name} 外观已重新合成（装备后）")
@@ -203,5 +233,5 @@ class EquipItemActionSystem(ReactiveProcessor):
             name=entity.name,
             prompt=prompt,
             context=self._game.get_agent_context(entity).context,
-            temperature=1.5,
+            temperature=1.0,
         )

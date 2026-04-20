@@ -30,7 +30,7 @@ def _format_appearance_init_notification(appearance: str) -> str:
 
 #######################################################################################################################################
 def _format_appearance_llm_notification(appearance: str) -> str:
-    """格式化 LLM 合成外观通知消息。
+    """格式化 LLM 合成外观通知消息（发给角色自身）。
 
     Args:
         appearance: LLM 合成后的完整外观描述
@@ -68,7 +68,8 @@ def _build_appearance_generation_prompt(
     return f"""## 角色基础身体
 {base_body}
 
-## 当前穿戴装备（视觉描述参考）
+## 当前穿戴装备（权威状态，以此为准）
+以下是角色**此刻实际穿戴**的装备，无论历史对话中出现过何种装备描述，均以此处为最终事实。
 武器：{weapons_line}
 套装：{armor_line}
 饰品：{accessory_line}
@@ -78,6 +79,7 @@ def _build_appearance_generation_prompt(
 - 第三人称，客观描述可见视觉特征，严禁主观词汇（如"优雅""坚毅""沧桑"）和角色名字
 - 严禁提及任何装备或物品的名称（可描述其视觉效果，如颜色、材质、形状、纹路）
 - 严格遵守物理遮挡逻辑：装备遮住的部位不出现在描述中，未被遮住的部位据实描述，装备的视觉特征自然融入整体
+- 槽位为"无"时，对应部位按基础身体描述呈现，不凭空添加遮挡物
 - 输出纯文字，不加任何标题或 Markdown 格式"""
 
 

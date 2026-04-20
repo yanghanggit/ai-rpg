@@ -45,6 +45,7 @@
     python scripts/run_agent_game.py advance           --snapshot PATH
     python scripts/run_agent_game.py speak             --snapshot PATH --target ACTOR --content TEXT
     python scripts/run_agent_game.py switch-stage      --snapshot PATH --stage STAGE_NAME
+    python scripts/run_agent_game.py equip-item        --snapshot PATH [--weapon ITEM] [--armor ITEM] [--accessory ITEM]
     python scripts/run_agent_game.py enter-dungeon     --snapshot PATH --dungeon DUNGEON_NAME
     python scripts/run_agent_game.py draw-cards        --snapshot PATH
     python scripts/run_agent_game.py play-cards-specified --snapshot PATH --actor ACTOR --card CARD [--targets TARGET...]
@@ -173,6 +174,7 @@ from agent_game_actions import (
     advance_game,
     speak_game,
     switch_stage_game,
+    equip_item_game,
     enter_dungeon_game,
     draw_cards_game,
     play_cards_specified_game,
@@ -365,6 +367,72 @@ def switch_stage(snapshot: str, stage: str) -> None:
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(switch_stage_game(world, player_session, stage, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("equip-item")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+@click.option(
+    "--weapon",
+    default=None,
+    help="武器槽目标物品全名（省略=不更换；传空字符串=脱掉；传物品全名=装备）",
+)
+@click.option(
+    "--armor",
+    default=None,
+    help="套装槽目标物品全名（省略=不更换；传空字符串=脱掉；传物品全名=装备）",
+)
+@click.option(
+    "--accessory",
+    default=None,
+    help="饰品槽目标物品全名（省略=不更换；传空字符串=脱掉；传物品全名=装备）",
+)
+def equip_item(
+    snapshot: str, weapon: str | None, armor: str | None, accessory: str | None
+) -> None:
+    """从存档复位，玩家装备背包中指定物品，并写入新存档。
+
+    适用于【家园模式】。三个槽位至少指定一个，省略的槽位保持不变。
+    使用空字符串（""）脱掉某槽的装备。
+
+    建议先用 inspect-self 查阅背包确认物品全名，再使用本命令。
+
+    示例：
+        equip-item --snapshot PATH --weapon 物品.武器.铁剑
+        equip-item --snapshot PATH --armor 物品.套装.皮甲 --accessory ""
+    """
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    if weapon is None and armor is None and accessory is None:
+        raise click.UsageError(
+            "至少需要指定一个装备槽位（--weapon / --armor / --accessory）"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(
+        equip_item_game(world, player_session, weapon, armor, accessory, _save_dir)
+    )
 
 
 ###############################################################################################################################################

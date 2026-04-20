@@ -117,6 +117,11 @@ class WeaponItem(Item):
     type: Literal[ItemType.WEAPON_ITEM] = Field(
         default=ItemType.WEAPON_ITEM, frozen=True
     )
+    stat_bonuses: CharacterStats = Field(
+        default_factory=lambda: CharacterStats(
+            hp=0, max_hp=0, attack=0, defense=0, action_count=0, speed=0
+        )
+    )
 
 
 ###############################################################################################################################################
@@ -138,6 +143,11 @@ class EquipmentItem(Item):
         default=ItemType.EQUIPMENT_ITEM, frozen=True
     )
     equipment_type: EquipmentType = EquipmentType.NONE  # 装备子类型
+    stat_bonuses: CharacterStats = Field(
+        default_factory=lambda: CharacterStats(
+            hp=0, max_hp=0, attack=0, defense=0, action_count=0, speed=0
+        )
+    )
 
 
 #######################################################################################################################################

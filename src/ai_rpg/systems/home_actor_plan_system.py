@@ -18,6 +18,7 @@ from ..models import (
     HomeComponent,
     MindEvent,
     ActorComponent,
+    AllyComponent,
     PlayerComponent,
     PlayerOnlyStageComponent,
 )
@@ -656,32 +657,48 @@ class HomeActorPlanSystem(ReactiveProcessor):
                 )
             )
 
-            # mock 强制发起某个action的例子。
-            # if actor_entity.has(AllyComponent) and not actor_entity.has(
-            #     PlayerComponent
-            # ):
-            #     logger.debug(
-            #         f"这里清醒mock一个message 添加给学者的上下文，要求在后续的计划行动中不可以使用trans_stage 来移动场景！"
-            #     )
-            #     self._game.add_human_message(
-            #         actor_entity,
-            #         "这是一个测试消息，要求你在后续的计划行动中不可以使用trans_stage 来移动场景！",
-            #     )
-            #     logger.debug(
-            #         f"这里清醒mock一个message 添加给学者的上下文，要求本轮使用 inspect_self 查看自身背包与装备状态！"
-            #     )
-            #     self._game.add_human_message(
-            #         actor_entity,
-            #         "这是一个测试消息，要求你在本轮计划行动中必须使用 inspect_self 查看自身背包与装备状态！",
-            #     )
-            #     logger.debug(
-            #         f'这里清醒mock一个message 添加给学者的上下文，要求在下一轮使用 equip_accessory: "" 脱掉饰品槽！'
-            #     )
-            #     self._game.add_human_message(
-            #         actor_entity,
-            #         '这是一个测试消息，要求你在查看完自身状态后的下一轮，使用 equip_accessory: "" 脱掉饰品槽！',
-            #     )
+            # 测试用：向非玩家盟友注入一组连续的 mock 消息，模拟强制发起特定行动的场景。
+            self._mock_inject_ally_equip_test(actor_entity)
 
         return chat_clients
+
+    #######################################################################################################################################
+    def _mock_inject_ally_equip_test(self, actor_entity: Entity) -> None:
+        """【测试用】向非玩家盟友注入一组连续的 mock 消息，模拟强制发起特定行动的场景。
+
+        流程：
+          1. 禁止本轮使用 trans_stage 移动场景
+          2. 本轮必须使用 inspect_self 查看背包与装备状态
+          3. 下一轮使用 equip_accessory: "" 脱掉饰品槽
+
+        只对非玩家盟友（AllyComponent & ~PlayerComponent）生效。
+
+        Args:
+            actor_entity: 待注入的角色实体
+        """
+        if not actor_entity.has(AllyComponent) or actor_entity.has(PlayerComponent):
+            return
+
+        logger.debug(
+            "这里清醒mock一个message 添加给学者的上下文，要求在后续的计划行动中不可以使用trans_stage 来移动场景！"
+        )
+        self._game.add_human_message(
+            actor_entity,
+            "这是一个测试消息，要求你在后续的计划行动中不可以使用trans_stage 来移动场景！",
+        )
+        logger.debug(
+            "这里清醒mock一个message 添加给学者的上下文，要求本轮使用 inspect_self 查看自身背包与装备状态！"
+        )
+        self._game.add_human_message(
+            actor_entity,
+            "这是一个测试消息，要求你在本轮计划行动中必须使用 inspect_self 查看自身背包与装备状态！",
+        )
+        logger.debug(
+            '这里清醒mock一个message 添加给学者的上下文，要求在下一轮使用 equip_accessory: "" 脱掉饰品槽！'
+        )
+        self._game.add_human_message(
+            actor_entity,
+            '这是一个测试消息，要求你在查看完自身状态后的下一轮，使用 equip_accessory: "" 脱掉饰品槽！',
+        )
 
     #######################################################################################################################################

@@ -7,6 +7,8 @@ from ..models import (
     Blueprint,
     EquipmentItem,
     EquipmentType,
+    UniqueItem,
+    WeaponItem,
 )
 from .actor_wanderer import create_wanderer
 from .actor_scholar import create_scholar
@@ -39,8 +41,13 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     # 调整旅行者的速度属性，增加其在 SPEED_ORDER 策略下的出手优先级
     actor_wanderer.character_stats.speed = 20
 
-    # 为旅行者分配初始装备：轻甲套装 + 沙漠护身符
+    # 为旅行者分配初始装备：猎刀 + 轻甲套装 + 沙漠护身符
     actor_wanderer.items = [
+        WeaponItem(
+            name="缺口猎刀",
+            uuid="",
+            description="一把刀身偏短的猎刀，刃背厚实，靠近刀尖三分之一处有一道浅缺口，像是曾经硬撬过什么。握柄以粗布条缠绕，布已泛黄，但缠法整齐，显然出自熟练的手。旅行者醒来时它插在腰带侧边，不知何时放上去的，但握在手里有一种说不清的熟悉感。",
+        ),
         EquipmentItem(
             name="沙漠旅行者轻甲",
             uuid="",
@@ -58,8 +65,13 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     # 创建学者角色
     actor_mystic = create_scholar()
 
-    # 为学者分配初始装备：学者长袍套装 + 记忆碎片项链
+    # 为学者分配初始装备：残破笔记本 + 学者长袍套装 + 记忆碎片项链
     actor_mystic.items = [
+        UniqueItem(
+            name="残破笔记本",
+            uuid="",
+            description="一本封皮已经破损的小开本笔记，内页密密麻麻写满了文字——字迹是维拉自己的，她一眼就认出来了。内容涉及某些地点的方位、符文图样的草稿、以及偶尔出现的只言片语，像是给自己留的备忘，但她对其中任何一条都毫无印象。最后几页空白，最末一行写着：'如果你看到这里，说明计划出了问题。'",
+        ),
         EquipmentItem(
             name="学者灰袍",
             uuid="",

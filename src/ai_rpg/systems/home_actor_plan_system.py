@@ -218,6 +218,46 @@ def _build_action_planning_prompt(
 
 
 #######################################################################################################################################
+def _build_compressed_planning_prompt(
+    current_stage: str,
+    current_stage_narration: str,
+    other_actors_appearances: Dict[str, str],
+    available_home_stages: List[str],
+    planning_turn_index: int,
+) -> str:
+    """构建角色行动规划提示词（压缩版，仅保留动态上下文）。
+
+    仅包含每轮变化的感知信息（回合/场景/角色），省略静态规则与格式说明，
+    用于写入对话历史，减少后续推理时的重复 token 消耗。
+
+    Args:
+        current_stage: 场景名称
+        current_stage_narration: 场景环境描述
+        other_actors_appearances: 其他角色的外观（角色名 -> 外观）
+        available_home_stages: 可前往的场景列表
+        planning_turn_index: 全局家园规划回合编号
+
+    Returns:
+        压缩版行动规划提示词
+    """
+    other_actors_appearance_info = []
+    for actor_name, appearance in other_actors_appearances.items():
+        other_actors_appearance_info.append(f"{actor_name}: {appearance}")
+    if not other_actors_appearance_info:
+        other_actors_appearance_info.append("无")
+
+    return f"""# 回合 {planning_turn_index} 场景感知
+
+## 场景: {current_stage} | {current_stage_narration}
+
+## 可移动至: {", ".join(available_home_stages) if available_home_stages else "无"}
+
+## 本场景其他角色
+
+{chr(10).join(other_actors_appearance_info)}"""
+
+
+#######################################################################################################################################
 @final
 class HomeActorPlanSystem(ReactiveProcessor):
     """家园角色行动系统。
@@ -313,20 +353,29 @@ class HomeActorPlanSystem(ReactiveProcessor):
             npc_entity, current_stage
         )
 
+        stage_narrative = current_stage.get(StageDescriptionComponent).narrative
+        available_stage_names = [e.name for e in available_home_stages]
+
         prompt = _build_action_planning_prompt(
             current_stage=current_stage.name,
-            current_stage_narration=current_stage.get(
-                StageDescriptionComponent
-            ).narrative,
+            current_stage_narration=stage_narrative,
             other_actors_appearances=other_actors_appearances,
-            available_home_stages=[e.name for e in available_home_stages],
+            available_home_stages=available_stage_names,
+            planning_turn_index=planning_turn_index,
+        )
+        compressed_prompt = _build_compressed_planning_prompt(
+            current_stage=current_stage.name,
+            current_stage_narration=stage_narrative,
+            other_actors_appearances=other_actors_appearances,
+            available_home_stages=available_stage_names,
             planning_turn_index=planning_turn_index,
         )
 
         self._game.add_human_message(
             npc_entity,
-            prompt,
+            compressed_prompt,
             home_actor_planning=npc_entity.name,
+            home_actor_full_prompt=prompt,
         )
 
         passive_mind = f"身处{current_stage.name}，待命。"
@@ -365,20 +414,29 @@ class HomeActorPlanSystem(ReactiveProcessor):
             player_entity, current_stage
         )
 
-        prompt = _build_action_planning_prompt(
+        stage_narrative = current_stage.get(StageDescriptionComponent).narrative
+        available_stage_names = [e.name for e in available_home_stages]
+
+        full_prompt = _build_action_planning_prompt(
             current_stage=current_stage.name,
-            current_stage_narration=current_stage.get(
-                StageDescriptionComponent
-            ).narrative,
+            current_stage_narration=stage_narrative,
             other_actors_appearances=other_actors_appearances,
-            available_home_stages=[e.name for e in available_home_stages],
+            available_home_stages=available_stage_names,
+            planning_turn_index=planning_turn_index,
+        )
+        compressed_prompt = _build_compressed_planning_prompt(
+            current_stage=current_stage.name,
+            current_stage_narration=stage_narrative,
+            other_actors_appearances=other_actors_appearances,
+            available_home_stages=available_stage_names,
             planning_turn_index=planning_turn_index,
         )
 
         self._game.add_human_message(
             player_entity,
-            prompt,
+            compressed_prompt,
             home_actor_planning=player_entity.name,
+            home_actor_full_prompt=full_prompt,
         )
 
         # 判断玩家本轮是否有主动动作
@@ -479,11 +537,12 @@ class HomeActorPlanSystem(ReactiveProcessor):
                 extract_json_from_code_block(chat_client.response_content)
             )
 
-            # 添加上下文！
+            # 添加上下文！存入压缩版 prompt，附挂原始全量 prompt 供检索
             self._game.add_human_message(
                 actor_entity,
-                chat_client.prompt,
+                chat_client.compressed_prompt,
                 home_actor_planning=actor_entity.name,
+                home_actor_full_prompt=chat_client.prompt,
             )
             assert chat_client.response_ai_message is not None
             self._game.add_ai_message(actor_entity, chat_client.response_ai_message)
@@ -641,16 +700,23 @@ class HomeActorPlanSystem(ReactiveProcessor):
             )
 
             # 生成请求处理器
+            stage_narrative = current_stage.get(StageDescriptionComponent).narrative
+            available_stage_names = [e.name for e in available_home_stages]
             chat_clients.append(
                 DeepSeekClient(
                     name=actor_entity.name,
                     prompt=_build_action_planning_prompt(
                         current_stage=current_stage.name,
-                        current_stage_narration=current_stage.get(
-                            StageDescriptionComponent
-                        ).narrative,
+                        current_stage_narration=stage_narrative,
                         other_actors_appearances=other_actors_appearances,
-                        available_home_stages=[e.name for e in available_home_stages],
+                        available_home_stages=available_stage_names,
+                        planning_turn_index=planning_turn_index,
+                    ),
+                    compressed_prompt=_build_compressed_planning_prompt(
+                        current_stage=current_stage.name,
+                        current_stage_narration=stage_narrative,
+                        other_actors_appearances=other_actors_appearances,
+                        available_home_stages=available_stage_names,
                         planning_turn_index=planning_turn_index,
                     ),
                     context=self._game.get_agent_context(actor_entity).context,

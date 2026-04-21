@@ -96,21 +96,26 @@ class DeepSeekClient:
         use_reasoner: bool = False,
         timeout: Optional[int] = None,
         temperature: Optional[float] = None,
+        compressed_prompt: Optional[str] = None,
     ) -> None:
         """初始化 DeepSeek 直连客户端
 
         Args:
             name: 客户端标识名称
-            prompt: 发送给 AI 的提示词
+            prompt: 发送给 AI 的提示词（完整版，用于推理）
             context: 历史对话上下文（使用本模块的消息类型）
             use_reasoner: True 使用 deepseek-reasoner（思考模式），默认 False 使用 deepseek-chat
             timeout: 请求超时（秒），默认 30
+            compressed_prompt: 写入对话历史的压缩版提示词；若为 None 则使用 prompt
         """
         assert name != "", "name should not be empty"
         assert prompt != "", "prompt should not be empty"
 
         self._name: Final[str] = name
         self._prompt: Final[str] = prompt
+        self._compressed_prompt: Final[str] = (
+            compressed_prompt if compressed_prompt is not None else prompt
+        )
         self._context: Sequence[BaseMessage] = context
         self._use_reasoner: Final[bool] = use_reasoner
         self._timeout: Final[int] = timeout if timeout is not None else 30
@@ -134,6 +139,12 @@ class DeepSeekClient:
     @property
     def prompt(self) -> str:
         return self._prompt
+
+    ################################################################################################################################################################################
+    @property
+    def compressed_prompt(self) -> str:
+        """写入对话历史的压缩版提示词"""
+        return self._compressed_prompt
 
     ################################################################################################################################################################################
     @property

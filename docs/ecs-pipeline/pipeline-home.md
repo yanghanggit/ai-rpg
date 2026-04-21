@@ -37,25 +37,15 @@
 
 ### HomeActorPlanSystem（步骤 4）
 
-**源码**：`src/ai_rpg/systems/home_actor_plan_system.py`  
-**类型**：`ReactiveProcessor`（监听 `MindEvent` 等触发条件）
+**源码**：`src/ai_rpg/systems/home_actor_plan_system.py`
 
-这是家园管线的"大脑"，负责驱动所有 NPC 和响应玩家意图。
+家园管线的"大脑"。每帧为 NPC 调用 LLM 规划行动，同时为玩家注入场景观察上下文（不调 LLM）。AI 以结构化 JSON 输出决策，涵盖内心独白、信息查询、对外交流、装备操作与场景移动五类意图，由后续 Reactive System 逐类消费。
 
-**AI 规划输出格式**（`ActionPlanResponse`）：
+**规划回合计数**：计数器持久化于 `World`，每帧自增后注入所有角色的提示词。存档恢复后可从正确编号续接，为 AI 提供连贯的时间感知。
 
-```text
-mind        内心独白（不对外可见）
-query       向量数据库检索关键词 → 触发 QueryAction
-speak       说话目标 → 内容映射 → 触发 SpeakAction
-whisper     耳语目标 → 内容映射 → 触发 WhisperAction
-announce    公开宣布内容 → 触发 AnnounceAction
-trans_stage 移动目标场景名 → 触发 TransStageAction
-```
+**Prompt 压缩**（`use_compressed_prompt`，默认开启）：对话历史只写入每轮变化的动态感知部分（场景叙述、可移动列表、其他角色外观），大幅减少重复 token 占用。静态规则与格式说明以 `home_actor_full_prompt` 附挂在消息额外字段中保留，LLM 推理仍使用完整版。
 
-**规划回合计数**：每次 `react()` 执行时，先自增 `World.home_planning_turn_index`，并将当前值作为 `planning_turn_index` 注入所有角色的规划提示词（`## 当前回合: N`）。该计数器持久化在 `World` 中，存档后续读也能从正确编号续接，为 AI 提供明确的时间维度感知。
-
-**玩家主动行动守卫**：若本帧玩家已持有 `SpeakAction` / `WhisperAction` / `AnnounceAction` / `TransStageAction` 中的任意一种，NPC 进入待命模式，不触发 AI 规划，避免玩家与 NPC 同帧竞争。
+**玩家主动行动守卫**：玩家本帧已提交主动行动时，NPC 跳过 LLM 推理进入待命，防止玩家与 NPC 同帧竞争资源。
 
 参见 [[design-patterns#4. 并行 LLM 推理]]
 

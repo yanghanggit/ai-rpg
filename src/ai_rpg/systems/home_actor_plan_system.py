@@ -267,11 +267,15 @@ class HomeActorPlanSystem(ReactiveProcessor):
 
     Attributes:
         _game: 游戏实例引用
+        _use_compressed_prompt: 是否使用压缩 prompt 机制。
+            True（默认）：对话历史存压缩版，full prompt 附挂在 home_actor_full_prompt 字段；
+            False：与旧行为一致，对话历史直接存完整 prompt，不附挂额外字段。
     """
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: TCGGame, use_compressed_prompt: bool = True) -> None:
         super().__init__(game)
         self._game: Final[TCGGame] = game
+        self._use_compressed_prompt: Final[bool] = use_compressed_prompt
 
     ####################################################################################################################################
     @override
@@ -363,20 +367,26 @@ class HomeActorPlanSystem(ReactiveProcessor):
             available_home_stages=available_stage_names,
             planning_turn_index=planning_turn_index,
         )
-        compressed_prompt = _build_compressed_planning_prompt(
-            current_stage=current_stage.name,
-            current_stage_narration=stage_narrative,
-            other_actors_appearances=other_actors_appearances,
-            available_home_stages=available_stage_names,
-            planning_turn_index=planning_turn_index,
-        )
-
-        self._game.add_human_message(
-            npc_entity,
-            compressed_prompt,
-            home_actor_planning=npc_entity.name,
-            home_actor_full_prompt=prompt,
-        )
+        if self._use_compressed_prompt:
+            compressed_prompt = _build_compressed_planning_prompt(
+                current_stage=current_stage.name,
+                current_stage_narration=stage_narrative,
+                other_actors_appearances=other_actors_appearances,
+                available_home_stages=available_stage_names,
+                planning_turn_index=planning_turn_index,
+            )
+            self._game.add_human_message(
+                npc_entity,
+                compressed_prompt,
+                home_actor_planning=npc_entity.name,
+                home_actor_full_prompt=prompt,
+            )
+        else:
+            self._game.add_human_message(
+                npc_entity,
+                prompt,
+                home_actor_planning=npc_entity.name,
+            )
 
         passive_mind = f"身处{current_stage.name}，待命。"
         standby_response = ActionPlanResponse(mind=passive_mind)
@@ -424,20 +434,26 @@ class HomeActorPlanSystem(ReactiveProcessor):
             available_home_stages=available_stage_names,
             planning_turn_index=planning_turn_index,
         )
-        compressed_prompt = _build_compressed_planning_prompt(
-            current_stage=current_stage.name,
-            current_stage_narration=stage_narrative,
-            other_actors_appearances=other_actors_appearances,
-            available_home_stages=available_stage_names,
-            planning_turn_index=planning_turn_index,
-        )
-
-        self._game.add_human_message(
-            player_entity,
-            compressed_prompt,
-            home_actor_planning=player_entity.name,
-            home_actor_full_prompt=full_prompt,
-        )
+        if self._use_compressed_prompt:
+            compressed_prompt = _build_compressed_planning_prompt(
+                current_stage=current_stage.name,
+                current_stage_narration=stage_narrative,
+                other_actors_appearances=other_actors_appearances,
+                available_home_stages=available_stage_names,
+                planning_turn_index=planning_turn_index,
+            )
+            self._game.add_human_message(
+                player_entity,
+                compressed_prompt,
+                home_actor_planning=player_entity.name,
+                home_actor_full_prompt=full_prompt,
+            )
+        else:
+            self._game.add_human_message(
+                player_entity,
+                full_prompt,
+                home_actor_planning=player_entity.name,
+            )
 
         # 判断玩家本轮是否有主动动作
         has_action = any(
@@ -538,12 +554,19 @@ class HomeActorPlanSystem(ReactiveProcessor):
             )
 
             # 添加上下文！存入压缩版 prompt，附挂原始全量 prompt 供检索
-            self._game.add_human_message(
-                actor_entity,
-                chat_client.compressed_prompt,
-                home_actor_planning=actor_entity.name,
-                home_actor_full_prompt=chat_client.prompt,
-            )
+            if self._use_compressed_prompt:
+                self._game.add_human_message(
+                    actor_entity,
+                    chat_client.compressed_prompt,
+                    home_actor_planning=actor_entity.name,
+                    home_actor_full_prompt=chat_client.prompt,
+                )
+            else:
+                self._game.add_human_message(
+                    actor_entity,
+                    chat_client.prompt,
+                    home_actor_planning=actor_entity.name,
+                )
             assert chat_client.response_ai_message is not None
             self._game.add_ai_message(actor_entity, chat_client.response_ai_message)
 
@@ -712,12 +735,16 @@ class HomeActorPlanSystem(ReactiveProcessor):
                         available_home_stages=available_stage_names,
                         planning_turn_index=planning_turn_index,
                     ),
-                    compressed_prompt=_build_compressed_planning_prompt(
-                        current_stage=current_stage.name,
-                        current_stage_narration=stage_narrative,
-                        other_actors_appearances=other_actors_appearances,
-                        available_home_stages=available_stage_names,
-                        planning_turn_index=planning_turn_index,
+                    compressed_prompt=(
+                        _build_compressed_planning_prompt(
+                            current_stage=current_stage.name,
+                            current_stage_narration=stage_narrative,
+                            other_actors_appearances=other_actors_appearances,
+                            available_home_stages=available_stage_names,
+                            planning_turn_index=planning_turn_index,
+                        )
+                        if self._use_compressed_prompt
+                        else None
                     ),
                     context=self._game.get_agent_context(actor_entity).context,
                 )

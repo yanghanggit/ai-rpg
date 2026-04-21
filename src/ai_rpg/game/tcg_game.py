@@ -30,9 +30,8 @@ from ..models import (
     CharacterStatsComponent,
     EquipmentComponent,
     InventoryComponent,
-    WeaponItem,
-    EquipmentItem,
 )
+from ..models.utils import compute_stats_with_equipment
 from .player_session import PlayerSession
 from ..entitas import Matcher, Entity
 
@@ -272,60 +271,37 @@ class TCGGame(RPGGame):
             包含基础属性与所有已装备物品加成之和的新 CharacterStats 实例
         """
 
+        assert entity.has(ActorComponent), f"{entity.name} 缺少 ActorComponent"
         assert entity.has(
             CharacterStatsComponent
         ), f"{entity.name} 缺少 CharacterStatsComponent"
-        assert entity.has(ActorComponent), f"{entity.name} 缺少 ActorComponent"
+
         stats_comp = entity.get(CharacterStatsComponent)
-        assert stats_comp is not None, f"{entity.name} 缺少 CharacterStatsComponent"
-
-        # 获取基础属性
-        base = stats_comp.stats
-
-        # 计算装备加成
-        bonus_hp = 0
-        bonus_max_hp = 0
-        bonus_attack = 0
-        bonus_defense = 0
-        bonus_action_count = 0
-        bonus_speed = 0
-
-        # 仅计算装备加成，不包括其他来源的属性加成（如状态效果、技能等），以保持方法职责单一。
-        if entity.has(EquipmentComponent) and entity.has(InventoryComponent):
-            equip_comp = entity.get(EquipmentComponent)
-            inventory_comp = entity.get(InventoryComponent)
-
-            for slot_name in (
-                equip_comp.weapon,
-                equip_comp.armor,
-                equip_comp.accessory,
-            ):
-                if not slot_name:
-                    continue
-                for item in inventory_comp.items:
-                    if item.name != slot_name:
-                        continue
-                    if isinstance(item, (WeaponItem, EquipmentItem)):
-                        b = item.stat_bonuses
-                        assert (
-                            b.hp == 0 and b.max_hp == 0
-                        ), "当前设计中装备加成不应包含 HP 相关属性!"
-                        bonus_hp += b.hp
-                        bonus_max_hp += b.max_hp
-                        bonus_attack += b.attack
-                        bonus_defense += b.defense
-                        bonus_action_count += b.action_count
-                        bonus_speed += b.speed
-                    break
-
-        # 返回新的 CharacterStats 实例，包含基础属性与装备加成之和
-        return CharacterStats(
-            hp=base.hp + bonus_hp,
-            max_hp=base.max_hp + bonus_max_hp,
-            attack=base.attack + bonus_attack,
-            defense=base.defense + bonus_defense,
-            action_count=base.action_count + bonus_action_count,
-            speed=base.speed + bonus_speed,
+        return compute_stats_with_equipment(
+            stats_comp,
+            entity.get(EquipmentComponent) if entity.has(EquipmentComponent) else None,
+            entity.get(InventoryComponent) if entity.has(InventoryComponent) else None,
         )
+
+    ###############################################################################################################################################
+    def set_character_hp(self, entity: Entity, hp: int) -> CharacterStats:
+        """设置角色的当前 HP，自动 clamp 至 [0, max_hp]。
+
+        Args:
+            entity: 角色实体，必须拥有 CharacterStatsComponent
+            hp: 目标 HP 值，将被 clamp 至 0 ~ compute_character_stats(entity).max_hp
+        """
+
+        assert entity.has(ActorComponent), f"{entity.name} 缺少 ActorComponent"
+        assert entity.has(
+            CharacterStatsComponent
+        ), f"{entity.name} 缺少 CharacterStatsComponent"
+
+        stats_comp = entity.get(CharacterStatsComponent)
+        max_hp = self.compute_character_stats(entity).max_hp
+        clamped = max(0, min(hp, max_hp))
+        stats_comp.stats.hp = clamped
+
+        return self.compute_character_stats(entity)
 
     ################################################################################################################

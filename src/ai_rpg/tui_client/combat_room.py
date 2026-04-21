@@ -30,6 +30,8 @@ from ..models import (
     CombatResult,
     CombatState,
     EntitySerialization,
+    EquipmentComponent,
+    InventoryComponent,
     TaskStatus,
     CharacterStatsComponent,
     StatusEffectsComponent,
@@ -38,6 +40,7 @@ from ..models import (
     ExpeditionMemberComponent,
     PlayerComponent,
 )
+from ..models.utils import compute_stats_with_equipment
 
 
 # ─────────────────────────────────────────────────
@@ -1200,14 +1203,23 @@ class CombatRoomScreen(Screen[None]):
                 flabel = "[dim]?[/]"
             hp_str = "?/?"
             block_val = 0
+            _stats_comp = None
+            _equip_comp = None
+            _inv_comp = None
             for comp in entity.components:
                 if comp.name == CharacterStatsComponent.__name__:
-                    hp_str = (
-                        f"{CharacterStatsComponent(**comp.data).stats.hp}"
-                        f"/{CharacterStatsComponent(**comp.data).stats.max_hp}"
-                    )
+                    _stats_comp = CharacterStatsComponent(**comp.data)
+                elif comp.name == EquipmentComponent.__name__:
+                    _equip_comp = EquipmentComponent(**comp.data)
+                elif comp.name == InventoryComponent.__name__:
+                    _inv_comp = InventoryComponent(**comp.data)
                 elif comp.name == BlockComponent.__name__:
                     block_val = BlockComponent(**comp.data).block
+            if _stats_comp is not None:
+                _final = compute_stats_with_equipment(
+                    _stats_comp, _equip_comp, _inv_comp
+                )
+                hp_str = f"{_final.hp}/{_final.max_hp}"
             short = display_name(entity.name)
             log.write(
                 f"    {flabel} [bold]{short}[/]"

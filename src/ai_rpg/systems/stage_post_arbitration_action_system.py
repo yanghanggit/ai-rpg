@@ -69,6 +69,7 @@ def _fmt_duration(d: int) -> str:
 
 
 def _generate_stage_post_arbitration_prompt(
+    game: TCGGame,
     actor_entities: Set[Entity],
     actor_name: str,
     current_round_number: int,
@@ -90,13 +91,17 @@ def _generate_stage_post_arbitration_prompt(
     # 格式化存活角色状态
     actor_lines: List[str] = []
     for entity in actor_entities:
-        stats_comp = entity.get(CharacterStatsComponent)
+        final_stats = (
+            game.compute_character_stats(entity)
+            if entity.has(CharacterStatsComponent)
+            else None
+        )
         block_comp = entity.get(BlockComponent)
         effects_comp = entity.get(StatusEffectsComponent)
 
         hp_str = (
-            f"HP: {stats_comp.stats.hp}/{stats_comp.stats.max_hp}"
-            if stats_comp is not None
+            f"HP: {final_stats.hp}/{final_stats.max_hp}"
+            if final_stats is not None
             else "HP: ?"
         )
         block_str = f"格挡: {block_comp.block}" if block_comp is not None else "格挡: 0"
@@ -305,6 +310,7 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
         prompt = _generate_stage_post_arbitration_prompt(
+            game=self._game,
             actor_entities=actor_entities,
             actor_name=action.actor_name,
             current_round_number=current_round_number,

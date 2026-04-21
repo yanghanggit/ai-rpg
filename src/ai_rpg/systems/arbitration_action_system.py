@@ -575,13 +575,12 @@ class ArbitrationActionSystem(ReactiveProcessor):
                 assert entity.has(
                     CharacterStatsComponent
                 ), f"实体 {entity_name} 缺少 CharacterStatsComponent！"
-                combat_stats = entity.get(CharacterStatsComponent)
 
-                # 更新 HP，确保不超过最大 HP 且不低于 0
-                old_hp = combat_stats.stats.hp
-                max_hp = combat_stats.stats.max_hp
-                new_hp = int(max(0, min(entity_stats.hp, max_hp)))
-                combat_stats.stats.hp = new_hp
+                # 更新 HP
+                old_hp = self._game.compute_character_stats(entity).hp
+                after_stats = self._game.set_character_hp(entity, int(entity_stats.hp))
+                new_hp = after_stats.hp
+                max_hp = after_stats.max_hp
                 logger.info(
                     f"更新 {entity_name} HP: {old_hp} → {new_hp}/{max_hp}, block: {entity_stats.block}"
                 )
@@ -654,13 +653,13 @@ class ArbitrationActionSystem(ReactiveProcessor):
         ).entities.copy()
 
         for entity in defeated_entities:
-            combat_stats_comp = entity.get(CharacterStatsComponent)
+            entity_hp = self._game.compute_character_stats(entity).hp
 
             # 只有当 HP 小于等于 0 时才处理死亡
-            if combat_stats_comp.stats.hp <= 0:
-                logger.info(f"{entity.name} 已被击败，HP={combat_stats_comp.stats.hp}")
+            if entity_hp <= 0:
+                logger.info(f"{entity.name} 已被击败，HP={entity_hp}")
                 self._game.add_human_message(entity, _generate_defeat_notification())
-                entity.replace(DeathComponent, combat_stats_comp.name)
+                entity.replace(DeathComponent, entity.name)
 
     #######################################################################################################################################
     def _add_status_effects_actions_after_arbitration(

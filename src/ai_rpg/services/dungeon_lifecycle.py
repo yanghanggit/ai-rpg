@@ -19,7 +19,6 @@ from ..models import (
     PlayerOnlyStageComponent,
     HomeComponent,
     DeathComponent,
-    CharacterStatsComponent,
     StatusEffectsComponent,
 )
 from ..entitas import Matcher, Entity
@@ -185,11 +184,10 @@ def _enter_dungeon_stage(
             expedition_member.remove(DeathComponent)
 
             # 恢复生命值1
-            assert expedition_member.has(CharacterStatsComponent)
-            combat_stats = expedition_member.get(CharacterStatsComponent)
-            combat_stats.stats.hp = 1
+            revived_stats = tcg_game.set_character_hp(expedition_member, 1)
+            # revived_stats = tcg_game.compute_character_stats(expedition_member)
             logger.info(
-                f"恢复生命值: {expedition_member.name} 生命值 = {combat_stats.stats.hp}/{combat_stats.stats.max_hp}"
+                f"恢复生命值: {expedition_member.name} 生命值 = {revived_stats.hp}/{revived_stats.max_hp}"
             )
 
     # 4. 执行场景传送
@@ -471,11 +469,10 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
             expedition_entity.remove(DeathComponent)
 
         # 恢复生命值至满血
-        assert expedition_entity.has(CharacterStatsComponent)
-        combat_stats = expedition_entity.get(CharacterStatsComponent)
-        combat_stats.stats.hp = combat_stats.stats.max_hp
+        full_stats = tcg_game.compute_character_stats(expedition_entity)
+        tcg_game.set_character_hp(expedition_entity, full_stats.max_hp)
         logger.info(
-            f"恢复满血: {expedition_entity.name} 生命值 = {combat_stats.stats.hp}/{combat_stats.stats.max_hp}"
+            f"恢复满血: {expedition_entity.name} 生命值 = {full_stats.max_hp}/{full_stats.max_hp}"
         )
 
         # 清空所有状态效果（若存在）

@@ -254,7 +254,7 @@ def _build_compressed_planning_prompt(
 
 ## 本场景其他角色
 
-{chr(10).join(other_actors_appearance_info)}"""
+{"\n".join(other_actors_appearance_info)}"""
 
 
 #######################################################################################################################################

@@ -8,7 +8,6 @@
 """
 
 from typing import Annotated, Any, Dict, List, Literal, Sequence, Union
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -20,7 +19,9 @@ class BaseMessage(BaseModel):
 
     type: str
     content: str = ""
-    additional_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    additional_kwargs: Dict[str, Any] = Field(
+        default_factory=dict
+    )  # 显式声明字段，避免与 extra="allow" 冲突导致无法访问, LLM 响应的结构化附属数据（目前专用于存 reasoning_content）
 
 
 ############################################################################################################

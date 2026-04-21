@@ -19,15 +19,21 @@
 import sys
 import os
 from datetime import datetime
+from typing import Final
 
 import click
 from loguru import logger
 
 from config import LOGS_DIR
 from ai_rpg.tui_client import GameClient
+from ai_rpg.tui_client.config import server_config
 
 # PyInstaller frozen bundle 检测：打包后 sys.frozen = True
 _IS_FROZEN: bool = getattr(sys, "frozen", False)
+
+# 默认服务器连接配置（可通过命令行参数覆盖）──
+_DEFAULT_SERVER_HOST: Final[str] = "192.168.192.77"
+_DEFAULT_SERVER_PORT: Final[int] = 8000
 
 # ── loguru 配置：移除默认 stderr sink，改为文件输出（TUI 渲染期间不能写终端）──
 logger.remove()
@@ -41,6 +47,18 @@ logger.add(
 
 
 @click.command()
+@click.option(
+    "--server-host",
+    default=_DEFAULT_SERVER_HOST,
+    show_default=True,
+    help="游戏服务器地址",
+)
+@click.option(
+    "--server-port",
+    default=_DEFAULT_SERVER_PORT,
+    show_default=True,
+    help="游戏服务器端口",
+)
 @click.option(
     "--web",
     is_flag=True,
@@ -59,7 +77,17 @@ logger.add(
     default=None,
     help="WebSocket 公开地址，局域网模式必填，例如 http://192.168.1.100:8080",
 )
-def main(web: bool, port: int, host: str, public_url: str | None) -> None:
+def main(
+    server_host: str,
+    server_port: int,
+    web: bool,
+    port: int,
+    host: str,
+    public_url: str | None,
+) -> None:
+    server_config.host = server_host
+    server_config.port = server_port
+
     if web:
         # frozen bundle 不含 textual-serve，拒绝 --web 模式
         if _IS_FROZEN:
@@ -71,7 +99,10 @@ def main(web: bool, port: int, host: str, public_url: str | None) -> None:
 
         from textual_serve.server import Server
 
-        command = f"{sys.executable} {os.path.abspath(__file__)}"
+        command = (
+            f"{sys.executable} {os.path.abspath(__file__)}"
+            f" --server-host {server_host} --server-port {server_port}"
+        )
         server = Server(command, host=host, port=port, public_url=public_url)
         display_url = public_url or f"http://{host}:{port}"
         click.echo(f"启动 Web 模式，请在浏览器打开: {display_url}")

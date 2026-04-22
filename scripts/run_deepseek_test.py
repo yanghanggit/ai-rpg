@@ -71,10 +71,59 @@ def test_get_buffer_string() -> None:
     print(result)
 
 
+def test_list_models() -> None:
+    """测试列出可用模型"""
+    print("\n=== 测试 list_models() ===")
+    models = DeepSeekClient.list_models()
+    if models:
+        print(f"可用模型（共 {len(models)} 个）:")
+        for m in models:
+            print(f"  - {m}")
+    else:
+        print("未获取到模型列表")
+
+
+def test_get_balance() -> None:
+    """测试查询账户余额"""
+    print("\n=== 测试 get_balance() ===")
+    balance = DeepSeekClient.get_balance()
+    if balance:
+        is_available = balance.get("is_available", False)
+        print(f"账户可用: {is_available}")
+        for info in balance.get("balance_infos", []):
+            currency = info.get("currency", "")
+            total = info.get("total_balance", "")
+            granted = info.get("granted_balance", "")
+            topped_up = info.get("topped_up_balance", "")
+            print(f"  货币: {currency}")
+            print(f"  总余额:     {total}")
+            print(f"  赠送余额:   {granted}")
+            print(f"  充值余额:   {topped_up}")
+    else:
+        print("未获取到余额信息")
+
+
+def test_cache_tokens() -> None:
+    """测试缓存命中 token 统计"""
+    print("\n=== 测试 prompt_cache_hit/miss_tokens ===")
+    client = DeepSeekClient(
+        name="test_cache",
+        prompt="请用一句话解释什么是缓存。",
+        context=[_SYSTEM],
+    )
+    client.chat()
+    print(f"缓存命中 tokens : {client.prompt_cache_hit_tokens}")
+    print(f"缓存未命中 tokens: {client.prompt_cache_miss_tokens}")
+    print(f"回复: {client.response_content}")
+
+
 def main() -> None:
     DeepSeekClient.setup()
     test_get_buffer_string()
+    test_list_models()
+    test_get_balance()
     test_chat()
+    test_cache_tokens()
     asyncio.run(test_batch_chat())
 
 

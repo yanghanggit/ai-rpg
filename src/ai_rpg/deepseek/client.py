@@ -29,6 +29,8 @@ load_dotenv()
 
 ############################################################################################################
 _DEEPSEEK_API_URL: Final[str] = "https://api.deepseek.com/chat/completions"
+_DEEPSEEK_MODELS_URL: Final[str] = "https://api.deepseek.com/models"
+_DEEPSEEK_BALANCE_URL: Final[str] = "https://api.deepseek.com/user/balance"
 
 # DeepSeek 消息 role 映射
 _ROLE_MAP: Final[Dict[str, str]] = {
@@ -82,6 +84,76 @@ class DeepSeekClient:
 
     ################################################################################################################################################################################
     @classmethod
+    def list_models(cls) -> List[str]:
+        """列出 DeepSeek 平台上当前可用的模型 ID
+
+        Returns:
+            模型 ID 列表；请求失败时返回空列表
+        """
+        try:
+            headers = {
+                "Accept": "application/json",
+                "Authorization": f"Bearer {cls._get_api_key()}",
+            }
+            response = requests.get(
+                url=_DEEPSEEK_MODELS_URL,
+                headers=headers,
+                timeout=10,
+            )
+            if response.status_code == 200:
+                data: Dict[str, Any] = response.json()
+                model_ids: List[str] = [
+                    m["id"] for m in data.get("data", []) if "id" in m
+                ]
+                logger.info(f"DeepSeekClient.list_models: {model_ids}")
+                return model_ids
+            else:
+                logger.error(
+                    f"DeepSeekClient.list_models failed ({response.status_code}): {response.text}"
+                )
+                return []
+        except requests.exceptions.RequestException as e:
+            logger.error(
+                f"DeepSeekClient.list_models request error: {type(e).__name__}: {e}"
+            )
+            return []
+
+    ################################################################################################################################################################################
+    @classmethod
+    def get_balance(cls) -> Dict[str, Any]:
+        """查询账户余额
+
+        Returns:
+            余额信息字典，包含 is_available 和 balance_infos 字段；
+            请求失败时返回空字典
+        """
+        try:
+            headers = {
+                "Accept": "application/json",
+                "Authorization": f"Bearer {cls._get_api_key()}",
+            }
+            response = requests.get(
+                url=_DEEPSEEK_BALANCE_URL,
+                headers=headers,
+                timeout=10,
+            )
+            if response.status_code == 200:
+                data: Dict[str, Any] = response.json()
+                logger.info(f"DeepSeekClient.get_balance: {data}")
+                return data
+            else:
+                logger.error(
+                    f"DeepSeekClient.get_balance failed ({response.status_code}): {response.text}"
+                )
+                return {}
+        except requests.exceptions.RequestException as e:
+            logger.error(
+                f"DeepSeekClient.get_balance request error: {type(e).__name__}: {e}"
+            )
+            return {}
+
+    ################################################################################################################################################################################
+    @classmethod
     async def close_async_client(cls) -> None:
         """关闭并重置异步 HTTP 客户端"""
         await cls._async_client.aclose()
@@ -126,6 +198,8 @@ class DeepSeekClient:
             logger.warning(f"{self._name}: context is empty")
 
         self._response_ai_message: Optional[AIMessage] = None
+        self._prompt_cache_hit_tokens: int = 0
+        self._prompt_cache_miss_tokens: int = 0
         self._temperature: Final[float] = (
             temperature if temperature is not None else 1.0
         )
@@ -159,6 +233,18 @@ class DeepSeekClient:
         if self._response_ai_message is None:
             return ""
         return self._response_ai_message.content
+
+    ################################################################################################################################################################################
+    @property
+    def prompt_cache_hit_tokens(self) -> int:
+        """本次请求缓存命中的 token 数（计费价格更低）"""
+        return self._prompt_cache_hit_tokens
+
+    ################################################################################################################################################################################
+    @property
+    def prompt_cache_miss_tokens(self) -> int:
+        """本次请求缓存未命中的 token 数"""
+        return self._prompt_cache_miss_tokens
 
     ################################################################################################################################################################################
     @property
@@ -223,6 +309,10 @@ class DeepSeekClient:
             additional_kwargs=additional_kwargs,
         )
 
+        usage: Dict[str, Any] = data.get("usage", {})
+        self._prompt_cache_hit_tokens = int(usage.get("prompt_cache_hit_tokens", 0))
+        self._prompt_cache_miss_tokens = int(usage.get("prompt_cache_miss_tokens", 0))
+
     ################################################################################################################################################################################
     def _handle_error_response(self, status_code: int, response_text: str) -> None:
         """根据 DeepSeek 文档记录对应状态码的错误信息
@@ -284,6 +374,9 @@ class DeepSeekClient:
             if response.status_code == 200:
                 self._parse_response(response.json())
                 logger.info(f"{self._name} response_content:\n{self.response_content}")
+                logger.debug(
+                    f"{self._name} cache: hit={self.prompt_cache_hit_tokens}, miss={self.prompt_cache_miss_tokens}"
+                )
                 if self.response_reasoning_content:
                     logger.info(
                         f"\n💭 {self._name} 思考过程:\n{self.response_reasoning_content}\n"
@@ -322,6 +415,9 @@ class DeepSeekClient:
             if response.status_code == 200:
                 self._parse_response(response.json())
                 logger.info(f"{self._name} response_content:\n{self.response_content}")
+                logger.debug(
+                    f"{self._name} cache: hit={self.prompt_cache_hit_tokens}, miss={self.prompt_cache_miss_tokens}"
+                )
                 if self.response_reasoning_content:
                     logger.info(
                         f"\n💭 {self._name} 思考过程:\n{self.response_reasoning_content}\n"

@@ -16,6 +16,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import TransStageAction, HomeComponent
 from loguru import logger
 from ..game.tcg_game import TCGGame
+from ..game.stage_transition import stage_transition
 
 
 @final
@@ -113,6 +114,6 @@ class TransStageActionSystem(ReactiveProcessor):
         logger.debug(
             f"角色 {entity.name} 触发场景转换动作, 从场景 {current_stage_entity.name} 转换到场景 {target_stage_entity.name}."
         )
-        self._game.stage_transition({entity}, target_stage_entity)
+        stage_transition(self._game, {entity}, target_stage_entity)
 
     ####################################################################################################################################

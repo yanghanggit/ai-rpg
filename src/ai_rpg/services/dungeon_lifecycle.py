@@ -9,6 +9,7 @@ from typing import Set
 from loguru import logger
 from ..game.config import DUNGEONS_DIR
 from ..game.tcg_game import TCGGame
+from ..game.stage_transition import stage_transition
 from ..models import (
     Dungeon,
     DungeonComponent,
@@ -191,7 +192,7 @@ def _enter_dungeon_stage(
             )
 
     # 4. 执行场景传送
-    tcg_game.stage_transition(expedition_entities, stage_entity)
+    stage_transition(tcg_game, expedition_entities, stage_entity)
 
     # 6. 初始化战斗状态
     dungeon.start_combat(Combat(name=stage_entity.name))
@@ -445,7 +446,7 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
             _generate_return_home_message(dungeon.name, dest_stage.name),
             dungeon_lifecycle_completion=dungeon.name,
         )
-        tcg_game.stage_transition({expedition_entity}, dest_stage)
+        stage_transition(tcg_game, {expedition_entity}, dest_stage)
 
         after_stage_entity = tcg_game.resolve_stage_entity(expedition_entity)
         after_stage_name = after_stage_entity.name if after_stage_entity else "None"

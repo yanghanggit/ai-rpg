@@ -224,6 +224,39 @@ class DeepSeekClient:
         )
 
     ################################################################################################################################################################################
+    def _handle_error_response(self, status_code: int, response_text: str) -> None:
+        """根据 DeepSeek 文档记录对应状态码的错误信息
+
+        Args:
+            status_code: HTTP 响应状态码
+            response_text: 响应正文（用于 400/422 的调试信息）
+        """
+        if status_code == 400:
+            logger.error(
+                f"{self._name}: 请求格式错误 (400) — 请检查请求体: {response_text}"
+            )
+        elif status_code == 401:
+            logger.error(
+                f"{self._name}: 认证失败 (401) — API key 错误，请检查 DEEPSEEK_API_KEY"
+            )
+        elif status_code == 402:
+            logger.error(f"{self._name}: 余额不足 (402) — 请前往 DeepSeek 平台充值")
+        elif status_code == 422:
+            logger.error(
+                f"{self._name}: 参数错误 (422) — 请检查请求参数: {response_text}"
+            )
+        elif status_code == 429:
+            logger.warning(f"{self._name}: 请求速率达到上限 (429) — 请稍后重试")
+        elif status_code == 500:
+            logger.error(
+                f"{self._name}: 服务器内部故障 (500) — 请稍后重试，如持续出现请联系 DeepSeek"
+            )
+        elif status_code == 503:
+            logger.warning(f"{self._name}: 服务器繁忙 (503) — 请稍后重试")
+        else:
+            logger.error(f"{self._name}: 请求失败 ({status_code}): {response_text}")
+
+    ################################################################################################################################################################################
     def _build_headers(self) -> Dict[str, str]:
         return {
             "Content-Type": "application/json",
@@ -257,9 +290,7 @@ class DeepSeekClient:
                     )
                     logger.info("=" * 60)
             else:
-                logger.error(
-                    f"{self._name} response Error: {response.status_code}, {response.text}"
-                )
+                self._handle_error_response(response.status_code, response.text)
 
         except requests.exceptions.Timeout as e:
             logger.error(f"{self._name}: request timeout: {type(e).__name__}: {e}")
@@ -297,9 +328,7 @@ class DeepSeekClient:
                     )
                     logger.info("=" * 60)
             else:
-                logger.error(
-                    f"{self._name} a_response Error: {response.status_code}, {response.text}"
-                )
+                self._handle_error_response(response.status_code, response.text)
 
         except httpx.TimeoutException as e:
             logger.error(f"{self._name}: async timeout: {type(e).__name__}: {e}")

@@ -32,7 +32,7 @@ from ai_rpg.demo import (
     # create_single_hunter_blueprint,
     # create_mountain_beasts_dungeon,
     # create_tiger_lair_dungeon,
-    create_sand_wolf_ruins_dungeon,
+    create_sand_jackal_ruins_dungeon,
     # create_training_dungeon,
 )
 from ai_rpg.pgsql import (
@@ -76,7 +76,7 @@ def _save_demo_dungeons() -> None:
     dungeons = [
         # create_mountain_beasts_dungeon(),  # 山林妖兽狩猎副本
         # create_tiger_lair_dungeon(),  # 山中虎巢穴副本
-        create_sand_wolf_ruins_dungeon(),  # 沙狼遗迹副本
+        create_sand_jackal_ruins_dungeon(),  # 沙豺遗迹副本
         # create_training_dungeon(),  # 猎人训练场副本
     ]
 

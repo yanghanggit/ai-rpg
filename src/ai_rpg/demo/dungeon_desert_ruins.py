@@ -4,7 +4,7 @@
 本模块用于创建沙漠残垣世界观下的遗迹相关地下城副本。
 
 核心内容：
-- create_sand_wolf_ruins_dungeon: 单场景副本，挑战遗迹外缘的沙狼（常物），适合初期狩猎练习。
+- create_sand_jackal_ruins_dungeon: 单场景副本，挑战遗迹外缘的沙豺（常物），适合初期狩猎练习。
 """
 
 from ..models import (
@@ -14,7 +14,7 @@ from ..models import (
     StageType,
 )
 
-from .actor_sand_wolf import create_actor_sand_wolf
+from .actor_sand_jackal import create_actor_sand_jackal
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
 )
@@ -26,15 +26,15 @@ from .rpg_system_rules import (
 )
 
 
-def create_sand_wolf_ruins_dungeon() -> Dungeon:
+def create_sand_jackal_ruins_dungeon() -> Dungeon:
     """
-    创建沙狼遗迹副本。
+    创建沙豺遗迹副本。
 
     包含单个场景：
-    - 残柱外沿：遗迹外缘的开阔沙地，常物级沙狼的活动领域
+    - 残柱外沿：遗迹外缘的开阔沙地，常物级沙豺的活动领域
 
     Returns:
-        Dungeon: 沙狼遗迹副本实例
+        Dungeon: 沙豺遗迹副本实例
     """
     stage_ruins_outskirts = create_stage(
         name="场景.残柱外沿",
@@ -49,12 +49,12 @@ def create_sand_wolf_ruins_dungeon() -> Dungeon:
         system_rules=RPG_SYSTEM_RULES,
     )
 
-    actor_wolf = create_actor_sand_wolf()
+    actor_wolf = create_actor_sand_jackal()
     stage_ruins_outskirts.actors = [actor_wolf]
 
     return Dungeon(
         name="地下城.沙漠残垣",
-        ecology="遗迹外缘散落的断柱与沙地交界处。松软沙土上留有大量宽爪印迹，深浅不一，部分印迹已被风沙半掩。断柱根部背风侧有浅凹，沙面压实，是沙狼白天蜷伏的痕迹。偶尔可见被咬断的小型骨骼碎片半埋在沙中。",
+        ecology="遗迹外缘散落的断柱与沙地交界处。松软沙土上留有大量宽爪印迹，深浅不一，部分印迹已被风沙半掩。断柱根部背风侧有浅凹，沙面压实，是沙豺白天蜷伏的痕迹。偶尔可见被咬断的小型骨骼碎片半埋在沙中。",
         rooms=[
             CombatRoom(stage=stage_ruins_outskirts),
         ],

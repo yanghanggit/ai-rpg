@@ -81,7 +81,7 @@
 **源码**：`src/ai_rpg/systems/draw_cards_action_system.py`  
 **监听**：`DrawCardsAction`（`max_num_cards=3`）
 
-**抽牌策略**（历史牌优先 + 保证新鲜度 + Archetype 约束 + 骰值注入）：
+**抽牌策略**（历史牌优先 + 保证新鲜度 + Archetype 约束 + 骰值注入 + Prompt 压缩）：
 
 - 从 `DrawDeckComponent`（可重抽历史牌池）取最多 `max_num_cards - 1` 张（FIFO 消耗）
 - 出牌时，仅 `card.source == actor_name` 的卡牌归入 `DiscardDeckComponent`（用于统计与展示）；`source` 不匹配的外来牌（含 Stage 塞入牌）直接丢弃，不归档
@@ -100,6 +100,8 @@
 当 `archetypes` 为空时，退回通用"差异化设计原则"提示（不附骰值），与改动前行为一致（向后兼容）。
 
 详细设计：[[archetype-system]]
+
+**Prompt 压缩**（`use_compressed_prompt`，默认开启）：对话历史只写入每轮变化的动态感知部分（回合编号、角色属性、Draw 状态效果、原型约束与骰值），静态的字段说明与 JSON 格式示例以 `draw_cards_full_prompt` 附挂在消息额外字段中保留，LLM 推理仍使用全量版。
 
 参见 [[design-patterns#4. 并行 LLM 推理]]
 

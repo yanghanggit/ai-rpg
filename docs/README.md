@@ -31,6 +31,7 @@
 
 | 日期 | 变更 |
 | ------ | ------ |
+| 2026-04-24 | `DrawCardsActionSystem` 新增 `use_compressed_prompt` 开关（默认 `True`）：对话历史存压缩版 prompt，静态字段说明与 JSON 示例以 `draw_cards_full_prompt` 附挂；新增 `_generate_compressed_draw_prompt`；更新 `pipeline-combat.md` |
 | 2026-04-21 | `HomeActorPlanSystem` 新增 `use_compressed_prompt` 开关（默认 `True`）：对话历史存压缩版 prompt，完整版以 `home_actor_full_prompt` 附挂；`ActionPlanResponse` 补全 `inspect_self` / `equip_weapon` / `equip_armor` / `equip_accessory` 字段；`_PLAYER_ACTIVE_ACTION_TYPES` 补入 `EquipItemAction`；更新 `pipeline-home.md` |
 | 2026-04-15 | 新增 `CardTargetType.ENEMY_RANDOM_MULTI`（多段随机命中）；`dungeon_actions._resolve_targets` 与 `EnemyPlayDecisionSystem` 均改用 `match` 分发；`arbitration_action_system` 提取 `_fmt_duration` / `_fmt_effects` / `_build_random_multi_sections` 为模块级函数；`pipeline-combat.md` 新增"卡牌目标类型（CardTargetType）"章节 |
 | 2026-04-14 | 新增 `DiceValue(IntEnum)`（`MIN=0`/`MAX=100`）；`DrawCardsActionSystem` 每回合按 `DiceValue` 范围生成骰值，逐张注入 prompt；`_build_design_principle_prompt` 支持骰值附加与兜底说明；更新 `archetype-system.md`、`pipeline-combat.md` |

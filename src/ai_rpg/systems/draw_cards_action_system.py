@@ -183,6 +183,62 @@ def _generate_draw_prompt(
 
 
 #######################################################################################################################################
+def _generate_compressed_draw_prompt(
+    actor_stats: CharacterStats,
+    current_round_number: int,
+    num_cards: int,
+    draw_status_effects: List[StatusEffect],
+    archetypes: List[Archetype] = [],
+    dice_rolls: List[int] = [],
+) -> str:
+    """生成"一次生成 num_cards 张 Card"的压缩版提示词。
+
+    仅包含每轮变化的动态感知部分（回合/属性/状态效果/原型约束），
+    省略静态的字段说明与 JSON 格式示例，用于写入对话历史以减少重复 token 消耗。
+
+    Args:
+        actor_stats: 角色当前属性（hp/max_hp/attack/defense）
+        current_round_number: 当前回合数
+        num_cards: 要求生成的卡牌数量
+        draw_status_effects: 当前 draw 阶段的状态效果列表
+        archetypes: 与 num_cards 等长的原型约束列表
+        dice_rolls: 与 num_cards 等长的骰值列表
+
+    Returns:
+        压缩版提示词（仅动态部分）
+    """
+
+    def _fmt_duration(d: int) -> str:
+        return "永久" if d == -1 else f"剩余{d}回合"
+
+    if draw_status_effects:
+        effects_lines = "\n".join(
+            f"- {e.name}（{_fmt_duration(e.duration)}）: {e.description}"
+            for e in draw_status_effects
+        )
+        draw_effects_prompt = (
+            f"状态效果（attack→damage_dealt，defense→block_gain）:\n{effects_lines}"
+        )
+    else:
+        draw_effects_prompt = ""
+
+    stats_line = f"属性：HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
+    archetype_line = _build_design_principle_prompt(num_cards, archetypes, dice_rolls)
+
+    sections = [stats_line]
+
+    if draw_effects_prompt:
+        sections.append(draw_effects_prompt)
+
+    sections.append(archetype_line)
+
+    return (
+        f"# 第 {current_round_number} 回合：生成 {num_cards} 张手牌\n\n"
+        + "\n\n".join(sections)
+    )
+
+
+#######################################################################################################################################
 @final
 class DrawCardsActionSystem(ReactiveProcessor):
     """
@@ -198,13 +254,16 @@ class DrawCardsActionSystem(ReactiveProcessor):
     5. 逐一调用 _process_draw_response，合并 Deck 历史牌 + LLM 新牌，写入 HandComponent
     """
 
-    def __init__(self, game: TCGGame, max_num_cards: int) -> None:
+    def __init__(
+        self, game: TCGGame, max_num_cards: int, use_compressed_prompt: bool = True
+    ) -> None:
         super().__init__(game)
         self._game: Final[TCGGame] = game
         assert (
             max_num_cards >= 1
         ), "max_num_cards 必须至少为 1，保证每回合至少生成 1 张新牌"
         self._max_num_cards: Final[int] = max_num_cards  # 每次抽取的卡牌数量
+        self._use_compressed_prompt: Final[bool] = use_compressed_prompt
 
     ####################################################################################################################################
     @override
@@ -377,9 +436,23 @@ class DrawCardsActionSystem(ReactiveProcessor):
             dice_rolls=dice_rolls,
         )
 
+        compressed_prompt = (
+            _generate_compressed_draw_prompt(
+                actor_stats=combat_stats,
+                current_round_number=current_round_number,
+                num_cards=num_cards,
+                draw_status_effects=draw_effects,
+                archetypes=sampled_archetypes,
+                dice_rolls=dice_rolls,
+            )
+            if self._use_compressed_prompt
+            else None
+        )
+
         return DeepSeekClient(
             name=entity.name,
             prompt=prompt,
+            compressed_prompt=compressed_prompt,
             context=self._game.get_agent_context(entity).context,
         )
 
@@ -412,12 +485,20 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
             current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
-            # 写入对话历史（原始 prompt + AI 原文）
-            self._game.add_human_message(
-                entity=entity,
-                message_content=chat_client.prompt,
-                draw_cards_round_number=current_round_number,
-            )
+            # 写入对话历史（压缩版 prompt + AI 原文，附挂全量 prompt 供检索）
+            if self._use_compressed_prompt:
+                self._game.add_human_message(
+                    entity=entity,
+                    message_content=chat_client.compressed_prompt,
+                    draw_cards_round_number=current_round_number,
+                    draw_cards_full_prompt=chat_client.prompt,
+                )
+            else:
+                self._game.add_human_message(
+                    entity=entity,
+                    message_content=chat_client.prompt,
+                    draw_cards_round_number=current_round_number,
+                )
             assert chat_client.response_ai_message is not None
             self._game.add_ai_message(
                 entity,

@@ -150,6 +150,8 @@
 5. 若 `final_stats` 中包含 `status_effect_patches`，原地回写对应状态效果的 `description`（用于更新 `cur` 等动态变量，如"前 N 次被攻击伤害变为 1"的剩余次数）
 6. HP 归零的角色添加 `DeathComponent`
 
+**Prompt 压缩**（`use_compressed_prompt`，默认开启）：对话历史（写入 `stage_entity` context）只写入每次出牌变化的动态感知部分（回合号、出牌者 HP/格挡、卡牌字段、目标 HP/格挡、仲裁状态效果），静态的计算规则与输出格式说明以 `combat_arbitration_full_prompt` 附挂在消息额外字段中保留，LLM 推理仍使用全量版。此外，ENEMY_RANDOM_MULTI 卡牌的 `hit_assignment`（系统预先随机确定的命中分配列表）属于动态内容，保留在压缩版中；`rm.rules`（静态规则说明）和 `rm.log_example`（静态格式示例）仅保留在全量版。
+
 **状态效果动态变量机制**：
 
 `StatusEffect.description` 同时承担规则说明与动态状态存储，例如：`"被攻击前3次伤害变为1，cur=2/max=3"`。  

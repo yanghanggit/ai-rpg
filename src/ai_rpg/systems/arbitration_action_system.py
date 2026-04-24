@@ -329,6 +329,72 @@ def _generate_combat_arbitration_prompt(
 
 
 ###########################################################################################################################################
+def _generate_compressed_combat_arbitration_prompt(
+    actor_name: str,
+    actor_stats: CharacterStats,
+    actor_block: int,
+    play_cards_action: PlayCardsAction,
+    target_stats: Dict[str, CharacterStats],
+    target_blocks: Dict[str, int],
+    current_round_number: int,
+    actor_arbitration_effects: List[StatusEffect],
+    target_arbitration_effects: Dict[str, List[StatusEffect]],
+) -> str:
+    """生成战斗结算的压缩版提示词。
+
+    仅包含每次出牌变化的动态感知部分（回合号、出牌者、出牌卡牌、目标状态、仲裁状态效果），
+    省略静态的计算规则与输出格式说明，用于写入对话历史以减少重复 token 消耗。
+    LLM 推理仍使用 _generate_combat_arbitration_prompt() 生成的完整版。
+    """
+    target_lines = (
+        "\n".join(
+            f"- {name}（HP {stats.hp}/{stats.max_hp}，当前格挡 {target_blocks.get(name, 0)}）"
+            for name, stats in target_stats.items()
+        )
+        if target_stats
+        else "- 无目标"
+    )
+
+    arbitration_effects_lines = (
+        f"**出牌者 —— {actor_name}**:\n{_fmt_effects(actor_arbitration_effects)}"
+    )
+    for t_name, t_effects in target_arbitration_effects.items():
+        arbitration_effects_lines += (
+            f"\n\n**目标 —— {t_name}**:\n{_fmt_effects(t_effects)}"
+        )
+
+    action_line = (
+        f"- 行动：{play_cards_action.action}"
+        if play_cards_action.action
+        else "- 行动：（未提供，请根据卡牌描述与战场情境自行演绎）"
+    )
+
+    rm = _build_random_multi_sections(play_cards_action)
+
+    return f"""# 第 {current_round_number} 回合：战斗结算（以 JSON 格式返回）
+
+## 出牌者
+
+{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp}，当前格挡 {actor_block}）
+
+## 出牌
+
+- 卡牌：{play_cards_action.card.name}
+- damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
+- hit_count：{play_cards_action.card.hit_count}（攻击次数）
+- block_gain：{play_cards_action.card.block_gain}
+{action_line}{rm.hit_assignment}
+
+## 目标
+
+{target_lines}
+
+## 仲裁状态效果
+
+{arbitration_effects_lines}"""
+
+
+###########################################################################################################################################
 @final
 class ArbitrationActionSystem(ReactiveProcessor):
     """战斗仲裁系统
@@ -337,9 +403,10 @@ class ArbitrationActionSystem(ReactiveProcessor):
     每次 pipeline.process() 只有一个角色出牌，仲裁随即触发。
     """
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: TCGGame, use_compressed_prompt: bool = True) -> None:
         super().__init__(game)
         self._game: Final[TCGGame] = game
+        self._use_compressed_prompt: Final[bool] = use_compressed_prompt
 
     #######################################################################################################################################
     @override
@@ -455,10 +522,27 @@ class ArbitrationActionSystem(ReactiveProcessor):
             target_arbitration_effects,
         )
 
+        compressed_message = (
+            _generate_compressed_combat_arbitration_prompt(
+                actor_entity.name,
+                self._game.compute_character_stats(actor_entity),
+                actor_block,
+                play_cards_action,
+                target_stats,
+                target_blocks,
+                current_round_number,
+                actor_arbitration_effects,
+                target_arbitration_effects,
+            )
+            if self._use_compressed_prompt
+            else None
+        )
+
         # 输出仲裁提示词日志，包含出牌者、卡牌信息、目标信息和当前回合数
         chat_client = DeepSeekClient(
             name=stage_entity.name,
             prompt=message,
+            compressed_prompt=compressed_message,
             context=self._game.get_agent_context(stage_entity).context,
             timeout=60 * 2,
         )
@@ -536,10 +620,17 @@ class ArbitrationActionSystem(ReactiveProcessor):
             # 上述能过才能继续执行后续逻辑，确保数据正确性
 
             # 将仲裁提示词、LLM 原始响应与格式化后的仲裁结果写入角色上下文，供后续查询与调试
-            self._game.add_human_message(
-                entity=stage_entity,
-                message_content=chat_client.prompt,
-            )
+            if self._use_compressed_prompt:
+                self._game.add_human_message(
+                    entity=stage_entity,
+                    message_content=chat_client.compressed_prompt,
+                    combat_arbitration_full_prompt=chat_client.prompt,
+                )
+            else:
+                self._game.add_human_message(
+                    entity=stage_entity,
+                    message_content=chat_client.prompt,
+                )
             assert chat_client.response_ai_message is not None
             self._game.add_ai_message(
                 entity=stage_entity,

@@ -32,7 +32,7 @@ from ai_rpg.tui_client.config import server_config
 _IS_FROZEN: bool = getattr(sys, "frozen", False)
 
 # 默认服务器连接配置（可通过命令行参数覆盖）──
-_DEFAULT_SERVER_HOST: Final[str] = "192.168.192.77"
+_DEFAULT_SERVER_HOST: Final[str] = "192.168.192.117"
 _DEFAULT_SERVER_PORT: Final[int] = 8000
 
 # ── loguru 配置：移除默认 stderr sink，改为文件输出（TUI 渲染期间不能写终端）──

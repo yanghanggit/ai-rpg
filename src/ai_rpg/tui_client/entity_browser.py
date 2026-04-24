@@ -16,7 +16,7 @@ from .utils import display_name
 BROWSER_HEADER = """\
 [bold cyan]── 实体浏览器 ──────────────────────────────────────[/]
 
-输入编号查看实体组件详情，[bold]/list[/] 返回列表，[bold]Escape[/] 返回。
+输入编号查看实体组件详情，[bold]0[/] 返回列表，[bold]Escape[/] 返回。
 """
 
 
@@ -86,7 +86,7 @@ class EntityBrowserScreen(Screen[None]):
         if not raw:
             return
 
-        if raw.lower() == "/list":
+        if raw == "0":
             log.clear()
             log.write(BROWSER_HEADER)
             self._render_list(log)

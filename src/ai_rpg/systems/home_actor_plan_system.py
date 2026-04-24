@@ -751,7 +751,7 @@ class HomeActorPlanSystem(ReactiveProcessor):
             )
 
             # 测试用：向非玩家盟友注入一组连续的 mock 消息，模拟强制发起特定行动的场景。
-            self._mock_inject_ally_equip_test(actor_entity)
+            # self._mock_inject_ally_equip_test(actor_entity)
 
         return chat_clients
 

@@ -1,6 +1,7 @@
 """Chat services module for handling AI chat functionality."""
 
 from .client import DeepSeekClient
+from .config import MODEL_FLASH, MODEL_PRO
 from ..models.messages import (
     AIMessage,
     BaseMessage,
@@ -11,6 +12,8 @@ from ..models.messages import (
 
 __all__ = [
     "DeepSeekClient",
+    "MODEL_FLASH",
+    "MODEL_PRO",
     "BaseMessage",
     "SystemMessage",
     "HumanMessage",

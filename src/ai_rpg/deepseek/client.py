@@ -24,6 +24,7 @@ from dotenv import load_dotenv
 from loguru import logger
 
 from ..models.messages import AIMessage, BaseMessage
+from .config import MODEL_FLASH
 
 load_dotenv()
 
@@ -165,7 +166,8 @@ class DeepSeekClient:
         name: str,
         prompt: str,
         context: Sequence[BaseMessage],
-        use_reasoner: bool = False,
+        model: str = MODEL_FLASH,
+        thinking: bool = False,
         timeout: Optional[int] = None,
         temperature: Optional[float] = None,
         compressed_prompt: Optional[str] = None,
@@ -176,7 +178,8 @@ class DeepSeekClient:
             name: 客户端标识名称
             prompt: 发送给 AI 的提示词（完整版，用于推理）
             context: 历史对话上下文（使用本模块的消息类型）
-            use_reasoner: True 使用 deepseek-reasoner（思考模式），默认 False 使用 deepseek-chat
+            model: 使用的模型，默认 _MODEL_FLASH；可选 _MODEL_PRO
+            thinking: True 开启思考模式（thinking enabled），默认 False
             timeout: 请求超时（秒），默认 30
             compressed_prompt: 写入对话历史的压缩版提示词；若为 None 则使用 prompt
         """
@@ -189,7 +192,8 @@ class DeepSeekClient:
             compressed_prompt if compressed_prompt is not None else prompt
         )
         self._context: Sequence[BaseMessage] = context
-        self._use_reasoner: Final[bool] = use_reasoner
+        self._model: Final[str] = model
+        self._thinking: Final[bool] = thinking
         self._timeout: Final[int] = timeout if timeout is not None else 30
 
         assert self._timeout > 0, "timeout should be positive"
@@ -267,11 +271,10 @@ class DeepSeekClient:
             messages.append({"role": role, "content": content})
         messages.append({"role": "user", "content": self._prompt})
 
-        model = "deepseek-reasoner" if self._use_reasoner else "deepseek-chat"
         payload: Dict[str, Any] = {
             "messages": messages,
-            "model": model,
-            "thinking": {"type": "enabled" if self._use_reasoner else "disabled"},
+            "model": self._model,
+            "thinking": {"type": "enabled" if self._thinking else "disabled"},
             "frequency_penalty": 0,
             "max_tokens": 4096,
             "presence_penalty": 0,

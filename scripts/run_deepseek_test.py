@@ -10,7 +10,7 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
 
-from ai_rpg.deepseek import DeepSeekClient
+from ai_rpg.deepseek import DeepSeekClient, MODEL_FLASH, MODEL_PRO
 from ai_rpg.models.messages import (
     AIMessage,
     HumanMessage,
@@ -56,6 +56,8 @@ async def test_batch_chat() -> None:
     for client in clients:
         print(f"\n❓ {client.prompt}")
         print(f"💬 {client.response_content}")
+
+    await DeepSeekClient.close_async_client()
 
 
 def test_get_buffer_string() -> None:
@@ -117,6 +119,40 @@ def test_cache_tokens() -> None:
     print(f"回复: {client.response_content}")
 
 
+async def test_model_matrix() -> None:
+    """2x2 矩阵测试：flash/pro × thinking=False/True"""
+    print("\n=== 测试 2x2 模型矩阵（flash/pro × thinking off/on）===")
+    _PROMPT = "请用一句话解释什么是递归。"
+    cases = [
+        (MODEL_FLASH, False),
+        (MODEL_FLASH, True),
+        (MODEL_PRO, False),
+        (MODEL_PRO, True),
+    ]
+    clients = [
+        DeepSeekClient(
+            name=f"{model}__thinking={thinking}",
+            prompt=_PROMPT,
+            context=[_SYSTEM],
+            model=model,
+            thinking=thinking,
+        )
+        for model, thinking in cases
+    ]
+
+    await DeepSeekClient.batch_chat(clients)
+
+    for client in clients:
+        label = client.name
+        print(f"\n[{label}]")
+        print(f"  回复: {client.response_content}")
+        if client.response_reasoning_content:
+            preview = client.response_reasoning_content[:120].replace("\n", " ")
+            print(f"  思考: {preview}...")
+
+    await DeepSeekClient.close_async_client()
+
+
 def main() -> None:
     DeepSeekClient.setup()
     test_get_buffer_string()
@@ -125,6 +161,7 @@ def main() -> None:
     test_chat()
     test_cache_tokens()
     asyncio.run(test_batch_chat())
+    asyncio.run(test_model_matrix())
 
 
 if __name__ == "__main__":

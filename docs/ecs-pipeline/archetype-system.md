@@ -12,9 +12,9 @@ Archetype 机制在此基础上引入**一组自然语言约束规则**，限定
 
 **典型效果**：
 
-- 无名氏（多段连击型）→ 每张牌的 `hit_count ≥ 2`
-- 维拉（状态控制型）→ 每张牌的 `status_effect_hint` 不为空
-- 沙狼（纯攻击型）→ `block_gain` 始终为 0，`damage_dealt` 最大化
+- 多段连击型 → 每张牌的 `hit_count ≥ 2`
+- 状态控制型 → 每张牌的 `status_effect_hint` 不为空
+- 纯攻击型 → `block_gain` 始终为 0，`damage_dealt` 最大化
 
 ---
 
@@ -77,11 +77,11 @@ Archetype 机制在此基础上引入**一组自然语言约束规则**，限定
 
 ## Demo 角色 Archetype 配置
 
-| 角色 | 原型描述 |
+| 角色类型 | 原型描述 |
 | ------ | ---------- |
-| 角色.旅行者.无名氏 | 多段连击型：每张卡牌优先生成多次攻击（hit_count ≥ 2），每段伤害较低但累积可观；格挡收益次要，damage_dealt 不为 0 |
-| 角色.学者.维拉 | 状态控制型：每张卡牌的 status_effect_hint 不得为空，优先生成能引发持续状态（如虚弱、减速、灼烧）的卡牌；damage_dealt 可以偏低甚至为 0，以控场效果为核心价值 |
-| 角色.怪物.沙狼 | 纯攻击型：所有卡牌以最大化 damage_dealt 为目标，block_gain 始终为 0，status_effect_hint 留空；target_type 仅使用 enemy_single |
+| 多段连击型（旅行者） | 每张卡牌优先生成多次攻击（hit_count ≥ 2），每段伤害较低但累积可观；格挡收益次要，damage_dealt 不为 0 |
+| 状态控制型（学者） | 每张卡牌的 status_effect_hint 不得为空，优先生成能引发持续状态（如虚弱、减速、灼烧）的卡牌；damage_dealt 可以偏低甚至为 0，以控场效果为核心价值 |
+| 纯攻击型（怪物） | 所有卡牌以最大化 damage_dealt 为目标，block_gain 始终为 0，status_effect_hint 留空；target_type 仅使用 enemy_single |
 
 ---
 

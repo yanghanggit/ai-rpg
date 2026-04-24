@@ -68,6 +68,63 @@ def _fmt_duration(d: int) -> str:
     return "永久" if d == -1 else f"剩余{d}回合"
 
 
+def _generate_compressed_stage_post_arbitration_prompt(
+    game: TCGGame,
+    actor_entities: Set[Entity],
+    actor_name: str,
+    current_round_number: int,
+) -> str:
+    """生成压缩版仲裁后场景效果提示词（仅动态感知部分，省略静态规则/格式说明）
+
+    保留内容：回合标题、出牌者说明、存活角色当前状态。
+    省略内容：## 你的本质与职责、状态效果字段说明、塞牌字段说明、description 规范、JSON 示例。
+    """
+
+    actor_lines: List[str] = []
+    for entity in actor_entities:
+        final_stats = (
+            game.compute_character_stats(entity)
+            if entity.has(CharacterStatsComponent)
+            else None
+        )
+        block_comp = entity.get(BlockComponent)
+        effects_comp = entity.get(StatusEffectsComponent)
+
+        hp_str = (
+            f"HP: {final_stats.hp}/{final_stats.max_hp}"
+            if final_stats is not None
+            else "HP: ?"
+        )
+        block_str = f"格挡: {block_comp.block}" if block_comp is not None else "格挡: 0"
+
+        if effects_comp is not None and effects_comp.status_effects:
+            effects_str = "、".join(
+                f"{e.name}（{_fmt_duration(e.duration)}）"
+                for e in effects_comp.status_effects
+            )
+        else:
+            effects_str = "无"
+
+        has_hand = entity.has(HandComponent)
+        hand_note = (
+            "（当前持有手牌，可塞牌）" if has_hand else "（本回合无手牌，塞牌无效）"
+        )
+        actor_lines.append(
+            f"- **{entity.name}**  {hp_str}  {block_str}  "
+            f"状态效果: {effects_str}  {hand_note}"
+        )
+
+    actors_summary = "\n".join(actor_lines) if actor_lines else "  （无存活角色）"
+
+    return f"""# 第 {current_round_number} 回合 — 仲裁后场景干预
+
+**{actor_name}** 刚刚完成出牌，仲裁结算已在上下文中记录。
+
+## 场内存活角色当前状态
+
+{actors_summary}"""
+
+
 def _generate_stage_post_arbitration_prompt(
     game: TCGGame,
     actor_entities: Set[Entity],
@@ -259,10 +316,12 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
         self,
         game: TCGGame,
         strategy: CardInjectStrategy = CardInjectStrategy.APPEND,
+        use_compressed_prompt: bool = True,
     ) -> None:
         super().__init__(game)
         self._game: Final[TCGGame] = game
         self._strategy: Final[CardInjectStrategy] = strategy
+        self._use_compressed_prompt: Final[bool] = use_compressed_prompt
 
     #######################################################################################################################################
     @override
@@ -316,9 +375,19 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
             current_round_number=current_round_number,
         )
 
+        compressed_message: str | None = None
+        if self._use_compressed_prompt:
+            compressed_message = _generate_compressed_stage_post_arbitration_prompt(
+                game=self._game,
+                actor_entities=actor_entities,
+                actor_name=action.actor_name,
+                current_round_number=current_round_number,
+            )
+
         chat_client = DeepSeekClient(
             name=stage_entity.name,
             prompt=prompt,
+            compressed_prompt=compressed_message,
             context=self._game.get_agent_context(stage_entity).context,
         )
 
@@ -356,10 +425,17 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
                 ), f"目标角色 {directive.target} 缺少 HandComponent"
 
             # 添加上下文消息到 stage entity 的对话历史，便于后续回顾与调试
-            self._game.add_human_message(
-                entity=stage_entity,
-                message_content=chat_client.prompt,
-            )
+            if self._use_compressed_prompt:
+                self._game.add_human_message(
+                    entity=stage_entity,
+                    message_content=chat_client.compressed_prompt,
+                    stage_post_arbitration_full_prompt=chat_client.prompt,
+                )
+            else:
+                self._game.add_human_message(
+                    entity=stage_entity,
+                    message_content=chat_client.prompt,
+                )
             assert chat_client.response_ai_message is not None
             self._game.add_ai_message(
                 entity=stage_entity,

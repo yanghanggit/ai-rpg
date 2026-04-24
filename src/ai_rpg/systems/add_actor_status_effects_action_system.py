@@ -36,6 +36,48 @@ class AddStatusEffectsResponse(BaseModel):
 
 
 #######################################################################################################################################
+def _generate_compressed_add_status_effects_prompt(
+    current_status_effects: List[StatusEffect],
+    current_round_number: int,
+    task_hint: str,
+    max_effects: int,
+) -> str:
+    """生成压缩版追加状态效果提示词（仅动态感知部分，省略静态 phase 说明与 JSON 示例）"""
+
+    def _fmt_duration(d: int) -> str:
+        return "永久" if d == -1 else f"剩余{d}回合"
+
+    if len(current_status_effects) == 0:
+        effects_list = "无"
+    elif len(current_status_effects) <= 3:
+        effects_list = "\n".join(
+            [
+                f"- {effect.name}（{_fmt_duration(effect.duration)}）: {effect.description}"
+                for effect in current_status_effects
+            ]
+        )
+    else:
+        effects_list = "、".join(
+            [
+                f"{effect.name}（{_fmt_duration(effect.duration)}）"
+                for effect in current_status_effects
+            ]
+        )
+
+    return f"""# 第 {current_round_number} 回合 — 追加状态效果
+
+回顾上下文历史，结合当前已有状态效果，追加本回合应有的新状态效果。
+
+> {task_hint}
+
+## 当前状态效果
+
+{effects_list}
+
+**要求**：不重复现有效果，最多追加 {max_effects} 个；无新增时输出空数组。"""
+
+
+#######################################################################################################################################
 def _generate_add_status_effects_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
@@ -143,11 +185,17 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
     - 每个 Actor 需同时具有 ActorComponent 与 StatusEffectsComponent
     """
 
-    def __init__(self, game: TCGGame, max_effects: int = 2) -> None:
+    def __init__(
+        self,
+        game: TCGGame,
+        max_effects: int = 2,
+        use_compressed_prompt: bool = True,
+    ) -> None:
         super().__init__(game)
         assert max_effects > 0, "max_effects 必须为正整数"
         self._game: Final[TCGGame] = game
         self._max_effects: Final[int] = max_effects
+        self._use_compressed_prompt: Final[bool] = use_compressed_prompt
 
     #######################################################################################################################################
     @override
@@ -213,11 +261,21 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
                 max_effects=self._max_effects,
             )
 
+            compressed_message: str | None = None
+            if self._use_compressed_prompt:
+                compressed_message = _generate_compressed_add_status_effects_prompt(
+                    current_status_effects=combat_status_effects.status_effects,
+                    current_round_number=current_round_number,
+                    task_hint=add_status_effects_action.task_hint,
+                    max_effects=self._max_effects,
+                )
+
             # 创建聊天客户端
             chat_clients.append(
                 DeepSeekClient(
                     name=entity.name,
                     prompt=prompt,
+                    compressed_prompt=compressed_message,
                     context=self._game.get_agent_context(entity).context,
                 )
             )
@@ -253,9 +311,16 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
             format_response = AddStatusEffectsResponse.model_validate_json(json_content)
 
             # 将本轮 prompt 写入角色上下文（Human 端）
-            self._game.add_human_message(
-                entity=entity, message_content=chat_client.prompt
-            )
+            if self._use_compressed_prompt:
+                self._game.add_human_message(
+                    entity=entity,
+                    message_content=chat_client.compressed_prompt,
+                    add_status_effects_full_prompt=chat_client.prompt,
+                )
+            else:
+                self._game.add_human_message(
+                    entity=entity, message_content=chat_client.prompt
+                )
 
             # 将 LLM 回复写入角色上下文（AI 端），完成本轮对话
             assert chat_client.response_ai_message is not None

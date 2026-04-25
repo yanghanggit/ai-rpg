@@ -111,7 +111,7 @@ def _generate_post_arbitration_task_hint(
     action_desc = play_cards_action.action if play_cards_action.action else "（未提供）"
 
     status_hint_line = (
-        f"- 潜在词缀：{chr(10).join(card.affixes)}" if card.affixes else ""
+        f"- 潜在词缀：{chr(10).join(card.effects)}" if card.effects else ""
     )
 
     card_info = (
@@ -765,7 +765,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         避免依赖仲裁 LLM 的压缩输出（combat_log/narrative）导致信息失真。
         出牌者与目标的 task_hint 视角不同，便于 LLM 区分身份做出准确判断。
 
-        当 card.affixes 为空时，说明该卡牌无持续性副作用，跳过整个流程，
+        当 card.effects 为空时，说明该卡牌无持续性副作用，跳过整个流程，
         不触发 AddActorStatusEffectsActionSystem LLM 推理，节省调用。
 
         若实体缺少 StatusEffectsComponent，先注入空组件以保证
@@ -777,9 +777,9 @@ class ArbitrationActionSystem(ReactiveProcessor):
             affected_entity_names: final_stats 中所有受影响实体的全名列表（出牌者 + 目标）
         """
         # 卡牌无词缀时跳过，不触发后续 LLM 推理
-        if not play_cards_action.card.affixes:
+        if not play_cards_action.card.effects:
             logger.debug(
-                f"[{actor_entity.name}] 出牌卡牌 affixes 为空，跳过 AddStatusEffectsAction"
+                f"[{actor_entity.name}] 出牌卡牌 effects 为空，跳过 AddStatusEffectsAction"
             )
             return
 

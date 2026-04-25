@@ -142,8 +142,8 @@ class DeckDetailScreen(Screen[None]):
                             else ""
                         )
                         hint_str = (
-                            f"\n        [yellow]词缀：{'、'.join(card.affixes)}[/]"
-                            if card.affixes
+                            f"\n        [yellow]效果：{'\u3001'.join(card.effects)}[/]"
+                            if card.effects
                             else ""
                         )
                         source_str = (

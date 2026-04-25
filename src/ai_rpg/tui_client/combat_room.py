@@ -734,9 +734,9 @@ class CombatRoomScreen(Screen[None]):
             action_str = (
                 f"\n        [dim]{card.description}[/]" if card.description else ""
             )
-            affixes_str = (
-                f"\n        [yellow]词缀：{'、'.join(card.affixes)}[/]"
-                if card.affixes
+            effects_str = (
+                f"\n        [yellow]效果：{'、'.join(card.effects)}[/]"
+                if card.effects
                 else ""
             )
             log.write(
@@ -744,7 +744,7 @@ class CombatRoomScreen(Screen[None]):
                 f"伤害:[red]{card.damage_dealt}[/]{hit_str}  格挡:[blue]{card.block_gain}[/]  目标:{tt_str}"
                 + source_str
                 + action_str
-                + affixes_str
+                + effects_str
             )
         self._current_actor = current_actor
         self._phase = _Phase.SELECT_CARD
@@ -1371,8 +1371,8 @@ class CombatRoomScreen(Screen[None]):
                                     else ""
                                 )
                                 + (
-                                    f"  [yellow]词缀：{'、'.join(card.affixes)}[/]"
-                                    if card.affixes
+                                    f"  [yellow]效果：{'、'.join(card.effects)}[/]"
+                                    if card.effects
                                     else ""
                                 )
                             )

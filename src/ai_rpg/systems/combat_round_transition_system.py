@@ -133,7 +133,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         new_round = Round(action_order=action_order)
         self._game.current_dungeon.current_combat.rounds.append(new_round)  # type: ignore[union-attr]
 
-        # 每回合开始时重置所有参战角色的 BlockComponent（杀戮尖塔模式：每轮格挡清零）
+        # 新回合创建时初始化所有参战角色的 BlockComponent（杀戮尖塔模式：每轮格挡清零；旧值已由 CombatRoundCleanupSystem.clear_round_state 移除）
         for actor in actors_in_stage:
             actor.replace(BlockComponent, actor.name, 0)
 

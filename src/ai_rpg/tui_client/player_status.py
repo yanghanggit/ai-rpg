@@ -50,7 +50,7 @@ _STAT_LABELS: list[tuple[str, str]] = [
     ("max_hp", "最大HP"),
     ("attack", "攻击"),
     ("defense", "防御"),
-    ("action_count", "行动"),
+    ("energy", "行动"),
     ("speed", "速度"),
 ]
 
@@ -137,7 +137,7 @@ def _render_component(name: str, data: Dict[str, Any], context: Dict[str, Any]) 
             f"    HP [bold green]{s.hp}[/] / [green]{s.max_hp}[/]"
             f"   攻击 [bold red]{s.attack}[/]"
             f"   防御 [bold blue]{s.defense}[/]"
-            f"   行动 [bold]{s.action_count}[/]"
+            f"   行动 [bold]{s.energy}[/]"
             f"   速度 [bold]{s.speed}[/]"
         )
 

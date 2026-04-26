@@ -64,8 +64,8 @@ class CharacterStats(BaseModel):
     attack: int = 5
     # 防御力
     defense: int = 3
-    # 每回合行动次数；决定该角色在 action_order 中出现几次，默认 1
-    action_count: int = 1
+    # 每回合行动次数（能量）；决定该角色在 action_order 中出现几次，默认 1
+    energy: int = 1
     # 速度；决定 SPEED_ORDER 策略下的出手优先级，值越大越靠前，默认 10
     speed: int = 10
 
@@ -119,7 +119,7 @@ class WeaponItem(Item):
     )
     stat_bonuses: CharacterStats = Field(
         default_factory=lambda: CharacterStats(
-            hp=0, max_hp=0, attack=0, defense=0, action_count=0, speed=0
+            hp=0, max_hp=0, attack=0, defense=0, energy=0, speed=0
         )
     )
 
@@ -145,7 +145,7 @@ class EquipmentItem(Item):
     equipment_type: EquipmentType = EquipmentType.NONE  # 装备子类型
     stat_bonuses: CharacterStats = Field(
         default_factory=lambda: CharacterStats(
-            hp=0, max_hp=0, attack=0, defense=0, action_count=0, speed=0
+            hp=0, max_hp=0, attack=0, defense=0, energy=0, speed=0
         )
     )
 

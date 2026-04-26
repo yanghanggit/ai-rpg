@@ -1048,14 +1048,14 @@ class CombatRoomScreen(Screen[None]):
 
         prev_round_idx = -1
         prev_completed_count = 0
-        prev_action_count = 0
+        prev_energy = 0
         try:
             pre_room = await fetch_dungeon_room(self._user_name, self._game_name)
             pre_rounds = pre_room.room.combat.rounds
             if pre_rounds:
                 prev_round_idx = len(pre_rounds) - 1
                 prev_completed_count = len(pre_rounds[-1].completed_actors)
-                prev_action_count = len(pre_rounds[-1].action_order)
+                prev_energy = len(pre_rounds[-1].action_order)
         except Exception as e:
             logger.warning(f"_do_play_card: 出牌前快照失败 error={e}")
 
@@ -1109,7 +1109,7 @@ class CombatRoomScreen(Screen[None]):
         await self._show_play_results(prev_round_idx, prev_completed_count)
 
         # ── 出牌后状态检查：若战斗已结束或本回合已完成，暂停并提示 ──
-        if prev_action_count > 0 and prev_round_idx >= 0:
+        if prev_energy > 0 and prev_round_idx >= 0:
             try:
                 post_room = await fetch_dungeon_room(self._user_name, self._game_name)
                 post_combat = post_room.room.combat
@@ -1129,8 +1129,7 @@ class CombatRoomScreen(Screen[None]):
 
                 if (
                     prev_round_idx < len(post_rounds)
-                    and len(post_rounds[prev_round_idx].completed_actors)
-                    >= prev_action_count
+                    and len(post_rounds[prev_round_idx].completed_actors) >= prev_energy
                 ):
                     self._enter_round_done()
                     return
@@ -1286,7 +1285,7 @@ class CombatRoomScreen(Screen[None]):
                     f"  [red]ATK:{stats.attack}[/red]"
                     f"  [blue]DEF:{stats.defense}[/blue]"
                     f"  [cyan]SPD:{stats.speed}[/cyan]"
-                    f"  行动:{stats.action_count}次/回合" + block_str
+                    f"  行动:{stats.energy}次/回合" + block_str
                 )
             else:
                 log.write("  [dim](无战斗属性)[/]")

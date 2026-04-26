@@ -28,7 +28,7 @@ def compute_stats_with_equipment(
 
     bonus_attack = 0
     bonus_defense = 0
-    bonus_action_count = 0
+    bonus_energy = 0
     bonus_speed = 0
 
     if equip_comp is not None and inventory_comp is not None:
@@ -47,7 +47,7 @@ def compute_stats_with_equipment(
                     assert b.hp == 0, "当前设计中装备加成不应包含 HP 相关属性!"
                     bonus_attack += b.attack
                     bonus_defense += b.defense
-                    bonus_action_count += b.action_count
+                    bonus_energy += b.energy
                     bonus_speed += b.speed
                 break
 
@@ -56,6 +56,6 @@ def compute_stats_with_equipment(
         max_hp=base.max_hp,
         attack=base.attack + bonus_attack,
         defense=base.defense + bonus_defense,
-        action_count=base.action_count + bonus_action_count,
+        energy=base.energy + bonus_energy,
         speed=base.speed + bonus_speed,
     )

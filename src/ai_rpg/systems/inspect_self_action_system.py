@@ -45,7 +45,7 @@ def _format_stats(stats: CharacterStats) -> str:
     return (
         f"HP: {stats.hp}/{stats.max_hp} | "
         f"攻击: {stats.attack} | 防御: {stats.defense} | "
-        f"速度: {stats.speed} | 行动次数: {stats.action_count}"
+        f"速度: {stats.speed} | 行动次数: {stats.energy}"
     )
 
 

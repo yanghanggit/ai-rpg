@@ -145,6 +145,9 @@ class PlayCardsActionSystem(ReactiveProcessor):
 
             # 将出牌角色写入本回合 completed_actors（允许同一角色多次出现）
             last_round.completed_actors.append(play_cards_action.name)
+            last_round.play_count[play_cards_action.name] = (
+                last_round.play_count.get(play_cards_action.name, 0) + 1
+            )
             logger.debug(
                 f"  completed_actors: {last_round.completed_actors} / {last_round.action_order}"
             )

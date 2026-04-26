@@ -19,7 +19,7 @@ from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
-    BlockComponent,
+    RoundStatsComponent,
     Card,
     CardTargetType,
     CharacterStatsComponent,
@@ -87,7 +87,7 @@ def _generate_compressed_stage_post_arbitration_prompt(
             if entity.has(CharacterStatsComponent)
             else None
         )
-        block_comp = entity.get(BlockComponent)
+        block_comp = entity.get(RoundStatsComponent)
         effects_comp = entity.get(StatusEffectsComponent)
 
         hp_str = (
@@ -153,7 +153,7 @@ def _generate_stage_post_arbitration_prompt(
             if entity.has(CharacterStatsComponent)
             else None
         )
-        block_comp = entity.get(BlockComponent)
+        block_comp = entity.get(RoundStatsComponent)
         effects_comp = entity.get(StatusEffectsComponent)
 
         hp_str = (

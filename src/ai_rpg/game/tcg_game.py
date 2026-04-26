@@ -21,7 +21,7 @@ from ..models import (
     HandComponent,
     DrawDeckComponent,
     DiscardDeckComponent,
-    BlockComponent,
+    RoundStatsComponent,
     StageType,
     ActorType,
     StatusEffectsComponent,
@@ -211,10 +211,10 @@ class TCGGame(RPGGame):
             # 移除 HandComponent
             entity.remove(HandComponent)
 
-        # 清除所有角色实体的格挡组件
-        for entity in self.get_group(Matcher(BlockComponent)).entities.copy():
-            logger.debug(f"clear blocks: {entity.name}")
-            entity.remove(BlockComponent)
+        # 清除所有角色实体的回合动态属性组件
+        for entity in self.get_group(Matcher(RoundStatsComponent)).entities.copy():
+            logger.debug(f"clear round stats: {entity.name}")
+            entity.remove(RoundStatsComponent)
 
     ################################################################################################################
     def clear_status_effects(self) -> None:

@@ -18,11 +18,11 @@ from loguru import logger
 from ..entitas import Entity, ExecuteProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
-    BlockComponent,
     CharacterStatsComponent,
     DungeonComponent,
     IdentityComponent,
     Round,
+    RoundStatsComponent,
 )
 
 
@@ -133,9 +133,12 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         new_round = Round(action_order=action_order)
         self._game.current_dungeon.current_combat.rounds.append(new_round)  # type: ignore[union-attr]
 
-        # 新回合创建时初始化所有参战角色的 BlockComponent（杀戮尖塔模式：每轮格挡清零；旧值已由 CombatRoundCleanupSystem.clear_round_state 移除）
+        # 新回合创建时初始化所有参战角色的 RoundStatsComponent（每轮重置；旧值已由 CombatRoundCleanupSystem.clear_round_state 移除）
         for actor in actors_in_stage:
-            actor.replace(BlockComponent, actor.name, 0)
+            computed = self._game.compute_character_stats(actor)
+            actor.replace(
+                RoundStatsComponent, actor.name, computed.energy, computed.speed, 0
+            )
 
         logger.info(f"创建第 {round_number} 回合，行动顺序: {new_round.action_order}")
 

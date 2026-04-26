@@ -335,18 +335,25 @@ class HandComponent(MutableComponent):
 ############################################################################################################
 @final
 @register_component_type
-class BlockComponent(MutableComponent):
-    """格挡值组件
+class RoundStatsComponent(MutableComponent):
+    """回合动态属性组件
 
-    存储角色当前回合的格挡值（来自出牌时 Card.block 的累加）。
-    格挡值在伤害结算时优先抵消伤害，回合结束后清零。
+    存储角色本回合的动态战斗属性，在每回合开始时由 CharacterStats（基础值 + 装备加成）初始化，
+    回合结束后随 clear_round_state 清除。回合内可被状态效果等系统修改，以实现动态改变能量/速度的玩法。
+
+    与 CharacterStats（不可变基础值）的关系：
+        CharacterStats.energy/speed 为只读基础值，本组件为运行时可变副本。
 
     Attributes:
         name: 角色名称
-        block: 当前格挡值
+        energy: 本回合有效行动次数（初值来自 compute_character_stats，回合内可变）
+        speed: 本回合有效速度（初值来自 compute_character_stats，回合内可变）
+        block: 本回合格挡值（来自出牌时 Card.block 的累加，伤害结算时优先抵消，初值为 0）
     """
 
     name: str
+    energy: int
+    speed: int
     block: int
 
 

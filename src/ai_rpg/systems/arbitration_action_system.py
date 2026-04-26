@@ -20,7 +20,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     PlayCardsAction,
-    BlockComponent,
+    RoundStatsComponent,
     CardTargetType,
     CharacterStats,
     CharacterStatsComponent,
@@ -416,7 +416,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(PlayCardsAction) and entity.has(BlockComponent)
+        return entity.has(PlayCardsAction) and entity.has(RoundStatsComponent)
 
     #######################################################################################################################################
     @override
@@ -472,15 +472,15 @@ class ArbitrationActionSystem(ReactiveProcessor):
             )
 
             assert target_entity.has(
-                BlockComponent
-            ), f"目标实体 {target_name} 缺少 BlockComponent！"
-            target_blocks[target_name] = target_entity.get(BlockComponent).block
+                RoundStatsComponent
+            ), f"目标实体 {target_name} 缺少 RoundStatsComponent！"
+            target_blocks[target_name] = target_entity.get(RoundStatsComponent).block
 
         # 解析出牌者的当前 HP 与格挡
         assert actor_entity.has(
-            BlockComponent
-        ), f"出牌实体 {actor_entity.name} 缺少 BlockComponent！"
-        actor_block = actor_entity.get(BlockComponent).block
+            RoundStatsComponent
+        ), f"出牌实体 {actor_entity.name} 缺少 RoundStatsComponent！"
+        actor_block = actor_entity.get(RoundStatsComponent).block
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
         # 读取出牌者的 arbitration 相位状态效果
@@ -676,9 +676,19 @@ class ArbitrationActionSystem(ReactiveProcessor):
                     f"更新 {entity_name} HP: {old_hp} → {new_hp}/{max_hp}, block: {entity_stats.block}"
                 )
 
-                # 更新格挡组件
+                # 更新回合动态属性组件中的格挡值（保留 energy/speed 现值）
                 new_block = int(max(0, entity_stats.block))
-                entity.replace(BlockComponent, entity_name, new_block)
+                round_stats = entity.get(RoundStatsComponent)
+                assert (
+                    round_stats is not None
+                ), f"{entity_name} 缺少 RoundStatsComponent"
+                entity.replace(
+                    RoundStatsComponent,
+                    entity_name,
+                    round_stats.energy,
+                    round_stats.speed,
+                    new_block,
+                )
 
                 # 回写仲裁阶段状态效果的 description（用于更新 cur 等动态变量）
                 if entity_stats.status_effect_patches:

@@ -26,7 +26,7 @@ from .server_client import (
 )
 from ..models import (
     Card,
-    BlockComponent,
+    RoundStatsComponent,
     CombatResult,
     CombatState,
     EntitySerialization,
@@ -1212,8 +1212,8 @@ class CombatRoomScreen(Screen[None]):
                     _equip_comp = EquipmentComponent(**comp.data)
                 elif comp.name == InventoryComponent.__name__:
                     _inv_comp = InventoryComponent(**comp.data)
-                elif comp.name == BlockComponent.__name__:
-                    block_val = BlockComponent(**comp.data).block
+                elif comp.name == RoundStatsComponent.__name__:
+                    block_val = RoundStatsComponent(**comp.data).block
             if _stats_comp is not None:
                 _final = compute_stats_with_equipment(
                     _stats_comp, _equip_comp, _inv_comp
@@ -1267,11 +1267,15 @@ class CombatRoomScreen(Screen[None]):
             if stats_comp is not None:
                 stats = CharacterStatsComponent(**stats_comp.data).stats
                 block_comp_inline = next(
-                    (c for c in entity.components if c.name == BlockComponent.__name__),
+                    (
+                        c
+                        for c in entity.components
+                        if c.name == RoundStatsComponent.__name__
+                    ),
                     None,
                 )
                 block_inline = (
-                    BlockComponent(**block_comp_inline.data).block
+                    RoundStatsComponent(**block_comp_inline.data).block
                     if block_comp_inline is not None
                     else None
                 )

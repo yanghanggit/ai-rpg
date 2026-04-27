@@ -33,6 +33,7 @@ from ..models import (
     CharacterStatsComponent,
     EquipmentComponent,
     InventoryComponent,
+    DeathComponent,
 )
 from ..models.utils import compute_stats_with_equipment
 from .player_session import PlayerSession
@@ -184,8 +185,8 @@ class TCGGame(RPGGame):
                 self.destroy_entity(destroy_stage_entity)
 
     ################################################################################################################
-    def start_new_round(self, action_order: list[str]) -> Round:
-        """创建并追加新回合，返回新回合实例。
+    def start_new_round(self, action_order: list[str], actors: set[Entity]) -> Round:
+        """创建并追加新回合，同时重置所有参战角色的 RoundStatsComponent。
 
         调用前必须确保战斗进行中（is_ongoing）且上一回合已完成（is_round_completed）。
         违反前置条件时以 AssertionError 快速失败，不做静默跳过。
@@ -202,9 +203,19 @@ class TCGGame(RPGGame):
 
         # 创建新回合并追加到 current_combat.rounds
         new_round = Round(action_order=action_order)
-
-        # 追加新回合到 current_combat.rounds
         self.current_dungeon.current_combat.rounds.append(new_round)
+
+        # 新回合开始时重置所有参战角色的 RoundStatsComponent（旧值已由 clear_round_state 移除）
+        for actor in actors:
+            assert not actor.has(
+                RoundStatsComponent
+            ), f"{actor.name} 已存在 RoundStatsComponent"
+            assert not actor.has(DeathComponent), f"{actor.name} 已死亡，不应参与新回合"
+            computed = self.compute_character_stats(actor)
+            actor.replace(
+                RoundStatsComponent, actor.name, computed.energy, computed.speed, 0
+            )
+
         return new_round
 
     ################################################################################################################

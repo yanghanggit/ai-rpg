@@ -21,7 +21,6 @@ from ..models import (
     CharacterStatsComponent,
     DungeonComponent,
     IdentityComponent,
-    RoundStatsComponent,
 )
 
 
@@ -129,14 +128,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
             return
 
         round_number = len(current_rounds) + 1
-        new_round = self._game.start_new_round(action_order)
-
-        # 新回合创建时初始化所有参战角色的 RoundStatsComponent（每轮重置；旧值已由 CombatRoundCleanupSystem.clear_round_state 移除）
-        for actor in actors_in_stage:
-            computed = self._game.compute_character_stats(actor)
-            actor.replace(
-                RoundStatsComponent, actor.name, computed.energy, computed.speed, 0
-            )
+        new_round = self._game.start_new_round(action_order, actors_in_stage)
 
         logger.info(f"创建第 {round_number} 回合，行动顺序: {new_round.action_order}")
 

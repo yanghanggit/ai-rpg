@@ -173,7 +173,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         self._add_status_effects_actions_for_all_actors(actor_entities)
 
         # 添加新的一局, 先什么都不做！
-        self._game.start_new_round(action_order=[])
+        self._game.start_new_round(action_order=[], actors=actor_entities)
 
     ###################################################################################################################################################################
     def _add_status_effects_actions_for_all_actors(

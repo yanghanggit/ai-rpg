@@ -495,7 +495,7 @@ async def play_cards_specified_game(
         return terminal_game
 
     last_round = terminal_game.current_dungeon.latest_round
-    if last_round is None or last_round.is_round_completed:
+    if last_round is None or last_round.is_completed:
         logger.error("play-cards-specified 当前没有未完成的回合可供打牌")
         return terminal_game
 

@@ -175,13 +175,18 @@ def _validate_play_turn(
     if latest_round is None:
         return None, "当前没有进行中的回合"
 
-    if actor_name not in latest_round.action_order:
+    current_snapshot = (
+        latest_round.actor_order_snapshots[-1]
+        if latest_round.actor_order_snapshots
+        else []
+    )
+    if actor_name not in current_snapshot:
         return (
             None,
-            f"角色 {actor_name} 不在本回合行动顺序中: {latest_round.action_order}",
+            f"角色 {actor_name} 不在本回合行动快照中: {current_snapshot}",
         )
 
-    next_actor = latest_round.current_actor
+    next_actor = latest_round.current_actor_name
     if next_actor != actor_name:
         return None, f"现在不是 {actor_name} 的回合，当前应由 {next_actor} 出牌"
 

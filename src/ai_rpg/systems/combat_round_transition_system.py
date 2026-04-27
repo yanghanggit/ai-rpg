@@ -12,10 +12,9 @@
 """
 
 from enum import StrEnum, unique
-import random
-from typing import Final, List, Set, final, override
+from typing import Final, final, override
 from loguru import logger
-from ..entitas import Entity, ExecuteProcessor
+from ..entitas import ExecuteProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     CharacterStatsComponent,
@@ -88,7 +87,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         if len(current_rounds) > 0:
             last_round = self._game.current_dungeon.latest_round
             assert last_round is not None
-            if not last_round.is_round_completed:
+            if not last_round.is_completed:
                 return
 
         # 玩家角色
@@ -111,71 +110,32 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         assert stage_entity is not None, "stage_entity is None"
         assert stage_entity.has(DungeonComponent), "stage_entity 没有 DungeonComponent"
 
-        # 按策略构造本回合出手队列
+        # 按策略生成快照（去重、按优先级排列）
         if self._strategy == ActionOrderStrategy.RANDOM:
-            action_order = self._build_action_order_random(actors_in_stage)
-        elif self._strategy == ActionOrderStrategy.CREATION_ORDER:
-            action_order = self._build_action_order_by_creation_order(actors_in_stage)
+            snapshot_entities = self._game.shuffled_actors_by_round(actors_in_stage)
         elif self._strategy == ActionOrderStrategy.SPEED_ORDER:
-            action_order = self._build_action_order_by_speed(actors_in_stage)
-        else:
-            logger.warning(f"未知的行动顺序策略: {self._strategy}，使用随机策略")
-            action_order = self._build_action_order_random(actors_in_stage)
+            snapshot_entities = self._game.sorted_actors_by_round_speed(actors_in_stage)
+        else:  # CREATION_ORDER（含未知策略回退）
+            snapshot_entities = self._game.sorted_actors_by_creation_order(
+                actors_in_stage
+            )
 
-        # 全员 energy <= 0 时 action_order 为空，跳过本次创建避免死锁
-        if not action_order:
+        # 无任何有行动力角色时跳过本次创建
+        if not snapshot_entities:
             logger.warning("所有参战角色 energy <= 0，本次跳过回合创建")
             return
 
         round_number = len(current_rounds) + 1
-        new_round = self._game.start_new_round(action_order, actors_in_stage)
+        new_round = self._game.start_new_round(actors_in_stage)
 
-        logger.info(f"创建第 {round_number} 回合，行动顺序: {new_round.action_order}")
-
-    ############################################################################################################
-    def _build_action_order_random(self, actors: Set[Entity]) -> List[str]:
-        """随机出手队列：将所有角色按 actions_per_round 展开后整体随机打乱"""
-
-        # 注意：同一角色的多次行动会相邻出现（A→A→B→B→C→C），但角色间顺序随机打乱
-        order: List[str] = []
-        for entity in actors:
-            count = self._game.compute_character_stats(entity).energy
-            if count > 0:
-                order.extend([entity.name] * count)
-        random.shuffle(order)
-        return order
-
-    ############################################################################################################
-    def _build_action_order_by_speed(self, actors: Set[Entity]) -> List[str]:
-        """速度出手队列：主键 speed 降序，同速时以 creation_order 升序决胜，每人连续出现 actions_per_round 次"""
-        sorted_actors = sorted(
-            actors,
-            key=lambda entity: (
-                -self._game.compute_character_stats(entity).speed,
-                entity.get(IdentityComponent).creation_order,
-            ),
+        # 记录本回合有行动力角色的快照，并设置首个行动角色
+        new_round.actor_order_snapshots.append(
+            [entity.name for entity in snapshot_entities]
         )
-        order: List[str] = []
-        for entity in sorted_actors:
-            count = self._game.compute_character_stats(entity).energy
-            if count > 0:
-                order.extend([entity.name] * count)
-        return order
-
-    ############################################################################################################
-    def _build_action_order_by_creation_order(self, actors: Set[Entity]) -> List[str]:
-        """固定出手队列：按 creation_order 升序排列，每人连续出现 actions_per_round 次（A→A→B→B→C→C）"""
-        sorted_actors = sorted(
-            actors,
-            key=lambda entity: entity.get(IdentityComponent).creation_order,
+        new_round.current_actor_name = snapshot_entities[0].name
+        logger.debug(f"设置当前行动角色: {new_round.current_actor_name}")
+        logger.info(
+            f"创建第 {round_number} 回合，快照行动顺序: {new_round.actor_order_snapshots[-1]}"
         )
-
-        # 注意：creation_order 由小到大，意味着先创建的角色优先出手
-        order: List[str] = []
-        for entity in sorted_actors:
-            count = self._game.compute_character_stats(entity).energy
-            if count > 0:
-                order.extend([entity.name] * count)
-        return order
 
     ################################################################################################################

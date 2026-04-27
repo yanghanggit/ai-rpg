@@ -5,7 +5,7 @@
 
 from enum import IntEnum, StrEnum, unique
 from typing import List, Optional, final
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 ###############################################################################################################################################
@@ -120,28 +120,16 @@ class Card(BaseModel):
 class Round(BaseModel):
     """战斗回合"""
 
-    action_order: List[str]  # 行动顺序，按顺序记录角色名称
-    completed_actors: List[str] = []  # 已完成出牌的角色名称（按出手顺序追加）
-    # play_count: Dict[str, int] = Field(
-    #     default_factory=dict
-    # )  # 每个 actor 本回合累计出手次数 {角色名: 次数}
+    completed_actors: List[str] = []  # 已完成出牌的角色名称（按出手顺序追加，允许重复）
+    actor_order_snapshots: List[List[str]] = Field(
+        default_factory=list
+    )  # 每次回合开始时的有行动力角色快照（去重、按优先级排列）；由 CombatRoundTransitionSystem 写入
+    current_actor_name: Optional[str] = (
+        None  # 当前应行动的角色名；由系统写入，供 TUI 等无 ECS 访问的消费点读取
+    )
+    is_completed: bool = False  # 回合结束标记；由 CombatRoundCompletionSystem 写入
     combat_log: List[str] = []  # 战斗计算日志，每次出手追加一条
     narrative: List[str] = []  # 叙事文本/演出描述，每次出手追加一条
-
-    @property
-    def current_actor(self) -> Optional[str]:
-        """返回当前应行动的角色名称；回合已结束或无行动顺序时返回 None。"""
-        completed_count = len(self.completed_actors)
-        if completed_count < len(self.action_order):
-            return self.action_order[completed_count]
-        return None
-
-    @property
-    def is_round_completed(self) -> bool:
-        """当 completed_actors 的长度等于 action_order 时，回合视为完成。"""
-        return len(self.action_order) > 0 and len(self.completed_actors) >= len(
-            self.action_order
-        )
 
 
 ###############################################################################################################################################

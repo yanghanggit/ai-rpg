@@ -534,7 +534,7 @@ async def dungeon_combat_play_cards(
             )
 
         last_round = rpg_game.current_dungeon.latest_round
-        if last_round is None or last_round.is_round_completed:
+        if last_round is None or last_round.is_completed:
             logger.error(f"玩家 {payload.user_name} 出牌失败: 当前没有未完成的回合")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

@@ -340,9 +340,12 @@ class CombatRoomScreen(Screen[None]):
             )
             if combat.rounds:
                 cur = combat.rounds[-1]
+                snapshot = (
+                    cur.actor_order_snapshots[-1] if cur.actor_order_snapshots else []
+                )
                 order_str = (
-                    " => ".join(display_name(a) for a in cur.action_order)
-                    if cur.action_order
+                    " => ".join(display_name(a) for a in snapshot)
+                    if snapshot
                     else "[dim]（无）[/]"
                 )
                 done_str = (
@@ -351,8 +354,8 @@ class CombatRoomScreen(Screen[None]):
                     else "[dim]（无）[/]"
                 )
                 current_actor_str = (
-                    f"[bold yellow]{display_name(cur.current_actor)}[/]"
-                    if cur.current_actor
+                    f"[bold yellow]{display_name(cur.current_actor_name)}[/]"
+                    if cur.current_actor_name
                     else "[dim]（回合已结束）[/]"
                 )
                 log.write(f"  [bold]行动顺序：[/] {order_str}")
@@ -636,9 +639,11 @@ class CombatRoomScreen(Screen[None]):
             inp.focus()
             return
 
-        current_actor = cur.current_actor
+        current_actor = cur.current_actor_name
         round_num = len(combat.rounds)
-        action_order = list(cur.action_order)
+        action_order = list(
+            cur.actor_order_snapshots[-1] if cur.actor_order_snapshots else []
+        )
         completed_actors = list(cur.completed_actors)
 
         # ── 回合已全部出完 ──
@@ -1055,7 +1060,8 @@ class CombatRoomScreen(Screen[None]):
             if pre_rounds:
                 prev_round_idx = len(pre_rounds) - 1
                 prev_completed_count = len(pre_rounds[-1].completed_actors)
-                prev_energy = len(pre_rounds[-1].action_order)
+                snapshot = pre_rounds[-1].actor_order_snapshots
+                prev_energy = len(snapshot[-1] if snapshot else [])
         except Exception as e:
             logger.warning(f"_do_play_card: 出牌前快照失败 error={e}")
 

@@ -120,7 +120,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
         assert last_round is not None, "PlayCardsActionSystem: latest_round is None"
 
         logger.debug(
-            f"PlayCardsActionSystem: 当前回合数 {len(current_rounds)}，最新回合状态: {'已完成' if last_round.is_round_completed else '未完成'}"
+            f"PlayCardsActionSystem: 当前回合数 {len(current_rounds)}，最新回合状态: {'已完成' if last_round.is_completed else '未完成'}"
         )
 
         for entity in entities:
@@ -134,14 +134,10 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 f" | 行动叙事: {play_cards_action.action}"
             )
 
-            # 写一个assert 要求 entity.name 必须在 last_round.action_order 中，确保出牌角色在当前回合的行动顺序中
-            assert entity.name in last_round.action_order, (
-                f"PlayCardsActionSystem: 出牌角色 {entity.name} 不在当前回合的行动顺序中！"
-                f" action_order={last_round.action_order}"
-            )
-            assert entity.name == last_round.current_actor, (
+            # 写一个assert 要求 entity.name 必须是当前回合的行动者
+            assert entity.name == self._game.get_current_actor(last_round), (
                 f"PlayCardsActionSystem: 出牌角色 {entity.name} 不是当前回合的行动者！"
-                f" current_actor={last_round.current_actor}"
+                f" current_actor={self._game.get_current_actor(last_round)}"
             )
 
             # 将出牌角色写入本回合 completed_actors（允许同一角色多次出现）
@@ -167,8 +163,11 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 round_stats.block,
             )
 
+            # 更新当前行动者（能量消耗后重新计算）
+            last_round.current_actor_name = self._game.get_current_actor(last_round)
+
             logger.debug(
-                f"  completed_actors: {last_round.completed_actors} / {last_round.action_order}"
+                f"  completed_actors: {last_round.completed_actors} / current_actor_name={last_round.current_actor_name}"
             )
 
             # 从 HandComponent 移除已出的卡牌，并将其归入 DiscardDeckComponent

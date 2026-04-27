@@ -128,6 +128,7 @@ def create_combat_pipeline(
         CombatRoundTransitionSystem,
         ActionOrderStrategy,
     )
+    from ..systems.combat_round_completion_system import CombatRoundCompletionSystem
     from ..systems.enemy_play_decision_system import EnemyPlayDecisionSystem
     from ..systems.play_action_narration_system import PlayActionNarrationSystem
 
@@ -161,6 +162,9 @@ def create_combat_pipeline(
             tcg_game, strategy=CardInjectStrategy.RANDOM_INSERT
         )
     )
+
+    # 回合完成判定系统（所有存活角色 energy <= 0 时写入 Round.is_completed = True）
+    processors.add(CombatRoundCompletionSystem(tcg_game))
 
     # 检查战斗结果系统
     processors.add(CombatOutcomeSystem(tcg_game))

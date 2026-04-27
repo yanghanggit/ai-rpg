@@ -88,7 +88,7 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
 
         last_round = self._game.current_dungeon.latest_round
         assert last_round is not None, "latest_round is None"
-        if not last_round.is_round_completed:
+        if not last_round.is_completed:
             return
 
         logger.debug("清除旧回合手牌与格挡状态")

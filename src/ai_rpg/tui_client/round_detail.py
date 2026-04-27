@@ -88,17 +88,14 @@ class RoundDetailScreen(Screen[None]):
                 prefix = "[bold magenta]▶ [/]" if is_last else "  "
                 title = f"[bold cyan]第 {idx + 1} 局[/]"
                 completed_mark = (
-                    "[green]✓ 已完成[/]"
-                    if rnd.is_round_completed
-                    else "[yellow]进行中[/]"
+                    "[green]✓ 已完成[/]" if rnd.is_completed else "[yellow]进行中[/]"
                 )
                 log.write(f"{prefix}{title}  {completed_mark}")
 
-                order_str = (
-                    "  →  ".join(rnd.action_order)
-                    if rnd.action_order
-                    else "[dim]（无）[/]"
+                snapshot = (
+                    rnd.actor_order_snapshots[-1] if rnd.actor_order_snapshots else []
                 )
+                order_str = "  →  ".join(snapshot) if snapshot else "[dim]（无）[/]"
                 done_str = (
                     "、".join(rnd.completed_actors)
                     if rnd.completed_actors
@@ -106,9 +103,9 @@ class RoundDetailScreen(Screen[None]):
                 )
                 log.write(f"    行动顺序：{order_str}")
                 log.write(f"    已出手：  {done_str}")
-                if rnd.current_actor is not None:
+                if rnd.current_actor_name is not None:
                     log.write(
-                        f"    [bold]当前行动：[/] [bold yellow]{display_name(rnd.current_actor)}[/]"
+                        f"    [bold]当前行动：[/] [bold yellow]{display_name(rnd.current_actor_name)}[/]"
                     )
 
                 if rnd.combat_log or rnd.narrative:

@@ -12,14 +12,18 @@
 """
 
 from enum import StrEnum, unique
-from typing import Final, final, override
+import random
+from typing import Final, List, Set, final, override
 from loguru import logger
-from ..entitas import ExecuteProcessor
+from ..entitas import Entity, ExecuteProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     CharacterStatsComponent,
+    DeathComponent,
     DungeonComponent,
     IdentityComponent,
+    Round,
+    RoundStatsComponent,
 )
 
 
@@ -73,6 +77,72 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         self._strategy: Final[ActionOrderStrategy] = strategy
 
     ############################################################################################################
+    def start_new_round(self, actors: set[Entity]) -> Round:
+        """创建并追加新回合，同时重置所有参战角色的 RoundStatsComponent。"""
+        assert (
+            self._game.current_dungeon.current_combat is not None
+        ), "current_combat is None"
+        assert self._game.current_dungeon.is_ongoing, "当前战斗未进行中，无法开始新回合"
+        current_rounds = self._game.current_dungeon.current_rounds or []
+        if len(current_rounds) > 0:
+            last_round = self._game.current_dungeon.latest_round
+            assert last_round is not None, "latest_round is None"
+            assert last_round.is_completed, "上一回合尚未完成，无法创建新回合"
+        new_round = Round()
+        self._game.current_dungeon.current_combat.rounds.append(new_round)
+        for actor in actors:
+            assert not actor.has(
+                RoundStatsComponent
+            ), f"{actor.name} 已存在 RoundStatsComponent"
+            assert not actor.has(DeathComponent), f"{actor.name} 已死亡，不应参与新回合"
+            computed = self._game.compute_character_stats(actor)
+            actor.replace(
+                RoundStatsComponent, actor.name, computed.energy, computed.speed, 0
+            )
+        return new_round
+
+    ############################################################################################################
+    def sorted_actors_by_round_speed(self, actors: Set[Entity]) -> List[Entity]:
+        """从给定的角色集合中，筛选本回合仍有行动力的角色并按速度降序排列。"""
+        eligible: List[Entity] = [
+            entity
+            for entity in actors
+            if entity.has(RoundStatsComponent)
+            and entity.get(RoundStatsComponent).energy > 0
+        ]
+        eligible.sort(
+            key=lambda entity: (
+                -entity.get(RoundStatsComponent).speed,
+                entity.get(IdentityComponent).creation_order,
+            )
+        )
+        return eligible
+
+    ############################################################################################################
+    def shuffled_actors_by_round(self, actors: Set[Entity]) -> List[Entity]:
+        """从给定的角色集合中，筛选本回合仍有行动力的角色并随机打乱顺序。"""
+        eligible: List[Entity] = [
+            entity
+            for entity in actors
+            if entity.has(RoundStatsComponent)
+            and entity.get(RoundStatsComponent).energy > 0
+        ]
+        random.shuffle(eligible)
+        return eligible
+
+    ############################################################################################################
+    def sorted_actors_by_creation_order(self, actors: Set[Entity]) -> List[Entity]:
+        """从给定的角色集合中，筛选本回合仍有行动力的角色并按创建顺序升序排列。"""
+        eligible: List[Entity] = [
+            entity
+            for entity in actors
+            if entity.has(RoundStatsComponent)
+            and entity.get(RoundStatsComponent).energy > 0
+        ]
+        eligible.sort(key=lambda entity: entity.get(IdentityComponent).creation_order)
+        return eligible
+
+    ############################################################################################################
     @override
     async def execute(self) -> None:
         # 状态守护：战斗未进行中 / 最新回合未完成 → 静默跳过
@@ -111,17 +181,15 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         assert stage_entity.has(DungeonComponent), "stage_entity 没有 DungeonComponent"
 
         round_number = len(current_rounds) + 1
-        new_round = self._game.start_new_round(actors_in_stage)
+        new_round = self.start_new_round(actors_in_stage)
 
         # 快照必须在 start_new_round 之后构建，此时 RoundStatsComponent 已按新回合重置
         if self._strategy == ActionOrderStrategy.RANDOM:
-            snapshot_entities = self._game.shuffled_actors_by_round(actors_in_stage)
+            snapshot_entities = self.shuffled_actors_by_round(actors_in_stage)
         elif self._strategy == ActionOrderStrategy.SPEED_ORDER:
-            snapshot_entities = self._game.sorted_actors_by_round_speed(actors_in_stage)
+            snapshot_entities = self.sorted_actors_by_round_speed(actors_in_stage)
         else:  # CREATION_ORDER（含未知策略回退）
-            snapshot_entities = self._game.sorted_actors_by_creation_order(
-                actors_in_stage
-            )
+            snapshot_entities = self.sorted_actors_by_creation_order(actors_in_stage)
 
         new_round.actor_order_snapshots.append(
             [entity.name for entity in snapshot_entities]

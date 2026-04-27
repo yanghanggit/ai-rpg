@@ -4,8 +4,7 @@ TCG 游戏核心实现
 融合交易卡牌战斗机制的 RPG 游戏，包含地下城探险、战斗系统和流程管道管理。
 """
 
-from typing import Final, List, Optional, Set
-import random
+from typing import Final
 from loguru import logger
 from overrides import override
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
@@ -17,13 +16,11 @@ from ..game.tcg_game_process_pipeline import (
 )
 from ..models import (
     Dungeon,
-    Round,
     World,
     ActorComponent,
     HandComponent,
     DrawDeckComponent,
     DiscardDeckComponent,
-    IdentityComponent,
     RoundStatsComponent,
     StageType,
     ActorType,
@@ -33,7 +30,6 @@ from ..models import (
     CharacterStatsComponent,
     EquipmentComponent,
     InventoryComponent,
-    DeathComponent,
 )
 from ..models.utils import compute_stats_with_equipment
 from .player_session import PlayerSession
@@ -185,40 +181,6 @@ class TCGGame(RPGGame):
                 self.destroy_entity(destroy_stage_entity)
 
     ################################################################################################################
-    def start_new_round(self, actors: set[Entity]) -> Round:
-        """创建并追加新回合，同时重置所有参战角色的 RoundStatsComponent。
-
-        调用前必须确保战斗进行中（is_ongoing）且上一回合已完成（is_completed）。
-        违反前置条件时以 AssertionError 快速失败，不做静默跳过。
-        """
-        assert self.current_dungeon.current_combat is not None, "current_combat is None"
-        assert self.current_dungeon.is_ongoing, "当前战斗未进行中，无法开始新回合"
-
-        # 检查战斗状态
-        current_rounds = self.current_dungeon.current_rounds or []
-        if len(current_rounds) > 0:
-            last_round = self.current_dungeon.latest_round
-            assert last_round is not None, "latest_round is None"
-            assert last_round.is_completed, "上一回合尚未完成，无法创建新回合"
-
-        # 创建新回合并追加到 current_combat.rounds
-        new_round = Round()
-        self.current_dungeon.current_combat.rounds.append(new_round)
-
-        # 新回合开始时重置所有参战角色的 RoundStatsComponent（旧值已由 clear_round_state 移除）
-        for actor in actors:
-            assert not actor.has(
-                RoundStatsComponent
-            ), f"{actor.name} 已存在 RoundStatsComponent"
-            assert not actor.has(DeathComponent), f"{actor.name} 已死亡，不应参与新回合"
-            computed = self.compute_character_stats(actor)
-            actor.replace(
-                RoundStatsComponent, actor.name, computed.energy, computed.speed, 0
-            )
-
-        return new_round
-
-    ################################################################################################################
     def clear_round_state(self) -> None:
         """清除所有角色实体的每回合可变状态（手牌与格挡）"""
 
@@ -341,108 +303,5 @@ class TCGGame(RPGGame):
         stats_comp.stats.hp = clamped
 
         return self.compute_character_stats(entity)
-
-    ################################################################################################################
-    def sorted_actors_by_round_speed(self, actors: Set[Entity]) -> List[Entity]:
-        """从给定的角色集合中，筛选本回合仍有行动力的角色并按速度降序排列。
-
-        筛选条件：拥有 RoundStatsComponent 且 energy > 0。
-        排序依据：RoundStatsComponent.speed 降序；同速时以 IdentityComponent.creation_order 升序决胜。
-
-        使用 RoundStatsComponent 的动态值（而非 compute_character_stats 的静态基础值），
-        以便回合内的 energy/speed 修改能被正确反映。
-
-        Args:
-            actors: 待筛选的角色实体集合（通常为本场景所有存活角色）
-
-        Returns:
-            按速度降序排列的有行动力角色列表
-        """
-        eligible: List[Entity] = [
-            entity
-            for entity in actors
-            if entity.has(RoundStatsComponent)
-            and entity.get(RoundStatsComponent).energy > 0
-        ]
-        eligible.sort(
-            key=lambda entity: (
-                -entity.get(RoundStatsComponent).speed,
-                entity.get(IdentityComponent).creation_order,
-            )
-        )
-        return eligible
-
-    ################################################################################################################
-    def shuffled_actors_by_round(self, actors: Set[Entity]) -> List[Entity]:
-        """从给定的角色集合中，筛选本回合仍有行动力的角色并随机打乱顺序。
-
-        筛选条件：拥有 RoundStatsComponent 且 energy > 0。
-        顺序：整体随机打乱，无固定优先级。
-
-        使用 RoundStatsComponent 的动态值（而非 compute_character_stats 的静态基础值），
-        以便回合内的 energy/speed 修改能被正确反映。
-
-        Args:
-            actors: 待筛选的角色实体集合（通常为本场景所有存活角色）
-
-        Returns:
-            随机打乱顺序的有行动力角色列表
-        """
-        eligible: List[Entity] = [
-            entity
-            for entity in actors
-            if entity.has(RoundStatsComponent)
-            and entity.get(RoundStatsComponent).energy > 0
-        ]
-        random.shuffle(eligible)
-        return eligible
-
-    ################################################################################################################
-    def get_current_actor(self, round: Round) -> Optional[str]:
-        """从最新快照中找出第一个仍有行动力（energy > 0）的角色名。
-
-        遍历 actor_order_snapshots[-1]（按策略排列的优先级顺序），返回第一个
-        RoundStatsComponent.energy > 0 的角色名；若无快照或所有角色耗尽能量则返回 None。
-
-        Args:
-            round: 当前战斗回合
-
-        Returns:
-            当前应行动的角色名，或 None
-        """
-        if not round.actor_order_snapshots:
-            return None
-        snapshot = round.actor_order_snapshots[-1]
-        for actor_name in snapshot:
-            actor_entity = self.get_actor_entity(actor_name)
-            if actor_entity is None:
-                continue
-            if not actor_entity.has(RoundStatsComponent):
-                continue
-            if actor_entity.get(RoundStatsComponent).energy > 0:
-                return actor_name
-        return None
-
-    ################################################################################################################
-    def sorted_actors_by_creation_order(self, actors: Set[Entity]) -> List[Entity]:
-        """从给定的角色集合中，筛选本回合仍有行动力的角色并按创建顺序升序排列。
-
-        筛选条件：拥有 RoundStatsComponent 且 energy > 0。
-        排序依据：IdentityComponent.creation_order 升序（先创建的角色靠前）。
-
-        Args:
-            actors: 待筛选的角色实体集合（通常为本场景所有存活角色）
-
-        Returns:
-            按创建顺序升序排列的有行动力角色列表
-        """
-        eligible: List[Entity] = [
-            entity
-            for entity in actors
-            if entity.has(RoundStatsComponent)
-            and entity.get(RoundStatsComponent).energy > 0
-        ]
-        eligible.sort(key=lambda entity: entity.get(IdentityComponent).creation_order)
-        return eligible
 
     ################################################################################################################

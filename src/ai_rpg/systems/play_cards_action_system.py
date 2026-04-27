@@ -5,7 +5,7 @@
 仅在战斗进行中(ongoing)阶段执行。
 """
 
-from typing import Final, final
+from typing import Final, final, Optional
 from loguru import logger
 from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
@@ -15,6 +15,7 @@ from ..models import (
     PlayCardsAction,
     ActorComponent,
     AgentEvent,
+    Round,
     RoundStatsComponent,
 )
 from ..game.tcg_game import TCGGame
@@ -78,6 +79,34 @@ class PlayCardsActionSystem(ReactiveProcessor):
         self._game: Final[TCGGame] = game
 
     ####################################################################################################################################
+    def get_current_actor(self, round: Round) -> Optional[str]:
+        """从最新快照中找出第一个仍有行动力（energy > 0）的角色名。"""
+        if not round.actor_order_snapshots:
+            return None
+
+        # 从最新的 actor_order_snapshot 中依次检查角色的 RoundStatsComponent 能量值，找出第一个能量大于0的角色
+        snapshot = round.actor_order_snapshots[-1]
+        for actor_name in snapshot:
+
+            actor_entity = self._game.get_actor_entity(actor_name)
+            assert actor_entity is not None, f"无法找到角色实体: {actor_name}"
+            if actor_entity is None:
+                continue
+
+            assert actor_entity.has(
+                RoundStatsComponent
+            ), f"{actor_name} 缺少 RoundStatsComponent"
+            if not actor_entity.has(RoundStatsComponent):
+                continue
+
+            # 如果该角色能量大于0，则返回其名字作为当前行动者
+            if actor_entity.get(RoundStatsComponent).energy > 0:
+                return actor_name
+
+        # 如果没有任何角色有行动力了，返回 None
+        return None
+
+    ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {Matcher(PlayCardsAction): GroupEvent.ADDED}
@@ -135,9 +164,9 @@ class PlayCardsActionSystem(ReactiveProcessor):
             )
 
             # 写一个assert 要求 entity.name 必须是当前回合的行动者
-            assert entity.name == self._game.get_current_actor(last_round), (
+            assert entity.name == self.get_current_actor(last_round), (
                 f"PlayCardsActionSystem: 出牌角色 {entity.name} 不是当前回合的行动者！"
-                f" current_actor={self._game.get_current_actor(last_round)}"
+                f" current_actor={self.get_current_actor(last_round)}"
             )
 
             # 将出牌角色写入本回合 completed_actors（允许同一角色多次出现）
@@ -164,7 +193,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             )
 
             # 更新当前行动者（能量消耗后重新计算）
-            last_round.current_actor_name = self._game.get_current_actor(last_round)
+            last_round.current_actor_name = self.get_current_actor(last_round)
 
             logger.debug(
                 f"  completed_actors: {last_round.completed_actors} / current_actor_name={last_round.current_actor_name}"

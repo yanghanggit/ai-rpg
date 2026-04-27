@@ -53,8 +53,8 @@ EpilogueSystem          ← flush 状态 + 记录日志
 | -------- | ---------- |
 | `StageDescriptionSystem` | 只在场景描述组件为空（尚未生成）时触发 LLM 推理 |
 | `CombatArchiveSystem` | 只在战斗刚结束（`CombatArchiveEvent` 存在）时触发归档 |
-| `CombatInitializationSystem` | 只在战斗开始阶段（无回合记录）时创建第一回合 |
-| `CombatRoundTransitionSystem` | 只在旧回合已清理、战斗仍在进行时创建新回合 |
+| `CombatInitializationSystem` | 只在战斗序列为 `initializing` 时注入战场上下文（不创建回合） |
+| `CombatRoundTransitionSystem` | 首帧（无回合记录）或旧回合已完成时创建新回合 |
 
 **意义**：同一个 System 实例可以安全地接入多条管线，无需为不同场景编写分支管线。
 

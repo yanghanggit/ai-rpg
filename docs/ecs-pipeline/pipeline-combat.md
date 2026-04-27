@@ -38,7 +38,7 @@
 | 1 | `PrologueSystem` | Execute | 管线入口 → [[systems-shared#PrologueSystem]] |
 | 2 | `ActorAppearanceUpdateSystem` | Execute | 生成角色外观 → [[systems-shared#ActorAppearanceUpdateSystem]] |
 | 3 | `StageDescriptionSystem` | Execute | 生成场景描述（状态守卫：仅战斗开始时触发）→ [[systems-shared#StageDescriptionSystem]] |
-| 4 | `CombatInitializationSystem` | Execute | 初始化战斗：注入战场上下文，创建第一回合 |
+| 4 | `CombatInitializationSystem` | Execute | 初始化战斗：注入战场上下文；第一回合由 `CombatRoundTransitionSystem` 在同帧末端创建 |
 | 5 | `DrawCardsActionSystem` | Reactive | 为角色生成手牌（历史牌组 + LLM 新牌） |
 | 6 | `EnemyPlayDecisionSystem` | Execute | 敌方 AI 决策出哪张牌 |
 | 7 | `PlayActionNarrationSystem` | Execute | LLM 润色出牌叙事 |
@@ -47,13 +47,14 @@
 | 10 | `ArbitrationActionSystem` | Reactive | **核心**：AI 仲裁伤害/格挡/HP 结算 |
 | 11 | `AddActorStatusEffectsActionSystem` | Reactive | 为角色追加状态效果（最多 2 个/帧） |
 | 12 | `StagePostArbitrationActionSystem` | Reactive | Stage Agent 干预：追加效果或随机塞牌 |
-| 13 | `CombatOutcomeSystem` | Execute | 检测胜负：友方/敌方全灭则结算 |
-| 14 | `CombatRoundCleanupSystem` | Execute | 清除旧回合手牌与格挡，递减状态效果 |
-| 15 | `CombatRoundTransitionSystem` | Execute | 创建新回合，按速度排序生成行动顺序 |
-| 16 | `CombatArchiveSystem` | Execute | 战斗归档：LLM 生成总结，压缩消息（状态守卫） |
-| 17 | `ActionCleanupSystem` | Execute | 清理所有 Action → [[systems-shared#ActionCleanupSystem]] |
-| 18 | `DestroyEntitySystem` | Execute | 销毁标记实体 → [[systems-shared#DestroyEntitySystem]] |
-| 19 | `EpilogueSystem` | Execute | flush 状态 → [[systems-shared#EpilogueSystem]] |
+| 13 | `CombatRoundCompletionSystem` | Execute | 回合完成判定：所有存活角色 energy ≤ 0 时写入 `Round.is_completed = True` |
+| 14 | `CombatOutcomeSystem` | Execute | 检测胜负：友方/敌方全灭则结算 |
+| 15 | `CombatRoundCleanupSystem` | Execute | 清除旧回合手牌与格挡，递减状态效果 |
+| 16 | `CombatRoundTransitionSystem` | Execute | 创建新回合，按速度排序生成行动顺序快照 |
+| 17 | `CombatArchiveSystem` | Execute | 战斗归档：LLM 生成总结，压缩消息（状态守卫） |
+| 18 | `ActionCleanupSystem` | Execute | 清理所有 Action → [[systems-shared#ActionCleanupSystem]] |
+| 19 | `DestroyEntitySystem` | Execute | 销毁标记实体 → [[systems-shared#DestroyEntitySystem]] |
+| 20 | `EpilogueSystem` | Execute | flush 状态 → [[systems-shared#EpilogueSystem]] |
 
 ---
 
@@ -64,13 +65,15 @@
 **源码**：`src/ai_rpg/systems/combat_initialization_system.py`  
 **类型**：`ExecuteProcessor`（含状态守卫）
 
-**触发条件**：当前无回合记录（战斗尚未初始化）。
+**触发条件**：战斗序列状态为 `initializing`（尚未有任何回合记录时）。
 
 执行内容（无 LLM 推理，纯上下文注入）：
 
 - 向所有参战角色注入战场情境通知（场景名 / 场景描述 / 其他角色外观与阵营 / 自身属性）
 - 以模拟 AIMessage 保证 agent 对话历史连续性
-- 创建第一回合，并为所有参战角色添加 `AddStatusEffectsAction`，触发初始状态效果评估
+- 转换战斗状态为 `ONGOING`
+- 为所有参战角色添加 `AddStatusEffectsAction`，触发初始状态效果评估
+- **不**创建第一回合——Round 1 由同帧末端的 `CombatRoundTransitionSystem` 统一创建（见步骤 16）
 
 参见 [[design-patterns#3. 状态守卫（State Guard）]]
 
@@ -160,12 +163,33 @@
 
 ---
 
-### CombatRoundTransitionSystem（步骤 15）
+### CombatRoundCompletionSystem（步骤 13）
+
+**源码**：`src/ai_rpg/systems/combat_round_completion_system.py`  
+**类型**：`ExecuteProcessor`
+
+**触发条件**：战斗进行中，最新回合存在且尚未完成，且回合快照（`actor_order_snapshots`）非空。
+
+判断依据：遍历本场景所有存活角色，若全部角色的 `RoundStatsComponent.energy <= 0`（或无该组件），则将 `Round.is_completed` 置为 `True`。
+
+设计要点：
+- 基于 **energy** 判断，反映运行时真实剩余行动数，比结构性计数更准确
+- 位于 `StagePostArbitrationActionSystem` 之后，所有 energy 消耗已结算
+- 位于 `CombatOutcomeSystem` 之前，使胜负检查能感知到回合完成状态
+
+---
+
+### CombatRoundTransitionSystem（步骤 16）
 
 **源码**：`src/ai_rpg/systems/combat_round_transition_system.py`  
 **策略**：`ActionOrderStrategy.SPEED_ORDER`（按速度属性降序排列行动顺序）
 
-位于管线末端，确保每帧结束时下一回合的行动顺序已就绪，供 `EnemyPlayDecisionSystem` 在下一帧使用。
+位于管线末端，负责在两种情况下创建新回合：
+
+1. **战斗首帧**（`current_rounds == 0`）：`CombatInitializationSystem` 将战斗状态切换为 `ONGOING` 后，本系统在同一帧末端创建 Round 1，直接跳过"上一回合是否完成"的检查。
+2. **常规轮转**（`current_rounds > 0` 且上一回合 `is_completed == True`）：旧回合由 `CombatRoundCleanupSystem` 清理后，本系统创建新回合。
+
+创建新回合时，按配置策略对当前存活角色排序，将结果写入 `Round.actor_order_snapshots`（快照列表），并初始化 `Round.current_actor_name` 为第一个行动者。
 
 可选策略：`RANDOM`（随机打乱）/ `CREATION_ORDER`（按实体创建顺序）/ `SPEED_ORDER`（速度降序）
 

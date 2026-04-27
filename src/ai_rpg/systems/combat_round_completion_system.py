@@ -44,7 +44,6 @@ class CombatRoundCompletionSystem(ExecuteProcessor):
             return
 
         latest_round = self._game.current_dungeon.latest_round
-        assert latest_round is not None, "latest_round is None"
 
         # 守卫②：无回合，或回合已标记完成 → 跳过
         if latest_round is None or latest_round.is_completed:

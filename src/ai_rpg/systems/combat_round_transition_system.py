@@ -83,13 +83,12 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         logger.debug("检查战斗回合状态，判断是否需要创建新回合...")
 
         current_rounds = self._game.current_dungeon.current_rounds or []
-        assert len(current_rounds) > 0, "当前战斗至少应有一个回合（初始回合）"
 
-        # if len(current_rounds) > 0:
-        last_round = self._game.current_dungeon.latest_round
-        assert last_round is not None, "latest_round is None"
-        if not last_round.is_completed:
-            return
+        if len(current_rounds) > 0:
+            last_round = self._game.current_dungeon.latest_round
+            assert last_round is not None, "latest_round is None"
+            if not last_round.is_completed:
+                return
 
         # 玩家角色
         player_entity = self._game.get_player_entity()

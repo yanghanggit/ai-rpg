@@ -83,9 +83,8 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
             return
 
         current_rounds = self._game.current_dungeon.current_rounds or []
-        assert len(current_rounds) > 0, "当前战斗至少应有一个回合（初始回合）"
-        # if len(current_rounds) == 0:
-        #     return
+        if len(current_rounds) == 0:
+            return
 
         last_round = self._game.current_dungeon.latest_round
         assert last_round is not None, "latest_round is None"

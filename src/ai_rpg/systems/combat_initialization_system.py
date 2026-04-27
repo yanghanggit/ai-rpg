@@ -172,8 +172,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         # 为所有参战角色添加 AddStatusEffectsAction，触发初始状态效果生成
         self._add_status_effects_actions_for_all_actors(actor_entities)
 
-        # 添加新的一局, 后续的运转交给 CombatRoundTransitionSystem 来创建第一回合并生成行动顺序快照
-        self._game.start_new_round(actors=actor_entities)
+        # 第一回合由 CombatRoundTransitionSystem 在本 pipeline tick 末创建（同帧创建）
 
     ###################################################################################################################################################################
     def _add_status_effects_actions_for_all_actors(

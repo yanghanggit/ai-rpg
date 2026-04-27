@@ -124,8 +124,8 @@ class Round(BaseModel):
     actor_order_snapshots: List[List[str]] = Field(
         default_factory=list
     )  # 每次回合开始时的有行动力角色快照（去重、按优先级排列）；由 CombatRoundTransitionSystem 写入
-    current_actor_name: Optional[str] = (
-        None  # 当前应行动的角色名；由系统写入，供 TUI 等无 ECS 访问的消费点读取
+    current_turn_actor_name: Optional[str] = (
+        None  # 当前 turn 应行动的角色名；由系统写入，供 TUI 等无 ECS 访问的消费点读取
     )
     is_completed: bool = False  # 回合结束标记；由 CombatRoundCompletionSystem 写入
     combat_log: List[str] = []  # 战斗计算日志，每次出手追加一条

@@ -186,7 +186,7 @@ def _validate_play_turn(
             f"角色 {actor_name} 不在本回合行动快照中: {current_snapshot}",
         )
 
-    next_actor = latest_round.current_actor_name
+    next_actor = latest_round.current_turn_actor_name
     if next_actor != actor_name:
         return None, f"现在不是 {actor_name} 的回合，当前应由 {next_actor} 出牌"
 

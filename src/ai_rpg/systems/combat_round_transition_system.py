@@ -172,10 +172,10 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         new_round.actor_order_snapshots.append(
             [entity.name for entity in snapshot_entities]
         )
-        new_round.current_actor_name = (
+        new_round.current_turn_actor_name = (
             snapshot_entities[0].name if snapshot_entities else None
         )
-        logger.debug(f"设置当前行动角色: {new_round.current_actor_name}")
+        logger.debug(f"设置当前 turn 行动角色: {new_round.current_turn_actor_name}")
         logger.info(
             f"创建第 {round_number} 回合，快照行动顺序: {new_round.actor_order_snapshots[-1]}"
         )

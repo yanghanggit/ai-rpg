@@ -354,8 +354,8 @@ class CombatRoomScreen(Screen[None]):
                     else "[dim]（无）[/]"
                 )
                 current_actor_str = (
-                    f"[bold yellow]{display_name(cur.current_actor_name)}[/]"
-                    if cur.current_actor_name
+                    f"[bold yellow]{display_name(cur.current_turn_actor_name)}[/]"
+                    if cur.current_turn_actor_name
                     else "[dim]（回合已结束）[/]"
                 )
                 log.write(f"  [bold]行动顺序：[/] {order_str}")
@@ -639,7 +639,7 @@ class CombatRoomScreen(Screen[None]):
             inp.focus()
             return
 
-        current_actor = cur.current_actor_name
+        current_actor = cur.current_turn_actor_name
         round_num = len(combat.rounds)
         action_order = list(
             cur.actor_order_snapshots[-1] if cur.actor_order_snapshots else []

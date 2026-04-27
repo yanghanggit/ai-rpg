@@ -79,7 +79,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
         self._game: Final[TCGGame] = game
 
     ####################################################################################################################################
-    def get_current_actor(self, round: Round) -> Optional[str]:
+    def get_current_turn_actor(self, round: Round) -> Optional[str]:
         """从最新快照中找出第一个仍有行动力（energy > 0）的角色名。"""
         if not round.actor_order_snapshots:
             return None
@@ -164,9 +164,9 @@ class PlayCardsActionSystem(ReactiveProcessor):
             )
 
             # 写一个assert 要求 entity.name 必须是当前回合的行动者
-            assert entity.name == self.get_current_actor(last_round), (
-                f"PlayCardsActionSystem: 出牌角色 {entity.name} 不是当前回合的行动者！"
-                f" current_actor={self.get_current_actor(last_round)}"
+            assert entity.name == self.get_current_turn_actor(last_round), (
+                f"PlayCardsActionSystem: 出牌角色 {entity.name} 不是当前 turn 的行动者！"
+                f" current_turn_actor={self.get_current_turn_actor(last_round)}"
             )
 
             # 将出牌角色写入本回合 completed_actors（允许同一角色多次出现）
@@ -193,10 +193,10 @@ class PlayCardsActionSystem(ReactiveProcessor):
             )
 
             # 更新当前行动者（能量消耗后重新计算）
-            last_round.current_actor_name = self.get_current_actor(last_round)
+            last_round.current_turn_actor_name = self.get_current_turn_actor(last_round)
 
             logger.debug(
-                f"  completed_actors: {last_round.completed_actors} / current_actor_name={last_round.current_actor_name}"
+                f"  completed_actors: {last_round.completed_actors} / current_turn_actor_name={last_round.current_turn_actor_name}"
             )
 
             # 从 HandComponent 移除已出的卡牌，并将其归入 DiscardDeckComponent

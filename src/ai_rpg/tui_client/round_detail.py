@@ -103,9 +103,9 @@ class RoundDetailScreen(Screen[None]):
                 )
                 log.write(f"    行动顺序：{order_str}")
                 log.write(f"    已出手：  {done_str}")
-                if rnd.current_actor_name is not None:
+                if rnd.current_turn_actor_name is not None:
                     log.write(
-                        f"    [bold]当前行动：[/] [bold yellow]{display_name(rnd.current_actor_name)}[/]"
+                        f"    [bold]当前 turn：[/] [bold yellow]{display_name(rnd.current_turn_actor_name)}[/]"
                     )
 
                 if rnd.combat_log or rnd.narrative:

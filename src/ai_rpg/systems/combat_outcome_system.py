@@ -1,3 +1,11 @@
+"""战斗结果判定系统
+
+检查双方阵营（友方 ExpeditionMemberComponent / 敌方 EnemyComponent）的存活情况，
+判定战斗胜负后调用 current_dungeon.complete_combat() 更新战斗状态，
+并向场景内所有友方角色广播胜/败消息。
+仅在战斗 ONGOING 阶段执行。
+"""
+
 from typing import Final, final, override, Set
 from ..entitas import ExecuteProcessor, Entity
 from ..game.tcg_game import TCGGame
@@ -32,13 +40,8 @@ def _get_combat_result_notification(stage_name: str, is_victory: bool) -> str:
 class CombatOutcomeSystem(ExecuteProcessor):
     """战斗结果判定系统。
 
-    负责监测战斗中的生命值变化，判定角色死亡状态，
-    检查双方阵营的全灭情况，并在战斗结束时广播胜负结果。
-
-    主要职责:
-    - 检测并标记生命值归零的实体为死亡状态
-    - 判断敌方或友方是否全员阵亡
-    - 确定战斗胜负并通知所有友方单位
+    检查双方阵营是否全员阵亡，确定战斗胜负，并向所有友方单位广播结果。
+    死亡标记（DeathComponent）由上游系统（ArbitrationActionSystem）写入，本系统仅读取。
     """
 
     def __init__(self, game: TCGGame) -> None:

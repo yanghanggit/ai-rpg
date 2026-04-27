@@ -9,7 +9,7 @@
 - energy-based 判断反映运行时真实剩余行动数，比结构性计数（completed_actors/action_order）更准确
 - 位于 StagePostArbitrationActionSystem 之后，确保本轮所有 energy 消耗已结算
 - 位于 CombatOutcomeSystem 之前，使战斗结果检查能感知到回合完成状态
-- init round（action_order=[]）跳过判断，维持初始化阶段行为
+- init round（actor_order_snapshots=[]）跳过判断，维持初始化阶段行为
 """
 
 from typing import Final, final, override

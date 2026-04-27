@@ -54,7 +54,7 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
     位于 CombatRoundTransitionSystem 之前，确保新回合创建时环境已干净。
 
     内部状态守护（不满足则静默跳过）：
-    - 战斗状态非 ONGOING / COMPLETE / POST_COMBAT → 跳过
+    - 战斗状态非 ONGOING → 跳过
     - 尚无任何回合 → 跳过
     - 最新回合未完成 → 跳过
     """

@@ -1,14 +1,9 @@
 """
 战斗回合过渡系统
 
-职责：
-- 判断是否需要创建新回合并生成 action_order
-
-设计特点：
-- 使用 ExecuteProcessor，每次 pipeline 执行时主动检查（位于 pipeline 末端）
-- 避免重复创建（第一回合已在 CombatInitializationSystem 中创建）
-- 为后续系统（EnemyDrawDecisionSystem）提供 action_order 上下文
-- 旧回合清理由 CombatRoundCleanupSystem 负责（位于本系统之前）
+职责：创建新回合、重置参战角色的回合属性，并生成本回合的行动顺序快照。
+第一回合由 CombatInitializationSystem 创建；本系统负责后续每一回合的衔接。
+旧回合清理由 CombatRoundCleanupSystem 负责（位于本系统之前）。
 """
 
 from enum import StrEnum, unique
@@ -42,29 +37,12 @@ class ActionOrderStrategy(StrEnum):
 @final
 class CombatRoundTransitionSystem(ExecuteProcessor):
     """
-    战斗回合过渡系统
+    战斗回合过渡系统。
 
-    在每次 pipeline 执行时创建新的战斗回合。
-    旧回合清理由 CombatRoundCleanupSystem 负责（位于本系统之前）。
-    位于 combat pipeline 末端，确保下一次 pipeline 执行时新回合已就绪。
-
-    执行时机：
-    - 在 CombatRoundCleanupSystem 之后（旧回合已清理）
-    - 在 EnemyDrawDecisionSystem 之前（决策需要 action_order）
-
-    行动顺序策略：
-    - RANDOM（默认）：每回合随机打乱角色顺序，增加战斗不确定性
-    - CREATION_ORDER：按实体创建顺序（creation_order 小的靠前），保证固定顺序
-
-    使用示例：
-        # 使用随机策略（默认）
-        system = CombatRoundTransitionSystem(game)
-
-        # 使用创建顺序策略
-        system = CombatRoundTransitionSystem(
-            game,
-            strategy=ActionOrderStrategy.CREATION_ORDER
-        )
+    每次 pipeline 执行时，若上一回合已完成（is_completed）则自动创建下一回合：
+    调用 start_new_round 重置所有参战角色的 RoundStatsComponent，
+    再按指定策略（RANDOM / SPEED_ORDER / CREATION_ORDER）生成行动顺序快照，
+    写入 Round.actor_order_snapshots 供 EnemyPlayDecisionSystem 等后续系统使用。
     """
 
     ############################################################################################################

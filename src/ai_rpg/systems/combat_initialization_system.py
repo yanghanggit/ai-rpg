@@ -3,7 +3,7 @@
 在战斗触发阶段为参战角色注入战场上下文，转换战斗状态为进行中。
 不进行 LLM 推理，仅通过 add_human_message 注入战斗上下文，
 并以模拟 AI 回应保证 agent 对话连续性。
-初始化末尾为所有参战角色添加 AddStatusEffectsAction，触发第一回合初始状态效果评估。
+初始化末尾为所有参战角色添加 AddStatusEffectsAction，触发 AddActorStatusEffectsActionSystem 完成第一回合初始状态效果评估。
 """
 
 from dataclasses import dataclass
@@ -109,7 +109,8 @@ class CombatInitializationSystem(ExecuteProcessor):
     在战斗触发阶段为参战角色注入战场上下文，转换战斗状态为进行中。
     不进行 LLM 推理，仅 add_human_message + 模拟 AI 回应以维护 agent 对话连续性。
     初始化末尾为所有参战角色添加 AddStatusEffectsAction，
-    触发 AddStatusEffectsActionSystem 完成第一回合初始状态效果评估。
+    触发 AddActorStatusEffectsActionSystem 完成第一回合初始状态效果评估。
+    第一回合由同帧末尾的 CombatRoundTransitionSystem 创建。
 
     执行时机：
         战斗序列状态为 initializing 时执行，在战斗触发后、第一回合开始前。

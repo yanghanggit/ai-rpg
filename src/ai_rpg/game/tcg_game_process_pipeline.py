@@ -144,7 +144,7 @@ def create_combat_pipeline(
     # 战斗场景描述系统（与家园共用，内部有状态守卫，只有在战斗开始时才会触发）
     processors.add(StageDescriptionSystem(game=tcg_game, enable_debug_cache=True))
 
-    # 战斗初始化系统（创建第一回合）
+    # 战斗初始化系统（注入战场上下文、转换战斗状态为进行中、触发初始状态效果；第一回合由 CombatRoundTransitionSystem 创建）
     processors.add(CombatInitializationSystem(tcg_game))
 
     # 战斗核心动作处理相关的系统：抽牌 → 敌人决策 → 叙事润色 → 出牌 → 退却 → 仲裁 → 状态效果追加

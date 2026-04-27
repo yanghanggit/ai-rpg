@@ -4,7 +4,8 @@ TCG 游戏核心实现
 融合交易卡牌战斗机制的 RPG 游戏，包含地下城探险、战斗系统和流程管道管理。
 """
 
-from typing import Final
+from typing import Final, List, Set
+import random
 from loguru import logger
 from overrides import override
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
@@ -16,11 +17,13 @@ from ..game.tcg_game_process_pipeline import (
 )
 from ..models import (
     Dungeon,
+    Round,
     World,
     ActorComponent,
     HandComponent,
     DrawDeckComponent,
     DiscardDeckComponent,
+    IdentityComponent,
     RoundStatsComponent,
     StageType,
     ActorType,
@@ -181,6 +184,30 @@ class TCGGame(RPGGame):
                 self.destroy_entity(destroy_stage_entity)
 
     ################################################################################################################
+    def start_new_round(self, action_order: list[str]) -> Round:
+        """创建并追加新回合，返回新回合实例。
+
+        调用前必须确保战斗进行中（is_ongoing）且上一回合已完成（is_round_completed）。
+        违反前置条件时以 AssertionError 快速失败，不做静默跳过。
+        """
+        assert self.current_dungeon.current_combat is not None, "current_combat is None"
+        assert self.current_dungeon.is_ongoing, "当前战斗未进行中，无法开始新回合"
+
+        # 检查战斗状态
+        current_rounds = self.current_dungeon.current_rounds or []
+        if len(current_rounds) > 0:
+            last_round = self.current_dungeon.latest_round
+            assert last_round is not None, "latest_round is None"
+            assert last_round.is_round_completed, "上一回合尚未完成，无法创建新回合"
+
+        # 创建新回合并追加到 current_combat.rounds
+        new_round = Round(action_order=action_order)
+
+        # 追加新回合到 current_combat.rounds
+        self.current_dungeon.current_combat.rounds.append(new_round)
+        return new_round
+
+    ################################################################################################################
     def clear_round_state(self) -> None:
         """清除所有角色实体的每回合可变状态（手牌与格挡）"""
 
@@ -303,5 +330,60 @@ class TCGGame(RPGGame):
         stats_comp.stats.hp = clamped
 
         return self.compute_character_stats(entity)
+
+    ################################################################################################################
+    def sorted_actors_by_round_speed(self, actors: Set[Entity]) -> List[Entity]:
+        """从给定的角色集合中，筛选本回合仍有行动力的角色并按速度降序排列。
+
+        筛选条件：拥有 RoundStatsComponent 且 energy > 0。
+        排序依据：RoundStatsComponent.speed 降序；同速时以 IdentityComponent.creation_order 升序决胜。
+
+        使用 RoundStatsComponent 的动态值（而非 compute_character_stats 的静态基础值），
+        以便回合内的 energy/speed 修改能被正确反映。
+
+        Args:
+            actors: 待筛选的角色实体集合（通常为本场景所有存活角色）
+
+        Returns:
+            按速度降序排列的有行动力角色列表
+        """
+        eligible: List[Entity] = [
+            entity
+            for entity in actors
+            if entity.has(RoundStatsComponent)
+            and entity.get(RoundStatsComponent).energy > 0
+        ]
+        eligible.sort(
+            key=lambda entity: (
+                -entity.get(RoundStatsComponent).speed,
+                entity.get(IdentityComponent).creation_order,
+            )
+        )
+        return eligible
+
+    ################################################################################################################
+    def shuffled_actors_by_round(self, actors: Set[Entity]) -> List[Entity]:
+        """从给定的角色集合中，筛选本回合仍有行动力的角色并随机打乱顺序。
+
+        筛选条件：拥有 RoundStatsComponent 且 energy > 0。
+        顺序：整体随机打乱，无固定优先级。
+
+        使用 RoundStatsComponent 的动态值（而非 compute_character_stats 的静态基础值），
+        以便回合内的 energy/speed 修改能被正确反映。
+
+        Args:
+            actors: 待筛选的角色实体集合（通常为本场景所有存活角色）
+
+        Returns:
+            随机打乱顺序的有行动力角色列表
+        """
+        eligible: List[Entity] = [
+            entity
+            for entity in actors
+            if entity.has(RoundStatsComponent)
+            and entity.get(RoundStatsComponent).energy > 0
+        ]
+        random.shuffle(eligible)
+        return eligible
 
     ################################################################################################################

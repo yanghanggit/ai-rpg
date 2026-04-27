@@ -4,8 +4,8 @@
 """
 
 from enum import IntEnum, StrEnum, unique
-from typing import Dict, List, Optional, final
-from pydantic import BaseModel, Field
+from typing import List, Optional, final
+from pydantic import BaseModel
 
 
 ###############################################################################################################################################
@@ -122,9 +122,9 @@ class Round(BaseModel):
 
     action_order: List[str]  # 行动顺序，按顺序记录角色名称
     completed_actors: List[str] = []  # 已完成出牌的角色名称（按出手顺序追加）
-    play_count: Dict[str, int] = Field(
-        default_factory=dict
-    )  # 每个 actor 本回合累计出手次数 {角色名: 次数}
+    # play_count: Dict[str, int] = Field(
+    #     default_factory=dict
+    # )  # 每个 actor 本回合累计出手次数 {角色名: 次数}
     combat_log: List[str] = []  # 战斗计算日志，每次出手追加一条
     narrative: List[str] = []  # 叙事文本/演出描述，每次出手追加一条
 

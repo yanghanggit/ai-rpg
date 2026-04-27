@@ -66,16 +66,20 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
     ############################################################################################################
     @override
     async def execute(self) -> None:
-        # 状态守护：非有效战斗阶段 / 无回合 / 最新回合未完成 → 静默跳过
-        valid_state = (
-            self._game.current_dungeon.is_ongoing
-            or self._game.current_dungeon.is_combat_completed
-            or self._game.current_dungeon.is_post_combat
-        )
-        if not valid_state:
-            logger.debug(
-                "当前战斗状态非 ONGOING/COMPLETE/POST_COMBAT，跳过旧回合状态清除"
-            )
+        # # 状态守护：非有效战斗阶段 / 无回合 / 最新回合未完成 → 静默跳过
+        # valid_state = (
+        #     self._game.current_dungeon.is_ongoing
+        #     or self._game.current_dungeon.is_combat_completed
+        #     or self._game.current_dungeon.is_post_combat
+        # )
+        # if not valid_state:
+        #     logger.debug(
+        #         "当前战斗状态非 ONGOING/COMPLETE/POST_COMBAT，跳过旧回合状态清除"
+        #     )
+        #     return
+
+        if not self._game.current_dungeon.is_ongoing:
+            logger.debug("当前战斗状态非 ONGOING，跳过旧回合状态清除")
             return
 
         current_rounds = self._game.current_dungeon.current_rounds or []

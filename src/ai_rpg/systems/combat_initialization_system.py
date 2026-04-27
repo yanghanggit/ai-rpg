@@ -165,9 +165,15 @@ class CombatInitializationSystem(ExecuteProcessor):
 
         # 设置战斗为进行中（第一回合将由 CombatRoundTransitionSystem 创建）
         self._game.current_dungeon.transition_to_ongoing()
+        assert (
+            self._game.current_dungeon.is_ongoing
+        ), "战斗状态转换失败，当前状态非 ONGOING！"
 
         # 为所有参战角色添加 AddStatusEffectsAction，触发初始状态效果生成
         self._add_status_effects_actions_for_all_actors(actor_entities)
+
+        # 添加新的一局, 先什么都不做！
+        self._game.start_new_round(action_order=[])
 
     ###################################################################################################################################################################
     def _add_status_effects_actions_for_all_actors(

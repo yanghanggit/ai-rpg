@@ -1,4 +1,4 @@
-from typing import Final, List, final, override, Set
+from typing import Final, final, override, Set
 from ..entitas import ExecuteProcessor, Entity
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -71,37 +71,37 @@ class CombatOutcomeSystem(ExecuteProcessor):
 
         if self._is_ally_side_eliminated():
             logger.info("ally side eliminated!!!")
-            self._flush_incomplete_round()
+            # self._flush_incomplete_round()
             self._game.current_dungeon.complete_combat(CombatResult.LOSE)
             self._broadcast_result_to_allies(CombatResult.LOSE)
         elif self._is_enemy_side_eliminated():
             logger.info("enemy side eliminated!!!")
-            self._flush_incomplete_round()
+            # self._flush_incomplete_round()
             self._game.current_dungeon.complete_combat(CombatResult.WIN)
             self._broadcast_result_to_allies(CombatResult.WIN)
         else:
             logger.debug("双方均未全灭，战斗继续进行")
 
     ########################################################################################################################################################################
-    def _flush_incomplete_round(self) -> None:
-        """将最新回合中未完成出手的角色补全为空占位。
+    # def _flush_incomplete_round(self) -> None:
+    #     """将最新回合中未完成出手的角色补全为空占位。
 
-        当战斗在回合中途结束（如一击必杀）时，latest_round 的 completed_actors
-        可能尚未包含全部 action_order 成员，导致 is_round_completed 为 False。
-        本方法将剩余角色依序追加至 completed_actors，并在 combat_log / narrative
-        中各追加一个空字符串占位，使三个列表长度保持一致。
-        """
-        latest_round = self._game.current_dungeon.latest_round
-        if latest_round is None or latest_round.is_round_completed:
-            return
+    #     当战斗在回合中途结束（如一击必杀）时，latest_round 的 completed_actors
+    #     可能尚未包含全部 action_order 成员，导致 is_round_completed 为 False。
+    #     本方法将剩余角色依序追加至 completed_actors，并在 combat_log / narrative
+    #     中各追加一个空字符串占位，使三个列表长度保持一致。
+    #     """
+    #     latest_round = self._game.current_dungeon.latest_round
+    #     if latest_round is None or latest_round.is_round_completed:
+    #         return
 
-        remaining: List[str] = latest_round.action_order[
-            len(latest_round.completed_actors) :
-        ]
-        for actor in remaining:
-            latest_round.completed_actors.append(actor)
-            latest_round.combat_log.append("")
-            latest_round.narrative.append("")
+    #     remaining: List[str] = latest_round.action_order[
+    #         len(latest_round.completed_actors) :
+    #     ]
+    #     for actor in remaining:
+    #         latest_round.completed_actors.append(actor)
+    #         latest_round.combat_log.append("")
+    #         latest_round.narrative.append("")
 
     ########################################################################################################################################################################
     def _is_enemy_side_eliminated(self) -> bool:

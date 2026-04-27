@@ -83,12 +83,13 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         logger.debug("检查战斗回合状态，判断是否需要创建新回合...")
 
         current_rounds = self._game.current_dungeon.current_rounds or []
+        assert len(current_rounds) > 0, "当前战斗至少应有一个回合（初始回合）"
 
-        if len(current_rounds) > 0:
-            last_round = self._game.current_dungeon.latest_round
-            assert last_round is not None
-            if not last_round.is_completed:
-                return
+        # if len(current_rounds) > 0:
+        last_round = self._game.current_dungeon.latest_round
+        assert last_round is not None, "latest_round is None"
+        if not last_round.is_completed:
+            return
 
         # 玩家角色
         player_entity = self._game.get_player_entity()
@@ -110,7 +111,10 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         assert stage_entity is not None, "stage_entity is None"
         assert stage_entity.has(DungeonComponent), "stage_entity 没有 DungeonComponent"
 
-        # 按策略生成快照（去重、按优先级排列）
+        round_number = len(current_rounds) + 1
+        new_round = self._game.start_new_round(actors_in_stage)
+
+        # 快照必须在 start_new_round 之后构建，此时 RoundStatsComponent 已按新回合重置
         if self._strategy == ActionOrderStrategy.RANDOM:
             snapshot_entities = self._game.shuffled_actors_by_round(actors_in_stage)
         elif self._strategy == ActionOrderStrategy.SPEED_ORDER:
@@ -120,19 +124,12 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
                 actors_in_stage
             )
 
-        # 无任何有行动力角色时跳过本次创建
-        if not snapshot_entities:
-            logger.warning("所有参战角色 energy <= 0，本次跳过回合创建")
-            return
-
-        round_number = len(current_rounds) + 1
-        new_round = self._game.start_new_round(actors_in_stage)
-
-        # 记录本回合有行动力角色的快照，并设置首个行动角色
         new_round.actor_order_snapshots.append(
             [entity.name for entity in snapshot_entities]
         )
-        new_round.current_actor_name = snapshot_entities[0].name
+        new_round.current_actor_name = (
+            snapshot_entities[0].name if snapshot_entities else None
+        )
         logger.debug(f"设置当前行动角色: {new_round.current_actor_name}")
         logger.info(
             f"创建第 {round_number} 回合，快照行动顺序: {new_round.actor_order_snapshots[-1]}"

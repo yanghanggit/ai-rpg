@@ -64,6 +64,7 @@ htmlcov/
 # AI Generated Content
 # -----------------------------------------------------------------------------
 generated_images/
+generated_archetypes/
 
 # -----------------------------------------------------------------------------
 # Other Files and Directories to Ignore

@@ -114,6 +114,7 @@ def generate_archetype() -> Optional[ArchetypeResult]:
         context=[_ARCHETYPE_SYSTEM],
         model=MODEL_FLASH,
         temperature=1.5,
+        timeout=120,
     )
     client.chat()
     if not client.response_content:
@@ -141,6 +142,7 @@ async def generate_keywords(archetype: ArchetypeResult) -> List[KeywordResult]:
             context=[system_msg],
             model=MODEL_FLASH,
             temperature=1.3,
+            timeout=120,
         )
         for i in range(_NUM_KEYWORDS)
     ]

@@ -188,7 +188,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 RoundStatsComponent,
                 entity.name,
                 round_stats.energy - 1,
-                round_stats.speed,
+                # round_stats.speed,
                 round_stats.block,
             )
 

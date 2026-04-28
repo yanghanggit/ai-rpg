@@ -686,7 +686,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
                     RoundStatsComponent,
                     entity_name,
                     round_stats.energy,
-                    round_stats.speed,
+                    # round_stats.speed,
                     new_block,
                 )
 

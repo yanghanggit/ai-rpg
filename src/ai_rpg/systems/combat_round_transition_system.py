@@ -74,9 +74,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
             ), f"{actor.name} 已存在 RoundStatsComponent"
             assert not actor.has(DeathComponent), f"{actor.name} 已死亡，不应参与新回合"
             computed = self._game.compute_character_stats(actor)
-            actor.replace(
-                RoundStatsComponent, actor.name, computed.energy, computed.speed, 0
-            )
+            actor.replace(RoundStatsComponent, actor.name, computed.energy, 0)
         return new_round
 
     ############################################################################################################
@@ -90,7 +88,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         ]
         eligible.sort(
             key=lambda entity: (
-                -entity.get(RoundStatsComponent).speed,
+                -entity.get(CharacterStatsComponent).stats.speed,  # 速度降序
                 entity.get(IdentityComponent).creation_order,
             )
         )

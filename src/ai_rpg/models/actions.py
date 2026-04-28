@@ -285,13 +285,13 @@ class StagePostArbitrationAction(Component):
 
     由 ArbitrationActionSystem 在每次真实仲裁结算成功后添加到 stage entity，
     触发 StagePostArbitrationActionSystem 以 stage agent（地牢主视角）决定
-    是否向场内参战角色追加状态效果或塞入卡牌（参考《杀戮尖塔》机制）。
+    是否向场内参战角色追加状态效果或塞入卡牌。
     动作组件由 ActionCleanupSystem 自动清除，无需手动移除。
 
     Attributes:
         name: stage entity 名称
-        actor_name: 本次仲裁的出牌者名称（用于向 LLM 传递上下文）
+        current_turn_actor_name: 本次仲裁的出牌者名称（用于向 LLM 传递上下文）
     """
 
     name: str
-    actor_name: str
+    current_turn_actor_name: str

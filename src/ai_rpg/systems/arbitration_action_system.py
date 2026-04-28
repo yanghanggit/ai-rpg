@@ -56,6 +56,7 @@ class ArbitrationResponse(BaseModel):
     combat_log: str
     final_stats: Dict[str, EntityFinalStats]
     narrative: str
+    trigger_post_arbitration: bool = False
 
 
 #######################################################################################################################################
@@ -298,9 +299,16 @@ def _generate_combat_arbitration_prompt(
 {{
   "combat_log": "字符串",
   "final_stats": {{}},
-  "narrative": "战斗演出"
+  "narrative": "战斗演出",
+  "trigger_post_arbitration": false
 }}
 ```
+
+### trigger_post_arbitration
+
+布尔值，决定是否触发场景干预系统（stage agent 追加状态效果 / 塞牌）。
+判断规则：仅当本回合出牌的 **narrative 叙事中涉及与已存在场景要素的物理交互**（如搅起沙尘、触发机关、破坏地面物件、揭示可借用道具等），且该交互**合理推断可对场内角色产生后续物理影响**时，设为 `true`；
+若本回合为纯角色交换（攻击/格挡/治疗），无环境互动，输出 `false`。
 
 ### combat_log（简名 = 全名最后一段）
 
@@ -731,10 +739,14 @@ class ArbitrationActionSystem(ReactiveProcessor):
             latest_round.combat_log.append(format_response.combat_log)
             latest_round.narrative.append(format_response.narrative)
 
-            # 仲裁结算成功后，触发 StagePostArbitrationActionSystem
-            stage_entity.replace(
-                StagePostArbitrationAction, stage_entity.name, actor_entity.name
-            )
+            # 仲裁结算成功后，仅当 LLM 判断存在场景干预必要性时触发 StagePostArbitrationActionSystem
+            if format_response.trigger_post_arbitration:
+                logger.debug(
+                    f"仲裁结果 trigger_post_arbitration=True，触发 StagePostArbitrationAction"
+                )
+                stage_entity.replace(
+                    StagePostArbitrationAction, stage_entity.name, actor_entity.name
+                )
 
         except Exception as e:
             logger.error(f"Exception: {e}")

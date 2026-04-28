@@ -71,7 +71,7 @@ def _fmt_duration(d: int) -> str:
 def _generate_compressed_stage_post_arbitration_prompt(
     game: TCGGame,
     actor_entities: Set[Entity],
-    actor_name: str,
+    current_turn_actor_name: str,
     current_round_number: int,
 ) -> str:
     """生成压缩版仲裁后场景效果提示词（仅动态感知部分，省略静态规则/格式说明）
@@ -118,7 +118,7 @@ def _generate_compressed_stage_post_arbitration_prompt(
 
     return f"""# 第 {current_round_number} 回合 — 仲裁后场景干预
 
-**{actor_name}** 刚刚完成出牌，仲裁结算已在上下文中记录。
+**{current_turn_actor_name}** 刚刚完成出牌，仲裁结算已在上下文中记录。
 
 ## 场内存活角色当前状态
 
@@ -128,7 +128,7 @@ def _generate_compressed_stage_post_arbitration_prompt(
 def _generate_stage_post_arbitration_prompt(
     game: TCGGame,
     actor_entities: Set[Entity],
-    actor_name: str,
+    current_turn_actor_name: str,
     current_round_number: int,
 ) -> str:
     """生成仲裁后场景效果提示词
@@ -138,7 +138,7 @@ def _generate_stage_post_arbitration_prompt(
 
     Args:
         actor_entities: 场内所有存活角色实体集合
-        actor_name: 本次仲裁的出牌者名称
+        current_turn_actor_name: 本回合出牌者名称（当前行动角色）
         current_round_number: 当前回合数
 
     Returns:
@@ -229,7 +229,7 @@ def _generate_stage_post_arbitration_prompt(
 
     return f"""# 第 {current_round_number} 回合 — 仲裁后场景干预
 
-**{actor_name}** 刚刚完成出牌，仲裁结算已在上下文中记录。
+**{current_turn_actor_name}** 刚刚完成出牌，仲裁结算已在上下文中记录。
 
 ## 场内存活角色当前状态
 
@@ -371,7 +371,7 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
         prompt = _generate_stage_post_arbitration_prompt(
             game=self._game,
             actor_entities=actor_entities,
-            actor_name=action.actor_name,
+            current_turn_actor_name=action.current_turn_actor_name,
             current_round_number=current_round_number,
         )
 
@@ -380,7 +380,7 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
             compressed_message = _generate_compressed_stage_post_arbitration_prompt(
                 game=self._game,
                 actor_entities=actor_entities,
-                actor_name=action.actor_name,
+                current_turn_actor_name=action.current_turn_actor_name,
                 current_round_number=current_round_number,
             )
 

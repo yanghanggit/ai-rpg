@@ -1,12 +1,7 @@
-"""仲裁后场景效果系统模块
+"""仲裁后效果系统模块
 
-在每次 ArbitrationActionSystem 完成真实仲裁结算后触发，由 combat stage 的 LLM agent
-（地牢主视角）决定是否对场内存活角色追加状态效果或塞入特殊卡牌。
-
-执行时机：
-- 监听 PostArbitrationAction.ADDED（ReactiveProcessor）
-- 由 ArbitrationActionSystem._apply_arbitration_result 在结算成功后添加到 stage entity
-- 仅在战斗进行中时触发（is_ongoing 守卫）
+每次战斗仲裁结算完成后，决定是否对场内角色施加额外效果。
+当前支持两条处理路径：Stage（场景级干预）和 Actor（角色级反应，暂为 stub）。
 """
 
 from enum import StrEnum, unique
@@ -19,6 +14,7 @@ from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
+    ActorComponent,
     RoundStatsComponent,
     Card,
     CardTargetType,
@@ -293,23 +289,19 @@ def _generate_stage_post_arbitration_prompt(
 #######################################################################################################################################
 @final
 class PostArbitrationActionSystem(ReactiveProcessor):
-    """仲裁后场景效果系统
+    """仲裁后效果系统
 
-    监听 PostArbitrationAction.ADDED，由 combat stage 的 LLM agent（地牢主视角）
-    决定是否对场内存活角色追加状态效果或塞入卡牌。
+    每次仲裁结算成功后触发，对 Stage 和 Actor 两类实体分批处理：
 
-    执行机制：
-    - 监听 PostArbitrationAction.ADDED（ReactiveProcessor）
-    - 由 ArbitrationActionSystem 在每次真实仲裁结算成功后触发
-    - 仅在战斗进行中时触发（is_ongoing 守卫）
+    - Stage：combat stage 的 LLM agent 以地牢主视角决定是否干预，
+      可追加状态效果或向角色手牌塞入卡牌。
+    - Actor（暂为 stub）：预留给角色级仲裁后反应，当前未激活。
 
-    执行条件：
-    - 战斗状态为 ONGOING（is_ongoing=True）
-    - stage entity 具有 StageComponent + DungeonComponent
+    战斗未进行中时整批跳过。
 
-    塞牌策略：
-    - APPEND（默认）：注入卡牌追加到手牌尾部
-    - RANDOM_INSERT：每张注入卡牌随机插入到原有手牌队列中
+    参数：
+        strategy: 塞牌位置策略（APPEND 追加尾部 / RANDOM_INSERT 随机插入）
+        use_compressed_prompt: 是否使用压缩提示词（默认 True）
     """
 
     def __init__(
@@ -331,10 +323,9 @@ class PostArbitrationActionSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return (
-            entity.has(PostArbitrationAction)
-            and entity.has(StageComponent)
-            and entity.has(DungeonComponent)
+        return entity.has(PostArbitrationAction) and (
+            (entity.has(StageComponent) and entity.has(DungeonComponent))
+            or entity.has(ActorComponent)
         )
 
     #######################################################################################################################################
@@ -344,8 +335,29 @@ class PostArbitrationActionSystem(ReactiveProcessor):
             logger.debug("PostArbitrationActionSystem: 战斗未进行中，跳过")
             return
 
-        for stage_entity in entities:
+        # 批次一：Stage 实体 — 地牢主视角干预（追加状态效果 / 塞牌）
+        stage_entities = [
+            e for e in entities if e.has(StageComponent) and e.has(DungeonComponent)
+        ]
+        for stage_entity in stage_entities:
             await self._process_stage(stage_entity)
+
+        # 批次二：Actor 实体 — 角色级仲裁后反应（暂未实现）
+        actor_entities = [e for e in entities if e.has(ActorComponent)]
+        for actor_entity in actor_entities:
+            await self._process_actor(actor_entity)
+
+    #######################################################################################################################################
+    async def _process_actor(self, actor_entity: Entity) -> None:
+        """Actor 路径：角色级仲裁后反应（暂未实现）
+
+        未来由 actor 自身的 LLM agent 决定是否执行仲裁后的角色反应。
+        触发点需在 ArbitrationActionSystem._apply_arbitration_result 中
+        对 actor_entity 添加 PostArbitrationAction 才会激活此路径。
+        """
+        logger.debug(
+            f"PostArbitrationActionSystem: [{actor_entity.name}] Actor 路径暂未实现，跳过"
+        )
 
     #######################################################################################################################################
     async def _process_stage(self, stage_entity: Entity) -> None:
@@ -452,11 +464,6 @@ class PostArbitrationActionSystem(ReactiveProcessor):
                 assert (
                     target_entity is not None
                 ), f"预验证阶段未发现目标角色: {directive.target}"
-                # if target_entity is None:
-                #     logger.warning(
-                #         f"[{stage_entity.name}] 找不到目标角色: {directive.target}，跳过"
-                #     )
-                #     continue
 
                 if directive.add_effects:
                     self._apply_status_effects(stage_entity, target_entity, directive)
@@ -483,11 +490,6 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         assert target_entity.has(
             StatusEffectsComponent
         ), f"目标角色 {directive.target} 缺少 StatusEffectsComponent"
-        # if not target_entity.has(StatusEffectsComponent):
-        #     logger.warning(
-        #         f"[{directive.target}] 缺少 StatusEffectsComponent，跳过状态效果追加"
-        #     )
-        #     return
 
         effects_comp = target_entity.get(StatusEffectsComponent)
         existing_effect_names = {e.name for e in effects_comp.status_effects}

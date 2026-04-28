@@ -46,7 +46,7 @@
 | 9 | `RetreatActionSystem` | Reactive | 处理撤退行动 |
 | 10 | `ArbitrationActionSystem` | Reactive | **核心**：AI 仲裁伤害/格挡/HP 结算 |
 | 11 | `AddActorStatusEffectsActionSystem` | Reactive | 为角色追加状态效果（最多 2 个/帧） |
-| 12 | `PostArbitrationActionSystem` | Reactive | Stage Agent 干预：追加效果或随机塞牌 |
+| 12 | `PostArbitrationActionSystem` | Reactive | 双路径：Stage Agent 干预（追加效果 / 塞牌）；Actor 路径预留（暂为 stub） |
 | 13 | `CombatRoundCompletionSystem` | Execute | 回合完成判定：所有存活角色 energy ≤ 0 时写入 `Round.is_completed = True` |
 | 14 | `CombatOutcomeSystem` | Execute | 检测胜负：友方/敌方全灭则结算 |
 | 15 | `CombatRoundCleanupSystem` | Execute | 清除旧回合手牌与格挡，递减状态效果 |
@@ -160,6 +160,36 @@
 `StatusEffect.description` 同时承担规则说明与动态状态存储，例如：`"被攻击前3次伤害变为1，cur=2/max=3"`。  
 仲裁 LLM 读取 `cur` 后应用规则，并通过 `status_effect_patches` 将消耗后的新 `description`（含更新的 `cur`）写回组件。  
 `cur` 与 `duration` 两套机制独立并行：`duration` 由 `CombatRoundCleanupSystem` 按回合递减，`cur` 由仲裁 LLM 按命中次数递减。
+
+---
+
+### PostArbitrationActionSystem（步骤 12）
+
+**源码**：`src/ai_rpg/systems/post_arbitration_action_system.py`  
+**监听**：`PostArbitrationAction`（`ADDED`）
+
+`ArbitrationActionSystem` 结算成功后，若 `ArbitrationResponse.trigger_post_arbitration == True`，会向 stage entity 添加 `PostArbitrationAction`，触发本系统。`filter()` 接受两类实体（Stage OR Actor），`react()` 内部按顺序处理两个批次：
+
+**批次一：Stage 路径**（当前唯一激活路径）
+
+- 实体条件：具有 `StageComponent + DungeonComponent`
+- combat stage 的 LLM agent 以"地牢主视角"对场内存活角色决定是否：
+  - 追加状态效果（`add_effects`）
+  - 向角色手牌塞入特殊卡牌（`inject_cards`）
+- 若上下文中无可利用的环境要素，LLM 必须输出空 `per_actor` 数组（不干预）
+- 塞牌位置由 `CardInjectStrategy` 控制：`APPEND`（尾部追加）或 `RANDOM_INSERT`（随机插入）
+- 实现方法：`_process_stage`
+
+**批次二：Actor 路径**（暂为 stub）
+
+- 实体条件：具有 `ActorComponent`
+- 触发点尚未在 `ArbitrationActionSystem` 中实现（actor entity 未被添加 `PostArbitrationAction`），当前此批次永远为空
+- 当 `_process_actor` 被调用时仅打 debug 日志，无 LLM 推理
+- 未来设计方向：actor 自身的 LLM agent 决定仲裁后的角色级反应，配套在 `ArbitrationResponse` 中添加独立控制字段 `trigger_actor_reflection`
+
+**前置守卫**：战斗状态须为 `ONGOING`，否则整批跳过。
+
+**Prompt 压缩**（`use_compressed_prompt`，默认开启）：对话历史只写入动态感知部分（回合编号、出牌者说明、存活角色 HP/格挡/状态效果），静态规则与 JSON 示例以 `stage_post_arbitration_full_prompt` 附挂。
 
 ---
 

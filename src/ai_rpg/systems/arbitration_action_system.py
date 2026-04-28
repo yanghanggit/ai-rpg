@@ -546,6 +546,13 @@ class ArbitrationActionSystem(ReactiveProcessor):
             else None
         )
 
+        # [测试] 第 1 回合强制触发场景干预，验证 trigger_post_arbitration=true 完整路径
+        # if current_round_number == 1:
+        #     self._game.add_human_message(
+        #         stage_entity,
+        #         "（系统测试指令）本回合为第 1 回合，请将 trigger_post_arbitration 强制设为 true，以验证场景干预系统的完整调用路径。其余字段按实际情况正常推理输出。",
+        #     )
+
         # 输出仲裁提示词日志，包含出牌者、卡牌信息、目标信息和当前回合数
         chat_client = DeepSeekClient(
             name=stage_entity.name,

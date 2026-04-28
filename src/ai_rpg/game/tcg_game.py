@@ -25,7 +25,7 @@ from ..models import (
     StageType,
     ActorType,
     StatusEffectsComponent,
-    ArchetypeComponent,
+    KeywordComponent,
     CharacterStats,
     CharacterStatsComponent,
     EquipmentComponent,
@@ -115,7 +115,7 @@ class TCGGame(RPGGame):
         """
         super().build_from_blueprint()
         self._mount_actor_deck_components()
-        self._mount_actor_archetype_components()
+        self._mount_actor_keyword_components()
         return self
 
     #######################################################################################################################################
@@ -153,7 +153,7 @@ class TCGGame(RPGGame):
 
         # 为新创建的怪物实体补充 DrawDeckComponent / DiscardDeckComponent
         self._mount_actor_deck_components()
-        self._mount_actor_archetype_components()
+        self._mount_actor_keyword_components()
 
         # 创建地下城的场景
         self._create_stage_entities([room.stage for room in dungeon_model.rooms])
@@ -238,26 +238,26 @@ class TCGGame(RPGGame):
                 logger.debug(f"为 Actor 实体 {entity.name} 添加空 DiscardDeckComponent")
 
     #######################################################################################################################################
-    def _mount_actor_archetype_components(self) -> None:
-        """为所有缺少 ArchetypeComponent 的 Actor 实体挂载原型约束"""
+    def _mount_actor_keyword_components(self) -> None:
+        """为所有缺少 KeywordComponent 的 Actor 实体挂载关键词约束"""
 
         all_actor_models = {
             a.name: a for a in self._world.blueprint.actors + self._world.dungeon.actors
         }
 
-        # 为每个 Actor 实体挂载 ArchetypeComponent，内容来自 Actor 模型的 archetypes 字段
+        # 为每个 Actor 实体挂载 KeywordComponent，内容来自 Actor 模型的 keywords 字段
         for entity in self.get_group(Matcher(ActorComponent)).entities:
-            if entity.has(ArchetypeComponent):
+            if entity.has(KeywordComponent):
                 continue
 
-            # 从蓝图中找到对应的 Actor 模型，获取其 archetypes 数据
+            # 从蓝图中找到对应的 Actor 模型，获取其 keywords 数据
             actor_model = all_actor_models.get(entity.name)
             assert actor_model is not None, f"找不到 Actor model: {entity.name}"
 
-            # 添加 ArchetypeComponent，内容来自 Actor 模型的 archetypes 字段
-            entity.replace(ArchetypeComponent, entity.name, actor_model.archetypes)
+            # 添加 KeywordComponent，内容来自 Actor 模型的 keywords 字段
+            entity.replace(KeywordComponent, entity.name, actor_model.keywords.copy())
             logger.debug(
-                f"为 Actor 实体 {entity.name} 挂载 ArchetypeComponent ({len(actor_model.archetypes)} 条原型)"
+                f"为 Actor 实体 {entity.name} 挂载 KeywordComponent ({len(actor_model.keywords)} 条关键词)"
             )
 
     ###############################################################################################################################################

@@ -12,7 +12,7 @@ from ..entitas.components import Component, MutableComponent
 from .combat import Card, StatusEffect
 from .entities import (
     AnyItem,
-    Archetype,
+    Keyword,
     CharacterStats,
 )
 from .registry import register_component_type
@@ -526,16 +526,16 @@ class DiscardDeckComponent(MutableComponent):
 ############################################################################################################
 @final
 @register_component_type
-class ArchetypeComponent(Component):
-    """卡牌原型约束组件
+class KeywordComponent(Component):
+    """卡牌关键词约束组件
 
-    存储角色的卡牌生成原型约束，在战斗中指导 LLM 按特定风格生成手牌。
-    数据来源于 Actor.archetypes，在实体创建时挂载，运行时不可变。
+    存储角色的卡牌生成关键词约束，在战斗中指导 LLM 按特定风格生成手牌。
+    数据来源于 Actor.keywords，在实体创建时挂载，运行时不可变。
 
     Attributes:
         name: 角色名称
-        archetypes: 原型约束列表
+        keywords: 关键词约束列表
     """
 
     name: str
-    archetypes: List[Archetype]
+    keywords: List[Keyword]

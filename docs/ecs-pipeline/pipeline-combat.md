@@ -84,27 +84,27 @@
 **源码**：`src/ai_rpg/systems/draw_cards_action_system.py`  
 **监听**：`DrawCardsAction`（`max_num_cards=3`）
 
-**抽牌策略**（历史牌优先 + 保证新鲜度 + Archetype 约束 + 骰值注入 + Prompt 压缩）：
+**抄牌策略**（历史牌优先 + 保证新鲜度 + Keyword 约束 + 骨値注入 + Prompt 压缩）：
 
-- 从 `DrawDeckComponent`（可重抽历史牌池）取最多 `max_num_cards - 1` 张（FIFO 消耗）
+- 从 `DrawDeckComponent`（可重抄历史牌池）取最多 `max_num_cards - 1` 张（FIFO 消耗）
 - 出牌时，仅 `card.source == actor_name` 的卡牌归入 `DiscardDeckComponent`（用于统计与展示）；`source` 不匹配的外来牌（含 Stage 塞入牌）直接丢弃，不归档
 - 至少 1 张由 LLM 实时生成，结合角色当前属性（HP/攻击/防御）和状态效果
-- 从 `ArchetypeComponent` 随机采样 `num_cards` 个原型约束，逐张注入 prompt（详见下方）
+- 从 `KeywordComponent` 随机采样 `num_cards` 个关键词约束，逐张注入 prompt（详见下方）
 - 每回合为每张牌生成一个 `DiceValue.MIN`～`DiceValue.MAX`（0-100）的随机整数（骰值），逐张附加在约束行末尾
 - 两部分合并为最终手牌写入 `HandComponent`
 
 每张牌包含：`name` / `description` / `damage_dealt` / `block_gain` / `hit_count` / `target_type` / `status_effect_hint`
 
-**Archetype 原型约束 + 骰值机制**：
+**Keyword 关键词约束 + 骨値机制**：
 
-每个角色携带 `ArchetypeComponent`（来自蓝图数据 `Actor.archetypes`），定义若干自然语言约束规则。  
-抽牌时系统随机采样 `num_cards` 个原型（池够时无放回，不够时有放回），并同步生成等数量的骰值，在 prompt 中按位置逐张声明。骰值以 `（骰值：N）` 形式附于各卡约束行末，同时 prompt header 中包含兜底说明：若 `Archetype.description` 未说明骰值用法，LLM 应忽略该数字。
+每个角色携带 `KeywordComponent`（来自蔗图数据 `Actor.keywords`），定义若干自然语言约束规则。  
+抄牌时系统随机采样 `num_cards` 个关键词（池够时无放回，不够时有放回），并同步生成等数量的骨値，在 prompt 中按位置逐张声明。骨値以 `（骨値：N）` 形式附于各卡约束行末，同时 prompt header 中包含匆底说明：若 `Keyword.description` 未说明骨値用法，LLM 应忽略该数字。
 
-当 `archetypes` 为空时，退回通用"差异化设计原则"提示（不附骰值），与改动前行为一致（向后兼容）。
+当 `keywords` 为空时，退回通用“差异化设计原则”提示（不附骨値），与改动前行为一致（向后兼容）。
 
-详细设计：[[archetype-system]]
+详细设计：[[keyword-system]]
 
-**Prompt 压缩**（`use_compressed_prompt`，默认开启）：对话历史只写入每轮变化的动态感知部分（回合编号、角色属性、Draw 状态效果、原型约束与骰值），静态的字段说明与 JSON 格式示例以 `draw_cards_full_prompt` 附挂在消息额外字段中保留，LLM 推理仍使用全量版。
+**Prompt 压缩**（`use_compressed_prompt`，默认开启）：对话历史只写入每轮变化的动态感知部分（回合编号、角色属性、Draw 状态效果、关键词约束与骰值），静态的字段说明与 JSON 格式示例以 `draw_cards_full_prompt` 附挂在消息额外字段中保留，LLM 推理仍使用全量版。
 
 参见 [[design-patterns#4. 并行 LLM 推理]]
 

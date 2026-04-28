@@ -12,7 +12,7 @@ from .server_client import (
     fetch_stages_state,
 )
 from .utils import display_name
-from ..models import ArchetypeComponent, DrawDeckComponent, DiscardDeckComponent
+from ..models import KeywordComponent, DrawDeckComponent, DiscardDeckComponent
 
 _TARGET_LABEL = {
     "enemy_single": "[red]敌方单体[/]",
@@ -174,18 +174,18 @@ class DeckDetailScreen(Screen[None]):
                 else:
                     log.write("    [dim]（尚无记录）[/]")
 
-                # 3) Archetype 原型约束
-                archetype_raw = next(
-                    (c for c in entity.components if c.name == "ArchetypeComponent"),
+                # 3) Keyword 关键词约束
+                keyword_raw = next(
+                    (c for c in entity.components if c.name == "KeywordComponent"),
                     None,
                 )
-                if archetype_raw is not None:
-                    archetype_comp = ArchetypeComponent(**archetype_raw.data)
-                    if archetype_comp.archetypes:
+                if keyword_raw is not None:
+                    keyword_comp = KeywordComponent(**keyword_raw.data)
+                    if keyword_comp.keywords:
                         log.write("")
-                        for j, arch in enumerate(archetype_comp.archetypes, start=1):
+                        for j, kw in enumerate(keyword_comp.keywords, start=1):
                             log.write(
-                                f"  [bold magenta]原型 {j}：[/][dim]{arch.description}[/]"
+                                f"  [bold magenta]关键词 {j}：[/][dim]{kw.description}[/]"
                             )
 
                 log.write("")

@@ -14,7 +14,7 @@ from typing import List
 
 from ..models import (
     Actor,
-    Archetype,
+    Keyword,
     CharacterSheet,
     CharacterStats,
     Stage,
@@ -30,13 +30,13 @@ def create_actor(
     character_stats: CharacterStats,
     campaign_setting: str,
     system_rules: str,
-    archetypes: List[Archetype] = [],
+    keywords: List[Keyword] = [],
 ) -> Actor:
     """
     创建一个游戏角色(Actor)实例。
 
     该函数初始化一个Actor对象，设置其角色表单、属性、系统消息等。
-    角色的生命值会被自动设置为最大生命值。
+    角色的生命値会被自动设置为最大生命値。
 
     Args:
         name: 角色名称
@@ -44,7 +44,7 @@ def create_actor(
         character_stats: 角色属性统计(CharacterStats对象)
         campaign_setting: 战役设定描述
         system_rules: 全局游戏机制规则
-        archetypes: 卡牌原型约束列表，限制 LLM 生成卡牌的风格与功能边界，默认无约束
+        keywords: 卡牌关键词约束列表，限制 LLM 生成卡牌的风格与功能边界，默认无约束
 
     Returns:
         Actor: 初始化完成的Actor实例，生命值已满
@@ -58,7 +58,7 @@ def create_actor(
         character_sheet=character_sheet,
         system_message="",
         character_stats=character_stats,
-        archetypes=archetypes,
+        keywords=keywords,
     )
 
     # 血量加满!!!!

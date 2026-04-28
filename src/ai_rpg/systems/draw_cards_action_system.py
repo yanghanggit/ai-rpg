@@ -24,8 +24,8 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     ActorComponent,
-    Archetype,
-    ArchetypeComponent,
+    Keyword,
+    KeywordComponent,
     DiceValue,
     DrawDeckComponent,
     DrawCardsAction,
@@ -67,41 +67,41 @@ class DrawCardsResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _sample_archetypes(archetypes: List[Archetype], k: int) -> List[Archetype]:
-    """从原型池中采样 k 个原型，优先不重复，池不足时降级为有放回采样。"""
-    if not archetypes:
+def _sample_keywords(keywords: List[Keyword], k: int) -> List[Keyword]:
+    """从关键词池中采样 k 个关键词，优先不重复，池不足时降级为有放回采样。"""
+    if not keywords:
         return []
-    if len(archetypes) >= k:
-        return random.sample(archetypes, k=k)
-    return random.choices(archetypes, k=k)
+    if len(keywords) >= k:
+        return random.sample(keywords, k=k)
+    return random.choices(keywords, k=k)
 
 
 #######################################################################################################################################
 def _build_design_principle_prompt(
     num_cards: int,
-    archetypes: List[Archetype],
+    keywords: List[Keyword],
     dice_rolls: List[int] = [],
 ) -> str:
-    """生成原型约束段落：去重后输出，无约束时输出差异化指引。
+    """生成关键词约束段落：去重后输出，无约束时输出差异化指引。
 
     当 dice_rolls 非空时，在每张牌的约束行末尾附加骰值。
-    骰值的实际含义由各 Archetype.description 自行声明；若 description 未提及骰值用法，
+    骰值的实际含义由各 Keyword.description 自行声明；若 description 未提及骰值用法，
     则 LLM 应忽略该数字，段落 header 中会注明这一兜底规则。
     """
-    if not archetypes:
+    if not keywords:
         return (
-            f"原型约束：无（{num_cards}张卡牌应有差异化，如高伤低防/高防低伤/均衡型）"
+            f"关键词约束：无（{num_cards}张卡牌应有差异化，如高伤低防/高防低伤/均衡型）"
         )
-    use_dice = len(dice_rolls) == len(archetypes)
+    use_dice = len(dice_rolls) == len(keywords)
     header = (
-        "原型约束（按顺序对应；骰值仅在约束中明确说明用法时生效，否则忽略）："
+        "关键词约束（按顺序对应；骰值仅在约束中明确说明用法时生效，否则忽略）："
         if use_dice
-        else "原型约束（按顺序对应）："
+        else "关键词约束（按顺序对应）："
     )
     lines = "\n".join(
-        f"  - 卡牌{i + 1}：{archetypes[i].description}"
+        f"  - 卡牌{i + 1}：{keywords[i].description}"
         + (f"（骰值：{dice_rolls[i]}）" if use_dice else "")
-        for i in range(len(archetypes))
+        for i in range(len(keywords))
     )
     return f"{header}\n{lines}"
 
@@ -112,19 +112,19 @@ def _generate_draw_prompt(
     current_round_number: int,
     num_cards: int,
     draw_status_effects: List[StatusEffect],
-    archetypes: List[Archetype] = [],
+    keywords: List[Keyword] = [],
     dice_rolls: List[int] = [],
 ) -> str:
-    """生成"一次生成 num_cards 张 Card"的提示词。
+    """生成“一次生成 num_cards 张 Card”的提示词。
 
     Args:
         actor_stats: 角色当前属性（hp/max_hp/attack/defense）
         current_round_number: 当前回合数
         num_cards: 要求生成的卡牌数量
-        draw_status_effects: 当前 draw 阶段的状态效果列表，影响卡牌数值生成
-        archetypes: 与 num_cards 等长的原型约束列表，每个元素对应一张卡的生成约束；为空则无约束
-        dice_rolls: 与 num_cards 等长的骰值列表（0-100 随机整数），每个元素对应一张牌的骰值；
-                    仅当 Archetype.description 明确说明用法时生效，否则 LLM 忽略
+        draw_status_effects: 当前 draw 阶段的状态效果列表，影响卡牌数値生成
+        keywords: 与 num_cards 等长的关键词约束列表，每个元素对应一张卡的生成约束；为空则无约束
+        dice_rolls: 与 num_cards 等长的骨値列表（0-100 随机整数），每个元素对应一张牌的骨値；
+                    仅当 Keyword.description 明确说明用法时生效，否则 LLM 忽略
 
     Returns:
         格式化的完整提示词
@@ -145,7 +145,7 @@ def _generate_draw_prompt(
         draw_effects_prompt = ""
 
     stats_line = f"属性：HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
-    archetype_line = _build_design_principle_prompt(num_cards, archetypes, dice_rolls)
+    keyword_line = _build_design_principle_prompt(num_cards, keywords, dice_rolls)
     fields_line = (
         "字段说明：\n"
         "- name：富有想象力，体现行动意图\n"
@@ -167,8 +167,8 @@ def _generate_draw_prompt(
     if draw_effects_prompt:
         sections.append(draw_effects_prompt)
 
-    # 原型约束段落无论是否有内容都输出，以明确格式与位置；当 archetypes 为空时会输出差异化指引
-    sections.append(archetype_line)
+    # 关键词约束段落无论是否有内容都输出，以明确格式与位置；当 keywords 为空时会输出差异化指引
+    sections.append(keyword_line)
 
     # 字段说明与示例始终输出，明确格式要求
     sections.append(fields_line)
@@ -188,12 +188,12 @@ def _generate_compressed_draw_prompt(
     current_round_number: int,
     num_cards: int,
     draw_status_effects: List[StatusEffect],
-    archetypes: List[Archetype] = [],
+    keywords: List[Keyword] = [],
     dice_rolls: List[int] = [],
 ) -> str:
-    """生成"一次生成 num_cards 张 Card"的压缩版提示词。
+    """生成“一次生成 num_cards 张 Card”的压缩版提示词。
 
-    仅包含每轮变化的动态感知部分（回合/属性/状态效果/原型约束），
+    仅包含每轮变化的动态感知部分（回合/属性/状态效果/关键词约束），
     省略静态的字段说明与 JSON 格式示例，用于写入对话历史以减少重复 token 消耗。
 
     Args:
@@ -201,7 +201,7 @@ def _generate_compressed_draw_prompt(
         current_round_number: 当前回合数
         num_cards: 要求生成的卡牌数量
         draw_status_effects: 当前 draw 阶段的状态效果列表
-        archetypes: 与 num_cards 等长的原型约束列表
+        keywords: 与 num_cards 等长的关键词约束列表
         dice_rolls: 与 num_cards 等长的骰值列表
 
     Returns:
@@ -223,14 +223,14 @@ def _generate_compressed_draw_prompt(
         draw_effects_prompt = ""
 
     stats_line = f"属性：HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
-    archetype_line = _build_design_principle_prompt(num_cards, archetypes, dice_rolls)
+    keyword_line = _build_design_principle_prompt(num_cards, keywords, dice_rolls)
 
     sections = [stats_line]
 
     if draw_effects_prompt:
         sections.append(draw_effects_prompt)
 
-    sections.append(archetype_line)
+    sections.append(keyword_line)
 
     return (
         f"# 第 {current_round_number} 回合：生成 {num_cards} 张手牌\n\n"
@@ -276,7 +276,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         return (
             entity.has(DrawCardsAction)
             and entity.has(ActorComponent)
-            and entity.has(ArchetypeComponent)
+            and entity.has(KeywordComponent)
             and entity.has(DrawDeckComponent)
             and entity.has(CharacterStatsComponent)
             and not entity.has(DeathComponent)
@@ -378,7 +378,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
     ) -> DeepSeekClient:
         """为单个角色创建"生成 num_cards 张 Card"的聊天客户端。
 
-        从实体的 ArchetypeComponent 随机采样 num_cards 个原型（优先不重复），
+        从实体的 KeywordComponent 随机采样 num_cards 个关键词（优先不重复），
         注入 prompt 以约束每张卡牌的生成风格。
 
         Args:
@@ -407,17 +407,15 @@ class DrawCardsActionSystem(ReactiveProcessor):
             if e.phase == StatusEffectPhase.DRAW
         ]
 
-        # 从 ArchetypeComponent 随机采样，每张牌对应一个原型约束
-        assert entity.has(
-            ArchetypeComponent
-        ), f"实体 {entity.name} 缺少 ArchetypeComponent"
-        archetype_comp = entity.get(ArchetypeComponent)
-        sampled_archetypes = _sample_archetypes(
-            archetype_comp.archetypes if archetype_comp is not None else [],
+        # 从 KeywordComponent 随机采样，每张牌对应一个关键词约束
+        assert entity.has(KeywordComponent), f"实体 {entity.name} 缺少 KeywordComponent"
+        keyword_comp = entity.get(KeywordComponent)
+        sampled_keywords = _sample_keywords(
+            keyword_comp.keywords if keyword_comp is not None else [],
             k=num_cards,
         )
         logger.debug(
-            f"[{entity.name}] 采样原型: {[a.description[:20] for a in sampled_archetypes]}"
+            f"[{entity.name}] 采样关键词: {[a.description[:20] for a in sampled_keywords]}"
         )
 
         dice_rolls = [
@@ -430,7 +428,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             current_round_number=current_round_number,
             num_cards=num_cards,
             draw_status_effects=draw_effects,
-            archetypes=sampled_archetypes,
+            keywords=sampled_keywords,
             dice_rolls=dice_rolls,
         )
 
@@ -440,7 +438,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 current_round_number=current_round_number,
                 num_cards=num_cards,
                 draw_status_effects=draw_effects,
-                archetypes=sampled_archetypes,
+                keywords=sampled_keywords,
                 dice_rolls=dice_rolls,
             )
             if self._use_compressed_prompt

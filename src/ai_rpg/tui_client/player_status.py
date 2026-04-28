@@ -13,7 +13,7 @@ from ..models import (
     InventoryComponent,
     PlayerComponent,
     ExpeditionRosterComponent,
-    ArchetypeComponent,
+    KeywordComponent,
     DrawDeckComponent,
     DiscardDeckComponent,
     AnyItem,
@@ -61,7 +61,7 @@ _COMPONENT_ORDER: list[str] = [
     EquipmentComponent.__name__,
     InventoryComponent.__name__,
     AppearanceComponent.__name__,
-    ArchetypeComponent.__name__,
+    KeywordComponent.__name__,
     DrawDeckComponent.__name__,
     DiscardDeckComponent.__name__,
 ]
@@ -156,13 +156,13 @@ def _render_component(name: str, data: Dict[str, Any], context: Dict[str, Any]) 
             for item in ic.items:
                 lines.append(_render_item(item, equipped))
 
-    elif name == ArchetypeComponent.__name__:
-        arc_comp = ArchetypeComponent(**data)
-        if not arc_comp.archetypes:
-            lines.append("    [dim]（暂无原型约束）[/]")
+    elif name == KeywordComponent.__name__:
+        keyword_comp = KeywordComponent(**data)
+        if not keyword_comp.keywords:
+            lines.append("    [dim]（暂无关键词约束）[/]")
         else:
-            for i, archetype in enumerate(arc_comp.archetypes, 1):
-                lines.append(f"    [dim]{i}.[/] {archetype.description}")
+            for i, kw in enumerate(keyword_comp.keywords, 1):
+                lines.append(f"    [dim]{i}.[/] {kw.description}")
 
     elif name == DrawDeckComponent.__name__:
         ddc = DrawDeckComponent(**data)

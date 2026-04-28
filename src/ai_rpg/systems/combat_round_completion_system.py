@@ -7,7 +7,7 @@
 
 设计说明：
 - energy-based 判断反映运行时真实剩余行动数，比结构性计数（completed_actors/action_order）更准确
-- 位于 StagePostArbitrationActionSystem 之后，确保本轮所有 energy 消耗已结算
+- 位于 PostArbitrationActionSystem 之后，确保本轮所有 energy 消耗已结算
 - 位于 CombatOutcomeSystem 之前，使战斗结果检查能感知到回合完成状态
 - init round（actor_order_snapshots=[]）跳过判断，维持初始化阶段行为
 """
@@ -29,7 +29,7 @@ class CombatRoundCompletionSystem(ExecuteProcessor):
     将最新回合的 is_completed 置为 True。
 
     执行时机：
-    - StagePostArbitrationActionSystem 之后（所有出牌 energy 消耗已结算）
+    - PostArbitrationActionSystem 之后（所有出牌 energy 消耗已结算）
     - CombatOutcomeSystem 之前（战斗结果检查依赖 is_completed 状态）
     """
 

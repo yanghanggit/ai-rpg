@@ -46,7 +46,7 @@
 | 9 | `RetreatActionSystem` | Reactive | 处理撤退行动 |
 | 10 | `ArbitrationActionSystem` | Reactive | **核心**：AI 仲裁伤害/格挡/HP 结算 |
 | 11 | `AddActorStatusEffectsActionSystem` | Reactive | 为角色追加状态效果（最多 2 个/帧） |
-| 12 | `StagePostArbitrationActionSystem` | Reactive | Stage Agent 干预：追加效果或随机塞牌 |
+| 12 | `PostArbitrationActionSystem` | Reactive | Stage Agent 干预：追加效果或随机塞牌 |
 | 13 | `CombatRoundCompletionSystem` | Execute | 回合完成判定：所有存活角色 energy ≤ 0 时写入 `Round.is_completed = True` |
 | 14 | `CombatOutcomeSystem` | Execute | 检测胜负：友方/敌方全灭则结算 |
 | 15 | `CombatRoundCleanupSystem` | Execute | 清除旧回合手牌与格挡，递减状态效果 |
@@ -174,7 +174,7 @@
 
 设计要点：
 - 基于 **energy** 判断，反映运行时真实剩余行动数，比结构性计数更准确
-- 位于 `StagePostArbitrationActionSystem` 之后，所有 energy 消耗已结算
+- 位于 `PostArbitrationActionSystem` 之后，所有 energy 消耗已结算
 - 位于 `CombatOutcomeSystem` 之前，使胜负检查能感知到回合完成状态
 
 ---

@@ -4,7 +4,7 @@
 （地牢主视角）决定是否对场内存活角色追加状态效果或塞入特殊卡牌。
 
 执行时机：
-- 监听 StagePostArbitrationAction.ADDED（ReactiveProcessor）
+- 监听 PostArbitrationAction.ADDED（ReactiveProcessor）
 - 由 ArbitrationActionSystem._apply_arbitration_result 在结算成功后添加到 stage entity
 - 仅在战斗进行中时触发（is_ongoing 守卫）
 """
@@ -26,7 +26,7 @@ from ..models import (
     DungeonComponent,
     HandComponent,
     StageComponent,
-    StagePostArbitrationAction,
+    PostArbitrationAction,
     StatusEffect,
     StatusEffectPhase,
     StatusEffectsComponent,
@@ -292,14 +292,14 @@ def _generate_stage_post_arbitration_prompt(
 
 #######################################################################################################################################
 @final
-class StagePostArbitrationActionSystem(ReactiveProcessor):
+class PostArbitrationActionSystem(ReactiveProcessor):
     """仲裁后场景效果系统
 
-    监听 StagePostArbitrationAction.ADDED，由 combat stage 的 LLM agent（地牢主视角）
+    监听 PostArbitrationAction.ADDED，由 combat stage 的 LLM agent（地牢主视角）
     决定是否对场内存活角色追加状态效果或塞入卡牌。
 
     执行机制：
-    - 监听 StagePostArbitrationAction.ADDED（ReactiveProcessor）
+    - 监听 PostArbitrationAction.ADDED（ReactiveProcessor）
     - 由 ArbitrationActionSystem 在每次真实仲裁结算成功后触发
     - 仅在战斗进行中时触发（is_ongoing 守卫）
 
@@ -326,13 +326,13 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(StagePostArbitrationAction): GroupEvent.ADDED}
+        return {Matcher(PostArbitrationAction): GroupEvent.ADDED}
 
     #######################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
         return (
-            entity.has(StagePostArbitrationAction)
+            entity.has(PostArbitrationAction)
             and entity.has(StageComponent)
             and entity.has(DungeonComponent)
         )
@@ -341,7 +341,7 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
     @override
     async def react(self, entities: list[Entity]) -> None:
         if not self._game.current_dungeon.is_ongoing:
-            logger.debug("StagePostArbitrationActionSystem: 战斗未进行中，跳过")
+            logger.debug("PostArbitrationActionSystem: 战斗未进行中，跳过")
             return
 
         for stage_entity in entities:
@@ -351,19 +351,19 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
     async def _process_stage(self, stage_entity: Entity) -> None:
         """为单个 stage entity 执行仲裁后场景干预逻辑"""
 
-        action = stage_entity.get(StagePostArbitrationAction)
+        action = stage_entity.get(PostArbitrationAction)
         assert (
             action is not None
-        ), "StagePostArbitrationActionSystem: 无法获取 StagePostArbitrationAction 组件！"
+        ), "PostArbitrationActionSystem: 无法获取 PostArbitrationAction 组件！"
 
         player_entity = self._game.get_player_entity()
         assert (
             player_entity is not None
-        ), "StagePostArbitrationActionSystem: 无法找到玩家实体！"
+        ), "PostArbitrationActionSystem: 无法找到玩家实体！"
 
         actor_entities = self._game.get_alive_actors_in_stage(player_entity)
         if not actor_entities:
-            logger.debug("StagePostArbitrationActionSystem: 无存活角色，跳过")
+            logger.debug("PostArbitrationActionSystem: 无存活角色，跳过")
             return
 
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
@@ -392,7 +392,7 @@ class StagePostArbitrationActionSystem(ReactiveProcessor):
         )
 
         logger.debug(
-            f"StagePostArbitrationActionSystem: [{stage_entity.name}] 进行仲裁后干预评估"
+            f"PostArbitrationActionSystem: [{stage_entity.name}] 进行仲裁后干预评估"
         )
         await DeepSeekClient.batch_chat(clients=[chat_client])
 

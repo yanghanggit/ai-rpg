@@ -280,11 +280,11 @@ class IllustrateDungeonAction(Component):
 @final
 @register_action_component_type
 @register_component_type
-class StagePostArbitrationAction(Component):
+class PostArbitrationAction(Component):
     """仲裁后场景效果动作组件
 
     由 ArbitrationActionSystem 在每次真实仲裁结算成功后添加到 stage entity，
-    触发 StagePostArbitrationActionSystem 以 stage agent（地牢主视角）决定
+    触发 PostArbitrationActionSystem 以 stage agent（地牢主视角）决定
     是否向场内参战角色追加状态效果或塞入卡牌。
     动作组件由 ActionCleanupSystem 自动清除，无需手动移除。
 

@@ -29,7 +29,7 @@ from ..models import (
     StatusEffectsComponent,
     StatusEffect,
     StatusEffectPhase,
-    StagePostArbitrationAction,
+    PostArbitrationAction,
     AddStatusEffectsAction,
 )
 from ..utils import extract_json_from_code_block
@@ -609,7 +609,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
 
         解析 combat_log / final_stats / narrative；更新所有受影响实体的 HP、格挡与
         状态效果 description；广播仲裁事件；触发 AddStatusEffectsAction 与
-        StagePostArbitrationAction；将日志追加到当前回合记录。
+        PostArbitrationAction；将日志追加到当前回合记录。
         解析或校验失败时仅记录 error 日志，不抛出异常。
         """
         try:
@@ -739,13 +739,13 @@ class ArbitrationActionSystem(ReactiveProcessor):
             latest_round.combat_log.append(format_response.combat_log)
             latest_round.narrative.append(format_response.narrative)
 
-            # 仲裁结算成功后，仅当 LLM 判断存在场景干预必要性时触发 StagePostArbitrationActionSystem
+            # 仲裁结算成功后，仅当 LLM 判断存在场景干预必要性时触发 PostArbitrationActionSystem
             if format_response.trigger_post_arbitration:
                 logger.debug(
-                    f"仲裁结果 trigger_post_arbitration=True，触发 StagePostArbitrationAction"
+                    f"仲裁结果 trigger_post_arbitration=True，触发 PostArbitrationAction"
                 )
                 stage_entity.replace(
-                    StagePostArbitrationAction, stage_entity.name, actor_entity.name
+                    PostArbitrationAction, stage_entity.name, actor_entity.name
                 )
 
         except Exception as e:

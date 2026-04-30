@@ -295,4 +295,4 @@ class KeywordComponent(Component):
 class AffixSealedComponent(Component):
     """卡牌词条：封印。带有此词条的卡牌不可被出牌，也不可被弃牌。"""
 
-    description: str = "不可被出牌，也不可被弃牌"
+    description: str

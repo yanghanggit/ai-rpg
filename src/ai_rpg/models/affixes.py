@@ -13,7 +13,7 @@ from .components import AffixSealedComponent
 ###############################################################################################################################################
 AFFIX_SEALED: Final[ComponentSerialization] = ComponentSerialization(
     name=AffixSealedComponent.__name__,
-    data=AffixSealedComponent().model_dump(),
+    data=AffixSealedComponent(description="不可被出牌，也不可被弃牌").model_dump(),
 )
 
 

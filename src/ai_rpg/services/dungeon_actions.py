@@ -20,6 +20,7 @@ from ..models import (
     RetreatAction,
     Card,
     CardTargetType,
+    AFFIX_SEALED,
 )
 from ..entitas import Entity, Matcher
 
@@ -246,6 +247,11 @@ def activate_play_cards_specified(
         logger.error(msg)
         return False, msg
 
+    if AFFIX_SEALED in selected_card.affixes:
+        msg = f"卡牌「{card_name}」带有词条「{AFFIX_SEALED}」，不可出牌"
+        logger.warning(msg)
+        return False, msg
+
     resolved_targets, resolve_err = _resolve_targets(
         selected_card, entity, targets, tcg_game
     )
@@ -298,6 +304,11 @@ def activate_discard_cards_specified(
     if selected_card is None:
         msg = f"角色 {actor_name} 手牌中找不到卡牌 '{card_name}'，当前手牌: {[c.name for c in hand_comp.cards]}"
         logger.error(msg)
+        return False, msg
+
+    if AFFIX_SEALED in selected_card.affixes:
+        msg = f"卡牌「{card_name}」带有词条「{AFFIX_SEALED}」，不可弃牌"
+        logger.warning(msg)
         return False, msg
 
     logger.debug(f"为角色 {actor_name} 激活弃牌动作，卡牌: {selected_card.name}")

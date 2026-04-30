@@ -34,6 +34,7 @@ from ..models import (
     StatusEffectPhase,
     ExpeditionMemberComponent,
     EnemyComponent,
+    AFFIX_SEALED,
 )
 from ..utils import extract_json_from_code_block
 
@@ -328,6 +329,33 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 chat_client,
                 num_cards=entity_generate_counts[found_entity.name],
                 deck_cards=entity_deck_cards[found_entity.name],
+            )
+
+        # TODO(mock): 第一回合随机给远征队员一张手牌添加「封印」词条，验证封印逻辑
+        self._mock_seal_one_card_first_round(entities, current_round_number)
+
+    #######################################################################################################################################
+    def _mock_seal_one_card_first_round(
+        self, entities: list[Entity], current_round_number: int
+    ) -> None:
+        """[mock] 第一回合随机给每个远征队员一张手牌添加「封印」词条，用于验证封印逻辑。移除封印 mock 时注释掉调用方那一行即可。"""
+        if current_round_number != 1:
+            return
+        for entity in entities:
+            if not entity.has(ExpeditionMemberComponent):
+                continue
+            hand_comp = entity.get(HandComponent)
+            if not hand_comp or not hand_comp.cards:
+                continue
+            target_idx = random.randrange(len(hand_comp.cards))
+            cards = list(hand_comp.cards)
+            sealed_card = cards[target_idx].model_copy(
+                update={"affixes": list(cards[target_idx].affixes) + [AFFIX_SEALED]}
+            )
+            cards[target_idx] = sealed_card
+            entity.replace(HandComponent, entity.name, cards, current_round_number)
+            logger.debug(
+                f"[mock] [{entity.name}] 第一回合：手牌「{sealed_card.name}」添加词条「{AFFIX_SEALED}」"
             )
 
     #######################################################################################################################################

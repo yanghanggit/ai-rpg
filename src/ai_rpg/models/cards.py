@@ -6,7 +6,8 @@ StatusEffectPhase、StatusEffect、CardTargetType、Card。
 
 from enum import StrEnum, unique
 from typing import Final, List, final
-from pydantic import BaseModel
+from uuid import uuid4
+from pydantic import BaseModel, Field
 
 
 ###############################################################################################################################################
@@ -44,6 +45,7 @@ class StatusEffect(BaseModel):
     duration: int = 3  # 持续回合数；-1=永久，>0=剩余回合
     phase: StatusEffectPhase = StatusEffectPhase.ARBITRATION  # 生效阶段，默认仲裁阶段
     source: str = ""  # 效果施加者名称；空字符串表示来源未知
+    uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
 
 
 ###############################################################################################################################################
@@ -99,6 +101,7 @@ class Card(BaseModel):
         CardTargetType.ENEMY_SINGLE
     )  # 出牌目标类型，决定目标约束策略
     source: str = ""  # 卡牌来源（生成/注入者名称）；空字符串表示来源未知
+    uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
 
 
 ###############################################################################################################################################

@@ -1,5 +1,6 @@
 from enum import IntEnum, StrEnum, unique
 from typing import Annotated, List, Literal, Union, final
+from uuid import uuid4
 from pydantic import BaseModel, Field
 from .serialization import ComponentSerialization
 
@@ -104,7 +105,7 @@ class Item(BaseModel):
     """物品基类"""
 
     name: str
-    uuid: str
+    uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
     description: str
     type: ItemType
     count: int = 1  # 物品数量，默认为1

@@ -31,6 +31,7 @@
 
 | 日期 | 变更 |
 | ------ | ------ |
+| 2026-04-30 | 新增弃牌机制 `DiscardCardsActionSystem`（步骤 9）：将手牌移入 `DiscardDeckComponent`，不消耗 energy，不推进行动顺序；source 守卫与出牌路径对称（自有牌归档 + 注入上下文，外来牌静默丢弃）；`DiscardDeckComponent` 由"保留备用"升级为主动弃牌堆。`DrawCardsActionSystem` 新增 LLM 解析失败兜底机制（兜底牌「等待」，`SELF_ONLY`），确保 `HandComponent` 始终写入、回合不阻塞；`pipeline-combat.md` 新增 `DiscardCardsActionSystem` 详解，步骤编号同步更新（原步骤 9→10，余类推） |
 | 2026-04-28 | `PostArbitrationActionSystem` 升级为双路径架构：`filter()` 扩展为 Stage OR Actor；`react()` 内部按顺序执行两个批次（Stage 批次：LLM 地牢主视角干预；Actor 批次：暂为 stub，触发点未实装）；类名/模块注释与 `pipeline-combat.md` 同步更新 |
 | 2026-04-27 | 移除 `CombatInitializationSystem` 的"创建第一回合"职责，改由 `CombatRoundTransitionSystem` 在同帧末端统一创建（消除初始化死锁）；`Round` 数据模型以 `actor_order_snapshots`（快照列表）+ `current_actor_name` 替代原 `action_order`；新增 `CombatRoundCompletionSystem`（energy-based 判断）；`pipeline-combat.md` 补充步骤 13、调整步骤编号 13→16 并新增 `CombatRoundCompletionSystem` 与 `CombatRoundTransitionSystem` 详细说明；`design-patterns.md` 更新状态守卫表 |
 | 2026-04-24 | `DrawCardsActionSystem` 新增 `use_compressed_prompt` 开关（默认 `True`）：对话历史存压缩版 prompt，静态字段说明与 JSON 示例以 `draw_cards_full_prompt` 附挂；新增 `_generate_compressed_draw_prompt`；更新 `pipeline-combat.md` |

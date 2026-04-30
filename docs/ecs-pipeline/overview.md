@@ -42,7 +42,7 @@ pipeline.process()
 
 函数命名规范：前缀 `_mount_`（非 `_ensure_`），明确表达"与实体创建流程强绑定、不允许重复调用"的一次性语义。
 
-- `_mount_actor_deck_components()` — 为所有尚无牌组组件的 Actor 实体同时挂载空 `DrawDeckComponent`（可重抒历史牌池）、`DiscardDeckComponent`（保留备用，暂不写入）和 `PlayedDeckComponent`（已出牌统计）
+- `_mount_actor_deck_components()` — 为所有尚无牌组组件的 Actor 实体同时挂载空 `DrawDeckComponent`（可重抒历史牌池）、`DiscardDeckComponent`（主动弃牌堆，接收玩家主动弃置的自有牌）和 `PlayedDeckComponent`（已出牌统计）
 - `_mount_actor_keyword_components()` — 从蔗图 `Actor.keywords` 读取约束，挂载 `KeywordComponent`
 
 `KeywordComponent` 详细设计见：[[keyword-system]]

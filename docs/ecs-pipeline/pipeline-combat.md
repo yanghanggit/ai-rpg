@@ -43,18 +43,19 @@
 | 6 | `EnemyPlayDecisionSystem` | Execute | 敌方 AI 决策出哪张牌 |
 | 7 | `PlayActionNarrationSystem` | Execute | LLM 润色出牌叙事 |
 | 8 | `PlayCardsActionSystem` | Reactive | 执行出牌，触发后续仲裁链 |
-| 9 | `RetreatActionSystem` | Reactive | 处理撤退行动 |
-| 10 | `ArbitrationActionSystem` | Reactive | **核心**：AI 仲裁伤害/格挡/HP 结算 |
-| 11 | `AddActorStatusEffectsActionSystem` | Reactive | 为角色追加状态效果（最多 2 个/帧） |
-| 12 | `PostArbitrationActionSystem` | Reactive | 双路径：Stage Agent 干预（追加效果 / 塞牌）；Actor 路径预留（暂为 stub） |
-| 13 | `CombatRoundCompletionSystem` | Execute | 回合完成判定：所有存活角色 energy ≤ 0 时写入 `Round.is_completed = True` |
-| 14 | `CombatOutcomeSystem` | Execute | 检测胜负：友方/敌方全灭则结算 |
-| 15 | `CombatRoundCleanupSystem` | Execute | 清除旧回合手牌与格挡，递减状态效果 |
-| 16 | `CombatRoundTransitionSystem` | Execute | 创建新回合，按速度排序生成行动顺序快照 |
-| 17 | `CombatArchiveSystem` | Execute | 战斗归档：LLM 生成总结，压缩消息（状态守卫） |
-| 18 | `ActionCleanupSystem` | Execute | 清理所有 Action → [[systems-shared#ActionCleanupSystem]] |
-| 19 | `DestroyEntitySystem` | Execute | 销毁标记实体 → [[systems-shared#DestroyEntitySystem]] |
-| 20 | `EpilogueSystem` | Execute | flush 状态 → [[systems-shared#EpilogueSystem]] |
+| 9 | `DiscardCardsActionSystem` | Reactive | 将指定手牌移入弃牌堆（不消耗 energy） |
+| 10 | `RetreatActionSystem` | Reactive | 处理撤退行动 |
+| 11 | `ArbitrationActionSystem` | Reactive | **核心**：AI 仲裁伤害/格挡/HP 结算 |
+| 12 | `AddActorStatusEffectsActionSystem` | Reactive | 为角色追加状态效果（最多 2 个/帧） |
+| 13 | `PostArbitrationActionSystem` | Reactive | 双路径：Stage Agent 干预（追加效果 / 塞牌）；Actor 路径预留（暂为 stub） |
+| 14 | `CombatRoundCompletionSystem` | Execute | 回合完成判定：所有存活角色 energy ≤ 0 时写入 `Round.is_completed = True` |
+| 15 | `CombatOutcomeSystem` | Execute | 检测胜负：友方/敌方全灭则结算 |
+| 16 | `CombatRoundCleanupSystem` | Execute | 清除旧回合手牌与格挡，递减状态效果 |
+| 17 | `CombatRoundTransitionSystem` | Execute | 创建新回合，按速度排序生成行动顺序快照 |
+| 18 | `CombatArchiveSystem` | Execute | 战斗归档：LLM 生成总结，压缩消息（状态守卫） |
+| 19 | `ActionCleanupSystem` | Execute | 清理所有 Action → [[systems-shared#ActionCleanupSystem]] |
+| 20 | `DestroyEntitySystem` | Execute | 销毁标记实体 → [[systems-shared#DestroyEntitySystem]] |
+| 21 | `EpilogueSystem` | Execute | flush 状态 → [[systems-shared#EpilogueSystem]] |
 
 ---
 
@@ -92,6 +93,7 @@
 - 从 `KeywordComponent` 随机采样 `num_cards` 个关键词约束，逐张注入 prompt（详见下方）
 - 每回合为每张牌生成一个 `DiceValue.MIN`～`DiceValue.MAX`（0-100）的随机整数（骰值），逐张附加在约束行末尾
 - 两部分合并为最终手牌写入 `HandComponent`
+- **LLM 解析失败兜底**：`DrawCardsResponse` 校验失败（如 LLM 返回裸 JSON 对象而非 `{"cards":[...]}` 包装）时，计算端不做补偿推理，直接插入兜底牌「等待」（`target_type=SELF_ONLY`，`damage_dealt=0`）并写入 `HandComponent`，确保手牌始终存在、回合不阻塞；兜底牌 `source` 设为本角色，可被正常出牌或弃牌
 
 每张牌包含：`name` / `description` / `damage_dealt` / `block_gain` / `hit_count` / `target_type` / `status_effect_hint`
 
@@ -110,6 +112,28 @@
 
 ---
 
+### DiscardCardsActionSystem（步骤 9）
+
+**源码**：`src/ai_rpg/systems/discard_cards_action_system.py`  
+**监听**：`DiscardCardsAction`
+
+将指定手牌从 `HandComponent` 移入 `DiscardDeckComponent`，供玩家在回合中主动丢弃不需要的手牌。
+
+**关键约束**：
+
+- **不消耗 energy，不推进行动顺序**：弃牌不触发仲裁链，`CombatRoundCompletionSystem` 的 energy 判断不受影响；玩家可在本回合出牌前后随时发起弃牌
+- **source 守卫**：与出牌归档规则对称——自有牌（`card.source == entity.name`）归入 `DiscardDeckComponent` 并注入弃牌上下文消息；外来牌（`PostArbitrationActionSystem` 塞入的 Stage 牌）静默丢弃，不写入 agent 上下文，保持角色对外来牌"未被告知"的上下文一致性
+
+**三类牌堆的归宿对比**：
+
+| 事件 | 归入牌堆 |
+| --- | --- |
+| 出牌（`PlayCardsAction`） | `PlayedDeckComponent`（已出牌统计） |
+| 主动弃牌（`DiscardCardsAction`） | `DiscardDeckComponent`（主动弃牌堆） |
+| 回合结束手牌剩余（`CombatRoundCleanupSystem`） | 自有牌归还至 `DrawDeckComponent`；外来牌丢弃 |
+
+---
+
 ### 卡牌目标类型（CardTargetType）
 
 `CardTargetType` 是每张卡牌的目标范围声明，由 `DrawCardsActionSystem` 在生成阶段由 LLM 写入 `target_type` 字段，再分别由玩家出牌路径（`dungeon_actions._resolve_targets`）和敌方 AI 路径（`EnemyPlayDecisionSystem._process_enemy_decision`）消费为实际 `targets` 列表，最终由 `ArbitrationActionSystem` 按列表逐目标结算伤害与格挡。
@@ -117,7 +141,7 @@
 **六种目标类型**：
 
 | 枚举值 | 目标范围 | `targets` 填写策略 |
-|---|---|---|
+| --- | --- | --- |
 | `enemy_single` | 单个敌方 | 调用方指定，列表长度 = 1 |
 | `enemy_all` | 全体存活敌方 | 系统自动填所有存活敌人 |
 | `enemy_random_multi` | 多段随机命中敌方 | 系统按 `hit_count` 随机采样，允许重复 |
@@ -137,7 +161,7 @@
 
 ---
 
-### ArbitrationActionSystem（步骤 10）
+### ArbitrationActionSystem（步骤 11）
 
 **源码**：`src/ai_rpg/systems/arbitration_action_system.py`  
 **监听**：`PlayCardsAction`
@@ -163,7 +187,7 @@
 
 ---
 
-### PostArbitrationActionSystem（步骤 12）
+### PostArbitrationActionSystem（步骤 13）
 
 **源码**：`src/ai_rpg/systems/post_arbitration_action_system.py`  
 **监听**：`PostArbitrationAction`（`ADDED`）
@@ -193,7 +217,7 @@
 
 ---
 
-### CombatRoundCompletionSystem（步骤 13）
+### CombatRoundCompletionSystem（步骤 14）
 
 **源码**：`src/ai_rpg/systems/combat_round_completion_system.py`  
 **类型**：`ExecuteProcessor`
@@ -203,13 +227,14 @@
 判断依据：遍历本场景所有存活角色，若全部角色的 `RoundStatsComponent.energy <= 0`（或无该组件），则将 `Round.is_completed` 置为 `True`。
 
 设计要点：
+
 - 基于 **energy** 判断，反映运行时真实剩余行动数，比结构性计数更准确
 - 位于 `PostArbitrationActionSystem` 之后，所有 energy 消耗已结算
 - 位于 `CombatOutcomeSystem` 之前，使胜负检查能感知到回合完成状态
 
 ---
 
-### CombatRoundTransitionSystem（步骤 16）
+### CombatRoundTransitionSystem（步骤 17）
 
 **源码**：`src/ai_rpg/systems/combat_round_transition_system.py`  
 **策略**：`ActionOrderStrategy.SPEED_ORDER`（按速度属性降序排列行动顺序）
@@ -227,7 +252,7 @@
 
 ---
 
-### CombatArchiveSystem（步骤 16）
+### CombatArchiveSystem（步骤 18）
 
 **源码**：`src/ai_rpg/systems/combat_archive_system.py`  
 **类型**：`ExecuteProcessor`（含状态守卫）

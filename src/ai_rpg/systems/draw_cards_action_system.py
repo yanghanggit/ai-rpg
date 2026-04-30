@@ -45,6 +45,15 @@ from ..utils import extract_json_from_code_block
 
 
 #######################################################################################################################################
+# 兜底牌常量
+_FALLBACK_CARD_NAME = "等待"
+_FALLBACK_CARD_DESCRIPTION = "什么都不做，原地等待。"
+_FALLBACK_DRAW_SYSTEM_MESSAGE = (
+    "[系统提示] 本回合卡牌生成失败（LLM 响应格式错误），已自动添加兜底牌「等待」。"
+)
+
+
+#######################################################################################################################################
 @final
 class CardEntry(BaseModel):
     """单张卡牌条目（用于 DrawCardsResponse 解析）"""
@@ -472,12 +481,17 @@ class DrawCardsActionSystem(ReactiveProcessor):
     ) -> None:
         """解析 LLM 返回的卡牌，与 Deck 历史牌合并后写入 HandComponent。
 
+        解析失败时（LLM 格式错误）不做补偿推理，直接插入兜底牌「等待」并写入 HandComponent，
+        确保角色本回合始终持有手牌，回合推进不阻塞。
+
         Args:
             entity: 目标角色实体
             chat_client: 包含 LLM 响应的聊天客户端
             num_cards: 预期由 LLM 生成的卡牌数量
             deck_cards: 本回合从 DrawDeckComponent 消耗的历史牌（已在 react() 中移除）
         """
+        current_round_number = len(self._game.current_dungeon.current_rounds or [])
+
         try:
             response = DrawCardsResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
@@ -488,8 +502,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
             assert (
                 not last_round.is_completed
             ), "当前没有进行中的战斗回合，不能写入卡牌。"
-
-            current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
             # 写入对话历史（压缩版 prompt + AI 原文，附挂全量 prompt 供检索）
             if self._use_compressed_prompt:
@@ -564,5 +576,25 @@ class DrawCardsActionSystem(ReactiveProcessor):
         except Exception as e:
             logger.error(f"{chat_client.response_content}")
             logger.error(f"Exception: {e}")
+            # LLM 推理失败：不做补偿，直接插入兜底牌，确保 HandComponent 始终被写入
+            fallback_card = Card(
+                name=_FALLBACK_CARD_NAME,
+                description=_FALLBACK_CARD_DESCRIPTION,
+                effects=[],
+                damage_dealt=0,
+                block_gain=0,
+                hit_count=1,
+                target_type=CardTargetType.SELF_ONLY,
+                source=entity.name,
+            )
+            all_cards = deck_cards + [fallback_card]
+            entity.replace(HandComponent, entity.name, all_cards, current_round_number)
+            self._game.add_human_message(
+                entity=entity,
+                message_content=_FALLBACK_DRAW_SYSTEM_MESSAGE,
+            )
+            logger.warning(
+                f"[{entity.name}] 卡牌生成失败，已插入兜底牌「等待」，手牌共 {len(all_cards)} 张"
+            )
 
     #######################################################################################################################################

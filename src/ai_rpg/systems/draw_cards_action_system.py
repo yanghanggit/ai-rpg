@@ -38,6 +38,8 @@ from ..models import (
     StatusEffectsComponent,
     StatusEffect,
     StatusEffectPhase,
+    ExpeditionMemberComponent,
+    EnemyComponent,
 )
 from ..utils import extract_json_from_code_block
 
@@ -254,16 +256,23 @@ class DrawCardsActionSystem(ReactiveProcessor):
     5. 逐一调用 _process_draw_response，合并 Deck 历史牌 + LLM 新牌，写入 HandComponent
     """
 
-    def __init__(
-        self, game: TCGGame, max_num_cards: int, use_compressed_prompt: bool = True
-    ) -> None:
+    def __init__(self, game: TCGGame, use_compressed_prompt: bool = True) -> None:
         super().__init__(game)
         self._game: Final[TCGGame] = game
-        assert (
-            max_num_cards >= 1
-        ), "max_num_cards 必须至少为 1，保证每回合至少生成 1 张新牌"
-        self._max_num_cards: Final[int] = max_num_cards  # 每次抽取的卡牌数量
         self._use_compressed_prompt: Final[bool] = use_compressed_prompt
+
+    ####################################################################################################################################
+    def _get_max_num_cards(self, actor: Entity) -> int:
+        """返回角色本回合应持有的手牌上限。
+        当前为硬编码占位，后续可扩展为动态逻辑：
+            - ExpeditionMemberComponent（远征队友方）→ 3 张
+            - EnemyComponent（敌方）→ 1 张
+        """
+        if actor.has(ExpeditionMemberComponent):
+            return 3
+        if actor.has(EnemyComponent):
+            return 1
+        return 1
 
     ####################################################################################################################################
     @override
@@ -359,11 +368,12 @@ class DrawCardsActionSystem(ReactiveProcessor):
             assert (
                 draw_deck_comp is not None
             ), f"实体 {entity.name} 缺少 DrawDeckComponent"
-            n_from_deck = min(len(draw_deck_comp.cards), self._max_num_cards - 1)
+            max_cards = self._get_max_num_cards(entity)
+            n_from_deck = min(len(draw_deck_comp.cards), max_cards - 1)
             deck_cards = list(draw_deck_comp.cards[:n_from_deck])
             del draw_deck_comp.cards[:n_from_deck]
             entity_deck_cards[entity.name] = deck_cards
-            entity_generate_counts[entity.name] = self._max_num_cards - n_from_deck
+            entity_generate_counts[entity.name] = max_cards - n_from_deck
             logger.debug(
                 f"[{entity.name}] 从 DrawDeck 取 {n_from_deck} 张历史牌，"
                 f"需 LLM 生成 {entity_generate_counts[entity.name]} 张"

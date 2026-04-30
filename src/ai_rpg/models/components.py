@@ -353,7 +353,6 @@ class RoundStatsComponent(MutableComponent):
 
     name: str
     energy: int
-    # speed: int
     block: int
 
 

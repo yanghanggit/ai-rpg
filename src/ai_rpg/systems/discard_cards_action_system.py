@@ -1,8 +1,8 @@
 """弃牌动作系统模块。
 
 处理战斗中角色的主动弃牌动作，将指定手牌从 HandComponent 移入 DiscardDeckComponent，
-消耗 1 点 energy，并向角色的对话上下文注入弃牌通知。
-仅在战斗进行中(ongoing)阶段执行。
+并向角色的对话上下文注入弃牌通知（仅限自有牌）。
+仅在战斗进行中(ongoing)阶段执行。弃牌不消耗能量、不推进行动顺序。
 """
 
 from typing import Final, final
@@ -14,7 +14,6 @@ from ..models import (
     DiscardDeckComponent,
     DiscardCardsAction,
     ActorComponent,
-    RoundStatsComponent,
 )
 from ..game.tcg_game import TCGGame
 
@@ -40,7 +39,7 @@ class DiscardCardsActionSystem(ReactiveProcessor):
     """弃牌动作系统。
 
     响应 DiscardCardsAction 组件的添加事件，将指定手牌移入弃牌堆（DiscardDeckComponent），
-    消耗 1 点 energy，并向角色注入弃牌上下文消息。
+    并向角色注入弃牌上下文消息。弃牌不消耗能量、不推进行动顺序。
 
     触发条件：
     - 实体添加 DiscardCardsAction 组件
@@ -48,10 +47,8 @@ class DiscardCardsActionSystem(ReactiveProcessor):
 
     执行流程：
     1. 按对象身份从 HandComponent 中移除目标卡牌
-    2. 若卡牌来源为本角色（source == entity.name），归入 DiscardDeckComponent；外来牌静默丢弃
-    3. 消耗 1 点 energy
-    4. 更新本回合当前行动者
-    5. 注入弃牌上下文消息到对话历史
+    2. 若卡牌来源为本角色（source == entity.name），归入 DiscardDeckComponent 并注入上下文消息
+       外来牌（PostArbitrationActionSystem 塞入，未通知角色）静默丢弃，不注入任何上下文
     """
 
     def __init__(self, game: TCGGame) -> None:
@@ -92,47 +89,10 @@ class DiscardCardsActionSystem(ReactiveProcessor):
             current_rounds is not None
         ), "DiscardCardsActionSystem: current_rounds is None"
 
-        last_round = self._game.current_dungeon.latest_round
-        assert last_round is not None, "DiscardCardsActionSystem: latest_round is None"
-
         for entity in entities:
             discard_action = entity.get(DiscardCardsAction)
             logger.debug(
                 f"  [{discard_action.name}] 弃牌 → 卡牌: {discard_action.card.name}"
-            )
-
-            # 验证本实体是当前回合的行动者
-            assert entity.name == self._game.get_current_turn_actor(last_round), (
-                f"DiscardCardsActionSystem: 弃牌角色 {entity.name} 不是当前 turn 的行动者！"
-                f" current_turn_actor={self._game.get_current_turn_actor(last_round)}"
-            )
-
-            # 记录到本回合 completed_actors
-            last_round.completed_actors.append(discard_action.name)
-
-            # 消耗 1 点 energy
-            assert entity.has(
-                RoundStatsComponent
-            ), f"{entity.name} 缺少 RoundStatsComponent"
-            round_stats = entity.get(RoundStatsComponent)
-            assert (
-                round_stats.energy > 0
-            ), f"{entity.name} 能量不足，无法弃牌！当前 energy={round_stats.energy}"
-
-            entity.replace(
-                RoundStatsComponent,
-                entity.name,
-                round_stats.energy - 1,
-                round_stats.block,
-            )
-
-            # 更新当前行动者
-            last_round.current_turn_actor_name = self._game.get_current_turn_actor(
-                last_round
-            )
-
-            logger.debug(
-                f"  completed_actors: {last_round.completed_actors} / current_turn_actor_name={last_round.current_turn_actor_name}"
             )
 
             # 按对象身份从 HandComponent 移除目标卡牌
@@ -142,7 +102,8 @@ class DiscardCardsActionSystem(ReactiveProcessor):
             new_hand_cards = [c for c in hand_comp.cards if c is not discarded_card]
             hand_comp.cards = new_hand_cards
 
-            # source 守卫：仅归档自有牌；外来塞入牌静默丢弃
+            # source 守卫：自有牌归档至 DiscardDeckComponent 并注入上下文
+            # 外来牌（PostArbitrationActionSystem 塞入时未通知角色）静默丢弃，不注入上下文
             if discarded_card.source == entity.name:
                 discard_comp = entity.get(DiscardDeckComponent)
                 assert (
@@ -153,16 +114,15 @@ class DiscardCardsActionSystem(ReactiveProcessor):
                     f"  [{entity.name}] 手牌 {len(hand_comp.cards) + 1} → {len(new_hand_cards)}，"
                     f"DiscardDeck 累计 {len(discard_comp.cards)} 张"
                 )
-            else:
-                logger.debug(
-                    f"  [{entity.name}] 外来牌 [{discarded_card.name}](source={discarded_card.source!r}) 已弃置，source 不匹配，丢弃不归档"
+                self._game.add_human_message(
+                    entity=entity,
+                    message_content=_generate_discard_card_context_prompt(
+                        discard_cards_action=discard_action,
+                        round_number=len(current_rounds),
+                    ),
                 )
-
-            # 注入弃牌上下文到角色对话历史
-            self._game.add_human_message(
-                entity=entity,
-                message_content=_generate_discard_card_context_prompt(
-                    discard_cards_action=discard_action,
-                    round_number=len(current_rounds),
-                ),
-            )
+            else:
+                # PostArbitration 塞入时未告知角色，弃牌同样静默，保持上下文一致
+                logger.debug(
+                    f"  [{entity.name}] 外来牌 [{discarded_card.name}](source={discarded_card.source!r}) 静默丢弃"
+                )

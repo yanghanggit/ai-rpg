@@ -679,7 +679,7 @@ class CombatRoomScreen(Screen[None]):
                 else ""
             )
             affixes_str = (
-                f"\n        [bold orange1]词条：{'  '.join(f'[{a.name}]:{a.data.get("description", "")}' for a in card.affixes)}[/]"
+                f"\n        [bold orange1]词条：{'  '.join(card.affixes)}[/]"
                 if card.affixes
                 else ""
             )
@@ -871,7 +871,7 @@ class CombatRoomScreen(Screen[None]):
                 else ""
             )
             affixes_str = (
-                f"\n        [bold orange1]词条：{'  '.join(f'[{a.name}]:{a.data.get("description", "")}' for a in card.affixes)}[/]"
+                f"\n        [bold orange1]词条：{'  '.join(card.affixes)}[/]"
                 if card.affixes
                 else ""
             )
@@ -1603,7 +1603,7 @@ class CombatRoomScreen(Screen[None]):
                                 )
                             if card.affixes:
                                 detail_parts.append(
-                                    f"[bold orange1]词条：{'  '.join(f'[{a.name}]:{a.data.get("description", "")}' for a in card.affixes)}[/]"
+                                    f"[bold orange1]词条：{'  '.join(card.affixes)}[/]"
                                 )
                             if card.source and card.source != entity.name:
                                 detail_parts.append(

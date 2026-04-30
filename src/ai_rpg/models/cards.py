@@ -8,7 +8,6 @@ from enum import StrEnum, unique
 from typing import List, final
 from uuid import uuid4
 from pydantic import BaseModel, Field
-from .serialization import ComponentSerialization
 
 
 ###############################################################################################################################################
@@ -86,9 +85,9 @@ class Card(BaseModel):
     effects: List[str] = (
         []
     )  # 词缀列表，每项为"[名称]:短句描述"格式（如"[燃烧]:可能引发持续火焰伤害"）；为空时仲裁后不触发 AddStatusEffectsAction LLM 推理
-    affixes: List[ComponentSerialization] = Field(
-        default_factory=list
-    )  # 卡牌特殊属性标记；每项 name=词条类型标识符，data=flat 参数字典（含 description 等）；系统在出牌/弃牌前读取，用于约束操作合法性
+    affixes: List[str] = (
+        []
+    )  # 卡牌词条列表，每项为自然语言字符串（如"封印：不可出牌，不可弃牌"）；由 LLM 填写，系统直接展示
     damage_dealt: int = 0  # 造成的伤害值（单次）
     block_gain: int = 0  # 提供的格挡增量
     hit_count: int = (

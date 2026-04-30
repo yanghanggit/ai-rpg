@@ -290,17 +290,17 @@ class KeywordComponent(Component):
 
 
 ############################################################################################################
-@final
-@register_component_type
-class AffixSealedComponent(Component):
-    """卡牌词条：封印。带有此词条的卡牌不可被出牌，也不可被弃牌。
+# @final
+# @register_component_type
+# class AffixSealedComponent(Component):
+#     """卡牌词条：封印。带有此词条的卡牌不可被出牌，也不可被弃牌。
 
-    Attributes:
-        name: 持有该词条的角色实体名称，用于快照场景下反向定位持有人。
-        description: 词条说明文本。
-        sealed_cards: 持有人手牌中携带「封印」词条的卡牌副本列表。
-    """
+#     Attributes:
+#         name: 持有该词条的角色实体名称，用于快照场景下反向定位持有人。
+#         description: 词条说明文本。
+#         sealed_cards: 持有人手牌中携带「封印」词条的卡牌副本列表。
+#     """
 
-    name: str
-    description: str
-    sealed_cards: List[Card]
+#     name: str
+#     description: str
+#     sealed_cards: List[Card]

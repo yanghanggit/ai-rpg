@@ -20,7 +20,7 @@ from ..models import (
     RetreatAction,
     Card,
     CardTargetType,
-    AffixSealedComponent,
+    # AffixSealedComponent,
 )
 from ..entitas import Entity, Matcher
 
@@ -247,22 +247,13 @@ def activate_play_cards_specified(
         logger.error(msg)
         return False, msg
 
-    sealed_comp = entity.get(AffixSealedComponent)
-    if sealed_comp is not None and any(
-        c.name == card_name for c in sealed_comp.sealed_cards
-    ):
-        matched_affix = next(
-            (
-                a
-                for a in selected_card.affixes
-                if a.name == AffixSealedComponent.__name__
-            ),
-            None,
-        )
-        desc = matched_affix.data.get("description", "") if matched_affix else ""
-        msg = f"卡牌「{card_name}」带有词条「[{AffixSealedComponent.__name__}]:{desc}」，不可出牌"
-        logger.warning(msg)
-        return False, msg
+    # sealed_comp = entity.get(AffixSealedComponent)
+    # if sealed_comp is not None and any(
+    #     c.name == card_name for c in sealed_comp.sealed_cards
+    # ):
+    #     msg = f"卡牌「{card_name}」带有封印词条，不可出牌"
+    #     logger.warning(msg)
+    #     return False, msg
 
     resolved_targets, resolve_err = _resolve_targets(
         selected_card, entity, targets, tcg_game
@@ -318,22 +309,13 @@ def activate_discard_cards_specified(
         logger.error(msg)
         return False, msg
 
-    sealed_comp = entity.get(AffixSealedComponent)
-    if sealed_comp is not None and any(
-        c.name == card_name for c in sealed_comp.sealed_cards
-    ):
-        matched_affix = next(
-            (
-                a
-                for a in selected_card.affixes
-                if a.name == AffixSealedComponent.__name__
-            ),
-            None,
-        )
-        desc = matched_affix.data.get("description", "") if matched_affix else ""
-        msg = f"卡牌「{card_name}」带有词条「[{AffixSealedComponent.__name__}]:{desc}」，不可弃牌"
-        logger.warning(msg)
-        return False, msg
+    # sealed_comp = entity.get(AffixSealedComponent)
+    # if sealed_comp is not None and any(
+    #     c.name == card_name for c in sealed_comp.sealed_cards
+    # ):
+    #     msg = f"卡牌「{card_name}」带有封印词条，不可弃牌"
+    #     logger.warning(msg)
+    #     return False, msg
 
     logger.debug(f"为角色 {actor_name} 激活弃牌动作，卡牌: {selected_card.name}")
     entity.replace(DiscardCardsAction, entity.name, selected_card)

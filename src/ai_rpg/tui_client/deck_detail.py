@@ -12,7 +12,12 @@ from .server_client import (
     fetch_stages_state,
 )
 from .utils import display_name
-from ..models import KeywordComponent, DrawDeckComponent, DiscardDeckComponent
+from ..models import (
+    KeywordComponent,
+    DrawDeckComponent,
+    DiscardDeckComponent,
+    PlayedDeckComponent,
+)
 
 _TARGET_LABEL = {
     "enemy_single": "[red]敌方单体[/]",
@@ -108,19 +113,26 @@ class DeckDetailScreen(Screen[None]):
                     (c for c in entity.components if c.name == "DrawDeckComponent"),
                     None,
                 )
-                if discard_raw is None and draw_raw is None:
+                played_raw = next(
+                    (c for c in entity.components if c.name == "PlayedDeckComponent"),
+                    None,
+                )
+                if discard_raw is None and draw_raw is None and played_raw is None:
                     continue
 
                 discard_comp = (
                     DiscardDeckComponent(**discard_raw.data) if discard_raw else None
                 )
                 draw_comp = DrawDeckComponent(**draw_raw.data) if draw_raw else None
-                discard_count = len(discard_comp.cards) if discard_comp else 0
+                played_comp = (
+                    PlayedDeckComponent(**played_raw.data) if played_raw else None
+                )
                 draw_count = len(draw_comp.cards) if draw_comp else 0
+                played_count = len(played_comp.cards) if played_comp else 0
 
                 log.write(
                     f"[bold cyan]{display_name(entity.name)}[/]  "
-                    f"[dim]已打出 {discard_count} 张 | 可重抽 {draw_count} 张[/]"
+                    f"[dim]已出牌 {played_count} 张 | 可重抽 {draw_count} 张[/]"
                 )
 
                 def _render_cards(cards: list, log: object) -> None:  # type: ignore[type-arg]
@@ -160,10 +172,10 @@ class DeckDetailScreen(Screen[None]):
                             + hint_str
                         )
 
-                # 1) 已打出卡牌（DiscardDeck）
-                log.write("  [bold red]▸ 已打出（DiscardDeck）[/]")
-                if discard_comp and discard_comp.cards:
-                    _render_cards(discard_comp.cards, log)
+                # 1) 已出牌（PlayedDeck）
+                log.write("  [bold red]▸ 已出牌（PlayedDeck）[/]")
+                if played_comp and played_comp.cards:
+                    _render_cards(played_comp.cards, log)
                 else:
                     log.write("    [dim]（尚无记录）[/]")
 

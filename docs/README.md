@@ -37,5 +37,6 @@
 | 2026-04-21 | `HomeActorPlanSystem` 新增 `use_compressed_prompt` 开关（默认 `True`）：对话历史存压缩版 prompt，完整版以 `home_actor_full_prompt` 附挂；`ActionPlanResponse` 补全 `inspect_self` / `equip_weapon` / `equip_armor` / `equip_accessory` 字段；`_PLAYER_ACTIVE_ACTION_TYPES` 补入 `EquipItemAction`；更新 `pipeline-home.md` |
 | 2026-04-15 | 新增 `CardTargetType.ENEMY_RANDOM_MULTI`（多段随机命中）；`dungeon_actions._resolve_targets` 与 `EnemyPlayDecisionSystem` 均改用 `match` 分发；`arbitration_action_system` 提取 `_fmt_duration` / `_fmt_effects` / `_build_random_multi_sections` 为模块级函数；`pipeline-combat.md` 新增"卡牌目标类型（CardTargetType）"章节 |
 | 2026-04-14 | 新增 `DiceValue(IntEnum)`（`MIN=0`/`MAX=100`）；`DrawCardsActionSystem` 每回合按 `DiceValue` 范围生成骰值，逐张注入 prompt；`_build_design_principle_prompt` 支持骰值附加与兜底说明；更新 `archetype-system.md`、`pipeline-combat.md` |
+| 2026-04-30 | 新增 `PlayedDeckComponent`（已出牌统计）；出牌归档目标从 `DiscardDeckComponent` 改为 `PlayedDeckComponent`；`DiscardDeckComponent` 保留备用；`_mount_actor_deck_components()` 同步挂载新组件；`overview.md`、`pipeline-combat.md` 同步更新 |
 | 2026-04-28 | 将 `Archetype`/`ArchetypeComponent`/`archetypes` 全面更名为 `Keyword`/`KeywordComponent`/`keywords`；`docs/ecs-pipeline/archetype-system.md` 重命名为 `keyword-system.md` |
 | 2026-04-13 | 初始化知识库；新增 `ecs-pipeline/` 系列文档（7 篇） |

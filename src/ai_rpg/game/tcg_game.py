@@ -21,6 +21,7 @@ from ..models import (
     HandComponent,
     DrawDeckComponent,
     DiscardDeckComponent,
+    PlayedDeckComponent,
     RoundStatsComponent,
     StageType,
     ActorType,
@@ -227,7 +228,7 @@ class TCGGame(RPGGame):
 
     #######################################################################################################################################
     def _mount_actor_deck_components(self) -> None:
-        """为所有缺少 DrawDeckComponent / DiscardDeckComponent 的 Actor 实体挂载空牌组"""
+        """为所有缺少 DrawDeckComponent / DiscardDeckComponent / PlayedDeckComponent 的 Actor 实体挂载空牌组"""
 
         for entity in self.get_group(Matcher(ActorComponent)).entities:
             if not entity.has(DrawDeckComponent):
@@ -236,6 +237,9 @@ class TCGGame(RPGGame):
             if not entity.has(DiscardDeckComponent):
                 entity.replace(DiscardDeckComponent, entity.name, [])
                 logger.debug(f"为 Actor 实体 {entity.name} 添加空 DiscardDeckComponent")
+            if not entity.has(PlayedDeckComponent):
+                entity.replace(PlayedDeckComponent, entity.name, [])
+                logger.debug(f"为 Actor 实体 {entity.name} 添加空 PlayedDeckComponent")
 
     #######################################################################################################################################
     def _mount_actor_keyword_components(self) -> None:

@@ -37,12 +37,12 @@ pipeline.process()
 
 | 调用点 | 挂载的实体 | 挂载的组件 |
 | -------- | ---------- | ---------- |
-| `build_from_blueprint()` | 家园角色（玩家 + 盟友） | `DrawDeckComponent` / `DiscardDeckComponent` / `KeywordComponent` |
-| `setup_dungeon_entities()` | 地下城怪物（新创建后） | `DrawDeckComponent` / `DiscardDeckComponent` / `KeywordComponent` |
+| `build_from_blueprint()` | 家园角色（玩家 + 盟友） | `DrawDeckComponent` / `DiscardDeckComponent` / `PlayedDeckComponent` / `KeywordComponent` |
+| `setup_dungeon_entities()` | 地下城怪物（新创建后） | `DrawDeckComponent` / `DiscardDeckComponent` / `PlayedDeckComponent` / `KeywordComponent` |
 
 函数命名规范：前缀 `_mount_`（非 `_ensure_`），明确表达"与实体创建流程强绑定、不允许重复调用"的一次性语义。
 
-- `_mount_actor_deck_components()` — 为所有尚无牌组组件的 Actor 实体同时挂载空 `DrawDeckComponent`（可重抽历史牌池）和 `DiscardDeckComponent`（已打出卡牌归档）
+- `_mount_actor_deck_components()` — 为所有尚无牌组组件的 Actor 实体同时挂载空 `DrawDeckComponent`（可重抒历史牌池）、`DiscardDeckComponent`（保留备用，暂不写入）和 `PlayedDeckComponent`（已出牌统计）
 - `_mount_actor_keyword_components()` — 从蔗图 `Actor.keywords` 读取约束，挂载 `KeywordComponent`
 
 `KeywordComponent` 详细设计见：[[keyword-system]]

@@ -11,7 +11,7 @@ from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     HandComponent,
-    DiscardDeckComponent,
+    PlayedDeckComponent,
     PlayCardsAction,
     ActorComponent,
     AgentEvent,
@@ -118,7 +118,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             entity.has(PlayCardsAction)
             and entity.has(HandComponent)
             and entity.has(ActorComponent)
-            and entity.has(DiscardDeckComponent)
+            and entity.has(PlayedDeckComponent)
         )
 
     #######################################################################################################################################
@@ -199,28 +199,28 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 f"  completed_actors: {last_round.completed_actors} / current_turn_actor_name={last_round.current_turn_actor_name}"
             )
 
-            # 从 HandComponent 移除已出的卡牌，并将其归入 DiscardDeckComponent
+            # 从 HandComponent 移除已出的卡牌，并将其归入 PlayedDeckComponent
             hand_comp = entity.get(HandComponent)
             assert hand_comp is not None, f"{entity.name} 缺少 HandComponent"
             assert entity.has(
-                DiscardDeckComponent
-            ), f"{entity.name} 缺少 DiscardDeckComponent"
+                PlayedDeckComponent
+            ), f"{entity.name} 缺少 PlayedDeckComponent"
             # 这里通过对象身份（is）而非等値比较（==）来确保正确移除特定的卡牌实例，避免同名卡牌导致的误删问题
             played_card = play_cards_action.card
             new_hand_cards = [c for c in hand_comp.cards if c is not played_card]
 
             hand_comp.cards = new_hand_cards
 
-            # 将已出的卡牌归入 DiscardDeckComponent
-            discard_comp = entity.get(DiscardDeckComponent)
-            assert discard_comp is not None, f"{entity.name} 缺少 DiscardDeckComponent"
+            # 将已出的卡牌归入 PlayedDeckComponent
+            played_comp = entity.get(PlayedDeckComponent)
+            assert played_comp is not None, f"{entity.name} 缺少 PlayedDeckComponent"
 
             # 仅归档来源为本角色的卡牌；外来塞入牌（source != actor_name）直接丢弃
             if played_card.source == entity.name:
-                discard_comp.cards.append(played_card)
+                played_comp.cards.append(played_card)
                 logger.debug(
                     f"  [{entity.name}] 手牌 {len(hand_comp.cards)} → {len(new_hand_cards)}，"
-                    f"DiscardDeck 累计 {len(discard_comp.cards)} 张"
+                    f"PlayedDeck 累计 {len(played_comp.cards)} 张"
                 )
             else:
                 logger.debug(

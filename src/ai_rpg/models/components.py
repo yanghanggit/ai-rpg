@@ -526,6 +526,32 @@ class DiscardDeckComponent(MutableComponent):
 ############################################################################################################
 @final
 @register_component_type
+class PlayedDeckComponent(MutableComponent):
+    """已打出卡牌统计组件
+
+    存储角色在地下城过程中所有已打出的卡牌，仅用于统计与展示，不参与抽牌逻辑。
+    在 actor 创建时以空列表初始化，跨战斗持续累积，随实体销毁自然消失。
+
+    与 DiscardDeckComponent 的区别：
+        - PlayedDeckComponent：出牌（PlayCardsAction）时归档的正式出牌记录，为当前主要归档组件。
+        - DiscardDeckComponent：保留供后续重构使用，暂不写入。
+
+    累积规则：
+        - 每次出牌后，被打出的 Card 从 HandComponent 移除并 append 到此组件
+        - 仅归档 card.source == actor_name 的自有牌；外来塞入牌直接丢弃，不归档
+
+    Attributes:
+        name: 角色名称
+        cards: 已打出卡牌列表（按时间顺序追加，只增不减）
+    """
+
+    name: str
+    cards: List[Card]
+
+
+############################################################################################################
+@final
+@register_component_type
 class KeywordComponent(Component):
     """卡牌关键词约束组件
 

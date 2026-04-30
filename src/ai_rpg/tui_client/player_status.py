@@ -16,6 +16,7 @@ from ..models import (
     KeywordComponent,
     DrawDeckComponent,
     DiscardDeckComponent,
+    PlayedDeckComponent,
     AnyItem,
     EquipmentItem,
     CharacterStats,
@@ -64,6 +65,7 @@ _COMPONENT_ORDER: list[str] = [
     KeywordComponent.__name__,
     DrawDeckComponent.__name__,
     DiscardDeckComponent.__name__,
+    PlayedDeckComponent.__name__,
 ]
 
 
@@ -177,7 +179,12 @@ def _render_component(name: str, data: Dict[str, Any], context: Dict[str, Any]) 
             lines.append("    [dim]（空）[/]")
         else:
             lines.append(f"    共 [bold]{len(disc.cards)}[/] 张已打出")
-
+    elif name == PlayedDeckComponent.__name__:
+        played = PlayedDeckComponent(**data)
+        if not played.cards:
+            lines.append("    [dim](空)[/]")
+        else:
+            lines.append(f"    共 [bold]{len(played.cards)}[/] 张已打出")
     else:
         # 通用展示：key-value，跳过 name 字段
         for k, v in data.items():

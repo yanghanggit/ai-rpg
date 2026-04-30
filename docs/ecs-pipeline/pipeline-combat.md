@@ -87,7 +87,7 @@
 **抄牌策略**（历史牌优先 + 保证新鲜度 + Keyword 约束 + 骨値注入 + Prompt 压缩）：
 
 - 从 `DrawDeckComponent`（可重抄历史牌池）取最多 `max_num_cards - 1` 张（FIFO 消耗）
-- 出牌时，仅 `card.source == actor_name` 的卡牌归入 `DiscardDeckComponent`（用于统计与展示）；`source` 不匹配的外来牌（含 Stage 塞入牌）直接丢弃，不归档
+- 出牌时，仅 `card.source == actor_name` 的卡牌归入 `PlayedDeckComponent`（已出牌统计，仅展示）；`source` 不匹配的外来牌（含 Stage 塞入牌）直接丢弃，不归档
 - 至少 1 张由 LLM 实时生成，结合角色当前属性（HP/攻击/防御）和状态效果
 - 从 `KeywordComponent` 随机采样 `num_cards` 个关键词约束，逐张注入 prompt（详见下方）
 - 每回合为每张牌生成一个 `DiceValue.MIN`～`DiceValue.MAX`（0-100）的随机整数（骰值），逐张附加在约束行末尾

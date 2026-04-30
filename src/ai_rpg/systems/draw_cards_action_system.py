@@ -355,7 +355,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             cards[target_idx] = sealed_card
             entity.replace(HandComponent, entity.name, cards, current_round_number)
             logger.debug(
-                f"[mock] [{entity.name}] 第一回合：手牌「{sealed_card.name}」添加词条「{AFFIX_SEALED}」"
+                f"[mock] [{entity.name}] 第一回合：手牌「{sealed_card.name}」添加词条「[{AFFIX_SEALED.name}]」"
             )
 
     #######################################################################################################################################

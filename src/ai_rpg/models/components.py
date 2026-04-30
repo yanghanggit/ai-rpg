@@ -287,3 +287,12 @@ class KeywordComponent(Component):
 
     name: str
     keywords: List[Keyword]
+
+
+############################################################################################################
+@final
+@register_component_type
+class AffixSealedComponent(Component):
+    """卡牌词条：封印。带有此词条的卡牌不可被出牌，也不可被弃牌。"""
+
+    description: str = "不可被出牌，也不可被弃牌"

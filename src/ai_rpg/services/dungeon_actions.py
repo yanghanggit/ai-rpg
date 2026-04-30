@@ -247,8 +247,8 @@ def activate_play_cards_specified(
         logger.error(msg)
         return False, msg
 
-    if AFFIX_SEALED in selected_card.affixes:
-        msg = f"卡牌「{card_name}」带有词条「{AFFIX_SEALED}」，不可出牌"
+    if any(a.name == AFFIX_SEALED.name for a in selected_card.affixes):
+        msg = f"卡牌「{card_name}」带有词条「[{AFFIX_SEALED.name}]:{AFFIX_SEALED.data.get('description', '')}」，不可出牌"
         logger.warning(msg)
         return False, msg
 
@@ -306,8 +306,8 @@ def activate_discard_cards_specified(
         logger.error(msg)
         return False, msg
 
-    if AFFIX_SEALED in selected_card.affixes:
-        msg = f"卡牌「{card_name}」带有词条「{AFFIX_SEALED}」，不可弃牌"
+    if any(a.name == AFFIX_SEALED.name for a in selected_card.affixes):
+        msg = f"卡牌「{card_name}」带有词条「[{AFFIX_SEALED.name}]:{AFFIX_SEALED.data.get('description', '')}」，不可弃牌"
         logger.warning(msg)
         return False, msg
 

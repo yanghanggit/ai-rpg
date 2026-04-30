@@ -1,17 +1,11 @@
 """
 卡牌抽取系统模块
 
-该模块实现了战斗回合中的卡牌生成机制，结合历史牌组复用与 LLM 实时生成，为每个角色填充手牌。
-
-核心特性：
-- 历史牌优先：优先从 DrawDeckComponent 取最多 max_num_cards - 1 张历史牌（FIFO 消耗语义）
-- 保证新鲜度：无论 Deck 是否充裕，每回合至少 1 张由 LLM 实时生成
-- 批量推理：所有角色的 LLM 请求并行发出（DeepSeekClient.batch_chat），结果逐一解析写入 HandComponent
-- 合并写入：Deck 历史牌（前）+ LLM 新生成牌（后）合并为最终手牌
+为战斗回合中的每个参战角色填充手牌。优先复用 DrawDeckComponent 历史牌（FIFO），
+Deck 不足时调用 LLM 实时补足；Deck 充裕时完全跳过 LLM 推理。
 
 主要组件：
-- DrawCardsActionSystem: 核心系统类，协调 Deck 消耗与 LLM 生成流程
-- _generate_draw_prompt: 生成"一次生成 num_cards 张卡"的 LLM 提示词
+- DrawCardsActionSystem: 核心系统类
 - CardEntry / DrawCardsResponse: LLM 响应的 Pydantic 解析模型
 """
 
@@ -93,11 +87,9 @@ def _build_design_principle_prompt(
     keywords: List[Keyword],
     dice_rolls: List[int] = [],
 ) -> str:
-    """生成关键词约束段落：去重后输出，无约束时输出差异化指引。
+    """生成关键词约束段落，注入抽牌 prompt。
 
-    当 dice_rolls 非空时，在每张牌的约束行末尾附加骰值。
-    骰值的实际含义由各 Keyword.description 自行声明；若 description 未提及骰值用法，
-    则 LLM 应忽略该数字，段落 header 中会注明这一兜底规则。
+    无关键词时输出差异化指引；有骰值时附加于各卡约束行末尾（骰值语义由 Keyword.description 声明）。
     """
     if not keywords:
         return (
@@ -126,19 +118,15 @@ def _generate_draw_prompt(
     keywords: List[Keyword] = [],
     dice_rolls: List[int] = [],
 ) -> str:
-    """生成“一次生成 num_cards 张 Card”的提示词。
+    """生成完整抽牌 prompt（含字段说明与 JSON 示例），用于 LLM 推理。
 
     Args:
-        actor_stats: 角色当前属性（hp/max_hp/attack/defense）
+        actor_stats: 角色当前属性
         current_round_number: 当前回合数
-        num_cards: 要求生成的卡牌数量
-        draw_status_effects: 当前 draw 阶段的状态效果列表，影响卡牌数値生成
-        keywords: 与 num_cards 等长的关键词约束列表，每个元素对应一张卡的生成约束；为空则无约束
-        dice_rolls: 与 num_cards 等长的骨値列表（0-100 随机整数），每个元素对应一张牌的骨値；
-                    仅当 Keyword.description 明确说明用法时生效，否则 LLM 忽略
-
-    Returns:
-        格式化的完整提示词
+        num_cards: 要求生成的张数
+        draw_status_effects: DRAW 阶段状态效果，影响数值建议
+        keywords: 与 num_cards 等长的关键词约束列表（为空则输出差异化指引）
+        dice_rolls: 与 num_cards 等长的骰值列表（0-100）
     """
 
     def _fmt_duration(d: int) -> str:
@@ -174,17 +162,13 @@ def _generate_draw_prompt(
 
     sections = [stats_line]
 
-    # 当有 draw 阶段状态效果时输出，否则不占位
     if draw_effects_prompt:
         sections.append(draw_effects_prompt)
 
-    # 关键词约束段落无论是否有内容都输出，以明确格式与位置；当 keywords 为空时会输出差异化指引
     sections.append(keyword_line)
 
-    # 字段说明与示例始终输出，明确格式要求
     sections.append(fields_line)
 
-    # 示例行也始终输出，确保 LLM 理解 JSON 格式要求
     sections.append(f"输出 JSON，cards 数组共 {num_cards} 张：\n{example_line}")
 
     return (
@@ -202,21 +186,10 @@ def _generate_compressed_draw_prompt(
     keywords: List[Keyword] = [],
     dice_rolls: List[int] = [],
 ) -> str:
-    """生成“一次生成 num_cards 张 Card”的压缩版提示词。
+    """生成压缩版抽牌 prompt（仅动态感知部分），写入对话历史以减少 token 消耗。
 
-    仅包含每轮变化的动态感知部分（回合/属性/状态效果/关键词约束），
-    省略静态的字段说明与 JSON 格式示例，用于写入对话历史以减少重复 token 消耗。
-
-    Args:
-        actor_stats: 角色当前属性（hp/max_hp/attack/defense）
-        current_round_number: 当前回合数
-        num_cards: 要求生成的卡牌数量
-        draw_status_effects: 当前 draw 阶段的状态效果列表
-        keywords: 与 num_cards 等长的关键词约束列表
-        dice_rolls: 与 num_cards 等长的骰值列表
-
-    Returns:
-        压缩版提示词（仅动态部分）
+    静态字段说明与 JSON 示例附挂在消息额外字段中，LLM 推理仍使用全量版。
+    Args 同 `_generate_draw_prompt`。
     """
 
     def _fmt_duration(d: int) -> str:
@@ -253,16 +226,9 @@ def _generate_compressed_draw_prompt(
 @final
 class DrawCardsActionSystem(ReactiveProcessor):
     """
-    卡牌抽取系统
+    响应 DrawCardsAction，为每个存活角色填充 HandComponent。
 
-    负责在战斗回合中为每个参战角色填充手牌（Hand）。
-
-    工作流程：
-    1. 接收 DrawCardsAction 触发（每个存活角色各一个）
-    2. 预处理：从每个实体的 DrawDeckComponent FIFO 消耗最多 max_num_cards - 1 张历史牌
-    3. 为每个角色调用 _create_draw_chat_client，向 LLM 请求生成剩余张数（≥1）的新卡牌
-    4. 所有请求并行执行（DeepSeekClient.batch_chat）
-    5. 逐一调用 _process_draw_response，合并 Deck 历史牌 + LLM 新牌，写入 HandComponent
+    Deck 充裕时从历史牌直接填满（跳过 LLM）；不足时并行调用 LLM 补足差额后合并写入。
     """
 
     def __init__(self, game: TCGGame, use_compressed_prompt: bool = True) -> None:
@@ -272,11 +238,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def _get_max_num_cards(self, actor: Entity) -> int:
-        """返回角色本回合应持有的手牌上限。
-        当前为硬编码占位，后续可扩展为动态逻辑：
-            - ExpeditionMemberComponent（远征队友方）→ 3 张
-            - EnemyComponent（敌方）→ 1 张
-        """
+        """返回角色本回合应持有的手牌上限（ExpeditionMember=3，Enemy=1）。"""
         if actor.has(ExpeditionMemberComponent):
             return 3
         if actor.has(EnemyComponent):
@@ -328,21 +290,34 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 HandComponent
             ), f"实体 {entity.name} 已有 HandComponent，可能是上回合遗留，先行移除"
 
-        # 预处理：从每个实体的 DrawDeckComponent FIFO 消耗历史牌
         entity_deck_cards, entity_generate_counts = self._consume_deck_cards(entities)
+        current_round_number = len(current_rounds)
 
-        # 为每个 entity 创建 draw 聊天客户端
-        chat_clients: List[DeepSeekClient] = []
+        # Deck 充裕（num_cards == 0）→ 直接写入 HandComponent，跳过 LLM
+        llm_entities = [e for e in entities if entity_generate_counts[e.name] > 0]
         for entity in entities:
+            if entity_generate_counts[entity.name] == 0:
+                deck_cards = entity_deck_cards[entity.name]
+                entity.replace(
+                    HandComponent, entity.name, deck_cards, current_round_number
+                )
+                logger.debug(
+                    f"[{entity.name}] Deck 充裕，手牌共 {len(deck_cards)} 张（全部历史牌，跳过 LLM）："
+                    f"{[c.name for c in deck_cards]}"
+                )
+
+        if not llm_entities:
+            return
+
+        chat_clients: List[DeepSeekClient] = []
+        for entity in llm_entities:
             chat_client = self._create_draw_chat_client(
                 entity=entity, num_cards=entity_generate_counts[entity.name]
             )
             chat_clients.append(chat_client)
 
-        # 批量 LLM 推理
         await DeepSeekClient.batch_chat(clients=chat_clients)
 
-        # 处理响应，写入 HandComponent
         for chat_client in chat_clients:
             found_entity = self._game.get_entity_by_name(chat_client.name)
             assert (
@@ -359,16 +334,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
     def _consume_deck_cards(
         self, entities: list[Entity]
     ) -> tuple[Dict[str, List[Card]], Dict[str, int]]:
-        """从每个实体的 DrawDeckComponent FIFO 消耗历史牌，计算本回合各实体需 LLM 生成的张数。
+        """FIFO 消耗 DrawDeckComponent 历史牌，计算各实体需 LLM 补足的张数。
 
-        最多消耗 max_num_cards - 1 张，保证至少 1 张由 LLM 新生成。
-
-        Args:
-            entities: 本回合需要抽牌的实体列表
-
-        Returns:
-            entity_deck_cards: entity.name -> 已消耗的历史牌列表
-            entity_generate_counts: entity.name -> 本回合需 LLM 生成的张数
+        Returns: (entity_deck_cards, entity_generate_counts)；counts 为 0 表示 Deck 充裕，无需 LLM。
         """
         entity_deck_cards: Dict[str, List[Card]] = {}
         entity_generate_counts: Dict[str, int] = {}
@@ -378,7 +346,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 draw_deck_comp is not None
             ), f"实体 {entity.name} 缺少 DrawDeckComponent"
             max_cards = self._get_max_num_cards(entity)
-            n_from_deck = min(len(draw_deck_comp.cards), max_cards - 1)
+            n_from_deck = min(len(draw_deck_comp.cards), max_cards)
             deck_cards = list(draw_deck_comp.cards[:n_from_deck])
             del draw_deck_comp.cards[:n_from_deck]
             entity_deck_cards[entity.name] = deck_cards
@@ -395,17 +363,11 @@ class DrawCardsActionSystem(ReactiveProcessor):
         entity: Entity,
         num_cards: int,
     ) -> DeepSeekClient:
-        """为单个角色创建"生成 num_cards 张 Card"的聊天客户端。
-
-        从实体的 KeywordComponent 随机采样 num_cards 个关键词（优先不重复），
-        注入 prompt 以约束每张卡牌的生成风格。
+        """为单个角色构建 LLM 抽牌请求，注入当前属性、状态效果与关键词约束。
 
         Args:
             entity: 角色实体
-            num_cards: 要求生成的卡牌数量
-
-        Returns:
-            DeepSeekClient: 已填充提示词的聊天客户端
+            num_cards: 需 LLM 生成的张数（> 0）
         """
         last_round = self._game.current_dungeon.latest_round
         assert last_round is not None
@@ -479,16 +441,15 @@ class DrawCardsActionSystem(ReactiveProcessor):
         num_cards: int,
         deck_cards: List[Card],
     ) -> None:
-        """解析 LLM 返回的卡牌，与 Deck 历史牌合并后写入 HandComponent。
+        """解析 LLM 响应，与 Deck 历史牌合并后写入 HandComponent。
 
-        解析失败时（LLM 格式错误）不做补偿推理，直接插入兜底牌「等待」并写入 HandComponent，
-        确保角色本回合始终持有手牌，回合推进不阻塞。
+        解析失败时插入兜底牌「等待」，确保手牌始终存在、回合不阻塞。
 
         Args:
             entity: 目标角色实体
             chat_client: 包含 LLM 响应的聊天客户端
-            num_cards: 预期由 LLM 生成的卡牌数量
-            deck_cards: 本回合从 DrawDeckComponent 消耗的历史牌（已在 react() 中移除）
+            num_cards: 预期由 LLM 生成的张数
+            deck_cards: 本回合已从 DrawDeckComponent 消耗的历史牌
         """
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
@@ -524,12 +485,11 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 draw_cards_round_number=current_round_number,
             )
 
-            # 构建 Card 列表：逐卡校验 target_type，非法值废弃并写入 agent 警告
+            # 逐卡校验 target_type，非法值废弃并写入 agent 警告
             valid_target_types = {e.value for e in CardTargetType}
             cards: List[Card] = []
             for entry in response.cards:
 
-                # 校验 target_type 字段是否合法，非法则废弃该卡并记录警告
                 if entry.target_type not in valid_target_types:
                     warn_msg = (
                         f"[系统警告] 你刚才生成的卡牌「{entry.name}」的 target_type 字段值为"
@@ -544,7 +504,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     )
                     continue
 
-                # 目标类型合法，构建 Card 对象并加入列表
                 cards.append(
                     Card(
                         name=entry.name,
@@ -564,7 +523,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     "可能有部分卡牌因无效 target_type 被废弃"
                 )
 
-            # 合并：Deck 历史牌（前）+ LLM 新生成牌（后）
             all_cards = deck_cards + cards
             entity.replace(HandComponent, entity.name, all_cards, current_round_number)
             logger.debug(

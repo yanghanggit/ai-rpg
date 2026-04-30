@@ -335,47 +335,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
         # TODO(mock): 第一回合随机给远征队员一张手牌添加「封印」词条，验证封印逻辑
         self._mock_seal_one_card_first_round(entities, current_round_number)
 
-        # 将手牌中携带封印词条的卡牌物化到实体级组件，供出牌/弃牌验证使用
-        self._sync_affix_sealed_to_entities(entities)
-
-    #######################################################################################################################################
-    def _sync_affix_sealed_to_entities(self, entities: list[Entity]) -> None:
-        """将手牌中携带「封印」词条的卡牌物化到 AffixSealedComponent，实现词缀约束的实体级解耦。
-
-        遍历每个实体的 HandComponent，找出 affixes 中含有 AffixSealedComponent 名称的卡牌，
-        将其副本写入 AffixSealedComponent.sealed_cards。无封印牌时清除组件。
-        """
-        for entity in entities:
-            hand_comp = entity.get(HandComponent)
-            if hand_comp is None:
-                continue
-
-            sealed_cards = [
-                card.model_copy()
-                for card in hand_comp.cards
-                if any(a.name == AffixSealedComponent.__name__ for a in card.affixes)
-            ]
-
-            if sealed_cards:
-                first_affix = next(
-                    (
-                        a
-                        for c in sealed_cards
-                        for a in c.affixes
-                        if a.name == AffixSealedComponent.__name__
-                    ),
-                    None,
-                )
-                desc = first_affix.data.get("description", "") if first_affix else ""
-                entity.replace(AffixSealedComponent, entity.name, desc, sealed_cards)
-                logger.debug(
-                    f"[{entity.name}] AffixSealedComponent 写入封印牌: "
-                    f"{[c.name for c in sealed_cards]}"
-                )
-            elif entity.has(AffixSealedComponent):
-                entity.remove(AffixSealedComponent)
-                logger.debug(f"[{entity.name}] 无封印牌，清除 AffixSealedComponent")
-
     #######################################################################################################################################
     def _mock_seal_one_card_first_round(
         self, entities: list[Entity], current_round_number: int

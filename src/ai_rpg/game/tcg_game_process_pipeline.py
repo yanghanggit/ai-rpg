@@ -102,6 +102,7 @@ def create_combat_pipeline(
     from ..systems.draw_cards_action_system import (
         DrawCardsActionSystem,
     )
+    from ..systems.affix_sealed_system import AffixSealedSystem
 
     from ..systems.play_cards_action_system import (
         PlayCardsActionSystem,
@@ -150,6 +151,7 @@ def create_combat_pipeline(
 
     # 战斗核心动作处理相关的系统：抽牌 → 敌人决策 → 叙事润色 → 出牌 → 退却 → 仲裁 → 状态效果追加
     processors.add(DrawCardsActionSystem(tcg_game))
+    processors.add(AffixSealedSystem(tcg_game))
     processors.add(EnemyPlayDecisionSystem(tcg_game))
     processors.add(PlayActionNarrationSystem(tcg_game))
     processors.add(PlayCardsActionSystem(tcg_game))

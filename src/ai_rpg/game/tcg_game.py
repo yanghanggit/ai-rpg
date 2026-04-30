@@ -213,6 +213,7 @@ class TCGGame(RPGGame):
 
             # 移除 HandComponent
             entity.remove(HandComponent)
+
             # 词条物化组件与手牌同生命周期，回合结束一并清除
             if entity.has(AffixSealedComponent):
                 entity.remove(AffixSealedComponent)

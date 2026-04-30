@@ -9,7 +9,7 @@
 
 from typing import List, final
 from ..entitas.components import Component, MutableComponent
-from .combat import Card, StatusEffect
+from .cards import Card, StatusEffect
 from .entities import (
     AnyItem,
     Keyword,

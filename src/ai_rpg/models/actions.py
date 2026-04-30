@@ -10,7 +10,7 @@
 
 from typing import Dict, List, Optional, final
 from ..entitas.components import Component
-from .combat import Card
+from .cards import Card
 from .registry import register_action_component_type, register_component_type
 
 

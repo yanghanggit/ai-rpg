@@ -12,6 +12,8 @@ from ..models import (
     DungeonCombatInitResponse,
     DungeonCombatPlayCardsRequest,
     DungeonCombatPlayCardsResponse,
+    DungeonCombatDiscardCardsRequest,
+    DungeonCombatDiscardCardsResponse,
     DungeonCombatResponse,
     DungeonCombatRetreatRequest,
     DungeonCombatRetreatResponse,
@@ -302,6 +304,27 @@ async def dungeon_combat_play_cards(
         )
         response.raise_for_status()
         return DungeonCombatPlayCardsResponse.model_validate(response.json())
+
+
+async def dungeon_combat_discard_cards(
+    user_name: str,
+    game_name: str,
+    actor_name: str,
+    card_name: str,
+) -> DungeonCombatDiscardCardsResponse:
+    """让指定角色弃掉指定手牌，返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            server_config.base_url + "/api/dungeon/combat/discard_cards/v1/",
+            json=DungeonCombatDiscardCardsRequest(
+                user_name=user_name,
+                game_name=game_name,
+                actor_name=actor_name,
+                card_name=card_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return DungeonCombatDiscardCardsResponse.model_validate(response.json())
 
 
 async def home_generate_dungeon(

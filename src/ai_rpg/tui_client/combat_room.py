@@ -15,6 +15,7 @@ from .round_detail import RoundDetailScreen
 from .utils import display_name
 from .server_client import dungeon_combat_draw_cards as server_dungeon_combat_draw_cards
 from .server_client import dungeon_combat_play_cards as server_play_cards
+from .server_client import dungeon_combat_discard_cards as server_discard_cards
 from .server_client import dungeon_combat_init as server_dungeon_combat_init
 from .server_client import dungeon_combat_retreat as server_dungeon_combat_retreat
 from .server_client import dungeon_exit as server_dungeon_exit
@@ -744,21 +745,29 @@ class CombatRoomScreen(Screen[None]):
                 if card.effects
                 else ""
             )
+            affixes_str = (
+                f"\n        [bold orange1]词条：{'  '.join(card.affixes)}[/]"
+                if card.affixes
+                else ""
+            )
             log.write(
                 f"    [bold cyan]{i}.[/] [bold]{card.name}[/]  "
                 f"伤害:[red]{card.damage_dealt}[/]{hit_str}  格挡:[blue]{card.block_gain}[/]  目标:{tt_str}"
                 + source_str
                 + action_str
                 + effects_str
+                + affixes_str
             )
         self._current_actor = current_actor
         self._phase = _Phase.SELECT_CARD
         self._update_play_status(
             f"[{short}] 输入卡牌编号（1-{len(hand_cards)}）选牌  |  q 返回主菜单"
         )
-        log.write("  [dim]（输入 q 可返回主菜单，下次输入 2 可继续出牌）[/]")
+        log.write(
+            f"  [dim](出牌：输入卡牌编号 / 弃牌：d + 编号，如 d1 / q 返回主菜单)[/]"
+        )
         inp = self.query_one(Input)
-        inp.placeholder = f"1-{len(hand_cards)} 或卡牌名 / q 返回"
+        inp.placeholder = f"1-{len(hand_cards)} / d1…d{len(hand_cards)} 弃牌 / q 返回"
         inp.disabled = False
         inp.focus()
 
@@ -911,6 +920,23 @@ class CombatRoomScreen(Screen[None]):
         if not hand_cards:
             log.write("[yellow]⚠ 手牌已不存在，重新推进回合...[/]")
             self._advance()
+            return
+
+        # 弃牌模式： raw 以 'd' 开头 + 数字（如 d1、d2）
+        if raw.lower().startswith("d") and raw[1:].isdigit():
+            idx = int(raw[1:]) - 1
+            if 0 <= idx < len(hand_cards):
+                discard_card = hand_cards[idx]
+                log.write(f"  准备弃牌：[bold cyan]{discard_card.name}[/]")
+                self._do_discard_card(actor_name, discard_card.name)
+            else:
+                log.write(
+                    f"[red]无效编号 '{raw[1:]}'，请输入 1-{len(hand_cards)} 的数字。[/]"
+                )
+                self._phase = _Phase.SELECT_CARD
+                inp = self.query_one(Input)
+                inp.disabled = False
+                inp.focus()
             return
 
         # ── 解析用户输入 ──
@@ -1143,6 +1169,70 @@ class CombatRoomScreen(Screen[None]):
                 logger.warning(f"_do_play_card: 出牌后状态检查失败 error={e}")
 
         self._advance()  # 启动新 @work 推进状态机；当前 coroutine 到此结束
+
+    # ──────────────────────────────────────────────
+    # 后台弃牌任务
+    # ──────────────────────────────────────────────
+    @work
+    async def _do_discard_card(self, actor_name: str, card_name: str) -> None:
+        log = self.query_one(RichLog)
+        self._phase = _Phase.WAITING
+        self.query_one(Input).disabled = True
+
+        short = display_name(actor_name)
+        log.write(f"  [dim]▶ {short} 弃牌中：{card_name}[/]")
+        logger.info(
+            f"CombatRoomScreen._do_discard_card: actor={actor_name} card={card_name}"
+        )
+
+        task_id = ""
+        try:
+            resp = await server_discard_cards(
+                self._user_name, self._game_name, actor_name, card_name
+            )
+            task_id = resp.task_id
+            logger.info(f"_do_discard_card: 任务已创建 task_id={task_id}")
+        except httpx.HTTPStatusError as e:
+            try:
+                detail = e.response.json().get("detail", str(e))
+            except Exception:
+                detail = str(e)
+            log.write(f"[bold red]❌ 弃牌请求失败: {detail}[/]")
+            logger.error(f"_do_discard_card: 请求失败 error={e}")
+            self._advance()
+            return
+        except Exception as e:
+            log.write(f"[bold red]❌ 弃牌请求失败: {e}[/]")
+            logger.error(f"_do_discard_card: 请求失败 error={e}")
+            self._advance()
+            return
+
+        self._update_play_status(f"等待 {short} 弃牌完成...")
+        for _ in range(_PLAY_MAX_POLLS):
+            await asyncio.sleep(_PLAY_POLL_INTERVAL)
+            try:
+                status_resp = await fetch_tasks_status([task_id])
+                if not status_resp.tasks:
+                    continue
+                record = status_resp.tasks[0]
+                if record.status == TaskStatus.COMPLETED:
+                    log.write(f"  [green]✓ {short} 弃牌完成：{card_name}[/]")
+                    logger.info(f"_do_discard_card: 任务完成 task_id={task_id}")
+                    break
+                elif record.status == TaskStatus.FAILED:
+                    error_msg = record.error or "未知错误"
+                    log.write(f"[bold red]❌ {short} 弃牌失败: {error_msg}[/]")
+                    logger.error(
+                        f"_do_discard_card: 任务失败 task_id={task_id} error={error_msg}"
+                    )
+                    break
+            except Exception as e:
+                logger.warning(f"_do_discard_card: 轮询失败 error={e}")
+        else:
+            log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
+            logger.warning(f"_do_discard_card: 轮询超时 task_id={task_id}")
+
+        self._advance()
 
     # ──────────────────────────────────────────────
     # 显示本次出牌的战斗演绎与计算日志
@@ -1382,6 +1472,11 @@ class CombatRoomScreen(Screen[None]):
                                 + (
                                     f"  [yellow]效果：{'、'.join(card.effects)}[/]"
                                     if card.effects
+                                    else ""
+                                )
+                                + (
+                                    f"  [bold orange1]词条：{'  '.join(card.affixes)}[/]"
+                                    if card.affixes
                                     else ""
                                 )
                             )

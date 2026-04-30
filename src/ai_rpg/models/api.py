@@ -249,6 +249,21 @@ class DungeonCombatPlayCardsResponse(BaseModel):
     message: str
 
 
+@final
+class DungeonCombatDiscardCardsRequest(BaseModel):
+    user_name: str
+    game_name: str
+    actor_name: str
+    card_name: str
+
+
+@final
+class DungeonCombatDiscardCardsResponse(BaseModel):
+    task_id: str
+    status: str
+    message: str
+
+
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################

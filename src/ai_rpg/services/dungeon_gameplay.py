@@ -28,6 +28,8 @@ from ..models import (
     DungeonCombatDrawCardsResponse,
     DungeonCombatPlayCardsRequest,
     DungeonCombatPlayCardsResponse,
+    DungeonCombatDiscardCardsRequest,
+    DungeonCombatDiscardCardsResponse,
     TaskStatus,
 )
 from .dungeon_lifecycle import (
@@ -37,6 +39,7 @@ from .dungeon_lifecycle import (
 from .dungeon_actions import (
     activate_all_card_draws,
     activate_play_cards_specified,
+    activate_discard_cards_specified,
     activate_enemy_play_trigger,
     activate_expedition_retreat,
 )
@@ -568,6 +571,78 @@ async def dungeon_combat_play_cards(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+@dungeon_gameplay_api_router.post(
+    path="/api/dungeon/combat/discard_cards/v1/",
+    response_model=DungeonCombatDiscardCardsResponse,
+)
+async def dungeon_combat_discard_cards(
+    payload: DungeonCombatDiscardCardsRequest,
+    game_server: CurrentGameServer,
+) -> DungeonCombatDiscardCardsResponse:
+    """地下城战斗弃牌接口
+
+    触发指定角色弃掉一张手牌的后台任务，立即返回任务ID。
+    封印词缀（AFFIX_SEALED）的卡牌无法被弃掉，后台任务会将错误写入 task.error。
+
+    Raises:
+        HTTPException(404): 玩家未登录或游戏不存在
+        HTTPException(400): 战斗未在进行中或无未完成的回合
+    """
+
+    logger.info(f"/api/dungeon/combat/discard_cards/v1/: user={payload.user_name}")
+
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有登录，请先登录",
+        )
+
+    async with current_room._lock:
+        rpg_game = _validate_dungeon_prerequisites(
+            user_name=payload.user_name,
+            game_server=game_server,
+        )
+
+        if not rpg_game.current_dungeon.is_ongoing:
+            logger.error(f"玩家 {payload.user_name} 弃牌失败: 战斗未在进行中")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="战斗未在进行中",
+            )
+
+        last_round = rpg_game.current_dungeon.latest_round
+        if last_round is None or last_round.is_completed:
+            logger.error(f"玩家 {payload.user_name} 弃牌失败: 当前没有未完成的回合")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="当前没有未完成的回合可供弃牌",
+            )
+
+    discard_cards_task = game_server.create_task()
+    asyncio.create_task(
+        _execute_discard_cards_task(
+            discard_cards_task.task_id,
+            payload.user_name,
+            payload.actor_name,
+            payload.card_name,
+            game_server,
+        )
+    )
+
+    logger.info(
+        f"📝 创建弃牌后台任务: task_id={discard_cards_task.task_id}, user={payload.user_name}"
+    )
+    return DungeonCombatDiscardCardsResponse(
+        task_id=discard_cards_task.task_id,
+        status=TaskStatus.RUNNING.value,
+        message="弃牌任务已启动，请通过会话消息查询结果",
+    )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
 async def _execute_init_combat_task(
     task_id: str,
     user_name: str,
@@ -806,6 +881,57 @@ async def _execute_play_cards_task(
     except Exception as e:
 
         logger.error(f"❌ 出牌任务失败: task_id={task_id}, user={user_name}, error={e}")
+        task_record = game_server.get_task(task_id)
+        if task_record is not None:
+            task_record.status = TaskStatus.FAILED
+            task_record.error = str(e)
+            task_record.end_time = datetime.now().isoformat()
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+async def _execute_discard_cards_task(
+    task_id: str,
+    user_name: str,
+    actor_name: str,
+    card_name: str,
+    game_server: GameServer,
+) -> None:
+    """后台执行弃牌任务"""
+    try:
+        logger.info(f"🚀 弃牌任务开始: task_id={task_id}, user={user_name}")
+
+        current_room = game_server.get_room(user_name)
+        if current_room is None or current_room._tcg_game is None:
+            raise ValueError(f"游戏实例不存在: user={user_name}")
+
+        async with current_room._lock:
+            rpg_game = current_room._tcg_game
+            assert isinstance(rpg_game, TCGGame), "Invalid game type"
+
+            if not rpg_game.current_dungeon.is_ongoing:
+                raise ValueError("战斗未在进行中")
+
+            success, message = activate_discard_cards_specified(
+                rpg_game, actor_name, card_name
+            )
+            if not success:
+                raise ValueError(f"弃牌失败: {message}")
+
+            await rpg_game._combat_pipeline.process()
+
+            archive_world(rpg_game._world, rpg_game._player_session)
+
+        task_record = game_server.get_task(task_id)
+        if task_record is not None:
+            task_record.status = TaskStatus.COMPLETED
+            task_record.end_time = datetime.now().isoformat()
+
+        logger.info(f"✅ 弃牌任务完成: task_id={task_id}, user={user_name}")
+
+    except Exception as e:
+        logger.error(f"❌ 弃牌任务失败: task_id={task_id}, user={user_name}, error={e}")
         task_record = game_server.get_task(task_id)
         if task_record is not None:
             task_record.status = TaskStatus.FAILED

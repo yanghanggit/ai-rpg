@@ -7,7 +7,6 @@
 from enum import IntEnum, unique
 from typing import List, Optional, final
 from pydantic import BaseModel, Field
-from .cards import Card, CardTargetType, StatusEffect, StatusEffectPhase  # noqa: F401
 
 
 ###############################################################################################################################################

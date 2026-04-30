@@ -5,7 +5,7 @@ StatusEffectPhase、StatusEffect、CardTargetType、Card。
 """
 
 from enum import StrEnum, unique
-from typing import List, final
+from typing import Final, List, final
 from pydantic import BaseModel
 
 
@@ -74,6 +74,10 @@ class CardTargetType(StrEnum):
 
 
 ###############################################################################################################################################
+AFFIX_SEALED: Final[str] = "[封印]:不可被出牌，也不可被弃牌"
+
+
+###############################################################################################################################################
 @final
 class Card(BaseModel):
     """战斗卡牌"""
@@ -83,6 +87,9 @@ class Card(BaseModel):
     effects: List[str] = (
         []
     )  # 词缀列表，每项为"[名称]:短句描述"格式（如"[燃烧]:可能引发持续火焰伤害"）；为空时仲裁后不触发 AddStatusEffectsAction LLM 推理
+    affixes: List[str] = (
+        []
+    )  # 卡牌特殊属性标记，每项为"[名称]:短句描述"格式；系统在出牌/弃牌前读取，用于约束操作合法性
     damage_dealt: int = 0  # 造成的伤害值（单次）
     block_gain: int = 0  # 提供的格挡增量
     hit_count: int = (

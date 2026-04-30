@@ -20,7 +20,7 @@ from ..models import (
     RetreatAction,
     Card,
     CardTargetType,
-    AFFIX_SEALED,
+    AffixSealedComponent,
 )
 from ..entitas import Entity, Matcher
 
@@ -247,8 +247,20 @@ def activate_play_cards_specified(
         logger.error(msg)
         return False, msg
 
-    if any(a.name == AFFIX_SEALED.name for a in selected_card.affixes):
-        msg = f"卡牌「{card_name}」带有词条「[{AFFIX_SEALED.name}]:{AFFIX_SEALED.data.get('description', '')}」，不可出牌"
+    sealed_comp = entity.get(AffixSealedComponent)
+    if sealed_comp is not None and any(
+        c.name == card_name for c in sealed_comp.sealed_cards
+    ):
+        matched_affix = next(
+            (
+                a
+                for a in selected_card.affixes
+                if a.name == AffixSealedComponent.__name__
+            ),
+            None,
+        )
+        desc = matched_affix.data.get("description", "") if matched_affix else ""
+        msg = f"卡牌「{card_name}」带有词条「[{AffixSealedComponent.__name__}]:{desc}」，不可出牌"
         logger.warning(msg)
         return False, msg
 
@@ -306,8 +318,20 @@ def activate_discard_cards_specified(
         logger.error(msg)
         return False, msg
 
-    if any(a.name == AFFIX_SEALED.name for a in selected_card.affixes):
-        msg = f"卡牌「{card_name}」带有词条「[{AFFIX_SEALED.name}]:{AFFIX_SEALED.data.get('description', '')}」，不可弃牌"
+    sealed_comp = entity.get(AffixSealedComponent)
+    if sealed_comp is not None and any(
+        c.name == card_name for c in sealed_comp.sealed_cards
+    ):
+        matched_affix = next(
+            (
+                a
+                for a in selected_card.affixes
+                if a.name == AffixSealedComponent.__name__
+            ),
+            None,
+        )
+        desc = matched_affix.data.get("description", "") if matched_affix else ""
+        msg = f"卡牌「{card_name}」带有词条「[{AffixSealedComponent.__name__}]:{desc}」，不可弃牌"
         logger.warning(msg)
         return False, msg
 

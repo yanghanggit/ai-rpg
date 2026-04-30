@@ -5,16 +5,10 @@
   - data : flat 参数字典，由对应 Component 的 model_dump() 生成
 """
 
-from typing import Final
-from .serialization import ComponentSerialization
-from .components import AffixSealedComponent
-
-
 ###############################################################################################################################################
-AFFIX_SEALED: Final[ComponentSerialization] = ComponentSerialization(
-    name=AffixSealedComponent.__name__,
-    data=AffixSealedComponent(description="不可被出牌，也不可被弃牌").model_dump(),
-)
-
-
+# 词条常量在此定义，示例：
+# AFFIX_FOO: Final[ComponentSerialization] = ComponentSerialization(
+#     name=FooComponent.__name__,
+#     data=FooComponent(name="", ...).model_dump(),
+# )
 ###############################################################################################################################################

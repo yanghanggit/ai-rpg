@@ -236,5 +236,5 @@ class EquipItemActionSystem(ReactiveProcessor):
             name=entity.name,
             prompt=prompt,
             context=self._game.get_agent_context(entity).context,
-            temperature=1.0,
+            # temperature=1.0,
         )

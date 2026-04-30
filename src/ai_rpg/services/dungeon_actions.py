@@ -8,7 +8,10 @@
 import random
 from typing import List, Tuple
 from loguru import logger
+from pydantic import BaseModel
+from ..deepseek import DeepSeekClient
 from ..game.tcg_game import TCGGame
+from ..utils import extract_json_from_code_block
 from ..models import (
     DrawCardsAction,
     HandComponent,
@@ -20,9 +23,98 @@ from ..models import (
     RetreatAction,
     Card,
     CardTargetType,
+    HandComponent,
     # AffixSealedComponent,
 )
 from ..entitas import Entity, Matcher
+
+
+###################################################################################################################################################################
+class _AffixGuardResponse(BaseModel):
+    """词条守卫 LLM 响应模型"""
+
+    allowed: bool
+    reason: str = ""
+
+
+###################################################################################################################################################################
+async def _check_affixes_allow_action(
+    tcg_game: TCGGame,
+    entity: Entity,
+    selected_card: Card,
+    action_type: str,
+) -> Tuple[bool, str]:
+    """用 LLM 判断当前手牌词条是否允许对 selected_card 执行 play 或 discard。
+
+    遍历手牌中所有带 affixes 的卡牌，将词条规则拼成提示词提交给 LLM；
+    LLM 返回 JSON {"allowed": bool, "reason": str}。
+    任何异常（网络错误、解析失败）均视为放行（fail-open）。
+
+    Args:
+        tcg_game: TCG 游戏实例
+        entity: 执行动作的角色实体
+        selected_card: 待执行 play/discard 的目标卡牌
+        action_type: "play" 或 "discard"
+
+    Returns:
+        (True, "") — 允许；(False, reason) — 阻止
+    """
+    hand_comp = entity.get(HandComponent)
+    if hand_comp is None:
+        return True, ""
+
+    affix_rules: List[str] = []
+    for card in hand_comp.cards:
+        for affix in card.affixes:
+            affix_rules.append(f"[{card.name}] {affix}")
+
+    if not affix_rules:
+        return True, ""
+
+    action_cn = "出牌" if action_type == "play" else "弃牌"
+    rules_text = "\n".join(f"- {r}" for r in affix_rules)
+    prompt = f"""# 词条守卫：判断{action_cn}是否被允许（以 JSON 格式返回）
+
+## 当前手牌词条规则
+
+{rules_text}
+
+## 待执行操作
+
+角色「{entity.name}」想要{action_cn}卡牌「{selected_card.name}」。
+
+## 判断规则
+
+逐条检查上方词条，若有词条**明确**禁止此{action_cn}操作（例如"封印：不可出牌"禁止出牌），则 allowed 为 false；否则为 true。reason 用一句中文说明原因。
+
+只输出 JSON：
+
+```json
+{{
+  "allowed": true,
+  "reason": "无词条禁止此操作"
+}}
+```"""
+
+    try:
+        client = DeepSeekClient(
+            name=entity.name,
+            prompt=prompt,
+            context=tcg_game.get_agent_context(entity).context,
+            # temperature=0.0,
+        )
+        await client.async_chat()
+        response = _AffixGuardResponse.model_validate_json(
+            extract_json_from_code_block(client.response_content)
+        )
+        if not response.allowed:
+            logger.warning(
+                f"[词条守卫] {entity.name} {action_cn}「{selected_card.name}」被词条阻止: {response.reason}"
+            )
+        return response.allowed, response.reason
+    except Exception as e:
+        logger.warning(f"[词条守卫] LLM 推理失败，放行操作: {type(e).__name__}: {e}")
+        return True, ""
 
 
 ###################################################################################################################################################################
@@ -209,7 +301,7 @@ def _validate_play_turn(
 
 
 ###################################################################################################################################################################
-def activate_play_cards_specified(
+async def activate_play_cards_specified(
     tcg_game: TCGGame,
     actor_name: str,
     card_name: str,
@@ -254,6 +346,11 @@ def activate_play_cards_specified(
     #     msg = f"卡牌「{card_name}」带有封印词条，不可出牌"
     #     logger.warning(msg)
     #     return False, msg
+    allowed, deny_reason = await _check_affixes_allow_action(
+        tcg_game, entity, selected_card, "play"
+    )
+    if not allowed:
+        return False, deny_reason
 
     resolved_targets, resolve_err = _resolve_targets(
         selected_card, entity, targets, tcg_game
@@ -276,7 +373,7 @@ def activate_play_cards_specified(
 
 
 ###################################################################################################################################################################
-def activate_discard_cards_specified(
+async def activate_discard_cards_specified(
     tcg_game: TCGGame,
     actor_name: str,
     card_name: str,
@@ -316,6 +413,11 @@ def activate_discard_cards_specified(
     #     msg = f"卡牌「{card_name}」带有封印词条，不可弃牌"
     #     logger.warning(msg)
     #     return False, msg
+    allowed, deny_reason = await _check_affixes_allow_action(
+        tcg_game, entity, selected_card, "discard"
+    )
+    if not allowed:
+        return False, deny_reason
 
     logger.debug(f"为角色 {actor_name} 激活弃牌动作，卡牌: {selected_card.name}")
     entity.replace(DiscardCardsAction, entity.name, selected_card)

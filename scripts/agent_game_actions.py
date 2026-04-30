@@ -504,7 +504,7 @@ async def play_cards_specified_game(
     if actor_entity is not None and actor_entity.has(EnemyComponent):
         success, message = activate_enemy_play_trigger(terminal_game, actor)
     else:
-        success, message = activate_play_cards_specified(
+        success, message = await activate_play_cards_specified(
             terminal_game, actor, card, list(targets)
         )
     if not success:
@@ -562,7 +562,9 @@ async def discard_cards_game(
         logger.error("discard-cards-specified 当前没有未完成的回合可供弃牌")
         return terminal_game
 
-    success, message = activate_discard_cards_specified(terminal_game, actor, card)
+    success, message = await activate_discard_cards_specified(
+        terminal_game, actor, card
+    )
     if not success:
         logger.error(f"discard-cards-specified 失败: {message}")
         return terminal_game

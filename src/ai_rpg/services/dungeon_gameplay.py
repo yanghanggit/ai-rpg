@@ -858,7 +858,7 @@ async def _execute_play_cards_task(
             if actor_entity is not None and actor_entity.has(EnemyComponent):
                 success, message = activate_enemy_play_trigger(rpg_game, actor_name)
             else:
-                success, message = activate_play_cards_specified(
+                success, message = await activate_play_cards_specified(
                     rpg_game, actor_name, card_name, targets
                 )
             if not success:
@@ -913,7 +913,7 @@ async def _execute_discard_cards_task(
             if not rpg_game.current_dungeon.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
-            success, message = activate_discard_cards_specified(
+            success, message = await activate_discard_cards_specified(
                 rpg_game, actor_name, card_name
             )
             if not success:

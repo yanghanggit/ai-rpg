@@ -206,6 +206,25 @@ class PlayCardsAction(Component):
 
 
 ############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
+class DiscardCardsAction(Component):
+    """弃牌动作组件
+
+    触发角色在战斗回合中主动弃置手中的指定卡牌，由 DiscardCardsActionSystem 处理。
+    弃置后卡牌归入 DiscardDeckComponent，消耗 1 点 energy。
+
+    Attributes:
+        name: 弃牌的角色名称
+        card: 要弃置的具体卡牌实例
+    """
+
+    name: str
+    card: Card
+
+
+############################################################################################################
 
 
 @final

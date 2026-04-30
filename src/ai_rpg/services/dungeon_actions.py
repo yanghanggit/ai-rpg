@@ -13,6 +13,7 @@ from ..models import (
     DrawCardsAction,
     HandComponent,
     PlayCardsAction,
+    DiscardCardsAction,
     ExpeditionMemberComponent,
     EnemyComponent,
     DeathComponent,
@@ -263,6 +264,45 @@ def activate_play_cards_specified(
         action,
     )
     return True, f"成功为角色 {actor_name} 激活出牌动作（卡牌: {card_name}）"
+
+
+###################################################################################################################################################################
+def activate_discard_cards_specified(
+    tcg_game: TCGGame,
+    actor_name: str,
+    card_name: str,
+) -> Tuple[bool, str]:
+    """
+    让指定远征队员主动弃置指定名称的手牌。仅适用于 ExpeditionMemberComponent 角色。
+
+    Args:
+        tcg_game: TCG游戏实例
+        actor_name: 弃牌角色的全名（如 角色.旅行者.无名氏）
+        card_name: 要弃置的卡牌名称（须存在于该角色手牌中）
+
+    Returns:
+        tuple[bool, str]: (是否成功, 结果消息)
+    """
+    entity, error_msg = _validate_play_turn(tcg_game, actor_name)
+    if entity is None:
+        logger.error(f"activate_discard_cards_specified: {error_msg}")
+        return False, error_msg
+
+    if not entity.has(ExpeditionMemberComponent):
+        msg = f"角色 {actor_name} 不是远征队员，弃牌仅限远征队员使用"
+        logger.error(msg)
+        return False, msg
+
+    hand_comp = entity.get(HandComponent)
+    selected_card = next((c for c in hand_comp.cards if c.name == card_name), None)
+    if selected_card is None:
+        msg = f"角色 {actor_name} 手牌中找不到卡牌 '{card_name}'，当前手牌: {[c.name for c in hand_comp.cards]}"
+        logger.error(msg)
+        return False, msg
+
+    logger.debug(f"为角色 {actor_name} 激活弃牌动作，卡牌: {selected_card.name}")
+    entity.replace(DiscardCardsAction, entity.name, selected_card)
+    return True, f"成功为角色 {actor_name} 激活弃牌动作（卡牌: {card_name}）"
 
 
 ###################################################################################################################################################################

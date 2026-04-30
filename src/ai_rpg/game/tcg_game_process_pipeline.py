@@ -106,6 +106,7 @@ def create_combat_pipeline(
     from ..systems.play_cards_action_system import (
         PlayCardsActionSystem,
     )
+    from ..systems.discard_cards_action_system import DiscardCardsActionSystem
     from ..systems.retreat_action_system import RetreatActionSystem
     from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.epilogue_system import EpilogueSystem
@@ -152,6 +153,7 @@ def create_combat_pipeline(
     processors.add(EnemyPlayDecisionSystem(tcg_game))
     processors.add(PlayActionNarrationSystem(tcg_game))
     processors.add(PlayCardsActionSystem(tcg_game))
+    processors.add(DiscardCardsActionSystem(tcg_game))
     processors.add(RetreatActionSystem(tcg_game))
     processors.add(ArbitrationActionSystem(tcg_game))
     processors.add(AddActorStatusEffectsActionSystem(tcg_game, max_effects=2))

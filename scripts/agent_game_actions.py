@@ -54,6 +54,7 @@ from ai_rpg.services.home_actions import (
 from ai_rpg.services.dungeon_actions import (
     activate_all_card_draws,
     activate_play_cards_specified,
+    activate_discard_cards_specified,
     activate_enemy_play_trigger,
     activate_expedition_retreat,
 )
@@ -514,6 +515,59 @@ async def play_cards_specified_game(
 
     if terminal_game.current_dungeon.is_post_combat:
         logger.debug("在本次处理中战斗已结束，进入后处理阶段")
+
+    archive_world(
+        terminal_game._world,
+        terminal_game._player_session,
+        save_dir=save_dir,
+    )
+    return terminal_game
+
+
+###############################################################################
+async def discard_cards_game(
+    world: World,
+    player_session: PlayerSession,
+    actor: str,
+    card: str,
+    save_dir: Path,
+) -> TCGGame:
+    """从存档复位，让指定角色弃置指定手牌，并归档新状态。
+
+    只有指定角色触发 DiscardCardsAction；其他角色本次 pipeline 不弃牌。
+    若角色名或卡牌名不合法，提前返回不归档。
+
+    前置条件：
+        - combat_sequence.is_ongoing 为 True（战斗进行中）
+        - latest_round.is_round_completed 为 False（当前回合未完成）
+
+    Args:
+        world: 由 restore_world() 反序列化的世界数据。
+        player_session: 由 restore_world() 反序列化的玩家会话。
+        actor: 弃牌角色全名（如 角色.旅行者.无名氏）。
+        card: 要弃置的卡牌名称（须存在于该角色手牌中）。
+        save_dir: 新存档写入目录。
+
+    Returns:
+        执行完毕后的 TCGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
+    """
+    terminal_game = await _restore_game(world, player_session)
+
+    if not terminal_game.current_dungeon.is_ongoing:
+        logger.error("discard-cards-specified 只能在战斗进行中使用")
+        return terminal_game
+
+    last_round = terminal_game.current_dungeon.latest_round
+    if last_round is None or last_round.is_completed:
+        logger.error("discard-cards-specified 当前没有未完成的回合可供弃牌")
+        return terminal_game
+
+    success, message = activate_discard_cards_specified(terminal_game, actor, card)
+    if not success:
+        logger.error(f"discard-cards-specified 失败: {message}")
+        return terminal_game
+
+    await terminal_game._combat_pipeline.process()
 
     archive_world(
         terminal_game._world,

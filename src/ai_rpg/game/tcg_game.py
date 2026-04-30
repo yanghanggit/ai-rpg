@@ -4,7 +4,7 @@ TCG 游戏核心实现
 融合交易卡牌战斗机制的 RPG 游戏，包含地下城探险、战斗系统和流程管道管理。
 """
 
-from typing import Final
+from typing import Final, Optional
 from loguru import logger
 from overrides import override
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
@@ -22,6 +22,7 @@ from ..models import (
     DrawDeckComponent,
     DiscardDeckComponent,
     PlayedDeckComponent,
+    Round,
     RoundStatsComponent,
     StageType,
     ActorType,
@@ -307,5 +308,33 @@ class TCGGame(RPGGame):
         stats_comp.stats.hp = clamped
 
         return self.compute_character_stats(entity)
+
+    ###############################################################################################################################################
+    def get_current_turn_actor(self, round: Round) -> Optional[str]:
+        """从最新回合快照中找出第一个仍有行动力（energy > 0）的角色名。
+
+        Args:
+            round: 当前战斗回合
+
+        Returns:
+            当前应行动的角色名；若所有角色能量耗尽则返回 None
+        """
+        if not round.actor_order_snapshots:
+            return None
+
+        snapshot = round.actor_order_snapshots[-1]
+        for actor_name in snapshot:
+            actor_entity = self.get_actor_entity(actor_name)
+            assert actor_entity is not None, f"无法找到角色实体: {actor_name}"
+            if actor_entity is None:
+                continue
+            assert actor_entity.has(
+                RoundStatsComponent
+            ), f"{actor_name} 缺少 RoundStatsComponent"
+            if not actor_entity.has(RoundStatsComponent):
+                continue
+            if actor_entity.get(RoundStatsComponent).energy > 0:
+                return actor_name
+        return None
 
     ################################################################################################################

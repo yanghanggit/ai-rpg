@@ -5,6 +5,8 @@ from enum import auto, Enum
 from typing import Dict, Final, List, Optional, final
 import httpx
 from loguru import logger
+from rich import box as rich_box
+from rich.table import Table
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
@@ -50,7 +52,8 @@ from ..models.utils import compute_stats_with_equipment
 class _Phase(Enum):
     LOADING = auto()  # 初始加载回合信息
     ENEMY_TURN = auto()  # 等待用户按 Enter 触发敌人 AI
-    SELECT_CARD = auto()  # 等待用户输入卡牌编号
+    SELECT_CARD = auto()  # 等待用户输入卡牌编号（出牌）
+    SELECT_DISCARD_CARD = auto()  # 等待用户输入卡牌编号（弃牌）
     SELECT_TARGET = auto()  # 等待用户输入目标编号
     WAITING = auto()  # 正在等待后端任务完成
     ROUND_DONE = auto()  # 回合已全部完成
@@ -87,15 +90,16 @@ COMBAT_ROOM_MENU: Final[
 [bold cyan]── 战斗 ──────────────────────────────────────[/]
   [bold green]1[/]  抽牌            按需初始化，再为全员抽牌
   [bold green]2[/]  出牌            进入出牌界面完成本回合
+  [bold green]3[/]  弃牌            从手牌中弃置一张卡牌
 
 [bold cyan]── 查看 ──────────────────────────────────────[/]
-  [bold green]3[/]  当前战斗状态    房间信息与角色属性
-  [bold green]4[/]  回合详情        行动顺序与出手记录
-  [bold green]5[/]  查阅牌组        本次地下城各角色历史牌组
+  [bold green]4[/]  当前战斗状态    房间信息与角色属性
+  [bold green]5[/]  回合详情        行动顺序与出手记录
+  [bold green]6[/]  查阅牌组        本次地下城各角色历史牌组
 
 [bold cyan]── 离场 ──────────────────────────────────────[/]
-  [bold green]6[/]  撤退            在战斗进行中撤退
-  [bold green]7[/]  退出战斗        战斗结束后返回游戏主场景
+  [bold green]7[/]  撤退            在战斗进行中撤退
+  [bold green]8[/]  退出战斗        战斗结束后返回游戏主场景
 
 [bold cyan]── 系统 ──────────────────────────────────────[/]
   [bold green]0[/]  显示此菜单
@@ -163,6 +167,9 @@ class CombatRoomScreen(Screen[None]):
         self._target_candidates: List[str] = (
             []
         )  # 可选目标名列表（SELECT_TARGET 内有效，用完即清）
+        self._discard_hand_cards: List[Card] = (
+            []
+        )  # 弃牌选牌阶段缓存的手牌（SELECT_DISCARD_CARD 内有效）
 
     @property
     def _user_name(self) -> str:
@@ -196,7 +203,7 @@ class CombatRoomScreen(Screen[None]):
 
     def action_suggest_exit(self) -> None:
         log = self.query_one(RichLog)
-        log.write("[yellow]请输入 6 退出战斗（战斗结束后），或 5 撤退（战斗中）。[/]")
+        log.write("[yellow]请输入 8 退出战斗（战斗结束后），或 7 撤退（战斗中）。[/]")
 
     @on(Input.Submitted, "#room-input")
     def handle_command(self, event: Input.Submitted) -> None:
@@ -228,6 +235,8 @@ class CombatRoomScreen(Screen[None]):
                 self._phase = _Phase.LOADING
                 self.query_one(Input).disabled = True
                 self._handle_card_selection(raw)
+            elif self._phase == _Phase.SELECT_DISCARD_CARD:
+                self._handle_discard_card_selection(raw)
             elif self._phase == _Phase.SELECT_TARGET:
                 self._handle_target_selection(raw)
             elif self._phase == _Phase.ROUND_DONE:
@@ -253,18 +262,21 @@ class CombatRoomScreen(Screen[None]):
             self._start_play_cards()
 
         elif cmd == "3":
-            self._fetch_status()
+            self._start_discard_card()
 
         elif cmd == "4":
-            self.app.push_screen(RoundDetailScreen())
+            self._fetch_status()
 
         elif cmd == "5":
-            self.app.push_screen(DeckDetailScreen())
+            self.app.push_screen(RoundDetailScreen())
 
         elif cmd == "6":
-            self._do_combat_retreat()
+            self.app.push_screen(DeckDetailScreen())
 
         elif cmd == "7":
+            self._do_combat_retreat()
+
+        elif cmd == "8":
             self._do_exit()
 
         else:
@@ -603,6 +615,119 @@ class CombatRoomScreen(Screen[None]):
         self._phase = _Phase.LOADING
         self._advance()
 
+    @work
+    async def _start_discard_card(self) -> None:
+        """弃牌模式：拉取玩家手牌并展示，等待用户选择要弃置的卡牌。"""
+        log = self.query_one(RichLog)
+        self.query_one(Input).disabled = True
+
+        try:
+            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
+            stage_name = room_resp.room.stage.name
+            stages_resp = await fetch_stages_state(self._user_name, self._game_name)
+            stage_actor_names: List[str] = list(stages_resp.mapping.get(stage_name, []))
+            all_details = await fetch_entities_details(
+                self._user_name, self._game_name, stage_actor_names
+            )
+        except Exception as e:
+            log.write(f"[bold red]❌ 加载手牌失败: {e}[/]")
+            inp = self.query_one(Input)
+            inp.disabled = False
+            inp.focus()
+            return
+
+        # 找到玩家控制的角色（PlayerComponent + HandComponent）
+        player_actor: Optional[str] = None
+        hand_cards: List[Card] = []
+        for entity in all_details.entities_serialization:
+            comp_names = {c.name for c in entity.components}
+            if PlayerComponent.__name__ not in comp_names:
+                continue
+            player_actor = entity.name
+            for comp in entity.components:
+                if comp.name == HandComponent.__name__:
+                    hand_cards = HandComponent(**comp.data).cards
+            break
+
+        if player_actor is None:
+            log.write("[yellow]⚠ 未找到玩家角色。[/]")
+            inp = self.query_one(Input)
+            inp.disabled = False
+            inp.focus()
+            return
+
+        if not hand_cards:
+            log.write("[yellow]⚠ 手牌为空，请先抽牌。[/]")
+            inp = self.query_one(Input)
+            inp.disabled = False
+            inp.focus()
+            return
+
+        short = display_name(player_actor)
+        log.write(
+            f"\n[bold cyan]── 弃牌：{short} ────────────────────────────────────────[/]"
+        )
+        for i, card in enumerate(hand_cards, 1):
+            hit_str = f"x[yellow]{card.hit_count}[/]" if card.hit_count > 1 else ""
+            tt_str = _TARGET_LABEL.get(card.target_type, f"[dim]{card.target_type}[/]")
+            action_str = (
+                f"\n        [dim]{card.description}[/]" if card.description else ""
+            )
+            effects_str = (
+                f"\n        [yellow]效果：{'、'.join(card.effects)}[/]"
+                if card.effects
+                else ""
+            )
+            affixes_str = (
+                f"\n        [bold orange1]词条：{'  '.join(card.affixes)}[/]"
+                if card.affixes
+                else ""
+            )
+            log.write(
+                f"    [bold cyan]{i}.[/] [bold]{card.name}[/]  "
+                f"伤害:[red]{card.damage_dealt}[/]{hit_str}  格挡:[blue]{card.block_gain}[/]  目标:{tt_str}"
+                + action_str
+                + effects_str
+                + affixes_str
+            )
+
+        self._current_actor = player_actor
+        self._discard_hand_cards = list(hand_cards)
+        self._phase = _Phase.SELECT_DISCARD_CARD
+        self._update_play_status(
+            f"[{short}] 弃牌：输入编号（1-{len(hand_cards)}）  |  q 取消"
+        )
+        log.write(f"  [dim](输入卡牌编号弃牌 / q 取消)[/]")
+        inp = self.query_one(Input)
+        inp.placeholder = f"1-{len(hand_cards)} / q 取消"
+        inp.disabled = False
+        inp.focus()
+
+    def _handle_discard_card_selection(self, raw: str) -> None:
+        """用户在弃牌选牌阶段输入编号后：验证并调用 _do_discard_card。"""
+        log = self.query_one(RichLog)
+        hand_cards = self._discard_hand_cards
+
+        if raw.lower() == "q":
+            self._discard_hand_cards = []
+            self._abort_play_cards()
+            return
+
+        if not raw.isdigit():
+            log.write(f"[red]请输入 1-{len(hand_cards)} 的数字，或 q 取消。[/]")
+            return
+
+        idx = int(raw) - 1
+        if not (0 <= idx < len(hand_cards)):
+            log.write(f"[red]无效编号 '{raw}'，请输入 1-{len(hand_cards)}。[/]")
+            return
+
+        assert self._current_actor is not None
+        discard_card = hand_cards[idx]
+        log.write(f"  准备弃牌：[bold cyan]{discard_card.name}[/]")
+        self._discard_hand_cards = []
+        self._do_discard_card(self._current_actor, discard_card.name)
+
     # ──────────────────────────────────────────────
     # 核心状态机推进（唯一分发点，不递归）
     # ──────────────────────────────────────────────
@@ -763,11 +888,9 @@ class CombatRoomScreen(Screen[None]):
         self._update_play_status(
             f"[{short}] 输入卡牌编号（1-{len(hand_cards)}）选牌  |  q 返回主菜单"
         )
-        log.write(
-            f"  [dim](出牌：输入卡牌编号 / 弃牌：d + 编号，如 d1 / q 返回主菜单)[/]"
-        )
+        log.write(f"  [dim](输入卡牌编号出牌 / q 返回主菜单)[/]")
         inp = self.query_one(Input)
-        inp.placeholder = f"1-{len(hand_cards)} / d1…d{len(hand_cards)} 弃牌 / q 返回"
+        inp.placeholder = f"1-{len(hand_cards)} 或卡牌名 / q 返回"
         inp.disabled = False
         inp.focus()
 
@@ -920,23 +1043,6 @@ class CombatRoomScreen(Screen[None]):
         if not hand_cards:
             log.write("[yellow]⚠ 手牌已不存在，重新推进回合...[/]")
             self._advance()
-            return
-
-        # 弃牌模式： raw 以 'd' 开头 + 数字（如 d1、d2）
-        if raw.lower().startswith("d") and raw[1:].isdigit():
-            idx = int(raw[1:]) - 1
-            if 0 <= idx < len(hand_cards):
-                discard_card = hand_cards[idx]
-                log.write(f"  准备弃牌：[bold cyan]{discard_card.name}[/]")
-                self._do_discard_card(actor_name, discard_card.name)
-            else:
-                log.write(
-                    f"[red]无效编号 '{raw[1:]}'，请输入 1-{len(hand_cards)} 的数字。[/]"
-                )
-                self._phase = _Phase.SELECT_CARD
-                inp = self.query_one(Input)
-                inp.disabled = False
-                inp.focus()
             return
 
         # ── 解析用户输入 ──
@@ -1404,33 +1510,44 @@ class CombatRoomScreen(Screen[None]):
                 ).status_effects
                 if effects:
                     log.write(f"  [bold]状态效果（{len(effects)}）：[/]")
+                    se_table = Table(
+                        show_header=True,
+                        show_lines=False,
+                        box=rich_box.SIMPLE_HEAD,
+                        padding=(0, 1),
+                        expand=True,
+                    )
+                    se_table.add_column(
+                        "名称", style="magenta", min_width=10, no_wrap=True
+                    )
+                    se_table.add_column("剩余", style="dim", width=10, no_wrap=True)
+                    se_table.add_column("阶段", width=15, no_wrap=True)
+                    se_table.add_column("描述", ratio=1)
+                    phase_colors = {
+                        "draw": "cyan",
+                        "play": "yellow",
+                        "arbitration": "red",
+                    }
                     for effect in effects:
                         duration_str = (
-                            "[永久]"
+                            "永久"
                             if effect.duration == -1
-                            else f"[剩余{effect.duration}回合]"
+                            else f"剩余{effect.duration}回合"
                         )
-                        phase_colors = {
-                            "draw": "cyan",
-                            "play": "yellow",
-                            "arbitration": "red",
-                        }
                         phase_color = phase_colors.get(effect.phase, "white")
-                        phase_tag = f"[{phase_color}]\\[{effect.phase}][/{phase_color}]"
-                        source_tag = (
-                            f"  [dim]来源:{display_name(effect.source)}[/]"
-                            if effect.source and effect.source != entity.name
-                            else ""
+                        phase_cell = f"[{phase_color}][{effect.phase}][/{phase_color}]"
+                        desc_cell = effect.description
+                        if effect.source and effect.source != entity.name:
+                            desc_cell += f"  [dim]来源:{display_name(effect.source)}[/]"
+                        se_table.add_row(
+                            effect.name, duration_str, phase_cell, desc_cell
                         )
-                        log.write(
-                            f"    └ [magenta]{effect.name}[/]"
-                            f"  {duration_str}  {phase_tag}  {effect.description}"
-                            f"{source_tag}"
-                        )
+                    log.write(se_table)
                 else:
                     log.write("  [dim](无状态效果)[/]")
             else:
                 log.write("  [dim](无状态效果)[/]")
+            log.write("")
             # 手牌
             if show_hand:
                 hand_comp = next(
@@ -1443,43 +1560,65 @@ class CombatRoomScreen(Screen[None]):
                         f"  [bold]手牌（回合 {hand.round}，共 {len(hand.cards)} 张）：[/]"
                     )
                     if hand.cards:
-                        for card in hand.cards:
+                        hand_table = Table(
+                            show_header=True,
+                            show_lines=True,
+                            box=rich_box.ROUNDED,
+                            padding=(0, 1),
+                            expand=True,
+                        )
+                        hand_table.add_column("#", style="cyan", width=3, no_wrap=True)
+                        hand_table.add_column(
+                            "名称", style="bold", min_width=10, no_wrap=True
+                        )
+                        hand_table.add_column(
+                            "伤害", style="red", width=6, no_wrap=True
+                        )
+                        hand_table.add_column(
+                            "格挡", style="blue", width=6, no_wrap=True
+                        )
+                        hand_table.add_column("目标", width=10, no_wrap=True)
+                        hand_table.add_column("描述 / 效果 / 词条", ratio=1)
+                        for idx, card in enumerate(hand.cards, 1):
                             hit_str = (
-                                f"x[yellow]{card.hit_count}[/]"
+                                f"x{card.hit_count}"
                                 if card.hit_count > 1
-                                else ""
+                                else str(card.damage_dealt)
+                            )
+                            dmg_cell = (
+                                f"{card.damage_dealt}x{card.hit_count}"
+                                if card.hit_count > 1
+                                else str(card.damage_dealt)
                             )
                             tt_str = _TARGET_LABEL.get(
                                 card.target_type,
                                 f"[dim]{card.target_type}[/]",
                             )
-                            source_str = (
-                                f"  [dim]来源:{display_name(card.source)}[/]"
-                                if card.source and card.source != entity.name
-                                else ""
+                            detail_parts: List[str] = []
+                            if card.description:
+                                detail_parts.append(f"[dim]{card.description}[/]")
+                            if card.effects:
+                                detail_parts.append(
+                                    f"[yellow]效果：{'、'.join(card.effects)}[/]"
+                                )
+                            if card.affixes:
+                                detail_parts.append(
+                                    f"[bold orange1]词条：{'  '.join(card.affixes)}[/]"
+                                )
+                            if card.source and card.source != entity.name:
+                                detail_parts.append(
+                                    f"[dim]来源:{display_name(card.source)}[/]"
+                                )
+                            detail_cell = "\n".join(detail_parts)
+                            hand_table.add_row(
+                                str(idx),
+                                card.name,
+                                dmg_cell,
+                                str(card.block_gain),
+                                tt_str,
+                                detail_cell,
                             )
-                            log.write(
-                                f"    └ [bold]{card.name}[/]"
-                                f"  伤害:[red]{card.damage_dealt}[/]{hit_str}"
-                                f"  格挡:[blue]{card.block_gain}[/]"
-                                f"  目标:{tt_str}"
-                                + source_str
-                                + (
-                                    f"  [dim]{card.description}[/]"
-                                    if card.description
-                                    else ""
-                                )
-                                + (
-                                    f"  [yellow]效果：{'、'.join(card.effects)}[/]"
-                                    if card.effects
-                                    else ""
-                                )
-                                + (
-                                    f"  [bold orange1]词条：{'  '.join(card.affixes)}[/]"
-                                    if card.affixes
-                                    else ""
-                                )
-                            )
+                        log.write(hand_table)
                     else:
                         log.write("    [dim](手牌为空)[/]")
                 else:

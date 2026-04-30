@@ -106,15 +106,27 @@ class DeckDetailScreen(Screen[None]):
 
             for entity in details_resp.entities_serialization:
                 discard_raw = next(
-                    (c for c in entity.components if c.name == "DiscardDeckComponent"),
+                    (
+                        c
+                        for c in entity.components
+                        if c.name == DiscardDeckComponent.__name__
+                    ),
                     None,
                 )
                 draw_raw = next(
-                    (c for c in entity.components if c.name == "DrawDeckComponent"),
+                    (
+                        c
+                        for c in entity.components
+                        if c.name == DrawDeckComponent.__name__
+                    ),
                     None,
                 )
                 played_raw = next(
-                    (c for c in entity.components if c.name == "PlayedDeckComponent"),
+                    (
+                        c
+                        for c in entity.components
+                        if c.name == PlayedDeckComponent.__name__
+                    ),
                     None,
                 )
                 if discard_raw is None and draw_raw is None and played_raw is None:
@@ -127,12 +139,13 @@ class DeckDetailScreen(Screen[None]):
                 played_comp = (
                     PlayedDeckComponent(**played_raw.data) if played_raw else None
                 )
+                discard_count = len(discard_comp.cards) if discard_comp else 0
                 draw_count = len(draw_comp.cards) if draw_comp else 0
                 played_count = len(played_comp.cards) if played_comp else 0
 
                 log.write(
                     f"[bold cyan]{display_name(entity.name)}[/]  "
-                    f"[dim]已出牌 {played_count} 张 | 可重抽 {draw_count} 张[/]"
+                    f"[dim]已出牌 {played_count} 张 | 弃牌堆 {discard_count} 张 | 可重抽 {draw_count} 张[/]"
                 )
 
                 def _render_cards(cards: list, log: object) -> None:  # type: ignore[type-arg]
@@ -179,16 +192,27 @@ class DeckDetailScreen(Screen[None]):
                 else:
                     log.write("    [dim]（尚无记录）[/]")
 
-                # 2) 可重抽卡牌（DrawDeck）
+                # 2) 弃牌堆（DiscardDeck）
+                log.write("  [bold magenta]▸ 弃牌堆（DiscardDeck）[/]")
+                if discard_comp and discard_comp.cards:
+                    _render_cards(discard_comp.cards, log)
+                else:
+                    log.write("    [dim]（尚无记录）[/]")
+
+                # 3) 可重抽卡牌（DrawDeck）
                 log.write("  [bold yellow]▸ 可重抽（DrawDeck）[/]")
                 if draw_comp and draw_comp.cards:
                     _render_cards(draw_comp.cards, log)
                 else:
                     log.write("    [dim]（尚无记录）[/]")
 
-                # 3) Keyword 关键词约束
+                # 4) Keyword 关键词约束
                 keyword_raw = next(
-                    (c for c in entity.components if c.name == "KeywordComponent"),
+                    (
+                        c
+                        for c in entity.components
+                        if c.name == KeywordComponent.__name__
+                    ),
                     None,
                 )
                 if keyword_raw is not None:

@@ -9,8 +9,9 @@ Deck 不足时调用 LLM 实时补足；Deck 充裕时完全跳过 LLM 推理。
 - CardEntry / DrawCardsResponse: LLM 响应的 Pydantic 解析模型
 """
 
+import json
 import random
-from typing import Dict, Final, List, final, override
+from typing import Any, Dict, Final, List, final, override
 from loguru import logger
 from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
@@ -36,6 +37,7 @@ from ..models import (
     EnemyComponent,
     AffixSealedComponent,
     ComponentSerialization,
+    COMPONENT_TYPES,
 )
 from ..utils import extract_json_from_code_block
 
@@ -59,6 +61,9 @@ class CardEntry(BaseModel):
     effects: List[str] = (
         []
     )  # 词缀列表，每项为"[名称]:短句描述"格式；为空时仲裁后不触发 AddStatusEffectsAction LLM 推理
+    affixes: List[Dict[str, Any]] = (
+        []
+    )  # 结构化词缀列表，每项格式为 ComponentSerialization JSON 对象：{"name": "<ComponentName>", "data": {<组件字段字典>}}；无词缀时输出空数组 []
     damage_dealt: int
     block_gain: int
     hit_count: int = 1
@@ -155,12 +160,15 @@ def _generate_draw_prompt(
         "  ❌ 错误示例：「借助断柱的支撑旋身，踢击敌人」「从落日余晖中冲出扑向目标」\n"
         "  ✓ 正确示例：「旋身借力，以连续踢击攻击单一敌人」「快速突进，向单一目标发起猛扑」\n"
         '- effects：词缀列表，每项格式为"[名称]:短句描述"（如"[燃烧]:可能引发持续火焰伤害"、"[中毒]:持续造成毒素伤害"）；若该卡仅为即时伤害/格挡无副作用，则输出空数组 []\n'
+        "- affixes：结构化词缀列表（与 effects 不同，effects 是自然语言状态效果描述，affixes 是可被系统直接反序列化的组件约束）。\n"
+        '  每项格式：{"name": "<ComponentName>", "data": {<组件字段字典>}}\n'
+        "  无词缀时输出空数组 []\n"
         "- damage_dealt：单次攻击造成的伤害值（基于攻击力合理推算，整数）\n"
         "- block_gain：本张卡牌提供的格挡增量（基于防御力合理推算，整数）\n"
         "- hit_count：攻击次数（默认 1；多段攻击如回旋镖可设为 2~4，每段独立抵挡目标格挡）\n"
         "- target_type：出牌目标类型：攻击/伤害类卡牌通常选 enemy_single 或 enemy_all；每段独立随机命中一名敌方（多段随机，搭配较高 hit_count）选 enemy_random_multi；治疗/强化友方类卡牌通常选 ally_single 或 ally_all；纯粹的自我防御、呼吸调息等仅作用于自身的卡牌选 self_only"
     )
-    example_line = '{"name":"...","description":"...","effects":[],"damage_dealt":0,"block_gain":0,"hit_count":1,"target_type":"enemy_single"}'
+    example_line = '{"name":"...","description":"...","effects":[],"affixes":[],"damage_dealt":0,"block_gain":0,"hit_count":1,"target_type":"enemy_single"}'
 
     sections = [stats_line]
 
@@ -217,6 +225,9 @@ def _generate_compressed_draw_prompt(
         sections.append(draw_effects_prompt)
 
     sections.append(keyword_line)
+    sections.append(
+        f"输出 JSON，cards 数组共 {num_cards} 张（affixes 字段无词缀时输出 []）"
+    )
 
     return (
         f"# 第 {current_round_number} 回合：生成 {num_cards} 张手牌\n\n"
@@ -311,6 +322,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
         if not llm_entities:
             return
 
+        self._inject_affix_sealed_mock_context(llm_entities, current_round_number)
+
         chat_clients: List[DeepSeekClient] = []
         for entity in llm_entities:
             chat_client = self._create_draw_chat_client(
@@ -332,40 +345,28 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 deck_cards=entity_deck_cards[found_entity.name],
             )
 
-        # TODO(mock): 第一回合随机给远征队员一张手牌添加「封印」词条，验证封印逻辑
-        self._mock_seal_one_card_first_round(entities, current_round_number)
-
     #######################################################################################################################################
-    def _mock_seal_one_card_first_round(
+    def _inject_affix_sealed_mock_context(
         self, entities: list[Entity], current_round_number: int
     ) -> None:
-        """[mock] 第一回合随机给每个远征队员一张手牌添加「封印」词条，用于验证封印逻辑。移除封印 mock 时注释掉调用方那一行即可。"""
+        """[mock] 第一回合向远征队员注入 context，引导 LLM 在某张手牌生成封印词缀。"""
         if current_round_number != 1:
             return
+        affix_example = {
+            "name": AffixSealedComponent.__name__,
+            "data": AffixSealedComponent(
+                name="", description="不可被出牌，也不可被弃牌", sealed_cards=[]
+            ).model_dump(),
+        }
+        msg = (
+            f"[系统提示] 本回合请在你生成的某一张卡牌的 affixes 字段中加入以下词缀（JSON 格式），"
+            f"以触发「封印」词条效果：\n{json.dumps(affix_example, ensure_ascii=False)}"
+        )
         for entity in entities:
             if not entity.has(ExpeditionMemberComponent):
                 continue
-            hand_comp = entity.get(HandComponent)
-            if not hand_comp or not hand_comp.cards:
-                continue
-            target_idx = random.randrange(len(hand_comp.cards))
-            cards = list(hand_comp.cards)
-            mock_affix = ComponentSerialization(
-                name=AffixSealedComponent.__name__,
-                data=AffixSealedComponent(
-                    name="",
-                    description="不可被出牌，也不可被弃牌",
-                    sealed_cards=[],
-                ).model_dump(),
-            )
-            sealed_card = cards[target_idx].model_copy(
-                update={"affixes": list(cards[target_idx].affixes) + [mock_affix]}
-            )
-            cards[target_idx] = sealed_card
-            entity.replace(HandComponent, entity.name, cards, current_round_number)
-            logger.debug(
-                f"[mock] [{entity.name}] 第一回合：手牌「{sealed_card.name}」添加词条「[{AffixSealedComponent.__name__}]」"
-            )
+            self._game.add_human_message(entity, msg)
+            logger.debug(f"[mock context] [{entity.name}] 注入封印词缀引导 context")
 
     #######################################################################################################################################
     def _consume_deck_cards(
@@ -541,11 +542,33 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     )
                     continue
 
+                parsed_affixes: List[ComponentSerialization] = []
+                for raw in entry.affixes:
+                    comp_name = raw.get("name", "")
+                    comp_data = raw.get("data", {})
+                    comp_class = COMPONENT_TYPES.get(comp_name)
+                    if comp_class is None:
+                        logger.warning(
+                            f"[{entity.name}] 未知词缀组件 {comp_name!r}，跳过"
+                        )
+                        continue
+                    try:
+                        comp_class(**comp_data)  # 实例化验证字段合法性
+                    except Exception as affix_err:
+                        logger.warning(
+                            f"[{entity.name}] 词缀 {comp_name} data 验证失败：{affix_err}，跳过"
+                        )
+                        continue
+                    parsed_affixes.append(
+                        ComponentSerialization(name=comp_name, data=comp_data)
+                    )
+
                 cards.append(
                     Card(
                         name=entry.name,
                         description=entry.description,
                         effects=entry.effects,
+                        affixes=parsed_affixes,
                         damage_dealt=entry.damage_dealt,
                         block_gain=entry.block_gain,
                         hit_count=entry.hit_count,

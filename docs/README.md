@@ -24,7 +24,7 @@
 | ------ | ---------- | ---------- |
 | **ECS 管线设计** | 三条游戏流程管线（家园/战斗/地牢生成）的架构、系统执行顺序与设计模式 | [ecs-pipeline/overview.md](ecs-pipeline/overview.md) |
 | **Keyword 卡牌关键词约束系统** | 角色卡牌生成风格约束的数据模型、ECS 组件、采样策略与 Prompt 注入机制 | [ecs-pipeline/keyword-system.md](ecs-pipeline/keyword-system.md) |
-| **Affix 卡牌词条系统** | 卡牌结构化词条的数据模型（`Card.affixes` / `ComponentSerialization`）、LLM 生成与验证、`AffixSealedSystem` 物化机制、出牌/弃牌拦截，以及开发期 mock 引导说明 | [ecs-pipeline/affix-system.md](ecs-pipeline/affix-system.md) |
+| **Affix 卡牌词条系统** | 卡牌词条数据模型（`Card.affixes: List[str]`，自然语言字符串）、LLM 生成、服务层 LLM 词条守卫（`_check_affixes_allow_action`），以及开发期 mock 引导说明 | [ecs-pipeline/affix-system.md](ecs-pipeline/affix-system.md) |
 
 ---
 
@@ -32,7 +32,7 @@
 
 | 日期 | 变更 |
 | ------ | ------ |
-| 2026-04-30 | 新增 Affix 词条系统：`Card.affixes`（`List[ComponentSerialization]`）字段、`AffixSealedComponent`（封印词条）、`AffixSealedSystem`（战斗管线步骤 6，每帧同步封印状态到实体级组件）；`DrawCardsActionSystem._process_draw_response` 新增词条验证与反序列化（宽进严出）；`_inject_affix_sealed_mock_context` 开发期 mock（Round 1 向远征队员注入封印词条引导）；出牌/弃牌路径新增封印守卫；战斗管线步骤编号 6→22（因新增 `AffixSealedSystem` 后移一位）；新增 `docs/ecs-pipeline/affix-system.md` |
+| 2026-04-30 | 新增 Affix 词条系统：`Card.affixes`（`List[str]`，自然语言词条）；出牌/弃牌路径新增服务层 LLM 词条守卫 `_check_affixes_allow_action`（`_AffixGuardResponse` Pydantic 校验，markdown prompt 风格，`extract_json_from_code_block` 提取）；`_mock_inject_sealed_affix_context` 开发期 mock（Round 1 向远征队员注入封印词条文本）；新增 `docs/ecs-pipeline/affix-system.md` |
 | 2026-04-30 | 新增弃牌机制 `DiscardCardsActionSystem`（步骤 9）：将手牌移入 `DiscardDeckComponent`，不消耗 energy，不推进行动顺序；source 守卫与出牌路径对称（自有牌归档 + 注入上下文，外来牌静默丢弃）；`DiscardDeckComponent` 由"保留备用"升级为主动弃牌堆。`DrawCardsActionSystem` 新增 LLM 解析失败兜底机制（兜底牌「等待」，`SELF_ONLY`），确保 `HandComponent` 始终写入、回合不阻塞；`pipeline-combat.md` 新增 `DiscardCardsActionSystem` 详解，步骤编号同步更新（原步骤 9→10，余类推） |
 | 2026-04-28 | `PostArbitrationActionSystem` 升级为双路径架构：`filter()` 扩展为 Stage OR Actor；`react()` 内部按顺序执行两个批次（Stage 批次：LLM 地牢主视角干预；Actor 批次：暂为 stub，触发点未实装）；类名/模块注释与 `pipeline-combat.md` 同步更新 |
 | 2026-04-27 | 移除 `CombatInitializationSystem` 的"创建第一回合"职责，改由 `CombatRoundTransitionSystem` 在同帧末端统一创建（消除初始化死锁）；`Round` 数据模型以 `actor_order_snapshots`（快照列表）+ `current_actor_name` 替代原 `action_order`；新增 `CombatRoundCompletionSystem`（energy-based 判断）；`pipeline-combat.md` 补充步骤 13、调整步骤编号 13→16 并新增 `CombatRoundCompletionSystem` 与 `CombatRoundTransitionSystem` 详细说明；`design-patterns.md` 更新状态守卫表 |

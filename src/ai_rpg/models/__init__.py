@@ -6,7 +6,6 @@ from .cards import *
 from .session_message import *
 from .combat import *
 from .components import *
-from .affixes import *
 from .dungeon import *
 from .entities import *
 from .messages import *

@@ -39,24 +39,23 @@
 | 2 | `ActorAppearanceUpdateSystem` | Execute | 生成角色外观 → [[systems-shared#ActorAppearanceUpdateSystem]] |
 | 3 | `StageDescriptionSystem` | Execute | 生成场景描述（状态守卫：仅战斗开始时触发）→ [[systems-shared#StageDescriptionSystem]] |
 | 4 | `CombatInitializationSystem` | Execute | 初始化战斗：注入战场上下文；第一回合由 `CombatRoundTransitionSystem` 在同帧末端创建 |
-| 5 | `DrawCardsActionSystem` | Reactive | 为角色生成手牌（历史牌组 + LLM 新牌）；`affixes` 字段由 LLM 填写，`_process_draw_response` 验证并反序列化为 `ComponentSerialization` |
-| 6 | `AffixSealedSystem` | Execute | 扫描手牌，将携带封印词条的卡牌物化为实体级 `AffixSealedComponent` → [[affix-system]] |
-| 7 | `EnemyPlayDecisionSystem` | Execute | 敌方 AI 决策出哪张牌 |
-| 8 | `PlayActionNarrationSystem` | Execute | LLM 润色出牌叙事 |
-| 9 | `PlayCardsActionSystem` | Reactive | 执行出牌，触发后续仲裁链 |
-| 10 | `DiscardCardsActionSystem` | Reactive | 将指定手牌移入弃牌堆（不消耗 energy） |
-| 11 | `RetreatActionSystem` | Reactive | 处理撤退行动 |
-| 12 | `ArbitrationActionSystem` | Reactive | **核心**：AI 仲裁伤害/格挡/HP 结算 |
-| 13 | `AddActorStatusEffectsActionSystem` | Reactive | 为角色追加状态效果（最多 2 个/帧） |
-| 14 | `PostArbitrationActionSystem` | Reactive | 双路径：Stage Agent 干预（追加效果 / 塞牌）；Actor 路径预留（暂为 stub） |
-| 15 | `CombatRoundCompletionSystem` | Execute | 回合完成判定：所有存活角色 energy ≤ 0 时写入 `Round.is_completed = True` |
-| 16 | `CombatOutcomeSystem` | Execute | 检测胜负：友方/敌方全灭则结算 |
-| 17 | `CombatRoundCleanupSystem` | Execute | 清除旧回合手牌与格挡，递减状态效果 |
-| 18 | `CombatRoundTransitionSystem` | Execute | 创建新回合，按速度排序生成行动顺序快照 |
-| 19 | `CombatArchiveSystem` | Execute | 战斗归档：LLM 生成总结，压缩消息（状态守卫） |
-| 20 | `ActionCleanupSystem` | Execute | 清理所有 Action → [[systems-shared#ActionCleanupSystem]] |
-| 21 | `DestroyEntitySystem` | Execute | 销毁标记实体 → [[systems-shared#DestroyEntitySystem]] |
-| 22 | `EpilogueSystem` | Execute | flush 状态 → [[systems-shared#EpilogueSystem]] |
+| 5 | `DrawCardsActionSystem` | Reactive | 为角色生成手牌（历史牌组 + LLM 新牌）；`affixes` 字段由 LLM 填写为自然语言词条（`List[str]`）→ [[affix-system]] |
+| 6 | `EnemyPlayDecisionSystem` | Execute | 敌方 AI 决策出哪张牌 |
+| 7 | `PlayActionNarrationSystem` | Execute | LLM 润色出牌叙事 |
+| 8 | `PlayCardsActionSystem` | Reactive | 执行出牌，触发后续仲裁链 |
+| 9 | `DiscardCardsActionSystem` | Reactive | 将指定手牌移入弃牌堆（不消耗 energy） |
+| 10 | `RetreatActionSystem` | Reactive | 处理撤退行动 |
+| 11 | `ArbitrationActionSystem` | Reactive | **核心**：AI 仲裁伤害/格挡/HP 结算 |
+| 12 | `AddActorStatusEffectsActionSystem` | Reactive | 为角色追加状态效果（最多 2 个/帧） |
+| 13 | `PostArbitrationActionSystem` | Reactive | 双路径：Stage Agent 干预（追加效果 / 塞牌）；Actor 路径预留（暂为 stub） |
+| 14 | `CombatRoundCompletionSystem` | Execute | 回合完成判定：所有存活角色 energy ≤ 0 时写入 `Round.is_completed = True` |
+| 15 | `CombatOutcomeSystem` | Execute | 检测胜负：友方/敌方全灭则结算 |
+| 16 | `CombatRoundCleanupSystem` | Execute | 清除旧回合手牌与格挡，递减状态效果 |
+| 17 | `CombatRoundTransitionSystem` | Execute | 创建新回合，按速度排序生成行动顺序快照 |
+| 18 | `CombatArchiveSystem` | Execute | 战斗归档：LLM 生成总结，压缩消息（状态守卫） |
+| 19 | `ActionCleanupSystem` | Execute | 清理所有 Action → [[systems-shared#ActionCleanupSystem]] |
+| 20 | `DestroyEntitySystem` | Execute | 销毁标记实体 → [[systems-shared#DestroyEntitySystem]] |
+| 21 | `EpilogueSystem` | Execute | flush 状态 → [[systems-shared#EpilogueSystem]] |
 
 ---
 
@@ -98,21 +97,14 @@
 
 每张牌包含：`name` / `description` / `effects` / `affixes` / `damage_dealt` / `block_gain` / `hit_count` / `target_type`
 
-**`affixes` 字段与词条反序列化**：
+**`affixes` 字段（`List[str]`）**：
 
-每张 LLM 生成的卡牌可在 `affixes` 数组中包含任意数量的结构化词条，格式为 `{"name": "<ComponentName>", "data": {<组件字段字典>}}`。  
-`_process_draw_response()` 在解析每张卡时对 `affixes` 逐项验证：
+`Card.affixes` 存放由 LLM 自由填写的自然语言词条字符串（如 `"封印：不可出牌，不可弃牌"`）。服务层入口函数在调用 `activate_play_cards_specified` / `activate_discard_cards_specified` 前，会先调用 `_check_affixes_allow_action` 向 LLM 请求裁决，决定是否放行本次操作。详细设计：[[affix-system]]
 
-- 用 `COMPONENT_TYPES.get(comp_name)` 查找注册组件；未知名称直接跳过（警告日志）
-- 调用 `comp_class(**comp_data)` 实例化验证字段合法性；字段错误时跳过（警告日志）
-- 通过验证的词条以 `ComponentSerialization(name=..., data=...)` 形式写入 `Card.affixes`
+**`_mock_inject_sealed_affix_context`（开发期 mock）**：
 
-`Card.affixes` 的设计语义与 `Card.effects` 不同：`effects` 是供 LLM 或人类阅读的自然语言描述，`affixes` 是可被系统直接反序列化并执行的组件约束。Prompt 中字段说明不枚举具体词条，仅说明格式规范，LLM 依上下文自主填写（或接受 mock 引导）。
-
-**`_inject_affix_sealed_mock_context`（开发期 mock）**：
-
-Round 1 时，系统向所有 `ExpeditionMemberComponent` 实体注入一条 human message，包含封印词条的 JSON 示例，引导 LLM 在某张牌的 `affixes` 字段中填入 `AffixSealedComponent`。  
-这是**开发期验证 mock**，用于端到端测试词条路径是否畅通，不代表正式的词条触发机制。  
+Round 1 时，系统向所有 `ExpeditionMemberComponent` 实体注入一条 human message，包含封印词条的文本示例（`"封印：不可被出牌，也不可被弃牌"`），引导 LLM 在某张牌的 `affixes` 字段填入该词条。
+这是**开发期验证 mock**，用于端到端测试词条路径是否畅通，不代表正式的词条触发机制。
 详细设计：[[affix-system]]
 
 **Keyword 关键词约束 + 骨値机制**：
@@ -130,20 +122,7 @@ Round 1 时，系统向所有 `ExpeditionMemberComponent` 实体注入一条 hum
 
 ---
 
-### AffixSealedSystem（步骤 6）
-
-**源码**：`src/ai_rpg/systems/affix_sealed_system.py`  
-**类型**：`ExecuteProcessor`
-
-每帧扫描所有持有 `HandComponent` 的实体，将手牌中携带「封印」词条（`affixes` 中含 `AffixSealedComponent`）的卡牌副本物化为实体级 `AffixSealedComponent`；手牌无封印牌时自动清除该组件。
-
-此系统紧跟 `DrawCardsActionSystem` 之后执行，保证**后续所有系统（出牌/弃牌/敌方决策）都能直接查询 `AffixSealedComponent`**，而无需自行扫描手牌 `affixes`。
-
-详细设计见：[[affix-system]]
-
----
-
-### DiscardCardsActionSystem（步骤 10）
+### DiscardCardsActionSystem（步骤 9）
 
 **源码**：`src/ai_rpg/systems/discard_cards_action_system.py`  
 **监听**：`DiscardCardsAction`
@@ -192,7 +171,7 @@ Round 1 时，系统向所有 `ExpeditionMemberComponent` 实体注入一条 hum
 
 ---
 
-### ArbitrationActionSystem（步骤 12）
+### ArbitrationActionSystem（步骤 11）
 
 **源码**：`src/ai_rpg/systems/arbitration_action_system.py`  
 **监听**：`PlayCardsAction`
@@ -218,7 +197,7 @@ Round 1 时，系统向所有 `ExpeditionMemberComponent` 实体注入一条 hum
 
 ---
 
-### PostArbitrationActionSystem（步骤 14）
+### PostArbitrationActionSystem（步骤 13）
 
 **源码**：`src/ai_rpg/systems/post_arbitration_action_system.py`  
 **监听**：`PostArbitrationAction`（`ADDED`）
@@ -248,7 +227,7 @@ Round 1 时，系统向所有 `ExpeditionMemberComponent` 实体注入一条 hum
 
 ---
 
-### CombatRoundCompletionSystem（步骤 15）
+### CombatRoundCompletionSystem（步骤 14）
 
 **源码**：`src/ai_rpg/systems/combat_round_completion_system.py`  
 **类型**：`ExecuteProcessor`
@@ -265,7 +244,7 @@ Round 1 时，系统向所有 `ExpeditionMemberComponent` 实体注入一条 hum
 
 ---
 
-### CombatRoundTransitionSystem（步骤 18）
+### CombatRoundTransitionSystem（步骤 17）
 
 **源码**：`src/ai_rpg/systems/combat_round_transition_system.py`  
 **策略**：`ActionOrderStrategy.SPEED_ORDER`（按速度属性降序排列行动顺序）
@@ -283,7 +262,7 @@ Round 1 时，系统向所有 `ExpeditionMemberComponent` 实体注入一条 hum
 
 ---
 
-### CombatArchiveSystem（步骤 19）
+### CombatArchiveSystem（步骤 18）
 
 **源码**：`src/ai_rpg/systems/combat_archive_system.py`  
 **类型**：`ExecuteProcessor`（含状态守卫）

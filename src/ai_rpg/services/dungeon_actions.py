@@ -24,7 +24,6 @@ from ..models import (
     Card,
     CardTargetType,
     HandComponent,
-    # AffixSealedComponent,
 )
 from ..entitas import Entity, Matcher
 
@@ -339,13 +338,6 @@ async def activate_play_cards_specified(
         logger.error(msg)
         return False, msg
 
-    # sealed_comp = entity.get(AffixSealedComponent)
-    # if sealed_comp is not None and any(
-    #     c.name == card_name for c in sealed_comp.sealed_cards
-    # ):
-    #     msg = f"卡牌「{card_name}」带有封印词条，不可出牌"
-    #     logger.warning(msg)
-    #     return False, msg
     allowed, deny_reason = await _check_affixes_allow_action(
         tcg_game, entity, selected_card, "play"
     )
@@ -406,13 +398,6 @@ async def activate_discard_cards_specified(
         logger.error(msg)
         return False, msg
 
-    # sealed_comp = entity.get(AffixSealedComponent)
-    # if sealed_comp is not None and any(
-    #     c.name == card_name for c in sealed_comp.sealed_cards
-    # ):
-    #     msg = f"卡牌「{card_name}」带有封印词条，不可弃牌"
-    #     logger.warning(msg)
-    #     return False, msg
     allowed, deny_reason = await _check_affixes_allow_action(
         tcg_game, entity, selected_card, "discard"
     )

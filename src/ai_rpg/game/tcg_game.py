@@ -32,7 +32,6 @@ from ..models import (
     CharacterStatsComponent,
     EquipmentComponent,
     InventoryComponent,
-    # AffixSealedComponent,
 )
 from ..models.utils import compute_stats_with_equipment
 from .player_session import PlayerSession
@@ -213,10 +212,6 @@ class TCGGame(RPGGame):
 
             # 移除 HandComponent
             entity.remove(HandComponent)
-
-            # 词条物化组件与手牌同生命周期，回合结束一并清除（已停用）
-            # if entity.has(AffixSealedComponent):
-            #     entity.remove(AffixSealedComponent)
 
         # 清除所有角色实体的回合动态属性组件
         for entity in self.get_group(Matcher(RoundStatsComponent)).entities.copy():

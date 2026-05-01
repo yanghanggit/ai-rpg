@@ -7,6 +7,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     PlayCardsAction,
+    PassTurnAction,
     EnemyComponent,
     DeathComponent,
     HandComponent,
@@ -23,9 +24,10 @@ from ..utils import extract_json_from_code_block
 class EnemyDecisionResponse(BaseModel):
     """LLM 返回的敌人出牌决策"""
 
-    card_name: str
-    targets: List[str]
-    action: str
+    pass_turn: bool = False
+    card_name: str = ""
+    targets: List[str] = []
+    action: str = ""
 
 
 #######################################################################################################################################
@@ -89,7 +91,7 @@ def _generate_enemy_decision_prompt(
 
     return f"""# 第 {current_round_number} 回合：选择你的出牌（以 JSON 格式返回）
 
-你是战场上的敌方角色 {enemy_name}，请根据当前局势选择一张手牌并决定攻击目标。
+请根据当前局势选择一张手牌并决定攻击目标。
 
 ## 你的当前状态
 
@@ -114,16 +116,92 @@ def _generate_enemy_decision_prompt(
 - 行动序列严格顺序执行，排在你前面的角色已出手，其目标可能已死亡
 - 格挡在下回合开始时清零：若你是本轮最后行动者，获取 block_gain 的牌本回合无效
 - targets 从"场上存活对手"中选全名，可多选，可为空列表
+- 若所有手牌均无法执行（如全部封印），可选择跳过出牌（pass_turn: true），此时 card_name/targets/action 可省略
 
 ## 输出 JSON
 
 ```json
 {{
+  "pass_turn": false,
   "card_name": "从手牌中选择一张卡牌的名称（必须是以下之一：{card_names_json}）",
   "targets": ["目标全名列表，可为 []"],
   "action": "第一人称出牌叙事（1-2句，结合当前战场情景，生动具体）"
 }}
-```"""
+```
+pass_turn 为 true 时表示跳过出牌，其他字段可省略"""
+
+
+#######################################################################################################################################
+def _generate_compressed_enemy_decision_prompt(
+    enemy_name: str,
+    enemy_stats: CharacterStats,
+    hand_cards: List[Card],
+    opponent_names: List[str],
+    action_order: List[str],
+    completed_actors: List[str],
+    current_round_number: int,
+) -> str:
+    """生成敌人出牌决策的压缩版提示词（写入对话历史，减少 token 消耗）。
+
+    保留动态感知部分（状态、序列、手牌、对手），删除静态策略说明与 JSON 字段注释。
+    LLM 推理仍使用全量版 `_generate_enemy_decision_prompt`。
+    Args 同 `_generate_enemy_decision_prompt`。
+    """
+    stats = enemy_stats
+    self_info = (
+        f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
+    )
+
+    cards_lines = "\n".join(
+        f"- 【{c.name}】描述：{c.description}"
+        + (f"  词缀：{'、'.join(c.effects)}" if c.effects else "")
+        + f"  damage_dealt:{c.damage_dealt}  hit_count:{c.hit_count}  block_gain:{c.block_gain}  target_type:{c.target_type}"
+        for c in hand_cards
+    )
+
+    opponents_lines = (
+        "\n".join(f"- {name}" for name in opponent_names)
+        if opponent_names
+        else "- 无存活对手"
+    )
+
+    order_display = " → ".join(
+        f"你（{name.split('.')[-1]}）" if name == enemy_name else name.split(".")[-1]
+        for name in action_order
+    )
+    my_position = next(
+        (i + 1 for i, name in enumerate(action_order) if name == enemy_name), None
+    )
+    position_text = f"第 {my_position} 位" if my_position is not None else "未知"
+    completed_text = (
+        "、".join(name.split(".")[-1] for name in completed_actors)
+        if completed_actors
+        else "无"
+    )
+
+    card_names_json = ", ".join(f'"{c.name}"' for c in hand_cards)
+
+    return f"""# 第 {current_round_number} 回合：选择你的出牌（以 JSON 格式返回）
+
+## 你的当前状态
+
+{self_info}
+
+## 本回合行动序列
+
+完整序列：{order_display}
+已行动：{completed_text}
+你的位置：{position_text}，现在轮到你
+
+## 当前手牌
+
+{cards_lines}
+
+## 场上存活对手
+
+{opponents_lines}
+
+输出 JSON（pass_turn/card_name/targets/action；可用卡牌：{card_names_json}）"""
 
 
 #######################################################################################################################################
@@ -153,6 +231,7 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
+
         # 验证战斗状态
         if not self._game.current_dungeon.is_ongoing:
             logger.debug("EnemyDrawDecisionSystem: 战斗未进行中，跳过决策")
@@ -161,6 +240,10 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
         logger.debug(
             f"EnemyPlayDecisionSystem: 为 {len(entities)} 个敌人进行出牌决策推理"
         )
+
+        # 注入 context 引导（仅第一回合，强制过牌）
+        current_round_number = len(self._game.current_dungeon.current_rounds or [])
+        self._mock_inject_pass_turn_context(entities, current_round_number)
 
         # 为每个敌人创建推理 DeepSeekClient
         chat_clients: List[DeepSeekClient] = []
@@ -178,10 +261,14 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
 
         # 解析并替换 PlayCardsAction
         for client in chat_clients:
+
             found_entity = self._game.get_entity_by_name(client.name)
-            if found_entity is None:
-                logger.error(f"EnemyPlayDecisionSystem: 无法找到实体 {client.name}")
-                continue
+            assert (
+                found_entity is not None
+            ), f"EnemyPlayDecisionSystem: 无法找到实体 {client.name}"
+            # if found_entity is None:
+            #     logger.error(f"EnemyPlayDecisionSystem: 无法找到实体 {client.name}")
+            #     continue
             self._process_enemy_decision(found_entity, client)
 
     ####################################################################################################################################
@@ -232,11 +319,37 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
             current_round_number=current_round_number,
         )
 
+        compressed_prompt = _generate_compressed_enemy_decision_prompt(
+            enemy_name=entity.name,
+            enemy_stats=enemy_stats,
+            hand_cards=hand_comp.cards,
+            opponent_names=opponent_names,
+            action_order=action_order,
+            completed_actors=completed_actors,
+            current_round_number=current_round_number,
+        )
+
         return DeepSeekClient(
             name=entity.name,
             prompt=prompt,
             context=self._game.get_agent_context(entity).context,
+            compressed_prompt=compressed_prompt,
         )
+
+    ####################################################################################################################################
+    def _mock_inject_pass_turn_context(
+        self, entities: list[Entity], current_round_number: int
+    ) -> None:
+        """[mock] 第一回合向敌人注入 context，强制引导 LLM 选择 pass_turn。"""
+        if current_round_number != 1:
+            return
+        msg = (
+            "[系统提示] 本回合你必须选择跳过出牌。"
+            "请在 JSON 响应中将 pass_turn 设为 true，其余字段可省略。"
+        )
+        for entity in entities:
+            self._game.add_human_message(entity, msg)
+            logger.debug(f"[mock context] [{entity.name}] 注入 pass_turn 引导 context")
 
     ####################################################################################################################################
     def _process_enemy_decision(self, entity: Entity, client: DeepSeekClient) -> None:
@@ -250,6 +363,25 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
             decision = EnemyDecisionResponse.model_validate_json(
                 extract_json_from_code_block(client.response_content)
             )
+
+            # 写对话历史（压缩版 prompt + AI 原文，附挂全量 prompt 供检索）
+            current_round_number = len(self._game.current_dungeon.current_rounds or [])
+            self._game.add_human_message(
+                entity=entity,
+                message_content=client.compressed_prompt,
+                draw_cards_round_number=current_round_number,
+                draw_cards_full_prompt=client.prompt,
+            )
+            assert client.response_ai_message is not None
+            self._game.add_ai_message(entity, client.response_ai_message)
+
+            if decision.pass_turn:
+                entity.remove(PlayCardsAction)
+                entity.replace(PassTurnAction, entity.name)
+                logger.debug(
+                    f"EnemyPlayDecisionSystem: [{entity.name}] 决策过牌（跳过本次出牌机会）"
+                )
+                return
 
             hand_comp = entity.get(HandComponent)
             assert hand_comp is not None
@@ -301,16 +433,6 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
                             f"EnemyPlayDecisionSystem: [{entity.name}] 过滤无效目标 "
                             f"{set(decision.targets) - alive_names}"
                         )
-
-            # 写对话历史
-            current_round_number = len(self._game.current_dungeon.current_rounds or [])
-            self._game.add_human_message(
-                entity=entity,
-                message_content=client.prompt,
-                draw_cards_round_number=current_round_number,
-            )
-            assert client.response_ai_message is not None
-            self._game.add_ai_message(entity, client.response_ai_message)
 
             # 替换 PlayCardsAction，填入真实卡牌和目标
             entity.replace(

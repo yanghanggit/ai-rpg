@@ -179,6 +179,7 @@ from agent_game_actions import (
     draw_cards_game,
     play_cards_specified_game,
     discard_cards_game,
+    pass_turn_game,
     exit_dungeon_and_return_home_game,
     next_dungeon_game,
     retreat_game,
@@ -619,6 +620,47 @@ def discard_cards_specified(snapshot: str, actor: str, card: str) -> None:
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(discard_cards_game(world, player_session, actor, card, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("pass-turn")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+@click.option(
+    "--actor",
+    required=True,
+    help="过牌角色全名（如 角色.旅行者.无名氏）",
+)
+def pass_turn(snapshot: str, actor: str) -> None:
+    """从存档复位，让指定角色跳过本次出牌机会，并写入新存档。
+
+    适用于【地下城模式】战斗进行中（is_ongoing），draw-cards 之后调用。
+    指定角色消耗 1 点 energy，不打出任何卡牌，行动顺序推进至下一角色。
+    """
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(pass_turn_game(world, player_session, actor, _save_dir))
 
 
 ###############################################################################################################################################

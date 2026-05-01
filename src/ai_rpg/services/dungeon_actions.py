@@ -15,6 +15,7 @@ from ..models import (
     HandComponent,
     PlayCardsAction,
     DiscardCardsAction,
+    PassTurnAction,
     ExpeditionMemberComponent,
     EnemyComponent,
     DeathComponent,
@@ -408,6 +409,30 @@ def activate_expedition_retreat(
         True,
         f"成功为 {len(expedition_member_entities)} 个远征队成员激活撤退动作",
     )
+
+
+###################################################################################################################################################################
+def activate_pass_turn(
+    tcg_game: TCGGame,
+    actor_name: str,
+) -> Tuple[bool, str]:
+    """让指定战斗角色跳过本次出牌机会（过牌），消耗 1 点 energy。
+
+    Args:
+        tcg_game: TCG游戏实例
+        actor_name: 过牌角色的全名
+
+    Returns:
+        tuple[bool, str]: (是否成功, 结果消息)
+    """
+    entity, error_msg = _validate_play_turn(tcg_game, actor_name)
+    if entity is None:
+        logger.error(f"activate_pass_turn: {error_msg}")
+        return False, error_msg
+
+    logger.debug(f"为角色 {actor_name} 激活过牌动作")
+    entity.replace(PassTurnAction, entity.name)
+    return True, f"成功为角色 {actor_name} 激活过牌动作"
 
 
 ###################################################################################################################################################################

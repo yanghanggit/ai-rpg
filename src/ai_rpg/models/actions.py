@@ -129,6 +129,16 @@ class DiscardCardsAction(Component):
 
 
 ############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
+class PassTurnAction(Component):
+    """触发角色主动跳过本次出牌机会，消耗 1 点 energy，推进行动顺序。"""
+
+    name: str
+
+
+############################################################################################################
 
 
 @final

@@ -264,6 +264,20 @@ class DungeonCombatDiscardCardsResponse(BaseModel):
     message: str
 
 
+@final
+class DungeonCombatPassTurnRequest(BaseModel):
+    user_name: str
+    game_name: str
+    actor_name: str
+
+
+@final
+class DungeonCombatPassTurnResponse(BaseModel):
+    task_id: str
+    status: str
+    message: str
+
+
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################

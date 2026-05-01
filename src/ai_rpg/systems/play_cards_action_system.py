@@ -142,9 +142,6 @@ class PlayCardsActionSystem(ReactiveProcessor):
 
             # 将出牌角色写入本回合 completed_actors（允许同一角色多次出现）
             last_round.completed_actors.append(play_cards_action.name)
-            # last_round.play_count[play_cards_action.name] = (
-            #     last_round.play_count.get(play_cards_action.name, 0) + 1
-            # )
 
             # 每出一张牌消耗 1 点 energy
             assert entity.has(
@@ -159,7 +156,6 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 RoundStatsComponent,
                 entity.name,
                 round_stats.energy - 1,
-                # round_stats.speed,
                 round_stats.block,
             )
 
@@ -178,10 +174,12 @@ class PlayCardsActionSystem(ReactiveProcessor):
             assert entity.has(
                 PlayedDeckComponent
             ), f"{entity.name} 缺少 PlayedDeckComponent"
+
             # 这里通过对象身份（is）而非等値比较（==）来确保正确移除特定的卡牌实例，避免同名卡牌导致的误删问题
             played_card = play_cards_action.card
             new_hand_cards = [c for c in hand_comp.cards if c is not played_card]
 
+            # 直接替换整个 hand_comp.cards 列表，避免修改原列表导致的潜在问题
             hand_comp.cards = new_hand_cards
 
             # 将已出的卡牌归入 PlayedDeckComponent

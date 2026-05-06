@@ -21,7 +21,7 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     PlayCardsAction,
     RoundStatsComponent,
-    CardTargetType,
+    TargetType,
     CharacterStats,
     CharacterStatsComponent,
     DeathComponent,
@@ -201,7 +201,7 @@ def _build_random_multi_sections(
 
     当 target_type 不是 ENEMY_RANDOM_MULTI 时，所有字段均为空字符串。
     """
-    if play_cards_action.card.target_type != CardTargetType.ENEMY_RANDOM_MULTI:
+    if play_cards_action.card.target_type != TargetType.ENEMY_RANDOM_MULTI:
         return _RandomMultiSections("", "", "")
 
     hit_lines = "\n".join(

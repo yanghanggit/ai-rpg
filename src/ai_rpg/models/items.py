@@ -10,6 +10,7 @@ from typing import Annotated, Literal, Union, final
 from uuid import uuid4
 from pydantic import BaseModel, Field
 from .stats import CharacterStats
+from .target_type import TargetType
 
 
 ###############################################################################################################################################
@@ -99,6 +100,7 @@ class ConsumableItem(Item):
     type: Literal[ItemType.CONSUMABLE_ITEM] = Field(
         default=ItemType.CONSUMABLE_ITEM, frozen=True
     )
+    target_type: TargetType = TargetType.SELF_ONLY  # 使用目标类型，默认仅作用于自身
 
 
 #######################################################################################################################################

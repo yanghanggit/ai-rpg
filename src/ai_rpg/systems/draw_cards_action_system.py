@@ -25,7 +25,7 @@ from ..models import (
     DrawCardsAction,
     HandComponent,
     Card,
-    CardTargetType,
+    TargetType,
     DeathComponent,
     CharacterStats,
     CharacterStatsComponent,
@@ -63,7 +63,7 @@ class CardEntry(BaseModel):
     damage_dealt: int
     block_gain: int
     hit_count: int = 1
-    target_type: str = CardTargetType.ENEMY_SINGLE  # 接受原始字符串，由系统逐卡校验
+    target_type: str = TargetType.ENEMY_SINGLE  # 接受原始字符串，由系统逐卡校验
 
 
 #######################################################################################################################################
@@ -493,7 +493,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             )
 
             # 逐卡校验 target_type，非法值废弃并写入 agent 警告
-            valid_target_types = {e.value for e in CardTargetType}
+            valid_target_types = {e.value for e in TargetType}
             cards: List[Card] = []
             for entry in response.cards:
 
@@ -520,7 +520,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                         damage_dealt=entry.damage_dealt,
                         block_gain=entry.block_gain,
                         hit_count=entry.hit_count,
-                        target_type=CardTargetType(entry.target_type),
+                        target_type=TargetType(entry.target_type),
                         source=entity.name,
                     )
                 )
@@ -550,7 +550,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 damage_dealt=0,
                 block_gain=0,
                 hit_count=1,
-                target_type=CardTargetType.SELF_ONLY,
+                target_type=TargetType.SELF_ONLY,
                 source=entity.name,
             )
             all_cards = deck_cards + [fallback_card]

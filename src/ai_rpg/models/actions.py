@@ -3,6 +3,7 @@
 from typing import Dict, List, Optional, final
 from ..entitas.components import Component
 from .cards import Card
+from .items import ConsumableItem
 from .registry import register_action_component_type, register_component_type
 
 
@@ -136,6 +137,18 @@ class PassTurnAction(Component):
     """触发角色主动跳过本次出牌机会，消耗 1 点 energy，推进行动顺序。"""
 
     name: str
+
+
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
+class UseConsumableItemAction(Component):
+    """触发角色在战斗中使用一件消耗品，消耗 1 点 energy，推进行动顺序。"""
+
+    name: str
+    item: ConsumableItem  # 要使用的消耗品
+    targets: List[str]  # 目标角色名列表（可为空，表示仅作用于自身）
 
 
 ############################################################################################################

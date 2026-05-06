@@ -1,13 +1,19 @@
 """卡牌与状态效果模型定义
 
 包含战斗中使用的状态效果（StatusEffect）与卡牌（Card）相关核心模型：
-StatusEffectPhase、StatusEffect、CardTargetType、Card、DiceValue、Keyword。
+StatusEffectPhase、StatusEffect、Card、DiceValue、Keyword。
+
+目标类型枚举（TargetType）已迁移至 target_type.py，此处保留向后兼容别名 CardTargetType。
 """
 
 from enum import IntEnum, StrEnum, unique
 from typing import List, final
 from uuid import uuid4
 from pydantic import BaseModel, Field
+from .target_type import TargetType
+
+# 向后兼容别名，新代码请直接使用 TargetType
+CardTargetType = TargetType
 
 
 ###############################################################################################################################################
@@ -48,33 +54,6 @@ class StatusEffect(BaseModel):
 
 ###############################################################################################################################################
 @final
-@unique
-class CardTargetType(StrEnum):
-    """卡牌目标类型
-
-    声明一张卡牌的打击范围，由 LLM 在抽卡时输出，出牌阶段系统据此做目标验证或自动填充。
-
-    当前约束策略：
-    - enemy_single：targets 必须恰好包含 1 名存活敌方角色名
-    - enemy_all：targets 由系统自动替换为场上全部存活敌方，调用方传入值被忽略
-    - enemy_random_multi：targets 由系统预先随机生成，长度 = hit_count，每段独立随机命中一名存活敌方
-                          （允许重复命中同一目标）；仲裁系统按段分配结算，
-    - ally_single / ally_all：暂不约束，targets 由调用方自由传入（占位，后续扩展）
-    - self_only：targets 由系统自动替换为施法者自身，调用方传入值被忽略；
-                 典型用途：纯防御（提升格挡）、呼吸法（自我恢复）、强化自身 buff 等
-                 与 ally_single 的区别：ally_single 可指向任意存活友方，self_only 严格限定为施法者本人
-    """
-
-    ENEMY_SINGLE = "enemy_single"
-    ENEMY_ALL = "enemy_all"
-    ENEMY_RANDOM_MULTI = "enemy_random_multi"
-    ALLY_SINGLE = "ally_single"
-    ALLY_ALL = "ally_all"
-    SELF_ONLY = "self_only"
-
-
-###############################################################################################################################################
-@final
 class Card(BaseModel):
     """战斗卡牌"""
 
@@ -91,9 +70,7 @@ class Card(BaseModel):
     hit_count: int = (
         1  # 攻击次数（默认 1；>1 时为多段攻击，每段各自抵挡格挡后依次结算）
     )
-    target_type: CardTargetType = (
-        CardTargetType.ENEMY_SINGLE
-    )  # 出牌目标类型，决定目标约束策略
+    target_type: TargetType = TargetType.ENEMY_SINGLE  # 出牌目标类型，决定目标约束策略
     source: str = ""  # 卡牌来源（生成/注入者名称）；空字符串表示来源未知
     uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
 

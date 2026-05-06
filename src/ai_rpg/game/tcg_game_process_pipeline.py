@@ -105,6 +105,12 @@ def create_combat_pipeline(
     from ..systems.play_cards_action_system import (
         PlayCardsActionSystem,
     )
+    from ..systems.use_consumable_item_action_system import (
+        UseConsumableItemActionSystem,
+    )
+    from ..systems.use_consumable_item_arbitration_system import (
+        UseConsumableItemArbitrationSystem,
+    )
     from ..systems.discard_cards_action_system import DiscardCardsActionSystem
     from ..systems.pass_turn_action_system import PassTurnActionSystem
     from ..systems.retreat_action_system import RetreatActionSystem
@@ -153,10 +159,12 @@ def create_combat_pipeline(
     processors.add(MonsterPlayDecisionSystem(tcg_game))
     processors.add(PlayActionNarrationSystem(tcg_game))
     processors.add(PlayCardsActionSystem(tcg_game))
+    processors.add(UseConsumableItemActionSystem(tcg_game))
     processors.add(DiscardCardsActionSystem(tcg_game))
     processors.add(PassTurnActionSystem(tcg_game))
     processors.add(RetreatActionSystem(tcg_game))
     processors.add(ArbitrationActionSystem(tcg_game))
+    processors.add(UseConsumableItemArbitrationSystem(tcg_game))
     processors.add(AddActorStatusEffectsActionSystem(tcg_game, max_effects=2))
 
     # 仲裁结算后，由 stage agent（地牢主视角）决定是否对场内角色追加状态效果或塞牌

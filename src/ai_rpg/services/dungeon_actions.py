@@ -16,14 +16,18 @@ from ..models import (
     PlayCardsAction,
     DiscardCardsAction,
     PassTurnAction,
+    UseConsumableItemAction,
     PartyMemberComponent,
     MonsterComponent,
     DeathComponent,
     RetreatAction,
     MonsterTurnAction,
     Card,
-    CardTargetType,
+    TargetType,
     HandComponent,
+    ConsumableItem,
+    InventoryComponent,
+    ItemType,
 )
 from ..entitas import Entity, Matcher
 
@@ -111,12 +115,13 @@ def activate_all_card_draws(
 
 ###################################################################################################################################################################
 def _resolve_targets(
-    card: Card,
+    target_type: TargetType,
+    hit_count: int,
     actor_entity: Entity,
     passed_targets: List[str],
     tcg_game: TCGGame,
 ) -> Tuple[List[str], str]:
-    """根据 card.target_type 解析并验证出牌目标。
+    """根据 target_type 解析并验证目标。
 
     actor_entity 是 PartyMemberComponent 时，"敌方"为 MonsterComponent，"我方"为 PartyMemberComponent。
     actor_entity 是 MonsterComponent 时，"敌方"为 PartyMemberComponent，"我方"为 MonsterComponent。
@@ -133,8 +138,8 @@ def _resolve_targets(
             else _get_alive_party_members_in_stage(actor_entity, tcg_game)
         )
 
-    match card.target_type:
-        case CardTargetType.ENEMY_SINGLE:
+    match target_type:
+        case TargetType.ENEMY_SINGLE:
             enemy_names = {e.name for e in _get_enemies()}
             if len(passed_targets) != 1:
                 return (
@@ -148,16 +153,16 @@ def _resolve_targets(
                 )
             return list(passed_targets), ""
 
-        case CardTargetType.ENEMY_ALL:
+        case TargetType.ENEMY_ALL:
             return [e.name for e in _get_enemies()], ""
 
-        case CardTargetType.ENEMY_RANDOM_MULTI:
+        case TargetType.ENEMY_RANDOM_MULTI:
             enemies = _get_enemies()
             if not enemies:
                 return [], "ENEMY_RANDOM_MULTI：场上无存活敌方"
-            return [e.name for e in random.choices(enemies, k=card.hit_count)], ""
+            return [e.name for e in random.choices(enemies, k=hit_count)], ""
 
-        case CardTargetType.SELF_ONLY:
+        case TargetType.SELF_ONLY:
             return [actor_entity.name], ""
 
         case _:  # ALLY_SINGLE / ALLY_ALL — 不限制目标
@@ -255,7 +260,7 @@ async def activate_play_cards_specified(
         return False, deny_reason
 
     resolved_targets, resolve_err = _resolve_targets(
-        selected_card, entity, targets, tcg_game
+        selected_card.target_type, selected_card.hit_count, entity, targets, tcg_game
     )
     if resolve_err:
         logger.error(f"activate_play_cards_specified: {resolve_err}")
@@ -439,6 +444,67 @@ def activate_pass_turn(
     logger.debug(f"为角色 {actor_name} 激活过牌动作")
     entity.replace(PassTurnAction, entity.name)
     return True, f"成功为角色 {actor_name} 激活过牌动作"
+
+
+###################################################################################################################################################################
+def activate_use_consumable_item(
+    tcg_game: TCGGame,
+    actor_name: str,
+    item_name: str,
+    targets: List[str],
+) -> Tuple[bool, str]:
+    """让指定远征队员在战斗中使用指定消耗品，消耗 1 点 energy。仅适用于 PartyMemberComponent 角色。
+
+    Args:
+        tcg_game: TCG游戏实例
+        actor_name: 使用者的全名（如 角色.旅行者.无名氏）
+        item_name: 要使用的消耗品名称（须存在于该角色背包中）
+        targets: 目标角色名列表，可为 []（表示仅作用于自身）
+
+    Returns:
+        tuple[bool, str]: (是否成功, 结果消息)
+    """
+    entity, error_msg = _validate_play_turn(tcg_game, actor_name)
+    if entity is None:
+        logger.error(f"activate_use_consumable_item: {error_msg}")
+        return False, error_msg
+
+    if not entity.has(PartyMemberComponent):
+        msg = f"activate_use_consumable_item: {actor_name} 不是远征队员，无法使用消耗品"
+        logger.error(msg)
+        return False, msg
+
+    if not entity.has(InventoryComponent):
+        msg = f"activate_use_consumable_item: {actor_name} 没有背包组件"
+        logger.error(msg)
+        return False, msg
+
+    inventory_comp = entity.get(InventoryComponent)
+    found_item: ConsumableItem | None = next(
+        (
+            item
+            for item in inventory_comp.items
+            if item.name == item_name and item.type == ItemType.CONSUMABLE_ITEM
+        ),
+        None,
+    )
+    if found_item is None:
+        msg = f"activate_use_consumable_item: {actor_name} 背包中找不到消耗品「{item_name}」"
+        logger.error(msg)
+        return False, msg
+
+    resolved_targets, resolve_err = _resolve_targets(
+        found_item.target_type, 1, entity, targets, tcg_game
+    )
+    if resolve_err:
+        logger.error(f"activate_use_consumable_item: {resolve_err}")
+        return False, resolve_err
+
+    logger.debug(
+        f"为角色 {actor_name} 激活使用消耗品动作，物品: {found_item.name} 目标: {resolved_targets}"
+    )
+    entity.replace(UseConsumableItemAction, entity.name, found_item, resolved_targets)
+    return True, f"成功为角色 {actor_name} 激活使用消耗品「{item_name}」动作"
 
 
 ###################################################################################################################################################################

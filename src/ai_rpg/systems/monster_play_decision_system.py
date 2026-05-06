@@ -15,7 +15,7 @@ from ..models import (
     CharacterStats,
     PartyMemberComponent,
     Card,
-    CardTargetType,
+    TargetType,
 )
 from ..utils import extract_json_from_code_block
 
@@ -407,12 +407,12 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
             alive_names = {a.name for a in alive_actors}
 
             match selected_card.target_type:
-                case CardTargetType.ENEMY_ALL:
+                case TargetType.ENEMY_ALL:
                     # 自动填充所有存活的远征队成员（对怪物来说"敌方"= PartyMember）
                     valid_targets = [
                         a.name for a in alive_actors if a.has(PartyMemberComponent)
                     ]
-                case CardTargetType.ENEMY_RANDOM_MULTI:
+                case TargetType.ENEMY_RANDOM_MULTI:
                     # 每段独立随机命中一名存活远征队成员（对怪物来说"敌方"= PartyMember）
                     party_members = [
                         a for a in alive_actors if a.has(PartyMemberComponent)
@@ -427,7 +427,7 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
                         if party_members
                         else []
                     )
-                case CardTargetType.SELF_ONLY:
+                case TargetType.SELF_ONLY:
                     # 仅作用于施法者自身
                     valid_targets = [entity.name]
                 case _:

@@ -278,20 +278,25 @@ class DungeonCombatPassTurnResponse(BaseModel):
     message: str
 
 
+@final
+class DungeonCombatUseConsumableItemRequest(BaseModel):
+    user_name: str
+    game_name: str
+    actor_name: str
+    item_name: str
+    targets: List[str] = []
+
+
+@final
+class DungeonCombatUseConsumableItemResponse(BaseModel):
+    task_id: str
+    status: str
+    message: str
+
+
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################
-
-
-# @final
-# class AllyDrawCardAction(BaseModel):
-#     """单个Ally角色的抽牌动作指定"""
-
-#     entity_name: str  # 出牌者实体名称
-#     skill_name: str  # 指定的技能名称
-#     target_names: List[str]  # 目标名称列表
-#     status_effect_names: List[str]  # 状态效果名称列表
-
 
 @final
 class DungeonCombatDrawCardsRequest(BaseModel):

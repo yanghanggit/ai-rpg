@@ -298,6 +298,7 @@ class DungeonCombatUseConsumableItemResponse(BaseModel):
 ################################################################################################################
 ################################################################################################################
 
+
 @final
 class DungeonCombatDrawCardsRequest(BaseModel):
     user_name: str

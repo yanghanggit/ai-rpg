@@ -352,7 +352,7 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         """Actor 路径：角色级仲裁后反应（暂未实现）
 
         未来由 actor 自身的 LLM agent 决定是否执行仲裁后的角色反应。
-        触发点需在 ArbitrationActionSystem._apply_arbitration_result 中
+        触发点需在 PlayCardsArbitrationSystem._apply_arbitration_result 中
         对 actor_entity 添加 PostArbitrationAction 才会激活此路径。
         """
         logger.debug(

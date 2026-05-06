@@ -58,7 +58,7 @@ def _generate_consumable_task_hint(
 ) -> str:
     """生成消耗品仲裁结算后的 AddStatusEffectsAction task_hint。
 
-    与 ArbitrationActionSystem._generate_post_arbitration_task_hint 同语义，
+    与 PlayCardsArbitrationSystem._generate_post_arbitration_task_hint 同语义，
     区分使用者视角与目标视角，供 AddActorStatusEffectsActionSystem 使用。
     """
     item = action.item
@@ -551,7 +551,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         """消耗品仲裁结算后，为使用者与所有目标添加 AddStatusEffectsAction。
 
         当 item.effects 为空时跳过，不触发后续 LLM 推理。
-        逻辑与 ArbitrationActionSystem._trigger_add_status_effects 对称。
+        逻辑与 PlayCardsArbitrationSystem._add_status_effects_actions_after_arbitration 对称。
         """
         if not action.item.effects:
             logger.debug(

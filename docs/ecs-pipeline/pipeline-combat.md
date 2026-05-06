@@ -45,7 +45,7 @@
 | 8 | `PlayCardsActionSystem` | Reactive | 执行出牌，触发后续仲裁链 |
 | 9 | `DiscardCardsActionSystem` | Reactive | 将指定手牌移入弃牌堆（不消耗 energy） |
 | 10 | `RetreatActionSystem` | Reactive | 处理撤退行动 |
-| 11 | `ArbitrationActionSystem` | Reactive | **核心**：AI 仲裁伤害/格挡/HP 结算 |
+| 11 | `PlayCardsArbitrationSystem` | Reactive | **核心**：AI 仲裁伤害/格挡/HP 结算 |
 | 12 | `AddActorStatusEffectsActionSystem` | Reactive | 为角色追加状态效果（最多 2 个/帧） |
 | 13 | `PostArbitrationActionSystem` | Reactive | 双路径：Stage Agent 干预（追加效果 / 塞牌）；Actor 路径预留（暂为 stub） |
 | 14 | `CombatRoundCompletionSystem` | Execute | 回合完成判定：所有存活角色 energy ≤ 0 时写入 `Round.is_completed = True` |
@@ -146,7 +146,7 @@ Round 1 时，系统向所有 `PartyMemberComponent` 实体注入一条 human me
 
 ### 卡牌目标类型（CardTargetType）
 
-`CardTargetType` 是每张卡牌的目标范围声明，由 `DrawCardsActionSystem` 在生成阶段由 LLM 写入 `target_type` 字段，再分别由玩家出牌路径（`dungeon_actions._resolve_targets`）和敌方 AI 路径（`EnemyPlayDecisionSystem._process_enemy_decision`）消费为实际 `targets` 列表，最终由 `ArbitrationActionSystem` 按列表逐目标结算伤害与格挡。
+`CardTargetType` 是每张卡牌的目标范围声明，由 `DrawCardsActionSystem` 在生成阶段由 LLM 写入 `target_type` 字段，再分别由玩家出牌路径（`dungeon_actions._resolve_targets`）和敌方 AI 路径（`EnemyPlayDecisionSystem._process_enemy_decision`）消费为实际 `targets` 列表，最终由 `PlayCardsArbitrationSystem` 按列表逐目标结算伤害与格挡。
 
 **六种目标类型**：
 
@@ -171,9 +171,9 @@ Round 1 时，系统向所有 `PartyMemberComponent` 实体注入一条 human me
 
 ---
 
-### ArbitrationActionSystem（步骤 11）
+### PlayCardsArbitrationSystem（步骤 11）
 
-**源码**：`src/ai_rpg/systems/arbitration_action_system.py`  
+**源码**：`src/ai_rpg/systems/play_cards_arbitration_system.py`  
 **监听**：`PlayCardsAction`
 
 这是战斗的数值结算核心。每次单张出牌后立即触发（`ActionCleanupSystem` 保证每帧只有一个角色出牌）。
@@ -202,7 +202,7 @@ Round 1 时，系统向所有 `PartyMemberComponent` 实体注入一条 human me
 **源码**：`src/ai_rpg/systems/post_arbitration_action_system.py`  
 **监听**：`PostArbitrationAction`（`ADDED`）
 
-`ArbitrationActionSystem` 结算成功后，若 `ArbitrationResponse.trigger_post_arbitration == True`，会向 stage entity 添加 `PostArbitrationAction`，触发本系统。`filter()` 接受两类实体（Stage OR Actor），`react()` 内部按顺序处理两个批次：
+`PlayCardsArbitrationSystem` 结算成功后，若 `ArbitrationResponse.trigger_post_arbitration == True`，会向 stage entity 添加 `PostArbitrationAction`，触发本系统。`filter()` 接受两类实体（Stage OR Actor），`react()` 内部按顺序处理两个批次：
 
 **批次一：Stage 路径**（当前唯一激活路径）
 
@@ -217,7 +217,7 @@ Round 1 时，系统向所有 `PartyMemberComponent` 实体注入一条 human me
 **批次二：Actor 路径**（暂为 stub）
 
 - 实体条件：具有 `ActorComponent`
-- 触发点尚未在 `ArbitrationActionSystem` 中实现（actor entity 未被添加 `PostArbitrationAction`），当前此批次永远为空
+- 触发点尚未在 `PlayCardsArbitrationSystem` 中实现（actor entity 未被添加 `PostArbitrationAction`），当前此批次永远为空
 - 当 `_process_actor` 被调用时仅打 debug 日志，无 LLM 推理
 - 未来设计方向：actor 自身的 LLM agent 决定仲裁后的角色级反应，配套在 `ArbitrationResponse` 中添加独立控制字段 `trigger_actor_reflection`
 

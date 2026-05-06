@@ -41,7 +41,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
     """战斗结果判定系统。
 
     检查双方阵营是否全员阵亡，确定战斗胜负，并向所有友方单位广播结果。
-    死亡标记（DeathComponent）由上游系统（ArbitrationActionSystem）写入，本系统仅读取。
+    死亡标记（DeathComponent）由上游系统（PlayCardsArbitrationSystem）写入，本系统仅读取。
     """
 
     def __init__(self, game: TCGGame) -> None:

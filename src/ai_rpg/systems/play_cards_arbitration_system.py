@@ -432,7 +432,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
         # 仅在战斗进行中时触发（is_ongoing 守卫）
         if not self._game.current_dungeon.is_ongoing:
-            logger.debug("ArbitrationActionSystem: 战斗未进行中，跳过仲裁")
+            logger.debug("PlayCardsArbitrationSystem: 战斗未进行中，跳过仲裁")
             return
 
         # 开始处理仲裁。
@@ -441,7 +441,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             stage_entity = self._game.resolve_stage_entity(entity)
             assert stage_entity is not None, f"无法获取 {entity.name} 所在场景实体！"
 
-            logger.debug(f"ArbitrationActionSystem: [{entity.name}] 触发仲裁")
+            logger.debug(f"PlayCardsArbitrationSystem: [{entity.name}] 触发仲裁")
             await self._request_combat_arbitration(stage_entity, entity)
 
     #######################################################################################################################################
@@ -460,7 +460,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         if play_cards_action.card.name == "":
             # 空卡表示 MonsterPlayDecisionSystem 推理失败，记录放弃行动结果
             logger.warning(
-                f"ArbitrationActionSystem: [{actor_entity.name}] 出牌为空卡，执行放弃行动"
+                f"PlayCardsArbitrationSystem: [{actor_entity.name}] 出牌为空卡，执行放弃行动"
             )
             self._apply_forfeit_result(stage_entity, actor_entity)
             return

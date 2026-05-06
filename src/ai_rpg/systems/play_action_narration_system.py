@@ -4,7 +4,7 @@
 当 PlayCardsAction.action 为空且卡牌非空时，调用 LLM 为出牌者生成
 第一人称行动叙事，回写至 PlayCardsAction。
 
-该系统是可选的：即使不加入 pipeline，ArbitrationActionSystem 也有兜底逻辑。
+该系统是可选的：即使不加入 pipeline，PlayCardsArbitrationSystem 也有兆底逻辑。
 """
 
 from typing import Final, List, final

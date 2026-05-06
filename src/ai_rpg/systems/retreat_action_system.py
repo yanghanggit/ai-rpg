@@ -10,7 +10,7 @@
 
 执行时机：
 - 在 PlayCardsActionSystem 之后
-- 在 ArbitrationActionSystem 之前
+- 在 PlayCardsArbitrationSystem 之前
 - 仅在战斗进行中（is_ongoing）阶段执行
 
 撤退流程：

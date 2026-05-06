@@ -489,10 +489,10 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         """[mock] 第一回合向 stage 注入 context，引导 LLM 向远征队员塞入一张带封印词缀的卡牌。"""
         if current_round_number != 1:
             return
-        expedition_members = [e for e in actor_entities if e.has(PartyMemberComponent)]
-        if not expedition_members:
+        party_members = [e for e in actor_entities if e.has(PartyMemberComponent)]
+        if not party_members:
             return
-        target_name = expedition_members[0].name
+        target_name = party_members[0].name
         affix_example = "封印：不可被出牌，也不可被弃牌"
         msg = (
             f"[系统提示] 本回合请在 inject_cards 中向「{target_name}」塞入一张包含以下 affixes 词缀的卡牌，"

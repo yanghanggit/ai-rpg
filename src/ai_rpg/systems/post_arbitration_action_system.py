@@ -20,7 +20,7 @@ from ..models import (
     CardTargetType,
     CharacterStatsComponent,
     DungeonComponent,
-    ExpeditionMemberComponent,
+    PartyMemberComponent,
     HandComponent,
     StageComponent,
     PostArbitrationAction,
@@ -489,9 +489,7 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         """[mock] 第一回合向 stage 注入 context，引导 LLM 向远征队员塞入一张带封印词缀的卡牌。"""
         if current_round_number != 1:
             return
-        expedition_members = [
-            e for e in actor_entities if e.has(ExpeditionMemberComponent)
-        ]
+        expedition_members = [e for e in actor_entities if e.has(PartyMemberComponent)]
         if not expedition_members:
             return
         target_name = expedition_members[0].name

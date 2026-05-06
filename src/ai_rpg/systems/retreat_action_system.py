@@ -22,7 +22,7 @@
 from typing import final, override
 from loguru import logger
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..models import RetreatAction, ExpeditionMemberComponent, DeathComponent
+from ..models import RetreatAction, PartyMemberComponent, DeathComponent
 from ..game.tcg_game import TCGGame
 
 
@@ -72,8 +72,8 @@ class RetreatActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        """过滤条件：必须有 RetreatAction 和 ExpeditionMemberComponent"""
-        return entity.has(RetreatAction) and entity.has(ExpeditionMemberComponent)
+        """过滤条件：必须有 RetreatAction 和 PartyMemberComponent"""
+        return entity.has(RetreatAction) and entity.has(PartyMemberComponent)
 
     ####################################################################################################################################
     @override
@@ -112,12 +112,12 @@ class RetreatActionSystem(ReactiveProcessor):
         """处理单个实体的撤退动作
 
         Args:
-            entity: 包含 RetreatAction 和 ExpeditionMemberComponent 的实体
+            entity: 包含 RetreatAction 和 PartyMemberComponent 的实体
             dungeon_name: 地下城名称
         """
         assert entity.has(
-            ExpeditionMemberComponent
-        ), f"Entity {entity.name} must have ExpeditionMemberComponent"
+            PartyMemberComponent
+        ), f"Entity {entity.name} must have PartyMemberComponent"
 
         # 标记为死亡，后续 CombatOutcomeSystem 会检测并触发战斗失败流程
         entity.replace(DeathComponent, entity.name)

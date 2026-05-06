@@ -14,8 +14,8 @@ from ..models import (
     Dungeon,
     DungeonComponent,
     Combat,
-    ExpeditionMemberComponent,
-    ExpeditionRosterComponent,
+    PartyMemberComponent,
+    PartyRosterComponent,
     PlayerComponent,
     PlayerOnlyStageComponent,
     HomeComponent,
@@ -68,9 +68,9 @@ def _generate_return_home_message(
 def _select_expedition_members(tcg_game: TCGGame, dungeon: Dungeon) -> Set[Entity]:
     """选择参与地下城远征的队伍成员
 
-    依据玩家实体上的 ExpeditionRosterComponent 决定队伍构成，规则：
+    依据玩家实体上的 PartyRosterComponent 决定队伍构成，规则：
     1. 玩家角色（PlayerComponent）无条件参与
-    2. 若玩家实体有 ExpeditionRosterComponent 且 members 非空，则按名单查找对应盟友加入
+    2. 若玩家实体有 PartyRosterComponent 且 members 非空，则按名单查找对应盟友加入
     3. 名单为空或组件不存在时，玩家独自冒险
 
     Args:
@@ -85,12 +85,12 @@ def _select_expedition_members(tcg_game: TCGGame, dungeon: Dungeon) -> Set[Entit
     player_entity = tcg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
     assert player_entity.has(
-        ExpeditionRosterComponent
-    ), "玩家实体缺少 ExpeditionRosterComponent 组件！"
-    expedition_roster_comp = player_entity.get(ExpeditionRosterComponent)
+        PartyRosterComponent
+    ), "玩家实体缺少 PartyRosterComponent 组件！"
+    expedition_roster_comp = player_entity.get(PartyRosterComponent)
     assert (
         expedition_roster_comp is not None
-    ), "玩家实体缺少 ExpeditionRosterComponent 组件！"
+    ), "玩家实体缺少 PartyRosterComponent 组件！"
 
     # 2. 根据名单选择远征队成员，默认仅玩家自己参与
     expedition_members: Set[Entity] = {player_entity}
@@ -106,10 +106,10 @@ def _select_expedition_members(tcg_game: TCGGame, dungeon: Dungeon) -> Set[Entit
         f"最终远征队成员 ({len(expedition_members)}): {[e.name for e in expedition_members]}"
     )
 
-    # 3. 为所有选中成员挂载 ExpeditionMemberComponent
+    # 3. 为所有选中成员挂载 PartyMemberComponent
     for expedition_ally in expedition_members:
         expedition_ally.replace(
-            ExpeditionMemberComponent,
+            PartyMemberComponent,
             expedition_ally.name,
             dungeon.name,
         )
@@ -295,7 +295,7 @@ def enter_dungeon_first_stage(tcg_game: TCGGame, dungeon: Dungeon) -> tuple[bool
 
     # 确保全局不存在远征队成员（无人正在参与远征）
     expedition_members = tcg_game.get_group(
-        Matcher(all_of=[ExpeditionMemberComponent])
+        Matcher(all_of=[PartyMemberComponent])
     ).entities
     assert len(expedition_members) == 0, (
         f"enter_dungeon_first_stage: 进入前必须无远征队成员，"
@@ -350,7 +350,7 @@ def advance_to_next_stage(tcg_game: TCGGame, dungeon: Dungeon) -> None:
 
     # 2. 获取所有远征队成员
     expedition_entities = tcg_game.get_group(
-        Matcher(all_of=[ExpeditionMemberComponent])
+        Matcher(all_of=[PartyMemberComponent])
     ).entities.copy()
     assert len(expedition_entities) > 0, "没有找到远征队成员"
 
@@ -392,7 +392,7 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
 
     # 1. 验证并获取远征队成员
     expedition_entities = tcg_game.get_group(
-        Matcher(all_of=[ExpeditionMemberComponent])
+        Matcher(all_of=[PartyMemberComponent])
     ).entities.copy()
     logger.debug(
         f"[return_home] 远征队成员({len(expedition_entities)}): "
@@ -482,9 +482,9 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
             combat_status_effects.status_effects.clear()
             logger.info(f"清空状态效果: {expedition_entity.name}")
 
-        # 解散远征队，移除ExpeditionMemberComponent组件
-        assert expedition_entity.has(ExpeditionMemberComponent)
-        expedition_entity.remove(ExpeditionMemberComponent)
+        # 解散远征队，移除PartyMemberComponent组件
+        assert expedition_entity.has(PartyMemberComponent)
+        expedition_entity.remove(PartyMemberComponent)
         logger.info(f"从远征队移除: {expedition_entity.name}")
 
     # 7. 最终场景确认

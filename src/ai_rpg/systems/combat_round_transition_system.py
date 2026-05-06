@@ -42,7 +42,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
     每次 pipeline 执行时，若上一回合已完成（is_completed）则自动创建下一回合：
     调用 start_new_round 重置所有参战角色的 RoundStatsComponent，
     再按指定策略（RANDOM / SPEED_ORDER / CREATION_ORDER）生成行动顺序快照，
-    写入 Round.actor_order_snapshots 供 EnemyPlayDecisionSystem 等后续系统使用。
+    写入 Round.actor_order_snapshots 供 MonsterPlayDecisionSystem 等后续系统使用。
     """
 
     ############################################################################################################

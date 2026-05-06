@@ -41,7 +41,7 @@ from ai_rpg.game.player_session import PlayerSession
 from ai_rpg.game.tcg_game import TCGGame
 
 # from ai_rpg.image_client.client import ImageClient
-from ai_rpg.models import Blueprint, CombatState, Dungeon, World, EnemyComponent
+from ai_rpg.models import Blueprint, CombatState, Dungeon, World, MonsterComponent
 from ai_rpg.game import archive_world
 from ai_rpg.services.home_actions import (
     activate_stage_plan,
@@ -58,7 +58,7 @@ from ai_rpg.services.dungeon_actions import (
     activate_play_cards_specified,
     activate_discard_cards_specified,
     activate_pass_turn,
-    activate_enemy_play_trigger,
+    activate_monster_play_trigger,
     activate_expedition_retreat,
 )
 from ai_rpg.services.dungeon_lifecycle import (
@@ -504,8 +504,8 @@ async def play_cards_specified_game(
         return terminal_game
 
     actor_entity = terminal_game.get_actor_entity(actor)
-    if actor_entity is not None and actor_entity.has(EnemyComponent):
-        success, message = activate_enemy_play_trigger(terminal_game, actor)
+    if actor_entity is not None and actor_entity.has(MonsterComponent):
+        success, message = activate_monster_play_trigger(terminal_game, actor)
     else:
         success, message = await activate_play_cards_specified(
             terminal_game, actor, card, list(targets)

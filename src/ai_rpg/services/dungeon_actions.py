@@ -16,8 +16,8 @@ from ..models import (
     PlayCardsAction,
     DiscardCardsAction,
     PassTurnAction,
-    ExpeditionMemberComponent,
-    EnemyComponent,
+    PartyMemberComponent,
+    MonsterComponent,
     DeathComponent,
     RetreatAction,
     Card,
@@ -34,7 +34,7 @@ def _get_alive_expedition_members_in_stage(
     """获取锚点实体所在场景中所有存活的远征队成员
 
     以 anchor_entity 定位其所在场景，然后在该场景中筛选所有带
-    ExpeditionMemberComponent 的存活实体。玩家实体是常用的锚点，
+    PartyMemberComponent 的存活实体。玩家实体是常用的锚点，
     但任意处于场景中的实体均可作为 anchor。
 
     Args:
@@ -45,29 +45,27 @@ def _get_alive_expedition_members_in_stage(
         存活的远征队成员实体列表
     """
     actor_entities = tcg_game.get_alive_actors_in_stage(anchor_entity)
-    return [
-        entity for entity in actor_entities if entity.has(ExpeditionMemberComponent)
-    ]
+    return [entity for entity in actor_entities if entity.has(PartyMemberComponent)]
 
 
 ###################################################################################################################################################################
-def _get_alive_enemies_in_stage(
+def _get_alive_monsters_in_stage(
     anchor_entity: Entity, tcg_game: TCGGame
 ) -> List[Entity]:
-    """获取锚点实体所在场景中所有存活的敌方
+    """获取锚点实体所在场景中所有存活的怪物
 
     以 anchor_entity 定位其所在场景，然后在该场景中筛选所有带
-    EnemyComponent 的存活实体。
+    MonsterComponent 的存活实体。
 
     Args:
         anchor_entity: 用于定位场景的锚点实体
         tcg_game: TCG游戏实例
 
     Returns:
-        存活的敌方实体列表
+        存活的怪物实体列表
     """
     actor_entities = tcg_game.get_alive_actors_in_stage(anchor_entity)
-    return [entity for entity in actor_entities if entity.has(EnemyComponent)]
+    return [entity for entity in actor_entities if entity.has(MonsterComponent)]
 
 
 ###################################################################################################################################################################
@@ -92,7 +90,7 @@ def activate_all_card_draws(
 
     all_entities = _get_alive_expedition_members_in_stage(
         player_entity, tcg_game
-    ) + _get_alive_enemies_in_stage(player_entity, tcg_game)
+    ) + _get_alive_monsters_in_stage(player_entity, tcg_game)
 
     if len(all_entities) == 0:
         error_msg = "激活全员抽牌失败: 场景中没有存活的战斗角色"
@@ -119,17 +117,17 @@ def _resolve_targets(
 ) -> Tuple[List[str], str]:
     """根据 card.target_type 解析并验证出牌目标。
 
-    actor_entity 是 ExpeditionMemberComponent 时，“敌方”为 EnemyComponent，“我方”为 ExpeditionMemberComponent。
-    actor_entity 是 EnemyComponent 时，“敌方”为 ExpeditionMemberComponent，“我方”为 EnemyComponent。
+    actor_entity 是 PartyMemberComponent 时，"敌方"为 MonsterComponent，"我方"为 PartyMemberComponent。
+    actor_entity 是 MonsterComponent 时，"敌方"为 PartyMemberComponent，"我方"为 MonsterComponent。
 
     Returns:
         (resolved_targets, error_msg): error_msg 为空字符串表示成功。
     """
-    is_actor_ally = actor_entity.has(ExpeditionMemberComponent)
+    is_actor_ally = actor_entity.has(PartyMemberComponent)
 
     def _get_enemies() -> List[Entity]:
         return (
-            _get_alive_enemies_in_stage(actor_entity, tcg_game)
+            _get_alive_monsters_in_stage(actor_entity, tcg_game)
             if is_actor_ally
             else _get_alive_expedition_members_in_stage(actor_entity, tcg_game)
         )
@@ -198,8 +196,8 @@ def _validate_play_turn(
     if entity is None:
         return None, f"找不到角色 {actor_name}"
 
-    if not (entity.has(ExpeditionMemberComponent) or entity.has(EnemyComponent)):
-        return None, f"角色 {actor_name} 不是战斗角色（非 ExpeditionMember 或 Enemy）"
+    if not (entity.has(PartyMemberComponent) or entity.has(MonsterComponent)):
+        return None, f"角色 {actor_name} 不是战斗角色（非 ExpeditionMember 或 Monster）"
 
     if entity.has(DeathComponent):
         return None, f"角色 {actor_name} 已死亡，无法出牌"
@@ -219,8 +217,8 @@ async def activate_play_cards_specified(
     action: str = "",
 ) -> Tuple[bool, str]:
     """
-    让指定远征队员打出指定名称的手牌。仅适用于 ExpeditionMemberComponent 角色。
-    敌人出牌请使用 activate_enemy_play_trigger。
+    让指定远征队员打出指定名称的手牌。仅适用于 PartyMemberComponent 角色。
+    敌人出牌请使用 activate_monster_play_trigger。
 
     Args:
         tcg_game: TCG游戏实例
@@ -237,8 +235,8 @@ async def activate_play_cards_specified(
         logger.error(f"activate_play_cards_specified: {error_msg}")
         return False, error_msg
 
-    if not entity.has(ExpeditionMemberComponent):
-        msg = f"角色 {actor_name} 不是远征队员，敌人出牌请使用 activate_enemy_play_trigger"
+    if not entity.has(PartyMemberComponent):
+        msg = f"角色 {actor_name} 不是远征队员，怪物出牌请使用 activate_monster_play_trigger"
         logger.error(msg)
         return False, msg
 
@@ -282,7 +280,7 @@ async def activate_discard_cards_specified(
     card_name: str,
 ) -> Tuple[bool, str]:
     """
-    让指定远征队员主动弃置指定名称的手牌。仅适用于 ExpeditionMemberComponent 角色。
+    让指定远征队员主动弃置指定名称的手牌。仅适用于 PartyMemberComponent 角色。
 
     Args:
         tcg_game: TCG游戏实例
@@ -297,7 +295,7 @@ async def activate_discard_cards_specified(
         logger.error(f"activate_discard_cards_specified: {error_msg}")
         return False, error_msg
 
-    if not entity.has(ExpeditionMemberComponent):
+    if not entity.has(PartyMemberComponent):
         msg = f"角色 {actor_name} 不是远征队员，弃牌仅限远征队员使用"
         logger.error(msg)
         return False, msg
@@ -321,39 +319,39 @@ async def activate_discard_cards_specified(
 
 
 ###################################################################################################################################################################
-def activate_enemy_play_trigger(
+def activate_monster_play_trigger(
     tcg_game: TCGGame,
     actor_name: str,
 ) -> Tuple[bool, str]:
     """
-    触发指定敌人的出牌决策流程。仅适用于 EnemyComponent 角色。
+    触发指定怪物的出牌决策流程。仅适用于 MonsterComponent 角色。
     玩家出牌请使用 activate_play_cards_specified。
 
-    装入空卡占位触发 PlayCardsAction，EnemyPlayDecisionSystem 在 pipeline 中
+    装入空卡占位触发 PlayCardsAction，MonsterPlayDecisionSystem 在 pipeline 中
     自动选牌并将其替换为真实卡牌与目标。
 
     Args:
         tcg_game: TCG游戏实例
-        actor_name: 敌人角色的全名
+        actor_name: 怪物角色的全名
 
     Returns:
         tuple[bool, str]: (是否成功, 结果消息)
     """
     entity, error_msg = _validate_play_turn(tcg_game, actor_name)
     if entity is None:
-        logger.error(f"activate_enemy_play_trigger: {error_msg}")
+        logger.error(f"activate_monster_play_trigger: {error_msg}")
         return False, error_msg
 
-    if not entity.has(EnemyComponent):
-        msg = f"角色 {actor_name} 不是敌人，远征队员出牌请使用 activate_play_cards_specified"
+    if not entity.has(MonsterComponent):
+        msg = f"角色 {actor_name} 不是怪物，远征队员出牌请使用 activate_play_cards_specified"
         logger.error(msg)
         return False, msg
 
     logger.debug(
-        f"为敌人 {actor_name} 触发出牌决策，由 EnemyPlayDecisionSystem 自动选牌"
+        f"为怪物 {actor_name} 触发出牌决策，由 MonsterPlayDecisionSystem 自动选牌"
     )
     entity.replace(PlayCardsAction, entity.name, Card(name="", description=""), [], "")
-    return True, f"成功为敌人 {actor_name} 触发出牌决策"
+    return True, f"成功为怪物 {actor_name} 触发出牌决策"
 
 
 ###################################################################################################################################################################
@@ -385,7 +383,7 @@ def activate_expedition_retreat(
         return False, error_msg
 
     expedition_member_entities = tcg_game.get_group(
-        Matcher(all_of=[ExpeditionMemberComponent])
+        Matcher(all_of=[PartyMemberComponent])
     ).entities
 
     if len(expedition_member_entities) == 0:
@@ -396,8 +394,8 @@ def activate_expedition_retreat(
     # 为每个远征队成员添加撤退动作组件
     for expedition_member_entity in expedition_member_entities:
         assert expedition_member_entity.has(
-            ExpeditionMemberComponent
-        ), f"Entity {expedition_member_entity.name} must have ExpeditionMemberComponent"
+            PartyMemberComponent
+        ), f"Entity {expedition_member_entity.name} must have PartyMemberComponent"
 
         expedition_member_entity.replace(
             RetreatAction,

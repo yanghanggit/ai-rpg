@@ -32,8 +32,8 @@ from ..models import (
     StatusEffectsComponent,
     StatusEffect,
     StatusEffectPhase,
-    ExpeditionMemberComponent,
-    EnemyComponent,
+    PartyMemberComponent,
+    MonsterComponent,
 )
 from ..utils import extract_json_from_code_block
 
@@ -245,10 +245,10 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def _get_max_num_cards(self, actor: Entity) -> int:
-        """返回角色本回合应持有的手牌上限（ExpeditionMember=3，Enemy=1）。"""
-        if actor.has(ExpeditionMemberComponent):
+        """返回角色本回合应持有的手牌上限（ExpeditionMember=3，Monster=1）。"""
+        if actor.has(PartyMemberComponent):
             return 3
-        if actor.has(EnemyComponent):
+        if actor.has(MonsterComponent):
             return 1
         return 1
 

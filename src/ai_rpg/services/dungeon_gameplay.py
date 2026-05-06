@@ -15,7 +15,7 @@ from ..game.world_store import archive_world
 from .game_server_dependencies import CurrentGameServer
 from ..models import (
     CombatState,
-    EnemyComponent,
+    MonsterComponent,
     DungeonCombatRetreatRequest,
     DungeonCombatRetreatResponse,
     DungeonAdvanceStageRequest,
@@ -43,7 +43,7 @@ from .dungeon_actions import (
     activate_play_cards_specified,
     activate_discard_cards_specified,
     activate_pass_turn,
-    activate_enemy_play_trigger,
+    activate_monster_play_trigger,
     activate_expedition_retreat,
 )
 from ..game.game_server import GameServer
@@ -928,8 +928,8 @@ async def _execute_play_cards_task(
                 raise ValueError("战斗未在进行中")
 
             actor_entity = rpg_game.get_actor_entity(actor_name)
-            if actor_entity is not None and actor_entity.has(EnemyComponent):
-                success, message = activate_enemy_play_trigger(rpg_game, actor_name)
+            if actor_entity is not None and actor_entity.has(MonsterComponent):
+                success, message = activate_monster_play_trigger(rpg_game, actor_name)
             else:
                 success, message = await activate_play_cards_specified(
                     rpg_game, actor_name, card_name, targets

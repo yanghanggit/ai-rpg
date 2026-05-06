@@ -15,8 +15,8 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     AddStatusEffectsAction,
     StageDescriptionComponent,
-    ExpeditionMemberComponent,
-    EnemyComponent,
+    PartyMemberComponent,
+    MonsterComponent,
     AppearanceComponent,
     StatusEffectsComponent,
 )
@@ -271,10 +271,10 @@ class CombatInitializationSystem(ExecuteProcessor):
         Returns:
             阵营关系字符串："友方" 或 "敌方"
         """
-        actor_is_ally = actor_entity.has(ExpeditionMemberComponent)
-        actor_is_enemy = actor_entity.has(EnemyComponent)
-        other_is_ally = other_entity.has(ExpeditionMemberComponent)
-        other_is_enemy = other_entity.has(EnemyComponent)
+        actor_is_ally = actor_entity.has(PartyMemberComponent)
+        actor_is_enemy = actor_entity.has(MonsterComponent)
+        other_is_ally = other_entity.has(PartyMemberComponent)
+        other_is_enemy = other_entity.has(MonsterComponent)
 
         # 同是友方或同是敌方
         if (actor_is_ally and other_is_ally) or (actor_is_enemy and other_is_enemy):

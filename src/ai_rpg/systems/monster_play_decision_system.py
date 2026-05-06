@@ -8,11 +8,11 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     PlayCardsAction,
     PassTurnAction,
-    EnemyComponent,
+    MonsterComponent,
     DeathComponent,
     HandComponent,
     CharacterStats,
-    ExpeditionMemberComponent,
+    PartyMemberComponent,
     Card,
     CardTargetType,
 )
@@ -21,8 +21,8 @@ from ..utils import extract_json_from_code_block
 
 #######################################################################################################################################
 @final
-class EnemyDecisionResponse(BaseModel):
-    """LLM 返回的敌人出牌决策"""
+class MonsterDecisionResponse(BaseModel):
+    """LLM 返回的怪物出牌决策"""
 
     pass_turn: bool = False
     card_name: str = ""
@@ -31,20 +31,20 @@ class EnemyDecisionResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _generate_enemy_decision_prompt(
-    enemy_name: str,
-    enemy_stats: CharacterStats,
+def _generate_monster_decision_prompt(
+    monster_name: str,
+    monster_stats: CharacterStats,
     hand_cards: List[Card],
     opponent_names: List[str],
     action_order: List[str],
     completed_actors: List[str],
     current_round_number: int,
 ) -> str:
-    """生成敌人出牌决策的 LLM 提示词。
+    """生成怪物出牌决策的 LLM 提示词。
 
     Args:
-        enemy_name: 敌人名称
-        enemy_stats: 敌人当前战斗属性
+        monster_name: 怪物名称
+        monster_stats: 怪物当前战斗属性
         hand_cards: 当前手牌列表
         opponent_names: 场上存活对手名称列表（不含血量）
         action_order: 本回合完整行动序列
@@ -54,7 +54,7 @@ def _generate_enemy_decision_prompt(
     Returns:
         格式化的完整提示词
     """
-    stats = enemy_stats
+    stats = monster_stats
     self_info = (
         f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
     )
@@ -74,11 +74,11 @@ def _generate_enemy_decision_prompt(
 
     # 构造行动序列文本，标注自己的位置
     order_display = " → ".join(
-        f"你（{name.split('.')[-1]}）" if name == enemy_name else name.split(".")[-1]
+        f"你（{name.split('.')[-1]}）" if name == monster_name else name.split(".")[-1]
         for name in action_order
     )
     my_position = next(
-        (i + 1 for i, name in enumerate(action_order) if name == enemy_name), None
+        (i + 1 for i, name in enumerate(action_order) if name == monster_name), None
     )
     position_text = f"第 {my_position} 位" if my_position is not None else "未知"
     completed_text = (
@@ -132,22 +132,22 @@ pass_turn 为 true 时表示跳过出牌，其他字段可省略"""
 
 
 #######################################################################################################################################
-def _generate_compressed_enemy_decision_prompt(
-    enemy_name: str,
-    enemy_stats: CharacterStats,
+def _generate_compressed_monster_decision_prompt(
+    monster_name: str,
+    monster_stats: CharacterStats,
     hand_cards: List[Card],
     opponent_names: List[str],
     action_order: List[str],
     completed_actors: List[str],
     current_round_number: int,
 ) -> str:
-    """生成敌人出牌决策的压缩版提示词（写入对话历史，减少 token 消耗）。
+    """生成怪物出牌决策的压缩版提示词（写入对话历史，减少 token 消耗）。
 
     保留动态感知部分（状态、序列、手牌、对手），删除静态策略说明与 JSON 字段注释。
-    LLM 推理仍使用全量版 `_generate_enemy_decision_prompt`。
-    Args 同 `_generate_enemy_decision_prompt`。
+    LLM 推理仍使用全量版 `_generate_monster_decision_prompt`。
+    Args 同 `_generate_monster_decision_prompt`。
     """
-    stats = enemy_stats
+    stats = monster_stats
     self_info = (
         f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
     )
@@ -166,11 +166,11 @@ def _generate_compressed_enemy_decision_prompt(
     )
 
     order_display = " → ".join(
-        f"你（{name.split('.')[-1]}）" if name == enemy_name else name.split(".")[-1]
+        f"你（{name.split('.')[-1]}）" if name == monster_name else name.split(".")[-1]
         for name in action_order
     )
     my_position = next(
-        (i + 1 for i, name in enumerate(action_order) if name == enemy_name), None
+        (i + 1 for i, name in enumerate(action_order) if name == monster_name), None
     )
     position_text = f"第 {my_position} 位" if my_position is not None else "未知"
     completed_text = (
@@ -206,7 +206,7 @@ def _generate_compressed_enemy_decision_prompt(
 
 #######################################################################################################################################
 @final
-class EnemyPlayDecisionSystem(ReactiveProcessor):
+class MonsterPlayDecisionSystem(ReactiveProcessor):
 
     def __init__(self, game: TCGGame) -> None:
         super().__init__(game)
@@ -220,11 +220,11 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        """只处理敌人实体且未死亡的情况"""
+        """只处理怪物实体且未死亡的情况"""
         return (
             entity.has(PlayCardsAction)
             and entity.has(HandComponent)
-            and entity.has(EnemyComponent)
+            and entity.has(MonsterComponent)
             and not entity.has(DeathComponent)
         )
 
@@ -234,26 +234,26 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
 
         # 验证战斗状态
         if not self._game.current_dungeon.is_ongoing:
-            logger.debug("EnemyDrawDecisionSystem: 战斗未进行中，跳过决策")
+            logger.debug("MonsterPlayDecisionSystem: 战斗未进行中，跳过决策")
             return
 
         logger.debug(
-            f"EnemyPlayDecisionSystem: 为 {len(entities)} 个敌人进行出牌决策推理"
+            f"MonsterPlayDecisionSystem: 为 {len(entities)} 个怪物进行出牌决策推理"
         )
 
         # 注入 context 引导（仅第一回合，强制过牌）
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
         self._mock_inject_pass_turn_context(entities, current_round_number)
 
-        # 为每个敌人创建推理 DeepSeekClient
+        # 为每个怪物创建推理 DeepSeekClient
         chat_clients: List[DeepSeekClient] = []
         for entity in entities:
-            client = self._create_enemy_decision_client(entity)
+            client = self._create_monster_decision_client(entity)
             if client is not None:
                 chat_clients.append(client)
 
         if not chat_clients:
-            logger.warning("EnemyPlayDecisionSystem: 没有可推理的敌人实体，跳过")
+            logger.warning("MonsterPlayDecisionSystem: 没有可推理的怪物实体，跳过")
             return
 
         # 并行 LLM 推理
@@ -265,18 +265,18 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
             found_entity = self._game.get_entity_by_name(client.name)
             assert (
                 found_entity is not None
-            ), f"EnemyPlayDecisionSystem: 无法找到实体 {client.name}"
+            ), f"MonsterPlayDecisionSystem: 无法找到实体 {client.name}"
             # if found_entity is None:
-            #     logger.error(f"EnemyPlayDecisionSystem: 无法找到实体 {client.name}")
+            #     logger.error(f"MonsterPlayDecisionSystem: 无法找到实体 {client.name}")
             #     continue
-            self._process_enemy_decision(found_entity, client)
+            self._process_monster_decision(found_entity, client)
 
     ####################################################################################################################################
-    def _create_enemy_decision_client(self, entity: Entity) -> DeepSeekClient | None:
-        """为单个敌人实体创建出牌决策的 DeepSeekClient。
+    def _create_monster_decision_client(self, entity: Entity) -> DeepSeekClient | None:
+        """为单个怪物实体创建出牌决策的 DeepSeekClient。
 
         Args:
-            entity: 敌人实体
+            entity: 怪物实体
 
         Returns:
             DeepSeekClient，若缺少必要组件则返回 None
@@ -284,16 +284,16 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
         hand_comp = entity.get(HandComponent)
         if hand_comp is None or len(hand_comp.cards) == 0:
             logger.error(
-                f"EnemyPlayDecisionSystem: 敌人 {entity.name} 没有手牌，无法决策"
+                f"MonsterPlayDecisionSystem: 怪物 {entity.name} 没有手牌，无法决策"
             )
             return None
 
-        enemy_stats = self._game.compute_character_stats(entity)
+        monster_stats = self._game.compute_character_stats(entity)
 
         # 获取场上存活的远征队成员名称（对手，不传入血量）
         alive_actors = self._game.get_alive_actors_in_stage(entity)
         opponent_names: List[str] = [
-            actor.name for actor in alive_actors if actor.has(ExpeditionMemberComponent)
+            actor.name for actor in alive_actors if actor.has(PartyMemberComponent)
         ]
 
         # 获取本回合行动序列信息
@@ -309,9 +309,9 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
 
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
-        prompt = _generate_enemy_decision_prompt(
-            enemy_name=entity.name,
-            enemy_stats=enemy_stats,
+        prompt = _generate_monster_decision_prompt(
+            monster_name=entity.name,
+            monster_stats=monster_stats,
             hand_cards=hand_comp.cards,
             opponent_names=opponent_names,
             action_order=action_order,
@@ -319,9 +319,9 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
             current_round_number=current_round_number,
         )
 
-        compressed_prompt = _generate_compressed_enemy_decision_prompt(
-            enemy_name=entity.name,
-            enemy_stats=enemy_stats,
+        compressed_prompt = _generate_compressed_monster_decision_prompt(
+            monster_name=entity.name,
+            monster_stats=monster_stats,
             hand_cards=hand_comp.cards,
             opponent_names=opponent_names,
             action_order=action_order,
@@ -340,7 +340,7 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
     def _mock_inject_pass_turn_context(
         self, entities: list[Entity], current_round_number: int
     ) -> None:
-        """[mock] 第一回合向敌人注入 context，强制引导 LLM 选择 pass_turn。"""
+        """[mock] 第一回合向怪物注入 context，强制引导 LLM 选择 pass_turn。"""
         if current_round_number != 1:
             return
         msg = (
@@ -352,15 +352,15 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
             logger.debug(f"[mock context] [{entity.name}] 注入 pass_turn 引导 context")
 
     ####################################################################################################################################
-    def _process_enemy_decision(self, entity: Entity, client: DeepSeekClient) -> None:
-        """解析 LLM 决策响应，替换敌人的 PlayCardsAction。
+    def _process_monster_decision(self, entity: Entity, client: DeepSeekClient) -> None:
+        """解析 LLM 决策响应，替换怪物的 PlayCardsAction。
 
         Args:
-            entity: 敌人实体
+            entity: 怪物实体
             client: 包含 LLM 响应的 DeepSeekClient
         """
         try:
-            decision = EnemyDecisionResponse.model_validate_json(
+            decision = MonsterDecisionResponse.model_validate_json(
                 extract_json_from_code_block(client.response_content)
             )
 
@@ -379,7 +379,7 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
                 entity.remove(PlayCardsAction)
                 entity.replace(PassTurnAction, entity.name)
                 logger.debug(
-                    f"EnemyPlayDecisionSystem: [{entity.name}] 决策过牌（跳过本次出牌机会）"
+                    f"MonsterPlayDecisionSystem: [{entity.name}] 决策过牌（跳过本次出牌机会）"
                 )
                 return
 
@@ -392,7 +392,7 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
             )
             if selected_card is None:
                 logger.error(
-                    f"EnemyPlayDecisionSystem: [{entity.name}] LLM 返回的卡牌名 '{decision.card_name}' "
+                    f"MonsterPlayDecisionSystem: [{entity.name}] LLM 返回的卡牌名 '{decision.card_name}' "
                     f"不在手牌中：{[c.name for c in hand_comp.cards]}，保留空卡"
                 )
                 return
@@ -403,14 +403,14 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
 
             match selected_card.target_type:
                 case CardTargetType.ENEMY_ALL:
-                    # 自动填充所有存活的远征队成员（对 Enemy 来说"敌方"= ExpeditionMember）
+                    # 自动填充所有存活的远征队成员（对怪物来说"敌方"= ExpeditionMember）
                     valid_targets = [
-                        a.name for a in alive_actors if a.has(ExpeditionMemberComponent)
+                        a.name for a in alive_actors if a.has(PartyMemberComponent)
                     ]
                 case CardTargetType.ENEMY_RANDOM_MULTI:
-                    # 每段独立随机命中一名存活远征队成员（对 Enemy 来说"敌方"= ExpeditionMember）
+                    # 每段独立随机命中一名存活远征队成员（对怪物来说"敌方"= ExpeditionMember）
                     expedition_members = [
-                        a for a in alive_actors if a.has(ExpeditionMemberComponent)
+                        a for a in alive_actors if a.has(PartyMemberComponent)
                     ]
                     valid_targets = (
                         [
@@ -430,7 +430,7 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
                     valid_targets = [t for t in decision.targets if t in alive_names]
                     if len(valid_targets) != len(decision.targets):
                         logger.warning(
-                            f"EnemyPlayDecisionSystem: [{entity.name}] 过滤无效目标 "
+                            f"MonsterPlayDecisionSystem: [{entity.name}] 过滤无效目标 "
                             f"{set(decision.targets) - alive_names}"
                         )
 
@@ -443,13 +443,13 @@ class EnemyPlayDecisionSystem(ReactiveProcessor):
                 decision.action,
             )
             logger.debug(
-                f"EnemyPlayDecisionSystem: [{entity.name}] 决策出牌 '{selected_card.name}'，目标：{valid_targets}"
+                f"MonsterPlayDecisionSystem: [{entity.name}] 决策出牌 '{selected_card.name}'，目标：{valid_targets}"
             )
 
         except Exception as e:
             logger.error(f"{client.response_content}")
             logger.error(
-                f"EnemyPlayDecisionSystem: [{entity.name}] 解析 LLM 响应失败，保留空卡。Exception: {e}"
+                f"MonsterPlayDecisionSystem: [{entity.name}] 解析 LLM 响应失败，保留空卡。Exception: {e}"
             )
 
     ####################################################################################################################################

@@ -458,7 +458,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
         ), f"实体 {actor_entity.name} 缺少 PlayCardsAction 组件！"
         play_cards_action = actor_entity.get(PlayCardsAction)
         if play_cards_action.card.name == "":
-            # 空卡表示 EnemyPlayDecisionSystem 推理失败，记录放弃行动结果
+            # 空卡表示 MonsterPlayDecisionSystem 推理失败，记录放弃行动结果
             logger.warning(
                 f"ArbitrationActionSystem: [{actor_entity.name}] 出牌为空卡，执行放弃行动"
             )
@@ -575,7 +575,7 @@ class ArbitrationActionSystem(ReactiveProcessor):
     def _apply_forfeit_result(self, stage_entity: Entity, actor_entity: Entity) -> None:
         """处理空卡（放弃行动）的默认结算结果。
 
-        当 EnemyPlayDecisionSystem 推理失败保留空卡时，以"放弃行动"作为本次出牌结果，
+        当 MonsterPlayDecisionSystem 推理失败保留空卡时，以"放弃行动"作为本次出牌结果，
         补全 combat_log 和 narrative，并广播到场景。
         """
         short_name = actor_entity.name.split(".")[-1]

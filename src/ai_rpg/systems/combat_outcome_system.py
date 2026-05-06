@@ -1,6 +1,6 @@
 """战斗结果判定系统
 
-检查双方阵营（友方 ExpeditionMemberComponent / 敌方 EnemyComponent）的存活情况，
+检查双方阵营（友方 PartyMemberComponent / 敌方 MonsterComponent）的存活情况，
 判定战斗胜负后调用 current_dungeon.complete_combat() 更新战斗状态，
 并向场景内所有友方角色广播胜/败消息。
 仅在战斗 ONGOING 阶段执行。
@@ -12,8 +12,8 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     DeathComponent,
     CombatResult,
-    ExpeditionMemberComponent,
-    EnemyComponent,
+    PartyMemberComponent,
+    MonsterComponent,
 )
 from loguru import logger
 
@@ -110,7 +110,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
     def _is_enemy_side_eliminated(self) -> bool:
         """检查敌方阵营是否已全员阵亡。
 
-        遍历当前场景中的所有角色，统计敌方单位(带EnemyComponent)的总数
+        遍历当前场景中的所有角色，统计敌方单位(带MonsterComponent)的总数
         和已阵亡敌方单位(带DeathComponent)的数量。
 
         Returns:
@@ -127,7 +127,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
 
         for entity in actors_in_stage:
 
-            if not entity.has(EnemyComponent):
+            if not entity.has(MonsterComponent):
                 continue
 
             # 激活的敌人
@@ -144,7 +144,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
     def _is_ally_side_eliminated(self) -> bool:
         """检查友方阵营是否已全员阵亡。
 
-        遍历当前场景中的所有角色，统计远征队成员(带ExpeditionMemberComponent)的总数
+        遍历当前场景中的所有角色，统计远征队成员(带PartyMemberComponent)的总数
         和已阵亡远征队成员(带DeathComponent)的数量。
 
         Returns:
@@ -162,7 +162,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
 
         for entity in actors_in_stage:
 
-            if not entity.has(ExpeditionMemberComponent):
+            if not entity.has(PartyMemberComponent):
                 continue
 
             # 当前存活的友方单位
@@ -179,7 +179,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
     def _broadcast_result_to_allies(self, result: CombatResult) -> None:
         """向当前场景中的所有远征队成员广播战斗结果消息。
 
-        遍历场景中的所有角色，向每个远征队成员(带ExpeditionMemberComponent)发送:
+        遍历场景中的所有角色，向每个远征队成员(带PartyMemberComponent)发送:
         - 胜利消息: 当result为CombatResult.WIN时
         - 失败消息: 当result为CombatResult.LOSE时
 
@@ -201,7 +201,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
         assert len(actors_in_stage) > 0, f"entities with actions: {actors_in_stage}"
 
         for entity in actors_in_stage:
-            if not entity.has(ExpeditionMemberComponent):
+            if not entity.has(PartyMemberComponent):
                 continue
 
             if result == CombatResult.WIN:

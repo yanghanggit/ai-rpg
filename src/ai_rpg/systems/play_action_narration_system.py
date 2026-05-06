@@ -1,6 +1,6 @@
 """出牌叙事润色系统模块。
 
-在 EnemyPlayDecisionSystem 之后、PlayCardsActionSystem 之前触发。
+在 MonsterPlayDecisionSystem 之后、PlayCardsActionSystem 之前触发。
 当 PlayCardsAction.action 为空且卡牌非空时，调用 LLM 为出牌者生成
 第一人称行动叙事，回写至 PlayCardsAction。
 

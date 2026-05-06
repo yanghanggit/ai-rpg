@@ -121,8 +121,8 @@ class DungeonComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class AllyComponent(Component):
-    """标记角色属于友方阵营。"""
+class NPCComponent(Component):
+    """标记角色为 NPC（非玩家控制的友方角色），属于友方阵营。"""
 
     name: str
 
@@ -130,8 +130,8 @@ class AllyComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class ExpeditionMemberComponent(Component):
-    """标记角色为当前地下城远征队活跃成员（AllyComponent 的子集，留守盟友不持有此组件）。"""
+class PartyMemberComponent(Component):
+    """标记角色为当前地下城远征队活跃成员（NPCComponent 的子集，留守盟友不持有此组件）。"""
 
     name: str
     dungeon_name: str  # 当前参与的地下城名称
@@ -140,7 +140,7 @@ class ExpeditionMemberComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class ExpeditionRosterComponent(Component):
+class PartyRosterComponent(Component):
     """挂载在玩家实体，记录本次远征预选同伴名单；为空时玩家独自冒险。"""
 
     name: str
@@ -150,8 +150,8 @@ class ExpeditionRosterComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class EnemyComponent(Component):
-    """标记角色属于敌方阵营。"""
+class MonsterComponent(Component):
+    """标记角色为怪物（敌方阵营战斗单位）。"""
 
     name: str
 

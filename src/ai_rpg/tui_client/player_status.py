@@ -5,14 +5,14 @@ from typing import Any, Dict, Set
 from loguru import logger
 from ..models import (
     IdentityComponent,
-    AllyComponent,
+    NPCComponent,
     AppearanceComponent,
     ActorComponent,
     CharacterStatsComponent,
     EquipmentComponent,
     InventoryComponent,
     PlayerComponent,
-    ExpeditionRosterComponent,
+    PartyRosterComponent,
     KeywordComponent,
     DrawDeckComponent,
     DiscardDeckComponent,
@@ -106,9 +106,9 @@ def _render_component(name: str, data: Dict[str, Any], context: Dict[str, Any]) 
     # 过滤掉纯冗余组件
     if name in (
         IdentityComponent.__name__,
-        AllyComponent.__name__,
+        NPCComponent.__name__,
         PlayerComponent.__name__,
-        ExpeditionRosterComponent.__name__,
+        PartyRosterComponent.__name__,
     ):
         return ""
 

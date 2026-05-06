@@ -130,7 +130,7 @@ def create_combat_pipeline(
         ActionOrderStrategy,
     )
     from ..systems.combat_round_completion_system import CombatRoundCompletionSystem
-    from ..systems.enemy_play_decision_system import EnemyPlayDecisionSystem
+    from ..systems.monster_play_decision_system import MonsterPlayDecisionSystem
     from ..systems.play_action_narration_system import PlayActionNarrationSystem
 
     tcg_game = cast(TCGGame, game)
@@ -150,7 +150,7 @@ def create_combat_pipeline(
 
     # 战斗核心动作处理相关的系统：抽牌 → 敌人决策 → 叙事润色 → 出牌 → 退却 → 仲裁 → 状态效果追加
     processors.add(DrawCardsActionSystem(tcg_game))
-    processors.add(EnemyPlayDecisionSystem(tcg_game))
+    processors.add(MonsterPlayDecisionSystem(tcg_game))
     processors.add(PlayActionNarrationSystem(tcg_game))
     processors.add(PlayCardsActionSystem(tcg_game))
     processors.add(DiscardCardsActionSystem(tcg_game))

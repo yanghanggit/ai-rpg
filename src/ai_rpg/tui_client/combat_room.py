@@ -39,8 +39,8 @@ from ..models import (
     CharacterStatsComponent,
     StatusEffectsComponent,
     HandComponent,
-    EnemyComponent,
-    ExpeditionMemberComponent,
+    MonsterComponent,
+    PartyMemberComponent,
     PlayerComponent,
 )
 from ..models.utils import compute_stats_with_equipment
@@ -848,7 +848,7 @@ class CombatRoomScreen(Screen[None]):
         ally_entities = [
             e
             for e in all_details.entities_serialization
-            if not any(c.name == EnemyComponent.__name__ for c in e.components)
+            if not any(c.name == MonsterComponent.__name__ for c in e.components)
         ]
         self._write_full_entities_block(
             ally_entities, show_hand=False, show_header=False
@@ -975,7 +975,7 @@ class CombatRoomScreen(Screen[None]):
         log.write(COMBAT_ROOM_MENU)
 
     # ──────────────────────────────────────────────
-    # 敌方名单辅助（通过 EnemyComponent）
+    # 敌方名单辅助（通过 MonsterComponent）
     # ──────────────────────────────────────────────
     async def _fetch_play_enemy_names(self, stage_name: str) -> List[str]:
         stages_resp = await fetch_stages_state(self._user_name, self._game_name)
@@ -988,7 +988,7 @@ class CombatRoomScreen(Screen[None]):
         return [
             e.name
             for e in details.entities_serialization
-            if any(c.name == EnemyComponent.__name__ for c in e.components)
+            if any(c.name == MonsterComponent.__name__ for c in e.components)
         ]
 
     # ──────────────────────────────────────────────
@@ -1031,9 +1031,9 @@ class CombatRoomScreen(Screen[None]):
         alive_allies: List[str] = []
         for entity in all_details.entities_serialization:
             comp_names = {c.name for c in entity.components}
-            if EnemyComponent.__name__ in comp_names:
+            if MonsterComponent.__name__ in comp_names:
                 alive_enemies.append(entity.name)
-            elif ExpeditionMemberComponent.__name__ in comp_names:
+            elif PartyMemberComponent.__name__ in comp_names:
                 alive_allies.append(entity.name)
             if entity.name == actor_name:
                 for comp in entity.components:
@@ -1396,9 +1396,9 @@ class CombatRoomScreen(Screen[None]):
         log.write("  [bold]战场态势：[/]")
         for entity in entities:
             comp_names = {c.name for c in entity.components}
-            if EnemyComponent.__name__ in comp_names:
+            if MonsterComponent.__name__ in comp_names:
                 flabel = "[red]敌[/]"
-            elif ExpeditionMemberComponent.__name__ in comp_names:
+            elif PartyMemberComponent.__name__ in comp_names:
                 flabel = "[green]友[/]"
             else:
                 flabel = "[dim]?[/]"
@@ -1446,10 +1446,10 @@ class CombatRoomScreen(Screen[None]):
                 c.name == PlayerComponent.__name__ for c in entity.components
             )
             for comp in entity.components:
-                if comp.name == ExpeditionMemberComponent.__name__:
+                if comp.name == PartyMemberComponent.__name__:
                     faction = "[bold green]友方[/]"
                     break
-                elif comp.name == EnemyComponent.__name__:
+                elif comp.name == MonsterComponent.__name__:
                     faction = "[bold red]敌方[/]"
                     break
             player_tag = r"  [bold yellow]\[玩家][/]" if is_player else ""

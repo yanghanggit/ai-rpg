@@ -60,7 +60,7 @@ class RosterScreen(Screen[None]):
 
     def __init__(self) -> None:
         super().__init__()
-        self._ally_list: List[str] = []
+        self._npc_list: List[str] = []
         self._current_roster: Set[str] = set()
 
     def compose(self) -> ComposeResult:
@@ -84,10 +84,10 @@ class RosterScreen(Screen[None]):
         log.write(
             "[bold yellow]── 当前盟友列表 ──────────────────────────────────────[/]"
         )
-        for i, ally in enumerate(self._ally_list, 1):
-            in_roster = ally in self._current_roster
+        for i, npc in enumerate(self._npc_list, 1):
+            in_roster = npc in self._current_roster
             marker = "[bold green][✓][/]" if in_roster else "[ ]"
-            log.write(f"  [bold green]{i}.[/] {marker} [cyan]{display_name(ally)}[/]")
+            log.write(f"  [bold green]{i}.[/] {marker} [cyan]{display_name(npc)}[/]")
         log.write("")
         log.write("[dim]输入编号切换成员状态：[/]")
 
@@ -100,7 +100,7 @@ class RosterScreen(Screen[None]):
         if not raw:
             return
 
-        if not self._ally_list:
+        if not self._npc_list:
             log.write("[yellow]盟友列表尚未加载，请稍候...[/]")
             return
 
@@ -109,15 +109,15 @@ class RosterScreen(Screen[None]):
             return
 
         idx = int(raw) - 1
-        if idx < 0 or idx >= len(self._ally_list):
-            log.write(f"[red]编号超出范围，请输入 1 ~ {len(self._ally_list)}。[/]")
+        if idx < 0 or idx >= len(self._npc_list):
+            log.write(f"[red]编号超出范围，请输入 1 ~ {len(self._npc_list)}。[/]")
             return
 
-        ally_name = self._ally_list[idx]
-        if ally_name in self._current_roster:
-            self._do_remove(ally_name)
+        npc_name = self._npc_list[idx]
+        if npc_name in self._current_roster:
+            self._do_remove(npc_name)
         else:
-            self._do_add(ally_name)
+            self._do_add(npc_name)
 
     @work
     async def _load_roster(self) -> None:
@@ -135,26 +135,26 @@ class RosterScreen(Screen[None]):
         game_name = app.session.game_name
         bp = app.session.blueprint
         player_actor = bp.player_actor
-        self._ally_list = [
+        self._npc_list = [
             actor.name for actor in bp.actors if actor.name != player_actor
         ]
 
-        if not self._ally_list:
+        if not self._npc_list:
             log.write("[yellow]没有可加入远征队的盟友。[/]")
             return
 
-        # 从服务器读取 player entity，取得 ExpeditionRosterComponent
+        # 从服务器读取 player entity，取得 PartyRosterComponent
         try:
             resp = await fetch_entities_details(user_name, game_name, [player_actor])
             for entity in resp.entities_serialization:
                 for comp in entity.components:
-                    if comp.name == "ExpeditionRosterComponent":
+                    if comp.name == "PartyRosterComponent":
                         members = comp.data.get("members", [])
                         self._current_roster = set(members)
                         break
 
             logger.info(
-                f"RosterScreen._load_roster: 加载完成 ally_list={self._ally_list} roster={self._current_roster}"
+                f"RosterScreen._load_roster: 加载完成 npc_list={self._npc_list} roster={self._current_roster}"
             )
         except Exception as e:
             logger.error(
@@ -166,12 +166,12 @@ class RosterScreen(Screen[None]):
         self._render_list()
 
     @work
-    async def _do_add(self, ally_name: str) -> None:
+    async def _do_add(self, npc_name: str) -> None:
         log = self.query_one(RichLog)
         inp = self.query_one(Input)
         inp.disabled = True
-        log.write(f"[dim]▶ 正在将 {display_name(ally_name)} 加入远征队...[/]")
-        logger.info(f"RosterScreen._do_add: ally_name={ally_name}")
+        log.write(f"[dim]▶ 正在将 {display_name(npc_name)} 加入远征队...[/]")
+        logger.info(f"RosterScreen._do_add: npc_name={npc_name}")
         from .app import GameClient
 
         app: GameClient = self.app  # type: ignore[assignment]
@@ -179,13 +179,13 @@ class RosterScreen(Screen[None]):
             return
         try:
             await home_roster_add(
-                app.session.user_name, app.session.game_name, ally_name
+                app.session.user_name, app.session.game_name, npc_name
             )
-            self._current_roster.add(ally_name)
-            log.write(f"[bold green]✅ {display_name(ally_name)} 已加入远征队[/]")
-            logger.info(f"RosterScreen._do_add: 成功 ally_name={ally_name}")
+            self._current_roster.add(npc_name)
+            log.write(f"[bold green]✅ {display_name(npc_name)} 已加入远征队[/]")
+            logger.info(f"RosterScreen._do_add: 成功 npc_name={npc_name}")
         except Exception as e:
-            logger.error(f"RosterScreen._do_add: 失败 ally_name={ally_name} error={e}")
+            logger.error(f"RosterScreen._do_add: 失败 npc_name={npc_name} error={e}")
             log.write(f"[bold red]❌ 加入失败: {e}[/]")
         finally:
             inp.disabled = False
@@ -193,12 +193,12 @@ class RosterScreen(Screen[None]):
         self._render_list()
 
     @work
-    async def _do_remove(self, ally_name: str) -> None:
+    async def _do_remove(self, npc_name: str) -> None:
         log = self.query_one(RichLog)
         inp = self.query_one(Input)
         inp.disabled = True
-        log.write(f"[dim]▶ 正在将 {display_name(ally_name)} 从远征队移除...[/]")
-        logger.info(f"RosterScreen._do_remove: ally_name={ally_name}")
+        log.write(f"[dim]▶ 正在将 {display_name(npc_name)} 从远征队移除...[/]")
+        logger.info(f"RosterScreen._do_remove: npc_name={npc_name}")
         from .app import GameClient
 
         app: GameClient = self.app  # type: ignore[assignment]
@@ -206,15 +206,13 @@ class RosterScreen(Screen[None]):
             return
         try:
             await home_roster_remove(
-                app.session.user_name, app.session.game_name, ally_name
+                app.session.user_name, app.session.game_name, npc_name
             )
-            self._current_roster.discard(ally_name)
-            log.write(f"[bold green]✅ {display_name(ally_name)} 已从远征队移除[/]")
-            logger.info(f"RosterScreen._do_remove: 成功 ally_name={ally_name}")
+            self._current_roster.discard(npc_name)
+            log.write(f"[bold green]✅ {display_name(npc_name)} 已从远征队移除[/]")
+            logger.info(f"RosterScreen._do_remove: 成功 npc_name={npc_name}")
         except Exception as e:
-            logger.error(
-                f"RosterScreen._do_remove: 失败 ally_name={ally_name} error={e}"
-            )
+            logger.error(f"RosterScreen._do_remove: 失败 npc_name={npc_name} error={e}")
             log.write(f"[bold red]❌ 移除失败: {e}[/]")
         finally:
             inp.disabled = False

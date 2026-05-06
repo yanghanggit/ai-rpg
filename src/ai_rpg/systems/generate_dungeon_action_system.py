@@ -630,7 +630,7 @@ class GenerateDungeonActionSystem(ReactiveProcessor):
                 name=actor_bp.actor_name,
                 character_sheet=CharacterSheet(
                     name=actor_bp.character_sheet_name,
-                    type=ActorType.ENEMY.value,
+                    type=ActorType.MONSTER.value,
                     profile=actor_bp.profile,
                     base_body=actor_bp.base_body,
                 ),

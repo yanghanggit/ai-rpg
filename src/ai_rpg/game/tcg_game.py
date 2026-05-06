@@ -19,7 +19,7 @@ from ..models import (
     Actor,
     ActorComponent,
     ActorType,
-    AllyComponent,
+    NPCComponent,
     AppearanceComponent,
     CharacterStats,
     CharacterStatsComponent,
@@ -28,11 +28,11 @@ from ..models import (
     DrawDeckComponent,
     Dungeon,
     DungeonComponent,
-    EnemyComponent,
+    MonsterComponent,
     EquipmentComponent,
     EquipmentItem,
     EquipmentType,
-    ExpeditionRosterComponent,
+    PartyRosterComponent,
     HandComponent,
     HomeComponent,
     IdentityComponent,
@@ -182,17 +182,15 @@ class TCGGame(RPGGame):
         )
         logger.debug(f"场景: {player_only_stage_entity.name} 已标记为仅玩家可见")
 
-        ## 第6步，添加 ExpeditionRosterComponent 到玩家角色实体
+        ## 第6步，添加 PartyRosterComponent 到玩家角色实体
         assert not player_actor_entity.has(
-            ExpeditionRosterComponent
-        ), "玩家角色实体不应该已经有 ExpeditionRosterComponent"
+            PartyRosterComponent
+        ), "玩家角色实体不应该已经有 PartyRosterComponent"
 
-        # 添加 ExpeditionRosterComponent 组件，并设置 name 属性为角色实体的名字，方便后续识别和管理玩家的远征队伍
-        player_actor_entity.replace(
-            ExpeditionRosterComponent, player_actor_entity.name, []
-        )
+        # 添加 PartyRosterComponent 组件，并设置 name 属性为角色实体的名字，方便后续识别和管理玩家的远征队伍
+        player_actor_entity.replace(PartyRosterComponent, player_actor_entity.name, [])
         logger.debug(
-            f"为玩家角色实体 {player_actor_entity.name} 添加 ExpeditionRosterComponent"
+            f"为玩家角色实体 {player_actor_entity.name} 添加 PartyRosterComponent"
         )
 
         return self
@@ -315,10 +313,10 @@ class TCGGame(RPGGame):
 
             # 必要组件：类型标记
             match actor_model.character_sheet.type:
-                case ActorType.ALLY:
-                    actor_entity.add(AllyComponent, actor_model.name)
-                case ActorType.ENEMY:
-                    actor_entity.add(EnemyComponent, actor_model.name)
+                case ActorType.NPC:
+                    actor_entity.add(NPCComponent, actor_model.name)
+                case ActorType.MONSTER:
+                    actor_entity.add(MonsterComponent, actor_model.name)
                 case _:
                     assert (
                         False
@@ -466,7 +464,7 @@ class TCGGame(RPGGame):
             actor_entity = self.get_actor_entity(actor.name)
             assert actor_entity is None, "actor_entity is not None"
             assert (
-                actor.character_sheet.type == ActorType.ENEMY
+                actor.character_sheet.type == ActorType.MONSTER
             ), "actor_entity is not enemy type"
 
         # 加一步测试: 不可以存在！如果存在说明没有清空。

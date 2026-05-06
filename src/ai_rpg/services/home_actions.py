@@ -12,9 +12,9 @@ from ..models import (
     TransStageAction,
     EquipItemAction,
     HomeComponent,
-    AllyComponent,
+    NPCComponent,
     PlayerComponent,
-    ExpeditionRosterComponent,
+    PartyRosterComponent,
     PlanAction,
     GenerateDungeonAction,
 )
@@ -193,8 +193,8 @@ def activate_stage_plan(tcg_game: TCGGame) -> Tuple[bool, str]:
     for actor_entity in actors_in_stage:
 
         assert actor_entity.has(
-            AllyComponent
-        ), f"角色 {actor_entity.name} 不是盟友，无法激活行动计划！"
+            NPCComponent
+        ), f"角色 {actor_entity.name} 不是 NPC，无法激活行动计划！"
 
         logger.debug(f"为角色 {actor_entity.name} 添加 PlanAction")
         actor_entity.replace(PlanAction, actor_entity.name)
@@ -225,8 +225,8 @@ def add_expedition_member(tcg_game: TCGGame, member_name: str) -> Tuple[bool, st
         logger.error(f"添加远征队成员失败: {error_detail}")
         return False, error_detail
 
-    if not member_entity.has(AllyComponent):
-        error_detail = f"角色 {member_name} 不是盟友，无法加入远征队"
+    if not member_entity.has(NPCComponent):
+        error_detail = f"角色 {member_name} 不是 NPC，无法加入远征队"
         logger.error(f"添加远征队成员失败: {error_detail}")
         return False, error_detail
 
@@ -237,18 +237,16 @@ def add_expedition_member(tcg_game: TCGGame, member_name: str) -> Tuple[bool, st
 
     player_entity = tcg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
-    assert player_entity.has(
-        ExpeditionRosterComponent
-    ), "玩家实体缺少 ExpeditionRosterComponent"
+    assert player_entity.has(PartyRosterComponent), "玩家实体缺少 PartyRosterComponent"
 
-    roster = player_entity.get(ExpeditionRosterComponent)
+    roster = player_entity.get(PartyRosterComponent)
     if member_name in roster.members:
         error_detail = f"{member_name} 已在远征队名单中"
         logger.warning(f"添加远征队成员失败: {error_detail}")
         return False, error_detail
 
     player_entity.replace(
-        ExpeditionRosterComponent,
+        PartyRosterComponent,
         player_entity.name,
         list(roster.members) + [member_name],
     )
@@ -275,18 +273,16 @@ def remove_expedition_member(tcg_game: TCGGame, member_name: str) -> Tuple[bool,
 
     player_entity = tcg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
-    assert player_entity.has(
-        ExpeditionRosterComponent
-    ), "玩家实体缺少 ExpeditionRosterComponent"
+    assert player_entity.has(PartyRosterComponent), "玩家实体缺少 PartyRosterComponent"
 
-    roster = player_entity.get(ExpeditionRosterComponent)
+    roster = player_entity.get(PartyRosterComponent)
     if member_name not in roster.members:
         error_detail = f"{member_name} 不在远征队名单中"
         logger.warning(f"移除远征队成员失败: {error_detail}")
         return False, error_detail
 
     player_entity.replace(
-        ExpeditionRosterComponent,
+        PartyRosterComponent,
         player_entity.name,
         [m for m in roster.members if m != member_name],
     )
@@ -310,13 +306,11 @@ def get_expedition_roster(tcg_game: TCGGame) -> List[str]:
     if player_entity is None:
         return []
 
-    assert player_entity.has(
-        ExpeditionRosterComponent
-    ), "玩家实体缺少 ExpeditionRosterComponent"
-    if not player_entity.has(ExpeditionRosterComponent):
+    assert player_entity.has(PartyRosterComponent), "玩家实体缺少 PartyRosterComponent"
+    if not player_entity.has(PartyRosterComponent):
         return []
 
-    return list(player_entity.get(ExpeditionRosterComponent).members)
+    return list(player_entity.get(PartyRosterComponent).members)
 
 
 ###################################################################################################################################################################

@@ -23,7 +23,7 @@ from src.ai_rpg.game.tcg_game import TCGGame
 from src.ai_rpg.models import (
     ActorComponent,
     ActorType,
-    AllyComponent,
+    NPCComponent,
     AppearanceComponent,
     CharacterStatsComponent,
     DungeonComponent,
@@ -112,14 +112,14 @@ def _make_actor_entity(game: Any, actor_name: str, stage_name: str = "") -> Enti
     entity.add(CharacterStatsComponent, actor_name, CharacterStats(hp=20, max_hp=20))
     entity.add(EquipmentComponent, actor_name, "", "", "")
     entity.add(InventoryComponent, actor_name, [])
-    entity.add(AllyComponent, actor_name)
+    entity.add(NPCComponent, actor_name)
     entity.add(AppearanceComponent, actor_name, "human body", "")
     return entity
 
 
 def _make_actor_model(
     name: str,
-    actor_type: ActorType = ActorType.ALLY,
+    actor_type: ActorType = ActorType.NPC,
     hp: int = 30,
     attack: int = 5,
     defense: int = 3,
@@ -153,7 +153,7 @@ def _make_stage_model(
 
 
 def _make_dungeon_with_enemy(enemy_name: str, stage_name: str) -> Dungeon:
-    enemy = _make_actor_model(enemy_name, ActorType.ENEMY)
+    enemy = _make_actor_model(enemy_name, ActorType.MONSTER)
     stage = _make_stage_model(stage_name, StageType.DUNGEON, actors=[enemy])
     room = CombatRoom(stage=stage)
     return Dungeon(name="test_dungeon", rooms=[room], ecology="")
@@ -217,7 +217,7 @@ class TestIsPlayerInStage:
 
 class TestBuildFromBlueprint:
     def _make_full_blueprint(self) -> Blueprint:
-        ally = _make_actor_model("hero", ActorType.ALLY)
+        ally = _make_actor_model("hero", ActorType.NPC)
         home = _make_stage_model("home_stage", StageType.HOME, actors=[ally])
         player_only = _make_stage_model("private_stage", StageType.HOME)
         return Blueprint(
@@ -307,8 +307,8 @@ class TestSetupDungeonEntities:
         # Still only one entity for "goblin" — no assertion error
         assert game.get_actor_entity("goblin") is not None
 
-    def test_ally_actor_type_raises(self) -> None:
-        ally = _make_actor_model("hero", ActorType.ALLY)
+    def test_npc_actor_type_raises(self) -> None:
+        ally = _make_actor_model("hero", ActorType.NPC)
         stage = _make_stage_model("cave_stage", StageType.DUNGEON, actors=[ally])
         room = CombatRoom(stage=stage)
         dungeon = Dungeon(name="d", rooms=[room], ecology="")

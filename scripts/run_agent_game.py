@@ -790,7 +790,7 @@ def generate_dungeon_cmd(snapshot: str) -> None:
 def roster_add(snapshot: str, member: str) -> None:
     """从存档复位，将指定盟友加入远征队名单，并写入新存档。
 
-    适用于【家园模式】。--member 必须为已存在的盟友（AllyComponent）角色名称且不能为玩家自身。
+    适用于【家园模式】。--member 必须为已存在的 NPC（NPCComponent）角色名称且不能为玩家自身。
     添加后可继续使用 enter-dungeon 进入地下城。
     """
 

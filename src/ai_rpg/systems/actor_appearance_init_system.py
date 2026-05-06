@@ -6,7 +6,7 @@ from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
     ActorComponent,
-    AllyComponent,
+    NPCComponent,
     AppearanceComponent,
     EquipmentComponent,
     InventoryComponent,
@@ -129,8 +129,8 @@ class ActorAppearanceInitSystem(ExecuteProcessor):
         # Step 1: 所有角色 appearance == "" → base_body（含 Enemy）
         self._initialize_appearances()
 
-        # Step 2: 仅盟友，LLM 合成 base_body + 装备 → appearance
-        await self._generate_ally_appearances_with_llm()
+        # Step 2: 仅 NPC，LLM 合成 base_body + 装备 → appearance
+        await self._generate_npc_appearances_with_llm()
 
     #######################################################################################################################################
     def _initialize_appearances(self) -> None:
@@ -172,21 +172,21 @@ class ActorAppearanceInitSystem(ExecuteProcessor):
             )
 
     #######################################################################################################################################
-    async def _generate_ally_appearances_with_llm(self) -> None:
-        """LLM 合成盟友角色外观：base_body + 装备描述 → appearance。
+    async def _generate_npc_appearances_with_llm(self) -> None:
+        """LLM 合成 NPC 角色外观：base_body + 装备描述 → appearance。
 
-        仅处理 AllyComponent 角色，且满足：
+        仅处理 NPCComponent 角色，且满足：
           - appearance == base_body（已初始化但未 LLM 增强）
           - EquipmentComponent 至少一个槽非空（有实际装备）
 
         天然幂等：LLM 写入后 appearance != base_body，不会二次触发。
         """
-        ally_entities = self._game.get_group(
+        npc_entities = self._game.get_group(
             Matcher(
                 all_of=[
                     ActorComponent,
                     AppearanceComponent,
-                    AllyComponent,
+                    NPCComponent,
                     EquipmentComponent,
                     InventoryComponent,
                 ]
@@ -196,7 +196,7 @@ class ActorAppearanceInitSystem(ExecuteProcessor):
         chat_clients: List[DeepSeekClient] = []
         pending_entities: List[Entity] = []
 
-        for actor_entity in ally_entities:
+        for actor_entity in npc_entities:
             appearance_comp = actor_entity.get(AppearanceComponent)
             equip_comp = actor_entity.get(EquipmentComponent)
 

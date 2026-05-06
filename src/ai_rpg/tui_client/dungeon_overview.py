@@ -316,7 +316,7 @@ class DungeonOverviewScreen(Screen[None]):
                 members: list[str] = []
                 for entity in resp.entities_serialization:
                     for comp in entity.components:
-                        if comp.name == "ExpeditionRosterComponent":
+                        if comp.name == "PartyRosterComponent":
                             members = list(comp.data.get("members", []))
                             break
                 roster = [player_actor] + members

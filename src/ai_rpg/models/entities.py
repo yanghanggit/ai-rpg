@@ -39,8 +39,8 @@ class StageProfile(BaseModel):
 @unique
 class ActorType(StrEnum):
     NONE = "None"
-    ALLY = "Ally"  # 我方/盟友/好人阵营
-    ENEMY = "Enemy"  # 敌方/怪物/坏人阵营
+    NPC = "NPC"  # 我方/NPC/好人阵营
+    MONSTER = "Monster"  # 敌方/怪物/坏人阵营
 
 
 ###############################################################################################################################################

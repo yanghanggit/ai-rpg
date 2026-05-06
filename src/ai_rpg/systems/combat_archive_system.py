@@ -6,7 +6,7 @@ from ..entitas import Entity, ExecuteProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     CombatArchiveEvent,
-    ExpeditionMemberComponent,
+    PartyMemberComponent,
 )
 from ..models.messages import AIMessage, HumanMessage, SystemMessage, get_buffer_string
 
@@ -74,7 +74,7 @@ def _get_combat_ally_actors(game: TCGGame) -> List[Entity]:
     1. 获取玩家实体（玩家所在场景即为战斗场景）
     2. 获取玩家所在的场景实体
     3. 获取该场景上的所有角色（使用get_actors_in_stage）
-    4. 过滤出带有ExpeditionMemberComponent的角色
+    4. 过滤出带有PartyMemberComponent的角色
 
     Args:
         game: TCGGame游戏实例
@@ -98,7 +98,7 @@ def _get_combat_ally_actors(game: TCGGame) -> List[Entity]:
 
     # 过滤出远征队成员
     ally_actors = [
-        actor for actor in actors_in_stage if actor.has(ExpeditionMemberComponent)
+        actor for actor in actors_in_stage if actor.has(PartyMemberComponent)
     ]
 
     return ally_actors

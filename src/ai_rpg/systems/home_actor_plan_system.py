@@ -18,7 +18,7 @@ from ..models import (
     HomeComponent,
     MindEvent,
     ActorComponent,
-    AllyComponent,
+    NPCComponent,
     PlayerComponent,
     PlayerOnlyStageComponent,
 )
@@ -767,12 +767,12 @@ class HomeActorPlanSystem(ReactiveProcessor):
           2. 本轮必须使用 inspect_self 查看背包与装备状态
           3. 下一轮使用 equip_accessory: "" 脱掉饰品槽
 
-        只对非玩家盟友（AllyComponent & ~PlayerComponent）生效。
+        只对非玩家 NPC（NPCComponent & ~PlayerComponent）生效。
 
         Args:
             actor_entity: 待注入的角色实体
         """
-        if not actor_entity.has(AllyComponent) or actor_entity.has(PlayerComponent):
+        if not actor_entity.has(NPCComponent) or actor_entity.has(PlayerComponent):
             return
 
         logger.debug(

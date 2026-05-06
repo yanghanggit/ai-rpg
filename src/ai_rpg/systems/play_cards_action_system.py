@@ -15,7 +15,6 @@ from ..models import (
     PlayCardsAction,
     ActorComponent,
     AgentEvent,
-    RoundStatsComponent,
 )
 from ..game.tcg_game import TCGGame
 
@@ -144,20 +143,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             last_round.completed_actors.append(play_cards_action.name)
 
             # 每出一张牌消耗 1 点 energy
-            assert entity.has(
-                RoundStatsComponent
-            ), f"{entity.name} 缺少 RoundStatsComponent"
-            round_stats = entity.get(RoundStatsComponent)
-            assert (
-                round_stats.energy > 0
-            ), f"{entity.name} 能量不足，无法出牌！当前 energy={round_stats.energy}"
-
-            entity.replace(
-                RoundStatsComponent,
-                entity.name,
-                round_stats.energy - 1,
-                round_stats.block,
-            )
+            self._game.consume_energy(entity)
 
             # 更新当前行动者（能量消耗后重新计算）
             self._game.advance_turn(last_round)

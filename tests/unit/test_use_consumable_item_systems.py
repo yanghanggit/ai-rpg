@@ -605,16 +605,3 @@ class TestTriggerAddStatusEffects:
 
         assert actor.has(AddStatusEffectsAction)
         assert enemy.has(AddStatusEffectsAction)
-
-    def test_injects_status_effects_component_when_missing(self) -> None:
-        """受影响实体若无 StatusEffectsComponent，应自动补充空组件。"""
-        game = _make_game()
-        actor = _make_actor_entity(game, "hero", "cave")
-        assert not actor.has(StatusEffectsComponent)
-        action = self._make_action(effects=["[毒]:每回合损失 HP"])
-        system = UseConsumableItemArbitrationSystem(game)
-
-        system._trigger_add_status_effects(actor, action, ["hero"])
-
-        assert actor.has(StatusEffectsComponent)
-        assert actor.has(AddStatusEffectsAction)

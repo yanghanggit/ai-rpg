@@ -24,6 +24,7 @@ from ..models import (
     CharacterStats,
     CharacterStatsComponent,
     COMPONENT_TYPES,
+    ConsumableItem,
     DiscardDeckComponent,
     DrawDeckComponent,
     Dungeon,
@@ -55,9 +56,6 @@ from ..models import (
 from ..models.utils import compute_stats_with_equipment
 from .player_session import PlayerSession
 from ..entitas import Matcher, Entity
-
-
-#################################################################################################################################################
 
 
 #################################################################################################################################################
@@ -635,5 +633,54 @@ class TCGGame(RPGGame):
         logger.debug(
             f"advance_turn: current_turn_actor_name updated to {round.current_turn_actor_name}"
         )
+
+    ###############################################################################################################################################
+    def consume_energy(self, entity: Entity, amount: int = 1) -> None:
+        """消耗角色实体指定点数的 energy。
+
+        Args:
+            entity: 角色实体，必须拥有 RoundStatsComponent 且 energy > 0
+            amount: 消耗的 energy 数量，默认为 1
+        """
+        assert entity.has(
+            RoundStatsComponent
+        ), f"{entity.name} 缺少 RoundStatsComponent"
+        round_stats = entity.get(RoundStatsComponent)
+        assert (
+            round_stats.energy > 0
+        ), f"{entity.name} 能量不足！当前 energy={round_stats.energy}"
+        entity.replace(
+            RoundStatsComponent,
+            entity.name,
+            max(0, round_stats.energy - amount),
+            round_stats.block,
+        )
+
+    ###############################################################################################################################################
+    def consume_item_from_inventory(self, entity: Entity, item: ConsumableItem) -> None:
+        """从角色背包中移除或递减指定消耗品。
+
+        count > 1 时递减数量；count == 1 时直接移除。
+
+        Args:
+            entity: 角色实体，必须拥有 InventoryComponent
+            item: 目标消耗品（按 uuid 精确匹配）
+        """
+        assert entity.has(InventoryComponent), f"{entity.name} 缺少 InventoryComponent"
+        inventory_comp = entity.get(InventoryComponent)
+        new_items = []
+        removed = False
+        for inv_item in inventory_comp.items:
+            if not removed and inv_item.uuid == item.uuid:
+                removed = True
+                if inv_item.count > 1:
+                    new_items.append(
+                        inv_item.model_copy(update={"count": inv_item.count - 1})
+                    )
+                # count == 1：直接丢弃，不加入 new_items
+            else:
+                new_items.append(inv_item)
+        assert removed, f"背包中找不到 uuid={item.uuid} 的物品"
+        inventory_comp.items = new_items
 
     ################################################################################################################

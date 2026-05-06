@@ -292,6 +292,8 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
+
+        # 战斗未进行中则跳过
         if not self._game.current_dungeon.is_ongoing:
             logger.debug("UseConsumableItemArbitrationSystem: 战斗未进行中，跳过仲裁")
             return
@@ -311,6 +313,8 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
     async def _request_consumable_arbitration(
         self, stage_entity: Entity, actor_entity: Entity
     ) -> None:
+
+        # 获取 UseConsumableItemAction 组件
         action = actor_entity.get(UseConsumableItemAction)
 
         # 收集目标的当前 HP 与格挡
@@ -359,6 +363,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
 
         actor_stats = self._game.compute_character_stats(actor_entity)
 
+        # 生成仲裁提示词，包含使用者与目标的 HP/格挡、消耗品信息、当前回合数、状态效果等上下文，供 LLM 结算使用
         message = _generate_consumable_arbitration_prompt(
             actor_name=actor_entity.name,
             actor_stats=actor_stats,
@@ -371,6 +376,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             target_arbitration_effects=target_arbitration_effects,
         )
 
+        # 生成压缩提示词写入对话历史，供 LLM 参考（仅包含关键信息，减少上下文长度）
         compressed_message = (
             _generate_compressed_consumable_arbitration_prompt(
                 actor_name=actor_entity.name,
@@ -387,6 +393,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             else None
         )
 
+        # 调用 LLM 进行仲裁结算，获取最终的 HP / 格挡 / 状态效果描述更新结果，以及战斗日志与演出描述
         chat_client = DeepSeekClient(
             name=stage_entity.name,
             prompt=message,
@@ -396,9 +403,12 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         )
         chat_client.chat()
 
+        # 应用仲裁结果：更新 HP / 格挡，回写状态效果描述，广播仲裁日志与演出描述
         self._apply_item_arbitration_result(
             stage_entity, chat_client, actor_entity, action
         )
+
+        # 结算后处理 HP 归零的实体
         self._process_zero_health_entities()
 
     #######################################################################################################################################
@@ -410,6 +420,8 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         action: UseConsumableItemAction,
     ) -> None:
         try:
+
+            # 从 LLM 响应中提取仲裁结果
             response = _UseConsumableArbitrationResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
             )
@@ -488,31 +500,35 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                     new_block,
                 )
 
-                # 回写状态效果描述补丁
-                if entity_stats.status_effect_patches:
-                    status_comp = entity.get(StatusEffectsComponent)
-                    if status_comp is not None:
-                        effect_map = {e.name: e for e in status_comp.status_effects}
-                        for patch in entity_stats.status_effect_patches:
-                            if patch.name in effect_map:
-                                old_desc = effect_map[patch.name].description
-                                effect_map[patch.name].description = patch.description
-                                logger.info(
-                                    f"更新 {entity_name} 状态效果「{patch.name}」description: "
-                                    f"{old_desc!r} → {patch.description!r}"
-                                )
-                            else:
-                                logger.warning(
-                                    f"status_effect_patches 中的效果「{patch.name}」"
-                                    f"在 {entity_name} 的 StatusEffectsComponent 中不存在，跳过"
-                                )
-
+                # 将 HP / 格挡 更新通知写入对话历史（仅通知受影响的实体）
                 self._game.add_human_message(
                     entity=entity,
                     message_content=_generate_stats_update_notification(
                         new_hp, max_hp, new_block
                     ),
                 )
+
+                # 回写状态效果描述补丁
+                if entity_stats.status_effect_patches:
+                    assert entity.has(
+                        StatusEffectsComponent
+                    ), f"{entity_name} 缺少 StatusEffectsComponent，无法回写状态效果描述"
+                    status_comp = entity.get(StatusEffectsComponent)
+                    # if status_comp is not None:
+                    effect_map = {e.name: e for e in status_comp.status_effects}
+                    for patch in entity_stats.status_effect_patches:
+                        if patch.name in effect_map:
+                            old_desc = effect_map[patch.name].description
+                            effect_map[patch.name].description = patch.description
+                            logger.info(
+                                f"更新 {entity_name} 状态效果「{patch.name}」description: "
+                                f"{old_desc!r} → {patch.description!r}"
+                            )
+                        else:
+                            logger.warning(
+                                f"status_effect_patches 中的效果「{patch.name}」"
+                                f"在 {entity_name} 的 StatusEffectsComponent 中不存在，跳过"
+                            )
 
             # 将仲裁日志写入当前回合
             latest_round = self._game.current_dungeon.latest_round
@@ -562,10 +578,6 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         for entity_name in affected_entity_names:
             entity = self._game.get_entity_by_name(entity_name)
             assert entity is not None, f"无法找到实体: {entity_name}"
-
-            # 确保实体具有 StatusEffectsComponent，若无则注入空组件
-            if not entity.has(StatusEffectsComponent):
-                entity.replace(StatusEffectsComponent, entity_name, [])
 
             task_hint = _generate_consumable_task_hint(
                 actor_name=actor_entity.name,

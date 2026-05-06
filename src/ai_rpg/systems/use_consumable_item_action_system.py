@@ -114,16 +114,7 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
             last_round.completed_actors.append(action.name)
 
             # 消耗 1 点 energy
-            round_stats = entity.get(RoundStatsComponent)
-            assert (
-                round_stats.energy > 0
-            ), f"{entity.name} 能量不足，无法使用消耗品！当前 energy={round_stats.energy}"
-            entity.replace(
-                RoundStatsComponent,
-                entity.name,
-                round_stats.energy - 1,
-                round_stats.block,
-            )
+            self._game.consume_energy(entity)
 
             # 推进行动顺序
             self._game.advance_turn(last_round)
@@ -134,26 +125,7 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
             )
 
             # 从背包移除或递减消耗品（按 uuid 精确匹配）
-            inventory_comp = entity.get(InventoryComponent)
-            used_item = action.item
-            new_items = []
-            removed = False
-            for item in inventory_comp.items:
-                if not removed and item.uuid == used_item.uuid:
-                    removed = True
-                    if item.count > 1:
-                        # 递减数量，保留物品
-
-                        new_items.append(
-                            item.model_copy(update={"count": item.count - 1})
-                        )
-                    # count == 1：直接丢弃，不加入 new_items
-                else:
-                    new_items.append(item)
-            assert (
-                removed
-            ), f"UseConsumableItemActionSystem: 背包中找不到 uuid={used_item.uuid} 的物品"
-            inventory_comp.items = new_items
+            self._game.consume_item_from_inventory(entity, action.item)
 
             # 注入使用上下文到对话历史
             self._game.add_human_message(

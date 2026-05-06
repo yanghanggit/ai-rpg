@@ -189,12 +189,16 @@ class CombatInitializationSystem(ExecuteProcessor):
         for actor_entity in actor_entities:
 
             # 如果没有状态效果组件则先添加一个空的，以保证 AddStatusEffectsActionSystem 能正常工作
-            if not actor_entity.has(StatusEffectsComponent):
-                actor_entity.replace(
-                    StatusEffectsComponent,
-                    actor_entity.name,
-                    [],
-                )
+            # if not actor_entity.has(StatusEffectsComponent):
+            assert (
+                not actor_entity.has(StatusEffectsComponent)
+                or len(actor_entity.get(StatusEffectsComponent).status_effects) == 0
+            ), f"角色 {actor_entity.name} 已有非空状态效果列表，理论上不应该出现这种情况！如果确实出现了，请检查之前的系统是否正确清理了状态效果。"
+            actor_entity.replace(
+                StatusEffectsComponent,
+                actor_entity.name,
+                [],
+            )
 
             logger.debug(
                 f"为角色 {actor_entity.name} 添加 AddStatusEffectsAction 以触发初始状态效果评估"

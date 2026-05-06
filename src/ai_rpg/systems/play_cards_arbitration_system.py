@@ -701,28 +701,30 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                     RoundStatsComponent,
                     entity_name,
                     round_stats.energy,
-                    # round_stats.speed,
                     new_block,
                 )
 
                 # 回写仲裁阶段状态效果的 description（用于更新 cur 等动态变量）
                 if entity_stats.status_effect_patches:
+                    assert entity.has(
+                        StatusEffectsComponent
+                    ), f"{entity_name} 缺少 StatusEffectsComponent，无法回写状态效果描述！"
                     status_comp = entity.get(StatusEffectsComponent)
-                    if status_comp is not None:
-                        effect_map = {e.name: e for e in status_comp.status_effects}
-                        for patch in entity_stats.status_effect_patches:
-                            if patch.name in effect_map:
-                                old_desc = effect_map[patch.name].description
-                                effect_map[patch.name].description = patch.description
-                                logger.info(
-                                    f"更新 {entity_name} 状态效果「{patch.name}」description: "
-                                    f"{old_desc!r} → {patch.description!r}"
-                                )
-                            else:
-                                logger.warning(
-                                    f"status_effect_patches 中的效果「{patch.name}」"
-                                    f"在 {entity_name} 的 StatusEffectsComponent 中不存在，跳过"
-                                )
+                    # if status_comp is not None:
+                    effect_map = {e.name: e for e in status_comp.status_effects}
+                    for patch in entity_stats.status_effect_patches:
+                        if patch.name in effect_map:
+                            old_desc = effect_map[patch.name].description
+                            effect_map[patch.name].description = patch.description
+                            logger.info(
+                                f"更新 {entity_name} 状态效果「{patch.name}」description: "
+                                f"{old_desc!r} → {patch.description!r}"
+                            )
+                        else:
+                            logger.warning(
+                                f"status_effect_patches 中的效果「{patch.name}」"
+                                f"在 {entity_name} 的 StatusEffectsComponent 中不存在，跳过"
+                            )
 
                 # 将属性更新通知写入角色上下文
                 self._game.add_human_message(
@@ -817,8 +819,8 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             assert entity is not None, f"无法找到实体: {entity_name}"
 
             # 确保实体具有 StatusEffectsComponent，若无则注入空组件
-            if not entity.has(StatusEffectsComponent):
-                entity.replace(StatusEffectsComponent, entity_name, [])
+            # if not entity.has(StatusEffectsComponent):
+            #     entity.replace(StatusEffectsComponent, entity_name, [])
 
             # 生成 task_hint，包含本次出牌的完整结构化数据，供 AddActorStatusEffectsActionSystem 使用
             task_hint = _generate_post_arbitration_task_hint(

@@ -96,17 +96,7 @@ class PassTurnActionSystem(ReactiveProcessor):
 
             last_round.completed_actors.append(pass_turn_action.name)
 
-            round_stats = entity.get(RoundStatsComponent)
-            assert (
-                round_stats.energy > 0
-            ), f"{entity.name} 能量不足，无法过牌！当前 energy={round_stats.energy}"
-
-            entity.replace(
-                RoundStatsComponent,
-                entity.name,
-                round_stats.energy - 1,
-                round_stats.block,
-            )
+            self._game.consume_energy(entity)
 
             self._game.advance_turn(last_round)
 

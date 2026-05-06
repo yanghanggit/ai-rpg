@@ -1,9 +1,4 @@
-"""Pipeline 收尾系统模块。
-
-本模块实现了 Pipeline 末端的收尾逻辑，负责记录当前场景中所有角色的分布信息，
-并将运行时实体状态同步回 world 数据模型。
-未来也可在此处扩展调试检查、状态校验等收尾操作。
-"""
+"""Pipeline 末端收尾系统，记录角色分布并同步实体状态到 world 模型。"""
 
 import json
 from typing import Dict, Final, List, final, override
@@ -17,13 +12,9 @@ from ..game.rpg_game import RPGGame
 
 @final
 class EpilogueSystem(ExecuteProcessor):
-    """Pipeline 收尾系统。
+    """Pipeline 末端收尾系统。
 
-    位于每条 Pipeline 的最末端，负责记录角色分布日志并将运行时实体状态
-    同步回 world 数据模型。未来可在此扩展调试检查或其他收尾操作。
-
-    Attributes:
-        _game: 游戏上下文实例，包含游戏的核心状态和数据。
+    记录角色分布日志并将实体状态同步回 world 模型。未来可在此扩展收尾检查。
     """
 
     ############################################################################################################
@@ -42,10 +33,7 @@ class EpilogueSystem(ExecuteProcessor):
 
     ############################################################################################################
     def _log_actor_distribution(self) -> None:
-        """记录当前各场景中的角色分布情况
-
-        获取所有场景及其中的角色，格式化为 JSON 并记录到日志。
-        """
+        """记录各场景中的角色分布情况到日志。"""
         actor_distribution = self._game.get_actors_by_stage()
 
         actor_distribution_info: Dict[str, List[str]] = {}
@@ -60,17 +48,13 @@ class EpilogueSystem(ExecuteProcessor):
 
     ############################################################################################################
     def _format_entity_name_with_status(self, entity: Entity) -> str:
-        """格式化实体名称并附加状态标签。
-
-        根据实体的组件状态生成包含状态信息的名称字符串。
-        如果实体具有特殊状态（如死亡），会在名称后添加相应的标签。
+        """返回实体名称，若有状态标签（如 dead）则附加在括号内。
 
         Args:
-            entity: 要格式化的实体对象。
+            entity: 要格式化的实体。
 
         Returns:
-            格式化后的实体名称字符串。如果实体有状态标签，
-            返回格式为 "实体名称(标签1 & 标签2)"，否则仅返回实体名称。
+            格式如 "name" 或 "name(dead)"。
         """
         tags = []
 

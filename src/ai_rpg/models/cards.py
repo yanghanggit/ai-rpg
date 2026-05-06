@@ -19,12 +19,10 @@ class StatusEffectPhase(StrEnum):
     标记一个状态效果应在战斗流程的哪个阶段起效。
 
     - draw        : 抽牌阶段（DrawCardsActionSystem）——影响本回合卡牌生成，如"混乱"使牌质下降
-    - play        : 出牌阶段（PlayCardsActionSystem）——影响出牌行为，如"束缚"禁止出攻击牌
     - arbitration : 仲裁阶段（ArbitrationActionSystem）——影响伤害/格挡结算，如"虚弱"伤害−2、"坚甲"格挡+3
     """
 
     DRAW = "draw"
-    PLAY = "play"
     ARBITRATION = "arbitration"
 
 

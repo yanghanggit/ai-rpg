@@ -316,8 +316,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
         if not llm_entities:
             return
 
-        self._mock_inject_sealed_affix_context(llm_entities, current_round_number)
-
         chat_clients: List[DeepSeekClient] = []
         for entity in llm_entities:
             chat_client = self._create_draw_chat_client(
@@ -338,24 +336,6 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 num_cards=entity_generate_counts[found_entity.name],
                 deck_cards=entity_deck_cards[found_entity.name],
             )
-
-    #######################################################################################################################################
-    def _mock_inject_sealed_affix_context(
-        self, entities: list[Entity], current_round_number: int
-    ) -> None:
-        """[mock] 第一回合向远征队员注入 context，引导 LLM 在某张手牌生成封印词缀。"""
-        if current_round_number != 1:
-            return
-        affix_example = "封印：不可被出牌，也不可被弃牌"
-        msg = (
-            f"[系统提示] 本回合请在你生成的某一张卡牌的 affixes 字段中加入以下词缀，"
-            f"以触发「封印」词条效果：\n{affix_example}"
-        )
-        for entity in entities:
-            if not entity.has(ExpeditionMemberComponent):
-                continue
-            self._game.add_human_message(entity, msg)
-            logger.debug(f"[mock context] [{entity.name}] 注入封印词缀引导 context")
 
     #######################################################################################################################################
     def _consume_deck_cards(

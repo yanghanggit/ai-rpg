@@ -20,6 +20,7 @@ from ..models import (
     CardTargetType,
     CharacterStatsComponent,
     DungeonComponent,
+    ExpeditionMemberComponent,
     HandComponent,
     StageComponent,
     PostArbitrationAction,
@@ -186,7 +187,6 @@ def _generate_stage_post_arbitration_prompt(
 | phase | 对应阶段 | 可影响属性 | 典型效果举例 |
 |---|---|---|---|
 | `{StatusEffectPhase.DRAW}` | 抽牌阶段 | attack、defense（间接影响下回合卡牌数值） | 「虚弱」攻击力−2，生成卡牌 damage_dealt 偏低；「迟重」防御力−1，block_gain 偏低 |
-| `{StatusEffectPhase.PLAY}` | 出牌阶段 | damage_dealt、block_gain（附加到本回合打出的牌） | 「淬毒」出牌时 damage_dealt+2；「护盾祝福」出牌时 block_gain+2 |
 | `{StatusEffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt、block_gain | 「燃烧」每回合结算扣 hp 3；「黑暗腐蚀」造成伤害+4；「坚甲赐福」格挡+3 |
 
 **属性约束**：
@@ -380,6 +380,10 @@ class PostArbitrationActionSystem(ReactiveProcessor):
 
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
+        self._mock_inject_sealed_affix_context(
+            stage_entity, actor_entities, current_round_number
+        )
+
         prompt = _generate_stage_post_arbitration_prompt(
             game=self._game,
             actor_entities=actor_entities,
@@ -474,6 +478,32 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         except Exception as e:
             logger.error(f"[{stage_entity.name}] 解析仲裁后干预响应失败: {e}")
             logger.error(f"原始响应: {chat_client.response_content}")
+
+    #######################################################################################################################################
+    def _mock_inject_sealed_affix_context(
+        self,
+        stage_entity: Entity,
+        actor_entities: Set[Entity],
+        current_round_number: int,
+    ) -> None:
+        """[mock] 第一回合向 stage 注入 context，引导 LLM 向远征队员塞入一张带封印词缀的卡牌。"""
+        if current_round_number != 1:
+            return
+        expedition_members = [
+            e for e in actor_entities if e.has(ExpeditionMemberComponent)
+        ]
+        if not expedition_members:
+            return
+        target_name = expedition_members[0].name
+        affix_example = "封印：不可被出牌，也不可被弃牌"
+        msg = (
+            f"[系统提示] 本回合请在 inject_cards 中向「{target_name}」塞入一张包含以下 affixes 词缀的卡牌，"
+            f'以触发「封印」词条效果，affixes 字段示例：["{affix_example}"]'
+        )
+        self._game.add_human_message(stage_entity, msg)
+        logger.debug(
+            f"[mock context] [{stage_entity.name}] 注入封印塞牌引导 context，目标：{target_name}"
+        )
 
     #######################################################################################################################################
     def _apply_status_effects(

@@ -127,7 +127,6 @@ def _generate_add_status_effects_prompt(
 | phase | 对应阶段 | 可影响的属性 | 典型效果举例 |
 |---|---|---|---|
 | `{StatusEffectPhase.DRAW}` | 抽牌阶段 | attack、defense（换算为卡牌的 damage_dealt / block_gain / hit_count） | 「虚弱」攻击力−2，本回合生成卡牌的 damage_dealt 偏低；「沉重」防御力−1，生成卡牌的 block_gain 偏低 |
-| `{StatusEffectPhase.PLAY}` | 出牌阶段 | damage_dealt、block_gain、hit_count（附加到本回合出的牌上） | 「淬毒」为本回合打出的牌附加 damage_dealt+2；「护盾祝福」为本回合出的牌附加 block_gain+2 |
 | `{StatusEffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt、block_gain | 「燃烧」本回合结算时扣 hp 3；「坚甲」格挡+3；「中毒」造成伤害+2 |
 
 **属性约束（所有阶段均适用）**：

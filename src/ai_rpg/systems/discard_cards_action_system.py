@@ -1,8 +1,6 @@
-"""弃牌动作系统模块。
+"""弃牌动作系统（DiscardCardsActionSystem）。
 
-处理战斗中角色的主动弃牌动作，将指定手牌从 HandComponent 移入 DiscardDeckComponent，
-并向角色的对话上下文注入弃牌通知（仅限自有牌）。
-仅在战斗进行中(ongoing)阶段执行。弃牌不消耗能量、不推进行动顺序。
+仅允许当前 turn 的行动者弃牌；弃牌不消耗 energy、不推进行动顺序。
 """
 
 from typing import Final, final
@@ -36,19 +34,10 @@ def _generate_discard_card_context_prompt(
 #######################################################################################################################################
 @final
 class DiscardCardsActionSystem(ReactiveProcessor):
-    """弃牌动作系统。
+    """响应 DiscardCardsAction 事件，将手牌移入弃牌堆。
 
-    响应 DiscardCardsAction 组件的添加事件，将指定手牌移入弃牌堆（DiscardDeckComponent），
-    并向角色注入弃牌上下文消息。弃牌不消耗能量、不推进行动顺序。
-
-    触发条件：
-    - 实体添加 DiscardCardsAction 组件
-    - 战斗序列处于进行中(ongoing)状态
-
-    执行流程：
-    1. 按对象身份从 HandComponent 中移除目标卡牌
-    2. 若卡牌来源为本角色（source == entity.name），归入 DiscardDeckComponent 并注入上下文消息
-       外来牌（PostArbitrationActionSystem 塞入，未通知角色）静默丢弃，不注入任何上下文
+    仅允许当前 turn 的行动者弃牌，且不消耗 energy、不推进行动顺序。
+    自有牌归入 DiscardDeckComponent 并注入上下文；外来牌静默丢弃。
     """
 
     def __init__(self, game: TCGGame) -> None:
@@ -89,7 +78,15 @@ class DiscardCardsActionSystem(ReactiveProcessor):
             current_rounds is not None
         ), "DiscardCardsActionSystem: current_rounds is None"
 
+        last_round = self._game.current_dungeon.latest_round
+        assert last_round is not None, "DiscardCardsActionSystem: latest_round is None"
+
         for entity in entities:
+            assert entity.name == self._game.get_current_turn_actor(last_round), (
+                f"DiscardCardsActionSystem: 弃牌角色 {entity.name} 不是当前 turn 的行动者！"
+                f" current_turn_actor={self._game.get_current_turn_actor(last_round)}"
+            )
+
             discard_action = entity.get(DiscardCardsAction)
             logger.debug(
                 f"  [{discard_action.name}] 弃牌 → 卡牌: {discard_action.card.name}"

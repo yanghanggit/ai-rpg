@@ -622,4 +622,18 @@ class TCGGame(RPGGame):
                 return actor_name
         return None
 
+    ###############################################################################################################################################
+    def advance_turn(self, round: Round) -> None:
+        """消耗 energy 后重新计算当前 turn 行动者，并写回 round.current_turn_actor_name。
+
+        在每次出牌或过牌消耗 energy 之后调用，保持 Round 模型中 current_turn_actor_name 的最新状态。
+
+        Args:
+            round: 当前战斗回合
+        """
+        round.current_turn_actor_name = self.get_current_turn_actor(round)
+        logger.debug(
+            f"advance_turn: current_turn_actor_name updated to {round.current_turn_actor_name}"
+        )
+
     ################################################################################################################

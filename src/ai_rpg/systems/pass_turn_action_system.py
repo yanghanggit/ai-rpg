@@ -108,9 +108,7 @@ class PassTurnActionSystem(ReactiveProcessor):
                 round_stats.block,
             )
 
-            last_round.current_turn_actor_name = self._game.get_current_turn_actor(
-                last_round
-            )
+            self._game.advance_turn(last_round)
 
             logger.debug(
                 f"  completed_actors: {last_round.completed_actors} / "

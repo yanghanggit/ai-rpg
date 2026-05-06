@@ -160,9 +160,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             )
 
             # 更新当前行动者（能量消耗后重新计算）
-            last_round.current_turn_actor_name = self._game.get_current_turn_actor(
-                last_round
-            )
+            self._game.advance_turn(last_round)
 
             logger.debug(
                 f"  completed_actors: {last_round.completed_actors} / current_turn_actor_name={last_round.current_turn_actor_name}"

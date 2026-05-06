@@ -2,12 +2,9 @@
 
 from typing import List, final
 from ..entitas.components import Component, MutableComponent
-from .cards import Card, StatusEffect
-from .entities import (
-    AnyItem,
-    Keyword,
-    CharacterStats,
-)
+from .cards import Card, Keyword, StatusEffect
+from .items import AnyItem
+from .stats import CharacterStats
 from .registry import register_component_type
 
 

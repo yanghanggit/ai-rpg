@@ -1,10 +1,10 @@
 """卡牌与状态效果模型定义
 
 包含战斗中使用的状态效果（StatusEffect）与卡牌（Card）相关核心模型：
-StatusEffectPhase、StatusEffect、CardTargetType、Card。
+StatusEffectPhase、StatusEffect、CardTargetType、Card、DiceValue、Keyword。
 """
 
-from enum import StrEnum, unique
+from enum import IntEnum, StrEnum, unique
 from typing import List, final
 from uuid import uuid4
 from pydantic import BaseModel, Field
@@ -96,6 +96,31 @@ class Card(BaseModel):
     )  # 出牌目标类型，决定目标约束策略
     source: str = ""  # 卡牌来源（生成/注入者名称）；空字符串表示来源未知
     uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
+
+
+###############################################################################################################################################
+@final
+@unique
+class DiceValue(IntEnum):
+    """骰值范围常量（0-100 均匀随机整数）"""
+
+    MIN = 0
+    MAX = 100
+
+
+###############################################################################################################################################
+@final
+class Keyword(BaseModel):
+    """卡牌关键词，定义角色生成卡牌时遵循的风格与功能约束。
+
+    通过自然语言描述约束规则，LLM 在生成卡牌时据此限制生成边界。
+    空列表表示无约束，角色可自由生成任意风格的卡牌。
+
+    Attributes:
+        description: 约束规则的自然语言描述
+    """
+
+    description: str
 
 
 ###############################################################################################################################################

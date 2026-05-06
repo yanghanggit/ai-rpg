@@ -8,8 +8,10 @@ from .combat import *
 from .components import *
 from .dungeon import *
 from .entities import *
+from .items import *
 from .messages import *
 from .registry import *
 from .serialization import *
+from .stats import *
 from .task import *
 from .world import *

@@ -5,7 +5,8 @@
 
 from typing import Optional
 from .components import CharacterStatsComponent, EquipmentComponent, InventoryComponent
-from .entities import CharacterStats, WeaponItem, EquipmentItem
+from .items import WeaponItem, EquipmentItem
+from .stats import CharacterStats
 
 
 def compute_stats_with_equipment(

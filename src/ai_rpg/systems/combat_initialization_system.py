@@ -20,7 +20,7 @@ from ..models import (
     AppearanceComponent,
     StatusEffectsComponent,
 )
-from ..models.entities import CharacterStats
+from ..models import CharacterStats
 
 
 ###################################################################################################################################################################

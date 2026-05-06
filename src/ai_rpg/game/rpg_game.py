@@ -1,5 +1,3 @@
-import copy
-import uuid
 from typing import Any, Dict, Final, List, Sequence, Set
 from ..models.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from loguru import logger
@@ -9,33 +7,9 @@ from .game_session import GameSession
 from .rpg_entity_manager import RPGEntityManager
 from .rpg_game_pipeline_manager import RPGGamePipelineManager
 from ..models import (
-    Actor,
-    ActorComponent,
-    ActorType,
     AgentEventUnion,
     AgentContext,
-    AppearanceComponent,
-    COMPONENT_TYPES,
-    DungeonComponent,
-    AllyComponent,
-    HomeComponent,
-    EnemyComponent,
-    PlayerComponent,
-    CharacterStatsComponent,
-    IdentityComponent,
-    Stage,
-    StageComponent,
-    StageType,
     World,
-    WorldSystem,
-    WorldComponent,
-    InventoryComponent,
-    PlayerOnlyStageComponent,
-    ExpeditionRosterComponent,
-    EquipmentComponent,
-    EquipmentItem,
-    EquipmentType,
-    WeaponItem,
 )
 from .player_session import PlayerSession
 
@@ -103,85 +77,16 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
     ###############################################################################################################################################
     @override
     def exit(self) -> None:
+        logger.debug("Exiting game, performing cleanup...")
         # 关闭所有管道
         self.shutdown_pipelines()
 
     ###############################################################################################################################################
     @override
     async def initialize(self) -> None:
+        logger.debug("Initializing game, setting up pipelines and world state...")
         # 初始化所有管道
         await self.initialize_pipelines()
-
-    ###############################################################################################################################################
-    def build_from_blueprint(self) -> "RPGGame":
-        """创建并初始化新游戏世界，包括世界系统、角色和场景
-
-        Returns:
-            返回自身实例，支持链式调用
-        """
-        assert (
-            len(self._world.entities_serialization) == 0
-        ), "游戏中有实体，不能创建新的游戏"
-        if len(self._world.entities_serialization) > 0:
-            logger.warning(
-                f"游戏中有实体，不能创建新的游戏，entities_serialization = {self._world.entities_serialization}"
-            )
-            return self
-
-        ## 第1步，创建world_system
-        self._create_world_entities(self._world.blueprint.world_systems)
-
-        ## 第2步，创建actor
-        self._create_actor_entities(self._world.blueprint.actors)
-
-        ## 第3步，创建stage
-        self._create_stage_entities(self._world.blueprint.stages)
-
-        ## 第4步，分配玩家控制的actor
-        assert self._player_session.name != "", "玩家名字不能为空"
-        assert self._player_session.actor != "", "玩家角色不能为空"
-        player_actor_entity = self.get_actor_entity(self._player_session.actor)
-        assert (
-            player_actor_entity is not None
-        ), f"找不到玩家角色实体: {self._player_session.actor}"
-
-        # 玩家角色实体必须没有 PlayerComponent，确保之前没有被分配过玩家控制
-        assert not player_actor_entity.has(PlayerComponent)
-        player_actor_entity.replace(PlayerComponent, self._player_session.name)
-        logger.info(
-            f"玩家: {self._player_session.name} 选择控制: {self._player_session.actor}"
-        )
-
-        ## 第5步，标记仅玩家可见的场景
-        assert (
-            self._world.blueprint.player_only_stage != ""
-        ), "player_only_stage 不能为空"
-        player_only_stage_entity = self.get_stage_entity(
-            self._world.blueprint.player_only_stage
-        )
-        assert player_only_stage_entity is not None, "player_only_stage_entity is None"
-        assert not player_only_stage_entity.has(PlayerOnlyStageComponent)
-
-        # 添加 PlayerOnlyStageComponent 组件，并设置 name 属性为场景实体的名字，方便后续识别和访问控制
-        player_only_stage_entity.replace(
-            PlayerOnlyStageComponent, player_only_stage_entity.name
-        )
-        logger.debug(f"场景: {player_only_stage_entity.name} 已标记为仅玩家可见")
-
-        ## 第6步，添加 ExpeditionRosterComponent 到玩家角色实体
-        assert not player_actor_entity.has(
-            ExpeditionRosterComponent
-        ), "玩家角色实体不应该已经有 ExpeditionRosterComponent"
-
-        # 添加 ExpeditionRosterComponent 组件，并设置 name 属性为角色实体的名字，方便后续识别和管理玩家的远征队伍
-        player_actor_entity.replace(
-            ExpeditionRosterComponent, player_actor_entity.name, []
-        )
-        logger.debug(
-            f"为玩家角色实体 {player_actor_entity.name} 添加 ExpeditionRosterComponent"
-        )
-
-        return self
 
     ###############################################################################################################################################
     def restore_from_snapshot(self) -> "RPGGame":
@@ -216,244 +121,6 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         return self
 
     ###############################################################################################################################################
-    def _create_world_entities(
-        self,
-        world_system_models: List[WorldSystem],
-    ) -> List[Entity]:
-        """创建世界系统实体（全局规则管理器、叙事者）
-
-        Args:
-            world_system_models: 世界系统模型列表
-
-        Returns:
-            创建完成的世界系统实体列表
-        """
-        world_entities: List[Entity] = []
-
-        for world_system_model in world_system_models:
-
-            # 创建实体
-            world_system_entity = self._create_entity(world_system_model.name)
-            assert (
-                world_system_entity is not None
-            ), f"创建world_system_entity失败: {world_system_model.name}"
-
-            # 必要组件：identifier
-            self._world.entity_counter += 1
-            world_system_entity.add(
-                IdentityComponent,
-                world_system_model.name,
-                self._world.entity_counter,
-                str(uuid.uuid4()),
-            )
-
-            # 必要组件：身份类型标记-世界系统
-            world_system_entity.add(WorldComponent, world_system_model.name)
-
-            # 添加系统消息
-            assert (
-                world_system_model.name in world_system_model.system_message
-            ), f"world_system_model.system_message 缺少 {world_system_model.name} 的系统消息"
-            self.add_system_message(
-                world_system_entity, world_system_model.system_message
-            )
-
-            # 特殊组件，根据 world_system_model.components 数据驱动动态添加
-            for comp_serialization in world_system_model.components:
-                comp_class = COMPONENT_TYPES.get(comp_serialization.name)
-                assert (
-                    comp_class is not None
-                ), f"未知组件类型: {comp_serialization.name}"
-                restore_comp = comp_class(**comp_serialization.data)
-                logger.debug(
-                    f"为 WorldSystem 实体 {world_system_entity.name} 添加 {comp_serialization.name}"
-                )
-                world_system_entity.set(comp_class, restore_comp)
-
-            # 添加到返回值
-            world_entities.append(world_system_entity)
-
-        return world_entities
-
-    ###############################################################################################################################################
-    def _create_actor_entities(self, actor_models: List[Actor]) -> List[Entity]:
-        """创建角色实体（玩家、NPC、敌人），初始化所有组件
-
-        Args:
-            actor_models: 角色模型列表
-
-        Returns:
-            创建完成的角色实体列表
-        """
-        actor_entities: List[Entity] = []
-
-        for actor_model in actor_models:
-
-            # 创建实体
-            actor_entity = self._create_entity(actor_model.name)
-            assert actor_entity is not None, f"创建actor_entity失败: {actor_model.name}"
-
-            # 必要组件：identifier
-            self._world.entity_counter += 1
-            actor_entity.add(
-                IdentityComponent,
-                actor_model.name,
-                self._world.entity_counter,
-                str(uuid.uuid4()),
-            )
-
-            # 必要组件：身份类型标记-角色Actor
-            actor_entity.add(
-                ActorComponent, actor_model.name, actor_model.character_sheet.name, ""
-            )
-
-            # 必要组件：系统消息
-            assert (
-                actor_model.name in actor_model.system_message
-            ), f"actor_model.system_message 缺少 {actor_model.name} 的系统消息"
-            self.add_system_message(actor_entity, actor_model.system_message)
-
-            # 必要组件：外观
-            assert (
-                actor_model.character_sheet.base_body != ""
-            ), f"actor_model.character_sheet.base_body 不能为空: {actor_model.name}"
-            actor_entity.add(
-                AppearanceComponent,
-                actor_model.name,
-                actor_model.character_sheet.base_body,
-                "",  # appearance 初始为空，由 ActorAppearanceUpdateSystem 填充
-            )
-
-            # 必要组件：基础属性，这里用浅拷贝，不能动原有的。
-            actor_entity.add(
-                CharacterStatsComponent,
-                actor_model.name,
-                copy.copy(actor_model.character_stats),
-            )
-
-            # 必要组件：类型标记
-            match actor_model.character_sheet.type:
-                case ActorType.ALLY:
-                    actor_entity.add(AllyComponent, actor_model.name)
-                case ActorType.ENEMY:
-                    actor_entity.add(EnemyComponent, actor_model.name)
-                case _:
-                    assert (
-                        False
-                    ), f"未知的 ActorType: {actor_model.character_sheet.type}"
-
-            # 必要组件：背包组件, 必须copy一份, 不要进行直接引用，而且在此处生成uuid
-            copy_items = copy.deepcopy(actor_model.items)
-            for item in copy_items:
-                item.uuid = str(uuid.uuid4())  # 始终在实体创建时分配新 uuid
-                logger.debug(
-                    f"为角色 {actor_model.name} 的物品 {item.name} 生成 uuid: {item.uuid}"
-                )
-
-            actor_entity.add(
-                InventoryComponent,
-                actor_model.name,
-                copy_items,
-            )
-
-            # 必要组件：装备组件，从背包中取各槽位第一个匹配物品作为初始装备
-            init_weapon = next(
-                (item.name for item in copy_items if isinstance(item, WeaponItem)), ""
-            )
-            init_armor = next(
-                (
-                    item.name
-                    for item in copy_items
-                    if isinstance(item, EquipmentItem)
-                    and item.equipment_type == EquipmentType.ARMOR
-                ),
-                "",
-            )
-            init_accessory = next(
-                (
-                    item.name
-                    for item in copy_items
-                    if isinstance(item, EquipmentItem)
-                    and item.equipment_type == EquipmentType.ACCESSORY
-                ),
-                "",
-            )
-            actor_entity.add(
-                EquipmentComponent,
-                actor_model.name,
-                init_weapon,
-                init_armor,
-                init_accessory,
-            )
-
-            # 添加到返回值
-            actor_entities.append(actor_entity)
-
-        return actor_entities
-
-    ###############################################################################################################################################
-    def _create_stage_entities(self, stage_models: List[Stage]) -> List[Entity]:
-        """创建场景实体，并建立角色与场景的关联关系
-
-        Args:
-            stage_models: 场景模型列表
-
-        Returns:
-            创建完成的场景实体列表
-        """
-        stage_entities: List[Entity] = []
-
-        for stage_model in stage_models:
-
-            # 创建实体
-            stage_entity = self._create_entity(stage_model.name)
-            assert stage_entity is not None, f"创建stage_entity失败: {stage_model.name}"
-
-            # 必要组件: identifier
-            self._world.entity_counter += 1
-            stage_entity.add(
-                IdentityComponent,
-                stage_model.name,
-                self._world.entity_counter,
-                str(uuid.uuid4()),
-            )
-
-            # 必要组件: StageComponent，包含场景名称和场景配置文件名称（stage_profile.name），方便后续访问和识别
-            stage_entity.add(
-                StageComponent, stage_model.name, stage_model.stage_profile.name
-            )
-
-            # 必要组件：系统消息
-            assert stage_model.name in stage_model.system_message
-            self.add_system_message(stage_entity, stage_model.system_message)
-
-            # 必要组件：类型
-            match stage_model.stage_profile.type:
-                case StageType.DUNGEON:
-                    stage_entity.add(DungeonComponent, stage_model.name)
-                case StageType.HOME:
-                    stage_entity.add(HomeComponent, stage_model.name)
-                case _:
-                    assert False, f"未知的 StageType: {stage_model.stage_profile.type}"
-
-            ## 重新设置Actor和stage的关系
-            for actor_model in stage_model.actors:
-                actor_entity = self.get_actor_entity(actor_model.name)
-                assert (
-                    actor_entity is not None
-                ), f"找不到actor_entity: {actor_model.name}"
-                actor_entity.replace(
-                    ActorComponent,
-                    actor_model.name,
-                    actor_model.character_sheet.name,
-                    stage_model.name,
-                )
-
-            stage_entities.append(stage_entity)
-
-        return stage_entities
-
-    ###############################################################################################################################################
     def add_system_message(self, entity: Entity, message_content: str) -> None:
         """添加系统消息到实体的LLM上下文，必须是第一条消息"""
         logger.info(
@@ -464,12 +131,6 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
             len(agent_context.context) == 0
         ), "system message should be the first message"
         agent_context.context.append(SystemMessage(content=message_content))
-
-    ###############################################################################################################################################
-    def increment_planning_turn(self) -> int:
-        """自增家园规划回合计数器并返回新值。"""
-        self._world.home_planning_turn_index += 1
-        return self._world.home_planning_turn_index
 
     ###############################################################################################################################################
     def add_human_message(

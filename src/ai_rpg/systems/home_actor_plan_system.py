@@ -291,8 +291,11 @@ class HomeActorPlanSystem(ReactiveProcessor):
     @override
     async def react(self, entities: list[Entity]) -> None:
 
-        planning_turn = self._game.increment_planning_turn()
+        # 进入家园角色行动规划阶段，首先自增全局规划回合计数器，生成提示词并调用 AI 获取决策。
+        self._game._world.home_planning_turn_index += 1
+        planning_turn = self._game._world.home_planning_turn_index
 
+        # 将玩家与 NPC 实体分开处理：玩家注入场景观察上下文，NPC 调用 LLM 进行行动规划。
         player_entities = [e for e in entities if e.has(PlayerComponent)]
         npc_entities = [e for e in entities if not e.has(PlayerComponent)]
 

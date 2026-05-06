@@ -14,6 +14,8 @@ from ..models import (
     DungeonCombatPlayCardsResponse,
     DungeonCombatDiscardCardsRequest,
     DungeonCombatDiscardCardsResponse,
+    DungeonCombatUseConsumableItemRequest,
+    DungeonCombatUseConsumableItemResponse,
     DungeonCombatResponse,
     DungeonCombatRetreatRequest,
     DungeonCombatRetreatResponse,
@@ -327,10 +329,33 @@ async def dungeon_combat_discard_cards(
         return DungeonCombatDiscardCardsResponse.model_validate(response.json())
 
 
+async def dungeon_combat_use_consumable_item(
+    user_name: str,
+    game_name: str,
+    actor_name: str,
+    item_name: str,
+    targets: list[str],
+) -> DungeonCombatUseConsumableItemResponse:
+    """让指定角色使用指定消耗品，返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            server_config.base_url + "/api/dungeon/combat/use_consumable_item/v1/",
+            json=DungeonCombatUseConsumableItemRequest(
+                user_name=user_name,
+                game_name=game_name,
+                actor_name=actor_name,
+                item_name=item_name,
+                targets=targets,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return DungeonCombatUseConsumableItemResponse.model_validate(response.json())
+
+
 async def home_generate_dungeon(
     user_name: str, game_name: str
 ) -> HomeGenerateDungeonResponse:
-    """触发地下城生成流程，返回后台任务ID。"""
+    """触发地下城生成流程，返回后台任务ID."""
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.post(
             server_config.base_url + "/api/home/generate_dungeon/v1/",

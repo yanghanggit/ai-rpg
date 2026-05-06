@@ -403,23 +403,23 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
 
             match selected_card.target_type:
                 case CardTargetType.ENEMY_ALL:
-                    # 自动填充所有存活的远征队成员（对怪物来说"敌方"= ExpeditionMember）
+                    # 自动填充所有存活的远征队成员（对怪物来说"敌方"= PartyMember）
                     valid_targets = [
                         a.name for a in alive_actors if a.has(PartyMemberComponent)
                     ]
                 case CardTargetType.ENEMY_RANDOM_MULTI:
-                    # 每段独立随机命中一名存活远征队成员（对怪物来说"敌方"= ExpeditionMember）
-                    expedition_members = [
+                    # 每段独立随机命中一名存活远征队成员（对怪物来说"敌方"= PartyMember）
+                    party_members = [
                         a for a in alive_actors if a.has(PartyMemberComponent)
                     ]
                     valid_targets = (
                         [
                             e.name
                             for e in random.choices(
-                                expedition_members, k=selected_card.hit_count
+                                party_members, k=selected_card.hit_count
                             )
                         ]
-                        if expedition_members
+                        if party_members
                         else []
                     )
                 case CardTargetType.SELF_ONLY:

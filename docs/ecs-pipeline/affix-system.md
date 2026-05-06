@@ -39,6 +39,6 @@
 
 ## 开发期 mock 的边界
 
-`_mock_inject_sealed_affix_context` 只是端到端验证路径畅通的临时手段：Round 1 时向所有 `ExpeditionMemberComponent` 注入封印词条文本示例，引导 LLM 在某张牌的 `affixes` 中填入该词条；后续出牌时守卫即可触发。
+`_mock_inject_sealed_affix_context` 只是端到端验证路径畅通的临时手段：Round 1 时向所有 `PartyMemberComponent` 注入封印词条文本示例，引导 LLM 在某张牌的 `affixes` 中填入该词条；后续出牌时守卫即可触发。
 
 正式的词条触发机制（装备赋能、场景效果、职业技能）都应通过游戏事件向 agent context 注入词条说明，驱动 LLM 在合适时机写入 `affixes`；系统侧无需为不同触发来源做任何分支。

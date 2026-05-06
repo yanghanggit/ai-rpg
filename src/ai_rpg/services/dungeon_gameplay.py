@@ -44,7 +44,7 @@ from .dungeon_actions import (
     activate_discard_cards_specified,
     activate_pass_turn,
     activate_monster_play_trigger,
-    activate_expedition_retreat,
+    activate_retreat,
 )
 from ..game.game_server import GameServer
 
@@ -173,7 +173,7 @@ async def dungeon_combat_retreat(
             )
 
         # 同步激活撤退动作（必须在 pipeline 执行前完成）
-        success, message = activate_expedition_retreat(rpg_game)
+        success, message = activate_retreat(rpg_game)
         if not success:
             logger.error(f"玩家 {payload.user_name} 撤退失败: {message}")
             raise HTTPException(
@@ -781,7 +781,7 @@ async def _execute_retreat_task(
     在后台异步执行撤退战斗流程，让 RetreatActionSystem 标记死亡，CombatOutcomeSystem 判定失败，
     最终进入 post_combat 状态。退出地下城统一由 /api/dungeon/exit/v1/ 接口处理。
 
-    注意：activate_expedition_retreat 已在 HTTP handler 锁内执行完毕，此处只负责 pipeline 执行。
+    注意：activate_retreat 已在 HTTP handler 锁内执行完毕，此处只负责 pipeline 执行。
 
     Args:
         task_id: 任务唯一标识符

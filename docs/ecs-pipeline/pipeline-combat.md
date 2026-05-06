@@ -103,7 +103,7 @@
 
 **`_mock_inject_sealed_affix_context`（开发期 mock）**：
 
-Round 1 时，系统向所有 `ExpeditionMemberComponent` 实体注入一条 human message，包含封印词条的文本示例（`"封印：不可被出牌，也不可被弃牌"`），引导 LLM 在某张牌的 `affixes` 字段填入该词条。
+Round 1 时，系统向所有 `PartyMemberComponent` 实体注入一条 human message，包含封印词条的文本示例（`"封印：不可被出牌，也不可被弃牌"`），引导 LLM 在某张牌的 `affixes` 字段填入该词条。
 这是**开发期验证 mock**，用于端到端测试词条路径是否畅通，不代表正式的词条触发机制。
 详细设计：[[affix-system]]
 

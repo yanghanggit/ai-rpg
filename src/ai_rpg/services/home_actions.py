@@ -203,7 +203,7 @@ def activate_stage_plan(tcg_game: TCGGame) -> Tuple[bool, str]:
 
 
 ###################################################################################################################################################################
-def add_expedition_member(tcg_game: TCGGame, member_name: str) -> Tuple[bool, str]:
+def add_party_member(tcg_game: TCGGame, member_name: str) -> Tuple[bool, str]:
     """
     将盟友加入远征队名单。
 
@@ -255,7 +255,7 @@ def add_expedition_member(tcg_game: TCGGame, member_name: str) -> Tuple[bool, st
 
 
 ###################################################################################################################################################################
-def remove_expedition_member(tcg_game: TCGGame, member_name: str) -> Tuple[bool, str]:
+def remove_party_member(tcg_game: TCGGame, member_name: str) -> Tuple[bool, str]:
     """
     将盟友从远征队名单中移除。
 
@@ -291,7 +291,7 @@ def remove_expedition_member(tcg_game: TCGGame, member_name: str) -> Tuple[bool,
 
 
 ###################################################################################################################################################################
-def get_expedition_roster(tcg_game: TCGGame) -> List[str]:
+def get_party_roster(tcg_game: TCGGame) -> List[str]:
     """
     查阅当前远征队名单（不含玩家自身）。
 

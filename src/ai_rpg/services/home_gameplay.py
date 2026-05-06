@@ -19,8 +19,8 @@ from .home_actions import (
     activate_equip_item,
     activate_stage_plan,
     activate_generate_dungeon,
-    add_expedition_member,
-    remove_expedition_member,
+    add_party_member,
+    remove_party_member,
 )
 from .dungeon_lifecycle import (
     setup_dungeon,
@@ -427,7 +427,7 @@ async def home_generate_dungeon(
 @home_gameplay_api_router.post(
     path="/api/home/roster/add/v1/", response_model=HomeRosterAddResponse
 )
-async def add_expedition_member_endpoint(
+async def add_party_member_endpoint(
     payload: HomeRosterAddRequest,
     game_server: CurrentGameServer,
 ) -> HomeRosterAddResponse:
@@ -439,7 +439,7 @@ async def add_expedition_member_endpoint(
         )
     async with current_room._lock:
         tcg_game = await _validate_player_at_home(payload.user_name, game_server)
-        success, error_detail = add_expedition_member(tcg_game, payload.member_name)
+        success, error_detail = add_party_member(tcg_game, payload.member_name)
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -454,7 +454,7 @@ async def add_expedition_member_endpoint(
 @home_gameplay_api_router.post(
     path="/api/home/roster/remove/v1/", response_model=HomeRosterRemoveResponse
 )
-async def remove_expedition_member_endpoint(
+async def remove_party_member_endpoint(
     payload: HomeRosterRemoveRequest,
     game_server: CurrentGameServer,
 ) -> HomeRosterRemoveResponse:
@@ -466,7 +466,7 @@ async def remove_expedition_member_endpoint(
         )
     async with current_room._lock:
         tcg_game = await _validate_player_at_home(payload.user_name, game_server)
-        success, error_detail = remove_expedition_member(tcg_game, payload.member_name)
+        success, error_detail = remove_party_member(tcg_game, payload.member_name)
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

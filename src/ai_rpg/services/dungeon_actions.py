@@ -28,7 +28,7 @@ from ..entitas import Entity, Matcher
 
 
 ###################################################################################################################################################################
-def _get_alive_expedition_members_in_stage(
+def _get_alive_party_members_in_stage(
     anchor_entity: Entity, tcg_game: TCGGame
 ) -> List[Entity]:
     """获取锚点实体所在场景中所有存活的远征队成员
@@ -88,7 +88,7 @@ def activate_all_card_draws(
     player_entity = tcg_game.get_player_entity()
     assert player_entity is not None, "activate_all_card_draws: player_entity is None"
 
-    all_entities = _get_alive_expedition_members_in_stage(
+    all_entities = _get_alive_party_members_in_stage(
         player_entity, tcg_game
     ) + _get_alive_monsters_in_stage(player_entity, tcg_game)
 
@@ -129,7 +129,7 @@ def _resolve_targets(
         return (
             _get_alive_monsters_in_stage(actor_entity, tcg_game)
             if is_actor_ally
-            else _get_alive_expedition_members_in_stage(actor_entity, tcg_game)
+            else _get_alive_party_members_in_stage(actor_entity, tcg_game)
         )
 
     match card.target_type:
@@ -197,7 +197,7 @@ def _validate_play_turn(
         return None, f"找不到角色 {actor_name}"
 
     if not (entity.has(PartyMemberComponent) or entity.has(MonsterComponent)):
-        return None, f"角色 {actor_name} 不是战斗角色（非 ExpeditionMember 或 Monster）"
+        return None, f"角色 {actor_name} 不是战斗角色（非 PartyMember 或 Monster）"
 
     if entity.has(DeathComponent):
         return None, f"角色 {actor_name} 已死亡，无法出牌"
@@ -355,7 +355,7 @@ def activate_monster_play_trigger(
 
 
 ###################################################################################################################################################################
-def activate_expedition_retreat(
+def activate_retreat(
     tcg_game: TCGGame,
 ) -> Tuple[bool, str]:
     """
@@ -364,7 +364,7 @@ def activate_expedition_retreat(
     为每个远征队成员添加 RetreatAction 组件，由 RetreatActionSystem 响应处理。
     要求当前处于战斗进行中（is_ongoing）状态。
 
-    这是符合 ECS 响应式架构的新实现方式，替代直接操作的 mark_expedition_retreat。
+    这是符合 ECS 响应式架构的新实现方式，替代直接操作的 mark_retreat。
     撤退处理流程：
     1. 本函数添加 RetreatAction 组件
     2. RetreatActionSystem 响应并标记死亡、添加叙事消息
@@ -382,30 +382,30 @@ def activate_expedition_retreat(
         logger.error(error_msg)
         return False, error_msg
 
-    expedition_member_entities = tcg_game.get_group(
+    party_member_entities = tcg_game.get_group(
         Matcher(all_of=[PartyMemberComponent])
     ).entities
 
-    if len(expedition_member_entities) == 0:
+    if len(party_member_entities) == 0:
         error_msg = "激活撤退动作失败: 没有找到远征队成员"
         logger.error(error_msg)
         return False, error_msg
 
     # 为每个远征队成员添加撤退动作组件
-    for expedition_member_entity in expedition_member_entities:
-        assert expedition_member_entity.has(
+    for party_member_entity in party_member_entities:
+        assert party_member_entity.has(
             PartyMemberComponent
-        ), f"Entity {expedition_member_entity.name} must have PartyMemberComponent"
+        ), f"Entity {party_member_entity.name} must have PartyMemberComponent"
 
-        expedition_member_entity.replace(
+        party_member_entity.replace(
             RetreatAction,
-            expedition_member_entity.name,
+            party_member_entity.name,
         )
-        logger.debug(f"为角色 {expedition_member_entity.name} 添加撤退动作组件")
+        logger.debug(f"为角色 {party_member_entity.name} 添加撤退动作组件")
 
     return (
         True,
-        f"成功为 {len(expedition_member_entities)} 个远征队成员激活撤退动作",
+        f"成功为 {len(party_member_entities)} 个远征队成员激活撤退动作",
     )
 
 

@@ -184,9 +184,9 @@ from agent_game_actions import (
     next_dungeon_game,
     retreat_game,
     generate_dungeon_game,
-    add_expedition_member_game,
-    remove_expedition_member_game,
-    get_expedition_roster_game,
+    add_party_member_game,
+    remove_party_member_game,
+    get_party_roster_game,
 )
 
 ###########################################################################################################################################
@@ -813,7 +813,7 @@ def roster_add(snapshot: str, member: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(add_expedition_member_game(world, player_session, member, _save_dir))
+    asyncio.run(add_party_member_game(world, player_session, member, _save_dir))
 
 
 ###############################################################################################################################################
@@ -853,7 +853,7 @@ def roster_remove(snapshot: str, member: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(remove_expedition_member_game(world, player_session, member, _save_dir))
+    asyncio.run(remove_party_member_game(world, player_session, member, _save_dir))
 
 
 ###############################################################################################################################################
@@ -885,7 +885,7 @@ def roster(snapshot: str) -> None:
     logger.info(f"本次运行日志文件：{_log_file}")
     logger.info(f"读取存档：{snapshot_path}")
 
-    members = asyncio.run(get_expedition_roster_game(world, player_session))
+    members = asyncio.run(get_party_roster_game(world, player_session))
     if members:
         click.echo("\n远征队当前名单：")
         for m in members:

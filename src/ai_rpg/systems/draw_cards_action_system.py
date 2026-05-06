@@ -245,7 +245,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def _get_max_num_cards(self, actor: Entity) -> int:
-        """返回角色本回合应持有的手牌上限（ExpeditionMember=3，Monster=1）。"""
+        """返回角色本回合应持有的手牌上限（PartyMember=3，Monster=1）。"""
         if actor.has(PartyMemberComponent):
             return 3
         if actor.has(MonsterComponent):

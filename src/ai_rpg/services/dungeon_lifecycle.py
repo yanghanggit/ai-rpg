@@ -65,7 +65,7 @@ def _generate_return_home_message(
 
 
 ###################################################################################################################################################################
-def _select_expedition_members(tcg_game: TCGGame, dungeon: Dungeon) -> Set[Entity]:
+def _select_party_members(tcg_game: TCGGame, dungeon: Dungeon) -> Set[Entity]:
     """选择参与地下城远征的队伍成员
 
     依据玩家实体上的 PartyRosterComponent 决定队伍构成，规则：
@@ -87,42 +87,38 @@ def _select_expedition_members(tcg_game: TCGGame, dungeon: Dungeon) -> Set[Entit
     assert player_entity.has(
         PartyRosterComponent
     ), "玩家实体缺少 PartyRosterComponent 组件！"
-    expedition_roster_comp = player_entity.get(PartyRosterComponent)
-    assert (
-        expedition_roster_comp is not None
-    ), "玩家实体缺少 PartyRosterComponent 组件！"
+    party_roster_comp = player_entity.get(PartyRosterComponent)
+    assert party_roster_comp is not None, "玩家实体缺少 PartyRosterComponent 组件！"
 
     # 2. 根据名单选择远征队成员，默认仅玩家自己参与
-    expedition_members: Set[Entity] = {player_entity}
+    party_members: Set[Entity] = {player_entity}
     logger.info(f"玩家 {player_entity.name} 将参与远征")
-    for member_name in expedition_roster_comp.members:
+    for member_name in party_roster_comp.members:
         member_entity = tcg_game.get_actor_entity(member_name)
         assert member_entity is not None, f"远征队名单中的成员 {member_name!r} 不存在！"
-        expedition_members.add(member_entity)
+        party_members.add(member_entity)
         logger.info(f"按名单将 {member_name} 加入远征队")
 
     # 打印最终选定的远征队成员名单
     logger.info(
-        f"最终远征队成员 ({len(expedition_members)}): {[e.name for e in expedition_members]}"
+        f"最终远征队成员 ({len(party_members)}): {[e.name for e in party_members]}"
     )
 
     # 3. 为所有选中成员挂载 PartyMemberComponent
-    for expedition_ally in expedition_members:
-        expedition_ally.replace(
+    for party_member in party_members:
+        party_member.replace(
             PartyMemberComponent,
-            expedition_ally.name,
+            party_member.name,
             dungeon.name,
         )
-        logger.debug(
-            f"将 {expedition_ally.name} 加入远征队，目标地下城：{dungeon.name}"
-        )
+        logger.debug(f"将 {party_member.name} 加入远征队，目标地下城：{dungeon.name}")
 
-    return expedition_members
+    return party_members
 
 
 ###################################################################################################################################################################
 def _enter_dungeon_stage(
-    tcg_game: TCGGame, dungeon: Dungeon, expedition_entities: Set[Entity]
+    tcg_game: TCGGame, dungeon: Dungeon, party_member_entities: Set[Entity]
 ) -> bool:
     """
     进入地下城关卡并初始化战斗环境
@@ -132,13 +128,13 @@ def _enter_dungeon_stage(
     Args:
         tcg_game: TCG游戏实例
         dungeon: 地下城实例
-        expedition_entities: 远征队成员实体集合
+        party_member_entities: 远征队成员实体集合
 
     Returns:
         bool: 是否成功进入关卡
     """
     # 验证远征队非空
-    if len(expedition_entities) == 0:
+    if len(party_member_entities) == 0:
         logger.error("没有远征队成员不能进入地下城!")
         return False
 
@@ -161,38 +157,38 @@ def _enter_dungeon_stage(
         dungeon.current_room_index == 0,
     )
 
-    for expedition_member in expedition_entities:
+    for party_member in party_member_entities:
         # 添加上下文！
         # 根据是否为首次进入，设置不同的生命周期标记
         if dungeon.current_room_index == 0:
             # 首次进入：仅地下城名称
             tcg_game.add_human_message(
-                expedition_member, trans_message, dungeon_lifecycle_entry=dungeon.name
+                party_member, trans_message, dungeon_lifecycle_entry=dungeon.name
             )
 
         else:
 
             # 关卡推进：地下城名称:关卡名称
             tcg_game.add_human_message(
-                expedition_member,
+                party_member,
                 trans_message,
                 dungeon_lifecycle_stage_advance=f"{dungeon.name}:{stage_entity.name}",
             )
 
-        if expedition_member.has(DeathComponent):
+        if party_member.has(DeathComponent):
 
-            logger.info(f"移除死亡组件: {expedition_member.name}")
-            expedition_member.remove(DeathComponent)
+            logger.info(f"移除死亡组件: {party_member.name}")
+            party_member.remove(DeathComponent)
 
             # 恢复生命值1
-            revived_stats = tcg_game.set_character_hp(expedition_member, 1)
-            # revived_stats = tcg_game.compute_character_stats(expedition_member)
+            revived_stats = tcg_game.set_character_hp(party_member, 1)
+            # revived_stats = tcg_game.compute_character_stats(party_member)
             logger.info(
-                f"恢复生命值: {expedition_member.name} 生命值 = {revived_stats.hp}/{revived_stats.max_hp}"
+                f"恢复生命值: {party_member.name} 生命值 = {revived_stats.hp}/{revived_stats.max_hp}"
             )
 
     # 4. 执行场景传送
-    stage_transition(tcg_game, expedition_entities, stage_entity)
+    stage_transition(tcg_game, party_member_entities, stage_entity)
 
     # 6. 初始化战斗状态
     dungeon.start_combat(Combat(name=stage_entity.name))
@@ -294,22 +290,20 @@ def enter_dungeon_first_stage(tcg_game: TCGGame, dungeon: Dungeon) -> tuple[bool
         return False, error_msg
 
     # 确保全局不存在远征队成员（无人正在参与远征）
-    expedition_members = tcg_game.get_group(
-        Matcher(all_of=[PartyMemberComponent])
-    ).entities
-    assert len(expedition_members) == 0, (
+    party_members = tcg_game.get_group(Matcher(all_of=[PartyMemberComponent])).entities
+    assert len(party_members) == 0, (
         f"enter_dungeon_first_stage: 进入前必须无远征队成员，"
-        f"当前存在 {len(expedition_members)} 个"
+        f"当前存在 {len(party_members)} 个"
     )
 
     # 推进索引（-1 → 0），_enter_dungeon_stage 依赖此值判断首次进入消息
     dungeon.current_room_index = 0
 
     # 选择远征队成员（玩家 + 最多1个随机盟友）
-    expedition_member_entities = _select_expedition_members(tcg_game, dungeon)
+    party_member_entities = _select_party_members(tcg_game, dungeon)
 
     # 传送并初始化战斗
-    if not _enter_dungeon_stage(tcg_game, dungeon, expedition_member_entities):
+    if not _enter_dungeon_stage(tcg_game, dungeon, party_member_entities):
         error_msg = f"enter_dungeon_first_stage 失败: 无法进入第一关 {dungeon.name}"
         logger.error(error_msg)
         return False, error_msg
@@ -349,13 +343,13 @@ def advance_to_next_stage(tcg_game: TCGGame, dungeon: Dungeon) -> None:
         return
 
     # 2. 获取所有远征队成员
-    expedition_entities = tcg_game.get_group(
+    party_member_entities = tcg_game.get_group(
         Matcher(all_of=[PartyMemberComponent])
     ).entities.copy()
-    assert len(expedition_entities) > 0, "没有找到远征队成员"
+    assert len(party_member_entities) > 0, "没有找到远征队成员"
 
     # 3. 进入下一关卡
-    enter = _enter_dungeon_stage(tcg_game, dungeon, expedition_entities)
+    enter = _enter_dungeon_stage(tcg_game, dungeon, party_member_entities)
     assert enter, "进入下一关卡失败！"
 
 
@@ -391,14 +385,14 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
         return
 
     # 1. 验证并获取远征队成员
-    expedition_entities = tcg_game.get_group(
+    party_member_entities = tcg_game.get_group(
         Matcher(all_of=[PartyMemberComponent])
     ).entities.copy()
     logger.debug(
-        f"[return_home] 远征队成员({len(expedition_entities)}): "
-        f"{[e.name for e in expedition_entities]}"
+        f"[return_home] 远征队成员({len(party_member_entities)}): "
+        f"{[e.name for e in party_member_entities]}"
     )
-    assert len(expedition_entities) > 0, "没有找到远征队成员"
+    assert len(party_member_entities) > 0, "没有找到远征队成员"
 
     # 2-3. 获取并分类家园场景实体
     player_only_stages: Set[Entity] = tcg_game.get_group(
@@ -424,34 +418,34 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
         next(iter(regular_home_stages)) if regular_home_stages else None
     )
 
-    for expedition_entity in expedition_entities:
-        is_player = expedition_entity.has(PlayerComponent)
+    for party_member_entity in party_member_entities:
+        is_player = party_member_entity.has(PlayerComponent)
         dest_stage = player_only_stage if is_player else regular_home_stage
-        current_stage_entity = tcg_game.resolve_stage_entity(expedition_entity)
+        current_stage_entity = tcg_game.resolve_stage_entity(party_member_entity)
         current_stage_name = (
             current_stage_entity.name if current_stage_entity else "None"
         )
         logger.debug(
-            f"[return_home] 传送 {expedition_entity.name} | is_player={is_player} | "
+            f"[return_home] 传送 {party_member_entity.name} | is_player={is_player} | "
             f"当前场景={current_stage_name!r} → 目标场景={dest_stage.name if dest_stage else 'None'!r}"
         )
         if dest_stage is None:
             logger.warning(
-                f"盟友 {expedition_entity.name} 无普通家园场景可返回，跳过传送"
+                f"盟友 {party_member_entity.name} 无普通家园场景可返回，跳过传送"
             )
             continue
 
         tcg_game.add_human_message(
-            expedition_entity,
+            party_member_entity,
             _generate_return_home_message(dungeon.name, dest_stage.name),
             dungeon_lifecycle_completion=dungeon.name,
         )
-        stage_transition(tcg_game, {expedition_entity}, dest_stage)
+        stage_transition(tcg_game, {party_member_entity}, dest_stage)
 
-        after_stage_entity = tcg_game.resolve_stage_entity(expedition_entity)
+        after_stage_entity = tcg_game.resolve_stage_entity(party_member_entity)
         after_stage_name = after_stage_entity.name if after_stage_entity else "None"
         logger.debug(
-            f"[return_home] 传送后 {expedition_entity.name} 当前场景={after_stage_name!r}"
+            f"[return_home] 传送后 {party_member_entity.name} 当前场景={after_stage_name!r}"
         )
 
     # 5. 清理地下城数据
@@ -463,35 +457,35 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     logger.debug("[return_home] teardown_dungeon_entities 完成，dungeon 已重置")
 
     # 6. 恢复所有远征队成员的战斗状态
-    for expedition_entity in expedition_entities:
+    for party_member_entity in party_member_entities:
         # 移除死亡组件
-        if expedition_entity.has(DeathComponent):
-            logger.info(f"移除死亡组件: {expedition_entity.name}")
-            expedition_entity.remove(DeathComponent)
+        if party_member_entity.has(DeathComponent):
+            logger.info(f"移除死亡组件: {party_member_entity.name}")
+            party_member_entity.remove(DeathComponent)
 
         # 恢复生命值至满血
-        full_stats = tcg_game.compute_character_stats(expedition_entity)
-        tcg_game.set_character_hp(expedition_entity, full_stats.max_hp)
+        full_stats = tcg_game.compute_character_stats(party_member_entity)
+        tcg_game.set_character_hp(party_member_entity, full_stats.max_hp)
         logger.info(
-            f"恢复满血: {expedition_entity.name} 生命值 = {full_stats.max_hp}/{full_stats.max_hp}"
+            f"恢复满血: {party_member_entity.name} 生命值 = {full_stats.max_hp}/{full_stats.max_hp}"
         )
 
         # 清空所有状态效果（若存在）
-        if expedition_entity.has(StatusEffectsComponent):
-            combat_status_effects = expedition_entity.get(StatusEffectsComponent)
+        if party_member_entity.has(StatusEffectsComponent):
+            combat_status_effects = party_member_entity.get(StatusEffectsComponent)
             combat_status_effects.status_effects.clear()
-            logger.info(f"清空状态效果: {expedition_entity.name}")
+            logger.info(f"清空状态效果: {party_member_entity.name}")
 
         # 解散远征队，移除PartyMemberComponent组件
-        assert expedition_entity.has(PartyMemberComponent)
-        expedition_entity.remove(PartyMemberComponent)
-        logger.info(f"从远征队移除: {expedition_entity.name}")
+        assert party_member_entity.has(PartyMemberComponent)
+        party_member_entity.remove(PartyMemberComponent)
+        logger.info(f"从远征队移除: {party_member_entity.name}")
 
     # 7. 最终场景确认
-    for expedition_entity in expedition_entities:
-        final_stage = tcg_game.resolve_stage_entity(expedition_entity)
+    for party_member_entity in party_member_entities:
+        final_stage = tcg_game.resolve_stage_entity(party_member_entity)
         logger.debug(
-            f"[return_home] 最终确认 {expedition_entity.name} 场景={final_stage.name if final_stage else 'None'!r}"
+            f"[return_home] 最终确认 {party_member_entity.name} 场景={final_stage.name if final_stage else 'None'!r}"
         )
 
     # 7. 清除每回合可变状态（手牌与格挡）

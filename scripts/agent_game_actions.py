@@ -49,9 +49,9 @@ from ai_rpg.services.home_actions import (
     activate_switch_stage,
     activate_equip_item,
     activate_generate_dungeon,
-    add_expedition_member,
-    remove_expedition_member,
-    get_expedition_roster,
+    add_party_member,
+    remove_party_member,
+    get_party_roster,
 )
 from ai_rpg.services.dungeon_actions import (
     activate_all_card_draws,
@@ -59,7 +59,7 @@ from ai_rpg.services.dungeon_actions import (
     activate_discard_cards_specified,
     activate_pass_turn,
     activate_monster_play_trigger,
-    activate_expedition_retreat,
+    activate_retreat,
 )
 from ai_rpg.services.dungeon_lifecycle import (
     setup_dungeon,
@@ -738,7 +738,7 @@ async def retreat_game(
 ) -> TCGGame:
     """从存档复位，主动撤退（等同于终端命令 /rtt），并归档新状态。
 
-    调用 activate_expedition_retreat 激活撤退动作，驱动 combat_pipeline.execute()
+    调用 activate_retreat 激活撤退动作，驱动 combat_pipeline.execute()
     让 RetreatActionSystem 和 CombatOutcomeSystem 正常走一遍（标记死亡和战斗失败），
     再调用 exit_dungeon_and_return_home 返回家园。
     撤退后游戏回到【家园模式】，视为失败结算。
@@ -763,7 +763,7 @@ async def retreat_game(
         return terminal_game
 
     # 标记撤退意图并正常走一遍战斗流程，让 RetreatActionSystem 和 CombatOutcomeSystem 处理后续结算（失败）
-    success, message = activate_expedition_retreat(terminal_game)
+    success, message = activate_retreat(terminal_game)
     if not success:
         logger.error(f"撤退失败: {message}")
         return terminal_game
@@ -824,7 +824,7 @@ async def generate_dungeon_game(
 
 
 ###############################################################################
-async def add_expedition_member_game(
+async def add_party_member_game(
     world: World,
     player_session: PlayerSession,
     member_name: str,
@@ -845,7 +845,7 @@ async def add_expedition_member_game(
     """
     terminal_game = await _restore_game(world, player_session)
 
-    success, error_detail = add_expedition_member(terminal_game, member_name)
+    success, error_detail = add_party_member(terminal_game, member_name)
     if not success:
         logger.error(f"添加远征队成员失败: {error_detail}")
         return terminal_game
@@ -861,7 +861,7 @@ async def add_expedition_member_game(
 
 
 ###############################################################################
-async def remove_expedition_member_game(
+async def remove_party_member_game(
     world: World,
     player_session: PlayerSession,
     member_name: str,
@@ -882,7 +882,7 @@ async def remove_expedition_member_game(
     """
     terminal_game = await _restore_game(world, player_session)
 
-    success, error_detail = remove_expedition_member(terminal_game, member_name)
+    success, error_detail = remove_party_member(terminal_game, member_name)
     if not success:
         logger.error(f"移除远征队成员失败: {error_detail}")
         return terminal_game
@@ -898,7 +898,7 @@ async def remove_expedition_member_game(
 
 
 ###############################################################################
-async def get_expedition_roster_game(
+async def get_party_roster_game(
     world: World,
     player_session: PlayerSession,
 ) -> list[str]:
@@ -912,4 +912,4 @@ async def get_expedition_roster_game(
         远征队同伴名称列表（不含玩家自身）。
     """
     terminal_game = await _restore_game(world, player_session)
-    return get_expedition_roster(terminal_game)
+    return get_party_roster(terminal_game)

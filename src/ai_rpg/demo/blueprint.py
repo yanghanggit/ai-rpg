@@ -6,8 +6,10 @@
 from ..models import (
     Blueprint,
     CharacterStats,
+    ConsumableItem,
     EquipmentItem,
     EquipmentType,
+    TargetType,
     UniqueItem,
     WeaponItem,
 )
@@ -66,6 +68,26 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             stat_bonuses=CharacterStats(
                 hp=0, max_hp=0, attack=1, defense=1, energy=0, speed=0
             ),
+        ),
+        # 测试消耗品：覆盖 SELF_ONLY / ENEMY_SINGLE / ENEMY_ALL 三种目标类型
+        ConsumableItem(
+            name="裂口草药包",
+            description="几片晒干的草叶压在一小块粗布里，散发着轻微的苦涩气味。不知用途，但直觉告诉你可以往伤口上敷。使用后应能小量恢复生命值。",
+            count=2,
+            target_type=TargetType.SELF_ONLY,
+        ),
+        ConsumableItem(
+            name="沙蝎毒液瓶",
+            description="一个封口严密的小玻璃瓶，瓶内液体呈深黄色，偶尔能看到细小气泡浮起。标签已模糊，隐约能辨认出一个骷髅图案。向单个敌人投掷可造成毒性伤害。",
+            count=2,
+            target_type=TargetType.ENEMY_SINGLE,
+        ),
+        ConsumableItem(
+            name="烟雾弹",
+            description="一枚掌心大小的铁制圆罐，侧面有一根拔环。拉环后会喷出浓烈的白色烟雾，在短时间内遮蔽视野。对场上所有敌人造成眩晕或命中减益。",
+            effects=["[烟雾眩晕]:浓烈烟雾遮蔽视野，命中率大幅下降"],
+            count=1,
+            target_type=TargetType.ENEMY_ALL,
         ),
     ]
 

@@ -22,6 +22,7 @@ from ..models import (
     StatusEffectsComponent,
     StatusEffect,
     StatusEffectPhase,
+    AddStatusEffectsAction,
 )
 from ..utils import extract_json_from_code_block
 
@@ -47,6 +48,40 @@ class _UseConsumableArbitrationResponse(BaseModel):
     combat_log: str
     final_stats: Dict[str, _EntityFinalStats]
     narrative: str
+
+
+#######################################################################################################################################
+def _generate_consumable_task_hint(
+    actor_name: str,
+    action: UseConsumableItemAction,
+    entity_name: str,
+) -> str:
+    """生成消耗品仲裁结算后的 AddStatusEffectsAction task_hint。
+
+    与 ArbitrationActionSystem._generate_post_arbitration_task_hint 同语义，
+    区分使用者视角与目标视角，供 AddActorStatusEffectsActionSystem 使用。
+    """
+    item = action.item
+    actor_short_name = actor_name.split(".")[-1]
+    targets_str = "、".join(t.split(".")[-1] for t in action.targets) or "无"
+    effects_line = f"- 潜在词缀：{chr(10).join(item.effects)}" if item.effects else ""
+    item_info = f"- 消耗品：{item.name}（{item.description}）" + (
+        f"\n{effects_line}" if effects_line else ""
+    )
+
+    if entity_name == actor_name:
+        return (
+            f"消耗品使用结算完成。你本回合使用了：\n"
+            f"{item_info}\n"
+            f"- 作用目标：{targets_str}\n"
+            f"请根据以上使用结果，结合战斗上下文，评估是否追加状态效果。"
+        )
+    else:
+        return (
+            f"消耗品使用结算完成。你本回合被 {actor_short_name} 使用消耗品命中：\n"
+            f"{item_info}\n"
+            f"请根据以上情况，结合战斗上下文，评估是否追加状态效果。"
+        )
 
 
 #######################################################################################################################################
@@ -485,6 +520,10 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             latest_round.combat_log.append(response.combat_log)
             latest_round.narrative.append(response.narrative)
 
+            # 消耗品 effects 非空时，为使用者与所有目标触发状态效果评估
+            affected_names = list(response.final_stats.keys())
+            self._trigger_add_status_effects(actor_entity, action, affected_names)
+
         except Exception as e:
             logger.error(f"UseConsumableItemArbitrationSystem: 仲裁结算异常: {e}")
 
@@ -501,3 +540,37 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 logger.info(f"{entity.name} 已被击败，HP={entity_hp}")
                 self._game.add_human_message(entity, _generate_defeat_notification())
                 entity.replace(DeathComponent, entity.name)
+
+    #######################################################################################################################################
+    def _trigger_add_status_effects(
+        self,
+        actor_entity: Entity,
+        action: UseConsumableItemAction,
+        affected_entity_names: List[str],
+    ) -> None:
+        """消耗品仲裁结算后，为使用者与所有目标添加 AddStatusEffectsAction。
+
+        当 item.effects 为空时跳过，不触发后续 LLM 推理。
+        逻辑与 ArbitrationActionSystem._trigger_add_status_effects 对称。
+        """
+        if not action.item.effects:
+            logger.debug(
+                f"[{actor_entity.name}] 消耗品 effects 为空，跳过 AddStatusEffectsAction"
+            )
+            return
+
+        for entity_name in affected_entity_names:
+            entity = self._game.get_entity_by_name(entity_name)
+            assert entity is not None, f"无法找到实体: {entity_name}"
+
+            # 确保实体具有 StatusEffectsComponent，若无则注入空组件
+            if not entity.has(StatusEffectsComponent):
+                entity.replace(StatusEffectsComponent, entity_name, [])
+
+            task_hint = _generate_consumable_task_hint(
+                actor_name=actor_entity.name,
+                action=action,
+                entity_name=entity_name,
+            )
+            entity.replace(AddStatusEffectsAction, entity_name, task_hint)
+            logger.debug(f"[{entity_name}] 消耗品仲裁后添加 AddStatusEffectsAction")

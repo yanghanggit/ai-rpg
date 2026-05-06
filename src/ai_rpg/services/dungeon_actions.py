@@ -20,6 +20,7 @@ from ..models import (
     MonsterComponent,
     DeathComponent,
     RetreatAction,
+    MonsterTurnAction,
     Card,
     CardTargetType,
     HandComponent,
@@ -327,8 +328,9 @@ def activate_monster_play_trigger(
     触发指定怪物的出牌决策流程。仅适用于 MonsterComponent 角色。
     玩家出牌请使用 activate_play_cards_specified。
 
-    装入空卡占位触发 PlayCardsAction，MonsterPlayDecisionSystem 在 pipeline 中
-    自动选牌并将其替换为真实卡牌与目标。
+    同时设置两个组件：
+    - PlayCardsAction：空卡占位，MonsterPlayDecisionSystem 在 pipeline 中自动选牌并替换为真实卡牌与目标。
+    - MonsterTurnAction：明确标记这是怪物回合，MonsterPlayDecisionSystem 同时监听两者以触发决策。
 
     Args:
         tcg_game: TCG游戏实例
@@ -350,7 +352,13 @@ def activate_monster_play_trigger(
     logger.debug(
         f"为怪物 {actor_name} 触发出牌决策，由 MonsterPlayDecisionSystem 自动选牌"
     )
+
+    # 使用空卡占位，真正的卡牌和目标由 MonsterPlayDecisionSystem 在 pipeline 中自动替换
     entity.replace(PlayCardsAction, entity.name, Card(name="", description=""), [], "")
+
+    # 核心标记：添加 MonsterTurnAction 组件，触发 MonsterPlayDecisionSystem 的决策流程
+    entity.replace(MonsterTurnAction, entity.name)
+
     return True, f"成功为怪物 {actor_name} 触发出牌决策"
 
 

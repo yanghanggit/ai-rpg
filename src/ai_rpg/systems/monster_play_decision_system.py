@@ -7,6 +7,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     PlayCardsAction,
+    MonsterTurnAction,
     PassTurnAction,
     MonsterComponent,
     DeathComponent,
@@ -215,7 +216,10 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(PlayCardsAction): GroupEvent.ADDED}
+        return {
+            Matcher(PlayCardsAction): GroupEvent.ADDED,
+            Matcher(MonsterTurnAction): GroupEvent.ADDED,
+        }
 
     ####################################################################################################################################
     @override
@@ -223,6 +227,7 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
         """只处理怪物实体且未死亡的情况"""
         return (
             entity.has(PlayCardsAction)
+            and entity.has(MonsterTurnAction)
             and entity.has(HandComponent)
             and entity.has(MonsterComponent)
             and not entity.has(DeathComponent)

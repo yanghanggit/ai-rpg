@@ -165,6 +165,16 @@ class RetreatAction(Component):
 @final
 @register_action_component_type
 @register_component_type
+class MonsterTurnAction(Component):
+    """标记当前轮到指定怪物行动，触发 MonsterPlayDecisionSystem 进行出牌决策。"""
+
+    name: str
+
+
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
 class GenerateDungeonAction(Component):
     """触发地下城文本数据完整创建流程（生态→场景→怪物→组装），完成后自动触发图片生成。"""
 

@@ -95,19 +95,20 @@ COMBAT_ROOM_MENU: Final[
 [bold yellow]可用操作（输入编号执行）：[/]
 
 [bold cyan]── 战斗 ──────────────────────────────────────[/]
-  [bold green]1[/]  抽牌            按需初始化，再为全员抽牌
-  [bold green]2[/]  出牌            进入出牌界面完成本回合
-  [bold green]3[/]  弃牌            从手牌中弃置一张卡牌
-  [bold green]4[/]  使用消耗品      从背包中取出并使用一件消耗道具
+  [bold green]1[/]  战斗开始        执行战斗初始化（首次进入战斗时）
+  [bold green]2[/]  抽牌            为全员抽牌
+  [bold green]3[/]  出牌            进入出牌界面完成本回合
+  [bold green]4[/]  弃牌            从手牌中弃置一张卡牌
+  [bold green]5[/]  使用消耗品      从背包中取出并使用一件消耗道具
 
 [bold cyan]── 查看 ──────────────────────────────────────[/]
-  [bold green]5[/]  当前战斗状态    房间信息与角色属性
-  [bold green]6[/]  回合详情        行动顺序与出手记录
-  [bold green]7[/]  查阅牌组        本次地下城各角色历史牌组
+  [bold green]6[/]  当前战斗状态    房间信息与角色属性
+  [bold green]7[/]  回合详情        行动顺序与出手记录
+  [bold green]8[/]  查阅牌组        本次地下城各角色历史牌组
 
 [bold cyan]── 离场 ──────────────────────────────────────[/]
-  [bold green]8[/]  撤退            在战斗进行中撤退
-  [bold green]9[/]  退出战斗        战斗结束后返回游戏主场景
+  [bold green]9[/]   撤退            在战斗进行中撤退
+  [bold green]10[/]  退出战斗        战斗结束后返回游戏主场景
 
 [bold cyan]── 系统 ──────────────────────────────────────[/]
   [bold green]0[/]  显示此菜单
@@ -217,7 +218,7 @@ class CombatRoomScreen(Screen[None]):
 
     def action_suggest_exit(self) -> None:
         log = self.query_one(RichLog)
-        log.write("[yellow]请输入 8 退出战斗（战斗结束后），或 7 撤退（战斗中）。[/]")
+        log.write("[yellow]请输入 10 退出战斗（战斗结束后），或 9 撤退（战斗中）。[/]")
 
     @on(Input.Submitted, "#room-input")
     def handle_command(self, event: Input.Submitted) -> None:
@@ -278,30 +279,33 @@ class CombatRoomScreen(Screen[None]):
             pass  # 仅显示菜单，已经显示
 
         elif cmd == "1":
-            self._do_advance_combat()
+            self._do_combat_start()
 
         elif cmd == "2":
-            self._start_play_cards()
+            self._do_advance_combat()
 
         elif cmd == "3":
-            self._start_discard_card()
+            self._start_play_cards()
 
         elif cmd == "4":
-            self._start_use_consumable_item()
+            self._start_discard_card()
 
         elif cmd == "5":
-            self._fetch_status()
+            self._start_use_consumable_item()
 
         elif cmd == "6":
-            self.app.push_screen(RoundDetailScreen())
+            self._fetch_status()
 
         elif cmd == "7":
-            self.app.push_screen(DeckDetailScreen())
+            self.app.push_screen(RoundDetailScreen())
 
         elif cmd == "8":
-            self._do_combat_retreat()
+            self.app.push_screen(DeckDetailScreen())
 
         elif cmd == "9":
+            self._do_combat_retreat()
+
+        elif cmd == "10":
             self._do_exit()
 
         else:
@@ -411,8 +415,43 @@ class CombatRoomScreen(Screen[None]):
             log.write("[dim]（当前地下城暂无进行中的房间）[/]")
 
     @work
+    async def _do_combat_start(self) -> None:
+        """执行战斗初始化（cmd 1）：仅在 INITIALIZATION 阶段有效。"""
+        log = self.query_one(RichLog)
+        inp = self.query_one(Input)
+        inp.disabled = True
+
+        logger.info(
+            f"CombatRoomScreen._do_combat_start: user={self._user_name} game={self._game_name}"
+        )
+
+        try:
+            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
+            state = room_resp.room.combat.state
+        except Exception as e:
+            logger.error(f"_do_combat_start: 读取房间状态失败 error={e}")
+            log.write(f"[bold red]❌ 读取战斗状态失败: {_format_http_error(e)}[/]")
+            inp.disabled = False
+            inp.focus()
+            return
+
+        if state != CombatState.INITIALIZATION:
+            log.write(f"[yellow]⚠ 当前战斗状态为 {state.name}，无需初始化。[/]")
+            inp.disabled = False
+            inp.focus()
+            return
+
+        log.write("[dim]▶ 正在初始化战斗...[/]")
+        ok = await self._run_combat_init()
+
+        inp.disabled = False
+        inp.focus()
+        if ok:
+            self._fetch_status()
+
+    @work
     async def _do_advance_combat(self) -> None:
-        """推进战斗：按需初始化（INITIALIZATION → ONGOING），再为全员抽牌。"""
+        """为全员抽牌（cmd 2）。"""
         log = self.query_one(RichLog)
         inp = self.query_one(Input)
         inp.disabled = True
@@ -421,7 +460,6 @@ class CombatRoomScreen(Screen[None]):
             f"CombatRoomScreen._do_advance_combat: user={self._user_name} game={self._game_name}"
         )
 
-        # ── 先读取当前战斗状态 ──
         try:
             room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
             state = room_resp.room.combat.state
@@ -433,7 +471,7 @@ class CombatRoomScreen(Screen[None]):
             return
 
         if state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
-            log.write("[yellow]⚠ 战斗已结束，无法推进。[/]")
+            log.write("[yellow]⚠ 战斗已结束，无法抽牌。[/]")
             inp.disabled = False
             inp.focus()
             return
@@ -444,14 +482,11 @@ class CombatRoomScreen(Screen[None]):
             inp.focus()
             return
 
-        # ── 若处于初始化阶段，先完成初始化 ──
         if state == CombatState.INITIALIZATION:
-            log.write("[dim]▶ 正在初始化战斗...[/]")
-            ok = await self._run_combat_init()
-            if not ok:
-                inp.disabled = False
-                inp.focus()
-                return
+            log.write("[yellow]⚠ 战斗尚未初始化，请先执行 1 战斗开始。[/]")
+            inp.disabled = False
+            inp.focus()
+            return
 
         # ── 全员抽牌 ──
         log.write("[dim]▶ 正在激活全员抽牌...[/]")

@@ -1,6 +1,6 @@
 from typing import Final, final, override, List
 from loguru import logger
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     PlayerComponent,
@@ -30,6 +30,11 @@ class ContentAuditResponse(BaseModel):
 
     is_approved: bool
     reason: str = ""
+
+    @field_validator("reason", mode="before")
+    @classmethod
+    def _coerce_none(cls, v: object) -> str:
+        return str(v) if v is not None else ""
 
 
 ####################################################################################################################################
@@ -68,29 +73,11 @@ def _build_audit_prompt(content: str) -> str:
 
 @final
 class PlayerActionAuditSystem(ReactiveProcessor):
-    """玩家动作审核系统。
+    """玩家动作内容审核系统。
 
-    反应式处理器，监听玩家的消息动作组件（SpeakAction、WhisperAction、AnnounceAction），
-    通过审计世界系统的 AI 进行内容审核。审核不通过时移除所有动作组件，阻止消息发送。
-
-    工作流程：
-        1. 监听玩家实体上的消息动作组件添加事件
-        2. 获取玩家行动审计世界系统实体（包含 PlayerActionAuditComponent）
-        3. 提取所有待审核的动作内容
-        4. 使用审计世界系统的 AI 上下文进行内容审核
-        5. 根据审核结果决定是否保留动作组件
-
-    安全策略：
-        - 任何异常情况（AI 连接失败、响应解析错误等）都默认拒绝
-        - 审核不通过时移除所有动作，等同于取消本回合的所有发言
-        - 审核通过的动作继续保留，由后续系统处理
-
-    Attributes:
-        _game: 游戏实例引用
-
-    Note:
-        - 当前为单机游戏模式，仅支持一个玩家实体
-        - 审核标准来自玩家行动审计世界系统，而非玩家自身的 AI 上下文
+    监听玩家的发言类动作（SpeakAction、WhisperAction、AnnounceAction），
+    调用审计世界系统的 AI 对内容进行合规审核。
+    审核不通过或发生任何异常时，移除全部动作组件，阻止本回合发言。
     """
 
     def __init__(self, game: TCGGame) -> None:

@@ -101,9 +101,7 @@ class ConsumableItem(Item):
         default=ItemType.CONSUMABLE_ITEM, frozen=True
     )
     target_type: TargetType = TargetType.SELF_ONLY  # 使用目标类型，默认仅作用于自身
-    effects: List[str] = (
-        []
-    )  # 潜在副作用词缀列表，格式与 Card.effects 相同（如"[眩晕]:命中减益"）；非空时仲裁后触发 AddStatusEffectsAction LLM 推理
+    effects: List[str] = []  # 潜在副作用词缀列表
 
 
 #######################################################################################################################################

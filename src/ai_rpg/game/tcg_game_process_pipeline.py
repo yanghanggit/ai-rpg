@@ -40,6 +40,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     from ..systems.home_actor_plan_system import HomeActorPlanSystem
     from ..systems.inspect_self_action_system import InspectSelfActionSystem
     from ..systems.equip_item_action_system import EquipItemActionSystem
+    from ..systems.craft_item_action_system import CraftItemActionSystem
 
     ##
     tcg_game = cast(TCGGame, game)
@@ -59,6 +60,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     processors.add(QueryActionSystem(tcg_game))
     processors.add(InspectSelfActionSystem(tcg_game))
     processors.add(EquipItemActionSystem(tcg_game))
+    processors.add(CraftItemActionSystem(tcg_game))
     processors.add(PlayerActionAuditSystem(tcg_game))
     processors.add(SpeakActionSystem(tcg_game))
     processors.add(WhisperActionSystem(tcg_game))

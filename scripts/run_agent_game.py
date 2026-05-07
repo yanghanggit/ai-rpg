@@ -46,6 +46,7 @@
     python scripts/run_agent_game.py speak             --snapshot PATH --target ACTOR --content TEXT
     python scripts/run_agent_game.py switch-stage      --snapshot PATH --stage STAGE_NAME
     python scripts/run_agent_game.py equip-item        --snapshot PATH [--weapon ITEM] [--armor ITEM] [--accessory ITEM]
+    python scripts/run_agent_game.py craft-item        --snapshot PATH --materials 材料1 [--materials 材料2 ...]
     python scripts/run_agent_game.py enter-dungeon     --snapshot PATH --dungeon DUNGEON_NAME
     python scripts/run_agent_game.py draw-cards        --snapshot PATH
     python scripts/run_agent_game.py play-cards-specified --snapshot PATH --actor ACTOR --card CARD [--targets TARGET...]
@@ -185,6 +186,7 @@ from agent_game_actions import (
     next_dungeon_game,
     retreat_game,
     generate_dungeon_game,
+    craft_item_game,
     add_party_member_game,
     remove_party_member_game,
     get_party_roster_game,
@@ -988,6 +990,55 @@ def retreat(snapshot: str) -> None:
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(retreat_game(world, player_session, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("craft-item")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+@click.option(
+    "--materials",
+    multiple=True,
+    required=True,
+    help="要消耗的材料名称（可重复指定多次）",
+)
+def craft_item(snapshot: str, materials: tuple[str, ...]) -> None:
+    """从存档复位，使用指定材料调用 LLM 制造消耗品，并写入新存档。
+
+    适用于【家园模式】。--materials 必须匹配玩家背包中现有的 MaterialItem 名称，
+    每种材料各消耗 1 个。LLM 将根据材料特性创意生成一件 ConsumableItem 并写入背包。
+
+    示例：
+        python run_agent_game.py craft-item --snapshot ./saves/xxx --materials 沙漠草叶 --materials 毒蝶触须
+    """
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    if not materials:
+        raise click.BadParameter("至少需要指定一种材料", param_hint="--materials")
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+    logger.info(f"指定材料：{list(materials)}")
+
+    asyncio.run(craft_item_game(world, player_session, list(materials), _save_dir))
 
 
 ###############################################################################################################################################

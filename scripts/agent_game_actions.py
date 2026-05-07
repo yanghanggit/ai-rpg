@@ -50,6 +50,7 @@ from ai_rpg.services.home_actions import (
     activate_switch_stage,
     activate_equip_item,
     activate_generate_dungeon,
+    activate_craft_item,
     add_party_member,
     remove_party_member,
     get_party_roster,
@@ -972,3 +973,44 @@ async def get_party_roster_game(
     """
     terminal_game = await _restore_game(world, player_session)
     return get_party_roster(terminal_game)
+
+
+###############################################################################
+async def craft_item_game(
+    world: World,
+    player_session: PlayerSession,
+    material_names: list[str],
+    save_dir: Path,
+) -> TCGGame:
+    """从存档复位，激活制造动作并执行 workshop_pipeline，并归档新状态。
+
+    调用 activate_craft_item 为玩家实体添加 CraftItemAction，
+    然后驱动 _home_pipeline.process() 触发 CraftItemActionSystem
+    执行 LLM 制造流程。动作组件由 ActionCleanupSystem 在 pipeline 末端自动清除。
+
+    前置条件：玩家必须处于家园模式（is_player_in_home_stage），且背包中有指定材料。
+
+    Args:
+        world: 由 restore_world() 反序列化的世界数据。
+        player_session: 由 restore_world() 反序列化的玩家会话。
+        material_names: 要消耗的材料名称列表。
+        save_dir: 新存档写入目录。
+
+    Returns:
+        执行完毕后的 TCGGame 实例（已归档）；激活失败时提前返回未归档实例。
+    """
+    terminal_game = await _restore_game(world, player_session)
+
+    success, error_detail = activate_craft_item(terminal_game, material_names)
+    if not success:
+        logger.error(f"激活制造失败: {error_detail}")
+        return terminal_game
+
+    await terminal_game._home_pipeline.process()
+
+    archive_world(
+        terminal_game._world,
+        terminal_game._player_session,
+        save_dir=save_dir,
+    )
+    return terminal_game

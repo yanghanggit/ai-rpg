@@ -17,6 +17,9 @@ from ..models import (
     PartyRosterComponent,
     PlanAction,
     GenerateDungeonAction,
+    CraftItemAction,
+    InventoryComponent,
+    MaterialItem,
 )
 
 
@@ -343,6 +346,72 @@ def activate_generate_dungeon(tcg_game: TCGGame) -> Tuple[bool, str]:
 
     logger.debug(f"激活地下城创建: {player_entity.name}")
     player_entity.replace(GenerateDungeonAction, player_entity.name)
+    return True, ""
+
+
+###################################################################################################################################################################
+def activate_craft_item(
+    tcg_game: TCGGame, material_names: List[str]
+) -> Tuple[bool, str]:
+    """
+    在家园状态下激活制造物品动作。
+
+    验证玩家处于家园场景且背包中存在指定材料，然后添加 CraftItemAction 到玩家实体，
+    触发 CraftItemActionSystem 在 workshop_pipeline 的下一次推进时执行 LLM 制造流程。
+
+    Args:
+        tcg_game: TCG 游戏实例
+        material_names: 要消耗的材料名称列表（必须存在于玩家背包中）
+
+    Returns:
+        Tuple[bool, str]: (是否成功, 失败时的错误详情)
+    """
+    if not tcg_game.is_player_in_home_stage:
+        error_detail = "玩家不在家园场景中，无法进行制造"
+        logger.error(f"激活制造失败: {error_detail}")
+        return False, error_detail
+
+    if not material_names:
+        error_detail = "材料列表不能为空"
+        logger.error(f"激活制造失败: {error_detail}")
+        return False, error_detail
+
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None, "玩家实体不存在！"
+
+    if not player_entity.has(InventoryComponent):
+        error_detail = "玩家实体没有背包，无法进行制造"
+        logger.error(f"激活制造失败: {error_detail}")
+        return False, error_detail
+
+    inventory = player_entity.get(InventoryComponent)
+    material_items: List[MaterialItem] = []
+    for name in material_names:
+        found = next(
+            (
+                item
+                for item in inventory.items
+                if isinstance(item, MaterialItem)
+                and item.name == name
+                and item.count > 0
+            ),
+            None,
+        )
+        if found is None:
+            error_detail = f"背包中未找到材料「{name}」或数量不足"
+            logger.error(f"激活制造失败: {error_detail}")
+            return False, error_detail
+        material_items.append(found)
+
+    if player_entity.has(CraftItemAction):
+        error_detail = "制造动作已存在，请勿重复激活"
+        logger.warning(f"激活制造失败: {error_detail}")
+        return False, error_detail
+
+    logger.debug(
+        f"激活制造: {player_entity.name}, 材料={[m.name for m in material_items]}"
+    )
+    player_entity.replace(CraftItemAction, player_entity.name, material_items)
     return True, ""
 
 

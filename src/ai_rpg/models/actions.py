@@ -3,7 +3,7 @@
 from typing import Dict, List, Optional, final
 from ..entitas.components import Component
 from .cards import Card
-from .items import ConsumableItem
+from .items import ConsumableItem, MaterialItem
 from .registry import register_action_component_type, register_component_type
 
 
@@ -214,3 +214,14 @@ class PostArbitrationAction(Component):
 
     name: str
     current_turn_actor_name: str  # 本次出牌者名称，用于 LLM 上下文
+
+
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
+class CraftItemAction(Component):
+    """触发制造工坊流程：以指定材料列表为输入，由 LLM 创意推断并生成消耗品写入背包。"""
+
+    name: str
+    materials: List[MaterialItem]  # 要消耗的材料物品列表（已从背包中解析）

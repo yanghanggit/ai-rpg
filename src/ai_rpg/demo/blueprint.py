@@ -9,6 +9,7 @@ from ..models import (
     ConsumableItem,
     EquipmentItem,
     EquipmentType,
+    MaterialItem,
     TargetType,
     WeaponItem,
 )
@@ -21,6 +22,7 @@ from .stage_ruins import (
 )
 from .world_system_player_action_audit import create_player_action_audit
 from .world_system_dungeon_generation import create_dungeon_generation
+from .world_system_workshop import create_workshop
 
 
 #######################################################################################################################
@@ -88,6 +90,21 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 effects=["[烟雾眩晕]:浓烈烟雾遮蔽视野，攻击率大幅下降"],
                 count=1,
                 target_type=TargetType.ENEMY_ALL,
+            ),  # 制造用原料 mock：用于测试 craft-item 流程
+            MaterialItem(
+                name="沙漠草叶",
+                description="深结鲧蒸气中采来的山草，叶片干硇后合拢为一据。散发淡淡的苦涩气味，叶脉间徘留着香气。据说直接敢布伤口可止血来炎。",
+                count=3,
+            ),
+            MaterialItem(
+                name="毒蝶触须",
+                description="一小捎普通大小的写字纸，造型粗简，前端有两根残灷的尖刺。表面残留黄色液迹，低温时凝固为蛇腔肘色粉末。意封密少量件化毒素。",
+                count=2,
+            ),
+            MaterialItem(
+                name="废旧皮革",
+                description="一块益拳大小的硬化皮革碎片，边缘粗糙，劫穿时留下的切穿印迹仍清晰可辨。内侧孙留着炎热气候和砟汗的吃味。工呀绑扎或简单防护的材料。",
+                count=2,
             ),
         ]
     )
@@ -134,7 +151,11 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             stage_broken_wall_enclosure,
             stage_stone_platform,
         ],
-        world_systems=[create_player_action_audit(), create_dungeon_generation()],
+        world_systems=[
+            create_player_action_audit(),
+            create_dungeon_generation(),
+            create_workshop(),
+        ],
     )
 
 

@@ -249,6 +249,15 @@ class DungeonGenerationComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
+class WorkshopComponent(Component):
+    """标记世界系统实体具有制造工坊职责（LLM 驱动，根据材料创意生成物品）。"""
+
+    name: str
+
+
+############################################################################################################
+@final
+@register_component_type
 class DrawDeckComponent(MutableComponent):
     """跨战斗持续累积的可重抽历史牌池；Draw 阶段 FIFO 消耗，回合结束将剩余手牌归还队尾。"""
 

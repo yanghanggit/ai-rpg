@@ -28,13 +28,13 @@ class _CraftedItemResponse(BaseModel):
     Attributes:
         name: 产出物品名称
         description: 产出物品描述
-        target_type: 使用目标类型（SELF_ONLY / ENEMY_SINGLE / ENEMY_ALL）
+        target_type: 使用目标类型（见 TargetType 枚举）
         effects: 效果词缀列表
     """
 
     name: str = ""
     description: str = ""
-    target_type: str = "SELF_ONLY"
+    target_type: str = TargetType.SELF_ONLY
     effects: List[str] = []
 
 
@@ -65,22 +65,38 @@ def _build_craft_prompt(material_items: List[MaterialItem]) -> str:
 {{
   "name": "物品名称",
   "description": "物品的感官描述，体现外观、气味、触感等细节。",
-  "target_type": "SELF_ONLY",
+  "target_type": "{TargetType.SELF_ONLY}",
   "effects": ["[效果词缀名]:效果描述"]
 }}
 ```
 
 ### target_type 规则
 
-- `SELF_ONLY`：恢复性、防护性、自身增益类物品
-- `ENEMY_SINGLE`：单体攻击性物品
-- `ENEMY_ALL`：范围控制性物品
+- `{TargetType.SELF_ONLY}`：恢复性、防护性、自身增益类物品
+- `{TargetType.ENEMY_SINGLE}`：单体攻击性物品
+- `{TargetType.ENEMY_ALL}`：范围控制性物品
 
 ### effects 规则
 
 - 格式固定为 `[词缀名]:简短描述`
 - 若无明显特殊效果，返回空数组 `[]`
 - 最多填写 2 条词缀"""
+
+
+####################################################################################################################################
+def _build_craft_result_message(
+    material_items: List[MaterialItem], new_item: ConsumableItem
+) -> str:
+    material_summary = "、".join(m.name for m in material_items)
+    effects_text = (
+        "\n".join(f"  - {e}" for e in new_item.effects)
+        if new_item.effects
+        else "  （无特殊效果）"
+    )
+    return (
+        f"你将 {material_summary} 送入制造工坊，合成了一件消耗品：\n\n"
+        f"**{new_item.name}**\n{new_item.description}\n\n效果：\n{effects_text}"
+    )
 
 
 ####################################################################################################################################
@@ -179,7 +195,7 @@ class CraftItemActionSystem(ReactiveProcessor):
             target_type = TargetType(crafted.target_type)
         except ValueError:
             logger.warning(
-                f"[CraftItemActionSystem] 未知 target_type={crafted.target_type!r}，默认 SELF_ONLY"
+                f"[CraftItemActionSystem] 未知 target_type={crafted.target_type!r}，默认 {TargetType.SELF_ONLY}"
             )
             target_type = TargetType.SELF_ONLY
 
@@ -217,14 +233,6 @@ class CraftItemActionSystem(ReactiveProcessor):
         )
 
         # 将制造结果写入 actor 的 LLM context，维持叙事一致性
-        material_summary = "、".join(m.name for m in material_items)
-        effects_text = (
-            "\n".join(f"  - {e}" for e in new_item.effects)
-            if new_item.effects
-            else "  （无特殊效果）"
-        )
         self._game.add_human_message(
-            entity,
-            f"你将 {material_summary} 送入制造工坊，合成了一件消耗品：\n\n"
-            f"**{new_item.name}**\n{new_item.description}\n\n效果：\n{effects_text}",
+            entity, _build_craft_result_message(material_items, new_item)
         )

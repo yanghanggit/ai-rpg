@@ -1,10 +1,4 @@
-"""战斗初始化系统
-
-在战斗触发阶段为参战角色注入战场上下文，转换战斗状态为进行中。
-不进行 LLM 推理，仅通过 add_human_message 注入战斗上下文，
-并以模拟 AI 回应保证 agent 对话连续性。
-初始化末尾为所有参战角色添加 AddStatusEffectsAction，触发 AddActorStatusEffectsActionSystem 完成第一回合初始状态效果评估。
-"""
+"""战斗初始化系统：战斗触发后、第一回合开始前，注入战场上下文并触发初始状态效果评估。"""
 
 from dataclasses import dataclass
 from typing import Final, List, final, override, Set
@@ -106,14 +100,8 @@ def _generate_init_status_effects_task_hint() -> str:
 class CombatInitializationSystem(ExecuteProcessor):
     """战斗初始化系统
 
-    在战斗触发阶段为参战角色注入战场上下文，转换战斗状态为进行中。
-    不进行 LLM 推理，仅 add_human_message + 模拟 AI 回应以维护 agent 对话连续性。
-    初始化末尾为所有参战角色添加 AddStatusEffectsAction，
-    触发 AddActorStatusEffectsActionSystem 完成第一回合初始状态效果评估。
-    第一回合由同帧末尾的 CombatRoundTransitionSystem 创建。
-
-    执行时机：
-        战斗序列状态为 initializing 时执行，在战斗触发后、第一回合开始前。
+    为所有参战角色注入战场上下文、转换战斗状态为进行中、并触发初始状态效果评估。
+    执行时机：战斗序列状态为 initializing 时（战斗触发后、第一回合开始前）。
     """
 
     def __init__(self, game: TCGGame) -> None:
@@ -122,12 +110,7 @@ class CombatInitializationSystem(ExecuteProcessor):
     ###################################################################################################################################################################
     @override
     async def execute(self) -> None:
-        """执行战斗初始化
 
-        为参战角色注入战场上下文（human message + 模拟 AI 回应），
-        转换战斗状态为进行中，并为所有参战角色添加 AddStatusEffectsAction
-        以触发第一回合初始状态效果评估。不进行 LLM 推理。
-        """
         if not self._game.current_dungeon.is_initializing:
             logger.debug("当前战斗状态非 initializing，跳过战斗初始化")
             return
@@ -171,25 +154,16 @@ class CombatInitializationSystem(ExecuteProcessor):
         ), "战斗状态转换失败，当前状态非 ONGOING！"
 
         # 为所有参战角色添加 AddStatusEffectsAction，触发初始状态效果生成
-        self._add_status_effects_actions_for_all_actors(actor_entities)
+        self._initialize_actor_status_effects(actor_entities)
 
         # 第一回合由 CombatRoundTransitionSystem 在本 pipeline tick 末创建（同帧创建）
 
     ###################################################################################################################################################################
-    def _add_status_effects_actions_for_all_actors(
-        self, actor_entities: Set[Entity]
-    ) -> None:
-        """为所有参战角色添加 AddStatusEffectsAction，触发初始状态效果评估。
-
-        若角色缺少 StatusEffectsComponent，先注入空组件以保证系统正常运行。
-
-        Args:
-            actor_entities: 所有参战角色实体集合
-        """
+    def _initialize_actor_status_effects(self, actor_entities: Set[Entity]) -> None:
+        """为所有参战角色初始化状态效果：注入空 StatusEffectsComponent 并挂载 AddStatusEffectsAction。"""
         for actor_entity in actor_entities:
 
             # 如果没有状态效果组件则先添加一个空的，以保证 AddStatusEffectsActionSystem 能正常工作
-            # if not actor_entity.has(StatusEffectsComponent):
             assert (
                 not actor_entity.has(StatusEffectsComponent)
                 or len(actor_entity.get(StatusEffectsComponent).status_effects) == 0
@@ -218,17 +192,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         stage_name: str,
         stage_description: str,
     ) -> None:
-        """为所有参战角色注入战场上下文
-
-        为每个角色生成战斗初始化提示词并添加到对话上下文（human message），
-        随后注入一条模拟 AI 回应以维护 Human↔AI 交替的 agent 对话结构。
-        不进行任何 LLM 调用。
-
-        Args:
-            actor_entities: 所有参战角色实体集合
-            stage_name: 战斗场景名称
-            stage_description: 战斗场景的环境描述
-        """
+        """为所有参战角色注入战场上下文（human message + 模拟 AI 回应），无 LLM 调用。"""
         for actor_entity in actor_entities:
 
             # 计算角色有效属性（含装备加成）
@@ -266,15 +230,7 @@ class CombatInitializationSystem(ExecuteProcessor):
     def _determine_camp_relationship(
         self, actor_entity: Entity, other_entity: Entity
     ) -> str:
-        """判断两个角色之间的阵营关系
-
-        Args:
-            actor_entity: 当前角色实体
-            other_entity: 其他角色实体
-
-        Returns:
-            阵营关系字符串："友方" 或 "敌方"
-        """
+        """返回两角色间的阵营关系：'友方' 或 '敌方'。"""
         actor_is_ally = actor_entity.has(PartyMemberComponent)
         actor_is_enemy = actor_entity.has(MonsterComponent)
         other_is_ally = other_entity.has(PartyMemberComponent)
@@ -290,15 +246,7 @@ class CombatInitializationSystem(ExecuteProcessor):
     def _generate_other_actors_info(
         self, actor_entity: Entity, actor_entities: Set[Entity]
     ) -> List[OtherActorInfo]:
-        """为指定角色生成其他所有参战角色的信息列表
-
-        Args:
-            actor_entity: 当前角色实体
-            actor_entities: 所有参战角色实体集合
-
-        Returns:
-            其他角色的信息列表，包含名称、外观和阵营关系
-        """
+        """生成除自身外所有参战角色的信息列表（名称、外观、阵营）。"""
         # copy生成其他参战角色的列表，但是移除自己
         copy_entities = actor_entities.copy()
         copy_entities.remove(actor_entity)

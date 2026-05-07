@@ -54,7 +54,7 @@
 **源码**：`src/ai_rpg/systems/illustrate_dungeon_action_system.py`  
 **监听**：`IllustrateDungeonAction`
 
-读取 Step 1-4 生成的地牢文本数据，为每个场景（房间）调用图片生成服务，输出图片文件到 `generated_images/` 目录。
+读取 Step 1-4 生成的地牢文本数据，为每个场景（房间）调用图片生成服务，输出图片文件到 `.generated_images/` 目录。
 
 ---
 

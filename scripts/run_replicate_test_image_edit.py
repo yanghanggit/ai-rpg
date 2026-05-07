@@ -15,7 +15,7 @@ python scripts/run_replicate_image_edit_test.py --demo blur
 
 # 自定义编辑
 python scripts/run_replicate_image_edit_test.py \
-  --input generated_images/cat.png \
+  --input .generated_images/cat.png \
   --prompt "Make the background blurry" \
   --model nano-banana
 
@@ -352,7 +352,7 @@ async def _async_main(
         print("  python scripts/run_replicate_image_edit_test.py --demo blur\n")
         print("  # 自定义编辑")
         print("  python scripts/run_replicate_image_edit_test.py \\")
-        print("    --input generated_images/cat.png \\")
+        print("    --input .generated_images/cat.png \\")
         print("    --prompt 'Make the background blurry'\n")
         print("  # 多图融合")
         print("  python scripts/run_replicate_image_edit_test.py \\")

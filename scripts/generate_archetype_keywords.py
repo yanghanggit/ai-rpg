@@ -4,7 +4,7 @@
 流程：
   1. 同步调用 LLM 生成一个 Archetype（name + description）
   2. 基于该 Archetype，并发生成 3 个 Keyword 约束规则
-  3. 将结果保存为 JSON 文件至 generated_archetypes/ 目录
+  3. 将结果保存为 JSON 文件至 .generated_archetypes/ 目录
 """
 
 import asyncio
@@ -29,7 +29,7 @@ from ai_rpg.utils import extract_json_from_code_block
 # ---------------------------------------------------------------------------
 # 配置
 # ---------------------------------------------------------------------------
-_OUTPUT_DIR: Path = Path(__file__).resolve().parent.parent / "generated_archetypes"
+_OUTPUT_DIR: Path = Path(__file__).resolve().parent.parent / ".generated_archetypes"
 _NUM_KEYWORDS: int = 3
 
 # ---------------------------------------------------------------------------

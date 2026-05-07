@@ -38,6 +38,8 @@ from ..models import (
     HomeRosterAddResponse,
     HomeRosterRemoveRequest,
     HomeRosterRemoveResponse,
+    HomeCraftItemRequest,
+    HomeCraftItemResponse,
     LoginRequest,
     LoginResponse,
     LogoutRequest,
@@ -421,3 +423,20 @@ async def home_roster_remove(
         )
         response.raise_for_status()
         return HomeRosterRemoveResponse.model_validate(response.json())
+
+
+async def home_craft_item(
+    user_name: str, game_name: str, materials: List[str]
+) -> HomeCraftItemResponse:
+    """提交制造请求，返回后台任务 ID。"""
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(
+            server_config.base_url + "/api/home/craft_item/v1/",
+            json=HomeCraftItemRequest(
+                user_name=user_name,
+                game_name=game_name,
+                materials=materials,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return HomeCraftItemResponse.model_validate(response.json())

@@ -47,6 +47,8 @@ from ..models import (
     Stage,
     StageComponent,
     StageType,
+    StatusEffect,
+    StatusEffectPhase,
     StatusEffectsComponent,
     WeaponItem,
     World,
@@ -549,6 +551,24 @@ class TCGGame(RPGGame):
             entity.remove(StatusEffectsComponent)
 
     ###############################################################################################################################################
+    def get_status_effects_by_phase(
+        self, entity: Entity, phase: StatusEffectPhase
+    ) -> List[StatusEffect]:
+        """返回实体在指定战斗阶段生效的状态效果列表。
+
+        Args:
+            entity: 目标实体
+            phase: 要筛选的生效阶段（StatusEffectPhase）
+
+        Returns:
+            匹配阶段的 StatusEffect 列表；实体无 StatusEffectsComponent 时返回空列表
+        """
+        status_comp = entity.get(StatusEffectsComponent)
+        if status_comp is None:
+            return []
+        return [e for e in status_comp.status_effects if e.phase == phase]
+
+    ###############################################################################################################################################
     def compute_character_stats(self, entity: Entity) -> CharacterStats:
         """计算角色的最终有效属性，聚合基础属性与已装备物品的属性加成。
 
@@ -591,6 +611,56 @@ class TCGGame(RPGGame):
         stats_comp.stats.hp = clamped
 
         return self.compute_character_stats(entity)
+
+    ###############################################################################################################################################
+    def set_entity_block(self, entity: Entity, block: int) -> None:
+        """设置实体的格挡值，自动 clamp 至 [0, +∞)，保留 energy 现值不变。
+
+        Args:
+            entity: 目标实体，必须拥有 RoundStatsComponent
+            block: 目标格挡值
+        """
+        assert entity.has(
+            RoundStatsComponent
+        ), f"{entity.name} 缺少 RoundStatsComponent"
+        round_stats = entity.get(RoundStatsComponent)
+        entity.replace(
+            RoundStatsComponent,
+            entity.name,
+            round_stats.energy,
+            max(0, block),
+        )
+
+    ###############################################################################################################################################
+    def apply_status_effect_patch(
+        self, entity: Entity, status_effect_name: str, update_description: str
+    ) -> None:
+        """更新实体上指定状态效果的 description，并记录更新日志。
+
+        匹配方式为按名称精确匹配。名称不存在时记录 warning 并跳过，不抛异常。
+
+        Args:
+            entity: 目标实体，必须拥有 StatusEffectsComponent
+            status_effect_name: 要更新的状态效果名称
+            update_description: 更新后的完整描述
+        """
+        assert entity.has(
+            StatusEffectsComponent
+        ), f"{entity.name} 缺少 StatusEffectsComponent，无法回写状态效果描述"
+        status_comp = entity.get(StatusEffectsComponent)
+        effect_map = {e.name: e for e in status_comp.status_effects}
+        if status_effect_name in effect_map:
+            old_desc = effect_map[status_effect_name].description
+            effect_map[status_effect_name].description = update_description
+            logger.info(
+                f"更新 {entity.name} 状态效果「{status_effect_name}」 description: "
+                f"{old_desc!r} → {update_description!r}"
+            )
+        else:
+            logger.warning(
+                f"status_effect_patches 中的效果「{status_effect_name}」"
+                f"在 {entity.name} 的 StatusEffectsComponent 中不存在，跳过"
+            )
 
     ###############################################################################################################################################
     def get_current_turn_actor(self, round: Round) -> Optional[str]:

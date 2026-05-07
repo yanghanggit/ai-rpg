@@ -380,9 +380,9 @@ class PostArbitrationActionSystem(ReactiveProcessor):
 
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
-        self._mock_inject_sealed_affix_context(
-            stage_entity, actor_entities, current_round_number
-        )
+        # self._mock_inject_sealed_affix_context(
+        #     stage_entity, actor_entities, current_round_number
+        # )
 
         prompt = _generate_stage_post_arbitration_prompt(
             game=self._game,

@@ -10,7 +10,7 @@ from textual.containers import Horizontal
 from textual.screen import Screen
 from textual.widgets import Input, RichLog, Static
 
-from ..models import Dungeon
+from ..models import Dungeon, ActorType
 from ..models.task import TaskStatus
 from .server_client import (
     fetch_dungeon_list,
@@ -164,7 +164,8 @@ class DungeonOverviewScreen(Screen[None]):
         for i, room in enumerate(dungeon.rooms, start=1):
             stage = room.stage
             is_combat = any(
-                actor.character_sheet.type == "Enemy" for actor in stage.actors
+                actor.character_sheet.type == ActorType.MONSTER
+                for actor in stage.actors
             )
             room_tag = "[bold red]⚔ 战斗[/]" if is_combat else "[dim cyan]○ 探索[/]"
             log.write(
@@ -172,7 +173,7 @@ class DungeonOverviewScreen(Screen[None]):
             )
             if is_combat:
                 for actor in stage.actors:
-                    if actor.character_sheet.type == "Enemy":
+                    if actor.character_sheet.type == ActorType.MONSTER:
                         stats = actor.character_stats
                         log.write(
                             f"    · [bold]{display_name(actor.name)}[/]"

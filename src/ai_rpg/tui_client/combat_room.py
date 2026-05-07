@@ -727,29 +727,7 @@ class CombatRoomScreen(Screen[None]):
         log.write(
             f"\n[bold cyan]── 弃牌：{short} ────────────────────────────────────────[/]"
         )
-        for i, card in enumerate(hand_cards, 1):
-            hit_str = f"x[yellow]{card.hit_count}[/]" if card.hit_count > 1 else ""
-            tt_str = _TARGET_LABEL.get(card.target_type, f"[dim]{card.target_type}[/]")
-            action_str = (
-                f"\n        [dim]{card.description}[/]" if card.description else ""
-            )
-            effects_str = (
-                f"\n        [yellow]效果：{'、'.join(card.effects)}[/]"
-                if card.effects
-                else ""
-            )
-            affixes_str = (
-                f"\n        [bold orange1]词条：{'  '.join(card.affixes)}[/]"
-                if card.affixes
-                else ""
-            )
-            log.write(
-                f"    [bold cyan]{i}.[/] [bold]{card.name}[/]  "
-                f"伤害:[red]{card.damage_dealt}[/]{hit_str}  格挡:[blue]{card.block_gain}[/]  目标:{tt_str}"
-                + action_str
-                + effects_str
-                + affixes_str
-            )
+        self._write_hand_table(hand_cards, player_actor)
 
         self._current_actor = player_actor
         self._discard_hand_cards = list(hand_cards)
@@ -1176,35 +1154,7 @@ class CombatRoomScreen(Screen[None]):
             ally_entities, show_hand=False, show_header=False
         )
         log.write("  [bold cyan]── 选牌（输入编号）──[/]")
-        for i, card in enumerate(hand_cards, 1):
-            hit_str = f"x[yellow]{card.hit_count}[/]" if card.hit_count > 1 else ""
-            tt_str = _TARGET_LABEL.get(card.target_type, f"[dim]{card.target_type}[/]")
-            source_str = (
-                f"  [dim]来源:{display_name(card.source)}[/]"
-                if card.source and card.source != current_actor
-                else ""
-            )
-            action_str = (
-                f"\n        [dim]{card.description}[/]" if card.description else ""
-            )
-            effects_str = (
-                f"\n        [yellow]效果：{'、'.join(card.effects)}[/]"
-                if card.effects
-                else ""
-            )
-            affixes_str = (
-                f"\n        [bold orange1]词条：{'  '.join(card.affixes)}[/]"
-                if card.affixes
-                else ""
-            )
-            log.write(
-                f"    [bold cyan]{i}.[/] [bold]{card.name}[/]  "
-                f"伤害:[red]{card.damage_dealt}[/]{hit_str}  格挡:[blue]{card.block_gain}[/]  目标:{tt_str}"
-                + source_str
-                + action_str
-                + effects_str
-                + affixes_str
-            )
+        self._write_hand_table(hand_cards, current_actor)
         self._current_actor = current_actor
         self._phase = _Phase.SELECT_CARD
         self._update_play_status(
@@ -1754,6 +1704,51 @@ class CombatRoomScreen(Screen[None]):
         log.write("")
 
     # ──────────────────────────────────────────────
+    # 手牌表格渲染（通用辅助，选牌/弃牌/状态显示共用）
+    # ──────────────────────────────────────────────
+    def _write_hand_table(self, cards: List[Card], entity_name: str) -> None:
+        """将手牌列表以表格形式写入 RichLog，与命令 6 状态显示保持一致。"""
+        log = self.query_one(RichLog)
+        hand_table = Table(
+            show_header=True,
+            show_lines=True,
+            box=rich_box.ROUNDED,
+            padding=(0, 1),
+            expand=True,
+        )
+        hand_table.add_column("#", style="cyan", width=3, no_wrap=True)
+        hand_table.add_column("名称", style="bold", min_width=10, no_wrap=True)
+        hand_table.add_column("伤害", style="red", width=6, no_wrap=True)
+        hand_table.add_column("格挡", style="blue", width=6, no_wrap=True)
+        hand_table.add_column("目标", width=10, no_wrap=True)
+        hand_table.add_column("描述 / 效果 / 词条", ratio=1)
+        for idx, card in enumerate(cards, 1):
+            dmg_cell = (
+                f"{card.damage_dealt}x{card.hit_count}"
+                if card.hit_count > 1
+                else str(card.damage_dealt)
+            )
+            tt_str = _TARGET_LABEL.get(card.target_type, f"[dim]{card.target_type}[/]")
+            detail_parts: List[str] = []
+            if card.description:
+                detail_parts.append(f"[dim]{card.description}[/]")
+            if card.effects:
+                detail_parts.append(f"[yellow]效果：{'、'.join(card.effects)}[/]")
+            if card.affixes:
+                detail_parts.append(f"[bold orange1]词条：{'  '.join(card.affixes)}[/]")
+            if card.source and card.source != entity_name:
+                detail_parts.append(f"[dim]来源:{display_name(card.source)}[/]")
+            hand_table.add_row(
+                str(idx),
+                card.name,
+                dmg_cell,
+                str(card.block_gain),
+                tt_str,
+                "\n".join(detail_parts),
+            )
+        log.write(hand_table)
+
+    # ──────────────────────────────────────────────
     # 实体完整信息渲染（与命令 3 一致：阵营/属性/状态效果/手牌）
     # ──────────────────────────────────────────────
     def _write_full_entities_block(
@@ -1884,65 +1879,7 @@ class CombatRoomScreen(Screen[None]):
                         f"  [bold]手牌（回合 {hand.round}，共 {len(hand.cards)} 张）：[/]"
                     )
                     if hand.cards:
-                        hand_table = Table(
-                            show_header=True,
-                            show_lines=True,
-                            box=rich_box.ROUNDED,
-                            padding=(0, 1),
-                            expand=True,
-                        )
-                        hand_table.add_column("#", style="cyan", width=3, no_wrap=True)
-                        hand_table.add_column(
-                            "名称", style="bold", min_width=10, no_wrap=True
-                        )
-                        hand_table.add_column(
-                            "伤害", style="red", width=6, no_wrap=True
-                        )
-                        hand_table.add_column(
-                            "格挡", style="blue", width=6, no_wrap=True
-                        )
-                        hand_table.add_column("目标", width=10, no_wrap=True)
-                        hand_table.add_column("描述 / 效果 / 词条", ratio=1)
-                        for idx, card in enumerate(hand.cards, 1):
-                            hit_str = (
-                                f"x{card.hit_count}"
-                                if card.hit_count > 1
-                                else str(card.damage_dealt)
-                            )
-                            dmg_cell = (
-                                f"{card.damage_dealt}x{card.hit_count}"
-                                if card.hit_count > 1
-                                else str(card.damage_dealt)
-                            )
-                            tt_str = _TARGET_LABEL.get(
-                                card.target_type,
-                                f"[dim]{card.target_type}[/]",
-                            )
-                            detail_parts: List[str] = []
-                            if card.description:
-                                detail_parts.append(f"[dim]{card.description}[/]")
-                            if card.effects:
-                                detail_parts.append(
-                                    f"[yellow]效果：{'、'.join(card.effects)}[/]"
-                                )
-                            if card.affixes:
-                                detail_parts.append(
-                                    f"[bold orange1]词条：{'  '.join(card.affixes)}[/]"
-                                )
-                            if card.source and card.source != entity.name:
-                                detail_parts.append(
-                                    f"[dim]来源:{display_name(card.source)}[/]"
-                                )
-                            detail_cell = "\n".join(detail_parts)
-                            hand_table.add_row(
-                                str(idx),
-                                card.name,
-                                dmg_cell,
-                                str(card.block_gain),
-                                tt_str,
-                                detail_cell,
-                            )
-                        log.write(hand_table)
+                        self._write_hand_table(hand.cards, entity.name)
                     else:
                         log.write("    [dim](手牌为空)[/]")
                 else:

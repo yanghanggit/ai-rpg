@@ -14,9 +14,7 @@ Unit tests for src/ai_rpg/game/tcg_game.py
 """
 
 from typing import Any, cast
-
 import pytest
-
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.player_session import PlayerSession
 from src.ai_rpg.game.tcg_game import TCGGame
@@ -36,19 +34,33 @@ from src.ai_rpg.models import (
     RoundStatsComponent,
     StageComponent,
     StatusEffectsComponent,
-)
-from src.ai_rpg.models.cards import StatusEffect, StatusEffectPhase
-from src.ai_rpg.models.combat import Round
-from src.ai_rpg.models.dungeon import CombatRoom, Dungeon
-from src.ai_rpg.models.entities import (
+    StatusEffect,
+    StatusEffectPhase,
+    Round,
+    CombatRoom,
+    Dungeon,
     Actor,
     CharacterSheet,
     CharacterStats,
     Stage,
     StageProfile,
     StageType,
+    Blueprint,
+    World,
 )
-from src.ai_rpg.models.world import Blueprint, World
+
+# from src.ai_rpg.models.cards import StatusEffect, StatusEffectPhase
+# from src.ai_rpg.models.combat import Round
+# from src.ai_rpg.models.dungeon import CombatRoom, Dungeon
+# from src.ai_rpg.models import (
+#     Actor,
+#     CharacterSheet,
+#     CharacterStats,
+#     Stage,
+#     StageProfile,
+#     StageType,
+# )
+# from src.ai_rpg.models.world import Blueprint, World
 
 
 # ---------------------------------------------------------------------------

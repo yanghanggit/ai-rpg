@@ -39,7 +39,7 @@
 | 2 | `ActorAppearanceUpdateSystem` | Execute | 生成角色外观 → [[systems-shared#ActorAppearanceUpdateSystem]] |
 | 3 | `StageDescriptionSystem` | Execute | 生成场景描述（状态守卫：仅战斗开始时触发）→ [[systems-shared#StageDescriptionSystem]] |
 | 4 | `CombatInitializationSystem` | Execute | 初始化战斗：注入战场上下文；第一回合由 `CombatRoundTransitionSystem` 在同帧末端创建 |
-| 5 | `DrawCardsActionSystem` | Reactive | 为角色生成手牌（历史牌组 + LLM 新牌）；`affixes` 字段由 LLM 填写为自然语言词条（`List[str]`）→ [[affix-system]] |
+| 5 | `DrawCardsActionSystem` | Reactive | 为角色生成手牌（历史牌组 + LLM 新牌） |
 | 6 | `EnemyPlayDecisionSystem` | Execute | 敌方 AI 决策出哪张牌 |
 | 7 | `PlayActionNarrationSystem` | Execute | LLM 润色出牌叙事 |
 | 8 | `PlayCardsActionSystem` | Reactive | 执行出牌，触发后续仲裁链 |
@@ -95,17 +95,7 @@
 - 两部分合并为最终手牌写入 `HandComponent`
 - **LLM 解析失败兜底**：`DrawCardsResponse` 校验失败（如 LLM 返回裸 JSON 对象而非 `{"cards":[...]}` 包装）时，计算端不做补偿推理，直接插入兜底牌「等待」（`target_type=SELF_ONLY`，`damage_dealt=0`）并写入 `HandComponent`，确保手牌始终存在、回合不阻塞；兜底牌 `source` 设为本角色，可被正常出牌或弃牌
 
-每张牌包含：`name` / `description` / `effects` / `affixes` / `damage_dealt` / `block_gain` / `hit_count` / `target_type`
-
-**`affixes` 字段（`List[str]`）**：
-
-`Card.affixes` 存放由 LLM 自由填写的自然语言词条字符串（如 `"封印：不可出牌，不可弃牌"`）。服务层入口函数在调用 `activate_play_cards_specified` / `activate_discard_cards_specified` 前，会先调用 `_check_affixes_allow_action` 向 LLM 请求裁决，决定是否放行本次操作。详细设计：[[affix-system]]
-
-**`_mock_inject_sealed_affix_context`（开发期 mock）**：
-
-Round 1 时，系统向所有 `PartyMemberComponent` 实体注入一条 human message，包含封印词条的文本示例（`"封印：不可被出牌，也不可被弃牌"`），引导 LLM 在某张牌的 `affixes` 字段填入该词条。
-这是**开发期验证 mock**，用于端到端测试词条路径是否畅通，不代表正式的词条触发机制。
-详细设计：[[affix-system]]
+每张牌包含：`name` / `description` / `effects` / `damage_dealt` / `block_gain` / `hit_count` / `target_type`
 
 **Keyword 关键词约束 + 骨値机制**：
 

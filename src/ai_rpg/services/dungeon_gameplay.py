@@ -588,7 +588,6 @@ async def dungeon_combat_discard_cards(
     """地下城战斗弃牌接口
 
     触发指定角色弃掉一张手牌的后台任务，立即返回任务ID。
-    封印词缀（AFFIX_SEALED）的卡牌无法被弃掉，后台任务会将错误写入 task.error。
 
     Raises:
         HTTPException(404): 玩家未登录或游戏不存在

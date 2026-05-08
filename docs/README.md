@@ -24,4 +24,3 @@
 | ------ | ---------- | ---------- |
 | **ECS 管线设计** | 三条游戏流程管线（家园/战斗/地牢生成）的架构、系统执行顺序与设计模式 | [ecs-pipeline/overview.md](ecs-pipeline/overview.md) |
 | **Keyword 卡牌关键词约束系统** | 角色卡牌生成风格约束的数据模型、ECS 组件、采样策略与 Prompt 注入机制 | [ecs-pipeline/keyword-system.md](ecs-pipeline/keyword-system.md) |
-| **Affix 卡牌词条系统** | 卡牌词条数据模型（`Card.affixes: List[str]`，自然语言字符串）、LLM 生成、服务层 LLM 词条守卫（`_check_affixes_allow_action`），以及开发期 mock 引导说明 | [ecs-pipeline/affix-system.md](ecs-pipeline/affix-system.md) |

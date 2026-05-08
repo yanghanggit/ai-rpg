@@ -20,7 +20,6 @@ from ..models import (
     TargetType,
     CharacterStatsComponent,
     DungeonComponent,
-    PartyMemberComponent,
     HandComponent,
     StageComponent,
     PostArbitrationAction,
@@ -209,7 +208,8 @@ def _generate_stage_post_arbitration_prompt(
 | name | 卡牌名称（<8字），体现效果意图 |
 | description | 第三人称，描述角色借助**上下文中已存在的**场景具体物件的即时客观动作（1句，如"抓起地面的断柱碎块掷向对方"）；不可凭空引入非场景物件 |
 | effects | 可选。状态触发标记列表，每项格式"[名称]:触发倾向描述"（如"[碎石粉尘]:可能引起视线模糊"）。出牌后系统若读到非空列表，将启动独立 LLM 推理为出牌者/目标生成实际 StatusEffect（持续性增减益）。纯即时效果输出 [] |
-| affixes | 可选。规则性词条列表，定义该卡在手牌期间或出牌时的强制约束规则，由系统直接执行（出牌/弃牌前守卫检查）。格式：自然语言字符串（如"封印：不可出牌，不可弃牌"）。仅当场景叙事明确暗示该物件具有束缚、禁锢等强约束属性（改变可操作性）时才使用；持续扣血等增减益效果应放入 effects，不属于此字段；无强约束场景依据时输出 [] |
+| playable | 可选。布尔值，是否允许出牌；默认 true，场景叙事明确暗示该物件具有禁出属性时填 false |
+| discardable | 可选。布尔值，是否允许弃牌；默认 true，场景叙事明确暗示该物件不可丢弃时填 false |
 | damage_dealt | 单次命中造成的伤害（整数；攻击类取合理正值，无伤害取 0） |
 | block_gain | 本张牌提供的格挡（整数；防御类取合理正值，无格挡取 0） |
 | hit_count | 攻击次数（默认 1；多段攻击可设 2~4，每段独立抵挡目标格挡） |
@@ -385,10 +385,6 @@ class PostArbitrationActionSystem(ReactiveProcessor):
 
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
-        # self._mock_inject_sealed_affix_context(
-        #     stage_entity, actor_entities, current_round_number
-        # )
-
         prompt = _generate_stage_post_arbitration_prompt(
             game=self._game,
             actor_entities=actor_entities,
@@ -483,30 +479,6 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         except Exception as e:
             logger.error(f"[{stage_entity.name}] 解析仲裁后干预响应失败: {e}")
             logger.error(f"原始响应: {chat_client.response_content}")
-
-    #######################################################################################################################################
-    def _mock_inject_sealed_affix_context(
-        self,
-        stage_entity: Entity,
-        actor_entities: Set[Entity],
-        current_round_number: int,
-    ) -> None:
-        """[mock] 第一回合向 stage 注入 context，引导 LLM 向远征队员塞入一张带封印词缀的卡牌。"""
-        if current_round_number != 1:
-            return
-        party_members = [e for e in actor_entities if e.has(PartyMemberComponent)]
-        if not party_members:
-            return
-        target_name = party_members[0].name
-        affix_example = "封印：不可被出牌，也不可被弃牌"
-        msg = (
-            f"[系统提示] 本回合请在 inject_cards 中向「{target_name}」塞入一张包含以下 affixes 词缀的卡牌，"
-            f'以触发「封印」词条效果，affixes 字段示例：["{affix_example}"]'
-        )
-        self._game.add_human_message(stage_entity, msg)
-        logger.debug(
-            f"[mock context] [{stage_entity.name}] 注入封印塞牌引导 context，目标：{target_name}"
-        )
 
     #######################################################################################################################################
     def _apply_status_effects(

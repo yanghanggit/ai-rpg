@@ -9,7 +9,6 @@ import random
 from typing import List, Tuple
 from loguru import logger
 from ..game.tcg_game import TCGGame
-from .affix_guard import check_play_affixes_allowed, check_discard_affixes_allowed
 from ..models import (
     DrawCardsAction,
     HandComponent,
@@ -253,11 +252,8 @@ async def activate_play_cards_specified(
         logger.error(msg)
         return False, msg
 
-    allowed, deny_reason = await check_play_affixes_allowed(
-        tcg_game, entity, selected_card
-    )
-    if not allowed:
-        return False, deny_reason
+    if not selected_card.playable:
+        return False, "该卡牌不可出牌"
 
     resolved_targets, resolve_err = _resolve_targets(
         selected_card.target_type, selected_card.hit_count, entity, targets, tcg_game
@@ -313,11 +309,8 @@ async def activate_discard_cards_specified(
         logger.error(msg)
         return False, msg
 
-    allowed, deny_reason = await check_discard_affixes_allowed(
-        tcg_game, entity, selected_card
-    )
-    if not allowed:
-        return False, deny_reason
+    if not selected_card.discardable:
+        return False, "该卡牌不可弃牌"
 
     logger.debug(f"为角色 {actor_name} 激活弃牌动作，卡牌: {selected_card.name}")
     entity.replace(DiscardCardsAction, entity.name, selected_card)

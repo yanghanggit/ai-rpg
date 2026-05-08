@@ -70,9 +70,8 @@ class Card(BaseModel):
     effects: List[str] = (
         []
     )  # 状态效果触发信号列表；每项格式"[名称]:触发倾向描述"（如"[燃烧]:可能引发持续火焰伤害"）；出牌后系统检查此列表，非空则启动独立 LLM 推理生成 StatusEffect（持续性增减益）；纯即时牌无持续影响时输出 []
-    affixes: List[str] = (
-        []
-    )  # 规则性词条列表；每项为自然语言字符串（如"封印：不可出牌，不可弃牌"）；系统强制执行（affix_guard 出/弃牌前守卫检查），影响卡牌可操作性；无强制约束时输出 []
+    playable: bool = True  # 是否可出牌；False 时系统阻止出牌操作
+    discardable: bool = True  # 是否可弃牌；False 时系统阻止弃牌操作
     damage_dealt: int = 0  # 造成的伤害值（单次）
     block_gain: int = 0  # 提供的格挡增量
     hit_count: int = (

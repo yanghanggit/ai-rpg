@@ -1734,8 +1734,10 @@ class CombatRoomScreen(Screen[None]):
                 detail_parts.append(f"[dim]{card.description}[/]")
             if card.effects:
                 detail_parts.append(f"[yellow]效果：{'、'.join(card.effects)}[/]")
-            if card.affixes:
-                detail_parts.append(f"[bold orange1]词条：{'  '.join(card.affixes)}[/]")
+            if not card.playable:
+                detail_parts.append("[bold orange1]【不可出牌】[/]")
+            if not card.discardable:
+                detail_parts.append("[bold orange1]【不可弃牌】[/]")
             if card.source and card.source != entity_name:
                 detail_parts.append(f"[dim]来源:{display_name(card.source)}[/]")
             hand_table.add_row(

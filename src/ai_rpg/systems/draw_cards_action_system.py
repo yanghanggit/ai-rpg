@@ -55,7 +55,8 @@ class CardEntry(BaseModel):
     name: str
     description: str
     effects: List[str] = []
-    affixes: List[str] = []
+    playable: bool = True
+    discardable: bool = True
     damage_dealt: int
     block_gain: int
     hit_count: int = 1
@@ -152,13 +153,14 @@ def _generate_draw_prompt(
         "  ❌ 错误示例：「借助断柱的支撑旋身，踢击敌人」「从落日余晖中冲出扑向目标」\n"
         "  ✓ 正确示例：「旋身借力，以连续踢击攻击单一敌人」「快速突进，向单一目标发起猛扑」\n"
         '- effects：状态触发标记列表。出牌后系统读取此字段，非空时启动独立 LLM 推理，为出牌者/目标生成实际 StatusEffect（持续性增减益）。每项格式"[名称]:触发倾向描述"（如"[燃烧]:可能引发持续火焰伤害"、"[中毒]:持续造成毒素伤害"）；仅代表可能触发的状态效果倾向，并非立即生效数值。纯即时伤害/格挡无持续影响时输出 []\n'
-        '- affixes：规则性词条列表。定义该卡在手牌期间或出牌时的强制约束规则，由系统直接执行（出牌/弃牌前守卫检查）。格式：自然语言字符串（如"封印：不可出牌，不可弃牌"）。仅用于真正改变游戏规则的强约束，如禁止操作；无此类约束时输出 []。**关键词中未明确提示可生成 affixes 时，必须输出 []**\n'
+        "- playable：布尔值。是否允许出牌；默认 true，封印/禁出场景填 false\n"
+        "- discardable：布尔值。是否允许弃牌；默认 true，禁弃场景填 false\n"
         "- damage_dealt：单次攻击造成的伤害值（基于攻击力合理推算，整数）\n"
         "- block_gain：本张卡牌提供的格挡增量（基于防御力合理推算，整数）\n"
         "- hit_count：攻击次数（默认 1；多段攻击如回旋镖可设为 2~4，每段独立抵挡目标格挡）\n"
         "- target_type：出牌目标类型：攻击/伤害类卡牌通常选 enemy_single 或 enemy_all；每段独立随机命中一名敌方（多段随机，搭配较高 hit_count）选 enemy_random_multi；治疗/强化友方类卡牌通常选 ally_single 或 ally_all；纯粹的自我防御、呼吸调息等仅作用于自身的卡牌选 self_only"
     )
-    example_line = '{"name":"...","description":"...","effects":[],"affixes":[],"damage_dealt":0,"block_gain":0,"hit_count":1,"target_type":"enemy_single"}'
+    example_line = '{"name":"...","description":"...","effects":[],"playable":true,"discardable":true,"damage_dealt":0,"block_gain":0,"hit_count":1,"target_type":"enemy_single"}'
 
     sections = [stats_line]
 
@@ -215,9 +217,7 @@ def _generate_compressed_draw_prompt(
         sections.append(draw_effects_prompt)
 
     sections.append(keyword_line)
-    sections.append(
-        f"输出 JSON，cards 数组共 {num_cards} 张（affixes 字段无词缀时输出 []）"
-    )
+    sections.append(f"输出 JSON，cards 数组共 {num_cards} 张")
 
     return (
         f"# 第 {current_round_number} 回合：生成 {num_cards} 张手牌\n\n"
@@ -512,7 +512,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
                         name=entry.name,
                         description=entry.description,
                         effects=entry.effects,
-                        affixes=list(entry.affixes),
+                        playable=entry.playable,
+                        discardable=entry.discardable,
                         damage_dealt=entry.damage_dealt,
                         block_gain=entry.block_gain,
                         hit_count=entry.hit_count,

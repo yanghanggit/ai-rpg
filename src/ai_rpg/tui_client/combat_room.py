@@ -1883,7 +1883,8 @@ class CombatRoomScreen(Screen[None]):
                         "名称", style="magenta", min_width=10, no_wrap=True
                     )
                     se_table.add_column("剩余", style="dim", width=10, no_wrap=True)
-                    se_table.add_column("阶段", width=15, no_wrap=True)
+                    se_table.add_column("阶段", width=12, no_wrap=True)
+                    se_table.add_column("速度", width=6, no_wrap=True)
                     se_table.add_column("描述", ratio=1)
                     phase_colors = {
                         "draw": "cyan",
@@ -1897,12 +1898,18 @@ class CombatRoomScreen(Screen[None]):
                             else f"剩余{effect.duration}回合"
                         )
                         phase_color = phase_colors.get(effect.phase, "white")
-                        phase_cell = f"[{phase_color}][{effect.phase}][/{phase_color}]"
+                        phase_cell = f"[{phase_color}]{effect.phase}[/{phase_color}]"
+                        if effect.speed > 0:
+                            speed_cell = f"[green]+{effect.speed}[/green]"
+                        elif effect.speed < 0:
+                            speed_cell = f"[red]{effect.speed}[/red]"
+                        else:
+                            speed_cell = "[dim]0[/dim]"
                         desc_cell = effect.description
                         if effect.source and effect.source != entity.name:
                             desc_cell += f"  [dim]来源:{display_name(effect.source)}[/]"
                         se_table.add_row(
-                            effect.name, duration_str, phase_cell, desc_cell
+                            effect.name, duration_str, phase_cell, speed_cell, desc_cell
                         )
                     log.write(se_table)
                 else:

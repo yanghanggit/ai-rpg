@@ -17,7 +17,7 @@ from ..models import (
     ActorComponent,
     RoundStatsComponent,
     Card,
-    CardTargetType,
+    TargetType,
     CharacterStatsComponent,
     DungeonComponent,
     PartyMemberComponent,
@@ -25,7 +25,7 @@ from ..models import (
     StageComponent,
     PostArbitrationAction,
     StatusEffect,
-    StatusEffectPhase,
+    EffectPhase,
     StatusEffectsComponent,
 )
 from ..utils import extract_json_from_code_block
@@ -186,18 +186,18 @@ def _generate_stage_post_arbitration_prompt(
 
 | phase | 对应阶段 | 可影响属性 | 典型效果举例 |
 |---|---|---|---|
-| `{StatusEffectPhase.DRAW}` | 抽牌阶段 | attack、defense（间接影响下回合卡牌数值） | 「虚弱」攻击力−2，生成卡牌 damage_dealt 偏低；「迟重」防御力−1，block_gain 偏低 |
-| `{StatusEffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt、block_gain | 「燃烧」每回合结算扣 hp 3；「黑暗腐蚀」造成伤害+4；「坚甲赐福」格挡+3 |
+| `{EffectPhase.DRAW}` | 抽牌阶段 | attack、defense（间接影响下回合卡牌数值） | 「虚弱」攻击力−2，生成卡牌 damage_dealt 偏低；「迟重」防御力−1，block_gain 偏低 |
+| `{EffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt、block_gain | 「燃烧」每回合结算扣 hp 3；「黑暗腐蚀」造成伤害+4；「坚甲赐福」格挡+3 |
 
 **speed 字段**：影响出手顺序（越高越先行动），只允许 +1 / 0 / -1；「地利加持」speed=+1，「泥泞困足」speed=−1，默认 0 不填。
 
 **属性约束**：
 - 禁止修改 max_hp
-- `{StatusEffectPhase.DRAW}` 阶段用 attack / defense 描述，不直接写 damage_dealt / block_gain
-- `{StatusEffectPhase.ARBITRATION}` 阶段直接用 hp / damage_dealt / block_gain，不用 attack / defense
+- `{EffectPhase.DRAW}` 阶段用 attack / defense 描述，不直接写 damage_dealt / block_gain
+- `{EffectPhase.ARBITRATION}` 阶段直接用 hp / damage_dealt / block_gain，不用 attack / defense
 - description 须引用上下文中实际存在的场景要素，第三人称描述环境如何作用于角色身体，如"战斗搅起的沙尘钻入眼中，视线模糊，造成伤害减少"
 
-绝大多数惩罚/增益效果选 `{StatusEffectPhase.ARBITRATION}`。"""
+绝大多数惩罚/增益效果选 `{EffectPhase.ARBITRATION}`。"""
 
     card_field_desc = f"""
 ## 塞牌字段说明
@@ -216,12 +216,12 @@ def _generate_stage_post_arbitration_prompt(
 
 | target_type | 含义 |
 |---|---|
-| `{CardTargetType.ENEMY_SINGLE}` | 攻击单体敌方（默认） |
-| `{CardTargetType.ENEMY_ALL}` | 攻击全体敌方 |
-| `{CardTargetType.ENEMY_RANDOM_MULTI}` | 每段独立随机命中一名敌方（需配合较高 hit_count） |
-| `{CardTargetType.ALLY_SINGLE}` | 治疗/增益单体友方 |
-| `{CardTargetType.ALLY_ALL}` | 治疗/增益全体友方 |
-| `{CardTargetType.SELF_ONLY}` | 仅作用于自身（防御、自损诅咒等） |
+| `{TargetType.ENEMY_SINGLE}` | 攻击单体敌方（默认） |
+| `{TargetType.ENEMY_ALL}` | 攻击全体敌方 |
+| `{TargetType.ENEMY_RANDOM_MULTI}` | 每段独立随机命中一名敌方（需配合较高 hit_count） |
+| `{TargetType.ALLY_SINGLE}` | 治疗/增益单体友方 |
+| `{TargetType.ALLY_ALL}` | 治疗/增益全体友方 |
+| `{TargetType.SELF_ONLY}` | 仅作用于自身（防御、自损诅咒等） |
 
 **注意**：damage_dealt 与 block_gain 不得同时为 0；只有当前持有手牌的角色才能被塞牌。"""
 
@@ -266,7 +266,7 @@ def _generate_stage_post_arbitration_prompt(
           "name": "沙尘入眼",
           "description": "战斗搅起的沙尘钻入眼中，视线模糊，造成伤害减少",
           "duration": 2,
-          "phase": "{StatusEffectPhase.ARBITRATION}",
+          "phase": "{EffectPhase.ARBITRATION}",
           "speed": 0
         }}
       ],
@@ -278,7 +278,7 @@ def _generate_stage_post_arbitration_prompt(
           "damage_dealt": 2,
           "block_gain": 0,
           "hit_count": 1,
-          "target_type": "{CardTargetType.ENEMY_SINGLE}"
+          "target_type": "{TargetType.ENEMY_SINGLE}"
         }}
       ]
     }}

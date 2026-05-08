@@ -301,13 +301,13 @@ class TestInitializeActorStatusEffects:
         self, context: Context, system: CombatInitializationSystem
     ) -> None:
         """若角色已有非空 status_effects，应触发 AssertionError。"""
-        from src.ai_rpg.models.cards import StatusEffect, StatusEffectPhase
+        from src.ai_rpg.models.cards import StatusEffect, EffectPhase
 
         actor = _make_actor_entity(context, "英雄", is_ally=True)
         existing_effect = StatusEffect(
             name="中毒",
             description="每回合损失 HP",
-            phase=StatusEffectPhase.ARBITRATION,
+            phase=EffectPhase.ARBITRATION,
             duration=2,
         )
         actor.add(StatusEffectsComponent, "英雄", [existing_effect])

@@ -144,9 +144,9 @@ Round 1 时，系统向所有 `PartyMemberComponent` 实体注入一条 human me
 
 ---
 
-### 卡牌目标类型（CardTargetType）
+### 卡牌目标类型（TargetType）
 
-`CardTargetType` 是每张卡牌的目标范围声明，由 `DrawCardsActionSystem` 在生成阶段由 LLM 写入 `target_type` 字段，再分别由玩家出牌路径（`dungeon_actions._resolve_targets`）和敌方 AI 路径（`EnemyPlayDecisionSystem._process_enemy_decision`）消费为实际 `targets` 列表，最终由 `PlayCardsArbitrationSystem` 按列表逐目标结算伤害与格挡。
+`TargetType` 是每张卡牌的目标范围声明，由 `DrawCardsActionSystem` 在生成阶段由 LLM 写入 `target_type` 字段，再分别由玩家出牌路径（`dungeon_actions._resolve_targets`）和敌方 AI 路径（`EnemyPlayDecisionSystem._process_enemy_decision`）消费为实际 `targets` 列表，最终由 `PlayCardsArbitrationSystem` 按列表逐目标结算伤害与格挡。
 
 **六种目标类型**：
 
@@ -161,7 +161,7 @@ Round 1 时，系统向所有 `PartyMemberComponent` 实体注入一条 human me
 
 **"宽进严出"验证策略**：
 
-`DrawCardsActionSystem` 生成的 `CardEntry` 将 LLM 的裸字符串原样保留；消费方在将其转换为 `CardTargetType` 枚举时，若字符串不匹配任何已知值，则直接丢弃该卡并记录 agent warning，不抛出异常。这保证 LLM 的自由输出不会崩溃后续管线，同时在管线边界处维持严格的类型约束。
+`DrawCardsActionSystem` 生成的 `CardEntry` 将 LLM 的裸字符串原样保留；消费方在将其转换为 `TargetType` 枚举时，若字符串不匹配任何已知值，则直接丢弃该卡并记录 agent warning，不抛出异常。这保证 LLM 的自由输出不会崩溃后续管线，同时在管线边界处维持严格的类型约束。
 
 **随机多段命中（`enemy_random_multi`）的设计要点**：
 

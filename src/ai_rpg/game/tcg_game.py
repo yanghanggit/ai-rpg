@@ -48,7 +48,7 @@ from ..models import (
     StageComponent,
     StageType,
     StatusEffect,
-    StatusEffectPhase,
+    EffectPhase,
     StatusEffectsComponent,
     WeaponItem,
     World,
@@ -552,13 +552,13 @@ class TCGGame(RPGGame):
 
     ###############################################################################################################################################
     def get_status_effects_by_phase(
-        self, entity: Entity, phase: StatusEffectPhase
+        self, entity: Entity, phase: EffectPhase
     ) -> List[StatusEffect]:
         """返回实体在指定战斗阶段生效的状态效果列表。
 
         Args:
             entity: 目标实体
-            phase: 要筛选的生效阶段（StatusEffectPhase）
+            phase: 要筛选的生效阶段（EffectPhase）
 
         Returns:
             匹配阶段的 StatusEffect 列表；实体无 StatusEffectsComponent 时返回空列表

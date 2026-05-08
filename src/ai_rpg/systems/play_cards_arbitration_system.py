@@ -20,7 +20,7 @@ from ..models import (
     DeathComponent,
     CombatArbitrationEvent,
     StatusEffect,
-    StatusEffectPhase,
+    EffectPhase,
     PostArbitrationAction,
     AddStatusEffectsAction,
 )
@@ -439,14 +439,14 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
         actor_arbitration_effects: List[StatusEffect] = (
             self._game.get_status_effects_by_phase(
-                actor_entity, StatusEffectPhase.ARBITRATION
+                actor_entity, EffectPhase.ARBITRATION
             )
         )
 
         target_arbitration_effects: Dict[str, List[StatusEffect]] = {
             target_name: self._game.get_status_effects_by_phase(
                 self._game.get_entity_by_name(target_name),  # type: ignore[arg-type]
-                StatusEffectPhase.ARBITRATION,
+                EffectPhase.ARBITRATION,
             )
             for target_name in dict.fromkeys(play_cards_action.targets)
         }

@@ -35,7 +35,7 @@ from src.ai_rpg.models import (
     StageComponent,
     StatusEffectsComponent,
     StatusEffect,
-    StatusEffectPhase,
+    EffectPhase,
     Round,
     CombatRoom,
     Dungeon,
@@ -48,20 +48,6 @@ from src.ai_rpg.models import (
     Blueprint,
     World,
 )
-
-# from src.ai_rpg.models.cards import StatusEffect, StatusEffectPhase
-# from src.ai_rpg.models.combat import Round
-# from src.ai_rpg.models.dungeon import CombatRoom, Dungeon
-# from src.ai_rpg.models import (
-#     Actor,
-#     CharacterSheet,
-#     CharacterStats,
-#     Stage,
-#     StageProfile,
-#     StageType,
-# )
-# from src.ai_rpg.models.world import Blueprint, World
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -413,7 +399,7 @@ class TestClearStatusEffects:
         actor = _make_actor_entity(game, "witch")
         effect = StatusEffect(
             name="burn",
-            phase=StatusEffectPhase.ARBITRATION,
+            phase=EffectPhase.ARBITRATION,
             description="burns",
             duration=2,
         )

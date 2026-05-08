@@ -31,7 +31,7 @@ from ..models import (
     CharacterStatsComponent,
     StatusEffectsComponent,
     StatusEffect,
-    StatusEffectPhase,
+    EffectPhase,
     PartyMemberComponent,
     MonsterComponent,
 )
@@ -392,7 +392,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 if status_effects_comp is not None
                 else []
             )
-            if e.phase == StatusEffectPhase.DRAW
+            if e.phase == EffectPhase.DRAW
         ]
 
         # 从 KeywordComponent 随机采样，每张牌对应一个关键词约束

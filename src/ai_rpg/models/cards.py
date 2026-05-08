@@ -1,9 +1,7 @@
 """卡牌与状态效果模型定义
 
 包含战斗中使用的状态效果（StatusEffect）与卡牌（Card）相关核心模型：
-StatusEffectPhase、StatusEffect、Card、DiceValue、Keyword。
-
-目标类型枚举（TargetType）已迁移至 target_type.py，此处保留向后兼容别名 CardTargetType。
+EffectPhase、StatusEffect、Card、DiceValue、Keyword
 """
 
 from enum import IntEnum, StrEnum, unique
@@ -12,14 +10,11 @@ from uuid import uuid4
 from pydantic import BaseModel, Field, field_validator
 from .target_type import TargetType
 
-# 向后兼容别名，新代码请直接使用 TargetType
-CardTargetType = TargetType
-
 
 ###############################################################################################################################################
 @final
 @unique
-class StatusEffectPhase(StrEnum):
+class EffectPhase(StrEnum):
     """状态效果生效阶段
 
     标记一个状态效果应在战斗流程的哪个阶段起效。
@@ -47,7 +42,7 @@ class StatusEffect(BaseModel):
     name: str
     description: str  # 效果描述（含表现与数值影响）
     duration: int = 3  # 持续回合数；-1=永久，>0=剩余回合
-    phase: StatusEffectPhase = StatusEffectPhase.ARBITRATION  # 生效阶段，默认仲裁阶段
+    phase: EffectPhase = EffectPhase.ARBITRATION  # 生效阶段，默认仲裁阶段
     source: str = ""  # 效果施加者名称；空字符串表示来源未知
     speed: int = (
         0  # 速度加成（正值加速、负值减速）；叠加到角色最终速度，影响每回合出手顺序

@@ -34,7 +34,7 @@ from src.ai_rpg.models import (
     StatusEffectsComponent,
 )
 from src.ai_rpg.models.actions import AddStatusEffectsAction, UseConsumableItemAction
-from src.ai_rpg.models.cards import StatusEffect, StatusEffectPhase
+from src.ai_rpg.models.cards import StatusEffect, EffectPhase
 from src.ai_rpg.models.combat import CombatState, Round
 from src.ai_rpg.models.dungeon import CombatRoom, Dungeon
 from src.ai_rpg.models.entities import (
@@ -469,7 +469,7 @@ class TestApplyItemArbitrationResult:
         effect = StatusEffect(
             name="中毒",
             description="每回合损失 2 HP（剩余 3 次）",
-            phase=StatusEffectPhase.ARBITRATION,
+            phase=EffectPhase.ARBITRATION,
             duration=3,
         )
         actor.add(StatusEffectsComponent, "hero", [effect])

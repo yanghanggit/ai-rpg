@@ -21,7 +21,7 @@ from ..models import (
     AddStatusEffectsAction,
     StatusEffectsComponent,
     StatusEffect,
-    StatusEffectPhase,
+    EffectPhase,
     DeathComponent,
 )
 from ..utils import extract_json_from_code_block
@@ -126,17 +126,17 @@ def _generate_add_status_effects_prompt(
 
 | phase | 对应阶段 | 可影响的属性 | 典型效果举例 |
 |---|---|---|---|
-| `{StatusEffectPhase.DRAW}` | 抽牌阶段 | attack、defense（换算为卡牌的 damage_dealt / block_gain / hit_count） | 「虚弱」攻击力−2，本回合生成卡牌的 damage_dealt 偏低；「沉重」防御力−1，生成卡牌的 block_gain 偏低 |
-| `{StatusEffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt、block_gain | 「燃烧」本回合结算时扣 hp 3；「坚甲」格挡+3；「中毒」造成伤害+2 |
+| `{EffectPhase.DRAW}` | 抽牌阶段 | attack、defense（换算为卡牌的 damage_dealt / block_gain / hit_count） | 「虚弱」攻击力−2，本回合生成卡牌的 damage_dealt 偏低；「沉重」防御力−1，生成卡牌的 block_gain 偏低 |
+| `{EffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt、block_gain | 「燃烧」本回合结算时扣 hp 3；「坚甲」格挡+3；「中毒」造成伤害+2 |
 
 **speed 字段**：影响出手顺序（越高越先行动），只允许 +1 / 0 / -1；「敏捷」speed=+1，「迟缓」speed=−1，默认 0 不填。
 
 **属性约束（所有阶段均适用）**：
 - 禁止修改 max_hp（最大生命值不可通过状态效果改变）
-- `{StatusEffectPhase.DRAW}` 阶段使用 attack / defense 描述，不直接写 damage_dealt / block_gain
-- `{StatusEffectPhase.ARBITRATION}` 阶段直接使用 hp / damage_dealt / block_gain，不使用 attack / defense
+- `{EffectPhase.DRAW}` 阶段使用 attack / defense 描述，不直接写 damage_dealt / block_gain
+- `{EffectPhase.ARBITRATION}` 阶段直接使用 hp / damage_dealt / block_gain，不使用 attack / defense
 
-绝大多数伤害/防御类效果选 `{StatusEffectPhase.ARBITRATION}`。"""
+绝大多数伤害/防御类效果选 `{EffectPhase.ARBITRATION}`。"""
 
     return f"""# 第 {current_round_number} 回合 — 追加状态效果
 
@@ -158,7 +158,7 @@ def _generate_add_status_effects_prompt(
       "name": "效果名（<8字）",
       "description": "第一人称，含表现与数值影响，1句话（如：我感到手臂刺痛，攻击力−2）",
       "duration": 持续回合数（-1=永久，正整数=剩余回合，默认3）,
-      "phase": "{StatusEffectPhase.ARBITRATION}",
+      "phase": "{EffectPhase.ARBITRATION}",
       "speed": 0
     }}
   ]

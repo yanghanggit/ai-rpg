@@ -2,15 +2,16 @@
 Unit tests for src/ai_rpg/systems/home_actor_plan_system.py
 
 覆盖范围：
-  - filter
-  - _is_player_active
-  - _build_player_action_response
+  - filter（仅 NPC 实体通过，PlayerComponent 实体被排除）
+  - _is_player_active（无参，查询游戏状态）
   - _get_other_actors_appearances
   - _get_available_home_stages
-  - _inject_player_scene_context
   - _inject_npc_standby_context
   - _execute_actor_actions
-  - react() 集成路径（player-only / player-active / player-passive+NPC）
+  - react() 集成路径（player-active / player-passive+NPC）
+
+玩家上下文注入相关逻辑（_build_player_action_response / _inject_player_scene_context）
+已迁移至 HomePlayerContextSystem，在本文件中通过 _make_player_system 测试。
 """
 
 import json
@@ -40,7 +41,8 @@ from src.ai_rpg.models import (
 from src.ai_rpg.models.dungeon import Dungeon
 from src.ai_rpg.models.messages import AIMessage
 from src.ai_rpg.models.world import Blueprint, World
-from src.ai_rpg.systems.home_actor_plan_system import HomeActorPlanSystem
+from src.ai_rpg.systems.home_npc_plan_system import HomeNpcPlanSystem
+from src.ai_rpg.systems.home_player_context_system import HomePlayerContextSystem
 
 
 # ---------------------------------------------------------------------------
@@ -110,8 +112,14 @@ def _make_player_actor(game: Any, name: str, stage_name: str) -> Entity:
 
 def _make_system(
     game: TCGGame, use_compressed_prompt: bool = True
-) -> HomeActorPlanSystem:
-    return HomeActorPlanSystem(game, use_compressed_prompt=use_compressed_prompt)
+) -> HomeNpcPlanSystem:
+    return HomeNpcPlanSystem(game, use_compressed_prompt=use_compressed_prompt)
+
+
+def _make_player_system(
+    game: TCGGame, use_compressed_prompt: bool = True
+) -> HomePlayerContextSystem:
+    return HomePlayerContextSystem(game, use_compressed_prompt=use_compressed_prompt)
 
 
 def _action_plan_json(**overrides: Any) -> dict[str, Any]:
@@ -152,6 +160,14 @@ class TestFilter:
         entity.add(PlanAction, "ghost")
         assert system.filter(entity) is False
 
+    def test_player_entity_filtered_out(self) -> None:
+        # PlayerComponent entities are handled by HomePlayerContextSystem, not here
+        game = _make_game()
+        system = _make_system(game)
+        player = _make_player_actor(game, "hero", "home")
+        player.add(PlanAction, "hero")
+        assert system.filter(player) is False
+
 
 # ---------------------------------------------------------------------------
 # TestIsPlayerActive
@@ -159,30 +175,30 @@ class TestFilter:
 
 
 class TestIsPlayerActive:
-    def test_empty_list_returns_false(self) -> None:
+    def test_no_player_entity_returns_false(self) -> None:
         game = _make_game()
         system = _make_system(game)
-        assert system._is_player_active([]) is False
+        assert system._is_player_active() is False
 
     def test_player_without_active_action_returns_false(self) -> None:
         game = _make_game()
         system = _make_system(game)
-        player = _make_player_actor(game, "hero", "home")
-        assert system._is_player_active([player]) is False
+        _make_player_actor(game, "hero", "home")
+        assert system._is_player_active() is False
 
     def test_player_with_speak_action_returns_true(self) -> None:
         game = _make_game()
         system = _make_system(game)
         player = _make_player_actor(game, "hero", "home")
         player.add(SpeakAction, "hero", {"npc": "hello"})
-        assert system._is_player_active([player]) is True
+        assert system._is_player_active() is True
 
     def test_player_with_trans_stage_action_returns_true(self) -> None:
         game = _make_game()
         system = _make_system(game)
         player = _make_player_actor(game, "hero", "home")
         player.add(TransStageAction, "hero", "library")
-        assert system._is_player_active([player]) is True
+        assert system._is_player_active() is True
 
 
 # ---------------------------------------------------------------------------
@@ -193,7 +209,7 @@ class TestIsPlayerActive:
 class TestBuildPlayerActionResponse:
     def test_no_actions_uses_passive_mind(self) -> None:
         game = _make_game()
-        system = _make_system(game)
+        system = _make_player_system(game)
         player = _make_player_actor(game, "hero", "home")
         result = system._build_player_action_response(player, "passive thought")
         assert result.mind == "passive thought"
@@ -204,7 +220,7 @@ class TestBuildPlayerActionResponse:
 
     def test_speak_action_populates_speak(self) -> None:
         game = _make_game()
-        system = _make_system(game)
+        system = _make_player_system(game)
         player = _make_player_actor(game, "hero", "home")
         player.add(SpeakAction, "hero", {"npc": "greetings"})
         result = system._build_player_action_response(player, "ignored")
@@ -212,7 +228,7 @@ class TestBuildPlayerActionResponse:
 
     def test_whisper_action_populates_whisper(self) -> None:
         game = _make_game()
-        system = _make_system(game)
+        system = _make_player_system(game)
         player = _make_player_actor(game, "hero", "home")
         player.add(WhisperAction, "hero", {"npc": "secret"})
         result = system._build_player_action_response(player, "ignored")
@@ -220,7 +236,7 @@ class TestBuildPlayerActionResponse:
 
     def test_announce_action_populates_announce(self) -> None:
         game = _make_game()
-        system = _make_system(game)
+        system = _make_player_system(game)
         player = _make_player_actor(game, "hero", "home")
         player.add(AnnounceAction, "hero", "public announcement")
         result = system._build_player_action_response(player, "ignored")
@@ -228,7 +244,7 @@ class TestBuildPlayerActionResponse:
 
     def test_trans_stage_action_populates_trans_stage(self) -> None:
         game = _make_game()
-        system = _make_system(game)
+        system = _make_player_system(game)
         player = _make_player_actor(game, "hero", "home")
         player.add(TransStageAction, "hero", "library")
         result = system._build_player_action_response(player, "ignored")
@@ -236,7 +252,7 @@ class TestBuildPlayerActionResponse:
 
     def test_equip_item_action_populates_equip_fields(self) -> None:
         game = _make_game()
-        system = _make_system(game)
+        system = _make_player_system(game)
         player = _make_player_actor(game, "hero", "home")
         player.add(EquipItemAction, "hero", "iron sword", None, "ring of power")
         result = system._build_player_action_response(player, "ignored")
@@ -246,7 +262,7 @@ class TestBuildPlayerActionResponse:
 
     def test_active_action_sets_mind_to_empty(self) -> None:
         game = _make_game()
-        system = _make_system(game)
+        system = _make_player_system(game)
         player = _make_player_actor(game, "hero", "home")
         player.add(SpeakAction, "hero", {"npc": "hi"})
         result = system._build_player_action_response(player, "should be ignored")
@@ -352,7 +368,7 @@ class TestInjectPlayerSceneContext:
     def test_passive_player_adds_three_context_entries(self) -> None:
         # passive → mind set → notify_entities called → 3 entries (human + AI + mind)
         game = _make_game()
-        system = _make_system(game)
+        system = _make_player_system(game)
         _make_home_stage(game, "home", narrative="peaceful hall")
         player = _make_player_actor(game, "hero", "home")
         before = len(game.get_agent_context(player).context)
@@ -363,7 +379,7 @@ class TestInjectPlayerSceneContext:
     def test_active_player_adds_two_context_entries(self) -> None:
         # active (SpeakAction) → passive_mind="" → mind="" → no notify_entities → 2 entries
         game = _make_game()
-        system = _make_system(game)
+        system = _make_player_system(game)
         _make_home_stage(game, "home", narrative="peaceful hall")
         player = _make_player_actor(game, "hero", "home")
         player.add(SpeakAction, "hero", {"npc": "hello"})
@@ -374,7 +390,7 @@ class TestInjectPlayerSceneContext:
 
     def test_uncompressed_mode_passive_player_adds_three_entries(self) -> None:
         game = _make_game()
-        system = _make_system(game, use_compressed_prompt=False)
+        system = _make_player_system(game, use_compressed_prompt=False)
         _make_home_stage(game, "home", narrative="peaceful hall")
         player = _make_player_actor(game, "hero", "home")
         before = len(game.get_agent_context(player).context)
@@ -419,7 +435,7 @@ class TestExecuteActorActions:
     def _run(
         self,
         game: TCGGame,
-        system: HomeActorPlanSystem,
+        system: HomeNpcPlanSystem,
         actor: Entity,
         response: dict[str, Any],
     ) -> None:
@@ -483,32 +499,26 @@ class TestExecuteActorActions:
 # TestReact (integration)
 # ---------------------------------------------------------------------------
 
-_PATCH_PATH = "src.ai_rpg.systems.home_actor_plan_system.DeepSeekClient.batch_chat"
+_PATCH_PATH = "src.ai_rpg.systems.home_npc_plan_system.DeepSeekClient.batch_chat"
 
 
 class TestReact:
-    async def test_increments_home_planning_turn_index(self) -> None:
+    async def test_no_npc_entities_batch_chat_called_with_empty_clients(self) -> None:
+        # Player filtered out before react(); with no NPC entities, batch_chat called with []
         game = _make_game()
         system = _make_system(game)
         _make_home_stage(game, "home")
-        player = _make_player_actor(game, "hero", "home")
-        before = game._world.home_planning_turn_index
-        await system.react([player])
-        assert game._world.home_planning_turn_index == before + 1
-
-    async def test_player_only_batch_chat_called_with_empty_clients(self) -> None:
-        # With no NPC entities, batch_chat is still invoked but with an empty list
-        game = _make_game()
-        system = _make_system(game)
-        _make_home_stage(game, "home")
-        player = _make_player_actor(game, "hero", "home")
+        _make_player_actor(
+            game, "hero", "home"
+        )  # exists in game but not passed to react
         with patch(_PATCH_PATH, new_callable=AsyncMock) as mock_batch:
-            await system.react([player])
+            await system.react([])
             mock_batch.assert_called_once_with(clients=[])
 
     async def test_player_active_action_puts_npc_in_standby_no_batch_chat(
         self,
     ) -> None:
+        # Player entity not in entities list; _is_player_active() queries game state
         game = _make_game()
         system = _make_system(game)
         _make_home_stage(game, "home")
@@ -516,7 +526,7 @@ class TestReact:
         npc = _make_actor(game, "npc", "home")
         player.add(SpeakAction, "hero", {"npc": "hello"})
         with patch(_PATCH_PATH, new_callable=AsyncMock) as mock_batch:
-            await system.react([player, npc])
+            await system.react([npc])  # player filtered out; only NPC passed
             mock_batch.assert_not_called()
         # NPC received standby context (3 entries: human + AI + mind notify)
         npc_ctx = game.get_agent_context(npc).context
@@ -526,8 +536,8 @@ class TestReact:
         game = _make_game()
         system = _make_system(game)
         _make_home_stage(game, "home")
-        player = _make_player_actor(game, "hero", "home")
+        _make_player_actor(game, "hero", "home")  # in game but filtered from react()
         npc = _make_actor(game, "npc", "home")
         with patch(_PATCH_PATH, new_callable=AsyncMock) as mock_batch:
-            await system.react([player, npc])
+            await system.react([npc])  # only NPC passed
             mock_batch.assert_called_once()

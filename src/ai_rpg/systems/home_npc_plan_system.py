@@ -259,11 +259,12 @@ def _build_compressed_planning_prompt(
 
 #######################################################################################################################################
 @final
-class HomeActorPlanSystem(ReactiveProcessor):
-    """家园角色行动系统。
+class HomeNpcPlanSystem(ReactiveProcessor):
+    """家园 NPC 自主行动规划系统。
 
-    响应式处理器，监听 PlanAction 组件触发，生成行动规划提示词，
-    调用 AI 服务获取决策，并转化为游戏行动组件。
+    响应式处理器，监听 PlanAction 组件触发，仅处理非玩家控制（无 PlayerComponent）的 NPC 实体。
+    生成行动规划提示词，调用 LLM 获取决策，并转化为游戏行动组件。
+    若玩家本轮有主动行动，NPC 进入待命模式（跳过 LLM 推理）。
 
     Attributes:
         _game: 游戏实例引用
@@ -285,33 +286,28 @@ class HomeActorPlanSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(PlanAction) and entity.has(ActorComponent)
+        return (
+            entity.has(PlanAction)
+            and entity.has(ActorComponent)
+            and not entity.has(PlayerComponent)
+        )
 
     #######################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
 
-        # 进入家园角色行动规划阶段，首先自增全局规划回合计数器，生成提示词并调用 AI 获取决策。
-        self._game._world.home_planning_turn_index += 1
+        # turn counter 由 HomePlayerContextSystem（注册在前）负责自增，此处直接读取。
         planning_turn = self._game._world.home_planning_turn_index
 
-        # 将玩家与 NPC 实体分开处理：玩家注入场景观察上下文，NPC 调用 LLM 进行行动规划。
-        player_entities = [e for e in entities if e.has(PlayerComponent)]
-        npc_entities = [e for e in entities if not e.has(PlayerComponent)]
-
-        # 玩家：注入场景观察上下文，不调用 LLM
-        for player_entity in player_entities:
-            self._inject_player_scene_context(player_entity, planning_turn)
-
         # 若玩家本轮有主动行动，NPC 进入待命模式（跳过 LLM 推理）
-        if self._is_player_active(player_entities):
-            for npc_entity in npc_entities:
+        if self._is_player_active():
+            for npc_entity in entities:
                 self._inject_npc_standby_context(npc_entity, planning_turn)
             return
 
         # NPC：调用 LLM 进行行动规划
         chat_clients: List[DeepSeekClient] = self._create_actor_chat_clients(
-            npc_entities, planning_turn
+            entities, planning_turn
         )
         await DeepSeekClient.batch_chat(clients=chat_clients)
 
@@ -323,18 +319,17 @@ class HomeActorPlanSystem(ReactiveProcessor):
             self._execute_actor_actions(response_entity, chat_client)
 
     #######################################################################################################################################
-    def _is_player_active(self, player_entities: List[Entity]) -> bool:
-        """判断本轮是否有玩家具有主动行动。
-
-        Args:
-            player_entities: 玩家实体列表
+    def _is_player_active(self) -> bool:
+        """判断本轮玩家是否具有主动行动。
 
         Returns:
-            若任一玩家持有 _PLAYER_ACTIVE_ACTION_TYPES 中任意类型则返回 True
+            玩家持有 _PLAYER_ACTIVE_ACTION_TYPES 中任意类型则返回 True；玩家不存在时返回 False
         """
+        player_entity = self._game.get_player_entity()
+        if player_entity is None:
+            return False
         return any(
-            e.has(action_type)
-            for e in player_entities
+            player_entity.has(action_type)
             for action_type in _PLAYER_ACTIVE_ACTION_TYPES
         )
 
@@ -406,136 +401,6 @@ class HomeActorPlanSystem(ReactiveProcessor):
                 content=passive_mind,
             ),
         )
-
-    #######################################################################################################################################
-    def _inject_player_scene_context(
-        self, player_entity: Entity, planning_turn_index: int
-    ) -> None:
-        """向玩家实体注入当前场景观察信息（不调用 LLM）。
-
-        Args:
-            player_entity: 玩家实体
-            planning_turn_index: 全局家园规划回合编号
-        """
-        current_stage = self._game.resolve_stage_entity(player_entity)
-        assert current_stage is not None
-
-        other_actors_appearances = self._get_other_actors_appearances(
-            player_entity, current_stage
-        )
-        available_home_stages = self._get_available_home_stages(
-            player_entity, current_stage
-        )
-
-        stage_narrative = current_stage.get(StageDescriptionComponent).narrative
-        available_stage_names = [e.name for e in available_home_stages]
-
-        full_prompt = _build_action_planning_prompt(
-            current_stage=current_stage.name,
-            current_stage_narration=stage_narrative,
-            other_actors_appearances=other_actors_appearances,
-            available_home_stages=available_stage_names,
-            planning_turn_index=planning_turn_index,
-        )
-        if self._use_compressed_prompt:
-            compressed_prompt = _build_compressed_planning_prompt(
-                current_stage=current_stage.name,
-                current_stage_narration=stage_narrative,
-                other_actors_appearances=other_actors_appearances,
-                available_home_stages=available_stage_names,
-                planning_turn_index=planning_turn_index,
-            )
-            self._game.add_human_message(
-                player_entity,
-                compressed_prompt,
-                home_actor_planning=player_entity.name,
-                home_actor_full_prompt=full_prompt,
-            )
-        else:
-            self._game.add_human_message(
-                player_entity,
-                full_prompt,
-                home_actor_planning=player_entity.name,
-            )
-
-        # 判断玩家本轮是否有主动动作
-        has_action = any(
-            player_entity.has(action_type)
-            for action_type in _PLAYER_ACTIVE_ACTION_TYPES
-        )
-        passive_mind = "" if has_action else f"身处{current_stage.name}，待命。"
-
-        mock_response = self._build_player_action_response(player_entity, passive_mind)
-        self._game.add_ai_message(
-            player_entity, AIMessage(content=mock_response.model_dump_json(indent=2))
-        )
-
-        # 被动观察轮：模拟 mind 通知，与 NPC 路径对齐
-        if mock_response.mind != "":
-            self._game.notify_entities(
-                {player_entity},
-                MindEvent(
-                    message=_format_mind_notification(
-                        player_entity.name, mock_response.mind
-                    ),
-                    actor=player_entity.name,
-                    content=mock_response.mind,
-                ),
-            )
-
-    #######################################################################################################################################
-    def _build_player_action_response(
-        self, player_entity: Entity, passive_mind: str = ""
-    ) -> ActionPlanResponse:
-        """根据玩家当前动作组件构建等效的 ActionPlanResponse。
-
-        有主动动作时 mind 为空；无任何动作（被动观察轮）时用 passive_mind 填入。
-
-        Args:
-            player_entity: 玩家实体
-            passive_mind: 被动观察轮时使用的 mind 文本
-
-        Returns:
-            模拟的 ActionPlanResponse
-        """
-        response = ActionPlanResponse()
-
-        if player_entity.has(SpeakAction):
-            response.speak = player_entity.get(SpeakAction).target_messages
-
-        if player_entity.has(WhisperAction):
-            response.whisper = player_entity.get(WhisperAction).target_messages
-
-        if player_entity.has(AnnounceAction):
-            response.announce = player_entity.get(AnnounceAction).message
-
-        if player_entity.has(TransStageAction):
-            response.trans_stage = player_entity.get(TransStageAction).target_stage_name
-
-        if player_entity.has(EquipItemAction):
-            equip_action = player_entity.get(EquipItemAction)
-            response.equip_weapon = equip_action.weapon
-            response.equip_armor = equip_action.armor
-            response.equip_accessory = equip_action.accessory
-
-        if not any(
-            [
-                response.speak,
-                response.whisper,
-                response.announce,
-                response.trans_stage,
-            ]
-        ) and not any(
-            x is not None
-            for x in [
-                response.equip_weapon,
-                response.equip_armor,
-                response.equip_accessory,
-            ]
-        ):
-            response.mind = passive_mind
-
-        return response
 
     #######################################################################################################################################
     def _execute_actor_actions(

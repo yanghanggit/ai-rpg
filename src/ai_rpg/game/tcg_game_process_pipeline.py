@@ -37,7 +37,8 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     from ..systems.stage_description_system import (
         StageDescriptionSystem,
     )
-    from ..systems.home_actor_plan_system import HomeActorPlanSystem
+    from ..systems.home_npc_plan_system import HomeNpcPlanSystem
+    from ..systems.home_player_context_system import HomePlayerContextSystem
     from ..systems.inspect_self_action_system import InspectSelfActionSystem
     from ..systems.equip_item_action_system import EquipItemActionSystem
     from ..systems.craft_item_action_system import CraftItemActionSystem
@@ -54,7 +55,8 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
 
     # 规划系统-场景描述系统-角色系统
     processors.add(StageDescriptionSystem(game=tcg_game, enable_debug_cache=True))
-    processors.add(HomeActorPlanSystem(tcg_game))
+    processors.add(HomePlayerContextSystem(tcg_game))
+    processors.add(HomeNpcPlanSystem(tcg_game))
 
     # 动作处理相关的系统：查询-自我审视-审核-说话-耳语-公告-场景转换-清理
     processors.add(QueryActionSystem(tcg_game))

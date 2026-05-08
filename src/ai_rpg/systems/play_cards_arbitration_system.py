@@ -288,9 +288,9 @@ def _generate_combat_arbitration_prompt(
 - hp：0 ≤ hp ≤ 最大 HP
 - block：结算后剩余格挡（出牌者 = 当前格挡 + block_gain；目标 = 当前格挡 − 消耗量，不低于 0）
 - status_effect_patches：仅在本次仲裁**消耗了**某状态效果的 cur 计数时填写，格式：
-  `{{"name": "效果名", "description": "更新后的完整描述（含新 cur 值，如 cur=1/max=3）"}}`
+  `{{"name": "效果名", "description": "更新后的完整描述（含新计数，如 1/3）"}}`
   - name 必须与"仲裁状态效果"中列出的名称完全一致
-  - 未被消耗的效果不输出；cur 耗尽时填 cur=0/max=N（不移除效果，duration 由系统另行维护）
+  - 未被消耗的效果不输出；cur 耗尽时描述中填 0/N（不移除效果，duration 由系统另行维护）
   - 若本次出牌未触发任何 cur 消耗，保持空数组 []
 
 ### narrative

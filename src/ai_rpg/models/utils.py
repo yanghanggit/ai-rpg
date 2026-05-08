@@ -3,7 +3,8 @@
 提供基于组件数据的纯计算工具，不依赖 ECS Entity，便于单元测试与复用。
 """
 
-from typing import Optional
+from typing import List, Optional
+from .cards import StatusEffect
 from .components import CharacterStatsComponent, EquipmentComponent, InventoryComponent
 from .items import WeaponItem, EquipmentItem
 from .stats import CharacterStats
@@ -13,16 +14,18 @@ def compute_stats_with_equipment(
     stats_comp: CharacterStatsComponent,
     equip_comp: Optional[EquipmentComponent],
     inventory_comp: Optional[InventoryComponent],
+    status_effects: Optional[List[StatusEffect]] = None,
 ) -> CharacterStats:
-    """计算角色的最终有效属性，聚合基础属性与已装备物品的属性加成。
+    """计算角色的最终有效属性，聚合基础属性、已装备物品以及状态效果的属性加成。
 
     Args:
         stats_comp: 角色基础属性组件
         equip_comp: 装备槽组件，为 None 时不计算装备加成
         inventory_comp: 背包组件，为 None 时不计算装备加成
+        status_effects: 当前状态效果列表，为 None 时不计算状态效果加成
 
     Returns:
-        包含基础属性与所有已装备物品加成之和的新 CharacterStats 实例
+        包含基础属性与所有加成之和的新 CharacterStats 实例
     """
 
     base = stats_comp.stats
@@ -51,6 +54,9 @@ def compute_stats_with_equipment(
                     bonus_energy += b.energy
                     bonus_speed += b.speed
                 break
+
+    for se in status_effects or []:
+        bonus_speed += se.speed
 
     return CharacterStats(
         hp=base.hp,

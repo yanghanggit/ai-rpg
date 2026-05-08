@@ -1802,6 +1802,14 @@ class CombatRoomScreen(Screen[None]):
                     ),
                     None,
                 )
+                status_effects_comp = next(
+                    (
+                        c
+                        for c in entity.components
+                        if c.name == StatusEffectsComponent.__name__
+                    ),
+                    None,
+                )
                 stats = compute_stats_with_equipment(
                     CharacterStatsComponent(**stats_comp.data),
                     (
@@ -1812,6 +1820,13 @@ class CombatRoomScreen(Screen[None]):
                     (
                         InventoryComponent(**inventory_comp_raw.data)
                         if inventory_comp_raw is not None
+                        else None
+                    ),
+                    (
+                        StatusEffectsComponent(
+                            **status_effects_comp.data
+                        ).status_effects
+                        if status_effects_comp is not None
                         else None
                     ),
                 )

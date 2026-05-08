@@ -189,6 +189,8 @@ def _generate_stage_post_arbitration_prompt(
 | `{StatusEffectPhase.DRAW}` | 抽牌阶段 | attack、defense（间接影响下回合卡牌数值） | 「虚弱」攻击力−2，生成卡牌 damage_dealt 偏低；「迟重」防御力−1，block_gain 偏低 |
 | `{StatusEffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt、block_gain | 「燃烧」每回合结算扣 hp 3；「黑暗腐蚀」造成伤害+4；「坚甲赐福」格挡+3 |
 
+**speed 字段**：影响出手顺序（越高越先行动），只允许 +1 / 0 / -1；「地利加持」speed=+1，「泥泞困足」speed=−1，默认 0 不填。
+
 **属性约束**：
 - 禁止修改 max_hp
 - `{StatusEffectPhase.DRAW}` 阶段用 attack / defense 描述，不直接写 damage_dealt / block_gain
@@ -264,7 +266,8 @@ def _generate_stage_post_arbitration_prompt(
           "name": "沙尘入眼",
           "description": "战斗搅起的沙尘钻入眼中，视线模糊，造成伤害减少",
           "duration": 2,
-          "phase": "{StatusEffectPhase.ARBITRATION}"
+          "phase": "{StatusEffectPhase.ARBITRATION}",
+          "speed": 0
         }}
       ],
       "inject_cards": [
@@ -283,7 +286,8 @@ def _generate_stage_post_arbitration_prompt(
 }}
 ```
 
-无干预时输出空的 per_actor 数组，只输出JSON。"""
+`speed` 仅填 +1 / 0 / -1，非零时才需显式填写，默认填 0。
+无干预时输出空的 per_actor 数组，只输出JSON."""
 
 
 #######################################################################################################################################

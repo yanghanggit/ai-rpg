@@ -9,7 +9,7 @@ StatusEffectPhase、StatusEffect、Card、DiceValue、Keyword。
 from enum import IntEnum, StrEnum, unique
 from typing import List, final
 from uuid import uuid4
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from .target_type import TargetType
 
 # 向后兼容别名，新代码请直接使用 TargetType
@@ -49,7 +49,20 @@ class StatusEffect(BaseModel):
     duration: int = 3  # 持续回合数；-1=永久，>0=剩余回合
     phase: StatusEffectPhase = StatusEffectPhase.ARBITRATION  # 生效阶段，默认仲裁阶段
     source: str = ""  # 效果施加者名称；空字符串表示来源未知
+    speed: int = (
+        0  # 速度加成（正值加速、负值减速）；叠加到角色最终速度，影响每回合出手顺序
+    )
     uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
+
+    @field_validator("speed")
+    @classmethod
+    def clamp_speed(cls, v: int) -> int:
+        """将 speed 归一化到 {-1, 0, +1}，保留正负号。"""
+        if v > 0:
+            return 1
+        if v < 0:
+            return -1
+        return 0
 
 
 ###############################################################################################################################################

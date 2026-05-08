@@ -589,6 +589,11 @@ class TCGGame(RPGGame):
             stats_comp,
             entity.get(EquipmentComponent) if entity.has(EquipmentComponent) else None,
             entity.get(InventoryComponent) if entity.has(InventoryComponent) else None,
+            (
+                entity.get(StatusEffectsComponent).status_effects
+                if entity.has(StatusEffectsComponent)
+                else None
+            ),
         )
 
     ###############################################################################################################################################

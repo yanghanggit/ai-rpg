@@ -43,7 +43,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     actor_wanderer = create_wanderer()
 
     # 调整旅行者的速度属性，增加其在 SPEED_ORDER 策略下的出手优先级
-    actor_wanderer.character_stats.speed = 20
+    # actor_wanderer.character_stats.speed = 20
 
     # 为旅行者分配初始装备：猎刀 + 轻甲套装 + 沙漠护身符
     actor_wanderer.items.extend(

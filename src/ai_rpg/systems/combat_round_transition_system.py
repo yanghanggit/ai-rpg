@@ -88,7 +88,9 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         ]
         eligible.sort(
             key=lambda entity: (
-                -entity.get(CharacterStatsComponent).stats.speed,  # 速度降序
+                -self._game.compute_character_stats(
+                    entity
+                ).speed,  # 速度降序（含装备加成）
                 entity.get(IdentityComponent).creation_order,
             )
         )

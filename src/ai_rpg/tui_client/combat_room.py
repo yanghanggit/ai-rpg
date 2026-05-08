@@ -1786,7 +1786,35 @@ class CombatRoomScreen(Screen[None]):
                 None,
             )
             if stats_comp is not None:
-                stats = CharacterStatsComponent(**stats_comp.data).stats
+                equip_comp_raw = next(
+                    (
+                        c
+                        for c in entity.components
+                        if c.name == EquipmentComponent.__name__
+                    ),
+                    None,
+                )
+                inventory_comp_raw = next(
+                    (
+                        c
+                        for c in entity.components
+                        if c.name == InventoryComponent.__name__
+                    ),
+                    None,
+                )
+                stats = compute_stats_with_equipment(
+                    CharacterStatsComponent(**stats_comp.data),
+                    (
+                        EquipmentComponent(**equip_comp_raw.data)
+                        if equip_comp_raw is not None
+                        else None
+                    ),
+                    (
+                        InventoryComponent(**inventory_comp_raw.data)
+                        if inventory_comp_raw is not None
+                        else None
+                    ),
+                )
                 block_comp_inline = next(
                     (
                         c

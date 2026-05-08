@@ -1,15 +1,4 @@
-"""
-战斗回合清理系统
-
-职责：
-- 清除上一回合的手牌、格挡状态
-- 递减状态效果持续时间，移除已过期效果
-
-设计特点：
-- 使用 ExecuteProcessor，每次 pipeline 执行时主动检查
-- 位于 CombatOutcomeSystem 之后、CombatRoundTransitionSystem 之前
-- 内部有状态守护：仅在回合已完成时触发
-"""
+"""战斗回合清理系统：回合结束后重置战场瞬态，确保下一回合以干净状态启动。"""
 
 from typing import Final, List, final, override
 from loguru import logger
@@ -47,16 +36,18 @@ def _make_status_effects_tick_message(
 @final
 class CombatRoundCleanupSystem(ExecuteProcessor):
     """
-    战斗回合清理系统
+    战斗回合清理系统。
 
-    在每次 pipeline 执行时清理已完成回合的残留状态：
-    清除旧回合手牌与格挡 → 递减/移除状态效果。
-    位于 CombatRoundTransitionSystem 之前，确保新回合创建时环境已干净。
+    目标：在每个回合标记完成后，清除该回合遗留的瞬态数据，
+          使 CombatRoundTransitionSystem 能安全地创建下一回合。
 
-    内部状态守护（不满足则静默跳过）：
-    - 战斗状态非 ONGOING → 跳过
-    - 尚无任何回合 → 跳过
-    - 最新回合未完成 → 跳过
+    Pipeline 位置：CombatOutcomeSystem（后）→ 本系统 → CombatRoundTransitionSystem（前）
+
+    前置条件：
+    - 当前战斗处于 ONGOING 状态
+    - 已存在至少一个回合，且最新回合已完成
+
+    不满足上述条件时静默跳过，对外无副作用。
     """
 
     ############################################################################################################
@@ -66,17 +57,6 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
     ############################################################################################################
     @override
     async def execute(self) -> None:
-        # # 状态守护：非有效战斗阶段 / 无回合 / 最新回合未完成 → 静默跳过
-        # valid_state = (
-        #     self._game.current_dungeon.is_ongoing
-        #     or self._game.current_dungeon.is_combat_completed
-        #     or self._game.current_dungeon.is_post_combat
-        # )
-        # if not valid_state:
-        #     logger.debug(
-        #         "当前战斗状态非 ONGOING/COMPLETE/POST_COMBAT，跳过旧回合状态清除"
-        #     )
-        #     return
 
         if not self._game.current_dungeon.is_ongoing:
             logger.debug("当前战斗状态非 ONGOING，跳过旧回合状态清除")
@@ -97,13 +77,7 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
 
     ############################################################################################################
     def tick_status_effects_duration(self) -> None:
-        """回合结束时递减所有角色的状态效果持续时间，移除已过期的效果。
-
-        - duration == -1：永久效果，跳过递减
-        - duration > 0：-=1；降至 0 时从列表中移除
-
-        对每个有变化的 actor 实体写入 human message，保持 agent 对话上下文连续性。
-        """
+        """推进所有角色的状态效果时钟，移除到期效果，并将变化同步写入角色 agent 上下文。"""
         for entity in self._game.get_group(
             Matcher(StatusEffectsComponent)
         ).entities.copy():

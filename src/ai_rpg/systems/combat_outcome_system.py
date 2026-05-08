@@ -1,10 +1,4 @@
-"""战斗结果判定系统
-
-检查双方阵营（友方 PartyMemberComponent / 敌方 MonsterComponent）的存活情况，
-判定战斗胜负后调用 current_dungeon.complete_combat() 更新战斗状态，
-并向场景内所有友方角色广播胜/败消息。
-仅在战斗 ONGOING 阶段执行。
-"""
+"""战斗结果判定系统：检测阵营全灭条件，结束战斗并广播结果。"""
 
 from typing import Final, final, override, Set
 from ..entitas import ExecuteProcessor, Entity
@@ -20,15 +14,7 @@ from loguru import logger
 
 ########################################################################################################################################################################
 def _get_combat_result_notification(stage_name: str, is_victory: bool) -> str:
-    """获取战斗结果通知消息。
-
-    Args:
-        stage_name: 战斗场景名称
-        is_victory: True表示胜利，False表示失败
-
-    Returns:
-        战斗结果通知字符串，包含场景名称和胜负结果
-    """
+    """生成写入 agent 上下文的战斗胜/败通知文本。"""
     result_text = "胜利" if is_victory else "失败"
     return f"# {stage_name}的战斗{result_text}！"
 
@@ -38,10 +24,16 @@ def _get_combat_result_notification(stage_name: str, is_victory: bool) -> str:
 
 @final
 class CombatOutcomeSystem(ExecuteProcessor):
-    """战斗结果判定系统。
+    """
+    战斗结果判定系统。
 
-    检查双方阵营是否全员阵亡，确定战斗胜负，并向所有友方单位广播结果。
-    死亡标记（DeathComponent）由上游系统（PlayCardsArbitrationSystem）写入，本系统仅读取。
+    目标：在每次 pipeline 执行时检测阵营全灭条件，一旦达成即结束战斗
+          并向全体远征队成员广播胜/败通知。
+
+    Pipeline 位置：PlayCardsArbitrationSystem（后）→ 本系统 → CombatRoundCleanupSystem（前）
+
+    依赖：DeathComponent 由上游系统写入，本系统只读不写角色状态。
+    仅在战斗 ONGOING 阶段生效，否则静默跳过。
     """
 
     def __init__(self, game: TCGGame) -> None:
@@ -50,72 +42,29 @@ class CombatOutcomeSystem(ExecuteProcessor):
     ########################################################################################################################################################################
     @override
     async def execute(self) -> None:
-
-        # step1: 判定战斗胜负
-        self._determine_combat_winner()
-
-    ########################################################################################################################################################################
-    def _determine_combat_winner(self) -> None:
-        """根据双方阵营的存活情况判定战斗胜负。
-
-        仅在战斗进行中时执行判定。检查顺序:
-        1. 若友方全灭，标记战斗失败并广播失败消息
-        2. 若敌方全灭，标记战斗胜利并广播胜利消息
-        3. 若双方均有存活单位，战斗继续
-
-        战斗结果会通过current_dungeon记录，
-        并向所有友方单位广播相应的胜负消息。
-        """
+        """检测阵营全灭条件，调用 complete_combat() 结束战斗并广播结果；战斗未 ONGOING 时静默跳过。"""
         if not self._game.current_dungeon.is_ongoing:
             logger.debug("当前不在战斗阶段，无需判定战斗胜负")
             return  # 不是本阶段就直接返回
 
         logger.debug("判定战斗胜负：检查双方阵营存活情况")
 
-        if self._is_ally_side_eliminated():
+        if self._is_player_side_eliminated():
             logger.info("ally side eliminated!!!")
-            # self._flush_incomplete_round()
             self._game.current_dungeon.complete_combat(CombatResult.LOSE)
-            self._broadcast_result_to_allies(CombatResult.LOSE)
+            self._game.clear_round_state()
+            self._broadcast_result_to_party_members(CombatResult.LOSE)
         elif self._is_enemy_side_eliminated():
             logger.info("enemy side eliminated!!!")
-            # self._flush_incomplete_round()
             self._game.current_dungeon.complete_combat(CombatResult.WIN)
-            self._broadcast_result_to_allies(CombatResult.WIN)
+            self._game.clear_round_state()
+            self._broadcast_result_to_party_members(CombatResult.WIN)
         else:
             logger.debug("双方均未全灭，战斗继续进行")
 
     ########################################################################################################################################################################
-    # def _flush_incomplete_round(self) -> None:
-    #     """将最新回合中未完成出手的角色补全为空占位。
-
-    #     当战斗在回合中途结束（如一击必杀）时，latest_round 的 completed_actors
-    #     可能尚未包含全部 action_order 成员，导致 is_round_completed 为 False。
-    #     本方法将剩余角色依序追加至 completed_actors，并在 combat_log / narrative
-    #     中各追加一个空字符串占位，使三个列表长度保持一致。
-    #     """
-    #     latest_round = self._game.current_dungeon.latest_round
-    #     if latest_round is None or latest_round.is_round_completed:
-    #         return
-
-    #     remaining: List[str] = latest_round.action_order[
-    #         len(latest_round.completed_actors) :
-    #     ]
-    #     for actor in remaining:
-    #         latest_round.completed_actors.append(actor)
-    #         latest_round.combat_log.append("")
-    #         latest_round.narrative.append("")
-
-    ########################################################################################################################################################################
     def _is_enemy_side_eliminated(self) -> bool:
-        """检查敌方阵营是否已全员阵亡。
-
-        遍历当前场景中的所有角色，统计敌方单位(带MonsterComponent)的总数
-        和已阵亡敌方单位(带DeathComponent)的数量。
-
-        Returns:
-            bool: 当存在敌方单位且所有敌方单位都已阵亡时返回True，否则返回False
-        """
+        """返回敌方阵营（MonsterComponent）是否已全员带有 DeathComponent。"""
         player_entity = self._game.get_player_entity()
         assert player_entity is not None
 
@@ -141,15 +90,8 @@ class CombatOutcomeSystem(ExecuteProcessor):
         return len(active_enemies) > 0 and len(defeated_enemies) >= len(active_enemies)
 
     ########################################################################################################################################################################
-    def _is_ally_side_eliminated(self) -> bool:
-        """检查友方阵营是否已全员阵亡。
-
-        遍历当前场景中的所有角色，统计远征队成员(带PartyMemberComponent)的总数
-        和已阵亡远征队成员(带DeathComponent)的数量。
-
-        Returns:
-            bool: 当存在远征队成员且所有远征队成员都已阵亡时返回True，否则返回False
-        """
+    def _is_player_side_eliminated(self) -> bool:
+        """返回友方阵营（PartyMemberComponent）是否已全员带有 DeathComponent。"""
 
         player_entity = self._game.get_player_entity()
         assert player_entity is not None, "Player entity should not be None."
@@ -176,18 +118,8 @@ class CombatOutcomeSystem(ExecuteProcessor):
         return len(current_allies) > 0 and len(defeated_allies) >= len(current_allies)
 
     ########################################################################################################################################################################
-    def _broadcast_result_to_allies(self, result: CombatResult) -> None:
-        """向当前场景中的所有远征队成员广播战斗结果消息。
-
-        遍历场景中的所有角色，向每个远征队成员(带PartyMemberComponent)发送:
-        - 胜利消息: 当result为CombatResult.WIN时
-        - 失败消息: 当result为CombatResult.LOSE时
-
-        消息中会附带当前战斗场景的名称作为combat_outcome参数。
-
-        Args:
-            result: 战斗结果枚举值，指示胜利或失败
-        """
+    def _broadcast_result_to_party_members(self, result: CombatResult) -> None:
+        """向当前场景内所有 PartyMemberComponent 实体写入胜/败通知，并附带 combat_outcome 参数。"""
 
         player_entity = self._game.get_player_entity()
         assert player_entity is not None, "Player entity should not be None."
@@ -201,9 +133,12 @@ class CombatOutcomeSystem(ExecuteProcessor):
         assert len(actors_in_stage) > 0, f"entities with actions: {actors_in_stage}"
 
         for entity in actors_in_stage:
+
+            # 仅向远征队成员广播结果消息，非远征队成员（如敌人）不发送
             if not entity.has(PartyMemberComponent):
                 continue
 
+            # 根据战斗结果发送不同的消息内容，附带当前战斗场景名称作为 combat_outcome 参数
             if result == CombatResult.WIN:
                 self._game.add_human_message(
                     entity,

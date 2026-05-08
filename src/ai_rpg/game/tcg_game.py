@@ -512,7 +512,7 @@ class TCGGame(RPGGame):
         # 清除所有角色实体的手牌组件，并将剩余手牌归还牌组
         for entity in self.get_group(Matcher(HandComponent)).entities.copy():
             hand_comp = entity.get(HandComponent)
-            assert hand_comp is not None
+
             # 将剩余手牌全部归还牌组，再移除手牌组件
             if hand_comp.cards:
                 draw_deck_comp = entity.get(DrawDeckComponent)

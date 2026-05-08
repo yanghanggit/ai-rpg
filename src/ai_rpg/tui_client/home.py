@@ -416,6 +416,7 @@ class HomeScreen(Screen[None]):
                         log.write(f"[bold white]{message_text}[/]")
                     else:
                         log.write(_format_agent_event(msg.data))
+                    log.write("--------------------------------------")
                     logger.debug(
                         f"_poll_messages: 收到消息 seq={msg.sequence_id} type={msg.message_type}"
                     )

@@ -23,7 +23,7 @@ from ..models import (
     PlayerComponent,
 )
 from ..game import TCGGame
-from .home_npc_plan_system import (
+from .home_planning_utils import (
     ActionPlanResponse,
     _PLAYER_ACTIVE_ACTION_TYPES,
     _build_action_planning_prompt,

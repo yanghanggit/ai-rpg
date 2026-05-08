@@ -43,6 +43,7 @@ from src.ai_rpg.models.messages import AIMessage
 from src.ai_rpg.models.world import Blueprint, World
 from src.ai_rpg.systems.home_npc_plan_system import HomeNpcPlanSystem
 from src.ai_rpg.systems.home_player_context_system import HomePlayerContextSystem
+from src.ai_rpg.systems.home_planning_utils import is_player_active
 
 
 # ---------------------------------------------------------------------------
@@ -177,28 +178,24 @@ class TestFilter:
 class TestIsPlayerActive:
     def test_no_player_entity_returns_false(self) -> None:
         game = _make_game()
-        system = _make_system(game)
-        assert system._is_player_active() is False
+        assert is_player_active(game) is False
 
     def test_player_without_active_action_returns_false(self) -> None:
         game = _make_game()
-        system = _make_system(game)
         _make_player_actor(game, "hero", "home")
-        assert system._is_player_active() is False
+        assert is_player_active(game) is False
 
     def test_player_with_speak_action_returns_true(self) -> None:
         game = _make_game()
-        system = _make_system(game)
         player = _make_player_actor(game, "hero", "home")
         player.add(SpeakAction, "hero", {"npc": "hello"})
-        assert system._is_player_active() is True
+        assert is_player_active(game) is True
 
     def test_player_with_trans_stage_action_returns_true(self) -> None:
         game = _make_game()
-        system = _make_system(game)
         player = _make_player_actor(game, "hero", "home")
         player.add(TransStageAction, "hero", "library")
-        assert system._is_player_active() is True
+        assert is_player_active(game) is True
 
 
 # ---------------------------------------------------------------------------

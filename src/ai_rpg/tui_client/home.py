@@ -14,12 +14,12 @@ import json
 from .server_client import (
     fetch_session_messages,
     fetch_stages_state,
-    fetch_tasks_status,
+    watch_task_until_done,
+    TaskFailedError,
     home_advance as server_home_advance,
     logout as server_logout,
 )
 from ..models.session_message import MessageType
-from ..models.task import TaskStatus
 from ..models.agent_event import EventHead
 from .utils import display_name
 
@@ -348,33 +348,19 @@ class HomeScreen(Screen[None]):
             inp.focus()
             return
 
-        # 轮询任务状态（最多 120 秒）
-        _POLL_INTERVAL = 1.0
-        _MAX_POLLS = 120
-        for _ in range(_MAX_POLLS):
-            await asyncio.sleep(_POLL_INTERVAL)
-            try:
-                status_resp = await fetch_tasks_status([task_id])
-                if not status_resp.tasks:
-                    continue
-                task_record = status_resp.tasks[0]
-                if task_record.status == TaskStatus.COMPLETED:
-                    log.write("[bold green]✅ 推进完成[/]")
-                    logger.info(f"_do_advance: 任务完成 task_id={task_id}")
-                    success = True
-                    break
-                elif task_record.status == TaskStatus.FAILED:
-                    error_msg = task_record.error or "未知错误"
-                    log.write(f"[bold red]❌ 推进失败: {error_msg}[/]")
-                    logger.error(
-                        f"_do_advance: 任务失败 task_id={task_id} error={error_msg}"
-                    )
-                    break
-            except Exception as e:
-                logger.warning(f"_do_advance: 轮询任务状态失败 error={e}")
-        else:
+        try:
+            await watch_task_until_done(task_id)
+            log.write("[bold green]✅ 推进完成[/]")
+            logger.info(f"_do_advance: 任务完成 task_id={task_id}")
+            success = True
+        except TaskFailedError as e:
+            log.write(f"[bold red]❌ 推进失败: {e}[/]")
+            logger.error(f"_do_advance: 任务失败 task_id={task_id} error={e}")
+        except TimeoutError:
             log.write("[bold yellow]⚠️ 推进超时，请检查服务器状态[/]")
             logger.warning(f"_do_advance: 任务轮询超时 task_id={task_id}")
+        except Exception as e:
+            logger.warning(f"_do_advance: 等待任务失败 error={e}")
 
         inp.disabled = False
         inp.focus()

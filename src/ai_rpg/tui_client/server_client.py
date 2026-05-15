@@ -1,5 +1,6 @@
 """游戏服务器 HTTP 客户端（TUI 客户端专用）"""
 
+import json
 from typing import Any, Dict, List, cast
 
 import httpx
@@ -48,9 +49,17 @@ from ..models import (
     NewGameResponse,
     SessionMessageResponse,
     StagesStateResponse,
+    TaskRecord,
     TasksStatusResponse,
+    TaskStatus,
 )
 from .config import server_config
+
+
+class TaskFailedError(Exception):
+    """后台任务执行失败时抛出。"""
+
+    pass
 
 
 async def fetch_server_info() -> Dict[str, Any]:
@@ -161,6 +170,46 @@ async def fetch_tasks_status(task_ids: List[str]) -> TasksStatusResponse:
         )
         response.raise_for_status()
         return TasksStatusResponse.model_validate(response.json())
+
+
+async def watch_task_until_done(task_id: str, timeout_seconds: int = 120) -> TaskRecord:
+    """通过 SSE 等待后台任务完成，返回终态 TaskRecord。
+
+    Args:
+        task_id: 要监听的任务 ID
+        timeout_seconds: 最大等待秒数（同时透传给服务端 SSE 生成器）
+
+    Returns:
+        TaskRecord: 状态为 COMPLETED 的任务记录
+
+    Raises:
+        TaskFailedError: 任务失败（status=FAILED 或服务端返回 error 字段）
+        TimeoutError: 等待超时
+    """
+    url = server_config.base_url + f"/api/tasks/v1/watch/{task_id}"
+    params = {"timeout_seconds": timeout_seconds}
+    timeout = httpx.Timeout(
+        connect=10.0,
+        read=float(timeout_seconds + 15),
+        write=10.0,
+        pool=10.0,
+    )
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        async with client.stream("GET", url, params=params) as response:
+            response.raise_for_status()
+            async for line in response.aiter_lines():
+                if not line.startswith("data:"):
+                    continue
+                payload = line[5:].strip()
+                if not payload:
+                    continue
+                data = json.loads(payload)
+                record = TaskRecord.model_validate(data)
+                if record.status == TaskStatus.FAILED:
+                    raise TaskFailedError(record.error or "未知错误")
+                if record.status == TaskStatus.COMPLETED:
+                    return record
+    raise TimeoutError(f"任务 {task_id} 等待超时")
 
 
 async def home_advance(user_name: str, game_name: str) -> HomeAdvanceResponse:

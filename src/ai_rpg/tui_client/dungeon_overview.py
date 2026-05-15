@@ -1,6 +1,5 @@
 """地下城总览 Screen"""
 
-import asyncio
 from typing import List, Optional
 
 from loguru import logger
@@ -11,11 +10,11 @@ from textual.screen import Screen
 from textual.widgets import Input, RichLog, Static
 
 from ..models import Dungeon, ActorType
-from ..models.task import TaskStatus
 from .server_client import (
     fetch_dungeon_list,
     fetch_entities_details,
-    fetch_tasks_status,
+    watch_task_until_done,
+    TaskFailedError,
     home_enter_dungeon as server_home_enter_dungeon,
 )
 from .server_client import home_generate_dungeon as server_home_generate_dungeon
@@ -256,37 +255,26 @@ class DungeonOverviewScreen(Screen[None]):
             inp.focus()
             return
 
-        _POLL_INTERVAL = 1.0
-        _MAX_POLLS = 120
-        for _ in range(_MAX_POLLS):
-            await asyncio.sleep(_POLL_INTERVAL)
-            try:
-                status_resp = await fetch_tasks_status([task_id])
-                if not status_resp.tasks:
-                    continue
-                task_record = status_resp.tasks[0]
-                if task_record.status == TaskStatus.COMPLETED:
-                    log.write("[bold green]✅ 地下城生成完成，正在刷新列表...[/]")
-                    logger.info(
-                        f"DungeonOverviewScreen._do_generate_dungeon: 任务完成 task_id={task_id}"
-                    )
-                    success = True
-                    break
-                elif task_record.status == TaskStatus.FAILED:
-                    error_msg = task_record.error or "未知错误"
-                    log.write(f"[bold red]❌ 地下城生成失败: {error_msg}[/]")
-                    logger.error(
-                        f"DungeonOverviewScreen._do_generate_dungeon: 任务失败 task_id={task_id} error={error_msg}"
-                    )
-                    break
-            except Exception as e:
-                logger.warning(
-                    f"DungeonOverviewScreen._do_generate_dungeon: 轮询失败 error={e}"
-                )
-        else:
+        try:
+            await watch_task_until_done(task_id)
+            log.write("[bold green]✅ 地下城生成完成，正在刷新列表...[/]")
+            logger.info(
+                f"DungeonOverviewScreen._do_generate_dungeon: 任务完成 task_id={task_id}"
+            )
+            success = True
+        except TaskFailedError as e:
+            log.write(f"[bold red]❌ 地下城生成失败: {e}[/]")
+            logger.error(
+                f"DungeonOverviewScreen._do_generate_dungeon: 任务失败 task_id={task_id} error={e}"
+            )
+        except TimeoutError:
             log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
             logger.warning(
                 f"DungeonOverviewScreen._do_generate_dungeon: 轮询超时 task_id={task_id}"
+            )
+        except Exception as e:
+            logger.warning(
+                f"DungeonOverviewScreen._do_generate_dungeon: 等待任务失败 error={e}"
             )
 
         inp.disabled = False

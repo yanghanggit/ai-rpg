@@ -12,12 +12,12 @@ from textual.widgets import Input, RichLog, Static
 
 from .server_client import (
     fetch_entities_details,
-    fetch_tasks_status,
+    watch_task_until_done,
+    TaskFailedError,
     home_craft_item as server_home_craft_item,
 )
 from .utils import display_name
 from ..models import InventoryComponent, ItemType
-from ..models.task import TaskStatus
 
 CRAFT_ITEM_HEADER = """\
 [bold cyan]── 物品制造 ──────────────────────────────────────[/]
@@ -262,32 +262,23 @@ class CraftItemScreen(Screen[None]):
             inp.focus()
             return
 
-        # 轮询任务状态
-        for _ in range(_MAX_POLLS):
-            await asyncio.sleep(_POLL_INTERVAL)
-            try:
-                status_resp = await fetch_tasks_status([task_id])
-                if not status_resp.tasks:
-                    continue
-                task_record = status_resp.tasks[0]
-                if task_record.status == TaskStatus.COMPLETED:
-                    log.write("[bold green]✅ 制造完成，正在返回主场景...[/]")
-                    logger.info(f"CraftItemScreen._do_craft: 完成 task_id={task_id}")
-                    await asyncio.sleep(0.5)
-                    self.app.pop_screen()
-                    return
-                elif task_record.status == TaskStatus.FAILED:
-                    error_msg = task_record.error or "未知错误"
-                    log.write(f"[bold red]❌ 制造失败: {error_msg}[/]")
-                    logger.error(
-                        f"CraftItemScreen._do_craft: 任务失败 task_id={task_id} error={error_msg}"
-                    )
-                    break
-            except Exception as e:
-                logger.warning(f"CraftItemScreen._do_craft: 轮询失败 error={e}")
-        else:
+        try:
+            await watch_task_until_done(task_id)
+            log.write("[bold green]✅ 制造完成，正在返回主场景...[/]")
+            logger.info(f"CraftItemScreen._do_craft: 完成 task_id={task_id}")
+            await asyncio.sleep(0.5)
+            self.app.pop_screen()
+            return
+        except TaskFailedError as e:
+            log.write(f"[bold red]❌ 制造失败: {e}[/]")
+            logger.error(
+                f"CraftItemScreen._do_craft: 任务失败 task_id={task_id} error={e}"
+            )
+        except TimeoutError:
             log.write("[bold yellow]⚠️ 制造超时，请检查服务器状态[/]")
             logger.warning(f"CraftItemScreen._do_craft: 轮询超时 task_id={task_id}")
+        except Exception as e:
+            logger.warning(f"CraftItemScreen._do_craft: 等待任务失败 error={e}")
 
         inp.disabled = False
         inp.focus()

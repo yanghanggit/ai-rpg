@@ -5,9 +5,11 @@
 """
 
 import asyncio
+import json
 from datetime import datetime
-from typing import List
+from typing import AsyncGenerator, List
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from loguru import logger
 from ..models import (
     TaskTriggerResponse,
@@ -151,3 +153,54 @@ async def get_tasks_status(
         tasks_details.append(task_detail)
 
     return TasksStatusResponse(tasks=tasks_details)
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+
+@background_tasks_api_router.get(path="/api/tasks/v1/watch/{task_id}")
+async def watch_task(
+    task_id: str,
+    game_server: CurrentGameServer,
+    timeout_seconds: int = Query(default=120, ge=1, le=600),
+    interval: float = Query(default=0.3, ge=0.1, le=5.0),
+) -> StreamingResponse:
+    """SSE 端点：推送单个任务状态直至终态或超时。
+
+    每 0.3 秒推送一次当前 TaskRecord JSON。
+    客户端收到 COMPLETED / FAILED 状态后即可关闭连接。
+
+    Args:
+        task_id: 要监视的任务 ID
+        game_server: 游戏服务器实例
+        timeout_seconds: 最大等待秒数，默认 120
+
+    Returns:
+        StreamingResponse: text/event-stream 格式的 SSE 响应
+    """
+
+    async def event_generator(poll_interval: float) -> AsyncGenerator[str, None]:
+        elapsed = 0.0
+        while elapsed < timeout_seconds:
+            task = game_server.get_task(task_id)
+            if task is None:
+                payload = json.dumps({"error": "task_not_found", "task_id": task_id})
+                yield f"data: {payload}\n\n"
+                logger.warning(f"watch_task: 任务不存在 task_id={task_id}")
+                return
+            yield f"data: {task.model_dump_json()}\n\n"
+            if task.status in (TaskStatus.COMPLETED, TaskStatus.FAILED):
+                logger.info(
+                    f"watch_task: 任务终态 task_id={task_id} status={task.status}"
+                )
+                return
+            await asyncio.sleep(poll_interval)
+            elapsed += poll_interval
+
+        payload = json.dumps({"error": "timeout", "task_id": task_id})
+        yield f"data: {payload}\n\n"
+        logger.warning(f"watch_task: 超时 task_id={task_id}")
+
+    return StreamingResponse(event_generator(interval), media_type="text/event-stream")

@@ -13,12 +13,12 @@ from textual.widgets import Input, RichLog, Static
 from .server_client import (
     fetch_entities_details,
     fetch_stages_state,
-    fetch_tasks_status,
+    watch_task_until_done,
+    TaskFailedError,
     home_player_action as server_home_player_action,
 )
 from .utils import display_name
 from ..models.api import HomePlayerActionType
-from ..models.task import TaskStatus
 
 SWITCH_STAGE_HEADER = """\
 [bold cyan]── 场景切换 ──────────────────────────────────────[/]
@@ -243,38 +243,26 @@ class SwitchStageScreen(Screen[None]):
             inp.focus()
             return
 
-        # 轮询任务状态（最多 120 秒）
-        _POLL_INTERVAL = 1.0
-        _MAX_POLLS = 120
-        for _ in range(_MAX_POLLS):
-            await asyncio.sleep(_POLL_INTERVAL)
-            try:
-                status_resp = await fetch_tasks_status([task_id])
-                if not status_resp.tasks:
-                    continue
-                task_record = status_resp.tasks[0]
-                if task_record.status == TaskStatus.COMPLETED:
-                    log.write("[bold green]✅ 场景切换完成，正在返回主场景...[/]")
-                    logger.info(
-                        f"SwitchStageScreen._do_switch_stage: 任务完成 task_id={task_id}"
-                    )
-                    success = True
-                    break
-                elif task_record.status == TaskStatus.FAILED:
-                    error_msg = task_record.error or "未知错误"
-                    log.write(f"[bold red]❌ 场景切换失败: {error_msg}[/]")
-                    logger.error(
-                        f"SwitchStageScreen._do_switch_stage: 任务失败 task_id={task_id} error={error_msg}"
-                    )
-                    break
-            except Exception as e:
-                logger.warning(
-                    f"SwitchStageScreen._do_switch_stage: 轮询失败 error={e}"
-                )
-        else:
+        try:
+            await watch_task_until_done(task_id)
+            log.write("[bold green]✅ 场景切换完成，正在返回主场景...[/]")
+            logger.info(
+                f"SwitchStageScreen._do_switch_stage: 任务完成 task_id={task_id}"
+            )
+            success = True
+        except TaskFailedError as e:
+            log.write(f"[bold red]❌ 场景切换失败: {e}[/]")
+            logger.error(
+                f"SwitchStageScreen._do_switch_stage: 任务失败 task_id={task_id} error={e}"
+            )
+        except TimeoutError:
             log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
             logger.warning(
                 f"SwitchStageScreen._do_switch_stage: 轮询超时 task_id={task_id}"
+            )
+        except Exception as e:
+            logger.warning(
+                f"SwitchStageScreen._do_switch_stage: 等待任务失败 error={e}"
             )
 
         if success:

@@ -1,6 +1,5 @@
 """战斗房间 Screen（CombatRoom）"""
 
-import asyncio
 from enum import auto, Enum
 from typing import Dict, Final, List, Optional, final
 import httpx
@@ -28,7 +27,8 @@ from .server_client import fetch_dungeon_room, fetch_dungeon_state
 from .server_client import (
     fetch_entities_details,
     fetch_stages_state,
-    fetch_tasks_status,
+    watch_task_until_done,
+    TaskFailedError,
 )
 from ..models import (
     Card,
@@ -40,7 +40,6 @@ from ..models import (
     EquipmentComponent,
     InventoryComponent,
     TargetType,
-    TaskStatus,
     CharacterStatsComponent,
     StatusEffectsComponent,
     HandComponent,
@@ -64,10 +63,6 @@ class _Phase(Enum):
     SELECT_CONSUMABLE_TARGET = auto()  # 等待用户选择消耗品目标编号
     WAITING = auto()  # 正在等待后端任务完成
     ROUND_DONE = auto()  # 回合已全部完成
-
-
-_PLAY_POLL_INTERVAL: Final[float] = 1.0
-_PLAY_MAX_POLLS: Final[int] = 90
 
 
 def _format_http_error(e: Exception) -> str:
@@ -513,29 +508,22 @@ class CombatRoomScreen(Screen[None]):
             log.write(f"[bold red]❌ 战斗初始化请求失败: {_format_http_error(e)}[/]")
             return False
 
-        for _ in range(60):
-            await asyncio.sleep(1.0)
-            try:
-                status_resp = await fetch_tasks_status([task_id])
-                if not status_resp.tasks:
-                    continue
-                record = status_resp.tasks[0]
-                if record.status == TaskStatus.COMPLETED:
-                    log.write("[bold green]✅ 战斗初始化完成[/]")
-                    logger.info(f"_run_combat_init: 任务完成 task_id={task_id}")
-                    return True
-                elif record.status == TaskStatus.FAILED:
-                    error_msg = record.error or "未知错误"
-                    log.write(f"[bold red]❌ 战斗初始化失败: {error_msg}[/]")
-                    logger.error(
-                        f"_run_combat_init: 任务失败 task_id={task_id} error={error_msg}"
-                    )
-                    return False
-            except Exception as e:
-                logger.warning(f"_run_combat_init: 轮询失败 error={e}")
-        log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
-        logger.warning(f"_run_combat_init: 轮询超时 task_id={task_id}")
-        return False
+        try:
+            await watch_task_until_done(task_id, timeout_seconds=60)
+            log.write("[bold green]✅ 战斗初始化完成[/]")
+            logger.info(f"_run_combat_init: 任务完成 task_id={task_id}")
+            return True
+        except TaskFailedError as e:
+            log.write(f"[bold red]❌ 战斗初始化失败: {e}[/]")
+            logger.error(f"_run_combat_init: 任务失败 task_id={task_id} error={e}")
+            return False
+        except TimeoutError:
+            log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
+            logger.warning(f"_run_combat_init: 轮询超时 task_id={task_id}")
+            return False
+        except Exception as e:
+            logger.warning(f"_run_combat_init: 等待任务失败 error={e}")
+            return False
 
     async def _run_draw_cards(self) -> bool:
         """执行全员抽牌任务，返回 True 表示成功。"""
@@ -556,29 +544,22 @@ class CombatRoomScreen(Screen[None]):
             log.write(f"[bold red]❌ 全员抽牌请求失败: {_format_http_error(e)}[/]")
             return False
 
-        for _ in range(60):
-            await asyncio.sleep(1.0)
-            try:
-                status_resp = await fetch_tasks_status([task_id])
-                if not status_resp.tasks:
-                    continue
-                record = status_resp.tasks[0]
-                if record.status == TaskStatus.COMPLETED:
-                    log.write("[bold green]✅ 全员抽牌完成[/]")
-                    logger.info(f"_run_draw_cards: 任务完成 task_id={task_id}")
-                    return True
-                elif record.status == TaskStatus.FAILED:
-                    error_msg = record.error or "未知错误"
-                    log.write(f"[bold red]❌ 全员抽牌失败: {error_msg}[/]")
-                    logger.error(
-                        f"_run_draw_cards: 任务失败 task_id={task_id} error={error_msg}"
-                    )
-                    return False
-            except Exception as e:
-                logger.warning(f"_run_draw_cards: 轮询失败 error={e}")
-        log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
-        logger.warning(f"_run_draw_cards: 轮询超时 task_id={task_id}")
-        return False
+        try:
+            await watch_task_until_done(task_id, timeout_seconds=60)
+            log.write("[bold green]✅ 全员抽牌完成[/]")
+            logger.info(f"_run_draw_cards: 任务完成 task_id={task_id}")
+            return True
+        except TaskFailedError as e:
+            log.write(f"[bold red]❌ 全员抽牌失败: {e}[/]")
+            logger.error(f"_run_draw_cards: 任务失败 task_id={task_id} error={e}")
+            return False
+        except TimeoutError:
+            log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
+            logger.warning(f"_run_draw_cards: 轮询超时 task_id={task_id}")
+            return False
+        except Exception as e:
+            logger.warning(f"_run_draw_cards: 等待任务失败 error={e}")
+            return False
 
     @work
     async def _do_combat_retreat(self) -> None:
@@ -605,31 +586,18 @@ class CombatRoomScreen(Screen[None]):
             inp.focus()
             return
 
-        _POLL_INTERVAL = 1.0
-        _MAX_POLLS = 60
-        for _ in range(_MAX_POLLS):
-            await asyncio.sleep(_POLL_INTERVAL)
-            try:
-                status_resp = await fetch_tasks_status([task_id])
-                if not status_resp.tasks:
-                    continue
-                record = status_resp.tasks[0]
-                if record.status == TaskStatus.COMPLETED:
-                    log.write("[bold green]✅ 撤退成功[/]")
-                    logger.info(f"_do_combat_retreat: 任务完成 task_id={task_id}")
-                    break
-                elif record.status == TaskStatus.FAILED:
-                    error_msg = record.error or "未知错误"
-                    log.write(f"[bold red]❌ 撤退失败: {error_msg}[/]")
-                    logger.error(
-                        f"_do_combat_retreat: 任务失败 task_id={task_id} error={error_msg}"
-                    )
-                    break
-            except Exception as e:
-                logger.warning(f"_do_combat_retreat: 轮询失败 error={e}")
-        else:
+        try:
+            await watch_task_until_done(task_id, timeout_seconds=60)
+            log.write("[bold green]✅ 撤退成功[/]")
+            logger.info(f"_do_combat_retreat: 任务完成 task_id={task_id}")
+        except TaskFailedError as e:
+            log.write(f"[bold red]❌ 撤退失败: {e}[/]")
+            logger.error(f"_do_combat_retreat: 任务失败 task_id={task_id} error={e}")
+        except TimeoutError:
             log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
             logger.warning(f"_do_combat_retreat: 轮询超时 task_id={task_id}")
+        except Exception as e:
+            logger.warning(f"_do_combat_retreat: 等待任务失败 error={e}")
 
         inp.disabled = False
         inp.focus()
@@ -997,29 +965,20 @@ class CombatRoomScreen(Screen[None]):
             return
 
         self._update_play_status(f"等待 {short} 使用消耗品完成...")
-        for _ in range(_PLAY_MAX_POLLS):
-            await asyncio.sleep(_PLAY_POLL_INTERVAL)
-            try:
-                status_resp = await fetch_tasks_status([task_id])
-                if not status_resp.tasks:
-                    continue
-                record = status_resp.tasks[0]
-                if record.status == TaskStatus.COMPLETED:
-                    log.write(f"  [green]✓ {short} 使用消耗品完成：{item_name}[/]")
-                    logger.info(f"_do_use_consumable_item: 任务完成 task_id={task_id}")
-                    break
-                elif record.status == TaskStatus.FAILED:
-                    error_msg = record.error or "未知错误"
-                    log.write(f"[bold red]❌ {short} 使用消耗品失败: {error_msg}[/]")
-                    logger.error(
-                        f"_do_use_consumable_item: 任务失败 task_id={task_id} error={error_msg}"
-                    )
-                    break
-            except Exception as e:
-                logger.warning(f"_do_use_consumable_item: 轮询失败 error={e}")
-        else:
+        try:
+            await watch_task_until_done(task_id, timeout_seconds=90)
+            log.write(f"  [green]✓ {short} 使用消耗品完成：{item_name}[/]")
+            logger.info(f"_do_use_consumable_item: 任务完成 task_id={task_id}")
+        except TaskFailedError as e:
+            log.write(f"[bold red]❌ {short} 使用消耗品失败: {e}[/]")
+            logger.error(
+                f"_do_use_consumable_item: 任务失败 task_id={task_id} error={e}"
+            )
+        except TimeoutError:
             log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
             logger.warning(f"_do_use_consumable_item: 轮询超时 task_id={task_id}")
+        except Exception as e:
+            logger.warning(f"_do_use_consumable_item: 等待任务失败 error={e}")
 
         self._phase = None
         inp = self.query_one(Input)
@@ -1494,29 +1453,18 @@ class CombatRoomScreen(Screen[None]):
             return
 
         self._update_play_status(f"等待 {short} 出牌完成...")
-        for _ in range(_PLAY_MAX_POLLS):
-            await asyncio.sleep(_PLAY_POLL_INTERVAL)
-            try:
-                status_resp = await fetch_tasks_status([task_id])
-                if not status_resp.tasks:
-                    continue
-                record = status_resp.tasks[0]
-                if record.status == TaskStatus.COMPLETED:
-                    log.write(f"  [green]✓ {short} 出牌完成[/]")
-                    logger.info(f"_do_play_card: 任务完成 task_id={task_id}")
-                    break
-                elif record.status == TaskStatus.FAILED:
-                    error_msg = record.error or "未知错误"
-                    log.write(f"[bold red]❌ {short} 出牌失败: {error_msg}[/]")
-                    logger.error(
-                        f"_do_play_card: 任务失败 task_id={task_id} error={error_msg}"
-                    )
-                    break
-            except Exception as e:
-                logger.warning(f"_do_play_card: 轮询失败 error={e}")
-        else:
+        try:
+            await watch_task_until_done(task_id, timeout_seconds=90)
+            log.write(f"  [green]✓ {short} 出牌完成[/]")
+            logger.info(f"_do_play_card: 任务完成 task_id={task_id}")
+        except TaskFailedError as e:
+            log.write(f"[bold red]❌ {short} 出牌失败: {e}[/]")
+            logger.error(f"_do_play_card: 任务失败 task_id={task_id} error={e}")
+        except TimeoutError:
             log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
             logger.warning(f"_do_play_card: 轮询超时 task_id={task_id}")
+        except Exception as e:
+            logger.warning(f"_do_play_card: 等待任务失败 error={e}")
 
         await self._show_play_results(prev_round_idx, prev_completed_count)
 
@@ -1588,29 +1536,18 @@ class CombatRoomScreen(Screen[None]):
             return
 
         self._update_play_status(f"等待 {short} 弃牌完成...")
-        for _ in range(_PLAY_MAX_POLLS):
-            await asyncio.sleep(_PLAY_POLL_INTERVAL)
-            try:
-                status_resp = await fetch_tasks_status([task_id])
-                if not status_resp.tasks:
-                    continue
-                record = status_resp.tasks[0]
-                if record.status == TaskStatus.COMPLETED:
-                    log.write(f"  [green]✓ {short} 弃牌完成：{card_name}[/]")
-                    logger.info(f"_do_discard_card: 任务完成 task_id={task_id}")
-                    break
-                elif record.status == TaskStatus.FAILED:
-                    error_msg = record.error or "未知错误"
-                    log.write(f"[bold red]❌ {short} 弃牌失败: {error_msg}[/]")
-                    logger.error(
-                        f"_do_discard_card: 任务失败 task_id={task_id} error={error_msg}"
-                    )
-                    break
-            except Exception as e:
-                logger.warning(f"_do_discard_card: 轮询失败 error={e}")
-        else:
+        try:
+            await watch_task_until_done(task_id, timeout_seconds=90)
+            log.write(f"  [green]✓ {short} 弃牌完成：{card_name}[/]")
+            logger.info(f"_do_discard_card: 任务完成 task_id={task_id}")
+        except TaskFailedError as e:
+            log.write(f"[bold red]❌ {short} 弃牌失败: {e}[/]")
+            logger.error(f"_do_discard_card: 任务失败 task_id={task_id} error={e}")
+        except TimeoutError:
             log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
             logger.warning(f"_do_discard_card: 轮询超时 task_id={task_id}")
+        except Exception as e:
+            logger.warning(f"_do_discard_card: 等待任务失败 error={e}")
 
         self._advance()
 

@@ -12,13 +12,13 @@ from textual.widgets import Input, RichLog, Static
 
 from .server_client import (
     fetch_entities_details,
-    fetch_tasks_status,
+    watch_task_until_done,
+    TaskFailedError,
     home_player_action as server_home_player_action,
 )
 from .utils import display_name
 from ..models import EquipmentComponent, InventoryComponent
 from ..models.api import HomePlayerActionType
-from ..models.task import TaskStatus
 
 EQUIP_ITEM_HEADER = """\
 [bold cyan]── 装备管理 ──────────────────────────────────────[/]
@@ -349,37 +349,21 @@ class EquipItemScreen(Screen[None]):
             inp.focus()
             return
 
-        # 轮询任务状态（最多 120 秒）
-        _POLL_INTERVAL = 1.0
-        _MAX_POLLS = 120
-        for _ in range(_MAX_POLLS):
-            await asyncio.sleep(_POLL_INTERVAL)
-            try:
-                status_resp = await fetch_tasks_status([task_id])
-                if not status_resp.tasks:
-                    continue
-                task_record = status_resp.tasks[0]
-                if task_record.status == TaskStatus.COMPLETED:
-                    log.write(
-                        f"[bold green]✅ {action_desc} 完成，正在返回主场景...[/]"
-                    )
-                    logger.info(
-                        f"EquipItemScreen._do_equip: 任务完成 task_id={task_id}"
-                    )
-                    success = True
-                    break
-                elif task_record.status == TaskStatus.FAILED:
-                    error_msg = task_record.error or "未知错误"
-                    log.write(f"[bold red]❌ 装备操作失败: {error_msg}[/]")
-                    logger.error(
-                        f"EquipItemScreen._do_equip: 任务失败 task_id={task_id} error={error_msg}"
-                    )
-                    break
-            except Exception as e:
-                logger.warning(f"EquipItemScreen._do_equip: 轮询失败 error={e}")
-        else:
+        try:
+            await watch_task_until_done(task_id)
+            log.write(f"[bold green]✅ {action_desc} 完成，正在返回主场景...[/]")
+            logger.info(f"EquipItemScreen._do_equip: 任务完成 task_id={task_id}")
+            success = True
+        except TaskFailedError as e:
+            log.write(f"[bold red]❌ 装备操作失败: {e}[/]")
+            logger.error(
+                f"EquipItemScreen._do_equip: 任务失败 task_id={task_id} error={e}"
+            )
+        except TimeoutError:
             log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
             logger.warning(f"EquipItemScreen._do_equip: 轮询超时 task_id={task_id}")
+        except Exception as e:
+            logger.warning(f"EquipItemScreen._do_equip: 等待任务失败 error={e}")
 
         if success:
             await asyncio.sleep(0.5)

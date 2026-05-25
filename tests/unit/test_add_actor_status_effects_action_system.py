@@ -54,9 +54,15 @@ def _make_effect(
     duration: int = 3,
     phase: EffectPhase = EffectPhase.ARBITRATION,
     speed: int = 0,
+    defense: int = 0,
 ) -> StatusEffect:
     return StatusEffect(
-        name=name, description=description, duration=duration, phase=phase, speed=speed
+        name=name,
+        description=description,
+        duration=duration,
+        phase=phase,
+        speed=speed,
+        defense=defense,
     )
 
 
@@ -276,6 +282,54 @@ class TestProcessStatusEffectsResponse:
 
         effects = entity.get(StatusEffectsComponent).status_effects
         assert effects[0].speed == -1
+
+    def test_defense_positive_parsed(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: AddActorStatusEffectsActionSystem,
+    ) -> None:
+        """LLM 返回 defense=2，应原值保留（无 clamp）。"""
+        entity = _make_actor_entity(context, "战士")
+        response_json = '{"add_effects": [{"name": "护盾", "description": "增防", "duration": 2, "phase": "arbitration", "defense": 2}]}'
+        client = _make_mock_chat_client("战士", response_json)
+
+        system._process_status_effects_response(entity, client)
+
+        effects = entity.get(StatusEffectsComponent).status_effects
+        assert effects[0].defense == 2
+
+    def test_defense_negative_parsed(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: AddActorStatusEffectsActionSystem,
+    ) -> None:
+        """LLM 返回 defense=-2（破甲），应原值保留（无 clamp）。"""
+        entity = _make_actor_entity(context, "刺客")
+        response_json = '{"add_effects": [{"name": "破甲", "description": "减防", "duration": 2, "phase": "arbitration", "defense": -2}]}'
+        client = _make_mock_chat_client("刺客", response_json)
+
+        system._process_status_effects_response(entity, client)
+
+        effects = entity.get(StatusEffectsComponent).status_effects
+        assert effects[0].defense == -2
+
+    def test_defense_default_zero(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: AddActorStatusEffectsActionSystem,
+    ) -> None:
+        """未提供 defense 字段时默认为 0。"""
+        entity = _make_actor_entity(context, "法师")
+        response_json = '{"add_effects": [{"name": "燃烧", "description": "灼烧", "duration": 2, "phase": "arbitration"}]}'
+        client = _make_mock_chat_client("法师", response_json)
+
+        system._process_status_effects_response(entity, client)
+
+        effects = entity.get(StatusEffectsComponent).status_effects
+        assert effects[0].defense == 0
 
     def test_invalid_json_logs_and_no_crash(
         self,

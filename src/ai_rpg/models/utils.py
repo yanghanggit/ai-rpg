@@ -10,7 +10,7 @@ from .items import WeaponItem, EquipmentItem
 from .stats import CharacterStats
 
 
-def compute_stats_with_equipment(
+def compute_effective_stats(
     stats_comp: CharacterStatsComponent,
     equip_comp: Optional[EquipmentComponent],
     inventory_comp: Optional[InventoryComponent],
@@ -57,6 +57,7 @@ def compute_stats_with_equipment(
 
     for se in status_effects or []:
         bonus_speed += se.speed
+        bonus_defense += se.defense
 
     return CharacterStats(
         hp=base.hp,

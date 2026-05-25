@@ -47,6 +47,9 @@ class StatusEffect(BaseModel):
     speed: int = (
         0  # 速度加成（正值加速、负值减速）；叠加到角色最终速度，影响每回合出手顺序
     )
+    defense: int = (
+        0  # 防御加成（正值增防、负值破甲）；叠加到角色最终防御，影响仲裁阶段的伤害减免
+    )
     uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
 
     @field_validator("speed")

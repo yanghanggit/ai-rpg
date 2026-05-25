@@ -130,6 +130,7 @@ def _generate_add_status_effects_prompt(
 | `{EffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt | 「燃烧」本回合结算时扣 hp 3；「中毒」造成伤害+2 |
 
 **speed 字段**：影响出手顺序（越高越先行动），只允许 +1 / 0 / -1；「敏捷」speed=+1，「迟缓」speed=−1，默认 0 不填。
+**defense 字段**：影响防御值（正值增防、负值破甲），填写整数；「护盾」defense=+2，「破甲」defense=−2，默认 0 不填。
 
 **属性约束（所有阶段均适用）**：
 - 禁止修改 max_hp（最大生命值不可通过状态效果改变）

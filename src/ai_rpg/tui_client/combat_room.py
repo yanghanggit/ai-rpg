@@ -46,7 +46,7 @@ from ..models import (
     PartyMemberComponent,
     PlayerComponent,
 )
-from ..models.utils import compute_stats_with_equipment
+from ..models.utils import compute_effective_stats
 
 
 # ─────────────────────────────────────────────────
@@ -1624,9 +1624,7 @@ class CombatRoomScreen(Screen[None]):
                 elif comp.name == InventoryComponent.__name__:
                     _inv_comp = InventoryComponent(**comp.data)
             if _stats_comp is not None:
-                _final = compute_stats_with_equipment(
-                    _stats_comp, _equip_comp, _inv_comp
-                )
+                _final = compute_effective_stats(_stats_comp, _equip_comp, _inv_comp)
                 hp_str = f"{_final.hp}/{_final.max_hp}"
             short = display_name(entity.name)
             log.write(f"    {flabel} [bold]{short}[/]" f"  HP:[yellow]{hp_str}[/]")
@@ -1739,7 +1737,7 @@ class CombatRoomScreen(Screen[None]):
                     ),
                     None,
                 )
-                stats = compute_stats_with_equipment(
+                stats = compute_effective_stats(
                     CharacterStatsComponent(**stats_comp.data),
                     (
                         EquipmentComponent(**equip_comp_raw.data)
@@ -1796,6 +1794,7 @@ class CombatRoomScreen(Screen[None]):
                     se_table.add_column("剩余", style="dim", width=10, no_wrap=True)
                     se_table.add_column("阶段", width=12, no_wrap=True)
                     se_table.add_column("速度", width=6, no_wrap=True)
+                    se_table.add_column("防御", width=6, no_wrap=True)
                     se_table.add_column("描述", ratio=1)
                     phase_colors = {
                         "draw": "cyan",
@@ -1816,11 +1815,22 @@ class CombatRoomScreen(Screen[None]):
                             speed_cell = f"[red]{effect.speed}[/red]"
                         else:
                             speed_cell = "[dim]0[/dim]"
+                        if effect.defense > 0:
+                            defense_cell = f"[green]+{effect.defense}[/green]"
+                        elif effect.defense < 0:
+                            defense_cell = f"[red]{effect.defense}[/red]"
+                        else:
+                            defense_cell = "[dim]0[/dim]"
                         desc_cell = effect.description
                         if effect.source and effect.source != entity.name:
                             desc_cell += f"  [dim]来源:{display_name(effect.source)}[/]"
                         se_table.add_row(
-                            effect.name, duration_str, phase_cell, speed_cell, desc_cell
+                            effect.name,
+                            duration_str,
+                            phase_cell,
+                            speed_cell,
+                            defense_cell,
+                            desc_cell,
                         )
                     log.write(se_table)
                 else:

@@ -55,7 +55,7 @@ from ..models import (
     WorldComponent,
     WorldSystem,
 )
-from ..models.utils import compute_stats_with_equipment
+from ..models.utils import compute_effective_stats
 from .player_session import PlayerSession
 from ..entitas import Matcher, Entity
 
@@ -585,7 +585,7 @@ class TCGGame(RPGGame):
         ), f"{entity.name} 缺少 CharacterStatsComponent"
 
         stats_comp = entity.get(CharacterStatsComponent)
-        return compute_stats_with_equipment(
+        return compute_effective_stats(
             stats_comp,
             entity.get(EquipmentComponent) if entity.has(EquipmentComponent) else None,
             entity.get(InventoryComponent) if entity.has(InventoryComponent) else None,

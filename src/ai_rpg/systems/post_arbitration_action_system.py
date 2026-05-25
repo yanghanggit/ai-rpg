@@ -182,6 +182,7 @@ def _generate_stage_post_arbitration_prompt(
 | `{EffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt | 「燃烧」每回合结算扣 hp 3；「黑暗腐蚀」造成伤害+4；「坏甲赐福」纴带加成（已移除） |
 
 **speed 字段**：影响出手顺序（越高越先行动），只允许 +1 / 0 / -1；「地利加持」speed=+1，「泥泞困足」speed=−1，默认 0 不填。
+**defense 字段**：影响防御值（正值增防、负值破甲），填写整数；「沙土护身」defense=+2，「破甲」defense=−2，默认 0 不填。
 
 **属性约束**：
 - 禁止修改 max_hp

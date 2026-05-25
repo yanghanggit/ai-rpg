@@ -53,9 +53,15 @@ def _make_effect(
     duration: int = 2,
     phase: EffectPhase = EffectPhase.ARBITRATION,
     speed: int = 0,
+    defense: int = 0,
 ) -> StatusEffect:
     return StatusEffect(
-        name=name, description=description, duration=duration, phase=phase, speed=speed
+        name=name,
+        description=description,
+        duration=duration,
+        phase=phase,
+        speed=speed,
+        defense=defense,
     )
 
 
@@ -268,6 +274,42 @@ class TestApplyStatusEffects:
 
         effects = target.get(StatusEffectsComponent).status_effects
         assert effects[0].speed == 1
+
+    def test_defense_positive_stored(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: PostArbitrationActionSystem,
+    ) -> None:
+        """defense=3 构造 StatusEffect 时应原值保留（无 clamp）。"""
+        stage = _make_stage_entity(context, "地下城")
+        target = _make_actor_entity(context, "骑士")
+        directive = ActorPostArbitrationDirective(
+            target="骑士",
+            add_effects=[_make_effect("沙土护身", defense=3)],
+        )
+        system._apply_status_effects(stage, target, directive)
+
+        effects = target.get(StatusEffectsComponent).status_effects
+        assert effects[0].defense == 3
+
+    def test_defense_negative_stored(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: PostArbitrationActionSystem,
+    ) -> None:
+        """defense=-2 构造 StatusEffect 时应原值保留（无 clamp）。"""
+        stage = _make_stage_entity(context, "地下城")
+        target = _make_actor_entity(context, "弓手")
+        directive = ActorPostArbitrationDirective(
+            target="弓手",
+            add_effects=[_make_effect("破甲", defense=-2)],
+        )
+        system._apply_status_effects(stage, target, directive)
+
+        effects = target.get(StatusEffectsComponent).status_effects
+        assert effects[0].defense == -2
 
 
 class TestInjectCards:

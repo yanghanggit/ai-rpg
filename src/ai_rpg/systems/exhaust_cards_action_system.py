@@ -109,7 +109,7 @@ class ExhaustCardsActionSystem(ReactiveProcessor):
                 discard_comp.cards.append(discarded_card)
                 logger.debug(
                     f"  [{entity.name}] 手牌 {len(hand_comp.cards) + 1} → {len(new_hand_cards)}，"
-                    f"DiscardDeck 累计 {len(discard_comp.cards)} 张"
+                    f"ExhaustPile 累计 {len(discard_comp.cards)} 张"
                 )
                 self._game.add_human_message(
                     entity=entity,

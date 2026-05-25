@@ -41,6 +41,7 @@ from ..models import (
     TargetType,
     CharacterStatsComponent,
     StatusEffectsComponent,
+    DrawPileComponent,
     HandComponent,
     MonsterComponent,
     PartyMemberComponent,
@@ -1837,6 +1838,19 @@ class CombatRoomScreen(Screen[None]):
                     log.write("  [dim](无状态效果)[/]")
             else:
                 log.write("  [dim](无状态效果)[/]")
+            log.write("")
+            # 抽牌堆
+            draw_pile_comp = next(
+                (c for c in entity.components if c.name == DrawPileComponent.__name__),
+                None,
+            )
+            if draw_pile_comp is not None:
+                draw_pile = DrawPileComponent(**draw_pile_comp.data)
+                log.write(f"  [bold]抽牌堆（{len(draw_pile.cards)} 张）：[/]")
+                if draw_pile.cards:
+                    self._write_hand_table(draw_pile.cards, entity.name)
+                else:
+                    log.write("    [dim](空)[/]")
             log.write("")
             # 手牌
             if show_hand:

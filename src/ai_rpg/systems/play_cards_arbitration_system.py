@@ -193,7 +193,7 @@ def _generate_combat_arbitration_prompt(
 ) -> str:
     target_lines = (
         "\n".join(
-            f"- {name}（HP {stats.hp}/{stats.max_hp}）"
+            f"- {name}（HP {stats.hp}/{stats.max_hp} | 防御:{stats.defense}）"
             for name, stats in target_stats.items()
         )
         if target_stats
@@ -220,7 +220,7 @@ def _generate_combat_arbitration_prompt(
 
 ## 出牌者
 
-{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp}）
+{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp} | 防御:{actor_stats.defense}）
 
 ## 出牌
 
@@ -239,11 +239,13 @@ def _generate_combat_arbitration_prompt(
 
 ## 计算规则
 
-多段攻击逐段结算（hit_count 次），总伤害 = 各段 damage_dealt 之和。
+单段有效伤害 = max(1, damage_dealt − 目标防御)（最低保底 1；示例：damage_dealt=3, 防御=3 → max(1, 0) = 1；damage_dealt=5, 防御=3 → max(1, 2) = 2）
+总伤害 = 各段有效伤害之和（hit_count 次）
 目标 HP = max(0, min(当前 HP − 总伤害, 最大 HP))
 若 hit_count = 1，按单段正常结算即可
 若出牌者 HP 已为 0，跳过结算
 仲裁状态效果中的数値修正（额外 hp 扣除、伤害加成等）**叠加**到上述计算规则之上，体现在 final_stats 中。
+出牌者防御已提供；当卡牌描述涉及自身减伤/护盾，或仲裁状态效果含反伤规则时，结合上下文决定是否使用。
 {rm.rules}
 ## 输出格式
 
@@ -300,7 +302,7 @@ def _generate_compressed_combat_arbitration_prompt(
     """压缩版仲裁提示词，省略静态规则与格式说明，用于写入对话历史减少重复 token。"""
     target_lines = (
         "\n".join(
-            f"- {name}（HP {stats.hp}/{stats.max_hp}）"
+            f"- {name}（HP {stats.hp}/{stats.max_hp} | 防御:{stats.defense}）"
             for name, stats in target_stats.items()
         )
         if target_stats
@@ -327,7 +329,7 @@ def _generate_compressed_combat_arbitration_prompt(
 
 ## 出牌者
 
-{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp}）
+{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp} | 防御:{actor_stats.defense}）
 
 ## 出牌
 

@@ -361,7 +361,7 @@ class TestClearRoundState:
     def test_round_stats_component_removed(self) -> None:
         game = _make_game()
         actor = _make_actor_entity(game, "fighter")
-        actor.add(RoundStatsComponent, "fighter", 3, 0)
+        actor.add(RoundStatsComponent, "fighter", 3)
         game.clear_round_state()
         assert not actor.has(RoundStatsComponent)
 
@@ -379,7 +379,7 @@ class TestClearRoundState:
             actor = _make_actor_entity(game, name)
             actor.add(DrawDeckComponent, name, [])
             actor.add(HandComponent, name, [], 1)
-            actor.add(RoundStatsComponent, name, 2, 1)
+            actor.add(RoundStatsComponent, name, 2)
         game.clear_round_state()
         for name in ("a1", "a2", "a3"):
             entity = game.get_actor_entity(name)
@@ -499,7 +499,7 @@ class TestGetCurrentTurnActor:
     def test_actor_with_energy_returned(self) -> None:
         game = _make_game()
         actor = _make_actor_entity(game, "mage")
-        actor.add(RoundStatsComponent, "mage", 2, 0)
+        actor.add(RoundStatsComponent, "mage", 2)
         round_ = Round(actor_order_snapshots=[["mage"]])
         result = game.get_current_turn_actor(round_)
         assert result == "mage"
@@ -507,7 +507,7 @@ class TestGetCurrentTurnActor:
     def test_all_zero_energy_returns_none(self) -> None:
         game = _make_game()
         actor = _make_actor_entity(game, "mage")
-        actor.add(RoundStatsComponent, "mage", 0, 0)
+        actor.add(RoundStatsComponent, "mage", 0)
         round_ = Round(actor_order_snapshots=[["mage"]])
         result = game.get_current_turn_actor(round_)
         assert result is None
@@ -516,8 +516,8 @@ class TestGetCurrentTurnActor:
         game = _make_game()
         a1 = _make_actor_entity(game, "a1")
         a2 = _make_actor_entity(game, "a2")
-        a1.add(RoundStatsComponent, "a1", 0, 0)
-        a2.add(RoundStatsComponent, "a2", 1, 0)
+        a1.add(RoundStatsComponent, "a1", 0)
+        a2.add(RoundStatsComponent, "a2", 1)
         round_ = Round(actor_order_snapshots=[["a1", "a2"]])
         result = game.get_current_turn_actor(round_)
         assert result == "a2"

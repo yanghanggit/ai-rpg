@@ -618,25 +618,6 @@ class TCGGame(RPGGame):
         return self.compute_character_stats(entity)
 
     ###############################################################################################################################################
-    def set_entity_block(self, entity: Entity, block: int) -> None:
-        """设置实体的格挡值，自动 clamp 至 [0, +∞)，保留 energy 现值不变。
-
-        Args:
-            entity: 目标实体，必须拥有 RoundStatsComponent
-            block: 目标格挡值
-        """
-        assert entity.has(
-            RoundStatsComponent
-        ), f"{entity.name} 缺少 RoundStatsComponent"
-        round_stats = entity.get(RoundStatsComponent)
-        entity.replace(
-            RoundStatsComponent,
-            entity.name,
-            round_stats.energy,
-            max(0, block),
-        )
-
-    ###############################################################################################################################################
     def apply_status_effect_patch(
         self, entity: Entity, status_effect_name: str, update_description: str
     ) -> None:
@@ -728,7 +709,6 @@ class TCGGame(RPGGame):
             RoundStatsComponent,
             entity.name,
             max(0, round_stats.energy - amount),
-            round_stats.block,
         )
 
     ###############################################################################################################################################

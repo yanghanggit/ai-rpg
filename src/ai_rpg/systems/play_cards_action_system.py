@@ -40,8 +40,6 @@ def _generate_play_card_context_prompt(
     if card.damage_dealt > 0:
         hit_info = f"（{card.hit_count} 段）" if card.hit_count > 1 else ""
         stats_parts.append(f"造成伤害 {card.damage_dealt}{hit_info}")
-    if card.block_gain > 0:
-        stats_parts.append(f"获得格挡 {card.block_gain}")
     if stats_parts:
         lines.append(f"卡牌效果：{'，'.join(stats_parts)}。")
     return "\n".join(lines)
@@ -128,7 +126,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             play_cards_action = entity.get(PlayCardsAction)
             logger.debug(
                 f"  [{play_cards_action.name}] 出牌 → 卡牌: {play_cards_action.card.name}"
-                f" | damage_dealt={play_cards_action.card.damage_dealt} block_gain={play_cards_action.card.block_gain}"
+                f" | damage_dealt={play_cards_action.card.damage_dealt}"
                 f" | 目标: {play_cards_action.targets}"
                 f" | 行动叙事: {play_cards_action.action}"
             )

@@ -105,7 +105,6 @@ def _build_response_json(
                 "name": c.name,
                 "description": c.description,
                 "damage_dealt": c.damage_dealt,
-                "block_gain": c.block_gain,
                 "hit_count": c.hit_count,
                 "target_type": str(c.target_type),
             }

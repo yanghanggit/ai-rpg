@@ -36,7 +36,6 @@ class _StatusEffectPatch(BaseModel):
 @final
 class _EntityFinalStats(BaseModel):
     hp: float
-    block: float
     status_effect_patches: List[_StatusEffectPatch] = []
 
 
@@ -85,11 +84,10 @@ def _generate_defeat_notification() -> str:
 
 
 #######################################################################################################################################
-def _generate_stats_update_notification(final_hp: int, max_hp: int, block: int) -> str:
-    return f"""# 你的生命值已更新
+def _generate_stats_update_notification(final_hp: int, max_hp: int) -> str:
+    return f"""# 你的生命値已更新
 
-当前HP: {final_hp}/{max_hp}
-当前格挡: {block}"""
+当前HP: {final_hp}/{max_hp}"""
 
 
 #######################################################################################################################################
@@ -126,17 +124,15 @@ def _generate_consumable_arbitration_broadcast(
 def _generate_consumable_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStats,
-    actor_block: int,
     action: UseConsumableItemAction,
     target_stats: Dict[str, CharacterStats],
-    target_blocks: Dict[str, int],
     current_round_number: int,
     actor_arbitration_effects: List[StatusEffect],
     target_arbitration_effects: Dict[str, List[StatusEffect]],
 ) -> str:
     target_lines = (
         "\n".join(
-            f"- {name}（HP {stats.hp}/{stats.max_hp}，当前格挡 {target_blocks.get(name, 0)}）"
+            f"- {name}（HP {stats.hp}/{stats.max_hp}）"
             for name, stats in target_stats.items()
         )
         if target_stats
@@ -155,7 +151,7 @@ def _generate_consumable_arbitration_prompt(
 
 ## 使用者
 
-{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp}，当前格挡 {actor_block}）
+{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp}）
 
 ## 消耗品
 
@@ -175,7 +171,7 @@ def _generate_consumable_arbitration_prompt(
 根据消耗品描述，推断其对使用者与目标的效果（如恢复 HP、提升格挡、施加增益/减益等）。
 仅依据物品描述中明确写明的数值计算；描述模糊时给出合理推断并体现在 narrative 中。
 目标 HP = max(0, min(计算后 HP, 最大 HP))
-格挡 = max(0, 格挡计算值)
+
 若使用者 HP 已为 0，跳过对其的恢复结算
 
 ## 输出格式
@@ -204,10 +200,9 @@ def _generate_consumable_arbitration_prompt(
 
 必须包含**使用者与所有目标**，格式：
 ```json
-{{"角色全名": {{"hp": 数值, "block": 数值, "status_effect_patches": []}}}}
+{{"角色全名": {{"hp": 数値, "status_effect_patches": []}}}}
 ```
 - hp：0 ≤ hp ≤ 最大 HP
-- block：结算后剩余格挡（不低于 0）
 - status_effect_patches：仅在本次仲裁**消耗了**某状态效果的 cur 计数时填写，格式：
   `{{"name": "效果名", "description": "更新后的完整描述（含新计数，如 1/3）"}}`
   - name 必须与"仲裁状态效果"中列出的名称完全一致
@@ -223,10 +218,8 @@ def _generate_consumable_arbitration_prompt(
 def _generate_compressed_consumable_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStats,
-    actor_block: int,
     action: UseConsumableItemAction,
     target_stats: Dict[str, CharacterStats],
-    target_blocks: Dict[str, int],
     current_round_number: int,
     actor_arbitration_effects: List[StatusEffect],
     target_arbitration_effects: Dict[str, List[StatusEffect]],
@@ -234,7 +227,7 @@ def _generate_compressed_consumable_arbitration_prompt(
     """生成压缩版消耗品仲裁提示词，用于写入对话历史。"""
     target_lines = (
         "\n".join(
-            f"- {name}（HP {stats.hp}/{stats.max_hp}，当前格挡 {target_blocks.get(name, 0)}）"
+            f"- {name}（HP {stats.hp}/{stats.max_hp}）"
             for name, stats in target_stats.items()
         )
         if target_stats
@@ -253,7 +246,7 @@ def _generate_compressed_consumable_arbitration_prompt(
 
 ## 使用者
 
-{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp}，当前格挡 {actor_block}）
+{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp}）
 
 ## 消耗品
 
@@ -316,19 +309,13 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         action = actor_entity.get(UseConsumableItemAction)
 
         target_stats: Dict[str, CharacterStats] = {}
-        target_blocks: Dict[str, int] = {}
         for target_name in dict.fromkeys(action.targets):
             target_entity = self._game.get_entity_by_name(target_name)
             assert target_entity is not None, f"无法找到目标实体: {target_name}"
             target_stats[target_name] = self._game.compute_character_stats(
                 target_entity
             )
-            assert target_entity.has(
-                RoundStatsComponent
-            ), f"目标实体 {target_name} 缺少 RoundStatsComponent！"
-            target_blocks[target_name] = target_entity.get(RoundStatsComponent).block
 
-        actor_block = actor_entity.get(RoundStatsComponent).block
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
         actor_arbitration_effects: List[StatusEffect] = (
@@ -350,10 +337,8 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         message = _generate_consumable_arbitration_prompt(
             actor_name=actor_entity.name,
             actor_stats=actor_stats,
-            actor_block=actor_block,
             action=action,
             target_stats=target_stats,
-            target_blocks=target_blocks,
             current_round_number=current_round_number,
             actor_arbitration_effects=actor_arbitration_effects,
             target_arbitration_effects=target_arbitration_effects,
@@ -363,10 +348,8 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             _generate_compressed_consumable_arbitration_prompt(
                 actor_name=actor_entity.name,
                 actor_stats=actor_stats,
-                actor_block=actor_block,
                 action=action,
                 target_stats=target_stats,
-                target_blocks=target_blocks,
                 current_round_number=current_round_number,
                 actor_arbitration_effects=actor_arbitration_effects,
                 target_arbitration_effects=target_arbitration_effects,
@@ -459,18 +442,11 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 after_stats = self._game.set_character_hp(entity, int(entity_stats.hp))
                 new_hp = after_stats.hp
                 max_hp = after_stats.max_hp
-                logger.info(
-                    f"更新 {entity_name} HP: {old_hp} → {new_hp}/{max_hp}, block: {entity_stats.block}"
-                )
-
-                new_block = int(max(0, entity_stats.block))
-                self._game.set_entity_block(entity, new_block)
+                logger.info(f"更新 {entity_name} HP: {old_hp} → {new_hp}/{max_hp}")
 
                 self._game.add_human_message(
                     entity=entity,
-                    message_content=_generate_stats_update_notification(
-                        new_hp, max_hp, new_block
-                    ),
+                    message_content=_generate_stats_update_notification(new_hp, max_hp),
                 )
 
                 # 回写状态效果描述补丁

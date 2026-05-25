@@ -178,8 +178,7 @@ class DeckDetailScreen(Screen[None]):
                         )
                         log.write(
                             f"  [bold green]{i:>2}[/]  [bold]{card.name}[/]  "
-                            f"伤害:[red]{card.damage_dealt}[/]{hit_str}  "
-                            f"格挡:[blue]{card.block_gain}[/]  目标:{tt_str}"
+                            f"伤害:[red]{card.damage_dealt}[/]{hit_str}  目标:{tt_str}"
                             + source_str
                             + action_str
                             + hint_str

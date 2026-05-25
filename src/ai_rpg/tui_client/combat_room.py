@@ -33,7 +33,6 @@ from .server_client import (
 from ..models import (
     Card,
     ConsumableItem,
-    RoundStatsComponent,
     CombatResult,
     CombatState,
     EntitySerialization,
@@ -1593,7 +1592,7 @@ class CombatRoomScreen(Screen[None]):
         action_order: Optional[List[str]] = None,
         completed_actors: Optional[List[str]] = None,
     ) -> None:
-        """从 ECS 实体列表渲染战场态势一览（回合信息 / HP / 格挡）。"""
+        """从 ECS 实体列表渲染战场态势一览（回合信息 / HP）。"""
         log = self.query_one(RichLog)
         if round_num > 0:
             ao_str = " → ".join(display_name(a) for a in (action_order or []))
@@ -1614,7 +1613,6 @@ class CombatRoomScreen(Screen[None]):
             else:
                 flabel = "[dim]?[/]"
             hp_str = "?/?"
-            block_val = 0
             _stats_comp = None
             _equip_comp = None
             _inv_comp = None
@@ -1625,19 +1623,13 @@ class CombatRoomScreen(Screen[None]):
                     _equip_comp = EquipmentComponent(**comp.data)
                 elif comp.name == InventoryComponent.__name__:
                     _inv_comp = InventoryComponent(**comp.data)
-                elif comp.name == RoundStatsComponent.__name__:
-                    block_val = RoundStatsComponent(**comp.data).block
             if _stats_comp is not None:
                 _final = compute_stats_with_equipment(
                     _stats_comp, _equip_comp, _inv_comp
                 )
                 hp_str = f"{_final.hp}/{_final.max_hp}"
             short = display_name(entity.name)
-            log.write(
-                f"    {flabel} [bold]{short}[/]"
-                f"  HP:[yellow]{hp_str}[/]"
-                f"  格挡:[blue]{block_val}[/]"
-            )
+            log.write(f"    {flabel} [bold]{short}[/]" f"  HP:[yellow]{hp_str}[/]")
         log.write("")
 
     # ──────────────────────────────────────────────
@@ -1656,7 +1648,6 @@ class CombatRoomScreen(Screen[None]):
         hand_table.add_column("#", style="cyan", width=3, no_wrap=True)
         hand_table.add_column("名称", style="bold", min_width=10, no_wrap=True)
         hand_table.add_column("伤害", style="red", width=6, no_wrap=True)
-        hand_table.add_column("格挡", style="blue", width=6, no_wrap=True)
         hand_table.add_column("目标", width=10, no_wrap=True)
         hand_table.add_column("描述 / 效果 / 词条", ratio=1)
         for idx, card in enumerate(cards, 1):
@@ -1681,7 +1672,6 @@ class CombatRoomScreen(Screen[None]):
                 str(idx),
                 card.name,
                 dmg_cell,
-                str(card.block_gain),
                 tt_str,
                 "\n".join(detail_parts),
             )
@@ -1769,30 +1759,12 @@ class CombatRoomScreen(Screen[None]):
                         else None
                     ),
                 )
-                block_comp_inline = next(
-                    (
-                        c
-                        for c in entity.components
-                        if c.name == RoundStatsComponent.__name__
-                    ),
-                    None,
-                )
-                block_inline = (
-                    RoundStatsComponent(**block_comp_inline.data).block
-                    if block_comp_inline is not None
-                    else None
-                )
-                block_str = (
-                    f"  [blue]格挡:{block_inline}[/blue]"
-                    if block_inline is not None
-                    else ""
-                )
                 log.write(
                     f"  [yellow]HP:{stats.hp}/{stats.max_hp}[/yellow]"
                     f"  [red]ATK:{stats.attack}[/red]"
                     f"  [blue]DEF:{stats.defense}[/blue]"
                     f"  [cyan]SPD:{stats.speed}[/cyan]"
-                    f"  行动:{stats.energy}次/回合" + block_str
+                    f"  行动:{stats.energy}次/回合"
                 )
             else:
                 log.write("  [dim](无战斗属性)[/]")

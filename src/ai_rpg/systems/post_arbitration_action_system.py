@@ -15,7 +15,6 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     ActorComponent,
-    RoundStatsComponent,
     Card,
     TargetType,
     CharacterStatsComponent,
@@ -83,7 +82,6 @@ def _generate_compressed_stage_post_arbitration_prompt(
             if entity.has(CharacterStatsComponent)
             else None
         )
-        block_comp = entity.get(RoundStatsComponent)
         effects_comp = entity.get(StatusEffectsComponent)
 
         hp_str = (
@@ -91,7 +89,6 @@ def _generate_compressed_stage_post_arbitration_prompt(
             if final_stats is not None
             else "HP: ?"
         )
-        block_str = f"格挡: {block_comp.block}" if block_comp is not None else "格挡: 0"
 
         if effects_comp is not None and effects_comp.status_effects:
             effects_str = "、".join(
@@ -106,8 +103,7 @@ def _generate_compressed_stage_post_arbitration_prompt(
             "（当前持有手牌，可塞牌）" if has_hand else "（本回合无手牌，塞牌无效）"
         )
         actor_lines.append(
-            f"- **{entity.name}**  {hp_str}  {block_str}  "
-            f"状态效果: {effects_str}  {hand_note}"
+            f"- **{entity.name}**  {hp_str}  " f"状态效果: {effects_str}  {hand_note}"
         )
 
     actors_summary = "\n".join(actor_lines) if actor_lines else "  （无存活角色）"
@@ -149,7 +145,6 @@ def _generate_stage_post_arbitration_prompt(
             if entity.has(CharacterStatsComponent)
             else None
         )
-        block_comp = entity.get(RoundStatsComponent)
         effects_comp = entity.get(StatusEffectsComponent)
 
         hp_str = (
@@ -157,7 +152,6 @@ def _generate_stage_post_arbitration_prompt(
             if final_stats is not None
             else "HP: ?"
         )
-        block_str = f"格挡: {block_comp.block}" if block_comp is not None else "格挡: 0"
 
         if effects_comp is not None and effects_comp.status_effects:
             effects_str = "、".join(
@@ -172,8 +166,7 @@ def _generate_stage_post_arbitration_prompt(
             "（当前持有手牌，可塞牌）" if has_hand else "（本回合无手牌，塞牌无效）"
         )
         actor_lines.append(
-            f"- **{entity.name}**  {hp_str}  {block_str}  "
-            f"状态效果: {effects_str}  {hand_note}"
+            f"- **{entity.name}**  {hp_str}  " f"状态效果: {effects_str}  {hand_note}"
         )
 
     actors_summary = "\n".join(actor_lines) if actor_lines else "  （无存活角色）"
@@ -185,15 +178,15 @@ def _generate_stage_post_arbitration_prompt(
 
 | phase | 对应阶段 | 可影响属性 | 典型效果举例 |
 |---|---|---|---|
-| `{EffectPhase.DRAW}` | 抽牌阶段 | attack、defense（间接影响下回合卡牌数值） | 「虚弱」攻击力−2，生成卡牌 damage_dealt 偏低；「迟重」防御力−1，block_gain 偏低 |
-| `{EffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt、block_gain | 「燃烧」每回合结算扣 hp 3；「黑暗腐蚀」造成伤害+4；「坚甲赐福」格挡+3 |
+| `{EffectPhase.DRAW}` | 抄牌阶段 | attack、defense（间接影响下回合卡牌数値） | 「虚弱」攻击力−2，生成卡牌 damage_dealt 偏低；「迟重」防御力−1，防御较弱 |
+| `{EffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt | 「燃烧」每回合结算扣 hp 3；「黑暗腐蚀」造成伤害+4；「坏甲赐福」纴带加成（已移除） |
 
 **speed 字段**：影响出手顺序（越高越先行动），只允许 +1 / 0 / -1；「地利加持」speed=+1，「泥泞困足」speed=−1，默认 0 不填。
 
 **属性约束**：
 - 禁止修改 max_hp
-- `{EffectPhase.DRAW}` 阶段用 attack / defense 描述，不直接写 damage_dealt / block_gain
-- `{EffectPhase.ARBITRATION}` 阶段直接用 hp / damage_dealt / block_gain，不用 attack / defense
+- `{EffectPhase.DRAW}` 阶段用 attack / defense 描述，不直接写 damage_dealt
+- `{EffectPhase.ARBITRATION}` 阶段直接用 hp / damage_dealt，不用 attack / defense
 - description 须引用上下文中实际存在的场景要素，第三人称描述环境如何作用于角色身体，如"战斗搅起的沙尘钻入眼中，视线模糊，造成伤害减少"
 
 绝大多数惩罚/增益效果选 `{EffectPhase.ARBITRATION}`。"""
@@ -211,8 +204,7 @@ def _generate_stage_post_arbitration_prompt(
 | playable | 可选。布尔值，是否允许出牌；默认 true，场景叙事明确暗示该物件具有禁出属性时填 false |
 | discardable | 可选。布尔值，是否允许弃牌；默认 true，场景叙事明确暗示该物件不可丢弃时填 false |
 | damage_dealt | 单次命中造成的伤害（整数；攻击类取合理正值，无伤害取 0） |
-| block_gain | 本张牌提供的格挡（整数；防御类取合理正值，无格挡取 0） |
-| hit_count | 攻击次数（默认 1；多段攻击可设 2~4，每段独立抵挡目标格挡） |
+| hit_count | 攻击次数（默认 1；多段攻击可设 2~4，每段独立作用） |
 | target_type | 出牌目标类型（见下表） |
 
 | target_type | 含义 |
@@ -224,7 +216,7 @@ def _generate_stage_post_arbitration_prompt(
 | `{TargetType.ALLY_ALL}` | 治疗/增益全体友方 |
 | `{TargetType.SELF_ONLY}` | 仅作用于自身（防御、自损诅咒等） |
 
-**注意**：damage_dealt 与 block_gain 不得同时为 0；只有当前持有手牌的角色才能被塞牌。"""
+**注意**：只有当前持有手牌的角色才能被塞牌。"""
 
     return f"""# 第 {current_round_number} 回合 — 仲裁后场景干预
 
@@ -277,7 +269,6 @@ def _generate_stage_post_arbitration_prompt(
           "description": "抓起地面的断柱碎块用力掷向对方，造成钝击伤害",
           "effects": [],
           "damage_dealt": 2,
-          "block_gain": 0,
           "hit_count": 1,
           "target_type": "{TargetType.ENEMY_SINGLE}"
         }}

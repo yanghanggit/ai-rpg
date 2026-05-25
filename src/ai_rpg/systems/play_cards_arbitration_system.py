@@ -38,7 +38,6 @@ class StatusEffectPatch(BaseModel):
 @final
 class EntityFinalStats(BaseModel):
     hp: float
-    block: float
     status_effect_patches: List[StatusEffectPatch] = []
 
 
@@ -52,11 +51,10 @@ class ArbitrationResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _generate_stats_update_notification(final_hp: int, max_hp: int, block: int) -> str:
-    return f"""# 你的生命值已更新
+def _generate_stats_update_notification(final_hp: int, max_hp: int) -> str:
+    return f"""# 你的生命値已更新
 
-当前HP: {final_hp}/{max_hp}
-当前格挡: {block}"""
+当前HP: {final_hp}/{max_hp}"""
 
 
 #######################################################################################################################################
@@ -91,7 +89,7 @@ def _generate_post_arbitration_task_hint(
 
     card_info = (
         f"- 卡牌：{card.name}（{card.description}）\n"
-        f"- 单次伤害：{card.damage_dealt}，攻击次数：{card.hit_count}，格挡增量：{card.block_gain}\n"
+        f"- 单次伤害：{card.damage_dealt}，攻击次数：{card.hit_count}\n"
         f"- 行动描述：{action_desc}"
         + (f"\n{status_hint_line}" if status_hint_line else "")
     )
@@ -188,17 +186,15 @@ def _build_random_multi_sections(
 def _generate_combat_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStats,
-    actor_block: int,
     play_cards_action: PlayCardsAction,
     target_stats: Dict[str, CharacterStats],
-    target_blocks: Dict[str, int],
     current_round_number: int,
     actor_arbitration_effects: List[StatusEffect],
     target_arbitration_effects: Dict[str, List[StatusEffect]],
 ) -> str:
     target_lines = (
         "\n".join(
-            f"- {name}（HP {stats.hp}/{stats.max_hp}，当前格挡 {target_blocks.get(name, 0)}）"
+            f"- {name}（HP {stats.hp}/{stats.max_hp}）"
             for name, stats in target_stats.items()
         )
         if target_stats
@@ -225,14 +221,13 @@ def _generate_combat_arbitration_prompt(
 
 ## 出牌者
 
-{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp}，当前格挡 {actor_block}）
+{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp}）
 
 ## 出牌
 
 - 卡牌：{play_cards_action.card.name}
 - damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
 - hit_count：{play_cards_action.card.hit_count}（攻击次数）
-- block_gain：{play_cards_action.card.block_gain}
 {action_line}{rm.hit_assignment}
 
 ## 目标
@@ -245,16 +240,11 @@ def _generate_combat_arbitration_prompt(
 
 ## 计算规则
 
-**格挡优先消耗**：出牌者先获得 block_gain 格挡（出牌者结算后格挡 = 当前格挡 + block_gain）。
-多段攻击逐段结算（hit_count 次）：
-  每段实际伤害 = max(0, damage_dealt − 目标当前剩余 block)
-  本段 block 消耗量 = min(damage_dealt, 目标当前剩余 block)
-  每段命中后，目标 block -= 本段 block 消耗量（block 不低于 0）
-  总伤害 = 各段实际伤害之和
+多段攻击逐段结算（hit_count 次），总伤害 = 各段 damage_dealt 之和。
 目标 HP = max(0, min(当前 HP − 总伤害, 最大 HP))
 若 hit_count = 1，按单段正常结算即可
 若出牌者 HP 已为 0，跳过结算
-仲裁状态效果中的数值修正（额外 hp 扣除、block 加成、伤害加成等）**叠加**到上述计算规则之上，体现在 final_stats 中。
+仲裁状态效果中的数値修正（额外 hp 扣除、伤害加成等）**叠加**到上述计算规则之上，体现在 final_stats 中。
 {rm.rules}
 ## 输出格式
 
@@ -283,10 +273,9 @@ def _generate_combat_arbitration_prompt(
 
 必须包含**出牌者与所有目标**，格式：
 ```json
-{{"角色全名": {{"hp": 数值, "block": 数值, "status_effect_patches": []}}}}
+{{"角色全名": {{"hp": 数值, "status_effect_patches": []}}}}
 ```
 - hp：0 ≤ hp ≤ 最大 HP
-- block：结算后剩余格挡（出牌者 = 当前格挡 + block_gain；目标 = 当前格挡 − 消耗量，不低于 0）
 - status_effect_patches：仅在本次仲裁**消耗了**某状态效果的 cur 计数时填写，格式：
   `{{"name": "效果名", "description": "更新后的完整描述（含新计数，如 1/3）"}}`
   - name 必须与"仲裁状态效果"中列出的名称完全一致
@@ -303,10 +292,8 @@ def _generate_combat_arbitration_prompt(
 def _generate_compressed_combat_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStats,
-    actor_block: int,
     play_cards_action: PlayCardsAction,
     target_stats: Dict[str, CharacterStats],
-    target_blocks: Dict[str, int],
     current_round_number: int,
     actor_arbitration_effects: List[StatusEffect],
     target_arbitration_effects: Dict[str, List[StatusEffect]],
@@ -314,7 +301,7 @@ def _generate_compressed_combat_arbitration_prompt(
     """压缩版仲裁提示词，省略静态规则与格式说明，用于写入对话历史减少重复 token。"""
     target_lines = (
         "\n".join(
-            f"- {name}（HP {stats.hp}/{stats.max_hp}，当前格挡 {target_blocks.get(name, 0)}）"
+            f"- {name}（HP {stats.hp}/{stats.max_hp}）"
             for name, stats in target_stats.items()
         )
         if target_stats
@@ -341,14 +328,13 @@ def _generate_compressed_combat_arbitration_prompt(
 
 ## 出牌者
 
-{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp}，当前格挡 {actor_block}）
+{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp}）
 
 ## 出牌
 
 - 卡牌：{play_cards_action.card.name}
 - damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
 - hit_count：{play_cards_action.card.hit_count}（攻击次数）
-- block_gain：{play_cards_action.card.block_gain}
 {action_line}{rm.hit_assignment}
 
 ## 目标
@@ -414,7 +400,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             return
 
         target_stats: Dict[str, CharacterStats] = {}
-        target_blocks: Dict[str, int] = {}
 
         # dict.fromkeys 去重并保序（ENEMY_RANDOM_MULTI 的 targets 长度=hit_count，可能含重复名）
         for target_name in dict.fromkeys(play_cards_action.targets):
@@ -426,15 +411,9 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 target_entity
             )
 
-            assert target_entity.has(
-                RoundStatsComponent
-            ), f"目标实体 {target_name} 缺少 RoundStatsComponent！"
-            target_blocks[target_name] = target_entity.get(RoundStatsComponent).block
-
         assert actor_entity.has(
             RoundStatsComponent
         ), f"出牌实体 {actor_entity.name} 缺少 RoundStatsComponent！"
-        actor_block = actor_entity.get(RoundStatsComponent).block
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
         actor_arbitration_effects: List[StatusEffect] = (
@@ -454,10 +433,8 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         message = _generate_combat_arbitration_prompt(
             actor_entity.name,
             self._game.compute_character_stats(actor_entity),
-            actor_block,
             play_cards_action,
             target_stats,
-            target_blocks,
             current_round_number,
             actor_arbitration_effects,
             target_arbitration_effects,
@@ -467,10 +444,8 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             _generate_compressed_combat_arbitration_prompt(
                 actor_entity.name,
                 self._game.compute_character_stats(actor_entity),
-                actor_block,
                 play_cards_action,
                 target_stats,
-                target_blocks,
                 current_round_number,
                 actor_arbitration_effects,
                 target_arbitration_effects,
@@ -604,12 +579,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 after_stats = self._game.set_character_hp(entity, int(entity_stats.hp))
                 new_hp = after_stats.hp
                 max_hp = after_stats.max_hp
-                logger.info(
-                    f"更新 {entity_name} HP: {old_hp} → {new_hp}/{max_hp}, block: {entity_stats.block}"
-                )
-
-                new_block = int(max(0, entity_stats.block))
-                self._game.set_entity_block(entity, new_block)
+                logger.info(f"更新 {entity_name} HP: {old_hp} → {new_hp}/{max_hp}")
 
                 # 回写仲裁阶段状态效果的 description（更新 cur 等动态变量）
                 for patch in entity_stats.status_effect_patches:
@@ -619,9 +589,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
                 self._game.add_human_message(
                     entity=entity,
-                    message_content=_generate_stats_update_notification(
-                        new_hp, max_hp, new_block
-                    ),
+                    message_content=_generate_stats_update_notification(new_hp, max_hp),
                 )
 
             self._add_status_effects_actions_after_arbitration(

@@ -91,13 +91,12 @@ def _make_actor_entity(
     stage_name: str,
     hp: int = 20,
     energy: int = 3,
-    block: int = 0,
     items: List[Any] | None = None,
 ) -> Entity:
     entity = cast(Entity, game._create_entity(actor_name))
     entity.add(ActorComponent, actor_name, "sheet", stage_name)
     entity.add(CharacterStatsComponent, actor_name, CharacterStats(hp=hp, max_hp=hp))
-    entity.add(RoundStatsComponent, actor_name, energy, block)
+    entity.add(RoundStatsComponent, actor_name, energy)
     entity.add(InventoryComponent, actor_name, items or [])
     return entity
 
@@ -193,7 +192,7 @@ class TestUseConsumableItemActionSystemFilter:
         item = _make_consumable_item()
         entity = game._create_entity("hero")
         entity.add(UseConsumableItemAction, "hero", item, [])
-        entity.add(RoundStatsComponent, "hero", 3, 0)
+        entity.add(RoundStatsComponent, "hero", 3)
         entity.add(InventoryComponent, "hero", [item])
         # ActorComponent missing — filter should reject
         assert UseConsumableItemActionSystem(game).filter(entity) is False
@@ -213,7 +212,7 @@ class TestUseConsumableItemActionSystemFilter:
         entity = game._create_entity("hero")
         entity.add(ActorComponent, "hero", "sheet", "cave")
         entity.add(UseConsumableItemAction, "hero", item, [])
-        entity.add(RoundStatsComponent, "hero", 3, 0)
+        entity.add(RoundStatsComponent, "hero", 3)
         assert UseConsumableItemActionSystem(game).filter(entity) is False
 
 
@@ -453,15 +452,6 @@ class TestApplyItemArbitrationResult:
         )
 
         assert game.compute_character_stats(actor_entity).hp == 15
-
-    def test_updates_block_from_final_stats(self) -> None:
-        game, system, stage, actor, action = self._setup()
-        response_json = '{"combat_log":"log","narrative":"narr","final_stats":{"hero":{"hp":20,"block":5,"status_effect_patches":[]}}}'
-        chat_client = _make_mock_chat_client(response_json)
-
-        system._apply_item_arbitration_result(stage, chat_client, actor, action)
-
-        assert actor.get(RoundStatsComponent).block == 5
 
     def test_patches_status_effect_description(self) -> None:
         game, system, stage, actor, action = self._setup()

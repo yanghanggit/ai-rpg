@@ -63,7 +63,7 @@ def _generate_monster_decision_prompt(
     cards_lines = "\n".join(
         f"- 【{c.name}】描述：{c.description}"
         + (f"  词缀：{'、'.join(c.effects)}" if c.effects else "")
-        + f"  damage_dealt:{c.damage_dealt}  hit_count:{c.hit_count}  block_gain:{c.block_gain}  target_type:{c.target_type}"
+        + f"  damage_dealt:{c.damage_dealt}  hit_count:{c.hit_count}  target_type:{c.target_type}"
         for c in hand_cards
     )
 
@@ -115,7 +115,6 @@ def _generate_monster_decision_prompt(
 ## 决策建议
 
 - 行动序列严格顺序执行，排在你前面的角色已出手，其目标可能已死亡
-- 格挡在下回合开始时清零：若你是本轮最后行动者，获取 block_gain 的牌本回合无效
 - targets 从"场上存活对手"中选全名，可多选，可为空列表
 - 若所有手牌均无法执行（如全部封印），可选择跳过出牌（pass_turn: true），此时 card_name/targets/action 可省略
 
@@ -156,7 +155,7 @@ def _generate_compressed_monster_decision_prompt(
     cards_lines = "\n".join(
         f"- 【{c.name}】描述：{c.description}"
         + (f"  词缀：{'、'.join(c.effects)}" if c.effects else "")
-        + f"  damage_dealt:{c.damage_dealt}  hit_count:{c.hit_count}  block_gain:{c.block_gain}  target_type:{c.target_type}"
+        + f"  damage_dealt:{c.damage_dealt}  hit_count:{c.hit_count}  target_type:{c.target_type}"
         for c in hand_cards
     )
 

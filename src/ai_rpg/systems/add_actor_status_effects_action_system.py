@@ -126,15 +126,15 @@ def _generate_add_status_effects_prompt(
 
 | phase | 对应阶段 | 可影响的属性 | 典型效果举例 |
 |---|---|---|---|
-| `{EffectPhase.DRAW}` | 抽牌阶段 | attack、defense（换算为卡牌的 damage_dealt / block_gain / hit_count） | 「虚弱」攻击力−2，本回合生成卡牌的 damage_dealt 偏低；「沉重」防御力−1，生成卡牌的 block_gain 偏低 |
-| `{EffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt、block_gain | 「燃烧」本回合结算时扣 hp 3；「坚甲」格挡+3；「中毒」造成伤害+2 |
+| `{EffectPhase.DRAW}` | 抄牌阶段 | attack、defense（换算为卡牌的 damage_dealt / hit_count） | 「虚弱」攻击力−2，本回合生成卡牌的 damage_dealt 偏低；「沉重」防御力−1，防御较弱 |
+| `{EffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt | 「燃烧」本回合结算时扣 hp 3；「坏甲」格挡+3（已移除）；「中毒」造成伤害+2 |
 
 **speed 字段**：影响出手顺序（越高越先行动），只允许 +1 / 0 / -1；「敏捷」speed=+1，「迟缓」speed=−1，默认 0 不填。
 
 **属性约束（所有阶段均适用）**：
 - 禁止修改 max_hp（最大生命值不可通过状态效果改变）
-- `{EffectPhase.DRAW}` 阶段使用 attack / defense 描述，不直接写 damage_dealt / block_gain
-- `{EffectPhase.ARBITRATION}` 阶段直接使用 hp / damage_dealt / block_gain，不使用 attack / defense
+- `{EffectPhase.DRAW}` 阶段使用 attack / defense 描述，不直接写 damage_dealt
+- `{EffectPhase.ARBITRATION}` 阶段直接使用 hp / damage_dealt，不使用 attack / defense
 
 绝大多数伤害/防御类效果选 `{EffectPhase.ARBITRATION}`。"""
 

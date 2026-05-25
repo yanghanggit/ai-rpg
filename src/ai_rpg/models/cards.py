@@ -73,7 +73,6 @@ class Card(BaseModel):
     playable: bool = True  # 是否可出牌；False 时系统阻止出牌操作
     discardable: bool = True  # 是否可弃牌；False 时系统阻止弃牌操作
     damage_dealt: int = 0  # 造成的伤害值（单次）
-    block_gain: int = 0  # 提供的格挡增量
     hit_count: int = (
         1  # 攻击次数（默认 1；>1 时为多段攻击，每段各自抵挡格挡后依次结算）
     )

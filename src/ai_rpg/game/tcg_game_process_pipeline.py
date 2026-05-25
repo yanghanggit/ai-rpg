@@ -131,6 +131,8 @@ def create_combat_pipeline(
         CardInjectStrategy,
     )
     from ..systems.combat_archive_system import CombatArchiveSystem
+    from ..systems.deck_generation_system import DeckGenerationSystem
+    from ..systems.deck_return_system import DeckReturnSystem
     from ..systems.stage_description_system import (
         StageDescriptionSystem,
     )
@@ -157,6 +159,9 @@ def create_combat_pipeline(
 
     # 战斗初始化系统（注入战场上下文、转换战斗状态为进行中、触发初始状态效果；第一回合由 CombatRoundTransitionSystem 创建）
     processors.add(CombatInitializationSystem(tcg_game))
+
+    # 牌库生成系统（战斗开始时为每个角色生成初始牌库，歸入 DrawPile；条件：is_ongoing AND no rounds）
+    processors.add(DeckGenerationSystem(tcg_game))
 
     # 战斗核心动作处理相关的系统：抽牌 → 敌人决策 → 叙事润色 → 出牌 → 退却 → 仲裁 → 状态效果追加
     processors.add(DrawCardsActionSystem(tcg_game))
@@ -192,6 +197,9 @@ def create_combat_pipeline(
 
     # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫）
     processors.add(CombatArchiveSystem(tcg_game))
+
+    # 牌库归还系统（战斗结束后将三个子堆自有牌归还 DeckComponent）
+    processors.add(DeckReturnSystem(tcg_game))
 
     # 通用性的系统，用于后处理部分：清除动作相关的临时状态、标记等，准备下一轮输入
     processors.add(ActionCleanupSystem(tcg_game))

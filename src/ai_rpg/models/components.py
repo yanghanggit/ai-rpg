@@ -257,31 +257,41 @@ class WorkshopComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class DrawDeckComponent(MutableComponent):
-    """跨战斗持续累积的可重抽历史牌池；Draw 阶段 FIFO 消耗，回合结束将剩余手牌归还队尾。"""
+class DrawPileComponent(MutableComponent):
+    """战斗内抽牌堆；Draw 阶段 FIFO 消耗，耗尽时自动将 DiscardPile 洗牌补入；战斗结束归还 DeckComponent。"""
 
     name: str
-    cards: List[Card]  # FIFO 消耗，回合结束归还
+    cards: List[Card]  # FIFO 消耗，耗尽时由 DiscardPile 洗牌补充
 
 
 ############################################################################################################
 @final
 @register_component_type
-class DiscardDeckComponent(MutableComponent):
-    """弃牌归档池；仅用于统计与展示，不参与抽牌逻辑。"""
+class ExhaustPileComponent(MutableComponent):
+    """消耗堆；存放主动弃置的自有牌，战斗内永久移出抽牌循环；战斗结束归还 DeckComponent。"""
 
     name: str
-    cards: List[Card]  # 按时间顺序追加，只增不减
+    cards: List[Card]  # 按时间顺序追加，战斗内只增不减
 
 
 ############################################################################################################
 @final
 @register_component_type
-class PlayedDeckComponent(MutableComponent):
-    """出牌正式归档池；仅归档 `card.source == actor_name` 的自有牌，外来塞入牌丢弃。"""
+class DiscardPileComponent(MutableComponent):
+    """弃牌堆；出牌使用后或回合末剩余手牌进入此堆，DrawPile 耗尽时洗牌回补；战斗结束归还 DeckComponent。"""
 
     name: str
-    cards: List[Card]  # 按时间顺序追加，只增不减
+    cards: List[Card]  # 按时间顺序追加，DrawPile 耗尽时整体洗牌移入 DrawPile
+
+
+############################################################################################################
+@final
+@register_component_type
+class DeckComponent(MutableComponent):
+    """跨战斗持久牌库；战斗外唯一权威来源。战斗开始时清空并洗牌填入 DrawPileComponent，战斗结束后三个子堆全部归还此处。"""
+
+    name: str
+    cards: List[Card]  # 战斗间持久存储，战斗中为空
 
 
 ############################################################################################################

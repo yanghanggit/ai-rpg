@@ -9,7 +9,7 @@ from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     HandComponent,
-    DiscardDeckComponent,
+    ExhaustPileComponent,
     DiscardCardsAction,
     ActorComponent,
 )
@@ -37,7 +37,7 @@ class DiscardCardsActionSystem(ReactiveProcessor):
     """响应 DiscardCardsAction 事件，将手牌移入弃牌堆。
 
     仅允许当前 turn 的行动者弃牌，且不消耗 energy、不推进行动顺序。
-    自有牌归入 DiscardDeckComponent 并注入上下文；外来牌静默丢弃。
+    自有牌归入 ExhaustPileComponent 并注入上下文；外来牌静默丢弃。
     """
 
     def __init__(self, game: TCGGame) -> None:
@@ -56,7 +56,7 @@ class DiscardCardsActionSystem(ReactiveProcessor):
             entity.has(DiscardCardsAction)
             and entity.has(HandComponent)
             and entity.has(ActorComponent)
-            and entity.has(DiscardDeckComponent)
+            and entity.has(ExhaustPileComponent)
         )
 
     #######################################################################################################################################
@@ -99,13 +99,13 @@ class DiscardCardsActionSystem(ReactiveProcessor):
             new_hand_cards = [c for c in hand_comp.cards if c is not discarded_card]
             hand_comp.cards = new_hand_cards
 
-            # source 守卫：自有牌归档至 DiscardDeckComponent 并注入上下文
+            # source 守卫：自有牌归档至 ExhaustPileComponent 并注入上下文
             # 外来牌（PostArbitrationActionSystem 塞入时未通知角色）静默丢弃，不注入上下文
             if discarded_card.source == entity.name:
-                discard_comp = entity.get(DiscardDeckComponent)
+                discard_comp = entity.get(ExhaustPileComponent)
                 assert (
                     discard_comp is not None
-                ), f"{entity.name} 缺少 DiscardDeckComponent"
+                ), f"{entity.name} 缺少 ExhaustPileComponent"
                 discard_comp.cards.append(discarded_card)
                 logger.debug(
                     f"  [{entity.name}] 手牌 {len(hand_comp.cards) + 1} → {len(new_hand_cards)}，"

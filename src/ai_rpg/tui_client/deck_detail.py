@@ -14,9 +14,9 @@ from .server_client import (
 from .utils import display_name
 from ..models import (
     KeywordComponent,
-    DrawDeckComponent,
-    DiscardDeckComponent,
-    PlayedDeckComponent,
+    DrawPileComponent,
+    ExhaustPileComponent,
+    DiscardPileComponent,
 )
 
 _TARGET_LABEL = {
@@ -30,12 +30,12 @@ _TARGET_LABEL = {
 DECK_HEADER = """\
 [bold cyan]── 牌组详情 ──────────────────────────────────────[/]
 
-显示本次地下城各角色牌组（已打出 / 可重抽）。[bold]Escape[/] 返回。
+显示本次地下城各角色牌组（已出牌 / 弃牌堆 / 可重抽）。[bold]Escape[/] 返回。
 """
 
 
 class DeckDetailScreen(Screen[None]):
-    """牌组详情 Screen：分节展示各角色 DiscardDeckComponent（已打出）和 DrawDeckComponent（可重抽）。"""
+    """牌组详情 Screen：分节展示各角色 DiscardPileComponent（已出牌）和 DrawPileComponent（可重抽）和 ExhaustPileComponent（弃牌堆）。"""
 
     CSS = """
     DeckDetailScreen {
@@ -109,7 +109,7 @@ class DeckDetailScreen(Screen[None]):
                     (
                         c
                         for c in entity.components
-                        if c.name == DiscardDeckComponent.__name__
+                        if c.name == ExhaustPileComponent.__name__
                     ),
                     None,
                 )
@@ -117,7 +117,7 @@ class DeckDetailScreen(Screen[None]):
                     (
                         c
                         for c in entity.components
-                        if c.name == DrawDeckComponent.__name__
+                        if c.name == DrawPileComponent.__name__
                     ),
                     None,
                 )
@@ -125,7 +125,7 @@ class DeckDetailScreen(Screen[None]):
                     (
                         c
                         for c in entity.components
-                        if c.name == PlayedDeckComponent.__name__
+                        if c.name == DiscardPileComponent.__name__
                     ),
                     None,
                 )
@@ -133,11 +133,11 @@ class DeckDetailScreen(Screen[None]):
                     continue
 
                 discard_comp = (
-                    DiscardDeckComponent(**discard_raw.data) if discard_raw else None
+                    ExhaustPileComponent(**discard_raw.data) if discard_raw else None
                 )
-                draw_comp = DrawDeckComponent(**draw_raw.data) if draw_raw else None
+                draw_comp = DrawPileComponent(**draw_raw.data) if draw_raw else None
                 played_comp = (
-                    PlayedDeckComponent(**played_raw.data) if played_raw else None
+                    DiscardPileComponent(**played_raw.data) if played_raw else None
                 )
                 discard_count = len(discard_comp.cards) if discard_comp else 0
                 draw_count = len(draw_comp.cards) if draw_comp else 0
@@ -145,7 +145,7 @@ class DeckDetailScreen(Screen[None]):
 
                 log.write(
                     f"[bold cyan]{display_name(entity.name)}[/]  "
-                    f"[dim]已出牌 {played_count} 张 | 弃牌堆 {discard_count} 张 | 可重抽 {draw_count} 张[/]"
+                    f"[dim]已出牌 {played_count} 张 | 消耗堆 {discard_count} 张 | 可重抽 {draw_count} 张[/]"
                 )
 
                 def _render_cards(cards: list, log: object) -> None:  # type: ignore[type-arg]
@@ -184,22 +184,22 @@ class DeckDetailScreen(Screen[None]):
                             + hint_str
                         )
 
-                # 1) 已出牌（PlayedDeck）
-                log.write("  [bold red]▸ 已出牌（PlayedDeck）[/]")
+                # 1) 已出牌（DiscardPile）
+                log.write("  [bold red]▸ 已出牌（DiscardPile）[/]")
                 if played_comp and played_comp.cards:
                     _render_cards(played_comp.cards, log)
                 else:
                     log.write("    [dim]（尚无记录）[/]")
 
-                # 2) 弃牌堆（DiscardDeck）
-                log.write("  [bold magenta]▸ 弃牌堆（DiscardDeck）[/]")
+                # 2) 消耗堆（ExhaustPile）
+                log.write("  [bold magenta]▸ 消耗堆（ExhaustPile）[/]")
                 if discard_comp and discard_comp.cards:
                     _render_cards(discard_comp.cards, log)
                 else:
                     log.write("    [dim]（尚无记录）[/]")
 
-                # 3) 可重抽卡牌（DrawDeck）
-                log.write("  [bold yellow]▸ 可重抽（DrawDeck）[/]")
+                # 3) 可重抽卡牌（DrawPile）
+                log.write("  [bold yellow]▸ 可重抽（DrawPile）[/]")
                 if draw_comp and draw_comp.cards:
                     _render_cards(draw_comp.cards, log)
                 else:

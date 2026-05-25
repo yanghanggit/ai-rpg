@@ -52,7 +52,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 name="缺口猎刀",
                 description="一把刀身偏短的猎刀，刃背厚实，靠近刀尖三分之一处有一道浅缺口，像是曾经硬撬过什么。握柄以粗布条缠绕，布已泛黄，但缠法整齐，显然出自熟练的手。",
                 stat_bonuses=CharacterStats(
-                    hp=0, max_hp=0, attack=2, defense=0, energy=0, speed=0
+                    hp=0, max_hp=0, attack=1000, defense=0, energy=0, speed=0
                 ),
             ),
             EquipmentItem(

@@ -25,8 +25,9 @@ from ..models import (
     CharacterStatsComponent,
     COMPONENT_TYPES,
     ConsumableItem,
-    DiscardDeckComponent,
-    DrawDeckComponent,
+    ExhaustPileComponent,
+    DrawPileComponent,
+    DeckComponent,
     Dungeon,
     DungeonComponent,
     MonsterComponent,
@@ -41,7 +42,7 @@ from ..models import (
     KeywordComponent,
     PlayerComponent,
     PlayerOnlyStageComponent,
-    PlayedDeckComponent,
+    DiscardPileComponent,
     Round,
     RoundStatsComponent,
     Stage,
@@ -367,10 +368,13 @@ class TCGGame(RPGGame):
             )
 
             # TCG 组件：牌组
-            actor_entity.replace(DrawDeckComponent, actor_entity.name, [])
-            actor_entity.replace(DiscardDeckComponent, actor_entity.name, [])
-            actor_entity.replace(PlayedDeckComponent, actor_entity.name, [])
-            logger.debug(f"为 Actor 实体 {actor_entity.name} 挂载空牌组")
+            actor_entity.replace(DeckComponent, actor_entity.name, [])
+            actor_entity.replace(DrawPileComponent, actor_entity.name, [])
+            actor_entity.replace(DiscardPileComponent, actor_entity.name, [])
+            actor_entity.replace(ExhaustPileComponent, actor_entity.name, [])
+            logger.debug(
+                f"为 Actor 实体 {actor_entity.name} 挂载空牌组（DeckComponent + DrawPile + DiscardPile + ExhaustPile）"
+            )
 
             # TCG 组件：关键词
             actor_entity.replace(
@@ -509,26 +513,25 @@ class TCGGame(RPGGame):
     def clear_round_state(self) -> None:
         """清除所有角色实体的每回合可变状态（手牌）"""
 
-        # 清除所有角色实体的手牌组件，并将剩余手牌归还牌组
+        # 清除所有角色实体的手牌组件，将剩余手牌归入 DiscardPile（STS 标准：回合末未出牌进弃牌堆）
         for entity in self.get_group(Matcher(HandComponent)).entities.copy():
             hand_comp = entity.get(HandComponent)
 
-            # 将剩余手牌全部归还牌组，再移除手牌组件
             if hand_comp.cards:
-                draw_deck_comp = entity.get(DrawDeckComponent)
+                discard_pile_comp = entity.get(DiscardPileComponent)
                 assert (
-                    draw_deck_comp is not None
-                ), f"{entity.name} 缺少 DrawDeckComponent"
-                # 仅归还来源为本角色的卡牌；外来塞入牌（source != actor_name）直接丢弃
+                    discard_pile_comp is not None
+                ), f"{entity.name} 缺少 DiscardPileComponent"
+                # 仅归入来源为本角色的卡牌；外来塞入牌（source != actor_name）直接丢弃
                 own_cards = [c for c in hand_comp.cards if c.source == entity.name]
                 foreign_cards = [c for c in hand_comp.cards if c.source != entity.name]
-                draw_deck_comp.cards.extend(own_cards)
+                discard_pile_comp.cards.extend(own_cards)
                 logger.debug(
-                    f"clear hands: {entity.name} 归还 {len(own_cards)} 张自有手牌到 DrawDeck，DrawDeck 累计 {len(draw_deck_comp.cards)} 张"
+                    f"clear hands: {entity.name} 将 {len(own_cards)} 张剩余手牌归入 DiscardPile，DiscardPile 累计 {len(discard_pile_comp.cards)} 张"
                 )
                 for fc in foreign_cards:
                     logger.debug(
-                        f"clear hands: [{entity.name}] 外来牌 [{fc.name}](source={fc.source!r}) 回合结束，source 不匹配，丢弃不归还"
+                        f"clear hands: [{entity.name}] 外来牌 [{fc.name}](source={fc.source!r}) 回合结束，source 不匹配，丢弃"
                     )
             else:
                 logger.debug(f"clear hands: {entity.name}")

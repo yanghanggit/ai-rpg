@@ -349,11 +349,11 @@ class TestTeardownDungeonEntities:
 
 class TestClearRoundState:
     def test_hand_component_removed(self) -> None:
-        from src.ai_rpg.models import DrawDeckComponent
+        from src.ai_rpg.models import DrawPileComponent
 
         game = _make_game()
         actor = _make_actor_entity(game, "fighter")
-        actor.add(DrawDeckComponent, "fighter", [])
+        actor.add(DrawPileComponent, "fighter", [])
         actor.add(HandComponent, "fighter", [], 1)
         game.clear_round_state()
         assert not actor.has(HandComponent)
@@ -372,12 +372,12 @@ class TestClearRoundState:
         game.clear_round_state()
 
     def test_multiple_actors_all_cleared(self) -> None:
-        from src.ai_rpg.models import DrawDeckComponent
+        from src.ai_rpg.models import DrawPileComponent
 
         game = _make_game()
         for name in ("a1", "a2", "a3"):
             actor = _make_actor_entity(game, name)
-            actor.add(DrawDeckComponent, name, [])
+            actor.add(DrawPileComponent, name, [])
             actor.add(HandComponent, name, [], 1)
             actor.add(RoundStatsComponent, name, 2)
         game.clear_round_state()

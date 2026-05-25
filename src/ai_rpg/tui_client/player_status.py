@@ -14,9 +14,9 @@ from ..models import (
     PlayerComponent,
     PartyRosterComponent,
     KeywordComponent,
-    DrawDeckComponent,
-    DiscardDeckComponent,
-    PlayedDeckComponent,
+    DrawPileComponent,
+    ExhaustPileComponent,
+    DiscardPileComponent,
     AnyItem,
     EquipmentItem,
     CharacterStats,
@@ -63,9 +63,9 @@ _COMPONENT_ORDER: list[str] = [
     InventoryComponent.__name__,
     AppearanceComponent.__name__,
     KeywordComponent.__name__,
-    DrawDeckComponent.__name__,
-    DiscardDeckComponent.__name__,
-    PlayedDeckComponent.__name__,
+    DrawPileComponent.__name__,
+    ExhaustPileComponent.__name__,
+    DiscardPileComponent.__name__,
 ]
 
 
@@ -166,25 +166,25 @@ def _render_component(name: str, data: Dict[str, Any], context: Dict[str, Any]) 
             for i, kw in enumerate(keyword_comp.keywords, 1):
                 lines.append(f"    [dim]{i}.[/] {kw.description}")
 
-    elif name == DrawDeckComponent.__name__:
-        ddc = DrawDeckComponent(**data)
+    elif name == DrawPileComponent.__name__:
+        ddc = DrawPileComponent(**data)
         if not ddc.cards:
             lines.append("    [dim]（空）[/]")
         else:
             lines.append(f"    共 [bold]{len(ddc.cards)}[/] 张")
 
-    elif name == DiscardDeckComponent.__name__:
-        disc = DiscardDeckComponent(**data)
+    elif name == ExhaustPileComponent.__name__:
+        disc = ExhaustPileComponent(**data)
         if not disc.cards:
             lines.append("    [dim]（空）[/]")
         else:
-            lines.append(f"    共 [bold]{len(disc.cards)}[/] 张已打出")
-    elif name == PlayedDeckComponent.__name__:
-        played = PlayedDeckComponent(**data)
+            lines.append(f"    共 [bold]{len(disc.cards)}[/] 张已消耗")
+    elif name == DiscardPileComponent.__name__:
+        played = DiscardPileComponent(**data)
         if not played.cards:
             lines.append("    [dim](空)[/]")
         else:
-            lines.append(f"    共 [bold]{len(played.cards)}[/] 张已打出")
+            lines.append(f"    共 [bold]{len(played.cards)}[/] 张已弃置")
     else:
         # 通用展示：key-value，跳过 name 字段
         for k, v in data.items():

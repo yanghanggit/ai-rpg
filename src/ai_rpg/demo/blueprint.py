@@ -44,7 +44,9 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
 
     # 调整旅行者的速度属性，增加其在 SPEED_ORDER 策略下的出手优先级
     actor_wanderer.character_stats.speed = 2
-    actor_wanderer.character_stats.attack = 1000 # 让旅行者的攻击力足够高，以便测试战斗系统的伤害计算和回合结算逻辑
+    actor_wanderer.character_stats.attack = (
+        1000  # 让旅行者的攻击力足够高，以便测试战斗系统的伤害计算和回合结算逻辑
+    )
 
     # 为旅行者分配初始装备：猎刀 + 轻甲套装 + 沙漠护身符
     actor_wanderer.items.extend(
@@ -53,7 +55,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 name="缺口猎刀",
                 description="一把刀身偏短的猎刀，刃背厚实，靠近刀尖三分之一处有一道浅缺口，像是曾经硬撬过什么。握柄以粗布条缠绕，布已泛黄，但缠法整齐，显然出自熟练的手。",
                 stat_bonuses=CharacterStats(
-                    hp=0, max_hp=0, attack=1000, defense=0, energy=0, speed=0
+                    hp=0, max_hp=0, attack=2, defense=0, energy=0, speed=0
                 ),
             ),
             EquipmentItem(

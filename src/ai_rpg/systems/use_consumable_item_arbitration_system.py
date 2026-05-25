@@ -1,6 +1,6 @@
 """使用消耗品仲裁系统模块。
 
-响应 UseConsumableItemAction 事件，调用 LLM 仲裁消耗品效果（HP/格挡/状态效果描述更新）。
+响应 UseConsumableItemAction 事件，调用 LLM 仲裁消耗品效果（HP/状态效果描述更新）。
 """
 
 from typing import Dict, Final, List, final
@@ -168,7 +168,7 @@ def _generate_consumable_arbitration_prompt(
 
 ## 计算规则
 
-根据消耗品描述，推断其对使用者与目标的效果（如恢复 HP、提升格挡、施加增益/减益等）。
+根据消耗品描述，推断其对使用者与目标的效果（如恢复 HP、施加增益/减益等）。
 仅依据物品描述中明确写明的数值计算；描述模糊时给出合理推断并体现在 narrative 中。
 目标 HP = max(0, min(计算后 HP, 最大 HP))
 
@@ -189,12 +189,12 @@ def _generate_consumable_arbitration_prompt(
 
 布尔值，决定是否触发场景干预系统。
 判断规则：仅当本回合消耗品使用的 **narrative 叙事中涉及与已存在场景要素的物理交互**（如搅起沙尘、触发机关、破坏地面物件、揭示可借用道具等），且该交互**合理推断可对场内角色产生后续物理影响**时，设为 `true`；
-若本回合为纯恢复/增益类使用（治疗、加格挡、施加状态效果），无环境互动，输出 `false`。
+若本回合为纯恢复/增益类使用（治疗、施加状态效果），无环境互动，输出 `false`。
 
 ### combat_log（简名 = 全名最后一段）
 
 示例：`[英雄|使用治愈药水→自身] HP:英雄 8→13`
-多目标示例：`[英雄|使用鼓舞之酒→队友A,队友B] 格挡:队友A +3,队友B +3`
+多目标示例：`[英雄|使用鼓舞之酒→队友A,队友B] HP:队友A 8→12,队友B 6→10`
 
 ### final_stats
 
@@ -265,7 +265,7 @@ def _generate_compressed_consumable_arbitration_prompt(
 #######################################################################################################################################
 @final
 class UseConsumableItemArbitrationSystem(ReactiveProcessor):
-    """响应 UseConsumableItemAction 事件，调用 LLM 仲裁消耗品效果（HP/格挡/状态效果描述更新）。"""
+    """响应 UseConsumableItemAction 事件，调用 LLM 仲裁消耗品效果（HP/状态效果描述更新）。"""
 
     def __init__(self, game: TCGGame, use_compressed_prompt: bool = True) -> None:
         super().__init__(game)

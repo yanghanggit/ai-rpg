@@ -507,7 +507,7 @@ class TCGGame(RPGGame):
 
     ################################################################################################################
     def clear_round_state(self) -> None:
-        """清除所有角色实体的每回合可变状态（手牌与格挡）"""
+        """清除所有角色实体的每回合可变状态（手牌）"""
 
         # 清除所有角色实体的手牌组件，并将剩余手牌归还牌组
         for entity in self.get_group(Matcher(HandComponent)).entities.copy():

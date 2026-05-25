@@ -182,7 +182,7 @@ def create_combat_pipeline(
     # 检查战斗结果系统
     processors.add(CombatOutcomeSystem(tcg_game))
 
-    # 战斗回合清理系统（清除旧回合手牌与格挡 + 递减状态效果）
+    # 战斗回合清理系统（清除旧回合手牌 + 递减状态效果）
     processors.add(CombatRoundCleanupSystem(tcg_game))
 
     # 战斗回合过渡系统（创建新回合 + 生成 action_order）

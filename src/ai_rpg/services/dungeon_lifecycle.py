@@ -192,7 +192,7 @@ def _enter_dungeon_stage(
     # 6. 初始化战斗状态
     dungeon.start_combat(Combat(name=stage_entity.name))
 
-    # 7. 清除每回合可变状态（手牌与格挡）
+    # 7. 清除每回合可变状态（手牌）
     tcg_game.clear_round_state()
     return True
 
@@ -481,7 +481,7 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
             f"[return_home] 最终确认 {party_member_entity.name} 场景={final_stage.name if final_stage else 'None'!r}"
         )
 
-    # 7. 清除每回合可变状态（手牌与格挡）
+    # 7. 清除每回合可变状态（手牌）
     tcg_game.clear_round_state()
 
     # 8. 清除状态效果组件

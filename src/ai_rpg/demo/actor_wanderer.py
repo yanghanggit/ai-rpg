@@ -41,7 +41,7 @@ def create_wanderer() -> Actor:
         system_rules=RPG_SYSTEM_RULES,
         keywords=[
             Keyword(
-                description="多段连击型：每张卡牌优先生成多次攻击（hit_count ≥ 2），每段伤害较低但累积可观；格挡收益次要，damage_dealt 不为 0。"
+                description="多段连击型：每张卡牌优先生成多次攻击（hit_count ≥ 2），每段伤害较低但累积可观；damage_dealt 不为 0。"
             ),
             Keyword(
                 description="状态控制型：每张卡牌的 effects 不得为空，优先生成能引发持续状态（如虚弱、减速、灼烧）的卡牌；damage_dealt 可以偏低甚至为 0，以控场效果为核心价値。"

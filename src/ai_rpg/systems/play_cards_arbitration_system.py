@@ -175,7 +175,6 @@ def _build_random_multi_sections(
     )
     rules = (
         "enemy_random_multi 特殊规则：按「命中分配」逐段结算，每段命中对应目标，"
-        "各目标独立维护剩余格挡；同一目标连续被命中时格挡跨段累计扣减。"
         "final_stats 须包含出牌者及**所有被命中过的不重复目标**。"
     )
     log_example = "\nrandom_multi 示例：`[英雄|回旋镖→随机:3×3段,敌A×2伤害5,敌B×1伤害3] HP:敌A 15→10 敌B 12→9`"
@@ -261,7 +260,7 @@ def _generate_combat_arbitration_prompt(
 
 布尔值，决定是否触发场景干预系统（stage agent 追加状态效果 / 塞牌）。
 判断规则：仅当本回合出牌的 **narrative 叙事中涉及与已存在场景要素的物理交互**（如搅起沙尘、触发机关、破坏地面物件、揭示可借用道具等），且该交互**合理推断可对场内角色产生后续物理影响**时，设为 `true`；
-若本回合为纯角色交换（攻击/格挡/治疗），无环境互动，输出 `false`。
+若本回合为纯角色交换（攻击/治疗），无环境互动，输出 `false`。
 
 ### combat_log（简名 = 全名最后一段）
 
@@ -513,7 +512,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         actor_entity: Entity,
         action: PlayCardsAction,
     ) -> None:
-        """解析 AI 仲裁响应，更新 HP/格挡/状态效果，广播仲裁事件，写入回合记录。解析失败仅记录 error。"""
+        """解析 AI 仲裁响应，更新 HP/状态效果，广播仲裁事件，写入回合记录。解析失败仅记录 error。"""
         try:
 
             format_response = ArbitrationResponse.model_validate_json(

@@ -71,7 +71,7 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
         if not last_round.is_completed:
             return
 
-        logger.debug("清除旧回合手牌与格挡状态")
+        logger.debug("清除旧回合手牌状态")
         self._game.clear_round_state()
         self.tick_status_effects_duration()
 

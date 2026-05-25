@@ -13,7 +13,7 @@ from ..models import (
     DrawCardsAction,
     HandComponent,
     PlayCardsAction,
-    DiscardCardsAction,
+    ExhaustCardsAction,
     PassTurnAction,
     UseConsumableItemAction,
     PartyMemberComponent,
@@ -276,7 +276,7 @@ async def activate_play_cards_specified(
 
 
 ###################################################################################################################################################################
-async def activate_discard_cards_specified(
+async def activate_exhaust_card_specified(
     tcg_game: TCGGame,
     actor_name: str,
     card_name: str,
@@ -294,7 +294,7 @@ async def activate_discard_cards_specified(
     """
     entity, error_msg = _validate_play_turn(tcg_game, actor_name)
     if entity is None:
-        logger.error(f"activate_discard_cards_specified: {error_msg}")
+        logger.error(f"activate_exhaust_card_specified: {error_msg}")
         return False, error_msg
 
     if not entity.has(PartyMemberComponent):
@@ -313,7 +313,7 @@ async def activate_discard_cards_specified(
         return False, "该卡牌不可弃牌"
 
     logger.debug(f"为角色 {actor_name} 激活弃牌动作，卡牌: {selected_card.name}")
-    entity.replace(DiscardCardsAction, entity.name, selected_card)
+    entity.replace(ExhaustCardsAction, entity.name, selected_card)
     return True, f"成功为角色 {actor_name} 激活弃牌动作（卡牌: {card_name}）"
 
 

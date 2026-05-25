@@ -14,7 +14,7 @@ from ..models import MonsterComponent, TaskStatus
 from .dungeon_actions import (
     activate_monster_play_trigger,
     activate_play_cards_specified,
-    activate_discard_cards_specified,
+    activate_exhaust_card_specified,
     activate_pass_turn,
     activate_use_consumable_item,
 )
@@ -271,7 +271,7 @@ async def _execute_play_cards_task(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-async def _execute_discard_cards_task(
+async def _execute_exhaust_card_task(
     task_id: str,
     user_name: str,
     actor_name: str,
@@ -293,7 +293,7 @@ async def _execute_discard_cards_task(
             if not rpg_game.current_dungeon.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
-            success, message = await activate_discard_cards_specified(
+            success, message = await activate_exhaust_card_specified(
                 rpg_game, actor_name, card_name
             )
             if not success:

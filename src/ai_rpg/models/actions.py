@@ -122,11 +122,11 @@ class PlayCardsAction(Component):
 @final
 @register_action_component_type
 @register_component_type
-class DiscardCardsAction(Component):
-    """触发角色弃置指定手牌，归入弃牌堆。"""
+class ExhaustCardsAction(Component):
+    """触发角色消耗指定手牌，归入消耗堆（ExhaustPile）。"""
 
     name: str
-    card: Card  # 要弃置的卡牌
+    card: Card  # 要消耗的卡牌
 
 
 ############################################################################################################

@@ -16,7 +16,7 @@ from .round_detail import RoundDetailScreen
 from .utils import display_name
 from .server_client import dungeon_combat_draw_cards as server_dungeon_combat_draw_cards
 from .server_client import dungeon_combat_play_cards as server_play_cards
-from .server_client import dungeon_combat_discard_cards as server_discard_cards
+from .server_client import dungeon_combat_exhaust_card as server_exhaust_card
 from .server_client import (
     dungeon_combat_use_consumable_item as server_use_consumable_item,
 )
@@ -1514,7 +1514,7 @@ class CombatRoomScreen(Screen[None]):
 
         task_id = ""
         try:
-            resp = await server_discard_cards(
+            resp = await server_exhaust_card(
                 self._user_name, self._game_name, actor_name, card_name
             )
             task_id = resp.task_id

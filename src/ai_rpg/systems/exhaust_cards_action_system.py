@@ -1,6 +1,6 @@
-"""弃牌动作系统（DiscardCardsActionSystem）。
+"""消耗牌动作系统（ExhaustCardsActionSystem）。
 
-仅允许当前 turn 的行动者弃牌；弃牌不消耗 energy、不推进行动顺序。
+仅允许当前 turn 的行动者消耗手牌；消耗不消耗 energy、不推进行动顺序。
 """
 
 from typing import Final, final
@@ -33,10 +33,10 @@ def _generate_discard_card_context_prompt(
 
 #######################################################################################################################################
 @final
-class DiscardCardsActionSystem(ReactiveProcessor):
-    """响应 DiscardCardsAction 事件，将手牌移入弃牌堆。
+class ExhaustCardsActionSystem(ReactiveProcessor):
+    """响应 ExhaustCardsAction 事件，将手牌移入消耗堆（ExhaustPile）。
 
-    仅允许当前 turn 的行动者弃牌，且不消耗 energy、不推进行动顺序。
+    仅允许当前 turn 的行动者消耗手牌，且不消耗 energy、不推进行动顺序。
     自有牌归入 ExhaustPileComponent 并注入上下文；外来牌静默丢弃。
     """
 
@@ -63,27 +63,27 @@ class DiscardCardsActionSystem(ReactiveProcessor):
     @override
     async def react(self, entities: list[Entity]) -> None:
         if not self._game.current_dungeon.is_ongoing:
-            logger.debug("DiscardCardsActionSystem: 战斗未进行中，跳过弃牌处理")
+            logger.debug("ExhaustCardsActionSystem: 战斗未进行中，跳过消耗处理")
             return
 
         assert (
             len(entities) == 1
-        ), "DiscardCardsActionSystem: 一次只能处理一个弃牌动作实体"
+        ), "ExhaustCardsActionSystem: 一次只能处理一个消耗动作实体"
         logger.debug(
-            f"DiscardCardsActionSystem: 触发弃牌处理，找到 {len(entities)} 个弃牌实体"
+            f"ExhaustCardsActionSystem: 触发消耗处理，找到 {len(entities)} 个消耗实体"
         )
 
         current_rounds = self._game.current_dungeon.current_rounds
         assert (
             current_rounds is not None
-        ), "DiscardCardsActionSystem: current_rounds is None"
+        ), "ExhaustCardsActionSystem: current_rounds is None"
 
         last_round = self._game.current_dungeon.latest_round
-        assert last_round is not None, "DiscardCardsActionSystem: latest_round is None"
+        assert last_round is not None, "ExhaustCardsActionSystem: latest_round is None"
 
         for entity in entities:
             assert entity.name == self._game.get_current_turn_actor(last_round), (
-                f"DiscardCardsActionSystem: 弃牌角色 {entity.name} 不是当前 turn 的行动者！"
+                f"ExhaustCardsActionSystem: 消耗牌角色 {entity.name} 不是当前 turn 的行动者！"
                 f" current_turn_actor={self._game.get_current_turn_actor(last_round)}"
             )
 

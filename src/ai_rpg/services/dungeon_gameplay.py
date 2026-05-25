@@ -45,7 +45,7 @@ from .dungeon_tasks import (
     _execute_retreat_task,
     _execute_draw_cards_task,
     _execute_play_cards_task,
-    _execute_discard_cards_task,
+    _execute_exhaust_card_task,
     _execute_pass_turn_task,
     _execute_use_consumable_item_task,
 )
@@ -578,10 +578,10 @@ async def dungeon_combat_play_cards(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @dungeon_gameplay_api_router.post(
-    path="/api/dungeon/combat/discard_cards/v1/",
+    path="/api/dungeon/combat/exhaust_card/v1/",
     response_model=DungeonCombatDiscardCardsResponse,
 )
-async def dungeon_combat_discard_cards(
+async def dungeon_combat_exhaust_card(
     payload: DungeonCombatDiscardCardsRequest,
     game_server: CurrentGameServer,
 ) -> DungeonCombatDiscardCardsResponse:
@@ -594,7 +594,7 @@ async def dungeon_combat_discard_cards(
         HTTPException(400): 战斗未在进行中或无未完成的回合
     """
 
-    logger.info(f"/api/dungeon/combat/discard_cards/v1/: user={payload.user_name}")
+    logger.info(f"/api/dungeon/combat/exhaust_card/v1/: user={payload.user_name}")
 
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
@@ -624,10 +624,10 @@ async def dungeon_combat_discard_cards(
                 detail="当前没有未完成的回合可供弃牌",
             )
 
-    discard_cards_task = game_server.create_task()
+    exhaust_card_task = game_server.create_task()
     asyncio.create_task(
-        _execute_discard_cards_task(
-            discard_cards_task.task_id,
+        _execute_exhaust_card_task(
+            exhaust_card_task.task_id,
             payload.user_name,
             payload.actor_name,
             payload.card_name,
@@ -636,10 +636,10 @@ async def dungeon_combat_discard_cards(
     )
 
     logger.info(
-        f"📝 创建弃牌后台任务: task_id={discard_cards_task.task_id}, user={payload.user_name}"
+        f"📝 创建消耗牌后台任务: task_id={exhaust_card_task.task_id}, user={payload.user_name}"
     )
     return DungeonCombatDiscardCardsResponse(
-        task_id=discard_cards_task.task_id,
+        task_id=exhaust_card_task.task_id,
         status=TaskStatus.RUNNING.value,
         message="弃牌任务已启动，请通过会话消息查询结果",
     )

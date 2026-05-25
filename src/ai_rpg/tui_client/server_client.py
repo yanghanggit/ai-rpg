@@ -359,7 +359,7 @@ async def dungeon_combat_play_cards(
         return DungeonCombatPlayCardsResponse.model_validate(response.json())
 
 
-async def dungeon_combat_discard_cards(
+async def dungeon_combat_exhaust_card(
     user_name: str,
     game_name: str,
     actor_name: str,
@@ -368,7 +368,7 @@ async def dungeon_combat_discard_cards(
     """让指定角色弃掉指定手牌，返回后台任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
-            server_config.base_url + "/api/dungeon/combat/discard_cards/v1/",
+            server_config.base_url + "/api/dungeon/combat/exhaust_card/v1/",
             json=DungeonCombatDiscardCardsRequest(
                 user_name=user_name,
                 game_name=game_name,

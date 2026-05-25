@@ -43,7 +43,7 @@
 | 6 | `EnemyPlayDecisionSystem` | Execute | 敌方 AI 决策出哪张牌 |
 | 7 | `PlayActionNarrationSystem` | Execute | LLM 润色出牌叙事 |
 | 8 | `PlayCardsActionSystem` | Reactive | 执行出牌，触发后续仲裁链 |
-| 9 | `DiscardCardsActionSystem` | Reactive | 将指定手牌移入弃牌堆（不消耗 energy） |
+| 9 | `ExhaustCardsActionSystem` | Reactive | 将指定手牌移入消耗堆 ExhaustPile（不消耗 energy） |
 | 10 | `RetreatActionSystem` | Reactive | 处理撤退行动 |
 | 11 | `PlayCardsArbitrationSystem` | Reactive | **核心**：AI 仲裁伤害/格挡/HP 结算 |
 | 12 | `AddActorStatusEffectsActionSystem` | Reactive | 为角色追加状态效果（最多 2 个/帧） |
@@ -112,24 +112,24 @@
 
 ---
 
-### DiscardCardsActionSystem（步骤 9）
+### ExhaustCardsActionSystem（步骤 9）
 
-**源码**：`src/ai_rpg/systems/discard_cards_action_system.py`  
-**监听**：`DiscardCardsAction`
+**源码**：`src/ai_rpg/systems/exhaust_cards_action_system.py`  
+**监听**：`ExhaustCardsAction`
 
-将指定手牌从 `HandComponent` 移入 `DiscardDeckComponent`，供玩家在回合中主动丢弃不需要的手牌。
+将指定手牌从 `HandComponent` 移入 `ExhaustPileComponent`，永久消耗该牌。
 
 **关键约束**：
 
-- **不消耗 energy，不推进行动顺序**：弃牌不触发仲裁链，`CombatRoundCompletionSystem` 的 energy 判断不受影响；玩家可在本回合出牌前后随时发起弃牌
-- **source 守卫**：与出牌归档规则对称——自有牌（`card.source == entity.name`）归入 `DiscardDeckComponent` 并注入弃牌上下文消息；外来牌（`PostArbitrationActionSystem` 塞入的 Stage 牌）静默丢弃，不写入 agent 上下文，保持角色对外来牌"未被告知"的上下文一致性
+- **不消耗 energy，不推进行动顺序**：消耗不触发仲裁链，`CombatRoundCompletionSystem` 的 energy 判断不受影响；玩家可在本回合出牌前后随时发起消耗
+- **source 守卫**：自有牌（`card.source == entity.name`）归入 `ExhaustPileComponent` 并注入消耗上下文消息；外来牌静默丢弃，不写入 agent 上下文
 
 **三类牌堆的归宿对比**：
 
 | 事件 | 归入牌堆 |
 | --- | --- |
 | 出牌（`PlayCardsAction`） | `PlayedDeckComponent`（已出牌统计） |
-| 主动弃牌（`DiscardCardsAction`） | `DiscardDeckComponent`（主动弃牌堆） |
+| 消耗（`ExhaustCardsAction`） | `ExhaustPileComponent`（永久消耗堆） |
 | 回合结束手牌剩余（`CombatRoundCleanupSystem`） | 自有牌归还至 `DrawDeckComponent`；外来牌丢弃 |
 
 ---

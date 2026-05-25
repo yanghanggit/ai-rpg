@@ -179,7 +179,7 @@ from agent_game_actions import (
     enter_dungeon_game,
     draw_cards_game,
     play_cards_specified_game,
-    discard_cards_game,
+    exhaust_card_game,
     pass_turn_game,
     use_consumable_item_game,
     exit_dungeon_and_return_home_game,
@@ -579,7 +579,7 @@ def play_cards_specified(
 
 
 ###############################################################################################################################################
-@main.command("discard-cards-specified")
+@main.command("exhaust-card")
 @click.option(
     "--snapshot",
     required=True,
@@ -595,11 +595,11 @@ def play_cards_specified(
     required=True,
     help="要弃置的卡牌名称（须存在于该角色手牌中）",
 )
-def discard_cards_specified(snapshot: str, actor: str, card: str) -> None:
-    """从存档复位，让指定角色弃置指定手牌，并写入新存档。
+def exhaust_card_specified(snapshot: str, actor: str, card: str) -> None:
+    """从存档复位，让指定角色消耗指定手牌（归入 ExhaustPile），并写入新存档。
 
     适用于【地下城模式】战斗进行中（is_ongoing），draw-cards 之后调用。
-    只有指定角色触发弃牌结算，消耗 1 点 energy。
+    只有指定角色触发消耗结算，不消耗 energy。
     --card 须与手牌中卡牌名称完全一致，否则报错不归档。
     """
 
@@ -622,7 +622,7 @@ def discard_cards_specified(snapshot: str, actor: str, card: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(discard_cards_game(world, player_session, actor, card, _save_dir))
+    asyncio.run(exhaust_card_game(world, player_session, actor, card, _save_dir))
 
 
 ###############################################################################################################################################

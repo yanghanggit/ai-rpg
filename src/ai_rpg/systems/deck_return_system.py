@@ -1,7 +1,7 @@
 """
 牌库归还系统模块
 
-在战斗结束时（is_combat_completed）将所有战斗牌堆（DrawPile、DiscardPile、ExhaustPile）
+在战斗结束后（is_post_combat）将所有战斗牌堆（DrawPile、DiscardPile、ExhaustPile）
 中属于各角色自身的卡牌归还至其 DeckComponent，并清空三个战斗子堆。
 
 主要组件：
@@ -27,7 +27,11 @@ class DeckReturnSystem(ExecuteProcessor):
     """
     战斗结束后将三个战斗子堆的自有卡牌归还 DeckComponent，并清空子堆。
 
-    触发条件：is_combat_completed == True
+    触发条件：is_post_combat == True
+
+    注意：CombatArchiveSystem 在本系统之前运行并调用 transition_to_post_combat()，
+    因此本系统必须在 is_post_combat（state==POST_COMBAT）时触发，
+    而非 is_combat_completed（state==COMPLETE）。
 
     适用于所有挂载 DeckComponent 的实体（玩家、盟友、怪物均走相同流程）。
     怪物实体在 DeckReturnSystem 执行后由外部服务统一销毁，顺序安全。
@@ -41,7 +45,7 @@ class DeckReturnSystem(ExecuteProcessor):
     async def execute(self) -> None:
         dungeon = self._game.current_dungeon
 
-        if not dungeon.is_combat_completed:
+        if not dungeon.is_post_combat:
             return
 
         entities = list(

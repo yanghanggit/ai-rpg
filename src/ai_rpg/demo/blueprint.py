@@ -44,6 +44,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
 
     # 调整旅行者的速度属性，增加其在 SPEED_ORDER 策略下的出手优先级
     actor_wanderer.character_stats.speed = 2
+    actor_wanderer.character_stats.attack = 1000 # 让旅行者的攻击力足够高，以便测试战斗系统的伤害计算和回合结算逻辑
 
     # 为旅行者分配初始装备：猎刀 + 轻甲套装 + 沙漠护身符
     actor_wanderer.items.extend(

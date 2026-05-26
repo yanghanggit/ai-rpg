@@ -17,6 +17,7 @@ from ..models import (
     StatusEffect,
     EffectPhase,
     DeathComponent,
+    MonsterComponent,
 )
 from ..utils import extract_json_from_code_block
 
@@ -263,6 +264,37 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
             found_entity = self._game.get_entity_by_name(chat_client.name)
             assert found_entity is not None, f"无法找到角色实体: {chat_client.name}"
             self._process_status_effects_response(found_entity, chat_client)
+            self._mock_inject_counter_effect(found_entity)  # [测试用]
+
+    #######################################################################################################################################
+    def _mock_inject_counter_effect(self, entity: Entity) -> None:
+        """[测试用] 若实体为怪物，强制注入一个计数型状态效果，用于验证 counter 机制。
+
+        规则：前3次受击伤害锁定为1；counter 初始为 3，仲裁 LLM 每次受击后将其递减 1，
+        counter 归零后效果不再触发。已注入则跳过（避免重复）。
+        """
+        if not entity.has(MonsterComponent):
+            return
+
+        combat_status_effects = entity.get(StatusEffectsComponent)
+        assert combat_status_effects is not None
+
+        mock_effect_name = "伤害锁定"
+        if any(e.name == mock_effect_name for e in combat_status_effects.status_effects):
+            return
+
+        mock_effect = StatusEffect(
+            name=mock_effect_name,
+            description="前3次受击伤害锁定为1；每次受击后 counter 递减1，counter 归零后效果失效",
+            duration=-1,
+            phase=EffectPhase.ARBITRATION,
+            counter=3,
+            source="[mock]",
+        )
+        combat_status_effects.status_effects.append(mock_effect)
+        logger.debug(
+            f"[{entity.name}] [mock] 注入测试效果: 「{mock_effect.name}」counter={mock_effect.counter}"
+        )
 
     #######################################################################################################################################
     def _process_status_effects_response(

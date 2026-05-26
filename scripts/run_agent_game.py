@@ -1,7 +1,7 @@
 """AI 操作工具 - 基于快照的游戏推进 CLI。
 
 本脚本是供 AI（GitHub Copilot）主动调用的游戏操作工具。
-人类玩家使用 run_terminal_game.py（交互式终端），AI 使用本脚本（无状态快照驱动）。
+人类玩家使用 run_tui_game_client.py（交互式终端），AI 使用本脚本（无状态快照驱动）。
 
 核心设计：
     每条命令 = 读取一个存档快照 → 执行一次游戏动作 → 写出新的存档快照。
@@ -54,82 +54,7 @@
     python scripts/run_agent_game.py next-dungeon      --snapshot PATH
     python scripts/run_agent_game.py retreat           --snapshot PATH
 
-日志文件：logs/run_agent_game_{timestamp}.log（与新存档时间戳相同）
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-AI 操作经验总结（供后续 AI 实例参考，勿删）
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-【陷阱 1】speak 之后 NPC 不会立即回应
-    speak 命令只是"登记"玩家的发言意图，NPC 的回应在下一次 advance 中才生成。
-    正确流程：
-        speak --snapshot A --target 角色.术士.云音 --content "..."  → 存档 B
-        advance --snapshot B                                         → 存档 C（云音在此回话）
-    读取 NPC 回应内容：
-        grep -A 20 "response_content" logs/run_agent_game_{C的时间戳}.log
-
-【陷阱 2】选错存档导致命令静默失败或行为异常（高频陷阱！）
-    每条命令对前置状态有严格要求，使用错误的存档会导致命令静默失败、不产生新存档，
-    但日志中只会打印一行 ERROR，没有异常抛出——极易误判为"命令卡住"或"bug"。
-    实际案例：打算从 BOSS 战存档撤退，却误传入了上一次已结算的存档，
-              retreat 直接返回未归档实例，花费大量时间排查"场景未更新"的假 bug。
-
-    操作前务必先确认存档状态（参见陷阱 4 的快速检查方法），再选择对应命令：
-        家园模式存档  → advance / speak / switch-stage / enter-dungeon
-        is_ongoing    → draw-cards / play-cards / retreat
-        is_post_combat + is_won  → next-dungeon / exit-dungeon
-        is_post_combat + is_lost → exit-dungeon
-
-    快速确认最新存档：
-        find .worlds -mindepth 3 -maxdepth 3 -type d | sort | tail -5
-
-【陷阱 3】next-dungeon 无下一关时静默返回，不产生新存档
-    若当前关卡已是最后一关（peek_next_stage() 返回 None），next-dungeon 不会报错，
-    但也不会写出新存档——存档目录时间戳不会更新。
-    判断是否有下一关：先尝试 next-dungeon；无新存档出现则说明已是末关，应用 exit-dungeon。
-
-【陷阱 4】识别当前存档的游戏状态
-    读取 world.json：实体结构为 {name, components:[{name, data}]}，不是平铺字段。
-    快速查战斗状态（dungeon.rooms[0].combat.state）：
-        0=NONE 1=INITIALIZATION 2=ONGOING 3=COMPLETE 4=POST_COMBAT
-        python3 -c "import json; d=json.load(open('PATH/world.json')); \
-        r=d['dungeon']['rooms'][0]['combat'] if d['dungeon']['rooms'] else {}; \
-        print('state:', r.get('state'), 'result:', r.get('result'))"
-    快速查玩家当前场景（components 数组方式）：
-        python3 -c "import json; d=json.load(open('PATH/world.json')); \
-        [print(e['name'], next((c['data'] for c in e['components'] if c['name']=='ActorComponent'),{}).get('current_stage','?')) \
-        for e in d['entities_serialization'] if any(c['name']=='PlayerComponent' for c in e['components'])]"
-
-【陷阱 5】exit-dungeon / retreat 后场景未更新（已修复）
-    EpilogueSystem 在 pipeline 末端调用 flush_entities()，此时角色仍在地下城场景。
-    随后 exit_dungeon_and_return_home() 仅更新内存，若不再次 flush_entities()，
-    archive_world() 会写出旧的场景数据。
-    修复：flush_entities() 已内置为 exit_dungeon_and_return_home() 的最后一步
-    （见 dungeon_lifecycle.py），调用方无需额外处理。
-
-【陷阱 6】play-cards-specified 每次只出一张牌
-    每次调用仅让一个角色出牌并跑完整个 pipeline。
-    一个回合内若有多个己方角色需要出牌，需依次调用，每次传入上一步产生的新存档。
-    敌方 AI 出牌同理（需手动为每个敌方角色各调用一次）。
-
-【陷阱 7】play-cards-specified 在战斗结束时需额外等待（CombatArchiveSystem）
-    当最后一张牌打出导致战斗结束时，pipeline 内 CombatArchiveSystem 会为每个
-    远征队成员调用 LLM 生成战斗总结并归档（COMPLETE→POST_COMBAT），耗时明显更长。
-    归档完成后存档状态即为 is_post_combat，可直接使用 next-dungeon / exit-dungeon。
-
-【最佳操作流程 - 完整测试一局】
-    1. new --user ai-copilot --game Game1 --dungeon 地下城.XXX
-    2. advance（NPC 主动行动，推进家园叙事）
-    3. speak --target ... --content ...  → advance（读取 NPC 回应）
-    4. switch-stage --stage 场景.X（可选，移动玩家位置）
-    5. enter-dungeon --dungeon 地下城.XXX
-    6. draw-cards → play-cards-specified（每个角色各一次，循环直到 is_post_combat）
-    7a. 胜利且有下一关 → next-dungeon → 回到步骤 6
-    7b. 胜利且无下一关 → exit-dungeon
-    7c. 失败             → exit-dungeon
-    7d. 主动撤退（需 is_ongoing 存档）→ retreat
-    8. advance（回家后推进家园叙事，NPC 对冒险有反应）
-"""
+日志文件：logs/run_agent_game_{timestamp}.log（与新存档时间戳相同）"""
 
 import os
 import sys

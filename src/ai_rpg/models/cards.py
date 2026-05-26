@@ -38,15 +38,21 @@ class StatusEffect(BaseModel):
 
     字段说明：
     - name: 状态效果名称
-    - description: 效果描述（含表现与数值影响，如"我感到手臂刺痛，攻击力−2"）
+    - description: 效果描述（静态规则说明，创建后不再修改；如"前3次受击伤害变为1"）
     - duration: 持续回合数；-1 = 永久不过期，>0 = 剩余回合，每回合结束后 -=1，降至 <=0 时移除
     - phase: 生效阶段；决定本效果在哪个战斗阶段被系统读取并应用
+    - counter: 特殊计数器；仅 ARBITRATION 阶段效果使用；由仲裁 LLM 按事件更新，不随回合递减
     """
 
     name: str
-    description: str  # 效果描述（含表现与数值影响）
+    description: (
+        str  # 效果描述（静态规则说明，不随状态变化，由 LLM 创建时写入后不再修改）
+    )
     duration: int = 3  # 持续回合数；-1=永久，>0=剩余回合
     phase: EffectPhase = EffectPhase.ARBITRATION  # 生效阶段，默认仲裁阶段
+    counter: int = (
+        0  # 特殊计数器；仅 ARBITRATION 阶段效果使用；由仲裁 LLM 按游戏事件更新（倒计型从初始值递减，累加型从 0 递增）；普通效果保持 0
+    )
     source: str = ""  # 效果施加者名称；空字符串表示来源未知
     speed: int = (
         0  # 速度加成（正值加速、负值减速）；叠加到角色最终速度，影响每回合出手顺序

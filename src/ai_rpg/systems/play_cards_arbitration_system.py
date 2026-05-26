@@ -30,7 +30,7 @@ from ..utils import extract_json_from_code_block
 @final
 class StatusEffectPatch(BaseModel):
     name: str
-    description: str
+    counter: int
 
 
 #######################################################################################################################################
@@ -276,11 +276,10 @@ def _generate_combat_arbitration_prompt(
 {{"角色全名": {{"hp": 数值, "status_effect_patches": []}}}}
 ```
 - hp：0 ≤ hp ≤ 最大 HP
-- status_effect_patches：仅在本次仲裁**消耗了**某状态效果的 cur 计数时填写，格式：
-  `{{"name": "效果名", "description": "更新后的完整描述（含新计数，如 1/3）"}}`
+- status_effect_patches：仅在本次仲裁改变了某效果的 counter 值时填写，格式：
+  `{{"name": "效果名", "counter": <新整数值>}}`
   - name 必须与"仲裁状态效果"中列出的名称完全一致
-  - 未被消耗的效果不输出；cur 耗尽时描述中填 0/N（不移除效果，duration 由系统另行维护）
-  - 若本次出牌未触发任何 cur 消耗，保持空数组 []
+  - 未改变 counter 的效果不输出；若本次出牌未触发任何 counter 变化，保持空数组 []
 
 ### narrative
 
@@ -581,10 +580,10 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 max_hp = after_stats.max_hp
                 logger.info(f"更新 {entity_name} HP: {old_hp} → {new_hp}/{max_hp}")
 
-                # 回写仲裁阶段状态效果的 description（更新 cur 等动态变量）
+                # 回写仲裁阶段状态效果的 counter（更新特殊计数器）
                 for patch in entity_stats.status_effect_patches:
                     self._game.apply_status_effect_patch(
-                        entity, patch.name, patch.description
+                        entity, patch.name, patch.counter
                     )
 
                 self._game.add_human_message(

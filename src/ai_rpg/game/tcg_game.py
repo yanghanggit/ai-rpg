@@ -623,28 +623,28 @@ class TCGGame(RPGGame):
 
     ###############################################################################################################################################
     def apply_status_effect_patch(
-        self, entity: Entity, status_effect_name: str, update_description: str
+        self, entity: Entity, status_effect_name: str, counter: int
     ) -> None:
-        """更新实体上指定状态效果的 description，并记录更新日志。
+        """更新实体上指定状态效果的 counter，并记录更新日志。
 
         匹配方式为按名称精确匹配。名称不存在时记录 warning 并跳过，不抛异常。
 
         Args:
             entity: 目标实体，必须拥有 StatusEffectsComponent
             status_effect_name: 要更新的状态效果名称
-            update_description: 更新后的完整描述
+            counter: 更新后的特殊计数器值
         """
         assert entity.has(
             StatusEffectsComponent
-        ), f"{entity.name} 缺少 StatusEffectsComponent，无法回写状态效果描述"
+        ), f"{entity.name} 缺少 StatusEffectsComponent，无法回写状态效果计数器"
         status_comp = entity.get(StatusEffectsComponent)
         effect_map = {e.name: e for e in status_comp.status_effects}
         if status_effect_name in effect_map:
-            old_desc = effect_map[status_effect_name].description
-            effect_map[status_effect_name].description = update_description
+            old_counter = effect_map[status_effect_name].counter
+            effect_map[status_effect_name].counter = counter
             logger.info(
-                f"更新 {entity.name} 状态效果「{status_effect_name}」 description: "
-                f"{old_desc!r} → {update_description!r}"
+                f"更新 {entity.name} 状态效果「{status_effect_name}」 counter: "
+                f"{old_counter} → {counter}"
             )
         else:
             logger.warning(

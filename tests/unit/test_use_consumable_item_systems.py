@@ -453,27 +453,28 @@ class TestApplyItemArbitrationResult:
 
         assert game.compute_character_stats(actor_entity).hp == 15
 
-    def test_patches_status_effect_description(self) -> None:
+    def test_patches_status_effect_counter(self) -> None:
         game, system, stage, actor, action = self._setup()
-        # 先给 actor 添加一个状态效果
+        # 先给 actor 添加一个带初始计数器的状态效果
         effect = StatusEffect(
-            name="中毒",
-            description="每回合损失 2 HP（剩余 3 次）",
+            name="护盾反弹",
+            description="前3次受击伤害变为1",
             phase=EffectPhase.ARBITRATION,
             duration=3,
+            counter=3,
         )
         actor.add(StatusEffectsComponent, "hero", [effect])
 
         response_json = (
             '{"combat_log":"log","narrative":"narr","final_stats":{"hero":{'
-            '"hp":20,"block":0,"status_effect_patches":[{"name":"中毒","description":"每回合损失 2 HP（剩余 2 次）"}]'
+            '"hp":20,"block":0,"status_effect_patches":[{"name":"护盾反弹","counter":2}]'
             "}}}"
         )
         chat_client = _make_mock_chat_client(response_json)
         system._apply_item_arbitration_result(stage, chat_client, actor, action)
 
         updated = actor.get(StatusEffectsComponent).status_effects[0]
-        assert updated.description == "每回合损失 2 HP（剩余 2 次）"
+        assert updated.counter == 2
 
     def test_skips_unknown_status_effect_patch(self) -> None:
         """status_effect_patches 中不存在的 name 应被跳过，不抛异常。"""
@@ -482,7 +483,7 @@ class TestApplyItemArbitrationResult:
 
         response_json = (
             '{"combat_log":"log","narrative":"narr","final_stats":{"hero":{'
-            '"hp":20,"block":0,"status_effect_patches":[{"name":"不存在效果","description":"x"}]'
+            '"hp":20,"block":0,"status_effect_patches":[{"name":"不存在效果","counter":1}]'
             "}}}"
         )
         chat_client = _make_mock_chat_client(response_json)

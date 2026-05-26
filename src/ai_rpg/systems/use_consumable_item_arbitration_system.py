@@ -28,7 +28,7 @@ from ..utils import extract_json_from_code_block
 @final
 class _StatusEffectPatch(BaseModel):
     name: str
-    description: str
+    counter: int
 
 
 #######################################################################################################################################
@@ -202,11 +202,10 @@ def _generate_consumable_arbitration_prompt(
 {{"角色全名": {{"hp": 数値, "status_effect_patches": []}}}}
 ```
 - hp：0 ≤ hp ≤ 最大 HP
-- status_effect_patches：仅在本次仲裁**消耗了**某状态效果的 cur 计数时填写，格式：
-  `{{"name": "效果名", "description": "更新后的完整描述（含新计数，如 1/3）"}}`
+- status_effect_patches：仅在本次仲裁改变了某效果的 counter 值时填写，格式：
+  `{{"name": "效果名", "counter": <新整数值>}}`
   - name 必须与"仲裁状态效果"中列出的名称完全一致
-  - 未被消耗的效果不输出；cur 耗尽时描述中填 0/N（不移除效果，duration 由系统另行维护）
-  - 若本次使用未触发任何 cur 消耗，保持空数组 []
+  - 未改变 counter 的效果不输出；若本次使用未触发任何 counter 变化，保持空数组 []
 
 ### narrative
 
@@ -448,10 +447,10 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                     message_content=_generate_stats_update_notification(new_hp, max_hp),
                 )
 
-                # 回写状态效果描述补丁
+                # 回写状态效果计数器补丁
                 for patch in entity_stats.status_effect_patches:
                     self._game.apply_status_effect_patch(
-                        entity, patch.name, patch.description
+                        entity, patch.name, patch.counter
                     )
 
             latest_round = self._game.current_dungeon.latest_round

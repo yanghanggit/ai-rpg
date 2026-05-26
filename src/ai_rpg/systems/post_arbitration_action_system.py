@@ -274,7 +274,7 @@ def _generate_stage_post_arbitration_prompt(
         {{
           "name": "碎柱投掷",
           "description": "抓起地面的断柱碎块用力掷向对方，造成钝击伤害",
-          "effects": [],
+          "affixes": [],
           "damage_dealt": 2,
           "hit_count": 1,
           "target_type": "{TargetType.ENEMY_SINGLE}"

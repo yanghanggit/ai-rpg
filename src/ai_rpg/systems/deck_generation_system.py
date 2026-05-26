@@ -113,14 +113,14 @@ def _generate_deck_prompt(
         "  【重要】禁止提及任何当前场景的地物（如断柱、沙地、余晖、岩板等）、地名或即时情境细节。\n"
         "  ❌ 错误示例：「借助断柱的支撑旋身，踢击敌人」\n"
         "  ✓ 正确示例：「旋身借力，以连续踢击攻击单一敌人」\n"
-        '- effects：状态触发标记列表。每项格式"[名称]:触发倾向描述"；纯即时伤害输出 []\n'
+        '- affixes：潜在状态效果声明列表。每项格式"[名称]:触发倾向描述"；纯即时伤害输出 []\n'
         "- playable：布尔值，是否允许出牌；默认 true\n"
         "- discardable：布尔值，是否允许弃牌；默认 true\n"
         "- damage_dealt：单次攻击造成的伤害值（基于攻击力合理推算，整数）\n"
         "- hit_count：攻击次数（默认 1；多段攻击可设为 2~4）\n"
         "- target_type：目标类型：enemy_single / enemy_all / enemy_random_multi / ally_single / ally_all / self_only"
     )
-    example_line = '{"name":"...","description":"...","effects":[],"playable":true,"discardable":true,"damage_dealt":0,"hit_count":1,"target_type":"enemy_single"}'
+    example_line = '{"name":"...","description":"...","affixes":[],"playable":true,"discardable":true,"damage_dealt":0,"hit_count":1,"target_type":"enemy_single"}'
 
     return f"# 战斗开始：生成 {num_cards} 张初始牌库卡牌\n\n" + "\n\n".join(
         [

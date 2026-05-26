@@ -98,10 +98,10 @@ def _generate_adjust_prompt(
         f"{stats_line}\n\n"
         f"DRAW 阶段状态效果（影响本回合手牌数值）：\n{effects_lines}\n\n"
         f"当前抽到的手牌：\n{cards_lines}\n\n"
-        "根据以上状态效果，调整每张手牌的数值（可修改 damage_dealt、hit_count、effects、description 等字段）。\n"
+        "根据以上状态效果，调整每张手牌的数值（可修改 damage_dealt、hit_count、affixes、description 等字段）。\n"
         "【重要】保持每张牌的 name 和 target_type 原值不变，cards 数组长度必须与输入相同。\n"
         "输出完整 JSON，cards 数组每项格式：\n"
-        '{"name":"...","description":"...","effects":[],"playable":true,"discardable":true,"damage_dealt":0,"hit_count":1,"target_type":"enemy_single"}'
+        '{"name":"...","description":"...","affixes":[],"playable":true,"discardable":true,"damage_dealt":0,"hit_count":1,"target_type":"enemy_single"}'
     )
 
 

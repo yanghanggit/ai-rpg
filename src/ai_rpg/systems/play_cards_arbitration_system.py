@@ -83,7 +83,7 @@ def _generate_post_arbitration_task_hint(
     action_desc = play_cards_action.action if play_cards_action.action else "（未提供）"
 
     status_hint_line = (
-        f"- 潜在词缀：{chr(10).join(card.effects)}" if card.effects else ""
+        f"- 潜在状态效果：{chr(10).join(card.affixes)}" if card.affixes else ""
     )
 
     card_info = (
@@ -620,17 +620,17 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         play_cards_action: PlayCardsAction,
         affected_entity_names: List[str],
     ) -> None:
-        """仲裁结算后为出牌者与所有目标添加 AddStatusEffectsAction。card.effects 为空时跳过。
+        """仲裁结算后为出牌者与所有目标添加 AddStatusEffectsAction。card.affixes 为空时跳过。
 
         Args:
             actor_entity: 出牌者实体
             play_cards_action: 本次出牌的 PlayCardsAction 组件
             affected_entity_names: final_stats 中所有受影响实体的全名列表
         """
-        # 卡牌无词缀时跳过，不触发后续 LLM 推理
-        if not play_cards_action.card.effects:
+        # 卡牌无潜在状态效果时跳过，不触发后续 LLM 推理
+        if not play_cards_action.card.affixes:
             logger.debug(
-                f"[{actor_entity.name}] 出牌卡牌 effects 为空，跳过 AddStatusEffectsAction"
+                f"[{actor_entity.name}] 出牌卡牌 affixes 为空，跳过 AddStatusEffectsAction"
             )
             return
 

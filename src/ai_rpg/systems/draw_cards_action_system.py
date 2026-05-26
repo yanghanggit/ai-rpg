@@ -52,7 +52,7 @@ class AdjustedCardEntry(BaseModel):
 
     name: str
     description: str
-    effects: List[str] = []
+    affixes: List[str] = []
     playable: bool = True
     discardable: bool = True
     damage_dealt: int
@@ -175,7 +175,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     Card(
                         name=_FALLBACK_CARD_NAME,
                         description=_FALLBACK_CARD_DESCRIPTION,
-                        effects=[],
+                        affixes=[],
                         damage_dealt=0,
                         hit_count=1,
                         target_type=TargetType.SELF_ONLY,
@@ -312,7 +312,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     Card(
                         name=original_cards[i].name,  # 保持原名
                         description=entry.description,
-                        effects=entry.effects,
+                        affixes=entry.affixes,
                         playable=entry.playable,
                         discardable=entry.discardable,
                         damage_dealt=entry.damage_dealt,

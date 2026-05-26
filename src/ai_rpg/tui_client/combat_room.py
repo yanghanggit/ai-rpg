@@ -1659,8 +1659,8 @@ class CombatRoomScreen(Screen[None]):
             detail_parts: List[str] = []
             if card.description:
                 detail_parts.append(f"[dim]{card.description}[/]")
-            if card.effects:
-                detail_parts.append(f"[yellow]效果：{'、'.join(card.effects)}[/]")
+            if card.affixes:
+                detail_parts.append(f"[yellow]效果：{'、'.join(card.affixes)}[/]")
             if not card.playable:
                 detail_parts.append("[bold orange1]【不可出牌】[/]")
             if not card.discardable:

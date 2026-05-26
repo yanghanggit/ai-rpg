@@ -280,7 +280,9 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
         assert combat_status_effects is not None
 
         mock_effect_name = "伤害锁定"
-        if any(e.name == mock_effect_name for e in combat_status_effects.status_effects):
+        if any(
+            e.name == mock_effect_name for e in combat_status_effects.status_effects
+        ):
             return
 
         mock_effect = StatusEffect(

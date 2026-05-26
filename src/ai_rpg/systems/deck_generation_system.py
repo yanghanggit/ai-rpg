@@ -44,7 +44,7 @@ class DeckCardEntry(BaseModel):
 
     name: str
     description: str
-    effects: List[str] = []
+    affixes: List[str] = []
     playable: bool = True
     discardable: bool = True
     damage_dealt: int
@@ -271,7 +271,7 @@ class DeckGenerationSystem(ExecuteProcessor):
                     Card(
                         name=entry.name,
                         description=entry.description,
-                        effects=entry.effects,
+                        affixes=entry.affixes,
                         playable=entry.playable,
                         discardable=entry.discardable,
                         damage_dealt=entry.damage_dealt,

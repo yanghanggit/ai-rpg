@@ -264,7 +264,7 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
             found_entity = self._game.get_entity_by_name(chat_client.name)
             assert found_entity is not None, f"无法找到角色实体: {chat_client.name}"
             self._process_status_effects_response(found_entity, chat_client)
-            self._mock_inject_counter_effect(found_entity)  # [测试用]
+            # self._mock_inject_counter_effect(found_entity)  # [测试用]
 
     #######################################################################################################################################
     def _mock_inject_counter_effect(self, entity: Entity) -> None:

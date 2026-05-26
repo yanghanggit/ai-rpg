@@ -207,7 +207,7 @@ def _generate_stage_post_arbitration_prompt(
 | --- | --- |
 | name | 卡牌名称（<8字），体现效果意图 |
 | description | 第三人称，描述角色借助**上下文中已存在的**场景具体物件的即时客观动作（1句，如"抓起地面的断柱碎块掷向对方"）；不可凭空引入非场景物件 |
-| effects | 可选。状态触发标记列表，每项格式"[名称]:触发倾向描述"（如"[碎石粉尘]:可能引起视线模糊"）。出牌后系统若读到非空列表，将启动独立 LLM 推理为出牌者/目标生成实际 StatusEffect（持续性增减益）。纯即时效果输出 [] |
+| affixes | 可选。潜在状态效果声明列表，每项格式"[名称]:触发倾向描述"（如"[碎石粉尘]:可能引起视线模糊"）。出牌后系统若读到非空列表，将启动独立 LLM 推理为出牌者/目标生成实际 StatusEffect（持续性增减益）。纯即时效果输出 [] |
 | playable | 可选。布尔值，是否允许出牌；默认 true，场景叙事明确暗示该物件具有禁出属性时填 false |
 | discardable | 可选。布尔值，是否允许弃牌；默认 true，场景叙事明确暗示该物件不可丢弃时填 false |
 | damage_dealt | 单次命中造成的伤害（整数；攻击类取合理正值，无伤害取 0） |
@@ -267,7 +267,9 @@ def _generate_stage_post_arbitration_prompt(
           "description": "战斗搅起的沙尘钻入眼中，视线模糊，造成伤害减少",
           "duration": 2,
           "phase": "{EffectPhase.ARBITRATION}",
-          "speed": 0
+          "speed": 0,
+          "defense": 0,
+          "counter": 0
         }}
       ],
       "inject_cards": [
@@ -287,6 +289,10 @@ def _generate_stage_post_arbitration_prompt(
 
 `speed` 仅填 +1 / 0 / -1，非零时才需显式填写，默认填 0。
 `phase` 填 `{EffectPhase.DRAW}` / `{EffectPhase.ARBITRATION}` / `{EffectPhase.ROUND_END}` 其中之一。
+- `duration`：-1=永久，>0=剩余回合数，默认 3
+- `speed`：+1 / 0 / -1；持续叠加到角色出手速度，非零时才需填写，默认 0
+- `defense`：整数；持续叠加到角色防御值（正值增防，负值破甲），默认 0
+- `counter`：整数初始值；`{EffectPhase.ARBITRATION}` 阶段特殊计数器词条（如"前3次受击"设 3），默认 0
 无干预时输出空的 per_actor 数组，只输出JSON."""
 
 

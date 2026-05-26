@@ -350,6 +350,10 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
                 logger.debug(
                     f"[{entity.name}] 新增 {len(format_response.add_effects)} 个状态效果"
                 )
+                for effect in format_response.add_effects:
+                    logger.info(
+                        f"[{entity.name}] 新增效果: 「{effect.name}」 phase={effect.phase} duration={effect.duration}"
+                    )
 
             else:
                 logger.debug(f"[{entity.name}] 本回合无新增状态效果")

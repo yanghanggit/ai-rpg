@@ -213,6 +213,11 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
             if not round_end_effects:
                 continue
 
+            logger.info(
+                f"[{entity.name}] 发现 {len(round_end_effects)} 个 ROUND_END 效果: "
+                f"{[e.name for e in round_end_effects]}"
+            )
+
             if not entity.has(CharacterStatsComponent):
                 logger.warning(
                     f"[{entity.name}] 有 ROUND_END 效果但缺少 CharacterStatsComponent，跳过"
@@ -235,6 +240,7 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
             )
 
         if not chat_clients:
+            logger.info("process_round_end_effects: 本回合无实体持有 ROUND_END 效果，跳过")
             return
 
         logger.debug(f"开始并发结算 {len(chat_clients)} 个实体的 ROUND_END 效果...")

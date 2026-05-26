@@ -1,12 +1,6 @@
 """战斗状态效果追加系统模块
 
-监听 AddStatusEffectsAction.ADDED，让每个参战角色根据上下文（战斗广播、HP变化等）
-评估并追加新的状态效果。
-
-执行时机：
-- 监听 AddStatusEffectsAction.ADDED（ReactiveProcessor）
-- 目前由 CombatInitializationSystem 在初始化末尾为所有参战角色添加 AddStatusEffectsAction 触发
-- 后续裁决系统完成后，也将在回合结算后触发
+为参战角色动态评估并追加状态效果（增益/减益）；监听 AddStatusEffectsAction.ADDED。
 """
 
 from typing import Final, List, final
@@ -120,28 +114,13 @@ def _generate_add_status_effects_prompt(
         )
 
     phase_desc = f"""
-## 生效阶段（phase）说明
+## 生效阶段（phase）
 
-每个状态效果必须指定 `phase` 字段，决定它在战斗流程的哪个阶段起效：
-
-| phase | 对应阶段 | 典型效果举例 |
+| phase | 触发时机 | 典型效果 |
 |---|---|---|
-| `{EffectPhase.DRAW}` | 抽牌阶段 | 「虚弱」攻击力−2，本回合生成卡牌的 damage_dealt 偏低；「沉重」防御力−1，防御较弱 |
-| `{EffectPhase.ARBITRATION}` | 仲裁阶段 | 「破甲」防御降低；「荆棘」攻击者反伤；「眩晕」影响出牌；「虚弱」伤害减少 |
-| `{EffectPhase.ROUND_END}` | 回合末阶段 | 「中毒」每回合末扣血；「燃烧」持续火焰伤害；「再生」每回合末回血 |
-
-**phase 选择指引**：
-- **`{EffectPhase.ARBITRATION}`**：与出牌结算绑定的效果——作为仲裁 LLM 的上下文参数，LLM 自由解读其影响（伤害/防御修正、反伤、条件行为等），每次出牌时触发
-- **`{EffectPhase.ROUND_END}`**：每回合末自动 tick 的持续伤害/治疗（DOT/HOT），与出牌无关
-- **`{EffectPhase.DRAW}`**：影响本回合抽得手牌的数值质量（attack/defense 描述）
-
-**speed 字段**：影响出手顺序（越高越先行动），只允许 +1 / 0 / -1；「敏捷」speed=+1，「迟缓」speed=−1，默认 0 不填。
-**defense 字段**：影响防御值（正值增防、负值破甲），填写整数；「护盾」defense=+2，「破甲」defense=−2，默认 0 不填。
-
-**属性约束（所有阶段均适用）**：
-- 禁止修改 max_hp（最大生命值不可通过状态效果改变）
-- `{EffectPhase.DRAW}` 阶段使用 attack / defense 描述，不直接写 damage_dealt
-- `{EffectPhase.ARBITRATION}` 阶段直接使用 hp / damage_dealt，不使用 attack / defense"""
+| `{EffectPhase.DRAW}` | 本回合抽牌时 | 「虚弱」生成的卡牌伤害偏低 |
+| `{EffectPhase.ARBITRATION}` | 每次出牌结算时 | 「破甲」防御降低；「荆棘」反伤；条件计数型词条（`counter` 字段） |
+| `{EffectPhase.ROUND_END}` | 每回合末自动 tick | 「中毒」扣血；「燃烧」持续伤害；「再生」回血（DOT/HOT） |"""
 
     return f"""# 第 {current_round_number} 回合 — 追加状态效果
 
@@ -154,44 +133,38 @@ def _generate_add_status_effects_prompt(
 {effects_list}
 {phase_desc}
 
-**要求**：不重复现有效果，最多追加 {max_effects} 个；无新增时输出空数组。
+**要求**：不重复现有效果，最多追加 {max_effects} 个；无新增时输出空数组，只输出 JSON。
 
 ```json
 {{
   "add_effects": [
     {{
-      "name": "效果名（<8字）",
-      "description": "第一人称，含表现与数值影响，1句话（如：我感到手臂刺痛，攻击力−2）",
-      "duration": 持续回合数（-1=永久，正整数=剩余回合，默认3）,
-      "phase": "{EffectPhase.ARBITRATION}",
-      "speed": 0
+      "name": "效果名（≤8字）",
+      "description": "规则说明（客观描述效果机制与数值，如：每回合末损失 2 HP；前3次受击伤害变为 1）",
+      "duration": 3,
+      "phase": "round_end",
+      "speed": 0,
+      "defense": 0,
+      "counter": 0
     }}
   ]
 }}
 ```
 
-`speed` 仅填 +1 / 0 / -1，非零时才需显式填写，默认填 0。
-`phase` 填 `{EffectPhase.DRAW}` / `{EffectPhase.ARBITRATION}` / `{EffectPhase.ROUND_END}` 其中之一。
-无新增状态时输出空数组，只输出JSON."""
+- `duration`：-1=永久，>0=剩余回合数，默认 3
+- `phase`：`{EffectPhase.DRAW}` / `{EffectPhase.ARBITRATION}` / `{EffectPhase.ROUND_END}` 三选一（见上表）
+- `speed`：+1 / 0 / -1；持续叠加到角色出手速度，与 phase 无关，默认 0
+- `defense`：整数；持续叠加到角色防御值（正值增防，负值破甲），与 phase 无关，默认 0
+- `counter`：整数初始值；`{EffectPhase.ARBITRATION}` 阶段特殊计数器词条（如"前3次受击"设 3），默认 0
+- 禁止修改 `max_hp`"""
 
 
 #######################################################################################################################################
 @final
 class AddActorStatusEffectsActionSystem(ReactiveProcessor):
-    """角色战斗状态效果追加系统
+    """让每个参战 Actor 根据战斗上下文评估并追加新的状态效果（增益/减益/削弱等）。
 
-    监听 AddStatusEffectsAction.ADDED，让每个参战 Actor 根据上下文
-    （战斗广播、HP变化等）评估并追加新的状态效果（受伤、增益、削弱等）。
-
-    执行机制：
-    - 监听 AddStatusEffectsAction.ADDED（ReactiveProcessor）
-    - 目前由 CombatInitializationSystem 在初始化末尾触发，覆盖第一回合初始状态
-    - 仅在战斗进行中时触发（is_ongoing 守卫）
-
-    执行条件：
-    - 战斗状态为 ONGOING（is_ongoing=True）
-    - 自动获取当前场景上的所有存活 Actor
-    - 每个 Actor 需同时具有 ActorComponent 与 StatusEffectsComponent
+    约束：实体须同时具有 ActorComponent + StatusEffectsComponent；仅战斗 ongoing 时生效。
     """
 
     def __init__(
@@ -224,15 +197,7 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
-        """
-        为每个参战角色追加状态效果
-
-        流程：
-        1. 为所有参战 Actor 并发创建 LLM 评估任务
-        2. 调用 LLM 生成新状态效果
-        3. 解析响应并追加到 StatusEffectsComponent.status_effects
-        4. 将新增状态效果通知写入角色上下文
-        """
+        """并发为所有实体调用 LLM 评估并追加状态效果。"""
 
         # 仅在战斗进行中时触发
         if not self._game.current_dungeon.is_ongoing:
@@ -303,12 +268,7 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
     def _process_status_effects_response(
         self, entity: Entity, chat_client: DeepSeekClient
     ) -> None:
-        """处理单个角色的状态效果评估响应，完成本轮对话并追加新状态效果
-
-        将本轮 prompt 以 add_human_message 写入角色上下文，
-        将 LLM 回复以 add_ai_message 写入角色上下文，
-        从而在 entity context 中形成完整的一轮 Human↔AI 对话。
-        """
+        """解析 LLM 响应并追加新状态效果；将本轮对话写入实体上下文。"""
 
         assert entity.has(
             StatusEffectsComponent

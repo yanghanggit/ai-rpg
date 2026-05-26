@@ -178,8 +178,14 @@ def _generate_stage_post_arbitration_prompt(
 
 | phase | 对应阶段 | 可影响属性 | 典型效果举例 |
 |---|---|---|---|
-| `{EffectPhase.DRAW}` | 抄牌阶段 | attack、defense（间接影响下回合卡牌数値） | 「虚弱」攻击力−2，生成卡牌 damage_dealt 偏低；「迟重」防御力−1，防御较弱 |
-| `{EffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt | 「燃烧」每回合结算扣 hp 3；「黑暗腐蚀」造成伤害+4；「坏甲赐福」纴带加成（已移除） |
+| `{EffectPhase.DRAW}` | 抽牌阶段 | attack、defense（间接影响下回合卡牌数値） | 「虚弱」攻击力−2，生成卡牌 damage_dealt 偏低；「沉重」防御力−1，防御较弱 |
+| `{EffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt | 「破甲」防御降低；「荆棘」攻击者反伤；「眩晕」影响出牌；「虚弱」伤害减少 |
+| `{EffectPhase.ROUND_END}` | 回合末阶段 | hp | 「中毒」每回合末扣血；「燃烧」持续火焰伤害；「再生」每回合末回血 |
+
+**phase 选择指引**：
+- **`{EffectPhase.ARBITRATION}`**：与出牌结算绑定的效果——作为仲裁 LLM 的上下文参数，LLM 自由解读其影响（伤害/防御修正、反伤、条件行为等），每次出牌时触发
+- **`{EffectPhase.ROUND_END}`**：每回合末自动 tick 的持续伤害/治疗（DOT/HOT），与出牌无关
+- **`{EffectPhase.DRAW}`**：影响本回合抽得手牌的数值质量（attack/defense 描述）
 
 **speed 字段**：影响出手顺序（越高越先行动），只允许 +1 / 0 / -1；「地利加持」speed=+1，「泥泞困足」speed=−1，默认 0 不填。
 **defense 字段**：影响防御值（正值增防、负值破甲），填写整数；「沙土护身」defense=+2，「破甲」defense=−2，默认 0 不填。
@@ -188,9 +194,9 @@ def _generate_stage_post_arbitration_prompt(
 - 禁止修改 max_hp
 - `{EffectPhase.DRAW}` 阶段用 attack / defense 描述，不直接写 damage_dealt
 - `{EffectPhase.ARBITRATION}` 阶段直接用 hp / damage_dealt，不用 attack / defense
+- `{EffectPhase.ROUND_END}` 阶段直接用 hp 描述，不用 damage_dealt 或 attack / defense
 - description 须引用上下文中实际存在的场景要素，第三人称描述环境如何作用于角色身体，如"战斗搅起的沙尘钻入眼中，视线模糊，造成伤害减少"
-
-绝大多数惩罚/增益效果选 `{EffectPhase.ARBITRATION}`。"""
+"""
 
     card_field_desc = f"""
 ## 塞牌字段说明
@@ -280,6 +286,7 @@ def _generate_stage_post_arbitration_prompt(
 ```
 
 `speed` 仅填 +1 / 0 / -1，非零时才需显式填写，默认填 0。
+`phase` 填 `{EffectPhase.DRAW}` / `{EffectPhase.ARBITRATION}` / `{EffectPhase.ROUND_END}` 其中之一。
 无干预时输出空的 per_actor 数组，只输出JSON."""
 
 

@@ -20,11 +20,15 @@ class EffectPhase(StrEnum):
     标记一个状态效果应在战斗流程的哪个阶段起效。
 
     - draw        : 抽牌阶段（DrawCardsActionSystem）——影响本回合卡牌生成，如"混乱"使牌质下降
-    - arbitration : 仲裁阶段（PlayCardsArbitrationSystem）——影响伤害结算，如"虚弱"伤害−2
+    - arbitration : 仲裁阶段（PlayCardsArbitrationSystem）——作为注入仲裁 LLM 的上下文参数，
+                    LLM 自由解读其对出牌结算过程的影响（伤害/防御修正、反伤、眩晕等），与出牌绑定
+    - round_end   : 回合末阶段（CombatRoundCleanupSystem）——每回合末自动 tick，
+                    实体自身 LLM 推理 HP 变化（DOT 如中毒/燃烧持续扣血，HOT 如再生持续回血）
     """
 
     DRAW = "draw"
     ARBITRATION = "arbitration"
+    ROUND_END = "round_end"
 
 
 ###############################################################################################################################################

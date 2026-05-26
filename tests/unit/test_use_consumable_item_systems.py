@@ -537,18 +537,16 @@ class TestProcessZeroHealthEntities:
     def test_adds_death_component_to_entity_with_zero_hp(self) -> None:
         game = _make_game()
         entity = _make_actor_entity(game, "hero", "cave", hp=0)
-        system = UseConsumableItemArbitrationSystem(game)
 
-        system._process_zero_health_entities()
+        game.process_zero_health_entities()
 
         assert entity.has(DeathComponent)
 
     def test_does_not_add_death_component_to_entity_with_positive_hp(self) -> None:
         game = _make_game()
         entity = _make_actor_entity(game, "hero", "cave", hp=10)
-        system = UseConsumableItemArbitrationSystem(game)
 
-        system._process_zero_health_entities()
+        game.process_zero_health_entities()
 
         assert not entity.has(DeathComponent)
 
@@ -557,10 +555,9 @@ class TestProcessZeroHealthEntities:
         game = _make_game()
         entity = _make_actor_entity(game, "hero", "cave", hp=0)
         entity.add(DeathComponent, "hero")
-        system = UseConsumableItemArbitrationSystem(game)
 
         # 调用两次也不应抛异常（replace 语义下幂等）
-        system._process_zero_health_entities()
+        game.process_zero_health_entities()
         assert entity.has(DeathComponent)
 
 

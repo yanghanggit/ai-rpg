@@ -124,10 +124,16 @@ def _generate_add_status_effects_prompt(
 
 每个状态效果必须指定 `phase` 字段，决定它在战斗流程的哪个阶段起效：
 
-| phase | 对应阶段 | 可影响的属性 | 典型效果举例 |
-|---|---|---|---|
-| `{EffectPhase.DRAW}` | 抄牌阶段 | attack、defense（换算为卡牌的 damage_dealt / hit_count） | 「虚弱」攻击力−2，本回合生成卡牌的 damage_dealt 偏低；「沉重」防御力−1，防御较弱 |
-| `{EffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt | 「燃烧」本回合结算时扣 hp 3；「中毒」造成伤害+2 |
+| phase | 对应阶段 | 典型效果举例 |
+|---|---|---|
+| `{EffectPhase.DRAW}` | 抽牌阶段 | 「虚弱」攻击力−2，本回合生成卡牌的 damage_dealt 偏低；「沉重」防御力−1，防御较弱 |
+| `{EffectPhase.ARBITRATION}` | 仲裁阶段 | 「破甲」防御降低；「荆棘」攻击者反伤；「眩晕」影响出牌；「虚弱」伤害减少 |
+| `{EffectPhase.ROUND_END}` | 回合末阶段 | 「中毒」每回合末扣血；「燃烧」持续火焰伤害；「再生」每回合末回血 |
+
+**phase 选择指引**：
+- **`{EffectPhase.ARBITRATION}`**：与出牌结算绑定的效果——作为仲裁 LLM 的上下文参数，LLM 自由解读其影响（伤害/防御修正、反伤、条件行为等），每次出牌时触发
+- **`{EffectPhase.ROUND_END}`**：每回合末自动 tick 的持续伤害/治疗（DOT/HOT），与出牌无关
+- **`{EffectPhase.DRAW}`**：影响本回合抽得手牌的数值质量（attack/defense 描述）
 
 **speed 字段**：影响出手顺序（越高越先行动），只允许 +1 / 0 / -1；「敏捷」speed=+1，「迟缓」speed=−1，默认 0 不填。
 **defense 字段**：影响防御值（正值增防、负值破甲），填写整数；「护盾」defense=+2，「破甲」defense=−2，默认 0 不填。
@@ -135,9 +141,7 @@ def _generate_add_status_effects_prompt(
 **属性约束（所有阶段均适用）**：
 - 禁止修改 max_hp（最大生命值不可通过状态效果改变）
 - `{EffectPhase.DRAW}` 阶段使用 attack / defense 描述，不直接写 damage_dealt
-- `{EffectPhase.ARBITRATION}` 阶段直接使用 hp / damage_dealt，不使用 attack / defense
-
-绝大多数伤害/防御类效果选 `{EffectPhase.ARBITRATION}`。"""
+- `{EffectPhase.ARBITRATION}` 阶段直接使用 hp / damage_dealt，不使用 attack / defense"""
 
     return f"""# 第 {current_round_number} 回合 — 追加状态效果
 
@@ -167,6 +171,7 @@ def _generate_add_status_effects_prompt(
 ```
 
 `speed` 仅填 +1 / 0 / -1，非零时才需显式填写，默认填 0。
+`phase` 填 `{EffectPhase.DRAW}` / `{EffectPhase.ARBITRATION}` / `{EffectPhase.ROUND_END}` 其中之一。
 无新增状态时输出空数组，只输出JSON."""
 
 

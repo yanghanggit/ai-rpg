@@ -48,6 +48,7 @@ from ..models import (
     Stage,
     StageComponent,
     StageType,
+    DeathComponent,
     StatusEffect,
     EffectPhase,
     StatusEffectsComponent,
@@ -740,5 +741,19 @@ class TCGGame(RPGGame):
                 new_items.append(inv_item)
         assert removed, f"背包中找不到 uuid={item.uuid} 的物品"
         inventory_comp.items = new_items
+
+    ###############################################################################################################################################
+    def process_zero_health_entities(self) -> None:
+        """为 HP 归零且尚未标记死亡的实体添加 DeathComponent。"""
+        defeated_entities = self.get_group(
+            Matcher(all_of=[CharacterStatsComponent], none_of=[DeathComponent])
+        ).entities.copy()
+
+        for entity in defeated_entities:
+            entity_hp = self.compute_character_stats(entity).hp
+            if entity_hp <= 0:
+                logger.info(f"{entity.name} 已被击败，HP={entity_hp}")
+                self.add_human_message(entity, "# 你的HP已归零，失去战斗能力！")
+                entity.replace(DeathComponent, entity.name)
 
     ################################################################################################################

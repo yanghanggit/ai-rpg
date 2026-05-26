@@ -17,7 +17,6 @@ from ..models import (
     TargetType,
     CharacterStats,
     CharacterStatsComponent,
-    DeathComponent,
     CombatArbitrationEvent,
     StatusEffect,
     EffectPhase,
@@ -475,7 +474,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             stage_entity, chat_client, actor_entity, play_cards_action
         )
 
-        self._process_zero_health_entities()
+        self._game.process_zero_health_entities()
 
     #######################################################################################################################################
     def _apply_forfeit_result(self, stage_entity: Entity, actor_entity: Entity) -> None:
@@ -614,21 +613,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
         except Exception as e:
             logger.error(f"Exception: {e}")
-
-    #######################################################################################################################################
-    def _process_zero_health_entities(self) -> None:
-        """为 HP 归零且尚未标记死亡的实体添加 DeathComponent。"""
-        defeated_entities = self._game.get_group(
-            Matcher(all_of=[CharacterStatsComponent], none_of=[DeathComponent])
-        ).entities.copy()
-
-        for entity in defeated_entities:
-            entity_hp = self._game.compute_character_stats(entity).hp
-
-            if entity_hp <= 0:
-                logger.info(f"{entity.name} 已被击败，HP={entity_hp}")
-                self._game.add_human_message(entity, _generate_defeat_notification())
-                entity.replace(DeathComponent, entity.name)
 
     #######################################################################################################################################
     def _add_status_effects_actions_after_arbitration(

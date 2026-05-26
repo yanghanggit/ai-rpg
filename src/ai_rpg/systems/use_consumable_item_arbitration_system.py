@@ -15,7 +15,6 @@ from ..models import (
     RoundStatsComponent,
     CharacterStats,
     CharacterStatsComponent,
-    DeathComponent,
     CombatArbitrationEvent,
     StatusEffect,
     EffectPhase,
@@ -371,7 +370,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             stage_entity, chat_client, actor_entity, action
         )
 
-        self._process_zero_health_entities()
+        self._game.process_zero_health_entities()
 
     #######################################################################################################################################
     def _apply_item_arbitration_result(
@@ -473,20 +472,6 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
 
         except Exception as e:
             logger.error(f"UseConsumableItemArbitrationSystem: 仲裁结算异常: {e}")
-
-    #######################################################################################################################################
-    def _process_zero_health_entities(self) -> None:
-        """处理生命值归零的实体，为其添加死亡组件。"""
-        defeated_entities = self._game.get_group(
-            Matcher(all_of=[CharacterStatsComponent], none_of=[DeathComponent])
-        ).entities.copy()
-
-        for entity in defeated_entities:
-            entity_hp = self._game.compute_character_stats(entity).hp
-            if entity_hp <= 0:
-                logger.info(f"{entity.name} 已被击败，HP={entity_hp}")
-                self._game.add_human_message(entity, _generate_defeat_notification())
-                entity.replace(DeathComponent, entity.name)
 
     #######################################################################################################################################
     def _trigger_add_status_effects(

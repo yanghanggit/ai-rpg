@@ -240,7 +240,9 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
             )
 
         if not chat_clients:
-            logger.info("process_round_end_effects: 本回合无实体持有 ROUND_END 效果，跳过")
+            logger.info(
+                "process_round_end_effects: 本回合无实体持有 ROUND_END 效果，跳过"
+            )
             return
 
         logger.debug(f"开始并发结算 {len(chat_clients)} 个实体的 ROUND_END 效果...")

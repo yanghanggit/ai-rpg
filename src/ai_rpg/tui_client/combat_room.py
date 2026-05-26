@@ -1799,8 +1799,13 @@ class CombatRoomScreen(Screen[None]):
                     se_table.add_column("描述", ratio=1)
                     phase_colors = {
                         "draw": "cyan",
-                        "play": "yellow",
-                        "arbitration": "red",
+                        "arbitration": "yellow",
+                        "round_end": "red",
+                    }
+                    phase_labels = {
+                        "draw": "抽牌",
+                        "arbitration": "仲裁",
+                        "round_end": "回合末",
                     }
                     for effect in effects:
                         duration_str = (
@@ -1809,7 +1814,8 @@ class CombatRoomScreen(Screen[None]):
                             else f"剩余{effect.duration}回合"
                         )
                         phase_color = phase_colors.get(effect.phase, "white")
-                        phase_cell = f"[{phase_color}]{effect.phase}[/{phase_color}]"
+                        phase_label = phase_labels.get(effect.phase, effect.phase)
+                        phase_cell = f"[{phase_color}]{phase_label}[/{phase_color}]"
                         if effect.speed > 0:
                             speed_cell = f"[green]+{effect.speed}[/green]"
                         elif effect.speed < 0:

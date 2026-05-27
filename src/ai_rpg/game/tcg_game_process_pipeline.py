@@ -117,6 +117,7 @@ def create_combat_pipeline(
     )
 
     from ..systems.exhaust_cards_action_system import ExhaustCardsActionSystem
+    from ..systems.move_to_discard_pile_system import MoveToDiscardPileSystem
     from ..systems.pass_turn_action_system import PassTurnActionSystem
     from ..systems.retreat_action_system import RetreatActionSystem
     from ..systems.action_cleanup_system import ActionCleanupSystem
@@ -169,6 +170,7 @@ def create_combat_pipeline(
     processors.add(MonsterPlayDecisionSystem(tcg_game))
     processors.add(PlayActionNarrationSystem(tcg_game))
     processors.add(PlayCardsActionSystem(tcg_game))
+    processors.add(MoveToDiscardPileSystem(tcg_game))
     processors.add(ExhaustCardsActionSystem(tcg_game))
     processors.add(UseConsumableItemActionSystem(tcg_game))
     processors.add(PassTurnActionSystem(tcg_game))

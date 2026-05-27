@@ -1,4 +1,4 @@
-"""消耗牌处理系统模块。"""
+"""出牌后路由系统模块。"""
 
 from typing import Final, final
 
@@ -9,7 +9,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     ActorComponent,
     DiscardPileComponent,
-    ExhaustPileComponent,
+    HandComponent,
     PlayCardsAction,
 )
 from ..game.tcg_game import TCGGame
@@ -17,8 +17,8 @@ from ..game.tcg_game import TCGGame
 
 #######################################################################################################################################
 @final
-class ExhaustCardsActionSystem(ReactiveProcessor):
-    """消耗牌处理系统。"""
+class MoveToDiscardPileSystem(ReactiveProcessor):
+    """出牌后路由系统。"""
 
     def __init__(self, game: TCGGame) -> None:
         super().__init__(game)
@@ -35,44 +35,33 @@ class ExhaustCardsActionSystem(ReactiveProcessor):
         return (
             entity.has(PlayCardsAction)
             and entity.has(ActorComponent)
+            and entity.has(HandComponent)
             and entity.has(DiscardPileComponent)
-            and entity.has(ExhaustPileComponent)
         )
 
     ####################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
-        """处理消耗牌路由。
-
-        将 exhaust=True 的自有牌从 DiscardPile 移至 ExhaustPile。
-        """
+        """将出牌从 Hand 移入 DiscardPile。"""
         if not self._game.current_dungeon.is_ongoing:
-            logger.debug("ExhaustCardsActionSystem: 战斗未进行中，跳过消耗牌处理")
+            logger.debug("MoveToDiscardPileSystem: 战斗未进行中，跳过出牌路由")
             return
 
         for entity in entities:
             play_cards_action = entity.get(PlayCardsAction)
             played_card = play_cards_action.card
 
-            # 只处理消耗牌（exhaust=True），source 过滤由 DeckReturnSystem 统一负责
-            if not played_card.exhaust:
-                continue
-
+            hand_comp = entity.get(HandComponent)
             discard_pile = entity.get(DiscardPileComponent)
-            exhaust_pile = entity.get(ExhaustPileComponent)
 
-            # 用对象身份（is）定位，确保移除的是同一实例
-            before_len = len(discard_pile.cards)
-            discard_pile.cards = [c for c in discard_pile.cards if c is not played_card]
+            # 用对象身份（is）移除，确保只移除本次出的那一张实例
+            before_count = len(hand_comp.cards)
+            hand_comp.cards = [c for c in hand_comp.cards if c is not played_card]
 
-            if len(discard_pile.cards) < before_len:
-                exhaust_pile.cards.append(played_card)
-                logger.debug(
-                    f"  [{entity.name}] 消耗牌 [{played_card.name}] 已从 DiscardPile 移入 ExhaustPile"
-                    f"（ExhaustPile 累计 {len(exhaust_pile.cards)} 张）"
-                )
-            else:
-                # MoveToDiscardPileSystem 对所有出牌必定写入 DiscardPile，此分支为防御性日志
-                logger.warning(
-                    f"  [{entity.name}] 消耗牌 [{played_card.name}] 未在 DiscardPile 中找到对应实例，跳过移入 ExhaustPile"
-                )
+            discard_pile.cards.append(played_card)
+
+            logger.debug(
+                f"  [{entity.name}] 手牌 {before_count} → {len(hand_comp.cards)}，"
+                f"DiscardPile 累计 {len(discard_pile.cards)} 张"
+                f"（牌：{played_card.name}，source={played_card.source!r}）"
+            )

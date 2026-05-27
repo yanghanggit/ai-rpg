@@ -1,9 +1,4 @@
-"""出牌动作系统模块。
-
-处理战斗中角色的出牌动作，向角色的对话上下文添加出牌通知，
-包含卡牌名称、目标、描述和卡牌属性（治疗/攻击/防御）。
-仅在战斗进行中(ongoing)阶段执行。
-"""
+"""出牌动作系统模块。"""
 
 from typing import Final, final
 from loguru import logger
@@ -11,7 +6,6 @@ from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     HandComponent,
-    DiscardPileComponent,
     PlayCardsAction,
     ActorComponent,
     AgentEvent,
@@ -55,20 +49,7 @@ def _generate_action_notice_for_others(actor_name: str, round_number: int) -> st
 #######################################################################################################################################
 @final
 class PlayCardsActionSystem(ReactiveProcessor):
-    """出牌动作系统。
-
-    响应 PlayCardsAction 组件的添加事件，向角色发送出牌通知消息。
-    通知包含卡牌的完整信息：名称、目标、描述和属性（治疗/攻击/防御）。
-
-    触发条件：
-    - 实体添加 PlayCardsAction 组件
-    - 战斗序列处于进行中(ongoing)状态
-
-    执行流程：
-    1. 发送出牌指令（第N回合使用卡牌）
-    2. 添加AI出牌执行消息（卡牌详情）
-    3. 为场景实体添加仲裁动作标记
-    """
+    """出牌动作系统。"""
 
     def __init__(self, game: TCGGame) -> None:
         super().__init__(game)
@@ -86,17 +67,12 @@ class PlayCardsActionSystem(ReactiveProcessor):
             entity.has(PlayCardsAction)
             and entity.has(HandComponent)
             and entity.has(ActorComponent)
-            and entity.has(DiscardPileComponent)
         )
 
     #######################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
-        """处理出牌动作。
-
-        检查战斗是否进行中，如是则为每个出牌的角色生成通知消息并添加到其对话上下文。
-        通知包含角色名、卡牌名、目标和卡牌完整数据(JSON)。
-        """
+        """处理出牌动作。"""
         if not self._game.current_dungeon.is_ongoing:
             # 必须是 进行中的阶段！
             logger.debug("PlayCardsActionSystem: 战斗未进行中，跳过出牌处理")
@@ -149,36 +125,6 @@ class PlayCardsActionSystem(ReactiveProcessor):
             logger.debug(
                 f"  completed_actors: {last_round.completed_actors} / current_turn_actor_name={last_round.current_turn_actor_name}"
             )
-
-            # 从 HandComponent 移除已出的卡牌，并将其归入 DiscardPileComponent
-            hand_comp = entity.get(HandComponent)
-            assert hand_comp is not None, f"{entity.name} 缺少 HandComponent"
-            assert entity.has(
-                DiscardPileComponent
-            ), f"{entity.name} 缺少 DiscardPileComponent"
-
-            # 这里通过对象身份（is）而非等値比较（==）来确保正确移除特定的卡牌实例，避免同名卡牌导致的误删问题
-            played_card = play_cards_action.card
-            new_hand_cards = [c for c in hand_comp.cards if c is not played_card]
-
-            # 直接替换整个 hand_comp.cards 列表，避免修改原列表导致的潜在问题
-            hand_comp.cards = new_hand_cards
-
-            # 将已出的卡牌归入 DiscardPileComponent
-            played_comp = entity.get(DiscardPileComponent)
-            assert played_comp is not None, f"{entity.name} 缺少 DiscardPileComponent"
-
-            # 仅归档来源为本角色的卡牌；外来塞入牌（source != actor_name）直接丢弃
-            if played_card.source == entity.name:
-                played_comp.cards.append(played_card)
-                logger.debug(
-                    f"  [{entity.name}] 手牌 {len(hand_comp.cards)} → {len(new_hand_cards)}，"
-                    f"PlayedDeck 累计 {len(played_comp.cards)} 张"
-                )
-            else:
-                logger.debug(
-                    f"  [{entity.name}] 外来牌 [{played_card.name}](source={played_card.source!r}) 已打出，source 不匹配，丢弃不归档"
-                )
 
             # 为出牌角色注入本回合出牌上下文，作为其对话历史的一部分
             self._game.add_human_message(

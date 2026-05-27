@@ -164,11 +164,12 @@ class TestExhaustCardsActionSystemExhaustFalse:
 
 
 class TestExhaustCardsActionSystemForeignCard:
-    """exhaust=True 的外来牌（source != entity.name）：PlayCardsActionSystem 已静默丢弃，
-    不写入 DiscardPile；ExhaustPile 不应增加。"""
+    """exhaust=True 的外来牌（source != entity.name）：
+    MoveToDiscardPileSystem 将其写入 DiscardPile，ExhaustCardsActionSystem 应将其
+    移入 ExhaustPile（source 过滤由 DeckReturnSystem 在战斗结束时统一处理）。"""
 
     @pytest.mark.asyncio
-    async def test_foreign_exhaust_card_not_added_to_exhaust_pile(
+    async def test_foreign_exhaust_card_moves_to_exhaust_pile(
         self,
         context: Context,
         mock_game: MagicMock,
@@ -176,10 +177,11 @@ class TestExhaustCardsActionSystemForeignCard:
     ) -> None:
         entity = _make_entity(context, "英雄")
         foreign_card = _make_card("外来秘术", source="他人", exhaust=True)
-        # 外来牌不在 DiscardPile（PlayCardsActionSystem 已静默丢弃）
+        # MoveToDiscardPileSystem 已无条件将出牌写入 DiscardPile
+        entity.get(DiscardPileComponent).cards.append(foreign_card)
         entity.add(PlayCardsAction, "英雄", foreign_card, [], "")
 
         await system.react([entity])
 
-        assert len(entity.get(DiscardPileComponent).cards) == 0
-        assert len(entity.get(ExhaustPileComponent).cards) == 0
+        assert foreign_card not in entity.get(DiscardPileComponent).cards
+        assert foreign_card in entity.get(ExhaustPileComponent).cards

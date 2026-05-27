@@ -101,7 +101,7 @@ class ConsumableItem(Item):
         default=ItemType.CONSUMABLE_ITEM, frozen=True
     )
     target_type: TargetType = TargetType.SELF_ONLY  # 使用目标类型，默认仅作用于自身
-    effects: List[str] = []  # 潜在副作用词缀列表
+    affixes: List[str] = []  # 潜在副作用词缀列表
 
 
 #######################################################################################################################################

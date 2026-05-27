@@ -84,7 +84,7 @@ def _build_keyword_system_message(archetype: ArchetypeResult) -> SystemMessage:
 
 Keyword 是 LLM 生成卡牌时施加的具体字段级约束，示例：
 - "每张卡牌的 hit_count ≥ 2，damage_dealt 不为 0"
-- "每张卡牌的 effects 不得为空，优先生成持续状态效果（如虚弱、减速、灼烧）"
+- "每张卡牌的 affixes 不得为空，优先生成持续状态效果（如虚弱、减速、灼烧）"
 
 请用 JSON 代码块返回，格式如下：
 ```json

@@ -90,7 +90,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             ConsumableItem(
                 name="烟雾弹",
                 description="一枚掌心大小的铁制圆罐，侧面有一根拔环。拉环后会喷出浓烈的白色烟雾，在短时间内遮蔽视野。对场上所有敌人造成眩晕或命中减益。",
-                effects=["[烟雾眩晕]:浓烈烟雾遮蔽视野，攻击率大幅下降"],
+                affixes=["[烟雾眩晕]:浓烈烟雾遮蔽视野，攻击率大幅下降"],
                 count=1,
                 target_type=TargetType.ENEMY_ALL,
             ),  # 制造用原料 mock：用于测试 craft-item 流程

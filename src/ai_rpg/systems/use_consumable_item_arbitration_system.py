@@ -57,7 +57,7 @@ def _generate_consumable_task_hint(
     item = action.item
     actor_short_name = actor_name.split(".")[-1]
     targets_str = "、".join(t.split(".")[-1] for t in action.targets) or "无"
-    effects_line = f"- 潜在词缀：{chr(10).join(item.effects)}" if item.effects else ""
+    effects_line = f"- 潜在词缀：{chr(10).join(item.affixes)}" if item.affixes else ""
     item_info = f"- 消耗品：{item.name}（{item.description}）" + (
         f"\n{effects_line}" if effects_line else ""
     )
@@ -479,10 +479,10 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         action: UseConsumableItemAction,
         affected_entity_names: List[str],
     ) -> None:
-        """消耗品仲裁结算后为使用者与所有目标添加 AddStatusEffectsAction。item.effects 为空时跳过。"""
-        if not action.item.effects:
+        """消耗品仲裁结算后为使用者与所有目标添加 AddStatusEffectsAction。item.affixes 为空时跳过。"""
+        if not action.item.affixes:
             logger.debug(
-                f"[{actor_entity.name}] 消耗品 effects 为空，跳过 AddStatusEffectsAction"
+                f"[{actor_entity.name}] 消耗品 affixes 为空，跳过 AddStatusEffectsAction"
             )
             return
 

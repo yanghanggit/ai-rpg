@@ -95,7 +95,7 @@
 - 两部分合并为最终手牌写入 `HandComponent`
 - **LLM 解析失败兜底**：`DrawCardsResponse` 校验失败（如 LLM 返回裸 JSON 对象而非 `{"cards":[...]}` 包装）时，计算端不做补偿推理，直接插入兜底牌「等待」（`target_type=SELF_ONLY`，`damage_dealt=0`）并写入 `HandComponent`，确保手牌始终存在、回合不阻塞；兜底牌 `source` 设为本角色，可被正常出牌或弃牌
 
-每张牌包含：`name` / `description` / `effects` / `damage_dealt` / `block_gain` / `hit_count` / `target_type`
+每张牌包含：`name` / `description` / `affixes` / `damage_dealt` / `block_gain` / `hit_count` / `target_type`
 
 **Keyword 关键词约束 + 骨値机制**：
 

@@ -29,13 +29,13 @@ class _CraftedItemResponse(BaseModel):
         name: 产出物品名称
         description: 产出物品描述
         target_type: 使用目标类型（见 TargetType 枚举）
-        effects: 效果词缀列表
+        affixes: 效果词缀列表
     """
 
     name: str = ""
     description: str = ""
     target_type: str = TargetType.SELF_ONLY
-    effects: List[str] = []
+    affixes: List[str] = []
 
 
 ####################################################################################################################################
@@ -66,7 +66,7 @@ def _build_craft_prompt(material_items: List[MaterialItem]) -> str:
   "name": "物品名称",
   "description": "物品的感官描述，体现外观、气味、触感等细节。",
   "target_type": "{TargetType.SELF_ONLY}",
-  "effects": ["[效果词缀名]:效果描述"]
+  "affixes": ["[效果词缀名]:效果描述"]
 }}
 ```
 
@@ -76,7 +76,7 @@ def _build_craft_prompt(material_items: List[MaterialItem]) -> str:
 - `{TargetType.ENEMY_SINGLE}`：单体攻击性物品
 - `{TargetType.ENEMY_ALL}`：范围控制性物品
 
-### effects 规则
+### affixes 规则
 
 - 格式固定为 `[词缀名]:简短描述`
 - 若无明显特殊效果，返回空数组 `[]`
@@ -89,8 +89,8 @@ def _build_craft_result_message(
 ) -> str:
     material_summary = "、".join(m.name for m in material_items)
     effects_text = (
-        "\n".join(f"  - {e}" for e in new_item.effects)
-        if new_item.effects
+        "\n".join(f"  - {e}" for e in new_item.affixes)
+        if new_item.affixes
         else "  （无特殊效果）"
     )
     return (
@@ -204,7 +204,7 @@ class CraftItemActionSystem(ReactiveProcessor):
             name=crafted.name,
             description=crafted.description,
             target_type=target_type,
-            effects=crafted.effects,
+            affixes=crafted.affixes,
             count=1,
             uuid=str(uuid.uuid4()),
         )
@@ -229,7 +229,7 @@ class CraftItemActionSystem(ReactiveProcessor):
         logger.info(
             f"[CraftItemActionSystem] 制造完成：{entity.name} 获得「{new_item.name}」\n"
             f"  描述: {new_item.description}\n"
-            f"  效果: {new_item.effects}"
+            f"  效果: {new_item.affixes}"
         )
 
         # 将制造结果写入 actor 的 LLM context，维持叙事一致性

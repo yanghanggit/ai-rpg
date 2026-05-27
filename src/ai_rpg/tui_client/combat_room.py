@@ -796,8 +796,8 @@ class CombatRoomScreen(Screen[None]):
         for i, item in enumerate(consumables, 1):
             tt_str = _TARGET_LABEL.get(item.target_type, f"[dim]{item.target_type}[/]")
             effects_str = (
-                f"\n        [yellow]效果：{'、'.join(item.effects)}[/]"
-                if item.effects
+                f"\n        [yellow]效果：{'、'.join(item.affixes)}[/]"
+                if item.affixes
                 else ""
             )
             log.write(

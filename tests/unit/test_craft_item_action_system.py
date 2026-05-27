@@ -77,7 +77,7 @@ def _make_consumable(
         description=f"{name} 的描述",
         count=1,
         target_type=target_type,
-        effects=effects or [],
+        affixes=effects or [],
     )
 
 
@@ -374,7 +374,7 @@ class TestCraftItemActionSystemReact:
         assert len(consumables) == 1
         assert consumables[0].name == "涩毒粉"
         assert consumables[0].target_type == TargetType.ENEMY_SINGLE
-        assert consumables[0].effects == ["涩毒:持续掉血"]
+        assert consumables[0].affixes == ["涩毒:持续掉血"]
 
     @pytest.mark.asyncio
     async def test_successful_craft_decrements_material_count(self) -> None:

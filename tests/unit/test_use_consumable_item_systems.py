@@ -73,7 +73,7 @@ def _make_consumable_item(
         description=f"{name} 描述",
         count=count,
         target_type=target_type,
-        effects=effects or [],
+        affixes=effects or [],
     )
 
 

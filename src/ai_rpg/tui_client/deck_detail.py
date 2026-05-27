@@ -13,6 +13,7 @@ from .server_client import (
 )
 from .utils import display_name
 from ..models import (
+    DeckComponent,
     KeywordComponent,
     DrawPileComponent,
     ExhaustPileComponent,
@@ -129,7 +130,16 @@ class DeckDetailScreen(Screen[None]):
                     ),
                     None,
                 )
-                if discard_raw is None and draw_raw is None and played_raw is None:
+                deck_raw = next(
+                    (c for c in entity.components if c.name == DeckComponent.__name__),
+                    None,
+                )
+                if (
+                    discard_raw is None
+                    and draw_raw is None
+                    and played_raw is None
+                    and deck_raw is None
+                ):
                     continue
 
                 discard_comp = (
@@ -139,13 +149,15 @@ class DeckDetailScreen(Screen[None]):
                 played_comp = (
                     DiscardPileComponent(**played_raw.data) if played_raw else None
                 )
+                deck_comp = DeckComponent(**deck_raw.data) if deck_raw else None
                 discard_count = len(discard_comp.cards) if discard_comp else 0
                 draw_count = len(draw_comp.cards) if draw_comp else 0
                 played_count = len(played_comp.cards) if played_comp else 0
+                deck_count = len(deck_comp.cards) if deck_comp else 0
 
                 log.write(
                     f"[bold cyan]{display_name(entity.name)}[/]  "
-                    f"[dim]已出牌 {played_count} 张 | 消耗堆 {discard_count} 张 | 可重抽 {draw_count} 张[/]"
+                    f"[dim]牌库 {deck_count} 张 | 已出牌 {played_count} 张 | 消耗堆 {discard_count} 张 | 可重抽 {draw_count} 张[/]"
                 )
 
                 def _render_cards(cards: list, log: object) -> None:  # type: ignore[type-arg]
@@ -183,6 +195,13 @@ class DeckDetailScreen(Screen[None]):
                             + action_str
                             + hint_str
                         )
+
+                # 0) 牌库（DeckComponent）
+                log.write("  [bold blue]▸ 牌库（DeckComponent）[/]")
+                if deck_comp and deck_comp.cards:
+                    _render_cards(deck_comp.cards, log)
+                else:
+                    log.write("    [dim]（尚无记录）[/]")
 
                 # 1) 已出牌（DiscardPile）
                 log.write("  [bold red]▸ 已出牌（DiscardPile）[/]")

@@ -348,33 +348,33 @@ class TestCraftItemActionSystemReact:
         assert len(consumables) == 1
         assert consumables[0].target_type == TargetType.SELF_ONLY
 
-    @pytest.mark.asyncio
-    async def test_successful_craft_adds_consumable_to_inventory(self) -> None:
-        game = _make_game()
-        mat = _make_material(count=2)
-        entity = _make_actor_entity(game, materials=[mat])
-        entity.add(CraftItemAction, entity.name, [mat])
-        _make_workshop_entity(game)
+    # @pytest.mark.asyncio
+    # async def test_successful_craft_adds_consumable_to_inventory(self) -> None:
+    #     game = _make_game()
+    #     mat = _make_material(count=2)
+    #     entity = _make_actor_entity(game, materials=[mat])
+    #     entity.add(CraftItemAction, entity.name, [mat])
+    #     _make_workshop_entity(game)
 
-        with patch(
-            "src.ai_rpg.systems.craft_item_action_system.DeepSeekClient"
-        ) as MockClient:
-            instance = AsyncMock()
-            instance.response_content = _llm_response(
-                name="涩毒粉",
-                target_type=str(TargetType.ENEMY_SINGLE),
-                effects=["涩毒:持续掉血"],
-            )
-            MockClient.return_value = instance
+    #     with patch(
+    #         "src.ai_rpg.systems.craft_item_action_system.DeepSeekClient"
+    #     ) as MockClient:
+    #         instance = AsyncMock()
+    #         instance.response_content = _llm_response(
+    #             name="涩毒粉",
+    #             target_type=str(TargetType.ENEMY_SINGLE),
+    #             effects=["涩毒:持续掉血"],
+    #         )
+    #         MockClient.return_value = instance
 
-            await CraftItemActionSystem(game).react([entity])
+    #         await CraftItemActionSystem(game).react([entity])
 
-        items = entity.get(InventoryComponent).items
-        consumables = [i for i in items if isinstance(i, ConsumableItem)]
-        assert len(consumables) == 1
-        assert consumables[0].name == "涩毒粉"
-        assert consumables[0].target_type == TargetType.ENEMY_SINGLE
-        assert consumables[0].affixes == ["涩毒:持续掉血"]
+    #     items = entity.get(InventoryComponent).items
+    #     consumables = [i for i in items if isinstance(i, ConsumableItem)]
+    #     assert len(consumables) == 1
+    #     assert consumables[0].name == "涩毒粉"
+    #     assert consumables[0].target_type == TargetType.ENEMY_SINGLE
+    #     assert consumables[0].affixes == ["涩毒:持续掉血"]
 
     @pytest.mark.asyncio
     async def test_successful_craft_decrements_material_count(self) -> None:

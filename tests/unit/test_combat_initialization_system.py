@@ -11,6 +11,9 @@ from src.ai_rpg.game.tcg_game import TCGGame
 from src.ai_rpg.models import (
     AddStatusEffectsAction,
     AppearanceComponent,
+    DiscardPileComponent,
+    DrawPileComponent,
+    ExhaustPileComponent,
     MonsterComponent,
     PartyMemberComponent,
     StageDescriptionComponent,
@@ -316,6 +319,53 @@ class TestInitializeActorStatusEffects:
             system._initialize_actor_status_effects({actor})
 
 
+class TestInitializeActorPiles:
+    """_initialize_actor_piles 的单元测试。"""
+
+    def test_adds_all_three_pile_components(
+        self, context: Context, system: CombatInitializationSystem
+    ) -> None:
+        """执行后角色应持有全部三个空 Pile 组件。"""
+        actor = _make_actor_entity(context, "英雄", is_ally=True)
+        system._initialize_actor_piles({actor})
+        assert actor.has(DrawPileComponent)
+        assert actor.has(DiscardPileComponent)
+        assert actor.has(ExhaustPileComponent)
+
+    def test_all_piles_are_empty(
+        self, context: Context, system: CombatInitializationSystem
+    ) -> None:
+        """初始化后三个 Pile 均应为空列表。"""
+        actor = _make_actor_entity(context, "英雄", is_ally=True)
+        system._initialize_actor_piles({actor})
+        assert actor.get(DrawPileComponent).cards == []
+        assert actor.get(DiscardPileComponent).cards == []
+        assert actor.get(ExhaustPileComponent).cards == []
+
+    def test_multiple_actors_all_initialized(
+        self, context: Context, system: CombatInitializationSystem
+    ) -> None:
+        """多个角色应全部获得三个 Pile 组件。"""
+        actors = {
+            _make_actor_entity(context, "英雄", is_ally=True),
+            _make_actor_entity(context, "哥布林", is_monster=True),
+        }
+        system._initialize_actor_piles(actors)
+        for actor in actors:
+            assert actor.has(DrawPileComponent)
+            assert actor.has(DiscardPileComponent)
+            assert actor.has(ExhaustPileComponent)
+
+    def test_raises_if_draw_pile_already_exists(
+        self, context: Context, system: CombatInitializationSystem
+    ) -> None:
+        """若角色已有 DrawPileComponent，应触发 AssertionError（防重复初始化）。"""
+        actor = _make_actor_entity(context, "英雄", is_ally=True)
+        actor.add(DrawPileComponent, "英雄", [])
+        with pytest.raises(AssertionError):
+            system._initialize_actor_piles({actor})
+
+
 class TestAddContextForAllActors:
     """_add_context_for_all_actors 的单元测试。"""
 
@@ -480,11 +530,28 @@ class TestExecute:
 
         with (
             patch.object(system, "_add_context_for_all_actors"),
+            patch.object(system, "_initialize_actor_piles"),
             patch.object(system, "_initialize_actor_status_effects") as mock_init,
         ):
             await system.execute()
 
         mock_init.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_delegates_pile_init(
+        self, context: Context, mock_game: MagicMock, system: CombatInitializationSystem
+    ) -> None:
+        """execute() 应调用 _initialize_actor_piles，在上下文注入之前。"""
+        self._configure_mock_game_for_execute(mock_game, context)
+
+        with (
+            patch.object(system, "_add_context_for_all_actors"),
+            patch.object(system, "_initialize_actor_piles") as mock_pile_init,
+            patch.object(system, "_initialize_actor_status_effects"),
+        ):
+            await system.execute()
+
+        mock_pile_init.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_context_injection_called_before_transition(

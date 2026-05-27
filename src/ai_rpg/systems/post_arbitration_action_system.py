@@ -63,18 +63,9 @@ def _fmt_duration(d: int) -> str:
     return "永久" if d == -1 else f"剩余{d}回合"
 
 
-def _generate_compressed_stage_post_arbitration_prompt(
-    game: TCGGame,
-    actor_entities: Set[Entity],
-    current_turn_actor_name: str,
-    current_round_number: int,
-) -> str:
-    """生成压缩版仲裁后场景效果提示词（仅动态感知部分，省略静态规则/格式说明）
-
-    保留内容：回合标题、出牌者说明、存活角色当前状态。
-    省略内容：## 你的本质与职责、状态效果字段说明、塞牌字段说明、description 规范、JSON 示例。
-    """
-
+#######################################################################################################################################
+def _build_actors_summary(game: TCGGame, actor_entities: Set[Entity]) -> str:
+    """格式化场内存活角色状态摘要，供 prompt 函数复用。"""
     actor_lines: List[str] = []
     for entity in actor_entities:
         final_stats = (
@@ -105,8 +96,23 @@ def _generate_compressed_stage_post_arbitration_prompt(
         actor_lines.append(
             f"- **{entity.name}**  {hp_str}  " f"状态效果: {effects_str}  {hand_note}"
         )
+    return "\n".join(actor_lines) if actor_lines else "  （无存活角色）"
 
-    actors_summary = "\n".join(actor_lines) if actor_lines else "  （无存活角色）"
+
+#######################################################################################################################################
+def _generate_compressed_stage_post_arbitration_prompt(
+    game: TCGGame,
+    actor_entities: Set[Entity],
+    current_turn_actor_name: str,
+    current_round_number: int,
+) -> str:
+    """生成压缩版仲裁后场景效果提示词（仅动态感知部分，省略静态规则/格式说明）
+
+    保留内容：回合标题、出牌者说明、存活角色当前状态。
+    省略内容：## 你的本质与职责、状态效果字段说明、塞牌字段说明、description 规范、JSON 示例。
+    """
+
+    actors_summary = _build_actors_summary(game, actor_entities)
 
     return f"""# 第 {current_round_number} 回合 — 仲裁后场景干预
 
@@ -117,6 +123,7 @@ def _generate_compressed_stage_post_arbitration_prompt(
 {actors_summary}"""
 
 
+#######################################################################################################################################
 def _generate_stage_post_arbitration_prompt(
     game: TCGGame,
     actor_entities: Set[Entity],
@@ -137,39 +144,7 @@ def _generate_stage_post_arbitration_prompt(
         格式化的提示词字符串
     """
 
-    # 格式化存活角色状态
-    actor_lines: List[str] = []
-    for entity in actor_entities:
-        final_stats = (
-            game.compute_character_stats(entity)
-            if entity.has(CharacterStatsComponent)
-            else None
-        )
-        effects_comp = entity.get(StatusEffectsComponent)
-
-        hp_str = (
-            f"HP: {final_stats.hp}/{final_stats.max_hp}"
-            if final_stats is not None
-            else "HP: ?"
-        )
-
-        if effects_comp is not None and effects_comp.status_effects:
-            effects_str = "、".join(
-                f"{e.name}（{_fmt_duration(e.duration)}）"
-                for e in effects_comp.status_effects
-            )
-        else:
-            effects_str = "无"
-
-        has_hand = entity.has(HandComponent)
-        hand_note = (
-            "（当前持有手牌，可塞牌）" if has_hand else "（本回合无手牌，塞牌无效）"
-        )
-        actor_lines.append(
-            f"- **{entity.name}**  {hp_str}  " f"状态效果: {effects_str}  {hand_note}"
-        )
-
-    actors_summary = "\n".join(actor_lines) if actor_lines else "  （无存活角色）"
+    actors_summary = _build_actors_summary(game, actor_entities)
 
     phase_desc = f"""
 ## 状态效果字段说明
@@ -178,24 +153,13 @@ def _generate_stage_post_arbitration_prompt(
 
 | phase | 对应阶段 | 可影响属性 | 典型效果举例 |
 |---|---|---|---|
-| `{EffectPhase.DRAW}` | 抽牌阶段 | attack、defense（间接影响下回合卡牌数値） | 「虚弱」攻击力−2，生成卡牌 damage_dealt 偏低；「沉重」防御力−1，防御较弱 |
-| `{EffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt | 「破甲」防御降低；「荆棘」攻击者反伤；「眩晕」影响出牌；「虚弱」伤害减少 |
+| `{EffectPhase.DRAW}` | 抽牌阶段 | attack、defense（间接影响下回合卡牌数値） | 「虚弱」攻击力−2，damage_dealt 偏低；「沉重」防御力−1，防御较弱 |
+| `{EffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt | 「破甲」防御降低；「荆棘」反伤；「眩晕」影响出牌；「虚弱」伤害减少 |
 | `{EffectPhase.ROUND_END}` | 回合末阶段 | hp | 「中毒」每回合末扣血；「燃烧」持续火焰伤害；「再生」每回合末回血 |
 
-**phase 选择指引**：
-- **`{EffectPhase.ARBITRATION}`**：与出牌结算绑定的效果——作为仲裁 LLM 的上下文参数，LLM 自由解读其影响（伤害/防御修正、反伤、条件行为等），每次出牌时触发
-- **`{EffectPhase.ROUND_END}`**：每回合末自动 tick 的持续伤害/治疗（DOT/HOT），与出牌无关
-- **`{EffectPhase.DRAW}`**：影响本回合抽得手牌的数值质量（attack/defense 描述）
-
-**speed 字段**：影响出手顺序（越高越先行动），只允许 +1 / 0 / -1；「地利加持」speed=+1，「泥泞困足」speed=−1，默认 0 不填。
-**defense 字段**：影响防御值（正值增防、负值破甲），填写整数；「沙土护身」defense=+2，「破甲」defense=−2，默认 0 不填。
-
-**属性约束**：
-- 禁止修改 max_hp
-- `{EffectPhase.DRAW}` 阶段用 attack / defense 描述，不直接写 damage_dealt
-- `{EffectPhase.ARBITRATION}` 阶段直接用 hp / damage_dealt，不用 attack / defense
-- `{EffectPhase.ROUND_END}` 阶段直接用 hp 描述，不用 damage_dealt 或 attack / defense
-- description 须引用上下文中实际存在的场景要素，第三人称描述环境如何作用于角色身体，如"战斗搅起的沙尘钻入眼中，视线模糊，造成伤害减少"
+**speed**：影响出手顺序，只允许 +1 / 0 / -1，默认 0。
+**defense**：影响防御值（正值增防、负值破甲），整数，默认 0。
+禁止修改 max_hp。
 """
 
     card_field_desc = f"""
@@ -207,7 +171,7 @@ def _generate_stage_post_arbitration_prompt(
 | --- | --- |
 | name | 卡牌名称（<8字），体现效果意图 |
 | description | 第三人称，描述角色借助**上下文中已存在的**场景具体物件的即时客观动作（1句，如"抓起地面的断柱碎块掷向对方"）；不可凭空引入非场景物件 |
-| affixes | 可选。潜在状态效果声明列表，每项格式"[名称]:触发倾向描述"（如"[碎石粉尘]:可能引起视线模糊"）。出牌后系统若读到非空列表，将启动独立 LLM 推理为出牌者/目标生成实际 StatusEffect（持续性增减益）。纯即时效果输出 [] |
+| affixes | 可选。词缀声明列表，两类格式：延迟词缀 `[名称]:触发倾向描述`（如 `[碎石粉尘]:可能引起视线模糊`），仲裁后独立推理生成持续状态效果；即时词缀 `![名称]:即时修正描述`（如 `![穿甲]:无视目标防御`），直接注入本次仲裁计算。纯即时无词缀时输出 [] |
 | playable | 可选。布尔值，是否允许出牌；默认 true，场景叙事明确暗示该物件具有禁出属性时填 false |
 | discardable | 可选。布尔值，是否允许弃牌；默认 true，场景叙事明确暗示该物件不可丢弃时填 false |
 | damage_dealt | 单次命中造成的伤害（整数；攻击类取合理正值，无伤害取 0） |
@@ -236,15 +200,13 @@ def _generate_stage_post_arbitration_prompt(
 ## 你的本质与职责
 
 你是这片场景本身，没有意志，没有偏好，只有物理现实在运作。
-你能做的，是将**上下文中已出现、已存在于this场景里的环境要素**，转化为对角色身体的客观影响，或为角色提供可借用的场景物件。
+你能做的，是将**上下文中已出现、已存在于此场景里的环境要素**，转化为对角色身体的客观影响，或为角色提供可借用的场景物件。
 
 **干预原则**：
 - ✅ 允许：上下文叙事中已描述的环境要素引发的物理后果（沙尘入眼、热浪灼烧、松软地面失稳、碎石可用、断柱可借力等）
 - ✅ 塞牌须有据：只有上下文中描述了该物件存在于场景中，才能将其作为卡牌塞给角色使用
 - ✅ 干预前先推断对象当前状态：从上下文叙事中判断场景对象处于何种状态（完好/部分损耗/已触发/已取走/仍可操作…），仅在该状态允许进一步交互时才将其转化为效果或卡牌
 - ❌ 禁止：勇气、恐惧、神圣、复仇、祝福、诅咒等角色内在情绪或来源不明的魔法效果
-- ❌ 禁止：凭空塞入武器或装备（除非场景叙事中明确描述了该物件）
-- ❌ 禁止：忽视上下文中已发生的状态变化——若叙事表明某物件已耗尽、被移位或无法再操作，不得再基于该物件干预
 - 不滥用：若上下文中无明显可利用的环境要素，**必须输出空数组**
 - 状态效果与卡牌可同时施加于同一目标
 {phase_desc}
@@ -287,11 +249,8 @@ def _generate_stage_post_arbitration_prompt(
 }}
 ```
 
-`speed` 仅填 +1 / 0 / -1，非零时才需显式填写，默认填 0。
 `phase` 填 `{EffectPhase.DRAW}` / `{EffectPhase.ARBITRATION}` / `{EffectPhase.ROUND_END}` 其中之一。
 - `duration`：-1=永久，>0=剩余回合数，默认 3
-- `speed`：+1 / 0 / -1；持续叠加到角色出手速度，非零时才需填写，默认 0
-- `defense`：整数；持续叠加到角色防御值（正值增防，负值破甲），默认 0
 - `counter`：整数初始值；`{EffectPhase.ARBITRATION}` 阶段特殊计数器词条（如"前3次受击"设 3），默认 0
 无干预时输出空的 per_actor 数组，只输出JSON."""
 

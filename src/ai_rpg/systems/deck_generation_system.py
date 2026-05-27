@@ -33,11 +33,6 @@ from ..utils import extract_json_from_code_block
 
 
 #######################################################################################################################################
-# 每场战斗为每个角色生成的卡牌数（开发阶段固定值）
-_CARDS_PER_COMBAT = 3
-
-
-#######################################################################################################################################
 @final
 class DeckCardEntry(BaseModel):
     """单张卡牌条目（用于 DeckGenerateResponse 解析）"""
@@ -104,32 +99,37 @@ def _generate_deck_prompt(
 ) -> str:
     """生成战斗开始牌库生成 prompt（含字段说明与 JSON 示例）。"""
 
-    stats_line = f"属性：HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
-    keyword_line = _build_design_principle_prompt(num_cards, keywords, dice_rolls)
-    fields_line = (
-        "字段说明：\n"
-        "- name：富有想象力，体现行动意图\n"
-        "- description：第三人称通用描述（1句，客观说明这张牌的即时战斗行为，禁止叙事润色）。\n"
-        "  【重要】禁止提及任何当前场景的地物（如断柱、沙地、余晖、岩板等）、地名或即时情境细节。\n"
-        "  ❌ 错误示例：「借助断柱的支撑旋身，踢击敌人」\n"
-        "  ✓ 正确示例：「旋身借力，以连续踢击攻击单一敌人」\n"
-        '- affixes：潜在状态效果声明列表。每项格式"[名称]:触发倾向描述"；纯即时伤害输出 []\n'
-        "- playable：布尔值，是否允许出牌；默认 true\n"
-        "- discardable：布尔值，是否允许弃牌；默认 true\n"
-        "- damage_dealt：单次攻击造成的伤害值（基于攻击力合理推算，整数）\n"
-        "- hit_count：攻击次数（默认 1；多段攻击可设为 2~4）\n"
-        "- target_type：目标类型：enemy_single / enemy_all / enemy_random_multi / ally_single / ally_all / self_only"
-    )
-    example_line = '{"name":"...","description":"...","affixes":[],"playable":true,"discardable":true,"damage_dealt":0,"hit_count":1,"target_type":"enemy_single"}'
+    design_principle = _build_design_principle_prompt(num_cards, keywords, dice_rolls)
 
-    return f"# 战斗开始：生成 {num_cards} 张初始牌库卡牌\n\n" + "\n\n".join(
-        [
-            stats_line,
-            keyword_line,
-            fields_line,
-            f"输出 JSON，cards 数组共 {num_cards} 张：\n{example_line}",
-        ]
-    )
+    return f"""# 战斗开始：生成 {num_cards} 张初始牌库卡牌
+
+## 角色属性
+
+HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}
+
+## 设计约束
+
+{design_principle}
+
+## 字段说明
+
+- name：富有想象力，体现行动意图
+- description：第三人称通用描述（1句，客观说明这张牌的即时战斗行为，禁止叙事润色）。
+  【重要】禁止提及任何当前场景的地物（如断柱、沙地、余晖、岩板等）、地名或即时情境细节。
+  ❌ 错误示例：「借助断柱的支撑旋身，踢击敌人」
+  ✓ 正确示例：「旋身借力，以连续踢击攻击单一敌人」
+- affixes：潜在状态效果声明列表。每项格式"[名称]:触发倾向描述"；纯即时伤害输出 []
+- playable：布尔值，是否允许出牌；默认 true
+- discardable：布尔值，是否允许弃牌；默认 true
+- damage_dealt：单次攻击造成的伤害值（基于攻击力合理推算，整数）
+- hit_count：攻击次数（默认 1；多段攻击可设为 2~4）
+- target_type：目标类型：enemy_single / enemy_all / enemy_random_multi / ally_single / ally_all / self_only
+
+## 输出格式
+
+输出 JSON，cards 数组共 {num_cards} 张：
+
+{{"name":"...","description":"...","affixes":[],"playable":true,"discardable":true,"damage_dealt":0,"hit_count":1,"target_type":"enemy_single"}}"""
 
 
 #######################################################################################################################################
@@ -143,13 +143,11 @@ class DeckGenerationSystem(ExecuteProcessor):
         is_ongoing == True  AND  len(current_rounds) == 0
     """
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: TCGGame, cards_per_combat: int = 3) -> None:
         self._game: Final[TCGGame] = game
-
-    ####################################################################################################################################
-    def _get_deck_size(self, actor: Entity) -> int:
-        """返回角色本场战斗应生成的牌库卡牌数。"""
-        return _CARDS_PER_COMBAT
+        self._cards_per_combat: Final[int] = (
+            cards_per_combat  # 每场战斗为每个角色生成的卡牌数（开发阶段固定值）
+        )
 
     ####################################################################################################################################
     def _get_combat_actor_entities(self) -> List[Entity]:
@@ -192,7 +190,11 @@ class DeckGenerationSystem(ExecuteProcessor):
         # 构建并行 LLM 请求
         chat_clients: List[DeepSeekClient] = []
         for entity in actor_entities:
-            num_cards = self._get_deck_size(entity)
+
+            # 获取角色战斗属性
+            num_cards = self._cards_per_combat
+
+            # 获取角色关键词
             combat_stats = self._game.compute_character_stats(entity)
 
             keyword_comp = entity.get(KeywordComponent)
@@ -230,9 +232,6 @@ class DeckGenerationSystem(ExecuteProcessor):
                 entity1 is not None
             ), f"DeckGenerationSystem: 无法找到实体 {chat_client.name} 以处理生成结果"
 
-            # if entity is None:
-            #     logger.warning(f"DeckGenerationSystem: 找不到实体 {chat_client.name}")
-            #     continue
             self._process_generation_response(entity1, chat_client)
 
     #######################################################################################################################################
@@ -243,9 +242,12 @@ class DeckGenerationSystem(ExecuteProcessor):
     ) -> None:
         """解析 LLM 响应，将生成卡牌洗牌填入 DrawPileComponent。解析失败时跳过（DrawPile 保持空）。"""
 
-        num_cards = self._get_deck_size(entity)
+        # 获取预期生成卡牌数量
+        num_cards = self._cards_per_combat
 
         try:
+
+            # 解析 LLM 响应 JSON
             response = DeckGenerateResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
             )
@@ -253,6 +255,8 @@ class DeckGenerationSystem(ExecuteProcessor):
             valid_target_types = {e.value for e in TargetType}
             cards: List[Card] = []
             for entry in response.cards:
+
+                # 验证 target_type 字段值是否合法，非法则跳过该卡并发出警告
                 if entry.target_type not in valid_target_types:
                     warn_msg = (
                         f"[系统警告] 你刚才生成的牌库卡牌「{entry.name}」的 target_type 字段值为"
@@ -291,8 +295,10 @@ class DeckGenerationSystem(ExecuteProcessor):
             assert deck_comp is not None, f"{entity.name} 缺少 DeckComponent"
             deck_comp.cards.extend(cards)
 
+            # 洗牌
             random.shuffle(deck_comp.cards)
 
+            # 移入 DrawPileComponent
             draw_pile = entity.get(DrawPileComponent)
             assert draw_pile is not None, f"{entity.name} 缺少 DrawPileComponent"
             draw_pile.cards.extend(deck_comp.cards)

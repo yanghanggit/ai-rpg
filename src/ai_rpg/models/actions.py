@@ -119,14 +119,14 @@ class PlayCardsAction(Component):
 
 
 ############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
-class ExhaustCardsAction(Component):
-    """触发角色消耗指定手牌，归入消耗堆（ExhaustPile）。"""
+# @final
+# @register_action_component_type
+# @register_component_type
+# class ExhaustCardsAction(Component):
+#     """触发角色消耗指定手牌，归入消耗堆（ExhaustPile）。"""
 
-    name: str
-    card: Card  # 要消耗的卡牌
+#     name: str
+#     card: Card  # 要消耗的卡牌
 
 
 ############################################################################################################

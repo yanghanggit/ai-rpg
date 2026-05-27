@@ -104,7 +104,7 @@ from agent_game_actions import (
     enter_dungeon_game,
     draw_cards_game,
     play_cards_specified_game,
-    exhaust_card_game,
+    # exhaust_card_game,
     pass_turn_game,
     use_consumable_item_game,
     exit_dungeon_and_return_home_game,
@@ -501,53 +501,6 @@ def play_cards_specified(
             world, player_session, actor, card, list(targets), _save_dir
         )
     )
-
-
-###############################################################################################################################################
-@main.command("exhaust-card")
-@click.option(
-    "--snapshot",
-    required=True,
-    help="存档目录路径",
-)
-@click.option(
-    "--actor",
-    required=True,
-    help="弃牌角色全名（如 角色.旅行者.无名氏）",
-)
-@click.option(
-    "--card",
-    required=True,
-    help="要弃置的卡牌名称（须存在于该角色手牌中）",
-)
-def exhaust_card_specified(snapshot: str, actor: str, card: str) -> None:
-    """从存档复位，让指定角色消耗指定手牌（归入 ExhaustPile），并写入新存档。
-
-    适用于【地下城模式】战斗进行中（is_ongoing），draw-cards 之后调用。
-    只有指定角色触发消耗结算，不消耗 energy。
-    --card 须与手牌中卡牌名称完全一致，否则报错不归档。
-    """
-
-    snapshot_path = Path(snapshot)
-    if not snapshot_path.exists():
-        raise click.BadParameter(
-            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
-        )
-
-    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
-    _setup_logger(_log_file)
-
-    world, player_session = restore_world(snapshot_path)
-    _save_dir = (
-        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
-    )
-
-    logger.info(f"本次运行日志文件：{_log_file}")
-    logger.info(f"读取存档：{snapshot_path}")
-    logger.info(f"本次存档目录：{_save_dir}")
-
-    asyncio.run(exhaust_card_game(world, player_session, actor, card, _save_dir))
 
 
 ###############################################################################################################################################

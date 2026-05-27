@@ -16,7 +16,6 @@ from .round_detail import RoundDetailScreen
 from .utils import display_name
 from .server_client import dungeon_combat_draw_cards as server_dungeon_combat_draw_cards
 from .server_client import dungeon_combat_play_cards as server_play_cards
-from .server_client import dungeon_combat_exhaust_card as server_exhaust_card
 from .server_client import (
     dungeon_combat_use_consumable_item as server_use_consumable_item,
 )
@@ -57,7 +56,6 @@ class _Phase(Enum):
     LOADING = auto()  # 初始加载回合信息
     ENEMY_TURN = auto()  # 等待用户按 Enter 触发敌人 AI
     SELECT_CARD = auto()  # 等待用户输入卡牌编号（出牌）
-    SELECT_DISCARD_CARD = auto()  # 等待用户输入卡牌编号（弃牌）
     SELECT_TARGET = auto()  # 等待用户输入目标编号
     SELECT_CONSUMABLE_ITEM = auto()  # 等待用户选择消耗品编号
     SELECT_CONSUMABLE_TARGET = auto()  # 等待用户选择消耗品目标编号
@@ -93,7 +91,6 @@ COMBAT_ROOM_MENU: Final[
   [bold green]1[/]  战斗开始        执行战斗初始化（首次进入战斗时）
   [bold green]2[/]  抽牌            为全员抽牌
   [bold green]3[/]  出牌            进入出牌界面完成本回合
-  [bold green]4[/]  弃牌            从手牌中弃置一张卡牌
   [bold green]5[/]  使用消耗品      从背包中取出并使用一件消耗道具
 
 [bold cyan]── 查看 ──────────────────────────────────────[/]
@@ -171,9 +168,6 @@ class CombatRoomScreen(Screen[None]):
         self._target_candidates: List[str] = (
             []
         )  # 可选目标名列表（SELECT_TARGET 内有效，用完即清）
-        self._discard_hand_cards: List[Card] = (
-            []
-        )  # 弃牌选牌阶段缓存的手牌（SELECT_DISCARD_CARD 内有效）
         self._consumable_candidates: List[ConsumableItem] = (
             []
         )  # 可用消耗品列表（SELECT_CONSUMABLE_ITEM 内有效）
@@ -247,8 +241,6 @@ class CombatRoomScreen(Screen[None]):
                 self._phase = _Phase.LOADING
                 self.query_one(Input).disabled = True
                 self._handle_card_selection(raw)
-            elif self._phase == _Phase.SELECT_DISCARD_CARD:
-                self._handle_discard_card_selection(raw)
             elif self._phase == _Phase.SELECT_TARGET:
                 self._handle_target_selection(raw)
             elif self._phase == _Phase.SELECT_CONSUMABLE_ITEM:
@@ -281,9 +273,6 @@ class CombatRoomScreen(Screen[None]):
 
         elif cmd == "3":
             self._start_play_cards()
-
-        elif cmd == "4":
-            self._start_discard_card()
 
         elif cmd == "5":
             self._start_use_consumable_item()
@@ -642,97 +631,6 @@ class CombatRoomScreen(Screen[None]):
         inp.disabled = True
         self._phase = _Phase.LOADING
         self._advance()
-
-    @work
-    async def _start_discard_card(self) -> None:
-        """弃牌模式：拉取玩家手牌并展示，等待用户选择要弃置的卡牌。"""
-        log = self.query_one(RichLog)
-        self.query_one(Input).disabled = True
-
-        try:
-            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
-            stage_name = room_resp.room.stage.name
-            stages_resp = await fetch_stages_state(self._user_name, self._game_name)
-            stage_actor_names: List[str] = list(stages_resp.mapping.get(stage_name, []))
-            all_details = await fetch_entities_details(
-                self._user_name, self._game_name, stage_actor_names
-            )
-        except Exception as e:
-            log.write(f"[bold red]❌ 加载手牌失败: {e}[/]")
-            inp = self.query_one(Input)
-            inp.disabled = False
-            inp.focus()
-            return
-
-        # 找到玩家控制的角色（PlayerComponent + HandComponent）
-        player_actor: Optional[str] = None
-        hand_cards: List[Card] = []
-        for entity in all_details.entities_serialization:
-            comp_names = {c.name for c in entity.components}
-            if PlayerComponent.__name__ not in comp_names:
-                continue
-            player_actor = entity.name
-            for comp in entity.components:
-                if comp.name == HandComponent.__name__:
-                    hand_cards = HandComponent(**comp.data).cards
-            break
-
-        if player_actor is None:
-            log.write("[yellow]⚠ 未找到玩家角色。[/]")
-            inp = self.query_one(Input)
-            inp.disabled = False
-            inp.focus()
-            return
-
-        if not hand_cards:
-            log.write("[yellow]⚠ 手牌为空，请先抽牌。[/]")
-            inp = self.query_one(Input)
-            inp.disabled = False
-            inp.focus()
-            return
-
-        short = display_name(player_actor)
-        log.write(
-            f"\n[bold cyan]── 弃牌：{short} ────────────────────────────────────────[/]"
-        )
-        self._write_hand_table(hand_cards, player_actor)
-
-        self._current_actor = player_actor
-        self._discard_hand_cards = list(hand_cards)
-        self._phase = _Phase.SELECT_DISCARD_CARD
-        self._update_play_status(
-            f"[{short}] 弃牌：输入编号（1-{len(hand_cards)}）  |  q 取消"
-        )
-        log.write(f"  [dim](输入卡牌编号弃牌 / q 取消)[/]")
-        inp = self.query_one(Input)
-        inp.placeholder = f"1-{len(hand_cards)} / q 取消"
-        inp.disabled = False
-        inp.focus()
-
-    def _handle_discard_card_selection(self, raw: str) -> None:
-        """用户在弃牌选牌阶段输入编号后：验证并调用 _do_discard_card。"""
-        log = self.query_one(RichLog)
-        hand_cards = self._discard_hand_cards
-
-        if raw.lower() == "q":
-            self._discard_hand_cards = []
-            self._abort_play_cards()
-            return
-
-        if not raw.isdigit():
-            log.write(f"[red]请输入 1-{len(hand_cards)} 的数字，或 q 取消。[/]")
-            return
-
-        idx = int(raw) - 1
-        if not (0 <= idx < len(hand_cards)):
-            log.write(f"[red]无效编号 '{raw}'，请输入 1-{len(hand_cards)}。[/]")
-            return
-
-        assert self._current_actor is not None
-        discard_card = hand_cards[idx]
-        log.write(f"  准备弃牌：[bold cyan]{discard_card.name}[/]")
-        self._discard_hand_cards = []
-        self._do_discard_card(self._current_actor, discard_card.name)
 
     # ──────────────────────────────────────────────
     # 消耗品使用流程
@@ -1497,59 +1395,6 @@ class CombatRoomScreen(Screen[None]):
                 logger.warning(f"_do_play_card: 出牌后状态检查失败 error={e}")
 
         self._advance()  # 启动新 @work 推进状态机；当前 coroutine 到此结束
-
-    # ──────────────────────────────────────────────
-    # 后台弃牌任务
-    # ──────────────────────────────────────────────
-    @work
-    async def _do_discard_card(self, actor_name: str, card_name: str) -> None:
-        log = self.query_one(RichLog)
-        self._phase = _Phase.WAITING
-        self.query_one(Input).disabled = True
-
-        short = display_name(actor_name)
-        log.write(f"  [dim]▶ {short} 弃牌中：{card_name}[/]")
-        logger.info(
-            f"CombatRoomScreen._do_discard_card: actor={actor_name} card={card_name}"
-        )
-
-        task_id = ""
-        try:
-            resp = await server_exhaust_card(
-                self._user_name, self._game_name, actor_name, card_name
-            )
-            task_id = resp.task_id
-            logger.info(f"_do_discard_card: 任务已创建 task_id={task_id}")
-        except httpx.HTTPStatusError as e:
-            try:
-                detail = e.response.json().get("detail", str(e))
-            except Exception:
-                detail = str(e)
-            log.write(f"[bold red]❌ 弃牌请求失败: {detail}[/]")
-            logger.error(f"_do_discard_card: 请求失败 error={e}")
-            self._advance()
-            return
-        except Exception as e:
-            log.write(f"[bold red]❌ 弃牌请求失败: {e}[/]")
-            logger.error(f"_do_discard_card: 请求失败 error={e}")
-            self._advance()
-            return
-
-        self._update_play_status(f"等待 {short} 弃牌完成...")
-        try:
-            await watch_task_until_done(task_id, timeout_seconds=90)
-            log.write(f"  [green]✓ {short} 弃牌完成：{card_name}[/]")
-            logger.info(f"_do_discard_card: 任务完成 task_id={task_id}")
-        except TaskFailedError as e:
-            log.write(f"[bold red]❌ {short} 弃牌失败: {e}[/]")
-            logger.error(f"_do_discard_card: 任务失败 task_id={task_id} error={e}")
-        except TimeoutError:
-            log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
-            logger.warning(f"_do_discard_card: 轮询超时 task_id={task_id}")
-        except Exception as e:
-            logger.warning(f"_do_discard_card: 等待任务失败 error={e}")
-
-        self._advance()
 
     # ──────────────────────────────────────────────
     # 显示本次出牌的战斗演绎与计算日志

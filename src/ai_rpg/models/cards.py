@@ -84,7 +84,9 @@ class Card(BaseModel):
         []
     )  # 词缀声明列表；每项格式"[名称]:触发倾向描述"（如"[燃烧]:可能引发持续火焰伤害"）；出牌后系统检查此列表，非空则启动独立 LLM 推理生成 StatusEffect（潜在状态效果实例化）；纯即时牌无持续影响时输出 []
     playable: bool = True  # 是否可出牌；False 时系统阻止出牌操作
-    discardable: bool = True  # 是否可弃牌；False 时系统阻止弃牌操作
+    exhaust: bool = (
+        False  # 是否为消耗牌；True 时出牌后永久归入 ExhaustPile，不进入 DiscardPile 循环
+    )
     damage_dealt: int = 0  # 造成的伤害值（单次）
     hit_count: int = 1  # 攻击次数（默认 1；>1 时为多段攻击，每段独立结算）
     target_type: TargetType = TargetType.ENEMY_SINGLE  # 出牌目标类型，决定目标约束策略

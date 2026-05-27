@@ -41,7 +41,7 @@ class DeckCardEntry(BaseModel):
     description: str
     affixes: List[str] = []
     playable: bool = True
-    discardable: bool = True
+    exhaust: bool = False
     damage_dealt: int
     hit_count: int = 1
     target_type: str = TargetType.ENEMY_SINGLE
@@ -123,7 +123,7 @@ HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:
   - 即时词缀（前缀 !）：`![名称]:即时修正描述`，直接注入本次仲裁计算（如 `![穿甲]:无视目标防御`）
   - 纯即时伤害无任何词缀时输出 []
 - playable：布尔值，是否允许出牌；默认 true
-- discardable：布尔值，是否允许弃牌；默认 true
+- exhaust：布尔值，出牌后是否永久消耗（归入消耗堆，不进入弃牌循环）；默认 false
 - damage_dealt：单次攻击造成的伤害值（基于攻击力合理推算，整数）
 - hit_count：攻击次数（默认 1；多段攻击可设为 2~4）
 - target_type：目标类型：enemy_single / enemy_all / enemy_random_multi / ally_single / ally_all / self_only
@@ -132,7 +132,7 @@ HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:
 
 输出 JSON，cards 数组共 {num_cards} 张：
 
-{{"name":"...","description":"...","affixes":[],"playable":true,"discardable":true,"damage_dealt":0,"hit_count":1,"target_type":"enemy_single"}}"""
+{{"name":"...","description":"...","affixes":[],"playable":true,"exhaust":false,"damage_dealt":0,"hit_count":1,"target_type":"enemy_single"}}"""
 
 
 #######################################################################################################################################
@@ -280,7 +280,7 @@ class DeckGenerationSystem(ExecuteProcessor):
                         description=entry.description,
                         affixes=entry.affixes,
                         playable=entry.playable,
-                        discardable=entry.discardable,
+                        exhaust=entry.exhaust,
                         damage_dealt=entry.damage_dealt,
                         hit_count=entry.hit_count,
                         target_type=TargetType(entry.target_type),

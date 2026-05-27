@@ -51,7 +51,7 @@ def _make_card(name: str, source: str) -> Card:
         description="测试卡牌",
         affixes=[],
         playable=True,
-        discardable=True,
+        exhaust=False,
         damage_dealt=1,
         hit_count=1,
         target_type=TargetType.ENEMY_SINGLE,

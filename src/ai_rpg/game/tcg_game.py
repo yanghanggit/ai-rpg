@@ -25,8 +25,6 @@ from ..models import (
     CharacterStatsComponent,
     COMPONENT_TYPES,
     ConsumableItem,
-    ExhaustPileComponent,
-    DrawPileComponent,
     DeckComponent,
     Dungeon,
     DungeonComponent,
@@ -370,11 +368,8 @@ class TCGGame(RPGGame):
 
             # TCG 组件：牌组
             actor_entity.replace(DeckComponent, actor_entity.name, [])
-            actor_entity.replace(DrawPileComponent, actor_entity.name, [])
-            actor_entity.replace(DiscardPileComponent, actor_entity.name, [])
-            actor_entity.replace(ExhaustPileComponent, actor_entity.name, [])
             logger.debug(
-                f"为 Actor 实体 {actor_entity.name} 挂载空牌组（DeckComponent + DrawPile + DiscardPile + ExhaustPile）"
+                f"为 Actor 实体 {actor_entity.name} 挂载空牌组（DeckComponent）"
             )
 
             # TCG 组件：关键词

@@ -13,6 +13,9 @@ from ..models import (
     MonsterComponent,
     AppearanceComponent,
     StatusEffectsComponent,
+    DrawPileComponent,
+    DiscardPileComponent,
+    ExhaustPileComponent,
 )
 from ..models import CharacterStats
 
@@ -140,6 +143,9 @@ class CombatInitializationSystem(ExecuteProcessor):
         actor_entities = self._game.get_alive_actors_in_stage(player_entity)
         assert len(actor_entities) > 0, "不可能出现没人参与战斗的情况！"
 
+        # 为所有参战角色初始化战斗临时牌堆（DrawPile / DiscardPile / ExhaustPile）
+        self._initialize_actor_piles(actor_entities)
+
         # 为每个角色注入战场上下文（无 LLM 调用）
         self._add_context_for_all_actors(
             actor_entities=actor_entities,
@@ -157,6 +163,20 @@ class CombatInitializationSystem(ExecuteProcessor):
         self._initialize_actor_status_effects(actor_entities)
 
         # 第一回合由 CombatRoundTransitionSystem 在本 pipeline tick 末创建（同帧创建）
+
+    ###################################################################################################################################################################
+    def _initialize_actor_piles(self, actor_entities: Set[Entity]) -> None:
+        """为所有参战角色初始化战斗临时牌堆：DrawPile / DiscardPile / ExhaustPile。"""
+        for actor_entity in actor_entities:
+            assert not actor_entity.has(
+                DrawPileComponent
+            ), f"角色 {actor_entity.name} 已存在 DrawPileComponent，战斗初始化不应重复挂载！"
+            actor_entity.replace(DrawPileComponent, actor_entity.name, [])
+            actor_entity.replace(DiscardPileComponent, actor_entity.name, [])
+            actor_entity.replace(ExhaustPileComponent, actor_entity.name, [])
+            logger.debug(
+                f"[{actor_entity.name}] 战斗临时牌堆初始化完成（DrawPile / DiscardPile / ExhaustPile）"
+            )
 
     ###################################################################################################################################################################
     def _initialize_actor_status_effects(self, actor_entities: Set[Entity]) -> None:

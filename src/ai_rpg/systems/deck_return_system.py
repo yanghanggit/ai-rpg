@@ -98,6 +98,11 @@ class DeckReturnSystem(ExecuteProcessor):
             discard_pile.cards.clear()
             exhaust_pile.cards.clear()
 
+            # 移除战斗临时牌堆组件（战斗结束后不再需要）
+            entity.remove(DrawPileComponent)
+            entity.remove(DiscardPileComponent)
+            entity.remove(ExhaustPileComponent)
+
             logger.debug(
                 f"[{entity.name}] 归还 {len(own_cards)} 张自有牌至 DeckComponent"
                 f"（丢弃 {len(foreign_dropped)} 张外来牌）"

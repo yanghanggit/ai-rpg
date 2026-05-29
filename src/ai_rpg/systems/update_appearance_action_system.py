@@ -51,12 +51,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(
-            UpdateAppearanceAction,
-            AppearanceComponent,
-            InventoryComponent,
-            StorageComponent,
-        )
+        return entity.has(UpdateAppearanceAction, AppearanceComponent)
 
     ####################################################################################################################################
     @override
@@ -84,7 +79,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             self._game.broadcast_to_stage(
                 entity,
                 AppearanceUpdateEvent(
-                    message=f"# {entity.name} 的外观已更新\n时装已移除，外观恢复为基础体型。",
+                    message=f"# {entity.name} 的外观已更新\n时装已移除，外观恢复为基础体型。\n当前外观：{appearance_comp.base_body}",
                     actor="",
                     target=entity.name,
                     appearance=appearance_comp.base_body,
@@ -92,9 +87,13 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             )
             return
 
-        # 从随身背包与储物箱合并池中查找目标时装
-        inventory = entity.get(InventoryComponent)
-        storage = entity.get(StorageComponent)
+        # 道具来源始终是玩家的随身背包与储物箱（全局）
+        player_entity = self._game.get_player_entity()
+        assert player_entity is not None, "找不到玩家实体"
+        assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
+        assert player_entity.has(StorageComponent), "玩家实体缺少 StorageComponent"
+        inventory = player_entity.get(InventoryComponent)
+        storage = player_entity.get(StorageComponent)
         all_items = list(inventory.items) + list(storage.items)
         costume = next(
             (
@@ -142,7 +141,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         self._game.broadcast_to_stage(
             entity,
             AppearanceUpdateEvent(
-                message=f"# {entity.name} 的外观已更新\n{entity.name} 穿上了「{costume.name}」。",
+                message=f"# {entity.name} 的外观已更新\n{entity.name} 穿上了「{costume.name}」。\n当前外观：{new_appearance}",
                 actor="",
                 target=entity.name,
                 appearance=new_appearance,

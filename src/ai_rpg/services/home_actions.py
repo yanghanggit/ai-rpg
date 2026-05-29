@@ -11,6 +11,7 @@ from ..models import (
     SpeakAction,
     TransStageAction,
     UpdateAppearanceAction,
+    AppearanceComponent,
     HomeComponent,
     InventoryComponent,
     NPCComponent,
@@ -395,14 +396,18 @@ def move_item_to_storage(
 
 
 ###################################################################################################################################################################
-def activate_update_appearance(tcg_game: TCGGame, item_name: str) -> Tuple[bool, str]:
+def activate_update_appearance(
+    tcg_game: TCGGame, item_name: str, target_name: str = ""
+) -> Tuple[bool, str]:
     """
-    激活玩家的外观更新动作，将背包或储物箱中指定时装应用到角色外观。
-    传入空字符串表示移除当前时装，将外观重置为基础体型描述。
+    为指定角色激活外观更新动作，时装来源为玩家的背包或储物箱（全局）。
+    target_name 为空时默认作用于玩家自身。
+    传入空字符串 item_name 表示移除当前时装，将外观重置为基础体型描述。
 
     Args:
         tcg_game: TCG 游戏实例
         item_name: CostumeItem 的精确名称；传入空字符串表示移除时装
+        target_name: 目标角色全名；为空时默认为玩家自身
 
     Returns:
         Tuple[bool, str]: (是否成功, 失败时的错误详情)
@@ -418,13 +423,27 @@ def activate_update_appearance(tcg_game: TCGGame, item_name: str) -> Tuple[bool,
     assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
     assert player_entity.has(StorageComponent), "玩家实体缺少 StorageComponent"
 
+    # 确定目标实体：为空则默认玩家自身
+    if target_name:
+        target_entity = tcg_game.get_actor_entity(target_name)
+        if target_entity is None:
+            error_detail = f"目标角色 {target_name!r} 不存在"
+            logger.error(f"激活外观更新失败: {error_detail}")
+            return False, error_detail
+        if not target_entity.has(AppearanceComponent):
+            error_detail = f"目标角色 {target_name!r} 缺少 AppearanceComponent"
+            logger.error(f"激活外观更新失败: {error_detail}")
+            return False, error_detail
+    else:
+        target_entity = player_entity
+
     # 空字符串：移除时装，直接触发动作
     if not item_name:
-        logger.debug(f"激活外观更新（移除时装）: {player_entity.name}")
-        player_entity.replace(UpdateAppearanceAction, player_entity.name, "")
+        logger.debug(f"激活外观更新（移除时装）: {target_entity.name}")
+        target_entity.replace(UpdateAppearanceAction, target_entity.name, "")
         return True, ""
 
-    # 从随身背包与储物箱合并池中查找目标时装
+    # 从玩家随身背包与储物箱合并池中查找目标时装（来源始终是玩家）
     inventory = player_entity.get(InventoryComponent)
     storage = player_entity.get(StorageComponent)
     all_items = list(inventory.items) + list(storage.items)
@@ -441,6 +460,6 @@ def activate_update_appearance(tcg_game: TCGGame, item_name: str) -> Tuple[bool,
         logger.error(f"激活外观更新失败: {error_detail}")
         return False, error_detail
 
-    logger.debug(f"激活外观更新: {player_entity.name} -> {item_name}")
-    player_entity.replace(UpdateAppearanceAction, player_entity.name, item_name)
+    logger.debug(f"激活外观更新: {target_entity.name} <- {item_name}")
+    target_entity.replace(UpdateAppearanceAction, target_entity.name, item_name)
     return True, ""

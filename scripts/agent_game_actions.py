@@ -49,6 +49,7 @@ from ai_rpg.services.home_actions import (
     get_party_roster,
     move_item_to_inventory,
     move_item_to_storage,
+    activate_update_appearance,
 )
 from ai_rpg.services.dungeon_actions import (
     activate_all_card_draws,
@@ -872,6 +873,48 @@ async def move_item_to_storage_game(
         save_dir=save_dir,
     )
     logger.info(f"道具 {item_name!r} 已从随身背包移回储物箱，存档: {save_dir}")
+    return terminal_game
+
+
+###############################################################################
+async def update_appearance_game(
+    world: World,
+    player_session: PlayerSession,
+    item_name: str,
+    save_dir: Path,
+    target_name: str = "",
+) -> TCGGame:
+    """从存档复位，触发外观更新动作并通过 home pipeline 执行 LLM 合成，归档新状态。
+
+    Args:
+        world: 由 restore_world() 反序列化的世界数据。
+        player_session: 由 restore_world() 反序列化的玩家会话。
+        item_name: CostumeItem 的精确名称；传入空字符串表示移除时装。
+        save_dir: 新存档写入目录。
+        target_name: 目标角色全名；为空时默认玩家自身。
+
+    Returns:
+        执行完毕后的 TCGGame 实例；操作失败时提前返回未归档实例。
+    """
+    terminal_game = await _restore_game(world, player_session)
+
+    success, error_detail = activate_update_appearance(
+        terminal_game, item_name, target_name
+    )
+    if not success:
+        logger.error(f"外观更新失败: {error_detail}")
+        return terminal_game
+
+    await terminal_game._home_pipeline.process()
+    terminal_game.flush_entities()
+    archive_world(
+        terminal_game._world,
+        terminal_game._player_session,
+        save_dir=save_dir,
+    )
+    action = "移除时装" if not item_name else f"穿上时装 {item_name!r}"
+    target_desc = target_name if target_name else "玩家"
+    logger.info(f"外观更新完成（{target_desc} {action}），存档: {save_dir}")
     return terminal_game
 
 

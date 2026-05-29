@@ -113,6 +113,7 @@ from agent_game_actions import (
     get_party_roster_game,
     move_item_to_inventory_game,
     move_item_to_storage_game,
+    update_appearance_game,
 )
 
 ###########################################################################################################################################
@@ -820,6 +821,55 @@ def inventory_to_storage(snapshot: str, item: str) -> None:
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(move_item_to_storage_game(world, player_session, item, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("wear-costume")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+@click.option(
+    "--item",
+    default="",
+    show_default=True,
+    help="时装名称（精确匹配 CostumeItem.name）；不传或传空字符串表示移除当前时装",
+)
+@click.option(
+    "--target",
+    default="",
+    show_default=True,
+    help="目标角色全名（如 角色.学者.寒蝉）；不传表示玩家自身",
+)
+def wear_costume(snapshot: str, item: str, target: str) -> None:
+    """从存档复位，为玩家或指定 NPC 穿上/移除时装，LLM 语义合成外观后广播，并写入新存档。
+
+    --item 须精确匹配玩家随身背包或储物箱中某个 CostumeItem 的名称（道具来源始终是玩家）。
+    不传 --item（或传空字符串）则移除目标当前时装，将外观重置为基础体型。
+    --target 指定换装对象（任意持有 AppearanceComponent 的角色）；不传则默认作用于玩家自身。
+    适用于【家园模式】。执行后外观变更广播至整个场景，仍处于家园模式。
+    """
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(update_appearance_game(world, player_session, item, _save_dir, target))
 
 
 ###############################################################################################################################################

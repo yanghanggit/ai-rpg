@@ -21,6 +21,8 @@ from .home_actions import (
     activate_generate_dungeon,
     add_party_member,
     remove_party_member,
+    move_item_to_inventory,
+    move_item_to_storage,
 )
 from .dungeon_lifecycle import (
     setup_dungeon,
@@ -40,6 +42,10 @@ from ..models import (
     HomeRosterAddResponse,
     HomeRosterRemoveRequest,
     HomeRosterRemoveResponse,
+    HomeItemMoveToInventoryRequest,
+    HomeItemMoveToInventoryResponse,
+    HomeItemMoveToStorageRequest,
+    HomeItemMoveToStorageResponse,
     TaskStatus,
 )
 
@@ -414,6 +420,74 @@ async def remove_party_member_endpoint(
                 detail=error_detail,
             )
     return HomeRosterRemoveResponse(message=f"已将 {payload.member_name} 从远征队移除")
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@home_gameplay_api_router.post(
+    path="/api/home/item/move_to_inventory/v1/",
+    response_model=HomeItemMoveToInventoryResponse,
+)
+async def home_item_move_to_inventory_endpoint(
+    payload: HomeItemMoveToInventoryRequest,
+    game_server: CurrentGameServer,
+) -> HomeItemMoveToInventoryResponse:
+    """将道具从储物箱移入随身背包。"""
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"找不到游戏房间: user={payload.user_name}",
+        )
+    async with current_room._lock:
+        tcg_game = await _validate_player_at_home(payload.user_name, game_server)
+        moved: list[str] = []
+        for name in payload.item_names:
+            success, error_detail = move_item_to_inventory(tcg_game, name)
+            if not success:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=error_detail,
+                )
+            moved.append(name)
+    return HomeItemMoveToInventoryResponse(
+        message=f"已将 {', '.join(moved)} 从储物箱移入随身背包"
+    )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@home_gameplay_api_router.post(
+    path="/api/home/item/move_to_storage/v1/",
+    response_model=HomeItemMoveToStorageResponse,
+)
+async def home_item_move_to_storage_endpoint(
+    payload: HomeItemMoveToStorageRequest,
+    game_server: CurrentGameServer,
+) -> HomeItemMoveToStorageResponse:
+    """将道具从随身背包移入储物箱。"""
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"找不到游戏房间: user={payload.user_name}",
+        )
+    async with current_room._lock:
+        tcg_game = await _validate_player_at_home(payload.user_name, game_server)
+        moved: list[str] = []
+        for name in payload.item_names:
+            success, error_detail = move_item_to_storage(tcg_game, name)
+            if not success:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=error_detail,
+                )
+            moved.append(name)
+    return HomeItemMoveToStorageResponse(
+        message=f"已将 {', '.join(moved)} 从随身背包移入储物箱"
+    )
 
 
 ###################################################################################################################################################################

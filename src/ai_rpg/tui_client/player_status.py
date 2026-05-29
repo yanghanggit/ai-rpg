@@ -9,12 +9,14 @@ from ..models import (
     AppearanceComponent,
     ActorComponent,
     CharacterStatsComponent,
+    InventoryComponent,
     PlayerComponent,
     PartyRosterComponent,
     KeywordComponent,
     DrawPileComponent,
     ExhaustPileComponent,
     DiscardPileComponent,
+    StorageComponent,
 )
 from textual import work
 from textual.app import ComposeResult
@@ -22,7 +24,7 @@ from textual.screen import Screen
 from textual.widgets import RichLog
 
 from .server_client import fetch_entities_details
-from .utils import display_name
+from .utils import display_name, render_item
 
 
 # 组件渲染顺序（靠前的优先展示）
@@ -30,6 +32,8 @@ _COMPONENT_ORDER: list[str] = [
     ActorComponent.__name__,
     CharacterStatsComponent.__name__,
     AppearanceComponent.__name__,
+    InventoryComponent.__name__,
+    StorageComponent.__name__,
     KeywordComponent.__name__,
     DrawPileComponent.__name__,
     ExhaustPileComponent.__name__,
@@ -78,6 +82,30 @@ def _render_component(name: str, data: Dict[str, Any], context: Dict[str, Any]) 
             f"   行动 [bold]{s.energy}[/]"
             f"   速度 [bold]{s.speed}[/]"
         )
+
+    elif name == InventoryComponent.__name__:
+        inv = InventoryComponent(**data)
+        if not inv.items:
+            lines.append("    [dim]（背包为空）[/]")
+        else:
+            lines.append(f"    共 [bold]{len(inv.items)}[/] 件道具：")
+            for item in inv.items:
+                lines.append(
+                    "    "
+                    + render_item(item if isinstance(item, dict) else item.model_dump())
+                )
+
+    elif name == StorageComponent.__name__:
+        storage = StorageComponent(**data)
+        if not storage.items:
+            lines.append("    [dim]（储物箱为空）[/]")
+        else:
+            lines.append(f"    共 [bold]{len(storage.items)}[/] 件道具：")
+            for item in storage.items:
+                lines.append(
+                    "    "
+                    + render_item(item if isinstance(item, dict) else item.model_dump())
+                )
 
     elif name == KeywordComponent.__name__:
         keyword_comp = KeywordComponent(**data)

@@ -35,6 +35,10 @@ from ..models import (
     HomeRosterAddResponse,
     HomeRosterRemoveRequest,
     HomeRosterRemoveResponse,
+    HomeItemMoveToInventoryRequest,
+    HomeItemMoveToInventoryResponse,
+    HomeItemMoveToStorageRequest,
+    HomeItemMoveToStorageResponse,
     LoginRequest,
     LoginResponse,
     LogoutRequest,
@@ -443,3 +447,37 @@ async def home_roster_remove(
         )
         response.raise_for_status()
         return HomeRosterRemoveResponse.model_validate(response.json())
+
+
+async def home_item_move_to_inventory(
+    user_name: str, game_name: str, item_names: List[str]
+) -> HomeItemMoveToInventoryResponse:
+    """将道具从储物箱移入随身背包。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            server_config.base_url + "/api/home/item/move_to_inventory/v1/",
+            json=HomeItemMoveToInventoryRequest(
+                user_name=user_name,
+                game_name=game_name,
+                item_names=item_names,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return HomeItemMoveToInventoryResponse.model_validate(response.json())
+
+
+async def home_item_move_to_storage(
+    user_name: str, game_name: str, item_names: List[str]
+) -> HomeItemMoveToStorageResponse:
+    """将道具从随身背包移入储物箱。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            server_config.base_url + "/api/home/item/move_to_storage/v1/",
+            json=HomeItemMoveToStorageRequest(
+                user_name=user_name,
+                game_name=game_name,
+                item_names=item_names,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return HomeItemMoveToStorageResponse.model_validate(response.json())

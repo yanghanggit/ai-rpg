@@ -100,7 +100,7 @@ def _make_actor(game: Any, name: str, stage_name: str) -> Entity:
     entity: Entity = game._create_entity(name)
     entity.add(ActorComponent, name, "sheet", stage_name)
     entity.add(NPCComponent, name)
-    entity.add(AppearanceComponent, name, "human body", f"{name} appearance")
+    entity.add(AppearanceComponent, name, "human body", f"{name} appearance", "")
     return entity
 
 

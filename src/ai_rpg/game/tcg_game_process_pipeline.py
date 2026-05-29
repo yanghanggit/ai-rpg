@@ -34,6 +34,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     from ..systems.trans_stage_action_system import (
         TransStageActionSystem,
     )
+    from ..systems.update_appearance_action_system import UpdateAppearanceActionSystem
     from ..systems.player_action_audit_system import PlayerActionAuditSystem
     from ..systems.stage_description_system import (
         StageDescriptionSystem,
@@ -63,6 +64,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     processors.add(WhisperActionSystem(tcg_game))
     processors.add(AnnounceActionSystem(tcg_game))
     processors.add(TransStageActionSystem(tcg_game))
+    processors.add(UpdateAppearanceActionSystem(tcg_game))
 
     # 清除动作相关的临时状态、标记等，准备下一轮输入
     processors.add(ActionCleanupSystem(tcg_game))
@@ -105,9 +107,10 @@ def create_combat_pipeline(
     from ..systems.play_cards_action_system import (
         PlayCardsActionSystem,
     )
-    from ..systems.use_consumable_item_arbitration_system import (
-        UseConsumableItemArbitrationSystem,
-    )
+
+    # from ..systems.use_consumable_item_arbitration_system import (
+    #     UseConsumableItemArbitrationSystem,
+    # )
 
     from ..systems.exhaust_cards_action_system import ExhaustCardsActionSystem
     from ..systems.move_to_discard_pile_system import MoveToDiscardPileSystem
@@ -168,7 +171,7 @@ def create_combat_pipeline(
     processors.add(PassTurnActionSystem(tcg_game))
     processors.add(RetreatActionSystem(tcg_game))
     processors.add(PlayCardsArbitrationSystem(tcg_game))
-    processors.add(UseConsumableItemArbitrationSystem(tcg_game))
+    # processors.add(UseConsumableItemArbitrationSystem(tcg_game))
     processors.add(AddActorStatusEffectsActionSystem(tcg_game, max_effects=2))
 
     # 仲裁结算后，由 stage agent（地牢主视角）决定是否对场内角色追加状态效果或塞牌

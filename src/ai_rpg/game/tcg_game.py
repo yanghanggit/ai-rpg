@@ -317,7 +317,8 @@ class TCGGame(RPGGame):
                 AppearanceComponent,
                 actor_model.name,
                 actor_model.character_sheet.base_body,
-                "",  # appearance 初始为空，由 ActorAppearanceUpdateSystem 填充
+                actor_model.character_sheet.base_body,  # 初始外观与基础身体相同，后续可通过装备 CostumeItem 修改 AppearanceComponent.appearance 来改变外观，但不影响基础身体（base_body）
+                "",
             )
 
             # 必要组件：基础属性，这里用浅拷贝，不能动原有的。

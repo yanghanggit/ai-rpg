@@ -3,7 +3,6 @@
 from typing import Dict, List, final
 from ..entitas.components import Component
 from .cards import Card
-from .items import ConsumableItem, MaterialItem
 from .registry import register_action_component_type, register_component_type
 
 
@@ -76,6 +75,17 @@ class TransStageAction(Component):
 @final
 @register_action_component_type
 @register_component_type
+class UpdateAppearanceAction(Component):
+    """触发玩家更新角色外观，将随身背包中指定时装（CostumeItem）应用到 AppearanceComponent。"""
+
+    name: str
+    item_name: str  # 指向 InventoryComponent 中 CostumeItem 的名称
+
+
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
 class DrawCardsAction(Component):
     """触发角色在战斗回合中抽取卡牌。"""
 
@@ -106,15 +116,15 @@ class PassTurnAction(Component):
 
 
 ############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
-class UseConsumableItemAction(Component):
-    """触发角色在战斗中使用一件消耗品，消耗 1 点 energy，推进行动顺序。"""
+# @final
+# @register_action_component_type
+# @register_component_type
+# class UseConsumableItemAction(Component):
+#     """触发角色在战斗中使用一件消耗品，消耗 1 点 energy，推进行动顺序。"""
 
-    name: str
-    item: ConsumableItem  # 要使用的消耗品
-    targets: List[str]  # 目标角色名列表（可为空，表示仅作用于自身）
+#     name: str
+#     item: ConsumableItem  # 要使用的消耗品
+#     targets: List[str]  # 目标角色名列表（可为空，表示仅作用于自身）
 
 
 ############################################################################################################
@@ -183,11 +193,11 @@ class PostArbitrationAction(Component):
 
 
 ############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
-class CraftItemAction(Component):
-    """触发制造工坊流程：以指定材料列表为输入，由 LLM 创意推断并生成消耗品写入背包。"""
+# @final
+# @register_action_component_type
+# @register_component_type
+# class CraftItemAction(Component):
+#     """触发制造工坊流程：以指定材料列表为输入，由 LLM 创意推断并生成消耗品写入背包。"""
 
-    name: str
-    materials: List[MaterialItem]  # 要消耗的材料物品列表（已从背包中解析）
+#     name: str
+#     materials: List[MaterialItem]  # 要消耗的材料物品列表（已从背包中解析）

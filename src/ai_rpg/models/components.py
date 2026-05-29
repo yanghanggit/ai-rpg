@@ -95,6 +95,7 @@ class AppearanceComponent(Component):
     name: str
     base_body: str  # 基础身体形态描述（不含装备）
     appearance: str  # 最终外观描述（含装备）
+    costume_item_name: str  # 当前穿戴的时装名（CostumeItem），空字符串表示未穿戴
 
 
 ############################################################################################################

@@ -10,6 +10,7 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     SpeakAction,
     TransStageAction,
+    UpdateAppearanceAction,
     HomeComponent,
     InventoryComponent,
     NPCComponent,
@@ -19,6 +20,7 @@ from ..models import (
     StorageComponent,
     GenerateDungeonAction,
 )
+from ..models.items import ItemType
 
 
 ###################################################################################################################################################################
@@ -382,4 +384,50 @@ def move_item_to_storage(
     player_entity.replace(StorageComponent, player_entity.name, new_storage_items)
 
     logger.debug(f"道具 {item_name!r} 已从随身背包移至储物箱")
+    return True, ""
+
+
+###################################################################################################################################################################
+def activate_update_appearance(tcg_game: TCGGame, item_name: str) -> Tuple[bool, str]:
+    """
+    激活玩家的外观更新动作，将背包中指定时装应用到角色外观。
+
+    Args:
+        tcg_game: TCG 游戏实例
+        item_name: 随身背包中 CostumeItem 的精确名称
+
+    Returns:
+        Tuple[bool, str]: (是否成功, 失败时的错误详情)
+    """
+
+    if not tcg_game.is_player_in_home_stage:
+        error_detail = "玩家不在家园场景中，无法更新外观"
+        logger.error(f"激活外观更新失败: {error_detail}")
+        return False, error_detail
+
+    if not item_name:
+        error_detail = "时装名称不能为空"
+        logger.error(f"激活外观更新失败: {error_detail}")
+        return False, error_detail
+
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None, "玩家实体不存在！"
+    assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
+
+    inventory = player_entity.get(InventoryComponent)
+    costume = next(
+        (
+            item
+            for item in inventory.items
+            if item.name == item_name and item.type == ItemType.COSTUME_ITEM
+        ),
+        None,
+    )
+    if costume is None:
+        error_detail = f"背包中不存在名为 {item_name!r} 的时装"
+        logger.error(f"激活外观更新失败: {error_detail}")
+        return False, error_detail
+
+    logger.debug(f"激活外观更新: {player_entity.name} -> {item_name}")
+    player_entity.replace(UpdateAppearanceAction, player_entity.name, item_name)
     return True, ""

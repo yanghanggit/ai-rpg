@@ -39,7 +39,6 @@ class ItemType(StrEnum):
     EQUIPMENT_ITEM = "EquipmentItem"
     CONSUMABLE_ITEM = "ConsumableItem"
     MATERIAL_ITEM = "MaterialItem"
-    UNIQUE_ITEM = "UniqueItem"
 
 
 ###############################################################################################################################################
@@ -113,18 +112,9 @@ class MaterialItem(Item):
     )
 
 
-#######################################################################################################################################
-class UniqueItem(Item):
-    """珍贵物品类，继承自物品基类"""
-
-    type: Literal[ItemType.UNIQUE_ITEM] = Field(
-        default=ItemType.UNIQUE_ITEM, frozen=True
-    )
-
-
 ###############################################################################################################################################
 AnyItem = Annotated[
-    Union[WeaponItem, EquipmentItem, ConsumableItem, MaterialItem, UniqueItem],
+    Union[WeaponItem, EquipmentItem, ConsumableItem, MaterialItem],
     Field(discriminator="type"),
 ]
 

@@ -4,7 +4,6 @@ from ..models import (
     CharacterSheet,
     ActorType,
     CharacterStats,
-    UniqueItem,
 )
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
@@ -50,13 +49,5 @@ def create_scholar() -> Actor:
             )
         ],
     )
-
-    # 为学者分配初始物品：残破册子
-    actor.items = [
-        UniqueItem(
-            name="残破册子",
-            description="一本封皮已经破损的小开本册子，内页密密麻麻写满了文字，字迹工整而细小。所有内容均为密文，符号繁复，无从辨读，像是某种经过刻意设计的加密方式。整本册子只有最后一页的末尾留有一行明文：「寒蝉，如果你看到这里，说明计划出了问题。」",
-        ),
-    ]
 
     return actor

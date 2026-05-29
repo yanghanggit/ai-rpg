@@ -338,6 +338,13 @@ def move_item_to_inventory(
         logger.error(f"移动道具到背包失败: {error_detail}")
         return False, error_detail
 
+    if target.type == ItemType.COSTUME_ITEM:
+        error_detail = (
+            f"时装 {item_name!r} 不允许移入随身背包，请通过外观更新功能直接使用"
+        )
+        logger.error(f"移动道具到背包失败: {error_detail}")
+        return False, error_detail
+
     new_storage_items = [item for item in storage.items if item is not target]
     new_inventory_items = list(inventory.items) + [target]
 
@@ -390,11 +397,12 @@ def move_item_to_storage(
 ###################################################################################################################################################################
 def activate_update_appearance(tcg_game: TCGGame, item_name: str) -> Tuple[bool, str]:
     """
-    激活玩家的外观更新动作，将背包中指定时装应用到角色外观。
+    激活玩家的外观更新动作，将背包或储物箱中指定时装应用到角色外观。
+    传入空字符串表示移除当前时装，将外观重置为基础体型描述。
 
     Args:
         tcg_game: TCG 游戏实例
-        item_name: 随身背包中 CostumeItem 的精确名称
+        item_name: CostumeItem 的精确名称；传入空字符串表示移除时装
 
     Returns:
         Tuple[bool, str]: (是否成功, 失败时的错误详情)
@@ -405,26 +413,31 @@ def activate_update_appearance(tcg_game: TCGGame, item_name: str) -> Tuple[bool,
         logger.error(f"激活外观更新失败: {error_detail}")
         return False, error_detail
 
-    if not item_name:
-        error_detail = "时装名称不能为空"
-        logger.error(f"激活外观更新失败: {error_detail}")
-        return False, error_detail
-
     player_entity = tcg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
     assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
+    assert player_entity.has(StorageComponent), "玩家实体缺少 StorageComponent"
 
+    # 空字符串：移除时装，直接触发动作
+    if not item_name:
+        logger.debug(f"激活外观更新（移除时装）: {player_entity.name}")
+        player_entity.replace(UpdateAppearanceAction, player_entity.name, "")
+        return True, ""
+
+    # 从随身背包与储物箱合并池中查找目标时装
     inventory = player_entity.get(InventoryComponent)
+    storage = player_entity.get(StorageComponent)
+    all_items = list(inventory.items) + list(storage.items)
     costume = next(
         (
             item
-            for item in inventory.items
+            for item in all_items
             if item.name == item_name and item.type == ItemType.COSTUME_ITEM
         ),
         None,
     )
     if costume is None:
-        error_detail = f"背包中不存在名为 {item_name!r} 的时装"
+        error_detail = f"背包与储物箱中均不存在名为 {item_name!r} 的时装"
         logger.error(f"激活外观更新失败: {error_detail}")
         return False, error_detail
 

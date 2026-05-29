@@ -93,7 +93,12 @@ class ItemManagementScreen(Screen[None]):
         storage_items = [
             (i, item)
             for i, (loc, item) in enumerate(self._all_items)
-            if loc == "storage"
+            if loc == "storage" and item.get("type") != "CostumeItem"
+        ]
+        costume_items = [
+            (i, item)
+            for i, (loc, item) in enumerate(self._all_items)
+            if loc == "storage" and item.get("type") == "CostumeItem"
         ]
 
         if inventory_items:
@@ -117,6 +122,17 @@ class ItemManagementScreen(Screen[None]):
             log.write("[bold blue]  ▍储物箱[/] [dim]（空）[/]")
 
         log.write("")
+
+        if costume_items:
+            log.write(
+                "[bold magenta]  ▍时装收藏[/] [dim]（只读，无法移动，通过外观更新功能使用）[/]"
+            )
+            for global_idx, item in costume_items:
+                log.write(
+                    f"  [bold magenta]{global_idx + 1}.[/] [magenta]【时装】[/] {render_item(item)}"
+                )
+            log.write("")
+
         log.write("[dim]输入编号移动道具（背包 ↔ 储物箱）：[/]")
 
     @on(Input.Submitted, "#item-input")
@@ -143,6 +159,13 @@ class ItemManagementScreen(Screen[None]):
 
         location, item_dict = self._all_items[idx]
         item_name = item_dict.get("name", "?")
+
+        if item_dict.get("type") == "CostumeItem":
+            log.write(
+                f"[yellow]⚠ 时装「{item_name}」不可移动，请通过外观更新功能使用。[/]"
+            )
+            return
+
         if location == "inventory":
             self._do_move_to_storage(item_name)
         else:

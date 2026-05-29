@@ -299,10 +299,6 @@ class HomeScreen(Screen[None]):
             from .switch_stage import SwitchStageScreen
 
             self.app.push_screen(SwitchStageScreen())
-        elif cmd == "8":
-            from .equip_item import EquipItemScreen
-
-            self.app.push_screen(EquipItemScreen())
         elif cmd == "9":
             from .roster import RosterScreen
 

@@ -25,7 +25,6 @@ from src.ai_rpg.models import (
     NPCComponent,
     AnnounceAction,
     AppearanceComponent,
-    EquipItemAction,
     HomeComponent,
     PlayerComponent,
     PlayerOnlyStageComponent,
@@ -129,9 +128,6 @@ def _action_plan_json(**overrides: Any) -> dict[str, Any]:
         "mind": "",
         "query": "",
         "inspect_self": False,
-        "equip_weapon": None,
-        "equip_armor": None,
-        "equip_accessory": None,
         "speak": {},
         "whisper": {},
         "announce": "",
@@ -251,11 +247,8 @@ class TestBuildPlayerActionResponse:
         game = _make_game()
         system = _make_player_system(game)
         player = _make_player_actor(game, "hero", "home")
-        player.add(EquipItemAction, "hero", "iron sword", None, "ring of power")
         result = system._build_player_action_response(player, "ignored")
-        assert result.equip_weapon == "iron sword"
-        assert result.equip_armor is None
-        assert result.equip_accessory == "ring of power"
+        assert result.trans_stage == ""
 
     def test_active_action_sets_mind_to_empty(self) -> None:
         game = _make_game()
@@ -462,9 +455,8 @@ class TestExecuteActorActions:
         system = _make_system(game)
         _make_home_stage(game, "home")
         actor = _make_actor(game, "knight", "home")
-        self._run(game, system, actor, _action_plan_json(equip_weapon="iron sword"))
-        assert actor.has(EquipItemAction)
-        assert actor.get(EquipItemAction).weapon == "iron sword"
+        self._run(game, system, actor, _action_plan_json(trans_stage=""))
+        assert not actor.has(TransStageAction)
 
     def test_query_action_added(self) -> None:
         game = _make_game()

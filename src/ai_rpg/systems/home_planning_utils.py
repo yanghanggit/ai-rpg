@@ -9,14 +9,13 @@
   - is_player_active：判断玩家本轮是否有主动行动
 """
 
-from typing import Any, Dict, Final, List, Optional
+from typing import Any, Dict, Final, List
 from pydantic import BaseModel, field_validator
 from ..models import (
     AnnounceAction,
     SpeakAction,
     WhisperAction,
     TransStageAction,
-    EquipItemAction,
 )
 from ..game import TCGGame
 
@@ -28,7 +27,6 @@ _PLAYER_ACTIVE_ACTION_TYPES: Final = (
     WhisperAction,
     AnnounceAction,
     TransStageAction,
-    EquipItemAction,
 )
 
 
@@ -69,9 +67,6 @@ class ActionPlanResponse(BaseModel):
     mind: str = ""
     query: str = ""
     inspect_self: bool = False
-    equip_weapon: Optional[str] = None
-    equip_armor: Optional[str] = None
-    equip_accessory: Optional[str] = None
     speak: Dict[str, str] = {}
     whisper: Dict[str, str] = {}
     announce: str = ""
@@ -98,7 +93,7 @@ def _build_action_planning_prompt(
 ) -> str:
     """构建角色行动规划提示词（完整版，含所有行动类型）。
 
-    包含：query、inspect_self、speak、whisper、announce、equip_weapon/equip_armor/equip_accessory、trans_stage。
+    包含：query、inspect_self、speak、whisper、announce、trans_stage。
 
     Args:
         current_stage: 场景名称
@@ -146,13 +141,11 @@ def _build_action_planning_prompt(
    │   ├─ speak
    │   ├─ whisper
    │   └─ announce
-   ├─ B. 装备操作（三槽可同轮并用）
-   │   └─ equip_weapon / equip_armor / equip_accessory
-   └─ C. trans_stage - 移动场景
+   └─ B. trans_stage - 移动场景
 ```
 
 > `query` / `inspect_self` 可同时使用，来源不同互不干扰。
-> 向内查询与主要行动**不能同轮并用**：若本轮执行主要行动（A/B/C 任意一类），则不填 query / inspect_self。
+> 向内查询与主要行动**不能同轮并用**：若本轮执行主要行动（A/B 任意一类），则不填 query / inspect_self。
 
 2. **第一人称视角**  
    所有行动和思考必须以第一人称进行。
@@ -172,16 +165,10 @@ def _build_action_planning_prompt(
 
    **约束**：三种方式每轮只选其一；只能使用 context 中已有的信息；本轮使用对外交流时，query / inspect_self 留空。
 
-6. **装备操作** (`equip_weapon` / `equip_armor` / `equip_accessory`)
-   - 三个装备槽**可在同一轮并用**，不操作的槽位填 `null`
-   - 填入背包物品精确全名 → 装备该槽；填写 `""` → 脱掉该槽；填 `null` → 不更换
-   - **装备分两轮完成**：第一轮用 `inspect_self` 查阅背包确认物品全名，第二轮再执行 `equip_*`；不可在同一轮同时使用 `inspect_self` 和 `equip_*`
-   - 本轮使用装备操作时，query / inspect_self 留空
-
-7. **场景移动** (`trans_stage`)
+6. **场景移动** (`trans_stage`)
    - 填写目标场景全名（从"可移动至"列表选择）
 
-8. **严格禁止虚构**：`mind`/`speak`/`whisper` 均只能基于 context 中已有的信息。禁止在任何字段中捏造其他角色的动作、反应或对话，禁止虚构 context 中未记录的事件。`mind` 只写你自己的思考，不得描述他人行为。
+7. **严格禁止虚构**：`mind`/`speak`/`whisper` 均只能基于 context 中已有的信息。禁止在任何字段中捏造其他角色的动作、反应或对话，禁止虚构 context 中未记录的事件。`mind` 只写你自己的思考，不得描述他人行为。
 
 ## 输出格式(JSON)
 
@@ -190,9 +177,6 @@ def _build_action_planning_prompt(
   "mind": "内心独白",
   "query": "检索关键词",
   "inspect_self": false,
-  "equip_weapon": null,
-  "equip_armor": null,
-  "equip_accessory": null,
   "speak": {{
     "角色全名": "说话内容"
   }},

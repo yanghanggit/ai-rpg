@@ -29,9 +29,6 @@ from ..models import (
     Dungeon,
     DungeonComponent,
     MonsterComponent,
-    EquipmentComponent,
-    EquipmentItem,
-    EquipmentType,
     PartyRosterComponent,
     HandComponent,
     HomeComponent,
@@ -50,7 +47,6 @@ from ..models import (
     StatusEffect,
     EffectPhase,
     StatusEffectsComponent,
-    WeaponItem,
     World,
     WorldComponent,
     WorldSystem,
@@ -336,36 +332,6 @@ class TCGGame(RPGGame):
                 copy_items,
             )
 
-            # 必要组件：装备组件，从背包中取各槽位第一个匹配物品作为初始装备
-            init_weapon = next(
-                (item.name for item in copy_items if isinstance(item, WeaponItem)), ""
-            )
-            init_armor = next(
-                (
-                    item.name
-                    for item in copy_items
-                    if isinstance(item, EquipmentItem)
-                    and item.equipment_type == EquipmentType.ARMOR
-                ),
-                "",
-            )
-            init_accessory = next(
-                (
-                    item.name
-                    for item in copy_items
-                    if isinstance(item, EquipmentItem)
-                    and item.equipment_type == EquipmentType.ACCESSORY
-                ),
-                "",
-            )
-            actor_entity.add(
-                EquipmentComponent,
-                actor_model.name,
-                init_weapon,
-                init_armor,
-                init_accessory,
-            )
-
             # TCG 组件：牌组
             actor_entity.replace(DeckComponent, actor_entity.name, [])
             logger.debug(
@@ -586,8 +552,6 @@ class TCGGame(RPGGame):
         stats_comp = entity.get(CharacterStatsComponent)
         return compute_effective_stats(
             stats_comp,
-            entity.get(EquipmentComponent) if entity.has(EquipmentComponent) else None,
-            entity.get(InventoryComponent) if entity.has(InventoryComponent) else None,
             (
                 entity.get(StatusEffectsComponent).status_effects
                 if entity.has(StatusEffectsComponent)

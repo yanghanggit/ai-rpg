@@ -1,6 +1,6 @@
 """游戏动作组件。添加到实体后由对应系统处理执行。"""
 
-from typing import Dict, List, Optional, final
+from typing import Dict, List, final
 from ..entitas.components import Component
 from .cards import Card
 from .items import ConsumableItem, MaterialItem
@@ -69,19 +69,6 @@ class InspectSelfAction(Component):
     """触发角色查阅自身背包与战斗属性，注入 LLM context。"""
 
     name: str
-
-
-############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
-class EquipItemAction(Component):
-    """触发角色装备背包物品到指定槽位。None=不更换，""=脱掉，非空=装备。"""
-
-    name: str
-    weapon: Optional[str] = None
-    armor: Optional[str] = None
-    accessory: Optional[str] = None
 
 
 ############################################################################################################

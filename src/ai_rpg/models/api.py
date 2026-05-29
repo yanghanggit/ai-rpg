@@ -175,7 +175,6 @@ class DungeonExitResponse(BaseModel):
 class HomePlayerActionType(StrEnum):
     SPEAK = "/speak"
     SWITCH_STAGE = "/switch_stage"
-    EQUIP_ITEM = "/equip_item"
 
 
 @final

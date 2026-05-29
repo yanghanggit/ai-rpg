@@ -16,7 +16,6 @@ from ..models import (
     WhisperAction,
     PlanAction,
     TransStageAction,
-    EquipItemAction,
     HomeComponent,
     MindEvent,
     ActorComponent,
@@ -180,25 +179,12 @@ class HomePlayerContextSystem(ReactiveProcessor):
         if player_entity.has(TransStageAction):
             response.trans_stage = player_entity.get(TransStageAction).target_stage_name
 
-        if player_entity.has(EquipItemAction):
-            equip_action = player_entity.get(EquipItemAction)
-            response.equip_weapon = equip_action.weapon
-            response.equip_armor = equip_action.armor
-            response.equip_accessory = equip_action.accessory
-
         if not any(
             [
                 response.speak,
                 response.whisper,
                 response.announce,
                 response.trans_stage,
-            ]
-        ) and not any(
-            x is not None
-            for x in [
-                response.equip_weapon,
-                response.equip_armor,
-                response.equip_accessory,
             ]
         ):
             response.mind = passive_mind

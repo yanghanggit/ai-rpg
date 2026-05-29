@@ -35,7 +35,6 @@ from ..models import (
     CombatResult,
     CombatState,
     EntitySerialization,
-    EquipmentComponent,
     InventoryComponent,
     TargetType,
     CharacterStatsComponent,
@@ -1460,17 +1459,11 @@ class CombatRoomScreen(Screen[None]):
                 flabel = "[dim]?[/]"
             hp_str = "?/?"
             _stats_comp = None
-            _equip_comp = None
-            _inv_comp = None
             for comp in entity.components:
                 if comp.name == CharacterStatsComponent.__name__:
                     _stats_comp = CharacterStatsComponent(**comp.data)
-                elif comp.name == EquipmentComponent.__name__:
-                    _equip_comp = EquipmentComponent(**comp.data)
-                elif comp.name == InventoryComponent.__name__:
-                    _inv_comp = InventoryComponent(**comp.data)
             if _stats_comp is not None:
-                _final = compute_effective_stats(_stats_comp, _equip_comp, _inv_comp)
+                _final = compute_effective_stats(_stats_comp)
                 hp_str = f"{_final.hp}/{_final.max_hp}"
             short = display_name(entity.name)
             log.write(f"    {flabel} [bold]{short}[/]" f"  HP:[yellow]{hp_str}[/]")
@@ -1559,22 +1552,6 @@ class CombatRoomScreen(Screen[None]):
                 None,
             )
             if stats_comp is not None:
-                equip_comp_raw = next(
-                    (
-                        c
-                        for c in entity.components
-                        if c.name == EquipmentComponent.__name__
-                    ),
-                    None,
-                )
-                inventory_comp_raw = next(
-                    (
-                        c
-                        for c in entity.components
-                        if c.name == InventoryComponent.__name__
-                    ),
-                    None,
-                )
                 status_effects_comp = next(
                     (
                         c
@@ -1585,16 +1562,6 @@ class CombatRoomScreen(Screen[None]):
                 )
                 stats = compute_effective_stats(
                     CharacterStatsComponent(**stats_comp.data),
-                    (
-                        EquipmentComponent(**equip_comp_raw.data)
-                        if equip_comp_raw is not None
-                        else None
-                    ),
-                    (
-                        InventoryComponent(**inventory_comp_raw.data)
-                        if inventory_comp_raw is not None
-                        else None
-                    ),
                     (
                         StatusEffectsComponent(
                             **status_effects_comp.data

@@ -13,7 +13,6 @@ from ..models import (
     PlanAction,
     TransStageAction,
     InspectSelfAction,
-    EquipItemAction,
     HomeComponent,
     MindEvent,
     ActorComponent,
@@ -241,23 +240,6 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             # 添加自我审视动作
             if validated_response.inspect_self:
                 actor_entity.replace(InspectSelfAction, actor_entity.name)
-
-            # 添加装备物品动作（任一槽位不为 None 即触发）
-            if any(
-                x is not None
-                for x in [
-                    validated_response.equip_weapon,
-                    validated_response.equip_armor,
-                    validated_response.equip_accessory,
-                ]
-            ):
-                actor_entity.replace(
-                    EquipItemAction,
-                    actor_entity.name,
-                    validated_response.equip_weapon,
-                    validated_response.equip_armor,
-                    validated_response.equip_accessory,
-                )
 
             # 最后：如果需要可以添加传送场景。
             if validated_response.trans_stage != "":

@@ -9,7 +9,6 @@ from ..models import (
     AppearanceComponent,
     ActorComponent,
     CharacterStatsComponent,
-    EquipmentComponent,
     InventoryComponent,
     PlayerComponent,
     PartyRosterComponent,
@@ -59,7 +58,6 @@ _STAT_LABELS: list[tuple[str, str]] = [
 _COMPONENT_ORDER: list[str] = [
     ActorComponent.__name__,
     CharacterStatsComponent.__name__,
-    EquipmentComponent.__name__,
     InventoryComponent.__name__,
     AppearanceComponent.__name__,
     KeywordComponent.__name__,
@@ -142,12 +140,6 @@ def _render_component(name: str, data: Dict[str, Any], context: Dict[str, Any]) 
             f"   行动 [bold]{s.energy}[/]"
             f"   速度 [bold]{s.speed}[/]"
         )
-
-    elif name == EquipmentComponent.__name__:
-        ec = EquipmentComponent(**data)
-        lines.append(f"    武器：[yellow]{ec.weapon or '（空）'}[/]")
-        lines.append(f"    防具：[yellow]{ec.armor or '（空）'}[/]")
-        lines.append(f"    饰品：[yellow]{ec.accessory or '（空）'}[/]")
 
     elif name == InventoryComponent.__name__:
         ic = InventoryComponent(**data)
@@ -280,17 +272,8 @@ class PlayerStatusScreen(Screen[None]):
                     log.write(
                         f"[bold yellow]── {display_name(entity.name)} ──────────────────────────────────────[/]"
                     )
-                    # 收集装备槽上下文，供 InventoryComponent 标注「装备中」
-                    comp_map = {comp.name: comp.data for comp in entity.components}
-                    equip_data = comp_map.get(EquipmentComponent.__name__, {})
-                    equipped_names: Set[str] = set()
-                    if equip_data:
-                        ec = EquipmentComponent(**equip_data)
-                        equipped_names = {
-                            v for v in (ec.weapon, ec.armor, ec.accessory) if v
-                        }
-                    render_context: Dict[str, Any] = {"equipped": equipped_names}
                     # 按预定义顺序渲染组件
+                    render_context: Dict[str, Any] = {"equipped": set()}
                     sorted_comps = sorted(
                         entity.components,
                         key=lambda c: (

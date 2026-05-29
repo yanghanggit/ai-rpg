@@ -218,18 +218,6 @@ class InventoryComponent(MutableComponent):
 ############################################################################################################
 @final
 @register_component_type
-class EquipmentComponent(MutableComponent):
-    """以名称引用记录角色当前装备槽；数据唯一来源为 InventoryComponent，空字符串表示未装备。"""
-
-    name: str
-    weapon: str = ""
-    armor: str = ""
-    accessory: str = ""
-
-
-############################################################################################################
-@final
-@register_component_type
 class PlayerActionAuditComponent(Component):
     """标记世界系统实体具有玩家行动审计功能。"""
 

@@ -44,25 +44,23 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     # 为旅行者分配初始装备：猎刀 + 轻甲套装 + 沙漠护身符
     # actor_wanderer.items.extend(
     #     [
-    #         WeaponItem(
+    #         GearItem(
     #             name="缺口猎刀",
     #             description="一把刀身偏短的猎刀，刃背厚实，靠近刀尖三分之一处有一道浅缺口，像是曾经硬撬过什么。握柄以粗布条缠绕，布已泛黄，但缠法整齐，显然出自熟练的手。",
     #             stat_bonuses=CharacterStats(
     #                 hp=0, max_hp=0, attack=2, defense=0, energy=0, speed=0
     #             ),
     #         ),
-    #         EquipmentItem(
+    #         GearItem(
     #             name="沙漠旅行者轻甲",
-    #             description="一套轻便的皮质护甲，由多块经过硬化处理的皮革拼接而成，覆盖躯干、肩部与小腿。设计简洁，不妨碍快速移动，表面留有风沙打磨的痕迹，像是在沙漠中经历过漫长跋涉。",
-    #             equipment_type=EquipmentType.ARMOR,
+    #             description="一套轻便的皮质护甲，由多块经过硬化处理的皮革拼接而成，覆盖躺干、肩部与小腿。设计简洁，不妨碍快速移动，表面留有风沙打磨的痕迹，像是在沙漠中经历过漫长跃溉。",
     #             stat_bonuses=CharacterStats(
     #                 hp=0, max_hp=0, attack=0, defense=2, energy=0, speed=0
     #             ),
     #         ),
-    #         EquipmentItem(
+    #         GearItem(
     #             name="裂纹护身符",
     #             description="一枚形状不规则的石质护符，中央有一道细小的裂缝，边缘被磨得光滑。来历不明，挂于颈间，正面无纹，背面有一个模糊的压印，已辨认不出原本的图样。",
-    #             equipment_type=EquipmentType.ACCESSORY,
     #             stat_bonuses=CharacterStats(
     #                 hp=0, max_hp=0, attack=1, defense=1, energy=0, speed=0
     #             ),
@@ -111,18 +109,16 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     # 为学者分配初始装备：残破笔记本 + 学者长袍套装 + 记忆碎片项链
     # actor_scholar.items.extend(
     #     [
-    #         EquipmentItem(
+    #         GearItem(
     #             name="学者灰袍",
-    #             description="一件质地粗糙的浅灰色长袍，款式简朴而宽松，带有宽袖与深兜帽。袖口与下摆因拖曳留有沙土的痕迹，腰间以窄皮带束紧。整体设计偏向文事而非战斗，但厚实的布料能提供基本的防护。",
-    #             equipment_type=EquipmentType.ARMOR,
+    #             description="一件质地粗糙的浅灰色长袍，款式简朴而宽松，带有宽袖与深兼帽。袖口与下摆因拖曳留有沙土的痕迹，腰间以窄皮带束紧。整体设计偏向文事而非战斗，但厚实的布料能提供基本的防护。",
     #             stat_bonuses=CharacterStats(
     #                 hp=0, max_hp=0, attack=0, defense=2, energy=0, speed=0
     #             ),
     #         ),
-    #         EquipmentItem(
+    #         GearItem(
     #             name="矿石佩饰",
-    #             description="一条由细银链串起的项链，坠子是一块半透明的矿石碎片，内部隐约有细纹如文字蜿蜒。原本夹于一本残破册子的最后一页，同页以相同笔迹写着：'不要摘下它。'",
-    #             equipment_type=EquipmentType.ACCESSORY,
+    #             description="一条由细銀链串起的项链，坠子是一块半透明的矿石碎片，内部隐约有细纹如文字蜘贚。原本夹于一本残破册子的最后一页，同页以相同笔迹写着：'不要摘下它。'",
     #             stat_bonuses=CharacterStats(
     #                 hp=0, max_hp=0, attack=1, defense=1, energy=0, speed=0
     #             ),

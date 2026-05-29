@@ -1,8 +1,7 @@
 """物品相关模型定义
 
 包含物品枚举与物品基类及其子类：
-ItemType、Item、WeaponItem、EquipmentType、EquipmentItem、
-ConsumableItem、MaterialItem、UniqueItem、AnyItem。
+ItemType、Item、GearItem、ConsumableItem、MaterialItem、AnyItem。
 """
 
 from enum import StrEnum, unique
@@ -35,8 +34,7 @@ class ItemType(StrEnum):
 
     背包：背包通常是一个管理物品的容器，常见的命名有 Inventory（库存）或 Backpack。在代码中，我们通常使用 Inventory 来指代背包系统。"""
 
-    WEAPON_ITEM = "WeaponItem"
-    EQUIPMENT_ITEM = "EquipmentItem"
+    GEAR_ITEM = "GearItem"
     CONSUMABLE_ITEM = "ConsumableItem"
     MATERIAL_ITEM = "MaterialItem"
 
@@ -53,38 +51,10 @@ class Item(BaseModel):
 
 
 #######################################################################################################################################
-class WeaponItem(Item):
-    """武器类，继承自物品基类"""
+class GearItem(Item):
+    """装备类（武器、防具、饰品等），继承自物品基类"""
 
-    type: Literal[ItemType.WEAPON_ITEM] = Field(
-        default=ItemType.WEAPON_ITEM, frozen=True
-    )
-    stat_bonuses: CharacterStats = Field(
-        default_factory=lambda: CharacterStats(
-            hp=0, max_hp=0, attack=0, defense=0, energy=0, speed=0
-        )
-    )
-
-
-###############################################################################################################################################
-@final
-@unique
-class EquipmentType(StrEnum):
-    """装备子类型，进一步细分装备的具体类别"""
-
-    ARMOR = "Armor"  # 防具/全身套装（护甲、头盔、护腿等）
-    ACCESSORY = "Accessory"  # 饰品（戒指、项链、护符等）
-    NONE = "None"  # 未分类
-
-
-#######################################################################################################################################
-class EquipmentItem(Item):
-    """装备类，继承自物品基类"""
-
-    type: Literal[ItemType.EQUIPMENT_ITEM] = Field(
-        default=ItemType.EQUIPMENT_ITEM, frozen=True
-    )
-    equipment_type: EquipmentType = EquipmentType.NONE  # 装备子类型
+    type: Literal[ItemType.GEAR_ITEM] = Field(default=ItemType.GEAR_ITEM, frozen=True)
     stat_bonuses: CharacterStats = Field(
         default_factory=lambda: CharacterStats(
             hp=0, max_hp=0, attack=0, defense=0, energy=0, speed=0
@@ -114,7 +84,7 @@ class MaterialItem(Item):
 
 ###############################################################################################################################################
 AnyItem = Annotated[
-    Union[WeaponItem, EquipmentItem, ConsumableItem, MaterialItem],
+    Union[GearItem, ConsumableItem, MaterialItem],
     Field(discriminator="type"),
 ]
 

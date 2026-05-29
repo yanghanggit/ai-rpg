@@ -1,7 +1,7 @@
 """物品相关模型定义
 
 包含物品枚举与物品基类及其子类：
-ItemType、Item、GearItem、ConsumableItem、MaterialItem、AnyItem。
+ItemType、Item、GearItem、CostumeItem、ConsumableItem、MaterialItem、AnyItem。
 """
 
 from enum import StrEnum, unique
@@ -16,25 +16,9 @@ from .target_type import TargetType
 @final
 @unique
 class ItemType(StrEnum):
-    """在游戏开发中，对类的命名通常会根据项目的规模和规范有所不同，但有一些常见的命名习惯。以下是一些常见的基类命名：
-
-    物品基类：通常命名为 Item。这个基类会包含所有物品共有的属性和方法，如名称、描述、图标、ID等。
-
-    武器/装备：武器和装备通常会有自己的子类。例如：
-
-    武器：Weapon，继承自 Item
-
-    装备：Equipment，也可能进一步分为 Armor（防具）、Accessory（饰品）等。
-
-    消耗品：通常命名为 Consumable，继承自 Item。
-
-    材料：通常命名为 Material，继承自 Item。
-
-    珍贵物品：有时称为任务物品或独特物品，可能命名为 UniqueItem 或 QuestItem，继承自 Item。
-
-    背包：背包通常是一个管理物品的容器，常见的命名有 Inventory（库存）或 Backpack。在代码中，我们通常使用 Inventory 来指代背包系统。"""
 
     GEAR_ITEM = "GearItem"
+    COSTUME_ITEM = "CostumeItem"
     CONSUMABLE_ITEM = "ConsumableItem"
     MATERIAL_ITEM = "MaterialItem"
 
@@ -63,6 +47,15 @@ class GearItem(Item):
 
 
 #######################################################################################################################################
+class CostumeItem(Item):
+    """时装类，仅改变角色外观（AppearanceComponent.appearance），不参与属性计算"""
+
+    type: Literal[ItemType.COSTUME_ITEM] = Field(
+        default=ItemType.COSTUME_ITEM, frozen=True
+    )
+
+
+#######################################################################################################################################
 class ConsumableItem(Item):
     """消耗品类，继承自物品基类"""
 
@@ -84,7 +77,7 @@ class MaterialItem(Item):
 
 ###############################################################################################################################################
 AnyItem = Annotated[
-    Union[GearItem, ConsumableItem, MaterialItem],
+    Union[GearItem, CostumeItem, ConsumableItem, MaterialItem],
     Field(discriminator="type"),
 ]
 

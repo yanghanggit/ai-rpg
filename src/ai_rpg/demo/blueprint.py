@@ -65,6 +65,10 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     #                 hp=0, max_hp=0, attack=1, defense=1, energy=0, speed=0
     #             ),
     #         ),
+    #         CostumeItem(
+    #             name="旅行者风尘斗篷",
+    #             description="一件覆盖全身的宽幅斗篷，布料经风沙磨砺后呈不均匀的赭石色，边缘绣有简单的几何暗纹。披上后显得愈发像一名经历颇丰的旅人。",
+    #         ),
     #         # 测试消耗品：覆盖 SELF_ONLY / ENEMY_SINGLE / ENEMY_ALL 三种目标类型
     #         ConsumableItem(
     #             name="裂口草药包",

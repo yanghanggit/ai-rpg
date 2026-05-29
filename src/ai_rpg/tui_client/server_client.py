@@ -13,8 +13,6 @@ from ..models import (
     DungeonCombatInitResponse,
     DungeonCombatPlayCardsRequest,
     DungeonCombatPlayCardsResponse,
-    DungeonCombatUseConsumableItemRequest,
-    DungeonCombatUseConsumableItemResponse,
     DungeonCombatResponse,
     DungeonCombatRetreatRequest,
     DungeonCombatRetreatResponse,
@@ -37,8 +35,6 @@ from ..models import (
     HomeRosterAddResponse,
     HomeRosterRemoveRequest,
     HomeRosterRemoveResponse,
-    HomeCraftItemRequest,
-    HomeCraftItemResponse,
     LoginRequest,
     LoginResponse,
     LogoutRequest,
@@ -378,29 +374,6 @@ async def dungeon_combat_play_cards(
 #         return DungeonCombatDiscardCardsResponse.model_validate(response.json())
 
 
-async def dungeon_combat_use_consumable_item(
-    user_name: str,
-    game_name: str,
-    actor_name: str,
-    item_name: str,
-    targets: list[str],
-) -> DungeonCombatUseConsumableItemResponse:
-    """让指定角色使用指定消耗品，返回后台任务ID。"""
-    async with httpx.AsyncClient(timeout=10) as client:
-        response = await client.post(
-            server_config.base_url + "/api/dungeon/combat/use_consumable_item/v1/",
-            json=DungeonCombatUseConsumableItemRequest(
-                user_name=user_name,
-                game_name=game_name,
-                actor_name=actor_name,
-                item_name=item_name,
-                targets=targets,
-            ).model_dump(),
-        )
-        response.raise_for_status()
-        return DungeonCombatUseConsumableItemResponse.model_validate(response.json())
-
-
 async def home_generate_dungeon(
     user_name: str, game_name: str
 ) -> HomeGenerateDungeonResponse:
@@ -470,20 +443,3 @@ async def home_roster_remove(
         )
         response.raise_for_status()
         return HomeRosterRemoveResponse.model_validate(response.json())
-
-
-async def home_craft_item(
-    user_name: str, game_name: str, materials: List[str]
-) -> HomeCraftItemResponse:
-    """提交制造请求，返回后台任务 ID。"""
-    async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.post(
-            server_config.base_url + "/api/home/craft_item/v1/",
-            json=HomeCraftItemRequest(
-                user_name=user_name,
-                game_name=game_name,
-                materials=materials,
-            ).model_dump(),
-        )
-        response.raise_for_status()
-        return HomeCraftItemResponse.model_validate(response.json())

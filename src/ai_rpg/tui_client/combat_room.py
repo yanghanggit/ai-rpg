@@ -16,9 +16,6 @@ from .round_detail import RoundDetailScreen
 from .utils import display_name
 from .server_client import dungeon_combat_draw_cards as server_dungeon_combat_draw_cards
 from .server_client import dungeon_combat_play_cards as server_play_cards
-from .server_client import (
-    dungeon_combat_use_consumable_item as server_use_consumable_item,
-)
 from .server_client import dungeon_combat_init as server_dungeon_combat_init
 from .server_client import dungeon_combat_retreat as server_dungeon_combat_retreat
 from .server_client import dungeon_exit as server_dungeon_exit
@@ -31,12 +28,9 @@ from .server_client import (
 )
 from ..models import (
     Card,
-    ConsumableItem,
     CombatResult,
     CombatState,
     EntitySerialization,
-    InventoryComponent,
-    TargetType,
     CharacterStatsComponent,
     StatusEffectsComponent,
     DrawPileComponent,
@@ -56,8 +50,6 @@ class _Phase(Enum):
     ENEMY_TURN = auto()  # 等待用户按 Enter 触发敌人 AI
     SELECT_CARD = auto()  # 等待用户输入卡牌编号（出牌）
     SELECT_TARGET = auto()  # 等待用户输入目标编号
-    SELECT_CONSUMABLE_ITEM = auto()  # 等待用户选择消耗品编号
-    SELECT_CONSUMABLE_TARGET = auto()  # 等待用户选择消耗品目标编号
     WAITING = auto()  # 正在等待后端任务完成
     ROUND_DONE = auto()  # 回合已全部完成
 
@@ -90,8 +82,6 @@ COMBAT_ROOM_MENU: Final[
   [bold green]1[/]  战斗开始        执行战斗初始化（首次进入战斗时）
   [bold green]2[/]  抽牌            为全员抽牌
   [bold green]3[/]  出牌            进入出牌界面完成本回合
-  [bold green]5[/]  使用消耗品      从背包中取出并使用一件消耗道具
-
 [bold cyan]── 查看 ──────────────────────────────────────[/]
   [bold green]6[/]  当前战斗状态    房间信息与角色属性
   [bold green]7[/]  回合详情        行动顺序与出手记录
@@ -167,12 +157,6 @@ class CombatRoomScreen(Screen[None]):
         self._target_candidates: List[str] = (
             []
         )  # 可选目标名列表（SELECT_TARGET 内有效，用完即清）
-        self._consumable_candidates: List[ConsumableItem] = (
-            []
-        )  # 可用消耗品列表（SELECT_CONSUMABLE_ITEM 内有效）
-        self._selected_consumable_name: Optional[str] = (
-            None  # 已选消耗品名（SELECT_CONSUMABLE_TARGET 跨步骤）
-        )
 
     @property
     def _user_name(self) -> str:
@@ -222,8 +206,6 @@ class CombatRoomScreen(Screen[None]):
                     _Phase.ENEMY_TURN,
                     _Phase.SELECT_CARD,
                     _Phase.SELECT_TARGET,
-                    _Phase.SELECT_CONSUMABLE_ITEM,
-                    _Phase.SELECT_CONSUMABLE_TARGET,
                     _Phase.ROUND_DONE,
                 ):
                     self._abort_play_cards()
@@ -242,12 +224,6 @@ class CombatRoomScreen(Screen[None]):
                 self._handle_card_selection(raw)
             elif self._phase == _Phase.SELECT_TARGET:
                 self._handle_target_selection(raw)
-            elif self._phase == _Phase.SELECT_CONSUMABLE_ITEM:
-                self._phase = _Phase.LOADING
-                self.query_one(Input).disabled = True
-                self._handle_consumable_item_selection(raw)
-            elif self._phase == _Phase.SELECT_CONSUMABLE_TARGET:
-                self._handle_consumable_target_selection(raw)
             elif self._phase == _Phase.ROUND_DONE:
                 self._confirm_round_done()
             return
@@ -272,9 +248,6 @@ class CombatRoomScreen(Screen[None]):
 
         elif cmd == "3":
             self._start_play_cards()
-
-        elif cmd == "5":
-            self._start_use_consumable_item()
 
         elif cmd == "6":
             self._fetch_status()
@@ -632,257 +605,6 @@ class CombatRoomScreen(Screen[None]):
         self._advance()
 
     # ──────────────────────────────────────────────
-    # 消耗品使用流程
-    # ──────────────────────────────────────────────
-
-    @work
-    async def _start_use_consumable_item(self) -> None:
-        """进入消耗品使用模式：加载玩家背包中的消耗品并展示选择列表。"""
-        log = self.query_one(RichLog)
-        inp = self.query_one(Input)
-        inp.disabled = True
-
-        try:
-            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
-            stage_name = room_resp.room.stage.name
-            stages_resp = await fetch_stages_state(self._user_name, self._game_name)
-            stage_actor_names: List[str] = list(stages_resp.mapping.get(stage_name, []))
-            all_details = await fetch_entities_details(
-                self._user_name, self._game_name, stage_actor_names
-            )
-        except Exception as e:
-            log.write(f"[bold red]❌ 加载背包信息失败: {_format_http_error(e)}[/]")
-            inp.disabled = False
-            inp.focus()
-            return
-
-        # 找到玩家控制的角色（PlayerComponent）
-        player_actor: Optional[str] = None
-        consumables: List[ConsumableItem] = []
-        for entity in all_details.entities_serialization:
-            comp_names = {c.name for c in entity.components}
-            if PlayerComponent.__name__ not in comp_names:
-                continue
-            player_actor = entity.name
-            for comp in entity.components:
-                if comp.name == InventoryComponent.__name__:
-                    inv = InventoryComponent(**comp.data)
-                    consumables = [
-                        item
-                        for item in inv.items
-                        if isinstance(item, ConsumableItem) and item.count > 0
-                    ]
-            break
-
-        if player_actor is None:
-            log.write("[yellow]⚠ 未找到玩家角色。[/]")
-            inp.disabled = False
-            inp.focus()
-            return
-
-        if not consumables:
-            log.write("[yellow]⚠ 背包中没有可用的消耗品。[/]")
-            inp.disabled = False
-            inp.focus()
-            return
-
-        short = display_name(player_actor)
-        log.write(
-            f"\n[bold cyan]── 使用消耗品：{short} ──────────────────────────────────[/]"
-        )
-        for i, item in enumerate(consumables, 1):
-            tt_str = _TARGET_LABEL.get(item.target_type, f"[dim]{item.target_type}[/]")
-            effects_str = (
-                f"\n        [yellow]效果：{'、'.join(item.affixes)}[/]"
-                if item.affixes
-                else ""
-            )
-            log.write(
-                f"    [bold cyan]{i}.[/] [bold]{item.name}[/]  "
-                f"x{item.count}  目标:{tt_str}"
-                f"\n        [dim]{item.description}[/]" + effects_str
-            )
-
-        self._current_actor = player_actor
-        self._consumable_candidates = list(consumables)
-        self._phase = _Phase.SELECT_CONSUMABLE_ITEM
-        self._update_play_status(
-            f"[{short}] 选择消耗品（1-{len(consumables)}）  |  q 取消"
-        )
-        log.write(f"  [dim](输入编号选择 / q 取消)[/]")
-        inp.placeholder = f"1-{len(consumables)} / q 取消"
-        inp.disabled = False
-        inp.focus()
-
-    @work
-    async def _handle_consumable_item_selection(self, raw: str) -> None:
-        """用户选择消耗品编号后：若需要选目标则展示目标列表，否则直接使用。"""
-        log = self.query_one(RichLog)
-        candidates = self._consumable_candidates
-
-        if raw.lower() == "q":
-            self._consumable_candidates = []
-            self._abort_play_cards()
-            return
-
-        if not raw.isdigit():
-            log.write(f"[red]请输入 1-{len(candidates)} 的数字，或 q 取消。[/]")
-            self._phase = _Phase.SELECT_CONSUMABLE_ITEM
-            inp = self.query_one(Input)
-            inp.disabled = False
-            inp.focus()
-            return
-
-        idx = int(raw) - 1
-        if not (0 <= idx < len(candidates)):
-            log.write(f"[red]无效编号 '{raw}'，请输入 1-{len(candidates)}。[/]")
-            self._phase = _Phase.SELECT_CONSUMABLE_ITEM
-            inp = self.query_one(Input)
-            inp.disabled = False
-            inp.focus()
-            return
-
-        assert self._current_actor is not None
-        item = candidates[idx]
-        log.write(f"  已选：[bold cyan]{item.name}[/]")
-        self._consumable_candidates = []
-
-        # ENEMY_SINGLE：需要选目标
-        if item.target_type == TargetType.ENEMY_SINGLE:
-            try:
-                room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
-                stage_name = room_resp.room.stage.name
-                enemy_names = await self._fetch_play_enemy_names(stage_name)
-            except Exception as e:
-                log.write(f"[bold red]❌ 加载敌方列表失败: {_format_http_error(e)}[/]")
-                self._abort_play_cards()
-                return
-
-            if not enemy_names:
-                log.write("  [dim]场上无存活敌人，直接使用[/]")
-                self._do_use_consumable_item(self._current_actor, item.name, [])
-                return
-
-            log.write("  [bold]可用目标：[/]")
-            for i, name in enumerate(enemy_names, 1):
-                log.write(f"    [bold cyan]{i}.[/] {display_name(name)}")
-            self._selected_consumable_name = item.name
-            self._target_candidates = list(enemy_names)
-            self._phase = _Phase.SELECT_CONSUMABLE_TARGET
-            self._update_play_status(f"输入目标编号（1-{len(enemy_names)}）  |  q 取消")
-            inp = self.query_one(Input)
-            inp.placeholder = f"1-{len(enemy_names)} / q 取消"
-            inp.disabled = False
-            inp.focus()
-
-        else:
-            # SELF_ONLY / ENEMY_ALL：无需手动选目标，系统自动处理
-            label_map = {
-                TargetType.ENEMY_ALL: "自动命中所有存活敌方",
-                TargetType.SELF_ONLY: "仅作用于自身",
-            }
-            hint = label_map.get(item.target_type, "自动处理目标")
-            log.write(f"  [dim]此消耗品{hint}[/]")
-            self._do_use_consumable_item(self._current_actor, item.name, [])
-
-    def _handle_consumable_target_selection(self, raw: str) -> None:
-        """用户在消耗品目标选择阶段输入编号后：验证并调用 _do_use_consumable_item。"""
-        log = self.query_one(RichLog)
-
-        if raw.lower() == "q":
-            self._selected_consumable_name = None
-            self._target_candidates = []
-            self._abort_play_cards()
-            return
-
-        candidates = self._target_candidates
-        if raw.isdigit():
-            idx = int(raw) - 1
-            if 0 <= idx < len(candidates):
-                target = candidates[idx]
-            else:
-                log.write(
-                    f"[red]无效目标编号 '{raw}'，请输入 1-{len(candidates)} 或 q 取消。[/]"
-                )
-                return
-        else:
-            matched = [n for n in candidates if n == raw or display_name(n) == raw]
-            if matched:
-                target = matched[0]
-            else:
-                log.write(f"[red]找不到目标 '{raw}'，请重新输入。[/]")
-                return
-
-        assert self._current_actor is not None
-        assert self._selected_consumable_name is not None
-        actor = self._current_actor
-        item_name = self._selected_consumable_name
-        self._selected_consumable_name = None
-        self._target_candidates = []
-        self._do_use_consumable_item(actor, item_name, [target])
-
-    @work
-    async def _do_use_consumable_item(
-        self, actor_name: str, item_name: str, targets: List[str]
-    ) -> None:
-        """后台消耗品使用任务：调用服务器接口并轮询完成，然后刷新状态。"""
-        log = self.query_one(RichLog)
-        self._phase = _Phase.WAITING
-        self.query_one(Input).disabled = True
-
-        short = display_name(actor_name)
-        target_str = (
-            "、".join(display_name(t) for t in targets) if targets else "（自动）"
-        )
-        log.write(f"  [dim]▶ {short} 使用消耗品：{item_name}  目标：{target_str}[/]")
-        logger.info(
-            f"CombatRoomScreen._do_use_consumable_item: actor={actor_name} item={item_name} targets={targets}"
-        )
-
-        task_id = ""
-        try:
-            resp = await server_use_consumable_item(
-                self._user_name, self._game_name, actor_name, item_name, targets
-            )
-            task_id = resp.task_id
-            logger.info(f"_do_use_consumable_item: 任务已创建 task_id={task_id}")
-        except httpx.HTTPStatusError as e:
-            try:
-                detail = e.response.json().get("detail", str(e))
-            except Exception:
-                detail = str(e)
-            log.write(f"[bold red]❌ 使用消耗品请求失败: {detail}[/]")
-            logger.error(f"_do_use_consumable_item: 请求失败 error={e}")
-            self._abort_play_cards()
-            return
-        except Exception as e:
-            log.write(f"[bold red]❌ 使用消耗品请求失败: {_format_http_error(e)}[/]")
-            logger.error(f"_do_use_consumable_item: 请求失败 error={e}")
-            self._abort_play_cards()
-            return
-
-        self._update_play_status(f"等待 {short} 使用消耗品完成...")
-        try:
-            await watch_task_until_done(task_id, timeout_seconds=90)
-            log.write(f"  [green]✓ {short} 使用消耗品完成：{item_name}[/]")
-            logger.info(f"_do_use_consumable_item: 任务完成 task_id={task_id}")
-        except TaskFailedError as e:
-            log.write(f"[bold red]❌ {short} 使用消耗品失败: {e}[/]")
-            logger.error(
-                f"_do_use_consumable_item: 任务失败 task_id={task_id} error={e}"
-            )
-        except TimeoutError:
-            log.write("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
-            logger.warning(f"_do_use_consumable_item: 轮询超时 task_id={task_id}")
-        except Exception as e:
-            logger.warning(f"_do_use_consumable_item: 等待任务失败 error={e}")
-
-        self._phase = None
-        inp = self.query_one(Input)
-        inp.placeholder = "输入命令..."
-        inp.disabled = False
-        inp.focus()
-        self._fetch_status()
 
     # ──────────────────────────────────────────────
     # 核心状态机推进（唯一分发点，不递归）
@@ -1082,8 +804,6 @@ class CombatRoomScreen(Screen[None]):
         self._current_actor = None
         self._selected_card_name = None
         self._target_candidates = []
-        self._consumable_candidates = []
-        self._selected_consumable_name = None
         log = self.query_one(RichLog)
         inp = self.query_one(Input)
         inp.placeholder = "输入命令..."

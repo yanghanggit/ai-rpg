@@ -5,13 +5,6 @@
 
 from ..models import (
     Blueprint,
-    CharacterStats,
-    ConsumableItem,
-    EquipmentItem,
-    EquipmentType,
-    MaterialItem,
-    TargetType,
-    WeaponItem,
 )
 from .actor_wanderer import create_wanderer
 from .actor_scholar import create_scholar
@@ -49,93 +42,93 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     # )
 
     # 为旅行者分配初始装备：猎刀 + 轻甲套装 + 沙漠护身符
-    actor_wanderer.items.extend(
-        [
-            WeaponItem(
-                name="缺口猎刀",
-                description="一把刀身偏短的猎刀，刃背厚实，靠近刀尖三分之一处有一道浅缺口，像是曾经硬撬过什么。握柄以粗布条缠绕，布已泛黄，但缠法整齐，显然出自熟练的手。",
-                stat_bonuses=CharacterStats(
-                    hp=0, max_hp=0, attack=2, defense=0, energy=0, speed=0
-                ),
-            ),
-            EquipmentItem(
-                name="沙漠旅行者轻甲",
-                description="一套轻便的皮质护甲，由多块经过硬化处理的皮革拼接而成，覆盖躯干、肩部与小腿。设计简洁，不妨碍快速移动，表面留有风沙打磨的痕迹，像是在沙漠中经历过漫长跋涉。",
-                equipment_type=EquipmentType.ARMOR,
-                stat_bonuses=CharacterStats(
-                    hp=0, max_hp=0, attack=0, defense=2, energy=0, speed=0
-                ),
-            ),
-            EquipmentItem(
-                name="裂纹护身符",
-                description="一枚形状不规则的石质护符，中央有一道细小的裂缝，边缘被磨得光滑。来历不明，挂于颈间，正面无纹，背面有一个模糊的压印，已辨认不出原本的图样。",
-                equipment_type=EquipmentType.ACCESSORY,
-                stat_bonuses=CharacterStats(
-                    hp=0, max_hp=0, attack=1, defense=1, energy=0, speed=0
-                ),
-            ),
-            # 测试消耗品：覆盖 SELF_ONLY / ENEMY_SINGLE / ENEMY_ALL 三种目标类型
-            ConsumableItem(
-                name="裂口草药包",
-                description="几片晒干的草叶压在一小块粗布里，散发着轻微的苦涩气味。不知用途，但直觉告诉你可以往伤口上敷。使用后应能小量恢复生命值。",
-                count=2,
-                target_type=TargetType.SELF_ONLY,
-            ),
-            ConsumableItem(
-                name="沙蝎毒液瓶",
-                description="一个封口严密的小玻璃瓶，瓶内液体呈深黄色，偶尔能看到细小气泡浮起。标签已模糊，隐约能辨认出一个骷髅图案。向单个敌人投掷可造成毒性伤害。",
-                count=2,
-                target_type=TargetType.ENEMY_SINGLE,
-            ),
-            ConsumableItem(
-                name="烟雾弹",
-                description="一枚掌心大小的铁制圆罐，侧面有一根拔环。拉环后会喷出浓烈的白色烟雾，在短时间内遮蔽视野。对场上所有敌人造成眩晕或命中减益。",
-                affixes=["[烟雾眩晕]:浓烈烟雾遮蔽视野，攻击率大幅下降"],
-                count=1,
-                target_type=TargetType.ENEMY_ALL,
-            ),  # 制造用原料 mock：用于测试 craft-item 流程
-            MaterialItem(
-                name="沙漠草叶",
-                description="深结鲧蒸气中采来的山草，叶片干硇后合拢为一据。散发淡淡的苦涩气味，叶脉间徘留着香气。据说直接敢布伤口可止血来炎。",
-                count=3,
-            ),
-            MaterialItem(
-                name="毒蝶触须",
-                description="一小捎普通大小的写字纸，造型粗简，前端有两根残灷的尖刺。表面残留黄色液迹，低温时凝固为蛇腔肘色粉末。意封密少量件化毒素。",
-                count=2,
-            ),
-            MaterialItem(
-                name="废旧皮革",
-                description="一块益拳大小的硬化皮革碎片，边缘粗糙，劫穿时留下的切穿印迹仍清晰可辨。内侧孙留着炎热气候和砟汗的吃味。工呀绑扎或简单防护的材料。",
-                count=2,
-            ),
-        ]
-    )
+    # actor_wanderer.items.extend(
+    #     [
+    #         WeaponItem(
+    #             name="缺口猎刀",
+    #             description="一把刀身偏短的猎刀，刃背厚实，靠近刀尖三分之一处有一道浅缺口，像是曾经硬撬过什么。握柄以粗布条缠绕，布已泛黄，但缠法整齐，显然出自熟练的手。",
+    #             stat_bonuses=CharacterStats(
+    #                 hp=0, max_hp=0, attack=2, defense=0, energy=0, speed=0
+    #             ),
+    #         ),
+    #         EquipmentItem(
+    #             name="沙漠旅行者轻甲",
+    #             description="一套轻便的皮质护甲，由多块经过硬化处理的皮革拼接而成，覆盖躯干、肩部与小腿。设计简洁，不妨碍快速移动，表面留有风沙打磨的痕迹，像是在沙漠中经历过漫长跋涉。",
+    #             equipment_type=EquipmentType.ARMOR,
+    #             stat_bonuses=CharacterStats(
+    #                 hp=0, max_hp=0, attack=0, defense=2, energy=0, speed=0
+    #             ),
+    #         ),
+    #         EquipmentItem(
+    #             name="裂纹护身符",
+    #             description="一枚形状不规则的石质护符，中央有一道细小的裂缝，边缘被磨得光滑。来历不明，挂于颈间，正面无纹，背面有一个模糊的压印，已辨认不出原本的图样。",
+    #             equipment_type=EquipmentType.ACCESSORY,
+    #             stat_bonuses=CharacterStats(
+    #                 hp=0, max_hp=0, attack=1, defense=1, energy=0, speed=0
+    #             ),
+    #         ),
+    #         # 测试消耗品：覆盖 SELF_ONLY / ENEMY_SINGLE / ENEMY_ALL 三种目标类型
+    #         ConsumableItem(
+    #             name="裂口草药包",
+    #             description="几片晒干的草叶压在一小块粗布里，散发着轻微的苦涩气味。不知用途，但直觉告诉你可以往伤口上敷。使用后应能小量恢复生命值。",
+    #             count=2,
+    #             target_type=TargetType.SELF_ONLY,
+    #         ),
+    #         ConsumableItem(
+    #             name="沙蝎毒液瓶",
+    #             description="一个封口严密的小玻璃瓶，瓶内液体呈深黄色，偶尔能看到细小气泡浮起。标签已模糊，隐约能辨认出一个骷髅图案。向单个敌人投掷可造成毒性伤害。",
+    #             count=2,
+    #             target_type=TargetType.ENEMY_SINGLE,
+    #         ),
+    #         ConsumableItem(
+    #             name="烟雾弹",
+    #             description="一枚掌心大小的铁制圆罐，侧面有一根拔环。拉环后会喷出浓烈的白色烟雾，在短时间内遮蔽视野。对场上所有敌人造成眩晕或命中减益。",
+    #             affixes=["[烟雾眩晕]:浓烈烟雾遮蔽视野，攻击率大幅下降"],
+    #             count=1,
+    #             target_type=TargetType.ENEMY_ALL,
+    #         ),  # 制造用原料 mock：用于测试 craft-item 流程
+    #         MaterialItem(
+    #             name="沙漠草叶",
+    #             description="深结鲧蒸气中采来的山草，叶片干硇后合拢为一据。散发淡淡的苦涩气味，叶脉间徘留着香气。据说直接敢布伤口可止血来炎。",
+    #             count=3,
+    #         ),
+    #         MaterialItem(
+    #             name="毒蝶触须",
+    #             description="一小捎普通大小的写字纸，造型粗简，前端有两根残灷的尖刺。表面残留黄色液迹，低温时凝固为蛇腔肘色粉末。意封密少量件化毒素。",
+    #             count=2,
+    #         ),
+    #         MaterialItem(
+    #             name="废旧皮革",
+    #             description="一块益拳大小的硬化皮革碎片，边缘粗糙，劫穿时留下的切穿印迹仍清晰可辨。内侧孙留着炎热气候和砟汗的吃味。工呀绑扎或简单防护的材料。",
+    #             count=2,
+    #         ),
+    #     ]
+    # )
 
     # 创建学者角色
     actor_scholar = create_scholar()
 
     # 为学者分配初始装备：残破笔记本 + 学者长袍套装 + 记忆碎片项链
-    actor_scholar.items.extend(
-        [
-            EquipmentItem(
-                name="学者灰袍",
-                description="一件质地粗糙的浅灰色长袍，款式简朴而宽松，带有宽袖与深兜帽。袖口与下摆因拖曳留有沙土的痕迹，腰间以窄皮带束紧。整体设计偏向文事而非战斗，但厚实的布料能提供基本的防护。",
-                equipment_type=EquipmentType.ARMOR,
-                stat_bonuses=CharacterStats(
-                    hp=0, max_hp=0, attack=0, defense=2, energy=0, speed=0
-                ),
-            ),
-            EquipmentItem(
-                name="矿石佩饰",
-                description="一条由细银链串起的项链，坠子是一块半透明的矿石碎片，内部隐约有细纹如文字蜿蜒。原本夹于一本残破册子的最后一页，同页以相同笔迹写着：'不要摘下它。'",
-                equipment_type=EquipmentType.ACCESSORY,
-                stat_bonuses=CharacterStats(
-                    hp=0, max_hp=0, attack=1, defense=1, energy=0, speed=0
-                ),
-            ),
-        ]
-    )
+    # actor_scholar.items.extend(
+    #     [
+    #         EquipmentItem(
+    #             name="学者灰袍",
+    #             description="一件质地粗糙的浅灰色长袍，款式简朴而宽松，带有宽袖与深兜帽。袖口与下摆因拖曳留有沙土的痕迹，腰间以窄皮带束紧。整体设计偏向文事而非战斗，但厚实的布料能提供基本的防护。",
+    #             equipment_type=EquipmentType.ARMOR,
+    #             stat_bonuses=CharacterStats(
+    #                 hp=0, max_hp=0, attack=0, defense=2, energy=0, speed=0
+    #             ),
+    #         ),
+    #         EquipmentItem(
+    #             name="矿石佩饰",
+    #             description="一条由细银链串起的项链，坠子是一块半透明的矿石碎片，内部隐约有细纹如文字蜿蜒。原本夹于一本残破册子的最后一页，同页以相同笔迹写着：'不要摘下它。'",
+    #             equipment_type=EquipmentType.ACCESSORY,
+    #             stat_bonuses=CharacterStats(
+    #                 hp=0, max_hp=0, attack=1, defense=1, energy=0, speed=0
+    #             ),
+    #         ),
+    #     ]
+    # )
 
     # 创建场景
     stage_broken_wall_enclosure = create_broken_wall_enclosure()

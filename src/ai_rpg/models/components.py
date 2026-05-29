@@ -3,7 +3,6 @@
 from typing import List, final
 from ..entitas.components import Component, MutableComponent
 from .cards import Card, Keyword, StatusEffect
-from .items import AnyItem
 from .stats import CharacterStats
 from .registry import register_component_type
 
@@ -203,16 +202,6 @@ class StatusEffectsComponent(MutableComponent):
 
     name: str
     status_effects: List[StatusEffect]
-
-
-############################################################################################################
-@final
-@register_component_type
-class InventoryComponent(MutableComponent):
-    """存储角色背包物品列表。"""
-
-    name: str
-    items: List[AnyItem]
 
 
 ############################################################################################################

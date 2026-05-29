@@ -1,6 +1,6 @@
 """玩家当前状态 Screen"""
 
-from typing import Any, Dict, Set
+from typing import Any, Dict
 
 from loguru import logger
 from ..models import (
@@ -9,16 +9,12 @@ from ..models import (
     AppearanceComponent,
     ActorComponent,
     CharacterStatsComponent,
-    InventoryComponent,
     PlayerComponent,
     PartyRosterComponent,
     KeywordComponent,
     DrawPileComponent,
     ExhaustPileComponent,
     DiscardPileComponent,
-    AnyItem,
-    EquipmentItem,
-    CharacterStats,
 )
 from textual import work
 from textual.app import ComposeResult
@@ -29,74 +25,16 @@ from .server_client import fetch_entities_details
 from .utils import display_name
 
 
-# 物品类型 → 中文标签
-_ITEM_TYPE_LABELS: Dict[str, str] = {
-    "WeaponItem": "武器",
-    "EquipmentItem": "装备",
-    "ConsumableItem": "消耗品",
-    "MaterialItem": "材料",
-    "UniqueItem": "特殊",
-}
-
-# EquipmentItem 子类型 → 中文标签
-_EQUIPMENT_TYPE_LABELS: Dict[str, str] = {
-    "Armor": "防具",
-    "Accessory": "饰品",
-}
-
-# stat_bonuses 字段 → 中文标签（按展示顺序）
-_STAT_LABELS: list[tuple[str, str]] = [
-    ("hp", "HP"),
-    ("max_hp", "最大HP"),
-    ("attack", "攻击"),
-    ("defense", "防御"),
-    ("energy", "行动"),
-    ("speed", "速度"),
-]
-
 # 组件渲染顺序（靠前的优先展示）
 _COMPONENT_ORDER: list[str] = [
     ActorComponent.__name__,
     CharacterStatsComponent.__name__,
-    InventoryComponent.__name__,
     AppearanceComponent.__name__,
     KeywordComponent.__name__,
     DrawPileComponent.__name__,
     ExhaustPileComponent.__name__,
     DiscardPileComponent.__name__,
 ]
-
-
-def _stat_bonuses_str(stats: CharacterStats) -> str:
-    """将 CharacterStats 属性加成转为可读字符串，只展示非零项。"""
-    parts = []
-    for attr, label in _STAT_LABELS:
-        val: int = getattr(stats, attr, 0)
-        if val != 0:
-            sign = "+" if val > 0 else ""
-            parts.append(f"{label}{sign}{val}")
-    return "  ".join(parts)
-
-
-def _render_item(item: AnyItem, equipped: Set[str]) -> str:
-    """将单个 AnyItem 渲染为多行 Rich markup 字符串。"""
-    type_label = _ITEM_TYPE_LABELS.get(item.type, str(item.type))
-    if isinstance(item, EquipmentItem):
-        type_label = _EQUIPMENT_TYPE_LABELS.get(
-            item.equipment_type, str(item.equipment_type)
-        )
-
-    equipped_tag = "  [bold green]\[装备中][/]" if item.name in equipped else ""
-    lines = [f"      [yellow]◦ {item.name}[/]{equipped_tag}"]
-    lines.append(f"        [dim]类型：{type_label}[/]")
-    if item.description:
-        lines.append(f"        [dim]{item.description}[/]")
-    stat_bonuses = getattr(item, "stat_bonuses", None)
-    if stat_bonuses is not None:
-        bonus_str = _stat_bonuses_str(stat_bonuses)
-        if bonus_str:
-            lines.append(f"        [cyan]属性加成：{bonus_str}[/]")
-    return "\n".join(lines)
 
 
 def _render_component(name: str, data: Dict[str, Any], context: Dict[str, Any]) -> str:
@@ -140,15 +78,6 @@ def _render_component(name: str, data: Dict[str, Any], context: Dict[str, Any]) 
             f"   行动 [bold]{s.energy}[/]"
             f"   速度 [bold]{s.speed}[/]"
         )
-
-    elif name == InventoryComponent.__name__:
-        ic = InventoryComponent(**data)
-        equipped: Set[str] = context.get("equipped", set())
-        if not ic.items:
-            lines.append("    [dim]（空）[/]")
-        else:
-            for item in ic.items:
-                lines.append(_render_item(item, equipped))
 
     elif name == KeywordComponent.__name__:
         keyword_comp = KeywordComponent(**data)

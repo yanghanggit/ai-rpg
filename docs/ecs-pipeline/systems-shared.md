@@ -44,10 +44,9 @@
 **执行流程**：
 
 1. 筛选需要生成外观的角色实体
-2. 从 `InventoryComponent` 读取装备类型物品（武器 / 防具 / 饰品）
-3. 构建「基础形态 + 装备信息」的 System Prompt
-4. 并行调用 LLM 生成完整外观描述（100-150字，第三人称，不含物品名称）
-5. 写入 `AppearanceComponent.appearance`，并向角色上下文注入外观更新通知
+2. 构建「基础形态」的 System Prompt
+3. 并行调用 LLM 生成完整外观描述（100-150字，第三人称，不含物品名称）
+4. 写入 `AppearanceComponent.appearance`，并向角色上下文注入外观更新通知
 
 参见 [[design-patterns#4. 并行 LLM 推理]]
 

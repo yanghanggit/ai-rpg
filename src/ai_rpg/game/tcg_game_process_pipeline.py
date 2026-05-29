@@ -39,7 +39,6 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     )
     from ..systems.home_npc_plan_system import HomeNpcPlanSystem
     from ..systems.home_player_context_system import HomePlayerContextSystem
-    from ..systems.craft_item_action_system import CraftItemActionSystem
 
     ##
     tcg_game = cast(TCGGame, game)
@@ -58,7 +57,6 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
 
     # 动作处理相关的系统：查询-审核-说话-耳语-公告-场景转换-清理
     processors.add(QueryActionSystem(tcg_game))
-    processors.add(CraftItemActionSystem(tcg_game))
     processors.add(PlayerActionAuditSystem(tcg_game))
     processors.add(SpeakActionSystem(tcg_game))
     processors.add(WhisperActionSystem(tcg_game))
@@ -104,9 +102,6 @@ def create_combat_pipeline(
     )
     from ..systems.play_cards_action_system import (
         PlayCardsActionSystem,
-    )
-    from ..systems.use_consumable_item_action_system import (
-        UseConsumableItemActionSystem,
     )
     from ..systems.use_consumable_item_arbitration_system import (
         UseConsumableItemArbitrationSystem,
@@ -168,7 +163,6 @@ def create_combat_pipeline(
     processors.add(PlayCardsActionSystem(tcg_game))
     processors.add(MoveToDiscardPileSystem(tcg_game))
     processors.add(ExhaustCardsActionSystem(tcg_game))
-    processors.add(UseConsumableItemActionSystem(tcg_game))
     processors.add(PassTurnActionSystem(tcg_game))
     processors.add(RetreatActionSystem(tcg_game))
     processors.add(PlayCardsArbitrationSystem(tcg_game))

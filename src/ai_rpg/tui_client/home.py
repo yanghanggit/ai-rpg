@@ -38,8 +38,6 @@ MENU_TEXT = """\
   [bold green]7[/]  切换场景      移动到其他场景
   [bold green]8[/]  装备管理      更换/卸下当前装备
   [bold green]9[/]  管理远征队    加入/移除远征队成员
-  [bold green]10[/] 物品制造      选择材料合成消耗品
-
 [bold cyan]── 系统 ──────────────────────────────────────[/]
   [bold green]0[/]  显示此菜单
   [bold dim]Escape[/]  登出并返回主菜单
@@ -303,10 +301,6 @@ class HomeScreen(Screen[None]):
             from .roster import RosterScreen
 
             self.app.push_screen(RosterScreen())
-        elif cmd == "10":
-            from .craft_item import CraftItemScreen
-
-            self.app.push_screen(CraftItemScreen())
         else:
             log.write(f"[red]未知输入：{cmd}，输入 0 查看操作菜单。[/]")
 

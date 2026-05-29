@@ -16,7 +16,6 @@ from .dungeon_actions import (
     activate_play_cards_specified,
     # activate_exhaust_card_specified,
     activate_pass_turn,
-    activate_use_consumable_item,
 )
 
 
@@ -316,60 +315,5 @@ async def _execute_pass_turn_task(
             task_record.end_time = datetime.now().isoformat()
 
 
-###################################################################################################################################################################
-###################################################################################################################################################################
-###################################################################################################################################################################
-async def _execute_use_consumable_item_task(
-    task_id: str,
-    user_name: str,
-    actor_name: str,
-    item_name: str,
-    targets: List[str],
-    game_server: GameServer,
-) -> None:
-    """后台执行使用消耗品任务"""
-    try:
-        logger.info(f"🚀 使用消耗品任务开始: task_id={task_id}, user={user_name}")
-
-        current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._tcg_game is None:
-            raise ValueError(f"游戏实例不存在: user={user_name}")
-
-        async with current_room._lock:
-            rpg_game = current_room._tcg_game
-            assert isinstance(rpg_game, TCGGame), "Invalid game type"
-
-            if not rpg_game.current_dungeon.is_ongoing:
-                raise ValueError("战斗未在进行中")
-
-            success, message = activate_use_consumable_item(
-                rpg_game, actor_name, item_name, targets
-            )
-            if not success:
-                raise ValueError(f"使用消耗品失败: {message}")
-
-            await rpg_game._combat_pipeline.process()
-
-            archive_world(rpg_game._world, rpg_game._player_session)
-
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.COMPLETED
-            task_record.end_time = datetime.now().isoformat()
-
-        logger.info(f"✅ 使用消耗品任务完成: task_id={task_id}, user={user_name}")
-
-    except Exception as e:
-        logger.error(
-            f"❌ 使用消耗品任务失败: task_id={task_id}, user={user_name}, error={e}"
-        )
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.FAILED
-            task_record.error = str(e)
-            task_record.end_time = datetime.now().isoformat()
-
-
-###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################

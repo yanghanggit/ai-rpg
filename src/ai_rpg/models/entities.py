@@ -2,7 +2,6 @@ from enum import StrEnum, unique
 from typing import List, final
 from pydantic import BaseModel
 from .serialization import ComponentSerialization
-from .items import AnyItem
 from .stats import CharacterStats
 from .cards import Keyword
 
@@ -61,7 +60,6 @@ class Actor(BaseModel):
     character_sheet: CharacterSheet
     system_message: str
     character_stats: CharacterStats
-    items: List[AnyItem] = []
     keywords: List[Keyword] = (
         []
     )  # 卡牌关键词约束列表，用于限制 LLM 生成卡牌的风格与功能边界

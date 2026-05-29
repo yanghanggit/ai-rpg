@@ -24,7 +24,6 @@ from ..models import (
     CharacterStats,
     CharacterStatsComponent,
     COMPONENT_TYPES,
-    ConsumableItem,
     DeckComponent,
     Dungeon,
     DungeonComponent,
@@ -33,7 +32,6 @@ from ..models import (
     HandComponent,
     HomeComponent,
     IdentityComponent,
-    InventoryComponent,
     KeywordComponent,
     PlayerComponent,
     PlayerOnlyStageComponent,
@@ -317,20 +315,6 @@ class TCGGame(RPGGame):
                     assert (
                         False
                     ), f"未知的 ActorType: {actor_model.character_sheet.type}"
-
-            # 必要组件：背包组件, 必须copy一份, 不要进行直接引用，而且在此处生成uuid
-            copy_items = copy.deepcopy(actor_model.items)
-            for item in copy_items:
-                item.uuid = str(uuid.uuid4())  # 始终在实体创建时分配新 uuid
-                logger.debug(
-                    f"为角色 {actor_model.name} 的物品 {item.name} 生成 uuid: {item.uuid}"
-                )
-
-            actor_entity.add(
-                InventoryComponent,
-                actor_model.name,
-                copy_items,
-            )
 
             # TCG 组件：牌组
             actor_entity.replace(DeckComponent, actor_entity.name, [])
@@ -673,33 +657,6 @@ class TCGGame(RPGGame):
             entity.name,
             max(0, round_stats.energy - amount),
         )
-
-    ###############################################################################################################################################
-    def consume_item_from_inventory(self, entity: Entity, item: ConsumableItem) -> None:
-        """从角色背包中移除或递减指定消耗品。
-
-        count > 1 时递减数量；count == 1 时直接移除。
-
-        Args:
-            entity: 角色实体，必须拥有 InventoryComponent
-            item: 目标消耗品（按 uuid 精确匹配）
-        """
-        assert entity.has(InventoryComponent), f"{entity.name} 缺少 InventoryComponent"
-        inventory_comp = entity.get(InventoryComponent)
-        new_items = []
-        removed = False
-        for inv_item in inventory_comp.items:
-            if not removed and inv_item.uuid == item.uuid:
-                removed = True
-                if inv_item.count > 1:
-                    new_items.append(
-                        inv_item.model_copy(update={"count": inv_item.count - 1})
-                    )
-                # count == 1：直接丢弃，不加入 new_items
-            else:
-                new_items.append(inv_item)
-        assert removed, f"背包中找不到 uuid={item.uuid} 的物品"
-        inventory_comp.items = new_items
 
     ###############################################################################################################################################
     def process_zero_health_entities(self) -> None:

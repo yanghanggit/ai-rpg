@@ -27,7 +27,6 @@ from src.ai_rpg.models import (
     DungeonComponent,
     HandComponent,
     HomeComponent,
-    InventoryComponent,
     PlayerComponent,
     PlayerOnlyStageComponent,
     RoundStatsComponent,
@@ -107,7 +106,6 @@ def _make_actor_entity(game: Any, actor_name: str, stage_name: str = "") -> Enti
     entity: Entity = cast(Entity, game._create_entity(actor_name))
     entity.add(ActorComponent, actor_name, "sheet", stage_name)
     entity.add(CharacterStatsComponent, actor_name, CharacterStats(hp=20, max_hp=20))
-    entity.add(InventoryComponent, actor_name, [])
     entity.add(NPCComponent, actor_name)
     entity.add(AppearanceComponent, actor_name, "human body", "")
     return entity

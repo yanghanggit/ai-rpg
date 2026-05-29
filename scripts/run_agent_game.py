@@ -105,12 +105,12 @@ from agent_game_actions import (
     play_cards_specified_game,
     # exhaust_card_game,
     pass_turn_game,
-    use_consumable_item_game,
+    # use_consumable_item_game,
     exit_dungeon_and_return_home_game,
     next_dungeon_game,
     retreat_game,
     generate_dungeon_game,
-    craft_item_game,
+    # craft_item_game,
     add_party_member_game,
     remove_party_member_game,
     get_party_roster_game,
@@ -478,61 +478,61 @@ def pass_turn(snapshot: str, actor: str) -> None:
 
 
 ###############################################################################################################################################
-@main.command("use-consumable-item")
-@click.option(
-    "--snapshot",
-    required=True,
-    help="存档目录路径",
-)
-@click.option(
-    "--actor",
-    required=True,
-    help="使用者角色全名（如 角色.旅行者.无名氏）",
-)
-@click.option(
-    "--item",
-    required=True,
-    help="消耗品名称（须存在于该角色背包中）",
-)
-@click.option(
-    "--target",
-    multiple=True,
-    default=[],
-    help="目标名称，可多次指定（如 --target 怪物A --target 怪物B）",
-)
-def use_consumable_item(
-    snapshot: str, actor: str, item: str, target: tuple[str, ...]
-) -> None:
-    """从存档复位，让指定角色使用指定消耗品，并写入新存档。
+# @main.command("use-consumable-item")
+# @click.option(
+#     "--snapshot",
+#     required=True,
+#     help="存档目录路径",
+# )
+# @click.option(
+#     "--actor",
+#     required=True,
+#     help="使用者角色全名（如 角色.旅行者.无名氏）",
+# )
+# @click.option(
+#     "--item",
+#     required=True,
+#     help="消耗品名称（须存在于该角色背包中）",
+# )
+# @click.option(
+#     "--target",
+#     multiple=True,
+#     default=[],
+#     help="目标名称，可多次指定（如 --target 怪物A --target 怪物B）",
+# )
+# def use_consumable_item(
+#     snapshot: str, actor: str, item: str, target: tuple[str, ...]
+# ) -> None:
+#     """从存档复位，让指定角色使用指定消耗品，并写入新存档。
 
-    适用于【地下城模式】战斗进行中（is_ongoing），draw-cards 之后调用。
-    指定角色消耗 1 点 energy，对 target 列表中的目标施加消耗品效果，行动顺序推进。
-    """
+#     适用于【地下城模式】战斗进行中（is_ongoing），draw-cards 之后调用。
+#     指定角色消耗 1 点 energy，对 target 列表中的目标施加消耗品效果，行动顺序推进。
+#     """
 
-    snapshot_path = Path(snapshot)
-    if not snapshot_path.exists():
-        raise click.BadParameter(
-            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
-        )
+#     snapshot_path = Path(snapshot)
+#     if not snapshot_path.exists():
+#         raise click.BadParameter(
+#             f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+#         )
 
-    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
-    _setup_logger(_log_file)
+#     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+#     _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+#     _setup_logger(_log_file)
 
-    world, player_session = restore_world(snapshot_path)
-    _save_dir = (
-        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
-    )
+#     world, player_session = restore_world(snapshot_path)
+#     _save_dir = (
+#         WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+#     )
 
-    logger.info(f"本次运行日志文件：{_log_file}")
-    logger.info(f"读取存档：{snapshot_path}")
-    logger.info(f"本次存档目录：{_save_dir}")
+#     logger.info(f"本次运行日志文件：{_log_file}")
+#     logger.info(f"读取存档：{snapshot_path}")
+#     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(
-        use_consumable_item_game(
-            world, player_session, actor, item, list(target), _save_dir
-        )
-    )
+#     asyncio.run(
+#         use_consumable_item_game(
+#             world, player_session, actor, item, list(target), _save_dir
+#         )
+#     )
 
 
 ###############################################################################################################################################
@@ -804,52 +804,52 @@ def retreat(snapshot: str) -> None:
 
 
 ###############################################################################################################################################
-@main.command("craft-item")
-@click.option(
-    "--snapshot",
-    required=True,
-    help="存档目录路径",
-)
-@click.option(
-    "--materials",
-    multiple=True,
-    required=True,
-    help="要消耗的材料名称（可重复指定多次）",
-)
-def craft_item(snapshot: str, materials: tuple[str, ...]) -> None:
-    """从存档复位，使用指定材料调用 LLM 制造消耗品，并写入新存档。
+# @main.command("craft-item")
+# @click.option(
+#     "--snapshot",
+#     required=True,
+#     help="存档目录路径",
+# )
+# @click.option(
+#     "--materials",
+#     multiple=True,
+#     required=True,
+#     help="要消耗的材料名称（可重复指定多次）",
+# )
+# def craft_item(snapshot: str, materials: tuple[str, ...]) -> None:
+#     """从存档复位，使用指定材料调用 LLM 制造消耗品，并写入新存档。
 
-    适用于【家园模式】。--materials 必须匹配玩家背包中现有的 MaterialItem 名称，
-    每种材料各消耗 1 个。LLM 将根据材料特性创意生成一件 ConsumableItem 并写入背包。
+#     适用于【家园模式】。--materials 必须匹配玩家背包中现有的 MaterialItem 名称，
+#     每种材料各消耗 1 个。LLM 将根据材料特性创意生成一件 ConsumableItem 并写入背包。
 
-    示例：
-        python run_agent_game.py craft-item --snapshot ./saves/xxx --materials 沙漠草叶 --materials 毒蝶触须
-    """
+#     示例：
+#         python run_agent_game.py craft-item --snapshot ./saves/xxx --materials 沙漠草叶 --materials 毒蝶触须
+#     """
 
-    snapshot_path = Path(snapshot)
-    if not snapshot_path.exists():
-        raise click.BadParameter(
-            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
-        )
+#     snapshot_path = Path(snapshot)
+#     if not snapshot_path.exists():
+#         raise click.BadParameter(
+#             f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+#         )
 
-    if not materials:
-        raise click.BadParameter("至少需要指定一种材料", param_hint="--materials")
+#     if not materials:
+#         raise click.BadParameter("至少需要指定一种材料", param_hint="--materials")
 
-    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
-    _setup_logger(_log_file)
+#     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+#     _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+#     _setup_logger(_log_file)
 
-    world, player_session = restore_world(snapshot_path)
-    _save_dir = (
-        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
-    )
+#     world, player_session = restore_world(snapshot_path)
+#     _save_dir = (
+#         WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+#     )
 
-    logger.info(f"本次运行日志文件：{_log_file}")
-    logger.info(f"读取存档：{snapshot_path}")
-    logger.info(f"本次存档目录：{_save_dir}")
-    logger.info(f"指定材料：{list(materials)}")
+#     logger.info(f"本次运行日志文件：{_log_file}")
+#     logger.info(f"读取存档：{snapshot_path}")
+#     logger.info(f"本次存档目录：{_save_dir}")
+#     logger.info(f"指定材料：{list(materials)}")
 
-    asyncio.run(craft_item_game(world, player_session, list(materials), _save_dir))
+#     asyncio.run(craft_item_game(world, player_session, list(materials), _save_dir))
 
 
 ###############################################################################################################################################

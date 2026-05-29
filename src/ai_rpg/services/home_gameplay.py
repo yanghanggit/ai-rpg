@@ -19,7 +19,6 @@ from .home_actions import (
     activate_switch_stage,
     activate_stage_plan,
     activate_generate_dungeon,
-    activate_craft_item,
     add_party_member,
     remove_party_member,
 )
@@ -41,8 +40,6 @@ from ..models import (
     HomeRosterAddResponse,
     HomeRosterRemoveRequest,
     HomeRosterRemoveResponse,
-    HomeCraftItemRequest,
-    HomeCraftItemResponse,
     TaskStatus,
 )
 
@@ -419,75 +416,5 @@ async def remove_party_member_endpoint(
     return HomeRosterRemoveResponse(message=f"已将 {payload.member_name} 从远征队移除")
 
 
-###################################################################################################################################################################
-###################################################################################################################################################################
-###################################################################################################################################################################
-@home_gameplay_api_router.post(
-    path="/api/home/craft_item/v1/", response_model=HomeCraftItemResponse
-)
-async def home_craft_item(
-    payload: HomeCraftItemRequest,
-    game_server: CurrentGameServer,
-) -> HomeCraftItemResponse:
-    """
-    家园制造物品接口
-
-    根据提交的材料列表调用 LLM 制造消耗品，写入背包并消耗对应材料。
-
-    Args:
-        payload: 制造请求对象，包含材料名称列表
-        game_server: 游戏服务器实例
-
-    Returns:
-        HomeCraftItemResponse: 包含 task_id 的异步任务响应
-
-    Raises:
-        HTTPException(404): 玩家未登录或游戏实例不存在
-        HTTPException(400): 玩家不在家园状态或材料不足
-    """
-
-    logger.info(f"/api/home/craft_item/v1/: {payload.model_dump_json()}")
-
-    current_room = game_server.get_room(payload.user_name)
-    if current_room is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="没有登录，请先登录",
-        )
-
-    async with current_room._lock:
-        rpg_game = await _validate_player_at_home(
-            payload.user_name,
-            game_server,
-        )
-        success, error_detail = activate_craft_item(rpg_game, payload.materials)
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_detail,
-            )
-
-    craft_task = game_server.create_task()
-
-    asyncio.create_task(
-        _execute_home_pipeline_task(
-            craft_task.task_id,
-            payload.user_name,
-            game_server,
-        )
-    )
-
-    logger.info(
-        f"📝 创建 craft_item 任务: task_id={craft_task.task_id}, user={payload.user_name}"
-    )
-
-    return HomeCraftItemResponse(
-        task_id=craft_task.task_id,
-        status=TaskStatus.RUNNING.value,
-        message="craft_item 任务已启动，请通过会话消息查询结果",
-    )
-
-
-###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################

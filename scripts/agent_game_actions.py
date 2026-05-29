@@ -47,6 +47,8 @@ from ai_rpg.services.home_actions import (
     add_party_member,
     remove_party_member,
     get_party_roster,
+    move_item_to_inventory,
+    move_item_to_storage,
 )
 from ai_rpg.services.dungeon_actions import (
     activate_all_card_draws,
@@ -801,6 +803,76 @@ async def get_party_roster_game(
     """
     terminal_game = await _restore_game(world, player_session)
     return get_party_roster(terminal_game)
+
+
+###############################################################################
+async def move_item_to_inventory_game(
+    world: World,
+    player_session: PlayerSession,
+    item_name: str,
+    save_dir: Path,
+) -> TCGGame:
+    """从存档复位，将指定道具从储物箱移入随身背包，并归档新状态。
+
+    Args:
+        world: 由 restore_world() 反序列化的世界数据。
+        player_session: 由 restore_world() 反序列化的玩家会话。
+        item_name: 要移动的道具名称（精确匹配 StorageComponent.items）。
+        save_dir: 新存档写入目录。
+
+    Returns:
+        执行完毕后的 TCGGame 实例；操作失败时提前返回未归档实例。
+    """
+    terminal_game = await _restore_game(world, player_session)
+
+    success, error_detail = move_item_to_inventory(terminal_game, item_name)
+    if not success:
+        logger.error(f"移动道具到背包失败: {error_detail}")
+        return terminal_game
+
+    terminal_game.flush_entities()
+    archive_world(
+        terminal_game._world,
+        terminal_game._player_session,
+        save_dir=save_dir,
+    )
+    logger.info(f"道具 {item_name!r} 已从储物箱移入随身背包，存档: {save_dir}")
+    return terminal_game
+
+
+###############################################################################
+async def move_item_to_storage_game(
+    world: World,
+    player_session: PlayerSession,
+    item_name: str,
+    save_dir: Path,
+) -> TCGGame:
+    """从存档复位，将指定道具从随身背包移回储物箱，并归档新状态。
+
+    Args:
+        world: 由 restore_world() 反序列化的世界数据。
+        player_session: 由 restore_world() 反序列化的玩家会话。
+        item_name: 要移动的道具名称（精确匹配 InventoryComponent.items）。
+        save_dir: 新存档写入目录。
+
+    Returns:
+        执行完毕后的 TCGGame 实例；操作失败时提前返回未归档实例。
+    """
+    terminal_game = await _restore_game(world, player_session)
+
+    success, error_detail = move_item_to_storage(terminal_game, item_name)
+    if not success:
+        logger.error(f"移动道具到储物箱失败: {error_detail}")
+        return terminal_game
+
+    terminal_game.flush_entities()
+    archive_world(
+        terminal_game._world,
+        terminal_game._player_session,
+        save_dir=save_dir,
+    )
+    logger.info(f"道具 {item_name!r} 已从随身背包移回储物箱，存档: {save_dir}")
+    return terminal_game
 
 
 ###############################################################################

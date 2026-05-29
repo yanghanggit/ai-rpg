@@ -11,10 +11,12 @@ from ..models import (
     SpeakAction,
     TransStageAction,
     HomeComponent,
+    InventoryComponent,
     NPCComponent,
     PlayerComponent,
     PartyRosterComponent,
     PlanAction,
+    StorageComponent,
     GenerateDungeonAction,
 )
 
@@ -302,4 +304,82 @@ def activate_generate_dungeon(tcg_game: TCGGame) -> Tuple[bool, str]:
 
     logger.debug(f"激活地下城创建: {player_entity.name}")
     player_entity.replace(GenerateDungeonAction, player_entity.name)
+    return True, ""
+
+
+###################################################################################################################################################################
+def move_item_to_inventory(
+    tcg_game: TCGGame,
+    item_name: str,
+) -> Tuple[bool, str]:
+    """将道具从玩家储物箱（StorageComponent）移动到随身背包（InventoryComponent）。
+
+    Args:
+        tcg_game: TCG 游戏实例
+        item_name: 要移动的道具名称（精确匹配）
+
+    Returns:
+        Tuple[bool, str]: (是否成功, 失败时的错误详情)
+    """
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None, "玩家实体不存在！"
+
+    assert player_entity.has(StorageComponent), "玩家实体缺少 StorageComponent"
+    assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
+
+    storage = player_entity.get(StorageComponent)
+    inventory = player_entity.get(InventoryComponent)
+
+    target = next((item for item in storage.items if item.name == item_name), None)
+    if target is None:
+        error_detail = f"储物箱中不存在名为 {item_name!r} 的道具"
+        logger.error(f"移动道具到背包失败: {error_detail}")
+        return False, error_detail
+
+    new_storage_items = [item for item in storage.items if item is not target]
+    new_inventory_items = list(inventory.items) + [target]
+
+    player_entity.replace(StorageComponent, player_entity.name, new_storage_items)
+    player_entity.replace(InventoryComponent, player_entity.name, new_inventory_items)
+
+    logger.debug(f"道具 {item_name!r} 已从储物箱移至随身背包")
+    return True, ""
+
+
+###################################################################################################################################################################
+def move_item_to_storage(
+    tcg_game: TCGGame,
+    item_name: str,
+) -> Tuple[bool, str]:
+    """将道具从玩家随身背包（InventoryComponent）移动到储物箱（StorageComponent）。
+
+    Args:
+        tcg_game: TCG 游戏实例
+        item_name: 要移动的道具名称（精确匹配）
+
+    Returns:
+        Tuple[bool, str]: (是否成功, 失败时的错误详情)
+    """
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None, "玩家实体不存在！"
+
+    assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
+    assert player_entity.has(StorageComponent), "玩家实体缺少 StorageComponent"
+
+    inventory = player_entity.get(InventoryComponent)
+    storage = player_entity.get(StorageComponent)
+
+    target = next((item for item in inventory.items if item.name == item_name), None)
+    if target is None:
+        error_detail = f"随身背包中不存在名为 {item_name!r} 的道具"
+        logger.error(f"移动道具到储物箱失败: {error_detail}")
+        return False, error_detail
+
+    new_inventory_items = [item for item in inventory.items if item is not target]
+    new_storage_items = list(storage.items) + [target]
+
+    player_entity.replace(InventoryComponent, player_entity.name, new_inventory_items)
+    player_entity.replace(StorageComponent, player_entity.name, new_storage_items)
+
+    logger.debug(f"道具 {item_name!r} 已从随身背包移至储物箱")
     return True, ""

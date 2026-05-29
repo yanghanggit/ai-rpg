@@ -111,6 +111,8 @@ from agent_game_actions import (
     add_party_member_game,
     remove_party_member_game,
     get_party_roster_game,
+    move_item_to_inventory_game,
+    move_item_to_storage_game,
 )
 
 ###########################################################################################################################################
@@ -740,6 +742,84 @@ def retreat(snapshot: str) -> None:
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(retreat_game(world, player_session, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("storage-to-inventory")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+@click.option(
+    "--item",
+    required=True,
+    help="要从储物箱取出的道具名称（精确匹配）",
+)
+def storage_to_inventory(snapshot: str, item: str) -> None:
+    """从存档复位，将指定道具从玩家储物箱移入随身背包，并写入新存档。
+
+    --item 必须精确匹配 StorageComponent.items 中的道具名称。道具对象本身被移动，不会复制。
+    """
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(move_item_to_inventory_game(world, player_session, item, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("inventory-to-storage")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+@click.option(
+    "--item",
+    required=True,
+    help="要从随身背包存回的道具名称（精确匹配）",
+)
+def inventory_to_storage(snapshot: str, item: str) -> None:
+    """从存档复位，将指定道具从玩家随身背包移回储物箱，并写入新存档。
+
+    --item 必须精确匹配 InventoryComponent.items 中的道具名称。道具对象本身被移动，不会复制。
+    """
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(move_item_to_storage_game(world, player_session, item, _save_dir))
 
 
 ###############################################################################################################################################

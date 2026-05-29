@@ -3,6 +3,7 @@ from .messages import ContextMessage
 from pydantic import BaseModel
 from .dungeon import Dungeon
 from .entities import Actor, Stage, WorldSystem
+from .items import AnyItem
 from .serialization import EntitySerialization
 
 
@@ -16,6 +17,7 @@ class Blueprint(BaseModel):
     campaign_setting: str
     stages: List[Stage]
     world_systems: List[WorldSystem]
+    items: List[AnyItem] = []  # 蓝图初始道具库
 
     @property
     def actors(self) -> List[Actor]:

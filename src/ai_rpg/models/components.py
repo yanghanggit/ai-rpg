@@ -3,6 +3,7 @@
 from typing import List, final
 from ..entitas.components import Component, MutableComponent
 from .cards import Card, Keyword, StatusEffect
+from .items import AnyItem
 from .stats import CharacterStats
 from .registry import register_component_type
 
@@ -279,6 +280,26 @@ class KeywordComponent(Component):
 
     name: str
     keywords: List[Keyword]
+
+
+############################################################################################################
+@final
+@register_component_type
+class InventoryComponent(MutableComponent):
+    """随身背包；存储角色当前携带的道具列表。"""
+
+    name: str
+    items: List[AnyItem]  # 当前携带的道具
+
+
+############################################################################################################
+@final
+@register_component_type
+class StorageComponent(MutableComponent):
+    """储物箱；存储角色全部道具，为备用库存；初始内容来自蓝图 items。"""
+
+    name: str
+    items: List[AnyItem]  # 全部库存道具
 
 
 ############################################################################################################

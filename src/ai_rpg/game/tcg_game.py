@@ -32,9 +32,11 @@ from ..models import (
     HandComponent,
     HomeComponent,
     IdentityComponent,
+    InventoryComponent,
     KeywordComponent,
     PlayerComponent,
     PlayerOnlyStageComponent,
+    StorageComponent,
     DiscardPileComponent,
     Round,
     RoundStatsComponent,
@@ -185,6 +187,26 @@ class TCGGame(RPGGame):
         player_actor_entity.replace(PartyRosterComponent, player_actor_entity.name, [])
         logger.debug(
             f"为玩家角色实体 {player_actor_entity.name} 添加 PartyRosterComponent"
+        )
+
+        ## 第7步，添加 InventoryComponent 与 StorageComponent 到玩家角色实体
+        assert not player_actor_entity.has(
+            InventoryComponent
+        ), "玩家角色实体不应该已经有 InventoryComponent"
+        player_actor_entity.replace(InventoryComponent, player_actor_entity.name, [])
+        logger.debug(
+            f"为玩家角色实体 {player_actor_entity.name} 添加 InventoryComponent"
+        )
+
+        assert not player_actor_entity.has(
+            StorageComponent
+        ), "玩家角色实体不应该已经有 StorageComponent"
+        initial_items = copy.deepcopy(self._world.blueprint.items)
+        player_actor_entity.replace(
+            StorageComponent, player_actor_entity.name, initial_items
+        )
+        logger.debug(
+            f"为玩家角色实体 {player_actor_entity.name} 添加 StorageComponent（{len(initial_items)} 件初始道具）"
         )
 
         return self

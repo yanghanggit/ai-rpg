@@ -127,7 +127,6 @@ def _action_plan_json(**overrides: Any) -> dict[str, Any]:
     base: dict[str, Any] = {
         "mind": "",
         "query": "",
-        "inspect_self": False,
         "speak": {},
         "whisper": {},
         "announce": "",

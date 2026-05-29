@@ -65,16 +65,6 @@ class QueryAction(Component):
 @final
 @register_action_component_type
 @register_component_type
-class InspectSelfAction(Component):
-    """触发角色查阅自身背包与战斗属性，注入 LLM context。"""
-
-    name: str
-
-
-############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
 class TransStageAction(Component):
     """触发角色移动到目标场景。"""
 
@@ -103,17 +93,6 @@ class PlayCardsAction(Component):
     card: Card  # 使用的卡牌
     targets: List[str]  # 技能目标角色名列表
     action: str  # 第一人称叙事；空字符串时仲裁 agent 自行演绎
-
-
-############################################################################################################
-# @final
-# @register_action_component_type
-# @register_component_type
-# class ExhaustCardsAction(Component):
-#     """触发角色消耗指定手牌，归入消耗堆（ExhaustPile）。"""
-
-#     name: str
-#     card: Card  # 要消耗的卡牌
 
 
 ############################################################################################################

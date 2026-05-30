@@ -420,7 +420,6 @@ def activate_update_appearance(
 
     player_entity = tcg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
-    assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
     assert player_entity.has(StorageComponent), "玩家实体缺少 StorageComponent"
 
     # 确定目标实体：为空则默认玩家自身
@@ -437,26 +436,24 @@ def activate_update_appearance(
     else:
         target_entity = player_entity
 
-    # 空字符串：移除时装，直接触发动作
+    # 空字符串：脱装，直接触发动作
     if not item_name:
-        logger.debug(f"激活外观更新（移除时装）: {target_entity.name}")
+        logger.debug(f"激活外观更新（脱装）: {target_entity.name}")
         target_entity.replace(UpdateAppearanceAction, target_entity.name, "")
         return True, ""
 
-    # 从玩家随身背包与储物箱合并池中查找目标时装（来源始终是玩家）
-    inventory = player_entity.get(InventoryComponent)
+    # 时装来源始终是玩家的 StorageComponent
     storage = player_entity.get(StorageComponent)
-    all_items = list(inventory.items) + list(storage.items)
     costume = next(
         (
             item
-            for item in all_items
+            for item in storage.items
             if item.name == item_name and item.type == ItemType.COSTUME_ITEM
         ),
         None,
     )
     if costume is None:
-        error_detail = f"背包与储物箱中均不存在名为 {item_name!r} 的时装"
+        error_detail = f"储物箱中不存在名为 {item_name!r} 的时装"
         logger.error(f"激活外观更新失败: {error_detail}")
         return False, error_detail
 

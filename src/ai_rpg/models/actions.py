@@ -76,10 +76,10 @@ class TransStageAction(Component):
 @register_action_component_type
 @register_component_type
 class UpdateAppearanceAction(Component):
-    """触发玩家更新角色外观，将随身背包中指定时装（CostumeItem）应用到 AppearanceComponent。"""
+    """触发角色更新外观。穿：从玩家 StorageComponent 取出指定时装挂载 CostumeComponent；脱：移除 CostumeComponent 并将时装归还玩家 StorageComponent。"""
 
     name: str
-    item_name: str  # 指向 InventoryComponent 中 CostumeItem 的名称
+    item_name: str  # 穿：指向玩家 StorageComponent 中 CostumeItem 的名称；脱：空字符串
 
 
 ############################################################################################################
@@ -113,18 +113,6 @@ class PassTurnAction(Component):
     """触发角色主动跳过本次出牌机会，消耗 1 点 energy，推进行动顺序。"""
 
     name: str
-
-
-############################################################################################################
-# @final
-# @register_action_component_type
-# @register_component_type
-# class UseConsumableItemAction(Component):
-#     """触发角色在战斗中使用一件消耗品，消耗 1 点 energy，推进行动顺序。"""
-
-#     name: str
-#     item: ConsumableItem  # 要使用的消耗品
-#     targets: List[str]  # 目标角色名列表（可为空，表示仅作用于自身）
 
 
 ############################################################################################################
@@ -190,14 +178,3 @@ class PostArbitrationAction(Component):
 
     name: str
     current_turn_actor_name: str  # 本次出牌者名称，用于 LLM 上下文
-
-
-############################################################################################################
-# @final
-# @register_action_component_type
-# @register_component_type
-# class CraftItemAction(Component):
-#     """触发制造工坊流程：以指定材料列表为输入，由 LLM 创意推断并生成消耗品写入背包。"""
-
-#     name: str
-#     materials: List[MaterialItem]  # 要消耗的材料物品列表（已从背包中解析）

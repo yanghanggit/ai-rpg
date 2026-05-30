@@ -46,7 +46,7 @@ def _make_actor_entity(
     """创建带外观和阵营标记的参战角色实体。"""
     entity = context.create_entity()
     entity._name = name
-    entity.add(AppearanceComponent, name, "base_body", appearance, "")
+    entity.add(AppearanceComponent, name, "base_body", appearance)
     if is_ally:
         entity.add(PartyMemberComponent, name, "test_dungeon")
     if is_monster:

@@ -3,7 +3,7 @@
 from typing import List, final
 from ..entitas.components import Component, MutableComponent
 from .cards import Card, Keyword, StatusEffect
-from .items import AnyItem
+from .items import AnyItem, CostumeItem
 from .stats import CharacterStats
 from .registry import register_component_type
 
@@ -95,7 +95,6 @@ class AppearanceComponent(Component):
     name: str
     base_body: str  # 基础身体形态描述（不含装备）
     appearance: str  # 最终外观描述（含装备）
-    costume_item_name: str  # 当前穿戴的时装名（CostumeItem），空字符串表示未穿戴
 
 
 ############################################################################################################
@@ -304,3 +303,12 @@ class StorageComponent(MutableComponent):
 
 
 ############################################################################################################
+
+
+@final
+@register_component_type
+class CostumeComponent(MutableComponent):
+    """时装组件，记录当前穿戴的时装（CostumeItem）"""
+
+    name: str
+    item: CostumeItem

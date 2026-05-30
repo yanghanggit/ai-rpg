@@ -66,6 +66,7 @@ def _make_game(
             campaign_setting="",
             stages=[],
             world_systems=[],
+            storage_entity="世界储物箱",
         )
     world = World(
         entity_counter=0,
@@ -221,6 +222,7 @@ class TestBuildFromBlueprint:
             campaign_setting="",
             stages=[home, player_only],
             world_systems=[],
+            storage_entity="世界储物箱",
         )
 
     def _make_game_for_build(self) -> TCGGame:

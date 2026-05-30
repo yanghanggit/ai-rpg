@@ -1,8 +1,4 @@
 """外观更新动作系统模块。
-
-处理玩家在家园场景中装备或移除时装（CostumeItem）的动作。
-- 指定时装名：从玩家 StorageComponent 取出时装 → 挂载 CostumeComponent，调用 LLM 语义合成最终外观描述，广播给场景内所有角色。
-- 空字符串：移除 CostumeComponent，将时装归还玩家 StorageComponent，将 appearance 重置为 base_body，广播给场景内所有角色。
 """
 
 from typing import final, override
@@ -56,6 +52,8 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
+        
+        # 处理每个触发外观更新动作的实体
         for entity in entities:
             await self._process_update_appearance_action(entity)
 
@@ -66,7 +64,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         action = entity.get(UpdateAppearanceAction)
         appearance_comp = entity.get(AppearanceComponent)
 
-        # 空字符串：脱装 —— 取出 CostumeComponent.item，移除组件，归还玩家 StorageComponent，重置外观
+        # 空字符串：脱装 —— 取出 CostumeComponent.item，移除组件，归还全局 StorageComponent，重置外观
         if not action.item_name:
             if not entity.has(CostumeComponent):
                 logger.warning(f"角色 {entity.name} 未穿戴时装，脱装请求忽略")
@@ -75,11 +73,13 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             costume_item: CostumeItem = entity.get(CostumeComponent).item
             entity.remove(CostumeComponent)
 
-            player_entity = self._game.get_player_entity()
-            assert player_entity is not None, "找不到玩家实体"
-            assert player_entity.has(StorageComponent), "玩家实体缺少 StorageComponent"
-            storage = player_entity.get(StorageComponent)
-            player_entity.replace(
+            storage_entity = self._game.get_storage_entity()
+            assert storage_entity is not None, "找不到全局储物箱实体"
+            assert storage_entity.has(
+                StorageComponent
+            ), "全局储物箱实体缺少 StorageComponent"
+            storage = storage_entity.get(StorageComponent)
+            storage_entity.replace(
                 StorageComponent,
                 storage.name,
                 list(storage.items) + [costume_item],
@@ -105,11 +105,13 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             )
             return
 
-        # 穿装 —— 时装来源始终是玩家的 StorageComponent
-        player_entity = self._game.get_player_entity()
-        assert player_entity is not None, "找不到玩家实体"
-        assert player_entity.has(StorageComponent), "玩家实体缺少 StorageComponent"
-        storage = player_entity.get(StorageComponent)
+        # 穿装 —— 时装来源始终是全局 StorageComponent
+        storage_entity = self._game.get_storage_entity()
+        assert storage_entity is not None, "找不到全局储物箱实体"
+        assert storage_entity.has(
+            StorageComponent
+        ), "全局储物箱实体缺少 StorageComponent"
+        storage = storage_entity.get(StorageComponent)
         costume = next(
             (
                 item
@@ -125,7 +127,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
 
         # 从 StorageComponent 移除该时装
         assert isinstance(costume, CostumeItem)
-        player_entity.replace(
+        storage_entity.replace(
             StorageComponent,
             storage.name,
             [item for item in storage.items if item.name != action.item_name],
@@ -140,11 +142,15 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             costume_name=costume.name,
             costume_description=costume.description,
         )
+
+        # 创建 DeepSeekClient 实例并异步调用 LLM 进行外观描述合成
         client = DeepSeekClient(
             name=entity.name,
             prompt=prompt,
             context=self._game.get_agent_context(entity).context,
         )
+
+        # 异步调用 LLM 进行外观描述合成
         await client.async_chat()
         new_appearance = client.response_content.strip()
 

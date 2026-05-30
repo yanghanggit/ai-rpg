@@ -51,6 +51,7 @@ from ..models import (
     WorldComponent,
     WorldSystem,
 )
+from ..models.items import AnyItem
 from ..models.utils import compute_effective_stats
 from .player_session import PlayerSession
 from ..entitas import Matcher, Entity
@@ -65,6 +66,8 @@ class TCGGame(RPGGame):
         _home_pipeline: 家园场景流程管道（NPC 与玩家共用）
         _combat_execution_pipeline: 地下城战斗执行流程管道
     """
+
+    # _DEFAULT_STORAGE_ENTITY: Final[str] = "世界储物箱"
 
     def __init__(
         self,
@@ -141,6 +144,10 @@ class TCGGame(RPGGame):
         ## 第1步，创建world_system
         self._create_world_entities(self._world.blueprint.world_systems)
 
+        ## 第1.5步，创建全局储物箱实体（挂载在 WorldComponent）
+        initial_items = copy.deepcopy(self._world.blueprint.items)
+        self._create_storage_entity(initial_items)
+
         ## 第2步，创建actor（含牌组与关键词组件挂载）
         self._create_actor_entities(self._world.blueprint.actors)
 
@@ -189,7 +196,7 @@ class TCGGame(RPGGame):
             f"为玩家角色实体 {player_actor_entity.name} 添加 PartyRosterComponent"
         )
 
-        ## 第7步，添加 InventoryComponent 与 StorageComponent 到玩家角色实体
+        ## 第7步，添加 InventoryComponent 到玩家角色实体
         assert not player_actor_entity.has(
             InventoryComponent
         ), "玩家角色实体不应该已经有 InventoryComponent"
@@ -198,18 +205,34 @@ class TCGGame(RPGGame):
             f"为玩家角色实体 {player_actor_entity.name} 添加 InventoryComponent"
         )
 
-        assert not player_actor_entity.has(
-            StorageComponent
-        ), "玩家角色实体不应该已经有 StorageComponent"
-        initial_items = copy.deepcopy(self._world.blueprint.items)
-        player_actor_entity.replace(
-            StorageComponent, player_actor_entity.name, initial_items
-        )
-        logger.debug(
-            f"为玩家角色实体 {player_actor_entity.name} 添加 StorageComponent（{len(initial_items)} 件初始道具）"
-        )
-
         return self
+
+    ###############################################################################################################################################
+    def _create_storage_entity(self, items: List[AnyItem]) -> Entity:
+        """创建全局唯一储物箱实体（WorldComponent + StorageComponent）。"""
+
+        storage_entity = self._world.blueprint.storage_entity
+        assert storage_entity != "", "storage_entity 不能为空"
+        # if not storage_entity:
+        #     storage_entity = self._DEFAULT_STORAGE_ENTITY
+
+        storage_entity_entity = self._create_entity(storage_entity)
+        assert (
+            storage_entity_entity is not None
+        ), f"创建storage_entity失败: {storage_entity}"
+
+        self._world.entity_counter += 1
+        storage_entity_entity.add(
+            IdentityComponent,
+            storage_entity,
+            self._world.entity_counter,
+            str(uuid.uuid4()),
+        )
+        storage_entity_entity.add(WorldComponent, storage_entity)
+        storage_entity_entity.add(StorageComponent, storage_entity, items)
+
+        logger.debug(f"创建全局储物箱实体 {storage_entity}，初始道具 {len(items)} 件")
+        return storage_entity_entity
 
     ###############################################################################################################################################
     def _create_world_entities(

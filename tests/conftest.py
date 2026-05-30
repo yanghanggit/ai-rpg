@@ -6,10 +6,17 @@ from typing import Type, Optional, Any
 try:
     from src.ai_rpg.game.tcg_game import TCGGame
     from src.ai_rpg.models.entities import Actor
-    from src.ai_rpg.models import CharacterSheet
-    from src.ai_rpg.models.entities import CharacterStats
-    from src.ai_rpg.models.world import World, Blueprint
-    from src.ai_rpg.models.dungeon import Dungeon
+    from src.ai_rpg.models import (
+        CharacterSheet,
+        World,
+        Blueprint,
+        Dungeon,
+        CharacterStats,
+    )
+
+    # from src.ai_rpg.models.entities import CharacterStats
+    # from src.ai_rpg.models.world import World, Blueprint
+    # from src.ai_rpg.models.dungeon import Dungeon
     from src.ai_rpg.game.player_session import PlayerSession
 
     _TCGGame: Optional[Type[TCGGame]] = TCGGame
@@ -34,6 +41,7 @@ def sample_game() -> Any:
         campaign_setting="test_setting",
         stages=[],
         world_systems=[],
+        storage_entity="世界储物箱",
     )
     dungeon = Dungeon(name="", rooms=[], ecology="")
     world = World(
@@ -67,7 +75,7 @@ def sample_actor() -> Any:
             type="hero",
             profile="test profile",
             base_body="",
-            appearance="test appearance",
+            # appearance="test appearance",
         ),
         system_message="test system message",
         # kick_off_message="test kick off message",

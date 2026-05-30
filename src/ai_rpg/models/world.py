@@ -17,6 +17,7 @@ class Blueprint(BaseModel):
     campaign_setting: str
     stages: List[Stage]
     world_systems: List[WorldSystem]
+    storage_entity: str  # 全局储物箱实体名
     items: List[AnyItem] = []  # 蓝图初始道具库
 
     @property

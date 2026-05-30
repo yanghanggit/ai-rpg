@@ -203,9 +203,14 @@ class ItemManagementScreen(BaseGameScreen):
         user_name = app.session.user_name
         game_name = app.session.game_name
         player_actor = app.session.blueprint.player_actor
+        storage_entity = app.session.blueprint.storage_entity
 
         try:
-            resp = await fetch_entities_details(user_name, game_name, [player_actor])
+            resp = await fetch_entities_details(
+                user_name,
+                game_name,
+                [player_actor, storage_entity],
+            )
         except Exception as e:
             logger.error(f"ItemManagementScreen._load_items: 查询失败 error={e}")
             log.write(f"[bold red]❌ 读取道具列表失败: {e}[/]")

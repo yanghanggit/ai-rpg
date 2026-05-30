@@ -9,6 +9,7 @@ from ..models import (
     DeathComponent,
     EntitySerialization,
     PlayerComponent,
+    StorageComponent,
     IdentityComponent,
     StageComponent,
     WorldComponent,
@@ -314,6 +315,24 @@ class RPGEntityManager(Context):
             if player_comp.player_name == player_name:
                 return player_entity
         return None
+
+    ###############################################################################################################################################
+    def get_storage_entity(self) -> Optional[Entity]:
+        """获取全局储物箱实体。
+
+        通过 WorldComponent + StorageComponent 组合查找全局唯一储物箱实体。
+
+        Returns:
+            Optional[Entity]: 全局储物箱实体，不存在时返回 None
+        """
+        storage_entities = self.get_group(
+            Matcher(
+                all_of=[WorldComponent, StorageComponent],
+            )
+        ).entities
+
+        assert len(storage_entities) <= 1, "There should be at most one storage entity."
+        return next(iter(storage_entities), None)
 
     ###############################################################################################################################################
     def get_actors_in_stage(self, entity: Entity) -> Set[Entity]:

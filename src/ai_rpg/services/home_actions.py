@@ -326,11 +326,13 @@ def move_item_to_inventory(
     """
     player_entity = tcg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
+    storage_entity = tcg_game.get_storage_entity()
+    assert storage_entity is not None, "全局储物箱实体不存在！"
 
-    assert player_entity.has(StorageComponent), "玩家实体缺少 StorageComponent"
+    assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
     assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
 
-    storage = player_entity.get(StorageComponent)
+    storage = storage_entity.get(StorageComponent)
     inventory = player_entity.get(InventoryComponent)
 
     target = next((item for item in storage.items if item.name == item_name), None)
@@ -349,7 +351,7 @@ def move_item_to_inventory(
     new_storage_items = [item for item in storage.items if item is not target]
     new_inventory_items = list(inventory.items) + [target]
 
-    player_entity.replace(StorageComponent, player_entity.name, new_storage_items)
+    storage_entity.replace(StorageComponent, storage.name, new_storage_items)
     player_entity.replace(InventoryComponent, player_entity.name, new_inventory_items)
 
     logger.debug(f"道具 {item_name!r} 已从储物箱移至随身背包")
@@ -372,12 +374,14 @@ def move_item_to_storage(
     """
     player_entity = tcg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
+    storage_entity = tcg_game.get_storage_entity()
+    assert storage_entity is not None, "全局储物箱实体不存在！"
 
     assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
-    assert player_entity.has(StorageComponent), "玩家实体缺少 StorageComponent"
+    assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
 
     inventory = player_entity.get(InventoryComponent)
-    storage = player_entity.get(StorageComponent)
+    storage = storage_entity.get(StorageComponent)
 
     target = next((item for item in inventory.items if item.name == item_name), None)
     if target is None:
@@ -389,7 +393,7 @@ def move_item_to_storage(
     new_storage_items = list(storage.items) + [target]
 
     player_entity.replace(InventoryComponent, player_entity.name, new_inventory_items)
-    player_entity.replace(StorageComponent, player_entity.name, new_storage_items)
+    storage_entity.replace(StorageComponent, storage.name, new_storage_items)
 
     logger.debug(f"道具 {item_name!r} 已从随身背包移至储物箱")
     return True, ""
@@ -420,7 +424,9 @@ def activate_update_appearance(
 
     player_entity = tcg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
-    assert player_entity.has(StorageComponent), "玩家实体缺少 StorageComponent"
+    storage_entity = tcg_game.get_storage_entity()
+    assert storage_entity is not None, "全局储物箱实体不存在！"
+    assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
 
     # 确定目标实体：为空则默认玩家自身
     if target_name:
@@ -443,7 +449,7 @@ def activate_update_appearance(
         return True, ""
 
     # 时装来源始终是玩家的 StorageComponent
-    storage = player_entity.get(StorageComponent)
+    storage = storage_entity.get(StorageComponent)
     costume = next(
         (
             item

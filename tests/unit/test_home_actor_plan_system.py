@@ -75,6 +75,7 @@ def _make_game() -> TCGGame:
         campaign_setting="",
         stages=[],
         world_systems=[],
+        storage_entity="世界储物箱",
     )
     world = World(
         entity_counter=0,

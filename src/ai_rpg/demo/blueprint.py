@@ -69,6 +69,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             create_dungeon_generation(),
             create_workshop(),
         ],
+        storage_entity="世界储物箱",
         items=[
             GearItem(
                 name="缺口猎刀",

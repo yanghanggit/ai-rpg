@@ -213,8 +213,6 @@ class TCGGame(RPGGame):
 
         storage_entity = self._world.blueprint.storage_entity
         assert storage_entity != "", "storage_entity 不能为空"
-        # if not storage_entity:
-        #     storage_entity = self._DEFAULT_STORAGE_ENTITY
 
         storage_entity_entity = self._create_entity(storage_entity)
         assert (

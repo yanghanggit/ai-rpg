@@ -1,5 +1,4 @@
-"""外观更新动作系统模块。
-"""
+"""外观更新动作系统模块。"""
 
 from typing import final, override
 from loguru import logger
@@ -52,7 +51,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
-        
+
         # 处理每个触发外观更新动作的实体
         for entity in entities:
             await self._process_update_appearance_action(entity)

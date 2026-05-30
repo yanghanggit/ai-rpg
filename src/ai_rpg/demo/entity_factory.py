@@ -72,7 +72,6 @@ def create_actor(
         campaign_setting=campaign_setting,
         system_rules=system_rules,
         character_profile=character_sheet.profile,
-        # appearance=character_sheet.base_body,
     )
 
     return actor

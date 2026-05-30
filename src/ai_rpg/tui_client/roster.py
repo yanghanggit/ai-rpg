@@ -6,8 +6,9 @@ from loguru import logger
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
-from textual.screen import Screen
 from textual.widgets import Input, RichLog, Static
+
+from .base import BaseGameScreen
 
 from .server_client import (
     fetch_entities_details,
@@ -23,7 +24,7 @@ ROSTER_HEADER = """\
 """
 
 
-class RosterScreen(Screen[None]):
+class RosterScreen(BaseGameScreen):
     """远征队管理 Screen：列出可加入的盟友，用编号 toggle 加入/移除远征队。"""
 
     CSS = """
@@ -125,9 +126,7 @@ class RosterScreen(Screen[None]):
         log = self.query_one(RichLog)
         log.write("[dim]正在加载远征队信息...[/]")
 
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             log.write("[red]⚠ 无法取得会话信息。[/]")
             return
@@ -172,9 +171,8 @@ class RosterScreen(Screen[None]):
         inp.disabled = True
         log.write(f"[dim]▶ 正在将 {display_name(npc_name)} 加入远征队...[/]")
         logger.info(f"RosterScreen._do_add: npc_name={npc_name}")
-        from .app import GameClient
 
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             return
         try:
@@ -199,9 +197,8 @@ class RosterScreen(Screen[None]):
         inp.disabled = True
         log.write(f"[dim]▶ 正在将 {display_name(npc_name)} 从远征队移除...[/]")
         logger.info(f"RosterScreen._do_remove: npc_name={npc_name}")
-        from .app import GameClient
 
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             return
         try:

@@ -7,8 +7,9 @@ from loguru import logger
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
-from textual.screen import Screen
 from textual.widgets import Input, RichLog, Static
+
+from .base import BaseGameScreen
 
 from .server_client import fetch_entities_details, fetch_stages_state
 from .utils import display_name
@@ -20,7 +21,7 @@ BROWSER_HEADER = """\
 """
 
 
-class EntityBrowserScreen(Screen[None]):
+class EntityBrowserScreen(BaseGameScreen):
     """实体浏览器 Screen：列出全部 Stage / Actor，按编号查看组件详情。"""
 
     CSS = """
@@ -143,9 +144,7 @@ class EntityBrowserScreen(Screen[None]):
         log = self.query_one(RichLog)
         logger.info(f"_load_entities: 加载实体列表")
         try:
-            from .app import GameClient
-
-            app: GameClient = self.app  # type: ignore[assignment]
+            app = self.game_client
             if app.session is None:
                 return
             user_name = app.session.user_name
@@ -185,9 +184,7 @@ class EntityBrowserScreen(Screen[None]):
         log.write(f"[dim]正在查询实体：{entity_name} ...[/]")
         logger.info(f"_show_entity: 查询 entity_name={entity_name}")
         try:
-            from .app import GameClient
-
-            app: GameClient = self.app  # type: ignore[assignment]
+            app = self.game_client
             if app.session is None:
                 return
             resp = await fetch_entities_details(

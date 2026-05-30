@@ -5,14 +5,14 @@ from typing import List
 from loguru import logger
 from textual import work
 from textual.app import ComposeResult
-from textual.screen import Screen
 from textual.widgets import RichLog
 from ..models import Blueprint
+from .base import BaseGameScreen
 from .server_client import fetch_blueprint_list, login, new_game
 from .utils import display_name
 
 
-class NewGameScreen(Screen[None]):
+class NewGameScreen(BaseGameScreen):
     """新游戏 Screen：自动生成玩家 ID，展示第一个蓝图详情，按 Enter 开始游戏。"""
 
     CSS = """
@@ -157,11 +157,10 @@ class NewGameScreen(Screen[None]):
             logger.info(
                 f"_start_new_game: 游戏创建成功 user_name={user_name} game_name={game_name} → 进入 HomeScreen"
             )
-            from .app import GameClient
             from .home import HomeScreen
             from .session import GameSession
 
-            app: GameClient = self.app  # type: ignore[assignment]
+            app = self.game_client
             app.session = GameSession(
                 user_name=user_name,
                 game_name=game_name,

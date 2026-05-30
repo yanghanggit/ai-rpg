@@ -5,9 +5,9 @@ from itertools import zip_longest
 from loguru import logger
 from textual import work
 from textual.app import ComposeResult
-from textual.screen import Screen
 from textual.widgets import RichLog
 
+from .base import BaseGameScreen
 from .server_client import fetch_dungeon_room
 from .utils import display_name
 
@@ -18,7 +18,7 @@ ROUND_HEADER = """\
 """
 
 
-class RoundDetailScreen(Screen[None]):
+class RoundDetailScreen(BaseGameScreen):
     """战斗回合详情 Screen：显示 Combat.rounds 完整信息（只读）。"""
 
     CSS = """
@@ -60,9 +60,7 @@ class RoundDetailScreen(Screen[None]):
         logger.info(f"RoundDetailScreen._fetch_rounds")
 
         try:
-            from .app import GameClient
-
-            app: GameClient = self.app  # type: ignore[assignment]
+            app = self.game_client
             if app.session is None:
                 return
             room_resp = await fetch_dungeon_room(

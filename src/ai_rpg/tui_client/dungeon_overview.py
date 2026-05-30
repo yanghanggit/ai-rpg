@@ -6,8 +6,9 @@ from loguru import logger
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
-from textual.screen import Screen
 from textual.widgets import Input, RichLog, Static
+
+from .base import BaseGameScreen
 
 from ..models import Dungeon, ActorType
 from .server_client import (
@@ -26,7 +27,7 @@ MENU_TEXT = """\
 """
 
 
-class DungeonOverviewScreen(Screen[None]):
+class DungeonOverviewScreen(BaseGameScreen):
     """地下城总览 Screen：列出全部地下城副本，按编号查看详情。"""
 
     CSS = """
@@ -194,9 +195,7 @@ class DungeonOverviewScreen(Screen[None]):
         log.write(f"[dim]▶ 正在进入地下城：{dungeon_name}...[/]")
         logger.info(f"DungeonOverviewScreen._do_enter_dungeon: dungeon={dungeon_name}")
 
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             return
         user_name = app.session.user_name
@@ -227,9 +226,7 @@ class DungeonOverviewScreen(Screen[None]):
         log.write("[dim]▶ 正在触发地下城生成流程...[/]")
         logger.info(f"DungeonOverviewScreen._do_generate_dungeon")
 
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             inp.disabled = False
             inp.focus()
@@ -288,9 +285,7 @@ class DungeonOverviewScreen(Screen[None]):
         logger.info("_load_dungeons: 正在获取地下城列表...")
 
         # 显示远征队名单
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             return
         user_name = app.session.user_name

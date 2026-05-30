@@ -3,9 +3,9 @@
 from loguru import logger
 from textual import work
 from textual.app import ComposeResult
-from textual.screen import Screen
 from textual.widgets import RichLog
 
+from .base import BaseGameScreen
 from .server_client import fetch_entities_details, fetch_stages_state
 from .utils import display_name
 
@@ -18,7 +18,7 @@ STAGES_HEADER = """\
 """
 
 
-class StagesScreen(Screen[None]):
+class StagesScreen(BaseGameScreen):
     """场景总览 Screen：展示全部场景角色分布，并显示玩家当前场景描述。"""
 
     CSS = """
@@ -57,9 +57,7 @@ class StagesScreen(Screen[None]):
         log = self.query_one(RichLog)
         log.write("[dim]正在加载场景数据...[/]")
 
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             return
         user_name = app.session.user_name

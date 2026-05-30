@@ -449,13 +449,15 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             )
         )
 
-        target_arbitration_effects: Dict[str, List[StatusEffect]] = {
-            target_name: self._game.get_status_effects_by_phase(
-                self._game.get_entity_by_name(target_name),  # type: ignore[arg-type]
-                EffectPhase.ARBITRATION,
+        target_arbitration_effects: Dict[str, List[StatusEffect]] = {}
+        for target_name in dict.fromkeys(play_cards_action.targets):
+            target_entity = self._game.get_entity_by_name(target_name)
+            assert target_entity is not None, f"无法找到目标实体: {target_name}"
+            target_arbitration_effects[target_name] = (
+                self._game.get_status_effects_by_phase(
+                    target_entity, EffectPhase.ARBITRATION
+                )
             )
-            for target_name in dict.fromkeys(play_cards_action.targets)
-        }
 
         message = _generate_combat_arbitration_prompt(
             actor_entity.name,

@@ -9,8 +9,8 @@ from rich.table import Table
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
-from textual.screen import Screen
 from textual.widgets import Input, RichLog, Static
+from .base import BaseGameScreen
 from .deck_detail import DeckDetailScreen
 from .round_detail import RoundDetailScreen
 from .utils import display_name
@@ -99,7 +99,7 @@ COMBAT_ROOM_MENU: Final[
 
 
 @final
-class CombatRoomScreen(Screen[None]):
+class CombatRoomScreen(BaseGameScreen):
     """战斗房间 Screen：进入地下城战斗房间后的主界面，支持战斗操作与状态查询。"""
 
     CSS = """
@@ -160,19 +160,13 @@ class CombatRoomScreen(Screen[None]):
 
     @property
     def _user_name(self) -> str:
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
-        assert app.session is not None
-        return app.session.user_name
+        assert self.game_client.session is not None
+        return self.game_client.session.user_name
 
     @property
     def _game_name(self) -> str:
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
-        assert app.session is not None
-        return app.session.game_name
+        assert self.game_client.session is not None
+        return self.game_client.session.game_name
 
     def compose(self) -> ComposeResult:
         yield Static("", id="combat-status", markup=True)

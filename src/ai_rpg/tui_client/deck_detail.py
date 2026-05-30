@@ -3,9 +3,9 @@
 from loguru import logger
 from textual import work
 from textual.app import ComposeResult
-from textual.screen import Screen
 from textual.widgets import RichLog
 
+from .base import BaseGameScreen
 from .server_client import (
     fetch_dungeon_room,
     fetch_entities_details,
@@ -19,6 +19,7 @@ from ..models import (
     ExhaustPileComponent,
     DiscardPileComponent,
 )
+from ..models.cards import Card
 
 _TARGET_LABEL = {
     "enemy_single": "[red]敌方单体[/]",
@@ -35,7 +36,7 @@ DECK_HEADER = """\
 """
 
 
-class DeckDetailScreen(Screen[None]):
+class DeckDetailScreen(BaseGameScreen):
     """牌组详情 Screen：分节展示各角色 DiscardPileComponent（已出牌）和 DrawPileComponent（可重抽）和 ExhaustPileComponent（弃牌堆）。"""
 
     CSS = """
@@ -76,9 +77,7 @@ class DeckDetailScreen(Screen[None]):
         logger.info("DeckDetailScreen._fetch_deck")
 
         try:
-            from .app import GameClient
-
-            app: GameClient = self.app  # type: ignore[assignment]
+            app = self.game_client
             if app.session is None:
                 return
 
@@ -160,10 +159,7 @@ class DeckDetailScreen(Screen[None]):
                     f"[dim]牌库 {deck_count} 张 | 已出牌 {played_count} 张 | 消耗堆 {discard_count} 张 | 可重抽 {draw_count} 张[/]"
                 )
 
-                def _render_cards(cards: list, log: object) -> None:  # type: ignore[type-arg]
-                    from textual.widgets import RichLog as _RichLog
-
-                    assert isinstance(log, _RichLog)
+                def _render_cards(cards: list[Card], log: RichLog) -> None:
                     for i, card in enumerate(cards, start=1):
                         hit_str = (
                             f"x[yellow]{card.hit_count}[/]"

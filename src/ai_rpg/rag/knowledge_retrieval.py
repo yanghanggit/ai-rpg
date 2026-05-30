@@ -11,9 +11,10 @@ RAG 知识检索模块
 """
 
 import traceback
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, cast
 from loguru import logger
 from chromadb.api.models.Collection import Collection
+from chromadb.api.types import Metadatas
 from sentence_transformers import SentenceTransformer
 
 
@@ -78,7 +79,7 @@ def add_documents(
         collection.add(
             embeddings=embeddings,
             documents=documents,
-            metadatas=metadatas,  # type: ignore[arg-type]
+            metadatas=cast(Metadatas, metadatas),
             ids=ids,
         )
 

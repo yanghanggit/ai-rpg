@@ -7,8 +7,9 @@ from loguru import logger
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
-from textual.screen import Screen
 from textual.widgets import Input, RichLog, Static
+
+from .base import BaseGameScreen
 
 from .server_client import (
     fetch_stages_state,
@@ -26,7 +27,7 @@ SPEAK_HEADER = """\
 """
 
 
-class SpeakScreen(Screen[None]):
+class SpeakScreen(BaseGameScreen):
     """对话 Screen：列出当前场景可交谈的 NPC，选目标后输入说话内容发送。"""
 
     CSS = """
@@ -126,9 +127,7 @@ class SpeakScreen(Screen[None]):
         log.write("[dim]正在加载当前场景 NPC...[/]")
         logger.info(f"SpeakScreen._load_targets")
 
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             return
         user_name = app.session.user_name
@@ -196,9 +195,7 @@ class SpeakScreen(Screen[None]):
         task_id: str = ""
         success = False
         try:
-            from .app import GameClient
-
-            app: GameClient = self.app  # type: ignore[assignment]
+            app = self.game_client
             if app.session is None:
                 inp.disabled = False
                 inp.focus()

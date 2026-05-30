@@ -7,8 +7,9 @@ from loguru import logger
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
-from textual.screen import Screen
 from textual.widgets import Input, RichLog, Static
+
+from .base import BaseGameScreen
 
 from .server_client import (
     fetch_entities_details,
@@ -27,7 +28,7 @@ SWITCH_STAGE_HEADER = """\
 """
 
 
-class SwitchStageScreen(Screen[None]):
+class SwitchStageScreen(BaseGameScreen):
     """场景切换 Screen：列出可前往的场景，输入编号后直接发送切换动作。"""
 
     CSS = """
@@ -113,9 +114,7 @@ class SwitchStageScreen(Screen[None]):
         log.write("[dim]正在加载场景列表...[/]")
         logger.info(f"SwitchStageScreen._load_stages")
 
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             return
         user_name = app.session.user_name
@@ -212,9 +211,7 @@ class SwitchStageScreen(Screen[None]):
         log.write(f"[dim]▶ 正在切换到场景：{display_name(target_stage)}...[/]")
         logger.info(f"SwitchStageScreen._do_switch_stage: target_stage={target_stage}")
 
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             inp.disabled = False
             inp.focus()

@@ -3,8 +3,9 @@
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
-from textual.screen import Screen
 from textual.widgets import Input, RichLog, Static
+
+from .base import BaseGameScreen
 
 import asyncio
 
@@ -22,6 +23,8 @@ from .server_client import (
 from ..models.session_message import MessageType
 from ..models.agent_event import EventHead
 from .utils import display_name
+
+from typing import Any
 
 MENU_TEXT = """\
 [bold yellow]可用操作（输入编号执行）：[/]
@@ -45,7 +48,7 @@ MENU_TEXT = """\
 """
 
 
-def _format_agent_event(data: dict) -> str:  # type: ignore[type-arg]
+def _format_agent_event(data: dict[str, Any]) -> str:
     """将 AGENT_EVENT 的 data dict 渲染为 Rich markup 字符串。"""
     head = data.get("head", EventHead.NONE)
     try:
@@ -105,7 +108,7 @@ def _format_agent_event(data: dict) -> str:  # type: ignore[type-arg]
             return f"[dim cyan]{data.get('message', '')}[/]"
 
 
-class HomeScreen(Screen[None]):
+class HomeScreen(BaseGameScreen):
     """游戏主场景 Screen（Screen 3）。新游戏创建成功后进入此界面。"""
 
     CSS = """
@@ -161,9 +164,7 @@ class HomeScreen(Screen[None]):
             yield Input(placeholder="输入编号执行操作...", id="home-input")
 
     def on_mount(self) -> None:
-        from .app import GameClient
-
-        _app: GameClient = self.app  # type: ignore[assignment]
+        _app = self.game_client
         log = self.query_one(RichLog)
         log.write(MENU_TEXT)
         if _app.session:
@@ -207,9 +208,7 @@ class HomeScreen(Screen[None]):
     @work
     async def _show_player_status(self) -> None:
         """异步查询并更新状态栏。"""
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             return
         bp = app.session.blueprint
@@ -311,9 +310,7 @@ class HomeScreen(Screen[None]):
     @work
     async def _do_advance(self) -> None:
         """执行一轮家园推进（home pipeline），推进期间禁用输入框并轮询任务状态。"""
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             return
         user_name = app.session.user_name
@@ -363,9 +360,7 @@ class HomeScreen(Screen[None]):
 
     @work(exclusive=True)
     async def _poll_messages(self) -> None:
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             return
         logger.info(
@@ -408,9 +403,7 @@ class HomeScreen(Screen[None]):
 
     @work
     async def _do_logout(self) -> None:
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             return
         user_name = app.session.user_name

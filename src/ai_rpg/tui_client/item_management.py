@@ -6,8 +6,9 @@ from loguru import logger
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
-from textual.screen import Screen
 from textual.widgets import Input, RichLog, Static
+
+from .base import BaseGameScreen
 
 from .server_client import (
     fetch_entities_details,
@@ -29,7 +30,7 @@ ITEM_MGMT_HEADER = """\
 _ItemEntry = Tuple[Literal["inventory", "storage", "equipped"], Dict[str, Any]]
 
 
-class ItemManagementScreen(Screen[None]):
+class ItemManagementScreen(BaseGameScreen):
     """道具管理 Screen：列出全部道具并支持在背包与储物箱之间移动。"""
 
     CSS = """
@@ -194,9 +195,7 @@ class ItemManagementScreen(Screen[None]):
         log = self.query_one(RichLog)
         log.write("[dim]正在加载道具信息...[/]")
 
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             log.write("[red]⚠ 无法取得会话信息。[/]")
             return
@@ -245,9 +244,7 @@ class ItemManagementScreen(Screen[None]):
         log.write(f"[dim]▶ 正在将 {display_name(item_name)} 移入背包...[/]")
         logger.info(f"ItemManagementScreen._do_move_to_inventory: item={item_name}")
 
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             inp.disabled = False
             return
@@ -277,9 +274,7 @@ class ItemManagementScreen(Screen[None]):
         log.write(f"[dim]▶ 正在将 {display_name(item_name)} 移入储物箱...[/]")
         logger.info(f"ItemManagementScreen._do_move_to_storage: item={item_name}")
 
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             inp.disabled = False
             return

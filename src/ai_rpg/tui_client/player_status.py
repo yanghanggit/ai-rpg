@@ -20,9 +20,9 @@ from ..models import (
 )
 from textual import work
 from textual.app import ComposeResult
-from textual.screen import Screen
 from textual.widgets import RichLog
 
+from .base import BaseGameScreen
 from .server_client import fetch_entities_details
 from .utils import display_name, render_item
 
@@ -153,7 +153,7 @@ STATUS_HEADER = """\
 """
 
 
-class PlayerStatusScreen(Screen[None]):
+class PlayerStatusScreen(BaseGameScreen):
     """当前状态 Screen：显示玩家/世界设定/角色实体组件详情。"""
 
     CSS = """
@@ -189,9 +189,7 @@ class PlayerStatusScreen(Screen[None]):
     @work
     async def _load_status(self) -> None:
         log = self.query_one(RichLog)
-        from .app import GameClient
-
-        app: GameClient = self.app  # type: ignore[assignment]
+        app = self.game_client
         if app.session is None:
             return
         user_name = app.session.user_name

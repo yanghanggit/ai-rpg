@@ -50,6 +50,7 @@ from ..models import (
     World,
     WorldComponent,
     WorldSystem,
+    CostumeComponent,
 )
 from ..models.items import AnyItem
 from ..models.utils import compute_effective_stats
@@ -372,6 +373,17 @@ class TCGGame(RPGGame):
             logger.debug(
                 f"为 Actor 实体 {actor_entity.name} 挂载 KeywordComponent ({len(actor_model.keywords)} 条关键词)"
             )
+
+            # TCG 组件：初始时装（CostumeComponent），如果 actor_model.custom_item 不为 None，则挂载 CostumeComponent，初始时装来源于 actor_model.custom_item
+            if actor_model.custom_item is not None:
+                actor_entity.replace(
+                    CostumeComponent,
+                    actor_entity.name,
+                    copy.deepcopy(actor_model.custom_item),
+                )
+                logger.debug(
+                    f"为 Actor 实体 {actor_entity.name} 添加初始时装 {actor_model.custom_item.name}"
+                )
 
             # 添加到返回值
             actor_entities.append(actor_entity)

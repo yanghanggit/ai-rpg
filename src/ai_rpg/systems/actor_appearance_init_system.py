@@ -69,14 +69,17 @@ class ActorAppearanceInitSystem(ExecuteProcessor):
 
         # 将合成结果更新回角色外观组件
         for entity, client in zip(targets, clients):
+
             appearance_comp = entity.get(AppearanceComponent)
             costume = entity.get(CostumeComponent).item
             new_appearance = client.response_content.strip()
+
             if not new_appearance:
                 logger.warning(
                     f"ActorAppearanceInitSystem: LLM 返回空，角色 {entity.name} 退回简单拼接"
                 )
                 new_appearance = f"{appearance_comp.base_body}，{costume.description}"
+
             entity.replace(
                 AppearanceComponent,
                 appearance_comp.name,

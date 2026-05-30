@@ -40,12 +40,20 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
 
     # 创建英雄营地场景和角色
     actor_wanderer = create_wanderer()
+    actor_wanderer.custom_item = CostumeItem(
+        name="旅行者风尘斗篷",
+        description="一件覆盖全身的宽幅斗篷，布料经风沙磨砺后呈不均匀的赭石色，边缘绣有简单的几何暗纹。披上后显得愈发像一名经历颇丰的旅人。",
+    )
 
     # 调整旅行者的速度属性，增加其在 SPEED_ORDER 策略下的出手优先级
     actor_wanderer.character_stats.speed = 2
 
     # 创建学者角色
     actor_scholar = create_scholar()
+    actor_scholar.custom_item = CostumeItem(
+        name="学者墨纹长袍",
+        description="一件深灰色长袍，袖口与衣摆绣有已褪色的墨色卷轴图案。穿上后气质沉稳，颇有远行学者的风范。",
+    )
 
     # 创建场景
     stage_broken_wall_enclosure = create_broken_wall_enclosure()
@@ -84,14 +92,6 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 stat_bonuses=CharacterStats(
                     hp=0, max_hp=0, attack=0, defense=2, energy=0, speed=0
                 ),
-            ),
-            CostumeItem(
-                name="旅行者风尘斗篷",
-                description="一件覆盖全身的宽幅斗篷，布料经风沙磨砺后呈不均匀的赭石色，边缘绣有简单的几何暗纹。披上后显得愈发像一名经历颇丰的旅人。",
-            ),
-            CostumeItem(
-                name="学者墨纹长袍",
-                description="一件深灰色长袍，袖口与衣摆绣有已褪色的墨色卷轴图案。穿上后气质沉稳，颇有远行学者的风范。",
             ),
             ConsumableItem(
                 name="裂口草药包",

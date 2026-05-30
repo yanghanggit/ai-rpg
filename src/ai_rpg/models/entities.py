@@ -1,9 +1,10 @@
 from enum import StrEnum, unique
-from typing import List, final
+from typing import List, final, Optional
 from pydantic import BaseModel
 from .serialization import ComponentSerialization
 from .stats import CharacterStats
 from .cards import Keyword
+from .items import CostumeItem
 
 
 ###############################################################################################################################################
@@ -60,6 +61,7 @@ class Actor(BaseModel):
     character_sheet: CharacterSheet
     system_message: str
     character_stats: CharacterStats
+    custom_item: Optional[CostumeItem] = None  # 当前穿戴的时装，None 表示未穿戴任何时装
     keywords: List[Keyword] = (
         []
     )  # 卡牌关键词约束列表，用于限制 LLM 生成卡牌的风格与功能边界

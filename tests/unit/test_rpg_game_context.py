@@ -8,7 +8,7 @@ Tests for RPGGame context message management methods:
 """
 
 import pytest
-from typing import Any
+from typing import Any, cast
 
 from src.ai_rpg.models.messages import AIMessage, HumanMessage
 from src.ai_rpg.entitas.entity import Entity
@@ -28,13 +28,13 @@ def game(sample_game: Any) -> Any:
 @pytest.fixture
 def actor(game: Any) -> Entity:
     """Create a named entity inside the game context."""
-    return game._create_entity("TestActor")  # type: ignore[no-any-return]
+    return cast(Entity, game._create_entity("TestActor"))
 
 
 @pytest.fixture
 def second_actor(game: Any) -> Entity:
     """Create a second named entity for multi-entity tests."""
-    return game._create_entity("OtherActor")  # type: ignore[no-any-return]
+    return cast(Entity, game._create_entity("OtherActor"))
 
 
 # ---------------------------------------------------------------------------

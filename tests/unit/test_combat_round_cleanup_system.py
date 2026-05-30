@@ -527,8 +527,8 @@ class TestProcessRoundEndEffects:
             call_order.append("tick")
             original_tick()
 
-        system.process_round_end_effects = track_round_end  # type: ignore[method-assign]
-        system.tick_status_effects_duration = track_tick  # type: ignore[method-assign]
+        setattr(system, "process_round_end_effects", track_round_end)
+        setattr(system, "tick_status_effects_duration", track_tick)
 
         await system.execute()
 

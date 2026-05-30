@@ -506,7 +506,7 @@ def run_all_vector_tests() -> None:
     try:
         # 确保数据库表已创建
         from src.ai_rpg.pgsql.client import engine
-        from src.ai_rpg.pgsql.client import Base  # type: ignore[attr-defined]
+        from src.ai_rpg.pgsql.base import Base
 
         Base.metadata.create_all(bind=engine)
         logger.info("✅ 数据库表已就绪")
@@ -530,7 +530,7 @@ def run_all_demos() -> None:
     try:
         # 确保数据库表已创建
         from src.ai_rpg.pgsql.client import engine
-        from src.ai_rpg.pgsql.client import Base  # type: ignore[attr-defined]
+        from src.ai_rpg.pgsql.base import Base
 
         Base.metadata.create_all(bind=engine)
 

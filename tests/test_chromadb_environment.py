@@ -295,6 +295,8 @@ class TestChromaDBEnvironment:
             from chromadb.utils.embedding_functions import (
                 SentenceTransformerEmbeddingFunction,
             )
+            from chromadb.api.types import EmbeddingFunction, Embeddable
+            from typing import cast as _cast
             from src.ai_rpg.embedding_model import multilingual_model, is_model_cached
 
             print(f"✅ [{time.time()-start_test_time:.2f}s] 组件导入完成")
@@ -346,7 +348,7 @@ class TestChromaDBEnvironment:
                 )
                 collection = client.create_collection(
                     name=test_collection_name,
-                    embedding_function=ef,  # type: ignore[arg-type]
+                    embedding_function=_cast(EmbeddingFunction[Embeddable], ef),
                 )
                 print(f"✅ [{time.time()-start_test_time:.2f}s] 集合创建完成")
 

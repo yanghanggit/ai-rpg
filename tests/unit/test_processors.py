@@ -127,22 +127,22 @@ class TestProcessors:
     def test_initialize_processor_abstract(self) -> None:
         """Test that InitializeProcessor is abstract."""
         with pytest.raises(TypeError):
-            InitializeProcessor()  # type: ignore
+            InitializeProcessor()  # type: ignore[abstract]
 
     def test_execute_processor_abstract(self) -> None:
         """Test that ExecuteProcessor is abstract."""
         with pytest.raises(TypeError):
-            ExecuteProcessor()  # type: ignore
+            ExecuteProcessor()  # type: ignore[abstract]
 
     def test_cleanup_processor_abstract(self) -> None:
         """Test that CleanupProcessor is abstract."""
         with pytest.raises(TypeError):
-            CleanupProcessor()  # type: ignore
+            CleanupProcessor()  # type: ignore[abstract]
 
     def test_tear_down_processor_abstract(self) -> None:
         """Test that TearDownProcessor is abstract."""
         with pytest.raises(TypeError):
-            TearDownProcessor()  # type: ignore
+            TearDownProcessor()  # type: ignore[abstract]
 
     @pytest.mark.asyncio
     async def test_initialize_processor_implementation(self) -> None:
@@ -544,8 +544,10 @@ class TestProcessors:
         normal_proc = TestExecuteProcessor()
 
         # Mock the reactive processors using setattr to avoid mypy error
-        setattr(reactive_proc1, "activate", Mock())
-        setattr(reactive_proc2, "activate", Mock())
+        mock_activate1 = Mock()
+        mock_activate2 = Mock()
+        setattr(reactive_proc1, "activate", mock_activate1)
+        setattr(reactive_proc2, "activate", mock_activate2)
 
         processors.add(reactive_proc1)
         processors.add(reactive_proc2)
@@ -553,8 +555,8 @@ class TestProcessors:
 
         processors.activate_reactive_processors()
 
-        reactive_proc1.activate.assert_called_once()  # type: ignore
-        reactive_proc2.activate.assert_called_once()  # type: ignore
+        mock_activate1.assert_called_once()
+        mock_activate2.assert_called_once()
 
     def test_processors_deactivate_reactive_processors(self) -> None:
         """Test deactivating reactive processors."""
@@ -567,8 +569,10 @@ class TestProcessors:
         normal_proc = TestExecuteProcessor()
 
         # Mock the reactive processors using setattr to avoid mypy error
-        setattr(reactive_proc1, "deactivate", Mock())
-        setattr(reactive_proc2, "deactivate", Mock())
+        mock_deactivate1 = Mock()
+        mock_deactivate2 = Mock()
+        setattr(reactive_proc1, "deactivate", mock_deactivate1)
+        setattr(reactive_proc2, "deactivate", mock_deactivate2)
 
         processors.add(reactive_proc1)
         processors.add(reactive_proc2)
@@ -576,8 +580,8 @@ class TestProcessors:
 
         processors.deactivate_reactive_processors()
 
-        reactive_proc1.deactivate.assert_called_once()  # type: ignore
-        reactive_proc2.deactivate.assert_called_once()  # type: ignore
+        mock_deactivate1.assert_called_once()
+        mock_deactivate2.assert_called_once()
 
     def test_processors_clear_reactive_processors(self) -> None:
         """Test clearing reactive processors."""
@@ -590,8 +594,10 @@ class TestProcessors:
         normal_proc = TestExecuteProcessor()
 
         # Mock the reactive processors using setattr to avoid mypy error
-        setattr(reactive_proc1, "clear", Mock())
-        setattr(reactive_proc2, "clear", Mock())
+        mock_clear1 = Mock()
+        mock_clear2 = Mock()
+        setattr(reactive_proc1, "clear", mock_clear1)
+        setattr(reactive_proc2, "clear", mock_clear2)
 
         processors.add(reactive_proc1)
         processors.add(reactive_proc2)
@@ -599,8 +605,8 @@ class TestProcessors:
 
         processors.clear_reactive_processors()
 
-        reactive_proc1.clear.assert_called_once()  # type: ignore
-        reactive_proc2.clear.assert_called_once()  # type: ignore
+        mock_clear1.assert_called_once()
+        mock_clear2.assert_called_once()
 
     def test_processors_nested_reactive_operations(self) -> None:
         """Test reactive operations on nested processor containers."""
@@ -610,24 +616,27 @@ class TestProcessors:
 
         # Add reactive processor to nested container
         reactive_proc = TestReactiveProcessor(context)
-        setattr(reactive_proc, "activate", Mock())
-        setattr(reactive_proc, "deactivate", Mock())
-        setattr(reactive_proc, "clear", Mock())
+        mock_activate = Mock()
+        mock_deactivate = Mock()
+        mock_clear = Mock()
+        setattr(reactive_proc, "activate", mock_activate)
+        setattr(reactive_proc, "deactivate", mock_deactivate)
+        setattr(reactive_proc, "clear", mock_clear)
 
         nested_processors.add(reactive_proc)
         main_processors.add(nested_processors)
 
         # Test activate
         main_processors.activate_reactive_processors()
-        reactive_proc.activate.assert_called_once()  # type: ignore
+        mock_activate.assert_called_once()
 
         # Test deactivate
         main_processors.deactivate_reactive_processors()
-        reactive_proc.deactivate.assert_called_once()  # type: ignore
+        mock_deactivate.assert_called_once()
 
         # Test clear
         main_processors.clear_reactive_processors()
-        reactive_proc.clear.assert_called_once()  # type: ignore
+        mock_clear.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_processors_full_lifecycle(self) -> None:
@@ -643,13 +652,16 @@ class TestProcessors:
         processors.add(reactive_proc)
 
         # Mock reactive processor methods using setattr to avoid mypy error
-        setattr(reactive_proc, "activate", Mock())
-        setattr(reactive_proc, "deactivate", Mock())
-        setattr(reactive_proc, "clear", Mock())
+        mock_activate = Mock()
+        mock_clear = Mock()
+        mock_deactivate = Mock()
+        setattr(reactive_proc, "activate", mock_activate)
+        setattr(reactive_proc, "deactivate", mock_deactivate)
+        setattr(reactive_proc, "clear", mock_clear)
 
         # Activate reactive processors
         processors.activate_reactive_processors()
-        reactive_proc.activate.assert_called_once()  # type: ignore
+        mock_activate.assert_called_once()
 
         # Initialize
         await processors.initialize()
@@ -665,11 +677,11 @@ class TestProcessors:
 
         # Clear reactive processors
         processors.clear_reactive_processors()
-        reactive_proc.clear.assert_called_once()  # type: ignore
+        mock_clear.assert_called_once()
 
         # Deactivate reactive processors
         processors.deactivate_reactive_processors()
-        reactive_proc.deactivate.assert_called_once()  # type: ignore
+        mock_deactivate.assert_called_once()
 
         # Tear down
         processors.tear_down()

@@ -1,9 +1,9 @@
 """游戏动作组件。添加到实体后由对应系统处理执行。"""
 
-from typing import Dict, List, final
+from typing import Dict, List, Optional, final
 from ..entitas.components import Component
 from .cards import Card
-from .items import MaterialItem
+from .items import CostumeItem, MaterialItem
 from .registry import register_action_component_type, register_component_type
 
 
@@ -80,7 +80,10 @@ class UpdateAppearanceAction(Component):
     """触发角色更新外观。穿：从玩家 StorageComponent 取出指定时装挂载 CostumeComponent；脱：移除 CostumeComponent 并将时装归还玩家 StorageComponent。"""
 
     name: str
-    item_name: str  # 穿：指向玩家 StorageComponent 中 CostumeItem 的名称；脱：空字符串
+    costume_item_name: (
+        str  # 穿：指向玩家 StorageComponent 中 CostumeItem 的名称；脱：空字符串
+    )
+    costume_item: Optional[CostumeItem] = None  # 穿：检索出的时装对象；脱：None
 
 
 ############################################################################################################

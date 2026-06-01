@@ -12,7 +12,7 @@ from ..models import (
     CostumeComponent,
     StorageComponent,
 )
-from ..models.items import CostumeItem, ItemType
+from ..models.items import CostumeItem
 from .appearance_synthesis_prompt import (
     build_appearance_synthesis_prompt,
     build_remove_costume_message,
@@ -47,104 +47,106 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     async def _process_update_appearance_action(self, entity: Entity) -> None:
-        """处理外观更新动作：空 item_name 脱装，否则从玩家 StorageComponent 取出时装穿上。"""
+        """处理外观更新动作：先脱（若有），costume_item_name 非空则再穿上新时装。"""
 
         action = entity.get(UpdateAppearanceAction)
         appearance_comp = entity.get(AppearanceComponent)
 
-        # 空字符串：脱装 —— 取出 CostumeComponent.item，移除组件，归还全局 StorageComponent，重置外观
-        if not action.item_name:
-            if not entity.has(CostumeComponent):
-                logger.warning(f"角色 {entity.name} 未穿戴时装，脱装请求忽略")
-                return
+        # 纯脱装请求但无时装：断言失败
+        assert action.costume_item_name or entity.has(
+            CostumeComponent
+        ), f"角色 {entity.name} 未穿戴时装，脱装请求忽略"
 
-            costume_item: CostumeItem = entity.get(CostumeComponent).item
-            entity.remove(CostumeComponent)
+        # 无论穿还是脱，先执行脱装（有时装则归还储物箱并重置外观）
+        self._process_remove_costume(entity, appearance_comp)
 
-            storage_entity = self._game.get_storage_entity()
-            assert storage_entity is not None, "找不到全局储物箱实体"
-            assert storage_entity.has(
-                StorageComponent
-            ), "全局储物箱实体缺少 StorageComponent"
-            storage = storage_entity.get(StorageComponent)
-            storage_entity.replace(
-                StorageComponent,
-                storage.name,
-                list(storage.items) + [costume_item],
-            )
+        # 有新时装时再执行穿装
+        if action.costume_item_name:
+            await self._process_wear_costume(entity, action, appearance_comp)
 
-            entity.replace(
-                AppearanceComponent,
-                appearance_comp.name,
-                appearance_comp.base_body,
-                appearance_comp.base_body,
-            )
-            logger.debug(
-                f"角色 {entity.name} 已移除时装 {costume_item.name!r}，外观重置为基础体型"
-            )
-            self._game.broadcast_to_stage(
-                entity,
-                AppearanceUpdateEvent(
-                    message=build_remove_costume_message(
-                        entity.name, appearance_comp.base_body
-                    ),
-                    actor="",
-                    target=entity.name,
-                    appearance=appearance_comp.base_body,
+    ####################################################################################################################################
+    def _process_remove_costume(
+        self,
+        entity: Entity,
+        appearance_comp: AppearanceComponent,
+    ) -> None:
+        """脱装：取出 CostumeComponent.item，移除组件，归还全局 StorageComponent，重置外观。无时装时静默跳过。"""
+
+        if not entity.has(CostumeComponent):
+            return
+
+        costume_item: CostumeItem = entity.get(CostumeComponent).item
+        entity.remove(CostumeComponent)
+
+        storage_entity = self._game.get_storage_entity()
+        assert storage_entity is not None, "找不到全局储物箱实体"
+        assert storage_entity.has(
+            StorageComponent
+        ), "全局储物箱实体缺少 StorageComponent"
+        storage_entity.get(StorageComponent).items.append(costume_item)
+
+        entity.replace(
+            AppearanceComponent,
+            appearance_comp.name,
+            appearance_comp.base_body,
+            appearance_comp.base_body,
+        )
+        logger.debug(
+            f"角色 {entity.name} 已移除时装 {costume_item.name!r}，外观重置为基础体型"
+        )
+        self._game.broadcast_to_stage(
+            entity,
+            AppearanceUpdateEvent(
+                message=build_remove_costume_message(
+                    entity.name, appearance_comp.base_body
                 ),
+                actor="",
+                target=entity.name,
+                appearance=appearance_comp.base_body,
+            ),
+        )
+
+    ####################################################################################################################################
+    async def _process_wear_costume(
+        self,
+        entity: Entity,
+        action: UpdateAppearanceAction,
+        appearance_comp: AppearanceComponent,
+    ) -> None:
+        """穿装：直接使用 action.costume_item，从 StorageComponent 移除，挂载组件，LLM 合成外观描述。"""
+
+        costume = action.costume_item
+        if costume is None:
+            logger.warning(
+                f"外观更新失败: action.costume_item 为空，角色 {entity.name}"
             )
             return
 
-        # 穿装 —— 时装来源始终是全局 StorageComponent
         storage_entity = self._game.get_storage_entity()
         assert storage_entity is not None, "找不到全局储物箱实体"
         assert storage_entity.has(
             StorageComponent
         ), "全局储物箱实体缺少 StorageComponent"
         storage = storage_entity.get(StorageComponent)
-        costume = next(
-            (
-                item
-                for item in storage.items
-                if item.name == action.item_name and item.type == ItemType.COSTUME_ITEM
-            ),
-            None,
-        )
+        storage.items[:] = [
+            item for item in storage.items if item.name != action.costume_item_name
+        ]
 
-        if costume is None:
-            logger.warning(f"外观更新失败: 玩家储物箱中找不到时装 {action.item_name!r}")
-            return
-
-        # 从 StorageComponent 移除该时装
-        assert isinstance(costume, CostumeItem)
-        storage_entity.replace(
-            StorageComponent,
-            storage.name,
-            [item for item in storage.items if item.name != action.item_name],
-        )
-
-        # 挂载 CostumeComponent
         entity.replace(CostumeComponent, entity.name, costume)
 
-        # LLM 语义合成外观描述
         prompt = build_appearance_synthesis_prompt(
             base_body=appearance_comp.base_body,
             costume_name=costume.name,
             costume_description=costume.description,
         )
-
-        # 创建 DeepSeekClient 实例并异步调用 LLM 进行外观描述合成
         client = DeepSeekClient(
             name=entity.name,
             prompt=prompt,
             context=self._game.get_agent_context(entity).context,
         )
-
-        # 异步调用 LLM 进行外观描述合成
         await client.async_chat()
         new_appearance = client.response_content.strip()
 
-        # 兜底：LLM 返回空时退回简单拼接
         if not new_appearance:
             logger.warning(f"LLM 外观合成返回空响应，角色 {entity.name} 退回简单拼接")
             new_appearance = f"{appearance_comp.base_body}，{costume.description}"
@@ -155,7 +157,6 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             appearance_comp.base_body,
             new_appearance,
         )
-
         logger.debug(f"角色 {entity.name} 外观已更新，当前时装: {costume.name!r}")
         self._game.broadcast_to_stage(
             entity,

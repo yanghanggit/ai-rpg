@@ -446,7 +446,7 @@ def activate_update_appearance(
     # 空字符串：脱装，直接触发动作
     if not item_name:
         logger.debug(f"激活外观更新（脱装）: {target_entity.name}")
-        target_entity.replace(UpdateAppearanceAction, target_entity.name, "")
+        target_entity.replace(UpdateAppearanceAction, target_entity.name, "", None)
         return True, ""
 
     # 时装来源始终是玩家的 StorageComponent
@@ -465,7 +465,9 @@ def activate_update_appearance(
         return False, error_detail
 
     logger.debug(f"激活外观更新: {target_entity.name} <- {item_name}")
-    target_entity.replace(UpdateAppearanceAction, target_entity.name, item_name)
+    target_entity.replace(
+        UpdateAppearanceAction, target_entity.name, item_name, costume
+    )
     return True, ""
 
 

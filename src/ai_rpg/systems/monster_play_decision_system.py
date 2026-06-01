@@ -247,7 +247,7 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
 
         # 注入 context 引导（仅第一回合，强制过牌）
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
-        self._mock_inject_pass_turn_context(entities, current_round_number)
+        # self._mock_inject_pass_turn_context(entities, current_round_number)
 
         # 为每个怪物创建推理 DeepSeekClient
         chat_clients: List[DeepSeekClient] = []
@@ -341,19 +341,19 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
         )
 
     ####################################################################################################################################
-    def _mock_inject_pass_turn_context(
-        self, entities: List[Entity], current_round_number: int
-    ) -> None:
-        """[mock] 第一回合向怪物注入 context，强制引导 LLM 选择 pass_turn。"""
-        if current_round_number != 1:
-            return
-        msg = (
-            "[系统提示] 本回合你必须选择跳过出牌。"
-            "请在 JSON 响应中将 pass_turn 设为 true，其余字段可省略。"
-        )
-        for entity in entities:
-            self._game.add_human_message(entity, msg)
-            logger.debug(f"[mock context] [{entity.name}] 注入 pass_turn 引导 context")
+    # def _mock_inject_pass_turn_context(
+    #     self, entities: List[Entity], current_round_number: int
+    # ) -> None:
+    #     """[mock] 第一回合向怪物注入 context，强制引导 LLM 选择 pass_turn。"""
+    #     if current_round_number != 1:
+    #         return
+    #     msg = (
+    #         "[系统提示] 本回合你必须选择跳过出牌。"
+    #         "请在 JSON 响应中将 pass_turn 设为 true，其余字段可省略。"
+    #     )
+    #     for entity in entities:
+    #         self._game.add_human_message(entity, msg)
+    #         logger.debug(f"[mock context] [{entity.name}] 注入 pass_turn 引导 context")
 
     ####################################################################################################################################
     def _process_monster_decision(self, entity: Entity, client: DeepSeekClient) -> None:

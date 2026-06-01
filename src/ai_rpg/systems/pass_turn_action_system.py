@@ -83,15 +83,14 @@ class PassTurnActionSystem(ReactiveProcessor):
                 f" current_turn_actor={self._game.get_current_turn_actor(last_round)}"
             )
 
-            # 将过牌角色添加到本轮已完成行动的角色列表中
-            last_round.completed_actors.append(pass_turn_action.name)
-
-            # 消耗过牌角色的行动能量
+            # 消耗过牌角色的全部行动能量，并按消耗次数追加 completed_actors（与出牌系统保持一致）
             cur_energy = self._game.get_energy(entity)
             logger.debug(
                 f"  {entity.name} 当前剩余行动能量: {cur_energy}，消耗后变为 0"
             )
             self._game.consume_energy(entity, cur_energy)
+            for _ in range(cur_energy):
+                last_round.completed_actors.append(pass_turn_action.name)
 
             # 结束当前角色的回合，进入下一角色的回合
             self._game.advance_turn(last_round)

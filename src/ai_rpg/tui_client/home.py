@@ -38,6 +38,7 @@ MENU_TEXT = """\
   [bold green]8[/]  道具管理      背包与储物箱道具移动
   [bold green]9[/]  管理远征队    加入/移除远征队成员
   [bold green]10[/] 穿戴时装      为目标安装/移除时装
+  [bold green]11[/] 制造工坊      合成消耗品等道具（未来可扩展至更多类型）
 [bold cyan]── 系统 ──────────────────────────────────────[/]
   [bold green]0[/]  显示此菜单
   [bold dim]Escape[/]  登出并返回主菜单
@@ -305,6 +306,10 @@ class HomeScreen(BaseGameScreen):
             from .wear_costume import WearCostumeScreen
 
             self.app.push_screen(WearCostumeScreen())
+        elif cmd == "11":
+            from .craft import CraftScreen
+
+            self.app.push_screen(CraftScreen())
         else:
             log.write(f"[red]未知输入：{cmd}，输入 0 查看操作菜单。[/]")
 

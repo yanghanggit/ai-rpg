@@ -21,6 +21,7 @@ from .home_actions import (
     activate_stage_plan,
     activate_generate_dungeon,
     activate_update_appearance,
+    activate_craft_consumable,
     add_party_member,
     remove_party_member,
     move_item_to_inventory,
@@ -50,6 +51,8 @@ from ..models import (
     HomeItemMoveToStorageResponse,
     HomeWearCostumeRequest,
     HomeWearCostumeResponse,
+    HomeCraftItemRequest,
+    HomeCraftItemResponse,
     TaskStatus,
 )
 
@@ -540,6 +543,60 @@ async def home_wear_costume_endpoint(
         task_id=wear_costume_task.task_id,
         status=TaskStatus.RUNNING.value,
         message="外观更新任务已启动，请通过会话消息查询结果",
+    )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+@home_gameplay_api_router.post(
+    path="/api/home/craft/item/v1/", response_model=HomeCraftItemResponse
+)
+async def home_craft_item_endpoint(
+    payload: HomeCraftItemRequest,
+    game_server: CurrentGameServer,
+) -> HomeCraftItemResponse:
+    """制造工坊合成接口：使用储物箱中的材料合成道具（当前支持消耗品，未来可扩展至装备等）。"""
+    logger.info(
+        f"/api/home/craft/item/v1/: user={payload.user_name} materials={payload.materials}"
+    )
+
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有登录，请先登录",
+        )
+
+    async with current_room._lock:
+        tcg_game = await _validate_player_at_home(payload.user_name, game_server)
+        success, error_detail = activate_craft_consumable(
+            tcg_game, list(payload.materials)
+        )
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_detail,
+            )
+
+    craft_task = game_server.create_task()
+    asyncio.create_task(
+        _execute_home_pipeline_task(
+            craft_task.task_id,
+            payload.user_name,
+            game_server,
+        )
+    )
+    logger.info(
+        f"📝 创建制造工坊任务: task_id={craft_task.task_id}, user={payload.user_name}"
+    )
+    return HomeCraftItemResponse(
+        task_id=craft_task.task_id,
+        status=TaskStatus.RUNNING.value,
+        message="制造工坊任务已启动，请通过会话消息查询结果",
     )
 
 

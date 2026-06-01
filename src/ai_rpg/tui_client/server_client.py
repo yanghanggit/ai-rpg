@@ -41,6 +41,8 @@ from ..models import (
     HomeItemMoveToStorageResponse,
     HomeWearCostumeRequest,
     HomeWearCostumeResponse,
+    HomeCraftItemRequest,
+    HomeCraftItemResponse,
     LoginRequest,
     LoginResponse,
     LogoutRequest,
@@ -501,3 +503,20 @@ async def home_wear_costume(
         )
         response.raise_for_status()
         return HomeWearCostumeResponse.model_validate(response.json())
+
+
+async def home_craft_item(
+    user_name: str, game_name: str, materials: List[str]
+) -> HomeCraftItemResponse:
+    """从储物箱材料合成道具（消耗品等），返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            server_config.base_url + "/api/home/craft/item/v1/",
+            json=HomeCraftItemRequest(
+                user_name=user_name,
+                game_name=game_name,
+                materials=materials,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return HomeCraftItemResponse.model_validate(response.json())

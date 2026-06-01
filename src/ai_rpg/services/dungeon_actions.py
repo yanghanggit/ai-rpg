@@ -23,6 +23,8 @@ from ..models import (
     Card,
     TargetType,
     HandComponent,
+    InventoryComponent,
+    UseConsumableItemAction,
 )
 from ..entitas import Entity, Matcher
 
@@ -367,6 +369,77 @@ def activate_retreat(
         True,
         f"成功为 {len(party_member_entities)} 个远征队成员激活撤退动作",
     )
+
+
+###################################################################################################################################################################
+def activate_use_consumable(
+    tcg_game: TCGGame,
+    actor_name: str,
+    item_name: str,
+    targets: List[str],
+) -> Tuple[bool, str]:
+    """让指定远征队员使用背包内的指定消耗品。仅适用于 PartyMemberComponent 角色。
+
+    使用消耗品不消耗 energy，可在玩家行动阶段内任意次数使用。
+
+    Args:
+        tcg_game: TCG游戏实例
+        actor_name: 使用消耗品的角色全名
+        item_name: 要使用的消耗品名称（须存在于该角色 InventoryComponent 中）
+        targets: 目标名称列表，可为 []；target_type 为 SELF_ONLY / ENEMY_ALL 时系统自动覆盖
+
+    Returns:
+        tuple[bool, str]: (是否成功, 结果消息)
+    """
+    entity, error_msg = _validate_play_turn(tcg_game, actor_name)
+    if entity is None:
+        logger.error(f"activate_use_consumable: {error_msg}")
+        return False, error_msg
+
+    if not entity.has(PartyMemberComponent):
+        msg = f"角色 {actor_name} 不是远征队员，怪物无法使用消耗品"
+        logger.error(msg)
+        return False, msg
+
+    if not entity.has(InventoryComponent):
+        msg = f"角色 {actor_name} 没有 InventoryComponent"
+        logger.error(msg)
+        return False, msg
+
+    inventory_comp = entity.get(InventoryComponent)
+    selected_item = next((i for i in inventory_comp.items if i.name == item_name), None)
+    if selected_item is None:
+        msg = (
+            f"角色 {actor_name} 背包中找不到消耗品 '{item_name}'，"
+            f"当前背包: {[i.name for i in inventory_comp.items]}"
+        )
+        logger.error(msg)
+        return False, msg
+
+    from ..models import ConsumableItem as _ConsumableItem
+
+    if not isinstance(selected_item, _ConsumableItem):
+        msg = f"物品 '{item_name}' 不是消耗品（类型: {type(selected_item).__name__}）"
+        logger.error(msg)
+        return False, msg
+
+    resolved_targets, resolve_err = _resolve_targets(
+        selected_item.target_type, 1, entity, targets, tcg_game
+    )
+    if resolve_err:
+        logger.error(f"activate_use_consumable: {resolve_err}")
+        return False, resolve_err
+
+    logger.debug(
+        f"为角色 {actor_name} 激活消耗品使用，物品: {selected_item.name} 目标: {resolved_targets}"
+    )
+    entity.replace(
+        UseConsumableItemAction,
+        entity.name,
+        selected_item,
+        resolved_targets,
+    )
+    return True, f"成功为角色 {actor_name} 激活消耗品使用（物品: {item_name}）"
 
 
 ###################################################################################################################################################################

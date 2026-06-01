@@ -3,7 +3,7 @@
 from typing import Dict, List, Optional, final
 from ..entitas.components import Component
 from .cards import Card
-from .items import CostumeItem, MaterialItem
+from .items import ConsumableItem, CostumeItem, MaterialItem
 from .registry import register_action_component_type, register_component_type
 
 
@@ -198,3 +198,15 @@ class CraftConsumableAction(Component):
     material_items: List[MaterialItem] = (
         []
     )  # 预填充的材料对象列表（count = 本次使用量）
+
+
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
+class UseConsumableItemAction(Component):
+    """触发角色在战斗中使用背包内的消耗品，由 LLM 仲裁效果（HP 变化、状态效果等）。"""
+
+    name: str
+    item: ConsumableItem  # 使用的消耗品对象（从 InventoryComponent 检索后填入）
+    targets: List[str]  # 技能目标角色名列表（由 target_type 解析后填入）

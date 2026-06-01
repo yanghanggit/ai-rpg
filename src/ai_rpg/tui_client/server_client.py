@@ -1,7 +1,7 @@
 """游戏服务器 HTTP 客户端（TUI 客户端专用）"""
 
 import json
-from typing import Any, Dict, List, cast
+from typing import Any, AsyncGenerator, Dict, List, cast
 
 import httpx
 
@@ -51,6 +51,7 @@ from ..models import (
     LogoutResponse,
     NewGameRequest,
     NewGameResponse,
+    SessionMessage,
     SessionMessageResponse,
     StagesStateResponse,
     TaskRecord,
@@ -139,6 +140,40 @@ async def fetch_session_messages(
         )
         response.raise_for_status()
         return SessionMessageResponse.model_validate(response.json())
+
+
+async def stream_session_messages(
+    user_name: str, game_name: str, last_sequence_id: int
+) -> AsyncGenerator[SessionMessage, None]:
+    """通过 SSE 持续接收玩家会话新消息。
+
+    长连接方式替代轮询，服务端以 0.3s 为间隔推送新 SessionMessage。
+    调用方通过 `async for` 消费，取消协程即可停止接收。
+
+    Args:
+        user_name: 用户名
+        game_name: 游戏名称
+        last_sequence_id: 从此序列号之后开始接收
+
+    Yields:
+        SessionMessage: 服务端推送的每条新消息
+    """
+    url = (
+        server_config.base_url
+        + f"/api/session_messages/v1/{user_name}/{game_name}/stream"
+    )
+    params = {"last_sequence_id": last_sequence_id}
+    timeout = httpx.Timeout(connect=10.0, read=None, write=10.0, pool=10.0)
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        async with client.stream("GET", url, params=params) as response:
+            response.raise_for_status()
+            async for line in response.aiter_lines():
+                if not line.startswith("data:"):
+                    continue
+                payload = line[5:].strip()
+                if not payload:
+                    continue
+                yield SessionMessage.model_validate_json(payload)
 
 
 async def fetch_entities_details(

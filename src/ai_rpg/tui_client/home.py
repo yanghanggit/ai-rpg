@@ -10,7 +10,7 @@ from loguru import logger
 import json
 
 from .server_client import (
-    fetch_session_messages,
+    stream_session_messages,
     fetch_stages_state,
     watch_task_until_done,
     TaskFailedError,
@@ -152,7 +152,6 @@ class HomeScreen(BaseGameScreen):
 
     def __init__(self) -> None:
         super().__init__()
-        self._polling_active: bool = False
 
     def compose(self) -> ComposeResult:
         yield Static("", id="home-status", markup=True)
@@ -171,23 +170,19 @@ class HomeScreen(BaseGameScreen):
                 f" game_name={_app.session.game_name}"
             )
         self.query_one(Input).focus()
-        self._polling_active = True
         self._poll_messages()
         self._refresh_status_bar()
 
     def on_unmount(self) -> None:
-        self._polling_active = False
         logger.info("HomeScreen: on_unmount，停止轮询")
 
     def on_screen_suspend(self) -> None:
         """推入子 Screen 时暂停轮询。"""
-        self._polling_active = False
         logger.info("HomeScreen: on_screen_suspend，暂停轮询")
 
     def on_screen_resume(self) -> None:
         """从子 Screen 返回时恢复轮询并刷新玩家状态。"""
         logger.info("HomeScreen: on_screen_resume，恢复轮询")
-        self._polling_active = True
         self._poll_messages()
         self._refresh_status_bar()
         self.query_one(Input).focus()
@@ -369,43 +364,38 @@ class HomeScreen(BaseGameScreen):
         app = self.game_client
         if app.session is None:
             return
+        user_name = app.session.user_name
+        game_name = app.session.game_name
         logger.info(
-            f"_poll_messages: 启动轮询 user_name={app.session.user_name} game_name={app.session.game_name}"
+            f"_poll_messages: 启动 SSE 流 user_name={user_name} game_name={game_name}"
         )
-        while self._polling_active:
-            await asyncio.sleep(2)
-            if not self._polling_active:
-                break
-            if app.session is None:
-                break
-            try:
-                resp = await fetch_session_messages(
-                    app.session.user_name,
-                    app.session.game_name,
-                    app.session.last_sequence_id,
-                )
-                for msg in resp.session_messages:
-                    if msg.message_type == MessageType.NONE:
-                        continue
-                    if msg.sequence_id > app.session.last_sequence_id:
-                        app.session.last_sequence_id = msg.sequence_id
-                    log = self.query_one(RichLog)
-                    if msg.message_type == MessageType.AGENT_EVENT:
-                        message_text = msg.data.get(
-                            "message", json.dumps(msg.data, ensure_ascii=False)
-                        )
-                        log.write(f"[bold white]{message_text}[/]")
-                    else:
-                        log.write(_format_agent_event(msg.data))
-                    log.write("--------------------------------------")
-                    logger.debug(
-                        f"_poll_messages: 收到消息 seq={msg.sequence_id} type={msg.message_type}"
+        try:
+            async for msg in stream_session_messages(
+                user_name,
+                game_name,
+                app.session.last_sequence_id,
+            ):
+                if app.session is None:
+                    break
+                if msg.message_type == MessageType.NONE:
+                    continue
+                if msg.sequence_id > app.session.last_sequence_id:
+                    app.session.last_sequence_id = msg.sequence_id
+                log = self.query_one(RichLog)
+                if msg.message_type == MessageType.AGENT_EVENT:
+                    message_text = msg.data.get(
+                        "message", json.dumps(msg.data, ensure_ascii=False)
                     )
-            except Exception as e:
-                logger.warning(f"_poll_messages: 轮询失败 error={e}")
-        logger.info(
-            f"_poll_messages: 轮询已停止 user_name={app.session.user_name if app.session else '?'}"
-        )
+                    log.write(f"[bold white]{message_text}[/]")
+                else:
+                    log.write(_format_agent_event(msg.data))
+                log.write("--------------------------------------")
+                logger.debug(
+                    f"_poll_messages: 收到消息 seq={msg.sequence_id} type={msg.message_type}"
+                )
+        except Exception as e:
+            logger.warning(f"_poll_messages: SSE 流中断 error={e}")
+        logger.info(f"_poll_messages: SSE 流已停止 user_name={user_name}")
 
     @work
     async def _do_logout(self) -> None:
@@ -424,7 +414,6 @@ class HomeScreen(BaseGameScreen):
             logger.info(
                 f"_do_logout: 登出成功 user_name={user_name} msg={msg} → 清空会话状态 + pop_screen"
             )
-            self._polling_active = False
             app.clear_session()
             await asyncio.sleep(0.5)
             self.app.pop_screen()

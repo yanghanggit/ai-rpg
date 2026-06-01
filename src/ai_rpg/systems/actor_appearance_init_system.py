@@ -6,7 +6,10 @@ from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.tcg_game import TCGGame
 from ..models import ActorComponent, AppearanceComponent, CostumeComponent
 from ..models.items import CostumeItem
-from .update_appearance_action_system import _build_appearance_synthesis_prompt
+from .appearance_synthesis_prompt import (
+    build_appearance_synthesis_prompt,
+    build_wear_costume_message,
+)
 
 
 #######################################################################################################################################
@@ -51,7 +54,7 @@ class ActorAppearanceInitSystem(ExecuteProcessor):
         for entity in targets:
             appearance_comp = entity.get(AppearanceComponent)
             costume: CostumeItem = entity.get(CostumeComponent).item
-            prompt = _build_appearance_synthesis_prompt(
+            prompt = build_appearance_synthesis_prompt(
                 base_body=appearance_comp.base_body,
                 costume_name=costume.name,
                 costume_description=costume.description,
@@ -80,11 +83,18 @@ class ActorAppearanceInitSystem(ExecuteProcessor):
                 )
                 new_appearance = f"{appearance_comp.base_body}，{costume.description}"
 
+            # 更新外观组件
             entity.replace(
                 AppearanceComponent,
                 appearance_comp.name,
                 appearance_comp.base_body,
                 new_appearance,
+            )
+
+            # 添加上下文。
+            self._game.add_human_message(
+                entity,
+                build_wear_costume_message(entity.name, costume.name, new_appearance),
             )
             logger.debug(
                 f"ActorAppearanceInitSystem: 角色 {entity.name} 外观已恢复合成，时装 {costume.name!r}"

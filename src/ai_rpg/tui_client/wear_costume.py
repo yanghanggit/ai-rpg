@@ -64,7 +64,8 @@ class WearCostumeScreen(BaseGameScreen):
     def __init__(self) -> None:
         super().__init__()
         self._costume_list: List[str] = []  # names of CostumeItem in storage
-        self._target_list: List[str] = []  # "" = player self, others = NPC names
+        self._target_list: List[str] = []  # NPC names in current stage
+        self._player_actor: str = ""  # player actor name
         self._step: Literal["select_costume", "select_target"] = "select_costume"
         self._selected_item: str = ""  # chosen costume name (empty = remove)
 
@@ -139,7 +140,12 @@ class WearCostumeScreen(BaseGameScreen):
 
         if idx == 1:
             target_name = ""
-            log.write("[dim]✓ 目标：玩家自身[/]")
+            player_label = (
+                f"{display_name(self._player_actor)}（玩家自身）"
+                if self._player_actor
+                else "玩家自身"
+            )
+            log.write(f"[dim]✓ 目标：[bold cyan]{player_label}[/][/]")
         else:
             target_name = self._target_list[idx - 2]
             log.write(f"[dim]✓ 目标：[bold cyan]{display_name(target_name)}[/][/]")
@@ -161,7 +167,12 @@ class WearCostumeScreen(BaseGameScreen):
     def _show_target_list(self) -> None:
         log = self.query_one(RichLog)
         log.write("[bold yellow]── 选择目标角色 ──────────────────────────────────[/]")
-        log.write("  [bold green]1.[/] [cyan]玩家自身[/]")
+        player_label = (
+            f"{display_name(self._player_actor)}（玩家自身）"
+            if self._player_actor
+            else "玩家自身"
+        )
+        log.write(f"  [bold green]1.[/] [cyan]{player_label}[/]")
         for i, name in enumerate(self._target_list, 2):
             log.write(f"  [bold green]{i}.[/] [cyan]{display_name(name)}[/]")
         log.write("")
@@ -182,6 +193,7 @@ class WearCostumeScreen(BaseGameScreen):
         game_name = app.session.game_name
         player_actor = app.session.blueprint.player_actor
         storage_entity = app.session.blueprint.storage_entity
+        self._player_actor = player_actor
 
         # --- 加载时装（from StorageComponent）---
         try:

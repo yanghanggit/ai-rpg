@@ -15,7 +15,7 @@ from .server_client import (
     home_item_move_to_inventory,
     home_item_move_to_storage,
 )
-from ..models import CostumeComponent, InventoryComponent, StorageComponent
+from ..models import InventoryComponent, StorageComponent
 from ..models.items import CostumeItem
 from .utils import display_name, render_item
 
@@ -103,12 +103,6 @@ class ItemManagementScreen(BaseGameScreen):
             for i, (loc, item) in enumerate(self._all_items)
             if loc == "storage" and item.get("type") == CostumeItem.__name__
         ]
-        equipped_items = [
-            (i, item)
-            for i, (loc, item) in enumerate(self._all_items)
-            if loc == "equipped"
-        ]
-
         if inventory_items:
             log.write("[bold green]  ▍随身背包[/]")
             for global_idx, item in inventory_items:
@@ -130,16 +124,6 @@ class ItemManagementScreen(BaseGameScreen):
             log.write("[bold blue]  ▍储物箱[/] [dim]（空）[/]")
 
         log.write("")
-
-        if equipped_items:
-            log.write(
-                "[bold magenta]  ▍穿戴中[/] [dim]（移除时装请使用外观更新功能）[/]"
-            )
-            for global_idx, item in equipped_items:
-                log.write(
-                    f"  [bold magenta]{global_idx + 1}.[/] [magenta]【穿戴】[/] {render_item(item)}"
-                )
-            log.write("")
 
         if costume_items:
             log.write(
@@ -178,7 +162,7 @@ class ItemManagementScreen(BaseGameScreen):
         location, item_dict = self._all_items[idx]
         item_name = item_dict.get("name", "?")
 
-        if location == "equipped" or item_dict.get("type") == CostumeItem.__name__:
+        if item_dict.get("type") == CostumeItem.__name__:
             log.write(
                 f"[yellow]⚠ 时装「{item_name}」不可移动，请通过外观更新功能使用。[/]"
             )
@@ -218,7 +202,6 @@ class ItemManagementScreen(BaseGameScreen):
 
         inventory_items: List[Dict[str, Any]] = []
         storage_items: List[Dict[str, Any]] = []
-        equipped_item: Dict[str, Any] = {}
 
         for entity in resp.entities_serialization:
             for comp in entity.components:
@@ -226,14 +209,10 @@ class ItemManagementScreen(BaseGameScreen):
                     inventory_items = comp.data.get("items", [])
                 elif comp.name == StorageComponent.__name__:
                     storage_items = comp.data.get("items", [])
-                elif comp.name == CostumeComponent.__name__:
-                    equipped_item = comp.data.get("item", {})
 
-        self._all_items = (
-            [("inventory", item) for item in inventory_items]
-            + [("storage", item) for item in storage_items]
-            + ([("equipped", equipped_item)] if equipped_item else [])
-        )
+        self._all_items = [("inventory", item) for item in inventory_items] + [
+            ("storage", item) for item in storage_items
+        ]
 
         logger.info(
             f"ItemManagementScreen._load_items: inventory={len(inventory_items)}"

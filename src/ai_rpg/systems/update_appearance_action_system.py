@@ -13,22 +13,11 @@ from ..models import (
     StorageComponent,
 )
 from ..models.items import CostumeItem, ItemType
-
-
-def _build_appearance_synthesis_prompt(
-    base_body: str,
-    costume_name: str,
-    costume_description: str,
-) -> str:
-    """构建外观合成提示词。"""
-    return f"""\
-你刚刚穿上了时装「{costume_name}」。
-
-基础体型：{base_body}
-时装「{costume_name}」描述：{costume_description}
-
-时装会覆盖或遮挡身体部分特征（如面具遮脸、上衣覆盖上身、裙子遮住腿部），请综合推理穿戴后的真实视觉效果，用第三人称写一段简短的外观描述（不超过50字）。只输出外观描述本身，不要解释。\
-"""
+from .appearance_synthesis_prompt import (
+    build_appearance_synthesis_prompt,
+    build_remove_costume_message,
+    build_wear_costume_message,
+)
 
 
 @final
@@ -96,7 +85,9 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             self._game.broadcast_to_stage(
                 entity,
                 AppearanceUpdateEvent(
-                    message=f"# {entity.name} 的外观已更新\n时装已移除，外观恢复为基础体型。\n当前外观：{appearance_comp.base_body}",
+                    message=build_remove_costume_message(
+                        entity.name, appearance_comp.base_body
+                    ),
                     actor="",
                     target=entity.name,
                     appearance=appearance_comp.base_body,
@@ -136,7 +127,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         entity.replace(CostumeComponent, entity.name, costume)
 
         # LLM 语义合成外观描述
-        prompt = _build_appearance_synthesis_prompt(
+        prompt = build_appearance_synthesis_prompt(
             base_body=appearance_comp.base_body,
             costume_name=costume.name,
             costume_description=costume.description,
@@ -169,7 +160,9 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         self._game.broadcast_to_stage(
             entity,
             AppearanceUpdateEvent(
-                message=f"# {entity.name} 的外观已更新\n{entity.name} 穿上了「{costume.name}」。\n当前外观：{new_appearance}",
+                message=build_wear_costume_message(
+                    entity.name, costume.name, new_appearance
+                ),
                 actor="",
                 target=entity.name,
                 appearance=new_appearance,

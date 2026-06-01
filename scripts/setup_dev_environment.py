@@ -43,8 +43,7 @@ from ai_rpg.pgsql import (
 )
 from ai_rpg.pgsql.user_operations import has_user, save_user
 from ai_rpg.demo import RPG_KNOWLEDGE_BASE
-from ai_rpg.chroma import reset_client, get_custom_collection
-from ai_rpg.rag import add_documents
+from ai_rpg.chroma import reset_client, get_custom_collection, add_documents
 from ai_rpg.embedding_model.sentence_transformer import multilingual_model
 
 

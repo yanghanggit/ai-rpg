@@ -10,10 +10,16 @@ from .client import (
     get_default_collection,
     get_custom_collection,
 )
+from .knowledge_retrieval import (
+    add_documents,
+    search_documents,
+)
 
 __all__ = [
     "chroma_client",
     "reset_client",
     "get_default_collection",
     "get_custom_collection",
+    "add_documents",
+    "search_documents",
 ]

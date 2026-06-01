@@ -21,8 +21,7 @@ from loguru import logger
 from ..embedding_model import (
     multilingual_model,
 )
-from ..chroma import get_custom_collection
-from ..rag import search_documents
+from ..chroma import get_custom_collection, search_documents
 from ..game.tcg_game import TCGGame
 
 

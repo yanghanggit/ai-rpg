@@ -18,7 +18,7 @@ from loguru import logger
 from chromadb.api.models.Collection import Collection
 
 from src.ai_rpg.chroma import chroma_client
-from src.ai_rpg.rag import add_documents, search_documents
+from src.ai_rpg.chroma import add_documents, search_documents
 from src.ai_rpg.embedding_model import multilingual_model
 
 

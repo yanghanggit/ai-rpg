@@ -674,7 +674,7 @@ class TCGGame(RPGGame):
             ), f"{actor_name} 缺少 RoundStatsComponent"
             if not actor_entity.has(RoundStatsComponent):
                 continue
-            if actor_entity.get(RoundStatsComponent).energy > 0:
+            if self.get_energy(actor_entity) > 0:
                 return actor_name
         return None
 
@@ -693,6 +693,19 @@ class TCGGame(RPGGame):
         )
 
     ###############################################################################################################################################
+    def get_energy(self, entity: Entity) -> int:
+        """获取角色实体的当前回合剩余行动次数（RoundStatsComponent.energy）。
+
+        Args:
+            entity: 角色实体；若无 RoundStatsComponent 则返回 0
+
+        Returns:
+            当前回合剩余行动次数；无 RoundStatsComponent 时返回 0
+        """
+        round_stats = entity.get(RoundStatsComponent)
+        return round_stats.energy if round_stats is not None else 0
+
+    ###############################################################################################################################################
     def consume_energy(self, entity: Entity, amount: int = 1) -> None:
         """消耗角色实体指定点数的 energy。
 
@@ -703,14 +716,13 @@ class TCGGame(RPGGame):
         assert entity.has(
             RoundStatsComponent
         ), f"{entity.name} 缺少 RoundStatsComponent"
-        round_stats = entity.get(RoundStatsComponent)
         assert (
-            round_stats.energy > 0
-        ), f"{entity.name} 能量不足！当前 energy={round_stats.energy}"
+            self.get_energy(entity) > 0
+        ), f"{entity.name} 能量不足！当前 energy={self.get_energy(entity)}"
         entity.replace(
             RoundStatsComponent,
             entity.name,
-            max(0, round_stats.energy - amount),
+            max(0, self.get_energy(entity) - amount),
         )
 
     ###############################################################################################################################################

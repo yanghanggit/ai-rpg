@@ -1,8 +1,4 @@
-"""过牌动作系统模块。
-
-处理战斗中角色的跳过出牌动作，消耗 1 点 energy 并推进行动顺序，不打出任何卡牌。
-仅在战斗进行中(ongoing)阶段执行。
-"""
+"""过牌动作系统模块。"""
 
 from typing import Final, final
 from loguru import logger
@@ -39,15 +35,7 @@ def _generate_pass_turn_notice_for_others(actor_name: str, round_number: int) ->
 #######################################################################################################################################
 @final
 class PassTurnActionSystem(ReactiveProcessor):
-    """过牌动作系统。
-
-    响应 PassTurnAction 组件的添加事件，消耗当前行动者的 1 点 energy 并推进行动顺序。
-    不打出任何卡牌，不触发仲裁。
-
-    触发条件：
-    - 实体添加 PassTurnAction 组件
-    - 战斗序列处于进行中(ongoing)状态
-    """
+    """过牌动作系统。"""
 
     def __init__(self, game: TCGGame) -> None:
         super().__init__(game)
@@ -71,6 +59,7 @@ class PassTurnActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     async def react(self, entities: list[Entity]) -> None:
+
         if not self._game.current_dungeon.is_ongoing:
             logger.debug("PassTurnActionSystem: 战斗未进行中，跳过过牌处理")
             return
@@ -94,17 +83,26 @@ class PassTurnActionSystem(ReactiveProcessor):
                 f" current_turn_actor={self._game.get_current_turn_actor(last_round)}"
             )
 
+            # 将过牌角色添加到本轮已完成行动的角色列表中
             last_round.completed_actors.append(pass_turn_action.name)
 
-            self._game.consume_energy(entity)
+            # 消耗过牌角色的行动能量
+            cur_energy = self._game.get_energy(entity)
+            logger.debug(
+                f"  {entity.name} 当前剩余行动能量: {cur_energy}，消耗后变为 0"
+            )
+            self._game.consume_energy(entity, cur_energy)
 
+            # 结束当前角色的回合，进入下一角色的回合
             self._game.advance_turn(last_round)
 
+            # 输出当前回合状态日志
             logger.debug(
                 f"  completed_actors: {last_round.completed_actors} / "
                 f"current_turn_actor_name={last_round.current_turn_actor_name}"
             )
 
+            # 给过牌角色发送过牌上下文消息，注入角色的对话历史
             self._game.add_human_message(
                 entity=entity,
                 message_content=_generate_pass_turn_context_prompt(
@@ -113,6 +111,7 @@ class PassTurnActionSystem(ReactiveProcessor):
                 ),
             )
 
+            # 给场景内其他角色广播过牌预告
             stage_entity = self._game.resolve_stage_entity(entity)
             assert (
                 stage_entity is not None

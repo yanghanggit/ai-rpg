@@ -81,10 +81,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
     def sorted_actors_by_round_speed(self, actors: Set[Entity]) -> List[Entity]:
         """从给定的角色集合中，筛选本回合仍有行动力的角色并按速度降序排列。"""
         eligible: List[Entity] = [
-            entity
-            for entity in actors
-            if entity.has(RoundStatsComponent)
-            and entity.get(RoundStatsComponent).energy > 0
+            entity for entity in actors if self._game.get_energy(entity) > 0
         ]
         eligible.sort(
             key=lambda entity: (
@@ -100,10 +97,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
     def shuffled_actors_by_round(self, actors: Set[Entity]) -> List[Entity]:
         """从给定的角色集合中，筛选本回合仍有行动力的角色并随机打乱顺序。"""
         eligible: List[Entity] = [
-            entity
-            for entity in actors
-            if entity.has(RoundStatsComponent)
-            and entity.get(RoundStatsComponent).energy > 0
+            entity for entity in actors if self._game.get_energy(entity) > 0
         ]
         random.shuffle(eligible)
         return eligible
@@ -112,10 +106,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
     def sorted_actors_by_creation_order(self, actors: Set[Entity]) -> List[Entity]:
         """从给定的角色集合中，筛选本回合仍有行动力的角色并按创建顺序升序排列。"""
         eligible: List[Entity] = [
-            entity
-            for entity in actors
-            if entity.has(RoundStatsComponent)
-            and entity.get(RoundStatsComponent).energy > 0
+            entity for entity in actors if self._game.get_energy(entity) > 0
         ]
         eligible.sort(key=lambda entity: entity.get(IdentityComponent).creation_order)
         return eligible

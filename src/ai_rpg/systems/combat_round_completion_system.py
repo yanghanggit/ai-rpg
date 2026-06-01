@@ -16,7 +16,6 @@ from typing import Final, final, override
 from loguru import logger
 from ..entitas import ExecuteProcessor
 from ..game.tcg_game import TCGGame
-from ..models import RoundStatsComponent
 
 
 ###############################################################################################################################################
@@ -61,9 +60,7 @@ class CombatRoundCompletionSystem(ExecuteProcessor):
 
         # 判断：所有存活角色均无剩余行动力
         all_energy_exhausted = all(
-            not actor.has(RoundStatsComponent)
-            or actor.get(RoundStatsComponent).energy <= 0
-            for actor in actors_in_stage
+            self._game.get_energy(actor) <= 0 for actor in actors_in_stage
         )
 
         if all_energy_exhausted:
